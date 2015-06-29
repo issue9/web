@@ -5,10 +5,8 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/issue9/context"
 	"github.com/issue9/logs"
@@ -20,25 +18,10 @@ var serveMux = mux.NewServeMux()
 // 初始化web包的内容。
 // 若dir目录并不真实存在或其它问题，则会直接panic
 func Init(dir string) {
-	// 判断dir
-	stat, err := os.Stat(dir)
-	if err != nil {
-		panic(err)
-	}
-	if !stat.IsDir() {
-		panic(fmt.Sprintf("路径[%v]不存在", dir))
-	}
-
-	// 确保dir参数以/结尾
-	last := configDIR[len(configDIR)-1]
-	if last != filepath.Separator && last != '/' {
-		dir += string(filepath.Separator)
-	}
-
-	configDIR = dir
+	initConfigDir(dir)
 
 	// 初始化日志系统
-	err = logs.InitFromXMLFile(ConfigFile("logs.xml"))
+	err := logs.InitFromXMLFile(ConfigFile("logs.xml"))
 	if err != nil {
 		panic(err)
 	}
@@ -54,6 +37,7 @@ func Run(errHandler mux.RecoverFunc) {
 		if len(cfg.ServerName) > 0 {
 			w.Header().Add("Server", cfg.ServerName) // 添加serverName
 		}
+
 		serveMux.ServeHTTP(w, req)
 		context.Free(req) // 清除context的内容
 		//delete(sessions, req)

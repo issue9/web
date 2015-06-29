@@ -1,0 +1,25 @@
+{
+    "https"     : true,
+    "keyFile"   : "keyFile",
+    "certFile"  : "certFile",
+    "port"      : "",
+    "serverName": "serverName",
+    "session"   : {
+        "idname": "gosession",
+        "lifetime": 3600,
+        "type"  : "memory",
+        "saveDir": "saveDir"
+    },
+    "db"        : {
+        "db1"   : {
+            "driver": "mysql",
+            "dsn": "dsn",
+            "prefix": "_"
+        },
+        "db2"   : {
+            "driver": "sqlite3",
+            "dsn": "dsn",
+            "prefix": ""
+        }
+    }
+}
