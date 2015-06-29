@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/issue9/logs"
 	"github.com/issue9/session"
 	"github.com/issue9/session/providers"
 	"github.com/issue9/session/stores"
@@ -30,7 +29,7 @@ func initSession() {
 	case "", "memory":
 		sessionMgr = session.New(stores.NewMemory(c.Lifetime), prv)
 	case "file":
-		f, err := stores.NewFile(c.SaveDir, c.Lifetime, logs.ERROR())
+		f, err := stores.NewFile(c.SaveDir, c.Lifetime, ERROR())
 		if err != nil {
 			panic(err)
 		}
@@ -51,7 +50,7 @@ func Session(w http.ResponseWriter, req *http.Request) *session.Session {
 
 	sess, err := sessionMgr.Start(w, req)
 	if err != nil {
-		logs.Error(err)
+		Error(err)
 		return nil
 	}
 
