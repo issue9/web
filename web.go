@@ -28,6 +28,7 @@ func Init(dir string) {
 
 	// 加载配置文件的内容
 	loadConfig(ConfigFile("web.json"))
+
 }
 
 // 开始监听。
@@ -40,7 +41,7 @@ func Run(errHandler mux.RecoverFunc) {
 
 		serveMux.ServeHTTP(w, req)
 		context.Free(req) // 清除context的内容
-		//delete(sessions, req)
+		delete(sessions, req)
 	})
 
 	if cfg.Https {
