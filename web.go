@@ -50,16 +50,14 @@ func Init(dir string) {
 // 开始监听。
 // errorHandler 为错误处理函数。
 func Run(errHandler mux.RecoverFunc) {
-	var h http.Handler
-	if len(cfg.ServerName) > 0 {
-		h = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if len(cfg.ServerName) > 0 {
 			w.Header().Add("Server", cfg.ServerName) // 添加serverName
-			serveMux.ServeHTTP(w, req)
-			context.Free(req) // 清除context的内容
-		})
-	} else {
-		h = serveMux
-	}
+		}
+		serveMux.ServeHTTP(w, req)
+		context.Free(req) // 清除context的内容
+		//delete(sessions, req)
+	})
 
 	if cfg.Https {
 		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, mux.NewRecovery(h, errHandler))
