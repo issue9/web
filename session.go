@@ -22,7 +22,7 @@ var (
 
 // 初始化session
 // vars接受以下四个参数：idname,lifetime,type,saveDir
-func initSession() error {
+func initSession() {
 	c := cfg.Session
 	prv := providers.NewCookie(c.Lifetime, c.IDName, "/", "", true)
 
@@ -38,8 +38,6 @@ func initSession() error {
 	default:
 		panic("initSession:无效的session.type值")
 	}
-
-	return nil
 }
 
 // 获取Session实例。
