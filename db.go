@@ -44,8 +44,7 @@ func initDB() {
 	}
 }
 
-// 返回一个orm.DB实例，若不存在，第二个参数返回false。
-func GetDB(name string) (*orm.DB, bool) {
-	db, found := dbs[name]
-	return db, found
+// 返回一个orm.DB实例，若不存在，返回nil。
+func DB(name string) *orm.DB {
+	return dbs[name]
 }
