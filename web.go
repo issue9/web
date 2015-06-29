@@ -29,6 +29,8 @@ func Init(dir string) {
 	// 加载配置文件的内容
 	loadConfig(ConfigFile("web.json"))
 
+	initSession()
+	initDB()
 }
 
 // 开始监听。
