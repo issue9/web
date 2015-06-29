@@ -46,6 +46,11 @@ func NewModule(name string, dependencies ...string) (*Module, error) {
 	modulesMu.Lock()
 	defer modulesMu.Unlock()
 
+	// 确保没有同名存在。
+	if _, found := modules[name]; found {
+		return nil, ErrModuleExists
+	}
+
 	// 检测依赖模块是否都已经存在
 	for _, m := range dependencies {
 		if _, found := modules[m]; !found {
@@ -53,15 +58,14 @@ func NewModule(name string, dependencies ...string) (*Module, error) {
 		}
 	}
 
-	if _, found := modules[name]; found {
-		return nil, ErrModuleExists
-	}
-
-	return &Module{
+	m := &Module{
 		name:         name,
 		dependencies: dependencies,
 		group:        serveMux.Group(),
-	}, nil
+	}
+	modules[name] = m
+
+	return m, nil
 }
 
 // 当前模块的路由是否处于运行状态
