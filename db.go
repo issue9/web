@@ -35,7 +35,7 @@ func initDB() {
 			panic("initDB:未知道的db.Driver值:" + v.Driver)
 		}
 
-		db, err := orm.NewDB(v.Driver, v.DSN, k, d)
+		db, err := orm.NewDB(v.Driver, v.DSN, v.Prefix, d)
 		if err != nil {
 			panic(err)
 		}

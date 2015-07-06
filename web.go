@@ -42,6 +42,18 @@ func Init(dir string) {
 
 	initSession()
 	initDB()
+	initStatic()
+}
+
+func initStatic() {
+	group, err := NewModule("static")
+	if err != nil {
+		panic(err)
+	}
+
+	for url, dir := range cfg.Static {
+		group.Get(url, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
+	}
 }
 
 // 开始监听。

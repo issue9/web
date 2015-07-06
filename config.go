@@ -17,13 +17,14 @@ var configDir string
 var cfg = &config{}
 
 type config struct {
-	Https      bool                 `json:"https"`      // 是否启用https
-	CertFile   string               `json:"certFile"`   // 当https为true时，此值为必须
-	KeyFile    string               `json:"keyFile"`    // 当https为true时，此值为必须
-	Port       string               `json:"port"`       // 端口，不指定，默认为80或是443
-	ServerName string               `json:"serverName"` // 响应头的server变量，为空时，不输出该内容
-	Session    *sessionConfig       `json:"session"`    // session相关配置
-	DB         map[string]*dbConfig `json:"db"`         // 数据库相关配置
+	Https      bool                 `json:"https"`            // 是否启用https
+	CertFile   string               `json:"certFile"`         // 当https为true时，此值为必须
+	KeyFile    string               `json:"keyFile"`          // 当https为true时，此值为必须
+	Port       string               `json:"port"`             // 端口，不指定，默认为80或是443
+	ServerName string               `json:"serverName"`       // 响应头的server变量，为空时，不输出该内容
+	Session    *sessionConfig       `json:"session"`          // session相关配置
+	DB         map[string]*dbConfig `json:"db"`               // 数据库相关配置
+	Static     map[string]string    `json:"static,omitempty"` // 表态路由映身，键名表示路由路径，键值表示文件目录
 }
 
 type sessionConfig struct {
@@ -82,5 +83,13 @@ func loadConfig(path string) {
 	}
 	if cfg.Port[0] != ':' {
 		cfg.Port = ":" + cfg.Port
+	}
+
+	// 确保每个目录都真实存在
+	for k, v := range cfg.Static {
+		last := v[len(v)-1]
+		if last != filepath.Separator && last != '/' {
+			cfg.Static[k] = v + string(filepath.Separator)
+		}
 	}
 }

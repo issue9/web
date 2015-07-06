@@ -4,6 +4,10 @@
     "certFile"  : "certFile",
     "port"      : "",
     "serverName": "serverName",
+    "static"    : {
+        "/assets": "./assets/",
+        "/libs"  : "./libs"
+    },
     "session"   : {
         "idname": "gosession",
         "lifetime": 3600,

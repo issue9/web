@@ -42,10 +42,16 @@ func TestLoadConfig(t *testing.T) {
 		True(cfg.Https).
 		Equal("certFile", cfg.CertFile).
 		Equal("keyFile", cfg.KeyFile)
+
+	a.Equal(2, len(cfg.Static)).
+		Equal("./assets/", cfg.Static["/assets"]).
+		Equal("./libs/", cfg.Static["/libs"])
+
 	a.Equal(3600, cfg.Session.Lifetime).
 		Equal("gosession", cfg.Session.IDName).
 		Equal("memory", cfg.Session.Type).
 		Equal("saveDir", cfg.Session.SaveDir)
+
 	a.Equal("", cfg.DB["db2"].Prefix).
 		Equal("dsn", cfg.DB["db2"].DSN).
 		Equal("sqlite3", cfg.DB["db2"].Driver)
