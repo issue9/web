@@ -43,9 +43,10 @@ func TestLoadConfig(t *testing.T) {
 		Equal("certFile", cfg.CertFile).
 		Equal("keyFile", cfg.KeyFile)
 
-	a.Equal(2, len(cfg.Static)).
-		Equal("./assets/", cfg.Static["/assets"]).
-		Equal("./libs/", cfg.Static["/libs"])
+	a.Equal(3, len(cfg.Static)).
+		Equal("./testdata/admin/", cfg.Static["/admin"]).
+		Equal("./testdata/front/", cfg.Static["/"]).
+		Equal("./testdata/front/", cfg.Static[""])
 
 	a.Equal("", cfg.DB["db2"].Prefix).
 		Equal("dsn", cfg.DB["db2"].DSN).

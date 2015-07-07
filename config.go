@@ -54,7 +54,7 @@ func ConfigFile(filename string) string {
 	return configDir + filename
 }
 
-// 从path中加载配置内容到cfg变量中
+// 从path中加载配置内容
 func loadConfig(path string) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {

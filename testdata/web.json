@@ -5,8 +5,9 @@
     "port"      : "",
     "serverName": "serverName",
     "static"    : {
-        "/assets": "./assets/",
-        "/libs"  : "./libs"
+        "/admin": "./testdata/admin/",
+        "/"     : "./testdata/front",
+        ""    : "./testdata/front"
     },
     "db"        : {
         "db1"   : {
