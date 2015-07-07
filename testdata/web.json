@@ -8,12 +8,6 @@
         "/assets": "./assets/",
         "/libs"  : "./libs"
     },
-    "session"   : {
-        "idname": "gosession",
-        "lifetime": 3600,
-        "type"  : "memory",
-        "saveDir": "saveDir"
-    },
     "db"        : {
         "db1"   : {
             "driver": "mysql",

@@ -47,11 +47,6 @@ func TestLoadConfig(t *testing.T) {
 		Equal("./assets/", cfg.Static["/assets"]).
 		Equal("./libs/", cfg.Static["/libs"])
 
-	a.Equal(3600, cfg.Session.Lifetime).
-		Equal("gosession", cfg.Session.IDName).
-		Equal("memory", cfg.Session.Type).
-		Equal("saveDir", cfg.Session.SaveDir)
-
 	a.Equal("", cfg.DB["db2"].Prefix).
 		Equal("dsn", cfg.DB["db2"].DSN).
 		Equal("sqlite3", cfg.DB["db2"].Driver)

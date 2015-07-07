@@ -40,7 +40,6 @@ func Init(dir string) {
 	// 确保在其它需要使用到cfg变量的函数之前调用。
 	loadConfig(ConfigFile("web.json"))
 
-	initSession()
 	initDB()
 	initStatic()
 }
@@ -66,11 +65,6 @@ func Run(errHandler mux.RecoverFunc) {
 
 		serveMux.ServeHTTP(w, req)
 		context.Free(req) // 清除context的内容
-
-		// 清除缓存的sessions
-		sessionsMu.Lock()
-		delete(sessions, req)
-		sessionsMu.Unlock()
 	})
 
 	if cfg.Https {
