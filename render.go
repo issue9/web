@@ -14,7 +14,7 @@ import (
 // header用于指定额外的Header信息，若传递nil，则表示没有。
 func RenderJson(w http.ResponseWriter, code int, v interface{}, header map[string]string) {
 	if w == nil {
-		Panic("参数w不能为空")
+		panic("参数w不能为空")
 	}
 
 	var data []byte

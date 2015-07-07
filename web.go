@@ -4,8 +4,8 @@
 
 // 一个模块化的微形web框架，依赖于issue9下的其它包。
 //  web.Init("~/config")
-//  // 其它处理工作...
-//  web.Run(errhandler)
+//  // 其它模块的初始化工作...
+//  web.Run(errhandler) // 开始监听端口
 //
 // 通过web.Init()指定一个配置文件的目录，web包本身有两个配置文件存在于该目录下：
 //  web.json 基本的配置内容，包括数据库等信息
@@ -21,12 +21,14 @@ import (
 	"github.com/issue9/mux"
 )
 
-// 当前库的版本
-const Version = "0.1.0.150628"
+// 当前的版本
+const Version = "0.1.1.150707"
 
 var serveMux = mux.NewServeMux()
 
 // 初始化web包的内容。
+//
+// dir为配置文件所在的目录，之后通过ConfigFile获取的文件都是相对于此目录的。
 // 若dir目录并不真实存在或其它问题，则会直接panic
 func Init(dir string) {
 	initConfigDir(dir)

@@ -49,7 +49,8 @@ func initConfigDir(dir string) {
 	configDir = dir
 }
 
-// 返回config目录下的文件
+// 返回configDir下的文件。
+// configDir由Init()函数作初始化。
 func ConfigFile(filename string) string {
 	return configDir + filename
 }
