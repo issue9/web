@@ -6,7 +6,9 @@ package web
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // 将v转换成json数据并写入到w中。code为服务端返回的代码。
@@ -52,4 +54,30 @@ func RenderJson(w http.ResponseWriter, code int, v interface{}, header map[strin
 	if _, err = w.Write(data); err != nil {
 		Error(err)
 	}
+}
+
+// 将r中的body当作一个json格式的数据读取到v中，若出错，则直接向w输出出错内容，
+// 并返回false，或是在一切正常的情况下返回true
+func ReadJson(w http.ResponseWriter, r *http.Request, v interface{}) (ok bool) {
+	ct := r.Header.Get("Content-Type")
+	if strings.Index(ct, "application/json") < 0 { // 请求格式不正确
+		RenderJson(w, http.StatusUnsupportedMediaType, nil, nil)
+		return false
+	}
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		Error(err)
+		RenderJson(w, http.StatusInternalServerError, nil, nil)
+		return false
+	}
+
+	err = json.Unmarshal(data, v)
+	if err != nil {
+		Error(err)
+		RenderJson(w, 422, nil, nil) // http包中并未定义422错误
+		return false
+	}
+
+	return true
 }

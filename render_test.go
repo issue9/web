@@ -23,8 +23,8 @@ func TestRenderJson(t *testing.T) {
 	}
 
 	// 特殊的值转换
-	test(nil, ``)
-	test("", ``)
+	test(nil, `{}`)
+	test("", `{}`)
 	test(0, `0`)
 
 	// 字符串类直接输出内容
