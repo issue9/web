@@ -5,6 +5,7 @@
 package web
 
 import (
+	"fmt"
 	"github.com/issue9/orm"
 	"github.com/issue9/orm/dialect"
 	"github.com/issue9/orm/forward"
@@ -46,5 +47,10 @@ func initDB() {
 
 // 返回一个orm.DB实例，若不存在，返回nil。
 func DB(name string) *orm.DB {
-	return dbs[name]
+	if db, found := dbs[name]; found {
+		return db
+	}
+
+	format := "未找到该名称[%v]的数据库实例，请查看web.json配置文件是否存在该数据库配置"
+	panic(fmt.Sprintf(format, name))
 }

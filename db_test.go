@@ -45,6 +45,5 @@ func TestDB(t *testing.T) {
 	db = DB("db2")
 	a.Equal(db, dbs["db2"])
 
-	db = DB("nil")
-	a.Nil(db)
+	a.Panic(func() { DB("nil") })
 }
