@@ -56,11 +56,24 @@ func RenderJson(w http.ResponseWriter, code int, v interface{}, header map[strin
 	}
 }
 
+// 检测请求格式和客户端能接受的类型是否正确
+// 若可接受返回true
+func CheckJsonMediaType(r *http.Request) bool {
+	if r.Method != "GET" {
+		ct := r.Header.Get("Content-Type")
+		if strings.Index(ct, "application/json") < 0 && strings.Index(ct, "*/*") < 0 {
+			return false
+		}
+	}
+
+	aceppt := r.Header.Get("Accept")
+	return strings.Index(aceppt, "application/json") >= 0 || strings.Index(aceppt, "*/*") >= 0
+}
+
 // 将r中的body当作一个json格式的数据读取到v中，若出错，则直接向w输出出错内容，
 // 并返回false，或是在一切正常的情况下返回true
 func ReadJson(w http.ResponseWriter, r *http.Request, v interface{}) (ok bool) {
-	ct := r.Header.Get("Content-Type")
-	if strings.Index(ct, "application/json") < 0 { // 请求格式不正确
+	if !CheckJsonMediaType(r) {
 		RenderJson(w, http.StatusUnsupportedMediaType, nil, nil)
 		return false
 	}
