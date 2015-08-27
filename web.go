@@ -18,10 +18,6 @@ import (
 	"github.com/issue9/mux"
 )
 
-var serveMux = mux.NewServeMux()
-
-var config *Config
-
 // web包的相关配置内容。
 type Config struct {
 	HTTPS      bool              `json:"https"`            // 是否启用https
@@ -30,33 +26,29 @@ type Config struct {
 	Port       string            `json:"port"`             // 端口，不指定，默认为80或是443
 	ServerName string            `json:"serverName"`       // 响应头的server变量，为空时，不输出该内容
 	Static     map[string]string `json:"static,omitempty"` // 静态路由映身，键名表示路由路径，键值表示文件目录
+	ErrHandler mux.RecoverFunc   `json:"-"`                // 错误处理
 }
 
 // 初始化web包的内容。
-func Run(cfg *Config, errHandler mux.RecoverFunc) {
+func Run(cfg *Config) {
 	checkConfig(cfg)
-	config = cfg
 
-	if len(config.Static) > 0 {
+	if len(cfg.Static) > 0 {
 		group, err := NewModule("static")
 		if err != nil {
 			panic(err)
 		}
 
-		for url, dir := range config.Static {
+		for url, dir := range cfg.Static {
 			group.Get(url, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
 		}
 	}
 
-	listen(errHandler)
+	listen(cfg)
 }
 
 // 检测cfg的各项字段是否合法，
 func checkConfig(cfg *Config) {
-	if config != nil {
-		panic("checkConfig:无法多次设置config的值")
-	}
-
 	// Port检测
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
@@ -80,19 +72,19 @@ func checkConfig(cfg *Config) {
 
 // 开始监听。
 // errorHandler 为错误处理函数。
-func listen(errHandler mux.RecoverFunc) {
+func listen(cfg *Config) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if len(config.ServerName) > 0 {
-			w.Header().Add("Server", config.ServerName) // 添加serverName
+		if len(cfg.ServerName) > 0 {
+			w.Header().Add("Server", cfg.ServerName) // 添加serverName
 		}
 
 		serveMux.ServeHTTP(w, req)
 		context.Free(req) // 清除context的内容
 	})
 
-	if config.HTTPS {
-		http.ListenAndServeTLS(config.Port, config.CertFile, config.KeyFile, mux.NewRecovery(h, errHandler))
+	if cfg.HTTPS {
+		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, mux.NewRecovery(h, cfg.ErrHandler))
 	} else {
-		http.ListenAndServe(config.Port, mux.NewRecovery(h, errHandler))
+		http.ListenAndServe(cfg.Port, mux.NewRecovery(h, cfg.ErrHandler))
 	}
 }

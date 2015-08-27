@@ -14,11 +14,12 @@ import (
 )
 
 var (
+	serveMux  = mux.NewServeMux()
 	modules   = map[string]*Module{} // 所有模块的列表。
 	modulesMu sync.Mutex
-
-	ErrModuleExists = errors.New("该名称的模块已经存在")
 )
+
+var ErrModuleExists = errors.New("该名称的模块已经存在")
 
 // 模块化管理路由项。相对于mux.Group，添加了模块依赖管理。
 type Module struct {
