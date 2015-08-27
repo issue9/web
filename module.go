@@ -20,6 +20,7 @@ var (
 	ErrModuleExists = errors.New("该名称的模块已经存在")
 )
 
+// 模块化管理路由项。相对于mux.Group，添加了模块依赖管理。
 type Module struct {
 	name         string   // 名称
 	dependencies []string // 依赖项
