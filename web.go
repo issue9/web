@@ -65,8 +65,9 @@ func checkConfig(cfg *Config) {
 	for k, v := range cfg.Static {
 		last := v[len(v)-1]
 		if last != filepath.Separator && last != '/' {
-			cfg.Static[k] = v + string(filepath.Separator)
+			v += string(filepath.Separator)
 		}
+		cfg.Static[k] = v
 	}
 }
 
