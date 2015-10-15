@@ -74,15 +74,15 @@ func checkConfig(cfg *Config) {
 // 开始监听。
 // errorHandler 为错误处理函数。
 func listen(cfg *Config) {
-	h := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	hf := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if len(cfg.ServerName) > 0 {
 			w.Header().Add("Server", cfg.ServerName) // 添加serverName
 		}
 
 		serveMux.ServeHTTP(w, req)
-		context.Free(req) // 清除context的内容
 	})
 
+	h := context.FreeHandler(hf)
 	if cfg.HTTPS {
 		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, mux.NewRecovery(h, cfg.ErrHandler))
 	} else {
