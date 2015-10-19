@@ -24,13 +24,13 @@ func TestModules(t *testing.T) {
 
 	m1, err := NewModule("m1")
 	a.NotError(err).NotNil(m1)
-	a.Equal(Modules(), modules).
-		Equal(modules, map[string]*Module{"m1": m1})
+	a.Equal(modules, map[string]*Module{"m1": m1})
+	a.Equal(1, len(Modules()))
 
 	m2, err := NewModule("m2")
 	a.NotError(err).NotNil(m2)
-	a.Equal(Modules(), modules).
-		Equal(modules, map[string]*Module{"m1": m1, "m2": m2})
+	a.Equal(2, len(Modules()))
+	a.Equal(modules, map[string]*Module{"m1": m1, "m2": m2})
 }
 
 func TestNewModule(t *testing.T) {

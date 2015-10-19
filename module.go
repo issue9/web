@@ -29,8 +29,12 @@ type Module struct {
 }
 
 // 所有模块列表，以模块名称为键名，模块实例为键值。
-func Modules() map[string]*Module {
-	return modules
+func Modules() []*Module {
+	ret := make([]*Module, 0, len(modules))
+	for _, m := range modules {
+		ret = append(ret, m)
+	}
+	return ret
 }
 
 // 获取指定名称的模块，若不存在，则返回nil
