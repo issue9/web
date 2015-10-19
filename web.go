@@ -57,6 +57,48 @@ func checkConfig(cfg *Config) {
 	}
 }
 
+// 修改服务器名称
+func (cfg *Config) buildServeName(h http.Handler) http.Handler {
+	if len(cfg.ServerName) > 0 {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Server", cfg.ServerName)
+			h.ServeHTTP(w, r)
+		})
+	}
+
+	return h
+}
+
+// 根据config.Pprof决定是否包装调试地址
+func (cfg *Config) buildPprof(h http.Handler) http.Handler {
+	if len(cfg.Pprof) > 0 {
+		colors.Println(colors.Stdout, colors.Green, colors.Default, "开启了调试功能，地址为：", cfg.Pprof)
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.HasPrefix(r.URL.Path, cfg.Pprof) {
+				h.ServeHTTP(w, r)
+				return
+			}
+
+			path := r.URL.Path[len(cfg.Pprof):]
+			switch path {
+			case "cmdline":
+				pprof.Cmdline(w, r)
+			case "profile":
+				pprof.Profile(w, r)
+			case "symbol":
+				pprof.Symbol(w, r)
+			case "trace":
+				pprof.Trace(w, r)
+			default:
+				pprof.Index(w, r)
+			}
+		})
+	}
+
+	return h
+}
+
 // 初始化web包的内容。
 func Run(cfg *Config) {
 	checkConfig(cfg)
@@ -78,49 +120,13 @@ func Run(cfg *Config) {
 // 开始监听。
 // errorHandler 为错误处理函数。
 func listen(cfg *Config) {
-	var h http.Handler = serveMux
-
-	// 修改服务器名称
-	if len(cfg.ServerName) > 0 {
-		h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Server", cfg.ServerName)
-			h.ServeHTTP(w, r)
-		})
-	}
+	h := cfg.buildServeName(serveMux)
 
 	// 作一些清理和错误处理
-	h = mux.NewRecovery(context.FreeHandler(serveMux), cfg.ErrHandler)
+	h = mux.NewRecovery(context.FreeHandler(h), cfg.ErrHandler)
 
 	// 在最外层添加调试地址，保证调试内容不会被其它handler干扰。
-	ref := h
-	if len(cfg.Pprof) > 0 {
-		colors.Println(colors.Stdout, colors.Green, colors.Default, "开启了调试功能，地址为：", cfg.Pprof)
-
-		h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !strings.HasPrefix(r.URL.Path, cfg.Pprof) {
-				ref.ServeHTTP(w, r)
-				return
-			}
-
-			path := r.URL.Path[len(cfg.Pprof):]
-			switch path {
-			case "cmdline":
-				pprof.Cmdline(w, r)
-			case "profile":
-				pprof.Profile(w, r)
-			case "symbol":
-				pprof.Symbol(w, r)
-			case "trace":
-				pprof.Trace(w, r)
-			default:
-				pprof.Index(w, r)
-			}
-		})
-	}
-
-	if h == nil {
-		panic("h==nil")
-	}
+	h = cfg.buildPprof(h)
 
 	if cfg.HTTPS {
 		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
