@@ -10,12 +10,12 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestCheckConfig(t *testing.T) {
+func TestConfig_init(t *testing.T) {
 	a := assert.New(t)
 	cfg := &Config{HTTPS: true}
 
 	// 正常加载之后，测试各个变量是否和配置文件中的一样。
-	a.NotPanic(func() { checkConfig(cfg) })
+	a.NotPanic(func() { cfg.init() })
 	a.Equal(":443", cfg.Port).
 		Equal("", cfg.ServerName).
 		True(cfg.HTTPS)

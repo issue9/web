@@ -34,7 +34,7 @@ type Config struct {
 }
 
 // 检测cfg的各项字段是否合法，
-func checkConfig(cfg *Config) {
+func (cfg *Config) init() {
 	// Port检测
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
@@ -101,7 +101,7 @@ func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 
 // 初始化web包的内容。
 func Run(cfg *Config) {
-	checkConfig(cfg)
+	cfg.init()
 
 	if len(cfg.Static) > 0 {
 		group, err := NewModule("static")
@@ -118,7 +118,6 @@ func Run(cfg *Config) {
 }
 
 // 开始监听。
-// errorHandler 为错误处理函数。
 func listen(cfg *Config) {
 	h := cfg.buildServeName(serveMux)
 
