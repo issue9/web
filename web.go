@@ -78,21 +78,27 @@ func Run(cfg *Config) {
 // 开始监听。
 // errorHandler 为错误处理函数。
 func listen(cfg *Config) {
-	var h http.Handler
+	var h http.Handler = serveMux
 
+	// 修改服务器名称
 	if len(cfg.ServerName) > 0 {
 		h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Server", cfg.ServerName)
-			context.FreeHandler(serveMux).ServeHTTP(w, r)
+			h.ServeHTTP(w, r)
 		})
 	}
 
+	// 作一些清理和错误处理
+	h = mux.NewRecovery(context.FreeHandler(serveMux), cfg.ErrHandler)
+
+	// 在最外层添加调试地址，保证调试内容不会被其它handler干扰。
+	ref := h
 	if len(cfg.Pprof) > 0 {
 		colors.Println(colors.Stdout, colors.Green, colors.Default, "开启了调试功能，地址为：", cfg.Pprof)
 
 		h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !strings.HasPrefix(r.URL.Path, cfg.Pprof) {
-				context.FreeHandler(serveMux).ServeHTTP(w, r)
+				ref.ServeHTTP(w, r)
 				return
 			}
 
@@ -113,12 +119,12 @@ func listen(cfg *Config) {
 	}
 
 	if h == nil {
-		h = context.FreeHandler(serveMux)
+		panic("h==nil")
 	}
 
 	if cfg.HTTPS {
-		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, mux.NewRecovery(h, cfg.ErrHandler))
+		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
 	} else {
-		http.ListenAndServe(cfg.Port, mux.NewRecovery(h, cfg.ErrHandler))
+		http.ListenAndServe(cfg.Port, h)
 	}
 }
