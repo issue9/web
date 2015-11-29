@@ -96,75 +96,70 @@ func (m *Module) Add(pattern string, h http.Handler, methods ...string) *Module 
 	return m
 }
 
-// Get相当于Module.Add(pattern, h, "GET")
+// Get 相当于Module.Add(pattern, h, "GET")
 func (m *Module) Get(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "GET")
 }
 
-// Post相当于Module.Add(pattern, h, "POST")
+// Post 相当于Module.Add(pattern, h, "POST")
 func (m *Module) Post(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "POST")
 }
 
-// Delete相当于Module.Add(pattern, h, "DELETE")
+// Delete 相当于Module.Add(pattern, h, "DELETE")
 func (m *Module) Delete(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "DELETE")
 }
 
-// Put相当于Module.Add(pattern, h, "PUT")
+// Put 相当于Module.Add(pattern, h, "PUT")
 func (m *Module) Put(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "PUT")
 }
 
-// Patch相当于Module.Add(pattern, h, "PATCH")
+// Patch 相当于Module.Add(pattern, h, "PATCH")
 func (m *Module) Patch(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "PATCH")
 }
 
-// Any相当于Module.Add(pattern, h)
+// Any 相当于Module.Add(pattern, h)
 func (m *Module) Any(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h)
 }
 
-// AddFunc相当于Module.Add(pattern, http.HandlerFunc(fun), methods...)
+// AddFunc 相当于Module.Add(pattern, http.HandlerFunc(fun), methods...)
 func (m *Module) AddFunc(pattern string, fun func(http.ResponseWriter, *http.Request), methods ...string) *Module {
 	m.group.AddFunc(pattern, fun, methods...)
 	return m
 }
 
-// GetFunc相当于Module.AddFunc(pattern, fun, "GET")
+// GetFunc 相当于Module.AddFunc(pattern, fun, "GET")
 func (m *Module) GetFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "GET")
 }
 
-// PutFunc相当于Module.AddFunc(pattern, fun, "PUT")
+// PutFunc 相当于Module.AddFunc(pattern, fun, "PUT")
 func (m *Module) PutFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "PUT")
 }
 
-// PostFunc相当于Module.AddFunc(pattern, fun, "POST")
+// PostFunc 相当于Module.AddFunc(pattern, fun, "POST")
 func (m *Module) PostFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "POST")
 }
 
-// DeleteFunc相当于Module.Addunc(pattern, fun, "DELETE")
+// DeleteFunc 相当于Module.Addunc(pattern, fun, "DELETE")
 func (m *Module) DeleteFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "DELETE")
 }
 
-// PatchFunc相当于Module.AddFunc(pattern, fun, "PATCH")
+// PatchFunc 相当于Module.AddFunc(pattern, fun, "PATCH")
 func (m *Module) PatchFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "PATCH")
 }
 
-// AnyFunc相当于Module.AddFunc(pattern, fn)
+// AnyFunc 相当于Module.AddFunc(pattern, fn)
 func (m *Module) AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun)
-}
-
-// 删除匹配模式。
-func (m *Module) Remove(pattern string, methods ...string) {
-	m.group.Remove(pattern, methods...)
 }
 
 // 创建一个mux.Prefix对象，具体可参考该实例说明。

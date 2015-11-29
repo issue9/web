@@ -17,20 +17,20 @@ import (
 	"strings"
 
 	"github.com/issue9/context"
-	"github.com/issue9/mux"
+	"github.com/issue9/handlers"
 	"github.com/issue9/term/colors"
 )
 
 // web包的相关配置内容。
 type Config struct {
-	HTTPS      bool              `json:"https"`                // 是否启用https
-	CertFile   string            `json:"certFile,omitempty"`   // 当https为true时，此值为必须
-	KeyFile    string            `json:"keyFile,omitempty"`    // 当https为true时，此值为必须
-	Port       string            `json:"port,omitempty"`       // 端口，不指定，默认为80或是443
-	ServerName string            `json:"serverName,omitempty"` // 响应头的server变量，为空时，不输出该内容
-	Static     map[string]string `json:"static,omitempty"`     // 静态路由映身，键名表示路由路径，键值表示文件目录
-	Pprof      string            `json:"pprof,omitempty"`      // 指定pprof地址
-	ErrHandler mux.RecoverFunc   `json:"-"`                    // 错误处理
+	HTTPS      bool                 `json:"https"`                // 是否启用https
+	CertFile   string               `json:"certFile,omitempty"`   // 当https为true时，此值为必须
+	KeyFile    string               `json:"keyFile,omitempty"`    // 当https为true时，此值为必须
+	Port       string               `json:"port,omitempty"`       // 端口，不指定，默认为80或是443
+	ServerName string               `json:"serverName,omitempty"` // 响应头的server变量，为空时，不输出该内容
+	Static     map[string]string    `json:"static,omitempty"`     // 静态路由映身，键名表示路由路径，键值表示文件目录
+	Pprof      string               `json:"pprof,omitempty"`      // 指定pprof地址
+	ErrHandler handlers.RecoverFunc `json:"-"`                    // 错误处理
 }
 
 // 检测cfg的各项字段是否合法，
@@ -122,7 +122,7 @@ func listen(cfg *Config) {
 	h := cfg.buildServeName(serveMux)
 
 	// 作一些清理和错误处理
-	h = mux.NewRecovery(context.FreeHandler(h), cfg.ErrHandler)
+	h = handlers.NewRecovery(context.FreeHandler(h), cfg.ErrHandler)
 
 	// 在最外层添加调试地址，保证调试内容不会被其它handler干扰。
 	h = cfg.buildPprof(h)
