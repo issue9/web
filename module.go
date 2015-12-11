@@ -23,12 +23,12 @@ var ErrModuleExists = errors.New("该名称的模块已经存在")
 
 // 模块化管理路由项。相对于mux.Group，添加了模块依赖管理。
 type Module struct {
-	name         string   // 名称
-	dependencies []string // 依赖项
+	Name         string   // 名称
+	Dependencies []string // 依赖项
 	group        *mux.Group
 }
 
-// 所有模块列表，以模块名称为键名，模块实例为键值。
+// 所有模块列表。
 func Modules() []*Module {
 	ret := make([]*Module, 0, len(modules))
 	for _, m := range modules {
@@ -65,8 +65,8 @@ func NewModule(name string, dependencies ...string) (*Module, error) {
 	}
 
 	m := &Module{
-		name:         name,
-		dependencies: dependencies,
+		Name:         name,
+		Dependencies: dependencies,
 		group:        serveMux.Group(),
 	}
 	modules[name] = m
