@@ -122,7 +122,7 @@ func listen(cfg *Config) {
 	h := cfg.buildServeName(serveMux)
 
 	// 作一些清理和错误处理
-	h = handlers.NewRecovery(context.FreeHandler(h), cfg.ErrHandler)
+	h = handlers.Recovery(context.FreeHandler(h), cfg.ErrHandler)
 
 	// 在最外层添加调试地址，保证调试内容不会被其它handler干扰。
 	h = cfg.buildPprof(h)
