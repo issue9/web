@@ -7,7 +7,7 @@
 //  m.Get("/", ...).
 //    Post("/", ...)
 //  // 其它模块的初始化工作...
-//  web.Run(&Config{},errhandler) // 开始监听端口
+//  web.Run(&Config{}) // 开始监听端口
 package web
 
 import (
@@ -42,8 +42,7 @@ func (cfg *Config) init() {
 		} else {
 			cfg.Port = ":80"
 		}
-	}
-	if cfg.Port[0] != ':' {
+	} else if cfg.Port[0] != ':' {
 		cfg.Port = ":" + cfg.Port
 	}
 
@@ -104,13 +103,13 @@ func Run(cfg *Config) {
 	cfg.init()
 
 	if len(cfg.Static) > 0 {
-		group, err := NewModule("static")
+		m, err := NewModule("static")
 		if err != nil {
 			panic(err)
 		}
 
 		for url, dir := range cfg.Static {
-			group.Get(url, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
+			m.Get(url, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
 		}
 	}
 
