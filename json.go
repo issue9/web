@@ -80,7 +80,7 @@ func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string
 
 // ReadJSON 用于将r中的body当作一个json格式的数据读取到v中，若出错，则返回相应的http状态码表示其错误类型。
 // 200 表示一切正常。
-func ReadJSON(w http.ResponseWriter, r *http.Request, v interface{}) (status int) {
+func ReadJSON(r *http.Request, v interface{}) (status int) {
 	if r.Method != "GET" {
 		ct := r.Header.Get("Content-Type")
 		if strings.Index(ct, "application/json") < 0 && strings.Index(ct, "*/*") < 0 {
