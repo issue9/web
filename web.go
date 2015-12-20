@@ -8,17 +8,18 @@
 //    Post("/", ...)
 //  // 其它模块的初始化工作...
 //  web.Run(&Config{}) // 开始监听端口
+//
+// web依赖logs包作日志输出，请确保已经正确初始化该包。
 package web
 
 import (
 	"net/http"
 	"net/http/pprof"
-	"path/filepath"
 	"strings"
 
 	"github.com/issue9/context"
 	"github.com/issue9/handlers"
-	"github.com/issue9/term/colors"
+	"github.com/issue9/logs"
 )
 
 // web包的相关配置内容。
@@ -28,7 +29,6 @@ type Config struct {
 	KeyFile    string               `json:"keyFile,omitempty"`    // 当https为true时，此值为必须
 	Port       string               `json:"port,omitempty"`       // 端口，不指定，默认为80或是443
 	ServerName string               `json:"serverName,omitempty"` // 响应头的server变量，为空时，不输出该内容
-	Static     map[string]string    `json:"static,omitempty"`     // 静态路由映身，键名表示路由路径，键值表示文件目录
 	Pprof      string               `json:"pprof,omitempty"`      // 指定pprof地址
 	ErrHandler handlers.RecoverFunc `json:"-"`                    // 错误处理
 }
@@ -44,15 +44,6 @@ func (cfg *Config) init() {
 		}
 	} else if cfg.Port[0] != ':' {
 		cfg.Port = ":" + cfg.Port
-	}
-
-	// 确保每个目录都以/结尾
-	for k, v := range cfg.Static {
-		last := v[len(v)-1]
-		if last != filepath.Separator && last != '/' {
-			v += string(filepath.Separator)
-		}
-		cfg.Static[k] = v
 	}
 }
 
@@ -71,7 +62,7 @@ func (cfg *Config) buildServeName(h http.Handler) http.Handler {
 // 根据config.Pprof决定是否包装调试地址
 func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 	if len(cfg.Pprof) > 0 {
-		colors.Println(colors.Stdout, colors.Green, colors.Default, "开启了调试功能，地址为：", cfg.Pprof)
+		logs.Debug("web:", "开启了调试功能，地址为：", cfg.Pprof)
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !strings.HasPrefix(r.URL.Path, cfg.Pprof) {
@@ -101,17 +92,6 @@ func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 // 初始化web包的内容。
 func Run(cfg *Config) {
 	cfg.init()
-
-	if len(cfg.Static) > 0 {
-		m, err := NewModule("static")
-		if err != nil {
-			panic(err)
-		}
-
-		for url, dir := range cfg.Static {
-			m.Get(url, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
-		}
-	}
 
 	listen(cfg)
 }
