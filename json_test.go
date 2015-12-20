@@ -12,6 +12,22 @@ import (
 	"github.com/issue9/assert"
 )
 
+func TestRenderJSONHeader(t *testing.T) {
+	a := assert.New(t)
+
+	w := httptest.NewRecorder()
+	a.NotNil(w)
+
+	renderJSONHeader(w, http.StatusCreated, nil)
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Header().Get("Content-Type"), "application/json;charset=utf-8")
+
+	renderJSONHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Header().Get("Content-Type"), "123")
+}
+
 func TestRenderJSON(t *testing.T) {
 	a := assert.New(t)
 
