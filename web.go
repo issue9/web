@@ -18,7 +18,7 @@ import (
 
 	"github.com/issue9/context"
 	"github.com/issue9/handlers"
-	"github.com/issue9/term/colors"
+	"github.com/issue9/logs"
 )
 
 // web包的相关配置内容。
@@ -71,7 +71,7 @@ func (cfg *Config) buildServeName(h http.Handler) http.Handler {
 // 根据config.Pprof决定是否包装调试地址
 func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 	if len(cfg.Pprof) > 0 {
-		colors.Println(colors.Stdout, colors.Green, colors.Default, "开启了调试功能，地址为：", cfg.Pprof)
+		logs.Info("web:", "开启了调试功能，地址为：", cfg.Pprof)
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !strings.HasPrefix(r.URL.Path, cfg.Pprof) {
