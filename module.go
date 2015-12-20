@@ -123,7 +123,8 @@ func (m *Module) Patch(pattern string, h http.Handler) *Module {
 
 // Any 相当于Module.Add(pattern, h)
 func (m *Module) Any(pattern string, h http.Handler) *Module {
-	return m.Add(pattern, h)
+	m.group.Any(pattern, h)
+	return m
 }
 
 // AddFunc 相当于Module.Add(pattern, http.HandlerFunc(fun), methods...)
@@ -159,7 +160,8 @@ func (m *Module) PatchFunc(pattern string, fun func(http.ResponseWriter, *http.R
 
 // AnyFunc 相当于Module.AddFunc(pattern, fn)
 func (m *Module) AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
-	return m.AddFunc(pattern, fun)
+	m.group.AnyFunc(pattern, fun)
+	return m
 }
 
 // 创建一个mux.Prefix对象，具体可参考该实例说明。
