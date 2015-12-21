@@ -22,7 +22,7 @@ import (
 	"github.com/issue9/logs"
 )
 
-// web包的相关配置内容。
+// 启动Run()函数的相关参数。
 type Config struct {
 	HTTPS      bool                 `json:"https"`                // 是否启用https
 	CertFile   string               `json:"certFile,omitempty"`   // 当https为true时，此值为必须
