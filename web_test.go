@@ -19,18 +19,18 @@ func TestConfig_init(t *testing.T) {
 	// 正常加载之后，测试各个变量是否和配置文件中的一样。
 	a.NotPanic(func() { cfg.init() })
 	a.Equal(":443", cfg.Port).
-		Equal("", cfg.ServerName).
+		Equal(0, len(cfg.Headers)).
 		True(cfg.HTTPS)
 }
 
-func TestConfig_buildServerName(t *testing.T) {
+func TestConfig_buildHeaders(t *testing.T) {
 	a := assert.New(t)
 	fh := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("123"))
 	}
 
-	cfg := &Config{ServerName: "test"}
-	h := cfg.buildServeName(http.HandlerFunc(fh))
+	cfg := &Config{Headers: map[string]string{"Server": "test"}}
+	h := cfg.buildHeaders(http.HandlerFunc(fh))
 
 	r, err := http.NewRequest("GET", "", nil)
 	a.NotError(err).NotNil(r)
@@ -40,8 +40,8 @@ func TestConfig_buildServerName(t *testing.T) {
 	a.Equal(w.Header().Get("Server"), "test")
 
 	// 为空
-	cfg = &Config{ServerName: ""}
-	h = cfg.buildServeName(http.HandlerFunc(fh))
+	cfg = &Config{Headers: map[string]string{}}
+	h = cfg.buildHeaders(http.HandlerFunc(fh))
 
 	r, err = http.NewRequest("GET", "", nil)
 	a.NotError(err).NotNil(r)
@@ -54,6 +54,7 @@ func TestConfig_buildServerName(t *testing.T) {
 func TestConfig_buildPprof(t *testing.T) {
 	a := assert.New(t)
 	fh := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("123"))
 	}
 
@@ -62,11 +63,16 @@ func TestConfig_buildPprof(t *testing.T) {
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/debug/profile")
+	resp, err := http.Get(srv.URL + "/debug/synbol")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
 	resp, err = http.Get(srv.URL + "/debug/cmdline")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
+
+	// 不存在的路由，跳转到fh函数
+	resp, err = http.Get(srv.URL + "/debug1/cmdline")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusNotFound)
 }

@@ -24,18 +24,17 @@ import (
 
 // 启动Run()函数的相关参数。
 type Config struct {
-	HTTPS      bool                 `json:"https"`                // 是否启用https
-	CertFile   string               `json:"certFile,omitempty"`   // 当https为true时，此值为必须
-	KeyFile    string               `json:"keyFile,omitempty"`    // 当https为true时，此值为必须
-	Port       string               `json:"port,omitempty"`       // 端口，不指定，默认为80或是443
-	ServerName string               `json:"serverName,omitempty"` // 响应头的server变量，为空时，不输出该内容
-	Pprof      string               `json:"pprof,omitempty"`      // 指定pprof地址
-	ErrHandler handlers.RecoverFunc `json:"-"`                    // 错误处理
+	HTTPS      bool                 `json:"https,omitempty"`    // 是否启用https
+	CertFile   string               `json:"certFile,omitempty"` // 当https为true时，此值为必填
+	KeyFile    string               `json:"keyFile,omitempty"`  // 当https为true时，此值为必填
+	Port       string               `json:"port,omitempty"`     // 端口，不指定，默认为80或是443
+	Headers    map[string]string    `json:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
+	Pprof      string               `json:"pprof,omitempty"`    // 指定pprof地址
+	ErrHandler handlers.RecoverFunc `json:"-"`                  // 错误处理
 }
 
 // 检测cfg的各项字段是否合法，
 func (cfg *Config) init() {
-	// Port检测
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
 			cfg.Port = ":443"
@@ -48,10 +47,12 @@ func (cfg *Config) init() {
 }
 
 // 修改服务器名称
-func (cfg *Config) buildServeName(h http.Handler) http.Handler {
-	if len(cfg.ServerName) > 0 {
+func (cfg *Config) buildHeaders(h http.Handler) http.Handler {
+	if len(cfg.Headers) > 0 {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Server", cfg.ServerName)
+			for k, v := range cfg.Headers {
+				w.Header().Set(k, v)
+			}
 			h.ServeHTTP(w, r)
 		})
 	}
@@ -98,7 +99,7 @@ func Run(cfg *Config) {
 
 // 开始监听。
 func listen(cfg *Config) {
-	h := cfg.buildServeName(serveMux)
+	h := cfg.buildHeaders(serveMux)
 
 	// 作一些清理和错误处理
 	h = handlers.Recovery(context.FreeHandler(h), cfg.ErrHandler)
