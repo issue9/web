@@ -91,14 +91,9 @@ func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 }
 
 // 初始化web包的内容。
-func Run(cfg *Config) {
+func Run(cfg *Config) error {
 	cfg.init()
 
-	listen(cfg)
-}
-
-// 开始监听。
-func listen(cfg *Config) {
 	h := cfg.buildHeaders(serveMux)
 
 	// 作一些清理和错误处理
@@ -108,8 +103,7 @@ func listen(cfg *Config) {
 	h = cfg.buildPprof(h)
 
 	if cfg.HTTPS {
-		http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
-	} else {
-		http.ListenAndServe(cfg.Port, h)
+		return http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
 	}
+	return http.ListenAndServe(cfg.Port, h)
 }
