@@ -164,6 +164,12 @@ func (m *Module) AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Req
 	return m
 }
 
+// Clean 清除当前模块的所有路由项
+func (m *Module) Clean() *Module {
+	m.group.Clean()
+	return m
+}
+
 // 创建一个mux.Prefix对象，具体可参考该实例说明。
 func (m *Module) Prefix(prefix string) *mux.Prefix {
 	return m.group.Prefix(prefix)
