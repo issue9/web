@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	serveMux  = mux.NewServeMux()
+	serveMux = mux.NewServeMux()
+
 	modules   = map[string]*Module{} // 所有模块的列表。
 	modulesMu sync.Mutex
 )

@@ -6,10 +6,12 @@
 //  m, err := web.NewModule("m1")
 //  m.Get("/", ...).
 //    Post("/", ...)
+//
 //  // 其它模块的初始化工作...
+//
 //  web.Run(&Config{}) // 开始监听端口
 //
-// web依赖logs包作日志输出，请确保已经正确初始化该包。
+// NOTE: web 依赖 github.com/issue9/logs 包作日志输出，请确保已经正确初始化该包。
 package web
 
 import (
@@ -22,27 +24,45 @@ import (
 	"github.com/issue9/logs"
 )
 
+const (
+	httpPort  = ":80"
+	httpsPort = ":443"
+)
+
+// 当启用 HTTPS 时，对 80 端口的处理方式。
+const (
+	HTTPStateDisabled = iota // 禁止监听 80 端口
+	HTTPStateListen          // 监听 80 端口，与 HTTPS 相同的方式处理
+	HTTPStateRedirect        // 监听 80 端口，并重定向到 HTTPS
+	httpStateSize
+)
+
 // 启动Run()函数的相关参数。
 type Config struct {
-	HTTPS      bool                 `json:"https,omitempty"`    // 是否启用https
-	CertFile   string               `json:"certFile,omitempty"` // 当https为true时，此值为必填
-	KeyFile    string               `json:"keyFile,omitempty"`  // 当https为true时，此值为必填
-	Port       string               `json:"port,omitempty"`     // 端口，不指定，默认为80或是443
-	Headers    map[string]string    `json:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
-	Pprof      string               `json:"pprof,omitempty"`    // 指定pprof地址
-	ErrHandler handlers.RecoverFunc `json:"-"`                  // 错误处理
+	HTTPS      bool                 `json:"https,omitempty"`     // 是否启用https
+	HTTPState  int                  `json:"httpState,omitempty"` // 80端口的状态，仅在HTTPS为true时，启作用
+	CertFile   string               `json:"certFile,omitempty"`  // 当https为true时，此值为必填
+	KeyFile    string               `json:"keyFile,omitempty"`   // 当https为true时，此值为必填
+	Port       string               `json:"port,omitempty"`      // 端口，不指定，默认为80或是443
+	Headers    map[string]string    `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
+	Pprof      string               `json:"pprof,omitempty"`     // 指定pprof地址
+	ErrHandler handlers.RecoverFunc `json:"-"`                   // 错误处理
 }
 
 // 检测cfg的各项字段是否合法，
 func (cfg *Config) init() {
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
-			cfg.Port = ":443"
+			cfg.Port = httpsPort
 		} else {
-			cfg.Port = ":80"
+			cfg.Port = httpPort
 		}
 	} else if cfg.Port[0] != ':' {
 		cfg.Port = ":" + cfg.Port
+	}
+
+	if cfg.HTTPState < 0 || cfg.HTTPState >= httpStateSize {
+		panic("无效的httpState值")
 	}
 }
 
@@ -90,7 +110,20 @@ func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 	return h
 }
 
-// 初始化web包的内容。
+// 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
+func (cfg *Config) buildHTTPRedirectServer() {
+	http.ListenAndServe(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL
+		url.Host = r.Host + cfg.Port
+		url.Scheme = "HTTPS"
+
+		urlStr := url.String()
+		logs.Info("301 HTTP==>HTTPS:", urlStr)
+		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
+	}))
+}
+
+// Run 运行路由，执行监听程序。
 func Run(cfg *Config) error {
 	cfg.init()
 
@@ -103,7 +136,19 @@ func Run(cfg *Config) error {
 	h = cfg.buildPprof(h)
 
 	if cfg.HTTPS {
+		switch cfg.HTTPState {
+		case HTTPStateListen:
+			logs.Info("开始临听%v端口", httpPort)
+			go http.ListenAndServe(httpPort, h)
+		case HTTPStateRedirect:
+			logs.Info("开始临听%v端口", httpsPort)
+			go cfg.buildHTTPRedirectServer()
+		}
+
+		logs.Info("开始临听%v端口", cfg.Port)
 		return http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
 	}
+
+	logs.Info("开始临听%v端口", cfg.Port)
 	return http.ListenAndServe(cfg.Port, h)
 }

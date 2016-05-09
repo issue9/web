@@ -17,7 +17,7 @@ import (
 // 默认情况下，会在返回的文件头信息中添加Content-Type=application/json;charset=utf-8
 // 的信息，若想手动指定该内容，可通过在headers中传递同名变量来改变。
 //
-// 确保参数v不为nil，否则将触发panic。
+// 确保参数w不为nil，否则将触发panic。
 // 若v的值是string,[]byte,[]rune则直接转换成字符串写入w。为nil时，
 // 不输出任何内容，若需要输出一个空对象，请使用"{}"字符串；
 //
@@ -60,7 +60,8 @@ func RenderJSON(w http.ResponseWriter, code int, v interface{}, headers map[stri
 	}
 }
 
-// 将headers当作一个头信息输出，若未指定Content-Type，则默认添加application/json;charset=utf-8作为其值。
+// 将headers当作一个头信息输出，若未指定Content-Type，
+// 则默认添加application/json;charset=utf-8作为其值。
 func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string) {
 	if headers == nil {
 		w.Header().Set("Content-Type", "application/json;charset=utf-8")
@@ -78,7 +79,8 @@ func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string
 	w.WriteHeader(code)
 }
 
-// ReadJSON 用于将r中的body当作一个json格式的数据读取到v中，若出错，则返回相应的http状态码表示其错误类型。
+// ReadJSON 用于将r中的body当作一个json格式的数据读取到v中，
+// 若出错，则返回相应的http状态码表示其错误类型。
 // 200 表示一切正常。
 func ReadJSON(r *http.Request, v interface{}) (status int) {
 	if r.Method != "GET" {
