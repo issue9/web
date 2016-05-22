@@ -14,7 +14,7 @@ import (
 
 // ParamString 获取一个string类型的参数，
 // 若不存在，则第二个参数返回false，并向logs.DEBUG()输出一条信息。
-func ParamString(r *http.Request, key string) (val string, found bool) {
+func ParamString(r *http.Request, key string) (string, bool) {
 	m, found := context.Get(r).Get("params")
 	if !found {
 		logs.Debug("web.ParamString:在context中找不到params参数")
@@ -22,7 +22,7 @@ func ParamString(r *http.Request, key string) (val string, found bool) {
 	}
 
 	params := m.(map[string]string)
-	val, found = params[key]
+	val, found := params[key]
 	if !found {
 		logs.Debug("web.ParamString:在context.params中找不到指定参数:", key)
 		return "", false
@@ -33,7 +33,7 @@ func ParamString(r *http.Request, key string) (val string, found bool) {
 
 // ParamInt64 获取一个int64类型的参数，
 // 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
-func ParamInt64(r *http.Request, key string) (val int64, found bool) {
+func ParamInt64(r *http.Request, key string) (int64, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
 		return 0, false
@@ -50,7 +50,7 @@ func ParamInt64(r *http.Request, key string) (val int64, found bool) {
 
 // ParamInt 获取一个int类型的参数，
 // 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
-func ParamInt(r *http.Request, key string) (val int, found bool) {
+func ParamInt(r *http.Request, key string) (int, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
 		return 0, false
@@ -67,7 +67,7 @@ func ParamInt(r *http.Request, key string) (val int, found bool) {
 
 // ParamFloat64 获取一个float64类型的参数，
 // 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
-func ParamFloat64(r *http.Request, key string) (val float64, found bool) {
+func ParamFloat64(r *http.Request, key string) (float64, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
 		return 0, false
@@ -84,7 +84,7 @@ func ParamFloat64(r *http.Request, key string) (val float64, found bool) {
 
 // ParamIID 获取一个大于0的int64类型的参数，
 // 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
-func ParamID(r *http.Request, key string) (val int64, found bool) {
+func ParamID(r *http.Request, key string) (int64, bool) {
 	num, ok := ParamInt64(r, key)
 	if !ok {
 		return 0, false
