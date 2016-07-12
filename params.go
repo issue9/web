@@ -12,8 +12,8 @@ import (
 	"github.com/issue9/logs"
 )
 
-// ParamString 获取一个string类型的参数，
-// 若不存在，则第二个参数返回false，并向logs.DEBUG()输出一条信息。
+// ParamString 获取一个 string 类型的参数，
+// 若不存在，则第二个参数返回 false，并向 logs.DEBUG() 输出一条信息。
 func ParamString(r *http.Request, key string) (string, bool) {
 	m, found := context.Get(r).Get("params")
 	if !found {
@@ -31,8 +31,8 @@ func ParamString(r *http.Request, key string) (string, bool) {
 	return val, true
 }
 
-// ParamInt64 获取一个int64类型的参数，
-// 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
+// ParamInt64 获取一个 int64 类型的参数，
+// 若不存在或转换出错，则第二个参数返回 false，并向相应的日志通道输出一条信息。
 func ParamInt64(r *http.Request, key string) (int64, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
@@ -48,8 +48,8 @@ func ParamInt64(r *http.Request, key string) (int64, bool) {
 	return num, true
 }
 
-// ParamInt 获取一个int类型的参数，
-// 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
+// ParamInt 获取一个 int 类型的参数，
+// 若不存在或转换出错，则第二个参数返回 false，并向相应的日志通道输出一条信息。
 func ParamInt(r *http.Request, key string) (int, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
@@ -66,7 +66,7 @@ func ParamInt(r *http.Request, key string) (int, bool) {
 }
 
 // ParamFloat64 获取一个float64类型的参数，
-// 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
+// 若不存在或转换出错，则第二个参数返回 false，并向相应的日志通道输出一条信息。
 func ParamFloat64(r *http.Request, key string) (float64, bool) {
 	str, ok := ParamString(r, key)
 	if !ok {
@@ -82,8 +82,8 @@ func ParamFloat64(r *http.Request, key string) (float64, bool) {
 	return num, true
 }
 
-// ParamIID 获取一个大于0的int64类型的参数，
-// 若不存在或转换出错，则第二个参数返回false，并向相应的日志通道输出一条信息。
+// ParamID 获取一个大于 0 的 int64 类型的参数，
+// 若不存在或转换出错，则第二个参数返回 false，并向相应的日志通道输出一条信息。
 func ParamID(r *http.Request, key string) (int64, bool) {
 	num, ok := ParamInt64(r, key)
 	if !ok {

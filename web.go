@@ -48,6 +48,8 @@ type Config struct {
 	Pprof      string               `json:"pprof,omitempty"`     // 指定 pprof 地址
 	Static     map[string]string    `json:"static,omitempty"`    // 静态内容，键名为 url 路径，键值为 文件地址
 	ErrHandler handlers.RecoverFunc `json:"-"`                   // 错误处理
+	Before     http.Handler         `json:"-"`                   // 所有路由之前执行的内容
+	After      http.Handler         `json:"-"`                   // 所有路由之后执行的内容
 }
 
 // 检测 cfg 的各项字段是否合法，

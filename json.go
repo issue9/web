@@ -13,15 +13,15 @@ import (
 	"github.com/issue9/logs"
 )
 
-// RenderJSON 用于将v转换成json数据并写入到w中。code为服务端返回的代码。
-// 默认情况下，会在返回的文件头信息中添加Content-Type=application/json;charset=utf-8
-// 的信息，若想手动指定该内容，可通过在headers中传递同名变量来改变。
+// RenderJSON 用于将 v 转换成 json 数据并写入到 w 中。code 为服务端返回的代码。
+// 默认情况下，会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
+// 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
 //
-// 确保参数w不为nil，否则将触发panic。
-// 若v的值是string,[]byte,[]rune则直接转换成字符串写入w。为nil时，
+// 确保参数 w 不为 nil，否则将触发 panic。
+// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串写入 w。为 nil 时，
 // 不输出任何内容，若需要输出一个空对象，请使用"{}"字符串；
 //
-// headers用于指定额外的Header信息，若传递nil，则表示没有。
+// headers 用于指定额外的 Header 信息，若传递 nil，则表示没有。
 func RenderJSON(w http.ResponseWriter, code int, v interface{}, headers map[string]string) {
 	if w == nil {
 		panic("web.RenderJSON:参数w不能为空")
@@ -60,8 +60,8 @@ func RenderJSON(w http.ResponseWriter, code int, v interface{}, headers map[stri
 	}
 }
 
-// 将headers当作一个头信息输出，若未指定Content-Type，
-// 则默认添加application/json;charset=utf-8作为其值。
+// 将 headers 当作一个头信息输出，若未指定Content-Type，
+// 则默认添加 application/json;charset=utf-8 作为其值。
 func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string) {
 	if headers == nil {
 		w.Header().Set("Content-Type", "application/json;charset=utf-8")
@@ -79,8 +79,8 @@ func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string
 	w.WriteHeader(code)
 }
 
-// ReadJSON 用于将r中的body当作一个json格式的数据读取到v中，
-// 若出错，则返回相应的http状态码表示其错误类型。
+// ReadJSON 用于将 r 中的 body 当作一个 json 格式的数据读取到v中，
+// 若出错，则返回相应的 http 状态码表示其错误类型。
 // 200 表示一切正常。
 func ReadJSON(r *http.Request, v interface{}) (status int) {
 	if r.Method != "GET" {
@@ -106,7 +106,7 @@ func ReadJSON(r *http.Request, v interface{}) (status int) {
 	err = json.Unmarshal(data, v)
 	if err != nil {
 		logs.Error("web.ReadJSON:", err)
-		return 422 // http包中并未定义422错误
+		return 422 // http 包中并未定义 422 错误
 	}
 
 	return http.StatusOK

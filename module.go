@@ -22,7 +22,7 @@ var (
 
 var ErrModuleExists = errors.New("该名称的模块已经存在")
 
-// 模块化管理路由项。相对于mux.Group，添加了模块依赖管理。
+// 模块化管理路由项。相对于 mux.Group，添加了模块依赖管理。
 type Module struct {
 	Name         string   // 名称
 	Dependencies []string // 依赖项
@@ -38,7 +38,7 @@ func Modules() []*Module {
 	return ret
 }
 
-// 获取指定名称的模块，若不存在，则返回nil
+// 获取指定名称的模块，若不存在，则返回 nil
 func GetModule(name string) *Module {
 	modulesMu.Lock()
 	defer modulesMu.Unlock()
@@ -91,75 +91,75 @@ func (m *Module) Stop() {
 }
 
 // 添加一个路由项。
-// 具体参数说明，可参考github.com/issue9/mux.ServeMux.Add()方法。
+// 具体参数说明，可参考 github.com/issue9/mux.ServeMux.Add() 方法。
 func (m *Module) Add(pattern string, h http.Handler, methods ...string) *Module {
 	m.group.Add(pattern, h, methods...)
 	return m
 }
 
-// Get 相当于Module.Add(pattern, h, "GET")
+// Get 相当于 Module.Add(pattern, h, "GET")
 func (m *Module) Get(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "GET")
 }
 
-// Post 相当于Module.Add(pattern, h, "POST")
+// Post 相当于 Module.Add(pattern, h, "POST")
 func (m *Module) Post(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "POST")
 }
 
-// Delete 相当于Module.Add(pattern, h, "DELETE")
+// Delete 相当于 Module.Add(pattern, h, "DELETE")
 func (m *Module) Delete(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "DELETE")
 }
 
-// Put 相当于Module.Add(pattern, h, "PUT")
+// Put 相当于 Module.Add(pattern, h, "PUT")
 func (m *Module) Put(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "PUT")
 }
 
-// Patch 相当于Module.Add(pattern, h, "PATCH")
+// Patch 相当于 Module.Add(pattern, h, "PATCH")
 func (m *Module) Patch(pattern string, h http.Handler) *Module {
 	return m.Add(pattern, h, "PATCH")
 }
 
-// Any 相当于Module.Add(pattern, h)
+// Any 相当于 Module.Add(pattern, h)
 func (m *Module) Any(pattern string, h http.Handler) *Module {
 	m.group.Any(pattern, h)
 	return m
 }
 
-// AddFunc 相当于Module.Add(pattern, http.HandlerFunc(fun), methods...)
+// AddFunc 相当于 Module.Add(pattern, http.HandlerFunc(fun), methods...)
 func (m *Module) AddFunc(pattern string, fun func(http.ResponseWriter, *http.Request), methods ...string) *Module {
 	m.group.AddFunc(pattern, fun, methods...)
 	return m
 }
 
-// GetFunc 相当于Module.AddFunc(pattern, fun, "GET")
+// GetFunc 相当于 Module.AddFunc(pattern, fun, "GET")
 func (m *Module) GetFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "GET")
 }
 
-// PutFunc 相当于Module.AddFunc(pattern, fun, "PUT")
+// PutFunc 相当于 Module.AddFunc(pattern, fun, "PUT")
 func (m *Module) PutFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "PUT")
 }
 
-// PostFunc 相当于Module.AddFunc(pattern, fun, "POST")
+// PostFunc 相当于 Module.AddFunc(pattern, fun, "POST")
 func (m *Module) PostFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "POST")
 }
 
-// DeleteFunc 相当于Module.Addunc(pattern, fun, "DELETE")
+// DeleteFunc 相当于 Module.Addunc(pattern, fun, "DELETE")
 func (m *Module) DeleteFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "DELETE")
 }
 
-// PatchFunc 相当于Module.AddFunc(pattern, fun, "PATCH")
+// PatchFunc 相当于 Module.AddFunc(pattern, fun, "PATCH")
 func (m *Module) PatchFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	return m.AddFunc(pattern, fun, "PATCH")
 }
 
-// AnyFunc 相当于Module.AddFunc(pattern, fn)
+// AnyFunc 相当于 Module.AddFunc(pattern, fn)
 func (m *Module) AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *Module {
 	m.group.AnyFunc(pattern, fun)
 	return m
@@ -171,7 +171,7 @@ func (m *Module) Clean() *Module {
 	return m
 }
 
-// 创建一个mux.Prefix对象，具体可参考该实例说明。
+// 创建一个 mux.Prefix 对象，具体可参考该实例说明。
 func (m *Module) Prefix(prefix string) *mux.Prefix {
 	return m.group.Prefix(prefix)
 }
