@@ -37,19 +37,20 @@ const (
 	httpStateSize
 )
 
-// 启动Run()函数的相关参数。
+// 启动 Run() 函数的相关参数。
 type Config struct {
-	HTTPS      bool                 `json:"https,omitempty"`     // 是否启用https
-	HTTPState  int                  `json:"httpState,omitempty"` // 80端口的状态，仅在HTTPS为true时，启作用
-	CertFile   string               `json:"certFile,omitempty"`  // 当https为true时，此值为必填
-	KeyFile    string               `json:"keyFile,omitempty"`   // 当https为true时，此值为必填
-	Port       string               `json:"port,omitempty"`      // 端口，不指定，默认为80或是443
+	HTTPS      bool                 `json:"https,omitempty"`     // 是否启用 HTTPS
+	HTTPState  int                  `json:"httpState,omitempty"` // 80 端口的状态，仅在 HTTPS 为 true 时，启作用
+	CertFile   string               `json:"certFile,omitempty"`  // 当 https 为 true 时，此值为必填
+	KeyFile    string               `json:"keyFile,omitempty"`   // 当 https 为 true 时，此值为必填
+	Port       string               `json:"port,omitempty"`      // 端口，不指定，默认为 80 或是 443
 	Headers    map[string]string    `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
-	Pprof      string               `json:"pprof,omitempty"`     // 指定pprof地址
+	Pprof      string               `json:"pprof,omitempty"`     // 指定 pprof 地址
+	Static     map[string]string    `json:"static,omitempty"`    // 静态内容，键名为 url 路径，键值为 文件地址
 	ErrHandler handlers.RecoverFunc `json:"-"`                   // 错误处理
 }
 
-// 检测cfg的各项字段是否合法，
+// 检测 cfg 的各项字段是否合法，
 func (cfg *Config) init() {
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
@@ -80,7 +81,7 @@ func (cfg *Config) buildHeaders(h http.Handler) http.Handler {
 	return h
 }
 
-// 根据config.Pprof决定是否包装调试地址
+// 根据 config.Pprof 决定是否包装调试地址
 func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 	if len(cfg.Pprof) > 0 {
 		logs.Debug("web:", "开启了调试功能，地址为：", cfg.Pprof)
@@ -123,32 +124,55 @@ func (cfg *Config) buildHTTPRedirectServer() {
 	}))
 }
 
+// 构建一个静态文件服务器
+func (cfg *Config) buildStaticServer() error {
+	if len(cfg.Static) == 0 {
+		return nil
+	}
+
+	m, err := NewModule("web-static")
+	if err != nil {
+		return err
+	}
+
+	for url, dir := range cfg.Static {
+		m.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+	}
+
+	return nil
+}
+
 // Run 运行路由，执行监听程序。
 func Run(cfg *Config) error {
 	cfg.init()
+
+	// 在其它之前调用
+	if err := cfg.buildStaticServer(); err != nil {
+		return err
+	}
 
 	h := cfg.buildHeaders(serveMux)
 
 	// 作一些清理和错误处理
 	h = handlers.Recovery(context.FreeHandler(h), cfg.ErrHandler)
 
-	// 在最外层添加调试地址，保证调试内容不会被其它handler干扰。
+	// 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	h = cfg.buildPprof(h)
 
 	if cfg.HTTPS {
 		switch cfg.HTTPState {
 		case HTTPStateListen:
-			logs.Info("开始临听%v端口", httpPort)
+			logs.Info("开始监听%v端口", httpPort)
 			go http.ListenAndServe(httpPort, h)
 		case HTTPStateRedirect:
-			logs.Info("开始临听%v端口", httpsPort)
+			logs.Info("开始监听%v端口", httpPort)
 			go cfg.buildHTTPRedirectServer()
 		}
 
-		logs.Info("开始临听%v端口", cfg.Port)
+		logs.Info("开始监听%v端口", cfg.Port)
 		return http.ListenAndServeTLS(cfg.Port, cfg.CertFile, cfg.KeyFile, h)
 	}
 
-	logs.Info("开始临听%v端口", cfg.Port)
+	logs.Info("开始监听%v端口", cfg.Port)
 	return http.ListenAndServe(cfg.Port, h)
 }
