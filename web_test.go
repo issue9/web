@@ -17,7 +17,7 @@ func TestConfig_init(t *testing.T) {
 	cfg := &Config{HTTPS: true}
 
 	// 正常加载之后，测试各个变量是否和配置文件中的一样。
-	a.NotPanic(func() { cfg.init() })
+	a.NotError(cfg.init())
 	a.Equal(":443", cfg.Port).
 		Equal(0, len(cfg.Headers)).
 		True(cfg.HTTPS)

@@ -15,6 +15,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"net/http/pprof"
 	"strings"
@@ -53,7 +54,8 @@ type Config struct {
 }
 
 // 检测 cfg 的各项字段是否合法，
-func (cfg *Config) init() {
+// 初始化相关内容。比如静态文件路由等。
+func (cfg *Config) init() error {
 	if len(cfg.Port) == 0 {
 		if cfg.HTTPS {
 			cfg.Port = httpsPort
@@ -65,8 +67,11 @@ func (cfg *Config) init() {
 	}
 
 	if cfg.HTTPState < 0 || cfg.HTTPState >= httpStateSize {
-		panic("无效的httpState值")
+		return errors.New("无效的httpState值")
 	}
+
+	// 在其它之前调用
+	return cfg.buildStaticServer()
 }
 
 // 修改服务器名称
@@ -146,10 +151,7 @@ func (cfg *Config) buildStaticServer() error {
 
 // Run 运行路由，执行监听程序。
 func Run(cfg *Config) error {
-	cfg.init()
-
-	// 在其它之前调用
-	if err := cfg.buildStaticServer(); err != nil {
+	if err := cfg.init(); err != nil {
 		return err
 	}
 
