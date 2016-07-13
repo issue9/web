@@ -65,7 +65,7 @@ func ParamInt(r *http.Request, key string) (int, bool) {
 	return num, true
 }
 
-// ParamFloat64 获取一个float64类型的参数，
+// ParamFloat64 获取一个 float64 类型的参数，
 // 若不存在或转换出错，则第二个参数返回 false，并向相应的日志通道输出一条信息。
 func ParamFloat64(r *http.Request, key string) (float64, bool) {
 	str, ok := ParamString(r, key)
