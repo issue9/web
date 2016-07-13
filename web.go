@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// 一个模块化的微形web框架。
+// 一个模块化的微形 web 框架。
 //  m, err := web.NewModule("m1")
 //  m.Get("/", ...).
 //    Post("/", ...)
@@ -47,7 +47,7 @@ type Config struct {
 	Port       string               `json:"port,omitempty"`      // 端口，不指定，默认为 80 或是 443
 	Headers    map[string]string    `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
 	Pprof      string               `json:"pprof,omitempty"`     // 指定 pprof 地址
-	Static     map[string]string    `json:"static,omitempty"`    // 静态内容，键名为 url 路径，键值为 文件地址
+	Static     map[string]string    `json:"static,omitempty"`    // 静态内容，键名为 URL 路径，键值为 文件地址
 	ErrHandler handlers.RecoverFunc `json:"-"`                   // 错误处理
 	Before     http.Handler         `json:"-"`                   // 所有路由之前执行的内容
 	After      http.Handler         `json:"-"`                   // 所有路由之后执行的内容
@@ -71,21 +71,55 @@ func (cfg *Config) init() error {
 	}
 
 	// 在其它之前调用
-	return cfg.buildStaticServer()
+	return cfg.buildStaticModule()
 }
 
-// 修改服务器名称
-func (cfg *Config) buildHeaders(h http.Handler) http.Handler {
-	if len(cfg.Headers) > 0 {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			for k, v := range cfg.Headers {
-				w.Header().Set(k, v)
-			}
-			h.ServeHTTP(w, r)
-		})
+// 构建一个静态文件服务器
+func (cfg *Config) buildStaticModule() error {
+	if len(cfg.Static) == 0 {
+		return nil
 	}
 
-	return h
+	m, err := NewModule("web-static")
+	if err != nil {
+		return err
+	}
+
+	for url, dir := range cfg.Static {
+		m.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+	}
+
+	return nil
+}
+
+// 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
+func (cfg *Config) buildHTTPRedirectServer() {
+	http.ListenAndServe(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL
+		url.Host = r.Host + cfg.Port
+		url.Scheme = "HTTPS"
+
+		urlStr := url.String()
+		logs.Info("301 HTTP==>HTTPS:", urlStr)
+		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
+	}))
+}
+
+func (cfg *Config) buildHandler(h http.Handler) http.Handler {
+	h = cfg.buildBefore(h)
+
+	h = cfg.buildHeader(h)
+
+	h = cfg.buildAfter(h)
+
+	// 清理 context 的相关内容
+	h = context.FreeHandler(h)
+
+	// 错误处理
+	h = handlers.Recovery(h, cfg.ErrHandler)
+
+	// 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+	return cfg.buildPprof(h)
 }
 
 // 根据 config.Pprof 决定是否包装调试地址
@@ -118,35 +152,39 @@ func (cfg *Config) buildPprof(h http.Handler) http.Handler {
 	return h
 }
 
-// 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
-func (cfg *Config) buildHTTPRedirectServer() {
-	http.ListenAndServe(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		url := r.URL
-		url.Host = r.Host + cfg.Port
-		url.Scheme = "HTTPS"
+func (cfg *Config) buildBefore(h http.Handler) http.Handler {
+	if cfg.Before == nil {
+		return h
+	}
 
-		urlStr := url.String()
-		logs.Info("301 HTTP==>HTTPS:", urlStr)
-		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
-	}))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.Before.ServeHTTP(w, r)
+		h.ServeHTTP(w, r)
+	})
 }
 
-// 构建一个静态文件服务器
-func (cfg *Config) buildStaticServer() error {
-	if len(cfg.Static) == 0 {
-		return nil
+func (cfg *Config) buildAfter(h http.Handler) http.Handler {
+	if cfg.After == nil {
+		return h
 	}
 
-	m, err := NewModule("web-static")
-	if err != nil {
-		return err
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+		cfg.After.ServeHTTP(w, r)
+	})
+}
+
+func (cfg *Config) buildHeader(h http.Handler) http.Handler {
+	if len(cfg.Headers) <= 0 {
+		return h
 	}
 
-	for url, dir := range cfg.Static {
-		m.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
-	}
-
-	return nil
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for k, v := range cfg.Headers {
+			w.Header().Set(k, v)
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
 // Run 运行路由，执行监听程序。
@@ -155,13 +193,7 @@ func Run(cfg *Config) error {
 		return err
 	}
 
-	h := cfg.buildHeaders(serveMux)
-
-	// 作一些清理和错误处理
-	h = handlers.Recovery(context.FreeHandler(h), cfg.ErrHandler)
-
-	// 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	h = cfg.buildPprof(h)
+	h := cfg.buildHandler(serveMux)
 
 	if cfg.HTTPS {
 		switch cfg.HTTPState {

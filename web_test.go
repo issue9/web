@@ -23,6 +23,42 @@ func TestConfig_init(t *testing.T) {
 		True(cfg.HTTPS)
 }
 
+func TestConfig_buildBeforeAfter(t *testing.T) {
+	a := assert.New(t)
+	beforeAfter := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ba"))
+	})
+	fh := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("123"))
+	}
+	r, err := http.NewRequest("GET", "", nil)
+	a.NotError(err).NotNil(r)
+
+	// before
+	cfg := &Config{Before: beforeAfter}
+	h := cfg.buildBefore(http.HandlerFunc(fh))
+	a.NotNil(h)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Body.String(), "ba123")
+
+	// after
+	cfg = &Config{After: beforeAfter}
+	h = cfg.buildAfter(http.HandlerFunc(fh))
+	a.NotNil(h)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Body.String(), "123ba")
+
+	// before & after
+	cfg = &Config{Before: beforeAfter, After: beforeAfter}
+	h = cfg.buildAfter(cfg.buildBefore(http.HandlerFunc(fh)))
+	a.NotNil(h)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Body.String(), "ba123ba")
+}
+
 func TestConfig_buildHeaders(t *testing.T) {
 	a := assert.New(t)
 	fh := func(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +66,7 @@ func TestConfig_buildHeaders(t *testing.T) {
 	}
 
 	cfg := &Config{Headers: map[string]string{"Server": "test"}}
-	h := cfg.buildHeaders(http.HandlerFunc(fh))
+	h := cfg.buildHeader(http.HandlerFunc(fh))
 
 	r, err := http.NewRequest("GET", "", nil)
 	a.NotError(err).NotNil(r)
@@ -41,7 +77,7 @@ func TestConfig_buildHeaders(t *testing.T) {
 
 	// 为空
 	cfg = &Config{Headers: map[string]string{}}
-	h = cfg.buildHeaders(http.HandlerFunc(fh))
+	h = cfg.buildHeader(http.HandlerFunc(fh))
 
 	r, err = http.NewRequest("GET", "", nil)
 	a.NotError(err).NotNil(r)
