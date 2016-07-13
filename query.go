@@ -35,7 +35,7 @@ func QueryInt(r *http.Request, key string, def int) (int, bool) {
 	ret, err := strconv.Atoi(val)
 	if err != nil {
 		logs.Errorf("web.QueryInt:将查询参数[%v]转换成int时，出现以下错误:%v", val, err)
-		return 0, false
+		return def, false
 	}
 	return ret, true
 }
@@ -53,7 +53,7 @@ func QueryInt64(r *http.Request, key string, def int64) (int64, bool) {
 	ret, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
 		logs.Errorf("web.QueryInt64:将查询参数[%v]转换成int64时，出现以下错误:%v", val, err)
-		return 0, false
+		return def, false
 	}
 	return ret, true
 }
@@ -71,7 +71,7 @@ func QueryFloat64(r *http.Request, key string, def float64) (float64, bool) {
 	ret, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		logs.Errorf("web.QueryFloat64:将查询参数[%v]转换成float64时，出现以下错误:%v", val, err)
-		return 0, false
+		return def, false
 	}
 	return ret, true
 }
