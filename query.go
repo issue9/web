@@ -7,8 +7,6 @@ package web
 import (
 	"net/http"
 	"strconv"
-
-	"github.com/issue9/logs"
 )
 
 // QueryString 获取查询参数 key 的值。
@@ -34,7 +32,7 @@ func QueryInt(r *http.Request, key string, def int) (int, bool) {
 
 	ret, err := strconv.Atoi(val)
 	if err != nil {
-		logs.Errorf("web.QueryInt:将查询参数[%v]转换成int时，出现以下错误:%v", val, err)
+		Errorf(r, "web.QueryInt:将查询参数[%v]转换成int时，出现以下错误:%v", val, err)
 		return def, false
 	}
 	return ret, true
@@ -52,7 +50,7 @@ func QueryInt64(r *http.Request, key string, def int64) (int64, bool) {
 
 	ret, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		logs.Errorf("web.QueryInt64:将查询参数[%v]转换成int64时，出现以下错误:%v", val, err)
+		Errorf(r, "web.QueryInt64:将查询参数[%v]转换成int64时，出现以下错误:%v", val, err)
 		return def, false
 	}
 	return ret, true
@@ -70,7 +68,7 @@ func QueryFloat64(r *http.Request, key string, def float64) (float64, bool) {
 
 	ret, err := strconv.ParseFloat(val, 64)
 	if err != nil {
-		logs.Errorf("web.QueryFloat64:将查询参数[%v]转换成float64时，出现以下错误:%v", val, err)
+		Errorf(r, "web.QueryFloat64:将查询参数[%v]转换成float64时，出现以下错误:%v", val, err)
 		return def, false
 	}
 	return ret, true
@@ -88,7 +86,7 @@ func QueryBool(r *http.Request, key string, def bool) (bool, bool) {
 
 	ret, err := strconv.ParseBool(val)
 	if err != nil {
-		logs.Errorf("web.QueryBool:将查询参数[%v]转换成bool时，出现以下错误:%v", val, err)
+		Errorf(r, "web.QueryBool:将查询参数[%v]转换成bool时，出现以下错误:%v", val, err)
 		return def, false
 	}
 
