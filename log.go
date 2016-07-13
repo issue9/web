@@ -5,75 +5,73 @@
 package web
 
 import (
-	"runtime"
+	"net/http"
 
 	"github.com/issue9/logs"
 )
 
-func message(v []interface{}) []interface{} {
+func message(r *http.Request, v []interface{}) []interface{} {
 	// 0 是 message，1 是 Error 等函数，2 才是真正调用 Error 等函数的函数
-	if pc, _, _, ok := runtime.Caller(2); ok {
-		v = append(v, "@", runtime.FuncForPC(pc).Name())
-	}
+	v = append(v, "@", r.URL)
 	return v
 }
 
 // Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
-func Critical(v ...interface{}) {
-	logs.Critical(message(v)...)
+func Critical(r *http.Request, v ...interface{}) {
+	logs.Critical(message(r, v)...)
 }
 
 // Criticalf 相当于调用了 logs.Criticalf，外加一些调用者的详细信息
-func Criticalf(format string, v ...interface{}) {
-	logs.Criticalf(format, message(v)...)
+func Criticalf(r *http.Request, format string, v ...interface{}) {
+	logs.Criticalf(format, message(r, v)...)
 }
 
 // Error 相当于调用了 logs.Error，外加一些调用者的详细信息
-func Error(v ...interface{}) {
-	logs.Error(message(v)...)
+func Error(r *http.Request, v ...interface{}) {
+	logs.Error(message(r, v)...)
 }
 
 // Errorf 相当于调用了 logs.Errorf，外加一些调用者的详细信息
-func Errorf(format string, v ...interface{}) {
-	logs.Errorf(format, message(v)...)
+func Errorf(r *http.Request, format string, v ...interface{}) {
+	logs.Errorf(format, message(r, v)...)
 }
 
 // Debug 相当于调用了 logs.Debug，外加一些调用者的详细信息
-func Debug(v ...interface{}) {
-	logs.Debug(message(v)...)
+func Debug(r *http.Request, v ...interface{}) {
+	logs.Debug(message(r, v)...)
 }
 
 // Debugf 相当于调用了 logs.Debugf，外加一些调用者的详细信息
-func Debugf(format string, v ...interface{}) {
-	logs.Debugf(format, message(v)...)
+func Debugf(r *http.Request, format string, v ...interface{}) {
+	logs.Debugf(format, message(r, v)...)
 }
 
 // Trace 相当于调用了 logs.Trace，外加一些调用者的详细信息
-func Trace(v ...interface{}) {
-	logs.Trace(message(v)...)
+func Trace(r *http.Request, v ...interface{}) {
+	logs.Trace(message(r, v)...)
 }
 
 // Tracef 相当于调用了 logs.Tracef，外加一些调用者的详细信息
-func Tracef(format string, v ...interface{}) {
-	logs.Tracef(format, message(v)...)
+func Tracef(r *http.Request, format string, v ...interface{}) {
+	logs.Tracef(format, message(r, v)...)
 }
 
 // Warn 相当于调用了 logs.Warn，外加一些调用者的详细信息
-func Warn(v ...interface{}) {
-	logs.Warn(message(v)...)
+func Warn(r *http.Request, v ...interface{}) {
+	logs.Warn(message(r, v)...)
 }
 
 // Warnf 相当于调用了 logs.Warnf，外加一些调用者的详细信息
-func Warnf(format string, v ...interface{}) {
-	logs.Warnf(format, message(v)...)
+func Warnf(r *http.Request, format string, v ...interface{}) {
+	logs.Warnf(format, message(r, v)...)
 }
 
 // Info 相当于调用了 logs.Info，外加一些调用者的详细信息
-func Info(v ...interface{}) {
-	logs.Info(message(v)...)
+func Info(r *http.Request, v ...interface{}) {
+	logs.Info(message(r, v)...)
 }
 
 // Infof 相当于调用了 logs.Infof，外加一些调用者的详细信息
-func Infof(format string, v ...interface{}) {
-	logs.Infof(format, message(v)...)
+func Infof(r *http.Request, format string, v ...interface{}) {
+	logs.Infof(format, message(r, v)...)
 }
