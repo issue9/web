@@ -93,14 +93,14 @@ func (cfg *Config) buildStaticModule() error {
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
-func (cfg *Config) buildHTTPRedirectServer() error {
+func (cfg *Config) httpRedirectListenAndServe() error {
 	srv := getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL
 		url.Host = r.Host + cfg.Port
 		url.Scheme = "HTTPS"
 
 		urlStr := url.String()
-		logs.Info("301 HTTP==>HTTPS:", urlStr)
+		Info(r, "301 HTTP==>HTTPS:", urlStr)
 		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
 	}))
 
@@ -200,18 +200,18 @@ func Run(cfg *Config) error {
 	if cfg.HTTPS {
 		switch cfg.HTTPState {
 		case HTTPStateListen:
-			logs.Info("开始监听%v端口", httpPort)
+			logs.Infof("开始监听%v端口", httpPort)
 			go getServer(httpPort, h).ListenAndServe()
 		case HTTPStateRedirect:
-			logs.Info("开始监听%v端口", httpPort)
-			go cfg.buildHTTPRedirectServer()
+			logs.Infof("开始监听%v端口", httpPort)
+			go cfg.httpRedirectListenAndServe()
 		}
 
-		logs.Info("开始监听%v端口", cfg.Port)
+		logs.Infof("开始监听%v端口", cfg.Port)
 		return getServer(cfg.Port, h).ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
 	}
 
-	logs.Info("开始监听%v端口", cfg.Port)
+	logs.Infof("开始监听%v端口", cfg.Port)
 	return getServer(cfg.Port, h).ListenAndServe()
 }
 

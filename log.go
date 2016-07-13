@@ -11,6 +11,10 @@ import (
 )
 
 func message(r *http.Request, v []interface{}) []interface{} {
+	if r == nil {
+		return v
+	}
+
 	return append(v, "@", r.URL)
 }
 
