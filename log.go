@@ -11,9 +11,7 @@ import (
 )
 
 func message(r *http.Request, v []interface{}) []interface{} {
-	// 0 是 message，1 是 Error 等函数，2 才是真正调用 Error 等函数的函数
-	v = append(v, "@", r.URL)
-	return v
+	return append(v, "@", r.URL)
 }
 
 // Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
