@@ -32,17 +32,20 @@ func TestRenderJSON(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
-	RenderJSON(w, http.StatusOK, nil, nil)
+	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
+	a.NotError(err).NotNil(r)
+	RenderJSON(w, r, http.StatusOK, nil, nil)
 	a.Equal(w.Code, http.StatusOK).Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
-	RenderJSON(w, http.StatusInternalServerError, map[string]string{"name": "name"}, map[string]string{"h": "h"})
+	RenderJSON(w, r, http.StatusInternalServerError, map[string]string{"name": "name"}, map[string]string{"h": "h"})
+	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), `{"name":"name"}`)
 	a.Equal(w.Header().Get("h"), "h")
 
 	// 解析json出错，会返回500错误
 	w = httptest.NewRecorder()
-	RenderJSON(w, http.StatusOK, complex(5, 7), nil)
+	RenderJSON(w, r, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
 }
