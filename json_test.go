@@ -5,6 +5,7 @@
 package web
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +25,6 @@ func TestRenderJSONHeader(t *testing.T) {
 
 	renderJSONHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
@@ -34,8 +34,8 @@ func TestRenderJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	RenderJSON(w, r, http.StatusOK, nil, nil)
-	a.Equal(w.Code, http.StatusOK).Equal(w.Body.String(), "")
+	RenderJSON(w, r, http.StatusCreated, nil, nil)
+	a.Equal(w.Code, http.StatusCreated).Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
 	RenderJSON(w, r, http.StatusInternalServerError, map[string]string{"name": "name"}, map[string]string{"h": "h"})
@@ -48,4 +48,62 @@ func TestRenderJSON(t *testing.T) {
 	RenderJSON(w, r, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
+}
+
+func TestReadJSON(t *testing.T) {
+	a := assert.New(t)
+
+	// POST 少 Accept, Content-Type
+	w := httptest.NewRecorder()
+	a.NotNil(w)
+	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
+	a.NotError(err).NotNil(r)
+	val := &struct {
+		Key string `json:"key"`
+	}{}
+	ok := ReadJSON(w, r, val)
+	a.False(ok).
+		Equal(w.Code, http.StatusUnsupportedMediaType).
+		Equal(val.Key, "")
+
+	// 少 Accept
+	w = httptest.NewRecorder()
+	a.NotNil(w)
+	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
+	a.NotError(err).NotNil(r)
+	val = &struct {
+		Key string `json:"key"`
+	}{}
+	ok = ReadJSON(w, r, val)
+	a.False(ok).
+		Equal(w.Code, http.StatusUnsupportedMediaType).
+		Equal(val.Key, "")
+
+	// 正常解析
+	w = httptest.NewRecorder()
+	a.NotNil(w)
+	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
+	a.NotError(err).NotNil(r)
+	r.Header.Set("Accept", "application/json;charset=utf-8")
+	val = &struct {
+		Key string `json:"key"`
+	}{}
+	ok = ReadJSON(w, r, val)
+	a.True(ok).
+		Equal(w.Code, http.StatusOK).
+		Equal(val.Key, "1")
+
+	// JSON 格式不正确，无法解析
+	w = httptest.NewRecorder()
+	a.NotNil(w)
+	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":1}`))
+	a.NotError(err).NotNil(r)
+	r.Header.Set("Accept", "application/json;charset=utf-8")
+	val = &struct {
+		Key string `json:"key"`
+	}{}
+	ok = ReadJSON(w, r, val)
+	a.False(ok).
+		Equal(w.Code, 422).
+		Equal(val.Key, "")
 }

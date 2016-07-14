@@ -50,7 +50,7 @@ func RenderJSON(w http.ResponseWriter, r *http.Request, code int, v interface{},
 		}
 	}
 
-	renderJSONHeader(w, code, headers)
+	renderJSONHeader(w, code, headers) // NOTE: WriteHeader() 必须在 Write() 之前调用
 
 	// 输出数据
 	if _, err = w.Write(data); err != nil {
@@ -82,7 +82,7 @@ func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string
 // ReadJSON 用于将 r 中的 body 当作一个 json 格式的数据读取到 v 中。
 // 返回值指定是否出错。若出错，会在函数体中指定出错信息，并将错误代码写入报头。
 func ReadJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
-	if r.Method != "GET" {
+	if r.Method != http.MethodGet {
 		ct := r.Header.Get("Content-Type")
 		if strings.Index(ct, "application/json") < 0 && strings.Index(ct, "*/*") < 0 {
 			w.WriteHeader(http.StatusUnsupportedMediaType)
