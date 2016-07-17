@@ -7,9 +7,13 @@
 //  m.Get("/", ...).
 //    Post("/", ...)
 //
-//  // 其它模块的初始化工作...
 //
-//  web.Run(&Config{}) // 开始监听端口
+//  conf := &web.Config{
+//      Pprof:  "/debug/pprof",
+//      Before: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
+//      After:  http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
+/// }
+//  web.Run(conf) // 开始监听端口
 //
 // NOTE: web 依赖 github.com/issue9/logs 包作日志输出，请确保已经正确初始化该包。
 package web
@@ -19,6 +23,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"strings"
+	"time"
 
 	"github.com/issue9/context"
 	"github.com/issue9/handlers"
@@ -40,17 +45,19 @@ const (
 
 // 启动 Run() 函数的相关参数。
 type Config struct {
-	HTTPS      bool                 `json:"https,omitempty"`     // 是否启用 HTTPS
-	HTTPState  int                  `json:"httpState,omitempty"` // 80 端口的状态，仅在 HTTPS 为 true 时，启作用
-	CertFile   string               `json:"certFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	KeyFile    string               `json:"keyFile,omitempty"`   // 当 https 为 true 时，此值为必填
-	Port       string               `json:"port,omitempty"`      // 端口，不指定，默认为 80 或是 443
-	Headers    map[string]string    `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
-	Pprof      string               `json:"pprof,omitempty"`     // 指定 pprof 地址
-	Static     map[string]string    `json:"static,omitempty"`    // 静态内容，键名为 URL 路径，键值为 文件地址
-	ErrHandler handlers.RecoverFunc `json:"-"`                   // 错误处理
-	Before     http.Handler         `json:"-"`                   // 所有路由之前执行的内容
-	After      http.Handler         `json:"-"`                   // 所有路由之后执行的内容
+	HTTPS        bool                 `json:"https,omitempty"`        // 是否启用 HTTPS
+	HTTPState    int                  `json:"httpState,omitempty"`    // 80 端口的状态，仅在 HTTPS 为 true 时，启作用
+	CertFile     string               `json:"certFile,omitempty"`     // 当 https 为 true 时，此值为必填
+	KeyFile      string               `json:"keyFile,omitempty"`      // 当 https 为 true 时，此值为必填
+	Port         string               `json:"port,omitempty"`         // 端口，不指定，默认为 80 或是 443
+	Headers      map[string]string    `json:"headers,omitempty"`      // 附加的头信息，头信息可能在其它地方被修改
+	Pprof        string               `json:"pprof,omitempty"`        // 指定 pprof 地址
+	Static       map[string]string    `json:"static,omitempty"`       // 静态内容，键名为 URL 路径，键值为 文件地址
+	ReadTimeout  time.Duration        `json:"readTimeout,omitempty"`  // http.Server.ReadTimeout 的值，单位：秒
+	WriteTimeout time.Duration        `json:"writeTimeout,omitempty"` // http.Server.WriteTimeout 的值，单位：秒
+	ErrHandler   handlers.RecoverFunc `json:"-"`                      // 错误处理
+	Before       http.Handler         `json:"-"`                      // 所有路由之前执行的内容
+	After        http.Handler         `json:"-"`                      // 所有路由之后执行的内容
 }
 
 // 检测 cfg 的各项字段是否合法，
@@ -94,7 +101,7 @@ func (cfg *Config) buildStaticModule() error {
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func (cfg *Config) httpRedirectListenAndServe() error {
-	srv := getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := getServer(cfg, httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL
 		url.Host = r.Host + cfg.Port
 		url.Scheme = "HTTPS"
@@ -201,25 +208,27 @@ func Run(cfg *Config) error {
 		switch cfg.HTTPState {
 		case HTTPStateListen:
 			logs.Infof("开始监听%v端口", httpPort)
-			go getServer(httpPort, h).ListenAndServe()
+			go getServer(cfg, httpPort, h).ListenAndServe()
 		case HTTPStateRedirect:
 			logs.Infof("开始监听%v端口", httpPort)
 			go cfg.httpRedirectListenAndServe()
 		}
 
 		logs.Infof("开始监听%v端口", cfg.Port)
-		return getServer(cfg.Port, h).ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
+		return getServer(cfg, cfg.Port, h).ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
 	}
 
 	logs.Infof("开始监听%v端口", cfg.Port)
-	return getServer(cfg.Port, h).ListenAndServe()
+	return getServer(cfg, cfg.Port, h).ListenAndServe()
 }
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
-func getServer(port string, h http.Handler) *http.Server {
+func getServer(cfg *Config, port string, h http.Handler) *http.Server {
 	return &http.Server{
-		Addr:     port,
-		Handler:  h,
-		ErrorLog: logs.ERROR(),
+		Addr:         port,
+		Handler:      h,
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  cfg.ReadTimeout * time.Second,
+		WriteTimeout: cfg.WriteTimeout * time.Second,
 	}
 }
