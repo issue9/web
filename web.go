@@ -12,7 +12,7 @@
 //      Pprof:  "/debug/pprof",
 //      Before: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
 //      After:  http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
-/// }
+//  }
 //  web.Run(conf) // 开始监听端口
 //
 // NOTE: web 依赖 github.com/issue9/logs 包作日志输出，请确保已经正确初始化该包。
