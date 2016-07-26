@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/context"
 	"github.com/issue9/handlers"
 	"github.com/issue9/logs"
+	"github.com/issue9/utils"
 )
 
 const (
@@ -30,6 +31,8 @@ const (
 )
 
 // 启动 Run() 函数的相关参数。
+//
+// NOTE: 所有涉及到的文件名最好使用绝对地址，或是相对程序的地址。
 type Config struct {
 	HTTPS        bool                 `json:"https,omitempty"`        // 是否启用 HTTPS
 	HTTPState    int                  `json:"httpState,omitempty"`    // 80 端口的状态，仅在 HTTPS 为 true 时，启作用
@@ -55,7 +58,8 @@ func (cfg *Config) init() error {
 		} else {
 			cfg.Port = httpPort
 		}
-	} else if cfg.Port[0] != ':' {
+	}
+	if cfg.Port[0] != ':' {
 		cfg.Port = ":" + cfg.Port
 	}
 
@@ -63,8 +67,16 @@ func (cfg *Config) init() error {
 		return errors.New("无效的httpState值")
 	}
 
-	// 在其它之前调用
-	return cfg.buildStaticModule()
+	if cfg.HTTPS {
+		if !utils.FileExists(cfg.CertFile) {
+			return errors.New("certFile 所指的文件并不存在")
+		}
+		if !utils.FileExists(cfg.KeyFile) {
+			return errors.New("keyFile 所指的文件并不存在")
+		}
+	}
+
+	return nil
 }
 
 // 构建一个静态文件服务模块
@@ -185,6 +197,11 @@ func (cfg *Config) buildHeader(h http.Handler) http.Handler {
 // 运行路由，执行监听程序。
 func (cfg *Config) run() error {
 	if err := cfg.init(); err != nil {
+		return err
+	}
+
+	// 在其它之前调用
+	if err := cfg.buildStaticModule(); err != nil {
 		return err
 	}
 

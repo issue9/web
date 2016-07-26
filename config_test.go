@@ -14,13 +14,17 @@ import (
 
 func TestConfig_init(t *testing.T) {
 	a := assert.New(t)
-	cfg := &Config{HTTPS: true}
+	cfg := &Config{HTTPS: false}
 
 	// 正常加载之后，测试各个变量是否和配置文件中的一样。
 	a.NotError(cfg.init())
-	a.Equal(":443", cfg.Port).
+	a.Equal(":80", cfg.Port).
 		Equal(0, len(cfg.Headers)).
-		True(cfg.HTTPS)
+		False(cfg.HTTPS)
+
+	// certFile 等不存在
+	cfg.HTTPS = true
+	a.Error(cfg.init())
 }
 
 func TestConfig_buildBeforeAfter(t *testing.T) {
