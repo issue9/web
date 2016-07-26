@@ -23,7 +23,7 @@ func ParamString(r *http.Request, key string) (string, bool) {
 	params := m.(map[string]string)
 	val, found := params[key]
 	if !found {
-		Debug(r, "web.ParamString:在context.params中找不到指定参数:", key)
+		Debug(r, "web.ParamString：在 context.params 中找不到指定参数:", key)
 		return "", false
 	}
 
