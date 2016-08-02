@@ -8,3 +8,4 @@ install:
     - go get github.com/issue9/handlers
     - go get github.com/issue9/logs
     - go get github.com/issue9/mux
+    - go get github.com/issue9/utils
