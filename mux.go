@@ -98,3 +98,21 @@ func PatchFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mu
 func AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
 	return defaultServeMux.AnyFunc(pattern, fun)
 }
+
+// Prefix 创建一个路由组，该组中添加的路由项，都会带上前缀 prefix
+// prefix 前缀字符串，所有从 Prefix 中声明的路由都将包含此前缀。
+//  p := srv.Prefix("/api")
+//  p.Get("/users")  // 相当于 srv.Get("/api/users")
+//  p.Get("/user/1") // 相当于 srv.Get("/api/user/1")
+func Prefix(prefix string) *mux.Prefix {
+	return defaultServeMux.Prefix(prefix)
+}
+
+// Resource 创建一个路由组，该组中添加的路由项，其地址均为 pattern。
+// pattern 前缀字符串，所有从 Resource 中声明的路由都将包含此前缀。
+//  p := srv.Resource("/api")
+//  p.Get("/users")  // 相当于 srv.Get("/api/users")
+//  p.Get("/user/1") // 相当于 srv.Get("/api/user/1")
+func Resource(pattern string) *mux.Resource {
+	return defaultServeMux.Resource(pattern)
+}
