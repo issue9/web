@@ -85,15 +85,11 @@ func (cfg *Config) buildStaticModule() error {
 		return nil
 	}
 
-	m, err := NewModule("web-static")
-	if err != nil {
-		return err
-	}
 	for url, dir := range cfg.Static {
 		if strings.HasSuffix(url, "/") {
 			url += "/"
 		}
-		m.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+		Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
 	}
 
 	return nil
@@ -207,7 +203,7 @@ func (cfg *Config) run() error {
 		return err
 	}
 
-	h := cfg.buildHandler(serveMux)
+	h := cfg.buildHandler(defaultServeMux)
 
 	if cfg.HTTPS {
 		switch cfg.HTTPState {
