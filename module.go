@@ -17,7 +17,7 @@ var (
 	serveMux = mux.NewServeMux()
 
 	modules   = map[string]*Module{} // 所有模块的列表。
-	modulesMu sync.Mutex
+	modulesMu sync.RWMutex
 )
 
 var ErrModuleExists = errors.New("该名称的模块已经存在")
@@ -26,24 +26,34 @@ var ErrModuleExists = errors.New("该名称的模块已经存在")
 type Module struct {
 	Name         string   // 名称
 	Dependencies []string // 依赖项
+	Author       string   // 模块作者
+	Version      string   // 模块版本
 	group        *mux.Group
 }
 
 // Modules 所有模块列表。
 func Modules() []*Module {
 	ret := make([]*Module, 0, len(modules))
+
+	modulesMu.RLock()
 	for _, m := range modules {
 		ret = append(ret, m)
 	}
+	modulesMu.RUnlock()
+
 	return ret
 }
 
 // GetModule 获取指定名称的模块，若不存在，则返回 nil
 func GetModule(name string) *Module {
-	modulesMu.Lock()
-	defer modulesMu.Unlock()
+	modulesMu.RLock()
+	ret, found := modules[name]
+	modulesMu.RUnlock()
 
-	return modules[name]
+	if found {
+		return ret
+	}
+	return nil
 }
 
 // NewModule 声明一个新的模块，若该名称已经存在，则返回错误信息。
