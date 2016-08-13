@@ -85,13 +85,9 @@ func (cfg *Config) buildStaticModule() error {
 		return nil
 	}
 
-	m, err := NewModule("web-static")
-	if err != nil {
-		return err
-	}
-
+	g := MustGroup("web-static")
 	for url, dir := range cfg.Static {
-		m.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+		g.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
 	}
 
 	return nil
