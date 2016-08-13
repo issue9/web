@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// 一个模块化的微形 web 框架。
+// web 一个模块化的微形 web 框架。
 //  m, err := web.NewModule("m1")
 //  m.Get("/", ...).
 //    Post("/", ...)
@@ -38,6 +38,14 @@ func message(r *http.Request, v []interface{}) []interface{} {
 	return append(v, "@", r.URL)
 }
 
+func messagef(r *http.Request, format string) string {
+	if r == nil {
+		return format
+	}
+
+	return format + "@" + r.URL.String()
+}
+
 // Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
 func Critical(r *http.Request, v ...interface{}) {
 	logs.Critical(message(r, v)...)
@@ -45,7 +53,7 @@ func Critical(r *http.Request, v ...interface{}) {
 
 // Criticalf 相当于调用了 logs.Criticalf，外加一些调用者的详细信息
 func Criticalf(r *http.Request, format string, v ...interface{}) {
-	logs.Criticalf(format, message(r, v)...)
+	logs.Criticalf(messagef(r, format), v...)
 }
 
 // Error 相当于调用了 logs.Error，外加一些调用者的详细信息
@@ -55,7 +63,7 @@ func Error(r *http.Request, v ...interface{}) {
 
 // Errorf 相当于调用了 logs.Errorf，外加一些调用者的详细信息
 func Errorf(r *http.Request, format string, v ...interface{}) {
-	logs.Errorf(format, message(r, v)...)
+	logs.Errorf(messagef(r, format), v...)
 }
 
 // Debug 相当于调用了 logs.Debug，外加一些调用者的详细信息
@@ -65,7 +73,7 @@ func Debug(r *http.Request, v ...interface{}) {
 
 // Debugf 相当于调用了 logs.Debugf，外加一些调用者的详细信息
 func Debugf(r *http.Request, format string, v ...interface{}) {
-	logs.Debugf(format, message(r, v)...)
+	logs.Debugf(messagef(r, format), v...)
 }
 
 // Trace 相当于调用了 logs.Trace，外加一些调用者的详细信息
@@ -75,7 +83,7 @@ func Trace(r *http.Request, v ...interface{}) {
 
 // Tracef 相当于调用了 logs.Tracef，外加一些调用者的详细信息
 func Tracef(r *http.Request, format string, v ...interface{}) {
-	logs.Tracef(format, message(r, v)...)
+	logs.Tracef(messagef(r, format), v...)
 }
 
 // Warn 相当于调用了 logs.Warn，外加一些调用者的详细信息
@@ -85,7 +93,7 @@ func Warn(r *http.Request, v ...interface{}) {
 
 // Warnf 相当于调用了 logs.Warnf，外加一些调用者的详细信息
 func Warnf(r *http.Request, format string, v ...interface{}) {
-	logs.Warnf(format, message(r, v)...)
+	logs.Warnf(messagef(r, format), v...)
 }
 
 // Info 相当于调用了 logs.Info，外加一些调用者的详细信息
@@ -95,7 +103,7 @@ func Info(r *http.Request, v ...interface{}) {
 
 // Infof 相当于调用了 logs.Infof，外加一些调用者的详细信息
 func Infof(r *http.Request, format string, v ...interface{}) {
-	logs.Infof(format, message(r, v)...)
+	logs.Infof(messagef(r, format), v...)
 }
 
 // ResultFields 从报头中获取 X-Result-Fields 的相关内容。

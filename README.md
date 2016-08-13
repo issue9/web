@@ -3,6 +3,8 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 
 一个模块化的微形 web 框架。
 
+**实验性的内容，勿用！**
+
 
 ### 安装
 
