@@ -22,14 +22,14 @@ var (
 
 var ErrModuleExists = errors.New("该名称的模块已经存在")
 
-// 模块化管理路由项。相对于 mux.Group，添加了模块依赖管理。
+// Module 模块化管理路由项。相对于 mux.Group，添加了模块依赖管理。
 type Module struct {
 	Name         string   // 名称
 	Dependencies []string // 依赖项
 	group        *mux.Group
 }
 
-// 所有模块列表。
+// Modules 所有模块列表。
 func Modules() []*Module {
 	ret := make([]*Module, 0, len(modules))
 	for _, m := range modules {
@@ -38,7 +38,7 @@ func Modules() []*Module {
 	return ret
 }
 
-// 获取指定名称的模块，若不存在，则返回 nil
+// GetModule 获取指定名称的模块，若不存在，则返回 nil
 func GetModule(name string) *Module {
 	modulesMu.Lock()
 	defer modulesMu.Unlock()
@@ -46,7 +46,7 @@ func GetModule(name string) *Module {
 	return modules[name]
 }
 
-// 声明一个新的模块，若该名称已经存在，则返回错误信息。
+// NewModule 声明一个新的模块，若该名称已经存在，则返回错误信息。
 // name 模块名称
 // dependencies 该模块的依赖模块列表。
 func NewModule(name string, dependencies ...string) (*Module, error) {
@@ -75,22 +75,22 @@ func NewModule(name string, dependencies ...string) (*Module, error) {
 	return m, nil
 }
 
-// 当前模块的路由是否处于运行状态
+// IsRunning 当前模块的路由是否处于运行状态
 func (m *Module) IsRunning() bool {
 	return m.group.IsRunning()
 }
 
-// 将当前模块改为运行状态
+// Start 将当前模块改为运行状态
 func (m *Module) Start() {
 	m.group.Start()
 }
 
-// 将当前模块改为暂停状态。
+// Stop 将当前模块改为暂停状态。
 func (m *Module) Stop() {
 	m.group.Stop()
 }
 
-// 添加一个路由项。
+// Add 添加一个路由项。
 // 具体参数说明，可参考 github.com/issue9/mux.ServeMux.Add() 方法。
 func (m *Module) Add(pattern string, h http.Handler, methods ...string) *Module {
 	m.group.Add(pattern, h, methods...)
@@ -171,7 +171,7 @@ func (m *Module) Clean() *Module {
 	return m
 }
 
-// 创建一个 mux.Prefix 对象，具体可参考该实例说明。
+// Prefix 创建一个 mux.Prefix 对象，具体可参考该实例说明。
 func (m *Module) Prefix(prefix string) *mux.Prefix {
 	return m.group.Prefix(prefix)
 }
