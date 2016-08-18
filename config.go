@@ -86,7 +86,7 @@ func (cfg *Config) buildStaticModule() error {
 	}
 
 	for url, dir := range cfg.Static {
-		if strings.HasSuffix(url, "/") {
+		if !strings.HasSuffix(url, "/") {
 			url += "/"
 		}
 		Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))

@@ -19,6 +19,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -30,80 +31,80 @@ func Run(conf *Config) error {
 	return conf.run()
 }
 
-func message(r *http.Request, v []interface{}) []interface{} {
-	if r == nil {
-		return v
+func message(r *http.Request, v []interface{}) string {
+	if r != nil {
+		v = append(v, "@", r.URL)
 	}
 
-	return append(v, "@", r.URL)
+	return fmt.Sprintln(v...)
 }
 
-func messagef(r *http.Request, format string) string {
-	if r == nil {
-		return format
+func messagef(r *http.Request, format string, v []interface{}) string {
+	if r != nil {
+		format = format + "@" + r.URL.String()
 	}
 
-	return format + "@" + r.URL.String()
+	return fmt.Sprintf(format, v...)
 }
 
 // Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
 func Critical(r *http.Request, v ...interface{}) {
-	logs.Critical(message(r, v)...)
+	logs.CRITICAL().Output(2, message(r, v))
 }
 
 // Criticalf 相当于调用了 logs.Criticalf，外加一些调用者的详细信息
 func Criticalf(r *http.Request, format string, v ...interface{}) {
-	logs.Criticalf(messagef(r, format), v...)
+	logs.CRITICAL().Output(2, messagef(r, format, v))
 }
 
 // Error 相当于调用了 logs.Error，外加一些调用者的详细信息
 func Error(r *http.Request, v ...interface{}) {
-	logs.Error(message(r, v)...)
+	logs.ERROR().Output(2, message(r, v))
 }
 
 // Errorf 相当于调用了 logs.Errorf，外加一些调用者的详细信息
 func Errorf(r *http.Request, format string, v ...interface{}) {
-	logs.Errorf(messagef(r, format), v...)
+	logs.ERROR().Output(2, messagef(r, format, v))
 }
 
 // Debug 相当于调用了 logs.Debug，外加一些调用者的详细信息
 func Debug(r *http.Request, v ...interface{}) {
-	logs.Debug(message(r, v)...)
+	logs.DEBUG().Output(2, message(r, v))
 }
 
 // Debugf 相当于调用了 logs.Debugf，外加一些调用者的详细信息
 func Debugf(r *http.Request, format string, v ...interface{}) {
-	logs.Debugf(messagef(r, format), v...)
+	logs.DEBUG().Output(2, messagef(r, format, v))
 }
 
 // Trace 相当于调用了 logs.Trace，外加一些调用者的详细信息
 func Trace(r *http.Request, v ...interface{}) {
-	logs.Trace(message(r, v)...)
+	logs.TRACE().Output(2, message(r, v))
 }
 
 // Tracef 相当于调用了 logs.Tracef，外加一些调用者的详细信息
 func Tracef(r *http.Request, format string, v ...interface{}) {
-	logs.Tracef(messagef(r, format), v...)
+	logs.TRACE().Output(2, messagef(r, format, v))
 }
 
 // Warn 相当于调用了 logs.Warn，外加一些调用者的详细信息
 func Warn(r *http.Request, v ...interface{}) {
-	logs.Warn(message(r, v)...)
+	logs.WARN().Output(2, message(r, v))
 }
 
 // Warnf 相当于调用了 logs.Warnf，外加一些调用者的详细信息
 func Warnf(r *http.Request, format string, v ...interface{}) {
-	logs.Warnf(messagef(r, format), v...)
+	logs.WARN().Output(2, messagef(r, format, v))
 }
 
 // Info 相当于调用了 logs.Info，外加一些调用者的详细信息
 func Info(r *http.Request, v ...interface{}) {
-	logs.Info(message(r, v)...)
+	logs.INFO().Output(2, message(r, v))
 }
 
 // Infof 相当于调用了 logs.Infof，外加一些调用者的详细信息
 func Infof(r *http.Request, format string, v ...interface{}) {
-	logs.Infof(messagef(r, format), v...)
+	logs.INFO().Output(2, messagef(r, format, v))
 }
 
 // ResultFields 从报头中获取 X-Result-Fields 的相关内容。
