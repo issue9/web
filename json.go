@@ -29,7 +29,8 @@ func RenderJSON(w http.ResponseWriter, r *http.Request, code int, v interface{},
 	}
 
 	if v == nil {
-		v = "{}"
+		renderJSONHeader(w, code, headers)
+		return
 	}
 
 	var data []byte

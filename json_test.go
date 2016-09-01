@@ -35,7 +35,7 @@ func TestRenderJSON(t *testing.T) {
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
 	RenderJSON(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusCreated).Equal(w.Body.String(), "{}")
+	a.Equal(w.Code, http.StatusCreated).Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
 	RenderJSON(w, r, http.StatusInternalServerError, map[string]string{"name": "name"}, map[string]string{"h": "h"})
