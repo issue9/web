@@ -65,5 +65,10 @@ func (r *Result) HasDetail() bool {
 
 // IsError 当将 Result 当作 error 实例来用时，需要判断此值是否为 true。
 func (r *Result) IsError() bool {
-	return r.Code/Scale >= 400
+	return r.Status() >= 400
+}
+
+// Status 获取与其相对的 HTTP 状态码
+func (r *Result) Status() int {
+	return r.Code / Scale
 }

@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+// RenderJSON 将当前的实例输出到客户端
+func (rslt *Result) RenderJSON(w http.ResponseWriter, r *http.Request, headers map[string]string) {
+	RenderJSON(w, r, rslt.Status(), rslt, headers)
+}
+
 // RenderJSON 用于将 v 转换成 json 数据并写入到 w 中。
 //
 // code 为服务端返回的代码。
