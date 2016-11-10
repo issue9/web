@@ -8,14 +8,9 @@ package result
 // Result 表示在最终向用户展示的提示信息。同时也实现了 error 接口，
 // 在 Result.IsError() 返回 true 的情况下，其实例可当作 error。
 type Result struct {
-	Message string    `json:"message"`
-	Code    int       `json:"code"`
-	Detail  []*detail `json:"detail,omitempty"`
-}
-
-type detail struct {
-	Message string `json:"message"`
-	Field   string `json:"field,omitempty"`
+	Message string            `json:"message"`
+	Code    int               `json:"code"`
+	Detail  map[string]string `json:"detail,omitempty"`
 }
 
 // New 声明一个新的 Result 实例
@@ -23,16 +18,13 @@ func New(code int) *Result {
 	return &Result{
 		Code:    code,
 		Message: Message(code),
-		Detail:  make([]*detail, 0, 2),
+		Detail:  make(map[string]string, 2),
 	}
 }
 
-// Add 添加一条详细的错误信息。
+// Add 添加一条详细的错误信息。同名 field 会覆盖。
 func (r *Result) Add(field, message string) *Result {
-	r.Detail = append(r.Detail, &detail{
-		Field:   field,
-		Message: message,
-	})
+	r.Detail[field] = message
 	return r
 }
 

@@ -5,6 +5,7 @@
 package result
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -38,4 +39,17 @@ func TestResult_IsError(t *testing.T) {
 
 	r = New(300 * scale)
 	a.False(r.IsError())
+}
+
+func TestResultMarshal(t *testing.T) {
+	a := assert.New(t)
+
+	r := New(400)
+	r.Message = "400"
+	r.Add("field", "message1")
+	r.Add("field", "message2")
+
+	bs, err := json.Marshal(r)
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `{"message":"400","code":400,"detail":{"field":"message2"}}`)
 }
