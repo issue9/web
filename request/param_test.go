@@ -16,12 +16,7 @@ func TestParam_Int(t *testing.T) {
 	params := map[string]string{
 		"p1": "5",
 	}
-	p := &Param{
-		abortOnError: false,
-		errors:       map[string]string{},
-		values:       make(map[string]value, len(params)),
-		params:       params,
-	}
+	p := newParam(params, false)
 
 	p1 := p.Int("p1")
 	a.Equal(len(p.Parse()), 0).Equal(*p1, 5)
