@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package result
+package web
 
 // Scale 每个错误代码都是从 HTTP 状态码上放大此配数再进行累加的。
 const Scale = 1000

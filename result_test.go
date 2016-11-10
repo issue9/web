@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package result
+package web
 
 import (
 	"encoding/json"
@@ -12,22 +12,22 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestNewResult(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(-2)
+	r := NewResult(-2)
 	a.Equal(r.Message, CodeNotExists)
 
 	code := http.StatusBadRequest * Scale
 	SetMessage(code, "400")
-	r = New(code)
+	r = NewResult(code)
 	a.Equal(r.Message, "400")
 }
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(400 * Scale)
+	r := NewResult(400 * Scale)
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
@@ -37,17 +37,17 @@ func TestResult_Add_HasDetail(t *testing.T) {
 func TestResult_IsError(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(400*Scale + 500)
+	r := NewResult(400*Scale + 500)
 	a.True(r.IsError())
 
-	r = New(300*Scale + 3)
+	r = NewResult(300*Scale + 3)
 	a.False(r.IsError())
 }
 
 func TestResultMarshal(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(400)
+	r := NewResult(400)
 	r.Message = "400"
 	r.Add("field", "message1")
 	r.Add("field", "message2")
