@@ -24,11 +24,73 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/web/request"
 )
 
 // Run 运行路由，执行监听程序。
 func Run(conf *Config) error {
 	return conf.run()
+}
+
+// ResultFields 从报头中获取 X-Result-Fields 的相关内容。
+//
+// allow 表示所有允许出现的字段名称。
+// 当请求头中未包含 X-Result-Fields 时，返回 nil, true；
+// 当请求头包含不允许(不包含在 allow 参数中)的字段是，返回该这些字段，第三个返回参数被设置为 false；
+// 否则返回 X-Reslt-Fields 的指定的所有字段，第二个参数返回 true；
+// 其它情况返回 nil, false。
+func ResultFields(r *http.Request, allow []string) ([]string, bool) {
+	if r.Method != http.MethodGet {
+		return nil, false
+	}
+
+	fields := r.Header.Get("X-Result-Fields")
+	if len(fields) == 0 {
+		return nil, true
+	}
+
+	isAllow := func(field string) bool {
+		for _, f1 := range allow {
+			if f1 == field {
+				return true
+			}
+		}
+		return false
+	}
+
+	fs := strings.Split(fields, ",")
+	errFields := make([]string, 0, len(fs))
+
+	for index, field := range fs {
+		field = strings.TrimSpace(field)
+		fs[index] = field
+
+		if isAllow(field) {
+			continue
+		}
+		errFields = append(errFields, field)
+	}
+
+	if len(errFields) > 0 {
+		return errFields, false
+	}
+
+	return fs, true
+}
+
+// Param 获取一个 request.Param 实例，用于查询路径中的参数
+func Param(r *http.Request, abortOnError bool) *request.Param {
+	p, err := request.NewParam(r, abortOnError)
+	if err != nil {
+		Debug(r, err)
+	}
+
+	return p
+}
+
+// Query 获取一个 request.Query 实例，用于查询路径中的查询参数
+func Query(r *http.Request, abortOnError bool) *request.Query {
+	return request.NewQuery(r, abortOnError)
 }
 
 func message(r *http.Request, v []interface{}) string {
@@ -105,50 +167,4 @@ func Info(r *http.Request, v ...interface{}) {
 // Infof 相当于调用了 logs.Infof，外加一些调用者的详细信息
 func Infof(r *http.Request, format string, v ...interface{}) {
 	logs.INFO().Output(2, messagef(r, format, v))
-}
-
-// ResultFields 从报头中获取 X-Result-Fields 的相关内容。
-//
-// allow 表示所有允许出现的字段名称。
-// 当请求头中未包含 X-Result-Fields 时，返回 nil, true；
-// 当请求头包含不允许(不包含在 allow 参数中)的字段是，返回该这些字段，第三个返回参数被设置为 false；
-// 否则返回 X-Reslt-Fields 的指定的所有字段，第二个参数返回 true；
-// 其它情况返回 nil, false。
-func ResultFields(r *http.Request, allow []string) ([]string, bool) {
-	if r.Method != http.MethodGet {
-		return nil, false
-	}
-
-	fields := r.Header.Get("X-Result-Fields")
-	if len(fields) == 0 {
-		return nil, true
-	}
-
-	isAllow := func(field string) bool {
-		for _, f1 := range allow {
-			if f1 == field {
-				return true
-			}
-		}
-		return false
-	}
-
-	fs := strings.Split(fields, ",")
-	errFields := make([]string, 0, len(fs))
-
-	for index, field := range fs {
-		field = strings.TrimSpace(field)
-		fs[index] = field
-
-		if isAllow(field) {
-			continue
-		}
-		errFields = append(errFields, field)
-	}
-
-	if len(errFields) > 0 {
-		return errFields, false
-	}
-
-	return fs, true
 }
