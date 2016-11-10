@@ -39,6 +39,15 @@ func New(code int) *Result {
 	}
 }
 
+// NewWithDetail 声明一个带 Detail 内容的实例
+func NewWithDetail(code int, detail map[string]string) *Result {
+	return &Result{
+		Code:    code,
+		Message: Message(code),
+		Detail:  detail,
+	}
+}
+
 // Add 添加一条详细的错误信息。同名 field 会覆盖。
 func (r *Result) Add(field, message string) *Result {
 	r.Detail[field] = message
