@@ -4,30 +4,25 @@
 
 package result
 
-// 每个错误代码都是从 HTTP 状态码上放大此配数再进行累加的。
-const scale = 1000
+// Scale 每个错误代码都是从 HTTP 状态码上放大此配数再进行累加的。
+const Scale = 1000
 
-const codeNotExists = "该错误代码不存"
+// CodeNotExists 错误代码不存在时的提示信息
+const CodeNotExists = "该错误代码不存在"
 
-var (
-	messages = map[int]string{}
-	indexes  = map[int]int{}
-)
+// 消息与代码的关联列表
+var messages = make(map[int]string, 500)
 
-// RegisterMessage 在某一个 HTTP 状态码下注册一个新的错误信息并返回表示该信息的代码。
-//
-// NOTE: 不应该在多个协程中调用 RegisterMessage，以免每次重启程序，分配的代码都不一样。
-func RegisterMessage(status int, message string) int {
-	index, found := indexes[status]
-	if !found {
-		index = status * scale
-	} else {
-		index++
+// SetMessage 关联错误代码和错误信息。
+func SetMessage(code int, message string) {
+	messages[code] = message
+}
+
+// SetMessages 指量执行 SetMessage
+func SetMessages(msgs map[int]string) {
+	for code, msg := range msgs {
+		SetMessage(code, msg)
 	}
-
-	messages[index] = message
-	indexes[status] = index
-	return index
 }
 
 // Message 获取指定代码所表示的错误信息
@@ -37,5 +32,5 @@ func Message(code int) string {
 		return msg
 	}
 
-	return codeNotExists
+	return CodeNotExists
 }

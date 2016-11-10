@@ -3,6 +3,23 @@
 // license that can be found in the LICENSE file.
 
 // result 提供了一套用于描述向客户端反馈错误信息的机制。
+//
+// 对于错误代码的定义是根据 HTTP 状态码进行分类的，
+// 比如所有与 400 有关的错误信息，都是以 400 * Scale 为基数的；
+// 而与验证有关的都是以 401 * Scale 为基数的。Scale 为一个常量。
+//
+// 示例：
+//  const(
+//      BadRequest1 = http.StatusBadRequest * result.Scale + iota
+//      BadRequest2
+//      BadRequest3
+//  )
+//
+//  func init(){
+//      result.SetMessage(BadRequest1, "BadRequest1")
+//      result.SetMessage(BadRequest2, "BadRequest2")
+//      result.SetMessage(BadRequest3, "BadRequest3")
+//  }
 package result
 
 // Result 表示在最终向用户展示的提示信息。同时也实现了 error 接口，
@@ -40,5 +57,5 @@ func (r *Result) HasDetail() bool {
 
 // IsError 当将 Result 当作 error 实例来用时，需要判断此值是否为 true。
 func (r *Result) IsError() bool {
-	return r.Code/scale >= 400
+	return r.Code/Scale >= 400
 }

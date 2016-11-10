@@ -6,6 +6,7 @@ package result
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -15,16 +16,18 @@ func TestNew(t *testing.T) {
 	a := assert.New(t)
 
 	r := New(-2)
-	a.Equal(r.Message, codeNotExists)
+	a.Equal(r.Message, CodeNotExists)
 
-	r = New(RegisterMessage(400, "400"))
+	code := http.StatusBadRequest * Scale
+	SetMessage(code, "400")
+	r = New(code)
 	a.Equal(r.Message, "400")
 }
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(400 * scale)
+	r := New(400 * Scale)
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
@@ -34,10 +37,10 @@ func TestResult_Add_HasDetail(t *testing.T) {
 func TestResult_IsError(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(400 * scale)
+	r := New(400*Scale + 500)
 	a.True(r.IsError())
 
-	r = New(300 * scale)
+	r = New(300*Scale + 3)
 	a.False(r.IsError())
 }
 
