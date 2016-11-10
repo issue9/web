@@ -56,3 +56,9 @@ func TestResultMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400,"detail":{"field":"message2"}}`)
 }
+
+func TestMessage(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(Message(-1000), CodeNotExists)
+}
