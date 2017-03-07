@@ -18,11 +18,6 @@ import (
 const Version = "0.1.0+20170307"
 
 const (
-	// 配置文件默认情况下的保存位置，
-	// 若未通过命令行设置相应参数，则使用此值。
-	defaultConfigDir = "./appconfig"
-
-	// 包内的一些私有常量设置
 	configFilename = "web.json" // 配置文件的文件名。
 	logsFilename   = "logs.xml" // 日志配置文件的文件名。
 )
