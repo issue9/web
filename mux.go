@@ -20,6 +20,9 @@ import (
 // 路由控制器
 var defaultServeMux = mux.NewServeMux()
 
+// 保存所有的 http.Server 方便重启这些服务。
+var servers = make([]*http.Server, 0, 5)
+
 // Mux 返回默认的 *mux.ServeMux 实例
 func Mux() *mux.ServeMux {
 	return defaultServeMux
@@ -140,11 +143,16 @@ func buildHeader(conf *config.Config, h http.Handler) http.Handler {
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
 func getServer(conf *config.Config, port string, h http.Handler) *http.Server {
-	return &http.Server{
+	srv := &http.Server{
 		Addr:         port,
 		Handler:      h,
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  conf.ReadTimeout * time.Second,
 		WriteTimeout: conf.WriteTimeout * time.Second,
 	}
+
+	// 记录所有的 server，方便重启等操作
+	servers = append(servers, srv)
+
+	return srv
 }
