@@ -70,34 +70,34 @@ func NewWithDetail(code int, detail map[string]string) *Result {
 // Add 添加一条详细的错误信息。
 //
 // 若 field 与已有的同名，会出现多条同名记录。
-func (r *Result) Add(field, message string) *Result {
-	r.Detail = append(r.Detail, &detail{Field: field, Message: message})
-	return r
+func (rslt *Result) Add(field, message string) *Result {
+	rslt.Detail = append(rslt.Detail, &detail{Field: field, Message: message})
+	return rslt
 }
 
 // Error error 接口
 //
 // 具体是否为一个 error 接口，还需要查看 IsError 是否为 true
-func (r *Result) Error() string {
-	return r.Message
+func (rslt *Result) Error() string {
+	return rslt.Message
 }
 
 // HasDetail 是否包含详细的错误信息
-func (r *Result) HasDetail() bool {
-	return len(r.Detail) > 0
+func (rslt *Result) HasDetail() bool {
+	return len(rslt.Detail) > 0
 }
 
 // IsError 当将 Result 当作 error 实例来用时，需要判断此值是否为 true。
-func (r *Result) IsError() bool {
-	return r.status >= http.StatusBadRequest
+func (rslt *Result) IsError() bool {
+	return rslt.status >= http.StatusBadRequest
 }
 
 // Status 获取与其相对的 HTTP 状态码
-func (r *Result) Status() int {
-	return r.status
+func (rslt *Result) Status() int {
+	return rslt.status
 }
 
 // Render 将当前的实例输出到客户端
-func (r *Result) Render(render contentype.Renderer, w http.ResponseWriter) {
-	render.Render(w, r.status, r, nil)
+func (rslt *Result) Render(w http.ResponseWriter, r *http.Request, render contentype.Renderer) {
+	render.Render(w, r, rslt.status, rslt, nil)
 }

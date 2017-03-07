@@ -16,8 +16,8 @@ var defaultContentType contentype.ContentTyper
 // Render 用于将 v 转换成相应的编码数据并写入到 w 中
 //
 // 若输出带报头的内容，可调用 ContentType().Render()
-func Render(w http.ResponseWriter, code int, v interface{}) {
-	defaultContentType.Render(w, code, v, nil)
+func Render(w http.ResponseWriter, r *http.Request, code int, v interface{}) {
+	defaultContentType.Render(w, r, code, v, nil)
 }
 
 // Read 用于将 r 中的 body 当作一个指定格式的数据读取到 v 中。

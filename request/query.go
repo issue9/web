@@ -147,9 +147,9 @@ func (q *Query) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (q *Query) OK(code int, render contentype.Renderer, w http.ResponseWriter) bool {
+func (q *Query) OK(w http.ResponseWriter, r *http.Request, code int, render contentype.Renderer) bool {
 	if len(q.errors) > 0 {
-		q.Result(code).Render(render, w)
+		q.Result(code).Render(w, r, render)
 		return false
 	}
 	return true

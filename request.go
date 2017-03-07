@@ -29,13 +29,13 @@ func ParamID(w http.ResponseWriter, r *http.Request, key string, code int, rende
 	rslt := p.Result(code)
 
 	if rslt.HasDetail() {
-		rslt.Render(render, w)
+		rslt.Render(w, r, render)
 		return id, false
 	}
 
 	if id <= 0 {
 		rslt.Add("id", "必须大于零")
-		rslt.Render(render, w)
+		rslt.Render(w, r, render)
 		return id, false
 	}
 
@@ -47,7 +47,7 @@ func ParamInt64(w http.ResponseWriter, r *http.Request, key string, code int, re
 	p := NewParam(r)
 	id := p.Int64(key)
 
-	if p.OK(code, render, w) {
+	if p.OK(w, r, code, render) {
 		return id, false
 	}
 

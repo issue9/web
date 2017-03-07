@@ -35,21 +35,23 @@ func TestJSON_Render(t *testing.T) {
 	j := New(log.New(ioutil.Discard, "", 0))
 	a.NotNil(j)
 
+	// 少 accept
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j.Render(w, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusCreated).Equal(w.Body.String(), "")
+	j.Render(w, r, http.StatusCreated, nil, nil)
+	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
-	j.Render(w, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
+	r.Header.Set("Accept", contentType)
+	j.Render(w, r, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), `{"name":"name"}`)
 	a.Equal(w.Header().Get("h"), "h")
 
-	// 解析json出错，会返回500错误
+	// 解析 json 出错，会返回 500 错误
 	w = httptest.NewRecorder()
-	j.Render(w, http.StatusOK, complex(5, 7), nil)
+	j.Render(w, r, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
 }
@@ -72,25 +74,11 @@ func TestJSON_Read(t *testing.T) {
 		Equal(w.Code, http.StatusUnsupportedMediaType).
 		Equal(val.Key, "")
 
-	// 少 Accept
-	w = httptest.NewRecorder()
-	a.NotNil(w)
-	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
-	a.NotError(err).NotNil(r)
-	val = &struct {
-		Key string `json:"key"`
-	}{}
-	ok = j.Read(w, r, val)
-	a.False(ok).
-		Equal(w.Code, http.StatusUnsupportedMediaType).
-		Equal(val.Key, "")
-
 	// 正常解析
 	w = httptest.NewRecorder()
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", contentType)
 	val = &struct {
 		Key string `json:"key"`
 	}{}
@@ -104,7 +92,6 @@ func TestJSON_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":1}`))
 	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", contentType)
 	val = &struct {
 		Key string `json:"key"`
 	}{}

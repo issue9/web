@@ -169,9 +169,9 @@ func (p *Param) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (p *Param) OK(code int, render contentype.Renderer, w http.ResponseWriter) bool {
+func (p *Param) OK(w http.ResponseWriter, r *http.Request, code int, render contentype.Renderer) bool {
 	if len(p.errors) > 0 {
-		p.Result(code).Render(render, w)
+		p.Result(code).Render(w, r, render)
 		return false
 	}
 	return true

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package xml 实现了 XML 版本的 contentype.ContentTyper 接口
 package xml
 
 import (
@@ -30,7 +31,14 @@ func New(errlog *log.Logger) *XML {
 }
 
 // Render 用于将 v 转换成 xml 数据并写入到 w 中。
-func (x *XML) Render(w http.ResponseWriter, code int, v interface{}, headers map[string]string) {
+func (x *XML) Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string) {
+	accept := r.Header.Get("Accept")
+	if strings.Index(accept, encodingType) < 0 && strings.Index(accept, "*/*") < 0 {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		x.errlog.Println("Accept 值不正确：", accept)
+		return
+	}
+
 	if v == nil {
 		renderHeader(w, code, headers)
 		return
@@ -92,13 +100,6 @@ func (x *XML) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 			x.errlog.Println("Content-Type 值不正确：", ct)
 			return false
 		}
-	}
-
-	accept := r.Header.Get("Accept")
-	if strings.Index(accept, encodingType) < 0 && strings.Index(accept, "*/*") < 0 {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		x.errlog.Println("Accept 值不正确：", accept)
-		return false
 	}
 
 	data, err := ioutil.ReadAll(r.Body)

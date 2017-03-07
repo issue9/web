@@ -29,7 +29,7 @@ type Renderer interface {
 	// headers 用于指定额外的 Header 信息，若传递 nil，则表示没有。
 	// NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
 	// 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
-	Render(w http.ResponseWriter, code int, v interface{}, headers map[string]string)
+	Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string)
 }
 
 // Reader 表示从客户端读取数据的接口。
