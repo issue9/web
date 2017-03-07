@@ -13,11 +13,24 @@ import (
 func TestParam_Int(t *testing.T) {
 	a := assert.New(t)
 
-	params := map[string]string{
-		"p1": "5",
+	data := map[string]string{
+		"i":   "-1",
+		"str": "str",
 	}
-	p := newParam(params, false)
+	p := newParam(data)
+	a.NotNil(p)
 
-	p1 := p.Int("p1")
-	a.Equal(len(p.Parse()), 0).Equal(*p1, 5)
+	a.Equal(-1, p.Int("i"))
+	a.Equal(0, p.Int("str"))
+	a.Equal(0, p.Int("not exists"))
+	rslt := p.Result(400001)
+	a.True(len(rslt.Detail) > 0)
+
+	var i int
+	p.IntVar(&i, "i")
+	a.Equal(-1, i)
+
+	i = 0
+	p.IntVar(&i, "not exists")
+	a.Equal(0, i)
 }

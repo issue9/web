@@ -1,0 +1,2 @@
+[ERROR]2016/12/21 23:51:48 request.go:21: 非 GET 方法，不支持 X-Result-Fields 方法 @ /test
+[ERROR]2016/12/21 23:51:48 request.go:21: 非 GET 方法，不支持 X-Result-Fields 方法 @ /test

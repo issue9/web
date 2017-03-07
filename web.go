@@ -2,169 +2,76 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// web 一个模块化的微形 web 框架。
-//  m, err := web.NewModule("m1")
-//  m.Get("/", ...).
-//    Post("/", ...)
-//
-//
-//  conf := &web.Config{
-//      Pprof:  "/debug/pprof",
-//      Before: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
-//      After:  http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){...}),
-//  }
-//  web.Run(conf) // 开始监听端口
-//
-// NOTE: web 依赖 github.com/issue9/logs 包作日志输出，请确保已经正确初始化该包。
 package web
 
 import (
-	"fmt"
-	"net/http"
-	"strings"
+	"errors"
+	"path/filepath"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/request"
+	"github.com/issue9/utils"
+	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/internal/config"
 )
 
-// Run 运行路由，执行监听程序。
-func Run(conf *Config) error {
-	return conf.run()
-}
+// Version 当前框架的版本
+const Version = "0.1.0+20170307"
 
-// ResultFields 从报头中获取 X-Result-Fields 的相关内容。
-//
-// allow 表示所有允许出现的字段名称。
-// 当请求头中未包含 X-Result-Fields 时，返回 nil, true；
-// 当请求头包含不允许(不包含在 allow 参数中)的字段是，返回该这些字段，第三个返回参数被设置为 false；
-// 否则返回 X-Reslt-Fields 的指定的所有字段，第二个参数返回 true；
-// 其它情况返回 nil, false。
-func ResultFields(r *http.Request, allow []string) ([]string, bool) {
-	if r.Method != http.MethodGet {
-		return nil, false
+const (
+	// 配置文件默认情况下的保存位置，
+	// 若未通过命令行设置相应参数，则使用此值。
+	defaultConfigDir = "./appconfig"
+
+	// 包内的一些私有常量设置
+	configFilename = "web.json" // 配置文件的文件名。
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+)
+
+var (
+	confDir       string         // 配置文件所在目录
+	defaultConfig *config.Config // 当前的配置实例
+)
+
+// Init 初始化系统的基础架构。
+// 包括加载配置文件、初始化日志系统、数据库等。
+func Init(configDir string) error {
+	if !utils.FileExists(configDir) {
+		return errors.New("配置文件目录不存在")
 	}
+	confDir = configDir
 
-	fields := r.Header.Get("X-Result-Fields")
-	if len(fields) == 0 {
-		return nil, true
-	}
-
-	isAllow := func(field string) bool {
-		for _, f1 := range allow {
-			if f1 == field {
-				return true
-			}
-		}
-		return false
-	}
-
-	fs := strings.Split(fields, ",")
-	errFields := make([]string, 0, len(fs))
-
-	for index, field := range fs {
-		field = strings.TrimSpace(field)
-		fs[index] = field
-
-		if isAllow(field) {
-			continue
-		}
-		errFields = append(errFields, field)
-	}
-
-	if len(errFields) > 0 {
-		return errFields, false
-	}
-
-	return fs, true
-}
-
-// Param 获取一个 request.Param 实例，用于查询路径中的参数
-func Param(r *http.Request, abortOnError bool) *request.Param {
-	p, err := request.NewParam(r, abortOnError)
+	// 初始化日志系统，第一个初始化，后续内容可能都依赖于此。
+	err := logs.InitFromXMLFile(File(logsFilename))
 	if err != nil {
-		Debug(r, err)
+		return err
 	}
 
-	return p
-}
-
-// Query 获取一个 request.Query 实例，用于查询路径中的查询参数
-func Query(r *http.Request, abortOnError bool) *request.Query {
-	return request.NewQuery(r, abortOnError)
-}
-
-func message(r *http.Request, v []interface{}) string {
-	if r != nil {
-		v = append(v, "@", r.URL)
+	// 加载配置文件
+	defaultConfig, err = config.Load(File(configFilename))
+	if err != nil {
+		return err
 	}
 
-	return fmt.Sprintln(v...)
+	// 确定编码
+	defaultContentType, err = contentype.New(defaultConfig.ContentType, logs.ERROR())
+	return err
 }
 
-func messagef(r *http.Request, format string, v []interface{}) string {
-	if r != nil {
-		format = format + "@" + r.URL.String()
+// File 获取相对于配置目录的文件路径
+func File(path string) string {
+	return filepath.Join(confDir, path)
+}
+
+// Run 运行路由，执行监听程序。
+func Run() error {
+	if err := defaultModules.Init(); err != nil {
+		return err
 	}
 
-	return fmt.Sprintf(format, v...)
+	return run(defaultConfig, defaultServeMux)
 }
 
-// Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
-func Critical(r *http.Request, v ...interface{}) {
-	logs.CRITICAL().Output(2, message(r, v))
-}
-
-// Criticalf 相当于调用了 logs.Criticalf，外加一些调用者的详细信息
-func Criticalf(r *http.Request, format string, v ...interface{}) {
-	logs.CRITICAL().Output(2, messagef(r, format, v))
-}
-
-// Error 相当于调用了 logs.Error，外加一些调用者的详细信息
-func Error(r *http.Request, v ...interface{}) {
-	logs.ERROR().Output(2, message(r, v))
-}
-
-// Errorf 相当于调用了 logs.Errorf，外加一些调用者的详细信息
-func Errorf(r *http.Request, format string, v ...interface{}) {
-	logs.ERROR().Output(2, messagef(r, format, v))
-}
-
-// Debug 相当于调用了 logs.Debug，外加一些调用者的详细信息
-func Debug(r *http.Request, v ...interface{}) {
-	logs.DEBUG().Output(2, message(r, v))
-}
-
-// Debugf 相当于调用了 logs.Debugf，外加一些调用者的详细信息
-func Debugf(r *http.Request, format string, v ...interface{}) {
-	logs.DEBUG().Output(2, messagef(r, format, v))
-}
-
-// Trace 相当于调用了 logs.Trace，外加一些调用者的详细信息
-func Trace(r *http.Request, v ...interface{}) {
-	logs.TRACE().Output(2, message(r, v))
-}
-
-// Tracef 相当于调用了 logs.Tracef，外加一些调用者的详细信息
-func Tracef(r *http.Request, format string, v ...interface{}) {
-	logs.TRACE().Output(2, messagef(r, format, v))
-}
-
-// Warn 相当于调用了 logs.Warn，外加一些调用者的详细信息
-func Warn(r *http.Request, v ...interface{}) {
-	logs.WARN().Output(2, message(r, v))
-}
-
-// Warnf 相当于调用了 logs.Warnf，外加一些调用者的详细信息
-func Warnf(r *http.Request, format string, v ...interface{}) {
-	logs.WARN().Output(2, messagef(r, format, v))
-}
-
-// Info 相当于调用了 logs.Info，外加一些调用者的详细信息
-func Info(r *http.Request, v ...interface{}) {
-	logs.INFO().Output(2, message(r, v))
-}
-
-// Infof 相当于调用了 logs.Infof，外加一些调用者的详细信息
-func Infof(r *http.Request, format string, v ...interface{}) {
-	logs.INFO().Output(2, messagef(r, format, v))
+// IsDebug 是否处于调试状态
+func IsDebug() bool {
+	return len(defaultConfig.Pprof) > 0
 }

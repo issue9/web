@@ -6,6 +6,11 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 **实验性的内容，勿用！**
 
 
+### 建议
+
+若项目需要支持 xml 返回，需要注意，xml 包不支持 map 形式的数据转换成 xml
+
+
 ### 安装
 
 ```shell

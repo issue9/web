@@ -1,4 +1,4 @@
-// Copyright 2015 by caixw, All rights reserved.
+// Copyright 2017 by caixw, All rights reserved.
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
@@ -6,113 +6,145 @@ package web
 
 import (
 	"net/http"
+	"net/http/pprof"
+	"strings"
+	"time"
 
+	"github.com/issue9/context"
+	"github.com/issue9/handlers"
+	"github.com/issue9/logs"
 	"github.com/issue9/mux"
+	"github.com/issue9/web/internal/config"
 )
 
+// 路由控制器
 var defaultServeMux = mux.NewServeMux()
 
-// Clean 清除所有的路由项
-func Clean() *mux.ServeMux {
-	return defaultServeMux.Clean()
+// Mux 返回默认的 *mux.ServeMux 实例
+func Mux() *mux.ServeMux {
+	return defaultServeMux
 }
 
-// Remove 移除指定的路由项，通过路由表达式和 method 来匹配。
-// 当未指定 methods 时，将删除所有 method 匹配的项。
-// 指定错误的 methods 值，将自动忽略该值。
-func Remove(pattern string, methods ...string) {
-	defaultServeMux.Remove(pattern, methods...)
+// Run 运行路由，执行监听程序。
+func run(conf *config.Config, mux *mux.ServeMux) error {
+	// 在其它之前调用
+	if err := buildStaticModule(conf, mux); err != nil {
+		return err
+	}
+
+	h := buildHandler(conf, mux)
+
+	if conf.HTTPS {
+		switch conf.HTTPState {
+		case config.HTTPStateListen:
+			logs.Infof("开始监听%v端口", config.HTTPPort)
+			go getServer(conf, config.HTTPPort, h).ListenAndServe()
+		case config.HTTPStateRedirect:
+			logs.Infof("开始监听%v端口", config.HTTPPort)
+			go httpRedirectListenAndServe(conf)
+			// 空值或是 disable 均为默认处理方式
+		}
+
+		logs.Infof("开始监听%v端口", conf.Port)
+		return getServer(conf, conf.Port, h).ListenAndServeTLS(conf.CertFile, conf.KeyFile)
+	}
+
+	logs.Infof("开始监听%v端口", conf.Port)
+	return getServer(conf, conf.Port, h).ListenAndServe()
 }
 
-// Add 添加一条路由数据。
-func Add(pattern string, h http.Handler, methods ...string) *mux.ServeMux {
-	return defaultServeMux.Add(pattern, h, methods...)
+// 构建一个静态文件服务模块
+func buildStaticModule(conf *config.Config, mux *mux.ServeMux) error {
+	if len(conf.Static) == 0 {
+		return nil
+	}
+
+	for url, dir := range conf.Static {
+		if !strings.HasSuffix(url, "/") {
+			url += "/"
+		}
+		mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+	}
+
+	return nil
 }
 
-// Options 手动指定 OPTIONS 请求方法的值。
-func Options(pattern string, allowMethods ...string) *mux.ServeMux {
-	return defaultServeMux.Options(pattern, allowMethods...)
+// 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
+func httpRedirectListenAndServe(conf *config.Config) error {
+	srv := getServer(conf, config.HTTPPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL
+		url.Host = r.Host + conf.Port
+		url.Scheme = "HTTPS"
+
+		urlStr := url.String()
+		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
+	}))
+
+	return srv.ListenAndServe()
 }
 
-// Get 相当于 defaultServeMux.Add(pattern, h, "GET") 的简易写法
-func Get(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Get(pattern, h)
+func buildHandler(conf *config.Config, h http.Handler) http.Handler {
+	h = buildHeader(conf, h)
+
+	// 清理 context 的相关内容
+	h = context.FreeHandler(h)
+
+	// 若是调试状态，则向客户端输出详细错误信息
+	if len(conf.Pprof) > 0 {
+		h = handlers.Recovery(h, handlers.PrintDebug)
+		// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+		return buildPprof(conf, h)
+	}
+
+	return h
 }
 
-// Post 相当于 defaultServeMux.Add(pattern, h, "POST") 的简易写法
-func Post(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Post(pattern, h)
+// 根据 Config.Pprof 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
+func buildPprof(conf *config.Config, h http.Handler) http.Handler {
+	logs.Debug("web:", "开启了调试功能，地址为：", conf.Pprof)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, conf.Pprof) {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		path := r.URL.Path[len(conf.Pprof):]
+		switch path {
+		case "cmdline":
+			pprof.Cmdline(w, r)
+		case "profile":
+			pprof.Profile(w, r)
+		case "symbol":
+			pprof.Symbol(w, r)
+		case "trace":
+			pprof.Trace(w, r)
+		default:
+			pprof.Index(w, r)
+		}
+	}) // end return http.HandlerFunc
 }
 
-// Delete 相当于 defaultServeMux.Add(pattern, h, "DELETE") 的简易写法
-func Delete(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Delete(pattern, h)
+func buildHeader(conf *config.Config, h http.Handler) http.Handler {
+	if len(conf.Headers) == 0 {
+		return h
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for k, v := range conf.Headers {
+			w.Header().Set(k, v)
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
-// Put 相当于 defaultServeMux.Add(pattern, h, "PUT") 的简易写法
-func Put(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Put(pattern, h)
-}
-
-// Patch 相当于 defaultServeMux.Add(pattern, h, "PATCH") 的简易写法
-func Patch(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Patch(pattern, h)
-}
-
-// Any 相当于 defaultServeMux.Add(pattern, h) 的简易写法
-func Any(pattern string, h http.Handler) *mux.ServeMux {
-	return defaultServeMux.Any(pattern, h)
-}
-
-// AddFunc 相当于 defaultServeMux.AddFunc(pattern, func, ...) 的简易写法
-func AddFunc(pattern string, fun func(http.ResponseWriter, *http.Request), methods ...string) *mux.ServeMux {
-	return defaultServeMux.AddFunc(pattern, fun, methods...)
-}
-
-// GetFunc 相当于 defaultServeMux.AddFunc(pattern, func, "GET") 的简易写法
-func GetFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.GetFunc(pattern, fun)
-}
-
-// PutFunc 相当于 defaultServeMux.AddFunc(pattern, func, "PUT") 的简易写法
-func PutFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.PutFunc(pattern, fun)
-}
-
-// PostFunc 相当于 defaultServeMux.AddFunc(pattern, func, "POST") 的简易写法
-func PostFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.PostFunc(pattern, fun)
-}
-
-// DeleteFunc 相当于 defaultServeMux.AddFunc(pattern, func, "DELETE") 的简易写法
-func DeleteFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.DeleteFunc(pattern, fun)
-}
-
-// PatchFunc 相当于 defaultServeMux.AddFunc(pattern, func, "PATCH") 的简易写法
-func PatchFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.PatchFunc(pattern, fun)
-}
-
-// AnyFunc 相当于 defaultServeMux.AddFunc(pattern, func) 的简易写法
-func AnyFunc(pattern string, fun func(http.ResponseWriter, *http.Request)) *mux.ServeMux {
-	return defaultServeMux.AnyFunc(pattern, fun)
-}
-
-// Prefix 创建一个路由组，该组中添加的路由项，都会带上前缀 prefix
-// prefix 前缀字符串，所有从 Prefix 中声明的路由都将包含此前缀。
-//  p := srv.Prefix("/api")
-//  p.Get("/users")  // 相当于 srv.Get("/api/users")
-//  p.Get("/user/1") // 相当于 srv.Get("/api/user/1")
-func Prefix(prefix string) *mux.Prefix {
-	return defaultServeMux.Prefix(prefix)
-}
-
-// Resource 创建一个路由组，该组中添加的路由项，其地址均为 pattern。
-// pattern 前缀字符串，所有从 Resource 中声明的路由都将包含此前缀。
-//  p := srv.Resource("/api")
-//  p.Get("/users")  // 相当于 srv.Get("/api/users")
-//  p.Get("/user/1") // 相当于 srv.Get("/api/user/1")
-func Resource(pattern string) *mux.Resource {
-	return defaultServeMux.Resource(pattern)
+// 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
+func getServer(conf *config.Config, port string, h http.Handler) *http.Server {
+	return &http.Server{
+		Addr:         port,
+		Handler:      h,
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  conf.ReadTimeout * time.Second,
+		WriteTimeout: conf.WriteTimeout * time.Second,
+	}
 }

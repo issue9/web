@@ -4,10 +4,7 @@
 
 package request
 
-import (
-	"errors"
-	"strconv"
-)
+import "strconv"
 
 type value interface {
 	set(string) error
@@ -34,23 +31,6 @@ func (v *int64Value) set(str string) error {
 	}
 
 	*v = int64Value(i)
-	return nil
-}
-
-// 大于 0 的 int64
-type idValue int64
-
-func (v *idValue) set(str string) error {
-	i, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	if *v <= 0 {
-		return errors.New("必须大于0")
-	}
-
-	*v = idValue(i)
 	return nil
 }
 

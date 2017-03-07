@@ -5,153 +5,174 @@
 package request
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/issue9/context"
+	"github.com/issue9/logs"
+	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/result"
 )
 
 const paramNotExists = "参数不存在"
 
 // Param 用于处理路径中包含的参数。用法类似于 flag
-//  p,_ := NewParam(r, false)
+//  p := NewParam(false)
 //  aid := p.Int64("aid")
 //  bid := p.Int64("bid")
-//  if msg := p.Parse();len(msg)>0{
-//      rslt := web.NewResultWithDetail(400, msg)
-//      rslt.RenderJSON(w,r,nil)
+//  if !p.OK(w){
 //      return
 //  }
 type Param struct {
-	abortOnError bool
-	errors       map[string]string
-	values       map[string]value
-	params       map[string]string // 从 context 中获取的参数列表
+	errors map[string]string
+	params map[string]string // 从 context 中获取的参数列表
 }
 
 // NewParam 声明一个新的 Param 实例
 //
 // NOTE:当出错时，会返回一个空的 Param 实例，而不是 nil
-func NewParam(r *http.Request, abortOnError bool) (*Param, error) {
+func NewParam(r *http.Request) *Param {
 	var params map[string]string
-	var err error
+
 	m, found := context.Get(r).Get("params")
 	if !found {
-		return newParam(params, abortOnError), errors.New("context 中的不存在 params 参数")
+		logs.Errorf("context 中的不存在 params 参数 @ %v", r.URL)
+		return newParam(params)
 	}
 
 	var ok bool
 	params, ok = m.(map[string]string)
 	if !ok {
-		return newParam(params, abortOnError), errors.New("无法将 context 中的 params 参数转换成 map[string]string 类型")
+		logs.Errorf("无法将 context 中的 params 参数转换成 map[string]string 类型 @ %v", r.URL)
+		return newParam(params)
 	}
 
-	return newParam(params, abortOnError), err
+	return newParam(params)
 }
 
-func newParam(params map[string]string, abortOnError bool) *Param {
+func newParam(params map[string]string) *Param {
 	return &Param{
-		abortOnError: abortOnError,
-		errors:       make(map[string]string, len(params)),
-		values:       make(map[string]value, len(params)),
-		params:       params,
+		errors: make(map[string]string, len(params)),
+		params: params,
 	}
 }
 
-func (p *Param) parseOne(key string, val value) (ok bool) {
+func (p *Param) parseOne(key string, val value) {
 	v, found := p.params[key]
 	if !found {
 		p.errors[key] = paramNotExists
-		return false
+		return
 	}
 
 	if err := val.set(v); err != nil {
 		p.errors[key] = err.Error()
-		return false
 	}
-	return true
-}
-
-// ID 获取参数 key 所代表的值，其值必须大于 0
-func (p *Param) ID(key string) *int64 {
-	i := new(int64)
-	p.IDVar(i, key)
-	return i
-}
-
-// IDVar 将参数 key 所代表的值保存到指针 i 中，其值必须大于 0
-func (p *Param) IDVar(i *int64, key string) {
-	p.values[key] = (*int64Value)(i)
+	return
 }
 
 // Int 获取参数 key 所代表的值
-func (p *Param) Int(key string) *int {
+func (p *Param) Int(key string) int {
 	i := new(int)
-	p.IntVar(i, key)
-	return i
+	p.intVar(i, key)
+	return *i
 }
 
 // IntVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Param) IntVar(i *int, key string) {
-	p.values[key] = (*intValue)(i)
+func (p *Param) IntVar(i *int, key string) *Param {
+	p.intVar(i, key)
+	return p
+}
+
+func (p *Param) intVar(i *int, key string) {
+	val := (*intValue)(i)
+	p.parseOne(key, val)
 }
 
 // Int64 获取参数 key 所代表的值
-func (p *Param) Int64(key string) *int64 {
+func (p *Param) Int64(key string) int64 {
 	i := new(int64)
-	p.Int64Var(i, key)
-	return i
+	p.int64Var(i, key)
+	return *i
 }
 
 // Int64Var 将参数 key 所代表的值保存到指针 i 中
-func (p *Param) Int64Var(i *int64, key string) {
-	p.values[key] = (*int64Value)(i)
+func (p *Param) Int64Var(i *int64, key string) *Param {
+	p.int64Var(i, key)
+	return p
+}
+
+func (p *Param) int64Var(i *int64, key string) {
+	val := (*int64Value)(i)
+	p.parseOne(key, val)
 }
 
 // String 获取参数 key 所代表的值
-func (p *Param) String(key string) *string {
+func (p *Param) String(key string) string {
 	i := new(string)
-	p.StringVar(i, key)
-	return i
+	p.stringVar(i, key)
+	return *i
 }
 
 // StringVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Param) StringVar(i *string, key string) {
-	p.values[key] = (*stringValue)(i)
+func (p *Param) StringVar(i *string, key string) *Param {
+	p.stringVar(i, key)
+	return p
+}
+
+func (p *Param) stringVar(i *string, key string) {
+	val := (*stringValue)(i)
+	p.parseOne(key, val)
 }
 
 // Bool 获取参数 key 所代表的值
-func (p *Param) Bool(key string) *bool {
+func (p *Param) Bool(key string) bool {
 	i := new(bool)
-	p.BoolVar(i, key)
-	return i
+	p.boolVar(i, key)
+	return *i
 }
 
 // BoolVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Param) BoolVar(i *bool, key string) {
-	p.values[key] = (*boolValue)(i)
+func (p *Param) BoolVar(i *bool, key string) *Param {
+	p.boolVar(i, key)
+	return p
+}
+
+func (p *Param) boolVar(i *bool, key string) {
+	val := (*boolValue)(i)
+	p.parseOne(key, val)
 }
 
 // Float64 获取参数 key 所代表的值
-func (p *Param) Float64(key string) *float64 {
+func (p *Param) Float64(key string) float64 {
 	i := new(float64)
-	p.Float64Var(i, key)
-	return i
+	p.float64Var(i, key)
+	return *i
 }
 
 // Float64Var 将参数 key 所代表的值保存到指针 i 中
-func (p *Param) Float64Var(i *float64, key string) {
-	p.values[key] = (*float64Value)(i)
+func (p *Param) Float64Var(i *float64, key string) *Param {
+	p.float64Var(i, key)
+	return p
 }
 
-// Parse 开始解析数据，若存在错误则返回每个参数对应的错误信息
-func (p *Param) Parse() map[string]string {
-	for k, v := range p.values {
-		ok := p.parseOne(k, v)
-		if !ok && p.abortOnError {
-			break
-		}
+func (p *Param) float64Var(i *float64, key string) {
+	val := (*float64Value)(i)
+	p.parseOne(key, val)
+}
+
+// Result 获取解析的结果，若存在错误则返回相应的 *result.Result 实例
+func (p *Param) Result(code int) *result.Result {
+	if len(p.errors) == 0 {
+		return result.New(code)
 	}
 
-	return p.errors
+	return result.NewWithDetail(code, p.errors)
+}
+
+// OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
+func (p *Param) OK(code int, render contentype.Renderer, w http.ResponseWriter) bool {
+	if len(p.errors) > 0 {
+		p.Result(code).Render(render, w)
+		return false
+	}
+	return true
 }

@@ -6,7 +6,6 @@ package request
 
 import (
 	"net/http"
-	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -15,34 +14,22 @@ import (
 func TestQuery_Int(t *testing.T) {
 	a := assert.New(t)
 
-	form := url.Values(map[string][]string{
-		"q1": []string{"1"},
-		"q2": []string{"21", "22"},
-		"q4": []string{"four"},
-	})
-	r := &http.Request{Form: form}
-
-	q := &Query{
-		abortOnError: false,
-		errors:       map[string]string{},
-		values:       make(map[string]value, len(form)),
-		request:      r,
+	form := map[string][]string{
+		"i":   []string{"-1"},
+		"str": []string{"str"},
 	}
 
-	q1 := q.Int("q1", 12)
-	msgs := q.Parse()
-	a.Equal(len(msgs), 0).Equal(*q1, 1)
+	q := NewQuery(&http.Request{Form: form})
+	a.Equal(-1, q.Int("i", 2))
+	a.Equal(2, q.Int("str", 2))
+	a.Equal(2, q.Int("not exists", 2))
+	rslt := q.Result(400001)
+	a.Equal(rslt.Code, 400001)
+	a.True(len(rslt.Detail) > 0)
 
-	q2 := q.Int64("q2", 12)
-	msgs = q.Parse()
-	a.Equal(len(msgs), 0).Equal(*q2, 21)
-
-	q3 := q.Int64("q3", 32)
-	msgs = q.Parse()
-	a.Equal(len(msgs), 0).Equal(*q3, 32)
-
-	// 出错的情况下，返回默认值
-	q4 := q.Int64("q4", 32)
-	msgs = q.Parse()
-	a.Equal(len(msgs), 1).Equal(*q4, 32)
+	var i int
+	q.IntVar(&i, "i", 2)
+	a.Equal(-1, i)
+	q.IntVar(&i, "not exists", 2)
+	a.Equal(2, i)
 }

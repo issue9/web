@@ -10,3 +10,4 @@ install:
     - go get github.com/issue9/logs
     - go get github.com/issue9/mux
     - go get github.com/issue9/utils
+    - go get github.com/issue9/orm
