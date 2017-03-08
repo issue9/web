@@ -5,10 +5,10 @@
 package request
 
 import (
+	"errors"
 	"net/http"
 
 	ctx "github.com/issue9/context"
-	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
 )
@@ -30,23 +30,22 @@ type Param struct {
 // NewParam 声明一个新的 Param 实例
 //
 // NOTE:当出错时，会返回一个空的 Param 实例，而不是 nil
-func NewParam(r *http.Request) *Param {
+func NewParam(r *http.Request) (*Param, error) {
 	var params map[string]string
 
 	m, found := ctx.Get(r).Get("params")
 	if !found {
-		logs.Errorf("context 中的不存在 params 参数 @ %v", r.URL)
-		return newParam(params)
+		return newParam(params), errors.New("context 中的不存在 params 参数")
 	}
 
 	var ok bool
 	params, ok = m.(map[string]string)
 	if !ok {
-		logs.Errorf("无法将 context 中的 params 参数转换成 map[string]string 类型 @ %v", r.URL)
-		return newParam(params)
+
+		return newParam(params), errors.New("无法将 context 中的 params 参数转换成 map[string]string 类型")
 	}
 
-	return newParam(params)
+	return newParam(params), nil
 }
 
 func newParam(params map[string]string) *Param {
@@ -59,6 +58,7 @@ func newParam(params map[string]string) *Param {
 func (p *Param) parseOne(key string, val value) {
 	v, found := p.params[key]
 	if !found {
+		// NOTE: 能导航到此，又找不到参数，说明代码逻辑有问题。
 		p.errors[key] = paramNotExists
 		return
 	}

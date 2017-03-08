@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/web/request"
 )
 
-// Context 是对 http.ResopnseWriter 和 http.Request 的简单闭装。
+// Context 是对 http.ResopnseWriter 和 http.Request 的简单封装。
 //
 //  ctx := web.NewContext(w, r)
 //  id,ok := ctx.ParamID("id", 400001)
@@ -60,7 +60,12 @@ func (ctx *Context) Read(v interface{}) bool {
 
 // NewParam 声明一个新的 *request.Param 实例
 func (ctx *Context) NewParam() *request.Param {
-	return request.NewParam(ctx.r)
+	p, err := request.NewParam(ctx.r)
+	if err != nil {
+		ctx.Error(err)
+	}
+
+	return p
 }
 
 // NewQuery 声明一个新的 *request.Query 实例
@@ -71,7 +76,7 @@ func (ctx *Context) NewQuery() *request.Query {
 // ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
 // 当出错时，第二个参数返回 false。
 func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	p := request.NewParam(ctx.r)
+	p := ctx.NewParam()
 	id := p.Int64(key)
 	rslt := p.Result(code)
 
@@ -91,7 +96,7 @@ func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 
 // ParamInt64 取地址参数中的 int64 值
 func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
-	p := request.NewParam(ctx.r)
+	p := ctx.NewParam()
 	id := p.Int64(key)
 
 	if p.OK(ctx, code) {

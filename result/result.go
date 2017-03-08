@@ -19,6 +19,8 @@ import (
 //
 // 在 Result.IsError() 为 true 的情况下，也可以将其当作 error 使用。
 //
+// Result 可以向用户输出以下格式的数据类型：
+// JSON
 //  {
 //      'message': 'error message',
 //      'code': 4000001,
@@ -27,7 +29,7 @@ import (
 //          {'field': 'username': 'message': '已经存在相同用户名'},
 //      ]
 //  }
-// 或是 xml
+// 或是 XML
 //  <result code="400" message="error message">
 //      <field name="username">已经存在相同用户名</field>
 //      <field name="username">已经存在相同用户名</field>
