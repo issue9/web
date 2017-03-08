@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package contentype
+package context
 
 import (
 	"bytes"
@@ -14,33 +14,34 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ ContentTyper = &xmlType{}
+var _ Render = XMLRender
+var _ Read = XMLRead
 
-func TestRenderXMLHeader(t *testing.T) {
+func TestXMLRenderHeader(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	renderXMLHeader(w, http.StatusCreated, nil)
+	xmlRenderHeader(w, http.StatusCreated, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("Content-Type"), xmlContentType)
 
-	renderXMLHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
+	xmlRenderHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
-func TestXMLType_Render(t *testing.T) {
+func TestXMLRender(t *testing.T) {
 	a := assert.New(t)
 	buf := new(bytes.Buffer)
-	j := newXML()
-	a.NotNil(j)
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j.Render(w, r, http.StatusCreated, nil, nil)
+	ctx := newDefaultContext(w, r)
+
+	XMLRender(ctx, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 
 	val := &struct {
@@ -51,33 +52,34 @@ func TestXMLType_Render(t *testing.T) {
 	}
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", xmlContentType)
-	j.Render(w, r, http.StatusCreated, val, map[string]string{"h": "h"})
+	ctx = newDefaultContext(w, r)
+	XMLRender(ctx, http.StatusCreated, val, map[string]string{"h": "h"})
 	a.Equal(w.Code, http.StatusCreated, buf.String())
 	a.Equal(w.Body.String(), `<root><name>name</name></root>`)
 	a.Equal(w.Header().Get("h"), "h")
 
 	// 解析xml出错，会返回500错误
 	w = httptest.NewRecorder()
-	j.Render(w, r, http.StatusOK, complex(5, 7), nil)
+	ctx = newDefaultContext(w, r)
+	XMLRender(ctx, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
 }
 
-func TestXMLType_Read(t *testing.T) {
+func TestXMLRead(t *testing.T) {
 	a := assert.New(t)
-	j := newXML()
-	a.NotNil(j)
 
 	// POST 少 Accept, Content-Type
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
+	ctx := newDefaultContext(w, r)
 	val := &struct {
 		XMLName xml.Name `xml:"root"`
 		Key     string   `xml:"key"`
 	}{}
-	ok := j.Read(w, r, val)
+	ok := XMLRead(ctx, val)
 	a.False(ok).
 		Equal(w.Code, http.StatusUnsupportedMediaType).
 		Equal(val.Key, "")
@@ -87,11 +89,12 @@ func TestXMLType_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`<root><key>1</key></root>`))
 	a.NotError(err).NotNil(r)
+	ctx = newDefaultContext(w, r)
 	val = &struct {
 		XMLName xml.Name `xml:"root"`
 		Key     string   `xml:"key"`
 	}{}
-	ok = j.Read(w, r, val)
+	ok = XMLRead(ctx, val)
 	a.True(ok).
 		Equal(w.Code, http.StatusOK).
 		Equal(val.Key, "1")
@@ -101,11 +104,12 @@ func TestXMLType_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":1}`))
 	a.NotError(err).NotNil(r)
+	ctx = newDefaultContext(w, r)
 	val = &struct {
 		XMLName xml.Name `xml:"root"`
 		Key     string   `xml:"key"`
 	}{}
-	ok = j.Read(w, r, val)
+	ok = XMLRead(ctx, val)
 	a.False(ok).
 		Equal(w.Code, http.StatusUnprocessableEntity).
 		Equal(val.Key, "")

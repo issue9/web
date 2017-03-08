@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package contentype
+package context
 
 import (
 	"bytes"
@@ -13,63 +13,66 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ ContentTyper = &jsonType{}
+var _ Render = JSONRender
+var _ Read = JSONRead
 
-func TestRenderJSONHeader(t *testing.T) {
+func TestJSONRenderHeader(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	renderJSONHeader(w, http.StatusCreated, nil)
+	jsonRenderHeader(w, http.StatusCreated, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("Content-Type"), jsonContentType)
 
-	renderJSONHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
+	jsonRenderHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
-func TestJSONType_Render(t *testing.T) {
+func TestJSONRender(t *testing.T) {
 	a := assert.New(t)
-	j := newJSON()
-	a.NotNil(j)
 
-	// 少 accept
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j.Render(w, r, http.StatusCreated, nil, nil)
+	ctx := newDefaultContext(w, r)
+
+	// 少 accept
+	JSONRender(ctx, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", jsonContentType)
-	j.Render(w, r, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
+	ctx = newDefaultContext(w, r)
+	JSONRender(ctx, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), `{"name":"name"}`)
 	a.Equal(w.Header().Get("h"), "h")
 
 	// 解析 json 出错，会返回 500 错误
 	w = httptest.NewRecorder()
-	j.Render(w, r, http.StatusOK, complex(5, 7), nil)
+	ctx = newDefaultContext(w, r)
+	JSONRender(ctx, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
 }
 
-func TestJSONType_Read(t *testing.T) {
+func TestJSONRead(t *testing.T) {
 	a := assert.New(t)
-	j := newJSON()
-	a.NotNil(j)
 
-	// POST 少 Accept, Content-Type
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
+	ctx := newDefaultContext(w, r)
+
+	// POST 少 Accept, Content-Type
 	val := &struct {
 		Key string `json:"key"`
 	}{}
-	ok := j.Read(w, r, val)
+	ok := JSONRead(ctx, val)
 	a.False(ok).
 		Equal(w.Code, http.StatusUnsupportedMediaType).
 		Equal(val.Key, "")
@@ -79,10 +82,11 @@ func TestJSONType_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
+	ctx = newDefaultContext(w, r)
 	val = &struct {
 		Key string `json:"key"`
 	}{}
-	ok = j.Read(w, r, val)
+	ok = JSONRead(ctx, val)
 	a.True(ok).
 		Equal(w.Code, http.StatusOK).
 		Equal(val.Key, "1")
@@ -92,10 +96,11 @@ func TestJSONType_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":1}`))
 	a.NotError(err).NotNil(r)
+	ctx = newDefaultContext(w, r)
 	val = &struct {
 		Key string `json:"key"`
 	}{}
-	ok = j.Read(w, r, val)
+	ok = JSONRead(ctx, val)
 	a.False(ok).
 		Equal(w.Code, 422).
 		Equal(val.Key, "")

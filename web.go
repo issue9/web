@@ -5,20 +5,20 @@
 package web
 
 import (
-	"context"
+	stdCtx "context"
 	"errors"
 	"path/filepath"
 	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/config"
-	"github.com/issue9/web/internal/contentype"
 	"github.com/issue9/web/modules"
 )
 
 // Version 当前框架的版本
-const Version = "0.3.2+20170308"
+const Version = "0.4.3+20170309"
 
 const (
 	configFilename = "web.json" // 配置文件的文件名。
@@ -26,10 +26,12 @@ const (
 )
 
 var (
-	confDir            string                  // 配置文件所在目录
-	defaultConfig      *config.Config          // 当前的配置实例
-	defaultContentType contentype.ContentTyper // 编码解码工具
-	defaultModules     = modules.New()         // 模块管理工具
+	confDir        string          // 配置文件所在目录
+	defaultConfig  *config.Config  // 当前的配置实例
+	defaultModules = modules.New() // 模块管理工具
+
+	defaultRender context.Render
+	defaultRead   context.Read
 )
 
 // Init 初始化框架的基本内容。
@@ -60,8 +62,17 @@ func load() error {
 	}
 
 	// 确定编码
-	defaultContentType, err = contentype.New(defaultConfig.ContentType)
-	return err
+	switch defaultConfig.ContentType {
+	case "json":
+		defaultRender = context.JSONRender
+		defaultRead = context.JSONRead
+	case "xml":
+		defaultRender = context.XMLRender
+		defaultRead = context.XMLRead
+	default:
+		return errors.New("不支持编码")
+	}
+	return nil
 }
 
 // Run 运行路由，执行监听程序。
@@ -105,7 +116,7 @@ func Shutdown(timeout time.Duration) error {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := stdCtx.WithTimeout(stdCtx.Background(), timeout)
 	defer cancel()
 
 	for _, srv := range servers {
