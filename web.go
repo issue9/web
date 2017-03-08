@@ -112,6 +112,7 @@ func Shutdown(timeout time.Duration) error {
 				return err
 			}
 		}
+		clearServers()
 
 		return nil
 	}
@@ -124,6 +125,7 @@ func Shutdown(timeout time.Duration) error {
 			return err
 		}
 	}
+	clearServers()
 
 	return nil
 }

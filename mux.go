@@ -25,6 +25,10 @@ var (
 	servers = make([]*http.Server, 0, 5)
 )
 
+func clearServers() {
+	servers = servers[:0]
+}
+
 // Mux 返回默认的 *mux.ServeMux 实例
 func Mux() *mux.ServeMux {
 	return defaultServeMux
