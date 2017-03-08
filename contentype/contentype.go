@@ -21,14 +21,9 @@ var ErrUnsupported = errors.New("不支持的编码类型")
 type Renderer interface {
 	// Render 用于将 v 转换成相应编码的数据并写入到 w 中。
 	//
-	// code 为服务端返回的代码。
-	//
-	// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串写入 w。为 nil 时，
-	// 不输出任何内容，若需要输出一个空对象，请使用"{}"字符串；
-	//
+	// code 为服务端返回的代码；
+	// v 为需要输出的变量；
 	// headers 用于指定额外的 Header 信息，若传递 nil，则表示没有。
-	// NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
-	// 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
 	Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string)
 }
 

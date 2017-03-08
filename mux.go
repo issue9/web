@@ -42,10 +42,10 @@ func run(conf *config.Config, mux *mux.ServeMux) error {
 	if conf.HTTPS {
 		switch conf.HTTPState {
 		case config.HTTPStateListen:
-			logs.Infof("开始监听%v端口", config.HTTPPort)
+			logs.Infof("开始监听[%v]端口", config.HTTPPort)
 			go getServer(conf, config.HTTPPort, h).ListenAndServe()
 		case config.HTTPStateRedirect:
-			logs.Infof("开始监听%v端口", config.HTTPPort)
+			logs.Infof("开始监听[%v]端口，并跳转至[%v]", config.HTTPPort, config.HTTPSPort)
 			go httpRedirectListenAndServe(conf)
 			// 空值或是 disable 均为默认处理方式，即不作为。
 		}
@@ -77,6 +77,7 @@ func buildStaticModule(conf *config.Config, mux *mux.ServeMux) error {
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func httpRedirectListenAndServe(conf *config.Config) error {
 	srv := getServer(conf, config.HTTPPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 替换原 URL 的端口和 Scheme
 		url := r.URL
 		url.Host = r.Host + conf.Port
 		url.Scheme = "HTTPS"

@@ -49,6 +49,11 @@ func (ctx *Context) Request() *http.Request {
 	return ctx.r
 }
 
+// ContentType 返回 contentype.ContentType 的实例
+func (ctx *Context) ContentType() contentype.ContentTyper {
+	return ctx.ct
+}
+
 // Render 将 v 渲染给客户端
 func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
 	ctx.ct.Render(ctx.w, ctx.r, status, v, headers)

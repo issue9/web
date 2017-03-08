@@ -31,6 +31,12 @@ func New(errlog *log.Logger) *JSON {
 }
 
 // Render 用于将 v 转换成 json 数据并写入到 w 中。
+//
+// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串写入 w。为 nil 时，
+// 不输出任何内容，若需要输出一个空对象，请使用"{}"字符串；
+//
+// NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
+// 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
 func (j *JSON) Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string) {
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, encodingType) < 0 && strings.Index(accept, "*/*") < 0 {

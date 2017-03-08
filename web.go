@@ -18,7 +18,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.2.1+20170307"
+const Version = "0.2.2+20170308"
 
 const (
 	configFilename = "web.json" // 配置文件的文件名。
