@@ -20,8 +20,8 @@ const (
 
 // JSONRender Render 的 JSON 编码实现。
 //
-// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串写入 w。为 nil 时，
-// 不输出任何内容，若需要输出一个空对象，请使用"{}"字符串；
+// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串；为 nil 时，
+// 不输出任何内容；若需要输出一个空对象，请使用"{}"字符串；
 //
 // NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
 // 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。

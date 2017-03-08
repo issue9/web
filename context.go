@@ -107,3 +107,12 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 
 	return id, true
 }
+
+// ResultFields 从报头中获取 X-Result-Fields 的相关内容。
+//
+// allow 表示所有允许出现的字段名称。
+// 当第二个参数返回 true 时，返回的是可获取的字段名列表；
+// 当第二个参数返回 false 时，返回的是不允许获取的字段名。
+func (ctx *Context) ResultFields(allow []string) ([]string, bool) {
+	return request.ResultFields(ctx.Request(), allow)
+}

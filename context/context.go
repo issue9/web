@@ -42,5 +42,6 @@ type Context interface {
 type Render func(ctx Context, code int, v interface{}, headers map[string]string)
 
 // Read 从客户端读取数据的函数声明。
-// 若成功读取，则返回 true，否则返回 false，并向 w 输出相应的状态码和错误信息。
+//
+// 若成功读取，则返回 true，否则返回 false，并向客户端输出相应的状态码和错误信息。
 type Read func(ctx Context, v interface{}) bool

@@ -15,10 +15,11 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/modules"
+	"github.com/issue9/web/result"
 )
 
 // Version 当前框架的版本
-const Version = "0.4.3+20170309"
+const Version = "0.4.5+20170309"
 
 const (
 	configFilename = "web.json" // 配置文件的文件名。
@@ -153,4 +154,24 @@ func NewModule(name string, init modules.Init, deps ...string) {
 	if err != nil {
 		logs.Fatal(err)
 	}
+}
+
+// NewResult 声明一个新的 *result.Result 实例
+func NewResult(code int) *result.Result {
+	return result.New(code)
+}
+
+// NewResultWithDetail 声明一个新的 *result.Result 实例
+func NewResultWithDetail(code int, detail map[string]string) *result.Result {
+	return result.NewWithDetail(code, detail)
+}
+
+// NewMessage 注册一条新的信息
+func NewMessage(code int, message string) error {
+	return result.NewMessage(code, message)
+}
+
+// NewMessages 批量注册信息
+func NewMessages(messages map[int]string) error {
+	return result.NewMessages(messages)
 }
