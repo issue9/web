@@ -17,11 +17,13 @@ import (
 	"github.com/issue9/web/internal/config"
 )
 
-// 路由控制器
-var defaultServeMux = mux.NewServeMux()
+var (
+	// 路由控制器
+	defaultServeMux = mux.NewServeMux()
 
-// 保存所有的 http.Server 方便重启这些服务。
-var servers = make([]*http.Server, 0, 5)
+	// 保存所有的 http.Server 方便重启这些服务。
+	servers = make([]*http.Server, 0, 5)
+)
 
 // Mux 返回默认的 *mux.ServeMux 实例
 func Mux() *mux.ServeMux {
@@ -45,7 +47,7 @@ func run(conf *config.Config, mux *mux.ServeMux) error {
 		case config.HTTPStateRedirect:
 			logs.Infof("开始监听%v端口", config.HTTPPort)
 			go httpRedirectListenAndServe(conf)
-			// 空值或是 disable 均为默认处理方式
+			// 空值或是 disable 均为默认处理方式，即不作为。
 		}
 
 		logs.Infof("开始监听%v端口", conf.Port)

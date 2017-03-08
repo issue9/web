@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/utils"
 	"github.com/issue9/web/contentype"
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/modules"
 )
 
 // Version 当前框架的版本
@@ -28,6 +29,7 @@ var (
 	confDir            string                  // 配置文件所在目录
 	defaultConfig      *config.Config          // 当前的配置实例
 	defaultContentType contentype.ContentTyper // 编码解码工具
+	defaultModules     = modules.New()         // 模块管理工具
 )
 
 // Init 初始化框架的基本内容。
@@ -40,6 +42,11 @@ func Init(configDir string) error {
 	}
 	confDir = configDir
 
+	return load()
+}
+
+// 加载配置，初始化相关的组件。
+func load() error {
 	// 初始化日志系统，第一个初始化，后续内容可能都依赖于此。
 	err := logs.InitFromXMLFile(File(logsFilename))
 	if err != nil {
@@ -57,11 +64,6 @@ func Init(configDir string) error {
 	return err
 }
 
-// File 获取相对于配置目录的文件路径。
-func File(path string) string {
-	return filepath.Join(confDir, path)
-}
-
 // Run 运行路由，执行监听程序。
 func Run() error {
 	if err := defaultModules.Init(); err != nil {
@@ -73,9 +75,14 @@ func Run() error {
 
 // Restart 重启服务。
 //
-// timeout 等待该时间之后重启。
+// timeout 等待该时间之后重启，小于该值，则立即重启。
 func Restart(timeout time.Duration) error {
 	if err := Shutdown(timeout); err != nil {
+		return err
+	}
+
+	// 重新加载配置内容
+	if err := load(); err != nil {
 		return err
 	}
 
@@ -84,6 +91,7 @@ func Restart(timeout time.Duration) error {
 
 // Shutdown 关闭服务。
 //
+// timeout 若超过该时间，服务还未自动停止的，则会强制停止。
 // 若 timeout<=0，则会立即停止服务，相当于 http.Server.Close()；
 // 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务，相当于 http.Server.Shutdown()。
 func Shutdown(timeout time.Duration) error {
@@ -109,8 +117,27 @@ func Shutdown(timeout time.Duration) error {
 	return nil
 }
 
+// File 获取配置目录下的文件。
+func File(path string) string {
+	return filepath.Join(confDir, path)
+}
+
 // IsDebug 是否处于调试状态。
 // 系统通过判断是否指定了 pprof 配置项，来确定当前是否处于调试状态。
 func IsDebug() bool {
 	return len(defaultConfig.Pprof) > 0
+}
+
+// NewModule 注册一个新的模块。
+//
+// name 为模块名称；
+// init 当前模块的初始化函数；
+// deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
+func NewModule(name string, init modules.Init, deps ...string) {
+	err := defaultModules.New(name, init, deps...)
+
+	// 注册模块时出错，直接退出。
+	if err != nil {
+		logs.Fatal(err)
+	}
 }
