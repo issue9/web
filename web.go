@@ -60,7 +60,7 @@ func load() error {
 	}
 
 	// 确定编码
-	defaultContentType, err = contentype.New(defaultConfig.ContentType, logs.ERROR())
+	defaultContentType, err = contentype.New(defaultConfig.ContentType)
 	return err
 }
 

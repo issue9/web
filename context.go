@@ -11,8 +11,7 @@ import (
 	"github.com/issue9/web/request"
 )
 
-// Context 进程的上下文数据。
-// 是对 http.ResopnseWriter 和 http.Request 的简单闭装。
+// Context 是对 http.ResopnseWriter 和 http.Request 的简单闭装。
 //
 //  ctx := web.NewContext(w, r)
 //  id,ok := ctx.ParamID("id", 400001)
@@ -47,11 +46,6 @@ func (ctx *Context) Response() http.ResponseWriter {
 // Request 返回 *http.Request 对象
 func (ctx *Context) Request() *http.Request {
 	return ctx.r
-}
-
-// ContentType 返回 contentype.ContentType 的实例
-func (ctx *Context) ContentType() contentype.ContentTyper {
-	return ctx.ct
 }
 
 // Render 将 v 渲染给客户端
