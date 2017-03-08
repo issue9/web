@@ -4,11 +4,6 @@
 
 package contentype
 
-import (
-	"github.com/issue9/web/contentype/internal/json"
-	"github.com/issue9/web/contentype/internal/xml"
-)
+var _ ContentTyper = &jsonType{}
 
-var _ ContentTyper = json.New(nil)
-
-var _ ContentTyper = xml.New(nil)
+var _ ContentTyper = &xmlType{}

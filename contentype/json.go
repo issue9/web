@@ -2,32 +2,28 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package json 实现了 JSON 版本的 contentype.ContentTyper 接口
-package json
+package contentype
 
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/issue9/logs"
 )
 
 const (
-	contentType  = "application/json;charset=utf-8"
-	encodingType = "application/json"
+	jsonContentType  = "application/json;charset=utf-8"
+	jsonEncodingType = "application/json"
 )
 
-// JSON 是 Encoding 接口的 JSON 操作实现
-type JSON struct {
-	errlog *log.Logger
+// jsonType 是 ContentTyper 接口的 jsonType 操作实现
+type jsonType struct {
 }
 
-// New 声明一个新的 JSON 实例
-func New(errlog *log.Logger) *JSON {
-	return &JSON{
-		errlog: errlog,
-	}
+func newJSON() *jsonType {
+	return &jsonType{}
 }
 
 // Render 用于将 v 转换成 json 数据并写入到 w 中。
@@ -37,16 +33,16 @@ func New(errlog *log.Logger) *JSON {
 //
 // NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
 // 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
-func (j *JSON) Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string) {
+func (j *jsonType) Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string) {
 	accept := r.Header.Get("Accept")
-	if strings.Index(accept, encodingType) < 0 && strings.Index(accept, "*/*") < 0 {
+	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		w.WriteHeader(http.StatusUnsupportedMediaType)
-		j.errlog.Println("Accept 值不正确：", accept)
+		logs.Error("Accept 值不正确：", accept)
 		return
 	}
 
 	if v == nil {
-		renderHeader(w, code, headers)
+		renderJSONHeader(w, code, headers)
 		return
 	}
 
@@ -62,32 +58,32 @@ func (j *JSON) Render(w http.ResponseWriter, r *http.Request, code int, v interf
 	default:
 		if data, err = json.Marshal(val); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			j.errlog.Println(err)
+			logs.Error(err)
 			return
 		}
 	}
 
-	renderHeader(w, code, headers) // NOTE: WriteHeader() 必须在 Write() 之前调用
+	renderJSONHeader(w, code, headers) // NOTE: WriteHeader() 必须在 Write() 之前调用
 
 	// 输出数据
 	if _, err = w.Write(data); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		j.errlog.Println(err)
+		logs.Error(err)
 		return
 	}
 }
 
-// 将 headers 当作一个头信息输出，若未指定Content-Type，
+// 将 headers 当作一个头信息输出，若未指定 Content-Type，
 // 则默认添加 application/json;charset=utf-8 作为其值。
-func renderHeader(w http.ResponseWriter, code int, headers map[string]string) {
+func renderJSONHeader(w http.ResponseWriter, code int, headers map[string]string) {
 	if headers == nil {
-		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Content-Type", jsonContentType)
 		w.WriteHeader(code)
 		return
 	}
 
 	if _, found := headers["Content-Type"]; !found {
-		headers["Content-Type"] = contentType
+		headers["Content-Type"] = jsonContentType
 	}
 
 	for k, v := range headers {
@@ -98,12 +94,12 @@ func renderHeader(w http.ResponseWriter, code int, headers map[string]string) {
 
 // Read 用于将 r 中的 body 当作一个 json 格式的数据读取到 v 中。
 // 返回值指定是否出错。若出错，会在函数体中指定出错信息，并将错误代码写入报头。
-func (j *JSON) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+func (j *jsonType) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	if r.Method != http.MethodGet {
 		ct := r.Header.Get("Content-Type")
-		if strings.Index(ct, encodingType) < 0 && strings.Index(ct, "*/*") < 0 {
+		if strings.Index(ct, jsonEncodingType) < 0 && strings.Index(ct, "*/*") < 0 {
 			w.WriteHeader(http.StatusUnsupportedMediaType)
-			j.errlog.Println("Content-Type 值不正确：", ct)
+			logs.Error("Content-Type 值不正确：", ct)
 			return false
 		}
 	}
@@ -111,14 +107,14 @@ func (j *JSON) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		j.errlog.Println(err)
+		logs.Error(err)
 		return false
 	}
 
 	err = json.Unmarshal(data, v)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		j.errlog.Println(err)
+		logs.Error(err)
 		return false
 	}
 

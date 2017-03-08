@@ -10,11 +10,7 @@ package contentype
 
 import (
 	"errors"
-	"log"
 	"net/http"
-
-	"github.com/issue9/web/contentype/internal/json"
-	"github.com/issue9/web/contentype/internal/xml"
 )
 
 // ErrUnsupported 表示不支持的编码类型
@@ -38,20 +34,22 @@ type Reader interface {
 }
 
 // ContentTyper 表示从客户端读取和输出时的相关编码解码操作。
+//
+// NOTE: ContentTyper 应该是无状态的。
 type ContentTyper interface {
 	Renderer
 	Reader
 }
 
-// New 根据 encoding 类型，返回一个相应的 ContentType 接口实例。
+// New 根据 encoding 类型，返回一个相应的 ContentTyper 接口实例。
 //
 // encoding 编码类型，支持 "json"、"xml" 两种类型，其它类型返回错误信息。
-func New(encoding string, errlog *log.Logger) (ContentTyper, error) {
+func New(encoding string) (ContentTyper, error) {
 	switch encoding {
 	case "json":
-		return json.New(errlog), nil
+		return newJSON(), nil
 	case "xml":
-		return xml.New(errlog), nil
+		return newXML(), nil
 	default:
 		return nil, ErrUnsupported
 	}
