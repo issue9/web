@@ -10,9 +10,6 @@ import (
 	"net/http"
 )
 
-//  错误代码不存在时的提示信息
-const codeNotExists = "该错误代码不存在"
-
 // ErrDuplicateMessageCode 表示消息 ID 有重复
 var ErrDuplicateMessageCode = errors.New("重复的消息 ID")
 
@@ -25,14 +22,14 @@ type message struct {
 }
 
 // 获取指定代码所表示的错误信息
-func getMessage(code int) message {
+func getMessage(code int) (message, error) {
 	msg, found := messages[code]
 	if found {
-		return msg
+		return msg, nil
 	}
 
-	// 找不到消息代码，算服务端错误
-	return message{status: http.StatusInternalServerError, message: codeNotExists}
+	// 不存在相关的错误码
+	return message{status: http.StatusInternalServerError, message: "未知错误"}, fmt.Errorf("错误代码[%v]不存在", code)
 }
 
 func getStatus(code int) int {

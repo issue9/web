@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 	a := assert.New(t)
 
 	r := New(-2) // 不存在的代码
-	a.Equal(r.Message, codeNotExists)
+	a.Equal(r.Code, -1)
 
 	code := http.StatusBadRequest * 1000
 	a.NotError(NewMessage(code, "400"))

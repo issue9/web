@@ -8,6 +8,7 @@ package result
 import (
 	"net/http"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
 )
 
@@ -50,7 +51,16 @@ type detail struct {
 
 // New 声明一个新的 Result 实例
 func New(code int) *Result {
-	msg := getMessage(code)
+	msg, err := getMessage(code)
+	if err != nil {
+		logs.Error(err)
+
+		return &Result{
+			Code:    -1,
+			Message: msg.message,
+			status:  msg.status,
+		}
+	}
 
 	return &Result{
 		Code:    code,
