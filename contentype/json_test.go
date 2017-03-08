@@ -13,6 +13,8 @@ import (
 	"github.com/issue9/assert"
 )
 
+var _ ContentTyper = &jsonType{}
+
 func TestRenderJSONHeader(t *testing.T) {
 	a := assert.New(t)
 

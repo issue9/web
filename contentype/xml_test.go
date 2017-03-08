@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/assert"
 )
 
+var _ ContentTyper = &xmlType{}
+
 func TestRenderXMLHeader(t *testing.T) {
 	a := assert.New(t)
 
