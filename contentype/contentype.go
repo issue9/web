@@ -3,6 +3,9 @@
 // license that can be found in the LICENSE file.
 
 // Package contentype 包含了读取和输出特定格式数据的操作函数。
+//
+// 原则上，所有从客户端读取数据或是向客户端输出数据，都应该是
+// 通过此包的相关功能函数实现的。
 package contentype
 
 import (
