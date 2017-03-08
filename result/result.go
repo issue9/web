@@ -8,7 +8,7 @@ package result
 import (
 	"net/http"
 
-	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/context"
 )
 
 // Result 提供了一套用于描述向客户端反馈错误信息的机制。
@@ -98,6 +98,6 @@ func (rslt *Result) Status() int {
 }
 
 // Render 将当前的实例输出到客户端
-func (rslt *Result) Render(w http.ResponseWriter, r *http.Request, render contentype.Renderer) {
-	render.Render(w, r, rslt.status, rslt, nil)
+func (rslt *Result) Render(ctx context.Context) {
+	ctx.Render(rslt.status, rslt, nil)
 }

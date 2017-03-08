@@ -12,13 +12,13 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/contentype"
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/contentype"
 	"github.com/issue9/web/modules"
 )
 
 // Version 当前框架的版本
-const Version = "0.2.2+20170308"
+const Version = "0.3.2+20170308"
 
 const (
 	configFilename = "web.json" // 配置文件的文件名。

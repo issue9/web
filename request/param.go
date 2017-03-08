@@ -7,9 +7,9 @@ package request
 import (
 	"net/http"
 
-	"github.com/issue9/context"
+	ctx "github.com/issue9/context"
 	"github.com/issue9/logs"
-	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
 )
 
@@ -33,7 +33,7 @@ type Param struct {
 func NewParam(r *http.Request) *Param {
 	var params map[string]string
 
-	m, found := context.Get(r).Get("params")
+	m, found := ctx.Get(r).Get("params")
 	if !found {
 		logs.Errorf("context 中的不存在 params 参数 @ %v", r.URL)
 		return newParam(params)
@@ -169,9 +169,9 @@ func (p *Param) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (p *Param) OK(w http.ResponseWriter, r *http.Request, code int, render contentype.Renderer) bool {
+func (p *Param) OK(ctx context.Context, code int) bool {
 	if len(p.errors) > 0 {
-		p.Result(code).Render(w, r, render)
+		p.Result(code).Render(ctx)
 		return false
 	}
 	return true

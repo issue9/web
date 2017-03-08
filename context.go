@@ -7,7 +7,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/internal/contentype"
 	"github.com/issue9/web/request"
 )
 
@@ -76,13 +76,13 @@ func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 	rslt := p.Result(code)
 
 	if rslt.HasDetail() {
-		rslt.Render(ctx.w, ctx.r, ctx.ct)
+		rslt.Render(ctx)
 		return id, false
 	}
 
 	if id <= 0 {
 		rslt.Add("id", "必须大于零")
-		rslt.Render(ctx.w, ctx.r, ctx.ct)
+		rslt.Render(ctx)
 		return id, false
 	}
 
@@ -94,7 +94,7 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 	p := request.NewParam(ctx.r)
 	id := p.Int64(key)
 
-	if p.OK(ctx.w, ctx.r, code, ctx.ct) {
+	if p.OK(ctx, code) {
 		return id, false
 	}
 

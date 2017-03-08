@@ -7,7 +7,7 @@ package request
 import (
 	"net/http"
 
-	"github.com/issue9/web/contentype"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
 )
 
@@ -147,9 +147,9 @@ func (q *Query) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (q *Query) OK(w http.ResponseWriter, r *http.Request, code int, render contentype.Renderer) bool {
+func (q *Query) OK(ctx context.Context, code int) bool {
 	if len(q.errors) > 0 {
-		q.Result(code).Render(w, r, render)
+		q.Result(code).Render(ctx)
 		return false
 	}
 	return true
