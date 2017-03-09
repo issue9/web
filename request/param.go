@@ -33,13 +33,18 @@ type Param struct {
 //
 // NOTE:当出错时，会返回一个空的 Param 实例，而不是 nil
 func NewParam(r *http.Request) (*Param, error) {
-	m, ok := r.Context().Value(mux.ContextKeyParams).(mux.Params)
+	params := r.Context().Value(mux.ContextKeyParams)
+	if params == nil {
+		return newParam(emptyParams), errors.New("r.Context() 中未包含有关参数的信息")
+	}
+
+	m, ok := params.(mux.Params)
 	if !ok {
-		return newParam(emptyParams), errors.New("从 context 中获取的值无法正确转换到 mux.Params")
+		return newParam(emptyParams), errors.New("从 r.Context() 中获取的值无法正确转换到 mux.Params")
 	}
 
 	if m == nil {
-		return newParam(emptyParams), errors.New("从 context 中获取的值为一个空的 map")
+		return newParam(emptyParams), errors.New("从 r.Context() 中获取的值为一个空的 map")
 	}
 
 	return newParam(m), nil
