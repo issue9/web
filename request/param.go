@@ -8,12 +8,14 @@ import (
 	"errors"
 	"net/http"
 
-	ctx "github.com/issue9/context"
+	"github.com/issue9/mux"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
 )
 
 const paramNotExists = "参数不存在"
+
+var emptyParams = map[string]string{}
 
 // Param 用于处理路径中包含的参数。用法类似于 flag
 //  p := NewParam(false)
@@ -31,21 +33,16 @@ type Param struct {
 //
 // NOTE:当出错时，会返回一个空的 Param 实例，而不是 nil
 func NewParam(r *http.Request) (*Param, error) {
-	var params map[string]string
-
-	m, found := ctx.Get(r).Get("params")
-	if !found {
-		return newParam(params), errors.New("context 中的不存在 params 参数")
-	}
-
-	var ok bool
-	params, ok = m.(map[string]string)
+	m, ok := r.Context().Value(mux.ContextKeyParams).(mux.Params)
 	if !ok {
-
-		return newParam(params), errors.New("无法将 context 中的 params 参数转换成 map[string]string 类型")
+		return newParam(emptyParams), errors.New("从 context 中获取的值无法正确转换到 mux.Params")
 	}
 
-	return newParam(params), nil
+	if m == nil {
+		return newParam(emptyParams), errors.New("从 context 中获取的值为一个空的 map")
+	}
+
+	return newParam(m), nil
 }
 
 func newParam(params map[string]string) *Param {

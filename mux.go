@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/context"
 	"github.com/issue9/handlers"
 	"github.com/issue9/logs"
 	"github.com/issue9/mux"
@@ -95,9 +94,6 @@ func httpRedirectListenAndServe(conf *config.Config) error {
 
 func buildHandler(conf *config.Config, h http.Handler) http.Handler {
 	h = buildHeader(conf, h)
-
-	// 清理 context 的相关内容
-	h = context.FreeHandler(h)
 
 	// 若是调试状态，则向客户端输出详细错误信息
 	if len(conf.Pprof) > 0 {
