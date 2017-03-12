@@ -24,7 +24,6 @@ func TestQuery_Int(t *testing.T) {
 	a.Equal(2, q.Int("str", 2))
 	a.Equal(2, q.Int("not exists", 2))
 	rslt := q.Result(400001)
-	a.Equal(rslt.Code, 400001)
 	a.True(len(rslt.Detail) > 0)
 
 	var i int

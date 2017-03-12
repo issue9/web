@@ -18,7 +18,7 @@ import (
 
 var (
 	// 路由控制器
-	defaultServeMux = mux.NewServeMux()
+	defaultServeMux = mux.NewServeMux(false)
 
 	// 保存所有的 http.Server 方便重启这些服务。
 	servers = make([]*http.Server, 0, 5)
