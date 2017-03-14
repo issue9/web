@@ -25,8 +25,8 @@ const (
 func XMLRender(ctx Context, code int, v interface{}, headers map[string]string) {
 	accept := ctx.Request().Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
-		ctx.Response().WriteHeader(http.StatusUnsupportedMediaType)
 		logs.Error("Accept 值不正确：", accept)
+		ctx.Response().WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
 
