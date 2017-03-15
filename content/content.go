@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/web/config"
 )
 
+// Renderer 包含了向 HTTP 渲染的函数定义。
 type Renderer interface {
 	// Render 向客户端渲染的函数声明。
 	//
@@ -23,6 +24,7 @@ type Renderer interface {
 	Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string)
 }
 
+// Reader 从 HTTP 读取内容的函数定义。
 type Reader interface {
 	// Read 从客户端读取数据的函数声明。
 	//
@@ -33,13 +35,31 @@ type Reader interface {
 	Read(w http.ResponseWriter, r *http.Request, v interface{}) bool
 }
 
+// Content 包含了对 HTTP 内容的读写操作。
 type Content interface {
 	Renderer
 	Reader
 }
 
+// New 声明一个 Content 实例。
+//
+// contenttype 编码类型，目前只支持 json 和 xml 两种类型；
+// conf 对 envelope 功能的配置，若不需要直接直接传递 nil 值。
 func New(contenttype string, conf *config.Envelope) (Content, error) {
-	// TODO 值的正确性检测
+	if conf == nil {
+		conf = &config.Envelope{
+			State: config.EnvelopeStateDisable,
+		}
+	}
+
+	if conf.State != config.EnvelopeStateDisable {
+		switch {
+		case len(conf.Key) == 0:
+			return nil, errors.New("conf.Key 不能为空")
+		case conf.Status < 100 || conf.Status > 999:
+			return nil, errors.New("conf.Status 值无效")
+		}
+	}
 
 	switch contenttype {
 	case "json":
