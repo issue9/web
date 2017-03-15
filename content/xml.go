@@ -19,7 +19,7 @@ const (
 	xmlEncodingType = "application/xml"
 )
 
-// 在将 envelope 解析到 json 出错时的提示。
+// 在将 envelope 解析到 xml 出错时的提示。
 // 理论上不会出现此错误，注意保持与 envelope 的导出格式相兼容。
 var xmlEnvelopeError = []byte(`<xml><status>500</status><response>服务器出错</response></xml>`)
 
@@ -78,7 +78,10 @@ func (x *xml) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, r
 	w.Write(data)
 }
 
-// XMLRender Render 的 XML 编码实现。
+// Render 将 v 转换成 XML 内容，并向客户端输出。
+//
+// 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串；为 nil 时，
+// 不输出任何内容；若需要输出一个空对象，请使用"{}"字符串；
 //
 // NOTE: 会在返回的文件头信息中添加 Content-Type=application/xml;charset=utf-8
 // 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
@@ -127,7 +130,7 @@ func (x *xml) Render(w http.ResponseWriter, r *http.Request, code int, v interfa
 	}
 }
 
-// 将 headers 当作一个头信息输出，若未指定 Content-Type，
+// 设置报头内容。若未指定 Content-Type，
 // 则默认添加 application/xml;charset=utf-8 作为其值。
 func (x *xml) setHeader(w http.ResponseWriter, headers map[string]string) {
 	if headers == nil {
@@ -144,7 +147,7 @@ func (x *xml) setHeader(w http.ResponseWriter, headers map[string]string) {
 	}
 }
 
-// XMLRead Read 的 XML 实现。
+// Read 将 r.Body 转换成 XML 对象，并写入到 v 中。
 func (x *xml) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	if r.Method != http.MethodGet {
 		ct := r.Header.Get("Content-Type")
