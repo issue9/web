@@ -4,7 +4,10 @@
 
 package content
 
-import "net/http"
+import (
+	stdjson "encoding/json"
+	"net/http"
+)
 
 // Envelope 是否启用的状态
 const (
@@ -14,16 +17,25 @@ const (
 )
 
 type envelope struct {
-	XMLName  struct{}          `json:"-" xml:"xml"`
-	Status   int               `json:"status" xml:"status"`
-	Headers  map[string]string `json:"headers,omitempty" xml:"headers"`
-	Response interface{}       `json:"response,omitempty" xml:"response"`
+	XMLName  struct{}    `json:"-" xml:"xml"`
+	Status   int         `json:"status" xml:"status"`
+	Headers  []*header   `json:"headers,omitempty" xml:"headers>header,omitempty"`
+	Response interface{} `json:"response,omitempty" xml:"response,omitempty"`
+}
+
+type header struct {
+	Name  string `xml:"name,attr"`
+	Value string `xml:",chardata"`
+}
+
+func (h *header) MarshalJSON() ([]byte, error) {
+	return stdjson.Marshal(map[string]string{h.Name: h.Value})
 }
 
 func newEnvelope(code int, headers http.Header, resp interface{}) *envelope {
-	hs := make(map[string]string, len(headers))
+	hs := make([]*header, 0, len(headers))
 	for key := range headers {
-		hs[key] = headers.Get(key)
+		hs = append(hs, &header{Name: key, Value: headers.Get(key)})
 	}
 
 	return &envelope{

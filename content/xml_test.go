@@ -16,6 +16,38 @@ import (
 
 var _ Content = &xml{}
 
+func TestXML_renderEnvelope(t *testing.T) {
+	a := assert.New(t)
+
+	w := httptest.NewRecorder()
+	a.NotNil(w)
+	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
+	a.NotError(err).NotNil(r)
+	j := newXML(defaultEnvelopeConf)
+	a.NotNil(j)
+
+	// 少 Accept
+	j.renderEnvelope(w, r, http.StatusOK, nil)
+	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+
+	// 错误的
+	r.Header.Set("Accept", "test")
+	w = httptest.NewRecorder()
+	j.renderEnvelope(w, r, http.StatusOK, nil)
+	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+
+	// 正常
+	r.Header.Set("Accept", xmlContentType)
+	w = httptest.NewRecorder()
+	w.Header().Set("ContentType", xmlContentType)
+	w.Header().Set("Test", "Test")
+	j.renderEnvelope(w, r, http.StatusCreated, nil)
+	a.Equal(`<xml><status>201</status><headers><header name="Contenttype">application/xml;charset=utf-8</header><header name="Test">Test</header></headers></xml>`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+}
+
 func TestXML_setHeader(t *testing.T) {
 	a := assert.New(t)
 

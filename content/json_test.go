@@ -15,6 +15,49 @@ import (
 
 var _ Content = &json{}
 
+func TestJSON_renderEnvelope(t *testing.T) {
+	a := assert.New(t)
+
+	w := httptest.NewRecorder()
+	a.NotNil(w)
+	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
+	a.NotError(err).NotNil(r)
+	j := newJSON(defaultEnvelopeConf)
+	a.NotNil(j)
+
+	// 少 Accept
+	j.renderEnvelope(w, r, http.StatusOK, nil)
+	a.Equal(`{"status":415}`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+
+	// 错误的
+	r.Header.Set("Accept", "test")
+	w = httptest.NewRecorder()
+	j.renderEnvelope(w, r, http.StatusOK, nil)
+	a.Equal(`{"status":415}`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+
+	// 正常
+	r.Header.Set("Accept", jsonContentType)
+	w = httptest.NewRecorder()
+	w.Header().Set("ContentType", jsonContentType)
+	j.renderEnvelope(w, r, http.StatusCreated, nil)
+	a.Equal(`{"status":201,"headers":[{"Contenttype":"application/json;charset=utf-8"}]}`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+
+	// 正常，带 respone
+	r.Header.Set("Accept", jsonContentType)
+	w = httptest.NewRecorder()
+	w.Header().Set("ContentType", jsonContentType)
+	j.renderEnvelope(w, r, http.StatusCreated, &struct {
+		Field int `json:"field"`
+	}{
+		Field: 5,
+	})
+	a.Equal(`{"status":201,"headers":[{"Contenttype":"application/json;charset=utf-8"}],"response":{"field":5}}`, w.Body.String())
+	a.Equal(w.Code, defaultEnvelopeConf.Status)
+}
+
 func TestJSON_setHeader(t *testing.T) {
 	a := assert.New(t)
 

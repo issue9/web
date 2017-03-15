@@ -65,6 +65,7 @@ func (j *json) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, 
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
 		code = http.StatusUnsupportedMediaType
+		resp = nil // 已经出错了，则不输出内容
 	}
 
 	e := newEnvelope(code, w.Header(), resp)
@@ -78,7 +79,7 @@ func (j *json) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, 
 	w.Write(data)
 }
 
-// JSONRender Render 的 JSON 编码实现。
+// Render 将 v 转换成 JSON 内容，并向客户端输出。
 //
 // 若 v 的值是 string,[]byte，[]rune 则直接转换成字符串；为 nil 时，
 // 不输出任何内容；若需要输出一个空对象，请使用"{}"字符串；
@@ -130,7 +131,8 @@ func (j *json) Render(w http.ResponseWriter, r *http.Request, code int, v interf
 	}
 }
 
-// 设置报头
+// 设置报头内容。若未指定 Content-Type，
+// 则默认添加 application/json;charset=utf-8 作为其值。
 func (j *json) setHeader(w http.ResponseWriter, headers map[string]string) {
 	if headers == nil {
 		w.Header().Set("Content-Type", jsonContentType)
@@ -146,7 +148,7 @@ func (j *json) setHeader(w http.ResponseWriter, headers map[string]string) {
 	}
 }
 
-// Read
+// Read 将 r.Body 转换成 JSON 对象，并写入到 v 中。
 func (j *json) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	if r.Method != http.MethodGet {
 		ct := r.Header.Get("Content-Type")
