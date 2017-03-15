@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/handlers"
 	"github.com/issue9/logs"
 	"github.com/issue9/mux"
-	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/config"
 )
 
 var (

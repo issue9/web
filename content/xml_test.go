@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package context
+package content
 
 import (
 	"bytes"
-	"encoding/xml"
+	stdxml "encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,66 +14,65 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ Render = XMLRender
-var _ Read = XMLRead
+var _ Content = &xml{}
 
-func TestXMLSetHeader(t *testing.T) {
+func TestXML_setHeader(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
+	x := newXML(defaultEnvelopeConf)
+	a.NotNil(x)
 
-	xmlSetHeader(w, nil)
+	x.setHeader(w, nil)
 	a.Equal(w.Header().Get("Content-Type"), xmlContentType)
 
-	xmlSetHeader(w, map[string]string{"Content-Type": "123"})
+	x.setHeader(w, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
-func TestXMLRender(t *testing.T) {
+func TestXML_Render(t *testing.T) {
 	a := assert.New(t)
 	buf := new(bytes.Buffer)
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	ctx := newDefaultContext(w, r)
+	x := newXML(defaultEnvelopeConf)
+	a.NotNil(x)
 
 	// 缺少 Accept
-	XMLRender(ctx, http.StatusCreated, nil, nil)
+	x.Render(w, r, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 
 	// 错误的 accept
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", "test")
 	a.NotError(err).NotNil(r)
-	ctx = newDefaultContext(w, r)
-	XMLRender(ctx, http.StatusCreated, nil, nil)
+	x.Render(w, r, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 
 	val := &struct {
-		XMLName xml.Name `xml:"root"`
-		Name    string   `xml:"name"`
+		XMLName stdxml.Name `xml:"root"`
+		Name    string      `xml:"name"`
 	}{
 		Name: "name",
 	}
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", xmlContentType)
-	ctx = newDefaultContext(w, r)
-	XMLRender(ctx, http.StatusCreated, val, map[string]string{"h": "h"})
+	x.Render(w, r, http.StatusCreated, val, map[string]string{"h": "h"})
 	a.Equal(w.Code, http.StatusCreated, buf.String())
 	a.Equal(w.Body.String(), `<root><name>name</name></root>`)
 	a.Equal(w.Header().Get("h"), "h")
 
 	// 解析xml出错，会返回500错误
 	w = httptest.NewRecorder()
-	ctx = newDefaultContext(w, r)
-	XMLRender(ctx, http.StatusOK, complex(5, 7), nil)
+	x.Render(w, r, http.StatusOK, complex(5, 7), nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
 	a.Equal(w.Body.String(), "")
 }
 
-func TestXMLRead(t *testing.T) {
+func TestXML_Read(t *testing.T) {
 	a := assert.New(t)
 
 	// POST 少 Accept, Content-Type
@@ -81,12 +80,13 @@ func TestXMLRead(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	ctx := newDefaultContext(w, r)
+	x := newXML(defaultEnvelopeConf)
+	a.NotNil(x)
 	val := &struct {
-		XMLName xml.Name `xml:"root"`
-		Key     string   `xml:"key"`
+		XMLName stdxml.Name `xml:"root"`
+		Key     string      `xml:"key"`
 	}{}
-	ok := XMLRead(ctx, val)
+	ok := x.Read(w, r, val)
 	a.False(ok).
 		Equal(w.Code, http.StatusUnsupportedMediaType).
 		Equal(val.Key, "")
@@ -96,12 +96,11 @@ func TestXMLRead(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`<root><key>1</key></root>`))
 	a.NotError(err).NotNil(r)
-	ctx = newDefaultContext(w, r)
 	val = &struct {
-		XMLName xml.Name `xml:"root"`
-		Key     string   `xml:"key"`
+		XMLName stdxml.Name `xml:"root"`
+		Key     string      `xml:"key"`
 	}{}
-	ok = XMLRead(ctx, val)
+	ok = x.Read(w, r, val)
 	a.True(ok).
 		Equal(w.Code, http.StatusOK).
 		Equal(val.Key, "1")
@@ -111,12 +110,11 @@ func TestXMLRead(t *testing.T) {
 	a.NotNil(w)
 	r, err = http.NewRequest("GET", "/index.php?a=b", bytes.NewBufferString(`{"key":1}`))
 	a.NotError(err).NotNil(r)
-	ctx = newDefaultContext(w, r)
 	val = &struct {
-		XMLName xml.Name `xml:"root"`
-		Key     string   `xml:"key"`
+		XMLName stdxml.Name `xml:"root"`
+		Key     string      `xml:"key"`
 	}{}
-	ok = XMLRead(ctx, val)
+	ok = x.Read(w, r, val)
 	a.False(ok).
 		Equal(w.Code, http.StatusUnprocessableEntity).
 		Equal(val.Key, "")

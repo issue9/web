@@ -2,15 +2,16 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package context
+package content
 
 import (
-	"encoding/json"
+	stdjson "encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/web/config"
 )
 
 const (
@@ -22,18 +23,52 @@ const (
 // 理论上不会出现此错误，注意保持与 envelope 的导出格式相兼容。
 var jsonEnvelopeError = []byte(`{"status":500,"response":"服务器错误"}`)
 
-func jsonEnvelopeRender(ctx Context, code int, resp interface{}) {
-	w := ctx.Response()
-	w.WriteHeader(envelopeStatus) // 固定的报头
+type json struct {
+	envelopeState int // 以数值的形式保存状态值，在判断上会比字符串快一些
+	envelopeConf  *config.Envelope
+}
 
-	accept := ctx.Request().Header.Get("Accept")
+func newJSON(conf *config.Envelope) *json {
+	j := &json{
+		envelopeConf: conf,
+	}
+
+	switch conf.State {
+	case config.EnvelopeStateMust:
+		j.envelopeState = envelopeStateMust
+	case config.EnvelopeStateEnable:
+		j.envelopeState = envelopeStateEnable
+	case config.EnvelopeStateDisable:
+		j.envelopeState = envelopeStateDisable
+	}
+
+	return j
+}
+
+func (j *json) envelope(r *http.Request) bool {
+	switch j.envelopeState {
+	case envelopeStateDisable:
+		return false
+	case envelopeStateMust:
+		return true
+	case envelopeStateEnable:
+		return r.FormValue(j.envelopeConf.Key) == "true"
+	default: // 默认为禁止
+		return false
+	}
+}
+
+func (j *json) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, resp interface{}) {
+	w.WriteHeader(j.envelopeConf.Status)
+
+	accept := r.Header.Get("Accept")
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
 		code = http.StatusUnsupportedMediaType
 	}
 
 	e := newEnvelope(code, w.Header(), resp)
-	data, err := json.Marshal(e)
+	data, err := stdjson.Marshal(e)
 	if err != nil {
 		logs.Error(err)
 		w.Write(jsonEnvelopeError)
@@ -50,16 +85,15 @@ func jsonEnvelopeRender(ctx Context, code int, resp interface{}) {
 //
 // NOTE: 会在返回的文件头信息中添加 Content-Type=application/json;charset=utf-8
 // 的信息，若想手动指定该内容，可通过在 headers 中传递同名变量来改变。
-func JSONRender(ctx Context, code int, v interface{}, headers map[string]string) {
-	w := ctx.Response()
-	jsonSetHeader(w, headers)
+func (j *json) Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string) {
+	j.setHeader(w, headers)
 
-	if ctx.Envelope() {
-		jsonEnvelopeRender(ctx, code, v)
+	if j.envelope(r) {
+		j.renderEnvelope(w, r, code, v)
 		return
 	}
 
-	accept := ctx.Request().Header.Get("Accept")
+	accept := r.Header.Get("Accept")
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
 		w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -81,7 +115,7 @@ func JSONRender(ctx Context, code int, v interface{}, headers map[string]string)
 	case []rune:
 		data = []byte(string(val))
 	default:
-		if data, err = json.Marshal(val); err != nil {
+		if data, err = stdjson.Marshal(val); err != nil {
 			logs.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -89,15 +123,15 @@ func JSONRender(ctx Context, code int, v interface{}, headers map[string]string)
 	}
 
 	w.WriteHeader(code) // NOTE: WriteHeader() 必须在 Write() 之前调用
-	if _, err = ctx.Response().Write(data); err != nil {
+	if _, err = w.Write(data); err != nil {
 		logs.Error(err)
-		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
 // 设置报头
-func jsonSetHeader(w http.ResponseWriter, headers map[string]string) {
+func (j *json) setHeader(w http.ResponseWriter, headers map[string]string) {
 	if headers == nil {
 		w.Header().Set("Content-Type", jsonContentType)
 		return
@@ -112,27 +146,27 @@ func jsonSetHeader(w http.ResponseWriter, headers map[string]string) {
 	}
 }
 
-// JSONRead Read 的 JSON 编码实现。
-func JSONRead(ctx Context, v interface{}) bool {
-	if ctx.Request().Method != http.MethodGet {
-		ct := ctx.Request().Header.Get("Content-Type")
+// Read
+func (j *json) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	if r.Method != http.MethodGet {
+		ct := r.Header.Get("Content-Type")
 		if strings.Index(ct, jsonEncodingType) < 0 && strings.Index(ct, "*/*") < 0 {
-			ctx.Response().WriteHeader(http.StatusUnsupportedMediaType)
+			w.WriteHeader(http.StatusUnsupportedMediaType)
 			logs.Error("Content-Type 值不正确：", ct)
 			return false
 		}
 	}
 
-	data, err := ioutil.ReadAll(ctx.Request().Body)
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		logs.Error(err)
 		return false
 	}
 
-	err = json.Unmarshal(data, v)
+	err = stdjson.Unmarshal(data, v)
 	if err != nil {
-		ctx.Response().WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		logs.Error(err)
 		return false
 	}
