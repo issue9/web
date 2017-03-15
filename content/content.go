@@ -11,8 +11,8 @@ import (
 	"github.com/issue9/web/config"
 )
 
-// Renderer 包含了向 HTTP 渲染的函数定义。
-type Renderer interface {
+// Content 包含了对 HTTP 内容的读写操作。
+type Content interface {
 	// Render 向客户端渲染的函数声明。
 	//
 	// code 为服务端返回的代码；
@@ -22,10 +22,7 @@ type Renderer interface {
 	// NOTE: Render 最终会被 Context.Render 引用，
 	// 所以在 Render 的实现者中不能调用 Context.Render 函数
 	Render(w http.ResponseWriter, r *http.Request, code int, v interface{}, headers map[string]string)
-}
 
-// Reader 从 HTTP 读取内容的函数定义。
-type Reader interface {
 	// Read 从客户端读取数据的函数声明。
 	//
 	// 若成功读取，则返回 true，否则返回 false，并向客户端输出相应的状态码和错误信息。
@@ -33,12 +30,6 @@ type Reader interface {
 	// NOTE: Read 最终会被 Context.Read 引用，
 	// 所以在 Read 的实现者中不能调用 Context.Read 函数
 	Read(w http.ResponseWriter, r *http.Request, v interface{}) bool
-}
-
-// Content 包含了对 HTTP 内容的读写操作。
-type Content interface {
-	Renderer
-	Reader
 }
 
 // New 声明一个 Content 实例。
