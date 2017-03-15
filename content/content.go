@@ -7,6 +7,8 @@ package content
 import (
 	"errors"
 	"net/http"
+
+	"github.com/issue9/web/config"
 )
 
 type Renderer interface {
@@ -36,22 +38,14 @@ type Content interface {
 	Reader
 }
 
-func New(contenttype string, envelopeState int, envelopeKey string, envelopeStatus int) (Content, error) {
-	if envelopeState != EnvelopeStateDisable {
-		if len(envelopeKey) == 0 {
-			return nil, errors.New("无效的 envelopeKey 值")
-		}
-
-		if envelopeStatus < 100 || envelopeStatus > 999 {
-			return nil, errors.New("无效的 envelopeStatus 值")
-		}
-	}
+func New(contenttype string, conf *config.Envelope) (Content, error) {
+	// TODO 值的正确性检测
 
 	switch contenttype {
 	case "json":
-		return newJSON(envelopeState, envelopeKey, envelopeStatus), nil
+		return newJSON(conf), nil
 	case "xml":
-		return newXML(envelopeState, envelopeKey, envelopeStatus), nil
+		return newXML(conf), nil
 	default:
 		return nil, errors.New("不支持的 contenttype")
 	}

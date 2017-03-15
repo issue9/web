@@ -21,7 +21,7 @@ func TestXML_setHeader(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
-	x := newXML(EnvelopeStateDisable, "", http.StatusOK)
+	x := newXML(defaultEnvelopeConf)
 	a.NotNil(x)
 
 	x.setHeader(w, nil)
@@ -38,7 +38,7 @@ func TestXML_Render(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	x := newXML(EnvelopeStateDisable, "", http.StatusOK)
+	x := newXML(defaultEnvelopeConf)
 	a.NotNil(x)
 
 	// 缺少 Accept
@@ -80,7 +80,7 @@ func TestXML_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	x := newXML(EnvelopeStateDisable, "", http.StatusOK)
+	x := newXML(defaultEnvelopeConf)
 	a.NotNil(x)
 	val := &struct {
 		XMLName stdxml.Name `xml:"root"`

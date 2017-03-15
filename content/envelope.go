@@ -8,9 +8,9 @@ import "net/http"
 
 // Envelope 是否启用的状态
 const (
-	EnvelopeStateEnable  = iota // 根据客户端决定是否开始
-	EnvelopeStateDisable        // 不能使用 envelope
-	EnvelopeStateMust           // 只能是 envelope
+	envelopeStateEnable  = iota // 根据客户端决定是否开始
+	envelopeStateDisable        // 不能使用 envelope
+	envelopeStateMust           // 只能是 envelope
 )
 
 type envelope struct {

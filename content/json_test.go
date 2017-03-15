@@ -20,7 +20,7 @@ func TestJSON_setHeader(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
-	j := newJSON(EnvelopeStateDisable, "", http.StatusOK)
+	j := newJSON(defaultEnvelopeConf)
 	a.NotNil(j)
 
 	j.setHeader(w, nil)
@@ -36,7 +36,7 @@ func TestJSON_Render(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j := newJSON(EnvelopeStateDisable, "", http.StatusOK)
+	j := newJSON(defaultEnvelopeConf)
 	a.NotNil(j)
 
 	// 少 accept
@@ -71,7 +71,7 @@ func TestJSON_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	j := newJSON(EnvelopeStateDisable, "", http.StatusOK)
+	j := newJSON(defaultEnvelopeConf)
 	a.NotNil(j)
 
 	// POST 少 Accept, Content-Type

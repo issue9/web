@@ -12,14 +12,14 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/modules"
 	"github.com/issue9/web/result"
 )
 
 // Version 当前框架的版本
-const Version = "0.5.0+20170315"
+const Version = "0.6.0+20170315"
 
 const (
 	configFilename = "web.json" // 配置文件的文件名。
@@ -61,17 +61,7 @@ func load() error {
 	}
 
 	// 确定编码
-	e := defaultConfig.Envelope
-	state := content.EnvelopeStateDisable
-	switch e.State {
-	case config.EnvelopeStateDisable:
-		state = content.EnvelopeStateDisable
-	case config.EnvelopeStateEnable:
-		state = content.EnvelopeStateEnable
-	case config.EnvelopeStateMust:
-		state = content.EnvelopeStateMust
-	}
-	defaultContent, err = content.New(defaultConfig.ContentType, state, e.Key, e.Status)
+	defaultContent, err = content.New(defaultConfig.ContentType, defaultConfig.Envelope)
 	if err != nil {
 		return err
 	}

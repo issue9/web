@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/web/config"
 )
 
 const (
@@ -23,34 +24,42 @@ const (
 var xmlEnvelopeError = []byte(`<xml><status>500</status><response>服务器出错</response></xml>`)
 
 type xml struct {
-	envelopeKey    string
-	envelopeState  int
-	envelopeStatus int
+	envelopeState int
+	envelopeConf  *config.Envelope
 }
 
-func newXML(envelopeState int, envelopeKey string, envelopeStatus int) *xml {
-	return &xml{
-		envelopeKey:    envelopeKey,
-		envelopeStatus: envelopeStatus,
-		envelopeState:  envelopeState,
+func newXML(conf *config.Envelope) *xml {
+	x := &xml{
+		envelopeConf: conf,
 	}
+
+	switch conf.State {
+	case config.EnvelopeStateMust:
+		x.envelopeState = envelopeStateMust
+	case config.EnvelopeStateEnable:
+		x.envelopeState = envelopeStateEnable
+	case config.EnvelopeStateDisable:
+		x.envelopeState = envelopeStateDisable
+	}
+
+	return x
 }
 
 func (x *xml) envelope(r *http.Request) bool {
 	switch x.envelopeState {
-	case EnvelopeStateDisable:
+	case envelopeStateDisable:
 		return false
-	case EnvelopeStateMust:
+	case envelopeStateMust:
 		return true
-	case EnvelopeStateEnable:
-		return r.FormValue(x.envelopeKey) == "true"
+	case envelopeStateEnable:
+		return r.FormValue(x.envelopeConf.Key) == "true"
 	default: // 默认为禁止
 		return false
 	}
 }
 
 func (x *xml) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, resp interface{}) {
-	w.WriteHeader(x.envelopeStatus)
+	w.WriteHeader(x.envelopeConf.Status)
 
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {

@@ -3,6 +3,8 @@
 // license that can be found in the LICENSE file.
 
 // Package config 提供了程序对自身的配置文件的操作能力。
+//
+// NOTE: 所有需要写入到配置文件的配置项，都应该在此定义。
 package config
 
 import (
