@@ -2,14 +2,16 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package context
+package content
 
-import (
-	"net/http"
+import "net/http"
+
+// Envelope 是否启用的状态
+const (
+	EnvelopeStateEnable  = iota // 根据客户端决定是否开始
+	EnvelopeStateDisable        // 不能使用 envelope
+	EnvelopeStateMust           // 只能是 envelope
 )
-
-// Envelope 状态下返回的状态值
-const envelopeStatus = http.StatusOK
 
 type envelope struct {
 	XMLName  struct{}          `json:"-" xml:"xml"`

@@ -27,13 +27,6 @@ const (
 	HTTPStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
 )
 
-// Envelope 的状态
-const (
-	EnvelopeStateEnable  = "enable"  // 根据客户端决定是否开始
-	EnvelopeStateDisable = "disable" // 不能使用 envelope
-	EnvelopeStateMust    = "must"    // 只能是 envelope
-)
-
 // Config 系统配置文件。
 type Config struct {
 	// 基本
@@ -46,16 +39,13 @@ type Config struct {
 	Static      map[string]string `json:"static,omitempty"`    // 静态内容，键名为 URL 路径，键值为文件地址
 	ContentType string            `json:"contentType"`         // 默认的编码类型
 
-	// Envelope
-	Envelope *struct {
-		State string `json:"state"`
-		Key   string `json:"key"`
-	} `json:"envelope,omitempty"`
-
 	// 性能
 	ReadTimeout  time.Duration `json:"readTimeout,omitempty"`  // http.Server.ReadTimeout 的值，单位：秒
 	WriteTimeout time.Duration `json:"writeTimeout,omitempty"` // http.Server.WriteTimeout 的值，单位：秒
 	Pprof        string        `json:"pprof,omitempty"`        // 指定 pprof 地址
+
+	// Envelope
+	Envelope *Envelope `json:"envelope,omitempty"`
 }
 
 // Load 加载配置文件
