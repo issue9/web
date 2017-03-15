@@ -34,6 +34,9 @@ type Context interface {
 
 	// 返回 *http.Request 对象
 	Request() *http.Request
+
+	// 当前页面是否启用 Envelope 模式。
+	Envelope() bool
 }
 
 // Render 向客户端渲染的函数声明。

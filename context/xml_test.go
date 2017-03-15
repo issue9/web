@@ -17,18 +17,16 @@ import (
 var _ Render = XMLRender
 var _ Read = XMLRead
 
-func TestXMLRenderHeader(t *testing.T) {
+func TestXMLSetHeader(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	xmlRenderHeader(w, http.StatusCreated, nil)
-	a.Equal(w.Code, http.StatusCreated)
+	xmlSetHeader(w, nil)
 	a.Equal(w.Header().Get("Content-Type"), xmlContentType)
 
-	xmlRenderHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
-	a.Equal(w.Code, http.StatusCreated)
+	xmlSetHeader(w, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
@@ -41,6 +39,15 @@ func TestXMLRender(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	ctx := newDefaultContext(w, r)
 
+	// 缺少 Accept
+	XMLRender(ctx, http.StatusCreated, nil, nil)
+	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
+
+	// 错误的 accept
+	w = httptest.NewRecorder()
+	r.Header.Set("Accept", "test")
+	a.NotError(err).NotNil(r)
+	ctx = newDefaultContext(w, r)
 	XMLRender(ctx, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
 

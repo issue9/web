@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/request"
 )
 
@@ -48,6 +49,19 @@ func (ctx *Context) Response() http.ResponseWriter {
 // Request 返回 *http.Request 对象
 func (ctx *Context) Request() *http.Request {
 	return ctx.r
+}
+
+// Envelope 是否将状态码和报头都输出到响应内容中。
+func (ctx *Context) Envelope() bool {
+	switch defaultConfig.Envelope.State {
+	case config.EnvelopeStateMust:
+		return true
+	case config.EnvelopeStateDisable:
+		return false
+	default:
+		return ctx.Request().FormValue(defaultConfig.Envelope.Key) == "true"
+	}
+
 }
 
 // Render 将 v 渲染给客户端

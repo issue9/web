@@ -14,26 +14,43 @@ import (
 )
 
 var _ Render = JSONRender
+
 var _ Read = JSONRead
 
-func TestJSONRenderHeader(t *testing.T) {
+func TestJSONEnvelopeRender(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
+	a.NotError(err).NotNil(r)
+	ctx := newDefaultContext(w, r)
+
+	// 缺少 Accept
+	jsonEnvelopeRender(ctx, http.StatusOK, nil)
+	a.Equal(w.Body.String(), `{"status":415}`)
+
+	// 错误的 Accept
+	w = httptest.NewRecorder()
+	r.Header.Set("Accept", "test")
+	ctx = newDefaultContext(w, r)
+	jsonEnvelopeRender(ctx, http.StatusOK, nil)
+	a.Equal(w.Body.String(), `{"status":415}`)
+}
+
+func TestJSONSetHeader(t *testing.T) {
 	a := assert.New(t)
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
 
-	jsonRenderHeader(w, http.StatusCreated, nil)
-	a.Equal(w.Code, http.StatusCreated)
+	jsonSetHeader(w, nil)
 	a.Equal(w.Header().Get("Content-Type"), jsonContentType)
 
-	jsonRenderHeader(w, http.StatusCreated, map[string]string{"Content-Type": "123"})
-	a.Equal(w.Code, http.StatusCreated)
+	jsonSetHeader(w, map[string]string{"Content-Type": "123"})
 	a.Equal(w.Header().Get("Content-Type"), "123")
 }
 
 func TestJSONRender(t *testing.T) {
 	a := assert.New(t)
-
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
@@ -42,6 +59,14 @@ func TestJSONRender(t *testing.T) {
 	// 少 accept
 	JSONRender(ctx, http.StatusCreated, nil, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
+
+	// 错误的 accept
+	w = httptest.NewRecorder()
+	r.Header.Set("Accept", "test")
+	ctx = newDefaultContext(w, r)
+	JSONRender(ctx, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
+	a.Equal(w.Code, http.StatusUnsupportedMediaType)
+	a.Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", jsonContentType)

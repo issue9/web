@@ -12,9 +12,10 @@ import (
 const envelopeStatus = http.StatusOK
 
 type envelope struct {
-	Status   int               `json:"status"`
-	Headers  map[string]string `json:"headers"`
-	Response interface{}       `json:"response"`
+	XMLName  struct{}          `json:"-" xml:"xml"`
+	Status   int               `json:"status" xml:"status"`
+	Headers  map[string]string `json:"headers,omitempty" xml:"headers"`
+	Response interface{}       `json:"response,omitempty" xml:"response"`
 }
 
 func newEnvelope(code int, headers http.Header, resp interface{}) *envelope {
