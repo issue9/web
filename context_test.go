@@ -4,6 +4,6 @@
 
 package web
 
-import "github.com/issue9/web/context"
+import "github.com/issue9/web/types"
 
-var _ context.Context = &Context{}
+var _ types.Context = &Context{}

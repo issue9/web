@@ -9,8 +9,8 @@ import (
 	"net/http"
 
 	"github.com/issue9/mux"
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/types"
 )
 
 const paramNotExists = "参数不存在"
@@ -171,7 +171,7 @@ func (p *Param) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (p *Param) OK(ctx context.Context, code int) bool {
+func (p *Param) OK(ctx types.Context, code int) bool {
 	if len(p.errors) > 0 {
 		p.Result(code).Render(ctx)
 		return false
