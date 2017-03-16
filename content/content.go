@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package content 包含了对 HTTP 内容各种编码下的读写操作。
+// Package content 包含了对 HTTP 内容在各种编码下的读写操作。
 package content
 
 import (

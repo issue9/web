@@ -16,6 +16,7 @@ const (
 	envelopeStateMust           // 只能是 envelope
 )
 
+// 输出 envelope 的模型。
 type envelope struct {
 	XMLName  struct{}    `json:"-" xml:"xml"`
 	Status   int         `json:"status" xml:"status"`
@@ -23,6 +24,7 @@ type envelope struct {
 	Response interface{} `json:"response,omitempty" xml:"response,omitempty"`
 }
 
+// 报头，之后以不直接用 map，是因为 map 无法直接转换成 xml。
 type header struct {
 	Name  string `xml:"name,attr"`
 	Value string `xml:",chardata"`
