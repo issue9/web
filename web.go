@@ -5,7 +5,6 @@
 package web
 
 import (
-	stdCtx "context"
 	"errors"
 	"path/filepath"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/modules"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/server"
 )
 
 // Version 当前框架的版本
@@ -29,6 +29,7 @@ const (
 var (
 	confDir        string         // 配置文件所在目录
 	defaultConfig  *config.Config // 当前的配置实例
+	defaultServer  *server.Server
 	defaultContent content.Content
 	defaultModules = modules.New() // 模块管理工具
 )
@@ -60,6 +61,9 @@ func load() error {
 		return err
 	}
 
+	// Server
+	defaultServer = server.New(defaultConfig.Server)
+
 	// 确定编码
 	defaultContent, err = content.New(defaultConfig.Content)
 	if err != nil {
@@ -75,14 +79,14 @@ func Run() error {
 		return err
 	}
 
-	return run(defaultConfig, defaultServeMux)
+	return defaultServer.Run()
 }
 
 // Restart 重启服务。
 //
 // timeout 等待该时间之后重启，小于该值，则立即重启。
 func Restart(timeout time.Duration) error {
-	if err := Shutdown(timeout); err != nil {
+	if err := defaultServer.Shutdown(timeout); err != nil {
 		return err
 	}
 
@@ -91,7 +95,7 @@ func Restart(timeout time.Duration) error {
 		return err
 	}
 
-	return Run()
+	return defaultServer.Run()
 }
 
 // Shutdown 关闭服务。
@@ -100,39 +104,12 @@ func Restart(timeout time.Duration) error {
 // 若 timeout<=0，则会立即停止服务，相当于 http.Server.Close()；
 // 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务，相当于 http.Server.Shutdown()。
 func Shutdown(timeout time.Duration) error {
-	if timeout <= 0 {
-		for _, srv := range servers {
-			if err := srv.Close(); err != nil {
-				return err
-			}
-		}
-		clearServers()
-
-		return nil
-	}
-
-	ctx, cancel := stdCtx.WithTimeout(stdCtx.Background(), timeout)
-	defer cancel()
-
-	for _, srv := range servers {
-		if err := srv.Shutdown(ctx); err != nil {
-			return err
-		}
-	}
-	clearServers()
-
-	return nil
+	return defaultServer.Shutdown(timeout)
 }
 
 // File 获取配置目录下的文件。
 func File(path string) string {
 	return filepath.Join(confDir, path)
-}
-
-// IsDebug 是否处于调试状态。
-// 系统通过判断是否指定了 pprof 配置项，来确定当前是否处于调试状态。
-func IsDebug() bool {
-	return len(defaultConfig.Pprof) > 0
 }
 
 // NewModule 注册一个新的模块。

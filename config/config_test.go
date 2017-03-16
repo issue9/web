@@ -13,9 +13,6 @@ import (
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := Load("./testdata/falid.json")
-	a.Error(err).Nil(conf)
-
-	conf, err = Load("./testdata/web.json")
+	conf, err := Load("./testdata/web.json")
 	a.NotError(err).NotNil(conf)
 }
