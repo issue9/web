@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/config"
 )
 
 const (
@@ -25,20 +24,20 @@ var jsonEnvelopeError = []byte(`{"status":500,"response":"服务器错误"}`)
 
 type json struct {
 	envelopeState int // 以数值的形式保存状态值，在判断上会比字符串快一些
-	envelopeConf  *config.Envelope
+	conf          *Config
 }
 
-func newJSON(conf *config.Envelope) *json {
+func newJSON(conf *Config) *json {
 	j := &json{
-		envelopeConf: conf,
+		conf: conf,
 	}
 
-	switch conf.State {
-	case config.EnvelopeStateMust:
+	switch conf.EnvelopeState {
+	case EnvelopeStateMust:
 		j.envelopeState = envelopeStateMust
-	case config.EnvelopeStateEnable:
+	case EnvelopeStateEnable:
 		j.envelopeState = envelopeStateEnable
-	case config.EnvelopeStateDisable:
+	case EnvelopeStateDisable:
 		j.envelopeState = envelopeStateDisable
 	}
 
@@ -52,14 +51,14 @@ func (j *json) envelope(r *http.Request) bool {
 	case envelopeStateMust:
 		return true
 	case envelopeStateEnable:
-		return r.FormValue(j.envelopeConf.Key) == "true"
+		return r.FormValue(j.conf.EnvelopeKey) == "true"
 	default: // 默认为禁止
 		return false
 	}
 }
 
 func (j *json) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, resp interface{}) {
-	w.WriteHeader(j.envelopeConf.Status)
+	w.WriteHeader(j.conf.EnvelopeStatus)
 
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {

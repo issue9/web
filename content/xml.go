@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/config"
 )
 
 const (
@@ -25,20 +24,20 @@ var xmlEnvelopeError = []byte(`<xml><status>500</status><response>服务器出�
 
 type xml struct {
 	envelopeState int
-	envelopeConf  *config.Envelope
+	conf          *Config
 }
 
-func newXML(conf *config.Envelope) *xml {
+func newXML(conf *Config) *xml {
 	x := &xml{
-		envelopeConf: conf,
+		conf: conf,
 	}
 
-	switch conf.State {
-	case config.EnvelopeStateMust:
+	switch conf.EnvelopeState {
+	case EnvelopeStateMust:
 		x.envelopeState = envelopeStateMust
-	case config.EnvelopeStateEnable:
+	case EnvelopeStateEnable:
 		x.envelopeState = envelopeStateEnable
-	case config.EnvelopeStateDisable:
+	case EnvelopeStateDisable:
 		x.envelopeState = envelopeStateDisable
 	}
 
@@ -52,14 +51,14 @@ func (x *xml) envelope(r *http.Request) bool {
 	case envelopeStateMust:
 		return true
 	case envelopeStateEnable:
-		return r.FormValue(x.envelopeConf.Key) == "true"
+		return r.FormValue(x.conf.EnvelopeKey) == "true"
 	default: // 默认为禁止
 		return false
 	}
 }
 
 func (x *xml) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, resp interface{}) {
-	w.WriteHeader(x.envelopeConf.Status)
+	w.WriteHeader(x.conf.EnvelopeStatus)
 
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {

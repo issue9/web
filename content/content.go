@@ -8,8 +8,6 @@ package content
 import (
 	"errors"
 	"net/http"
-
-	"github.com/issue9/web/config"
 )
 
 // Content 包含了对 HTTP 内容的读写操作。
@@ -35,25 +33,25 @@ type Content interface {
 
 // New 声明一个 Content 实例。
 //
-// contenttype 编码类型，目前只支持 json 和 xml 两种类型；
 // conf 对 envelope 功能的配置，若不需要直接直接传递 nil 值。
-func New(contenttype string, conf *config.Envelope) (Content, error) {
+func New(conf *Config) (Content, error) {
 	if conf == nil {
-		conf = &config.Envelope{
-			State: config.EnvelopeStateDisable,
+		conf = &Config{
+			ContentType:   "json",
+			EnvelopeState: EnvelopeStateDisable,
 		}
 	}
 
-	if conf.State != config.EnvelopeStateDisable {
+	if conf.EnvelopeState != EnvelopeStateDisable {
 		switch {
-		case len(conf.Key) == 0:
+		case len(conf.EnvelopeKey) == 0:
 			return nil, errors.New("conf.Key 不能为空")
-		case conf.Status < 100 || conf.Status > 999:
+		case conf.EnvelopeStatus < 100 || conf.EnvelopeStatus > 999:
 			return nil, errors.New("conf.Status 值无效")
 		}
 	}
 
-	switch contenttype {
+	switch conf.ContentType {
 	case "json":
 		return newJSON(conf), nil
 	case "xml":

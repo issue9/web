@@ -22,20 +22,20 @@ func TestJSON_renderEnvelope(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j := newJSON(defaultEnvelopeConf)
+	j := newJSON(defaultConf)
 	a.NotNil(j)
 
 	// 少 Accept
 	j.renderEnvelope(w, r, http.StatusOK, nil)
 	a.Equal(`{"status":415}`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 错误的
 	r.Header.Set("Accept", "test")
 	w = httptest.NewRecorder()
 	j.renderEnvelope(w, r, http.StatusOK, nil)
 	a.Equal(`{"status":415}`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 正常
 	r.Header.Set("Accept", jsonContentType)
@@ -43,7 +43,7 @@ func TestJSON_renderEnvelope(t *testing.T) {
 	w.Header().Set("ContentType", jsonContentType)
 	j.renderEnvelope(w, r, http.StatusCreated, nil)
 	a.Equal(`{"status":201,"headers":[{"Contenttype":"application/json;charset=utf-8"}]}`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 正常，带 respone
 	r.Header.Set("Accept", jsonContentType)
@@ -55,7 +55,7 @@ func TestJSON_renderEnvelope(t *testing.T) {
 		Field: 5,
 	})
 	a.Equal(`{"status":201,"headers":[{"Contenttype":"application/json;charset=utf-8"}],"response":{"field":5}}`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 }
 
 func TestJSON_setHeader(t *testing.T) {
@@ -63,7 +63,7 @@ func TestJSON_setHeader(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
-	j := newJSON(defaultEnvelopeConf)
+	j := newJSON(defaultConf)
 	a.NotNil(j)
 
 	j.setHeader(w, nil)
@@ -79,7 +79,7 @@ func TestJSON_Render(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j := newJSON(defaultEnvelopeConf)
+	j := newJSON(defaultConf)
 	a.NotNil(j)
 
 	// 少 accept
@@ -114,7 +114,7 @@ func TestJSON_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	j := newJSON(defaultEnvelopeConf)
+	j := newJSON(defaultConf)
 	a.NotNil(j)
 
 	// POST 少 Accept, Content-Type

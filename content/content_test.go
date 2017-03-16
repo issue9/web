@@ -10,25 +10,26 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/config"
 )
 
-var defaultEnvelopeConf = &config.Envelope{
-	State:  config.EnvelopeStateDisable,
-	Key:    "",
-	Status: http.StatusOK,
+var defaultConf = &Config{
+	ContentType:    "json",
+	EnvelopeState:  EnvelopeStateDisable,
+	EnvelopeKey:    "",
+	EnvelopeStatus: http.StatusOK,
 }
 
-var envelopeEnableConf = &config.Envelope{
-	State:  config.EnvelopeStateEnable,
-	Key:    "envelope",
-	Status: http.StatusOK,
+var envelopeEnableConf = &Config{
+	ContentType:    "json",
+	EnvelopeState:  EnvelopeStateEnable,
+	EnvelopeKey:    "envelope",
+	EnvelopeStatus: http.StatusOK,
 }
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	c, err := New("json", envelopeEnableConf)
+	c, err := New(envelopeEnableConf)
 	a.NotError(err).NotNil(c)
 	w := httptest.NewRecorder()
 	a.NotNil(w)
