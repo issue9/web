@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/utils"
+	"github.com/issue9/web/content"
 )
 
 // 端口的定义
@@ -46,8 +47,8 @@ type Config struct {
 	WriteTimeout time.Duration `json:"writeTimeout,omitempty"` // http.Server.WriteTimeout 的值，单位：秒
 	Pprof        string        `json:"pprof,omitempty"`        // 指定 pprof 地址
 
-	// Envelope
-	Envelope *Envelope `json:"envelope,omitempty"`
+	// Content
+	Content *content.Config `json:"content,omitempty"`
 }
 
 // Load 加载配置文件

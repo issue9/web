@@ -61,7 +61,7 @@ func load() error {
 	}
 
 	// 确定编码
-	defaultContent, err = content.New(defaultConfig.ContentType, defaultConfig.Envelope)
+	defaultContent, err = content.New(defaultConfig.Content)
 	if err != nil {
 		return err
 	}

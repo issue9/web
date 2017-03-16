@@ -23,20 +23,20 @@ func TestXML_renderEnvelope(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	j := newXML(defaultEnvelopeConf)
+	j := newXML(defaultConf)
 	a.NotNil(j)
 
 	// 少 Accept
 	j.renderEnvelope(w, r, http.StatusOK, nil)
 	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 错误的
 	r.Header.Set("Accept", "test")
 	w = httptest.NewRecorder()
 	j.renderEnvelope(w, r, http.StatusOK, nil)
 	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 正常
 	r.Header.Set("Accept", xmlContentType)
@@ -45,7 +45,7 @@ func TestXML_renderEnvelope(t *testing.T) {
 	w.Header().Set("Test", "Test")
 	j.renderEnvelope(w, r, http.StatusCreated, nil)
 	a.Equal(`<xml><status>201</status><headers><header name="Contenttype">application/xml;charset=utf-8</header><header name="Test">Test</header></headers></xml>`, w.Body.String())
-	a.Equal(w.Code, defaultEnvelopeConf.Status)
+	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 }
 
 func TestXML_setHeader(t *testing.T) {
@@ -53,7 +53,7 @@ func TestXML_setHeader(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	a.NotNil(w)
-	x := newXML(defaultEnvelopeConf)
+	x := newXML(defaultConf)
 	a.NotNil(x)
 
 	x.setHeader(w, nil)
@@ -70,7 +70,7 @@ func TestXML_Render(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/index.php?a=b", nil)
 	a.NotError(err).NotNil(r)
-	x := newXML(defaultEnvelopeConf)
+	x := newXML(defaultConf)
 	a.NotNil(x)
 
 	// 缺少 Accept
@@ -112,7 +112,7 @@ func TestXML_Read(t *testing.T) {
 	a.NotNil(w)
 	r, err := http.NewRequest("POST", "/index.php?a=b", bytes.NewBufferString(`{"key":"1"}`))
 	a.NotError(err).NotNil(r)
-	x := newXML(defaultEnvelopeConf)
+	x := newXML(defaultConf)
 	a.NotNil(x)
 	val := &struct {
 		XMLName stdxml.Name `xml:"root"`
