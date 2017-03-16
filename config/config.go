@@ -10,32 +10,54 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/server"
 )
 
+const filename = "web.json" // 配置文件的文件名。
+
 // Config 系统配置文件。
 type Config struct {
+	confDir string // 配置文件所在的目录
+
+	// Server
 	Server *server.Config `json:"server"`
 
 	// Content
 	Content *content.Config `json:"content,omitempty"`
 }
 
+// New 声明一个 *Config 实例
+func New(confDir string) (*Config, error) {
+	conf := &Config{
+		confDir: confDir,
+	}
+
+	if err := conf.load(); err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
 // Load 加载配置文件
 //
 // path 用于指定配置文件的位置；
-func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+func (conf *Config) load() error {
+	data, err := ioutil.ReadFile(conf.File(filename))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	conf := &Config{}
 	if err = json.Unmarshal(data, conf); err != nil {
-		return nil, err
+		return err
 	}
 
-	return conf, nil
+	return nil
+}
+
+// File 获取配置目录下的文件。
+func (conf *Config) File(path string) string {
+	return filepath.Join(conf.confDir, path)
 }

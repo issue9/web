@@ -10,9 +10,10 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestLoad(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := Load("./testdata/web.json")
+	conf, err := New("./testdata")
 	a.NotError(err).NotNil(conf)
+	a.Equal(conf.Server.KeyFile, "keyFile")
 }
