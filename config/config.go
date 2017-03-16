@@ -14,25 +14,27 @@ import (
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/server"
+	"github.com/issue9/web/types"
 )
 
 const filename = "web.json" // 配置文件的文件名。
 
-// Config 系统配置文件。
+// Config 默认的配置文件。
 type Config struct {
-	confDir string // 配置文件所在的目录
+	// 配置文件所在的目录
+	dir string
 
 	// Server
 	Server *server.Config `json:"server"`
 
 	// Content
-	Content *content.Config `json:"content,omitempty"`
+	Content *content.Config `json:"content"`
 }
 
-// New 声明一个 *Config 实例
+// New 声明一个 *Config 实例，从 confDir/web.json 中获取。
 func New(confDir string) (*Config, error) {
 	conf := &Config{
-		confDir: confDir,
+		dir: confDir,
 	}
 
 	if err := conf.load(); err != nil {
@@ -54,10 +56,40 @@ func (conf *Config) load() error {
 		return err
 	}
 
+	if conf.Server == nil {
+		conf.Server = &server.Config{}
+	}
+	if err = initItem(conf.Server); err != nil {
+		return err
+	}
+
+	if conf.Content == nil {
+		conf.Content = &content.Config{}
+	}
+	if err = initItem(conf.Content); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func initItem(conf types.Config) error {
+	if err := conf.Init(); err != nil {
+		return err
+	}
+
+	return conf.Check()
 }
 
 // File 获取配置目录下的文件。
 func (conf *Config) File(path string) string {
-	return filepath.Join(conf.confDir, path)
+	return filepath.Join(conf.dir, path)
+}
+
+// DefaultConfig 输出默认配置内容。
+func DefaultConfig() *Config {
+	return &Config{
+		Server:  server.DefaultConfig(),
+		Content: content.DefaultConfig(),
+	}
 }

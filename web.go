@@ -18,11 +18,9 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.6.0+20170315"
+const Version = "0.7.0+20170317"
 
-const (
-	logsFilename = "logs.xml" // 日志配置文件的文件名。
-)
+const logsFilename = "logs.xml" // 日志配置文件的文件名。
 
 var (
 	defaultConfig  *config.Config // 当前的配置实例
