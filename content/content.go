@@ -36,19 +36,11 @@ type Content interface {
 // conf 对 envelope 功能的配置，若不需要直接直接传递 nil 值。
 func New(conf *Config) (Content, error) {
 	if conf == nil {
-		conf = &Config{
-			ContentType:   "json",
-			EnvelopeState: EnvelopeStateDisable,
-		}
+		return nil, errors.New("参数 conf 不能为空")
 	}
 
-	if conf.EnvelopeState != EnvelopeStateDisable {
-		switch {
-		case len(conf.EnvelopeKey) == 0:
-			return nil, errors.New("conf.Key 不能为空")
-		case conf.EnvelopeStatus < 100 || conf.EnvelopeStatus > 999:
-			return nil, errors.New("conf.Status 值无效")
-		}
+	if err := conf.Check(); err != nil {
+		return nil, err
 	}
 
 	switch conf.ContentType {

@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// Envelope 是否启用的状态
+// Envelope 是否启用的状态，与 config.go 中的三个变量相对应。
 const (
 	envelopeStateEnable  = iota // 根据客户端决定是否开始
 	envelopeStateDisable        // 不能使用 envelope

@@ -9,91 +9,87 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
-	"time"
+	"path/filepath"
 
-	"github.com/issue9/utils"
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/types"
 )
 
-// 端口的定义
-const (
-	HTTPPort  = ":80"
-	HTTPSPort = ":443"
-)
+const filename = "web.json" // 配置文件的文件名。
 
-// 当启用 HTTPS 时，对 80 端口的处理方式。
-const (
-	HTTPStateDisabled = "disable"  // 禁止监听 80 端口
-	HTTPStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
-	HTTPStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
-)
-
-// Config 系统配置文件。
+// Config 默认的配置文件。
 type Config struct {
-	// 基本
-	HTTPS       bool              `json:"https,omitempty"`     // 是否启用 HTTPS
-	HTTPState   string            `json:"httpState,omitempty"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile    string            `json:"certFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	KeyFile     string            `json:"keyFile,omitempty"`   // 当 https 为 true 时，此值为必填
-	Port        string            `json:"port,omitempty"`      // 端口，不指定，默认为 80 或是 443
-	Headers     map[string]string `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
-	Static      map[string]string `json:"static,omitempty"`    // 静态内容，键名为 URL 路径，键值为文件地址
-	ContentType string            `json:"contentType"`         // 默认的编码类型
+	// 配置文件所在的目录
+	dir string
 
-	// 性能
-	ReadTimeout  time.Duration `json:"readTimeout,omitempty"`  // http.Server.ReadTimeout 的值，单位：秒
-	WriteTimeout time.Duration `json:"writeTimeout,omitempty"` // http.Server.WriteTimeout 的值，单位：秒
-	Pprof        string        `json:"pprof,omitempty"`        // 指定 pprof 地址
+	// Server
+	Server *server.Config `json:"server"`
 
 	// Content
-	Content *content.Config `json:"content,omitempty"`
+	Content *content.Config `json:"content"`
+}
+
+// New 声明一个 *Config 实例，从 confDir/web.json 中获取。
+func New(confDir string) (*Config, error) {
+	conf := &Config{
+		dir: confDir,
+	}
+
+	if err := conf.load(); err != nil {
+		return nil, err
+	}
+	return conf, nil
 }
 
 // Load 加载配置文件
 //
 // path 用于指定配置文件的位置；
-func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+func (conf *Config) load() error {
+	data, err := ioutil.ReadFile(conf.File(filename))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	conf := &Config{}
 	if err = json.Unmarshal(data, conf); err != nil {
-		return nil, err
+		return err
 	}
 
-	if len(conf.Port) == 0 {
-		if conf.HTTPS {
-			conf.Port = HTTPSPort
-		} else {
-			conf.Port = HTTPPort
-		}
+	if conf.Server == nil {
+		conf.Server = &server.Config{}
 	}
-	if conf.Port[0] != ':' {
-		conf.Port = ":" + conf.Port
+	if err = initItem(conf.Server); err != nil {
+		return err
 	}
 
-	if len(conf.HTTPState) > 0 && (conf.HTTPState != HTTPStateDisabled &&
-		conf.HTTPState != HTTPStateListen &&
-		conf.HTTPState != HTTPStateRedirect) {
-		return nil, errors.New("无效的 httpState 值")
+	if conf.Content == nil {
+		conf.Content = &content.Config{}
+	}
+	if err = initItem(conf.Content); err != nil {
+		return err
 	}
 
-	if conf.HTTPS {
-		if !utils.FileExists(conf.CertFile) {
-			return nil, errors.New("certFile 所指的文件并不存在")
-		}
-		if !utils.FileExists(conf.KeyFile) {
-			return nil, errors.New("keyFile 所指的文件并不存在")
-		}
+	return nil
+}
+
+func initItem(conf types.Config) error {
+	if err := conf.Init(); err != nil {
+		return err
 	}
 
-	if len(conf.ContentType) == 0 {
-		return nil, errors.New("contentType 未指定")
-	}
+	return conf.Check()
+}
 
-	return conf, nil
+// File 获取配置目录下的文件。
+func (conf *Config) File(path string) string {
+	return filepath.Join(conf.dir, path)
+}
+
+// DefaultConfig 输出默认配置内容。
+func DefaultConfig() *Config {
+	return &Config{
+		Server:  server.DefaultConfig(),
+		Content: content.DefaultConfig(),
+	}
 }

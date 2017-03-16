@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/types"
 )
 
 // Result 提供了一套用于描述向客户端反馈错误信息的机制。
@@ -110,6 +110,6 @@ func (rslt *Result) Status() int {
 }
 
 // Render 将当前的实例输出到客户端
-func (rslt *Result) Render(ctx context.Context) {
+func (rslt *Result) Render(ctx types.Context) {
 	ctx.Render(rslt.status, rslt, nil)
 }

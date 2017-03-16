@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/types"
 )
 
 func (ctx *Context) logMessage(v []interface{}) string {
@@ -29,36 +29,36 @@ func (ctx *Context) logMessagef(format string, v []interface{}) string {
 
 // Critical 相当于调用了 logs.Critical，外加一些调用者的详细信息
 //
-// 出错，一般也意味着当前协程的结束，所以会返回一个 context.Renderer
+// 出错，一般也意味着当前协程的结束，所以会返回一个 types.Renderer
 // 接口，方便向当前客户端输出相关的错误信息。
-func (ctx *Context) Critical(v ...interface{}) context.Renderer {
+func (ctx *Context) Critical(v ...interface{}) types.Renderer {
 	logs.CRITICAL().Output(2, ctx.logMessage(v))
 	return ctx
 }
 
 // Criticalf 相当于调用了 logs.Criticalf，外加一些调用者的详细信息
 //
-// 出错，一般也意味着当前协程的结束，所以会返回一个 context.Renderer
+// 出错，一般也意味着当前协程的结束，所以会返回一个 types.Renderer
 // 接口，方便向当前客户端输出相关的错误信息。
-func (ctx *Context) Criticalf(format string, v ...interface{}) context.Renderer {
+func (ctx *Context) Criticalf(format string, v ...interface{}) types.Renderer {
 	logs.CRITICAL().Output(2, ctx.logMessagef(format, v))
 	return ctx
 }
 
 // Error 相当于调用了 logs.Error，外加一些调用者的详细信息
 //
-// 出错，一般也意味着当前协程的结束，所以会返回一个 context.Renderer
+// 出错，一般也意味着当前协程的结束，所以会返回一个 types.Renderer
 // 接口，方便向当前客户端输出相关的错误信息。
-func (ctx *Context) Error(v ...interface{}) context.Renderer {
+func (ctx *Context) Error(v ...interface{}) types.Renderer {
 	logs.ERROR().Output(2, ctx.logMessage(v))
 	return ctx
 }
 
 // Errorf 相当于调用了 logs.Errorf，外加一些调用者的详细信息
 //
-// 出错，一般也意味着当前协程的结束，所以会返回一个 context.Renderer
+// 出错，一般也意味着当前协程的结束，所以会返回一个 types.Renderer
 // 接口，方便向当前客户端输出相关的错误信息。
-func (ctx *Context) Errorf(format string, v ...interface{}) context.Renderer {
+func (ctx *Context) Errorf(format string, v ...interface{}) types.Renderer {
 	logs.ERROR().Output(2, ctx.logMessagef(format, v))
 	return ctx
 }

@@ -7,8 +7,8 @@ package request
 import (
 	"net/http"
 
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/types"
 )
 
 // Query 用于处理路径中的查询参数。用法类似于 flag
@@ -147,7 +147,7 @@ func (q *Query) Result(code int) *result.Result {
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (q *Query) OK(ctx context.Context, code int) bool {
+func (q *Query) OK(ctx types.Context, code int) bool {
 	if len(q.errors) > 0 {
 		q.Result(code).Render(ctx)
 		return false
