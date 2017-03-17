@@ -73,20 +73,26 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 	return nil
 }
 
-// Run 运行路由，执行监听程序。
-func (s *Server) Run() error {
-	// 在其它之前调用
-	if err := s.buildStaticHandler(); err != nil {
-		return err
+// Init 初始化路由项
+func (s *Server) Init(h http.Handler) {
+	// 在其它路由构建之前调用
+	s.buildStaticHandler()
+
+	if h == nil {
+		h = s.mux
 	}
 
-	h := s.buildHandler(s.mux)
+	// 构建其它路由
+	s.handler = s.buildHandler(h)
+}
 
+// Run 运行路由，执行监听程序。
+func (s *Server) Run() error {
 	if s.conf.HTTPS {
 		switch s.conf.HTTPState {
 		case httpStateListen:
 			logs.Infof("开始监听[%v]端口", httpPort)
-			go s.getServer(httpPort, h).ListenAndServe()
+			go s.getServer(httpPort, s.handler).ListenAndServe()
 		case httpStateRedirect:
 			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
 			go s.httpRedirectListenAndServe()
@@ -94,17 +100,17 @@ func (s *Server) Run() error {
 		}
 
 		logs.Infof("开始监听%v端口", s.conf.Port)
-		return s.getServer(s.conf.Port, h).ListenAndServeTLS(s.conf.CertFile, s.conf.KeyFile)
+		return s.getServer(s.conf.Port, s.handler).ListenAndServeTLS(s.conf.CertFile, s.conf.KeyFile)
 	}
 
 	logs.Infof("开始监听%v端口", s.conf.Port)
-	return s.getServer(s.conf.Port, h).ListenAndServe()
+	return s.getServer(s.conf.Port, s.handler).ListenAndServe()
 }
 
 // 构建一个静态文件服务模块
-func (s *Server) buildStaticHandler() error {
+func (s *Server) buildStaticHandler() {
 	if len(s.conf.Static) == 0 {
-		return nil
+		return
 	}
 
 	for url, dir := range s.conf.Static {
@@ -114,7 +120,6 @@ func (s *Server) buildStaticHandler() error {
 		s.mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
 	}
 
-	return nil
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。

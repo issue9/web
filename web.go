@@ -6,6 +6,7 @@ package web
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/issue9/logs"
@@ -18,7 +19,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.7.1+20170317"
+const Version = "0.7.2+20170317"
 
 const logsFilename = "logs.xml" // 日志配置文件的文件名。
 
@@ -66,10 +67,12 @@ func load(configDir string) error {
 }
 
 // Run 运行路由，执行监听程序。
-func Run() error {
+func Run(h http.Handler) error {
 	if err := defaultModules.Init(); err != nil {
 		return err
 	}
+
+	defaultServer.Init(h)
 
 	return defaultServer.Run()
 }
