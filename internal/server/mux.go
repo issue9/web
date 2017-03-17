@@ -21,6 +21,9 @@ type Server struct {
 	conf *Config
 	mux  *mux.ServeMux
 
+	// mux 的外层封装。
+	handler http.Handler
+
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
 	servers []*http.Server
@@ -38,17 +41,6 @@ func New(conf *Config) *Server {
 // Mux 返回默认的 *mux.ServeMux 实例
 func (s *Server) Mux() *mux.ServeMux {
 	return s.mux
-}
-
-// Restart 重启服务。
-//
-// timeout 等待该时间之后重启，小于该值，则立即重启。
-func (s *Server) Restart(timeout time.Duration) error {
-	if err := s.Shutdown(timeout); err != nil {
-		return err
-	}
-
-	return s.Run()
 }
 
 // Shutdown 关闭服务。
@@ -84,7 +76,7 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 // Run 运行路由，执行监听程序。
 func (s *Server) Run() error {
 	// 在其它之前调用
-	if err := s.buildStaticModule(); err != nil {
+	if err := s.buildStaticHandler(); err != nil {
 		return err
 	}
 
@@ -110,7 +102,7 @@ func (s *Server) Run() error {
 }
 
 // 构建一个静态文件服务模块
-func (s *Server) buildStaticModule() error {
+func (s *Server) buildStaticHandler() error {
 	if len(s.conf.Static) == 0 {
 		return nil
 	}
