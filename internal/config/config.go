@@ -5,7 +5,7 @@
 // Package config 提供了框架对自身的配置文件的操作能力。
 //
 // 框架自身的各个模块若需要操作配置文件，应该统一交由
-// Config 来管理，模块只要实现 types.Config 接口及一
+// Config 来管理，模块只要实现 configer 接口及一
 // 个 DefaultConfig() 函数即可。
 package config
 
@@ -16,10 +16,18 @@ import (
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
-	"github.com/issue9/web/types"
 )
 
 const filename = "web.json" // 配置文件的文件名。
+
+// 需要写入到 web.json 配置文件的类需要实现的接口。
+type configer interface {
+	// 对配置内容进行初始化，对一些可以为空的值，进行默认赋值。
+	Init() error
+
+	// 检测配置项是否有错误。
+	Check() error
+}
 
 // Config 默认的配置文件。
 type Config struct {
@@ -75,7 +83,7 @@ func (conf *Config) load() error {
 	return nil
 }
 
-func initItem(conf types.Config) error {
+func initItem(conf configer) error {
 	if err := conf.Init(); err != nil {
 		return err
 	}

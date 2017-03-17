@@ -8,7 +8,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/server"
 )
+
+var _ configer = server.DefaultConfig()
+
+var _ configer = content.DefaultConfig()
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)

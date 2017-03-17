@@ -42,24 +42,25 @@ func load(configDir string) error {
 	if !utils.FileExists(configDir) {
 		return errors.New("配置文件目录不存在")
 	}
-	var err error
 
-	defaultConfig, err = config.New(configDir)
+	conf, err := config.New(configDir)
 	if err != nil {
 		return err
 	}
 
-	err = logs.InitFromXMLFile(defaultConfig.File(logsFilename))
+	err = logs.InitFromXMLFile(conf.File(logsFilename))
 	if err != nil {
 		return err
 	}
 
-	defaultServer = server.New(defaultConfig.Server)
+	defaultServer = server.New(conf.Server)
 
-	defaultContent, err = content.New(defaultConfig.Content)
+	defaultContent, err = content.New(conf.Content)
 	if err != nil {
 		return err
 	}
+
+	defaultConfig = conf
 
 	return nil
 }
