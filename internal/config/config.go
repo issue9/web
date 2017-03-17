@@ -14,14 +14,12 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/issue9/logs"
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/server"
+	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/types"
 )
 
-const filename = "web.json"     // 配置文件的文件名。
-const logsFilename = "logs.xml" // 日志配置文件的文件名。
+const filename = "web.json" // 配置文件的文件名。
 
 // Config 默认的配置文件。
 type Config struct {
@@ -51,12 +49,6 @@ func New(confDir string) (*Config, error) {
 //
 // path 用于指定配置文件的位置；
 func (conf *Config) load() error {
-	// 初始化日志系统，第一个初始化，后续内容可能都依赖于此。
-	err := logs.InitFromXMLFile(conf.File(logsFilename))
-	if err != nil {
-		return err
-	}
-
 	data, err := ioutil.ReadFile(conf.File(filename))
 	if err != nil {
 		return err

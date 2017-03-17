@@ -10,15 +10,17 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/modules"
 	"github.com/issue9/web/result"
-	"github.com/issue9/web/server"
 )
 
 // Version 当前框架的版本
 const Version = "0.7.1+20170317"
+
+const logsFilename = "logs.xml" // 日志配置文件的文件名。
 
 var (
 	defaultConfig  *config.Config // 当前的配置实例
@@ -43,6 +45,11 @@ func load(configDir string) error {
 	var err error
 
 	defaultConfig, err = config.New(configDir)
+	if err != nil {
+		return err
+	}
+
+	err = logs.InitFromXMLFile(defaultConfig.File(logsFilename))
 	if err != nil {
 		return err
 	}
