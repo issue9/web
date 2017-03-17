@@ -32,8 +32,6 @@ type Content interface {
 }
 
 // New 声明一个 Content 实例。
-//
-// conf 对 envelope 功能的配置，若不需要直接直接传递 nil 值。
 func New(conf *Config) (Content, error) {
 	if conf == nil {
 		return nil, errors.New("参数 conf 不能为空")
