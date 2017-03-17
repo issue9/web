@@ -74,9 +74,18 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 }
 
 // Init 初始化路由项
+//
+// 若指定了 h 值，则会以 h 代替 s.mux 来执行，所以需要任何附加
+// 在 mux 上的 http.Handler 的，可以在此处指定。比如：
+//  s.Init(handlers.Host(s.Mux(), "www.caixw.io")
 func (s *Server) Init(h http.Handler) {
 	// 在其它路由构建之前调用
-	s.buildStaticHandler()
+	for url, dir := range s.conf.Static {
+		if !strings.HasSuffix(url, "/") {
+			url += "/"
+		}
+		s.mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+	}
 
 	if h == nil {
 		h = s.mux
@@ -109,17 +118,12 @@ func (s *Server) Run() error {
 
 // 构建一个静态文件服务模块
 func (s *Server) buildStaticHandler() {
-	if len(s.conf.Static) == 0 {
-		return
-	}
-
 	for url, dir := range s.conf.Static {
 		if !strings.HasSuffix(url, "/") {
 			url += "/"
 		}
 		s.mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
 	}
-
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
@@ -140,10 +144,12 @@ func (s *Server) httpRedirectListenAndServe() error {
 func (s *Server) buildHandler(h http.Handler) http.Handler {
 	h = s.buildHeader(h)
 
-	// 若是调试状态，则向客户端输出详细错误信息
+	h = handlers.Recovery(h, func(w http.ResponseWriter, msg interface{}) {
+		logs.Error(msg)
+	})
+
+	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if len(s.conf.Pprof) > 0 {
-		h = handlers.Recovery(h, handlers.PrintDebug)
-		// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 		return s.buildPprof(h)
 	}
 
