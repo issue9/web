@@ -13,15 +13,15 @@ import (
 
 // 端口的定义
 const (
-	HTTPPort  = ":80"
-	HTTPSPort = ":443"
+	httpPort  = ":80"
+	httpsPort = ":443"
 )
 
 // 当启用 HTTPS 时，对 80 端口的处理方式。
 const (
-	HTTPStateDisabled = "disable"  // 禁止监听 80 端口
-	HTTPStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
-	HTTPStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
+	httpStateDisabled = "disable"  // 禁止监听 80 端口
+	httpStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
+	httpStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
 )
 
 // Config 系统配置文件。
@@ -46,7 +46,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		HTTPS:     false,
-		HTTPState: HTTPStateDisabled,
+		HTTPState: httpStateDisabled,
 		CertFile:  "",
 		KeyFile:   "",
 		Port:      ":80",
@@ -77,7 +77,7 @@ func (conf *Config) Init() error {
 // Check 检测各个值是否正常
 func (conf *Config) Check() error {
 	switch conf.HTTPState {
-	case HTTPStateListen, HTTPStateDisabled, HTTPStateRedirect:
+	case httpStateListen, httpStateDisabled, httpStateRedirect:
 	default:
 		return errors.New("httpState 的值不正确")
 	}

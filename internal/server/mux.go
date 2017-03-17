@@ -89,11 +89,11 @@ func (s *Server) Run() error {
 
 	if s.conf.HTTPS {
 		switch s.conf.HTTPState {
-		case HTTPStateListen:
-			logs.Infof("开始监听[%v]端口", HTTPPort)
-			go s.getServer(HTTPPort, h).ListenAndServe()
-		case HTTPStateRedirect:
-			logs.Infof("开始监听[%v]端口，并跳转至[%v]", HTTPPort, HTTPSPort)
+		case httpStateListen:
+			logs.Infof("开始监听[%v]端口", httpPort)
+			go s.getServer(httpPort, h).ListenAndServe()
+		case httpStateRedirect:
+			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
 			go s.httpRedirectListenAndServe()
 			// 空值或是 disable 均为默认处理方式，即不作为。
 		}
@@ -124,7 +124,7 @@ func (s *Server) buildStaticModule() error {
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func (s *Server) httpRedirectListenAndServe() error {
-	srv := s.getServer(HTTPPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := s.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 替换原 URL 的端口和 Scheme
 		url := r.URL
 		url.Host = r.Host + s.conf.Port
