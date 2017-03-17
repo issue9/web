@@ -18,9 +18,12 @@ import (
 
 // Server 服务器控制
 type Server struct {
-	mux     *mux.ServeMux
+	conf *Config
+	mux  *mux.ServeMux
+
+	// 除了 mux 所依赖的 http.Server 实例之外，
+	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
 	servers []*http.Server
-	conf    *Config
 }
 
 // New 声明一个新的 Server 实例

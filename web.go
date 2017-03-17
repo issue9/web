@@ -78,6 +78,8 @@ func Run() error {
 //
 // timeout 等待该时间之后重启，小于该值，则立即重启。
 func Restart(timeout time.Duration) error {
+	// BUG(caixw) 在未调用 Run() 的情况下直接调
+	// 用 Restart 会出现 modules 未初始化的问题
 	if err := defaultServer.Shutdown(timeout); err != nil {
 		return err
 	}
