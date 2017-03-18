@@ -26,13 +26,14 @@ type Server struct {
 
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
+	// 记录这些 server，方便重启等操作。
 	servers []*http.Server
 }
 
 // New 声明一个新的 Server 实例
 func New(conf *Config) *Server {
-	// conf 只来自 web.go，理论上可以保证其一直是正确的，
-	// 所以此处不再做各个字段是否正确的检测。
+	// NOTE: conf 只能来自 web.go，理论上可以保证
+	// 其一直是正确的，所以此处不再做正确的检测。
 	return &Server{
 		mux:     mux.NewServeMux(!conf.Options),
 		servers: make([]*http.Server, 0, 5),
@@ -48,8 +49,8 @@ func (s *Server) Mux() *mux.ServeMux {
 // Shutdown 关闭服务。
 //
 // timeout 若超过该时间，服务还未自动停止的，则会强制停止。
-// 若 timeout<=0，则会立即停止服务，相当于 http.Server.Close()；
-// 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务，相当于 http.Server.Shutdown()。
+// 若 timeout<=0，则会立即停止服务；
+// 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务。
 func (s *Server) Shutdown(timeout time.Duration) error {
 	if timeout <= 0 {
 		for _, srv := range s.servers {
@@ -57,31 +58,28 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 				return err
 			}
 		}
-		s.servers = s.servers[:0]
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
 
-		return nil
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	for _, srv := range s.servers {
-		if err := srv.Shutdown(ctx); err != nil {
-			return err
+		for _, srv := range s.servers {
+			if err := srv.Shutdown(ctx); err != nil {
+				return err
+			}
 		}
 	}
-	s.servers = s.servers[:0]
 
+	s.servers = s.servers[:0]
 	return nil
 }
 
 // Init 初始化路由项
 //
-// 若指定了 h 值，则会以 h 代替 s.mux 来执行，所以需要任何附加
-// 在 mux 上的 http.Handler 的，可以在此处指定。比如：
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Server.Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
 //  s.Init(handlers.Host(s.Mux(), "www.caixw.io")
 func (s *Server) Init(h http.Handler) {
-	// 在其它路由构建之前调用
+	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range s.conf.Static {
 		if !strings.HasSuffix(url, "/") {
 			url += "/"
@@ -116,16 +114,6 @@ func (s *Server) Run() error {
 
 	logs.Infof("开始监听%v端口", s.conf.Port)
 	return s.getServer(s.conf.Port, s.handler).ListenAndServe()
-}
-
-// 构建一个静态文件服务模块
-func (s *Server) buildStaticHandler() {
-	for url, dir := range s.conf.Static {
-		if !strings.HasSuffix(url, "/") {
-			url += "/"
-		}
-		s.mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
-	}
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
@@ -207,7 +195,6 @@ func (s *Server) getServer(port string, h http.Handler) *http.Server {
 		WriteTimeout: s.conf.WriteTimeout * time.Second,
 	}
 
-	// 记录所有的 server，方便重启等操作
 	s.servers = append(s.servers, srv)
 
 	return srv
