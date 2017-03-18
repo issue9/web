@@ -12,9 +12,9 @@ import (
 	"github.com/issue9/web/internal/server"
 )
 
-var _ configer = server.DefaultConfig()
+var _ sanitizer = server.DefaultConfig()
 
-var _ configer = content.DefaultConfig()
+var _ sanitizer = content.DefaultConfig()
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)

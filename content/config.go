@@ -7,8 +7,6 @@ package content
 import (
 	"errors"
 	"net/http"
-
-	"github.com/issue9/utils"
 )
 
 // Envelope 的状态
@@ -36,13 +34,8 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Init 初始化配置内容，给空值赋予默认址。
-func (conf *Config) Init() error {
-	return utils.Merge(true, conf, DefaultConfig())
-}
-
-// Check 检测各个项的各法性
-func (conf *Config) Check() error {
+// Sanitize 检测各个项的各法性
+func (conf *Config) Sanitize() error {
 	if conf.ContentType != "json" && conf.ContentType != "xml" {
 		return errors.New("contentType 无效的值")
 	}

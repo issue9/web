@@ -37,7 +37,7 @@ func New(conf *Config) (Content, error) {
 		return nil, errors.New("参数 conf 不能为空")
 	}
 
-	if err := conf.Check(); err != nil {
+	if err := conf.Sanitize(); err != nil {
 		return nil, err
 	}
 

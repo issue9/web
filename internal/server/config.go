@@ -60,29 +60,15 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Init 给 conf 的零值赋予一个默认值。
-// 以及值的修正。
-func (conf *Config) Init() error {
-	if err := utils.Merge(true, conf, DefaultConfig()); err != nil {
-		return err
-	}
-
-	if conf.Port[0] != ':' {
-		conf.Port = ":" + conf.Port
-	}
-
-	return nil
-}
-
-// Check 检测各个值是否正常
-func (conf *Config) Check() error {
-	switch conf.HTTPState {
-	case httpStateListen, httpStateDisabled, httpStateRedirect:
-	default:
-		return errors.New("httpState 的值不正确")
-	}
-
+// Sanitize 检测各个值是否正常
+func (conf *Config) Sanitize() error {
 	if conf.HTTPS {
+		switch conf.HTTPState {
+		case httpStateListen, httpStateDisabled, httpStateRedirect:
+		default:
+			return errors.New("httpState 的值不正确")
+		}
+
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
 		}
@@ -92,8 +78,10 @@ func (conf *Config) Check() error {
 		}
 	}
 
-	if conf.Port[0] != ':' {
-		return errors.New("port 必须以 : 开头")
+	if len(conf.Port) == 0 {
+		return errors.New("port 必须指定")
+	} else if conf.Port[0] != ':' {
+		conf.Port = ":" + conf.Port
 	}
 
 	if conf.ReadTimeout < 0 {

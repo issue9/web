@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/issue9/utils"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
 )
@@ -21,12 +22,9 @@ import (
 const filename = "web.json" // 配置文件的文件名。
 
 // 需要写入到 web.json 配置文件的类需要实现的接口。
-type configer interface {
-	// 对配置内容进行初始化，对一些可以为空的值，进行默认赋值。
-	Init() error
-
-	// 检测配置项是否有错误。
-	Check() error
+type sanitizer interface {
+	// 修正可修正的内容，返回不可修正的错误。
+	Sanitize() error
 }
 
 // Config 默认的配置文件。
@@ -66,29 +64,38 @@ func (conf *Config) load() error {
 		return err
 	}
 
+	// Server
 	if conf.Server == nil {
 		conf.Server = server.DefaultConfig()
-	}
-	if err = initItem(conf.Server); err != nil {
-		return err
+	} else {
+		// 将未设置的项，给予一个默认值。
+		c := server.DefaultConfig()
+		if err = utils.Merge(true, c, conf.Server); err != nil {
+			return err
+		}
+		conf.Server = c
+
+		if err = conf.Server.Sanitize(); err != nil {
+			return err
+		}
 	}
 
+	// Content
 	if conf.Content == nil {
 		conf.Content = content.DefaultConfig()
-	}
-	if err = initItem(conf.Content); err != nil {
-		return err
+	} else {
+		c := content.DefaultConfig()
+		if err = utils.Merge(true, c, conf.Content); err != nil {
+			return err
+		}
+		conf.Content = c
+
+		if err = conf.Content.Sanitize(); err != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-func initItem(conf configer) error {
-	if err := conf.Init(); err != nil {
-		return err
-	}
-
-	return conf.Check()
 }
 
 // File 获取配置目录下的文件。

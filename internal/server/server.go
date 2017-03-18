@@ -31,6 +31,8 @@ type Server struct {
 
 // New 声明一个新的 Server 实例
 func New(conf *Config) *Server {
+	// conf 只来自 web.go，理论上可以保证其一直是正确的，
+	// 所以此处不再做各个字段是否正确的检测。
 	return &Server{
 		mux:     mux.NewServeMux(!conf.Options),
 		servers: make([]*http.Server, 0, 5),
