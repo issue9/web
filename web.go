@@ -19,7 +19,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.7.2+20170317"
+const Version = "0.7.3+20170318"
 
 const logsFilename = "logs.xml" // 日志配置文件的文件名。
 

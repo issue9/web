@@ -46,13 +46,18 @@ func (conf *Config) Sanitize() error {
 		return errors.New("envelopeState 无效的值")
 	}
 
-	if conf.EnvelopeState != EnvelopeStateDisable {
+	if conf.EnvelopeState == EnvelopeStateEnable {
 		switch {
 		case len(conf.EnvelopeKey) == 0:
 			return errors.New("envelopeKey 不能为空")
-		case conf.EnvelopeStatus < 100 || conf.EnvelopeStatus > 999:
+		case conf.EnvelopeStatus < 100 || conf.EnvelopeStatus > 599:
 			return errors.New("envelopeStatus 值无效")
 		}
+	}
+
+	if conf.EnvelopeState == EnvelopeStateMust &&
+		(conf.EnvelopeStatus < 100 || conf.EnvelopeStatus > 599) {
+		return errors.New("envelopeStatus 值无效")
 	}
 	return nil
 }
