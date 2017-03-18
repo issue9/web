@@ -41,10 +41,9 @@ func TestXML_renderEnvelope(t *testing.T) {
 	// 正常
 	r.Header.Set("Accept", xmlContentType)
 	w = httptest.NewRecorder()
-	w.Header().Set("ContentType", xmlContentType)
 	w.Header().Set("Test", "Test")
 	j.renderEnvelope(w, r, http.StatusCreated, nil)
-	a.Equal(`<xml><status>201</status><headers><header name="Contenttype">application/xml;charset=utf-8</header><header name="Test">Test</header></headers></xml>`, w.Body.String())
+	a.Equal(`<xml><status>201</status><headers><header name="Test">Test</header></headers></xml>`, w.Body.String())
 	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 }
 

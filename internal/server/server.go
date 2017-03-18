@@ -119,7 +119,6 @@ func (s *Server) Run() error {
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func (s *Server) httpRedirectListenAndServe() error {
 	srv := s.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 替换原 URL 的端口和 Scheme
 		url := r.URL
 		url.Host = r.Host + s.conf.Port
 		url.Scheme = "HTTPS"
