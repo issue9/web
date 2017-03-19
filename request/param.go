@@ -26,7 +26,7 @@ var emptyParams = map[string]string{}
 //  }
 type Param struct {
 	errors map[string]string
-	params map[string]string // 从 context 中获取的参数列表
+	params mux.Params // 从 context 中获取的参数列表
 }
 
 // NewParam 声明一个新的 Param 实例
