@@ -5,34 +5,29 @@
 package web
 
 import (
-	stdCtx "context"
 	"errors"
-	"path/filepath"
+	"net/http"
 	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/modules"
 	"github.com/issue9/web/result"
 )
 
 // Version 当前框架的版本
-const Version = "0.4.5+20170309"
+const Version = "0.7.3+20170318"
 
-const (
-	configFilename = "web.json" // 配置文件的文件名。
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-)
+const logsFilename = "logs.xml" // 日志配置文件的文件名。
 
 var (
-	confDir        string          // 配置文件所在目录
-	defaultConfig  *config.Config  // 当前的配置实例
+	defaultConfig  *config.Config // 当前的配置实例
+	defaultServer  *server.Server
+	defaultContent content.Content
 	defaultModules = modules.New() // 模块管理工具
-
-	defaultRender context.Render
-	defaultRead   context.Read
 )
 
 // Init 初始化框架的基本内容。
@@ -40,65 +35,67 @@ var (
 // configDir 指定了配置文件所在的目录，框架默认的
 // 两个配置文件都会从此目录下查找。
 func Init(configDir string) error {
-	if !utils.FileExists(configDir) {
-		return errors.New("配置文件目录不存在")
-	}
-	confDir = configDir
-
-	return load()
+	return load(configDir)
 }
 
 // 加载配置，初始化相关的组件。
-func load() error {
-	// 初始化日志系统，第一个初始化，后续内容可能都依赖于此。
-	err := logs.InitFromXMLFile(File(logsFilename))
+func load(configDir string) error {
+	if !utils.FileExists(configDir) {
+		return errors.New("配置文件目录不存在")
+	}
+
+	conf, err := config.New(configDir)
 	if err != nil {
 		return err
 	}
 
-	// 加载配置文件
-	defaultConfig, err = config.Load(File(configFilename))
+	err = logs.InitFromXMLFile(conf.File(logsFilename))
 	if err != nil {
 		return err
 	}
 
-	// 确定编码
-	switch defaultConfig.ContentType {
-	case "json":
-		defaultRender = context.JSONRender
-		defaultRead = context.JSONRead
-	case "xml":
-		defaultRender = context.XMLRender
-		defaultRead = context.XMLRead
-	default:
-		return errors.New("不支持编码")
+	defaultServer, err = server.New(conf.Server)
+	if err != nil {
+		return err
 	}
+
+	defaultContent, err = content.New(conf.Content)
+	if err != nil {
+		return err
+	}
+
+	defaultConfig = conf
+
 	return nil
 }
 
 // Run 运行路由，执行监听程序。
-func Run() error {
+func Run(h http.Handler) error {
 	if err := defaultModules.Init(); err != nil {
 		return err
 	}
 
-	return run(defaultConfig, defaultServeMux)
+	defaultServer.Init(h)
+
+	return defaultServer.Run()
 }
 
 // Restart 重启服务。
 //
 // timeout 等待该时间之后重启，小于该值，则立即重启。
 func Restart(timeout time.Duration) error {
-	if err := Shutdown(timeout); err != nil {
+	// BUG(caixw) 在未调用 Run() 的情况下直接调
+	// 用 Restart 会出现 modules 未初始化的问题
+	if err := defaultServer.Shutdown(timeout); err != nil {
 		return err
 	}
 
 	// 重新加载配置内容
-	if err := load(); err != nil {
+	if err := load(defaultConfig.File("")); err != nil {
 		return err
 	}
 
-	return Run()
+	return defaultServer.Run()
 }
 
 // Shutdown 关闭服务。
@@ -107,39 +104,12 @@ func Restart(timeout time.Duration) error {
 // 若 timeout<=0，则会立即停止服务，相当于 http.Server.Close()；
 // 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务，相当于 http.Server.Shutdown()。
 func Shutdown(timeout time.Duration) error {
-	if timeout <= 0 {
-		for _, srv := range servers {
-			if err := srv.Close(); err != nil {
-				return err
-			}
-		}
-		clearServers()
-
-		return nil
-	}
-
-	ctx, cancel := stdCtx.WithTimeout(stdCtx.Background(), timeout)
-	defer cancel()
-
-	for _, srv := range servers {
-		if err := srv.Shutdown(ctx); err != nil {
-			return err
-		}
-	}
-	clearServers()
-
-	return nil
+	return defaultServer.Shutdown(timeout)
 }
 
 // File 获取配置目录下的文件。
 func File(path string) string {
-	return filepath.Join(confDir, path)
-}
-
-// IsDebug 是否处于调试状态。
-// 系统通过判断是否指定了 pprof 配置项，来确定当前是否处于调试状态。
-func IsDebug() bool {
-	return len(defaultConfig.Pprof) > 0
+	return defaultConfig.File(path)
 }
 
 // NewModule 注册一个新的模块。

@@ -7,7 +7,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/content"
 	"github.com/issue9/web/request"
 )
 
@@ -24,19 +24,17 @@ import (
 //      // return
 //  }
 type Context struct {
-	w      http.ResponseWriter
-	r      *http.Request
-	read   context.Read
-	render context.Render
+	w http.ResponseWriter
+	r *http.Request
+	c content.Content
 }
 
 // NewContext 声明一个新的 Context
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
-		w:      w,
-		r:      r,
-		read:   defaultRead,
-		render: defaultRender,
+		w: w,
+		r: r,
+		c: defaultContent,
 	}
 }
 
@@ -52,12 +50,12 @@ func (ctx *Context) Request() *http.Request {
 
 // Render 将 v 渲染给客户端
 func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
-	ctx.render(ctx, status, v, headers)
+	ctx.c.Render(ctx.Response(), ctx.Request(), status, v, headers)
 }
 
 // Read 从客户端读取数据
 func (ctx *Context) Read(v interface{}) bool {
-	return ctx.read(ctx, v)
+	return ctx.c.Read(ctx.Response(), ctx.Request(), v)
 }
 
 // NewParam 声明一个新的 *request.Param 实例

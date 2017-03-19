@@ -6,16 +6,22 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/server"
 )
 
-func TestLoad(t *testing.T) {
+var _ sanitizer = server.DefaultConfig()
+
+var _ sanitizer = content.DefaultConfig()
+
+func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := Load("./testdata/falid.json")
-	a.Error(err).Nil(conf)
-
-	conf, err = Load("./testdata/web.json")
+	conf, err := New("./testdata")
 	a.NotError(err).NotNil(conf)
+	a.Equal(conf.Server.KeyFile, "keyFile")
+	a.Equal(conf.Server.ReadTimeout, 30*time.Nanosecond)
 }

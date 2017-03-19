@@ -2,92 +2,111 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package config 提供了程序对自身的配置文件的操作能力。
+// Package config 提供了框架对自身的配置文件的操作能力。
+//
+// 框架自身的各个模块若需要操作配置文件，应该统一交由
+// Config 来管理，模块只要实现 configer 接口及一
+// 个 DefaultConfig() 函数即可。
 package config
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
-	"time"
+	"path/filepath"
 
 	"github.com/issue9/utils"
+	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/server"
 )
 
-// 端口的定义
-const (
-	HTTPPort  = ":80"
-	HTTPSPort = ":443"
-)
+const filename = "web.json" // 配置文件的文件名。
 
-// 当启用 HTTPS 时，对 80 端口的处理方式。
-const (
-	HTTPStateDisabled = "disable"  // 禁止监听 80 端口
-	HTTPStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
-	HTTPStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
-)
+// 需要写入到 web.json 配置文件的类需要实现的接口。
+type sanitizer interface {
+	// 修正可修正的内容，返回不可修正的错误。
+	Sanitize() error
+}
 
-// Config 系统配置文件。
+// Config 默认的配置文件。
 type Config struct {
-	// 基本
-	HTTPS       bool              `json:"https,omitempty"`     // 是否启用 HTTPS
-	HTTPState   string            `json:"httpState,omitempty"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile    string            `json:"certFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	KeyFile     string            `json:"keyFile,omitempty"`   // 当 https 为 true 时，此值为必填
-	Port        string            `json:"port,omitempty"`      // 端口，不指定，默认为 80 或是 443
-	Headers     map[string]string `json:"headers,omitempty"`   // 附加的头信息，头信息可能在其它地方被修改
-	Static      map[string]string `json:"static,omitempty"`    // 静态内容，键名为 URL 路径，键值为文件地址
-	ContentType string            `json:"contentType"`         // 默认的编码类型
+	// 配置文件所在的目录
+	dir string
 
-	// 性能
-	ReadTimeout  time.Duration `json:"readTimeout,omitempty"`  // http.Server.ReadTimeout 的值，单位：秒
-	WriteTimeout time.Duration `json:"writeTimeout,omitempty"` // http.Server.WriteTimeout 的值，单位：秒
-	Pprof        string        `json:"pprof,omitempty"`        // 指定 pprof 地址
+	// Server
+	Server *server.Config `json:"server"`
+
+	// Content
+	Content *content.Config `json:"content"`
+}
+
+// New 声明一个 *Config 实例，从 confDir/web.json 中获取。
+func New(confDir string) (*Config, error) {
+	conf := &Config{
+		dir: confDir,
+	}
+
+	if err := conf.load(); err != nil {
+		return nil, err
+	}
+	return conf, nil
 }
 
 // Load 加载配置文件
 //
 // path 用于指定配置文件的位置；
-func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+func (conf *Config) load() error {
+	data, err := ioutil.ReadFile(conf.File(filename))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	conf := &Config{}
 	if err = json.Unmarshal(data, conf); err != nil {
-		return nil, err
+		return err
 	}
 
-	if len(conf.Port) == 0 {
-		if conf.HTTPS {
-			conf.Port = HTTPSPort
-		} else {
-			conf.Port = HTTPPort
+	// Server
+	if conf.Server == nil {
+		conf.Server = server.DefaultConfig()
+	} else {
+		// 将未设置的项，给予一个默认值。
+		c := server.DefaultConfig()
+		if err = utils.Merge(true, c, conf.Server); err != nil {
+			return err
 		}
-	}
-	if conf.Port[0] != ':' {
-		conf.Port = ":" + conf.Port
-	}
+		conf.Server = c
 
-	if len(conf.HTTPState) > 0 && (conf.HTTPState != HTTPStateDisabled &&
-		conf.HTTPState != HTTPStateListen &&
-		conf.HTTPState != HTTPStateRedirect) {
-		return nil, errors.New("无效的 httpState 值")
-	}
-
-	if conf.HTTPS {
-		if !utils.FileExists(conf.CertFile) {
-			return nil, errors.New("certFile 所指的文件并不存在")
-		}
-		if !utils.FileExists(conf.KeyFile) {
-			return nil, errors.New("keyFile 所指的文件并不存在")
+		if err = conf.Server.Sanitize(); err != nil {
+			return err
 		}
 	}
 
-	if len(conf.ContentType) == 0 {
-		return nil, errors.New("contentType 未指定")
+	// Content
+	if conf.Content == nil {
+		conf.Content = content.DefaultConfig()
+	} else {
+		c := content.DefaultConfig()
+		if err = utils.Merge(true, c, conf.Content); err != nil {
+			return err
+		}
+		conf.Content = c
+
+		if err = conf.Content.Sanitize(); err != nil {
+			return err
+		}
 	}
 
-	return conf, nil
+	return nil
+}
+
+// File 获取配置目录下的文件。
+func (conf *Config) File(path string) string {
+	return filepath.Join(conf.dir, path)
+}
+
+// DefaultConfig 输出默认配置内容。
+func DefaultConfig() *Config {
+	return &Config{
+		Server:  server.DefaultConfig(),
+		Content: content.DefaultConfig(),
+	}
 }
