@@ -30,14 +30,16 @@ type Server struct {
 }
 
 // New 声明一个新的 Server 实例
-func New(conf *Config) *Server {
-	// NOTE: conf 只能来自 web.go，理论上可以保证
-	// 其一直是正确的，所以此处不再做正确的检测。
+func New(conf *Config) (*Server, error) {
+	if err := conf.Sanitize(); err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		mux:     mux.NewServeMux(!conf.Options),
 		servers: make([]*http.Server, 0, 5),
 		conf:    conf,
-	}
+	}, nil
 }
 
 // Mux 返回默认的 *mux.ServeMux 实例

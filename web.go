@@ -54,7 +54,10 @@ func load(configDir string) error {
 		return err
 	}
 
-	defaultServer = server.New(conf.Server)
+	defaultServer, err = server.New(conf.Server)
+	if err != nil {
+		return err
+	}
 
 	defaultContent, err = content.New(conf.Content)
 	if err != nil {

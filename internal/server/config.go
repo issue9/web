@@ -98,6 +98,10 @@ func (conf *Config) Sanitize() error {
 		}
 	}
 
+	if len(conf.Pprof) > 0 && conf.Pprof[len(conf.Pprof)-1] != '/' {
+		conf.Pprof = conf.Pprof + "/"
+	}
+
 	if conf.ReadTimeout < 0 {
 		return errors.New("readTimeout 必须大于等于 0")
 	}

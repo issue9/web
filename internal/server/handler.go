@@ -14,15 +14,16 @@ import (
 )
 
 func (s *Server) buildHandler(h http.Handler) http.Handler {
-	h = s.buildVersion(s.buildHeader(h))
+	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
 
 	h = handlers.Recovery(h, func(w http.ResponseWriter, msg interface{}) {
 		logs.Error(msg)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if len(s.conf.Pprof) > 0 {
-		return s.buildPprof(h)
+		h = s.buildPprof(h)
 	}
 
 	return h
@@ -59,7 +60,7 @@ func (s *Server) buildHeader(h http.Handler) http.Handler {
 
 // 根据 Config.Pprof 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
 func (s *Server) buildPprof(h http.Handler) http.Handler {
-	logs.Debug("web:", "开启了调试功能，地址为：", s.conf.Pprof)
+	logs.Debug("开启了调试功能，地址为：", s.conf.Pprof)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, s.conf.Pprof) {
