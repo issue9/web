@@ -35,6 +35,7 @@ type Config struct {
 	Headers   map[string]string `json:"headers"`   // 附加的头信息，头信息可能在其它地方被修改
 	Static    map[string]string `json:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
 	Options   bool              `json:"options"`   // 是否启用 OPTIONS 请求
+	Version   string            `json:"version"`   // 限定版本
 
 	// 性能
 	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：秒
