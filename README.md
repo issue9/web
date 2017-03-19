@@ -1,14 +1,42 @@
 web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https://travis-ci.org/issue9/web)
 ======
 
-一个模块化的微形 web 框架。
-
 **实验性的内容，勿用！**
 
+这是一个采用 Go 开发的 API 开发框架。
+如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
 
-### 建议
+
+#### 配置文件 web.json
+
+TODO
+
+
+#### 日志处理
+
+TODO
+
+
+#### content-type
+
+目前支持 `json` 和 `xml` 两种编码方式，均以官方标准库的处理方式进行处理，
+TODO
+
+###### 注意事项
 
 若项目需要支持 xml 返回，需要注意，xml 包不支持 map 形式的数据转换成 xml
+
+
+#### envelope
+
+TODO
+
+
+
+#### 错误处理
+
+框架中定义了一个错误返回类型：Result，
+TODO
 
 
 ### 安装
