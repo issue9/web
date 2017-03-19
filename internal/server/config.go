@@ -41,8 +41,8 @@ type Config struct {
 	Hosts     []string          `json:"hosts"`     // 限定这些域名
 
 	// 性能
-	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：秒
-	WriteTimeout time.Duration `json:"writeTimeout"` // http.Server.WriteTimeout 的值，单位：秒
+	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：纳秒
+	WriteTimeout time.Duration `json:"writeTimeout"` // http.Server.WriteTimeout 的值，单位：纳秒
 	Pprof        string        `json:"pprof"`        // 指定 pprof 地址
 }
 

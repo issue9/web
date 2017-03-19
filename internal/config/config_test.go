@@ -6,6 +6,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/content"
@@ -22,4 +23,5 @@ func TestNew(t *testing.T) {
 	conf, err := New("./testdata")
 	a.NotError(err).NotNil(conf)
 	a.Equal(conf.Server.KeyFile, "keyFile")
+	a.Equal(conf.Server.ReadTimeout, 30*time.Nanosecond)
 }

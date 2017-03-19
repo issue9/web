@@ -135,8 +135,8 @@ func (s *Server) getServer(port string, h http.Handler) *http.Server {
 		Addr:         port,
 		Handler:      h,
 		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  s.conf.ReadTimeout * time.Second,
-		WriteTimeout: s.conf.WriteTimeout * time.Second,
+		ReadTimeout:  s.conf.ReadTimeout,
+		WriteTimeout: s.conf.WriteTimeout,
 	}
 
 	s.servers = append(s.servers, srv)
