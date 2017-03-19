@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -31,6 +32,10 @@ type Server struct {
 
 // New 声明一个新的 Server 实例
 func New(conf *Config) (*Server, error) {
+	if conf == nil {
+		return nil, errors.New("参数 conf 不能为空")
+	}
+
 	if err := conf.Sanitize(); err != nil {
 		return nil, err
 	}
@@ -109,11 +114,11 @@ func (s *Server) Run() error {
 			// 空值或是 disable 均为默认处理方式，即不作为。
 		}
 
-		logs.Infof("开始监听%v端口", s.conf.Port)
+		logs.Infof("开始监听[%v]端口", s.conf.Port)
 		return s.getServer(s.conf.Port, s.handler).ListenAndServeTLS(s.conf.CertFile, s.conf.KeyFile)
 	}
 
-	logs.Infof("开始监听%v端口", s.conf.Port)
+	logs.Infof("开始监听[%v]端口", s.conf.Port)
 	return s.getServer(s.conf.Port, s.handler).ListenAndServe()
 }
 

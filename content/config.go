@@ -13,15 +13,15 @@ import (
 const (
 	EnvelopeStateEnable  = "enable"  // 根据客户端决定是否开始
 	EnvelopeStateDisable = "disable" // 不能使用 envelope
-	EnvelopeStateMust    = "must"    // 只能是 envelope
+	EnvelopeStateMust    = "must"    // 强制使用 envelope
 )
 
 // Config 初始化 content 包的配置
 type Config struct {
-	ContentType    string `json:"contentType"` // 默认的编码类型
-	EnvelopeState  string `json:"envelopeState"`
-	EnvelopeKey    string `json:"envelopeKey"`
-	EnvelopeStatus int    `json:"envelopeStatus"`
+	ContentType    string `json:"contentType"`    // 默认的编码类型
+	EnvelopeState  string `json:"envelopeState"`  // 是否启用 envelope 状态
+	EnvelopeKey    string `json:"envelopeKey"`    // 若 EnvelopeState == enable，则此值表示触发的查询参数关键字。
+	EnvelopeStatus int    `json:"envelopeStatus"` // 当 Envelope 处理开启状态时，返回的状态码。
 }
 
 // DefaultConfig 获取一个默认的 Config 实例。
@@ -34,7 +34,7 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Sanitize 检测各个项的各法性
+// Sanitize 检测各项的各法性
 func (conf *Config) Sanitize() error {
 	if conf.ContentType != "json" && conf.ContentType != "xml" {
 		return errors.New("contentType 无效的值")
