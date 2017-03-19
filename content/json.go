@@ -63,7 +63,7 @@ func (j *json) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, 
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
-		code = http.StatusUnsupportedMediaType
+		code = http.StatusNotAcceptable
 		resp = nil // 已经出错了，则不输出内容
 	}
 
@@ -96,7 +96,7 @@ func (j *json) Render(w http.ResponseWriter, r *http.Request, code int, v interf
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, jsonEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 

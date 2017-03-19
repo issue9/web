@@ -63,7 +63,8 @@ func (x *xml) renderEnvelope(w http.ResponseWriter, r *http.Request, code int, r
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
-		code = http.StatusUnsupportedMediaType
+		code = http.StatusNotAcceptable
+		resp = nil // 已经出错了，则不输出内容
 	}
 
 	e := newEnvelope(code, w.Header(), resp)
@@ -95,7 +96,7 @@ func (x *xml) Render(w http.ResponseWriter, r *http.Request, code int, v interfa
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
-		w.WriteHeader(http.StatusUnsupportedMediaType)
+		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
