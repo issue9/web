@@ -28,6 +28,14 @@ func (s *Server) buildHandler(h http.Handler) http.Handler {
 	return h
 }
 
+func (s *Server) buildHosts(h http.Handler) http.Handler {
+	if len(s.conf.Hosts) == 0 {
+		return h
+	}
+
+	return handlers.Host(h, s.conf.Hosts...)
+}
+
 func (s *Server) buildVersion(h http.Handler) http.Handler {
 	if len(s.conf.Version) == 0 {
 		return h

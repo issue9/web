@@ -6,8 +6,10 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/issue9/is"
 	"github.com/issue9/utils"
 )
 
@@ -36,6 +38,7 @@ type Config struct {
 	Static    map[string]string `json:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
 	Options   bool              `json:"options"`   // 是否启用 OPTIONS 请求
 	Version   string            `json:"version"`   // 限定版本
+	Hosts     []string          `json:"hosts"`     // 限定这些域名
 
 	// 性能
 	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：秒
@@ -54,6 +57,8 @@ func DefaultConfig() *Config {
 		Headers:   nil,
 		Static:    nil,
 		Options:   true,
+		Version:   "",
+		Hosts:     []string{},
 
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -83,6 +88,14 @@ func (conf *Config) Sanitize() error {
 		return errors.New("port 必须指定")
 	} else if conf.Port[0] != ':' {
 		conf.Port = ":" + conf.Port
+	}
+
+	if len(conf.Hosts) > 0 {
+		for index, host := range conf.Hosts {
+			if !is.URL(host) {
+				return fmt.Errorf("conf.Hosts[%v] 为非法的 URL", index)
+			}
+		}
 	}
 
 	if conf.ReadTimeout < 0 {
