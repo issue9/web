@@ -39,107 +39,70 @@ func (ctx *Context) Params() *Params {
 	}
 }
 
-func (p *Params) parseOne(key string, val value) {
-	v, found := p.params[key]
-	if !found {
-		p.errors[key] = "参数名不存在"
-		return
-	}
-
-	if err := val.set(v); err != nil {
-		p.errors[key] = err.Error()
-	}
-	return
-}
-
 // Int 获取参数 key 所代表的值
 func (p *Params) Int(key string) int {
-	i := new(int)
-	p.intVar(i, key)
-	return *i
+	return int(p.Int64(key))
 }
 
-// IntVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Params) IntVar(i *int, key string) *Params {
-	p.intVar(i, key)
-	return p
-}
-
-func (p *Params) intVar(i *int, key string) {
-	val := (*intValue)(i)
-	p.parseOne(key, val)
+func (p *Params) MustInt(key string, def int) int {
+	return int(p.params.MustInt(key, int64(def)))
 }
 
 // Int64 获取参数 key 所代表的值
 func (p *Params) Int64(key string) int64 {
-	i := new(int64)
-	p.int64Var(i, key)
-	return *i
+	ret, err := p.params.Int(key)
+	if err != nil {
+		p.errors[key] = err.Error()
+	}
+
+	return ret
 }
 
-// Int64Var 将参数 key 所代表的值保存到指针 i 中
-func (p *Params) Int64Var(i *int64, key string) *Params {
-	p.int64Var(i, key)
-	return p
-}
-
-func (p *Params) int64Var(i *int64, key string) {
-	val := (*int64Value)(i)
-	p.parseOne(key, val)
+func (p *Params) MustInt64(key string, def int64) int64 {
+	return p.params.MustInt(key, def)
 }
 
 // String 获取参数 key 所代表的值
 func (p *Params) String(key string) string {
-	i := new(string)
-	p.stringVar(i, key)
-	return *i
+	ret, err := p.params.String(key)
+	if err != nil {
+		p.errors[key] = err.Error()
+	}
+
+	return ret
 }
 
-// StringVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Params) StringVar(i *string, key string) *Params {
-	p.stringVar(i, key)
-	return p
-}
-
-func (p *Params) stringVar(i *string, key string) {
-	val := (*stringValue)(i)
-	p.parseOne(key, val)
+func (p *Params) MustString(key, def string) string {
+	return p.params.MustString(key, def)
 }
 
 // Bool 获取参数 key 所代表的值
 func (p *Params) Bool(key string) bool {
-	i := new(bool)
-	p.boolVar(i, key)
-	return *i
+	ret, err := p.params.Bool(key)
+	if err != nil {
+		p.errors[key] = err.Error()
+	}
+
+	return ret
 }
 
-// BoolVar 将参数 key 所代表的值保存到指针 i 中
-func (p *Params) BoolVar(i *bool, key string) *Params {
-	p.boolVar(i, key)
-	return p
-}
-
-func (p *Params) boolVar(i *bool, key string) {
-	val := (*boolValue)(i)
-	p.parseOne(key, val)
+// MustBool
+func (p *Params) MustBool(key string, def bool) bool {
+	return p.params.MustBool(key, def)
 }
 
 // Float64 获取参数 key 所代表的值
 func (p *Params) Float64(key string) float64 {
-	i := new(float64)
-	p.float64Var(i, key)
-	return *i
+	ret, err := p.params.Float(key)
+	if err != nil {
+		p.errors[key] = err.Error()
+	}
+
+	return ret
 }
 
-// Float64Var 将参数 key 所代表的值保存到指针 i 中
-func (p *Params) Float64Var(i *float64, key string) *Params {
-	p.float64Var(i, key)
-	return p
-}
-
-func (p *Params) float64Var(i *float64, key string) {
-	val := (*float64Value)(i)
-	p.parseOne(key, val)
+func (p *Params) MustFloat64(key string, def float64) float64 {
+	return p.params.MustFloat(key, def)
 }
 
 // Result 获取解析的结果，若存在错误则返回相应的 *Result 实例

@@ -4,6 +4,8 @@
 
 package web
 
+import "strconv"
+
 // Queries 用于处理路径中的查询参数。用法类似于 flag
 //  q,_ := NewQuery(r, false)
 //  page := q.Int64("page", 1)
@@ -25,108 +27,79 @@ func (ctx *Context) Queries() *Queries {
 	}
 }
 
-func (q *Queries) parseOne(key string, val value) {
-	v := q.ctx.Request().FormValue(key)
-
-	if len(v) == 0 { // 不存在，使用原来的值
-		return
-	}
-
-	if err := val.set(v); err != nil {
-		q.errors[key] = err.Error()
-	}
-}
-
 // Int 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 //
 // 若是无法转换，则会保存错误信息
 func (q *Queries) Int(key string, def int) int {
-	i := new(int)
-	q.intVar(i, key, def)
-	return *i
-}
+	str := q.ctx.Request().FormValue(key)
+	if len(str) == 0 {
+		return def
+	}
 
-// IntVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Queries) IntVar(i *int, key string, def int) *Queries {
-	q.intVar(i, key, def)
-	return q
-}
+	v, err := strconv.Atoi(str)
+	if err != nil {
+		q.errors[key] = err.Error()
+		return def
+	}
 
-func (q *Queries) intVar(i *int, key string, def int) {
-	*i = def
-	q.parseOne(key, (*intValue)(i))
+	return v
 }
 
 // Int64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Int64(key string, def int64) int64 {
-	i := new(int64)
-	q.int64Var(i, key, def)
-	return *i
-}
+	str := q.ctx.Request().FormValue(key)
+	if len(str) == 0 {
+		return def
+	}
 
-// Int64Var 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Queries) Int64Var(i *int64, key string, def int64) *Queries {
-	q.int64Var(i, key, def)
-	return q
-}
+	v, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		q.errors[key] = err.Error()
+		return def
+	}
 
-func (q *Queries) int64Var(i *int64, key string, def int64) {
-	*i = def
-	q.parseOne(key, (*int64Value)(i))
+	return v
 }
 
 // String 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
-	i := new(string)
-	q.stringVar(i, key, def)
-	return *i
-}
-
-// StringVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Queries) StringVar(i *string, key string, def string) *Queries {
-	q.stringVar(i, key, def)
-	return q
-}
-
-func (q *Queries) stringVar(i *string, key string, def string) {
-	*i = def
-	q.parseOne(key, (*stringValue)(i))
+	str := q.ctx.Request().FormValue(key)
+	if len(str) == 0 {
+		return def
+	}
+	return str
 }
 
 // Bool 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Bool(key string, def bool) bool {
-	i := new(bool)
-	q.boolVar(i, key, def)
-	return *i
-}
+	str := q.ctx.Request().FormValue(key)
+	if len(str) == 0 {
+		return def
+	}
 
-// BoolVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Queries) BoolVar(i *bool, key string, def bool) *Queries {
-	q.boolVar(i, key, def)
-	return q
-}
+	v, err := strconv.ParseBool(str)
+	if err != nil {
+		q.errors[key] = err.Error()
+		return def
+	}
 
-func (q *Queries) boolVar(i *bool, key string, def bool) {
-	*i = def
-	q.parseOne(key, (*boolValue)(i))
+	return v
 }
 
 // Float64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Float64(key string, def float64) float64 {
-	i := new(float64)
-	q.float64Var(i, key, def)
-	return *i
-}
+	str := q.ctx.Request().FormValue(key)
+	if len(str) == 0 {
+		return def
+	}
 
-// Float64Var 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Queries) Float64Var(i *float64, key string, def float64) *Queries {
-	q.float64Var(i, key, def)
-	return q
-}
+	v, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		q.errors[key] = err.Error()
+		return def
+	}
 
-func (q *Queries) float64Var(i *float64, key string, def float64) {
-	*i = def
-	q.parseOne(key, (*float64Value)(i))
+	return v
 }
 
 // Result 返回一个 *Result 实例，若存在错误内容，
