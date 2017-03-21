@@ -103,6 +103,11 @@ func (conf *Config) File(path string) string {
 	return filepath.Join(conf.dir, path)
 }
 
+// Dir 获取配置文件的保存目录。
+func (conf *Config) Dir() string {
+	return conf.dir
+}
+
 // DefaultConfig 输出默认配置内容。
 func DefaultConfig() *Config {
 	return &Config{

@@ -88,8 +88,11 @@ func Restart(timeout time.Duration) error {
 		return err
 	}
 
+	logs.All("重启服务器...")
+	logs.Flush()
+
 	// 重新加载配置内容
-	if err := load(defaultConfig.File("")); err != nil {
+	if err := load(defaultConfig.Dir()); err != nil {
 		return err
 	}
 
