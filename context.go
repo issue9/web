@@ -11,6 +11,16 @@ import (
 	"github.com/issue9/web/request"
 )
 
+// Renderer 向客户端渲染的接口
+type Renderer interface {
+	Render(status int, v interface{}, headers map[string]string)
+}
+
+// Reader 从客户端读取数据的接口
+type Reader interface {
+	Read(v interface{}) bool
+}
+
 // Context 是对 http.ResopnseWriter 和 http.Request 的简单封装。
 //
 //  ctx := web.NewContext(w, r)
@@ -58,25 +68,10 @@ func (ctx *Context) Read(v interface{}) bool {
 	return ctx.c.Read(ctx.Response(), ctx.Request(), v)
 }
 
-// NewParam 声明一个新的 *request.Param 实例
-func (ctx *Context) NewParam() *request.Param {
-	p, err := request.NewParam(ctx.r)
-	if err != nil {
-		ctx.Error(err)
-	}
-
-	return p
-}
-
-// NewQuery 声明一个新的 *request.Query 实例
-func (ctx *Context) NewQuery() *request.Query {
-	return request.NewQuery(ctx.r)
-}
-
 // ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
 // 当出错时，第二个参数返回 false。
 func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
 	rslt := p.Result(code)
 
@@ -96,10 +91,10 @@ func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 
 // ParamInt64 取地址参数中的 int64 值
 func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
 
-	if p.OK(ctx, code) {
+	if p.OK(code) {
 		return id, false
 	}
 

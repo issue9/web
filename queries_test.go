@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package request
+package web
 
 import (
 	"net/http"
@@ -19,7 +19,9 @@ func TestQuery_Int(t *testing.T) {
 		"str": []string{"str"},
 	}
 
-	q := NewQuery(&http.Request{Form: form})
+	r := &http.Request{Form: form}
+	ctx := NewContext(nil, r)
+	q := ctx.Queries()
 	a.Equal(-1, q.Int("i", 2))
 	a.Equal(2, q.Int("str", 2))
 	a.Equal(2, q.Int("not exists", 2))

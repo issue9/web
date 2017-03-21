@@ -2,16 +2,9 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package request
+package web
 
-import (
-	"net/http"
-
-	"github.com/issue9/web/result"
-	"github.com/issue9/web/types"
-)
-
-// Query 用于处理路径中的查询参数。用法类似于 flag
+// Queries 用于处理路径中的查询参数。用法类似于 flag
 //  q,_ := NewQuery(r, false)
 //  page := q.Int64("page", 1)
 //  size := q.Int64("size", 20)
@@ -19,21 +12,21 @@ import (
 //      rslt.RenderJSON(w)
 //      return
 //  }
-type Query struct {
-	errors  map[string]string
-	request *http.Request
+type Queries struct {
+	ctx    *Context
+	errors map[string]string
 }
 
-// NewQuery 声明一个新的 Query 实例
-func NewQuery(r *http.Request) *Query {
-	return &Query{
-		errors:  map[string]string{},
-		request: r,
+// Queries 声明一个新的 Queries 实例
+func (ctx *Context) Queries() *Queries {
+	return &Queries{
+		ctx:    ctx,
+		errors: map[string]string{},
 	}
 }
 
-func (q *Query) parseOne(key string, val value) {
-	v := q.request.FormValue(key)
+func (q *Queries) parseOne(key string, val value) {
+	v := q.ctx.Request().FormValue(key)
 
 	if len(v) == 0 { // 不存在，使用原来的值
 		return
@@ -47,109 +40,109 @@ func (q *Query) parseOne(key string, val value) {
 // Int 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 //
 // 若是无法转换，则会保存错误信息
-func (q *Query) Int(key string, def int) int {
+func (q *Queries) Int(key string, def int) int {
 	i := new(int)
 	q.intVar(i, key, def)
 	return *i
 }
 
 // IntVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Query) IntVar(i *int, key string, def int) *Query {
+func (q *Queries) IntVar(i *int, key string, def int) *Queries {
 	q.intVar(i, key, def)
 	return q
 }
 
-func (q *Query) intVar(i *int, key string, def int) {
+func (q *Queries) intVar(i *int, key string, def int) {
 	*i = def
 	q.parseOne(key, (*intValue)(i))
 }
 
 // Int64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
-func (q *Query) Int64(key string, def int64) int64 {
+func (q *Queries) Int64(key string, def int64) int64 {
 	i := new(int64)
 	q.int64Var(i, key, def)
 	return *i
 }
 
 // Int64Var 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Query) Int64Var(i *int64, key string, def int64) *Query {
+func (q *Queries) Int64Var(i *int64, key string, def int64) *Queries {
 	q.int64Var(i, key, def)
 	return q
 }
 
-func (q *Query) int64Var(i *int64, key string, def int64) {
+func (q *Queries) int64Var(i *int64, key string, def int64) {
 	*i = def
 	q.parseOne(key, (*int64Value)(i))
 }
 
 // String 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
-func (q *Query) String(key, def string) string {
+func (q *Queries) String(key, def string) string {
 	i := new(string)
 	q.stringVar(i, key, def)
 	return *i
 }
 
 // StringVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Query) StringVar(i *string, key string, def string) *Query {
+func (q *Queries) StringVar(i *string, key string, def string) *Queries {
 	q.stringVar(i, key, def)
 	return q
 }
 
-func (q *Query) stringVar(i *string, key string, def string) {
+func (q *Queries) stringVar(i *string, key string, def string) {
 	*i = def
 	q.parseOne(key, (*stringValue)(i))
 }
 
 // Bool 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
-func (q *Query) Bool(key string, def bool) bool {
+func (q *Queries) Bool(key string, def bool) bool {
 	i := new(bool)
 	q.boolVar(i, key, def)
 	return *i
 }
 
 // BoolVar 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Query) BoolVar(i *bool, key string, def bool) *Query {
+func (q *Queries) BoolVar(i *bool, key string, def bool) *Queries {
 	q.boolVar(i, key, def)
 	return q
 }
 
-func (q *Query) boolVar(i *bool, key string, def bool) {
+func (q *Queries) boolVar(i *bool, key string, def bool) {
 	*i = def
 	q.parseOne(key, (*boolValue)(i))
 }
 
 // Float64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
-func (q *Query) Float64(key string, def float64) float64 {
+func (q *Queries) Float64(key string, def float64) float64 {
 	i := new(float64)
 	q.float64Var(i, key, def)
 	return *i
 }
 
 // Float64Var 从查询参数中获取指定名称的值到 i，若不存在则使用 def 作为其默认值。
-func (q *Query) Float64Var(i *float64, key string, def float64) *Query {
+func (q *Queries) Float64Var(i *float64, key string, def float64) *Queries {
 	q.float64Var(i, key, def)
 	return q
 }
 
-func (q *Query) float64Var(i *float64, key string, def float64) {
+func (q *Queries) float64Var(i *float64, key string, def float64) {
 	*i = def
 	q.parseOne(key, (*float64Value)(i))
 }
 
-// Result 返回一个 *result.Result 实例，若存在错误内容，
-// 则这些错误内容会作为 result.Result.Detail 的内容一起返回。
-func (q *Query) Result(code int) *result.Result {
+// Result 返回一个 *Result 实例，若存在错误内容，
+// 则这些错误内容会作为 Result.Detail 的内容一起返回。
+func (q *Queries) Result(code int) *Result {
 	if len(q.errors) == 0 {
-		return result.New(code)
+		return nil
 	}
 
-	return result.NewWithDetail(code, q.errors)
+	return NewResult(code, q.errors)
 }
 
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
-func (q *Query) OK(ctx types.Context, code int) bool {
+func (q *Queries) OK(code int) bool {
 	if len(q.errors) > 0 {
-		q.Result(code).Render(ctx)
+		q.Result(code).Render(q.ctx)
 		return false
 	}
 	return true
