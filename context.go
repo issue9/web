@@ -6,10 +6,20 @@ package web
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/request"
 )
+
+// Renderer 向客户端渲染的接口
+type Renderer interface {
+	Render(status int, v interface{}, headers map[string]string)
+}
+
+// Reader 从客户端读取数据的接口
+type Reader interface {
+	Read(v interface{}) bool
+}
 
 // Context 是对 http.ResopnseWriter 和 http.Request 的简单封装。
 //
@@ -58,25 +68,10 @@ func (ctx *Context) Read(v interface{}) bool {
 	return ctx.c.Read(ctx.Response(), ctx.Request(), v)
 }
 
-// NewParam 声明一个新的 *request.Param 实例
-func (ctx *Context) NewParam() *request.Param {
-	p, err := request.NewParam(ctx.r)
-	if err != nil {
-		ctx.Error(err)
-	}
-
-	return p
-}
-
-// NewQuery 声明一个新的 *request.Query 实例
-func (ctx *Context) NewQuery() *request.Query {
-	return request.NewQuery(ctx.r)
-}
-
 // ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
 // 当出错时，第二个参数返回 false。
 func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
 	rslt := p.Result(code)
 
@@ -96,10 +91,10 @@ func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 
 // ParamInt64 取地址参数中的 int64 值
 func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
 
-	if p.OK(ctx, code) {
+	if p.OK(code) {
 		return id, false
 	}
 
@@ -112,5 +107,34 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 // 当第二个参数返回 true 时，返回的是可获取的字段名列表；
 // 当第二个参数返回 false 时，返回的是不允许获取的字段名。
 func (ctx *Context) ResultFields(allow []string) ([]string, bool) {
-	return request.ResultFields(ctx.Request(), allow)
+	resultFields := ctx.Request().Header.Get("X-Result-Fields")
+	if len(resultFields) == 0 { // 没有指定，则返回所有字段内容
+		return allow, true
+	}
+	fields := strings.Split(resultFields, ",")
+	fails := make([]string, 0, len(fields))
+
+	isAllow := func(field string) bool {
+		for _, f1 := range allow {
+			if f1 == field {
+				return true
+			}
+		}
+		return false
+	}
+
+	for index, field := range fields {
+		field = strings.TrimSpace(field)
+		fields[index] = field
+
+		if !isAllow(field) { // 记录不允许获取的字段名
+			fails = append(fails, field)
+		}
+	}
+
+	if len(fails) > 0 {
+		return fails, false
+	}
+
+	return fields, true
 }
