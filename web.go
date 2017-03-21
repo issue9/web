@@ -7,6 +7,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/issue9/logs"
@@ -43,27 +44,25 @@ func load(configDir string) error {
 		return errors.New("配置文件目录不存在")
 	}
 
-	conf, err := config.New(configDir)
+	err := logs.InitFromXMLFile(filepath.Join(configDir, logsFilename))
 	if err != nil {
 		return err
 	}
 
-	err = logs.InitFromXMLFile(conf.File(logsFilename))
+	defaultConfig, err = config.New(configDir)
 	if err != nil {
 		return err
 	}
 
-	defaultServer, err = server.New(conf.Server)
+	defaultServer, err = server.New(defaultConfig.Server)
 	if err != nil {
 		return err
 	}
 
-	defaultContent, err = content.New(conf.Content)
+	defaultContent, err = content.New(defaultConfig.Content)
 	if err != nil {
 		return err
 	}
-
-	defaultConfig = conf
 
 	return nil
 }
