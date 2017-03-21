@@ -32,10 +32,13 @@ func (ctx *Context) Queries() *Queries {
 // 若是无法转换，则会保存错误信息
 func (q *Queries) Int(key string, def int) int {
 	str := q.ctx.Request().FormValue(key)
+
+	// 不存在，返回默认值
 	if len(str) == 0 {
 		return def
 	}
 
+	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil {
 		q.errors[key] = err.Error()

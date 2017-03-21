@@ -4,7 +4,11 @@
 
 package web
 
-import "github.com/issue9/mux"
+import (
+	"strconv"
+
+	"github.com/issue9/mux"
+)
 
 var emptyParams = mux.Params(map[string]string{})
 
@@ -44,8 +48,10 @@ func (p *Params) Int(key string) int {
 	return int(p.Int64(key))
 }
 
+// MustInt 获取参数 key 所代表的值。
+// 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustInt(key string, def int) int {
-	return int(p.params.MustInt(key, int64(def)))
+	return int(p.MustInt64(key, int64(def)))
 }
 
 // Int64 获取参数 key 所代表的值
@@ -58,8 +64,23 @@ func (p *Params) Int64(key string) int64 {
 	return ret
 }
 
+// MustInt64 获取参数 key 所代表的值。
+// 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustInt64(key string, def int64) int64 {
-	return p.params.MustInt(key, def)
+	str, found := p.params[key]
+
+	// 不存在，仅返回默认值，不算错误
+	if !found {
+		return def
+	}
+
+	ret, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		p.errors[key] = err.Error()
+		return def
+	}
+
+	return ret
 }
 
 // String 获取参数 key 所代表的值
@@ -72,8 +93,16 @@ func (p *Params) String(key string) string {
 	return ret
 }
 
+// MustString 获取参数 key 所代表的值。
+// 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustString(key, def string) string {
-	return p.params.MustString(key, def)
+	ret, found := p.params[key]
+
+	// 不存在，仅返回默认值，不算错误
+	if !found {
+		return def
+	}
+	return ret
 }
 
 // Bool 获取参数 key 所代表的值
@@ -86,9 +115,23 @@ func (p *Params) Bool(key string) bool {
 	return ret
 }
 
-// MustBool
+// MustBool 获取参数 key 所代表的值。
+// 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustBool(key string, def bool) bool {
-	return p.params.MustBool(key, def)
+	str, found := p.params[key]
+
+	// 不存在，仅返回默认值，不算错误
+	if !found {
+		return def
+	}
+
+	ret, err := strconv.ParseBool(str)
+	if err != nil {
+		p.errors[key] = err.Error()
+		return def
+	}
+
+	return ret
 }
 
 // Float64 获取参数 key 所代表的值
@@ -101,8 +144,23 @@ func (p *Params) Float64(key string) float64 {
 	return ret
 }
 
+// MustFloat64 获取参数 key 所代表的值。
+// 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustFloat64(key string, def float64) float64 {
-	return p.params.MustFloat(key, def)
+	str, found := p.params[key]
+
+	// 不存在，仅返回默认值，不算错误
+	if !found {
+		return def
+	}
+
+	ret, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		p.errors[key] = err.Error()
+		return def
+	}
+
+	return ret
 }
 
 // Result 获取解析的结果，若存在错误则返回相应的 *Result 实例
