@@ -27,14 +27,14 @@ func TestJSON_renderEnvelope(t *testing.T) {
 
 	// 少 Accept
 	j.renderEnvelope(w, r, http.StatusOK, nil)
-	a.Equal(`{"status":415}`, w.Body.String())
+	a.Equal(`{"status":406}`, w.Body.String())
 	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 错误的
 	r.Header.Set("Accept", "test")
 	w = httptest.NewRecorder()
 	j.renderEnvelope(w, r, http.StatusOK, nil)
-	a.Equal(`{"status":415}`, w.Body.String())
+	a.Equal(`{"status":406}`, w.Body.String())
 	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 正常
@@ -84,13 +84,13 @@ func TestJSON_Render(t *testing.T) {
 
 	// 少 accept
 	j.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
 
 	// 错误的 accept
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", "test")
 	j.Render(w, r, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
-	a.Equal(w.Code, http.StatusUnsupportedMediaType)
+	a.Equal(w.Code, http.StatusNotAcceptable)
 	a.Equal(w.Body.String(), "")
 
 	w = httptest.NewRecorder()

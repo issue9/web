@@ -28,14 +28,14 @@ func TestXML_renderEnvelope(t *testing.T) {
 
 	// 少 Accept
 	j.renderEnvelope(w, r, http.StatusOK, nil)
-	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
+	a.Equal(`<xml><status>406</status><headers></headers></xml>`, w.Body.String())
 	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 错误的
 	r.Header.Set("Accept", "test")
 	w = httptest.NewRecorder()
 	j.renderEnvelope(w, r, http.StatusOK, nil)
-	a.Equal(`<xml><status>415</status><headers></headers></xml>`, w.Body.String())
+	a.Equal(`<xml><status>406</status><headers></headers></xml>`, w.Body.String())
 	a.Equal(w.Code, defaultConf.EnvelopeStatus)
 
 	// 正常
@@ -74,14 +74,14 @@ func TestXML_Render(t *testing.T) {
 
 	// 缺少 Accept
 	x.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
 
 	// 错误的 accept
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", "test")
 	a.NotError(err).NotNil(r)
 	x.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusUnsupportedMediaType).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
 
 	val := &struct {
 		XMLName stdxml.Name `xml:"root"`
