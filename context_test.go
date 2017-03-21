@@ -6,14 +6,29 @@ package web
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/content"
 )
 
 var _ Renderer = &Context{}
 
 var _ Reader = &Context{}
+
+// 获取一个默认的 Context 实例，方便测试用。
+func defaultContext(a *assert.Assertion) *Context {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	c, err := content.New(content.DefaultConfig())
+	a.NotError(err).NotNil(c)
+
+	ctx := NewContext(w, r)
+	a.NotNil(ctx)
+	ctx.c = c
+	return ctx
+}
 
 func TestContext_ResultFields(t *testing.T) {
 	a := assert.New(t)

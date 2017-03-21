@@ -2,7 +2,6 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package result 用于描述向用户返回的提示信息。
 package web
 
 import (
