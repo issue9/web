@@ -19,11 +19,15 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.8.0+20170321"
+const Version = "0.8.1+20170322"
 
-const logsFilename = "logs.xml" // 日志配置文件的文件名。
+const (
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	configFilename = "web.json" // 配置文件的文件名。
+)
 
 var (
+	configDir      string         // 配置文件所在目录
 	defaultConfig  *config.Config // 当前的配置实例
 	defaultServer  *server.Server
 	defaultContent content.Content
@@ -32,24 +36,25 @@ var (
 
 // Init 初始化框架的基本内容。
 //
-// configDir 指定了配置文件所在的目录，框架默认的
+// confDir 指定了配置文件所在的目录，框架默认的
 // 两个配置文件都会从此目录下查找。
-func Init(configDir string) error {
-	return load(configDir)
+func Init(confDir string) error {
+	if !utils.FileExists(confDir) {
+		return errors.New("配置文件目录不存在")
+	}
+	configDir = confDir
+
+	return load()
 }
 
 // 加载配置，初始化相关的组件。
-func load(configDir string) error {
-	if !utils.FileExists(configDir) {
-		return errors.New("配置文件目录不存在")
-	}
-
-	err := logs.InitFromXMLFile(filepath.Join(configDir, logsFilename))
+func load() error {
+	err := logs.InitFromXMLFile(File(logsFilename))
 	if err != nil {
 		return err
 	}
 
-	defaultConfig, err = config.New(configDir)
+	defaultConfig, err = config.Load(File(configFilename))
 	if err != nil {
 		return err
 	}
@@ -92,7 +97,7 @@ func Restart(timeout time.Duration) error {
 	logs.Flush()
 
 	// 重新加载配置内容
-	if err := load(defaultConfig.Dir()); err != nil {
+	if err := load(); err != nil {
 		return err
 	}
 
@@ -110,7 +115,7 @@ func Shutdown(timeout time.Duration) error {
 
 // File 获取配置目录下的文件。
 func File(path string) string {
-	return defaultConfig.File(path)
+	return filepath.Join(configDir, path)
 }
 
 // NewModule 注册一个新的模块。
