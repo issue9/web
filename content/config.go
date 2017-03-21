@@ -10,6 +10,9 @@ import (
 )
 
 // Envelope 的状态
+//
+// Envelope 为用户端在无法获取报头等内容的情况下，
+// 服务端将这些内容转换成一定格式输出到响应内容中的一种方式。
 const (
 	EnvelopeStateEnable  = "enable"  // 根据客户端决定是否开始
 	EnvelopeStateDisable = "disable" // 不能使用 envelope

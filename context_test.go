@@ -24,9 +24,8 @@ func defaultContext(a *assert.Assertion) *Context {
 	c, err := content.New(content.DefaultConfig())
 	a.NotError(err).NotNil(c)
 
-	ctx := NewContext(w, r)
+	ctx := NewContext(w, r, c)
 	a.NotNil(ctx)
-	ctx.c = c
 	return ctx
 }
 
