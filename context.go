@@ -44,7 +44,7 @@ type Context struct {
 // 若 c 为空，则使用默认的内容。
 func NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
 	if c == nil {
-		c = defaultContent
+		c = defaultApp.Content()
 	}
 
 	return &Context{

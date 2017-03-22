@@ -74,15 +74,6 @@ func (s *Server) Init(h http.Handler) {
 	s.handler = s.buildHandler(h)
 }
 
-// Restart 重启服务。
-func (s *Server) Restart(timeout time.Duration) error {
-	if err := s.Shutdown(timeout); err != nil {
-		return err
-	}
-
-	return s.Run()
-}
-
 // Run 运行路由，执行监听程序。
 func (s *Server) Run() error {
 	if s.conf.HTTPS {
