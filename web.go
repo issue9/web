@@ -83,34 +83,42 @@ func Run(h http.Handler) error {
 	return defaultServer.Run()
 }
 
-// Restart 重启服务。
+// Restart 重启路由服务。仅是重启路由服务，
+// 不会重新加载配置文件，不然会影响全局内容，和直接重启程序没什么区别。
 //
-// timeout 等待该时间之后重启，小于该值，则立即重启。
+// timeout 等待该时间之后重启，若小于或等于 0 则立即重启。
 func Restart(timeout time.Duration) error {
-	// BUG(caixw) 在未调用 Run() 的情况下直接调
-	// 用 Restart 会出现 modules 未初始化的问题
-	if err := defaultServer.Shutdown(timeout); err != nil {
-		return err
-	}
-
 	logs.All("重启服务器...")
 	logs.Flush()
 
-	// 重新加载配置内容
-	if err := load(); err != nil {
-		return err
+	if defaultServer != nil {
+		return defaultServer.Restart(timeout)
 	}
 
-	return defaultServer.Run()
+	return nil
 }
 
-// Shutdown 关闭服务。
+// Shutdown 关闭所有服务。
+// 关闭之后不能再调用 Run() 重新运行。
+// 若只是想重启服务，只能调用 Restart() 函数。
 //
-// timeout 若超过该时间，服务还未自动停止的，则会强制停止。
-// 若 timeout<=0，则会立即停止服务，相当于 http.Server.Close()；
-// 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务，相当于 http.Server.Shutdown()。
+// timeout 表示已有服务的等待时间。
+// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func Shutdown(timeout time.Duration) error {
-	return defaultServer.Shutdown(timeout)
+	logs.Flush()
+
+	if defaultServer != nil {
+		if err := defaultServer.Shutdown(timeout); err != nil {
+			return err
+		}
+	}
+
+	defaultConfig = nil
+	defaultContent = nil
+	defaultServer = nil
+	defaultModules = nil
+
+	return nil
 }
 
 // File 获取配置目录下的文件。
