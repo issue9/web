@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/issue9/mux"
 	"github.com/issue9/web/modules"
 )
 
@@ -56,6 +57,15 @@ func Shutdown(timeout time.Duration) error {
 // File 获取配置目录下的文件。
 func File(path string) string {
 	return defaultApp.File(path)
+}
+
+// Mux 获取 mux.ServeMux 实例。
+//
+// 通过 Mux 可以添加各类路由项，诸如：
+//  Mux().Get("/test", h).
+//      Post("/test", h)
+func Mux() *mux.ServeMux {
+	return defaultApp.Mux()
 }
 
 // NewModule 注册一个新的模块。

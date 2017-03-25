@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/mux"
 	"github.com/issue9/utils"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/config"
@@ -73,6 +74,15 @@ func NewApp(confDir string) (*App, error) {
 // File 获取配置目录下的文件。
 func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
+}
+
+// Mux 获取 mux.ServeMux 实例。
+//
+// 通过 Mux 可以添加各类路由项，诸如：
+//  Mux().Get("/test", h).
+//      Post("/test", h)
+func (app *App) Mux() *mux.ServeMux {
+	return app.server.Mux()
 }
 
 // NewModule 注册一个新的模块。
