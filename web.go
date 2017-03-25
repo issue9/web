@@ -37,7 +37,8 @@ func Run(h http.Handler) error {
 
 // Restart 重启整个服务。
 //
-// timeout 等待该时间之后重启，若小于或等于 0 则立即重启。
+// timeout 表示已有服务的等待时间。
+// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func Restart(timeout time.Duration) error {
 	return defaultApp.Restart(timeout)
 }
