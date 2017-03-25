@@ -6,10 +6,20 @@ package web
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/request"
 )
+
+// Renderer 向客户端渲染的接口
+type Renderer interface {
+	Render(status int, v interface{}, headers map[string]string)
+}
+
+// Reader 从客户端读取数据的接口
+type Reader interface {
+	Read(v interface{}) bool
+}
 
 // Context 是对 http.ResopnseWriter 和 http.Request 的简单封装。
 //
@@ -30,11 +40,17 @@ type Context struct {
 }
 
 // NewContext 声明一个新的 Context
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+//
+// 若 c 为空，则使用默认的内容。
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
+	if c == nil {
+		c = app.content
+	}
+
 	return &Context{
 		w: w,
 		r: r,
-		c: defaultContent,
+		c: c,
 	}
 }
 
@@ -58,48 +74,37 @@ func (ctx *Context) Read(v interface{}) bool {
 	return ctx.c.Read(ctx.Response(), ctx.Request(), v)
 }
 
-// NewParam 声明一个新的 *request.Param 实例
-func (ctx *Context) NewParam() *request.Param {
-	p, err := request.NewParam(ctx.r)
-	if err != nil {
-		ctx.Error(err)
-	}
-
-	return p
-}
-
-// NewQuery 声明一个新的 *request.Query 实例
-func (ctx *Context) NewQuery() *request.Query {
-	return request.NewQuery(ctx.r)
-}
-
 // ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
 // 当出错时，第二个参数返回 false。
+//
+// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
+// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
 func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
-	rslt := p.Result(code)
 
-	if rslt.HasDetail() {
-		rslt.Render(ctx)
+	if !p.OK(code) {
 		return id, false
 	}
 
 	if id <= 0 {
-		rslt.Add("id", "必须大于零")
-		rslt.Render(ctx)
+		NewResult(code, map[string]string{key: "必须大于零"}).Render(ctx)
 		return id, false
 	}
 
 	return id, true
 }
 
-// ParamInt64 取地址参数中的 int64 值
+// ParamInt64 取地址参数中的 int64 值。
+// 当出错时，第二个参数返回 false。
+//
+// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
+// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
 func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
-	p := ctx.NewParam()
+	p := ctx.Params()
 	id := p.Int64(key)
 
-	if p.OK(ctx, code) {
+	if p.OK(code) {
 		return id, false
 	}
 
@@ -112,5 +117,34 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 // 当第二个参数返回 true 时，返回的是可获取的字段名列表；
 // 当第二个参数返回 false 时，返回的是不允许获取的字段名。
 func (ctx *Context) ResultFields(allow []string) ([]string, bool) {
-	return request.ResultFields(ctx.Request(), allow)
+	resultFields := ctx.Request().Header.Get("X-Result-Fields")
+	if len(resultFields) == 0 { // 没有指定，则返回所有字段内容
+		return allow, true
+	}
+	fields := strings.Split(resultFields, ",")
+	fails := make([]string, 0, len(fields))
+
+	isAllow := func(field string) bool {
+		for _, f1 := range allow {
+			if f1 == field {
+				return true
+			}
+		}
+		return false
+	}
+
+	for index, field := range fields {
+		field = strings.TrimSpace(field)
+		fields[index] = field
+
+		if !isAllow(field) { // 记录不允许获取的字段名
+			fails = append(fails, field)
+		}
+	}
+
+	if len(fails) > 0 {
+		return fails, false
+	}
+
+	return fields, true
 }

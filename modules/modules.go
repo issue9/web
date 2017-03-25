@@ -19,7 +19,9 @@ var (
 	ErrModulesInited = errors.New("所有模块已经初始化完成")
 )
 
-// Init 模块的初始化函数
+// Init 模块的初始化函数，实现者需要注意：
+// 在重启服务时，会被再次调用，需要保证在多次调用的情况下，
+// 不会出现冲突。
 type Init func() error
 
 // 用以表示一个模块所需要的数据。
@@ -93,6 +95,20 @@ func (ms *Modules) Init() error {
 
 	ms.inited = true
 	return nil
+}
+
+// Reset 重置为未初始化状态。
+func (ms *Modules) Reset() error {
+	ms.inited = false
+
+	// 重置所有模块为未初始化状态
+	ms.lock.Lock()
+	for _, m := range ms.modules {
+		m.inited = false
+	}
+	ms.lock.Unlock()
+
+	return ms.Init()
 }
 
 // 初始化指定模块，会先初始化其依赖模块。

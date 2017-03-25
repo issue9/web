@@ -10,16 +10,19 @@ import (
 )
 
 // Envelope 的状态
+//
+// Envelope 为用户端在无法获取报头等内容的情况下，
+// 服务端将这些内容转换成一定格式输出到响应内容中的一种方式。
 const (
 	EnvelopeStateEnable  = "enable"  // 根据客户端决定是否开始
 	EnvelopeStateDisable = "disable" // 不能使用 envelope
 	EnvelopeStateMust    = "must"    // 强制使用 envelope
 )
 
-// Config 初始化 content 包的配置
+// Config New 的参数，同时也是 internal/config 中配置文件中的部分内容。
 type Config struct {
-	ContentType    string `json:"contentType"`    // 默认的编码类型
-	EnvelopeState  string `json:"envelopeState"`  // 是否启用 envelope 状态
+	ContentType    string `json:"contentType"`    // 编码类型
+	EnvelopeState  string `json:"envelopeState"`  // envelope 的启用状态
 	EnvelopeKey    string `json:"envelopeKey"`    // 若 EnvelopeState == enable，则此值表示触发的查询参数关键字。
 	EnvelopeStatus int    `json:"envelopeStatus"` // 当 Envelope 处理开启状态时，返回的状态码。
 }

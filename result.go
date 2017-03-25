@@ -2,14 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package result 用于描述向用户返回的提示信息。
-package result
+package web
 
 import (
 	"net/http"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/types"
 )
 
 // Result 提供了一套用于描述向客户端反馈错误信息的机制。
@@ -49,8 +47,11 @@ type detail struct {
 	Message string `json:"message" xml:",chardata"`
 }
 
-// New 声明一个新的 Result 实例
-func New(code int) *Result {
+// NewResult 声明一个新的 Result 实例
+//
+// code 表示错误代码；
+// fields 为具体的错误信息；
+func NewResult(code int, fields map[string]string) *Result {
 	msg, err := getMessage(code)
 	if err != nil {
 		logs.Error(err)
@@ -62,20 +63,17 @@ func New(code int) *Result {
 		}
 	}
 
-	return &Result{
+	rslt := &Result{
 		Code:    code,
 		Message: msg.message,
 		status:  msg.status,
-		Detail:  make([]*detail, 0, 2),
+		Detail:  make([]*detail, 0, len(fields)),
 	}
-}
 
-// NewWithDetail 声明一个带 Detail 内容的实例
-func NewWithDetail(code int, detail map[string]string) *Result {
-	rslt := New(code)
-	for k, v := range detail {
+	for k, v := range fields {
 		rslt.Add(k, v)
 	}
+
 	return rslt
 }
 
@@ -110,6 +108,6 @@ func (rslt *Result) Status() int {
 }
 
 // Render 将当前的实例输出到客户端
-func (rslt *Result) Render(ctx types.Context) {
+func (rslt *Result) Render(ctx *Context) {
 	ctx.Render(rslt.status, rslt, nil)
 }

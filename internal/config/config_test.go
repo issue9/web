@@ -17,10 +17,10 @@ var _ sanitizer = server.DefaultConfig()
 
 var _ sanitizer = content.DefaultConfig()
 
-func TestNew(t *testing.T) {
+func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := New("./testdata")
+	conf, err := Load("./testdata/web.json")
 	a.NotError(err).NotNil(conf)
 	a.Equal(conf.Server.KeyFile, "keyFile")
 	a.Equal(conf.Server.ReadTimeout, 30*time.Nanosecond)
