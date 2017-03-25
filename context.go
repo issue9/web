@@ -76,26 +76,30 @@ func (ctx *Context) Read(v interface{}) bool {
 
 // ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
 // 当出错时，第二个参数返回 false。
+//
+// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
+// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
 func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 	p := ctx.Params()
 	id := p.Int64(key)
-	rslt := p.Result(code)
 
-	if rslt.HasDetail() {
-		rslt.Render(ctx)
+	if !p.OK(code) {
 		return id, false
 	}
 
 	if id <= 0 {
-		rslt.Add("id", "必须大于零")
-		rslt.Render(ctx)
+		NewResult(code, map[string]string{key: "必须大于零"}).Render(ctx)
 		return id, false
 	}
 
 	return id, true
 }
 
-// ParamInt64 取地址参数中的 int64 值
+// ParamInt64 取地址参数中的 int64 值。
+// 当出错时，第二个参数返回 false。
+//
+// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
+// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
 func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 	p := ctx.Params()
 	id := p.Int64(key)
