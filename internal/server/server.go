@@ -21,9 +21,6 @@ type Server struct {
 	conf *Config
 	mux  *mux.ServeMux
 
-	// mux 的外层封装。
-	handler http.Handler
-
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
 	// 记录这些 server，方便重启等操作。
@@ -53,7 +50,7 @@ func (s *Server) Mux() *mux.ServeMux {
 }
 
 // 初始化路由项。
-func (s *Server) initRoutes(h http.Handler) {
+func (s *Server) initRoutes(h http.Handler) http.Handler {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range s.conf.Static {
 		if !strings.HasSuffix(url, "/") {
@@ -67,7 +64,7 @@ func (s *Server) initRoutes(h http.Handler) {
 	}
 
 	// 构建其它路由
-	s.handler = s.buildHandler(h)
+	return s.buildHandler(h)
 }
 
 // Run 运行路由，执行监听程序。
@@ -76,13 +73,13 @@ func (s *Server) initRoutes(h http.Handler) {
 // 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
 //  s.Init(handlers.Host(s.Mux(), "www.caixw.io")
 func (s *Server) Run(h http.Handler) error {
-	s.initRoutes(h)
+	h = s.initRoutes(h)
 
 	if s.conf.HTTPS {
 		switch s.conf.HTTPState {
 		case httpStateListen:
 			logs.Infof("开始监听[%v]端口", httpPort)
-			go s.getServer(httpPort, s.handler).ListenAndServe()
+			go s.getServer(httpPort, h).ListenAndServe()
 		case httpStateRedirect:
 			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
 			go s.httpRedirectListenAndServe()
@@ -90,11 +87,11 @@ func (s *Server) Run(h http.Handler) error {
 		}
 
 		logs.Infof("开始监听[%v]端口", s.conf.Port)
-		return s.getServer(s.conf.Port, s.handler).ListenAndServeTLS(s.conf.CertFile, s.conf.KeyFile)
+		return s.getServer(s.conf.Port, h).ListenAndServeTLS(s.conf.CertFile, s.conf.KeyFile)
 	}
 
 	logs.Infof("开始监听[%v]端口", s.conf.Port)
-	return s.getServer(s.conf.Port, s.handler).ListenAndServe()
+	return s.getServer(s.conf.Port, h).ListenAndServe()
 }
 
 // Shutdown 关闭服务。
