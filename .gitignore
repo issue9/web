@@ -30,4 +30,4 @@ _testmain.go
 .DS_Store
 
 .vscode/
-./testdata/*.log
+testdata/**/*.log
