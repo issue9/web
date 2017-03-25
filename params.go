@@ -175,7 +175,7 @@ func (p *Params) Result(code int) *Result {
 // OK 是否一切正常，若出错，则自动向 w 输出 *Result 错误信息，并返回 false
 func (p *Params) OK(code int) bool {
 	if len(p.errors) > 0 {
-		p.Result(code).Render(p.ctx)
+		NewResult(code, p.errors).Render(p.ctx)
 		return false
 	}
 	return true

@@ -17,18 +17,19 @@ var _ Renderer = &Context{}
 
 var _ Reader = &Context{}
 
-// 获取一个默认的 Context 实例，方便测试用。
-func defaultContext(a *assert.Assertion) *Context {
+func TestApp_NewContext(t *testing.T) {
+	a := assert.New(t)
+
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	c, err := content.New(content.DefaultConfig())
 	a.NotError(err).NotNil(c)
-	app, err := NewApp("./")
+	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
 	ctx := app.NewContext(w, r, c)
 	a.NotNil(ctx)
-	return ctx
+	a.Equal(ctx.Response(), w).Equal(ctx.Request(), r).Equal(ctx.c, c)
 }
 
 func TestContext_ResultFields(t *testing.T) {
