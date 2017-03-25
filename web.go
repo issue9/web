@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/modules"
 )
 
@@ -16,7 +15,7 @@ import (
 const Version = "0.9.0+20170322"
 
 var (
-	defaultApp     *app.App
+	defaultApp     *App
 	defaultHandler http.Handler
 )
 
@@ -25,12 +24,12 @@ var (
 // confDir 指定了配置文件所在的目录，框架默认的
 // 两个配置文件都会从此目录下查找。
 func Init(confDir string) error {
-	a, err := app.New(confDir)
+	app, err := NewApp(confDir)
 	if err != nil {
 		return err
 	}
 
-	defaultApp = a
+	defaultApp = app
 	return nil
 }
 

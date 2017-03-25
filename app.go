@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"errors"
@@ -30,13 +30,14 @@ type App struct {
 	server    *server.Server
 	content   content.Content
 	modules   *modules.Modules
+	handler   http.Handler
 }
 
-// New 初始化框架的基本内容。
+// NewApp 初始化框架的基本内容。
 //
 // confDir 指定了配置文件所在的目录，框架默认的
 // 两个配置文件都会从此目录下查找。
-func New(confDir string) (*App, error) {
+func NewApp(confDir string) (*App, error) {
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件目录不存在")
 	}
@@ -88,17 +89,13 @@ func (app *App) NewModule(name string, init modules.Init, deps ...string) {
 	}
 }
 
-// Content 获取 content.Content 实例
-func (app *App) Content() content.Content {
-	return app.content
-}
-
 // Run 运行路由，执行监听程序。
 func (app *App) Run(h http.Handler) error {
 	if err := app.modules.Init(); err != nil {
 		return err
 	}
 
+	app.handler = h
 	app.server.Init(h)
 
 	return app.server.Run()
@@ -120,4 +117,19 @@ func (app *App) Shutdown(timeout time.Duration) error {
 	}
 
 	return nil
+}
+
+// Restart 重启整个服务。
+//
+// timeout 等待该时间之后重启，若小于或等于 0 则立即重启。
+func (app *App) Restart(timeout time.Duration) error {
+	if err := app.Shutdown(timeout); err != nil {
+		return err
+	}
+
+	if err := app.modules.Reset(); err != nil {
+		return err
+	}
+
+	return app.Run(defaultHandler)
 }
