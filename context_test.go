@@ -23,8 +23,10 @@ func defaultContext(a *assert.Assertion) *Context {
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	c, err := content.New(content.DefaultConfig())
 	a.NotError(err).NotNil(c)
+	app, err := NewApp("./")
+	a.NotError(err).NotNil(app)
 
-	ctx := NewContext(w, r, c)
+	ctx := app.NewContext(w, r, c)
 	a.NotNil(ctx)
 	return ctx
 }

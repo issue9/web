@@ -52,12 +52,8 @@ func (s *Server) Mux() *mux.ServeMux {
 	return s.mux
 }
 
-// Init 初始化。
-//
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Server.Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
-//  s.Init(handlers.Host(s.Mux(), "www.caixw.io")
-func (s *Server) Init(h http.Handler) {
+// 初始化路由项。
+func (s *Server) initRoutes(h http.Handler) {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range s.conf.Static {
 		if !strings.HasSuffix(url, "/") {
@@ -74,17 +70,14 @@ func (s *Server) Init(h http.Handler) {
 	s.handler = s.buildHandler(h)
 }
 
-// Restart 重启服务。
-func (s *Server) Restart(timeout time.Duration) error {
-	if err := s.Shutdown(timeout); err != nil {
-		return err
-	}
-
-	return s.Run()
-}
-
 // Run 运行路由，执行监听程序。
-func (s *Server) Run() error {
+//
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Server.Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
+//  s.Init(handlers.Host(s.Mux(), "www.caixw.io")
+func (s *Server) Run(h http.Handler) error {
+	s.initRoutes(h)
+
 	if s.conf.HTTPS {
 		switch s.conf.HTTPState {
 		case httpStateListen:

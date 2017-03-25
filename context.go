@@ -42,9 +42,9 @@ type Context struct {
 // NewContext 声明一个新的 Context
 //
 // 若 c 为空，则使用默认的内容。
-func NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
 	if c == nil {
-		c = defaultContent
+		c = app.content
 	}
 
 	return &Context{
