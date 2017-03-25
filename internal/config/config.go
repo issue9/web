@@ -12,14 +12,11 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
-	"path/filepath"
 
 	"github.com/issue9/utils"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
 )
-
-const filename = "web.json" // 配置文件的文件名。
 
 // 需要写入到 web.json 配置文件的类需要实现的接口。
 type sanitizer interface {
@@ -29,9 +26,6 @@ type sanitizer interface {
 
 // Config 默认的配置文件。
 type Config struct {
-	// 配置文件所在的目录
-	dir string
-
 	// Server
 	Server *server.Config `json:"server"`
 
@@ -39,29 +33,18 @@ type Config struct {
 	Content *content.Config `json:"content"`
 }
 
-// New 声明一个 *Config 实例，从 confDir/web.json 中获取。
-func New(confDir string) (*Config, error) {
-	conf := &Config{
-		dir: confDir,
-	}
-
-	if err := conf.load(); err != nil {
-		return nil, err
-	}
-	return conf, nil
-}
-
 // Load 加载配置文件
 //
 // path 用于指定配置文件的位置；
-func (conf *Config) load() error {
-	data, err := ioutil.ReadFile(conf.File(filename))
+func Load(path string) (*Config, error) {
+	conf := &Config{}
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = json.Unmarshal(data, conf); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Server
@@ -71,12 +54,12 @@ func (conf *Config) load() error {
 		// 将未设置的项，给予一个默认值。
 		c := server.DefaultConfig()
 		if err = utils.Merge(true, c, conf.Server); err != nil {
-			return err
+			return nil, err
 		}
 		conf.Server = c
 
 		if err = conf.Server.Sanitize(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -86,21 +69,16 @@ func (conf *Config) load() error {
 	} else {
 		c := content.DefaultConfig()
 		if err = utils.Merge(true, c, conf.Content); err != nil {
-			return err
+			return nil, err
 		}
 		conf.Content = c
 
 		if err = conf.Content.Sanitize(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
-}
-
-// File 获取配置目录下的文件。
-func (conf *Config) File(path string) string {
-	return filepath.Join(conf.dir, path)
+	return conf, nil
 }
 
 // DefaultConfig 输出默认配置内容。

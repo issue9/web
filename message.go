@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package result
+package web
 
 import (
 	"errors"
@@ -40,6 +40,8 @@ func getStatus(code int) int {
 }
 
 // NewMessage 注册一条新的信息
+//
+// code 必须为一个大于 100 的整数。
 func NewMessage(code int, msg string) error {
 	if code < 100 {
 		return fmt.Errorf("ID 必须为大于等于 %v 的值", 100)

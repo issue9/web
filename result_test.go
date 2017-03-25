@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package result
+package web
 
 import (
 	"encoding/json"
@@ -16,12 +16,12 @@ import (
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(-2) // 不存在的代码
+	r := NewResult(-2, nil) // 不存在的代码
 	a.Equal(r.Code, -1)
 
 	code := http.StatusBadRequest * 1000
 	a.NotError(NewMessage(code, "400"))
-	r = New(code)
+	r = NewResult(code, nil)
 	a.Equal(r.Message, "400")
 
 	clearMesages()
@@ -32,7 +32,7 @@ func TestResult_Add_HasDetail(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(code)
+	r := NewResult(code, nil)
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
@@ -46,16 +46,16 @@ func TestResult_IsError(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(400 + 500)
+	r := NewResult(400+500, nil)
 	a.True(r.IsError())
 
 	code = 300 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r = New(code + 3)
+	r = NewResult(code+3, nil)
 	a.True(r.IsError())
 
 	// 不存在于 message 中，算是 500 错误
-	r = New(200*100 + 3)
+	r = NewResult(200*100+3, nil)
 	a.True(r.IsError())
 
 	clearMesages()
@@ -65,7 +65,7 @@ func TestResultJSONMarshal(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
+	r := NewResult(400, nil)
 	r.Add("field1", "message1")
 	r.Add("field2", "message2")
 
@@ -73,7 +73,7 @@ func TestResultJSONMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400,"detail":[{"field":"field1","message":"message1"},{"field":"field2","message":"message2"}]}`)
 
-	r = New(400)
+	r = NewResult(400, nil)
 	bs, err = json.Marshal(r)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400}`)
@@ -85,7 +85,7 @@ func TestResultXMLMarshal(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
+	r := NewResult(400, nil)
 	r.Add("field", "message1")
 	r.Add("field", "message2")
 
@@ -93,7 +93,7 @@ func TestResultXMLMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `<result message="400" code="400"><field name="field">message1</field><field name="field">message2</field></result>`)
 
-	r = New(400)
+	r = NewResult(400, nil)
 	bs, err = xml.Marshal(r)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `<result message="400" code="400"></result>`)
