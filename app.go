@@ -96,9 +96,7 @@ func (app *App) Run(h http.Handler) error {
 	}
 
 	app.handler = h
-	app.server.Init(h)
-
-	return app.server.Run()
+	return app.server.Run(app.handler)
 }
 
 // Shutdown 关闭所有服务。
@@ -131,5 +129,5 @@ func (app *App) Restart(timeout time.Duration) error {
 		return err
 	}
 
-	return app.Run(defaultHandler)
+	return app.Run(app.handler)
 }

@@ -14,10 +14,7 @@ import (
 // Version 当前框架的版本
 const Version = "0.9.0+20170322"
 
-var (
-	defaultApp     *App
-	defaultHandler http.Handler
-)
+var defaultApp *App
 
 // Init 初始化框架的基本内容。
 //
@@ -35,7 +32,6 @@ func Init(confDir string) error {
 
 // Run 运行路由，执行监听程序。
 func Run(h http.Handler) error {
-	defaultHandler = h
 	return defaultApp.Run(h)
 }
 
@@ -43,11 +39,7 @@ func Run(h http.Handler) error {
 //
 // timeout 等待该时间之后重启，若小于或等于 0 则立即重启。
 func Restart(timeout time.Duration) error {
-	if err := defaultApp.Shutdown(timeout); err != nil {
-		return err
-	}
-
-	return defaultApp.Run(defaultHandler)
+	return defaultApp.Restart(timeout)
 }
 
 // Shutdown 关闭所有服务。
