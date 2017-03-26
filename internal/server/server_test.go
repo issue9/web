@@ -49,6 +49,7 @@ func TestServer_Run(t *testing.T) {
 	resp, err = http.Get("http://localhost:8082/static/dir/file2.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
+
 	srv.Shutdown(0)
 }
 
@@ -62,7 +63,7 @@ func TestServer_Shutdown(t *testing.T) {
 	srv.Mux().GetFunc("/test", f1)
 	srv.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
-		srv.Shutdown(0)
+		srv.Shutdown(0) // 手动调用接口关闭
 	})
 
 	go func() {
@@ -117,8 +118,6 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
-
-	srv.Shutdown(0)
 }
 
 func TestServer_httpStateDisabled(t *testing.T) {
@@ -139,7 +138,9 @@ func TestServer_httpStateDisabled(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// BUG(caixw) 一定机率返回错误 getsockopt: connection refused
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	time.Sleep(500 * time.Millisecond)
+
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
 	resp, err := client.Get("https://localhost:8083/test")
@@ -170,14 +171,16 @@ func TestServer_httpStateRedirect(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// BUG(caixw) 一定机率返回错误 getsockopt: connection refused
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	time.Sleep(500 * time.Millisecond)
+
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
 	resp, err := client.Get("https://localhost:8083/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	resp, err = http.Get("http://localhost:8083/test")
+	resp, err = http.Get("http://localhost:80/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusMovedPermanently)
 
@@ -202,7 +205,9 @@ func TestServer_httpStateListen(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// BUG(caixw) 一定机率返回错误 getsockopt: connection refused
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	time.Sleep(500 * time.Millisecond)
+
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
 	resp, err := client.Get("https://localhost:8083/test")
