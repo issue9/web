@@ -48,27 +48,37 @@ func NewApp(confDir string) (*App, error) {
 		modules:   modules.New(),
 	}
 
-	err := logs.InitFromXMLFile(app.File(logsFilename))
-	if err != nil {
-		return nil, err
-	}
-
-	app.config, err = config.Load(app.File(configFilename))
-	if err != nil {
-		return nil, err
-	}
-
-	app.server, err = server.New(app.config.Server)
-	if err != nil {
-		return nil, err
-	}
-
-	app.content, err = content.New(app.config.Content)
-	if err != nil {
+	if err := app.init(); err != nil {
 		return nil, err
 	}
 
 	return app, nil
+}
+
+// 对其它可重复加载的数据进行初始化。
+// 方便在 NewApp 和 Restart 中进行调用。
+func (app *App) init() error {
+	err := logs.InitFromXMLFile(app.File(logsFilename))
+	if err != nil {
+		return err
+	}
+
+	app.config, err = config.Load(app.File(configFilename))
+	if err != nil {
+		return err
+	}
+
+	app.server, err = server.New(app.config.Server)
+	if err != nil {
+		return err
+	}
+
+	app.content, err = content.New(app.config.Content)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // File 获取配置目录下的文件。
@@ -133,6 +143,10 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func (app *App) Restart(timeout time.Duration) error {
 	if err := app.Shutdown(timeout); err != nil {
+		return err
+	}
+
+	if err := app.init(); err != nil {
 		return err
 	}
 
