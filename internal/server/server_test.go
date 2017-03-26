@@ -214,8 +214,6 @@ func TestServer_httpStateListen(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	tlsconf = &tls.Config{InsecureSkipVerify: true}
-	client = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
 	resp, err = http.Get("http://localhost:80/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
