@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package server 与路由有关的服务管理。
+//
+// NOTE: 测试内容涉及到 80 端口，部分系统可能需要 sudo go test 才能正确执行。
 package server
 
 import (
@@ -78,11 +81,15 @@ func (s *Server) Run(h http.Handler) error {
 	if s.conf.HTTPS {
 		switch s.conf.HTTPState {
 		case httpStateListen:
-			logs.Infof("开始监听[%v]端口", httpPort)
-			go s.getServer(httpPort, h).ListenAndServe()
+			go func() {
+				logs.Infof("开始监听[%v]端口", httpPort)
+				logs.Error(s.getServer(httpPort, h).ListenAndServe())
+			}()
 		case httpStateRedirect:
-			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
-			go s.httpRedirectListenAndServe()
+			go func() {
+				logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
+				logs.Error(s.httpRedirectServer().ListenAndServe())
+			}()
 			// 空值或是 disable 均为默认处理方式，即不作为。
 		}
 
@@ -122,17 +129,16 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
-func (s *Server) httpRedirectListenAndServe() error {
-	srv := s.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) httpRedirectServer() *http.Server {
+	return s.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 构建跳转链接
 		url := r.URL
-		url.Host = r.Host + s.conf.Port
 		url.Scheme = "HTTPS"
+		url.Host = strings.Split(r.Host, ":")[0] + s.conf.Port
 
 		urlStr := url.String()
 		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
 	}))
-
-	return srv.ListenAndServe()
 }
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。

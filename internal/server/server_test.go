@@ -138,7 +138,7 @@ func TestServer_httpStateDisabled(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -171,7 +171,7 @@ func TestServer_httpStateRedirect(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -180,9 +180,9 @@ func TestServer_httpStateRedirect(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	resp, err = http.Get("http://localhost:80/test")
+	resp, err = client.Get("http://localhost:80/test")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusMovedPermanently)
+	a.Equal(resp.StatusCode, 1)
 
 	srv.Shutdown(0)
 }
@@ -205,7 +205,7 @@ func TestServer_httpStateListen(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能时间会不同
+	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -214,7 +214,9 @@ func TestServer_httpStateListen(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	resp, err = http.Get("http://localhost:8083/test")
+	tlsconf = &tls.Config{InsecureSkipVerify: true}
+	client = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
+	resp, err = http.Get("http://localhost:80/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
