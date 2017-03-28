@@ -32,6 +32,10 @@ func Init(confDir string) error {
 }
 
 // Run 运行路由，执行监听程序。
+//
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 Mux() 之上：
+//  web.Run(handlers.Host(web.Mux(), "www.caixw.io")
 func Run(h http.Handler) error {
 	return defaultApp.Run(h)
 }
