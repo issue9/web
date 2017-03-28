@@ -1,11 +1,10 @@
 language: go
-
+sudo: required
 go:
     - tip
     - 1.8
-
-script: sudo go test ./...
-
+script:
+    - go test ./...
 install:
     - go get github.com/issue9/assert
     - go get github.com/issue9/context
