@@ -4,7 +4,7 @@ go:
     - tip
     - 1.8
 script:
-    - go test ./...
+    - sudo go test ./...
 install:
     - go get github.com/issue9/assert
     - go get github.com/issue9/context
