@@ -10,8 +10,7 @@
             "Access-Control-Allow-Headers":"Content-Type, Authorization, Accept,X-Requested-With",
             "Server": "Windows/IIS7"
         },
-
-        "readTimeout": 30,
+        "readTimeout": 30000000,
         "pprof"     : "/debug/pprof/"
     },
 

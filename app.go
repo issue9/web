@@ -124,7 +124,6 @@ func (app *App) Run(h http.Handler) error {
 }
 
 // Shutdown 关闭所有服务。
-// 关闭之后不能再调用 Run() 重新运行。
 // 若只是想重启服务，只能调用 Restart() 函数。
 //
 // timeout 表示已有服务的等待时间。
@@ -142,6 +141,7 @@ func (app *App) Shutdown(timeout time.Duration) error {
 }
 
 // Restart 重启整个服务。
+// Restart 并不简单地等于 Shutdown() + Run()。
 //
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
