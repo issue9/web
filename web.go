@@ -13,7 +13,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.9.2+20170326"
+const Version = "0.9.3+20170403"
 
 var defaultApp *App
 

@@ -52,20 +52,45 @@ func TestApp(t *testing.T) {
 		w.WriteHeader(1)
 	}
 	shutdown := func(w http.ResponseWriter, r *http.Request) {
-		app.Shutdown(10 * time.Microsecond)
+		w.WriteHeader(1)
+		if err := app.Shutdown(50 * time.Microsecond); err != nil {
+			logs.Error("SHUTDOWN:", err)
+		}
 	}
 	restart := func(w http.ResponseWriter, r *http.Request) {
-		app.Restart(10 * time.Microsecond)
+		w.WriteHeader(1)
+		if err := app.Restart(50 * time.Microsecond); err != nil {
+			logs.Error("RESTART:", err)
+		}
 	}
 
-	app.Mux().GetFunc("/test", f1)
-	app.Mux().GetFunc("/shutdown", shutdown)
-	app.Mux().GetFunc("/restart", restart)
+	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
+	app.NewModule("init", func() error {
+		app.Mux().GetFunc("/test", f1)
+		app.Mux().GetFunc("/restart", restart)
+		app.Mux().GetFunc("/shutdown", shutdown)
+		return nil
+	})
 
-	go func(app *App) {
-		a.NotError(app.Run(nil))
-	}(app)
+	go func() {
+		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
+		app.Run(nil)
+	}()
 
+	// 正常访问
 	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
+
+	// 重启之后，依然能访问
+	resp, err = http.Get("http://localhost:8082/restart")
 	a.NotError(err).NotNil(resp)
+	time.Sleep(500 * time.Microsecond) // 待待 app.Restart 生效果
+	resp, err = http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
+
+	// 关闭
+	resp, err = http.Get("http://localhost:8082/shutdown")
+	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
 }
