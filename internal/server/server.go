@@ -114,10 +114,10 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 			}
 		}
 	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-
 		for _, srv := range s.servers {
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
 			if err := srv.Shutdown(ctx); err != nil {
 				return err
 			}
