@@ -5,6 +5,7 @@
 package web
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -30,5 +31,27 @@ func TestNewMessage(t *testing.T) {
 	a.Error(NewMessage(99, "99"))      // 必须大于等于 100
 	a.NotError(NewMessage(100, "100")) // 必须大于等于 100
 
+	a.Error(NewMessage(100, "100")) // 已经存在
+	a.Error(NewMessage(100, ""))    // 消息为空
+
 	clearMesages()
+}
+
+func TestNewMessages(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(NewMessages(map[int]string{
+		100:   "100",
+		40100: "40100",
+	}))
+
+	msg, err := getMessage(100)
+	a.NotError(err).NotNil(msg).Equal(msg.status, 100)
+
+	msg, err = getMessage(40100)
+	a.NotError(err).NotNil(msg).Equal(msg.status, 401)
+
+	// 不存在
+	msg, err = getMessage(100001)
+	a.Error(err).NotNil(msg).Equal(msg.status, http.StatusInternalServerError)
 }

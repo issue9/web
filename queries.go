@@ -118,7 +118,7 @@ func (q *Queries) Result(code int) *Result {
 // OK 是否一切正常，若出错，则自动向 w 输出错误信息，并返回 false
 func (q *Queries) OK(code int) bool {
 	if len(q.errors) > 0 {
-		q.Result(code).Render(q.ctx)
+		NewResult(code, q.errors).Render(q.ctx)
 		return false
 	}
 	return true

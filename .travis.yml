@@ -1,7 +1,10 @@
 language: go
+sudo: true
 go:
     - tip
     - 1.8
+script:
+    - sudo -E env "PATH=$PATH" go test -v ./...
 install:
     - go get github.com/issue9/assert
     - go get github.com/issue9/context
@@ -9,4 +12,4 @@ install:
     - go get github.com/issue9/logs
     - go get github.com/issue9/mux
     - go get github.com/issue9/utils
-    - go get github.com/issue9/orm
+    - go get github.com/issue9/is

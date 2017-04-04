@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestNewResult(t *testing.T) {
 	a := assert.New(t)
 
 	r := NewResult(-2, nil) // 不存在的代码
@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 	code := http.StatusBadRequest * 1000
 	a.NotError(NewMessage(code, "400"))
 	r = NewResult(code, nil)
-	a.Equal(r.Message, "400")
+	a.Equal(r.Message, "400").Equal(r.Status(), 400).Equal(r.Code, code)
 
 	clearMesages()
 }
