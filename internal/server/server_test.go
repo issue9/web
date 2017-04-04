@@ -71,6 +71,9 @@ func TestServer_Shutdown(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
 
+	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Millisecond)
+
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
@@ -100,6 +103,9 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 		err := srv.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed)
 	}()
+
+	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Millisecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
