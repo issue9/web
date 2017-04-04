@@ -77,6 +77,9 @@ func TestApp(t *testing.T) {
 		app.Run(nil)
 	}()
 
+	// 等待 app.Run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Millisecond)
+
 	// 正常访问
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)

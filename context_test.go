@@ -32,6 +32,15 @@ func TestApp_NewContext(t *testing.T) {
 	a.Equal(ctx.Response(), w).Equal(ctx.Request(), r).Equal(ctx.c, c)
 }
 
+func TestContext_ParamID(t *testing.T) {
+	a := assert.New(t)
+
+	r, err := http.NewRequest(http.MethodPut, "/test", nil)
+	a.NotError(err).NotNil(r)
+	ctx := &Context{r: r}
+	a.NotNil(ctx)
+}
+
 func TestContext_ResultFields(t *testing.T) {
 	a := assert.New(t)
 	allow := []string{"col1", "col2", "col3"}

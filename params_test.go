@@ -27,7 +27,13 @@ func testParams(a *assert.Assertion, pattern, path string, h http.Handler) {
 func TestParams_Int(t *testing.T) {
 	a := assert.New(t)
 
-	f1 := func(w http.ResponseWriter, r *http.Request) {
+	buildHandler := func(vals map[string]int) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := app.NewContext(w, r)
+			for key, val := range vals {
+				a.Equal(val, ctx.MustInt(key))
+			}
+		})
 	}
 
 	testParams(a, "/test/{id:\\d+}/{id2:\\d+}", "/test/123/456", http.HandlerFunc(f1))
