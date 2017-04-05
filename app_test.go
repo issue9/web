@@ -15,10 +15,19 @@ import (
 	"github.com/issue9/logs"
 )
 
+var initErr error
+
 func TestMain(m *testing.M) {
-	Init("./testdata")
+	initErr = Init("./testdata")
 
 	os.Exit(m.Run())
+}
+
+// 检测在 TestMain() 中的功能是否存在错误。
+func TestInit(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(initErr).NotNil(defaultApp)
 }
 
 func TestApp_File(t *testing.T) {
