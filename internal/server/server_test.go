@@ -68,11 +68,11 @@ func TestServer_Shutdown(t *testing.T) {
 
 	go func() {
 		err := srv.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
 	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -101,11 +101,11 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 
 	go func() {
 		err := srv.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
 	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -141,11 +141,11 @@ func TestServer_httpStateDisabled(t *testing.T) {
 
 	go func() {
 		err := srv.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
@@ -174,11 +174,11 @@ func TestServer_httpStateRedirect(t *testing.T) {
 
 	go func() {
 		err := srv.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
@@ -208,11 +208,11 @@ func TestServer_httpStateListen(t *testing.T) {
 
 	go func() {
 		err := srv.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}

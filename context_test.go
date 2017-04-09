@@ -24,10 +24,8 @@ func TestApp_NewContext(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	c, err := content.New(content.DefaultConfig())
 	a.NotError(err).NotNil(c)
-	app, err := NewApp("./testdata")
-	a.NotError(err).NotNil(app)
 
-	ctx := app.NewContext(w, r, c)
+	ctx := NewContext(w, r, c)
 	a.NotNil(ctx)
 	a.Equal(ctx.Response(), w).Equal(ctx.Request(), r).Equal(ctx.c, c)
 }

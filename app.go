@@ -7,6 +7,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"time"
 
@@ -24,16 +25,22 @@ const (
 	configFilename = "web.json" // 配置文件的文件名。
 )
 
+// ErrAppClosed 表示当前的 app 实例已经关闭。
+var ErrAppClosed = errors.New("当前实例已经关闭")
+
 var defaultApp *App
 
 // App 保存整个程序的运行环境，方便做整体的调度，比如重启等。
 type App struct {
 	configDir string
-	config    *config.Config
-	server    *server.Server
-	content   content.Content
-	modules   *modules.Modules
+	closed    bool
 	handler   http.Handler
+	router    *mux.Prefix
+
+	config  *config.Config
+	server  *server.Server
+	content content.Content
+	modules *modules.Modules
 }
 
 // Init 初始化框架的基本内容。
@@ -50,52 +57,37 @@ func Init(confDir string) error {
 	return nil
 }
 
-// Run 运行路由，执行监听程序。
-//
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 Mux() 之上：
-//  web.Run(handlers.Host(web.Mux(), "www.caixw.io")
+// Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
 func Run(h http.Handler) error {
 	return defaultApp.Run(h)
 }
 
-// Restart 重启整个服务。
-//
-// timeout 表示已有服务的等待时间。
-// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
+// Restart 重启整个服务，具体说明可参考 App.Restart()。
 func Restart(timeout time.Duration) error {
 	return defaultApp.Restart(timeout)
 }
 
-// Shutdown 关闭所有服务。
-// 关闭之后不能再调用 Run() 重新运行。
-// 若只是想重启服务，只能调用 Restart() 函数。
-//
-// timeout 表示已有服务的等待时间。
-// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
+// Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
 func Shutdown(timeout time.Duration) error {
 	return defaultApp.Shutdown(timeout)
 }
 
-// File 获取配置目录下的文件。
+// File 获取配置目录下的文件，具体说明可参考 App.File()。
 func File(path string) string {
 	return defaultApp.File(path)
 }
 
-// Mux 获取 mux.ServeMux 实例。
-//
-// 通过 Mux 可以添加各类路由项，诸如：
-//  Mux().Get("/test", h).
-//      Post("/test", h)
-func Mux() *mux.ServeMux {
-	return defaultApp.Mux()
+// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
+func Router() *mux.Prefix {
+	return defaultApp.Router()
 }
 
-// NewModule 注册一个新的模块。
-//
-// name 为模块名称；
-// init 当前模块的初始化函数；
-// deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
+// URL 构建一条基于 Config.Root 的完整 URL
+func URL(path string) string {
+	return defaultApp.URL(path)
+}
+
+// NewModule 注册一个新的模块，具体说明可参考 App.Mux()。
 func NewModule(name string, init modules.Init, deps ...string) {
 	defaultApp.NewModule(name, init, deps...)
 }
@@ -144,43 +136,26 @@ func (app *App) init() error {
 		return err
 	}
 
-	return nil
-}
-
-// File 获取配置目录下的文件。
-func (app *App) File(path string) string {
-	return filepath.Join(app.configDir, path)
-}
-
-// Mux 获取 mux.ServeMux 实例。
-//
-// 通过 Mux 可以添加各类路由项，诸如：
-//  Mux().Get("/test", h).
-//      Post("/test", h)
-func (app *App) Mux() *mux.ServeMux {
-	return app.server.Mux()
-}
-
-// NewModule 注册一个新的模块。
-//
-// name 为模块名称；
-// init 当前模块的初始化函数；
-// deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
-func (app *App) NewModule(name string, init modules.Init, deps ...string) {
-	err := app.modules.New(name, init, deps...)
-
-	// 注册模块时出错，直接退出。
+	// router
+	u, err := url.Parse(app.config.Root)
 	if err != nil {
-		logs.Fatal(err)
+		return err
 	}
+	app.router = app.server.Mux().Prefix(u.Path)
+
+	return nil
 }
 
 // Run 运行路由，执行监听程序。
 //
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Mux() 之上：
-//  app.Run(handlers.Host(app.Mux(), "www.caixw.io")
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Router().Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Router().Mux() 之上：
+//  app.Run(handlers.Host(app.Router().Mux(), "www.caixw.io")
 func (app *App) Run(h http.Handler) error {
+	if app.closed {
+		return ErrAppClosed
+	}
+
 	if err := app.modules.Init(); err != nil {
 		return err
 	}
@@ -189,13 +164,14 @@ func (app *App) Run(h http.Handler) error {
 	return app.server.Run(app.handler)
 }
 
-// Shutdown 关闭所有服务。
+// Shutdown 关闭所有服务，之后 app 实例将不可再用，
 // 若只是想重启服务，只能调用 Restart() 函数。
 //
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func (app *App) Shutdown(timeout time.Duration) error {
 	logs.Flush()
+	app.closed = true
 
 	if app.server != nil {
 		return app.server.Shutdown(timeout)
@@ -212,9 +188,13 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func (app *App) Restart(timeout time.Duration) error {
-	if err := app.Shutdown(timeout); err != nil {
-		// NOTE: Shutdown() 始返回的错误信息，并不表示程序出错，无需退出，仅作简单的记录。
-		logs.Error(err)
+	if app.closed {
+		return ErrAppClosed
+	}
+
+	if app.server != nil {
+		// NOTE: Shutdown() 始终返回的错误信息，并不表示程序出错，无需退出，仅作简单的记录。
+		logs.Error(app.server.Shutdown(timeout))
 	}
 
 	if err := app.init(); err != nil {
@@ -230,4 +210,44 @@ func (app *App) Restart(timeout time.Duration) error {
 	}()
 
 	return nil
+}
+
+// File 获取配置目录下的文件。
+func (app *App) File(path string) string {
+	return filepath.Join(app.configDir, path)
+}
+
+// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
+//
+// 通过 Router 可以添加各类路由项，诸如：
+//  Mux().Get("/test", h).
+//      Post("/test", h)
+func (app *App) Router() *mux.Prefix {
+	return app.router
+}
+
+// NewModule 注册一个新的模块。
+//
+// name 为模块名称；
+// init 当前模块的初始化函数；
+// deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
+func (app *App) NewModule(name string, init modules.Init, deps ...string) {
+	err := app.modules.New(name, init, deps...)
+
+	// 注册模块时出错，直接退出。
+	if err != nil {
+		logs.Fatal(err)
+	}
+}
+
+// URL 构建一条基于 Config.Root 的完整 URL
+func (app *App) URL(path string) string {
+	if len(path) == 0 {
+		return app.config.Root
+	}
+
+	if path[0] != '/' {
+		path = "/" + path
+	}
+	return app.config.Root + path
 }

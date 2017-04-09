@@ -22,6 +22,7 @@ func TestLoad(t *testing.T) {
 
 	conf, err := Load("./testdata/web.json")
 	a.NotError(err).NotNil(conf)
+	a.Equal(conf.Root, "https://caixw.io")
 	a.Equal(conf.Server.KeyFile, "keyFile")
 	a.Equal(conf.Server.ReadTimeout, 30*time.Nanosecond)
 }
