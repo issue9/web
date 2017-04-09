@@ -32,8 +32,8 @@ web 包是一个比较完整的 API 开发框架，相对于简单的路由，�
 | server.pprof           | string | pprof 的相关调试的地址，若为空，表示没有。
 | content                | object | 与读取内容相关的各类操作
 | content.contentType    | string | 默认的编码方式，目前 web 仅支持 json 和 xml 两种方式
-| content.envelopeState  | string | envelope 的状态，可选值为： disable: 不雇用；enable: 启用；must：强制启用，有着 envelope 的相关信息可查看之后的内容
-| content.envelopeKey    | string | 当 envelopeState 的值为 enable 时，通过在地址中传递此值表示是否启用
+| content.envelopeState  | string | envelope 的状态，可选值为： disable: 不启用；enable: 启用；must：强制启用，有着 envelope 的相关信息可查看之后的内容
+| content.envelopeKey    | string | 当 envelopeState 的值为 enable 时，通过在地址中传递此值表示是否启用，默认值为 envelope
 | content.envelopeStatus | string | 当 envelope 不为 disable 时，请求时返回的状态值，默认 200
 
 
@@ -56,8 +56,8 @@ logs 完成相应功能。
 
 #### envelope
 
-envelope 模工主要是在部分客户端无法获取报头内容的情况下，将所有报头内容转换成报文内容的兼容模式。
-输出格式固定，比如 JSON 为以下格式，response 为实际输出的内容：
+envelope 模式主要是在部分客户端无法获取报头内容的情况下，将所有报头内容转换成报文内容的兼容模式。
+输出格式固定，比如 JSON 格式如下，response 为实际输出的内容：
 ```json
 {
     "statue": 200,
@@ -73,7 +73,16 @@ envelope 模工主要是在部分客户端无法获取报头内容的情况下�
     }
 }
 ```
-详细内容可查看代码文档
+
+在配置文件中可以指定 envelope 的状态：
+
+1. disable 表示禁用；
+1. must 表示强制启用；
+1. enable 表示自动选择。
+
+当值为 `enable` 时，只有通过传递查询参数，才能将返回内容转换成 envelope 模式，比如：
+`https://caixw.io/users?envelope=true` 其中 envelope 可以通过 `envelopeKey` 配置项指定，
+但值必须为 true 才表示启用。
 
 
 
@@ -90,6 +99,8 @@ envelope 模工主要是在部分客户端无法获取报头内容的情况下�
     ]
 }
 ```
+
+具体可参考代码文档中的定义。
 
 
 ### 安装
