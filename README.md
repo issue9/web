@@ -15,6 +15,7 @@ web 包是一个比较完整的 API 开发框架，相对于简单的路由，�
 
 | 名称                   | 类型   | 描述
 |:-----------------------|:-------|:-----
+| root                   | string | 项目的根路径，比如 `https://caixw.io/root/`
 | server                 | object | 与 http 服务相关的设置
 | server.https           | bool   | 是否启用 HTTPS
 | server.httpState       | string | 当启用 HTTPS 时，针对 80 端口的处理方式，可以是 disable：不作任何处理；listen：与 https 作相同的算是；redirect 跳转到 https 相对应的端口。
@@ -48,24 +49,47 @@ logs 完成相应功能。
 
 #### content-type
 
-目前支持 `json` 和 `xml` 两种编码方式，均以官方标准库的处理方式进行处理，
-TODO
+目前支持 `json` 和 `xml` 两种编码方式，均以官方标准库的处理方式进行处理，服务端的渲染均支持这两种方式，
+包括 envelope  和 Result 的输出。
 
-###### 注意事项
-
-若项目需要支持 xml 返回，需要注意，xml 包不支持 map 形式的数据转换成 xml
-
+**若项目需要支持 xml 返回，需要注意，xml 包不支持 map 形式的数据转换成 xml**
 
 #### envelope
 
-TODO
+envelope 模工主要是在部分客户端无法获取报头内容的情况下，将所有报头内容转换成报文内容的兼容模式。
+输出格式固定，比如 JSON 为以下格式：
+```json
+{
+    "statue": 200,
+    "headers": [
+        "ContentType": "application/json",
+        "ContentLen": "1024"
+    ],
+    "response": { // 实际的输出内容
+        "count": 24,
+        "list": [
+            {...}
+        ]
+    }
+}
+```
+详细内容可查看代码文档
 
 
 
 #### 错误处理
 
-框架中定义了一个错误返回类型：Result，
-TODO
+框架中定义了一个统一的错误返回类型：Result，其输出格式是固定的，类似以下：
+```json
+{
+    "code": 400001,
+    "message": "error message",
+    "detail": [
+        {"field": "username", "message": "不能为空"},
+        {"field": "password", "message": "不能为空"},
+    ]
+}
+```
 
 
 ### 安装
