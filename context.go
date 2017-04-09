@@ -21,7 +21,7 @@ type Reader interface {
 	Read(v interface{}) bool
 }
 
-// Context 是对 http.ResopnseWriter 和 http.Request 的简单封装。
+// Context 是对当前请求内容的封装，仅与当前请求相关。
 //
 //  ctx := web.NewContext(w, r)
 //  id,ok := ctx.ParamID("id", 400001)
@@ -39,7 +39,12 @@ type Context struct {
 	c content.Content
 }
 
-// NewContext 声明一个新的 Context
+// NewContext 声明一个新的 Context 实例。
+func NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
+	return defaultApp.NewContext(w, r, c)
+}
+
+// NewContext 声明一个新的 Context 实例。
 //
 // 若 c 为空，则使用默认的内容。
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request, c content.Content) *Context {
@@ -72,43 +77,6 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 // Read 从客户端读取数据
 func (ctx *Context) Read(v interface{}) bool {
 	return ctx.c.Read(ctx.Response(), ctx.Request(), v)
-}
-
-// ParamID 获取地址参数中表示 ID 的值。相对于 int64，但该值必须大于 0。
-// 当出错时，第二个参数返回 false。
-//
-// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
-// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
-func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	p := ctx.Params()
-	id := p.Int64(key)
-
-	if !p.OK(code) {
-		return id, false
-	}
-
-	if id <= 0 {
-		NewResult(code, map[string]string{key: "必须大于零"}).Render(ctx)
-		return id, false
-	}
-
-	return id, true
-}
-
-// ParamInt64 取地址参数中的 int64 值。
-// 当出错时，第二个参数返回 false。
-//
-// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
-// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
-func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
-	p := ctx.Params()
-	id := p.Int64(key)
-
-	if p.OK(code) {
-		return id, false
-	}
-
-	return id, true
 }
 
 // ResultFields 从报头中获取 X-Result-Fields 的相关内容。
