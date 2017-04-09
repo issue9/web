@@ -50,6 +50,7 @@ func (p *Params) Int(key string) int {
 
 // MustInt 获取参数 key 所代表的值，并转换成 int。
 // 若不存在或是转换出错，则返回 def 作为其默认值。
+// 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt(key string, def int) int {
 	return int(p.MustInt64(key, int64(def)))
 }
@@ -66,6 +67,7 @@ func (p *Params) Int64(key string) int64 {
 
 // MustInt64 获取参数 key 所代表的值，并转换成 int64。
 // 若不存在或是转换出错，则返回 def 作为其默认值。
+// 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt64(key string, def int64) int64 {
 	str, found := p.params[key]
 
@@ -106,6 +108,9 @@ func (p *Params) MustString(key, def string) string {
 }
 
 // Bool 获取参数 key 所代表的值，并转换成 bool。
+//
+// 最终会调用 strconv.ParseBool 进行转换，
+// 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) Bool(key string) bool {
 	ret, err := p.params.Bool(key)
 	if err != nil {
@@ -117,6 +122,10 @@ func (p *Params) Bool(key string) bool {
 
 // MustBool 获取参数 key 所代表的值，并转换成 bool。
 // 若不存在或是转换出错，则返回 def 作为其默认值。
+// 仅在类型转换出错时，才会向 errors 写入错误信息。
+//
+// 最终会调用 strconv.ParseBool 进行转换，
+// 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) MustBool(key string, def bool) bool {
 	str, found := p.params[key]
 
@@ -146,6 +155,7 @@ func (p *Params) Float64(key string) float64 {
 
 // MustFloat64 获取参数 key 所代表的值，并转换成 float64。
 // 若不存在或是转换出错，则返回 def 作为其默认值。
+// 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustFloat64(key string, def float64) float64 {
 	str, found := p.params[key]
 
@@ -191,12 +201,12 @@ func (ctx *Context) ParamID(key string, code int) (int64, bool) {
 	id := p.Int64(key)
 
 	if !p.OK(code) {
-		return id, false
+		return 0, false
 	}
 
 	if id <= 0 {
 		NewResult(code, map[string]string{key: "必须大于零"}).Render(ctx)
-		return id, false
+		return 0, false
 	}
 
 	return id, true
@@ -211,7 +221,7 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
 	p := ctx.Params()
 	id := p.Int64(key)
 
-	if p.OK(code) {
+	if !p.OK(code) {
 		return id, false
 	}
 

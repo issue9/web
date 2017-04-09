@@ -15,25 +15,48 @@ import (
 	"github.com/issue9/logs"
 )
 
-func newApp(a *assert.Assertion) *App {
-	app, err := NewApp("./testdata")
-	a.NotError(err).NotNil(app)
+var initErr error
 
-	return app
+func TestMain(m *testing.M) {
+	initErr = Init("./testdata")
+
+	os.Exit(m.Run())
+}
+
+// 检测在 TestMain() 中的功能是否存在错误。
+func TestInit(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(initErr).NotNil(defaultApp)
 }
 
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app := newApp(a)
+	app, err := NewApp("./testdata")
+	a.NotError(err).NotNil(app)
+
 	a.Equal(app.File("test"), "testdata/test")
 	a.Equal(app.File("test/file.jpg"), "testdata/test/file.jpg")
+
+	// 全局函数
+	a.Equal(File("test"), "testdata/test")
+	a.Equal(File("test/file.jpg"), "testdata/test/file.jpg")
+}
+
+func TestURL(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(URL("test"), "https://caixw.io/test")
+	a.Equal(URL("/test/file.jpg"), "https://caixw.io/test/file.jpg")
 }
 
 func TestNewApp(t *testing.T) {
 	a := assert.New(t)
 
-	app := newApp(a)
+	app, err := NewApp("./testdata")
+	a.NotError(err).NotNil(app)
+
 	a.Equal(app.configDir, "./testdata").
 		NotNil(app.config).
 		NotNil(app.server).
@@ -44,7 +67,6 @@ func TestNewApp(t *testing.T) {
 
 func TestApp(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
@@ -53,31 +75,31 @@ func TestApp(t *testing.T) {
 	}
 	shutdown := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(1)
-		if err := app.Shutdown(50 * time.Microsecond); err != nil {
+		if err := Shutdown(50 * time.Microsecond); err != nil {
 			logs.Error("SHUTDOWN:", err)
 		}
 	}
 	restart := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(1)
-		if err := app.Restart(50 * time.Microsecond); err != nil {
+		if err := Restart(50 * time.Microsecond); err != nil {
 			logs.Error("RESTART:", err)
 		}
 	}
 
 	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
-	app.NewModule("init", func() error {
-		app.Mux().GetFunc("/test", f1)
-		app.Mux().GetFunc("/restart", restart)
-		app.Mux().GetFunc("/shutdown", shutdown)
+	NewModule("init", func() error {
+		Router().GetFunc("/test", f1)
+		Router().GetFunc("/restart", restart)
+		Router().GetFunc("/shutdown", shutdown)
 		return nil
 	})
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run(nil)
+		Run(nil)
 	}()
 
-	// 等待 app.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
 	// 正常访问
@@ -87,7 +109,7 @@ func TestApp(t *testing.T) {
 	// 重启之后，依然能访问
 	resp, err = http.Get("http://localhost:8082/restart")
 	a.NotError(err).NotNil(resp)
-	time.Sleep(500 * time.Microsecond) // 待待 app.Restart 生效果
+	time.Sleep(500 * time.Microsecond) // 待待 Restart 生效果
 	resp, err = http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
 

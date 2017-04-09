@@ -38,7 +38,7 @@ type Config struct {
 	Static    map[string]string `json:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
 	Options   bool              `json:"options"`   // 是否启用 OPTIONS 请求
 	Version   string            `json:"version"`   // 限定版本
-	Hosts     []string          `json:"hosts"`     // 限定这些域名
+	Hosts     []string          `json:"hosts"`     // 限定访问域名。仅需指定域名，端口及其它任何信息不需要指定
 
 	// 性能
 	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：纳秒
@@ -91,9 +91,9 @@ func (conf *Config) Sanitize() error {
 	}
 
 	if len(conf.Hosts) > 0 {
-		for index, host := range conf.Hosts {
+		for _, host := range conf.Hosts {
 			if !is.URL(host) {
-				return fmt.Errorf("conf.Hosts[%v] 为非法的 URL", index)
+				return fmt.Errorf("conf.Hosts 中的 %v 为非法的 URL", host)
 			}
 		}
 	}
