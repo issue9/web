@@ -72,7 +72,7 @@ func TestServer_Shutdown(t *testing.T) {
 	}()
 
 	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -105,7 +105,7 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 	}()
 
 	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -145,7 +145,7 @@ func TestServer_httpStateDisabled(t *testing.T) {
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
@@ -178,7 +178,7 @@ func TestServer_httpStateRedirect(t *testing.T) {
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
@@ -212,7 +212,7 @@ func TestServer_httpStateListen(t *testing.T) {
 	}()
 
 	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}

@@ -57,18 +57,18 @@ logs 完成相应功能。
 #### envelope
 
 envelope 模工主要是在部分客户端无法获取报头内容的情况下，将所有报头内容转换成报文内容的兼容模式。
-输出格式固定，比如 JSON 为以下格式：
+输出格式固定，比如 JSON 为以下格式，response 为实际输出的内容：
 ```json
 {
     "statue": 200,
     "headers": [
-        "ContentType": "application/json",
-        "ContentLen": "1024"
+        {"ContentType": "application/json"},
+        {"ContentLen": "1024"}
     ],
-    "response": { // 实际的输出内容
+    "response": {
         "count": 24,
         "list": [
-            {...}
+            {}
         ]
     }
 }
