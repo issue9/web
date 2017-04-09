@@ -11,8 +11,10 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 
+	"github.com/issue9/is"
 	"github.com/issue9/utils"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
@@ -24,8 +26,11 @@ type sanitizer interface {
 	Sanitize() error
 }
 
-// Config 默认的配置文件。
+// Config 配置文件。
 type Config struct {
+	// 表示网站的根目录，带域名。
+	Root string `json:"root"`
+
 	// Server
 	Server *server.Config `json:"server"`
 
@@ -45,6 +50,13 @@ func Load(path string) (*Config, error) {
 
 	if err = json.Unmarshal(data, conf); err != nil {
 		return nil, err
+	}
+
+	if !is.URL(conf.Root) {
+		return nil, errors.New("conf.Root 必须是一个 URL")
+	}
+	if conf.Root[len(conf.Root)-1] == '/' {
+		conf.Root = conf.Root[:len(conf.Root)-1]
 	}
 
 	// Server

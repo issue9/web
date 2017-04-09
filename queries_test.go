@@ -17,10 +17,10 @@ func TestQueries_Int(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/queries/int", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/queries/int", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		q := ctx.Queries()
 
@@ -44,10 +44,10 @@ func TestQueries_Int64(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/queries/int64", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/queries/int64", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		q := ctx.Queries()
 
@@ -71,10 +71,10 @@ func TestQueries_String(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/queries/string", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/queries/string", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		q := ctx.Queries()
 
@@ -93,10 +93,10 @@ func TestQueries_Bool(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/queries/bool", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/queries/bool", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		q := ctx.Queries()
 
@@ -120,10 +120,10 @@ func TestQueries_Float64(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/queries/float64", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/queries/float64", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		q := ctx.Queries()
 

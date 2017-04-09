@@ -7,6 +7,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"time"
 
@@ -32,12 +33,14 @@ var defaultApp *App
 // App 保存整个程序的运行环境，方便做整体的调度，比如重启等。
 type App struct {
 	configDir string
-	config    *config.Config
-	server    *server.Server
-	content   content.Content
-	modules   *modules.Modules
-	handler   http.Handler
 	closed    bool
+	handler   http.Handler
+	router    *mux.Prefix
+
+	config  *config.Config
+	server  *server.Server
+	content content.Content
+	modules *modules.Modules
 }
 
 // Init 初始化框架的基本内容。
@@ -74,9 +77,14 @@ func File(path string) string {
 	return defaultApp.File(path)
 }
 
-// Mux 获取 mux.ServeMux 实例，具体说明可参考 App.Mux()。
-func Mux() *mux.ServeMux {
-	return defaultApp.Mux()
+// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
+func Router() *mux.Prefix {
+	return defaultApp.Router()
+}
+
+// URL 构建一条基于 Config.Root 的完整 URL
+func URL(path string) string {
+	return defaultApp.URL(path)
 }
 
 // NewModule 注册一个新的模块，具体说明可参考 App.Mux()。
@@ -128,14 +136,21 @@ func (app *App) init() error {
 		return err
 	}
 
+	// router
+	u, err := url.Parse(app.config.Root)
+	if err != nil {
+		return err
+	}
+	app.router = app.server.Mux().Prefix(u.Path)
+
 	return nil
 }
 
 // Run 运行路由，执行监听程序。
 //
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Mux() 之上：
-//  app.Run(handlers.Host(app.Mux(), "www.caixw.io")
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Router().Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Router().Mux() 之上：
+//  app.Run(handlers.Host(app.Router().Mux(), "www.caixw.io")
 func (app *App) Run(h http.Handler) error {
 	if app.closed {
 		return ErrAppClosed
@@ -202,13 +217,13 @@ func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
 }
 
-// Mux 获取 mux.ServeMux 实例。
+// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
 //
-// 通过 Mux 可以添加各类路由项，诸如：
+// 通过 Router 可以添加各类路由项，诸如：
 //  Mux().Get("/test", h).
 //      Post("/test", h)
-func (app *App) Mux() *mux.ServeMux {
-	return app.server.Mux()
+func (app *App) Router() *mux.Prefix {
+	return app.router
 }
 
 // NewModule 注册一个新的模块。
@@ -223,4 +238,16 @@ func (app *App) NewModule(name string, init modules.Init, deps ...string) {
 	if err != nil {
 		logs.Fatal(err)
 	}
+}
+
+// URL 构建一条基于 Config.Root 的完整 URL
+func (app *App) URL(path string) string {
+	if len(path) == 0 {
+		return app.config.Root
+	}
+
+	if path[0] != '/' {
+		path = "/" + path
+	}
+	return app.config.Root + path
 }

@@ -17,10 +17,10 @@ func TestParams_empty(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/empty", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/empty", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		ps := ctx.Params()
 
@@ -37,10 +37,10 @@ func TestParams_Int_MustInt(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		ps := ctx.Params()
 
@@ -69,10 +69,10 @@ func TestParams_Bool_MustBool(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/bool/{b1}/{b2}/{str}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/bool/{b1}/{b2}/{str}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		ps := ctx.Params()
 
@@ -101,10 +101,10 @@ func TestParams_String_MustString(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/string/{s1}/{s2}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/string/{s1}/{s2}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		ps := ctx.Params()
 
@@ -131,10 +131,10 @@ func TestParams_Float_MustFloat(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/float/{f1}/{f2}/{str}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/float/{f1}/{f2}/{str}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, nil)
 		ps := ctx.Params()
 
@@ -166,10 +166,10 @@ func TestParams_ParamID(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/paramid/{i1}/{i2}/{str}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/paramid/{i1}/{i2}/{str}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := app.NewContext(w, r, nil)
 
 		i1, ok := ctx.ParamID("i1", 40001)
@@ -191,10 +191,10 @@ func TestParams_ParamInt64(t *testing.T) {
 	app, err := NewApp("./testdata")
 	a.NotError(err).NotNil(app)
 
-	srv := httptest.NewServer(app.Mux())
+	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
 
-	app.Mux().GetFunc("/params/paramint64/{i1}/{i2}/{str}", func(w http.ResponseWriter, r *http.Request) {
+	app.Router().GetFunc("/params/paramint64/{i1}/{i2}/{str}", func(w http.ResponseWriter, r *http.Request) {
 		ctx := app.NewContext(w, r, nil)
 
 		i1, ok := ctx.ParamInt64("i1", 40001)

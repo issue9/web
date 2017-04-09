@@ -44,6 +44,13 @@ func TestApp_File(t *testing.T) {
 	a.Equal(File("test/file.jpg"), "testdata/test/file.jpg")
 }
 
+func TestURL(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(URL("test"), "https://caixw.io/test")
+	a.Equal(URL("/test/file.jpg"), "https://caixw.io/test/file.jpg")
+}
+
 func TestNewApp(t *testing.T) {
 	a := assert.New(t)
 
@@ -81,9 +88,9 @@ func TestApp(t *testing.T) {
 
 	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
 	NewModule("init", func() error {
-		Mux().GetFunc("/test", f1)
-		Mux().GetFunc("/restart", restart)
-		Mux().GetFunc("/shutdown", shutdown)
+		Router().GetFunc("/test", f1)
+		Router().GetFunc("/restart", restart)
+		Router().GetFunc("/shutdown", shutdown)
 		return nil
 	})
 
