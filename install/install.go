@@ -6,13 +6,13 @@
 // 可以在控制台细粒度地显示安装进程。
 //
 // 正常安装内容，则显示如下内容：
-//  安装模块users...
+//  安装模块 users...
 //      install  users [ok]
 //      install  email [ok]
 //  完成安装
 //
 // 安装出错，则显示如下内容：
-//  安装模块users...
+//  安装模块 users...
 //      install  users [ok]
 //      install  email [falid:message]
 //  安装失败
