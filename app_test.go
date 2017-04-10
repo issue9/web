@@ -61,7 +61,6 @@ func TestNewApp(t *testing.T) {
 		NotNil(app.config).
 		NotNil(app.server).
 		NotNil(app.modules).
-		Nil(app.handler).
 		NotNil(app.content)
 }
 
@@ -81,7 +80,7 @@ func TestApp(t *testing.T) {
 	}
 	restart := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(1)
-		if err := Restart(50 * time.Microsecond); err != nil {
+		if err := Restart(nil, 50*time.Microsecond); err != nil {
 			logs.Error("RESTART:", err)
 		}
 	}
