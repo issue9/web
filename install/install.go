@@ -15,7 +15,7 @@
 //  安装模块users...
 //      install  users [ok]
 //      install  email [falid:message]
-//  完成失败
+//  安装失败
 //
 // 使用方法：
 //  声明一个安装模块
@@ -76,17 +76,6 @@ func (i *Module) Event(title string, fn func() *Return) {
 		title: title,
 		fn:    fn,
 	})
-}
-
-// Events 批量注册事件。
-//
-// events 为一个 map，键名为事件名称，键值为事件处理函数。
-//
-// NOTE:事件名称若相同，会相互覆盖。
-func (i *Module) Events(events map[string]func() *Return) {
-	for title, fn := range events {
-		i.Event(title, fn)
-	}
 }
 
 // Done 完成当前安装模块的所有事件注册
