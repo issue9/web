@@ -84,14 +84,15 @@ func TestJSON_Render(t *testing.T) {
 
 	// 少 accept
 	j.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).
+		Equal(w.Body.String(), http.StatusText(http.StatusNotAcceptable)+"\n")
 
 	// 错误的 accept
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", "test")
 	j.Render(w, r, http.StatusCreated, map[string]string{"name": "name"}, map[string]string{"h": "h"})
-	a.Equal(w.Code, http.StatusNotAcceptable)
-	a.Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).
+		Equal(w.Body.String(), http.StatusText(http.StatusNotAcceptable)+"\n")
 
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", jsonContentType)
@@ -103,8 +104,8 @@ func TestJSON_Render(t *testing.T) {
 	// 解析 json 出错，会返回 500 错误
 	w = httptest.NewRecorder()
 	j.Render(w, r, http.StatusOK, complex(5, 7), nil)
-	a.Equal(w.Code, http.StatusInternalServerError)
-	a.Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusInternalServerError).
+		Equal(w.Body.String(), http.StatusText(http.StatusInternalServerError)+"\n")
 }
 
 func TestJSON_Read(t *testing.T) {
