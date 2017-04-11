@@ -4,7 +4,7 @@ go:
     - tip
     - 1.8
 script:
-    - sudo -E env "PATH=$PATH" go test -v ./...
+    - sudo -E env "PATH=$PATH" go test -v -parallel=1 ./...
 install:
     - go get github.com/issue9/assert
     - go get github.com/issue9/context
