@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package web 一个微型的 API 框架，包含了以下内容：
+// Package web 一个微型的 API 框架。
 package web
 
 // Version 当前框架的版本
-const Version = "0.10.2+20170411"
+const Version = "0.11.0+20170412"

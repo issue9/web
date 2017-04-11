@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/web/internal/message"
 )
 
 // Result 提供了一套用于描述向客户端反馈错误信息的机制。
@@ -52,21 +53,21 @@ type detail struct {
 // code 表示错误代码；
 // fields 为具体的错误信息；
 func NewResult(code int, fields map[string]string) *Result {
-	msg, err := getMessage(code)
+	msg, err := message.GetMessage(code)
 	if err != nil {
 		logs.Error(err)
 
 		return &Result{
 			Code:    -1,
-			Message: msg.message,
-			status:  msg.status,
+			Message: msg.Message,
+			status:  msg.Status,
 		}
 	}
 
 	rslt := &Result{
 		Code:    code,
-		Message: msg.message,
-		status:  msg.status,
+		Message: msg.Message,
+		status:  msg.Status,
 		Detail:  make([]*detail, 0, len(fields)),
 	}
 
@@ -110,4 +111,15 @@ func (rslt *Result) Status() int {
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *Context) {
 	ctx.Render(rslt.status, rslt, nil)
+}
+
+// NewMessage 注册一条新的错误信息。
+// 非协程安全，需要在程序初始化时添加所有的错误代码。
+func NewMessage(code int, msg string) error {
+	return message.Register(code, msg)
+}
+
+// NewMessages 批量注册信息
+func NewMessages(msgs map[int]string) error {
+	return message.Registers(msgs)
 }
