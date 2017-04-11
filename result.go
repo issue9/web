@@ -113,10 +113,15 @@ func (rslt *Result) Render(ctx *Context) {
 	ctx.Render(rslt.status, rslt, nil)
 }
 
+// NewMessage 注册一条新的错误信息。
+// 非协程安全，需要在程序初始化时添加所有的错误代码。
+//
+// code 必须为一个大于 100 的整数。
 func NewMessage(code int, msg string) error {
 	return message.Register(code, msg)
 }
 
+// NewMessages 批量注册信息
 func NewMessages(msgs map[int]string) error {
 	return message.Registers(msgs)
 }
