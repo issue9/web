@@ -26,7 +26,7 @@ type Server struct {
 
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
-	// 记录这些 server，方便重启等操作。
+	// 记录这些 server，方便关闭服务等操作。
 	servers []*http.Server
 }
 
