@@ -88,7 +88,7 @@ func URL(path string) string {
 }
 
 // NewModule 注册一个新的模块，具体说明可参考 App.Mux()。
-func NewModule(name string, init modules.Init, deps ...string) {
+func NewModule(name string, init modules.InitFunc, deps ...string) {
 	defaultApp.NewModule(name, init, deps...)
 }
 
@@ -232,7 +232,7 @@ func (app *App) Router() *mux.Prefix {
 // name 为模块名称；
 // init 当前模块的初始化函数；
 // deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
-func (app *App) NewModule(name string, init modules.Init, deps ...string) {
+func (app *App) NewModule(name string, init modules.InitFunc, deps ...string) {
 	err := app.modules.New(name, init, deps...)
 
 	// 注册模块时出错，直接退出。
