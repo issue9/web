@@ -39,11 +39,9 @@ func getStatus(code int) int {
 
 // Register 注册一条新的错误信息。
 // 非协程安全，需要在程序初始化时添加所有的错误代码。
-//
-// code 必须为一个大于 100 的整数。
 func Register(code int, msg string) error {
 	if code < 100 {
-		return fmt.Errorf("ID 必须为大于等于 %v 的值", 100)
+		return errors.New("ID 必须为大于等于 100 的值")
 	}
 
 	if len(msg) == 0 {
@@ -70,7 +68,7 @@ func Registers(msgs map[int]string) error {
 	return nil
 }
 
-// Clean 清除内容
+// Clean 清空所有消息内容
 func Clean() {
 	messages = map[int]*Message{}
 }
