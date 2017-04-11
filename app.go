@@ -87,9 +87,9 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
-// NewModule 注册一个新的模块，具体说明可参考 App.Mux()。
-func NewModule(name string, init modules.InitFunc, deps ...string) {
-	defaultApp.NewModule(name, init, deps...)
+// Module 注册一个新的模块，具体说明可参考 App.Mux()。
+func Module(name string, init modules.InitFunc, deps ...string) {
+	defaultApp.Module(name, init, deps...)
 }
 
 // NewApp 初始化框架的基本内容。
@@ -227,12 +227,12 @@ func (app *App) Router() *mux.Prefix {
 	return app.router
 }
 
-// NewModule 注册一个新的模块。
+// Module 注册一个新的模块。
 //
 // name 为模块名称；
 // init 当前模块的初始化函数；
 // deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
-func (app *App) NewModule(name string, init modules.InitFunc, deps ...string) {
+func (app *App) Module(name string, init modules.InitFunc, deps ...string) {
 	err := app.modules.New(name, init, deps...)
 
 	// 注册模块时出错，直接退出。
