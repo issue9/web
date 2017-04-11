@@ -18,28 +18,10 @@ func TestInstall(t *testing.T) {
 	i.Event("安装数据表users", func() *Return { return nil })
 	i.Done()
 
-	// Events
 	i = New("users3")
-	i.Event("安装数据表users", func() *Return { return nil })
-	i.Events(map[string]func() *Return{
-		"安装数据表users1": func() *Return { return ReturnOK() },
-		"安装数据表users2": func() *Return { return nil },
-		"安装数据表users3": func() *Return { return nil },
-	})
-	i.Done()
-
-	i = New("users4")
 	i.Event("安装数据表users", func() *Return { return nil })
 	i.Event("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) })
 	i.Event("安装数据表users", func() *Return { return nil })
-	i.Done()
-
-	i = New("users5")
-	i.Events(map[string]func() *Return{
-		"安装数据表users1": func() *Return { return nil },
-		"安装数据表users2": func() *Return { return ReturnError(errors.New("falid message")) },
-		"安装数据表users3": func() *Return { return nil },
-	})
 	i.Done()
 
 	Install()
