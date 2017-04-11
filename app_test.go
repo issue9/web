@@ -117,7 +117,7 @@ func TestApp(t *testing.T) {
 
 	Router().GetFunc("/out", f1)
 	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
-	NewModule("init", func() error {
+	Module("init", func() error {
 		Router().GetFunc("/test", f1)
 		Router().GetFunc("/restart", restart)
 		Router().GetFunc("/shutdown", shutdown)

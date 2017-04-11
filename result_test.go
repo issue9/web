@@ -20,7 +20,7 @@ func TestNewResult(t *testing.T) {
 	a.Equal(r.Code, -1)
 
 	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r = NewResult(code, nil)
 	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
 
@@ -31,7 +31,7 @@ func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
 
 	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r := NewResult(code, nil)
 	a.False(r.HasDetail())
 
@@ -45,12 +45,12 @@ func TestResult_IsError(t *testing.T) {
 	a := assert.New(t)
 
 	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r := NewResult(400+500, nil)
 	a.True(r.IsError())
 
 	code = 300 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r = NewResult(code+3, nil)
 	a.True(r.IsError())
 
@@ -63,7 +63,7 @@ func TestResult_IsError(t *testing.T) {
 
 func TestResultJSONMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
+	a.NotError(message.Register(400, "400"))
 
 	r := NewResult(400, nil)
 	r.Add("field1", "message1")
@@ -83,7 +83,7 @@ func TestResultJSONMarshal(t *testing.T) {
 
 func TestResultXMLMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
+	a.NotError(message.Register(400, "400"))
 
 	r := NewResult(400, nil)
 	r.Add("field", "message1")
