@@ -77,7 +77,7 @@ func File(path string) string {
 	return defaultApp.File(path)
 }
 
-// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
+// Router 获取操作路由的接口，为一个 mux.Prefix 实例，具体接口说明可参考 issue9/mux 包。
 func Router() *mux.Prefix {
 	return defaultApp.Router()
 }
@@ -218,7 +218,7 @@ func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
 }
 
-// Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
+// Router 获取操作路由的接口，为一个 mux.Prefix 实例，具体接口说明可参考 issue9/mux 包。
 //
 // 通过 Router 可以添加各类路由项，诸如：
 //  Router().Get("/test", h).

@@ -22,7 +22,7 @@ func TestNewResult(t *testing.T) {
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
 	r = NewResult(code, nil)
-	a.Equal(r.Message, "400").Equal(r.Status(), 400).Equal(r.Code, code)
+	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
 
 	message.Clean()
 }

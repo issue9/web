@@ -23,7 +23,7 @@ type Reader interface {
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 //
-//  ctx := web.NewContext(w, r)
+//  ctx := NewContext(w, r, nil)
 //  id,ok := ctx.ParamID("id", 400001)
 //  if !ok {
 //      return

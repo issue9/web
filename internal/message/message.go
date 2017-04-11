@@ -20,6 +20,8 @@ type Message struct {
 }
 
 // GetMessage 获取指定代码所表示的错误信息
+// 若存在错误，比如 code 不存在等，
+// 会同时返回一个 error 以及一个模糊的 Message 实例表示出错了。
 func GetMessage(code int) (*Message, error) {
 	msg, found := messages[code]
 	if found {
