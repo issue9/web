@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package message
 
 import (
 	"errors"
@@ -11,22 +11,23 @@ import (
 )
 
 // 保存所有的代码与消息对应关系
-var messages = map[int]message{}
+var messages = map[int]*Message{}
 
-type message struct {
-	message string // 消息信息
-	status  int    // 对应的 HTTP 状态码
+// Message 一个错误代码对应的内容
+type Message struct {
+	Message string // 消息信息
+	Status  int    // 对应的 HTTP 状态码
 }
 
-// 获取指定代码所表示的错误信息
-func getMessage(code int) (message, error) {
+// GetMessage 获取指定代码所表示的错误信息
+func GetMessage(code int) (*Message, error) {
 	msg, found := messages[code]
 	if found {
 		return msg, nil
 	}
 
-	// 不存在相关的错误码
-	return message{status: http.StatusInternalServerError, message: "未知错误"}, fmt.Errorf("错误代码[%v]不存在", code)
+	// 不存在相关的错误码，返回 500 错误
+	return &Message{Status: http.StatusInternalServerError, Message: "未知错误"}, fmt.Errorf("错误代码[%v]不存在", code)
 }
 
 func getStatus(code int) int {
@@ -36,11 +37,11 @@ func getStatus(code int) int {
 	return code
 }
 
-// NewMessage 注册一条新的错误信息。
+// Register 注册一条新的错误信息。
 // 非协程安全，需要在程序初始化时添加所有的错误代码。
 //
 // code 必须为一个大于 100 的整数。
-func NewMessage(code int, msg string) error {
+func Register(code int, msg string) error {
 	if code < 100 {
 		return fmt.Errorf("ID 必须为大于等于 %v 的值", 100)
 	}
@@ -53,18 +54,23 @@ func NewMessage(code int, msg string) error {
 		return fmt.Errorf("重复的消息 ID: %v", code)
 	}
 
-	messages[code] = message{message: msg, status: getStatus(code)}
+	messages[code] = &Message{Message: msg, Status: getStatus(code)}
 
 	return nil
 }
 
-// NewMessages 批量注册信息
-func NewMessages(msgs map[int]string) error {
+// Registers 批量注册信息
+func Registers(msgs map[int]string) error {
 	for code, msg := range msgs {
-		if err := NewMessage(code, msg); err != nil {
+		if err := Register(code, msg); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// Clean 清除内容
+func Clean() {
+	messages = map[int]*Message{}
 }
