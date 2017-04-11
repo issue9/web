@@ -52,8 +52,17 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 
+	if err = conf.Sanitize(); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}
+
+// Sanitize 修正可修正的内容，返回不可修正的错误。
+func (conf *Config) Sanitize() error {
 	if !is.URL(conf.Root) {
-		return nil, errors.New("conf.Root 必须是一个 URL")
+		return errors.New("conf.Root 必须是一个 URL")
 	}
 	if conf.Root[len(conf.Root)-1] == '/' {
 		conf.Root = conf.Root[:len(conf.Root)-1]
@@ -65,13 +74,13 @@ func Load(path string) (*Config, error) {
 	} else {
 		// 将未设置的项，给予一个默认值。
 		c := server.DefaultConfig()
-		if err = utils.Merge(true, c, conf.Server); err != nil {
-			return nil, err
+		if err := utils.Merge(true, c, conf.Server); err != nil {
+			return err
 		}
 		conf.Server = c
 
-		if err = conf.Server.Sanitize(); err != nil {
-			return nil, err
+		if err := conf.Server.Sanitize(); err != nil {
+			return err
 		}
 	}
 
@@ -80,17 +89,17 @@ func Load(path string) (*Config, error) {
 		conf.Content = content.DefaultConfig()
 	} else {
 		c := content.DefaultConfig()
-		if err = utils.Merge(true, c, conf.Content); err != nil {
-			return nil, err
+		if err := utils.Merge(true, c, conf.Content); err != nil {
+			return err
 		}
 		conf.Content = c
 
-		if err = conf.Content.Sanitize(); err != nil {
-			return nil, err
+		if err := conf.Content.Sanitize(); err != nil {
+			return err
 		}
 	}
 
-	return conf, nil
+	return nil
 }
 
 // DefaultConfig 输出默认配置内容。

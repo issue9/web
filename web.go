@@ -6,4 +6,4 @@
 package web
 
 // Version 当前框架的版本
-const Version = "0.11.0+20170412"
+const Version = "0.11.1+20170412"
