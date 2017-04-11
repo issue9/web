@@ -14,8 +14,7 @@ import (
 
 func TestQueries_Int(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
+	app := getApp(a)
 
 	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
@@ -41,8 +40,7 @@ func TestQueries_Int(t *testing.T) {
 
 func TestQueries_Int64(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
+	app := getApp(a)
 
 	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
@@ -68,8 +66,7 @@ func TestQueries_Int64(t *testing.T) {
 
 func TestQueries_String(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
+	app := getApp(a)
 
 	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
@@ -90,8 +87,7 @@ func TestQueries_String(t *testing.T) {
 
 func TestQueries_Bool(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
+	app := getApp(a)
 
 	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
@@ -117,8 +113,7 @@ func TestQueries_Bool(t *testing.T) {
 
 func TestQueries_Float64(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
+	app := getApp(a)
 
 	srv := httptest.NewServer(app.Router().Mux())
 	defer srv.Close()
