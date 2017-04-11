@@ -5,7 +5,7 @@
 // Package config 提供了框架对自身的配置文件的操作能力。
 //
 // 框架自身的各个模块若需要操作配置文件，应该统一交由
-// Config 来管理，模块只要实现 configer 接口及一
+// Config 来管理，模块只要实现 sanitizer 接口及一
 // 个 DefaultConfig() 函数即可。
 package config
 
@@ -28,7 +28,7 @@ type sanitizer interface {
 
 // Config 配置文件。
 type Config struct {
-	// 表示网站的根目录，带域名。
+	// 表示网站的根目录，带域名，非默认端口也得带上。
 	Root string `json:"root"`
 
 	// Server

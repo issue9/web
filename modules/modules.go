@@ -11,13 +11,8 @@ import (
 	"sync"
 )
 
-var (
-	// ErrModuleExists 表示指定的模块已经存在。
-	ErrModuleExists = errors.New("该模块已经存在")
-
-	// ErrModulesInited 表示模块已经初始化完成，不能再添加新模发起人。
-	ErrModulesInited = errors.New("所有模块已经初始化完成")
-)
+// ErrModulesInited 表示模块已经初始化完成，不能再添加新模块。
+var ErrModulesInited = errors.New("所有模块已经初始化完成")
 
 // Init 模块的初始化函数，实现者需要注意：
 // 在重启服务时，会被再次调用，需要保证在多次调用的情况下，
@@ -60,7 +55,7 @@ func (ms *Modules) New(name string, init Init, deps ...string) error {
 	defer ms.lock.Unlock()
 
 	if _, found := ms.modules[name]; found {
-		return ErrModuleExists
+		return fmt.Errorf("模块[%v]已经存在", name)
 	}
 
 	ms.modules[name] = &module{

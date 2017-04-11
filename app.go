@@ -34,7 +34,6 @@ var defaultApp *App
 type App struct {
 	configDir string
 	closed    bool
-	handler   http.Handler
 	router    *mux.Prefix
 
 	config  *config.Config
@@ -45,8 +44,8 @@ type App struct {
 
 // Init 初始化框架的基本内容。
 //
-// confDir 指定了配置文件所在的目录，框架默认的
-// 两个配置文件都会从此目录下查找。
+// confDir 指定了配置文件所在的目录，
+// 框架默认的两个配置文件都会从此目录下查找。
 func Init(confDir string) error {
 	app, err := NewApp(confDir)
 	if err != nil {
@@ -63,8 +62,8 @@ func Run(h http.Handler) error {
 }
 
 // Restart 重启整个服务，具体说明可参考 App.Restart()。
-func Restart(timeout time.Duration) error {
-	return defaultApp.Restart(timeout)
+func Restart(h http.Handler, timeout time.Duration) error {
+	return defaultApp.Restart(h, timeout)
 }
 
 // Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
@@ -94,8 +93,8 @@ func NewModule(name string, init modules.Init, deps ...string) {
 
 // NewApp 初始化框架的基本内容。
 //
-// confDir 指定了配置文件所在的目录，框架默认的
-// 两个配置文件都会从此目录下查找。
+// confDir 指定了配置文件所在的目录，
+// 框架默认的两个配置文件都会从此目录下查找。
 func NewApp(confDir string) (*App, error) {
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件目录不存在")
@@ -160,8 +159,7 @@ func (app *App) Run(h http.Handler) error {
 		return err
 	}
 
-	app.handler = h
-	return app.server.Run(app.handler)
+	return app.server.Run(h)
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
@@ -185,9 +183,12 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // 重启时，会得新加载配置文件内容；清除路由项；重新调用模块初始化函数。要想保持
 // 路由继续启作用，请将路由的初发化工作放到模块的初始化函数中。
 //
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Router().Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Router().Mux() 之上：
+//  app.Run(handlers.Host(app.Router().Mux(), "www.caixw.io")
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
-func (app *App) Restart(timeout time.Duration) error {
+func (app *App) Restart(h http.Handler, timeout time.Duration) error {
 	if app.closed {
 		return ErrAppClosed
 	}
@@ -206,7 +207,7 @@ func (app *App) Restart(timeout time.Duration) error {
 	}
 
 	go func() {
-		logs.Error(app.Run(app.handler))
+		logs.Error(app.Run(h))
 	}()
 
 	return nil
