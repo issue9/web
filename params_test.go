@@ -14,7 +14,7 @@ import (
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -34,7 +34,7 @@ func TestParams_empty(t *testing.T) {
 
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -66,7 +66,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -98,7 +98,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -128,7 +128,7 @@ func TestParams_String_MustString(t *testing.T) {
 
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -163,7 +163,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 func TestParams_ParamID(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -188,7 +188,7 @@ func TestParams_ParamID(t *testing.T) {
 
 func TestParams_ParamInt64(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())

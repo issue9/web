@@ -30,11 +30,15 @@ var ErrAppClosed = errors.New("当前实例已经关闭")
 
 var defaultApp *App
 
+// BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
+type BuildHandler func(http.Handler) http.Handler
+
 // App 保存整个程序的运行环境，方便做整体的调度，比如重启等。
 type App struct {
 	configDir string
 	closed    bool
 	router    *mux.Prefix
+	builder   BuildHandler
 
 	config  *config.Config
 	server  *server.Server
@@ -46,8 +50,9 @@ type App struct {
 //
 // confDir 指定了配置文件所在的目录，
 // 框架默认的两个配置文件都会从此目录下查找。
-func Init(confDir string) error {
-	app, err := NewApp(confDir)
+// builder 用于封装内部的 http.Handler 实例，不需要则传递空值。
+func Init(confDir string, builder BuildHandler) error {
+	app, err := NewApp(confDir, builder)
 	if err != nil {
 		return err
 	}
@@ -57,13 +62,13 @@ func Init(confDir string) error {
 }
 
 // Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
-func Run(h http.Handler) error {
-	return defaultApp.Run(h)
+func Run() error {
+	return defaultApp.Run()
 }
 
 // Restart 重启整个服务，具体说明可参考 App.Restart()。
-func Restart(h http.Handler, timeout time.Duration) error {
-	return defaultApp.Restart(h, timeout)
+func Restart(timeout time.Duration) error {
+	return defaultApp.Restart(timeout)
 }
 
 // Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
@@ -95,7 +100,9 @@ func NewModule(name string, init modules.Init, deps ...string) {
 //
 // confDir 指定了配置文件所在的目录，
 // 框架默认的两个配置文件都会从此目录下查找。
-func NewApp(confDir string) (*App, error) {
+// builder 被用于封装另内部的 http.Handler 接口，
+// 一些统一的功能实现可以封装在此函数中。
+func NewApp(confDir string, builder BuildHandler) (*App, error) {
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件目录不存在")
 	}
@@ -103,6 +110,7 @@ func NewApp(confDir string) (*App, error) {
 	app := &App{
 		configDir: confDir,
 		modules:   modules.New(),
+		builder:   builder,
 	}
 
 	if err := app.init(); err != nil {
@@ -146,11 +154,7 @@ func (app *App) init() error {
 }
 
 // Run 运行路由，执行监听程序。
-//
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Router().Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Router().Mux() 之上：
-//  app.Run(handlers.Host(app.Router().Mux(), "www.caixw.io")
-func (app *App) Run(h http.Handler) error {
+func (app *App) Run() error {
 	if app.closed {
 		return ErrAppClosed
 	}
@@ -159,7 +163,11 @@ func (app *App) Run(h http.Handler) error {
 		return err
 	}
 
-	return app.server.Run(h)
+	if app.builder == nil {
+		return app.server.Run(nil)
+	}
+
+	return app.server.Run(app.builder(app.Router().Mux()))
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
@@ -183,12 +191,9 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // 重启时，会得新加载配置文件内容；清除路由项；重新调用模块初始化函数。要想保持
 // 路由继续启作用，请将路由的初发化工作放到模块的初始化函数中。
 //
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 App.Router().Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 App.Router().Mux() 之上：
-//  app.Run(handlers.Host(app.Router().Mux(), "www.caixw.io")
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
-func (app *App) Restart(h http.Handler, timeout time.Duration) error {
+func (app *App) Restart(timeout time.Duration) error {
 	if app.closed {
 		return ErrAppClosed
 	}
@@ -207,7 +212,7 @@ func (app *App) Restart(h http.Handler, timeout time.Duration) error {
 	}
 
 	go func() {
-		logs.Error(app.Run(h))
+		logs.Error(app.Run())
 	}()
 
 	return nil

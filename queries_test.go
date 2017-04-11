@@ -14,7 +14,7 @@ import (
 
 func TestQueries_Int(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -41,7 +41,7 @@ func TestQueries_Int(t *testing.T) {
 
 func TestQueries_Int64(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -68,7 +68,7 @@ func TestQueries_Int64(t *testing.T) {
 
 func TestQueries_String(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -90,7 +90,7 @@ func TestQueries_String(t *testing.T) {
 
 func TestQueries_Bool(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())
@@ -117,7 +117,7 @@ func TestQueries_Bool(t *testing.T) {
 
 func TestQueries_Float64(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	srv := httptest.NewServer(app.Router().Mux())

@@ -18,7 +18,7 @@ import (
 var initErr error
 
 func TestMain(m *testing.M) {
-	initErr = Init("./testdata")
+	initErr = Init("./testdata", nil)
 
 	os.Exit(m.Run())
 }
@@ -33,7 +33,7 @@ func TestInit(t *testing.T) {
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.File("test"), "testdata/test")
@@ -54,7 +54,7 @@ func TestURL(t *testing.T) {
 func TestNewApp(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.configDir, "./testdata").
@@ -80,7 +80,7 @@ func TestApp(t *testing.T) {
 	}
 	restart := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(1)
-		if err := Restart(nil, 50*time.Microsecond); err != nil {
+		if err := Restart(50 * time.Microsecond); err != nil {
 			logs.Error("RESTART:", err)
 		}
 	}
@@ -95,7 +95,7 @@ func TestApp(t *testing.T) {
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		Run(nil)
+		Run()
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
