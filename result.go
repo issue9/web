@@ -35,7 +35,7 @@ import (
 //  </result>
 type Result struct {
 	XMLName struct{} `json:"-" xml:"result"`
-	status  int
+	status  int      // 当前的信息所对应的 HTTP 状态码
 
 	Message string    `json:"message" xml:"message,attr"`
 	Code    int       `json:"code" xml:"code,attr"`

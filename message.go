@@ -10,9 +10,6 @@ import (
 	"net/http"
 )
 
-// ErrDuplicateMessageCode 表示消息 ID 有重复
-var ErrDuplicateMessageCode = errors.New("重复的消息 ID")
-
 // 保存所有的代码与消息对应关系
 var messages = map[int]message{}
 
@@ -52,7 +49,7 @@ func NewMessage(code int, msg string) error {
 	}
 
 	if _, found := messages[code]; found {
-		return ErrDuplicateMessageCode
+		return fmt.Errorf("重复的消息 ID: %v", code)
 	}
 
 	messages[code] = message{message: msg, status: getStatus(code)}

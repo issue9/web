@@ -46,11 +46,7 @@ type App struct {
 	modules *modules.Modules
 }
 
-// Init 初始化框架的基本内容。
-//
-// confDir 指定了配置文件所在的目录，
-// 框架默认的两个配置文件都会从此目录下查找。
-// builder 用于封装内部的 http.Handler 实例，不需要则传递空值。
+// Init 初始化框架的基本内容。参数说明可参考 NewApp() 的文档。
 func Init(confDir string, builder BuildHandler) error {
 	app, err := NewApp(confDir, builder)
 	if err != nil {
@@ -100,8 +96,7 @@ func NewModule(name string, init modules.Init, deps ...string) {
 //
 // confDir 指定了配置文件所在的目录，
 // 框架默认的两个配置文件都会从此目录下查找。
-// builder 被用于封装另内部的 http.Handler 接口，
-// 一些统一的功能实现可以封装在此函数中。
+// builder 被用于封装内部的 http.Handler 接口，不需要可以传递空值。
 func NewApp(confDir string, builder BuildHandler) (*App, error) {
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件目录不存在")
@@ -218,7 +213,7 @@ func (app *App) Restart(timeout time.Duration) error {
 	return nil
 }
 
-// File 获取配置目录下的文件。
+// File 获取相对于配置目录下的文件。
 func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
 }
@@ -226,7 +221,7 @@ func (app *App) File(path string) string {
 // Router 获取操作路由的接口，为一个 mux.Preifx 实例，具体接口说明可参考 issue9/mux 包。
 //
 // 通过 Router 可以添加各类路由项，诸如：
-//  Mux().Get("/test", h).
+//  Router().Get("/test", h).
 //      Post("/test", h)
 func (app *App) Router() *mux.Prefix {
 	return app.router
