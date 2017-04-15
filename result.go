@@ -108,8 +108,10 @@ func (rslt *Result) Render(ctx *Context) {
 	ctx.Render(rslt.status, rslt, nil)
 }
 
-// NewMessages 批量注册信息
+// NewMessages 注册错误代码。
 // 非协程安全，需要在程序初始化时添加所有的错误代码。
+//
+// 此处注册的错误代码将与所有的 App 实例共享。
 func NewMessages(msgs map[int]string) error {
 	return message.Registers(msgs)
 }

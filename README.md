@@ -3,9 +3,9 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 
 **实验性的内容，勿用！**
 
-如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
+web 是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
 
-web 包是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
+如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
 
 
 #### 配置文件
