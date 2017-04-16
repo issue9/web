@@ -3,9 +3,9 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 
 **实验性的内容，勿用！**
 
-如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
+web 是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
 
-web 包是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
+如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
 
 
 #### 配置文件
@@ -26,7 +26,7 @@ web 包是一个比较完整的 API 开发框架，相对于简单的路由，�
 | server.static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | server.options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
 | server.version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
-| server.hosts           | array  | 限定域名，可以是多个，若不指定，表示不限定
+| server.hosts           | array  | 限定访问域名，可以是多个，若不指定，表示不限定
 | server.readTimeout     | int    | 与 http.Server.ReadTimeout 相同，单位*纳秒*
 | server.writeTimeout    | int    | 与 http.Server.WriteTimeout 相同，单位*纳秒*
 | server.pprof           | string | pprof 的相关调试的地址，若为空，表示没有。

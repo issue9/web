@@ -14,15 +14,15 @@ import (
 // ErrModulesInited 表示模块已经初始化完成，不能再添加新模块。
 var ErrModulesInited = errors.New("所有模块已经初始化完成")
 
-// Init 模块的初始化函数，实现者需要注意：
+// InitFunc 模块的初始化函数，实现者需要注意：
 // 在重启服务时，会被再次调用，需要保证在多次调用的情况下，
 // 不会出现冲突。
-type Init func() error
+type InitFunc func() error
 
 // 用以表示一个模块所需要的数据。
 type module struct {
 	name   string   // 模块名
-	init   Init     // 初始化函数
+	init   InitFunc // 初始化函数
 	inited bool     // 是否已经初始化
 	deps   []string // 依赖项
 }
@@ -46,7 +46,7 @@ func New() *Modules {
 // name 为模块的名称；
 // init 为模块的初始化函数；
 // deps 为模块的依赖模块，依赖模块可以后于当前模块注册。
-func (ms *Modules) New(name string, init Init, deps ...string) error {
+func (ms *Modules) New(name string, init InitFunc, deps ...string) error {
 	if ms.inited {
 		return ErrModulesInited
 	}

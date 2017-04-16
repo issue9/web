@@ -74,14 +74,16 @@ func TestXML_Render(t *testing.T) {
 
 	// 缺少 Accept
 	x.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).
+		Equal(w.Body.String(), http.StatusText(http.StatusNotAcceptable)+"\n")
 
 	// 错误的 accept
 	w = httptest.NewRecorder()
 	r.Header.Set("Accept", "test")
 	a.NotError(err).NotNil(r)
 	x.Render(w, r, http.StatusCreated, nil, nil)
-	a.Equal(w.Code, http.StatusNotAcceptable).Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusNotAcceptable).
+		Equal(w.Body.String(), http.StatusText(http.StatusNotAcceptable)+"\n")
 
 	val := &struct {
 		XMLName stdxml.Name `xml:"root"`
@@ -99,8 +101,8 @@ func TestXML_Render(t *testing.T) {
 	// 解析xml出错，会返回500错误
 	w = httptest.NewRecorder()
 	x.Render(w, r, http.StatusOK, complex(5, 7), nil)
-	a.Equal(w.Code, http.StatusInternalServerError)
-	a.Equal(w.Body.String(), "")
+	a.Equal(w.Code, http.StatusInternalServerError).
+		Equal(w.Body.String(), http.StatusText(http.StatusInternalServerError)+"\n")
 }
 
 func TestXML_Read(t *testing.T) {

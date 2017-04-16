@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/web/internal/message"
 )
 
 // Result 提供了一套用于描述向客户端反馈错误信息的机制。
@@ -35,7 +36,7 @@ import (
 //  </result>
 type Result struct {
 	XMLName struct{} `json:"-" xml:"result"`
-	status  int
+	status  int      // 当前的信息所对应的 HTTP 状态码
 
 	Message string    `json:"message" xml:"message,attr"`
 	Code    int       `json:"code" xml:"code,attr"`
@@ -52,21 +53,21 @@ type detail struct {
 // code 表示错误代码；
 // fields 为具体的错误信息；
 func NewResult(code int, fields map[string]string) *Result {
-	msg, err := getMessage(code)
+	msg, err := message.GetMessage(code)
 	if err != nil {
 		logs.Error(err)
 
 		return &Result{
 			Code:    -1,
-			Message: msg.message,
-			status:  msg.status,
+			Message: msg.Message,
+			status:  msg.Status,
 		}
 	}
 
 	rslt := &Result{
 		Code:    code,
-		Message: msg.message,
-		status:  msg.status,
+		Message: msg.Message,
+		status:  msg.Status,
 		Detail:  make([]*detail, 0, len(fields)),
 	}
 
@@ -102,12 +103,15 @@ func (rslt *Result) IsError() bool {
 	return rslt.status >= http.StatusBadRequest
 }
 
-// Status 获取与其相对的 HTTP 状态码
-func (rslt *Result) Status() int {
-	return rslt.status
-}
-
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *Context) {
 	ctx.Render(rslt.status, rslt, nil)
+}
+
+// NewMessages 注册错误代码。
+// 非协程安全，需要在程序初始化时添加所有的错误代码。
+//
+// 此处注册的错误代码将与所有的 App 实例共享。
+func NewMessages(msgs map[int]string) error {
+	return message.Registers(msgs)
 }

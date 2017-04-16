@@ -17,6 +17,8 @@ var _ sanitizer = server.DefaultConfig()
 
 var _ sanitizer = content.DefaultConfig()
 
+var _ sanitizer = DefaultConfig()
+
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
 

@@ -96,7 +96,7 @@ func (x *xml) Render(w http.ResponseWriter, r *http.Request, code int, v interfa
 	accept := r.Header.Get("Accept")
 	if strings.Index(accept, xmlEncodingType) < 0 && strings.Index(accept, "*/*") < 0 {
 		logs.Error("Accept 值不正确：", accept)
-		w.WriteHeader(http.StatusNotAcceptable)
+		http.Error(w, http.StatusText(http.StatusNotAcceptable), http.StatusNotAcceptable)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (x *xml) Render(w http.ResponseWriter, r *http.Request, code int, v interfa
 	default:
 		if data, err = stdxml.Marshal(val); err != nil {
 			logs.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -125,7 +125,8 @@ func (x *xml) Render(w http.ResponseWriter, r *http.Request, code int, v interfa
 	w.WriteHeader(code) // NOTE: WriteHeader() 必须在 Write() 之前调用
 	if _, err = w.Write(data); err != nil {
 		logs.Error(err)
-		w.WriteHeader(http.StatusInternalServerError) // BUG(caixw) 会提示重复调用 WriteHeader 的错误
+		// BUG(caixw) 此处由于之前的 WriteHeader() 已经调用，会提示重复调用 WriteHeader 的错误
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
@@ -152,23 +153,23 @@ func (x *xml) Read(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 	if r.Method != http.MethodGet {
 		ct := r.Header.Get("Content-Type")
 		if strings.Index(ct, xmlEncodingType) < 0 && strings.Index(ct, "*/*") < 0 {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
 			logs.Error("Content-Type 值不正确：", ct)
+			http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
 			return false
 		}
 	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		logs.Error(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return false
 	}
 
 	err = stdxml.Unmarshal(data, v)
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
 		logs.Error(err)
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 		return false
 	}
 

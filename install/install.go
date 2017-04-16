@@ -41,6 +41,13 @@ import (
 	"github.com/issue9/web/modules"
 )
 
+const (
+	colorDefault = colors.Default
+	colorInfo    = colors.Magenta
+	colorError   = colors.Red
+	colorSuccess = colors.Green
+)
+
 var defaultModules = modules.New()
 
 // Module 声明了一个用于安装的模块。
@@ -71,56 +78,53 @@ func New(module string, deps ...string) *Module {
 //
 // name 事件名称。
 // fn 事件的处理函数。
-func (i *Module) Event(title string, fn func() *Return) {
-	i.events = append(i.events, &event{
+func (m *Module) Event(title string, fn func() *Return) {
+	m.events = append(m.events, &event{
 		title: title,
 		fn:    fn,
 	})
 }
 
 // Done 完成当前安装模块的所有事件注册
-func (i *Module) Done() error {
-	return defaultModules.New(i.name, i.run, i.deps...)
+func (m *Module) Done() error {
+	return defaultModules.New(m.name, m.run, m.deps...)
 }
 
-// 运行当前模块的安装事件。
-//
-// NOTE: 此函数会作为 modules 包中的模块初始化函数，
-// 在初始化所有模块时，根据依赖顺序被调用。
-func (i *Module) run() error {
-	colorPrint(colors.Green, "安装模块:")
-	colorPrintf(colors.Default, "[%v]\n", i.name)
+// 运行当前模块的安装事件。此方法会被作为 modules.InitFunc 被调用。
+func (m *Module) run() error {
+	colorPrint(colorSuccess, "安装模块:")
+	colorPrintf(colorDefault, "[%v]\n", m.name)
 
-	for _, e := range i.events {
-		i.runEvent(e)
+	for _, e := range m.events {
+		m.runEvent(e)
 	}
 
-	if i.hasError {
-		colorPrint(colors.Red, "安装失败!\n\n")
+	if m.hasError {
+		colorPrint(colorError, "安装失败!\n\n")
 	} else {
-		colorPrint(colors.Green, "安装完成!\n\n")
+		colorPrint(colorSuccess, "安装完成!\n\n")
 	}
 	return nil
 }
 
 // 运行一条注册的事件。
-func (i *Module) runEvent(e *event) {
-	colorPrint(colors.Default, "\t", e.title, "......")
+func (m *Module) runEvent(e *event) {
+	colorPrint(colorDefault, "\t", e.title, "......")
 
 	ret := e.fn()
 
 	if ret != nil && ret.typ == typeFailed {
-		i.hasError = true
-		colorPrintf(colors.Red, "[FALID:%v]\n", ret.message)
+		m.hasError = true
+		colorPrintf(colorError, "[FALID:%v]\n", ret.message)
 		return
 	}
 
-	colorPrint(colors.Green, "[OK")
+	colorPrint(colorSuccess, "[OK")
 	if ret != nil && len(ret.message) > 0 {
-		colorPrint(colors.Magenta, ":")
-		colorPrint(colors.Magenta, ret.message)
+		colorPrint(colorInfo, ":")
+		colorPrint(colorInfo, ret.message)
 	}
-	colorPrintln(colors.Green, "]")
+	colorPrintln(colorSuccess, "]")
 }
 
 // Install 安装各个模块

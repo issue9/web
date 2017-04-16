@@ -18,7 +18,7 @@ import (
 var initErr error
 
 func TestMain(m *testing.M) {
-	initErr = Init("./testdata")
+	initErr = Init("./testdata", nil)
 
 	os.Exit(m.Run())
 }
@@ -30,10 +30,40 @@ func TestInit(t *testing.T) {
 	a.NotError(initErr).NotNil(defaultApp)
 }
 
+func TestBuildHandler(t *testing.T) {
+	a := assert.New(t)
+	app, err := NewApp("./testdata", func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Date", "1111")
+			h.ServeHTTP(w, r)
+		})
+	})
+	a.NotError(err).NotNil(app)
+
+	f1 := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(1)
+	}
+
+	app.Router().GetFunc("/builder", f1)
+	go func() {
+		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
+		app.Run()
+	}()
+
+	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Millisecond)
+
+	// 正常访问
+	resp, err := http.Get("http://localhost:8082/builder")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.Header.Get("Date"), "1111")
+	app.Shutdown(0)
+}
+
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.File("test"), "testdata/test")
@@ -54,7 +84,7 @@ func TestURL(t *testing.T) {
 func TestNewApp(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata")
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.configDir, "./testdata").
@@ -80,13 +110,14 @@ func TestApp(t *testing.T) {
 	}
 	restart := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(1)
-		if err := Restart(nil, 50*time.Microsecond); err != nil {
+		if err := Restart(50 * time.Microsecond); err != nil {
 			logs.Error("RESTART:", err)
 		}
 	}
 
+	Router().GetFunc("/out", f1)
 	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
-	NewModule("init", func() error {
+	Module("init", func() error {
 		Router().GetFunc("/test", f1)
 		Router().GetFunc("/restart", restart)
 		Router().GetFunc("/shutdown", shutdown)
@@ -95,7 +126,7 @@ func TestApp(t *testing.T) {
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		Run(nil)
+		Run()
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
@@ -104,6 +135,8 @@ func TestApp(t *testing.T) {
 	// 正常访问
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
+	resp, err = http.Get("http://localhost:8082/out")
+	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
 
 	// 重启之后，依然能访问
 	resp, err = http.Get("http://localhost:8082/restart")
@@ -111,6 +144,9 @@ func TestApp(t *testing.T) {
 	time.Sleep(500 * time.Microsecond) // 待待 Restart 生效果
 	resp, err = http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
+	// 重启之后不能访问了
+	resp, err = http.Get("http://localhost:8082/out")
+	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, http.StatusNotFound)
 
 	// 关闭
 	resp, err = http.Get("http://localhost:8082/shutdown")

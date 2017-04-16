@@ -7,10 +7,10 @@ package web
 import (
 	"encoding/json"
 	"encoding/xml"
-	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/internal/message"
 )
 
 func TestNewResult(t *testing.T) {
@@ -19,38 +19,38 @@ func TestNewResult(t *testing.T) {
 	r := NewResult(-2, nil) // 不存在的代码
 	a.Equal(r.Code, -1)
 
-	code := http.StatusBadRequest * 1000
-	a.NotError(NewMessage(code, "400"))
+	code := 400 * 1000
+	a.NotError(message.Register(code, "400"))
 	r = NewResult(code, nil)
-	a.Equal(r.Message, "400").Equal(r.Status(), 400).Equal(r.Code, code)
+	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
 
-	clearMesages()
+	message.Clean()
 }
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
 
 	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r := NewResult(code, nil)
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
 	a.True(r.HasDetail())
 
-	clearMesages()
+	message.Clean()
 }
 
 func TestResult_IsError(t *testing.T) {
 	a := assert.New(t)
 
 	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r := NewResult(400+500, nil)
 	a.True(r.IsError())
 
 	code = 300 * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(message.Register(code, "400"))
 	r = NewResult(code+3, nil)
 	a.True(r.IsError())
 
@@ -58,12 +58,12 @@ func TestResult_IsError(t *testing.T) {
 	r = NewResult(200*100+3, nil)
 	a.True(r.IsError())
 
-	clearMesages()
+	message.Clean()
 }
 
 func TestResultJSONMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
+	a.NotError(message.Register(400, "400"))
 
 	r := NewResult(400, nil)
 	r.Add("field1", "message1")
@@ -78,12 +78,12 @@ func TestResultJSONMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400}`)
 
-	clearMesages()
+	message.Clean()
 }
 
 func TestResultXMLMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
+	a.NotError(message.Register(400, "400"))
 
 	r := NewResult(400, nil)
 	r.Add("field", "message1")

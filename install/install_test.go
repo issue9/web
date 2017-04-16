@@ -7,14 +7,18 @@ package install
 import (
 	"errors"
 	"testing"
+
+	"github.com/issue9/assert"
 )
 
 func TestInstall(t *testing.T) {
+	a := assert.New(t)
+
 	i := New("users1", "users2", "users3")
 	i.Event("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
 	i.Done()
 
-	i = New("users2", "users4")
+	i = New("users2", "users3")
 	i.Event("安装数据表users", func() *Return { return nil })
 	i.Done()
 
@@ -24,5 +28,5 @@ func TestInstall(t *testing.T) {
 	i.Event("安装数据表users", func() *Return { return nil })
 	i.Done()
 
-	Install()
+	a.NotError(Install())
 }

@@ -6,7 +6,7 @@ package web
 
 import "strconv"
 
-// Queries 用于处理路径中的查询参数。用法类似于 flag
+// Queries 用于处理路径中的查询参数。
 //  q,_ := NewQuery(r, false)
 //  page := q.Int64("page", 1)
 //  size := q.Int64("size", 20)
