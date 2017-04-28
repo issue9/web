@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"strings"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
@@ -64,7 +65,7 @@ func (conf *Config) Sanitize() error {
 	if !is.URL(conf.Root) {
 		return errors.New("conf.Root 必须是一个 URL")
 	}
-	if conf.Root[len(conf.Root)-1] == '/' {
+	if strings.HasSuffix(conf.Root, "/") {
 		conf.Root = conf.Root[:len(conf.Root)-1]
 	}
 
