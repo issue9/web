@@ -22,7 +22,7 @@ import (
 // Server 服务器控制
 type Server struct {
 	conf *Config
-	mux  *mux.ServeMux
+	mux  *mux.Mux
 
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
@@ -41,14 +41,14 @@ func New(conf *Config) (*Server, error) {
 	}
 
 	return &Server{
-		mux:     mux.NewServeMux(!conf.Options),
+		mux:     mux.New(!conf.Options, nil, nil),
 		servers: make([]*http.Server, 0, 5),
 		conf:    conf,
 	}, nil
 }
 
-// Mux 返回默认的 *mux.ServeMux 实例
-func (s *Server) Mux() *mux.ServeMux {
+// Mux 返回默认的 *mux.Mux 实例
+func (s *Server) Mux() *mux.Mux {
 	return s.mux
 }
 

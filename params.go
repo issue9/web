@@ -27,10 +27,7 @@ type Params struct {
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
-	params, err := mux.GetParams(ctx.Request())
-	if err != nil {
-		ctx.Error(err)
-	}
+	params := mux.GetParams(ctx.Request())
 	if params == nil {
 		ctx.Error("mux.GetParams() 中获取的值为一个空的 map")
 		params = emptyParams
