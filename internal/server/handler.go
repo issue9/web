@@ -9,14 +9,16 @@ import (
 	"net/http/pprof"
 	"strings"
 
-	"github.com/issue9/handlers"
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware/host"
+	"github.com/issue9/middleware/recovery"
+	"github.com/issue9/middleware/version"
 )
 
 func (s *Server) buildHandler(h http.Handler) http.Handler {
 	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
 
-	h = handlers.Recovery(h, func(w http.ResponseWriter, msg interface{}) {
+	h = recovery.New(h, func(w http.ResponseWriter, msg interface{}) {
 		logs.Error(msg)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	})
@@ -34,7 +36,7 @@ func (s *Server) buildHosts(h http.Handler) http.Handler {
 		return h
 	}
 
-	return handlers.Host(h, s.conf.Hosts...)
+	return host.New(h, s.conf.Hosts...)
 }
 
 func (s *Server) buildVersion(h http.Handler) http.Handler {
@@ -42,7 +44,7 @@ func (s *Server) buildVersion(h http.Handler) http.Handler {
 		return h
 	}
 
-	return handlers.Version(h, s.conf.Version, true)
+	return version.New(h, s.conf.Version, true)
 }
 
 func (s *Server) buildHeader(h http.Handler) http.Handler {

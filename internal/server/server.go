@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/handlers"
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 )
 
@@ -41,7 +41,7 @@ func New(conf *Config) (*Server, error) {
 	}
 
 	return &Server{
-		mux:     mux.New(!conf.Options, nil, nil),
+		mux:     mux.New(!conf.Options, false, nil, nil),
 		servers: make([]*http.Server, 0, 5),
 		conf:    conf,
 	}, nil
@@ -59,7 +59,7 @@ func (s *Server) initRoutes(h http.Handler) http.Handler {
 		if !strings.HasSuffix(url, "/") {
 			url += "/"
 		}
-		s.mux.Get(url, http.StripPrefix(url, handlers.Compress(http.FileServer(http.Dir(dir)))))
+		s.mux.Get(url, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)))))
 	}
 
 	if h == nil {
@@ -74,7 +74,7 @@ func (s *Server) initRoutes(h http.Handler) http.Handler {
 //
 // h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Server.Mux() 代替。
 // 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
-//  s.Run(handlers.Host(s.Mux(), "www.caixw.io")
+//  s.Run(host.New(s.Mux(), "www.caixw.io")
 func (s *Server) Run(h http.Handler) error {
 	h = s.initRoutes(h)
 
