@@ -59,7 +59,7 @@ func (s *Server) initRoutes(h http.Handler) http.Handler {
 		if !strings.HasSuffix(url, "/") {
 			url += "/"
 		}
-		s.mux.Get(url, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)))))
+		s.mux.Get(url, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
 	if h == nil {

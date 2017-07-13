@@ -24,7 +24,7 @@ func (s *Server) buildHandler(h http.Handler) http.Handler {
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	if len(s.conf.Pprof) > 0 {
+	if s.conf.Pprof {
 		h = s.buildPprof(h)
 	}
 
@@ -62,15 +62,15 @@ func (s *Server) buildHeader(h http.Handler) http.Handler {
 
 // 根据 Config.Pprof 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
 func (s *Server) buildPprof(h http.Handler) http.Handler {
-	logs.Debug("开启了调试功能，地址为：", s.conf.Pprof)
+	logs.Debug("开启了调试功能，地址为：", pprofPath)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, s.conf.Pprof) {
+		if !strings.HasPrefix(r.URL.Path, pprofPath) {
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		path := r.URL.Path[len(s.conf.Pprof):]
+		path := r.URL.Path[len(pprofPath):]
 		switch path {
 		case "cmdline":
 			pprof.Cmdline(w, r)

@@ -13,6 +13,8 @@ import (
 	"github.com/issue9/utils"
 )
 
+const pprofPath = "/debug/pprof/"
+
 // 端口的定义
 const (
 	httpPort  = ":80"
@@ -43,7 +45,7 @@ type Config struct {
 	// 性能
 	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：纳秒
 	WriteTimeout time.Duration `json:"writeTimeout"` // http.Server.WriteTimeout 的值，单位：纳秒
-	Pprof        string        `json:"pprof"`        // 指定 pprof 地址
+	Pprof        bool          `json:"pprof"`        // 指定 pprof 地址
 }
 
 // DefaultConfig 返回一个默认的 Config
@@ -62,7 +64,7 @@ func DefaultConfig() *Config {
 
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
-		Pprof:        "/debub/pprof",
+		Pprof:        true,
 	}
 }
 
@@ -96,10 +98,6 @@ func (conf *Config) Sanitize() error {
 				return fmt.Errorf("conf.Hosts 中的 %v 为非法的 URL", host)
 			}
 		}
-	}
-
-	if len(conf.Pprof) > 0 && conf.Pprof[len(conf.Pprof)-1] != '/' {
-		conf.Pprof = conf.Pprof + "/"
 	}
 
 	if conf.ReadTimeout < 0 {
