@@ -8,9 +8,10 @@ import (
 	"strconv"
 
 	"github.com/issue9/mux"
+	"github.com/issue9/mux/params"
 )
 
-var emptyParams = mux.Params(map[string]string{})
+var emptyParams = params.Params(map[string]string{})
 
 // Params 用于处理路径中包含的参数。
 //  p := ctx.Params()
@@ -21,13 +22,13 @@ var emptyParams = mux.Params(map[string]string{})
 //  }
 type Params struct {
 	ctx    *Context
-	params mux.Params
+	params params.Params
 	errors map[string]string
 }
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
-	params := mux.GetParams(ctx.Request())
+	params := mux.Params(ctx.Request())
 	if params == nil {
 		ctx.Error("mux.GetParams() 中获取的值为一个空的 map")
 		params = emptyParams

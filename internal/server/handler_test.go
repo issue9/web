@@ -70,7 +70,7 @@ func TestServer_buildHosts(t *testing.T) {
 	w = httptest.NewRecorder()
 	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
 func TestServer_buildVersion(t *testing.T) {
@@ -114,7 +114,7 @@ func TestServer_buildVersion(t *testing.T) {
 	w = httptest.NewRecorder()
 	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusForbidden)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
 func TestServer_buildHeader(t *testing.T) {
@@ -138,13 +138,13 @@ func TestServer_buildPprof(t *testing.T) {
 	a := assert.New(t)
 
 	c := DefaultConfig()
-	c.Pprof = "/pprof"
+	c.Pprof = true
 	s, err := New(c)
 	a.NotError(err).NotNil(s)
 	h := s.buildPprof(h1)
 
-	// 命中 /pprof/cmdline
-	r := httptest.NewRequest("GET", "http://caixw.io/pprof/cmdline", nil)
+	// 命中 /debug/pprof/cmdline
+	r := httptest.NewRequest("GET", "http://caixw.io/debug/pprof/cmdline", nil)
 	w := httptest.NewRecorder()
 	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)

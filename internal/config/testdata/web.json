@@ -17,7 +17,7 @@
         },
 
         "readTimeout": 30,
-        "pprof"     : "/debug/pprof/"
+        "pprof"     : true
     },
 
     "content":{
