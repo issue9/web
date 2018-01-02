@@ -96,6 +96,7 @@ func Module(name string, init modules.InitFunc, deps ...string) {
 //
 // confDir 指定了配置文件所在的目录，
 // 框架默认的两个配置文件都会从此目录下查找。
+// confDir 下面必须包含 logs.xml 与 web.json 两个配置文件。
 // builder 被用于封装内部的 http.Handler 接口，不需要可以传递空值。
 func NewApp(confDir string, builder BuildHandler) (*App, error) {
 	if !utils.FileExists(confDir) {

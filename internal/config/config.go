@@ -62,7 +62,7 @@ func Load(path string) (*Config, error) {
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
 func (conf *Config) Sanitize() error {
-	if !is.URL(conf.Root) {
+	if !is.URL(conf.Root) || strings.HasPrefix(conf.Root, "localhost:") {
 		return errors.New("conf.Root 必须是一个 URL")
 	}
 	if strings.HasSuffix(conf.Root, "/") {

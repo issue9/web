@@ -56,9 +56,6 @@ func (s *Server) Mux() *mux.Mux {
 func (s *Server) initRoutes(h http.Handler) http.Handler {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range s.conf.Static {
-		if !strings.HasSuffix(url, "/") {
-			url += "/"
-		}
 		pattern := url + "{path}"
 		s.mux.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}

@@ -51,7 +51,7 @@ type detail struct {
 // NewResult 声明一个新的 Result 实例
 //
 // code 表示错误代码；
-// fields 为具体的错误信息；
+// fields 为具体的错误信息，若没有，则为 nil；
 func NewResult(code int, fields map[string]string) *Result {
 	msg, err := message.GetMessage(code)
 	if err != nil {
