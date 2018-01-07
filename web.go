@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/web/result"
 )
 
+// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	conf := app.config
 	ctx, err := context.New(w, r, conf.OutputEncoding, conf.OutputCharset, conf.Strict)
@@ -27,6 +28,7 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	return ctx
 }
 
+// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
 func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	return defaultApp.NewContext(w, r)
 }

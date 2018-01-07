@@ -19,7 +19,7 @@ var _ sanitizer = DefaultConfig()
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := Load("./testdata/web.json")
+	conf, err := Load("./testdata/web.yaml")
 	a.NotError(err).NotNil(conf)
 	a.Equal(conf.Root, "https://caixw.io")
 	a.Equal(conf.Server.KeyFile, "keyFile")
