@@ -90,8 +90,7 @@ func TestNewApp(t *testing.T) {
 	a.Equal(app.configDir, "./testdata").
 		NotNil(app.config).
 		NotNil(app.server).
-		NotNil(app.modules).
-		NotNil(app.content)
+		NotNil(app.modules)
 }
 
 func TestApp(t *testing.T) {

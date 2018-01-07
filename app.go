@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/logs"
 	"github.com/issue9/mux"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/modules"
@@ -42,7 +41,6 @@ type App struct {
 
 	config  *config.Config
 	server  *server.Server
-	content content.Content
 	modules *modules.Modules
 }
 
@@ -130,11 +128,6 @@ func (app *App) init() error {
 	}
 
 	app.server, err = server.New(app.config.Server)
-	if err != nil {
-		return err
-	}
-
-	app.content, err = content.New(app.config.Content)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,6 @@ import (
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
 )
 
@@ -34,9 +33,6 @@ type Config struct {
 
 	// Server
 	Server *server.Config `json:"server"`
-
-	// Content
-	Content *content.Config `json:"content"`
 }
 
 // Load 加载配置文件
@@ -85,28 +81,12 @@ func (conf *Config) Sanitize() error {
 		}
 	}
 
-	// Content
-	if conf.Content == nil {
-		conf.Content = content.DefaultConfig()
-	} else {
-		c := content.DefaultConfig()
-		if err := utils.Merge(true, c, conf.Content); err != nil {
-			return err
-		}
-		conf.Content = c
-
-		if err := conf.Content.Sanitize(); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
 // DefaultConfig 输出默认配置内容。
 func DefaultConfig() *Config {
 	return &Config{
-		Server:  server.DefaultConfig(),
-		Content: content.DefaultConfig(),
+		Server: server.DefaultConfig(),
 	}
 }

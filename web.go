@@ -1,9 +1,14 @@
-// Copyright 2016 by caixw, All rights reserved.
+// Copyright 2018 by caixw, All rights reserved.
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package web 一个微型的 API 框架。
 package web
 
-// Version 当前框架的版本
-const Version = "0.11.1+20170412"
+import (
+	"github.com/issue9/web/result"
+)
+
+// NewResult 生成一个 *result.Result 对象
+func NewResult(code int, fields map[string]string) *result.Result {
+	return result.New(code, fields)
+}
