@@ -60,11 +60,6 @@ func Run() error {
 	return defaultApp.Run()
 }
 
-// Restart 重启整个服务，具体说明可参考 App.Restart()。
-func Restart(timeout time.Duration) error {
-	return defaultApp.Restart(timeout)
-}
-
 // Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
 func Shutdown(timeout time.Duration) error {
 	return defaultApp.Shutdown(timeout)
@@ -171,38 +166,6 @@ func (app *App) Shutdown(timeout time.Duration) error {
 	if app.server != nil {
 		return app.server.Shutdown(timeout)
 	}
-
-	return nil
-}
-
-// Restart 重启整个服务。
-// Restart 并不简单地等于 Shutdown() + Run()。
-// 重启时，会得新加载配置文件内容；清除路由项；重新调用模块初始化函数。要想保持
-// 路由继续启作用，请将路由的初发化工作放到模块的初始化函数中。
-//
-// timeout 表示已有服务的等待时间。
-// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
-func (app *App) Restart(timeout time.Duration) error {
-	if app.closed {
-		return ErrAppClosed
-	}
-
-	if app.server != nil {
-		// NOTE: Shutdown() 始终返回的错误信息，并不表示程序出错，无需退出，仅作简单的记录。
-		logs.Error(app.server.Shutdown(timeout))
-	}
-
-	if err := app.init(); err != nil {
-		return err
-	}
-
-	if err := app.modules.Reset(); err != nil {
-		return err
-	}
-
-	go func() {
-		logs.Error(app.Run())
-	}()
 
 	return nil
 }

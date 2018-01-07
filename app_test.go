@@ -107,18 +107,11 @@ func TestApp(t *testing.T) {
 			logs.Error("SHUTDOWN:", err)
 		}
 	}
-	restart := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
-		if err := Restart(50 * time.Microsecond); err != nil {
-			logs.Error("RESTART:", err)
-		}
-	}
 
 	Router().GetFunc("/out", f1)
 	// 只有将路由初始化放在 modules 中，才能在重启时，正确重新初始化路由。
 	Module("init", func() error {
 		Router().GetFunc("/test", f1)
-		Router().GetFunc("/restart", restart)
 		Router().GetFunc("/shutdown", shutdown)
 		return nil
 	})
@@ -136,16 +129,6 @@ func TestApp(t *testing.T) {
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
 	resp, err = http.Get("http://localhost:8082/out")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
-
-	// 重启之后，依然能访问
-	resp, err = http.Get("http://localhost:8082/restart")
-	a.NotError(err).NotNil(resp)
-	time.Sleep(500 * time.Microsecond) // 待待 Restart 生效果
-	resp, err = http.Get("http://localhost:8082/test")
-	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
-	// 重启之后不能访问了
-	resp, err = http.Get("http://localhost:8082/out")
-	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, http.StatusNotFound)
 
 	// 关闭
 	resp, err = http.Get("http://localhost:8082/shutdown")

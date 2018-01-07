@@ -5,8 +5,31 @@
 package web
 
 import (
+	"net/http"
+
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
 )
+
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+	conf := app.config
+	ctx, err := context.New(w, r, conf.OutputEncoding, conf.OutputCharset, conf.Strict)
+
+	switch {
+	case err == context.ErrUnsupportedContentType:
+		context.RenderStatus(w, http.StatusUnsupportedMediaType)
+		return nil
+	case err == context.ErrClientNotAcceptable:
+		context.RenderStatus(w, http.StatusNotAcceptable)
+		return nil
+	}
+
+	return ctx
+}
+
+func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+	return defaultApp.NewContext(w, r)
+}
 
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int, fields map[string]string) *result.Result {
