@@ -21,7 +21,7 @@ import (
 
 const (
 	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.json" // 配置文件的文件名。
+	configFilename = "web.yaml" // 配置文件的文件名。
 )
 
 // ErrAppClosed 表示当前的 app 实例已经关闭。

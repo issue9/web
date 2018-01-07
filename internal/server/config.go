@@ -31,21 +31,21 @@ const (
 // Config 系统配置文件。
 type Config struct {
 	// 基本
-	HTTPS     bool              `json:"https"`     // 是否启用 HTTPS
-	HTTPState string            `json:"httpState"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile  string            `json:"certFile"`  // 当 https 为 true 时，此值为必填
-	KeyFile   string            `json:"keyFile"`   // 当 https 为 true 时，此值为必填
-	Port      string            `json:"port"`      // 端口，不指定，默认为 80 或是 443
-	Headers   map[string]string `json:"headers"`   // 附加的头信息，头信息可能在其它地方被修改
-	Static    map[string]string `json:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
-	Options   bool              `json:"options"`   // 是否启用 OPTIONS 请求
-	Version   string            `json:"version"`   // 限定版本
-	Hosts     []string          `json:"hosts"`     // 限定访问域名。仅需指定域名，端口及其它任何信息不需要指定
+	HTTPS     bool              `yaml:"https"`     // 是否启用 HTTPS
+	HTTPState string            `yaml:"httpState"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
+	CertFile  string            `yaml:"certFile"`  // 当 https 为 true 时，此值为必填
+	KeyFile   string            `yaml:"keyFile"`   // 当 https 为 true 时，此值为必填
+	Port      string            `yaml:"port"`      // 端口，不指定，默认为 80 或是 443
+	Headers   map[string]string `yaml:"headers"`   // 附加的头信息，头信息可能在其它地方被修改
+	Static    map[string]string `yaml:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
+	Options   bool              `yaml:"options"`   // 是否启用 OPTIONS 请求
+	Version   string            `yaml:"version"`   // 限定版本
+	Hosts     []string          `yaml:"hosts"`     // 限定访问域名。仅需指定域名，端口及其它任何信息不需要指定
 
 	// 性能
-	ReadTimeout  time.Duration `json:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：纳秒
-	WriteTimeout time.Duration `json:"writeTimeout"` // http.Server.WriteTimeout 的值，单位：纳秒
-	Pprof        bool          `json:"pprof"`        // 指定 pprof 地址
+	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值，单位：纳秒
+	WriteTimeout time.Duration `yaml:"writeTimeout"` // http.Server.WriteTimeout 的值，单位：纳秒
+	Pprof        bool          `yaml:"pprof"`        // 指定 pprof 地址
 }
 
 // DefaultConfig 返回一个默认的 Config
@@ -95,7 +95,7 @@ func (conf *Config) Sanitize() error {
 	if len(conf.Hosts) > 0 {
 		for _, host := range conf.Hosts {
 			if !is.URL(host) {
-				return fmt.Errorf("conf.Hosts 中的 %v 为非法的 URL", host)
+				return fmt.Errorf("Hosts 中的 %v 为非法的 URL", host)
 			}
 		}
 	}

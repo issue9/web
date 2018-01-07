@@ -10,7 +10,6 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
 	"github.com/issue9/web/internal/server"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // 需要写入到 web.json 配置文件的类需要实现的接口。
@@ -29,10 +29,10 @@ type sanitizer interface {
 // Config 配置文件。
 type Config struct {
 	// 表示网站的根目录，带域名，非默认端口也得带上。
-	Root string `json:"root"`
+	Root string `yaml:"root"`
 
 	// Server
-	Server *server.Config `json:"server"`
+	Server *server.Config `yaml:"server"`
 }
 
 // Load 加载配置文件
@@ -45,7 +45,7 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 
-	if err = json.Unmarshal(data, conf); err != nil {
+	if err = yaml.Unmarshal(data, conf); err != nil {
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func Load(path string) (*Config, error) {
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
 func (conf *Config) Sanitize() error {
-	if !is.URL(conf.Root) || strings.HasPrefix(conf.Root, "localhost:") {
+	if !is.URL(conf.Root) || strings.Contains(conf.Root, "localhost:") {
 		return errors.New("conf.Root 必须是一个 URL")
 	}
 	if strings.HasSuffix(conf.Root, "/") {

@@ -9,13 +9,10 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/server"
 )
 
 var _ sanitizer = server.DefaultConfig()
-
-var _ sanitizer = content.DefaultConfig()
 
 var _ sanitizer = DefaultConfig()
 
