@@ -17,6 +17,15 @@ import (
 	"golang.org/x/text/transform"
 )
 
+var (
+	// ErrUnsupportedContentType 表示用户提交的 Content-type
+	// 报头中指定的编码或是字符集，不受当前系统的支持。
+	ErrUnsupportedContentType = errors.New("不支持的 content-type 内容")
+
+	// ErrClientNotAcceptable 表示客户端不接受当前系统指定的编码方式。
+	ErrClientNotAcceptable = errors.New("客户端不接受当前的编码")
+)
+
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
 	w http.ResponseWriter
@@ -41,7 +50,7 @@ type Context struct {
 	outputCharset encoding.Encoding
 
 	// 输出的编码方式
-	outputEncoding string
+	outputEncodingName string
 
 	// 输出的字符集
 	outputCharsetName string
@@ -57,52 +66,50 @@ type Context struct {
 // strict 若为 true，则会验证用户的 Accept 报头是否接受 encodingName 编码。
 // 输入时的编码与字符集信息从报头 Content-Type 中获取，若未指定字符集，则默认为 utf-8
 func New(w http.ResponseWriter, r *http.Request, encodingName, charsetName string, strict bool) (*Context, error) {
-	m, found := marshals[encodingName]
+	marshal, found := marshals[encodingName]
 	if !found {
 		return nil, errors.New("encodingName 不存在")
 	}
 
-	c, found := charset[charsetName]
+	outputCharset, found := charset[charsetName]
 	if !found {
 		return nil, errors.New("charsetName 不存在")
 	}
 
-	ctx := &Context{
-		w:                 w,
-		r:                 r,
-		outputEncoding:    encodingName,
-		marshal:           m,
-		outputCharset:     c,
-		outputCharsetName: charsetName,
+	encName, charsetName := parseContentType(r.Header.Get("Content-Type"))
+
+	unmarshal, found := unmarshals[encName]
+	if !found {
+		return nil, ErrUnsupportedContentType
 	}
 
-	if r.Method != http.MethodGet {
-		encName, charsetName := parseContentType(r.Header.Get("Content-Type"))
-
-		enc, found := unmarshals[encName]
-		if !found {
-			return nil, errors.New("不支持的媒体类型")
-		}
-		ctx.unmarshal = enc
-
-		c, found := charset[charsetName]
-		if !found {
-			return nil, errors.New("不支持的字符集")
-		}
-		ctx.inputCharset = c
+	inputCharset, found := charset[charsetName]
+	if !found {
+		return nil, ErrUnsupportedContentType
 	}
 
 	if strict {
 		accept := r.Header.Get("Accept")
-		if strings.Index(accept, encodingName) < 0 && strings.Index(accept, "*/*") < 0 {
-			return nil, errors.New("客户端不支持当前的编码方式")
+		if !strings.Contains(accept, encodingName) && !strings.Contains(accept, "*/*") {
+			return nil, ErrClientNotAcceptable
 		}
 	}
 
-	return ctx, nil
+	return &Context{
+		w:                  w,
+		r:                  r,
+		marshal:            marshal,
+		unmarshal:          unmarshal,
+		inputCharset:       inputCharset,
+		outputEncodingName: encodingName,
+		outputCharset:      outputCharset,
+		outputCharsetName:  charsetName,
+	}, nil
 }
 
-// Body 读取所有内容，相对于 ctx.Request().Body，此值可多次读取
+// Body 获取用户提交的内容。
+//
+// 相对于 ctx.Request().Body，此函数可多次读取。
 func (ctx *Context) Body() ([]byte, error) {
 	if ctx.body == nil {
 		bs, err := ioutil.ReadAll(ctx.r.Body)
@@ -116,16 +123,16 @@ func (ctx *Context) Body() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-
-			ctx.body = bs
 		}
+
+		ctx.body = bs
 	}
 
 	return ctx.body, nil
 }
 
-// Read 从客户端读取数据并转换成 v 对象
-func (ctx *Context) Read(v interface{}) error {
+// Unmarshal 将提交的内容转换成 v 对象。
+func (ctx *Context) Unmarshal(v interface{}) error {
 	body, err := ctx.Body()
 	if err != nil {
 		return err
@@ -134,10 +141,11 @@ func (ctx *Context) Read(v interface{}) error {
 	return ctx.unmarshal(body, v)
 }
 
-// Render 将 v 渲染给客户端。
-// 若是出错，则会尝试调用 ctx.Error() 输出错误信息。
-func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
-	ct := buildContentType(ctx.outputEncoding, ctx.outputCharsetName)
+// Marshal 将 v 发送给客户端。
+//
+// NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头
+func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
+	ct := buildContentType(ctx.outputEncodingName, ctx.outputCharsetName)
 	if headers == nil {
 		ctx.w.Header().Set("Content-Type", ct)
 	} else if _, found := headers["Content-Type"]; !found {
@@ -160,7 +168,29 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 		}
 	}
 
-	if err != nil {
+	return err
+}
+
+// Read 从客户端读取数据并转换成 v 对象。
+//
+// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，
+// 会直接调用 Error() 处理：输出 422 的状态码，
+// 并返回一个 false，告知用户转换失败。
+func (ctx *Context) Read(v interface{}) (ok bool) {
+	if err := ctx.Unmarshal(v); err != nil {
+		ctx.Error(http.StatusUnprocessableEntity, err)
+		return false
+	}
+
+	return true
+}
+
+// Render 将 v 渲染给客户端。
+//
+// 功能与 Marshal() 相同，只不过 Render() 在出错时，
+// 会直接调用 Error() 处理，输出 500 的状态码。
+func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
+	if err := ctx.Marshal(status, v, headers); err != nil {
 		ctx.Error(http.StatusInternalServerError, err)
 	}
 }

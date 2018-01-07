@@ -13,7 +13,8 @@ import (
 	"github.com/issue9/logs"
 )
 
-func (ctx *Context) logMessage(v []interface{}) string {
+// 返回调用者的堆栈信息
+func traceStack(level int, messages ...interface{}) string {
 	w := new(bytes.Buffer)
 
 	ws := func(val string) {
@@ -23,13 +24,13 @@ func (ctx *Context) logMessage(v []interface{}) string {
 		}
 	}
 
-	if len(v) > 0 {
-		if _, err := fmt.Fprint(w, v...); err != nil {
+	if len(messages) > 0 {
+		if _, err := fmt.Fprint(w, messages...); err != nil {
 			panic(err)
 		}
 	}
 
-	for i := 3; true; i++ {
+	for i := level; true; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if !ok {
 			break
@@ -43,18 +44,20 @@ func (ctx *Context) logMessage(v []interface{}) string {
 	return w.String()
 }
 
-// Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面
+// Critical 输出一条日志到 CRITICAL 日志通道，
+// 并向用户输出一个指定状态码的页面。
 // 若是输出日志的过程中出错，则 panic
 func (ctx *Context) Critical(status int, v ...interface{}) {
-	logs.CRITICAL().Output(2, ctx.logMessage(v))
+	logs.CRITICAL().Output(2, traceStack(2, v...))
 
 	ctx.RenderStatus(status)
 }
 
-// Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面
+// Error 输出一条日志到 ERROR 日志通道，
+// 并向用户输出一个指定状态码的页面。
 // 若是输出日志的过程中出错，则 panic
 func (ctx *Context) Error(status int, v ...interface{}) {
-	logs.ERROR().Output(2, ctx.logMessage(v))
+	logs.ERROR().Output(2, traceStack(2, v...))
 
 	ctx.RenderStatus(status)
 }
