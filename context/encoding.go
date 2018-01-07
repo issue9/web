@@ -5,6 +5,7 @@
 package context
 
 import (
+	stdencoding "encoding"
 	"errors"
 	"strings"
 
@@ -14,7 +15,7 @@ import (
 const (
 	// DefaultEncoding 默认的编码方式，在不能正确获取输入和输出的编码方式时，
 	// 会采用此值作为其默认值。
-	DefaultEncoding = "application/json"
+	DefaultEncoding = "text/plain"
 
 	// DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 	// 会采用此值和为其默认值。
@@ -29,13 +30,23 @@ type Marshal func(v interface{}) ([]byte, error)
 // Context.Read() 会调用此接口。
 type Unmarshal func([]byte, interface{}) error
 
-// ErrExists 表示存在相同名称的项。
-// 多个类似功能的函数，都有可能返回此错误。
-var ErrExists = errors.New("存在相同名称的项")
+var (
+	// ErrExists 表示存在相同名称的项。
+	// 多个类似功能的函数，都有可能返回此错误。
+	ErrExists = errors.New("存在相同名称的项")
+
+	// 指定的对象，没有转换相应的格式。
+	errUnsupportedMarshal = errors.New("对象没有有效的转换方法")
+)
 
 var (
-	marshals   = map[string]Marshal{}
-	unmarshals = map[string]Unmarshal{}
+	marshals = map[string]Marshal{
+		DefaultEncoding: textMarshal,
+	}
+
+	unmarshals = map[string]Unmarshal{
+		DefaultEncoding: textUnmarshal,
+	}
 
 	charset = map[string]encoding.Encoding{
 		DefaultCharset: nil,
@@ -78,6 +89,29 @@ func AddCharset(name string, enc encoding.Encoding) error {
 	return nil
 }
 
+func textMarshal(v interface{}) ([]byte, error) {
+	switch vv := v.(type) {
+	case string:
+		return []byte(vv), nil
+	case []byte:
+		return vv, nil
+	case []rune:
+		return []byte(string(vv)), nil
+	case stdencoding.TextMarshaler:
+		return vv.MarshalText()
+	}
+
+	return nil, errUnsupportedMarshal
+}
+
+func textUnmarshal(data []byte, v interface{}) error {
+	if vv, ok := v.(stdencoding.TextUnmarshaler); ok {
+		return vv.UnmarshalText(data)
+	}
+
+	return errUnsupportedMarshal
+}
+
 // 生成一个 content-type
 func buildContentType(encoding, charset string) string {
 	if encoding == "" {
@@ -87,7 +121,7 @@ func buildContentType(encoding, charset string) string {
 		charset = DefaultCharset
 	}
 
-	return encoding + ";charset=" + charset
+	return encoding + "; charset=" + charset
 }
 
 // 从 content-type 中获取编码和字符集
