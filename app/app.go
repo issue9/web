@@ -35,7 +35,7 @@ type App struct {
 	builder   BuildHandler
 
 	config  *config
-	server  *Server
+	server  *server
 	modules *modules.Modules
 }
 
@@ -76,7 +76,7 @@ func (app *App) init() error {
 		return err
 	}
 
-	app.server, err = NewServer(app.config)
+	app.server, err = newServer(app.config)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (app *App) init() error {
 	if err != nil {
 		return err
 	}
-	app.router = app.server.Mux().Prefix(u.Path)
+	app.router = app.server.mux.Prefix(u.Path)
 
 	return nil
 }
@@ -102,10 +102,10 @@ func (app *App) Run() error {
 	}
 
 	if app.builder == nil {
-		return app.server.Run(nil)
+		return app.server.run(nil)
 	}
 
-	return app.server.Run(app.builder(app.Router().Mux()))
+	return app.server.run(app.builder(app.Router().Mux()))
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
@@ -118,7 +118,7 @@ func (app *App) Shutdown(timeout time.Duration) error {
 	app.closed = true
 
 	if app.server != nil {
-		return app.server.Shutdown(timeout)
+		return app.server.shutdown(timeout)
 	}
 
 	return nil

@@ -11,8 +11,8 @@ import (
 	"github.com/issue9/assert"
 )
 
-// DefaultConfig 返回一个默认的 Config
-func DefaultConfig() *config {
+// 返回一个默认的 Config
+func defaultConfig() *config {
 	return &config{
 		Debug:          true,
 		OutputCharset:  "utf-8",

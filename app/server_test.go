@@ -16,25 +16,25 @@ import (
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := NewServer(nil)
+	srv, err := newServer(nil)
 	a.Error(err).Nil(srv)
 
-	srv, err = NewServer(DefaultConfig())
+	srv, err = newServer(defaultConfig())
 	a.NotError(err).NotNil(srv)
 }
 
-func TestServer_Run(t *testing.T) {
+func TestServer_run(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
 	conf.Static = map[string]string{"/static": "./testdata/"}
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
+	srv.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
@@ -50,28 +50,28 @@ func TestServer_Run(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
-	srv.Shutdown(0)
+	srv.shutdown(0)
 }
 
-func TestServer_Shutdown(t *testing.T) {
+func TestServer_shutdown(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
-	srv.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	srv.mux.GetFunc("/test", f1)
+	srv.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
-		srv.Shutdown(0) // 手动调用接口关闭
+		srv.shutdown(0) // 手动调用接口关闭
 	})
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8083/test")
@@ -85,26 +85,26 @@ func TestServer_Shutdown(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func TestServer_Shutdown_timeout(t *testing.T) {
+func TestServer_shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
-	srv.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	srv.mux.GetFunc("/test", f1)
+	srv.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("closed"))
-		srv.Shutdown(30 * time.Microsecond)
+		srv.shutdown(30 * time.Microsecond)
 	})
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8083/test")
@@ -129,22 +129,22 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 func TestServer_httpStateDisabled(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
 	conf.HTTPS = true
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateDisabled
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
+	srv.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -156,28 +156,28 @@ func TestServer_httpStateDisabled(t *testing.T) {
 	resp, err = http.Get("http://localhost:8083/test")
 	a.Error(err).Nil(resp)
 
-	srv.Shutdown(0)
+	srv.shutdown(0)
 }
 
 func TestServer_httpStateRedirect(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
 	conf.HTTPS = true
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateRedirect
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
+	srv.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -190,28 +190,28 @@ func TestServer_httpStateRedirect(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	srv.Shutdown(0)
+	srv.shutdown(0)
 }
 
 func TestServer_httpStateListen(t *testing.T) {
 	a := assert.New(t)
 
-	conf := DefaultConfig()
+	conf := defaultConfig()
 	conf.Port = ":8083"
 	conf.HTTPS = true
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateListen
-	srv, err := NewServer(conf)
+	srv, err := newServer(conf)
 	a.NotError(err).NotNil(srv)
-	srv.Mux().GetFunc("/test", f1)
+	srv.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := srv.Run(nil)
+		err := srv.run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.Run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -224,5 +224,5 @@ func TestServer_httpStateListen(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	srv.Shutdown(0)
+	srv.shutdown(0)
 }

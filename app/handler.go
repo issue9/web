@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/middleware/version"
 )
 
-func (s *Server) buildHandler(h http.Handler) http.Handler {
+func (s *server) buildHandler(h http.Handler) http.Handler {
 	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
 	h = recovery.New(h, recovery.PrintDebug)
 
@@ -27,7 +27,7 @@ func (s *Server) buildHandler(h http.Handler) http.Handler {
 	return h
 }
 
-func (s *Server) buildHosts(h http.Handler) http.Handler {
+func (s *server) buildHosts(h http.Handler) http.Handler {
 	if len(s.conf.Hosts) == 0 {
 		return h
 	}
@@ -35,7 +35,7 @@ func (s *Server) buildHosts(h http.Handler) http.Handler {
 	return host.New(h, s.conf.Hosts...)
 }
 
-func (s *Server) buildVersion(h http.Handler) http.Handler {
+func (s *server) buildVersion(h http.Handler) http.Handler {
 	if len(s.conf.Version) == 0 {
 		return h
 	}
@@ -43,7 +43,7 @@ func (s *Server) buildVersion(h http.Handler) http.Handler {
 	return version.New(h, s.conf.Version, true)
 }
 
-func (s *Server) buildHeader(h http.Handler) http.Handler {
+func (s *server) buildHeader(h http.Handler) http.Handler {
 	if len(s.conf.Headers) == 0 {
 		return h
 	}
@@ -56,8 +56,8 @@ func (s *Server) buildHeader(h http.Handler) http.Handler {
 	})
 }
 
-// 根据 Config.Pprof 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func (s *Server) buildPprof(h http.Handler) http.Handler {
+// 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
+func (s *server) buildPprof(h http.Handler) http.Handler {
 	logs.Debug("开启了调试功能，地址为：", pprofPath)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

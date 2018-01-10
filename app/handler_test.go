@@ -21,7 +21,7 @@ var h1 = http.HandlerFunc(f1)
 func TestServer_buildHandler(t *testing.T) {
 	a := assert.New(t)
 
-	s, err := NewServer(DefaultConfig())
+	s, err := newServer(defaultConfig())
 	a.NotError(err).NotNil(s)
 	h := s.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
@@ -37,7 +37,7 @@ func TestServer_buildHandler(t *testing.T) {
 func TestServer_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
 
-	s, err := NewServer(DefaultConfig())
+	s, err := newServer(defaultConfig())
 	a.NotError(err).NotNil(s)
 	h := s.buildHosts(h1)
 
@@ -52,9 +52,9 @@ func TestServer_buildHosts(t *testing.T) {
 	a := assert.New(t)
 
 	// 指定域名
-	c := DefaultConfig()
+	c := defaultConfig()
 	c.Hosts = []string{"caixw.io", "example.com"}
-	s, err := NewServer(c)
+	s, err := newServer(c)
 	a.NotError(err).NotNil(s)
 	h := s.buildHosts(h1)
 
@@ -76,7 +76,7 @@ func TestServer_buildHosts(t *testing.T) {
 func TestServer_buildVersion(t *testing.T) {
 	a := assert.New(t)
 
-	s, err := NewServer(DefaultConfig())
+	s, err := newServer(defaultConfig())
 	a.NotError(err).NotNil(s)
 	h := s.buildVersion(h1)
 
@@ -87,9 +87,9 @@ func TestServer_buildVersion(t *testing.T) {
 	a.Equal(w.Code, 1)
 
 	// 指版本号
-	c := DefaultConfig()
+	c := defaultConfig()
 	c.Version = "1.0"
-	s, err = NewServer(c)
+	s, err = newServer(c)
 	a.NotError(err).NotNil(s)
 	h = s.buildVersion(h1)
 
@@ -120,9 +120,9 @@ func TestServer_buildVersion(t *testing.T) {
 func TestServer_buildHeader(t *testing.T) {
 	a := assert.New(t)
 
-	c := DefaultConfig()
+	c := defaultConfig()
 	c.Headers = map[string]string{"Test": "test"}
-	s, err := NewServer(c)
+	s, err := newServer(c)
 	a.NotError(err).NotNil(s)
 	h := s.buildHeader(h1)
 
@@ -137,8 +137,8 @@ func TestServer_buildHeader(t *testing.T) {
 func TestServer_buildPprof(t *testing.T) {
 	a := assert.New(t)
 
-	c := DefaultConfig()
-	s, err := NewServer(c)
+	c := defaultConfig()
+	s, err := newServer(c)
 	a.NotError(err).NotNil(s)
 	h := s.buildPprof(h1)
 

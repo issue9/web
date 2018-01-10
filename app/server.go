@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/mux"
 )
 
-// Server 服务器控制
-type Server struct {
+// 服务器控制
+type server struct {
 	conf *config
 	mux  *mux.Mux
 
@@ -27,26 +27,21 @@ type Server struct {
 	servers []*http.Server
 }
 
-// NewServer 声明一个新的 Server 实例
-func NewServer(conf *config) (*Server, error) {
+// 声明一个新的 Server 实例
+func newServer(conf *config) (*server, error) {
 	if conf == nil {
 		return nil, errors.New("参数 conf 不能为空")
 	}
 
-	return &Server{
+	return &server{
 		mux:     mux.New(!conf.Options, false, nil, nil),
 		servers: make([]*http.Server, 0, 5),
 		conf:    conf,
 	}, nil
 }
 
-// Mux 返回默认的 *mux.Mux 实例
-func (s *Server) Mux() *mux.Mux {
-	return s.mux
-}
-
 // 初始化路由项。
-func (s *Server) initRoutes(h http.Handler) http.Handler {
+func (s *server) initRoutes(h http.Handler) http.Handler {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range s.conf.Static {
 		pattern := url + "{path}"
@@ -61,12 +56,12 @@ func (s *Server) initRoutes(h http.Handler) http.Handler {
 	return s.buildHandler(h)
 }
 
-// Run 运行路由，执行监听程序。
+// 运行路由，执行监听程序。
 //
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 Server.Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 Server.Mux() 之上：
+// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 server.Mux() 代替。
+// 可以通过以下方式，将一些 http.Handler 实例附加到 server.Mux() 之上：
 //  s.Run(host.New(s.Mux(), "www.caixw.io")
-func (s *Server) Run(h http.Handler) error {
+func (s *server) run(h http.Handler) error {
 	h = s.initRoutes(h)
 
 	if s.conf.HTTPS {
@@ -92,12 +87,12 @@ func (s *Server) Run(h http.Handler) error {
 	return s.getServer(s.conf.Port, h).ListenAndServe()
 }
 
-// Shutdown 关闭服务。
+// 关闭服务。
 //
 // timeout 若超过该时间，服务还未自动停止的，则会强制停止。
 // 若 timeout<=0，则会立即停止服务；
 // 若 timeout>0 时，则会等待处理完毕或是该时间耗尽才停止服务。
-func (s *Server) Shutdown(timeout time.Duration) error {
+func (s *server) shutdown(timeout time.Duration) error {
 	if timeout <= 0 {
 		for _, srv := range s.servers {
 			if err := srv.Close(); err != nil {
@@ -120,7 +115,7 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
-func (s *Server) httpRedirectServer() *http.Server {
+func (s *server) httpRedirectServer() *http.Server {
 	return s.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 构建跳转链接
 		url := r.URL
@@ -133,7 +128,7 @@ func (s *Server) httpRedirectServer() *http.Server {
 }
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
-func (s *Server) getServer(port string, h http.Handler) *http.Server {
+func (s *server) getServer(port string, h http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         port,
 		Handler:      h,
