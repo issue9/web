@@ -2,10 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package server 与路由有关的服务管理。
-//
-// NOTE: 测试内容涉及到 80 端口，部分系统可能需要 sudo go test 才能正确执行。
-package server
+package app
 
 import (
 	"context"
@@ -21,7 +18,7 @@ import (
 
 // Server 服务器控制
 type Server struct {
-	conf *Config
+	conf *config
 	mux  *mux.Mux
 
 	// 除了 mux 所依赖的 http.Server 实例之外，
@@ -30,14 +27,10 @@ type Server struct {
 	servers []*http.Server
 }
 
-// New 声明一个新的 Server 实例
-func New(conf *Config) (*Server, error) {
+// NewServer 声明一个新的 Server 实例
+func NewServer(conf *config) (*Server, error) {
 	if conf == nil {
 		return nil, errors.New("参数 conf 不能为空")
-	}
-
-	if err := conf.Sanitize(); err != nil {
-		return nil, err
 	}
 
 	return &Server{

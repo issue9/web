@@ -11,12 +11,36 @@ import (
 	"github.com/issue9/assert"
 )
 
+// DefaultConfig 返回一个默认的 Config
+func DefaultConfig() *config {
+	return &config{
+		Debug:          true,
+		OutputCharset:  "utf-8",
+		OutputEncoding: "application/json",
+		Strict:         true,
+
+		HTTPS:     false,
+		HTTPState: httpStateDisabled,
+		CertFile:  "",
+		KeyFile:   "",
+		Port:      ":80",
+		Headers:   nil,
+		Static:    nil,
+		Options:   true,
+		Version:   "",
+		Hosts:     []string{},
+
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
+}
+
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
 	conf, err := loadConfig("./testdata/web.yaml")
 	a.NotError(err).NotNil(conf)
 	a.Equal(conf.Root, "https://caixw.io")
-	a.Equal(conf.Server.KeyFile, "keyFile")
-	a.Equal(conf.Server.ReadTimeout, 3*time.Second)
+	a.Equal(conf.KeyFile, "keyFile")
+	a.Equal(conf.ReadTimeout, 3*time.Second)
 }

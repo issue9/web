@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package server
+package app
 
 import (
 	"crypto/tls"
@@ -13,13 +13,13 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := New(nil)
+	srv, err := NewServer(nil)
 	a.Error(err).Nil(srv)
 
-	srv, err = New(DefaultConfig())
+	srv, err = NewServer(DefaultConfig())
 	a.NotError(err).NotNil(srv)
 }
 
@@ -29,7 +29,7 @@ func TestServer_Run(t *testing.T) {
 	conf := DefaultConfig()
 	conf.Port = ":8083"
 	conf.Static = map[string]string{"/static": "./testdata/"}
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 
@@ -58,7 +58,7 @@ func TestServer_Shutdown(t *testing.T) {
 
 	conf := DefaultConfig()
 	conf.Port = ":8083"
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 	srv.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func TestServer_Shutdown_timeout(t *testing.T) {
 
 	conf := DefaultConfig()
 	conf.Port = ":8083"
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 	srv.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +135,7 @@ func TestServer_httpStateDisabled(t *testing.T) {
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateDisabled
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 
@@ -168,7 +168,7 @@ func TestServer_httpStateRedirect(t *testing.T) {
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateRedirect
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 
@@ -202,7 +202,7 @@ func TestServer_httpStateListen(t *testing.T) {
 	conf.KeyFile = "./testdata/key.pem"
 	conf.CertFile = "./testdata/cert.pem"
 	conf.HTTPState = httpStateListen
-	srv, err := New(conf)
+	srv, err := NewServer(conf)
 	a.NotError(err).NotNil(srv)
 	srv.Mux().GetFunc("/test", f1)
 

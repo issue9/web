@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package server
+package app
 
 import (
 	"net/http"
@@ -15,17 +15,12 @@ import (
 	"github.com/issue9/middleware/version"
 )
 
-func recoveryLog(w http.ResponseWriter, msg interface{}) {
-	logs.Error(msg)
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
 func (s *Server) buildHandler(h http.Handler) http.Handler {
 	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
 	h = recovery.New(h, recovery.PrintDebug)
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	if s.conf.Pprof {
+	if s.conf.Debug {
 		h = s.buildPprof(h)
 	}
 

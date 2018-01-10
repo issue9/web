@@ -6,13 +6,14 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/server"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -21,24 +22,45 @@ const (
 	configFilename = "web.yaml" // 配置文件的文件名。
 )
 
-type config struct {
-	// 表示网站的根目录，带域名，非默认端口也得带上。
-	Root string `yaml:"root"`
+const pprofPath = "/debug/pprof/"
 
+// 端口的定义
+const (
+	httpPort  = ":80"
+	httpsPort = ":443"
+)
+
+// 当启用 HTTPS 时，对 80 端口的处理方式。
+const (
+	httpStateDisabled = "disable"  // 禁止监听 80 端口
+	httpStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
+	httpStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
+)
+
+type config struct {
 	// 是否启用调试模式
+	// 该值可能会同时影响多个方面，比如是否启用 Pprof 等
 	Debug bool `yaml:"debug"`
 
-	// 输出的编码方式，必须已经通过 context.AddUnmarshal() 添加
-	OutputEncoding string `yaml:"outputEncoding"`
+	Root           string `yaml:"root"`           // 表示网站的根目录，带域名，非默认端口也得带上。
+	OutputEncoding string `yaml:"outputEncoding"` // 输出的编码方式
+	OutputCharset  string `yaml:"outputCharset"`  // 输出的字符集名称
+	Strict         bool   `yaml:"strict"`         // 参考 context.New() 中的 strict 参数
 
-	// 输出的字符符，必须已经通过 context.AddCharset() 添加
-	OutputCharset string `yaml:"outputCharset"`
+	HTTPS     bool              `yaml:"https"`     // 是否启用 HTTPS
+	HTTPState string            `yaml:"httpState"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
+	CertFile  string            `yaml:"certFile"`  // 当 https 为 true 时，此值为必填
+	KeyFile   string            `yaml:"keyFile"`   // 当 https 为 true 时，此值为必填
+	Port      string            `yaml:"port"`      // 端口，不指定，默认为 80 或是 443
+	Headers   map[string]string `yaml:"headers"`   // 附加的头信息，头信息可能在其它地方被修改
+	Static    map[string]string `yaml:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
+	Options   bool              `yaml:"options"`   // 是否启用 OPTIONS 请求
+	Version   string            `yaml:"version"`   // 限定版本
+	Hosts     []string          `yaml:"hosts"`     // 限定访问域名。仅需指定域名
 
-	// 参考 context.New() 中的 strict 参数
-	Strict bool `yaml:"strict"`
-
-	// Server
-	Server *server.Config `yaml:"server"`
+	// 性能
+	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值
+	WriteTimeout time.Duration `yaml:"writeTimeout"` // http.Server.WriteTimeout 的值
 }
 
 // 加载配置文件
@@ -79,21 +101,42 @@ func (conf *config) sanitize() error {
 		conf.OutputEncoding = context.DefaultEncoding
 	}
 
-	// Server
-	if conf.Server == nil {
-		conf.Server = server.DefaultConfig()
-	} else {
-		// 将未设置的项，给予一个默认值。
-		c := server.DefaultConfig()
-		if err := utils.Merge(true, c, conf.Server); err != nil {
-			return err
+	if conf.HTTPS {
+		switch conf.HTTPState {
+		case httpStateListen, httpStateDisabled, httpStateRedirect:
+		default:
+			return errors.New("httpState 的值不正确")
 		}
-		conf.Server = c
 
-		if err := conf.Server.Sanitize(); err != nil {
-			return err
+		if !utils.FileExists(conf.CertFile) {
+			return errors.New("certFile 文件不存在")
+		}
+
+		if !utils.FileExists(conf.KeyFile) {
+			return errors.New("keyFile 文件不存在")
 		}
 	}
 
+	if len(conf.Port) == 0 {
+		return errors.New("port 必须指定")
+	} else if conf.Port[0] != ':' {
+		conf.Port = ":" + conf.Port
+	}
+
+	if len(conf.Hosts) > 0 {
+		for _, host := range conf.Hosts {
+			if !is.URL(host) {
+				return fmt.Errorf("Hosts 中的 %v 为非法的 URL", host)
+			}
+		}
+	}
+
+	if conf.ReadTimeout < 0 {
+		return errors.New("readTimeout 必须大于等于 0")
+	}
+
+	if conf.WriteTimeout < 0 {
+		return errors.New("writeTimeout 必须大于等于 0")
+	}
 	return nil
 }

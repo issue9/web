@@ -15,7 +15,6 @@ import (
 	"github.com/issue9/mux"
 	"github.com/issue9/utils"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/modules"
 )
 
@@ -36,7 +35,7 @@ type App struct {
 	builder   BuildHandler
 
 	config  *config
-	server  *server.Server
+	server  *Server
 	modules *modules.Modules
 }
 
@@ -77,7 +76,7 @@ func (app *App) init() error {
 		return err
 	}
 
-	app.server, err = server.New(app.config.Server)
+	app.server, err = NewServer(app.config)
 	if err != nil {
 		return err
 	}
