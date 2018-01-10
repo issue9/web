@@ -17,7 +17,7 @@ import (
 
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", func(h http.Handler) http.Handler {
+	app, err := New("./testdata", func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Date", "1111")
 			h.ServeHTTP(w, r)
@@ -48,7 +48,7 @@ func TestBuildHandler(t *testing.T) {
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.File("test"), "testdata/test")
@@ -58,17 +58,17 @@ func TestApp_File(t *testing.T) {
 func TestURL(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.URL("test"), "https://caixw.io/test")
 	a.Equal(app.URL("/test/file.jpg"), "https://caixw.io/test/file.jpg")
 }
 
-func TestNewApp(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := NewApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.configDir, "./testdata").
@@ -76,7 +76,7 @@ func TestNewApp(t *testing.T) {
 		NotNil(app.server).
 		NotNil(app.modules)
 
-	app, err = NewApp("./not-exists", nil)
+	app, err = New("./not-exists", nil)
 	a.Equal(err, ErrConfigDirNotExists)
 }
 
@@ -85,7 +85,7 @@ func TestApp(t *testing.T) {
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
-	app, err := NewApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {

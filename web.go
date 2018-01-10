@@ -17,9 +17,9 @@ import (
 
 var defaultApp *app.App
 
-// Init 初始化框架的基本内容。参数说明可参考 NewApp() 的文档。
+// Init 初始化框架的基本内容。参数说明可参考 app.New() 的文档。
 func Init(confDir string, builder app.BuildHandler) error {
-	app, err := app.NewApp(confDir, builder)
+	app, err := app.New(confDir, builder)
 	if err != nil {
 		return err
 	}

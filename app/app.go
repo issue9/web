@@ -45,13 +45,13 @@ type App struct {
 	modules *modules.Modules
 }
 
-// NewApp 初始化框架的基本内容。
+// New 初始化框架的基本内容。
 //
 // confDir 指定了配置文件所在的目录，
 // 框架默认的两个配置文件都会从此目录下查找。
 // confDir 下面必须包含 logs.xml 与 web.json 两个配置文件。
 // builder 被用于封装内部的 http.Handler 接口，不需要可以传递空值。
-func NewApp(confDir string, builder BuildHandler) (*App, error) {
+func New(confDir string, builder BuildHandler) (*App, error) {
 	if !utils.FileExists(confDir) {
 		return nil, ErrConfigDirNotExists
 	}
