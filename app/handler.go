@@ -13,11 +13,22 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/middleware/version"
+	"github.com/issue9/web/context"
 )
+
+func logRecovery(w http.ResponseWriter, msg interface{}) {
+	logs.Error(msg)
+	context.RenderStatus(w, http.StatusInternalServerError)
+}
 
 func (s *server) buildHandler(h http.Handler) http.Handler {
 	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
-	h = recovery.New(h, recovery.PrintDebug)
+
+	ff := logRecovery
+	if s.conf.Debug {
+		ff = recovery.PrintDebug
+	}
+	h = recovery.New(h, ff)
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if s.conf.Debug {

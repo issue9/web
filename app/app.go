@@ -27,7 +27,7 @@ var (
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
 type BuildHandler func(http.Handler) http.Handler
 
-// App 保存整个程序的运行环境，方便做整体的调度，比如重启等。
+// App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
 	configDir string
 	closed    bool
