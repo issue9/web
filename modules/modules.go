@@ -92,20 +92,6 @@ func (ms *Modules) Init() error {
 	return nil
 }
 
-// Reset 重置为未初始化状态。
-func (ms *Modules) Reset() error {
-	ms.inited = false
-
-	// 重置所有模块为未初始化状态
-	ms.lock.Lock()
-	for _, m := range ms.modules {
-		m.inited = false
-	}
-	ms.lock.Unlock()
-
-	return ms.Init()
-}
-
 // 初始化指定模块，会先初始化其依赖模块。
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
 func (ms *Modules) init(m *module) error {
