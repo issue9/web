@@ -21,46 +21,46 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 	context.RenderStatus(w, http.StatusInternalServerError)
 }
 
-func (s *server) buildHandler(h http.Handler) http.Handler {
-	h = s.buildHosts(s.buildVersion(s.buildHeader(h)))
+func (app *App) buildHandler(h http.Handler) http.Handler {
+	h = app.buildHosts(app.buildVersion(app.buildHeader(h)))
 
 	ff := logRecovery
-	if s.conf.Debug {
+	if app.config.Debug {
 		ff = recovery.PrintDebug
 	}
 	h = recovery.New(h, ff)
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	if s.conf.Debug {
-		h = s.buildPprof(h)
+	if app.config.Debug {
+		h = app.buildPprof(h)
 	}
 
 	return h
 }
 
-func (s *server) buildHosts(h http.Handler) http.Handler {
-	if len(s.conf.Hosts) == 0 {
+func (app *App) buildHosts(h http.Handler) http.Handler {
+	if len(app.config.Hosts) == 0 {
 		return h
 	}
 
-	return host.New(h, s.conf.Hosts...)
+	return host.New(h, app.config.Hosts...)
 }
 
-func (s *server) buildVersion(h http.Handler) http.Handler {
-	if len(s.conf.Version) == 0 {
+func (app *App) buildVersion(h http.Handler) http.Handler {
+	if len(app.config.Version) == 0 {
 		return h
 	}
 
-	return version.New(h, s.conf.Version, true)
+	return version.New(h, app.config.Version, true)
 }
 
-func (s *server) buildHeader(h http.Handler) http.Handler {
-	if len(s.conf.Headers) == 0 {
+func (app *App) buildHeader(h http.Handler) http.Handler {
+	if len(app.config.Headers) == 0 {
 		return h
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range s.conf.Headers {
+		for k, v := range app.config.Headers {
 			w.Header().Set(k, v)
 		}
 		h.ServeHTTP(w, r)
@@ -68,7 +68,7 @@ func (s *server) buildHeader(h http.Handler) http.Handler {
 }
 
 // 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func (s *server) buildPprof(h http.Handler) http.Handler {
+func (app *App) buildPprof(h http.Handler) http.Handler {
 	logs.Debug("开启了调试功能，地址为：", pprofPath)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

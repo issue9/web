@@ -5,6 +5,7 @@
 package app
 
 import (
+	ctx "context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -35,8 +36,14 @@ type App struct {
 	builder   BuildHandler
 
 	config  *config
-	server  *server
 	modules *modules.Modules
+
+	mux *mux.Mux
+
+	// 除了 mux 所依赖的 http.Server 实例之外，
+	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
+	// 记录这些 server，方便关闭服务等操作。
+	servers []*http.Server
 }
 
 // New 初始化框架的基本内容。
@@ -54,6 +61,7 @@ func New(confDir string, builder BuildHandler) (*App, error) {
 		configDir: confDir,
 		modules:   modules.New(),
 		builder:   builder,
+		servers:   make([]*http.Server, 0, 5),
 	}
 
 	if err := app.init(); err != nil {
@@ -76,17 +84,14 @@ func (app *App) init() error {
 		return err
 	}
 
-	app.server, err = newServer(app.config)
-	if err != nil {
-		return err
-	}
+	app.mux = mux.New(!app.config.Options, false, nil, nil)
 
 	// router
 	u, err := url.Parse(app.config.Root)
 	if err != nil {
 		return err
 	}
-	app.router = app.server.mux.Prefix(u.Path)
+	app.router = app.mux.Prefix(u.Path)
 
 	return nil
 }
@@ -102,10 +107,10 @@ func (app *App) Run() error {
 	}
 
 	if app.builder == nil {
-		return app.server.run(nil)
+		return app.run(nil)
 	}
 
-	return app.server.run(app.builder(app.Router().Mux()))
+	return app.run(app.builder(app.Router().Mux()))
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
@@ -117,10 +122,24 @@ func (app *App) Shutdown(timeout time.Duration) error {
 	logs.Flush()
 	app.closed = true
 
-	if app.server != nil {
-		return app.server.shutdown(timeout)
+	if timeout <= 0 {
+		for _, srv := range app.servers {
+			if err := srv.Close(); err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, srv := range app.servers {
+			ctx, cancel := ctx.WithTimeout(ctx.Background(), timeout)
+			defer cancel()
+
+			if err := srv.Shutdown(ctx); err != nil {
+				return err
+			}
+		}
 	}
 
+	app.servers = app.servers[:0]
 	return nil
 }
 

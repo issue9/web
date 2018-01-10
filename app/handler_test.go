@@ -18,12 +18,13 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 
 var h1 = http.HandlerFunc(f1)
 
-func TestServer_buildHandler(t *testing.T) {
+func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
 
-	s, err := newServer(defaultConfig())
-	a.NotError(err).NotNil(s)
-	h := s.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
 	}))
 
@@ -34,12 +35,13 @@ func TestServer_buildHandler(t *testing.T) {
 	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestServer_buildHosts_empty(t *testing.T) {
+func TestApp_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
 
-	s, err := newServer(defaultConfig())
-	a.NotError(err).NotNil(s)
-	h := s.buildHosts(h1)
+	h := app.buildHosts(h1)
 
 	r := httptest.NewRequest("GET", "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
@@ -48,15 +50,14 @@ func TestServer_buildHosts_empty(t *testing.T) {
 	a.Equal(w.Code, 1)
 }
 
-func TestServer_buildHosts(t *testing.T) {
+func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	app.config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
 
-	// 指定域名
-	c := defaultConfig()
-	c.Hosts = []string{"caixw.io", "example.com"}
-	s, err := newServer(c)
-	a.NotError(err).NotNil(s)
-	h := s.buildHosts(h1)
+	h := app.buildHosts(h1)
 
 	// 带正确的域名访问
 	r := httptest.NewRequest("GET", "http://caixw.io/test", nil)
@@ -73,12 +74,13 @@ func TestServer_buildHosts(t *testing.T) {
 	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestServer_buildVersion(t *testing.T) {
+func TestApp_buildVersion(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
 
-	s, err := newServer(defaultConfig())
-	a.NotError(err).NotNil(s)
-	h := s.buildVersion(h1)
+	h := app.buildVersion(h1)
 
 	r := httptest.NewRequest("GET", "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
@@ -87,11 +89,12 @@ func TestServer_buildVersion(t *testing.T) {
 	a.Equal(w.Code, 1)
 
 	// 指版本号
-	c := defaultConfig()
-	c.Version = "1.0"
-	s, err = newServer(c)
-	a.NotError(err).NotNil(s)
-	h = s.buildVersion(h1)
+	app, err = New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Version = "1.0"
+
+	h = app.buildVersion(h1)
 
 	// 指版本号的情况下，不正确版本号访问
 	r = httptest.NewRequest("GET", "http://caixw.io/test", nil)
@@ -117,14 +120,14 @@ func TestServer_buildVersion(t *testing.T) {
 	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestServer_buildHeader(t *testing.T) {
+func TestApp_buildHeader(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Headers = map[string]string{"Test": "test"}
 
-	c := defaultConfig()
-	c.Headers = map[string]string{"Test": "test"}
-	s, err := newServer(c)
-	a.NotError(err).NotNil(s)
-	h := s.buildHeader(h1)
+	h := app.buildHeader(h1)
 
 	r := httptest.NewRequest("GET", "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
@@ -134,13 +137,13 @@ func TestServer_buildHeader(t *testing.T) {
 	a.Equal(w.Header().Get("Test"), "test")
 }
 
-func TestServer_buildPprof(t *testing.T) {
+func TestApp_buildPprof(t *testing.T) {
 	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
 
-	c := defaultConfig()
-	s, err := newServer(c)
-	a.NotError(err).NotNil(s)
-	h := s.buildPprof(h1)
+	h := app.buildPprof(h1)
 
 	// 命中 /debug/pprof/cmdline
 	r := httptest.NewRequest("GET", "http://caixw.io/debug/pprof/cmdline", nil)

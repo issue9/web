@@ -73,7 +73,6 @@ func TestNew(t *testing.T) {
 
 	a.Equal(app.configDir, "./testdata").
 		NotNil(app.config).
-		NotNil(app.server).
 		NotNil(app.modules)
 
 	app, err = New("./not-exists", nil)
@@ -123,5 +122,78 @@ func TestApp(t *testing.T) {
 	resp, err = http.Get("http://localhost:8082/shutdown")
 	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
 	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+}
+
+func TestApp_Shutdown(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Port = ":8083"
+
+	app.mux.GetFunc("/test", f1)
+	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("closed"))
+		app.Shutdown(0) // 手动调用接口关闭
+	})
+
+	go func() {
+		err := app.run(nil)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+	}()
+
+	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(time.Second)
+
+	resp, err := http.Get("http://localhost:8083/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
+
+	resp, err = http.Get("http://localhost:8083/close")
+	a.Error(err).Nil(resp)
+
+	resp, err = http.Get("http://localhost:8083/test")
+	a.Error(err).Nil(resp)
+}
+
+func TestApp_Shutdown_timeout(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Port = ":8083"
+
+	app.mux.GetFunc("/test", f1)
+	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("closed"))
+		app.Shutdown(30 * time.Microsecond)
+	})
+
+	go func() {
+		err := app.run(nil)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+	}()
+
+	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(time.Second)
+
+	resp, err := http.Get("http://localhost:8083/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
+
+	// 关闭指令可以正常执行
+	resp, err = http.Get("http://localhost:8083/close")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusCreated)
+
+	// 拒绝访问
+	resp, err = http.Get("http://localhost:8083/test")
+	a.Error(err).Nil(resp)
+
+	// 已被关闭
+	time.Sleep(30 * time.Microsecond)
+	resp, err = http.Get("http://localhost:8083/test")
 	a.Error(err).Nil(resp)
 }
