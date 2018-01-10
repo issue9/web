@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/logs"
 	"github.com/issue9/mux"
 	"github.com/issue9/utils"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/modules"
 )
@@ -167,4 +168,21 @@ func (app *App) URL(path string) string {
 		path = "/" + path
 	}
 	return app.config.Root + path
+}
+
+// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+	conf := app.config
+	ctx, err := context.New(w, r, conf.OutputEncoding, conf.OutputCharset, conf.Strict)
+
+	switch {
+	case err == context.ErrUnsupportedContentType:
+		context.RenderStatus(w, http.StatusUnsupportedMediaType)
+		return nil
+	case err == context.ErrClientNotAcceptable:
+		context.RenderStatus(w, http.StatusNotAcceptable)
+		return nil
+	}
+
+	return ctx
 }
