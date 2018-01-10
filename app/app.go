@@ -19,11 +19,6 @@ import (
 	"github.com/issue9/web/modules"
 )
 
-const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.yaml" // 配置文件的文件名。
-)
-
 // 一些错误信息的定义
 var (
 	ErrAppClosed          = errors.New("当前实例已经关闭")

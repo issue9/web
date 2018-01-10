@@ -16,11 +16,10 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// 需要写入到 web.json 配置文件的类需要实现的接口。
-type sanitizer interface {
-	// 修正可修正的内容，返回不可修正的错误。
-	Sanitize() error
-}
+const (
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	configFilename = "web.yaml" // 配置文件的文件名。
+)
 
 type config struct {
 	// 表示网站的根目录，带域名，非默认端口也得带上。

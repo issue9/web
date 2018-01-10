@@ -9,10 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/internal/server"
 )
-
-var _ sanitizer = server.DefaultConfig()
 
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
