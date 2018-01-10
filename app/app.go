@@ -171,7 +171,7 @@ func (app *App) Module(name string, init modules.InitFunc, deps ...string) {
 	}
 }
 
-// URL 构建一条基于 Config.Root 的完整 URL
+// URL 构建一条基于 config.Root 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
 		return app.config.Root

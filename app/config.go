@@ -39,7 +39,7 @@ const (
 
 type config struct {
 	// 是否启用调试模式
-	// 该值可能会同时影响多个方面，比如是否启用 Pprof 等
+	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
 	Debug bool `yaml:"debug"`
 
 	Root           string `yaml:"root"`           // 表示网站的根目录，带域名，非默认端口也得带上。

@@ -10,30 +10,28 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 
 #### 配置文件
 
-通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.json`
+通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.yaml`
 以下是该文件的所有配置项：
 
 | 名称                   | 类型   | 描述
 |:-----------------------|:-------|:-----
-| root                   | string | 项目的根路径，比如 `https://caixw.io/root/`
-| debug                  | bool   | 是否启用调试模式
-| outputEncoding         | string | 默认的编码方式
-| outputCharset          | string | 字符集
-| strict                 | bool   | 启用此值，会检测用户的 Accept 报头是否符合当前的编码。
-| server                 | object | 与 http 服务相关的设置
-| server.https           | bool   | 是否启用 HTTPS
-| server.httpState       | string | 当启用 HTTPS 时，针对 80 端口的处理方式，可以是 disable：不作任何处理；listen：与 https 作相同的算是；redirect 跳转到 https 相对应的端口。
-| server.certFile        | string | 当启用 HTTPS 时的 cert 文件
-| server.keyFile         | string | 当启用 HTTPS 时的 key 文件
-| server.port            | string | 监听端口，以冒号(:) 开头
-| server.headers         | object | 输出的报头，键名为报头名称，键值为对应的值
-| server.static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
-| server.options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
-| server.version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
-| server.hosts           | array  | 限定访问域名，可以是多个，若不指定，表示不限定
-| server.readTimeout     | int    | 与 http.Server.ReadTimeout 相同，单位*纳秒*
-| server.writeTimeout    | int    | 与 http.Server.WriteTimeout 相同，单位*纳秒*
-| server.pprof           | string | pprof 的相关调试的地址，若为空，表示没有。
+| root            | string | 项目的根路径，比如 `https://caixw.io/root/`
+| debug           | bool   | 是否启用调试模式
+| outputEncoding  | string | 默认的编码方式
+| outputCharset   | string | 字符集
+| strict          | bool   | 启用此值，会检测用户的 Accept 报头是否符合当前的编码。
+| https           | bool   | 是否启用 HTTPS
+| httpState       | string | 当启用 HTTPS 时，针对 80 端口的处理方式，可以是 disable：不作任何处理；listen：与 https 作相同的算是；redirect 跳转到 https 相对应的端口。
+| certFile        | string | 当启用 HTTPS 时的 cert 文件
+| keyFile         | string | 当启用 HTTPS 时的 key 文件
+| port            | string | 监听端口，以冒号(:) 开头
+| headers         | object | 输出的报头，键名为报头名称，键值为对应的值
+| static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
+| options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
+| version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
+| hosts           | array  | 限定访问域名，可以是多个，若不指定，表示不限定
+| readTimeout     | string | 与 http.Server.ReadTimeout 相同
+| writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 
 
 
