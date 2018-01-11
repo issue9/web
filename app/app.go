@@ -29,8 +29,8 @@ type BuildHandler func(http.Handler) http.Handler
 // App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
 	configDir string
+	config    *config
 
-	config  *config
 	modules *modules.Modules
 
 	router *mux.Prefix
@@ -49,7 +49,6 @@ type App struct {
 // confDir 指定了配置文件所在的目录。
 // 框架默认的两个配置文件都会从此目录下查找。
 // confDir 下面必须包含 logs.xml 与 web.yaml 两个配置文件。
-//
 func New(confDir string) (*App, error) {
 	confDir, err := filepath.Abs(confDir)
 	if err != nil {
@@ -60,42 +59,29 @@ func New(confDir string) (*App, error) {
 		return nil, errors.New("配置文件的目录不存在")
 	}
 
-	app := &App{
-		configDir: confDir,
-		modules:   modules.New(),
-		servers:   make([]*http.Server, 0, 5),
-	}
-
-	if err := app.init(); err != nil {
+	if err = logs.InitFromXMLFile(filepath.Join(confDir, logsFilename)); err != nil {
 		return nil, err
 	}
 
-	return app, nil
-}
-
-// 对其它可重复加载的数据进行初始化。
-// 方便在 NewApp 和 Restart 中进行调用。
-func (app *App) init() error {
-	err := logs.InitFromXMLFile(app.File(logsFilename))
+	conf, err := loadConfig(filepath.Join(confDir, configFilename))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	app.config, err = loadConfig(app.File(configFilename))
+	u, err := url.Parse(conf.Root)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	app.mux = mux.New(!app.config.Options, false, nil, nil)
-
-	// router
-	u, err := url.Parse(app.config.Root)
-	if err != nil {
-		return err
-	}
-	app.router = app.mux.Prefix(u.Path)
-
-	return nil
+	mux := mux.New(!conf.Options, false, nil, nil)
+	return &App{
+		configDir: confDir,
+		config:    conf,
+		modules:   modules.New(),
+		router:    mux.Prefix(u.Path),
+		mux:       mux,
+		servers:   make([]*http.Server, 0, 5),
+	}, nil
 }
 
 // Run 运行路由，执行监听程序。
