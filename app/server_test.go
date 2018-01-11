@@ -24,7 +24,7 @@ func TestApp_run(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
@@ -55,11 +55,11 @@ func TestApp_httpStateDisabled(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -87,11 +87,11 @@ func TestApp_httpStateRedirect(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -120,7 +120,7 @@ func TestApp_httpStateListen(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 

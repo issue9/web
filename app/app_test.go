@@ -147,11 +147,11 @@ func TestApp_Shutdown(t *testing.T) {
 	})
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8083/test")
@@ -180,11 +180,11 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	})
 
 	go func() {
-		err := app.run(nil)
+		err := app.run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 srv.run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://localhost:8083/test")

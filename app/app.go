@@ -114,11 +114,7 @@ func (app *App) Run() error {
 		return err
 	}
 
-	if app.builder == nil {
-		return app.run(nil)
-	}
-
-	return app.run(app.builder(app.Router().Mux()))
+	return app.run()
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
