@@ -20,7 +20,7 @@ var h1 = http.HandlerFunc(f1)
 
 func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 
@@ -36,7 +36,7 @@ func TestApp_buildHandler(t *testing.T) {
 
 func TestApp_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 
@@ -51,7 +51,7 @@ func TestApp_buildHosts_empty(t *testing.T) {
 
 func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
 	app.config = defaultConfig()
@@ -73,7 +73,7 @@ func TestApp_buildHosts(t *testing.T) {
 
 func TestApp_buildVersion(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 
@@ -85,7 +85,7 @@ func TestApp_buildVersion(t *testing.T) {
 	a.Equal(w.Code, 1)
 
 	// 指版本号
-	app, err = New("./testdata", nil)
+	app, err = New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 	app.config.Version = "1.0"
@@ -116,7 +116,7 @@ func TestApp_buildVersion(t *testing.T) {
 
 func TestApp_buildHeader(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 	app.config.Headers = map[string]string{"Test": "test"}
@@ -132,7 +132,7 @@ func TestApp_buildHeader(t *testing.T) {
 
 func TestApp_buildPprof(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 

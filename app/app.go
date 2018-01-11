@@ -33,9 +33,8 @@ type App struct {
 	config  *config
 	modules *modules.Modules
 
-	builder BuildHandler
-	router  *mux.Prefix
-	mux     *mux.Mux
+	router *mux.Prefix
+	mux    *mux.Mux
 
 	// 保存着所有的 http.Server 实例。
 	//
@@ -51,8 +50,7 @@ type App struct {
 // 框架默认的两个配置文件都会从此目录下查找。
 // confDir 下面必须包含 logs.xml 与 web.yaml 两个配置文件。
 //
-// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
-func New(confDir string, builder BuildHandler) (*App, error) {
+func New(confDir string) (*App, error) {
 	confDir, err := filepath.Abs(confDir)
 	if err != nil {
 		return nil, err
@@ -65,7 +63,6 @@ func New(confDir string, builder BuildHandler) (*App, error) {
 	app := &App{
 		configDir: confDir,
 		modules:   modules.New(),
-		builder:   builder,
 		servers:   make([]*http.Server, 0, 5),
 	}
 
@@ -102,7 +99,8 @@ func (app *App) init() error {
 }
 
 // Run 运行路由，执行监听程序。
-func (app *App) Run() error {
+// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
+func (app *App) Run(build BuildHandler) error {
 	if err := app.modules.Init(); err != nil {
 		return err
 	}
@@ -113,11 +111,11 @@ func (app *App) Run() error {
 		app.mux.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
-	if app.builder != nil {
-		h := app.buildHandler(app.builder(app.mux))
-		return app.listen(h)
+	var h http.Handler = app.mux
+	if build != nil {
+		h = build(h)
 	}
-	return app.listen(app.buildHandler(app.mux))
+	return app.listen(app.buildHandler(h))
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，

@@ -14,7 +14,7 @@ import (
 var initErr error
 
 func TestMain(m *testing.M) {
-	initErr = Init("./testdata", nil)
+	initErr = Init("./testdata")
 
 	os.Exit(m.Run())
 }

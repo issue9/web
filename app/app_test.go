@@ -19,12 +19,7 @@ import (
 
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Date", "1111")
-			h.ServeHTTP(w, r)
-		})
-	})
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +29,12 @@ func TestBuildHandler(t *testing.T) {
 	app.Router().GetFunc("/builder", f1)
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run()
+		app.Run(func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Date", "1111")
+				h.ServeHTTP(w, r)
+			})
+		})
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
@@ -50,7 +50,7 @@ func TestBuildHandler(t *testing.T) {
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	f, err := filepath.Abs("./testdata")
@@ -59,14 +59,14 @@ func TestNew(t *testing.T) {
 		NotNil(app.config).
 		NotNil(app.modules)
 
-	app, err = New("./not-exists", nil)
+	app, err = New("./not-exists")
 	a.Error(err).Nil(app)
 }
 
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	f, err := filepath.Abs("./testdata/test")
@@ -81,7 +81,7 @@ func TestApp_File(t *testing.T) {
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.URL("test"), "https://caixw.io/test")
@@ -93,7 +93,7 @@ func TestApp(t *testing.T) {
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func TestApp(t *testing.T) {
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run()
+		app.Run(nil)
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
@@ -136,7 +136,7 @@ func TestApp(t *testing.T) {
 
 func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 	app.config.Port = ":8083"
@@ -148,7 +148,7 @@ func TestApp_Shutdown(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -168,7 +168,7 @@ func TestApp_Shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 	app.config.Port = ":8083"
@@ -181,7 +181,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -209,7 +209,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
 	app.config.Port = ":8083"
@@ -218,7 +218,7 @@ func TestApp_Run(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
@@ -239,7 +239,7 @@ func TestApp_Run(t *testing.T) {
 
 func TestApp_httpStateDisabled(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config.Port = ":8083"
 	app.config.HTTPS = true
@@ -249,7 +249,7 @@ func TestApp_httpStateDisabled(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -270,7 +270,7 @@ func TestApp_httpStateDisabled(t *testing.T) {
 
 func TestApp_httpStateRedirect(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config.Port = ":8083"
 	app.config.HTTPS = true
@@ -281,7 +281,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -303,7 +303,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 
 func TestApp_httpStateListen(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 	app.config.Port = ":8083"
 	app.config.HTTPS = true
@@ -314,7 +314,7 @@ func TestApp_httpStateListen(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run()
+		err := app.Run(nil)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 

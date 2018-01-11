@@ -18,8 +18,8 @@ import (
 var defaultApp *app.App
 
 // Init 初始化框架的基本内容。参数说明可参考 app.New() 的文档。
-func Init(confDir string, builder app.BuildHandler) error {
-	app, err := app.New(confDir, builder)
+func Init(confDir string) error {
+	app, err := app.New(confDir)
 	if err != nil {
 		return err
 	}
@@ -29,8 +29,8 @@ func Init(confDir string, builder app.BuildHandler) error {
 }
 
 // Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
-func Run() error {
-	return defaultApp.Run()
+func Run(build app.BuildHandler) error {
+	return defaultApp.Run(build)
 }
 
 // Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
