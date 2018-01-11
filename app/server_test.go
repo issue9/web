@@ -5,137 +5,148 @@
 package app
 
 import (
-	"crypto/tls"
 	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 )
 
-func TestApp_run(t *testing.T) {
+var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(1)
+}
+
+var h1 = http.HandlerFunc(f1)
+
+func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 	app.config = defaultConfig()
-	app.config.Port = ":8083"
-	app.config.Static = map[string]string{"/static": "./testdata/"}
 
-	app.mux.GetFunc("/test", f1)
+	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("err")
+	}))
 
-	go func() {
-		err := app.listen()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
-	}()
-
-	resp, err := http.Get("http://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = http.Get("http://localhost:8083/static/file1.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusOK)
-
-	resp, err = http.Get("http://localhost:8083/static/dir/file2.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusOK)
-
-	app.Shutdown(0)
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestApp_httpStateDisabled(t *testing.T) {
+func TestApp_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
-	app.config.Port = ":8083"
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateDisabled
-	app.mux.GetFunc("/test", f1)
+	app.config = defaultConfig()
 
-	go func() {
-		err := app.listen()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
+	h := app.buildHosts(h1)
 
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(time.Second)
-
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = http.Get("http://localhost:8083/test")
-	a.Error(err).Nil(resp)
-
-	app.Shutdown(0)
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	a.NotNil(r).NotNil(w)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 }
 
-func TestApp_httpStateRedirect(t *testing.T) {
+func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
-	app.config.Port = ":8083"
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateRedirect
+	app.config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
+	app.config = defaultConfig()
 
-	app.mux.GetFunc("/test", f1)
+	h := app.buildHosts(h1)
 
-	go func() {
-		err := app.listen()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
+	// 带正确的域名访问
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(time.Second)
-
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = client.Get("http://localhost:80/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	app.Shutdown(0)
+	// 带不允许的域名访问
+	r = httptest.NewRequest(http.MethodGet, "http://not.exists/test", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusNotFound)
 }
 
-func TestApp_httpStateListen(t *testing.T) {
+func TestApp_buildVersion(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
-	app.config.Port = ":8083"
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateListen
+	app.config = defaultConfig()
 
-	app.mux.GetFunc("/test", f1)
+	h := app.buildVersion(h1)
 
-	go func() {
-		err := app.listen()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(time.Second)
+	// 指版本号
+	app, err = New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Version = "1.0"
 
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	h = app.buildVersion(h1)
 
-	resp, err = http.Get("http://localhost:80/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	// 指版本号的情况下，不正确版本号访问
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w = httptest.NewRecorder()
+	a.NotNil(r).NotNil(w)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusForbidden)
 
-	app.Shutdown(0)
+	// 指版本号的情况下，带正确版本号访问
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	r.Header.Set("accept", "application/json;version=1.0")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+
+	// 指版本号的情况下，带不正确版本号访问
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	r.Header.Set("accept", "application/json;version=2.0")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusNotFound)
+}
+
+func TestApp_buildHeader(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+	app.config.Headers = map[string]string{"Test": "test"}
+
+	h := app.buildHeader(h1)
+
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+	a.Equal(w.Header().Get("Test"), "test")
+}
+
+func TestApp_buildPprof(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+	app.config = defaultConfig()
+
+	h := app.buildPprof(h1)
+
+	// 命中 /debug/pprof/cmdline
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/debug/pprof/cmdline", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusOK)
+
+	// 命中 h1
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 }

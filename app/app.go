@@ -13,15 +13,12 @@ import (
 	"time"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 	"github.com/issue9/utils"
+
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/modules"
-)
-
-// 一些错误信息的定义
-var (
-	ErrConfigDirNotExists = errors.New("配置文件的目录不存在")
 )
 
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
@@ -62,7 +59,7 @@ func New(confDir string, builder BuildHandler) (*App, error) {
 	}
 
 	if !utils.FileExists(confDir) {
-		return nil, ErrConfigDirNotExists
+		return nil, errors.New("配置文件的目录不存在")
 	}
 
 	app := &App{
@@ -110,7 +107,17 @@ func (app *App) Run() error {
 		return err
 	}
 
-	return app.listen()
+	// 静态文件路由，在其它路由构建之前调用
+	for url, dir := range app.config.Static {
+		pattern := url + "{path}"
+		app.mux.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
+	}
+
+	if app.builder != nil {
+		h := app.buildHandler(app.builder(app.mux))
+		return app.listen(h)
+	}
+	return app.listen(app.buildHandler(app.mux))
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，

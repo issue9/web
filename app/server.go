@@ -6,30 +6,22 @@ package app
 
 import (
 	"net/http"
+	"net/http/pprof"
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/host"
+	"github.com/issue9/middleware/recovery"
+	"github.com/issue9/middleware/version"
+	"github.com/issue9/web/context"
 )
 
-// 初始化路由项。
-func (app *App) initRoutes() http.Handler {
-	// 静态文件路由，在其它路由构建之前调用
-	for url, dir := range app.config.Static {
-		pattern := url + "{path}"
-		app.mux.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
-	}
-
-	if app.builder != nil {
-		return app.buildHandler(app.builder(app.mux))
-	}
-	return app.buildHandler(app.mux)
+func logRecovery(w http.ResponseWriter, msg interface{}) {
+	logs.Error(msg)
+	context.RenderStatus(w, http.StatusInternalServerError)
 }
 
-// 运行路由，执行监听程序。
-func (app *App) listen() error {
-	h := app.initRoutes()
-
+func (app *App) listen(h http.Handler) error {
 	if app.config.HTTPS {
 		switch app.config.HTTPState {
 		case httpStateListen:
@@ -79,4 +71,76 @@ func (app *App) newServer(port string, h http.Handler) *http.Server {
 	app.servers = append(app.servers, srv)
 
 	return srv
+}
+
+func (app *App) buildHandler(h http.Handler) http.Handler {
+	h = app.buildHosts(app.buildVersion(app.buildHeader(h)))
+
+	ff := logRecovery
+	if app.config.Debug {
+		ff = recovery.PrintDebug
+	}
+	h = recovery.New(h, ff)
+
+	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+	if app.config.Debug {
+		h = app.buildPprof(h)
+	}
+
+	return h
+}
+
+func (app *App) buildHosts(h http.Handler) http.Handler {
+	if len(app.config.Hosts) == 0 {
+		return h
+	}
+
+	return host.New(h, app.config.Hosts...)
+}
+
+func (app *App) buildVersion(h http.Handler) http.Handler {
+	if len(app.config.Version) == 0 {
+		return h
+	}
+
+	return version.New(h, app.config.Version, true)
+}
+
+func (app *App) buildHeader(h http.Handler) http.Handler {
+	if len(app.config.Headers) == 0 {
+		return h
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for k, v := range app.config.Headers {
+			w.Header().Set(k, v)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
+func (app *App) buildPprof(h http.Handler) http.Handler {
+	logs.Debug("开启了调试功能，地址为：", pprofPath)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, pprofPath) {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		path := r.URL.Path[len(pprofPath):]
+		switch path {
+		case "cmdline":
+			pprof.Cmdline(w, r)
+		case "profile":
+			pprof.Profile(w, r)
+		case "symbol":
+			pprof.Symbol(w, r)
+		case "trace":
+			pprof.Trace(w, r)
+		default:
+			pprof.Index(w, r)
+		}
+	}) // end return http.HandlerFunc
 }
