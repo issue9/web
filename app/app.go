@@ -110,7 +110,7 @@ func (app *App) Run() error {
 		return err
 	}
 
-	return app.run()
+	return app.listen()
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，

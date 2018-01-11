@@ -147,7 +147,7 @@ func TestApp_Shutdown(t *testing.T) {
 	})
 
 	go func() {
-		err := app.run()
+		err := app.listen()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -180,7 +180,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	})
 
 	go func() {
-		err := app.run()
+		err := app.listen()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 

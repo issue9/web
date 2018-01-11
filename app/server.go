@@ -27,11 +27,7 @@ func (app *App) initRoutes() http.Handler {
 }
 
 // 运行路由，执行监听程序。
-//
-// h 表示需要执行的路由处理函数，传递 nil 时，会自动以 server.Mux() 代替。
-// 可以通过以下方式，将一些 http.Handler 实例附加到 server.Mux() 之上：
-//  app.run(host.New(app.Mux(), "www.caixw.io")
-func (app *App) run() error {
+func (app *App) listen() error {
 	h := app.initRoutes()
 
 	if app.config.HTTPS {
