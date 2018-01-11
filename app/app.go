@@ -21,24 +21,24 @@ import (
 
 // 一些错误信息的定义
 var (
-	ErrAppClosed          = errors.New("当前实例已经关闭")
 	ErrConfigDirNotExists = errors.New("配置文件的目录不存在")
 )
 
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
+//
+// 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
 type BuildHandler func(http.Handler) http.Handler
 
 // App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
 	configDir string
-	closed    bool
-	builder   BuildHandler
 
 	config  *config
 	modules *modules.Modules
 
-	router *mux.Prefix
-	mux    *mux.Mux
+	builder BuildHandler
+	router  *mux.Prefix
+	mux     *mux.Mux
 
 	// 保存着所有的 http.Server 实例。
 	//
@@ -106,10 +106,6 @@ func (app *App) init() error {
 
 // Run 运行路由，执行监听程序。
 func (app *App) Run() error {
-	if app.closed {
-		return ErrAppClosed
-	}
-
 	if err := app.modules.Init(); err != nil {
 		return err
 	}
@@ -124,7 +120,6 @@ func (app *App) Run() error {
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
 func (app *App) Shutdown(timeout time.Duration) error {
 	logs.Flush()
-	app.closed = true
 
 	if timeout <= 0 {
 		for _, srv := range app.servers {

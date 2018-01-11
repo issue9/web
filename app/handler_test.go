@@ -30,7 +30,6 @@ func TestApp_buildHandler(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusNotFound)
 }
@@ -82,7 +81,6 @@ func TestApp_buildVersion(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
@@ -105,7 +103,6 @@ func TestApp_buildVersion(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	r.Header.Set("accept", "application/json;version=1.0")
 	w = httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
@@ -113,7 +110,6 @@ func TestApp_buildVersion(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	r.Header.Set("accept", "application/json;version=2.0")
 	w = httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusNotFound)
 }
@@ -129,7 +125,6 @@ func TestApp_buildHeader(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 	a.Equal(w.Header().Get("Test"), "test")
@@ -146,14 +141,12 @@ func TestApp_buildPprof(t *testing.T) {
 	// 命中 /debug/pprof/cmdline
 	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/debug/pprof/cmdline", nil)
 	w := httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusOK)
 
 	// 命中 h1
 	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
 	w = httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 }
