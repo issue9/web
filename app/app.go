@@ -53,6 +53,11 @@ type App struct {
 // confDir 下面必须包含 logs.xml 与 web.json 两个配置文件。
 // builder 被用于封装内部的 http.Handler 接口，不需要可以传递空值。
 func New(confDir string, builder BuildHandler) (*App, error) {
+	confDir, err := filepath.Abs(confDir)
+	if err != nil {
+		return nil, err
+	}
+
 	if !utils.FileExists(confDir) {
 		return nil, ErrConfigDirNotExists
 	}

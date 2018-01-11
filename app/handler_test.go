@@ -62,14 +62,12 @@ func TestApp_buildHosts(t *testing.T) {
 	// 带正确的域名访问
 	r := httptest.NewRequest("GET", "http://caixw.io/test", nil)
 	w := httptest.NewRecorder()
-	a.NotNil(w).NotNil(r)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, 1)
 
 	// 带不允许的域名访问
 	r = httptest.NewRequest("GET", "http://not.exists/test", nil)
 	w = httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, http.StatusNotFound)
 }
