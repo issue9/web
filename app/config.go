@@ -38,25 +38,31 @@ const (
 )
 
 type config struct {
-	// 是否启用调试模式
+	// Debug 是否启用调试模式
+	//
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
 	Debug bool `yaml:"debug"`
 
-	Root           string `yaml:"root"`           // 表示网站的根目录，带域名，非默认端口也得带上。
-	OutputEncoding string `yaml:"outputEncoding"` // 输出的编码方式
-	OutputCharset  string `yaml:"outputCharset"`  // 输出的字符集名称
-	Strict         bool   `yaml:"strict"`         // 参考 context.New() 中的 strict 参数
+	// Root 表示网站所在的根目录。
+	//
+	// 带域名，存在路径和非默认端口也得带上。
+	// 若带路径，则在构建路由时，会自动加此前缀。
+	Root string `yaml:"root"`
 
-	HTTPS     bool              `yaml:"https"`     // 是否启用 HTTPS
-	HTTPState string            `yaml:"httpState"` // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile  string            `yaml:"certFile"`  // 当 https 为 true 时，此值为必填
-	KeyFile   string            `yaml:"keyFile"`   // 当 https 为 true 时，此值为必填
-	Port      string            `yaml:"port"`      // 端口，不指定，默认为 80 或是 443
-	Headers   map[string]string `yaml:"headers"`   // 附加的头信息，头信息可能在其它地方被修改
-	Static    map[string]string `yaml:"static"`    // 静态内容，键名为 URL 路径，键值为文件地址
-	Options   bool              `yaml:"options"`   // 是否启用 OPTIONS 请求
-	Version   string            `yaml:"version"`   // 限定版本
-	Hosts     []string          `yaml:"hosts"`     // 限定访问域名。仅需指定域名
+	OutputEncoding string `yaml:"outputEncoding"`   // 输出的编码方式
+	OutputCharset  string `yaml:"outputCharset"`    // 输出的字符集名称
+	Strict         bool   `yaml:"strict,omitempty"` // 参考 context.New() 中的 strict 参数
+
+	HTTPS     bool              `yaml:"https"`              // 是否启用 HTTPS
+	HTTPState string            `yaml:"httpState"`          // 80 端口的状态，仅在 HTTPS 为 true 时启作用
+	CertFile  string            `yaml:"certFile,omitempty"` // 当 https 为 true 时，此值为必填
+	KeyFile   string            `yaml:"keyFile,omitempty"`  // 当 https 为 true 时，此值为必填
+	Port      string            `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
+	Headers   map[string]string `yaml:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
+	Static    map[string]string `yaml:"static,omitempty"`   // 静态内容，键名为 URL 路径，键值为文件地址
+	Options   bool              `yaml:"options,omitempty"`  // 是否启用 OPTIONS 请求
+	Version   string            `yaml:"version,omitempty"`  // 限定版本
+	Hosts     []string          `yaml:"hosts,omitempty"`    // 限定访问域名。仅需指定域名
 
 	// 性能
 	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值
@@ -118,7 +124,11 @@ func (conf *config) sanitize() error {
 	}
 
 	if len(conf.Port) == 0 {
-		return errors.New("port 必须指定")
+		if conf.HTTPS {
+			conf.Port = httpsPort
+		} else {
+			conf.Port = httpPort
+		}
 	} else if conf.Port[0] != ':' {
 		conf.Port = ":" + conf.Port
 	}

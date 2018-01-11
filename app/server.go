@@ -41,7 +41,7 @@ func (app *App) run(h http.Handler) error {
 		case httpStateListen:
 			go func() {
 				logs.Infof("开始监听[%v]端口", httpPort)
-				logs.Error(app.getServer(httpPort, h).ListenAndServe())
+				logs.Error(app.newServer(httpPort, h).ListenAndServe())
 			}()
 		case httpStateRedirect:
 			go func() {
@@ -52,16 +52,16 @@ func (app *App) run(h http.Handler) error {
 		}
 
 		logs.Infof("开始监听[%v]端口", app.config.Port)
-		return app.getServer(app.config.Port, h).ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
+		return app.newServer(app.config.Port, h).ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 	}
 
 	logs.Infof("开始监听[%v]端口", app.config.Port)
-	return app.getServer(app.config.Port, h).ListenAndServe()
+	return app.newServer(app.config.Port, h).ListenAndServe()
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func (app *App) httpRedirectServer() *http.Server {
-	return app.getServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return app.newServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 构建跳转链接
 		url := r.URL
 		url.Scheme = "HTTPS"
@@ -73,7 +73,7 @@ func (app *App) httpRedirectServer() *http.Server {
 }
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
-func (app *App) getServer(port string, h http.Handler) *http.Server {
+func (app *App) newServer(port string, h http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         port,
 		Handler:      h,
