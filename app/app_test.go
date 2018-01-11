@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -51,8 +52,13 @@ func TestApp_File(t *testing.T) {
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	a.Equal(app.File("test"), "testdata/test")
-	a.Equal(app.File("test/file.jpg"), "testdata/test/file.jpg")
+	f, err := filepath.Abs("./testdata/test")
+	a.NotError(err)
+	a.Equal(app.File("test"), f)
+
+	f, err = filepath.Abs("./testdata/test/file.jpg")
+	a.NotError(err)
+	a.Equal(app.File("test/file.jpg"), f)
 }
 
 func TestURL(t *testing.T) {
@@ -71,7 +77,9 @@ func TestNew(t *testing.T) {
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	a.Equal(app.configDir, "./testdata").
+	f, err := filepath.Abs("./testdata")
+	a.NotError(err)
+	a.Equal(app.configDir, f).
 		NotNil(app.config).
 		NotNil(app.modules)
 

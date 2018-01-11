@@ -32,26 +32,29 @@ type BuildHandler func(http.Handler) http.Handler
 type App struct {
 	configDir string
 	closed    bool
-	router    *mux.Prefix
 	builder   BuildHandler
 
 	config  *config
 	modules *modules.Modules
 
-	mux *mux.Mux
+	router *mux.Prefix
+	mux    *mux.Mux
 
+	// 保存着所有的 http.Server 实例。
+	//
 	// 除了 mux 所依赖的 http.Server 实例之外，
 	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
-	// 记录这些 server，方便关闭服务等操作。
+	// 记录这些 server，关闭服务时需要将这些全部都关闭。
 	servers []*http.Server
 }
 
 // New 初始化框架的基本内容。
 //
-// confDir 指定了配置文件所在的目录，
+// confDir 指定了配置文件所在的目录。
 // 框架默认的两个配置文件都会从此目录下查找。
-// confDir 下面必须包含 logs.xml 与 web.json 两个配置文件。
-// builder 被用于封装内部的 http.Handler 接口，不需要可以传递空值。
+// confDir 下面必须包含 logs.xml 与 web.yaml 两个配置文件。
+//
+// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
 func New(confDir string, builder BuildHandler) (*App, error) {
 	confDir, err := filepath.Abs(confDir)
 	if err != nil {
