@@ -136,10 +136,10 @@ func TestApp(t *testing.T) {
 
 func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Port = 8083
+	config := defaultConfig()
+	config.Port = 8083
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -168,10 +168,10 @@ func TestApp_Shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Port = 8083
+	config := defaultConfig()
+	config.Port = 8083
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -209,11 +209,11 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Port = 8083
-	app.config.Static = map[string]string{"/static": "./testdata/"}
+	config := defaultConfig()
+	config.Port = 8083
+	config.Static = map[string]string{"/static": "./testdata/"}
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	app.mux.GetFunc("/test", f1)
 
@@ -239,13 +239,15 @@ func TestApp_Run(t *testing.T) {
 
 func TestApp_httpStateDisabled(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config.Port = 8083
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateDisabled
+	config := defaultConfig()
+	config.Port = 8083
+	config.HTTPS = true
+	config.KeyFile = "./testdata/key.pem"
+	config.CertFile = "./testdata/cert.pem"
+	config.HTTPState = httpStateDisabled
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
+
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
@@ -270,13 +272,14 @@ func TestApp_httpStateDisabled(t *testing.T) {
 
 func TestApp_httpStateRedirect(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config.Port = 8083
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateRedirect
+	config := defaultConfig()
+	config.Port = 8083
+	config.HTTPS = true
+	config.KeyFile = "./testdata/key.pem"
+	config.CertFile = "./testdata/cert.pem"
+	config.HTTPState = httpStateRedirect
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	app.mux.GetFunc("/test", f1)
 
@@ -303,13 +306,14 @@ func TestApp_httpStateRedirect(t *testing.T) {
 
 func TestApp_httpStateListen(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config.Port = 8083
-	app.config.HTTPS = true
-	app.config.KeyFile = "./testdata/key.pem"
-	app.config.CertFile = "./testdata/cert.pem"
-	app.config.HTTPState = httpStateListen
+	config := defaultConfig()
+	config.Port = 8083
+	config.HTTPS = true
+	config.KeyFile = "./testdata/key.pem"
+	config.CertFile = "./testdata/cert.pem"
+	config.HTTPState = httpStateListen
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	app.mux.GetFunc("/test", f1)
 

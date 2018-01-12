@@ -51,10 +51,10 @@ func TestApp_buildHosts_empty(t *testing.T) {
 
 func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
+	config := defaultConfig()
+	config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	h := app.buildHosts(h1)
 
@@ -75,7 +75,6 @@ func TestApp_buildVersion(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
 
 	h := app.buildVersion(h1)
 
@@ -85,10 +84,10 @@ func TestApp_buildVersion(t *testing.T) {
 	a.Equal(w.Code, 1)
 
 	// 指版本号
-	app, err = New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Version = "1.0"
+	config := defaultConfig()
+	config.Version = "1.0"
+	app = &App{}
+	a.NotError(app.initFromConfig(config))
 
 	h = app.buildVersion(h1)
 
@@ -116,10 +115,10 @@ func TestApp_buildVersion(t *testing.T) {
 
 func TestApp_buildHeader(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
-	app.config.Headers = map[string]string{"Test": "test"}
+	config := defaultConfig()
+	config.Headers = map[string]string{"Test": "test"}
+	app := &App{}
+	a.NotError(app.initFromConfig(config))
 
 	h := app.buildHeader(h1)
 
@@ -134,7 +133,6 @@ func TestApp_buildPprof(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
 
 	h := app.buildPprof(h1)
 

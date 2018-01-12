@@ -33,8 +33,8 @@ type App struct {
 
 	modules *modules.Modules
 
-	router *mux.Prefix
 	mux    *mux.Mux
+	router *mux.Prefix
 
 	// 保存着所有的 http.Server 实例。
 	//
@@ -54,34 +54,40 @@ func New(confDir string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	app := &App{configDir: confDir}
 
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件的目录不存在")
 	}
 
-	if err = logs.InitFromXMLFile(filepath.Join(confDir, logsFilename)); err != nil {
+	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
 		return nil, err
 	}
 
-	conf, err := loadConfig(filepath.Join(confDir, configFilename))
+	conf, err := loadConfig(app.File(configFilename))
 	if err != nil {
 		return nil, err
 	}
 
+	if err = app.initFromConfig(conf); err != nil {
+		return nil, err
+	}
+
+	return app, nil
+}
+
+func (app *App) initFromConfig(conf *config) error {
 	u, err := url.Parse(conf.Root)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	mux := mux.New(!conf.Options, false, nil, nil)
-	return &App{
-		configDir: confDir,
-		config:    conf,
-		modules:   modules.New(),
-		router:    mux.Prefix(u.Path),
-		mux:       mux,
-		servers:   make([]*http.Server, 0, 5),
-	}, nil
+	app.config = conf
+	app.modules = modules.New()
+	app.mux = mux.New(!conf.Options, false, nil, nil)
+	app.router = app.mux.Prefix(u.Path)
+	app.servers = make([]*http.Server, 0, 5)
+	return nil
 }
 
 // Run 运行路由，执行监听程序。
