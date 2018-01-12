@@ -49,13 +49,14 @@ func (app *App) listen(h http.Handler) error {
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
 func (app *App) httpRedirectServer() *http.Server {
 	return app.newServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 构建跳转链接
-		url := r.URL
-		url.Scheme = "HTTPS"
-		url.Host = strings.Split(r.Host, ":")[0] + ":" + strconv.Itoa(app.config.Port)
+		u := r.URL // 直接采用 r.URL，毕竟跳转之后，此值就没用了。
+		u.Scheme = "HTTPS"
+		u.Host = strings.Split(r.Host, ":")[0]
+		if app.config.Port != httpsPort {
+			u.Host += ":" + strconv.Itoa(app.config.Port)
+		}
 
-		urlStr := url.String()
-		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
+		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
 	}))
 }
 
