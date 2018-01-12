@@ -26,8 +26,8 @@ const pprofPath = "/debug/pprof/"
 
 // 端口的定义
 const (
-	httpPort  = ":80"
-	httpsPort = ":443"
+	httpPort  = 80
+	httpsPort = 443
 )
 
 // 当启用 HTTPS 时，对 80 端口的处理方式。
@@ -57,7 +57,7 @@ type config struct {
 	HTTPState string            `yaml:"httpState"`          // 80 端口的状态，仅在 HTTPS 为 true 时启作用
 	CertFile  string            `yaml:"certFile,omitempty"` // 当 https 为 true 时，此值为必填
 	KeyFile   string            `yaml:"keyFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	Port      string            `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
+	Port      int               `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
 	Headers   map[string]string `yaml:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
 	Static    map[string]string `yaml:"static,omitempty"`   // 静态内容，键名为 URL 路径，键值为文件地址
 	Options   bool              `yaml:"options,omitempty"`  // 是否启用 OPTIONS 请求
@@ -123,14 +123,12 @@ func (conf *config) sanitize() error {
 		}
 	}
 
-	if len(conf.Port) == 0 {
+	if conf.Port == 0 {
 		if conf.HTTPS {
 			conf.Port = httpsPort
 		} else {
 			conf.Port = httpPort
 		}
-	} else if conf.Port[0] != ':' {
-		conf.Port = ":" + conf.Port
 	}
 
 	if len(conf.Hosts) > 0 {

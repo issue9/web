@@ -3,7 +3,7 @@ debug: true
 https: false
 keyFile: keyFile
 certFile: certFile
-port: ":8082"
+port: 8082
 static:
   admin: ./static/admin
   client: ./static/client

@@ -7,6 +7,7 @@ package app
 import (
 	"net/http"
 	"net/http/pprof"
+	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
@@ -51,7 +52,7 @@ func (app *App) httpRedirectServer() *http.Server {
 		// 构建跳转链接
 		url := r.URL
 		url.Scheme = "HTTPS"
-		url.Host = strings.Split(r.Host, ":")[0] + app.config.Port
+		url.Host = strings.Split(r.Host, ":")[0] + ":" + strconv.Itoa(app.config.Port)
 
 		urlStr := url.String()
 		http.Redirect(w, r, urlStr, http.StatusMovedPermanently)
@@ -59,9 +60,9 @@ func (app *App) httpRedirectServer() *http.Server {
 }
 
 // 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
-func (app *App) newServer(port string, h http.Handler) *http.Server {
+func (app *App) newServer(port int, h http.Handler) *http.Server {
 	srv := &http.Server{
-		Addr:         port,
+		Addr:         ":" + strconv.Itoa(port),
 		Handler:      h,
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  app.config.ReadTimeout,

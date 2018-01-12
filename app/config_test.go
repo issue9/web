@@ -23,7 +23,7 @@ func defaultConfig() *config {
 		HTTPState: httpStateDisabled,
 		CertFile:  "",
 		KeyFile:   "",
-		Port:      ":80",
+		Port:      httpPort,
 		Headers:   nil,
 		Static:    nil,
 		Options:   true,
