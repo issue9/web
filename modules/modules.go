@@ -6,13 +6,9 @@
 package modules
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 )
-
-// ErrModulesInited 表示模块已经初始化完成，不能再添加新模块。
-var ErrModulesInited = errors.New("所有模块已经初始化完成")
 
 // InitFunc 模块的初始化函数，实现者需要注意：
 // 在重启服务时，会被再次调用，需要保证在多次调用的情况下，
@@ -31,7 +27,6 @@ type module struct {
 type Modules struct {
 	modules map[string]*module
 	lock    sync.Mutex
-	inited  bool // 是否已经初始化
 }
 
 // New 声明一个 Modules 实例
@@ -47,10 +42,6 @@ func New() *Modules {
 // init 为模块的初始化函数；
 // deps 为模块的依赖模块，依赖模块可以后于当前模块注册。
 func (ms *Modules) New(name string, init InitFunc, deps ...string) error {
-	if ms.inited {
-		return ErrModulesInited
-	}
-
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
 
@@ -69,10 +60,6 @@ func (ms *Modules) New(name string, init InitFunc, deps ...string) error {
 // Init 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
 func (ms *Modules) Init() error {
-	if ms.inited { // 已全部初始化，则不再进行相应操作
-		return nil
-	}
-
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
 
@@ -88,7 +75,6 @@ func (ms *Modules) Init() error {
 		}
 	}
 
-	ms.inited = true
 	return nil
 }
 
