@@ -17,6 +17,8 @@ import (
 	"github.com/issue9/web/context"
 )
 
+const pprofPath = "/debug/pprof/"
+
 func logRecovery(w http.ResponseWriter, msg interface{}) {
 	logs.Error(msg)
 	context.RenderStatus(w, http.StatusInternalServerError)
@@ -93,11 +95,11 @@ func (app *App) buildHandler(h http.Handler) http.Handler {
 }
 
 func (app *App) buildHosts(h http.Handler) http.Handler {
-	if len(app.config.Hosts) == 0 {
+	if len(app.config.AllowedDomains) == 0 {
 		return h
 	}
 
-	return host.New(h, app.config.Hosts...)
+	return host.New(h, app.config.AllowedDomains...)
 }
 
 func (app *App) buildVersion(h http.Handler) http.Handler {

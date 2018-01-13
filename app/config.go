@@ -13,16 +13,15 @@ import (
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/context"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/issue9/web/context"
 )
 
 const (
 	logsFilename   = "logs.xml" // 日志配置文件的文件名。
 	configFilename = "web.yaml" // 配置文件的文件名。
 )
-
-const pprofPath = "/debug/pprof/"
 
 // 端口的定义
 const (
@@ -53,16 +52,16 @@ type config struct {
 	OutputCharset  string `yaml:"outputCharset"`    // 输出的字符集名称
 	Strict         bool   `yaml:"strict,omitempty"` // 参考 context.New() 中的 strict 参数
 
-	HTTPS     bool              `yaml:"https"`              // 是否启用 HTTPS
-	HTTPState string            `yaml:"httpState"`          // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile  string            `yaml:"certFile,omitempty"` // 当 https 为 true 时，此值为必填
-	KeyFile   string            `yaml:"keyFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	Port      int               `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
-	Headers   map[string]string `yaml:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
-	Static    map[string]string `yaml:"static,omitempty"`   // 静态内容，键名为 URL 路径，键值为文件地址
-	Options   bool              `yaml:"options,omitempty"`  // 是否启用 OPTIONS 请求
-	Version   string            `yaml:"version,omitempty"`  // 限定版本
-	Hosts     []string          `yaml:"hosts,omitempty"`    // 限定访问域名。仅需指定域名
+	HTTPS          bool              `yaml:"https"`                    // 是否启用 HTTPS
+	HTTPState      string            `yaml:"httpState"`                // 80 端口的状态，仅在 HTTPS 为 true 时启作用
+	CertFile       string            `yaml:"certFile,omitempty"`       // 当 https 为 true 时，此值为必填
+	KeyFile        string            `yaml:"keyFile,omitempty"`        // 当 https 为 true 时，此值为必填
+	Port           int               `yaml:"port,omitempty"`           // 端口，不指定，默认为 80 或是 443
+	Headers        map[string]string `yaml:"headers,omitempty"`        // 附加的头信息，头信息可能在其它地方被修改
+	Static         map[string]string `yaml:"static,omitempty"`         // 静态内容，键名为 URL 路径，键值为文件地址
+	Options        bool              `yaml:"options,omitempty"`        // 是否启用 OPTIONS 请求
+	Version        string            `yaml:"version,omitempty"`        // 限定版本
+	AllowedDomains []string          `yaml:"allowedDomains,omitempty"` // 限定访问域名。仅需指定域名
 
 	// 性能
 	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值
@@ -131,10 +130,10 @@ func (conf *config) sanitize() error {
 		}
 	}
 
-	if len(conf.Hosts) > 0 {
-		for _, host := range conf.Hosts {
+	if len(conf.AllowedDomains) > 0 {
+		for _, host := range conf.AllowedDomains {
 			if !is.URL(host) {
-				return fmt.Errorf("Hosts 中的 %v 为非法的 URL", host)
+				return fmt.Errorf("AllowedDomains 中的 %v 为非法的 URL", host)
 			}
 		}
 	}

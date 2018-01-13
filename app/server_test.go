@@ -52,7 +52,7 @@ func TestApp_buildHosts_empty(t *testing.T) {
 func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
 	config := defaultConfig()
-	config.Hosts = []string{"caixw.io", "example.com"} // 指定域名
+	config.AllowedDomains = []string{"caixw.io", "example.com"} // 指定域名
 	app := &App{}
 	a.NotError(app.initFromConfig(config))
 
