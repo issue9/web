@@ -1,5 +1,5 @@
-root: https://caixw.io/
 https: false
+domains: localhost
 keyFile: keyFile
 certFile: certFile
 port: 8082

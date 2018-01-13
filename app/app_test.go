@@ -78,14 +78,43 @@ func TestApp_File(t *testing.T) {
 	a.Equal(app.File("test/file.jpg"), f)
 }
 
+func TestApp_initFromConfig(t *testing.T) {
+	a := assert.New(t)
+
+	app := &App{}
+	conf := defaultConfig()
+	conf.HTTPS = true
+	conf.Port = httpsPort
+	conf.Domain = "example.com"
+	conf.Root = "/path"
+	app.initFromConfig(conf)
+	a.Equal(app.url, "https://example.com/path")
+
+	app = &App{}
+	conf.HTTPS = false
+	app.initFromConfig(conf)
+	a.Equal(app.url, "http://example.com:443/path")
+
+	app = &App{}
+	conf.HTTPS = false
+	conf.Port = httpPort
+	conf.Root = ""
+	app.initFromConfig(conf)
+	a.Equal(app.url, "http://example.com")
+}
+
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := &App{}
+	conf := defaultConfig()
+	conf.HTTPS = true
+	conf.Port = 443
+	conf.Domain = "example.com"
+	app.initFromConfig(conf)
 
-	a.Equal(app.URL("test"), "https://caixw.io/test")
-	a.Equal(app.URL("/test/file.jpg"), "https://caixw.io/test/file.jpg")
+	a.Equal(app.URL("test"), "https://example.com/test")
+	a.Equal(app.URL("/test/file.jpg"), "https://example.com/test/file.jpg")
 }
 
 func TestApp(t *testing.T) {
@@ -139,7 +168,7 @@ func TestApp_Shutdown(t *testing.T) {
 	config := defaultConfig()
 	config.Port = 8083
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +200,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	config := defaultConfig()
 	config.Port = 8083
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -213,7 +242,7 @@ func TestApp_Run(t *testing.T) {
 	config.Port = 8083
 	config.Static = map[string]string{"/static": "./testdata/"}
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 
@@ -247,7 +276,7 @@ func TestApp_httpStateDisabled(t *testing.T) {
 	config.CertFile = "./testdata/cert.pem"
 	config.HTTPState = httpStateDisabled
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 
@@ -280,7 +309,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 	config.CertFile = "./testdata/cert.pem"
 	config.HTTPState = httpStateRedirect
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 
@@ -314,7 +343,7 @@ func TestApp_httpStateListen(t *testing.T) {
 	config.CertFile = "./testdata/cert.pem"
 	config.HTTPState = httpStateListen
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	app.mux.GetFunc("/test", f1)
 

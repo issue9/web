@@ -54,7 +54,7 @@ func TestApp_buildHosts(t *testing.T) {
 	config := defaultConfig()
 	config.AllowedDomains = []string{"caixw.io", "example.com"} // 指定域名
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	h := app.buildHosts(h1)
 
@@ -87,7 +87,7 @@ func TestApp_buildVersion(t *testing.T) {
 	config := defaultConfig()
 	config.Version = "1.0"
 	app = &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	h = app.buildVersion(h1)
 
@@ -118,7 +118,7 @@ func TestApp_buildHeader(t *testing.T) {
 	config := defaultConfig()
 	config.Headers = map[string]string{"Test": "test"}
 	app := &App{}
-	a.NotError(app.initFromConfig(config))
+	app.initFromConfig(config)
 
 	h := app.buildHeader(h1)
 

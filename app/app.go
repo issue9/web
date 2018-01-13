@@ -8,8 +8,8 @@ import (
 	ctx "context"
 	"errors"
 	"net/http"
-	"net/url"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/issue9/logs"
@@ -30,6 +30,7 @@ type BuildHandler func(http.Handler) http.Handler
 type App struct {
 	configDir string
 	config    *config
+	url       string
 
 	modules *modules.Modules
 
@@ -69,25 +70,30 @@ func New(confDir string) (*App, error) {
 		return nil, err
 	}
 
-	if err = app.initFromConfig(conf); err != nil {
-		return nil, err
-	}
+	app.initFromConfig(conf)
 
 	return app, nil
 }
 
-func (app *App) initFromConfig(conf *config) error {
-	u, err := url.Parse(conf.Root)
-	if err != nil {
-		return err
-	}
-
+func (app *App) initFromConfig(conf *config) {
 	app.config = conf
 	app.modules = modules.New()
 	app.mux = mux.New(!conf.Options, false, nil, nil)
-	app.router = app.mux.Prefix(u.Path)
+	app.router = app.mux.Prefix(conf.Root)
 	app.servers = make([]*http.Server, 0, 5)
-	return nil
+
+	if conf.HTTPS {
+		app.url = "https://" + conf.Domain
+		if conf.Port != httpsPort {
+			app.url += ":" + strconv.Itoa(conf.Port)
+		}
+	} else {
+		app.url = "http://" + conf.Domain
+		if conf.Port != httpPort {
+			app.url += ":" + strconv.Itoa(conf.Port)
+		}
+	}
+	app.url += conf.Root
 }
 
 // Run 运行路由，执行监听程序。
@@ -100,7 +106,7 @@ func (app *App) Run(build BuildHandler) error {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range app.config.Static {
 		pattern := url + "{path}"
-		app.mux.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
+		app.Router().Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
 	var h http.Handler = app.mux
@@ -170,13 +176,13 @@ func (app *App) Module(name string, init modules.InitFunc, deps ...string) {
 // URL 构建一条基于 config.Root 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
-		return app.config.Root
+		return app.url
 	}
 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	return app.config.Root + path
+	return app.url + path
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

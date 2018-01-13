@@ -15,8 +15,9 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 
 | 名称            | 类型   | 描述
 |:----------------|:-------|:-----
-| root            | string | 项目的根路径，比如 `https://caixw.io/root/`
 | debug           | bool   | 是否启用调试模式
+| domain          | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
+| root            | string | 项目的根路径，比如 `/blog`
 | outputEncoding  | string | 默认的编码方式
 | outputCharset   | string | 字符集
 | strict          | bool   | 启用此值，会检测用户的 Accept 报头是否符合当前的编码。
@@ -29,7 +30,7 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 | static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
 | version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
-| hosts           | array  | 限定访问域名，可以是多个，若不指定，表示不限定
+| allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 
