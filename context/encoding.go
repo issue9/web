@@ -22,14 +22,6 @@ const (
 	DefaultCharset = "utf-8"
 )
 
-// Marshal 将一个对象转换成 []byte 内容时，所采用的接口。
-// Context.Render() 会调用此接口。
-type Marshal func(v interface{}) ([]byte, error)
-
-// Unmarshal 将客户端内容转换成一个对象时，所采用的接口。
-// Context.Read() 会调用此接口。
-type Unmarshal func([]byte, interface{}) error
-
 var (
 	// ErrExists 表示存在相同名称的项。
 	// 多个类似功能的函数，都有可能返回此错误。
@@ -52,6 +44,12 @@ var (
 		DefaultCharset: nil,
 	}
 )
+
+// Marshal 将一个对象转换成 []byte 内容时，所采用的接口。
+type Marshal func(v interface{}) ([]byte, error)
+
+// Unmarshal 将客户端内容转换成一个对象时，所采用的接口。
+type Unmarshal func([]byte, interface{}) error
 
 // AddMarshal 添加一个新的解码器，只有通过 AddMarshal 添加的解码器，
 // 才能被 Context 使用。

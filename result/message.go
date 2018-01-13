@@ -26,6 +26,7 @@ func getStatus(code int) int {
 }
 
 // NewMessage 注册一条新的错误信息。
+//
 // 非协程安全，需要在程序初始化时添加所有的错误代码。
 func NewMessage(code int, msg string) error {
 	if code < 100 {

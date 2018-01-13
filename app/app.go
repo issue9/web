@@ -97,6 +97,7 @@ func (app *App) initFromConfig(conf *config) {
 }
 
 // Run 运行路由，执行监听程序。
+//
 // builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
 func (app *App) Run(build BuildHandler) error {
 	if err := app.modules.Init(); err != nil {

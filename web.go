@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/issue9/mux"
+	"golang.org/x/text/encoding"
+
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/modules"
@@ -17,9 +19,55 @@ import (
 
 var defaultApp *app.App
 
-// Init 初始化框架的基本内容。参数说明可参考 app.New() 的文档。
-func Init(confDir string) error {
-	app, err := app.New(confDir)
+// Options 传递给 web.Init() 的参数
+type Options struct {
+	// 配置文件所在的目录。
+	ConfigDir string
+
+	// 所有需要支持的字符集
+	//
+	// 内置 utf-8 字符集支持，不需要再指定
+	Charset map[string]encoding.Encoding
+
+	// 指定从客户端数据转换到结构体的函数。
+	//
+	// 已内置对 text/plain 的支持。
+	Marshals map[string]context.Marshal
+
+	// 指定将结构体转换成字符串的函数。
+	//
+	// 已内置对 text/plain 的支持。
+	Unmarshals map[string]context.Unmarshal
+
+	// 所有的错误代码与错误信息的对照表。
+	Messages map[int]string
+}
+
+// Init 初始化框架的基本内容
+func Init(opt *Options) error {
+	for name, c := range opt.Charset {
+		if err := context.AddCharset(name, c); err != nil {
+			return err
+		}
+	}
+
+	for name, m := range opt.Marshals {
+		if err := context.AddMarshal(name, m); err != nil {
+			return err
+		}
+	}
+
+	for name, m := range opt.Unmarshals {
+		if err := context.AddUnmarshal(name, m); err != nil {
+			return err
+		}
+	}
+
+	if err := result.NewMessages(opt.Messages); err != nil {
+		return err
+	}
+
+	app, err := app.New(opt.ConfigDir)
 	if err != nil {
 		return err
 	}
