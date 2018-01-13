@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs"
+	"github.com/issue9/web/modules"
 )
 
 func TestBuildHandler(t *testing.T) {
@@ -136,11 +137,13 @@ func TestApp(t *testing.T) {
 	}
 
 	app.Router().GetFunc("/out", f1)
-	app.Module("init", func() error {
-		app.Router().GetFunc("/test", f1)
-		app.Router().GetFunc("/shutdown", shutdown)
-		return nil
-	})
+	app.AddModule(&modules.Module{
+		Name: "init",
+		Init: func() error {
+			app.Router().GetFunc("/test", f1)
+			app.Router().GetFunc("/shutdown", shutdown)
+			return nil
+		}})
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
@@ -318,7 +321,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完毕，不���机器可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}

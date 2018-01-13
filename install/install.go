@@ -87,7 +87,7 @@ func (m *Module) Event(title string, fn func() *Return) {
 
 // Done 完成当前安装模块的所有事件注册
 func (m *Module) Done() error {
-	return defaultModules.New(m.name, m.run, m.deps...)
+	return defaultModules.Add(m.name, m.run, m.deps...)
 }
 
 // 运行当前模块的安装事件。此方法会被作为 modules.InitFunc 被调用。

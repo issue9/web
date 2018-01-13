@@ -99,6 +99,9 @@ func (app *App) initFromConfig(conf *config) {
 // Run 运行路由，执行监听程序。
 //
 // builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
+//
+// 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
+// 之后的好多操作，都会将日志输出 logs 中的相关通道中。
 func (app *App) Run(build BuildHandler) error {
 	if err := app.modules.Init(); err != nil {
 		return err
@@ -160,18 +163,9 @@ func (app *App) Router() *mux.Prefix {
 	return app.router
 }
 
-// Module 注册一个新的模块。
-//
-// name 为模块名称；
-// init 当前模块的初始化函数；
-// deps 模块的依赖模块，这些模块在初始化时，会先于 name 初始化始。
-func (app *App) Module(name string, init modules.InitFunc, deps ...string) {
-	err := app.modules.New(name, init, deps...)
-
-	// 注册模块时出错，直接退出。
-	if err != nil {
-		logs.Fatal(err)
-	}
+// AddModule 注册一个新的模块。
+func (app *App) AddModule(m *modules.Module) error {
+	return app.modules.AddModule(m)
 }
 
 // URL 构建一条基于 config.Root 的完整 URL

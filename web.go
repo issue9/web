@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/mux"
 	"golang.org/x/text/encoding"
 
@@ -101,9 +102,20 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
-// Module 注册一个新的模块，具体说明可参考 App.Mux()。
-func Module(name string, init modules.InitFunc, deps ...string) {
-	defaultApp.Module(name, init, deps...)
+// NewModule 声明一个模块内容。
+func NewModule(name string, init modules.InitFunc, deps ...string) *modules.Module {
+	return &modules.Module{
+		Name: name,
+		Init: init,
+		Deps: deps,
+	}
+}
+
+// AddModule 注册一个新的模块，具体说明可参考 App.Mux()。
+func AddModule(m *modules.Module) {
+	if err := defaultApp.AddModule(m); err != nil {
+		logs.Error(err)
+	}
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

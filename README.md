@@ -78,6 +78,12 @@ go get github.com/issue9/web
 ```
 
 
+### 用到的第三方包
+
+- yaml gopkg.in/yaml.v2 配置文件使用 yaml 格式，比 JSON 拥有更好的阅读体验；
+- text golang.org/x/text 提供了非 UTF-8 字符集的转码方式。
+
+
 ### 文档
 
 [![Go Walker](https://gowalker.org/api/v1/badge)](http://gowalker.org/github.com/issue9/web)

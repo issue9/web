@@ -24,9 +24,9 @@ func TestModules_New(t *testing.T) {
 	ms := New()
 	a.NotNil(ms)
 
-	a.NotError(ms.New("m1", i("m1"), "d1", "d2"))
-	a.NotError(ms.New("m2", i("m2"), "d1", "d2"))
-	a.Error(ms.New("m2", i("m2"), "d1", "d2"))
+	a.NotError(ms.Add("m1", i("m1"), "d1", "d2"))
+	a.NotError(ms.Add("m2", i("m2"), "d1", "d2"))
+	a.Error(ms.Add("m2", i("m2"), "d1", "d2"))
 }
 
 func TestModules_isDep(t *testing.T) {
@@ -34,8 +34,8 @@ func TestModules_isDep(t *testing.T) {
 	ms := New()
 	a.NotNil(ms)
 
-	a.NotError(ms.New("m1", i("m1"), "d1", "d2"))
-	a.NotError(ms.New("d1", i("d1"), "d3"))
+	a.NotError(ms.Add("m1", i("m1"), "d1", "d2"))
+	a.NotError(ms.Add("d1", i("d1"), "d3"))
 
 	a.True(ms.isDep("m1", "d1"))
 	a.True(ms.isDep("m1", "d2"))
@@ -43,7 +43,7 @@ func TestModules_isDep(t *testing.T) {
 	a.False(ms.isDep("m1", "m1"))
 
 	// 循环依赖
-	a.NotError(ms.New("d3", i("d3"), "d1"))
+	a.NotError(ms.Add("d3", i("d3"), "d1"))
 	a.True(ms.isDep("d1", "d1"))
 
 	// 不存在的模块
@@ -55,12 +55,12 @@ func TestModules_checkDeps(t *testing.T) {
 	ms := New()
 	a.NotNil(ms)
 
-	a.NotError(ms.New("m1", i("m1"), "d1", "d2"))
-	a.NotError(ms.New("d1", i("d1"), "d3"))
+	a.NotError(ms.Add("m1", i("m1"), "d1", "d2"))
+	a.NotError(ms.Add("d1", i("d1"), "d3"))
 	m1 := ms.modules["m1"]
 	a.Error(ms.checkDeps(m1)) // 依赖项不存在
 
-	a.NotError(ms.New("d2", i("d2"), "d3"))
+	a.NotError(ms.Add("d2", i("d2"), "d3"))
 	a.NotError(ms.checkDeps(m1))
 }
 
@@ -69,10 +69,10 @@ func TestModules_Init(t *testing.T) {
 	ms := New()
 	a.NotNil(ms)
 
-	a.NotError(ms.New("m1", i("m1"), "d1", "d2"))
-	a.NotError(ms.New("d1", i("d1"), "d3"))
-	a.NotError(ms.New("d2", i("d2"), "d3"))
-	a.NotError(ms.New("d3", i("d3")))
+	a.NotError(ms.Add("m1", i("m1"), "d1", "d2"))
+	a.NotError(ms.Add("d1", i("d1"), "d3"))
+	a.NotError(ms.Add("d2", i("d2"), "d3"))
+	a.NotError(ms.Add("d3", i("d3")))
 
 	a.NotError(ms.Init())
 	a.Equal(len(inits), 4).

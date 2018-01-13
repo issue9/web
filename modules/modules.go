@@ -10,50 +10,53 @@ import (
 	"sync"
 )
 
-// InitFunc 模块的初始化函数，实现者需要注意：
-// 在重启服务时，会被再次调用，需要保证在多次调用的情况下，
-// 不会出现冲突。
+// InitFunc 模块的初始化函数。
 type InitFunc func() error
 
-// 用以表示一个模块所需要的数据。
-type module struct {
-	name   string   // 模块名
-	init   InitFunc // 初始化函数
+// Module 用以表示一个模块所需要的数据。
+type Module struct {
+	Name   string   // 模块名
+	Init   InitFunc // 初始化函数
+	Deps   []string // 依赖项
 	inited bool     // 是否已经初始化
-	deps   []string // 依赖项
 }
 
 // Modules 模块管理工具，管理模块的初始化顺序
 type Modules struct {
-	modules map[string]*module
+	modules map[string]*Module
 	lock    sync.Mutex
 }
 
 // New 声明一个 Modules 实例
 func New() *Modules {
 	return &Modules{
-		modules: make(map[string]*module, 20),
+		modules: make(map[string]*Module, 20),
 	}
 }
 
-// New 注册一个新的模块，以及它的依赖的模块。
+// Add 添加一个新的模块。
 //
 // name 为模块的名称；
 // init 为模块的初始化函数；
-// deps 为模块的依赖模块，依赖模块可以后于当前模块注册。
-func (ms *Modules) New(name string, init InitFunc, deps ...string) error {
+// deps 为模块的依赖模块，依赖模块可以后于当前模块注册，但必须要存在。
+func (ms *Modules) Add(name string, init InitFunc, deps ...string) error {
+	return ms.AddModule(&Module{
+		Name: name,
+		Init: init,
+		Deps: deps,
+	})
+}
+
+// AddModule 添加一个新的模块信息
+func (ms *Modules) AddModule(m *Module) error {
 	ms.lock.Lock()
 	defer ms.lock.Unlock()
 
-	if _, found := ms.modules[name]; found {
-		return fmt.Errorf("模块[%v]已经存在", name)
+	if _, found := ms.modules[m.Name]; found {
+		return fmt.Errorf("模块[%v]已经存在", m.Name)
 	}
 
-	ms.modules[name] = &module{
-		name: name,
-		init: init,
-		deps: deps,
-	}
+	ms.modules[m.Name] = m
 	return nil
 }
 
@@ -80,13 +83,13 @@ func (ms *Modules) Init() error {
 
 // 初始化指定模块，会先初始化其依赖模块。
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
-func (ms *Modules) init(m *module) error {
+func (ms *Modules) init(m *Module) error {
 	if m.inited {
 		return nil
 	}
 
 	// 先初始化依赖项
-	for _, dep := range m.deps {
+	for _, dep := range m.Deps {
 		depm, found := ms.modules[dep]
 		if !found {
 			return fmt.Errorf("依赖项[%v]未找到", dep)
@@ -98,7 +101,7 @@ func (ms *Modules) init(m *module) error {
 	}
 
 	// 初始化模块自身
-	if err := m.init(); err != nil {
+	if err := m.Init(); err != nil {
 		return err
 	}
 
@@ -108,17 +111,17 @@ func (ms *Modules) init(m *module) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (ms *Modules) checkDeps(m *module) error {
+func (ms *Modules) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
-	for _, dep := range m.deps {
+	for _, dep := range m.Deps {
 		_, found := ms.modules[dep]
 		if !found {
-			return fmt.Errorf("未找到[%v]的依赖模块[%v]", m.name, dep)
+			return fmt.Errorf("未找到[%v]的依赖模块[%v]", m.Name, dep)
 		}
 	}
 
-	if ms.isDep(m.name, m.name) {
-		return fmt.Errorf("存在循环依赖项:[%v]", m.name)
+	if ms.isDep(m.Name, m.Name) {
+		return fmt.Errorf("存在循环依赖项:[%v]", m.Name)
 	}
 
 	return nil
@@ -131,7 +134,7 @@ func (ms *Modules) isDep(m1, m2 string) bool {
 		return false
 	}
 
-	for _, dep := range module1.deps {
+	for _, dep := range module1.Deps {
 		if dep == m2 {
 			return true
 		}
