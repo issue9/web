@@ -8,13 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/logs"
-	"github.com/issue9/mux"
 	"golang.org/x/text/encoding"
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/modules"
 	"github.com/issue9/web/result"
 )
 
@@ -92,30 +89,21 @@ func File(path string) string {
 	return defaultApp.File(path)
 }
 
-// Router 获取操作路由的接口，为一个 mux.Prefix 实例，具体接口说明可参考 issue9/mux 包。
-func Router() *mux.Prefix {
-	return defaultApp.Router()
-}
-
 // URL 构建一条基于 Config.Root 的完整 URL
 func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
 // NewModule 声明一个模块内容。
-func NewModule(name string, init modules.InitFunc, deps ...string) *modules.Module {
-	return &modules.Module{
-		Name: name,
-		Init: init,
-		Deps: deps,
-	}
+//
+// 仅作声明，并不会添加到系统中，需要通过 AddModule 时行添加。
+func NewModule(name, desc string, deps ...string) *app.Module {
+	return app.NewModule(name, desc, deps...)
 }
 
-// AddModule 注册一个新的模块，具体说明可参考 App.Mux()。
-func AddModule(m *modules.Module) {
-	if err := defaultApp.AddModule(m); err != nil {
-		logs.Error(err)
-	}
+// AddModule 注册一个模块
+func AddModule(m *app.Module) {
+	defaultApp.AddModule(m)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

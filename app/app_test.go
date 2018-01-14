@@ -26,7 +26,7 @@ func TestBuildHandler(t *testing.T) {
 		w.WriteHeader(1)
 	}
 
-	app.Router().GetFunc("/builder", f1)
+	app.router.GetFunc("/builder", f1)
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
 		app.Run(func(h http.Handler) http.Handler {
@@ -134,18 +134,18 @@ func TestApp(t *testing.T) {
 		}
 	}
 
-	app.Router().GetFunc("/out", f1)
+	app.router.GetFunc("/out", f1)
 	app.AddModule(&Module{
 		Name:        "init",
 		Description: "init 测试用",
 		Routes: []*Route{
 			{
-				Method:  http.MethodGet,
+				Methods: []string{http.MethodGet},
 				Path:    "/test",
 				Handler: http.HandlerFunc(f1),
 			},
 			{
-				Method:  http.MethodGet,
+				Methods: []string{http.MethodGet},
 				Path:    "/shutdown",
 				Handler: http.HandlerFunc(shutdown),
 			},
@@ -324,7 +324,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 
 	go func() {
 		err := app.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错����信息为:%v", err)
 	}()
 
 	// 加载证书比较慢，需要等待 app.run() 启动完���，不���机���可能需要的时间会不同

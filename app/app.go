@@ -109,7 +109,7 @@ func (app *App) Run(build BuildHandler) error {
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range app.config.Static {
 		pattern := url + "{path}"
-		app.Router().Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
+		app.router.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
 	var h http.Handler = app.mux
@@ -151,15 +151,6 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // File 获取相对于配置目录下的文件。
 func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
-}
-
-// Router 获取操作路由的接口，为一个 mux.Prefix 实例，具体接口说明可参考 issue9/mux 包。
-//
-// 通过 Router 可以添加各类路由项，诸如：
-//  Router().Get("/test", h).
-//      Post("/test", h)
-func (app *App) Router() *mux.Prefix {
-	return app.router
 }
 
 // AddModule 注册一个新的模块。

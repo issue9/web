@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package dependency 依赖工具，可以保证各个模块能按顺序初始化依赖项。
+// Package dependency 依赖管理，可以保证各个模块能按顺序初始化依赖项。
 package dependency
 
 import (
