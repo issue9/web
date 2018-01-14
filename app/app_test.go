@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs"
-	"github.com/issue9/web/dependency"
 )
 
 func TestBuildHandler(t *testing.T) {
@@ -57,8 +56,7 @@ func TestNew(t *testing.T) {
 	f, err := filepath.Abs("./testdata")
 	a.NotError(err)
 	a.Equal(app.configDir, f).
-		NotNil(app.config).
-		NotNil(app.dependency)
+		NotNil(app.config)
 
 	app, err = New("./not-exists")
 	a.Error(err).Nil(app)
@@ -137,12 +135,20 @@ func TestApp(t *testing.T) {
 	}
 
 	app.Router().GetFunc("/out", f1)
-	app.AddModule(&dependency.Module{
-		Name: "init",
-		Init: func() error {
-			app.Router().GetFunc("/test", f1)
-			app.Router().GetFunc("/shutdown", shutdown)
-			return nil
+	app.AddModule(&Module{
+		Name:        "init",
+		Description: "init 测试用",
+		Routes: []*Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/test",
+				Handler: http.HandlerFunc(f1),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/shutdown",
+				Handler: http.HandlerFunc(shutdown),
+			},
 		}})
 
 	go func() {
@@ -321,7 +327,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 app.run() 启动完��，不���机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完���，不���机���可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
