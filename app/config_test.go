@@ -28,7 +28,6 @@ func defaultConfig() *config {
 		Headers:        nil,
 		Static:         nil,
 		Options:        true,
-		Version:        "",
 		AllowedDomains: []string{},
 
 		ReadTimeout:  30 * time.Second,

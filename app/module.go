@@ -135,7 +135,7 @@ func NewPlugin(name, desc string, deps ...string) *Module {
 //
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
-// deps 表示当前模块的依赖模块名称，可以是插件的模块名称。
+// deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,

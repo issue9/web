@@ -67,7 +67,6 @@ type config struct {
 	Port      int               `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
 	Headers   map[string]string `yaml:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
 	Options   bool              `yaml:"options,omitempty"`  // 是否启用 OPTIONS 请求
-	Version   string            `yaml:"version,omitempty"`  // 限定版本
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//

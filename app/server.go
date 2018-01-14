@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
-	"github.com/issue9/middleware/version"
 
 	"github.com/issue9/web/context"
 )
@@ -79,7 +78,7 @@ func (app *App) newServer(port int, h http.Handler) *http.Server {
 }
 
 func (app *App) buildHandler(h http.Handler) http.Handler {
-	h = app.buildHosts(app.buildVersion(app.buildHeader(h)))
+	h = app.buildHosts(app.buildHeader(h))
 
 	ff := logRecovery
 	if app.config.Debug {
@@ -101,14 +100,6 @@ func (app *App) buildHosts(h http.Handler) http.Handler {
 	}
 
 	return host.New(h, app.config.AllowedDomains...)
-}
-
-func (app *App) buildVersion(h http.Handler) http.Handler {
-	if len(app.config.Version) == 0 {
-		return h
-	}
-
-	return version.New(h, app.config.Version, true)
 }
 
 func (app *App) buildHeader(h http.Handler) http.Handler {
