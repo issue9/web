@@ -12,12 +12,19 @@ import (
 	"github.com/issue9/web/dependency"
 )
 
+// PluginModuleName 插件中必须提供的变量名称。
+// 根据此变量提供的数据进行初始化。
+const PluginModuleName = "Module"
+
 // 表示模块的类型。
 const (
-	ModuleTypeAll     = iota
-	ModuleTypeDefault // 默认的方式，即和代码一起编译
-	ModuleTypePlugin  // 加载以 buildmode=plugin 方式加载的模块
+	ModuleTypeAll    ModuleType = iota
+	ModuleTypeModule            // 默认的方式，即和代码一起编译
+	ModuleTypePlugin            // 加载以 buildmode=plugin 方式加载的模块
 )
+
+// ModuleType 用以指定模块的类型。
+type ModuleType int8
 
 // Module 表示模块信息
 type Module struct {
@@ -25,7 +32,7 @@ type Module struct {
 	Deps        []string
 	Description string
 	Routes      []*Route
-	Type        int
+	Type        ModuleType
 
 	inits []dependency.InitFunc
 }
@@ -48,12 +55,18 @@ func (app *App) AddModule(m *Module) *App {
 	return app
 }
 
-// LoadPlugin 加载插件。
-//
-// 必须符合以下要求：
-// 一个插件必须为一个模块；
-// 公开一个类型为 *Module 的变量 Module。
-func (app *App) LoadPlugin(path string) error {
+// 加载配置文件中指定的所有插件
+func (app *App) loadPlugins() error {
+	for _, p := range app.config.Plugins {
+		if err := app.loadPlugin(p); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *App) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -103,12 +116,20 @@ func (app *App) getInit(m *Module) dependency.InitFunc {
 	}
 }
 
+// NewPlugin 声明一个新的模块，该模块以插件的形式提供。
+func NewPlugin(name, desc string, deps ...string) *Module {
+	m := NewModule(name, desc, deps...)
+	m.Type = ModuleTypePlugin
+	return m
+}
+
 // NewModule 声明一个新的模块
 func NewModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
+		Type:        ModuleTypeModule,
 		Routes:      make([]*Route, 0, 10),
 		inits:       make([]dependency.InitFunc, 0, 5),
 	}

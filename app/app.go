@@ -102,6 +102,12 @@ func (app *App) initFromConfig(conf *config) {
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
 func (app *App) Run(build BuildHandler) error {
+	// 插件作为模块的一种实现方式，要在依赖关系之前加载
+	if err := app.loadPlugins(); err != nil {
+		return err
+	}
+
+	// 初始化各个模块之间的依赖关系
 	if err := app.initDependency(); err != nil {
 		return err
 	}

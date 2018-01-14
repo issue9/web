@@ -86,6 +86,11 @@ type config struct {
 	// AllowedDomains 为空时，并不会限定域名为 Domain 指定的域名。
 	AllowedDomains []string `yaml:"allowedDomains,omitempty"`
 
+	// 指定需要加载的插件
+	//
+	// 每一个元素指定一条插件的路径。确保路径和权限正确。
+	Plugins []string `yaml:"plugins,omitempty"`
+
 	// 性能
 	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值
 	WriteTimeout time.Duration `yaml:"writeTimeout"` // http.Server.WriteTimeout 的值
@@ -176,6 +181,12 @@ func (conf *config) sanitize() error {
 		// 仅在存在 allowedDomains 字段，且该字段不为空时，才添加 domain 字段到 allowedDomains 中
 		if !found {
 			conf.AllowedDomains = append(conf.AllowedDomains, conf.Domain)
+		}
+	}
+
+	for _, path := range conf.Plugins {
+		if !utils.FileExists(path) {
+			return errors.New("插件不存在")
 		}
 	}
 
