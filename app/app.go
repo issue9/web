@@ -126,7 +126,6 @@ func (app *App) Run(build BuildHandler) error {
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
-// 若只是想重启服务，只能调用 Restart() 函数。
 //
 // timeout 表示已有服务的等待时间。
 // 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
@@ -159,7 +158,7 @@ func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
 }
 
-// URL 构建一条基于 config.Root 的完整 URL
+// URL 构建一条基于 app.url 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
 		return app.url

@@ -1,4 +1,7 @@
 web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https://travis-ci.org/issue9/web)
+[![Go version](https://img.shields.io/badge/Go-1.8-brightgreen.svg?style=flat)](https://golang.org)
+[![Go Report Card](https://goreportcard.com/badge/github.com/issue9/web)](https://goreportcard.com/report/github.com/issue9/web)
+[![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 ======
 
 **实验性的内容，勿用！**
@@ -6,6 +9,45 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 web 是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
 
 如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
+
+```go
+// main.go
+func main() {
+    opt := &web.Options {
+        ConfigDir: "./appconfig",
+        Charset: map[string]encoding.Encoding {
+            "gb18030": simplifiedchinese.GB18030,
+            "gbk": simplifiedchinese.GBK,
+        },
+        Marshals: map[string]context.Marshaler {
+            "application/json": json.Marshal,
+            "application/xml": xml.Marshal,
+        },
+        Unmarshals: map[string]context.Unmarshaler {
+            "application/json": json.Unmarshal,
+            "application/xml": xml.Unmarshal,
+        }
+    }
+
+    web.Init(opt)
+
+    // 注册模块信息
+    web.AddModule(m1.Module)
+    web.AddModule(m2.Module)
+
+    logs.Fatal(web.Run(nil))
+}
+
+// m1/module.go
+var Module = web.NewModule("m1", "模块描述信息").
+    GetFunc("/admins", getAdmins).
+    GetFunc("/groups", getGroups)
+
+// m2/module.go
+var Module = web.NewModule("m2", "模块描述信息", "m1").
+    GetFunc("/admins", getAdmins).
+    GetFunc("/groups", getGroups)
+```
 
 
 #### 配置文件
@@ -31,6 +73,7 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 | options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
 | version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
 | allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
+| plugins         | array  | 指定一组 so 文件，可以当作插件的形式进行加载
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 
@@ -49,7 +92,7 @@ logs 完成相应功能。
 
 输出的编码方式与字符集由用户在配置文件中指定，而输入的编码方式与字符集，
 由客户端在请求时，通过 `Content-Type` 报头指定。当然系统具体可以支持什么编码和字符集，
-由用户在开始前通过 `context.AddMarshal()`、`context.AddUnmarshal()` 和 `context.AddCharset()`
+由用户在开始前通过 `AddMarshal()`、`AddUnmarshal()` 和 `AddCharset()`
 来指定一个列表，在此列表内的编码和字符集，均可用。
 
 
