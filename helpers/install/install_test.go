@@ -14,19 +14,19 @@ import (
 func TestInstall(t *testing.T) {
 	a := assert.New(t)
 
-	i := New("users1", "users2", "users3")
-	i.Event("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
-	i.Done()
+	i1 := New("users1", "users2", "users3")
+	i1.Event("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
 
-	i = New("users2", "users3")
-	i.Event("安装数据表users", func() *Return { return nil })
-	i.Done()
+	i2 := New("users2", "users3")
+	i2.Event("安装数据表users", func() *Return { return nil })
 
-	i = New("users3")
-	i.Event("安装数据表users", func() *Return { return nil })
-	i.Event("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) })
-	i.Event("安装数据表users", func() *Return { return nil })
-	i.Done()
+	i3 := New("users3")
+	i3.Event("安装数据表users", func() *Return { return nil })
+	i3.Event("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) })
+	i3.Event("安装数据表users", func() *Return { return nil })
 
+	Add(i1)
+	Add(i2)
+	Add(i3)
 	a.NotError(Install())
 }

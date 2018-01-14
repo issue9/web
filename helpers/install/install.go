@@ -20,7 +20,6 @@
 // 使用方法：
 //  声明一个安装模块
 //  i := install.New("admin")
-//  defer i.Done()
 //
 //  i.Event("创建表:users", func()*install.Result{
 //      return nil
@@ -33,6 +32,7 @@
 //
 //
 //  // 执行安装
+//  install.Add(i)
 //  install.Install()
 package install
 
@@ -48,7 +48,7 @@ const (
 	colorSuccess = colors.Green
 )
 
-var defaultDependency = dependency.New()
+var modules = make([]*Module, 0, 100)
 
 // Module 声明了一个用于安装的模块。
 // 所有的安装事件都可以向模块注册，模块会在适当的时候进行初始化。
@@ -85,9 +85,9 @@ func (m *Module) Event(title string, fn func() *Return) {
 	})
 }
 
-// Done 完成当前安装模块的所有事件注册
-func (m *Module) Done() error {
-	return defaultDependency.Add(m.name, m.run, m.deps...)
+// Add 添加安装模块
+func Add(m *Module) {
+	modules = append(modules, m)
 }
 
 // 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
@@ -96,7 +96,9 @@ func (m *Module) run() error {
 	colorPrintf(colorDefault, "[%v]\n", m.name)
 
 	for _, e := range m.events {
-		m.runEvent(e)
+		if !m.runEvent(e) {
+			break
+		}
 	}
 
 	if m.hasError {
@@ -108,7 +110,9 @@ func (m *Module) run() error {
 }
 
 // 运行一条注册的事件。
-func (m *Module) runEvent(e *event) {
+//
+// 若返回 true，表示继承当前模块的下一条操作，否则中止当前模块的操作。
+func (m *Module) runEvent(e *event) bool {
 	colorPrint(colorDefault, "\t", e.title, "......")
 
 	ret := e.fn()
@@ -116,7 +120,7 @@ func (m *Module) runEvent(e *event) {
 	if ret != nil && ret.typ == typeFailed {
 		m.hasError = true
 		colorPrintf(colorError, "[FALID:%v]\n", ret.message)
-		return
+		return false
 	}
 
 	colorPrint(colorSuccess, "[OK")
@@ -125,11 +129,18 @@ func (m *Module) runEvent(e *event) {
 		colorPrint(colorInfo, ret.message)
 	}
 	colorPrintln(colorSuccess, "]")
+
+	return ret != nil && ret.typ != typeBreak
 }
 
 // Install 安装各个模块
 func Install() error {
-	return defaultDependency.Init()
+	dep := dependency.New()
+	for _, m := range modules {
+		dep.Add(m.name, m.run, m.deps...)
+	}
+
+	return dep.Init()
 }
 
 // 打印指定颜色的字符串
