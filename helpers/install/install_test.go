@@ -15,15 +15,15 @@ func TestInstall(t *testing.T) {
 	a := assert.New(t)
 
 	i1 := New("users1", "users2", "users3")
-	i1.Event("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
+	i1.Task("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
 
 	i2 := New("users2", "users3")
-	i2.Event("安装数据表users", func() *Return { return nil })
+	i2.Task("安装数据表users", func() *Return { return nil })
 
 	i3 := New("users3")
-	i3.Event("安装数据表users", func() *Return { return nil })
-	i3.Event("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) })
-	i3.Event("安装数据表users", func() *Return { return nil })
+	i3.Task("安装数据表users", func() *Return { return nil }).
+		Task("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) }).
+		Task("安装数据表users", func() *Return { return nil })
 
 	Add(i1)
 	Add(i2)

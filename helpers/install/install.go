@@ -21,11 +21,11 @@
 //  声明一个安装模块
 //  i := install.New("admin")
 //
-//  i.Event("创建表:users", func()*install.Result{
+//  i.Task("创建表:users", func()*install.Result{
 //      return nil
 //  })
 //
-//  i.Event("创建表:users2", func()*install.Result{
+//  i.Task("创建表:users2", func()*install.Result{
 //      err := db.Insert(...)
 //      return install.ReturnError(err)
 //  })
@@ -56,10 +56,10 @@ type Module struct {
 	name     string
 	deps     []string
 	hasError bool
-	events   []*event
+	tasks    []*task
 }
 
-type event struct {
+type task struct {
 	title string
 	fn    func() *Return
 }
@@ -70,19 +70,21 @@ func New(module string, deps ...string) *Module {
 		name:     module,
 		deps:     deps,
 		hasError: false,
-		events:   make([]*event, 0, 10),
+		tasks:    make([]*task, 0, 10),
 	}
 }
 
-// Event 为当前模块注册安装事件。
+// Task 为当前模块添加任务。
 //
 // name 事件名称。
 // fn 事件的处理函数。
-func (m *Module) Event(title string, fn func() *Return) {
-	m.events = append(m.events, &event{
+func (m *Module) Task(title string, fn func() *Return) *Module {
+	m.tasks = append(m.tasks, &task{
 		title: title,
 		fn:    fn,
 	})
+
+	return m
 }
 
 // Add 添加安装模块
@@ -95,10 +97,8 @@ func (m *Module) run() error {
 	colorPrint(colorSuccess, "安装模块:")
 	colorPrintf(colorDefault, "[%v]\n", m.name)
 
-	for _, e := range m.events {
-		if !m.runEvent(e) {
-			break
-		}
+	for _, e := range m.tasks {
+		m.runEvent(e)
 	}
 
 	if m.hasError {
@@ -112,15 +112,20 @@ func (m *Module) run() error {
 // 运行一条注册的事件。
 //
 // 若返回 true，表示继承当前模块的下一条操作，否则中止当前模块的操作。
-func (m *Module) runEvent(e *event) bool {
+func (m *Module) runEvent(e *task) {
 	colorPrint(colorDefault, "\t", e.title, "......")
+
+	if m.hasError {
+		colorPrintf(colorInfo, "[BREAK:因前一任务失败而中止]\n")
+		return
+	}
 
 	ret := e.fn()
 
 	if ret != nil && ret.typ == typeFailed {
 		m.hasError = true
-		colorPrintf(colorError, "[FALID:%v]\n", ret.message)
-		return false
+		colorPrintf(colorError, "[FALID:%s]\n", ret.message)
+		return
 	}
 
 	colorPrint(colorSuccess, "[OK")
@@ -129,8 +134,6 @@ func (m *Module) runEvent(e *event) bool {
 		colorPrint(colorInfo, ret.message)
 	}
 	colorPrintln(colorSuccess, "]")
-
-	return ret != nil && ret.typ != typeBreak
 }
 
 // Install 安装各个模块

@@ -12,7 +12,6 @@ const (
 	typeOK returnType = iota
 	typeFailed
 	typeMessage
-	typeBreak // 退出当前模块
 )
 
 // Return 事件的返回类型
