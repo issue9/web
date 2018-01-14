@@ -13,24 +13,24 @@ import (
 // InitFunc 模块的初始化函数。
 type InitFunc func() error
 
-// Module 用以表示一个模块所需要的数据。
-type Module struct {
-	Name   string   // 模块名
-	Init   InitFunc // 初始化函数
-	Deps   []string // 依赖项
+// 用以表示一个模块所需要的数据。
+type module struct {
+	name   string   // 模块名
+	init   InitFunc // 初始化函数
+	deps   []string // 依赖项
 	inited bool     // 是否已经初始化
 }
 
 // Dependency 模块管理工具，管理模块的初始化顺序
 type Dependency struct {
-	modules map[string]*Module
+	modules map[string]*module
 	lock    sync.Mutex
 }
 
 // New 声明一个 Dependency 实例
 func New() *Dependency {
 	return &Dependency{
-		modules: make(map[string]*Module, 20),
+		modules: make(map[string]*module, 20),
 	}
 }
 
@@ -40,23 +40,18 @@ func New() *Dependency {
 // init 为模块的初始化函数；
 // deps 为模块的依赖模块，依赖模块可以后于当前模块注册，但必须要存在。
 func (dep *Dependency) Add(name string, init InitFunc, deps ...string) error {
-	return dep.AddModule(&Module{
-		Name: name,
-		Init: init,
-		Deps: deps,
-	})
-}
-
-// AddModule 添加一个新的模块信息
-func (dep *Dependency) AddModule(m *Module) error {
 	dep.lock.Lock()
 	defer dep.lock.Unlock()
 
-	if _, found := dep.modules[m.Name]; found {
-		return fmt.Errorf("模块[%v]已经存在", m.Name)
+	if _, found := dep.modules[name]; found {
+		return fmt.Errorf("模块[%s]已经存在", name)
 	}
 
-	dep.modules[m.Name] = m
+	dep.modules[name] = &module{
+		name: name,
+		init: init,
+		deps: deps,
+	}
 	return nil
 }
 
@@ -83,13 +78,13 @@ func (dep *Dependency) Init() error {
 
 // 初始化指定模块，会先初始化其依赖模块。
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
-func (dep *Dependency) init(m *Module) error {
+func (dep *Dependency) init(m *module) error {
 	if m.inited {
 		return nil
 	}
 
 	// 先初始化依赖项
-	for _, d := range m.Deps {
+	for _, d := range m.deps {
 		depm, found := dep.modules[d]
 		if !found {
 			return fmt.Errorf("依赖项[%v]未找到", d)
@@ -101,7 +96,7 @@ func (dep *Dependency) init(m *Module) error {
 	}
 
 	// 初始化模块自身
-	if err := m.Init(); err != nil {
+	if err := m.init(); err != nil {
 		return err
 	}
 
@@ -111,17 +106,17 @@ func (dep *Dependency) init(m *Module) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (dep *Dependency) checkDeps(m *Module) error {
+func (dep *Dependency) checkDeps(m *module) error {
 	// 检测依赖项是否都存在
-	for _, d := range m.Deps {
+	for _, d := range m.deps {
 		_, found := dep.modules[d]
 		if !found {
-			return fmt.Errorf("未找到[%v]的依赖模块[%v]", m.Name, d)
+			return fmt.Errorf("未找到[%v]的依赖模块[%v]", m.name, d)
 		}
 	}
 
-	if dep.isDep(m.Name, m.Name) {
-		return fmt.Errorf("存在循环依赖项:[%v]", m.Name)
+	if dep.isDep(m.name, m.name) {
+		return fmt.Errorf("存在循环依赖项:[%v]", m.name)
 	}
 
 	return nil
@@ -134,7 +129,7 @@ func (dep *Dependency) isDep(m1, m2 string) bool {
 		return false
 	}
 
-	for _, d := range module1.Deps {
+	for _, d := range module1.deps {
 		if d == m2 {
 			return true
 		}

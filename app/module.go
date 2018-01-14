@@ -42,11 +42,7 @@ func (app *App) initDependency() error {
 	dep := dependency.New()
 
 	for _, module := range app.modules {
-		dep.AddModule(&dependency.Module{
-			Name: module.Name,
-			Deps: module.Deps,
-			Init: app.getInit(module),
-		})
+		dep.Add(module.Name, app.getInit(module), module.Deps...)
 	}
 
 	return dep.Init()
