@@ -153,11 +153,6 @@ func (app *App) File(path string) string {
 	return filepath.Join(app.configDir, path)
 }
 
-// AddModule 注册一个新的模块。
-func (app *App) AddModule(m *Module) {
-	app.modules = append(app.modules, m)
-}
-
 // URL 构建一条基于 config.Root 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {

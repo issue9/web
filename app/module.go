@@ -32,6 +32,12 @@ func (app *App) Modules() []*Module {
 	return app.modules
 }
 
+// AddModule 注册一个新的模块。
+func (app *App) AddModule(m *Module) *App {
+	app.modules = append(app.modules, m)
+	return app
+}
+
 func (app *App) initDependency() error {
 	dep := dependency.New()
 

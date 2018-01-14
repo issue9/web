@@ -102,8 +102,8 @@ func NewModule(name, desc string, deps ...string) *app.Module {
 }
 
 // AddModule 注册一个模块
-func AddModule(m *app.Module) {
-	defaultApp.AddModule(m)
+func AddModule(m *app.Module) *app.App {
+	return defaultApp.AddModule(m)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
