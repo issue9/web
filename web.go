@@ -89,22 +89,17 @@ func File(path string) string {
 	return defaultApp.File(path)
 }
 
-// URL 构建一条基于 Config.Root 的完整 URL
+// URL 构建一条完整 URL
 func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
 // NewModule 声明一个模块内容。
-//
-// 仅作声明，并不会添加到系统中，需要通过 AddModule 时行添加。
 func NewModule(name, desc string, deps ...string) *app.Module {
 	return app.NewModule(name, desc, deps...)
 }
 
-// NewPlugin 声明一个插件下模块内容。
-//
-// 仅作声明，并不会添加到系统中，需要将插件添加到配置文件中，
-// 才会在启动时，加载到系统中。
+// NewPlugin 声明一个插件下的模块信息。
 func NewPlugin(name, desc string, deps ...string) *app.Module {
 	return app.NewPlugin(name, desc, deps...)
 }
