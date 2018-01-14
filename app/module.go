@@ -5,9 +5,18 @@
 package app
 
 import (
+	"errors"
 	"net/http"
+	"plugin"
 
 	"github.com/issue9/web/dependency"
+)
+
+// 表示模块的类型。
+const (
+	ModuleTypeAll     = iota
+	ModuleTypeDefault // 默认的方式，即和代码一起编译
+	ModuleTypePlugin  // 加载以 buildmode=plugin 方式加载的模块
 )
 
 // Module 表示模块信息
@@ -16,6 +25,7 @@ type Module struct {
 	Deps        []string
 	Description string
 	Routes      []*Route
+	Type        int
 
 	inits []dependency.InitFunc
 }
@@ -36,6 +46,33 @@ func (app *App) Modules() []*Module {
 func (app *App) AddModule(m *Module) *App {
 	app.modules = append(app.modules, m)
 	return app
+}
+
+// LoadPlugin 加载插件。
+//
+// 必须符合以下要求：
+// 一个插件必须为一个模块；
+// 公开一个类型为 *Module 的变量 Module。
+func (app *App) LoadPlugin(path string) error {
+	p, err := plugin.Open(path)
+	if err != nil {
+		return err
+	}
+
+	symbol, err := p.Lookup("M")
+	if err != nil {
+		return err
+	}
+
+	module, ok := symbol.(*Module)
+	if !ok {
+		return errors.New("无法转换成 Module")
+	}
+
+	module.Type = ModuleTypePlugin
+	app.AddModule(module)
+
+	return nil
 }
 
 func (app *App) initDependency() error {
