@@ -101,6 +101,14 @@ func NewModule(name, desc string, deps ...string) *app.Module {
 	return app.NewModule(name, desc, deps...)
 }
 
+// NewPlugin 声明一个插件下模块内容。
+//
+// 仅作声明，并不会添加到系统中，需要将插件添加到配置文件中，
+// 才会在启动时，加载到系统中。
+func NewPlugin(name, desc string, deps ...string) *app.Module {
+	return app.NewPlugin(name, desc, deps...)
+}
+
 // AddModule 注册一个模块
 func AddModule(m *app.Module) *app.App {
 	return defaultApp.AddModule(m)
