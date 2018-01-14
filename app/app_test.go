@@ -15,7 +15,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs"
-	"github.com/issue9/web/modules"
+	"github.com/issue9/web/dependency"
 )
 
 func TestBuildHandler(t *testing.T) {
@@ -58,7 +58,7 @@ func TestNew(t *testing.T) {
 	a.NotError(err)
 	a.Equal(app.configDir, f).
 		NotNil(app.config).
-		NotNil(app.modules)
+		NotNil(app.dependency)
 
 	app, err = New("./not-exists")
 	a.Error(err).Nil(app)
@@ -137,7 +137,7 @@ func TestApp(t *testing.T) {
 	}
 
 	app.Router().GetFunc("/out", f1)
-	app.AddModule(&modules.Module{
+	app.AddModule(&dependency.Module{
 		Name: "init",
 		Init: func() error {
 			app.Router().GetFunc("/test", f1)
@@ -321,7 +321,7 @@ func TestApp_httpStateRedirect(t *testing.T) {
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不���机器可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完��，不���机器可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}

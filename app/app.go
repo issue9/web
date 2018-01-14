@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/utils"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/modules"
+	"github.com/issue9/web/dependency"
 )
 
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
@@ -32,7 +32,7 @@ type App struct {
 	config    *config
 	url       string
 
-	modules *modules.Modules
+	dependency *dependency.Dependency
 
 	mux    *mux.Mux
 	router *mux.Prefix
@@ -77,7 +77,7 @@ func New(confDir string) (*App, error) {
 
 func (app *App) initFromConfig(conf *config) {
 	app.config = conf
-	app.modules = modules.New()
+	app.dependency = dependency.New()
 	app.mux = mux.New(!conf.Options, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 	app.servers = make([]*http.Server, 0, 5)
@@ -103,7 +103,7 @@ func (app *App) initFromConfig(conf *config) {
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
 func (app *App) Run(build BuildHandler) error {
-	if err := app.modules.Init(); err != nil {
+	if err := app.dependency.Init(); err != nil {
 		return err
 	}
 
@@ -164,8 +164,8 @@ func (app *App) Router() *mux.Prefix {
 }
 
 // AddModule 注册一个新的模块。
-func (app *App) AddModule(m *modules.Module) error {
-	return app.modules.AddModule(m)
+func (app *App) AddModule(m *dependency.Module) error {
+	return app.dependency.AddModule(m)
 }
 
 // URL 构建一条基于 config.Root 的完整 URL

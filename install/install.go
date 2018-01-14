@@ -38,7 +38,7 @@ package install
 
 import (
 	"github.com/issue9/term/colors"
-	"github.com/issue9/web/modules"
+	"github.com/issue9/web/dependency"
 )
 
 const (
@@ -48,7 +48,7 @@ const (
 	colorSuccess = colors.Green
 )
 
-var defaultModules = modules.New()
+var defaultDependency = dependency.New()
 
 // Module 声明了一个用于安装的模块。
 // 所有的安装事件都可以向模块注册，模块会在适当的时候进行初始化。
@@ -87,10 +87,10 @@ func (m *Module) Event(title string, fn func() *Return) {
 
 // Done 完成当前安装模块的所有事件注册
 func (m *Module) Done() error {
-	return defaultModules.Add(m.name, m.run, m.deps...)
+	return defaultDependency.Add(m.name, m.run, m.deps...)
 }
 
-// 运行当前模块的安装事件。此方法会被作为 modules.InitFunc 被调用。
+// 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
 func (m *Module) run() error {
 	colorPrint(colorSuccess, "安装模块:")
 	colorPrintf(colorDefault, "[%v]\n", m.name)
@@ -129,7 +129,7 @@ func (m *Module) runEvent(e *event) {
 
 // Install 安装各个模块
 func Install() error {
-	return defaultModules.Init()
+	return defaultDependency.Init()
 }
 
 // 打印指定颜色的字符串
