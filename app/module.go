@@ -142,19 +142,6 @@ func (app *App) getInit(m *Module) dependency.InitFunc {
 	}
 }
 
-// NewPlugin 声明一个新的模块，该模块以插件的形式提供。
-//
-// 需要将插件添加到配置文件中，才会在启动时，加载到系统中。
-//
-// name 模块名称，需要全局唯一；
-// desc 模块的详细信息；
-// deps 表示当前模块的依赖模块名称。
-func NewPlugin(name, desc string, deps ...string) *Module {
-	m := NewModule(name, desc, deps...)
-	m.Type = ModuleTypePlugin
-	return m
-}
-
 // NewModule 声明一个新的模块
 //
 // 仅作声明，并不会添加到系统中，需要通过 AddModule 时行添加。

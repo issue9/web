@@ -116,11 +116,6 @@ func NewModule(name, desc string, deps ...string) *app.Module {
 	return app.NewModule(name, desc, deps...)
 }
 
-// NewPlugin 声明一个插件下的模块信息。
-func NewPlugin(name, desc string, deps ...string) *app.Module {
-	return app.NewPlugin(name, desc, deps...)
-}
-
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *result.Result {
 	return result.New(code, nil)
