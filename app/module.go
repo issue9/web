@@ -23,6 +23,15 @@ const (
 	ModuleTypePlugin            // 加载以 buildmode=plugin 方式编译的模块
 )
 
+// ModuleFunc 每个模块必须提供的注册函数
+//
+// 如果让模块直接以变量的形式直接提供，则需要保证每个 *Module
+// 需要使用的数据都会在加载模块时初始化，这无法做到；
+//
+// 而返回 *Module 而不是直接在 ModuleFunc 内进行注册，
+// 是因为这样可以控制 Module.Type 的值。
+type ModuleFunc func() *Module
+
 // ModuleType 用以指定模块的类型。
 type ModuleType int8
 
@@ -87,11 +96,12 @@ func (app *App) loadPlugin(path string) error {
 		return err
 	}
 
-	module, ok := symbol.(*Module)
+	f, ok := symbol.(ModuleFunc)
 	if !ok {
-		return errors.New("无法转换成 Module")
+		return errors.New("无法转换成 ModuleFunc")
 	}
 
+	module := f()
 	module.Type = ModuleTypePlugin
 	app.AddModule(module)
 
