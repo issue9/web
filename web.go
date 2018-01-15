@@ -120,6 +120,11 @@ func NewPlugin(name, desc string, deps ...string) *app.Module {
 }
 
 // NewResult 生成一个 *result.Result 对象
-func NewResult(code int, fields map[string]string) *result.Result {
+func NewResult(code int) *result.Result {
+	return result.New(code)
+}
+
+// NewResultWithDetail 声明一个带详细内容的 result.Result 对象
+func NewResultWithDetail(code int, fields map[string]string) *result.Result {
 	return result.New(code, fields)
 }
