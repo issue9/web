@@ -19,7 +19,12 @@ import (
 
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
+	app, err := New("./testdata", func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Date", "1111")
+			h.ServeHTTP(w, r)
+		})
+	})
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -29,12 +34,7 @@ func TestBuildHandler(t *testing.T) {
 	app.router.GetFunc("/builder", f1)
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run(func(h http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Date", "1111")
-				h.ServeHTTP(w, r)
-			})
-		})
+		app.Run()
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
@@ -50,7 +50,7 @@ func TestBuildHandler(t *testing.T) {
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata")
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	f, err := filepath.Abs("./testdata")
@@ -58,14 +58,14 @@ func TestNew(t *testing.T) {
 	a.Equal(app.configDir, f).
 		NotNil(app.config)
 
-	app, err = New("./not-exists")
+	app, err = New("./not-exists", nil)
 	a.Error(err).Nil(app)
 }
 
 func TestApp_File(t *testing.T) {
 	a := assert.New(t)
 
-	app, err := New("./testdata")
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	f, err := filepath.Abs("./testdata/test")
@@ -121,7 +121,7 @@ func TestApp(t *testing.T) {
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
-	app, err := New("./testdata")
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +153,7 @@ func TestApp(t *testing.T) {
 
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run(nil)
+		app.Run()
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
@@ -186,7 +186,7 @@ func TestApp_Shutdown(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run(nil)
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -219,7 +219,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run(nil)
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -256,7 +256,7 @@ func TestApp_Run(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run(nil)
+		err := app.Run()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
@@ -290,7 +290,7 @@ func TestApp_httpStateDisabled(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run(nil)
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
@@ -323,11 +323,11 @@ func TestApp_httpStateRedirect(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run(nil)
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错����信息为:%v", err)
+		err := app.Run()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 加载证书比较慢，需要等待 app.run() 启动完���，不���机���可能需要的时间会不同
+	// 加载证书比较慢，需要等待 app.run() 启动完成，不同机器可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
 	tlsconf := &tls.Config{InsecureSkipVerify: true}
@@ -357,7 +357,7 @@ func TestApp_httpStateListen(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 
 	go func() {
-		err := app.Run(nil)
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 

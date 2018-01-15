@@ -37,6 +37,7 @@ type App struct {
 
 	modules []*Module
 
+	build  BuildHandler
 	mux    *mux.Mux
 	router *mux.Prefix
 
@@ -55,12 +56,17 @@ type App struct {
 //
 // 用户的自定义配置文件也可以存在此目录下，就可以通过
 // App.File() 获取文件内容。
-func New(confDir string) (*App, error) {
+//
+// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
+func New(confDir string, builder BuildHandler) (*App, error) {
 	confDir, err := filepath.Abs(confDir)
 	if err != nil {
 		return nil, err
 	}
-	app := &App{configDir: confDir}
+	app := &App{
+		configDir: confDir,
+		build:     builder,
+	}
 
 	if !utils.FileExists(confDir) {
 		return nil, errors.New("配置文件的目录不存在")
@@ -108,11 +114,9 @@ func (app *App) initFromConfig(conf *config) {
 
 // Run 运行路由，执行监听程序。
 //
-// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
-//
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
-func (app *App) Run(build BuildHandler) error {
+func (app *App) Run() error {
 	// 插件作为模块的一种实现方式，要在依赖关系之前加载
 	if err := app.loadPlugins(); err != nil {
 		return err
@@ -130,8 +134,8 @@ func (app *App) Run(build BuildHandler) error {
 	}
 
 	var h http.Handler = app.mux
-	if build != nil {
-		h = build(h)
+	if app.build != nil {
+		h = app.build(h)
 	}
 	return app.listen(app.buildHandler(h))
 }
