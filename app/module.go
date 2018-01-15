@@ -159,7 +159,6 @@ func NewModule(name, desc string, deps ...string) *Module {
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-		Type:        ModuleTypeModule,
 		Routes:      make([]*Route, 0, 10),
 		inits:       make([]dependency.InitFunc, 0, 5),
 	}
