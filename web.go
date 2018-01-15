@@ -74,6 +74,11 @@ func Init(opt *Options) error {
 	return nil
 }
 
+// IsDebug 是否处在调试模式
+func IsDebug() bool {
+	return defaultApp.IsDebug()
+}
+
 // Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
 func Run(build app.BuildHandler) error {
 	return defaultApp.Run(build)
@@ -94,16 +99,6 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
-// NewModule 声明一个模块内容。
-func NewModule(name, desc string, deps ...string) *app.Module {
-	return app.NewModule(name, desc, deps...)
-}
-
-// NewPlugin 声明一个插件下的模块信息。
-func NewPlugin(name, desc string, deps ...string) *app.Module {
-	return app.NewPlugin(name, desc, deps...)
-}
-
 // AddModule 注册一个模块
 func AddModule(m *app.Module) *app.App {
 	return defaultApp.AddModule(m)
@@ -112,6 +107,16 @@ func AddModule(m *app.Module) *app.App {
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
 func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	return defaultApp.NewContext(w, r)
+}
+
+// NewModule 声明一个模块内容。
+func NewModule(name, desc string, deps ...string) *app.Module {
+	return app.NewModule(name, desc, deps...)
+}
+
+// NewPlugin 声明一个插件下的模块信息。
+func NewPlugin(name, desc string, deps ...string) *app.Module {
+	return app.NewPlugin(name, desc, deps...)
 }
 
 // NewResult 生成一个 *result.Result 对象

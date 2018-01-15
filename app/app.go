@@ -5,7 +5,7 @@
 package app
 
 import (
-	ctx "context"
+	stdctx "context"
 	"errors"
 	"net/http"
 	"path/filepath"
@@ -29,7 +29,11 @@ type BuildHandler func(http.Handler) http.Handler
 type App struct {
 	configDir string
 	config    *config
-	url       string
+
+	// 根据 config 中的相关变量生成网站的地址
+	//
+	// 包括协议、域名、端口和根目录等。
+	url string
 
 	modules []*Module
 
@@ -47,8 +51,10 @@ type App struct {
 // New 初始化框架的基本内容。
 //
 // confDir 指定了配置文件所在的目录。
-// 框架默认的两个配置文件都会从此目录下查找。
-// confDir 下面必须包含 logs.xml 与 web.yaml 两个配置文件。
+// 框架默认的两个配置文件 logs.xml 和 web.yaml 都会从此目录下查找。
+//
+// 用户的自定义配置文件也可以存在此目录下，就可以通过
+// App.File() 获取文件内容。
 func New(confDir string) (*App, error) {
 	confDir, err := filepath.Abs(confDir)
 	if err != nil {
@@ -72,6 +78,11 @@ func New(confDir string) (*App, error) {
 	app.initFromConfig(conf)
 
 	return app, nil
+}
+
+// IsDebug 是否处在调试模式
+func (app *App) IsDebug() bool {
+	return app.config.Debug
 }
 
 func (app *App) initFromConfig(conf *config) {
@@ -139,18 +150,23 @@ func (app *App) Shutdown(timeout time.Duration) error {
 			}
 		}
 	} else {
+		// BUG(caixw) 多个服务之间，会依赖关闭，实际时间可能远远大于 timeout
 		for _, srv := range app.servers {
-			ctx, cancel := ctx.WithTimeout(ctx.Background(), timeout)
-			defer cancel()
-
-			if err := srv.Shutdown(ctx); err != nil {
+			if err := closeServer(srv, timeout); err != nil {
 				return err
 			}
-		}
+		} // end for
 	}
 
 	app.servers = app.servers[:0]
 	return nil
+}
+
+func closeServer(srv *http.Server, timeout time.Duration) error {
+	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), timeout)
+	defer cancel()
+
+	return srv.Shutdown(ctx)
 }
 
 // File 获取相对于配置目录下的文件。

@@ -20,7 +20,7 @@ const PluginModuleName = "Module"
 const (
 	ModuleTypeAll    ModuleType = iota
 	ModuleTypeModule            // 默认的方式，即和代码一起编译
-	ModuleTypePlugin            // 加载以 buildmode=plugin 方式加载的模块
+	ModuleTypePlugin            // 加载以 buildmode=plugin 方式编译的模块
 )
 
 // ModuleType 用以指定模块的类型。
@@ -34,7 +34,8 @@ type Module struct {
 	Routes      []*Route
 	Type        ModuleType
 
-	inits []dependency.InitFunc
+	inits        []dependency.InitFunc
+	buildHandler BuildHandler
 }
 
 // Route 表示模块信息中的路由信息
@@ -98,6 +99,7 @@ func (app *App) initDependency() error {
 	return dep.Init()
 }
 
+// 当 Module 的内容生成一个 dependency.InitFunc 函数
 func (app *App) getInit(m *Module) dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {
@@ -107,7 +109,12 @@ func (app *App) getInit(m *Module) dependency.InitFunc {
 		}
 
 		for _, r := range m.Routes {
-			if err := app.router.Handle(r.Path, r.Handler, r.Methods...); err != nil {
+			h := r.Handler
+			if m.buildHandler != nil {
+				h = m.buildHandler(h)
+			}
+
+			if err := app.router.Handle(r.Path, h, r.Methods...); err != nil {
 				return err
 			}
 		}
@@ -145,6 +152,13 @@ func NewModule(name, desc string, deps ...string) *Module {
 		Routes:      make([]*Route, 0, 10),
 		inits:       make([]dependency.InitFunc, 0, 5),
 	}
+}
+
+// SetHandler 为当前模块的所有路由添加的中间件。
+//
+// 多次调用，最后一次为准。
+func (m *Module) SetHandler(f BuildHandler) {
+	m.buildHandler = f
 }
 
 // AddInit 添加一个初始化函数
