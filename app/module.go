@@ -70,8 +70,13 @@ func (app *App) Modules() []*Module {
 
 // AddModule 注册一个新的模块。
 func (app *App) AddModule(m *Module) *App {
-	app.modules = append(app.modules, m)
+	m.Type = ModuleTypeModule
+	app.addModule(m)
 	return app
+}
+
+func (app *App) addModule(m *Module) {
+	app.modules = append(app.modules, m)
 }
 
 // 加载配置文件中指定的所有插件
@@ -103,7 +108,7 @@ func (app *App) loadPlugin(path string) error {
 
 	module := f()
 	module.Type = ModuleTypePlugin
-	app.AddModule(module)
+	app.addModule(module)
 
 	return nil
 }
