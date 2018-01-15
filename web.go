@@ -39,6 +39,8 @@ type Options struct {
 
 	// 所有的错误代码与错误信息的对照表。
 	Messages map[int]string
+
+	Build app.BuildHandler
 }
 
 // Init 初始化框架的基本内容
@@ -65,7 +67,7 @@ func Init(opt *Options) error {
 		return err
 	}
 
-	app, err := app.New(opt.ConfigDir)
+	app, err := app.New(opt.ConfigDir, opt.Build)
 	if err != nil {
 		return err
 	}
@@ -80,8 +82,8 @@ func IsDebug() bool {
 }
 
 // Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
-func Run(build app.BuildHandler) error {
-	return defaultApp.Run(build)
+func Run() error {
+	return defaultApp.Run()
 }
 
 // Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
@@ -127,4 +129,20 @@ func NewResult(code int) *result.Result {
 // NewResultWithDetail 声明一个带详细内容的 result.Result 对象
 func NewResultWithDetail(code int, fields map[string]string) *result.Result {
 	return result.New(code, fields)
+}
+
+// Restart 重启服务
+//
+// 其实是终止旧有的服务，然后再开一个新的服务，
+// 包括初始化等操作，都会重新走一遍。
+func Restart(opt *Options, timeout time.Duration) error {
+	if err := Shutdown(timeout); err != nil {
+		return err
+	}
+
+	if err := Init(opt); err != nil {
+		return err
+	}
+
+	return Run()
 }
