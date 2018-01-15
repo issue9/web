@@ -82,7 +82,7 @@ func (app *App) loadPlugin(path string) error {
 		return err
 	}
 
-	symbol, err := p.Lookup("M")
+	symbol, err := p.Lookup(PluginModuleName)
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func (p *Prefix) DeleteFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodDelete)
 }
 
-// PatchFunc 指定一个 Patch 请求
+// PatchFunc 指定一个 Patch ���求
 func (p *Prefix) PatchFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodPatch)
 }
