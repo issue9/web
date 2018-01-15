@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/web/dependency"
 )
 
-// PluginModuleName 插件中必须提供的变量名称。
+// PluginModuleName 插件中必须提供的函数名称。
 // 根据此变量提供的数据进行初始化。
 const PluginModuleName = "Module"
 
