@@ -81,17 +81,17 @@ func IsDebug() bool {
 	return defaultApp.IsDebug()
 }
 
-// Run 运行路由，执行监听程序，具体说明可参考 App.Run()。
+// Run 运行路由，执行监听程序。
 func Run() error {
 	return defaultApp.Run()
 }
 
-// Shutdown 关闭所有服务，具体说明可参考 App.Shutdown()
+// Shutdown 关闭所有服务。
 func Shutdown(timeout time.Duration) error {
 	return defaultApp.Shutdown(timeout)
 }
 
-// File 获取配置目录下的文件，具体说明可参考 App.File()。
+// File 获取配置目录下的文件。
 func File(path string) string {
 	return defaultApp.File(path)
 }

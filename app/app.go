@@ -112,7 +112,7 @@ func (app *App) initFromConfig(conf *config) {
 	app.url += conf.Root
 }
 
-// Run 运行路由，执行监听程序。
+// Run 加载各个模块的数据，运行路由，执行监听程序。
 //
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
@@ -202,6 +202,8 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	case err == context.ErrClientNotAcceptable:
 		context.RenderStatus(w, http.StatusNotAcceptable)
 		return nil
+	case err != nil:
+		panic(err)
 	}
 
 	return ctx
