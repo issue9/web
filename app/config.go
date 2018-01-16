@@ -171,7 +171,11 @@ func (conf *config) sanitize() error {
 
 	if conf.HTTPS {
 		switch conf.HTTPState {
-		case httpStateListen, httpStateDisabled, httpStateRedirect:
+		case httpStateListen, httpStateRedirect:
+			if conf.Port == httpPort {
+				return errors.New("httpState 和 port 同时监听了 80 端口")
+			}
+		case httpStateDisabled:
 		default:
 			return errors.New("httpState 的值不正确")
 		}
