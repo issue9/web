@@ -39,14 +39,18 @@ func main() {
 }
 
 // m1/module.go
-var Module = web.NewModule("m1", "模块描述信息").
-    GetFunc("/admins", getAdmins).
-    GetFunc("/groups", getGroups)
+func Module() *app.Module {
+    return web.NewModule("m1", "模块描述信息").
+        GetFunc("/admins", getAdmins).
+        GetFunc("/groups", getGroups)
+}
 
 // m2/module.go
-var Module = web.NewModule("m2", "模块描述信息", "m1").
-    GetFunc("/admins", getAdmins).
-    GetFunc("/groups", getGroups)
+func Module() *app.Module {
+    return web.NewModule("m2", "模块描述信息", "m1").
+        GetFunc("/admins", getAdmins).
+        GetFunc("/groups", getGroups)
+}
 ```
 
 
