@@ -25,27 +25,27 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 }
 
 func (app *App) listen(h http.Handler) error {
-	if app.config.HTTPS {
-		switch app.config.HTTPState {
-		case httpStateListen:
-			go func() {
-				logs.Infof("开始监听[%v]端口", httpPort)
-				logs.Error(app.newServer(httpPort, h).ListenAndServe())
-			}()
-		case httpStateRedirect:
-			go func() {
-				logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
-				logs.Error(app.httpRedirectServer().ListenAndServe())
-			}()
-			// 空值或是 disable 均为默认处理方式，即不作为。
-		}
-
+	if !app.config.HTTPS {
 		logs.Infof("开始监听[%v]端口", app.config.Port)
-		return app.newServer(app.config.Port, h).ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
+		return app.newServer(app.config.Port, h).ListenAndServe()
 	}
 
+	switch app.config.HTTPState {
+	case httpStateListen:
+		go func() {
+			logs.Infof("开始监听[%v]端口", httpPort)
+			logs.Error(app.newServer(httpPort, h).ListenAndServe())
+		}()
+	case httpStateRedirect:
+		go func() {
+			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
+			logs.Error(app.httpRedirectServer().ListenAndServe())
+		}()
+		// 空值或是 disable 均为默认处理方式，即不作为。
+	} // end switch
+
 	logs.Infof("开始监听[%v]端口", app.config.Port)
-	return app.newServer(app.config.Port, h).ListenAndServe()
+	return app.newServer(app.config.Port, h).ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 }
 
 // 构建一个从 HTTP 跳转到 HTTPS 的路由服务。

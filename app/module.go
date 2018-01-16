@@ -123,7 +123,7 @@ func (app *App) initDependency() error {
 	return dep.Init()
 }
 
-// 当 Module 的内容生成一个 dependency.InitFunc 函数
+// 将 Module 的内容生成一个 dependency.InitFunc 函数
 func (app *App) getInit(m *Module) dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {

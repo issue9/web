@@ -28,11 +28,11 @@ const (
 	httpsPort = 443
 )
 
-// 当启用 HTTPS 时，对 80 端口的处理方式。
+// config.HTTPState 的三种取值
 const (
-	httpStateDisabled = "disable"  // 禁止监听 80 端口
-	httpStateListen   = "listen"   // 监听 80 端口，与 HTTPS 相同的方式处理
-	httpStateRedirect = "redirect" // 监听 80 端口，并重定向到 HTTPS
+	httpStateDisabled = "disable"
+	httpStateListen   = "listen"
+	httpStateRedirect = "redirect"
 )
 
 type config struct {
@@ -41,9 +41,25 @@ type config struct {
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
 	Debug bool `yaml:"debug"`
 
-	OutputEncoding string `yaml:"outputEncoding"`   // 输出的编码方式
-	OutputCharset  string `yaml:"outputCharset"`    // 输出的字符集名称
-	Strict         bool   `yaml:"strict,omitempty"` // 参考 context.New() 中的 strict 参数
+	// OutputEncoding 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
+	//
+	// 此编码方式必须已经通过 context.AddMarsal() 添加。
+	//
+	// 如果为空，则会采用 context.DefaultEncoding 作为默认值。
+	OutputEncoding string `yaml:"outputEncoding"`
+
+	// OutputCharset 向客户端输出的字符集名称。
+	//
+	// 此编码方式必须已经通过 context.AddCharset() 添加。
+	//
+	// 如果为空，则会采用 context.DefaultCharset 作为默认值。
+	OutputCharset string `yaml:"outputCharset"`
+
+	// Strict 严格模式。
+	//
+	// 启用此配置，某些内容的验证会更加严格。
+	// 比如会检测客户端的 Accept 是否接受当前的 OutputEncoding 值等。
+	Strict bool `yaml:"strict,omitempty"`
 
 	// Domain 网站的主域名
 	//
@@ -60,13 +76,25 @@ type config struct {
 	// Root 值的格式必须为以 / 开头，不以 / 结尾。
 	Root string `yaml:"root,omitempty"`
 
-	HTTPS     bool              `yaml:"https"`              // 是否启用 HTTPS
-	HTTPState string            `yaml:"httpState"`          // 80 端口的状态，仅在 HTTPS 为 true 时启作用
-	CertFile  string            `yaml:"certFile,omitempty"` // 当 https 为 true 时，此值为必填
-	KeyFile   string            `yaml:"keyFile,omitempty"`  // 当 https 为 true 时，此值为必填
-	Port      int               `yaml:"port,omitempty"`     // 端口，不指定，默认为 80 或是 443
-	Headers   map[string]string `yaml:"headers,omitempty"`  // 附加的头信息，头信息可能在其它地方被修改
-	Options   bool              `yaml:"options,omitempty"`  // 是否启用 OPTIONS 请求
+	// HTTPS 是否启用 HTTPS 协议
+	//
+	// 如果启用此配置，则需要保证 CertFile 和 KeyFile 两个文件必须存在，
+	// 这两个文件最终会被传递给 http.ListenAndServeTLS() 的两个参数。
+	//
+	// 此值还会影响 Port 的默认值。
+	HTTPS    bool              `yaml:"https"`
+	CertFile string            `yaml:"certFile,omitempty"`
+	KeyFile  string            `yaml:"keyFile,omitempty"`
+	Port     int               `yaml:"port,omitempty"`
+	Headers  map[string]string `yaml:"headers,omitempty"` // 附加的头信息，头信息可能在其它地方被修改
+	Options  bool              `yaml:"options,omitempty"` // 是否启用 OPTIONS 请求
+
+	// HTTPState 当启用 HTTPS 时，对 80 端口的处理方式。
+	//
+	// disable 默认值，即不作处理；
+	// listen 监听 80 端口，处理方式和 HTTPS 是一样的；
+	// redirect 将 80 端口的请求跳转到当前端口进行处理。
+	HTTPState string `yaml:"httpState,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
