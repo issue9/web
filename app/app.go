@@ -20,6 +20,11 @@ import (
 	"github.com/issue9/web/context"
 )
 
+const (
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	configFilename = "web.yaml" // 配置文件的文件名。
+)
+
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
 //
 // 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
@@ -94,7 +99,7 @@ func (app *App) IsDebug() bool {
 func (app *App) initFromConfig(conf *config) {
 	app.config = conf
 	app.modules = make([]*Module, 0, 100)
-	app.mux = mux.New(!conf.Options, false, nil, nil)
+	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 	app.servers = make([]*http.Server, 0, 5)
 

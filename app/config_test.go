@@ -27,7 +27,7 @@ func defaultConfig() *config {
 		Port:           httpPort,
 		Headers:        nil,
 		Static:         nil,
-		Options:        true,
+		DisableOptions: false,
 		AllowedDomains: []string{},
 
 		ReadTimeout:  30 * time.Second,

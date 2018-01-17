@@ -17,11 +17,6 @@ import (
 	"github.com/issue9/web/context"
 )
 
-const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.yaml" // 配置文件的文件名。
-)
-
 // 端口的定义
 const (
 	httpPort  = 80
@@ -41,6 +36,12 @@ type config struct {
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
 	Debug bool `yaml:"debug"`
 
+	// Strict 严格模式。
+	//
+	// 启用此配置，某些内容的验证会更加严格。
+	// 比如会检测客户端的 Accept 是否接受当前的 OutputEncoding 值等。
+	Strict bool `yaml:"strict,omitempty"`
+
 	// OutputEncoding 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
 	//
 	// 此编码方式必须已经通过 context.AddMarsal() 添加。
@@ -54,12 +55,6 @@ type config struct {
 	//
 	// 如果为空，则会采用 context.DefaultCharset 作为默认值。
 	OutputCharset string `yaml:"outputCharset"`
-
-	// Strict 严格模式。
-	//
-	// 启用此配置，某些内容的验证会更加严格。
-	// 比如会检测客户端的 Accept 是否接受当前的 OutputEncoding 值等。
-	Strict bool `yaml:"strict,omitempty"`
 
 	// Domain 网站的主域名
 	//
@@ -82,12 +77,20 @@ type config struct {
 	// 这两个文件最终会被传递给 http.ListenAndServeTLS() 的两个参数。
 	//
 	// 此值还会影响 Port 的默认值。
-	HTTPS    bool              `yaml:"https"`
-	CertFile string            `yaml:"certFile,omitempty"`
-	KeyFile  string            `yaml:"keyFile,omitempty"`
-	Port     int               `yaml:"port,omitempty"`
-	Headers  map[string]string `yaml:"headers,omitempty"` // 附加的头信息，头信息可能在其它地方被修改
-	Options  bool              `yaml:"options,omitempty"` // 是否启用 OPTIONS 请求
+	HTTPS    bool   `yaml:"https"`
+	CertFile string `yaml:"certFile,omitempty"`
+	KeyFile  string `yaml:"keyFile,omitempty"`
+	Port     int    `yaml:"port,omitempty"`
+
+	// DisableOptions 是否禁用对 OPTIONS 请求的处理
+	DisableOptions bool `yaml:"disableOptions,omitempty"`
+
+	// Headers 附加的报头信息
+	//
+	// 一些诸如跨域等报头信息，可以在此作设置。
+	//
+	// 报头信息可能在其它处理器被修改。
+	Headers map[string]string `yaml:"headers,omitempty"`
 
 	// HTTPState 当启用 HTTPS 时，对 80 端口的处理方式。
 	//
@@ -118,9 +121,8 @@ type config struct {
 	// 每一个元素指定一条插件的路径。确保路径和权限正确。
 	Plugins []string `yaml:"plugins,omitempty"`
 
-	// 性能
-	ReadTimeout  time.Duration `yaml:"readTimeout"`  // http.Server.ReadTimeout 的值
-	WriteTimeout time.Duration `yaml:"writeTimeout"` // http.Server.WriteTimeout 的值
+	ReadTimeout  time.Duration `yaml:"readTimeout"`
+	WriteTimeout time.Duration `yaml:"writeTimeout"`
 }
 
 // 加载配置文件

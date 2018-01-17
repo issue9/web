@@ -40,6 +40,7 @@ type Options struct {
 	// 所有的错误代码与错误信息的对照表。
 	Messages map[int]string
 
+	// 作用于给所有路由的中间件
 	Build app.BuildHandler
 }
 
