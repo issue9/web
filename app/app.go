@@ -16,8 +16,7 @@ import (
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 	"github.com/issue9/utils"
-
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/encoding"
 )
 
 const (
@@ -46,6 +45,15 @@ type App struct {
 	mux    *mux.Mux
 	router *mux.Prefix
 
+	marshals   map[string]encoding.Marshal
+	unmarshals map[string]encoding.Unmarshal
+	charset    map[string]encoding.Charset
+
+	outputEncoding     encoding.Marshal
+	outputCharset      encoding.Charset
+	outputEncodingName string
+	outputCharsetName  string
+
 	// 保存着所有的 http.Server 实例。
 	//
 	// 除了 mux 所依赖的 http.Server 实例之外，
@@ -71,6 +79,16 @@ func New(confDir string, builder BuildHandler) (*App, error) {
 	app := &App{
 		configDir: confDir,
 		build:     builder,
+
+		marshals: map[string]encoding.Marshal{
+			encoding.DefaultEncoding: encoding.TextMarshal,
+		},
+		unmarshals: map[string]encoding.Unmarshal{
+			encoding.DefaultEncoding: encoding.TextUnmarshal,
+		},
+		charset: map[string]encoding.Charset{
+			encoding.DefaultCharset: nil,
+		},
 	}
 
 	if !utils.FileExists(confDir) {
@@ -96,7 +114,7 @@ func (app *App) IsDebug() bool {
 	return app.config.Debug
 }
 
-func (app *App) initFromConfig(conf *config) {
+func (app *App) initFromConfig(conf *config) error {
 	app.config = conf
 	app.modules = make([]*Module, 0, 100)
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
@@ -114,7 +132,24 @@ func (app *App) initFromConfig(conf *config) {
 			app.url += ":" + strconv.Itoa(conf.Port)
 		}
 	}
+
 	app.url += conf.Root
+
+	app.outputEncodingName = conf.OutputEncoding
+	app.outputCharsetName = conf.OutputCharset
+
+	found := false
+	app.outputEncoding, found = app.marshals[conf.OutputEncoding]
+	if !found {
+		return errors.New("未找到 outputEncoding")
+	}
+
+	app.outputCharset, found = app.charset[conf.OutputCharset]
+	if !found {
+		return errors.New("未找到 outputCharset")
+	}
+
+	return nil
 }
 
 // Run 加载各个模块的数据，运行路由，执行监听程序。
@@ -193,23 +228,4 @@ func (app *App) URL(path string) string {
 		path = "/" + path
 	}
 	return app.url + path
-}
-
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
-func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	conf := app.config
-	ctx, err := context.New(w, r, conf.OutputEncoding, conf.OutputCharset, conf.Strict)
-
-	switch {
-	case err == context.ErrUnsupportedContentType:
-		context.RenderStatus(w, http.StatusUnsupportedMediaType)
-		return nil
-	case err == context.ErrClientNotAcceptable:
-		context.RenderStatus(w, http.StatusNotAcceptable)
-		return nil
-	case err != nil:
-		panic(err)
-	}
-
-	return ctx
 }
