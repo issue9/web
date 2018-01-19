@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/text/encoding"
-
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/result"
 )
 
@@ -25,17 +24,17 @@ type Options struct {
 	// 所有需要支持的字符集
 	//
 	// 内置 utf-8 字符集支持，不需要再指定
-	Charset map[string]encoding.Encoding
+	Charset map[string]encoding.Charset
 
 	// 指定从客户端数据转换到结构体的函数。
 	//
 	// 已内置对 text/plain 的支持。
-	Marshals map[string]context.Marshal
+	Marshals map[string]encoding.Marshal
 
 	// 指定将结构体转换成字符串的函数。
 	//
 	// 已内置对 text/plain 的支持。
-	Unmarshals map[string]context.Unmarshal
+	Unmarshals map[string]encoding.Unmarshal
 
 	// 所有的错误代码与错误信息的对照表。
 	Messages map[int]string
