@@ -28,13 +28,10 @@ type Context struct {
 	OutputCharset     encoding.Charset
 	OutputCharsetName string
 
-	// InputEncoding 读取客户端内容时所使用的编码方式。
+	// 客户端内容所使用的编码方式。
 	InputEncoding encoding.Unmarshal
 
-	// 客户端内容的字符集，若为空，则表示为 utf-8
-	//
-	// 此值会通过 Content-Type 报头获取，
-	// 且此字符集必须已经通过 AddCharset() 函数添加。
+	// 客户端内容所使用的字符集，若为空，则表示为 utf-8
 	InputCharset encoding.Charset
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
