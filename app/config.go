@@ -12,9 +12,8 @@ import (
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
+	"github.com/issue9/web/encoding"
 	yaml "gopkg.in/yaml.v2"
-
-	"github.com/issue9/web/context"
 )
 
 // 端口的定义
@@ -164,11 +163,11 @@ func (conf *config) sanitize() error {
 	}
 
 	if conf.OutputCharset == "" {
-		conf.OutputCharset = context.DefaultCharset
+		conf.OutputCharset = encoding.DefaultCharset
 	}
 
 	if conf.OutputEncoding == "" {
-		conf.OutputEncoding = context.DefaultEncoding
+		conf.OutputEncoding = encoding.DefaultEncoding
 	}
 
 	if conf.HTTPS {
