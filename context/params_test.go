@@ -11,11 +11,13 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
+
+	"github.com/issue9/web/encoding"
 )
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {
 	r.Header.Set("Accept", "*/*")
-	ctx, err := New(w, r, DefaultEncoding, DefaultCharset, true)
+	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.NotError(err).NotNil(ctx)
 
 	return ctx

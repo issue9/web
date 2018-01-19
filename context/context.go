@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.org/x/text/encoding"
+	"github.com/issue9/web/encoding"
 	"golang.org/x/text/transform"
 )
 
@@ -44,10 +44,10 @@ type Context struct {
 	//
 	// 此值会通过 Content-Type 报头获取，
 	// 且此字符集必须已经通过 AddCharset() 函数添加。
-	inputCharset encoding.Encoding
+	inputCharset encoding.Charset
 
 	// 输出到客户端的字符集，若为空，表示为 utf-8
-	outputCharset encoding.Encoding
+	outputCharset encoding.Charset
 
 	// 输出的编码方式
 	outputEncodingName string
@@ -76,7 +76,7 @@ func New(w http.ResponseWriter, r *http.Request, encodingName, charsetName strin
 		return nil, errors.New("charsetName 不存在")
 	}
 
-	encName, charsetName := parseContentType(r.Header.Get("Content-Type"))
+	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
 	unmarshal, found := unmarshals[encName]
 	if !found {
@@ -145,7 +145,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 //
 // NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	ct := buildContentType(ctx.outputEncodingName, ctx.outputCharsetName)
+	ct := encoding.BuildContentType(ctx.outputEncodingName, ctx.outputCharsetName)
 	if headers == nil {
 		ctx.w.Header().Set("Content-Type", ct)
 	} else if _, found := headers["Content-Type"]; !found {
@@ -212,7 +212,7 @@ func (ctx *Context) Response() http.ResponseWriter {
 
 // RenderStatus 仅向客户端输出状态码
 func RenderStatus(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", buildContentType(DefaultEncoding, DefaultCharset))
+	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultEncoding, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	fmt.Fprintln(w, http.StatusText(status))

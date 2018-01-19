@@ -5,43 +5,28 @@
 package context
 
 import (
-	stdencoding "encoding"
 	"errors"
-	"strings"
 
-	"golang.org/x/text/encoding"
-)
-
-const (
-	// DefaultEncoding 默认的编码方式，在不能正确获取输入和输出的编码方式时，
-	// 会采用此值作为其默认值。
-	DefaultEncoding = "text/plain"
-
-	// DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
-	// 会采用此值和为其默认值。
-	DefaultCharset = "utf-8"
+	"github.com/issue9/web/encoding"
 )
 
 var (
 	// ErrExists 表示存在相同名称的项。
 	// 多个类似功能的函数，都有可能返回此错误。
 	ErrExists = errors.New("存在相同名称的项")
-
-	// 指定的对象，没有转换相应的格式。
-	errUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 )
 
 var (
 	marshals = map[string]Marshal{
-		DefaultEncoding: textMarshal,
+		encoding.DefaultEncoding: encoding.TextMarshal,
 	}
 
 	unmarshals = map[string]Unmarshal{
-		DefaultEncoding: textUnmarshal,
+		encoding.DefaultEncoding: encoding.TextUnmarshal,
 	}
 
-	charset = map[string]encoding.Encoding{
-		DefaultCharset: nil,
+	charset = map[string]encoding.Charset{
+		encoding.DefaultCharset: nil,
 	}
 )
 
@@ -77,7 +62,7 @@ func AddUnmarshal(name string, m Unmarshal) error {
 
 // AddCharset 添加编码方式，只有通过 AddCharset 添加的字符集，
 // 才能被 Context 使用。
-func AddCharset(name string, enc encoding.Encoding) error {
+func AddCharset(name string, enc encoding.Charset) error {
 	_, found := charset[name]
 	if found {
 		return ErrExists
@@ -85,84 +70,4 @@ func AddCharset(name string, enc encoding.Encoding) error {
 
 	charset[name] = enc
 	return nil
-}
-
-func textMarshal(v interface{}) ([]byte, error) {
-	switch vv := v.(type) {
-	case string:
-		return []byte(vv), nil
-	case []byte:
-		return vv, nil
-	case []rune:
-		return []byte(string(vv)), nil
-	case stdencoding.TextMarshaler:
-		return vv.MarshalText()
-	}
-
-	return nil, errUnsupportedMarshal
-}
-
-func textUnmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(stdencoding.TextUnmarshaler); ok {
-		return vv.UnmarshalText(data)
-	}
-
-	return errUnsupportedMarshal
-}
-
-// 生成一个 content-type
-func buildContentType(encoding, charset string) string {
-	if encoding == "" {
-		encoding = DefaultEncoding
-	}
-	if charset == "" {
-		charset = DefaultCharset
-	}
-
-	return encoding + "; charset=" + charset
-}
-
-// 从 content-type 中获取编码和字符集
-func parseContentType(v string) (encoding, charset string) {
-	v = strings.ToLower(strings.TrimSpace(v))
-	if len(v) == 0 {
-		return DefaultEncoding, DefaultCharset
-	}
-
-	// encoding
-	index := strings.IndexByte(v, ';')
-	switch {
-	case index < 0: // 只有编码
-		return v, DefaultCharset
-	case index == 0: // 编码为空
-		encoding = DefaultEncoding
-	case index > 0:
-		encoding = strings.TrimSpace(v[:index])
-	}
-
-	v = v[index+1:]
-	if len(v) == 0 {
-		return encoding, DefaultCharset
-	}
-
-	index = strings.IndexByte(v, ';') // 查找第二个 ;
-	switch {
-	case index == 0:
-		return encoding, DefaultCharset
-	case index > 0:
-		v = v[:index]
-	}
-
-	index = strings.IndexByte(v, '=')
-	switch {
-	case index < 0:
-		charset = strings.TrimSpace(v)
-	case index >= 0:
-		charset = strings.TrimSpace(v[index+1:])
-	}
-	if charset == "" {
-		charset = DefaultCharset
-	}
-
-	return encoding, charset
 }

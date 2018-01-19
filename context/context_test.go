@@ -11,6 +11,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/encoding/test"
 )
 
 func TestNew(t *testing.T) {
@@ -18,43 +21,43 @@ func TestNew(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
 
-	ctx, err := New(w, r, "not exists", DefaultCharset, true)
+	ctx, err := New(w, r, "not exists", encoding.DefaultCharset, true)
 	a.Error(err).Nil(ctx)
 
-	ctx, err = New(w, r, DefaultEncoding, "not exits", true)
+	ctx, err = New(w, r, encoding.DefaultEncoding, "not exits", true)
 	a.Error(err).Nil(ctx)
 
 	// 缺少 Accept 报头
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.Equal(err, ErrClientNotAcceptable).Nil(ctx)
 
 	// 不检测 Accept 报头
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, false)
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, false)
 	a.NotError(err).NotNil(ctx)
 
 	// 指定 accept 报头
-	r.Header.Set("Accept", DefaultEncoding)
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	r.Header.Set("Accept", encoding.DefaultEncoding)
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.NotError(err).NotNil(ctx)
 
 	// 未指定 content-type，使用默认值。
 	r.Method = http.MethodPost
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.NotError(err).NotNil(ctx)
 
 	// 可用的 content-type
-	r.Header.Set("Content-type", buildContentType(DefaultEncoding, DefaultCharset))
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultEncoding, encoding.DefaultCharset))
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.NotError(err).NotNil(ctx)
 
 	// 不可用的 content-type.encoding
-	r.Header.Set("Content-type", buildContentType("text/unknown", DefaultCharset))
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	r.Header.Set("Content-type", encoding.BuildContentType("text/unknown", encoding.DefaultCharset))
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.Equal(err, ErrUnsupportedContentType).Nil(ctx)
 
 	// 不可用的 content-type.charset
-	r.Header.Set("Content-type", buildContentType(DefaultEncoding, "unknown"))
-	ctx, err = New(w, r, DefaultEncoding, DefaultCharset, true)
+	r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultEncoding, "unknown"))
+	ctx, err = New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.Equal(err, ErrUnsupportedContentType).Nil(ctx)
 }
 
@@ -63,7 +66,7 @@ func TestContext_Body(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx, err := New(w, r, DefaultEncoding, DefaultCharset, true)
+	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
 	a.NotError(err).NotNil(ctx)
 
 	a.Nil(ctx.body) // 未缓存
@@ -82,10 +85,10 @@ func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
 	w := httptest.NewRecorder()
-	ctx, err := New(w, r, DefaultEncoding, DefaultCharset, false)
+	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, false)
 	a.NotError(err).NotNil(ctx)
 
-	obj := &textObject{}
+	obj := &test.TextObject{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -97,10 +100,10 @@ func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx, err := New(w, r, DefaultEncoding, DefaultCharset, false)
+	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, false)
 	a.NotError(err).NotNil(ctx)
 
-	obj := &textObject{Name: "test", Age: 123}
+	obj := &test.TextObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -110,7 +113,7 @@ func TestContext_RenderStatus(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx, err := New(w, r, DefaultEncoding, DefaultCharset, false)
+	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, false)
 	a.NotError(err).NotNil(ctx)
 
 	ctx.RenderStatus(http.StatusForbidden)
