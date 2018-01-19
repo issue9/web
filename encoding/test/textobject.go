@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package test 为 encoding 包提供的一些测试功能。
 package test
 
 import (
