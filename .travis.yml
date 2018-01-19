@@ -3,7 +3,6 @@ sudo: true
 go:
     - tip
     - 1.9
-    - 1.8
 script:
     - sudo -E env "PATH=$PATH" go test -v -parallel=1 ./...
 install:
