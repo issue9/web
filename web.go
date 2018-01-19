@@ -45,30 +45,30 @@ type Options struct {
 
 // Init 初始化框架的基本内容
 func Init(opt *Options) error {
+	app, err := app.New(opt.ConfigDir, opt.Build)
+	if err != nil {
+		return err
+	}
+
 	for name, c := range opt.Charset {
-		if err := context.AddCharset(name, c); err != nil {
+		if err := app.AddCharset(name, c); err != nil {
 			return err
 		}
 	}
 
 	for name, m := range opt.Marshals {
-		if err := context.AddMarshal(name, m); err != nil {
+		if err := app.AddMarshal(name, m); err != nil {
 			return err
 		}
 	}
 
 	for name, m := range opt.Unmarshals {
-		if err := context.AddUnmarshal(name, m); err != nil {
+		if err := app.AddUnmarshal(name, m); err != nil {
 			return err
 		}
 	}
 
 	if err := result.NewMessages(opt.Messages); err != nil {
-		return err
-	}
-
-	app, err := app.New(opt.ConfigDir, opt.Build)
-	if err != nil {
 		return err
 	}
 
