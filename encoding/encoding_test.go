@@ -5,42 +5,17 @@
 package encoding
 
 import (
-	"errors"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/encoding/test"
 )
 
 var (
 	_ Marshal   = TextMarshal
 	_ Unmarshal = TextUnmarshal
 )
-
-type textObject struct {
-	Name string
-	Age  int
-}
-
-func (o *textObject) MarshalText() ([]byte, error) {
-	return []byte(o.Name + "," + strconv.Itoa(o.Age)), nil
-}
-
-func (o *textObject) UnmarshalText(data []byte) error {
-	text := strings.Split(string(data), ",")
-	if len(text) != 2 {
-		return errors.New("无法转换")
-	}
-
-	age, err := strconv.Atoi(text[1])
-	if err != nil {
-		return err
-	}
-	o.Age = age
-	o.Name = text[0]
-	return nil
-}
 
 func TestTextMarshal(t *testing.T) {
 	a := assert.New(t)
@@ -53,7 +28,7 @@ func TestTextMarshal(t *testing.T) {
 	a.NotError(err).Equal(string(data), v)
 
 	// 实现 TextMarshaler 的对象
-	data, err = TextMarshal(&textObject{Name: "test", Age: 5})
+	data, err = TextMarshal(&test.TextObject{Name: "test", Age: 5})
 	a.NotError(err).NotNil(data).Equal(string(data), "test,5")
 
 	// 未实现 TextMarshaler 接口的对象
@@ -64,7 +39,7 @@ func TestTextMarshal(t *testing.T) {
 func TestTextUnmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	v1 := &textObject{}
+	v1 := &test.TextObject{}
 	a.NotError(TextUnmarshal([]byte("test,5"), v1))
 	a.Equal(v1.Name, "test").Equal(v1.Age, 5)
 
