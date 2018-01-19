@@ -31,7 +31,7 @@ func (ctx *Context) Queries() *Queries {
 //
 // 若是无法转换，则会保存错误信息
 func (q *Queries) Int(key string, def int) int {
-	str := q.ctx.Request().FormValue(key)
+	str := q.ctx.Request.FormValue(key)
 
 	// 不存在，返回默认值
 	if len(str) == 0 {
@@ -50,7 +50,7 @@ func (q *Queries) Int(key string, def int) int {
 
 // Int64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Int64(key string, def int64) int64 {
-	str := q.ctx.Request().FormValue(key)
+	str := q.ctx.Request.FormValue(key)
 	if len(str) == 0 {
 		return def
 	}
@@ -66,7 +66,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 
 // String 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
-	str := q.ctx.Request().FormValue(key)
+	str := q.ctx.Request.FormValue(key)
 	if len(str) == 0 {
 		return def
 	}
@@ -75,7 +75,7 @@ func (q *Queries) String(key, def string) string {
 
 // Bool 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Bool(key string, def bool) bool {
-	str := q.ctx.Request().FormValue(key)
+	str := q.ctx.Request.FormValue(key)
 	if len(str) == 0 {
 		return def
 	}
@@ -91,7 +91,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 // Float64 从查询参数中获取指定名称的值，若不存在则返回 def 作为其默认值。
 func (q *Queries) Float64(key string, def float64) float64 {
-	str := q.ctx.Request().FormValue(key)
+	str := q.ctx.Request.FormValue(key)
 	if len(str) == 0 {
 		return def
 	}

@@ -30,7 +30,7 @@ type Params struct {
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
-	params := mux.Params(ctx.Request())
+	params := mux.Params(ctx.Request)
 	if params == nil {
 		params = emptyParams
 	}

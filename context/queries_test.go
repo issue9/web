@@ -19,8 +19,7 @@ func newContextWithQuery(a *assert.Assertion, path string) *Context {
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx, err := New(w, r, encoding.DefaultEncoding, encoding.DefaultCharset, true)
-	a.NotError(err).NotNil(ctx)
+	ctx := newContext(w, r, encoding.TextMarshal, nil)
 
 	return ctx
 }
