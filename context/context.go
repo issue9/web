@@ -32,13 +32,13 @@ type Context struct {
 	r *http.Request
 
 	// 输出内容到客户端时所使用的编码方式。
-	marshal Marshal
+	marshal encoding.Marshal
 
 	// 读取客户端内容时所使用的编码方式。这些编码方式必须是已经通过
 	// AddUnmmarshal() 函数添加的。
 	//
 	// 此变量会通过 Content-Type 报头获取。
-	unmarshal Unmarshal
+	unmarshal encoding.Unmarshal
 
 	// 客户端内容的字符集，若为空，则表示为 utf-8
 	//

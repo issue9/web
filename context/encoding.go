@@ -17,11 +17,11 @@ var (
 )
 
 var (
-	marshals = map[string]Marshal{
+	marshals = map[string]encoding.Marshal{
 		encoding.DefaultEncoding: encoding.TextMarshal,
 	}
 
-	unmarshals = map[string]Unmarshal{
+	unmarshals = map[string]encoding.Unmarshal{
 		encoding.DefaultEncoding: encoding.TextUnmarshal,
 	}
 
@@ -30,15 +30,9 @@ var (
 	}
 )
 
-// Marshal 将一个对象转换成 []byte 内容时，所采用的接口。
-type Marshal func(v interface{}) ([]byte, error)
-
-// Unmarshal 将客户端内容转换成一个对象时，所采用的接口。
-type Unmarshal func([]byte, interface{}) error
-
 // AddMarshal 添加一个新的解码器，只有通过 AddMarshal 添加的解码器，
 // 才能被 Context 使用。
-func AddMarshal(name string, m Marshal) error {
+func AddMarshal(name string, m encoding.Marshal) error {
 	_, found := marshals[name]
 	if found {
 		return ErrExists
@@ -50,7 +44,7 @@ func AddMarshal(name string, m Marshal) error {
 
 // AddUnmarshal 添加一个编码器，只有通过 AddUnmarshal 添加的解码器，
 // 才能被 Context 使用。
-func AddUnmarshal(name string, m Unmarshal) error {
+func AddUnmarshal(name string, m encoding.Unmarshal) error {
 	_, found := unmarshals[name]
 	if found {
 		return ErrExists
