@@ -8,21 +8,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/result"
 )
 
-const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.yaml" // 配置文件的文件名。
-)
+var defaultApp *App
 
-var defaultApp *app.App
+// BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
+//
+// 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
+type BuildHandler func(http.Handler) http.Handler
 
-// Options 传递给 web.Init() 的参数
-type Options struct {
+// Web 传递给 web.Init() 的参数
+type Web struct {
 	// 配置文件所在的目录。
 	ConfigDir string
 
@@ -45,22 +44,13 @@ type Options struct {
 	Messages map[int]string
 
 	// 作用于给所有路由的中间件
-	Build app.BuildHandler
+	Build BuildHandler
 }
 
 // Init 初始化框架的基本内容
-func Init(opt *Options) error {
-	app, err := app.New(opt.ConfigDir, opt.Build)
-	if err != nil {
-		return err
-	}
-
-	if err := result.NewMessages(opt.Messages); err != nil {
-		return err
-	}
-
-	defaultApp = app
-	return nil
+func Init(web *Web) (err error) {
+	defaultApp, err = web.NewApp()
+	return err
 }
 
 // IsDebug 是否处在调试模式
@@ -89,18 +79,13 @@ func URL(path string) string {
 }
 
 // AddModule 注册一个模块
-func AddModule(m *app.Module) *app.App {
+func AddModule(m *Module) *App {
 	return defaultApp.AddModule(m)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
 func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	return defaultApp.NewContext(w, r)
-}
-
-// NewModule 声明一个模块内容。
-func NewModule(name, desc string, deps ...string) *app.Module {
-	return app.NewModule(name, desc, deps...)
 }
 
 // NewResult 生成一个 *result.Result 对象
@@ -117,12 +102,12 @@ func NewResultWithDetail(code int, fields map[string]string) *result.Result {
 //
 // 其实是终止旧有的服务，然后再开一个新的服务，
 // 包括初始化等操作，都会重新走一遍。
-func Restart(opt *Options, timeout time.Duration) error {
+func Restart(web *Web, timeout time.Duration) error {
 	if err := Shutdown(timeout); err != nil {
 		return err
 	}
 
-	if err := Init(opt); err != nil {
+	if err := Init(web); err != nil {
 		return err
 	}
 

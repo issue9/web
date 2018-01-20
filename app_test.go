@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"log"
@@ -73,7 +73,7 @@ func TestApp_initFromConfig(t *testing.T) {
 
 	app = &App{}
 	conf.HTTPS = false
-	conf.Port = httpPort
+	conf.Port = 80
 	conf.Root = ""
 	app.initFromConfig(conf)
 	a.Equal(app.url, "http://example.com")

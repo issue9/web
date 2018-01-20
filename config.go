@@ -2,23 +2,18 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
 
 	"github.com/issue9/web/encoding"
-)
-
-// 端口的定义
-const (
-	httpPort  = 80
-	httpsPort = 443
 )
 
 type config struct {
@@ -108,21 +103,12 @@ type config struct {
 	ReadTimeout  time.Duration `yaml:"readTimeout"`
 	WriteTimeout time.Duration `yaml:"writeTimeout"`
 
-	// Marshals 和 Unmarshal 所有可用的编码和解码方式。
-	// 键名为 mime-type 值，键值为对应的编码函数
-	Marshals   map[string]encoding.Marshal   `yaml:"-"`
-	Unmarshals map[string]encoding.Unmarshal `yaml:"-"`
-
-	// Charset 所有可用的字符集处理实例。
-	// 键名为字符集名称，比如：utf-8；键值为对应的实例。
+	// URL 网站的首页地址。
+	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
 	//
-	// 如果是 utf-8 编码，则键值为 nil
-	Charset map[string]encoding.Charset `yaml:"-"`
-
-	Build BuildHandler `yaml:"-"`
-
-	outputEncoding encoding.Marshal
-	outputCharset  encoding.Charset
+	// 若为空，则会根据配置文件的内容，生成网站首页地址。
+	// 用户也可台强制指定一个不同的地址。
+	URL string `yaml:"url"`
 }
 
 // 修正可修正的内容，返回不可修正的错误。
@@ -162,9 +148,9 @@ func (conf *config) sanitize() error {
 
 	if conf.Port == 0 {
 		if conf.HTTPS {
-			conf.Port = httpsPort
+			conf.Port = 443
 		} else {
-			conf.Port = httpPort
+			conf.Port = 80
 		}
 	}
 
@@ -200,15 +186,19 @@ func (conf *config) sanitize() error {
 		return errors.New("writeTimeout 必须大于等于 0")
 	}
 
-	found := false
-	conf.outputEncoding, found = conf.Marshals[conf.OutputEncoding]
-	if !found {
-		return errors.New("未找到 outputEncoding")
-	}
-
-	conf.outputCharset, found = conf.Charset[conf.OutputCharset]
-	if !found {
-		return errors.New("未找到 outputCharset")
+	if conf.URL == "" {
+		if conf.HTTPS {
+			conf.URL = "https://" + conf.Domain
+			if conf.Port != 443 {
+				conf.URL += ":" + strconv.Itoa(conf.Port)
+			}
+		} else {
+			conf.URL = "http://" + conf.Domain
+			if conf.Port != 80 {
+				conf.URL += ":" + strconv.Itoa(conf.Port)
+			}
+		}
+		conf.URL += conf.Root
 	}
 
 	return nil

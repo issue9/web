@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"testing"
@@ -32,16 +32,6 @@ func defaultConfig() *config {
 
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
-
-		Marshals: map[string]encoding.Marshal{
-			encoding.DefaultEncoding: encoding.TextMarshal,
-		},
-		Unmarshals: map[string]encoding.Unmarshal{
-			encoding.DefaultEncoding: encoding.TextUnmarshal,
-		},
-		Charset: map[string]encoding.Charset{
-			encoding.DefaultCharset: nil,
-		},
 	}
 }
 

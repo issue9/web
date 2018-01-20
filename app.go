@@ -2,12 +2,15 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	stdctx "context"
+	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -17,26 +20,24 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/mux"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/result"
 )
 
 const pprofPath = "/debug/pprof/"
 
-// BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
-//
-// 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
-type BuildHandler func(http.Handler) http.Handler
+const (
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	configFilename = "web.yaml" // 配置文件的文件名。
+)
 
 // App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
-	config *config
-
-	// 根据 config 中的相关变量生成网站的地址
-	//
-	// 包括协议、域名、端口和根目录等。
-	url string
+	configDir string
+	config    *config
 
 	modules []*Module
 
@@ -44,11 +45,56 @@ type App struct {
 	router *mux.Prefix
 
 	server *http.Server
+
+	// 所有可用的编码和解码方式。
+	// 键名为 mime-type 值，键值为对应的编码函数
+	marshals   map[string]encoding.Marshal   `yaml:"-"`
+	unmarshals map[string]encoding.Unmarshal `yaml:"-"`
+
+	// 所有可用的字符集处理实例。
+	// 键名为字符集名称，比如：utf-8；键值为对应的实例。
+	//
+	// 如果是 utf-8 编码，则键值为 nil
+	charset map[string]encoding.Charset `yaml:"-"`
+
+	build BuildHandler `yaml:"-"`
+
+	outputEncoding encoding.Marshal
+	outputCharset  encoding.Charset
 }
 
-// New 初始化框架的基本内容。
-func New(conf *config) (*App, error) {
-	app := &App{}
+// NewApp 初始化框架的基本内容。
+func (web *Web) NewApp() (*App, error) {
+	dir, err := filepath.Abs(web.ConfigDir)
+	if err != nil {
+		return nil, err
+	}
+
+	app := &App{
+		configDir:  dir,
+		marshals:   web.Marshals,
+		unmarshals: web.Unmarshals,
+		charset:    web.Charset,
+		build:      web.Build,
+		modules:    make([]*Module, 0, 100),
+	}
+
+	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
+		return nil, err
+	}
+
+	if err := result.NewMessages(web.Messages); err != nil {
+		return nil, err
+	}
+
+	data, err := ioutil.ReadFile(app.File(configFilename))
+	if err != nil {
+		return nil, err
+	}
+	conf := &config{}
+	if err = yaml.Unmarshal(data, conf); err != nil {
+		return nil, err
+	}
 
 	app.initFromConfig(conf)
 
@@ -60,25 +106,30 @@ func (app *App) IsDebug() bool {
 	return app.config.Debug
 }
 
-func (app *App) initFromConfig(conf *config) {
+func (app *App) initFromConfig(conf *config) error {
 	app.config = conf
-	app.modules = make([]*Module, 0, 100)
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 
-	if conf.HTTPS {
-		app.url = "https://" + conf.Domain
-		if conf.Port != httpsPort {
-			app.url += ":" + strconv.Itoa(conf.Port)
-		}
-	} else {
-		app.url = "http://" + conf.Domain
-		if conf.Port != httpPort {
-			app.url += ":" + strconv.Itoa(conf.Port)
-		}
+	found := false
+	app.outputEncoding, found = app.marshals[conf.OutputEncoding]
+	if !found {
+		return errors.New("未找到 outputEncoding")
 	}
 
-	app.url += conf.Root
+	app.outputCharset, found = app.charset[conf.OutputCharset]
+	if !found {
+		return errors.New("未找到 outputCharset")
+	}
+
+	return nil
+}
+
+// File 获取配置目录下的文件名
+func (app *App) File(path ...string) string {
+	paths := make([]string, 0, len(path)+1)
+	paths = append(paths, app.configDir)
+	return filepath.Join(append(paths, path...)...)
 }
 
 // Run 加载各个模块的数据，运行路由，执行监听程序。
@@ -103,8 +154,8 @@ func (app *App) Run() error {
 	}
 
 	var h http.Handler = app.mux
-	if app.config.Build != nil {
-		h = app.config.Build(h)
+	if app.build != nil {
+		h = app.build(h)
 	}
 
 	app.server = &http.Server{
@@ -143,13 +194,13 @@ func (app *App) Shutdown(timeout time.Duration) error {
 // URL 构建一条基于 app.url 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
-		return app.url
+		return app.config.URL
 	}
 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	return app.url + path
+	return app.config.URL + path
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
@@ -161,13 +212,13 @@ func (app *App) URL(path string) string {
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
-	unmarshal, found := app.config.Unmarshals[encName]
+	unmarshal, found := app.unmarshals[encName]
 	if !found {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
 	}
 
-	inputCharset, found := app.config.Charset[charsetName]
+	inputCharset, found := app.charset[charsetName]
 	if !found {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
@@ -184,11 +235,11 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	return &context.Context{
 		Response:           w,
 		Request:            r,
-		OutputEncoding:     app.config.outputEncoding,
+		OutputEncoding:     app.outputEncoding,
 		OutputEncodingName: app.config.OutputEncoding,
 		InputEncoding:      unmarshal,
 		InputCharset:       inputCharset,
-		OutputCharset:      app.config.outputCharset,
+		OutputCharset:      app.outputCharset,
 		OutputCharsetName:  app.config.OutputCharset,
 	}
 }
