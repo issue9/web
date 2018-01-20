@@ -7,21 +7,22 @@ package app
 import (
 	stdctx "context"
 	"net/http"
+	"net/http/pprof"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/host"
+	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/mux"
+
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
 )
 
-const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.yaml" // 配置文件的文件名。
-)
+const pprofPath = "/debug/pprof/"
 
 // BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
 //
@@ -46,14 +47,6 @@ type App struct {
 }
 
 // New 初始化框架的基本内容。
-//
-// confDir 指定了配置文件所在的目录。
-// 框架默认的两个配置文件 logs.xml 和 web.yaml 都会从此目录下查找。
-//
-// 用户的自定义配置文件也可以存在此目录下，就可以通过
-// App.File() 获取文件内容。
-//
-// builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
 func New(conf *config) (*App, error) {
 	app := &App{}
 
@@ -198,4 +191,73 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		OutputCharset:      app.config.outputCharset,
 		OutputCharsetName:  app.config.OutputCharset,
 	}
+}
+
+func logRecovery(w http.ResponseWriter, msg interface{}) {
+	logs.Error(msg)
+	context.RenderStatus(w, http.StatusInternalServerError)
+}
+
+func (app *App) buildHandler(h http.Handler) http.Handler {
+	h = app.buildHosts(app.buildHeader(h))
+
+	ff := logRecovery
+	if app.config.Debug {
+		ff = recovery.PrintDebug
+	}
+	h = recovery.New(h, ff)
+
+	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+	if app.config.Debug {
+		h = app.buildPprof(h)
+	}
+
+	return h
+}
+
+func (app *App) buildHosts(h http.Handler) http.Handler {
+	if len(app.config.AllowedDomains) == 0 {
+		return h
+	}
+
+	return host.New(h, app.config.AllowedDomains...)
+}
+
+func (app *App) buildHeader(h http.Handler) http.Handler {
+	if len(app.config.Headers) == 0 {
+		return h
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for k, v := range app.config.Headers {
+			w.Header().Set(k, v)
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
+func (app *App) buildPprof(h http.Handler) http.Handler {
+	logs.Debug("开启了调试功能，地址为：", pprofPath)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, pprofPath) {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		path := r.URL.Path[len(pprofPath):]
+		switch path {
+		case "cmdline":
+			pprof.Cmdline(w, r)
+		case "profile":
+			pprof.Profile(w, r)
+		case "symbol":
+			pprof.Symbol(w, r)
+		case "trace":
+			pprof.Trace(w, r)
+		default:
+			pprof.Index(w, r)
+		}
+	}) // end return http.HandlerFunc
 }

@@ -14,6 +14,11 @@ import (
 	"github.com/issue9/web/result"
 )
 
+const (
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	configFilename = "web.yaml" // 配置文件的文件名。
+)
+
 var defaultApp *app.App
 
 // Options 传递给 web.Init() 的参数

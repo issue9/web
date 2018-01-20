@@ -16,6 +16,12 @@ import (
 	"github.com/issue9/logs"
 )
 
+var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(1)
+}
+
+var h1 = http.HandlerFunc(f1)
+
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
 	conf := defaultConfig()
@@ -269,4 +275,95 @@ func TestApp_NewContext(t *testing.T) {
 	ctx = app.NewContext(w, r)
 	a.NotNil(ctx)
 	a.Equal(w.Code, http.StatusOK)
+}
+
+func TestApp_buildHandler(t *testing.T) {
+	a := assert.New(t)
+	conf := defaultConfig()
+	app, err := New(conf)
+	a.NotError(err).NotNil(app)
+
+	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("err")
+	}))
+
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusNotFound)
+}
+
+func TestApp_buildHosts_empty(t *testing.T) {
+	a := assert.New(t)
+	conf := defaultConfig()
+	app, err := New(conf)
+	a.NotError(err).NotNil(app)
+
+	h := app.buildHosts(h1)
+
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	a.NotNil(r).NotNil(w)
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+}
+
+func TestApp_buildHosts(t *testing.T) {
+	a := assert.New(t)
+	config := defaultConfig()
+	config.AllowedDomains = []string{"caixw.io", "example.com"} // 指定域名
+	app := &App{}
+	app.initFromConfig(config)
+
+	h := app.buildHosts(h1)
+
+	// 带正确的域名访问
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+
+	// 带不允许的域名访问
+	r = httptest.NewRequest(http.MethodGet, "http://not.exists/test", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusNotFound)
+}
+
+func TestApp_buildHeader(t *testing.T) {
+	a := assert.New(t)
+	config := defaultConfig()
+	config.Headers = map[string]string{"Test": "test"}
+	app := &App{}
+	app.initFromConfig(config)
+
+	h := app.buildHeader(h1)
+
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
+	a.Equal(w.Header().Get("Test"), "test")
+}
+
+func TestApp_buildPprof(t *testing.T) {
+	a := assert.New(t)
+
+	conf := defaultConfig()
+	app, err := New(conf)
+	a.NotError(err).NotNil(app)
+
+	h := app.buildPprof(h1)
+
+	// 命中 /debug/pprof/cmdline
+	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/debug/pprof/cmdline", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, http.StatusOK)
+
+	// 命中 h1
+	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	a.Equal(w.Code, 1)
 }
