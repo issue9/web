@@ -5,55 +5,12 @@
 package app
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
 )
-
-var (
-	// ErrExists 表示存在相同名称的项。
-	// 多个类似功能的函数，都有可能返回此错误。
-	ErrExists = errors.New("存在相同名称的项")
-)
-
-// AddMarshal 添加一个新的解码器，只有通过 AddMarshal 添加的解码器，
-// 才能被 Context 使用。
-func (app *App) AddMarshal(name string, m encoding.Marshal) error {
-	_, found := app.marshals[name]
-	if found {
-		return ErrExists
-	}
-
-	app.marshals[name] = m
-	return nil
-}
-
-// AddUnmarshal 添加一个编码器，只有通过 AddUnmarshal 添加的解码器，
-// 才能被 Context 使用。
-func (app *App) AddUnmarshal(name string, m encoding.Unmarshal) error {
-	_, found := app.unmarshals[name]
-	if found {
-		return ErrExists
-	}
-
-	app.unmarshals[name] = m
-	return nil
-}
-
-// AddCharset 添加编码方式，只有通过 AddCharset 添加的字符集，
-// 才能被 Context 使用。
-func (app *App) AddCharset(name string, enc encoding.Charset) error {
-	_, found := app.charset[name]
-	if found {
-		return ErrExists
-	}
-
-	app.charset[name] = enc
-	return nil
-}
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
 //
@@ -64,13 +21,13 @@ func (app *App) AddCharset(name string, enc encoding.Charset) error {
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
-	unmarshal, found := app.unmarshals[encName]
+	unmarshal, found := app.config.Unmarshals[encName]
 	if !found {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
 	}
 
-	inputCharset, found := app.charset[charsetName]
+	inputCharset, found := app.config.Charset[charsetName]
 	if !found {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
@@ -78,7 +35,7 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
-		if !strings.Contains(accept, app.outputEncodingName) && !strings.Contains(accept, "*/*") {
+		if !strings.Contains(accept, app.config.OutputEncoding) && !strings.Contains(accept, "*/*") {
 			context.RenderStatus(w, http.StatusNotAcceptable)
 			return nil
 		}
@@ -87,11 +44,11 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	return &context.Context{
 		Response:           w,
 		Request:            r,
-		OutputEncoding:     app.outputEncoding,
-		OutputEncodingName: app.outputEncodingName,
+		OutputEncoding:     app.config.outputEncoding,
+		OutputEncodingName: app.config.OutputEncoding,
 		InputEncoding:      unmarshal,
 		InputCharset:       inputCharset,
-		OutputCharset:      app.outputCharset,
-		OutputCharsetName:  app.outputCharsetName,
+		OutputCharset:      app.config.outputCharset,
+		OutputCharsetName:  app.config.OutputCharset,
 	}
 }

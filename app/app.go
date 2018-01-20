@@ -6,17 +6,13 @@ package app
 
 import (
 	stdctx "context"
-	"errors"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
-	"github.com/issue9/utils"
-	"github.com/issue9/web/encoding"
 )
 
 const (
@@ -31,8 +27,7 @@ type BuildHandler func(http.Handler) http.Handler
 
 // App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
-	configDir string
-	config    *config
+	config *config
 
 	// 根据 config 中的相关变量生成网站的地址
 	//
@@ -41,18 +36,8 @@ type App struct {
 
 	modules []*Module
 
-	build  BuildHandler
 	mux    *mux.Mux
 	router *mux.Prefix
-
-	marshals   map[string]encoding.Marshal
-	unmarshals map[string]encoding.Unmarshal
-	charset    map[string]encoding.Charset
-
-	outputEncoding     encoding.Marshal
-	outputCharset      encoding.Charset
-	outputEncodingName string
-	outputCharsetName  string
 
 	// 保存着所有的 http.Server 实例。
 	//
@@ -71,38 +56,8 @@ type App struct {
 // App.File() 获取文件内容。
 //
 // builder 用来给 mux 对象加上一个统一的中间件。不需要可以传递空值。
-func New(confDir string, builder BuildHandler) (*App, error) {
-	confDir, err := filepath.Abs(confDir)
-	if err != nil {
-		return nil, err
-	}
-	app := &App{
-		configDir: confDir,
-		build:     builder,
-
-		marshals: map[string]encoding.Marshal{
-			encoding.DefaultEncoding: encoding.TextMarshal,
-		},
-		unmarshals: map[string]encoding.Unmarshal{
-			encoding.DefaultEncoding: encoding.TextUnmarshal,
-		},
-		charset: map[string]encoding.Charset{
-			encoding.DefaultCharset: nil,
-		},
-	}
-
-	if !utils.FileExists(confDir) {
-		return nil, errors.New("配置文件的目录不存在")
-	}
-
-	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
-		return nil, err
-	}
-
-	conf, err := loadConfig(app.File(configFilename))
-	if err != nil {
-		return nil, err
-	}
+func New(conf *config) (*App, error) {
+	app := &App{}
 
 	app.initFromConfig(conf)
 
@@ -114,7 +69,7 @@ func (app *App) IsDebug() bool {
 	return app.config.Debug
 }
 
-func (app *App) initFromConfig(conf *config) error {
+func (app *App) initFromConfig(conf *config) {
 	app.config = conf
 	app.modules = make([]*Module, 0, 100)
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
@@ -134,22 +89,6 @@ func (app *App) initFromConfig(conf *config) error {
 	}
 
 	app.url += conf.Root
-
-	app.outputEncodingName = conf.OutputEncoding
-	app.outputCharsetName = conf.OutputCharset
-
-	found := false
-	app.outputEncoding, found = app.marshals[conf.OutputEncoding]
-	if !found {
-		return errors.New("未找到 outputEncoding")
-	}
-
-	app.outputCharset, found = app.charset[conf.OutputCharset]
-	if !found {
-		return errors.New("未找到 outputCharset")
-	}
-
-	return nil
 }
 
 // Run 加载各个模块的数据，运行路由，执行监听程序。
@@ -174,8 +113,8 @@ func (app *App) Run() error {
 	}
 
 	var h http.Handler = app.mux
-	if app.build != nil {
-		h = app.build(h)
+	if app.config.Build != nil {
+		h = app.config.Build(h)
 	}
 	return app.listen(app.buildHandler(h))
 }
@@ -211,11 +150,6 @@ func closeServer(srv *http.Server, timeout time.Duration) error {
 	defer cancel()
 
 	return srv.Shutdown(ctx)
-}
-
-// File 获取相对于配置目录下的文件。
-func (app *App) File(path string) string {
-	return filepath.Join(app.configDir, path)
 }
 
 // URL 构建一条基于 app.url 的完整 URL

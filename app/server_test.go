@@ -20,9 +20,9 @@ var h1 = http.HandlerFunc(f1)
 
 func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	conf := defaultConfig()
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
 
 	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
@@ -36,9 +36,9 @@ func TestApp_buildHandler(t *testing.T) {
 
 func TestApp_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	conf := defaultConfig()
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
-	app.config = defaultConfig()
 
 	h := app.buildHosts(h1)
 
@@ -89,7 +89,9 @@ func TestApp_buildHeader(t *testing.T) {
 
 func TestApp_buildPprof(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+
+	conf := defaultConfig()
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
 
 	h := app.buildPprof(h1)

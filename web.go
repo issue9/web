@@ -50,24 +50,6 @@ func Init(opt *Options) error {
 		return err
 	}
 
-	for name, c := range opt.Charset {
-		if err := app.AddCharset(name, c); err != nil {
-			return err
-		}
-	}
-
-	for name, m := range opt.Marshals {
-		if err := app.AddMarshal(name, m); err != nil {
-			return err
-		}
-	}
-
-	for name, m := range opt.Unmarshals {
-		if err := app.AddUnmarshal(name, m); err != nil {
-			return err
-		}
-	}
-
 	if err := result.NewMessages(opt.Messages); err != nil {
 		return err
 	}

@@ -10,16 +10,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"golang.org/x/text/encoding/simplifiedchinese"
-
-	"github.com/issue9/web/encoding"
 )
 
 func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
-	app, err := New("./testdata", nil)
+	conf := defaultConfig()
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
 
 	// 缺少 Accept 报头
@@ -35,47 +33,4 @@ func TestApp_NewContext(t *testing.T) {
 	ctx = app.NewContext(w, r)
 	a.NotNil(ctx)
 	a.Equal(w.Code, http.StatusOK)
-}
-
-func TestApp_AddMarshal(t *testing.T) {
-	a := assert.New(t)
-	f1 := func(v interface{}) ([]byte, error) { return nil, nil }
-	app, err := New("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	a.Equal(1, len(app.marshals))
-
-	a.NotError(app.AddMarshal("n1", f1))
-	a.NotError(app.AddMarshal("n2", f1))
-	a.Equal(app.AddMarshal("n2", f1), ErrExists)
-	a.Equal(3, len(app.marshals))
-}
-
-func TestApp_AddUnmarshal(t *testing.T) {
-	a := assert.New(t)
-	f1 := func(data []byte, v interface{}) error { return nil }
-	app, err := New("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	a.Equal(1, len(app.unmarshals))
-
-	a.NotError(app.AddUnmarshal("n1", f1))
-	a.NotError(app.AddUnmarshal("n2", f1))
-	a.Equal(app.AddUnmarshal("n2", f1), ErrExists)
-	a.Equal(3, len(app.unmarshals))
-}
-
-func TestApp_AddCharset(t *testing.T) {
-	a := assert.New(t)
-	e := simplifiedchinese.GBK
-	app, err := New("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	a.Equal(1, len(app.charset))
-	a.Nil(app.charset[encoding.DefaultCharset])
-
-	a.NotError(app.AddCharset("n1", e))
-	a.NotError(app.AddCharset("n2", e))
-	a.Equal(app.AddCharset("n2", e), ErrExists)
-	a.Equal(3, len(app.charset))
 }

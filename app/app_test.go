@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,12 +18,14 @@ import (
 
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", func(h http.Handler) http.Handler {
+	conf := defaultConfig()
+	conf.Build = func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Date", "1111")
 			h.ServeHTTP(w, r)
 		})
-	})
+	}
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -45,36 +46,6 @@ func TestBuildHandler(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.Header.Get("Date"), "1111")
 	app.Shutdown(0)
-}
-
-func TestNew(t *testing.T) {
-	a := assert.New(t)
-
-	app, err := New("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	f, err := filepath.Abs("./testdata")
-	a.NotError(err)
-	a.Equal(app.configDir, f).
-		NotNil(app.config)
-
-	app, err = New("./not-exists", nil)
-	a.Error(err).Nil(app)
-}
-
-func TestApp_File(t *testing.T) {
-	a := assert.New(t)
-
-	app, err := New("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	f, err := filepath.Abs("./testdata/test")
-	a.NotError(err)
-	a.Equal(app.File("test"), f)
-
-	f, err = filepath.Abs("./testdata/test/file.jpg")
-	a.NotError(err)
-	a.Equal(app.File("test/file.jpg"), f)
 }
 
 func TestApp_initFromConfig(t *testing.T) {
@@ -121,7 +92,8 @@ func TestApp(t *testing.T) {
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
-	app, err := New("./testdata", nil)
+	conf := defaultConfig()
+	app, err := New(conf)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {

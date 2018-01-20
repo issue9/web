@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/encoding"
 )
 
 // 返回一个默认的 Config
 func defaultConfig() *config {
 	return &config{
 		Debug:          true,
-		OutputCharset:  "utf-8",
-		OutputEncoding: "application/json",
+		OutputCharset:  encoding.DefaultCharset,
+		OutputEncoding: encoding.DefaultEncoding,
 		Strict:         true,
 
 		HTTPS:          false,
@@ -24,7 +25,7 @@ func defaultConfig() *config {
 		HTTPState:      httpStateDisabled,
 		CertFile:       "",
 		KeyFile:        "",
-		Port:           httpPort,
+		Port:           8082,
 		Headers:        nil,
 		Static:         nil,
 		DisableOptions: false,
@@ -32,16 +33,17 @@ func defaultConfig() *config {
 
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
+
+		Marshals: map[string]encoding.Marshal{
+			encoding.DefaultEncoding: encoding.TextMarshal,
+		},
+		Unmarshals: map[string]encoding.Unmarshal{
+			encoding.DefaultEncoding: encoding.TextUnmarshal,
+		},
+		Charset: map[string]encoding.Charset{
+			encoding.DefaultCharset: nil,
+		},
 	}
-}
-
-func TestLoad(t *testing.T) {
-	a := assert.New(t)
-
-	conf, err := loadConfig("./testdata/web.yaml")
-	a.NotError(err).NotNil(conf)
-	a.Equal(conf.KeyFile, "keyFile")
-	a.Equal(conf.ReadTimeout, 3*time.Second)
 }
 
 func TestConfig_sanitize(t *testing.T) {

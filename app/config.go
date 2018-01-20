@@ -7,13 +7,12 @@ package app
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
+
 	"github.com/issue9/web/encoding"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // 端口的定义
@@ -122,27 +121,22 @@ type config struct {
 
 	ReadTimeout  time.Duration `yaml:"readTimeout"`
 	WriteTimeout time.Duration `yaml:"writeTimeout"`
-}
 
-// 加载配置文件
-//
-// path 用于指定配置文件的位置；
-func loadConfig(path string) (*config, error) {
-	conf := &config{}
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+	// Marshals 和 Unmarshal 所有可用的编码和解码方式。
+	// 键名为 mime-type 值，键值为对应的编码函数
+	Marshals   map[string]encoding.Marshal   `yaml:"-"`
+	Unmarshals map[string]encoding.Unmarshal `yaml:"-"`
 
-	if err = yaml.Unmarshal(data, conf); err != nil {
-		return nil, err
-	}
+	// Charset 所有可用的字符集处理实例。
+	// 键名为字符集名称，比如：utf-8；键值为对应的实例。
+	//
+	// 如果是 utf-8 编码，则键值为 nil
+	Charset map[string]encoding.Charset `yaml:"-"`
 
-	if err = conf.sanitize(); err != nil {
-		return nil, err
-	}
+	Build BuildHandler `yaml:"-"`
 
-	return conf, nil
+	outputEncoding encoding.Marshal
+	outputCharset  encoding.Charset
 }
 
 // 修正可修正的内容，返回不可修正的错误。
@@ -229,5 +223,17 @@ func (conf *config) sanitize() error {
 	if conf.WriteTimeout < 0 {
 		return errors.New("writeTimeout 必须大于等于 0")
 	}
+
+	found := false
+	conf.outputEncoding, found = conf.Marshals[conf.OutputEncoding]
+	if !found {
+		return errors.New("未找到 outputEncoding")
+	}
+
+	conf.outputCharset, found = conf.Charset[conf.OutputCharset]
+	if !found {
+		return errors.New("未找到 outputCharset")
+	}
+
 	return nil
 }
