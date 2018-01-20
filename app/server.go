@@ -7,7 +7,6 @@ package app
 import (
 	"net/http"
 	"net/http/pprof"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
@@ -22,59 +21,6 @@ const pprofPath = "/debug/pprof/"
 func logRecovery(w http.ResponseWriter, msg interface{}) {
 	logs.Error(msg)
 	context.RenderStatus(w, http.StatusInternalServerError)
-}
-
-func (app *App) listen(h http.Handler) error {
-	if !app.config.HTTPS {
-		logs.Infof("开始监听[%v]端口", app.config.Port)
-		return app.newServer(app.config.Port, h).ListenAndServe()
-	}
-
-	switch app.config.HTTPState {
-	case httpStateListen:
-		go func() {
-			logs.Infof("开始监听[%v]端口", httpPort)
-			logs.Error(app.newServer(httpPort, h).ListenAndServe())
-		}()
-	case httpStateRedirect:
-		go func() {
-			logs.Infof("开始监听[%v]端口，并跳转至[%v]", httpPort, httpsPort)
-			logs.Error(app.httpRedirectServer().ListenAndServe())
-		}()
-		// 空值或是 disable 均为默认处理方式，即不作为。
-	} // end switch
-
-	logs.Infof("开始监听[%v]端口", app.config.Port)
-	return app.newServer(app.config.Port, h).ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
-}
-
-// 构建一个从 HTTP 跳转到 HTTPS 的路由服务。
-func (app *App) httpRedirectServer() *http.Server {
-	return app.newServer(httpPort, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u := r.URL // 直接采用 r.URL，毕竟跳转之后，此值就没用了。
-		u.Scheme = "HTTPS"
-		u.Host = strings.Split(r.Host, ":")[0]
-		if app.config.Port != httpsPort {
-			u.Host += ":" + strconv.Itoa(app.config.Port)
-		}
-
-		http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
-	}))
-}
-
-// 获取 http.Server 实例，相对于 http 的默认实现，指定了 ErrorLog 字段。
-func (app *App) newServer(port int, h http.Handler) *http.Server {
-	srv := &http.Server{
-		Addr:         ":" + strconv.Itoa(port),
-		Handler:      h,
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.config.ReadTimeout,
-		WriteTimeout: app.config.WriteTimeout,
-	}
-
-	app.servers = append(app.servers, srv)
-
-	return srv
 }
 
 func (app *App) buildHandler(h http.Handler) http.Handler {

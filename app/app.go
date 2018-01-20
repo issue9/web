@@ -42,12 +42,7 @@ type App struct {
 	mux    *mux.Mux
 	router *mux.Prefix
 
-	// 保存着所有的 http.Server 实例。
-	//
-	// 除了 mux 所依赖的 http.Server 实例之外，
-	// 还有诸如 80 端口跳转等产生的 http.Server 实例。
-	// 记录这些 server，关闭服务时需要将这些全部都关闭。
-	servers []*http.Server
+	server *http.Server
 }
 
 // New 初始化框架的基本内容。
@@ -77,7 +72,6 @@ func (app *App) initFromConfig(conf *config) {
 	app.modules = make([]*Module, 0, 100)
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
-	app.servers = make([]*http.Server, 0, 5)
 
 	if conf.HTTPS {
 		app.url = "https://" + conf.Domain
@@ -119,7 +113,22 @@ func (app *App) Run() error {
 	if app.config.Build != nil {
 		h = app.config.Build(h)
 	}
-	return app.listen(app.buildHandler(h))
+
+	app.server = &http.Server{
+		Addr:         ":" + strconv.Itoa(app.config.Port),
+		Handler:      h,
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  app.config.ReadTimeout,
+		WriteTimeout: app.config.WriteTimeout,
+	}
+
+	logs.Infof("开始监听[%v]端口", app.config.Port)
+
+	if !app.config.HTTPS {
+		return app.server.ListenAndServe()
+	}
+
+	return app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 }
 
 // Shutdown 关闭所有服务，之后 app 实例将不可再用，
@@ -130,29 +139,12 @@ func (app *App) Shutdown(timeout time.Duration) error {
 	logs.Flush()
 
 	if timeout <= 0 {
-		for _, srv := range app.servers {
-			if err := srv.Close(); err != nil {
-				return err
-			}
-		}
-	} else {
-		// BUG(caixw) 多个服务之间，会依赖关闭，实际时间可能远远大于 timeout
-		for _, srv := range app.servers {
-			if err := closeServer(srv, timeout); err != nil {
-				return err
-			}
-		} // end for
+		return app.server.Close()
 	}
 
-	app.servers = app.servers[:0]
-	return nil
-}
-
-func closeServer(srv *http.Server, timeout time.Duration) error {
 	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), timeout)
 	defer cancel()
-
-	return srv.Shutdown(ctx)
+	return app.server.Shutdown(ctx)
 }
 
 // URL 构建一条基于 app.url 的完整 URL

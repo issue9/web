@@ -21,13 +21,6 @@ const (
 	httpsPort = 443
 )
 
-// config.HTTPState 的三种取值
-const (
-	httpStateDisabled = "disable"
-	httpStateListen   = "listen"
-	httpStateRedirect = "redirect"
-)
-
 type config struct {
 	// Debug 是否启用调试模式
 	//
@@ -89,13 +82,6 @@ type config struct {
 	//
 	// 报头信息可能在其它处理器被修改。
 	Headers map[string]string `yaml:"headers,omitempty"`
-
-	// HTTPState 当启用 HTTPS 时，对 80 端口的处理方式。
-	//
-	// disable 默认值，即不作处理；
-	// listen 监听 80 端口，处理方式和 HTTPS 是一样的；
-	// redirect 将 80 端口的请求跳转到当前端口进行处理。
-	HTTPState string `yaml:"httpState,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
@@ -165,16 +151,6 @@ func (conf *config) sanitize() error {
 	}
 
 	if conf.HTTPS {
-		switch conf.HTTPState {
-		case httpStateListen, httpStateRedirect:
-			if conf.Port == httpPort {
-				return errors.New("httpState 和 port 同时监听了 80 端口")
-			}
-		case httpStateDisabled:
-		default:
-			return errors.New("httpState 的值不正确")
-		}
-
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
 		}

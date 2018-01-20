@@ -5,7 +5,6 @@
 package app
 
 import (
-	"crypto/tls"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -245,107 +244,6 @@ func TestApp_Run(t *testing.T) {
 	resp, err = http.Get("http://localhost:8083/static/dir/file2.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
-
-	app.Shutdown(0)
-}
-
-func TestApp_httpStateDisabled(t *testing.T) {
-	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
-	config.HTTPS = true
-	config.KeyFile = "./testdata/key.pem"
-	config.CertFile = "./testdata/cert.pem"
-	config.HTTPState = httpStateDisabled
-	app := &App{}
-	app.initFromConfig(config)
-
-	app.mux.GetFunc("/test", f1)
-
-	go func() {
-		err := app.Run()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
-
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Microsecond)
-
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = http.Get("http://localhost:8083/test")
-	a.Error(err).Nil(resp)
-
-	app.Shutdown(0)
-}
-
-func TestApp_httpStateRedirect(t *testing.T) {
-	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
-	config.HTTPS = true
-	config.KeyFile = "./testdata/key.pem"
-	config.CertFile = "./testdata/cert.pem"
-	config.HTTPState = httpStateRedirect
-	app := &App{}
-	app.initFromConfig(config)
-
-	app.mux.GetFunc("/test", f1)
-
-	go func() {
-		err := app.Run()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
-
-	// 加载证书比较慢，需要等待 app.run() 启动完成，不同机器可能需要的时间会不同
-	time.Sleep(50 * time.Microsecond)
-
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = client.Get("http://localhost:80/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	app.Shutdown(0)
-}
-
-func TestApp_httpStateListen(t *testing.T) {
-	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
-	config.HTTPS = true
-	config.KeyFile = "./testdata/key.pem"
-	config.CertFile = "./testdata/cert.pem"
-	config.HTTPState = httpStateListen
-	app := &App{}
-	app.initFromConfig(config)
-
-	app.mux.GetFunc("/test", f1)
-
-	go func() {
-		err := app.Run()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-	}()
-
-	// 加载证书比较慢，需要等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(50 * time.Microsecond)
-
-	tlsconf := &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsconf}}
-	resp, err := client.Get("https://localhost:8083/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
-
-	resp, err = http.Get("http://localhost:80/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
 
 	app.Shutdown(0)
 }

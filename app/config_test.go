@@ -22,7 +22,6 @@ func defaultConfig() *config {
 
 		HTTPS:          false,
 		Domain:         "example.com",
-		HTTPState:      httpStateDisabled,
 		CertFile:       "",
 		KeyFile:        "",
 		Port:           8082,
