@@ -6,16 +6,11 @@
 package encoding
 
 import (
-	stdencoding "encoding"
 	"errors"
 	"strings"
 
 	"golang.org/x/text/encoding"
 )
-
-// Marshal 和 Unmarshal 的实现者中，如果无法识别数据内容，
-// 则返回此错误信息。
-var ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 
 const (
 	// DefaultEncoding 默认的编码方式，在不能正确获取输入和输出的编码方式时，
@@ -27,40 +22,81 @@ const (
 	DefaultCharset = "utf-8"
 )
 
-// Marshal 将一个对象转换成 []byte 内容时，所采用的接口。
-type Marshal func(v interface{}) ([]byte, error)
+var (
+	// ErrExists 表示指定名称的项目已经存在
+	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
+	ErrExists = errors.New("该名称的项目已经存在")
 
-// Unmarshal 将客户端内容转换成一个对象时，所采用的接口。
-type Unmarshal func([]byte, interface{}) error
+	// ErrUnsupportedMarshal MarshalFunc 和 UnmarshalFunc 的实现者中，
+	// 如果无法识别数据内容，则返回此错误信息。
+	ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
+)
 
-// Charset 操作字符集的相关内容
-//
-// golang.org/x/text 下包含部分常用的结构。
-type Charset = encoding.Encoding
-
-// TextMarshal 针对文本内容的 Marshal 实现
-func TextMarshal(v interface{}) ([]byte, error) {
-	switch vv := v.(type) {
-	case string:
-		return []byte(vv), nil
-	case []byte:
-		return vv, nil
-	case []rune:
-		return []byte(string(vv)), nil
-	case stdencoding.TextMarshaler:
-		return vv.MarshalText()
+var (
+	charset = map[string]encoding.Encoding{
+		DefaultCharset: encoding.Nop,
 	}
 
-	return nil, ErrUnsupportedMarshal
+	marshals = map[string]MarshalFunc{
+		DefaultEncoding: TextMarshal,
+	}
+
+	unmarshals = map[string]UnmarshalFunc{
+		DefaultEncoding: TextUnmarshal,
+	}
+)
+
+// MarshalFunc 将一个对象转换成 []byte 内容时，所采用的接口。
+type MarshalFunc func(v interface{}) ([]byte, error)
+
+// UnmarshalFunc 将客户端内容转换成一个对象时，所采用的接口。
+type UnmarshalFunc func([]byte, interface{}) error
+
+// Charset 获取指定名称的字符集
+// 若不存在，则返回 nil
+func Charset(name string) encoding.Encoding {
+	return charset[name]
 }
 
-// TextUnmarshal 针对文本内容的 Marshal 实现
-func TextUnmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(stdencoding.TextUnmarshaler); ok {
-		return vv.UnmarshalText(data)
+// AddCharset 添加字符集
+func AddCharset(name string, c encoding.Encoding) error {
+	if _, found := charset[name]; found {
+		return ErrExists
 	}
 
-	return ErrUnsupportedMarshal
+	charset[name] = c
+
+	return nil
+}
+
+// Marshal 获取指定名称的编码函数
+func Marshal(name string) MarshalFunc {
+	return marshals[name]
+}
+
+// AddMarshal 添加编码函数
+func AddMarshal(name string, m MarshalFunc) error {
+	if _, found := marshals[name]; found {
+		return ErrExists
+	}
+
+	marshals[name] = m
+	return nil
+}
+
+// Unmarshal 获取指定名称的编码函数
+func Unmarshal(name string) UnmarshalFunc {
+	return unmarshals[name]
+}
+
+// AddUnmarshal 添加编码函数
+func AddUnmarshal(name string, m UnmarshalFunc) error {
+	if _, found := unmarshals[name]; found {
+		return ErrExists
+	}
+
+	unmarshals[name] = m
+	return nil
 }
 
 // BuildContentType 生成一个 content-type

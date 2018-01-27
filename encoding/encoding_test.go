@@ -5,46 +5,59 @@
 package encoding
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/encoding/test"
+	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
-var (
-	_ Marshal   = TextMarshal
-	_ Unmarshal = TextUnmarshal
-)
-
-func TestTextMarshal(t *testing.T) {
+func TestCharset(t *testing.T) {
 	a := assert.New(t)
 
-	v := "123"
-	data, err := TextMarshal(v)
-	a.NotError(err).Equal(string(data), v)
+	a.Equal(len(charset), 1) // 有一条默认的字符集信息
+	a.Nil(Charset("not exists"))
+	a.NotNil(Charset(DefaultCharset))
 
-	data, err = TextMarshal([]rune(v))
-	a.NotError(err).Equal(string(data), v)
+	// 添加已存在的
+	a.Equal(AddCharset(DefaultCharset, simplifiedchinese.GBK), ErrExists)
+	a.Equal(len(charset), 1) // 添加没成功
 
-	// 实现 TextMarshaler 的对象
-	data, err = TextMarshal(&test.TextObject{Name: "test", Age: 5})
-	a.NotError(err).NotNil(data).Equal(string(data), "test,5")
-
-	// 未实现 TextMarshaler 接口的对象
-	data, err = TextMarshal(&struct{}{})
-	a.Equal(err, ErrUnsupportedMarshal).Nil(data)
+	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
+	a.Equal(len(charset), 2) // 添加没成功
+	a.NotNil(Charset("GBK"))
 }
 
-func TestTextUnmarshal(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	a := assert.New(t)
 
-	v1 := &test.TextObject{}
-	a.NotError(TextUnmarshal([]byte("test,5"), v1))
-	a.Equal(v1.Name, "test").Equal(v1.Age, 5)
+	a.Equal(len(marshals), 1)
+	a.Nil(Marshal("not exists"))
+	a.NotNil(Marshal(DefaultEncoding))
 
-	v2 := &struct{}{}
-	a.Equal(TextUnmarshal(nil, v2), ErrUnsupportedMarshal)
+	// 添加已存在的
+	a.Equal(AddMarshal(DefaultEncoding, json.Marshal), ErrExists)
+	a.Equal(len(marshals), 1) // 添加没成功
+
+	a.NotError(AddMarshal("json", json.Marshal))
+	a.Equal(len(marshals), 2) // 添加没成功
+	a.NotNil(Marshal("json"))
+}
+
+func TestUnmarshal(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(len(unmarshals), 1)
+	a.Nil(Unmarshal("not exists"))
+	a.NotNil(Unmarshal(DefaultEncoding))
+
+	// 添加已存在的
+	a.Equal(AddUnmarshal(DefaultEncoding, json.Unmarshal), ErrExists)
+	a.Equal(len(unmarshals), 1) // 添加没成功
+
+	a.NotError(AddUnmarshal("json", json.Unmarshal))
+	a.Equal(len(unmarshals), 2) // 添加没成功
+	a.NotNil(Unmarshal("json"))
 }
 
 func TestBuildContentType(t *testing.T) {
