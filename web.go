@@ -19,10 +19,15 @@ var defaultApp *App
 // 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
 type BuildHandler func(http.Handler) http.Handler
 
-// Init 初始化框架的基本内容
-func Init() (err error) {
-	defaultApp, err = NewApp()
-	return err
+// Init 初始化整个应用环境
+func Init(configDir string, build BuildHandler) error {
+	app, err := NewApp(configDir, build)
+	if err != nil {
+		return err
+	}
+
+	defaultApp = app
+	return nil
 }
 
 // IsDebug 是否处在调试模式

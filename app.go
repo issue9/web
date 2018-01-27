@@ -38,16 +38,14 @@ const (
 type App struct {
 	configDir string
 	config    *config
+	modules   []*Module
+	server    *http.Server
 
-	modules []*Module
-
+	build  BuildHandler // 应用于全局所有路由项的中间件
 	mux    *mux.Mux
 	router *mux.Prefix
 
-	server *http.Server
-
-	build BuildHandler `yaml:"-"`
-
+	// 根据配置文件，获取相应的输出编码和字符集。
 	outputEncoding encoding.MarshalFunc
 	outputCharset  charset.Encoding
 }
@@ -83,17 +81,11 @@ func NewApp(configDir string, build BuildHandler) (*App, error) {
 	return app, nil
 }
 
-// IsDebug 是否处在调试模式
-func (app *App) IsDebug() bool {
-	return app.config.Debug
-}
-
 func (app *App) initFromConfig(conf *config) error {
 	app.config = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 
-	found := false
 	app.outputEncoding = encoding.Marshal(conf.OutputEncoding)
 	if app.outputEncoding == nil {
 		return errors.New("未找到 outputEncoding")
@@ -105,6 +97,11 @@ func (app *App) initFromConfig(conf *config) error {
 	}
 
 	return nil
+}
+
+// IsDebug 是否处在调试模式
+func (app *App) IsDebug() bool {
+	return app.config.Debug
 }
 
 // File 获取配置目录下的文件名

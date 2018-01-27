@@ -24,14 +24,13 @@ var h1 = http.HandlerFunc(f1)
 
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
-	conf := defaultConfig()
-	conf.Build = func(h http.Handler) http.Handler {
+	build := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Date", "1111")
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := New(conf)
+	app, err := NewApp("./testdata", build)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -54,52 +53,12 @@ func TestBuildHandler(t *testing.T) {
 	app.Shutdown(0)
 }
 
-func TestApp_initFromConfig(t *testing.T) {
-	a := assert.New(t)
-
-	app := &App{}
-	conf := defaultConfig()
-	conf.HTTPS = true
-	conf.Port = httpsPort
-	conf.Domain = "example.com"
-	conf.Root = "/path"
-	app.initFromConfig(conf)
-	a.Equal(app.url, "https://example.com/path")
-
-	app = &App{}
-	conf.HTTPS = false
-	app.initFromConfig(conf)
-	a.Equal(app.url, "http://example.com:443/path")
-
-	app = &App{}
-	conf.HTTPS = false
-	conf.Port = 80
-	conf.Root = ""
-	app.initFromConfig(conf)
-	a.Equal(app.url, "http://example.com")
-}
-
-func TestApp_URL(t *testing.T) {
-	a := assert.New(t)
-
-	app := &App{}
-	conf := defaultConfig()
-	conf.HTTPS = true
-	conf.Port = 443
-	conf.Domain = "example.com"
-	app.initFromConfig(conf)
-
-	a.Equal(app.URL("test"), "https://example.com/test")
-	a.Equal(app.URL("/test/file.jpg"), "https://example.com/test/file.jpg")
-}
-
 func TestApp(t *testing.T) {
 	a := assert.New(t)
 	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
 	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
 
-	conf := defaultConfig()
-	app, err := New(conf)
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	f1 := func(w http.ResponseWriter, r *http.Request) {
@@ -154,8 +113,8 @@ func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
 	config := defaultConfig()
 	config.Port = 8083
-	app := &App{}
-	app.initFromConfig(config)
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -184,10 +143,8 @@ func TestApp_Shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
-	app := &App{}
-	app.initFromConfig(config)
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -228,8 +185,8 @@ func TestApp_Run(t *testing.T) {
 	config := defaultConfig()
 	config.Port = 8083
 	config.Static = map[string]string{"/static": "./testdata/"}
-	app := &App{}
-	app.initFromConfig(config)
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
 
@@ -258,8 +215,7 @@ func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
-	conf := defaultConfig()
-	app, err := New(conf)
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	// 缺少 Accept 报头
@@ -279,8 +235,7 @@ func TestApp_NewContext(t *testing.T) {
 
 func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
-	conf := defaultConfig()
-	app, err := New(conf)
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -295,8 +250,7 @@ func TestApp_buildHandler(t *testing.T) {
 
 func TestApp_buildHosts_empty(t *testing.T) {
 	a := assert.New(t)
-	conf := defaultConfig()
-	app, err := New(conf)
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	h := app.buildHosts(h1)
@@ -312,8 +266,8 @@ func TestApp_buildHosts(t *testing.T) {
 	a := assert.New(t)
 	config := defaultConfig()
 	config.AllowedDomains = []string{"caixw.io", "example.com"} // 指定域名
-	app := &App{}
-	app.initFromConfig(config)
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	h := app.buildHosts(h1)
 
@@ -334,8 +288,8 @@ func TestApp_buildHeader(t *testing.T) {
 	a := assert.New(t)
 	config := defaultConfig()
 	config.Headers = map[string]string{"Test": "test"}
-	app := &App{}
-	app.initFromConfig(config)
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	h := app.buildHeader(h1)
 
@@ -349,8 +303,7 @@ func TestApp_buildHeader(t *testing.T) {
 func TestApp_buildPprof(t *testing.T) {
 	a := assert.New(t)
 
-	conf := defaultConfig()
-	app, err := New(conf)
+	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	h := app.buildPprof(h1)

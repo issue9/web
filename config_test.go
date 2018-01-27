@@ -44,6 +44,7 @@ func TestConfig_sanitize(t *testing.T) {
 	conf.AllowedDomains = nil
 	a.NotError(conf.sanitize())
 	a.Nil(conf.AllowedDomains)
+	a.Equal(conf.URL, "http://example.com:8082")
 
 	// 存在 allowedDomains，将 Domain 加入其中
 	conf = defaultConfig()

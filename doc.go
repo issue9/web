@@ -11,5 +11,5 @@ const (
 
 	// MinimumGoVersion 需求的最低 Go 版本
 	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
-	MinimumGoVersion = "1.9"
+	MinimumGoVersion = "1.8"
 )
