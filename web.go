@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/result"
 )
 
@@ -20,36 +19,9 @@ var defaultApp *App
 // 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
 type BuildHandler func(http.Handler) http.Handler
 
-// Web 传递给 web.Init() 的参数
-type Web struct {
-	// 配置文件所在的目录。
-	ConfigDir string
-
-	// 所有需要支持的字符集
-	//
-	// 内置 utf-8 字符集支持，不需要再指定
-	Charset map[string]encoding.Charset
-
-	// 指定从客户端数据转换到结构体的函数。
-	//
-	// 已内置对 text/plain 的支持。
-	Marshals map[string]encoding.Marshal
-
-	// 指定将结构体转换成字符串的函数。
-	//
-	// 已内置对 text/plain 的支持。
-	Unmarshals map[string]encoding.Unmarshal
-
-	// 所有的错误代码与错误信息的对照表。
-	Messages map[int]string
-
-	// 作用于给所有路由的中间件
-	Build BuildHandler
-}
-
 // Init 初始化框架的基本内容
-func Init(web *Web) (err error) {
-	defaultApp, err = web.NewApp()
+func Init() (err error) {
+	defaultApp, err = NewApp()
 	return err
 }
 
@@ -96,20 +68,4 @@ func NewResult(code int) *result.Result {
 // NewResultWithDetail 声明一个带详细内容的 result.Result 对象
 func NewResultWithDetail(code int, fields map[string]string) *result.Result {
 	return result.New(code, fields)
-}
-
-// Restart 重启服务
-//
-// 其实是终止旧有的服务，然后再开一个新的服务，
-// 包括初始化等操作，都会重新走一遍。
-func Restart(web *Web, timeout time.Duration) error {
-	if err := Shutdown(timeout); err != nil {
-		return err
-	}
-
-	if err := Init(web); err != nil {
-		return err
-	}
-
-	return Run()
 }

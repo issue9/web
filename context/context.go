@@ -11,8 +11,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/issue9/web/encoding"
+	charset "golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
+
+	"github.com/issue9/web/encoding"
 )
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
@@ -21,18 +23,22 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的编码方式，以及名称
-	OutputEncoding     encoding.Marshal
+	OutputEncoding     encoding.MarshalFunc
 	OutputEncodingName string
 
-	// 输出到客户端的字符集，若为空，表示为 utf-8
-	OutputCharset     encoding.Charset
+	// 输出到客户端的字符集
+	//
+	// 若值为 charset.Nop 或是空，表示为 utf-8
+	OutputCharset     charset.Encoding
 	OutputCharsetName string
 
 	// 客户端内容所使用的编码方式。
-	InputEncoding encoding.Unmarshal
+	InputEncoding encoding.UnmarshalFunc
 
-	// 客户端内容所使用的字符集，若为空，则表示为 utf-8
-	InputCharset encoding.Charset
+	// 客户端内容所使用的字符集
+	//
+	// 若值为 charset.Nop 或是空，表示为 utf-8
+	InputCharset charset.Encoding
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
 	body []byte
@@ -88,17 +94,21 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	data, err := ctx.OutputEncoding(v)
-	if err == nil {
-		ctx.Response.WriteHeader(status)
-
-		if ctx.OutputCharset != nil {
-			w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
-			_, err = w.Write(data)
-		} else {
-			_, err = ctx.Response.Write(data)
-		}
+	if err != nil {
+		return err
 	}
 
+	ctx.Response.WriteHeader(status)
+
+	if ctx.OutputCharset != nil {
+		w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
+		if _, err = w.Write(data); err != nil {
+			return err
+		}
+		return w.Close()
+	}
+
+	_, err = ctx.Response.Write(data)
 	return err
 }
 

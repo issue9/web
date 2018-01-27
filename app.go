@@ -20,11 +20,11 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/mux"
+	charset "golang.org/x/text/encoding"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/result"
 )
 
 const pprofPath = "/debug/pprof/"
@@ -46,44 +46,26 @@ type App struct {
 
 	server *http.Server
 
-	// 所有可用的编码和解码方式。
-	// 键名为 mime-type 值，键值为对应的编码函数
-	marshals   map[string]encoding.Marshal   `yaml:"-"`
-	unmarshals map[string]encoding.Unmarshal `yaml:"-"`
-
-	// 所有可用的字符集处理实例。
-	// 键名为字符集名称，比如：utf-8；键值为对应的实例。
-	//
-	// 如果是 utf-8 编码，则键值为 nil
-	charset map[string]encoding.Charset `yaml:"-"`
-
 	build BuildHandler `yaml:"-"`
 
-	outputEncoding encoding.Marshal
-	outputCharset  encoding.Charset
+	outputEncoding encoding.MarshalFunc
+	outputCharset  charset.Encoding
 }
 
 // NewApp 初始化框架的基本内容。
-func (web *Web) NewApp() (*App, error) {
-	dir, err := filepath.Abs(web.ConfigDir)
+func NewApp(configDir string, build BuildHandler) (*App, error) {
+	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		configDir:  dir,
-		marshals:   web.Marshals,
-		unmarshals: web.Unmarshals,
-		charset:    web.Charset,
-		build:      web.Build,
-		modules:    make([]*Module, 0, 100),
+		configDir: dir,
+		build:     build,
+		modules:   make([]*Module, 0, 100),
 	}
 
 	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
-		return nil, err
-	}
-
-	if err := result.NewMessages(web.Messages); err != nil {
 		return nil, err
 	}
 
@@ -112,13 +94,13 @@ func (app *App) initFromConfig(conf *config) error {
 	app.router = app.mux.Prefix(conf.Root)
 
 	found := false
-	app.outputEncoding, found = app.marshals[conf.OutputEncoding]
-	if !found {
+	app.outputEncoding = encoding.Marshal(conf.OutputEncoding)
+	if app.outputEncoding == nil {
 		return errors.New("未找到 outputEncoding")
 	}
 
-	app.outputCharset, found = app.charset[conf.OutputCharset]
-	if !found {
+	app.outputCharset = encoding.Charset(conf.OutputCharset)
+	if app.outputCharset == nil {
 		return errors.New("未找到 outputCharset")
 	}
 
@@ -212,14 +194,14 @@ func (app *App) URL(path string) string {
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
-	unmarshal, found := app.unmarshals[encName]
-	if !found {
+	unmarshal := encoding.Unmarshal(encName)
+	if unmarshal == nil {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
 	}
 
-	inputCharset, found := app.charset[charsetName]
-	if !found {
+	inputCharset := encoding.Charset(charsetName)
+	if inputCharset == nil {
 		context.RenderStatus(w, http.StatusUnsupportedMediaType)
 		return nil
 	}

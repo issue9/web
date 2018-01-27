@@ -11,12 +11,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	charset "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/test"
 )
 
-func newContext(w http.ResponseWriter, r *http.Request, outputEncoding encoding.Marshal, outputCharset encoding.Charset) *Context {
+func newContext(w http.ResponseWriter, r *http.Request, outputEncoding encoding.MarshalFunc, outputCharset charset.Encoding) *Context {
 	return &Context{
 		Response:       w,
 		Request:        r,
