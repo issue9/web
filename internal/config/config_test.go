@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package config
 
 import (
 	"testing"
@@ -13,8 +13,8 @@ import (
 )
 
 // 返回一个默认的 Config
-func defaultConfig() *config {
-	return &config{
+func defaultConfig() *Config {
+	return &Config{
 		Debug:          true,
 		OutputCharset:  encoding.DefaultCharset,
 		OutputEncoding: encoding.DefaultEncoding,

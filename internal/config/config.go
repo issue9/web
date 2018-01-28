@@ -2,25 +2,29 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+// Package config 为框架提供配置文件内容。
+package config
 
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/encoding"
 )
 
-type config struct {
+// Config 配置文件内容
+type Config struct {
 	// Debug 是否启用调试模式
 	//
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
-	Debug bool `yaml:"debug"`
+	Debug bool `yaml:"debug,omitempty"`
 
 	// Strict 严格模式。
 	//
@@ -30,16 +34,16 @@ type config struct {
 
 	// OutputEncoding 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
 	//
-	// 此编码方式必须已经通过 context.AddMarsal() 添加。
+	// 此编码方式必须已经通过 encoding.AddMarsal() 添加。
 	//
-	// 如果为空，则会采用 context.DefaultEncoding 作为默认值。
+	// 如果为空，则会采用 encoding.DefaultEncoding 作为默认值。
 	OutputEncoding string `yaml:"outputEncoding"`
 
 	// OutputCharset 向客户端输出的字符集名称。
 	//
-	// 此编码方式必须已经通过 context.AddCharset() 添加。
+	// 此编码方式必须已经通过 encoding.AddCharset() 添加。
 	//
-	// 如果为空，则会采用 context.DefaultCharset 作为默认值。
+	// 如果为空，则会采用 encoding.DefaultCharset 作为默认值。
 	OutputCharset string `yaml:"outputCharset"`
 
 	// Domain 网站的主域名
@@ -100,21 +104,40 @@ type config struct {
 	// 每一个元素指定一条插件的路径。确保路径和权限正确。
 	Plugins []string `yaml:"plugins,omitempty"`
 
-	ReadTimeout  time.Duration `yaml:"readTimeout"`
-	WriteTimeout time.Duration `yaml:"writeTimeout"`
+	ReadTimeout  time.Duration `yaml:"readTimeout,omitempty"`
+	WriteTimeout time.Duration `yaml:"writeTimeout,omitempty"`
 
 	// URL 网站的首页地址。
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
 	//
 	// 若为空，则会根据配置文件的内容，生成网站首页地址。
 	// 用户也可台强制指定一个不同的地址。
-	URL string `yaml:"url"`
+	URL string `yaml:"url,omitempty"`
+}
+
+// Load 加载指定的文件
+func Load(path string) (*Config, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	conf := &Config{}
+	if err = yaml.Unmarshal(data, conf); err != nil {
+		return nil, err
+	}
+
+	if err = conf.sanitize(); err != nil {
+		return nil, err
+	}
+
+	return conf, nil
 }
 
 // 修正可修正的内容，返回不可修正的错误。
-func (conf *config) sanitize() error {
+func (conf *Config) sanitize() error {
 	if !is.URL(conf.Domain) && conf.Domain != "localhost" {
-		return errors.New("conf.domain 必须是一个 URL")
+		return errors.New("domain 必须是一个 URL")
 	}
 
 	if conf.Root == "/" {
