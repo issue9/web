@@ -28,8 +28,10 @@ const (
 // 如果让模块直接以变量的形式直接提供，则需要保证每个 *Module
 // 需要使用的数据都会在加载模块时初始化，这无法做到；
 //
-// 而返回 *Module 而不是直接在 ModuleFunc 内进行注册，
+// 返回 *Module 而不是直接在 ModuleFunc 内进行注册，
 // 是因为这样可以控制 Module.Type 的值。
+// 且只有这样才能保证，插件注册到当前的 App 对象中，
+// 而不是默认的 defaultApp 对象中。
 type ModuleFunc func() *Module
 
 // ModuleType 用以指定模块的类型。
