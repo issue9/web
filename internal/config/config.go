@@ -19,8 +19,17 @@ import (
 	"github.com/issue9/web/encoding"
 )
 
+const localhostURL = "localhost"
+
 // Config 配置文件内容
 type Config struct {
+	// Domain 网站的主域名
+	//
+	// 必须为一个合法的域名、IP 或是 localhost 字符串。
+	//
+	// 当 AllowedDomain 值不会空时，此值会自动合并到 AllowedDomains 中。
+	Domain string `yaml:"domain,omitempty"`
+
 	// Debug 是否启用调试模式
 	//
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
@@ -34,24 +43,17 @@ type Config struct {
 
 	// OutputEncoding 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
 	//
-	// 此编码方式必须已经通过 encoding.AddMarsal() 添加。
+	// 该值最终会通过 encoding.Marshal() 进行查找。
 	//
 	// 如果为空，则会采用 encoding.DefaultEncoding 作为默认值。
-	OutputEncoding string `yaml:"outputEncoding"`
+	OutputEncoding string `yaml:"outputEncoding,omitempty"`
 
 	// OutputCharset 向客户端输出的字符集名称。
 	//
-	// 此编码方式必须已经通过 encoding.AddCharset() 添加。
+	// 该值最终会通过 encoding.Marshal() 进行查找。
 	//
 	// 如果为空，则会采用 encoding.DefaultCharset 作为默认值。
-	OutputCharset string `yaml:"outputCharset"`
-
-	// Domain 网站的主域名
-	//
-	// 必须为一个合法的域名、IP 或是 localhost 字符串。
-	//
-	// 当 AllowedDomain 值不会空时，此值会自动合并到 AllowedDomains 中。
-	Domain string `yaml:"domain"`
+	OutputCharset string `yaml:"outputCharset,omitempty"`
 
 	// Root 表示网站所在的根目录
 	//
@@ -67,7 +69,7 @@ type Config struct {
 	// 这两个文件最终会被传递给 http.ListenAndServeTLS() 的两个参数。
 	//
 	// 此值还会影响 Port 的默认值。
-	HTTPS    bool   `yaml:"https"`
+	HTTPS    bool   `yaml:"https,omitempty"`
 	CertFile string `yaml:"certFile,omitempty"`
 	KeyFile  string `yaml:"keyFile,omitempty"`
 	Port     int    `yaml:"port,omitempty"`
@@ -91,7 +93,7 @@ type Config struct {
 
 	// AllowedDomains 限定访问域名。
 	//
-	// 若指定了此值，则只有此列表与 Domain 中指定的域名可以访问当前网页。
+	// 若指定了此值，则只有此列表中指定的域名可以访问当前网页。
 	// 诸如 IP 和其它域名的指向将不再启作用。
 	//
 	// 在 AllowedDomains 中至少存在一个及以上的域名时，Domain
@@ -111,6 +113,8 @@ type Config struct {
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
 	//
 	// 若为空，则会根据配置文件的内容，生成网站首页地址。
+	// 若是 domain 为空，则生成的地址只有路径部分。
+	//
 	// 用户也可台强制指定一个不同的地址。
 	URL string `yaml:"url,omitempty"`
 }
@@ -136,10 +140,48 @@ func Load(path string) (*Config, error) {
 
 // 修正可修正的内容，返回不可修正的错误。
 func (conf *Config) sanitize() error {
-	if !is.URL(conf.Domain) && conf.Domain != "localhost" {
+	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
 	}
 
+	if conf.OutputCharset == "" {
+		conf.OutputCharset = encoding.DefaultCharset
+	}
+
+	if conf.OutputEncoding == "" {
+		conf.OutputEncoding = encoding.DefaultEncoding
+	}
+
+	for _, path := range conf.Plugins {
+		if !utils.FileExists(path) {
+			return fmt.Errorf("插件 %s 不存在", path)
+		}
+	}
+
+	if conf.ReadTimeout < 0 {
+		return errors.New("readTimeout 必须大于等于 0")
+	}
+
+	if conf.WriteTimeout < 0 {
+		return errors.New("writeTimeout 必须大于等于 0")
+	}
+
+	if err := conf.buildRoot(); err != nil {
+		return err
+	}
+	if err := conf.buildAllowedDomains(); err != nil {
+		return err
+	}
+	if err := conf.buildHTTPS(); err != nil {
+		return err
+	}
+
+	conf.buildURL()
+
+	return nil
+}
+
+func (conf *Config) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
 	} else if len(conf.Root) > 0 {
@@ -151,14 +193,10 @@ func (conf *Config) sanitize() error {
 		}
 	}
 
-	if conf.OutputCharset == "" {
-		conf.OutputCharset = encoding.DefaultCharset
-	}
+	return nil
+}
 
-	if conf.OutputEncoding == "" {
-		conf.OutputEncoding = encoding.DefaultEncoding
-	}
-
+func (conf *Config) buildHTTPS() error {
 	if conf.HTTPS {
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
@@ -177,11 +215,15 @@ func (conf *Config) sanitize() error {
 		}
 	}
 
+	return nil
+}
+
+func (conf *Config) buildAllowedDomains() error {
 	if len(conf.AllowedDomains) > 0 {
 		found := false
 		for _, host := range conf.AllowedDomains {
 			if !is.URL(host) {
-				return fmt.Errorf("AllowedDomains 中的 %v 为非法的 URL", host)
+				return fmt.Errorf("AllowedDomains 中的 %s 为非法的 URL", host)
 			}
 
 			if host == conf.Domain {
@@ -189,40 +231,37 @@ func (conf *Config) sanitize() error {
 			}
 		}
 
-		// 仅在存在 allowedDomains 字段，且该字段不为空时，才添加 domain 字段到 allowedDomains 中
-		if !found {
+		// 仅在 allowedDomains 字段不为空时，才添加 domain 到 allowedDomains 中
+		if !found && conf.Domain != "" {
 			conf.AllowedDomains = append(conf.AllowedDomains, conf.Domain)
 		}
 	}
 
-	for _, path := range conf.Plugins {
-		if !utils.FileExists(path) {
-			return errors.New("插件不存在")
-		}
-	}
-
-	if conf.ReadTimeout < 0 {
-		return errors.New("readTimeout 必须大于等于 0")
-	}
-
-	if conf.WriteTimeout < 0 {
-		return errors.New("writeTimeout 必须大于等于 0")
-	}
-
-	if conf.URL == "" {
-		if conf.HTTPS {
-			conf.URL = "https://" + conf.Domain
-			if conf.Port != 443 {
-				conf.URL += ":" + strconv.Itoa(conf.Port)
-			}
-		} else {
-			conf.URL = "http://" + conf.Domain
-			if conf.Port != 80 {
-				conf.URL += ":" + strconv.Itoa(conf.Port)
-			}
-		}
-		conf.URL += conf.Root
-	}
-
 	return nil
+}
+
+func (conf *Config) buildURL() {
+	if conf.URL != "" {
+		return
+	}
+
+	// 未指定域名，则只有路径部分
+	if conf.Domain == "" {
+		conf.URL = conf.Root
+		return
+	}
+
+	if conf.HTTPS {
+		conf.URL = "https://" + conf.Domain
+		if conf.Port != 443 {
+			conf.URL += ":" + strconv.Itoa(conf.Port)
+		}
+	} else {
+		conf.URL = "http://" + conf.Domain
+		if conf.Port != 80 {
+			conf.URL += ":" + strconv.Itoa(conf.Port)
+		}
+	}
+
+	conf.URL += conf.Root
 }

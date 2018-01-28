@@ -9,54 +9,136 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding"
 )
 
-// 返回一个默认的 Config
-func defaultConfig() *Config {
-	return &Config{
-		Debug:          true,
-		OutputCharset:  encoding.DefaultCharset,
-		OutputEncoding: encoding.DefaultEncoding,
-		Strict:         true,
-
-		HTTPS:          false,
-		Domain:         "example.com",
-		CertFile:       "",
-		KeyFile:        "",
-		Port:           8082,
-		Headers:        nil,
-		Static:         nil,
-		DisableOptions: false,
-		AllowedDomains: []string{},
-
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-}
-
-func TestConfig_sanitize(t *testing.T) {
+func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
-	// 不存在 allowedDomains，不会将 Domain 加入其中
-	conf := defaultConfig()
-	conf.Domain = "example.com"
-	conf.AllowedDomains = nil
-	a.NotError(conf.sanitize())
-	a.Nil(conf.AllowedDomains)
-	a.Equal(conf.URL, "http://example.com:8082")
+	conf, err := Load("./testdata/not-exists.yml")
+	a.Error(err).Nil(conf)
 
-	// 存在 allowedDomains，将 Domain 加入其中
-	conf = defaultConfig()
+	conf, err = Load("./testdata/web.yaml")
+	a.NotError(err).NotNil(conf)
+	a.Equal(conf.Port, 8082)
+	a.Equal(conf.Domain, localhostURL)
+	a.Equal(conf.ReadTimeout, time.Second*3)
+	a.Equal(conf.WriteTimeout, 0)
+}
+
+func TestConfig_buildRoot(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Config{}
+	a.NotError(conf.buildRoot())
+	a.Equal(conf.Root, "")
+
+	conf = &Config{Root: "/"}
+	a.NotError(conf.buildRoot())
+	a.Equal(conf.Root, "")
+
+	conf = &Config{Root: "/path"}
+	a.NotError(conf.buildRoot())
+	a.Equal(conf.Root, "/path")
+
+	conf = &Config{Root: "/path/"}
+	a.Error(conf.buildRoot())
+
+	conf = &Config{Root: "path"}
+	a.Error(conf.buildRoot())
+}
+
+func TestConfig_buildAllowedDomains(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Config{}
+	a.NotError(conf.buildAllowedDomains())
+	a.Empty(conf.AllowedDomains)
+
+	// 未指定 allowedDomains
 	conf.Domain = "example.com"
-	conf.AllowedDomains = []string{"caixw.io"}
-	a.NotError(conf.sanitize())
+	a.NotError(conf.buildAllowedDomains())
+	a.Empty(conf.AllowedDomains)
+
+	// 与 domain 同一个域名
+	conf.Domain = "example.com"
+	conf.AllowedDomains = []string{"example.com"}
+	a.NotError(conf.buildAllowedDomains())
+	a.Equal(1, len(conf.AllowedDomains))
+
+	conf.Domain = localhostURL
+	conf.AllowedDomains = []string{"example.com"}
+	a.NotError(conf.buildAllowedDomains())
 	a.Equal(2, len(conf.AllowedDomains))
 
-	// 存在 allowedDomains 且有与 Domain 相同的项，不会再次将 Domain 加入其中
-	conf = defaultConfig()
-	conf.Domain = "example.com"
-	conf.AllowedDomains = []string{"caixw.io", "example.com"}
-	a.NotError(conf.sanitize())
-	a.Equal(2, len(conf.AllowedDomains))
+	conf.Domain = ""
+	conf.AllowedDomains = []string{"example.com"}
+	a.NotError(conf.buildAllowedDomains())
+	a.Equal(1, len(conf.AllowedDomains))
+
+	conf.AllowedDomains = []string{"not url"}
+	a.Error(conf.buildAllowedDomains())
+}
+
+func TestConfig_buildHTTPS(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Config{HTTPS: false}
+	a.NotError(conf.buildHTTPS())
+	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
+
+	// 指定端口
+	conf.Port = 8080
+	a.NotError(conf.buildHTTPS())
+	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 8080)
+
+	// 未指定 cert 和 key
+	conf.HTTPS = true
+	a.Error(conf.buildHTTPS())
+
+	conf = &Config{
+		HTTPS:    true,
+		CertFile: "./testdata/cert.pem",
+		KeyFile:  "./testdata/key.pem",
+	}
+	a.NotError(conf.buildHTTPS())
+	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 443)
+
+	// 指定端口
+	conf.Port = 8080
+	a.NotError(conf.buildHTTPS())
+	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
+}
+
+func TestConfig_buildURL(t *testing.T) {
+	a := assert.New(t)
+	conf := &Config{Port: 80}
+	conf.buildURL()
+	a.Equal(conf.URL, "")
+
+	conf.Root = "/path"
+	conf.URL = "" // 重置为空
+	conf.buildURL()
+	a.Equal(conf.URL, "/path")
+
+	conf.Domain = localhostURL
+	conf.URL = "" // 重置为空
+	conf.buildURL()
+	a.Equal(conf.URL, "http://localhost/path")
+
+	conf.Port = 443
+	conf.URL = "" // 重置为空
+	conf.buildURL()
+	a.Equal(conf.URL, "http://localhost:443/path")
+
+	conf.Port = 80
+	conf.HTTPS = true
+	conf.URL = "" // 重置为空
+	conf.buildURL()
+	a.Equal(conf.URL, "https://localhost:80/path")
+
+	conf.Port = 443
+	conf.HTTPS = true
+	conf.URL = "" // 重置为空
+	conf.buildURL()
+	a.Equal(conf.URL, "https://localhost/path")
 }

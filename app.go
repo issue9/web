@@ -7,7 +7,6 @@ package web
 import (
 	stdctx "context"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
 	"path/filepath"
@@ -21,10 +20,10 @@ import (
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/mux"
 	charset "golang.org/x/text/encoding"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/internal/config"
 )
 
 const pprofPath = "/debug/pprof/"
@@ -37,7 +36,7 @@ const (
 // App 保存整个程序的运行环境，方便做整体的调度。
 type App struct {
 	configDir string
-	config    *config
+	config    *config.Config
 	modules   []*Module
 	server    *http.Server
 
@@ -67,12 +66,8 @@ func NewApp(configDir string, build BuildHandler) (*App, error) {
 		return nil, err
 	}
 
-	data, err := ioutil.ReadFile(app.File(configFilename))
+	conf, err := config.Load(app.File(configFilename))
 	if err != nil {
-		return nil, err
-	}
-	conf := &config{}
-	if err = yaml.Unmarshal(data, conf); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +76,7 @@ func NewApp(configDir string, build BuildHandler) (*App, error) {
 	return app, nil
 }
 
-func (app *App) initFromConfig(conf *config) error {
+func (app *App) initFromConfig(conf *config.Config) error {
 	app.config = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
