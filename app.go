@@ -5,24 +5,20 @@
 package web
 
 import (
-	stdctx "context"
 	"errors"
 	"net/http"
-	"net/http/pprof"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
-	"github.com/issue9/middleware/host"
-	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/mux"
 	charset "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/server"
 )
 
 const pprofPath = "/debug/pprof/"
@@ -36,7 +32,6 @@ type app struct {
 	configDir string
 	config    *config.Config
 	modules   []*Module
-	server    *http.Server
 
 	middleware Middleware // 应用于全局所有路由项的中间件
 	mux        *mux.Mux
@@ -121,33 +116,17 @@ func (app *app) Run() error {
 		app.router.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
-	h := app.buildHandler(app.mux)
+	var h http.Handler = app.mux
 	if app.middleware != nil {
 		h = app.middleware(h)
 	}
 
-	app.server = &http.Server{
-		Addr:         ":" + strconv.Itoa(app.config.Port),
-		Handler:      h,
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.config.ReadTimeout,
-		WriteTimeout: app.config.WriteTimeout,
-	}
-
-	logs.Infof("开始监听[%v]端口", app.config.Port)
-
-	if !app.config.HTTPS {
-		return app.server.ListenAndServe()
-	}
-
-	return app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
+	return server.Listen(h, app.config)
 }
 
 // Close 立即关闭服务
 func (app *app) Close() error {
-	logs.Flush()
-
-	return app.server.Close()
+	return server.Close()
 }
 
 // Shutdown 关闭所有服务。
@@ -155,15 +134,7 @@ func (app *app) Close() error {
 // 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
 // 等待时间由配置文件决定。
 func (app *app) Shutdown() error {
-	logs.Flush()
-
-	if app.config.ShutdownTimeout <= 0 {
-		return app.server.Close()
-	}
-
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.config.ShutdownTimeout)
-	defer cancel()
-	return app.server.Shutdown(ctx)
+	return server.Shutdown(app.config.ShutdownTimeout)
 }
 
 // URL 构建一条基于 app.url 的完整 URL
@@ -217,73 +188,4 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		OutputCharset:      app.outputCharset,
 		OutputCharsetName:  app.config.OutputCharset,
 	}
-}
-
-func logRecovery(w http.ResponseWriter, msg interface{}) {
-	logs.Error(msg)
-	context.RenderStatus(w, http.StatusInternalServerError)
-}
-
-func (app *app) buildHandler(h http.Handler) http.Handler {
-	h = app.buildHosts(app.buildHeader(h))
-
-	ff := logRecovery
-	if app.config.Debug {
-		ff = recovery.PrintDebug
-	}
-	h = recovery.New(h, ff)
-
-	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	if app.config.Debug {
-		h = app.buildPprof(h)
-	}
-
-	return h
-}
-
-func (app *app) buildHosts(h http.Handler) http.Handler {
-	if len(app.config.AllowedDomains) == 0 {
-		return h
-	}
-
-	return host.New(h, app.config.AllowedDomains...)
-}
-
-func (app *app) buildHeader(h http.Handler) http.Handler {
-	if len(app.config.Headers) == 0 {
-		return h
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range app.config.Headers {
-			w.Header().Set(k, v)
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
-// 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func (app *app) buildPprof(h http.Handler) http.Handler {
-	logs.Debug("开启了调试功能，地址为：", pprofPath)
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, pprofPath) {
-			h.ServeHTTP(w, r)
-			return
-		}
-
-		path := r.URL.Path[len(pprofPath):]
-		switch path {
-		case "cmdline":
-			pprof.Cmdline(w, r)
-		case "profile":
-			pprof.Profile(w, r)
-		case "symbol":
-			pprof.Symbol(w, r)
-		case "trace":
-			pprof.Trace(w, r)
-		default:
-			pprof.Index(w, r)
-		}
-	}) // end return http.HandlerFunc
 }
