@@ -4,7 +4,7 @@
 
 package encoding
 
-import stdencoding "encoding"
+import "encoding"
 
 // TextMarshal 针对文本内容的 MarshalFunc 实现
 func TextMarshal(v interface{}) ([]byte, error) {
@@ -15,7 +15,7 @@ func TextMarshal(v interface{}) ([]byte, error) {
 		return vv, nil
 	case []rune:
 		return []byte(string(vv)), nil
-	case stdencoding.TextMarshaler:
+	case encoding.TextMarshaler:
 		return vv.MarshalText()
 	}
 
@@ -24,7 +24,7 @@ func TextMarshal(v interface{}) ([]byte, error) {
 
 // TextUnmarshal 针对文本内容的 UnmarshalFunc 实现
 func TextUnmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(stdencoding.TextUnmarshaler); ok {
+	if vv, ok := v.(encoding.TextUnmarshaler); ok {
 		return vv.UnmarshalText(data)
 	}
 

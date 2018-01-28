@@ -40,9 +40,9 @@ type App struct {
 	modules   []*Module
 	server    *http.Server
 
-	build  BuildHandler // 应用于全局所有路由项的中间件
-	mux    *mux.Mux
-	router *mux.Prefix
+	middleware Middleware // 应用于全局所有路由项的中间件
+	mux        *mux.Mux
+	router     *mux.Prefix
 
 	// 根据配置文件，获取相应的输出编码和字符集。
 	outputEncoding encoding.MarshalFunc
@@ -50,33 +50,35 @@ type App struct {
 }
 
 // NewApp 初始化框架的基本内容。
-func NewApp(configDir string, build BuildHandler) (*App, error) {
+func NewApp(configDir string, m Middleware) (*App, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		configDir: dir,
-		build:     build,
-		modules:   make([]*Module, 0, 100),
+		configDir:  dir,
+		middleware: m,
+		modules:    make([]*Module, 0, 100),
 	}
 
 	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
 		return nil, err
 	}
 
-	conf, err := config.Load(app.File(configFilename))
-	if err != nil {
+	if err = app.loadConfig(); err != nil {
 		return nil, err
 	}
-
-	app.initFromConfig(conf)
 
 	return app, nil
 }
 
-func (app *App) initFromConfig(conf *config.Config) error {
+func (app *App) loadConfig() error {
+	conf, err := config.Load(app.File(configFilename))
+	if err != nil {
+		return err
+	}
+
 	app.config = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
@@ -127,9 +129,9 @@ func (app *App) Run() error {
 		app.router.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
 	}
 
-	var h http.Handler = app.mux
-	if app.build != nil {
-		h = app.build(h)
+	h := app.buildHandler(app.mux)
+	if app.middleware != nil {
+		h = app.middleware(h)
 	}
 
 	app.server = &http.Server{

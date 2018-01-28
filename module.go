@@ -43,8 +43,8 @@ type Module struct {
 	Routes      []*Route
 	Type        ModuleType
 
-	inits        []dependency.InitFunc
-	buildHandler BuildHandler
+	inits      []dependency.InitFunc
+	middleware Middleware
 }
 
 // Route 表示模块信息中的路由信息
@@ -134,8 +134,8 @@ func (app *App) getInit(m *Module) dependency.InitFunc {
 
 		for _, r := range m.Routes {
 			h := r.Handler
-			if m.buildHandler != nil {
-				h = m.buildHandler(h)
+			if m.middleware != nil {
+				h = m.middleware(h)
 			}
 
 			if err := app.router.Handle(r.Path, h, r.Methods...); err != nil {
@@ -177,11 +177,11 @@ func (p *Prefix) Module() *Module {
 	return p.module
 }
 
-// SetHandler 为当前模块的所有路由添加的中间件。
+// SetMiddleware 为当前模块的所有路由添加的中间件。
 //
 // 多次调用，最后一次为准。
-func (m *Module) SetHandler(f BuildHandler) {
-	m.buildHandler = f
+func (m *Module) SetMiddleware(f Middleware) {
+	m.middleware = f
 }
 
 // AddInit 添加一个初始化函数

@@ -5,15 +5,12 @@
 package web
 
 import (
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs"
 )
 
 var f1 = func(w http.ResponseWriter, r *http.Request) {
@@ -22,22 +19,18 @@ var f1 = func(w http.ResponseWriter, r *http.Request) {
 
 var h1 = http.HandlerFunc(f1)
 
-func TestBuildHandler(t *testing.T) {
+func TestMiddleware(t *testing.T) {
 	a := assert.New(t)
-	build := func(h http.Handler) http.Handler {
+	m := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Date", "1111")
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := NewApp("./testdata", build)
+	app, err := NewApp("./testdata", m)
 	a.NotError(err).NotNil(app)
 
-	f1 := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
-	}
-
-	app.router.GetFunc("/builder", f1)
+	app.router.GetFunc("/middleware", f1)
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
 		app.Run()
@@ -47,72 +40,14 @@ func TestBuildHandler(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	// 正常访问
-	resp, err := http.Get("http://localhost:8082/builder")
+	resp, err := http.Get("http://localhost:8082/middleware")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.Header.Get("Date"), "1111")
 	app.Shutdown(0)
 }
 
-func TestApp(t *testing.T) {
-	a := assert.New(t)
-	logs.SetWriter(logs.LevelError, os.Stderr, "[ERR]", log.LstdFlags)
-	logs.SetWriter(logs.LevelInfo, os.Stderr, "[INFO]", log.LstdFlags)
-
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	f1 := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
-	}
-	shutdown := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
-		if err := app.Shutdown(5 * time.Microsecond); err != nil {
-			logs.Error("SHUTDOWN:", err)
-		}
-	}
-
-	app.router.GetFunc("/out", f1)
-	app.AddModule(&Module{
-		Name:        "init",
-		Description: "init 测试用",
-		Routes: []*Route{
-			{
-				Methods: []string{http.MethodGet},
-				Path:    "/test",
-				Handler: http.HandlerFunc(f1),
-			},
-			{
-				Methods: []string{http.MethodGet},
-				Path:    "/shutdown",
-				Handler: http.HandlerFunc(shutdown),
-			},
-		}})
-
-	go func() {
-		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run()
-	}()
-
-	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
-
-	// 正常访问
-	resp, err := http.Get("http://localhost:8082/test")
-	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
-	resp, err = http.Get("http://localhost:8082/out")
-	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
-
-	// 关闭
-	resp, err = http.Get("http://localhost:8082/shutdown")
-	a.NotError(err).NotNil(resp).Equal(resp.StatusCode, 1)
-	resp, err = http.Get("http://localhost:8082/test")
-	a.Error(err).Nil(resp)
-}
-
 func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
 	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
@@ -130,14 +65,14 @@ func TestApp_Shutdown(t *testing.T) {
 	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8083/test")
+	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	resp, err = http.Get("http://localhost:8083/close")
+	resp, err = http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
-	resp, err = http.Get("http://localhost:8083/test")
+	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
 }
 
@@ -161,30 +96,27 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(50 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8083/test")
+	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
 	// 关闭指令可以正常执行
-	resp, err = http.Get("http://localhost:8083/close")
+	resp, err = http.Get("http://localhost:8082/close")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusCreated)
 
 	// 拒绝访问
-	resp, err = http.Get("http://localhost:8083/test")
+	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
 
 	// 已被关闭
 	time.Sleep(30 * time.Microsecond)
-	resp, err = http.Get("http://localhost:8083/test")
+	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
 }
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	config := defaultConfig()
-	config.Port = 8083
-	config.Static = map[string]string{"/static": "./testdata/"}
 	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
@@ -196,15 +128,15 @@ func TestApp_Run(t *testing.T) {
 	}()
 
 	time.Sleep(50 * time.Microsecond)
-	resp, err := http.Get("http://localhost:8083/test")
+	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
 
-	resp, err = http.Get("http://localhost:8083/static/file1.txt")
+	resp, err = http.Get("http://localhost:8082/client/file1.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
-	resp, err = http.Get("http://localhost:8083/static/dir/file2.txt")
+	resp, err = http.Get("http://localhost:8082/client/dir/file2.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
@@ -218,105 +150,53 @@ func TestApp_NewContext(t *testing.T) {
 	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	// 缺少 Accept 报头
-	app.config.Strict = true
+	// 少报头 accept
 	ctx := app.NewContext(w, r)
 	a.Nil(ctx)
-	a.Equal(w.Code, http.StatusNotAcceptable)
 
-	// 不检测 Accept 报头
-	app.config.Strict = false
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	w = httptest.NewRecorder()
+	r.Header.Set("Accept", "*/*")
 	ctx = app.NewContext(w, r)
 	a.NotNil(ctx)
-	a.Equal(w.Code, http.StatusOK)
 }
 
 func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
 	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
+	m := NewModule("init", "init module")
+	m.Get("/ping", h1)
+	app.AddModule(m)
 
-	h := app.buildHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		panic("err")
-	}))
+	go func() {
+		err := app.Run()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+	}()
 
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusNotFound)
-}
+	time.Sleep(50 * time.Microsecond)
 
-func TestApp_buildHosts_empty(t *testing.T) {
-	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	h := app.buildHosts(h1)
-
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	w := httptest.NewRecorder()
-	a.NotNil(r).NotNil(w)
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
-}
-
-func TestApp_buildHosts(t *testing.T) {
-	a := assert.New(t)
-	config := defaultConfig()
-	config.AllowedDomains = []string{"caixw.io", "example.com"} // 指定域名
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	h := app.buildHosts(h1)
+	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusNotFound)
 
 	// 带正确的域名访问
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	resp, err = http.Get("http://127.0.0.1:8082/ping")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
 
-	// 带不允许的域名访问
-	r = httptest.NewRequest(http.MethodGet, "http://not.exists/test", nil)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusNotFound)
-}
+	// 报头
+	resp, err = http.Get("http://localhost:8082/ping")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
+	a.Equal(resp.Header.Get("Access-Control-Allow-Origin"), "*")
 
-func TestApp_buildHeader(t *testing.T) {
-	a := assert.New(t)
-	config := defaultConfig()
-	config.Headers = map[string]string{"Test": "test"}
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	h := app.buildHeader(h1)
-
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
-	a.Equal(w.Header().Get("Test"), "test")
-}
-
-func TestApp_buildPprof(t *testing.T) {
-	a := assert.New(t)
-
-	app, err := NewApp("./testdata", nil)
-	a.NotError(err).NotNil(app)
-
-	h := app.buildPprof(h1)
-
-	// 命中 /debug/pprof/cmdline
-	r := httptest.NewRequest(http.MethodGet, "http://caixw.io/debug/pprof/cmdline", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusOK)
+	url := app.URL("/debug/pprof/cmdline")
+	resp, err = http.Get(url)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
 
 	// 命中 h1
-	r = httptest.NewRequest(http.MethodGet, "http://caixw.io/test", nil)
-	w = httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	resp, err = http.Get("http://localhost:8082/ping")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
 }

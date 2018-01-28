@@ -17,7 +17,10 @@ var (
 	_ encoding.TextUnmarshaler = &TextObject{}
 )
 
-// TextObject 分别实现了对 encoding.Marshal 和 encoding.Unmarshal 的解析
+// TextObject 本质是实现了 encoding.TextMarshaler 和 encoding.TextUnmarshaler
+// 接口的实例。
+//
+// 可用于父包中的 MarshalFunc 和 UnmarshalFunc 的测试。
 type TextObject struct {
 	Name string
 	Age  int

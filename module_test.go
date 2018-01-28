@@ -14,8 +14,8 @@ import (
 
 func TestApp_getInit(t *testing.T) {
 	a := assert.New(t)
-	app := &App{}
-	app.initFromConfig(defaultConfig())
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	m := NewModule("m1", "m1 desc")
 	app.AddModule(m)
@@ -42,8 +42,8 @@ func TestApp_getInit(t *testing.T) {
 
 func TestApp_Modules(t *testing.T) {
 	a := assert.New(t)
-	app := &App{}
-	app.initFromConfig(defaultConfig())
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 
 	app.AddModule(NewModule("m1", "m1", "m2")).
 		AddModule(NewModule("m2", "m2"))
@@ -53,8 +53,8 @@ func TestApp_Modules(t *testing.T) {
 
 func TestApp_initDependency(t *testing.T) {
 	a := assert.New(t)
-	app := &App{}
-	app.initFromConfig(defaultConfig())
+	app, err := NewApp("./testdata", nil)
+	a.NotError(err).NotNil(app)
 	w := new(bytes.Buffer)
 
 	m1 := NewModule("m1", "m1", "m2")

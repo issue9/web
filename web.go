@@ -14,14 +14,12 @@ import (
 
 var defaultApp *App
 
-// BuildHandler 将一个 http.Handler 封装成另一个 http.Handler
-//
-// 一个中间件的接口定义，传递给 New() 函数，可以给全部的路由项添加一个中间件。
-type BuildHandler func(http.Handler) http.Handler
+// Middleware 将一个 http.Handler 封装成另一个 http.Handler
+type Middleware func(http.Handler) http.Handler
 
 // Init 初始化整个应用环境
-func Init(configDir string, build BuildHandler) error {
-	app, err := NewApp(configDir, build)
+func Init(configDir string, m Middleware) error {
+	app, err := NewApp(configDir, m)
 	if err != nil {
 		return err
 	}
