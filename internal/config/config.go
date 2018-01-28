@@ -158,6 +158,12 @@ func (conf *Config) sanitize() error {
 		}
 	}
 
+	for url := range conf.Static {
+		if !isURLPath(url) {
+			return fmt.Errorf("static 中的 %s 必须以 / 开头且不能以 / 结尾", url)
+		}
+	}
+
 	if conf.ReadTimeout < 0 {
 		return errors.New("readTimeout 必须大于等于 0")
 	}
@@ -184,16 +190,15 @@ func (conf *Config) sanitize() error {
 func (conf *Config) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
-	} else if len(conf.Root) > 0 {
-		if conf.Root[0] != '/' {
-			return errors.New("root 必须以 / 开始")
-		}
-		if conf.Root[len(conf.Root)-1] == '/' {
-			return errors.New("root 不能以 / 结尾")
-		}
+	} else if (len(conf.Root) > 0) && !isURLPath(conf.Root) {
+		return errors.New("root 必须以 / 开头且不以 / 结尾")
 	}
 
 	return nil
+}
+
+func isURLPath(path string) bool {
+	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
 func (conf *Config) buildHTTPS() error {

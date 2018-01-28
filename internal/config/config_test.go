@@ -47,6 +47,15 @@ func TestConfig_buildRoot(t *testing.T) {
 	a.Error(conf.buildRoot())
 }
 
+func TestIsURLPath(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(isURLPath("/path"))
+	a.False(isURLPath("path/"))
+	a.False(isURLPath("/path/"))
+	a.False(isURLPath("path"))
+}
+
 func TestConfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
@@ -141,4 +150,10 @@ func TestConfig_buildURL(t *testing.T) {
 	conf.URL = "" // 重置为空
 	conf.buildURL()
 	a.Equal(conf.URL, "https://localhost/path")
+
+	// 强制指定 URL，不受其它参数的影响
+	conf.URL = "https://example.com"
+	conf.Port = 8082
+	conf.buildURL()
+	a.Equal(conf.URL, "https://example.com")
 }
