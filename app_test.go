@@ -27,7 +27,7 @@ func TestMiddleware(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := NewApp("./testdata", m)
+	app, err := newApp("./testdata", m)
 	a.NotError(err).NotNil(app)
 
 	app.router.GetFunc("/middleware", f1)
@@ -48,7 +48,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
+	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
@@ -78,7 +78,7 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
+	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
@@ -117,7 +117,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
+	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f1)
@@ -147,7 +147,7 @@ func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
-	app, err := NewApp("./testdata", nil)
+	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	// 少报头 accept
@@ -162,7 +162,7 @@ func TestApp_NewContext(t *testing.T) {
 
 func TestApp_buildHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := NewApp("./testdata", nil)
+	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 	m := NewModule("init", "init module")
 	m.Get("/ping", h1)

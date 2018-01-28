@@ -11,14 +11,14 @@ import (
 	"github.com/issue9/web/result"
 )
 
-var defaultApp *App
+var defaultApp *app
 
 // Middleware 将一个 http.Handler 封装成另一个 http.Handler
 type Middleware func(http.Handler) http.Handler
 
 // Init 初始化整个应用环境
 func Init(configDir string, m Middleware) error {
-	app, err := NewApp(configDir, m)
+	app, err := newApp(configDir, m)
 	if err != nil {
 		return err
 	}
@@ -58,8 +58,8 @@ func URL(path string) string {
 }
 
 // AddModule 注册一个模块
-func AddModule(m *Module) *App {
-	return defaultApp.AddModule(m)
+func AddModule(m *Module) {
+	defaultApp.AddModule(m)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

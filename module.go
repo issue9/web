@@ -30,7 +30,7 @@ const (
 //
 // 返回 *Module 而不是直接在 ModuleFunc 内进行注册，
 // 是因为这样可以控制 Module.Type 的值。
-// 且只有这样才能保证，插件注册到当前的 App 对象中，
+// 且只有这样才能保证，插件注册到当前的 app 对象中，
 // 而不是默认的 defaultApp 对象中。
 type ModuleFunc func() *Module
 
@@ -66,23 +66,22 @@ type Prefix struct {
 }
 
 // Modules 获取当前的所有模块信息
-func (app *App) Modules() []*Module {
+func (app *app) Modules() []*Module {
 	return app.modules
 }
 
 // AddModule 注册一个新的模块。
-func (app *App) AddModule(m *Module) *App {
+func (app *app) AddModule(m *Module) {
 	m.Type = ModuleTypeModule
 	app.addModule(m)
-	return app
 }
 
-func (app *App) addModule(m *Module) {
+func (app *app) addModule(m *Module) {
 	app.modules = append(app.modules, m)
 }
 
 // 加载配置文件中指定的所有插件
-func (app *App) loadPlugins() error {
+func (app *app) loadPlugins() error {
 	for _, p := range app.config.Plugins {
 		if err := app.loadPlugin(p); err != nil {
 			return err
@@ -92,7 +91,7 @@ func (app *App) loadPlugins() error {
 	return nil
 }
 
-func (app *App) loadPlugin(path string) error {
+func (app *app) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -115,7 +114,11 @@ func (app *App) loadPlugin(path string) error {
 	return nil
 }
 
-func (app *App) initDependency() error {
+func (app *app) initDependency() error {
+	if err := app.loadPlugins(); err != nil {
+		return err
+	}
+
 	dep := dependency.New()
 
 	for _, module := range app.modules {
@@ -126,7 +129,7 @@ func (app *App) initDependency() error {
 }
 
 // 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (app *App) getInit(m *Module) dependency.InitFunc {
+func (app *app) getInit(m *Module) dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {
 			if err := init(); err != nil {

@@ -32,8 +32,7 @@ const (
 	configFilename = "web.yaml" // 配置文件的文件名。
 )
 
-// App 保存整个程序的运行环境，方便做整体的调度。
-type App struct {
+type app struct {
 	configDir string
 	config    *config.Config
 	modules   []*Module
@@ -48,14 +47,13 @@ type App struct {
 	outputCharset  charset.Encoding
 }
 
-// NewApp 初始化框架的基本内容。
-func NewApp(configDir string, m Middleware) (*App, error) {
+func newApp(configDir string, m Middleware) (*app, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
-	app := &App{
+	app := &app{
 		configDir:  dir,
 		middleware: m,
 		modules:    make([]*Module, 0, 100),
@@ -72,7 +70,7 @@ func NewApp(configDir string, m Middleware) (*App, error) {
 	return app, nil
 }
 
-func (app *App) loadConfig() error {
+func (app *app) loadConfig() error {
 	conf, err := config.Load(app.File(configFilename))
 	if err != nil {
 		return err
@@ -96,12 +94,12 @@ func (app *App) loadConfig() error {
 }
 
 // IsDebug 是否处在调试模式
-func (app *App) IsDebug() bool {
+func (app *app) IsDebug() bool {
 	return app.config.Debug
 }
 
 // File 获取配置目录下的文件名
-func (app *App) File(path ...string) string {
+func (app *app) File(path ...string) string {
 	paths := make([]string, 0, len(path)+1)
 	paths = append(paths, app.configDir)
 	return filepath.Join(append(paths, path...)...)
@@ -111,12 +109,7 @@ func (app *App) File(path ...string) string {
 //
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
-func (app *App) Run() error {
-	// 插件作为模块的一种实现方式，要在依赖关系之前加载
-	if err := app.loadPlugins(); err != nil {
-		return err
-	}
-
+func (app *app) Run() error {
 	// 初始化各个模块之间的依赖关系
 	if err := app.initDependency(); err != nil {
 		return err
@@ -151,7 +144,7 @@ func (app *App) Run() error {
 }
 
 // Close 立即关闭服务
-func (app *App) Close() error {
+func (app *app) Close() error {
 	logs.Flush()
 
 	return app.server.Close()
@@ -161,7 +154,7 @@ func (app *App) Close() error {
 //
 // 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
 // 等待时间由配置文件决定。
-func (app *App) Shutdown() error {
+func (app *app) Shutdown() error {
 	logs.Flush()
 
 	if app.config.ShutdownTimeout <= 0 {
@@ -174,7 +167,7 @@ func (app *App) Shutdown() error {
 }
 
 // URL 构建一条基于 app.url 的完整 URL
-func (app *App) URL(path string) string {
+func (app *app) URL(path string) string {
 	if len(path) == 0 {
 		return app.config.URL
 	}
@@ -191,7 +184,7 @@ func (app *App) URL(path string) string {
 // charsetName 指定输出时的字符集，此字符集名称必须已经通过 AddCharset 添加；
 // strict 若为 true，则会验证用户的 Accept 报头是否接受 encodingName 编码。
 // 输入时的编码与字符集信息从报头 Content-Type 中获取，若未指定字符集，则默认为 utf-8
-func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
 	unmarshal := encoding.Unmarshal(encName)
@@ -231,7 +224,7 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 	context.RenderStatus(w, http.StatusInternalServerError)
 }
 
-func (app *App) buildHandler(h http.Handler) http.Handler {
+func (app *app) buildHandler(h http.Handler) http.Handler {
 	h = app.buildHosts(app.buildHeader(h))
 
 	ff := logRecovery
@@ -248,7 +241,7 @@ func (app *App) buildHandler(h http.Handler) http.Handler {
 	return h
 }
 
-func (app *App) buildHosts(h http.Handler) http.Handler {
+func (app *app) buildHosts(h http.Handler) http.Handler {
 	if len(app.config.AllowedDomains) == 0 {
 		return h
 	}
@@ -256,7 +249,7 @@ func (app *App) buildHosts(h http.Handler) http.Handler {
 	return host.New(h, app.config.AllowedDomains...)
 }
 
-func (app *App) buildHeader(h http.Handler) http.Handler {
+func (app *app) buildHeader(h http.Handler) http.Handler {
 	if len(app.config.Headers) == 0 {
 		return h
 	}
@@ -270,7 +263,7 @@ func (app *App) buildHeader(h http.Handler) http.Handler {
 }
 
 // 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func (app *App) buildPprof(h http.Handler) http.Handler {
+func (app *app) buildPprof(h http.Handler) http.Handler {
 	logs.Debug("开启了调试功能，地址为：", pprofPath)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
