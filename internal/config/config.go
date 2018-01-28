@@ -109,6 +109,11 @@ type Config struct {
 	ReadTimeout  time.Duration `yaml:"readTimeout,omitempty"`
 	WriteTimeout time.Duration `yaml:"writeTimeout,omitempty"`
 
+	// 表示关闭整个服务时，需要等待的时间。
+	//
+	// 若为 0，表示直接关闭，否则会等待该指定的时间，或是在超时时才执行强制关闭。
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout,omitempty"`
+
 	// URL 网站的首页地址。
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
 	//
@@ -170,6 +175,10 @@ func (conf *Config) sanitize() error {
 
 	if conf.WriteTimeout < 0 {
 		return errors.New("writeTimeout 必须大于等于 0")
+	}
+
+	if conf.ShutdownTimeout < 0 {
+		return errors.New("shutdownTimeout 必须大于等于 0")
 	}
 
 	if err := conf.buildRoot(); err != nil {

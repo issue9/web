@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
@@ -151,18 +150,25 @@ func (app *App) Run() error {
 	return app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 }
 
-// Shutdown 关闭所有服务，之后 app 实例将不可再用，
-//
-// timeout 表示已有服务的等待时间。
-// 若超过该时间，服务还未自动停止的，则会强制停止，若小于或等于 0 则立即重启。
-func (app *App) Shutdown(timeout time.Duration) error {
+// Close 立即关闭服务
+func (app *App) Close() error {
 	logs.Flush()
 
-	if timeout <= 0 {
+	return app.server.Close()
+}
+
+// Shutdown 关闭所有服务。
+//
+// 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
+// 等待时间由配置文件决定。
+func (app *App) Shutdown() error {
+	logs.Flush()
+
+	if app.config.ShutdownTimeout <= 0 {
 		return app.server.Close()
 	}
 
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), timeout)
+	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.config.ShutdownTimeout)
 	defer cancel()
 	return app.server.Shutdown(ctx)
 }

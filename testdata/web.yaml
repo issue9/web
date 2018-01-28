@@ -14,5 +14,6 @@ headers:
   Access-Control-Allow-Headers: Content-Type, Authorization, Accept,X-Requested-With
   Server: Windows/IIS7
 readTimeout: 3s
+shutdownTimeout: 300ms
 allowedDomains:
   - "127.0.0.1"

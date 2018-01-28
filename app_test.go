@@ -43,10 +43,10 @@ func TestMiddleware(t *testing.T) {
 	resp, err := http.Get("http://localhost:8082/middleware")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.Header.Get("Date"), "1111")
-	app.Shutdown(0)
+	app.Close()
 }
 
-func TestApp_Shutdown(t *testing.T) {
+func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
 	app, err := NewApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
@@ -54,7 +54,7 @@ func TestApp_Shutdown(t *testing.T) {
 	app.mux.GetFunc("/test", f1)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
-		app.Shutdown(0) // 手动调用接口关闭
+		app.Close()
 	})
 
 	go func() {
@@ -85,7 +85,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("closed"))
-		app.Shutdown(30 * time.Microsecond)
+		app.Shutdown()
 	})
 
 	go func() {
@@ -140,7 +140,7 @@ func TestApp_Run(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
-	app.Shutdown(0)
+	app.Close()
 }
 
 func TestApp_NewContext(t *testing.T) {

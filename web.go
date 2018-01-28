@@ -6,7 +6,6 @@ package web
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/result"
@@ -38,9 +37,14 @@ func Run() error {
 	return defaultApp.Run()
 }
 
+// Close 立即关闭服务
+func Close() error {
+	return defaultApp.Close()
+}
+
 // Shutdown 关闭所有服务。
-func Shutdown(timeout time.Duration) error {
-	return defaultApp.Shutdown(timeout)
+func Shutdown() error {
+	return defaultApp.Shutdown()
 }
 
 // File 获取配置目录下的文件。
