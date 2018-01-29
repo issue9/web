@@ -5,6 +5,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,11 +29,8 @@ func grace(s ...os.Signal) {
 	signalChannel = make(chan os.Signal)
 	signal.Notify(signalChannel, s...)
 
-	go func() {
-		for range signalChannel {
-			Shutdown()
-		}
-	}()
+	<-signalChannel
+	Shutdown()
 }
 
 // Init 初始化整个应用环境
@@ -42,8 +40,8 @@ func grace(s ...os.Signal) {
 // s 表示触发 shutdown 的信号。
 // 传递给框架的信号，会触发调用 Shutdown() 操作。
 func Init(configDir string, m Middleware, s ...os.Signal) error {
-	if len(s) > 0 {
-		grace(s...)
+	if defaultApp != nil {
+		return errors.New("不能重复调用 Init")
 	}
 
 	app, err := newApp(configDir, m)
@@ -52,6 +50,11 @@ func Init(configDir string, m Middleware, s ...os.Signal) error {
 	}
 
 	defaultApp = app
+
+	if len(s) > 0 {
+		go grace(s...)
+	}
+
 	return nil
 }
 
