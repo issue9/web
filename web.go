@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/result"
@@ -25,7 +26,9 @@ func grace(s ...os.Signal) {
 	signal.Notify(signalChannel, s...)
 
 	<-signalChannel
-	Shutdown()
+	if err := Shutdown(); err != nil {
+		logs.Error(err)
+	}
 }
 
 // Init 初始化整个应用环境
