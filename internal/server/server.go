@@ -50,6 +50,10 @@ func Listen(h http.Handler, config *config.Config) error {
 func Close() error {
 	logs.Flush()
 
+	if server == nil {
+		return nil
+	}
+
 	return server.Close()
 }
 
@@ -60,7 +64,11 @@ func Close() error {
 func Shutdown() error {
 	logs.Flush()
 
-	if conf.ShutdownTimeout <= 0 {
+	if server == nil {
+		return nil
+	}
+
+	if conf == nil || conf.ShutdownTimeout <= 0 {
 		return server.Close()
 	}
 
