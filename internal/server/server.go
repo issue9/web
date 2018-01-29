@@ -11,7 +11,6 @@ import (
 	"net/http/pprof"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/host"
@@ -23,13 +22,18 @@ import (
 
 const pprofPath = "/debug/pprof/"
 
-var server *http.Server
+var (
+	conf   *config.Config
+	server *http.Server
+)
 
 // Listen 监听程序
-func Listen(h http.Handler, conf *config.Config) error {
+func Listen(h http.Handler, config *config.Config) error {
+	conf = config
+
 	server = &http.Server{
 		Addr:         ":" + strconv.Itoa(conf.Port),
-		Handler:      buildHandler(conf, h),
+		Handler:      buildHandler(h), // 依赖全局变量 conf
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  conf.ReadTimeout,
 		WriteTimeout: conf.WriteTimeout,
@@ -52,15 +56,15 @@ func Close() error {
 // Shutdown 关闭所有服务。
 //
 // 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
-// 等待时间由 timeout 决定。
-func Shutdown(timeout time.Duration) error {
+// 等待时间由 conf.shutdownTimeout 决定。
+func Shutdown() error {
 	logs.Flush()
 
-	if timeout <= 0 {
+	if conf.ShutdownTimeout <= 0 {
 		return server.Close()
 	}
 
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), timeout)
+	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), conf.ShutdownTimeout)
 	defer cancel()
 	return server.Shutdown(ctx)
 }
@@ -70,8 +74,8 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 	context.RenderStatus(w, http.StatusInternalServerError)
 }
 
-func buildHandler(conf *config.Config, h http.Handler) http.Handler {
-	h = buildHosts(conf, buildHeader(conf, h))
+func buildHandler(h http.Handler) http.Handler {
+	h = buildHosts(buildHeader(h))
 
 	ff := logRecovery
 	if conf.Debug {
@@ -81,13 +85,13 @@ func buildHandler(conf *config.Config, h http.Handler) http.Handler {
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		h = buildPprof(conf, h)
+		h = buildPprof(h)
 	}
 
 	return h
 }
 
-func buildHosts(conf *config.Config, h http.Handler) http.Handler {
+func buildHosts(h http.Handler) http.Handler {
 	if len(conf.AllowedDomains) == 0 {
 		return h
 	}
@@ -95,7 +99,7 @@ func buildHosts(conf *config.Config, h http.Handler) http.Handler {
 	return host.New(h, conf.AllowedDomains...)
 }
 
-func buildHeader(conf *config.Config, h http.Handler) http.Handler {
+func buildHeader(h http.Handler) http.Handler {
 	if len(conf.Headers) == 0 {
 		return h
 	}
@@ -109,7 +113,7 @@ func buildHeader(conf *config.Config, h http.Handler) http.Handler {
 }
 
 // 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func buildPprof(conf *config.Config, h http.Handler) http.Handler {
+func buildPprof(h http.Handler) http.Handler {
 	logs.Debug("开启了调试功能，地址为：", pprofPath)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

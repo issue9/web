@@ -105,33 +105,33 @@ func TestBuildHandler(t *testing.T) {
 	})
 
 	// 触发 panic
-	conf := &config.Config{}
-	h := buildHandler(conf, panicFunc)
+	conf = &config.Config{}
+	h := buildHandler(panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
 
 	// 触发 panic，调试模式
 	conf = &config.Config{
 		Debug: true,
 	}
-	h = buildHandler(conf, panicFunc)
+	h = buildHandler(panicFunc)
 	request(a, h, "http://example.com/test", http.StatusNotFound)
 }
 
 func TestBuildHosts_empty(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{}
+	conf = &config.Config{}
 
-	h := buildHosts(conf, h1)
+	h := buildHosts(h1)
 	request(a, h, "http://example.com/test", 1)
 }
 
 func TestBuildHosts(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf = &config.Config{
 		AllowedDomains: []string{"caixw.io", "example.com"},
 	}
 
-	h := buildHosts(conf, h1)
+	h := buildHosts(h1)
 
 	// 带正确的域名访问
 	request(a, h, "http://caixw.io/test", 1)
@@ -142,11 +142,11 @@ func TestBuildHosts(t *testing.T) {
 
 func TestBuildHeader(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf = &config.Config{
 		Headers: map[string]string{"Test": "test"},
 	}
 
-	h := buildHeader(conf, h1)
+	h := buildHeader(h1)
 
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
 	w := httptest.NewRecorder()
@@ -157,9 +157,9 @@ func TestBuildHeader(t *testing.T) {
 
 func TestBuildPprof(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{}
+	conf = &config.Config{}
 
-	h := buildPprof(conf, h1)
+	h := buildPprof(h1)
 
 	// 命中 /debug/pprof/cmdline
 	request(a, h, "http://example.com/debug/pprof/", http.StatusOK)

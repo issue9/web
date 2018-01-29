@@ -131,7 +131,7 @@ func (app *app) Close() error {
 // 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
 // 等待时间由配置文件决定。
 func (app *app) Shutdown() error {
-	return server.Shutdown(app.config.ShutdownTimeout)
+	return server.Shutdown()
 }
 
 // URL 构建一条基于 app.url 的完整 URL
