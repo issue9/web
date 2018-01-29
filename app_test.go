@@ -63,7 +63,7 @@ func TestApp_Close(t *testing.T) {
 	}()
 
 	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(50 * time.Microsecond)
+	time.Sleep(500 * time.Microsecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -94,7 +94,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	}()
 
 	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(50 * time.Microsecond)
+	time.Sleep(500 * time.Microsecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
@@ -127,7 +127,7 @@ func TestApp_Run(t *testing.T) {
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
-	time.Sleep(50 * time.Microsecond)
+	time.Sleep(500 * time.Microsecond)
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, 1)
