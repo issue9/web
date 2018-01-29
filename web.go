@@ -17,17 +17,11 @@ import (
 
 var defaultApp *app
 
-var signalChannel chan os.Signal
-
 // Middleware 将一个 http.Handler 封装成另一个 http.Handler
 type Middleware func(http.Handler) http.Handler
 
 func grace(s ...os.Signal) {
-	if signalChannel != nil {
-		return
-	}
-
-	signalChannel = make(chan os.Signal)
+	signalChannel := make(chan os.Signal)
 	signal.Notify(signalChannel, s...)
 
 	<-signalChannel
