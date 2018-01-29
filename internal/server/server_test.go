@@ -7,23 +7,94 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/internal/config"
 )
 
-var f1 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(1)
-}
+const timeout = 300 * time.Microsecond
 
-var h1 = http.HandlerFunc(f1)
+var (
+	h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(1)
+	})
 
+	timeoutHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(timeout)
+		w.WriteHeader(1)
+
+	})
+)
+
+// 验证请求地址是否返回正确的状态码
 func request(a *assert.Assertion, h http.Handler, url string, code int) {
 	r := httptest.NewRequest(http.MethodGet, url, nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
 	a.Equal(w.Code, code)
+}
+
+func TestListenClose(t *testing.T) {
+	a := assert.New(t)
+	conf := &config.Config{
+		Port: 8080,
+	}
+
+	go func() {
+		a.Equal(Listen(h1, conf), http.ErrServerClosed)
+	}()
+	time.Sleep(300 * time.Microsecond) // 等待启动完成
+
+	// 正常访问
+	resp, err := http.Get("http://localhost:8080/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
+
+	// 关闭
+	a.NotError(Close())
+	time.Sleep(300 * time.Microsecond)
+
+	// 已经关闭，不能访问
+	resp, err = http.Get("http://localhost:8080/test")
+	a.Error(err).Nil(resp)
+}
+
+func TestCloseWithTimeout(t *testing.T) {
+	a := assert.New(t)
+	conf := &config.Config{
+		Port: 8080,
+	}
+
+	go func() {
+		a.Equal(Listen(timeoutHandler, conf), http.ErrServerClosed)
+	}()
+	time.Sleep(300 * time.Microsecond) // 等待启动完成
+
+	// 正常访问
+	resp, err := http.Get("http://localhost:8080/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, 1)
+
+	// 等待以下两个协程完成
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	defer wg.Wait()
+
+	// 在执行过程中被关闭，不能访问
+	go func() {
+		resp, err = http.Get("http://localhost:8080/test")
+		a.Error(err).Nil(resp)
+		wg.Done()
+	}()
+
+	// 关闭
+	go func() {
+		a.NotError(Close())
+		wg.Done()
+	}()
 }
 
 func TestBuildHandler(t *testing.T) {
