@@ -7,6 +7,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,8 +21,6 @@ import (
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/server"
 )
-
-const pprofPath = "/debug/pprof/"
 
 const (
 	logsFilename   = "logs.xml" // 日志配置文件的文件名。
@@ -105,23 +104,21 @@ func (app *app) File(path ...string) string {
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
 func (app *app) Run() error {
-	// 初始化各个模块之间的依赖关系
 	if err := app.initDependency(); err != nil {
 		return err
 	}
 
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range app.config.Static {
-		pattern := url + "{path}"
-		app.router.Get(pattern, http.StripPrefix(url, compress.New(http.FileServer(http.Dir(dir)), logs.ERROR())))
+		pattern := path.Join(app.config.Root, url+"{path}")
+		fs := http.FileServer(http.Dir(dir))
+		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
 	}
 
-	var h http.Handler = app.mux
 	if app.middleware != nil {
-		h = app.middleware(h)
+		return server.Listen(app.middleware(app.mux), app.config)
 	}
-
-	return server.Listen(h, app.config)
+	return server.Listen(app.mux, app.config)
 }
 
 // Close 立即关闭服务
