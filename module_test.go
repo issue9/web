@@ -19,7 +19,7 @@ func TestApp_getInit(t *testing.T) {
 
 	m := NewModule("m1", "m1 desc")
 	app.AddModule(m)
-	fn := app.getInit(m)
+	fn := m.getInit(app)
 	a.NotNil(fn).NotError(fn)
 
 	// 返回错误
@@ -27,7 +27,7 @@ func TestApp_getInit(t *testing.T) {
 	m.AddInit(func() error {
 		return errors.New("error")
 	})
-	fn = app.getInit(m)
+	fn = m.getInit(app)
 	a.NotNil(fn).Error(fn())
 
 	w := new(bytes.Buffer)
@@ -36,7 +36,7 @@ func TestApp_getInit(t *testing.T) {
 		_, err := w.WriteString("m3")
 		return err
 	})
-	fn = app.getInit(m)
+	fn = m.getInit(app)
 	a.NotNil(fn).NotError(fn()).Equal(w.String(), "m3")
 }
 

@@ -88,8 +88,8 @@ func (app *app) loadConfig() error {
 }
 
 // IsDebug 是否处在调试模式
-func (app *app) IsDebug() bool {
-	return app.config.Debug
+func IsDebug() bool {
+	return defaultApp.config.Debug
 }
 
 // File 获取配置目录下的文件名

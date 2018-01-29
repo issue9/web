@@ -27,11 +27,6 @@ func Init(configDir string, m Middleware) error {
 	return nil
 }
 
-// IsDebug 是否处在调试模式
-func IsDebug() bool {
-	return defaultApp.IsDebug()
-}
-
 // Run 运行路由，执行监听程序。
 func Run() error {
 	return defaultApp.Run()

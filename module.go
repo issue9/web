@@ -52,8 +52,8 @@ type Module struct {
 // Route 表示模块信息中的路由信息
 type Route struct {
 	Path    string
-	Handler http.Handler
 	Methods []string
+	handler http.Handler
 }
 
 // Prefix 可以将具有统一前缀的路由项集中在一起操作。
@@ -122,14 +122,14 @@ func (app *app) initDependency() error {
 	dep := dependency.New()
 
 	for _, module := range app.modules {
-		dep.Add(module.Name, app.getInit(module), module.Deps...)
+		dep.Add(module.Name, module.getInit(app), module.Deps...)
 	}
 
 	return dep.Init()
 }
 
 // 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (app *app) getInit(m *Module) dependency.InitFunc {
+func (m *Module) getInit(app *app) dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {
 			if err := init(); err != nil {
@@ -138,7 +138,7 @@ func (app *app) getInit(m *Module) dependency.InitFunc {
 		}
 
 		for _, r := range m.Routes {
-			h := r.Handler
+			h := r.handler
 			if m.middleware != nil {
 				h = m.middleware(h)
 			}
@@ -200,7 +200,7 @@ func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module 
 	m.Routes = append(m.Routes, &Route{
 		Methods: methods,
 		Path:    path,
-		Handler: h,
+		handler: h,
 	})
 
 	return m
@@ -317,7 +317,7 @@ func (p *Prefix) DeleteFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodDelete)
 }
 
-// PatchFunc 指定一个 Patch ���求
+// PatchFunc 指定一个 Patch 请求
 func (p *Prefix) PatchFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodPatch)
 }
