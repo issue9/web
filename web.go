@@ -11,6 +11,7 @@ import (
 	"os/signal"
 
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/result"
 )
 
@@ -58,6 +59,11 @@ func Init(configDir string, m Middleware, s ...os.Signal) error {
 	return nil
 }
 
+// IsDebug 是否处在调试模式
+func IsDebug() bool {
+	return defaultApp.config.Debug
+}
+
 // Run 运行路由，执行监听程序。
 func Run() error {
 	return defaultApp.Run()
@@ -65,12 +71,15 @@ func Run() error {
 
 // Close 立即关闭服务
 func Close() error {
-	return defaultApp.Close()
+	return server.Close()
 }
 
 // Shutdown 关闭所有服务。
+//
+// 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
+// 等待时间由配置文件决定。
 func Shutdown() error {
-	return defaultApp.Shutdown()
+	return server.Shutdown()
 }
 
 // File 获取配置目录下的文件。

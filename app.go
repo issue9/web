@@ -87,11 +87,6 @@ func (app *app) loadConfig() error {
 	return nil
 }
 
-// IsDebug 是否处在调试模式
-func IsDebug() bool {
-	return defaultApp.config.Debug
-}
-
 // File 获取配置目录下的文件名
 func (app *app) File(path ...string) string {
 	paths := make([]string, 0, len(path)+1)
@@ -119,19 +114,6 @@ func (app *app) Run() error {
 		return server.Listen(app.middleware(app.mux), app.config)
 	}
 	return server.Listen(app.mux, app.config)
-}
-
-// Close 立即关闭服务
-func (app *app) Close() error {
-	return server.Close()
-}
-
-// Shutdown 关闭所有服务。
-//
-// 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
-// 等待时间由配置文件决定。
-func (app *app) Shutdown() error {
-	return server.Shutdown()
 }
 
 // URL 构建一条基于 app.url 的完整 URL
