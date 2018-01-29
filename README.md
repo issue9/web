@@ -13,23 +13,22 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    opt := &web.Options {
-        ConfigDir: "./appconfig",
-        Charset: map[string]encoding.Encoding {
-            "gb18030": simplifiedchinese.GB18030,
-            "gbk": simplifiedchinese.GBK,
-        },
-        Marshals: map[string]context.Marshaler {
-            "application/json": json.Marshal,
-            "application/xml": xml.Marshal,
-        },
-        Unmarshals: map[string]context.Unmarshaler {
-            "application/json": json.Unmarshal,
-            "application/xml": xml.Unmarshal,
-        }
-    }
+    encoding.AddCharset(map[string]encoding.Encoding {
+        "gb18030": simplifiedchinese.GB18030,
+        "gbk": simplifiedchinese.GBK,
+    })
 
-    web.Init(opt)
+    encoding.AddMarshals(map[string]context.Marshaler {
+        "application/json": json.Marshal,
+        "application/xml": xml.Marshal,
+    })
+
+    encoding.AddUnmarshals(map[string]context.Unmarshaler {
+        "application/json": json.Unmarshal,
+        "application/xml": xml.Unmarshal,
+    })
+
+    web.Init("./appconfig", nil)
 
     // 注册模块信息
     web.AddModule(m1.Module)
@@ -68,18 +67,17 @@ func Module() *app.Module {
 | outputCharset   | string | 字符集
 | strict          | bool   | 启用此值，会检测用户的 Accept 报头是否符合当前的编码。
 | https           | bool   | 是否启用 HTTPS
-| httpState       | string | 当启用 HTTPS 时，针对 80 端口的处理方式，可以是 disable：不作任何处理；listen：与 https 作相同的算是；redirect 跳转到 https 相对应的端口。
 | certFile        | string | 当启用 HTTPS 时的 cert 文件
 | keyFile         | string | 当启用 HTTPS 时的 key 文件
 | port            | string | 监听端口，以冒号(:) 开头
 | headers         | object | 输出的报头，键名为报头名称，键值为对应的值
 | static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
-| version         | string | 是否所有的接口只限定此版本，版本号在 accept 报头中指定，格式为 value=xx;version=xx
 | allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
 | plugins         | array  | 指定一组 so 文件，可以当作插件的形式进行加载
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
+| shutdownTimeout | string | 关闭服务的等待时间
 
 
 
