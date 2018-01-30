@@ -145,17 +145,27 @@ func TestApp_Run(t *testing.T) {
 
 func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
 	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	// 少报头 accept
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", "not")
 	ctx := app.NewContext(w, r)
 	a.Nil(ctx)
 
+	// 少 accept-charset
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Accept-Charset", "unknown")
+	ctx = app.NewContext(w, r)
+	a.Nil(ctx)
+
+	// 正常
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Accept-Charset", "*")
 	ctx = app.NewContext(w, r)
 	a.NotNil(ctx)
 }

@@ -151,13 +151,13 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
-		if !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
+		if accept != "" && !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
 			context.RenderStatus(w, http.StatusNotAcceptable)
 			return nil
 		}
 
-		acceptCharset := r.Header.Get("Accept-Charset")
-		if !strings.Contains(acceptCharset, app.config.OutputCharset) && !strings.Contains(acceptCharset, "*") {
+		accept = r.Header.Get("Accept-Charset")
+		if accept != "" && !strings.Contains(accept, app.config.OutputCharset) && !strings.Contains(accept, "*") {
 			context.RenderStatus(w, http.StatusNotAcceptable)
 			return nil
 		}
