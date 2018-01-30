@@ -24,7 +24,7 @@ func newContext(w http.ResponseWriter, r *http.Request, outputMimeType encoding.
 		OutputCharset:  outputCharset,
 		OutputMimeType: outputMimeType,
 
-		InputEncoding: encoding.TextUnmarshal,
+		InputMimeType: encoding.TextUnmarshal,
 		InputCharset:  nil,
 	}
 }

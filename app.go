@@ -173,7 +173,7 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		Request:            r,
 		OutputMimeType:     app.outputMimeType,
 		OutputMimeTypeName: app.config.OutputMimeType,
-		InputEncoding:      unmarshal,
+		InputMimeType:      unmarshal,
 		InputCharset:       inputCharset,
 		OutputCharset:      app.outputCharset,
 		OutputCharsetName:  app.config.OutputCharset,

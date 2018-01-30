@@ -33,7 +33,7 @@ type Context struct {
 	OutputCharsetName string
 
 	// 客户端内容所使用的编码方式。
-	InputEncoding encoding.UnmarshalFunc
+	InputMimeType encoding.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//
@@ -75,7 +75,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 		return err
 	}
 
-	return ctx.InputEncoding(body, v)
+	return ctx.InputMimeType(body, v)
 }
 
 // Marshal 将 v 发送给客户端。
