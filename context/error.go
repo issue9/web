@@ -7,6 +7,7 @@ package context
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"runtime"
 	"strconv"
 
@@ -60,4 +61,22 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 	logs.ERROR().Output(2, traceStack(2, v...))
 
 	ctx.RenderStatus(status)
+}
+
+// Critical 输出一条日志到 CRITICAL 日志通道，
+// 并向用户输出一个指定状态码的页面。
+// 若是输出日志的过程中出错，则 panic
+func Critical(w http.ResponseWriter, status int, v ...interface{}) {
+	logs.CRITICAL().Output(2, traceStack(2, v...))
+
+	RenderStatus(w, status)
+}
+
+// Error 输出一条日志到 ERROR 日志通道，
+// 并向用户输出一个指定状态码的页面。
+// 若是输出日志的过程中出错，则 panic
+func Error(w http.ResponseWriter, status int, v ...interface{}) {
+	logs.ERROR().Output(2, traceStack(2, v...))
+
+	RenderStatus(w, status)
 }
