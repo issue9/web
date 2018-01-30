@@ -155,6 +155,12 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 			context.RenderStatus(w, http.StatusNotAcceptable)
 			return nil
 		}
+
+		acceptCharset := r.Header.Get("Accept-Charset")
+		if !strings.Contains(acceptCharset, app.config.OutputCharset) && !strings.Contains(acceptCharset, "*") {
+			context.RenderStatus(w, http.StatusNotAcceptable)
+			return nil
+		}
 	}
 
 	return &context.Context{
