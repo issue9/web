@@ -17,12 +17,12 @@ import (
 	"github.com/issue9/web/encoding/test"
 )
 
-func newContext(w http.ResponseWriter, r *http.Request, outputEncoding encoding.MarshalFunc, outputCharset charset.Encoding) *Context {
+func newContext(w http.ResponseWriter, r *http.Request, outputMimeType encoding.MarshalFunc, outputCharset charset.Encoding) *Context {
 	return &Context{
 		Response:       w,
 		Request:        r,
 		OutputCharset:  outputCharset,
-		OutputEncoding: outputEncoding,
+		OutputMimeType: outputMimeType,
 
 		InputEncoding: encoding.TextUnmarshal,
 		InputCharset:  nil,

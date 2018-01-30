@@ -33,10 +33,10 @@ func TestMarshal(t *testing.T) {
 
 	a.Equal(len(marshals), 1)
 	a.Nil(Marshal("not exists"))
-	a.NotNil(Marshal(DefaultEncoding))
+	a.NotNil(Marshal(DefaultMimeType))
 
 	// 添加已存在的
-	a.Equal(AddMarshal(DefaultEncoding, json.Marshal), ErrExists)
+	a.Equal(AddMarshal(DefaultMimeType, json.Marshal), ErrExists)
 	a.Equal(len(marshals), 1) // 添加没成功
 
 	a.NotError(AddMarshal("json", json.Marshal))
@@ -49,10 +49,10 @@ func TestUnmarshal(t *testing.T) {
 
 	a.Equal(len(unmarshals), 1)
 	a.Nil(Unmarshal("not exists"))
-	a.NotNil(Unmarshal(DefaultEncoding))
+	a.NotNil(Unmarshal(DefaultMimeType))
 
 	// 添加已存在的
-	a.Equal(AddUnmarshal(DefaultEncoding, json.Unmarshal), ErrExists)
+	a.Equal(AddUnmarshal(DefaultMimeType, json.Unmarshal), ErrExists)
 	a.Equal(len(unmarshals), 1) // 添加没成功
 
 	a.NotError(AddUnmarshal("json", json.Unmarshal))
@@ -65,7 +65,7 @@ func TestBuildContentType(t *testing.T) {
 
 	a.Equal("application/xml; charset=utf16", BuildContentType("application/xml", "utf16"))
 	a.Equal("application/xml; charset="+DefaultCharset, BuildContentType("application/xml", ""))
-	a.Equal(DefaultEncoding+"; charset="+DefaultCharset, BuildContentType("", ""))
+	a.Equal(DefaultMimeType+"; charset="+DefaultCharset, BuildContentType("", ""))
 	a.Equal("application/xml; charset="+DefaultCharset, BuildContentType("application/xml", ""))
 }
 
@@ -73,10 +73,10 @@ func TestParseContentType(t *testing.T) {
 	a := assert.New(t)
 
 	e, c, err := ParseContentType("")
-	a.NotError(err).Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
+	a.NotError(err).Equal(e, DefaultMimeType).Equal(c, DefaultCharset)
 
 	e, c, err = ParseContentType(" ")
-	a.NotError(err).Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
+	a.NotError(err).Equal(e, DefaultMimeType).Equal(c, DefaultCharset)
 
 	e, c, err = ParseContentType(" ;;;")
 	a.Error(err).Empty(e).Empty(c)

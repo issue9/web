@@ -38,15 +38,15 @@ type Config struct {
 	// Strict 严格模式。
 	//
 	// 启用此配置，某些内容的验证会更加严格。
-	// 比如会检测客户端的 Accept 是否接受当前的 OutputEncoding 值等。
+	// 比如会检测客户端的 Accept 是否接受当前的 OutputMimeType 值等。
 	Strict bool `yaml:"strict,omitempty"`
 
-	// OutputEncoding 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
+	// OutputMimeType 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
 	//
 	// 该值最终会通过 encoding.Marshal() 进行查找。
 	//
-	// 如果为空，则会采用 encoding.DefaultEncoding 作为默认值。
-	OutputEncoding string `yaml:"outputEncoding,omitempty"`
+	// 如果为空，则会采用 encoding.DefaultMimeType 作为默认值。
+	OutputMimeType string `yaml:"outputMimeType,omitempty"`
 
 	// OutputCharset 向客户端输出的字符集名称。
 	//
@@ -153,8 +153,8 @@ func (conf *Config) sanitize() error {
 		conf.OutputCharset = encoding.DefaultCharset
 	}
 
-	if conf.OutputEncoding == "" {
-		conf.OutputEncoding = encoding.DefaultEncoding
+	if conf.OutputMimeType == "" {
+		conf.OutputMimeType = encoding.DefaultMimeType
 	}
 
 	for _, path := range conf.Plugins {

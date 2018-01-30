@@ -37,7 +37,7 @@ type app struct {
 	router     *mux.Prefix
 
 	// 根据配置文件，获取相应的输出编码和字符集。
-	outputEncoding encoding.MarshalFunc
+	outputMimeType encoding.MarshalFunc
 	outputCharset  charset.Encoding
 }
 
@@ -74,9 +74,9 @@ func (app *app) loadConfig() error {
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 
-	app.outputEncoding = encoding.Marshal(conf.OutputEncoding)
-	if app.outputEncoding == nil {
-		return errors.New("未找到 outputEncoding")
+	app.outputMimeType = encoding.Marshal(conf.OutputMimeType)
+	if app.outputMimeType == nil {
+		return errors.New("未找到 outputMimeType")
 	}
 
 	app.outputCharset = encoding.Charset(conf.OutputCharset)
@@ -156,7 +156,7 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
-		if !strings.Contains(accept, app.config.OutputEncoding) && !strings.Contains(accept, "*/*") {
+		if !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
 			context.RenderStatus(w, http.StatusNotAcceptable)
 			return nil
 		}
@@ -171,8 +171,8 @@ func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	return &context.Context{
 		Response:           w,
 		Request:            r,
-		OutputEncoding:     app.outputEncoding,
-		OutputEncodingName: app.config.OutputEncoding,
+		OutputMimeType:     app.outputMimeType,
+		OutputMimeTypeName: app.config.OutputMimeType,
 		InputEncoding:      unmarshal,
 		InputCharset:       inputCharset,
 		OutputCharset:      app.outputCharset,

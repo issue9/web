@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	// DefaultEncoding 默认的编码方式，在不能正确获取输入和输出的编码方式时，
+	// DefaultMimeType 默认的编码方式，在不能正确获取输入和输出的编码方式时，
 	// 会采用此值作为其默认值。
-	DefaultEncoding = "text/plain"
+	DefaultMimeType = "text/plain"
 
 	// DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 	// 会采用此值和为其默认值。
@@ -39,11 +39,11 @@ var (
 	}
 
 	marshals = map[string]MarshalFunc{
-		DefaultEncoding: TextMarshal,
+		DefaultMimeType: TextMarshal,
 	}
 
 	unmarshals = map[string]UnmarshalFunc{
-		DefaultEncoding: TextUnmarshal,
+		DefaultMimeType: TextUnmarshal,
 	}
 )
 
@@ -103,15 +103,15 @@ func AddUnmarshal(name string, m UnmarshalFunc) error {
 // BuildContentType 生成一个 content-type
 //
 // 若值为空，则会使用默认值代替
-func BuildContentType(encoding, charset string) string {
-	if encoding == "" {
-		encoding = DefaultEncoding
+func BuildContentType(mimetype, charset string) string {
+	if mimetype == "" {
+		mimetype = DefaultMimeType
 	}
 	if charset == "" {
 		charset = DefaultCharset
 	}
 
-	return encoding + "; charset=" + charset
+	return mimetype + "; charset=" + charset
 }
 
 // ParseContentType 从 content-type 中获取编码和字符集
@@ -121,11 +121,11 @@ func BuildContentType(encoding, charset string) string {
 // 返回值中，mimetype 一律返回小写的值，charset 则原样返回
 //
 // https://tools.ietf.org/html/rfc7231#section-3.1.1.1
-func ParseContentType(v string) (encoding, charset string, err error) {
+func ParseContentType(v string) (mimetype, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if len(v) == 0 {
-		return DefaultEncoding, DefaultCharset, nil
+		return DefaultMimeType, DefaultCharset, nil
 	}
 
 	index := strings.IndexByte(v, ';')
@@ -136,7 +136,7 @@ func ParseContentType(v string) (encoding, charset string, err error) {
 		return "", "", errors.New("缺少 mimetype")
 	}
 
-	encoding = strings.ToLower(v[:index])
+	mimetype = strings.ToLower(v[:index])
 
 	for index > 0 {
 		// 去掉左边的空白字符
@@ -148,8 +148,8 @@ func ParseContentType(v string) (encoding, charset string, err error) {
 		}
 
 		v = strings.TrimPrefix(v, "charset=")
-		return encoding, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
+		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	return encoding, DefaultCharset, nil
+	return mimetype, DefaultCharset, nil
 }

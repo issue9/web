@@ -23,8 +23,8 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的编码方式，以及名称
-	OutputEncoding     encoding.MarshalFunc
-	OutputEncodingName string
+	OutputMimeType     encoding.MarshalFunc
+	OutputMimeTypeName string
 
 	// 输出到客户端的字符集
 	//
@@ -82,7 +82,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 //
 // NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	ct := encoding.BuildContentType(ctx.OutputEncodingName, ctx.OutputCharsetName)
+	ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
 	if headers == nil {
 		ctx.Response.Header().Set("Content-Type", ct)
 	} else if _, found := headers["Content-Type"]; !found {
@@ -93,7 +93,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		}
 	}
 
-	data, err := ctx.OutputEncoding(v)
+	data, err := ctx.OutputMimeType(v)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (ctx *Context) RenderStatus(status int) {
 
 // RenderStatus 仅向客户端输出状态码
 func RenderStatus(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultEncoding, encoding.DefaultCharset))
+	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	fmt.Fprintln(w, http.StatusText(status))
