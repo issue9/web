@@ -8,6 +8,7 @@ package encoding
 import (
 	"errors"
 	"strings"
+	"unicode"
 
 	"golang.org/x/text/encoding"
 )
@@ -116,46 +117,39 @@ func BuildContentType(encoding, charset string) string {
 // ParseContentType 从 content-type 中获取编码和字符集
 //
 // 若客户端传回的是空值，则会使用默认值代替。
-func ParseContentType(v string) (encoding, charset string) {
-	v = strings.ToLower(strings.TrimSpace(v))
+//
+// 返回值中，mimetype 一律返回小写的值，charset 则原样返回
+//
+// https://tools.ietf.org/html/rfc7231#section-3.1.1.1
+func ParseContentType(v string) (encoding, charset string, err error) {
+	v = strings.TrimSpace(v)
+
 	if len(v) == 0 {
-		return DefaultEncoding, DefaultCharset
+		return DefaultEncoding, DefaultCharset, nil
 	}
 
-	// encoding
 	index := strings.IndexByte(v, ';')
 	switch {
 	case index < 0: // 只有编码
-		return v, DefaultCharset
-	case index == 0: // 编码为空
-		encoding = DefaultEncoding
-	case index > 0:
-		encoding = strings.TrimSpace(v[:index])
+		return strings.ToLower(v), DefaultCharset, nil
+	case index == 0: // mimetype 不可省略
+		return "", "", errors.New("缺少 mimetype")
 	}
 
-	v = v[index+1:]
-	if len(v) == 0 {
-		return encoding, DefaultCharset
+	encoding = strings.ToLower(v[:index])
+
+	for index > 0 {
+		// 去掉左边的空白字符
+		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return unicode.IsSpace(r) })
+
+		if !strings.HasPrefix(v, "charset=") {
+			index = strings.IndexByte(v, ';')
+			continue
+		}
+
+		v = strings.TrimPrefix(v, "charset=")
+		return encoding, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	index = strings.IndexByte(v, ';') // 查找第二个 ;
-	switch {
-	case index == 0:
-		return encoding, DefaultCharset
-	case index > 0:
-		v = v[:index]
-	}
-
-	index = strings.IndexByte(v, '=')
-	switch {
-	case index < 0:
-		charset = strings.TrimSpace(v)
-	case index >= 0:
-		charset = strings.TrimSpace(v[index+1:])
-	}
-	if charset == "" {
-		charset = DefaultCharset
-	}
-
-	return encoding, charset
+	return encoding, DefaultCharset, nil
 }

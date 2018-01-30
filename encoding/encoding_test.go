@@ -72,45 +72,24 @@ func TestBuildContentType(t *testing.T) {
 func TestParseContentType(t *testing.T) {
 	a := assert.New(t)
 
-	e, c := ParseContentType("")
-	a.Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
+	e, c, err := ParseContentType("")
+	a.NotError(err).Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
 
-	e, c = ParseContentType(" ")
-	a.Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
+	e, c, err = ParseContentType(" ")
+	a.NotError(err).Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
 
-	e, c = ParseContentType(" ;;;")
-	a.Equal(e, DefaultEncoding).Equal(c, DefaultCharset)
+	e, c, err = ParseContentType(" ;;;")
+	a.Error(err).Empty(e).Empty(c)
 
-	e, c = ParseContentType("application/XML")
-	a.Equal(e, "application/xml").Equal(c, DefaultCharset)
+	e, c, err = ParseContentType("application/XML")
+	a.NotError(err).Equal(e, "application/xml").Equal(c, DefaultCharset)
 
-	e, c = ParseContentType("application/XML;")
-	a.Equal(e, "application/xml").Equal(c, DefaultCharset)
+	e, c, err = ParseContentType("application/XML;")
+	a.NotError(err).Equal(e, "application/xml").Equal(c, DefaultCharset)
 
-	e, c = ParseContentType(" application/xml ;;")
-	a.Equal(e, "application/xml").Equal(c, DefaultCharset)
+	e, c, err = ParseContentType("text/html;charset=utf-8")
+	a.NotError(err).Equal(e, "text/html").Equal(c, "utf-8")
 
-	e, c = ParseContentType("  ;charset=utf16")
-	a.Equal(e, DefaultEncoding).Equal(c, "utf16")
-
-	e, c = ParseContentType("  ;charset=utf16;")
-	a.Equal(e, DefaultEncoding).Equal(c, "utf16")
-
-	e, c = ParseContentType("application/xml; charset=utf16")
-	a.Equal(e, "application/xml").Equal(c, "utf16")
-
-	e, c = ParseContentType("application/xml;utf16")
-	a.Equal(e, "application/xml").Equal(c, "utf16")
-
-	e, c = ParseContentType("application/xml;=utf16")
-	a.Equal(e, "application/xml").Equal(c, "utf16")
-
-	e, c = ParseContentType("application/xml;utf16=")
-	a.Equal(e, "application/xml").Equal(c, DefaultCharset)
-
-	e, c = ParseContentType("application/xml;=utf16=")
-	a.Equal(e, "application/xml").Equal(c, "utf16=")
-
-	e, c = ParseContentType(";charset=utf16")
-	a.Equal(e, DefaultEncoding).Equal(c, "utf16")
+	e, c, err = ParseContentType(`Text/HTML;Charset="utf-8"`)
+	a.NotError(err).Equal(e, "text/html").Equal(c, "utf-8")
 }

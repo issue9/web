@@ -135,7 +135,12 @@ func (app *app) URL(path string) string {
 // strict 若为 true，则会验证用户的 Accept 报头是否接受 encodingName 编码。
 // 输入时的编码与字符集信息从报头 Content-Type 中获取，若未指定字符集，则默认为 utf-8
 func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	encName, charsetName := encoding.ParseContentType(r.Header.Get("Content-Type"))
+	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
+
+	if err != nil {
+		context.RenderStatus(w, http.StatusUnsupportedMediaType)
+		return nil
+	}
 
 	unmarshal := encoding.Unmarshal(encName)
 	if unmarshal == nil {
