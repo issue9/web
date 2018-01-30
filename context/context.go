@@ -22,7 +22,7 @@ type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
 
-	// 指定输出时所使用的编码方式，以及名称
+	// 指定输出时所使用的媒体类型，以及名称
 	OutputMimeType     encoding.MarshalFunc
 	OutputMimeTypeName string
 
@@ -32,7 +32,7 @@ type Context struct {
 	OutputCharset     charset.Encoding
 	OutputCharsetName string
 
-	// 客户端内容所使用的编码方式。
+	// 客户端内容所使用的媒体类型。
 	InputMimeType encoding.UnmarshalFunc
 
 	// 客户端内容所使用的字符集

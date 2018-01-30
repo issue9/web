@@ -41,7 +41,7 @@ type Config struct {
 	// 比如会检测客户端的 Accept 是否接受当前的 OutputMimeType 值等。
 	Strict bool `yaml:"strict,omitempty"`
 
-	// OutputMimeType 向客户输出时，采用的编码方式，值类型应该采用 mime-type 值。
+	// OutputMimeType 向客户输出时采用的媒体类型，值类型应该采用 mime-type 值。
 	//
 	// 该值最终会通过 encoding.Marshal() 进行查找。
 	//

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// DefaultMimeType 默认的编码方式，在不能正确获取输入和输出的编码方式时，
+	// DefaultMimeType 默认的媒体类型，在不能正确获取输入和输出的媒体类型时，
 	// 会采用此值作为其默认值。
 	DefaultMimeType = "text/plain"
 

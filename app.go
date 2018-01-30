@@ -129,11 +129,6 @@ func (app *app) URL(path string) string {
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
-//
-// encodingName 指定出输出时的编码方式，此编码名称必须已经通过 AddMarshal 添加；
-// charsetName 指定输出时的字符集，此字符集名称必须已经通过 AddCharset 添加；
-// strict 若为 true，则会验证用户的 Accept 报头是否接受 encodingName 编码。
-// 输入时的编码与字符集信息从报头 Content-Type 中获取，若未指定字符集，则默认为 utf-8
 func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
