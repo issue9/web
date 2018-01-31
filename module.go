@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"plugin"
 
-	"github.com/issue9/web/dependency"
+	"github.com/issue9/web/core"
+	"github.com/issue9/web/core/dependency"
 )
 
 // PluginModuleName 插件中必须提供的函数名称。
@@ -46,7 +47,7 @@ type Module struct {
 	Type        ModuleType
 
 	inits      []dependency.InitFunc
-	middleware Middleware
+	middleware core.Middleware
 }
 
 // Route 表示模块信息中的路由信息
@@ -185,7 +186,7 @@ func (p *Prefix) Module() *Module {
 // SetMiddleware 为当前模块的所有路由添加的中间件。
 //
 // 多次调用，最后一次为准。
-func (m *Module) SetMiddleware(f Middleware) {
+func (m *Module) SetMiddleware(f core.Middleware) {
 	m.middleware = f
 }
 
@@ -312,7 +313,7 @@ func (p *Prefix) PostFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodPost)
 }
 
-// DeleteFunc 指定一个 Delete 请求
+// DeleteFunc ���定一个 Delete 请求
 func (p *Prefix) DeleteFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodDelete)
 }

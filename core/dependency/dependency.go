@@ -24,7 +24,7 @@ type module struct {
 // Dependency 模块管理工具，管理模块的初始化顺序
 type Dependency struct {
 	modules map[string]*module
-	lock    sync.Mutex
+	locker  sync.Mutex
 }
 
 // New 声明一个 Dependency 实例
@@ -40,8 +40,8 @@ func New() *Dependency {
 // init 为模块的初始化函数；
 // deps 为模块的依赖模块，依赖模块可以后于当前模块注册，但必须要存在。
 func (dep *Dependency) Add(name string, init InitFunc, deps ...string) error {
-	dep.lock.Lock()
-	defer dep.lock.Unlock()
+	dep.locker.Lock()
+	defer dep.locker.Unlock()
 
 	if _, found := dep.modules[name]; found {
 		return fmt.Errorf("模块[%s]已经存在", name)
@@ -58,8 +58,8 @@ func (dep *Dependency) Add(name string, init InitFunc, deps ...string) error {
 // Init 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
 func (dep *Dependency) Init() error {
-	dep.lock.Lock()
-	defer dep.lock.Unlock()
+	dep.locker.Lock()
+	defer dep.locker.Unlock()
 
 	for _, m := range dep.modules {
 		if err := dep.checkDeps(m); err != nil {

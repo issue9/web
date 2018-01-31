@@ -38,7 +38,7 @@ package install
 
 import (
 	"github.com/issue9/term/colors"
-	"github.com/issue9/web/dependency"
+	"github.com/issue9/web/core/dependency"
 )
 
 const (
