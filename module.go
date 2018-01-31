@@ -5,38 +5,11 @@
 package web
 
 import (
-	"errors"
 	"net/http"
-	"plugin"
 
 	"github.com/issue9/web/core"
 	"github.com/issue9/web/core/dependency"
 )
-
-// PluginModuleName 插件中必须提供的函数名称。
-// 根据此变量提供的数据进行初始化。
-const PluginModuleName = "Module"
-
-// 表示模块的类型。
-const (
-	ModuleTypeAll    ModuleType = iota
-	ModuleTypeModule            // 默认的方式，即和代码一起编译
-	ModuleTypePlugin            // 加载以 buildmode=plugin 方式编译的模块
-)
-
-// ModuleFunc 每个模块必须提供的注册函数
-//
-// 如果让模块直接以变量的形式直接提供，则需要保证每个 *Module
-// 需要使用的数据都会在加载模块时初始化，这无法做到；
-//
-// 返回 *Module 而不是直接在 ModuleFunc 内进行注册，
-// 是因为这样可以控制 Module.Type 的值。
-// 且只有这样才能保证，插件注册到当前的 app 对象中，
-// 而不是默认的 defaultApp 对象中。
-type ModuleFunc func() *Module
-
-// ModuleType 用以指定模块的类型。
-type ModuleType int8
 
 // Module 表示模块信息
 type Module struct {
@@ -44,7 +17,6 @@ type Module struct {
 	Deps        []string
 	Description string
 	Routes      []*Route
-	Type        ModuleType
 
 	inits      []dependency.InitFunc
 	middleware core.Middleware
@@ -73,53 +45,10 @@ func (app *app) Modules() []*Module {
 
 // AddModule 注册一个新的模块。
 func (app *app) AddModule(m *Module) {
-	m.Type = ModuleTypeModule
-	app.addModule(m)
-}
-
-func (app *app) addModule(m *Module) {
 	app.modules = append(app.modules, m)
 }
 
-// 加载配置文件中指定的所有插件
-func (app *app) loadPlugins() error {
-	for _, p := range app.config.Plugins {
-		if err := app.loadPlugin(p); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (app *app) loadPlugin(path string) error {
-	p, err := plugin.Open(path)
-	if err != nil {
-		return err
-	}
-
-	symbol, err := p.Lookup(PluginModuleName)
-	if err != nil {
-		return err
-	}
-
-	f, ok := symbol.(ModuleFunc)
-	if !ok {
-		return errors.New("无法转换成 ModuleFunc")
-	}
-
-	module := f()
-	module.Type = ModuleTypePlugin
-	app.addModule(module)
-
-	return nil
-}
-
 func (app *app) initDependency() error {
-	if err := app.loadPlugins(); err != nil {
-		return err
-	}
-
 	dep := dependency.New()
 
 	for _, module := range app.modules {
