@@ -1,16 +1,25 @@
 language: go
-sudo: true
+
+os:
+  - linux
+  - osx
+  - windows
+
 go:
-    - tip
-    - 1.9
-    - 1.8
+  - tip
+  - "1.10"
+  - 1.9
+  - 1.8
+
 install:
-    - go get github.com/issue9/assert
-    - go get github.com/issue9/context
-    - go get github.com/issue9/middleware
-    - go get github.com/issue9/logs
-    - go get github.com/issue9/mux
-    - go get github.com/issue9/utils
-    - go get github.com/issue9/is
-    - go get gopkg.in/yaml.v2
-    - go get golang.org/x/text
+  - go get github.com/issue9/assert
+  - go get github.com/issue9/context
+  - go get github.com/issue9/middleware
+  - go get github.com/issue9/logs
+  - go get github.com/issue9/mux
+  - go get github.com/issue9/utils
+  - go get github.com/issue9/is
+  - go get gopkg.in/yaml.v2
+  - go get golang.org/x/text
+
+script: go test -race -v ./...
