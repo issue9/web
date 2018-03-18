@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/issue9/mux"
-	"github.com/issue9/web/core/dependency"
+	"github.com/issue9/web/internal/dependency"
 )
 
 // ErrModulesIsInited 当前模块已经被初始化。不能再次执行初始化操作

@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/issue9/web/core"
-	"github.com/issue9/web/core/dependency"
 )
 
 // Module 表示模块信息
@@ -19,7 +18,7 @@ type Module struct {
 	Description string
 	Routes      []*Route
 
-	inits      []dependency.InitFunc
+	inits      []func() error
 	middleware core.Middleware
 }
 
@@ -50,7 +49,7 @@ func (ms *Modules) New(name, desc string, deps ...string) *Module {
 		Deps:        deps,
 		Description: desc,
 		Routes:      make([]*Route, 0, 10),
-		inits:       make([]dependency.InitFunc, 0, 5),
+		inits:       make([]func() error, 0, 5),
 	}
 
 	ms.modules = append(ms.modules, m)
@@ -78,7 +77,7 @@ func (m *Module) SetMiddleware(f core.Middleware) {
 }
 
 // AddInit 添加一个初始化函数
-func (m *Module) AddInit(f dependency.InitFunc) *Module {
+func (m *Module) AddInit(f func() error) *Module {
 	m.inits = append(m.inits, f)
 	return m
 }
