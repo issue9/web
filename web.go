@@ -12,7 +12,6 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/core"
 	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
@@ -36,7 +35,7 @@ func grace(s ...os.Signal) {
 // m 表示应用于所有路由项的中间件；
 // s 表示触发 shutdown 的信号。
 // 传递给框架的信号，会触发调用 Shutdown() 操作。
-func Init(configDir string, m core.Middleware, s ...os.Signal) error {
+func Init(configDir string, m module.Middleware, s ...os.Signal) error {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}

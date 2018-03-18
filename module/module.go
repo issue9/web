@@ -7,9 +7,10 @@ package module
 
 import (
 	"net/http"
-
-	"github.com/issue9/web/core"
 )
+
+// Middleware 将一个 http.Handler 封装成另一个 http.Handler
+type Middleware func(http.Handler) http.Handler
 
 // Module 表示模块信息
 type Module struct {
@@ -19,7 +20,7 @@ type Module struct {
 	Routes      []*Route
 
 	inits      []func() error
-	middleware core.Middleware
+	middleware Middleware
 }
 
 // Route 表示模块信息中的路由信息
@@ -72,7 +73,7 @@ func (p *Prefix) Module() *Module {
 // SetMiddleware 为当前模块的所有路由添加的中间件。
 //
 // 多次调用，最后一次为准。
-func (m *Module) SetMiddleware(f core.Middleware) {
+func (m *Module) SetMiddleware(f Middleware) {
 	m.middleware = f
 }
 

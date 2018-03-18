@@ -17,7 +17,6 @@ import (
 	charset "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/core"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/server"
@@ -34,7 +33,7 @@ type app struct {
 	config    *config.Config
 	modules   *module.Modules
 
-	middleware core.Middleware // 应用于全局所有路由项的中间件
+	middleware module.Middleware // 应用于全局所有路由项的中间件
 	mux        *mux.Mux
 	router     *mux.Prefix
 
@@ -43,7 +42,7 @@ type app struct {
 	outputCharset  charset.Encoding
 }
 
-func newApp(configDir string, m core.Middleware) (*app, error) {
+func newApp(configDir string, m module.Middleware) (*app, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
