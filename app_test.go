@@ -13,11 +13,11 @@ import (
 	"github.com/issue9/assert"
 )
 
-var f1 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(1)
+var f202 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
 }
 
-var h1 = http.HandlerFunc(f1)
+var h202 = http.HandlerFunc(f202)
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t)
@@ -30,7 +30,7 @@ func TestMiddleware(t *testing.T) {
 	app, err := newApp("./testdata", m)
 	a.NotError(err).NotNil(app)
 
-	app.router.GetFunc("/middleware", f1)
+	app.router.GetFunc("/middleware", f202)
 	go func() {
 		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
 		app.Run()
@@ -51,7 +51,7 @@ func TestApp_Close(t *testing.T) {
 	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	app.mux.GetFunc("/test", f1)
+	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
 		Close()
@@ -67,7 +67,7 @@ func TestApp_Close(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
 
 	resp, err = http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
@@ -81,7 +81,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	app.mux.GetFunc("/test", f1)
+	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("closed"))
@@ -98,7 +98,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
 
 	// 关闭指令可以正常执行
 	resp, err = http.Get("http://localhost:8082/close")
@@ -120,7 +120,7 @@ func TestApp_Run(t *testing.T) {
 	app, err := newApp("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	app.mux.GetFunc("/test", f1)
+	app.mux.GetFunc("/test", f202)
 
 	go func() {
 		err := app.Run()
@@ -130,7 +130,7 @@ func TestApp_Run(t *testing.T) {
 	time.Sleep(500 * time.Microsecond)
 	resp, err := http.Get("http://localhost:8082/test")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
 
 	resp, err = http.Get("http://localhost:8082/client/file1.txt")
 	a.NotError(err).NotNil(resp)

@@ -18,13 +18,13 @@ import (
 const timeout = 300 * time.Microsecond
 
 var (
-	h1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(1)
+	h202 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
 	})
 
 	timeoutHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(timeout)
-		w.WriteHeader(1)
+		w.WriteHeader(http.StatusAccepted)
 
 	})
 )
@@ -44,14 +44,14 @@ func TestListenClose(t *testing.T) {
 	}
 
 	go func() {
-		a.Equal(Listen(h1, conf), http.ErrServerClosed)
+		a.Equal(Listen(h202, conf), http.ErrServerClosed)
 	}()
 	time.Sleep(300 * time.Microsecond) // 等待启动完成
 
 	// 正常访问
 	resp, err := http.Get("http://localhost:8080/test")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, 1)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
 
 	// 关闭
 	a.NotError(Close())
@@ -62,7 +62,7 @@ func TestListenClose(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func TestCloseWithTimeout(t *testing.T) {
+func testCloseWithTimeout(t *testing.T) {
 	a := assert.New(t)
 	conf := &config.Config{
 		Port: 8080,
@@ -121,8 +121,8 @@ func TestBuildHosts_empty(t *testing.T) {
 	a := assert.New(t)
 	conf = &config.Config{}
 
-	h := buildHosts(h1)
-	request(a, h, "http://example.com/test", 1)
+	h := buildHosts(h202)
+	request(a, h, "http://example.com/test", http.StatusAccepted)
 }
 
 func TestBuildHosts(t *testing.T) {
@@ -131,10 +131,10 @@ func TestBuildHosts(t *testing.T) {
 		AllowedDomains: []string{"caixw.io", "example.com"},
 	}
 
-	h := buildHosts(h1)
+	h := buildHosts(h202)
 
 	// 带正确的域名访问
-	request(a, h, "http://caixw.io/test", 1)
+	request(a, h, "http://caixw.io/test", http.StatusAccepted)
 
 	// 带不允许的域名访问
 	request(a, h, "http://not.allowed/test", http.StatusNotFound)
@@ -146,12 +146,12 @@ func TestBuildHeader(t *testing.T) {
 		Headers: map[string]string{"Test": "test"},
 	}
 
-	h := buildHeader(h1)
+	h := buildHeader(h202)
 
 	r := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
-	a.Equal(w.Code, 1)
+	a.Equal(w.Code, http.StatusAccepted)
 	a.Equal(w.Header().Get("Test"), "test")
 }
 
@@ -159,7 +159,7 @@ func TestBuildPprof(t *testing.T) {
 	a := assert.New(t)
 	conf = &config.Config{}
 
-	h := buildPprof(h1)
+	h := buildPprof(h202)
 
 	// 命中 /debug/pprof/cmdline
 	request(a, h, "http://example.com/debug/pprof/", http.StatusOK)
@@ -168,6 +168,6 @@ func TestBuildPprof(t *testing.T) {
 	request(a, h, "http://example.com/debug/pprof/symbol", http.StatusOK)
 	//request(a, h, "http://example.com/debug/pprof/profile", http.StatusOK)
 
-	// 命中 h1
-	request(a, h, "http://example.com/debug", 1)
+	// 命中 h202
+	request(a, h, "http://example.com/debug", http.StatusAccepted)
 }
