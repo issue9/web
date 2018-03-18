@@ -32,8 +32,7 @@ func TestMiddleware(t *testing.T) {
 
 	app.router.GetFunc("/middleware", f202)
 	go func() {
-		// 不判断返回值，在被关闭或是重启时，会返回 http.ErrServerClosed 错误
-		app.Run()
+		a.Equal(app.Run(), http.ErrServerClosed)
 	}()
 
 	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同

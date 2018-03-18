@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/core"
 	"github.com/issue9/web/internal/server"
+	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
 
@@ -87,9 +88,9 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
-// AddModule 注册一个模块
-func AddModule(m *Module) {
-	defaultApp.AddModule(m)
+// NewModule 注册一个模块
+func NewModule(name, desc string, deps ...string) *module.Module {
+	return defaultApp.modules.New(name, desc, deps...)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

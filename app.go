@@ -21,6 +21,7 @@ import (
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/server"
+	"github.com/issue9/web/module"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 type app struct {
 	configDir string
 	config    *config.Config
-	modules   []*Module
+	modules   *module.Modules
 
 	middleware core.Middleware // 应用于全局所有路由项的中间件
 	mux        *mux.Mux
@@ -51,7 +52,6 @@ func newApp(configDir string, m core.Middleware) (*app, error) {
 	app := &app{
 		configDir:  dir,
 		middleware: m,
-		modules:    make([]*Module, 0, 100),
 	}
 
 	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
@@ -85,6 +85,8 @@ func (app *app) loadConfig() error {
 		return errors.New("未找到 outputCharset")
 	}
 
+	app.modules = module.NewModules(app.router)
+
 	return nil
 }
 
@@ -100,7 +102,7 @@ func (app *app) File(path ...string) string {
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
 func (app *app) Run() error {
-	if err := app.initDependency(); err != nil {
+	if err := app.modules.Init(); err != nil {
 		return err
 	}
 

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+// Package module 提供模块的的相关功能。
+package module
 
 import (
 	"net/http"
@@ -38,65 +39,22 @@ type Prefix struct {
 	prefix string
 }
 
-// Modules 获取当前的所有模块信息
-func (app *app) Modules() []*Module {
-	return app.modules
-}
-
-// AddModule 注册一个新的模块。
-func (app *app) AddModule(m *Module) {
-	app.modules = append(app.modules, m)
-}
-
-func (app *app) initDependency() error {
-	dep := dependency.New()
-
-	for _, module := range app.modules {
-		dep.Add(module.Name, module.getInit(app), module.Deps...)
-	}
-
-	return dep.Init()
-}
-
-// 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (m *Module) getInit(app *app) dependency.InitFunc {
-	return func() error {
-		for _, init := range m.inits {
-			if err := init(); err != nil {
-				return err
-			}
-		}
-
-		for _, r := range m.Routes {
-			h := r.handler
-			if m.middleware != nil {
-				h = m.middleware(h)
-			}
-
-			if err := app.router.Handle(r.Path, h, r.Methods...); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-}
-
-// NewModule 声明一个新的模块
-//
-// 仅作声明，并不会添加到系统中，需要通过 AddModule 时行添加。
+// New 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func NewModule(name, desc string, deps ...string) *Module {
-	return &Module{
+func (ms *Modules) New(name, desc string, deps ...string) *Module {
+	m := &Module{
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
 		Routes:      make([]*Route, 0, 10),
 		inits:       make([]dependency.InitFunc, 0, 5),
 	}
+
+	ms.modules = append(ms.modules, m)
+	return m
 }
 
 // Prefix 声明一个 Prefix 实例。
@@ -242,7 +200,7 @@ func (p *Prefix) PostFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodPost)
 }
 
-// DeleteFunc ���定一个 Delete 请求
+// DeleteFunc 指定一个 Delete 请求
 func (p *Prefix) DeleteFunc(path string, f http.HandlerFunc) *Prefix {
 	return p.HandleFunc(path, f, http.MethodDelete)
 }
