@@ -19,7 +19,7 @@
 //
 // 使用方法：
 //  声明一个安装模块
-//  i := install.New("admin")
+//  i := install.Get("1.0").New("admin")
 //
 //  i.Task("创建表:users", func()*install.Result{
 //      return nil
@@ -32,8 +32,7 @@
 //
 //
 //  // 执行安装
-//  install.Add(i)
-//  install.Install()
+//  install.Install("1.0")
 package install
 
 import (
@@ -48,7 +47,12 @@ const (
 	colorSuccess = colors.Green
 )
 
-var modules = make([]*Module, 0, 100)
+var versions = map[string]*Version{}
+
+// Version 某一版本下的安装信息
+type Version struct {
+	modules []*Module
+}
 
 // Module 声明了一个用于安装的模块。
 // 所有的安装事件都可以向模块注册，模块会在适当的时候进行初始化。
@@ -64,14 +68,32 @@ type task struct {
 	fn    func() *Return
 }
 
+// Get 获取指定版本相关的安装信息
+func Get(version string) *Version {
+	if v, found := versions[version]; found {
+		return v
+	}
+
+	v := &Version{
+		modules: make([]*Module, 0, 10),
+	}
+
+	versions[version] = v
+	return v
+}
+
 // New 输出模块开始安装的信息。
-func New(module string, deps ...string) *Module {
-	return &Module{
+func (v *Version) New(module string, deps ...string) *Module {
+	m := &Module{
 		name:     module,
 		deps:     deps,
 		hasError: false,
 		tasks:    make([]*task, 0, 10),
 	}
+
+	v.modules = append(v.modules, m)
+
+	return m
 }
 
 // Task 为当前模块添加任务。
@@ -85,11 +107,6 @@ func (m *Module) Task(title string, fn func() *Return) *Module {
 	})
 
 	return m
-}
-
-// Add 添加安装模块
-func Add(m *Module) {
-	modules = append(modules, m)
 }
 
 // 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
@@ -137,9 +154,14 @@ func (m *Module) runEvent(e *task) {
 }
 
 // Install 安装各个模块
-func Install() error {
+func Install(version string) error {
+	v, found := versions[version]
+	if !found {
+		return nil
+	}
+
 	dep := dependency.New()
-	for _, m := range modules {
+	for _, m := range v.modules {
 		dep.Add(m.name, m.run, m.deps...)
 	}
 

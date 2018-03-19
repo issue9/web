@@ -18,7 +18,7 @@ var ErrModulesIsInited = errors.New("当前的所有模块已经初始化")
 type Modules struct {
 	router  *mux.Prefix
 	modules []*Module
-	isInit  bool
+	inited  bool
 }
 
 // NewModules 新建一个模块管理功能
@@ -35,7 +35,7 @@ func NewModules(router *mux.Prefix) *Modules {
 
 // Init 执行初始化操作
 func (ms *Modules) Init() error {
-	if ms.isInit {
+	if ms.inited {
 		return ErrModulesIsInited
 	}
 
@@ -51,7 +51,7 @@ func (ms *Modules) Init() error {
 		return err
 	}
 
-	ms.isInit = true
+	ms.inited = true
 	return nil
 }
 

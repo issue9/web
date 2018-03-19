@@ -11,22 +11,36 @@ import (
 	"github.com/issue9/assert"
 )
 
+func TestGet(t *testing.T) {
+	a := assert.New(t)
+
+	i := Get("install")
+	a.NotNil(i)
+	a.Equal(len(versions), 1)
+
+	i = Get("install")
+	a.NotNil(i)
+	a.Equal(len(versions), 1)
+
+	i = Get("v1.0")
+	a.NotNil(i)
+	a.Equal(len(versions), 2)
+}
+
 func TestInstall(t *testing.T) {
 	a := assert.New(t)
 
-	i1 := New("users1", "users2", "users3")
+	i1 := Get("install").New("users1", "users2", "users3")
 	i1.Task("安装数据表users", func() *Return { return ReturnMessage("默认用户为admin:123") })
 
-	i2 := New("users2", "users3")
+	i2 := Get("install").New("users2", "users3")
 	i2.Task("安装数据表users", func() *Return { return nil })
 
-	i3 := New("users3")
+	i3 := Get("install").New("users3")
 	i3.Task("安装数据表users", func() *Return { return nil }).
 		Task("安装数据表users", func() *Return { return ReturnError(errors.New("falid message")) }).
 		Task("安装数据表users", func() *Return { return nil })
 
-	Add(i1)
-	Add(i2)
-	Add(i3)
-	a.NotError(Install())
+	a.NotError(Install("install"))
+	a.NotError(Install("not exists"))
 }
