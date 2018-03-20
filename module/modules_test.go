@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/mux"
 )
 
-func TestApp_getInit(t *testing.T) {
+func TestModule_getInit(t *testing.T) {
 	a := assert.New(t)
 	ms := NewModules(&mux.Prefix{})
 	a.NotNil(ms)
@@ -40,7 +40,7 @@ func TestApp_getInit(t *testing.T) {
 	a.NotNil(fn).NotError(fn()).Equal(w.String(), "m3")
 }
 
-func TestApp_Init(t *testing.T) {
+func TestModule_Init(t *testing.T) {
 	a := assert.New(t)
 	ms := NewModules(&mux.Prefix{})
 	a.NotNil(ms)
