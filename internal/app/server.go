@@ -36,6 +36,9 @@ func (app *App) Close() error {
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
+//
+// 同时会使函数 Run() 立即返回 http.ErrServerClosed 错误，
+// 请确保该函数不会提前中止程序，致使 Shutdown 失败。
 func (app *App) Shutdown() error {
 	logs.Flush()
 

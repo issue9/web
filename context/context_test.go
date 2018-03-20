@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	charset "golang.org/x/text/encoding"
+	xencoding "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/test"
 )
 
-func newContext(w http.ResponseWriter, r *http.Request, outputMimeType encoding.MarshalFunc, outputCharset charset.Encoding) *Context {
+func newContext(w http.ResponseWriter, r *http.Request, outputMimeType encoding.MarshalFunc, outputCharset xencoding.Encoding) *Context {
 	return &Context{
 		Response:       w,
 		Request:        r,
@@ -90,10 +90,10 @@ func TestRenderStatus(t *testing.T) {
 
 	RenderStatus(w, http.StatusOK)
 	a.Equal(w.Code, http.StatusOK).
-		Equal(w.Header().Get("Content-Type"), "text/plain; charset=utf-8")
+		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 
 	w = httptest.NewRecorder()
 	RenderStatus(w, http.StatusInternalServerError)
 	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), "text/plain; charset=utf-8")
+		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 }

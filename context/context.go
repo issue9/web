@@ -137,11 +137,15 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 }
 
 // RenderStatus 仅向客户端输出状态码
+//
+// 无论当前设置的输出类型是什么，都会将 Content-Type 强制改变为 encoding 定义的默认值。
 func (ctx *Context) RenderStatus(status int) {
 	RenderStatus(ctx.Response, status)
 }
 
 // RenderStatus 仅向客户端输出状态码
+//
+// Content-Type 始终是 encoding 定义的默认值。
 func RenderStatus(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
