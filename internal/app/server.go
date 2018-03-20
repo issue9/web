@@ -8,9 +8,12 @@ import (
 	stdctx "context"
 	"net/http"
 	"net/http/pprof"
+	"path"
+	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
@@ -19,6 +22,46 @@ import (
 )
 
 const pprofPath = "/debug/pprof/"
+
+// Run 加载各个模块的数据，运行路由，执行监听程序。
+func (app *App) Run() (err error) {
+	if err = app.modules.Init(); err != nil {
+		return err
+	}
+
+	// 静态文件路由，在其它路由构建之前调用
+	for url, dir := range app.config.Static {
+		pattern := path.Join(app.config.Root, url+"{path}")
+		fs := http.FileServer(http.Dir(dir))
+		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
+	}
+
+	var h http.Handler = app.mux
+	if app.middleware != nil {
+		h = app.middleware(app.mux)
+	}
+
+	app.server = &http.Server{
+		Addr:         ":" + strconv.Itoa(app.config.Port),
+		Handler:      buildHandler(app.config, h),
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  app.config.ReadTimeout,
+		WriteTimeout: app.config.WriteTimeout,
+	}
+
+	if !app.config.HTTPS {
+		err = app.server.ListenAndServe()
+	} else {
+		err = app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
+	}
+
+	// 由 Shutdown 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
+	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
+	if err == http.ErrServerClosed {
+		<-app.closed
+	}
+	return err
+}
 
 // Close 关闭服务。
 //
@@ -30,16 +73,14 @@ func (app *App) Close() error {
 		return nil
 	}
 
+	app.closed <- true
 	return app.server.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-//
-// 同时会使函数 Run() 立即返回 http.ErrServerClosed 错误，
-// 请确保该函数不会提前中止程序，致使 Shutdown 失败。
-func (app *App) Shutdown() error {
+func (app *App) Shutdown() (err error) {
 	logs.Flush()
 
 	if app.server == nil {
@@ -47,11 +88,15 @@ func (app *App) Shutdown() error {
 	}
 
 	if app.config.ShutdownTimeout <= 0 {
+		app.closed <- true
 		return app.server.Close()
 	}
 
 	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.config.ShutdownTimeout)
-	defer cancel()
+	defer func() {
+		cancel()
+		app.closed <- true
+	}()
 	return app.server.Shutdown(ctx)
 }
 

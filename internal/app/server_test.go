@@ -32,6 +32,103 @@ func request(a *assert.Assertion, h http.Handler, url string, code int) {
 	a.Equal(w.Code, code)
 }
 
+func TestApp_Run(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+
+	app.mux.GetFunc("/test", f202)
+
+	go func() {
+		err := app.Run()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+	}()
+
+	time.Sleep(500 * time.Microsecond)
+	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	resp, err = http.Get("http://localhost:8082/client/file1.txt")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
+
+	resp, err = http.Get("http://localhost:8082/client/dir/file2.txt")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
+
+	app.Close()
+}
+
+func TestApp_Close(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+
+	app.mux.GetFunc("/test", f202)
+	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("closed"))
+		app.Close()
+	})
+
+	go func() {
+		err := app.Run()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+	}()
+
+	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
+
+	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	resp, err = http.Get("http://localhost:8082/close")
+	a.Error(err).Nil(resp)
+
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+}
+
+func TestApp_Shutdown_timeout(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+
+	app.mux.GetFunc("/test", f202)
+	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("closed"))
+		app.Shutdown()
+	})
+
+	go func() {
+		err := app.Run()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+	}()
+
+	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
+
+	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	// 关闭指令可以正常执行
+	resp, err = http.Get("http://localhost:8082/close")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusCreated)
+
+	// 拒绝访问
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+
+	// 已被关闭
+	time.Sleep(30 * time.Microsecond)
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+}
+
 func TestBuildHandler(t *testing.T) {
 	a := assert.New(t)
 

@@ -7,13 +7,10 @@ package app
 import (
 	"errors"
 	"net/http"
-	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 	xencoding "golang.org/x/text/encoding"
 
@@ -34,7 +31,7 @@ type App struct {
 	config    *config.Config
 	modules   *module.Modules
 
-	middleware module.Middleware // 应用于全局所有路由项的中间件
+	middleware module.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
 	router     *mux.Prefix
 	server     *http.Server
@@ -42,6 +39,9 @@ type App struct {
 	// 根据配置文件，获取相应的输出编码和字符集。
 	outputMimeType encoding.MarshalFunc
 	outputCharset  xencoding.Encoding
+
+	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
+	closed chan bool
 }
 
 // New 声明一个新的 App 实例
@@ -54,6 +54,7 @@ func New(configDir string, m module.Middleware) (*App, error) {
 	app := &App{
 		configDir:  dir,
 		middleware: m,
+		closed:     make(chan bool, 1),
 	}
 
 	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
@@ -107,41 +108,6 @@ func (app *App) File(path ...string) string {
 	paths := make([]string, 0, len(path)+1)
 	paths = append(paths, app.configDir)
 	return filepath.Join(append(paths, path...)...)
-}
-
-// Run 加载各个模块的数据，运行路由，执行监听程序。
-//
-// 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
-// 之后的好多操作，都会将日志输出 logs 中的相关通道中。
-func (app *App) Run() error {
-	if err := app.modules.Init(); err != nil {
-		return err
-	}
-
-	// 静态文件路由，在其它路由构建之前调用
-	for url, dir := range app.config.Static {
-		pattern := path.Join(app.config.Root, url+"{path}")
-		fs := http.FileServer(http.Dir(dir))
-		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
-	}
-
-	var h http.Handler = app.mux
-	if app.middleware != nil {
-		h = app.middleware(app.mux)
-	}
-	app.server = &http.Server{
-		Addr:         ":" + strconv.Itoa(app.config.Port),
-		Handler:      buildHandler(app.config, h), // 依赖全局变量 conf
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.config.ReadTimeout,
-		WriteTimeout: app.config.WriteTimeout,
-	}
-
-	if !app.config.HTTPS {
-		return app.server.ListenAndServe()
-	}
-
-	return app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 }
 
 // URL 构建一条基于 app.url 的完整 URL

@@ -81,10 +81,12 @@ func New(code int, fields map[string]string) *Result {
 }
 
 // SetDetail 设置详细的错误信息
-func (rslt *Result) SetDetail(fields map[string]string) {
+func (rslt *Result) SetDetail(fields map[string]string) *Result {
 	for k, v := range fields {
 		rslt.Add(k, v)
 	}
+
+	return rslt
 }
 
 // Add 添加一条详细的错误信息。
