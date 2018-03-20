@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode"
 
-	"golang.org/x/text/encoding"
+	xencoding "golang.org/x/text/encoding"
 )
 
 const (
@@ -34,8 +34,8 @@ var (
 )
 
 var (
-	charset = map[string]encoding.Encoding{
-		DefaultCharset: encoding.Nop,
+	charset = map[string]xencoding.Encoding{
+		DefaultCharset: xencoding.Nop,
 	}
 
 	marshals = map[string]MarshalFunc{
@@ -55,12 +55,12 @@ type UnmarshalFunc func([]byte, interface{}) error
 
 // Charset 获取指定名称的字符集
 // 若不存在，则返回 nil
-func Charset(name string) encoding.Encoding {
+func Charset(name string) xencoding.Encoding {
 	return charset[name]
 }
 
 // AddCharset 添加字符集
-func AddCharset(name string, c encoding.Encoding) error {
+func AddCharset(name string, c xencoding.Encoding) error {
 	if _, found := charset[name]; found {
 		return ErrExists
 	}

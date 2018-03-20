@@ -12,12 +12,12 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/server"
+	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
 
-var defaultApp *app
+var defaultApp *app.App
 
 func grace(s ...os.Signal) {
 	signalChannel := make(chan os.Signal)
@@ -40,7 +40,7 @@ func Init(configDir string, m module.Middleware, s ...os.Signal) error {
 		return errors.New("不能重复调用 Init")
 	}
 
-	app, err := newApp(configDir, m)
+	app, err := app.New(configDir, m)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func Init(configDir string, m module.Middleware, s ...os.Signal) error {
 
 // IsDebug 是否处在调试模式
 func IsDebug() bool {
-	return defaultApp.config.Debug
+	return defaultApp.Debug()
 }
 
 // Run 运行路由，执行监听程序。
@@ -64,17 +64,18 @@ func Run() error {
 	return defaultApp.Run()
 }
 
-// Close 立即关闭服务
+// Close 关闭服务。
+//
+// 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func Close() error {
-	return server.Close()
+	return defaultApp.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
-// 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
-// 等待时间由配置文件决定。
+// 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func Shutdown() error {
-	return server.Shutdown()
+	return defaultApp.Shutdown()
 }
 
 // File 获取配置目录下的文件。
@@ -89,7 +90,7 @@ func URL(path string) string {
 
 // NewModule 注册一个模块
 func NewModule(name, desc string, deps ...string) *module.Module {
-	return defaultApp.modules.New(name, desc, deps...)
+	return defaultApp.NewModule(name, desc, deps...)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil

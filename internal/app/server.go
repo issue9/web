@@ -2,14 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package server 根据配置内容，生成相应的服务监听程序。
-package server
+package app
 
 import (
 	stdctx "context"
 	"net/http"
 	"net/http/pprof"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
@@ -22,59 +20,36 @@ import (
 
 const pprofPath = "/debug/pprof/"
 
-var (
-	conf   *config.Config
-	server *http.Server
-)
-
-// Listen 监听程序
-func Listen(h http.Handler, config *config.Config) error {
-	conf = config
-
-	server = &http.Server{
-		Addr:         ":" + strconv.Itoa(conf.Port),
-		Handler:      buildHandler(h), // 依赖全局变量 conf
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  conf.ReadTimeout,
-		WriteTimeout: conf.WriteTimeout,
-	}
-
-	if !conf.HTTPS {
-		return server.ListenAndServe()
-	}
-
-	return server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
-}
-
-// Close 立即关闭服务
-func Close() error {
+// Close 关闭服务。
+//
+// 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
+func (app *App) Close() error {
 	logs.Flush()
 
-	if server == nil {
+	if app.server == nil {
 		return nil
 	}
 
-	return server.Close()
+	return app.server.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
-// 和 Close 的区别在于 Shutdown 会等待所有的服务完成之后才关闭，
-// 等待时间由 conf.shutdownTimeout 决定。
-func Shutdown() error {
+// 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
+func (app *App) Shutdown() error {
 	logs.Flush()
 
-	if server == nil {
+	if app.server == nil {
 		return nil
 	}
 
-	if conf == nil || conf.ShutdownTimeout <= 0 {
-		return server.Close()
+	if app.config.ShutdownTimeout <= 0 {
+		return app.server.Close()
 	}
 
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), conf.ShutdownTimeout)
+	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.config.ShutdownTimeout)
 	defer cancel()
-	return server.Shutdown(ctx)
+	return app.server.Shutdown(ctx)
 }
 
 func logRecovery(w http.ResponseWriter, msg interface{}) {
@@ -82,8 +57,8 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 	context.RenderStatus(w, http.StatusInternalServerError)
 }
 
-func buildHandler(h http.Handler) http.Handler {
-	h = buildHosts(buildHeader(h))
+func buildHandler(conf *config.Config, h http.Handler) http.Handler {
+	h = buildHosts(conf, buildHeader(conf, h))
 
 	ff := logRecovery
 	if conf.Debug {
@@ -99,7 +74,7 @@ func buildHandler(h http.Handler) http.Handler {
 	return h
 }
 
-func buildHosts(h http.Handler) http.Handler {
+func buildHosts(conf *config.Config, h http.Handler) http.Handler {
 	if len(conf.AllowedDomains) == 0 {
 		return h
 	}
@@ -107,7 +82,7 @@ func buildHosts(h http.Handler) http.Handler {
 	return host.New(h, conf.AllowedDomains...)
 }
 
-func buildHeader(h http.Handler) http.Handler {
+func buildHeader(conf *config.Config, h http.Handler) http.Handler {
 	if len(conf.Headers) == 0 {
 		return h
 	}

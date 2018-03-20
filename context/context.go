@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	charset "golang.org/x/text/encoding"
+	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/encoding"
@@ -28,8 +28,8 @@ type Context struct {
 
 	// 输出到客户端的字符集
 	//
-	// 若值为 charset.Nop 或是空，表示为 utf-8
-	OutputCharset     charset.Encoding
+	// 若值为 xencoding.Nop 或是空，表示为 utf-8
+	OutputCharset     xencoding.Encoding
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
@@ -37,8 +37,8 @@ type Context struct {
 
 	// 客户端内容所使用的字符集
 	//
-	// 若值为 charset.Nop 或是空，表示为 utf-8
-	InputCharset charset.Encoding
+	// 若值为 xencoding.Nop 或是空，表示为 utf-8
+	InputCharset xencoding.Encoding
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
 	body []byte

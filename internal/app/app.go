@@ -2,24 +2,24 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package app
 
 import (
 	"errors"
 	"net/http"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
-	charset "golang.org/x/text/encoding"
+	xencoding "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/internal/config"
-	"github.com/issue9/web/internal/server"
 	"github.com/issue9/web/module"
 )
 
@@ -28,7 +28,8 @@ const (
 	configFilename = "web.yaml" // 配置文件的文件名。
 )
 
-type app struct {
+// App 程序运行实例
+type App struct {
 	configDir string
 	config    *config.Config
 	modules   *module.Modules
@@ -36,19 +37,21 @@ type app struct {
 	middleware module.Middleware // 应用于全局所有路由项的中间件
 	mux        *mux.Mux
 	router     *mux.Prefix
+	server     *http.Server
 
 	// 根据配置文件，获取相应的输出编码和字符集。
 	outputMimeType encoding.MarshalFunc
-	outputCharset  charset.Encoding
+	outputCharset  xencoding.Encoding
 }
 
-func newApp(configDir string, m module.Middleware) (*app, error) {
+// New 声明一个新的 App 实例
+func New(configDir string, m module.Middleware) (*App, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
-	app := &app{
+	app := &App{
 		configDir:  dir,
 		middleware: m,
 	}
@@ -64,7 +67,12 @@ func newApp(configDir string, m module.Middleware) (*app, error) {
 	return app, nil
 }
 
-func (app *app) loadConfig() error {
+// Debug 是否处于调试模式
+func (app *App) Debug() bool {
+	return app.config.Debug
+}
+
+func (app *App) loadConfig() error {
 	conf, err := config.Load(app.File(configFilename))
 	if err != nil {
 		return err
@@ -89,8 +97,13 @@ func (app *app) loadConfig() error {
 	return nil
 }
 
+// NewModule 声明一个新的模块
+func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
+	return app.modules.New(name, desc, deps...)
+}
+
 // File 获取配置目录下的文件名
-func (app *app) File(path ...string) string {
+func (app *App) File(path ...string) string {
 	paths := make([]string, 0, len(path)+1)
 	paths = append(paths, app.configDir)
 	return filepath.Join(append(paths, path...)...)
@@ -100,7 +113,7 @@ func (app *app) File(path ...string) string {
 //
 // 必须得保证在调用 Run() 时，logs 包的所有功能是可用的，
 // 之后的好多操作，都会将日志输出 logs 中的相关通道中。
-func (app *app) Run() error {
+func (app *App) Run() error {
 	if err := app.modules.Init(); err != nil {
 		return err
 	}
@@ -112,14 +125,27 @@ func (app *app) Run() error {
 		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
 	}
 
+	var h http.Handler = app.mux
 	if app.middleware != nil {
-		return server.Listen(app.middleware(app.mux), app.config)
+		h = app.middleware(app.mux)
 	}
-	return server.Listen(app.mux, app.config)
+	app.server = &http.Server{
+		Addr:         ":" + strconv.Itoa(app.config.Port),
+		Handler:      buildHandler(app.config, h), // 依赖全局变量 conf
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  app.config.ReadTimeout,
+		WriteTimeout: app.config.WriteTimeout,
+	}
+
+	if !app.config.HTTPS {
+		return app.server.ListenAndServe()
+	}
+
+	return app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 }
 
 // URL 构建一条基于 app.url 的完整 URL
-func (app *app) URL(path string) string {
+func (app *App) URL(path string) string {
 	if len(path) == 0 {
 		return app.config.URL
 	}
@@ -131,7 +157,7 @@ func (app *app) URL(path string) string {
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
-func (app *app) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
 	if err != nil {

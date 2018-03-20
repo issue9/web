@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package app
 
 import (
 	"net/http"
@@ -13,11 +13,13 @@ import (
 	"github.com/issue9/assert"
 )
 
-var f202 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-}
+var (
+	f202 = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}
 
-var h202 = http.HandlerFunc(f202)
+	h202 = http.HandlerFunc(f202)
+)
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t)
@@ -27,7 +29,7 @@ func TestMiddleware(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := newApp("./testdata", m)
+	app, err := New("./testdata", m)
 	a.NotError(err).NotNil(app)
 
 	app.router.GetFunc("/middleware", f202)
@@ -42,18 +44,18 @@ func TestMiddleware(t *testing.T) {
 	resp, err := http.Get("http://localhost:8082/middleware")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.Header.Get("Date"), "1111")
-	Close()
+	app.Close()
 }
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app, err := newApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
-		Close()
+		app.Close()
 	})
 
 	go func() {
@@ -77,14 +79,14 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := newApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("closed"))
-		Shutdown()
+		app.Shutdown()
 	})
 
 	go func() {
@@ -116,7 +118,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	app, err := newApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
@@ -139,13 +141,13 @@ func TestApp_Run(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
-	Close()
+	app.Close()
 }
 
 func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app, err := newApp("./testdata", nil)
+	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
 	// 少报头 accept
