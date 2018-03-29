@@ -19,7 +19,7 @@
 //
 // 使用方法：
 //  声明一个安装模块
-//  i := install.Get("1.0").New("admin")
+//  i := install.New("admin").Get("1.0")
 //
 //  i.Task("创建表:users", func()*install.Result{
 //      return nil
@@ -47,11 +47,12 @@ const (
 	colorSuccess = colors.Green
 )
 
-var versions = map[string]*Version{}
+var modules = []*Module{}
 
 // Version 某一版本下的安装信息
 type Version struct {
-	modules []*Module
+	name   string
+	module *Module
 }
 
 // Module 声明了一个用于安装的模块。
@@ -60,7 +61,7 @@ type Module struct {
 	name     string
 	deps     []string
 	hasError bool
-	tasks    []*task
+	tasks    map[string][]*task
 }
 
 type task struct {
@@ -68,62 +69,62 @@ type task struct {
 	fn    func() *Return
 }
 
-// Get 获取指定版本相关的安装信息
-func Get(version string) *Version {
-	if v, found := versions[version]; found {
-		return v
-	}
-
-	v := &Version{
-		modules: make([]*Module, 0, 10),
-	}
-
-	versions[version] = v
-	return v
-}
-
 // New 输出模块开始安装的信息。
-func (v *Version) New(module string, deps ...string) *Module {
+func New(module string, deps ...string) *Module {
 	m := &Module{
 		name:     module,
 		deps:     deps,
 		hasError: false,
-		tasks:    make([]*task, 0, 10),
+		tasks:    make(map[string][]*task, 10),
 	}
 
-	v.modules = append(v.modules, m)
+	modules = append(modules, m)
 
 	return m
+}
+
+// Get 获取指定版本相关的安装信息
+func (m *Module) Get(version string) *Version {
+	if m.tasks[version] == nil {
+		m.tasks[version] = make([]*task, 0, 10)
+	}
+
+	return &Version{
+		name:   version,
+		module: m,
+	}
 }
 
 // Task 为当前模块添加任务。
 //
 // name 事件名称。
 // fn 事件的处理函数。
-func (m *Module) Task(title string, fn func() *Return) *Module {
-	m.tasks = append(m.tasks, &task{
+func (v *Version) Task(title string, fn func() *Return) *Version {
+	v.module.tasks[v.name] = append(v.module.tasks[v.name], &task{
 		title: title,
 		fn:    fn,
 	})
 
-	return m
+	return v
 }
 
 // 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
-func (m *Module) run() error {
-	colorPrint(colorSuccess, "安装模块:")
-	colorPrintf(colorDefault, "[%v]\n", m.name)
+func (m *Module) run(version string) func() error {
+	return func() error {
+		colorPrint(colorSuccess, "安装模块:")
+		colorPrintf(colorDefault, "[%v]\n", m.name)
 
-	for _, e := range m.tasks {
-		m.runEvent(e)
-	}
+		for _, e := range m.tasks[version] {
+			m.runEvent(e)
+		}
 
-	if m.hasError {
-		colorPrint(colorError, "安装失败!\n\n")
-	} else {
-		colorPrint(colorSuccess, "安装完成!\n\n")
+		if m.hasError {
+			colorPrint(colorError, "安装失败!\n\n")
+		} else {
+			colorPrint(colorSuccess, "安装完成!\n\n")
+		}
+		return nil
 	}
-	return nil
 }
 
 // 运行一条注册的事件。
@@ -155,14 +156,9 @@ func (m *Module) runEvent(e *task) {
 
 // Install 安装各个模块
 func Install(version string) error {
-	v, found := versions[version]
-	if !found {
-		return nil
-	}
-
 	dep := dependency.New()
-	for _, m := range v.modules {
-		dep.Add(m.name, m.run, m.deps...)
+	for _, m := range modules {
+		dep.Add(m.name, m.run(version), m.deps...)
 	}
 
 	return dep.Init()
