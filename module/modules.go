@@ -33,6 +33,11 @@ func NewModules(router *mux.Prefix) *Modules {
 	}
 }
 
+// Modules 返回所有的模块信息
+func (ms *Modules) Modules() []*Module {
+	return ms.modules
+}
+
 // Init 执行初始化操作
 func (ms *Modules) Init() error {
 	if ms.inited {

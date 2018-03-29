@@ -87,6 +87,11 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
+// Modules 当前系统使用的所有模块信息
+func Modules() []*module.Module {
+	return defaultApp.Modules()
+}
+
 // NewModule 注册一个模块
 func NewModule(name, desc string, deps ...string) *module.Module {
 	return defaultApp.NewModule(name, desc, deps...)

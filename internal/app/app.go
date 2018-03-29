@@ -98,6 +98,11 @@ func (app *App) loadConfig() error {
 	return nil
 }
 
+// Modules 获取所有的模块信息
+func (app *App) Modules() []*module.Module {
+	return app.modules.Modules()
+}
+
 // NewModule 声明一个新的模块
 func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 	return app.modules.New(name, desc, deps...)
