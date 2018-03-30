@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package errors 包含了一些公用的错误处理函数和类型定义
 package errors
 
 import (

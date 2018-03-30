@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/config"
 )
 
@@ -136,6 +137,10 @@ func TestBuildHandler(t *testing.T) {
 		panic("err")
 	})
 
+	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		context.Panic(http.StatusNotAcceptable)
+	})
+
 	// 触发 panic
 	h := buildHandler(&config.Config{}, panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
@@ -145,7 +150,11 @@ func TestBuildHandler(t *testing.T) {
 		Debug: true,
 	}
 	h = buildHandler(conf, panicFunc)
-	request(a, h, "http://example.com/test", http.StatusNotFound)
+	request(a, h, "http://example.com/test", http.StatusInternalServerError)
+
+	// 触发 panic, errors.HTTP
+	h = buildHandler(&config.Config{}, panicHTTPFunc)
+	request(a, h, "http://example.com/test", http.StatusNotAcceptable)
 }
 
 func TestBuildHosts_empty(t *testing.T) {

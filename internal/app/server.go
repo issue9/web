@@ -6,7 +6,6 @@ package app
 
 import (
 	stdctx "context"
-	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"path"
@@ -103,7 +102,6 @@ func (app *App) Shutdown() (err error) {
 }
 
 func logRecovery(w http.ResponseWriter, msg interface{}) {
-	fmt.Println("logs====")
 	logs.Error(msg)
 
 	if err, ok := msg.(errors.HTTP); ok {
@@ -115,15 +113,14 @@ func logRecovery(w http.ResponseWriter, msg interface{}) {
 }
 
 func debugRecovery(w http.ResponseWriter, msg interface{}) {
-	fmt.Println("debug====")
 	if err, ok := msg.(errors.HTTP); ok {
 		context.RenderStatus(w, int(err))
 		w.Write([]byte(errors.TraceStack(3, err.Error())))
 		return
 	}
 
-	errors.TraceStack(3, msg)
 	context.RenderStatus(w, http.StatusInternalServerError)
+	w.Write([]byte(errors.TraceStack(3, msg)))
 }
 
 func buildHandler(conf *config.Config, h http.Handler) http.Handler {

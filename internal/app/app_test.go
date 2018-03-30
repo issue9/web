@@ -66,20 +66,22 @@ func TestApp_NewContext(t *testing.T) {
 	// 少报头 accept
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
-	ctx := app.NewContext(w, r)
-	a.Nil(ctx)
+	a.Panic(func() {
+		app.NewContext(w, r)
+	})
 
 	// 少 accept-charset
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Accept-Charset", "unknown")
-	ctx = app.NewContext(w, r)
-	a.Nil(ctx)
+	a.Panic(func() {
+		app.NewContext(w, r)
+	})
 
 	// 正常
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Accept-Charset", "*")
-	ctx = app.NewContext(w, r)
+	ctx := app.NewContext(w, r)
 	a.NotNil(ctx)
 }

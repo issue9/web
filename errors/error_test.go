@@ -5,6 +5,7 @@
 package errors
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 
@@ -12,6 +13,13 @@ import (
 )
 
 var _ error = HTTP(5)
+
+func TestHTTP_Error(t *testing.T) {
+	a := assert.New(t)
+
+	err := HTTP(http.StatusOK)
+	a.Equal(http.StatusText(http.StatusOK), err.Error())
+}
 
 func TestTraceStack(t *testing.T) {
 	a := assert.New(t)
