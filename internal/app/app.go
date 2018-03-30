@@ -127,38 +127,33 @@ func (app *App) URL(path string) string {
 	return app.config.URL + path
 }
 
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
+// NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
 	if err != nil {
-		context.RenderStatus(w, http.StatusUnsupportedMediaType)
-		return nil
+		context.Panic(http.StatusUnsupportedMediaType)
 	}
 
 	unmarshal := encoding.Unmarshal(encName)
 	if unmarshal == nil {
-		context.RenderStatus(w, http.StatusUnsupportedMediaType)
-		return nil
+		panic(http.StatusUnsupportedMediaType)
 	}
 
 	inputCharset := encoding.Charset(charsetName)
 	if inputCharset == nil {
-		context.RenderStatus(w, http.StatusUnsupportedMediaType)
-		return nil
+		context.Panic(http.StatusUnsupportedMediaType)
 	}
 
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
 		if accept != "" && !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
-			context.RenderStatus(w, http.StatusNotAcceptable)
-			return nil
+			context.Panic(http.StatusNotAcceptable)
 		}
 
 		accept = r.Header.Get("Accept-Charset")
 		if accept != "" && !strings.Contains(accept, app.config.OutputCharset) && !strings.Contains(accept, "*") {
-			context.RenderStatus(w, http.StatusNotAcceptable)
-			return nil
+			context.Panic(http.StatusNotAcceptable)
 		}
 	}
 
