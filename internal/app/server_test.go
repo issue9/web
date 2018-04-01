@@ -33,7 +33,7 @@ func request(a *assert.Assertion, h http.Handler, url string, code int) {
 	a.Equal(w.Code, code)
 }
 
-func TestApp_Run(t *testing.T) {
+func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
@@ -41,7 +41,7 @@ func TestApp_Run(t *testing.T) {
 	app.mux.GetFunc("/test", f202)
 
 	go func() {
-		err := app.Run()
+		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 
@@ -73,11 +73,11 @@ func TestApp_Close(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run()
+		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
 	resp, err := http.Get("http://localhost:8082/test")
@@ -104,11 +104,11 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Run()
+		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 
-	// 等待 app.run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
 	resp, err := http.Get("http://localhost:8082/test")

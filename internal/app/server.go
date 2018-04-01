@@ -24,10 +24,11 @@ import (
 
 const pprofPath = "/debug/pprof/"
 
-// Run 加载各个模块的数据，运行路由，执行监听程序。
-func (app *App) Run() (err error) {
-	if err = app.modules.Init(); err != nil {
-		return err
+// Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
+// 比如在 httptest.NewServer 中使用。
+func (app *App) Handler() (http.Handler, error) {
+	if err := app.modules.Init(); err != nil {
+		return nil, err
 	}
 
 	// 静态文件路由，在其它路由构建之前调用
@@ -42,9 +43,19 @@ func (app *App) Run() (err error) {
 		h = app.middleware(app.mux)
 	}
 
+	return buildHandler(app.config, h), nil
+}
+
+// Serve 加载各个模块的数据，运行路由，执行监听程序。
+func (app *App) Serve() error {
+	h, err := app.Handler()
+	if err != nil {
+		return err
+	}
+
 	app.server = &http.Server{
 		Addr:         ":" + strconv.Itoa(app.config.Port),
-		Handler:      buildHandler(app.config, h),
+		Handler:      h,
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  app.config.ReadTimeout,
 		WriteTimeout: app.config.WriteTimeout,

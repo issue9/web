@@ -34,10 +34,10 @@ func TestMiddleware(t *testing.T) {
 
 	app.router.GetFunc("/middleware", f202)
 	go func() {
-		a.Equal(app.Run(), http.ErrServerClosed)
+		a.Equal(app.Serve(), http.ErrServerClosed)
 	}()
 
-	// 等待 Run() 启动完毕，不同机器可能需要的时间会不同
+	// 等待 Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
 	// 正常访问

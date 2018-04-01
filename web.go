@@ -58,9 +58,15 @@ func IsDebug() bool {
 	return defaultApp.Debug()
 }
 
+// Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
+// 比如在 httptest.NewServer 中使用。
+func Handler() (http.Handler, error) {
+	return defaultApp.Handler()
+}
+
 // Run 运行路由，执行监听程序。
 func Run() error {
-	return defaultApp.Run()
+	return defaultApp.Serve()
 }
 
 // Close 关闭服务。
