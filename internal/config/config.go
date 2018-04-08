@@ -226,7 +226,7 @@ func (conf *Config) buildAllowedDomains() error {
 		found := false
 		for _, host := range conf.AllowedDomains {
 			if !is.URL(host) {
-				return fmt.Errorf("AllowedDomains 中的 %s 为非法的 URL", host)
+				return fmt.Errorf("allowedDomains 中的 %s 为非法的 URL", host)
 			}
 
 			if host == conf.Domain {

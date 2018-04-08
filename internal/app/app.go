@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package app 核心功能的实现
 package app
 
 import (
@@ -57,7 +58,7 @@ func New(configDir string, m module.Middleware) (*App, error) {
 		closed:     make(chan bool, 1),
 	}
 
-	if err := logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
+	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
 		return nil, err
 	}
 

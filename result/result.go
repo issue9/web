@@ -51,7 +51,7 @@ type Result struct {
 
 	Message string    `json:"message" xml:"message,attr" yaml:"message"`
 	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
-	Detail  []*detail `json:"detail,omitempty" xml:"detail,omitempty" yaml:"detail,omitmpty"`
+	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty"`
 }
 
 type detail struct {
@@ -106,21 +106,9 @@ func (rslt *Result) Add(field, message string) *Result {
 	return rslt
 }
 
-// Error error 接口
-//
-// 具体是否为一个 error 接口，还需要查看 IsError 是否为 true
-func (rslt *Result) Error() string {
-	return rslt.Message
-}
-
 // HasDetail 是否包含详细的错误信息
 func (rslt *Result) HasDetail() bool {
 	return len(rslt.Detail) > 0
-}
-
-// IsError 当将 Result 当作 error 实例来用时，需要判断此值是否为 true。
-func (rslt *Result) IsError() bool {
-	return rslt.status >= http.StatusBadRequest
 }
 
 // Render 将当前的实例输出到客户端

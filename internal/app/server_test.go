@@ -72,6 +72,9 @@ func TestApp_Close(t *testing.T) {
 		app.Close()
 	})
 
+	// 未调用 Serve 时，调用 Close，应该不会有任何变化
+	a.NotError(app.Close())
+
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -91,6 +94,42 @@ func TestApp_Close(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
+func TestApp_shutdown(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	app.config.ShutdownTimeout = 0
+	a.NotError(err).NotNil(app)
+
+	app.mux.GetFunc("/test", f202)
+	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("shutdown"))
+		app.Shutdown()
+	})
+
+	// 未调用 Serve 时，调用 Close，应该不会有任何变化
+	a.NotError(app.Shutdown())
+
+	go func() {
+		err := app.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+	}()
+
+	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
+
+	resp, err := http.Get("http://localhost:8082/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	// 调用关闭操作
+	resp, err = http.Get("http://localhost:8082/close")
+	a.Error(err).Nil(resp)
+
+	// 立即关闭
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+}
+
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
@@ -99,9 +138,12 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("closed"))
+		w.Write([]byte("shutdown with timeout"))
 		app.Shutdown()
 	})
+
+	// 未调用 Serve 时，调用 Shutdown，应该不会有任何变化
+	a.NotError(app.Shutdown())
 
 	go func() {
 		err := app.Serve()
@@ -120,7 +162,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusCreated)
 
-	// 拒绝访问
+	// 未超时，但是拒绝新的链接
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
 

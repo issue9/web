@@ -112,36 +112,26 @@ func (app *App) Shutdown() (err error) {
 	return app.server.Shutdown(ctx)
 }
 
-func logRecovery(w http.ResponseWriter, msg interface{}) {
-	logs.Error(msg)
+func recoveryFunc(debug bool) recovery.RecoverFunc {
+	return func(w http.ResponseWriter, msg interface{}) {
+		if err, ok := msg.(errors.HTTP); ok {
+			context.RenderStatus(w, int(err))
+		} else {
+			context.RenderStatus(w, http.StatusInternalServerError)
+		}
 
-	if err, ok := msg.(errors.HTTP); ok {
-		context.RenderStatus(w, int(err))
-		return
+		if debug {
+			w.Write([]byte(errors.TraceStack(3, msg)))
+		} else {
+			logs.Error(msg)
+		}
 	}
-
-	context.RenderStatus(w, http.StatusInternalServerError)
-}
-
-func debugRecovery(w http.ResponseWriter, msg interface{}) {
-	if err, ok := msg.(errors.HTTP); ok {
-		context.RenderStatus(w, int(err))
-		w.Write([]byte(errors.TraceStack(3, err.Error())))
-		return
-	}
-
-	context.RenderStatus(w, http.StatusInternalServerError)
-	w.Write([]byte(errors.TraceStack(3, msg)))
 }
 
 func buildHandler(conf *config.Config, h http.Handler) http.Handler {
 	h = buildHosts(conf, buildHeader(conf, h))
 
-	ff := logRecovery
-	if conf.Debug {
-		ff = debugRecovery
-	}
-	h = recovery.New(h, ff)
+	h = recovery.New(h, recoveryFunc(conf.Debug))
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {

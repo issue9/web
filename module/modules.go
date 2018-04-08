@@ -49,12 +49,12 @@ func (ms *Modules) Init() error {
 	dep := dependency.New()
 
 	for _, module := range ms.modules {
-		dep.Add(module.Name, ms.getInit(module), module.Deps...)
+		if err := dep.Add(module.Name, ms.getInit(module), module.Deps...); err != nil {
+			return err
+		}
 	}
 
-	err := dep.Init()
-
-	if err != nil {
+	if err := dep.Init(); err != nil {
 		return err
 	}
 

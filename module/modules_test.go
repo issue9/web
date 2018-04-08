@@ -8,15 +8,25 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
 )
 
-var f1 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
+var (
+	f1 = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	middle = func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Server", "middleware")
+			h.ServeHTTP(w, r)
+		})
+	}
+)
 
 func TestNewModules(t *testing.T) {
 	a := assert.New(t)
@@ -81,7 +91,8 @@ func TestModules_getInit(t *testing.T) {
 
 func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
-	ms := NewModules(&mux.Prefix{})
+	router := mux.New(false, false, nil, nil).Prefix("")
+	ms := NewModules(router)
 	a.NotNil(ms)
 	w := new(bytes.Buffer)
 
@@ -92,6 +103,8 @@ func TestModules_Init(t *testing.T) {
 		return err
 	})
 	m2, err := ms.New("m2", "m2")
+	m2.PatchFunc("/path", f1) // 在 middleware 之前
+	m2.SetMiddleware(middle)  // middleware
 	a.NotError(err).NotNil(m2)
 	m2.AddInit(func() error {
 		_, err := w.WriteString("m2")
@@ -100,6 +113,12 @@ func TestModules_Init(t *testing.T) {
 
 	a.NotError(ms.Init())
 	a.Equal(w.String(), "m2m1")
+
+	wr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPatch, "/path", nil)
+	router.Mux().ServeHTTP(wr, req)
+	a.Equal(wr.Header().Get("Server"), "middleware")
+	a.Equal(wr.Result().StatusCode, http.StatusOK)
 
 	// 多次初始化
 	a.ErrorType(ms.Init(), ErrModulesIsInited)
