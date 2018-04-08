@@ -22,6 +22,8 @@ type Modules struct {
 }
 
 // NewModules 新建一个模块管理功能
+//
+// router 指定所有模块中的路由将被添加到该路径之下。
 func NewModules(router *mux.Prefix) *Modules {
 	if router == nil {
 		panic("router 不能为空")

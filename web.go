@@ -99,7 +99,7 @@ func Modules() []*module.Module {
 }
 
 // NewModule 注册一个模块
-func NewModule(name, desc string, deps ...string) *module.Module {
+func NewModule(name, desc string, deps ...string) (*module.Module, error) {
 	return defaultApp.NewModule(name, desc, deps...)
 }
 

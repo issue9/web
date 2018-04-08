@@ -5,7 +5,6 @@ web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https:
 [![codecov](https://codecov.io/gh/issue9/web/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/web)
 ======
 
-**实验性的内容，勿用！**
 
 web 是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能，当前也会有更多的限制。
 
@@ -32,22 +31,22 @@ func main() {
     web.Init("./appconfig", nil)
 
     // 注册模块信息
-    web.AddModule(m1.Module)
-    web.AddModule(m2.Module)
+    m1.Init()
+    m2.Init()
 
-    logs.Fatal(web.Run(nil))
+    logs.Fatal(web.Run())
 }
 
 // m1/module.go
-func Module() *app.Module {
-    return web.NewModule("m1", "模块描述信息").
+func Init() {
+    web.NewModule("m1", "模块描述信息").
         GetFunc("/admins", getAdmins).
         GetFunc("/groups", getGroups)
 }
 
 // m2/module.go
-func Module() *app.Module {
-    return web.NewModule("m2", "模块描述信息", "m1").
+func Init() {
+    web.NewModule("m2", "模块描述信息", "m1").
         GetFunc("/admins", getAdmins).
         GetFunc("/groups", getGroups)
 }

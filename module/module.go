@@ -6,8 +6,12 @@
 package module
 
 import (
+	"errors"
 	"net/http"
 )
+
+// ErrModuleExists 当添加多个相同名称的模块时，返回此错误信息
+var ErrModuleExists = errors.New("已经存在同名的模块")
 
 // Middleware 将一个 http.Handler 封装成另一个 http.Handler
 type Middleware func(http.Handler) http.Handler
@@ -44,7 +48,15 @@ type Prefix struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (ms *Modules) New(name, desc string, deps ...string) *Module {
+//
+// 如果存在同名的模块名，则会 panic
+func (ms *Modules) New(name, desc string, deps ...string) (*Module, error) {
+	for _, m := range ms.modules {
+		if m.Name == name {
+			return nil, ErrModuleExists
+		}
+	}
+
 	m := &Module{
 		Name:        name,
 		Deps:        deps,
@@ -54,7 +66,8 @@ func (ms *Modules) New(name, desc string, deps ...string) *Module {
 	}
 
 	ms.modules = append(ms.modules, m)
-	return m
+
+	return m, nil
 }
 
 // Prefix 声明一个 Prefix 实例。

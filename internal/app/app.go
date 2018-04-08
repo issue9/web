@@ -104,7 +104,7 @@ func (app *App) Modules() []*module.Module {
 }
 
 // NewModule 声明一个新的模块
-func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
+func (app *App) NewModule(name, desc string, deps ...string) (*module.Module, error) {
 	return app.modules.New(name, desc, deps...)
 }
 
