@@ -36,18 +36,27 @@ import (
 //      <field name="username">已经存在相同用户名</field>
 //      <field name="username">已经存在相同用户名</field>
 //  </result>
+//
+// YAML:
+//  message: 'error message'
+//  code: 40000001
+//  detail:
+//    - field: usename
+//      message: 已经存在相同用户名
+//    - field: usename
+//      message: 已经存在相同用户名
 type Result struct {
-	XMLName struct{} `json:"-" xml:"result"`
+	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
 	status  int      // 当前的信息所对应的 HTTP 状态码
 
-	Message string    `json:"message" xml:"message,attr"`
-	Code    int       `json:"code" xml:"code,attr"`
-	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty"`
+	Message string    `json:"message" xml:"message,attr" yaml:"message"`
+	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
+	Detail  []*detail `json:"detail,omitempty" xml:"detail,omitempty" yaml:"detail,omitmpty"`
 }
 
 type detail struct {
-	Field   string `json:"field" xml:"name,attr"`
-	Message string `json:"message" xml:",chardata"`
+	Field   string `json:"field" xml:"name,attr" yaml:"field"`
+	Message string `json:"message" xml:",chardata" yaml:"message"`
 }
 
 // New 声明一个新的 Result 实例
