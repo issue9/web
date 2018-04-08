@@ -17,15 +17,20 @@ import (
 	"github.com/issue9/web/encoding/test"
 )
 
-func newContext(w http.ResponseWriter, r *http.Request, outputMimeType encoding.MarshalFunc, outputCharset xencoding.Encoding) *Context {
+func newContext(w http.ResponseWriter,
+	r *http.Request,
+	outputMimeType encoding.MarshalFunc,
+	outputCharset xencoding.Encoding,
+	inputMimeType encoding.UnmarshalFunc,
+	InputCharset xencoding.Encoding) *Context {
 	return &Context{
 		Response:       w,
 		Request:        r,
 		OutputCharset:  outputCharset,
 		OutputMimeType: outputMimeType,
 
-		InputMimeType: encoding.TextUnmarshal,
-		InputCharset:  nil,
+		InputMimeType: inputMimeType,
+		InputCharset:  InputCharset,
 	}
 }
 
@@ -34,42 +39,72 @@ func TestContext_Body(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 
-	a.Nil(ctx.body) // 未缓存
+	// 未缓存
+	a.Nil(ctx.body)
 	data, err := ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
 
+	// 读取缓存内容
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
 
-	// TODO 编码
+	// 采用 Nop 即 utf-8 编码
+	w.Body.Reset()
+	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r.Header.Set("Accept", "*/*")
+	ctx = newContext(w, r, encoding.TextMarshal, xencoding.Nop, encoding.TextUnmarshal, xencoding.Nop)
+	data, err = ctx.Body()
+	a.NotError(err).Equal(data, []byte("123"))
+	a.Equal(ctx.body, data)
 }
 
-func TestContext_Unmarshal(t *testing.T) {
+func TestContext_Read(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 
 	obj := &test.TextObject{}
-	a.NotError(ctx.Unmarshal(obj))
+	a.True(ctx.Read(obj))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
 	o := &struct{}{}
-	a.Error(ctx.Unmarshal(o))
+	a.False(ctx.Read(o))
 }
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
+
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	obj := &test.TextObject{Name: "test", Age: 123}
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json"}))
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Body.String(), "test,123")
+	a.Equal(w.Header().Get("content-type"), "json")
+
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	w = httptest.NewRecorder()
+	ctx = newContext(w, r, encoding.TextMarshal, xencoding.Nop, encoding.TextUnmarshal, xencoding.Nop)
+	obj = &test.TextObject{Name: "test", Age: 1234}
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Body.String(), "test,1234")
+}
+
+func TestContext_Render(t *testing.T) {
+	a := assert.New(t)
+	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	w := httptest.NewRecorder()
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 
 	obj := &test.TextObject{Name: "test", Age: 123}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 }
@@ -78,7 +113,7 @@ func TestContext_RenderStatus(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 
 	ctx.RenderStatus(http.StatusForbidden)
 	a.Equal(w.Code, http.StatusForbidden)

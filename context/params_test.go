@@ -17,7 +17,7 @@ import (
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {
 	r.Header.Set("Accept", "*/*")
-	ctx := newContext(w, r, encoding.TextMarshal, nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 
 	return ctx
 }
@@ -106,6 +106,10 @@ func TestParams_Int_MustInt(t *testing.T) {
 
 		// MustInt() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustInt("str", 3), 3)
+		a.Equal(len(ps.errors), 2)
+
+		// MustInt() 正常转换
+		a.Equal(ps.MustInt("i1", 3), 1)
 		a.Equal(len(ps.errors), 2)
 	})
 
@@ -202,6 +206,10 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 		// MustFloat64() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustFloat64("str", 3.3), 3.3)
+		a.Equal(len(ps.Errors()), 2)
+
+		// MustFloat64() 正常转换
+		a.Equal(ps.MustFloat64("f1", 3.3), 1.1)
 		a.Equal(len(ps.Errors()), 2)
 	})
 

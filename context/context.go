@@ -80,17 +80,21 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 
 // Marshal 将 v 发送给客户端。
 //
-// NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头
+// NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头，
+// 但是不会改变其输出时的实际编码方式。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
-	if headers == nil {
-		ctx.Response.Header().Set("Content-Type", ct)
-	} else if _, found := headers["Content-Type"]; !found {
-		headers["Content-Type"] = ct
-
-		for k, v := range headers {
-			ctx.Response.Header().Set(k, v)
+	key := http.CanonicalHeaderKey("Content-type")
+	found := false
+	for k, v := range headers {
+		if http.CanonicalHeaderKey(k) == key {
+			found = true
 		}
+		ctx.Response.Header().Set(k, v)
+
+	}
+	if !found {
+		ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
+		ctx.Response.Header().Set("Content-Type", ct)
 	}
 
 	data, err := ctx.OutputMimeType(v)
@@ -130,6 +134,8 @@ func (ctx *Context) Read(v interface{}) (ok bool) {
 //
 // 功能与 Marshal() 相同，只不过 Render() 在出错时，
 // 会直接调用 Error() 处理，输出 500 的状态码。
+//
+// 如果需要具体控制出错后的处理方式，可以使用 Marshal 函数。
 func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
 	if err := ctx.Marshal(status, v, headers); err != nil {
 		ctx.Error(http.StatusInternalServerError, err)
@@ -143,9 +149,10 @@ func (ctx *Context) RenderStatus(status int) {
 	RenderStatus(ctx.Response, status)
 }
 
-// RenderStatus 仅向客户端输出状态码
+// RenderStatus 仅向客户端输出状态码。
+// 编码和字符集均采用 encoding 的默认值。
 //
-// Content-Type 始终是 encoding 定义的默认值。
+// 一般情况下，用于输出错误的状态信息。
 func RenderStatus(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
