@@ -137,7 +137,7 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 
 	unmarshal := encoding.Unmarshal(encName)
 	if unmarshal == nil {
-		panic(http.StatusUnsupportedMediaType)
+		context.Panic(http.StatusUnsupportedMediaType)
 	}
 
 	inputCharset := encoding.Charset(charsetName)

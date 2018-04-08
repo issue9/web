@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/encoding"
 )
 
 var (
@@ -74,6 +75,27 @@ func TestApp_NewContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Accept-Charset", "unknown")
+	a.Panic(func() {
+		app.NewContext(w, r)
+	})
+
+	// content-type 不正确
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Content-Type", ";charset=utf-8")
+	a.Panic(func() {
+		app.NewContext(w, r)
+	})
+
+	// content-type 不正确
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Content-Type", "unknown")
+	a.Panic(func() {
+		app.NewContext(w, r)
+	})
+
+	// content-type 不正确
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, "unknown"))
 	a.Panic(func() {
 		app.NewContext(w, r)
 	})
