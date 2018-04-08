@@ -62,6 +62,11 @@ func TestDependency_checkDeps(t *testing.T) {
 
 	a.NotError(dep.Add("d2", i("d2"), "d3"))
 	a.NotError(dep.checkDeps(m1))
+
+	// 自我依赖
+	d2 := dep.modules["d2"]
+	a.NotError(dep.Add("d3", i("d3"), "d2"))
+	a.Error(dep.checkDeps(d2))
 }
 
 func TestDependency_Init(t *testing.T) {
@@ -72,6 +77,7 @@ func TestDependency_Init(t *testing.T) {
 	a.NotError(dep.Add("m1", i("m1"), "d1", "d2"))
 	a.NotError(dep.Add("d1", i("d1"), "d3"))
 	a.NotError(dep.Add("d2", i("d2"), "d3"))
+	a.Error(dep.Init()) // 缺少依赖项 d3
 	a.NotError(dep.Add("d3", i("d3")))
 
 	a.NotError(dep.Init())

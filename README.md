@@ -74,7 +74,6 @@ func Init() {
 | static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | options         | bool   | 是否启用 OPTIONS 请求方法，默认为启用
 | allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
-| plugins         | array  | 指定一组 so 文件，可以当作插件的形式进行加载
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 | shutdownTimeout | string | 关闭服务的等待时间
