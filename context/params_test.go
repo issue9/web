@@ -73,6 +73,10 @@ func TestParams_ID_MustID(t *testing.T) {
 		// MustID() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustID("str", 3), 3)
 		a.Equal(len(ps.Errors()), 3)
+
+		// MustID() 能正常转换
+		a.Equal(ps.MustID("i1", 3), 1)
+		a.Equal(len(ps.Errors()), 3)
 	})
 
 	resp, err := http.Get(srv.URL + "/params/id/1/-2/str")
@@ -131,7 +135,11 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		a.Equal(len(ps.errors), 1)
 
 		// MustBool() 无法转换，会返回默认值，且添加错误信息
-		a.True(ps.MustBool("str", true), true)
+		a.True(ps.MustBool("str", true))
+		a.Equal(len(ps.Errors()), 2)
+
+		// MustBool() 能正常转换
+		a.True(ps.MustBool("b1", false))
 		a.Equal(len(ps.Errors()), 2)
 	})
 
@@ -159,6 +167,10 @@ func TestParams_String_MustString(t *testing.T) {
 
 		// MustString() 不会增加错误信息
 		a.Equal(ps.MustString("s3", "str3"), "str3")
+		a.Equal(len(ps.Errors()), 1)
+
+		// MustString() 能正常转换
+		a.Equal(ps.MustString("s1", "str3"), "str1")
 		a.Equal(len(ps.Errors()), 1)
 	})
 
