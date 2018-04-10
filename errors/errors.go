@@ -6,11 +6,11 @@
 package errors
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 // HTTP 表示一个 HTTP 状态码错误
@@ -25,7 +25,7 @@ func (err HTTP) Error() string {
 
 // TraceStack 返回调用者的堆栈信息
 func TraceStack(level int, messages ...interface{}) string {
-	w := new(bytes.Buffer)
+	var w strings.Builder
 
 	ws := func(val string) {
 		_, err := w.WriteString(val)
@@ -35,7 +35,7 @@ func TraceStack(level int, messages ...interface{}) string {
 	}
 
 	if len(messages) > 0 {
-		if _, err := fmt.Fprint(w, messages...); err != nil {
+		if _, err := fmt.Fprint(&w, messages...); err != nil {
 			panic(err)
 		}
 	}
@@ -47,6 +47,7 @@ func TraceStack(level int, messages ...interface{}) string {
 		}
 
 		ws(file)
+		ws(":")
 		ws(strconv.Itoa(line))
 		ws("\n")
 	}
