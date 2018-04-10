@@ -9,15 +9,40 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/version"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
 
+const (
+	// Version 当前框架的版本
+	Version = "0.13.0+20180409"
+
+	// MinimumGoVersion 需求的最低 Go 版本
+	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
+	MinimumGoVersion = "1.10"
+)
+
 var defaultApp *app.App
+
+// 作最低版本检测
+func init() {
+	ver := strings.TrimPrefix(runtime.Version(), "go")
+	v, err := version.SemVerCompare(ver, MinimumGoVersion)
+	if err != nil {
+		panic(err)
+	}
+
+	if v < 0 {
+		panic("低于最小版本需求")
+	}
+}
 
 func grace(s ...os.Signal) {
 	signalChannel := make(chan os.Signal)
@@ -34,17 +59,14 @@ func grace(s ...os.Signal) {
 // configDir 表示配置文件的目录；
 // m 表示应用于所有路由项的中间件；
 // s 表示触发 Shutdown 的信号，如果为空，表示不处理任何信息。
-func Init(configDir string, m module.Middleware, s ...os.Signal) error {
+func Init(configDir string, m module.Middleware, s ...os.Signal) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
 
-	app, err := app.New(configDir, m)
-	if err != nil {
+	if defaultApp, err = app.New(configDir, m); err != nil {
 		return err
 	}
-
-	defaultApp = app
 
 	if len(s) > 0 {
 		go grace(s...)

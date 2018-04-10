@@ -36,12 +36,3 @@
 // 对模块进行了依赖管理。用户可以在 web.NewModule() 返回对象中，
 // 对模块进行初始化和路由项的添加。所有模块会在 web.Run() 中进行初始化。
 package web
-
-const (
-	// Version 当前框架的版本
-	Version = "0.13.0+20180409"
-
-	// MinimumGoVersion 需求的最低 Go 版本
-	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
-	MinimumGoVersion = "1.10"
-)
