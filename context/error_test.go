@@ -39,8 +39,14 @@ func TestContext_Error(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
-	errLog.Reset()
 
+	// 没有错误信息
+	errLog.Reset()
+	ctx.Error(http.StatusInternalServerError)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(errLog.Len() == 0)
+
+	errLog.Reset()
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
@@ -50,8 +56,14 @@ func TestContext_Critical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
-	criticalLog.Reset()
 
+	// 没有错误信息
+	criticalLog.Reset()
+	ctx.Critical(http.StatusInternalServerError)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(criticalLog.Len() == 0)
+
+	criticalLog.Reset()
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
@@ -60,8 +72,14 @@ func TestContext_Critical(t *testing.T) {
 func TestError(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	errLog.Reset()
 
+	// 没有错误信息
+	errLog.Reset()
+	Error(w, http.StatusInternalServerError)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(errLog.Len() == 0)
+
+	errLog.Reset()
 	Error(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
@@ -70,8 +88,14 @@ func TestError(t *testing.T) {
 func TestCritical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	criticalLog.Reset()
 
+	// 没有错误信息
+	criticalLog.Reset()
+	Critical(w, http.StatusInternalServerError)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(criticalLog.Len() == 0)
+
+	criticalLog.Reset()
 	Critical(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))

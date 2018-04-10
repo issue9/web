@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/internal/errors"
 )
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
@@ -144,7 +143,7 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 
 // RenderStatus 仅向客户端输出状态码
 //
-// 无论当前设置的输出类型是什么，都会将 Content-Type 强制改变为 encoding 定义的默认值。
+// Deprecated: 直接使用 Error() 代替。
 func (ctx *Context) RenderStatus(status int) {
-	errors.RenderStatus(ctx.Response, status)
+	ctx.Error(status)
 }
