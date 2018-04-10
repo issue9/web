@@ -13,7 +13,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs"
-	xerrors "github.com/issue9/web/errors"
 )
 
 var (
@@ -31,9 +30,9 @@ func TestContext_Panic(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
 
-	a.PanicType(func() {
+	a.Panic(func() {
 		ctx.Panic(http.StatusBadRequest)
-	}, xerrors.HTTP(http.StatusBadRequest))
+	})
 }
 
 func TestContext_Error(t *testing.T) {

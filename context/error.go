@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/web/errors"
+	"github.com/issue9/web/internal/errors"
 )
 
 // Critical 输出一条日志到 CRITICAL 日志通道，
@@ -43,7 +43,7 @@ func (ctx *Context) Panic(status int) {
 func Critical(w http.ResponseWriter, status int, v ...interface{}) {
 	logs.CRITICAL().Output(2, errors.TraceStack(2, v...))
 
-	RenderStatus(w, status)
+	errors.RenderStatus(w, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，
@@ -52,7 +52,7 @@ func Critical(w http.ResponseWriter, status int, v ...interface{}) {
 func Error(w http.ResponseWriter, status int, v ...interface{}) {
 	logs.ERROR().Output(2, errors.TraceStack(2, v...))
 
-	RenderStatus(w, status)
+	errors.RenderStatus(w, status)
 }
 
 // Panic 以指定的状态码抛出异常
@@ -60,5 +60,5 @@ func Error(w http.ResponseWriter, status int, v ...interface{}) {
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Panic 则会触发 panic，退出当前协程。
 func Panic(status int) {
-	panic(errors.HTTP(status))
+	errors.Panic(status)
 }

@@ -17,9 +17,8 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
-	"github.com/issue9/web/context"
-	"github.com/issue9/web/errors"
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/errors"
 )
 
 const pprofPath = "/debug/pprof/"
@@ -67,7 +66,7 @@ func (app *App) Serve() error {
 		err = app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
 	}
 
-	// 由 Shutdown 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
+	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 	if err == http.ErrServerClosed {
 		<-app.closed
@@ -112,26 +111,9 @@ func (app *App) Shutdown() (err error) {
 	return app.server.Shutdown(ctx)
 }
 
-func recoveryFunc(debug bool) recovery.RecoverFunc {
-	return func(w http.ResponseWriter, msg interface{}) {
-		if err, ok := msg.(errors.HTTP); ok {
-			context.RenderStatus(w, int(err))
-		} else {
-			context.RenderStatus(w, http.StatusInternalServerError)
-		}
-
-		if debug {
-			w.Write([]byte(errors.TraceStack(3, msg)))
-		} else {
-			logs.Error(msg)
-		}
-	}
-}
-
 func buildHandler(conf *config.Config, h http.Handler) http.Handler {
 	h = buildHosts(conf, buildHeader(conf, h))
-
-	h = recovery.New(h, recoveryFunc(conf.Debug))
+	h = recovery.New(h, errors.Recovery(conf.Debug))
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {

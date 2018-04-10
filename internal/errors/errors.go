@@ -11,16 +11,19 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/issue9/web/encoding"
 )
 
-// HTTP 表示一个 HTTP 状态码错误
+// RenderStatus 仅向客户端输出状态码。
+// 编码和字符集均采用 encoding 的默认值。
 //
-// 如果遇到不可处理的错误，可以 panic 此类型的值，其值为一个 HTTP 状态码，
-// 则会立即以当前状态为返回结果，直接退出当前请求。
-type HTTP int
-
-func (err HTTP) Error() string {
-	return http.StatusText(int(err))
+// 一般情况下，用于输出错误的状态信息。
+func RenderStatus(w http.ResponseWriter, status int) {
+	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(status)
+	fmt.Fprintln(w, http.StatusText(status))
 }
 
 // TraceStack 返回调用者的堆栈信息
