@@ -9,40 +9,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
-	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/version"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
 
-const (
-	// Version 当前框架的版本
-	Version = "0.13.0+20180409"
-
-	// MinimumGoVersion 需求的最低 Go 版本
-	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
-	MinimumGoVersion = "1.10"
-)
-
 var defaultApp *app.App
-
-// 作最低版本检测
-func init() {
-	ver := strings.TrimPrefix(runtime.Version(), "go")
-	v, err := version.SemVerCompare(ver, MinimumGoVersion)
-	if err != nil {
-		panic(err)
-	}
-
-	if v < 0 {
-		panic("低于最小版本需求")
-	}
-}
 
 func grace(s ...os.Signal) {
 	signalChannel := make(chan os.Signal)
