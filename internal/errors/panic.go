@@ -17,8 +17,8 @@ import (
 // 则会立即以当前状态为返回结果，直接退出当前请求。
 type httpStatus int
 
-// Panic 以指定的状态码抛出异常
-func Panic(status int) {
+// ExitCoroutine 以指定的状态码退出当前的协程
+func ExitCoroutine(status int) {
 	panic(httpStatus(status))
 }
 

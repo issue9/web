@@ -26,12 +26,12 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 	errors.Error(3, ctx.Response, status, v...)
 }
 
-// Panic 以指定的状态码抛出异常
+// Exit 以指定的状态码退出当前协程
 //
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Panic 则会触发 panic，退出当前协程。
-func (ctx *Context) Panic(status int) {
-	Panic(status)
+func (ctx *Context) Exit(status int) {
+	Exit(status)
 }
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -50,10 +50,10 @@ func Error(w http.ResponseWriter, status int, v ...interface{}) {
 	errors.Error(3, w, status, v...)
 }
 
-// Panic 以指定的状态码抛出异常
+// Exit 以指定的状态码退出当前协程
 //
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Panic 则会触发 panic，退出当前协程。
-func Panic(status int) {
-	errors.Panic(status)
+func Exit(status int) {
+	errors.ExitCoroutine(status)
 }
