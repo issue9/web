@@ -133,28 +133,28 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
 
 	if err != nil {
-		context.Panic(http.StatusUnsupportedMediaType)
+		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
 	unmarshal := encoding.Unmarshal(encName)
 	if unmarshal == nil {
-		context.Panic(http.StatusUnsupportedMediaType)
+		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
 	inputCharset := encoding.Charset(charsetName)
 	if inputCharset == nil {
-		context.Panic(http.StatusUnsupportedMediaType)
+		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
 		if accept != "" && !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
-			context.Panic(http.StatusNotAcceptable)
+			context.Exit(http.StatusNotAcceptable)
 		}
 
 		accept = r.Header.Get("Accept-Charset")
 		if accept != "" && !strings.Contains(accept, app.config.OutputCharset) && !strings.Contains(accept, "*") {
-			context.Panic(http.StatusNotAcceptable)
+			context.Exit(http.StatusNotAcceptable)
 		}
 	}
 

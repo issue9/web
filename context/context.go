@@ -7,7 +7,6 @@ package context
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -144,18 +143,7 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 
 // RenderStatus 仅向客户端输出状态码
 //
-// 无论当前设置的输出类型是什么，都会将 Content-Type 强制改变为 encoding 定义的默认值。
+// Deprecated: 直接使用 Error() 代替。
 func (ctx *Context) RenderStatus(status int) {
-	RenderStatus(ctx.Response, status)
-}
-
-// RenderStatus 仅向客户端输出状态码。
-// 编码和字符集均采用 encoding 的默认值。
-//
-// 一般情况下，用于输出错误的状态信息。
-func RenderStatus(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(status)
-	fmt.Fprintln(w, http.StatusText(status))
+	ctx.Error(status)
 }

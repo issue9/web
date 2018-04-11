@@ -180,7 +180,7 @@ func TestBuildHandler(t *testing.T) {
 	})
 
 	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		context.Panic(http.StatusNotAcceptable)
+		context.Exit(http.StatusNotAcceptable)
 	})
 
 	// 触发 panic

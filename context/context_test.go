@@ -118,17 +118,3 @@ func TestContext_RenderStatus(t *testing.T) {
 	ctx.RenderStatus(http.StatusForbidden)
 	a.Equal(w.Code, http.StatusForbidden)
 }
-
-func TestRenderStatus(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	RenderStatus(w, http.StatusOK)
-	a.Equal(w.Code, http.StatusOK).
-		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
-
-	w = httptest.NewRecorder()
-	RenderStatus(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
-}

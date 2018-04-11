@@ -13,7 +13,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs"
-	xerrors "github.com/issue9/web/errors"
 )
 
 var (
@@ -26,54 +25,54 @@ func init() {
 	logs.SetWriter(logs.LevelCritical, criticalLog, "", 0)
 }
 
-func TestContext_Panic(t *testing.T) {
+func TestContext_Exit(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
 
-	a.PanicType(func() {
-		ctx.Panic(http.StatusBadRequest)
-	}, xerrors.HTTP(http.StatusBadRequest))
+	a.Panic(func() {
+		ctx.Exit(http.StatusBadRequest)
+	})
 }
 
 func TestContext_Error(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
-	errLog.Reset()
 
+	errLog.Reset()
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
 }
 
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
-	criticalLog.Reset()
 
+	criticalLog.Reset()
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }
 
 func TestError(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	errLog.Reset()
 
+	errLog.Reset()
 	Error(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
 }
 
 func TestCritical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	criticalLog.Reset()
 
+	criticalLog.Reset()
 	Critical(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }
