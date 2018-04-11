@@ -7,10 +7,7 @@ package web
 import (
 	"errors"
 	"net/http"
-	"os"
-	"os/signal"
 
-	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
@@ -33,26 +30,6 @@ func Init(configDir string, m module.Middleware) (err error) {
 	}
 
 	return nil
-}
-
-// Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
-//
-// NOTE: 传递空值，与不调用，其结果是不同的。
-// 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
-func Grace(sig ...os.Signal) {
-	go grace(sig...)
-}
-
-func grace(sig ...os.Signal) {
-	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, sig...)
-
-	<-signalChannel
-	signal.Stop(signalChannel)
-
-	if err := Shutdown(); err != nil {
-		logs.Error(err)
-	}
 }
 
 // IsDebug 是否处在调试模式
@@ -113,9 +90,4 @@ func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *result.Result {
 	return result.New(code, nil)
-}
-
-// NewResultWithDetail 声明一个带详细内容的 result.Result 对象
-func NewResultWithDetail(code int, fields map[string]string) *result.Result {
-	return result.New(code, fields)
 }
