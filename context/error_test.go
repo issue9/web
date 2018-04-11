@@ -40,12 +40,6 @@ func TestContext_Error(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
 
-	// 没有错误信息
-	errLog.Reset()
-	ctx.Error(http.StatusInternalServerError)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(errLog.Len() == 0)
-
 	errLog.Reset()
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
@@ -57,12 +51,6 @@ func TestContext_Critical(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
 
-	// 没有错误信息
-	criticalLog.Reset()
-	ctx.Critical(http.StatusInternalServerError)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(criticalLog.Len() == 0)
-
 	criticalLog.Reset()
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
@@ -73,12 +61,6 @@ func TestError(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 
-	// 没有错误信息
-	errLog.Reset()
-	Error(w, http.StatusInternalServerError)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(errLog.Len() == 0)
-
 	errLog.Reset()
 	Error(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
@@ -88,12 +70,6 @@ func TestError(t *testing.T) {
 func TestCritical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-
-	// 没有错误信息
-	criticalLog.Reset()
-	Critical(w, http.StatusInternalServerError)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(criticalLog.Len() == 0)
 
 	criticalLog.Reset()
 	Critical(w, http.StatusInternalServerError, "log1", "log2")

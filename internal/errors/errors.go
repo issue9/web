@@ -12,22 +12,47 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/web/encoding"
 )
 
-// RenderStatus 仅向客户端输出状态码。
+// 仅向客户端输出状态码。
 // 编码和字符集均采用 encoding 的默认值。
 //
 // 一般情况下，用于输出错误的状态信息。
-func RenderStatus(w http.ResponseWriter, status int) {
+func renderStatus(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	fmt.Fprintln(w, http.StatusText(status))
 }
 
-// TraceStack 返回调用者的堆栈信息
-func TraceStack(level int, messages ...interface{}) string {
+// Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
+//
+// 若是输出日志的过程中出错，则 panic
+// 若没有错误信息，则仅向客户端输出一条状态码信息。
+func Error(level int, w http.ResponseWriter, status int, v ...interface{}) {
+	if len(v) > 0 {
+		logs.ERROR().Output(level, traceStack(2, v...))
+	}
+
+	renderStatus(w, status)
+}
+
+// Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
+//
+// 若是输出日志的过程中出错，则 panic
+// 若没有错误信息，则仅向客户端输出一条状态码信息。
+func Critical(level int, w http.ResponseWriter, status int, v ...interface{}) {
+	if len(v) > 0 {
+		logs.CRITICAL().Output(level, traceStack(2, v...))
+	}
+
+	renderStatus(w, status)
+}
+
+// 返回调用者的堆栈信息
+func traceStack(level int, messages ...interface{}) string {
 	var w strings.Builder
 
 	ws := func(val string) {

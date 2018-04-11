@@ -24,16 +24,18 @@ func Panic(status int) {
 
 // Recovery 生成一个 recovery.RecoverFunc 函数
 // 用于抓获由 Panic() 触发的事件。
-func Recovery(toResponse bool) recovery.RecoverFunc {
+//
+// debug 是否为调试模式，或是调试模式，则详细信息输出到客户端，否则输出到日志中。
+func Recovery(debug bool) recovery.RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		if err, ok := msg.(httpStatus); ok {
-			RenderStatus(w, int(err))
+			renderStatus(w, int(err))
 		} else {
-			RenderStatus(w, http.StatusInternalServerError)
+			renderStatus(w, http.StatusInternalServerError)
 		}
 
-		if toResponse {
-			w.Write([]byte(TraceStack(3, msg)))
+		if debug {
+			w.Write([]byte(traceStack(3, msg)))
 		} else {
 			logs.Error(msg)
 		}
