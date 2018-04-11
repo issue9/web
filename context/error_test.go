@@ -25,13 +25,13 @@ func init() {
 	logs.SetWriter(logs.LevelCritical, criticalLog, "", 0)
 }
 
-func TestContext_Panic(t *testing.T) {
+func TestContext_Exit(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	ctx := &Context{Response: w}
 
 	a.Panic(func() {
-		ctx.Panic(http.StatusBadRequest)
+		ctx.Exit(http.StatusBadRequest)
 	})
 }
 
@@ -43,7 +43,7 @@ func TestContext_Error(t *testing.T) {
 	errLog.Reset()
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
 }
 
 func TestContext_Critical(t *testing.T) {
@@ -54,7 +54,7 @@ func TestContext_Critical(t *testing.T) {
 	criticalLog.Reset()
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }
 
 func TestError(t *testing.T) {
@@ -64,7 +64,7 @@ func TestError(t *testing.T) {
 	errLog.Reset()
 	Error(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
 }
 
 func TestCritical(t *testing.T) {
@@ -74,5 +74,5 @@ func TestCritical(t *testing.T) {
 	criticalLog.Reset()
 	Critical(w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }

@@ -29,7 +29,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // Exit 以指定的状态码退出当前协程
 //
 // 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 Panic 则会触发 panic，退出当前协程。
+// Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
 	Exit(status)
 }
@@ -53,7 +53,7 @@ func Error(w http.ResponseWriter, status int, v ...interface{}) {
 // Exit 以指定的状态码退出当前协程
 //
 // 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 Panic 则会触发 panic，退出当前协程。
+// Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func Exit(status int) {
 	errors.ExitCoroutine(status)
 }
