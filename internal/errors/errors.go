@@ -25,7 +25,7 @@ func Error(level int, w http.ResponseWriter, status int, v ...interface{}) {
 		logs.ERROR().Output(level, traceStack(2, v...))
 	}
 
-	renderStatus(w, status)
+	render(w, status)
 }
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -37,14 +37,14 @@ func Critical(level int, w http.ResponseWriter, status int, v ...interface{}) {
 		logs.CRITICAL().Output(level, traceStack(2, v...))
 	}
 
-	renderStatus(w, status)
+	render(w, status)
 }
 
 // 仅向客户端输出状态码。
 // 编码和字符集均采用 encoding 的默认值。
 //
 // 一般情况下，用于输出错误的状态信息。
-func renderStatus(w http.ResponseWriter, status int) {
+func render(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
@@ -63,7 +63,7 @@ func traceStack(level int, messages ...interface{}) string {
 	}
 
 	if len(messages) > 0 {
-		if _, err := fmt.Fprint(&w, messages...); err != nil {
+		if _, err := fmt.Fprintln(&w, messages...); err != nil {
 			panic(err)
 		}
 	}

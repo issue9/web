@@ -30,20 +30,20 @@ func TestTraceStack(t *testing.T) {
 	a := assert.New(t)
 
 	str := traceStack(1, "message", 12)
-	a.True(strings.HasPrefix(str, "message12"))
+	a.True(strings.HasPrefix(str, "message 12"))
 	a.True(strings.Contains(str, "error_test.go")) // 肯定包含当前文件名
 }
 
-func TestRenderStatus(t *testing.T) {
+func TestRender(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 
-	renderStatus(w, http.StatusOK)
+	render(w, http.StatusOK)
 	a.Equal(w.Code, http.StatusOK).
 		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 
 	w = httptest.NewRecorder()
-	renderStatus(w, http.StatusInternalServerError)
+	render(w, http.StatusInternalServerError)
 	a.Equal(w.Code, http.StatusInternalServerError).
 		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 }
@@ -61,7 +61,7 @@ func TestError(t *testing.T) {
 	errLog.Reset()
 	Error(2, w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
 }
 
 func TestCritical(t *testing.T) {
@@ -77,5 +77,5 @@ func TestCritical(t *testing.T) {
 	criticalLog.Reset()
 	Critical(2, w, http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }
