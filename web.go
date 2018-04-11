@@ -19,22 +19,11 @@ import (
 
 var defaultApp *app.App
 
-func grace(s ...os.Signal) {
-	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, s...)
-
-	<-signalChannel
-	if err := Shutdown(); err != nil {
-		logs.Error(err)
-	}
-}
-
 // Init 初始化整个应用环境
 //
 // configDir 表示配置文件的目录；
 // m 表示应用于所有路由项的中间件；
-// s 表示触发 Shutdown 的信号，如果为空，表示不处理任何信息。
-func Init(configDir string, m module.Middleware, s ...os.Signal) (err error) {
+func Init(configDir string, m module.Middleware) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
@@ -43,11 +32,27 @@ func Init(configDir string, m module.Middleware, s ...os.Signal) (err error) {
 		return err
 	}
 
-	if len(s) > 0 {
-		go grace(s...)
-	}
-
 	return nil
+}
+
+// Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
+//
+// NOTE: 传递空值，与不调用，其结果是不同的。
+// 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
+func Grace(sig ...os.Signal) {
+	go grace(sig...)
+}
+
+func grace(sig ...os.Signal) {
+	signalChannel := make(chan os.Signal)
+	signal.Notify(signalChannel, sig...)
+
+	<-signalChannel
+	signal.Stop(signalChannel)
+
+	if err := Shutdown(); err != nil {
+		logs.Error(err)
+	}
 }
 
 // IsDebug 是否处在调试模式
