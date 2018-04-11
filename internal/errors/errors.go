@@ -58,6 +58,9 @@ func traceStack(level int, messages ...interface{}) string {
 	ws := func(val string) {
 		_, err := w.WriteString(val)
 		if err != nil {
+			// BUG(caixw) 此处的 panic 会被 Recovery 接收，而 Recovery
+			// 又会再次调用 traceStack，所以如果此处的 panic 成功触发，
+			// 而必然造成死循环。
 			panic(err)
 		}
 	}
