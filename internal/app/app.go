@@ -115,7 +115,7 @@ func (app *App) NewModule(name, desc string, deps ...string) (*module.Module, er
 		}
 	}
 
-	m := module.New(name, desc, deps...)
+	m := module.New(app.router, name, desc, deps...)
 	app.modules = append(app.modules, m)
 
 	return m, nil

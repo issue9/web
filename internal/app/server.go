@@ -50,7 +50,7 @@ func (app *App) modulesInit() error {
 	dep := dependency.New()
 
 	for _, module := range app.modules {
-		if err := dep.Add(module.Name, module.GetInit(app.router), module.Deps...); err != nil {
+		if err := dep.Add(module.Name, module.GetInit(), module.Deps...); err != nil {
 			return err
 		}
 	}

@@ -6,7 +6,6 @@
 package module
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/issue9/mux"
@@ -18,14 +17,10 @@ type Module struct {
 	Name        string
 	Deps        []string
 	Description string
-	Routes      []*Route
-	inits       []func() error
-}
+	Routes      map[string][]string
 
-// Route 表示模块信息中的路由信息
-type Route struct {
-	Path    string
-	Methods map[string]http.Handler
+	inits  []func() error
+	router *mux.Prefix
 }
 
 // Prefix 可以将具有统一前缀的路由项集中在一起操作。
@@ -44,30 +39,23 @@ type Prefix struct {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 //
 // 如果存在同名的模块名，则会 panic
-func New(name, desc string, deps ...string) *Module {
+func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-		Routes:      make([]*Route, 0, 10),
+		Routes:      make(map[string][]string, 10),
 		inits:       make([]func() error, 0, 5),
+		router:      router,
 	}
 }
 
 // GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
+func (m *Module) GetInit() dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {
 			if err := init(); err != nil {
 				return err
-			}
-		}
-
-		for _, r := range m.Routes {
-			for method, handler := range r.Methods {
-				if err := router.Handle(r.Path, handler, method); err != nil {
-					return err
-				}
 			}
 		}
 
@@ -96,28 +84,16 @@ func (m *Module) AddInit(f func() error) *Module {
 
 // Handle 添加一个路由项
 func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	var route *Route
-	for _, r := range m.Routes {
-		if r.Path == path {
-			route = r
-			break
-		}
+	if err := m.router.Handle(path, h, methods...); err != nil {
+		panic(err)
 	}
 
-	if route == nil { // 不存在现成的
-		route = &Route{
-			Path:    path,
-			Methods: make(map[string]http.Handler, len(methods)),
-		}
-		m.Routes = append(m.Routes, route)
+	route, found := m.Routes[path]
+	if !found {
+		route = make([]string, 0, 10)
 	}
+	m.Routes[path] = append(route, methods...)
 
-	for _, method := range methods {
-		if _, found := route.Methods[method]; found {
-			panic(fmt.Sprintf("存在相同的路由项 %s:%s", method, route.Path))
-		}
-		route.Methods[method] = h
-	}
 	return m
 }
 
