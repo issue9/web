@@ -33,20 +33,6 @@ func TestMain(t *testing.T) {
 		return nil
 	})
 
-	m1.PostFunc("/post/1", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-	})
-	// 应该应用到所有路由项上，即使声明在部分路由项之后
-	m1.SetMiddleware(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Server", "Middleware")
-			h.ServeHTTP(w, r)
-		})
-	})
-	m1.PostFunc("/post/2", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-	})
-
 	m2, err := NewModule("m2", "m2 desc")
 	a.NotError(err).NotNil(m2)
 	m2.AddInit(func() error {
@@ -110,16 +96,5 @@ func TestHandler(t *testing.T) {
 	srv.NewRequest(http.MethodPost, "/post/m2").
 		Do().
 		Status(http.StatusCreated).
-		Header("Server", "Middleware").
 		Body([]byte(testdata))
-
-	srv.NewRequest(http.MethodPost, "/post/1").
-		Do().
-		Status(http.StatusCreated).
-		Header("Server", "Middleware")
-
-	srv.NewRequest(http.MethodPost, "/post/2").
-		Do().
-		Status(http.StatusCreated).
-		Header("Server", "Middleware")
 }

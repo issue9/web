@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 	"github.com/issue9/web/internal/dependency"
 )
@@ -20,9 +19,7 @@ type Module struct {
 	Deps        []string
 	Description string
 	Routes      []*Route
-
-	inits      []func() error
-	middleware middleware.Middleware
+	inits       []func() error
 }
 
 // Route 表示模块信息中的路由信息
@@ -68,10 +65,6 @@ func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
 
 		for _, r := range m.Routes {
 			for method, handler := range r.Methods {
-				if m.middleware != nil {
-					handler = m.middleware(handler)
-				}
-
 				if err := router.Handle(r.Path, handler, method); err != nil {
 					return err
 				}
@@ -93,13 +86,6 @@ func (m *Module) Prefix(prefix string) *Prefix {
 // Module 返回关联的 Module 实全
 func (p *Prefix) Module() *Module {
 	return p.module
-}
-
-// SetMiddleware 为当前模块的所有路由添加的中间件。
-//
-// 多次调用，最后一次为准。
-func (m *Module) SetMiddleware(f middleware.Middleware) {
-	m.middleware = f
 }
 
 // AddInit 添加一个初始化函数
