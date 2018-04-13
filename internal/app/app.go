@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 	xencoding "golang.org/x/text/encoding"
 
@@ -32,7 +33,7 @@ type App struct {
 	configDir string
 	config    *config.Config
 
-	middleware module.Middleware // 应用于全局路由项的中间件
+	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
 	router     *mux.Prefix
 	server     *http.Server
@@ -48,7 +49,7 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-func New(configDir string, m module.Middleware) (*App, error) {
+func New(configDir string, m middleware.Middleware) (*App, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
