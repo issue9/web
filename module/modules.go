@@ -49,7 +49,7 @@ func (ms *Modules) Init() error {
 	dep := dependency.New()
 
 	for _, module := range ms.modules {
-		if err := dep.Add(module.Name, ms.getInit(module), module.Deps...); err != nil {
+		if err := dep.Add(module.Name, module.getInit(ms.router), module.Deps...); err != nil {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func (ms *Modules) Init() error {
 }
 
 // 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (ms *Modules) getInit(m *Module) dependency.InitFunc {
+func (m *Module) getInit(router *mux.Prefix) dependency.InitFunc {
 	return func() error {
 		for _, init := range m.inits {
 			if err := init(); err != nil {
@@ -77,7 +77,7 @@ func (ms *Modules) getInit(m *Module) dependency.InitFunc {
 					handler = m.middleware(handler)
 				}
 
-				if err := ms.router.Handle(r.Path, handler, method); err != nil {
+				if err := router.Handle(r.Path, handler, method); err != nil {
 					return err
 				}
 			}

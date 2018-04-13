@@ -62,7 +62,7 @@ func TestModules_getInit(t *testing.T) {
 
 	m, err := ms.New("m1", "m1 desc")
 	a.NotError(err).NotNil(m)
-	fn := ms.getInit(m)
+	fn := m.getInit(ms.router)
 	a.NotNil(fn).NotError(fn)
 
 	// 返回错误
@@ -71,7 +71,7 @@ func TestModules_getInit(t *testing.T) {
 	m.AddInit(func() error {
 		return errors.New("error")
 	})
-	fn = ms.getInit(m)
+	fn = m.getInit(ms.router)
 	a.NotNil(fn).Error(fn())
 
 	w := new(bytes.Buffer)
@@ -83,7 +83,7 @@ func TestModules_getInit(t *testing.T) {
 	})
 	m.GetFunc("/get", f1)
 	m.Prefix("/p").PostFunc("/post", f1)
-	fn = ms.getInit(m)
+	fn = m.getInit(ms.router)
 	a.NotNil(fn).
 		NotError(fn()).
 		Equal(w.String(), "m3")
