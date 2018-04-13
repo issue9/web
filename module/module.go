@@ -44,9 +44,12 @@ func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-		Routes:      make(map[string][]string, 10),
-		inits:       make([]func() error, 0, 5),
-		router:      router,
+
+		// 当前模块的所有路由项。
+		// 键中为路由地址，键值为路由中启用的请求方法。
+		Routes: make(map[string][]string, 10),
+		inits:  make([]func() error, 0, 5),
+		router: router,
 	}
 }
 
