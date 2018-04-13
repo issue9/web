@@ -72,13 +72,14 @@ func (ms *Modules) getInit(m *Module) dependency.InitFunc {
 		}
 
 		for _, r := range m.Routes {
-			h := r.handler
-			if m.middleware != nil {
-				h = m.middleware(h)
-			}
+			for method, handler := range r.Methods {
+				if m.middleware != nil {
+					handler = m.middleware(handler)
+				}
 
-			if err := ms.router.Handle(r.Path, h, r.Methods...); err != nil {
-				return err
+				if err := ms.router.Handle(r.Path, handler, method); err != nil {
+					return err
+				}
 			}
 		}
 

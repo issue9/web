@@ -30,8 +30,7 @@ type Module struct {
 // Route 表示模块信息中的路由信息
 type Route struct {
 	Path    string
-	Methods []string
-	handler http.Handler
+	Methods map[string]http.Handler
 }
 
 // Prefix 可以将具有统一前缀的路由项集中在一起操作。
@@ -98,12 +97,25 @@ func (m *Module) AddInit(f func() error) *Module {
 
 // Handle 添加一个路由项
 func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	m.Routes = append(m.Routes, &Route{
-		Methods: methods,
-		Path:    path,
-		handler: h,
-	})
+	var route *Route
+	for _, r := range m.Routes {
+		if r.Path == path {
+			route = r
+			break
+		}
+	}
 
+	if route == nil { // 不存在现成的
+		route = &Route{
+			Path:    path,
+			Methods: make(map[string]http.Handler, len(methods)),
+		}
+		m.Routes = append(m.Routes, route)
+	}
+
+	for _, method := range methods {
+		route.Methods[method] = h
+	}
 	return m
 }
 
