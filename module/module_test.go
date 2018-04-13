@@ -68,41 +68,90 @@ func TestPrefix_Module(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
+
+	path := "/path"
 	m := New("m1", "m1 desc")
 	a.NotNil(m)
 
-	m.Get("/path", h1)
-	a.Panic(func() { m.GetFunc("/path", f1) })
+	m.Get(path, h1)
+	a.Panic(func() { m.GetFunc(path, f1) })
 	a.Equal(len(m.Routes[0].Methods), 1)
 
-	m.Post("/path", h1)
+	m.Post(path, h1)
 	a.Equal(len(m.Routes[0].Methods), 2)
 
-	m.Patch("/path", h1)
+	m.Patch(path, h1)
 	a.Equal(len(m.Routes[0].Methods), 3)
 
-	m.Put("/path", h1)
+	m.Put(path, h1)
 	a.Equal(len(m.Routes[0].Methods), 4)
 
-	m.Delete("/path", h1)
+	m.Delete(path, h1)
 	a.Equal(len(m.Routes[0].Methods), 5)
 
 	// *Func
+	path = "/path1"
 	m = New("m1", "m1 desc")
 	a.NotNil(m)
 
-	m.GetFunc("/path", f1)
+	m.GetFunc(path, f1)
 	a.Equal(len(m.Routes[0].Methods), 1)
 
-	m.PostFunc("/path", f1)
+	m.PostFunc(path, f1)
 	a.Equal(len(m.Routes[0].Methods), 2)
 
-	m.PatchFunc("/path", f1)
+	m.PatchFunc(path, f1)
 	a.Equal(len(m.Routes[0].Methods), 3)
 
-	m.PutFunc("/path", f1)
+	m.PutFunc(path, f1)
 	a.Equal(len(m.Routes[0].Methods), 4)
 
-	m.DeleteFunc("/path", f1)
+	m.DeleteFunc(path, f1)
+	a.Equal(len(m.Routes[0].Methods), 5)
+}
+
+func TestPrefix_Handles(t *testing.T) {
+	a := assert.New(t)
+
+	path := "path"
+	m := New("m1", "m1 desc")
+	a.NotNil(m)
+	p := m.Prefix("/p")
+
+	p.Get(path, h1)
+	a.Panic(func() { p.GetFunc(path, f1) })
+	a.Equal(len(m.Routes[0].Methods), 1)
+
+	p.Post(path, h1)
+	a.Equal(len(m.Routes[0].Methods), 2)
+
+	p.Patch(path, h1)
+	a.Equal(len(m.Routes[0].Methods), 3)
+
+	p.Put(path, h1)
+	a.Equal(len(m.Routes[0].Methods), 4)
+
+	p.Delete(path, h1)
+	a.Equal(len(m.Routes[0].Methods), 5)
+
+	// *Func
+	path = "/path1"
+	m = New("m1", "m1 desc")
+	a.NotNil(m)
+	p = m.Prefix("/p")
+
+	p.GetFunc(path, f1)
+	a.Equal(len(m.Routes[0].Methods), 1)
+
+	p.PostFunc(path, f1)
+	a.Equal(len(m.Routes[0].Methods), 2)
+
+	p.PatchFunc(path, f1)
+	a.Equal(len(m.Routes[0].Methods), 3)
+
+	p.PutFunc(path, f1)
+	a.Equal(len(m.Routes[0].Methods), 4)
+
+	p.DeleteFunc(path, f1)
 	a.Equal(len(m.Routes[0].Methods), 5)
 }

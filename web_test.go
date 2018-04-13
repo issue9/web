@@ -24,10 +24,27 @@ func TestMain(t *testing.T) {
 	// m1 的路由项依赖 m2 的初始化数据
 	m1, err := NewModule("m1", "m1 desc", "m2")
 	a.NotError(err).NotNil(m1)
-	m1.PostFunc("/post", func(w http.ResponseWriter, r *http.Request) {
-		a.Equal(testdata, "m2")
-		ctx := NewContext(w, r)
-		ctx.Render(http.StatusCreated, testdata, nil)
+	m1.AddInit(func() error {
+		m1.PostFunc("/post/"+testdata, func(w http.ResponseWriter, r *http.Request) {
+			a.Equal(testdata, "m2")
+			ctx := NewContext(w, r)
+			ctx.Render(http.StatusCreated, testdata, nil)
+		})
+		return nil
+	})
+
+	m1.PostFunc("/post/1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	})
+	// 应该应用到所有路由项上，即使声明在部分路由项之后
+	m1.SetMiddleware(func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Server", "Middleware")
+			h.ServeHTTP(w, r)
+		})
+	})
+	m1.PostFunc("/post/2", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
 	})
 
 	m2, err := NewModule("m2", "m2 desc")
@@ -88,8 +105,21 @@ func TestHandler(t *testing.T) {
 	a.NotNil(srv)
 	defer srv.Close()
 
-	srv.NewRequest(http.MethodPost, "/post").
+	srv.NewRequest(http.MethodPost, "/post").Do().Status(http.StatusNotFound)
+
+	srv.NewRequest(http.MethodPost, "/post/m2").
 		Do().
 		Status(http.StatusCreated).
+		Header("Server", "Middleware").
 		Body([]byte(testdata))
+
+	srv.NewRequest(http.MethodPost, "/post/1").
+		Do().
+		Status(http.StatusCreated).
+		Header("Server", "Middleware")
+
+	srv.NewRequest(http.MethodPost, "/post/2").
+		Do().
+		Status(http.StatusCreated).
+		Header("Server", "Middleware")
 }
