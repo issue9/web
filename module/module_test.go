@@ -5,34 +5,58 @@
 package module
 
 import (
+	"bytes"
+	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
 )
 
-func TestModules_New(t *testing.T) {
+var f1 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func TestModule_GetInit(t *testing.T) {
 	a := assert.New(t)
-	ms := NewModules(&mux.Prefix{})
-	a.NotNil(ms)
+	router := mux.New(false, false, nil, nil).Prefix("")
+	a.NotNil(router)
 
-	m, err := ms.New("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m := New("m1", "m1 desc")
+	a.NotNil(m)
+	fn := m.GetInit(router)
+	a.NotNil(fn).NotError(fn())
 
-	m, err = ms.New("m1", "m1 desc")
-	a.ErrorType(err, ErrModuleExists).Nil(m)
+	// 返回错误
+	m = New("m2", "m2 desc")
+	a.NotNil(m)
+	m.AddInit(func() error {
+		return errors.New("error")
+	})
+	fn = m.GetInit(router)
+	a.NotNil(fn).Error(fn())
 
-	m, err = ms.New("m2", "m1 desc")
-	a.NotError(err).NotNil(m)
+	w := new(bytes.Buffer)
+	m = New("m3", "m3 desc")
+	a.NotNil(m)
+	m.AddInit(func() error {
+		_, err := w.WriteString("m3")
+		return err
+	})
+	m.GetFunc("/get", f1)
+	m.Prefix("/p").PostFunc("/post", f1)
+	fn = m.GetInit(router)
+	a.NotNil(fn).
+		NotError(fn()).
+		Equal(w.String(), "m3")
 }
 
 func TestPrefix_Module(t *testing.T) {
 	a := assert.New(t)
-	ms := NewModules(&mux.Prefix{})
-	a.NotNil(ms)
 
-	m, err := ms.New("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m := New("m1", "m1 desc")
+	a.NotNil(m)
 
 	p := m.Prefix("/p")
 	a.Equal(p.Module(), m)

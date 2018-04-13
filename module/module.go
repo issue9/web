@@ -6,12 +6,11 @@
 package module
 
 import (
-	"errors"
 	"net/http"
-)
 
-// ErrModuleExists 当添加多个相同名称的模块时，返回此错误信息
-var ErrModuleExists = errors.New("已经存在同名的模块")
+	"github.com/issue9/mux"
+	"github.com/issue9/web/internal/dependency"
+)
 
 // Middleware 将一个 http.Handler 封装成另一个 http.Handler
 type Middleware func(http.Handler) http.Handler
@@ -49,24 +48,39 @@ type Prefix struct {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 //
 // 如果存在同名的模块名，则会 panic
-func (ms *Modules) New(name, desc string, deps ...string) (*Module, error) {
-	for _, m := range ms.modules {
-		if m.Name == name {
-			return nil, ErrModuleExists
-		}
-	}
-
-	m := &Module{
+func New(name, desc string, deps ...string) *Module {
+	return &Module{
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
 		Routes:      make([]*Route, 0, 10),
 		inits:       make([]func() error, 0, 5),
 	}
+}
 
-	ms.modules = append(ms.modules, m)
+// GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
+func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
+	return func() error {
+		for _, init := range m.inits {
+			if err := init(); err != nil {
+				return err
+			}
+		}
 
-	return m, nil
+		for _, r := range m.Routes {
+			for method, handler := range r.Methods {
+				if m.middleware != nil {
+					handler = m.middleware(handler)
+				}
+
+				if err := router.Handle(r.Path, handler, method); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
 }
 
 // Prefix 声明一个 Prefix 实例。

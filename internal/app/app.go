@@ -7,6 +7,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -30,12 +31,13 @@ const (
 type App struct {
 	configDir string
 	config    *config.Config
-	modules   *module.Modules
 
 	middleware module.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
 	router     *mux.Prefix
 	server     *http.Server
+
+	modules []*module.Module
 
 	// 根据配置文件，获取相应的输出编码和字符集。
 	outputMimeType encoding.MarshalFunc
@@ -94,19 +96,28 @@ func (app *App) loadConfig() error {
 		return errors.New("未找到 outputCharset")
 	}
 
-	app.modules = module.NewModules(app.router)
+	app.modules = make([]*module.Module, 0, 50)
 
 	return nil
 }
 
 // Modules 获取所有的模块信息
 func (app *App) Modules() []*module.Module {
-	return app.modules.Modules()
+	return app.modules
 }
 
 // NewModule 声明一个新的模块
 func (app *App) NewModule(name, desc string, deps ...string) (*module.Module, error) {
-	return app.modules.New(name, desc, deps...)
+	for _, m := range app.modules {
+		if m.Name == name {
+			return nil, fmt.Errorf("模块 %s 已经存在", name)
+		}
+	}
+
+	m := module.New(name, desc, deps...)
+	app.modules = append(app.modules, m)
+
+	return m, nil
 }
 
 // File 获取配置目录下的文件名

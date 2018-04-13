@@ -48,6 +48,28 @@ func TestMiddleware(t *testing.T) {
 	app.Close()
 }
 
+func TestApp_Modules(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+
+	_, err = app.NewModule("m1", "m1 desc")
+	a.NotError(err)
+	list := app.Modules()
+	a.Equal(len(list), 1)
+
+	// 已经存在
+	_, err = app.NewModule("m1", "m1 desc")
+	a.Error(err)
+	list = app.Modules()
+	a.Equal(len(list), 1)
+
+	_, err = app.NewModule("m2", "m1 desc")
+	a.NotError(err)
+	list = app.Modules()
+	a.Equal(len(list), 2)
+}
+
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)

@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/middleware/recovery"
 
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/internal/errors"
 )
 
@@ -26,15 +27,15 @@ const pprofPath = "/debug/pprof/"
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
 // 比如在 httptest.NewServer 中使用。
 func (app *App) Handler() (http.Handler, error) {
-	if err := app.modules.Init(); err != nil {
-		return nil, err
-	}
-
 	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range app.config.Static {
 		pattern := path.Join(app.config.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
 		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
+	}
+
+	if err := app.modulesInit(); err != nil {
+		return nil, err
 	}
 
 	var h http.Handler = app.mux
@@ -43,6 +44,18 @@ func (app *App) Handler() (http.Handler, error) {
 	}
 
 	return buildHandler(app.config, h), nil
+}
+
+func (app *App) modulesInit() error {
+	dep := dependency.New()
+
+	for _, module := range app.modules {
+		if err := dep.Add(module.Name, module.GetInit(app.router), module.Deps...); err != nil {
+			return err
+		}
+	}
+
+	return dep.Init()
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
