@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/issue9/middleware"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
@@ -20,7 +21,7 @@ var defaultApp *app.App
 //
 // configDir 表示配置文件的目录；
 // m 表示应用于所有路由项的中间件；
-func Init(configDir string, m module.Middleware) (err error) {
+func Init(configDir string, m middleware.Middleware) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
