@@ -6,6 +6,7 @@
 package module
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/issue9/mux"
@@ -128,6 +129,9 @@ func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module 
 	}
 
 	for _, method := range methods {
+		if _, found := route.Methods[method]; found {
+			panic(fmt.Sprintf("存在相同的路由项 %s:%s", method, route.Path))
+		}
 		route.Methods[method] = h
 	}
 	return m

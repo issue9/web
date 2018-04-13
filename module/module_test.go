@@ -14,9 +14,13 @@ import (
 	"github.com/issue9/mux"
 )
 
-var f1 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
+var (
+	f1 = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	h1 = http.HandlerFunc(f1)
+)
 
 func TestModule_GetInit(t *testing.T) {
 	a := assert.New(t)
@@ -35,7 +39,7 @@ func TestModule_GetInit(t *testing.T) {
 		return errors.New("error")
 	})
 	fn = m.GetInit(router)
-	a.NotNil(fn).Error(fn())
+	a.NotNil(fn).ErrorString(fn(), "error")
 
 	w := new(bytes.Buffer)
 	m = New("m3", "m3 desc")
@@ -60,4 +64,45 @@ func TestPrefix_Module(t *testing.T) {
 
 	p := m.Prefix("/p")
 	a.Equal(p.Module(), m)
+}
+
+func TestModule_Handles(t *testing.T) {
+	a := assert.New(t)
+	m := New("m1", "m1 desc")
+	a.NotNil(m)
+
+	m.Get("/path", h1)
+	a.Panic(func() { m.GetFunc("/path", f1) })
+	a.Equal(len(m.Routes[0].Methods), 1)
+
+	m.Post("/path", h1)
+	a.Equal(len(m.Routes[0].Methods), 2)
+
+	m.Patch("/path", h1)
+	a.Equal(len(m.Routes[0].Methods), 3)
+
+	m.Put("/path", h1)
+	a.Equal(len(m.Routes[0].Methods), 4)
+
+	m.Delete("/path", h1)
+	a.Equal(len(m.Routes[0].Methods), 5)
+
+	// *Func
+	m = New("m1", "m1 desc")
+	a.NotNil(m)
+
+	m.GetFunc("/path", f1)
+	a.Equal(len(m.Routes[0].Methods), 1)
+
+	m.PostFunc("/path", f1)
+	a.Equal(len(m.Routes[0].Methods), 2)
+
+	m.PatchFunc("/path", f1)
+	a.Equal(len(m.Routes[0].Methods), 3)
+
+	m.PutFunc("/path", f1)
+	a.Equal(len(m.Routes[0].Methods), 4)
+
+	m.DeleteFunc("/path", f1)
+	a.Equal(len(m.Routes[0].Methods), 5)
 }
