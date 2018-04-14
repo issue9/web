@@ -147,9 +147,9 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 // ClientIP 返回客户端的 IP 地址。
 //
 // 获取顺序如下：
-// - X-Forwarded-For 的第一个元素
-// - Remote-Addr 报头
-// - X-Read-IP 报头
+//  - X-Forwarded-For 的第一个元素
+//  - Remote-Addr 报头
+//  - X-Read-IP 报头
 func (ctx *Context) ClientIP() string {
 	ip := ctx.Request.Header.Get("X-Forwarded-For")
 	if index := strings.IndexByte(ip, ','); index > 0 {
