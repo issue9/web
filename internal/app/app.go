@@ -128,7 +128,7 @@ func (app *App) File(path ...string) string {
 	return filepath.Join(append(paths, path...)...)
 }
 
-// URL 构建一条基于 app.url 的完整 URL
+// URL 构建一条基于 app.config.URL 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
 		return app.config.URL
@@ -140,7 +140,7 @@ func (app *App) URL(path string) string {
 	return app.config.URL + path
 }
 
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
+// NewContext 根据当前配置，生成 context.Context 对象
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
 

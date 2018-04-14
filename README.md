@@ -103,6 +103,8 @@ func Init() {
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 | shutdownTimeout | string | 关闭服务的等待时间
 
+*详细的介绍可以参考 /internal/config/config.go 文件中的描述*
+
 
 
 #### 日志处理

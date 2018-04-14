@@ -26,8 +26,7 @@ func ExitCoroutine(status int) {
 	panic(httpStatus(status))
 }
 
-// Recovery 生成一个 recovery.RecoverFunc 函数
-// 用于抓获由 panic 和 ExitCoroutine() 触发的事件。
+// Recovery 生成一个 recovery.RecoverFunc 函数，用于抓获由 panic 触发的事件。
 //
 // debug 是否为调试模式，若是调试模式，则详细信息输出到客户端，否则输出到日志中。
 func Recovery(debug bool) recovery.RecoverFunc {
@@ -35,7 +34,7 @@ func Recovery(debug bool) recovery.RecoverFunc {
 		if err, ok := msg.(httpStatus); ok {
 			render(w, int(err))
 			if debug {
-				// render 会输出当前状态码表示的错误信息到 w，
+				// NOTE: render 会输出当前状态码表示的错误信息到 w，
 				// 所以没必要再让 traceStack 重复一次错误内容。
 				w.Write([]byte(traceStack(3)))
 			} else {

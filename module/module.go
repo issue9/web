@@ -17,7 +17,10 @@ type Module struct {
 	Name        string
 	Deps        []string
 	Description string
-	Routes      map[string][]string
+
+	// 当前模块的所有路由项。
+	// 键中为路由地址，键值为路由中启用的请求方法。
+	Routes map[string][]string
 
 	inits  []func() error
 	router *mux.Prefix
@@ -44,12 +47,9 @@ func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-
-		// 当前模块的所有路由项。
-		// 键中为路由地址，键值为路由中启用的请求方法。
-		Routes: make(map[string][]string, 10),
-		inits:  make([]func() error, 0, 5),
-		router: router,
+		Routes:      make(map[string][]string, 10),
+		inits:       make([]func() error, 0, 5),
+		router:      router,
 	}
 }
 

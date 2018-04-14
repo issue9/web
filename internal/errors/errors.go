@@ -42,8 +42,6 @@ func Critical(level int, w http.ResponseWriter, status int, v ...interface{}) {
 
 // 仅向客户端输出状态码。
 // 编码和字符集均采用 encoding 的默认值。
-//
-// 一般情况下，用于输出错误的状态信息。
 func render(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
