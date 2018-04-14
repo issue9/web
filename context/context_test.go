@@ -109,6 +109,27 @@ func TestContext_Render(t *testing.T) {
 	a.Equal(w.Body.String(), "test,123")
 }
 
+func TestContext_ClientIP(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), r.RemoteAddr)
+
+	// httptest.NewRequest 会直接将  remote-addr 赋值为 192.0.2.1 无法测试
+	r, err := http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
+	r.Header.Set("x-real-ip", "192.168.1.1:8080")
+	ctx = newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.1.1:8080")
+
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	ctx = newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+}
+
 func TestContext_RenderStatus(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)

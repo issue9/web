@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
@@ -85,6 +86,8 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	key := http.CanonicalHeaderKey("Content-type")
 	found := false
 	for k, v := range headers {
+		// strings.ToLower 的性能未必有 http.CanonicalHeaderKey 好，
+		// 所以直接使用了 http.CanonicalHeaderKey 作转换。
 		if http.CanonicalHeaderKey(k) == key {
 			found = true
 		}
@@ -139,6 +142,30 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 	if err := ctx.Marshal(status, v, headers); err != nil {
 		ctx.Error(http.StatusInternalServerError, err)
 	}
+}
+
+// ClientIP 返回客户端的 IP 地址。
+//
+// 获取顺序如下：
+// - X-Forwarded-For 的第一个元素
+// - Remote-Addr 报头
+// - X-Read-IP 报头
+func (ctx *Context) ClientIP() string {
+	ip := ctx.Request.Header.Get("X-Forwarded-For")
+	if index := strings.IndexByte(ip, ','); index > 0 {
+		ip = ip[:index]
+	}
+	if ip == "" {
+		if ctx.Request.RemoteAddr != "" {
+			ip = ctx.Request.RemoteAddr
+		}
+
+		if ip == "" {
+			ip = ctx.Request.Header.Get("X-Real-IP")
+		}
+	}
+
+	return strings.TrimSpace(ip)
 }
 
 // RenderStatus 仅向客户端输出状态码
