@@ -27,7 +27,6 @@ const pprofPath = "/debug/pprof/"
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
 // 比如在 httptest.NewServer 中使用。
 func (app *App) Handler() (http.Handler, error) {
-	// 静态文件路由，在其它路由构建之前调用
 	for url, dir := range app.config.Static {
 		pattern := path.Join(app.config.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
