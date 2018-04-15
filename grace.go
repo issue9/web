@@ -20,14 +20,18 @@ var graced sync.Once
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(sig ...os.Signal) {
 	graced.Do(func() {
-		signalChannel := make(chan os.Signal)
-		signal.Notify(signalChannel, sig...)
-
-		<-signalChannel
-		signal.Stop(signalChannel)
-
-		if err := Shutdown(); err != nil {
-			logs.Error(err)
-		}
+		go grace(sig...)
 	})
+}
+
+func grace(sig ...os.Signal) {
+	signalChannel := make(chan os.Signal)
+	signal.Notify(signalChannel, sig...)
+
+	<-signalChannel
+	signal.Stop(signalChannel)
+
+	if err := Shutdown(); err != nil {
+		logs.Error(err)
+	}
 }
