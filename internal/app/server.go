@@ -5,7 +5,7 @@
 package app
 
 import (
-	stdctx "context"
+	"context"
 	"net/http"
 	"net/http/pprof"
 	"path"
@@ -27,6 +27,16 @@ const pprofPath = "/debug/pprof/"
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
 // 比如在 httptest.NewServer 中使用。
 func (app *App) Handler() (http.Handler, error) {
+	if app.server == nil {
+		if err := app.initServer(); err != nil {
+			return nil, err
+		}
+	}
+
+	return app.server.Handler, nil
+}
+
+func (app *App) initServer() error {
 	for url, dir := range app.config.Static {
 		pattern := path.Join(app.config.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
@@ -34,7 +44,7 @@ func (app *App) Handler() (http.Handler, error) {
 	}
 
 	if err := app.modulesInit(); err != nil {
-		return nil, err
+		return err
 	}
 
 	var h http.Handler = app.mux
@@ -42,7 +52,15 @@ func (app *App) Handler() (http.Handler, error) {
 		h = app.middleware(app.mux)
 	}
 
-	return buildHandler(app.config, h), nil
+	app.server = &http.Server{
+		Addr:         ":" + strconv.Itoa(app.config.Port),
+		Handler:      buildHandler(app.config, h),
+		ErrorLog:     logs.ERROR(),
+		ReadTimeout:  app.config.ReadTimeout,
+		WriteTimeout: app.config.WriteTimeout,
+	}
+
+	return nil
 }
 
 func (app *App) modulesInit() error {
@@ -58,18 +76,18 @@ func (app *App) modulesInit() error {
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
+//
+// 多次调用，会直接返回 nil 值。
 func (app *App) Serve() error {
-	h, err := app.Handler()
-	if err != nil {
-		return err
+	// 简单地根据 server 判断是否多次执行。
+	// 但是放在多线程环境中同时调用 Serve 可能会出错。
+	if app.server != nil {
+		return nil
 	}
 
-	app.server = &http.Server{
-		Addr:         ":" + strconv.Itoa(app.config.Port),
-		Handler:      h,
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.config.ReadTimeout,
-		WriteTimeout: app.config.WriteTimeout,
+	err := app.initServer()
+	if err != nil {
+		return err
 	}
 
 	if !app.config.HTTPS {
@@ -115,7 +133,7 @@ func (app *App) Shutdown() (err error) {
 		return app.server.Close()
 	}
 
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.config.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.config.ShutdownTimeout)
 	defer func() {
 		cancel()
 		app.closed <- true

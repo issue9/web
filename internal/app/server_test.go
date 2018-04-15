@@ -33,20 +33,48 @@ func request(a *assert.Assertion, h http.Handler, url string, code int) {
 	a.Equal(w.Code, code)
 }
 
+func TestApp_Handler(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata", nil)
+	a.NotError(err).NotNil(app)
+
+	m1, err := app.NewModule("m1", "m1 desc", "m2")
+	a.NotError(err).NotNil(m1)
+	m2, err := app.NewModule("m2", "m2 desc")
+	a.NotError(err).NotNil(m2)
+	m1.GetFunc("/m1/test", f202)
+	m2.GetFunc("/m2/test", f202)
+
+	h1, err := app.Handler()
+	a.NotError(err).NotNil(h1)
+
+	h2, err := app.Handler()
+	a.NotError(err).NotNil(h2)
+
+	a.Equal(h1, h2)
+}
+
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata", nil)
 	a.NotError(err).NotNil(app)
 
-	app.mux.GetFunc("/test", f202)
+	m1, err := app.NewModule("m1", "m1 desc", "m2")
+	a.NotError(err).NotNil(m1)
+	m2, err := app.NewModule("m2", "m2 desc")
+	a.NotError(err).NotNil(m2)
+	m1.GetFunc("/m1/test", f202)
+	m2.GetFunc("/m2/test", f202)
 
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
-
 	time.Sleep(500 * time.Microsecond)
-	resp, err := http.Get("http://localhost:8082/test")
+
+	a.NotError(app.Serve()) // 多次调用，之后的调用，都直接返回空值。
+
+	resp, err := http.Get("http://localhost:8082/m1/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)
 
