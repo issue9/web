@@ -22,13 +22,18 @@ const (
 
 // 作最低版本检测
 func init() {
-	ver := strings.TrimPrefix(runtime.Version(), "go")
+	checkVersion(runtime.Version())
+}
 
-	if strings.HasPrefix(ver, "devel ") { // tip 版本，不作检测
+func checkVersion(goversion string) {
+	goversion = strings.TrimPrefix(goversion, "go")
+
+	// tip 版本，不作检测
+	if strings.HasPrefix(goversion, "devel ") {
 		return
 	}
 
-	v, err := version.SemVerCompare(ver, MinimumGoVersion)
+	v, err := version.SemVerCompare(goversion, MinimumGoVersion)
 	if err != nil {
 		panic(err)
 	}

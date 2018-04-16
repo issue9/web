@@ -26,11 +26,8 @@ func Init(configDir string, m middleware.Middleware) (err error) {
 		return errors.New("不能重复调用 Init")
 	}
 
-	if defaultApp, err = app.New(configDir, m); err != nil {
-		return err
-	}
-
-	return nil
+	defaultApp, err = app.New(configDir, m)
+	return
 }
 
 // IsDebug 是否处在调试模式

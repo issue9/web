@@ -47,25 +47,22 @@ type Context struct {
 // Body 获取用户提交的内容。
 //
 // 相对于 ctx.Request().Body，此函数可多次读取。
-func (ctx *Context) Body() ([]byte, error) {
-	if ctx.body == nil {
-		bs, err := ioutil.ReadAll(ctx.Request.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		if ctx.InputCharset != nil {
-			reader := transform.NewReader(bytes.NewReader(bs), ctx.InputCharset.NewDecoder())
-			bs, err = ioutil.ReadAll(reader)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		ctx.body = bs
+func (ctx *Context) Body() (body []byte, err error) {
+	if ctx.body != nil {
+		return ctx.body, nil
 	}
 
-	return ctx.body, nil
+	if ctx.body, err = ioutil.ReadAll(ctx.Request.Body); err != nil {
+		return nil, err
+	}
+
+	if ctx.InputCharset == nil {
+		return ctx.body, nil
+	}
+
+	reader := transform.NewReader(bytes.NewReader(ctx.body), ctx.InputCharset.NewDecoder())
+	ctx.body, err = ioutil.ReadAll(reader)
+	return ctx.body, err
 }
 
 // Unmarshal 将提交的内容转换成 v 对象。
@@ -106,16 +103,16 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	ctx.Response.WriteHeader(status)
 
-	if ctx.OutputCharset != nil {
-		w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
-		if _, err = w.Write(data); err != nil {
-			return err
-		}
-		return w.Close()
+	if ctx.OutputCharset == nil {
+		_, err = ctx.Response.Write(data)
+		return err
 	}
 
-	_, err = ctx.Response.Write(data)
-	return err
+	w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
+	if _, err = w.Write(data); err != nil {
+		return err
+	}
+	return w.Close()
 }
 
 // Read 从客户端读取数据并转换成 v 对象。
