@@ -14,13 +14,13 @@ import (
 
 // Module 表示模块信息
 type Module struct {
-	Name        string
-	Deps        []string
-	Description string
+	Name        string   `json:"name" yaml:"name" xml:"name"`
+	Deps        []string `json:"deps" yaml:"deps" xml:"deps"`
+	Description string   `json:"description" yaml:"description" xml:"description"`
 
 	// 当前模块的所有路由项。
 	// 键中为路由地址，键值为路由中启用的请求方法。
-	Routes map[string][]string
+	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
 
 	inits  []func() error
 	router *mux.Prefix
