@@ -113,23 +113,23 @@ func TestParseField_array(t *testing.T) {
 	parseField(r, reflect.ValueOf(data).Elem(), errors)
 	a.Equal(data.Array, []int{11, 1})
 
-	// 指定了默认值，指定空参数，则使用默认值
+	// 指定了默认值，指定空参数，struct tag 中的默认值
 	errors = map[string]string{}
 	r = httptest.NewRequest(http.MethodGet, "/q?array=", nil)
 	data = &testQueryObject{
 		Array: [2]int{2, 2},
 	}
 	parseField(r, reflect.ValueOf(data).Elem(), errors)
-	a.Equal(data.Array, []int{2, 2})
+	a.Equal(data.Array, []int{1, 2})
 
-	// 指定了默认值，未指定数，则使用默认值
+	// 指定了默认值，未指定数，则使用 struct tag 中的默认值
 	errors = map[string]string{}
 	r = httptest.NewRequest(http.MethodGet, "/q", nil)
 	data = &testQueryObject{
 		Array: [2]int{2, 2},
 	}
 	parseField(r, reflect.ValueOf(data).Elem(), errors)
-	a.Equal(data.Array, []int{2, 2})
+	a.Equal(data.Array, []int{1, 2})
 
 	// 都未指定，则使用 struct tag 中的默认值
 	errors = map[string]string{}

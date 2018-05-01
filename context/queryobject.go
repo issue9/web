@@ -53,59 +53,16 @@ LOOP:
 			continue
 		}
 
-		name, def := getQueryTag(tf)
-		val := r.FormValue(name)
 		vf := rval.Field(i)
 
 		switch tf.Type.Kind() {
 		case reflect.Slice:
-			if val == "" {
-				if vf.Len() > 0 { // 有默认值，则采用默认值
-					continue LOOP
-				}
-				val = def
-			}
-
-			vals := strings.Split(val, ",")
-			if len(vals) > 0 { // 指定了参数，则舍弃 slice 中的旧值
-				vf.Set(vf.Slice(0, 0))
-			}
-
-			elemtype := tf.Type.Elem()
-			for elemtype.Kind() == reflect.Ptr {
-				elemtype = elemtype.Elem()
-			}
-			for _, v := range vals {
-				elem := reflect.New(elemtype)
-				if err := conv.Value(v, elem); err != nil {
-					errors[name] = err.Error()
-					continue LOOP
-				}
-				vf.Set(reflect.Append(vf, elem.Elem()))
-			}
+			parseFieldSlice(r, errors, tf, vf)
 		case reflect.Array:
-			if val == "" {
-				val = def
-			}
-			vals := strings.Split(val, ",")
-
-			elemtype := tf.Type.Elem()
-			for elemtype.Kind() == reflect.Ptr {
-				elemtype = elemtype.Elem()
-			}
-
-			if tf.Type.Len() < len(vals) { // array 类型的长度从其 type 上获取
-				vals = vals[:tf.Type.Len()]
-			}
-
-			for index, v := range vals {
-				elem := vf.Index(index)
-				if err := conv.Value(v, elem); err != nil {
-					errors[name] = err.Error()
-					continue LOOP
-				}
-			}
+			parseFieldArray(r, errors, tf, vf)
 		default:
+			name, def := getQueryTag(tf)
+			val := r.FormValue(name)
 			if val == "" {
 				if vf.Interface() != reflect.Zero(tf.Type).Interface() {
 					continue LOOP
@@ -119,6 +76,63 @@ LOOP:
 			}
 		}
 	} // end for
+}
+
+func parseFieldSlice(r *http.Request, errors map[string]string, tf reflect.StructField, vf reflect.Value) {
+	name, def := getQueryTag(tf)
+	val := r.FormValue(name)
+
+	if val == "" {
+		if vf.Len() > 0 { // 有默认值，则采用默认值
+			return
+		}
+		val = def
+	}
+
+	vals := strings.Split(val, ",")
+	if len(vals) > 0 { // 指定了参数，则舍弃 slice 中的旧值
+		vf.Set(vf.Slice(0, 0))
+	}
+
+	elemtype := tf.Type.Elem()
+	for elemtype.Kind() == reflect.Ptr {
+		elemtype = elemtype.Elem()
+	}
+	for _, v := range vals {
+		elem := reflect.New(elemtype)
+		if err := conv.Value(v, elem); err != nil {
+			errors[name] = err.Error()
+			return
+		}
+		vf.Set(reflect.Append(vf, elem.Elem()))
+	}
+}
+
+func parseFieldArray(r *http.Request, errors map[string]string, tf reflect.StructField, vf reflect.Value) {
+	name, def := getQueryTag(tf)
+	val := r.FormValue(name)
+
+	if val == "" {
+		val = def
+	}
+	vals := strings.Split(val, ",")
+
+	elemtype := tf.Type.Elem()
+	for elemtype.Kind() == reflect.Ptr {
+		elemtype = elemtype.Elem()
+	}
+
+	if tf.Type.Len() < len(vals) { // array 类型的长度从其 type 上获取
+		vals = vals[:tf.Type.Len()]
+	}
+
+	for index, v := range vals {
+		elem := vf.Index(index)
+		if err := conv.Value(v, elem); err != nil {
+			errors[name] = err.Error()
+			return
+		}
+	}
 }
 
 func getQueryTag(field reflect.StructField) (name, def string) {
