@@ -19,6 +19,11 @@ type QueryValidator interface {
 	QueryValid(map[string]string)
 }
 
+// UnmarshalQueryer 将一个值转换成 Query 对象中的值
+type UnmarshalQueryer interface {
+	UnmarshalQuery(data []byte) error
+}
+
 // QueryObject 将查询参数解析到一个对象中。
 //
 // 返回的是每一个字段对应的错误信息。
@@ -70,7 +75,12 @@ LOOP:
 				val = def
 			}
 
-			if err := conv.Value(val, vf); err != nil {
+			if q, ok := vf.Interface().(UnmarshalQueryer); ok {
+				if err := q.UnmarshalQuery([]byte(val)); err != nil {
+					errors[name] = err.Error()
+					continue LOOP
+				}
+			} else if err := conv.Value(val, vf); err != nil {
 				errors[name] = err.Error()
 				continue LOOP
 			}
