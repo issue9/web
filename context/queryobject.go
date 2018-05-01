@@ -39,8 +39,8 @@ func (ctx *Context) QueryObject(v interface{}) (errors map[string]string) {
 	parseField(ctx.Request, rval, ret)
 
 	// 接口在转换完成之后调用。
-	if v, ok := rval.Interface().(QueryValidator); ok {
-		v.QueryValid(ret)
+	if q, ok := v.(QueryValidator); ok {
+		q.QueryValid(ret)
 	}
 
 	return ret

@@ -52,6 +52,31 @@ type testQueryObject struct {
 	States []State   `query:"states,normal,left"`
 }
 
+func (obj *testQueryString) QueryValid(errors map[string]string) {
+	if obj.State == -1 {
+		errors["state"] = "取值错误"
+	}
+}
+
+func (obj *testQueryObject) QueryValid(errors map[string]string) {
+	obj.testQueryString.QueryValid(errors)
+
+	if obj.Int == 0 {
+		errors["int"] = "取值错误"
+	}
+}
+
+func TestQueryObject(t *testing.T) {
+	a := assert.New(t)
+	r := httptest.NewRequest(http.MethodGet, "/q?string=str&strings=s1,s2&int=0", nil)
+	data := &testQueryObject{}
+	ctx := &Context{Request: r}
+
+	errors := ctx.QueryObject(data)
+	a.True(len(errors["int"]) > 0)
+	a.Equal(data.Int, 0)
+}
+
 func TestParseField(t *testing.T) {
 	a := assert.New(t)
 
