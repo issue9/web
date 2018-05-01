@@ -52,14 +52,14 @@ type testQueryObject struct {
 	States []State   `query:"states,normal,left"`
 }
 
-func (obj *testQueryString) QueryValid(errors map[string]string) {
+func (obj *testQueryString) QuerySanitize(errors map[string]string) {
 	if obj.State == -1 {
 		errors["state"] = "取值错误"
 	}
 }
 
-func (obj *testQueryObject) QueryValid(errors map[string]string) {
-	obj.testQueryString.QueryValid(errors)
+func (obj *testQueryObject) QuerySanitize(errors map[string]string) {
+	obj.testQueryString.QuerySanitize(errors)
 
 	if obj.Int == 0 {
 		errors["int"] = "取值错误"

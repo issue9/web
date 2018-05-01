@@ -14,9 +14,9 @@ import (
 
 const queryTag = "query"
 
-// QueryValidator 验证接口
-type QueryValidator interface {
-	QueryValid(map[string]string)
+// QuerySanitizer 验证接口
+type QuerySanitizer interface {
+	QuerySanitize(map[string]string)
 }
 
 // UnmarshalQueryer 将一个值转换成 Query 对象中的值
@@ -39,8 +39,8 @@ func (ctx *Context) QueryObject(v interface{}) (errors map[string]string) {
 	parseField(ctx.Request, rval, ret)
 
 	// 接口在转换完成之后调用。
-	if q, ok := v.(QueryValidator); ok {
-		q.QueryValid(ret)
+	if q, ok := v.(QuerySanitizer); ok {
+		q.QuerySanitize(ret)
 	}
 
 	return ret
