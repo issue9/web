@@ -21,7 +21,7 @@ type QueryValidator interface {
 
 // UnmarshalQueryer 将一个值转换成 Query 对象中的值
 type UnmarshalQueryer interface {
-	UnmarshalQuery(data []byte) error
+	UnmarshalQuery(data string) error
 }
 
 // QueryObject 将查询参数解析到一个对象中。
@@ -65,31 +65,45 @@ LOOP:
 			parseFieldSlice(r, errors, tf, vf)
 		case reflect.Array:
 			parseFieldArray(r, errors, tf, vf)
+		case reflect.Ptr, reflect.Chan, reflect.Func:
+			continue LOOP
 		default:
-			name, def := getQueryTag(tf)
-			val := r.FormValue(name)
-			if val == "" {
-				if vf.Interface() != reflect.Zero(tf.Type).Interface() {
-					continue LOOP
-				}
-				val = def
-			}
-
-			if q, ok := vf.Interface().(UnmarshalQueryer); ok {
-				if err := q.UnmarshalQuery([]byte(val)); err != nil {
-					errors[name] = err.Error()
-					continue LOOP
-				}
-			} else if err := conv.Value(val, vf); err != nil {
-				errors[name] = err.Error()
-				continue LOOP
-			}
+			parseFieldValue(r, errors, tf, vf)
 		}
 	} // end for
 }
 
+func parseFieldValue(r *http.Request, errors map[string]string, tf reflect.StructField, vf reflect.Value) {
+	name, def := getQueryTag(tf)
+	if name == "" {
+		return
+	}
+
+	val := r.FormValue(name)
+	if val == "" {
+		if vf.Interface() != reflect.Zero(tf.Type).Interface() {
+			return
+		}
+		val = def
+	}
+
+	if q, ok := vf.Addr().Interface().(UnmarshalQueryer); ok {
+		if err := q.UnmarshalQuery(val); err != nil {
+			errors[name] = err.Error()
+			return
+		}
+	} else if err := conv.Value(val, vf); err != nil {
+		errors[name] = err.Error()
+		return
+	}
+}
+
 func parseFieldSlice(r *http.Request, errors map[string]string, tf reflect.StructField, vf reflect.Value) {
 	name, def := getQueryTag(tf)
+	if name == "" {
+		return
+	}
+
 	val := r.FormValue(name)
 
 	if val == "" {
@@ -110,7 +124,12 @@ func parseFieldSlice(r *http.Request, errors map[string]string, tf reflect.Struc
 	}
 	for _, v := range vals {
 		elem := reflect.New(elemtype)
-		if err := conv.Value(v, elem); err != nil {
+		if q, ok := elem.Interface().(UnmarshalQueryer); ok {
+			if err := q.UnmarshalQuery(v); err != nil {
+				errors[name] = err.Error()
+				return
+			}
+		} else if err := conv.Value(v, elem); err != nil {
 			errors[name] = err.Error()
 			return
 		}
@@ -120,6 +139,10 @@ func parseFieldSlice(r *http.Request, errors map[string]string, tf reflect.Struc
 
 func parseFieldArray(r *http.Request, errors map[string]string, tf reflect.StructField, vf reflect.Value) {
 	name, def := getQueryTag(tf)
+	if name == "" {
+		return
+	}
+
 	val := r.FormValue(name)
 
 	if val == "" {
@@ -138,6 +161,12 @@ func parseFieldArray(r *http.Request, errors map[string]string, tf reflect.Struc
 
 	for index, v := range vals {
 		elem := vf.Index(index)
+		if q, ok := elem.Interface().(UnmarshalQueryer); ok {
+			if err := q.UnmarshalQuery(v); err != nil {
+				errors[name] = err.Error()
+				return
+			}
+		}
 		if err := conv.Value(v, elem); err != nil {
 			errors[name] = err.Error()
 			return

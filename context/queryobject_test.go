@@ -5,6 +5,7 @@
 package context
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -13,9 +14,34 @@ import (
 	"github.com/issue9/assert"
 )
 
+type State int
+
+const (
+	StateNormal State = iota + 1 // 正常
+	StateLocked                  // 锁定
+	StateLeft                    // 离职
+)
+
+// UnmarshalQuery 解码
+func (s *State) UnmarshalQuery(data string) error {
+	switch data {
+	case "normal":
+		*s = StateNormal
+	case "locked":
+		*s = StateLocked
+	case "left":
+		*s = StateLeft
+	default:
+		return fmt.Errorf("无效的值：%s", string(data))
+	}
+
+	return nil
+}
+
 type testQueryString struct {
 	String  string   `query:"string,str1,str2"`
 	Strings []string `query:"strings,str1,str2"`
+	State   State    `query:"state,normal"`
 }
 
 type testQueryObject struct {
@@ -23,6 +49,7 @@ type testQueryObject struct {
 	Int    int       `query:"int,1"`
 	Floats []float64 `query:"floats,1.1,2.2"`
 	Array  [2]int    `query:"array,1,2"`
+	States []State   `query:"states,normal,left"`
 }
 
 func TestParseField(t *testing.T) {
@@ -34,6 +61,7 @@ func TestParseField(t *testing.T) {
 	parseField(r, reflect.ValueOf(data).Elem(), errors)
 	a.Empty(errors)
 	a.Equal(data.String, "str").
+		Equal(data.State, StateNormal).
 		Equal(data.Strings, []string{"s1", "s2"}).
 		Equal(data.Int, 1). // 默认值
 		Equal(data.Floats, []float64{1.1, 2.2}).
