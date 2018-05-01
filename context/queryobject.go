@@ -87,6 +87,10 @@ func parseFieldValue(r *http.Request, errors map[string]string, tf reflect.Struc
 		val = def
 	}
 
+	if val == "" { // 依然是空值
+		return
+	}
+
 	if q, ok := vf.Addr().Interface().(UnmarshalQueryer); ok {
 		if err := q.UnmarshalQuery(val); err != nil {
 			errors[name] = err.Error()
@@ -111,6 +115,10 @@ func parseFieldSlice(r *http.Request, errors map[string]string, tf reflect.Struc
 			return
 		}
 		val = def
+	}
+
+	if val == "" { // 依然是空值
+		return
 	}
 
 	vals := strings.Split(val, ",")
