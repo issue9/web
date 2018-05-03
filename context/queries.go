@@ -4,7 +4,11 @@
 
 package context
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/issue9/query"
+)
 
 // Queries 用于处理路径中的查询参数。
 //  q,_ := ctx.Queries()
@@ -113,4 +117,13 @@ func (q *Queries) HasErrors() bool {
 // Errors 所有的错误信息
 func (q *Queries) Errors() map[string]string {
 	return q.errors
+}
+
+// QueryObject 将查询参数解析到一个对象中。
+//
+// 返回的是每一个字段对应的错误信息。
+//
+// 具体的文档信息可以参考 https://github.com/issue9/query
+func (ctx *Context) QueryObject(v interface{}) (errors map[string]string) {
+	return query.Parse(ctx.Request, v)
 }

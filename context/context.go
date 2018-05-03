@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package context 对 HTTP 请求和输出作了简单的封装。
+// Package context 用于处理单个请求的上下文关系。
 package context
 
 import (
