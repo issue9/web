@@ -6,6 +6,7 @@ package context
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -95,6 +96,22 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
+
+	// 输出 nil
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	w = httptest.NewRecorder()
+	ctx = newContext(w, r, encoding.TextMarshal, xencoding.Nop, encoding.TextUnmarshal, xencoding.Nop)
+	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Body.String(), "")
+
+	// 输出 Nil，encoding.Text 未实现对 nil 值的解析，所以采用了 json.Marshal
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	w = httptest.NewRecorder()
+	ctx = newContext(w, r, json.Marshal, xencoding.Nop, encoding.TextUnmarshal, xencoding.Nop)
+	a.NotError(ctx.Marshal(http.StatusCreated, Nil, nil))
+	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Body.String(), "null")
 }
 
 func TestContext_Render(t *testing.T) {

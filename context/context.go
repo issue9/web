@@ -17,6 +17,12 @@ import (
 	"github.com/issue9/web/encoding"
 )
 
+// Nil 表示向客户端输出 nil 值。
+//
+// 这是一个只有类型但是值为空的变量。在某些特殊情况下，
+// 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
+var Nil *struct{}
+
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
 	Response http.ResponseWriter
@@ -56,7 +62,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return nil, err
 	}
 
-	if ctx.InputCharset == nil {
+	if ctx.InputCharset == nil || ctx.InputCharset == xencoding.Nop {
 		return ctx.body, nil
 	}
 
@@ -75,7 +81,10 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 	return ctx.InputMimeType(body, v)
 }
 
-// Marshal 将 v 发送给客户端。
+// Marshal 将 v 解码并发送给客户端。
+//
+// 若 v 是一个 nil 值，则不会向客户端输出任何内容；
+// 若是需要正常输出一个 nil 类型到客户端（json 中会输出 null），可以使用 Nil 变量代替。
 //
 // NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头，
 // 但是不会改变其输出时的实际编码方式。
@@ -96,6 +105,11 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		ctx.Response.Header().Set("Content-Type", ct)
 	}
 
+	if v == nil {
+		ctx.Response.WriteHeader(status)
+		return nil
+	}
+
 	data, err := ctx.OutputMimeType(v)
 	if err != nil {
 		return err
@@ -103,13 +117,14 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	ctx.Response.WriteHeader(status)
 
-	if ctx.OutputCharset == nil {
+	if ctx.OutputCharset == nil || ctx.OutputCharset == xencoding.Nop {
 		_, err = ctx.Response.Write(data)
 		return err
 	}
 
 	w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
 	if _, err = w.Write(data); err != nil {
+		w.Close()
 		return err
 	}
 	return w.Close()
