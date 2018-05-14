@@ -219,8 +219,7 @@ func (p *Params) Errors() map[string]string {
 
 // ParamID 获取地址参数中表示 ID 的值。相对于 ParamInt64，该值必须大于 0。
 //
-// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
-// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
+// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamID(key string) (int64, error) {
 	id, err := ctx.ParamInt64(key)
 
@@ -237,15 +236,14 @@ func (ctx *Context) ParamID(key string) (int64, error) {
 
 // ParamInt64 取地址参数中的 int64 值。
 //
-// NOTE: 若需要获取其它类型的数据，可以使用 Context.Params 来获取。
-// Context.ParamInt64 和 Context.ParamID 仅作为一个简便的操作存在。
+// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamInt64(key string) (int64, error) {
-	p := ctx.Params()
+	return ctx.Params().params.Int(key)
+}
 
-	ret, err := p.params.Int(key)
-	if err != nil {
-		return 0, err
-	}
-
-	return ret, nil
+// ParamString 取地址参数中的 string 值。
+//
+// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
+func (ctx *Context) ParamString(key string) (string, error) {
+	return ctx.Params().params.String(key)
 }
