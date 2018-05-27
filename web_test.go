@@ -22,8 +22,8 @@ func TestMain(t *testing.T) {
 	a.NotError(Init("./internal/app/testdata/"))
 
 	// m1 的路由项依赖 m2 的初始化数据
-	m1, err := NewModule("m1", "m1 desc", "m2")
-	a.NotError(err).NotNil(m1)
+	m1 := NewModule("m1", "m1 desc", "m2")
+	a.NotNil(m1)
 	m1.AddInit(func() error {
 		m1.PostFunc("/post/"+testdata, func(w http.ResponseWriter, r *http.Request) {
 			a.Equal(testdata, "m2")
@@ -33,8 +33,8 @@ func TestMain(t *testing.T) {
 		return nil
 	})
 
-	m2, err := NewModule("m2", "m2 desc")
-	a.NotError(err).NotNil(m2)
+	m2 := NewModule("m2", "m2 desc")
+	a.NotNil(m2)
 	m2.AddInit(func() error {
 		testdata = "m2"
 		return nil

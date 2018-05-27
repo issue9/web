@@ -58,14 +58,14 @@ func TestApp_Modules(t *testing.T) {
 	list := app.Modules()
 	a.Equal(len(list), 1)
 
-	// 已经存在
+	// 已经存在，不检测，只在初始化才检测
 	app.NewModule("m1", "m1 desc")
 	list = app.Modules()
-	a.Equal(len(list), 1)
+	a.Equal(len(list), 2)
 
 	app.NewModule("m2", "m1 desc")
 	list = app.Modules()
-	a.Equal(len(list), 2)
+	a.Equal(len(list), 3)
 }
 
 func TestApp_URL(t *testing.T) {
