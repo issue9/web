@@ -38,10 +38,10 @@ func TestApp_Handler(t *testing.T) {
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
-	m1, err := app.NewModule("m1", "m1 desc", "m2")
-	a.NotError(err).NotNil(m1)
-	m2, err := app.NewModule("m2", "m2 desc")
-	a.NotError(err).NotNil(m2)
+	m1 := app.NewModule("m1", "m1 desc", "m2")
+	a.NotNil(m1)
+	m2 := app.NewModule("m2", "m2 desc")
+	a.NotNil(m2)
 	m1.GetFunc("/m1/test", f202)
 	m2.GetFunc("/m2/test", f202)
 
@@ -59,10 +59,10 @@ func TestApp_Serve(t *testing.T) {
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
-	m1, err := app.NewModule("m1", "m1 desc", "m2")
-	a.NotError(err).NotNil(m1)
-	m2, err := app.NewModule("m2", "m2 desc")
-	a.NotError(err).NotNil(m2)
+	m1 := app.NewModule("m1", "m1 desc", "m2")
+	a.NotNil(m1)
+	m2 := app.NewModule("m2", "m2 desc")
+	a.NotNil(m2)
 	m1.GetFunc("/m1/test", f202)
 	m2.GetFunc("/m2/test", f202)
 

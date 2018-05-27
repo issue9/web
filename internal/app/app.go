@@ -7,7 +7,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -113,17 +112,10 @@ func (app *App) Modules() []*module.Module {
 }
 
 // NewModule 声明一个新的模块
-func (app *App) NewModule(name, desc string, deps ...string) (*module.Module, error) {
-	for _, m := range app.modules {
-		if m.Name == name {
-			return nil, fmt.Errorf("模块 %s 已经存在", name)
-		}
-	}
-
+func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 	m := module.New(app.router, name, desc, deps...)
 	app.modules = append(app.modules, m)
-
-	return m, nil
+	return m
 }
 
 // File 获取配置目录下的文件名

@@ -54,19 +54,16 @@ func TestApp_Modules(t *testing.T) {
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
-	_, err = app.NewModule("m1", "m1 desc")
-	a.NotError(err)
+	app.NewModule("m1", "m1 desc")
 	list := app.Modules()
 	a.Equal(len(list), 1)
 
 	// 已经存在
-	_, err = app.NewModule("m1", "m1 desc")
-	a.Error(err)
+	app.NewModule("m1", "m1 desc")
 	list = app.Modules()
 	a.Equal(len(list), 1)
 
-	_, err = app.NewModule("m2", "m1 desc")
-	a.NotError(err)
+	app.NewModule("m2", "m1 desc")
 	list = app.Modules()
 	a.Equal(len(list), 2)
 }
