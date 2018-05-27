@@ -30,7 +30,8 @@ func TestMiddleware(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := New("./testdata", m)
+	app, err := New("./testdata")
+	app.SetMiddleware(m)
 	a.NotError(err).NotNil(app)
 
 	app.router.GetFunc("/middleware", f202)
@@ -50,7 +51,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestApp_Modules(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	_, err = app.NewModule("m1", "m1 desc")
@@ -72,7 +73,7 @@ func TestApp_Modules(t *testing.T) {
 
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
@@ -83,7 +84,7 @@ func TestApp_URL(t *testing.T) {
 func TestApp_NewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	// 少报头 accept

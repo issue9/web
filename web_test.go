@@ -19,7 +19,7 @@ var testdata = ""
 
 func TestMain(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(Init("./internal/app/testdata/", nil))
+	a.NotError(Init("./internal/app/testdata/"))
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1, err := NewModule("m1", "m1 desc", "m2")
@@ -43,7 +43,7 @@ func TestMain(t *testing.T) {
 
 func TestInit(t *testing.T) {
 	a := assert.New(t)
-	a.Error(Init("./internal/app/testdata/", nil))
+	a.Error(Init("./internal/app/testdata/"))
 }
 
 func TestIsDebug(t *testing.T) {

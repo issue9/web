@@ -20,14 +20,18 @@ var defaultApp *app.App
 // Init 初始化整个应用环境
 //
 // configDir 表示配置文件的目录；
-// m 表示应用于所有路由项的中间件；
-func Init(configDir string, m middleware.Middleware) (err error) {
+func Init(configDir string) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(configDir, m)
+	defaultApp, err = app.New(configDir)
 	return
+}
+
+// SetMiddleware 设置一个全局的中间件，多次设置，只有最后一次会启作用。
+func SetMiddleware(m middleware.Middleware) {
+	defaultApp.SetMiddleware(m)
 }
 
 // IsDebug 是否处在调试模式

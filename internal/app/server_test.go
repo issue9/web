@@ -35,7 +35,7 @@ func request(a *assert.Assertion, h http.Handler, url string, code int) {
 
 func TestApp_Handler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	m1, err := app.NewModule("m1", "m1 desc", "m2")
@@ -56,7 +56,7 @@ func TestApp_Handler(t *testing.T) {
 
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	m1, err := app.NewModule("m1", "m1 desc", "m2")
@@ -91,7 +91,7 @@ func TestApp_Serve(t *testing.T) {
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
@@ -124,7 +124,7 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_shutdown(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	app.config.ShutdownTimeout = 0
 	a.NotError(err).NotNil(app)
 
@@ -160,7 +160,7 @@ func TestApp_shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata", nil)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)

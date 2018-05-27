@@ -177,13 +177,3 @@ func TestContext_ClientIP(t *testing.T) {
 	ctx = newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
-
-func TestContext_RenderStatus(t *testing.T) {
-	a := assert.New(t)
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
-
-	ctx.RenderStatus(http.StatusForbidden)
-	a.Equal(w.Code, http.StatusForbidden)
-}

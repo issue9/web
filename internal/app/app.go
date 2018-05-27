@@ -49,16 +49,15 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-func New(configDir string, m middleware.Middleware) (*App, error) {
+func New(configDir string) (*App, error) {
 	dir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		configDir:  dir,
-		middleware: m,
-		closed:     make(chan bool, 1),
+		configDir: dir,
+		closed:    make(chan bool, 1),
 	}
 
 	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
@@ -70,6 +69,12 @@ func New(configDir string, m middleware.Middleware) (*App, error) {
 	}
 
 	return app, nil
+}
+
+// SetMiddleware 设置一个全局的中间件，多次设置，只有最后一次会启作用。
+func (app *App) SetMiddleware(m middleware.Middleware) *App {
+	app.middleware = m
+	return app
 }
 
 // Debug 是否处于调试模式

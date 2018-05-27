@@ -179,10 +179,3 @@ func (ctx *Context) ClientIP() string {
 
 	return strings.TrimSpace(ip)
 }
-
-// RenderStatus 仅向客户端输出状态码
-//
-// Deprecated: 直接使用 Error() 代替。
-func (ctx *Context) RenderStatus(status int) {
-	ctx.Error(status)
-}
