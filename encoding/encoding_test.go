@@ -31,32 +31,26 @@ func TestCharset(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	a := assert.New(t)
 
-	a.Equal(len(marshals), 1)
 	a.Nil(Marshal("not exists"))
 	a.NotNil(Marshal(DefaultMimeType))
 
 	// 添加已存在的
 	a.Equal(AddMarshal(DefaultMimeType, json.Marshal), ErrExists)
-	a.Equal(len(marshals), 1) // 添加没成功
 
 	a.NotError(AddMarshal("json", json.Marshal))
-	a.Equal(len(marshals), 2) // 添加没成功
 	a.NotNil(Marshal("json"))
 }
 
 func TestUnmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	a.Equal(len(unmarshals), 1)
 	a.Nil(Unmarshal("not exists"))
 	a.NotNil(Unmarshal(DefaultMimeType))
 
 	// 添加已存在的
 	a.Equal(AddUnmarshal(DefaultMimeType, json.Unmarshal), ErrExists)
-	a.Equal(len(unmarshals), 1) // 添加没成功
 
 	a.NotError(AddUnmarshal("json", json.Unmarshal))
-	a.Equal(len(unmarshals), 2) // 添加没成功
 	a.NotNil(Unmarshal("json"))
 }
 

@@ -33,19 +33,9 @@ var (
 	ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 )
 
-var (
-	charset = map[string]xencoding.Encoding{
-		DefaultCharset: xencoding.Nop,
-	}
-
-	marshals = map[string]MarshalFunc{
-		DefaultMimeType: TextMarshal,
-	}
-
-	unmarshals = map[string]UnmarshalFunc{
-		DefaultMimeType: TextUnmarshal,
-	}
-)
+var charset = map[string]xencoding.Encoding{
+	DefaultCharset: xencoding.Nop,
+}
 
 // MarshalFunc 将一个对象转换成 []byte 内容时，所采用的接口。
 type MarshalFunc func(v interface{}) ([]byte, error)
@@ -72,32 +62,24 @@ func AddCharset(name string, c xencoding.Encoding) error {
 
 // Marshal 获取指定名称的编码函数
 func Marshal(name string) MarshalFunc {
-	return marshals[name]
+	m, _ := Mimetype(name)
+	return m
 }
 
 // AddMarshal 添加编码函数
 func AddMarshal(name string, m MarshalFunc) error {
-	if _, found := marshals[name]; found {
-		return ErrExists
-	}
-
-	marshals[name] = m
-	return nil
+	return AddMimetype(name, m, nil)
 }
 
 // Unmarshal 获取指定名称的编码函数
 func Unmarshal(name string) UnmarshalFunc {
-	return unmarshals[name]
+	_, m := Mimetype(name)
+	return m
 }
 
 // AddUnmarshal 添加编码函数
 func AddUnmarshal(name string, m UnmarshalFunc) error {
-	if _, found := unmarshals[name]; found {
-		return ErrExists
-	}
-
-	unmarshals[name] = m
-	return nil
+	return AddMimetype(name, nil, m)
 }
 
 // BuildContentType 生成一个 content-type
