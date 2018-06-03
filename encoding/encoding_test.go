@@ -5,54 +5,10 @@
 package encoding
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/issue9/assert"
-	"golang.org/x/text/encoding/simplifiedchinese"
 )
-
-func TestCharset(t *testing.T) {
-	a := assert.New(t)
-
-	a.Equal(len(charset), 1) // 有一条默认的字符集信息
-	a.Nil(Charset("not exists"))
-	a.NotNil(Charset(DefaultCharset))
-
-	// 添加已存在的
-	a.Equal(AddCharset(DefaultCharset, simplifiedchinese.GBK), ErrExists)
-	a.Equal(len(charset), 1) // 添加没成功
-
-	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
-	a.Equal(len(charset), 2) // 添加没成功
-	a.NotNil(Charset("GBK"))
-}
-
-func TestMarshal(t *testing.T) {
-	a := assert.New(t)
-
-	a.Nil(Marshal("not exists"))
-	a.NotNil(Marshal(DefaultMimeType))
-
-	// 添加已存在的
-	a.Equal(AddMarshal(DefaultMimeType, json.Marshal), ErrExists)
-
-	a.NotError(AddMarshal("json", json.Marshal))
-	a.NotNil(Marshal("json"))
-}
-
-func TestUnmarshal(t *testing.T) {
-	a := assert.New(t)
-
-	a.Nil(Unmarshal("not exists"))
-	a.NotNil(Unmarshal(DefaultMimeType))
-
-	// 添加已存在的
-	a.Equal(AddUnmarshal(DefaultMimeType, json.Unmarshal), ErrExists)
-
-	a.NotError(AddUnmarshal("json", json.Unmarshal))
-	a.NotNil(Unmarshal("json"))
-}
 
 func TestBuildContentType(t *testing.T) {
 	a := assert.New(t)

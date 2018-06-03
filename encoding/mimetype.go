@@ -9,22 +9,60 @@ import (
 	"strings"
 )
 
+// DefaultMimeType 默认的媒体类型，在不能正确获取输入和输出的媒体类型时，
+// 会采用此值作为其默认值。
+const DefaultMimeType = "text/plain"
+
 // 保存所有添加的 mimetype 类型，根表示 */* 的内容
 var mimetypes = &mimetype{
 	subtypes: make(map[string]*mimetype, 7),
 }
 
-type mimetype struct {
-	marshal   MarshalFunc
-	unmarshal UnmarshalFunc
-	subtypes  map[string]*mimetype
-}
+type (
+	// MarshalFunc 将一个对象转换成 []byte 内容时，所采用的接口。
+	MarshalFunc func(v interface{}) ([]byte, error)
+
+	// UnmarshalFunc 将客户端内容转换成一个对象时，所采用的接口。
+	UnmarshalFunc func([]byte, interface{}) error
+
+	mimetype struct {
+		marshal   MarshalFunc
+		unmarshal UnmarshalFunc
+		subtypes  map[string]*mimetype
+	}
+)
 
 func init() {
-	err := AddMimetype(DefaultMimeType, TextMarshal, TextUnmarshal)
+	err := AddMimeType(DefaultMimeType, TextMarshal, TextUnmarshal)
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Marshal 获取指定名称的编码函数
+func Marshal(name string) MarshalFunc {
+	m, _ := MimeType(name)
+	return m
+}
+
+// AddMarshal 添加编码函数
+//
+// Deprecated: 改用 AddMimeType 代替
+func AddMarshal(name string, m MarshalFunc) error {
+	return AddMimeType(name, m, nil)
+}
+
+// Unmarshal 获取指定名称的编码函数
+func Unmarshal(name string) UnmarshalFunc {
+	_, m := MimeType(name)
+	return m
+}
+
+// AddUnmarshal 添加编码函数
+//
+// Deprecated: 改用 AddMimeType 代替
+func AddUnmarshal(name string, m UnmarshalFunc) error {
+	return AddMimeType(name, nil, m)
 }
 
 func (mt *mimetype) set(marshal MarshalFunc, unmarshal UnmarshalFunc) error {
@@ -41,9 +79,9 @@ func (mt *mimetype) set(marshal MarshalFunc, unmarshal UnmarshalFunc) error {
 	return nil
 }
 
-// Mimetype 获取指定名称的编解码函数
-func Mimetype(name string) (MarshalFunc, UnmarshalFunc) {
-	name, subname := parseMimetype(name)
+// MimeType 获取指定名称的编解码函数
+func MimeType(name string) (MarshalFunc, UnmarshalFunc) {
+	name, subname := parseMimeType(name)
 
 	if name == "*" {
 		return mimetypes.marshal, mimetypes.unmarshal
@@ -54,7 +92,7 @@ func Mimetype(name string) (MarshalFunc, UnmarshalFunc) {
 		return nil, nil
 	}
 
-	if subname == "" {
+	if subname == "" || subname == "*" {
 		return item.marshal, item.unmarshal
 	}
 
@@ -65,12 +103,12 @@ func Mimetype(name string) (MarshalFunc, UnmarshalFunc) {
 	return sub.marshal, sub.unmarshal
 }
 
-// AddMimetype 添加编码和解码方式
-func AddMimetype(name string, marshal MarshalFunc, unmarshal UnmarshalFunc) error {
+// AddMimeType 添加编码和解码方式
+func AddMimeType(name string, marshal MarshalFunc, unmarshal UnmarshalFunc) error {
 	if name == "" {
 		return errors.New("参数 name 不能为空")
 	}
-	name, subname := parseMimetype(name)
+	name, subname := parseMimeType(name)
 
 	if name[0] == '*' {
 		return mimetypes.set(marshal, unmarshal)
@@ -85,7 +123,7 @@ func AddMimetype(name string, marshal MarshalFunc, unmarshal UnmarshalFunc) erro
 	}
 
 	// 没有子名称
-	if subname == "" {
+	if subname == "" || subname == "*" {
 		return item.set(marshal, unmarshal)
 	}
 
@@ -97,7 +135,7 @@ func AddMimetype(name string, marshal MarshalFunc, unmarshal UnmarshalFunc) erro
 	return sub.set(marshal, unmarshal)
 }
 
-func parseMimetype(mimename string) (name, subname string) {
+func parseMimeType(mimename string) (name, subname string) {
 	index := strings.IndexByte(mimename, '/')
 	if index > 0 {
 		return mimename[:index], mimename[index+1:]
