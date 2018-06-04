@@ -122,7 +122,7 @@ func (app *App) URL(path string) string {
 
 // NewContext 根据当前配置，生成 context.Context 对象
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
+	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
 	if err != nil {
 		context.Exit(http.StatusUnsupportedMediaType)
 	}
@@ -139,23 +139,13 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		context.Exit(http.StatusNotAcceptable)
 	}
 
-	unmarshal := encoding.Unmarshal(encName)
-	if unmarshal == nil {
-		context.Exit(http.StatusUnsupportedMediaType)
-	}
-
-	inputCharset := encoding.Charset(charsetName)
-	if inputCharset == nil {
-		context.Exit(http.StatusUnsupportedMediaType)
-	}
-
 	return &context.Context{
 		Response:           w,
 		Request:            r,
 		OutputMimeType:     marshal,
 		OutputMimeTypeName: outputMimeType,
 		InputMimeType:      unmarshal,
-		InputCharset:       inputCharset,
+		InputCharset:       charset,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 	}

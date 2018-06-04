@@ -8,7 +8,17 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	xencoding "golang.org/x/text/encoding"
 )
+
+func TestContentType(t *testing.T) {
+	a := assert.New(t)
+
+	um, c, err := ContentType(BuildContentType("", ""))
+	a.NotError(err).
+		Equal(um, UnmarshalFunc(um)).
+		Equal(c, xencoding.Nop)
+}
 
 func TestBuildContentType(t *testing.T) {
 	a := assert.New(t)

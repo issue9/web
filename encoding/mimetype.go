@@ -39,6 +39,24 @@ func init() {
 	}
 }
 
+// AcceptMimeType 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
+//
+// 不存在时，返回默认值，出错时，返回错误。
+func AcceptMimeType(header string) (string, MarshalFunc, error) {
+	accepts, err := ParseAccept(header)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for _, accept := range accepts {
+		if m := Marshal(accept.Value); m != nil {
+			return accept.Value, m, nil
+		}
+	}
+
+	return "", nil, ErrUnsupportedMarshal
+}
+
 // Marshal 获取指定名称的编码函数
 func Marshal(name string) MarshalFunc {
 	m, _ := MimeType(name)

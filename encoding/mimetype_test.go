@@ -37,6 +37,26 @@ func testUnmarshal(t *testing.T) {
 	a.NotNil(Unmarshal("json"))
 }
 
+func TestAcceptMimeType(t *testing.T) {
+	a := assert.New(t)
+
+	name, marshal, err := AcceptMimeType(DefaultMimeType)
+	a.NotError(err).
+		Equal(marshal, MarshalFunc(TextMarshal)).
+		Equal(name, DefaultMimeType)
+
+	// * 不指定，需要用户自行决定其表示方式
+	name, marshal, err = AcceptMimeType("*/*")
+	a.Error(err).
+		Empty(name).
+		Nil(marshal)
+
+	name, marshal, err = AcceptMimeType("font/wotff")
+	a.Error(err).
+		Empty(name).
+		Nil(marshal)
+}
+
 func TestMimeType(t *testing.T) {
 	a := assert.New(t)
 

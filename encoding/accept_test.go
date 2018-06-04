@@ -37,26 +37,6 @@ func TestAccept_parse(t *testing.T) {
 	a.Error(accept.parse())
 }
 
-func TestAcceptMimeType(t *testing.T) {
-	a := assert.New(t)
-
-	name, marshal, err := AcceptMimeType(DefaultMimeType)
-	a.NotError(err).
-		Equal(marshal, MarshalFunc(TextMarshal)).
-		Equal(name, DefaultMimeType)
-
-	// * 不指定，需要用户自行决定其表示方式
-	name, marshal, err = AcceptMimeType("*/*")
-	a.Error(err).
-		Empty(name).
-		Nil(marshal)
-
-	name, marshal, err = AcceptMimeType("font/wotff")
-	a.Error(err).
-		Empty(name).
-		Nil(marshal)
-}
-
 func TestParseAccept(t *testing.T) {
 	a := assert.New(t)
 

@@ -9,6 +9,8 @@ import (
 	"errors"
 	"strings"
 	"unicode"
+
+	xencoding "golang.org/x/text/encoding"
 )
 
 var (
@@ -20,6 +22,26 @@ var (
 	// 如果无法识别数据内容，则返回此错误信息。
 	ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 )
+
+// ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
+func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
+	encName, charsetName, err := ParseContentType(header)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unmarshal := Unmarshal(encName)
+	if unmarshal == nil {
+		return nil, nil, ErrUnsupportedMarshal
+	}
+
+	c := Charset(charsetName)
+	if c == nil {
+		return nil, nil, ErrUnsupportedCharset
+	}
+
+	return unmarshal, c, nil
+}
 
 // BuildContentType 生成一个 content-type
 //
