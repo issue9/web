@@ -5,14 +5,45 @@
 package encoding
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
 
 // Accept 表示 Accept* 的报头元素
 type Accept struct {
+	Content string // 完整的内容
+
+	// 解析之后的内容
 	Value string
-	Q     float64
+	Q     float32
+}
+
+// 将 Content 的内容解析到 Value 和 Q 中
+func (a *Accept) parse() error {
+	index := strings.IndexByte(a.Content, ';')
+	if index < 0 {
+		a.Value = a.Content
+		a.Q = 1.0
+		return nil
+	}
+
+	if index >= 0 {
+		a.Value = a.Content[:index]
+	}
+
+	index = strings.LastIndex(a.Content, ";q=")
+	if index > 0 {
+		q, err := strconv.ParseFloat(a.Content[index+4:], 32)
+		if err != nil {
+			return err
+		}
+		a.Q = float32(q)
+	} else {
+		a.Q = 1.0
+	}
+
+	return nil
 }
 
 // ParseAccept 将报头内容解析为 []*Accept
@@ -23,7 +54,7 @@ func ParseAccept(header string) ([]*Accept, error) {
 		index := strings.IndexByte(header, ',')
 		if index == -1 {
 			if header != "" {
-				accepts = append(accepts, &Accept{Value: header})
+				accepts = append(accepts, &Accept{Content: header})
 			}
 			break
 		}
@@ -35,29 +66,21 @@ func ParseAccept(header string) ([]*Accept, error) {
 
 		val := header[:index]
 		if val != "" {
-			accepts = append(accepts, &Accept{Value: header[:index]})
+			accepts = append(accepts, &Accept{Content: header[:index]})
 		}
 
 		header = header[index+1:]
 	}
 
 	for _, accept := range accepts {
-		val := accept.Value
-
-		index := strings.IndexByte(val, ';')
-		if index > 0 {
-			accept.Value = val[:index]
-		}
-
-		index = strings.LastIndexByte(val, ';')
-		if index > 0 {
-			q, err := strconv.ParseFloat(val[index+1:], 32)
-			if err != nil {
-				return nil, err
-			}
-			accept.Q = q
+		if err := accept.parse(); err != nil {
+			return nil, err
 		}
 	}
+
+	sort.SliceStable(accepts, func(i, j int) bool {
+		return accepts[i].Q > accepts[j].Q
+	})
 
 	return accepts, nil
 }
