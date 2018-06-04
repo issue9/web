@@ -13,8 +13,6 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/context"
-	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/module"
 )
@@ -118,35 +116,4 @@ func (app *App) URL(path string) string {
 		path = "/" + path
 	}
 	return app.config.URL + path
-}
-
-// NewContext 根据当前配置，生成 context.Context 对象
-func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
-	if err != nil {
-		context.Exit(http.StatusUnsupportedMediaType)
-	}
-
-	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"))
-	if err != nil {
-		logs.Error(err)
-		context.Exit(http.StatusNotAcceptable)
-	}
-
-	outputCharsetName, outputCharset, err := encoding.AcceptCharset(r.Header.Get("Accept-Charset"))
-	if err != nil {
-		logs.Error(err)
-		context.Exit(http.StatusNotAcceptable)
-	}
-
-	return &context.Context{
-		Response:           w,
-		Request:            r,
-		OutputMimeType:     marshal,
-		OutputMimeTypeName: outputMimeType,
-		InputMimeType:      unmarshal,
-		InputCharset:       charset,
-		OutputCharset:      outputCharset,
-		OutputCharsetName:  outputCharsetName,
-	}
 }

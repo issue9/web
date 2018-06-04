@@ -47,6 +47,39 @@ func newContext(w http.ResponseWriter,
 	}
 }
 
+func TestNew(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+
+	// 错误的 accept
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", "not")
+	a.Panic(func() {
+		New(w, r)
+	})
+
+	// 错误的 accept-charset
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept-Charset", "unknown")
+	a.Panic(func() {
+		New(w, r)
+	})
+
+	// 错误的 content-type
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Content-Type", ";charset=utf-8")
+	a.Panic(func() {
+		New(w, r)
+	})
+
+	// 正常
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", encoding.DefaultMimeType)
+	ctx := New(w, r)
+	a.NotNil(ctx)
+}
+
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))

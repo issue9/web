@@ -14,6 +14,7 @@ import (
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/web/encoding"
 )
 
@@ -48,6 +49,41 @@ type Context struct {
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
 	body []byte
+}
+
+// New 根据当前请求内容生成 Context 对象
+//
+// 如果 Accept 的内容与当前配置无法匹配，
+// 则退出(panic)并输出 NotAcceptable 状态码。
+func New(w http.ResponseWriter, r *http.Request) *Context {
+	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
+	if err != nil {
+		logs.Error(err)
+		Exit(http.StatusUnsupportedMediaType)
+	}
+
+	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"))
+	if err != nil {
+		logs.Error(err)
+		Exit(http.StatusNotAcceptable)
+	}
+
+	outputCharsetName, outputCharset, err := encoding.AcceptCharset(r.Header.Get("Accept-Charset"))
+	if err != nil {
+		logs.Error(err)
+		Exit(http.StatusNotAcceptable)
+	}
+
+	return &Context{
+		Response:           w,
+		Request:            r,
+		OutputMimeType:     marshal,
+		OutputMimeTypeName: outputMimeType,
+		InputMimeType:      unmarshal,
+		InputCharset:       charset,
+		OutputCharset:      outputCharset,
+		OutputCharsetName:  outputCharsetName,
+	}
 }
 
 // Body 获取用户提交的内容。

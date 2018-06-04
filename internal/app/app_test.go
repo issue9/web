@@ -6,12 +6,10 @@ package app
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding"
 )
 
 var (
@@ -76,53 +74,4 @@ func TestApp_URL(t *testing.T) {
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
 	a.Equal(app.URL(""), "http://localhost:8082")
-}
-
-func TestApp_NewContext(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
-
-	// 少报头 accept
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", "not")
-	a.Panic(func() {
-		app.NewContext(w, r)
-	})
-
-	// 少 accept-charset
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", "*/*")
-	r.Header.Set("Accept-Charset", "unknown")
-	a.Panic(func() {
-		app.NewContext(w, r)
-	})
-
-	// content-type 不正确
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Content-Type", ";charset=utf-8")
-	a.Panic(func() {
-		app.NewContext(w, r)
-	})
-
-	// content-type 不正确
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Content-Type", "unknown")
-	a.Panic(func() {
-		app.NewContext(w, r)
-	})
-
-	// content-type 不正确
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Content-Type", encoding.BuildContentType(encoding.DefaultMimeType, "unknown"))
-	a.Panic(func() {
-		app.NewContext(w, r)
-	})
-
-	// 正常
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", encoding.DefaultMimeType)
-	ctx := app.NewContext(w, r)
-	a.NotNil(ctx)
 }

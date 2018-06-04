@@ -84,9 +84,9 @@ func NewModule(name, desc string, deps ...string) *module.Module {
 	return defaultApp.NewModule(name, desc, deps...)
 }
 
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则返回 nil
+// NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	return defaultApp.NewContext(w, r)
+	return context.New(w, r)
 }
 
 // NewResult 生成一个 *result.Result 对象
