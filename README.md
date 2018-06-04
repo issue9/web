@@ -88,9 +88,6 @@ func Init() {
 | debug           | bool   | 是否启用调试模式
 | domain          | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
 | root            | string | 项目的根路径，比如 `/blog`
-| outputMimeType  | string | 默认输出媒体类型
-| outputCharset   | string | 字符集
-| strict          | bool   | 启用此值，会检测用户的 Accept 报头是否符合当前的编码。
 | https           | bool   | 是否启用 HTTPS
 | certFile        | string | 当启用 HTTPS 时的 cert 文件
 | keyFile         | string | 当启用 HTTPS 时的 key 文件
