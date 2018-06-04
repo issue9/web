@@ -45,6 +45,12 @@ func TestAcceptMimeType(t *testing.T) {
 		Equal(marshal, MarshalFunc(TextMarshal)).
 		Equal(name, DefaultMimeType)
 
+	// * 不指定，需要用户自行决定其表示方式
+	name, marshal, err = AcceptMimeType("*/*")
+	a.Error(err).
+		Empty(name).
+		Nil(marshal)
+
 	name, marshal, err = AcceptMimeType("font/wotff")
 	a.Error(err).
 		Empty(name).

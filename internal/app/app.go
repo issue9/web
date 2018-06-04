@@ -6,15 +6,12 @@
 package app
 
 import (
-	"errors"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
-	xencoding "golang.org/x/text/encoding"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding"
@@ -38,9 +35,6 @@ type App struct {
 	server     *http.Server
 
 	modules []*module.Module
-
-	// 根据配置文件，获取相应的输出编码和字符集。
-	outputCharset xencoding.Encoding
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -89,11 +83,6 @@ func (app *App) loadConfig() error {
 	app.config = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
-
-	app.outputCharset = encoding.Charset(conf.OutputCharset)
-	if app.outputCharset == nil {
-		return errors.New("未找到 outputCharset")
-	}
 
 	app.modules = make([]*module.Module, 0, 50)
 
@@ -144,6 +133,12 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		context.Exit(http.StatusNotAcceptable)
 	}
 
+	outputCharsetName, outputCharset, err := encoding.AcceptCharset(r.Header.Get("Accept-Charset"))
+	if err != nil {
+		logs.Error(err)
+		context.Exit(http.StatusNotAcceptable)
+	}
+
 	unmarshal := encoding.Unmarshal(encName)
 	if unmarshal == nil {
 		context.Exit(http.StatusUnsupportedMediaType)
@@ -154,13 +149,6 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
-	if app.config.Strict {
-		accept := r.Header.Get("Accept-Charset")
-		if accept != "" && !strings.Contains(accept, app.config.OutputCharset) && !strings.Contains(accept, "*") {
-			context.Exit(http.StatusNotAcceptable)
-		}
-	}
-
 	return &context.Context{
 		Response:           w,
 		Request:            r,
@@ -168,7 +156,7 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		OutputMimeTypeName: outputMimeType,
 		InputMimeType:      unmarshal,
 		InputCharset:       inputCharset,
-		OutputCharset:      app.outputCharset,
-		OutputCharsetName:  app.config.OutputCharset,
+		OutputCharset:      outputCharset,
+		OutputCharsetName:  outputCharsetName,
 	}
 }

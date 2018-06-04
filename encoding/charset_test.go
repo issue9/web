@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
@@ -25,4 +26,27 @@ func TestCharset(t *testing.T) {
 	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
 	a.Equal(len(charset), 2) // 添加没成功
 	a.NotNil(Charset("GBK"))
+}
+
+func TestAcceptCharset(t *testing.T) {
+	a := assert.New(t)
+
+	name, enc, err := AcceptCharset(DefaultCharset)
+	a.NotError(err).
+		Equal(enc, xencoding.Nop).
+		Equal(name, DefaultCharset)
+
+	name, enc, err = AcceptCharset("")
+	a.NotError(err).
+		Equal(enc, xencoding.Nop).
+		Equal(name, DefaultCharset)
+
+	// * 不指定，需要用户自行决定其表示方式
+	name, enc, err = AcceptCharset("*")
+	a.Error(err)
+
+	name, enc, err = AcceptCharset("not-supported")
+	a.Error(err).
+		Empty(name).
+		Nil(enc)
 }

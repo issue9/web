@@ -123,7 +123,6 @@ func TestApp_NewContext(t *testing.T) {
 	// 正常
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
-	r.Header.Set("Accept-Charset", "*")
 	ctx := app.NewContext(w, r)
 	a.NotNil(ctx)
 }

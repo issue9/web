@@ -4,11 +4,18 @@
 
 package encoding
 
-import xencoding "golang.org/x/text/encoding"
+import (
+	"errors"
+
+	xencoding "golang.org/x/text/encoding"
+)
 
 // DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 // 会采用此值和为其默认值。
 const DefaultCharset = "utf-8"
+
+// ErrUnsupportedCharset 该字符集不被支持
+var ErrUnsupportedCharset = errors.New("不支持的字符集")
 
 var charset = map[string]xencoding.Encoding{
 	DefaultCharset: xencoding.Nop,
@@ -29,4 +36,24 @@ func AddCharset(name string, c xencoding.Encoding) error {
 	charset[name] = c
 
 	return nil
+}
+
+// AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
+func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
+	if header == "" {
+		header = DefaultCharset
+	}
+
+	accepts, err := ParseAccept(header)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for _, accept := range accepts {
+		if enc := Charset(accept.Value); enc != nil {
+			return accept.Value, enc, nil
+		}
+	}
+
+	return "", nil, ErrUnsupportedCharset
 }

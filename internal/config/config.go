@@ -15,8 +15,6 @@ import (
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
 	yaml "gopkg.in/yaml.v2"
-
-	"github.com/issue9/web/encoding"
 )
 
 const localhostURL = "localhost"
@@ -40,13 +38,6 @@ type Config struct {
 	// 启用此配置，某些内容的验证会更加严格。
 	// 比如会检测客户端的 Accept 是否接受当前的 OutputMimeType 值等。
 	Strict bool `yaml:"strict,omitempty"`
-
-	// OutputCharset 向客户端输出的字符集名称。
-	//
-	// 该值最终会通过 encoding.Marshal() 进行查找。
-	//
-	// 如果为空，则会采用 encoding.DefaultCharset 作为默认值。
-	OutputCharset string `yaml:"outputCharset,omitempty"`
 
 	// Root 表示网站所在的根目录
 	//
@@ -135,10 +126,6 @@ func Load(path string) (*Config, error) {
 func (conf *Config) sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
-	}
-
-	if conf.OutputCharset == "" {
-		conf.OutputCharset = encoding.DefaultCharset
 	}
 
 	for url := range conf.Static {
