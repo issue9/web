@@ -155,6 +155,12 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
+	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"), app.config.OutputMimeType, app.outputMimeType)
+	if err != nil {
+		logs.Error(err)
+		context.Exit(http.StatusNotAcceptable)
+	}
+
 	if app.config.Strict {
 		accept := r.Header.Get("Accept")
 		if accept != "" && !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
@@ -170,8 +176,8 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 	return &context.Context{
 		Response:           w,
 		Request:            r,
-		OutputMimeType:     app.outputMimeType,
-		OutputMimeTypeName: app.config.OutputMimeType,
+		OutputMimeType:     marshal,
+		OutputMimeTypeName: outputMimeType,
 		InputMimeType:      unmarshal,
 		InputCharset:       inputCharset,
 		OutputCharset:      app.outputCharset,
