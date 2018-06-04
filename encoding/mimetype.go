@@ -49,7 +49,7 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 	}
 
 	for _, accept := range accepts {
-		if m := Marshal(accept.Value); m != nil {
+		if m, _ := MimeType(accept.Value); m != nil {
 			return accept.Value, m, nil
 		}
 	}
@@ -57,23 +57,11 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 	return "", nil, ErrUnsupportedMarshal
 }
 
-// Marshal 获取指定名称的编码函数
-func Marshal(name string) MarshalFunc {
-	m, _ := MimeType(name)
-	return m
-}
-
 // AddMarshal 添加编码函数
 //
 // Deprecated: 改用 AddMimeType 代替
 func AddMarshal(name string, m MarshalFunc) error {
 	return AddMimeType(name, m, nil)
-}
-
-// Unmarshal 获取指定名称的编码函数
-func Unmarshal(name string) UnmarshalFunc {
-	_, m := MimeType(name)
-	return m
 }
 
 // AddUnmarshal 添加编码函数

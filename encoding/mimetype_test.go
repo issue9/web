@@ -5,37 +5,10 @@
 package encoding
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/issue9/assert"
 )
-
-func testMarshal(t *testing.T) {
-	a := assert.New(t)
-
-	a.Nil(Marshal("not exists"))
-	a.NotNil(Marshal(DefaultMimeType))
-
-	// 添加已存在的
-	a.Equal(AddMarshal(DefaultMimeType, json.Marshal), ErrExists)
-
-	a.NotError(AddMarshal("json", json.Marshal))
-	a.NotNil(Marshal("json"))
-}
-
-func testUnmarshal(t *testing.T) {
-	a := assert.New(t)
-
-	a.Nil(Unmarshal("not exists"))
-	a.NotNil(Unmarshal(DefaultMimeType))
-
-	// 添加已存在的
-	a.Equal(AddUnmarshal(DefaultMimeType, json.Unmarshal), ErrExists)
-
-	a.NotError(AddUnmarshal("json", json.Unmarshal))
-	a.NotNil(Unmarshal("json"))
-}
 
 func TestAcceptMimeType(t *testing.T) {
 	a := assert.New(t)
