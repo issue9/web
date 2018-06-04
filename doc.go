@@ -17,7 +17,7 @@
 //
 // 字符集和媒体类型
 //
-// 默认情况下，框架只支持 utf-8 字符集和 text/plain 的媒体类型，
+// 默认情况下，框架只支持 utf-8 字符集和 application/octet-stream 的媒体类型，
 // 如果需要其它类型的支持，则需要通过 encoding 包进行手动管理，
 // encoding 包通过 AddCharset、AddMarshal 和 AddUnmarshal 给用户提供相关功能。
 //

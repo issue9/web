@@ -55,6 +55,9 @@ type Context struct {
 //
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
+//
+// 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
+// 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
 func New(w http.ResponseWriter, r *http.Request) *Context {
 	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
 	if err != nil {

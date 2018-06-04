@@ -5,8 +5,6 @@
 package encoding
 
 import (
-	"errors"
-
 	"github.com/issue9/web/internal/accept"
 	xencoding "golang.org/x/text/encoding"
 )
@@ -14,9 +12,6 @@ import (
 // DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 // 会采用此值和为其默认值。
 const DefaultCharset = "utf-8"
-
-// ErrUnsupportedCharset 该字符集不被支持
-var ErrUnsupportedCharset = errors.New("不支持的字符集")
 
 var charset = map[string]xencoding.Encoding{
 	DefaultCharset: xencoding.Nop,

@@ -18,9 +18,17 @@ var (
 	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
 	ErrExists = errors.New("该名称的项目已经存在")
 
-	// ErrUnsupportedMarshal MarshalFunc 和 UnmarshalFunc 的实现者中，
+	// ErrUnsupportedMarshal 不支持的转码
+	//
+	// MarshalFunc 和 UnmarshalFunc 的实现者中，
 	// 如果无法识别数据内容，则返回此错误信息。
+	// 或是在 Accept 和 Content-Type 报头的解析中用到。
 	ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
+
+	// ErrUnsupportedCharset 该字符集不被支持。
+	//
+	// 一般在 Accept-Charset 或是 Content-Type 等报头的分析中用到。
+	ErrUnsupportedCharset = errors.New("不支持的字符集")
 )
 
 // ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
