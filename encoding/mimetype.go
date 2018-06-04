@@ -11,7 +11,7 @@ import (
 
 // DefaultMimeType 默认的媒体类型，在不能正确获取输入和输出的媒体类型时，
 // 会采用此值作为其默认值。
-const DefaultMimeType = "text/plain"
+const DefaultMimeType = "application/octet-stream"
 
 // 保存所有添加的 mimetype 类型，根表示 */* 的内容
 var mimetypes = &mimetype{

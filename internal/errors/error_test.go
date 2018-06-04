@@ -40,12 +40,12 @@ func TestRender(t *testing.T) {
 
 	render(w, http.StatusOK)
 	a.Equal(w.Code, http.StatusOK).
-		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
+		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(errorMimeType, encoding.DefaultCharset))
 
 	w = httptest.NewRecorder()
 	render(w, http.StatusInternalServerError)
 	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(encoding.DefaultMimeType, encoding.DefaultCharset))
+		Equal(w.Header().Get("Content-Type"), encoding.BuildContentType(errorMimeType, encoding.DefaultCharset))
 }
 
 func TestError(t *testing.T) {
