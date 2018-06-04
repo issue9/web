@@ -33,12 +33,6 @@ type Config struct {
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
 	Debug bool `yaml:"debug,omitempty"`
 
-	// Strict 严格模式。
-	//
-	// 启用此配置，某些内容的验证会更加严格。
-	// 比如会检测客户端的 Accept 是否接受当前的 OutputMimeType 值等。
-	Strict bool `yaml:"strict,omitempty"`
-
 	// Root 表示网站所在的根目录
 	//
 	// 当网站不在根目录下时，需要指定 Root，比如将网站部署在：example.com/blog
