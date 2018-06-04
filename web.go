@@ -7,7 +7,10 @@ package web
 import (
 	"errors"
 	"net/http"
+	"os"
+	"os/signal"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
@@ -27,6 +30,27 @@ func Init(configDir string) (err error) {
 
 	defaultApp, err = app.New(configDir)
 	return
+}
+
+// Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
+//
+// 多次调用，则每次指定的信号都会起作用，如果由传递了相同的值，
+// 则有可能多次触发 Shutdown()。
+//
+// NOTE: 传递空值，与不调用，其结果是不同的。
+// 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
+func Grace(sig ...os.Signal) {
+	go func() {
+		signalChannel := make(chan os.Signal)
+		signal.Notify(signalChannel, sig...)
+
+		<-signalChannel
+		signal.Stop(signalChannel)
+
+		if err := Shutdown(); err != nil {
+			logs.Error(err)
+		}
+	}()
 }
 
 // SetMiddleware 设置一个全局的中间件，多次设置，只有最后一次会启作用。
