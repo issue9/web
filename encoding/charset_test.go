@@ -16,8 +16,7 @@ func TestCharset(t *testing.T) {
 	a := assert.New(t)
 
 	a.Equal(len(charset), 1) // 有一条默认的字符集信息
-	a.Nil(Charset("not exists"))
-	a.NotNil(Charset(DefaultCharset))
+	a.NotNil(charset[DefaultCharset])
 
 	// 添加已存在的
 	a.Equal(AddCharset(DefaultCharset, simplifiedchinese.GBK), ErrExists)
@@ -25,7 +24,7 @@ func TestCharset(t *testing.T) {
 
 	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
 	a.Equal(len(charset), 2) // 添加没成功
-	a.NotNil(Charset("GBK"))
+	a.NotNil(charset["GBK"])
 }
 
 func TestAcceptCharset(t *testing.T) {

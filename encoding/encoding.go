@@ -35,7 +35,7 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 		return nil, nil, ErrUnsupportedMarshal
 	}
 
-	c := Charset(charsetName)
+	c := charset[charsetName]
 	if c == nil {
 		return nil, nil, ErrUnsupportedCharset
 	}

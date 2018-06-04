@@ -21,12 +21,6 @@ var charset = map[string]xencoding.Encoding{
 	DefaultCharset: xencoding.Nop,
 }
 
-// Charset 获取指定名称的字符集
-// 若不存在，则返回 nil
-func Charset(name string) xencoding.Encoding {
-	return charset[name]
-}
-
 // AddCharset 添加字符集
 func AddCharset(name string, c xencoding.Encoding) error {
 	if _, found := charset[name]; found {
@@ -50,7 +44,7 @@ func AcceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 	}
 
 	for _, accept := range accepts {
-		if enc := Charset(accept.Value); enc != nil {
+		if enc := charset[accept.Value]; enc != nil {
 			return accept.Value, enc, nil
 		}
 	}
