@@ -41,13 +41,6 @@ type Config struct {
 	// 比如会检测客户端的 Accept 是否接受当前的 OutputMimeType 值等。
 	Strict bool `yaml:"strict,omitempty"`
 
-	// OutputMimeType 向客户输出时采用的媒体类型，值类型应该采用 mime-type 值。
-	//
-	// 该值最终会通过 encoding.Marshal() 进行查找。
-	//
-	// 如果为空，则会采用 encoding.DefaultMimeType 作为默认值。
-	OutputMimeType string `yaml:"outputMimeType,omitempty"`
-
 	// OutputCharset 向客户端输出的字符集名称。
 	//
 	// 该值最终会通过 encoding.Marshal() 进行查找。
@@ -146,10 +139,6 @@ func (conf *Config) sanitize() error {
 
 	if conf.OutputCharset == "" {
 		conf.OutputCharset = encoding.DefaultCharset
-	}
-
-	if conf.OutputMimeType == "" {
-		conf.OutputMimeType = encoding.DefaultMimeType
 	}
 
 	for url := range conf.Static {

@@ -62,6 +62,7 @@ func TestNewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.Header.Set("Accept", encoding.DefaultMimeType)
 	ctx := NewContext(w, r)
 	a.NotNil(ctx).
 		Equal(ctx.Response, w).
@@ -91,9 +92,13 @@ func TestHandler(t *testing.T) {
 	a.NotNil(srv)
 	defer srv.Close()
 
-	srv.NewRequest(http.MethodPost, "/post").Do().Status(http.StatusNotFound)
+	srv.NewRequest(http.MethodPost, "/post").
+		Header("Accept", encoding.DefaultMimeType).
+		Do().
+		Status(http.StatusNotFound)
 
 	srv.NewRequest(http.MethodPost, "/post/m2").
+		Header("Accept", encoding.DefaultMimeType).
 		Do().
 		Status(http.StatusCreated).
 		Body([]byte(testdata))

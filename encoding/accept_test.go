@@ -5,7 +5,6 @@
 package encoding
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -41,13 +40,15 @@ func TestAccept_parse(t *testing.T) {
 func TestAcceptMimeType(t *testing.T) {
 	a := assert.New(t)
 
-	name, marshal, err := AcceptMimeType(DefaultMimeType, "", nil)
-	a.NotError(err).NotNil(marshal).NotEmpty(name)
-
-	name, marshal, err = AcceptMimeType("font/wotff", "wtoff", json.Marshal)
+	name, marshal, err := AcceptMimeType(DefaultMimeType)
 	a.NotError(err).
-		Equal(name, "wtoff").
-		Equal(marshal, MarshalFunc(json.Marshal))
+		Equal(marshal, MarshalFunc(TextMarshal)).
+		Equal(name, DefaultMimeType)
+
+	name, marshal, err = AcceptMimeType("font/wotff")
+	a.Error(err).
+		Empty(name).
+		Nil(marshal)
 }
 
 func TestParseAccept(t *testing.T) {

@@ -40,8 +40,7 @@ type App struct {
 	modules []*module.Module
 
 	// 根据配置文件，获取相应的输出编码和字符集。
-	outputMimeType encoding.MarshalFunc
-	outputCharset  xencoding.Encoding
+	outputCharset xencoding.Encoding
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -91,11 +90,6 @@ func (app *App) loadConfig() error {
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 
-	app.outputMimeType = encoding.Marshal(conf.OutputMimeType)
-	if app.outputMimeType == nil {
-		return errors.New("未找到 outputMimeType")
-	}
-
 	app.outputCharset = encoding.Charset(conf.OutputCharset)
 	if app.outputCharset == nil {
 		return errors.New("未找到 outputCharset")
@@ -140,9 +134,14 @@ func (app *App) URL(path string) string {
 // NewContext 根据当前配置，生成 context.Context 对象
 func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 	encName, charsetName, err := encoding.ParseContentType(r.Header.Get("Content-Type"))
-
 	if err != nil {
 		context.Exit(http.StatusUnsupportedMediaType)
+	}
+
+	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"))
+	if err != nil {
+		logs.Error(err)
+		context.Exit(http.StatusNotAcceptable)
 	}
 
 	unmarshal := encoding.Unmarshal(encName)
@@ -155,19 +154,8 @@ func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Cont
 		context.Exit(http.StatusUnsupportedMediaType)
 	}
 
-	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"), app.config.OutputMimeType, app.outputMimeType)
-	if err != nil {
-		logs.Error(err)
-		context.Exit(http.StatusNotAcceptable)
-	}
-
 	if app.config.Strict {
-		accept := r.Header.Get("Accept")
-		if accept != "" && !strings.Contains(accept, app.config.OutputMimeType) && !strings.Contains(accept, "*/*") {
-			context.Exit(http.StatusNotAcceptable)
-		}
-
-		accept = r.Header.Get("Accept-Charset")
+		accept := r.Header.Get("Accept-Charset")
 		if accept != "" && !strings.Contains(accept, app.config.OutputCharset) && !strings.Contains(accept, "*") {
 			context.Exit(http.StatusNotAcceptable)
 		}

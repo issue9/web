@@ -49,7 +49,7 @@ func (a *Accept) parse() error {
 // AcceptMimeType 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
 //
 // 不存在时，返回默认值，出错时，返回错误。
-func AcceptMimeType(header string, defMimetype string, defMarshal MarshalFunc) (string, MarshalFunc, error) {
+func AcceptMimeType(header string) (string, MarshalFunc, error) {
 	accepts, err := ParseAccept(header)
 	if err != nil {
 		return "", nil, err
@@ -61,7 +61,7 @@ func AcceptMimeType(header string, defMimetype string, defMarshal MarshalFunc) (
 		}
 	}
 
-	return defMimetype, defMarshal, nil
+	return "", nil, ErrUnsupportedMarshal
 }
 
 // ParseAccept 将报头内容解析为 []*Accept
