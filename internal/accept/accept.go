@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package encoding
+package accept
 
 import (
 	"sort"
@@ -46,8 +46,8 @@ func (a *Accept) parse() error {
 	return nil
 }
 
-// ParseAccept 将报头内容解析为 []*Accept
-func ParseAccept(header string) ([]*Accept, error) {
+// Parse 将报头内容解析为 []*Accept
+func Parse(header string) ([]*Accept, error) {
 	accepts := make([]*Accept, 0, strings.Count(header, ",")+1)
 
 	for {

@@ -7,6 +7,7 @@ package encoding
 import (
 	"errors"
 
+	"github.com/issue9/web/internal/accept"
 	xencoding "golang.org/x/text/encoding"
 )
 
@@ -38,7 +39,7 @@ func AcceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 		header = DefaultCharset
 	}
 
-	accepts, err := ParseAccept(header)
+	accepts, err := accept.Parse(header)
 	if err != nil {
 		return "", nil, err
 	}

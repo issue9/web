@@ -7,6 +7,8 @@ package encoding
 import (
 	"errors"
 	"strings"
+
+	"github.com/issue9/web/internal/accept"
 )
 
 // DefaultMimeType 默认的媒体类型，在不能正确获取输入和输出的媒体类型时，
@@ -43,7 +45,7 @@ func init() {
 //
 // 不存在时，返回默认值，出错时，返回错误。
 func AcceptMimeType(header string) (string, MarshalFunc, error) {
-	accepts, err := ParseAccept(header)
+	accepts, err := accept.Parse(header)
 	if err != nil {
 		return "", nil, err
 	}
