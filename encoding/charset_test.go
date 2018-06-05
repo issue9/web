@@ -44,6 +44,10 @@ func TestAcceptCharset(t *testing.T) {
 	name, enc, err = AcceptCharset("*")
 	a.Error(err)
 
+	name, enc, err = AcceptCharset("utf-8;q=x.9,gbk;q=0.8")
+	a.Error(err)
+	a.Equal(name, "")
+
 	name, enc, err = AcceptCharset("not-supported")
 	a.Error(err).
 		Empty(name).

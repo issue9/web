@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package accept 用于处理 accpet 系列的报头。
 package accept
 
 import (
@@ -33,8 +34,8 @@ func (a *Accept) parse() error {
 	}
 
 	index = strings.LastIndex(a.Content, ";q=")
-	if index > 0 {
-		q, err := strconv.ParseFloat(a.Content[index+4:], 32)
+	if index >= 0 {
+		q, err := strconv.ParseFloat(a.Content[index+3:], 32)
 		if err != nil {
 			return err
 		}

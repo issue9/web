@@ -33,6 +33,9 @@ func TestAccept_parse(t *testing.T) {
 	a.Equal(accept.Value, "text/html").
 		Equal(accept.Q, float32(0.9))
 
+	accept = &Accept{Content: "text/html;format=xx;q=x.9"}
+	a.Error(accept.parse())
+
 	accept = &Accept{Content: "text/html;format=xx;q=0.9x"}
 	a.Error(accept.parse())
 }
@@ -49,4 +52,8 @@ func TestParse(t *testing.T) {
 
 	as, err = Parse(",a1,a2,a3;q=5,a4,a5;q=0.x9,a6;a61;q=0.8")
 	a.Error(err).Empty(as)
+
+	as, err = Parse("utf-8;q=x.9,gbk;q=0.8")
+	a.Error(err).
+		Empty(as)
 }

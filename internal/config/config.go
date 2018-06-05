@@ -25,7 +25,7 @@ type Config struct {
 	//
 	// 必须为一个合法的域名、IP 或是 localhost 字符串。
 	//
-	// 当 AllowedDomain 值不会空时，此值会自动合并到 AllowedDomains 中。
+	// 当 AllowedDomain 值不为空时，此值会自动合并到 AllowedDomains 中。
 	Domain string `yaml:"domain,omitempty"`
 
 	// Debug 是否启用调试模式
