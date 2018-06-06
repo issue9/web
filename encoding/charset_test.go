@@ -12,19 +12,24 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
-func TestCharset(t *testing.T) {
+func TestFindCharset(t *testing.T) {
 	a := assert.New(t)
 
 	a.Equal(len(charset), 1) // 有一条默认的字符集信息
-	a.NotNil(charset[DefaultCharset])
+	name, intf := findCharset(DefaultCharset)
+	a.Equal(name, DefaultCharset).NotNil(intf)
 
 	// 添加已存在的
 	a.Equal(AddCharset(DefaultCharset, simplifiedchinese.GBK), ErrExists)
 	a.Equal(len(charset), 1) // 添加没成功
 
 	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
-	a.Equal(len(charset), 2) // 添加没成功
-	a.NotNil(charset["GBK"])
+	a.Equal(len(charset), 2) // 添加成功
+	name, intf = findCharset("gbk")
+	a.Equal(name, "GBK").NotNil(intf)
+
+	name, intf = findCharset("*")
+	a.Equal(name, DefaultCharset).Equal(intf, xencoding.Nop)
 }
 
 func TestAcceptCharset(t *testing.T) {
@@ -42,7 +47,7 @@ func TestAcceptCharset(t *testing.T) {
 
 	// * 不指定，需要用户自行决定其表示方式
 	name, enc, err = AcceptCharset("*")
-	a.Error(err)
+	a.NotError(err).Equal(name, DefaultCharset)
 
 	name, enc, err = AcceptCharset("utf-8;q=x.9,gbk;q=0.8")
 	a.Error(err)

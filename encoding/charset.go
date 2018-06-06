@@ -5,20 +5,32 @@
 package encoding
 
 import (
+	"strings"
+
 	"github.com/issue9/web/internal/accept"
 	xencoding "golang.org/x/text/encoding"
 )
 
 // DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 // 会采用此值和为其默认值。
-const DefaultCharset = "utf-8"
+const DefaultCharset = "UTF-8"
 
 var charset = map[string]xencoding.Encoding{
 	DefaultCharset: xencoding.Nop,
 }
 
+func findCharset(name string) (string, xencoding.Encoding) {
+	if name == "*" {
+		return DefaultCharset, charset[DefaultCharset]
+	}
+
+	name = strings.ToUpper(name)
+	return name, charset[name]
+}
+
 // AddCharset 添加字符集
 func AddCharset(name string, c xencoding.Encoding) error {
+	name = strings.ToUpper(name)
 	if _, found := charset[name]; found {
 		return ErrExists
 	}
@@ -30,8 +42,9 @@ func AddCharset(name string, c xencoding.Encoding) error {
 
 // AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
 func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
-	if header == "" {
-		header = DefaultCharset
+	if header == "" || header == "*" {
+		name, enc := findCharset("*")
+		return name, enc, nil
 	}
 
 	accepts, err := accept.Parse(header)
@@ -40,8 +53,9 @@ func AcceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 	}
 
 	for _, accept := range accepts {
-		if enc := charset[accept.Value]; enc != nil {
-			return accept.Value, enc, nil
+		name, enc := findCharset(accept.Value)
+		if enc != nil {
+			return name, enc, nil
 		}
 	}
 

@@ -42,7 +42,7 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 		return nil, nil, ErrInvalidMimeType
 	}
 
-	c := charset[charsetName]
+	_, c := findCharset(charsetName)
 	if c == nil {
 		return nil, nil, ErrInvalidCharset
 	}
