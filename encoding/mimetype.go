@@ -5,7 +5,7 @@
 package encoding
 
 import (
-	"errors"
+	"sort"
 	"strings"
 
 	"github.com/issue9/web/internal/accept"
@@ -16,9 +16,7 @@ import (
 const DefaultMimeType = "application/octet-stream"
 
 // 保存所有添加的 mimetype 类型，根表示 */* 的内容
-var mimetypes = &mimetype{
-	subtypes: make(map[string]*mimetype, 7),
-}
+var mimetypes = make([]*mimetype, 0, 10)
 
 type (
 	// MarshalFunc 将一个对象转换成 []byte 内容时，所采用的接口。
@@ -30,7 +28,7 @@ type (
 	mimetype struct {
 		marshal   MarshalFunc
 		unmarshal UnmarshalFunc
-		subtypes  map[string]*mimetype
+		name      string
 	}
 )
 
@@ -51,7 +49,7 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 	}
 
 	for _, accept := range accepts {
-		if m, _ := MimeType(accept.Value); m != nil {
+		if m := findMarshal(accept.Value); m != nil {
 			return accept.Value, m, nil
 		}
 	}
@@ -87,66 +85,70 @@ func (mt *mimetype) set(marshal MarshalFunc, unmarshal UnmarshalFunc) error {
 	return nil
 }
 
-// MimeType 获取指定名称的编解码函数
-func MimeType(name string) (MarshalFunc, UnmarshalFunc) {
-	name, subname := parseMimeType(name)
-
-	if name == "*" {
-		return mimetypes.marshal, mimetypes.unmarshal
+func findMarshal(name string) MarshalFunc {
+	if name == "*/*" {
+		return mimetypes[0].marshal
 	}
 
-	item, found := mimetypes.subtypes[name]
-	if !found {
-		return nil, nil
+	if strings.HasSuffix(name, "/*") {
+		prefix := name[:len(name)-3]
+		for _, mt := range mimetypes {
+			if strings.HasPrefix(mt.name, prefix) && mt.marshal != nil {
+				return mt.marshal
+			}
+		}
 	}
 
-	if subname == "" || subname == "*" {
-		return item.marshal, item.unmarshal
+	for _, mt := range mimetypes {
+		if mt.name == name && mt.marshal != nil {
+			return mt.marshal
+		}
 	}
 
-	sub, found := item.subtypes[subname]
-	if !found {
-		return nil, nil
+	return nil
+}
+
+func findUnmarshal(name string) UnmarshalFunc {
+	if name == "*/*" {
+		return mimetypes[0].unmarshal
 	}
-	return sub.marshal, sub.unmarshal
+
+	if strings.HasSuffix(name, "/*") {
+		prefix := name[:len(name)-3]
+		for _, mt := range mimetypes {
+			if strings.HasPrefix(mt.name, prefix) && mt.unmarshal != nil {
+				return mt.unmarshal
+			}
+		}
+	}
+
+	for _, mt := range mimetypes {
+		if mt.name == name && mt.unmarshal != nil {
+			return mt.unmarshal
+		}
+	}
+
+	return nil
 }
 
 // AddMimeType 添加编码和解码方式
 func AddMimeType(name string, marshal MarshalFunc, unmarshal UnmarshalFunc) error {
-	if name == "" {
-		return errors.New("参数 name 不能为空")
-	}
-	name, subname := parseMimeType(name)
-
-	if name[0] == '*' {
-		return mimetypes.set(marshal, unmarshal)
-	}
-
-	item, found := mimetypes.subtypes[name]
-	if !found {
-		item = &mimetype{
-			subtypes: make(map[string]*mimetype, 10),
+	for _, mt := range mimetypes {
+		if mt.name == name &&
+			((mt.marshal != nil && marshal != nil) || mt.unmarshal != nil && unmarshal != nil) {
+			return ErrExists
 		}
-		mimetypes.subtypes[name] = item
 	}
 
-	// 没有子名称
-	if subname == "" || subname == "*" {
-		return item.set(marshal, unmarshal)
-	}
+	mimetypes = append(mimetypes, &mimetype{
+		marshal:   marshal,
+		unmarshal: unmarshal,
+		name:      name,
+	})
 
-	sub, found := item.subtypes[subname]
-	if !found {
-		sub = &mimetype{} // 只有二级，所以子项不用再申请 subytpes 空间
-		item.subtypes[subname] = sub
-	}
-	return sub.set(marshal, unmarshal)
-}
+	sort.SliceStable(mimetypes, func(i, j int) bool {
+		return mimetypes[i].name > mimetypes[j].name
+	})
 
-func parseMimeType(mimename string) (name, subname string) {
-	index := strings.IndexByte(mimename, '/')
-	if index > 0 {
-		return mimename[:index], mimename[index+1:]
-	}
-	return mimename, ""
+	return nil
 }

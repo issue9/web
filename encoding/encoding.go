@@ -38,7 +38,7 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 		return nil, nil, err
 	}
 
-	_, unmarshal := MimeType(encName)
+	unmarshal := findUnmarshal(encName)
 	if unmarshal == nil {
 		return nil, nil, ErrUnsupportedMarshal
 	}
