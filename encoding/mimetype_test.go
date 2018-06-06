@@ -10,6 +10,18 @@ import (
 	"github.com/issue9/assert"
 )
 
+func resetMarshals() {
+	marshals = []*marshaler{
+		&marshaler{name: DefaultMimeType, f: TextMarshal},
+	}
+}
+
+func resetUnmarshals() {
+	unmarshals = []*unmarshaler{
+		&unmarshaler{name: DefaultMimeType, f: TextUnmarshal},
+	}
+}
+
 func TestAcceptMimeType(t *testing.T) {
 	a := assert.New(t)
 
@@ -18,8 +30,13 @@ func TestAcceptMimeType(t *testing.T) {
 		Equal(marshal, MarshalFunc(TextMarshal)).
 		Equal(name, DefaultMimeType)
 
-	// * 不指定，需要用户自行决定其表示方式
+	// 匹配任意内容，一般选取第一个
 	name, marshal, err = AcceptMimeType("*/*")
+	a.NotError(err).
+		Equal(marshal, MarshalFunc(TextMarshal)).
+		Equal(name, DefaultMimeType)
+
+	name, marshal, err = AcceptMimeType("font/wotff;q=x.9")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
@@ -30,72 +47,80 @@ func TestAcceptMimeType(t *testing.T) {
 		Nil(marshal)
 }
 
-func TestMimeType(t *testing.T) {
+func TestAddMarshal(t *testing.T) {
 	a := assert.New(t)
 
-	m, um := MimeType(DefaultMimeType)
-	a.NotNil(m).NotNil(um)
+	a.ErrorType(AddMarshal(DefaultMimeType, nil), ErrExists)
 
-	// 并未指定 text/*
-	m, um = MimeType("text")
-	a.Nil(m).Nil(um)
+	// 不能添加以 /* 结属的名称
+	a.ErrorType(AddMarshal("application/*", nil), ErrExists)
+	a.ErrorType(AddMarshal("/*", nil), ErrExists)
 
-	// 未指定 font
-	m, um = MimeType("font")
-	a.Nil(m).Nil(um)
-
-	a.NotError(AddMimeType("text/*", TextMarshal, TextUnmarshal))
-	m, um = MimeType("text")
-	a.NotNil(m).NotNil(um)
-	m, um = MimeType("text/html") // 不存在
-	a.Nil(m).Nil(um)
-
-	a.NotError(AddMimeType("text/html", TextMarshal, TextUnmarshal))
-	m, um = MimeType("text/html")
-	a.NotNil(m).NotNil(um)
-
-	// 根元素未安装
-	m, um = MimeType("*/*")
-	a.Nil(m).Nil(um)
-
-	a.NotError(AddMimeType("*/*", TextMarshal, TextUnmarshal))
-	m, um = MimeType("*")
-	a.NotNil(m).NotNil(um)
-
-	a.Error(AddMimeType("", TextMarshal, TextUnmarshal))
+	// 排序是否正常
+	a.NotError(AddMarshal("application/json", nil))
+	a.Equal(marshals[1].name, DefaultMimeType)
 }
 
-func TestMimetype_set(t *testing.T) {
+func TestAddUnmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	mt := &mimetype{}
-	a.NotError(mt.set(TextMarshal, TextUnmarshal))
+	a.ErrorType(AddUnmarshal(DefaultMimeType, nil), ErrExists)
 
-	a.ErrorType(mt.set(TextMarshal, nil), ErrExists)
-	a.ErrorType(mt.set(nil, TextUnmarshal), ErrExists)
+	// 不能添加以 /* 结属的名称
+	a.ErrorType(AddUnmarshal("application/*", nil), ErrExists)
+	a.ErrorType(AddUnmarshal("/*", nil), ErrExists)
+
+	// 排序是否正常
+	a.NotError(AddUnmarshal("application/json", nil))
+	a.Equal(unmarshals[1].name, DefaultMimeType)
 }
 
-func TestParseMimeType(t *testing.T) {
+func TestFindMarshal(t *testing.T) {
 	a := assert.New(t)
+	resetMarshals()
 
-	name, subname := parseMimeType("*/*")
-	a.Equal(name, "*").Equal(subname, "*")
+	a.NotError(AddMarshal("text", nil))
+	a.NotError(AddMarshal("text/plain", nil))
+	a.NotError(AddMarshal("text/text", nil))
+	a.NotError(AddMarshal("application/json", nil))
 
-	name, subname = parseMimeType("*/")
-	a.Equal(name, "*").Equal(subname, "")
+	m := findMarshal("text")
+	a.Equal(m.name, "text")
 
-	name, subname = parseMimeType("*/text")
-	a.Equal(name, "*").Equal(subname, "text")
+	m = findMarshal("text/*")
+	a.Equal(m.name, "text")
 
-	name, subname = parseMimeType("text/*")
-	a.Equal(name, "text").Equal(subname, "*")
+	m = findMarshal("application/*")
+	a.Equal(m.name, "application/json")
 
-	name, subname = parseMimeType("text/")
-	a.Equal(name, "text").Equal(subname, "")
+	m = findMarshal("*/*")
+	a.Equal(m.name, "application/json")
 
-	name, subname = parseMimeType("/")
-	a.Equal(name, "/").Equal(subname, "")
+	// 不存在
+	a.Nil(findMarshal("xx/*"))
+}
 
-	name, subname = parseMimeType("/*")
-	a.Equal(name, "/*").Equal(subname, "")
+func TestFindUnmarshal(t *testing.T) {
+	a := assert.New(t)
+	resetUnmarshals()
+
+	a.NotError(AddUnmarshal("text", nil))
+	a.NotError(AddUnmarshal("text/plain", nil))
+	a.NotError(AddUnmarshal("text/text", nil))
+	a.NotError(AddUnmarshal("application/json", nil))
+
+	m := findUnmarshal("text")
+	a.Equal(m.name, "text")
+
+	m = findUnmarshal("text/*")
+	a.Equal(m.name, "text")
+
+	m = findUnmarshal("application/*")
+	a.Equal(m.name, "application/json")
+
+	m = findUnmarshal("*/*")
+	a.Equal(m.name, "application/json")
+
+	// 不存在
+	a.Nil(findUnmarshal("xx/*"))
 }

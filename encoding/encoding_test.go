@@ -18,6 +18,18 @@ func TestContentType(t *testing.T) {
 	a.NotError(err).
 		Equal(um, UnmarshalFunc(um)).
 		Equal(c, xencoding.Nop)
+
+	// 未指定 memetype
+	um, c, err = ContentType(";" + DefaultCharset)
+	a.Error(err)
+
+	// mimetype 无法找到
+	um, c, err = ContentType(BuildContentType("not-exists", DefaultCharset))
+	a.Error(err)
+
+	// charset 无法找到
+	um, c, err = ContentType(BuildContentType(DefaultMimeType, "not-exists"))
+	a.Error(err)
 }
 
 func TestBuildContentType(t *testing.T) {

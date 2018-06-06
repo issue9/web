@@ -48,7 +48,7 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 		return nil, nil, ErrUnsupportedCharset
 	}
 
-	return unmarshal, c, nil
+	return unmarshal.f, c, nil
 }
 
 // BuildContentType 生成一个 content-type
