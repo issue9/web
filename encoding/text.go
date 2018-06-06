@@ -4,7 +4,16 @@
 
 package encoding
 
-import "encoding"
+import (
+	"encoding"
+	"errors"
+)
+
+// ErrUnsupportedMarshal 不支持的转码
+//
+// MarshalFunc 和 UnmarshalFunc 的实现者中，
+// 如果无法识别数据内容，则返回此错误信息。
+var ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 
 // TextMarshal 针对文本内容的 MarshalFunc 实现
 func TextMarshal(v interface{}) ([]byte, error) {

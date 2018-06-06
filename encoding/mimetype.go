@@ -76,7 +76,7 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 		}
 	}
 
-	return "", nil, ErrUnsupportedMarshal
+	return "", nil, ErrInvalidMimeType
 }
 
 // AddMarshal 添加编码函数

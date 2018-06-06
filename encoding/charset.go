@@ -45,5 +45,5 @@ func AcceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 		}
 	}
 
-	return "", nil, ErrUnsupportedCharset
+	return "", nil, ErrInvalidCharset
 }

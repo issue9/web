@@ -14,21 +14,20 @@ import (
 )
 
 var (
-	// ErrExists 表示指定名称的项目已经存在
+	// ErrExists 表示指定名称的项目已经存在。
+	//
 	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
 	ErrExists = errors.New("该名称的项目已经存在")
 
-	// ErrUnsupportedMarshal 不支持的转码
+	// ErrInvalidCharset 无效的字符集。
 	//
-	// MarshalFunc 和 UnmarshalFunc 的实现者中，
-	// 如果无法识别数据内容，则返回此错误信息。
-	// 或是在 Accept 和 Content-Type 报头的解析中用到。
-	ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
+	// 一般在 Accept-Charset 或是 Content-Type
+	// 等报头中指定的字符集无效或是不被支持。
+	ErrInvalidCharset = errors.New("无效的字符集")
 
-	// ErrUnsupportedCharset 该字符集不被支持。
-	//
-	// 一般在 Accept-Charset 或是 Content-Type 等报头的分析中用到。
-	ErrUnsupportedCharset = errors.New("不支持的字符集")
+	// ErrInvalidMimeType 无效的 mimetype 值，一般为 content-type 或
+	// Accept 等报头指定的 mimetype 值无效。
+	ErrInvalidMimeType = errors.New("mimetype 无效")
 )
 
 // ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
@@ -40,12 +39,12 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 
 	unmarshal := findUnmarshal(encName)
 	if unmarshal == nil {
-		return nil, nil, ErrUnsupportedMarshal
+		return nil, nil, ErrInvalidMimeType
 	}
 
 	c := charset[charsetName]
 	if c == nil {
-		return nil, nil, ErrUnsupportedCharset
+		return nil, nil, ErrInvalidCharset
 	}
 
 	return unmarshal.f, c, nil
@@ -84,7 +83,7 @@ func ParseContentType(v string) (mimetype, charset string, err error) {
 	case index < 0: // 只有编码
 		return strings.ToLower(v), DefaultCharset, nil
 	case index == 0: // mimetype 不可省略
-		return "", "", errors.New("缺少 mimetype")
+		return "", "", ErrInvalidMimeType
 	}
 
 	mimetype = strings.ToLower(v[:index])
