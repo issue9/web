@@ -5,7 +5,6 @@
 package encoding
 
 import (
-	"errors"
 	"sort"
 	"strings"
 
@@ -82,7 +81,7 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 // AddMarshal 添加编码函数
 func AddMarshal(name string, m MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") {
-		return errors.New("无效的参数 name")
+		return ErrInvalidMimeType
 	}
 
 	for _, mt := range marshals {
@@ -106,7 +105,7 @@ func AddMarshal(name string, m MarshalFunc) error {
 // AddUnmarshal 添加编码函数
 func AddUnmarshal(name string, m UnmarshalFunc) error {
 	if strings.HasSuffix(name, "/*") {
-		return errors.New("无效的参数 name")
+		return ErrInvalidMimeType
 	}
 
 	for _, mt := range unmarshals {
