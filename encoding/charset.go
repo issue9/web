@@ -30,6 +30,10 @@ func findCharset(name string) (string, xencoding.Encoding) {
 
 // AddCharset 添加字符集
 func AddCharset(name string, c xencoding.Encoding) error {
+	if name == "*" {
+		return ErrInvalidCharset
+	}
+
 	name = strings.ToUpper(name)
 	if _, found := charset[name]; found {
 		return ErrExists

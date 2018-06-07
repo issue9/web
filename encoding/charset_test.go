@@ -12,8 +12,10 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
-func TestFindCharset(t *testing.T) {
+func TestCharset(t *testing.T) {
 	a := assert.New(t)
+
+	a.ErrorType(AddCharset("*", nil), ErrInvalidCharset)
 
 	a.Equal(len(charset), 1) // 有一条默认的字符集信息
 	name, intf := findCharset(DefaultCharset)
