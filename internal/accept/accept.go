@@ -21,30 +21,28 @@ type Accept struct {
 }
 
 // 将 Content 的内容解析到 Value 和 Q 中
-func (a *Accept) parse() error {
-	index := strings.IndexByte(a.Content, ';')
+func parseAccept(v string) (val string, q float32, err error) {
+	index := strings.IndexByte(v, ';')
 	if index < 0 {
-		a.Value = a.Content
-		a.Q = 1.0
-		return nil
+		return v, 1.0, nil
 	}
 
 	if index >= 0 {
-		a.Value = a.Content[:index]
+		val = v[:index]
 	}
 
-	index = strings.LastIndex(a.Content, ";q=")
+	index = strings.LastIndex(v, ";q=")
 	if index >= 0 {
-		q, err := strconv.ParseFloat(a.Content[index+3:], 32)
+		qq, err := strconv.ParseFloat(v[index+3:], 32)
 		if err != nil {
-			return err
+			return "", 0, err
 		}
-		a.Q = float32(q)
+		q = float32(qq)
 	} else {
-		a.Q = 1.0
+		q = 1.0
 	}
 
-	return nil
+	return val, q, nil
 }
 
 // Parse 将报头内容解析为 []*Accept
@@ -55,7 +53,13 @@ func Parse(header string) ([]*Accept, error) {
 		index := strings.IndexByte(header, ',')
 		if index == -1 {
 			if header != "" {
-				accepts = append(accepts, &Accept{Content: header})
+				val, q, err := parseAccept(header)
+				if err != nil {
+					return nil, err
+				}
+				if q > 0.0 {
+					accepts = append(accepts, &Accept{Content: header, Value: val, Q: q})
+				}
 			}
 			break
 		}
@@ -65,18 +69,19 @@ func Parse(header string) ([]*Accept, error) {
 			continue
 		}
 
-		val := header[:index]
-		if val != "" {
-			accepts = append(accepts, &Accept{Content: header[:index]})
+		v := header[:index]
+		if v != "" {
+			val, q, err := parseAccept(v)
+			if err != nil {
+				return nil, err
+			}
+
+			if q > 0.0 {
+				accepts = append(accepts, &Accept{Content: v, Value: val, Q: q})
+			}
 		}
 
 		header = header[index+1:]
-	}
-
-	for _, accept := range accepts {
-		if err := accept.parse(); err != nil {
-			return nil, err
-		}
 	}
 
 	sort.SliceStable(accepts, func(i, j int) bool {
