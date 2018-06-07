@@ -57,6 +57,11 @@ func TestParseAccept(t *testing.T) {
 		Equal(v, "application/xml").
 		Equal(q, float32(0.9))
 
+	v, q, err = parseAccept(";application/xml;q=0.9")
+	a.NotError(err).
+		Equal(v, "").
+		Equal(q, float32(0.9))
+
 	v, q, err = parseAccept("text/html;format=xx;q=0.9")
 	a.NotError(err).
 		Equal(v, "text/html").

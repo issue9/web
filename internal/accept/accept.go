@@ -22,24 +22,20 @@ type Accept struct {
 
 // 将 Content 的内容解析到 Value 和 Q 中
 func parseAccept(v string) (val string, q float32, err error) {
+	q = 1.0 // 设置为默认值
+
 	index := strings.IndexByte(v, ';')
-	if index < 0 {
-		return v, 1.0, nil
+	if index < 0 { // 没有 q 的内容
+		return v, q, nil
 	}
 
-	if index >= 0 {
-		val = v[:index]
-	}
-
-	index = strings.LastIndex(v, ";q=")
-	if index >= 0 {
+	val = v[:index]
+	if index = strings.LastIndex(v, ";q="); index >= 0 {
 		qq, err := strconv.ParseFloat(v[index+3:], 32)
 		if err != nil {
 			return "", 0, err
 		}
 		q = float32(qq)
-	} else {
-		q = 1.0
 	}
 
 	return val, q, nil
