@@ -46,6 +46,10 @@ func parseAccept(v string) (val string, q float32, err error) {
 }
 
 // Parse 将报头内容解析为 []*Accept
+//
+// q 值为 0 的数据将被过滤，比如：
+//  application/json,application/xml;q=0.1,text/html;q=0
+// 其中的 text/html 不会被返回
 func Parse(header string) ([]*Accept, error) {
 	accepts := make([]*Accept, 0, strings.Count(header, ",")+1)
 
