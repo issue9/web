@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
@@ -40,7 +39,7 @@ func (app *App) initServer() error {
 	for url, dir := range app.config.Static {
 		pattern := path.Join(app.config.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
-		app.router.Get(pattern, http.StripPrefix(url, compress.New(fs, logs.ERROR())))
+		app.router.Get(pattern, http.StripPrefix(url, fs))
 	}
 
 	if err := app.modulesInit(); err != nil {
