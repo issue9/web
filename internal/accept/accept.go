@@ -20,6 +20,10 @@ type Accept struct {
 	Q     float32
 }
 
+func (accept *Accept) hasWildcard() bool {
+	return strings.HasSuffix(accept.Value, "/*")
+}
+
 // 将 Content 的内容解析到 Value 和 Q 中
 func parseAccept(v string) (val string, q float32, err error) {
 	q = 1.0 // 设置为默认值
@@ -44,8 +48,8 @@ func parseAccept(v string) (val string, q float32, err error) {
 // Parse 将报头内容解析为 []*Accept
 //
 // q 值为 0 的数据将被过滤，比如：
-//  application/json,application/xml;q=0.1,text/html;q=0
-// 其中的 text/html 不会被返回
+//  application/*;q=0.1,application/xml;q=0.1,text/html;q=0
+// 其中的 text/html 不会被返回，application/xml 的优先级会高于 applicatioon/*
 func Parse(header string) ([]*Accept, error) {
 	accepts := make([]*Accept, 0, strings.Count(header, ",")+1)
 
@@ -83,7 +87,17 @@ func Parse(header string) ([]*Accept, error) {
 	}
 
 	sort.SliceStable(accepts, func(i, j int) bool {
-		return accepts[i].Q > accepts[j].Q
+		ii := accepts[i]
+		jj := accepts[j]
+
+		if ii.Q == jj.Q {
+			if ii.hasWildcard() {
+				return !jj.hasWildcard()
+			}
+			return true
+		}
+
+		return ii.Q > jj.Q
 	})
 
 	return accepts, nil
