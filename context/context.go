@@ -120,20 +120,21 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 	return ctx.InputMimeType(body, v)
 }
 
+var contentTypeKey = http.CanonicalHeaderKey("Content-type")
+
 // Marshal 将 v 解码并发送给客户端。
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（json 中会输出 null），可以使用 Nil 变量代替。
 //
-// NOTE: 若在 headers 中包含了 Content-Type，则会覆盖原来的 Content-Type 报头，
-// 但是不会改变其输出时的实际编码方式。
+// NOTE: 如果需要指定一个特定的 Content-Type，可以在 headers 中指定，
+// 否则使用当前的编码名称。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	key := http.CanonicalHeaderKey("Content-type")
 	found := false
 	for k, v := range headers {
 		// strings.ToLower 的性能未必有 http.CanonicalHeaderKey 好，
 		// 所以直接使用了 http.CanonicalHeaderKey 作转换。
-		if http.CanonicalHeaderKey(k) == key {
+		if http.CanonicalHeaderKey(k) == contentTypeKey {
 			found = true
 		}
 		ctx.Response.Header().Set(k, v)
