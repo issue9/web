@@ -55,22 +55,22 @@ func Parse(header string) ([]*Accept, error) {
 
 	for {
 		index := strings.IndexByte(header, ',')
+		if index == 0 { // 过滤掉空值
+			header = header[1:]
+			continue
+		}
+
 		if index == -1 { // 最后一条数据
 			if header != "" {
 				val, q, err := parseAccept(header)
 				if err != nil {
 					return nil, err
 				}
-				if q > 0.0 {
+				if q > 0 {
 					accepts = append(accepts, &Accept{Content: header, Value: val, Q: q})
 				}
 			}
 			break
-		}
-
-		if index == 0 { // 过滤掉空值
-			header = header[1:]
-			continue
 		}
 
 		// 由上面的两个 if 保证，此处 v 肯定不为空
@@ -79,7 +79,7 @@ func Parse(header string) ([]*Accept, error) {
 		if err != nil {
 			return nil, err
 		}
-		if q > 0.0 {
+		if q > 0 {
 			accepts = append(accepts, &Accept{Content: v, Value: val, Q: q})
 		}
 
