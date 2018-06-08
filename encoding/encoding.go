@@ -74,7 +74,7 @@ func BuildContentType(mimetype, charset string) string {
 func ParseContentType(v string) (mimetype, charset string, err error) {
 	v = strings.TrimSpace(v)
 
-	if len(v) == 0 {
+	if v == "" {
 		return DefaultMimeType, DefaultCharset, nil
 	}
 
