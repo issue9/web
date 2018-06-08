@@ -6,7 +6,7 @@
 package test
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -29,7 +29,7 @@ func (o *TextObject) MarshalText() ([]byte, error) {
 func (o *TextObject) UnmarshalText(data []byte) error {
 	text := strings.Split(string(data), ",")
 	if len(text) != 2 {
-		return errors.New("无法转换")
+		return fmt.Errorf("无法转换:%s", string(data))
 	}
 
 	age, err := strconv.Atoi(text[1])
