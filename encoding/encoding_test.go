@@ -64,4 +64,7 @@ func TestParseContentType(t *testing.T) {
 
 	e, c, err = ParseContentType(`Text/HTML;Charset="utf-8"`)
 	a.NotError(err).Equal(e, "text/html").Equal(c, "UTF-8")
+
+	e, c, err = ParseContentType(`Text/HTML; charset="gbk"`)
+	a.NotError(err).Equal(e, "text/html").Equal(c, "gbk")
 }

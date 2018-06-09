@@ -123,7 +123,8 @@ func BenchmarkPost(b *testing.B) {
 		ctx := New(w, r)
 
 		obj := &test.TextObject{}
-		a.True(ctx.Read(obj))
+		a.NotError(ctx.Unmarshal(obj))
+		a.Equal(obj.Age, 15).Equal(obj.Name, "request")
 
 		obj.Age++
 		obj.Name = "response"

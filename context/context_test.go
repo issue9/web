@@ -7,11 +7,8 @@ package context
 import (
 	"bytes"
 	"encoding/json"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -21,14 +18,6 @@ import (
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/test"
 )
-
-func getEncodingContent(a *assert.Assertion, file string) io.Reader {
-	file = "./testdata/" + file
-	r, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
-	a.NotError(err).NotNil(r)
-
-	return r
-}
 
 func newContext(w http.ResponseWriter,
 	r *http.Request,
@@ -109,11 +98,11 @@ func TestContext_Body(t *testing.T) {
 
 	// 采用不同的编码
 	w.Body.Reset()
-	r = httptest.NewRequest(http.MethodGet, "/path", getEncodingContent(a, "GB18030.txt"))
+	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
 	r.Header.Set("Accept", "*/*")
 	ctx = newContext(w, r, encoding.TextMarshal, xencoding.Nop, encoding.TextUnmarshal, simplifiedchinese.GB18030)
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), "编码 GB18030\n")
+	a.NotError(err).Equal(string(data), gbkstr1)
 	a.Equal(ctx.body, data)
 }
 
@@ -171,11 +160,9 @@ func TestContext_Marshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
 	ctx = newContext(w, r, encoding.TextMarshal, simplifiedchinese.GB18030, encoding.TextUnmarshal, xencoding.Nop)
-	a.NotError(ctx.Marshal(http.StatusCreated, "编码 GB18030\n", nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkstr2, nil))
 	a.Equal(w.Code, http.StatusCreated)
-	data, err := ioutil.ReadAll(getEncodingContent(a, "GB18030.txt"))
-	a.NotError(err).NotNil(data)
-	a.Equal(w.Body.String(), string(data))
+	a.Equal(w.Body.Bytes(), gbkdata2)
 }
 
 func TestContext_Render(t *testing.T) {
