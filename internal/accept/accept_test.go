@@ -62,10 +62,19 @@ func TestParseAccept(t *testing.T) {
 		Equal(v, "").
 		Equal(q, float32(0.9))
 
+	v, q, err = parseAccept("application/xml;qq=xx;q=0.9")
+	a.NotError(err).
+		Equal(v, "application/xml").
+		Equal(q, float32(0.9))
+
 	v, q, err = parseAccept("text/html;format=xx;q=0.9")
 	a.NotError(err).
 		Equal(v, "text/html").
 		Equal(q, float32(0.9))
+
+	// 要求 q 必须在最后，否则还是会出错
+	v, q, err = parseAccept("text/html;q=0.9;format=xx")
+	a.Error(err).Empty(v).Empty(q)
 
 	v, q, err = parseAccept("text/html;format=xx;q=x.9")
 	a.Error(err).Empty(v).Empty(q)

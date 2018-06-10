@@ -26,7 +26,7 @@ func (accept *Accept) hasWildcard() bool {
 
 // 将 Content 的内容解析到 Value 和 Q 中
 func parseAccept(v string) (val string, q float32, err error) {
-	q = 1.0 // 设置为默认值
+	q = 1 // 设置为默认值
 
 	index := strings.IndexByte(v, ';')
 	if index < 0 { // 没有 q 的内容
