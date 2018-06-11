@@ -167,14 +167,21 @@ func TestContext_Marshal(t *testing.T) {
 
 func TestContext_Render(t *testing.T) {
 	a := assert.New(t)
+
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
-
 	obj := &test.TextObject{Name: "test", Age: 123}
 	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
+
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	w = httptest.NewRecorder()
+	ctx = newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	obj1 := &struct{ Name string }{Name: "name"}
+	ctx.Render(http.StatusCreated, obj1, nil)
+	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
 func TestContext_ClientIP(t *testing.T) {

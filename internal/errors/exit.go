@@ -22,6 +22,8 @@ func (s httpStatus) String() string {
 }
 
 // ExitCoroutine 以指定的状态码退出当前的协程
+//
+// status 表示输出的状态码，如果为 0，则不会作任何状态码输出。
 func ExitCoroutine(status int) {
 	panic(httpStatus(status))
 }
@@ -33,7 +35,9 @@ func Recovery(debug bool) recovery.RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		// 通 httpStatus 退出的，并不能算是错误，所以此处不输出调用堆栈信息。
 		if status, ok := msg.(httpStatus); ok {
-			render(w, int(status))
+			if status > 0 {
+				render(w, int(status))
+			}
 			return
 		}
 

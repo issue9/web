@@ -115,3 +115,9 @@ func (rslt *Result) HasDetail() bool {
 func (rslt *Result) Render(ctx *context.Context) {
 	ctx.Render(rslt.status, rslt, nil)
 }
+
+// Exit 将当前的实例输出到客户端，并退出当前请求
+func (rslt *Result) Exit(ctx *context.Context) {
+	rslt.Render(ctx)
+	ctx.Exit(0)
+}

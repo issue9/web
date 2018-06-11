@@ -66,4 +66,11 @@ func TestRecovery(t *testing.T) {
 	fn(w, httpStatus(http.StatusBadGateway))
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
 	a.Empty(errLog.String())
+
+	// httpStatus == 0
+	w = httptest.NewRecorder()
+	errLog.Reset()
+	fn(w, httpStatus(0))
+	a.Equal(w.Result().StatusCode, http.StatusOK) // 默认输出的状态码
+	a.Empty(errLog.String())
 }
