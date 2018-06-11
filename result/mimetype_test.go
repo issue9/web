@@ -17,7 +17,7 @@ func TestResultJSONMarshal(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(NewMessage(400, "400"))
 
-	r := New(400, nil)
+	r := New(400)
 	r.Add("field1", "message1")
 	r.Add("field2", "message2")
 
@@ -25,7 +25,7 @@ func TestResultJSONMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400,"detail":[{"field":"field1","message":"message1"},{"field":"field2","message":"message2"}]}`)
 
-	r = New(400, nil)
+	r = New(400)
 	bs, err = json.Marshal(r)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400}`)
@@ -37,7 +37,7 @@ func TestResultXMLMarshal(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(NewMessage(400, "400"))
 
-	r := New(400, nil)
+	r := New(400)
 	r.Add("field", "message1")
 	r.Add("field", "message2")
 
@@ -45,7 +45,7 @@ func TestResultXMLMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `<result message="400" code="400"><field name="field">message1</field><field name="field">message2</field></result>`)
 
-	r = New(400, nil)
+	r = New(400)
 	bs, err = xml.Marshal(r)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `<result message="400" code="400"></result>`)
@@ -57,7 +57,7 @@ func TestResultYAMLMarshal(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(NewMessage(400, "400"))
 
-	r := New(400, nil)
+	r := New(400)
 	r.Add("field", "message1")
 	r.Add("field", "message2")
 
@@ -72,7 +72,7 @@ detail:
   message: message2
 `)
 
-	r = New(400, nil)
+	r = New(400)
 	bs, err = yaml.Marshal(r)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `message: "400"

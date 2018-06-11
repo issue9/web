@@ -62,8 +62,7 @@ type detail struct {
 // New 声明一个新的 Result 实例
 //
 // code 表示错误代码；
-// fields 为具体的错误信息，若没有，则为 nil；
-func New(code int, fields map[string]string) *Result {
+func New(code int) *Result {
 	msg, found := messages[code]
 	if !found {
 		logs.Error("不存在的错误码:", code)
@@ -79,11 +78,6 @@ func New(code int, fields map[string]string) *Result {
 		Code:    code,
 		Message: msg.message,
 		status:  msg.status,
-		Detail:  make([]*detail, 0, len(fields)),
-	}
-
-	for k, v := range fields {
-		rslt.Add(k, v)
 	}
 
 	return rslt
@@ -91,6 +85,10 @@ func New(code int, fields map[string]string) *Result {
 
 // SetDetail 设置详细的错误信息
 func (rslt *Result) SetDetail(fields map[string]string) *Result {
+	if rslt.Detail == nil {
+		rslt.Detail = make([]*detail, 0, len(fields))
+	}
+
 	for k, v := range fields {
 		rslt.Add(k, v)
 	}

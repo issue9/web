@@ -115,5 +115,5 @@ func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *result.Result {
-	return result.New(code, nil)
+	return result.New(code)
 }

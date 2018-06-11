@@ -19,17 +19,13 @@ import (
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	r := New(-2, nil) // 不存在的代码
+	r := New(-2) // 不存在的代码
 	a.Equal(r.Code, -1)
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r = New(code, nil)
+	r = New(code)
 	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
-
-	r = New(code, map[string]string{"f1": "m1", "f2": "m2"})
-	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
-	a.Equal(len(r.Detail), 2)
 
 	cleanMessage()
 }
@@ -39,7 +35,7 @@ func TestResult_Add_HasDetail(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(code, nil)
+	r := New(code)
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
@@ -55,7 +51,7 @@ func TestResult_SetDetail(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(code, nil)
+	r := New(code)
 	a.False(r.HasDetail())
 
 	r.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
@@ -78,7 +74,7 @@ func TestResult_Render(t *testing.T) {
 		}
 		code := http.StatusForbidden * 1000
 		a.NotError(NewMessage(code, "400"))
-		rslt := New(code, nil)
+		rslt := New(code)
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Render(ctx)
 	}))
@@ -105,7 +101,7 @@ func TestResult_Exit(t *testing.T) {
 		}
 		code := http.StatusForbidden * 1000
 		a.NotError(NewMessage(code, "400"))
-		rslt := New(code, nil)
+		rslt := New(code)
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Exit(ctx)
 	})
