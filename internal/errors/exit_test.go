@@ -65,5 +65,5 @@ func TestRecovery(t *testing.T) {
 	errLog.Reset()
 	fn(w, httpStatus(http.StatusBadGateway))
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
-	a.True(strings.Contains(errLog.String(), http.StatusText(http.StatusBadGateway)), errLog.String())
+	a.Empty(errLog.String())
 }

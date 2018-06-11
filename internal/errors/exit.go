@@ -31,15 +31,9 @@ func ExitCoroutine(status int) {
 // debug 是否为调试模式，若是调试模式，则详细信息输出到客户端，否则输出到日志中。
 func Recovery(debug bool) recovery.RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
-		if err, ok := msg.(httpStatus); ok {
-			render(w, int(err))
-			if debug {
-				// NOTE: render 会输出当前状态码表示的错误信息到 w，
-				// 所以没必要再让 traceStack 重复一次错误内容。
-				w.Write([]byte(traceStack(3)))
-			} else {
-				logs.Error(traceStack(3, err.String()))
-			}
+		// 通 httpStatus 退出的，并不能算是错误，所以此处不输出调用堆栈信息。
+		if status, ok := msg.(httpStatus); ok {
+			render(w, int(status))
 			return
 		}
 
