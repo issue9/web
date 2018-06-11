@@ -78,3 +78,35 @@ func TestCritical(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
 }
+
+func TestErrorf(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+
+	// 没有错误信息
+	errLog.Reset()
+	Errorf(2, w, http.StatusInternalServerError, "")
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(errLog.Len() == 0)
+
+	errLog.Reset()
+	Errorf(2, w, http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"), errLog.String())
+}
+
+func TestCriticalf(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+
+	// 没有错误信息
+	criticalLog.Reset()
+	Criticalf(2, w, http.StatusInternalServerError, "")
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(criticalLog.Len() == 0)
+
+	criticalLog.Reset()
+	Criticalf(2, w, http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
+}

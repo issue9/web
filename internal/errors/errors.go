@@ -25,7 +25,7 @@ var errorContentType = encoding.BuildContentType("text/plain", encoding.DefaultC
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func Error(level int, w http.ResponseWriter, status int, v ...interface{}) {
 	if len(v) > 0 {
-		logs.ERROR().Output(level, traceStack(2, v...))
+		logs.ERROR().Output(level, traceStack(level, v...))
 	}
 
 	render(w, status)
@@ -37,7 +37,31 @@ func Error(level int, w http.ResponseWriter, status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func Critical(level int, w http.ResponseWriter, status int, v ...interface{}) {
 	if len(v) > 0 {
-		logs.CRITICAL().Output(level, traceStack(2, v...))
+		logs.CRITICAL().Output(level, traceStack(level, v...))
+	}
+
+	render(w, status)
+}
+
+// Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
+//
+// 若是输出日志的过程中出错，则 panic
+// 若没有错误信息，则仅向客户端输出一条状态码信息。
+func Errorf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
+	if len(v) > 0 {
+		logs.ERROR().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
+	}
+
+	render(w, status)
+}
+
+// Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
+//
+// 若是输出日志的过程中出错，则 panic
+// 若没有错误信息，则仅向客户端输出一条状态码信息。
+func Criticalf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
+	if len(v) > 0 {
+		logs.CRITICAL().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
 	}
 
 	render(w, status)
