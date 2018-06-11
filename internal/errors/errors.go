@@ -16,7 +16,8 @@ import (
 	"github.com/issue9/web/encoding"
 )
 
-const errorMimeType = "text/plain"
+// 错误状态下，输出的 content-type 报头内容
+var errorContentType = encoding.BuildContentType("text/plain", encoding.DefaultCharset)
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
 //
@@ -45,10 +46,10 @@ func Critical(level int, w http.ResponseWriter, status int, v ...interface{}) {
 // 仅向客户端输出状态码。
 // 编码和字符集均采用 encoding 的默认值。
 func render(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", encoding.BuildContentType(errorMimeType, encoding.DefaultCharset))
+	w.Header().Set("Content-Type", errorContentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
-	fmt.Fprintln(w, http.StatusText(status))
+	w.Write([]byte(http.StatusText(status) + "\n"))
 }
 
 // 返回调用者的堆栈信息
