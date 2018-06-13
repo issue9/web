@@ -57,7 +57,7 @@ func TestResult_SetDetail(t *testing.T) {
 	r.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 	r.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 	a.True(r.HasDetail())
-	a.Equal(len(r.Detail), 4)
+	a.Equal(len(r.Detail), 2)
 
 	cleanMessage()
 }

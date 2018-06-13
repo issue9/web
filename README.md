@@ -91,7 +91,7 @@ func Init() {
 | https           | bool   | 是否启用 HTTPS
 | certFile        | string | 当启用 HTTPS 时的 cert 文件
 | keyFile         | string | 当启用 HTTPS 时的 key 文件
-| port            | string | 监听端口，以冒号(:) 开头
+| port            | int    | 监听的端口号
 | headers         | object | 输出的报头，键名为报头名称，键值为对应的值
 | static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | disableOptions  | bool   | 是否禁用 OPTIONS 请求方法
@@ -99,6 +99,7 @@ func Init() {
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
 | shutdownTimeout | string | 关闭服务的等待时间
+| url             | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
 
 *详细的介绍可以参考 /internal/config/config.go 文件中的描述*
 

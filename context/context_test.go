@@ -152,7 +152,7 @@ func TestContext_Marshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
 	ctx = newContext(w, r, json.Marshal, xencoding.Nop, encoding.TextUnmarshal, xencoding.Nop)
-	a.NotError(ctx.Marshal(http.StatusCreated, Nil, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, encoding.Nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "null")
 

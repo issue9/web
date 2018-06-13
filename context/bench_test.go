@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/issue9/assert"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/assert"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/test"
 )

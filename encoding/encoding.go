@@ -13,6 +13,12 @@ import (
 	xencoding "golang.org/x/text/encoding"
 )
 
+// Nil 表示向客户端输出 nil 值。
+//
+// 这是一个只有类型但是值为空的变量。在某些特殊情况下，
+// 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
+var Nil *struct{}
+
 var (
 	// ErrExists 表示指定名称的项目已经存在。
 	//

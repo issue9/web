@@ -84,10 +84,10 @@ func New(code int) *Result {
 }
 
 // SetDetail 设置详细的错误信息
+//
+// 会覆盖由 Add() 添加的内容
 func (rslt *Result) SetDetail(fields map[string]string) *Result {
-	if rslt.Detail == nil {
-		rslt.Detail = make([]*detail, 0, len(fields))
-	}
+	rslt.Detail = make([]*detail, 0, len(fields))
 
 	for k, v := range fields {
 		rslt.Add(k, v)

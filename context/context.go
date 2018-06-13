@@ -18,12 +18,6 @@ import (
 	"github.com/issue9/web/encoding"
 )
 
-// Nil 表示向客户端输出 nil 值。
-//
-// 这是一个只有类型但是值为空的变量。在某些特殊情况下，
-// 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
-var Nil *struct{}
-
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
 	Response http.ResponseWriter
