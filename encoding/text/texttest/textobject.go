@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package test 为 encoding 包提供的一些测试功能。
-package test
+// Package texttest 包含了一个实现 text 解码的对象，方便其它包测试。
+package texttest
 
 import (
 	"fmt"

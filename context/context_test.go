@@ -17,8 +17,8 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/encoding/test"
 	"github.com/issue9/web/encoding/text"
+	"github.com/issue9/web/encoding/text/texttest"
 )
 
 var logwriter = new(bytes.Buffer)
@@ -125,7 +125,7 @@ func TestContext_Read(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
 
-	obj := &test.TextObject{}
+	obj := &texttest.TextObject{}
 	a.True(ctx.Read(obj))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -139,7 +139,7 @@ func TestContext_Marshal(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
-	obj := &test.TextObject{Name: "test", Age: 123}
+	obj := &texttest.TextObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -148,7 +148,7 @@ func TestContext_Marshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
 	ctx = newContext(w, r, text.Marshal, xencoding.Nop, text.Unmarshal, xencoding.Nop)
-	obj = &test.TextObject{Name: "test", Age: 1234}
+	obj = &texttest.TextObject{Name: "test", Age: 1234}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
@@ -184,7 +184,7 @@ func TestContext_Render(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
-	obj := &test.TextObject{Name: "test", Age: 123}
+	obj := &texttest.TextObject{Name: "test", Age: 123}
 	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
