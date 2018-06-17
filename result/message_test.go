@@ -46,10 +46,15 @@ func TestNewMessages(t *testing.T) {
 	}))
 
 	msg, found := messages[100]
-	a.True(found).NotNil(msg).Equal(msg.status, 100)
+	a.True(found).
+		NotNil(msg).
+		Equal(msg.status, 100)
+	a.Equal(len(Messages()), 2)
 
 	msg, found = messages[40100]
-	a.True(found).NotNil(msg).Equal(msg.status, 401)
+	a.True(found).
+		NotNil(msg).
+		Equal(msg.status, 401)
 
 	// 不存在
 	msg, found = messages[100001]

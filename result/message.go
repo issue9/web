@@ -18,6 +18,16 @@ type message struct {
 	status  int    // 对应的 HTTP 状态码
 }
 
+// Messages 返回所有 Message 内容
+func Messages() map[int]string {
+	msgs := make(map[int]string, len(messages))
+	for code, msg := range messages {
+		msgs[code] = msg.message
+	}
+
+	return msgs
+}
+
 func getStatus(code int) int {
 	for code > 999 {
 		code /= 10
