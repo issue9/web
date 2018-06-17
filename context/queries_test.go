@@ -11,15 +11,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/encoding/text"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) *Context {
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, encoding.TextMarshal, nil, encoding.TextUnmarshal, nil)
+	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
 
 	return ctx
 }

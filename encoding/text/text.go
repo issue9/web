@@ -2,12 +2,18 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package encoding
+// Package text 针对文本内容的编解码实现
+package text
 
-import "encoding"
+import (
+	"encoding"
+	"errors"
+)
 
-// TextMarshal 针对文本内容的 MarshalFunc 实现
-func TextMarshal(v interface{}) ([]byte, error) {
+var errUnsupported = errors.New("对象没有有效的转换方法")
+
+// Marshal 针对文本内容的 MarshalFunc 实现
+func Marshal(v interface{}) ([]byte, error) {
 	switch vv := v.(type) {
 	case string:
 		return []byte(vv), nil
@@ -19,14 +25,14 @@ func TextMarshal(v interface{}) ([]byte, error) {
 		return vv.MarshalText()
 	}
 
-	return nil, ErrUnsupportedMarshal
+	return nil, errUnsupported
 }
 
-// TextUnmarshal 针对文本内容的 UnmarshalFunc 实现
-func TextUnmarshal(data []byte, v interface{}) error {
+// Unmarshal 针对文本内容的 UnmarshalFunc 实现
+func Unmarshal(data []byte, v interface{}) error {
 	if vv, ok := v.(encoding.TextUnmarshaler); ok {
 		return vv.UnmarshalText(data)
 	}
 
-	return ErrUnsupportedMarshal
+	return errUnsupported
 }
