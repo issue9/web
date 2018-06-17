@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
+
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
@@ -110,7 +111,7 @@ func NewModule(name, desc string, deps ...string) *module.Module {
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	return context.New(w, r)
+	return context.New(w, r, logs.ERROR())
 }
 
 // NewResult 生成一个 *result.Result 对象

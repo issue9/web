@@ -5,6 +5,7 @@
 package encoding
 
 import (
+	"errors"
 	"sort"
 	"strings"
 
@@ -14,6 +15,12 @@ import (
 // DefaultMimeType 默认的媒体类型，在不能正确获取输入和输出的媒体类型时，
 // 会采用此值作为其默认值。
 const DefaultMimeType = "application/octet-stream"
+
+// ErrUnsupportedMarshal 不支持的转码
+//
+// MarshalFunc 和 UnmarshalFunc 的实现者中，
+// 如果无法识别数据内容，则返回此错误信息。
+var ErrUnsupportedMarshal = errors.New("对象没有有效的转换方法")
 
 var (
 	marshals   = make([]*marshaler, 0, 10)

@@ -8,10 +8,10 @@ package context
 import (
 	"bytes"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
-	"github.com/issue9/logs"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
@@ -50,24 +50,33 @@ type Context struct {
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
 //
+// errlog 为错误信息输出通道，在 New() 非正常退出时，除了输出一个 HTTP 的状态码之外，
+// 若还指定了 errlog，则还会将错误信息输出到该通道上，为 nil，则不输出任何错误信息。
+//
 // 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
 // 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
-func New(w http.ResponseWriter, r *http.Request) *Context {
+func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
 	if err != nil {
-		logs.Error(err)
+		if errlog != nil {
+			errlog.Println(err)
+		}
 		Exit(http.StatusUnsupportedMediaType)
 	}
 
 	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"))
 	if err != nil {
-		logs.Error(err)
+		if errlog != nil {
+			errlog.Println(err)
+		}
 		Exit(http.StatusNotAcceptable)
 	}
 
 	outputCharsetName, outputCharset, err := encoding.AcceptCharset(r.Header.Get("Accept-Charset"))
 	if err != nil {
-		logs.Error(err)
+		if errlog != nil {
+			errlog.Println(err)
+		}
 		Exit(http.StatusNotAcceptable)
 	}
 

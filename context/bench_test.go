@@ -55,7 +55,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", encoding.DefaultMimeType)
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{Age: 16, Name: "response"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -72,7 +72,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -87,7 +87,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -104,7 +104,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -120,7 +120,7 @@ func BenchmarkPost(b *testing.B) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -142,7 +142,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := New(w, r)
+		ctx := New(w, r, nil)
 
 		obj := &test.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))

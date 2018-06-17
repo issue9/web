@@ -7,6 +7,7 @@ package context
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,9 @@ import (
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/test"
 )
+
+var logwriter = new(bytes.Buffer)
+var errlog = log.New(logwriter, "", 0)
 
 func newContext(w http.ResponseWriter,
 	r *http.Request,
@@ -41,32 +45,40 @@ func TestNew(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 错误的 accept
+	logwriter.Reset()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
 	a.Panic(func() {
-		New(w, r)
+		New(w, r, nil)
 	})
+	a.Equal(logwriter.Len(), 0)
 
 	// 错误的 accept-charset
+	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
-		New(w, r)
+		New(w, r, errlog)
 	})
+	a.True(logwriter.Len() > 0)
 
 	// 错误的 content-type
+	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r)
+		New(w, r, errlog)
 	})
+	a.True(logwriter.Len() > 0)
 
 	// 正常
+	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
-	ctx := New(w, r)
+	ctx := New(w, r, errlog)
 	a.NotNil(ctx)
+	a.Equal(logwriter.Len(), 0)
 }
 
 func TestContext_Body(t *testing.T) {
