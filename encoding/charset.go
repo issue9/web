@@ -48,6 +48,17 @@ func AddCharset(name string, c xencoding.Encoding) error {
 	return nil
 }
 
+// AddCharsets 添加多个字符集
+func AddCharsets(cs map[string]xencoding.Encoding) error {
+	for k, v := range cs {
+		if err := AddCharset(k, v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
 //
 // 传递 * 获取返回默认的字符集相关信息，即 DefaultCharset

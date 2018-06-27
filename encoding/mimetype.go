@@ -13,6 +13,8 @@ import (
 
 // DefaultMimeType 默认的媒体类型，在不能获取输入和输出的媒体类型时，
 // 会采用此值作为其默认值。
+//
+// 若编码函数中指定该类型的函数，则会使用该编码优先匹配 */* 等格式的请求。
 const DefaultMimeType = "application/octet-stream"
 
 var (
@@ -66,6 +68,17 @@ func AcceptMimeType(header string) (string, MarshalFunc, error) {
 	return "", nil, ErrInvalidMimeType
 }
 
+// AddMarshals 添加多个编码函数
+func AddMarshals(ms map[string]MarshalFunc) error {
+	for k, v := range ms {
+		if err := AddMarshal(k, v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // AddMarshal 添加编码函数
 func AddMarshal(name string, m MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") || name == "*" {
@@ -94,6 +107,17 @@ func AddMarshal(name string, m MarshalFunc) error {
 
 		return marshals[i].name < marshals[j].name
 	})
+
+	return nil
+}
+
+// AddUnmarshals 添加多个编码函数
+func AddUnmarshals(ms map[string]UnmarshalFunc) error {
+	for k, v := range ms {
+		if err := AddUnmarshal(k, v); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

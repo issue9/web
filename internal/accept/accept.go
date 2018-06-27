@@ -86,6 +86,12 @@ func Parse(header string) ([]*Accept, error) {
 		header = header[index+1:]
 	}
 
+	sortAccepts(accepts)
+
+	return accepts, nil
+}
+
+func sortAccepts(accepts []*Accept) {
 	sort.SliceStable(accepts, func(i, j int) bool {
 		ii := accepts[i]
 		jj := accepts[j]
@@ -99,6 +105,4 @@ func Parse(header string) ([]*Accept, error) {
 
 		return ii.Q > jj.Q
 	})
-
-	return accepts, nil
 }
