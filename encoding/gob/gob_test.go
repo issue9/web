@@ -28,13 +28,18 @@ func TestGOB(t *testing.T) {
 	a.Equal(str2, str1)
 
 	type gobject struct {
-		V int
+		V  int
+		PV *int
 	}
 
-	obj1 := &gobject{V: 22}
+	v := 5
+	obj1 := &gobject{V: 22, PV: &v}
 	data, err = gob.Marshal(obj1)
 	a.NotError(err)
 	obj2 := &gobject{}
 	a.NotError(gob.Unmarshal(data, obj2))
 	a.Equal(obj2, obj1)
+
+	data, err = gob.Marshal(nil)
+	a.Error(err).Nil(data)
 }

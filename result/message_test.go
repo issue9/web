@@ -59,4 +59,17 @@ func TestNewMessages(t *testing.T) {
 	// 不存在
 	msg, found = messages[100001]
 	a.False(found).Nil(msg)
+
+	// 小于 100 的值，会发生错误
+	cleanMessage()
+	a.Error(NewMessages(map[int]string{
+		10000: "100",
+		40100: "40100",
+		99:    "10000",
+		100:   "100",
+	}))
+	msg, found = messages[10000]
+	a.True(found).Equal(msg.message, "100")
+	msg, found = messages[100]
+	a.False(found).Nil(msg)
 }

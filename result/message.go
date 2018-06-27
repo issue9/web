@@ -48,7 +48,7 @@ func NewMessage(code int, msg string) error {
 	}
 
 	if _, found := messages[code]; found {
-		return fmt.Errorf("重复的消息 ID: %v", code)
+		return fmt.Errorf("重复的消息 ID: %d", code)
 	}
 
 	messages[code] = &message{message: msg, status: getStatus(code)}
@@ -57,6 +57,7 @@ func NewMessage(code int, msg string) error {
 }
 
 // NewMessages 注册错误代码。
+//
 // 非协程安全，需要在程序初始化时添加所有的错误代码。
 func NewMessages(msgs map[int]string) error {
 	for code, msg := range msgs {
