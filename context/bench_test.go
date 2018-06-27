@@ -17,7 +17,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/encoding/text/texttest"
+	"github.com/issue9/web/encoding/encodingtest"
 )
 
 var (
@@ -57,7 +57,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{Age: 16, Name: "response"}
+		obj := &encodingtest.TextObject{Age: 16, Name: "response"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.String(), "response,16")
 	}
@@ -74,7 +74,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{Age: 22, Name: "中文2"}
+		obj := &encodingtest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), gbkdata2)
 	}
@@ -89,7 +89,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{}
+		obj := &encodingtest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 15).Equal(obj.Name, "request")
 	}
@@ -106,7 +106,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{}
+		obj := &encodingtest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
 	}
@@ -122,7 +122,7 @@ func BenchmarkPost(b *testing.B) {
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{}
+		obj := &encodingtest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 15).Equal(obj.Name, "request")
 
@@ -144,7 +144,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &texttest.TextObject{}
+		obj := &encodingtest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
 

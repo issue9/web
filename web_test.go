@@ -5,8 +5,6 @@
 package web
 
 import (
-	"bytes"
-	"encoding/gob"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -15,6 +13,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/encoding/encodingtest"
 )
 
 var testdata = ""
@@ -22,6 +21,7 @@ var testdata = ""
 func TestMain(t *testing.T) {
 	a := assert.New(t)
 	a.NotError(Init("./internal/app/testdata/"))
+	a.NotError(encoding.AddMarshal("text/plain", encodingtest.TextMarshal))
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
@@ -95,16 +95,13 @@ func TestHandler(t *testing.T) {
 	defer srv.Close()
 
 	srv.NewRequest(http.MethodPost, "/post").
-		Header("Accept", encoding.DefaultMimeType).
+		Header("Accept", "text/plain").
 		Do().
 		Status(http.StatusNotFound)
 
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	a.NotError(enc.Encode(testdata))
 	srv.NewRequest(http.MethodPost, "/post/m2").
-		Header("Accept", encoding.DefaultMimeType).
+		Header("Accept", "text/plain").
 		Do().
 		Status(http.StatusCreated).
-		Body(buf.Bytes())
+		Body([]byte(testdata))
 }

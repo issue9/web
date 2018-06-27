@@ -17,8 +17,7 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/encoding/text"
-	"github.com/issue9/web/encoding/text/texttest"
+	"github.com/issue9/web/encoding/encodingtest"
 )
 
 var logwriter = new(bytes.Buffer)
@@ -87,7 +86,7 @@ func TestContext_Body(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 
 	// 未缓存
 	a.Nil(ctx.body)
@@ -104,7 +103,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
-	ctx = newContext(w, r, text.Marshal, xencoding.Nop, text.Unmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
@@ -113,7 +112,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
 	r.Header.Set("Accept", "*/*")
-	ctx = newContext(w, r, text.Marshal, xencoding.Nop, text.Unmarshal, simplifiedchinese.GB18030)
+	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, simplifiedchinese.GB18030)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(string(data), gbkstr1)
 	a.Equal(ctx.body, data)
@@ -123,9 +122,9 @@ func TestContext_Read(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 
-	obj := &texttest.TextObject{}
+	obj := &encodingtest.TextObject{}
 	a.True(ctx.Read(obj))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -138,8 +137,8 @@ func TestContext_Marshal(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
-	obj := &texttest.TextObject{Name: "test", Age: 123}
+	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	obj := &encodingtest.TextObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -147,8 +146,8 @@ func TestContext_Marshal(t *testing.T) {
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, text.Marshal, xencoding.Nop, text.Unmarshal, xencoding.Nop)
-	obj = &texttest.TextObject{Name: "test", Age: 1234}
+	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
+	obj = &encodingtest.TextObject{Name: "test", Age: 1234}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
@@ -156,7 +155,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 nil
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, text.Marshal, xencoding.Nop, text.Unmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
 	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "")
@@ -164,7 +163,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 Nil，text. 未实现对 nil 值的解析，所以采用了 json.Marshal
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, json.Marshal, xencoding.Nop, text.Unmarshal, xencoding.Nop)
+	ctx = newContext(w, r, json.Marshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
 	a.NotError(ctx.Marshal(http.StatusCreated, encoding.Nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "null")
@@ -172,7 +171,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出不同编码的内容
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, text.Marshal, simplifiedchinese.GB18030, text.Unmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, simplifiedchinese.GB18030, encodingtest.TextUnmarshal, xencoding.Nop)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkstr2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), gbkdata2)
@@ -183,15 +182,15 @@ func TestContext_Render(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
-	obj := &texttest.TextObject{Name: "test", Age: 123}
+	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	obj := &encodingtest.TextObject{Name: "test", Age: 123}
 	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	obj1 := &struct{ Name string }{Name: "name"}
 	ctx.Render(http.StatusCreated, obj1, nil)
 	a.Equal(w.Code, http.StatusInternalServerError)
@@ -202,18 +201,18 @@ func TestContext_ClientIP(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	ctx := newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)
 
 	// httptest.NewRequest 会直接将  remote-addr 赋值为 192.0.2.1 无法测试
 	r, err := http.NewRequest(http.MethodPost, "/path", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("x-real-ip", "192.168.1.1:8080")
-	ctx = newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.1.1:8080")
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
-	ctx = newContext(w, r, text.Marshal, nil, text.Unmarshal, nil)
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
