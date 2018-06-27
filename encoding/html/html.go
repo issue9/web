@@ -7,17 +7,32 @@ package html
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
-
-	"github.com/issue9/web/encoding"
 )
 
 // MimeType HTML 的 mimetype 值
 const MimeType = "text/html"
 
+var errUnsupported = errors.New("当前不支持该对象的解析")
+
 // HTML 模板管理
 type HTML struct {
 	tpl *template.Template
+}
+
+// Template 模板
+type Template struct {
+	Name string // 模块名称
+	Data interface{}
+}
+
+// Tpl 声明一个模板变量
+func Tpl(name string, data interface{}) *Template {
+	return &Template{
+		Name: name,
+		Data: data,
+	}
 }
 
 // New 声明 HTML 变量
@@ -27,17 +42,11 @@ func New(tpl *template.Template) *HTML {
 	}
 }
 
-// Template 模板
-type Template struct {
-	Name string // 模块名称
-	Data interface{}
-}
-
 // Marshal 针对 HTML 内容的 MarshalFunc 实现
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
 	obj, ok := v.(*Template)
 	if !ok {
-		return nil, encoding.ErrUnsupportedMarshal
+		return nil, errUnsupported
 	}
 
 	w := new(bytes.Buffer)
