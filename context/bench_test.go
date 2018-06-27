@@ -18,7 +18,6 @@ import (
 
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/encodingtest"
-	"github.com/issue9/web/encoding/gob"
 )
 
 var (
@@ -32,11 +31,11 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	if err := encoding.AddMarshal(encoding.DefaultMimeType, gob.Marshal); err != nil {
+	if err := encoding.AddMarshal(encoding.DefaultMimeType, encodingtest.TextMarshal); err != nil {
 		panic(err)
 	}
 
-	if err := encoding.AddUnmarshal(encoding.DefaultMimeType, gob.Unmarshal); err != nil {
+	if err := encoding.AddUnmarshal(encoding.DefaultMimeType, encodingtest.TextUnmarshal); err != nil {
 		panic(err)
 	}
 
