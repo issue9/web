@@ -27,4 +27,8 @@ func TestTextObject(t *testing.T) {
 
 	a.NotError(obj.UnmarshalText([]byte("unmarshal,22")))
 	a.Equal(obj.Name, "unmarshal").Equal(obj.Age, 22)
+
+	a.Error(obj.UnmarshalText([]byte("unmarshal,22,33")))
+
+	a.Error(obj.UnmarshalText([]byte("22,unmarshal")))
 }
