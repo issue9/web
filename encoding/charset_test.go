@@ -49,11 +49,14 @@ func TestAcceptCharset(t *testing.T) {
 
 	// * 不指定，需要用户自行决定其表示方式
 	name, enc, err = AcceptCharset("*")
-	a.NotError(err).Equal(name, DefaultCharset)
+	a.NotError(err).
+		Equal(name, DefaultCharset).
+		NotNil(enc)
 
 	name, enc, err = AcceptCharset("utf-8;q=x.9,gbk;q=0.8")
-	a.Error(err)
-	a.Equal(name, "")
+	a.Error(err).
+		Equal(name, "").
+		Nil(enc)
 
 	name, enc, err = AcceptCharset("not-supported")
 	a.Error(err).

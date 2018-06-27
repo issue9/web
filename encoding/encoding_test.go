@@ -29,15 +29,15 @@ func TestContentType(t *testing.T) {
 
 	// 未指定 memetype
 	um, c, err = ContentType(";" + DefaultCharset)
-	a.Error(err)
+	a.Error(err).Nil(um).Nil(c)
 
 	// mimetype 无法找到
 	um, c, err = ContentType(BuildContentType("not-exists", DefaultCharset))
-	a.Error(err)
+	a.Error(err).Nil(um).Nil(c)
 
 	// charset 无法找到
 	um, c, err = ContentType(BuildContentType(DefaultMimeType, "not-exists"))
-	a.Error(err)
+	a.Error(err).Nil(um).Nil(c)
 }
 
 func TestBuildContentType(t *testing.T) {
