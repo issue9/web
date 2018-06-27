@@ -14,21 +14,38 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/encodingtest"
+	"github.com/issue9/web/encoding/gob"
 )
 
 var testdata = ""
 
-func TestMain(t *testing.T) {
-	a := assert.New(t)
-	a.NotError(Init("./internal/app/testdata/"))
-	a.NotError(encoding.AddMarshal("text/plain", encodingtest.TextMarshal))
+func TestMain(m *testing.M) {
+	if err := Init("./internal/app/testdata/"); err != nil {
+		panic(err)
+	}
+
+	if err := encoding.AddMarshal("text/plain", encodingtest.TextMarshal); err != nil {
+		panic(err)
+	}
+
+	if err := encoding.AddMarshal(encoding.DefaultMimeType, gob.Marshal); err != nil {
+		panic(err)
+	}
+
+	if err := encoding.AddUnmarshal(encoding.DefaultMimeType, gob.Unmarshal); err != nil {
+		panic(err)
+	}
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
-	a.NotNil(m1)
+	if m1 == nil {
+		panic("m1==nil")
+	}
 	m1.AddInit(func() error {
 		m1.PostFunc("/post/"+testdata, func(w http.ResponseWriter, r *http.Request) {
-			a.Equal(testdata, "m2")
+			if testdata != "m2" {
+				panic("testdata!=m2")
+			}
 			ctx := NewContext(w, r)
 			ctx.Render(http.StatusCreated, testdata, nil)
 		})
@@ -36,7 +53,9 @@ func TestMain(t *testing.T) {
 	})
 
 	m2 := NewModule("m2", "m2 desc")
-	a.NotNil(m2)
+	if m2 == nil {
+		panic("m2==nil")
+	}
 	m2.AddInit(func() error {
 		testdata = "m2"
 		return nil

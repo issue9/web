@@ -18,6 +18,7 @@ import (
 
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/encodingtest"
+	"github.com/issue9/web/encoding/gob"
 )
 
 var (
@@ -28,6 +29,14 @@ var (
 
 func TestMain(m *testing.M) {
 	if err := encoding.AddCharset("gbk", simplifiedchinese.GBK); err != nil {
+		panic(err)
+	}
+
+	if err := encoding.AddMarshal(encoding.DefaultMimeType, gob.Marshal); err != nil {
+		panic(err)
+	}
+
+	if err := encoding.AddUnmarshal(encoding.DefaultMimeType, gob.Unmarshal); err != nil {
 		panic(err)
 	}
 

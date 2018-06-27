@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/encoding/gob"
 	xencoding "golang.org/x/text/encoding"
 )
 
@@ -15,6 +16,13 @@ func TestContentType(t *testing.T) {
 	a := assert.New(t)
 
 	um, c, err := ContentType(BuildContentType("", ""))
+	a.Error(err).
+		Nil(um).
+		Nil(c)
+
+	a.NotError(AddUnmarshal(DefaultMimeType, gob.Unmarshal))
+	a.NotError(AddMarshal(DefaultMimeType, gob.Marshal))
+	um, c, err = ContentType(BuildContentType("", ""))
 	a.NotError(err).
 		Equal(um, UnmarshalFunc(um)).
 		Equal(c, xencoding.Nop)

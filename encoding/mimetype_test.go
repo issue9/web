@@ -12,30 +12,46 @@ import (
 )
 
 func resetMarshals() {
-	marshals = []*marshaler{
-		&marshaler{name: DefaultMimeType, f: gob.Marshal},
-	}
+	marshals = []*marshaler{}
 }
 
 func resetUnmarshals() {
-	unmarshals = []*unmarshaler{
-		&unmarshaler{name: DefaultMimeType, f: gob.Unmarshal},
-	}
+	unmarshals = []*unmarshaler{}
 }
 
 func TestAcceptMimeType(t *testing.T) {
 	a := assert.New(t)
+	resetMarshals()
+	resetUnmarshals()
 
 	name, marshal, err := AcceptMimeType(DefaultMimeType)
+	a.Error(err).
+		Nil(marshal).
+		Empty(name)
+
+	a.NotError(AddMarshal(DefaultMimeType, gob.Marshal))
+	a.NotError(AddMarshal("text/plain", gob.Marshal))
+
+	name, marshal, err = AcceptMimeType(DefaultMimeType)
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
-	// 匹配任意内容，一般选取第一个
+	name, marshal, err = AcceptMimeType(DefaultMimeType)
+	a.NotError(err).
+		Equal(marshal, MarshalFunc(gob.Marshal)).
+		Equal(name, DefaultMimeType)
+
+	// */* 如果指定了 DefaultMimeType，则必定是该值
 	name, marshal, err = AcceptMimeType("*/*")
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
+
+	name, marshal, err = AcceptMimeType("*/*,text/plain")
+	a.NotError(err).
+		Equal(marshal, MarshalFunc(gob.Marshal)).
+		Equal(name, "text/plain")
 
 	name, marshal, err = AcceptMimeType("font/wotff;q=x.9")
 	a.Error(err).
@@ -50,7 +66,10 @@ func TestAcceptMimeType(t *testing.T) {
 
 func TestAddMarshal(t *testing.T) {
 	a := assert.New(t)
+	resetMarshals()
 
+	// 不能添加同名的多次
+	a.NotError(AddMarshal(DefaultMimeType, nil))
 	a.ErrorType(AddMarshal(DefaultMimeType, nil), ErrExists)
 
 	// 不能添加以 /* 结属的名称
@@ -59,12 +78,14 @@ func TestAddMarshal(t *testing.T) {
 
 	// 排序是否正常
 	a.NotError(AddMarshal("application/json", nil))
-	a.Equal(marshals[1].name, DefaultMimeType)
+	a.Equal(marshals[0].name, DefaultMimeType) // 默认始终在第一
 }
 
 func TestAddUnmarshal(t *testing.T) {
 	a := assert.New(t)
+	resetUnmarshals()
 
+	a.NotError(AddUnmarshal(DefaultMimeType, nil))
 	a.ErrorType(AddUnmarshal(DefaultMimeType, nil), ErrExists)
 
 	// 不能添加以 /* 结属的名称
@@ -73,7 +94,7 @@ func TestAddUnmarshal(t *testing.T) {
 
 	// 排序是否正常
 	a.NotError(AddUnmarshal("application/json", nil))
-	a.Equal(unmarshals[1].name, DefaultMimeType)
+	a.Equal(unmarshals[0].name, DefaultMimeType) // 默认始终在第一
 }
 
 func TestFindMarshal(t *testing.T) {
@@ -83,7 +104,7 @@ func TestFindMarshal(t *testing.T) {
 	a.NotError(AddMarshal("text", nil))
 	a.NotError(AddMarshal("text/plain", nil))
 	a.NotError(AddMarshal("text/text", nil))
-	a.NotError(AddMarshal("application/json", nil))
+	a.NotError(AddMarshal("application/aa", nil)) // aa 排名靠前
 
 	m := findMarshal("text")
 	a.Equal(m.name, "text")
@@ -92,10 +113,16 @@ func TestFindMarshal(t *testing.T) {
 	a.Equal(m.name, "text")
 
 	m = findMarshal("application/*")
-	a.Equal(m.name, "application/json")
+	a.Equal(m.name, "application/aa")
 
+	// 第一条数据
 	m = findMarshal("*/*")
-	a.Equal(m.name, "application/json")
+	a.Equal(m.name, "application/aa")
+
+	// 有默认值，则始终在第一
+	a.NotError(AddMarshal(DefaultMimeType, nil))
+	m = findMarshal("*/*")
+	a.Equal(m.name, DefaultMimeType)
 
 	// 不存在
 	a.Nil(findMarshal("xx/*"))
@@ -108,7 +135,7 @@ func TestFindUnmarshal(t *testing.T) {
 	a.NotError(AddUnmarshal("text", nil))
 	a.NotError(AddUnmarshal("text/plain", nil))
 	a.NotError(AddUnmarshal("text/text", nil))
-	a.NotError(AddUnmarshal("application/json", nil))
+	a.NotError(AddUnmarshal("application/aa", nil)) // aa 排名靠前
 
 	m := findUnmarshal("text")
 	a.Equal(m.name, "text")
@@ -117,10 +144,16 @@ func TestFindUnmarshal(t *testing.T) {
 	a.Equal(m.name, "text")
 
 	m = findUnmarshal("application/*")
-	a.Equal(m.name, "application/json")
+	a.Equal(m.name, "application/aa")
 
+	// 第一条数据
 	m = findUnmarshal("*/*")
-	a.Equal(m.name, "application/json")
+	a.Equal(m.name, "application/aa")
+
+	// 有默认值，则始终在第一
+	a.NotError(AddUnmarshal(DefaultMimeType, nil))
+	m = findUnmarshal("*/*")
+	a.Equal(m.name, DefaultMimeType)
 
 	// 不存在
 	a.Nil(findUnmarshal("xx/*"))
