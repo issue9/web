@@ -15,8 +15,12 @@ import (
 // 会采用此值和为其默认值。
 const DefaultCharset = "UTF-8"
 
-var charset = map[string]xencoding.Encoding{
-	DefaultCharset: xencoding.Nop,
+var charset = make(map[string]xencoding.Encoding, 10)
+
+func init() {
+	if err := AddCharset(DefaultCharset, xencoding.Nop); err != nil {
+		panic(err)
+	}
 }
 
 func findCharset(name string) (string, xencoding.Encoding) {
