@@ -5,6 +5,8 @@
 package web
 
 import (
+	"bytes"
+	"encoding/gob"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -97,9 +99,12 @@ func TestHandler(t *testing.T) {
 		Do().
 		Status(http.StatusNotFound)
 
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	a.NotError(enc.Encode(testdata))
 	srv.NewRequest(http.MethodPost, "/post/m2").
 		Header("Accept", encoding.DefaultMimeType).
 		Do().
 		Status(http.StatusCreated).
-		Body([]byte(testdata))
+		Body(buf.Bytes())
 }

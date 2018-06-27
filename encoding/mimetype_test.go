@@ -8,18 +8,18 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding/text"
+	"github.com/issue9/web/encoding/gob"
 )
 
 func resetMarshals() {
 	marshals = []*marshaler{
-		&marshaler{name: DefaultMimeType, f: text.Marshal},
+		&marshaler{name: DefaultMimeType, f: gob.Marshal},
 	}
 }
 
 func resetUnmarshals() {
 	unmarshals = []*unmarshaler{
-		&unmarshaler{name: DefaultMimeType, f: text.Unmarshal},
+		&unmarshaler{name: DefaultMimeType, f: gob.Unmarshal},
 	}
 }
 
@@ -28,13 +28,13 @@ func TestAcceptMimeType(t *testing.T) {
 
 	name, marshal, err := AcceptMimeType(DefaultMimeType)
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(text.Marshal)).
+		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
 	// 匹配任意内容，一般选取第一个
 	name, marshal, err = AcceptMimeType("*/*")
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(text.Marshal)).
+		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
 	name, marshal, err = AcceptMimeType("font/wotff;q=x.9")

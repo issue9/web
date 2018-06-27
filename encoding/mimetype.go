@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/issue9/web/encoding/text"
+	"github.com/issue9/web/encoding/gob"
 	"github.com/issue9/web/internal/accept"
 )
 
@@ -41,12 +41,12 @@ type (
 
 func init() {
 	// findMarshal 需要确保最少有一个元素在 marshals 中
-	if err := AddMarshal(DefaultMimeType, text.Marshal); err != nil {
+	if err := AddMarshal(DefaultMimeType, gob.Marshal); err != nil {
 		panic(err)
 	}
 
 	// findUnmarshal 需要确保最少有一个元素在 unmarshals 中
-	if err := AddUnmarshal(DefaultMimeType, text.Unmarshal); err != nil {
+	if err := AddUnmarshal(DefaultMimeType, gob.Unmarshal); err != nil {
 		panic(err)
 	}
 }
