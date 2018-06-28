@@ -85,14 +85,28 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
+	var ctx *Context
 	a.NotPanic(func() {
-		ctx := New(w, r, errlog)
-
-		a.NotNil(ctx).
-			Equal(logwriter.Len(), 0).
-			Equal(ctx.InputCharset, nil).
-			Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
+		ctx = New(w, r, errlog)
 	})
+	a.NotNil(ctx).
+		Equal(logwriter.Len(), 0).
+		Equal(ctx.InputCharset, nil).
+		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
+
+	// 正常，且有输入内容
+	a.NotError(encoding.AddUnmarshal(encodingtest.MimeType, encodingtest.TextUnmarshal))
+	logwriter.Reset()
+	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("content-type", encoding.BuildContentType(encodingtest.MimeType, encoding.DefaultCharset))
+	a.NotPanic(func() {
+		ctx = New(w, r, errlog)
+	})
+	a.NotNil(ctx).
+		Equal(logwriter.Len(), 0).
+		Equal(ctx.InputCharset, xencoding.Nop).
+		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
 }
 
 func TestContext_Body(t *testing.T) {
