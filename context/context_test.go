@@ -63,7 +63,7 @@ func TestNew(t *testing.T) {
 	})
 	a.True(logwriter.Len() > 0)
 
-	// 错误的 content-type
+	// 错误的 content-type,无输入内容
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
@@ -72,13 +72,27 @@ func TestNew(t *testing.T) {
 	})
 	a.True(logwriter.Len() > 0)
 
+	// 错误的 content-type，且有输入内容
+	logwriter.Reset()
+	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("content-type", encoding.BuildContentType(encodingtest.MimeType, encoding.DefaultCharset))
+	a.Panic(func() {
+		New(w, r, errlog)
+	})
+
 	// 正常
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
-	ctx := New(w, r, errlog)
-	a.NotNil(ctx)
-	a.Equal(logwriter.Len(), 0)
+	a.NotPanic(func() {
+		ctx := New(w, r, errlog)
+
+		a.NotNil(ctx).
+			Equal(logwriter.Len(), 0).
+			Equal(ctx.InputCharset, nil).
+			Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
+	})
 }
 
 func TestContext_Body(t *testing.T) {

@@ -68,8 +68,4 @@ func TestNewMessages(t *testing.T) {
 		99:    "10000",
 		100:   "100",
 	}))
-	msg, found = messages[10000]
-	a.True(found).Equal(msg.message, "100")
-	msg, found = messages[100]
-	a.False(found).Nil(msg)
 }

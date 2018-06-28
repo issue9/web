@@ -56,15 +56,8 @@ type Context struct {
 // 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
 // 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
 func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
-	unmarshal, charset, err := encoding.ContentType(r.Header.Get("Content-Type"))
-	if err != nil {
-		if errlog != nil {
-			errlog.Println(err)
-		}
-		Exit(http.StatusUnsupportedMediaType)
-	}
-
-	outputMimeType, marshal, err := encoding.AcceptMimeType(r.Header.Get("Accept"))
+	at := r.Header.Get("Accept")
+	outputMimeType, marshal, err := encoding.AcceptMimeType(at)
 	if err != nil {
 		if errlog != nil {
 			errlog.Println(err)
@@ -72,7 +65,8 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		Exit(http.StatusNotAcceptable)
 	}
 
-	outputCharsetName, outputCharset, err := encoding.AcceptCharset(r.Header.Get("Accept-Charset"))
+	ac := r.Header.Get("Accept-Charset")
+	outputCharsetName, outputCharset, err := encoding.AcceptCharset(ac)
 	if err != nil {
 		if errlog != nil {
 			errlog.Println(err)
@@ -80,21 +74,35 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		Exit(http.StatusNotAcceptable)
 	}
 
-	return &Context{
+	ctx := &Context{
 		Response:           w,
 		Request:            r,
 		OutputMimeType:     marshal,
 		OutputMimeTypeName: outputMimeType,
-		InputMimeType:      unmarshal,
-		InputCharset:       charset,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 	}
+
+	// 只在有请求内容的时候，才会获取其输出转码函数
+	// 当请求 body 为空时，r.Body == http.NoBody，与请求方法无关。
+	if r.Body != nil && r.Body != http.NoBody {
+		ct := r.Header.Get("Content-Type")
+		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(ct)
+		if err != nil {
+			if errlog != nil {
+				errlog.Println(err)
+			}
+			Exit(http.StatusUnsupportedMediaType)
+		}
+	}
+
+	return ctx
 }
 
 // Body 获取用户提交的内容。
 //
 // 相对于 ctx.Request().Body，此函数可多次读取。
+// 不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
 	if ctx.body != nil {
 		return ctx.body, nil
@@ -120,7 +128,11 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 		return err
 	}
 
-	return ctx.InputMimeType(body, v)
+	if ctx.InputMimeType != nil {
+		return ctx.InputMimeType(body, v)
+	}
+
+	return nil
 }
 
 var contentTypeKey = http.CanonicalHeaderKey("Content-type")

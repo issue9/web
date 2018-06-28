@@ -10,6 +10,9 @@ import (
 	"errors"
 )
 
+// MimeType 当前包能解析的编码类型
+const MimeType = "text/plain"
+
 var errUnsupported = errors.New("对象没有有效的转换方法")
 
 // TextMarshal 针对文本内容的 MarshalFunc 实现
