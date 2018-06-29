@@ -5,7 +5,12 @@
 // Package form 用于处理 www-form-urlencoded 编码
 package form
 
-import "net/url"
+import (
+	"errors"
+	"net/url"
+)
+
+var errInvalidType = errors.New("当前只支持 net/url.Values 类型")
 
 // MimeType 当前编码的媒体类型
 const MimeType = "application/x-www-form-urlencoded"
@@ -16,7 +21,7 @@ func Marshal(v interface{}) ([]byte, error) {
 		return []byte(vals.Encode()), nil
 	}
 
-	return nil, nil
+	return nil, errInvalidType
 }
 
 // Unmarshal 针对 www-form-urlencoded 内容的 UnmarshalFunc 实现
@@ -26,6 +31,14 @@ func Unmarshal(data []byte, v interface{}) error {
 		return err
 	}
 
-	v = vals
+	obj, ok := v.(url.Values)
+	if !ok {
+		return errInvalidType
+	}
+
+	for k, v := range vals {
+		obj[k] = v
+	}
+
 	return nil
 }
