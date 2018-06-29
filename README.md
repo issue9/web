@@ -155,6 +155,7 @@ go get github.com/issue9/web
 
 - yaml gopkg.in/yaml.v2 配置文件使用 yaml 格式，比 JSON 拥有更好的阅读体验；
 - text golang.org/x/text 提供了非 UTF-8 字符集的转码方式。
+- protobuf github.com/golang/protobuf 提供了 Google protocol buffers 协议的支持。
 
 
 
