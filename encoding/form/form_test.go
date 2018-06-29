@@ -17,25 +17,52 @@ var (
 	_ encoding.UnmarshalFunc = Unmarshal
 )
 
+var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"
+
+func init() {
+}
+
 func TestMarshal(t *testing.T) {
 	a := assert.New(t)
 
-	v := url.Values{}
-	v.Set("name", "Ava")
-	v.Add("friend", "Jess")
-	v.Add("friend", "Sarah")
-	v.Add("friend", "Zoe")
+	formObject := url.Values{}
+	data, err := Marshal(formObject)
+	a.NotError(err)
+	a.NotNil(data). // 非 nil
+			Empty(data) // 但长度为 0
 
-	data, err := Marshal(v)
+	formObject.Set("name", "Ava")
+	formObject.Add("friend", "Jess")
+	formObject.Add("friend", "Sarah")
+	formObject.Add("friend", "Zoe")
+	data, err = Marshal(formObject)
 	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "friend=Jess&friend=Sarah&friend=Zoe&name=Ava")
+	a.Equal(string(data), formString)
+
+	// 非 url.Values 类型
+	data, err = Marshal(&struct{}{})
+	a.ErrorType(err, errInvalidType).Nil(data)
 }
 
 func TestUnmarshal(t *testing.T) {
 	a := assert.New(t)
 
 	v := url.Values{}
-	a.NotError(Unmarshal([]byte("friend=Jess&friend=Sarah&friend=Zoe&name=Ava"), v))
+	a.NotError(Unmarshal(nil, v))
+	a.Equal(len(v), 0)
+
+	v = url.Values{}
+	a.NotError(Unmarshal([]byte{}, v))
+	a.Equal(len(v), 0)
+
+	v = url.Values{}
+	a.Error(Unmarshal([]byte("%"), v))
+
+	a.ErrorType(Unmarshal([]byte(formString), &struct{}{}), errInvalidType)
+
+	v = url.Values{}
+	a.NotError(Unmarshal([]byte(formString), v))
+	a.Equal(len(v), 2)
 	a.Equal(v.Get("name"), "Ava")
 	a.Equal(v.Get("friend"), "Jess")
 	a.Equal(v["friend"], []string{"Jess", "Sarah", "Zoe"})
