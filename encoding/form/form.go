@@ -3,6 +3,21 @@
 // license that can be found in the LICENSE file.
 
 // Package form 用于处理 www-form-urlencoded 编码
+//
+// NOTE: 仅支持将数据从 net/url.Values 导出或是写入到 net/url.Values
+//
+//  func read(w http.ResponseWriter, r *http.Request) {
+//      ctx := web.New(w, r)
+//      vals := urls.Values{}
+//      !ctx.Read(vals)
+//  }
+//
+//  func write(w http.ResponseWriter, r *http.Request) {
+//      ctx := web.New(w, r)
+//      vals := urls.Values{}
+//      vals.Add("name", "caixw")
+//      ctx.Render(http.StatusOK, vals, nil)
+//  }
 package form
 
 import (
