@@ -75,4 +75,7 @@ func TestParseContentType(t *testing.T) {
 
 	e, c, err = ParseContentType(`Text/HTML; charset="gbk"`)
 	a.NotError(err).Equal(e, "text/html").Equal(c, "gbk")
+
+	e, c, err = ParseContentType(`multipart/form-data; boundary=AaB03x`)
+	a.NotError(err).Equal(e, "multipart/form-data").Equal(c, DefaultCharset)
 }
