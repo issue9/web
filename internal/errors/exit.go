@@ -14,11 +14,14 @@ import (
 // 表示一个 HTTP 状态码错误。
 // panic 此类型的值，可以在 Revoery 中作特殊处理。
 //
-// 目前仅由 ExitCoroutine 使用，以用让框加以特写的状态码退出当前协程。
+// 目前仅由 ExitCoroutine 使用，让框加以特定的状态码退出当前协程。
 type httpStatus int
 
-func (s httpStatus) String() string {
-	return http.StatusText(int(s))
+// 表示继续向上一级发出错误信息。
+//
+// 一般情况下表示要退出整个应用程序。
+type exit struct {
+	msg interface{}
 }
 
 // ExitCoroutine 以指定的状态码退出当前的协程
@@ -39,6 +42,10 @@ func Recovery(debug bool) recovery.RecoverFunc {
 				render(w, int(status))
 			}
 			return
+		}
+
+		if obj, ok := msg.(exit); ok {
+			panic(obj.msg)
 		}
 
 		render(w, http.StatusInternalServerError)

@@ -17,7 +17,8 @@ import (
 )
 
 // 错误状态下，输出的 content-type 报头内容
-var errorContentType = encoding.BuildContentType("text/plain", encoding.DefaultCharset)
+// 错误状态下只能输出 utf-8 才不需要转码。
+var errorContentType = encoding.BuildContentType("text/plain", "UTF-8")
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
 //
@@ -68,7 +69,6 @@ func Criticalf(level int, w http.ResponseWriter, status int, format string, v ..
 }
 
 // 仅向客户端输出状态码。
-// 编码和字符集均采用 encoding 的默认值。
 func render(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", errorContentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -83,16 +83,13 @@ func traceStack(level int, messages ...interface{}) string {
 	ws := func(val string) {
 		_, err := w.WriteString(val)
 		if err != nil {
-			// BUG(caixw) 此处的 panic 会被 Recovery 接收，而 Recovery
-			// 又会再次调用 traceStack，所以如果此处的 panic 成功触发，
-			// 而必然造成死循环。
-			panic(err)
+			panic(&exit{msg: err})
 		}
 	}
 
 	if len(messages) > 0 {
 		if _, err := fmt.Fprintln(&w, messages...); err != nil {
-			panic(err)
+			panic(&exit{msg: err})
 		}
 	}
 
