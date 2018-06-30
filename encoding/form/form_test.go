@@ -19,7 +19,37 @@ var (
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"
 
-func init() {
+var objectData = &object{
+	Name:   "Ava",
+	Friend: []string{"Jess", "Sarah", "Zoe"},
+}
+
+type object struct {
+	Name   string
+	Friend []string
+}
+
+func (obj *object) MarshalForm() ([]byte, error) {
+	vals := url.Values{}
+
+	vals.Set("name", obj.Name)
+	for _, v := range obj.Friend {
+		vals.Add("friend", v)
+	}
+
+	return []byte(vals.Encode()), nil
+}
+
+func (obj *object) UnmarshalForm(data []byte) error {
+	vals, err := url.ParseQuery(string(data))
+	if err != nil {
+		return err
+	}
+
+	obj.Name = vals.Get("name")
+	obj.Friend = vals["friend"]
+
+	return nil
 }
 
 func TestMarshal(t *testing.T) {
@@ -42,6 +72,11 @@ func TestMarshal(t *testing.T) {
 	// 非 url.Values 类型
 	data, err = Marshal(&struct{}{})
 	a.ErrorType(err, errInvalidType).Nil(data)
+
+	// Marshaler 类型
+	data, err = Marshal(objectData)
+	a.NotError(err).
+		Equal(string(data), formString)
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -66,4 +101,9 @@ func TestUnmarshal(t *testing.T) {
 	a.Equal(v.Get("name"), "Ava")
 	a.Equal(v.Get("friend"), "Jess")
 	a.Equal(v["friend"], []string{"Jess", "Sarah", "Zoe"})
+
+	// Unmarshaler 类型
+	obj := &object{}
+	a.NotError(Unmarshal([]byte(formString), obj))
+	a.Equal(obj, objectData)
 }

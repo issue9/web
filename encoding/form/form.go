@@ -25,13 +25,27 @@ import (
 	"net/url"
 )
 
-var errInvalidType = errors.New("当前只支持 net/url.Values 类型")
+var errInvalidType = errors.New("该类型无法进行转换")
 
 // MimeType 当前编码的媒体类型
 const MimeType = "application/x-www-form-urlencoded"
 
+// Marshaler 将一个普通对象转换成 form 类型
+type Marshaler interface {
+	MarshalForm() ([]byte, error)
+}
+
+// Unmarshaler 将 form 类型转换成一个对象
+type Unmarshaler interface {
+	UnmarshalForm([]byte) error
+}
+
 // Marshal 针对 www-form-urlencoded 内容的 MarshalFunc 实现
 func Marshal(v interface{}) ([]byte, error) {
+	if m, ok := v.(Marshaler); ok {
+		return m.MarshalForm()
+	}
+
 	if vals, ok := v.(url.Values); ok {
 		return []byte(vals.Encode()), nil
 	}
@@ -41,6 +55,10 @@ func Marshal(v interface{}) ([]byte, error) {
 
 // Unmarshal 针对 www-form-urlencoded 内容的 UnmarshalFunc 实现
 func Unmarshal(data []byte, v interface{}) error {
+	if m, ok := v.(Unmarshaler); ok {
+		return m.UnmarshalForm(data)
+	}
+
 	vals, err := url.ParseQuery(string(data))
 	if err != nil {
 		return err
