@@ -47,7 +47,9 @@ import (
 //      message: 已经存在相同用户名
 type Result struct {
 	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
-	status  int      // 当前的信息所对应的 HTTP 状态码
+
+	// 当前的信息所对应的 HTTP 状态码
+	Status int `json:"-" xml:"-" yaml:"-"`
 
 	Message string    `json:"message" xml:"message,attr" yaml:"message"`
 	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
@@ -70,14 +72,14 @@ func New(code int) *Result {
 		return &Result{
 			Code:    -1,
 			Message: "未知错误",
-			status:  http.StatusInternalServerError,
+			Status:  http.StatusInternalServerError,
 		}
 	}
 
 	rslt := &Result{
 		Code:    code,
 		Message: msg.message,
-		status:  msg.status,
+		Status:  msg.status,
 	}
 
 	return rslt
@@ -111,7 +113,7 @@ func (rslt *Result) HasDetail() bool {
 
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *context.Context) {
-	ctx.Render(rslt.status, rslt, nil)
+	ctx.Render(rslt.Status, rslt, nil)
 }
 
 // Exit 将当前的实例输出到客户端，并退出当前请求
