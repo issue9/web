@@ -17,13 +17,6 @@ import (
 // 目前仅由 ExitCoroutine 使用，让框加以特定的状态码退出当前协程。
 type httpStatus int
 
-// 表示继续向上一级发出错误信息。
-//
-// 一般情况下表示要退出整个应用程序。
-type exit struct {
-	msg interface{}
-}
-
 // ExitCoroutine 以指定的状态码退出当前的协程
 //
 // status 表示输出的状态码，如果为 0，则不会作任何状态码输出。
@@ -44,13 +37,12 @@ func Recovery(debug bool) recovery.RecoverFunc {
 			return
 		}
 
-		if obj, ok := msg.(exit); ok {
-			panic(obj.msg)
-		}
-
 		render(w, http.StatusInternalServerError)
 		if debug {
-			w.Write([]byte(traceStack(3, msg)))
+			_, err := w.Write([]byte(traceStack(3, msg)))
+			if err != nil {
+				panic(err)
+			}
 		} else {
 			logs.Error(traceStack(3, msg))
 		}

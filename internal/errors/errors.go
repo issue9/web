@@ -83,13 +83,13 @@ func traceStack(level int, messages ...interface{}) string {
 	ws := func(val string) {
 		_, err := w.WriteString(val)
 		if err != nil {
-			panic(&exit{msg: err})
+			panic(err)
 		}
 	}
 
 	if len(messages) > 0 {
 		if _, err := fmt.Fprintln(&w, messages...); err != nil {
-			panic(&exit{msg: err})
+			panic(err)
 		}
 	}
 
