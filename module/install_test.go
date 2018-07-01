@@ -14,14 +14,15 @@ import (
 func TestModule_GetInstall(t *testing.T) {
 	a := assert.New(t)
 
-	m1 := New(router, "users1", "users1 module", "users2")
-	m1.Task("v1", "安装数据表users", func() error { return errors.New("默认用户为admin:123") })
+	m := New(router, "users2", "users2 mdoule")
+	m.Task("v1", "安装数据表users", func() error { return nil })
+	m.Task("v1", "安装数据表users", func() error { return errors.New("falid message") })
+	m.Task("v1", "安装数据表users", func() error { return nil })
 
-	f := m1.GetInstall("v1")
+	f := m.GetInstall("v1")
 	a.NotNil(f)
 	a.NotError(f())
-
-	f = m1.GetInstall("not-exists")
+	f = m.GetInstall("not-exists")
 	a.NotNil(f)
 	a.NotError(f())
 }
