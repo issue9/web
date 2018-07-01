@@ -5,6 +5,7 @@
 package app
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -74,4 +75,24 @@ func TestApp_URL(t *testing.T) {
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
 	a.Equal(app.URL(""), "http://localhost:8082")
+}
+
+func TestApp_GetInstall(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata")
+	a.NotError(err).NotNil(app)
+
+	m1 := app.NewModule("users1", "user1 module", "users2", "users3")
+	m1.Task("v1", "安装数据表users", func() error { return errors.New("默认用户为admin:123") })
+
+	m2 := app.NewModule("users2", "user2 module", "users3")
+	m2.Task("v1", "安装数据表users", func() error { return nil })
+
+	m3 := app.NewModule("users3", "user3 mdoule")
+	m3.Task("v1", "安装数据表users", func() error { return nil })
+	m3.Task("v1", "安装数据表users", func() error { return errors.New("falid message") })
+	m3.Task("v1", "安装数据表users", func() error { return nil })
+
+	a.NotError(app.Install("install"))
+	a.NotError(app.Install("not exists"))
 }
