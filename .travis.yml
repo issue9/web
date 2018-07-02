@@ -18,6 +18,7 @@ install:
   - go get github.com/issue9/is
   - go get github.com/issue9/version
   - go get github.com/issue9/query
+  - go get github.com/issue9/term
 
   - go get gopkg.in/yaml.v2
   - go get golang.org/x/text

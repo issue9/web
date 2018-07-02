@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
@@ -116,4 +117,14 @@ func (app *App) URL(path string) string {
 		path = "/" + path
 	}
 	return app.config.URL + path
+}
+
+// Install 安装各个模块
+func (app *App) Install(version string) error {
+	dep := dependency.New()
+	for _, m := range app.modules {
+		dep.Add(m.Name, m.GetInstall(version), m.Deps...)
+	}
+
+	return dep.Init()
 }

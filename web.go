@@ -75,6 +75,11 @@ func Run() error {
 	return defaultApp.Serve()
 }
 
+// Install 执行指定版本的安装功能
+func Install(version string) error {
+	return defaultApp.Install(version)
+}
+
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
