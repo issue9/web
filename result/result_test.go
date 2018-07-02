@@ -14,8 +14,11 @@ import (
 	"github.com/issue9/middleware/recovery"
 
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/encoding/form"
 	"github.com/issue9/web/internal/errors"
 )
+
+var _ form.Marshaler = &Result{}
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
