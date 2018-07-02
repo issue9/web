@@ -5,8 +5,15 @@
 package module
 
 import (
-	"github.com/issue9/logs"
+	"github.com/issue9/term/colors"
 	"github.com/issue9/web/internal/dependency"
+)
+
+const (
+	colorDefault = colors.Default
+	colorInfo    = colors.Magenta
+	colorError   = colors.Red
+	colorSuccess = colors.Green
 )
 
 // TaskFunc 安装脚本的函数签名
@@ -49,7 +56,12 @@ func (m *Module) Task(version, title string, fn TaskFunc) {
 // GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
 func (m *Module) GetInstall(version string) dependency.InitFunc {
 	return func() error {
-		logs.Infof("安装模块: %s\n", m.Name)
+		colorPrintf(colorDefault, "安装模块: %s\n", m.Name)
+
+		if _, found := m.installs[version]; !found {
+			colorPrint(colorInfo, "不存在此版本的安装脚本!\n\n")
+			return nil
+		}
 
 		hasError := false
 		for _, e := range m.installs[version] {
@@ -57,9 +69,9 @@ func (m *Module) GetInstall(version string) dependency.InitFunc {
 		}
 
 		if hasError {
-			logs.Errorf("安装失败!\n\n")
+			colorPrint(colorError, "安装失败!\n\n")
 		} else {
-			logs.Infof("安装完成!\n\n")
+			colorPrint(colorSuccess, "安装完成!\n\n")
 		}
 		return nil
 	}
@@ -71,25 +83,40 @@ func (m *Module) GetInstall(version string) dependency.InitFunc {
 //
 // 返回值表示当前执行是否出错，若出错返回 true
 func (m *Module) runTask(e *task, hasError bool) bool {
-	logs.Infof("\t%s ......", e.title)
+	colorPrintf(colorInfo, "\t%s ......", e.title)
 
 	if hasError {
-		logs.Info("[BREAK:因前一任务失败而中止]\n")
+		colorPrintln(colorError, "[BREAK:因前一任务失败而中止]")
 		return true
 	}
 
 	err := e.task()
 
 	if err == nil {
-		logs.Info("[OK]")
+		colorPrintln(colorSuccess, "[OK]")
 		return false
 	}
 
 	if msg, ok := err.(message); ok {
-		logs.Infof("[OK:%s]\n", msg)
+		colorPrintf(colorSuccess, "[OK:%s]\n", msg)
 		return false
 	}
 
-	logs.Errorf("[FALID:%s]\n", err.Error())
+	colorPrintf(colorError, "[FALID:%s]\n", err.Error())
 	return true
+}
+
+// 打印指定颜色的字符串
+func colorPrint(color colors.Color, msg ...interface{}) {
+	colors.Print(color, colors.Default, msg...)
+}
+
+// 打印指定颜色的字符串并换行
+func colorPrintln(color colors.Color, msg ...interface{}) {
+	colors.Println(color, colors.Default, msg...)
+}
+
+// 打印指定颜色的字符串
+func colorPrintf(color colors.Color, msg string, vals ...interface{}) {
+	colors.Printf(color, colors.Default, msg, vals...)
 }
