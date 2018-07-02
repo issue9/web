@@ -12,9 +12,13 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/middleware/recovery"
+
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/encoding/form"
 	"github.com/issue9/web/internal/errors"
 )
+
+var _ form.Marshaler = &Result{}
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
@@ -25,7 +29,7 @@ func TestNew(t *testing.T) {
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
 	r = New(code)
-	a.Equal(r.Message, "400").Equal(r.status, 400).Equal(r.Code, code)
+	a.Equal(r.Message, "400").Equal(r.Status, 400).Equal(r.Code, code)
 
 	cleanMessage()
 }

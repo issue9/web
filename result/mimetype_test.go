@@ -81,3 +81,23 @@ code: 400
 
 	cleanMessage()
 }
+
+func TestResultFormMarshal(t *testing.T) {
+	a := assert.New(t)
+	a.NotError(NewMessage(400, "400"))
+
+	r := New(400)
+	r.Add("field", "message1")
+	r.Add("field", "message2")
+
+	bs, err := r.MarshalForm()
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `code=400&detail.field=message1&detail.field=message2&message=400`)
+
+	r = New(400)
+	bs, err = r.MarshalForm()
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `code=400&message=400`)
+
+	cleanMessage()
+}

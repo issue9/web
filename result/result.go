@@ -14,6 +14,8 @@ package result
 
 import (
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/web/context"
@@ -45,9 +47,14 @@ import (
 //      message: 已经存在相同用户名
 //    - field: usename
 //      message: 已经存在相同用户名
+//
+// FormData:
+//  message=errormessage&code=4000001&detail.username=message&detail.username=message
 type Result struct {
 	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
-	status  int      // 当前的信息所对应的 HTTP 状态码
+
+	// 当前的信息所对应的 HTTP 状态码
+	Status int `json:"-" xml:"-" yaml:"-"`
 
 	Message string    `json:"message" xml:"message,attr" yaml:"message"`
 	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
@@ -70,14 +77,14 @@ func New(code int) *Result {
 		return &Result{
 			Code:    -1,
 			Message: "未知错误",
-			status:  http.StatusInternalServerError,
+			Status:  http.StatusInternalServerError,
 		}
 	}
 
 	rslt := &Result{
 		Code:    code,
 		Message: msg.message,
-		status:  msg.status,
+		Status:  msg.status,
 	}
 
 	return rslt
@@ -111,11 +118,24 @@ func (rslt *Result) HasDetail() bool {
 
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *context.Context) {
-	ctx.Render(rslt.status, rslt, nil)
+	ctx.Render(rslt.Status, rslt, nil)
 }
 
 // Exit 将当前的实例输出到客户端，并退出当前请求
 func (rslt *Result) Exit(ctx *context.Context) {
 	rslt.Render(ctx)
 	ctx.Exit(0)
+}
+
+// MarshalForm 为 form.Marshaler 接口实现。用于将 result 对象转换成 form 数据格式
+func (rslt *Result) MarshalForm() ([]byte, error) {
+	vals := url.Values{}
+	vals.Add("code", strconv.Itoa(rslt.Code))
+	vals.Add("message", rslt.Message)
+
+	for _, field := range rslt.Detail {
+		vals.Add("detail."+field.Field, field.Message)
+	}
+
+	return []byte(vals.Encode()), nil
 }
