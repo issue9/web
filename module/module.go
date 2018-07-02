@@ -45,8 +45,6 @@ type Prefix struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-//
-// 如果存在同名的模块名，则会 panic
 func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
