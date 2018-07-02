@@ -59,7 +59,7 @@ func (m *Module) GetInstall(version string) dependency.InitFunc {
 		if hasError {
 			logs.Errorf("安装失败!\n\n")
 		} else {
-			logs.Infof("安装失败!\n\n")
+			logs.Infof("安装完成!\n\n")
 		}
 		return nil
 	}
@@ -86,7 +86,7 @@ func (m *Module) runTask(e *task, hasError bool) bool {
 	}
 
 	if msg, ok := err.(message); ok {
-		logs.Errorf("[OK:%s]\n", msg)
+		logs.Infof("[OK:%s]\n", msg)
 		return false
 	}
 
