@@ -24,6 +24,12 @@ type task struct {
 	task  TaskFunc
 }
 
+// Version 用于限定在某一版本下的安装脚本
+type Version struct {
+	version string
+	m       *Module
+}
+
 type message string
 
 // NewMessage 声明一条 message 类型的错误信息
@@ -38,8 +44,25 @@ func (msg message) Error() string {
 	return string(msg)
 }
 
+// NewVersion 为当前模块添加某一版本号下的安装脚本。
+func (m *Module) NewVersion(version string) *Version {
+	return &Version{
+		version: version,
+		m:       m,
+	}
+}
+
+// Task 添加安装脚本
+func (ver *Version) Task(title string, fn TaskFunc) {
+	ver.m.Task(ver.version, title, fn)
+}
+
 // Task 添加一条安装脚本
 func (m *Module) Task(version, title string, fn TaskFunc) {
+	if version == "" {
+		panic("无效的参数 version")
+	}
+
 	if m.installs == nil {
 		m.installs = make(map[string][]*task, 100)
 	}
