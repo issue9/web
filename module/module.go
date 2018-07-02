@@ -22,8 +22,9 @@ type Module struct {
 	// 键中为路由地址，键值为路由中启用的请求方法。
 	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
 
-	// 安装脚本
-	// 每个模块中的任务列表可能有顺序要求。
+	// 当前模块的安装功能。
+	//
+	// 键名指定了安装的版本，键值则为安装脚本。
 	installs map[string][]*task
 
 	inits  []func() error

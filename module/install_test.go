@@ -11,10 +11,21 @@ import (
 	"github.com/issue9/assert"
 )
 
+func TestNewMessage(t *testing.T) {
+	a := assert.New(t)
+
+	err := NewMessage("test")
+	a.Error(err)
+	msg, ok := err.(message)
+	a.True(ok).
+		Equal(string(msg), "test")
+}
+
 func TestModule_GetInstall(t *testing.T) {
 	a := assert.New(t)
 
 	m := New(router, "users2", "users2 mdoule")
+	m.Task("v1", "安装数据表users", func() error { return NewMessage("success message") })
 	m.Task("v1", "安装数据表users", func() error { return nil })
 	m.Task("v1", "安装数据表users", func() error { return errors.New("falid message") })
 	m.Task("v1", "安装数据表users", func() error { return nil })

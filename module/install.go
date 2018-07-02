@@ -12,6 +12,25 @@ import (
 // TaskFunc 安装脚本的函数签名
 type TaskFunc func() error
 
+type task struct {
+	title string
+	task  TaskFunc
+}
+
+type message string
+
+// NewMessage 声明一条 message 类型的错误信息
+//
+// 返回内容并不是一个真正的错误，则是在某些时候需要在安装完成之后，
+// 反馈一些文字信息，则需要用此函数进行包装。
+func NewMessage(msg string) error {
+	return message(msg)
+}
+
+func (msg message) Error() string {
+	return string(msg)
+}
+
 // Task 添加一条安装脚本
 func (m *Module) Task(version, title string, fn TaskFunc) {
 	if m.installs == nil {
@@ -25,11 +44,6 @@ func (m *Module) Task(version, title string, fn TaskFunc) {
 
 	mm = append(mm, &task{title: title, task: fn})
 	m.installs[version] = mm
-}
-
-type task struct {
-	title string
-	task  TaskFunc
 }
 
 // GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
@@ -51,10 +65,12 @@ func (m *Module) GetInstall(version string) dependency.InitFunc {
 	}
 }
 
-// 运行一条注册的事件。
+// 运行一条安装的事件。
 //
 // 若返回 true，表示继续当前模块的下一条操作，否则中止当前模块的操作。
-func (m *Module) runTask(e *task, hasError bool) (err bool) {
+//
+// 返回值表示当前执行是否出错，若出错返回 true
+func (m *Module) runTask(e *task, hasError bool) bool {
 	logs.Infof("\t%s ......", e.title)
 
 	if hasError {
@@ -62,13 +78,18 @@ func (m *Module) runTask(e *task, hasError bool) (err bool) {
 		return true
 	}
 
-	ret := e.task()
+	err := e.task()
 
-	if ret != nil {
-		logs.Errorf("[FALID:%s]\n", ret.Error())
-		return true
+	if err == nil {
+		logs.Info("[OK]")
+		return false
 	}
 
-	logs.Info("[OK]")
-	return false
+	if msg, ok := err.(message); ok {
+		logs.Errorf("[OK:%s]\n", msg)
+		return false
+	}
+
+	logs.Errorf("[FALID:%s]\n", err.Error())
+	return true
 }
