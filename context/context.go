@@ -13,9 +13,12 @@ import (
 	"strings"
 
 	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/internal/accept"
 )
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
@@ -40,6 +43,10 @@ type Context struct {
 	//
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
 	InputCharset xencoding.Encoding
+
+	// 实际输出的语言
+	OutputTag language.Tag
+	Printer   *message.Printer
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
 	body []byte
@@ -74,6 +81,14 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		Exit(http.StatusNotAcceptable)
 	}
 
+	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
+	if err != nil {
+		if errlog != nil {
+			errlog.Println(err)
+		}
+		Exit(http.StatusNotAcceptable)
+	}
+
 	ctx := &Context{
 		Response:           w,
 		Request:            r,
@@ -81,6 +96,8 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		OutputMimeTypeName: outputMimeType,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
+		OutputTag:          tag,
+		Printer:            message.NewPrinter(tag),
 	}
 
 	// 只在有请求内容的时候，才会获取其输出转码函数
@@ -135,7 +152,10 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 	return nil
 }
 
-var contentTypeKey = http.CanonicalHeaderKey("Content-type")
+var (
+	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
+	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
+)
 
 // Marshal 将 v 解码并发送给客户端。
 //
@@ -145,19 +165,28 @@ var contentTypeKey = http.CanonicalHeaderKey("Content-type")
 // NOTE: 如果需要指定一个特定的 Content-Type，可以在 headers 中指定，
 // 否则使用当前的编码名称。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	found := false
+	contentTypeFound := false
+	contentLanguageFound := false
 	for k, v := range headers {
 		// strings.ToLower 的性能未必有 http.CanonicalHeaderKey 好，
 		// 所以直接使用了 http.CanonicalHeaderKey 作转换。
-		if http.CanonicalHeaderKey(k) == contentTypeKey {
-			found = true
+		k = http.CanonicalHeaderKey(k)
+
+		if k == contentTypeKey {
+			contentTypeFound = true
+		} else if k == contentLanguageKey {
+			contentLanguageFound = true
 		}
 		ctx.Response.Header().Set(k, v)
-
 	}
-	if !found {
+
+	if !contentTypeFound {
 		ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
-		ctx.Response.Header().Set("Content-Type", ct)
+		ctx.Response.Header().Set(contentTypeKey, ct)
+	}
+
+	if !contentLanguageFound && ctx.OutputTag != language.Und {
+		ctx.Response.Header().Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
 	if v == nil {
@@ -233,4 +262,23 @@ func (ctx *Context) ClientIP() string {
 	}
 
 	return strings.TrimSpace(ip)
+}
+
+func acceptLanguage(header string) (language.Tag, error) {
+	if header == "" {
+		return language.Und, nil
+	}
+
+	al, err := accept.Parse(header)
+	if err != nil {
+		return language.Und, err
+	}
+
+	prefs := make([]language.Tag, 0, len(al))
+	for _, l := range al {
+		prefs = append(prefs, language.Make(l.Value))
+	}
+
+	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
+	return tag, nil
 }
