@@ -21,6 +21,12 @@ import (
 	"github.com/issue9/web/internal/accept"
 )
 
+// 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
+var (
+	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
+	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
+)
+
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
 	Response http.ResponseWriter
@@ -44,7 +50,7 @@ type Context struct {
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
 	InputCharset xencoding.Encoding
 
-	// 实际输出的语言
+	// 输出语言的相关设置项。
 	OutputTag language.Tag
 	Printer   *message.Printer
 
@@ -103,7 +109,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	// 只在有请求内容的时候，才会获取其输出转码函数
 	// 当请求 body 为空时，r.Body == http.NoBody，与请求方法无关。
 	if r.Body != nil && r.Body != http.NoBody {
-		ct := r.Header.Get("Content-Type")
+		ct := r.Header.Get(contentTypeKey)
 		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(ct)
 		if err != nil {
 			if errlog != nil {
@@ -151,11 +157,6 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 
 	return nil
 }
-
-var (
-	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
-	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
-)
 
 // Marshal 将 v 解码并发送给客户端。
 //
