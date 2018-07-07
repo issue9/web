@@ -69,31 +69,27 @@ type Context struct {
 // 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
 // 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
 func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
-	at := r.Header.Get("Accept")
-	outputMimeType, marshal, err := encoding.AcceptMimeType(at)
-	if err != nil {
+	checkError := func(err error, status int) {
+		if err == nil {
+			return
+		}
+
 		if errlog != nil {
 			errlog.Println(err)
 		}
-		Exit(http.StatusNotAcceptable)
+		Exit(status)
 	}
 
-	ac := r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset, err := encoding.AcceptCharset(ac)
-	if err != nil {
-		if errlog != nil {
-			errlog.Println(err)
-		}
-		Exit(http.StatusNotAcceptable)
-	}
+	header := r.Header.Get("Accept")
+	outputMimeType, marshal, err := encoding.AcceptMimeType(header)
+	checkError(err, http.StatusNotAcceptable)
+
+	header = r.Header.Get("Accept-Charset")
+	outputCharsetName, outputCharset, err := encoding.AcceptCharset(header)
+	checkError(err, http.StatusNotAcceptable)
 
 	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
-	if err != nil {
-		if errlog != nil {
-			errlog.Println(err)
-		}
-		Exit(http.StatusNotAcceptable)
-	}
+	checkError(err, http.StatusNotAcceptable)
 
 	ctx := &Context{
 		Response:           w,
@@ -109,14 +105,9 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	// 只在有请求内容的时候，才会获取其输出转码函数
 	// 当请求 body 为空时，r.Body == http.NoBody，与请求方法无关。
 	if r.Body != nil && r.Body != http.NoBody {
-		ct := r.Header.Get(contentTypeKey)
-		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(ct)
-		if err != nil {
-			if errlog != nil {
-				errlog.Println(err)
-			}
-			Exit(http.StatusUnsupportedMediaType)
-		}
+		header = r.Header.Get(contentTypeKey)
+		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(header)
+		checkError(err, http.StatusUnsupportedMediaType)
 	}
 
 	return ctx
@@ -139,7 +130,8 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return ctx.body, nil
 	}
 
-	reader := transform.NewReader(bytes.NewReader(ctx.body), ctx.InputCharset.NewDecoder())
+	d := ctx.InputCharset.NewDecoder()
+	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
 	ctx.body, err = ioutil.ReadAll(reader)
 	return ctx.body, err
 }
@@ -163,31 +155,26 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（json 中会输出 null），可以使用 Nil 变量代替。
 //
-// NOTE: 如果需要指定一个特定的 Content-Type，可以在 headers 中指定，
-// 否则使用当前的编码名称。
+// NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
+// 可以在 headers 中指定，否则使用当前的编码和语言名称。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	contentTypeFound := false
-	contentLanguageFound := false
+	header := ctx.Response.Header()
+	var contentTypeFound, contentLanguageFound bool
 	for k, v := range headers {
-		// strings.ToLower 的性能未必有 http.CanonicalHeaderKey 好，
-		// 所以直接使用了 http.CanonicalHeaderKey 作转换。
 		k = http.CanonicalHeaderKey(k)
 
-		if k == contentTypeKey {
-			contentTypeFound = true
-		} else if k == contentLanguageKey {
-			contentLanguageFound = true
-		}
-		ctx.Response.Header().Set(k, v)
+		contentTypeFound = (contentTypeFound || k == contentTypeKey)
+		contentLanguageFound = (contentLanguageFound || k == contentLanguageKey)
+		header.Set(k, v)
 	}
 
 	if !contentTypeFound {
 		ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
-		ctx.Response.Header().Set(contentTypeKey, ct)
+		header.Set(contentTypeKey, ct)
 	}
 
 	if !contentLanguageFound && ctx.OutputTag != language.Und {
-		ctx.Response.Header().Set(contentLanguageKey, ctx.OutputTag.String())
+		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
 	if v == nil {
@@ -252,14 +239,11 @@ func (ctx *Context) ClientIP() string {
 	if index := strings.IndexByte(ip, ','); index > 0 {
 		ip = ip[:index]
 	}
+	if ip == "" && ctx.Request.RemoteAddr != "" {
+		ip = ctx.Request.RemoteAddr
+	}
 	if ip == "" {
-		if ctx.Request.RemoteAddr != "" {
-			ip = ctx.Request.RemoteAddr
-		}
-
-		if ip == "" {
-			ip = ctx.Request.Header.Get("X-Real-IP")
-		}
+		ip = ctx.Request.Header.Get("X-Real-IP")
 	}
 
 	return strings.TrimSpace(ip)

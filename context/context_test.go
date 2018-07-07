@@ -200,7 +200,7 @@ func TestContext_Marshal(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	obj := &encodingtest.TextObject{Name: "test", Age: 123}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-language": "zh-hans"}))
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 	a.Equal(w.Header().Get("content-type"), "json")
@@ -278,6 +278,21 @@ func TestContext_ClientIP(t *testing.T) {
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+
+	// 测试获取 IP 报头的优先级
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	r.Header.Set("x-real-ip", "192.168.2.2")
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+
+	// 测试获取 IP 报头的优先级
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("Remote-Addr", "192.168.2.0")
+	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
