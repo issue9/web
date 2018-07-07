@@ -113,7 +113,7 @@ func TestNew(t *testing.T) {
 		Equal(ctx.InputCharset, nil).
 		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
-		NotNil(ctx.Printer)
+		NotNil(ctx.LocalePrinter)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	logwriter.Reset()

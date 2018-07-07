@@ -51,8 +51,8 @@ type Context struct {
 	InputCharset xencoding.Encoding
 
 	// 输出语言的相关设置项。
-	OutputTag language.Tag
-	Printer   *message.Printer
+	OutputTag     language.Tag
+	LocalePrinter *message.Printer
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
 	body []byte
@@ -99,7 +99,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
-		Printer:            message.NewPrinter(tag),
+		LocalePrinter:      message.NewPrinter(tag),
 	}
 
 	// 只在有请求内容的时候，才会获取其输出转码函数
