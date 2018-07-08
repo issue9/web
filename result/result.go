@@ -3,13 +3,6 @@
 // license that can be found in the LICENSE file.
 
 // Package result 提供了一套用于描述向客户端反馈错误信息的机制。
-//
-//
-// 错误码
-//
-// 对于错误代码的定义是根据 HTTP 状态码进行分类的，
-// 比如所有与 400 有关的错误信息，都是以 400 * 10N 为基数的；
-// 而与验证有关的都是以 401 * 10N 为基数的。
 package result
 
 import (
