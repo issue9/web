@@ -31,6 +31,8 @@ type message struct {
 }
 
 // Messages 返回所有 Message 内容
+//
+// 若需要特定语言的内容，需要自选对返回值作本地操作。
 func Messages() map[int]string {
 	msgs := make(map[int]string, len(messages))
 	for code, msg := range messages {
