@@ -61,11 +61,36 @@ func TestNewMessages(t *testing.T) {
 	a.False(found).Nil(msg)
 
 	// 小于 100 的值，会发生错误
-	cleanMessage()
 	a.Error(NewMessages(map[int]string{
 		10000: "100",
 		40100: "40100",
 		99:    "10000",
 		100:   "100",
 	}))
+
+	cleanMessage()
+}
+
+func TestNewStatusMessages(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(NewStatusMessages(400, map[int]string{
+		1:   "1",
+		100: "100",
+	}))
+
+	msg, found := messages[1]
+	a.True(found).
+		Equal(msg.status, 400).
+		Equal(msg.message, "1")
+
+	msg, found = messages[401]
+	a.False(found).Nil(msg)
+
+	a.Error(NewStatusMessages(400, map[int]string{
+		1:   "",
+		100: "100",
+	}))
+
+	cleanMessage()
 }
