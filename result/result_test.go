@@ -12,6 +12,8 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/middleware/recovery"
+	"golang.org/x/text/language"
+	xmessage "golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding/form"
@@ -19,20 +21,6 @@ import (
 )
 
 var _ form.Marshaler = &Result{}
-
-func TestNew(t *testing.T) {
-	a := assert.New(t)
-
-	r := New(-2) // 不存在的代码
-	a.Equal(r.Code, -1)
-
-	code := 400 * 1000
-	a.NotError(NewMessage(code, "400"))
-	r = New(code)
-	a.Equal(r.Message, "400").Equal(r.Status, 400).Equal(r.Code, code)
-
-	cleanMessage()
-}
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
@@ -75,6 +63,7 @@ func TestResult_Render(t *testing.T) {
 			OutputMimeTypeName: "application/json",
 			Request:            r,
 			Response:           w,
+			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
 		code := http.StatusForbidden * 1000
 		a.NotError(NewMessage(code, "400"))
@@ -102,6 +91,7 @@ func TestResult_Exit(t *testing.T) {
 			OutputMimeTypeName: "application/json",
 			Request:            r,
 			Response:           w,
+			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
 		code := http.StatusForbidden * 1000
 		a.NotError(NewMessage(code, "400"))

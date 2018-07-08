@@ -14,6 +14,12 @@ import (
 	"github.com/issue9/web/context"
 )
 
+// 未知错误代码所表示的代码
+const (
+	UnknownCode           = -1
+	UnknownCodeMessageKey = "未知的错误代码"
+)
+
 // Result 定义了出错时，向客户端返回的结构体。支持以下格式：
 //
 // JSON:
@@ -63,24 +69,7 @@ type detail struct {
 //
 // code 表示错误代码；
 func New(code int) *Result {
-	msg, found := messages[code]
-	if !found {
-		logs.Error("不存在的错误码:", code)
-
-		return &Result{
-			Code:    -1,
-			Message: "未知错误",
-			Status:  http.StatusInternalServerError,
-		}
-	}
-
-	rslt := &Result{
-		Code:    code,
-		Message: msg.message,
-		Status:  msg.status,
-	}
-
-	return rslt
+	return &Result{Code: code}
 }
 
 // SetDetail 设置详细的错误信息
@@ -111,6 +100,17 @@ func (rslt *Result) HasDetail() bool {
 
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *context.Context) {
+	if msg, found := messages[rslt.Code]; !found {
+		logs.Error("不存在的错误码:", rslt.Code)
+
+		rslt.Status = http.StatusInternalServerError
+		rslt.Code = UnknownCode
+		rslt.Message = ctx.LocalePrinter.Sprintf(UnknownCodeMessageKey)
+	} else {
+		rslt.Status = msg.status
+		rslt.Message = ctx.LocalePrinter.Sprintf(msg.message)
+	}
+
 	ctx.Render(rslt.Status, rslt, nil)
 }
 
