@@ -13,20 +13,36 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var (
+	mimetypeResult = &Result{
+		Code:    400,
+		Message: "400",
+		Detail: []*detail{
+			&detail{
+				Field:   "field1",
+				Message: "message1",
+			},
+			&detail{
+				Field:   "field2",
+				Message: "message2",
+			},
+		},
+	}
+
+	simpleMimetypeResult = &Result{
+		Code:    400,
+		Message: "400",
+	}
+)
+
 func TestResultJSONMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
-	r.Add("field1", "message1")
-	r.Add("field2", "message2")
-
-	bs, err := json.Marshal(r)
+	bs, err := json.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400,"detail":[{"field":"field1","message":"message1"},{"field":"field2","message":"message2"}]}`)
 
-	r = New(400)
-	bs, err = json.Marshal(r)
+	bs, err = json.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `{"message":"400","code":400}`)
 
@@ -35,18 +51,12 @@ func TestResultJSONMarshal(t *testing.T) {
 
 func TestResultXMLMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
-	r.Add("field", "message1")
-	r.Add("field", "message2")
-
-	bs, err := xml.Marshal(r)
+	bs, err := xml.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<result message="400" code="400"><field name="field">message1</field><field name="field">message2</field></result>`)
+	a.Equal(string(bs), `<result message="400" code="400"><field name="field1">message1</field><field name="field2">message2</field></result>`)
 
-	r = New(400)
-	bs, err = xml.Marshal(r)
+	bs, err = xml.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `<result message="400" code="400"></result>`)
 
@@ -55,25 +65,19 @@ func TestResultXMLMarshal(t *testing.T) {
 
 func TestResultYAMLMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
-	r.Add("field", "message1")
-	r.Add("field", "message2")
-
-	bs, err := yaml.Marshal(r)
+	bs, err := yaml.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `message: "400"
 code: 400
 detail:
-- field: field
+- field: field1
   message: message1
-- field: field
+- field: field2
   message: message2
 `)
 
-	r = New(400)
-	bs, err = yaml.Marshal(r)
+	bs, err = yaml.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `message: "400"
 code: 400
@@ -84,18 +88,12 @@ code: 400
 
 func TestResultFormMarshal(t *testing.T) {
 	a := assert.New(t)
-	a.NotError(NewMessage(400, "400"))
 
-	r := New(400)
-	r.Add("field", "message1")
-	r.Add("field", "message2")
-
-	bs, err := r.MarshalForm()
+	bs, err := mimetypeResult.MarshalForm()
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `code=400&detail.field=message1&detail.field=message2&message=400`)
+	a.Equal(string(bs), `code=400&detail.field1=message1&detail.field2=message2&message=400`)
 
-	r = New(400)
-	bs, err = r.MarshalForm()
+	bs, err = simpleMimetypeResult.MarshalForm()
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `code=400&message=400`)
 
