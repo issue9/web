@@ -54,12 +54,14 @@ func TestResult_SetDetail(t *testing.T) {
 	cleanMessage()
 }
 
-func TestResult_Render(t *testing.T) {
+func TestResult_Render_Exit(t *testing.T) {
 	a := assert.New(t)
-	code := http.StatusForbidden * 1000
-	a.NotError(NewMessage(code, "400"))
+	a.NotError(NewMessages(map[int]string{
+		http.StatusForbidden * 1000:    "400", // 需要与 resultRenderHandler 中的错误代码值相同
+		http.StatusUnauthorized * 1000: "401", // 需要与 resultRenderHandler 中的错误代码值相同
+	}))
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	resultRenderHandler := func(w http.ResponseWriter, r *http.Request) {
 		ctx := &context.Context{
 			OutputMimeType:     json.Marshal,
 			OutputMimeTypeName: "application/json",
@@ -67,71 +69,39 @@ func TestResult_Render(t *testing.T) {
 			Response:           w,
 			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
-		rslt := &Result{Code: code}
-		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
-		rslt.Render(ctx)
-	}))
 
-	r, err := http.NewRequest(http.MethodGet, srv.URL+"/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(r)
+		switch r.URL.Path {
+		case "/render":
+			rslt := &Result{Code: http.StatusForbidden * 1000}
+			rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+			rslt.Render(ctx)
+		case "/exit":
+			rslt := &Result{Code: http.StatusUnauthorized * 1000}
+			rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+			rslt.Exit(ctx)
+		case "/error":
+			rslt := &Result{Code: 100}
+			rslt.Render(ctx)
+		}
+	}
+
+	h := http.HandlerFunc(resultRenderHandler)
+	srv := httptest.NewServer(recovery.New(h, errors.Recovery(false)))
+
+	// render 的正常流程测试
+	resp, err := http.Get(srv.URL + "/render")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusForbidden)
 
-	cleanMessage()
-}
-
-func TestResult_Render_error(t *testing.T) {
-	a := assert.New(t)
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := &context.Context{
-			OutputMimeType:     json.Marshal,
-			OutputMimeTypeName: "application/json",
-			Request:            r,
-			Response:           w,
-			LocalePrinter:      xmessage.NewPrinter(language.Und),
-		}
-		rslt := &Result{Code: 100}
-		rslt.Render(ctx)
-	}))
-
-	r, err := http.NewRequest(http.MethodGet, srv.URL+"/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(r)
+	// result.Code 不存在的情况
+	resp, err = http.Get(srv.URL + "/error")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusInternalServerError)
 
-	cleanMessage()
-}
-
-func TestResult_Exit(t *testing.T) {
-	a := assert.New(t)
-	code := http.StatusForbidden * 1000
-	a.NotError(NewMessage(code, "400"))
-
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := &context.Context{
-			OutputMimeType:     json.Marshal,
-			OutputMimeTypeName: "application/json",
-			Request:            r,
-			Response:           w,
-			LocalePrinter:      xmessage.NewPrinter(language.Und),
-		}
-		rslt := &Result{Code: code}
-		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
-		rslt.Exit(ctx)
-	})
-
-	srv := httptest.NewServer(recovery.New(h, errors.Recovery(false)))
-	r, err := http.NewRequest(http.MethodGet, srv.URL+"/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(r)
+	// result.Exit() 测试
+	resp, err = http.Get(srv.URL + "/exit")
 	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusForbidden)
+	a.Equal(resp.StatusCode, http.StatusUnauthorized)
 
 	cleanMessage()
 }
