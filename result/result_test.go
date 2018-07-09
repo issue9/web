@@ -27,7 +27,7 @@ func TestResult_Add_HasDetail(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(code)
+	r := &Result{Code: code}
 	a.False(r.HasDetail())
 
 	r.Add("field", "message")
@@ -43,7 +43,7 @@ func TestResult_SetDetail(t *testing.T) {
 
 	code := 400 * 1000
 	a.NotError(NewMessage(code, "400"))
-	r := New(code)
+	r := &Result{Code: code}
 	a.False(r.HasDetail())
 
 	r.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
@@ -67,7 +67,7 @@ func TestResult_Render(t *testing.T) {
 			Response:           w,
 			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
-		rslt := New(code)
+		rslt := &Result{Code: code}
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Render(ctx)
 	}))
@@ -78,6 +78,31 @@ func TestResult_Render(t *testing.T) {
 	resp, err := http.DefaultClient.Do(r)
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusForbidden)
+
+	cleanMessage()
+}
+
+func TestResult_Render_error(t *testing.T) {
+	a := assert.New(t)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := &context.Context{
+			OutputMimeType:     json.Marshal,
+			OutputMimeTypeName: "application/json",
+			Request:            r,
+			Response:           w,
+			LocalePrinter:      xmessage.NewPrinter(language.Und),
+		}
+		rslt := &Result{Code: 100}
+		rslt.Render(ctx)
+	}))
+
+	r, err := http.NewRequest(http.MethodGet, srv.URL+"/path", nil)
+	a.NotError(err).NotNil(r)
+	r.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(r)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusInternalServerError)
 
 	cleanMessage()
 }
@@ -95,7 +120,7 @@ func TestResult_Exit(t *testing.T) {
 			Response:           w,
 			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
-		rslt := New(code)
+		rslt := &Result{Code: code}
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Exit(ctx)
 	})

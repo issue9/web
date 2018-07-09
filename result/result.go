@@ -58,13 +58,6 @@ type detail struct {
 	Message string `json:"message" xml:",chardata" yaml:"message"`
 }
 
-// New 声明一个新的 Result 实例
-//
-// code 表示错误代码；
-func New(code int) *Result {
-	return &Result{Code: code}
-}
-
 // SetDetail 设置详细的错误信息
 //
 // 会覆盖由 Add() 添加的内容
