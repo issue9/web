@@ -35,9 +35,9 @@ import (
 //  message: 'error message'
 //  code: 40000001
 //  detail:
-//    - field: usename
+//    - field: username
 //      message: 已经存在相同用户名
-//    - field: usename
+//    - field: username
 //      message: 已经存在相同用户名
 //
 // FormData:

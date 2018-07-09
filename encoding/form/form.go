@@ -4,8 +4,6 @@
 
 // Package form 用于处理 www-form-urlencoded 编码
 //
-// NOTE: 仅支持将数据从 net/url.Values 导出或是写入到 net/url.Values
-//
 //  func read(w http.ResponseWriter, r *http.Request) {
 //      ctx := web.New(w, r)
 //      vals := urls.Values{}

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	xmessage "golang.org/x/text/message"
 )
 
 // 未知错误代码所表示的代码
@@ -30,13 +32,23 @@ type message struct {
 	status  int    // 对应的 HTTP 状态码
 }
 
-// Messages 返回所有 Message 内容
+// Messages 错误信息列表
 //
-// 若需要特定语言的内容，需要自选对返回值作本地操作。
+// 若需要特定语言的内容，可以调用 LocaleMessages() 函数获取。
 func Messages() map[int]string {
 	msgs := make(map[int]string, len(messages))
 	for code, msg := range messages {
 		msgs[code] = msg.message
+	}
+
+	return msgs
+}
+
+// LocaleMessages 本化地的错误信息列表
+func LocaleMessages(p *xmessage.Printer) map[int]string {
+	msgs := make(map[int]string, len(messages))
+	for code, msg := range messages {
+		msgs[code] = p.Sprintf(msg.message)
 	}
 
 	return msgs
@@ -53,6 +65,7 @@ func findMessage(code int) *message {
 	if msg, found := messages[code]; found {
 		return msg
 	}
+
 	return unknownCodeMessage
 }
 

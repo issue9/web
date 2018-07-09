@@ -56,6 +56,8 @@ func TestResult_SetDetail(t *testing.T) {
 
 func TestResult_Render(t *testing.T) {
 	a := assert.New(t)
+	code := http.StatusForbidden * 1000
+	a.NotError(NewMessage(code, "400"))
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := &context.Context{
@@ -65,8 +67,6 @@ func TestResult_Render(t *testing.T) {
 			Response:           w,
 			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
-		code := http.StatusForbidden * 1000
-		a.NotError(NewMessage(code, "400"))
 		rslt := New(code)
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Render(ctx)
@@ -84,6 +84,8 @@ func TestResult_Render(t *testing.T) {
 
 func TestResult_Exit(t *testing.T) {
 	a := assert.New(t)
+	code := http.StatusForbidden * 1000
+	a.NotError(NewMessage(code, "400"))
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := &context.Context{
@@ -93,8 +95,6 @@ func TestResult_Exit(t *testing.T) {
 			Response:           w,
 			LocalePrinter:      xmessage.NewPrinter(language.Und),
 		}
-		code := http.StatusForbidden * 1000
-		a.NotError(NewMessage(code, "400"))
 		rslt := New(code)
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Exit(ctx)
