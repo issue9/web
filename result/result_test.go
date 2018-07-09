@@ -7,10 +7,10 @@ package result
 import (
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 	"github.com/issue9/middleware/recovery"
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
@@ -86,22 +86,22 @@ func TestResult_Render_Exit(t *testing.T) {
 	}
 
 	h := http.HandlerFunc(resultRenderHandler)
-	srv := httptest.NewServer(recovery.New(h, errors.Recovery(false)))
+	srv := rest.NewServer(t, recovery.New(h, errors.Recovery(false)), nil)
 
 	// render 的正常流程测试
-	resp, err := http.Get(srv.URL + "/render")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusForbidden)
+	srv.NewRequest(http.MethodGet, "/render").
+		Do().
+		Status(http.StatusForbidden)
 
 	// result.Code 不存在的情况
-	resp, err = http.Get(srv.URL + "/error")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusInternalServerError)
+	srv.NewRequest(http.MethodGet, "/error").
+		Do().
+		Status(http.StatusInternalServerError)
 
 	// result.Exit() 测试
-	resp, err = http.Get(srv.URL + "/exit")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusUnauthorized)
+	srv.NewRequest(http.MethodGet, "/exit").
+		Do().
+		Status(http.StatusUnauthorized)
 
 	cleanMessage()
 }
