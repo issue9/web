@@ -6,6 +6,7 @@
 package result
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -86,15 +87,14 @@ func (rslt *Result) HasDetail() bool {
 
 // Render 将当前的实例输出到客户端
 func (rslt *Result) Render(ctx *context.Context) {
-	msg := findMessage(rslt.Code)
-
-	if msg == unknownCodeMessage {
+	msg, found := messages[rslt.Code]
+	if !found {
 		logs.Error("不存在的错误码:", rslt.Code)
-		rslt.Code = UnknownCode
+		ctx.Exit(http.StatusInternalServerError)
 	}
+
 	rslt.Status = msg.status
 	rslt.Message = ctx.LocalePrinter.Sprintf(msg.message)
-
 	ctx.Render(rslt.Status, rslt, nil)
 }
 

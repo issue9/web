@@ -7,24 +7,12 @@ package result
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	xmessage "golang.org/x/text/message"
 )
 
-// 未知错误代码所表示的代码
-const (
-	UnknownCode           = -1
-	UnknownCodeMessageKey = "未知的错误代码"
-)
-
 // 保存所有的代码与消息对应关系
 var messages = map[int]*message{}
-
-var unknownCodeMessage = &message{
-	status:  http.StatusInternalServerError,
-	message: UnknownCodeMessageKey,
-}
 
 // message 一个错误代码对应的内容
 type message struct {
@@ -61,14 +49,6 @@ func getStatus(code int) int {
 	return code
 }
 
-func findMessage(code int) *message {
-	if msg, found := messages[code]; found {
-		return msg
-	}
-
-	return unknownCodeMessage
-}
-
 // NewMessage 注册一条新的错误信息。
 //
 // 功能与 NewStatusMessage 相同，但相较于 NewStatusMessage 函数，
@@ -101,10 +81,6 @@ func NewMessages(msgs map[int]string) error {
 // code 表示的是该错误的错误代码。
 // msg 表示具体的错误描述内容。
 func NewStatusMessage(status, code int, msg string) error {
-	if code == UnknownCode {
-		return errors.New("不允许的值")
-	}
-
 	if len(msg) == 0 {
 		return errors.New("参数 msg 不能为空值")
 	}

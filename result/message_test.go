@@ -47,21 +47,6 @@ func TestMessages(t *testing.T) {
 	cleanMessage()
 }
 
-func TestFindMessage(t *testing.T) {
-	a := assert.New(t)
-
-	a.NotError(NewMessage(10010, "100"))
-
-	msg := findMessage(10010)
-	a.Equal(msg.status, 100).
-		Equal(msg.message, "100")
-
-	msg = findMessage(100) // 不存在
-	a.Equal(msg, unknownCodeMessage)
-
-	cleanMessage()
-}
-
 func TestGetStatus(t *testing.T) {
 	a := assert.New(t)
 
@@ -114,18 +99,6 @@ func TestNewMessages(t *testing.T) {
 		99:    "10000",
 		100:   "100",
 	}))
-
-	cleanMessage()
-}
-
-func TestNewStatusMessage(t *testing.T) {
-	a := assert.New(t)
-	a.NotError(NewStatusMessage(500, 50010, "100"))
-
-	a.Error(NewStatusMessage(500, UnknownCode, "msg")) // 错误代码不正确
-	a.Error(NewStatusMessage(500, 50010, ""))          // msg 不能为空
-	a.Error(NewStatusMessage(500, 50010, "100"))       // 已经存在
-	a.Error(NewStatusMessage(600, 50010, "100"))       // 已经存在，仅使状态码不同
 
 	cleanMessage()
 }
