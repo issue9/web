@@ -19,7 +19,7 @@ type Module struct {
 	Description string   `json:"description" yaml:"description" xml:"description"`
 
 	// 当前模块的所有路由项。
-	// 键中为路由地址，键值为路由中启用的请求方法。
+	// 键名为路由地址，键值为路由中启用的请求方法。
 	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
 
 	// 当前模块的安装功能。
