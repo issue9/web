@@ -15,10 +15,19 @@ import (
 	"github.com/issue9/assert"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/encoding"
 	"github.com/issue9/web/encoding/encodingtest"
 )
+
+func init() {
+	message.SetString(language.Chinese, "test", "中文")
+	message.SetString(language.SimplifiedChinese, "test", "简体")
+	message.SetString(language.TraditionalChinese, "test", "繁体")
+	message.SetString(language.English, "test", "english")
+}
 
 var logwriter = new(bytes.Buffer)
 var errlog = log.New(logwriter, "", 0)
@@ -81,11 +90,35 @@ func TestNew(t *testing.T) {
 		New(w, r, errlog)
 	})
 
-	// 正常
+	// 错误的 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
+	a.Panic(func() {
+		New(w, r, errlog)
+	})
+
+	// 正常，指定 Accept-Language
+	logwriter.Reset()
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	var ctx *Context
+	a.NotPanic(func() {
+		ctx = New(w, r, errlog)
+	})
+	a.NotNil(ctx).
+		Equal(logwriter.Len(), 0).
+		Equal(ctx.InputCharset, nil).
+		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType).
+		Equal(ctx.OutputTag, language.SimplifiedChinese).
+		NotNil(ctx.LocalePrinter)
+
+	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
+	logwriter.Reset()
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("Accept", encoding.DefaultMimeType)
 	a.NotPanic(func() {
 		ctx = New(w, r, errlog)
 	})
@@ -94,7 +127,7 @@ func TestNew(t *testing.T) {
 		Equal(ctx.InputCharset, nil).
 		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
 
-	// 正常，且有输入内容
+	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	a.NotError(encoding.AddUnmarshal(encodingtest.MimeType, encodingtest.TextUnmarshal))
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
@@ -167,10 +200,11 @@ func TestContext_Marshal(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	obj := &encodingtest.TextObject{Name: "test", Age: 123}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json"}))
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 	a.Equal(w.Header().Get("content-type"), "json")
+	a.Equal(w.Header().Get("content-language"), "zh-hans")
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
@@ -179,14 +213,17 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
+	a.Equal(w.Header().Get("content-language"), "") // 未指定
 
 	// 输出 nil
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
 	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
+	ctx.OutputTag = language.MustParse("zh-Hans")
 	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "")
+	a.Equal(w.Header().Get("content-language"), "zh-Hans") // 指定了输出语言
 
 	// 输出 Nil，text. 未实现对 nil 值的解析，所以采用了 json.Marshal
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -243,4 +280,40 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+
+	// 测试获取 IP 报头的优先级
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	r.Header.Set("x-real-ip", "192.168.2.2")
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+
+	// 测试获取 IP 报头的优先级
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("Remote-Addr", "192.168.2.0")
+	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
+	r.Header.Set("x-real-ip", "192.168.2.2")
+	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+}
+
+func TestAcceptLanguage(t *testing.T) {
+	a := assert.New(t)
+	tag, err := acceptLanguage("")
+	a.NotError(err).Equal(tag, language.Und)
+
+	tag, err = acceptLanguage("xx;q=xxx")
+	a.Error(err).Equal(tag, language.Und)
+
+	tag, err = acceptLanguage("zh")
+	a.NotError(err).Equal(tag, language.Chinese)
+
+	tag, err = acceptLanguage("zh-Hant")
+	a.NotError(err).Equal(tag, language.TraditionalChinese)
+
+	tag, err = acceptLanguage("zh-Hans")
+	a.NotError(err).Equal(tag, language.SimplifiedChinese)
+
+	tag, err = acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	a.NotError(err).Equal(tag, language.English)
 }

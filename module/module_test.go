@@ -20,11 +20,12 @@ var (
 	}
 
 	h1 = http.HandlerFunc(f1)
+
+	router = mux.New(false, false, nil, nil).Prefix("")
 )
 
 func TestModule_GetInit(t *testing.T) {
 	a := assert.New(t)
-	router := mux.New(false, false, nil, nil).Prefix("")
 	a.NotNil(router)
 
 	m := New(router, "m1", "m1 desc")
@@ -58,7 +59,6 @@ func TestModule_GetInit(t *testing.T) {
 
 func TestPrefix_Module(t *testing.T) {
 	a := assert.New(t)
-	router := mux.New(false, false, nil, nil).Prefix("")
 
 	m := New(router, "m1", "m1 desc")
 	a.NotNil(m)
@@ -69,7 +69,6 @@ func TestPrefix_Module(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
-	router := mux.New(false, false, nil, nil).Prefix("")
 
 	path := "/path"
 	m := New(router, "m1", "m1 desc")
@@ -114,7 +113,6 @@ func TestModule_Handles(t *testing.T) {
 
 func TestPrefix_Handles(t *testing.T) {
 	a := assert.New(t)
-	router := mux.New(false, false, nil, nil).Prefix("")
 
 	path := "/path"
 	m := New(router, "m1", "m1 desc")

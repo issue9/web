@@ -19,8 +19,13 @@ type Module struct {
 	Description string   `json:"description" yaml:"description" xml:"description"`
 
 	// 当前模块的所有路由项。
-	// 键中为路由地址，键值为路由中启用的请求方法。
+	// 键名为路由地址，键值为路由中启用的请求方法。
 	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
+
+	// 当前模块的安装功能。
+	//
+	// 键名指定了安装的版本，键值则为安装脚本。
+	installs map[string][]*task
 
 	inits  []func() error
 	router *mux.Prefix
@@ -40,8 +45,6 @@ type Prefix struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-//
-// 如果存在同名的模块名，则会 panic
 func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,

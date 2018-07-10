@@ -75,6 +75,11 @@ func Run() error {
 	return defaultApp.Serve()
 }
 
+// Install 执行指定版本的安装功能
+func Install(version string) error {
+	return defaultApp.Install(version)
+}
+
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
@@ -116,5 +121,5 @@ func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
 
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *result.Result {
-	return result.New(code)
+	return &result.Result{Code: code}
 }

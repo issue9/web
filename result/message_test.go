@@ -8,11 +8,43 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"golang.org/x/text/language"
+	xmessage "golang.org/x/text/message"
 )
 
 // cleanMessage 清空所有消息内容
 func cleanMessage() {
 	messages = map[int]*message{}
+}
+
+func TestMessages(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(xmessage.SetString(language.Und, "lang", "und"))
+	a.NotError(xmessage.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(xmessage.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(NewMessage(40010, "lang"))
+
+	lmsgs := LocaleMessages(xmessage.NewPrinter(language.Und))
+	msgs := Messages()
+	a.Equal(lmsgs[40010], "und")
+
+	lmsgs = LocaleMessages(xmessage.NewPrinter(language.SimplifiedChinese))
+	msgs = Messages()
+	a.Equal(lmsgs[40010], "hans")
+	a.Equal(msgs[40010], "lang")
+
+	lmsgs = LocaleMessages(xmessage.NewPrinter(language.TraditionalChinese))
+	msgs = Messages()
+	a.Equal(lmsgs[40010], "hant")
+	a.Equal(msgs[40010], "lang")
+
+	lmsgs = LocaleMessages(xmessage.NewPrinter(language.English))
+	msgs = Messages()
+	a.Equal(lmsgs[40010], "und")
+	a.Equal(msgs[40010], "lang")
+
+	cleanMessage()
 }
 
 func TestGetStatus(t *testing.T) {
@@ -61,11 +93,36 @@ func TestNewMessages(t *testing.T) {
 	a.False(found).Nil(msg)
 
 	// 小于 100 的值，会发生错误
-	cleanMessage()
 	a.Error(NewMessages(map[int]string{
 		10000: "100",
 		40100: "40100",
 		99:    "10000",
 		100:   "100",
 	}))
+
+	cleanMessage()
+}
+
+func TestNewStatusMessages(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(NewStatusMessages(400, map[int]string{
+		1:   "1",
+		100: "100",
+	}))
+
+	msg, found := messages[1]
+	a.True(found).
+		Equal(msg.status, 400).
+		Equal(msg.message, "1")
+
+	msg, found = messages[401]
+	a.False(found).Nil(msg)
+
+	a.Error(NewStatusMessages(400, map[int]string{
+		1:   "",
+		100: "100",
+	}))
+
+	cleanMessage()
 }
