@@ -42,7 +42,7 @@ func (app *App) initServer() error {
 		app.router.Get(pattern, http.StripPrefix(url, fs))
 	}
 
-	if err := app.modulesInit(); err != nil {
+	if err := app.initModules(); err != nil {
 		return err
 	}
 
@@ -62,7 +62,12 @@ func (app *App) initServer() error {
 	return nil
 }
 
-func (app *App) modulesInit() error {
+func (app *App) initModules() error {
+	// 在初始化模块之前，先加载所有的插件
+	if err := app.loadPlugins(); err != nil {
+		return err
+	}
+
 	dep := dependency.New()
 
 	for _, module := range app.modules {
