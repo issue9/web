@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-//go:generate go build -o=plugin.so -buildmode=plugin ./plugin.go
+//go:generate go build -o=../plugin2.so -buildmode=plugin ./plugin.go
 
 // 测试用的 plugin 模块，可以直接运行 go generate 生成 .so 文件
 package main
@@ -15,8 +15,8 @@ import (
 
 // Init 初始化模块
 func Init(m *module.Module) {
-	m.Name = "plugin"
-	m.Description = "plugin desc"
+	m.Name = "plugin2"
+	m.Description = "plugin2 desc"
 	m.Deps = []string{}
 
 	m.AddInit(init1)
@@ -27,22 +27,22 @@ func Init(m *module.Module) {
 }
 
 func init1() error {
-	fmt.Println("init1")
+	fmt.Println("plugin2 init1")
 	return nil
 }
 
 func init2() error {
-	fmt.Println("init2")
+	fmt.Println("plugin2 init2")
 	return nil
 }
 
 func install1() error {
-	fmt.Println("install1")
+	fmt.Println("plugin2 install1")
 	return nil
 }
 
 func install2() error {
-	fmt.Println("install2")
+	fmt.Println("plugin2 install2")
 	return nil
 }
 

@@ -10,15 +10,24 @@ import (
 	"github.com/issue9/assert"
 )
 
+func TestApp_loadPlugins(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata")
+	a.NotError(err).NotNil(app)
+
+	a.NotError(app.loadPlugins("./plugins/*.so"))
+	a.Equal(2, len(app.modules))
+}
+
 func TestApp_loadPlugin(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
-	m, err := app.loadPlugin("./plugin/plugin.so")
+	m, err := app.loadPlugin("./plugins/plugin1.so")
 	a.NotError(err).NotNil(m)
 	a.Equal(m.Name, "plugin")
 
-	m, err = app.loadPlugin("./plugin/not-exists.so")
+	m, err = app.loadPlugin("./plugins/not-exists.so")
 	a.Error(err).Nil(m)
 }
