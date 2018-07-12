@@ -63,9 +63,11 @@ func (app *App) initServer() error {
 }
 
 func (app *App) initModules() error {
-	// 在初始化模块之前，先加载所有的插件
-	if err := app.loadPlugins(); err != nil {
-		return err
+	// 在初始化模块之前，先加载插件
+	if app.config.Plugins != "" {
+		if err := app.loadPlugins(app.config.Plugins); err != nil {
+			return err
+		}
 	}
 
 	dep := dependency.New()

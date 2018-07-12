@@ -88,7 +88,7 @@ func Init() {
 | debug           | bool   | 是否启用调试模式
 | domain          | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
 | root            | string | 项目的根路径，比如 `/blog`
-| pluginDir       | string | 插件所在的目录
+| plugins         | string | 指定需要加载的插件，可以使用 glob 模式
 | https           | bool   | 是否启用 HTTPS
 | certFile        | string | 当启用 HTTPS 时的 cert 文件
 | keyFile         | string | 当启用 HTTPS 时的 key 文件

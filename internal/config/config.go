@@ -41,10 +41,9 @@ type Config struct {
 	// Root 值的格式必须为以 / 开头，不以 / 结尾。
 	Root string `yaml:"root,omitempty"`
 
-	// PluginDir 插件所在的目录
-	//
-	// 如果该目录下存在 so 文件，则会将其当作插件进行加载。
-	PluginDir string `yaml:"pluginDir"`
+	// Plugins 指定插件，通过 glob 语法指定，比如：~/plugins/*.so
+	// 为空表示没有插件。
+	Plugins string `yaml:"plugins,omitempty"`
 
 	// HTTPS 是否启用 HTTPS 协议
 	//

@@ -5,43 +5,30 @@
 package app
 
 import (
-	"os"
 	"path/filepath"
 	"plugin"
-	"strings"
 
 	"github.com/issue9/web/module"
 )
 
 const moduleInitFuncName = "Init"
 
-func (app *App) loadPlugins() error {
-	dir := app.config.PluginDir
-	if dir == "" {
-		return nil
+func (app *App) loadPlugins(glob string) error {
+	fs, err := filepath.Glob(glob)
+	if err != nil {
+		return err
 	}
 
-	return filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if fi.IsDir() {
-			return nil
-		}
-
-		if strings.ToLower(filepath.Ext(fi.Name())) != ".so" {
-			return nil
-		}
-
-		m, err := app.loadPlugin(filepath.Join(dir, path))
+	for _, path := range fs {
+		m, err := app.loadPlugin(path)
 		if err != nil {
 			return err
 		}
 
 		app.modules = append(app.modules, m)
-		return nil
-	})
+	}
+
+	return nil
 }
 
 func (app *App) loadPlugin(path string) (*module.Module, error) {
