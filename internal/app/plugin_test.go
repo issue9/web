@@ -6,9 +6,16 @@ package app
 
 import (
 	"testing"
+	"unicode"
 
 	"github.com/issue9/assert"
 )
+
+func TestModuleInitFuncName(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(unicode.IsUpper(rune(moduleInitFuncName[0])))
+}
 
 func TestApp_loadPlugins(t *testing.T) {
 	a := assert.New(t)
