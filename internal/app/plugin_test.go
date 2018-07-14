@@ -33,7 +33,7 @@ func TestApp_loadPlugin(t *testing.T) {
 
 	m, err := app.loadPlugin("./plugins/plugin1.so")
 	a.NotError(err).NotNil(m)
-	a.Equal(m.Name, "plugin")
+	a.Equal(m.Name, "plugin1")
 
 	m, err = app.loadPlugin("./plugins/not-exists.so")
 	a.Error(err).Nil(m)

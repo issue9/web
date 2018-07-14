@@ -44,6 +44,7 @@ func (app *App) loadPlugin(path string) (*module.Module, error) {
 	init := symbol.(func(*module.Module))
 
 	m := module.New(app.router, "plugin", "plugin desc")
+	m.Type = module.TypePlugin
 	init(m)
 
 	return m, nil

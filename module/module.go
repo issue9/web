@@ -12,8 +12,18 @@ import (
 	"github.com/issue9/web/internal/dependency"
 )
 
+// Type 表示模块的类型
+type Type int8
+
+// 表示模块的类型
+const (
+	TypeModule Type = iota + 1
+	TypePlugin
+)
+
 // Module 表示模块信息
 type Module struct {
+	Type        Type     `json:"type" yaml:"type" xml:"type"`
 	Name        string   `json:"name" yaml:"name" xml:"name"`
 	Deps        []string `json:"deps" yaml:"deps" xml:"deps"`
 	Description string   `json:"description" yaml:"description" xml:"description"`
@@ -47,6 +57,7 @@ type Prefix struct {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 	return &Module{
+		Type:        TypeModule,
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
