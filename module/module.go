@@ -23,14 +23,14 @@ const (
 
 // Module 表示模块信息
 type Module struct {
-	Type        Type     `json:"type" yaml:"type" xml:"type"`
-	Name        string   `json:"name" yaml:"name" xml:"name"`
-	Deps        []string `json:"deps" yaml:"deps" xml:"deps"`
-	Description string   `json:"description" yaml:"description" xml:"description"`
+	Type        Type
+	Name        string
+	Deps        []string
+	Description string
 
 	// 当前模块的所有路由项。
 	// 键名为路由地址，键值为路由中启用的请求方法。
-	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
+	Routes map[string][]string
 
 	// 当前模块的安装功能。
 	//
