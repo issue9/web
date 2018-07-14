@@ -63,6 +63,7 @@ func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
 		Description: desc,
 		Routes:      make(map[string][]string, 10),
 		inits:       make([]func() error, 0, 5),
+		installs:    make(map[string][]*task, 10),
 		router:      router,
 	}
 }

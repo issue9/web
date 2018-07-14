@@ -63,10 +63,6 @@ func (m *Module) Task(version, title string, fn TaskFunc) {
 		panic("无效的参数 version")
 	}
 
-	if m.installs == nil {
-		m.installs = make(map[string][]*task, 100)
-	}
-
 	mm, found := m.installs[version]
 	if !found {
 		mm = make([]*task, 0, 10)
