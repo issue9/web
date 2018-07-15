@@ -8,13 +8,11 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const localhostURL = "localhost"
@@ -99,25 +97,6 @@ type Config struct {
 	//
 	// 用户也可台强制指定一个不同的地址。
 	URL string `yaml:"url,omitempty"`
-}
-
-// Load 加载指定的文件
-func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := &Config{}
-	if err = yaml.Unmarshal(data, conf); err != nil {
-		return nil, err
-	}
-
-	if err = conf.sanitize(); err != nil {
-		return nil, err
-	}
-
-	return conf, nil
 }
 
 // 修正可修正的内容，返回不可修正的错误。
