@@ -26,7 +26,7 @@ const (
 // App 程序运行实例
 type App struct {
 	configDir string
-	config    *config.Config
+	config    *config.Web
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux

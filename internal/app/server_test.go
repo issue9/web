@@ -212,31 +212,31 @@ func TestBuildHandler(t *testing.T) {
 	})
 
 	// 触发 panic
-	h := buildHandler(&config.Config{}, panicFunc)
+	h := buildHandler(&config.Web{}, panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
 
 	// 触发 panic，调试模式
-	conf := &config.Config{
+	conf := &config.Web{
 		Debug: true,
 	}
 	h = buildHandler(conf, panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
 
 	// 触发 panic, errors.HTTP
-	h = buildHandler(&config.Config{}, panicHTTPFunc)
+	h = buildHandler(&config.Web{}, panicHTTPFunc)
 	request(a, h, "http://example.com/test", http.StatusNotAcceptable)
 }
 
 func TestBuildHosts_empty(t *testing.T) {
 	a := assert.New(t)
 
-	h := buildHosts(&config.Config{}, h202)
+	h := buildHosts(&config.Web{}, h202)
 	request(a, h, "http://example.com/test", http.StatusAccepted)
 }
 
 func TestBuildHosts(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf := &config.Web{
 		AllowedDomains: []string{"caixw.io", "example.com"},
 	}
 
@@ -251,7 +251,7 @@ func TestBuildHosts(t *testing.T) {
 
 func TestBuildHeader(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf := &config.Web{
 		Headers: map[string]string{"Test": "test"},
 	}
 
