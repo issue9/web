@@ -1,5 +1,4 @@
 debug: true
-strict: true
 https: false
 domain: localhost
 keyFile: keyFile
