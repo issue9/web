@@ -10,25 +10,25 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestConfig_buildRoot(t *testing.T) {
+func TestWeb_buildRoot(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	conf := &Web{}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Config{Root: "/"}
+	conf = &Web{Root: "/"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Config{Root: "/path"}
+	conf = &Web{Root: "/path"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "/path")
 
-	conf = &Config{Root: "/path/"}
+	conf = &Web{Root: "/path/"}
 	a.Error(conf.buildRoot())
 
-	conf = &Config{Root: "path"}
+	conf = &Web{Root: "path"}
 	a.Error(conf.buildRoot())
 }
 
@@ -41,10 +41,10 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestConfig_buildAllowedDomains(t *testing.T) {
+func TestWeb_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	conf := &Web{}
 	a.NotError(conf.buildAllowedDomains())
 	a.Empty(conf.AllowedDomains)
 
@@ -73,10 +73,10 @@ func TestConfig_buildAllowedDomains(t *testing.T) {
 	a.Error(conf.buildAllowedDomains())
 }
 
-func TestConfig_buildHTTPS(t *testing.T) {
+func TestWeb_buildHTTPS(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{HTTPS: false}
+	conf := &Web{HTTPS: false}
 	a.NotError(conf.buildHTTPS())
 	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
 
@@ -89,7 +89,7 @@ func TestConfig_buildHTTPS(t *testing.T) {
 	conf.HTTPS = true
 	a.Error(conf.buildHTTPS())
 
-	conf = &Config{
+	conf = &Web{
 		HTTPS:    true,
 		CertFile: "./testdata/cert.pem",
 		KeyFile:  "./testdata/key.pem",
@@ -103,9 +103,9 @@ func TestConfig_buildHTTPS(t *testing.T) {
 	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
 }
 
-func TestConfig_buildURL(t *testing.T) {
+func TestWeb_buildURL(t *testing.T) {
 	a := assert.New(t)
-	conf := &Config{Port: 80}
+	conf := &Web{Port: 80}
 	conf.buildURL()
 	a.Equal(conf.URL, "")
 

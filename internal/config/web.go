@@ -17,8 +17,8 @@ import (
 
 const localhostURL = "localhost"
 
-// Config 配置文件内容
-type Config struct {
+// Web 配置文件内容
+type Web struct {
 	// Domain 网站的主域名
 	//
 	// 必须为一个合法的域名、IP 或是 localhost 字符串。
@@ -100,7 +100,7 @@ type Config struct {
 }
 
 // 修正可修正的内容，返回不可修正的错误。
-func (conf *Config) sanitize() error {
+func (conf *Web) sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
 	}
@@ -138,7 +138,7 @@ func (conf *Config) sanitize() error {
 	return nil
 }
 
-func (conf *Config) buildRoot() error {
+func (conf *Web) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
 	} else if (len(conf.Root) > 0) && !isURLPath(conf.Root) {
@@ -152,7 +152,7 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (conf *Config) buildHTTPS() error {
+func (conf *Web) buildHTTPS() error {
 	if conf.HTTPS {
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
@@ -174,7 +174,7 @@ func (conf *Config) buildHTTPS() error {
 	return nil
 }
 
-func (conf *Config) buildAllowedDomains() error {
+func (conf *Web) buildAllowedDomains() error {
 	if len(conf.AllowedDomains) == 0 {
 		return nil
 	}
@@ -197,7 +197,7 @@ func (conf *Config) buildAllowedDomains() error {
 	return nil
 }
 
-func (conf *Config) buildURL() {
+func (conf *Web) buildURL() {
 	if conf.URL != "" {
 		return
 	}

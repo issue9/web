@@ -11,13 +11,13 @@ import (
 )
 
 // Load 加载指定的文件
-func Load(path string) (*Config, error) {
+func Load(path string) (*Web, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	conf := &Config{}
+	conf := &Web{}
 	if err = yaml.Unmarshal(data, conf); err != nil {
 		return nil, err
 	}
