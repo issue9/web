@@ -36,8 +36,8 @@ func (app *App) Handler() (http.Handler, error) {
 }
 
 func (app *App) initServer() error {
-	for url, dir := range app.config.Static {
-		pattern := path.Join(app.config.Root, url+"{path}")
+	for url, dir := range app.webConfig.Static {
+		pattern := path.Join(app.webConfig.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
 		app.router.Get(pattern, http.StripPrefix(url, fs))
 	}
@@ -52,11 +52,11 @@ func (app *App) initServer() error {
 	}
 
 	app.server = &http.Server{
-		Addr:         ":" + strconv.Itoa(app.config.Port),
-		Handler:      buildHandler(app.config, h),
+		Addr:         ":" + strconv.Itoa(app.webConfig.Port),
+		Handler:      buildHandler(app.webConfig, h),
 		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.config.ReadTimeout,
-		WriteTimeout: app.config.WriteTimeout,
+		ReadTimeout:  app.webConfig.ReadTimeout,
+		WriteTimeout: app.webConfig.WriteTimeout,
 	}
 
 	return nil
@@ -64,8 +64,8 @@ func (app *App) initServer() error {
 
 func (app *App) initModules() error {
 	// 在初始化模块之前，先加载插件
-	if app.config.Plugins != "" {
-		if err := app.loadPlugins(app.config.Plugins); err != nil {
+	if app.webConfig.Plugins != "" {
+		if err := app.loadPlugins(app.webConfig.Plugins); err != nil {
 			return err
 		}
 	}
@@ -96,10 +96,11 @@ func (app *App) Serve() error {
 		return err
 	}
 
-	if !app.config.HTTPS {
+	conf := app.webConfig
+	if !conf.HTTPS {
 		err = app.server.ListenAndServe()
 	} else {
-		err = app.server.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile)
+		err = app.server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
 	}
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
@@ -134,12 +135,12 @@ func (app *App) Shutdown() (err error) {
 		return nil
 	}
 
-	if app.config.ShutdownTimeout <= 0 {
+	if app.webConfig.ShutdownTimeout <= 0 {
 		app.closed <- true
 		return app.server.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), app.config.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
 	defer func() {
 		cancel()
 		app.closed <- true

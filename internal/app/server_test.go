@@ -125,7 +125,7 @@ func TestApp_Close(t *testing.T) {
 func TestApp_shutdown(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata")
-	app.config.ShutdownTimeout = 0
+	app.webConfig.ShutdownTimeout = 0
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)

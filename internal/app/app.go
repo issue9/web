@@ -26,7 +26,7 @@ const (
 // App 程序运行实例
 type App struct {
 	configDir string
-	config    *config.Web
+	webConfig *config.Web
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
@@ -70,7 +70,7 @@ func (app *App) SetMiddleware(m middleware.Middleware) *App {
 
 // Debug 是否处于调试模式
 func (app *App) Debug() bool {
-	return app.config.Debug
+	return app.webConfig.Debug
 }
 
 func (app *App) loadConfig() error {
@@ -79,7 +79,7 @@ func (app *App) loadConfig() error {
 		return err
 	}
 
-	app.config = conf
+	app.webConfig = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
 	app.router = app.mux.Prefix(conf.Root)
 
@@ -110,13 +110,13 @@ func (app *App) File(path ...string) string {
 // URL 构建一条基于 app.config.URL 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
-		return app.config.URL
+		return app.webConfig.URL
 	}
 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	return app.config.URL + path
+	return app.webConfig.URL + path
 }
 
 // Install 安装各个模块
