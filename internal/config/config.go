@@ -196,22 +196,23 @@ func (conf *Config) buildHTTPS() error {
 }
 
 func (conf *Config) buildAllowedDomains() error {
-	if len(conf.AllowedDomains) > 0 {
-		found := false
-		for _, host := range conf.AllowedDomains {
-			if !is.URL(host) {
-				return fmt.Errorf("allowedDomains 中的 %s 为非法的 URL", host)
-			}
+	if len(conf.AllowedDomains) == 0 {
+		return nil
+	}
 
-			if host == conf.Domain {
-				found = true
-			}
+	found := false // 确定 domain 是否已经在 allowedDomains 中
+	for _, host := range conf.AllowedDomains {
+		if !is.URL(host) {
+			return fmt.Errorf("allowedDomains 中的 %s 为非法的 URL", host)
 		}
 
-		// 仅在 allowedDomains 字段不为空时，才添加 domain 到 allowedDomains 中
-		if !found && conf.Domain != "" {
-			conf.AllowedDomains = append(conf.AllowedDomains, conf.Domain)
+		if host == conf.Domain {
+			found = true
 		}
+	}
+
+	if !found && conf.Domain != "" {
+		conf.AllowedDomains = append(conf.AllowedDomains, conf.Domain)
 	}
 
 	return nil
