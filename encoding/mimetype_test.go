@@ -106,6 +106,7 @@ func TestFindMarshal(t *testing.T) {
 		"text/plain":     nil,
 		"text/text":      nil,
 		"application/aa": nil, // aa 排名靠前
+		"application/bb": nil, // aa 排名靠前
 	}))
 
 	m := findMarshal("text")
