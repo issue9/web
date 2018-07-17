@@ -16,10 +16,7 @@ import (
 	"github.com/issue9/web/module"
 )
 
-const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-	configFilename = "web.yaml" // 配置文件的文件名。
-)
+const configFilename = "web.yaml" // 配置文件的文件名。
 
 // App 程序运行实例
 type App struct {
