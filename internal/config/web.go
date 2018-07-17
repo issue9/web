@@ -99,8 +99,8 @@ type Web struct {
 	URL string `yaml:"url,omitempty"`
 }
 
-// 修正可修正的内容，返回不可修正的错误。
-func (conf *Web) sanitize() error {
+// Sanitize 修正可修正的内容，返回不可修正的错误。
+func (conf *Web) Sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
 	}

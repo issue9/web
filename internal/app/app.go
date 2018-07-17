@@ -7,9 +7,7 @@ package app
 
 import (
 	"net/http"
-	"path/filepath"
 
-	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
@@ -25,7 +23,7 @@ const (
 
 // App 程序运行实例
 type App struct {
-	configDir string
+	config    *config.Config
 	webConfig *config.Web
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
@@ -41,18 +39,14 @@ type App struct {
 
 // New 声明一个新的 App 实例
 func New(configDir string) (*App, error) {
-	dir, err := filepath.Abs(configDir)
+	conf, err := config.New(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		configDir: dir,
-		closed:    make(chan bool, 1),
-	}
-
-	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
-		return nil, err
+		config: conf,
+		closed: make(chan bool, 1),
 	}
 
 	if err = app.loadConfig(); err != nil {
@@ -74,7 +68,8 @@ func (app *App) Debug() bool {
 }
 
 func (app *App) loadConfig() error {
-	conf, err := config.Load(app.File(configFilename))
+	conf := &config.Web{}
+	err := app.config.Load(app.File(configFilename), conf)
 	if err != nil {
 		return err
 	}
@@ -102,9 +97,7 @@ func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 
 // File 获取配置目录下的文件名
 func (app *App) File(path ...string) string {
-	paths := make([]string, 0, len(path)+1)
-	paths = append(paths, app.configDir)
-	return filepath.Join(append(paths, path...)...)
+	return app.config.File(path...)
 }
 
 // URL 构建一条基于 app.config.URL 的完整 URL
