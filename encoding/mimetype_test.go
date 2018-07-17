@@ -119,6 +119,10 @@ func TestFindMarshal(t *testing.T) {
 	m = findMarshal("*/*")
 	a.Equal(m.name, "application/aa")
 
+	// 第一条数据
+	m = findMarshal("")
+	a.Equal(m.name, "application/aa")
+
 	// 有默认值，则始终在第一
 	a.NotError(AddMarshal(DefaultMimeType, nil))
 	m = findMarshal("*/*")
@@ -148,6 +152,10 @@ func TestFindUnmarshal(t *testing.T) {
 
 	// 第一条数据
 	m = findUnmarshal("*/*")
+	a.Equal(m.name, "application/aa")
+
+	// 第一条数据
+	m = findUnmarshal("")
 	a.Equal(m.name, "application/aa")
 
 	// 有默认值，则始终在第一

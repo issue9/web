@@ -158,7 +158,7 @@ func findMarshal(name string) *marshaler {
 	switch {
 	case len(marshals) == 0:
 		return nil
-	case name == "*/*":
+	case name == "" || name == "*/*":
 		return marshals[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
@@ -181,7 +181,7 @@ func findUnmarshal(name string) *unmarshaler {
 	switch {
 	case len(marshals) == 0:
 		return nil
-	case name == "*/*":
+	case name == "" || name == "*/*":
 		return unmarshals[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
