@@ -1,0 +1,6 @@
+{
+  "debug": true,
+  "certFile": "certFile",
+  "port": 8082,
+  "readTimeout": 3000000000
+}

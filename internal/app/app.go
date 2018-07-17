@@ -7,21 +7,27 @@ package app
 
 import (
 	"net/http"
+	"path/filepath"
 
+	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/config"
+	webconfig "github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
-const configFilename = "web.yaml" // 配置文件的文件名。
+const (
+	configFilename = "web.yaml" // 配置文件的文件名。
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+)
 
 // App 程序运行实例
 type App struct {
-	config    *config.Config
-	webConfig *config.Web
+	configDir string
+	webConfig *webconfig.Web
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
@@ -36,14 +42,18 @@ type App struct {
 
 // New 声明一个新的 App 实例
 func New(configDir string) (*App, error) {
-	conf, err := config.New(configDir)
+	configDir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		config: conf,
-		closed: make(chan bool, 1),
+		configDir: configDir,
+		closed:    make(chan bool, 1),
+	}
+
+	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
+		return nil, err
 	}
 
 	if err = app.loadConfig(); err != nil {
@@ -65,8 +75,8 @@ func (app *App) Debug() bool {
 }
 
 func (app *App) loadConfig() error {
-	conf := &config.Web{}
-	err := app.config.Load(app.File(configFilename), conf)
+	conf := &webconfig.Web{}
+	err := config.Load(app.File(configFilename), conf)
 	if err != nil {
 		return err
 	}
@@ -94,7 +104,9 @@ func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 
 // File 获取配置目录下的文件名
 func (app *App) File(path ...string) string {
-	return app.config.File(path...)
+	paths := make([]string, 0, len(path)+1)
+	paths = append(paths, app.configDir)
+	return filepath.Join(append(paths, path...)...)
 }
 
 // URL 构建一条基于 app.config.URL 的完整 URL
