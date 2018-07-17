@@ -176,26 +176,3 @@ func findMarshal(name string) *marshaler {
 	}
 	return nil
 }
-
-func findUnmarshal(name string) *unmarshaler {
-	switch {
-	case len(marshals) == 0:
-		return nil
-	case name == "" || name == "*/*":
-		return unmarshals[0] // 由 len(marshals) == 0 确保最少有一个元素
-	case strings.HasSuffix(name, "/*"):
-		prefix := name[:len(name)-3]
-		for _, mt := range unmarshals {
-			if strings.HasPrefix(mt.name, prefix) {
-				return mt
-			}
-		}
-	default:
-		for _, mt := range unmarshals {
-			if mt.name == name {
-				return mt
-			}
-		}
-	}
-	return nil
-}

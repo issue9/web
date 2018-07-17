@@ -131,38 +131,3 @@ func TestFindMarshal(t *testing.T) {
 	// 不存在
 	a.Nil(findMarshal("xx/*"))
 }
-
-func TestFindUnmarshal(t *testing.T) {
-	a := assert.New(t)
-	resetUnmarshals()
-
-	a.NotError(AddUnmarshal("text", nil))
-	a.NotError(AddUnmarshal("text/plain", nil))
-	a.NotError(AddUnmarshal("text/text", nil))
-	a.NotError(AddUnmarshal("application/aa", nil)) // aa 排名靠前
-
-	m := findUnmarshal("text")
-	a.Equal(m.name, "text")
-
-	m = findUnmarshal("text/*")
-	a.Equal(m.name, "text")
-
-	m = findUnmarshal("application/*")
-	a.Equal(m.name, "application/aa")
-
-	// 第一条数据
-	m = findUnmarshal("*/*")
-	a.Equal(m.name, "application/aa")
-
-	// 第一条数据
-	m = findUnmarshal("")
-	a.Equal(m.name, "application/aa")
-
-	// 有默认值，则始终在第一
-	a.NotError(AddUnmarshal(DefaultMimeType, nil))
-	m = findUnmarshal("*/*")
-	a.Equal(m.name, DefaultMimeType)
-
-	// 不存在
-	a.Nil(findUnmarshal("xx/*"))
-}
