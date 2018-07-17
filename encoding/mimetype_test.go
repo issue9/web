@@ -88,9 +88,9 @@ func TestAddUnmarshal(t *testing.T) {
 	a.NotError(AddUnmarshal(DefaultMimeType, nil))
 	a.ErrorType(AddUnmarshal(DefaultMimeType, nil), ErrExists)
 
-	// 不能添加以 /* 结属的名称
+	// 不能添加包含 * 字符的名称
 	a.ErrorType(AddUnmarshal("application/*", nil), ErrExists)
-	a.ErrorType(AddUnmarshal("/*", nil), ErrExists)
+	a.ErrorType(AddUnmarshal("*", nil), ErrExists)
 
 	// 排序是否正常
 	a.NotError(AddUnmarshal("application/json", nil))
@@ -101,10 +101,12 @@ func TestFindMarshal(t *testing.T) {
 	a := assert.New(t)
 	resetMarshals()
 
-	a.NotError(AddMarshal("text", nil))
-	a.NotError(AddMarshal("text/plain", nil))
-	a.NotError(AddMarshal("text/text", nil))
-	a.NotError(AddMarshal("application/aa", nil)) // aa 排名靠前
+	a.NotError(AddMarshals(map[string]MarshalFunc{
+		"text":           nil,
+		"text/plain":     nil,
+		"text/text":      nil,
+		"application/aa": nil, // aa 排名靠前
+	}))
 
 	m := findMarshal("text")
 	a.Equal(m.name, "text")

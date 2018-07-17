@@ -124,7 +124,7 @@ func AddUnmarshals(ms map[string]UnmarshalFunc) error {
 
 // AddUnmarshal 添加编码函数
 func AddUnmarshal(name string, m UnmarshalFunc) error {
-	if strings.HasSuffix(name, "/*") || name == "*" {
+	if strings.IndexByte(name, '*') >= 0 {
 		return ErrInvalidMimeType
 	}
 
