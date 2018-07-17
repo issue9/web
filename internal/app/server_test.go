@@ -264,9 +264,9 @@ func TestBuildHeader(t *testing.T) {
 	a.Equal(w.Header().Get("Test"), "test")
 }
 
-func TestBuildPprof(t *testing.T) {
+func TestBuildDebug(t *testing.T) {
 	a := assert.New(t)
-	h := buildPprof(h202)
+	h := buildDebug(h202)
 
 	// 命中 /debug/pprof/cmdline
 	request(a, h, "http://example.com/debug/pprof/", http.StatusOK)
@@ -274,6 +274,9 @@ func TestBuildPprof(t *testing.T) {
 	request(a, h, "http://example.com/debug/pprof/trace", http.StatusOK)
 	request(a, h, "http://example.com/debug/pprof/symbol", http.StatusOK)
 	//request(a, h, "http://example.com/debug/pprof/profile", http.StatusOK)
+
+	// /debug/vars
+	request(a, h, "http://example.com/debug/vars", http.StatusOK)
 
 	// 命中 h202
 	request(a, h, "http://example.com/debug", http.StatusAccepted)

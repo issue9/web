@@ -42,7 +42,7 @@ type (
 
 // AcceptMimeType 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
 //
-// */* 表示匹配任意内容，一般会选择第一个元素作匹配；
+// */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
 // xx/ 表示完全匹配以 xx/ 的内容
 // 如果传递的内容如下：
@@ -124,7 +124,7 @@ func AddUnmarshals(ms map[string]UnmarshalFunc) error {
 
 // AddUnmarshal 添加编码函数
 func AddUnmarshal(name string, m UnmarshalFunc) error {
-	if strings.HasSuffix(name, "/*") || name == "*" {
+	if strings.IndexByte(name, '*') >= 0 {
 		return ErrInvalidMimeType
 	}
 
@@ -158,7 +158,7 @@ func findMarshal(name string) *marshaler {
 	switch {
 	case len(marshals) == 0:
 		return nil
-	case name == "*/*":
+	case name == "" || name == "*/*":
 		return marshals[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
@@ -169,29 +169,6 @@ func findMarshal(name string) *marshaler {
 		}
 	default:
 		for _, mt := range marshals {
-			if mt.name == name {
-				return mt
-			}
-		}
-	}
-	return nil
-}
-
-func findUnmarshal(name string) *unmarshaler {
-	switch {
-	case len(marshals) == 0:
-		return nil
-	case name == "*/*":
-		return unmarshals[0] // 由 len(marshals) == 0 确保最少有一个元素
-	case strings.HasSuffix(name, "/*"):
-		prefix := name[:len(name)-3]
-		for _, mt := range unmarshals {
-			if strings.HasPrefix(mt.name, prefix) {
-				return mt
-			}
-		}
-	default:
-		for _, mt := range unmarshals {
 			if mt.name == name {
 				return mt
 			}

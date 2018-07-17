@@ -105,6 +105,9 @@ func Init() {
 *详细的介绍可以参考 /internal/config/config.go 文件中的描述*
 
 
+在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
+
+
 
 #### 日志处理
 

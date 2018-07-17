@@ -6,6 +6,7 @@ package app
 
 import (
 	"context"
+	"expvar"
 	"net/http"
 	"net/http/pprof"
 	"path"
@@ -21,7 +22,14 @@ import (
 	"github.com/issue9/web/internal/errors"
 )
 
-const pprofPath = "/debug/pprof/"
+// 定义了用于调试输出的网页地址。
+const (
+	// 此变量理论上可以更改，但实际上，更改之后，所有的子页面都会不可用。
+	debugPprofPath = "/debug/pprof/"
+
+	// 此地址可以修改。
+	debugVarsPath = "/debug/vars"
+)
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
 // 比如在 httptest.NewServer 中使用。
@@ -154,7 +162,8 @@ func buildHandler(conf *config.Web, h http.Handler) http.Handler {
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		h = buildPprof(h)
+		logs.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
+		h = buildDebug(h)
 	}
 
 	return h
@@ -182,27 +191,27 @@ func buildHeader(conf *config.Web, h http.Handler) http.Handler {
 }
 
 // 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func buildPprof(h http.Handler) http.Handler {
-	logs.Debug("开启了调试功能，地址为：", pprofPath)
-
+func buildDebug(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, pprofPath) {
-			h.ServeHTTP(w, r)
-			return
-		}
-
-		path := r.URL.Path[len(pprofPath):]
-		switch path {
-		case "cmdline":
-			pprof.Cmdline(w, r)
-		case "profile":
-			pprof.Profile(w, r)
-		case "symbol":
-			pprof.Symbol(w, r)
-		case "trace":
-			pprof.Trace(w, r)
+		switch {
+		case strings.HasPrefix(r.URL.Path, debugPprofPath):
+			path := r.URL.Path[len(debugPprofPath):]
+			switch path {
+			case "cmdline":
+				pprof.Cmdline(w, r)
+			case "profile":
+				pprof.Profile(w, r)
+			case "symbol":
+				pprof.Symbol(w, r)
+			case "trace":
+				pprof.Trace(w, r)
+			default:
+				pprof.Index(w, r)
+			}
+		case strings.HasPrefix(r.URL.Path, debugVarsPath):
+			expvar.Handler().ServeHTTP(w, r)
 		default:
-			pprof.Index(w, r)
+			h.ServeHTTP(w, r)
 		}
 	}) // end return http.HandlerFunc
 }

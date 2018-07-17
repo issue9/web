@@ -88,9 +88,9 @@ func TestAddUnmarshal(t *testing.T) {
 	a.NotError(AddUnmarshal(DefaultMimeType, nil))
 	a.ErrorType(AddUnmarshal(DefaultMimeType, nil), ErrExists)
 
-	// 不能添加以 /* 结属的名称
+	// 不能添加包含 * 字符的名称
 	a.ErrorType(AddUnmarshal("application/*", nil), ErrExists)
-	a.ErrorType(AddUnmarshal("/*", nil), ErrExists)
+	a.ErrorType(AddUnmarshal("*", nil), ErrExists)
 
 	// 排序是否正常
 	a.NotError(AddUnmarshal("application/json", nil))
@@ -101,10 +101,13 @@ func TestFindMarshal(t *testing.T) {
 	a := assert.New(t)
 	resetMarshals()
 
-	a.NotError(AddMarshal("text", nil))
-	a.NotError(AddMarshal("text/plain", nil))
-	a.NotError(AddMarshal("text/text", nil))
-	a.NotError(AddMarshal("application/aa", nil)) // aa 排名靠前
+	a.NotError(AddMarshals(map[string]MarshalFunc{
+		"text":           nil,
+		"text/plain":     nil,
+		"text/text":      nil,
+		"application/aa": nil, // aa 排名靠前
+		"application/bb": nil, // aa 排名靠前
+	}))
 
 	m := findMarshal("text")
 	a.Equal(m.name, "text")
@@ -119,6 +122,10 @@ func TestFindMarshal(t *testing.T) {
 	m = findMarshal("*/*")
 	a.Equal(m.name, "application/aa")
 
+	// 第一条数据
+	m = findMarshal("")
+	a.Equal(m.name, "application/aa")
+
 	// 有默认值，则始终在第一
 	a.NotError(AddMarshal(DefaultMimeType, nil))
 	m = findMarshal("*/*")
@@ -126,35 +133,4 @@ func TestFindMarshal(t *testing.T) {
 
 	// 不存在
 	a.Nil(findMarshal("xx/*"))
-}
-
-func TestFindUnmarshal(t *testing.T) {
-	a := assert.New(t)
-	resetUnmarshals()
-
-	a.NotError(AddUnmarshal("text", nil))
-	a.NotError(AddUnmarshal("text/plain", nil))
-	a.NotError(AddUnmarshal("text/text", nil))
-	a.NotError(AddUnmarshal("application/aa", nil)) // aa 排名靠前
-
-	m := findUnmarshal("text")
-	a.Equal(m.name, "text")
-
-	m = findUnmarshal("text/*")
-	a.Equal(m.name, "text")
-
-	m = findUnmarshal("application/*")
-	a.Equal(m.name, "application/aa")
-
-	// 第一条数据
-	m = findUnmarshal("*/*")
-	a.Equal(m.name, "application/aa")
-
-	// 有默认值，则始终在第一
-	a.NotError(AddUnmarshal(DefaultMimeType, nil))
-	m = findUnmarshal("*/*")
-	a.Equal(m.name, DefaultMimeType)
-
-	// 不存在
-	a.Nil(findUnmarshal("xx/*"))
 }

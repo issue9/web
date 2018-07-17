@@ -43,7 +43,13 @@ func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 		return nil, nil, err
 	}
 
-	unmarshal := findUnmarshal(encName)
+	var unmarshal *unmarshaler
+	for _, mt := range unmarshals {
+		if mt.name == encName {
+			unmarshal = mt
+			break
+		}
+	}
 	if unmarshal == nil {
 		return nil, nil, ErrInvalidMimeType
 	}
