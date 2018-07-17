@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package config
+package app
 
 import (
 	"testing"
@@ -10,25 +10,25 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestWeb_buildRoot(t *testing.T) {
+func TestWebconfig_buildRoot(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Web{}
+	conf := &webconfig{}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Web{Root: "/"}
+	conf = &webconfig{Root: "/"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Web{Root: "/path"}
+	conf = &webconfig{Root: "/path"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "/path")
 
-	conf = &Web{Root: "/path/"}
+	conf = &webconfig{Root: "/path/"}
 	a.Error(conf.buildRoot())
 
-	conf = &Web{Root: "path"}
+	conf = &webconfig{Root: "path"}
 	a.Error(conf.buildRoot())
 }
 
@@ -41,10 +41,10 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestWeb_buildAllowedDomains(t *testing.T) {
+func TestWebconfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Web{}
+	conf := &webconfig{}
 	a.NotError(conf.buildAllowedDomains())
 	a.Empty(conf.AllowedDomains)
 
@@ -73,10 +73,10 @@ func TestWeb_buildAllowedDomains(t *testing.T) {
 	a.Error(conf.buildAllowedDomains())
 }
 
-func TestWeb_buildHTTPS(t *testing.T) {
+func TestWebconfig_buildHTTPS(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Web{HTTPS: false}
+	conf := &webconfig{HTTPS: false}
 	a.NotError(conf.buildHTTPS())
 	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
 
@@ -89,7 +89,7 @@ func TestWeb_buildHTTPS(t *testing.T) {
 	conf.HTTPS = true
 	a.Error(conf.buildHTTPS())
 
-	conf = &Web{
+	conf = &webconfig{
 		HTTPS:    true,
 		CertFile: "./testdata/cert.pem",
 		KeyFile:  "./testdata/key.pem",
@@ -103,9 +103,9 @@ func TestWeb_buildHTTPS(t *testing.T) {
 	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
 }
 
-func TestWeb_buildURL(t *testing.T) {
+func TestWebconfig_buildURL(t *testing.T) {
 	a := assert.New(t)
-	conf := &Web{Port: 80}
+	conf := &webconfig{Port: 80}
 	conf.buildURL()
 	a.Equal(conf.URL, "")
 

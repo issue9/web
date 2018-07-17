@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
-	"github.com/issue9/web/internal/config"
 	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/internal/errors"
 )
@@ -156,7 +155,7 @@ func (app *App) Shutdown() (err error) {
 	return app.server.Shutdown(ctx)
 }
 
-func buildHandler(conf *config.Web, h http.Handler) http.Handler {
+func buildHandler(conf *webconfig, h http.Handler) http.Handler {
 	h = buildHosts(conf, buildHeader(conf, h))
 	h = recovery.New(h, errors.Recovery(conf.Debug))
 
@@ -169,7 +168,7 @@ func buildHandler(conf *config.Web, h http.Handler) http.Handler {
 	return h
 }
 
-func buildHosts(conf *config.Web, h http.Handler) http.Handler {
+func buildHosts(conf *webconfig, h http.Handler) http.Handler {
 	if len(conf.AllowedDomains) == 0 {
 		return h
 	}
@@ -177,7 +176,7 @@ func buildHosts(conf *config.Web, h http.Handler) http.Handler {
 	return host.New(h, conf.AllowedDomains...)
 }
 
-func buildHeader(conf *config.Web, h http.Handler) http.Handler {
+func buildHeader(conf *webconfig, h http.Handler) http.Handler {
 	if len(conf.Headers) == 0 {
 		return h
 	}
