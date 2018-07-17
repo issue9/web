@@ -19,6 +19,17 @@ import (
 	"github.com/issue9/web/result"
 )
 
+type (
+	// Context 等同于 context.Context，方便调用者使用
+	Context = context.Context
+
+	// Result 等同于 result.Result，方便调用者使用
+	Result = result.Result
+
+	// Module 等同于 module.Module，方便调用者使用
+	Module = module.Module
+)
+
 var defaultApp *app.App
 
 // Init 初始化整个应用环境
@@ -110,16 +121,16 @@ func Modules() []*module.Module {
 }
 
 // NewModule 注册一个模块
-func NewModule(name, desc string, deps ...string) *module.Module {
+func NewModule(name, desc string, deps ...string) *Module {
 	return defaultApp.NewModule(name, desc, deps...)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
-func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return context.New(w, r, logs.ERROR())
 }
 
 // NewResult 生成一个 *result.Result 对象
-func NewResult(code int) *result.Result {
+func NewResult(code int) *Result {
 	return &result.Result{Code: code}
 }
