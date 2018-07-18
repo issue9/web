@@ -5,10 +5,12 @@
 package config
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type config struct {
@@ -22,6 +24,41 @@ type config struct {
 func (conf *config) Sanitize() error {
 	conf.Port++
 	return nil
+}
+
+func TestAddUnmarshal(t *testing.T) {
+	a := assert.New(t)
+
+	a.Error(AddUnmarshal(json.Unmarshal, "json"))
+
+	a.NotError(AddUnmarshal(json.Unmarshal, "test1"))
+	a.Error(AddUnmarshal(json.Unmarshal, ".test1"))
+	a.Equal(unmarshals[".test1"], UnmarshalFunc(json.Unmarshal))
+
+	a.NotError(AddUnmarshal(json.Unmarshal, ".test2"))
+	a.Equal(unmarshals[".test2"], UnmarshalFunc(json.Unmarshal))
+
+	a.Error(AddUnmarshal(json.Unmarshal, ""))
+	a.Error(AddUnmarshal(json.Unmarshal, "."))
+}
+
+func TestSetUnmarshal(t *testing.T) {
+	a := assert.New(t)
+
+	a.NotError(SetUnmarshal(yaml.Unmarshal, "json"))
+	a.Equal(unmarshals[".json"], UnmarshalFunc(yaml.Unmarshal))
+
+	// 修改
+	a.NotError(SetUnmarshal(json.Unmarshal, "test1"))
+	a.NotError(SetUnmarshal(yaml.Unmarshal, ".test1"))
+	a.Equal(unmarshals[".test1"], UnmarshalFunc(yaml.Unmarshal))
+
+	// 新增
+	a.NotError(SetUnmarshal(json.Unmarshal, ".test2"))
+	a.Equal(unmarshals[".test2"], UnmarshalFunc(json.Unmarshal))
+
+	a.Error(SetUnmarshal(json.Unmarshal, ""))
+	a.Error(SetUnmarshal(json.Unmarshal, "."))
 }
 
 func TestLoad(t *testing.T) {
