@@ -17,6 +17,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+var errExtNotAllowEmpty = errors.New("扩展名不能为空")
+
 // UnmarshalFunc 定义了将文本内容解析到对象的函数原型。
 type UnmarshalFunc func([]byte, interface{}) error
 
@@ -46,7 +48,7 @@ func init() {
 func AddUnmarshal(m UnmarshalFunc, ext ...string) error {
 	for _, e := range ext {
 		if e == "" || e == "." {
-			return errors.New("扩展名不能为空")
+			return errExtNotAllowEmpty
 		}
 
 		if e[0] != '.' {
@@ -67,7 +69,7 @@ func AddUnmarshal(m UnmarshalFunc, ext ...string) error {
 func SetUnmarshal(m UnmarshalFunc, ext ...string) error {
 	for _, e := range ext {
 		if e == "" || e == "." {
-			return errors.New("扩展名不能为空")
+			return errExtNotAllowEmpty
 		}
 
 		if e[0] != '.' {
