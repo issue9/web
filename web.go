@@ -109,6 +109,11 @@ func Modules() []*module.Module {
 	return defaultApp.Modules()
 }
 
+// LoadConfig 从配置目录中加载数据到对象 v 中。
+func LoadConfig(path string, v interface{}) error {
+	return defaultApp.LoadConfig(path, v)
+}
+
 // NewModule 注册一个模块
 func NewModule(name, desc string, deps ...string) *module.Module {
 	return defaultApp.NewModule(name, desc, deps...)

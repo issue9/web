@@ -49,15 +49,20 @@ func New(configDir string) (*App, error) {
 	app := &App{
 		configDir: configDir,
 		closed:    make(chan bool, 1),
+		modules:   make([]*module.Module, 0, 50),
 	}
 
 	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
 		return nil, err
 	}
 
-	if err = app.loadConfig(); err != nil {
+	conf := &webconfig{}
+	if err := app.LoadConfig(configFilename, conf); err != nil {
 		return nil, err
 	}
+	app.webConfig = conf
+	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
+	app.router = app.mux.Prefix(conf.Root)
 
 	return app, nil
 }
@@ -73,20 +78,9 @@ func (app *App) Debug() bool {
 	return app.webConfig.Debug
 }
 
-func (app *App) loadConfig() error {
-	conf := &webconfig{}
-	err := config.Load(app.File(configFilename), conf)
-	if err != nil {
-		return err
-	}
-
-	app.webConfig = conf
-	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
-	app.router = app.mux.Prefix(conf.Root)
-
-	app.modules = make([]*module.Module, 0, 50)
-
-	return nil
+// LoadConfig 从配置文件目录加载配置文件到 v 中
+func (app *App) LoadConfig(path string, v interface{}) error {
+	return config.Load(app.File(path), v)
 }
 
 // Modules 获取所有的模块信息
