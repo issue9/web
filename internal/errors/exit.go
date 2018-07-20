@@ -38,13 +38,14 @@ func Recovery(debug bool) recovery.RecoverFunc {
 		}
 
 		render(w, http.StatusInternalServerError)
+
+		message := traceStack(3, msg)
 		if debug {
-			_, err := w.Write([]byte(traceStack(3, msg)))
-			if err != nil {
+			_, err := w.Write([]byte(message))
+			if err != nil { // 输出错误时再次出错，则 panic，退出整个程序
 				panic(err)
 			}
-		} else {
-			logs.Error(traceStack(3, msg))
 		}
+		logs.Error(message)
 	}
 }
