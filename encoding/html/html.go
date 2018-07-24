@@ -65,6 +65,11 @@ func New(tpl *template.Template) *HTML {
 	}
 }
 
+// SetTemplate 修改模板内容
+func (html *HTML) SetTemplate(tpl *template.Template) {
+	html.tpl = tpl
+}
+
 // Marshal 针对 HTML 内容的 MarshalFunc 实现
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
 	obj, ok := v.(*Template)
