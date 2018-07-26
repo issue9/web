@@ -71,7 +71,14 @@ func Handler() (http.Handler, error) {
 }
 
 // Run 运行路由，执行监听程序。
+//
+// Deprecated: 由 Serve 代替
 func Run() error {
+	return defaultApp.Serve()
+}
+
+// Serve 运行路由，执行监听程序。
+func Serve() error {
 	return defaultApp.Serve()
 }
 
