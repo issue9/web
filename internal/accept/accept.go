@@ -50,7 +50,7 @@ func parseAccept(v string) (val string, q float32, err error) {
 //
 // 排序方式如下:
 //
-// Q 值大的靠前，如果 Q 值相同，则全名的比带通配符的造前，*/* 最后。
+// Q 值大的靠前，如果 Q 值相同，则全名的比带通配符的靠前，*/* 最后。
 //
 // q 值为 0 的数据将被过滤，比如：
 //  application/*;q=0.1,application/xml;q=0.1,text/html;q=0

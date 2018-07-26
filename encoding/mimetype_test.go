@@ -48,6 +48,12 @@ func TestAcceptMimeType(t *testing.T) {
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
+	// 同 */*
+	name, marshal, err = AcceptMimeType("")
+	a.NotError(err).
+		Equal(marshal, MarshalFunc(gob.Marshal)).
+		Equal(name, DefaultMimeType)
+
 	name, marshal, err = AcceptMimeType("*/*,text/plain")
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
