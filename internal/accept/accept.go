@@ -45,7 +45,12 @@ func parseAccept(v string) (val string, q float32, err error) {
 	return val, q, nil
 }
 
-// Parse 将报头内容解析为 []*Accept
+// Parse 将报头内容解析为 []*Accept，并对内容进行排序之后返回。
+//
+//
+// 排序方式如下:
+//
+// Q 值大的靠前，如果 Q 值相同，则全名的比带通配符的造前，*/* 最后。
 //
 // q 值为 0 的数据将被过滤，比如：
 //  application/*;q=0.1,application/xml;q=0.1,text/html;q=0
@@ -96,13 +101,19 @@ func sortAccepts(accepts []*Accept) {
 		ii := accepts[i]
 		jj := accepts[j]
 
-		if ii.Q == jj.Q {
-			if ii.hasWildcard() {
-				return !jj.hasWildcard()
-			}
-			return true
+		if ii.Q != jj.Q {
+			return ii.Q > jj.Q
 		}
 
-		return ii.Q > jj.Q
+		switch {
+		case ii.Value == "*/*":
+			return false
+		case jj.Value == "*/*":
+			return true
+		case ii.hasWildcard():
+			return false
+		default: // !ii.hasWildcard()
+			return jj.hasWildcard()
+		}
 	})
 }
