@@ -24,8 +24,8 @@ install:
 
 script:
   - go generate -v $(go list ./...| grep -v /vendor/)
-  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
   - go vet -v $(go list ./...| grep -v /vendor/)
+  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

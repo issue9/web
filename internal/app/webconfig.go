@@ -2,25 +2,21 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package config 为框架提供配置文件内容。
-package config
+package app
 
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const localhostURL = "localhost"
 
-// Config 配置文件内容
-type Config struct {
+type webconfig struct {
 	// Domain 网站的主域名
 	//
 	// 必须为一个合法的域名、IP 或是 localhost 字符串。
@@ -101,27 +97,8 @@ type Config struct {
 	URL string `yaml:"url,omitempty"`
 }
 
-// Load 加载指定的文件
-func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := &Config{}
-	if err = yaml.Unmarshal(data, conf); err != nil {
-		return nil, err
-	}
-
-	if err = conf.sanitize(); err != nil {
-		return nil, err
-	}
-
-	return conf, nil
-}
-
-// 修正可修正的内容，返回不可修正的错误。
-func (conf *Config) sanitize() error {
+// Sanitize 修正可修正的内容，返回不可修正的错误。
+func (conf *webconfig) Sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
 	}
@@ -159,7 +136,7 @@ func (conf *Config) sanitize() error {
 	return nil
 }
 
-func (conf *Config) buildRoot() error {
+func (conf *webconfig) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
 	} else if (len(conf.Root) > 0) && !isURLPath(conf.Root) {
@@ -173,7 +150,7 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (conf *Config) buildHTTPS() error {
+func (conf *webconfig) buildHTTPS() error {
 	if conf.HTTPS {
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
@@ -195,7 +172,7 @@ func (conf *Config) buildHTTPS() error {
 	return nil
 }
 
-func (conf *Config) buildAllowedDomains() error {
+func (conf *webconfig) buildAllowedDomains() error {
 	if len(conf.AllowedDomains) == 0 {
 		return nil
 	}
@@ -218,7 +195,7 @@ func (conf *Config) buildAllowedDomains() error {
 	return nil
 }
 
-func (conf *Config) buildURL() {
+func (conf *webconfig) buildURL() {
 	if conf.URL != "" {
 		return
 	}

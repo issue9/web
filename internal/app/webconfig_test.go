@@ -2,48 +2,33 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package config
+package app
 
 import (
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 )
 
-func TestLoad(t *testing.T) {
+func TestWebconfig_buildRoot(t *testing.T) {
 	a := assert.New(t)
 
-	conf, err := Load("./testdata/not-exists.yml")
-	a.Error(err).Nil(conf)
-
-	conf, err = Load("./testdata/web.yaml")
-	a.NotError(err).NotNil(conf)
-	a.Equal(conf.Port, 8082)
-	a.Equal(conf.Domain, localhostURL)
-	a.Equal(conf.ReadTimeout, time.Second*3)
-	a.Equal(conf.WriteTimeout, 0)
-}
-
-func TestConfig_buildRoot(t *testing.T) {
-	a := assert.New(t)
-
-	conf := &Config{}
+	conf := &webconfig{}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Config{Root: "/"}
+	conf = &webconfig{Root: "/"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &Config{Root: "/path"}
+	conf = &webconfig{Root: "/path"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "/path")
 
-	conf = &Config{Root: "/path/"}
+	conf = &webconfig{Root: "/path/"}
 	a.Error(conf.buildRoot())
 
-	conf = &Config{Root: "path"}
+	conf = &webconfig{Root: "path"}
 	a.Error(conf.buildRoot())
 }
 
@@ -56,10 +41,10 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestConfig_buildAllowedDomains(t *testing.T) {
+func TestWebconfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	conf := &webconfig{}
 	a.NotError(conf.buildAllowedDomains())
 	a.Empty(conf.AllowedDomains)
 
@@ -88,10 +73,10 @@ func TestConfig_buildAllowedDomains(t *testing.T) {
 	a.Error(conf.buildAllowedDomains())
 }
 
-func TestConfig_buildHTTPS(t *testing.T) {
+func TestWebconfig_buildHTTPS(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{HTTPS: false}
+	conf := &webconfig{HTTPS: false}
 	a.NotError(conf.buildHTTPS())
 	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
 
@@ -104,7 +89,7 @@ func TestConfig_buildHTTPS(t *testing.T) {
 	conf.HTTPS = true
 	a.Error(conf.buildHTTPS())
 
-	conf = &Config{
+	conf = &webconfig{
 		HTTPS:    true,
 		CertFile: "./testdata/cert.pem",
 		KeyFile:  "./testdata/key.pem",
@@ -118,9 +103,9 @@ func TestConfig_buildHTTPS(t *testing.T) {
 	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
 }
 
-func TestConfig_buildURL(t *testing.T) {
+func TestWebconfig_buildURL(t *testing.T) {
 	a := assert.New(t)
-	conf := &Config{Port: 80}
+	conf := &webconfig{Port: 80}
 	conf.buildURL()
 	a.Equal(conf.URL, "")
 

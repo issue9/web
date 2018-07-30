@@ -54,6 +54,13 @@ type (
 // 返回的名称可能是：
 //  text/plain
 func AcceptMimeType(header string) (string, MarshalFunc, error) {
+	if header == "" {
+		if m := findMarshal("*/*"); m != nil {
+			return m.name, m.f, nil
+		}
+		return "", nil, ErrInvalidMimeType
+	}
+
 	accepts, err := accept.Parse(header)
 	if err != nil {
 		return "", nil, err

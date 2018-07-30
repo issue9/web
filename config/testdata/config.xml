@@ -1,0 +1,6 @@
+<config>
+    <debug>true</debug>
+    <certFile>certFile</certFile>
+    <port>8082</port>
+    <readTimeout>3000000000</readTimeout>
+</config>

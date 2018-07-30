@@ -59,10 +59,17 @@ func Tpl(name string, data interface{}) *Template {
 }
 
 // New 声明 HTML 变量
+//
+// tpl 可以为空，通过之后的 SetTemplate 再次指定
 func New(tpl *template.Template) *HTML {
 	return &HTML{
 		tpl: tpl,
 	}
+}
+
+// SetTemplate 修改模板内容
+func (html *HTML) SetTemplate(tpl *template.Template) {
+	html.tpl = tpl
 }
 
 // Marshal 针对 HTML 内容的 MarshalFunc 实现

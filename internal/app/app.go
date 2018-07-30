@@ -13,20 +13,20 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/config"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
 const (
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
 	configFilename = "web.yaml" // 配置文件的文件名。
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
 )
 
 // App 程序运行实例
 type App struct {
 	configDir string
-	config    *config.Config
+	webConfig *webconfig
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
@@ -41,23 +41,28 @@ type App struct {
 
 // New 声明一个新的 App 实例
 func New(configDir string) (*App, error) {
-	dir, err := filepath.Abs(configDir)
+	configDir, err := filepath.Abs(configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
-		configDir: dir,
+		configDir: configDir,
 		closed:    make(chan bool, 1),
+		modules:   make([]*module.Module, 0, 50),
 	}
 
 	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
 		return nil, err
 	}
 
-	if err = app.loadConfig(); err != nil {
+	conf := &webconfig{}
+	if err := app.LoadConfig(configFilename, conf); err != nil {
 		return nil, err
 	}
+	app.webConfig = conf
+	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
+	app.router = app.mux.Prefix(conf.Root)
 
 	return app, nil
 }
@@ -70,22 +75,12 @@ func (app *App) SetMiddleware(m middleware.Middleware) *App {
 
 // Debug 是否处于调试模式
 func (app *App) Debug() bool {
-	return app.config.Debug
+	return app.webConfig.Debug
 }
 
-func (app *App) loadConfig() error {
-	conf, err := config.Load(app.File(configFilename))
-	if err != nil {
-		return err
-	}
-
-	app.config = conf
-	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
-	app.router = app.mux.Prefix(conf.Root)
-
-	app.modules = make([]*module.Module, 0, 50)
-
-	return nil
+// LoadConfig 从配置文件目录加载配置文件到 v 中
+func (app *App) LoadConfig(path string, v interface{}) error {
+	return config.Load(app.File(path), v)
 }
 
 // Modules 获取所有的模块信息
@@ -110,13 +105,13 @@ func (app *App) File(path ...string) string {
 // URL 构建一条基于 app.config.URL 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
-		return app.config.URL
+		return app.webConfig.URL
 	}
 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	return app.config.URL + path
+	return app.webConfig.URL + path
 }
 
 // Install 安装各个模块

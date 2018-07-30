@@ -14,7 +14,7 @@ charset = utf-8
 indent_style = space
 indent_size = 4
 
-# yaml
-[*.{yml,yaml}]
+# 配置文件
+[*.{yml,yaml,json}]
 indent_style = space
 indent_size = 2

@@ -71,7 +71,14 @@ func Handler() (http.Handler, error) {
 }
 
 // Run 运行路由，执行监听程序。
+//
+// Deprecated: 由 Serve 代替
 func Run() error {
+	return defaultApp.Serve()
+}
+
+// Serve 运行路由，执行监听程序。
+func Serve() error {
 	return defaultApp.Serve()
 }
 
@@ -107,6 +114,11 @@ func URL(path string) string {
 // Modules 当前系统使用的所有模块信息
 func Modules() []*module.Module {
 	return defaultApp.Modules()
+}
+
+// LoadConfig 从配置目录中加载数据到对象 v 中。
+func LoadConfig(path string, v interface{}) error {
+	return defaultApp.LoadConfig(path, v)
 }
 
 // NewModule 注册一个模块

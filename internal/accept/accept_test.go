@@ -99,21 +99,96 @@ func TestParse(t *testing.T) {
 	a.Equal(len(as), 5)
 	a.Equal(as[0].Q, float32(1.0))
 
-	// xx/* 的权限底于相同 Q 值的其它权限
-	as, err = Parse("text/*;q=0.1,application/*;q=0.1,text/html;q=0.1,")
+	// xx/* 的权限低于相同 Q 值的其它权限
+	as, err = Parse("x/*;q=0.1,b/*;q=0.1,a/*;q=0.1,t/*;q=0.1,text/plian;q=0.1")
+	a.NotError(err).NotEmpty(as)
+	a.Equal(len(as), 5)
+	a.Equal(as[0].Value, "text/plian").Equal(as[0].Q, float32(0.1))
+	a.Equal(as[1].Value, "x/*").Equal(as[1].Q, float32(0.1))
+	a.Equal(as[2].Value, "b/*").Equal(as[2].Q, float32(0.1))
+	a.Equal(as[3].Value, "a/*").Equal(as[3].Q, float32(0.1))
+	a.Equal(as[4].Value, "t/*").Equal(as[4].Q, float32(0.1))
+
+	// xx/* 的权限低于相同 Q 值的其它权限
+	as, err = Parse("text/*;q=0.1,xx/*;q=0.1,text/html;q=0.1")
 	a.NotError(err).NotEmpty(as)
 	a.Equal(len(as), 3)
-	a.Equal(as[0].Value, "text/html")
+	a.Equal(as[0].Value, "text/html").Equal(as[0].Q, float32(0.1))
+	a.Equal(as[1].Value, "text/*").Equal(as[1].Q, float32(0.1))
 
-	// xx/* 的权限底于相同 Q 值的其它权限
-	as, err = Parse("text/html;q=0.1,text/*;q=0.1,")
+	// */* 的权限最底
+	as, err = Parse("text/html;q=0.1,text/*;q=0.1,xx/*;q=0.1,*/*;q=0.1")
 	a.NotError(err).NotEmpty(as)
-	a.Equal(len(as), 2)
-	a.Equal(as[1].Value, "text/html")
+	a.Equal(len(as), 4)
+	a.Equal(as[0].Value, "text/html").Equal(as[0].Q, float32(0.1))
+	a.Equal(as[1].Value, "text/*").Equal(as[1].Q, float32(0.1))
 
 	as, err = Parse(",a1,a2,a3;q=5,a4,a5;q=0.9,a6;a61;q=0.x8")
 	a.Error(err).Empty(as)
 
 	as, err = Parse("utf-8;q=x.9,gbk;q=0.8")
 	a.Error(err).Empty(as)
+}
+
+func TestSortAccepts(t *testing.T) {
+	a := assert.New(t)
+
+	as := []*Accept{
+		&Accept{Value: "*/*", Q: 0.7},
+		&Accept{Value: "a/*", Q: 0.7},
+	}
+	sortAccepts(as)
+	a.Equal(as[0].Value, "a/*")
+	a.Equal(as[1].Value, "*/*")
+
+	as = []*Accept{
+		&Accept{Value: "*/*", Q: 0.7},
+		&Accept{Value: "a/*", Q: 0.7},
+		&Accept{Value: "b/*", Q: 0.7},
+	}
+	sortAccepts(as)
+	a.Equal(as[0].Value, "a/*")
+	a.Equal(as[1].Value, "b/*")
+	a.Equal(as[2].Value, "*/*")
+
+	as = []*Accept{
+		&Accept{Value: "*/*", Q: 0.7},
+		&Accept{Value: "a/*", Q: 0.7},
+		&Accept{Value: "c/c", Q: 0.7},
+		&Accept{Value: "b/*", Q: 0.7},
+	}
+	sortAccepts(as)
+	a.Equal(as[0].Value, "c/c")
+	a.Equal(as[1].Value, "a/*")
+	a.Equal(as[2].Value, "b/*")
+	a.Equal(as[3].Value, "*/*")
+
+	as = []*Accept{
+		&Accept{Value: "d/d", Q: 0.7},
+		&Accept{Value: "a/*", Q: 0.7},
+		&Accept{Value: "*/*", Q: 0.7},
+		&Accept{Value: "b/*", Q: 0.7},
+		&Accept{Value: "c/c", Q: 0.7},
+	}
+	sortAccepts(as)
+	a.Equal(as[0].Value, "d/d")
+	a.Equal(as[1].Value, "c/c")
+	a.Equal(as[2].Value, "a/*")
+	a.Equal(as[3].Value, "b/*")
+	a.Equal(as[4].Value, "*/*")
+
+	// Q 值不一样
+	as = []*Accept{
+		&Accept{Value: "d/d", Q: 0.7},
+		&Accept{Value: "a/*", Q: 0.8},
+		&Accept{Value: "*/*", Q: 0.7},
+		&Accept{Value: "b/*", Q: 0.7},
+		&Accept{Value: "c/c", Q: 0.7},
+	}
+	sortAccepts(as)
+	a.Equal(as[0].Value, "a/*")
+	a.Equal(as[1].Value, "d/d")
+	a.Equal(as[2].Value, "c/c")
+	a.Equal(as[3].Value, "b/*")
+	a.Equal(as[4].Value, "*/*")
 }

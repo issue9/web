@@ -12,7 +12,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/config"
 )
 
 const timeout = 300 * time.Microsecond
@@ -125,7 +124,7 @@ func TestApp_Close(t *testing.T) {
 func TestApp_shutdown(t *testing.T) {
 	a := assert.New(t)
 	app, err := New("./testdata")
-	app.config.ShutdownTimeout = 0
+	app.webConfig.ShutdownTimeout = 0
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
@@ -212,31 +211,31 @@ func TestBuildHandler(t *testing.T) {
 	})
 
 	// 触发 panic
-	h := buildHandler(&config.Config{}, panicFunc)
+	h := buildHandler(&webconfig{}, panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
 
 	// 触发 panic，调试模式
-	conf := &config.Config{
+	conf := &webconfig{
 		Debug: true,
 	}
 	h = buildHandler(conf, panicFunc)
 	request(a, h, "http://example.com/test", http.StatusInternalServerError)
 
 	// 触发 panic, errors.HTTP
-	h = buildHandler(&config.Config{}, panicHTTPFunc)
+	h = buildHandler(&webconfig{}, panicHTTPFunc)
 	request(a, h, "http://example.com/test", http.StatusNotAcceptable)
 }
 
 func TestBuildHosts_empty(t *testing.T) {
 	a := assert.New(t)
 
-	h := buildHosts(&config.Config{}, h202)
+	h := buildHosts(&webconfig{}, h202)
 	request(a, h, "http://example.com/test", http.StatusAccepted)
 }
 
 func TestBuildHosts(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf := &webconfig{
 		AllowedDomains: []string{"caixw.io", "example.com"},
 	}
 
@@ -251,7 +250,7 @@ func TestBuildHosts(t *testing.T) {
 
 func TestBuildHeader(t *testing.T) {
 	a := assert.New(t)
-	conf := &config.Config{
+	conf := &webconfig{
 		Headers: map[string]string{"Test": "test"},
 	}
 

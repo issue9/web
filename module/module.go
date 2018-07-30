@@ -89,6 +89,11 @@ func (m *Module) Prefix(prefix string) *Prefix {
 	}
 }
 
+// Mux 返回 github.com/issue9/mxu.Mux 实例
+func (m *Module) Mux() *mux.Mux {
+	return m.router.Mux()
+}
+
 // Module 返回关联的 Module 实全
 func (p *Prefix) Module() *Module {
 	return p.module
