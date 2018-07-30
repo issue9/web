@@ -19,17 +19,6 @@ import (
 	"github.com/issue9/web/result"
 )
 
-type (
-	// Context 等同于 context.Context，方便调用者使用
-	Context = context.Context
-
-	// Result 等同于 result.Result，方便调用者使用
-	Result = result.Result
-
-	// Module 等同于 module.Module，方便调用者使用
-	Module = module.Module
-)
-
 var defaultApp *app.App
 
 // Init 初始化整个应用环境
