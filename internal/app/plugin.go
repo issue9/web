@@ -5,12 +5,14 @@
 package app
 
 import (
+	"fmt"
 	"path/filepath"
 	"plugin"
 
 	"github.com/issue9/web/module"
 )
 
+// 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInitFuncName = "Init"
 
 func (app *App) loadPlugins(glob string) error {
@@ -43,9 +45,13 @@ func (app *App) loadPlugin(path string) (*module.Module, error) {
 	}
 	init := symbol.(func(*module.Module))
 
-	m := module.New(app.router, "plugin", "plugin desc")
+	m := module.New(app.router, "", "plugin desc")
 	m.Type = module.TypePlugin
 	init(m)
+
+	if m.Name == "" {
+		return nil, fmt.Errorf("插件 %s 未指定插件名称", path)
+	}
 
 	return m, nil
 }
