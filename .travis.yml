@@ -23,7 +23,7 @@ install:
   - go get golang.org/x/text
 
 script:
-  - ./test.sh
+  - ./test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
