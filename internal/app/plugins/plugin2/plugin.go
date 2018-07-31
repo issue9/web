@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-//go:generate go build -o=../plugin2.so -buildmode=plugin ./plugin.go
+//go:generate go build -o=../plugin_2.so -buildmode=plugin ./plugin.go
 
 // 测试用的 plugin 模块，可以直接运行 go generate 生成 .so 文件
 package main
