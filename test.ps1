@@ -18,4 +18,3 @@ go vet $v $list
 
 echo '执行 go test'
 go test $v $c $list
-
