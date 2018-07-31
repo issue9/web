@@ -23,9 +23,7 @@ install:
   - go get golang.org/x/text
 
 script:
-  - go generate -v $(go list ./...| grep -v /vendor/)
-  - go vet -v $(go list ./...| grep -v /vendor/)
-  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
+  - ./test.sh
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
