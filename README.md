@@ -13,12 +13,6 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    // 可以自动处理 content-type 的值为 charset=gb18083 和 gbk 的请求，会自动转码
-    encoding.AddCharset(map[string]xencoding.Encoding {
-        "gb18030": simplifiedchinese.GB18030,
-        "gbk": simplifiedchinese.GBK,
-    })
-
     encoding.AddMarshals(map[string]encoding.MarshaleFunc {
         "application/json": json.Marshal,
         "application/xml": xml.Marshal,
