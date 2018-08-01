@@ -15,7 +15,10 @@ import (
 // 会采用此值和为其默认值。
 const DefaultCharset = "UTF-8"
 
-var charset = make(map[string]xencoding.Encoding, 10)
+// Charseter 字符集编码需要实现的接口
+type Charseter = xencoding.Encoding
+
+var charset = make(map[string]Charseter, 10)
 
 func init() {
 	if err := AddCharset(DefaultCharset, xencoding.Nop); err != nil {
@@ -23,7 +26,7 @@ func init() {
 	}
 }
 
-func findCharset(name string) (string, xencoding.Encoding) {
+func findCharset(name string) (string, Charseter) {
 	if name == "*" {
 		return DefaultCharset, charset[DefaultCharset]
 	}
@@ -33,7 +36,7 @@ func findCharset(name string) (string, xencoding.Encoding) {
 }
 
 // AddCharset 添加字符集
-func AddCharset(name string, c xencoding.Encoding) error {
+func AddCharset(name string, c Charseter) error {
 	if name == "*" {
 		return ErrInvalidCharset
 	}
@@ -49,7 +52,7 @@ func AddCharset(name string, c xencoding.Encoding) error {
 }
 
 // AddCharsets 添加多个字符集
-func AddCharsets(cs map[string]xencoding.Encoding) error {
+func AddCharsets(cs map[string]Charseter) error {
 	for k, v := range cs {
 		if err := AddCharset(k, v); err != nil {
 			return err
@@ -63,7 +66,7 @@ func AddCharsets(cs map[string]xencoding.Encoding) error {
 //
 // 传递 * 获取返回默认的字符集相关信息，即 DefaultCharset
 // 其它值则按值查找，或是在找不到时返回空值。
-func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
+func AcceptCharset(header string) (name string, enc Charseter, err error) {
 	if header == "" || header == "*" {
 		name, enc := findCharset("*")
 		return name, enc, nil

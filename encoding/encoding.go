@@ -9,8 +9,6 @@ import (
 	"errors"
 	"strings"
 	"unicode"
-
-	xencoding "golang.org/x/text/encoding"
 )
 
 // Nil 表示向客户端输出 nil 值。
@@ -37,7 +35,7 @@ var (
 )
 
 // ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
-func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
+func ContentType(header string) (UnmarshalFunc, Charseter, error) {
 	encName, charsetName, err := ParseContentType(header)
 	if err != nil {
 		return nil, nil, err

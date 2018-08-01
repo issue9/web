@@ -39,7 +39,7 @@ type Context struct {
 	// 输出到客户端的字符集
 	//
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	OutputCharset     xencoding.Encoding
+	OutputCharset     encoding.Charseter
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
@@ -48,7 +48,7 @@ type Context struct {
 	// 客户端内容所使用的字符集
 	//
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	InputCharset xencoding.Encoding
+	InputCharset encoding.Charseter
 
 	// 输出语言的相关设置项。
 	OutputTag     language.Tag
