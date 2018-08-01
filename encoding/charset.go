@@ -28,7 +28,7 @@ func init() {
 
 func findCharset(name string) (string, Charseter) {
 	if name == "*" {
-		return DefaultCharset, charset[DefaultCharset]
+		name = DefaultCharset
 	}
 
 	name = strings.ToUpper(name)
