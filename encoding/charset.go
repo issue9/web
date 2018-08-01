@@ -5,60 +5,32 @@
 package encoding
 
 import (
-	"strings"
-
 	"github.com/issue9/web/internal/accept"
 	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
+	"golang.org/x/text/encoding/unicode"
 )
 
 // DefaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
 // 会采用此值和为其默认值。
-const DefaultCharset = "UTF-8"
+const DefaultCharset = "utf-8"
 
-// Charseter 字符集编码需要实现的接口
-type Charseter = xencoding.Encoding
-
-var charset = make(map[string]Charseter, 10)
-
-func init() {
-	if err := AddCharset(DefaultCharset, xencoding.Nop); err != nil {
-		panic(err)
-	}
-}
-
-func findCharset(name string) (string, Charseter) {
-	if name == "*" {
-		name = DefaultCharset
-	}
-
-	name = strings.ToUpper(name)
-	return name, charset[name]
+// CharsetIsNop 指定的编码是否不需要任何额外操作
+func CharsetIsNop(enc xencoding.Encoding) bool {
+	return enc == nil ||
+		enc == unicode.UTF8 ||
+		enc == xencoding.Nop
 }
 
 // AddCharset 添加字符集
-func AddCharset(name string, c Charseter) error {
-	if name == "*" {
-		return ErrInvalidCharset
-	}
-
-	name = strings.ToUpper(name)
-	if _, found := charset[name]; found {
-		return ErrExists
-	}
-
-	charset[name] = c
-
+// Deprecated: 不再启作用
+func AddCharset(name string, c xencoding.Encoding) error {
 	return nil
 }
 
 // AddCharsets 添加多个字符集
-func AddCharsets(cs map[string]Charseter) error {
-	for k, v := range cs {
-		if err := AddCharset(k, v); err != nil {
-			return err
-		}
-	}
-
+// Deprecated: 不再启作用
+func AddCharsets(cs map[string]xencoding.Encoding) error {
 	return nil
 }
 
@@ -66,10 +38,11 @@ func AddCharsets(cs map[string]Charseter) error {
 //
 // 传递 * 获取返回默认的字符集相关信息，即 DefaultCharset
 // 其它值则按值查找，或是在找不到时返回空值。
-func AcceptCharset(header string) (name string, enc Charseter, err error) {
+//
+// 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
+func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
 	if header == "" || header == "*" {
-		name, enc := findCharset("*")
-		return name, enc, nil
+		return DefaultCharset, nil, nil
 	}
 
 	accepts, err := accept.Parse(header)
@@ -78,10 +51,18 @@ func AcceptCharset(header string) (name string, enc Charseter, err error) {
 	}
 
 	for _, accept := range accepts {
-		name, enc := findCharset(accept.Value)
-		if enc != nil {
-			return name, enc, nil
+		enc, err = htmlindex.Get(accept.Value)
+		if err != nil { // err != nil 表示未找到，继续查找
+			continue
 		}
+
+		// 转换成官方的名称
+		name, err = htmlindex.Name(enc)
+		if err != nil {
+			name = accept.Value // 不存在，直接使用用户上传的名称
+		}
+
+		return name, enc, nil
 	}
 
 	return "", nil, ErrInvalidCharset

@@ -8,56 +8,46 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
-
-func TestCharset(t *testing.T) {
-	a := assert.New(t)
-
-	a.ErrorType(AddCharset("*", nil), ErrInvalidCharset)
-
-	a.Equal(len(charset), 1) // 有一条默认的字符集信息
-	name, intf := findCharset(DefaultCharset)
-	a.Equal(name, DefaultCharset).NotNil(intf)
-
-	// 添加已存在的
-	a.Equal(AddCharset(DefaultCharset, simplifiedchinese.GBK), ErrExists)
-	a.Equal(len(charset), 1) // 添加没成功
-
-	a.NotError(AddCharset("GBK", simplifiedchinese.GBK))
-	a.Equal(len(charset), 2) // 添加成功
-	name, intf = findCharset("gbk")
-	a.Equal(name, "GBK").NotNil(intf)
-
-	name, intf = findCharset("*")
-	a.Equal(name, DefaultCharset).Equal(intf, xencoding.Nop)
-}
 
 func TestAcceptCharset(t *testing.T) {
 	a := assert.New(t)
 
 	name, enc, err := AcceptCharset(DefaultCharset)
 	a.NotError(err).
-		Equal(enc, xencoding.Nop).
-		Equal(name, DefaultCharset)
+		Equal(name, DefaultCharset).
+		True(CharsetIsNop(enc))
 
 	name, enc, err = AcceptCharset("")
 	a.NotError(err).
-		Equal(enc, xencoding.Nop).
-		Equal(name, DefaultCharset)
+		Equal(name, DefaultCharset).
+		True(CharsetIsNop(enc))
 
-	// * 不指定，需要用户自行决定其表示方式
+	// * 表示采用默认的编码
 	name, enc, err = AcceptCharset("*")
 	a.NotError(err).
 		Equal(name, DefaultCharset).
-		NotNil(enc)
+		True(CharsetIsNop(enc))
 
+	name, enc, err = AcceptCharset("gbk")
+	a.NotError(err).
+		Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
+
+	// 传递一个非正规名称
+	name, enc, err = AcceptCharset("chinese")
+	a.NotError(err).
+		Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
+
+	// q 错解析错误
 	name, enc, err = AcceptCharset("utf-8;q=x.9,gbk;q=0.8")
 	a.Error(err).
 		Equal(name, "").
 		Nil(enc)
 
+	// 不支持的编码
 	name, enc, err = AcceptCharset("not-supported")
 	a.Error(err).
 		Empty(name).

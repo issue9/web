@@ -9,7 +9,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/encoding/gob"
-	xencoding "golang.org/x/text/encoding"
 )
 
 func TestContentType(t *testing.T) {
@@ -25,7 +24,7 @@ func TestContentType(t *testing.T) {
 	um, c, err = ContentType(BuildContentType("", ""))
 	a.NotError(err).
 		Equal(um, UnmarshalFunc(um)).
-		Equal(c, xencoding.Nop)
+		True(CharsetIsNop(c))
 
 	// 未指定 memetype
 	um, c, err = ContentType(";" + DefaultCharset)

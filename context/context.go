@@ -39,7 +39,7 @@ type Context struct {
 	// 输出到客户端的字符集
 	//
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	OutputCharset     encoding.Charseter
+	OutputCharset     xencoding.Encoding
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
@@ -48,7 +48,7 @@ type Context struct {
 	// 客户端内容所使用的字符集
 	//
 	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	InputCharset encoding.Charseter
+	InputCharset xencoding.Encoding
 
 	// 输出语言的相关设置项。
 	OutputTag     language.Tag
@@ -126,7 +126,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return nil, err
 	}
 
-	if ctx.InputCharset == nil || ctx.InputCharset == xencoding.Nop {
+	if encoding.CharsetIsNop(ctx.InputCharset) {
 		return ctx.body, nil
 	}
 
@@ -190,7 +190,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	ctx.Response.WriteHeader(status)
 
-	if ctx.OutputCharset == nil || ctx.OutputCharset == xencoding.Nop {
+	if encoding.CharsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
 		return err
 	}

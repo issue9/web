@@ -9,6 +9,9 @@ import (
 	"errors"
 	"strings"
 	"unicode"
+
+	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 )
 
 // Nil 表示向客户端输出 nil 值。
@@ -35,7 +38,7 @@ var (
 )
 
 // ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
-func ContentType(header string) (UnmarshalFunc, Charseter, error) {
+func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
 	encName, charsetName, err := ParseContentType(header)
 	if err != nil {
 		return nil, nil, err
@@ -52,12 +55,12 @@ func ContentType(header string) (UnmarshalFunc, Charseter, error) {
 		return nil, nil, ErrInvalidMimeType
 	}
 
-	_, c := findCharset(charsetName)
-	if c == nil {
+	charset, err := htmlindex.Get(charsetName)
+	if err != nil {
 		return nil, nil, ErrInvalidCharset
 	}
 
-	return unmarshal.f, c, nil
+	return unmarshal.f, charset, nil
 }
 
 // BuildContentType 生成一个 content-type

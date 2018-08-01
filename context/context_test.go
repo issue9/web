@@ -76,6 +76,14 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
+	a.NotPanic(func() {
+		New(w, r, errlog)
+	})
+
+	// 错误的 content-type,有输入内容
+	logwriter.Reset()
+	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
+	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
 		New(w, r, errlog)
 	})
@@ -138,7 +146,7 @@ func TestNew(t *testing.T) {
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
-		Equal(ctx.InputCharset, xencoding.Nop).
+		True(encoding.CharsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
 }
 
