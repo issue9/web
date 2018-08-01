@@ -14,20 +14,20 @@ import (
 func TestAcceptCharset(t *testing.T) {
 	a := assert.New(t)
 
-	name, enc, err := AcceptCharset(defaultCharset)
+	name, enc, err := AcceptCharset(utf8Name)
 	a.NotError(err).
-		Equal(name, defaultCharset).
+		Equal(name, utf8Name).
 		True(CharsetIsNop(enc))
 
 	name, enc, err = AcceptCharset("")
 	a.NotError(err).
-		Equal(name, defaultCharset).
+		Equal(name, utf8Name).
 		True(CharsetIsNop(enc))
 
 	// * 表示采用默认的编码
 	name, enc, err = AcceptCharset("*")
 	a.NotError(err).
-		Equal(name, defaultCharset).
+		Equal(name, utf8Name).
 		True(CharsetIsNop(enc))
 
 	name, enc, err = AcceptCharset("gbk")

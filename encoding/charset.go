@@ -11,9 +11,7 @@ import (
 	"golang.org/x/text/encoding/unicode"
 )
 
-// defaultCharset 默认的字符集，在不能正确获取输入和输出的字符集时，
-// 会采用此值和为其默认值。
-const defaultCharset = "utf-8"
+const utf8Name = "utf-8"
 
 // CharsetIsNop 指定的编码是否不需要任何额外操作
 func CharsetIsNop(enc xencoding.Encoding) bool {
@@ -36,13 +34,13 @@ func AddCharsets(cs map[string]xencoding.Encoding) error {
 
 // AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
 //
-// 传递 * 获取返回默认的字符集相关信息，即 defaultCharset
+// 传递 * 获取返回默认的字符集相关信息，即 utf-8
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
 func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
 	if header == "" || header == "*" {
-		return defaultCharset, nil, nil
+		return utf8Name, nil, nil
 	}
 
 	accepts, err := accept.Parse(header)

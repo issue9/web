@@ -14,7 +14,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 	a := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
-		a.True(len(BuildContentType(DefaultMimeType, defaultCharset)) > 0)
+		a.True(len(BuildContentType(DefaultMimeType, utf8Name)) > 0)
 	}
 }
 
