@@ -71,7 +71,7 @@ func BuildContentType(mimetype, charset string) string {
 		mimetype = DefaultMimeType
 	}
 	if charset == "" {
-		charset = DefaultCharset
+		charset = defaultCharset
 	}
 
 	return mimetype + "; charset=" + charset
@@ -88,13 +88,13 @@ func ParseContentType(v string) (mimetype, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if v == "" {
-		return DefaultMimeType, DefaultCharset, nil
+		return DefaultMimeType, defaultCharset, nil
 	}
 
 	index := strings.IndexByte(v, ';')
 	switch {
 	case index < 0: // 只有编码
-		return strings.ToLower(v), DefaultCharset, nil
+		return strings.ToLower(v), defaultCharset, nil
 	case index == 0: // mimetype 不可省略
 		return "", "", ErrInvalidMimeType
 	}
@@ -114,5 +114,5 @@ func ParseContentType(v string) (mimetype, charset string, err error) {
 		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	return mimetype, DefaultCharset, nil
+	return mimetype, defaultCharset, nil
 }

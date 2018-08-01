@@ -88,7 +88,7 @@ func TestNewContext(t *testing.T) {
 	a.NotNil(ctx).
 		Equal(ctx.Response, w).
 		Equal(ctx.Request, r).
-		Equal(ctx.OutputCharsetName, encoding.DefaultCharset).
+		Equal(ctx.OutputCharsetName, "utf-8").
 		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
 }
 
