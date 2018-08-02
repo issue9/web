@@ -55,7 +55,8 @@ type Context struct {
 	LocalePrinter *message.Printer
 
 	// 从客户端获取的内容，已经解析为 utf-8 方式。
-	body []byte
+	body   []byte
+	readed bool // 是否已经从 r.Body 中加载过
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -108,6 +109,8 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		header = r.Header.Get(contentTypeKey)
 		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(header)
 		checkError(err, http.StatusUnsupportedMediaType)
+	} else {
+		ctx.readed = true
 	}
 
 	return ctx
@@ -118,7 +121,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 // 相对于 ctx.Request().Body，此函数可多次读取。
 // 不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
-	if ctx.body != nil {
+	if ctx.readed {
 		return ctx.body, nil
 	}
 
@@ -127,12 +130,14 @@ func (ctx *Context) Body() (body []byte, err error) {
 	}
 
 	if encoding.CharsetIsNop(ctx.InputCharset) {
+		ctx.readed = true
 		return ctx.body, nil
 	}
 
 	d := ctx.InputCharset.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
 	ctx.body, err = ioutil.ReadAll(reader)
+	ctx.readed = true
 	return ctx.body, err
 }
 
