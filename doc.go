@@ -17,7 +17,7 @@
 //
 // 字符集和媒体类型
 //
-// encoding 包通过 AddCharset、AddMarshal 和 AddUnmarshal 给用户提供相关功能。
+// encoding 包通过 AddMarshal 和 AddUnmarshal 给用户提供相关功能。
 //
 // 当然用户也可以直接构建一个 context.Context 对象来生成一个一次性的对象。
 //
