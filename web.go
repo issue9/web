@@ -122,16 +122,16 @@ func LoadConfig(path string, v interface{}) error {
 }
 
 // NewModule 注册一个模块
-func NewModule(name, desc string, deps ...string) *module.Module {
+func NewModule(name, desc string, deps ...string) *Module {
 	return defaultApp.NewModule(name, desc, deps...)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
-func NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return context.New(w, r, logs.ERROR())
 }
 
 // NewResult 生成一个 *result.Result 对象
-func NewResult(code int) *result.Result {
+func NewResult(code int) *Result {
 	return &result.Result{Code: code}
 }
