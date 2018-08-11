@@ -15,7 +15,7 @@ import (
 // 表示一个 HTTP 状态码错误。
 // panic 此类型的值，可以在 Revoery 中作特殊处理。
 //
-// 目前仅由 ExitCoroutine 使用，让框加以特定的状态码退出当前协程。
+// 目前仅由 Exit 使用，让框加以特定的状态码退出当前协程。
 type httpStatus int
 
 // Exit 以指定的状态码退出当前协程
@@ -24,9 +24,6 @@ type httpStatus int
 //
 // Exit 最终是以 panic 的形式退出，所以如果你的代码里截获了 panic，
 // 那么 Exit 并不能达到退出当前请求的操作。
-//
-// 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func Exit(status int) {
 	panic(httpStatus(status))
 }
