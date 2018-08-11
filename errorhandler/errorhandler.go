@@ -13,10 +13,6 @@ import (
 
 var errorHandlers = map[int]func(http.ResponseWriter, int){}
 
-// 错误状态下，输出的 content-type 报头内容
-// 错误状态下只能输出 utf-8 才不需要转码。
-var errorContentType = encoding.BuildContentType("text/plain", "UTF-8")
-
 // AddErrorHandler 添加针对特写状态码的错误处理函数
 //
 // 返回值表示是否添加成功
@@ -36,6 +32,9 @@ func SetErrorHandler(status int, f func(http.ResponseWriter, int)) {
 	errorHandlers[status] = f
 }
 
+// defaultRender 用到的 content-type 类型
+var errorContentType = encoding.BuildContentType("text/plain", "UTF-8")
+
 // 仅向客户端输出状态码。
 func defaultRender(w http.ResponseWriter, status int) {
 	w.Header().Set("Content-Type", errorContentType)
@@ -44,7 +43,7 @@ func defaultRender(w http.ResponseWriter, status int) {
 	w.Write([]byte(http.StatusText(status) + "\n"))
 }
 
-// Render 仅向客户端输出状态码。
+// Render 向客户端输出指定状态码的错误内容。
 func Render(w http.ResponseWriter, status int) {
 	f, found := errorHandlers[status]
 	if !found || f == nil {

@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
-	"github.com/issue9/web/context"
+	"github.com/issue9/web/errorhandler"
 	"github.com/issue9/web/internal/dependency"
 )
 
@@ -157,7 +157,7 @@ func (app *App) Shutdown() (err error) {
 
 func buildHandler(conf *webconfig, h http.Handler) http.Handler {
 	h = buildHosts(conf, buildHeader(conf, h))
-	h = recovery.New(h, context.Recovery(conf.Debug))
+	h = recovery.New(h, errorhandler.Recovery(conf.Debug))
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
