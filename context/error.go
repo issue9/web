@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/utils"
 	"github.com/issue9/web/errorhandler"
 )
 
@@ -91,7 +92,7 @@ func Exit(status int) {
 
 func throwError(level int, w http.ResponseWriter, status int, v ...interface{}) {
 	if len(v) > 0 {
-		logs.ERROR().Output(level, errorhandler.TraceStack(level, v...))
+		logs.ERROR().Output(level, traceStack(level, v...))
 	}
 
 	errorhandler.Render(w, status)
@@ -99,7 +100,7 @@ func throwError(level int, w http.ResponseWriter, status int, v ...interface{}) 
 
 func throwCritical(level int, w http.ResponseWriter, status int, v ...interface{}) {
 	if len(v) > 0 {
-		logs.CRITICAL().Output(level, errorhandler.TraceStack(level, v...))
+		logs.CRITICAL().Output(level, traceStack(level, v...))
 	}
 
 	errorhandler.Render(w, status)
@@ -107,7 +108,7 @@ func throwCritical(level int, w http.ResponseWriter, status int, v ...interface{
 
 func throwErrorf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		logs.ERROR().Output(level, errorhandler.TraceStack(level, fmt.Sprintf(format, v...)))
+		logs.ERROR().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
 	}
 
 	errorhandler.Render(w, status)
@@ -115,8 +116,17 @@ func throwErrorf(level int, w http.ResponseWriter, status int, format string, v 
 
 func throwCriticalf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		logs.CRITICAL().Output(level, errorhandler.TraceStack(level, fmt.Sprintf(format, v...)))
+		logs.CRITICAL().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
 	}
 
 	errorhandler.Render(w, status)
+}
+
+func traceStack(level int, messages ...interface{}) string {
+	msg, err := utils.TraceStack(level, messages...)
+	if err != nil {
+		panic(err)
+	}
+
+	return msg
 }

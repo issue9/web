@@ -5,14 +5,11 @@
 package errorhandler
 
 import (
-	"fmt"
 	"net/http"
-	"runtime"
-	"strconv"
-	"strings"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/recovery"
+	"github.com/issue9/utils"
 )
 
 // 表示一个 HTTP 状态码错误。
@@ -34,7 +31,7 @@ func Exit(status int) {
 	panic(httpStatus(status))
 }
 
-// Recovery 生成一个 recovery.RecoverFunc 函数，用于抓获由 panic 触发的事件。
+// Recovery 生成一个 recovery.RecoverFunc 函数，用于捕获由 panic 触发的事件。
 //
 // debug 是否为调试模式，若是调试模式，则详细信息输出到客户端，否则输出到日志中。
 func Recovery(debug bool) recovery.RecoverFunc {
@@ -49,7 +46,11 @@ func Recovery(debug bool) recovery.RecoverFunc {
 
 		Render(w, http.StatusInternalServerError)
 
-		message := TraceStack(3, msg)
+		message, err := utils.TraceStack(3, msg)
+		if err != nil {
+			panic(err)
+		}
+
 		if debug {
 			_, err := w.Write([]byte(message))
 			if err != nil { // 输出错误时再次出错，则 panic，退出整个程序
@@ -58,36 +59,4 @@ func Recovery(debug bool) recovery.RecoverFunc {
 		}
 		logs.Error(message)
 	}
-}
-
-// TraceStack 返回调用者的堆栈信息
-func TraceStack(level int, messages ...interface{}) string {
-	var w strings.Builder
-
-	ws := func(val string) {
-		_, err := w.WriteString(val)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if len(messages) > 0 {
-		if _, err := fmt.Fprintln(&w, messages...); err != nil {
-			panic(err)
-		}
-	}
-
-	for i := level; true; i++ {
-		_, file, line, ok := runtime.Caller(i)
-		if !ok {
-			break
-		}
-
-		ws(file)
-		ws(":")
-		ws(strconv.Itoa(line))
-		ws("\n")
-	}
-
-	return w.String()
 }

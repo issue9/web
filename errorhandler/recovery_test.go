@@ -22,14 +22,6 @@ func init() {
 	logs.SetWriter(logs.LevelError, errLog, "", 0)
 }
 
-func TestTraceStack(t *testing.T) {
-	a := assert.New(t)
-
-	str := TraceStack(1, "message", 12)
-	a.True(strings.HasPrefix(str, "message 12"))
-	a.True(strings.Contains(str, "recovery_test.go")) // 肯定包含当前文件名
-}
-
 func TestRecovery_debug(t *testing.T) {
 	a := assert.New(t)
 	fn := Recovery(true)
