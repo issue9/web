@@ -6,6 +6,7 @@
 package errorhandler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/issue9/web/encoding"
@@ -14,22 +15,25 @@ import (
 var errorHandlers = map[int]func(http.ResponseWriter, int){}
 
 // AddErrorHandler 添加针对特写状态码的错误处理函数
-//
-// 返回值表示是否添加成功
-func AddErrorHandler(status int, f func(http.ResponseWriter, int)) bool {
-	if _, found := errorHandlers[status]; found {
-		return false
+func AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
+	for _, s := range status {
+		if _, found := errorHandlers[s]; found {
+			return fmt.Errorf("状态码 %d 已经存在", s)
+		}
+
+		errorHandlers[s] = f
 	}
 
-	errorHandlers[status] = f
-	return true
+	return nil
 }
 
 // SetErrorHandler 设置指定状态码对应的处理函数
 //
 // 有则修改，没有则添加
-func SetErrorHandler(status int, f func(http.ResponseWriter, int)) {
-	errorHandlers[status] = f
+func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
+	for _, s := range status {
+		errorHandlers[s] = f
+	}
 }
 
 // defaultRender 用到的 content-type 类型
@@ -46,7 +50,11 @@ func defaultRender(w http.ResponseWriter, status int) {
 // Render 向客户端输出指定状态码的错误内容。
 func Render(w http.ResponseWriter, status int) {
 	f, found := errorHandlers[status]
-	if !found || f == nil {
+	if !found {
+		if f, found = errorHandlers[0]; !found || f == nil {
+			f = defaultRender
+		}
+	} else if f == nil {
 		f = defaultRender
 	}
 
