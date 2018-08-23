@@ -13,7 +13,7 @@ import (
 )
 
 // 表示一个 HTTP 状态码错误。
-// panic 此类型的值，可以在 Revoery 中作特殊处理。
+// panic 此类型的值，可以在 Recovery 中作特殊处理。
 //
 // 目前仅由 Exit 使用，让框加以特定的状态码退出当前协程。
 type httpStatus int
