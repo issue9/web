@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
@@ -158,6 +159,12 @@ func (app *App) Shutdown() (err error) {
 func buildHandler(conf *webconfig, h http.Handler) http.Handler {
 	h = buildHosts(conf, buildHeader(conf, h))
 	h = recovery.New(h, errorhandler.Recovery(conf.Debug))
+
+	// 需保证外层调用不再写入内容。否则可能出错
+	h = compress.New(h, logs.ERROR(), map[string]compress.BuildCompressWriter{
+		"gizp":    compress.NewGzip,
+		"deflate": compress.NewDeflate,
+	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
