@@ -17,7 +17,7 @@ import (
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/encoding/form"
-	"github.com/issue9/web/errorhandler"
+	"github.com/issue9/web/internal/errors"
 )
 
 var _ form.Marshaler = &Result{}
@@ -86,7 +86,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	}
 
 	h := http.HandlerFunc(resultRenderHandler)
-	srv := rest.NewServer(t, recovery.New(h, errorhandler.Recovery(false)), nil)
+	srv := rest.NewServer(t, recovery.New(h, errors.Recovery(false)), nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").

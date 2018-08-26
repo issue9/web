@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package errorhandler 对状态码错误的处理方式
-package errorhandler
+// Package errors 对状态码错误的处理方式
+package errors
 
 import (
 	"fmt"

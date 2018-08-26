@@ -10,7 +10,8 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/utils"
-	"github.com/issue9/web/errorhandler"
+
+	"github.com/issue9/web/internal/errors"
 )
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -50,7 +51,7 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
-	errorhandler.Exit(status)
+	errors.Exit(status)
 }
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -95,7 +96,7 @@ func Errorf(w http.ResponseWriter, status int, format string, v ...interface{}) 
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func Exit(status int) {
-	errorhandler.Exit(status)
+	errors.Exit(status)
 }
 
 func throwError(level int, w http.ResponseWriter, status int, v ...interface{}) {
@@ -103,7 +104,7 @@ func throwError(level int, w http.ResponseWriter, status int, v ...interface{}) 
 		logs.ERROR().Output(level, traceStack(level, v...))
 	}
 
-	errorhandler.Render(w, status)
+	errors.Render(w, status)
 }
 
 func throwCritical(level int, w http.ResponseWriter, status int, v ...interface{}) {
@@ -111,7 +112,7 @@ func throwCritical(level int, w http.ResponseWriter, status int, v ...interface{
 		logs.CRITICAL().Output(level, traceStack(level, v...))
 	}
 
-	errorhandler.Render(w, status)
+	errors.Render(w, status)
 }
 
 func throwErrorf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
@@ -119,7 +120,7 @@ func throwErrorf(level int, w http.ResponseWriter, status int, format string, v 
 		logs.ERROR().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
 	}
 
-	errorhandler.Render(w, status)
+	errors.Render(w, status)
 }
 
 func throwCriticalf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
@@ -127,7 +128,7 @@ func throwCriticalf(level int, w http.ResponseWriter, status int, format string,
 		logs.CRITICAL().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
 	}
 
-	errorhandler.Render(w, status)
+	errors.Render(w, status)
 }
 
 func traceStack(level int, messages ...interface{}) string {

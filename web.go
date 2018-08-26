@@ -13,10 +13,8 @@ import (
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/module"
-	"github.com/issue9/web/result"
 )
 
 var defaultApp *app.App
@@ -124,14 +122,4 @@ func LoadConfig(path string, v interface{}) error {
 // NewModule 注册一个模块
 func NewModule(name, desc string, deps ...string) *Module {
 	return defaultApp.NewModule(name, desc, deps...)
-}
-
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, logs.ERROR())
-}
-
-// NewResult 生成一个 *result.Result 对象
-func NewResult(code int) *Result {
-	return &result.Result{Code: code}
 }
