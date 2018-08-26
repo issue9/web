@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/issue9/web/internal/accept"
+	"github.com/issue9/middleware/compress/accept"
 )
 
 // DefaultMimeType 默认的媒体类型，在不能获取输入和输出的媒体类型时，

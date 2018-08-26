@@ -5,7 +5,7 @@
 package encoding
 
 import (
-	"github.com/issue9/web/internal/accept"
+	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/unicode"

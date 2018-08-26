@@ -12,13 +12,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/internal/accept"
 )
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
