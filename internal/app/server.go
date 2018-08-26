@@ -14,10 +14,10 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/internal/errors"
 )
@@ -161,10 +161,7 @@ func buildHandler(conf *webconfig, h http.Handler) http.Handler {
 	h = recovery.New(h, errors.Recovery(conf.Debug))
 
 	// 需保证外层调用不再写入内容。否则可能出错
-	h = compress.New(h, logs.ERROR(), map[string]compress.WriterFunc{
-		"gizp":    compress.NewGzip,
-		"deflate": compress.NewDeflate,
-	})
+	h = compress.Handler(h, logs.ERROR())
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
