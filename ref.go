@@ -43,11 +43,15 @@ func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
 }
 
 // AddCompress 添加压缩方法。框架本身已经指定了 gzip 和 deflate 两种方法。
+//
+// NOTE: 只有在 web.Init() 之前调用才能启作用。
 func AddCompress(name string, f compress.WriterFunc) error {
 	return middlewares.AddCompress(name, f)
 }
 
 // SetCompress 修改或是添加压缩方法。
+//
+// NOTE: 只有在 web.Init() 之前调用才能启作用。
 func SetCompress(name string, f compress.WriterFunc) {
 	middlewares.SetCompress(name, f)
 }

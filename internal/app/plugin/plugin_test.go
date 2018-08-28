@@ -20,7 +20,10 @@ func TestModuleInitFuncName(t *testing.T) {
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := Load("./testdata/plugin-*.so", nil)
+	ms, err := Load("", nil)
+	a.NotError(err).Nil(ms)
+
+	ms, err = Load("./testdata/plugin-*.so", nil)
 	a.Error(err).Nil(ms)
 
 	ms, err = Load("./testdata/plugin_*.so", nil)

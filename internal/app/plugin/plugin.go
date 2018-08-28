@@ -17,6 +17,8 @@ import (
 const moduleInitFuncName = "Init"
 
 // Load 加载所有的插件
+//
+// 如果 glob 为空，则不会加载任何内容，返回空值
 func Load(glob string, router *mux.Prefix) ([]*module.Module, error) {
 	if glob == "" {
 		return nil, nil
