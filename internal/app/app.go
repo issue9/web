@@ -142,12 +142,6 @@ func (app *App) Handler() (http.Handler, error) {
 }
 
 func (app *App) initServer() error {
-	for url, dir := range app.webConfig.Static {
-		pattern := path.Join(app.webConfig.Root, url+"{path}")
-		fs := http.FileServer(http.Dir(dir))
-		app.router.Get(pattern, http.StripPrefix(url, fs))
-	}
-
 	if err := app.initModules(); err != nil {
 		return err
 	}
@@ -169,6 +163,14 @@ func (app *App) initServer() error {
 }
 
 func (app *App) initModules() (err error) {
+	// 初始化静态文件处理模块
+	m := app.NewModule("web-core", "框架本身的模块")
+	for url, dir := range app.webConfig.Static {
+		pattern := path.Join(app.webConfig.Root, url+"{path}")
+		fs := http.FileServer(http.Dir(dir))
+		m.Get(pattern, http.StripPrefix(url, fs))
+	}
+
 	// 在初始化模块之前，先加载插件
 	app.modules, err = plugin.Load(app.webConfig.Plugins, app.router)
 	if err != nil {
