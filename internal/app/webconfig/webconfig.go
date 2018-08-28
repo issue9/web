@@ -83,6 +83,9 @@ type WebConfig struct {
 	ReadTimeout  time.Duration `yaml:"readTimeout,omitempty"`
 	WriteTimeout time.Duration `yaml:"writeTimeout,omitempty"`
 
+	// Compress 表示压缩的相关配置
+	Compress *Compress `yaml:"compress,omitempty"`
+
 	// 表示关闭整个服务时，需要等待的时间。
 	//
 	// 若为 0，表示直接关闭，否则会等待该指定的时间，或是在超时时才执行强制关闭。
@@ -96,6 +99,12 @@ type WebConfig struct {
 	//
 	// 用户也可台强制指定一个不同的地址。
 	URL string `yaml:"url,omitempty"`
+}
+
+// Compress 表示压缩的相关配置
+type Compress struct {
+	Types []string
+	Size  int
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。

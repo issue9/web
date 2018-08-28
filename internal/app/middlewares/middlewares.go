@@ -23,12 +23,14 @@ func Handler(h http.Handler, conf *webconfig.WebConfig) http.Handler {
 	h = recovery.New(h, errors.Recovery(conf.Debug))
 
 	// 需保证外层调用不再写入内容。否则可能出错
-	h = compress.New(h, &compress.Options{
-		Funcs:    funcs,
-		Types:    []string{},
-		Size:     0,
-		ErrorLog: logs.ERROR(),
-	})
+	if conf.Compress != nil {
+		h = compress.New(h, &compress.Options{
+			Funcs:    funcs,
+			Types:    conf.Compress.Types,
+			Size:     conf.Compress.Size,
+			ErrorLog: logs.ERROR(),
+		})
+	}
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
