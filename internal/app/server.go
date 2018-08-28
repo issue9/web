@@ -56,24 +56,19 @@ func (app *App) initServer() error {
 	return nil
 }
 
-func (app *App) initModules() error {
+func (app *App) initModules() (err error) {
 	// 在初始化模块之前，先加载插件
-	if app.webConfig.Plugins != "" {
-		modules, err := plugin.Load(app.webConfig.Plugins, app.router)
-		if err != nil {
-			return err
-		}
-		app.modules = modules
+	app.modules, err = plugin.Load(app.webConfig.Plugins, app.router)
+	if err != nil {
+		return err
 	}
 
 	dep := dependency.New()
-
 	for _, module := range app.modules {
-		if err := dep.Add(module.Name, module.GetInit(), module.Deps...); err != nil {
+		if err = dep.Add(module.Name, module.GetInit(), module.Deps...); err != nil {
 			return err
 		}
 	}
-
 	return dep.Init()
 }
 

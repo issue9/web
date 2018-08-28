@@ -18,6 +18,10 @@ const moduleInitFuncName = "Init"
 
 // Load 加载所有的插件
 func Load(glob string, router *mux.Prefix) ([]*module.Module, error) {
+	if glob == "" {
+		return nil, nil
+	}
+
 	fs, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err
