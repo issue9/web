@@ -93,6 +93,8 @@ func Init() {
 | allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
 | readTimeout     | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout    | string | 与 http.Server.WriteTimeout 相同
+| compress.types  | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
+| compress.size   | int    | 指定可以使用 accept-encoding 输出的最小内容大小
 | shutdownTimeout | string | 关闭服务的等待时间
 | url             | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
 

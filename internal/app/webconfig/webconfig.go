@@ -84,6 +84,8 @@ type WebConfig struct {
 	WriteTimeout time.Duration `yaml:"writeTimeout,omitempty"`
 
 	// Compress 表示压缩的相关配置
+	//
+	// 不指定值，则表示不会进行压缩。
 	Compress *Compress `yaml:"compress,omitempty"`
 
 	// 表示关闭整个服务时，需要等待的时间。
@@ -103,8 +105,16 @@ type WebConfig struct {
 
 // Compress 表示压缩的相关配置
 type Compress struct {
+	// Types 指定可以进行压缩的 mime-type 值。
+	//
+	// 可以使用 * 作为结尾，同时指定多个，比如：
+	// text/* 表示所有以 text/* 开头的 mime-type 类型。
 	Types []string
-	Size  int
+
+	// Size 指定大小，默认为 0。
+	//
+	// 若指定了非零值，表示只有 content-length 值大于此值才会进行压缩。
+	Size int
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
