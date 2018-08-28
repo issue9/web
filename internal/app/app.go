@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
@@ -26,7 +27,7 @@ const (
 // App 程序运行实例
 type App struct {
 	configDir string
-	webConfig *webconfig
+	webConfig *webconfig.WebConfig
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
@@ -55,7 +56,7 @@ func New(configDir string) (*App, error) {
 		return nil, err
 	}
 
-	conf := &webconfig{}
+	conf := &webconfig.WebConfig{}
 	if err := app.LoadConfig(configFilename, conf); err != nil {
 		return nil, err
 	}

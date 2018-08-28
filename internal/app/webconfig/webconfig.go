@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package webconfig
 
 import (
 	"errors"
@@ -16,7 +16,8 @@ import (
 
 const localhostURL = "localhost"
 
-type webconfig struct {
+// WebConfig 项目的配置内容
+type WebConfig struct {
 	// Domain 网站的主域名
 	//
 	// 必须为一个合法的域名、IP 或是 localhost 字符串。
@@ -98,7 +99,7 @@ type webconfig struct {
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
-func (conf *webconfig) Sanitize() error {
+func (conf *WebConfig) Sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
 		return errors.New("domain 必须是一个 URL")
 	}
@@ -136,7 +137,7 @@ func (conf *webconfig) Sanitize() error {
 	return nil
 }
 
-func (conf *webconfig) buildRoot() error {
+func (conf *WebConfig) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
 	} else if (len(conf.Root) > 0) && !isURLPath(conf.Root) {
@@ -150,7 +151,7 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (conf *webconfig) buildHTTPS() error {
+func (conf *WebConfig) buildHTTPS() error {
 	if conf.HTTPS {
 		if !utils.FileExists(conf.CertFile) {
 			return errors.New("certFile 文件不存在")
@@ -172,7 +173,7 @@ func (conf *webconfig) buildHTTPS() error {
 	return nil
 }
 
-func (conf *webconfig) buildAllowedDomains() error {
+func (conf *WebConfig) buildAllowedDomains() error {
 	if len(conf.AllowedDomains) == 0 {
 		return nil
 	}
@@ -195,7 +196,7 @@ func (conf *webconfig) buildAllowedDomains() error {
 	return nil
 }
 
-func (conf *webconfig) buildURL() {
+func (conf *WebConfig) buildURL() {
 	if conf.URL != "" {
 		return
 	}

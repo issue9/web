@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package webconfig
 
 import (
 	"testing"
@@ -13,22 +13,22 @@ import (
 func TestWebconfig_buildRoot(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &webconfig{}
+	conf := &WebConfig{}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &webconfig{Root: "/"}
+	conf = &WebConfig{Root: "/"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "")
 
-	conf = &webconfig{Root: "/path"}
+	conf = &WebConfig{Root: "/path"}
 	a.NotError(conf.buildRoot())
 	a.Equal(conf.Root, "/path")
 
-	conf = &webconfig{Root: "/path/"}
+	conf = &WebConfig{Root: "/path/"}
 	a.Error(conf.buildRoot())
 
-	conf = &webconfig{Root: "path"}
+	conf = &WebConfig{Root: "path"}
 	a.Error(conf.buildRoot())
 }
 
@@ -44,7 +44,7 @@ func TestIsURLPath(t *testing.T) {
 func TestWebconfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &webconfig{}
+	conf := &WebConfig{}
 	a.NotError(conf.buildAllowedDomains())
 	a.Empty(conf.AllowedDomains)
 
@@ -76,7 +76,7 @@ func TestWebconfig_buildAllowedDomains(t *testing.T) {
 func TestWebconfig_buildHTTPS(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &webconfig{HTTPS: false}
+	conf := &WebConfig{HTTPS: false}
 	a.NotError(conf.buildHTTPS())
 	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
 
@@ -89,7 +89,7 @@ func TestWebconfig_buildHTTPS(t *testing.T) {
 	conf.HTTPS = true
 	a.Error(conf.buildHTTPS())
 
-	conf = &webconfig{
+	conf = &WebConfig{
 		HTTPS:    true,
 		CertFile: "./testdata/cert.pem",
 		KeyFile:  "./testdata/key.pem",
@@ -105,7 +105,7 @@ func TestWebconfig_buildHTTPS(t *testing.T) {
 
 func TestWebconfig_buildURL(t *testing.T) {
 	a := assert.New(t)
-	conf := &webconfig{Port: 80}
+	conf := &WebConfig{Port: 80}
 	conf.buildURL()
 	a.Equal(conf.URL, "")
 

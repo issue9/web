@@ -47,7 +47,7 @@ func (app *App) initServer() error {
 
 	app.server = &http.Server{
 		Addr:         ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:      middlewares.Handler(h, app.webConfig.Debug, app.webConfig.AllowedDomains, app.webConfig.Headers),
+		Handler:      middlewares.Handler(h, app.webConfig),
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  app.webConfig.ReadTimeout,
 		WriteTimeout: app.webConfig.WriteTimeout,

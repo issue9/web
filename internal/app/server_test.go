@@ -6,7 +6,6 @@ package app
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -22,14 +21,6 @@ var (
 
 	})
 )
-
-// 验证请求地址是否返回正确的状态码
-func request(a *assert.Assertion, h http.Handler, url string, code int) {
-	r := httptest.NewRequest(http.MethodGet, url, nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, code)
-}
 
 func TestApp_Handler(t *testing.T) {
 	a := assert.New(t)

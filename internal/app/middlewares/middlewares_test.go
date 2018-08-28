@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/issue9/web/internal/app/webconfig"
+
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/web/context"
@@ -27,7 +29,7 @@ func TestHandler(t *testing.T) {
 		context.Exit(http.StatusNotAcceptable)
 	})
 
-	h := Handler(panicFunc, false, nil, nil)
+	h := Handler(panicFunc, &webconfig.WebConfig{})
 	srv := rest.NewServer(t, h, nil)
 
 	// 触发 panic
@@ -36,14 +38,14 @@ func TestHandler(t *testing.T) {
 		Status(http.StatusInternalServerError)
 
 	// 触发 panic，调试模式
-	h = Handler(panicFunc, true, nil, nil)
+	h = Handler(panicFunc, &webconfig.WebConfig{Debug: true})
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
 		Status(http.StatusInternalServerError)
 
 	// 触发 panic, errors.HTTP
-	h = Handler(panicHTTPFunc, false, nil, nil)
+	h = Handler(panicHTTPFunc, &webconfig.WebConfig{})
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
