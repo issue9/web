@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package plugin
 
 import (
 	"testing"
@@ -17,31 +17,29 @@ func TestModuleInitFuncName(t *testing.T) {
 	a.True(unicode.IsUpper(rune(moduleInitFuncName[0])))
 }
 
-func TestApp_loadPlugins(t *testing.T) {
+func TestLoad(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
 
-	a.Error(app.loadPlugins("./plugins/plugin-*.so"))
+	ms, err := Load("./testdata/plugin-*.so", nil)
+	a.Error(err).Nil(ms)
 
-	a.NotError(app.loadPlugins("./plugins/plugin_*.so"))
-	a.Equal(2, len(app.modules))
+	ms, err = Load("./testdata/plugin_*.so", nil)
+	a.NotError(err).NotNil(ms).
+		Equal(2, len(ms))
 }
 
 func TestApp_loadPlugin(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
 
-	m, err := app.loadPlugin("./plugins/plugin_1.so")
+	m, err := loadPlugin("./testdata/plugin_1.so", nil)
 	a.NotError(err).NotNil(m)
 	a.Equal(m.Name, "plugin1")
 
 	// 加载错误的插件
-	m, err = app.loadPlugin("./plugins/plugin-3.so")
+	m, err = loadPlugin("./testdata/plugin-3.so", nil)
 	a.Error(err).Nil(m)
 
 	// 不存在的插件
-	m, err = app.loadPlugin("./plugins/not-exists.so")
+	m, err = loadPlugin("./testdata/not-exists.so", nil)
 	a.Error(err).Nil(m)
 }

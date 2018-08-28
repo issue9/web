@@ -2,38 +2,41 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package plugin
 
 import (
 	"fmt"
 	"path/filepath"
 	"plugin"
 
+	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
 )
 
 // 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInitFuncName = "Init"
 
-func (app *App) loadPlugins(glob string) error {
+// Load 加载所有的插件
+func Load(glob string, router *mux.Prefix) ([]*module.Module, error) {
 	fs, err := filepath.Glob(glob)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	modules := make([]*module.Module, 0, len(fs))
 	for _, path := range fs {
-		m, err := app.loadPlugin(path)
+		m, err := loadPlugin(path, router)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		app.modules = append(app.modules, m)
+		modules = append(modules, m)
 	}
 
-	return nil
+	return modules, nil
 }
 
-func (app *App) loadPlugin(path string) (*module.Module, error) {
+func loadPlugin(path string, router *mux.Prefix) (*module.Module, error) {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return nil, err
@@ -45,7 +48,7 @@ func (app *App) loadPlugin(path string) (*module.Module, error) {
 	}
 	init := symbol.(func(*module.Module))
 
-	m := module.New(app.router, "", "plugin desc")
+	m := module.New(router, "", "plugin desc")
 	m.Type = module.TypePlugin
 	init(m)
 

@@ -49,7 +49,6 @@ func New(configDir string) (*App, error) {
 	app := &App{
 		configDir: configDir,
 		closed:    make(chan bool, 1),
-		modules:   make([]*module.Module, 0, 50),
 	}
 
 	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {

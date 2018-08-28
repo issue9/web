@@ -73,9 +73,11 @@ func (app *App) initServer() error {
 func (app *App) initModules() error {
 	// 在初始化模块之前，先加载插件
 	if app.webConfig.Plugins != "" {
-		if err := app.loadPlugins(app.webConfig.Plugins); err != nil {
+		modules, err := plugin.Load(app.webConfig.Plugins, app.router)
+		if err != nil {
 			return err
 		}
+		app.modules = modules
 	}
 
 	dep := dependency.New()
