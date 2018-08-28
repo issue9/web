@@ -6,29 +6,15 @@ package app
 
 import (
 	stdctx "context"
-	"expvar"
 	"net/http"
-	"net/http/pprof"
 	"path"
 	"strconv"
-	"strings"
 
 	"github.com/issue9/logs"
-	"github.com/issue9/middleware/host"
-	"github.com/issue9/middleware/recovery"
 
-	"github.com/issue9/web/internal/compress"
+	"github.com/issue9/web/internal/app/middlewares"
+	"github.com/issue9/web/internal/app/plugin"
 	"github.com/issue9/web/internal/dependency"
-	"github.com/issue9/web/internal/errors"
-)
-
-// 定义了用于调试输出的网页地址。
-const (
-	// 此变量理论上可以更改，但实际上，更改之后，所有的子页面都会不可用。
-	debugPprofPath = "/debug/pprof/"
-
-	// 此地址可以修改。
-	debugVarsPath = "/debug/vars"
 )
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
@@ -61,7 +47,7 @@ func (app *App) initServer() error {
 
 	app.server = &http.Server{
 		Addr:         ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:      buildHandler(app.webConfig, h),
+		Handler:      middlewares.Handler(h, app.webConfig.Debug, app.webConfig.AllowedDomains, app.webConfig.Headers),
 		ErrorLog:     logs.ERROR(),
 		ReadTimeout:  app.webConfig.ReadTimeout,
 		WriteTimeout: app.webConfig.WriteTimeout,
@@ -156,67 +142,4 @@ func (app *App) Shutdown() (err error) {
 		app.closed <- true
 	}()
 	return app.server.Shutdown(ctx)
-}
-
-func buildHandler(conf *webconfig, h http.Handler) http.Handler {
-	h = buildHosts(conf, buildHeader(conf, h))
-	h = recovery.New(h, errors.Recovery(conf.Debug))
-
-	// 需保证外层调用不再写入内容。否则可能出错
-	h = compress.Handler(h, logs.ERROR())
-
-	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	if conf.Debug {
-		logs.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
-		h = buildDebug(h)
-	}
-
-	return h
-}
-
-func buildHosts(conf *webconfig, h http.Handler) http.Handler {
-	if len(conf.AllowedDomains) == 0 {
-		return h
-	}
-
-	return host.New(h, conf.AllowedDomains...)
-}
-
-func buildHeader(conf *webconfig, h http.Handler) http.Handler {
-	if len(conf.Headers) == 0 {
-		return h
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range conf.Headers {
-			w.Header().Set(k, v)
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
-// 根据 决定是否包装调试地址，调用前请确认是否已经开启 Pprof 选项
-func buildDebug(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case strings.HasPrefix(r.URL.Path, debugPprofPath):
-			path := r.URL.Path[len(debugPprofPath):]
-			switch path {
-			case "cmdline":
-				pprof.Cmdline(w, r)
-			case "profile":
-				pprof.Profile(w, r)
-			case "symbol":
-				pprof.Symbol(w, r)
-			case "trace":
-				pprof.Trace(w, r)
-			default:
-				pprof.Index(w, r)
-			}
-		case strings.HasPrefix(r.URL.Path, debugVarsPath):
-			expvar.Handler().ServeHTTP(w, r)
-		default:
-			h.ServeHTTP(w, r)
-		}
-	}) // end return http.HandlerFunc
 }

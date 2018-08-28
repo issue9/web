@@ -8,10 +8,10 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs"
-	xcompress "github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/compress"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/compress"
+	"github.com/issue9/web/internal/app/middlewares"
 	"github.com/issue9/web/internal/errors"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
@@ -43,13 +43,13 @@ func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
 }
 
 // AddCompress 添加压缩方法。框架本身已经指定了 gzip 和 deflate 两种方法。
-func AddCompress(name string, f xcompress.WriterFunc) error {
-	return compress.Add(name, f)
+func AddCompress(name string, f compress.WriterFunc) error {
+	return middlewares.AddCompress(name, f)
 }
 
 // SetCompress 修改或是添加压缩方法。
-func SetCompress(name string, f xcompress.WriterFunc) {
-	compress.Set(name, f)
+func SetCompress(name string, f compress.WriterFunc) {
+	middlewares.SetCompress(name, f)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic

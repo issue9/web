@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/context"
 )
 
 const timeout = 300 * time.Microsecond
@@ -197,86 +196,4 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
-}
-
-func TestBuildHandler(t *testing.T) {
-	a := assert.New(t)
-
-	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		panic("err")
-	})
-
-	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		context.Exit(http.StatusNotAcceptable)
-	})
-
-	// 触发 panic
-	h := buildHandler(&webconfig{}, panicFunc)
-	request(a, h, "http://example.com/test", http.StatusInternalServerError)
-
-	// 触发 panic，调试模式
-	conf := &webconfig{
-		Debug: true,
-	}
-	h = buildHandler(conf, panicFunc)
-	request(a, h, "http://example.com/test", http.StatusInternalServerError)
-
-	// 触发 panic, errors.HTTP
-	h = buildHandler(&webconfig{}, panicHTTPFunc)
-	request(a, h, "http://example.com/test", http.StatusNotAcceptable)
-}
-
-func TestBuildHosts_empty(t *testing.T) {
-	a := assert.New(t)
-
-	h := buildHosts(&webconfig{}, h202)
-	request(a, h, "http://example.com/test", http.StatusAccepted)
-}
-
-func TestBuildHosts(t *testing.T) {
-	a := assert.New(t)
-	conf := &webconfig{
-		AllowedDomains: []string{"caixw.io", "example.com"},
-	}
-
-	h := buildHosts(conf, h202)
-
-	// 带正确的域名访问
-	request(a, h, "http://caixw.io/test", http.StatusAccepted)
-
-	// 带不允许的域名访问
-	request(a, h, "http://not.allowed/test", http.StatusNotFound)
-}
-
-func TestBuildHeader(t *testing.T) {
-	a := assert.New(t)
-	conf := &webconfig{
-		Headers: map[string]string{"Test": "test"},
-	}
-
-	h := buildHeader(conf, h202)
-
-	r := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
-	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	a.Equal(w.Code, http.StatusAccepted)
-	a.Equal(w.Header().Get("Test"), "test")
-}
-
-func TestBuildDebug(t *testing.T) {
-	a := assert.New(t)
-	h := buildDebug(h202)
-
-	// 命中 /debug/pprof/cmdline
-	request(a, h, "http://example.com/debug/pprof/", http.StatusOK)
-	request(a, h, "http://example.com/debug/pprof/cmdline", http.StatusOK)
-	request(a, h, "http://example.com/debug/pprof/trace", http.StatusOK)
-	request(a, h, "http://example.com/debug/pprof/symbol", http.StatusOK)
-	//request(a, h, "http://example.com/debug/pprof/profile", http.StatusOK)
-
-	// /debug/vars
-	request(a, h, "http://example.com/debug/vars", http.StatusOK)
-
-	// 命中 h202
-	request(a, h, "http://example.com/debug", http.StatusAccepted)
 }
