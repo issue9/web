@@ -74,11 +74,42 @@ func TestHosts(t *testing.T) {
 	request(h, "http://not.allowed/test", http.StatusNotFound)
 }
 
-func TestBuildHeader(t *testing.T) {
-	h := header(h202, map[string]string{"Test": "test"})
+func TestHeaders(t *testing.T) {
+	h := headers(h202, map[string]string{"Test": "test"})
 	srv := rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
 		Status(http.StatusAccepted).
 		Header("Test", "test")
+}
+
+func TestDebug(t *testing.T) {
+	srv := rest.NewServer(t, debug(h202), nil)
+
+	// 命中 /debug/pprof/cmdline
+	srv.NewRequest(http.MethodGet, "/debug/pprof/").
+		Do().
+		Status(http.StatusOK)
+
+	srv.NewRequest(http.MethodGet, "/debug/pprof/cmdline").
+		Do().
+		Status(http.StatusOK)
+
+	srv.NewRequest(http.MethodGet, "/debug/pprof/trace").
+		Do().
+		Status(http.StatusOK)
+
+	srv.NewRequest(http.MethodGet, "/debug/pprof/symbol").
+		Do().
+		Status(http.StatusOK)
+
+	// /debug/vars
+	srv.NewRequest(http.MethodGet, "/debug/vars").
+		Do().
+		Status(http.StatusOK)
+
+	// 命中 h202
+	srv.NewRequest(http.MethodGet, "/debug/").
+		Do().
+		Status(http.StatusAccepted)
 }
