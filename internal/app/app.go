@@ -51,6 +51,7 @@ func New(configDir string) (*App, error) {
 
 	app := &App{
 		configDir: configDir,
+		webConfig: &webconfig.WebConfig{},
 		closed:    make(chan bool, 1),
 	}
 
@@ -58,12 +59,10 @@ func New(configDir string) (*App, error) {
 		return nil, err
 	}
 
-	conf := &webconfig.WebConfig{}
-	if err := app.LoadConfig(configFilename, conf); err != nil {
+	if err := app.LoadConfig(configFilename, app.webConfig); err != nil {
 		return nil, err
 	}
-	app.webConfig = conf
-	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
+	app.mux = mux.New(app.webConfig.DisableOptions, false, nil, nil)
 	app.modules, err = modules.New(50, app.mux, app.webConfig)
 	if err != nil {
 		return nil, err
