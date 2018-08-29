@@ -54,6 +54,7 @@ func New(configDir string) (*App, error) {
 
 	app := &App{
 		configDir: configDir,
+		modules:   make([]*module.Module, 0, 10),
 		closed:    make(chan bool, 1),
 	}
 
@@ -146,11 +147,7 @@ func (app *App) initServer() error {
 		return err
 	}
 
-	var h http.Handler = app.mux
-	if app.middleware != nil {
-		h = app.middleware(app.mux)
-	}
-
+	h := middleware.Handler(app.mux, app.middleware)
 	app.server = &http.Server{
 		Addr:         ":" + strconv.Itoa(app.webConfig.Port),
 		Handler:      middlewares.Handler(h, app.webConfig),
@@ -162,7 +159,7 @@ func (app *App) initServer() error {
 	return nil
 }
 
-func (app *App) initModules() (err error) {
+func (app *App) initModules() error {
 	// 初始化静态文件处理模块
 	m := app.NewModule("web-core", "框架本身的模块")
 	for url, dir := range app.webConfig.Static {
@@ -172,9 +169,12 @@ func (app *App) initModules() (err error) {
 	}
 
 	// 在初始化模块之前，先加载插件
-	app.modules, err = plugin.Load(app.webConfig.Plugins, app.router)
+	ms, err := plugin.Load(app.webConfig.Plugins, app.router)
 	if err != nil {
 		return err
+	}
+	for _, m := range ms {
+		app.modules = append(app.modules, m)
 	}
 
 	dep := dependency.New()
