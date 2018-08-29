@@ -173,9 +173,7 @@ func (app *App) initModules() error {
 	if err != nil {
 		return err
 	}
-	for _, m := range ms {
-		app.modules = append(app.modules, m)
-	}
+	app.modules = append(app.modules, ms...)
 
 	dep := dependency.New()
 	for _, module := range app.modules {
