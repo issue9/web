@@ -8,7 +8,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"path"
 	"path/filepath"
 	"strconv"
 
@@ -18,9 +17,8 @@ import (
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/app/middlewares"
-	"github.com/issue9/web/internal/app/plugin"
+	"github.com/issue9/web/internal/app/modules"
 	"github.com/issue9/web/internal/app/webconfig"
-	"github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
@@ -36,10 +34,9 @@ type App struct {
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
-	router     *mux.Prefix
 	server     *http.Server
 
-	modules []*module.Module
+	modules *modules.Modules
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -54,7 +51,6 @@ func New(configDir string) (*App, error) {
 
 	app := &App{
 		configDir: configDir,
-		modules:   make([]*module.Module, 0, 10),
 		closed:    make(chan bool, 1),
 	}
 
@@ -68,7 +64,10 @@ func New(configDir string) (*App, error) {
 	}
 	app.webConfig = conf
 	app.mux = mux.New(conf.DisableOptions, false, nil, nil)
-	app.router = app.mux.Prefix(conf.Root)
+	app.modules, err = modules.New(50, app.mux, app.webConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	return app, nil
 }
@@ -91,14 +90,12 @@ func (app *App) LoadConfig(path string, v interface{}) error {
 
 // Modules 获取所有的模块信息
 func (app *App) Modules() []*module.Module {
-	return app.modules
+	return app.modules.Modules()
 }
 
 // NewModule 声明一个新的模块
 func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
-	m := module.New(app.router, name, desc, deps...)
-	app.modules = append(app.modules, m)
-	return m
+	return app.modules.NewModule(name, desc, deps...)
 }
 
 // File 获取配置目录下的文件名
@@ -122,12 +119,7 @@ func (app *App) URL(path string) string {
 
 // Install 安装各个模块
 func (app *App) Install(version string) error {
-	dep := dependency.New()
-	for _, m := range app.modules {
-		dep.Add(m.Name, m.GetInstall(version), m.Deps...)
-	}
-
-	return dep.Init()
+	return app.modules.Install(version)
 }
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
@@ -143,7 +135,7 @@ func (app *App) Handler() (http.Handler, error) {
 }
 
 func (app *App) initServer() error {
-	if err := app.initModules(); err != nil {
+	if err := app.modules.Init(); err != nil {
 		return err
 	}
 
@@ -157,31 +149,6 @@ func (app *App) initServer() error {
 	}
 
 	return nil
-}
-
-func (app *App) initModules() error {
-	// 初始化静态文件处理模块
-	m := app.NewModule("web-core", "框架本身的模块")
-	for url, dir := range app.webConfig.Static {
-		pattern := path.Join(app.webConfig.Root, url+"{path}")
-		fs := http.FileServer(http.Dir(dir))
-		m.Get(pattern, http.StripPrefix(url, fs))
-	}
-
-	// 在初始化模块之前，先加载插件
-	ms, err := plugin.Load(app.webConfig.Plugins, app.router)
-	if err != nil {
-		return err
-	}
-	app.modules = append(app.modules, ms...)
-
-	dep := dependency.New()
-	for _, module := range app.modules {
-		if err = dep.Add(module.Name, module.GetInit(), module.Deps...); err != nil {
-			return err
-		}
-	}
-	return dep.Init()
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package plugin
+package modules
 
 import (
 	"testing"
@@ -17,16 +17,13 @@ func TestModuleInitFuncName(t *testing.T) {
 	a.True(unicode.IsUpper(rune(moduleInitFuncName[0])))
 }
 
-func TestLoad(t *testing.T) {
+func TestLoadPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := Load("", nil)
-	a.NotError(err).Nil(ms)
-
-	ms, err = Load("./testdata/plugin-*.so", nil)
+	ms, err := loadPlugins("./testdata/plugin-*.so", nil)
 	a.Error(err).Nil(ms)
 
-	ms, err = Load("./testdata/plugin_*.so", nil)
+	ms, err = loadPlugins("./testdata/plugin_*.so", nil)
 	a.NotError(err).NotNil(ms).
 		Equal(2, len(ms))
 }
