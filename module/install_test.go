@@ -23,19 +23,19 @@ func TestNewMessage(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 	a := assert.New(t)
-	m := New(router, "user1", "user1 desc")
+	m := New("user1", "user1 desc")
 	a.NotNil(m)
 
 	v := m.NewVersion("0.1.0")
 	a.NotNil(v)
 	v.Task("title1", nil)
-	a.Equal(m.installs["0.1.0"][0].title, "title1")
+	a.Equal(m.Installs["0.1.0"][0].title, "title1")
 }
 
 func TestModule_GetInstall(t *testing.T) {
 	a := assert.New(t)
 
-	m := New(router, "users2", "users2 mdoule")
+	m := New("users2", "users2 mdoule")
 	a.NotNil(m)
 
 	m.Task("v1", "安装数据表users", func() error { return NewMessage("success message") })

@@ -56,7 +56,7 @@ func New(cap int, mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 
 // NewModule 声明一个新的模块
 func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
-	m := module.New(ms.router, name, desc, deps...)
+	m := module.New(name, desc, deps...)
 	ms.modules = append(ms.modules, m)
 	return m
 }
@@ -77,7 +77,7 @@ func (ms *Modules) Install(version string) error {
 func (ms *Modules) Init() error {
 	dep := dependency.New()
 	for _, module := range ms.modules {
-		if err := dep.Add(module.Name, module.GetInit(), module.Deps...); err != nil {
+		if err := dep.Add(module.Name, module.GetInit(ms.router), module.Deps...); err != nil {
 			return err
 		}
 	}

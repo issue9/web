@@ -63,13 +63,13 @@ func (m *Module) Task(version, title string, fn TaskFunc) {
 		panic("无效的参数 version")
 	}
 
-	mm, found := m.installs[version]
+	mm, found := m.Installs[version]
 	if !found {
 		mm = make([]*task, 0, 10)
 	}
 
 	mm = append(mm, &task{title: title, task: fn})
-	m.installs[version] = mm
+	m.Installs[version] = mm
 }
 
 // GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
@@ -77,13 +77,13 @@ func (m *Module) GetInstall(version string) dependency.InitFunc {
 	return func() error {
 		colorPrintf(colorDefault, "安装模块: %s\n", m.Name)
 
-		if _, found := m.installs[version]; !found {
+		if _, found := m.Installs[version]; !found {
 			colorPrint(colorInfo, "不存在此版本的安装脚本!\n\n")
 			return nil
 		}
 
 		hasError := false
-		for _, e := range m.installs[version] {
+		for _, e := range m.Installs[version] {
 			hasError = m.runTask(e, hasError)
 		}
 

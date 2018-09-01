@@ -6,6 +6,7 @@
 package module
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/issue9/mux"
@@ -28,17 +29,15 @@ type Module struct {
 	Deps        []string
 	Description string
 
-	// 当前模块的所有路由项。
-	// 键名为路由地址，键值为路由中启用的请求方法。
-	Routes map[string][]string
+	// 第一个键名为路径，第二键名为请求方法
+	Routes map[string]map[string]http.Handler
 
 	// 当前模块的安装功能。
 	//
 	// 键名指定了安装的版本，键值则为安装脚本。
-	installs map[string][]*task
+	Installs map[string][]*task
 
-	inits  []func() error
-	router *mux.Prefix
+	Inits []func() error
 }
 
 // New 声明一个新的模块
@@ -46,23 +45,30 @@ type Module struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
+func New(name, desc string, deps ...string) *Module {
 	return &Module{
 		Type:        TypeModule,
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-		Routes:      make(map[string][]string, 10),
-		inits:       make([]func() error, 0, 5),
-		installs:    make(map[string][]*task, 10),
-		router:      router,
+		Routes:      make(map[string]map[string]http.Handler, 10),
+		Inits:       make([]func() error, 0, 5),
+		Installs:    make(map[string][]*task, 10),
 	}
 }
 
 // GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (m *Module) GetInit() dependency.InitFunc {
+func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
 	return func() error {
-		for _, init := range m.inits {
+		for path, ms := range m.Routes {
+			for method, h := range ms {
+				if err := router.Handle(path, h, method); err != nil {
+					return err
+				}
+			}
+		}
+
+		for _, init := range m.Inits {
 			if err := init(); err != nil {
 				return err
 			}
@@ -72,28 +78,26 @@ func (m *Module) GetInit() dependency.InitFunc {
 	}
 }
 
-// Mux 返回 github.com/issue9/mxu.Mux 实例
-func (m *Module) Mux() *mux.Mux {
-	return m.router.Mux()
-}
-
 // AddInit 添加一个初始化函数
 func (m *Module) AddInit(f func() error) *Module {
-	m.inits = append(m.inits, f)
+	m.Inits = append(m.Inits, f)
 	return m
 }
 
 // Handle 添加一个路由项
 func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	if err := m.router.Handle(path, h, methods...); err != nil {
-		panic(err)
+	ms, found := m.Routes[path]
+	if !found {
+		ms = make(map[string]http.Handler, 8)
+		m.Routes[path] = ms
 	}
 
-	route, found := m.Routes[path]
-	if !found {
-		route = make([]string, 0, 10)
+	for _, method := range methods {
+		if _, found = ms[method]; found {
+			panic(fmt.Sprintf("路径 %s 已经存在相同的请求方法 %s", path, method))
+		}
+		ms[method] = h
 	}
-	m.Routes[path] = append(route, methods...)
 
 	return m
 }

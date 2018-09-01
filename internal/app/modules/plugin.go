@@ -50,7 +50,7 @@ func loadPlugin(path string, router *mux.Prefix) (*module.Module, error) {
 	}
 	init := symbol.(func(*module.Module))
 
-	m := module.New(router, "", "plugin desc")
+	m := module.New("", "plugin desc")
 	m.Type = module.TypePlugin
 	init(m)
 

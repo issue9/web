@@ -26,24 +26,23 @@ var (
 
 func TestModule_GetInit(t *testing.T) {
 	a := assert.New(t)
-	a.NotNil(router)
 
-	m := New(router, "m1", "m1 desc")
+	m := New("m1", "m1 desc")
 	a.NotNil(m)
-	fn := m.GetInit()
+	fn := m.GetInit(router)
 	a.NotNil(fn).NotError(fn())
 
 	// 返回错误
-	m = New(router, "m2", "m2 desc")
+	m = New("m2", "m2 desc")
 	a.NotNil(m)
 	m.AddInit(func() error {
 		return errors.New("error")
 	})
-	fn = m.GetInit()
+	fn = m.GetInit(router)
 	a.NotNil(fn).ErrorString(fn(), "error")
 
 	w := new(bytes.Buffer)
-	m = New(router, "m3", "m3 desc")
+	m = New("m3", "m3 desc")
 	a.NotNil(m)
 	m.AddInit(func() error {
 		_, err := w.WriteString("m3")
@@ -51,7 +50,7 @@ func TestModule_GetInit(t *testing.T) {
 	})
 	m.GetFunc("/get", f1)
 	m.Prefix("/p").PostFunc("/post", f1)
-	fn = m.GetInit()
+	fn = m.GetInit(router)
 	a.NotNil(fn).
 		NotError(fn()).
 		Equal(w.String(), "m3")
@@ -61,7 +60,7 @@ func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New(router, "m1", "m1 desc")
+	m := New("m1", "m1 desc")
 	a.NotNil(m)
 
 	m.Get(path, h1)
@@ -82,7 +81,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New(router, "m1", "m1 desc")
+	m = New("m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)
