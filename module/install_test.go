@@ -6,6 +6,7 @@ package module
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -27,9 +28,10 @@ func TestVersion(t *testing.T) {
 	a.NotNil(m)
 
 	v := m.NewVersion("0.1.0")
-	a.NotNil(v)
+	a.NotNil(v).NotNil(m.Tags["0.1.0"])
 	v.Task("title1", nil)
-	a.Equal(m.Installs["0.1.0"][0].title, "title1")
+	fmt.Println(v)
+	a.Equal(v.Installs[0].title, "title1")
 }
 
 func TestModule_GetInstall(t *testing.T) {
@@ -38,10 +40,11 @@ func TestModule_GetInstall(t *testing.T) {
 	m := New("users2", "users2 mdoule")
 	a.NotNil(m)
 
-	m.Task("v1", "安装数据表users", func() error { return NewMessage("success message") })
-	m.Task("v1", "安装数据表users", func() error { return nil })
-	m.Task("v1", "安装数据表users", func() error { return errors.New("falid message") })
-	m.Task("v1", "安装数据表users", func() error { return nil })
+	tag := m.NewTag("v1")
+	tag.Task("安装数据表users", func() error { return NewMessage("success message") })
+	tag.Task("安装数据表users", func() error { return nil })
+	tag.Task("安装数据表users", func() error { return errors.New("falid message") })
+	tag.Task("安装数据表users", func() error { return nil })
 
 	f := m.GetInstall("v1")
 	a.NotNil(f)

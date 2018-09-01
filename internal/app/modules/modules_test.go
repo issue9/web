@@ -40,15 +40,17 @@ func TestModules_Install(t *testing.T) {
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
-	m1.Task("v1", "安装数据表users", func() error { return errors.New("默认用户为admin:123") })
+	m1.NewTag("v1").
+		Task("安装数据表users", func() error { return errors.New("默认用户为admin:123") })
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.Task("v1", "安装数据表users", func() error { return nil })
+	m2.NewTag("v1").Task("安装数据表users", func() error { return nil })
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
-	m3.Task("v1", "安装数据表users", func() error { return nil })
-	m3.Task("v1", "安装数据表users", func() error { return errors.New("falid message") })
-	m3.Task("v1", "安装数据表users", func() error { return nil })
+	tag := m3.NewTag("v1")
+	tag.Task("安装数据表users", func() error { return nil })
+	tag.Task("安装数据表users", func() error { return errors.New("falid message") })
+	tag.Task("安装数据表users", func() error { return nil })
 
 	a.NotError(ms.Install("install"))
 	a.NotError(ms.Install("not exists"))

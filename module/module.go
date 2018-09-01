@@ -35,9 +35,11 @@ type Module struct {
 	// 当前模块的安装功能。
 	//
 	// 键名指定了安装的版本，键值则为安装脚本。
-	Installs map[string][]*task
+	Installs []*task
 
 	Inits []func() error
+
+	Tags map[string]*Module
 }
 
 // New 声明一个新的模块
@@ -53,7 +55,8 @@ func New(name, desc string, deps ...string) *Module {
 		Description: desc,
 		Routes:      make(map[string]map[string]http.Handler, 10),
 		Inits:       make([]func() error, 0, 5),
-		Installs:    make(map[string][]*task, 10),
+		Installs:    make([]*task, 0, 10),
+		Tags:        make(map[string]*Module, 5),
 	}
 }
 

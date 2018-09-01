@@ -5,6 +5,8 @@
 package module
 
 import (
+	"net/http"
+
 	"github.com/issue9/term/colors"
 	"github.com/issue9/web/internal/dependency"
 )
@@ -24,12 +26,6 @@ type task struct {
 	task  TaskFunc
 }
 
-// Version 用于限定在某一版本下的安装脚本
-type Version struct {
-	version string
-	m       *Module
-}
-
 type message string
 
 // NewMessage 声明一条 message 类型的错误信息
@@ -45,45 +41,45 @@ func (msg message) Error() string {
 }
 
 // NewVersion 为当前模块添加某一版本号下的安装脚本。
-func (m *Module) NewVersion(version string) *Version {
-	return &Version{
-		version: version,
-		m:       m,
-	}
+func (m *Module) NewVersion(version string) *Module {
+	return m.NewTag(version)
 }
 
-// Task 添加安装脚本
-func (ver *Version) Task(title string, fn TaskFunc) {
-	ver.m.Task(ver.version, title, fn)
+// NewTag 为当前模块添加某一版本号下的安装脚本。
+func (m *Module) NewTag(tag string) *Module {
+	if _, found := m.Tags[tag]; !found {
+		m.Tags[tag] = &Module{
+			Type:        TypeModule,
+			Name:        "",
+			Deps:        nil,
+			Description: "",
+			Routes:      make(map[string]map[string]http.Handler, 10),
+			Inits:       make([]func() error, 0, 5),
+			Installs:    make([]*task, 0, 10),
+		}
+	}
+
+	return m.Tags[tag]
 }
 
 // Task 添加一条安装脚本
-func (m *Module) Task(version, title string, fn TaskFunc) {
-	if version == "" {
-		panic("无效的参数 version")
-	}
-
-	mm, found := m.Installs[version]
-	if !found {
-		mm = make([]*task, 0, 10)
-	}
-
-	mm = append(mm, &task{title: title, task: fn})
-	m.Installs[version] = mm
+func (m *Module) Task(title string, fn TaskFunc) {
+	m.Installs = append(m.Installs, &task{title: title, task: fn})
 }
 
 // GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
-func (m *Module) GetInstall(version string) dependency.InitFunc {
+func (m *Module) GetInstall(tag string) dependency.InitFunc {
 	return func() error {
 		colorPrintf(colorDefault, "安装模块: %s\n", m.Name)
 
-		if _, found := m.Installs[version]; !found {
+		t, found := m.Tags[tag]
+		if !found {
 			colorPrint(colorInfo, "不存在此版本的安装脚本!\n\n")
 			return nil
 		}
 
 		hasError := false
-		for _, e := range m.Installs[version] {
+		for _, e := range t.Installs {
 			hasError = m.runTask(e, hasError)
 		}
 
