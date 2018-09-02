@@ -5,8 +5,6 @@
 package module
 
 import (
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -30,26 +28,5 @@ func TestVersion(t *testing.T) {
 	v := m.NewVersion("0.1.0")
 	a.NotNil(v).NotNil(m.Tags["0.1.0"])
 	v.Task("title1", nil)
-	fmt.Println(v)
 	a.Equal(v.Inits[0].Title, "title1")
-}
-
-func TestModule_GetInstall(t *testing.T) {
-	a := assert.New(t)
-
-	m := New("users2", "users2 mdoule")
-	a.NotNil(m)
-
-	tag := m.NewTag("v1")
-	tag.Task("安装数据表users", func() error { return NewMessage("success message") })
-	tag.Task("安装数据表users", func() error { return nil })
-	tag.Task("安装数据表users", func() error { return errors.New("falid message") })
-	tag.Task("安装数据表users", func() error { return nil })
-
-	f := m.GetInstall("v1")
-	a.NotNil(f)
-	a.NotError(f())
-	f = m.GetInstall("not-exists")
-	a.NotNil(f)
-	a.NotError(f())
 }

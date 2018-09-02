@@ -134,7 +134,7 @@ func (app *App) Handler() (http.Handler, error) {
 }
 
 func (app *App) initServer() error {
-	if err := app.modules.Init(); err != nil {
+	if err := app.modules.Init(""); err != nil {
 		return err
 	}
 

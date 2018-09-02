@@ -4,18 +4,7 @@
 
 package module
 
-import (
-	"net/http"
-
-	"github.com/issue9/term/colors"
-)
-
-const (
-	colorDefault = colors.Default
-	colorInfo    = colors.Magenta
-	colorError   = colors.Red
-	colorSuccess = colors.Green
-)
+import "net/http"
 
 type message string
 
@@ -32,6 +21,8 @@ func (msg message) Error() string {
 }
 
 // NewVersion 为当前模块添加某一版本号下的安装脚本。
+//
+// Deprecated: 采用 NewTag 代替
 func (m *Module) NewVersion(version string) *Module {
 	return m.NewTag(version)
 }
@@ -55,47 +46,4 @@ func (m *Module) NewTag(tag string) *Module {
 // Task 添加一条安装脚本
 func (m *Module) Task(title string, fn func() error) {
 	m.Inits = append(m.Inits, &Init{Title: title, F: fn})
-}
-
-// 运行一条安装的事件。
-//
-// 若返回 true，表示继续当前模块的下一条操作，否则中止当前模块的操作。
-//
-// 返回值表示当前执行是否出错，若出错返回 true
-func (m *Module) runTask(e *Init, hasError bool) bool {
-	colorPrintf(colorInfo, "\t%s ......", e.Title)
-
-	if hasError {
-		colorPrintln(colorError, "[BREAK:因前一任务失败而中止]")
-		return true
-	}
-
-	err := e.F()
-	if err == nil {
-		colorPrintln(colorSuccess, "[OK]")
-		return false
-	}
-
-	if msg, ok := err.(message); ok {
-		colorPrintf(colorSuccess, "[OK:%s]\n", msg)
-		return false
-	}
-
-	colorPrintf(colorError, "[FALID:%s]\n", err.Error())
-	return true
-}
-
-// 打印指定颜色的字符串
-func colorPrint(color colors.Color, msg ...interface{}) {
-	colors.Print(color, colors.Default, msg...)
-}
-
-// 打印指定颜色的字符串并换行
-func colorPrintln(color colors.Color, msg ...interface{}) {
-	colors.Println(color, colors.Default, msg...)
-}
-
-// 打印指定颜色的字符串
-func colorPrintf(color colors.Color, msg string, vals ...interface{}) {
-	colors.Printf(color, colors.Default, msg, vals...)
 }

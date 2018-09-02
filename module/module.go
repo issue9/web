@@ -62,9 +62,19 @@ func New(name, desc string, deps ...string) *Module {
 }
 
 // GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
+//
+// tag 为空，表示当前模块的内容
+func (m *Module) GetInit(router *mux.Prefix, tag string) dependency.InitFunc {
 	return func() error {
-		for path, ms := range m.Routes {
+		t := m
+		if tag != "" {
+			found := false
+			if t, found = m.Tags[tag]; !found {
+				return nil
+			}
+		}
+
+		for path, ms := range t.Routes {
 			for method, h := range ms {
 				if err := router.Handle(path, h, method); err != nil {
 					return err
@@ -72,37 +82,12 @@ func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
 			}
 		}
 
-		for _, init := range m.Inits {
+		for _, init := range t.Inits {
 			if err := init.F(); err != nil {
 				return err
 			}
 		}
 
-		return nil
-	}
-}
-
-// GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
-func (m *Module) GetInstall(tag string) dependency.InitFunc {
-	return func() error {
-		colorPrintf(colorDefault, "安装模块: %s\n", m.Name)
-
-		t, found := m.Tags[tag]
-		if !found {
-			colorPrint(colorInfo, "不存在此版本的安装脚本!\n\n")
-			return nil
-		}
-
-		hasError := false
-		for _, e := range t.Inits {
-			hasError = m.runTask(e, hasError)
-		}
-
-		if hasError {
-			colorPrint(colorError, "安装失败!\n\n")
-		} else {
-			colorPrint(colorSuccess, "安装完成!\n\n")
-		}
 		return nil
 	}
 }

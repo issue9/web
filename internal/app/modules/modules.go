@@ -62,22 +62,17 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 }
 
 // Install 安装各个模块
-func (ms *Modules) Install(version string) error {
-	dep := dependency.New()
-	for _, m := range ms.modules {
-		if err := dep.Add(m.Name, m.GetInstall(version), m.Deps...); err != nil {
-			return err
-		}
-	}
-
-	return dep.Init()
+//
+// Deprecated: 采用 NewTag 代替
+func (ms *Modules) Install(tag string) error {
+	return ms.Init(tag)
 }
 
 // Init 初如化插件
-func (ms *Modules) Init() error {
+func (ms *Modules) Init(tag string) error {
 	dep := dependency.New()
 	for _, module := range ms.modules {
-		if err := dep.Add(module.Name, module.GetInit(ms.router), module.Deps...); err != nil {
+		if err := dep.Add(module.Name, module.GetInit(ms.router, tag), module.Deps...); err != nil {
 			return err
 		}
 	}

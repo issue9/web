@@ -21,12 +21,14 @@ func CharsetIsNop(enc xencoding.Encoding) bool {
 }
 
 // AddCharset 添加字符集
+//
 // Deprecated: 不再启作用
 func AddCharset(name string, c xencoding.Encoding) error {
 	return nil
 }
 
 // AddCharsets 添加多个字符集
+//
 // Deprecated: 不再启作用
 func AddCharsets(cs map[string]xencoding.Encoding) error {
 	return nil

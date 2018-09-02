@@ -29,7 +29,7 @@ func TestModule_GetInit(t *testing.T) {
 
 	m := New("m1", "m1 desc")
 	a.NotNil(m)
-	fn := m.GetInit(router)
+	fn := m.GetInit(router, "")
 	a.NotNil(fn).NotError(fn())
 
 	// 返回错误
@@ -38,7 +38,7 @@ func TestModule_GetInit(t *testing.T) {
 	m.AddInit(func() error {
 		return errors.New("error")
 	})
-	fn = m.GetInit(router)
+	fn = m.GetInit(router, "")
 	a.NotNil(fn).ErrorString(fn(), "error")
 
 	w := new(bytes.Buffer)
@@ -50,10 +50,28 @@ func TestModule_GetInit(t *testing.T) {
 	})
 	m.GetFunc("/get", f1)
 	m.Prefix("/p").PostFunc("/post", f1)
-	fn = m.GetInit(router)
+	fn = m.GetInit(router, "")
 	a.NotNil(fn).
 		NotError(fn()).
 		Equal(w.String(), "m3")
+}
+
+func TestModule_GetInit2(t *testing.T) {
+	a := assert.New(t)
+
+	m := New("users2", "users2 mdoule")
+	a.NotNil(m)
+
+	tag := m.NewTag("v1")
+	tag.Task("安装数据表users", func() error { return nil })
+	tag.Task("安装数据表users", func() error { return nil })
+
+	f := m.GetInit(router, "v1")
+	a.NotNil(f)
+	a.NotError(f())
+	f = m.GetInit(router, "not-exists")
+	a.NotNil(f)
+	a.NotError(f())
 }
 
 func TestModule_Handles(t *testing.T) {
