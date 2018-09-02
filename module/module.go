@@ -32,14 +32,16 @@ type Module struct {
 	// 第一个键名为路径，第二键名为请求方法
 	Routes map[string]map[string]http.Handler
 
-	// 当前模块的安装功能。
-	//
-	// 键名指定了安装的版本，键值则为安装脚本。
-	Installs []*task
-
-	Inits []func() error
+	// 一些初始化函数
+	Inits []*Init
 
 	Tags map[string]*Module
+}
+
+// Init 表示初始化功能的相关数据
+type Init struct {
+	Title string
+	F     func() error
 }
 
 // New 声明一个新的模块
@@ -54,8 +56,7 @@ func New(name, desc string, deps ...string) *Module {
 		Deps:        deps,
 		Description: desc,
 		Routes:      make(map[string]map[string]http.Handler, 10),
-		Inits:       make([]func() error, 0, 5),
-		Installs:    make([]*task, 0, 10),
+		Inits:       make([]*Init, 0, 5),
 		Tags:        make(map[string]*Module, 5),
 	}
 }
@@ -72,7 +73,7 @@ func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
 		}
 
 		for _, init := range m.Inits {
-			if err := init(); err != nil {
+			if err := init.F(); err != nil {
 				return err
 			}
 		}
@@ -81,9 +82,34 @@ func (m *Module) GetInit(router *mux.Prefix) dependency.InitFunc {
 	}
 }
 
+// GetInstall 运行当前模块的安装事件。此方法会被作为 dependency.InitFunc 被调用。
+func (m *Module) GetInstall(tag string) dependency.InitFunc {
+	return func() error {
+		colorPrintf(colorDefault, "安装模块: %s\n", m.Name)
+
+		t, found := m.Tags[tag]
+		if !found {
+			colorPrint(colorInfo, "不存在此版本的安装脚本!\n\n")
+			return nil
+		}
+
+		hasError := false
+		for _, e := range t.Inits {
+			hasError = m.runTask(e, hasError)
+		}
+
+		if hasError {
+			colorPrint(colorError, "安装失败!\n\n")
+		} else {
+			colorPrint(colorSuccess, "安装完成!\n\n")
+		}
+		return nil
+	}
+}
+
 // AddInit 添加一个初始化函数
 func (m *Module) AddInit(f func() error) *Module {
-	m.Inits = append(m.Inits, f)
+	m.Inits = append(m.Inits, &Init{F: f})
 	return m
 }
 

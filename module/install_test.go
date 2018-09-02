@@ -31,7 +31,7 @@ func TestVersion(t *testing.T) {
 	a.NotNil(v).NotNil(m.Tags["0.1.0"])
 	v.Task("title1", nil)
 	fmt.Println(v)
-	a.Equal(v.Installs[0].title, "title1")
+	a.Equal(v.Inits[0].Title, "title1")
 }
 
 func TestModule_GetInstall(t *testing.T) {
