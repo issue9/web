@@ -118,7 +118,7 @@ func (app *App) URL(path string) string {
 
 // Install 安装各个模块
 func (app *App) Install(version string) error {
-	return app.modules.Install(version)
+	return app.modules.Init(version)
 }
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。

@@ -8,9 +8,6 @@ package module
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/issue9/mux"
-	"github.com/issue9/web/internal/dependency"
 )
 
 // Type 表示模块的类型
@@ -61,41 +58,31 @@ func New(name, desc string, deps ...string) *Module {
 	}
 }
 
-// GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
-//
-// tag 为空，表示当前模块的内容
-func (m *Module) GetInit(router *mux.Prefix, tag string) dependency.InitFunc {
-	return func() error {
-		t := m
-		if tag != "" {
-			found := false
-			if t, found = m.Tags[tag]; !found {
-				return nil
-			}
+// NewTag 为当前模块添加某一版本号下的安装脚本。
+func (m *Module) NewTag(tag string) *Module {
+	if _, found := m.Tags[tag]; !found {
+		m.Tags[tag] = &Module{
+			Type:        TypeModule,
+			Name:        "",
+			Deps:        nil,
+			Description: "",
+			Routes:      make(map[string]map[string]http.Handler, 10),
+			Inits:       make([]*Init, 0, 5),
 		}
-
-		for path, ms := range t.Routes {
-			for method, h := range ms {
-				if err := router.Handle(path, h, method); err != nil {
-					return err
-				}
-			}
-		}
-
-		for _, init := range t.Inits {
-			if err := init.F(); err != nil {
-				return err
-			}
-		}
-
-		return nil
 	}
+
+	return m.Tags[tag]
 }
 
 // AddInit 添加一个初始化函数
 func (m *Module) AddInit(f func() error) *Module {
 	m.Inits = append(m.Inits, &Init{F: f})
 	return m
+}
+
+// Task 添加一条安装脚本
+func (m *Module) Task(title string, fn func() error) {
+	m.Inits = append(m.Inits, &Init{Title: title, F: fn})
 }
 
 // Handle 添加一个路由项

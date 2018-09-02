@@ -61,18 +61,11 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 	return m
 }
 
-// Install 安装各个模块
-//
-// Deprecated: 采用 NewTag 代替
-func (ms *Modules) Install(tag string) error {
-	return ms.Init(tag)
-}
-
 // Init 初如化插件
 func (ms *Modules) Init(tag string) error {
 	dep := dependency.New()
 	for _, module := range ms.modules {
-		if err := dep.Add(module.Name, module.GetInit(ms.router, tag), module.Deps...); err != nil {
+		if err := dep.Add(module.Name, getInit(module, ms.router, tag), module.Deps...); err != nil {
 			return err
 		}
 	}
@@ -82,4 +75,35 @@ func (ms *Modules) Init(tag string) error {
 // Modules 获取所有的模块信息
 func (ms *Modules) Modules() []*module.Module {
 	return ms.modules
+}
+
+// 将 Module 的内容生成一个 dependency.InitFunc 函数
+//
+// tag 为空，表示当前模块的内容
+func getInit(m *module.Module, router *mux.Prefix, tag string) dependency.InitFunc {
+	return func() error {
+		t := m
+		if tag != "" {
+			found := false
+			if t, found = m.Tags[tag]; !found {
+				return nil
+			}
+		}
+
+		for path, ms := range t.Routes {
+			for method, h := range ms {
+				if err := router.Handle(path, h, method); err != nil {
+					return err
+				}
+			}
+		}
+
+		for _, init := range t.Inits {
+			if err := init.F(); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }
