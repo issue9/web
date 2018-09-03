@@ -19,6 +19,17 @@ const (
 	TypePlugin
 )
 
+var defaultMethods = []string{
+	http.MethodDelete,
+	http.MethodGet,
+	http.MethodOptions,
+	http.MethodPatch,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodTrace,
+	http.MethodConnect,
+}
+
 // Module 表示模块信息
 type Module struct {
 	Type        Type
@@ -93,6 +104,9 @@ func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module 
 		m.Routes[path] = ms
 	}
 
+	if len(methods) == 0 {
+		methods = defaultMethods
+	}
 	for _, method := range methods {
 		if _, found = ms[method]; found {
 			panic(fmt.Sprintf("路径 %s 已经存在相同的请求方法 %s", path, method))

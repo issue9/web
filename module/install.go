@@ -6,6 +6,11 @@ package module
 
 type message string
 
+// Version 指定标签的模块
+//
+// Deprecated: 仅作为兼容保存，下个版本删除
+type Version = Module
+
 // NewMessage 声明一条 message 类型的错误信息
 //
 // 返回内容并不是一个真正的错误，则是在某些时候需要在安装完成之后，

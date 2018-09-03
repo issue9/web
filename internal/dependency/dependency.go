@@ -61,12 +61,14 @@ func (dep *Dependency) Init() error {
 	dep.locker.Lock()
 	defer dep.locker.Unlock()
 
+	// 检测依赖
 	for _, m := range dep.modules {
 		if err := dep.checkDeps(m); err != nil {
 			return err
 		}
 	}
 
+	// 进行初如化
 	for _, m := range dep.modules {
 		if err := dep.init(m); err != nil {
 			return err
