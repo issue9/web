@@ -12,7 +12,6 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/internal/app/webconfig"
-	dep "github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
@@ -63,47 +62,10 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 
 // Init 初如化插件
 func (ms *Modules) Init(tag string) error {
-	dep := dep.New()
-	for _, module := range ms.modules {
-		if err := dep.Add(module.Name, getInit(module, ms.router, tag), module.Deps...); err != nil {
-			return err
-		}
-	}
-	return dep.Init()
+	return newDepencency(ms.modules).Init(tag, ms.router)
 }
 
 // Modules 获取所有的模块信息
 func (ms *Modules) Modules() []*module.Module {
 	return ms.modules
-}
-
-// 将 Module 的内容生成一个 dependency.InitFunc 函数
-//
-// tag 为空，表示当前模块的内容
-func getInit(m *module.Module, router *mux.Prefix, tag string) dep.InitFunc {
-	return func() error {
-		t := m
-		if tag != "" {
-			found := false
-			if t, found = m.Tags[tag]; !found {
-				return nil
-			}
-		}
-
-		for path, ms := range t.Routes {
-			for method, h := range ms {
-				if err := router.Handle(path, h, method); err != nil {
-					return err
-				}
-			}
-		}
-
-		for _, init := range t.Inits {
-			if err := init.F(); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
 }
