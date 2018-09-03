@@ -87,13 +87,20 @@ func (m *Module) NewTag(tag string) *Module {
 
 // AddInit 添加一个初始化函数
 func (m *Module) AddInit(f func() error) *Module {
-	m.Inits = append(m.Inits, &Init{F: f})
+	return m.AddInitTitle("", f)
+}
+
+// AddInitTitle 添加一个初始化函数，带描述信息。
+func (m *Module) AddInitTitle(title string, f func() error) *Module {
+	m.Inits = append(m.Inits, &Init{F: f, Title: title})
 	return m
 }
 
 // Task 添加一条安装脚本
+//
+// Deprecated: 仅作为兼容保存，下个版本删除
 func (m *Module) Task(title string, fn func() error) {
-	m.Inits = append(m.Inits, &Init{Title: title, F: fn})
+	m.AddInitTitle(title, fn)
 }
 
 // Handle 添加一个路由项
