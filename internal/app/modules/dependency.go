@@ -6,7 +6,6 @@ package modules
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
@@ -21,7 +20,6 @@ type mod struct {
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
 	modules map[string]*mod
-	locker  sync.Mutex
 }
 
 // 声明一个 dependency 实例
@@ -40,9 +38,6 @@ func newDepencency(ms []*module.Module) *dependency {
 // 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
 func (dep *dependency) Init(tag string, router *mux.Prefix) error {
-	dep.locker.Lock()
-	defer dep.locker.Unlock()
-
 	// 检测依赖
 	for _, m := range dep.modules {
 		if err := dep.checkDeps(m); err != nil {
