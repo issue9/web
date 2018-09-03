@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/internal/app/webconfig"
-	"github.com/issue9/web/internal/dependency"
+	dep "github.com/issue9/web/internal/dependency"
 	"github.com/issue9/web/module"
 )
 
@@ -63,7 +63,7 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 
 // Init 初如化插件
 func (ms *Modules) Init(tag string) error {
-	dep := dependency.New()
+	dep := dep.New()
 	for _, module := range ms.modules {
 		if err := dep.Add(module.Name, getInit(module, ms.router, tag), module.Deps...); err != nil {
 			return err
@@ -80,7 +80,7 @@ func (ms *Modules) Modules() []*module.Module {
 // 将 Module 的内容生成一个 dependency.InitFunc 函数
 //
 // tag 为空，表示当前模块的内容
-func getInit(m *module.Module, router *mux.Prefix, tag string) dependency.InitFunc {
+func getInit(m *module.Module, router *mux.Prefix, tag string) dep.InitFunc {
 	return func() error {
 		t := m
 		if tag != "" {
