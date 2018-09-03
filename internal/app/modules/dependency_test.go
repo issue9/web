@@ -82,7 +82,7 @@ func TestDependency_checkDeps(t *testing.T) {
 	a.Error(dep.checkDeps(d2))
 }
 
-func TestDependency_Init(t *testing.T) {
+func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
 	dep := newDepencency([]*module.Module{
 		m("m1", i("m1"), "d1", "d2"),
@@ -90,7 +90,7 @@ func TestDependency_Init(t *testing.T) {
 		m("d2", i("d2"), "d3"),
 	})
 
-	a.Error(dep.Init("", router)) // 缺少依赖项 d3
+	a.Error(dep.init("", router)) // 缺少依赖项 d3
 
 	dep = newDepencency([]*module.Module{
 		m("m1", i("m1"), "d1", "d2"),
@@ -99,7 +99,7 @@ func TestDependency_Init(t *testing.T) {
 		m("d3", i("d3")),
 	})
 
-	a.NotError(dep.Init("", router))
+	a.NotError(dep.init("", router))
 	a.Equal(len(inits), 4).
 		Equal(inits["m1"], 1).
 		Equal(inits["d1"], 1).
