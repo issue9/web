@@ -13,7 +13,7 @@ import (
 
 const (
 	// Version 当前框架的版本
-	Version = "0.16.0+20180715"
+	Version = "0.16.1+20180905"
 
 	// MinimumGoVersion 需求的最低 Go 版本
 	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
