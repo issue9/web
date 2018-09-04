@@ -24,4 +24,4 @@ echo '生成 so 文件'
 go generate $v $list
 
 echo '执行 go test'
-go test $v $c $list
+GO111MODULE=on go test $v $c $list

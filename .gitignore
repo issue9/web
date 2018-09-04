@@ -21,3 +21,5 @@
 
 .vscode/
 **/testdata/logs/*
+
+go.sum
