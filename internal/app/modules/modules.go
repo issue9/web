@@ -62,7 +62,7 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 
 // Init 初如化插件
 func (ms *Modules) Init(tag string) error {
-	return newDepencency(ms.modules).init(tag, ms.router)
+	return newDepencency(ms.modules, ms.router).init(tag)
 }
 
 // Modules 获取所有的模块信息

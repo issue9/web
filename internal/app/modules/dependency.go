@@ -20,12 +20,14 @@ type mod struct {
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
 	modules map[string]*mod
+	router  *mux.Prefix
 }
 
 // 声明一个 dependency 实例
-func newDepencency(ms []*module.Module) *dependency {
+func newDepencency(ms []*module.Module, router *mux.Prefix) *dependency {
 	dep := &dependency{
 		modules: make(map[string]*mod, len(ms)),
+		router:  router,
 	}
 
 	for _, m := range ms {
@@ -37,7 +39,7 @@ func newDepencency(ms []*module.Module) *dependency {
 
 // 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
-func (dep *dependency) init(tag string, router *mux.Prefix) error {
+func (dep *dependency) init(tag string) error {
 	// 检测依赖
 	for _, m := range dep.modules {
 		if err := dep.checkDeps(m); err != nil {
@@ -47,7 +49,7 @@ func (dep *dependency) init(tag string, router *mux.Prefix) error {
 
 	// 进行初如化
 	for _, m := range dep.modules {
-		if err := dep.initModule(m, tag, router); err != nil {
+		if err := dep.initModule(m, tag); err != nil {
 			return err
 		}
 	}
@@ -57,7 +59,7 @@ func (dep *dependency) init(tag string, router *mux.Prefix) error {
 
 // 初始化指定模块，会先初始化其依赖模块。
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
-func (dep *dependency) initModule(m *mod, tag string, router *mux.Prefix) error {
+func (dep *dependency) initModule(m *mod, tag string) error {
 	if m.inited {
 		return nil
 	}
@@ -69,7 +71,7 @@ func (dep *dependency) initModule(m *mod, tag string, router *mux.Prefix) error 
 			return fmt.Errorf("依赖项[%v]未找到", d)
 		}
 
-		if err := dep.initModule(depm, tag, router); err != nil {
+		if err := dep.initModule(depm, tag); err != nil {
 			return err
 		}
 	}
@@ -85,7 +87,7 @@ func (dep *dependency) initModule(m *mod, tag string, router *mux.Prefix) error 
 
 	for path, ms := range t.Routes {
 		for method, h := range ms {
-			if err := router.Handle(path, h, method); err != nil {
+			if err := dep.router.Handle(path, h, method); err != nil {
 				return err
 			}
 		}
