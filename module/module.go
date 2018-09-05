@@ -17,8 +17,12 @@ type Type int8
 const (
 	TypeModule Type = iota + 1
 	TypePlugin
+	TypeTag
 )
 
+// 在没有指定请法语方法时，使用的默认值。
+//
+// NOTE: 保持与 github.com/issue9/mux.Mux.Handle() 中的默认值相同。
 var defaultMethods = []string{
 	http.MethodDelete,
 	http.MethodGet,
@@ -43,6 +47,7 @@ type Module struct {
 	// 一些初始化函数
 	Inits []*Init
 
+	// 保存特定标签下的子模块。
 	Tags map[string]*Module
 }
 
@@ -57,29 +62,25 @@ type Init struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func New(name, desc string, deps ...string) *Module {
+func New(typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
-		Type:        TypeModule,
+		Type:        typ,
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
 		Routes:      make(map[string]map[string]http.Handler, 10),
 		Inits:       make([]*Init, 0, 5),
-		Tags:        make(map[string]*Module, 5),
 	}
 }
 
-// NewTag 为当前模块添加某一版本号下的安装脚本。
+// NewTag 为当前模块生成特定名称的子模块。
 func (m *Module) NewTag(tag string) *Module {
+	if m.Tags == nil {
+		m.Tags = make(map[string]*Module, 5)
+	}
+
 	if _, found := m.Tags[tag]; !found {
-		m.Tags[tag] = &Module{
-			Type:        TypeModule,
-			Name:        "",
-			Deps:        nil,
-			Description: "",
-			Routes:      make(map[string]map[string]http.Handler, 10),
-			Inits:       make([]*Init, 0, 5),
-		}
+		m.Tags[tag] = New(TypeTag, "", "")
 	}
 
 	return m.Tags[tag]

@@ -55,7 +55,7 @@ func New(cap int, mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 
 // NewModule 声明一个新的模块
 func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
-	m := module.New(name, desc, deps...)
+	m := module.New(module.TypeModule, name, desc, deps...)
 	ms.modules = append(ms.modules, m)
 	return m
 }

@@ -24,11 +24,12 @@ var (
 
 func TestTag(t *testing.T) {
 	a := assert.New(t)
-	m := New("user1", "user1 desc")
-	a.NotNil(m)
+	m := New(TypeModule, "user1", "user1 desc")
+	a.NotNil(m).Equal(m.Type, TypeModule)
 
 	v := m.NewTag("0.1.0")
 	a.NotNil(v).NotNil(m.Tags["0.1.0"])
+	a.Equal(v.Type, TypeTag)
 	v.Task("title1", nil)
 	a.Equal(v.Inits[0].Title, "title1")
 }
@@ -37,7 +38,7 @@ func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New("m1", "m1 desc")
+	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.Get(path, h1)
@@ -58,7 +59,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New("m1", "m1 desc")
+	m = New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)

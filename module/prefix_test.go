@@ -13,7 +13,7 @@ import (
 func TestPrefix_Module(t *testing.T) {
 	a := assert.New(t)
 
-	m := New("m1", "m1 desc")
+	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	p := m.Prefix("/p")
@@ -24,7 +24,7 @@ func TestPrefix_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New("m1", "m1 desc")
+	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	mp := p.prefix + path
@@ -47,7 +47,7 @@ func TestPrefix_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New("m1", "m1 desc")
+	m = New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	p = m.Prefix("/p")
 	mp = p.prefix + path
