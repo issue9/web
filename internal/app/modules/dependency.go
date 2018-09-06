@@ -6,6 +6,7 @@ package modules
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
@@ -21,13 +22,14 @@ type mod struct {
 type dependency struct {
 	modules map[string]*mod
 	router  *mux.Prefix
+	infolog *log.Logger // 一些执行信息输出通道
 }
 
-// 声明一个 dependency 实例
-func newDepencency(ms []*module.Module, router *mux.Prefix) *dependency {
+func newDepencency(ms []*module.Module, router *mux.Prefix, infolog *log.Logger) *dependency {
 	dep := &dependency{
 		modules: make(map[string]*mod, len(ms)),
 		router:  router,
+		infolog: infolog,
 	}
 
 	for _, m := range ms {
@@ -35,6 +37,22 @@ func newDepencency(ms []*module.Module, router *mux.Prefix) *dependency {
 	}
 
 	return dep
+}
+
+func (dep *dependency) println(v ...interface{}) {
+	if dep.infolog == nil {
+		return
+	}
+
+	dep.infolog.Println(v...)
+}
+
+func (dep *dependency) printf(format string, v ...interface{}) {
+	if dep.infolog == nil {
+		return
+	}
+
+	dep.infolog.Printf(format, v...)
 }
 
 // 对所有的模块进行初始化操作，会进行依赖检测。
@@ -76,7 +94,6 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	}
 
-	// 初始化模块自身
 	t := m.Module
 	if tag != "" {
 		found := false
@@ -85,8 +102,15 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	}
 
+	if m.Type == module.TypeModule {
+		dep.println("开始初始化模块：", m.Name)
+	} else if m.Type == module.TypePlugin {
+		dep.println("开始初始化插件：", m.Name)
+	}
+
 	for path, ms := range t.Routes {
 		for method, h := range ms {
+			dep.printf("注册路由：%s:%s\n", method, path)
 			if err := dep.router.Handle(path, h, method); err != nil {
 				return err
 			}
@@ -94,6 +118,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	}
 
 	for _, init := range t.Inits {
+		dep.println("执行函数：", init.Title)
 		if err := init.F(); err != nil {
 			return err
 		}

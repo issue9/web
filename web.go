@@ -82,7 +82,7 @@ func Serve() error {
 
 // Install 执行指定版本的安装功能
 func Install(version string) error {
-	return defaultApp.Install(version)
+	return defaultApp.InitModules(version, logs.INFO())
 }
 
 // Close 关闭服务。

@@ -6,7 +6,6 @@ package modules
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -15,14 +14,7 @@ import (
 	"github.com/issue9/web/internal/app/webconfig"
 )
 
-var (
-	muxtest = mux.New(false, false, nil, nil)
-	router  = muxtest.Prefix("")
-
-	f1 = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}
-)
+var muxtest = mux.New(false, false, nil, nil)
 
 func TestNew(t *testing.T) {
 	a := assert.New(t)
@@ -49,17 +41,18 @@ func TestModules_Init(t *testing.T) {
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
-		Task("安装数据表users", func() error { return errors.New("默认用户为admin:123") })
+		Task("安装数据表 users1", func() error { return errors.New("falid message") })
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.NewTag("v1").Task("安装数据表users", func() error { return nil })
+	m2.NewTag("v1").Task("安装数据表 users2", func() error { return nil })
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
-	tag.Task("安装数据表users", func() error { return nil })
-	tag.Task("安装数据表users", func() error { return errors.New("falid message") })
-	tag.Task("安装数据表users", func() error { return nil })
+	tag.Task("安装数据表 users3-1", func() error { return nil })
+	tag.Task("安装数据表 users3-2", func() error { return nil })
+	tag.Task("安装数据表 users3-3", func() error { return nil })
 
-	a.NotError(ms.Init("install"))
-	a.NotError(ms.Init("not exists"))
+	a.NotError(ms.Init("install", infolog))
+	a.Error(ms.Init("v1", infolog))
+	a.NotError(ms.Init("not exists", nil))
 }

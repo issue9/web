@@ -62,6 +62,8 @@ type Init struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
+//
+// 仅供框架内部使用，不保证函数签名的兼容性。
 func New(typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
 		Type:        typ,

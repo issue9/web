@@ -6,6 +6,7 @@
 package modules
 
 import (
+	"log"
 	"net/http"
 	"path"
 
@@ -61,8 +62,12 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 }
 
 // Init 初如化插件
-func (ms *Modules) Init(tag string) error {
-	return newDepencency(ms.modules, ms.router).init(tag)
+//
+// 若指定了 tag 参数，则只初始化该名称的子模块内容。
+//
+// 指定 log 参数，可以输出详细的初始化步骤。
+func (ms *Modules) Init(tag string, log *log.Logger) error {
+	return newDepencency(ms.modules, ms.router, log).init(tag)
 }
 
 // Modules 获取所有的模块信息

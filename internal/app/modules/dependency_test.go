@@ -5,6 +5,9 @@
 package modules
 
 import (
+	"log"
+	"net/http"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -12,7 +15,15 @@ import (
 	"github.com/issue9/web/module"
 )
 
-var inits = map[string]int{}
+var (
+	inits   = map[string]int{}
+	router  = muxtest.Prefix("")
+	infolog = log.New(os.Stderr, "", 0)
+	f1      = func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("f1"))
+		w.WriteHeader(http.StatusAccepted)
+	}
+)
 
 func i(name string) func() error {
 	return func() error {
@@ -22,27 +33,23 @@ func i(name string) func() error {
 }
 
 func m(name string, f func() error, deps ...string) *module.Module {
-	return &module.Module{
-		Name:  name,
-		Deps:  deps,
-		Inits: []*module.Init{&module.Init{F: f}},
-	}
+	m := module.New(module.TypeModule, name, name, deps...)
+	m.AddInit(f)
+	return m
 }
 
 func mt(name, title string, f func() error, deps ...string) *module.Module {
-	return &module.Module{
-		Name:  name,
-		Deps:  deps,
-		Inits: []*module.Init{&module.Init{F: f}},
-	}
+	m := module.New(module.TypeModule, name, name, deps...)
+	m.AddInitTitle(title, f)
+	return m
 }
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
 	dep := newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
-		m("d1", i("d1"), "d3"),
-	}, router)
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+	}, router, nil)
 	a.NotNil(dep)
 
 	a.True(dep.isDep("m1", "d1"))
@@ -52,10 +59,10 @@ func TestDependency_isDep(t *testing.T) {
 
 	// 循环依赖
 	dep = newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
-		m("d1", i("d1"), "d3"),
-		m("d3", i("d3"), "d1"),
-	}, router)
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d3", nil, "d1"),
+	}, router, nil)
 	a.True(dep.isDep("d1", "d1"))
 
 	// 不存在的模块
@@ -65,51 +72,59 @@ func TestDependency_isDep(t *testing.T) {
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
 	dep := newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
-		m("d1", i("d1"), "d3"),
-	}, router)
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+	}, router, nil)
 
 	m1 := dep.modules["m1"]
 	a.Error(dep.checkDeps(m1)) // 依赖项不存在
 
 	dep = newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
-		m("d1", i("d1"), "d3"),
-		m("d2", i("d2"), "d3"),
-	}, router)
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d2", nil, "d3"),
+	}, router, nil)
 	a.NotError(dep.checkDeps(m1))
 
 	// 自我依赖
 	dep = newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
-		m("d1", i("d1"), "d3"),
-		m("d2", i("d2"), "d3"),
-		m("d3", i("d3"), "d2"),
-	}, router)
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d2", nil, "d3"),
+		m("d3", nil, "d2"),
+	}, router, nil)
 	d2 := dep.modules["d2"]
 	a.Error(dep.checkDeps(d2))
 }
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
+
+	// 缺少依赖项 d3
 	dep := newDepencency([]*module.Module{
 		m("m1", i("m1"), "d1", "d2"),
 		m("d1", i("d1"), "d3"),
 		m("d2", i("d2"), "d3"),
-	}, router)
+	}, router, infolog)
+	a.Error(dep.init(""))
 
-	a.Error(dep.init("")) // 缺少依赖项 d3
-
-	dep = newDepencency([]*module.Module{
-		m("m1", i("m1"), "d1", "d2"),
+	m1 := m("m1", i("m1"), "d1", "d2")
+	m1.PutFunc("/put", f1)
+	m1.NewTag("install").PostFunc("/install", f1)
+	ms := []*module.Module{
+		m1,
 		m("d1", i("d1"), "d3"),
 		m("d2", i("d2"), "d3"),
 		m("d3", i("d3")),
-	}, router)
+	}
 
+	dep = newDepencency(ms, router, infolog)
 	a.NotError(dep.init(""))
 	a.Equal(len(inits), 4).
 		Equal(inits["m1"], 1).
 		Equal(inits["d1"], 1).
 		Equal(inits["d2"], 1)
+
+	dep = newDepencency(ms, router, infolog)
+	a.NotError(dep.init("install"), infolog)
 }
