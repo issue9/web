@@ -19,12 +19,12 @@ var muxtest = mux.New(false, false, nil, nil)
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := New(10, muxtest, &webconfig.WebConfig{})
+	ms, err := New(muxtest, &webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
 		Equal(ms.modules[0].Name, CoreModuleName)
 
-	ms, err = New(10, muxtest, &webconfig.WebConfig{
+	ms, err = New(muxtest, &webconfig.WebConfig{
 		Plugins: "./testdata/plugin_*.so",
 		Static: map[string]string{
 			"/url": "/path",
@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 
 func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
-	ms, err := New(10, muxtest, &webconfig.WebConfig{})
+	ms, err := New(muxtest, &webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")

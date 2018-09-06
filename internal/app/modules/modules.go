@@ -26,10 +26,10 @@ type Modules struct {
 }
 
 // New 声明 Modules 变量
-func New(cap int, mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
+func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 	ms := &Modules{
 		router:  mux.Prefix(conf.Root),
-		modules: make([]*module.Module, 0, cap),
+		modules: make([]*module.Module, 0, 100),
 	}
 
 	// 默认的模块

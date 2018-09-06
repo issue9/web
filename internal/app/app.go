@@ -39,7 +39,7 @@ type App struct {
 func New(conf *webconfig.WebConfig) (*App, error) {
 	mux := mux.New(conf.DisableOptions, false, nil, nil)
 
-	ms, err := modules.New(50, mux, conf)
+	ms, err := modules.New(mux, conf)
 	if err != nil {
 		return nil, err
 	}
