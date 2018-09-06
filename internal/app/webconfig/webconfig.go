@@ -81,8 +81,11 @@ type WebConfig struct {
 	// AllowedDomains 为空时，并不会限定域名为 Domain 指定的域名。
 	AllowedDomains []string `yaml:"allowedDomains,omitempty"`
 
-	ReadTimeout  time.Duration `yaml:"readTimeout,omitempty"`
-	WriteTimeout time.Duration `yaml:"writeTimeout,omitempty"`
+	// 应用于 http.Server 的几个变量。
+	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty"`
+	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty"`
+	IdleTimeout       time.Duration `yaml:"idleTiemout,omitempty"`
+	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty"`
 
 	// Compress 表示压缩的相关配置
 	//

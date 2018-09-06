@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 	ms, err := New(muxtest, &webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
-		Equal(ms.modules[0].Name, CoreModuleName)
+		Equal(ms.modules[0].Name, coreModuleName)
 
 	ms, err = New(muxtest, &webconfig.WebConfig{
 		Plugins: "./testdata/plugin_*.so",

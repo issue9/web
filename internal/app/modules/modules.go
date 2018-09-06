@@ -16,8 +16,10 @@ import (
 	"github.com/issue9/web/module"
 )
 
-// CoreModuleName 框架名
-const CoreModuleName = "web-core"
+const (
+	coreModuleName        = "web-core"
+	coreModuleDescription = "web-core"
+)
 
 // Modules 模块管理
 type Modules struct {
@@ -33,7 +35,7 @@ func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 	}
 
 	// 默认的模块
-	m := ms.NewModule(CoreModuleName, CoreModuleName)
+	m := ms.NewModule(coreModuleName, coreModuleDescription)
 
 	// 初始化静态文件处理
 	for url, dir := range conf.Static {

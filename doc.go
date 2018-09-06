@@ -33,4 +33,4 @@
 // 用户可以把功能相对独立的内容当作一个模块进行封装。框架本身提供了 web.NewModule()
 // 对模块进行了依赖管理。用户可以在 web.NewModule() 返回对象中，
 // 对模块进行初始化和路由项的添加。所有模块会在 web.Run() 中进行初始化。
-package web
+package web // import "github.com/issue9/web"

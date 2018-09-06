@@ -109,11 +109,13 @@ func (app *App) initServer() error {
 
 	h := middleware.Handler(app.mux, app.middleware)
 	app.server = &http.Server{
-		Addr:         ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:      middlewares.Handler(h, app.webConfig),
-		ErrorLog:     logs.ERROR(),
-		ReadTimeout:  app.webConfig.ReadTimeout,
-		WriteTimeout: app.webConfig.WriteTimeout,
+		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
+		Handler:           middlewares.Handler(h, app.webConfig),
+		ErrorLog:          logs.ERROR(),
+		ReadTimeout:       app.webConfig.ReadTimeout,
+		WriteTimeout:      app.webConfig.WriteTimeout,
+		IdleTimeout:       app.webConfig.IdleTimeout,
+		ReadHeaderTimeout: app.webConfig.ReadHeaderTimeout,
 	}
 
 	return nil
