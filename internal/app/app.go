@@ -37,19 +37,19 @@ type App struct {
 
 // New 声明一个新的 App 实例
 func New(conf *webconfig.WebConfig) (*App, error) {
-	app := &App{
-		webConfig: conf,
-		mux:       mux.New(conf.DisableOptions, false, nil, nil),
-		closed:    make(chan bool, 1),
-	}
+	mux := mux.New(conf.DisableOptions, false, nil, nil)
 
-	ms, err := modules.New(50, app.mux, conf)
+	ms, err := modules.New(50, mux, conf)
 	if err != nil {
 		return nil, err
 	}
-	app.modules = ms
 
-	return app, nil
+	return &App{
+		webConfig: conf,
+		mux:       mux,
+		closed:    make(chan bool, 1),
+		modules:   ms,
+	}, nil
 }
 
 // SetMiddleware 设置一个全局的中间件，多次设置，只有最后一次会启作用。
