@@ -7,7 +7,6 @@ package app
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -86,8 +85,8 @@ func (app *App) URL(path string) string {
 }
 
 // InitModules 初始化模块内容
-func (app *App) InitModules(tag string, log *log.Logger) error {
-	return app.modules.Init(tag, log)
+func (app *App) InitModules(tag string) error {
+	return app.modules.Init(tag, logs.INFO())
 }
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
@@ -103,7 +102,7 @@ func (app *App) Handler() (http.Handler, error) {
 }
 
 func (app *App) initServer() error {
-	if err := app.InitModules("", nil); err != nil {
+	if err := app.InitModules(""); err != nil {
 		return err
 	}
 
