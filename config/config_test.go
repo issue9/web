@@ -61,33 +61,33 @@ func TestSetUnmarshal(t *testing.T) {
 	a.Error(SetUnmarshal(json.Unmarshal, "."))
 }
 
-func TestLoad(t *testing.T) {
+func TestLoadFile(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &config{}
-	a.NotError(Load("./testdata/config.yaml", conf))
+	a.NotError(LoadFile("./testdata/config.yaml", conf))
 	a.True(conf.Debug)
 	a.Equal(conf.Port, 8083)
 	a.Equal(conf.CertFile, "certFile")
 	a.Equal(conf.ReadTimeout, time.Second*3)
 
 	conf = &config{}
-	a.NotError(Load("./testdata/config.json", conf))
+	a.NotError(LoadFile("./testdata/config.json", conf))
 	a.True(conf.Debug)
 	a.Equal(conf.Port, 8083)
 	a.Equal(conf.CertFile, "certFile")
 	a.Equal(conf.ReadTimeout, time.Second*3)
 
 	conf = &config{}
-	a.NotError(Load("./testdata/config.xml", conf))
+	a.NotError(LoadFile("./testdata/config.xml", conf))
 	a.True(conf.Debug)
 	a.Equal(conf.Port, 8083)
 	a.Equal(conf.CertFile, "certFile")
 	a.Equal(conf.ReadTimeout, time.Second*3)
 
 	conf = &config{}
-	a.Error(Load("not-exists.json", conf))
+	a.Error(LoadFile("not-exists.json", conf))
 
 	conf = &config{}
-	a.Error(Load("config.unknown", conf))
+	a.Error(LoadFile("config.unknown", conf))
 }

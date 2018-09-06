@@ -20,7 +20,7 @@ import (
 var testdata = ""
 
 func TestMain(m *testing.M) {
-	if err := Init("./internal/app/testdata/"); err != nil {
+	if err := Init("./testdata/"); err != nil {
 		panic(err)
 	}
 

@@ -10,7 +10,9 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -82,18 +84,28 @@ func SetUnmarshal(m UnmarshalFunc, ext ...string) error {
 	return nil
 }
 
-// Load 加载指定的配置文件内容到 v 中
-func Load(path string, v interface{}) error {
-	ext := strings.ToLower(filepath.Ext(path))
-	unmarshal, found := unmarshals[ext]
-	if !found {
-		return fmt.Errorf("无效的配置文件类型：%s", ext)
-	}
-
-	data, err := ioutil.ReadFile(path)
+// LoadFile 加载指定的配置文件内容到 v 中
+func LoadFile(path string, v interface{}) error {
+	r, err := os.Open(path)
 	if err != nil {
 		return err
 	}
+	return Load(r, filepath.Ext(path), v)
+}
+
+// Load 加载指定的配置文件内容到 v 中
+func Load(r io.Reader, typ string, v interface{}) error {
+	typ = strings.ToLower(typ)
+	unmarshal, found := unmarshals[typ]
+	if !found {
+		return fmt.Errorf("无效的配置文件类型：%s", typ)
+	}
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
 	if err = unmarshal(data, v); err != nil {
 		return err
 	}

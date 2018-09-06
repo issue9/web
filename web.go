@@ -9,25 +9,50 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/app"
+	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/module"
 )
 
-var defaultApp *app.App
+const (
+	configFilename = "web.yaml" // 配置文件的文件名。
+	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+)
+
+var (
+	configDir  string
+	defaultApp *app.App
+)
 
 // Init 初始化整个应用环境
 //
-// configDir 表示配置文件的目录；
-func Init(configDir string) (err error) {
+// dir 表示配置文件的目录；
+func Init(dir string) (err error) {
+	configDir, err = filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(configDir)
+	if err = logs.InitFromXMLFile(File(logsFilename)); err != nil {
+		return err
+	}
+
+	webconf := &webconfig.WebConfig{}
+	if err = config.LoadFile(File(configFilename), webconf); err != nil {
+		return err
+	}
+
+	defaultApp, err = app.New(webconf)
 	return
 }
 
@@ -100,8 +125,10 @@ func Shutdown() error {
 }
 
 // File 获取配置目录下的文件。
-func File(path string) string {
-	return defaultApp.File(path)
+func File(path ...string) string {
+	paths := make([]string, 0, len(path)+1)
+	paths = append(paths, configDir)
+	return filepath.Join(append(paths, path...)...)
 }
 
 // URL 构建一条完整 URL
@@ -116,7 +143,7 @@ func Modules() []*module.Module {
 
 // LoadConfig 从配置目录中加载数据到对象 v 中。
 func LoadConfig(path string, v interface{}) error {
-	return defaultApp.LoadConfig(path, v)
+	return config.LoadFile(path, v)
 }
 
 // NewModule 注册一个模块

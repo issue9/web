@@ -9,28 +9,20 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/app/middlewares"
 	"github.com/issue9/web/internal/app/modules"
 	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/module"
 )
 
-const (
-	configFilename = "web.yaml" // 配置文件的文件名。
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-)
-
 // App 程序运行实例
 type App struct {
-	configDir string
 	webConfig *webconfig.WebConfig
 
 	middleware middleware.Middleware // 应用于全局路由项的中间件
@@ -44,30 +36,18 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-func New(configDir string) (*App, error) {
-	configDir, err := filepath.Abs(configDir)
-	if err != nil {
-		return nil, err
-	}
-
+func New(conf *webconfig.WebConfig) (*App, error) {
 	app := &App{
-		configDir: configDir,
-		webConfig: &webconfig.WebConfig{},
+		webConfig: conf,
+		mux:       mux.New(conf.DisableOptions, false, nil, nil),
 		closed:    make(chan bool, 1),
 	}
 
-	if err = logs.InitFromXMLFile(app.File(logsFilename)); err != nil {
-		return nil, err
-	}
-
-	if err := app.LoadConfig(configFilename, app.webConfig); err != nil {
-		return nil, err
-	}
-	app.mux = mux.New(app.webConfig.DisableOptions, false, nil, nil)
-	app.modules, err = modules.New(50, app.mux, app.webConfig)
+	ms, err := modules.New(50, app.mux, conf)
 	if err != nil {
 		return nil, err
 	}
+	app.modules = ms
 
 	return app, nil
 }
@@ -83,11 +63,6 @@ func (app *App) Debug() bool {
 	return app.webConfig.Debug
 }
 
-// LoadConfig 从配置文件目录加载配置文件到 v 中
-func (app *App) LoadConfig(path string, v interface{}) error {
-	return config.Load(app.File(path), v)
-}
-
 // Modules 获取所有的模块信息
 func (app *App) Modules() []*module.Module {
 	return app.modules.Modules()
@@ -98,14 +73,7 @@ func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 	return app.modules.NewModule(name, desc, deps...)
 }
 
-// File 获取配置目录下的文件名
-func (app *App) File(path ...string) string {
-	paths := make([]string, 0, len(path)+1)
-	paths = append(paths, app.configDir)
-	return filepath.Join(append(paths, path...)...)
-}
-
-// URL 构建一条基于 app.config.URL 的完整 URL
+// URL 构建一条基于 app.webconfig.URL 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {
 		return app.webConfig.URL
