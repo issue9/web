@@ -151,6 +151,11 @@ func Modules() []*module.Module {
 	return defaultApp.Modules()
 }
 
+// RegisterOnShutdown 注册在关闭服务时需要执行的操作。
+func RegisterOnShutdown(f func()) {
+	defaultApp.RegisterOnShutdown(f)
+}
+
 // LoadConfig 从配置目录中加载数据到对象 v 中。
 func LoadConfig(path string, v interface{}) error {
 	return config.LoadFile(path, v)

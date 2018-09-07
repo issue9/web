@@ -159,13 +159,12 @@ func (app *App) Serve() error {
 //
 // 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func (app *App) Close() error {
-	logs.Flush()
+	defer logs.Flush()
 
-	if app.server == nil {
-		return nil
+	if app.server != nil {
+		return app.close()
 	}
-
-	return app.close()
+	return nil
 }
 
 // Shutdown 关闭所有服务。
@@ -174,7 +173,7 @@ func (app *App) Close() error {
 //
 // 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func (app *App) Shutdown() (err error) {
-	logs.Flush()
+	defer logs.Flush()
 
 	if app.server == nil {
 		return nil
@@ -195,4 +194,9 @@ func (app *App) Shutdown() (err error) {
 func (app *App) close() error {
 	app.closed <- true
 	return app.server.Close()
+}
+
+// RegisterOnShutdown 等于于 http.Server.RegisterOnShutdown
+func (app *App) RegisterOnShutdown(f func()) {
+	app.server.RegisterOnShutdown(f)
 }
