@@ -57,6 +57,11 @@ func (app *App) SetMiddleware(m middleware.Middleware) *App {
 	return app
 }
 
+// Mux 返回 mux.Mux 实例。
+func (app *App) Mux() *mux.Mux {
+	return app.mux
+}
+
 // Debug 是否处于调试模式
 func (app *App) Debug() bool {
 	return app.webConfig.Debug
@@ -84,7 +89,7 @@ func (app *App) URL(path string) string {
 	return app.webConfig.URL + path
 }
 
-// InitModules 初始化模块内容
+// InitModules 执行模板的初始化函数。可以重复调用执行。
 func (app *App) InitModules(tag string) error {
 	return app.modules.Init(tag, logs.INFO())
 }
@@ -124,8 +129,6 @@ func (app *App) initServer() error {
 //
 // 多次调用，会直接返回 nil 值。
 func (app *App) Serve() error {
-	// 简单地根据 server 判断是否多次执行。
-	// 但是放在多线程环境中同时调用 Serve 可能会出错。
 	if app.server != nil {
 		return nil
 	}
@@ -153,6 +156,8 @@ func (app *App) Serve() error {
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
+//
+// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func (app *App) Close() error {
 	logs.Flush()
 
@@ -160,13 +165,14 @@ func (app *App) Close() error {
 		return nil
 	}
 
-	app.closed <- true
-	return app.server.Close()
+	return app.close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
+//
+// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func (app *App) Shutdown() (err error) {
 	logs.Flush()
 
@@ -175,8 +181,7 @@ func (app *App) Shutdown() (err error) {
 	}
 
 	if app.webConfig.ShutdownTimeout <= 0 {
-		app.closed <- true
-		return app.server.Close()
+		return app.close()
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
@@ -185,4 +190,9 @@ func (app *App) Shutdown() (err error) {
 		app.closed <- true
 	}()
 	return app.server.Shutdown(ctx)
+}
+
+func (app *App) close() error {
+	app.closed <- true
+	return app.server.Close()
 }

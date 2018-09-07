@@ -13,6 +13,7 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
+	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/app"
@@ -93,6 +94,11 @@ func Handler() (http.Handler, error) {
 	return defaultApp.Handler()
 }
 
+// Mux 返回 mux.Mux 实例。
+func Mux() *mux.Mux {
+	return defaultApp.Mux()
+}
+
 // Run 运行路由，执行监听程序。
 //
 // Deprecated: 由 Serve 代替
@@ -113,6 +119,8 @@ func Install(version string) error {
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
+//
+// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func Close() error {
 	return defaultApp.Close()
 }
@@ -120,6 +128,8 @@ func Close() error {
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
+//
+// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func Shutdown() error {
 	return defaultApp.Shutdown()
 }
