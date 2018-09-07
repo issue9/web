@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/logs"
 	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
@@ -86,12 +87,7 @@ func headers(h http.Handler, headers map[string]string) http.Handler {
 		return h
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for k, v := range headers {
-			w.Header().Set(k, v)
-		}
-		h.ServeHTTP(w, r)
-	})
+	return header.New(h, headers, nil)
 }
 
 func debug(h http.Handler) http.Handler {
