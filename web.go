@@ -74,6 +74,7 @@ func Grace(sig ...os.Signal) {
 
 		if err := Shutdown(); err != nil {
 			logs.Error(err)
+			logs.Flush() // 保证内容会被正常输出到日志。
 		}
 	}()
 }
@@ -119,8 +120,6 @@ func Install(version string) error {
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
-//
-// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func Close() error {
 	return defaultApp.Close()
 }
@@ -128,8 +127,6 @@ func Close() error {
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-//
-// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func Shutdown() error {
 	return defaultApp.Shutdown()
 }

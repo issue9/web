@@ -156,8 +156,6 @@ func (app *App) Serve() error {
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
-//
-// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
 func (app *App) Close() error {
 	defer logs.Flush()
 
@@ -170,9 +168,7 @@ func (app *App) Close() error {
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-//
-// 日志服务也将关闭，之后产生的日志不能再写入到日志服务中。
-func (app *App) Shutdown() (err error) {
+func (app *App) Shutdown() error {
 	defer logs.Flush()
 
 	if app.server == nil {
