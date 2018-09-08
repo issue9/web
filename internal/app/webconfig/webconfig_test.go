@@ -8,9 +8,30 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/config"
 )
 
-func TestWebconfig_buildRoot(t *testing.T) {
+var _ config.Sanitizer = &WebConfig{}
+
+func TestWebConfig_checkStatic(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &WebConfig{}
+	a.NotError(conf.checkStatic())
+
+	conf.Static = map[string]string{
+		"/admin": "./testdata",
+	}
+	a.NotError(conf.checkStatic())
+
+	conf.Static = map[string]string{
+		"/admin": "./not-exists",
+	}
+	a.Error(conf.checkStatic())
+}
+
+func TestWebConfig_buildRoot(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &WebConfig{}
@@ -41,7 +62,7 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestWebconfig_buildAllowedDomains(t *testing.T) {
+func TestWebConfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &WebConfig{}
@@ -73,7 +94,7 @@ func TestWebconfig_buildAllowedDomains(t *testing.T) {
 	a.Error(conf.buildAllowedDomains())
 }
 
-func TestWebconfig_buildHTTPS(t *testing.T) {
+func TestWebConfig_buildHTTPS(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &WebConfig{HTTPS: false}
@@ -103,7 +124,7 @@ func TestWebconfig_buildHTTPS(t *testing.T) {
 	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
 }
 
-func TestWebconfig_buildURL(t *testing.T) {
+func TestWebConfig_buildURL(t *testing.T) {
 	a := assert.New(t)
 	conf := &WebConfig{Port: 80}
 	conf.buildURL()
