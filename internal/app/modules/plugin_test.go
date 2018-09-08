@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// +build !windows
+
 //go:generate go build -o=./testdata/plugin_1.so -buildmode=plugin ./testdata/plugin1/plugin.go
 //go:generate go build -o=./testdata/plugin_2.so -buildmode=plugin ./testdata/plugin2/plugin.go
 //go:generate go build -o=./testdata/plugin-3.so -buildmode=plugin ./testdata/plugin3/plugin.go
