@@ -148,7 +148,7 @@ func (conf *WebConfig) Sanitize() error {
 		return errors.New("shutdownTimeout 必须大于等于 0")
 	}
 
-	if conf.Compress.Size < 0 {
+	if conf.Compress != nil && conf.Compress.Size < 0 {
 		return errors.New("comporess.size 必须大于等于 0")
 	}
 
