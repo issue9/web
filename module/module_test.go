@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/mux"
 )
 
 var (
@@ -18,8 +17,6 @@ var (
 	}
 
 	h1 = http.HandlerFunc(f1)
-
-	router = mux.New(false, false, nil, nil).Prefix("")
 )
 
 func TestTag(t *testing.T) {
@@ -32,6 +29,42 @@ func TestTag(t *testing.T) {
 	a.Equal(v.Type, TypeTag)
 	v.Task("title1", nil)
 	a.Equal(v.Inits[0].Title, "title1")
+}
+
+func TestModule_AddInit(t *testing.T) {
+	a := assert.New(t)
+
+	m := New(TypeModule, "m1", "m1 desc")
+	a.NotNil(m)
+	m.AddInit(func() error { return nil })
+	a.Equal(len(m.Inits), 1).
+		Empty(m.Inits[0].Title).
+		NotNil(m.Inits[0].F)
+
+	m.AddInitTitle("t1", func() error { return nil })
+	a.Equal(len(m.Inits), 2).
+		Equal(m.Inits[1].Title, "t1").
+		NotNil(m.Inits[1].F)
+
+	m.AddInitTitle("t1", func() error { return nil })
+	a.Equal(len(m.Inits), 3).
+		Equal(m.Inits[2].Title, "t1").
+		NotNil(m.Inits[2].F)
+}
+
+func TestModule_Handle(t *testing.T) {
+	a := assert.New(t)
+
+	m := New(TypeModule, "m1", "m1 desc")
+	a.NotNil(m)
+
+	path := "/path"
+	m.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	a.Equal(len(m.Routes[path]), 2)
+
+	path = "/path1"
+	m.Handle(path, h1)
+	a.Equal(len(m.Routes[path]), len(defaultMethods))
 }
 
 func TestModule_Handles(t *testing.T) {
