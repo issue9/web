@@ -77,28 +77,30 @@ func Init() {
 通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.yaml`
 以下是该文件的所有配置项：
 
-| 名称            | 类型   | 描述
-|:----------------|:-------|:-----
-| debug           | bool   | 是否启用调试模式
-| domain          | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
-| root            | string | 项目的根路径，比如 `/blog`
-| plugins         | string | 指定需要加载的插件，可以使用 glob 模式
-| https           | bool   | 是否启用 HTTPS
-| certFile        | string | 当启用 HTTPS 时的 cert 文件
-| keyFile         | string | 当启用 HTTPS 时的 key 文件
-| port            | int    | 监听的端口号
-| headers         | object | 输出的报头，键名为报头名称，键值为对应的值
-| static          | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
-| disableOptions  | bool   | 是否禁用 OPTIONS 请求方法
-| allowedDomains  | array  | 限定访问域名，可以是多个，若不指定，表示不限定
-| readTimeout     | string | 与 http.Server.ReadTimeout 相同
-| writeTimeout    | string | 与 http.Server.WriteTimeout 相同
-| compress.types  | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
-| compress.size   | int    | 指定可以使用 accept-encoding 输出的最小内容大小
-| shutdownTimeout | string | 关闭服务的等待时间
-| url             | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
+| 名称              | 类型   | 描述
+|:------------------|:-------|:-----
+| debug             | bool   | 是否启用调试模式
+| domain            | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
+| root              | string | 项目的根路径，比如 `/blog`
+| plugins           | string | 指定需要加载的插件，可以使用 glob 模式
+| https             | bool   | 是否启用 HTTPS
+| certFile          | string | 当启用 HTTPS 时的 cert 文件
+| keyFile           | string | 当启用 HTTPS 时的 key 文件
+| port              | int    | 监听的端口号
+| headers           | object | 输出的报头，键名为报头名称，键值为对应的值
+| static            | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
+| disableOptions    | bool   | 是否禁用 OPTIONS 请求方法
+| allowedDomains    | array  | 限定访问域名，可以是多个，若不指定，表示不限定
+| readTimeout       | string | 与 http.Server.ReadTimeout 相同
+| writeTimeout      | string | 与 http.Server.WriteTimeout 相同
+| idleTimeout       | string | 与 http.Server.IdleTimeout 相同
+| readHeaderTimeout | string | 与 http.Server.ReadHeaderTimeout 相同
+| compress.types    | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
+| compress.size     | int    | 指定可以使用 accept-encoding 输出的最小内容大小
+| shutdownTimeout   | string | 关闭服务的等待时间
+| url               | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
 
-*详细的介绍可以参考 /internal/config/config.go 文件中的描述*
+*详细的介绍可以参考 /internal/app/webconfig/webconfig.go 文件中的描述*
 
 
 在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
@@ -120,7 +122,7 @@ logs 完成相应功能。
 输出的媒体类型与字符集由用户在配置文件中指定，而输入的媒体类型与字符集，
 由客户端在请求时，通过 `Content-Type` 报头指定。
 当然如果需要框架支持用户提交的类型，需要在框架初始化时，添加相关的编友支持：
-由用户在开始前通过 `AddMarshal()`、`AddUnmarshal()` 和 `AddCharset()`
+由用户在开始前通过 `AddMarshal()` 和 `AddUnmarshal()`
 来指定一个列表，在此列表内的编码和字符集，均可用。
 
 
@@ -148,13 +150,6 @@ logs 完成相应功能。
 ```shell
 go get github.com/issue9/web
 ```
-
-
-
-### 用到的第三方包
-
-- yaml gopkg.in/yaml.v2 配置文件使用 yaml 格式，比 JSON 拥有更好的阅读体验；
-- text golang.org/x/text 提供了非 UTF-8 字符集的转码方式。
 
 
 
