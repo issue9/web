@@ -31,3 +31,10 @@ func (msg message) Error() string {
 func (m *Module) NewVersion(version string) *Module {
 	return m.NewTag(version)
 }
+
+// Task 添加一条安装脚本
+//
+// Deprecated: 仅作为兼容保存，下个版本删除
+func (m *Module) Task(title string, fn func() error) {
+	m.AddInitTitle(title, fn)
+}

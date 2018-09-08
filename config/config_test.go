@@ -5,8 +5,10 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/issue9/assert"
@@ -90,4 +92,16 @@ func TestLoadFile(t *testing.T) {
 
 	conf = &config{}
 	a.Error(LoadFile("config.unknown", conf))
+}
+
+func TestLoad(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &config{}
+	r := bytes.NewBufferString("xx")
+
+	errReader := iotest.DataErrReader(r)
+	a.Error(Load(errReader, "json", conf))
+
+	a.Error(Load(r, "not-exists", conf))
 }

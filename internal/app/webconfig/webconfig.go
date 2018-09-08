@@ -8,6 +8,7 @@ package webconfig
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -127,12 +128,6 @@ func (conf *WebConfig) Sanitize() error {
 		return errors.New("domain 必须是一个 URL")
 	}
 
-	for url := range conf.Static {
-		if !isURLPath(url) {
-			return fmt.Errorf("static 中的 %s 必须以 / 开头且不能以 / 结尾", url)
-		}
-	}
-
 	if conf.ReadTimeout < 0 {
 		return errors.New("readTimeout 必须大于等于 0")
 	}
@@ -141,8 +136,24 @@ func (conf *WebConfig) Sanitize() error {
 		return errors.New("writeTimeout 必须大于等于 0")
 	}
 
+	if conf.IdleTimeout < 0 {
+		return errors.New("idleTimeout 必须大于等于 0")
+	}
+
+	if conf.ReadHeaderTimeout < 0 {
+		return errors.New("readHeaderTimeout 必须大于等于 0")
+	}
+
 	if conf.ShutdownTimeout < 0 {
 		return errors.New("shutdownTimeout 必须大于等于 0")
+	}
+
+	if conf.Compress.Size < 0 {
+		return errors.New("comporess.size 必须大于等于 0")
+	}
+
+	if err := conf.checkStatic(); err != nil {
+		return err
 	}
 
 	if err := conf.buildRoot(); err != nil {
@@ -156,6 +167,28 @@ func (conf *WebConfig) Sanitize() error {
 	}
 
 	conf.buildURL()
+
+	return nil
+}
+
+func (conf *WebConfig) checkStatic() (err error) {
+	for url, path := range conf.Static {
+		if !isURLPath(url) {
+			return fmt.Errorf("static 中的 %s 必须以 / 开头且不能以 / 结尾", url)
+		}
+
+		if !filepath.IsAbs(path) {
+			path, err = filepath.Abs(path)
+			if err != nil {
+				return fmt.Errorf("static[%s] 的值错误：%s", url, err.Error())
+			}
+		}
+
+		if !utils.FileExists(path) {
+			return fmt.Errorf("static[%s] 的路径不存在", url)
+		}
+		conf.Static[url] = path
+	}
 
 	return nil
 }
