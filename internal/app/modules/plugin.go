@@ -2,14 +2,14 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// +build !windows
-
 package modules
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"plugin"
+	"runtime"
 
 	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
@@ -18,10 +18,26 @@ import (
 // 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInitFuncName = "Init"
 
+var pluginOS = []string{"linux", "darwin"}
+
+func isPluginOS() bool {
+	for _, os := range pluginOS {
+		if os == runtime.GOOS {
+			return true
+		}
+	}
+
+	return false
+}
+
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
 func loadPlugins(glob string, router *mux.Prefix) ([]*module.Module, error) {
+	if !isPluginOS() {
+		return nil, errors.New("windows 平台并未实现插件功能！")
+	}
+
 	fs, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err

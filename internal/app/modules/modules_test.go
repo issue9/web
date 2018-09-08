@@ -6,7 +6,6 @@ package modules
 
 import (
 	"errors"
-	"runtime"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -26,7 +25,7 @@ func TestNew(t *testing.T) {
 		Equal(ms.modules[0].Name, coreModuleName)
 
 	// 以下内容需要用到 plugin 功能，该功能 windows 并未实例，暂时跳过
-	if runtime.GOOS == "windows" {
+	if !isPluginOS() {
 		return
 	}
 
