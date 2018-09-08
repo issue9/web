@@ -180,12 +180,12 @@ func (conf *WebConfig) checkStatic() (err error) {
 		if !filepath.IsAbs(path) {
 			path, err = filepath.Abs(path)
 			if err != nil {
-				return fmt.Errorf("static[%s] 的值错误：%s", url, err.Error())
+				return fmt.Errorf("static[%s] 的路径值获取错误：%s", url, err.Error())
 			}
 		}
 
 		if !utils.FileExists(path) {
-			return fmt.Errorf("static[%s] 的路径不存在", url)
+			return fmt.Errorf("static[%s] 对应的路径不存在", url)
 		}
 		conf.Static[url] = path
 	}

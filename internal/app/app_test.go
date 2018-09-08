@@ -35,7 +35,6 @@ var (
 		ShutdownTimeout: 300 * time.Millisecond,
 		AllowedDomains:  []string{"127.0.0.1"},
 		Static: map[string]string{
-			"/admin":  "./static/admin",
 			"/client": "./testdata",
 		},
 		Headers: map[string]string{
