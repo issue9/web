@@ -8,10 +8,10 @@
 
 param($c,$v)
 
-$list = go list ./... | ? {$_ -notlike '/vendor/*'}
+$list = go list ./... | Where-Object {$_ -notlike '/vendor/*'}
 
-echo '生成 so 文件'
+Write-Output '生成 so 文件'
 go generate $v $list
 
-echo '执行 go test'
+Write-Output '执行 go test'
 go test $v $c $list
