@@ -99,13 +99,6 @@ func (m *Module) AddInitTitle(title string, f func() error) *Module {
 	return m
 }
 
-// Task 添加一条安装脚本
-//
-// Deprecated: 仅作为兼容保存，下个版本删除
-func (m *Module) Task(title string, fn func() error) {
-	m.AddInitTitle(title, fn)
-}
-
 // Handle 添加一个路由项
 func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
 	ms, found := m.Routes[path]
