@@ -6,6 +6,8 @@ package modules
 
 import (
 	"errors"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -57,7 +59,7 @@ func TestModules_Init(t *testing.T) {
 	tag.Task("安装数据表 users3-2", func() error { return nil })
 	tag.Task("安装数据表 users3-3", func() error { return nil })
 
-	a.NotError(ms.Init("install", infolog))
-	a.Error(ms.Init("v1", infolog))
+	a.NotError(ms.Init("install", log.New(os.Stderr, "", 0)))
+	a.Error(ms.Init("v1", nil))
 	a.NotError(ms.Init("not exists", nil))
 }

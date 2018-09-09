@@ -38,6 +38,8 @@ func AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
 // SetErrorHandler 设置指定状态码对应的处理函数
 //
 // 有则修改，没有则添加
+//
+// status 表示状态码，如果为 0，则表示所有未指定的状态码。
 func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
 	errors.SetErrorHandler(f, status...)
 }

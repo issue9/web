@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package modules
+package dep
 
 import (
 	"log"
@@ -11,13 +11,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/mux"
 
 	"github.com/issue9/web/module"
 )
 
 var (
 	inits   = map[string]int{}
-	router  = muxtest.Prefix("")
+	router  = mux.New(false, false, nil, nil).Prefix("")
 	infolog = log.New(os.Stderr, "", 0)
 	f1      = func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("f1"))

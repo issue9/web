@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/mux"
 
+	"github.com/issue9/web/internal/app/modules/dep"
 	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/module"
 )
@@ -69,7 +70,7 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 //
 // 指定 log 参数，可以输出详细的初始化步骤。
 func (ms *Modules) Init(tag string, log *log.Logger) error {
-	return newDepencency(ms.modules, ms.router, log).init(tag)
+	return dep.Do(ms.modules, ms.router, log, tag)
 }
 
 // Modules 获取所有的模块信息

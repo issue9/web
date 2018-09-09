@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package modules
+package dep
 
 import (
 	"fmt"
@@ -23,6 +23,11 @@ type dependency struct {
 	modules map[string]*mod
 	router  *mux.Prefix
 	infolog *log.Logger // 一些执行信息输出通道
+}
+
+// Do 执行初始化操作
+func Do(ms []*module.Module, router *mux.Prefix, infolog *log.Logger, tag string) error {
+	return newDepencency(ms, router, infolog).init(tag)
 }
 
 func newDepencency(ms []*module.Module, router *mux.Prefix, infolog *log.Logger) *dependency {
