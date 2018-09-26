@@ -70,27 +70,27 @@ type Context struct {
 // 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
 // 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
 func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
-	checkError := func(err error, status int) {
+	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
 		if errlog != nil {
-			errlog.Println(err)
+			errlog.Printf("报头 %s 出错：%s\n", name, err.Error())
 		}
 		Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
 	outputMimeType, marshal, err := encoding.AcceptMimeType(header)
-	checkError(err, http.StatusNotAcceptable)
+	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset, err := encoding.AcceptCharset(header)
-	checkError(err, http.StatusNotAcceptable)
+	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
 	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
-	checkError(err, http.StatusNotAcceptable)
+	checkError("Accept-Language", err, http.StatusNotAcceptable)
 
 	ctx := &Context{
 		Response:           w,
@@ -103,12 +103,9 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		LocalePrinter:      message.NewPrinter(tag),
 	}
 
-	// 只在有请求内容的时候，才会获取其输出转码函数
-	// 当请求 body 为空时，r.Body == http.NoBody，与请求方法无关。
-	if r.Body != nil && r.Body != http.NoBody {
-		header = r.Header.Get(contentTypeKey)
+	if header = r.Header.Get(contentTypeKey); header != "" {
 		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(header)
-		checkError(err, http.StatusUnsupportedMediaType)
+		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 	} else {
 		ctx.readed = true
 	}
@@ -193,6 +190,8 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return err
 	}
 
+	// 注意 WriteHeader 调用顺序。
+	// https://github.com/golang/go/issues/17083
 	ctx.Response.WriteHeader(status)
 
 	if encoding.CharsetIsNop(ctx.OutputCharset) {
