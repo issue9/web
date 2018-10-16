@@ -116,3 +116,7 @@ func (rslt *Result) MarshalForm() ([]byte, error) {
 
 	return []byte(vals.Encode()), nil
 }
+
+func (rslt *Result) Error() string {
+	return rslt.Message
+}

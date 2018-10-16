@@ -20,7 +20,10 @@ import (
 	"github.com/issue9/web/internal/errors"
 )
 
-var _ form.Marshaler = &Result{}
+var (
+	_ form.Marshaler = &Result{}
+	_ error          = &Result{}
+)
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
