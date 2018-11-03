@@ -94,7 +94,9 @@ func (rslt *Result) Render(ctx *context.Context) {
 	}
 
 	rslt.Status = msg.status
-	rslt.Message = ctx.LocalePrinter.Sprintf(msg.message)
+	if ctx.LocalePrinter != nil {
+		rslt.Message = ctx.LocalePrinter.Sprintf(msg.message)
+	}
 	ctx.Render(rslt.Status, rslt, nil)
 }
 

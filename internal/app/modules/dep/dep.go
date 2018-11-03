@@ -7,6 +7,7 @@ package dep
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
@@ -108,26 +109,30 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	}
 
 	if m.Type == module.TypeModule {
-		dep.println("开始初始化模块：", m.Name)
+		dep.println("\n开始初始化模块：", m.Name)
 	} else if m.Type == module.TypePlugin {
-		dep.println("开始初始化插件：", m.Name)
+		dep.println("\n开始初始化插件：", m.Name)
 	}
 
 	for path, ms := range t.Routes {
 		for method, h := range ms {
-			dep.printf("注册路由：%s:%s\n", method, path)
+			dep.printf("  注册路由：%s ==> %s\n", method, path)
 			if err := dep.router.Handle(path, h, method); err != nil {
 				return err
 			}
 		}
-	}
+	} // end for
 
-	for _, init := range t.Inits {
-		dep.println("执行函数：", init.Title)
+	for i, init := range t.Inits {
+		title := init.Title
+		if title == "" {
+			title = strconv.Itoa(i)
+		}
+		dep.println("  执行初始化函数：", title)
 		if err := init.F(); err != nil {
 			return err
 		}
-	}
+	} // end for
 
 	m.inited = true
 	return nil
