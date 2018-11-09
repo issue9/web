@@ -116,7 +116,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 
 	for path, ms := range t.Routes {
 		for method, h := range ms {
-			dep.printf("  注册路由：%s ==> %s\n", method, path)
+			dep.printf("  注册路由：%s %s\n", method, path)
 			if err := dep.router.Handle(path, h, method); err != nil {
 				return err
 			}
@@ -128,6 +128,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		if title == "" {
 			title = strconv.Itoa(i)
 		}
+
 		dep.println("  执行初始化函数：", title)
 		if err := init.F(); err != nil {
 			return err
