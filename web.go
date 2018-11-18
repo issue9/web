@@ -100,13 +100,6 @@ func Mux() *mux.Mux {
 	return defaultApp.Mux()
 }
 
-// Run 运行路由，执行监听程序。
-//
-// Deprecated: 由 Serve 代替
-func Run() error {
-	return Serve()
-}
-
 // Serve 运行路由，执行监听程序。
 func Serve() error {
 	return defaultApp.Serve()

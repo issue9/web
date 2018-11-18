@@ -20,20 +20,6 @@ func CharsetIsNop(enc xencoding.Encoding) bool {
 		enc == xencoding.Nop
 }
 
-// AddCharset 添加字符集
-//
-// Deprecated: 不再启作用
-func AddCharset(name string, c xencoding.Encoding) error {
-	return nil
-}
-
-// AddCharsets 添加多个字符集
-//
-// Deprecated: 不再启作用
-func AddCharsets(cs map[string]xencoding.Encoding) error {
-	return nil
-}
-
 // AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
 //
 // 传递 * 获取返回默认的字符集相关信息，即 utf-8
