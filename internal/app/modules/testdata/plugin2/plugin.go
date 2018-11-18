@@ -20,8 +20,8 @@ func Init(m *module.Module) {
 	m.AddInit(init1)
 	m.AddInit(init2)
 
-	m.NewVersion("install").Task("title", install1)
-	m.NewVersion("v1.0").Task("title", install2)
+	m.NewTag("install").AddInitTitle("title", install1)
+	m.NewTag("v1.0").AddInitTitle("title", install2)
 }
 
 func init1() error {

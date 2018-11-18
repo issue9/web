@@ -27,7 +27,7 @@ func TestTag(t *testing.T) {
 	v := m.NewTag("0.1.0")
 	a.NotNil(v).NotNil(m.Tags["0.1.0"])
 	a.Equal(v.Type, TypeTag)
-	v.Task("title1", nil)
+	v.AddInitTitle("title1", nil)
 	a.Equal(v.Inits[0].Title, "title1")
 }
 
