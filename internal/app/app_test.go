@@ -63,7 +63,7 @@ func TestMiddleware(t *testing.T) {
 		})
 	}
 	app, err := New(conf)
-	app.SetMiddleware(m)
+	app.SetMiddlewares(m)
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/middleware", f202)

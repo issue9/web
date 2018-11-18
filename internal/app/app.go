@@ -24,7 +24,7 @@ import (
 type App struct {
 	webConfig *webconfig.WebConfig
 
-	middleware middleware.Middleware // 应用于全局路由项的中间件
+	middleware []middleware.Middleware // 应用于全局路由项的中间件
 	mux        *mux.Mux
 	server     *http.Server
 
@@ -51,8 +51,8 @@ func New(conf *webconfig.WebConfig) (*App, error) {
 	}, nil
 }
 
-// SetMiddleware 设置一个全局的中间件，多次设置，只有最后一次会启作用。
-func (app *App) SetMiddleware(m middleware.Middleware) *App {
+// SetMiddlewares 设置一个全局的中间件，多次设置，只有最后一次会启作用。
+func (app *App) SetMiddlewares(m ...middleware.Middleware) *App {
 	app.middleware = m
 	return app
 }
@@ -111,10 +111,15 @@ func (app *App) initServer() error {
 		return err
 	}
 
-	h := middleware.Handler(app.mux, app.middleware)
+	if app.middleware == nil {
+		app.middleware = middlewares.Middlewares(app.webConfig)
+	} else {
+		app.middleware = append(app.middleware, middlewares.Middlewares(app.webConfig)...)
+	}
+
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:           middlewares.Handler(h, app.webConfig),
+		Handler:           middleware.Handler(app.mux, app.middleware...),
 		ErrorLog:          logs.ERROR(),
 		ReadTimeout:       app.webConfig.ReadTimeout,
 		WriteTimeout:      app.webConfig.WriteTimeout,

@@ -27,10 +27,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	if err := encoding.AddCharset("gbk", simplifiedchinese.GBK); err != nil {
-		panic(err)
-	}
-
 	if err := encoding.AddMarshal(encoding.DefaultMimeType, encodingtest.TextMarshal); err != nil {
 		panic(err)
 	}

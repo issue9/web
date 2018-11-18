@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/issue9/logs"
+	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/host"
@@ -50,44 +51,50 @@ func SetCompress(name string, f compress.WriterFunc) {
 	funcs[name] = f
 }
 
-// Handler 将所有配置文件中指定的中间件应用于 h，并返回新的 http.Handler 实例
-func Handler(h http.Handler, conf *webconfig.WebConfig) http.Handler {
-	h = hosts(headers(h, conf.Headers), conf.AllowedDomains)
-	h = recovery.New(h, errors.Recovery(conf.Debug))
+// Middlewares 根据配置文件获取所有的中间件
+func Middlewares(conf *webconfig.WebConfig) []middleware.Middleware {
+	ret := make([]middleware.Middleware, 0, 10)
 
-	// 需保证外层调用不再写入内容。否则可能出错
+	// domains
+	if len(conf.AllowedDomains) > 0 {
+		ret = append(ret, func(h http.Handler) http.Handler {
+			return host.New(h, conf.AllowedDomains...)
+		})
+	}
+
+	// headers
+	if len(conf.Headers) > 0 {
+		ret = append(ret, func(h http.Handler) http.Handler {
+			return header.New(h, conf.Headers, nil)
+		})
+	}
+
+	// recovery
+	ret = append(ret, func(h http.Handler) http.Handler {
+		return recovery.New(h, errors.Recovery(conf.Debug))
+	})
+
+	// compress
 	if conf.Compress != nil {
-		h = compress.New(h, &compress.Options{
-			Funcs:    funcs,
-			Types:    conf.Compress.Types,
-			Size:     conf.Compress.Size,
-			ErrorLog: logs.ERROR(),
+		ret = append(ret, func(h http.Handler) http.Handler {
+			return compress.New(h, &compress.Options{
+				Funcs:    funcs,
+				Types:    conf.Compress.Types,
+				Size:     conf.Compress.Size,
+				ErrorLog: logs.ERROR(),
+			})
 		})
 	}
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
 		logs.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
-		h = debug(h)
+		ret = append(ret, func(h http.Handler) http.Handler {
+			return debug(h)
+		})
 	}
 
-	return h
-}
-
-func hosts(h http.Handler, domains []string) http.Handler {
-	if len(domains) == 0 {
-		return h
-	}
-
-	return host.New(h, domains...)
-}
-
-func headers(h http.Handler, headers map[string]string) http.Handler {
-	if len(headers) == 0 {
-		return h
-	}
-
-	return header.New(h, headers, nil)
+	return ret
 }
 
 func debug(h http.Handler) http.Handler {
