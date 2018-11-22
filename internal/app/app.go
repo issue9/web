@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/app/middlewares"
 	"github.com/issue9/web/internal/app/modules"
 	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/module"
@@ -112,9 +111,9 @@ func (app *App) initServer() error {
 	}
 
 	if app.middleware == nil {
-		app.middleware = middlewares.Middlewares(app.webConfig)
+		app.middleware = middlewares(app.webConfig)
 	} else {
-		app.middleware = append(app.middleware, middlewares.Middlewares(app.webConfig)...)
+		app.middleware = append(app.middleware, middlewares(app.webConfig)...)
 	}
 
 	app.server = &http.Server{

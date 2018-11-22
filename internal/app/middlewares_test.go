@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package middlewares
+package app
 
 import (
 	"net/http"
@@ -15,11 +15,7 @@ import (
 	"github.com/issue9/web/internal/app/webconfig"
 )
 
-var h202 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-})
-
-func TestHandler(t *testing.T) {
+func TestMiddleware(t *testing.T) {
 	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
 	})
@@ -28,7 +24,7 @@ func TestHandler(t *testing.T) {
 		context.Exit(http.StatusNotAcceptable)
 	})
 
-	h := middleware.Handler(panicFunc, Middlewares(&webconfig.WebConfig{})...)
+	h := middleware.Handler(panicFunc, middlewares(&webconfig.WebConfig{})...)
 	srv := rest.NewServer(t, h, nil)
 
 	// 触发 panic
@@ -37,14 +33,14 @@ func TestHandler(t *testing.T) {
 		Status(http.StatusInternalServerError)
 
 	// 触发 panic，调试模式
-	h = middleware.Handler(panicFunc, Middlewares(&webconfig.WebConfig{Debug: true})...)
+	h = middleware.Handler(panicFunc, middlewares(&webconfig.WebConfig{Debug: true})...)
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
 		Status(http.StatusInternalServerError)
 
 	// 触发 panic, errors.HTTP
-	h = middleware.Handler(panicHTTPFunc, Middlewares(&webconfig.WebConfig{})...)
+	h = middleware.Handler(panicHTTPFunc, middlewares(&webconfig.WebConfig{})...)
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().

@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/middleware/compress"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/app/middlewares"
+	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/internal/errors"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
@@ -48,14 +48,14 @@ func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
 //
 // NOTE: 只有在 web.Init() 之前调用才能启作用。
 func AddCompress(name string, f compress.WriterFunc) error {
-	return middlewares.AddCompress(name, f)
+	return app.AddCompress(name, f)
 }
 
 // SetCompress 修改或是添加压缩方法。
 //
 // NOTE: 只有在 web.Init() 之前调用才能启作用。
 func SetCompress(name string, f compress.WriterFunc) {
-	middlewares.SetCompress(name, f)
+	app.SetCompress(name, f)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic

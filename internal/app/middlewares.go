@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package middlewares 提供一系列中间
-package middlewares
+package app
 
 import (
 	"expvar"
@@ -51,8 +50,7 @@ func SetCompress(name string, f compress.WriterFunc) {
 	funcs[name] = f
 }
 
-// Middlewares 根据配置文件获取所有的中间件
-func Middlewares(conf *webconfig.WebConfig) []middleware.Middleware {
+func middlewares(conf *webconfig.WebConfig) []middleware.Middleware {
 	ret := make([]middleware.Middleware, 0, 10)
 
 	// domains

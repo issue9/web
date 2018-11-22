@@ -21,6 +21,8 @@ var (
 		w.WriteHeader(http.StatusAccepted)
 	}
 
+	h202 = http.HandlerFunc(f202)
+
 	timeoutHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(timeout)
 		w.WriteHeader(http.StatusAccepted)
@@ -54,7 +56,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestMiddleware(t *testing.T) {
+func TestApp_SetMiddleware(t *testing.T) {
 	a := assert.New(t)
 	m := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
