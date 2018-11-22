@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/web/internal/app/webconfig"
 )
 
-func TestMiddleware(t *testing.T) {
+func TestApp_buildMiddlewares(t *testing.T) {
 	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
 	})
@@ -24,7 +24,10 @@ func TestMiddleware(t *testing.T) {
 		context.Exit(http.StatusNotAcceptable)
 	})
 
-	h := middleware.Handler(panicFunc, middlewares(&webconfig.WebConfig{})...)
+	app := &App{}
+
+	app.buildMiddlewares(&webconfig.WebConfig{})
+	h := middleware.Handler(panicFunc, app.middlewares...)
 	srv := rest.NewServer(t, h, nil)
 
 	// 触发 panic
@@ -32,15 +35,17 @@ func TestMiddleware(t *testing.T) {
 		Do().
 		Status(http.StatusInternalServerError)
 
-	// 触发 panic，调试模式
-	h = middleware.Handler(panicFunc, middlewares(&webconfig.WebConfig{Debug: true})...)
+		// 触发 panic，调试模式
+	app.buildMiddlewares(&webconfig.WebConfig{Debug: true})
+	h = middleware.Handler(panicFunc, app.middlewares...)
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().
 		Status(http.StatusInternalServerError)
 
-	// 触发 panic, errors.HTTP
-	h = middleware.Handler(panicHTTPFunc, middlewares(&webconfig.WebConfig{})...)
+		// 触发 panic, errors.HTTP
+	app.buildMiddlewares(&webconfig.WebConfig{})
+	h = middleware.Handler(panicHTTPFunc, app.middlewares...)
 	srv = rest.NewServer(t, h, nil)
 	srv.NewRequest(http.MethodGet, "/test").
 		Do().

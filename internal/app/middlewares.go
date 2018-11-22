@@ -50,31 +50,33 @@ func SetCompress(name string, f compress.WriterFunc) {
 	funcs[name] = f
 }
 
-func middlewares(conf *webconfig.WebConfig) []middleware.Middleware {
-	ret := make([]middleware.Middleware, 0, 10)
+func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
+	if app.middlewares == nil {
+		app.middlewares = make([]middleware.Middleware, 0, 10)
+	}
 
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		ret = append(ret, func(h http.Handler) http.Handler {
+		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		ret = append(ret, func(h http.Handler) http.Handler {
+		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
 	// recovery
-	ret = append(ret, func(h http.Handler) http.Handler {
+	app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 		return recovery.New(h, errors.Recovery(conf.Debug))
 	})
 
 	// compress
 	if conf.Compress != nil {
-		ret = append(ret, func(h http.Handler) http.Handler {
+		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    funcs,
 				Types:    conf.Compress.Types,
@@ -87,12 +89,10 @@ func middlewares(conf *webconfig.WebConfig) []middleware.Middleware {
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
 		logs.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
-		ret = append(ret, func(h http.Handler) http.Handler {
+		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}
-
-	return ret
 }
 
 func debug(h http.Handler) http.Handler {
