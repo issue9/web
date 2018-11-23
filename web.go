@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"github.com/issue9/logs"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
@@ -21,10 +20,7 @@ import (
 	"github.com/issue9/web/module"
 )
 
-const (
-	configFilename = "web.yaml" // 配置文件的文件名。
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
-)
+const configFilename = "web.yaml" // 配置文件的文件名。
 
 var (
 	configDir  string
@@ -44,7 +40,7 @@ func Init(dir string) (err error) {
 		return errors.New("不能重复调用 Init")
 	}
 
-	if err = logs.InitFromXMLFile(File(logsFilename)); err != nil {
+	if err = initLogs(); err != nil {
 		return err
 	}
 
@@ -73,8 +69,8 @@ func Grace(sig ...os.Signal) {
 		signal.Stop(signalChannel)
 
 		if err := Shutdown(); err != nil {
-			logs.Error(err)
-			logs.Flush() // 保证内容会被正常输出到日志。
+			Error(err)
+			FlushLogs() // 保证内容会被正常输出到日志。
 		}
 	}()
 }

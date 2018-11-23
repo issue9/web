@@ -11,6 +11,12 @@ import (
 	"github.com/issue9/logs"
 )
 
+const logsFilename = "logs.xml" // 日志配置文件的文件名。
+
+func initLogs() error {
+	return logs.InitFromXMLFile(File(logsFilename))
+}
+
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。
 func INFO() *log.Logger {
 	return logs.INFO()
