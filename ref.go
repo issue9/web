@@ -7,7 +7,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/issue9/logs"
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 
 	"github.com/issue9/web/context"

@@ -13,13 +13,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs"
+	"github.com/issue9/logs/v2"
 )
 
 var errLog = new(bytes.Buffer)
 
 func init() {
-	logs.SetWriter(logs.LevelError, errLog, "", 0)
+	logs.SetOutput(logs.LevelError, errLog, "", 0)
 }
 
 func TestRecovery_debug(t *testing.T) {
