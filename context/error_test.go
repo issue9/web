@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs"
+	"github.com/issue9/logs/v2"
 )
 
 var (
@@ -21,8 +21,8 @@ var (
 )
 
 func init() {
-	logs.SetWriter(logs.LevelError, errLog, "", 0)
-	logs.SetWriter(logs.LevelCritical, criticalLog, "", 0)
+	logs.SetOutput(logs.LevelError, errLog, "", 0)
+	logs.SetOutput(logs.LevelCritical, criticalLog, "", 0)
 }
 
 func TestContext_Exit(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/issue9/logs"
+	"github.com/issue9/logs/v2"
 )
 
 const logsFilename = "logs.xml" // 日志配置文件的文件名。

@@ -12,7 +12,7 @@ go:
 install:
   - go get github.com/issue9/assert
   - go get github.com/issue9/middleware
-  - go get github.com/issue9/logs
+  - go get github.com/issue9/logs/v2
   - go get github.com/issue9/mux
   - go get github.com/issue9/utils
   - go get github.com/issue9/is

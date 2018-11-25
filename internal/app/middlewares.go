@@ -11,7 +11,7 @@ import (
 	"net/http/pprof"
 	"strings"
 
-	"github.com/issue9/logs"
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
