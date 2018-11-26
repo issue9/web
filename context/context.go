@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -86,7 +85,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset, err := encoding.AcceptCharset(header)
+	outputCharsetName, outputCharset, err := acceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
 	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
@@ -126,7 +125,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return nil, err
 	}
 
-	if encoding.CharsetIsNop(ctx.InputCharset) {
+	if charsetIsNop(ctx.InputCharset) {
 		ctx.readed = true
 		return ctx.body, nil
 	}
@@ -194,7 +193,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	// https://github.com/golang/go/issues/17083
 	ctx.Response.WriteHeader(status)
 
-	if encoding.CharsetIsNop(ctx.OutputCharset) {
+	if charsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
 		return err
 	}
@@ -252,23 +251,4 @@ func (ctx *Context) ClientIP() string {
 	}
 
 	return strings.TrimSpace(ip)
-}
-
-func acceptLanguage(header string) (language.Tag, error) {
-	if header == "" {
-		return language.Und, nil
-	}
-
-	al, err := accept.Parse(header)
-	if err != nil {
-		return language.Und, err
-	}
-
-	prefs := make([]language.Tag, 0, len(al))
-	for _, l := range al {
-		prefs = append(prefs, language.Make(l.Value))
-	}
-
-	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
-	return tag, nil
 }

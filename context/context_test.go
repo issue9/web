@@ -146,7 +146,7 @@ func TestNew(t *testing.T) {
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
-		True(encoding.CharsetIsNop(ctx.InputCharset)).
+		True(charsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
 }
 

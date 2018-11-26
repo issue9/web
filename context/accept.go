@@ -2,33 +2,35 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package encoding
+package context
 
 import (
 	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+
+	"github.com/issue9/web/encoding"
 )
 
-const utf8Name = "utf-8"
-
-// CharsetIsNop 指定的编码是否不需要任何额外操作
-func CharsetIsNop(enc xencoding.Encoding) bool {
+// 指定的编码是否不需要任何额外操作
+func charsetIsNop(enc xencoding.Encoding) bool {
 	return enc == nil ||
 		enc == unicode.UTF8 ||
 		enc == xencoding.Nop
 }
 
-// AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
+// 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
 //
 // 传递 * 获取返回默认的字符集相关信息，即 utf-8
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func AcceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
+func acceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
 	if header == "" || header == "*" {
-		return utf8Name, nil, nil
+		return encoding.DefaultCharset, nil, nil
 	}
 
 	accepts, err := accept.Parse(header)
@@ -51,5 +53,24 @@ func AcceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 		return name, enc, nil
 	}
 
-	return "", nil, ErrInvalidCharset
+	return "", nil, encoding.ErrInvalidCharset
+}
+
+func acceptLanguage(header string) (language.Tag, error) {
+	if header == "" {
+		return language.Und, nil
+	}
+
+	al, err := accept.Parse(header)
+	if err != nil {
+		return language.Und, err
+	}
+
+	prefs := make([]language.Tag, 0, len(al))
+	for _, l := range al {
+		prefs = append(prefs, language.Make(l.Value))
+	}
+
+	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
+	return tag, nil
 }

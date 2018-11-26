@@ -14,6 +14,9 @@ import (
 	"golang.org/x/text/encoding/htmlindex"
 )
 
+// DefaultCharset 默认的字符集
+const DefaultCharset = "utf-8"
+
 // Nil 表示向客户端输出 nil 值。
 //
 // 这是一个只有类型但是值为空的变量。在某些特殊情况下，
@@ -71,7 +74,7 @@ func BuildContentType(mimetype, charset string) string {
 		mimetype = DefaultMimeType
 	}
 	if charset == "" {
-		charset = utf8Name
+		charset = DefaultCharset
 	}
 
 	return mimetype + "; charset=" + charset
@@ -88,13 +91,13 @@ func ParseContentType(v string) (mimetype, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if v == "" {
-		return DefaultMimeType, utf8Name, nil
+		return DefaultMimeType, DefaultCharset, nil
 	}
 
 	index := strings.IndexByte(v, ';')
 	switch {
 	case index < 0: // 只有编码
-		return strings.ToLower(v), utf8Name, nil
+		return strings.ToLower(v), DefaultCharset, nil
 	case index == 0: // mimetype 不可省略
 		return "", "", ErrInvalidMimeType
 	}
@@ -114,5 +117,5 @@ func ParseContentType(v string) (mimetype, charset string, err error) {
 		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	return mimetype, utf8Name, nil
+	return mimetype, DefaultCharset, nil
 }
