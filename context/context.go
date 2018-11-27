@@ -7,6 +7,7 @@ package context
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -78,7 +79,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		}
 
 		if errlog != nil {
-			errlog.Printf("报头 %s 出错：%s\n", name, err.Error())
+			errlog.Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
 		}
 		Exit(status)
 	}
