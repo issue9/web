@@ -53,9 +53,12 @@ type Context struct {
 	OutputTag     language.Tag
 	LocalePrinter *message.Printer
 
-	// 从客户端获取的内容，已经解析为 utf-8 方式。
+	// 保存着从 http.Request.Body 中获取的内容。
+	//
+	// body 会在第一次从 http.Request.Body 中读取之后作缓存。
+	// readed 会对是否已经从 http.Request.Body 读取作标签。
 	body   []byte
-	readed bool // 是否已经从 r.Body 中加载过
+	readed bool
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -114,7 +117,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 
 // Body 获取用户提交的内容。
 //
-// 相对于 ctx.Request().Body，此函数可多次读取。
+// 相对于 ctx.Request.Body，此函数可多次读取。
 // 不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
 	if ctx.readed {
@@ -154,7 +157,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // Marshal 将 v 解码并发送给客户端。
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
-// 若是需要正常输出一个 nil 类型到客户端（json 中会输出 null），
+// 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
 // 可以使用 encoding.Nil 变量代替。
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
