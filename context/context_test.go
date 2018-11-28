@@ -304,24 +304,3 @@ func TestContext_ClientIP(t *testing.T) {
 	ctx = newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
-
-func TestAcceptLanguage(t *testing.T) {
-	a := assert.New(t)
-	tag, err := acceptLanguage("")
-	a.NotError(err).Equal(tag, language.Und)
-
-	tag, err = acceptLanguage("xx;q=xxx")
-	a.Error(err).Equal(tag, language.Und)
-
-	tag, err = acceptLanguage("zh")
-	a.NotError(err).Equal(tag, language.Chinese)
-
-	tag, err = acceptLanguage("zh-Hant")
-	a.NotError(err).Equal(tag, language.TraditionalChinese)
-
-	tag, err = acceptLanguage("zh-Hans")
-	a.NotError(err).Equal(tag, language.SimplifiedChinese)
-
-	tag, err = acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
-	a.NotError(err).Equal(tag, language.English)
-}

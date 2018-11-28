@@ -52,6 +52,15 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func BenchmarkParseContentType(b *testing.B) {
+	a := assert.New(b)
+
+	for i := 0; i < b.N; i++ {
+		_, _, err := parseContentType("application/json;charset=utf-8")
+		a.NotError(err)
+	}
+}
+
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
 

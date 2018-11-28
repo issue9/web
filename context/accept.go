@@ -6,6 +6,8 @@ package context
 
 import (
 	"errors"
+	"strings"
+	stdunicode "unicode"
 
 	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
@@ -77,4 +79,44 @@ func acceptLanguage(header string) (language.Tag, error) {
 
 	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
 	return tag, nil
+}
+
+// 从 content-type 中获取编码和字符集
+//
+// 若客户端传回的是空值，则会使用默认值代替。
+//
+// 返回值中，mimetype 一律返回小写的值，charset 则原样返回
+//
+// https://tools.ietf.org/html/rfc7231#section-3.1.1.1
+func parseContentType(v string) (mimetype, charset string, err error) {
+	v = strings.TrimSpace(v)
+
+	if v == "" {
+		return encoding.DefaultMimeType, encoding.DefaultCharset, nil
+	}
+
+	index := strings.IndexByte(v, ';')
+	switch {
+	case index < 0: // 只有编码
+		return strings.ToLower(v), encoding.DefaultCharset, nil
+	case index == 0: // mimetype 不可省略
+		return "", "", encoding.ErrInvalidMimeType
+	}
+
+	mimetype = strings.ToLower(v[:index])
+
+	for index > 0 {
+		// 去掉左边的空白字符
+		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return stdunicode.IsSpace(r) })
+
+		if !strings.HasPrefix(v, "charset=") {
+			index = strings.IndexByte(v, ';')
+			continue
+		}
+
+		v = strings.TrimPrefix(v, "charset=")
+		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
+	}
+
+	return mimetype, encoding.DefaultCharset, nil
 }

@@ -108,7 +108,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
-		encName, charsetName, err := encoding.ParseContentType(header)
+		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputMimeType, err = encoding.Unmarshal(encName)

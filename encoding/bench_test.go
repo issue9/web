@@ -17,12 +17,3 @@ func BenchmarkBuildContentType(b *testing.B) {
 		a.True(len(BuildContentType(DefaultMimeType, DefaultCharset)) > 0)
 	}
 }
-
-func BenchmarkParseContentType(b *testing.B) {
-	a := assert.New(b)
-
-	for i := 0; i < b.N; i++ {
-		_, _, err := ParseContentType("application/json;charset=utf-8")
-		a.NotError(err)
-	}
-}
