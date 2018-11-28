@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
-	"github.com/issue9/web/encoding/encodingtest"
+	"github.com/issue9/web/mimetype/encodingtest"
 )
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {

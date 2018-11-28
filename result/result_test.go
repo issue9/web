@@ -16,8 +16,8 @@ import (
 	xmessage "golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/encoding/form"
 	"github.com/issue9/web/internal/errors"
+	"github.com/issue9/web/mimetype/form"
 )
 
 var (

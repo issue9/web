@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/mimetype"
 )
 
-var _ encoding.MarshalFunc = (&HTML{}).Marshal
+var _ mimetype.MarshalFunc = (&HTML{}).Marshal
 
 func TestHTML(t *testing.T) {
 	a := assert.New(t)

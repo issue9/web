@@ -2,13 +2,13 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package encoding
+package mimetype
 
 import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding/gob"
+	"github.com/issue9/web/mimetype/gob"
 )
 
 func resetMarshals() {

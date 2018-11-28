@@ -10,13 +10,13 @@ import (
 	stdunicode "unicode"
 
 	"github.com/issue9/middleware/compress/accept"
-	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/mimetype"
 )
 
 const utfName = "utf-8"
@@ -24,10 +24,10 @@ const utfName = "utf-8"
 var errInvalidCharset = errors.New("无效的字符集")
 
 // 指定的编码是否不需要任何额外操作
-func charsetIsNop(enc xencoding.Encoding) bool {
+func charsetIsNop(enc encoding.Encoding) bool {
 	return enc == nil ||
 		enc == unicode.UTF8 ||
-		enc == xencoding.Nop
+		enc == encoding.Nop
 }
 
 // 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
@@ -36,7 +36,7 @@ func charsetIsNop(enc xencoding.Encoding) bool {
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func acceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
+func acceptCharset(header string) (name string, enc encoding.Encoding, err error) {
 	if header == "" || header == "*" {
 		return utfName, nil, nil
 	}
@@ -90,11 +90,11 @@ func acceptLanguage(header string) (language.Tag, error) {
 // 返回值中，mimetype 一律返回小写的值，charset 则原样返回
 //
 // https://tools.ietf.org/html/rfc7231#section-3.1.1.1
-func parseContentType(v string) (mimetype, charset string, err error) {
+func parseContentType(v string) (mime, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if v == "" {
-		return encoding.DefaultMimeType, utfName, nil
+		return mimetype.DefaultMimeType, utfName, nil
 	}
 
 	index := strings.IndexByte(v, ';')
@@ -102,10 +102,10 @@ func parseContentType(v string) (mimetype, charset string, err error) {
 	case index < 0: // 只有编码
 		return strings.ToLower(v), utfName, nil
 	case index == 0: // mimetype 不可省略
-		return "", "", encoding.ErrInvalidMimeType
+		return "", "", mimetype.ErrInvalidMimeType
 	}
 
-	mimetype = strings.ToLower(v[:index])
+	mime = strings.ToLower(v[:index])
 
 	for index > 0 {
 		// 去掉左边的空白字符
@@ -117,22 +117,22 @@ func parseContentType(v string) (mimetype, charset string, err error) {
 		}
 
 		v = strings.TrimPrefix(v, "charset=")
-		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
+		return mime, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	return mimetype, utfName, nil
+	return mime, utfName, nil
 }
 
 // 生成一个 content-type
 //
 // 若值为空，则会使用默认值代替
-func buildContentType(mimetype, charset string) string {
-	if mimetype == "" {
-		mimetype = encoding.DefaultMimeType
+func buildContentType(mime, charset string) string {
+	if mime == "" {
+		mime = mimetype.DefaultMimeType
 	}
 	if charset == "" {
 		charset = utfName
 	}
 
-	return mimetype + "; charset=" + charset
+	return mime + "; charset=" + charset
 }

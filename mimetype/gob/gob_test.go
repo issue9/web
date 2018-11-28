@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/encoding/gob"
+	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/mimetype/gob"
 )
 
 var (
-	_ encoding.MarshalFunc   = gob.Marshal
-	_ encoding.UnmarshalFunc = gob.Unmarshal
+	_ mimetype.MarshalFunc   = gob.Marshal
+	_ mimetype.UnmarshalFunc = gob.Unmarshal
 )
 
 func TestGOB(t *testing.T) {

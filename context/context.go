@@ -8,18 +8,18 @@ package context
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/text/encoding/htmlindex"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 
-	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/mimetype"
 )
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
@@ -34,22 +34,22 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的媒体类型，以及名称
-	OutputMimeType     encoding.MarshalFunc
+	OutputMimeType     mimetype.MarshalFunc
 	OutputMimeTypeName string
 
 	// 输出到客户端的字符集
 	//
-	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	OutputCharset     xencoding.Encoding
+	// 若值为 encoding.Nop 或是空，表示为 utf-8
+	OutputCharset     encoding.Encoding
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
-	InputMimeType encoding.UnmarshalFunc
+	InputMimeType mimetype.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//
-	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	InputCharset xencoding.Encoding
+	// 若值为 encoding.Nop 或是空，表示为 utf-8
+	InputCharset encoding.Encoding
 
 	// 输出语言的相关设置项。
 	OutputTag     language.Tag
@@ -86,7 +86,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := encoding.Marshal(header)
+	outputMimeTypeName, marshal, err := mimetype.Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -111,7 +111,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = encoding.Unmarshal(encName)
+		ctx.InputMimeType, err = mimetype.Unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
@@ -166,7 +166,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
-// 可以使用 encoding.Nil 变量代替。
+// 可以使用 mimetype.Nil 变量代替。
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称。

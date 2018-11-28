@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/encoding"
+	"github.com/issue9/web/mimetype"
 )
 
 var (
-	_ encoding.MarshalFunc   = Marshal
-	_ encoding.UnmarshalFunc = Unmarshal
+	_ mimetype.MarshalFunc   = Marshal
+	_ mimetype.UnmarshalFunc = Unmarshal
 )
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"

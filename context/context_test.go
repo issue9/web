@@ -13,13 +13,13 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/encoding"
-	"github.com/issue9/web/encoding/encodingtest"
+	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/mimetype/encodingtest"
 )
 
 func init() {
@@ -34,10 +34,10 @@ var errlog = log.New(logwriter, "", 0)
 
 func newContext(w http.ResponseWriter,
 	r *http.Request,
-	outputMimeType encoding.MarshalFunc,
-	outputCharset xencoding.Encoding,
-	inputMimeType encoding.UnmarshalFunc,
-	InputCharset xencoding.Encoding) *Context {
+	outputMimeType mimetype.MarshalFunc,
+	outputCharset encoding.Encoding,
+	inputMimeType mimetype.UnmarshalFunc,
+	InputCharset encoding.Encoding) *Context {
 	return &Context{
 		Response:       w,
 		Request:        r,
@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 	// 错误的 accept-charset
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
 		New(w, r, errlog)
@@ -92,7 +92,7 @@ func TestNew(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	r.Header.Set("content-type", buildContentType(encodingtest.MimeType, "utf-"))
 	a.Panic(func() {
 		New(w, r, errlog)
@@ -101,7 +101,7 @@ func TestNew(t *testing.T) {
 	// 错误的 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	a.Panic(func() {
 		New(w, r, errlog)
@@ -110,7 +110,7 @@ func TestNew(t *testing.T) {
 	// 正常，指定 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	var ctx *Context
 	a.NotPanic(func() {
@@ -119,27 +119,27 @@ func TestNew(t *testing.T) {
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType).
+		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimeType).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	a.NotPanic(func() {
 		ctx = New(w, r, errlog)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
+		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimeType)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
-	a.NotError(encoding.AddUnmarshal(encodingtest.MimeType, encodingtest.TextUnmarshal))
+	a.NotError(mimetype.AddUnmarshal(encodingtest.MimeType, encodingtest.TextUnmarshal))
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("Accept", encoding.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimeType)
 	r.Header.Set("content-type", buildContentType(encodingtest.MimeType, "utf-8"))
 	a.NotPanic(func() {
 		ctx = New(w, r, errlog)
@@ -147,7 +147,7 @@ func TestNew(t *testing.T) {
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimeTypeName, encoding.DefaultMimeType)
+		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimeType)
 }
 
 func TestContext_Body(t *testing.T) {
@@ -172,7 +172,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
-	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, encoding.Nop, encodingtest.TextUnmarshal, encoding.Nop)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
@@ -181,7 +181,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
 	r.Header.Set("Accept", "*/*")
-	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, simplifiedchinese.GB18030)
+	ctx = newContext(w, r, encodingtest.TextMarshal, encoding.Nop, encodingtest.TextUnmarshal, simplifiedchinese.GB18030)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(string(data), gbkstr1)
 	a.Equal(ctx.body, data)
@@ -216,7 +216,7 @@ func TestContext_Marshal(t *testing.T) {
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, encoding.Nop, encodingtest.TextUnmarshal, encoding.Nop)
 	obj = &encodingtest.TextObject{Name: "test", Age: 1234}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
@@ -226,7 +226,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 nil
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, encodingtest.TextMarshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, encoding.Nop, encodingtest.TextUnmarshal, encoding.Nop)
 	ctx.OutputTag = language.MustParse("zh-Hans")
 	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
@@ -236,15 +236,15 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 Nil，text. 未实现对 nil 值的解析，所以采用了 json.Marshal
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, json.Marshal, xencoding.Nop, encodingtest.TextUnmarshal, xencoding.Nop)
-	a.NotError(ctx.Marshal(http.StatusCreated, encoding.Nil, nil))
+	ctx = newContext(w, r, json.Marshal, encoding.Nop, encodingtest.TextUnmarshal, encoding.Nop)
+	a.NotError(ctx.Marshal(http.StatusCreated, mimetype.Nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "null")
 
 	// 输出不同编码的内容
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	ctx = newContext(w, r, encodingtest.TextMarshal, simplifiedchinese.GB18030, encodingtest.TextUnmarshal, xencoding.Nop)
+	ctx = newContext(w, r, encodingtest.TextMarshal, simplifiedchinese.GB18030, encodingtest.TextUnmarshal, encoding.Nop)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkstr2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), gbkdata2)

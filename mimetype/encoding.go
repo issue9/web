@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package encoding 提供了对编码的支持。
-package encoding
+// Package mimetype 提供了对编码的支持。
+package mimetype
 
 import (
 	"errors"
