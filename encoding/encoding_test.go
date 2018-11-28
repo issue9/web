@@ -38,12 +38,12 @@ func TestUnmarshal(t *testing.T) {
 	a.Error(err).Nil(um)
 }
 
-func TestAcceptMimeType(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	a := assert.New(t)
 	resetMarshals()
 	resetUnmarshals()
 
-	name, marshal, err := AcceptMimeType(DefaultMimeType)
+	name, marshal, err := Marshal(DefaultMimeType)
 	a.Error(err).
 		Nil(marshal).
 		Empty(name)
@@ -51,39 +51,39 @@ func TestAcceptMimeType(t *testing.T) {
 	a.NotError(AddMarshal(DefaultMimeType, gob.Marshal))
 	a.NotError(AddMarshal("text/plain", gob.Marshal))
 
-	name, marshal, err = AcceptMimeType(DefaultMimeType)
+	name, marshal, err = Marshal(DefaultMimeType)
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
-	name, marshal, err = AcceptMimeType(DefaultMimeType)
+	name, marshal, err = Marshal(DefaultMimeType)
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
 	// */* 如果指定了 DefaultMimeType，则必定是该值
-	name, marshal, err = AcceptMimeType("*/*")
+	name, marshal, err = Marshal("*/*")
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
 	// 同 */*
-	name, marshal, err = AcceptMimeType("")
+	name, marshal, err = Marshal("")
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, DefaultMimeType)
 
-	name, marshal, err = AcceptMimeType("*/*,text/plain")
+	name, marshal, err = Marshal("*/*,text/plain")
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, "text/plain")
 
-	name, marshal, err = AcceptMimeType("font/wotff;q=x.9")
+	name, marshal, err = Marshal("font/wotff;q=x.9")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
 
-	name, marshal, err = AcceptMimeType("font/wotff")
+	name, marshal, err = Marshal("font/wotff")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)

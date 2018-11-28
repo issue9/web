@@ -86,7 +86,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := encoding.AcceptMimeType(header)
+	outputMimeTypeName, marshal, err := encoding.Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
