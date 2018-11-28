@@ -5,6 +5,8 @@
 package context
 
 import (
+	"errors"
+
 	"github.com/issue9/middleware/compress/accept"
 	xencoding "golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
@@ -14,6 +16,8 @@ import (
 
 	"github.com/issue9/web/encoding"
 )
+
+var errInvalidCharset = errors.New("无效的字符集")
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc xencoding.Encoding) bool {
@@ -53,7 +57,7 @@ func acceptCharset(header string) (name string, enc xencoding.Encoding, err erro
 		return name, enc, nil
 	}
 
-	return "", nil, encoding.ErrInvalidCharset
+	return "", nil, errInvalidCharset
 }
 
 func acceptLanguage(header string) (language.Tag, error) {

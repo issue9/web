@@ -9,35 +9,25 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/encoding/gob"
-	"golang.org/x/text/encoding/unicode"
 )
 
-func TestContentType(t *testing.T) {
+func TestUnmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	um, c, err := ContentType(BuildContentType("", ""))
+	um, err := Unmarshal("")
 	a.Error(err).
-		Nil(um).
-		Nil(c)
+		Nil(um)
 
 	a.NotError(AddUnmarshal(DefaultMimeType, gob.Unmarshal))
 	a.NotError(AddMarshal(DefaultMimeType, gob.Marshal))
-	um, c, err = ContentType(BuildContentType("", ""))
-	a.NotError(err).
-		Equal(um, UnmarshalFunc(um)).
-		Equal(c, unicode.UTF8)
 
-	// 未指定 memetype
-	um, c, err = ContentType(";" + DefaultCharset)
-	a.Error(err).Nil(um).Nil(c)
+	// 未指定 mimetype
+	um, err = Unmarshal("")
+	a.Error(err).Nil(um)
 
 	// mimetype 无法找到
-	um, c, err = ContentType(BuildContentType("not-exists", DefaultCharset))
-	a.Error(err).Nil(um).Nil(c)
-
-	// charset 无法找到
-	um, c, err = ContentType(BuildContentType(DefaultMimeType, "not-exists"))
-	a.Error(err).Nil(um).Nil(c)
+	um, err = Unmarshal("not-exists")
+	a.Error(err).Nil(um)
 }
 
 func TestBuildContentType(t *testing.T) {

@@ -8,6 +8,7 @@ package context
 import (
 	"bytes"
 	"fmt"
+	"golang.org/x/text/encoding/htmlindex"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -107,7 +108,13 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
-		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(header)
+		encName, charsetName, err := encoding.ParseContentType(header)
+		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
+
+		ctx.InputMimeType, err = encoding.Unmarshal(encName)
+		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
+
+		ctx.InputCharset, err = htmlindex.Get(charsetName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 	} else {
 		ctx.readed = true

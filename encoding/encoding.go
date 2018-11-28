@@ -9,9 +9,6 @@ import (
 	"errors"
 	"strings"
 	"unicode"
-
-	xencoding "golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
 )
 
 // DefaultCharset 默认的字符集
@@ -29,41 +26,25 @@ var (
 	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
 	ErrExists = errors.New("该名称的项目已经存在")
 
-	// ErrInvalidCharset 无效的字符集。
-	//
-	// 一般在 Accept-Charset 或是 Content-Type
-	// 等报头中指定的字符集无效或是不被支持。
-	ErrInvalidCharset = errors.New("无效的字符集")
-
 	// ErrInvalidMimeType 无效的 mimetype 值，一般为 content-type 或
 	// Accept 等报头指定的 mimetype 值无效。
 	ErrInvalidMimeType = errors.New("mimetype 无效")
 )
 
-// ContentType 从 content-type 报头中解析出其使用的编码和字符集函数。
-func ContentType(header string) (UnmarshalFunc, xencoding.Encoding, error) {
-	encName, charsetName, err := ParseContentType(header)
-	if err != nil {
-		return nil, nil, err
-	}
-
+// Unmarshal 查找指定名称的 UnmarshalFunc
+func Unmarshal(name string) (UnmarshalFunc, error) {
 	var unmarshal *unmarshaler
 	for _, mt := range unmarshals {
-		if mt.name == encName {
+		if mt.name == name {
 			unmarshal = mt
 			break
 		}
 	}
 	if unmarshal == nil {
-		return nil, nil, ErrInvalidMimeType
+		return nil, ErrInvalidMimeType
 	}
 
-	charset, err := htmlindex.Get(charsetName)
-	if err != nil {
-		return nil, nil, ErrInvalidCharset
-	}
-
-	return unmarshal.f, charset, nil
+	return unmarshal.f, nil
 }
 
 // BuildContentType 生成一个 content-type
