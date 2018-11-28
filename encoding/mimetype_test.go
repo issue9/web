@@ -19,6 +19,25 @@ func resetUnmarshals() {
 	unmarshals = []*unmarshaler{}
 }
 
+func TestUnmarshal(t *testing.T) {
+	a := assert.New(t)
+
+	um, err := Unmarshal("")
+	a.Error(err).
+		Nil(um)
+
+	a.NotError(AddUnmarshal(DefaultMimeType, gob.Unmarshal))
+	a.NotError(AddMarshal(DefaultMimeType, gob.Marshal))
+
+	// 未指定 mimetype
+	um, err = Unmarshal("")
+	a.Error(err).Nil(um)
+
+	// mimetype 无法找到
+	um, err = Unmarshal("not-exists")
+	a.Error(err).Nil(um)
+}
+
 func TestAcceptMimeType(t *testing.T) {
 	a := assert.New(t)
 	resetMarshals()

@@ -6,46 +6,12 @@
 package encoding
 
 import (
-	"errors"
 	"strings"
 	"unicode"
 )
 
 // DefaultCharset 默认的字符集
 const DefaultCharset = "utf-8"
-
-// Nil 表示向客户端输出 nil 值。
-//
-// 这是一个只有类型但是值为空的变量。在某些特殊情况下，
-// 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
-var Nil *struct{}
-
-var (
-	// ErrExists 表示指定名称的项目已经存在。
-	//
-	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
-	ErrExists = errors.New("该名称的项目已经存在")
-
-	// ErrInvalidMimeType 无效的 mimetype 值，一般为 content-type 或
-	// Accept 等报头指定的 mimetype 值无效。
-	ErrInvalidMimeType = errors.New("mimetype 无效")
-)
-
-// Unmarshal 查找指定名称的 UnmarshalFunc
-func Unmarshal(name string) (UnmarshalFunc, error) {
-	var unmarshal *unmarshaler
-	for _, mt := range unmarshals {
-		if mt.name == name {
-			unmarshal = mt
-			break
-		}
-	}
-	if unmarshal == nil {
-		return nil, ErrInvalidMimeType
-	}
-
-	return unmarshal.f, nil
-}
 
 // BuildContentType 生成一个 content-type
 //
