@@ -82,10 +82,10 @@ func TestParseContentType(t *testing.T) {
 	a := assert.New(t)
 
 	e, c, err := parseContentType("")
-	a.NotError(err).Equal(e, mimetype.DefaultMimeType).Equal(c, utfName)
+	a.NotError(err).Equal(e, mimetype.DefaultMimetype).Equal(c, utfName)
 
 	e, c, err = parseContentType(" ")
-	a.NotError(err).Equal(e, mimetype.DefaultMimeType).Equal(c, utfName)
+	a.NotError(err).Equal(e, mimetype.DefaultMimetype).Equal(c, utfName)
 
 	e, c, err = parseContentType(" ;;;")
 	a.Error(err).Empty(e).Empty(c)
@@ -114,6 +114,6 @@ func TestBuildContentType(t *testing.T) {
 
 	a.Equal("application/xml; charset=utf16", buildContentType("application/xml", "utf16"))
 	a.Equal("application/xml; charset="+utfName, buildContentType("application/xml", ""))
-	a.Equal(mimetype.DefaultMimeType+"; charset="+utfName, buildContentType("", ""))
+	a.Equal(mimetype.DefaultMimetype+"; charset="+utfName, buildContentType("", ""))
 	a.Equal("application/xml; charset="+utfName, buildContentType("application/xml", ""))
 }

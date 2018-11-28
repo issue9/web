@@ -17,7 +17,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/encodingtest"
+	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
 var (
@@ -27,11 +27,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	if err := mimetype.AddMarshal(mimetype.DefaultMimeType, encodingtest.TextMarshal); err != nil {
+	if err := mimetype.AddMarshal(mimetype.DefaultMimetype, mimetypetest.TextMarshal); err != nil {
 		panic(err)
 	}
 
-	if err := mimetype.AddUnmarshal(mimetype.DefaultMimeType, encodingtest.TextUnmarshal); err != nil {
+	if err := mimetype.AddUnmarshal(mimetype.DefaultMimetype, mimetypetest.TextUnmarshal); err != nil {
 		panic(err)
 	}
 
@@ -65,7 +65,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 	a := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
-		a.True(len(buildContentType(mimetype.DefaultMimeType, utfName)) > 0)
+		a.True(len(buildContentType(mimetype.DefaultMimetype, utfName)) > 0)
 	}
 }
 
@@ -75,10 +75,10 @@ func BenchmarkContext_Marshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{Age: 16, Name: "response"}
+		obj := &mimetypetest.TextObject{Age: 16, Name: "response"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.String(), "response,16")
 	}
@@ -90,12 +90,12 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimeType, "gbk"))
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimetype, "gbk"))
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{Age: 22, Name: "中文2"}
+		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), gbkdata2)
 	}
@@ -107,10 +107,10 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{}
+		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 15).Equal(obj.Name, "request")
 	}
@@ -122,12 +122,12 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimeType, "gbk"))
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimetype, "gbk"))
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{}
+		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
 	}
@@ -140,10 +140,10 @@ func BenchmarkPost(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{}
+		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 15).Equal(obj.Name, "request")
 
@@ -160,12 +160,12 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimeType, "gbk"))
-		r.Header.Set("Accept", mimetype.DefaultMimeType)
+		r.Header.Set("Content-type", buildContentType(mimetype.DefaultMimetype, "gbk"))
+		r.Header.Set("Accept", mimetype.DefaultMimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
 
-		obj := &encodingtest.TextObject{}
+		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
 		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
 

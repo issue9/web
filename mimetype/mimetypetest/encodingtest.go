@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package encodingtest 针对文本内容的编解码实现，仅作为测试用例。
-package encodingtest
+// Package mimetypetest 针对文本内容的编解码实现，仅作为测试用例。
+package mimetypetest
 
 import (
 	"encoding"

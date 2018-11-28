@@ -94,7 +94,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if v == "" {
-		return mimetype.DefaultMimeType, utfName, nil
+		return mimetype.DefaultMimetype, utfName, nil
 	}
 
 	index := strings.IndexByte(v, ';')
@@ -102,7 +102,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 	case index < 0: // 只有编码
 		return strings.ToLower(v), utfName, nil
 	case index == 0: // mimetype 不可省略
-		return "", "", mimetype.ErrInvalidMimeType
+		return "", "", mimetype.ErrInvalidMimetype
 	}
 
 	mime = strings.ToLower(v[:index])
@@ -128,7 +128,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 // 若值为空，则会使用默认值代替
 func buildContentType(mime, charset string) string {
 	if mime == "" {
-		mime = mimetype.DefaultMimeType
+		mime = mimetype.DefaultMimetype
 	}
 	if charset == "" {
 		charset = utfName

@@ -13,11 +13,11 @@ import (
 	"github.com/issue9/middleware/compress/accept"
 )
 
-// DefaultMimeType 默认的媒体类型，在不能获取输入和输出的媒体类型时，
+// DefaultMimetype 默认的媒体类型，在不能获取输入和输出的媒体类型时，
 // 会采用此值作为其默认值。
 //
 // 若编码函数中指定该类型的函数，则会使用该编码优先匹配 */* 等格式的请求。
-const DefaultMimeType = "application/octet-stream"
+const DefaultMimetype = "application/octet-stream"
 
 var (
 	marshals   = make([]*marshaler, 0, 10)
@@ -30,9 +30,9 @@ var (
 	// 在 AddCharset、Addmarshal 和 AddUnmarshal 中会返回此错误。
 	ErrExists = errors.New("该名称的项目已经存在")
 
-	// ErrInvalidMimeType 无效的 mimetype 值，一般为 content-type 或
+	// ErrInvalidMimetype 无效的 mimetype 值，一般为 content-type 或
 	// Accept 等报头指定的 mimetype 值无效。
-	ErrInvalidMimeType = errors.New("mimetype 无效")
+	ErrInvalidMimetype = errors.New("mimetype 无效")
 )
 
 // Nil 表示向客户端输出 nil 值。
@@ -59,6 +59,22 @@ type (
 	}
 )
 
+// Mimetypes 管理 mimetype 解析函数的对象。
+type Mimetypes interface {
+	Marshal(header string) (string, MarshalFunc, error)
+
+	Unmarshal(name string) (UnmarshalFunc, error)
+
+	AddMarshal(name string, m MarshalFunc) error
+	AddMarshals(ms map[string]MarshalFunc) error
+
+	// AddUnmarshals 添加多个编码函数
+	AddUnmarshals(ms map[string]UnmarshalFunc) error
+
+	// AddUnmarshal 添加编码函数
+	AddUnmarshal(name string, m UnmarshalFunc) error
+}
+
 // Unmarshal 查找指定名称的 UnmarshalFunc
 func Unmarshal(name string) (UnmarshalFunc, error) {
 	var unmarshal *unmarshaler
@@ -69,7 +85,7 @@ func Unmarshal(name string) (UnmarshalFunc, error) {
 		}
 	}
 	if unmarshal == nil {
-		return nil, ErrInvalidMimeType
+		return nil, ErrInvalidMimetype
 	}
 
 	return unmarshal.f, nil
@@ -93,7 +109,7 @@ func Marshal(header string) (string, MarshalFunc, error) {
 		if m := findMarshal("*/*"); m != nil {
 			return m.name, m.f, nil
 		}
-		return "", nil, ErrInvalidMimeType
+		return "", nil, ErrInvalidMimetype
 	}
 
 	accepts, err := accept.Parse(header)
@@ -107,7 +123,7 @@ func Marshal(header string) (string, MarshalFunc, error) {
 		}
 	}
 
-	return "", nil, ErrInvalidMimeType
+	return "", nil, ErrInvalidMimetype
 }
 
 // AddMarshals 添加多个编码函数
@@ -124,7 +140,7 @@ func AddMarshals(ms map[string]MarshalFunc) error {
 // AddMarshal 添加编码函数
 func AddMarshal(name string, m MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") || name == "*" {
-		return ErrInvalidMimeType
+		return ErrInvalidMimetype
 	}
 
 	for _, mt := range marshals {
@@ -139,11 +155,11 @@ func AddMarshal(name string, m MarshalFunc) error {
 	})
 
 	sort.SliceStable(marshals, func(i, j int) bool {
-		if marshals[i].name == DefaultMimeType {
+		if marshals[i].name == DefaultMimetype {
 			return true
 		}
 
-		if marshals[j].name == DefaultMimeType {
+		if marshals[j].name == DefaultMimetype {
 			return false
 		}
 
@@ -167,7 +183,7 @@ func AddUnmarshals(ms map[string]UnmarshalFunc) error {
 // AddUnmarshal 添加编码函数
 func AddUnmarshal(name string, m UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
-		return ErrInvalidMimeType
+		return ErrInvalidMimetype
 	}
 
 	for _, mt := range unmarshals {
@@ -182,11 +198,11 @@ func AddUnmarshal(name string, m UnmarshalFunc) error {
 	})
 
 	sort.SliceStable(unmarshals, func(i, j int) bool {
-		if unmarshals[i].name == DefaultMimeType {
+		if unmarshals[i].name == DefaultMimetype {
 			return true
 		}
 
-		if unmarshals[j].name == DefaultMimeType {
+		if unmarshals[j].name == DefaultMimetype {
 			return false
 		}
 

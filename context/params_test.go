@@ -11,12 +11,12 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
-	"github.com/issue9/web/mimetype/encodingtest"
+	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {
 	r.Header.Set("Accept", "*/*")
-	ctx := newContext(w, r, encodingtest.TextMarshal, nil, encodingtest.TextUnmarshal, nil)
+	ctx := newContext(w, r, mimetypetest.TextMarshal, nil, mimetypetest.TextUnmarshal, nil)
 
 	return ctx
 }

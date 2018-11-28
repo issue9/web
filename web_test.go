@@ -13,8 +13,8 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/encodingtest"
 	"github.com/issue9/web/mimetype/gob"
+	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
 var testdata = ""
@@ -24,15 +24,15 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	if err := mimetype.AddMarshal("text/plain", encodingtest.TextMarshal); err != nil {
+	if err := mimetype.AddMarshal("text/plain", mimetypetest.TextMarshal); err != nil {
 		panic(err)
 	}
 
-	if err := mimetype.AddMarshal(mimetype.DefaultMimeType, gob.Marshal); err != nil {
+	if err := mimetype.AddMarshal(mimetype.DefaultMimetype, gob.Marshal); err != nil {
 		panic(err)
 	}
 
-	if err := mimetype.AddUnmarshal(mimetype.DefaultMimeType, gob.Unmarshal); err != nil {
+	if err := mimetype.AddUnmarshal(mimetype.DefaultMimetype, gob.Unmarshal); err != nil {
 		panic(err)
 	}
 
@@ -83,13 +83,13 @@ func TestNewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimeType)
+	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	ctx := NewContext(w, r)
 	a.NotNil(ctx).
 		Equal(ctx.Response, w).
 		Equal(ctx.Request, r).
 		Equal(ctx.OutputCharsetName, "utf-8").
-		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimeType)
+		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
 }
 
 func TestModules(t *testing.T) {
