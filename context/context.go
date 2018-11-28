@@ -56,8 +56,8 @@ type Context struct {
 
 	// 保存着从 http.Request.Body 中获取的内容。
 	//
-	// body 会在第一次从 http.Request.Body 中读取之后作缓存。
-	// readed 会对是否已经从 http.Request.Body 读取作标签。
+	// body 用于缓存从 http.Request.Body 中读取的内容；
+	// readed 表示是否需要从 http.Request.Body 读取内容。
 	body   []byte
 	readed bool
 }
@@ -85,7 +85,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeType, marshal, err := encoding.AcceptMimeType(header)
+	outputMimeTypeName, marshal, err := encoding.AcceptMimeType(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -99,7 +99,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		Response:           w,
 		Request:            r,
 		OutputMimeType:     marshal,
-		OutputMimeTypeName: outputMimeType,
+		OutputMimeTypeName: outputMimeTypeName,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
