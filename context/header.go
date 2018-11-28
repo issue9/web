@@ -19,6 +19,8 @@ import (
 	"github.com/issue9/web/encoding"
 )
 
+const utfName = "utf-8"
+
 var errInvalidCharset = errors.New("无效的字符集")
 
 // 指定的编码是否不需要任何额外操作
@@ -36,7 +38,7 @@ func charsetIsNop(enc xencoding.Encoding) bool {
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
 func acceptCharset(header string) (name string, enc xencoding.Encoding, err error) {
 	if header == "" || header == "*" {
-		return encoding.DefaultCharset, nil, nil
+		return utfName, nil, nil
 	}
 
 	accepts, err := accept.Parse(header)
@@ -92,13 +94,13 @@ func parseContentType(v string) (mimetype, charset string, err error) {
 	v = strings.TrimSpace(v)
 
 	if v == "" {
-		return encoding.DefaultMimeType, encoding.DefaultCharset, nil
+		return encoding.DefaultMimeType, utfName, nil
 	}
 
 	index := strings.IndexByte(v, ';')
 	switch {
 	case index < 0: // 只有编码
-		return strings.ToLower(v), encoding.DefaultCharset, nil
+		return strings.ToLower(v), utfName, nil
 	case index == 0: // mimetype 不可省略
 		return "", "", encoding.ErrInvalidMimeType
 	}
@@ -118,5 +120,19 @@ func parseContentType(v string) (mimetype, charset string, err error) {
 		return mimetype, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
 	}
 
-	return mimetype, encoding.DefaultCharset, nil
+	return mimetype, utfName, nil
+}
+
+// 生成一个 content-type
+//
+// 若值为空，则会使用默认值代替
+func buildContentType(mimetype, charset string) string {
+	if mimetype == "" {
+		mimetype = encoding.DefaultMimeType
+	}
+	if charset == "" {
+		charset = utfName
+	}
+
+	return mimetype + "; charset=" + charset
 }

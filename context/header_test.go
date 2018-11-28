@@ -17,20 +17,20 @@ import (
 func TestAcceptCharset(t *testing.T) {
 	a := assert.New(t)
 
-	name, enc, err := acceptCharset(encoding.DefaultCharset)
+	name, enc, err := acceptCharset(utfName)
 	a.NotError(err).
-		Equal(name, encoding.DefaultCharset).
+		Equal(name, utfName).
 		True(charsetIsNop(enc))
 
 	name, enc, err = acceptCharset("")
 	a.NotError(err).
-		Equal(name, encoding.DefaultCharset).
+		Equal(name, utfName).
 		True(charsetIsNop(enc))
 
 	// * 表示采用默认的编码
 	name, enc, err = acceptCharset("*")
 	a.NotError(err).
-		Equal(name, encoding.DefaultCharset).
+		Equal(name, utfName).
 		True(charsetIsNop(enc))
 
 	name, enc, err = acceptCharset("gbk")
@@ -82,29 +82,38 @@ func TestParseContentType(t *testing.T) {
 	a := assert.New(t)
 
 	e, c, err := parseContentType("")
-	a.NotError(err).Equal(e, encoding.DefaultMimeType).Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, encoding.DefaultMimeType).Equal(c, utfName)
 
 	e, c, err = parseContentType(" ")
-	a.NotError(err).Equal(e, encoding.DefaultMimeType).Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, encoding.DefaultMimeType).Equal(c, utfName)
 
 	e, c, err = parseContentType(" ;;;")
 	a.Error(err).Empty(e).Empty(c)
 
 	e, c, err = parseContentType("application/XML")
-	a.NotError(err).Equal(e, "application/xml").Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, "application/xml").Equal(c, utfName)
 
 	e, c, err = parseContentType("application/XML;")
-	a.NotError(err).Equal(e, "application/xml").Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, "application/xml").Equal(c, utfName)
 
 	e, c, err = parseContentType("text/html;charset=utf-8")
 	a.NotError(err).Equal(e, "text/html").Equal(c, "utf-8")
 
 	e, c, err = parseContentType(`Text/HTML;Charset="gbk"`)
-	a.NotError(err).Equal(e, "text/html").Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, "text/html").Equal(c, utfName)
 
 	e, c, err = parseContentType(`Text/HTML; charset="gbk"`)
 	a.NotError(err).Equal(e, "text/html").Equal(c, "gbk")
 
 	e, c, err = parseContentType(`multipart/form-data; boundary=AaB03x`)
-	a.NotError(err).Equal(e, "multipart/form-data").Equal(c, encoding.DefaultCharset)
+	a.NotError(err).Equal(e, "multipart/form-data").Equal(c, utfName)
+}
+
+func TestBuildContentType(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal("application/xml; charset=utf16", buildContentType("application/xml", "utf16"))
+	a.Equal("application/xml; charset="+utfName, buildContentType("application/xml", ""))
+	a.Equal(encoding.DefaultMimeType+"; charset="+utfName, buildContentType("", ""))
+	a.Equal("application/xml; charset="+utfName, buildContentType("application/xml", ""))
 }

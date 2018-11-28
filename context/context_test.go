@@ -93,7 +93,7 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", encoding.DefaultMimeType)
-	r.Header.Set("content-type", encoding.BuildContentType(encodingtest.MimeType, "utf-"))
+	r.Header.Set("content-type", buildContentType(encodingtest.MimeType, "utf-"))
 	a.Panic(func() {
 		New(w, r, errlog)
 	})
@@ -140,7 +140,7 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", encoding.DefaultMimeType)
-	r.Header.Set("content-type", encoding.BuildContentType(encodingtest.MimeType, "utf-8"))
+	r.Header.Set("content-type", buildContentType(encodingtest.MimeType, "utf-8"))
 	a.NotPanic(func() {
 		ctx = New(w, r, errlog)
 	})

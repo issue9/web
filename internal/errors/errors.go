@@ -8,8 +8,6 @@ package errors
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/issue9/web/encoding"
 )
 
 var errorHandlers = map[int]func(http.ResponseWriter, int){}
@@ -37,7 +35,7 @@ func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
 }
 
 // defaultRender 用到的 content-type 类型
-var errorContentType = encoding.BuildContentType("text/plain", "UTF-8")
+const errorContentType = "text/plain; charset=UTF-8"
 
 // 仅向客户端输出状态码。
 func defaultRender(w http.ResponseWriter, status int) {

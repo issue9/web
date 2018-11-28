@@ -182,7 +182,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if !contentTypeFound {
-		ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
+		ct := buildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 

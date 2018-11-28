@@ -61,6 +61,14 @@ func BenchmarkParseContentType(b *testing.B) {
 	}
 }
 
+func BenchmarkBuildContentType(b *testing.B) {
+	a := assert.New(b)
+
+	for i := 0; i < b.N; i++ {
+		a.True(len(buildContentType(encoding.DefaultMimeType, utfName)) > 0)
+	}
+}
+
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
 
@@ -82,7 +90,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
+		r.Header.Set("Content-type", buildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
@@ -114,7 +122,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
+		r.Header.Set("Content-type", buildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
@@ -152,7 +160,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", encoding.BuildContentType(encoding.DefaultMimeType, "gbk"))
+		r.Header.Set("Content-type", buildContentType(encoding.DefaultMimeType, "gbk"))
 		r.Header.Set("Accept", encoding.DefaultMimeType)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := New(w, r, nil)
