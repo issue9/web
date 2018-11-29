@@ -7,7 +7,6 @@ package web
 import (
 	"net/http"
 
-	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 
 	"github.com/issue9/web/context"
@@ -60,7 +59,7 @@ func SetCompress(name string, f compress.WriterFunc) {
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, logs.ERROR())
+	return defaultApp.NewContext(w, r)
 }
 
 // NewResult 生成一个 *result.Result 对象

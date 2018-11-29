@@ -6,7 +6,7 @@
 package app
 
 import (
-	"context"
+	stdctx "context"
 	"net/http"
 	"strconv"
 
@@ -14,8 +14,10 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
 
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app/modules"
 	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )
 
@@ -28,6 +30,7 @@ type App struct {
 	server      *http.Server
 
 	modules *modules.Modules
+	mt      *mimetype.Mimetypes
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -47,6 +50,7 @@ func New(conf *webconfig.WebConfig) (*App, error) {
 		mux:       mux,
 		closed:    make(chan bool, 1),
 		modules:   ms,
+		mt:        mimetype.New(),
 	}, nil
 }
 
@@ -164,6 +168,11 @@ func (app *App) Close() error {
 	return nil
 }
 
+// NewContext 声明 context.Context 实例
+func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
+	return context.New(w, r, app.mt, logs.ERROR())
+}
+
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
@@ -178,7 +187,7 @@ func (app *App) Shutdown() error {
 		return app.close()
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
+	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.webConfig.ShutdownTimeout)
 	defer func() {
 		cancel()
 		app.closed <- true

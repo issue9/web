@@ -68,12 +68,14 @@ type Context struct {
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
 //
+// mt 为 mimetype.Mimetypes 对象，用于从中查找指定名称的 mimetype 转码函数。
+//
 // errlog 为错误信息输出通道，在 New() 非正常退出时，除了输出一个 HTTP 的状态码之外，
 // 若还指定了 errlog，则还会将错误信息输出到该通道上，为 nil，则不输出任何错误信息。
 //
-// 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
-// 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
-func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
+// NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
+// 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
+func New(w http.ResponseWriter, r *http.Request, mt *mimetype.Mimetypes, errlog *log.Logger) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
@@ -86,7 +88,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := mimetype.Marshal(header)
+	outputMimeTypeName, marshal, err := mt.Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -111,7 +113,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = mimetype.Unmarshal(encName)
+		ctx.InputMimeType, err = mt.Unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)

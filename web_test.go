@@ -24,17 +24,10 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	if err := mimetype.AddMarshal("text/plain", mimetypetest.TextMarshal); err != nil {
-		panic(err)
-	}
-
-	if err := mimetype.AddMarshal(mimetype.DefaultMimetype, gob.Marshal); err != nil {
-		panic(err)
-	}
-
-	if err := mimetype.AddUnmarshal(mimetype.DefaultMimetype, gob.Unmarshal); err != nil {
-		panic(err)
-	}
+	mt := mimetype.New()
+	mt.AddMarshal("text/plain", mimetypetest.TextMarshal)
+	mt.AddMarshal(mimetype.DefaultMimetype, gob.Marshal)
+	mt.AddUnmarshal(mimetype.DefaultMimetype, gob.Unmarshal)
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")

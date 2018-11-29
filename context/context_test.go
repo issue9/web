@@ -29,9 +29,6 @@ func init() {
 	message.SetString(language.English, "test", "english")
 }
 
-var logwriter = new(bytes.Buffer)
-var errlog = log.New(logwriter, "", 0)
-
 func newContext(w http.ResponseWriter,
 	r *http.Request,
 	outputMimeType mimetype.MarshalFunc,
@@ -52,13 +49,18 @@ func newContext(w http.ResponseWriter,
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
+	mt := mimetype.New()
+	mt.AddMarshal(mimetype.DefaultMimetype, mimetypetest.TextMarshal)
+	mt.AddUnmarshal(mimetype.DefaultMimetype, mimetypetest.TextUnmarshal)
+	logwriter := new(bytes.Buffer)
+	errlog := log.New(logwriter, "", 0)
 
 	// 错误的 accept
 	logwriter.Reset()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
 	a.Panic(func() {
-		New(w, r, nil)
+		New(w, r, mt, nil)
 	})
 	a.Equal(logwriter.Len(), 0)
 
@@ -68,7 +70,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
-		New(w, r, errlog)
+		New(w, r, mt, errlog)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -76,8 +78,8 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
-	a.NotPanic(func() {
-		New(w, r, errlog)
+	a.Panic(func() {
+		New(w, r, mt, errlog)
 	})
 
 	// 错误的 content-type,有输入内容
@@ -85,7 +87,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r, errlog)
+		New(w, r, mt, errlog)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -95,7 +97,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.MimeType, "utf-"))
 	a.Panic(func() {
-		New(w, r, errlog)
+		New(w, r, mt, errlog)
 	})
 
 	// 错误的 Accept-Language
@@ -104,7 +106,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	a.Panic(func() {
-		New(w, r, errlog)
+		New(w, r, mt, errlog)
 	})
 
 	// 正常，指定 Accept-Language
@@ -114,7 +116,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	var ctx *Context
 	a.NotPanic(func() {
-		ctx = New(w, r, errlog)
+		ctx = New(w, r, mt, errlog)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -128,7 +130,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	a.NotPanic(func() {
-		ctx = New(w, r, errlog)
+		ctx = New(w, r, mt, errlog)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -136,13 +138,13 @@ func TestNew(t *testing.T) {
 		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
-	a.NotError(mimetype.AddUnmarshal(mimetypetest.MimeType, mimetypetest.TextUnmarshal))
+	a.NotError(mt.AddUnmarshal(mimetypetest.MimeType, mimetypetest.TextUnmarshal))
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.MimeType, "utf-8"))
 	a.NotPanic(func() {
-		ctx = New(w, r, errlog)
+		ctx = New(w, r, mt, errlog)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
