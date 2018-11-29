@@ -204,3 +204,23 @@ func (app *App) close() error {
 func (app *App) RegisterOnShutdown(f func()) {
 	app.server.RegisterOnShutdown(f)
 }
+
+// AddMarshals 添加多个编码函数
+func (app *App) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+	return app.mt.AddMarshals(ms)
+}
+
+// AddMarshal 添加编码函数
+func (app *App) AddMarshal(name string, mf mimetype.MarshalFunc) error {
+	return app.mt.AddMarshal(name, mf)
+}
+
+// AddUnmarshals 添加多个编码函数
+func (app *App) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+	return app.mt.AddUnmarshals(ms)
+}
+
+// AddUnmarshal 添加编码函数
+func (app *App) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+	return app.mt.AddUnmarshal(name, mm)
+}

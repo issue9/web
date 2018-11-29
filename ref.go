@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/internal/errors"
+	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
@@ -65,4 +66,24 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *Result {
 	return &result.Result{Code: code}
+}
+
+// AddMarshals 添加多个编码函数
+func AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+	return defaultApp.AddMarshals(ms)
+}
+
+// AddMarshal 添加编码函数
+func AddMarshal(name string, mf mimetype.MarshalFunc) error {
+	return defaultApp.AddMarshal(name, mf)
+}
+
+// AddUnmarshals 添加多个编码函数
+func AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+	return defaultApp.AddUnmarshals(ms)
+}
+
+// AddUnmarshal 添加编码函数
+func AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+	return defaultApp.AddUnmarshal(name, mm)
 }
