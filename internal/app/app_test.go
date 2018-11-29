@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/internal/app/webconfig"
 )
 
 const timeout = 300 * time.Microsecond
@@ -22,39 +20,7 @@ var (
 	}
 
 	h202 = http.HandlerFunc(f202)
-
-	timeoutHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(timeout)
-		w.WriteHeader(http.StatusAccepted)
-
-	})
-
-	conf = &webconfig.WebConfig{
-		Debug:           true,
-		Domain:          "localhost",
-		Port:            8082,
-		ReadTimeout:     3 * time.Second,
-		ShutdownTimeout: 300 * time.Millisecond,
-		AllowedDomains:  []string{"127.0.0.1"},
-		Static: map[string]string{
-			"/client": "./testdata",
-		},
-		Headers: map[string]string{
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "POST,GET,PUT,PATCH,OPTIONS,DELETE",
-			"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept,X-Requested-With",
-			"Server":                       "Windows/IIS7",
-		},
-	}
 )
-
-func TestMain(m *testing.M) {
-	if err := conf.Sanitize(); err != nil {
-		panic(err)
-	}
-
-	m.Run()
-}
 
 func TestApp_SetMiddleware(t *testing.T) {
 	a := assert.New(t)
@@ -64,9 +30,9 @@ func TestApp_SetMiddleware(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := New(conf)
-	app.SetMiddlewares(m)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
+	app.SetMiddlewares(m)
 
 	app.mux.GetFunc("/middleware", f202)
 	go func() {
@@ -85,7 +51,7 @@ func TestApp_SetMiddleware(t *testing.T) {
 
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
-	app, err := New(conf)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
@@ -95,7 +61,7 @@ func TestApp_URL(t *testing.T) {
 
 func TestApp_Handler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New(conf)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	m1 := app.NewModule("m1", "m1 desc", "m2")
@@ -116,7 +82,7 @@ func TestApp_Handler(t *testing.T) {
 
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
-	app, err := New(conf)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	m1 := app.NewModule("m1", "m1 desc", "m2")
@@ -151,7 +117,7 @@ func TestApp_Serve(t *testing.T) {
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app, err := New(conf)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
@@ -184,10 +150,8 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_shutdown(t *testing.T) {
 	a := assert.New(t)
-	cfg := &webconfig.WebConfig{}
-	*cfg = *conf
-	cfg.ShutdownTimeout = 0
-	app, err := New(cfg)
+	app, err := New("./testdata")
+	app.webConfig.ShutdownTimeout = 0
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
@@ -222,7 +186,7 @@ func TestApp_shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := New(conf)
+	app, err := New("./testdata")
 	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)

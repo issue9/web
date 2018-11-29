@@ -74,9 +74,14 @@ func (mgr *Manager) SetUnmarshal(m UnmarshalFunc, ext ...string) error {
 	return nil
 }
 
+// File 获取文件路径，相对于当前配置目录
+func (mgr *Manager) File(path string) string {
+	return filepath.Join(mgr.dir, path)
+}
+
 // LoadFile 加载指定的配置文件内容到 v 中
 func (mgr *Manager) LoadFile(path string, v interface{}) error {
-	r, err := os.Open(filepath.Join(mgr.dir, path))
+	r, err := os.Open(mgr.File(path))
 	if err != nil {
 		return err
 	}
