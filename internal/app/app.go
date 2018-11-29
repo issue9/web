@@ -7,11 +7,13 @@ package app
 
 import (
 	stdctx "context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/context"
@@ -29,8 +31,9 @@ type App struct {
 	mux         *mux.Mux
 	server      *http.Server
 
-	modules *modules.Modules
-	mt      *mimetype.Mimetypes
+	modules    *modules.Modules
+	mt         *mimetype.Mimetypes
+	compresses map[string]compress.WriterFunc
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -51,6 +54,10 @@ func New(conf *webconfig.WebConfig) (*App, error) {
 		closed:    make(chan bool, 1),
 		modules:   ms,
 		mt:        mimetype.New(),
+		compresses: map[string]compress.WriterFunc{
+			"gizp":    compress.NewGzip,
+			"deflate": compress.NewDeflate,
+		},
 	}, nil
 }
 
@@ -223,4 +230,19 @@ func (app *App) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 // AddUnmarshal 添加编码函数
 func (app *App) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 	return app.mt.AddUnmarshal(name, mm)
+}
+
+// AddCompress 添加压缩方法。框架本身已经指定了 gzip 和 deflate 两种方法。
+func (app *App) AddCompress(name string, f compress.WriterFunc) error {
+	if _, found := app.compresses[name]; found {
+		return fmt.Errorf("已经存在同名 %s 的压缩函数", name)
+	}
+
+	app.compresses[name] = f
+	return nil
+}
+
+// SetCompress 修改或是添加压缩方法。
+func (app *App) SetCompress(name string, f compress.WriterFunc) {
+	app.compresses[name] = f
 }
