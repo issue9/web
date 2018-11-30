@@ -45,7 +45,7 @@ type App struct {
 	compresses    map[string]compress.WriterFunc
 	configs       *config.Manager
 	logs          *logs.Logs
-	errorHandlers map[int]func(http.ResponseWriter, int)
+	errorHandlers map[int]ErrorHandler
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -91,7 +91,7 @@ func New(dir string) (*App, error) {
 		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          l,
-		errorHandlers: map[int]func(http.ResponseWriter, int){},
+		errorHandlers: map[int]ErrorHandler{},
 		compresses: map[string]compress.WriterFunc{
 			"gizp":    compress.NewGzip,
 			"deflate": compress.NewDeflate,

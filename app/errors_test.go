@@ -43,7 +43,7 @@ func TestApp_SetErrorHandler(t *testing.T) {
 	a.True(found).Nil(f)
 
 	app.SetErrorHandler(testRenderError, 500, 502)
-	a.Equal(app.errorHandlers[500], testRenderError)
+	a.Equal(app.errorHandlers[500], ErrorHandler(testRenderError))
 }
 
 func TestApp_RenderError(t *testing.T) {

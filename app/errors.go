@@ -13,8 +13,11 @@ import (
 	"github.com/issue9/middleware/recovery"
 )
 
+// ErrorHandler 错误处理函数
+type ErrorHandler func(http.ResponseWriter, int)
+
 // AddErrorHandler 添加针对特写状态码的错误处理函数
-func (app *App) AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
+func (app *App) AddErrorHandler(f ErrorHandler, status ...int) error {
 	for _, s := range status {
 		if _, found := app.errorHandlers[s]; found {
 			return fmt.Errorf("状态码 %d 已经存在", s)
@@ -29,7 +32,7 @@ func (app *App) AddErrorHandler(f func(http.ResponseWriter, int), status ...int)
 // SetErrorHandler 设置指定状态码对应的处理函数
 //
 // 有则修改，没有则添加
-func (app *App) SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
+func (app *App) SetErrorHandler(f ErrorHandler, status ...int) {
 	for _, s := range status {
 		app.errorHandlers[s] = f
 	}
