@@ -15,8 +15,8 @@ import (
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
 
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/mimetype/form"
 )
 

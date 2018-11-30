@@ -21,8 +21,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/internal/app/modules"
-	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/modules"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )

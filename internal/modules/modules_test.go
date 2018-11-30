@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/webconfig"
 )
 
 var muxtest = mux.New(false, false, nil, nil)

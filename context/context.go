@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	a "github.com/issue9/web/internal/app"
+	a "github.com/issue9/web/app"
 	"github.com/issue9/web/mimetype"
 )
 

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/app"
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/mimetypetest"
 )
@@ -50,7 +50,7 @@ func newContext(a *assert.Assertion,
 }
 
 func newApp(a *assert.Assertion) *app.App {
-	app, err := app.New("../internal/app/testdata")
+	app, err := app.New("../testdata")
 	a.NotError(err).NotNil(app)
 	app.AddMarshal(mimetype.DefaultMimetype, mimetypetest.TextMarshal)
 	app.AddUnmarshal(mimetype.DefaultMimetype, mimetypetest.TextUnmarshal)

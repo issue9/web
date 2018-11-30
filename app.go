@@ -16,9 +16,9 @@ import (
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )

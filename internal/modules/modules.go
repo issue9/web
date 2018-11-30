@@ -12,8 +12,8 @@ import (
 
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/app/modules/dep"
-	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/modules/dep"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/module"
 )
 

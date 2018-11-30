@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 
-	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/webconfig"
 )
 
 const (

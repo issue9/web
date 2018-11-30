@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/middleware"
 
-	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/webconfig"
 )
 
 func TestApp_buildMiddlewares(t *testing.T) {
