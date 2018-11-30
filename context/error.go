@@ -5,8 +5,7 @@
 package context
 
 import (
-	"github.com/issue9/utils"
-
+	"fmt"
 	"github.com/issue9/web/internal/errors"
 )
 
@@ -16,8 +15,7 @@ import (
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
-		//ctx.app.Critical(traceStack(2, v...))
-		ctx.app.Critical(v...)
+		ctx.app.CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
 	errors.Render(ctx.Response, status)
@@ -29,8 +27,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
-		//ctx.app.Error(traceStack(2, v...))
-		ctx.app.Error(v...)
+		ctx.app.ERROR().Output(2, fmt.Sprint(v...))
 	}
 
 	errors.Render(ctx.Response, status)
@@ -42,8 +39,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		//ctx.app.Criticalf(traceStack(2, v...))
-		ctx.app.Criticalf(format, v...)
+		ctx.app.CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
 	errors.Render(ctx.Response, status)
@@ -55,8 +51,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		//ctx.app.Errorf(traceStack(2, v...))
-		ctx.app.Errorf(format, v...)
+		ctx.app.ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
 	errors.Render(ctx.Response, status)
@@ -73,13 +68,4 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
 	errors.Exit(status)
-}
-
-func traceStack(level int, messages ...interface{}) string {
-	msg, err := utils.TraceStack(level, messages...)
-	if err != nil {
-		panic(err)
-	}
-
-	return msg
 }

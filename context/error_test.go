@@ -52,7 +52,7 @@ func TestContext_Error(t *testing.T) {
 
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
+	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
 }
 
 func TestContext_Critical(t *testing.T) {
@@ -68,7 +68,7 @@ func TestContext_Critical(t *testing.T) {
 
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
+	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
 }
 
 func TestContext_Errorf(t *testing.T) {
