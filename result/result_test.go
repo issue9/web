@@ -16,7 +16,7 @@ import (
 	xmessage "golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/errors"
+	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/mimetype/form"
 )
 
@@ -59,6 +59,9 @@ func TestResult_SetDetail(t *testing.T) {
 
 func TestResult_Render_Exit(t *testing.T) {
 	a := assert.New(t)
+	app, err := app.New("../testdata")
+	a.NotError(err).NotNil(app)
+
 	a.NotError(NewMessages(map[int]string{
 		http.StatusForbidden * 1000:    "400", // 需要与 resultRenderHandler 中的错误代码值相同
 		http.StatusUnauthorized * 1000: "401", // 需要与 resultRenderHandler 中的错误代码值相同
@@ -89,7 +92,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	}
 
 	h := http.HandlerFunc(resultRenderHandler)
-	srv := rest.NewServer(t, recovery.New(h, errors.Recovery(false)), nil)
+	srv := rest.NewServer(t, recovery.New(h, app.Recovery(false)), nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").

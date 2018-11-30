@@ -18,8 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/internal/app"
-	"github.com/issue9/web/internal/errors"
+	a "github.com/issue9/web/internal/app"
 	"github.com/issue9/web/mimetype"
 )
 
@@ -63,7 +62,7 @@ type Context struct {
 	body   []byte
 	readed bool
 
-	app *app.App
+	app *a.App
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -78,14 +77,14 @@ type Context struct {
 //
 // NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
 // 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
-func New(w http.ResponseWriter, r *http.Request, app *app.App) *Context {
+func New(w http.ResponseWriter, r *http.Request, app *a.App) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
 		app.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		errors.Exit(status)
+		a.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")

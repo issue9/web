@@ -8,23 +8,25 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/middleware"
 
 	"github.com/issue9/web/internal/app/webconfig"
-	"github.com/issue9/web/internal/errors"
 )
 
 func TestApp_buildMiddlewares(t *testing.T) {
+	a := assert.New(t)
+	app, err := New("./testdata")
+	a.NotError(err).NotNil(app)
+
 	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
 	})
 
 	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		errors.Exit(http.StatusNotAcceptable)
+		Exit(http.StatusNotAcceptable)
 	})
-
-	app := &App{}
 
 	app.buildMiddlewares(&webconfig.WebConfig{})
 	h := middleware.Handler(panicFunc, app.middlewares...)
@@ -35,7 +37,7 @@ func TestApp_buildMiddlewares(t *testing.T) {
 		Do().
 		Status(http.StatusInternalServerError)
 
-		// 触发 panic，调试模式
+	// 触发 panic，调试模式
 	app.buildMiddlewares(&webconfig.WebConfig{Debug: true})
 	h = middleware.Handler(panicFunc, app.middlewares...)
 	srv = rest.NewServer(t, h, nil)

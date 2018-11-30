@@ -192,3 +192,19 @@ func AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 func AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 	return defaultApp.AddUnmarshal(name, mm)
 }
+
+// AddErrorHandler 添加对错误状态码的处理方式。
+//
+// status 表示状态码，如果为 0，则表示所有未指定的状态码。
+func AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
+	return defaultApp.AddErrorHandler(f, status...)
+}
+
+// SetErrorHandler 设置指定状态码对应的处理函数
+//
+// 有则修改，没有则添加
+//
+// status 表示状态码，如果为 0，则表示所有未指定的状态码。
+func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
+	defaultApp.SetErrorHandler(f, status...)
+}

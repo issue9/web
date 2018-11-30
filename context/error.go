@@ -6,7 +6,8 @@ package context
 
 import (
 	"fmt"
-	"github.com/issue9/web/internal/errors"
+
+	"github.com/issue9/web/internal/app"
 )
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -18,7 +19,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 		ctx.app.CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
-	errors.Render(ctx.Response, status)
+	ctx.app.RenderError(ctx.Response, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -30,7 +31,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 		ctx.app.ERROR().Output(2, fmt.Sprint(v...))
 	}
 
-	errors.Render(ctx.Response, status)
+	ctx.app.RenderError(ctx.Response, status)
 }
 
 // Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -42,7 +43,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 		ctx.app.CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	errors.Render(ctx.Response, status)
+	ctx.app.RenderError(ctx.Response, status)
 }
 
 // Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -54,7 +55,7 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 		ctx.app.ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	errors.Render(ctx.Response, status)
+	ctx.app.RenderError(ctx.Response, status)
 }
 
 // Exit 以指定的状态码退出当前协程
@@ -67,5 +68,5 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
-	errors.Exit(status)
+	app.Exit(status)
 }

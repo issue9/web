@@ -5,13 +5,11 @@
 package web
 
 import (
-	"net/http"
 	"runtime"
 	"strings"
 
 	"github.com/issue9/version"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/errors"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 )
@@ -35,22 +33,6 @@ type (
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module
 )
-
-// AddErrorHandler 添加对错误状态码的处理方式。
-//
-// status 表示状态码，如果为 0，则表示所有未指定的状态码。
-func AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
-	return errors.AddErrorHandler(f, status...)
-}
-
-// SetErrorHandler 设置指定状态码对应的处理函数
-//
-// 有则修改，没有则添加
-//
-// status 表示状态码，如果为 0，则表示所有未指定的状态码。
-func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
-	errors.SetErrorHandler(f, status...)
-}
 
 // NewResult 生成一个 *result.Result 对象
 func NewResult(code int) *Result {

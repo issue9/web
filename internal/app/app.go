@@ -40,11 +40,12 @@ type App struct {
 	mux         *mux.Mux
 	server      *http.Server
 
-	modules    *modules.Modules
-	mt         *mimetype.Mimetypes
-	compresses map[string]compress.WriterFunc
-	configs    *config.Manager
-	logs       *logs.Logs
+	modules       *modules.Modules
+	mt            *mimetype.Mimetypes
+	compresses    map[string]compress.WriterFunc
+	configs       *config.Manager
+	logs          *logs.Logs
+	errorHandlers map[int]func(http.ResponseWriter, int)
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -83,13 +84,14 @@ func New(dir string) (*App, error) {
 	}
 
 	return &App{
-		webConfig: conf,
-		mux:       mux,
-		closed:    make(chan bool, 1),
-		modules:   ms,
-		mt:        mimetype.New(),
-		configs:   mgr,
-		logs:      l,
+		webConfig:     conf,
+		mux:           mux,
+		closed:        make(chan bool, 1),
+		modules:       ms,
+		mt:            mimetype.New(),
+		configs:       mgr,
+		logs:          l,
+		errorHandlers: map[int]func(http.ResponseWriter, int){},
 		compresses: map[string]compress.WriterFunc{
 			"gizp":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
