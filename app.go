@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -65,7 +66,7 @@ func SetMiddlewares(m ...middleware.Middleware) {
 
 // IsDebug 是否处在调试模式
 func IsDebug() bool {
-	return defaultApp.Debug()
+	return defaultApp.IsDebug()
 }
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
@@ -169,7 +170,7 @@ func SetCompress(name string, f compress.WriterFunc) {
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return defaultApp.NewContext(w, r)
+	return context.New(w, r, defaultApp)
 }
 
 // AddMarshals 添加多个编码函数

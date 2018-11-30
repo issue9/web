@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
@@ -19,6 +18,8 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
+	"github.com/issue9/web/internal/app"
+	"github.com/issue9/web/internal/errors"
 	"github.com/issue9/web/mimetype"
 )
 
@@ -61,6 +62,8 @@ type Context struct {
 	// readed 表示是否需要从 http.Request.Body 读取内容。
 	body   []byte
 	readed bool
+
+	app *app.App
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -75,20 +78,18 @@ type Context struct {
 //
 // NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
 // 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
-func New(w http.ResponseWriter, r *http.Request, mt *mimetype.Mimetypes, errlog *log.Logger) *Context {
+func New(w http.ResponseWriter, r *http.Request, app *app.App) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
-		if errlog != nil {
-			errlog.Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		}
-		Exit(status)
+		app.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		errors.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := mt.Marshal(header)
+	outputMimeTypeName, marshal, err := app.MimetypeMarshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -107,13 +108,15 @@ func New(w http.ResponseWriter, r *http.Request, mt *mimetype.Mimetypes, errlog 
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      message.NewPrinter(tag),
+
+		app: app,
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = mt.Unmarshal(encName)
+		ctx.InputMimeType, err = app.MimetypeUnmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)

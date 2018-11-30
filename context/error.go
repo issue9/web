@@ -5,10 +5,6 @@
 package context
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/issue9/logs/v2"
 	"github.com/issue9/utils"
 
 	"github.com/issue9/web/internal/errors"
@@ -19,7 +15,12 @@ import (
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Critical(status int, v ...interface{}) {
-	throwCritical(3, ctx.Response, status, v...)
+	if len(v) > 0 {
+		//ctx.app.Critical(traceStack(2, v...))
+		ctx.app.Critical(v...)
+	}
+
+	errors.Render(ctx.Response, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -27,7 +28,12 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Error(status int, v ...interface{}) {
-	throwError(3, ctx.Response, status, v...)
+	if len(v) > 0 {
+		//ctx.app.Error(traceStack(2, v...))
+		ctx.app.Error(v...)
+	}
+
+	errors.Render(ctx.Response, status)
 }
 
 // Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -35,7 +41,12 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
-	throwCriticalf(3, ctx.Response, status, format, v...)
+	if len(v) > 0 {
+		//ctx.app.Criticalf(traceStack(2, v...))
+		ctx.app.Criticalf(format, v...)
+	}
+
+	errors.Render(ctx.Response, status)
 }
 
 // Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -43,47 +54,12 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
-	throwErrorf(3, ctx.Response, status, format, v...)
-}
+	if len(v) > 0 {
+		//ctx.app.Errorf(traceStack(2, v...))
+		ctx.app.Errorf(format, v...)
+	}
 
-// Exit 以指定的状态码退出当前协程
-//
-// 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
-func (ctx *Context) Exit(status int) {
-	errors.Exit(status)
-}
-
-// Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
-//
-// 若是输出日志的过程中出错，则 panic
-// 若没有错误信息，则仅向客户端输出一条状态码信息。
-func Critical(w http.ResponseWriter, status int, v ...interface{}) {
-	throwCritical(3, w, status, v...)
-}
-
-// Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
-//
-// 若是输出日志的过程中出错，则 panic
-// 若没有错误信息，则仅向客户端输出一条状态码信息。
-func Error(w http.ResponseWriter, status int, v ...interface{}) {
-	throwError(3, w, status, v...)
-}
-
-// Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
-//
-// 若是输出日志的过程中出错，则 panic
-// 若没有错误信息，则仅向客户端输出一条状态码信息。
-func Criticalf(w http.ResponseWriter, status int, format string, v ...interface{}) {
-	throwCriticalf(3, w, status, format, v...)
-}
-
-// Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
-//
-// 若是输出日志的过程中出错，则 panic
-// 若没有错误信息，则仅向客户端输出一条状态码信息。
-func Errorf(w http.ResponseWriter, status int, format string, v ...interface{}) {
-	throwErrorf(3, w, status, format, v...)
+	errors.Render(ctx.Response, status)
 }
 
 // Exit 以指定的状态码退出当前协程
@@ -95,40 +71,8 @@ func Errorf(w http.ResponseWriter, status int, format string, v ...interface{}) 
 //
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
-func Exit(status int) {
+func (ctx *Context) Exit(status int) {
 	errors.Exit(status)
-}
-
-func throwError(level int, w http.ResponseWriter, status int, v ...interface{}) {
-	if len(v) > 0 {
-		logs.ERROR().Output(level, traceStack(level, v...))
-	}
-
-	errors.Render(w, status)
-}
-
-func throwCritical(level int, w http.ResponseWriter, status int, v ...interface{}) {
-	if len(v) > 0 {
-		logs.CRITICAL().Output(level, traceStack(level, v...))
-	}
-
-	errors.Render(w, status)
-}
-
-func throwErrorf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
-	if len(v) > 0 {
-		logs.ERROR().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
-	}
-
-	errors.Render(w, status)
-}
-
-func throwCriticalf(level int, w http.ResponseWriter, status int, format string, v ...interface{}) {
-	if len(v) > 0 {
-		logs.CRITICAL().Output(level, traceStack(level, fmt.Sprintf(format, v...)))
-	}
-
-	errors.Render(w, status)
 }
 
 func traceStack(level int, messages ...interface{}) string {

@@ -28,7 +28,11 @@ func init() {
 func TestContext_Exit(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	ctx := &Context{Response: w}
+	app := newApp(a)
+	ctx := &Context{
+		Response: w,
+		app:      app,
+	}
 
 	a.Panic(func() {
 		ctx.Exit(http.StatusBadRequest)
@@ -38,9 +42,14 @@ func TestContext_Exit(t *testing.T) {
 func TestContext_Error(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	ctx := &Context{Response: w}
-
+	app := newApp(a)
 	errLog.Reset()
+	app.ERROR().SetOutput(errLog)
+	ctx := &Context{
+		Response: w,
+		app:      app,
+	}
+
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
@@ -49,9 +58,14 @@ func TestContext_Error(t *testing.T) {
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	ctx := &Context{Response: w}
-
 	criticalLog.Reset()
+	app := newApp(a)
+	app.CRITICAL().SetOutput(criticalLog)
+	ctx := &Context{
+		Response: w,
+		app:      app,
+	}
+
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
@@ -60,9 +74,14 @@ func TestContext_Critical(t *testing.T) {
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	ctx := &Context{Response: w}
-
+	app := newApp(a)
 	errLog.Reset()
+	app.ERROR().SetOutput(errLog)
+	ctx := &Context{
+		Response: w,
+		app:      app,
+	}
+
 	ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
@@ -71,50 +90,15 @@ func TestContext_Errorf(t *testing.T) {
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	ctx := &Context{Response: w}
-
+	app := newApp(a)
 	criticalLog.Reset()
+	app.CRITICAL().SetOutput(criticalLog)
+	ctx := &Context{
+		Response: w,
+		app:      app,
+	}
+
 	ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
-}
-
-func TestError(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	errLog.Reset()
-	Error(w, http.StatusInternalServerError, "log1", "log2")
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "log1 log2"))
-}
-
-func TestCritical(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	criticalLog.Reset()
-	Critical(w, http.StatusInternalServerError, "log1", "log2")
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(criticalLog.String(), "log1 log2"))
-}
-
-func TestErrorf(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	errLog.Reset()
-	Errorf(w, http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
-	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
-}
-
-func TestCriticalf(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	criticalLog.Reset()
-	Criticalf(w, http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
 }

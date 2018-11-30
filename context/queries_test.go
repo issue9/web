@@ -18,7 +18,7 @@ func newContextWithQuery(a *assert.Assertion, path string) *Context {
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx := newContext(w, r, mimetypetest.TextMarshal, nil, mimetypetest.TextUnmarshal, nil)
+	ctx := newContext(a, w, r, mimetypetest.TextMarshal, nil, mimetypetest.TextUnmarshal, nil)
 
 	return ctx
 }

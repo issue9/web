@@ -11,8 +11,8 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/middleware"
 
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app/webconfig"
+	"github.com/issue9/web/internal/errors"
 )
 
 func TestApp_buildMiddlewares(t *testing.T) {
@@ -21,7 +21,7 @@ func TestApp_buildMiddlewares(t *testing.T) {
 	})
 
 	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		context.Exit(http.StatusNotAcceptable)
+		errors.Exit(http.StatusNotAcceptable)
 	})
 
 	app := &App{}

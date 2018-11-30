@@ -21,7 +21,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/app/modules"
 	"github.com/issue9/web/internal/app/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -45,6 +44,7 @@ type App struct {
 	mt         *mimetype.Mimetypes
 	compresses map[string]compress.WriterFunc
 	configs    *config.Manager
+	logs       *logs.Logs
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
 	closed chan bool
@@ -65,7 +65,8 @@ func New(dir string) (*App, error) {
 		return nil, err
 	}
 
-	if err := logs.InitFromXMLFile(mgr.File(logsFilename)); err != nil {
+	l := logs.New()
+	if err := l.InitFromXMLFile(mgr.File(logsFilename)); err != nil {
 		return nil, err
 	}
 
@@ -88,6 +89,7 @@ func New(dir string) (*App, error) {
 		modules:   ms,
 		mt:        mimetype.New(),
 		configs:   mgr,
+		logs:      l,
 		compresses: map[string]compress.WriterFunc{
 			"gizp":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
@@ -106,8 +108,8 @@ func (app *App) Mux() *mux.Mux {
 	return app.mux
 }
 
-// Debug 是否处于调试模式
-func (app *App) Debug() bool {
+// IsDebug 是否处于调试模式
+func (app *App) IsDebug() bool {
 	return app.webConfig.Debug
 }
 
@@ -135,7 +137,7 @@ func (app *App) URL(path string) string {
 
 // InitModules 执行模板的初始化函数。可以重复调用执行。
 func (app *App) InitModules(tag string) error {
-	return app.modules.Init(tag, logs.INFO())
+	return app.modules.Init(tag, app.logs.INFO())
 }
 
 // Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
@@ -159,7 +161,7 @@ func (app *App) initServer() error {
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
 		Handler:           middleware.Handler(app.mux, app.middlewares...),
-		ErrorLog:          logs.ERROR(),
+		ErrorLog:          app.logs.ERROR(),
 		ReadTimeout:       app.webConfig.ReadTimeout,
 		WriteTimeout:      app.webConfig.WriteTimeout,
 		IdleTimeout:       app.webConfig.IdleTimeout,
@@ -201,7 +203,7 @@ func (app *App) Serve() error {
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	defer logs.Flush()
+	defer app.logs.Flush()
 
 	if app.server != nil {
 		return app.close()
@@ -209,16 +211,11 @@ func (app *App) Close() error {
 	return nil
 }
 
-// NewContext 声明 context.Context 实例
-func (app *App) NewContext(w http.ResponseWriter, r *http.Request) *context.Context {
-	return context.New(w, r, app.mt, logs.ERROR())
-}
-
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (app *App) Shutdown() error {
-	defer logs.Flush()
+	defer app.logs.Flush()
 
 	if app.server == nil {
 		return nil
@@ -304,4 +301,12 @@ func (app *App) AddConfig(m config.UnmarshalFunc, ext ...string) error {
 // SetConfig 修改指定扩展名关联的解析函数，不存在则添加。
 func (app *App) SetConfig(m config.UnmarshalFunc, ext ...string) error {
 	return app.configs.SetUnmarshal(m, ext...)
+}
+
+func (app *App) MimetypeMarshal(name string) (string, mimetype.MarshalFunc, error) {
+	return app.mt.Marshal(name)
+}
+
+func (app *App) MimetypeUnmarshal(name string) (mimetype.UnmarshalFunc, error) {
+	return app.mt.Unmarshal(name)
 }
