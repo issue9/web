@@ -86,6 +86,7 @@ func New(conf *Config) (*App, error) {
 
 	return &App{
 		webConfig:     webconf,
+		middlewares:   conf.Middlewares,
 		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
