@@ -7,6 +7,8 @@ package context
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
+	"github.com/issue9/web/mimetype/gob"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,8 +18,11 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	yaml "gopkg.in/yaml.v2"
 
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/mimetypetest"
 )
@@ -49,11 +54,38 @@ func newContext(a *assert.Assertion,
 	}
 }
 
+// 声明一个 App 实例
 func newApp(a *assert.Assertion) *app.App {
-	app, err := app.New("../testdata")
+	app, err := app.New(&app.Config{
+		Dir: "../testdata",
+
+		ConfigUnmarshals: map[string]config.UnmarshalFunc{
+			".yaml": yaml.Unmarshal,
+			".yml":  yaml.Unmarshal,
+			".xml":  xml.Unmarshal,
+			".json": json.Unmarshal,
+		},
+
+		Compresses: map[string]compress.WriterFunc{
+			"gizp":    compress.NewGzip,
+			"deflate": compress.NewDeflate,
+		},
+
+		MimetypeMarshals: map[string]mimetype.MarshalFunc{
+			"application/json":       json.Marshal,
+			"application/xml":        xml.Marshal,
+			mimetype.DefaultMimetype: gob.Marshal,
+		},
+
+		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
+			"application/json":       json.Unmarshal,
+			"application/xml":        xml.Unmarshal,
+			mimetype.DefaultMimetype: gob.Unmarshal,
+		},
+	})
+
 	a.NotError(err).NotNil(app)
-	app.AddMarshal(mimetype.DefaultMimetype, mimetypetest.TextMarshal)
-	app.AddUnmarshal(mimetype.DefaultMimetype, mimetypetest.TextUnmarshal)
+
 	return app
 }
 

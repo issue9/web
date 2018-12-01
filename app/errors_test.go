@@ -23,8 +23,7 @@ func testRenderError(w http.ResponseWriter, status int) {
 
 func TestApp_AddErrorHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	a.NotError(app.AddErrorHandler(nil, 500, 501))
 	a.Error(app.AddErrorHandler(nil, 500, 502)) // 已经存在
@@ -35,8 +34,7 @@ func TestApp_AddErrorHandler(t *testing.T) {
 
 func TestApp_SetErrorHandler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	app.SetErrorHandler(nil, 500, 501)
 	f, found := app.errorHandlers[500]
@@ -48,8 +46,7 @@ func TestApp_SetErrorHandler(t *testing.T) {
 
 func TestApp_RenderError(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	w := httptest.NewRecorder()
 	app.RenderError(w, http.StatusOK)
@@ -79,8 +76,7 @@ func TestApp_RenderError(t *testing.T) {
 
 func TestApp_RenderError_0(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	app.AddErrorHandler(testRenderError, 401, 402)
 	w := httptest.NewRecorder()
@@ -109,8 +105,7 @@ func TestApp_RenderError_0(t *testing.T) {
 
 func TestApp_Recovery_debug(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	fn := app.Recovery(true)
 
@@ -136,10 +131,9 @@ func TestApp_Recovery_debug(t *testing.T) {
 
 func TestApp_Recovery(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
+	app := newApp(a)
 	errLog := new(bytes.Buffer)
 	app.ERROR().SetOutput(errLog)
-	a.NotError(err).NotNil(app)
 
 	fn := app.Recovery(false)
 

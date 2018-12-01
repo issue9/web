@@ -5,11 +5,19 @@
 package app
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/issue9/middleware/compress"
+	"github.com/issue9/web/config"
+	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/mimetype/gob"
 )
 
 const timeout = 300 * time.Microsecond
@@ -22,21 +30,57 @@ var (
 	h202 = http.HandlerFunc(f202)
 )
 
+// 声明一个 App 实例
+func newApp(a *assert.Assertion) *App {
+	app, err := New(&Config{
+		Dir: "./testdata",
+
+		ConfigUnmarshals: map[string]config.UnmarshalFunc{
+			".yaml": yaml.Unmarshal,
+			".yml":  yaml.Unmarshal,
+			".xml":  xml.Unmarshal,
+			".json": json.Unmarshal,
+		},
+
+		Compresses: map[string]compress.WriterFunc{
+			"gizp":    compress.NewGzip,
+			"deflate": compress.NewDeflate,
+		},
+
+		MimetypeMarshals: map[string]mimetype.MarshalFunc{
+			"application/json":       json.Marshal,
+			"application/xml":        xml.Marshal,
+			mimetype.DefaultMimetype: gob.Marshal,
+		},
+
+		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
+			"application/json":       json.Unmarshal,
+			"application/xml":        xml.Unmarshal,
+			mimetype.DefaultMimetype: gob.Unmarshal,
+		},
+	})
+
+	a.NotError(err).NotNil(app)
+
+	return app
+}
+
 func TestApp_SetMiddleware(t *testing.T) {
 	a := assert.New(t)
+	app := newApp(a)
 	m := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Date", "1111")
 			h.ServeHTTP(w, r)
 		})
 	}
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
 	app.SetMiddlewares(m)
+	a.Equal(len(app.middlewares), 1)
 
-	app.mux.GetFunc("/middleware", f202)
+	app.Mux().GetFunc("/middleware", f202)
 	go func() {
-		a.Equal(app.Serve(), http.ErrServerClosed)
+		err := app.Serve()
+		a.ErrorType(err, http.ErrServerClosed, "错误，%v", err.Error())
 	}()
 
 	// 等待 Serve() 启动完毕，不同机器可能需要的时间会不同
@@ -51,8 +95,7 @@ func TestApp_SetMiddleware(t *testing.T) {
 
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
@@ -61,8 +104,7 @@ func TestApp_URL(t *testing.T) {
 
 func TestApp_Handler(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	m1 := app.NewModule("m1", "m1 desc", "m2")
 	a.NotNil(m1)
@@ -82,8 +124,7 @@ func TestApp_Handler(t *testing.T) {
 
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	m1 := app.NewModule("m1", "m1 desc", "m2")
 	a.NotNil(m1)
@@ -91,6 +132,7 @@ func TestApp_Serve(t *testing.T) {
 	a.NotNil(m2)
 	m1.GetFunc("/m1/test", f202)
 	m2.GetFunc("/m2/test", f202)
+	app.Mux().GetFunc("/mux/test", f202)
 
 	go func() {
 		err := app.Serve()
@@ -104,6 +146,15 @@ func TestApp_Serve(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)
 
+	resp, err = http.Get("http://localhost:8082/m2/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	resp, err = http.Get("http://localhost:8082/mux/test")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusAccepted)
+
+	// static 中定义的静态文件
 	resp, err = http.Get("http://localhost:8082/client/file1.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
@@ -112,13 +163,17 @@ func TestApp_Serve(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
+	// 不存在的文件
+	resp, err = http.Get("http://localhost:8082/client/dir/not-exists.txt")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusNotFound)
+
 	app.Close()
 }
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -150,9 +205,8 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_shutdown(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
+	app := newApp(a)
 	app.webConfig.ShutdownTimeout = 0
-	a.NotError(err).NotNil(app)
 
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -186,8 +240,7 @@ func TestApp_shutdown(t *testing.T) {
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	app.mux.GetFunc("/test", f202)
 	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {

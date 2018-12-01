@@ -5,6 +5,8 @@
 package web
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -12,6 +14,11 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/middleware/compress"
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -19,15 +26,43 @@ import (
 
 var testdata = ""
 
+// 声明一个 App 实例
+func newConfig() *app.Config {
+	return &app.Config{
+		Dir: "./testdata",
+
+		ConfigUnmarshals: map[string]config.UnmarshalFunc{
+			".yaml": yaml.Unmarshal,
+			".yml":  yaml.Unmarshal,
+			".xml":  xml.Unmarshal,
+			".json": json.Unmarshal,
+		},
+
+		Compresses: map[string]compress.WriterFunc{
+			"gizp":    compress.NewGzip,
+			"deflate": compress.NewDeflate,
+		},
+
+		MimetypeMarshals: map[string]mimetype.MarshalFunc{
+			"application/json":       json.Marshal,
+			"application/xml":        xml.Marshal,
+			"text/plain":             mimetypetest.TextMarshal,
+			mimetype.DefaultMimetype: gob.Marshal,
+		},
+
+		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
+			"application/json":       json.Unmarshal,
+			"application/xml":        xml.Unmarshal,
+			"text/plain":             mimetypetest.TextUnmarshal,
+			mimetype.DefaultMimetype: gob.Unmarshal,
+		},
+	}
+}
+
 func TestMain(m *testing.M) {
-	if err := Init("./testdata/"); err != nil {
+	if err := Init(newConfig()); err != nil {
 		panic(err)
 	}
-
-	mt := mimetype.New()
-	mt.AddMarshal("text/plain", mimetypetest.TextMarshal)
-	mt.AddMarshal(mimetype.DefaultMimetype, gob.Marshal)
-	mt.AddUnmarshal(mimetype.DefaultMimetype, gob.Unmarshal)
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
@@ -57,7 +92,7 @@ func TestMain(m *testing.M) {
 
 func TestInit(t *testing.T) {
 	a := assert.New(t)
-	a.Error(Init("./internal/app/testdata/"))
+	a.Error(Init(newConfig()))
 }
 
 func TestIsDebug(t *testing.T) {

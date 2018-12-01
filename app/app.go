@@ -7,8 +7,6 @@ package app
 
 import (
 	stdctx "context"
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,7 +16,6 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/modules"
@@ -54,16 +51,12 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-func New(dir string) (*App, error) {
-	mgr := config.NewManager(dir)
-	if err := mgr.AddUnmarshal(json.Unmarshal, ".json"); err != nil {
-		return nil, err
-	}
-	if err := mgr.AddUnmarshal(yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-		return nil, err
-	}
-	if err := mgr.AddUnmarshal(xml.Unmarshal, ".xml"); err != nil {
-		return nil, err
+func New(conf *Config) (*App, error) {
+	mgr := config.NewManager(conf.Dir)
+	for k, v := range conf.ConfigUnmarshals {
+		if err := mgr.AddUnmarshal(v, k); err != nil {
+			return nil, err
+		}
 	}
 
 	l := logs.New()
@@ -71,31 +64,36 @@ func New(dir string) (*App, error) {
 		return nil, err
 	}
 
-	conf := &webconfig.WebConfig{}
+	webconf := &webconfig.WebConfig{}
 	if err := mgr.LoadFile(configFilename, conf); err != nil {
 		return nil, err
 	}
 
-	mux := mux.New(conf.DisableOptions, false, nil, nil)
+	mt := mimetype.New()
+	if err := mt.AddMarshals(conf.MimetypeMarshals); err != nil {
+		return nil, err
+	}
+	if err := mt.AddUnmarshals(conf.MimetypeUnmarshals); err != nil {
+		return nil, err
+	}
 
-	ms, err := modules.New(mux, conf)
+	mux := mux.New(webconf.DisableOptions, false, nil, nil)
+
+	ms, err := modules.New(mux, webconf)
 	if err != nil {
 		return nil, err
 	}
 
 	return &App{
-		webConfig:     conf,
+		webConfig:     webconf,
 		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
-		mt:            mimetype.New(),
+		mt:            mt,
 		configs:       mgr,
 		logs:          l,
-		errorHandlers: map[int]ErrorHandler{},
-		compresses: map[string]compress.WriterFunc{
-			"gizp":    compress.NewGzip,
-			"deflate": compress.NewDeflate,
-		},
+		errorHandlers: conf.ErrorHandlers,
+		compresses:    conf.Compresses,
 	}, nil
 }
 

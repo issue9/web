@@ -17,8 +17,7 @@ import (
 
 func TestApp_buildMiddlewares(t *testing.T) {
 	a := assert.New(t)
-	app, err := New("./testdata")
-	a.NotError(err).NotNil(app)
+	app := newApp(a)
 
 	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("err")
