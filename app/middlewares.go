@@ -10,7 +10,6 @@ import (
 	"net/http/pprof"
 	"strings"
 
-	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
@@ -59,14 +58,14 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 				Funcs:    app.compresses,
 				Types:    conf.Compress.Types,
 				Size:     conf.Compress.Size,
-				ErrorLog: logs.ERROR(),
+				ErrorLog: app.ERROR(),
 			})
 		})
 	}
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		logs.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
+		app.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
 		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return debug(h)
 		})

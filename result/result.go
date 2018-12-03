@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/issue9/logs/v2"
 	"github.com/issue9/web/context"
 )
 
@@ -89,8 +88,7 @@ func (rslt *Result) HasDetail() bool {
 func (rslt *Result) Render(ctx *context.Context) {
 	msg, found := messages[rslt.Code]
 	if !found {
-		logs.Error("不存在的错误码:", rslt.Code)
-		ctx.Exit(http.StatusInternalServerError)
+		ctx.Error(http.StatusInternalServerError, "不存在的错误码:", rslt.Code)
 	}
 
 	rslt.Status = msg.status

@@ -12,18 +12,12 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
 )
 
 var (
 	errLog      = new(bytes.Buffer)
 	criticalLog = new(bytes.Buffer)
 )
-
-func init() {
-	logs.SetOutput(logs.LevelError, errLog, "", 0)
-	logs.SetOutput(logs.LevelCritical, criticalLog, "", 0)
-}
 
 func TestContext_Exit(t *testing.T) {
 	a := assert.New(t)
