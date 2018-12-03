@@ -102,7 +102,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 	case index < 0: // 只有编码
 		return strings.ToLower(v), utfName, nil
 	case index == 0: // mimetype 不可省略
-		return "", "", mimetype.ErrInvalidMimetype
+		return "", "", errors.New("content-type 不存在 mimetype 部分")
 	}
 
 	mime = strings.ToLower(v[:index])

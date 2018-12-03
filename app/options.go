@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -48,7 +49,7 @@ func (opt *Options) newApp() (*App, error) {
 		return nil, err
 	}
 
-	mt := mimetype.New()
+	mt := mimetypes.New()
 	if err = mt.AddMarshals(opt.MimetypeMarshals); err != nil {
 		return nil, err
 	}

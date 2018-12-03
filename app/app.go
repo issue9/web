@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -37,7 +38,7 @@ type App struct {
 	server      *http.Server
 
 	modules       *modules.Modules
-	mt            *mimetype.Mimetypes
+	mt            *mimetypes.Mimetypes
 	compresses    map[string]compress.WriterFunc
 	configs       *config.Manager
 	logs          *logs.Logs
