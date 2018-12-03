@@ -38,15 +38,9 @@ func (app *App) SetErrorHandler(f ErrorHandler, status ...int) {
 	}
 }
 
-// defaultRender 用到的 content-type 类型
-const errorContentType = "text/plain; charset=UTF-8"
-
 // 仅向客户端输出状态码。
 func defaultRender(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", errorContentType)
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(status)
-	w.Write([]byte(http.StatusText(status) + "\n"))
+	http.Error(w, http.StatusText(status), status)
 }
 
 // RenderError 向客户端输出指定状态码的错误内容。

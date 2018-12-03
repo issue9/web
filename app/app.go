@@ -215,10 +215,12 @@ func (app *App) Load(r io.Reader, typ string, v interface{}) error {
 	return app.configs.Load(r, typ, v)
 }
 
+// MimetypeMarshal 获取指定的编码函数及其官方名称
 func (app *App) MimetypeMarshal(name string) (string, mimetype.MarshalFunc, error) {
 	return app.mt.Marshal(name)
 }
 
+// MimetypeUnmarshal 获取指定名称的解码函数
 func (app *App) MimetypeUnmarshal(name string) (mimetype.UnmarshalFunc, error) {
 	return app.mt.Unmarshal(name)
 }

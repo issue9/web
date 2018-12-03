@@ -50,20 +50,17 @@ func TestApp_RenderError(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	app.RenderError(w, http.StatusOK)
-	a.Equal(w.Code, http.StatusOK).
-		Equal(w.Header().Get("Content-Type"), errorContentType)
+	a.Equal(w.Code, http.StatusOK)
 
 	w = httptest.NewRecorder()
 	app.RenderError(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), errorContentType)
+	a.Equal(w.Code, http.StatusInternalServerError)
 
 	// 设置为空，依然采用 defaultRender
 	app.SetErrorHandler(nil, http.StatusInternalServerError)
 	w = httptest.NewRecorder()
 	app.RenderError(w, http.StatusInternalServerError)
-	a.Equal(w.Code, http.StatusInternalServerError).
-		Equal(w.Header().Get("Content-Type"), errorContentType)
+	a.Equal(w.Code, http.StatusInternalServerError)
 
 	// 设置为 testRender
 	app.SetErrorHandler(testRenderError, http.StatusInternalServerError)
@@ -86,8 +83,7 @@ func TestApp_RenderError_0(t *testing.T) {
 		Equal(w.Body.String(), "test")
 	w = httptest.NewRecorder()
 	app.RenderError(w, 405) // 不存在
-	a.Equal(w.Code, 405).
-		Equal(w.Header().Get("Content-Type"), errorContentType)
+	a.Equal(w.Code, 405)
 
 	// 设置为 testRender
 	app.SetErrorHandler(testRenderError, 0, 401, 402)
