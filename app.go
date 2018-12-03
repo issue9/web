@@ -23,18 +23,16 @@ import (
 
 var defaultApp *app.App
 
-// Config Init 函数的初始化函数
-type Config = app.Config
+// Options Init 的参数类型
+type Options = app.Options
 
 // Init 初始化整个应用环境
-//
-// dir 表示配置文件的目录；
-func Init(conf *Config) (err error) {
+func Init(opt *Options) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(conf)
+	defaultApp, err = app.New(opt)
 	return
 }
 

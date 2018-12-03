@@ -50,8 +50,8 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-func New(conf *Config) (*App, error) {
-	return conf.newApp()
+func New(opt *Options) (*App, error) {
+	return opt.newApp()
 }
 
 // SetMiddlewares 设置一个全局的中间件，多次设置，只有最后一次会启作用。

@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/web/mimetype"
 )
 
-// Config 配置项
-type Config struct {
+// Options 配置项
+type Options struct {
 	Dir                string
 	ErrorHandlers      map[int]ErrorHandler
 	Compresses         map[string]compress.WriterFunc
@@ -27,15 +27,12 @@ type Config struct {
 	MimetypeUnmarshals map[string]mimetype.UnmarshalFunc
 }
 
-// New 声明一个新的 App 实例
-//
-// 日志系统会在此处初始化。
-func (conf *Config) newApp() (*App, error) {
-	mgr, err := config.NewManager(conf.Dir)
+func (opt *Options) newApp() (*App, error) {
+	mgr, err := config.NewManager(opt.Dir)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range conf.ConfigUnmarshals {
+	for k, v := range opt.ConfigUnmarshals {
 		if err := mgr.AddUnmarshal(v, k); err != nil {
 			return nil, err
 		}
@@ -52,24 +49,24 @@ func (conf *Config) newApp() (*App, error) {
 	}
 
 	mt := mimetype.New()
-	if err = mt.AddMarshals(conf.MimetypeMarshals); err != nil {
+	if err = mt.AddMarshals(opt.MimetypeMarshals); err != nil {
 		return nil, err
 	}
-	if err = mt.AddUnmarshals(conf.MimetypeUnmarshals); err != nil {
+	if err = mt.AddUnmarshals(opt.MimetypeUnmarshals); err != nil {
 		return nil, err
 	}
 
-	middlewares := conf.Middlewares
+	middlewares := opt.Middlewares
 	if middlewares == nil {
 		middlewares = make([]middleware.Middleware, 0, 10)
 	}
 
-	errorHandlers := conf.ErrorHandlers
+	errorHandlers := opt.ErrorHandlers
 	if errorHandlers == nil {
 		errorHandlers = make(map[int]ErrorHandler, 10)
 	}
 
-	compresses := conf.Compresses
+	compresses := opt.Compresses
 	if compresses == nil {
 		compresses = make(map[string]compress.WriterFunc, 10)
 	}

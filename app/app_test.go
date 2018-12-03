@@ -32,7 +32,7 @@ var (
 
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *App {
-	app, err := New(&Config{
+	app, err := New(&Options{
 		Dir: "./testdata",
 
 		ConfigUnmarshals: map[string]config.UnmarshalFunc{

@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/middleware/compress"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
@@ -26,9 +25,8 @@ import (
 
 var testdata = ""
 
-// 声明一个 App 实例
-func newConfig() *app.Config {
-	return &app.Config{
+func newOptions() *Options {
+	return &Options{
 		Dir: "./testdata",
 
 		ConfigUnmarshals: map[string]config.UnmarshalFunc{
@@ -60,7 +58,7 @@ func newConfig() *app.Config {
 }
 
 func TestMain(m *testing.M) {
-	if err := Init(newConfig()); err != nil {
+	if err := Init(newOptions()); err != nil {
 		panic(err)
 	}
 
@@ -92,7 +90,7 @@ func TestMain(m *testing.M) {
 
 func TestInit(t *testing.T) {
 	a := assert.New(t)
-	a.Error(Init(newConfig()))
+	a.Error(Init(newOptions()))
 }
 
 func TestIsDebug(t *testing.T) {
