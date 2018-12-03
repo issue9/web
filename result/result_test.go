@@ -6,6 +6,7 @@ package result
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"testing"
 
@@ -14,16 +15,53 @@ import (
 	"github.com/issue9/middleware/recovery"
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
+	yaml "gopkg.in/yaml.v2"
 
+	"github.com/issue9/middleware/compress"
+	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/encoding/form"
-	"github.com/issue9/web/internal/errors"
+	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/mimetype/form"
 )
 
 var (
 	_ form.Marshaler = &Result{}
 	_ error          = &Result{}
 )
+
+// 声明一个 App 实例
+func newApp(a *assert.Assertion) *app.App {
+	app, err := app.New(&app.Config{
+		Dir: "../testdata",
+
+		ConfigUnmarshals: map[string]config.UnmarshalFunc{
+			".yaml": yaml.Unmarshal,
+			".yml":  yaml.Unmarshal,
+			".xml":  xml.Unmarshal,
+			".json": json.Unmarshal,
+		},
+
+		Compresses: map[string]compress.WriterFunc{
+			"gizp":    compress.NewGzip,
+			"deflate": compress.NewDeflate,
+		},
+
+		MimetypeMarshals: map[string]mimetype.MarshalFunc{
+			"application/json": json.Marshal,
+			"application/xml":  xml.Marshal,
+		},
+
+		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
+			"application/json": json.Unmarshal,
+			"application/xml":  xml.Unmarshal,
+		},
+	})
+
+	a.NotError(err).NotNil(app)
+
+	return app
+}
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
@@ -59,6 +97,8 @@ func TestResult_SetDetail(t *testing.T) {
 
 func TestResult_Render_Exit(t *testing.T) {
 	a := assert.New(t)
+	app := newApp(a)
+
 	a.NotError(NewMessages(map[int]string{
 		http.StatusForbidden * 1000:    "400", // 需要与 resultRenderHandler 中的错误代码值相同
 		http.StatusUnauthorized * 1000: "401", // 需要与 resultRenderHandler 中的错误代码值相同
@@ -89,7 +129,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	}
 
 	h := http.HandlerFunc(resultRenderHandler)
-	srv := rest.NewServer(t, recovery.New(h, errors.Recovery(false)), nil)
+	srv := rest.NewServer(t, recovery.New(h, app.Recovery(false)), nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").

@@ -7,18 +7,19 @@ package context
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
-	"github.com/issue9/middleware/compress/accept"
-	xencoding "golang.org/x/text/encoding"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/encoding"
+	a "github.com/issue9/web/app"
+	"github.com/issue9/web/mimetype"
 )
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
@@ -33,30 +34,35 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的媒体类型，以及名称
-	OutputMimeType     encoding.MarshalFunc
+	OutputMimeType     mimetype.MarshalFunc
 	OutputMimeTypeName string
 
 	// 输出到客户端的字符集
 	//
-	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	OutputCharset     xencoding.Encoding
+	// 若值为 encoding.Nop 或是空，表示为 utf-8
+	OutputCharset     encoding.Encoding
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
-	InputMimeType encoding.UnmarshalFunc
+	InputMimeType mimetype.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//
-	// 若值为 xencoding.Nop 或是空，表示为 utf-8
-	InputCharset xencoding.Encoding
+	// 若值为 encoding.Nop 或是空，表示为 utf-8
+	InputCharset encoding.Encoding
 
 	// 输出语言的相关设置项。
 	OutputTag     language.Tag
 	LocalePrinter *message.Printer
 
-	// 从客户端获取的内容，已经解析为 utf-8 方式。
+	// 保存着从 http.Request.Body 中获取的内容。
+	//
+	// body 用于缓存从 http.Request.Body 中读取的内容；
+	// readed 表示是否需要从 http.Request.Body 读取内容。
 	body   []byte
-	readed bool // 是否已经从 r.Body 中加载过
+	readed bool
+
+	app *a.App
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -64,29 +70,29 @@ type Context struct {
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
 //
+// mt 为 mimetype.Mimetypes 对象，用于从中查找指定名称的 mimetype 转码函数。
+//
 // errlog 为错误信息输出通道，在 New() 非正常退出时，除了输出一个 HTTP 的状态码之外，
 // 若还指定了 errlog，则还会将错误信息输出到该通道上，为 nil，则不输出任何错误信息。
 //
-// 一些特殊类型的请求，比如上传操作等，可能无法直接通过 New 构造一个合适的 Context，
-// 此时可以直接使用 &Context{} 的方法手动指定 Context 的各个变量值。
-func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
+// NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
+// 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
+func New(w http.ResponseWriter, r *http.Request, app *a.App) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
-		if errlog != nil {
-			errlog.Printf("报头 %s 出错：%s\n", name, err.Error())
-		}
-		Exit(status)
+		app.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		a.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeType, marshal, err := encoding.AcceptMimeType(header)
+	outputMimeTypeName, marshal, err := app.MimetypeMarshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset, err := encoding.AcceptCharset(header)
+	outputCharsetName, outputCharset, err := acceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
 	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
@@ -96,15 +102,23 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 		Response:           w,
 		Request:            r,
 		OutputMimeType:     marshal,
-		OutputMimeTypeName: outputMimeType,
+		OutputMimeTypeName: outputMimeTypeName,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      message.NewPrinter(tag),
+
+		app: app,
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
-		ctx.InputMimeType, ctx.InputCharset, err = encoding.ContentType(header)
+		encName, charsetName, err := parseContentType(header)
+		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
+
+		ctx.InputMimeType, err = app.MimetypeUnmarshal(encName)
+		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
+
+		ctx.InputCharset, err = htmlindex.Get(charsetName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 	} else {
 		ctx.readed = true
@@ -115,7 +129,7 @@ func New(w http.ResponseWriter, r *http.Request, errlog *log.Logger) *Context {
 
 // Body 获取用户提交的内容。
 //
-// 相对于 ctx.Request().Body，此函数可多次读取。
+// 相对于 ctx.Request.Body，此函数可多次读取。
 // 不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
 	if ctx.readed {
@@ -126,7 +140,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return nil, err
 	}
 
-	if encoding.CharsetIsNop(ctx.InputCharset) {
+	if charsetIsNop(ctx.InputCharset) {
 		ctx.readed = true
 		return ctx.body, nil
 	}
@@ -155,8 +169,8 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // Marshal 将 v 解码并发送给客户端。
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
-// 若是需要正常输出一个 nil 类型到客户端（json 中会输出 null），
-// 可以使用 encoding.Nil 变量代替。
+// 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
+// 可以使用 mimetype.Nil 变量代替。
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称。
@@ -172,7 +186,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if !contentTypeFound {
-		ct := encoding.BuildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
+		ct := buildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 
@@ -194,7 +208,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	// https://github.com/golang/go/issues/17083
 	ctx.Response.WriteHeader(status)
 
-	if encoding.CharsetIsNop(ctx.OutputCharset) {
+	if charsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
 		return err
 	}
@@ -252,23 +266,4 @@ func (ctx *Context) ClientIP() string {
 	}
 
 	return strings.TrimSpace(ip)
-}
-
-func acceptLanguage(header string) (language.Tag, error) {
-	if header == "" {
-		return language.Und, nil
-	}
-
-	al, err := accept.Parse(header)
-	if err != nil {
-		return language.Und, err
-	}
-
-	prefs := make([]language.Tag, 0, len(al))
-	for _, l := range al {
-		prefs = append(prefs, language.Make(l.Value))
-	}
-
-	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
-	return tag, nil
 }

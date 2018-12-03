@@ -1,5 +1,5 @@
 web [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https://travis-ci.org/issue9/web)
-[![Go version](https://img.shields.io/badge/Go-1.10-brightgreen.svg?style=flat)](https://golang.org)
+[![Go version](https://img.shields.io/badge/Go-1.11-brightgreen.svg?style=flat)](https://golang.org)
 [![Go Report Card](https://goreportcard.com/badge/github.com/issue9/web)](https://goreportcard.com/report/github.com/issue9/web)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/issue9/web/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/web)
@@ -13,12 +13,12 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    encoding.AddMarshals(map[string]encoding.MarshaleFunc {
+    web.AddMarshals(map[string]encoding.MarshaleFunc {
         "application/json": json.Marshal,
         "application/xml": xml.Marshal,
     })
 
-    encoding.AddUnmarshals(map[string]encoding.UnmarshaleFunc {
+    web.AddUnmarshals(map[string]encoding.UnmarshaleFunc {
         "application/json": json.Unmarshal,
         "application/xml": xml.Unmarshal,
     })
