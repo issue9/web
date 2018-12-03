@@ -29,11 +29,16 @@ type Manager struct {
 }
 
 // NewManager 新的 Manager 实例
-func NewManager(dir string) *Manager {
+func NewManager(dir string) (*Manager, error) {
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Manager{
 		dir:        dir,
 		unmarshals: map[string]UnmarshalFunc{},
-	}
+	}, nil
 }
 
 // AddUnmarshal 注册解析函数
@@ -85,6 +90,8 @@ func (mgr *Manager) LoadFile(path string, v interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer r.Close()
+
 	return mgr.Load(r, filepath.Ext(path), v)
 }
 

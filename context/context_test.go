@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"github.com/issue9/web/mimetype/gob"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,6 +23,7 @@ import (
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
@@ -75,12 +75,14 @@ func newApp(a *assert.Assertion) *app.App {
 			"application/json":       json.Marshal,
 			"application/xml":        xml.Marshal,
 			mimetype.DefaultMimetype: gob.Marshal,
+			mimetypetest.MimeType:    mimetypetest.TextMarshal,
 		},
 
 		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
 			"application/json":       json.Unmarshal,
 			"application/xml":        xml.Unmarshal,
 			mimetype.DefaultMimetype: gob.Unmarshal,
+			mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 		},
 	})
 
@@ -179,7 +181,6 @@ func TestNew(t *testing.T) {
 		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
-	a.NotError(app.AddUnmarshal(mimetypetest.MimeType, mimetypetest.TextUnmarshal))
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", mimetype.DefaultMimetype)

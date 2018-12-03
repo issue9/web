@@ -75,7 +75,9 @@ func TestApp_SetMiddleware(t *testing.T) {
 		})
 	}
 	app.SetMiddlewares(m)
-	a.Equal(len(app.middlewares), 1)
+	a.Equal(len(app.middlewares), 1).
+		True(app.webConfig.Debug).
+		Equal(app.webConfig.Domain, "localhost")
 
 	app.Mux().GetFunc("/middleware", f202)
 	go func() {

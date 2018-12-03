@@ -31,7 +31,8 @@ func (conf *config) Sanitize() error {
 
 func TestAddUnmarshal(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager("./testdata")
+	mgr, err := NewManager("./testdata")
+	a.NotError(err).NotNil(mgr)
 
 	a.NotError(mgr.AddUnmarshal(json.Unmarshal, "json"))
 
@@ -48,7 +49,8 @@ func TestAddUnmarshal(t *testing.T) {
 
 func TestSetUnmarshal(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager("./testdata")
+	mgr, err := NewManager("./testdata")
+	a.NotError(err).NotNil(mgr)
 
 	a.NotError(mgr.SetUnmarshal(yaml.Unmarshal, "json"))
 	a.Equal(mgr.unmarshals[".json"], UnmarshalFunc(yaml.Unmarshal))
@@ -68,7 +70,9 @@ func TestSetUnmarshal(t *testing.T) {
 
 func TestLoadFile(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager("./testdata")
+	mgr, err := NewManager("./testdata")
+	a.NotError(err).NotNil(mgr)
+
 	a.NotError(mgr.AddUnmarshal(json.Unmarshal, "json"))
 	a.NotError(mgr.AddUnmarshal(yaml.Unmarshal, "yaml", ".yml"))
 	a.NotError(mgr.AddUnmarshal(xml.Unmarshal, "xml"))
@@ -103,7 +107,9 @@ func TestLoadFile(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager("./testdata")
+	mgr, err := NewManager("./testdata")
+	a.NotError(err).NotNil(mgr)
+
 	a.NotError(mgr.AddUnmarshal(json.Unmarshal, "json"))
 	a.NotError(mgr.AddUnmarshal(yaml.Unmarshal, "yaml", ".yml"))
 	a.NotError(mgr.AddUnmarshal(xml.Unmarshal, "xml"))

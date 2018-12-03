@@ -13,13 +13,10 @@ import (
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/app"
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )
 
@@ -147,67 +144,7 @@ func Load(r io.Reader, typ string, v interface{}) error {
 	return defaultApp.Load(r, typ, v)
 }
 
-// AddConfig 注册解析函数
-func AddConfig(m config.UnmarshalFunc, ext ...string) error {
-	return defaultApp.AddConfig(m, ext...)
-}
-
-// SetConfig 修改指定扩展名关联的解析函数，不存在则添加。
-func SetConfig(m config.UnmarshalFunc, ext ...string) error {
-	return defaultApp.SetConfig(m, ext...)
-}
-
-// AddCompress 添加压缩方法。框架本身已经指定了 gzip 和 deflate 两种方法。
-//
-// NOTE: 只有在 web.Init() 之前调用才能启作用。
-func AddCompress(name string, f compress.WriterFunc) error {
-	return defaultApp.AddCompress(name, f)
-}
-
-// SetCompress 修改或是添加压缩方法。
-//
-// NOTE: 只有在 web.Init() 之前调用才能启作用。
-func SetCompress(name string, f compress.WriterFunc) {
-	defaultApp.SetCompress(name, f)
-}
-
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return context.New(w, r, defaultApp)
-}
-
-// AddMarshals 添加多个编码函数
-func AddMarshals(ms map[string]mimetype.MarshalFunc) error {
-	return defaultApp.AddMarshals(ms)
-}
-
-// AddMarshal 添加编码函数
-func AddMarshal(name string, mf mimetype.MarshalFunc) error {
-	return defaultApp.AddMarshal(name, mf)
-}
-
-// AddUnmarshals 添加多个编码函数
-func AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
-	return defaultApp.AddUnmarshals(ms)
-}
-
-// AddUnmarshal 添加编码函数
-func AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
-	return defaultApp.AddUnmarshal(name, mm)
-}
-
-// AddErrorHandler 添加对错误状态码的处理方式。
-//
-// status 表示状态码，如果为 0，则表示所有未指定的状态码。
-func AddErrorHandler(f func(http.ResponseWriter, int), status ...int) error {
-	return defaultApp.AddErrorHandler(f, status...)
-}
-
-// SetErrorHandler 设置指定状态码对应的处理函数
-//
-// 有则修改，没有则添加
-//
-// status 表示状态码，如果为 0，则表示所有未指定的状态码。
-func SetErrorHandler(f func(http.ResponseWriter, int), status ...int) {
-	defaultApp.SetErrorHandler(f, status...)
 }

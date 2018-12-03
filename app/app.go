@@ -7,7 +7,6 @@ package app
 
 import (
 	stdctx "context"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -52,50 +51,7 @@ type App struct {
 //
 // 日志系统会在此处初始化。
 func New(conf *Config) (*App, error) {
-	mgr := config.NewManager(conf.Dir)
-	for k, v := range conf.ConfigUnmarshals {
-		if err := mgr.AddUnmarshal(v, k); err != nil {
-			return nil, err
-		}
-	}
-
-	l := logs.New()
-	if err := l.InitFromXMLFile(mgr.File(logsFilename)); err != nil {
-		return nil, err
-	}
-
-	webconf := &webconfig.WebConfig{}
-	if err := mgr.LoadFile(configFilename, conf); err != nil {
-		return nil, err
-	}
-
-	mt := mimetype.New()
-	if err := mt.AddMarshals(conf.MimetypeMarshals); err != nil {
-		return nil, err
-	}
-	if err := mt.AddUnmarshals(conf.MimetypeUnmarshals); err != nil {
-		return nil, err
-	}
-
-	mux := mux.New(webconf.DisableOptions, false, nil, nil)
-
-	ms, err := modules.New(mux, webconf)
-	if err != nil {
-		return nil, err
-	}
-
-	return &App{
-		webConfig:     webconf,
-		middlewares:   conf.Middlewares,
-		mux:           mux,
-		closed:        make(chan bool, 1),
-		modules:       ms,
-		mt:            mt,
-		configs:       mgr,
-		logs:          l,
-		errorHandlers: conf.ErrorHandlers,
-		compresses:    conf.Compresses,
-	}, nil
+	return conf.newApp()
 }
 
 // SetMiddlewares 设置一个全局的中间件，多次设置，只有最后一次会启作用。
@@ -244,41 +200,6 @@ func (app *App) RegisterOnShutdown(f func()) {
 	app.server.RegisterOnShutdown(f)
 }
 
-// AddMarshals 添加多个编码函数
-func (app *App) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
-	return app.mt.AddMarshals(ms)
-}
-
-// AddMarshal 添加编码函数
-func (app *App) AddMarshal(name string, mf mimetype.MarshalFunc) error {
-	return app.mt.AddMarshal(name, mf)
-}
-
-// AddUnmarshals 添加多个编码函数
-func (app *App) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
-	return app.mt.AddUnmarshals(ms)
-}
-
-// AddUnmarshal 添加编码函数
-func (app *App) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
-	return app.mt.AddUnmarshal(name, mm)
-}
-
-// AddCompress 添加压缩方法。框架本身已经指定了 gzip 和 deflate 两种方法。
-func (app *App) AddCompress(name string, f compress.WriterFunc) error {
-	if _, found := app.compresses[name]; found {
-		return fmt.Errorf("已经存在同名 %s 的压缩函数", name)
-	}
-
-	app.compresses[name] = f
-	return nil
-}
-
-// SetCompress 修改或是添加压缩方法。
-func (app *App) SetCompress(name string, f compress.WriterFunc) {
-	app.compresses[name] = f
-}
-
 // File 获取文件路径，相对于当前配置目录
 func (app *App) File(path string) string {
 	return app.configs.File(path)
@@ -292,16 +213,6 @@ func (app *App) LoadFile(path string, v interface{}) error {
 // Load 加载指定的配置文件内容到 v 中
 func (app *App) Load(r io.Reader, typ string, v interface{}) error {
 	return app.configs.Load(r, typ, v)
-}
-
-// AddConfig 注册解析函数
-func (app *App) AddConfig(m config.UnmarshalFunc, ext ...string) error {
-	return app.configs.AddUnmarshal(m, ext...)
-}
-
-// SetConfig 修改指定扩展名关联的解析函数，不存在则添加。
-func (app *App) SetConfig(m config.UnmarshalFunc, ext ...string) error {
-	return app.configs.SetUnmarshal(m, ext...)
 }
 
 func (app *App) MimetypeMarshal(name string) (string, mimetype.MarshalFunc, error) {
