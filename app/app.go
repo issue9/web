@@ -225,3 +225,19 @@ func (app *App) MimetypeMarshal(name string) (string, mimetype.MarshalFunc, erro
 func (app *App) MimetypeUnmarshal(name string) (mimetype.UnmarshalFunc, error) {
 	return app.mt.Unmarshal(name)
 }
+
+// AddMimetypeUnmarshal 添加解码函数
+//
+// 动态添加 mimetype 的解码函数。
+// 正常情况下，可以直接通过 options 的配置项添加。
+func (app *App) AddMimetypeUnmarshal(name string, mf mimetype.UnmarshalFunc) error {
+	return app.mt.AddUnmarshal(name, mf)
+}
+
+// AddMimetypeMarshal 添加编码函数
+//
+// 动态添加 mimetype 的编码函数。
+// 正常情况下，可以直接通过 options 的配置项添加。
+func (app *App) AddMimetypeMarshal(name string, mf mimetype.MarshalFunc) error {
+	return app.mt.AddMarshal(name, mf)
+}

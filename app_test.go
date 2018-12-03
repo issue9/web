@@ -91,6 +91,8 @@ func TestMain(m *testing.M) {
 func TestInit(t *testing.T) {
 	a := assert.New(t)
 	a.Error(Init(newOptions()))
+
+	a.Equal(defaultApp, App())
 }
 
 func TestIsDebug(t *testing.T) {

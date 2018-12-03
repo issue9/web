@@ -36,6 +36,11 @@ func Init(opt *Options) (err error) {
 	return
 }
 
+// App 返回 defaultApp 实例
+func App() *app.App {
+	return defaultApp
+}
+
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
 //
 // 多次调用，则每次指定的信号都会起作用，如果由传递了相同的值，
