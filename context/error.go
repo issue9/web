@@ -16,10 +16,10 @@ import (
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.app.CRITICAL().Output(2, fmt.Sprint(v...))
+		ctx.App.CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.app.RenderError(ctx.Response, status)
+	ctx.App.RenderError(ctx.Response, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -28,10 +28,10 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.app.ERROR().Output(2, fmt.Sprint(v...))
+		ctx.App.ERROR().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.app.RenderError(ctx.Response, status)
+	ctx.App.RenderError(ctx.Response, status)
 }
 
 // Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -40,10 +40,10 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.app.CRITICAL().Output(2, fmt.Sprintf(format, v...))
+		ctx.App.CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.app.RenderError(ctx.Response, status)
+	ctx.App.RenderError(ctx.Response, status)
 }
 
 // Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -52,10 +52,10 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.app.ERROR().Output(2, fmt.Sprintf(format, v...))
+		ctx.App.ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.app.RenderError(ctx.Response, status)
+	ctx.App.RenderError(ctx.Response, status)
 }
 
 // Exit 以指定的状态码退出当前协程

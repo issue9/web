@@ -25,7 +25,7 @@ func TestContext_Exit(t *testing.T) {
 	app := newApp(a)
 	ctx := &Context{
 		Response: w,
-		app:      app,
+		App:      app,
 	}
 
 	a.Panic(func() {
@@ -41,7 +41,7 @@ func TestContext_Error(t *testing.T) {
 	app.ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
-		app:      app,
+		App:      app,
 	}
 
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
@@ -57,7 +57,7 @@ func TestContext_Critical(t *testing.T) {
 	app.CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
-		app:      app,
+		App:      app,
 	}
 
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
@@ -73,7 +73,7 @@ func TestContext_Errorf(t *testing.T) {
 	app.ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
-		app:      app,
+		App:      app,
 	}
 
 	ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
@@ -89,7 +89,7 @@ func TestContext_Criticalf(t *testing.T) {
 	app.CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
-		app:      app,
+		App:      app,
 	}
 
 	ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)

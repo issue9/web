@@ -23,9 +23,6 @@ import (
 
 var defaultApp *app.App
 
-// Options Init 的参数类型
-type Options = app.Options
-
 // Init 初始化整个应用环境
 func Init(opt *Options) (err error) {
 	if defaultApp != nil {

@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	a "github.com/issue9/web/app"
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/mimetype"
 )
 
@@ -30,6 +30,8 @@ var (
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
+	App *app.App
+
 	Response http.ResponseWriter
 	Request  *http.Request
 
@@ -61,8 +63,6 @@ type Context struct {
 	// readed 表示是否需要从 http.Request.Body 读取内容。
 	body   []byte
 	readed bool
-
-	app *a.App
 }
 
 // New 根据当前请求内容生成 Context 对象
@@ -77,18 +77,18 @@ type Context struct {
 //
 // NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
 // 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
-func New(w http.ResponseWriter, r *http.Request, app *a.App) *Context {
+func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
-		app.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		a.Exit(status)
+		a.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		app.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := app.MimetypeMarshal(header)
+	outputMimeTypeName, marshal, err := a.MimetypeMarshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -99,6 +99,7 @@ func New(w http.ResponseWriter, r *http.Request, app *a.App) *Context {
 	checkError("Accept-Language", err, http.StatusNotAcceptable)
 
 	ctx := &Context{
+		App:                a,
 		Response:           w,
 		Request:            r,
 		OutputMimeType:     marshal,
@@ -107,15 +108,13 @@ func New(w http.ResponseWriter, r *http.Request, app *a.App) *Context {
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      message.NewPrinter(tag),
-
-		app: app,
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = app.MimetypeUnmarshal(encName)
+		ctx.InputMimeType, err = ctx.App.MimetypeUnmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)

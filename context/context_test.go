@@ -42,6 +42,8 @@ func newContext(a *assert.Assertion,
 	inputMimeType mimetype.UnmarshalFunc,
 	InputCharset encoding.Encoding) *Context {
 	return &Context{
+		App: newApp(a),
+
 		Response:       w,
 		Request:        r,
 		OutputCharset:  outputCharset,
@@ -49,8 +51,6 @@ func newContext(a *assert.Assertion,
 
 		InputMimeType: inputMimeType,
 		InputCharset:  InputCharset,
-
-		app: newApp(a),
 	}
 }
 
