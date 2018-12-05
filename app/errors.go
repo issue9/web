@@ -72,10 +72,10 @@ func ExitContext(status int) {
 	panic(httpStatus(status))
 }
 
-// Recovery 生成一个 recovery.RecoverFunc 函数，用于捕获由 panic 触发的事件。
+// 生成一个 recovery.RecoverFunc 函数，用于捕获由 panic 触发的事件。
 //
 // debug 是否为调试模式，若是调试模式，则详细信息输出到客户端，否则输出到日志中。
-func (app *App) Recovery(debug bool) recovery.RecoverFunc {
+func (app *App) recovery(debug bool) recovery.RecoverFunc {
 	return func(w http.ResponseWriter, msg interface{}) {
 		// 通 httpStatus 退出的，并不能算是错误，所以此处不输出调用堆栈信息。
 		if status, ok := msg.(httpStatus); ok {

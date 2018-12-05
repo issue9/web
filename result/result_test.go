@@ -97,7 +97,6 @@ func TestResult_SetDetail(t *testing.T) {
 
 func TestResult_Render_Exit(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 
 	a.NotError(NewMessages(map[int]string{
 		http.StatusForbidden * 1000:    "400", // 需要与 resultRenderHandler 中的错误代码值相同
@@ -129,7 +128,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	}
 
 	h := http.HandlerFunc(resultRenderHandler)
-	srv := rest.NewServer(t, recovery.New(h, app.Recovery(false)), nil)
+	srv := rest.NewServer(t, recovery.New(h, recoverFunc), nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").
@@ -139,7 +138,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	// result.Code 不存在的情况
 	srv.NewRequest(http.MethodGet, "/error").
 		Do().
-		Status(http.StatusInternalServerError)
+		Status(http.StatusInternalServerError) // 等同于 recoverFunc 中的输出报头
 
 	// result.Exit() 测试
 	srv.NewRequest(http.MethodGet, "/exit").
@@ -147,4 +146,9 @@ func TestResult_Render_Exit(t *testing.T) {
 		Status(http.StatusUnauthorized)
 
 	cleanMessage()
+}
+
+// 仅作为 TestResult_Render_Exit 的测试用
+func recoverFunc(w http.ResponseWriter, msg interface{}) {
+	w.WriteHeader(http.StatusInternalServerError)
 }

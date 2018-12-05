@@ -99,11 +99,11 @@ func TestApp_RenderError_0(t *testing.T) {
 		Equal(w.Body.String(), "test")
 }
 
-func TestApp_Recovery_debug(t *testing.T) {
+func TestApp_recovery_debug(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	fn := app.Recovery(true)
+	fn := app.recovery(true)
 
 	w := httptest.NewRecorder()
 	a.NotPanic(func() { fn(w, "msg") })
@@ -125,13 +125,13 @@ func TestApp_Recovery_debug(t *testing.T) {
 	a.True(strings.Contains(w.Body.String(), http.StatusText(http.StatusBadGateway)))
 }
 
-func TestApp_Recovery(t *testing.T) {
+func TestApp_recovery(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 	errLog := new(bytes.Buffer)
 	app.ERROR().SetOutput(errLog)
 
-	fn := app.Recovery(false)
+	fn := app.recovery(false)
 
 	w := httptest.NewRecorder()
 	a.NotPanic(func() { fn(w, "msg") })

@@ -48,7 +48,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 
 	// recovery
 	app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
-		return recovery.New(h, app.Recovery(conf.Debug))
+		return recovery.New(h, app.recovery(conf.Debug))
 	})
 
 	// compress
