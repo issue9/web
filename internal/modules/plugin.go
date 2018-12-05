@@ -11,7 +11,6 @@ import (
 	"plugin"
 	"runtime"
 
-	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
 )
 
@@ -34,7 +33,7 @@ func isPluginOS() bool {
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func loadPlugins(glob string, router *mux.Prefix) ([]*module.Module, error) {
+func loadPlugins(glob string) ([]*module.Module, error) {
 	if !isPluginOS() {
 		return nil, errors.New("windows 平台并未实现插件功能！")
 	}
@@ -46,7 +45,7 @@ func loadPlugins(glob string, router *mux.Prefix) ([]*module.Module, error) {
 
 	modules := make([]*module.Module, 0, len(fs))
 	for _, path := range fs {
-		m, err := loadPlugin(path, router)
+		m, err := loadPlugin(path)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +56,7 @@ func loadPlugins(glob string, router *mux.Prefix) ([]*module.Module, error) {
 	return modules, nil
 }
 
-func loadPlugin(path string, router *mux.Prefix) (*module.Module, error) {
+func loadPlugin(path string) (*module.Module, error) {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return nil, err

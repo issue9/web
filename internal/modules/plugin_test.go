@@ -20,10 +20,10 @@ func TestModuleInitFuncName(t *testing.T) {
 func TestLoadPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := loadPlugins("./testdata/plugin-*.so", nil)
+	ms, err := loadPlugins("./testdata/plugin-*.so")
 	a.Error(err).Nil(ms)
 
-	ms, err = loadPlugins("./testdata/plugin_*.so", nil)
+	ms, err = loadPlugins("./testdata/plugin_*.so")
 	if !isPluginOS() {
 		a.Error(err).Nil(ms)
 	} else {
@@ -39,15 +39,17 @@ func TestApp_loadPlugin(t *testing.T) {
 		return
 	}
 
-	m, err := loadPlugin("./testdata/plugin_1.so", nil)
+	m, err := loadPlugin("./testdata/plugin_1.so")
 	a.NotError(err).NotNil(m)
 	a.Equal(m.Name, "plugin1")
+	a.NotEmpty(m.Routes["/plugin1"]["GET"])
+	a.Empty(m.Routes["/plugin1"]["POST"])
 
 	// 加载错误的插件
-	m, err = loadPlugin("./testdata/plugin-3.so", nil)
+	m, err = loadPlugin("./testdata/plugin-3.so")
 	a.Error(err).Nil(m)
 
 	// 不存在的插件
-	m, err = loadPlugin("./testdata/not-exists.so", nil)
+	m, err = loadPlugin("./testdata/not-exists.so")
 	a.Error(err).Nil(m)
 }

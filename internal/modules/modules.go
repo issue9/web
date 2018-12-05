@@ -47,7 +47,7 @@ func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 
 	// 在初始化模块之前，先加载插件
 	if conf.Plugins != "" {
-		modules, err := loadPlugins(conf.Plugins, ms.router)
+		modules, err := loadPlugins(conf.Plugins)
 		if err != nil {
 			return nil, err
 		}

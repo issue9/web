@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/issue9/web/module"
 )
@@ -22,6 +23,10 @@ func Init(m *module.Module) {
 
 	m.NewTag("install").AddInitTitle("title", install1)
 	m.NewTag("v1.0").AddInitTitle("title", install2)
+
+	m.GetFunc("/plugin1", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("plugin1"))
+	})
 }
 
 func init1() error {
