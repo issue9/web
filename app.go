@@ -125,11 +125,6 @@ func RegisterOnShutdown(f func()) {
 	defaultApp.RegisterOnShutdown(f)
 }
 
-// LoadConfig 从配置目录中加载数据到对象 v 中。
-func LoadConfig(path string, v interface{}) error {
-	return defaultApp.LoadFile(path, v)
-}
-
 // NewModule 注册一个模块
 func NewModule(name, desc string, deps ...string) *Module {
 	return defaultApp.NewModule(name, desc, deps...)
