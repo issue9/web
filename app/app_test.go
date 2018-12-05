@@ -65,7 +65,7 @@ func newApp(a *assert.Assertion) *App {
 	return app
 }
 
-func TestApp_SetMiddleware(t *testing.T) {
+func TestApp_AddMiddleware(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 	m := func(h http.Handler) http.Handler {
@@ -74,7 +74,7 @@ func TestApp_SetMiddleware(t *testing.T) {
 			h.ServeHTTP(w, r)
 		})
 	}
-	app.SetMiddlewares(m)
+	app.AddMiddlewares(m)
 	a.Equal(len(app.middlewares), 1).
 		True(app.webConfig.Debug).
 		Equal(app.webConfig.Domain, "localhost")
