@@ -68,5 +68,5 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
-	app.Exit(status)
+	app.ExitContext(status)
 }

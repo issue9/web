@@ -84,7 +84,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		}
 
 		a.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		app.Exit(status)
+		app.ExitContext(status)
 	}
 
 	header := r.Header.Get("Accept")

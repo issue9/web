@@ -24,7 +24,7 @@ func TestApp_buildMiddlewares(t *testing.T) {
 	})
 
 	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Exit(http.StatusNotAcceptable)
+		ExitContext(http.StatusNotAcceptable)
 	})
 
 	app.buildMiddlewares(&webconfig.WebConfig{})
