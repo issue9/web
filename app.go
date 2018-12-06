@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
@@ -46,18 +45,7 @@ func App() *app.App {
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(sig ...os.Signal) {
-	go func() {
-		signalChannel := make(chan os.Signal)
-		signal.Notify(signalChannel, sig...)
-
-		<-signalChannel
-		signal.Stop(signalChannel)
-
-		if err := Shutdown(); err != nil {
-			Error(err)
-			FlushLogs() // 保证内容会被正常输出到日志。
-		}
-	}()
+	app.Grace(defaultApp, sig...)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。

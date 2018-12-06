@@ -9,6 +9,8 @@ import (
 	stdctx "context"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 
 	"github.com/issue9/logs/v2"
@@ -241,4 +243,26 @@ func (app *App) AddMimetypeUnmarshal(name string, mf mimetype.UnmarshalFunc) err
 // 正常情况下，可以直接通过 options 的配置项添加。
 func (app *App) AddMimetypeMarshal(name string, mf mimetype.MarshalFunc) error {
 	return app.mt.AddMarshal(name, mf)
+}
+
+// Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
+//
+// 多次调用，则每次指定的信号都会起作用，如果由传递了相同的值，
+// 则有可能多次触发 Shutdown()。
+//
+// NOTE: 传递空值，与不调用，其结果是不同的。
+// 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
+func Grace(app *App, sig ...os.Signal) {
+	go func() {
+		signalChannel := make(chan os.Signal)
+		signal.Notify(signalChannel, sig...)
+
+		<-signalChannel
+		signal.Stop(signalChannel)
+
+		if err := app.Shutdown(); err != nil {
+			app.Error(err)
+			app.FlushLogs() // 保证内容会被正常输出到日志。
+		}
+	}()
 }

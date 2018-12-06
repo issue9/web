@@ -36,6 +36,7 @@ func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 	}
 
 	// 默认的模块
+	// 数组的第一个元素，且没有依赖，可以确保是第一个被初始化的元素。
 	m := ms.NewModule(coreModuleName, coreModuleDescription)
 
 	// 初始化静态文件处理
