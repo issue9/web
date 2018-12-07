@@ -60,6 +60,8 @@ func New(opt *Options) (*App, error) {
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
+//
+// 在调用 serve 之后调用将不再启效果。
 func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
 	app.middlewares = append(app.middlewares, m...)
 	return app
@@ -123,7 +125,7 @@ func (app *App) initServer() error {
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
 		Handler:           middleware.Handler(app.mux, app.middlewares...),
-		ErrorLog:          app.logs.ERROR(),
+		ErrorLog:          app.ERROR(),
 		ReadTimeout:       app.webConfig.ReadTimeout,
 		WriteTimeout:      app.webConfig.WriteTimeout,
 		IdleTimeout:       app.webConfig.IdleTimeout,
@@ -298,5 +300,6 @@ func Grace(app *App, sig ...os.Signal) {
 			app.Error(err)
 			app.FlushLogs() // 保证内容会被正常输出到日志。
 		}
+		close(signalChannel)
 	}()
 }
