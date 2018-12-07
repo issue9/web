@@ -7,6 +7,7 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/http"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/mux"
@@ -92,7 +93,7 @@ func (opt *Options) newApp() (*App, error) {
 		errorHandlers = make(map[int]ErrorHandler, 10)
 	}
 
-	mux := mux.New(webconf.DisableOptions, false, nil, nil)
+	mux := mux.New(webconf.DisableOptions, false, notFound, methodNotAllowed)
 
 	ms, err := modules.New(mux, webconf)
 	if err != nil {
@@ -110,4 +111,12 @@ func (opt *Options) newApp() (*App, error) {
 		logs:          logs,
 		errorHandlers: errorHandlers,
 	}, nil
+}
+
+func notFound(w http.ResponseWriter, r *http.Request) {
+	ExitContext(http.StatusNotFound)
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	ExitContext(http.StatusMethodNotAllowed)
 }

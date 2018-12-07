@@ -7,6 +7,7 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -112,6 +113,10 @@ func TestApp_Handler(t *testing.T) {
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	app.AddErrorHandler(func(w http.ResponseWriter, status int) {
+		w.WriteHeader(status)
+		w.Write([]byte("error handler test"))
+	}, http.StatusNotFound)
 
 	m1 := app.NewModule("m1", "m1 desc", "m2")
 	a.NotNil(m1)
@@ -141,6 +146,15 @@ func TestApp_Serve(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)
 
+	// not found
+	// 返回 ErrorHandler 内容
+	resp, err = http.Get("http://localhost:8082/mux/not-exists.txt")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusNotFound)
+	text, err := ioutil.ReadAll(resp.Body)
+	a.NotError(err).NotNil(text)
+	a.Equal(string(text), "error handler test")
+
 	// static 中定义的静态文件
 	resp, err = http.Get("http://localhost:8082/client/file1.txt")
 	a.NotError(err).NotNil(resp)
@@ -154,6 +168,9 @@ func TestApp_Serve(t *testing.T) {
 	resp, err = http.Get("http://localhost:8082/client/dir/not-exists.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusNotFound)
+	text, err = ioutil.ReadAll(resp.Body)
+	a.NotError(err).NotNil(text)
+	a.Equal(string(text), "error handler test")
 
 	app.Close()
 }
