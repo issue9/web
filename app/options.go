@@ -16,13 +16,32 @@ import (
 	"github.com/issue9/web/mimetype"
 )
 
-// Options 配置项
+// Options App 的配置项
 type Options struct {
-	Dir                string
-	ErrorHandlers      map[int]ErrorHandler
-	Middlewares        []middleware.Middleware
-	ConfigUnmarshals   map[string]config.UnmarshalFunc
-	MimetypeMarshals   map[string]mimetype.MarshalFunc
+	// 配置文件所在的目录，不能为空。
+	// 框架自带的 web.yaml 和 logs.xml 也都将在此目录下。
+	Dir string
+
+	// 指定状态下对应的错误处理函数。
+	//
+	// 若该状态码的处理函数不存在，则会查找键值为 0 的函数，
+	// 若依然不存在，则调用 defaultRender
+	//
+	// 用户也可以通过调用 App.AddErrorHandler 进行添加。
+	ErrorHandlers map[int]ErrorHandler
+
+	// 指定使用的中间件。
+	//
+	// 用户也可以通过 app.AddMiddlewares 进行添加。
+	Middlewares []middleware.Middleware
+
+	// 指定配置文件的解析函数
+	ConfigUnmarshals map[string]config.UnmarshalFunc
+
+	// 指定 mimetype 的编码函数
+	MimetypeMarshals map[string]mimetype.MarshalFunc
+
+	// 指定 mimetype 的解码函数
 	MimetypeUnmarshals map[string]mimetype.UnmarshalFunc
 }
 

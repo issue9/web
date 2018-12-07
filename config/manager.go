@@ -22,7 +22,7 @@ type Sanitizer interface {
 	Sanitize() error
 }
 
-// Manager 配置管理内容
+// Manager 对 UnmarshalFunc 与扩展名的关联管理。
 type Manager struct {
 	dir        string
 	unmarshals map[string]UnmarshalFunc
