@@ -9,7 +9,6 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/modules"
@@ -21,7 +20,6 @@ import (
 type Options struct {
 	Dir                string
 	ErrorHandlers      map[int]ErrorHandler
-	Compresses         map[string]compress.WriterFunc
 	Middlewares        []middleware.Middleware
 	ConfigUnmarshals   map[string]config.UnmarshalFunc
 	MimetypeMarshals   map[string]mimetype.MarshalFunc
@@ -67,11 +65,6 @@ func (opt *Options) newApp() (*App, error) {
 		errorHandlers = make(map[int]ErrorHandler, 10)
 	}
 
-	compresses := opt.Compresses
-	if compresses == nil {
-		compresses = make(map[string]compress.WriterFunc, 10)
-	}
-
 	mux := mux.New(webconf.DisableOptions, false, nil, nil)
 
 	ms, err := modules.New(mux, webconf)
@@ -89,6 +82,5 @@ func (opt *Options) newApp() (*App, error) {
 		configs:       mgr,
 		logs:          logs,
 		errorHandlers: errorHandlers,
-		compresses:    compresses,
 	}, nil
 }

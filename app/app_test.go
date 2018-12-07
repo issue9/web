@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/assert"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
@@ -40,11 +39,6 @@ func newApp(a *assert.Assertion) *App {
 			".yml":  yaml.Unmarshal,
 			".xml":  xml.Unmarshal,
 			".json": json.Unmarshal,
-		},
-
-		Compresses: map[string]compress.WriterFunc{
-			"gizp":    compress.NewGzip,
-			"deflate": compress.NewDeflate,
 		},
 
 		MimetypeMarshals: map[string]mimetype.MarshalFunc{

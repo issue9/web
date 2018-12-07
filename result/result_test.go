@@ -17,7 +17,6 @@ import (
 	xmessage "golang.org/x/text/message"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
@@ -40,11 +39,6 @@ func newApp(a *assert.Assertion) *app.App {
 			".yml":  yaml.Unmarshal,
 			".xml":  xml.Unmarshal,
 			".json": json.Unmarshal,
-		},
-
-		Compresses: map[string]compress.WriterFunc{
-			"gizp":    compress.NewGzip,
-			"deflate": compress.NewDeflate,
 		},
 
 		MimetypeMarshals: map[string]mimetype.MarshalFunc{

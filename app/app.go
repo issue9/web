@@ -6,8 +6,7 @@
 package app
 
 import (
-	stdctx "context"
-	"errors"
+	"context"
 	"io"
 	"net/http"
 	"os"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
@@ -42,7 +40,6 @@ type App struct {
 
 	modules       *modules.Modules
 	mt            *mimetypes.Mimetypes
-	compresses    map[string]compress.WriterFunc
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorHandlers map[int]ErrorHandler
@@ -189,7 +186,7 @@ func (app *App) Shutdown() error {
 		return app.close()
 	}
 
-	ctx, cancel := stdctx.WithTimeout(stdctx.Background(), app.webConfig.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
 	defer func() {
 		cancel()
 		app.closed <- true
@@ -246,25 +243,6 @@ func (app *App) AddMimetypeUnmarshal(name string, mf mimetype.UnmarshalFunc) err
 // 正常情况下，可以直接通过 options 的配置项添加。
 func (app *App) AddMimetypeMarshal(name string, mf mimetype.MarshalFunc) error {
 	return app.mt.AddMarshal(name, mf)
-}
-
-// AddCompress 添加压缩处理函数，若已经存在，则返回错误信息
-//
-// name 表示压缩名称，比如 deflate 等。
-func (app *App) AddCompress(name string, f compress.WriterFunc) error {
-	if _, found := app.compresses[name]; found {
-		return errors.New("已经存在相同名称")
-	}
-
-	app.compresses[name] = f
-	return nil
-}
-
-// SetCompress 添加压缩处理函数，若已经存在，则修改其关联的函数。
-//
-// name 表示压缩名称，比如 deflate 等。
-func (app *App) SetCompress(name string, f compress.WriterFunc) {
-	app.compresses[name] = f
 }
 
 // AddConfigUnmarshal 添加配置文件的处理函数

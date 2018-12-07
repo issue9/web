@@ -27,6 +27,12 @@ const (
 	debugVarsPath = "/debug/vars"
 )
 
+// 目前支持的压缩方式
+var compresses = map[string]compress.WriterFunc{
+	"gizp":    compress.NewGzip,
+	"deflate": compress.NewDeflate,
+}
+
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	if app.middlewares == nil {
 		app.middlewares = make([]middleware.Middleware, 0, 10)
@@ -55,7 +61,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	if conf.Compress != nil {
 		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
-				Funcs:    app.compresses,
+				Funcs:    compresses,
 				Types:    conf.Compress.Types,
 				Size:     conf.Compress.Size,
 				ErrorLog: app.ERROR(),

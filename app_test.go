@@ -14,7 +14,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/middleware/compress"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
@@ -34,11 +33,6 @@ func newOptions() *Options {
 			".yml":  yaml.Unmarshal,
 			".xml":  xml.Unmarshal,
 			".json": json.Unmarshal,
-		},
-
-		Compresses: map[string]compress.WriterFunc{
-			"gizp":    compress.NewGzip,
-			"deflate": compress.NewDeflate,
 		},
 
 		MimetypeMarshals: map[string]mimetype.MarshalFunc{
