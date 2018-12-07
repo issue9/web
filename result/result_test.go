@@ -15,10 +15,8 @@ import (
 	"github.com/issue9/middleware/recovery"
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/form"
@@ -33,13 +31,6 @@ var (
 func newApp(a *assert.Assertion) *app.App {
 	app, err := app.New(&app.Options{
 		Dir: "../testdata",
-
-		ConfigUnmarshals: map[string]config.UnmarshalFunc{
-			".yaml": yaml.Unmarshal,
-			".yml":  yaml.Unmarshal,
-			".xml":  xml.Unmarshal,
-			".json": json.Unmarshal,
-		},
 
 		MimetypeMarshals: map[string]mimetype.MarshalFunc{
 			"application/json": json.Marshal,

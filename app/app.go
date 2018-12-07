@@ -245,18 +245,9 @@ func (app *App) AddMimetypeMarshal(name string, mf mimetype.MarshalFunc) error {
 	return app.mt.AddMarshal(name, mf)
 }
 
-// AddConfigUnmarshal 添加配置文件的处理函数
-//
-// ext 表示配置文件的扩展名。
-func (app *App) AddConfigUnmarshal(f config.UnmarshalFunc, ext ...string) error {
-	return app.configs.AddUnmarshal(f, ext...)
-}
-
-// SetConfigUnmarshal 添加配置文件的处理函数
-//
-// ext 表示配置文件的扩展名。
-func (app *App) SetConfigUnmarshal(f config.UnmarshalFunc, ext ...string) error {
-	return app.configs.SetUnmarshal(f, ext...)
+// Config 获取 config.Manager 的实例
+func (app *App) Config() *config.Manager {
+	return app.configs
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。

@@ -5,8 +5,12 @@
 package app
 
 import (
+	"encoding/json"
+	"encoding/xml"
+
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/mux"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/middleware"
 	"github.com/issue9/web/config"
@@ -15,6 +19,13 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 )
+
+var configUnmarshals = map[string]config.UnmarshalFunc{
+	".yaml": yaml.Unmarshal,
+	".yml":  yaml.Unmarshal,
+	".xml":  xml.Unmarshal,
+	".json": json.Unmarshal,
+}
 
 // Options App 的配置项
 type Options struct {
@@ -35,9 +46,6 @@ type Options struct {
 	// 用户也可以通过 app.AddMiddlewares 进行添加。
 	Middlewares []middleware.Middleware
 
-	// 指定配置文件的解析函数
-	ConfigUnmarshals map[string]config.UnmarshalFunc
-
 	// 指定 mimetype 的编码函数
 	MimetypeMarshals map[string]mimetype.MarshalFunc
 
@@ -50,7 +58,7 @@ func (opt *Options) newApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range opt.ConfigUnmarshals {
+	for k, v := range configUnmarshals {
 		if err := mgr.AddUnmarshal(v, k); err != nil {
 			return nil, err
 		}
