@@ -40,6 +40,8 @@ func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 	m := ms.NewModule(coreModuleName, coreModuleDescription)
 
 	// 初始化静态文件处理
+	// BUG(caixw): http.FileServer 无法自定义 404 等错误的行为。
+	// https://github.com/issue9/web/issues/4
 	for url, dir := range conf.Static {
 		pattern := path.Join(conf.Root, url+"{path}")
 		fs := http.FileServer(http.Dir(dir))
