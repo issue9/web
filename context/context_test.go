@@ -55,20 +55,20 @@ func newContext(a *assert.Assertion,
 func newApp(a *assert.Assertion) *app.App {
 	app, err := app.New(&app.Options{
 		Dir: "../testdata",
+	})
 
-		MimetypeMarshals: map[string]mimetype.MarshalFunc{
-			"application/json":       json.Marshal,
-			"application/xml":        xml.Marshal,
-			mimetype.DefaultMimetype: gob.Marshal,
-			mimetypetest.MimeType:    mimetypetest.TextMarshal,
-		},
+	app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+		"application/json":       json.Marshal,
+		"application/xml":        xml.Marshal,
+		mimetype.DefaultMimetype: gob.Marshal,
+		mimetypetest.MimeType:    mimetypetest.TextMarshal,
+	})
 
-		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
-			"application/json":       json.Unmarshal,
-			"application/xml":        xml.Unmarshal,
-			mimetype.DefaultMimetype: gob.Unmarshal,
-			mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
-		},
+	app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		"application/json":       json.Unmarshal,
+		"application/xml":        xml.Unmarshal,
+		mimetype.DefaultMimetype: gob.Unmarshal,
+		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 	})
 
 	a.NotError(err).NotNil(app)

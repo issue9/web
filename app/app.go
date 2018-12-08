@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/mux"
 
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -39,7 +38,7 @@ type App struct {
 	server      *http.Server
 
 	modules       *modules.Modules
-	mt            *mimetypes.Mimetypes
+	mt            *mimetype.Mimetypes
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorHandlers map[int]ErrorHandler
@@ -219,30 +218,9 @@ func (app *App) Load(r io.Reader, typ string, v interface{}) error {
 	return app.configs.Load(r, typ, v)
 }
 
-// MimetypeMarshal 获取指定的编码函数及其官方名称
-func (app *App) MimetypeMarshal(name string) (string, mimetype.MarshalFunc, error) {
-	return app.mt.Marshal(name)
-}
-
-// MimetypeUnmarshal 获取指定名称的解码函数
-func (app *App) MimetypeUnmarshal(name string) (mimetype.UnmarshalFunc, error) {
-	return app.mt.Unmarshal(name)
-}
-
-// AddMimetypeUnmarshal 添加解码函数
-//
-// 动态添加 mimetype 的解码函数。
-// 正常情况下，可以直接通过 options 的配置项添加。
-func (app *App) AddMimetypeUnmarshal(name string, mf mimetype.UnmarshalFunc) error {
-	return app.mt.AddUnmarshal(name, mf)
-}
-
-// AddMimetypeMarshal 添加编码函数
-//
-// 动态添加 mimetype 的编码函数。
-// 正常情况下，可以直接通过 options 的配置项添加。
-func (app *App) AddMimetypeMarshal(name string, mf mimetype.MarshalFunc) error {
-	return app.mt.AddMarshal(name, mf)
+// Mimetypes 返回 mimetype.Mimetypes
+func (app *App) Mimetypes() *mimetype.Mimetypes {
+	return app.mt
 }
 
 // Config 获取 config.Manager 的实例

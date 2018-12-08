@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/middleware"
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -46,12 +45,6 @@ type Options struct {
 	//
 	// 用户也可以通过 app.AddMiddlewares 进行添加。
 	Middlewares []middleware.Middleware
-
-	// 指定 mimetype 的编码函数
-	MimetypeMarshals map[string]mimetype.MarshalFunc
-
-	// 指定 mimetype 的解码函数
-	MimetypeUnmarshals map[string]mimetype.UnmarshalFunc
 }
 
 func (opt *Options) newApp() (*App, error) {
@@ -72,14 +65,6 @@ func (opt *Options) newApp() (*App, error) {
 
 	webconf := &webconfig.WebConfig{}
 	if err = mgr.LoadFile(configFilename, webconf); err != nil {
-		return nil, err
-	}
-
-	mt := mimetypes.New()
-	if err = mt.AddMarshals(opt.MimetypeMarshals); err != nil {
-		return nil, err
-	}
-	if err = mt.AddUnmarshals(opt.MimetypeUnmarshals); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +91,7 @@ func (opt *Options) newApp() (*App, error) {
 		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
-		mt:            mt,
+		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          logs,
 		errorHandlers: errorHandlers,

@@ -32,18 +32,18 @@ var (
 func newApp(a *assert.Assertion) *App {
 	app, err := New(&Options{
 		Dir: "./testdata",
+	})
 
-		MimetypeMarshals: map[string]mimetype.MarshalFunc{
-			"application/json":       json.Marshal,
-			"application/xml":        xml.Marshal,
-			mimetype.DefaultMimetype: gob.Marshal,
-		},
+	app.mt.AddMarshals(map[string]mimetype.MarshalFunc{
+		"application/json":       json.Marshal,
+		"application/xml":        xml.Marshal,
+		mimetype.DefaultMimetype: gob.Marshal,
+	})
 
-		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
-			"application/json":       json.Unmarshal,
-			"application/xml":        xml.Unmarshal,
-			mimetype.DefaultMimetype: gob.Unmarshal,
-		},
+	app.mt.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		"application/json":       json.Unmarshal,
+		"application/xml":        xml.Unmarshal,
+		mimetype.DefaultMimetype: gob.Unmarshal,
 	})
 
 	a.NotError(err).NotNil(app)

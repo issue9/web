@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package mimetypes 实现 mimetype 的管理
-package mimetypes
+package mimetype
 
 import (
 	"errors"
@@ -12,8 +11,6 @@ import (
 	"strings"
 
 	"github.com/issue9/middleware/compress/accept"
-
-	"github.com/issue9/web/mimetype"
 )
 
 var errInvalidMimetype = errors.New("mimetype 名称无效")
@@ -25,12 +22,12 @@ type Mimetypes struct {
 }
 
 type marshaler struct {
-	f    mimetype.MarshalFunc
+	f    MarshalFunc
 	name string
 }
 
 type unmarshaler struct {
-	f    mimetype.UnmarshalFunc
+	f    UnmarshalFunc
 	name string
 }
 
@@ -47,7 +44,7 @@ func nameExists(name string) error {
 }
 
 // Unmarshal 查找指定名称的 UnmarshalFunc
-func (m *Mimetypes) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
+func (m *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
 	var unmarshal *unmarshaler
 	for _, mt := range m.unmarshals {
 		if mt.name == name {
@@ -75,7 +72,7 @@ func (m *Mimetypes) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (m *Mimetypes) Marshal(header string) (string, mimetype.MarshalFunc, error) {
+func (m *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 	if header == "" {
 		if mm := m.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.f, nil
@@ -98,7 +95,7 @@ func (m *Mimetypes) Marshal(header string) (string, mimetype.MarshalFunc, error)
 }
 
 // AddMarshals 添加多个编码函数
-func (m *Mimetypes) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+func (m *Mimetypes) AddMarshals(ms map[string]MarshalFunc) error {
 	for k, v := range ms {
 		if err := m.AddMarshal(k, v); err != nil {
 			return err
@@ -109,7 +106,7 @@ func (m *Mimetypes) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
 }
 
 // AddMarshal 添加编码函数
-func (m *Mimetypes) AddMarshal(name string, mf mimetype.MarshalFunc) error {
+func (m *Mimetypes) AddMarshal(name string, mf MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") || name == "*" {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
@@ -126,11 +123,11 @@ func (m *Mimetypes) AddMarshal(name string, mf mimetype.MarshalFunc) error {
 	})
 
 	sort.SliceStable(m.marshals, func(i, j int) bool {
-		if m.marshals[i].name == mimetype.DefaultMimetype {
+		if m.marshals[i].name == DefaultMimetype {
 			return true
 		}
 
-		if m.marshals[j].name == mimetype.DefaultMimetype {
+		if m.marshals[j].name == DefaultMimetype {
 			return false
 		}
 
@@ -141,7 +138,7 @@ func (m *Mimetypes) AddMarshal(name string, mf mimetype.MarshalFunc) error {
 }
 
 // AddUnmarshals 添加多个编码函数
-func (m *Mimetypes) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+func (m *Mimetypes) AddUnmarshals(ms map[string]UnmarshalFunc) error {
 	for k, v := range ms {
 		if err := m.AddUnmarshal(k, v); err != nil {
 			return err
@@ -152,7 +149,7 @@ func (m *Mimetypes) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 }
 
 // AddUnmarshal 添加编码函数
-func (m *Mimetypes) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+func (m *Mimetypes) AddUnmarshal(name string, mm UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
@@ -169,11 +166,11 @@ func (m *Mimetypes) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 	})
 
 	sort.SliceStable(m.unmarshals, func(i, j int) bool {
-		if m.unmarshals[i].name == mimetype.DefaultMimetype {
+		if m.unmarshals[i].name == DefaultMimetype {
 			return true
 		}
 
-		if m.unmarshals[j].name == mimetype.DefaultMimetype {
+		if m.unmarshals[j].name == DefaultMimetype {
 			return false
 		}
 

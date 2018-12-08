@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -22,30 +23,30 @@ import (
 
 var testdata = ""
 
-func newOptions() *Options {
-	return &Options{
-		Dir: "./testdata",
-
-		MimetypeMarshals: map[string]mimetype.MarshalFunc{
-			"application/json":       json.Marshal,
-			"application/xml":        xml.Marshal,
-			"text/plain":             mimetypetest.TextMarshal,
-			mimetype.DefaultMimetype: gob.Marshal,
-		},
-
-		MimetypeUnmarshals: map[string]mimetype.UnmarshalFunc{
-			"application/json":       json.Unmarshal,
-			"application/xml":        xml.Unmarshal,
-			"text/plain":             mimetypetest.TextUnmarshal,
-			mimetype.DefaultMimetype: gob.Unmarshal,
-		},
-	}
-}
-
 func TestMain(m *testing.M) {
-	if err := Init(newOptions()); err != nil {
+	opt := &Options{
+		Dir: "./testdata",
+	}
+
+	tmp, err := app.New(opt)
+	if err != nil {
 		panic(err)
 	}
+
+	defaultApp = tmp
+	defaultApp.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+		"application/json":       json.Marshal,
+		"application/xml":        xml.Marshal,
+		mimetype.DefaultMimetype: gob.Marshal,
+		mimetypetest.MimeType:    mimetypetest.TextMarshal,
+	})
+
+	defaultApp.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		"application/json":       json.Unmarshal,
+		"application/xml":        xml.Unmarshal,
+		mimetype.DefaultMimetype: gob.Unmarshal,
+		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
+	})
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
@@ -71,13 +72,6 @@ func TestMain(m *testing.M) {
 		testdata = "m2"
 		return nil
 	})
-}
-
-func TestInit(t *testing.T) {
-	a := assert.New(t)
-	a.Error(Init(newOptions()))
-
-	a.Equal(defaultApp, App())
 }
 
 func TestIsDebug(t *testing.T) {

@@ -88,7 +88,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := a.MimetypeMarshal(header)
+	outputMimeTypeName, marshal, err := a.Mimetypes().Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -114,7 +114,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = ctx.App.MimetypeUnmarshal(encName)
+		ctx.InputMimeType, err = ctx.App.Mimetypes().Unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
