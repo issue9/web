@@ -48,6 +48,10 @@ func newApp(a *assert.Assertion) *App {
 
 	a.NotError(err).NotNil(app)
 
+	// 以下内容由配置文件决定
+	a.True(app.IsDebug()).
+		True(len(app.Modules()) > 0) // 最起码有 web-core 模板
+
 	return app
 }
 
@@ -73,6 +77,9 @@ func TestApp_AddMiddleware(t *testing.T) {
 
 	// 等待 Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
+
+	// 启动服务之后，再添加中间件，会产生 panic
+	a.Panic(func() { app.AddMiddlewares(m) })
 
 	// 正常访问
 	resp, err := http.Get("http://localhost:8082/middleware")

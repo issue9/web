@@ -33,7 +33,9 @@ const (
 type App struct {
 	webConfig *webconfig.WebConfig
 
-	middlewares []middleware.Middleware // 应用于全局路由项的中间件
+	// 应用于全局路由项的中间件。当服务启动之后，该列表不再启作用。
+	// 服务启动之后，会将该值设置为 nil。表示服务已经启动。
+	middlewares []middleware.Middleware
 	mux         *mux.Mux
 	server      *http.Server
 
@@ -66,6 +68,10 @@ func New(opt *Options) (*App, error) {
 //
 // 在调用 serve 之后调用将不再启效果。
 func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
+	if app.middlewares == nil {
+		panic("服务已经启动，不能再设置中是间件信息！")
+	}
+
 	app.middlewares = append(app.middlewares, m...)
 	return app
 }
@@ -134,6 +140,7 @@ func (app *App) initServer() error {
 		IdleTimeout:       app.webConfig.IdleTimeout,
 		ReadHeaderTimeout: app.webConfig.ReadHeaderTimeout,
 	}
+	app.middlewares = nil // 不再启作用
 
 	return nil
 }

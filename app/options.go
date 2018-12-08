@@ -32,11 +32,6 @@ type Options struct {
 	// 配置文件所在的目录，不能为空。
 	// 框架自带的 web.yaml 和 logs.xml 也都将在此目录下。
 	Dir string
-
-	// 指定使用的中间件。
-	//
-	// 用户也可以通过 app.AddMiddlewares 进行添加。
-	Middlewares []middleware.Middleware
 }
 
 func (opt *Options) newApp() (*App, error) {
@@ -60,11 +55,6 @@ func (opt *Options) newApp() (*App, error) {
 		return nil, err
 	}
 
-	middlewares := opt.Middlewares
-	if middlewares == nil {
-		middlewares = make([]middleware.Middleware, 0, 10)
-	}
-
 	mux := mux.New(webconf.DisableOptions, false, notFound, methodNotAllowed)
 
 	ms, err := modules.New(mux, webconf)
@@ -74,7 +64,7 @@ func (opt *Options) newApp() (*App, error) {
 
 	return &App{
 		webConfig:     webconf,
-		middlewares:   middlewares,
+		middlewares:   make([]middleware.Middleware, 0, 10),
 		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
