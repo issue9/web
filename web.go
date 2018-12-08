@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/issue9/version"
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
@@ -33,9 +32,6 @@ type (
 
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module
-
-	// Options Init 的参数类型
-	Options = app.Options
 )
 
 // NewResult 生成一个 *result.Result 对象

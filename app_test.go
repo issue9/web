@@ -24,11 +24,7 @@ import (
 var testdata = ""
 
 func TestMain(m *testing.M) {
-	opt := &Options{
-		Dir: "./testdata",
-	}
-
-	tmp, err := app.New(opt)
+	tmp, err := app.New("./testdata")
 	if err != nil {
 		panic(err)
 	}

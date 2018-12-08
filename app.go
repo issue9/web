@@ -23,12 +23,12 @@ import (
 var defaultApp *app.App
 
 // Init 初始化整个应用环境
-func Init(opt *Options) (err error) {
+func Init(dir string) (err error) {
 	if defaultApp != nil {
 		return errors.New("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(opt)
+	defaultApp, err = app.New(dir)
 	return
 }
 

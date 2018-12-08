@@ -29,9 +29,7 @@ var (
 
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *app.App {
-	app, err := app.New(&app.Options{
-		Dir: "../testdata",
-	})
+	app, err := app.New("../testdata")
 
 	app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json": json.Marshal,

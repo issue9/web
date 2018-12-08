@@ -7,6 +7,8 @@ package app
 
 import (
 	"context"
+	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"os"
@@ -16,6 +18,7 @@ import (
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/modules"
@@ -28,6 +31,13 @@ const (
 	configFilename = "web.yaml" // 配置文件的文件名。
 	logsFilename   = "logs.xml" // 日志配置文件的文件名。
 )
+
+var configUnmarshals = map[string]config.UnmarshalFunc{
+	".yaml": yaml.Unmarshal,
+	".yml":  yaml.Unmarshal,
+	".xml":  xml.Unmarshal,
+	".json": json.Unmarshal,
+}
 
 // App 程序运行实例
 type App struct {
@@ -60,8 +70,45 @@ type App struct {
 //
 // 日志系统会在此处初始化。
 // opt 参数在传递之后，再次修改，将不对 App 启作用。
-func New(opt *Options) (*App, error) {
-	return opt.newApp()
+func New(dir string) (*App, error) {
+	mgr, err := config.NewManager(dir)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range configUnmarshals {
+		if err := mgr.AddUnmarshal(v, k); err != nil {
+			return nil, err
+		}
+	}
+
+	logs := logs.New()
+	if err = logs.InitFromXMLFile(mgr.File(logsFilename)); err != nil {
+		return nil, err
+	}
+
+	webconf := &webconfig.WebConfig{}
+	if err = mgr.LoadFile(configFilename, webconf); err != nil {
+		return nil, err
+	}
+
+	mux := mux.New(webconf.DisableOptions, false, notFound, methodNotAllowed)
+
+	ms, err := modules.New(mux, webconf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &App{
+		webConfig:     webconf,
+		middlewares:   make([]middleware.Middleware, 0, 10),
+		mux:           mux,
+		closed:        make(chan bool, 1),
+		modules:       ms,
+		mt:            mimetype.New(),
+		configs:       mgr,
+		logs:          logs,
+		errorHandlers: make(map[int]ErrorHandler, 10),
+	}, nil
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
@@ -263,4 +310,12 @@ func Grace(app *App, sig ...os.Signal) {
 		}
 		close(signalChannel)
 	}()
+}
+
+func notFound(w http.ResponseWriter, r *http.Request) {
+	ExitContext(http.StatusNotFound)
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	ExitContext(http.StatusMethodNotAllowed)
 }
