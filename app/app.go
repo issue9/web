@@ -37,10 +37,17 @@ type App struct {
 	mux         *mux.Mux
 	server      *http.Server
 
-	modules       *modules.Modules
-	mt            *mimetype.Mimetypes
-	configs       *config.Manager
-	logs          *logs.Logs
+	modules *modules.Modules
+	mt      *mimetype.Mimetypes
+	configs *config.Manager
+	logs    *logs.Logs
+
+	// 指定状态下对应的错误处理函数。
+	//
+	// 若该状态码的处理函数不存在，则会查找键值为 0 的函数，
+	// 若依然不存在，则调用 defaultRender
+	//
+	// 用户也可以通过调用 App.AddErrorHandler 进行添加。
 	errorHandlers map[int]ErrorHandler
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。

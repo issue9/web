@@ -33,14 +33,6 @@ type Options struct {
 	// 框架自带的 web.yaml 和 logs.xml 也都将在此目录下。
 	Dir string
 
-	// 指定状态下对应的错误处理函数。
-	//
-	// 若该状态码的处理函数不存在，则会查找键值为 0 的函数，
-	// 若依然不存在，则调用 defaultRender
-	//
-	// 用户也可以通过调用 App.AddErrorHandler 进行添加。
-	ErrorHandlers map[int]ErrorHandler
-
 	// 指定使用的中间件。
 	//
 	// 用户也可以通过 app.AddMiddlewares 进行添加。
@@ -73,11 +65,6 @@ func (opt *Options) newApp() (*App, error) {
 		middlewares = make([]middleware.Middleware, 0, 10)
 	}
 
-	errorHandlers := opt.ErrorHandlers
-	if errorHandlers == nil {
-		errorHandlers = make(map[int]ErrorHandler, 10)
-	}
-
 	mux := mux.New(webconf.DisableOptions, false, notFound, methodNotAllowed)
 
 	ms, err := modules.New(mux, webconf)
@@ -94,7 +81,7 @@ func (opt *Options) newApp() (*App, error) {
 		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          logs,
-		errorHandlers: errorHandlers,
+		errorHandlers: make(map[int]ErrorHandler, 10),
 	}, nil
 }
 
