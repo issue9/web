@@ -3,7 +3,7 @@ module github.com/issue9/web
 require (
 	github.com/issue9/assert v1.0.0
 	github.com/issue9/is v1.0.0
-	github.com/issue9/logs/v2 v2.1.0
+	github.com/issue9/logs/v2 v2.1.1
 	github.com/issue9/middleware v1.0.0
 	github.com/issue9/mux v1.1.0
 	github.com/issue9/query v1.0.0

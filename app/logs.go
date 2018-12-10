@@ -114,13 +114,13 @@ func (app *App) Logs() *logs.Logs {
 }
 
 // Fatal 输出错误信息，然后退出程序。
-func (app *App) Fatal(v ...interface{}) {
-	app.logs.Fatal(v...)
+func (app *App) Fatal(code int, v ...interface{}) {
+	app.logs.Fatal(code, v...)
 }
 
 // Fatalf 输出错误信息，然后退出程序。
-func (app *App) Fatalf(format string, v ...interface{}) {
-	app.logs.Fatalf(format, v...)
+func (app *App) Fatalf(code int, format string, v ...interface{}) {
+	app.logs.Fatalf(code, format, v...)
 }
 
 // Panic 输出错误信息，然后触发 panic。

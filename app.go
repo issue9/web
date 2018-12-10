@@ -226,13 +226,13 @@ func Criticalf(format string, v ...interface{}) {
 }
 
 // Fatal 输出错误信息，然后退出程序。
-func Fatal(v ...interface{}) {
-	defaultApp.Fatal(v...)
+func Fatal(code int, v ...interface{}) {
+	defaultApp.Fatal(code, v...)
 }
 
 // Fatalf 输出错误信息，然后退出程序。
-func Fatalf(format string, v ...interface{}) {
-	defaultApp.Fatalf(format, v...)
+func Fatalf(code int, format string, v ...interface{}) {
+	defaultApp.Fatalf(code, format, v...)
 }
 
 // Panic 输出错误信息，然后触发 panic。
