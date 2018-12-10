@@ -10,7 +10,6 @@ import (
 	"net/http/pprof"
 	"strings"
 
-	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/host"
@@ -34,32 +33,28 @@ var compresses = map[string]compress.WriterFunc{
 }
 
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
-	if app.middlewares == nil {
-		app.middlewares = make([]middleware.Middleware, 0, 10)
-	}
-
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
+		app.AddMiddlewares(func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
+		app.AddMiddlewares(func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
 	// recovery
-	app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
+	app.AddMiddlewares(func(h http.Handler) http.Handler {
 		return recovery.New(h, app.recovery(conf.Debug))
 	})
 
 	// compress
 	if conf.Compress != nil {
-		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
+		app.AddMiddlewares(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    compresses,
 				Types:    conf.Compress.Types,
@@ -72,7 +67,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
 		app.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
-		app.middlewares = append(app.middlewares, func(h http.Handler) http.Handler {
+		app.AddMiddlewares(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}

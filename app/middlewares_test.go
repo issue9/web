@@ -8,50 +8,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/middleware"
-
-	"github.com/issue9/web/internal/webconfig"
 )
-
-func TestApp_buildMiddlewares(t *testing.T) {
-	a := assert.New(t)
-	app := newApp(a)
-
-	panicFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		panic("err")
-	})
-
-	panicHTTPFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ExitContext(http.StatusNotAcceptable)
-	})
-
-	app.buildMiddlewares(&webconfig.WebConfig{})
-	h := middleware.Handler(panicFunc, app.middlewares...)
-	srv := rest.NewServer(t, h, nil)
-
-	// 触发 panic
-	srv.NewRequest(http.MethodGet, "/test").
-		Do().
-		Status(http.StatusInternalServerError)
-
-	// 触发 panic，调试模式
-	app.buildMiddlewares(&webconfig.WebConfig{Debug: true})
-	h = middleware.Handler(panicFunc, app.middlewares...)
-	srv = rest.NewServer(t, h, nil)
-	srv.NewRequest(http.MethodGet, "/test").
-		Do().
-		Status(http.StatusInternalServerError)
-
-		// 触发 panic, errors.HTTP
-	app.buildMiddlewares(&webconfig.WebConfig{})
-	h = middleware.Handler(panicHTTPFunc, app.middlewares...)
-	srv = rest.NewServer(t, h, nil)
-	srv.NewRequest(http.MethodGet, "/test").
-		Do().
-		Status(http.StatusNotAcceptable)
-}
 
 func TestDebug(t *testing.T) {
 	srv := rest.NewServer(t, debug(h202), nil)

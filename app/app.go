@@ -43,11 +43,8 @@ var configUnmarshals = map[string]config.UnmarshalFunc{
 type App struct {
 	webConfig *webconfig.WebConfig
 
-	// 应用于全局路由项的中间件。当服务启动之后，该列表不再启作用。
-	// 服务启动之后，会将该值设置为 nil。表示服务已经启动。
-	middlewares []middleware.Middleware
-	mux         *mux.Mux
-	server      *http.Server
+	mux    *mux.Mux
+	server *http.Server
 
 	modules *modules.Modules
 	mt      *mimetype.Mimetypes
@@ -100,7 +97,6 @@ func New(dir string) (*App, error) {
 
 	return &App{
 		webConfig:     webconf,
-		middlewares:   make([]middleware.Middleware, 0, 10),
 		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
@@ -112,14 +108,8 @@ func New(dir string) (*App, error) {
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
-//
-// 在调用 serve 之后调用将不再启效果。
 func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
-	if app.middlewares == nil {
-		panic("服务已经启动，不能再设置中是间件信息！")
-	}
-
-	app.middlewares = append(app.middlewares, m...)
+	app.mux.AddMiddlewares(m...)
 	return app
 }
 
@@ -180,14 +170,13 @@ func (app *App) initServer() error {
 	app.buildMiddlewares(app.webConfig)
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:           middleware.Handler(app.mux, app.middlewares...),
+		Handler:           app.mux,
 		ErrorLog:          app.ERROR(),
 		ReadTimeout:       app.webConfig.ReadTimeout,
 		WriteTimeout:      app.webConfig.WriteTimeout,
 		IdleTimeout:       app.webConfig.IdleTimeout,
 		ReadHeaderTimeout: app.webConfig.ReadHeaderTimeout,
 	}
-	app.middlewares = nil // 不再启作用
 
 	return nil
 }
