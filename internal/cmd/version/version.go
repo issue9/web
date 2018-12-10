@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	help.Register("help", usage)
+	help.Register("version", usage)
 }
 
 // Do 执行子命令

@@ -12,39 +12,39 @@ import (
 
 var errNotExists = errors.New("不存在子命令")
 
-var usages = map[string]func(){
-	"help": usage,
+var usages = map[string]func(){}
+
+func init() {
+	Register("help", usage)
 }
 
 // Do 执行子命令
 func Do() error {
-	if len(os.Args) == 1 {
+	if len(os.Args) < 3 {
 		return errNotExists
 	}
 
-	usage, found := usages[os.Args[1]]
+	fn, found := usages[os.Args[2]]
 	if !found {
 		return errNotExists
 	}
 
-	usage()
+	fn()
 
 	return nil
 }
 
 // Register 注册 usage 函数
-func Register(name string, usage func()) {
+func Register(name string, fn func()) {
 	if _, exists := usages[name]; exists {
 		panic(fmt.Sprintln("存在同名的子命令:", name))
 	}
 
-	usages[name] = usage
+	usages[name] = fn
 }
-
 
 func usage() {
 	fmt.Println(`用法：web help subcommand
 
 显示名为 subcommand 的子命令的用法。`)
 }
-

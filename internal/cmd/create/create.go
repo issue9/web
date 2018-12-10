@@ -5,7 +5,10 @@
 package create
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/issue9/web/internal/cmd/help"
 )
@@ -16,12 +19,23 @@ func init() {
 
 // Do 执行子命令
 func Do() error {
-	// TODO
-	return nil
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println("模块名称")
+	path, err := reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	return create(path)
 }
 
 func usage() {
 	fmt.Println(`语法：web create
 
 构建一个新的 web 项目`)
+}
+
+func create(path string) error {
+	name := filepath.Base(path)
+
 }
