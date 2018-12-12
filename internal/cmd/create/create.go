@@ -37,5 +37,7 @@ func usage() {
 
 func create(path string) error {
 	name := filepath.Base(path)
-
+	fmt.Println(name)
+	// TODO
+	return nil
 }
