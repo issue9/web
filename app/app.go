@@ -95,7 +95,7 @@ func New(dir string) (*App, error) {
 		return nil, err
 	}
 
-	return &App{
+	app := &App{
 		webConfig:     webconf,
 		mux:           mux,
 		closed:        make(chan bool, 1),
@@ -104,7 +104,12 @@ func New(dir string) (*App, error) {
 		configs:       mgr,
 		logs:          logs,
 		errorHandlers: make(map[int]ErrorHandler, 10),
-	}, nil
+	}
+
+	// 加载固有的中间件
+	app.buildMiddlewares(webconf)
+
+	return app, nil
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
@@ -157,7 +162,6 @@ func (app *App) initServer() error {
 		return err
 	}
 
-	app.buildMiddlewares(app.webConfig)
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
 		Handler:           app.mux,
