@@ -1,5 +1,4 @@
 github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
-github.com/golang/text v0.3.0 h1:uI5zIUA9cg047ctlTptnVc0Ghjfurf2eZMFrod8R7v8=
 github.com/golang/text v0.3.0/go.mod h1:GUiq9pdJKRKKAZXiVgWFEvocYuREvC14NhI4OPgEjeE=
 github.com/issue9/assert v1.0.0 h1:NkLKrreEZgOdyl0aHlF8Yq2+Id7GsfEtU0rTK8nsN4E=
 github.com/issue9/assert v1.0.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=
@@ -11,8 +10,8 @@ github.com/issue9/logs/v2 v2.1.1 h1:zGC/vHnpWYeTmnbvuKZhXO++DrVEGFHhUUtThIRje7M=
 github.com/issue9/logs/v2 v2.1.1/go.mod h1:CqC5enplqGO/nWreLo6sHfPXC+4/JH3TWfOkjb/84Cs=
 github.com/issue9/middleware v1.0.0 h1:yLYpv6cJ9hFvoG1zHTIXCdcVyGMicc3YC3iZCZy+C7U=
 github.com/issue9/middleware v1.0.0/go.mod h1:gmx9k2nnC1O4yg9xK3liaanThZedNw37ci4UnCzm6vE=
-github.com/issue9/mux v1.1.0 h1:wmDMM4Y6iKyS0aXa+Es/1fwOvH48xZAx4dwa4pvx+4Q=
-github.com/issue9/mux v1.1.0/go.mod h1:tpS5g9czPWXCLQW88O5QF+dn5/3oiFINWwMdr6bgBw4=
+github.com/issue9/mux v1.2.0 h1:HNAzORN/Xkc1iHwlo/kYfSkimfQHE2AGCXGvQ9fBg0c=
+github.com/issue9/mux v1.2.0/go.mod h1:tpS5g9czPWXCLQW88O5QF+dn5/3oiFINWwMdr6bgBw4=
 github.com/issue9/query v1.0.0 h1:XHAKlrPGRcgRBv8UKFtm89YHB13I1qVoaSugMp6fb88=
 github.com/issue9/query v1.0.0/go.mod h1:eJqZy7Yz3BRLasGX9ofVw2W7/k9xONk587qIpKkCLSQ=
 github.com/issue9/term v1.0.0 h1:Gz7VoKwJJEC3ljAmCk82YyEia8prkXxdrzvkLujYamE=

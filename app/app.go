@@ -108,8 +108,10 @@ func New(dir string) (*App, error) {
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
+//
+// 后添加的后调用。
 func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
-	app.mux.AddMiddlewares(m...)
+	app.mux.UnshiftMiddlewares(m...)
 	return app
 }
 
