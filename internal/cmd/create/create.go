@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/issue9/utils"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/internal/cmd/help"
 	"github.com/issue9/web/internal/webconfig"
