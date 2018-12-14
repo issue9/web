@@ -106,13 +106,10 @@ func TestURL(t *testing.T) {
 	a.Equal(URL("/test/abc.png"), "http://localhost:8082/test/abc.png")
 }
 
-func TestHandler(t *testing.T) {
+func TestMux(t *testing.T) {
 	a := assert.New(t)
 
-	h, err := Handler()
-	a.NotError(err).NotNil(h)
-
-	srv := rest.NewServer(t, h, nil)
+	srv := rest.NewServer(t, Mux(), nil)
 	a.NotNil(srv)
 	defer srv.Close()
 

@@ -152,18 +152,6 @@ func (app *App) InitModules(tag string) error {
 	return app.modules.Init(tag, app.logs.INFO())
 }
 
-// Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
-// 比如在 httptest.NewServer 中使用。
-func (app *App) Handler() (http.Handler, error) {
-	if app.server == nil {
-		if err := app.initServer(); err != nil {
-			return nil, err
-		}
-	}
-
-	return app.server.Handler, nil
-}
-
 func (app *App) initServer() error {
 	if err := app.InitModules(""); err != nil {
 		return err

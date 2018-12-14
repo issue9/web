@@ -58,12 +58,6 @@ func IsDebug() bool {
 	return defaultApp.IsDebug()
 }
 
-// Handler 将当前实例当作一个 http.Handler 返回。一般用于测试。
-// 比如在 httptest.NewServer 中使用。
-func Handler() (http.Handler, error) {
-	return defaultApp.Handler()
-}
-
 // Mux 返回 mux.Mux 实例。
 func Mux() *mux.Mux {
 	return defaultApp.Mux()

@@ -1,4 +1,5 @@
 github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
+github.com/golang/text v0.3.0 h1:uI5zIUA9cg047ctlTptnVc0Ghjfurf2eZMFrod8R7v8=
 github.com/golang/text v0.3.0/go.mod h1:GUiq9pdJKRKKAZXiVgWFEvocYuREvC14NhI4OPgEjeE=
 github.com/issue9/assert v1.0.0 h1:NkLKrreEZgOdyl0aHlF8Yq2+Id7GsfEtU0rTK8nsN4E=
 github.com/issue9/assert v1.0.0/go.mod h1:KLwR3U/5rbCxqwAnV3aCr+dz07aoIyIfk2lefIVr2BA=

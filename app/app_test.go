@@ -94,26 +94,6 @@ func TestApp_URL(t *testing.T) {
 	a.Equal(app.URL(""), "http://localhost:8082")
 }
 
-func TestApp_Handler(t *testing.T) {
-	a := assert.New(t)
-	app := newApp(a)
-
-	m1 := app.NewModule("m1", "m1 desc", "m2")
-	a.NotNil(m1)
-	m2 := app.NewModule("m2", "m2 desc")
-	a.NotNil(m2)
-	m1.GetFunc("/m1/test", f202)
-	m2.GetFunc("/m2/test", f202)
-
-	h1, err := app.Handler()
-	a.NotError(err).NotNil(h1)
-
-	h2, err := app.Handler()
-	a.NotError(err).NotNil(h2)
-
-	a.Equal(h1, h2)
-}
-
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
