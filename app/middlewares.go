@@ -32,6 +32,9 @@ var compresses = map[string]compress.WriterFunc{
 	"deflate": compress.NewDeflate,
 }
 
+// 通过配置文件加载相关的中间件。
+//
+// 始终保持这些中间件在最后初始化。用户添加的中间件由 app.mux.UnshiftMiddlewares 添加。
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// domains
 	if len(conf.AllowedDomains) > 0 {

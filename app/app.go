@@ -59,7 +59,7 @@ type App struct {
 	// 用户也可以通过调用 App.AddErrorHandler 进行添加。
 	errorHandlers map[int]ErrorHandler
 
-	// 当 shutdown 延时关闭时，通过此事件确定 Run() 的返回时机。
+	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
 }
 
