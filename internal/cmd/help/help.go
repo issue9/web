@@ -5,12 +5,9 @@
 package help
 
 import (
-	"errors"
 	"fmt"
 	"os"
 )
-
-var errNotExists = errors.New("不存在子命令")
 
 var usages = map[string]func(){}
 
@@ -20,17 +17,14 @@ func init() {
 
 // Do 执行子命令
 func Do() error {
-	if len(os.Args) < 3 {
-		return errNotExists
-	}
-
-	fn, found := usages[os.Args[2]]
-	if !found {
-		return errNotExists
+	fn := usage
+	if len(os.Args) >= 3 {
+		if f, found := usages[os.Args[2]]; found {
+			fn = f
+		}
 	}
 
 	fn()
-
 	return nil
 }
 
