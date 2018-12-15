@@ -168,7 +168,7 @@ func (app *App) InitModules(tag string) error {
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
 //
-// 多次调用，会直接返回 nil 值。
+// 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
 func (app *App) Serve() error {
 	err := app.InitModules("")
 	if err != nil {
@@ -204,10 +204,6 @@ func (app *App) Close() error {
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (app *App) Shutdown() error {
 	defer app.FlushLogs()
-
-	if app.server == nil {
-		return nil
-	}
 
 	if app.webConfig.ShutdownTimeout <= 0 {
 		return app.close()
