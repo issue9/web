@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/issue9/web/internal/cmd/create"
 	"github.com/issue9/web/internal/cmd/help"
@@ -37,6 +38,14 @@ func main() {
 }
 
 func usage() {
-	fmt.Println(`web 命令是 github.com/issue9/web 框架提供的辅助工具。
-具体指令可以通过 web help 进行查看。`)
+	keys := make([]string, 0, len(subcommands))
+	for k := range subcommands {
+		keys = append(keys, k)
+	}
+
+	fmt.Printf(`web 命令是 github.com/issue9/web 框架提供的辅助工具。
+
+目前支持以下子命令：%s
+详情可以通过 web help 进行查看。
+`, strings.Join(keys, ","))
 }

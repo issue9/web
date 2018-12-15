@@ -39,7 +39,7 @@ func Register(name string, fn func()) {
 }
 
 func usage() {
-	fmt.Println(`显示名为 subcommand 的子命令的相关介绍。
-用法：web help subcommand`)
+	fmt.Println(`显示名子命令的相关介绍
 
+用法：web help subcommand`)
 }

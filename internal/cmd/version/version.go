@@ -24,7 +24,7 @@ func Do() error {
 }
 
 func usage() {
-	fmt.Println(`语法：web version
+	fmt.Println(`显示当前程序的版本号
 
-显示当前程序的版本号`)
+语法：web version`)
 }

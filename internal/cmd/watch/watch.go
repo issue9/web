@@ -57,9 +57,10 @@ func Do() error {
 }
 
 func usage() {
-	fmt.Println(`语法：web watch
+	fmt.Println(`热编译指定项目
 
-热编译指定项目`)
+语法：web watch [options] [dir...]
+其中 dir 是除当前目录之外需要监视的目录，options 则是以下的传递参数：`)
 
 	flagset.PrintDefaults()
 }
