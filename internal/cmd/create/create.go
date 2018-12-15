@@ -31,9 +31,7 @@ func Do() error {
 	ask := newAsker(os.Stdin, os.Stdout)
 
 	if len(os.Args) == 3 {
-		if err := createMod(os.Args[2], wd, ask); err != nil {
-			return err
-		}
+		return createMod(os.Args[2], wd, ask)
 	}
 
 	mod, err := ask.Ask("模块名", "")
@@ -43,12 +41,7 @@ func Do() error {
 	if mod == "" {
 		return errors.New("模块名不能为空")
 	}
-	if err := createMod(mod, wd, ask); err != nil {
-		return err
-	}
-
-	// TODO logs.xml
-	return nil
+	return createMod(mod, wd, ask)
 }
 
 func usage() {
@@ -94,6 +87,10 @@ MOD:
 // dir 为配置文件的目录名称
 func createConfig(path, dir string) error {
 	path = filepath.Join(path, dir)
+
+	if err := os.Mkdir(path, os.ModePerm); err != nil {
+		return err
+	}
 
 	// 输出 logs.xml
 	if err := dumpFile(filepath.Join(path, "logs.xml"), logs); err != nil {
