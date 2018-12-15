@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package help 管理 web help xx 的显示信息
 package help
 
 import (
@@ -28,7 +29,7 @@ func Do() error {
 	return nil
 }
 
-// Register 注册 usage 函数
+// Register 注册 usage 函数，注册的功能会在调用 web help xx 时调用。
 func Register(name string, fn func()) {
 	if _, exists := usages[name]; exists {
 		panic(fmt.Sprintln("存在同名的子命令:", name))
@@ -38,7 +39,7 @@ func Register(name string, fn func()) {
 }
 
 func usage() {
-	fmt.Println(`用法：web help subcommand
+	fmt.Println(`显示名为 subcommand 的子命令的相关介绍。
+用法：web help subcommand`)
 
-显示名为 subcommand 的子命令的用法。`)
 }

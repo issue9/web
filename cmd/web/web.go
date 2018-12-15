@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/issue9/web/internal/cmd/create"
@@ -36,5 +37,6 @@ func main() {
 }
 
 func usage() {
-	// TODO
+	fmt.Println(`web 命令是 github.com/issue9/web 框架提供的辅助工具。
+具体指令可以通过 web help 进行查看。`)
 }
