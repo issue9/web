@@ -63,3 +63,27 @@ func TestModules_Init(t *testing.T) {
 	a.Error(ms.Init("v1", nil))
 	a.NotError(ms.Init("not exists", nil))
 }
+
+func TestModules_Tags(t *testing.T) {
+	a := assert.New(t)
+	ms, err := New(muxtest, &webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+
+	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
+	m1.NewTag("v1").
+		AddInitTitle("安装数据表 users1", func() error { return errors.New("falid message") })
+	m1.NewTag("v2")
+
+	m2 := ms.NewModule("users2", "user2 module", "users3")
+	m2.NewTag("v1").AddInitTitle("安装数据表 users2", func() error { return nil })
+	m2.NewTag("v3")
+
+	m3 := ms.NewModule("users3", "user3 mdoule")
+	tag := m3.NewTag("v1")
+	tag.AddInitTitle("安装数据表 users3-1", func() error { return nil })
+	tag.AddInitTitle("安装数据表 users3-2", func() error { return nil })
+	m3.NewTag("v4")
+
+	tags := ms.Tags()
+	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+}

@@ -102,6 +102,11 @@ func Modules() []*module.Module {
 	return defaultApp.Modules()
 }
 
+// Tags 获取所有的子模块名称
+func Tags() []string {
+	return defaultApp.Tags()
+}
+
 // RegisterOnShutdown 注册在关闭服务时需要执行的操作。
 func RegisterOnShutdown(f func()) {
 	defaultApp.RegisterOnShutdown(f)

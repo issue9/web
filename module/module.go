@@ -83,7 +83,7 @@ func (m *Module) NewTag(tag string) *Module {
 	}
 
 	if _, found := m.Tags[tag]; !found {
-		m.Tags[tag] = New(TypeTag, "", "")
+		m.Tags[tag] = New(TypeTag, tag, "")
 	}
 
 	return m.Tags[tag]

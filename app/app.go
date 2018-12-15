@@ -144,6 +144,11 @@ func (app *App) Modules() []*module.Module {
 	return app.modules.Modules()
 }
 
+// Tags 获取所有的子模块名称
+func (app *App) Tags() []string {
+	return app.modules.Tags()
+}
+
 // NewModule 声明一个新的模块
 func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 	return app.modules.NewModule(name, desc, deps...)

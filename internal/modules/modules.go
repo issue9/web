@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"path"
+	"sort"
 
 	"github.com/issue9/mux"
 
@@ -79,4 +80,25 @@ func (ms *Modules) Init(tag string, log *log.Logger) error {
 // Modules 获取所有的模块信息
 func (ms *Modules) Modules() []*module.Module {
 	return ms.modules
+}
+
+// Tags 返回所有的子模块名称
+func (ms *Modules) Tags() []string {
+	tags := make([]string, 0, len(ms.modules)*2)
+
+	for _, m := range ms.modules {
+	LOOP:
+		for k := range m.Tags {
+			for _, v := range tags {
+				if v == k {
+					continue LOOP
+				}
+			}
+			tags = append(tags, k)
+		}
+	}
+
+	sort.Strings(tags)
+
+	return tags
 }
