@@ -76,6 +76,7 @@ func New(typ Type, name, desc string, deps ...string) *Module {
 }
 
 // NewTag 为当前模块生成特定名称的子模块。
+// 若已经存在，则直接返回该子模块。
 func (m *Module) NewTag(tag string) *Module {
 	if m.Tags == nil {
 		m.Tags = make(map[string]*Module, 5)

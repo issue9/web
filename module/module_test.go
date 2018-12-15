@@ -29,6 +29,12 @@ func TestTag(t *testing.T) {
 	a.Equal(v.Type, TypeTag)
 	v.AddInitTitle("title1", nil)
 	a.Equal(v.Inits[0].Title, "title1")
+
+	vv := m.NewTag("0.1.0")
+	a.Equal(vv, v)
+
+	v2 := m.NewTag("0.2.0")
+	a.NotEqual(v2, v)
 }
 
 func TestModule_AddInit(t *testing.T) {
