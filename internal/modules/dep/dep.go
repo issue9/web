@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package dep 管理模块的依赖信息，并按照依赖顺序进行初始化。
 package dep
 
 import (
@@ -92,7 +93,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	for _, d := range m.Deps {
 		depm, found := dep.modules[d]
 		if !found {
-			return fmt.Errorf("依赖项[%v]未找到", d)
+			return fmt.Errorf("依赖项[%s]未找到", d)
 		}
 
 		if err := dep.initModule(depm, tag); err != nil {
@@ -114,6 +115,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		dep.println("\n开始初始化插件：", m.Name)
 	}
 
+	// 加载化当前模块的路由项
 	for path, ms := range t.Routes {
 		for method, h := range ms {
 			dep.printf("  注册路由：%s %s\n", method, path)
@@ -123,6 +125,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	} // end for
 
+	// 执行当前模块的初始化函数
 	for i, init := range t.Inits {
 		title := init.Title
 		if title == "" {

@@ -163,7 +163,7 @@ func (app *App) URL(path string) string {
 
 // InitModules 执行模板的初始化函数。可以重复调用执行。
 func (app *App) InitModules(tag string) error {
-	return app.modules.Init(tag, app.logs.INFO())
+	return app.modules.Init(tag, app.INFO())
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
@@ -229,17 +229,17 @@ func (app *App) RegisterOnShutdown(f func()) {
 
 // File 获取文件路径，相对于当前配置目录
 func (app *App) File(path string) string {
-	return app.configs.File(path)
+	return app.Config().File(path)
 }
 
 // LoadFile 加载指定的配置文件内容到 v 中
 func (app *App) LoadFile(path string, v interface{}) error {
-	return app.configs.LoadFile(path, v)
+	return app.Config().LoadFile(path, v)
 }
 
 // Load 加载指定的配置文件内容到 v 中
 func (app *App) Load(r io.Reader, typ string, v interface{}) error {
-	return app.configs.Load(r, typ, v)
+	return app.Config().Load(r, typ, v)
 }
 
 // Mimetypes 返回 mimetype.Mimetypes

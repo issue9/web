@@ -68,11 +68,11 @@ func loadPlugin(path string) (*module.Module, error) {
 	}
 	init := symbol.(func(*module.Module))
 
-	m := module.New(module.TypePlugin, "", "plugin desc")
+	m := module.New(module.TypePlugin, "", "")
 	init(m)
 
-	if m.Name == "" {
-		return nil, fmt.Errorf("插件 %s 未指定插件名称", path)
+	if m.Name == "" || m.Description == "" {
+		return nil, fmt.Errorf("插件 %s 未指定插件名称或描述内容", path)
 	}
 
 	return m, nil
