@@ -104,6 +104,15 @@ func New(dir string) (*App, error) {
 		configs:       mgr,
 		logs:          logs,
 		errorHandlers: make(map[int]ErrorHandler, 10),
+		server: &http.Server{
+			Addr:              ":" + strconv.Itoa(webconf.Port),
+			Handler:           mux,
+			ErrorLog:          logs.ERROR(),
+			ReadTimeout:       webconf.ReadTimeout,
+			WriteTimeout:      webconf.WriteTimeout,
+			IdleTimeout:       webconf.IdleTimeout,
+			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+		},
 	}
 
 	// 加载固有的中间件
@@ -157,33 +166,11 @@ func (app *App) InitModules(tag string) error {
 	return app.modules.Init(tag, app.logs.INFO())
 }
 
-func (app *App) initServer() error {
-	if err := app.InitModules(""); err != nil {
-		return err
-	}
-
-	app.server = &http.Server{
-		Addr:              ":" + strconv.Itoa(app.webConfig.Port),
-		Handler:           app.mux,
-		ErrorLog:          app.ERROR(),
-		ReadTimeout:       app.webConfig.ReadTimeout,
-		WriteTimeout:      app.webConfig.WriteTimeout,
-		IdleTimeout:       app.webConfig.IdleTimeout,
-		ReadHeaderTimeout: app.webConfig.ReadHeaderTimeout,
-	}
-
-	return nil
-}
-
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
 //
 // 多次调用，会直接返回 nil 值。
 func (app *App) Serve() error {
-	if app.server != nil {
-		return nil
-	}
-
-	err := app.initServer()
+	err := app.InitModules("")
 	if err != nil {
 		return err
 	}
@@ -207,19 +194,16 @@ func (app *App) Serve() error {
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	defer app.logs.Flush()
+	defer app.FlushLogs()
 
-	if app.server != nil {
-		return app.close()
-	}
-	return nil
+	return app.close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (app *App) Shutdown() error {
-	defer app.logs.Flush()
+	defer app.FlushLogs()
 
 	if app.server == nil {
 		return nil

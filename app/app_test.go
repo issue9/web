@@ -116,7 +116,7 @@ func TestApp_Serve(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Microsecond)
 
-	a.NotError(app.Serve()) // 多次调用，之后的调用，都直接返回空值。
+	a.ErrorType(app.Serve(), http.ErrServerClosed) // 多次调用
 
 	resp, err := http.Get("http://localhost:8082/m1/test")
 	a.NotError(err).NotNil(resp)
@@ -171,9 +171,6 @@ func TestApp_Close(t *testing.T) {
 		app.Close()
 	})
 
-	// 未调用 Serve 时，调用 Close，应该不会有任何变化
-	a.NotError(app.Close())
-
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -203,9 +200,6 @@ func TestApp_shutdown(t *testing.T) {
 		w.Write([]byte("shutdown"))
 		app.Shutdown()
 	})
-
-	// 未调用 Serve 时，调用 Close，应该不会有任何变化
-	a.NotError(app.Shutdown())
 
 	go func() {
 		err := app.Serve()
@@ -238,9 +232,6 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 		w.Write([]byte("shutdown with timeout"))
 		app.Shutdown()
 	})
-
-	// 未调用 Serve 时，调用 Shutdown，应该不会有任何变化
-	a.NotError(app.Shutdown())
 
 	go func() {
 		err := app.Serve()
