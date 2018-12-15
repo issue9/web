@@ -17,6 +17,7 @@ import (
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )
 
@@ -61,6 +62,11 @@ func IsDebug() bool {
 // Mux 返回 mux.Mux 实例。
 func Mux() *mux.Mux {
 	return defaultApp.Mux()
+}
+
+// Mimetypes 返回 mimetype.Mimetypes
+func Mimetypes() *mimetype.Mimetypes {
+	return defaultApp.Mimetypes()
 }
 
 // Serve 运行路由，执行监听程序。

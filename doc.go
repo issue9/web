@@ -7,7 +7,7 @@
 //
 // 配置文件
 //
-// 配置文件的映射对象在 internal/config 包中，其中有各个字段的详细说明。
+// 配置文件的映射对象在 internal/webconfig 包中，其中有各个字段的详细说明。
 // 用户如果需要添加一些自定义的配置项，需要自行再添加其它名称的配置文件，
 // 文件地址最好通过 web.File 来获取，这样可以和框架本身的配置文件存在同一目录下。
 //
@@ -17,7 +17,7 @@
 //
 // 字符集和媒体类型
 //
-// encoding 包通过 AddMarshal 和 AddUnmarshal 给用户提供相关功能。
+// App.Mimetypes() 通过 AddMarshal 和 AddUnmarshal 给用户提供相关功能。
 //
 // 当然用户也可以直接构建一个 context.Context 对象来生成一个一次性的对象。
 //

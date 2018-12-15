@@ -13,12 +13,12 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    web.AddMarshals(map[string]encoding.MarshaleFunc {
+    web.Mimetypes().AddMarshals(map[string]encoding.MarshaleFunc {
         "application/json": json.Marshal,
         "application/xml": xml.Marshal,
     })
 
-    web.AddUnmarshals(map[string]encoding.UnmarshaleFunc {
+    web.Mimetypes().AddUnmarshals(map[string]encoding.UnmarshaleFunc {
         "application/json": json.Unmarshal,
         "application/xml": xml.Unmarshal,
     })
