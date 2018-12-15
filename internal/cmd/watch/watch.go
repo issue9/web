@@ -57,10 +57,32 @@ func Do() error {
 }
 
 func usage() {
-	fmt.Println(`热编译指定项目
+	fmt.Fprintln(os.Stdout, `热编译当前目录下的项目
 
-语法：web watch [options] [dir...]
-其中 dir 是除当前目录之外需要监视的目录，options 则是以下的传递参数：`)
+命令行语法：
+ web watch [options] [dependents]
 
+ options:`)
+
+	flagset.SetOutput(os.Stdout)
 	flagset.PrintDefaults()
+
+	fmt.Fprintln(os.Stdout, `
+ dependents:
+  指定其它依赖的目录，只能出现在命令的尾部。
+
+
+常见用法:
+
+ web watch 
+   监视当前目录，若有变动，则重新编译当前目录下的 *.go 文件；
+
+ web watch -main=main.go
+   监视当前目录，若有变动，则重新编译当前目录下的 main.go 文件；
+
+ web watch -main="main.go" dir1 dir2
+   监视当前目录及 dir1 和 dir2，若有变动，则重新编译当前目录下的 main.go 文件；
+
+
+NOTE: 不会监视隐藏文件和隐藏目录下的文件。`)
 }

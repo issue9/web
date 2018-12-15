@@ -7,20 +7,14 @@ package create
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/issue9/utils"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/internal/cmd/help"
 	"github.com/issue9/web/internal/webconfig"
 )
-
-func init() {
-	help.Register("create", usage)
-}
 
 // Do 执行子命令
 func Do() error {
@@ -43,15 +37,6 @@ func Do() error {
 		return errors.New("模块名不能为空")
 	}
 	return createMod(mod, wd, ask)
-}
-
-func usage() {
-	fmt.Println(`构建一个新的 web 项目
-
-语法：web create [mod]
-mod 为一个可选参数，如果指定了，则会直接使用此值作为模块名，
-若不指定，则会通过之后的交互要求用户指定。模块名中的最后一
-路径名称，会作为目录名称创建于当前目录下。`)
 }
 
 // 创建包的目录结构。
@@ -102,7 +87,11 @@ func createConfig(path, dir string) error {
 	}
 
 	// web.yaml
-	conf := &webconfig.WebConfig{Domain: "localhost"}
+	conf := &webconfig.WebConfig{
+		HTTPS:  false,
+		Domain: "localhost",
+		Port:   8080,
+	}
 	data, err := yaml.Marshal(conf)
 	if err != nil {
 		return err
