@@ -17,7 +17,17 @@
 //
 // 字符集和媒体类型
 //
-// App.Mimetypes() 通过 AddMarshal 和 AddUnmarshal 给用户提供相关功能。
+// 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
+// Mimetypes().AddMarshals() 和 Mimetypes().AddUnmarshals() 添加相关的处理函数。
+// 添加方式如下：
+//  Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+//      "application/json": json.Marshal,
+//  })
+//  Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+//      "application/json": json.Unmarshal,
+//  })
+// 之后，通过 web.NewContext() 获得的 context 对象，会根据用户的
+// Accept 和 Content-Type 自动使用相应的解析和输出格式。
 //
 // 当然用户也可以直接构建一个 context.Context 对象来生成一个一次性的对象。
 //
