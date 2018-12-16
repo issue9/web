@@ -15,11 +15,14 @@ import (
 	"github.com/issue9/web/internal/cmd/watch"
 )
 
-var subcommands = map[string]func() error{
+// 帮助信息的输出通道
+var output = os.Stdout
+
+var subcommands = map[string]func(*os.File) error{
 	"version": version.Do,
-	"help":    help.Do,
 	"watch":   watch.Do,
 	"create":  create.Do,
+	"help":    help.Do,
 }
 
 func main() {
@@ -34,7 +37,7 @@ func main() {
 		return
 	}
 
-	fn()
+	fn(output)
 }
 
 func usage() {

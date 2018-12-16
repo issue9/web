@@ -7,6 +7,7 @@ package version
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/issue9/web"
@@ -18,13 +19,13 @@ func init() {
 }
 
 // Do 执行子命令
-func Do() error {
-	_, err := fmt.Printf("web:%s build with %s\n", web.Version, runtime.Version())
+func Do(output *os.File) error {
+	_, err := fmt.Fprintf(output, "web:%s build with %s\n", web.Version, runtime.Version())
 	return err
 }
 
-func usage() {
-	fmt.Println(`显示当前程序的版本号
+func usage(output *os.File) {
+	fmt.Fprintln(output, `显示当前程序的版本号
 
 语法：web version`)
 }

@@ -10,14 +10,14 @@ import (
 	"os"
 )
 
-var usages = map[string]func(){}
+var usages = map[string]func(*os.File){}
 
 func init() {
 	Register("help", usage)
 }
 
 // Do 执行子命令
-func Do() error {
+func Do(output *os.File) error {
 	fn := usage
 	if len(os.Args) >= 3 {
 		if f, found := usages[os.Args[2]]; found {
@@ -25,12 +25,12 @@ func Do() error {
 		}
 	}
 
-	fn()
+	fn(output)
 	return nil
 }
 
 // Register 注册 usage 函数，注册的功能会在调用 web help xx 时调用。
-func Register(name string, fn func()) {
+func Register(name string, fn func(*os.File)) {
 	if _, exists := usages[name]; exists {
 		panic(fmt.Sprintln("存在同名的子命令:", name))
 	}
@@ -38,8 +38,8 @@ func Register(name string, fn func()) {
 	usages[name] = fn
 }
 
-func usage() {
-	fmt.Println(`显示名子命令的相关介绍
+func usage(output *os.File) {
+	fmt.Fprintln(output, `显示名子命令的相关介绍
 
 用法：web help subcommand`)
 }

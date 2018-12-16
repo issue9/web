@@ -6,6 +6,7 @@ package create
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/issue9/web/internal/cmd/help"
 )
@@ -14,8 +15,8 @@ func init() {
 	help.Register("create", usage)
 }
 
-func usage() {
-	fmt.Println(`构建一个新的 web 项目
+func usage(output *os.File) {
+	fmt.Fprintln(output, `构建一个新的 web 项目
 
 语法：web create [mod]
 mod 为一个可选参数，如果指定了，则会直接使用此值作为模块名，

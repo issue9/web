@@ -17,13 +17,13 @@ import (
 )
 
 // Do 执行子命令
-func Do() error {
+func Do(output *os.File) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	ask := newAsker(os.Stdin, os.Stdout)
+	ask := newAsker(os.Stdin, output)
 
 	if len(os.Args) == 3 {
 		return createMod(os.Args[2], wd, ask)

@@ -33,11 +33,10 @@ func init() {
 	flagset.StringVar(&appArgs, "x", "", "传递给编译程序的参数；")
 	flagset.StringVar(&extString, "ext", "go", "指定监视的文件扩展，区分大小写。* 表示监视所有类型文件，空值代表不监视任何文件；")
 	flagset.StringVar(&mainFiles, "main", "", "指定需要编译的文件；")
-	flagset.Usage = usage
 }
 
 // Do 执行子命令
-func Do() error {
+func Do(output *os.File) error {
 	flagset.Parse(os.Args[1:])
 
 	logs := gobuild.NewConsoleLogs(showIgnore)
@@ -56,18 +55,18 @@ func Do() error {
 	return nil
 }
 
-func usage() {
-	fmt.Fprintln(os.Stdout, `热编译当前目录下的项目
+func usage(output *os.File) {
+	fmt.Fprintln(output, `热编译当前目录下的项目
 
 命令行语法：
  web watch [options] [dependents]
 
  options:`)
 
-	flagset.SetOutput(os.Stdout)
+	flagset.SetOutput(output)
 	flagset.PrintDefaults()
 
-	fmt.Fprintln(os.Stdout, `
+	fmt.Fprintln(output, `
  dependents:
   指定其它依赖的目录，只能出现在命令的尾部。
 
