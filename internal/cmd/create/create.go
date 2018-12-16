@@ -7,12 +7,14 @@ package create
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/issue9/utils"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/internal/webconfig"
 )
 
@@ -63,7 +65,10 @@ func createMod(mod, wd string, ask *asker) error {
 	}
 
 MOD:
-	err = dumpFile(filepath.Join(path, "go.mod"), []byte("module "+mod+"\n"))
+	content := fmt.Sprintf(`module %s
+
+required github.com/issue9/web v%s`, mod, web.Version)
+	err = dumpFile(filepath.Join(path, "go.mod"), []byte(content))
 	if err != nil {
 		return err
 	}
