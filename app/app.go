@@ -27,9 +27,11 @@ import (
 	"github.com/issue9/web/module"
 )
 
+// 框加需要用到的配置文件名。
+// 实际路径需要通过 App.File 获取。
 const (
-	configFilename = "web.yaml" // 配置文件的文件名。
-	logsFilename   = "logs.xml" // 日志配置文件的文件名。
+	ConfigFilename = "web.yaml"
+	LogsFilename   = "logs.xml"
 )
 
 var configUnmarshals = map[string]config.UnmarshalFunc{
@@ -79,12 +81,12 @@ func New(dir string) (*App, error) {
 	}
 
 	logs := logs.New()
-	if err = logs.InitFromXMLFile(mgr.File(logsFilename)); err != nil {
+	if err = logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
 		return nil, err
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err = mgr.LoadFile(configFilename, webconf); err != nil {
+	if err = mgr.LoadFile(ConfigFilename, webconf); err != nil {
 		return nil, err
 	}
 

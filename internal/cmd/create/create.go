@@ -15,6 +15,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/webconfig"
 )
 
@@ -87,7 +88,7 @@ func createConfig(path, dir string) error {
 	}
 
 	// 输出 logs.xml
-	if err := dumpFile(filepath.Join(path, "logs.xml"), logs); err != nil {
+	if err := dumpFile(filepath.Join(path, app.LogsFilename), logs); err != nil {
 		return err
 	}
 
@@ -101,7 +102,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, "web.yaml"), data)
+	return dumpFile(filepath.Join(path, app.ConfigFilename), data)
 }
 
 func dumpFile(path string, content []byte) error {
