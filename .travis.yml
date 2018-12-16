@@ -9,7 +9,7 @@ go:
   - 1.11
 
 script:
-  - .build/test.sh -cv
+  - ./build/test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
