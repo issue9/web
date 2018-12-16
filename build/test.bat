@@ -6,12 +6,15 @@
 # -c 表示需要输出代码测试覆盖率到文件 coverage.txt 中；
 # -v 表示需要输出详细的执行信息到终端。
 
-param($c,$v)
+SET list = go list %~dp0\..\cmd\web
 
-$list = go list ./... | Where-Object {$_ -notlike '/vendor/*'}
+FOR/f %%a IN ("%*") DO (
+    IF/I"%%a"=="/v" SET v='-v'
+    IF/I"%%a"=="/c" SET c='-coverprofile=coverage.txt -covermode=atomic'
+)
 
-Write-Output '生成 so 文件'
-go generate $v $list
+echo '生成 so 文件'
+go generate %v% %list%
 
-Write-Output '执行 go test'
-go test $v $c $list
+echo '执行 go test'
+go test %v% %c% %list%
