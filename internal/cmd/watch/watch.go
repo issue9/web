@@ -39,20 +39,15 @@ func init() {
 func Do(output *os.File) error {
 	flagset.Parse(os.Args[1:])
 
-	logs := gobuild.NewConsoleLogs(showIgnore)
-
 	wd, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 	dirs := append([]string{wd}, flag.Args()...)
 
-	err = gobuild.Build(logs.Logs, mainFiles, outputName, extString, recursive, appArgs, dirs...)
-	if err != nil {
-		panic(err)
-	}
-	logs.Stop()
-	return nil
+	logs := gobuild.NewConsoleLogs(showIgnore)
+	defer logs.Stop()
+	return gobuild.Build(logs.Logs, mainFiles, outputName, extString, recursive, appArgs, dirs...)
 }
 
 func usage(output *os.File) {
