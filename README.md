@@ -31,7 +31,7 @@ func main() {
     m1.Init()
     m2.Init()
 
-    logs.Fatal(web.Run())
+    web.Fatal(2, web.Serve())
 }
 
 // modules/m1/module.go
@@ -110,7 +110,7 @@ func Init() {
 #### 日志处理
 
 日志处理，采用 [logs](https://github.com/issue9/logs) 包，一旦 web.Init() 调用，logs 包即是处于可用状态。
-logs 的配置文件与 `web.json` 一样放在同一目录下，可根据需求自行修改。
+logs 的配置文件与 `web.yaml` 一样放在同一目录下，可根据需求自行修改。
 
 web.Context 提供了一套与 logs 相同接口的日志处理方法，相对于直接调用 logs，这些方法可以输出更多的调试信息，但其底层还是调用
 logs 完成相应功能。

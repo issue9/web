@@ -18,4 +18,4 @@ CONTRIBUTING
 ```shell
 go generate ./...
 ```
-或是执行根目录下的 `test.sh` 或 `test.ps1` 文件运行测试内容。
+或是执行 `build` 目录下的 `test.sh` 或 `test.bat` 文件运行测试内容。
