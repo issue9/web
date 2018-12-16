@@ -150,6 +150,7 @@ logs 完成相应功能。
 ```shell
 go get github.com/issue9/web
 ```
+同时还提供了一个辅助工具 web，代码目录在 `cmd/web` 之下。
 
 
 
