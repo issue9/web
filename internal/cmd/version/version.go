@@ -14,13 +14,22 @@ import (
 	"github.com/issue9/web/internal/cmd/help"
 )
 
+var (
+	version   = web.Version
+	buildDate string
+)
+
 func init() {
 	help.Register("version", usage)
+
+	if buildDate != "" {
+		version += ("+" + buildDate)
+	}
 }
 
 // Do 执行子命令
 func Do(output *os.File) error {
-	_, err := fmt.Fprintf(output, "web:%s build with %s\n", web.Version, runtime.Version())
+	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version, runtime.Version())
 	return err
 }
 
