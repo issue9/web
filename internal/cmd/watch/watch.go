@@ -37,11 +37,13 @@ func init() {
 
 // Do 执行子命令
 func Do(output *os.File) error {
-	flagset.Parse(os.Args[1:])
+	if err := flagset.Parse(os.Args[2:]); err != nil {
+		return err
+	}
 
 	wd, err := os.Getwd()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	dirs := append([]string{wd}, flag.Args()...)
 
