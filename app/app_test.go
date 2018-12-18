@@ -148,15 +148,13 @@ func TestApp_Serve(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
-	// 不存在的文件
-	// 这是个 BUG，具体参考 https://github.com/issue9/web/issues/4 暂时忽略
-	/*resp, err = http.Get("http://localhost:8082/client/dir/not-exists.txt")
+	// 不存在的文件，测试 internal/fileserver 是否启作用
+	resp, err = http.Get("http://localhost:8082/client/dir/not-exists.txt")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusNotFound)
 	text, err = ioutil.ReadAll(resp.Body)
 	a.NotError(err).NotNil(text)
 	a.Equal(string(text), "error handler test")
-	*/
 
 	app.Close()
 }
