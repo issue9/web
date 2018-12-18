@@ -6,9 +6,17 @@
 package version
 
 import (
+	"bufio"
+	"bytes"
+	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
+	"sort"
+	"strings"
+
+	v "github.com/issue9/version"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/cmd/help"
@@ -29,12 +37,73 @@ func init() {
 
 // Do 执行子命令
 func Do(output *os.File) error {
+	flagset := flag.NewFlagSet("version", flag.ExitOnError)
+	flagset.Parse(os.Args[1:])
+	check := flagset.Bool("c", false, "是否检测线上的最新版本")
+
+	if *check {
+		return checkRemoteVersion(output)
+	}
+
 	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version, runtime.Version())
 	return err
+}
+
+// 检测框架的最新版本号
+//
+// 获取线上的标签列表，拿到其中的最大值。
+func checkRemoteVersion(output *os.File) error {
+	cmd := exec.Command("git", "ls-remote", "--tags")
+	buf := new(bytes.Buffer)
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	ver, err := getMaxVersion(buf)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(output, "local:%s build with %s\n", version, runtime.Version())
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(output, "latest:%s\n", ver)
+	return nil
+}
+
+func getMaxVersion(buf *bytes.Buffer) (string, error) {
+	s := bufio.NewScanner(buf)
+	vers := make([]*v.SemVersion, 0, 10)
+
+	for s.Scan() {
+		text := s.Text()
+		index := strings.LastIndex(text, "/v")
+		if index < 0 {
+			continue
+		}
+		text = text[index+2:]
+
+		ver, err := v.SemVer(text)
+		if err != nil {
+			return "", err
+		}
+		vers = append(vers, ver)
+	}
+
+	sort.SliceStable(vers, func(i, j int) bool {
+		return vers[i].Compare(vers[j]) > 0
+	})
+
+	return vers[0].String(), nil
 }
 
 func usage(output *os.File) {
 	fmt.Fprintln(output, `显示当前程序的版本号
 
-语法：web version`)
+语法：web version [-c]
+如果指定了 -c，则会检测是否存在新版本的内容。`)
 }
