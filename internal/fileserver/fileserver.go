@@ -6,7 +6,9 @@
 package fileserver
 
 import (
+	"io"
 	"net/http"
+	"time"
 
 	"github.com/issue9/web/internal/exit"
 )
@@ -26,6 +28,16 @@ func New(dir http.Dir) http.Handler {
 	return &fileServer{
 		h: http.FileServer(dir),
 	}
+}
+
+// ServeFile 简单包装 http.ServeFile，使其可以自定义错误状态码。
+func ServeFile(w http.ResponseWriter, r *http.Request, name string) {
+	http.ServeFile(&response{ResponseWriter: w}, r, name)
+}
+
+// ServeContent 简单包装 http.ServeContent，使其可以自定义错误状态码。
+func ServeContent(w http.ResponseWriter, r *http.Request, name string, modified time.Time, buf io.ReadSeeker) {
+	http.ServeContent(&response{ResponseWriter: w}, r, name, modified, buf)
 }
 
 func (fs *fileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

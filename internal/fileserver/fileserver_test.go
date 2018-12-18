@@ -5,9 +5,12 @@
 package fileserver
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/middleware"
@@ -15,7 +18,7 @@ import (
 	"github.com/issue9/web/internal/exit"
 )
 
-// 错误返回
+// New 错误返回
 func TestFileServer_faild(t *testing.T) {
 	a := assert.New(t)
 
@@ -37,7 +40,7 @@ func TestFileServer_faild(t *testing.T) {
 	a.Equal(resp.StatusCode, http.StatusOK)
 }
 
-// 正常返回的
+// New 正常返回的
 func TestFileServer_ok(t *testing.T) {
 	a := assert.New(t)
 
@@ -55,6 +58,65 @@ func TestFileServer_ok(t *testing.T) {
 
 	srv := httptest.NewServer(h)
 	resp, err := http.Get(srv.URL + "/file")
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
+}
+
+// ServeFile 错误返回
+func TestServeFile_faild(t *testing.T) {
+	a := assert.New(t)
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			msg, ok := recover().(exit.HTTPStatus)
+			a.True(ok).Equal(msg, http.StatusNotFound)
+		}()
+
+		ServeFile(w, r, "./test/not-exists")
+	})
+
+	srv := httptest.NewServer(h)
+	resp, err := http.Get(srv.URL)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
+}
+
+// ServeFile 正常返回的
+func TestServeFile_ok(t *testing.T) {
+	a := assert.New(t)
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			msg := recover()
+			a.Nil(msg)
+		}()
+
+		ServeFile(w, r, "./testdata/file")
+	})
+
+	srv := httptest.NewServer(h)
+	resp, err := http.Get(srv.URL)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusOK)
+}
+
+// ServeContent 错误返回
+func TestServeContent_ok(t *testing.T) {
+	a := assert.New(t)
+	buf, err := ioutil.ReadFile("./testdata/file")
+	a.NotError(err).NotNil(buf)
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			msg := recover()
+			a.Nil(msg)
+		}()
+
+		ServeContent(w, r, "test", time.Now(), bytes.NewReader(buf))
+	})
+
+	srv := httptest.NewServer(h)
+	resp, err := http.Get(srv.URL)
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusOK)
 }
