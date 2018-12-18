@@ -27,23 +27,29 @@ var (
 	buildDate    string
 )
 
+var (
+	check   bool
+	flagset *flag.FlagSet
+)
+
 func init() {
 	help.Register("version", usage)
 
 	if buildDate != "" {
 		localVersion += ("+" + buildDate)
 	}
+
+	flagset = flag.NewFlagSet("version", flag.ExitOnError)
+	flagset.BoolVar(&check, "c", false, "是否检测线上的最新版本")
 }
 
 // Do 执行子命令
 func Do(output *os.File) error {
-	flagset := flag.NewFlagSet("version", flag.ExitOnError)
-	check := flagset.Bool("c", false, "是否检测线上的最新版本")
-	if err := flagset.Parse(os.Args[1:]); err != nil {
+	if err := flagset.Parse(os.Args[2:]); err != nil {
 		return err
 	}
 
-	if *check {
+	if check {
 		return checkRemoteVersion(output)
 	}
 
@@ -106,6 +112,8 @@ func getMaxVersion(buf *bytes.Buffer) (string, error) {
 func usage(output *os.File) {
 	fmt.Fprintln(output, `显示当前程序的版本号
 
-语法：web version [-c]
-如果指定了 -c，则会检测是否存在新版本的内容。`)
+语法：web version [options]
+options`)
+	flagset.SetOutput(output)
+	flagset.PrintDefaults()
 }
