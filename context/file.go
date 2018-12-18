@@ -12,6 +12,8 @@ import (
 
 	"github.com/issue9/upload"
 	"github.com/issue9/utils"
+
+	"github.com/issue9/web/internal/fileserver"
 )
 
 // ServeFile 提供文件下载
@@ -34,8 +36,7 @@ func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
 	for k, v := range headers {
 		ctx.Response.Header().Set(k, v)
 	}
-	// BUG(caixw): 无法自定义 ServeFile 中的错误处理
-	http.ServeFile(ctx.Response, ctx.Request, path)
+	fileserver.ServeFile(ctx.Response, ctx.Request, path)
 }
 
 // ServeFileBuffer 将一块内存中的内容转换为文件提供下载
@@ -51,8 +52,7 @@ func (ctx *Context) ServeFileBuffer(buf io.ReadSeeker, name string, headers map[
 		ctx.Response.Header().Set(k, v)
 	}
 
-	// BUG(caixw): 无法自定义 ServeContent 中的错误处理
-	http.ServeContent(ctx.Response, ctx.Request, name, time.Now(), buf)
+	fileserver.ServeContent(ctx.Response, ctx.Request, name, time.Now(), buf)
 }
 
 // Upload 执行上传文件的相关操作。
