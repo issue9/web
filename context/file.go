@@ -6,12 +6,10 @@ package context
 
 import (
 	"io"
-	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/issue9/upload"
-	"github.com/issue9/utils"
 
 	"github.com/issue9/web/internal/fileserver"
 )
@@ -25,10 +23,6 @@ import (
 // name 下载时，显示的文件，若为空，则直接使用 path 中的文件名部分；
 // headers 额外显示的报头内容。
 func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
-	if !utils.FileExists(path) {
-		ctx.Exit(http.StatusNotFound)
-	}
-
 	if name == "" {
 		name = filepath.Base(path)
 	}
