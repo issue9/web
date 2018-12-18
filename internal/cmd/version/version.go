@@ -16,36 +16,38 @@ import (
 	"sort"
 	"strings"
 
-	v "github.com/issue9/version"
+	"github.com/issue9/version"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/cmd/help"
 )
 
 var (
-	version   = web.Version
-	buildDate string
+	localVersion = web.Version
+	buildDate    string
 )
 
 func init() {
 	help.Register("version", usage)
 
 	if buildDate != "" {
-		version += ("+" + buildDate)
+		localVersion += ("+" + buildDate)
 	}
 }
 
 // Do 执行子命令
 func Do(output *os.File) error {
 	flagset := flag.NewFlagSet("version", flag.ExitOnError)
-	flagset.Parse(os.Args[1:])
 	check := flagset.Bool("c", false, "是否检测线上的最新版本")
+	if err := flagset.Parse(os.Args[1:]); err != nil {
+		return err
+	}
 
 	if *check {
 		return checkRemoteVersion(output)
 	}
 
-	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version, runtime.Version())
+	_, err := fmt.Fprintf(output, "web:%s build with %s\n", localVersion, runtime.Version())
 	return err
 }
 
@@ -66,18 +68,18 @@ func checkRemoteVersion(output *os.File) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(output, "local:%s build with %s\n", version, runtime.Version())
+	_, err = fmt.Fprintf(output, "local:%s build with %s\n", localVersion, runtime.Version())
 	if err != nil {
 		return err
 	}
 
 	_, err = fmt.Fprintf(output, "latest:%s\n", ver)
-	return nil
+	return err
 }
 
 func getMaxVersion(buf *bytes.Buffer) (string, error) {
 	s := bufio.NewScanner(buf)
-	vers := make([]*v.SemVersion, 0, 10)
+	vers := make([]*version.SemVersion, 0, 10)
 
 	for s.Scan() {
 		text := s.Text()
@@ -87,7 +89,7 @@ func getMaxVersion(buf *bytes.Buffer) (string, error) {
 		}
 		text = text[index+2:]
 
-		ver, err := v.SemVer(text)
+		ver, err := version.SemVer(text)
 		if err != nil {
 			return "", err
 		}
