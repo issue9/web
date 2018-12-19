@@ -45,7 +45,6 @@ var configUnmarshals = map[string]config.UnmarshalFunc{
 type App struct {
 	webConfig *webconfig.WebConfig
 
-	mux    *mux.Mux
 	server *http.Server
 
 	modules *modules.Modules
@@ -90,16 +89,13 @@ func New(dir string) (*App, error) {
 		return nil, err
 	}
 
-	mux := mux.New(webconf.DisableOptions, false, notFound, methodNotAllowed)
-
-	ms, err := modules.New(mux, webconf)
+	ms, err := modules.New(webconf)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &App{
 		webConfig:     webconf,
-		mux:           mux,
 		closed:        make(chan bool, 1),
 		modules:       ms,
 		mt:            mimetype.New(),
@@ -108,7 +104,7 @@ func New(dir string) (*App, error) {
 		errorHandlers: make(map[int]ErrorHandler, 10),
 		server: &http.Server{
 			Addr:              ":" + strconv.Itoa(webconf.Port),
-			Handler:           mux,
+			Handler:           ms.Mux(),
 			ErrorLog:          logs.ERROR(),
 			ReadTimeout:       webconf.ReadTimeout,
 			WriteTimeout:      webconf.WriteTimeout,
@@ -117,7 +113,7 @@ func New(dir string) (*App, error) {
 		},
 	}
 
-	// 加载固有的中间件
+	// 加载固有的中间件，需要在 ms 初始化之后调用
 	app.buildMiddlewares(webconf)
 
 	return app, nil
@@ -127,13 +123,13 @@ func New(dir string) (*App, error) {
 //
 // 后添加的后调用。
 func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
-	app.mux.UnshiftMiddlewares(m...)
+	app.Mux().UnshiftMiddlewares(m...)
 	return app
 }
 
 // Mux 返回 mux.Mux 实例。
 func (app *App) Mux() *mux.Mux {
-	return app.mux
+	return app.modules.Mux()
 }
 
 // IsDebug 是否处于调试模式
@@ -280,12 +276,4 @@ func Grace(app *App, sig ...os.Signal) {
 		}
 		close(signalChannel)
 	}()
-}
-
-func notFound(w http.ResponseWriter, r *http.Request) {
-	ExitContext(http.StatusNotFound)
-}
-
-func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	ExitContext(http.StatusMethodNotAllowed)
 }

@@ -25,16 +25,19 @@ const (
 )
 
 // Modules 模块管理
+//
+// 负责模块的初始化工作，包括路由的加载等。
 type Modules struct {
 	modules []*module.Module
 	router  *mux.Prefix
 }
 
 // New 声明 Modules 变量
-func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
+func New(conf *webconfig.WebConfig) (*Modules, error) {
+	mux := mux.New(conf.DisableOptions, false, notFound, methodNotAllowed)
 	ms := &Modules{
-		router:  mux.Prefix(conf.Root),
 		modules: make([]*module.Module, 0, 100),
+		router:  mux.Prefix(conf.Root),
 	}
 
 	// 默认的模块
@@ -65,6 +68,11 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 	m := module.New(module.TypeModule, name, desc, deps...)
 	ms.modules = append(ms.modules, m)
 	return m
+}
+
+// Mux 返回相关的 mux.Mux 实例
+func (ms *Modules) Mux() *mux.Mux {
+	return ms.router.Mux()
 }
 
 // Init 初如化插件
@@ -100,4 +108,12 @@ func (ms *Modules) Tags() []string {
 	sort.Strings(tags)
 
 	return tags
+}
+
+func notFound(w http.ResponseWriter, r *http.Request) {
+	exit.Context(http.StatusNotFound)
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	exit.Context(http.StatusMethodNotAllowed)
 }

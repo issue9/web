@@ -7,31 +7,33 @@ package modules
 import (
 	"errors"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/mux"
 
 	"github.com/issue9/web/internal/webconfig"
 )
 
-var muxtest = mux.New(false, false, nil, nil)
-
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := New(muxtest, &webconfig.WebConfig{})
+	ms, err := New(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
 		Equal(ms.modules[0].Name, coreModuleName)
+
+	a.NotNil(ms.Mux()).
+		Equal(ms.Mux(), ms.router.Mux())
 
 	// 以下内容需要用到 plugin 功能，该功能 windows 并未实例，暂时跳过
 	if !isPluginOS() {
 		return
 	}
 
-	ms, err = New(muxtest, &webconfig.WebConfig{
+	ms, err = New(&webconfig.WebConfig{
 		Plugins: "./testdata/plugin_*.so",
 		Static: map[string]string{
 			"/url": "/path",
@@ -43,7 +45,7 @@ func TestNew(t *testing.T) {
 
 func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
-	ms, err := New(muxtest, &webconfig.WebConfig{})
+	ms, err := New(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
@@ -66,7 +68,7 @@ func TestModules_Init(t *testing.T) {
 
 func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
-	ms, err := New(muxtest, &webconfig.WebConfig{})
+	ms, err := New(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
@@ -86,4 +88,24 @@ func TestModules_Tags(t *testing.T) {
 
 	tags := ms.Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+}
+
+func TestNotFound(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+
+	a.Panic(func() {
+		notFound(w, r)
+	})
+}
+
+func TestMethodNotAllowed(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+
+	a.Panic(func() {
+		methodNotAllowed(w, r)
+	})
 }

@@ -163,8 +163,8 @@ func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	app.mux.GetFunc("/test", f202)
-	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	app.Mux().GetFunc("/test", f202)
+	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
 		app.Close()
 	})
@@ -193,8 +193,8 @@ func TestApp_shutdown(t *testing.T) {
 	app := newApp(a)
 	app.webConfig.ShutdownTimeout = 0
 
-	app.mux.GetFunc("/test", f202)
-	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	app.Mux().GetFunc("/test", f202)
+	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("shutdown"))
 		app.Shutdown()
 	})
@@ -224,8 +224,8 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	app.mux.GetFunc("/test", f202)
-	app.mux.GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	app.Mux().GetFunc("/test", f202)
+	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("shutdown with timeout"))
 		app.Shutdown()

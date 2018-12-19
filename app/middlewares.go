@@ -38,26 +38,26 @@ var compresses = map[string]compress.WriterFunc{
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		app.mux.AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		app.mux.AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
 	// recovery
-	app.mux.AppendMiddlewares(func(h http.Handler) http.Handler {
+	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 		return recovery.New(h, app.recovery(conf.Debug))
 	})
 
 	// compress
 	if conf.Compress != nil {
-		app.mux.AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    compresses,
 				Types:    conf.Compress.Types,
@@ -70,7 +70,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
 		app.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
-		app.mux.AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}
