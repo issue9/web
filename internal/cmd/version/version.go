@@ -13,10 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"sort"
 	"strings"
-
-	"github.com/issue9/version"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/cmd/help"
@@ -85,7 +82,7 @@ func checkRemoteVersion(output *os.File) error {
 
 func getMaxVersion(buf *bytes.Buffer) (string, error) {
 	s := bufio.NewScanner(buf)
-	vers := make([]*version.SemVersion, 0, 10)
+	var max string
 
 	for s.Scan() {
 		text := s.Text()
@@ -93,20 +90,14 @@ func getMaxVersion(buf *bytes.Buffer) (string, error) {
 		if index < 0 {
 			continue
 		}
-		text = text[index+2:]
+		ver := text[index+2:]
 
-		ver, err := version.SemVer(text)
-		if err != nil {
-			return "", err
+		if ver > max {
+			max = ver
 		}
-		vers = append(vers, ver)
 	}
 
-	sort.SliceStable(vers, func(i, j int) bool {
-		return vers[i].Compare(vers[j]) > 0
-	})
-
-	return vers[0].String(), nil
+	return max, nil
 }
 
 func usage(output *os.File) {
