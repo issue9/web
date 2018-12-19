@@ -4,7 +4,7 @@
 
 package create
 
-var logs = []byte(`<?xml version="1.0" encoding="utf-8" ?>
+var logs = []byte(`<?xml version="1.0" encoding="utf-8"?>
 <logs>
     <!-- info内容，先缓存到一定10条，再一次性输出 -->
     <info prefix="INFO" flag="">

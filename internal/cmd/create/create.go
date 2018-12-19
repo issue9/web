@@ -74,7 +74,11 @@ required github.com/issue9/web v%s`, mod, web.Version)
 		return err
 	}
 
-	return createConfig(path, "appconfig")
+	if err = createConfig(path, "appconfig"); err != nil {
+		return err
+	}
+
+	return createModules(path)
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
@@ -83,7 +87,7 @@ required github.com/issue9/web v%s`, mod, web.Version)
 func createConfig(path, dir string) error {
 	path = filepath.Join(path, dir)
 
-	if err := os.Mkdir(path, os.ModePerm); err != nil {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -103,6 +107,20 @@ func createConfig(path, dir string) error {
 		return err
 	}
 	return dumpFile(filepath.Join(path, app.ConfigFilename), data)
+}
+
+// 创建模块目录，并输出默认的配置内容。
+// path 为项目的根目录
+func createModules(path string) error {
+	path = filepath.Join(path, "modules")
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+
+	// TODO 输出 modules.go
+
+	return nil
 }
 
 func dumpFile(path string, content []byte) error {
