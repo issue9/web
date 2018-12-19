@@ -13,6 +13,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/internal/exit"
 )
 
 func testRenderError(w http.ResponseWriter, status int) {
@@ -120,7 +122,7 @@ func TestApp_recovery_debug(t *testing.T) {
 
 	// httpStatus
 	w = httptest.NewRecorder()
-	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
+	a.NotPanic(func() { fn(w, exit.HTTPStatus(http.StatusBadGateway)) })
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
 	a.True(strings.Contains(w.Body.String(), http.StatusText(http.StatusBadGateway)))
 }
@@ -148,14 +150,14 @@ func TestApp_recovery(t *testing.T) {
 	// httpStatus
 	w = httptest.NewRecorder()
 	errLog.Reset()
-	a.NotPanic(func() { fn(w, httpStatus(http.StatusBadGateway)) })
+	a.NotPanic(func() { fn(w, exit.HTTPStatus(http.StatusBadGateway)) })
 	a.Equal(w.Result().StatusCode, http.StatusBadGateway)
 	a.Empty(errLog.String())
 
 	// httpStatus == 0
 	w = httptest.NewRecorder()
 	errLog.Reset()
-	a.NotPanic(func() { fn(w, httpStatus(0)) })
+	a.NotPanic(func() { fn(w, exit.HTTPStatus(0)) })
 	a.Equal(w.Result().StatusCode, http.StatusOK) // 默认输出的状态码
 	a.Empty(errLog.String())
 }

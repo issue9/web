@@ -8,6 +8,7 @@ require (
 	github.com/issue9/middleware v1.0.0
 	github.com/issue9/mux v1.2.0
 	github.com/issue9/query v1.0.0
+	github.com/issue9/upload v1.0.0
 	github.com/issue9/utils v1.0.0
 	github.com/issue9/version v1.0.0
 	golang.org/x/text v0.3.0
