@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package fileserver
+package exit
 
 import (
 	"bytes"
@@ -14,19 +14,17 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/middleware"
-
-	"github.com/issue9/web/internal/exit"
 )
 
 // New 错误返回
 func TestFileServer_faild(t *testing.T) {
 	a := assert.New(t)
 
-	h := New("./testdata")
+	h := FileServer("./testdata")
 	h = middleware.Handler(h, func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
-				msg, ok := recover().(exit.HTTPStatus)
+				msg, ok := recover().(HTTPStatus)
 				a.True(ok).Equal(msg, http.StatusNotFound)
 			}()
 
@@ -40,11 +38,11 @@ func TestFileServer_faild(t *testing.T) {
 	a.Equal(resp.StatusCode, http.StatusOK)
 }
 
-// New 正常返回的
+// FileServer 正常返回的
 func TestFileServer_ok(t *testing.T) {
 	a := assert.New(t)
 
-	h := New("./testdata")
+	h := FileServer("./testdata")
 	h = middleware.Handler(h, func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -68,7 +66,7 @@ func TestServeFile_faild(t *testing.T) {
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			msg, ok := recover().(exit.HTTPStatus)
+			msg, ok := recover().(HTTPStatus)
 			a.True(ok).Equal(msg, http.StatusNotFound)
 		}()
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/fileserver"
+	"github.com/issue9/web/internal/exit"
 	"github.com/issue9/web/internal/modules/dep"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/module"
@@ -44,7 +44,7 @@ func New(mux *mux.Mux, conf *webconfig.WebConfig) (*Modules, error) {
 	// 初始化静态文件处理
 	for url, dir := range conf.Static {
 		pattern := path.Join(conf.Root, url+"{path}")
-		fs := fileserver.New(http.Dir(dir))
+		fs := exit.FileServer(http.Dir(dir))
 		m.Get(pattern, http.StripPrefix(url, fs))
 	}
 

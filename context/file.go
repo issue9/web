@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/upload"
 
-	"github.com/issue9/web/internal/fileserver"
+	"github.com/issue9/web/internal/exit"
 )
 
 // ServeFile 提供文件下载
@@ -30,7 +30,7 @@ func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
 	for k, v := range headers {
 		ctx.Response.Header().Set(k, v)
 	}
-	fileserver.ServeFile(ctx.Response, ctx.Request, path)
+	exit.ServeFile(ctx.Response, ctx.Request, path)
 }
 
 // ServeFileBuffer 将一块内存中的内容转换为文件提供下载
@@ -46,7 +46,7 @@ func (ctx *Context) ServeFileBuffer(buf io.ReadSeeker, name string, headers map[
 		ctx.Response.Header().Set(k, v)
 	}
 
-	fileserver.ServeContent(ctx.Response, ctx.Request, name, time.Now(), buf)
+	exit.ServeContent(ctx.Response, ctx.Request, name, time.Now(), buf)
 }
 
 // Upload 执行上传文件的相关操作。

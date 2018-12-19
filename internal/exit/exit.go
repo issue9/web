@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package exit 提供了一种退出当前协程的方案。
+// Package exit 提供了一种退出当前协程的方案以及与其相关的一些操作。
 package exit
 
 // HTTPStatus 表示一个 HTTP 状态码错误。

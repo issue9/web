@@ -2,15 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package fileserver 封装 http.FileServer 使其可以使用自定义的错误状态码处理。
-package fileserver
+package exit
 
 import (
 	"io"
 	"net/http"
 	"time"
-
-	"github.com/issue9/web/internal/exit"
 )
 
 type fileServer struct {
@@ -21,10 +18,10 @@ type response struct {
 	http.ResponseWriter
 }
 
-// New 声明一个可以自定义处理 404 等错误的 FileServer。
+// FileServer 声明一个可以自定义处理 404 等错误的 FileServer。
 //
 // 仅对 400 以下的状态作处理。
-func New(dir http.Dir) http.Handler {
+func FileServer(dir http.Dir) http.Handler {
 	return &fileServer{
 		h: http.FileServer(dir),
 	}
@@ -46,7 +43,7 @@ func (fs *fileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (r *response) WriteHeader(status int) {
 	if status >= 400 {
-		exit.Context(status)
+		Context(status)
 	}
 
 	r.ResponseWriter.WriteHeader(status)
