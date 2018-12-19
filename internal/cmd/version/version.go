@@ -19,6 +19,9 @@ import (
 	"github.com/issue9/web/internal/cmd/help"
 )
 
+// 用于获取版本信息的 git 仓库地址
+const repoURL = "https://github.com/issue9/web"
+
 var (
 	localVersion = web.Version
 	buildDate    string
@@ -58,7 +61,7 @@ func Do(output *os.File) error {
 //
 // 获取线上的标签列表，拿到其中的最大值。
 func checkRemoteVersion(output *os.File) error {
-	cmd := exec.Command("git", "ls-remote", "--tags")
+	cmd := exec.Command("git", "ls-remote", "--tags", repoURL)
 	buf := new(bytes.Buffer)
 	cmd.Stdout = buf
 
