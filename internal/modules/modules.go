@@ -13,7 +13,6 @@ import (
 
 	"github.com/issue9/mux"
 
-	"github.com/issue9/web/internal/exit"
 	"github.com/issue9/web/internal/modules/dep"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/module"
@@ -34,7 +33,7 @@ type Modules struct {
 
 // New 声明 Modules 变量
 func New(conf *webconfig.WebConfig) (*Modules, error) {
-	mux := mux.New(conf.DisableOptions, false, notFound, methodNotAllowed)
+	mux := mux.New(conf.DisableOptions, false, nil, nil)
 	ms := &Modules{
 		modules: make([]*module.Module, 0, 100),
 		router:  mux.Prefix(conf.Root),
@@ -47,8 +46,7 @@ func New(conf *webconfig.WebConfig) (*Modules, error) {
 	// 初始化静态文件处理
 	for url, dir := range conf.Static {
 		pattern := path.Join(conf.Root, url+"{path}")
-		fs := exit.FileServer(http.Dir(dir))
-		m.Get(pattern, http.StripPrefix(url, fs))
+		m.Get(pattern, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
 	}
 
 	// 在初始化模块之前，先加载插件
@@ -108,12 +106,4 @@ func (ms *Modules) Tags() []string {
 	sort.Strings(tags)
 
 	return tags
-}
-
-func notFound(w http.ResponseWriter, r *http.Request) {
-	exit.Context(http.StatusNotFound)
-}
-
-func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	exit.Context(http.StatusMethodNotAllowed)
 }

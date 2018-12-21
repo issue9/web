@@ -97,7 +97,7 @@ func TestApp_URL(t *testing.T) {
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
-	app.AddErrorHandler(func(w http.ResponseWriter, status int) {
+	app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		w.Write([]byte("error handler test"))
 	}, http.StatusNotFound)

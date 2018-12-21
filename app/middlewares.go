@@ -50,11 +50,6 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 		})
 	}
 
-	// recovery
-	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
-		return recovery.New(h, app.recovery(conf.Debug))
-	})
-
 	// compress
 	if conf.Compress != nil {
 		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
@@ -66,6 +61,15 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 			})
 		})
 	}
+
+	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		return app.errorhandlers.New(h)
+	})
+
+	// recovery
+	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		return recovery.New(h, app.errorhandlers.Recovery(app.ERROR()))
+	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {

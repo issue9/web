@@ -19,7 +19,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 		ctx.App.CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.App.RenderError(ctx.Response, status)
+	ctx.App.ErrorHandlers().Render(ctx.Response, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -31,7 +31,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 		ctx.App.ERROR().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.App.RenderError(ctx.Response, status)
+	ctx.App.ErrorHandlers().Render(ctx.Response, status)
 }
 
 // Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -43,7 +43,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 		ctx.App.CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.App.RenderError(ctx.Response, status)
+	ctx.App.ErrorHandlers().Render(ctx.Response, status)
 }
 
 // Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -55,7 +55,7 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 		ctx.App.ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.App.RenderError(ctx.Response, status)
+	ctx.App.ErrorHandlers().Render(ctx.Response, status)
 }
 
 // Exit 以指定的状态码退出当前协程

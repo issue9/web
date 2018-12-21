@@ -7,8 +7,6 @@ package modules
 import (
 	"errors"
 	"log"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -88,24 +86,4 @@ func TestModules_Tags(t *testing.T) {
 
 	tags := ms.Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
-}
-
-func TestNotFound(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-
-	a.Panic(func() {
-		notFound(w, r)
-	})
-}
-
-func TestMethodNotAllowed(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-
-	a.Panic(func() {
-		methodNotAllowed(w, r)
-	})
 }

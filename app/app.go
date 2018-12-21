@@ -17,6 +17,7 @@ import (
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux"
 	yaml "gopkg.in/yaml.v2"
 
@@ -47,18 +48,11 @@ type App struct {
 
 	server *http.Server
 
-	modules *modules.Modules
-	mt      *mimetype.Mimetypes
-	configs *config.Manager
-	logs    *logs.Logs
-
-	// 指定状态下对应的错误处理函数。
-	//
-	// 若该状态码的处理函数不存在，则会查找键值为 0 的函数，
-	// 若依然不存在，则调用 defaultRender
-	//
-	// 用户也可以通过调用 App.AddErrorHandler 进行添加。
-	errorHandlers map[int]ErrorHandler
+	modules       *modules.Modules
+	mt            *mimetype.Mimetypes
+	configs       *config.Manager
+	logs          *logs.Logs
+	errorhandlers *errorhandler.ErrorHandler
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
@@ -101,7 +95,7 @@ func New(dir string) (*App, error) {
 		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          logs,
-		errorHandlers: make(map[int]ErrorHandler, 10),
+		errorhandlers: errorhandler.New(),
 		server: &http.Server{
 			Addr:              ":" + strconv.Itoa(webconf.Port),
 			Handler:           ms.Mux(),
@@ -130,6 +124,11 @@ func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
 // Mux 返回 mux.Mux 实例。
 func (app *App) Mux() *mux.Mux {
 	return app.modules.Mux()
+}
+
+// ErrorHandlers 错误处理功能
+func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
+	return app.errorhandlers
 }
 
 // IsDebug 是否处于调试模式
@@ -276,4 +275,9 @@ func Grace(app *App, sig ...os.Signal) {
 		}
 		close(signalChannel)
 	}()
+}
+
+// ExitContext 退出当前的请求处理协程
+func ExitContext(status int) {
+	errorhandler.Exit(status)
 }

@@ -24,13 +24,19 @@ func TestContext_ServeFile(t *testing.T) {
 		Request:  httptest.NewRequest(http.MethodGet, "/file", nil),
 		App:      app,
 	}
+
+	// 存在的文件
 	a.NotPanic(func() {
 		ctx.ServeFile("./testdata/file", "", map[string]string{"Test": "Test"})
 		a.Equal(w.Header().Get("Test"), "Test")
 	})
 
-	a.Panic(func() {
+	// 不存在的文件
+	w = httptest.NewRecorder()
+	ctx.Response = w
+	a.NotPanic(func() {
 		ctx.ServeFile("./testdata/not-exists", "", nil)
+		a.Equal(w.Code, http.StatusNotFound)
 	})
 }
 
@@ -46,6 +52,7 @@ func TestContext_ServeFileBuffer(t *testing.T) {
 		Request:  httptest.NewRequest(http.MethodGet, "/file", nil),
 		App:      app,
 	}
+
 	a.NotPanic(func() {
 		ctx.ServeFileBuffer(bytes.NewReader(buf), "name", map[string]string{"Test": "Test"})
 		a.Equal(w.Header().Get("Test"), "Test")
