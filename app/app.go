@@ -104,6 +104,7 @@ func New(dir string) (*App, error) {
 			WriteTimeout:      webconf.WriteTimeout,
 			IdleTimeout:       webconf.IdleTimeout,
 			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+			MaxHeaderBytes:    webconf.MaxHeaderBytes,
 		},
 	}
 

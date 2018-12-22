@@ -87,6 +87,7 @@ type WebConfig struct {
 	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty"`
 	IdleTimeout       time.Duration `yaml:"idleTiemout,omitempty"`
 	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty"`
+	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty"`
 
 	// Compress 表示压缩的相关配置
 	//
@@ -142,6 +143,10 @@ func (conf *WebConfig) Sanitize() error {
 
 	if conf.ReadHeaderTimeout < 0 {
 		return errors.New("readHeaderTimeout 必须大于等于 0")
+	}
+
+	if conf.MaxHeaderBytes < 0 {
+		return errors.New("maxHeaderBytes 必须大于 0")
 	}
 
 	if conf.ShutdownTimeout < 0 {
