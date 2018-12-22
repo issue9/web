@@ -96,16 +96,6 @@ func New(dir string) (*App, error) {
 		configs:       mgr,
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
-		server: &http.Server{
-			Addr:              ":" + strconv.Itoa(webconf.Port),
-			Handler:           ms.Mux(),
-			ErrorLog:          logs.ERROR(),
-			ReadTimeout:       webconf.ReadTimeout,
-			WriteTimeout:      webconf.WriteTimeout,
-			IdleTimeout:       webconf.IdleTimeout,
-			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
-			MaxHeaderBytes:    webconf.MaxHeaderBytes,
-		},
 	}
 
 	// 加载固有的中间件，需要在 ms 初始化之后调用
@@ -179,6 +169,18 @@ func (app *App) Serve() error {
 	}
 
 	conf := app.webConfig
+
+	app.server = &http.Server{
+		Addr:              ":" + strconv.Itoa(conf.Port),
+		Handler:           app.modules.Mux(),
+		ErrorLog:          app.Logs().ERROR(),
+		ReadTimeout:       conf.ReadTimeout,
+		WriteTimeout:      conf.WriteTimeout,
+		IdleTimeout:       conf.IdleTimeout,
+		ReadHeaderTimeout: conf.ReadHeaderTimeout,
+		MaxHeaderBytes:    conf.MaxHeaderBytes,
+	}
+
 	if !conf.HTTPS {
 		err = app.server.ListenAndServe()
 	} else {
