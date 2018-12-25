@@ -19,6 +19,7 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux"
+	"golang.org/x/text/message"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
@@ -263,6 +264,17 @@ func (app *App) Config() *config.Manager {
 // NewMessages 添加新的错误消息
 func (app *App) NewMessages(status int, msgs map[int]string) {
 	app.messages.NewMessages(status, msgs)
+}
+
+// Messages 获取所有的错误消息代码
+//
+// 如果指定 p 的值，则返回本地化的消息内容。
+func (app *App) Messages(p *message.Printer) map[int]string {
+	if p == nil {
+		return app.messages.Messages()
+	}
+
+	return app.messages.LocaleMessages(p)
 }
 
 // GetMessage 查找指定代码的错误信息

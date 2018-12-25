@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
@@ -131,6 +132,18 @@ func LoadFile(path string, v interface{}) error {
 // Load 加载指定的配置文件内容到 v 中
 func Load(r io.Reader, typ string, v interface{}) error {
 	return defaultApp.Load(r, typ, v)
+}
+
+// NewMessages 添加新的错误消息代码
+func NewMessages(status int, messages map[int]string) {
+	defaultApp.NewMessages(status, messages)
+}
+
+// Messages 获取所有的错误消息代码
+//
+// 如果指定 p 的值，则返回本地化的消息内容。
+func Messages(p *message.Printer) map[int]string {
+	return defaultApp.Messages(p)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
