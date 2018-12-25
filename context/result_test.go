@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -24,6 +25,21 @@ var (
 	_ form.Marshaler = &Result{}
 	_ error          = &Result{}
 )
+
+func TestContext_NewResult(t *testing.T) {
+	a := assert.New(t)
+	app := newApp(a)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx := New(w, r, app)
+
+	// 不存在
+	a.Panic(func() { ctx.NewResult(400) })
+
+	a.NotPanic(func() { app.NewMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { ctx.NewResult(40000) })
+	a.Panic(func() { ctx.NewResult(50000) })
+}
 
 func TestResult_Add_HasDetail(t *testing.T) {
 	a := assert.New(t)
