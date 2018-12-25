@@ -2,15 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package result 提供了一套用于描述向客户端反馈错误信息的机制。
-package result
+package context
 
 import (
-	"net/http"
+	"fmt"
 	"net/url"
 	"strconv"
-
-	"github.com/issue9/web/context"
 )
 
 // Result 定义了出错时，向客户端返回的结构体。支持以下格式：
@@ -46,7 +43,8 @@ type Result struct {
 	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
 
 	// 当前的信息所对应的 HTTP 状态码
-	Status int `json:"-" xml:"-" yaml:"-"`
+	status int
+	ctx    *Context
 
 	Message string    `json:"message" xml:"message,attr" yaml:"message"`
 	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
@@ -56,6 +54,21 @@ type Result struct {
 type detail struct {
 	Field   string `json:"field" xml:"name,attr" yaml:"field"`
 	Message string `json:"message" xml:",chardata" yaml:"message"`
+}
+
+// NewResult 返回 Result 实例
+func (ctx *Context) NewResult(code int) *Result {
+	msg, found := ctx.App.GetMessage(code)
+	if !found {
+		panic(fmt.Sprintln("不存在的错误码:", code))
+	}
+
+	return &Result{
+		ctx:     ctx,
+		status:  msg.Status,
+		Code:    code,
+		Message: ctx.Sprintf(msg.Message),
+	}
 }
 
 // SetDetail 设置详细的错误信息
@@ -85,21 +98,14 @@ func (rslt *Result) HasDetail() bool {
 }
 
 // Render 将当前的实例输出到客户端
-func (rslt *Result) Render(ctx *context.Context) {
-	msg, found := messages[rslt.Code]
-	if !found {
-		ctx.Error(http.StatusInternalServerError, "不存在的错误码:", rslt.Code)
-	}
-
-	rslt.Status = msg.status
-	rslt.Message = ctx.Sprintf(msg.message)
-	ctx.Render(rslt.Status, rslt, nil)
+func (rslt *Result) Render() {
+	rslt.ctx.Render(rslt.status, rslt, nil)
 }
 
 // Exit 将当前的实例输出到客户端，并退出当前请求
-func (rslt *Result) Exit(ctx *context.Context) {
-	rslt.Render(ctx)
-	ctx.Exit(0)
+func (rslt *Result) Exit() {
+	rslt.Render()
+	rslt.ctx.Exit(0)
 }
 
 // MarshalForm 为 form.Marshaler 接口实现。用于将 result 对象转换成 form 数据格式
