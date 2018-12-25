@@ -32,7 +32,7 @@ func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
 	http.ServeFile(ctx.Response, ctx.Request, path)
 }
 
-// ServeFileBuffer 将一块内存中的内容转换为文件提供下载
+// ServeContent 将一块内存中的内容转换为文件提供下载
 //
 // 文件可能提供连续的下载功能，其状态码是未定的，
 // 所以提供了一个类似于 Render 的变体专门用于下载功能。
@@ -40,7 +40,7 @@ func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
 // buf 实现 io.ReadSeeker 接口的内存块；
 // name 下载时，显示的文件；
 // headers 文件报头内容。
-func (ctx *Context) ServeFileBuffer(buf io.ReadSeeker, name string, headers map[string]string) {
+func (ctx *Context) ServeContent(buf io.ReadSeeker, name string, headers map[string]string) {
 	for k, v := range headers {
 		ctx.Response.Header().Set(k, v)
 	}

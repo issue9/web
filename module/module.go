@@ -95,6 +95,8 @@ func (m *Module) NewTag(tag string) *Module {
 }
 
 // AddInit 添加一个初始化函数
+//
+// title 该初始化函数的名称。没有则会自动生成一个序号，多个，则取第一个元素。
 func (m *Module) AddInit(f func() error, title ...string) *Module {
 	t := ""
 	if len(title) == 0 {

@@ -40,7 +40,7 @@ func TestContext_ServeFile(t *testing.T) {
 	})
 }
 
-func TestContext_ServeFileBuffer(t *testing.T) {
+func TestContext_ServeContent(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 	buf, err := ioutil.ReadFile("./testdata/file")
@@ -54,7 +54,7 @@ func TestContext_ServeFileBuffer(t *testing.T) {
 	}
 
 	a.NotPanic(func() {
-		ctx.ServeFileBuffer(bytes.NewReader(buf), "name", map[string]string{"Test": "Test"})
+		ctx.ServeContent(bytes.NewReader(buf), "name", map[string]string{"Test": "Test"})
 		a.Equal(w.Header().Get("Test"), "Test")
 	})
 }
