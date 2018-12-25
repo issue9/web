@@ -22,6 +22,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/internal/messages"
 	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
@@ -53,6 +54,7 @@ type App struct {
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
+	messages      *messages.Messages
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
@@ -96,6 +98,7 @@ func New(dir string) (*App, error) {
 		configs:       mgr,
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
+		messages:      messages.New(),
 	}
 
 	// 加载固有的中间件，需要在 ms 初始化之后调用
@@ -255,6 +258,16 @@ func (app *App) Mimetypes() *mimetype.Mimetypes {
 // Config 获取 config.Manager 的实例
 func (app *App) Config() *config.Manager {
 	return app.configs
+}
+
+// NewMessages 添加新的错误消息
+func (app *App) NewMessages(status int, msgs map[int]string) {
+	app.messages.NewMessages(status, msgs)
+}
+
+// GetMessage 查找指定代码的错误信息
+func (app *App) GetMessage(code int) (*messages.Message, bool) {
+	return app.messages.Find(code)
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
