@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
@@ -84,7 +85,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		}
 
 		a.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		app.ExitContext(status)
+		errorhandler.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")

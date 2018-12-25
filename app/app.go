@@ -292,8 +292,3 @@ func Grace(app *App, sig ...os.Signal) {
 		close(signalChannel)
 	}()
 }
-
-// ExitContext 退出当前的请求处理协程
-func ExitContext(status int) {
-	errorhandler.Exit(status)
-}

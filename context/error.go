@@ -7,7 +7,7 @@ package context
 import (
 	"fmt"
 
-	"github.com/issue9/web/app"
+	"github.com/issue9/middleware/recovery/errorhandler"
 )
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -68,5 +68,5 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 // 与 Error 的不同在于：
 // Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
 func (ctx *Context) Exit(status int) {
-	app.ExitContext(status)
+	errorhandler.Exit(status)
 }
