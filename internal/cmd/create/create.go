@@ -69,8 +69,12 @@ MOD:
 	content := fmt.Sprintf(`module %s
 
 required github.com/issue9/web v%s`, mod, web.Version)
-	err = dumpFile(filepath.Join(path, "go.mod"), []byte(content))
-	if err != nil {
+	if err = dumpFile(filepath.Join(path, "go.mod"), []byte(content)); err != nil {
+		return err
+	}
+
+	// 输出 main.go
+	if err = dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
 		return err
 	}
 

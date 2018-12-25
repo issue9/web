@@ -39,3 +39,16 @@ var logs = []byte(`<?xml version="1.0" encoding="utf-8"?>
     </critical>
 </logs>
 `)
+
+var maingo = []byte(`package main
+
+const appconfig = "./appconfig"
+
+import (
+    "github.com/issue9/web"
+)
+
+func main() {
+    web.Init(appconfig)
+}
+`)
