@@ -41,6 +41,14 @@ func NewManager(dir string) (*Manager, error) {
 	}, nil
 }
 
+// Exists 是否已经存在该类型的解析函数
+//
+// ext 表示该类型的文件扩展名，带 . 符号
+func (mgr *Manager) Exists(ext string) bool {
+	_, found := mgr.unmarshals[ext]
+	return found
+}
+
 // AddUnmarshal 注册解析函数
 func (mgr *Manager) AddUnmarshal(m UnmarshalFunc, ext ...string) error {
 	for _, e := range ext {
@@ -53,7 +61,7 @@ func (mgr *Manager) AddUnmarshal(m UnmarshalFunc, ext ...string) error {
 		}
 
 		e = strings.ToLower(e)
-		if _, found := mgr.unmarshals[e]; found {
+		if mgr.Exists(e) {
 			return fmt.Errorf("已经存在该扩展名 %s 对应的解析函数", ext)
 		}
 		mgr.unmarshals[e] = m

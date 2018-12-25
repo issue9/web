@@ -73,7 +73,7 @@ func (ms *Modules) Mux() *mux.Mux {
 	return ms.router.Mux()
 }
 
-// Init 初如化插件
+// Init 初始化插件
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
 //
