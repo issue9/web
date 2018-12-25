@@ -27,7 +27,7 @@ func TestTag(t *testing.T) {
 	v := m.NewTag("0.1.0")
 	a.NotNil(v).NotNil(m.Tags["0.1.0"])
 	a.Equal(v.Type, TypeTag).Equal(v.Name, "0.1.0")
-	v.AddInitTitle("title1", nil)
+	v.AddInit(nil, "title1")
 	a.Equal(v.Inits[0].Title, "title1")
 
 	vv := m.NewTag("0.1.0")
@@ -44,15 +44,15 @@ func TestModule_AddInit(t *testing.T) {
 	a.NotNil(m)
 	m.AddInit(func() error { return nil })
 	a.Equal(len(m.Inits), 1).
-		Empty(m.Inits[0].Title).
+		NotEmpty(m.Inits[0].Title). // 一个默认的数值。
 		NotNil(m.Inits[0].F)
 
-	m.AddInitTitle("t1", func() error { return nil })
+	m.AddInit(func() error { return nil }, "t1")
 	a.Equal(len(m.Inits), 2).
 		Equal(m.Inits[1].Title, "t1").
 		NotNil(m.Inits[1].F)
 
-	m.AddInitTitle("t1", func() error { return nil })
+	m.AddInit(func() error { return nil }, "t1")
 	a.Equal(len(m.Inits), 3).
 		Equal(m.Inits[2].Title, "t1").
 		NotNil(m.Inits[2].F)

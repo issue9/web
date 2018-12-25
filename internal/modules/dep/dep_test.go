@@ -41,7 +41,7 @@ func m(name string, f func() error, deps ...string) *module.Module {
 
 func mt(name, title string, f func() error, deps ...string) *module.Module {
 	m := module.New(module.TypeModule, name, name, deps...)
-	m.AddInitTitle(title, f)
+	m.AddInit(f, title)
 	return m
 }
 

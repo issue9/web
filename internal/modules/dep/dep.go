@@ -8,7 +8,6 @@ package dep
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/issue9/mux"
 	"github.com/issue9/web/module"
@@ -126,11 +125,8 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	} // end for
 
 	// 执行当前模块的初始化函数
-	for i, init := range t.Inits {
+	for _, init := range t.Inits {
 		title := init.Title
-		if title == "" {
-			title = strconv.Itoa(i)
-		}
 
 		dep.println("  执行初始化函数：", title)
 		if err := init.F(); err != nil {

@@ -48,16 +48,16 @@ func TestModules_Init(t *testing.T) {
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
-		AddInitTitle("安装数据表 users1", func() error { return errors.New("falid message") })
+		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.NewTag("v1").AddInitTitle("安装数据表 users2", func() error { return nil })
+	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
-	tag.AddInitTitle("安装数据表 users3-1", func() error { return nil })
-	tag.AddInitTitle("安装数据表 users3-2", func() error { return nil })
-	tag.AddInitTitle("安装数据表 users3-3", func() error { return nil })
+	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
+	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
+	tag.AddInit(func() error { return nil }, "安装数据表 users3-3")
 
 	a.NotError(ms.Init("install", log.New(os.Stderr, "", 0)))
 	a.Error(ms.Init("v1", nil))
@@ -71,17 +71,17 @@ func TestModules_Tags(t *testing.T) {
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
-		AddInitTitle("安装数据表 users1", func() error { return errors.New("falid message") })
+		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.NewTag("v1").AddInitTitle("安装数据表 users2", func() error { return nil })
+	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
-	tag.AddInitTitle("安装数据表 users3-1", func() error { return nil })
-	tag.AddInitTitle("安装数据表 users3-2", func() error { return nil })
+	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
+	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
 	m3.NewTag("v4")
 
 	tags := ms.Tags()

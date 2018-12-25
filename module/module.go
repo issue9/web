@@ -8,6 +8,7 @@ package module
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 // Type 表示模块的类型
@@ -78,6 +79,10 @@ func New(typ Type, name, desc string, deps ...string) *Module {
 // NewTag 为当前模块生成特定名称的子模块。
 // 若已经存在，则直接返回该子模块。
 func (m *Module) NewTag(tag string) *Module {
+	if m.Type == TypeTag {
+		panic("子模块不能再添子模块")
+	}
+
 	if m.Tags == nil {
 		m.Tags = make(map[string]*Module, 5)
 	}
@@ -90,13 +95,15 @@ func (m *Module) NewTag(tag string) *Module {
 }
 
 // AddInit 添加一个初始化函数
-func (m *Module) AddInit(f func() error) *Module {
-	return m.AddInitTitle("", f)
-}
+func (m *Module) AddInit(f func() error, title ...string) *Module {
+	t := ""
+	if len(title) == 0 {
+		t = strconv.Itoa(len(m.Inits))
+	} else {
+		t = title[0]
+	}
 
-// AddInitTitle 添加一个初始化函数，带描述信息。
-func (m *Module) AddInitTitle(title string, f func() error) *Module {
-	m.Inits = append(m.Inits, &Init{F: f, Title: title})
+	m.Inits = append(m.Inits, &Init{F: f, Title: t})
 	return m
 }
 
