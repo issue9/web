@@ -7,7 +7,7 @@
 # -c 表示需要输出代码测试覆盖率到文件 coverage.txt 中；
 # -v 表示需要输出详细的执行信息到终端。
 
-list=$(dirname $0)/../...
+list=$(go list $(dirname $0)/../...)
 
 while getopts 'vc' OPT; do
     case $OPT in
