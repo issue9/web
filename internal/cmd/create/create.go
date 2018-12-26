@@ -73,16 +73,30 @@ required github.com/issue9/web v%s`, mod, web.Version)
 		return err
 	}
 
-	// 输出 main.go
-	if err = dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
-		return err
-	}
-
 	if err = createConfig(path, "appconfig"); err != nil {
 		return err
 	}
 
-	return createModules(path)
+	if err = createModules(path); err != nil {
+		return err
+	}
+
+	return createCmd(path, "cmd/main")
+}
+
+func createCmd(path, dir string) error {
+	path = filepath.Join(path, dir)
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+
+	// 输出 main.go
+	if err := dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
