@@ -8,7 +8,7 @@ go:
   - tip
   - 1.11.4
 
-script: ./test.sh -cv
+script: ./build/test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
