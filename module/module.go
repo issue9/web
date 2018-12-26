@@ -6,38 +6,56 @@
 package module
 
 import (
+	"fmt"
 	"net/http"
-
-	"github.com/issue9/mux"
-	"github.com/issue9/web/internal/dependency"
+	"strconv"
 )
+
+// Type 表示模块的类型
+type Type int8
+
+// 表示模块的类型
+const (
+	TypeModule Type = iota + 1
+	TypePlugin
+	TypeTag
+)
+
+// 在没有指定请法语方法时，使用的默认值。
+//
+// NOTE: 保持与 github.com/issue9/mux.Mux.Handle() 中的默认值相同。
+var defaultMethods = []string{
+	http.MethodDelete,
+	http.MethodGet,
+	http.MethodOptions,
+	http.MethodPatch,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodTrace,
+	http.MethodConnect,
+}
 
 // Module 表示模块信息
 type Module struct {
-	Name        string   `json:"name" yaml:"name" xml:"name"`
-	Deps        []string `json:"deps" yaml:"deps" xml:"deps"`
-	Description string   `json:"description" yaml:"description" xml:"description"`
+	Type        Type
+	Name        string
+	Deps        []string
+	Description string
 
-	// 当前模块的所有路由项。
-	// 键名为路由地址，键值为路由中启用的请求方法。
-	Routes map[string][]string `json:"routes" yaml:"routes" xml:"routes"`
+	// 第一个键名为路径，第二键名为请求方法
+	Routes map[string]map[string]http.Handler
 
-	// 当前模块的安装功能。
-	//
-	// 键名指定了安装的版本，键值则为安装脚本。
-	installs map[string][]*task
+	// 一些初始化函数
+	Inits []*Init
 
-	inits  []func() error
-	router *mux.Prefix
+	// 保存特定标签下的子模块。
+	Tags map[string]*Module
 }
 
-// Prefix 可以将具有统一前缀的路由项集中在一起操作。
-//  p := srv.Prefix("/api")
-//  p.Get("/users")  // 相当于 srv.Get("/api/users")
-//  p.Get("/user/1") // 相当于 srv.Get("/api/user/1")
-type Prefix struct {
-	module *Module
-	prefix string
+// Init 表示初始化功能的相关数据
+type Init struct {
+	Title string
+	F     func() error
 }
 
 // New 声明一个新的模块
@@ -45,60 +63,69 @@ type Prefix struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func New(router *mux.Prefix, name, desc string, deps ...string) *Module {
+//
+// 仅供框架内部使用，不保证函数签名的兼容性。
+func New(typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
+		Type:        typ,
 		Name:        name,
 		Deps:        deps,
 		Description: desc,
-		Routes:      make(map[string][]string, 10),
-		inits:       make([]func() error, 0, 5),
-		router:      router,
+		Routes:      make(map[string]map[string]http.Handler, 10),
+		Inits:       make([]*Init, 0, 5),
 	}
 }
 
-// GetInit 将 Module 的内容生成一个 dependency.InitFunc 函数
-func (m *Module) GetInit() dependency.InitFunc {
-	return func() error {
-		for _, init := range m.inits {
-			if err := init(); err != nil {
-				return err
-			}
-		}
-
-		return nil
+// NewTag 为当前模块生成特定名称的子模块。
+// 若已经存在，则直接返回该子模块。
+func (m *Module) NewTag(tag string) *Module {
+	if m.Type == TypeTag {
+		panic("子模块不能再添子模块")
 	}
-}
 
-// Prefix 声明一个 Prefix 实例。
-func (m *Module) Prefix(prefix string) *Prefix {
-	return &Prefix{
-		module: m,
-		prefix: prefix,
+	if m.Tags == nil {
+		m.Tags = make(map[string]*Module, 5)
 	}
-}
 
-// Module 返回关联的 Module 实全
-func (p *Prefix) Module() *Module {
-	return p.module
+	if _, found := m.Tags[tag]; !found {
+		m.Tags[tag] = New(TypeTag, tag, "")
+	}
+
+	return m.Tags[tag]
 }
 
 // AddInit 添加一个初始化函数
-func (m *Module) AddInit(f func() error) *Module {
-	m.inits = append(m.inits, f)
+//
+// title 该初始化函数的名称。没有则会自动生成一个序号，多个，则取第一个元素。
+func (m *Module) AddInit(f func() error, title ...string) *Module {
+	t := ""
+	if len(title) == 0 {
+		t = strconv.Itoa(len(m.Inits))
+	} else {
+		t = title[0]
+	}
+
+	m.Inits = append(m.Inits, &Init{F: f, Title: t})
 	return m
 }
 
 // Handle 添加一个路由项
 func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	if err := m.router.Handle(path, h, methods...); err != nil {
-		panic(err)
+	ms, found := m.Routes[path]
+	if !found {
+		ms = make(map[string]http.Handler, 8)
+		m.Routes[path] = ms
 	}
 
-	route, found := m.Routes[path]
-	if !found {
-		route = make([]string, 0, 10)
+	if len(methods) == 0 {
+		methods = defaultMethods
 	}
-	m.Routes[path] = append(route, methods...)
+	for _, method := range methods {
+		if _, found = ms[method]; found {
+			panic(fmt.Sprintf("路径 %s 已经存在相同的请求方法 %s", path, method))
+		}
+		ms[method] = h
+	}
 
 	return m
 }
@@ -156,65 +183,4 @@ func (m *Module) PutFunc(path string, h func(w http.ResponseWriter, r *http.Requ
 // PatchFunc 指定一个 Patch 请求
 func (m *Module) PatchFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
 	return m.HandleFunc(path, h, http.MethodPatch)
-}
-
-// Handle 添加路由项
-func (p *Prefix) Handle(path string, h http.Handler, methods ...string) *Prefix {
-	p.module.Handle(p.prefix+path, h, methods...)
-	return p
-}
-
-// Get 指定一个 GET 请求
-func (p *Prefix) Get(path string, h http.Handler) *Prefix {
-	return p.Handle(path, h, http.MethodGet)
-}
-
-// Post 指定一个 Post 请求
-func (p *Prefix) Post(path string, h http.Handler) *Prefix {
-	return p.Handle(path, h, http.MethodPost)
-}
-
-// Delete 指定一个 Delete 请求
-func (p *Prefix) Delete(path string, h http.Handler) *Prefix {
-	return p.Handle(path, h, http.MethodDelete)
-}
-
-// Put 指定一个 Put 请求
-func (p *Prefix) Put(pattern string, h http.Handler) *Prefix {
-	return p.Handle(pattern, h, http.MethodPut)
-}
-
-// Patch 指定一个 Patch 请求
-func (p *Prefix) Patch(pattern string, h http.Handler) *Prefix {
-	return p.Handle(pattern, h, http.MethodPatch)
-}
-
-// HandleFunc 指定一个请求
-func (p *Prefix) HandleFunc(path string, f http.HandlerFunc, methods ...string) *Prefix {
-	return p.Handle(path, http.HandlerFunc(f), methods...)
-}
-
-// GetFunc 指定一个 Get 请求
-func (p *Prefix) GetFunc(path string, f http.HandlerFunc) *Prefix {
-	return p.HandleFunc(path, f, http.MethodGet)
-}
-
-// PutFunc 指定一个 Put 请求
-func (p *Prefix) PutFunc(path string, f http.HandlerFunc) *Prefix {
-	return p.HandleFunc(path, f, http.MethodPut)
-}
-
-// PostFunc 指定一个 Post 请求
-func (p *Prefix) PostFunc(path string, f http.HandlerFunc) *Prefix {
-	return p.HandleFunc(path, f, http.MethodPost)
-}
-
-// DeleteFunc 指定一个 Delete 请求
-func (p *Prefix) DeleteFunc(path string, f http.HandlerFunc) *Prefix {
-	return p.HandleFunc(path, f, http.MethodDelete)
-}
-
-// PatchFunc 指定一个 Patch 请求
-func (p *Prefix) PatchFunc(path string, f http.HandlerFunc) *Prefix {
-	return p.HandleFunc(path, f, http.MethodPatch)
 }

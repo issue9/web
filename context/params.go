@@ -217,6 +217,14 @@ func (p *Params) Errors() map[string]string {
 	return p.errors
 }
 
+// Result 转换成 Result 对象
+//
+// code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
+// Params.errors 将会作为 Result.Detail 的内容。
+func (p *Params) Result(code int) *Result {
+	return p.ctx.NewResult(code).SetDetail(p.Errors())
+}
+
 // ParamID 获取地址参数中表示 ID 的值。相对于 ParamInt64，该值必须大于 0。
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。

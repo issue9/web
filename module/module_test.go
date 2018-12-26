@@ -5,13 +5,10 @@
 package module
 
 import (
-	"bytes"
-	"errors"
 	"net/http"
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/mux"
 )
 
 var (
@@ -20,58 +17,67 @@ var (
 	}
 
 	h1 = http.HandlerFunc(f1)
-
-	router = mux.New(false, false, nil, nil).Prefix("")
 )
 
-func TestModule_GetInit(t *testing.T) {
+func TestTag(t *testing.T) {
 	a := assert.New(t)
-	a.NotNil(router)
+	m := New(TypeModule, "user1", "user1 desc")
+	a.NotNil(m).Equal(m.Type, TypeModule)
 
-	m := New(router, "m1", "m1 desc")
-	a.NotNil(m)
-	fn := m.GetInit()
-	a.NotNil(fn).NotError(fn())
+	v := m.NewTag("0.1.0")
+	a.NotNil(v).NotNil(m.Tags["0.1.0"])
+	a.Equal(v.Type, TypeTag).Equal(v.Name, "0.1.0")
+	v.AddInit(nil, "title1")
+	a.Equal(v.Inits[0].Title, "title1")
 
-	// 返回错误
-	m = New(router, "m2", "m2 desc")
-	a.NotNil(m)
-	m.AddInit(func() error {
-		return errors.New("error")
-	})
-	fn = m.GetInit()
-	a.NotNil(fn).ErrorString(fn(), "error")
+	vv := m.NewTag("0.1.0")
+	a.Equal(vv, v).Equal(vv.Name, "0.1.0")
 
-	w := new(bytes.Buffer)
-	m = New(router, "m3", "m3 desc")
-	a.NotNil(m)
-	m.AddInit(func() error {
-		_, err := w.WriteString("m3")
-		return err
-	})
-	m.GetFunc("/get", f1)
-	m.Prefix("/p").PostFunc("/post", f1)
-	fn = m.GetInit()
-	a.NotNil(fn).
-		NotError(fn()).
-		Equal(w.String(), "m3")
+	v2 := m.NewTag("0.2.0")
+	a.NotEqual(v2, v)
 }
 
-func TestPrefix_Module(t *testing.T) {
+func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
 
-	m := New(router, "m1", "m1 desc")
+	m := New(TypeModule, "m1", "m1 desc")
+	a.NotNil(m)
+	m.AddInit(func() error { return nil })
+	a.Equal(len(m.Inits), 1).
+		NotEmpty(m.Inits[0].Title). // 一个默认的数值。
+		NotNil(m.Inits[0].F)
+
+	m.AddInit(func() error { return nil }, "t1")
+	a.Equal(len(m.Inits), 2).
+		Equal(m.Inits[1].Title, "t1").
+		NotNil(m.Inits[1].F)
+
+	m.AddInit(func() error { return nil }, "t1")
+	a.Equal(len(m.Inits), 3).
+		Equal(m.Inits[2].Title, "t1").
+		NotNil(m.Inits[2].F)
+}
+
+func TestModule_Handle(t *testing.T) {
+	a := assert.New(t)
+
+	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
-	p := m.Prefix("/p")
-	a.Equal(p.Module(), m)
+	path := "/path"
+	m.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	a.Equal(len(m.Routes[path]), 2)
+
+	path = "/path1"
+	m.Handle(path, h1)
+	a.Equal(len(m.Routes[path]), len(defaultMethods))
 }
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New(router, "m1", "m1 desc")
+	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.Get(path, h1)
@@ -92,7 +98,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New(router, "m1", "m1 desc")
+	m = New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)
@@ -109,52 +115,4 @@ func TestModule_Handles(t *testing.T) {
 
 	m.DeleteFunc(path, f1)
 	a.Equal(len(m.Routes[path]), 5)
-}
-
-func TestPrefix_Handles(t *testing.T) {
-	a := assert.New(t)
-
-	path := "/path"
-	m := New(router, "m1", "m1 desc")
-	a.NotNil(m)
-	p := m.Prefix("/p")
-	mp := p.prefix + path
-
-	p.Get(path, h1)
-	a.Panic(func() { p.GetFunc(path, f1) })
-	a.Equal(len(m.Routes[mp]), 1)
-
-	p.Post(path, h1)
-	a.Equal(len(m.Routes[mp]), 2)
-
-	p.Patch(path, h1)
-	a.Equal(len(m.Routes[mp]), 3)
-
-	p.Put(path, h1)
-	a.Equal(len(m.Routes[mp]), 4)
-
-	p.Delete(path, h1)
-	a.Equal(len(m.Routes[mp]), 5)
-
-	// *Func
-	path = "/path1"
-	m = New(router, "m1", "m1 desc")
-	a.NotNil(m)
-	p = m.Prefix("/p")
-	mp = p.prefix + path
-
-	p.GetFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 1)
-
-	p.PostFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 2)
-
-	p.PatchFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 3)
-
-	p.PutFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 4)
-
-	p.DeleteFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 5)
 }

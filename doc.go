@@ -7,7 +7,7 @@
 //
 // 配置文件
 //
-// 配置文件的映射对象在 internal/config 包中，其中有各个字段的详细说明。
+// 配置文件的映射对象在 internal/webconfig 包中，其中有各个字段的详细说明。
 // 用户如果需要添加一些自定义的配置项，需要自行再添加其它名称的配置文件，
 // 文件地址最好通过 web.File 来获取，这样可以和框架本身的配置文件存在同一目录下。
 //
@@ -17,9 +17,17 @@
 //
 // 字符集和媒体类型
 //
-// 默认情况下，框架只支持 utf-8 字符集和 application/octet-stream 的媒体类型，
-// 如果需要其它类型的支持，则需要通过 encoding 包进行手动管理，
-// encoding 包通过 AddCharset、AddMarshal 和 AddUnmarshal 给用户提供相关功能。
+// 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
+// Mimetypes().AddMarshals() 和 Mimetypes().AddUnmarshals() 添加相关的处理函数。
+// 添加方式如下：
+//  Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+//      "application/json": json.Marshal,
+//  })
+//  Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+//      "application/json": json.Unmarshal,
+//  })
+// 之后，通过 web.NewContext() 获得的 context 对象，会根据用户的
+// Accept 和 Content-Type 自动使用相应的解析和输出格式。
 //
 // 当然用户也可以直接构建一个 context.Context 对象来生成一个一次性的对象。
 //

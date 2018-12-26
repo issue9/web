@@ -6,25 +6,9 @@ os:
 
 go:
   - tip
-  - "1.10"
+  - 1.11.4
 
-install:
-  - go get github.com/issue9/assert
-  - go get github.com/issue9/middleware
-  - go get github.com/issue9/logs
-  - go get github.com/issue9/mux
-  - go get github.com/issue9/utils
-  - go get github.com/issue9/is
-  - go get github.com/issue9/version
-  - go get github.com/issue9/query
-  - go get github.com/issue9/term/colors
-
-  - go get gopkg.in/yaml.v2
-  - go get golang.org/x/text
-
-script:
-  - go test -v -coverprofile=coverage.txt -covermode=atomic $(go list ./...| grep -v /vendor/)
-  - go vet -v $(go list ./...| grep -v /vendor/)
+script: ./build/test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
