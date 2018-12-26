@@ -4,9 +4,9 @@
 
 package protobuf
 
-import "github.com/issue9/web/encoding"
+import "github.com/issue9/web/mimetype"
 
 var (
-	_ encoding.MarshalFunc   = Marshal
-	_ encoding.UnmarshalFunc = Unmarshal
+	_ mimetype.MarshalFunc   = Marshal
+	_ mimetype.UnmarshalFunc = Unmarshal
 )
