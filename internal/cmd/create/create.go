@@ -81,6 +81,10 @@ required github.com/issue9/web v%s`, mod, web.Version)
 	return createCmd(path, "cmd/main", mod)
 }
 
+// 创建 cmd 目录内容
+// path 表示项目的根目录；
+// dir 表示相对于 path 的 cmd 目录名称；
+// mod 表示模块的包名。
 func createCmd(path, dir, mod string) error {
 	path = filepath.Join(path, dir)
 
@@ -98,8 +102,8 @@ func createCmd(path, dir, mod string) error {
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
-// path 为项目的根目录
-// dir 为配置文件的目录名称
+// path 为项目的根目录；
+// dir 为配置文件的目录名称，相对于 path 目录。
 func createConfig(path, dir string) error {
 	path = filepath.Join(path, dir)
 

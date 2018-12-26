@@ -6,14 +6,14 @@ package create
 
 var logs = []byte(`<?xml version="1.0" encoding="utf-8"?>
 <logs>
-    <!-- info内容，先缓存到一定10条，再一次性输出 -->
+    <!-- info 内容，先缓存到一定 10 条，再一次性输出 -->
     <info prefix="INFO" flag="">
         <buffer size="100">
             <rotate filename="info-%Y%m%d.%i.log" dir="./logs/" size="5M" />
         </buffer>
     </info>
 
-    <!-- debug日志 -->
+    <!-- debug 日志 -->
     <debug>
         <buffer size="5">
             <rotate filename="debug-%Y%m%d.%i.log" dir="./logs/debug/" size="5M" />
@@ -77,6 +77,7 @@ func main() {
 
 var modulesgo = []byte(`// 内容由 web 自动生成，可根据需求自由修改！
 
+// Package modules 完成所有模块的初始化
 package modules
 
 // Init 所有模块的初始化操作可在此处进行。
