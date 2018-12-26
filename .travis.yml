@@ -9,7 +9,7 @@ go:
   - 1.11.4
 
 script:
-  - ./build/test.sh -cv
+  - GO111MODULE=on ./build/test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
