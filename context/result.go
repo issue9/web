@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Result 定义了出错时，向客户端返回的结构体。支持以下格式：
@@ -123,4 +125,18 @@ func (rslt *Result) MarshalForm() ([]byte, error) {
 
 func (rslt *Result) Error() string {
 	return rslt.Message
+}
+
+// Reset proto.Message.Reset
+func (rslt *Result) Reset() {
+	*rslt = Result{}
+}
+
+// String proto.Message.String
+func (rslt *Result) String() string {
+	return proto.CompactTextString(rslt)
+}
+
+// ProtoMessage proto.Message.ProtoMessage
+func (rslt *Result) ProtoMessage() {
 }

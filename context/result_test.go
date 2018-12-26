@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/middleware/recovery"
@@ -24,6 +25,7 @@ import (
 var (
 	_ form.Marshaler = &Result{}
 	_ error          = &Result{}
+	_ proto.Message  = &Result{}
 )
 
 func TestContext_NewResult(t *testing.T) {
