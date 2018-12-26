@@ -6,6 +6,7 @@ package app
 
 import (
 	"net/http"
+	"sort"
 	"sync"
 )
 
@@ -17,6 +18,21 @@ type Apps struct {
 
 // NewApps 新的 Apps 实例。
 func NewApps(app ...*App) *Apps {
+	if len(app) == 0 {
+		panic("参数不能为空")
+	}
+
+	ports := make([]int, 0, len(app))
+	for _, a := range app {
+		ports = append(ports, a.webConfig.Port)
+	}
+	sort.Ints(ports)
+	for i := 1; i < len(ports); i++ {
+		if ports[i-1] == ports[i] {
+			panic("存在相同的端口号")
+		}
+	}
+
 	return &Apps{
 		apps: app,
 	}
