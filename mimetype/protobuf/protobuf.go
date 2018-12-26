@@ -11,6 +11,9 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// Version 当前支持的协议版本号
+const Version = "3"
+
 // MimeType 当前协议的 mimetype 值
 const MimeType = "application/octet-stream"
 
