@@ -6,6 +6,7 @@
 package create
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -69,8 +70,31 @@ MOD:
 	content := fmt.Sprintf(`module %s
 
 required github.com/issue9/web v%s`, mod, web.Version)
-	err = dumpFile(filepath.Join(path, "go.mod"), []byte(content))
-	if err != nil {
+	if err = dumpFile(filepath.Join(path, "go.mod"), []byte(content)); err != nil {
+		return err
+	}
+
+	if err = createModules(path); err != nil {
+		return err
+	}
+
+	return createCmd(path, "cmd/main", mod)
+}
+
+// 创建 cmd 目录内容
+// path 表示项目的根目录；
+// dir 表示相对于 path 的 cmd 目录名称；
+// mod 表示模块的包名。
+func createCmd(path, dir, mod string) error {
+	path = filepath.Join(path, dir)
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+
+	// 输出 main.go
+	data := bytes.Replace(maingo, []byte("%s"), []byte(mod+"/modules"), 1)
+	if err := dumpFile(filepath.Join(path, "main.go"), data); err != nil {
 		return err
 	}
 
@@ -78,12 +102,12 @@ required github.com/issue9/web v%s`, mod, web.Version)
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
-// path 为项目的根目录
-// dir 为配置文件的目录名称
+// path 为项目的根目录；
+// dir 为配置文件的目录名称，相对于 path 目录。
 func createConfig(path, dir string) error {
 	path = filepath.Join(path, dir)
 
-	if err := os.Mkdir(path, os.ModePerm); err != nil {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -103,6 +127,23 @@ func createConfig(path, dir string) error {
 		return err
 	}
 	return dumpFile(filepath.Join(path, app.ConfigFilename), data)
+}
+
+// 创建模块目录，并输出默认的配置内容。
+// path 为项目的根目录
+func createModules(path string) error {
+	path = filepath.Join(path, "modules")
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+
+	// 输出 modules.go
+	if err := dumpFile(filepath.Join(path, "modules.go"), modulesgo); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func dumpFile(path string, content []byte) error {

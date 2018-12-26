@@ -13,6 +13,8 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
+    web.Init("./appconfig", nil)
+
     web.Mimetypes().AddMarshals(map[string]encoding.MarshaleFunc {
         "application/json": json.Marshal,
         "application/xml": xml.Marshal,
@@ -24,8 +26,6 @@ func main() {
     })
 
     result.NewMessages(map[int]string{...})
-
-    web.Init("./appconfig", nil)
 
     // 注册模块信息
     m1.Init()
@@ -55,20 +55,22 @@ func Init() {
 这只是推荐的目录结构，但不是必须按照此来。
 ```
 |----- appconfig 配置文存放路径
-|         |
-|         +----- web.yaml 框架本身的配置文件
-|         |
-|         +----- logs.xml 日志配置文件
+|        |
+|        +----- web.yaml 框架本身的配置文件
+|        |
+|        +----- logs.xml 日志配置文件
 |
 +----- common 一些公用的包
 |
 +----- modules 各个模块的代码
-|         |
-|         +----- module1
-|         |
-|         +----- module2
+|        |
+|        +----- module1
+|        |
+|        +----- module2
 |
-+----- main.go
++----- cmd
+|        |
+|        +----- main.go
 ```
 
 
