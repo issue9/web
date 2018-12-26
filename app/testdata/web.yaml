@@ -13,5 +13,10 @@ headers:
   Server: Windows/IIS7
 readTimeout: 3s
 shutdownTimeout: 300ms
+compress:
+  types:
+    - text/*
+    - application/json
+  size: 1024
 allowedDomains:
   - "127.0.0.1"
