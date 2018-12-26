@@ -73,10 +73,6 @@ required github.com/issue9/web v%s`, mod, web.Version)
 		return err
 	}
 
-	if err = createConfig(path, "appconfig"); err != nil {
-		return err
-	}
-
 	if err = createModules(path); err != nil {
 		return err
 	}
@@ -96,7 +92,7 @@ func createCmd(path, dir string) error {
 		return err
 	}
 
-	return nil
+	return createConfig(path, "appconfig")
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
