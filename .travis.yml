@@ -8,8 +8,7 @@ go:
   - tip
   - 1.11.4
 
-script:
-  - GO111MODULE=on ./build/test.sh -cv
+script: ./test.sh -cv
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
