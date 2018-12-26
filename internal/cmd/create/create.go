@@ -6,6 +6,7 @@
 package create
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -77,10 +78,10 @@ required github.com/issue9/web v%s`, mod, web.Version)
 		return err
 	}
 
-	return createCmd(path, "cmd/main")
+	return createCmd(path, "cmd/main", mod)
 }
 
-func createCmd(path, dir string) error {
+func createCmd(path, dir, mod string) error {
 	path = filepath.Join(path, dir)
 
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
@@ -88,7 +89,8 @@ func createCmd(path, dir string) error {
 	}
 
 	// 输出 main.go
-	if err := dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
+	data := bytes.Replace(maingo, []byte("%s"), []byte(mod+"/modules"), 1)
+	if err := dumpFile(filepath.Join(path, "main.go"), data); err != nil {
 		return err
 	}
 
@@ -132,7 +134,10 @@ func createModules(path string) error {
 		return err
 	}
 
-	// TODO 输出 modules.go
+	// 输出 modules.go
+	if err := dumpFile(filepath.Join(path, "modules.go"), modulesgo); err != nil {
+		return err
+	}
 
 	return nil
 }
