@@ -6,7 +6,6 @@
 package create
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -44,6 +43,9 @@ func Do(output *os.File) error {
 }
 
 // 创建包的目录结构。
+//
+// mod 是模块名称，比如 github.com/issue9/web；
+// wd 表示当前的工作目录，项目会在此目录中创建。
 func createMod(mod, wd string, ask *asker) error {
 	name := filepath.Base(mod)
 	path, err := filepath.Abs(filepath.Join(wd, name))
@@ -67,10 +69,8 @@ func createMod(mod, wd string, ask *asker) error {
 	}
 
 MOD:
-	content := fmt.Sprintf(`module %s
-
-required github.com/issue9/web v%s`, mod, web.Version)
-	if err = dumpFile(filepath.Join(path, "go.mod"), []byte(content)); err != nil {
+	content := fmt.Sprintf(gomod, mod, web.Version)
+	if err = dumpFile(filepath.Join(path, "go.mod"), content); err != nil {
 		return err
 	}
 
@@ -82,6 +82,7 @@ required github.com/issue9/web v%s`, mod, web.Version)
 }
 
 // 创建 cmd 目录内容
+//
 // path 表示项目的根目录；
 // dir 表示相对于 path 的 cmd 目录名称；
 // mod 表示模块的包名。
@@ -93,7 +94,7 @@ func createCmd(path, dir, mod string) error {
 	}
 
 	// 输出 main.go
-	data := bytes.Replace(maingo, []byte("%s"), []byte(mod+"/modules"), 1)
+	data := fmt.Sprintf(maingo, mod+"/modules")
 	if err := dumpFile(filepath.Join(path, "main.go"), data); err != nil {
 		return err
 	}
@@ -102,6 +103,7 @@ func createCmd(path, dir, mod string) error {
 }
 
 // 创建配置文件目录，并输出默认的配置内容。
+//
 // path 为项目的根目录；
 // dir 为配置文件的目录名称，相对于 path 目录。
 func createConfig(path, dir string) error {
@@ -126,10 +128,11 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, app.ConfigFilename), data)
+	return dumpFile(filepath.Join(path, app.ConfigFilename), string(data))
 }
 
 // 创建模块目录，并输出默认的配置内容。
+//
 // path 为项目的根目录
 func createModules(path string) error {
 	path = filepath.Join(path, "modules")
@@ -146,7 +149,7 @@ func createModules(path string) error {
 	return nil
 }
 
-func dumpFile(path string, content []byte) error {
+func dumpFile(path string, content string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -158,6 +161,6 @@ func dumpFile(path string, content []byte) error {
 		}
 	}()
 
-	_, err = file.Write(content)
+	_, err = file.WriteString(content)
 	return err
 }
