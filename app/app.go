@@ -83,6 +83,9 @@ func New(dir string) (*App, error) {
 
 	webconf := &webconfig.WebConfig{}
 	if err = mgr.LoadFile(ConfigFilename, webconf); err != nil {
+		if serr, ok := err.(*config.Error); ok {
+			serr.File = LogsFilename
+		}
 		return nil, err
 	}
 

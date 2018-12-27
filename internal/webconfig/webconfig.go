@@ -6,14 +6,14 @@
 package webconfig
 
 import (
-	"errors"
-	"fmt"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
+
+	"github.com/issue9/web/config"
 )
 
 const localhostURL = "localhost"
@@ -126,35 +126,35 @@ type Compress struct {
 // Sanitize 修正可修正的内容，返回不可修正的错误。
 func (conf *WebConfig) Sanitize() error {
 	if conf.Domain != "" && !is.URL(conf.Domain) && conf.Domain != localhostURL {
-		return errors.New("domain 必须是一个 URL")
+		return &config.Error{Field: "domain", Message: "必须是一个 URL"}
 	}
 
 	if conf.ReadTimeout < 0 {
-		return errors.New("readTimeout 必须大于等于 0")
+		return &config.Error{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
 
 	if conf.WriteTimeout < 0 {
-		return errors.New("writeTimeout 必须大于等于 0")
+		return &config.Error{Field: "writeTimeout", Message: "必须大于等于 0"}
 	}
 
 	if conf.IdleTimeout < 0 {
-		return errors.New("idleTimeout 必须大于等于 0")
+		return &config.Error{Field: "idleTimeout", Message: "必须大于等于 0"}
 	}
 
 	if conf.ReadHeaderTimeout < 0 {
-		return errors.New("readHeaderTimeout 必须大于等于 0")
+		return &config.Error{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
 	}
 
 	if conf.MaxHeaderBytes < 0 {
-		return errors.New("maxHeaderBytes 必须大于 0")
+		return &config.Error{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
 	if conf.ShutdownTimeout < 0 {
-		return errors.New("shutdownTimeout 必须大于等于 0")
+		return &config.Error{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
 
 	if conf.Compress != nil && conf.Compress.Size < 0 {
-		return errors.New("comporess.size 必须大于等于 0")
+		return &config.Error{Field: "comporess.size", Message: "必须大于等于 0"}
 	}
 
 	if err := conf.checkStatic(); err != nil {
@@ -179,18 +179,21 @@ func (conf *WebConfig) Sanitize() error {
 func (conf *WebConfig) checkStatic() (err error) {
 	for url, path := range conf.Static {
 		if !isURLPath(url) {
-			return fmt.Errorf("static 中的 %s 必须以 / 开头且不能以 / 结尾", url)
+			return &config.Error{
+				Field:   "static." + url,
+				Message: "必须以 / 开头且不能以 / 结尾",
+			}
 		}
 
 		if !filepath.IsAbs(path) {
 			path, err = filepath.Abs(path)
 			if err != nil {
-				return fmt.Errorf("static[%s] 的路径值获取错误：%s", url, err.Error())
+				return &config.Error{Field: "static." + url, Message: err.Error()}
 			}
 		}
 
 		if !utils.FileExists(path) {
-			return fmt.Errorf("static[%s] 对应的路径不存在", url)
+			return &config.Error{Field: "static." + url, Message: "对应的路径不存在"}
 		}
 		conf.Static[url] = path
 	}
@@ -202,7 +205,7 @@ func (conf *WebConfig) buildRoot() error {
 	if conf.Root == "/" {
 		conf.Root = conf.Root[:0]
 	} else if (len(conf.Root) > 0) && !isURLPath(conf.Root) {
-		return errors.New("root 必须以 / 开头且不以 / 结尾")
+		return &config.Error{Field: "root", Message: "必须以 / 开头且不以 / 结尾"}
 	}
 
 	return nil
@@ -215,11 +218,11 @@ func isURLPath(path string) bool {
 func (conf *WebConfig) buildHTTPS() error {
 	if conf.HTTPS {
 		if !utils.FileExists(conf.CertFile) {
-			return errors.New("certFile 文件不存在")
+			return &config.Error{Field: "certFile", Message: "文件不存在"}
 		}
 
 		if !utils.FileExists(conf.KeyFile) {
-			return errors.New("keyFile 文件不存在")
+			return &config.Error{Field: "keyFile", Message: "文件不存在"}
 		}
 	}
 
@@ -242,7 +245,10 @@ func (conf *WebConfig) buildAllowedDomains() error {
 	found := false // 确定 domain 是否已经在 allowedDomains 中
 	for _, host := range conf.AllowedDomains {
 		if !is.URL(host) {
-			return fmt.Errorf("allowedDomains 中的 %s 为非法的 URL", host)
+			return &config.Error{
+				Field:   "allowedDomains." + host,
+				Message: "非法的 URL",
+			}
 		}
 
 		if host == conf.Domain {

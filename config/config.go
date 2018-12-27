@@ -17,6 +17,15 @@ type Error struct {
 	Message string // 错误信息
 }
 
+// NewError 声明新的 Error 对象
+func NewError(file, field, message string) *Error {
+	return &Error{
+		File:    file,
+		Field:   field,
+		Message: message,
+	}
+}
+
 func (err *Error) Error() string {
 	return fmt.Sprintf("在 %s 中的 %s 出错了 %s", err.File, err.Field, err.Message)
 }
