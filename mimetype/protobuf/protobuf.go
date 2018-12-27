@@ -21,20 +21,18 @@ var errInvalidType = errors.New("无效的类型，只能是 protof.Message")
 
 // Marshal 提供对 protobuf 的支持
 func Marshal(v interface{}) ([]byte, error) {
-	p, ok := v.(proto.Message)
-	if !ok {
-		return nil, errInvalidType
+	if p, ok := v.(proto.Message); ok {
+		return proto.Marshal(p)
 	}
 
-	return proto.Marshal(p)
+	return nil, errInvalidType
 }
 
 // Unmarshal 提供对 protobuf 的支持
 func Unmarshal(buf []byte, v interface{}) error {
-	p, ok := v.(proto.Message)
-	if !ok {
-		return errInvalidType
+	if p, ok := v.(proto.Message); ok {
+		return proto.Unmarshal(buf, p)
 	}
 
-	return proto.Unmarshal(buf, p)
+	return errInvalidType
 }
