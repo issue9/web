@@ -28,6 +28,9 @@ type (
 
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module
+
+	// Result 等同于 module.Result，方便调用者使用
+	Result = context.Result
 )
 
 // 作最低版本检测
