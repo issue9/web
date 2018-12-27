@@ -103,7 +103,7 @@ func Init() {
 | shutdownTimeout   | string | 关闭服务的等待时间
 | url               | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
 
-*详细的介绍可以参考 /internal/app/webconfig/webconfig.go 文件中的描述*
+*详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*
 
 
 在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
