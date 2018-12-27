@@ -19,6 +19,9 @@ var errExtNotAllowEmpty = errors.New("扩展名不能为空")
 // Sanitizer 如果对象实现了该方法，那么在解析完之后，
 // 会调用该接口的函数对数据进行修正和检测。
 type Sanitizer interface {
+	// 对对象的各个字段进行检测，如果可以调整，则调整。
+	// 如果不能调整，则返回错误信息。返回的错误信息，
+	// 尽可能是 *Error 对象。
 	Sanitize() error
 }
 
