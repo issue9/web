@@ -96,6 +96,7 @@ func Init() {
 | readTimeout       | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout      | string | 与 http.Server.WriteTimeout 相同
 | idleTimeout       | string | 与 http.Server.IdleTimeout 相同
+| maxHeaderBytes    | int    | 与 http.Server.MaxHeaderBytes 相同
 | readHeaderTimeout | string | 与 http.Server.ReadHeaderTimeout 相同
 | compress.types    | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
 | compress.size     | int    | 指定可以使用 accept-encoding 输出的最小内容大小
