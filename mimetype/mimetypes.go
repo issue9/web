@@ -106,6 +106,9 @@ func (m *Mimetypes) AddMarshals(ms map[string]MarshalFunc) error {
 }
 
 // AddMarshal 添加编码函数
+//
+// mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
+// 另作处理，比如下载，上传等内容。
 func (m *Mimetypes) AddMarshal(name string, mf MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") || name == "*" {
 		panic("name 不是一个有效的 mimetype 名称格式")
@@ -149,6 +152,9 @@ func (m *Mimetypes) AddUnmarshals(ms map[string]UnmarshalFunc) error {
 }
 
 // AddUnmarshal 添加编码函数
+//
+// mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
+// 另作处理，比如下载，上传等内容。
 func (m *Mimetypes) AddUnmarshal(name string, mm UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
