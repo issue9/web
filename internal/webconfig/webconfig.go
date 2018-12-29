@@ -37,7 +37,7 @@ type WebConfig struct {
 	// 当网站不在根目录下时，需要指定 Root，比如将网站部署在：example.com/blog
 	// 则除了将 Domain 的值设置为 example.com 之外，也要将 Root 的值设置为 /blog。
 	//
-	// Root 值的格式必须为以 / 开头，不以 / 结尾。
+	// Root 值的格式必须为以 / 开头，不以 / 结尾，或是空值。
 	Root string `yaml:"root,omitempty"`
 
 	// Plugins 指定插件，通过 glob 语法指定，比如：~/plugins/*.so
@@ -99,7 +99,7 @@ type WebConfig struct {
 	// 若为 0，表示直接关闭，否则会等待该指定的时间，或是在超时时才执行强制关闭。
 	ShutdownTimeout time.Duration `yaml:"shutdownTimeout,omitempty"`
 
-	// URL 网站的首页地址。
+	// URL 网站的根地址。
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
 	//
 	// 若为空，则会根据配置文件的内容，生成网站首页地址。
