@@ -1,34 +1,26 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <logs>
-    <!-- info内容，先缓存到一定10条，再一次性输出 -->
-    <info prefix="INFO" flag="">
-        <buffer size="100">
-            <rotate filename="info-%Y%m%d.%i.log" dir="./testdata/logs/" size="5M" />
-        </buffer>
+    <info prefix="[INFO]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stdout" foreground="green" background="default" />
     </info>
 
-    <!-- debug日志 -->
-    <debug>
-        <buffer size="5">
-            <rotate filename="debug-%Y%m%d.%i.log" dir="./testdata/logs/debug/" size="5M" />
-        </buffer>
+    <debug prefix="[DEBUG]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
     </debug>
 
-    <trace>
-        <buffer size="5">
-            <rotate filename="trace-%Y%m%d.%i.log" dir="./testdata/logs/trace/" size="5M" />
-        </buffer>
+    <trace prefix="[TRACE]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
     </trace>
 
-    <warn>
-        <rotate filename="warn-%Y%m%d.%i.log"  dir="./testdata/logs/warn/" size="5M" />
+    <warn prefix="[WARNNING]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="yellow" background="default" />
     </warn>
 
-    <error>
-        <rotate filename="error-%Y%m%d.%i.log"  dir="./testdata/logs/error/" size="5M" />
+    <error prefix="[ERROR]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="red" background="default" />
     </error>
 
-    <critical>
-        <rotate filename="critical-%Y%m%d.%i.log"  dir="./testdata/logs/critical/" size="5M" />
+    <critical prefix="[CRITICAL]" flag="log.Lshortfile|log.Ldate|log.Ltime">
+        <console output="stderr" foreground="red" background="default" />
     </critical>
 </logs>
