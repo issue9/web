@@ -13,9 +13,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/middleware/recovery"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/mimetype/form"
@@ -82,27 +79,25 @@ func TestResult_Render_Exit(t *testing.T) {
 		})
 	})
 
-	resultRenderHandler := func(w http.ResponseWriter, r *http.Request) {
+	app.Mux().GetFunc("/render", func(w http.ResponseWriter, r *http.Request) {
 		ctx := New(w, r, app)
-		ctx.LocalePrinter = message.NewPrinter(language.Und)
+		rslt := ctx.NewResult(4000)
+		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+		rslt.Render()
+	})
+	app.Mux().GetFunc("/exit", func(w http.ResponseWriter, r *http.Request) {
+		ctx := New(w, r, app)
+		rslt := ctx.NewResult(4001)
+		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+		rslt.Exit()
+	})
 
-		switch r.URL.Path {
-		case "/render":
-			rslt := ctx.NewResult(4000)
-			rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
-			rslt.Render()
-		case "/exit":
-			rslt := ctx.NewResult(4001)
-			rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
-			rslt.Exit()
-		case "/error":
-			rslt := &Result{Code: 100}
-			rslt.Render()
-		}
-	}
+	app.Mux().GetFunc("/error", func(w http.ResponseWriter, r *http.Request) {
+		rslt := &Result{Code: 100}
+		rslt.Render()
+	})
 
-	h := http.HandlerFunc(resultRenderHandler)
-	srv := rest.NewServer(t, recovery.New(h, recoverFunc), nil)
+	srv := rest.NewServer(t, app.Mux(), nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").
@@ -118,11 +113,6 @@ func TestResult_Render_Exit(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/exit").
 		Do().
 		Status(400)
-}
-
-// 仅作为 TestResult_Render_Exit 的测试用
-func recoverFunc(w http.ResponseWriter, msg interface{}) {
-	w.WriteHeader(http.StatusInternalServerError)
 }
 
 var (
