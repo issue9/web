@@ -195,7 +195,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if v == nil {
-		ctx.Response.WriteHeader(status)
+		errorhandler.WriteHeader(ctx.Response, status)
 		return nil
 	}
 
@@ -206,7 +206,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	// 注意 WriteHeader 调用顺序。
 	// https://github.com/golang/go/issues/17083
-	ctx.Response.WriteHeader(status)
+	errorhandler.WriteHeader(ctx.Response, status)
 
 	if charsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)

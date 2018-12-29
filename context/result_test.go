@@ -101,18 +101,23 @@ func TestResult_Render_Exit(t *testing.T) {
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").
+		Header("Accept", "application/json").
 		Do().
-		Status(400)
+		Status(400).
+		StringBody(`{"message":"400","code":4000,"detail":[{"field":"field1","message":"message1"},{"field":"field2","message":"message2"}]}`)
 
 	// result.Code 不存在的情况
 	srv.NewRequest(http.MethodGet, "/error").
+		Header("Accept", "application/json").
 		Do().
-		Status(http.StatusInternalServerError) // 等同于 recoverFunc 中的输出报头
+		Status(http.StatusInternalServerError)
 
 	// result.Exit() 测试
 	srv.NewRequest(http.MethodGet, "/exit").
+		Header("Accept", "application/json").
 		Do().
-		Status(400)
+		Status(400).
+		StringBody(`{"message":"401","code":4001,"detail":[{"field":"field1","message":"message1"},{"field":"field2","message":"message2"}]}`)
 }
 
 var (
