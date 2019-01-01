@@ -149,6 +149,18 @@ func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
 	return app.modules.NewModule(name, desc, deps...)
 }
 
+// Path 获取中径部分的地址
+//
+// 基于 app.webConfig.URL 中的路径部分。
+func (app *App) Path(p string) string {
+	p = app.webConfig.URLPath + p
+	if p != "" && p[0] != '/' {
+		p = "/" + p
+	}
+
+	return p
+}
+
 // URL 构建一条基于 app.webconfig.URL 的完整 URL
 func (app *App) URL(path string) string {
 	if len(path) == 0 {

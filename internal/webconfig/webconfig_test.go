@@ -133,12 +133,14 @@ func TestWebConfig_buildURL(t *testing.T) {
 	conf.Root = "/path"
 	conf.URL = "" // 重置为空
 	conf.buildURL()
-	a.Equal(conf.URL, "/path")
+	a.Equal(conf.URL, "/path").
+		Equal(conf.URLPath, "/path")
 
 	conf.Domain = localhostURL
 	conf.URL = "" // 重置为空
 	conf.buildURL()
-	a.Equal(conf.URL, "http://localhost/path")
+	a.Equal(conf.URL, "http://localhost/path").
+		Equal(conf.URLPath, "/path")
 
 	conf.Port = 443
 	conf.URL = "" // 重置为空
@@ -161,5 +163,6 @@ func TestWebConfig_buildURL(t *testing.T) {
 	conf.URL = "https://example.com"
 	conf.Port = 8082
 	conf.buildURL()
-	a.Equal(conf.URL, "https://example.com")
+	a.Equal(conf.URL, "https://example.com").
+		Equal(conf.URLPath, "")
 }

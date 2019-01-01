@@ -6,6 +6,7 @@
 package webconfig
 
 import (
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -107,7 +108,8 @@ type WebConfig struct {
 	//
 	// 用户也可台强制指定一个不同的地址，比如在被反向代理时，
 	// 此值可能就和从 Domain、Port 等配置项自动生成的不一样。
-	URL string `yaml:"url,omitempty"`
+	URL     string `yaml:"url,omitempty"`
+	URLPath string `yaml:"-"` // URL 的 path 部分
 }
 
 // Compress 表示压缩的相关配置
@@ -172,9 +174,7 @@ func (conf *WebConfig) Sanitize() error {
 		return err
 	}
 
-	conf.buildURL()
-
-	return nil
+	return conf.buildURL()
 }
 
 func (conf *WebConfig) checkStatic() (err error) {
@@ -264,15 +264,15 @@ func (conf *WebConfig) buildAllowedDomains() error {
 	return nil
 }
 
-func (conf *WebConfig) buildURL() {
+func (conf *WebConfig) buildURL() error {
 	if conf.URL != "" {
-		return
+		goto PARSE
 	}
 
 	// 未指定域名，则只有路径部分
 	if conf.Domain == "" {
 		conf.URL = conf.Root
-		return
+		goto PARSE
 	}
 
 	if conf.HTTPS {
@@ -288,4 +288,18 @@ func (conf *WebConfig) buildURL() {
 	}
 
 	conf.URL += conf.Root
+
+PARSE:
+	return conf.parseURL()
+}
+
+func (conf *WebConfig) parseURL() error {
+	obj, err := url.Parse(conf.URL)
+	if err != nil {
+		return err
+	}
+
+	conf.URLPath = obj.Path
+
+	return nil
 }

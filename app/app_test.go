@@ -93,6 +93,14 @@ func TestApp_URL(t *testing.T) {
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
 	a.Equal(app.URL(""), "http://localhost:8082")
 }
+func TestApp_Path(t *testing.T) {
+	a := assert.New(t)
+	app := newApp(a)
+
+	a.Equal(app.Path("/abc"), "/abc")
+	a.Equal(app.Path("abc/def"), "/abc/def")
+	a.Equal(app.Path(""), "")
+}
 
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)

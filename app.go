@@ -104,6 +104,11 @@ func URL(path string) string {
 	return defaultApp.URL(path)
 }
 
+// Path 构建 URL 的 Path 部分
+func Path(path string) string {
+	return defaultApp.Path(path)
+}
+
 // Modules 当前系统使用的所有模块信息
 func Modules() []*module.Module {
 	return defaultApp.Modules()
