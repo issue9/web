@@ -101,7 +101,7 @@ func Init() {
 | compress.types    | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
 | compress.size     | int    | 指定可以使用 accept-encoding 输出的最小内容大小
 | shutdownTimeout   | string | 关闭服务的等待时间
-| url               | string | 网站首页地址，一般可以不写，由 domain、root 和 port 自动拼成
+| url               | string | 网站首页地址，一般由 domain、root 和 port 自动拼成，但也有可能存在类似于反向代理的情况，需要自行指定不同的值。
 
 *详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*
 
