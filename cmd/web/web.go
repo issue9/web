@@ -47,7 +47,7 @@ func usage() {
 		keys = append(keys, k)
 	}
 
-	fmt.Printf(`web 命令是 github.com/issue9/web 框架提供的辅助工具。
+	fmt.Fprintf(output, `web 命令是 github.com/issue9/web 框架提供的辅助工具。
 
 目前支持以下子命令：%s
 详情可以通过 web help 进行查看。
