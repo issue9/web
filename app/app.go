@@ -181,14 +181,14 @@ func (app *App) InitModules(tag string) error {
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
-func (app *App) Serve() error {
-	err := app.InitModules("")
-	if err != nil {
-		return err
+func (app *App) Serve() (err error) {
+	// 当 app.server 不为空时，必须不能覆盖该值，
+	// 否则 Close 等操作，无法拿到正确的 app.server 变量。
+	if app.server != nil {
+		return nil
 	}
 
 	conf := app.webConfig
-
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(conf.Port),
 		Handler:           app.modules.Mux(),

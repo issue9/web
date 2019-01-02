@@ -67,6 +67,7 @@ func TestApp_AddMiddleware(t *testing.T) {
 		Equal(app.webConfig.Domain, "localhost")
 
 	app.Mux().GetFunc("/middleware", f202)
+	a.NotError(app.InitModules(""))
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "错误，%v", err.Error())
@@ -118,13 +119,14 @@ func TestApp_Serve(t *testing.T) {
 	m2.GetFunc("/m2/test", f202)
 	app.Mux().GetFunc("/mux/test", f202)
 
+	a.NotError(app.InitModules(""))
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 	}()
 	time.Sleep(500 * time.Microsecond)
 
-	a.ErrorType(app.Serve(), http.ErrServerClosed) // 多次调用
+	a.NotError(app.Serve()) // 多次调用
 
 	resp, err := http.Get("http://localhost:8082/m1/test")
 	a.NotError(err).NotNil(resp)
@@ -177,6 +179,7 @@ func TestApp_Close(t *testing.T) {
 		app.Close()
 	})
 
+	a.NotError(app.InitModules(""))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -208,6 +211,7 @@ func TestApp_shutdown(t *testing.T) {
 		app.Shutdown()
 	})
 
+	a.NotError(app.InitModules(""))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -240,6 +244,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 		app.Shutdown()
 	})
 
+	a.NotError(app.InitModules(""))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
