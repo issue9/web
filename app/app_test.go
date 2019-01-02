@@ -189,6 +189,7 @@ func TestApp_Close(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)
 
+	// 连接被关闭，返回错误内容
 	resp, err = http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
@@ -219,7 +220,7 @@ func TestApp_shutdown(t *testing.T) {
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)
 
-	// 调用关闭操作
+	// 调用关闭操作，连接被关闭，返回错误内容
 	resp, err = http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
