@@ -75,9 +75,9 @@ func Serve() error {
 	return defaultApp.Serve()
 }
 
-// Install 执行指定版本的安装功能
-func Install(version string) error {
-	return defaultApp.InitModules(version)
+// InitModules 初始化指定标签的模块
+func InitModules(tag string) error {
+	return defaultApp.InitModules(tag)
 }
 
 // Close 关闭服务。
