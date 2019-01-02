@@ -13,34 +13,34 @@ require github.com/issue9/web v%s`
 const logs = `<?xml version="1.0" encoding="utf-8"?>
 <logs>
     <!-- info 内容，先缓存到一定 10 条，再一次性输出 -->
-    <info prefix="INFO" flag="">
+    <info prefix="INFO" flag="log.Llongfile|log.Ldate|log.Ltime">
         <buffer size="100">
             <rotate filename="info-%Y%m%d.%i.log" dir="./logs/" size="5M" />
         </buffer>
     </info>
 
     <!-- debug 日志 -->
-    <debug>
+    <debug prefix="DEBUG" flag="log.Llongfile|log.Ldate|log.Ltime">
         <buffer size="5">
             <rotate filename="debug-%Y%m%d.%i.log" dir="./logs/debug/" size="5M" />
         </buffer>
     </debug>
 
-    <trace>
+    <trace prefix="TRACE" flag="log.Llongfile|log.Ldate|log.Ltime">
         <buffer size="5">
             <rotate filename="trace-%Y%m%d.%i.log" dir="./logs/trace/" size="5M" />
         </buffer>
     </trace>
 
-    <warn>
+    <warn prefix="WARN" flag="log.Llongfile|log.Ldate|log.Ltime">
         <rotate filename="warn-%Y%m%d.%i.log"  dir="./logs/warn/" size="5M" />
     </warn>
 
-    <error>
+    <error prefix="ERROR" flag="log.Llongfile|log.Ldate|log.Ltime">
         <rotate filename="error-%Y%m%d.%i.log"  dir="./logs/error/" size="5M" />
     </error>
 
-    <critical>
+    <critical prefix="CRITICAL" flag="log.Llongfile|log.Ldate|log.Ltime">
         <rotate filename="critical-%Y%m%d.%i.log"  dir="./logs/critical/" size="5M" />
     </critical>
 </logs>
