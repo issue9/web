@@ -43,6 +43,8 @@ type WebConfig struct {
 
 	// Plugins 指定插件，通过 glob 语法指定，比如：~/plugins/*.so
 	// 为空表示没有插件。
+	//
+	// 当前仅支持部分系统：https://golang.org/pkg/plugin/
 	Plugins string `yaml:"plugins,omitempty"`
 
 	// HTTPS 是否启用 HTTPS 协议
