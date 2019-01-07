@@ -12,7 +12,7 @@ import (
 )
 
 func TestDebug(t *testing.T) {
-	srv := rest.NewServer(t, debug(h202), nil)
+	srv := rest.NewServer(t, debug(http.HandlerFunc(f202)), nil)
 
 	// 命中 /debug/pprof/cmdline
 	srv.NewRequest(http.MethodGet, "/debug/pprof/").

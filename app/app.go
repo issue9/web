@@ -292,8 +292,8 @@ func (app *App) Messages(p *message.Printer) map[int]string {
 	return app.messages.LocaleMessages(p)
 }
 
-// GetMessage 查找指定代码的错误信息
-func (app *App) GetMessage(code int) (*messages.Message, bool) {
+// Message 查找指定代码的错误信息
+func (app *App) Message(code int) (*messages.Message, bool) {
 	return app.messages.Message(code)
 }
 

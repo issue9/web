@@ -20,31 +20,28 @@ import (
 
 const timeout = 300 * time.Microsecond
 
-var (
-	f202 = func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusAccepted)
-	}
-
-	h202 = http.HandlerFunc(f202)
-)
+var f202 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+}
 
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *App {
 	app, err := New("./testdata")
+	a.NotError(err).NotNil(app)
 
-	app.mt.AddMarshals(map[string]mimetype.MarshalFunc{
+	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
 	})
+	a.NotError(err)
 
-	app.mt.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
 	})
-
-	a.NotError(err).NotNil(app)
+	a.NotError(err)
 
 	// 以下内容由配置文件决定
 	a.True(app.IsDebug()).

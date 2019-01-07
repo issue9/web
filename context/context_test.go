@@ -54,22 +54,23 @@ func newContext(a *assert.Assertion,
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *app.App {
 	app, err := app.New("../testdata")
+	a.NotError(err).NotNil(app)
 
-	app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
 		mimetypetest.MimeType:    mimetypetest.TextMarshal,
 	})
+	a.NotError(err)
 
-	app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
 		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 	})
-
-	a.NotError(err).NotNil(app)
+	a.NotError(err)
 
 	return app
 }
