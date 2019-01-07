@@ -22,13 +22,13 @@ func TestMessages(t *testing.T) {
 	a.NotError(xmessage.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotPanic(func() { (m.newMessage(400, 40010, "lang")) })
 
-	msg, found := m.Find(40010)
+	msg, found := m.Message(40010)
 	a.True(found).
 		Equal(msg.Message, "lang").
 		Equal(msg.Status, 400)
 
 	// 不存在
-	msg, found = m.Find(40010001)
+	msg, found = m.Message(40010001)
 	a.False(found).Nil(msg)
 
 	lmsgs := m.LocaleMessages(xmessage.NewPrinter(language.Und))

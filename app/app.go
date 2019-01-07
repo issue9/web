@@ -294,7 +294,7 @@ func (app *App) Messages(p *message.Printer) map[int]string {
 
 // GetMessage 查找指定代码的错误信息
 func (app *App) GetMessage(code int) (*messages.Message, bool) {
-	return app.messages.Find(code)
+	return app.messages.Message(code)
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。

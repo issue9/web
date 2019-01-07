@@ -74,8 +74,8 @@ func TestResult_Render_Exit(t *testing.T) {
 
 	a.NotPanic(func() {
 		app.NewMessages(400, map[int]string{
-			4000: "400", // 需要与 resultRenderHandler 中的错误代码值相同
-			4001: "401", // 需要与 resultRenderHandler 中的错误代码值相同
+			4000: "400",
+			4001: "401",
 		})
 	})
 
@@ -85,6 +85,7 @@ func TestResult_Render_Exit(t *testing.T) {
 		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
 		rslt.Render()
 	})
+
 	app.Mux().GetFunc("/exit", func(w http.ResponseWriter, r *http.Request) {
 		ctx := New(w, r, app)
 		rslt := ctx.NewResult(4001)
@@ -93,8 +94,8 @@ func TestResult_Render_Exit(t *testing.T) {
 	})
 
 	app.Mux().GetFunc("/error", func(w http.ResponseWriter, r *http.Request) {
-		rslt := &Result{Code: 100}
-		rslt.Render()
+		ctx := New(w, r, app)
+		ctx.NewResult(100).Render()
 	})
 
 	srv := rest.NewServer(t, app.Mux(), nil)

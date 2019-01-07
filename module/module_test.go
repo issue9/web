@@ -35,6 +35,11 @@ func TestTag(t *testing.T) {
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)
+
+	// 子标签，不能再添加子标
+	a.Panic(func() {
+		vv.NewTag("0.3.0")
+	})
 }
 
 func TestModule_AddInit(t *testing.T) {

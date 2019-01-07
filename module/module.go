@@ -39,17 +39,15 @@ var defaultMethods = []string{
 type Module struct {
 	Type        Type
 	Name        string
-	Deps        []string
 	Description string
+	Deps        []string
+	Inits       []*Init
+	Tags        map[string]*Module
 
+	// 路由项列表。
+	//
 	// 第一个键名为路径，第二键名为请求方法
 	Routes map[string]map[string]http.Handler
-
-	// 一些初始化函数
-	Inits []*Init
-
-	// 保存特定标签下的子模块。
-	Tags map[string]*Module
 }
 
 // Init 表示初始化功能的相关数据
@@ -69,10 +67,10 @@ func New(typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
 		Type:        typ,
 		Name:        name,
-		Deps:        deps,
 		Description: desc,
-		Routes:      make(map[string]map[string]http.Handler, 10),
+		Deps:        deps,
 		Inits:       make([]*Init, 0, 5),
+		Routes:      make(map[string]map[string]http.Handler, 10),
 	}
 }
 

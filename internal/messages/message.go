@@ -28,8 +28,8 @@ type Message struct {
 	Status  int    // 对应的 HTTP 状态码
 }
 
-// Find 查找指定代码的错误信息
-func (m *Messages) Find(code int) (*Message, bool) {
+// Message 查找指定代码的错误信息
+func (m *Messages) Message(code int) (*Message, bool) {
 	msg, found := m.messages[code]
 	return msg, found
 }
