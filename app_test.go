@@ -15,33 +15,27 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
-	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
 var testdata = ""
 
 func TestMain(m *testing.M) {
-	tmp, err := app.New("./testdata")
-	if err != nil {
+	if err := Init("./testdata"); err != nil {
 		panic(err)
 	}
 
-	defaultApp = tmp
 	defaultApp.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.MimeType:    mimetypetest.TextMarshal,
 	})
 
 	defaultApp.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 	})
 
 	// m1 的路由项依赖 m2 的初始化数据
