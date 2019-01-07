@@ -8,6 +8,7 @@ package mimetypetest
 import (
 	"encoding"
 	"errors"
+	"github.com/issue9/web/mimetype"
 )
 
 // MimeType 当前包能解析的编码类型
@@ -15,8 +16,15 @@ const MimeType = "text/plain"
 
 var errUnsupported = errors.New("对象没有有效的转换方法")
 
+// Nil mimetype.Nil 解码后的值
+var Nil = []byte("NIL")
+
 // TextMarshal 针对文本内容的 MarshalFunc 实现
 func TextMarshal(v interface{}) ([]byte, error) {
+	if v == mimetype.Nil {
+		return Nil, nil
+	}
+
 	switch vv := v.(type) {
 	case string:
 		return []byte(vv), nil
