@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -26,28 +27,36 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	defaultApp.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	if defaultApp == nil {
+		panic("defaultApp == nil")
+	}
+
+	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	defaultApp.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
-	if m1 == nil {
-		panic("m1==nil")
-	}
 	m1.AddInit(func() error {
+		if testdata != "m2" {
+			panic("testdata!=m2")
+		}
+
 		m1.PostFunc("/post/"+testdata, func(w http.ResponseWriter, r *http.Request) {
-			if testdata != "m2" {
-				panic("testdata!=m2")
-			}
 			ctx := NewContext(w, r)
 			ctx.Render(http.StatusCreated, testdata, nil)
 		})
@@ -55,13 +64,12 @@ func TestMain(m *testing.M) {
 	})
 
 	m2 := NewModule("m2", "m2 desc")
-	if m2 == nil {
-		panic("m2==nil")
-	}
 	m2.AddInit(func() error {
 		testdata = "m2"
 		return nil
 	})
+
+	os.Exit(m.Run())
 }
 
 func TestIsDebug(t *testing.T) {
@@ -71,7 +79,7 @@ func TestIsDebug(t *testing.T) {
 
 func TestFile(t *testing.T) {
 	a := assert.New(t)
-	path, err := filepath.Abs("./internal/app/testdata/abc.yaml")
+	path, err := filepath.Abs("./testdata/abc.yaml")
 	a.NotError(err)
 	a.Equal(File("/abc.yaml"), path)
 }
@@ -92,7 +100,7 @@ func TestNewContext(t *testing.T) {
 func TestModules(t *testing.T) {
 	a := assert.New(t)
 	ms := Modules()
-	a.Equal(2, len(ms)) // 由 testmain 中初始化的 m1,m2
+	a.Equal(3, len(ms)) // 由 testmain 中初始化的 m1,m2，以及自带的模块 web-core
 }
 
 func TestURL(t *testing.T) {
