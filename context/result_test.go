@@ -82,14 +82,18 @@ func TestResult_Render_Exit(t *testing.T) {
 	app.Mux().GetFunc("/render", func(w http.ResponseWriter, r *http.Request) {
 		ctx := New(w, r, app)
 		rslt := ctx.NewResult(4000)
-		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+		// 不能使用 SetDetail，顺序未定，可能导致测试失败
+		rslt.Add("field1", "message1")
+		rslt.Add("field2", "message2")
 		rslt.Render()
 	})
 
 	app.Mux().GetFunc("/exit", func(w http.ResponseWriter, r *http.Request) {
 		ctx := New(w, r, app)
 		rslt := ctx.NewResult(4001)
-		rslt.SetDetail(map[string]string{"field1": "message1", "field2": "message2"})
+		// 不能使用 SetDetail，顺序未定，可能导致测试失败
+		rslt.Add("field1", "message1")
+		rslt.Add("field2", "message2")
 		rslt.Exit()
 	})
 
