@@ -18,8 +18,8 @@ func TestVersion(t *testing.T) {
 func TestCheckVersion(t *testing.T) {
 	a := assert.New(t)
 
-	checkVersion("go1.10")
-	checkVersion("go1.10.1")
+	checkVersion("go1.11")
+	checkVersion("go1.11.1")
 	checkVersion("1.11.1")
 
 	checkVersion("devel +12345")
