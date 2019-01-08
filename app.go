@@ -5,7 +5,6 @@
 package web
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -25,9 +24,11 @@ import (
 var defaultApp *app.App
 
 // Init 初始化整个应用环境
+//
+// 重复调用会直接 panic
 func Init(dir string) (err error) {
 	if defaultApp != nil {
-		return errors.New("不能重复调用 Init")
+		panic("不能重复调用 Init")
 	}
 
 	defaultApp, err = app.New(dir)

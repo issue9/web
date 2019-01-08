@@ -9,6 +9,8 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -267,4 +269,19 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
+}
+
+func TestGrace(t *testing.T) {
+	a := assert.New(t)
+	app := newApp(a)
+
+	Grace(app, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		app.Serve()
+	}()
+	time.Sleep(30 * time.Microsecond)
+
+	p, err := os.FindProcess(os.Getpid())
+	a.NotError(err).NotNil(p)
+	p.Signal(syscall.SIGTERM)
 }

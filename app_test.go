@@ -28,6 +28,11 @@ func TestApp(t *testing.T) {
 
 	a.NotError(Init("./testdata"))
 	a.NotNil(defaultApp)
+	a.Equal(defaultApp, App())
+
+	a.Panic(func() {
+		Init("./testdata")
+	})
 
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,

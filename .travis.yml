@@ -4,6 +4,9 @@ os:
   - linux
   - osx
 
+env:
+  - GO111MODULE=on
+
 go:
   - tip
   - 1.11.4
