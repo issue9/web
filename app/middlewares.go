@@ -73,7 +73,6 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		app.Debug("调试模式，地址启用：", debugPprofPath, debugVarsPath)
 		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
