@@ -59,6 +59,22 @@ func BenchmarkBuildContentType(b *testing.B) {
 	}
 }
 
+func BenchmarkNew(b *testing.B) {
+	a := assert.New(b)
+	app := newApp(a)
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set("Content-type", buildContentType(mimetypetest.MimeType, "gbk"))
+		r.Header.Set("Accept", mimetypetest.MimeType)
+		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
+
+		ctx := New(w, r, app)
+		a.NotNil(ctx)
+	}
+}
+
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
 	app := newApp(a)
@@ -69,9 +85,26 @@ func BenchmarkContext_Marshal(b *testing.B) {
 		r.Header.Set("Accept", mimetypetest.MimeType)
 		ctx := New(w, r, app)
 
-		obj := &mimetypetest.TextObject{Age: 16, Name: "response"}
+		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.String(), "response,16")
+		a.Equal(w.Body.Bytes(), gbkstr2)
+	}
+}
+
+func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
+	a := assert.New(b)
+	app := newApp(a)
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set("Accept", mimetypetest.MimeType)
+		r.Header.Set("Accept-Charset", "utf-8")
+		ctx := New(w, r, app)
+
+		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
+		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		a.Equal(w.Body.Bytes(), gbkstr2)
 	}
 }
 
@@ -110,6 +143,23 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	}
 }
 
+func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
+	a := assert.New(b)
+	app := newApp(a)
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkstr1))
+		r.Header.Set("Content-type", buildContentType(mimetypetest.MimeType, "utf-8"))
+		r.Header.Set("Accept", mimetypetest.MimeType)
+		ctx := New(w, r, app)
+
+		obj := &mimetypetest.TextObject{}
+		a.NotError(ctx.Unmarshal(obj))
+		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
+	}
+}
+
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
 	app := newApp(a)
@@ -119,11 +169,12 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.MimeType, "gbk"))
 		r.Header.Set("Accept", mimetypetest.MimeType)
+		r.Header.Set("Accept-Charset", "gbk")
 		ctx := New(w, r, app)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
-		a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
+		a.Equal(obj.Age, 11)
 	}
 }
 

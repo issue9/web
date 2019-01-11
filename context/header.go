@@ -83,6 +83,8 @@ func acceptLanguage(header string) (language.Tag, error) {
 	return tag, nil
 }
 
+var errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部分")
+
 // 从 content-type 中获取编码和字符集
 //
 // 若客户端传回的是空值，则会使用默认值代替。
@@ -102,7 +104,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 	case index < 0: // 只有编码
 		return strings.ToLower(v), utfName, nil
 	case index == 0: // mimetype 不可省略
-		return "", "", errors.New("content-type 不存在 mimetype 部分")
+		return "", "", errContentTypeMissMimetype
 	}
 
 	mime = strings.ToLower(v[:index])

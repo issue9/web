@@ -31,7 +31,7 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 	a.Error(err).Nil(um)
 }
 
-func TestMarshal(t *testing.T) {
+func TestMImetypes_Marshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -70,18 +70,18 @@ func TestMarshal(t *testing.T) {
 		Equal(marshal, MarshalFunc(gob.Marshal)).
 		Equal(name, "text/plain")
 
-	name, marshal, err = m.Marshal("font/wotff;q=x.9")
+	name, marshal, err = m.Marshal("font/wottf;q=x.9")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
 
-	name, marshal, err = m.Marshal("font/wotff")
+	name, marshal, err = m.Marshal("font/wottf")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
 }
 
-func TestAddMarshal(t *testing.T) {
+func TestMImetypes_AddMarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -98,7 +98,7 @@ func TestAddMarshal(t *testing.T) {
 	a.Equal(m.marshals[0].name, DefaultMimetype) // 默认始终在第一
 }
 
-func TestAddUnmarshal(t *testing.T) {
+func TestMImetypes_AddUnmarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -114,7 +114,7 @@ func TestAddUnmarshal(t *testing.T) {
 	a.Equal(m.unmarshals[0].name, DefaultMimetype) // 默认始终在第一
 }
 
-func TestFindMarshal(t *testing.T) {
+func TestMImetypes_findMarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
