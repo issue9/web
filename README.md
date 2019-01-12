@@ -95,6 +95,7 @@ func Init() {
 | headers           | object | 输出的报头，键名为报头名称，键值为对应的值
 | static            | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | disableOptions    | bool   | 是否禁用 OPTIONS 请求方法
+| disableHead       | bool   | 是否禁用自动生成 HEAD 请求方法
 | allowedDomains    | array  | 限定访问域名，可以是多个，若不指定，表示不限定
 | readTimeout       | string | 与 http.Server.ReadTimeout 相同
 | writeTimeout      | string | 与 http.Server.WriteTimeout 相同
