@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package messages 管理错误状态码与其对应的消息内容
 package messages
 
 import (

@@ -79,7 +79,10 @@ func Init() {
 
 #### 配置文件
 
-通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.yaml`
+通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.yaml` 以及日志配置文件 `logs.xml`
+
+##### web.yaml
+
 以下是该文件的所有配置项：
 
 | 名称              | 类型   | 描述
@@ -114,23 +117,36 @@ func Init() {
 
 
 
-#### 日志处理
+##### logs.xml
 
-日志处理，采用 [logs](https://github.com/issue9/logs) 包，一旦 web.Init() 调用，logs 包即是处于可用状态。
-logs 的配置文件与 `web.yaml` 一样放在同一目录下，可根据需求自行修改。
-
-web.Context 提供了一套与 logs 相同接口的日志处理方法，相对于直接调用 logs，这些方法可以输出更多的调试信息，但其底层还是调用
-logs 完成相应功能。
+`logs.xml` 采用 [logs](https://github.com/issue9/logs) 包的功能，具体的配置可参考其文档。
 
 
 
-#### 字符集和媒体类型
+#### 字符集
 
-输出的媒体类型与字符集由用户在配置文件中指定，而输入的媒体类型与字符集，
-由客户端在请求时，通过 `Content-Type` 报头指定。
-当然如果需要框架支持用户提交的类型，需要在框架初始化时，添加相关的编友支持：
-由用户在开始前通过 `AddMarshal()` 和 `AddUnmarshal()`
-来指定一个列表，在此列表内的编码和字符集，均可用。
+字符集用户无须任何操作，会自动根据 `Content-Type` 中的 charset 属性自动解析其字符集，
+输出时，也会根据 `Accept-Charset` 报头内容，作自动转换之后再输出。以下字符集都被支持：
+https://www.iana.org/assignments/character-sets/character-sets.xhtml
+
+
+#### 媒体类型
+
+默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
+`Mimetypes().AddMarshals()` 和 `Mimetypes().AddUnmarshals()` 添加相关的处理函数。
+添加方式如下：
+```go
+Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+    "application/json": json.Marshal,
+})
+Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+    "application/json": json.Unmarshal,
+})
+```
+之后，通过 `web.NewContext()` 获得的 `Context` 对象，会根据用户的
+`Accept` 和 `Content-Type` 自动使用相应的解析和输出格式。
+
+当然用户也可以直接构建一个 `Context` 对象来生成一个一次性的对象。
 
 
 
@@ -148,7 +164,7 @@ logs 完成相应功能。
 }
 ```
 
-具体可参考代码文档中的有关 Result 的定义。
+具体可参考代码文档中的有关 context.Result 的定义。
 
 
 
@@ -157,13 +173,14 @@ logs 完成相应功能。
 ```shell
 go get github.com/issue9/web
 ```
-同时还提供了一个辅助工具 web，代码目录在 `cmd/web` 之下。
+
+同时还提供了一个辅助工具 web，可通过调用 `./build/web.sh` 进行编译。
 
 
 
 ### 文档
 
-[![Go Walker](https://gowalker.org/api/v1/badge)](http://gowalker.org/github.com/issue9/web)
+[![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/web)
 [![GoDoc](https://godoc.org/github.com/issue9/web?status.svg)](https://godoc.org/github.com/issue9/web)
 
 

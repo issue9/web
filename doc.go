@@ -15,6 +15,15 @@
 // 具体的日志相关信息，可以访问 https://github.com/issue9/logs 包。
 //
 //
+// 字符集
+//
+// 字符集用户无须任何操作，会自动根据 `Content-Type` 中的 charset
+// 属性自动解析其字符集，
+// 输出时，也会根据 `Accept-Charset` 报头内容，作自动转换之后再输出。
+// 以下字符集都被支持：
+// https://www.iana.org/assignments/character-sets/character-sets.xhtml
+//
+//
 // 字符集和媒体类型
 //
 // 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
@@ -34,8 +43,8 @@
 //
 // 返回结果
 //
-// 框架内置了一个 result 包，用以统一向用户返回的错误信息，这是一个可选的包，
-// 如果要使用，需要在 web.Run() 之前调用 result.NewMessages() 注册相关的错误代码。
+// context 包下的 Result 表示在出错时的输出内容。在使用前，用户需要调用 web.NewMessages()
+// 添加各类错误代码。
 //
 //
 // 模块
