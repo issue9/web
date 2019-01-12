@@ -5,8 +5,8 @@ require (
 	github.com/issue9/assert v1.1.0
 	github.com/issue9/is v1.0.0
 	github.com/issue9/logs/v2 v2.1.1
-	github.com/issue9/middleware v1.3.0
-	github.com/issue9/mux v1.2.0
+	github.com/issue9/middleware v1.4.0
+	github.com/issue9/mux/v2 v2.0.0
 	github.com/issue9/query v1.0.0
 	github.com/issue9/upload v1.0.0
 	github.com/issue9/utils v1.0.0

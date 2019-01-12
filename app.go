@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/issue9/middleware"
-	"github.com/issue9/mux"
+	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/app"

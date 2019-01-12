@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/issue9/mux"
+	"github.com/issue9/mux/v2"
 	"github.com/issue9/web/module"
 )
 

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/issue9/mux"
-	"github.com/issue9/mux/params"
+	"github.com/issue9/mux/v2"
+	"github.com/issue9/mux/v2/params"
 )
 
 var emptyParams = params.Params(map[string]string{})

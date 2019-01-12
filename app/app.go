@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/recovery/errorhandler"
-	"github.com/issue9/mux"
+	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 	yaml "gopkg.in/yaml.v2"
 

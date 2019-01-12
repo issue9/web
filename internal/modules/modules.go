@@ -11,7 +11,7 @@ import (
 	"path"
 	"sort"
 
-	"github.com/issue9/mux"
+	"github.com/issue9/mux/v2"
 
 	"github.com/issue9/web/internal/modules/dep"
 	"github.com/issue9/web/internal/webconfig"
@@ -33,7 +33,7 @@ type Modules struct {
 
 // New 声明 Modules 变量
 func New(conf *webconfig.WebConfig) (*Modules, error) {
-	mux := mux.New(conf.DisableOptions, false, nil, nil)
+	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
 		modules: make([]*module.Module, 0, 100),
 		router:  mux.Prefix(conf.Root),

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/mux"
+	"github.com/issue9/mux/v2"
 )
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {
@@ -22,7 +22,7 @@ func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Asser
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -42,7 +42,7 @@ func TestParams_empty(t *testing.T) {
 
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -83,7 +83,7 @@ func TestParams_ID_MustID(t *testing.T) {
 
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -117,7 +117,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -151,7 +151,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -182,7 +182,7 @@ func TestParams_String_MustString(t *testing.T) {
 
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -217,7 +217,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 func TestParams_ParamID(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -240,7 +240,7 @@ func TestParams_ParamID(t *testing.T) {
 
 func TestParams_ParamInt64(t *testing.T) {
 	a := assert.New(t)
-	mux := mux.New(true, true, nil, nil)
+	mux := mux.New(true, true, true, nil, nil)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 

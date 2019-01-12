@@ -58,8 +58,9 @@ type WebConfig struct {
 	KeyFile  string `yaml:"keyFile,omitempty"`
 	Port     int    `yaml:"port,omitempty"`
 
-	// DisableOptions 是否禁用对 OPTIONS 请求的处理
+	// DisableOptions 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
 	DisableOptions bool `yaml:"disableOptions,omitempty"`
+	DisableHead    bool `yaml:"disableHead,omitempty"`
 
 	// Headers 附加的报头信息
 	//
