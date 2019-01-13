@@ -26,6 +26,9 @@ type (
 	// Context 等同于 context.Context，方便调用者使用
 	Context = context.Context
 
+	// Result 等同于 context.Resut，方便调用者使用
+	Result = context.Result
+
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module
 )
