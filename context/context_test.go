@@ -78,7 +78,7 @@ func TestNew(t *testing.T) {
 	w := httptest.NewRecorder()
 	app := newApp(a)
 	logwriter := new(bytes.Buffer)
-	app.ERROR().SetOutput(logwriter)
+	app.Logs().ERROR().SetOutput(logwriter)
 
 	// 错误的 accept
 	logwriter.Reset()

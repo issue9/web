@@ -84,7 +84,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 			return
 		}
 
-		a.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		a.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
 		errorhandler.Exit(status)
 	}
 

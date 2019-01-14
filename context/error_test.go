@@ -38,7 +38,7 @@ func TestContext_Error(t *testing.T) {
 	w := httptest.NewRecorder()
 	app := newApp(a)
 	errLog.Reset()
-	app.ERROR().SetOutput(errLog)
+	app.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
 		App:      app,
@@ -54,7 +54,7 @@ func TestContext_Critical(t *testing.T) {
 	w := httptest.NewRecorder()
 	criticalLog.Reset()
 	app := newApp(a)
-	app.CRITICAL().SetOutput(criticalLog)
+	app.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
 		App:      app,
@@ -70,7 +70,7 @@ func TestContext_Errorf(t *testing.T) {
 	w := httptest.NewRecorder()
 	app := newApp(a)
 	errLog.Reset()
-	app.ERROR().SetOutput(errLog)
+	app.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
 		App:      app,
@@ -86,7 +86,7 @@ func TestContext_Criticalf(t *testing.T) {
 	w := httptest.NewRecorder()
 	app := newApp(a)
 	criticalLog.Reset()
-	app.CRITICAL().SetOutput(criticalLog)
+	app.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
 		App:      app,

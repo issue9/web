@@ -159,7 +159,7 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。
 func INFO() *log.Logger {
-	return defaultApp.INFO()
+	return defaultApp.Logs().INFO()
 }
 
 // Info 相当于 INFO().Println(v...) 的简写方式
@@ -176,7 +176,7 @@ func Infof(format string, v ...interface{}) {
 
 // DEBUG 获取 DEBUG 级别的 log.Logger 实例，在未指定 debug 级别的日志时，该实例返回一个 nil。
 func DEBUG() *log.Logger {
-	return defaultApp.DEBUG()
+	return defaultApp.Logs().DEBUG()
 }
 
 // Debug 相当于 DEBUG().Println(v...) 的简写方式
@@ -191,7 +191,7 @@ func Debugf(format string, v ...interface{}) {
 
 // TRACE 获取 TRACE 级别的 log.Logger 实例，在未指定 trace 级别的日志时，该实例返回一个 nil。
 func TRACE() *log.Logger {
-	return defaultApp.TRACE()
+	return defaultApp.Logs().TRACE()
 }
 
 // Trace 相当于 TRACE().Println(v...) 的简写方式
@@ -206,7 +206,7 @@ func Tracef(format string, v ...interface{}) {
 
 // WARN 获取 WARN 级别的 log.Logger 实例，在未指定 warn 级别的日志时，该实例返回一个 nil。
 func WARN() *log.Logger {
-	return defaultApp.WARN()
+	return defaultApp.Logs().WARN()
 }
 
 // Warn 相当于 WARN().Println(v...) 的简写方式
@@ -221,7 +221,7 @@ func Warnf(format string, v ...interface{}) {
 
 // ERROR 获取 ERROR 级别的 log.Logger 实例，在未指定 error 级别的日志时，该实例返回一个 nil。
 func ERROR() *log.Logger {
-	return defaultApp.ERROR()
+	return defaultApp.Logs().ERROR()
 }
 
 // Error 相当于 ERROR().Println(v...) 的简写方式
@@ -236,7 +236,7 @@ func Errorf(format string, v ...interface{}) {
 
 // CRITICAL 获取 CRITICAL 级别的 log.Logger 实例，在未指定 critical 级别的日志时，该实例返回一个 nil。
 func CRITICAL() *log.Logger {
-	return defaultApp.CRITICAL()
+	return defaultApp.Logs().CRITICAL()
 }
 
 // Critical 相当于 CRITICAL().Println(v...)的简写方式
@@ -251,25 +251,25 @@ func Criticalf(format string, v ...interface{}) {
 
 // Fatal 输出错误信息，然后退出程序。
 func Fatal(code int, v ...interface{}) {
-	defaultApp.Fatal(code, v...)
+	defaultApp.Logs().Fatal(code, v...)
 }
 
 // Fatalf 输出错误信息，然后退出程序。
 func Fatalf(code int, format string, v ...interface{}) {
-	defaultApp.Fatalf(code, format, v...)
+	defaultApp.Logs().Fatalf(code, format, v...)
 }
 
 // Panic 输出错误信息，然后触发 panic。
 func Panic(v ...interface{}) {
-	defaultApp.Panic(v...)
+	defaultApp.Logs().Panic(v...)
 }
 
 // Panicf 输出错误信息，然后触发 panic。
 func Panicf(format string, v ...interface{}) {
-	defaultApp.Panicf(format, v...)
+	defaultApp.Logs().Panicf(format, v...)
 }
 
 // FlushLogs 立即输出所有的日志信息。
 func FlushLogs() {
-	defaultApp.FlushLogs()
+	defaultApp.Logs().Flush()
 }

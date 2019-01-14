@@ -57,7 +57,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 				Funcs:    compresses,
 				Types:    conf.Compress.Types,
 				Size:     conf.Compress.Size,
-				ErrorLog: app.ERROR(),
+				ErrorLog: app.Logs().ERROR(),
 			})
 		})
 	}
@@ -68,7 +68,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 
 	// recovery
 	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
-		return recovery.New(h, app.errorhandlers.Recovery(app.ERROR()))
+		return recovery.New(h, app.errorhandlers.Recovery(app.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。

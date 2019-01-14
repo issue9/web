@@ -175,7 +175,7 @@ func (app *App) URL(path string) string {
 
 // InitModules 执行模板的初始化函数。可以重复调用执行。
 func (app *App) InitModules(tag string) error {
-	return app.modules.Init(tag, app.INFO())
+	return app.modules.Init(tag, app.Logs().INFO())
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
@@ -218,7 +218,7 @@ func (app *App) Serve() (err error) {
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	defer app.FlushLogs()
+	defer app.Logs().Flush()
 
 	return app.close()
 }
@@ -227,7 +227,7 @@ func (app *App) Close() error {
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (app *App) Shutdown() error {
-	defer app.FlushLogs()
+	defer app.Logs().Flush()
 
 	if app.webConfig.ShutdownTimeout <= 0 {
 		return app.close()
@@ -297,6 +297,11 @@ func (app *App) Message(code int) (*messages.Message, bool) {
 	return app.messages.Message(code)
 }
 
+// Logs 获取 logs.Logs 实例
+func (app *App) Logs() *logs.Logs {
+	return app.logs
+}
+
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
 //
 // 多次调用，则每次指定的信号都会起作用，如果由传递了相同的值，
@@ -313,8 +318,8 @@ func Grace(app *App, sig ...os.Signal) {
 		signal.Stop(signalChannel)
 
 		if err := app.Shutdown(); err != nil {
-			app.Error(err)
-			app.FlushLogs() // 保证内容会被正常输出到日志。
+			app.Logs().Error(err)
+			app.Logs().Flush() // 保证内容会被正常输出到日志。
 		}
 		close(signalChannel)
 	}()

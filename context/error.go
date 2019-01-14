@@ -16,7 +16,7 @@ import (
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.App.CRITICAL().Output(2, fmt.Sprint(v...))
+		ctx.App.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
 	ctx.App.ErrorHandlers().Render(ctx.Response, status)
@@ -28,7 +28,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.App.ERROR().Output(2, fmt.Sprint(v...))
+		ctx.App.Logs().ERROR().Output(2, fmt.Sprint(v...))
 	}
 
 	ctx.App.ErrorHandlers().Render(ctx.Response, status)
@@ -40,7 +40,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.App.CRITICAL().Output(2, fmt.Sprintf(format, v...))
+		ctx.App.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
 	ctx.App.ErrorHandlers().Render(ctx.Response, status)
@@ -52,7 +52,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.App.ERROR().Output(2, fmt.Sprintf(format, v...))
+		ctx.App.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
 	ctx.App.ErrorHandlers().Render(ctx.Response, status)
