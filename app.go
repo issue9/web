@@ -95,11 +95,6 @@ func Shutdown() error {
 	return defaultApp.Shutdown()
 }
 
-// File 获取配置目录下的文件。
-func File(path string) string {
-	return defaultApp.File(path)
-}
-
 // URL 构建一条完整 URL
 func URL(path string) string {
 	return defaultApp.URL(path)
@@ -130,14 +125,19 @@ func NewModule(name, desc string, deps ...string) *Module {
 	return defaultApp.NewModule(name, desc, deps...)
 }
 
+// File 获取配置目录下的文件。
+func File(path string) string {
+	return defaultApp.Config().File(path)
+}
+
 // LoadFile 加载指定的配置文件内容到 v 中
 func LoadFile(path string, v interface{}) error {
-	return defaultApp.LoadFile(path, v)
+	return defaultApp.Config().LoadFile(path, v)
 }
 
 // Load 加载指定的配置文件内容到 v 中
 func Load(r io.Reader, typ string, v interface{}) error {
-	return defaultApp.Load(r, typ, v)
+	return defaultApp.Config().Load(r, typ, v)
 }
 
 // NewMessages 添加新的错误消息代码

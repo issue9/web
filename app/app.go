@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -249,21 +248,6 @@ func (app *App) close() error {
 // RegisterOnShutdown 等于于 http.Server.RegisterOnShutdown
 func (app *App) RegisterOnShutdown(f func()) {
 	app.server.RegisterOnShutdown(f)
-}
-
-// File 获取文件路径，相对于当前配置目录
-func (app *App) File(path string) string {
-	return app.Config().File(path)
-}
-
-// LoadFile 加载指定的配置文件内容到 v 中
-func (app *App) LoadFile(path string, v interface{}) error {
-	return app.Config().LoadFile(path, v)
-}
-
-// Load 加载指定的配置文件内容到 v 中
-func (app *App) Load(r io.Reader, typ string, v interface{}) error {
-	return app.Config().Load(r, typ, v)
 }
 
 // Mimetypes 返回 mimetype.Mimetypes
