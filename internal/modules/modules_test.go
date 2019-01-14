@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 	ms, err := New(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
-		Equal(ms.modules[0].Name, coreModuleName)
+		Equal(ms.modules[0].Name, CoreModuleName)
 
 	a.NotNil(ms.Mux()).
 		Equal(ms.Mux(), ms.router.Mux())

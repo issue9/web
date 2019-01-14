@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/issue9/version"
+
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/module"
 )
 
@@ -20,6 +22,9 @@ const (
 	// MinimumGoVersion 需求的最低 Go 版本
 	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
 	MinimumGoVersion = "1.11"
+
+	// CoreModuleName 模块名称
+	CoreModuleName = modules.CoreModuleName
 )
 
 type (

@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	coreModuleName        = "web-core"
-	coreModuleDescription = "web-core"
+	// CoreModuleName 模块名称
+	CoreModuleName        = "web-core"
+	coreModuleDescription = "web 框架自带的模块"
 )
 
 // Modules 模块管理
@@ -40,8 +41,7 @@ func New(conf *webconfig.WebConfig) (*Modules, error) {
 	}
 
 	// 默认的模块
-	// 数组的第一个元素，且没有依赖，可以确保是第一个被初始化的元素。
-	m := ms.NewModule(coreModuleName, coreModuleDescription)
+	m := ms.NewModule(CoreModuleName, coreModuleDescription)
 
 	// 初始化静态文件处理
 	for url, dir := range conf.Static {
