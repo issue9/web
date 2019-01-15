@@ -34,25 +34,25 @@ var compresses = map[string]compress.WriterFunc{
 
 // 通过配置文件加载相关的中间件。
 //
-// 始终保持这些中间件在最后初始化。用户添加的中间件由 app.mux.UnshiftMiddlewares 添加。
+// 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.modules.Before(func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.modules.Before(func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
 	// compress
 	if conf.Compress != nil {
-		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.modules.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    compresses,
 				Types:    conf.Compress.Types,
@@ -62,18 +62,18 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 		})
 	}
 
-	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+	app.modules.Before(func(h http.Handler) http.Handler {
 		return app.errorhandlers.New(h)
 	})
 
 	// recovery
-	app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+	app.modules.Before(func(h http.Handler) http.Handler {
 		return recovery.New(h, app.errorhandlers.Recovery(app.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		app.Mux().AppendMiddlewares(func(h http.Handler) http.Handler {
+		app.modules.Before(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}

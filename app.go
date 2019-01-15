@@ -52,8 +52,8 @@ func Grace(sig ...os.Signal) {
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
-func AddMiddlewares(m ...middleware.Middleware) {
-	defaultApp.AddMiddlewares(m...)
+func AddMiddlewares(m middleware.Middleware) {
+	defaultApp.AddMiddlewares(m)
 }
 
 // IsDebug 是否处在调试模式

@@ -11,6 +11,7 @@ import (
 	"path"
 	"sort"
 
+	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 
 	"github.com/issue9/web/internal/modules/dep"
@@ -28,6 +29,8 @@ const (
 //
 // 负责模块的初始化工作，包括路由的加载等。
 type Modules struct {
+	middleware.Manager
+
 	modules []*module.Module
 	router  *mux.Prefix
 }
@@ -36,6 +39,7 @@ type Modules struct {
 func New(conf *webconfig.WebConfig) (*Modules, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
+		Manager: *middleware.NewManager(mux),
 		modules: make([]*module.Module, 0, 100),
 		router:  mux.Prefix(conf.Root),
 	}

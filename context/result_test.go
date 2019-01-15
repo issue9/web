@@ -102,7 +102,7 @@ func TestResult_Render_Exit(t *testing.T) {
 		ctx.NewResult(100).Render()
 	})
 
-	srv := rest.NewServer(t, app.Mux(), nil)
+	srv := rest.NewServer(t, app, nil)
 
 	// render 的正常流程测试
 	srv.NewRequest(http.MethodGet, "/render").

@@ -111,10 +111,8 @@ func New(dir string) (*App, error) {
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
-//
-// 后添加的后调用。
-func (app *App) AddMiddlewares(m ...middleware.Middleware) *App {
-	app.Mux().UnshiftMiddlewares(m...)
+func (app *App) AddMiddlewares(m middleware.Middleware) *App {
+	app.modules.After(m)
 	return app
 }
 
@@ -177,6 +175,10 @@ func (app *App) InitModules(tag string) error {
 	return app.modules.Init(tag, app.Logs().INFO())
 }
 
+func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	app.modules.ServeHTTP(w, r)
+}
+
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
@@ -190,7 +192,7 @@ func (app *App) Serve() (err error) {
 	conf := app.webConfig
 	app.server = &http.Server{
 		Addr:              ":" + strconv.Itoa(conf.Port),
-		Handler:           app.modules.Mux(),
+		Handler:           app,
 		ErrorLog:          app.Logs().ERROR(),
 		ReadTimeout:       conf.ReadTimeout,
 		WriteTimeout:      conf.WriteTimeout,
