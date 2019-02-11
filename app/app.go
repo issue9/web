@@ -40,10 +40,10 @@ type App struct {
 	server *http.Server
 
 	modules       *modules.Modules
-	mt            *mimetype.Mimetypes
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
+	mt            *mimetype.Mimetypes
 	messages      *messages.Messages
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
