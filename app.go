@@ -5,6 +5,8 @@
 package web
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -14,8 +16,10 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -26,13 +30,30 @@ var defaultApp *app.App
 // Init 初始化整个应用环境
 //
 // 重复调用会直接 panic
-func Init(dir string) (err error) {
+func Init(dir string) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(dir)
-	return
+	var configUnmarshals = map[string]config.UnmarshalFunc{
+		".yaml": yaml.Unmarshal,
+		".yml":  yaml.Unmarshal,
+		".xml":  xml.Unmarshal,
+		".json": json.Unmarshal,
+	}
+
+	mgr, err := config.NewManager("./testdata")
+	if err != nil {
+		return err
+	}
+	for k, v := range configUnmarshals {
+		if err = mgr.AddUnmarshal(v, k); err != nil {
+			return err
+		}
+	}
+
+	defaultApp, err = app.New(mgr)
+	return err
 }
 
 // App 返回 defaultApp 实例

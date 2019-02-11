@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 )
@@ -28,7 +30,20 @@ var f202 = func(w http.ResponseWriter, r *http.Request) {
 
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *App {
-	app, err := New("./testdata")
+	var configUnmarshals = map[string]config.UnmarshalFunc{
+		".yaml": yaml.Unmarshal,
+		".yml":  yaml.Unmarshal,
+		".xml":  xml.Unmarshal,
+		".json": json.Unmarshal,
+	}
+
+	mgr, err := config.NewManager("./testdata")
+	a.NotError(err).NotNil(mgr)
+	for k, v := range configUnmarshals {
+		a.NotError(mgr.AddUnmarshal(v, k))
+	}
+
+	app, err := New(mgr)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

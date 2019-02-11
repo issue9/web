@@ -7,8 +7,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
-	"encoding/xml"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +17,6 @@ import (
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/messages"
@@ -35,13 +32,6 @@ const (
 	ConfigFilename = "web.yaml"
 	LogsFilename   = "logs.xml"
 )
-
-var configUnmarshals = map[string]config.UnmarshalFunc{
-	".yaml": yaml.Unmarshal,
-	".yml":  yaml.Unmarshal,
-	".xml":  xml.Unmarshal,
-	".json": json.Unmarshal,
-}
 
 // App 程序运行实例
 type App struct {
@@ -64,24 +54,14 @@ type App struct {
 //
 // 日志系统会在此处初始化。
 // opt 参数在传递之后，再次修改，将不对 App 启作用。
-func New(dir string) (*App, error) {
-	mgr, err := config.NewManager(dir)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range configUnmarshals {
-		if err := mgr.AddUnmarshal(v, k); err != nil {
-			return nil, err
-		}
-	}
-
+func New(mgr *config.Manager) (*App, error) {
 	logs := logs.New()
-	if err = logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
+	if err := logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
 		return nil, err
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err = mgr.LoadFile(ConfigFilename, webconf); err != nil {
+	if err := mgr.LoadFile(ConfigFilename, webconf); err != nil {
 		if serr, ok := err.(*config.Error); ok {
 			serr.File = LogsFilename
 		}
