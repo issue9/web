@@ -44,7 +44,24 @@ func Classic(dir string) error {
 		return err
 	}
 
-	return Init(mgr)
+	if err = Init(mgr); err != nil {
+		return err
+	}
+
+	// TODO compress
+
+	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		"application/json":    json.Unmarshal,
+		"multipart/form-data": nil,
+	})
+	if err != nil {
+		return err
+	}
+
+	return Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+		"application/json":    json.Marshal,
+		"multipart/form-data": nil,
+	})
 }
 
 // Init 初始化整个应用环境

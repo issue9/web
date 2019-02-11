@@ -27,6 +27,8 @@ const (
 )
 
 // 目前支持的压缩方式
+//
+// TODO 添加到 App，变为可配置项
 var compresses = map[string]compress.WriterFunc{
 	"gizp":    compress.NewGzip,
 	"deflate": compress.NewDeflate,
