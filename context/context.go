@@ -71,11 +71,6 @@ type Context struct {
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
 //
-// mt 为 mimetype.Mimetypes 对象，用于从中查找指定名称的 mimetype 转码函数。
-//
-// errlog 为错误信息输出通道，在 New() 非正常退出时，除了输出一个 HTTP 的状态码之外，
-// 若还指定了 errlog，则还会将错误信息输出到该通道上，为 nil，则不输出任何错误信息。
-//
 // NOTE: New 仅供框架内部使用，不保证兼容性。如果框架提供的 Context
 // 不符合你的要求，那么请直接使用 &Context{} 指定相关的值构建对象。
 func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {

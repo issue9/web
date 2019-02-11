@@ -53,7 +53,6 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-// opt 参数在传递之后，再次修改，将不对 App 启作用。
 func New(mgr *config.Manager) (*App, error) {
 	logs := logs.New()
 	if err := logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {

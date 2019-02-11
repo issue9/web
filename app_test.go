@@ -26,12 +26,12 @@ var testdata = ""
 func TestApp(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(Init("./testdata"))
+	a.NotError(Classic("./testdata"))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
 
 	a.Panic(func() {
-		Init("./testdata")
+		Classic("./testdata")
 	})
 
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
