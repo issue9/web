@@ -29,42 +29,34 @@ var defaultApp *app.App
 
 // Classic 按默认值初始化整个应用环境
 func Classic(dir string) error {
-	return Init(dir, map[string]config.UnmarshalFunc{
-		".yaml": yaml.Unmarshal,
-		".yml":  yaml.Unmarshal,
-		".xml":  xml.Unmarshal,
-		".json": json.Unmarshal,
-	}, nil, nil)
+	mgr, err := config.NewManager(dir)
+	if err != nil {
+		return err
+	}
+
+	if err = mgr.AddUnmarshal(yaml.Unmarshal, ".yaml", ".yml"); err != nil {
+		return err
+	}
+	if err = mgr.AddUnmarshal(json.Unmarshal, ".json"); err != nil {
+		return err
+	}
+	if err = mgr.AddUnmarshal(xml.Unmarshal, ".xml"); err != nil {
+		return err
+	}
+
+	return Init(mgr)
 }
 
 // Init 初始化整个应用环境
 //
 // 重复调用会直接 panic
-func Init(dir string, configs map[string]config.UnmarshalFunc, marshals map[string]mimetype.MarshalFunc, unmarshals map[string]mimetype.UnmarshalFunc) error {
+func Init(mgr *config.Manager) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	mgr, err := config.NewManager(dir)
-	if err != nil {
-		return err
-	}
-	for k, v := range configs {
-		if err = mgr.AddUnmarshal(v, k); err != nil {
-			return err
-		}
-	}
-
 	defaultApp, err = app.New(mgr)
-	if err != nil {
-		return err
-	}
-
-	if err = defaultApp.Mimetypes().AddMarshals(marshals); err != nil {
-		return err
-	}
-
-	return defaultApp.Mimetypes().AddUnmarshals(unmarshals)
+	return
 }
 
 // App 返回 defaultApp 实例
