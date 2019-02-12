@@ -37,10 +37,8 @@ const (
 
 // App 程序运行实例
 type App struct {
-	webConfig *webconfig.WebConfig
-
-	server *http.Server
-
+	webConfig     *webconfig.WebConfig
+	server        *http.Server
 	modules       *modules.Modules
 	configs       *config.Manager
 	logs          *logs.Logs
@@ -48,6 +46,8 @@ type App struct {
 	mt            *mimetype.Mimetypes
 	messages      *messages.Messages
 	compresses    map[string]compress.WriterFunc
+
+	// TODO: 添加 text/message/catelog.Catelog，而不是使用全局的？
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
