@@ -7,6 +7,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
@@ -45,6 +47,7 @@ type App struct {
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
 	messages      *messages.Messages
+	compresses    map[string]compress.WriterFunc
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
@@ -81,12 +84,26 @@ func New(mgr *config.Manager) (*App, error) {
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
 		messages:      messages.New(),
+		compresses:    make(map[string]compress.WriterFunc, 5),
 	}
 
 	// 加载固有的中间件，需要在 ms 初始化之后调用
 	app.buildMiddlewares(webconf)
 
 	return app, nil
+}
+
+// AddCompresses 添加压缩处理函数
+func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
+	for k, v := range m {
+		if _, found := app.compresses[k]; found {
+			return errors.New("已经存在")
+		}
+
+		app.compresses[k] = v
+	}
+
+	return nil
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。

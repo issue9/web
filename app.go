@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
@@ -27,7 +28,7 @@ import (
 
 var defaultApp *app.App
 
-// Classic 按默认值初始化整个应用环境
+// Classic 初始化一个可运行的框架环境
 func Classic(dir string) error {
 	mgr, err := config.NewManager(dir)
 	if err != nil {
@@ -48,7 +49,13 @@ func Classic(dir string) error {
 		return err
 	}
 
-	// TODO compress
+	err = AddCompresses(map[string]compress.WriterFunc{
+		"gizp":    compress.NewGzip,
+		"deflate": compress.NewDeflate,
+	})
+	if err != nil {
+		return err
+	}
 
 	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":    json.Unmarshal,
@@ -90,6 +97,11 @@ func App() *app.App {
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(sig ...os.Signal) {
 	app.Grace(defaultApp, sig...)
+}
+
+// AddCompresses 添加压缩处理函数
+func AddCompresses(m map[string]compress.WriterFunc) error {
+	return defaultApp.AddCompresses(m)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
