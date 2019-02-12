@@ -50,7 +50,7 @@ func Classic(dir string) error {
 	}
 
 	err = AddCompresses(map[string]compress.WriterFunc{
-		"gizp":    compress.NewGzip,
+		"gzip":    compress.NewGzip,
 		"deflate": compress.NewDeflate,
 	})
 	if err != nil {
@@ -168,9 +168,9 @@ func Tags() []string {
 	return defaultApp.Tags()
 }
 
-// RegisterOnShutdown 注册在关闭服务时需要执行的操作。
-func RegisterOnShutdown(f func()) {
-	defaultApp.RegisterOnShutdown(f)
+// Server 获取 http.Server 实例
+func Server() *http.Server {
+	return defaultApp.Server()
 }
 
 // NewModule 注册一个模块

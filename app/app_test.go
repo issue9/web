@@ -140,8 +140,6 @@ func TestApp_Serve(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Microsecond)
 
-	a.NotError(app.Serve()) // 多次调用
-
 	resp, err := http.Get("http://localhost:8082/m1/test")
 	a.NotError(err).NotNil(resp)
 	a.Equal(resp.StatusCode, http.StatusAccepted)

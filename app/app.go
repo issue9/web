@@ -85,7 +85,17 @@ func New(mgr *config.Manager) (*App, error) {
 		errorhandlers: errorhandler.New(),
 		messages:      messages.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
+		server: &http.Server{
+			Addr:              ":" + strconv.Itoa(webconf.Port),
+			ErrorLog:          logs.ERROR(),
+			ReadTimeout:       webconf.ReadTimeout,
+			WriteTimeout:      webconf.WriteTimeout,
+			IdleTimeout:       webconf.IdleTimeout,
+			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+			MaxHeaderBytes:    webconf.MaxHeaderBytes,
+		},
 	}
+	app.server.Handler = app
 
 	// 加载固有的中间件，需要在 ms 初始化之后调用
 	app.buildMiddlewares(webconf)
@@ -179,23 +189,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
 func (app *App) Serve() (err error) {
-	// 当 app.server 不为空时，必须不能覆盖该值，
-	// 否则 Close 等操作，无法拿到正确的 app.server 变量。
-	if app.server != nil {
-		return nil
-	}
-
 	conf := app.webConfig
-	app.server = &http.Server{
-		Addr:              ":" + strconv.Itoa(conf.Port),
-		Handler:           app,
-		ErrorLog:          app.Logs().ERROR(),
-		ReadTimeout:       conf.ReadTimeout,
-		WriteTimeout:      conf.WriteTimeout,
-		IdleTimeout:       conf.IdleTimeout,
-		ReadHeaderTimeout: conf.ReadHeaderTimeout,
-		MaxHeaderBytes:    conf.MaxHeaderBytes,
-	}
 
 	if !conf.HTTPS {
 		err = app.server.ListenAndServe()
@@ -243,9 +237,9 @@ func (app *App) close() error {
 	return app.server.Close()
 }
 
-// RegisterOnShutdown 等于于 http.Server.RegisterOnShutdown
-func (app *App) RegisterOnShutdown(f func()) {
-	app.server.RegisterOnShutdown(f)
+// Server 获取 http.Server 实例
+func (app *App) Server() *http.Server {
+	return app.server
 }
 
 // Mimetypes 返回 mimetype.Mimetypes
