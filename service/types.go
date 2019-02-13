@@ -15,6 +15,9 @@ import (
 // now 表示调用此函数的时间。
 type TaskFunc func(ctx context.Context, now time.Time) error
 
+// NextFunc 获取一次服务的执行时间。
+type NextFunc func() <-chan time.Time
+
 // State 服务的状态值
 type State int8
 
@@ -48,4 +51,13 @@ func (s State) String() string {
 	}
 
 	return "<unknown>"
+}
+
+// Tick 定时功能的 NextFunc。
+//
+// 是对 time.Tick 的简单封闭。
+func Tick(d time.Duration) NextFunc {
+	return NextFunc(func() <-chan time.Time {
+		return time.Tick(d)
+	})
 }

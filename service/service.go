@@ -19,7 +19,7 @@ type Service struct {
 	count       int // 执行次数
 
 	state State
-	next  func() chan time.Time
+	next  NextFunc
 	task  TaskFunc
 
 	closed     chan struct{}

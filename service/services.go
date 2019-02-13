@@ -4,13 +4,10 @@
 
 package service
 
-import (
-	"time"
-
-	"github.com/issue9/autoinc"
-)
+import "github.com/issue9/autoinc"
 
 // Services 服务管理
+// NOTE: 最多只能管理 math.MaxInt64 个服务。
 type Services struct {
 	services []*Service
 	ai       *autoinc.AutoInc
@@ -29,7 +26,7 @@ func NewServices() *Services {
 // next 表示下次执行此服务的时间，如果是一个一次性的常驻服务，请使用 nil 代替。
 //
 // NOTE: 如果为服务生成唯一 ID 失败，则会 panic。
-func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandling, next func() chan time.Time) {
+func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandling, next NextFunc) {
 	srv := &Service{
 		id:          s.ai.MustID(),
 		description: description,
