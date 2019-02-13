@@ -14,7 +14,7 @@ import (
 
 // Service 服务模型
 type Service struct {
-	id          string // 唯一标志
+	id          int64 // 唯一标志
 	description string
 	count       int // 执行次数
 
@@ -30,7 +30,7 @@ type Service struct {
 }
 
 // ID 唯一标志
-func (srv *Service) ID() string {
+func (srv *Service) ID() int64 {
 	return srv.id
 }
 
