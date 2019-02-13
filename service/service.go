@@ -12,32 +12,6 @@ import (
 	"time"
 )
 
-// TaskFunc 服务实际需要执行的函数
-//
-// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-// now 表示调用此函数的时间。
-type TaskFunc func(ctx context.Context, now time.Time) error
-
-// State 服务的状态值
-type State int8
-
-// 几种可能的状态值
-const (
-	StateWating  State = iota + 1 // 等待下次运行，默认状态
-	StateRunning                  // 正在运行
-	StateStop                     // 正常停止，将不再执行后续操作
-	StateFaild                    // 出错，不再执行后续操作
-)
-
-// ErrorHandling 出错时的处理方式
-type ErrorHandling int8
-
-// 定义几种出错时的处理方式
-const (
-	ContinueOnError ErrorHandling = iota + 1
-	ExitOnError
-)
-
 // Service 服务模型
 type Service struct {
 	id          string // 唯一标志
@@ -109,6 +83,7 @@ func (srv *Service) serve(now time.Time) {
 
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
+	srv.state = StateRunning
 	if err := srv.task(ctx, now); err != nil {
 		srv.err = err
 
