@@ -15,7 +15,7 @@ import (
 // now 表示调用此函数的时间。
 type TaskFunc func(ctx context.Context, now time.Time) error
 
-// NextFunc 获取一次服务的执行时间。
+// NextFunc 获取下一次服务的执行时间。
 type NextFunc func() <-chan time.Time
 
 // State 服务的状态值

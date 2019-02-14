@@ -37,6 +37,12 @@ func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandl
 		errHandling: errHandling,
 	}
 
-	srv.Run()
 	s.services = append(s.services, srv)
+}
+
+// Serve 依次启动服务
+func (s *Services) Serve() {
+	for _, srv := range s.services {
+		srv.Run()
+	}
 }
