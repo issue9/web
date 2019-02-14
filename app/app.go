@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/config"
@@ -250,6 +251,11 @@ func (app *App) Mimetypes() *mimetype.Mimetypes {
 // Config 获取 config.Manager 的实例
 func (app *App) Config() *config.Manager {
 	return app.configs
+}
+
+// LocalPrinter 获取本地化的输出对象
+func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
+	return message.NewPrinter(tag, opts...)
 }
 
 // NewMessages 添加新的错误消息

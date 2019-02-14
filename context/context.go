@@ -103,7 +103,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
-		LocalePrinter:      message.NewPrinter(tag),
+		LocalePrinter:      a.LocalPrinter(tag),
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
