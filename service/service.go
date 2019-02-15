@@ -18,9 +18,10 @@ type Service struct {
 	description string
 	count       int // 执行次数
 
-	state State
-	next  NextFunc
-	task  TaskFunc
+	state        State
+	task         TaskFunc
+	next         NextFunc
+	prevHandling PrevHandling
 
 	closed     chan struct{}
 	cancelFunc context.CancelFunc
@@ -81,6 +82,19 @@ func (srv *Service) serve(now time.Time) {
 		}
 	}()
 
+	if srv.state == StateRunning { // 前一任务还在执行
+		switch srv.prevHandling {
+		case AbortOnNext:
+			if srv.cancelFunc != nil {
+				srv.cancelFunc()
+			}
+		case ContinueOnNext:
+			// 不需要做任务事情
+		default:
+			panic("无效的 PrevHandling 取值")
+		}
+	}
+
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
 	srv.state = StateRunning
@@ -93,7 +107,10 @@ func (srv *Service) serve(now time.Time) {
 		case ExitOnError:
 			srv.state = StateFaild
 		}
+		return
 	}
+
+	srv.state = StateWating
 }
 
 // Stop 停止服务，即使定时服务，后续的也将不再执行。

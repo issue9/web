@@ -38,6 +38,15 @@ const (
 	ExitOnError
 )
 
+// PrevHandling 表示在下一次执行时，如果前一任务未完成，如何处理。
+type PrevHandling int8
+
+// PrevHandling 的几种常量
+const (
+	AbortOnNext PrevHandling = iota + 1
+	ContinueOnNext
+)
+
 func (s State) String() string {
 	switch s {
 	case StateWating:

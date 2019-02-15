@@ -26,15 +26,16 @@ func NewServices() *Services {
 // next 表示下次执行此服务的时间，如果是一个一次性的常驻服务，请使用 nil 代替。
 //
 // NOTE: 如果为服务生成唯一 ID 失败，则会 panic。
-func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandling, next NextFunc) {
+func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandling, next NextFunc, prevHandling PrevHandling) {
 	srv := &Service{
-		id:          s.ai.MustID(),
-		description: description,
-		state:       StateWating,
-		task:        task,
-		next:        next,
-		closed:      make(chan struct{}, 1),
-		errHandling: errHandling,
+		id:           s.ai.MustID(),
+		description:  description,
+		state:        StateWating,
+		task:         task,
+		next:         next,
+		prevHandling: prevHandling,
+		closed:       make(chan struct{}, 1),
+		errHandling:  errHandling,
 	}
 
 	s.services = append(s.services, srv)
