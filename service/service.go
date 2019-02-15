@@ -12,7 +12,7 @@ import (
 
 // Service 服务模型
 type Service struct {
-	id          int64 // 唯一标志
+	id          int // 唯一标志
 	description string
 
 	state State
@@ -25,7 +25,7 @@ type Service struct {
 }
 
 // ID 唯一标志
-func (srv *Service) ID() int64 {
+func (srv *Service) ID() int {
 	return srv.id
 }
 
