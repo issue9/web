@@ -9,7 +9,6 @@ import "context"
 // TaskFunc 服务实际需要执行的函数
 //
 // 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-// now 表示调用此函数的时间。
 type TaskFunc func(ctx context.Context) error
 
 // State 服务的状态值
@@ -17,9 +16,8 @@ type State int8
 
 // 几种可能的状态值
 const (
-	StateWating  State = iota + 1 // 等待下次运行，默认状态
+	StateStop    State = iota + 1 // 当前处理停止状态，默认状态
 	StateRunning                  // 正在运行
-	StateStop                     // 正常停止，将不再执行后续操作
 	StateFaild                    // 出错，不再执行后续操作
 )
 
@@ -34,12 +32,10 @@ const (
 
 func (s State) String() string {
 	switch s {
-	case StateWating:
-		return "wating"
-	case StateRunning:
-		return "running"
 	case StateStop:
 		return "stop"
+	case StateRunning:
+		return "running"
 	case StateFaild:
 		return "faild"
 	}

@@ -30,7 +30,7 @@ func (s *Services) New(task TaskFunc, description string, errHandling ErrorHandl
 	srv := &Service{
 		id:          s.ai.MustID(),
 		description: description,
-		state:       StateWating,
+		state:       StateStop,
 		task:        task,
 		errHandling: errHandling,
 	}

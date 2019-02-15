@@ -7,7 +7,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -37,8 +36,8 @@ func (srv *Service) Description() string {
 
 // Run 开始执行该服务
 func (srv *Service) Run() {
-	if srv.state != StateWating {
-		srv.err = errors.New("判断不正确，无法启动服务！")
+	if srv.state != StateStop {
+		srv.err = fmt.Errorf("当前状态 %s 无法再次启动该服务", srv.state)
 	}
 
 	go srv.serve()
@@ -51,7 +50,7 @@ func (srv *Service) serve() {
 
 			switch srv.errHandling {
 			case ContinueOnError:
-				srv.state = StateWating
+				srv.state = StateStop
 			case ExitOnError:
 				srv.state = StateFaild
 			}
@@ -66,26 +65,20 @@ func (srv *Service) serve() {
 
 		switch srv.errHandling {
 		case ContinueOnError:
-			srv.state = StateWating
+			srv.state = StateStop
 		case ExitOnError:
 			srv.state = StateFaild
 		}
 		return
 	}
 
-	srv.state = StateWating
-}
-
-// Stop 停止服务，即使定时服务，后续的也将不再执行。
-func (srv *Service) Stop() {
-	srv.stop()
 	srv.state = StateStop
 }
 
-// Pause 停止服务，如果是定时起动的，下次依然可以执行。
-func (srv *Service) Pause() {
+// Stop 停止服务。
+func (srv *Service) Stop() {
 	srv.stop()
-	srv.state = StateWating
+	srv.state = StateStop
 }
 
 func (srv *Service) stop() {
