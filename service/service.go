@@ -9,21 +9,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 )
 
 // Service 服务模型
 type Service struct {
 	id          int64 // 唯一标志
 	description string
-	count       int // 执行次数
 
-	state        State
-	task         TaskFunc
-	next         NextFunc
-	prevHandling PrevHandling
+	state State
+	task  TaskFunc
 
-	closed     chan struct{}
 	cancelFunc context.CancelFunc
 
 	err         error // 保存上次的出错内容
@@ -40,35 +35,16 @@ func (srv *Service) Description() string {
 	return srv.description
 }
 
-// Count 执行次数
-func (srv *Service) Count() int {
-	return srv.count
-}
-
 // Run 开始执行该服务
 func (srv *Service) Run() {
 	if srv.state != StateWating {
 		srv.err = errors.New("判断不正确，无法启动服务！")
 	}
 
-	if srv.next == nil {
-		go srv.serve(time.Now())
-		return
-	}
-
-	go func() {
-		for now := range srv.next() {
-			select {
-			case <-srv.closed:
-				return
-			default:
-				go srv.serve(now)
-			}
-		}
-	}()
+	go srv.serve()
 }
 
-func (srv *Service) serve(now time.Time) {
+func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
@@ -82,23 +58,10 @@ func (srv *Service) serve(now time.Time) {
 		}
 	}()
 
-	if srv.state == StateRunning { // 前一任务还在执行
-		switch srv.prevHandling {
-		case AbortOnNext:
-			if srv.cancelFunc != nil {
-				srv.cancelFunc()
-			}
-		case ContinueOnNext:
-			// 不需要做任务事情
-		default:
-			panic("无效的 PrevHandling 取值")
-		}
-	}
-
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
 	srv.state = StateRunning
-	if err := srv.task(ctx, now); err != nil {
+	if err := srv.task(ctx); err != nil {
 		srv.err = err
 
 		switch srv.errHandling {
@@ -126,8 +89,6 @@ func (srv *Service) Pause() {
 }
 
 func (srv *Service) stop() {
-	srv.closed <- struct{}{}
-
 	if srv.cancelFunc != nil {
 		srv.cancelFunc()
 		srv.cancelFunc = nil

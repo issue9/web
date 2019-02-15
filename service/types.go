@@ -4,19 +4,13 @@
 
 package service
 
-import (
-	"context"
-	"time"
-)
+import "context"
 
 // TaskFunc 服务实际需要执行的函数
 //
 // 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
 // now 表示调用此函数的时间。
-type TaskFunc func(ctx context.Context, now time.Time) error
-
-// NextFunc 获取下一次服务的执行时间。
-type NextFunc func() <-chan time.Time
+type TaskFunc func(ctx context.Context) error
 
 // State 服务的状态值
 type State int8
@@ -38,15 +32,6 @@ const (
 	ExitOnError
 )
 
-// PrevHandling 表示在下一次执行时，如果前一任务未完成，如何处理。
-type PrevHandling int8
-
-// PrevHandling 的几种常量
-const (
-	AbortOnNext PrevHandling = iota + 1
-	ContinueOnNext
-)
-
 func (s State) String() string {
 	switch s {
 	case StateWating:
@@ -60,13 +45,4 @@ func (s State) String() string {
 	}
 
 	return "<unknown>"
-}
-
-// Tick 定时功能的 NextFunc。
-//
-// 是对 time.Tick 的简单封闭。
-func Tick(d time.Duration) NextFunc {
-	return NextFunc(func() <-chan time.Time {
-		return time.Tick(d)
-	})
 }
