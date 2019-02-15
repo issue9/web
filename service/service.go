@@ -8,6 +8,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
 )
 
 // Service 服务模型
@@ -15,10 +16,10 @@ type Service struct {
 	id          int // 唯一标志
 	description string
 
-	state State
-	task  TaskFunc
-
+	state      State
+	task       TaskFunc
 	cancelFunc context.CancelFunc
+	locker     sync.Mutex
 
 	err         error // 保存上次的出错内容
 	errHandling ErrorHandling
@@ -34,8 +35,16 @@ func (srv *Service) Description() string {
 	return srv.description
 }
 
+// State 状态值
+func (srv *Service) State() State {
+	return srv.state
+}
+
 // Run 开始执行该服务
 func (srv *Service) Run() {
+	srv.locker.Lock()
+	defer srv.locker.Unlock()
+
 	if srv.state != StateStop {
 		srv.err = fmt.Errorf("当前状态 %s 无法再次启动该服务", srv.state)
 	}
@@ -60,7 +69,9 @@ func (srv *Service) serve() {
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
 	srv.state = StateRunning
-	if err := srv.task(ctx); err != nil {
+
+	err := srv.task(ctx)
+	if err != nil && err != context.Canceled {
 		srv.err = err
 
 		switch srv.errHandling {
@@ -77,13 +88,13 @@ func (srv *Service) serve() {
 
 // Stop 停止服务。
 func (srv *Service) Stop() {
-	srv.stop()
-	srv.state = StateStop
-}
+	srv.locker.Lock()
+	defer srv.locker.Unlock()
 
-func (srv *Service) stop() {
 	if srv.cancelFunc != nil {
 		srv.cancelFunc()
 		srv.cancelFunc = nil
 	}
+
+	srv.state = StateStop
 }

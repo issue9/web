@@ -7,7 +7,6 @@ package service
 import "sync"
 
 // Services 服务管理
-// NOTE: 最多只能管理 math.MaxInt64 个服务。
 type Services struct {
 	services []*Service
 	locker   sync.Mutex
