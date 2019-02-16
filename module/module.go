@@ -26,8 +26,9 @@ type Module struct {
 	Name        string
 	Description string
 	Deps        []string
-	Inits       []*Init
 	Tags        map[string]*Module
+	Inits       []*Init
+	Services    []*Service
 
 	// 路由项列表。
 	//
@@ -55,6 +56,7 @@ func New(typ Type, name, desc string, deps ...string) *Module {
 		Description: desc,
 		Deps:        deps,
 		Inits:       make([]*Init, 0, 5),
+		Services:    make([]*Service, 0, 5),
 		Routes:      make(map[string]map[string]http.Handler, 10),
 	}
 }
