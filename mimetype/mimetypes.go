@@ -13,7 +13,8 @@ import (
 	"github.com/issue9/middleware/compress/accept"
 )
 
-var errInvalidMimetype = errors.New("mimetype 名称无效")
+// ErrNotFound 表示指定名称的 mimetype 解析函数未找到
+var ErrNotFound = errors.New("未找到指定名称的 mimetype")
 
 // Mimetypes 管理 mimetype 的处理函数
 type Mimetypes struct {
@@ -53,7 +54,7 @@ func (m *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
 		}
 	}
 	if unmarshal == nil {
-		return nil, errInvalidMimetype
+		return nil, ErrNotFound
 	}
 
 	return unmarshal.f, nil
@@ -77,7 +78,7 @@ func (m *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 		if mm := m.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.f, nil
 		}
-		return "", nil, errInvalidMimetype
+		return "", nil, ErrNotFound
 	}
 
 	accepts, err := accept.Parse(header)
@@ -91,7 +92,7 @@ func (m *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 		}
 	}
 
-	return "", nil, errInvalidMimetype
+	return "", nil, ErrNotFound
 }
 
 // AddMarshals 添加多个编码函数

@@ -17,8 +17,10 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -51,7 +53,21 @@ func newContext(a *assert.Assertion,
 
 // 声明一个 App 实例
 func newApp(a *assert.Assertion) *app.App {
-	app, err := app.New("../testdata")
+	var configUnmarshals = map[string]config.UnmarshalFunc{
+		".yaml": yaml.Unmarshal,
+		".yml":  yaml.Unmarshal,
+		".xml":  xml.Unmarshal,
+		".json": json.Unmarshal,
+	}
+
+	mgr, err := config.NewManager("../testdata")
+	a.NotError(err).NotNil(mgr)
+
+	for k, v := range configUnmarshals {
+		a.NotError(mgr.AddUnmarshal(v, k))
+	}
+
+	app, err := app.New(mgr)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

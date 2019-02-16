@@ -35,7 +35,7 @@ func isPluginOS() bool {
 // 如果 glob 为空，则不会加载任何内容，返回空值
 func loadPlugins(glob string) ([]*module.Module, error) {
 	if !isPluginOS() {
-		return nil, errors.New("windows 平台并未实现插件功能！")
+		return nil, errors.New("当前平台并未实现插件功能！")
 	}
 
 	fs, err := filepath.Glob(glob)

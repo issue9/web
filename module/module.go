@@ -6,7 +6,6 @@
 package module
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -20,20 +19,6 @@ const (
 	TypePlugin
 	TypeTag
 )
-
-// 在没有指定请法语方法时，使用的默认值。
-//
-// NOTE: 保持与 github.com/issue9/mux.Mux.Handle() 中的默认值相同。
-var defaultMethods = []string{
-	http.MethodDelete,
-	http.MethodGet,
-	http.MethodOptions,
-	http.MethodPatch,
-	http.MethodPost,
-	http.MethodPut,
-	http.MethodTrace,
-	http.MethodConnect,
-}
 
 // Module 表示模块信息
 type Module struct {
@@ -105,80 +90,4 @@ func (m *Module) AddInit(f func() error, title ...string) *Module {
 
 	m.Inits = append(m.Inits, &Init{F: f, Title: t})
 	return m
-}
-
-// Handle 添加一个路由项
-func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	ms, found := m.Routes[path]
-	if !found {
-		ms = make(map[string]http.Handler, 8)
-		m.Routes[path] = ms
-	}
-
-	if len(methods) == 0 {
-		methods = defaultMethods
-	}
-	for _, method := range methods {
-		if _, found = ms[method]; found {
-			panic(fmt.Sprintf("路径 %s 已经存在相同的请求方法 %s", path, method))
-		}
-		ms[method] = h
-	}
-
-	return m
-}
-
-// Get 指定一个 GET 请求
-func (m *Module) Get(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodGet)
-}
-
-// Post 指定个 POST 请求处理
-func (m *Module) Post(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPost)
-}
-
-// Delete 指定个 Delete 请求处理
-func (m *Module) Delete(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodDelete)
-}
-
-// Put 指定个 Put 请求处理
-func (m *Module) Put(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPut)
-}
-
-// Patch 指定个 Patch 请求处理
-func (m *Module) Patch(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPatch)
-}
-
-// HandleFunc 指定一个请求
-func (m *Module) HandleFunc(path string, h func(w http.ResponseWriter, r *http.Request), methods ...string) *Module {
-	return m.Handle(path, http.HandlerFunc(h), methods...)
-}
-
-// GetFunc 指定一个 GET 请求
-func (m *Module) GetFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodGet)
-}
-
-// PostFunc 指定一个 Post 请求
-func (m *Module) PostFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPost)
-}
-
-// DeleteFunc 指定一个 Delete 请求
-func (m *Module) DeleteFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodDelete)
-}
-
-// PutFunc 指定一个 Put 请求
-func (m *Module) PutFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPut)
-}
-
-// PatchFunc 指定一个 Patch 请求
-func (m *Module) PatchFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPatch)
 }

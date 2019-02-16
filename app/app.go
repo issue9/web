@@ -7,8 +7,7 @@ package app
 
 import (
 	"context"
-	"encoding/json"
-	"encoding/xml"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,10 +15,11 @@ import (
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/messages"
@@ -36,25 +36,19 @@ const (
 	LogsFilename   = "logs.xml"
 )
 
-var configUnmarshals = map[string]config.UnmarshalFunc{
-	".yaml": yaml.Unmarshal,
-	".yml":  yaml.Unmarshal,
-	".xml":  xml.Unmarshal,
-	".json": json.Unmarshal,
-}
-
 // App 程序运行实例
 type App struct {
-	webConfig *webconfig.WebConfig
-
-	server *http.Server
-
+	webConfig     *webconfig.WebConfig
+	server        *http.Server
 	modules       *modules.Modules
-	mt            *mimetype.Mimetypes
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
+	mt            *mimetype.Mimetypes
 	messages      *messages.Messages
+	compresses    map[string]compress.WriterFunc
+
+	// TODO: 添加 text/message/catelog.Catelog，而不是使用全局的？
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
@@ -63,25 +57,14 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-// opt 参数在传递之后，再次修改，将不对 App 启作用。
-func New(dir string) (*App, error) {
-	mgr, err := config.NewManager(dir)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range configUnmarshals {
-		if err := mgr.AddUnmarshal(v, k); err != nil {
-			return nil, err
-		}
-	}
-
+func New(mgr *config.Manager) (*App, error) {
 	logs := logs.New()
-	if err = logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
+	if err := logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
 		return nil, err
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err = mgr.LoadFile(ConfigFilename, webconf); err != nil {
+	if err := mgr.LoadFile(ConfigFilename, webconf); err != nil {
 		if serr, ok := err.(*config.Error); ok {
 			serr.File = LogsFilename
 		}
@@ -102,12 +85,36 @@ func New(dir string) (*App, error) {
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
 		messages:      messages.New(),
+		compresses:    make(map[string]compress.WriterFunc, 5),
+		server: &http.Server{
+			Addr:              ":" + strconv.Itoa(webconf.Port),
+			ErrorLog:          logs.ERROR(),
+			ReadTimeout:       webconf.ReadTimeout,
+			WriteTimeout:      webconf.WriteTimeout,
+			IdleTimeout:       webconf.IdleTimeout,
+			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+			MaxHeaderBytes:    webconf.MaxHeaderBytes,
+		},
 	}
+	app.server.Handler = app
 
 	// 加载固有的中间件，需要在 ms 初始化之后调用
 	app.buildMiddlewares(webconf)
 
 	return app, nil
+}
+
+// AddCompresses 添加压缩处理函数
+func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
+	for k, v := range m {
+		if _, found := app.compresses[k]; found {
+			return errors.New("已经存在")
+		}
+
+		app.compresses[k] = v
+	}
+
+	return nil
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
@@ -183,23 +190,7 @@ func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
 func (app *App) Serve() (err error) {
-	// 当 app.server 不为空时，必须不能覆盖该值，
-	// 否则 Close 等操作，无法拿到正确的 app.server 变量。
-	if app.server != nil {
-		return nil
-	}
-
 	conf := app.webConfig
-	app.server = &http.Server{
-		Addr:              ":" + strconv.Itoa(conf.Port),
-		Handler:           app,
-		ErrorLog:          app.Logs().ERROR(),
-		ReadTimeout:       conf.ReadTimeout,
-		WriteTimeout:      conf.WriteTimeout,
-		IdleTimeout:       conf.IdleTimeout,
-		ReadHeaderTimeout: conf.ReadHeaderTimeout,
-		MaxHeaderBytes:    conf.MaxHeaderBytes,
-	}
 
 	if !conf.HTTPS {
 		err = app.server.ListenAndServe()
@@ -247,9 +238,9 @@ func (app *App) close() error {
 	return app.server.Close()
 }
 
-// RegisterOnShutdown 等于于 http.Server.RegisterOnShutdown
-func (app *App) RegisterOnShutdown(f func()) {
-	app.server.RegisterOnShutdown(f)
+// Server 获取 http.Server 实例
+func (app *App) Server() *http.Server {
+	return app.server
 }
 
 // Mimetypes 返回 mimetype.Mimetypes
@@ -260,6 +251,11 @@ func (app *App) Mimetypes() *mimetype.Mimetypes {
 // Config 获取 config.Manager 的实例
 func (app *App) Config() *config.Manager {
 	return app.configs
+}
+
+// LocalPrinter 获取本地化的输出对象
+func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
+	return message.NewPrinter(tag, opts...)
 }
 
 // NewMessages 添加新的错误消息

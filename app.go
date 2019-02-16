@@ -5,6 +5,8 @@
 package web
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -12,10 +14,13 @@ import (
 	"os"
 
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -23,15 +28,58 @@ import (
 
 var defaultApp *app.App
 
+// Classic 初始化一个可运行的框架环境
+func Classic(dir string) error {
+	mgr, err := config.NewManager(dir)
+	if err != nil {
+		return err
+	}
+
+	if err = mgr.AddUnmarshal(yaml.Unmarshal, ".yaml", ".yml"); err != nil {
+		return err
+	}
+	if err = mgr.AddUnmarshal(json.Unmarshal, ".json"); err != nil {
+		return err
+	}
+	if err = mgr.AddUnmarshal(xml.Unmarshal, ".xml"); err != nil {
+		return err
+	}
+
+	if err = Init(mgr); err != nil {
+		return err
+	}
+
+	err = AddCompresses(map[string]compress.WriterFunc{
+		"gzip":    compress.NewGzip,
+		"deflate": compress.NewDeflate,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		"application/json":    json.Unmarshal,
+		"multipart/form-data": nil,
+	})
+	if err != nil {
+		return err
+	}
+
+	return Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+		"application/json":    json.Marshal,
+		"multipart/form-data": nil,
+	})
+}
+
 // Init 初始化整个应用环境
 //
 // 重复调用会直接 panic
-func Init(dir string) (err error) {
+func Init(mgr *config.Manager) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(dir)
+	defaultApp, err = app.New(mgr)
 	return
 }
 
@@ -49,6 +97,11 @@ func App() *app.App {
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(sig ...os.Signal) {
 	app.Grace(defaultApp, sig...)
+}
+
+// AddCompresses 添加压缩处理函数
+func AddCompresses(m map[string]compress.WriterFunc) error {
+	return defaultApp.AddCompresses(m)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
@@ -115,9 +168,9 @@ func Tags() []string {
 	return defaultApp.Tags()
 }
 
-// RegisterOnShutdown 注册在关闭服务时需要执行的操作。
-func RegisterOnShutdown(f func()) {
-	defaultApp.RegisterOnShutdown(f)
+// Server 获取 http.Server 实例
+func Server() *http.Server {
+	return defaultApp.Server()
 }
 
 // NewModule 注册一个模块
