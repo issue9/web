@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package dep
+package modules
 
 import (
 	"log"
@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 
 	"github.com/issue9/web/module"
@@ -45,12 +46,23 @@ func mt(name, title string, f func() error, deps ...string) *module.Module {
 	return m
 }
 
+func newDep(ms []*module.Module, log *log.Logger) *dependency {
+	mux := mux.New(false, false, false, nil, nil)
+
+	return newDepencency(&Modules{
+		Manager:  *middleware.NewManager(mux),
+		modules:  ms,
+		router:   mux.Prefix(""),
+		services: make([]*module.Service, 0, 100),
+	}, log)
+}
+
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	dep := newDepencency([]*module.Module{
+	dep := newDep([]*module.Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
-	}, router, nil)
+	}, nil)
 	a.NotNil(dep)
 
 	a.True(dep.isDep("m1", "d1"))
@@ -59,11 +71,11 @@ func TestDependency_isDep(t *testing.T) {
 	a.False(dep.isDep("m1", "m1"))
 
 	// 循环依赖
-	dep = newDepencency([]*module.Module{
+	dep = newDep([]*module.Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d3", nil, "d1"),
-	}, router, nil)
+	}, nil)
 	a.True(dep.isDep("d1", "d1"))
 
 	// 不存在的模块
@@ -72,28 +84,28 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	dep := newDepencency([]*module.Module{
+	dep := newDep([]*module.Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
-	}, router, nil)
+	}, nil)
 
 	m1 := dep.modules["m1"]
 	a.Error(dep.checkDeps(m1)) // 依赖项不存在
 
-	dep = newDepencency([]*module.Module{
+	dep = newDep([]*module.Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d2", nil, "d3"),
-	}, router, nil)
+	}, nil)
 	a.NotError(dep.checkDeps(m1))
 
 	// 自我依赖
-	dep = newDepencency([]*module.Module{
+	dep = newDep([]*module.Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d2", nil, "d3"),
 		m("d3", nil, "d2"),
-	}, router, nil)
+	}, nil)
 	d2 := dep.modules["d2"]
 	a.Error(dep.checkDeps(d2))
 }
@@ -102,11 +114,11 @@ func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
 
 	// 缺少依赖项 d3
-	dep := newDepencency([]*module.Module{
+	dep := newDep([]*module.Module{
 		m("m1", i("m1"), "d1", "d2"),
 		m("d1", i("d1"), "d3"),
 		m("d2", i("d2"), "d3"),
-	}, router, infolog)
+	}, infolog)
 	a.Error(dep.init(""))
 
 	m1 := m("m1", i("m1"), "d1", "d2")
@@ -119,13 +131,13 @@ func TestDependency_init(t *testing.T) {
 		m("d3", i("d3")),
 	}
 
-	dep = newDepencency(ms, router, infolog)
+	dep = newDep(ms, infolog)
 	a.NotError(dep.init(""))
 	a.Equal(len(inits), 4).
 		Equal(inits["m1"], 1).
 		Equal(inits["d1"], 1).
 		Equal(inits["d2"], 1)
 
-	dep = newDepencency(ms, router, infolog)
+	dep = newDep(ms, infolog)
 	a.NotError(dep.init("install"), infolog)
 }

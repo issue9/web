@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 
-	"github.com/issue9/web/internal/modules/dep"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/module"
 )
@@ -22,7 +21,7 @@ import (
 const (
 	// CoreModuleName 模块名称
 	CoreModuleName        = "web-core"
-	coreModuleDescription = "web 框架自带的模块"
+	coreModuleDescription = "web 框架自带的模块，包括启动服务等，最后加载运行"
 )
 
 // Modules 模块管理
@@ -31,27 +30,26 @@ const (
 type Modules struct {
 	middleware.Manager
 
-	modules []*module.Module
-	router  *mux.Prefix
+	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
+	// 还有所有服务的注册启动等，其初始化包含了启动服务等。
+	coreModule *module.Module
+
+	modules  []*module.Module
+	router   *mux.Prefix
+	services []*module.Service
 }
 
 // New 声明 Modules 变量
 func New(conf *webconfig.WebConfig) (*Modules, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
-		Manager: *middleware.NewManager(mux),
-		modules: make([]*module.Module, 0, 100),
-		router:  mux.Prefix(conf.Root),
+		Manager:  *middleware.NewManager(mux),
+		modules:  make([]*module.Module, 0, 100),
+		router:   mux.Prefix(conf.Root),
+		services: make([]*module.Service, 0, 100),
 	}
 
-	// 默认的模块
-	m := ms.NewModule(CoreModuleName, coreModuleDescription)
-
-	// 初始化静态文件处理
-	for url, dir := range conf.Static {
-		pattern := path.Join(conf.Root, url+"{path}")
-		m.Get(pattern, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
-	}
+	ms.buildCoreModule(conf)
 
 	// 在初始化模块之前，先加载插件
 	if conf.Plugins != "" {
@@ -59,16 +57,43 @@ func New(conf *webconfig.WebConfig) (*Modules, error) {
 		if err != nil {
 			return nil, err
 		}
-		ms.modules = append(ms.modules, modules...)
+		ms.appendModules(modules...)
 	}
 
 	return ms, nil
 }
 
+func (ms *Modules) appendModules(modules ...*module.Module) {
+	for _, m := range modules {
+		ms.modules = append(ms.modules, m)
+
+		// 让 coreModule 依赖所有模块，保证其在最后进行初始化
+		ms.coreModule.Deps = append(ms.coreModule.Deps, m.Name)
+	}
+}
+
+func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
+	ms.coreModule = module.New(module.TypeModule, CoreModuleName, coreModuleDescription)
+	ms.modules = append(ms.modules, ms.coreModule)
+
+	// 初始化静态文件处理
+	for url, dir := range conf.Static {
+		pattern := path.Join(conf.Root, url+"{path}")
+		ms.coreModule.Get(pattern, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
+	}
+
+	ms.coreModule.AddInit(func() error {
+		for _, srv := range ms.services {
+			srv.Run()
+		}
+		return nil
+	}, "启动常驻服务")
+}
+
 // NewModule 声明一个新的模块
 func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
 	m := module.New(module.TypeModule, name, desc, deps...)
-	ms.modules = append(ms.modules, m)
+	ms.appendModules(m)
 	return m
 }
 
@@ -83,7 +108,7 @@ func (ms *Modules) Mux() *mux.Mux {
 //
 // 指定 log 参数，可以输出详细的初始化步骤。
 func (ms *Modules) Init(tag string, log *log.Logger) error {
-	return dep.Do(ms.modules, ms.router, log, tag)
+	return newDepencency(ms, log).init(tag)
 }
 
 // Modules 获取所有的模块信息

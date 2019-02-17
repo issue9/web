@@ -2,14 +2,12 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package dep 管理模块的依赖信息，并按照依赖顺序进行初始化。
-package dep
+package modules
 
 import (
 	"fmt"
 	"log"
 
-	"github.com/issue9/mux/v2"
 	"github.com/issue9/web/module"
 )
 
@@ -22,23 +20,18 @@ type mod struct {
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
 	modules map[string]*mod
-	router  *mux.Prefix
+	ms      *Modules
 	infolog *log.Logger // 一些执行信息输出通道
 }
 
-// Do 执行初始化操作
-func Do(ms []*module.Module, router *mux.Prefix, infolog *log.Logger, tag string) error {
-	return newDepencency(ms, router, infolog).init(tag)
-}
-
-func newDepencency(ms []*module.Module, router *mux.Prefix, infolog *log.Logger) *dependency {
+func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
 	dep := &dependency{
-		modules: make(map[string]*mod, len(ms)),
-		router:  router,
+		modules: make(map[string]*mod, len(ms.modules)),
+		ms:      ms,
 		infolog: infolog,
 	}
 
-	for _, m := range ms {
+	for _, m := range ms.modules {
 		dep.modules[m.Name] = &mod{Module: m}
 	}
 
@@ -118,11 +111,19 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	for path, ms := range t.Routes {
 		for method, h := range ms {
 			dep.printf("  注册路由：%s %s\n", method, path)
-			if err := dep.router.Handle(path, h, method); err != nil {
+			if err := dep.ms.router.Handle(path, h, method); err != nil {
 				return err
 			}
 		}
 	} // end for
+
+	// 注册服务
+	if len(m.Services) > 0 {
+		for _, srv := range m.Services {
+			dep.ms.services = append(dep.ms.services, srv)
+			srv.ID = len(dep.ms.services)
+		}
+	}
 
 	// 执行当前模块的初始化函数
 	for _, init := range t.Inits {
