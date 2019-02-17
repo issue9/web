@@ -5,10 +5,7 @@
 // Package module 提供模块的的相关功能。
 package module
 
-import (
-	"net/http"
-	"strconv"
-)
+import "net/http"
 
 // Type 表示模块的类型
 type Type int8
@@ -36,12 +33,6 @@ type Module struct {
 	Routes map[string]map[string]http.Handler
 }
 
-// Init 表示初始化功能的相关数据
-type Init struct {
-	Title string
-	F     func() error
-}
-
 // New 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
@@ -55,8 +46,6 @@ func New(typ Type, name, desc string, deps ...string) *Module {
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		Inits:       make([]*Init, 0, 5),
-		Services:    make([]*Service, 0, 5),
 		Routes:      make(map[string]map[string]http.Handler, 10),
 	}
 }
@@ -77,19 +66,4 @@ func (m *Module) NewTag(tag string) *Module {
 	}
 
 	return m.Tags[tag]
-}
-
-// AddInit 添加一个初始化函数
-//
-// title 该初始化函数的名称。没有则会自动生成一个序号，多个，则取第一个元素。
-func (m *Module) AddInit(f func() error, title ...string) *Module {
-	t := ""
-	if len(title) == 0 {
-		t = strconv.Itoa(len(m.Inits))
-	} else {
-		t = title[0]
-	}
-
-	m.Inits = append(m.Inits, &Init{F: f, Title: t})
-	return m
 }
