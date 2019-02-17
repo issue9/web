@@ -13,6 +13,7 @@ import (
 // ServiceFunc 服务实际需要执行的函数
 //
 // 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
+// 如果是通 ctx 取消的，应该返回其错误信息。
 type ServiceFunc func(ctx context.Context) error
 
 // ServiceState 服务的状态值
@@ -56,16 +57,19 @@ func (srv *Service) State() ServiceState {
 	return srv.state
 }
 
+// Err 上次的错误信息，不会请空。
+func (srv *Service) Err() error {
+	return srv.err
+}
+
 // Run 开始执行该服务
 func (srv *Service) Run() {
 	srv.locker.Lock()
 	defer srv.locker.Unlock()
 
-	if srv.state == ServiceRunning {
-		srv.err = fmt.Errorf("当前状态 %v 无法再次启动该服务", srv.state)
+	if srv.state != ServiceRunning {
+		go srv.serve()
 	}
-
-	go srv.serve()
 }
 
 func (srv *Service) serve() {
