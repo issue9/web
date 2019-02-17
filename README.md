@@ -15,19 +15,8 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    web.Init("./appconfig", nil)
-
-    web.Mimetypes().AddMarshals(map[string]encoding.MarshaleFunc {
-        "application/json": json.Marshal,
-        "application/xml": xml.Marshal,
-    })
-
-    web.Mimetypes().AddUnmarshals(map[string]encoding.UnmarshaleFunc {
-        "application/json": json.Unmarshal,
-        "application/xml": xml.Unmarshal,
-    })
-
-    result.NewMessages(map[int]string{...})
+    web.Classic("./appconfig")
+    web.NewMessages(map[int]string{...})
 
     // 注册模块信息
     m1.Init()

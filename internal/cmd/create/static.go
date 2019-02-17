@@ -63,17 +63,7 @@ import (
 )
 
 func main() {
-    web.Init(appconfig)
-
-    web.Mimetypes().AddMarshals(map[string]encoding.MarshaleFunc {
-        "application/json": json.Marshal,
-        "application/xml": xml.Marshal,
-    })
-
-    web.Mimetypes().AddUnmarshals(map[string]encoding.UnmarshaleFunc {
-        "application/json": json.Unmarshal,
-        "application/xml": xml.Unmarshal,
-    })
+    web.Classic(appconfig)
 
     // 所有的模块初始化在此函数
     modules.Init()
