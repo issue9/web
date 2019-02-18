@@ -29,12 +29,13 @@ const (
 // 负责模块的初始化工作，包括路由的加载等。
 type Modules struct {
 	middleware.Manager
+	modules []*module.Module
 
 	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
 	// 还有所有服务的注册启动等，其初始化包含了启动服务等。
 	coreModule *module.Module
 
-	modules  []*module.Module
+	// 以下是调用 Init 进行初始化之后，会改变的内容
 	router   *mux.Prefix
 	services []*module.Service
 }
@@ -108,7 +109,13 @@ func (ms *Modules) Mux() *mux.Mux {
 //
 // 指定 log 参数，可以输出详细的初始化步骤。
 func (ms *Modules) Init(tag string, log *log.Logger) error {
-	return newDepencency(ms, log).init(tag)
+	if err := newDepencency(ms, log).init(tag); err != nil {
+		ms.router.Clean()
+		ms.services = ms.services[:0]
+		return err
+	}
+
+	return nil
 }
 
 // Modules 获取所有的模块信息
