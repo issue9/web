@@ -17,32 +17,9 @@ import (
 	"github.com/issue9/web/module"
 )
 
-var (
-	inits   = map[string]int{}
-	router  = mux.New(false, false, false, nil, nil).Prefix("")
-	infolog = log.New(os.Stderr, "", 0)
-	f1      = func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("f1"))
-		w.WriteHeader(http.StatusAccepted)
-	}
-)
-
-func i(name string) func() error {
-	return func() error {
-		inits[name] = inits[name] + 1
-		return nil
-	}
-}
-
 func m(name string, f func() error, deps ...string) *module.Module {
 	m := module.New(module.TypeModule, name, name, deps...)
 	m.AddInit(f)
-	return m
-}
-
-func mt(name, title string, f func() error, deps ...string) *module.Module {
-	m := module.New(module.TypeModule, name, name, deps...)
-	m.AddInit(f, title)
 	return m
 }
 
@@ -112,6 +89,19 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
+
+	inits := map[string]int{}
+	infolog := log.New(os.Stderr, "", 0)
+	f1 := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("f1"))
+		w.WriteHeader(http.StatusAccepted)
+	}
+	i := func(name string) func() error {
+		return func() error {
+			inits[name] = inits[name] + 1
+			return nil
+		}
+	}
 
 	// 缺少依赖项 d3
 	dep := newDep([]*module.Module{
