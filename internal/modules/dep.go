@@ -39,19 +39,15 @@ func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
 }
 
 func (dep *dependency) println(v ...interface{}) {
-	if dep.infolog == nil {
-		return
+	if dep.infolog != nil {
+		dep.infolog.Println(v...)
 	}
-
-	dep.infolog.Println(v...)
 }
 
 func (dep *dependency) printf(format string, v ...interface{}) {
-	if dep.infolog == nil {
-		return
+	if dep.infolog != nil {
+		dep.infolog.Printf(format, v...)
 	}
-
-	dep.infolog.Printf(format, v...)
 }
 
 // 对所有的模块进行初始化操作，会进行依赖检测。
@@ -117,14 +113,6 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	} // end for
 
-	// 注册服务
-	if len(m.Services) > 0 {
-		for _, srv := range m.Services {
-			dep.ms.services = append(dep.ms.services, srv)
-			srv.ID = len(dep.ms.services)
-		}
-	}
-
 	// 执行当前模块的初始化函数
 	for _, init := range t.Inits {
 		title := init.Title
@@ -134,6 +122,13 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 			return err
 		}
 	} // end for
+
+	// 注册服务
+	for _, srv := range t.Services {
+		dep.println("  注册服务：", srv.Title)
+		dep.ms.services = append(dep.ms.services, srv)
+		srv.ID = len(dep.ms.services)
+	}
 
 	m.inited = true
 	return nil
