@@ -57,7 +57,7 @@ func (srv *Service) State() ServiceState {
 	return srv.state
 }
 
-// Err 上次的错误信息，不会请空。
+// Err 上次的错误信息，不会清空。
 func (srv *Service) Err() error {
 	return srv.err
 }

@@ -163,6 +163,11 @@ func Modules() []*module.Module {
 	return defaultApp.Modules()
 }
 
+// Services 返回所有的服务列表
+func Services() []*module.Service {
+	return defaultApp.Services()
+}
+
 // Tags 获取所有的子模块名称
 func Tags() []string {
 	return defaultApp.Tags()

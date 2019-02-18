@@ -143,6 +143,11 @@ func (app *App) Modules() []*module.Module {
 	return app.modules.Modules()
 }
 
+// Services 返回所有的服务列表
+func (app *App) Services() []*module.Service {
+	return app.modules.Services()
+}
+
 // Tags 获取所有的子模块名称
 func (app *App) Tags() []string {
 	return app.modules.Tags()

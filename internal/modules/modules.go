@@ -116,6 +116,11 @@ func (ms *Modules) Modules() []*module.Module {
 	return ms.modules
 }
 
+// Services 返回所有的服务列表
+func (ms *Modules) Services() []*module.Service {
+	return ms.services
+}
+
 // Tags 返回所有的子模块名称
 func (ms *Modules) Tags() []string {
 	tags := make([]string, 0, len(ms.modules)*2)
