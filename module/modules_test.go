@@ -34,14 +34,14 @@ func TestModules_Init(t *testing.T) {
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
 	m1.AddService(srv1, "服务 1")
 	m1.AddService(srv1, "服务 2")
-	a.Equal(len(m1.services), 2)
+	a.Equal(len(ms.services), 0)
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.AddService(srv1, "服务 3")
-	a.Equal(len(m2.services), 1)
+	a.Equal(len(ms.services), 0)
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
@@ -50,7 +50,7 @@ func TestModules_Init(t *testing.T) {
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-3")
 	a.Equal(len(tag.inits), 3)
 	tag.AddService(srv1, "服务 1")
-	a.Equal(len(tag.services), 1)
+	a.Equal(len(ms.services), 0)
 
 	a.Error(ms.Init("v1", nil))            // 出错后中断
 	a.NotError(ms.Init("not exists", nil)) // 不存在

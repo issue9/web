@@ -111,13 +111,6 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	} // end for
 
-	// 注册服务
-	for _, srv := range t.services {
-		dep.println("  注册服务：", srv.Title)
-		dep.ms.services = append(dep.ms.services, srv)
-		srv.ID = len(dep.ms.services)
-	}
-
 	m.inited = true
 	return nil
 }

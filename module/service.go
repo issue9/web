@@ -41,15 +41,14 @@ type Service struct {
 
 // AddService 添加新的服务
 func (m *Module) AddService(f ServiceFunc, title string) {
-	if m.services == nil {
-		m.services = make([]*Service, 0, 5)
-	}
-
-	m.services = append(m.services, &Service{
-		Title: title,
-		state: ServiceStop,
-		f:     f,
-	})
+	m.AddInit(func() error {
+		m.ms.services = append(m.ms.services, &Service{
+			Title: title,
+			state: ServiceStop,
+			f:     f,
+		})
+		return nil
+	}, "注册服务："+title)
 }
 
 // State 获取当前服务的状态

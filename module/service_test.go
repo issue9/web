@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -74,26 +76,21 @@ func TestModule_AddService(t *testing.T) {
 	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
-	a.Nil(m.services)
 	m.AddService(srv1, "srv1")
-	a.Equal(len(m.services), 1)
-	a.Equal(m.services[0].State(), ServiceStop)
 }
 
-func TestService(t *testing.T) {
+func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
-	m := newModule(ms, TypeModule, "m1", "m1 desc")
+	m := ms.NewModule("m1", "m1 desc")
 	a.NotNil(m)
-	a.Nil(m.services)
-
-	// srv1
+	a.Empty(ms.services)
 
 	m.AddService(srv1, "srv1")
-	srv1 := m.services[0]
-	srv1.Run()
+	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
+	srv1 := ms.services[0]
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
 	srv1.Stop()
@@ -105,12 +102,20 @@ func TestService(t *testing.T) {
 	a.Equal(srv1.State(), ServiceRunning)
 	srv1.Stop()
 	a.Equal(srv1.State(), ServiceStop)
+}
 
-	// srv2
+func TestService_srv2(t *testing.T) {
+	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+
+	m := ms.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	a.Empty(ms.services)
 
 	m.AddService(srv2, "srv2")
-	srv2 := m.services[1]
-	srv2.Run()
+	a.NotError(ms.Init("", nil)) // 注册并运行服务
+	srv2 := ms.services[0]
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv2.State(), ServiceRunning)
 	srv2.Stop()
@@ -125,12 +130,20 @@ func TestService(t *testing.T) {
 	srv2.Run()
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	srv2.Stop()
+}
 
-	// srv3
+func TestService_srv3(t *testing.T) {
+	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+
+	m := ms.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	a.Empty(ms.services)
 
 	m.AddService(srv3, "srv3")
-	srv3 := m.services[2]
-	srv3.Run()
+	a.NotError(ms.Init("", nil)) // 注册并运行服务
+	srv3 := ms.services[0]
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)
 	time.Sleep(500 * time.Microsecond) // 等待超过返回错误

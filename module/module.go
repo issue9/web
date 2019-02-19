@@ -22,10 +22,9 @@ type Module struct {
 	Description string
 	Deps        []string
 
-	tags     map[string]*Module
-	inits    []*initialization
-	services []*Service
-	ms       *Modules
+	tags  map[string]*Module
+	inits []*initialization
+	ms    *Modules
 }
 
 // 声明一个新的模块
