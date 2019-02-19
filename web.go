@@ -35,6 +35,9 @@ type (
 
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module
+
+	// Service 等同于 module.Service，方便调用者使用
+	Service = module.Service
 )
 
 // 作最低版本检测
