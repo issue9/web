@@ -23,7 +23,6 @@ import (
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/messages"
-	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -40,7 +39,7 @@ const (
 type App struct {
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
-	modules       *modules.Modules
+	modules       *module.Modules
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
@@ -71,7 +70,7 @@ func New(mgr *config.Manager) (*App, error) {
 		return nil, err
 	}
 
-	ms, err := modules.New(webconf)
+	ms, err := module.NewModules(webconf)
 	if err != nil {
 		return nil, err
 	}

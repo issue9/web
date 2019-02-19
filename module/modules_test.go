@@ -2,64 +2,33 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package modules
+package module
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 
 	"github.com/issue9/web/internal/webconfig"
 )
 
-var srv1 = func(ctx context.Context) error {
-	for now := range time.Tick(500 * time.Microsecond) {
-		select {
-		case <-ctx.Done():
-			fmt.Println("cancel srv1")
-			return ctx.Err()
-		default:
-			fmt.Println("srv1:", now)
-		}
-	}
-	return nil
-}
-
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := New(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
-		Equal(ms.modules[0].Name, CoreModuleName)
-
-	a.NotNil(ms.Mux()).
+		Equal(ms.modules[0].Name, CoreModuleName).
+		NotNil(ms.Mux()).
 		Equal(ms.Mux(), ms.router.Mux())
-
-	// 以下内容需要用到 plugin 功能，该功能 windows 并未实例，暂时跳过
-	if !isPluginOS() {
-		return
-	}
-
-	ms, err = New(&webconfig.WebConfig{
-		Plugins: "./testdata/plugin_*.so",
-		Static: map[string]string{
-			"/url": "/path",
-		},
-	})
-	a.NotError(err).NotNil(ms)
-	a.Equal(len(ms.Modules()), 3) // 插件*2 + 默认的模块
 }
 
 func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
-	ms, err := New(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
@@ -92,7 +61,7 @@ func TestModules_Init(t *testing.T) {
 
 func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
-	ms, err := New(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")

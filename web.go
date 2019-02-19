@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/version"
 
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/internal/modules"
 	"github.com/issue9/web/module"
 )
 
@@ -24,7 +23,7 @@ const (
 	MinimumGoVersion = "1.11"
 
 	// CoreModuleName 模块名称
-	CoreModuleName = modules.CoreModuleName
+	CoreModuleName = module.CoreModuleName
 )
 
 type (

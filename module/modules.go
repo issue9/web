@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package modules 处理模块信息
-package modules
+package module
 
 import (
 	"log"
@@ -15,7 +14,6 @@ import (
 	"github.com/issue9/mux/v2"
 
 	"github.com/issue9/web/internal/webconfig"
-	"github.com/issue9/web/module"
 )
 
 const (
@@ -29,42 +27,33 @@ const (
 // 负责模块的初始化工作，包括路由的加载等。
 type Modules struct {
 	middleware.Manager
-	modules []*module.Module
+	modules []*Module
 
 	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
 	// 还有所有服务的注册启动等，其初始化包含了启动服务等。
-	coreModule *module.Module
+	coreModule *Module
 
 	// 以下是调用 Init 进行初始化之后，会改变的内容
 	router   *mux.Prefix
-	services []*module.Service
+	services []*Service
 }
 
-// New 声明 Modules 变量
-func New(conf *webconfig.WebConfig) (*Modules, error) {
+// NewModules 声明 Modules 变量
+func NewModules(conf *webconfig.WebConfig) (*Modules, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
 		Manager:  *middleware.NewManager(mux),
-		modules:  make([]*module.Module, 0, 100),
+		modules:  make([]*Module, 0, 100),
 		router:   mux.Prefix(conf.Root),
-		services: make([]*module.Service, 0, 100),
+		services: make([]*Service, 0, 100),
 	}
 
 	ms.buildCoreModule(conf)
 
-	// 在初始化模块之前，先加载插件
-	if conf.Plugins != "" {
-		modules, err := loadPlugins(conf.Plugins)
-		if err != nil {
-			return nil, err
-		}
-		ms.appendModules(modules...)
-	}
-
 	return ms, nil
 }
 
-func (ms *Modules) appendModules(modules ...*module.Module) {
+func (ms *Modules) appendModules(modules ...*Module) {
 	for _, m := range modules {
 		ms.modules = append(ms.modules, m)
 
@@ -74,7 +63,7 @@ func (ms *Modules) appendModules(modules ...*module.Module) {
 }
 
 func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
-	ms.coreModule = module.New(module.TypeModule, CoreModuleName, coreModuleDescription)
+	ms.coreModule = New(TypeModule, CoreModuleName, coreModuleDescription)
 	ms.modules = append(ms.modules, ms.coreModule)
 
 	// 初始化静态文件处理
@@ -92,8 +81,8 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 }
 
 // NewModule 声明一个新的模块
-func (ms *Modules) NewModule(name, desc string, deps ...string) *module.Module {
-	m := module.New(module.TypeModule, name, desc, deps...)
+func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
+	m := New(TypeModule, name, desc, deps...)
 	ms.appendModules(m)
 	return m
 }
@@ -119,12 +108,12 @@ func (ms *Modules) Init(tag string, log *log.Logger) error {
 }
 
 // Modules 获取所有的模块信息
-func (ms *Modules) Modules() []*module.Module {
+func (ms *Modules) Modules() []*Module {
 	return ms.modules
 }
 
 // Services 返回所有的服务列表
-func (ms *Modules) Services() []*module.Service {
+func (ms *Modules) Services() []*Service {
 	return ms.services
 }
 

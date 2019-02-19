@@ -2,18 +2,16 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package modules
+package module
 
 import (
 	"fmt"
 	"log"
-
-	"github.com/issue9/web/module"
 )
 
 // 用以表示一个模块所需要的数据。
 type mod struct {
-	*module.Module
+	*Module
 	inited bool // 是否已经初始化
 }
 
@@ -97,9 +95,9 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	}
 
-	if m.Type == module.TypeModule {
+	if m.Type == TypeModule {
 		dep.println("\n开始初始化模块：", m.Name)
-	} else if m.Type == module.TypePlugin {
+	} else if m.Type == TypePlugin {
 		dep.println("\n开始初始化插件：", m.Name)
 	}
 

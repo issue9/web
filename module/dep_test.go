@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package modules
+package module
 
 import (
 	"log"
@@ -13,30 +13,28 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
-
-	"github.com/issue9/web/module"
 )
 
-func m(name string, f func() error, deps ...string) *module.Module {
-	m := module.New(module.TypeModule, name, name, deps...)
+func m(name string, f func() error, deps ...string) *Module {
+	m := New(TypeModule, name, name, deps...)
 	m.AddInit(f)
 	return m
 }
 
-func newDep(ms []*module.Module, log *log.Logger) *dependency {
+func newDep(ms []*Module, log *log.Logger) *dependency {
 	mux := mux.New(false, false, false, nil, nil)
 
 	return newDepencency(&Modules{
 		Manager:  *middleware.NewManager(mux),
 		modules:  ms,
 		router:   mux.Prefix(""),
-		services: make([]*module.Service, 0, 100),
+		services: make([]*Service, 0, 100),
 	}, log)
 }
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	dep := newDep([]*module.Module{
+	dep := newDep([]*Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 	}, nil)
@@ -48,7 +46,7 @@ func TestDependency_isDep(t *testing.T) {
 	a.False(dep.isDep("m1", "m1"))
 
 	// 循环依赖
-	dep = newDep([]*module.Module{
+	dep = newDep([]*Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d3", nil, "d1"),
@@ -61,7 +59,7 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	dep := newDep([]*module.Module{
+	dep := newDep([]*Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 	}, nil)
@@ -69,7 +67,7 @@ func TestDependency_checkDeps(t *testing.T) {
 	m1 := dep.modules["m1"]
 	a.Error(dep.checkDeps(m1)) // 依赖项不存在
 
-	dep = newDep([]*module.Module{
+	dep = newDep([]*Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d2", nil, "d3"),
@@ -77,7 +75,7 @@ func TestDependency_checkDeps(t *testing.T) {
 	a.NotError(dep.checkDeps(m1))
 
 	// 自我依赖
-	dep = newDep([]*module.Module{
+	dep = newDep([]*Module{
 		m("m1", nil, "d1", "d2"),
 		m("d1", nil, "d3"),
 		m("d2", nil, "d3"),
@@ -104,7 +102,7 @@ func TestDependency_init(t *testing.T) {
 	}
 
 	// 缺少依赖项 d3
-	dep := newDep([]*module.Module{
+	dep := newDep([]*Module{
 		m("m1", i("m1"), "d1", "d2"),
 		m("d1", i("d1"), "d3"),
 		m("d2", i("d2"), "d3"),
@@ -114,7 +112,7 @@ func TestDependency_init(t *testing.T) {
 	m1 := m("m1", i("m1"), "d1", "d2")
 	m1.PutFunc("/put", f1)
 	m1.NewTag("install").PostFunc("/install", f1)
-	ms := []*module.Module{
+	ms := []*Module{
 		m1,
 		m("d1", i("d1"), "d3"),
 		m("d2", i("d2"), "d3"),
