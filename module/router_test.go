@@ -22,7 +22,7 @@ var (
 func TestPrefix_Module(t *testing.T) {
 	a := assert.New(t)
 
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	p := m.Prefix("/p")
@@ -32,7 +32,7 @@ func TestPrefix_Module(t *testing.T) {
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -48,7 +48,7 @@ func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.Get(path, h1)
@@ -69,7 +69,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New(TypeModule, "m1", "m1 desc")
+	m = newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)
@@ -92,7 +92,7 @@ func TestPrefix_Handles(t *testing.T) {
 	a := assert.New(t)
 
 	path := "/path"
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	mp := p.prefix + path
@@ -115,7 +115,7 @@ func TestPrefix_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = New(TypeModule, "m1", "m1 desc")
+	m = newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	p = m.Prefix("/p")
 	mp = p.prefix + path

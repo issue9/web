@@ -34,14 +34,14 @@ type Module struct {
 	Routes map[string]map[string]http.Handler
 }
 
-// New 声明一个新的模块
+// 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 //
 // 仅供框架内部使用，不保证函数签名的兼容性。
-func New(typ Type, name, desc string, deps ...string) *Module {
+func newModule(typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
 		Type:        typ,
 		Name:        name,
@@ -63,7 +63,7 @@ func (m *Module) NewTag(tag string) *Module {
 	}
 
 	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = New(TypeTag, tag, "")
+		m.tags[tag] = newModule(TypeTag, tag, "")
 	}
 
 	return m.tags[tag]

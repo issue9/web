@@ -63,7 +63,7 @@ func (ms *Modules) appendModules(modules ...*Module) {
 }
 
 func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
-	ms.coreModule = New(TypeModule, CoreModuleName, coreModuleDescription)
+	ms.coreModule = newModule(TypeModule, CoreModuleName, coreModuleDescription)
 	ms.modules = append(ms.modules, ms.coreModule)
 
 	// 初始化静态文件处理
@@ -82,7 +82,7 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 
 // NewModule 声明一个新的模块
 func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
-	m := New(TypeModule, name, desc, deps...)
+	m := newModule(TypeModule, name, desc, deps...)
 	ms.appendModules(m)
 	return m
 }

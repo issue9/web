@@ -12,7 +12,7 @@ import (
 
 func TestTag(t *testing.T) {
 	a := assert.New(t)
-	m := New(TypeModule, "user1", "user1 desc")
+	m := newModule(TypeModule, "user1", "user1 desc")
 	a.NotNil(m).Equal(m.Type, TypeModule)
 
 	v := m.NewTag("0.1.0")

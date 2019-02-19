@@ -67,7 +67,7 @@ var (
 
 func TestModule_AddService(t *testing.T) {
 	a := assert.New(t)
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.services)
@@ -79,7 +79,7 @@ func TestModule_AddService(t *testing.T) {
 func TestService(t *testing.T) {
 	a := assert.New(t)
 
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	a.Nil(m.services)
 

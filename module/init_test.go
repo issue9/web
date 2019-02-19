@@ -12,7 +12,7 @@ import (
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	m := New(TypeModule, "m1", "m1 desc")
+	m := newModule(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)
