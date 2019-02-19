@@ -239,6 +239,7 @@ func (app *App) Shutdown() error {
 
 func (app *App) close() error {
 	app.closed <- true
+	app.modules.Stop()
 	return app.server.Close()
 }
 

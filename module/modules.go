@@ -117,6 +117,13 @@ func (ms *Modules) Services() []*Service {
 	return ms.services
 }
 
+// Stop 停止服务
+func (ms *Modules) Stop() {
+	for _, srv := range ms.services {
+		srv.Stop()
+	}
+}
+
 // Tags 返回所有的子模块名称
 func (ms *Modules) Tags() []string {
 	tags := make([]string, 0, len(ms.modules)*2)
