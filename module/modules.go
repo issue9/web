@@ -123,7 +123,7 @@ func (ms *Modules) Tags() []string {
 
 	for _, m := range ms.modules {
 	LOOP:
-		for k := range m.Tags {
+		for k := range m.tags {
 			for _, v := range tags {
 				if v == k {
 					continue LOOP

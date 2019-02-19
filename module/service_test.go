@@ -70,10 +70,10 @@ func TestModule_AddService(t *testing.T) {
 	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
-	a.Nil(m.Services)
+	a.Nil(m.services)
 	m.AddService(srv1, "srv1")
-	a.Equal(len(m.Services), 1)
-	a.Equal(m.Services[0].State(), ServiceStop)
+	a.Equal(len(m.services), 1)
+	a.Equal(m.services[0].State(), ServiceStop)
 }
 
 func TestService(t *testing.T) {
@@ -81,12 +81,12 @@ func TestService(t *testing.T) {
 
 	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
-	a.Nil(m.Services)
+	a.Nil(m.services)
 
 	// srv1
 
 	m.AddService(srv1, "srv1")
-	srv1 := m.Services[0]
+	srv1 := m.services[0]
 	srv1.Run()
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
@@ -103,7 +103,7 @@ func TestService(t *testing.T) {
 	// srv2
 
 	m.AddService(srv2, "srv2")
-	srv2 := m.Services[1]
+	srv2 := m.services[1]
 	srv2.Run()
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv2.State(), ServiceRunning)
@@ -123,7 +123,7 @@ func TestService(t *testing.T) {
 	// srv3
 
 	m.AddService(srv3, "srv3")
-	srv3 := m.Services[2]
+	srv3 := m.services[2]
 	srv3.Run()
 	time.Sleep(200 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)

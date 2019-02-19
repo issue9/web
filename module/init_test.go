@@ -15,19 +15,19 @@ func TestModule_AddInit(t *testing.T) {
 	m := New(TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
-	a.Nil(m.Inits)
+	a.Nil(m.inits)
 	m.AddInit(func() error { return nil })
-	a.Equal(len(m.Inits), 1).
-		NotEmpty(m.Inits[0].Title). // 一个默认的数值。
-		NotNil(m.Inits[0].F)
+	a.Equal(len(m.inits), 1).
+		NotEmpty(m.inits[0].title). // 一个默认的数值。
+		NotNil(m.inits[0].f)
 
 	m.AddInit(func() error { return nil }, "t1")
-	a.Equal(len(m.Inits), 2).
-		Equal(m.Inits[1].Title, "t1").
-		NotNil(m.Inits[1].F)
+	a.Equal(len(m.inits), 2).
+		Equal(m.inits[1].title, "t1").
+		NotNil(m.inits[1].f)
 
 	m.AddInit(func() error { return nil }, "t1")
-	a.Equal(len(m.Inits), 3).
-		Equal(m.Inits[2].Title, "t1").
-		NotNil(m.Inits[2].F)
+	a.Equal(len(m.inits), 3).
+		Equal(m.inits[2].title, "t1").
+		NotNil(m.inits[2].f)
 }

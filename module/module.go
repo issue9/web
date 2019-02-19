@@ -23,9 +23,10 @@ type Module struct {
 	Name        string
 	Description string
 	Deps        []string
-	Tags        map[string]*Module
-	Inits       []*Init
-	Services    []*Service
+
+	tags     map[string]*Module
+	inits    []*initialization
+	services []*Service
 
 	// 路由项列表。
 	//
@@ -57,13 +58,13 @@ func (m *Module) NewTag(tag string) *Module {
 		panic("子模块不能再添子模块")
 	}
 
-	if m.Tags == nil {
-		m.Tags = make(map[string]*Module, 5)
+	if m.tags == nil {
+		m.tags = make(map[string]*Module, 5)
 	}
 
-	if _, found := m.Tags[tag]; !found {
-		m.Tags[tag] = New(TypeTag, tag, "")
+	if _, found := m.tags[tag]; !found {
+		m.tags[tag] = New(TypeTag, tag, "")
 	}
 
-	return m.Tags[tag]
+	return m.tags[tag]
 }

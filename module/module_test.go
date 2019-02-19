@@ -16,10 +16,10 @@ func TestTag(t *testing.T) {
 	a.NotNil(m).Equal(m.Type, TypeModule)
 
 	v := m.NewTag("0.1.0")
-	a.NotNil(v).NotNil(m.Tags["0.1.0"])
+	a.NotNil(v).NotNil(m.tags["0.1.0"])
 	a.Equal(v.Type, TypeTag).Equal(v.Name, "0.1.0")
 	v.AddInit(nil, "title1")
-	a.Equal(v.Inits[0].Title, "title1")
+	a.Equal(v.inits[0].title, "title1")
 
 	vv := m.NewTag("0.1.0")
 	a.Equal(vv, v).Equal(vv.Name, "0.1.0")

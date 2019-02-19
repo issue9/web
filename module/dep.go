@@ -90,7 +90,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	t := m.Module
 	if tag != "" {
 		found := false
-		if t, found = m.Tags[tag]; !found {
+		if t, found = m.tags[tag]; !found {
 			return nil
 		}
 	}
@@ -112,17 +112,17 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 	} // end for
 
 	// 执行当前模块的初始化函数
-	for _, init := range t.Inits {
-		title := init.Title
+	for _, init := range t.inits {
+		title := init.title
 
 		dep.println("  执行初始化函数：", title)
-		if err := init.F(); err != nil {
+		if err := init.f(); err != nil {
 			return err
 		}
 	} // end for
 
 	// 注册服务
-	for _, srv := range t.Services {
+	for _, srv := range t.services {
 		dep.println("  注册服务：", srv.Title)
 		dep.ms.services = append(dep.ms.services, srv)
 		srv.ID = len(dep.ms.services)

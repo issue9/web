@@ -41,11 +41,11 @@ type Service struct {
 
 // AddService 添加新的服务
 func (m *Module) AddService(f ServiceFunc, title string) {
-	if m.Services == nil {
-		m.Services = make([]*Service, 0, 5)
+	if m.services == nil {
+		m.services = make([]*Service, 0, 5)
 	}
 
-	m.Services = append(m.Services, &Service{
+	m.services = append(m.services, &Service{
 		Title: title,
 		state: ServiceStop,
 		f:     f,
