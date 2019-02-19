@@ -99,6 +99,10 @@ func (srv *Service) Stop() {
 	srv.locker.Lock()
 	defer srv.locker.Unlock()
 
+	if srv.state != ServiceRunning {
+		return
+	}
+
 	if srv.cancelFunc != nil {
 		srv.cancelFunc()
 		srv.cancelFunc = nil
