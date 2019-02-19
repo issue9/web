@@ -9,6 +9,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
+
+	"github.com/issue9/web/internal/webconfig"
 )
 
 var (
@@ -19,119 +22,103 @@ var (
 	h1 = http.HandlerFunc(f1)
 )
 
-func TestPrefix_Module(t *testing.T) {
-	a := assert.New(t)
-
-	m := newModule(TypeModule, "m1", "m1 desc")
-	a.NotNil(m)
-
-	p := m.Prefix("/p")
-	a.Equal(p.Module(), m)
-}
-
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	srv := rest.NewServer(t, ms.Mux(), nil)
 
-	m := newModule(TypeModule, "m1", "m1 desc")
+	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
 	m.Handle(path, h1, http.MethodGet, http.MethodDelete)
-	a.Equal(len(m.Routes[path]), 2)
+	srv.NewRequest(http.MethodGet, path).
+		Do().
+		Status(http.StatusOK)
+	srv.NewRequest(http.MethodDelete, path).
+		Do().
+		Status(http.StatusOK)
+	srv.NewRequest(http.MethodPost, path).
+		Do().
+		Status(http.StatusMethodNotAllowed)
 
 	path = "/path1"
 	m.Handle(path, h1)
-	a.Equal(len(m.Routes[path]), len(defaultMethods))
+	srv.NewRequest(http.MethodDelete, path).
+		Do().
+		Status(http.StatusOK)
+	srv.NewRequest(http.MethodPatch, path).
+		Do().
+		Status(http.StatusOK)
 }
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	srv := rest.NewServer(t, ms.Mux(), nil)
 
 	path := "/path"
-	m := newModule(TypeModule, "m1", "m1 desc")
+	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
+	srv.NewRequest(http.MethodDelete, path).
+		Do().
+		Status(http.StatusNotFound)
+
 	m.Get(path, h1)
-	a.Panic(func() { m.GetFunc(path, f1) })
-	a.Equal(len(m.Routes[path]), 1)
+	srv.NewRequest(http.MethodGet, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.Post(path, h1)
-	a.Equal(len(m.Routes[path]), 2)
+	srv.NewRequest(http.MethodPost, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.Patch(path, h1)
-	a.Equal(len(m.Routes[path]), 3)
+	srv.NewRequest(http.MethodPatch, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.Put(path, h1)
-	a.Equal(len(m.Routes[path]), 4)
+	srv.NewRequest(http.MethodPut, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.Delete(path, h1)
-	a.Equal(len(m.Routes[path]), 5)
+	srv.NewRequest(http.MethodDelete, path).
+		Do().
+		Status(http.StatusOK)
 
 	// *Func
 	path = "/path1"
-	m = newModule(TypeModule, "m1", "m1 desc")
+	m = newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)
-	a.Equal(len(m.Routes[path]), 1)
+	srv.NewRequest(http.MethodGet, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.PostFunc(path, f1)
-	a.Equal(len(m.Routes[path]), 2)
+	srv.NewRequest(http.MethodPost, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.PatchFunc(path, f1)
-	a.Equal(len(m.Routes[path]), 3)
+	srv.NewRequest(http.MethodPatch, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.PutFunc(path, f1)
-	a.Equal(len(m.Routes[path]), 4)
+	srv.NewRequest(http.MethodPut, path).
+		Do().
+		Status(http.StatusOK)
 
 	m.DeleteFunc(path, f1)
-	a.Equal(len(m.Routes[path]), 5)
-}
-
-func TestPrefix_Handles(t *testing.T) {
-	a := assert.New(t)
-
-	path := "/path"
-	m := newModule(TypeModule, "m1", "m1 desc")
-	a.NotNil(m)
-	p := m.Prefix("/p")
-	mp := p.prefix + path
-
-	p.Get(path, h1)
-	a.Panic(func() { p.GetFunc(path, f1) })
-	a.Equal(len(m.Routes[mp]), 1)
-
-	p.Post(path, h1)
-	a.Equal(len(m.Routes[mp]), 2)
-
-	p.Patch(path, h1)
-	a.Equal(len(m.Routes[mp]), 3)
-
-	p.Put(path, h1)
-	a.Equal(len(m.Routes[mp]), 4)
-
-	p.Delete(path, h1)
-	a.Equal(len(m.Routes[mp]), 5)
-
-	// *Func
-	path = "/path1"
-	m = newModule(TypeModule, "m1", "m1 desc")
-	a.NotNil(m)
-	p = m.Prefix("/p")
-	mp = p.prefix + path
-
-	p.GetFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 1)
-
-	p.PostFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 2)
-
-	p.PatchFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 3)
-
-	p.PutFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 4)
-
-	p.DeleteFunc(path, f1)
-	a.Equal(len(m.Routes[mp]), 5)
+	srv.NewRequest(http.MethodDelete, path).
+		Do().
+		Status(http.StatusOK)
 }

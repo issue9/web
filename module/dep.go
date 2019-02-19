@@ -101,16 +101,6 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		dep.println("\n开始初始化插件：", m.Name)
 	}
 
-	// 加载化当前模块的路由项
-	for path, ms := range t.Routes {
-		for method, h := range ms {
-			dep.printf("  注册路由：%s %s\n", method, path)
-			if err := dep.ms.router.Handle(path, h, method); err != nil {
-				return err
-			}
-		}
-	} // end for
-
 	// 执行当前模块的初始化函数
 	for _, init := range t.inits {
 		title := init.title

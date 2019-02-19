@@ -8,11 +8,15 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/internal/webconfig"
 )
 
 func TestTag(t *testing.T) {
 	a := assert.New(t)
-	m := newModule(TypeModule, "user1", "user1 desc")
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	m := newModule(ms, TypeModule, "user1", "user1 desc")
 	a.NotNil(m).Equal(m.Type, TypeModule)
 
 	v := m.NewTag("0.1.0")

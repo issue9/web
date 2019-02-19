@@ -7,7 +7,6 @@ package module
 import (
 	"log"
 	"net/http"
-	"path"
 	"sort"
 
 	"github.com/issue9/middleware"
@@ -63,13 +62,13 @@ func (ms *Modules) appendModules(modules ...*Module) {
 }
 
 func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
-	ms.coreModule = newModule(TypeModule, CoreModuleName, coreModuleDescription)
+	ms.coreModule = newModule(ms, TypeModule, CoreModuleName, coreModuleDescription)
 	ms.modules = append(ms.modules, ms.coreModule)
 
 	// 初始化静态文件处理
 	for url, dir := range conf.Static {
-		pattern := path.Join(conf.Root, url+"{path}")
-		ms.coreModule.Get(pattern, http.StripPrefix(url, http.FileServer(http.Dir(dir))))
+		//pattern := path.Join(conf.Root, )
+		ms.coreModule.Get(url+"{path}", http.StripPrefix(url, http.FileServer(http.Dir(dir))))
 	}
 
 	ms.coreModule.AddInit(func() error {
@@ -82,7 +81,7 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 
 // NewModule 声明一个新的模块
 func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
-	m := newModule(TypeModule, name, desc, deps...)
+	m := newModule(ms, TypeModule, name, desc, deps...)
 	ms.appendModules(m)
 	return m
 }

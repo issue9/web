@@ -8,11 +8,15 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/internal/webconfig"
 )
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	m := newModule(TypeModule, "m1", "m1 desc")
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)

@@ -5,8 +5,6 @@
 // Package module 提供模块的的相关功能。
 package module
 
-import "net/http"
-
 // Type 表示模块的类型
 type Type int8
 
@@ -27,11 +25,7 @@ type Module struct {
 	tags     map[string]*Module
 	inits    []*initialization
 	services []*Service
-
-	// 路由项列表。
-	//
-	// 第一个键名为路径，第二键名为请求方法
-	Routes map[string]map[string]http.Handler
+	ms       *Modules
 }
 
 // 声明一个新的模块
@@ -41,13 +35,13 @@ type Module struct {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 //
 // 仅供框架内部使用，不保证函数签名的兼容性。
-func newModule(typ Type, name, desc string, deps ...string) *Module {
+func newModule(ms *Modules, typ Type, name, desc string, deps ...string) *Module {
 	return &Module{
 		Type:        typ,
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		Routes:      make(map[string]map[string]http.Handler, 10),
+		ms:          ms,
 	}
 }
 
@@ -63,7 +57,7 @@ func (m *Module) NewTag(tag string) *Module {
 	}
 
 	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = newModule(TypeTag, tag, "")
+		m.tags[tag] = newModule(m.ms, TypeTag, tag, "")
 	}
 
 	return m.tags[tag]

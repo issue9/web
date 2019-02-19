@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/internal/webconfig"
 )
 
 const panicTimer = 500 * time.Millisecond
@@ -67,7 +69,9 @@ var (
 
 func TestModule_AddService(t *testing.T) {
 	a := assert.New(t)
-	m := newModule(TypeModule, "m1", "m1 desc")
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.services)
@@ -78,8 +82,10 @@ func TestModule_AddService(t *testing.T) {
 
 func TestService(t *testing.T) {
 	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
 
-	m := newModule(TypeModule, "m1", "m1 desc")
+	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 	a.Nil(m.services)
 
