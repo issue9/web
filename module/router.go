@@ -16,65 +16,61 @@ func (m *Module) Prefix(prefix string) *mux.Prefix {
 }
 
 // Handle 添加一个路由项
-func (m *Module) Handle(path string, h http.Handler, methods ...string) *Module {
-	if err := m.ms.router.Handle(path, h, methods...); err != nil {
-		panic(err)
-	}
-
-	return m
+func (m *Module) Handle(path string, h http.Handler, methods ...string) error {
+	return m.ms.router.Handle(path, h, methods...)
 }
 
 // Get 指定一个 GET 请求
-func (m *Module) Get(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodGet)
+func (m *Module) Get(path string, h http.Handler) *mux.Prefix {
+	return m.ms.router.Get(path, h)
 }
 
 // Post 指定个 POST 请求处理
-func (m *Module) Post(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPost)
+func (m *Module) Post(path string, h http.Handler) *mux.Prefix {
+	return m.ms.router.Post(path, h)
 }
 
 // Delete 指定个 Delete 请求处理
-func (m *Module) Delete(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodDelete)
+func (m *Module) Delete(path string, h http.Handler) *mux.Prefix {
+	return m.ms.router.Delete(path, h)
 }
 
 // Put 指定个 Put 请求处理
-func (m *Module) Put(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPut)
+func (m *Module) Put(path string, h http.Handler) *mux.Prefix {
+	return m.ms.router.Put(path, h)
 }
 
 // Patch 指定个 Patch 请求处理
-func (m *Module) Patch(path string, h http.Handler) *Module {
-	return m.Handle(path, h, http.MethodPatch)
+func (m *Module) Patch(path string, h http.Handler) *mux.Prefix {
+	return m.ms.router.Patch(path, h)
 }
 
 // HandleFunc 指定一个请求
-func (m *Module) HandleFunc(path string, h func(w http.ResponseWriter, r *http.Request), methods ...string) *Module {
-	return m.Handle(path, http.HandlerFunc(h), methods...)
+func (m *Module) HandleFunc(path string, h func(w http.ResponseWriter, r *http.Request), methods ...string) error {
+	return m.ms.router.Handle(path, http.HandlerFunc(h), methods...)
 }
 
 // GetFunc 指定一个 GET 请求
-func (m *Module) GetFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodGet)
+func (m *Module) GetFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
+	return m.ms.router.GetFunc(path, h)
 }
 
 // PostFunc 指定一个 Post 请求
-func (m *Module) PostFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPost)
+func (m *Module) PostFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
+	return m.ms.router.PostFunc(path, h)
 }
 
 // DeleteFunc 指定一个 Delete 请求
-func (m *Module) DeleteFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodDelete)
+func (m *Module) DeleteFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
+	return m.ms.router.PostFunc(path, h)
 }
 
 // PutFunc 指定一个 Put 请求
-func (m *Module) PutFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPut)
+func (m *Module) PutFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
+	return m.ms.router.PostFunc(path, h)
 }
 
 // PatchFunc 指定一个 Patch 请求
-func (m *Module) PatchFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *Module {
-	return m.HandleFunc(path, h, http.MethodPatch)
+func (m *Module) PatchFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
+	return m.ms.router.PostFunc(path, h)
 }
