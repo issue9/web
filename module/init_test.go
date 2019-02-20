@@ -20,9 +20,9 @@ func TestModule_AddInit(t *testing.T) {
 	a.NotNil(m)
 
 	a.Nil(m.inits)
-	m.AddInit(func() error { return nil })
+	m.AddInit(func() error { return nil }, "t1")
 	a.Equal(len(m.inits), 1).
-		NotEmpty(m.inits[0].title). // 一个默认的数值。
+		Equal(m.inits[0].title, "t1").
 		NotNil(m.inits[0].f)
 
 	m.AddInit(func() error { return nil }, "t1")

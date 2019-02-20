@@ -62,15 +62,15 @@ func (m *Module) PostFunc(path string, h func(w http.ResponseWriter, r *http.Req
 
 // DeleteFunc 指定一个 Delete 请求
 func (m *Module) DeleteFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
-	return m.ms.router.PostFunc(path, h)
+	return m.ms.router.DeleteFunc(path, h)
 }
 
 // PutFunc 指定一个 Put 请求
 func (m *Module) PutFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
-	return m.ms.router.PostFunc(path, h)
+	return m.ms.router.PutFunc(path, h)
 }
 
 // PatchFunc 指定一个 Patch 请求
 func (m *Module) PatchFunc(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Prefix {
-	return m.ms.router.PostFunc(path, h)
+	return m.ms.router.PatchFunc(path, h)
 }
