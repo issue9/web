@@ -36,12 +36,6 @@ func (dep *dependency) println(v ...interface{}) {
 	}
 }
 
-func (dep *dependency) printf(format string, v ...interface{}) {
-	if dep.infolog != nil {
-		dep.infolog.Printf(format, v...)
-	}
-}
-
 // 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
 func (dep *dependency) init(tag string) error {

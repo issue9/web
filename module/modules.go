@@ -113,7 +113,6 @@ func (ms *Modules) reset() {
 	for _, m := range ms.modules {
 		m.inited = false
 	}
-
 }
 
 // Modules 获取所有的模块信息
