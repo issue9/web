@@ -106,7 +106,7 @@ func AddCompresses(m map[string]compress.WriterFunc) error {
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
 func AddMiddlewares(m middleware.Middleware) {
-	defaultApp.AddMiddlewares(m)
+	defaultApp.After(m)
 }
 
 // IsDebug 是否处在调试模式
@@ -131,7 +131,7 @@ func Serve() error {
 
 // InitModules 初始化指定标签的模块
 func InitModules(tag string) error {
-	return defaultApp.InitModules(tag)
+	return defaultApp.Init(tag, ERROR())
 }
 
 // Close 关闭服务。
@@ -160,7 +160,7 @@ func Path(path string) string {
 
 // Modules 当前系统使用的所有模块信息
 func Modules() []*module.Module {
-	return defaultApp.Modules()
+	return defaultApp.Modules.Modules()
 }
 
 // Services 返回所有的服务列表

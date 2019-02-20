@@ -14,10 +14,8 @@ import (
 	"strconv"
 
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
-	"github.com/issue9/mux/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -37,9 +35,10 @@ const (
 
 // App 程序运行实例
 type App struct {
+	*module.Modules
+
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
-	modules       *module.Modules
 	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
@@ -76,9 +75,9 @@ func New(mgr *config.Manager) (*App, error) {
 	}
 
 	app := &App{
+		Modules:       ms,
 		webConfig:     webconf,
 		closed:        make(chan bool, 1),
-		modules:       ms,
 		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          logs,
@@ -116,17 +115,6 @@ func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
 	return nil
 }
 
-// AddMiddlewares 设置全局的中间件，可多次调用。
-func (app *App) AddMiddlewares(m middleware.Middleware) *App {
-	app.modules.After(m)
-	return app
-}
-
-// Mux 返回 mux.Mux 实例。
-func (app *App) Mux() *mux.Mux {
-	return app.modules.Mux()
-}
-
 // ErrorHandlers 错误处理功能
 func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 	return app.errorhandlers
@@ -135,26 +123,6 @@ func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 // IsDebug 是否处于调试模式
 func (app *App) IsDebug() bool {
 	return app.webConfig.Debug
-}
-
-// Modules 获取所有的模块信息
-func (app *App) Modules() []*module.Module {
-	return app.modules.Modules()
-}
-
-// Services 返回所有的服务列表
-func (app *App) Services() []*module.Service {
-	return app.modules.Services()
-}
-
-// Tags 获取所有的子模块名称
-func (app *App) Tags() []string {
-	return app.modules.Tags()
-}
-
-// NewModule 声明一个新的模块
-func (app *App) NewModule(name, desc string, deps ...string) *module.Module {
-	return app.modules.NewModule(name, desc, deps...)
 }
 
 // Path 获取中径部分的地址
@@ -179,15 +147,6 @@ func (app *App) URL(path string) string {
 		path = "/" + path
 	}
 	return app.webConfig.URL + path
-}
-
-// InitModules 执行模板的初始化函数。可以重复调用执行。
-func (app *App) InitModules(tag string) error {
-	return app.modules.Init(tag, app.Logs().INFO())
-}
-
-func (app *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	app.modules.ServeHTTP(w, r)
 }
 
 // Serve 加载各个模块的数据，运行路由，执行监听程序。
@@ -239,7 +198,7 @@ func (app *App) Shutdown() error {
 
 func (app *App) close() error {
 	app.closed <- true
-	app.modules.Stop()
+	app.Stop()
 	return app.server.Close()
 }
 

@@ -32,21 +32,21 @@ const (
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		app.modules.Before(func(h http.Handler) http.Handler {
+		app.Before(func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		app.modules.Before(func(h http.Handler) http.Handler {
+		app.Before(func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
 	// compress
 	if conf.Compress != nil && len(app.compresses) > 0 {
-		app.modules.Before(func(h http.Handler) http.Handler {
+		app.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    app.compresses,
 				Types:    conf.Compress.Types,
@@ -56,18 +56,18 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 		})
 	}
 
-	app.modules.Before(func(h http.Handler) http.Handler {
+	app.Before(func(h http.Handler) http.Handler {
 		return app.errorhandlers.New(h)
 	})
 
 	// recovery
-	app.modules.Before(func(h http.Handler) http.Handler {
+	app.Before(func(h http.Handler) http.Handler {
 		return recovery.New(h, app.errorhandlers.Recovery(app.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		app.modules.Before(func(h http.Handler) http.Handler {
+		app.Before(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}

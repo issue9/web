@@ -62,42 +62,9 @@ func newApp(a *assert.Assertion) *App {
 
 	// 以下内容由配置文件决定
 	a.True(app.IsDebug()).
-		True(len(app.Modules()) > 0) // 最起码有 web-core 模板
+		True(len(app.Modules.Modules()) > 0) // 最起码有 web-core 模板
 
 	return app
-}
-
-func TestApp_AddMiddleware(t *testing.T) {
-	a := assert.New(t)
-	app := newApp(a)
-	m := func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Date", "1111")
-			h.ServeHTTP(w, r)
-		})
-	}
-	app.AddMiddlewares(m)
-	a.True(app.webConfig.Debug).
-		Equal(app.webConfig.Domain, "localhost")
-
-	app.Mux().GetFunc("/middleware", f202)
-	a.NotError(app.InitModules(""))
-	go func() {
-		err := app.Serve()
-		a.ErrorType(err, http.ErrServerClosed, "错误，%v", err.Error())
-	}()
-
-	// 等待 Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
-
-	// 启动服务之后，再添加中间件，不会产生 panic
-	a.NotPanic(func() { app.AddMiddlewares(m) })
-
-	// 正常访问
-	resp, err := http.Get("http://localhost:8082/middleware")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.Header.Get("Date"), "1111")
-	app.Close()
 }
 
 func TestApp_URL(t *testing.T) {
@@ -133,7 +100,7 @@ func TestApp_Serve(t *testing.T) {
 	m2.GetFunc("/m2/test", f202)
 	app.Mux().GetFunc("/mux/test", f202)
 
-	a.NotError(app.InitModules(""))
+	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
@@ -191,7 +158,7 @@ func TestApp_Close(t *testing.T) {
 		app.Close()
 	})
 
-	a.NotError(app.InitModules(""))
+	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -223,7 +190,7 @@ func TestApp_shutdown(t *testing.T) {
 		app.Shutdown()
 	})
 
-	a.NotError(app.InitModules(""))
+	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -256,7 +223,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 		app.Shutdown()
 	})
 
-	a.NotError(app.InitModules(""))
+	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
