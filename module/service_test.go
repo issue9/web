@@ -94,6 +94,7 @@ func TestService_srv1(t *testing.T) {
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
 	time.Sleep(400 * time.Microsecond)                 // 等待服务启动完成
 	srv1 := ms.services[0]
+	a.Equal(srv1.Module, m)
 	a.Equal(srv1.State(), ServiceRunning)
 	srv1.Stop()
 	a.Equal(srv1.State(), ServiceStop)

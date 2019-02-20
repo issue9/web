@@ -28,23 +28,24 @@ const (
 
 // Service 服务模型
 type Service struct {
-	Title string
+	Title  string
+	Module *Module
 
 	state      ServiceState
 	f          ServiceFunc
 	cancelFunc context.CancelFunc
 	locker     sync.Mutex
-
-	err error // 保存上次的出错内容
+	err        error // 保存上次的出错内容
 }
 
 // AddService 添加新的服务
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
 		m.ms.services = append(m.ms.services, &Service{
-			Title: title,
-			state: ServiceStop,
-			f:     f,
+			Title:  title,
+			Module: m,
+			state:  ServiceStop,
+			f:      f,
 		})
 		return nil
 	}, "注册服务："+title)
