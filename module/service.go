@@ -28,7 +28,7 @@ const (
 
 // Service 服务模型
 type Service struct {
-	ID    int // 唯一标志，在运行之后才会赋值
+	ID    int
 	Title string
 
 	state      ServiceState
@@ -43,6 +43,7 @@ type Service struct {
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
 		m.ms.services = append(m.ms.services, &Service{
+			//TODO ID:0,
 			Title: title,
 			state: ServiceStop,
 			f:     f,

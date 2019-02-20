@@ -105,13 +105,15 @@ func (ms *Modules) Init(tag string, log *log.Logger) error {
 
 // 重置状态为未初始化时的状态
 func (ms *Modules) reset() {
+	ms.router.Clean()
+
+	ms.Stop() // 先停止停止服务
+	ms.services = ms.services[:0]
+
 	for _, m := range ms.modules {
 		m.inited = false
 	}
 
-	ms.router.Clean()
-	ms.Stop() // 停止服务
-	ms.services = ms.services[:0]
 }
 
 // Modules 获取所有的模块信息

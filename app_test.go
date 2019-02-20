@@ -65,13 +65,13 @@ func TestApp(t *testing.T) {
 			ctx.Render(http.StatusCreated, testdata, nil)
 		})
 		return nil
-	})
+	}, "init")
 
 	m2 := NewModule("m2", "m2 desc")
 	m2.AddInit(func() error {
 		testdata = "m2"
 		return nil
-	})
+	}, "init")
 
 	a.NotError(InitModules(""))
 

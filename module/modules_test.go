@@ -54,13 +54,18 @@ func TestModules_Init(t *testing.T) {
 	a.Equal(len(ms.services), 0)
 
 	a.Error(ms.Init("v1", nil))            // 出错后中断
-	time.Sleep(500 * time.Microsecond)     // 等待 ms.Init 中的服务结束
+	time.Sleep(800 * time.Microsecond)     // 等待 ms.Init 中的服务结束
 	a.NotError(ms.Init("not exists", nil)) // 不存在
-	time.Sleep(500 * time.Microsecond)     // 等待 ms.Init 中的服务结束
+	time.Sleep(800 * time.Microsecond)     // 等待 ms.Init 中的服务结束
 
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0)))
 	a.Equal(3, len(ms.Services()))
+
+	// 停止之后，都不在运行状态
 	ms.Stop()
+	for _, srv := range ms.Services() {
+		a.NotEqual(srv.State(), ServiceRunning)
+	}
 }
 
 func TestModules_Tags(t *testing.T) {

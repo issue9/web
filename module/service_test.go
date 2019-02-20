@@ -76,7 +76,9 @@ func TestModule_AddService(t *testing.T) {
 	m := newModule(ms, TypeModule, "m1", "m1 desc")
 	a.NotNil(m)
 
+	ml := len(m.inits)
 	m.AddService(srv1, "srv1")
+	a.Equal(ml+1, len(m.inits))
 }
 
 func TestService_srv1(t *testing.T) {
@@ -90,18 +92,20 @@ func TestService_srv1(t *testing.T) {
 
 	m.AddService(srv1, "srv1")
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
+	time.Sleep(400 * time.Microsecond)                 // 等待服务启动完成
 	srv1 := ms.services[0]
+	a.Equal(srv1.State(), ServiceRunning)
+	srv1.Stop()
+	a.Equal(srv1.State(), ServiceStop)
+	time.Sleep(400 * time.Microsecond) // 等待停止
+
+	// 再次运行
+	srv1.Run()
 	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
 	srv1.Stop()
 	a.Equal(srv1.State(), ServiceStop)
-
-	// 再次运行
-	srv1.Run()
-	time.Sleep(600 * time.Microsecond) // 等待服务启动完成
-	a.Equal(srv1.State(), ServiceRunning)
-	srv1.Stop()
-	a.Equal(srv1.State(), ServiceStop)
+	time.Sleep(400 * time.Microsecond) // 等待停止
 }
 
 func TestService_srv2(t *testing.T) {
@@ -120,6 +124,7 @@ func TestService_srv2(t *testing.T) {
 	a.Equal(srv2.State(), ServiceRunning)
 	srv2.Stop()
 	a.Equal(srv2.State(), ServiceStop)
+	time.Sleep(400 * time.Microsecond) // 等待停止
 
 	// 再次运行，等待 panic
 	srv2.Run()
@@ -130,6 +135,7 @@ func TestService_srv2(t *testing.T) {
 	srv2.Run()
 	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
 	srv2.Stop()
+	time.Sleep(400 * time.Microsecond) // 等待停止
 }
 
 func TestService_srv3(t *testing.T) {
@@ -156,4 +162,5 @@ func TestService_srv3(t *testing.T) {
 	a.Equal(srv3.State(), ServiceRunning)
 	srv3.Stop()
 	a.Equal(srv3.State(), ServiceStop)
+	time.Sleep(400 * time.Microsecond) // 等待停止
 }
