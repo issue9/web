@@ -25,6 +25,8 @@ type Module struct {
 	tags  map[string]*Module
 	inits []*initialization
 	ms    *Modules
+
+	inited bool
 }
 
 // 声明一个新的模块

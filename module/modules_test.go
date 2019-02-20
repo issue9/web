@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 
@@ -39,8 +40,8 @@ func TestModules_Init(t *testing.T) {
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.AddService(srv1, "服务 3")
+	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	a.Equal(len(ms.services), 0)
 
 	m3 := ms.NewModule("users3", "user3 mdoule")
@@ -53,10 +54,13 @@ func TestModules_Init(t *testing.T) {
 	a.Equal(len(ms.services), 0)
 
 	a.Error(ms.Init("v1", nil))            // 出错后中断
+	time.Sleep(500 * time.Microsecond)     // 等待 ms.Init 中的服务结束
 	a.NotError(ms.Init("not exists", nil)) // 不存在
+	time.Sleep(500 * time.Microsecond)     // 等待 ms.Init 中的服务结束
 
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0)))
 	a.Equal(3, len(ms.Services()))
+	ms.Stop()
 }
 
 func TestModules_Tags(t *testing.T) {

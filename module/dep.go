@@ -9,28 +9,22 @@ import (
 	"log"
 )
 
-// 用以表示一个模块所需要的数据。
-type mod struct {
-	*Module
-	inited bool // 是否已经初始化
-}
-
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
-	modules map[string]*mod
+	modules map[string]*Module
 	ms      *Modules
 	infolog *log.Logger // 一些执行信息输出通道
 }
 
 func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
 	dep := &dependency{
-		modules: make(map[string]*mod, len(ms.modules)),
+		modules: make(map[string]*Module, len(ms.modules)),
 		ms:      ms,
 		infolog: infolog,
 	}
 
 	for _, m := range ms.modules {
-		dep.modules[m.Name] = &mod{Module: m}
+		dep.modules[m.Name] = m
 	}
 
 	return dep
@@ -70,7 +64,7 @@ func (dep *dependency) init(tag string) error {
 
 // 初始化指定模块，会先初始化其依赖模块。
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
-func (dep *dependency) initModule(m *mod, tag string) error {
+func (dep *dependency) initModule(m *Module, tag string) error {
 	if m.inited {
 		return nil
 	}
@@ -87,7 +81,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		}
 	}
 
-	t := m.Module
+	t := m
 	if tag != "" {
 		found := false
 		if t, found = m.tags[tag]; !found {
@@ -117,7 +111,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (dep *dependency) checkDeps(m *mod) error {
+func (dep *dependency) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, d := range m.Deps {
 		_, found := dep.modules[d]
