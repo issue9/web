@@ -207,11 +207,7 @@ func NewMessages(status int, messages map[int]string) {
 //
 // 如果指定 p 的值，则返回本地化的消息内容。
 func Messages(p *message.Printer) map[int]string {
-	if p == nil {
-		return defaultApp.Messages().Messages()
-	}
-
-	return defaultApp.Messages().LocaleMessages(p)
+	return defaultApp.Messages().Messages(p)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic

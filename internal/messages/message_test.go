@@ -31,24 +31,20 @@ func TestMessages(t *testing.T) {
 	msg, found = m.Message(40010001)
 	a.False(found).Nil(msg)
 
-	lmsgs := m.LocaleMessages(xmessage.NewPrinter(language.Und))
-	msgs := m.Messages()
+	lmsgs := m.Messages(xmessage.NewPrinter(language.Und))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = m.LocaleMessages(xmessage.NewPrinter(language.SimplifiedChinese))
-	msgs = m.Messages()
+	lmsgs = m.Messages(xmessage.NewPrinter(language.SimplifiedChinese))
 	a.Equal(lmsgs[40010], "hans")
-	a.Equal(msgs[40010], "lang")
 
-	lmsgs = m.LocaleMessages(xmessage.NewPrinter(language.TraditionalChinese))
-	msgs = m.Messages()
+	lmsgs = m.Messages(xmessage.NewPrinter(language.TraditionalChinese))
 	a.Equal(lmsgs[40010], "hant")
-	a.Equal(msgs[40010], "lang")
 
-	lmsgs = m.LocaleMessages(xmessage.NewPrinter(language.English))
-	msgs = m.Messages()
+	lmsgs = m.Messages(xmessage.NewPrinter(language.English))
 	a.Equal(lmsgs[40010], "und")
-	a.Equal(msgs[40010], "lang")
+
+	lmsgs = m.Messages(nil)
+	a.Equal(lmsgs[40010], "lang")
 }
 
 func TestNewMessages(t *testing.T) {

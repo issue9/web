@@ -8,7 +8,7 @@ package messages
 import (
 	"fmt"
 
-	xmessage "golang.org/x/text/message"
+	"golang.org/x/text/message"
 )
 
 // Messages 保存所有的代码与消息对应关系
@@ -37,21 +37,18 @@ func (m *Messages) Message(code int) (*Message, bool) {
 
 // Messages 错误信息列表
 //
-// 若需要特定语言的内容，可以调用 LocaleMessages() 函数获取。
-func (m *Messages) Messages() map[int]string {
+// p 用于返回特定语言的内容。如果为空，则表示返回原始值。
+func (m *Messages) Messages(p *message.Printer) map[int]string {
 	msgs := make(map[int]string, len(m.messages))
-	for code, msg := range m.messages {
-		msgs[code] = msg.Message
-	}
 
-	return msgs
-}
-
-// LocaleMessages 本化地的错误信息列表
-func (m *Messages) LocaleMessages(p *xmessage.Printer) map[int]string {
-	msgs := make(map[int]string, len(m.messages))
-	for code, msg := range m.messages {
-		msgs[code] = p.Sprintf(msg.Message)
+	if p == nil {
+		for code, msg := range m.messages {
+			msgs[code] = msg.Message
+		}
+	} else {
+		for code, msg := range m.messages {
+			msgs[code] = p.Sprintf(msg.Message)
+		}
 	}
 
 	return msgs
