@@ -18,12 +18,15 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 )
 
-const panicTimer = 500 * time.Millisecond
+const (
+	tickTimer  = 500 * time.Microsecond
+	panicTimer = 5 * tickTimer
+)
 
 var (
 	// 正常服务
 	srv1 = func(ctx context.Context) error {
-		for now := range time.Tick(500 * time.Microsecond) {
+		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
 				fmt.Println("cancel srv1")
@@ -39,7 +42,7 @@ var (
 	srv2 = func(ctx context.Context) error {
 		timer := time.NewTimer(panicTimer)
 
-		for now := range time.Tick(500 * time.Microsecond) {
+		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
 				fmt.Println("cancel srv2")
@@ -55,7 +58,7 @@ var (
 
 	// error
 	srv3 = func(ctx context.Context) error {
-		for now := range time.Tick(500 * time.Microsecond) {
+		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
 				fmt.Println("cancel srv3")
@@ -92,7 +95,7 @@ func TestService_srv1(t *testing.T) {
 
 	m.AddService(srv1, "srv1")
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
-	time.Sleep(400 * time.Microsecond)                 // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond)                  // 等待服务启动完成
 	srv1 := ms.services[0]
 	a.Equal(srv1.Module, m)
 	a.Equal(srv1.State(), ServiceRunning)
@@ -102,7 +105,7 @@ func TestService_srv1(t *testing.T) {
 
 	// 再次运行
 	srv1.Run()
-	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
 	srv1.Stop()
 	a.Equal(srv1.State(), ServiceStop)
@@ -121,7 +124,7 @@ func TestService_srv2(t *testing.T) {
 	m.AddService(srv2, "srv2")
 	a.NotError(ms.Init("", nil)) // 注册并运行服务
 	srv2 := ms.services[0]
-	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv2.State(), ServiceRunning)
 	srv2.Stop()
 	a.Equal(srv2.State(), ServiceStop)
@@ -131,10 +134,11 @@ func TestService_srv2(t *testing.T) {
 	srv2.Run()
 	time.Sleep(panicTimer * 2) // 等待 panic 触发
 	a.Equal(srv2.State(), ServiceFailed)
+	a.NotEmpty(srv2.Err())
 
 	// 出错后，还能正确运行和结束
 	srv2.Run()
-	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	srv2.Stop()
 	time.Sleep(400 * time.Microsecond) // 等待停止
 }
@@ -151,15 +155,15 @@ func TestService_srv3(t *testing.T) {
 	m.AddService(srv3, "srv3")
 	a.NotError(ms.Init("", nil)) // 注册并运行服务
 	srv3 := ms.services[0]
-	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)
-	time.Sleep(300 * time.Microsecond) // 等待超过返回错误
+	time.Sleep(600 * time.Microsecond) // 等待超过返回错误
 	a.Equal(srv3.State(), ServiceFailed)
 	a.NotNil(srv3.Err())
 
 	// 再次运行
 	srv3.Run()
-	time.Sleep(400 * time.Microsecond) // 等待服务启动完成
+	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)
 	srv3.Stop()
 	a.Equal(srv3.State(), ServiceStop)

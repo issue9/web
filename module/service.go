@@ -87,10 +87,9 @@ func (srv *Service) serve() {
 	if err != nil && err != context.Canceled {
 		srv.err = err
 		srv.state = ServiceFailed
-		return
+	} else {
+		srv.state = ServiceStop
 	}
-
-	srv.state = ServiceStop
 }
 
 // Stop 停止服务。

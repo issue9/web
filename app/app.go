@@ -46,8 +46,6 @@ type App struct {
 	messages      *messages.Messages
 	compresses    map[string]compress.WriterFunc
 
-	// TODO: 添加 text/message/catelog.Catelog，而不是使用全局的？
-
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan bool
 }
@@ -115,11 +113,6 @@ func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
 	return nil
 }
 
-// ErrorHandlers 错误处理功能
-func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
-	return app.errorhandlers
-}
-
 // IsDebug 是否处于调试模式
 func (app *App) IsDebug() bool {
 	return app.webConfig.Debug
@@ -167,6 +160,11 @@ func (app *App) Serve() (err error) {
 		<-app.closed
 	}
 	return err
+}
+
+// LocalPrinter 获取本地化的输出对象
+func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
+	return message.NewPrinter(tag, opts...)
 }
 
 // Close 关闭服务。
@@ -217,9 +215,9 @@ func (app *App) Config() *config.Manager {
 	return app.configs
 }
 
-// LocalPrinter 获取本地化的输出对象
-func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
-	return message.NewPrinter(tag, opts...)
+// ErrorHandlers 错误处理功能
+func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
+	return app.errorhandlers
 }
 
 // Messages 返回 messages.Messages 实例
