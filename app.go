@@ -200,14 +200,18 @@ func Load(r io.Reader, typ string, v interface{}) error {
 
 // NewMessages 添加新的错误消息代码
 func NewMessages(status int, messages map[int]string) {
-	defaultApp.NewMessages(status, messages)
+	defaultApp.Messages().NewMessages(status, messages)
 }
 
 // Messages 获取所有的错误消息代码
 //
 // 如果指定 p 的值，则返回本地化的消息内容。
 func Messages(p *message.Printer) map[int]string {
-	return defaultApp.Messages(p)
+	if p == nil {
+		return defaultApp.Messages().Messages()
+	}
+
+	return defaultApp.Messages().LocaleMessages(p)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic

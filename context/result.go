@@ -58,7 +58,7 @@ type detail struct {
 
 // NewResult 返回 Result 实例
 func (ctx *Context) NewResult(code int) *Result {
-	msg, found := ctx.App.Message(code)
+	msg, found := ctx.App.Messages().Message(code)
 	if !found {
 		panic(fmt.Sprintln("不存在的错误码:", code))
 	}

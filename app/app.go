@@ -222,25 +222,9 @@ func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.
 	return message.NewPrinter(tag, opts...)
 }
 
-// NewMessages 添加新的错误消息
-func (app *App) NewMessages(status int, msgs map[int]string) {
-	app.messages.NewMessages(status, msgs)
-}
-
-// Messages 获取所有的错误消息代码
-//
-// 如果指定 p 的值，则返回本地化的消息内容。
-func (app *App) Messages(p *message.Printer) map[int]string {
-	if p == nil {
-		return app.messages.Messages()
-	}
-
-	return app.messages.LocaleMessages(p)
-}
-
-// Message 查找指定代码的错误信息
-func (app *App) Message(code int) (*messages.Message, bool) {
-	return app.messages.Message(code)
+// Messages 返回 messages.Messages 实例
+func (app *App) Messages() *messages.Messages {
+	return app.messages
 }
 
 // Logs 获取 logs.Logs 实例

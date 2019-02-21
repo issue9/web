@@ -33,7 +33,7 @@ func TestContext_NewResult(t *testing.T) {
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })
 
-	a.NotPanic(func() { app.NewMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { app.Messages().NewMessages(400, map[int]string{40000: "400"}) })
 	a.NotPanic(func() { ctx.NewResult(40000) })
 	a.Panic(func() { ctx.NewResult(50000) })
 }
@@ -43,7 +43,7 @@ func TestResult_Add_HasDetail(t *testing.T) {
 	app := newApp(a)
 
 	code := 400 * 1000
-	a.NotPanic(func() { app.NewMessages(400, map[int]string{400000: "400"}) })
+	a.NotPanic(func() { app.Messages().NewMessages(400, map[int]string{400000: "400"}) })
 	r := &Result{Code: code}
 	a.False(r.HasDetail())
 
@@ -58,7 +58,7 @@ func TestResult_SetDetail(t *testing.T) {
 	app := newApp(a)
 
 	code := 400 * 1000
-	a.NotPanic(func() { app.NewMessages(400, map[int]string{400000: "400"}) })
+	a.NotPanic(func() { app.Messages().NewMessages(400, map[int]string{400000: "400"}) })
 	r := &Result{Code: code}
 	a.False(r.HasDetail())
 
@@ -73,7 +73,7 @@ func TestResult_Render_Exit(t *testing.T) {
 	app := newApp(a)
 
 	a.NotPanic(func() {
-		app.NewMessages(400, map[int]string{
+		app.Messages().NewMessages(400, map[int]string{
 			4000: "400",
 			4001: "401",
 		})
