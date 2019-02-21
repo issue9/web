@@ -54,3 +54,12 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
 	ms.appendModules(m)
 	return m
 }
+
+// Plugin 设置插件信息
+func (m *Module) Plugin(name, description string, deps ...string) *Module {
+	m.Name = name
+	m.Description = description
+	m.Deps = deps
+
+	return m
+}

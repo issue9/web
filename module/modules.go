@@ -47,6 +47,12 @@ func NewModules(conf *webconfig.WebConfig) (*Modules, error) {
 
 	ms.buildCoreModule(conf)
 
+	if conf.Plugins != "" {
+		if err := ms.loadPlugins(conf.Plugins); err != nil {
+			return nil, err
+		}
+	}
+
 	return ms, nil
 }
 
