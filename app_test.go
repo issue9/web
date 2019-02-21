@@ -24,6 +24,7 @@ var testdata = ""
 
 func TestApp(t *testing.T) {
 	a := assert.New(t)
+	defaultApp = nil
 
 	a.NotError(Classic("./testdata"))
 	a.NotNil(defaultApp)

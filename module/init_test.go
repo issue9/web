@@ -16,7 +16,7 @@ func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
-	m := newModule(ms, TypeModule, "m1", "m1 desc")
+	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)

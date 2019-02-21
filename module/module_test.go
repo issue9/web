@@ -16,12 +16,12 @@ func TestTag(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
-	m := newModule(ms, TypeModule, "user1", "user1 desc")
-	a.NotNil(m).Equal(m.Type, TypeModule)
+	m := newModule(ms, "user1", "user1 desc")
+	a.NotNil(m)
 
 	v := m.NewTag("0.1.0")
 	a.NotNil(v).NotNil(m.tags["0.1.0"])
-	a.Equal(v.Type, TypeTag).Equal(v.Name, "0.1.0")
+	a.Equal(v.Name, "0.1.0")
 	v.AddInit(nil, "title1")
 	a.Equal(v.inits[0].title, "title1")
 
@@ -30,9 +30,4 @@ func TestTag(t *testing.T) {
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)
-
-	// 子标签，不能再添加子标
-	a.Panic(func() {
-		vv.NewTag("0.3.0")
-	})
 }

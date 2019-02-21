@@ -60,7 +60,7 @@ func (ms *Modules) appendModules(modules ...*Module) {
 }
 
 func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
-	ms.coreModule = newModule(ms, TypeModule, CoreModuleName, coreModuleDescription)
+	ms.coreModule = newModule(ms, CoreModuleName, coreModuleDescription)
 	ms.modules = append(ms.modules, ms.coreModule)
 
 	// 初始化静态文件处理
@@ -75,13 +75,6 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 		}
 		return nil
 	}, "启动常驻服务")
-}
-
-// NewModule 声明一个新的模块
-func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
-	m := newModule(ms, TypeModule, name, desc, deps...)
-	ms.appendModules(m)
-	return m
 }
 
 // Mux 返回相关的 mux.Mux 实例

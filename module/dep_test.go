@@ -18,7 +18,7 @@ import (
 )
 
 func m(ms *Modules, name string, f func() error, deps ...string) *Module {
-	m := newModule(ms, TypeModule, name, name, deps...)
+	m := newModule(ms, name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }

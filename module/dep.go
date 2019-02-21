@@ -83,11 +83,7 @@ func (dep *dependency) initModule(m *Module, tag string) error {
 		}
 	}
 
-	if m.Type == TypeModule {
-		dep.println("\n开始初始化模块：", m.Name)
-	} else if m.Type == TypePlugin {
-		dep.println("\n开始初始化插件：", m.Name)
-	}
+	dep.println("\n开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
 	for _, init := range t.inits {

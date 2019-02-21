@@ -5,19 +5,8 @@
 // Package module 提供模块的的相关功能。
 package module
 
-// Type 表示模块的类型
-type Type int8
-
-// 表示模块的类型
-const (
-	TypeModule Type = iota + 1
-	TypePlugin
-	TypeTag
-)
-
 // Module 表示模块信息
 type Module struct {
-	Type        Type
 	Name        string
 	Description string
 	Deps        []string
@@ -36,9 +25,8 @@ type Module struct {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 //
 // 仅供框架内部使用，不保证函数签名的兼容性。
-func newModule(ms *Modules, typ Type, name, desc string, deps ...string) *Module {
+func newModule(ms *Modules, name, desc string, deps ...string) *Module {
 	return &Module{
-		Type:        typ,
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
@@ -49,17 +37,20 @@ func newModule(ms *Modules, typ Type, name, desc string, deps ...string) *Module
 // NewTag 为当前模块生成特定名称的子模块。
 // 若已经存在，则直接返回该子模块。
 func (m *Module) NewTag(tag string) *Module {
-	if m.Type == TypeTag {
-		panic("子模块不能再添子模块")
-	}
-
 	if m.tags == nil {
 		m.tags = make(map[string]*Module, 5)
 	}
 
 	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = newModule(m.ms, TypeTag, tag, "")
+		m.tags[tag] = newModule(m.ms, tag, "")
 	}
 
 	return m.tags[tag]
+}
+
+// NewModule 声明一个新的模块
+func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
+	m := newModule(ms, name, desc, deps...)
+	ms.appendModules(m)
+	return m
 }

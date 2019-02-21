@@ -28,7 +28,7 @@ func TestModule_Handle(t *testing.T) {
 	a.NotError(err).NotNil(ms)
 	srv := rest.NewServer(t, ms.Mux(), nil)
 
-	m := newModule(ms, TypeModule, "m1", "m1 desc")
+	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -60,7 +60,7 @@ func TestModule_Handles(t *testing.T) {
 	srv := rest.NewServer(t, ms.Mux(), nil)
 
 	path := "/path"
-	m := newModule(ms, TypeModule, "m1", "m1 desc")
+	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).
@@ -94,7 +94,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = newModule(ms, TypeModule, "m1", "m1 desc")
+	m = newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)
