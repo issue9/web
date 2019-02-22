@@ -67,6 +67,7 @@ func (srv *Service) Run() {
 	defer srv.locker.Unlock()
 
 	if srv.state != ServiceRunning {
+		srv.state = ServiceRunning
 		go srv.serve()
 	}
 }
@@ -75,21 +76,23 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
+			srv.locker.Lock()
 			srv.state = ServiceFailed
+			srv.locker.Unlock()
 		}
 	}()
 
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
-	srv.state = ServiceRunning
-
-	err := srv.f(ctx)
-	if err != nil && err != context.Canceled {
-		srv.err = err
-		srv.state = ServiceFailed
-	} else {
-		srv.state = ServiceStop
+	srv.err = srv.f(ctx)
+	state := ServiceStop
+	if srv.err != nil && srv.err != context.Canceled {
+		state = ServiceFailed
 	}
+
+	srv.locker.Lock()
+	srv.state = state
+	srv.locker.Unlock()
 }
 
 // Stop 停止服务。
@@ -105,6 +108,4 @@ func (srv *Service) Stop() {
 		srv.cancelFunc()
 		srv.cancelFunc = nil
 	}
-
-	srv.state = ServiceStop
 }
