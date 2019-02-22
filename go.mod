@@ -2,7 +2,7 @@ module github.com/issue9/web
 
 require (
 	github.com/caixw/gobuild v0.7.1
-	github.com/issue9/assert v1.1.0
+	github.com/issue9/assert v1.1.1
 	github.com/issue9/is v1.1.2
 	github.com/issue9/logs/v2 v2.1.2
 	github.com/issue9/middleware v1.5.0
