@@ -247,8 +247,8 @@ func Grace(app *App, sig ...os.Signal) {
 
 		if err := app.Shutdown(); err != nil {
 			app.Logs().Error(err)
-			app.Logs().Flush() // 保证内容会被正常输出到日志。
 		}
+		app.Logs().Flush() // 保证内容会被正常输出到日志。
 		close(signalChannel)
 	}()
 }

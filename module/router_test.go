@@ -22,6 +22,30 @@ var (
 	h1 = http.HandlerFunc(f1)
 )
 
+func TestModule_Prefix(t *testing.T) {
+	a := assert.New(t)
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	srv := rest.NewServer(t, ms.Mux(), nil)
+
+	m := newModule(ms, "m1", "m1 desc")
+	a.NotNil(m)
+	p := m.Prefix("/p")
+	a.NotNil(p)
+
+	path := "/path"
+	p.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	srv.NewRequest(http.MethodGet, "/p"+path).
+		Do().
+		Status(http.StatusOK)
+	srv.NewRequest(http.MethodDelete, "/p"+path).
+		Do().
+		Status(http.StatusOK)
+	srv.NewRequest(http.MethodPost, "/p"+path).
+		Do().
+		Status(http.StatusMethodNotAllowed)
+}
+
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
@@ -43,6 +67,7 @@ func TestModule_Handle(t *testing.T) {
 		Do().
 		Status(http.StatusMethodNotAllowed)
 
+	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
 	m.Handle(path, h1)
 	srv.NewRequest(http.MethodDelete, path).

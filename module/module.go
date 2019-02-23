@@ -56,10 +56,14 @@ func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
 }
 
 // Plugin 设置插件信息
-func (m *Module) Plugin(name, description string, deps ...string) *Module {
+//
+// 在将模块设置为插件模式时，可以初始化函数中，可以采用此方法设置模块的基本信息。
+func (m *Module) Plugin(name, description string, deps ...string) {
+	if m.Name != "" || m.Description != "" || len(m.Deps) > 0 {
+		panic("不能多次调用该函数")
+	}
+
 	m.Name = name
 	m.Description = description
 	m.Deps = deps
-
-	return m
 }

@@ -39,6 +39,9 @@ type Service struct {
 }
 
 // AddService 添加新的服务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
 		m.ms.services = append(m.ms.services, &Service{

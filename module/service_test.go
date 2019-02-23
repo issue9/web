@@ -110,6 +110,7 @@ func TestService_srv1(t *testing.T) {
 
 	// 再次运行
 	srv1.Run()
+	srv1.Run()                         // 在运行状态再次运行，不启作用
 	time.Sleep(500 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
 	stopService(a, srv1)

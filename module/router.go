@@ -47,7 +47,7 @@ func (m *Module) Patch(path string, h http.Handler) *mux.Prefix {
 
 // HandleFunc 指定一个请求
 func (m *Module) HandleFunc(path string, h func(w http.ResponseWriter, r *http.Request), methods ...string) error {
-	return m.ms.router.Handle(path, http.HandlerFunc(h), methods...)
+	return m.ms.router.HandleFunc(path, h, methods...)
 }
 
 // GetFunc 指定一个 GET 请求

@@ -14,7 +14,8 @@ import (
 // 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInitFuncName = "Init"
 
-// 指定支持 plugin 模式的系统类型，需要保持该值与 gen.go 中的 +build 指令中的值一致
+// 指定支持 plugin 模式的系统类型，需要保持该值与
+// internal/plugintest/plugintest.go 中的 +build 指令中的值一致
 var pluginOS = []string{"linux", "darwin"}
 
 func isPluginOS() bool {

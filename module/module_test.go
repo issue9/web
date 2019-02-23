@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 )
 
-func TestTag(t *testing.T) {
+func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
 	a.NotError(err).NotNil(ms)
@@ -30,4 +30,22 @@ func TestTag(t *testing.T) {
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)
+}
+
+func TestModule_Plugin(t *testing.T) {
+	a := assert.New(t)
+
+	ms, err := NewModules(&webconfig.WebConfig{})
+	a.NotError(err).NotNil(ms)
+	m := newModule(ms, "user1", "user1 desc")
+	a.NotNil(m)
+
+	a.Panic(func() {
+		m.Plugin("p1", "p1 desc")
+	})
+
+	m = newModule(ms, "", "")
+	a.NotPanic(func() {
+		m.Plugin("p1", "p1 desc")
+	})
 }
