@@ -72,6 +72,12 @@ var (
 	}
 )
 
+func stopService(a *assert.Assertion, srv *Service) {
+	srv.Stop()
+	time.Sleep(2 * tickTimer) // 等待停止
+	a.Equal(srv.State(), ServiceStop)
+}
+
 func TestModule_AddService(t *testing.T) {
 	a := assert.New(t)
 	ms, err := NewModules(&webconfig.WebConfig{})
@@ -100,17 +106,13 @@ func TestService_srv1(t *testing.T) {
 	srv1 := ms.services[0]
 	a.Equal(srv1.Module, m)
 	a.Equal(srv1.State(), ServiceRunning)
-	srv1.Stop()
-	time.Sleep(2 * tickTimer) // 等待停止
-	a.Equal(srv1.State(), ServiceStop)
+	stopService(a, srv1)
 
 	// 再次运行
 	srv1.Run()
 	time.Sleep(500 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv1.State(), ServiceRunning)
-	srv1.Stop()
-	time.Sleep(2 * tickTimer) // 等待停止
-	a.Equal(srv1.State(), ServiceStop)
+	stopService(a, srv1)
 }
 
 func TestService_srv2(t *testing.T) {
@@ -127,9 +129,7 @@ func TestService_srv2(t *testing.T) {
 	srv2 := ms.services[0]
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv2.State(), ServiceRunning)
-	srv2.Stop()
-	a.Equal(srv2.State(), ServiceStop)
-	time.Sleep(2 * tickTimer) // 等待停止
+	stopService(a, srv2)
 
 	// 再次运行，等待 panic
 	srv2.Run()
@@ -140,8 +140,7 @@ func TestService_srv2(t *testing.T) {
 	// 出错后，还能正确运行和结束
 	srv2.Run()
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
-	srv2.Stop()
-	time.Sleep(2 * tickTimer) // 等待停止
+	stopService(a, srv2)
 }
 
 func TestService_srv3(t *testing.T) {
@@ -166,7 +165,5 @@ func TestService_srv3(t *testing.T) {
 	srv3.Run()
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)
-	srv3.Stop()
-	a.Equal(srv3.State(), ServiceStop)
-	time.Sleep(2 * tickTimer) // 等待停止
+	stopService(a, srv3)
 }
