@@ -157,7 +157,7 @@ func TestService_srv3(t *testing.T) {
 	srv3 := ms.services[0]
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(srv3.State(), ServiceRunning)
-	time.Sleep(600 * time.Microsecond) // 等待超过返回错误
+	time.Sleep(2 * tickTimer) // 等待超过返回错误
 	a.Equal(srv3.State(), ServiceFailed)
 	a.NotNil(srv3.Err())
 

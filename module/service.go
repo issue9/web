@@ -63,13 +63,15 @@ func (srv *Service) Err() error {
 
 // Run 开始执行该服务
 func (srv *Service) Run() {
+	if srv.state == ServiceRunning {
+		return
+	}
+
 	srv.locker.Lock()
 	defer srv.locker.Unlock()
 
-	if srv.state != ServiceRunning {
-		srv.state = ServiceRunning
-		go srv.serve()
-	}
+	srv.state = ServiceRunning
+	go srv.serve()
 }
 
 func (srv *Service) serve() {
@@ -97,9 +99,6 @@ func (srv *Service) serve() {
 
 // Stop 停止服务。
 func (srv *Service) Stop() {
-	srv.locker.Lock()
-	defer srv.locker.Unlock()
-
 	if srv.state != ServiceRunning {
 		return
 	}
