@@ -45,7 +45,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	}
 
 	// compress
-	if conf.Compress != nil && len(app.compresses) > 0 {
+	if conf.Compress != nil {
 		app.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    app.compresses,

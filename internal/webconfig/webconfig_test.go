@@ -29,6 +29,11 @@ func TestWebConfig_checkStatic(t *testing.T) {
 		"/admin": "./not-exists",
 	}
 	a.Error(conf.checkStatic())
+
+	conf.Static = map[string]string{
+		"admin": "./testdata",
+	}
+	a.Error(conf.checkStatic())
 }
 
 func TestWebConfig_buildRoot(t *testing.T) {

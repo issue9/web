@@ -7,7 +7,6 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"syscall"
@@ -15,6 +14,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
+	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
@@ -46,23 +47,28 @@ func newApp(a *assert.Assertion) *App {
 	app, err := New(mgr)
 	a.NotError(err).NotNil(app)
 
-	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
+		"gzip":    compress.NewGzip,
+		"deflate": compress.NewDeflate,
+	}))
+
+	a.NotError(app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
-	})
-	a.NotError(err)
+	}))
 
-	err = app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	a.NotError(app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
-	})
-	a.NotError(err)
+	}))
 
 	// 以下内容由配置文件决定
 	a.True(app.IsDebug()).
-		True(len(app.Modules.Modules()) > 0) // 最起码有 web-core 模板
+		True(len(app.Modules.Modules()) > 0). // 最起码有 web-core 模板
+		NotNil(app.webConfig.Compress).
+		NotEmpty(app.compresses)
 
 	a.NotNil(app.mt).Equal(app.mt, app.Mimetypes())
 	a.NotNil(app.configs).Equal(app.configs, app.Config())
@@ -82,6 +88,7 @@ func TestApp_URL(t *testing.T) {
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
 	a.Equal(app.URL(""), "http://localhost:8082")
 }
+
 func TestApp_Path(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
@@ -114,43 +121,39 @@ func TestApp_Serve(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8082/m1/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m1/test").
+		Do().
+		Status(http.StatusAccepted)
 
-	resp, err = http.Get("http://localhost:8082/m2/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m2/test").
+		Do().
+		Status(http.StatusAccepted)
 
-	resp, err = http.Get("http://localhost:8082/mux/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/mux/test").
+		Do().
+		Status(http.StatusAccepted)
 
 	// not found
 	// 返回 ErrorHandler 内容
-	resp, err = http.Get("http://localhost:8082/mux/not-exists.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusNotFound)
-	text, err := ioutil.ReadAll(resp.Body)
-	a.NotError(err).NotNil(text)
-	a.Equal(string(text), "error handler test")
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/mux/not-exists.txt").
+		Do().
+		Status(http.StatusNotFound).
+		StringBody("error handler test")
 
 	// static 中定义的静态文件
-	resp, err = http.Get("http://localhost:8082/client/file1.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusOK)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/file1.txt").
+		Do().
+		Status(http.StatusOK)
 
-	resp, err = http.Get("http://localhost:8082/client/dir/file2.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusOK)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/dir/file2.txt").
+		Do().
+		Status(http.StatusOK)
 
 	// 不存在的文件，测试 internal/fileserver 是否启作用
-	resp, err = http.Get("http://localhost:8082/client/dir/not-exists.txt")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusNotFound)
-	text, err = ioutil.ReadAll(resp.Body)
-	a.NotError(err).NotNil(text)
-	a.Equal(string(text), "error handler test")
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/dir/not-exists.txt").
+		Do().
+		Status(http.StatusNotFound).
+		StringBody("error handler test")
 
 	app.Close()
 }
@@ -174,12 +177,13 @@ func TestApp_Close(t *testing.T) {
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8082/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	resp, err = http.Get("http://localhost:8082/close")
+	// TODO assert/rest.Failed
+	resp, err := http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
 	resp, err = http.Get("http://localhost:8082/test")
@@ -206,12 +210,12 @@ func TestApp_shutdown(t *testing.T) {
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8082/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
 
 	// 调用关闭操作，连接被关闭，返回错误内容
-	resp, err = http.Get("http://localhost:8082/close")
+	resp, err := http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
 	// 立即关闭
@@ -239,17 +243,17 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
-	resp, err := http.Get("http://localhost:8082/test")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusAccepted)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
 
 	// 关闭指令可以正常执行
-	resp, err = http.Get("http://localhost:8082/close")
-	a.NotError(err).NotNil(resp)
-	a.Equal(resp.StatusCode, http.StatusCreated)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/close").
+		Do().
+		Status(http.StatusCreated)
 
 	// 未超时，但是拒绝新的链接
-	resp, err = http.Get("http://localhost:8082/test")
+	resp, err := http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
 
 	// 已被关闭

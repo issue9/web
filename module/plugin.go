@@ -69,6 +69,7 @@ func (ms *Modules) loadPlugin(path string) error {
 		return errors.New("name 和 description 都不能为空")
 	}
 
+	// 只有在插件不出问题的情况下，才将其添加到 modules 表中
 	ms.appendModules(m)
 
 	return nil

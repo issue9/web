@@ -17,6 +17,6 @@ compress:
   types:
     - text/*
     - application/json
-  size: 1024
+  size: 1
 allowedDomains:
   - "127.0.0.1"

@@ -16,7 +16,11 @@ import (
 )
 
 const (
-	// CoreModuleName 模块名称
+	// CoreModuleName 框架自带的模块名称
+	//
+	// 该模块会在所有模块初始化之后，进行最后的初始化操作，包括了以下内容：
+	// - 配置文件中指定的静态文件服务内容 static；
+	// - 所有模块注册的服务，也有此模块负责启动。
 	CoreModuleName        = "web-core"
 	coreModuleDescription = "web 框架自带的模块，包括启动服务等，最后加载运行"
 )
@@ -56,6 +60,7 @@ func NewModules(conf *webconfig.WebConfig) (*Modules, error) {
 	return ms, nil
 }
 
+// 收录模块到当前实例，并更 coreModule 的依赖项。
 func (ms *Modules) appendModules(modules ...*Module) {
 	for _, m := range modules {
 		ms.modules = append(ms.modules, m)

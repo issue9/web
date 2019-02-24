@@ -19,10 +19,10 @@ const (
 	Version = "0.25.0"
 
 	// MinimumGoVersion 需求的最低 Go 版本
-	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖。
+	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖以及 README.md 中的相关信息。
 	MinimumGoVersion = "1.11"
 
-	// CoreModuleName 模块名称
+	// CoreModuleName 框架自带的模块名称
 	CoreModuleName = module.CoreModuleName
 )
 
