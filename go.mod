@@ -2,10 +2,10 @@ module github.com/issue9/web
 
 require (
 	github.com/caixw/gobuild v0.7.1
-	github.com/issue9/assert v1.1.1
+	github.com/issue9/assert v1.2.1
 	github.com/issue9/is v1.1.2
-	github.com/issue9/logs/v2 v2.1.2
-	github.com/issue9/middleware v1.5.0
+	github.com/issue9/logs/v2 v2.2.0
+	github.com/issue9/middleware v1.5.2
 	github.com/issue9/mux/v2 v2.1.0
 	github.com/issue9/query v1.0.0
 	github.com/issue9/upload v1.1.1

@@ -38,6 +38,7 @@ func TestMiddlewares(t *testing.T) {
 
 	// static 中定义的静态文件
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate").
 		Do().
 		Status(http.StatusOK).
 		Header("Content-Type", "text/plain; charset=utf-8").
