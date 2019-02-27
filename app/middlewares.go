@@ -44,24 +44,21 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 		})
 	}
 
+	app.Before(func(h http.Handler) http.Handler {
+		return app.errorhandlers.New(h)
+	})
+
 	// compress
 	if conf.Compress != nil {
 		app.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
-				Funcs: map[string]compress.WriterFunc{
-					"gzip":    compress.NewGzip,
-					"deflate": compress.NewDeflate,
-				},
-				//Types:    conf.Compress.Types,
+				Funcs:    app.compresses,
+				Types:    conf.Compress.Types,
 				Size:     conf.Compress.Size,
 				ErrorLog: app.Logs().ERROR(),
 			})
 		})
 	}
-
-	app.Before(func(h http.Handler) http.Handler {
-		return app.errorhandlers.New(h)
-	})
 
 	// recovery
 	app.Before(func(h http.Handler) http.Handler {

@@ -5,6 +5,9 @@
 package app
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -12,6 +15,12 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 )
+
+var f201 = func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("1234567890"))
+}
 
 func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
@@ -21,13 +30,9 @@ func TestMiddlewares(t *testing.T) {
 		w.Write([]byte("error handler test"))
 	}, http.StatusNotFound)
 
-	m1 := app.NewModule("m1", "m1 desc", "m2")
+	m1 := app.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
-	m2 := app.NewModule("m2", "m2 desc")
-	a.NotNil(m2)
-	m1.GetFunc("/m1/test", f202)
-	m2.GetFunc("/m2/test", f202)
-	app.Mux().GetFunc("/mux/test", f202)
+	m1.GetFunc("/m1/test", f201)
 
 	a.NotError(app.Init("", nil))
 	go func() {
@@ -36,17 +41,41 @@ func TestMiddlewares(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Microsecond)
 
+	buf := new(bytes.Buffer)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m1/test").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusCreated).
+		ReadBody(buf).
+		Header("Content-Type", "text/html").
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+	reader, err := gzip.NewReader(buf)
+	a.NotError(err).NotNil(reader)
+	data, err := ioutil.ReadAll(reader)
+	a.NotError(err).NotNil(data)
+	a.Equal(string(data), "1234567890")
+
 	// static 中定义的静态文件
+	buf.Reset()
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/file1.txt").
-		Header("Accept-Encoding", "gzip,deflate").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).
+		ReadBody(buf).
 		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "gzip")
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+	reader, err = gzip.NewReader(buf)
+	a.NotError(err).NotNil(reader)
+	data, err = ioutil.ReadAll(reader)
+	a.NotError(err).NotNil(data)
+	a.Equal(string(data), "file1")
 }
 
 func TestDebug(t *testing.T) {
 	srv := rest.NewServer(t, debug(http.HandlerFunc(f202)), nil)
+	defer srv.Close()
 
 	// 命中 /debug/pprof/cmdline
 	srv.NewRequest(http.MethodGet, "/debug/pprof/").

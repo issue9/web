@@ -131,7 +131,7 @@ func Serve() error {
 
 // InitModules 初始化指定标签的模块
 func InitModules(tag string) error {
-	return defaultApp.Init(tag, ERROR())
+	return defaultApp.Init(tag, INFO())
 }
 
 // Close 关闭服务。

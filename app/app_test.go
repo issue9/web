@@ -27,6 +27,7 @@ const timeout = 300 * time.Microsecond
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("1234567890"))
 }
 
 // 声明一个 App 实例

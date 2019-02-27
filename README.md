@@ -1,6 +1,5 @@
 web
 [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https://travis-ci.org/issue9/web)
-[![Build status](https://ci.appveyor.com/api/projects/status/a5nj9txfmh4wgqj3?svg=true)](https://ci.appveyor.com/project/caixw/web)
 [![Go version](https://img.shields.io/badge/Go-1.11-brightgreen.svg?style=flat)](https://golang.org)
 [![Go Report Card](https://goreportcard.com/badge/github.com/issue9/web)](https://goreportcard.com/report/github.com/issue9/web)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
