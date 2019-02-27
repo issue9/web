@@ -3,12 +3,14 @@ language: go
 os:
   - linux
   - osx
+  - windows
 
 env:
   - GO111MODULE=on
 
 go:
   - tip
+  - 1.12
   - 1.11.4
 
 script: ./build/test.sh -cv
