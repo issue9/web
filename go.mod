@@ -4,7 +4,7 @@ require (
 	github.com/caixw/gobuild v0.7.2
 	github.com/issue9/assert v1.3.1
 	github.com/issue9/is v1.1.3
-	github.com/issue9/logs/v2 v2.2.1
+	github.com/issue9/logs/v2 v2.2.2
 	github.com/issue9/middleware v1.5.3
 	github.com/issue9/mux/v2 v2.1.1
 	github.com/issue9/query v1.0.1
