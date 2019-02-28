@@ -62,7 +62,7 @@ func New(mgr *config.Manager) (*App, error) {
 	webconf := &webconfig.WebConfig{}
 	if err := mgr.LoadFile(ConfigFilename, webconf); err != nil {
 		if serr, ok := err.(*config.Error); ok {
-			serr.File = LogsFilename
+			serr.File = ConfigFilename
 		}
 		return nil, err
 	}
