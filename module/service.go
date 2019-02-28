@@ -43,15 +43,22 @@ type Service struct {
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
+	srv := &Service{
+		Title:  title,
+		Module: m,
+		state:  ServiceStop,
+		f:      f,
+	}
+
 	m.AddInit(func() error {
-		m.ms.services = append(m.ms.services, &Service{
-			Title:  title,
-			Module: m,
-			state:  ServiceStop,
-			f:      f,
-		})
+		m.ms.services = append(m.ms.services, srv)
 		return nil
 	}, "注册服务："+title)
+
+	m.ms.coreModule.AddInit(func() error {
+		srv.Run()
+		return nil
+	}, "启动服务："+srv.Title)
 }
 
 // State 获取当前服务的状态

@@ -79,13 +79,6 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
 		ms.coreModule.Get(url+"{path}", h)
 	}
-
-	ms.coreModule.AddInit(func() error {
-		for _, srv := range ms.services {
-			srv.Run()
-		}
-		return nil
-	}, "启动常驻服务")
 }
 
 // Mux 返回相关的 mux.Mux 实例
