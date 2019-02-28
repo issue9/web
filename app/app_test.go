@@ -102,6 +102,7 @@ func TestApp_Path(t *testing.T) {
 func TestApp_Serve(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	exit := make(chan bool, 1)
 	app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		w.Write([]byte("error handler test"))
@@ -119,8 +120,9 @@ func TestApp_Serve(t *testing.T) {
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+		exit <- true
 	}()
-	time.Sleep(500 * time.Microsecond)
+	time.Sleep(500 * time.Microsecond) // 等待 go func() 完成
 
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m1/test").
 		Do().
@@ -156,23 +158,26 @@ func TestApp_Serve(t *testing.T) {
 		Status(http.StatusNotFound).
 		StringBody("error handler test")
 
-	app.Close()
+	a.NotError(app.Close())
+	<-exit
 }
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	exit := make(chan bool, 1)
 
 	app.Mux().GetFunc("/test", f202)
 	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("closed"))
-		app.Close()
+		a.NotError(app.Close())
 	})
 
 	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
 	}()
 
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
@@ -183,16 +188,18 @@ func TestApp_Close(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	// TODO assert/rest.Failed
 	resp, err := http.Get("http://localhost:8082/close")
 	a.Error(err).Nil(resp)
 
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
+
+	<-exit
 }
 
-func TestApp_shutdown(t *testing.T) {
+func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
+	exit := make(chan bool, 1)
 	app := newApp(a)
 	app.webConfig.ShutdownTimeout = 0
 
@@ -206,6 +213,7 @@ func TestApp_shutdown(t *testing.T) {
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
 	}()
 
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
@@ -222,11 +230,14 @@ func TestApp_shutdown(t *testing.T) {
 	// 立即关闭
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
+
+	<-exit
 }
 
 func TestApp_Shutdown_timeout(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	exit := make(chan bool, 1)
 
 	app.Mux().GetFunc("/test", f202)
 	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
@@ -239,6 +250,7 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
 	}()
 
 	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
@@ -261,19 +273,25 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
+
+	<-exit
 }
 
 func TestGrace(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	exit := make(chan bool, 1)
 
 	Grace(app, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		app.Serve()
+		exit <- true
 	}()
 	time.Sleep(300 * time.Microsecond)
 
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
 	p.Signal(syscall.SIGTERM)
+
+	<-exit
 }

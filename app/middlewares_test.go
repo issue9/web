@@ -25,6 +25,7 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
+	exit := make(chan bool, 1)
 	app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		w.Write([]byte("error handler test"))
@@ -38,6 +39,7 @@ func TestMiddlewares(t *testing.T) {
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+		exit <- true
 	}()
 	time.Sleep(500 * time.Microsecond)
 
@@ -71,6 +73,9 @@ func TestMiddlewares(t *testing.T) {
 	data, err = ioutil.ReadAll(reader)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "file1")
+
+	a.NotError(app.Close())
+	<-exit
 }
 
 func TestDebug(t *testing.T) {

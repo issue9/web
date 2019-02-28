@@ -25,6 +25,7 @@ var testdata = ""
 func TestApp(t *testing.T) {
 	a := assert.New(t)
 	defaultApp = nil
+	exit := make(chan bool, 1)
 
 	a.NotError(Classic("./testdata"))
 	a.NotNil(defaultApp)
@@ -83,6 +84,7 @@ func TestApp(t *testing.T) {
 		if err != http.ErrServerClosed {
 			a.NotError(err)
 		}
+		exit <- true
 	}()
 	time.Sleep(500 * time.Microsecond)
 
@@ -98,6 +100,8 @@ func TestApp(t *testing.T) {
 		StringBody(testdata)
 
 	a.NotError(Shutdown())
+
+	<-exit
 }
 
 func testFile(a *assert.Assertion) {
