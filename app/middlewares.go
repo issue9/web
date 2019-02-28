@@ -49,6 +49,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	})
 
 	// compress
+	// app.errorhandlers.New 可能会输出大段内容。所以放在其之后。
 	if conf.Compress != nil {
 		app.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{

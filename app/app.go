@@ -47,7 +47,7 @@ type App struct {
 	compresses    map[string]compress.WriterFunc
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
-	closed chan bool
+	closed chan struct{}
 }
 
 // New 声明一个新的 App 实例
@@ -75,7 +75,7 @@ func New(mgr *config.Manager) (*App, error) {
 	app := &App{
 		Modules:       ms,
 		webConfig:     webconf,
-		closed:        make(chan bool, 1),
+		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
 		configs:       mgr,
 		logs:          logs,
@@ -171,33 +171,29 @@ func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	defer app.Logs().Flush()
+	app.Stop() // 关闭服务
 
-	return app.close()
+	defer func() {
+		app.closed <- struct{}{}
+	}()
+	return app.server.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (app *App) Shutdown() error {
-	defer app.Logs().Flush()
-
 	if app.webConfig.ShutdownTimeout <= 0 {
-		return app.close()
+		return app.Close()
 	}
 
+	app.Stop() // 关闭服务
 	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
 	defer func() {
 		cancel()
-		app.closed <- true
+		app.closed <- struct{}{}
 	}()
 	return app.server.Shutdown(ctx)
-}
-
-func (app *App) close() error {
-	app.closed <- true
-	app.Stop()
-	return app.server.Close()
 }
 
 // Server 获取 http.Server 实例
