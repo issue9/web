@@ -103,7 +103,11 @@ func (mgr *Manager) LoadFile(path string, v interface{}) error {
 	}
 	defer r.Close()
 
-	return mgr.Load(r, filepath.Ext(path), v)
+	err = mgr.Load(r, filepath.Ext(path), v)
+	if serr, ok := err.(*Error); ok {
+		serr.File = path
+	}
+	return err
 }
 
 // Load 加载指定的配置文件内容到 v 中

@@ -25,6 +25,13 @@ type config struct {
 }
 
 func (conf *config) Sanitize() error {
+	if conf.Port < 100 {
+		return &Error{
+			Field:   "port",
+			Message: "invalid",
+		}
+	}
+
 	conf.Port++
 	return nil
 }
@@ -103,6 +110,9 @@ func TestLoadFile(t *testing.T) {
 
 	conf = &config{}
 	a.Error(mgr.LoadFile("config.unknown", conf))
+
+	conf = &config{}
+	a.ErrorType(mgr.LoadFile("./invalid.yml", conf), &Error{})
 }
 
 func TestLoad(t *testing.T) {
