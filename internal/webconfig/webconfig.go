@@ -121,11 +121,6 @@ type Compress struct {
 	// 可以使用 * 作为结尾，同时指定多个，比如：
 	// text/* 表示所有以 text/* 开头的 mime-type 类型。
 	Types []string
-
-	// Size 指定大小，默认为 0。
-	//
-	// 若指定了非零值，表示只有 content-length 值大于此值才会进行压缩。
-	Size int
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
@@ -156,10 +151,6 @@ func (conf *WebConfig) Sanitize() error {
 
 	if conf.ShutdownTimeout < 0 {
 		return &config.Error{Field: "shutdownTimeout", Message: "必须大于等于 0"}
-	}
-
-	if conf.Compress != nil && conf.Compress.Size < 0 {
-		return &config.Error{Field: "comporess.size", Message: "必须大于等于 0"}
 	}
 
 	if err := conf.checkStatic(); err != nil {

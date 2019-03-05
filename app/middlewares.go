@@ -55,7 +55,6 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 			return compress.New(h, &compress.Options{
 				Funcs:    app.compresses,
 				Types:    conf.Compress.Types,
-				Size:     conf.Compress.Size,
 				ErrorLog: app.Logs().ERROR(),
 			})
 		})
