@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/config"
 	"github.com/issue9/logs/v2"
+	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/language"
@@ -24,13 +25,6 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
-)
-
-// 框加需要用到的配置文件名。
-// 实际路径需要通过 App.File 获取。
-const (
-	ConfigFilename = "web.yaml"
-	LogsFilename   = "logs.xml"
 )
 
 // App 程序运行实例
@@ -53,14 +47,18 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-func New(mgr *config.Manager) (*App, error) {
+func New(mgr *config.Manager, logsFilename, configFilename string) (*App, error) {
 	logs := logs.New()
-	if err := logs.InitFromXMLFile(mgr.File(LogsFilename)); err != nil {
+	conf := &lconf.Config{}
+	if err := mgr.LoadFile(logsFilename, conf); err != nil {
+		return nil, err
+	}
+	if err := logs.Init(conf); err != nil {
 		return nil, err
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err := mgr.LoadFile(ConfigFilename, webconf); err != nil {
+	if err := mgr.LoadFile(configFilename, webconf); err != nil {
 		return nil, err
 	}
 

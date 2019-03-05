@@ -15,7 +15,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/webconfig"
 )
 
@@ -114,7 +113,7 @@ func createConfig(path, dir string) error {
 	}
 
 	// 输出 logs.xml
-	if err := dumpFile(filepath.Join(path, app.LogsFilename), logs); err != nil {
+	if err := dumpFile(filepath.Join(path, web.DefaultLogsFilename), logs); err != nil {
 		return err
 	}
 
@@ -128,7 +127,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, app.ConfigFilename), string(data))
+	return dumpFile(filepath.Join(path, web.DefaultConfigFilename), string(data))
 }
 
 // 创建模块目录，并输出默认的配置内容。
