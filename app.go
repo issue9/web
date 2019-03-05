@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/issue9/config"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux/v2"
@@ -20,7 +21,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"

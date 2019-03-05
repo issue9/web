@@ -13,13 +13,13 @@ import (
 	"os/signal"
 	"strconv"
 
+	"github.com/issue9/config"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/internal/messages"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"

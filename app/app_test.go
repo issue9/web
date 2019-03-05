@@ -15,10 +15,10 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/config"
 	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 )

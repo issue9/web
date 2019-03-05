@@ -11,10 +11,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/issue9/config"
 	"github.com/issue9/is"
 	"github.com/issue9/utils"
-
-	"github.com/issue9/web/config"
 )
 
 const localhostURL = "localhost"
