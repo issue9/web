@@ -11,10 +11,9 @@ type Module struct {
 	Description string
 	Deps        []string
 
-	tags  map[string]*Module
-	inits []*initialization
-	ms    *Modules
-
+	tags   map[string]*Module
+	inits  []*initialization
+	ms     *Modules
 	inited bool
 }
 
@@ -34,8 +33,10 @@ func newModule(ms *Modules, name, desc string, deps ...string) *Module {
 	}
 }
 
-// NewTag 为当前模块生成特定名称的子模块。
-// 若已经存在，则直接返回该子模块。
+// NewTag 为当前模块生成特定名称的子模块。若已经存在，则直接返回该子模块。
+//
+// Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
+// 一般用于功能更新等操作。
 func (m *Module) NewTag(tag string) *Module {
 	if m.tags == nil {
 		m.tags = make(map[string]*Module, 5)

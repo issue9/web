@@ -35,7 +35,7 @@ type Modules struct {
 	services []*Service
 
 	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
-	// 还有所有服务的注册启动等，其初始化包含了启动服务等。
+	// 还有包含了启动服务等。
 	coreModule *Module
 }
 
