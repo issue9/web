@@ -74,7 +74,7 @@ var (
 
 func stopService(a *assert.Assertion, srv *Service) {
 	srv.Stop()
-	time.Sleep(3 * tickTimer) // 等待停止
+	time.Sleep(5 * tickTimer) // 足够的时间等待 ctx.Cancel 停止整个服务
 	a.Equal(srv.State(), ServiceStop)
 }
 
