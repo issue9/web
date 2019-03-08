@@ -13,7 +13,9 @@ go:
   - 1.12
   - 1.11.x
 
-script: ./build/test.sh -cv
+script: 
+  - go generate -v ./...
+  - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
