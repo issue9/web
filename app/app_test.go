@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"net/http"
 	"os"
+	"runtime"
 	"syscall"
 	"testing"
 	"time"
@@ -278,6 +279,11 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 }
 
 func TestGrace(t *testing.T) {
+	// windows 不支持 os.Process.Signal
+	if runtime.GOOS == "windows" {
+		return
+	}
+
 	a := assert.New(t)
 	app := newApp(a)
 	exit := make(chan bool, 1)
