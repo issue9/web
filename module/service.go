@@ -109,6 +109,7 @@ func (srv *Service) serve() {
 
 // Stop 停止服务。
 func (srv *Service) Stop() {
+	println("s2 stop")
 	if srv.state != ServiceRunning {
 		return
 	}

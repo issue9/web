@@ -23,9 +23,16 @@ const (
 	panicTimer = 5 * tickTimer
 )
 
-var (
-	// 正常服务
-	srv1 = func(ctx context.Context) error {
+func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
+	exit = make(chan struct{}, 1)
+	start = make(chan struct{}, 1)
+
+	return func(ctx context.Context) error {
+		defer func() {
+			exit <- struct{}{}
+		}()
+
+		inited := false
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
@@ -33,31 +40,59 @@ var (
 				return ctx.Err()
 			default:
 				fmt.Println("srv1:", now)
+				if !inited {
+					inited = true
+					start <- struct{}{}
+				}
 			}
 		}
 		return nil
-	}
+	}, start, exit
+}
 
-	// panic
-	srv2 = func(ctx context.Context) error {
+// panic
+func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
+	exit = make(chan struct{}, 1)
+	start = make(chan struct{}, 1)
+
+	return func(ctx context.Context) error {
+		defer func() {
+			exit <- struct{}{}
+		}()
+
+		inited := false
 		timer := time.NewTimer(panicTimer)
-
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
 				fmt.Println("cancel srv2")
 				return ctx.Err()
 			case <-timer.C:
+				fmt.Println("panic srv2")
 				panic("panic srv2")
 			default:
+				if !inited {
+					inited = true
+					start <- struct{}{}
+				}
 				fmt.Println("srv2:", now)
 			}
 		}
 		return nil
-	}
+	}, start, exit
+}
 
-	// error
-	srv3 = func(ctx context.Context) error {
+// error
+func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
+	exit = make(chan struct{}, 1)
+	start = make(chan struct{}, 1)
+
+	return func(ctx context.Context) error {
+		defer func() {
+			exit <- struct{}{}
+		}()
+
+		inited := false
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
@@ -65,17 +100,16 @@ var (
 				return ctx.Err()
 			default:
 				fmt.Println("srv3:", now)
-				return errors.New("Error")
+				if !inited {
+					inited = true
+					start <- struct{}{}
+				} else {
+					return errors.New("Error")
+				}
 			}
 		}
 		return nil
-	}
-)
-
-func stopService(a *assert.Assertion, srv *Service) {
-	srv.Stop()
-	time.Sleep(5 * tickTimer) // 足够的时间等待 ctx.Cancel 停止整个服务
-	a.Equal(srv.State(), ServiceStop)
+	}, start, exit
 }
 
 func TestModule_AddService(t *testing.T) {
@@ -84,6 +118,8 @@ func TestModule_AddService(t *testing.T) {
 	a.NotError(err).NotNil(ms)
 	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
+
+	srv1 := func(ctx context.Context) error { return nil }
 
 	ml := len(m.inits)
 	m.AddService(srv1, "srv1")
@@ -99,21 +135,26 @@ func TestService_srv1(t *testing.T) {
 	a.NotNil(m)
 	a.Empty(ms.services)
 
+	srv1, start, exit := buildSrv1()
 	m.AddService(srv1, "srv1")
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
-	time.Sleep(20 * time.Microsecond)                  // 等待服务启动完成
+	<-start
+	time.Sleep(20 * time.Microsecond) // 等待其它内容初始化完成
 	a.Equal(1, len(ms.services))
-	srv1 := ms.services[0]
-	a.Equal(srv1.Module, m)
-	a.Equal(srv1.State(), ServiceRunning)
-	stopService(a, srv1)
+	s1 := ms.services[0]
+	a.Equal(s1.Module, m)
+	a.Equal(s1.State(), ServiceRunning)
+	s1.Stop()
+	<-exit
+	a.Equal(s1.State(), ServiceStop)
 
-	// 再次运行
-	srv1.Run()
-	srv1.Run()                         // 在运行状态再次运行，不启作用
-	time.Sleep(500 * time.Microsecond) // 等待服务启动完成
-	a.Equal(srv1.State(), ServiceRunning)
-	stopService(a, srv1)
+	s1.Run()
+	s1.Run() // 在运行状态再次运行，不启作用
+	<-start
+	a.Equal(s1.State(), ServiceRunning)
+	s1.Stop()
+	<-exit
+	a.Equal(s1.State(), ServiceStop)
 }
 
 func TestService_srv2(t *testing.T) {
@@ -125,23 +166,31 @@ func TestService_srv2(t *testing.T) {
 	a.NotNil(m)
 	a.Empty(ms.services)
 
+	srv2, start, exit := buildSrv2()
 	m.AddService(srv2, "srv2")
 	a.NotError(ms.Init("", nil)) // 注册并运行服务
-	srv2 := ms.services[0]
+	s2 := ms.services[0]
+	<-start
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
-	a.Equal(srv2.State(), ServiceRunning)
-	stopService(a, srv2)
+	a.Equal(s2.State(), ServiceRunning)
+	s2.Stop()
+	<-exit
+	a.Equal(s2.State(), ServiceStop)
 
 	// 再次运行，等待 panic
-	srv2.Run()
-	time.Sleep(panicTimer * 2) // 等待 panic 触发
-	a.Equal(srv2.State(), ServiceFailed)
-	a.NotEmpty(srv2.Err())
+	s2.Run()
+	<-start
+	<-exit
+	a.Equal(s2.State(), ServiceFailed)
+	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
-	srv2.Run()
-	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
-	stopService(a, srv2)
+	s2.Run()
+	<-start
+	a.Equal(s2.State(), ServiceRunning)
+	s2.Stop()
+	<-exit
+	a.Equal(s2.State(), ServiceStop)
 }
 
 func TestService_srv3(t *testing.T) {
@@ -153,18 +202,23 @@ func TestService_srv3(t *testing.T) {
 	a.NotNil(m)
 	a.Empty(ms.services)
 
+	srv3, start, exit := buildSrv3()
 	m.AddService(srv3, "srv3")
 	a.NotError(ms.Init("", nil)) // 注册并运行服务
-	srv3 := ms.services[0]
+	s3 := ms.services[0]
+	<-start
 	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
-	a.Equal(srv3.State(), ServiceRunning)
-	time.Sleep(2 * tickTimer) // 等待超过返回错误
-	a.Equal(srv3.State(), ServiceFailed)
-	a.NotNil(srv3.Err())
+	a.Equal(s3.State(), ServiceRunning)
+
+	<-exit // 等待超过返回错误
+	a.Equal(s3.State(), ServiceFailed)
+	a.NotNil(s3.Err())
 
 	// 再次运行
-	srv3.Run()
-	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
-	a.Equal(srv3.State(), ServiceRunning)
-	stopService(a, srv3)
+	s3.Run()
+	<-start
+	a.Equal(s3.State(), ServiceRunning)
+	s3.Stop()
+	<-exit
+	a.Equal(s3.State(), ServiceStop)
 }

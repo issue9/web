@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,14 +34,17 @@ func TestModules_Init(t *testing.T) {
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
+	srv1, start1, exit1 := buildSrv1()
 	m1.AddService(srv1, "服务 1")
-	m1.AddService(srv1, "服务 2")
+	srv2, start2, exit2 := buildSrv1()
+	m1.AddService(srv2, "服务 2")
 	a.Equal(len(ms.services), 0)
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 
 	m2 := ms.NewModule("users2", "user2 module", "users3")
-	m2.AddService(srv1, "服务 3")
+	srv3, start3, exit3 := buildSrv1()
+	m2.AddService(srv3, "服务 3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	a.Equal(len(ms.services), 0)
 
@@ -62,10 +66,41 @@ func TestModules_Init(t *testing.T) {
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0)))
 	a.Equal(3, len(ms.Services()))
 
-	// 停止之后，都不在运行状态
-	time.Sleep(5 * tickTimer) // 等待启动完成
+	// 等待启动完成
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+	go func() {
+		<-start1
+		wg.Done()
+	}()
+	go func() {
+		<-start2
+		wg.Done()
+	}()
+	go func() {
+		<-start3
+		wg.Done()
+	}()
+	wg.Wait()
+
 	ms.Stop()
-	time.Sleep(5 * tickTimer) // 等待停止
+
+	// 等待停止
+	wg = &sync.WaitGroup{}
+	wg.Add(3)
+	go func() {
+		<-exit1
+		wg.Done()
+	}()
+	go func() {
+		<-exit2
+		wg.Done()
+	}()
+	go func() {
+		<-exit3
+		wg.Done()
+	}()
+	wg.Wait()
 	for _, srv := range ms.Services() {
 		a.Equal(srv.State(), ServiceStop)
 	}
