@@ -27,7 +27,7 @@ func TestContext_ServeFile(t *testing.T) {
 
 	// 存在的文件
 	a.NotPanic(func() {
-		ctx.ServeFile("./testdata/file", "", map[string]string{"Test": "Test"})
+		ctx.ServeFile("./testdata/file", map[string]string{"Test": "Test"})
 		a.Equal(w.Header().Get("Test"), "Test")
 	})
 
@@ -35,7 +35,7 @@ func TestContext_ServeFile(t *testing.T) {
 	w = httptest.NewRecorder()
 	ctx.Response = w
 	a.NotPanic(func() {
-		ctx.ServeFile("./testdata/not-exists", "", nil)
+		ctx.ServeFile("./testdata/not-exists", nil)
 		a.Equal(w.Code, http.StatusNotFound)
 	})
 }

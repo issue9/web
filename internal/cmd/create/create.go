@@ -141,11 +141,7 @@ func createModules(path string) error {
 	}
 
 	// 输出 modules.go
-	if err := dumpFile(filepath.Join(path, "modules.go"), modulesgo); err != nil {
-		return err
-	}
-
-	return nil
+	return dumpFile(filepath.Join(path, "modules.go"), modulesgo)
 }
 
 func dumpFile(path string, content string) error {

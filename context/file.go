@@ -7,7 +7,6 @@ package context
 import (
 	"io"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	"github.com/issue9/upload"
@@ -19,13 +18,8 @@ import (
 // 所以提供了一个类似于 Render 的变体专门用于下载功能。
 //
 // path 指向本地文件的地址；
-// name 下载时，显示的文件，若为空，则直接使用 path 中的文件名部分；
 // headers 额外显示的报头内容。
-func (ctx *Context) ServeFile(path, name string, headers map[string]string) {
-	if name == "" {
-		name = filepath.Base(path)
-	}
-
+func (ctx *Context) ServeFile(path string, headers map[string]string) {
 	for k, v := range headers {
 		ctx.Response.Header().Set(k, v)
 	}

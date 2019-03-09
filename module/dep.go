@@ -77,7 +77,7 @@ func (dep *dependency) initModule(m *Module, tag string) error {
 
 	t := m
 	if tag != "" {
-		found := false
+		var found bool
 		if t, found = m.tags[tag]; !found {
 			return nil
 		}
