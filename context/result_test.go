@@ -130,11 +130,11 @@ var (
 		Code:    400,
 		Message: "400",
 		Detail: []*detail{
-			&detail{
+			{
 				Field:   "field1",
 				Message: "message1",
 			},
-			&detail{
+			{
 				Field:   "field2",
 				Message: "message2",
 			},
