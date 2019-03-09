@@ -20,7 +20,7 @@ import (
 
 const (
 	tickTimer  = 500 * time.Microsecond
-	panicTimer = 5 * tickTimer
+	panicTimer = 50 * tickTimer // windows 下此值不能过小，否则测试容易出错
 )
 
 func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
@@ -93,18 +93,20 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 		}()
 
 		inited := false
+		timer := time.NewTimer(panicTimer)
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
 				fmt.Println("cancel srv3")
 				return ctx.Err()
+			case <-timer.C:
+				fmt.Println("panic srv2")
+				return errors.New("Error")
 			default:
 				fmt.Println("srv3:", now)
 				if !inited {
 					inited = true
 					start <- struct{}{}
-				} else {
-					return errors.New("Error")
 				}
 			}
 		}
