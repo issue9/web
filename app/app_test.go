@@ -24,8 +24,6 @@ import (
 	"github.com/issue9/web/mimetype/gob"
 )
 
-const timeout = 300 * time.Microsecond
-
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte("1234567890"))
