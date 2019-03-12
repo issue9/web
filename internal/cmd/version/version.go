@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/cmd/help"
 )
 
 // 用于获取版本信息的 git 仓库地址
@@ -33,8 +32,6 @@ var (
 )
 
 func init() {
-	help.Register("version", usage)
-
 	if buildDate != "" {
 		localVersion += ("+" + buildDate)
 	}
@@ -103,7 +100,8 @@ func getMaxVersion(buf *bytes.Buffer) (string, error) {
 	return max, nil
 }
 
-func usage(output *os.File) {
+// Usage 当前子命令的用法
+func Usage(output *os.File) {
 	fmt.Fprintln(output, `显示当前程序的版本号
 
 语法：web version [options]

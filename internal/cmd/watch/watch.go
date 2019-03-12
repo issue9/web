@@ -13,8 +13,6 @@ import (
 	"os"
 
 	"github.com/caixw/gobuild"
-
-	"github.com/issue9/web/internal/cmd/help"
 )
 
 var (
@@ -25,8 +23,6 @@ var (
 )
 
 func init() {
-	help.Register("watch", usage)
-
 	flagset.BoolVar(&recursive, "r", true, "是否查找子目录；")
 	flagset.BoolVar(&showIgnore, "i", false, "是否显示被标记为 IGNORE 的日志内容；")
 	flagset.StringVar(&outputName, "o", "", "指定输出名称，程序的工作目录随之改变；")
@@ -52,7 +48,8 @@ func Do(output *os.File) error {
 	return gobuild.Build(logs.Logs, mainFiles, outputName, extString, recursive, appArgs, dirs...)
 }
 
-func usage(output *os.File) {
+// Usage 当前子命令的用法
+func Usage(output *os.File) {
 	fmt.Fprintln(output, `热编译当前目录下的项目
 
 命令行语法：

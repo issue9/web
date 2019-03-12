@@ -7,15 +7,10 @@ package create
 import (
 	"fmt"
 	"os"
-
-	"github.com/issue9/web/internal/cmd/help"
 )
 
-func init() {
-	help.Register("create", usage)
-}
-
-func usage(output *os.File) {
+// Usage 当前子命令的用法
+func Usage(output *os.File) {
 	fmt.Fprintln(output, `构建一个新的 web 项目
 
 语法：web create [mod]
