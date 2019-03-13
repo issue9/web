@@ -6,12 +6,17 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
 var commands = map[string]*command{}
+
+// ErrNotFound 子命令未注册，通过 web hep [subcommnad]
+// 时，返回此错误信息。
+var ErrNotFound = errors.New("找不到该子命令")
 
 // 每个子命令的结构
 type command struct {
@@ -27,25 +32,13 @@ func init() {
 }
 
 // Exec 执行子命令
-func Exec(output *os.File) {
+func Exec(output *os.File) error {
 	fn := usage
 	if cmd, found := commands[os.Args[1]]; found {
 		fn = cmd.do
 	}
 
-	fn(output)
-}
-
-func helpDo(output *os.File) error {
-	fn := helpNotExistsUsage
-	if len(os.Args) >= 3 {
-		if cmd, found := commands[os.Args[2]]; found {
-			fn = cmd.usage
-		}
-	}
-
-	fn(output)
-	return nil
+	return fn(output)
 }
 
 // Register 注册 usage 函数，注册的功能会在调用 web help xx 时调用。
@@ -60,23 +53,21 @@ func Register(name string, do func(*os.File) error, usage func(*os.File)) {
 	}
 }
 
+func helpDo(output *os.File) error {
+	if len(os.Args) >= 3 {
+		if cmd, found := commands[os.Args[2]]; found {
+			cmd.usage(output)
+			return nil
+		}
+	}
+
+	return ErrNotFound
+}
+
 func helpUsage(output *os.File) {
 	fmt.Fprintln(output, `显示名子命令的相关介绍
 
 用法：web help [subcommand]`)
-}
-
-func helpNotExistsUsage(output *os.File) {
-	keys := make([]string, 0, len(commands))
-	for k := range commands {
-		keys = append(keys, k)
-	}
-
-	fmt.Fprintf(output, `找不到该子命令的相关信息
-
-目前支持以下子命令：%s
-详情可以通过 web help [subcommand] 进行查看。
-`, strings.Join(keys, ","))
 }
 
 func usage(output *os.File) error {

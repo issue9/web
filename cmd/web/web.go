@@ -22,5 +22,7 @@ func main() {
 	command.Register("watch", watch.Do, watch.Usage)
 	command.Register("create", create.Do, create.Usage)
 
-	command.Exec(output)
+	if err := command.Exec(output); err != nil {
+		panic(err)
+	}
 }
