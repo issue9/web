@@ -8,6 +8,7 @@ package create
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -19,7 +20,7 @@ import (
 )
 
 // Usage 当前子命令的用法
-func Usage(output *os.File) {
+func Usage(output io.Writer) {
 	fmt.Fprintln(output, `构建一个新的 web 项目
 
 语法：web create [mod]
@@ -29,7 +30,7 @@ mod 为一个可选参数，如果指定了，则会直接使用此值作为模�
 }
 
 // Do 执行子命令
-func Do(output *os.File) error {
+func Do(output io.Writer) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

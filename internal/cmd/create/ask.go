@@ -7,7 +7,7 @@ package create
 import (
 	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -15,13 +15,13 @@ import (
 // 构建一个简单的终端交互界面
 type asker struct {
 	reader *bufio.Reader
-	output *os.File
+	output io.Writer
 
 	err error
 }
 
 // 声明 asker 变量
-func newAsker(input, output *os.File) *asker {
+func newAsker(input io.Reader, output io.Writer) *asker {
 	return &asker{
 		reader: bufio.NewReader(input),
 		output: output,

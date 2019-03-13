@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -41,7 +42,7 @@ func init() {
 }
 
 // Do 执行子命令
-func Do(output *os.File) error {
+func Do(output io.Writer) error {
 	if err := flagset.Parse(os.Args[2:]); err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func Do(output *os.File) error {
 // 检测框架的最新版本号
 //
 // 获取线上的标签列表，拿到其中的最大值。
-func checkRemoteVersion(output *os.File) error {
+func checkRemoteVersion(output io.Writer) error {
 	cmd := exec.Command("git", "ls-remote", "--tags", repoURL)
 	buf := new(bytes.Buffer)
 	cmd.Stdout = buf
@@ -101,7 +102,7 @@ func getMaxVersion(buf *bytes.Buffer) (string, error) {
 }
 
 // Usage 当前子命令的用法
-func Usage(output *os.File) {
+func Usage(output io.Writer) {
 	fmt.Fprintln(output, `显示当前程序的版本号
 
 语法：web version [options]

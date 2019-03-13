@@ -10,6 +10,7 @@ package watch
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/caixw/gobuild"
@@ -32,7 +33,7 @@ func init() {
 }
 
 // Do 执行子命令
-func Do(output *os.File) error {
+func Do(output io.Writer) error {
 	if err := flagset.Parse(os.Args[2:]); err != nil {
 		return err
 	}
@@ -49,7 +50,7 @@ func Do(output *os.File) error {
 }
 
 // Usage 当前子命令的用法
-func Usage(output *os.File) {
+func Usage(output io.Writer) {
 	fmt.Fprintln(output, `热编译当前目录下的项目
 
 命令行语法：
