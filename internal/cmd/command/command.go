@@ -35,8 +35,10 @@ func init() {
 // Exec 执行子命令
 func Exec(output io.Writer) error {
 	fn := usage
-	if cmd, found := commands[os.Args[1]]; found {
-		fn = cmd.do
+	if len(os.Args) > 1 {
+		if cmd, found := commands[os.Args[1]]; found {
+			fn = cmd.do
+		}
 	}
 
 	return fn(output)
