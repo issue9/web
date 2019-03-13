@@ -67,7 +67,16 @@ func helpUsage(output *os.File) {
 }
 
 func helpNotExistsUsage(output *os.File) {
-	// TODO
+	keys := make([]string, 0, len(commands))
+	for k := range commands {
+		keys = append(keys, k)
+	}
+
+	fmt.Fprintf(output, `找不到该子命令的相关信息
+
+目前支持以下子命令：%s
+详情可以通过 web help [subcommand] 进行查看。
+`, strings.Join(keys, ","))
 }
 
 func usage(output *os.File) error {
