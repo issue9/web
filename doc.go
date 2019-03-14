@@ -24,7 +24,7 @@
 // https://www.iana.org/assignments/character-sets/character-sets.xhtml
 //
 //
-// 字符集和媒体类型
+// 媒体类型
 //
 // 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
 // Mimetypes().AddMarshals() 和 Mimetypes().AddUnmarshals() 添加相关的处理函数。
@@ -51,5 +51,5 @@
 //
 // 用户可以把功能相对独立的内容当作一个模块进行封装。框架本身提供了 web.NewModule()
 // 对模块进行了依赖管理。用户可以在 web.NewModule() 返回对象中，
-// 对模块进行初始化和路由项的添加。所有模块会在 web.Serve() 中进行初始化。
+// 对模块进行初始化和路由项的添加。所有模块会在 web.Init() 中进行初始化。
 package web

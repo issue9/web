@@ -64,6 +64,24 @@ func Init() {
 |
 ```
 
+##### 模块
+
+项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
+用于向框架注册当前模块的一些主要信息。通过 `web.NewModule` 注册模块：
+```go
+m := web.NewModule("test", "测试模块")
+
+m.AddInit(func()error {
+    // TODO 此处可以添加初始化模块的相关代码
+    return nil
+}, "初始化函数描述")
+
+m.AddService(func(ctx context.Context)error {
+    // TODO 此处添加服务代码
+}, "服务描述")
+```
+
+
 
 #### 配置文件
 
@@ -151,7 +169,7 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 }
 ```
 
-具体可参考代码文档中的有关 context.Result 的定义。
+具体可参考代码文档中的有关 web.Result 的定义。
 
 
 
