@@ -5,6 +5,8 @@
 package web
 
 import (
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -15,22 +17,17 @@ func TestVersion(t *testing.T) {
 	assert.True(t, version.SemVerValid(Version), "无效的版本号")
 }
 
-func TestCheckVersion(t *testing.T) {
+func TestMiniVersion(t *testing.T) {
 	a := assert.New(t)
 
-	checkVersion("go1.11")
-	checkVersion("go1.11.1")
-	checkVersion("1.11.1")
+	goversion := strings.TrimPrefix(runtime.Version(), "go")
+	a.NotEmpty(goversion)
 
-	checkVersion("devel +12345")
+	// tip 版本，不作检测
+	if strings.HasPrefix(goversion, "devel ") {
+		return
+	}
 
-	// 错误的语法
-	a.Panic(func() {
-		checkVersion("1.ab.")
-	})
-
-	// 版本过低
-	a.Panic(func() {
-		checkVersion("go1.9")
-	})
+	v, err := version.SemVerCompare(goversion, MinimumGoVersion)
+	a.NotError(err).False(v < 0, "版本号太低")
 }

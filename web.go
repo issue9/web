@@ -5,11 +5,6 @@
 package web
 
 import (
-	"runtime"
-	"strings"
-
-	"github.com/issue9/version"
-
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/module"
 )
@@ -42,26 +37,3 @@ type (
 	// ServiceFunc 等同于 module.ServiceFunc，方便调用者使用
 	ServiceFunc = module.ServiceFunc
 )
-
-// 作最低版本检测
-func init() {
-	checkVersion(runtime.Version())
-}
-
-func checkVersion(goversion string) {
-	goversion = strings.TrimPrefix(goversion, "go")
-
-	// tip 版本，不作检测
-	if strings.HasPrefix(goversion, "devel ") {
-		return
-	}
-
-	v, err := version.SemVerCompare(goversion, MinimumGoVersion)
-	if err != nil {
-		panic(err)
-	}
-
-	if v < 0 {
-		panic("低于最小版本需求")
-	}
-}
