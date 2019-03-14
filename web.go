@@ -38,6 +38,9 @@ type (
 
 	// Service 等同于 module.Service，方便调用者使用
 	Service = module.Service
+
+	// ServiceFunc 等同于 module.ServiceFunc，方便调用者使用
+	ServiceFunc = module.ServiceFunc
 )
 
 // 作最低版本检测
