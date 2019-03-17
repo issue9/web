@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/config"
 	"github.com/issue9/middleware"
+	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
@@ -213,6 +214,11 @@ func Load(r io.Reader, typ string, v interface{}) error {
 // NewMessages 添加新的错误消息代码
 func NewMessages(status int, messages map[int]string) {
 	defaultApp.Messages().NewMessages(status, messages)
+}
+
+// ErrorHandlers 错误处理功能
+func  ErrorHandlers() *errorhandler.ErrorHandler {
+	return defaultApp.ErrorHandlers()
 }
 
 // Messages 获取所有的错误消息代码
