@@ -140,12 +140,18 @@ func (rslt *Result) String() string {
 // ProtoMessage proto.Message.ProtoMessage
 func (rslt *Result) ProtoMessage() {}
 
-func (m *detail) Reset()         { *m = detail{} }
-func (m *detail) String() string { return proto.CompactTextString(m) }
-func (*detail) ProtoMessage()    {}
+func (m *detail) Reset() {
+	*m = detail{}
+}
+
+func (m *detail) String() string {
+	return proto.CompactTextString(m)
+}
+
+func (*detail) ProtoMessage() {}
 
 // RegisterProto 注册用到的 proto 类型
 func RegisterProto() {
 	proto.RegisterType((*Result)(nil), "Result")
-	proto.RegisterType((*detail)(nil), "detail")
+	proto.RegisterType((*detail)(nil), "Detail")
 }
