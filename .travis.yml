@@ -14,8 +14,13 @@ go:
   - 1.11.x
 
 script: 
+  # test
   - go generate -v ./...
   - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+
+  # build
+  - -if [[ "$TRAVIS_OS_NAME" == "windows" ]] then ./build/web.bat;
+  - -if [[ "$TRAVIS_OS_NAME" != "windows" ]] then ./build/web.sh;
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
