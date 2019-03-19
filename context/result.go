@@ -42,7 +42,7 @@ import (
 // FormData:
 //  message=errormessage&code=4000001&detail.username=message&detail.username=message
 type Result struct {
-	XMLName struct{} `json:"-" xml:"result" yaml:"-" protobuf:"-"`
+	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
 
 	// 当前的信息所对应的 HTTP 状态码
 	status int
