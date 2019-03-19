@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 
 	"github.com/issue9/utils"
+	"github.com/issue9/term/prompt"
+	"github.com/issue9/term/colors"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
@@ -36,13 +38,13 @@ func Do(output io.Writer) error {
 		return err
 	}
 
-	ask := newAsker(os.Stdin, output)
+	ask := prompt.New('\n',os.Stdin, output,colors.Green)
 
 	if len(os.Args) == 3 {
 		return createMod(os.Args[2], wd, ask)
 	}
 
-	mod, err := ask.Ask("模块名", "")
+	mod, err := ask.String("模块名", "")
 	if err != nil {
 		return err
 	}
@@ -56,7 +58,7 @@ func Do(output io.Writer) error {
 //
 // mod 是模块名称，比如 github.com/issue9/web；
 // wd 表示当前的工作目录，项目会在此目录中创建。
-func createMod(mod, wd string, ask *asker) error {
+func createMod(mod, wd string, ask *prompt.Prompt) error {
 	name := filepath.Base(mod)
 	path, err := filepath.Abs(filepath.Join(wd, name))
 	if err != nil {
@@ -65,7 +67,7 @@ func createMod(mod, wd string, ask *asker) error {
 
 	// 创建文件夹
 	if utils.FileExists(path) {
-		cover, err := ask.AskBool("存在同名文件夹，是否覆盖", false)
+		cover, err := ask.Bool("存在同名文件夹，是否覆盖", false)
 		if err != nil {
 			return err
 		}
