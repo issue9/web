@@ -53,6 +53,13 @@ func (dep *dependency) init(tag string) error {
 		}
 	}
 
+	dep.println("模块初始化完成！")
+	dep.println("模块加载了以下路由项：")
+	all := dep.ms.Mux().All(true, true)
+	for path, methods := range all {
+		dep.println(path, methods)
+	}
+
 	return nil
 }
 
