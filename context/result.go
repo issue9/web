@@ -42,20 +42,20 @@ import (
 // FormData:
 //  message=errormessage&code=4000001&detail.username=message&detail.username=message
 type Result struct {
-	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
+	XMLName struct{} `json:"-" xml:"result" yaml:"-" protobuf:"-"`
 
 	// 当前的信息所对应的 HTTP 状态码
 	status int
 	ctx    *Context
 
-	Message string    `json:"message" xml:"message,attr" yaml:"message"`
-	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
-	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty"`
+	Message string    `json:"message" xml:"message,attr" yaml:"message" protobuf:"bytes,2,opt,name=message,proto3"`
+	Code    int       `json:"code" xml:"code,attr" yaml:"code" protobuf:"varint,1,opt,name=code,proto3"`
+	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty" protobuf:"bytes,3,rep,name=detail,proto3"`
 }
 
 type detail struct {
-	Field   string `json:"field" xml:"name,attr" yaml:"field"`
-	Message string `json:"message" xml:",chardata" yaml:"message"`
+	Field   string `json:"field" xml:"name,attr" yaml:"field" protobuf:"bytes,1,opt,name=field,proto3"`
+	Message string `json:"message" xml:",chardata" yaml:"message" protobuf:"bytes,2,opt,name=message,proto3"`
 }
 
 // NewResult 返回 Result 实例
@@ -138,5 +138,14 @@ func (rslt *Result) String() string {
 }
 
 // ProtoMessage proto.Message.ProtoMessage
-func (rslt *Result) ProtoMessage() {
+func (rslt *Result) ProtoMessage() {}
+
+func (m *detail) Reset()         { *m = detail{} }
+func (m *detail) String() string { return proto.CompactTextString(m) }
+func (*detail) ProtoMessage()    {}
+
+// RegisterProto 注册用到的 proto 类型
+func RegisterProto() {
+	proto.RegisterType((*Result)(nil), "Result")
+	proto.RegisterType((*detail)(nil), "detail")
 }

@@ -1,12 +1,12 @@
 syntax = "proto3";
 
 message Result {
-    required int code = 1;
-    required string message = 2;
+    int64 code = 1;
+    string message = 2;
     repeated Detail detail = 3;
 }
 
 message Detail {
-    required string field = 1;
-    required string message = 2;
+    string field = 1;
+    string message = 2;
 }
