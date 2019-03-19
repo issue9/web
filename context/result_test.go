@@ -205,3 +205,15 @@ func TestResultFormMarshal(t *testing.T) {
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `code=400&message=400`)
 }
+
+func TestResultProtoMarshal(t *testing.T) {
+	a := assert.New(t)
+	RegisterProto()
+
+	bs, err := proto.Marshal(mimetypeResult)
+	a.NotError(err).NotNil(bs)
+
+	r2 :=&Result{}
+	a.NotError(proto.Unmarshal(bs,r2)).
+	Equal(r2,mimetypeResult)
+}
