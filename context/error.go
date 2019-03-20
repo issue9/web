@@ -14,6 +14,9 @@ import (
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
+//
+// 输出的内容，会根据 status 的值，在 errorhandler 中查找相应的响应内容，
+// 即使该值小于 400。
 func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.App.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
@@ -26,6 +29,9 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
+//
+// 输出的内容，会根据 status 的值，在 errorhandler 中查找相应的响应内容，
+// 即使该值小于 400。
 func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.App.Logs().ERROR().Output(2, fmt.Sprint(v...))
@@ -38,6 +44,9 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
+//
+// 输出的内容，会根据 status 的值，在 errorhandler 中查找相应的响应内容，
+// 即使该值小于 400。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.App.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
@@ -50,6 +59,9 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
+//
+// 输出的内容，会根据 status 的值，在 errorhandler 中查找相应的响应内容，
+// 即使该值小于 400。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.App.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))

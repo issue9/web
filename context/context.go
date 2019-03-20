@@ -169,6 +169,9 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称。
+//
+// 通过 Render 输出的内容，即使 status 的值大于 399，
+// 依赖能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
 	header := ctx.Response.Header()
 	var contentTypeFound, contentLanguageFound bool
@@ -236,6 +239,9 @@ func (ctx *Context) Read(v interface{}) (ok bool) {
 // 会直接调用 Error() 处理，输出 500 的状态码。
 //
 // 如果需要具体控制出错后的处理方式，可以使用 Marshal 函数。
+//
+// 通过 Render 输出的内容，即使 status 的值大于 399，
+// 依赖能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容。
 func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
 	if err := ctx.Marshal(status, v, headers); err != nil {
 		ctx.Error(http.StatusInternalServerError, err)
