@@ -15,7 +15,7 @@ os:
 
 go:
   - tip
-  - 1.12
+  - 1.12.x
   - 1.11.x
 
 stages:
@@ -25,11 +25,9 @@ stages:
 jobs:
   include:
     - stage: test
-      script:
-        - go generate -v ./...
-        - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-      after_success:
-        - bash <(curl -s https://codecov.io/bash)
+      script: go generate -v ./...
+      script: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+      after_success: bash <(curl -s https://codecov.io/bash)
 
     # 简单尝试编译是否成功
     - stage: build
