@@ -13,14 +13,27 @@ go:
   - 1.12
   - 1.11.x
 
-script: 
-  # test
-  - go generate -v ./...
-  - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+stages:
+  - test
 
-  # build
-  - -if [[ "$TRAVIS_OS_NAME" == "windows" ]] then ./build/web.bat;
-  - -if [[ "$TRAVIS_OS_NAME" != "windows" ]] then ./build/web.sh;
+  - name: build-posix
+    if: os != windows
+
+  - name: build-windows
+    if: os = windows
+
+jobs:
+  include:
+    - stage: test
+      script:
+        - go generate -v ./...
+        - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - stage: build-posix
+      script: ./build/web.sh
+
+    - stage: build-windows
+      script: ./build/web.bat
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
