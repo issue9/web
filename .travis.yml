@@ -1,17 +1,7 @@
 language: go
 
-os:
-  - linux
-  - osx
-  - windows
-
 env:
   - GO111MODULE=on
-
-go:
-  - tip
-  - 1.12
-  - 1.11.x
 
 stages:
   - test
@@ -20,16 +10,31 @@ stages:
 jobs:
   include:
     - stage: test
+      os:
+        - linux
+        - osx
+        - windows
+      go:
+        - tip
+        - 1.12
+        - 1.11.x
       script:
         - go generate -v ./...
         - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
 
     # 简单尝试编译是否成功
     - stage: build
+      os:
+        - linux
+        - osx
+        - windows
+      go:
+        - tip
+        - 1.12
+        - 1.11.x
       script: go build ./cmd/web
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
 
 matrix:
   allow_failures:
