@@ -15,12 +15,7 @@ go:
 
 stages:
   - test
-
-  - name: build-posix
-    if: os != windows
-
-  - name: build-windows
-    if: os = windows
+  - build
 
 jobs:
   include:
@@ -29,11 +24,9 @@ jobs:
         - go generate -v ./...
         - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
 
-    - stage: build-posix
-      script: ./build/web.sh
-
-    - stage: build-windows
-      script: ./build/web.bat
+    # 简单尝试编译是否成功
+    - stage: build
+      script: go build ./cmd/web
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
