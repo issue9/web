@@ -3,6 +3,21 @@ language: go
 env:
   - GO111MODULE=on
 
+branchs:
+  only:
+  - master
+  - /^v*$/
+
+os:
+  - linux
+  - osx
+  - windows
+
+go:
+  - tip
+  - 1.12
+  - 1.11.x
+
 stages:
   - test
   - build
@@ -10,14 +25,6 @@ stages:
 jobs:
   include:
     - stage: test
-      os:
-        - linux
-        - osx
-        - windows
-      go:
-        - tip
-        - 1.12
-        - 1.11.x
       script:
         - go generate -v ./...
         - go test -v -coverprofile=coverage.txt -covermode=atomic ./...
@@ -26,14 +33,18 @@ jobs:
 
     # 简单尝试编译是否成功
     - stage: build
-      os:
-        - linux
-        - osx
-        - windows
-      go:
-        - tip
-        - 1.12
-        - 1.11.x
+      os: linux
+      go: 1.12.x
+      script: go build ./cmd/web
+
+    - stage: build
+      os: windows
+      go: 1.12.x
+      script: go build ./cmd/web
+
+    - stage: build
+      os: macOS
+      go: 1.12.x
       script: go build ./cmd/web
 
 matrix:
