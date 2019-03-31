@@ -14,7 +14,7 @@ import (
 
 func TestMessages(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := New(getResult)
 	a.NotNil(m)
 
 	a.NotError(xmessage.SetString(language.Und, "lang", "und"))
@@ -22,14 +22,16 @@ func TestMessages(t *testing.T) {
 	a.NotError(xmessage.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotPanic(func() { (m.newMessage(400, 40010, "lang")) })
 
-	msg, found := m.Message(40010)
-	a.True(found).
-		Equal(msg.Message, "lang").
-		Equal(msg.Status, 400)
+	rslt := m.New(40010)
+	r, ok := rslt.(*ResultData)
+	a.True(ok).NotNil(r)
+	a.Equal(r.Message, "lang").
+		Equal(r.status, 400)
 
 	// 不存在
-	msg, found = m.Message(40010001)
-	a.False(found).Nil(msg)
+	a.Panic(func() {
+		m.New(40010001)
+	})
 
 	lmsgs := m.Messages(xmessage.NewPrinter(language.Und))
 	a.Equal(lmsgs[40010], "und")
@@ -49,7 +51,7 @@ func TestMessages(t *testing.T) {
 
 func TestNewMessages(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := New(getResult)
 	a.NotNil(m)
 
 	a.NotPanic(func() {
@@ -61,8 +63,8 @@ func TestNewMessages(t *testing.T) {
 
 	msg, found := m.messages[1]
 	a.True(found).
-		Equal(msg.Status, 400).
-		Equal(msg.Message, "1")
+		Equal(msg.status, 400).
+		Equal(msg.message, "1")
 
 	msg, found = m.messages[401]
 	a.False(found).Nil(msg)

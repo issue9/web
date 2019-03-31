@@ -10,6 +10,8 @@ type Result interface {
 	// 添加详细的内容
 	Add(key, val string)
 
+	Set(key, val string)
+
 	// HTTP 状态码
 	Status() int
 }
