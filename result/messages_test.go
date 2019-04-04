@@ -14,7 +14,7 @@ import (
 
 func TestMessages(t *testing.T) {
 	a := assert.New(t)
-	m := New(getResult)
+	m := NewMessages(getResult)
 	a.NotNil(m)
 
 	a.NotError(xmessage.SetString(language.Und, "lang", "und"))
@@ -51,7 +51,7 @@ func TestMessages(t *testing.T) {
 
 func TestNewMessages(t *testing.T) {
 	a := assert.New(t)
-	m := New(getResult)
+	m := NewMessages(getResult)
 	a.NotNil(m)
 
 	a.NotPanic(func() {

@@ -4,7 +4,10 @@
 
 package result
 
-var _ Result = &ResultData{}
+var (
+	_ Result        = &ResultData{}
+	_ GetResultFunc = getResult
+)
 
 func getResult(status, code int, message string) Result {
 	return &ResultData{
@@ -40,4 +43,8 @@ func (rslt *ResultData) Set(field, message string) {
 
 func (rslt *ResultData) Status() int {
 	return rslt.status
+}
+
+func (rslt *ResultData) Error() string {
+	return rslt.Message
 }

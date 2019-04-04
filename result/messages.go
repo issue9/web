@@ -10,14 +10,17 @@ import (
 	xmessage "golang.org/x/text/message"
 )
 
+// GetResultFunc 用于生成 Result 接口对象的函数
+type GetResultFunc func(status, code int, message string) Result
+
 // Messages 保存所有的代码与消息对应关系
 type Messages struct {
 	get      func(int, int, string) Result
 	messages map[int]*message
 }
 
-// New 声明 Messages 变量
-func New(get func(int, int, string) Result) *Messages {
+// NewMessages 声明 Messages 变量
+func NewMessages(get GetResultFunc) *Messages {
 	return &Messages{
 		get:      get,
 		messages: make(map[int]*message, 100),
