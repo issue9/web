@@ -21,12 +21,11 @@ func TestModule_NewTag(t *testing.T) {
 
 	v := m.NewTag("0.1.0")
 	a.NotNil(v).NotNil(m.tags["0.1.0"])
-	a.Equal(v.Name, "0.1.0")
 	v.AddInit(nil, "title1")
 	a.Equal(v.inits[0].title, "title1")
 
 	vv := m.NewTag("0.1.0")
-	a.Equal(vv, v).Equal(vv.Name, "0.1.0")
+	a.Equal(vv, v)
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)

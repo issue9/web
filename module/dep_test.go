@@ -121,7 +121,6 @@ func TestDependency_init(t *testing.T) {
 
 	m1 := m(ms, "m1", i("m1"), "d1", "d2")
 	m1.PutFunc("/put", f1)
-	m1.NewTag("install").PostFunc("/install", f1)
 	mss := []*Module{
 		m1,
 		m(ms, "d1", i("d1"), "d3"),

@@ -66,7 +66,9 @@ func (dep *dependency) init(tag string) error {
 }
 
 // 初始化指定模块，会先初始化其依赖模块。
+//
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
+// 若 tag 不为空，表示只调用该标签下的初始化函数。
 func (dep *dependency) initModule(m *Module, tag string) error {
 	if m.inited {
 		return nil
@@ -84,18 +86,19 @@ func (dep *dependency) initModule(m *Module, tag string) error {
 		}
 	}
 
-	t := m
+	inits := m.inits
 	if tag != "" {
-		var found bool
-		if t, found = m.tags[tag]; !found {
+		t, found := m.tags[tag]
+		if !found {
 			return nil
 		}
+		inits = t.inits
 	}
 
 	dep.println("\n开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
-	for _, init := range t.inits {
+	for _, init := range inits {
 		title := init.title
 
 		dep.println("  执行初始化函数：", title)

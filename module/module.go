@@ -7,14 +7,20 @@ package module
 
 // Module 表示模块信息
 type Module struct {
+	Tag
+
 	Name        string
 	Description string
 	Deps        []string
 
-	tags   map[string]*Module
-	inits  []*initialization
+	tags   map[string]*Tag
 	ms     *Modules
 	inited bool
+}
+
+// Tag 版本化安装脚本管理内容
+type Tag struct {
+	inits []*initialization
 }
 
 // 声明一个新的模块
@@ -22,8 +28,6 @@ type Module struct {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-//
-// 仅供框架内部使用，不保证函数签名的兼容性。
 func newModule(ms *Modules, name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
@@ -37,13 +41,15 @@ func newModule(ms *Modules, name, desc string, deps ...string) *Module {
 //
 // Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
 // 一般用于功能更新等操作。
-func (m *Module) NewTag(tag string) *Module {
+func (m *Module) NewTag(tag string) *Tag {
 	if m.tags == nil {
-		m.tags = make(map[string]*Module, 5)
+		m.tags = make(map[string]*Tag, 5)
 	}
 
 	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = newModule(m.ms, tag, "")
+		m.tags[tag] = &Tag{
+			inits: make([]*initialization, 0, 5),
+		}
 	}
 
 	return m.tags[tag]
