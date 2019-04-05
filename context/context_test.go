@@ -21,6 +21,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/internal/resulttest"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -31,6 +32,10 @@ func init() {
 	message.SetString(language.SimplifiedChinese, "test", "简体")
 	message.SetString(language.TraditionalChinese, "test", "繁体")
 	message.SetString(language.English, "test", "english")
+}
+
+func getResult(status, code int, message string) app.Result {
+	return resulttest.New(status, code, message)
 }
 
 func newContext(a *assert.Assertion,
@@ -67,7 +72,7 @@ func newApp(a *assert.Assertion) *app.App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := app.New(mgr, "logs.xml", "web.yaml")
+	app, err := app.New(mgr, "logs.xml", "web.yaml", getResult)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

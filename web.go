@@ -5,6 +5,7 @@
 package web
 
 import (
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/module"
 )
@@ -25,8 +26,8 @@ type (
 	// Context 等同于 context.Context，方便调用者使用
 	Context = context.Context
 
-	// Result 等同于 context.Resut，方便调用者使用
-	Result = context.Result
+	// Result 等同于 app.Resut，方便调用者使用
+	Result = app.Result
 
 	// Module 等同于 module.Module，方便调用者使用
 	Module = module.Module

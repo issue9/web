@@ -10,51 +10,17 @@ import (
 	"github.com/issue9/assert"
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
+
+	"github.com/issue9/web/internal/resulttest"
 )
 
 var (
-	_ Result        = &ResultData{}
+	_ Result        = &resulttest.Result{}
 	_ GetResultFunc = getResult
 )
 
 func getResult(status, code int, message string) Result {
-	return &ResultData{
-		status:  status,
-		Code:    code,
-		Message: message,
-	}
-}
-
-type ResultData struct {
-	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
-
-	// 当前的信息所对应的 HTTP 状态码
-	status int
-
-	Message string    `json:"message" xml:"message,attr" yaml:"message"`
-	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
-	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty"`
-}
-
-type detail struct {
-	Field   string `json:"field" xml:"name,attr" yaml:"field"`
-	Message string `json:"message" xml:",chardata" yaml:"message"`
-}
-
-func (rslt *ResultData) Add(field, message string) {
-	rslt.Detail = append(rslt.Detail, &detail{Field: field, Message: message})
-}
-
-func (rslt *ResultData) Set(field, message string) {
-	rslt.Detail = append(rslt.Detail, &detail{Field: field, Message: message})
-}
-
-func (rslt *ResultData) Status() int {
-	return rslt.status
-}
-
-func (rslt *ResultData) Error() string {
-	return rslt.Message
+	return resulttest.New(status, code, message)
 }
 
 func TestApp_Messages(t *testing.T) {
@@ -69,10 +35,10 @@ func TestApp_Messages(t *testing.T) {
 	a.NotPanic(func() { (app.newMessage(400, 40010, "lang")) })
 
 	rslt := app.NewResult(40010)
-	r, ok := rslt.(*ResultData)
+	r, ok := rslt.(*resulttest.Result)
 	a.True(ok).NotNil(r)
 	a.Equal(r.Message, "lang").
-		Equal(r.status, 400)
+		Equal(r.Status(), 400)
 
 	// 不存在
 	a.Panic(func() {

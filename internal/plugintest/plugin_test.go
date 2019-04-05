@@ -13,13 +13,19 @@ import (
 	"github.com/issue9/assert"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/app"
+	"github.com/issue9/web/internal/resulttest"
 )
+
+func getResult(status, code int, message string) app.Result {
+	return resulttest.New(status, code, message)
+}
 
 // 测试插件系统是否正常
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(web.Classic("./testdata"))
+	a.NotError(web.Classic("./testdata", getResult))
 
 	ms := web.Modules()
 	a.Equal(3, len(ms)) // web-core 和两个插件
