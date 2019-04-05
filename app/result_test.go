@@ -32,7 +32,7 @@ func TestApp_Messages(t *testing.T) {
 	a.NotError(xmessage.SetString(language.Und, "lang", "und"))
 	a.NotError(xmessage.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(xmessage.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotPanic(func() { (app.newMessage(400, 40010, "lang")) })
+	a.NotPanic(func() { (app.AddMessages(400, map[int]string{40010: "lang"})) })
 
 	rslt := app.NewResult(40010)
 	r, ok := rslt.(*resulttest.Result)
@@ -61,12 +61,12 @@ func TestApp_Messages(t *testing.T) {
 	a.Equal(lmsgs[40010], "lang")
 }
 
-func TestApp_NewMessages(t *testing.T) {
+func TestApp_AddMessages(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
 	a.NotPanic(func() {
-		app.NewMessages(400, map[int]string{
+		app.AddMessages(400, map[int]string{
 			1:   "1",
 			100: "100",
 		})
@@ -82,7 +82,7 @@ func TestApp_NewMessages(t *testing.T) {
 
 	// 消息不能为空
 	a.Panic(func() {
-		app.NewMessages(400, map[int]string{
+		app.AddMessages(400, map[int]string{
 			1:   "",
 			100: "100",
 		})
@@ -90,7 +90,7 @@ func TestApp_NewMessages(t *testing.T) {
 
 	// 重复的 ID
 	a.Panic(func() {
-		app.NewMessages(400, map[int]string{
+		app.AddMessages(400, map[int]string{
 			1:   "1",
 			100: "100",
 		})

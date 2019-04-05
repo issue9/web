@@ -211,9 +211,9 @@ func Load(r io.Reader, typ string, v interface{}) error {
 	return defaultApp.Config().Load(r, typ, v)
 }
 
-// NewMessages 添加新的错误消息代码
-func NewMessages(status int, messages map[int]string) {
-	defaultApp.NewMessages(status, messages)
+// AddMessages 添加新的错误消息代码
+func AddMessages(status int, messages map[int]string) {
+	defaultApp.AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能

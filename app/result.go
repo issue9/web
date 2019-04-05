@@ -62,26 +62,21 @@ func (app *App) Messages(p *xmessage.Printer) map[int]string {
 	return msgs
 }
 
-// 添加一条错误信息
+// AddMessages 添加一组错误信息。
 //
-// status 指定了该错误代码反馈给客户端的 HTTP 状态码
-// code 表示的是该错误的错误代码。
-// msg 表示具体的错误描述内容。
-func (app *App) newMessage(status, code int, msg string) {
-	if len(msg) == 0 {
-		panic("参数 msg 不能为空值")
-	}
-
-	if _, found := app.messages[code]; found {
-		panic(fmt.Sprintf("重复的消息 ID: %d", code))
-	}
-
-	app.messages[code] = &message{message: msg, status: status}
-}
-
-// NewMessages 添加一组错误信息。
-func (app *App) NewMessages(status int, msgs map[int]string) {
+// status 指定了该错误代码反馈给客户端的 HTTP 状态码；
+// msgs 中，键名表示的是该错误的错误代码；
+// 键值表示具体的错误描述内容。
+func (app *App) AddMessages(status int, msgs map[int]string) {
 	for code, msg := range msgs {
-		app.newMessage(status, code, msg)
+		if msg == "" {
+			panic("参数 msg 不能为空值")
+		}
+
+		if _, found := app.messages[code]; found {
+			panic(fmt.Sprintf("重复的消息 ID: %d", code))
+		}
+
+		app.messages[code] = &message{message: msg, status: status}
 	}
 }
