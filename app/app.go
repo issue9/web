@@ -19,9 +19,8 @@ import (
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+	xmessage "golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/messages"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -37,8 +36,10 @@ type App struct {
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
-	messages      *messages.Messages
 	compresses    map[string]compress.WriterFunc
+
+	getResult GetResultFunc
+	messages  map[int]*message
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
@@ -47,7 +48,7 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-func New(mgr *config.Manager, logsFilename, configFilename string) (*App, error) {
+func New(mgr *config.Manager, logsFilename, configFilename string, get GetResultFunc) (*App, error) {
 	logs := logs.New()
 	conf := &lconf.Config{}
 	if err := mgr.LoadFile(logsFilename, conf); err != nil {
@@ -75,8 +76,9 @@ func New(mgr *config.Manager, logsFilename, configFilename string) (*App, error)
 		configs:       mgr,
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
-		messages:      messages.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
+		getResult:     get,
+		messages:      map[int]*message{},
 		server: &http.Server{
 			Addr:              ":" + strconv.Itoa(webconf.Port),
 			ErrorLog:          logs.ERROR(),
@@ -158,8 +160,8 @@ func (app *App) Serve() (err error) {
 }
 
 // LocalPrinter 获取本地化的输出对象
-func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
-	return message.NewPrinter(tag, opts...)
+func (app *App) LocalPrinter(tag language.Tag, opts ...xmessage.Option) *xmessage.Printer {
+	return xmessage.NewPrinter(tag, opts...)
 }
 
 // Close 关闭服务。
@@ -209,11 +211,6 @@ func (app *App) Config() *config.Manager {
 // ErrorHandlers 错误处理功能
 func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 	return app.errorhandlers
-}
-
-// Messages 返回 messages.Messages 实例
-func (app *App) Messages() *messages.Messages {
-	return app.messages
 }
 
 // Logs 获取 logs.Logs 实例
