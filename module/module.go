@@ -18,7 +18,10 @@ type Module struct {
 	inited bool
 }
 
-// Tag 版本化安装脚本管理内容
+// Tag 表示与特写标签相关联的初始化函数列表。
+// 依附地模块，共享模块的依赖关系。
+//
+// 一般是各个模块下的安装脚本使用。
 type Tag struct {
 	inits []*initialization
 }

@@ -53,13 +53,16 @@ func (dep *dependency) init(tag string) error {
 		}
 	}
 
-	all := dep.ms.Mux().All(true, true)
-	if len(all) > 0 {
-		dep.println("模块加载了以下路由项：")
-		for path, methods := range all {
-			dep.println(path, methods)
+	if tag == "" { // 只有模块的初始化才带路由
+		all := dep.ms.Mux().All(true, true)
+		if len(all) > 0 {
+			dep.println("模块加载了以下路由项：")
+			for path, methods := range all {
+				dep.println(path, methods)
+			}
 		}
 	}
+
 	dep.println("模块初始化完成！")
 
 	return nil
