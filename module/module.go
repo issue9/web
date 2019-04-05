@@ -26,6 +26,12 @@ type Tag struct {
 	inits []*initialization
 }
 
+// 表示初始化功能的相关数据
+type initialization struct {
+	title string
+	f     func() error
+}
+
 // 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
@@ -76,4 +82,16 @@ func (m *Module) Plugin(name, description string, deps ...string) {
 	m.Name = name
 	m.Description = description
 	m.Deps = deps
+}
+
+// AddInit 添加一个初始化函数
+//
+// title 该初始化函数的名称。没有则会自动生成一个序号，多个，则取第一个元素。
+func (t *Tag) AddInit(f func() error, title string) *Tag {
+	if t.inits == nil {
+		t.inits = make([]*initialization, 0, 5)
+	}
+
+	t.inits = append(t.inits, &initialization{f: f, title: title})
+	return t
 }
