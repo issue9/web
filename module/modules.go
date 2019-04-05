@@ -106,10 +106,6 @@ func (ms *Modules) reset() {
 
 	ms.Stop() // 先停止停止服务
 	ms.services = ms.services[:0]
-
-	for _, m := range ms.modules {
-		m.inited = false
-	}
 }
 
 // Modules 获取所有的模块信息

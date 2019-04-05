@@ -8,14 +8,11 @@ package module
 // Module 表示模块信息
 type Module struct {
 	Tag
-
 	Name        string
 	Description string
 	Deps        []string
-
-	tags   map[string]*Tag
-	ms     *Modules
-	inited bool
+	tags        map[string]*Tag
+	ms          *Modules
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
