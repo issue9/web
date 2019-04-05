@@ -10,6 +10,8 @@ import (
 
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/mux/v2/params"
+
+	"github.com/issue9/web/app"
 )
 
 var emptyParams = params.Params(map[string]string{})
@@ -221,8 +223,12 @@ func (p *Params) Errors() map[string]string {
 //
 // code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
 // Params.errors 将会作为 Result.Detail 的内容。
-func (p *Params) Result(code int) *Result {
-	return p.ctx.NewResult(code).SetDetail(p.Errors())
+func (p *Params) Result(code int) app.Result {
+	rslt := p.ctx.NewResult(code)
+	for k, v := range p.Errors() {
+		rslt.Add(k, v)
+	}
+	return rslt
 }
 
 // ParamID 获取地址参数中表示 ID 的值。相对于 ParamInt64，该值必须大于 0。
