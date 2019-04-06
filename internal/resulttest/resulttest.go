@@ -14,7 +14,35 @@ func New(status, code int, message string) *Result {
 	}
 }
 
-// Result 实现 app.Result 接口内容
+// Result 定义了出错时，向客户端返回的结构体。支持以下格式：
+//
+// JSON:
+//  {
+//      'message': 'error message',
+//      'code': 4000001,
+//      'detail':[
+//          {'field': 'username': 'message': '已经存在相同用户名'},
+//          {'field': 'username': 'message': '已经存在相同用户名'},
+//      ]
+//  }
+//
+// XML:
+//  <result code="400" message="error message">
+//      <field name="username">已经存在相同用户名</field>
+//      <field name="username">已经存在相同用户名</field>
+//  </result>
+//
+// YAML:
+//  message: 'error message'
+//  code: 40000001
+//  detail:
+//    - field: username
+//      message: 已经存在相同用户名
+//    - field: username
+//      message: 已经存在相同用户名
+//
+// FormData:
+//  message=errormessage&code=4000001&detail.username=message&detail.username=message
 type Result struct {
 	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
 
@@ -33,11 +61,6 @@ type detail struct {
 
 // Add app.Result.Add
 func (rslt *Result) Add(field, message string) {
-	rslt.Detail = append(rslt.Detail, &detail{Field: field, Message: message})
-}
-
-// Set app.Result.Set
-func (rslt *Result) Set(field, message string) {
 	rslt.Detail = append(rslt.Detail, &detail{Field: field, Message: message})
 }
 

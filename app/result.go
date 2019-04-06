@@ -13,14 +13,27 @@ import (
 // GetResultFunc 用于生成 Result 接口对象的函数
 type GetResultFunc func(status, code int, message string) Result
 
-// Result 提供了错误状态码的输出功能
+// Result 提供了自定义错误码的功能
+//
+// 比如类似以下的错误内容：
+//  {
+//      'message': 'error message',
+//      'code': 4000001,
+//      'detail':[
+//          {'field': 'username': 'message': '已经存在相同用户名'},
+//          {'field': 'username': 'message': '已经存在相同用户名'},
+//      ]
+//  }
+//
+// 用户可以根据自己的需求，在出错时，展示自定义的错误码以及相关的错误信息。
+// 其中通过 Add 和 Set 可以添加具体的字段错误信息。
+//
+// 可以查看 internal/resulttest 查看 Result 的实现方式。
 type Result interface {
 	error
+
 	// 添加详细的内容
 	Add(key, val string)
-
-	// 设置详细内容
-	Set(key, val string)
 
 	// HTTP 状态码
 	//
