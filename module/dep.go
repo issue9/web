@@ -6,7 +6,6 @@ package module
 
 import (
 	"fmt"
-	"log"
 )
 
 type mod struct {
@@ -17,15 +16,14 @@ type mod struct {
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
 	modules map[string]*mod
-	ms      *Modules
-	infolog *log.Logger // 一些执行信息输出通道
+	l       func(v ...interface{})
 }
 
-func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
+// l 表示输出一些执行过程中的提示信息
+func newDepencency(ms *Modules, l func(v ...interface{})) *dependency {
 	dep := &dependency{
 		modules: make(map[string]*mod, len(ms.modules)),
-		ms:      ms,
-		infolog: infolog,
+		l:       l,
 	}
 
 	for _, m := range ms.modules {
@@ -33,12 +31,6 @@ func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
 	}
 
 	return dep
-}
-
-func (dep *dependency) println(v ...interface{}) {
-	if dep.infolog != nil {
-		dep.infolog.Println(v...)
-	}
 }
 
 // 对所有的模块进行初始化操作，会进行依赖检测。
@@ -57,18 +49,6 @@ func (dep *dependency) init(tag string) error {
 			return err
 		}
 	}
-
-	if tag == "" { // 只有模块的初始化才带路由
-		all := dep.ms.Mux().All(true, true)
-		if len(all) > 0 {
-			dep.println("模块加载了以下路由项：")
-			for path, methods := range all {
-				dep.println(path, methods)
-			}
-		}
-	}
-
-	dep.println("模块初始化完成！")
 
 	return nil
 }
@@ -103,13 +83,13 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		inits = t.inits
 	}
 
-	dep.println("\n开始初始化模块：", m.Name)
+	dep.l("\n开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
 	for _, init := range inits {
 		title := init.title
 
-		dep.println("  执行初始化函数：", title)
+		dep.l("  执行初始化函数：", title)
 		if err := init.f(); err != nil {
 			return err
 		}

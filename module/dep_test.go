@@ -31,7 +31,11 @@ func newDep(ms []*Module, log *log.Logger) *dependency {
 		modules:  ms,
 		router:   mux.Prefix(""),
 		services: make([]*Service, 0, 100),
-	}, log)
+	}, func(v ...interface{}) {
+		if log != nil {
+			log.Println(v...)
+		}
+	})
 }
 
 func TestDependency_isDep(t *testing.T) {
