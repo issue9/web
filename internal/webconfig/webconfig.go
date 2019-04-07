@@ -25,12 +25,12 @@ type WebConfig struct {
 	// 必须为一个合法的域名、IP 或是 localhost 字符串。
 	//
 	// 当 AllowedDomain 值不为空时，此值会自动合并到 AllowedDomains 中。
-	Domain string `yaml:"domain,omitempty"`
+	Domain string `yaml:"domain,omitempty" json:"domain.omitempty"`
 
 	// Debug 是否启用调试模式
 	//
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
-	Debug bool `yaml:"debug,omitempty"`
+	Debug bool `yaml:"debug,omitempty" json:"debug,omitempty"`
 
 	// Root 表示网站所在的根目录
 	//
@@ -38,13 +38,13 @@ type WebConfig struct {
 	// 则除了将 Domain 的值设置为 example.com 之外，也要将 Root 的值设置为 /blog。
 	//
 	// Root 值的格式必须为以 / 开头，不以 / 结尾，或是空值。
-	Root string `yaml:"root,omitempty"`
+	Root string `yaml:"root,omitempty" json:"root,omitempty"`
 
 	// Plugins 指定插件，通过 glob 语法指定，比如：~/plugins/*.so
 	// 为空表示没有插件。
 	//
 	// 当前仅支持部分系统：https://golang.org/pkg/plugin/
-	Plugins string `yaml:"plugins,omitempty"`
+	Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty"`
 
 	// HTTPS 是否启用 HTTPS 协议
 	//
@@ -52,28 +52,28 @@ type WebConfig struct {
 	// 这两个文件最终会被传递给 http.ListenAndServeTLS() 的两个参数。
 	//
 	// 此值还会影响 Port 的默认值。
-	HTTPS    bool   `yaml:"https,omitempty"`
-	CertFile string `yaml:"certFile,omitempty"`
-	KeyFile  string `yaml:"keyFile,omitempty"`
-	Port     int    `yaml:"port,omitempty"`
+	HTTPS    bool   `yaml:"https,omitempty" json:"https,omitempty"`
+	CertFile string `yaml:"certFile,omitempty" json:"certFile,omitempty"`
+	KeyFile  string `yaml:"keyFile,omitempty" json:"keyFile,omitempty"`
+	Port     int    `yaml:"port,omitempty" json:"port,omitempty"`
 
 	// DisableOptions 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
-	DisableOptions bool `yaml:"disableOptions,omitempty"`
-	DisableHead    bool `yaml:"disableHead,omitempty"`
+	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty"`
+	DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty"`
 
 	// Headers 附加的报头信息
 	//
 	// 一些诸如跨域等报头信息，可以在此作设置。
 	//
 	// 报头信息可能在其它处理器被修改。
-	Headers map[string]string `yaml:"headers,omitempty"`
+	Headers map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-	Static map[string]string `yaml:"static,omitempty"`
+	Static map[string]string `yaml:"static,omitempty" json:"static,omitempty"`
 
 	// AllowedDomains 限定访问域名。
 	//
@@ -83,24 +83,24 @@ type WebConfig struct {
 	// 在 AllowedDomains 中至少存在一个及以上的域名时，Domain
 	// 中指定的域名会自动合并到当前列表中。
 	// AllowedDomains 为空时，并不会限定域名为 Domain 指定的域名。
-	AllowedDomains []string `yaml:"allowedDomains,omitempty"`
+	AllowedDomains []string `yaml:"allowedDomains,omitempty" json:"allowedDomains,omitempty"`
 
 	// 应用于 http.Server 的几个变量。
-	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty"`
-	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty"`
-	IdleTimeout       time.Duration `yaml:"idleTiemout,omitempty"`
-	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty"`
-	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty"`
+	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
+	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
+	IdleTimeout       time.Duration `yaml:"idleTiemout,omitempty" json:"idleTiemout,omitempty"`
+	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty"`
+	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
 
 	// Compress 表示压缩的相关配置
 	//
 	// 不指定值，则表示不会进行压缩。
-	Compress *Compress `yaml:"compress,omitempty"`
+	Compress *Compress `yaml:"compress,omitempty" json:"compress,omitempty"`
 
 	// 表示关闭整个服务时，需要等待的时间。
 	//
 	// 若为 0，表示直接关闭，否则会等待该指定的时间，或是在超时时才执行强制关闭。
-	ShutdownTimeout time.Duration `yaml:"shutdownTimeout,omitempty"`
+	ShutdownTimeout time.Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty"`
 
 	// URL 网站的根地址。
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。
@@ -110,8 +110,8 @@ type WebConfig struct {
 	//
 	// 用户也可台强制指定一个不同的地址，比如在被反向代理时，
 	// 此值可能就和从 Domain、Port 等配置项自动生成的不一样。
-	URL     string `yaml:"url,omitempty"`
-	URLPath string `yaml:"-"` // URL 的 path 部分
+	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
+	URLPath string `yaml:"-" json:"-"` // URL 的 path 部分
 }
 
 // Compress 表示压缩的相关配置
