@@ -54,7 +54,7 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 		app.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    app.compresses,
-				Types:    conf.Compress.Types,
+				Types:    conf.Compress,
 				ErrorLog: app.Logs().ERROR(),
 			})
 		})

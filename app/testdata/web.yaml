@@ -14,9 +14,7 @@ headers:
 readTimeout: 3s
 shutdownTimeout: 300ms
 compress:
-  types:
-    - text/*
-    - application/json
-  size: 1
+  - text/*
+  - application/json
 allowedDomains:
   - "127.0.0.1"

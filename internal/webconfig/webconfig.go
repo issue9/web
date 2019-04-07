@@ -94,8 +94,9 @@ type WebConfig struct {
 
 	// Compress 表示压缩的相关配置
 	//
-	// 不指定值，则表示不会进行压缩。
-	Compress *Compress `yaml:"compress,omitempty" json:"compress,omitempty"`
+	// 可以使用 * 作为结尾，同时指定多个，比如：
+	// text/* 表示所有以 text/* 开头的 mime-type 类型。
+	Compress []string `yaml:"compress,omitempty" json:"compress,omitempty"`
 
 	// 表示关闭整个服务时，需要等待的时间。
 	//
@@ -112,15 +113,6 @@ type WebConfig struct {
 	// 此值可能就和从 Domain、Port 等配置项自动生成的不一样。
 	URL     string `yaml:"url,omitempty" json:"url,omitempty"`
 	URLPath string `yaml:"-" json:"-"` // URL 的 path 部分
-}
-
-// Compress 表示压缩的相关配置
-type Compress struct {
-	// Types 指定可以进行压缩的 mime-type 值。
-	//
-	// 可以使用 * 作为结尾，同时指定多个，比如：
-	// text/* 表示所有以 text/* 开头的 mime-type 类型。
-	Types []string
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
