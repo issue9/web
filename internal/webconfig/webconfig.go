@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/issue9/config"
 	"github.com/issue9/is"
@@ -88,11 +87,11 @@ type WebConfig struct {
 	AllowedDomains []string `yaml:"allowedDomains,omitempty" json:"allowedDomains,omitempty" xml:"allowedDomains,omitempty"`
 
 	// 应用于 http.Server 的几个变量。
-	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
-	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,omitempty"`
-	IdleTimeout       time.Duration `yaml:"idleTiemout,omitempty" json:"idleTiemout,omitempty" xml:"idleTiemout,omitempty"`
-	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
-	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
+	ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
+	WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,omitempty"`
+	IdleTimeout       Duration `yaml:"idleTiemout,omitempty" json:"idleTiemout,omitempty" xml:"idleTiemout,omitempty"`
+	ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
+	MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
 
 	// Compress 表示压缩的相关配置
 	//
@@ -103,7 +102,7 @@ type WebConfig struct {
 	// 表示关闭整个服务时，需要等待的时间。
 	//
 	// 若为 0，表示直接关闭，否则会等待该指定的时间，或是在超时时才执行强制关闭。
-	ShutdownTimeout time.Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
+	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
 
 	// URL 网站的根地址。
 	// 一般情况下，如果用到诸如生成 URL 地址什么的，会用到此值。

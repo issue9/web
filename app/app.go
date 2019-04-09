@@ -82,10 +82,10 @@ func New(mgr *config.Manager, logsFilename, configFilename string, get GetResult
 		server: &http.Server{
 			Addr:              ":" + strconv.Itoa(webconf.Port),
 			ErrorLog:          logs.ERROR(),
-			ReadTimeout:       webconf.ReadTimeout,
-			WriteTimeout:      webconf.WriteTimeout,
-			IdleTimeout:       webconf.IdleTimeout,
-			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+			ReadTimeout:       webconf.ReadTimeout.Duration(),
+			WriteTimeout:      webconf.WriteTimeout.Duration(),
+			IdleTimeout:       webconf.IdleTimeout.Duration(),
+			ReadHeaderTimeout: webconf.ReadHeaderTimeout.Duration(),
 			MaxHeaderBytes:    webconf.MaxHeaderBytes,
 		},
 	}
@@ -185,7 +185,7 @@ func (app *App) Shutdown() error {
 	}
 
 	app.Stop() // 关闭服务
-	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout.Duration())
 	defer func() {
 		cancel()
 		app.closed <- struct{}{}
