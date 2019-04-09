@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-// Package webconfig web.yaml 配置文件对应的内容。
+// Package webconfig 配置文件对应的内容。
 package webconfig
 
 import (
@@ -32,7 +32,7 @@ type WebConfig struct {
 	// Debug 是否启用调试模式
 	//
 	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
-	Debug bool `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,omitempty"`
+	Debug bool `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,attr,omitempty"`
 
 	// Root 表示网站所在的根目录
 	//
@@ -68,14 +68,14 @@ type WebConfig struct {
 	// 一些诸如跨域等报头信息，可以在此作设置。
 	//
 	// 报头信息可能在其它处理器被修改。
-	Headers map[string]string `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
+	Headers stringMap `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-	Static map[string]string `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
+	Static stringMap `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
 	// AllowedDomains 限定访问域名。
 	//
