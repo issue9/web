@@ -68,14 +68,14 @@ type WebConfig struct {
 	// 一些诸如跨域等报头信息，可以在此作设置。
 	//
 	// 报头信息可能在其它处理器被修改。
-	Headers stringMap `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
+	Headers pairs `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-	Static stringMap `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
+	Static pairs `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
 	// AllowedDomains 限定访问域名。
 	//
