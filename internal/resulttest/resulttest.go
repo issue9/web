@@ -49,14 +49,14 @@ type Result struct {
 	// 当前的信息所对应的 HTTP 状态码
 	status int
 
-	Message string    `json:"message" xml:"message,attr" yaml:"message"`
-	Code    int       `json:"code" xml:"code,attr" yaml:"code"`
-	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty"`
+	Message string    `json:"message" xml:"message,attr" yaml:"message" protobuf:"bytes,2,opt,name=message,proto3"`
+	Code    int       `json:"code" xml:"code,attr" yaml:"code" protobuf:"varint,1,opt,name=code,proto3"`
+	Detail  []*detail `json:"detail,omitempty" xml:"field,omitempty" yaml:"detail,omitempty" protobuf:"bytes,3,rep,name=detail,proto3"`
 }
 
 type detail struct {
-	Field   string `json:"field" xml:"name,attr" yaml:"field"`
-	Message string `json:"message" xml:",chardata" yaml:"message"`
+	Field   string `json:"field" xml:"name,attr" yaml:"field" protobuf:"bytes,1,opt,name=field,proto3"`
+	Message string `json:"message" xml:",chardata" yaml:"message" protobuf:"bytes,2,opt,name=message,proto3"`
 }
 
 // Add app.Result.Add
@@ -72,4 +72,9 @@ func (rslt *Result) Status() int {
 // Error app.Result.Error
 func (rslt *Result) Error() string {
 	return rslt.Message
+}
+
+// Reset proto.Message.Reset
+func (rslt *Result) Reset() {
+	*rslt = Result{}
 }

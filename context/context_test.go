@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/resulttest"
@@ -350,4 +350,19 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newContext(a, w, r, nil, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+}
+
+func TestContext_NewResult(t *testing.T) {
+	a := assert.New(t)
+	app := newApp(a)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx := New(w, r, app)
+
+	// 不存在
+	a.Panic(func() { ctx.NewResult(400) })
+
+	a.NotPanic(func() { app.AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { ctx.NewResult(40000) })
+	a.Panic(func() { ctx.NewResult(50000) })
 }

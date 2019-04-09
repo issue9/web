@@ -4,7 +4,7 @@
 
 // Package watch 提供热编译功能。
 //
-// 功能与 github.com/caixw/gobuild 相同。
+// 功能与 github.com/caixw/gobuild 相似。
 package watch
 
 import (
@@ -15,6 +15,8 @@ import (
 
 	"github.com/caixw/gobuild"
 )
+
+// TODO 自动编译 .proto 文件？
 
 var (
 	recursive, showIgnore                     bool
