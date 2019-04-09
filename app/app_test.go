@@ -44,7 +44,7 @@ func newApp(a *assert.Assertion) *App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := New(mgr, "logs.xml", "web.yaml")
+	app, err := New(mgr, "logs.xml", "web.yaml", getResult)
 	a.NotError(err).NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
@@ -74,7 +74,6 @@ func newApp(a *assert.Assertion) *App {
 	a.NotNil(app.configs).Equal(app.configs, app.Config())
 	a.NotNil(app.server).Equal(app.server, app.Server())
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
-	a.NotNil(app.messages).Equal(app.messages, app.Messages())
 	a.NotNil(app.logs).Equal(app.logs, app.Logs())
 
 	return app

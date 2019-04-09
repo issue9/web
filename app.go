@@ -15,8 +15,8 @@ import (
 
 	"github.com/issue9/config"
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
@@ -38,7 +38,7 @@ const (
 var defaultApp *app.App
 
 // Classic 初始化一个可运行的框架环境
-func Classic(dir string) error {
+func Classic(dir string, get app.GetResultFunc) error {
 	mgr, err := config.NewManager(dir)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func Classic(dir string) error {
 		return err
 	}
 
-	if err = Init(mgr, DefaultLogsFilename, DefaultConfigFilename); err != nil {
+	if err = Init(mgr, DefaultLogsFilename, DefaultConfigFilename, get); err != nil {
 		return err
 	}
 
@@ -87,12 +87,12 @@ func Classic(dir string) error {
 // logs 和 conf 的格式可以是 xml、yaml 和 json。
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, logs, conf string) (err error) {
+func Init(mgr *config.Manager, logs, conf string, get app.GetResultFunc) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(mgr, logs, conf)
+	defaultApp, err = app.New(mgr, logs, conf, get)
 	return
 }
 
@@ -211,13 +211,13 @@ func Load(r io.Reader, typ string, v interface{}) error {
 	return defaultApp.Config().Load(r, typ, v)
 }
 
-// NewMessages 添加新的错误消息代码
-func NewMessages(status int, messages map[int]string) {
-	defaultApp.Messages().NewMessages(status, messages)
+// AddMessages 添加新的错误消息代码
+func AddMessages(status int, messages map[int]string) {
+	defaultApp.AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
-func  ErrorHandlers() *errorhandler.ErrorHandler {
+func ErrorHandlers() *errorhandler.ErrorHandler {
 	return defaultApp.ErrorHandlers()
 }
 
@@ -225,7 +225,7 @@ func  ErrorHandlers() *errorhandler.ErrorHandler {
 //
 // 如果指定 p 的值，则返回本地化的消息内容。
 func Messages(p *message.Printer) map[int]string {
-	return defaultApp.Messages().Messages(p)
+	return defaultApp.Messages(p)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic

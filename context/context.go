@@ -268,3 +268,8 @@ func (ctx *Context) ClientIP() string {
 
 	return strings.TrimSpace(ip)
 }
+
+// NewResult 返回 Result 实例
+func (ctx *Context) NewResult(code int) app.Result {
+	return ctx.App.NewResult(code)
+}
