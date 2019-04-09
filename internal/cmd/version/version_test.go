@@ -20,5 +20,7 @@ func TestGetRemoteTags(t *testing.T) {
 	tags, err := getRemoteTags()
 	a.NotError(err).NotNil(tags)
 
-	a.True(tags[0] > tags[1])
+	if len(tags) > 2 {
+		a.True(tags[0] > tags[1])
+	}
 }
