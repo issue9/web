@@ -69,6 +69,11 @@ func (rslt *Result) Status() int {
 	return rslt.status
 }
 
+// HasDetail app.Result.Status
+func (rslt *Result) HasDetail() bool {
+	return len(rslt.Detail) > 0
+}
+
 // Error app.Result.Error
 func (rslt *Result) Error() string {
 	return rslt.Message

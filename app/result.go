@@ -35,6 +35,11 @@ type Result interface {
 	// 添加详细的内容
 	Add(key, val string)
 
+	// 是否存在详细的错误信息
+	//
+	// 如果有通过 Add 添加内容，那么应该返回 true
+	HasDetail() bool
+
 	// HTTP 状态码
 	//
 	// 最终会经此值作为 HTTP 状态会返回给用户
