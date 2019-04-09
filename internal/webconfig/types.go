@@ -9,8 +9,6 @@ import (
 	"encoding/xml"
 	"io"
 	"time"
-
-	yaml "gopkg.in/yaml.v2"
 )
 
 type pairs map[string]string
@@ -87,7 +85,7 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 
 // MarshalYAML yaml.Marshaler 接口
 func (d Duration) MarshalYAML() (interface{}, error) {
-	return yaml.Marshal(time.Duration(d))
+	return time.Duration(d).String(), nil
 }
 
 // UnmarshalYAML yaml.Unmarshaler 接口
@@ -103,7 +101,7 @@ func (d *Duration) UnmarshalYAML(u func(interface{}) error) error {
 
 // MarshalXML xml.Marshaler 接口
 func (d Duration) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.Encode(time.Duration(d).String())
+	return e.EncodeElement(time.Duration(d).String(), start)
 }
 
 // UnmarshalXML xml.Unmarshaler 接口
