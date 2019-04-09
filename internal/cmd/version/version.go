@@ -78,7 +78,7 @@ func checkRemoteVersion(output io.Writer) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(output, "latest:%s\n", tags[0][1:])
+	_, err = fmt.Fprintf(output, "latest:%s\n", tags[0])
 	return err
 }
 
@@ -89,7 +89,7 @@ func getRemoteVersions(output io.Writer) error {
 	}
 
 	for _, tag := range tags {
-		if _, err = fmt.Fprintf(output, tag); err != nil {
+		if _, err = fmt.Fprintln(output, tag); err != nil {
 			return err
 		}
 	}
@@ -112,11 +112,11 @@ func getRemoteTags() ([]string, error) {
 
 	for s.Scan() {
 		text := s.Text()
-		index := strings.LastIndex(text, "/")
+		index := strings.LastIndex(text, "/v")
 		if index < 0 {
 			continue
 		}
-		tags = append(tags, text[index+1:])
+		tags = append(tags, text[index+2:])
 	}
 
 	sort.Sort(sort.Reverse(sort.StringSlice(tags)))
