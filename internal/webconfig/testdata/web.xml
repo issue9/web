@@ -1,0 +1,22 @@
+<!-- webconfig 的测试文件，需要与其它内容数值相同 -->
+
+<webconfig debug="true">
+    <domain>localhost</domain>
+    <https>false</https>
+    <keyFile>keyFile</keyFile>
+    <certFile>certFile</certFile>
+    <port>8082</port>
+    <static>
+        <key name="/admin">./testdata</key>
+    </static>
+    <headers>
+        <key name="Access-Control-Allow-Origin">*</key>
+        <key name="Access-Control-Allow-Methods">POST,GET,PUT,PATCH,OPTIONS,DELETE</key>
+        <key name="Access-Control-Allow-Headers">Content-Type, Authorization, Accept,X-Requested-With</key>
+        <key name="Server">Windows/IIS7</key>
+    </headers>
+    <readTimeout>3s</readTimeout>
+    <shutdownTimeout>300ms</shutdownTimeout>
+    <allowedDomains>127.0.0.1</allowedDomains>
+    <allowedDomains>127.0.0.2</allowedDomains>
+</webconfig>

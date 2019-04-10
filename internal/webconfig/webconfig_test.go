@@ -5,6 +5,10 @@
 package webconfig
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	yaml "gopkg.in/yaml.v2"
+	"io/ioutil"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -12,6 +16,28 @@ import (
 )
 
 var _ config.Sanitizer = &WebConfig{}
+
+func TestWebConfig(t *testing.T) {
+	a := assert.New(t)
+
+	bs, err := ioutil.ReadFile("./testdata/web.yaml")
+	a.NotError(err).NotNil(bs)
+	confYAML := &WebConfig{}
+	a.NotError(yaml.Unmarshal(bs, confYAML))
+
+	bs, err = ioutil.ReadFile("./testdata/web.json")
+	a.NotError(err).NotNil(bs)
+	confJSON := &WebConfig{}
+	a.NotError(json.Unmarshal(bs, confJSON))
+
+	bs, err = ioutil.ReadFile("./testdata/web.xml")
+	a.NotError(err).NotNil(bs)
+	confXML := &WebConfig{}
+	a.NotError(xml.Unmarshal(bs, confXML))
+
+	a.Equal(confJSON, confXML)
+	a.Equal(confJSON, confYAML)
+}
 
 func TestWebConfig_checkStatic(t *testing.T) {
 	a := assert.New(t)
