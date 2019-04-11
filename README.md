@@ -111,7 +111,7 @@ m.AddService(func(ctx context.Context)error {
 | idleTimeout       | string | 与 http.Server.IdleTimeout 相同
 | maxHeaderBytes    | int    | 与 http.Server.MaxHeaderBytes 相同
 | readHeaderTimeout | string | 与 http.Server.ReadHeaderTimeout 相同
-| compress.types    | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
+| compress          | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
 | shutdownTimeout   | string | 关闭服务的等待时间
 | url               | string | 网站首页地址，一般由 domain、root 和 port 自动拼成，但也有可能存在类似于反向代理的情况，需要自行指定不同的值。
 

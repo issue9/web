@@ -13,15 +13,12 @@ import (
 	"os/signal"
 	"strconv"
 
-	"github.com/issue9/config"
 	"github.com/issue9/logs/v2"
-	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+	xmessage "golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/messages"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -33,35 +30,20 @@ type App struct {
 
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
-	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
-	messages      *messages.Messages
 	compresses    map[string]compress.WriterFunc
+
+	getResult GetResultFunc
+	messages  map[int]*message
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
 
 // New 声明一个新的 App 实例
-//
-// 日志系统会在此处初始化。
-func New(mgr *config.Manager, logsFilename, configFilename string) (*App, error) {
-	logs := logs.New()
-	conf := &lconf.Config{}
-	if err := mgr.LoadFile(logsFilename, conf); err != nil {
-		return nil, err
-	}
-	if err := logs.Init(conf); err != nil {
-		return nil, err
-	}
-
-	webconf := &webconfig.WebConfig{}
-	if err := mgr.LoadFile(configFilename, webconf); err != nil {
-		return nil, err
-	}
-
+func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
 	ms, err := module.NewModules(webconf)
 	if err != nil {
 		return nil, err
@@ -72,18 +54,18 @@ func New(mgr *config.Manager, logsFilename, configFilename string) (*App, error)
 		webConfig:     webconf,
 		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
-		configs:       mgr,
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
-		messages:      messages.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
+		getResult:     get,
+		messages:      map[int]*message{},
 		server: &http.Server{
 			Addr:              ":" + strconv.Itoa(webconf.Port),
 			ErrorLog:          logs.ERROR(),
-			ReadTimeout:       webconf.ReadTimeout,
-			WriteTimeout:      webconf.WriteTimeout,
-			IdleTimeout:       webconf.IdleTimeout,
-			ReadHeaderTimeout: webconf.ReadHeaderTimeout,
+			ReadTimeout:       webconf.ReadTimeout.Duration(),
+			WriteTimeout:      webconf.WriteTimeout.Duration(),
+			IdleTimeout:       webconf.IdleTimeout.Duration(),
+			ReadHeaderTimeout: webconf.ReadHeaderTimeout.Duration(),
 			MaxHeaderBytes:    webconf.MaxHeaderBytes,
 		},
 	}
@@ -158,8 +140,8 @@ func (app *App) Serve() (err error) {
 }
 
 // LocalPrinter 获取本地化的输出对象
-func (app *App) LocalPrinter(tag language.Tag, opts ...message.Option) *message.Printer {
-	return message.NewPrinter(tag, opts...)
+func (app *App) LocalPrinter(tag language.Tag, opts ...xmessage.Option) *xmessage.Printer {
+	return xmessage.NewPrinter(tag, opts...)
 }
 
 // Close 关闭服务。
@@ -183,7 +165,7 @@ func (app *App) Shutdown() error {
 	}
 
 	app.Stop() // 关闭服务
-	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout.Duration())
 	defer func() {
 		cancel()
 		app.closed <- struct{}{}
@@ -201,19 +183,9 @@ func (app *App) Mimetypes() *mimetype.Mimetypes {
 	return app.mt
 }
 
-// Config 获取 config.Manager 的实例
-func (app *App) Config() *config.Manager {
-	return app.configs
-}
-
 // ErrorHandlers 错误处理功能
 func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 	return app.errorhandlers
-}
-
-// Messages 返回 messages.Messages 实例
-func (app *App) Messages() *messages.Messages {
-	return app.messages
 }
 
 // Logs 获取 logs.Logs 实例

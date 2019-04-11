@@ -15,3 +15,4 @@ readTimeout: 3s
 shutdownTimeout: 300ms
 allowedDomains:
   - "127.0.0.1"
+logs: logs.xml

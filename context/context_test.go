@@ -14,13 +14,16 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v2"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
+	"github.com/issue9/web/internal/resulttest"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -31,6 +34,10 @@ func init() {
 	message.SetString(language.SimplifiedChinese, "test", "简体")
 	message.SetString(language.TraditionalChinese, "test", "繁体")
 	message.SetString(language.English, "test", "english")
+}
+
+func getResult(status, code int, message string) app.Result {
+	return resulttest.New(status, code, message)
 }
 
 func newContext(a *assert.Assertion,
@@ -67,7 +74,10 @@ func newApp(a *assert.Assertion) *app.App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := app.New(mgr, "logs.xml", "web.yaml")
+	webconf := &webconfig.WebConfig{}
+	a.NotError(mgr.LoadFile("web.yaml", webconf))
+
+	app, err := app.New(webconf, logs.New(), getResult)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
@@ -345,4 +355,19 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newContext(a, w, r, nil, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+}
+
+func TestContext_NewResult(t *testing.T) {
+	a := assert.New(t)
+	app := newApp(a)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx := New(w, r, app)
+
+	// 不存在
+	a.Panic(func() { ctx.NewResult(400) })
+
+	a.NotPanic(func() { app.AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { ctx.NewResult(40000) })
+	a.Panic(func() { ctx.NewResult(50000) })
 }

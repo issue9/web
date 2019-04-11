@@ -1,3 +1,5 @@
+# webconfig 的测试文件，需要与其它内容数值相同
+
 debug: true
 https: false
 domain: localhost
@@ -5,7 +7,7 @@ keyFile: keyFile
 certFile: certFile
 port: 8082
 static:
-  /client: ./testdata
+  /admin: ./testdata
 headers:
   Access-Control-Allow-Origin: "*"  
   Access-Control-Allow-Methods: POST,GET,PUT,PATCH,OPTIONS,DELETE
@@ -13,9 +15,6 @@ headers:
   Server: Windows/IIS7
 readTimeout: 3s
 shutdownTimeout: 300ms
-compress:
-  - text/*
-  - application/json
 allowedDomains:
   - "127.0.0.1"
-logs: logs.xml
+  - "127.0.0.2"

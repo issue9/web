@@ -17,9 +17,11 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 )
@@ -44,7 +46,10 @@ func newApp(a *assert.Assertion) *App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := New(mgr, "logs.xml", "web.yaml")
+	webconf := &webconfig.WebConfig{}
+	a.NotError(mgr.LoadFile("web.yaml", webconf))
+
+	app, err := New(webconf, logs.New(), getResult)
 	a.NotError(err).NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
@@ -71,10 +76,8 @@ func newApp(a *assert.Assertion) *App {
 		NotEmpty(app.compresses)
 
 	a.NotNil(app.mt).Equal(app.mt, app.Mimetypes())
-	a.NotNil(app.configs).Equal(app.configs, app.Config())
 	a.NotNil(app.server).Equal(app.server, app.Server())
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
-	a.NotNil(app.messages).Equal(app.messages, app.Messages())
 	a.NotNil(app.logs).Equal(app.logs, app.Logs())
 
 	return app

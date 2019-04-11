@@ -12,9 +12,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/issue9/utils"
-	"github.com/issue9/term/prompt"
 	"github.com/issue9/term/colors"
+	"github.com/issue9/term/prompt"
+	"github.com/issue9/utils"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
@@ -38,7 +38,7 @@ func Do(output io.Writer) error {
 		return err
 	}
 
-	ask := prompt.New('\n',os.Stdin, output,colors.Green)
+	ask := prompt.New('\n', os.Stdin, output, colors.Green)
 
 	if len(os.Args) == 3 {
 		return createMod(os.Args[2], wd, ask)
@@ -126,7 +126,7 @@ func createConfig(path, dir string) error {
 	}
 
 	// 输出 logs.xml
-	if err := dumpFile(filepath.Join(path, web.DefaultLogsFilename), logs); err != nil {
+	if err := dumpFile(filepath.Join(path, "logs.xml"), logs); err != nil {
 		return err
 	}
 
@@ -135,12 +135,13 @@ func createConfig(path, dir string) error {
 		HTTPS:  false,
 		Domain: "localhost",
 		Port:   8080,
+		Logs:   "logs.xml",
 	}
 	data, err := yaml.Marshal(conf)
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, web.DefaultConfigFilename), string(data))
+	return dumpFile(filepath.Join(path, "web.yaml"), string(data))
 }
 
 // 创建模块目录，并输出默认的配置内容。

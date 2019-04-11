@@ -15,6 +15,8 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
+	"github.com/issue9/web/app"
+	"github.com/issue9/web/internal/resulttest"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -22,17 +24,21 @@ import (
 
 var testdata = ""
 
+func getResult(status, code int, message string) app.Result {
+	return resulttest.New(status, code, message)
+}
+
 func TestApp(t *testing.T) {
 	a := assert.New(t)
 	defaultApp = nil
 	exit := make(chan bool, 1)
 
-	a.NotError(Classic("./testdata"))
+	a.NotError(Classic("./testdata/web.yaml", getResult))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
 
 	a.Panic(func() {
-		Classic("./testdata")
+		Classic("./testdata/web.yaml", getResult)
 	})
 
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

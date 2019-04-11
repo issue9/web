@@ -12,33 +12,37 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v2"
+	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 )
 
-// 默认的配置文件名
-//
-// Classic 采用这些值作为默认的文件名。
-const (
-	DefaultConfigFilename = "web.yaml"
-	DefaultLogsFilename   = "logs.xml"
+var (
+	defaultConfigs *config.Manager
+	defaultApp     *app.App
 )
 
-var defaultApp *app.App
-
 // Classic 初始化一个可运行的框架环境
-func Classic(dir string) error {
+//
+// path 配置文件地址，该文件所在的目录，会成为项目所有配置文件的根地址。
+func Classic(path string, get app.GetResultFunc) error {
+	dir := filepath.Dir(path)
+	filename := filepath.Base(path)
+
 	mgr, err := config.NewManager(dir)
 	if err != nil {
 		return err
@@ -54,7 +58,7 @@ func Classic(dir string) error {
 		return err
 	}
 
-	if err = Init(mgr, DefaultLogsFilename, DefaultConfigFilename); err != nil {
+	if err = Init(mgr, filename, get); err != nil {
 		return err
 	}
 
@@ -82,17 +86,32 @@ func Classic(dir string) error {
 
 // Init 初始化整个应用环境
 //
-// logs 表示日志配置文件的文件名，路径相对于 mgr.Dir；
-// conf 表示框架的配置文件名，路径相对于 mgr.Dir。
-// logs 和 conf 的格式可以是 xml、yaml 和 json。
-//
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, logs, conf string) (err error) {
+func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(mgr, logs, conf)
+	if configFilename == "" {
+		panic("参数 configFilename 不能为空")
+	}
+
+	webconf := &webconfig.WebConfig{}
+	if err = mgr.LoadFile(configFilename, webconf); err != nil {
+		return err
+	}
+
+	l := logs.New()
+	if webconf.Logs != "" {
+		lc := &lconf.Config{}
+		if err = mgr.LoadFile(webconf.Logs, lc); err != nil {
+			return err
+		}
+		l.Init(lc)
+	}
+
+	defaultConfigs = mgr
+	defaultApp, err = app.New(webconf, l, get)
 	return
 }
 
@@ -198,26 +217,26 @@ func NewModule(name, desc string, deps ...string) *Module {
 
 // File 获取配置目录下的文件。
 func File(path string) string {
-	return defaultApp.Config().File(path)
+	return defaultConfigs.File(path)
 }
 
 // LoadFile 加载指定的配置文件内容到 v 中
 func LoadFile(path string, v interface{}) error {
-	return defaultApp.Config().LoadFile(path, v)
+	return defaultConfigs.LoadFile(path, v)
 }
 
 // Load 加载指定的配置文件内容到 v 中
 func Load(r io.Reader, typ string, v interface{}) error {
-	return defaultApp.Config().Load(r, typ, v)
+	return defaultConfigs.Load(r, typ, v)
 }
 
-// NewMessages 添加新的错误消息代码
-func NewMessages(status int, messages map[int]string) {
-	defaultApp.Messages().NewMessages(status, messages)
+// AddMessages 添加新的错误消息代码
+func AddMessages(status int, messages map[int]string) {
+	defaultApp.AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
-func  ErrorHandlers() *errorhandler.ErrorHandler {
+func ErrorHandlers() *errorhandler.ErrorHandler {
 	return defaultApp.ErrorHandlers()
 }
 
@@ -225,7 +244,7 @@ func  ErrorHandlers() *errorhandler.ErrorHandler {
 //
 // 如果指定 p 的值，则返回本地化的消息内容。
 func Messages(p *message.Printer) map[int]string {
-	return defaultApp.Messages().Messages(p)
+	return defaultApp.Messages(p)
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
