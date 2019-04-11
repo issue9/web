@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v2"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/resulttest"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
@@ -72,7 +74,10 @@ func newApp(a *assert.Assertion) *app.App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := app.New(mgr, "web.yaml", getResult)
+	webconf := &webconfig.WebConfig{}
+	a.NotError(mgr.LoadFile("web.yaml", webconf))
+
+	app, err := app.New(webconf, logs.New(), getResult)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

@@ -25,7 +25,7 @@ func getResult(status, code int, message string) app.Result {
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(web.Classic("./testdata", getResult))
+	a.NotError(web.Classic("./testdata/web.yaml", getResult))
 
 	ms := web.Modules()
 	a.Equal(3, len(ms)) // web-core 和两个插件

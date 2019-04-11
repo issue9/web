@@ -33,12 +33,12 @@ func TestApp(t *testing.T) {
 	defaultApp = nil
 	exit := make(chan bool, 1)
 
-	a.NotError(Classic("./testdata", getResult))
+	a.NotError(Classic("./testdata/web.yaml", getResult))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
 
 	a.Panic(func() {
-		Classic("./testdata", getResult)
+		Classic("./testdata/web.yaml", getResult)
 	})
 
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{

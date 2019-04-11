@@ -141,7 +141,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, web.DefaultConfigFilename), string(data))
+	return dumpFile(filepath.Join(path, "web.yaml"), string(data))
 }
 
 // 创建模块目录，并输出默认的配置内容。

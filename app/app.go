@@ -13,9 +13,7 @@ import (
 	"os/signal"
 	"strconv"
 
-	"github.com/issue9/config"
 	"github.com/issue9/logs/v2"
-	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/language"
@@ -32,7 +30,6 @@ type App struct {
 
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
-	configs       *config.Manager
 	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
@@ -46,25 +43,7 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-//
-// 日志系统会在此处初始化。
-func New(mgr *config.Manager, configFilename string, get GetResultFunc) (*App, error) {
-	webconf := &webconfig.WebConfig{}
-	if err := mgr.LoadFile(configFilename, webconf); err != nil {
-		return nil, err
-	}
-
-	logs := logs.New()
-	if webconf.Logs != "" {
-		conf := &lconf.Config{}
-		if err := mgr.LoadFile(webconf.Logs, conf); err != nil {
-			return nil, err
-		}
-		if err := logs.Init(conf); err != nil {
-			return nil, err
-		}
-	}
-
+func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
 	ms, err := module.NewModules(webconf)
 	if err != nil {
 		return nil, err
@@ -75,7 +54,6 @@ func New(mgr *config.Manager, configFilename string, get GetResultFunc) (*App, e
 		webConfig:     webconf,
 		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
-		configs:       mgr,
 		logs:          logs,
 		errorhandlers: errorhandler.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
@@ -203,11 +181,6 @@ func (app *App) Server() *http.Server {
 // Mimetypes 返回 mimetype.Mimetypes
 func (app *App) Mimetypes() *mimetype.Mimetypes {
 	return app.mt
-}
-
-// Config 获取 config.Manager 的实例
-func (app *App) Config() *config.Manager {
-	return app.configs
 }
 
 // ErrorHandlers 错误处理功能
