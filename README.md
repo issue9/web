@@ -14,7 +14,7 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 // main.go
 func main() {
-    web.Classic("./appconfig")
+    web.Classic("./appconfig/web.yaml")
     web.NewMessages(map[int]string{...})
 
     // 注册模块信息
@@ -85,7 +85,8 @@ m.AddService(func(ctx context.Context)error {
 
 #### 配置文件
 
-通过 web.Init() 函数，可以在初始化时指定配置文件所在的目录，目前 web 包本身需要一个配置文件 `web.yaml` 以及日志配置文件 `logs.xml`
+通过 web.Classic() 函数，可以在初始化时指定配置文件，文件格式可以是 XML、JSON 和
+YAML。用户也可以自行添加新的格式支持。
 
 ##### web.yaml
 
@@ -114,6 +115,7 @@ m.AddService(func(ctx context.Context)error {
 | compress          | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
 | shutdownTimeout   | string | 关闭服务的等待时间
 | url               | string | 网站首页地址，一般由 domain、root 和 port 自动拼成，但也有可能存在类似于反向代理的情况，需要自行指定不同的值。
+| logs              | string | 指定日志配置文件名，相对于当前目录。
 
 *详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*
 
