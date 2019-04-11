@@ -32,7 +32,6 @@ import (
 // Classic 采用这些值作为默认的文件名。
 const (
 	DefaultConfigFilename = "web.yaml"
-	DefaultLogsFilename   = "logs.xml"
 )
 
 var defaultApp *app.App
@@ -54,7 +53,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, DefaultLogsFilename, DefaultConfigFilename, get); err != nil {
+	if err = Init(mgr, DefaultConfigFilename, get); err != nil {
 		return err
 	}
 
@@ -82,17 +81,16 @@ func Classic(dir string, get app.GetResultFunc) error {
 
 // Init 初始化整个应用环境
 //
-// logs 表示日志配置文件的文件名，路径相对于 mgr.Dir；
 // conf 表示框架的配置文件名，路径相对于 mgr.Dir。
 // logs 和 conf 的格式可以是 xml、yaml 和 json。
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, logs, conf string, get app.GetResultFunc) (err error) {
+func Init(mgr *config.Manager, conf string, get app.GetResultFunc) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
-	defaultApp, err = app.New(mgr, logs, conf, get)
+	defaultApp, err = app.New(mgr, conf, get)
 	return
 }
 

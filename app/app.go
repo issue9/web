@@ -48,7 +48,7 @@ type App struct {
 // New 声明一个新的 App 实例
 //
 // 日志系统会在此处初始化。
-func New(mgr *config.Manager, logsFilename, configFilename string, get GetResultFunc) (*App, error) {
+func New(mgr *config.Manager, configFilename string, get GetResultFunc) (*App, error) {
 	webconf := &webconfig.WebConfig{}
 	if err := mgr.LoadFile(configFilename, webconf); err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func New(mgr *config.Manager, logsFilename, configFilename string, get GetResult
 	logs := logs.New()
 	if webconf.Logs != "" {
 		conf := &lconf.Config{}
-		if err := mgr.LoadFile(logsFilename, conf); err != nil {
+		if err := mgr.LoadFile(webconf.Logs, conf); err != nil {
 			return nil, err
 		}
 		if err := logs.Init(conf); err != nil {

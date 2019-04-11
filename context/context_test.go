@@ -72,7 +72,7 @@ func newApp(a *assert.Assertion) *app.App {
 		a.NotError(mgr.AddUnmarshal(v, k))
 	}
 
-	app, err := app.New(mgr, "logs.xml", "web.yaml", getResult)
+	app, err := app.New(mgr, "web.yaml", getResult)
 	a.NotError(err).NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
