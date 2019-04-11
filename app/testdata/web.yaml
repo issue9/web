@@ -18,3 +18,4 @@ compress:
   - application/json
 allowedDomains:
   - "127.0.0.1"
+logs: logs.xml

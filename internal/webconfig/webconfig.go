@@ -114,6 +114,15 @@ type WebConfig struct {
 	// 此值可能就和从 Domain、Port 等配置项自动生成的不一样。
 	URL     string `yaml:"url,omitempty" json:"url,omitempty" xml:"url,omitempty"`
 	URLPath string `yaml:"-" json:"-" xml:"-"` // URL 的 path 部分
+
+	// Logs 指定配置文件
+	//
+	// 相对于配置文件目录。如果不存在，则日志内容采用默认设置，
+	// 不会输出到任何地方。
+	//
+	// 配置文件的类型可以是任意支持的格式类型。
+	// 最终的加载的方式也是通过与 app.App 关联的 config.Manager 进行加载。
+	Logs string `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。

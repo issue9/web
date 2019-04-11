@@ -49,18 +49,20 @@ type App struct {
 //
 // 日志系统会在此处初始化。
 func New(mgr *config.Manager, logsFilename, configFilename string, get GetResultFunc) (*App, error) {
-	logs := logs.New()
-	conf := &lconf.Config{}
-	if err := mgr.LoadFile(logsFilename, conf); err != nil {
-		return nil, err
-	}
-	if err := logs.Init(conf); err != nil {
-		return nil, err
-	}
-
 	webconf := &webconfig.WebConfig{}
 	if err := mgr.LoadFile(configFilename, webconf); err != nil {
 		return nil, err
+	}
+
+	logs := logs.New()
+	if webconf.Logs != "" {
+		conf := &lconf.Config{}
+		if err := mgr.LoadFile(logsFilename, conf); err != nil {
+			return nil, err
+		}
+		if err := logs.Init(conf); err != nil {
+			return nil, err
+		}
 	}
 
 	ms, err := module.NewModules(webconf)
