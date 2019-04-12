@@ -4,47 +4,16 @@
 
 package create
 
+import (
+	"github.com/issue9/logs/v2/config"
+
+	"github.com/issue9/web/internal/webconfig"
+)
+
 // go.mod
 const gomod = `module %s
 
 require github.com/issue9/web v%s`
-
-// logs.xml
-const logs = `<?xml version="1.0" encoding="utf-8"?>
-<logs>
-    <!-- info 内容，先缓存到一定 10 条，再一次性输出 -->
-    <info prefix="INFO" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <buffer size="100">
-            <rotate filename="info-%Y%m%d.%i.log" dir="./logs/" size="5M" />
-        </buffer>
-    </info>
-
-    <!-- debug 日志 -->
-    <debug prefix="DEBUG" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <buffer size="5">
-            <rotate filename="debug-%Y%m%d.%i.log" dir="./logs/debug/" size="5M" />
-        </buffer>
-    </debug>
-
-    <trace prefix="TRACE" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <buffer size="5">
-            <rotate filename="trace-%Y%m%d.%i.log" dir="./logs/trace/" size="5M" />
-        </buffer>
-    </trace>
-
-    <warn prefix="WARN" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <rotate filename="warn-%Y%m%d.%i.log"  dir="./logs/warn/" size="5M" />
-    </warn>
-
-    <error prefix="ERROR" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <rotate filename="error-%Y%m%d.%i.log"  dir="./logs/error/" size="5M" />
-    </error>
-
-    <critical prefix="CRITICAL" flag="log.Llongfile|log.Ldate|log.Ltime">
-        <rotate filename="critical-%Y%m%d.%i.log"  dir="./logs/critical/" size="5M" />
-    </critical>
-</logs>
-`
 
 // main.go
 const maingo = `// 内容由 web 自动生成，可根据需求自由修改！
@@ -82,3 +51,115 @@ func Init() {
     // TODO
 }
 `
+
+var webconf = &webconfig.WebConfig{
+	HTTPS:  false,
+	Domain: "localhost",
+	Port:   8080,
+	Logs:   "logs.yaml",
+}
+
+var logsconf = &config.Config{
+	Items: map[string]*config.Config{
+		"info": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "INFO",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"buffer": &config.Config{
+					Attrs: map[string]string{"size": "100"},
+					Items: map[string]*config.Config{
+						"rotate": &config.Config{
+							Attrs: map[string]string{
+								"filename": "info-%Y%m%d.%i.log",
+								"dir":      "./logs",
+								"size":     "5m",
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"debug": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "DEBUG",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"rotate": &config.Config{
+					Attrs: map[string]string{
+						"filename": "debug-%Y%m%d.%i.log",
+						"dir":      "./logs",
+						"size":     "5m",
+					},
+				},
+			},
+		},
+
+		"warn": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "WARN",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"rotate": &config.Config{
+					Attrs: map[string]string{
+						"filename": "warn-%Y%m%d.%i.log",
+						"dir":      "./logs",
+						"size":     "5m",
+					},
+				},
+			},
+		},
+
+		"trace": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "TRACE",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"rotate": &config.Config{
+					Attrs: map[string]string{
+						"filename": "trace-%Y%m%d.%i.log",
+						"dir":      "./logs",
+						"size":     "5m",
+					},
+				},
+			},
+		},
+
+		"error": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "ERROR",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"rotate": &config.Config{
+					Attrs: map[string]string{
+						"filename": "error-%Y%m%d.%i.log",
+						"dir":      "./logs",
+						"size":     "5m",
+					},
+				},
+			},
+		},
+
+		"critical": &config.Config{
+			Attrs: map[string]string{
+				"prefix": "CRITICAL",
+				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
+			},
+			Items: map[string]*config.Config{
+				"rotate": &config.Config{
+					Attrs: map[string]string{
+						"filename": "critical-%Y%m%d.%i.log",
+						"dir":      "./logs",
+						"size":     "5m",
+					},
+				},
+			},
+		},
+	},
+}

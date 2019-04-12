@@ -18,7 +18,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/webconfig"
 )
 
 // Usage 当前子命令的用法
@@ -126,18 +125,16 @@ func createConfig(path, dir string) error {
 	}
 
 	// 输出 logs.xml
-	if err := dumpFile(filepath.Join(path, "logs.xml"), logs); err != nil {
+	data, err := yaml.Marshal(logsconf)
+	if err != nil {
+		return err
+	}
+	if err = dumpFile(filepath.Join(path, "logs.yaml"), string(data)); err != nil {
 		return err
 	}
 
 	// web.yaml
-	conf := &webconfig.WebConfig{
-		HTTPS:  false,
-		Domain: "localhost",
-		Port:   8080,
-		Logs:   "logs.xml",
-	}
-	data, err := yaml.Marshal(conf)
+	data, err = yaml.Marshal(webconf)
 	if err != nil {
 		return err
 	}
