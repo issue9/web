@@ -54,7 +54,6 @@ func TestModules_Init(t *testing.T) {
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-3")
 	a.Equal(len(tag.inits), 3)
-	tag.AddService(srv1, "服务 1")
 	a.Equal(len(ms.services), 0)
 
 	a.Error(ms.Init("v1", nil))            // 出错后中断

@@ -86,16 +86,36 @@ func (ms *Modules) Mux() *mux.Mux {
 	return ms.router.Mux()
 }
 
-// Init 初始化插件
+// Init 初始化所有的模块或是模块下指定标签名称的函数。
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
 //
 // 指定 log 参数，可以输出详细的初始化步骤。
 func (ms *Modules) Init(tag string, log *log.Logger) error {
-	if err := newDepencency(ms, log).init(tag); err != nil {
+	l := func(v ...interface{}) {
+		if log != nil {
+			log.Println(v...)
+		}
+	}
+
+	l("开始初始化模块...")
+
+	if err := newDepencency(ms, l).init(tag); err != nil {
 		ms.reset()
 		return err
 	}
+
+	if tag == "" { // 只有模块的初始化才带路由
+		all := ms.Mux().All(true, true)
+		if len(all) > 0 {
+			l("模块加载了以下路由项：")
+			for path, methods := range all {
+				log.Println(path, methods)
+			}
+		}
+	}
+
+	l("模块初始化完成！")
 
 	return nil
 }
@@ -106,10 +126,6 @@ func (ms *Modules) reset() {
 
 	ms.Stop() // 先停止停止服务
 	ms.services = ms.services[:0]
-
-	for _, m := range ms.modules {
-		m.inited = false
-	}
 }
 
 // Modules 获取所有的模块信息

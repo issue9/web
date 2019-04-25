@@ -6,34 +6,31 @@ package module
 
 import (
 	"fmt"
-	"log"
 )
+
+type mod struct {
+	*Module
+	inited bool
+}
 
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
-	modules map[string]*Module
-	ms      *Modules
-	infolog *log.Logger // 一些执行信息输出通道
+	modules map[string]*mod
+	l       func(v ...interface{})
 }
 
-func newDepencency(ms *Modules, infolog *log.Logger) *dependency {
+// l 表示输出一些执行过程中的提示信息
+func newDepencency(ms *Modules, l func(v ...interface{})) *dependency {
 	dep := &dependency{
-		modules: make(map[string]*Module, len(ms.modules)),
-		ms:      ms,
-		infolog: infolog,
+		modules: make(map[string]*mod, len(ms.modules)),
+		l:       l,
 	}
 
 	for _, m := range ms.modules {
-		dep.modules[m.Name] = m
+		dep.modules[m.Name] = &mod{Module: m}
 	}
 
 	return dep
-}
-
-func (dep *dependency) println(v ...interface{}) {
-	if dep.infolog != nil {
-		dep.infolog.Println(v...)
-	}
 }
 
 // 对所有的模块进行初始化操作，会进行依赖检测。
@@ -53,21 +50,14 @@ func (dep *dependency) init(tag string) error {
 		}
 	}
 
-	all := dep.ms.Mux().All(true, true)
-	if len(all) > 0 {
-		dep.println("模块加载了以下路由项：")
-		for path, methods := range all {
-			dep.println(path, methods)
-		}
-	}
-	dep.println("模块初始化完成！")
-
 	return nil
 }
 
 // 初始化指定模块，会先初始化其依赖模块。
+//
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
-func (dep *dependency) initModule(m *Module, tag string) error {
+// 若 tag 不为空，表示只调用该标签下的初始化函数。
+func (dep *dependency) initModule(m *mod, tag string) error {
 	if m.inited {
 		return nil
 	}
@@ -84,21 +74,22 @@ func (dep *dependency) initModule(m *Module, tag string) error {
 		}
 	}
 
-	t := m
+	inits := m.inits
 	if tag != "" {
-		var found bool
-		if t, found = m.tags[tag]; !found {
+		t, found := m.tags[tag]
+		if !found {
 			return nil
 		}
+		inits = t.inits
 	}
 
-	dep.println("\n开始初始化模块：", m.Name)
+	dep.l("\n开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
-	for _, init := range t.inits {
+	for _, init := range inits {
 		title := init.title
 
-		dep.println("  执行初始化函数：", title)
+		dep.l("  执行初始化函数：", title)
 		if err := init.f(); err != nil {
 			return err
 		}
@@ -110,7 +101,7 @@ func (dep *dependency) initModule(m *Module, tag string) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (dep *dependency) checkDeps(m *Module) error {
+func (dep *dependency) checkDeps(m *mod) error {
 	// 检测依赖项是否都存在
 	for _, d := range m.Deps {
 		_, found := dep.modules[d]
