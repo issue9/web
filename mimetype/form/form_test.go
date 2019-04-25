@@ -15,6 +15,9 @@ import (
 var (
 	_ mimetype.MarshalFunc   = Marshal
 	_ mimetype.UnmarshalFunc = Unmarshal
+
+	_ Marshaler   = objectData
+	_ Unmarshaler = objectData
 )
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"
@@ -71,7 +74,7 @@ func TestMarshal(t *testing.T) {
 
 	// 非 url.Values 类型
 	data, err = Marshal(&struct{}{})
-	a.ErrorType(err, errInvalidType).Nil(data)
+	a.NotError(err).Empty(data)
 
 	// Marshaler 类型
 	data, err = Marshal(objectData)
@@ -93,7 +96,7 @@ func TestUnmarshal(t *testing.T) {
 	v = url.Values{}
 	a.Error(Unmarshal([]byte("%"), v))
 
-	a.ErrorType(Unmarshal([]byte(formString), &struct{}{}), errInvalidType)
+	a.NotError(Unmarshal([]byte(formString), &struct{}{}))
 
 	v = url.Values{}
 	a.NotError(Unmarshal([]byte(formString), v))

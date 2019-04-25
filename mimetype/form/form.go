@@ -18,12 +18,7 @@
 //  }
 package form
 
-import (
-	"errors"
-	"net/url"
-)
-
-var errInvalidType = errors.New("该类型无法进行转换")
+import "net/url"
 
 // MimeType 当前编码的媒体类型
 const MimeType = "application/x-www-form-urlencoded"
@@ -39,6 +34,11 @@ type Unmarshaler interface {
 }
 
 // Marshal 针对 www-form-urlencoded 内容的 MarshalFunc 实现
+//
+// 按以下顺序解析内容：
+//  - 如果实现 Marshaler 接口，则调用该接口；
+//  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
+//  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v interface{}) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
@@ -48,10 +48,19 @@ func Marshal(v interface{}) ([]byte, error) {
 		return []byte(vals.Encode()), nil
 	}
 
-	return nil, errInvalidType
+	vals, err := marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(vals.Encode()), nil
 }
 
 // Unmarshal 针对 www-form-urlencoded 内容的 UnmarshalFunc 实现
+// 按以下顺序解析内容：
+//  - 如果实现 Unmarshaler 接口，则调用该接口；
+//  - 如果是 url.Values 对象，则依次赋值每个对象；
+//  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Unmarshal(data []byte, v interface{}) error {
 	if m, ok := v.(Unmarshaler); ok {
 		return m.UnmarshalForm(data)
@@ -62,14 +71,12 @@ func Unmarshal(data []byte, v interface{}) error {
 		return err
 	}
 
-	obj, ok := v.(url.Values)
-	if !ok {
-		return errInvalidType
+	if obj, ok := v.(url.Values); ok {
+		for k, v := range vals {
+			obj[k] = v
+		}
+		return nil
 	}
 
-	for k, v := range vals {
-		obj[k] = v
-	}
-
-	return nil
+	return unmarshal(vals, v)
 }
