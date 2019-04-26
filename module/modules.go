@@ -110,7 +110,7 @@ func (ms *Modules) Init(tag string, log *log.Logger) error {
 		if len(all) > 0 {
 			l("模块加载了以下路由项：")
 			for path, methods := range all {
-				log.Println(path, methods)
+				l(path, methods)
 			}
 		}
 	}
