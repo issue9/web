@@ -165,12 +165,18 @@ func (app *App) Shutdown() error {
 	}
 
 	app.Stop() // 关闭服务
-	ctx, cancel := context.WithTimeout(context.Background(), app.webConfig.ShutdownTimeout.Duration())
+	dur := app.webConfig.ShutdownTimeout.Duration()
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+
 	defer func() {
 		cancel()
 		app.closed <- struct{}{}
 	}()
-	return app.server.Shutdown(ctx)
+	err := app.server.Shutdown(ctx)
+	if err != nil && err != context.DeadlineExceeded {
+		return err
+	}
+	return nil
 }
 
 // Server 获取 http.Server 实例
