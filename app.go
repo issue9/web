@@ -248,6 +248,11 @@ func Messages(p *message.Printer) map[int]string {
 	return defaultApp.Messages(p)
 }
 
+// Jobs 返回所有的计划任务
+func Jobs() []*module.Job {
+	return defaultApp.Jobs()
+}
+
 // Location 返回当前配置文件中指定的时区信息
 func Location() *time.Location {
 	return defaultApp.Location()
