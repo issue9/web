@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
+	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/internal/webconfig"
 )
@@ -30,9 +31,10 @@ const (
 // 负责模块的初始化工作，包括路由的加载等。
 type Modules struct {
 	middleware.Manager
-	modules  []*Module
-	router   *mux.Prefix
-	services []*Service
+	modules   []*Module
+	router    *mux.Prefix
+	services  []*Service
+	scheduled *scheduled.Server
 
 	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
 	// 还有包含了启动服务等。
@@ -43,10 +45,11 @@ type Modules struct {
 func NewModules(conf *webconfig.WebConfig) (*Modules, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
-		Manager:  *middleware.NewManager(mux),
-		modules:  make([]*Module, 0, 100),
-		router:   mux.Prefix(conf.Root),
-		services: make([]*Service, 0, 100),
+		Manager:   *middleware.NewManager(mux),
+		modules:   make([]*Module, 0, 100),
+		router:    mux.Prefix(conf.Root),
+		services:  make([]*Service, 0, 100),
+		scheduled: scheduled.NewServer(nil),
 	}
 
 	ms.buildCoreModule(conf)
@@ -79,6 +82,8 @@ func (ms *Modules) buildCoreModule(conf *webconfig.WebConfig) {
 		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
 		ms.coreModule.Get(url+"{path}", h)
 	}
+
+	ms.coreModule.AddService(ms.scheduledService, "定时服务监控")
 }
 
 // Mux 返回相关的 mux.Mux 实例
