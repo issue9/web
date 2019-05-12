@@ -115,6 +115,7 @@ YAML。用户也可以自行添加新的格式支持。
 | compress          | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
 | shutdownTimeout   | string | 关闭服务的等待时间
 | url               | string | 网站首页地址，一般由 domain、root 和 port 自动拼成，但也有可能存在类似于反向代理的情况，需要自行指定不同的值。
+| timezone          | string | 时区信息，名称为 IAAN 注册的名称
 | logs              | string | 指定日志配置文件名，相对于当前目录。
 
 *详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*

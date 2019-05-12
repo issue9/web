@@ -94,7 +94,7 @@ func (app *App) IsDebug() bool {
 	return app.webConfig.Debug
 }
 
-// Path 获取中径部分的地址
+// Path 生成路径部分的地址
 //
 // 基于 app.webConfig.URL 中的路径部分。
 func (app *App) Path(p string) string {
