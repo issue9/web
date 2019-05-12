@@ -116,7 +116,7 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 
 func TestModule_AddService(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)
@@ -130,7 +130,7 @@ func TestModule_AddService(t *testing.T) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	m := ms.NewModule("m1", "m1 desc")
@@ -161,7 +161,7 @@ func TestService_srv1(t *testing.T) {
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	m := ms.NewModule("m1", "m1 desc")
@@ -197,7 +197,7 @@ func TestService_srv2(t *testing.T) {
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	m := ms.NewModule("m1", "m1 desc")

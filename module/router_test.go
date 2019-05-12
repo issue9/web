@@ -24,7 +24,7 @@ var (
 
 func TestModule_Prefix(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	srv := rest.NewServer(t, ms.Mux(), nil)
 
@@ -48,7 +48,7 @@ func TestModule_Prefix(t *testing.T) {
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	srv := rest.NewServer(t, ms.Mux(), nil)
 
@@ -80,7 +80,7 @@ func TestModule_Handle(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	srv := rest.NewServer(t, ms.Mux(), nil)
 

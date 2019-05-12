@@ -71,7 +71,7 @@ func (ms *Modules) Jobs() []*Job {
 }
 
 func (ms *Modules) scheduledService(ctx context.Context) error {
-	go ms.scheduled.Serve(nil) // TODO
+	go ms.scheduled.Serve(ms.logs.ERROR())
 
 	<-ctx.Done()
 	return context.Canceled

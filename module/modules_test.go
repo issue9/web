@@ -20,7 +20,7 @@ import (
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	a.Equal(len(ms.Modules()), 1).
 		Equal(ms.modules[0].Name, CoreModuleName).
@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 
 func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
@@ -107,7 +107,7 @@ func TestModules_Init(t *testing.T) {
 
 func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")

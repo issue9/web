@@ -8,13 +8,16 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/logs/v2"
 
 	"github.com/issue9/web/internal/webconfig"
 )
 
+var logsDefault = logs.New()
+
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	m := newModule(ms, "user1", "user1 desc")
 	a.NotNil(m)
@@ -34,7 +37,7 @@ func TestModule_NewTag(t *testing.T) {
 func TestModule_Plugin(t *testing.T) {
 	a := assert.New(t)
 
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	m := newModule(ms, "user1", "user1 desc")
 	a.NotNil(m)
@@ -51,7 +54,7 @@ func TestModule_Plugin(t *testing.T) {
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 	m := newModule(ms, "m1", "m1 desc")
 	a.NotNil(m)

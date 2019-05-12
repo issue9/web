@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/scheduled"
@@ -35,6 +36,7 @@ type Modules struct {
 	router    *mux.Prefix
 	services  []*Service
 	scheduled *scheduled.Server
+	logs      *logs.Logs
 
 	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
 	// 还有包含了启动服务等。
@@ -42,14 +44,15 @@ type Modules struct {
 }
 
 // NewModules 声明 Modules 变量
-func NewModules(conf *webconfig.WebConfig) (*Modules, error) {
+func NewModules(conf *webconfig.WebConfig, logs *logs.Logs) (*Modules, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	ms := &Modules{
 		Manager:   *middleware.NewManager(mux),
 		modules:   make([]*Module, 0, 100),
 		router:    mux.Prefix(conf.Root),
 		services:  make([]*Service, 0, 100),
-		scheduled: scheduled.NewServer(nil),
+		scheduled: scheduled.NewServer(conf.Location),
+		logs:      logs,
 	}
 
 	ms.buildCoreModule(conf)
@@ -141,6 +144,11 @@ func (ms *Modules) Modules() []*Module {
 // Services 返回所有的服务列表
 func (ms *Modules) Services() []*Service {
 	return ms.services
+}
+
+// Logs 返回 logs.Logs 实例
+func (ms *Modules) Logs() *logs.Logs {
+	return ms.logs
 }
 
 // Stop 停止服务

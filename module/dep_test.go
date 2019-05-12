@@ -40,7 +40,7 @@ func newDep(ms []*Module, log *log.Logger) *dependency {
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	dep := newDep([]*Module{
@@ -68,7 +68,7 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	dep := newDep([]*Module{
@@ -99,7 +99,7 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{})
+	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
 	a.NotError(err).NotNil(ms)
 
 	inits := map[string]int{}

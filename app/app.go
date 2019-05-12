@@ -31,7 +31,6 @@ type App struct {
 
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
-	logs          *logs.Logs
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
@@ -45,7 +44,7 @@ type App struct {
 
 // New 声明一个新的 App 实例
 func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
-	ms, err := module.NewModules(webconf)
+	ms, err := module.NewModules(webconf, logs)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,6 @@ func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App
 		webConfig:     webconf,
 		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
-		logs:          logs,
 		errorhandlers: errorhandler.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
 		getResult:     get,
@@ -193,11 +191,6 @@ func (app *App) Mimetypes() *mimetype.Mimetypes {
 // ErrorHandlers 错误处理功能
 func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 	return app.errorhandlers
-}
-
-// Logs 获取 logs.Logs 实例
-func (app *App) Logs() *logs.Logs {
-	return app.logs
 }
 
 // Location 当前设置的时区信息
