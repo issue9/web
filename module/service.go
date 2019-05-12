@@ -21,9 +21,9 @@ type ServiceState int8
 
 // 几种可能的状态值
 const (
-	ServiceStop    ServiceState = iota + 1 // 当前处理停止状态，默认状态
-	ServiceRunning                         // 正在运行
-	ServiceFailed                          // 出错，不再执行后续操作
+	ServiceStop    ServiceState = iota // 当前处理停止状态，默认状态
+	ServiceRunning                     // 正在运行
+	ServiceFailed                      // 出错，不再执行后续操作
 )
 
 // Service 服务模型
@@ -46,7 +46,6 @@ func (m *Module) AddService(f ServiceFunc, title string) {
 	srv := &Service{
 		Title:  title,
 		Module: m,
-		state:  ServiceStop,
 		f:      f,
 	}
 
