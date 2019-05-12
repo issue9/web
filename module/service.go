@@ -60,6 +60,11 @@ func (m *Module) AddService(f ServiceFunc, title string) {
 	}, "启动服务："+srv.Title)
 }
 
+// Services 返回所有的服务列表
+func (ms *Modules) Services() []*Service {
+	return ms.services
+}
+
 // State 获取当前服务的状态
 func (srv *Service) State() ServiceState {
 	return srv.state

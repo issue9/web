@@ -141,11 +141,6 @@ func (ms *Modules) Modules() []*Module {
 	return ms.modules
 }
 
-// Services 返回所有的服务列表
-func (ms *Modules) Services() []*Service {
-	return ms.services
-}
-
 // Logs 返回 logs.Logs 实例
 func (ms *Modules) Logs() *logs.Logs {
 	return ms.logs

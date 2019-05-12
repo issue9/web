@@ -29,8 +29,10 @@ type Job struct {
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) error {
-	return m.ms.scheduled.NewCron(title, f, spec, delay)
+func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
+	m.ms.coreModule.AddInit(func() error {
+		return m.ms.scheduled.NewCron(title, f, spec, delay)
+	}, "注册计划任务"+title)
 }
 
 // AddTicker 添加新的定时任务
@@ -38,8 +40,10 @@ func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) error
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, delay bool) error {
-	return m.ms.scheduled.NewTicker(title, f, dur, delay)
+func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, delay bool) {
+	m.ms.coreModule.AddInit(func() error {
+		return m.ms.scheduled.NewTicker(title, f, dur, delay)
+	}, "注册计划任务"+title)
 }
 
 // AddAt 添加新的定时任务
@@ -48,8 +52,10 @@ func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, delay boo
 // title 是对该服务的简要说明；
 // spec 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) error {
-	return m.ms.scheduled.NewAt(title, f, spec, delay)
+func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
+	m.ms.coreModule.AddInit(func() error {
+		return m.ms.scheduled.NewAt(title, f, spec, delay)
+	}, "注册计划任务"+title)
 }
 
 // Jobs 返回所有的计划任务
