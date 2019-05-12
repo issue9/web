@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/issue9/config"
 	"github.com/issue9/is"
@@ -115,6 +116,13 @@ type WebConfig struct {
 	URL     string `yaml:"url,omitempty" json:"url,omitempty" xml:"url,omitempty"`
 	URLPath string `yaml:"-" json:"-" xml:"-"` // URL 的 path 部分
 
+	// Timezone 时区名称，可以是 Asia/Shanghai 等，具体可参考：
+	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+	//
+	// 为空和 local 值都会被初始化本地时间。
+	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	Location *time.Location `yaml:"-" json:"-" xml:"-"`
+
 	// Logs 指定配置文件
 	//
 	// 相对于配置文件目录。如果不存在，则日志内容采用默认设置，
@@ -155,6 +163,10 @@ func (conf *WebConfig) Sanitize() error {
 		return &config.Error{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
 
+	if err := conf.buildTimezone(); err != nil {
+		return err
+	}
+
 	if err := conf.checkStatic(); err != nil {
 		return err
 	}
@@ -170,6 +182,19 @@ func (conf *WebConfig) Sanitize() error {
 	}
 
 	return conf.buildURL()
+}
+
+func (conf *WebConfig) buildTimezone() error {
+	if conf.Timezone == "" {
+		conf.Timezone = "Local"
+	}
+	loc, err := time.LoadLocation(conf.Timezone)
+	if err != nil {
+		return &config.Error{Field: "timezone", Message: err.Error()}
+	}
+	conf.Location = loc
+
+	return nil
 }
 
 func (conf *WebConfig) checkStatic() (err error) {

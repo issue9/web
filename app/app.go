@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"time"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
@@ -197,6 +198,11 @@ func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 // Logs 获取 logs.Logs 实例
 func (app *App) Logs() *logs.Logs {
 	return app.logs
+}
+
+// Location 当前设置的时区信息
+func (app *App) Location() *time.Location {
+	return app.webConfig.Location
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。

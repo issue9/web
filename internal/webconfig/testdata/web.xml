@@ -19,4 +19,5 @@
     <shutdownTimeout>300ms</shutdownTimeout>
     <allowedDomains>127.0.0.1</allowedDomains>
     <allowedDomains>127.0.0.2</allowedDomains>
+    <timezone>Africa/Addis_Ababa</timezone>
 </webconfig>

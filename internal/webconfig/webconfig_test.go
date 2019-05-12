@@ -10,6 +10,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/config"
@@ -37,6 +38,23 @@ func TestWebConfig(t *testing.T) {
 
 	a.Equal(confJSON, confXML)
 	a.Equal(confJSON, confYAML)
+}
+
+func TestWebConfig_buildTimezone(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &WebConfig{}
+	a.NotError(conf.buildTimezone())
+	a.Equal(conf.Location, time.Local).
+		Equal(conf.Timezone, "Local")
+
+	conf = &WebConfig{Timezone: "Africa/Addis_Ababa"}
+	a.NotError(conf.buildTimezone())
+	a.Equal(conf.Location.String(), "Africa/Addis_Ababa").
+		Equal(conf.Timezone, "Africa/Addis_Ababa")
+
+	conf = &WebConfig{Timezone: "not-exists-time-zone"}
+	a.Error(conf.buildTimezone())
 }
 
 func TestWebConfig_checkStatic(t *testing.T) {
