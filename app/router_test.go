@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package module
+package app
 
 import (
 	"net/http"
@@ -10,8 +10,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-
-	"github.com/issue9/web/internal/webconfig"
 )
 
 var (
@@ -24,11 +22,10 @@ var (
 
 func TestModule_Prefix(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
-	a.NotError(err).NotNil(ms)
-	srv := rest.NewServer(t, ms.Mux(), nil)
+	app := newApp(a)
+	srv := rest.NewServer(t, app.Mux(), nil)
 
-	m := newModule(ms, "m1", "m1 desc")
+	m := newModule(app, "m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -48,11 +45,10 @@ func TestModule_Prefix(t *testing.T) {
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
-	a.NotError(err).NotNil(ms)
-	srv := rest.NewServer(t, ms.Mux(), nil)
+	app := newApp(a)
+	srv := rest.NewServer(t, app.Mux(), nil)
 
-	m := newModule(ms, "m1", "m1 desc")
+	m := newModule(app, "m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -80,12 +76,11 @@ func TestModule_Handle(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
-	ms, err := NewModules(&webconfig.WebConfig{}, logsDefault)
-	a.NotError(err).NotNil(ms)
-	srv := rest.NewServer(t, ms.Mux(), nil)
+	app := newApp(a)
+	srv := rest.NewServer(t, app.Mux(), nil)
 
 	path := "/path"
-	m := newModule(ms, "m1", "m1 desc")
+	m := newModule(app, "m1", "m1 desc")
 	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).
@@ -119,7 +114,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = newModule(ms, "m1", "m1 desc")
+	m = newModule(app, "m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)

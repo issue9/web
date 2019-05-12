@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package module
+package app
 
 import (
 	"context"
@@ -24,8 +24,8 @@ type Job = scheduled.Job
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
-	m.ms.coreModule.AddInit(func() error {
-		return m.ms.scheduled.NewCron(title, f, spec, delay)
+	m.app.coreModule.AddInit(func() error {
+		return m.app.scheduled.NewCron(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -35,8 +35,8 @@ func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 // title 是对该服务的简要说明；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, delay bool) {
-	m.ms.coreModule.AddInit(func() error {
-		return m.ms.scheduled.NewTicker(title, f, dur, delay)
+	m.app.coreModule.AddInit(func() error {
+		return m.app.scheduled.NewTicker(title, f, dur, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -47,18 +47,18 @@ func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, delay boo
 // spec 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
-	m.ms.coreModule.AddInit(func() error {
-		return m.ms.scheduled.NewAt(title, f, spec, delay)
+	m.app.coreModule.AddInit(func() error {
+		return m.app.scheduled.NewAt(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
 // Schedulers 返回所有的计划任务
-func (ms *Modules) Schedulers() []*Job {
-	return ms.scheduled.Jobs()
+func (app *App) Schedulers() []*Job {
+	return app.scheduled.Jobs()
 }
 
-func (ms *Modules) scheduledService(ctx context.Context) error {
-	go ms.scheduled.Serve(ms.logs.ERROR())
+func (app *App) scheduledService(ctx context.Context) error {
+	go app.scheduled.Serve(app.logs.ERROR())
 
 	<-ctx.Done()
 	return context.Canceled

@@ -29,7 +29,6 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/module"
 )
 
 var (
@@ -192,12 +191,12 @@ func Path(path string) string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func Modules() []*module.Module {
-	return defaultApp.Modules.Modules()
+func Modules() []*app.Module {
+	return defaultApp.Modules()
 }
 
 // Services 返回所有的服务列表
-func Services() []*module.Service {
+func Services() []*app.Service {
 	return defaultApp.Services()
 }
 
@@ -249,7 +248,7 @@ func Messages(p *message.Printer) map[int]string {
 }
 
 // Schedulers 返回所有的计划任务
-func Schedulers() []*module.Job {
+func Schedulers() []*app.Job {
 	return defaultApp.Schedulers()
 }
 

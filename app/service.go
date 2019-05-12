@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package module
+package app
 
 import (
 	"context"
@@ -28,8 +28,7 @@ const (
 
 // Service 服务模型
 type Service struct {
-	Title  string
-	Module *Module
+	Title string
 
 	state      ServiceState
 	f          ServiceFunc
@@ -44,25 +43,24 @@ type Service struct {
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	srv := &Service{
-		Title:  title,
-		Module: m,
-		f:      f,
+		Title: title,
+		f:     f,
 	}
 
 	m.AddInit(func() error {
-		m.ms.services = append(m.ms.services, srv)
+		m.app.services = append(m.app.services, srv)
 		return nil
 	}, "注册服务："+title)
 
-	m.ms.coreModule.AddInit(func() error {
+	m.app.coreModule.AddInit(func() error {
 		srv.Run()
 		return nil
 	}, "启动服务："+srv.Title)
 }
 
 // Services 返回所有的服务列表
-func (ms *Modules) Services() []*Service {
-	return ms.services
+func (app *App) Services() []*Service {
+	return app.services
 }
 
 // State 获取当前服务的状态

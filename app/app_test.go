@@ -71,7 +71,7 @@ func newApp(a *assert.Assertion) *App {
 
 	// 以下内容由配置文件决定
 	a.True(app.IsDebug()).
-		True(len(app.Modules.Modules()) > 0). // 最起码有 web-core 模板
+		True(len(app.Modules()) > 0). // 最起码有 web-core 模板
 		NotNil(app.webConfig.Compress).
 		NotEmpty(app.compresses)
 
@@ -79,6 +79,9 @@ func newApp(a *assert.Assertion) *App {
 	a.NotNil(app.server).Equal(app.server, app.Server())
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
 	a.NotNil(app.Logs())
+	a.Equal(app.modules[0].Name, CoreModuleName)
+	a.NotNil(app.Mux())
+	a.Equal(app.Mux(), app.router.Mux())
 
 	return app
 }

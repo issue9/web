@@ -15,43 +15,55 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v2"
+	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
+	"github.com/issue9/mux/v2"
+	"github.com/issue9/scheduled"
 	"golang.org/x/text/language"
 	xmessage "golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/module"
 )
 
 // App 程序运行实例
 type App struct {
-	*module.Modules
+	middleware.Manager
 
+	modules       []*Module
+	router        *mux.Prefix
+	services      []*Service
+	scheduled     *scheduled.Server
+	logs          *logs.Logs
 	webConfig     *webconfig.WebConfig
 	server        *http.Server
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
+	getResult     GetResultFunc
+	messages      map[int]*message
 
-	getResult GetResultFunc
-	messages  map[int]*message
+	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
+	// 还有包含了启动服务等。
+	coreModule *Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
 
 // New 声明一个新的 App 实例
-func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
-	ms, err := module.NewModules(webconf, logs)
-	if err != nil {
-		return nil, err
-	}
+func New(conf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
+	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 
 	app := &App{
-		Modules:       ms,
-		webConfig:     webconf,
+		Manager:       *middleware.NewManager(mux),
+		modules:       make([]*Module, 0, 100),
+		router:        mux.Prefix(conf.Root),
+		services:      make([]*Service, 0, 100),
+		scheduled:     scheduled.NewServer(conf.Location),
+		logs:          logs,
+		webConfig:     conf,
 		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
 		errorhandlers: errorhandler.New(),
@@ -59,19 +71,28 @@ func New(webconf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App
 		getResult:     get,
 		messages:      map[int]*message{},
 		server: &http.Server{
-			Addr:              ":" + strconv.Itoa(webconf.Port),
+			Addr:              ":" + strconv.Itoa(conf.Port),
 			ErrorLog:          logs.ERROR(),
-			ReadTimeout:       webconf.ReadTimeout.Duration(),
-			WriteTimeout:      webconf.WriteTimeout.Duration(),
-			IdleTimeout:       webconf.IdleTimeout.Duration(),
-			ReadHeaderTimeout: webconf.ReadHeaderTimeout.Duration(),
-			MaxHeaderBytes:    webconf.MaxHeaderBytes,
+			ReadTimeout:       conf.ReadTimeout.Duration(),
+			WriteTimeout:      conf.WriteTimeout.Duration(),
+			IdleTimeout:       conf.IdleTimeout.Duration(),
+			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
+			MaxHeaderBytes:    conf.MaxHeaderBytes,
 		},
 	}
+
+	app.buildCoreModule(conf)
+
+	if conf.Plugins != "" {
+		if err := app.loadPlugins(conf.Plugins); err != nil {
+			return nil, err
+		}
+	}
+
 	app.server.Handler = app
 
-	// 加载固有的中间件，需要在 ms 初始化之后调用
-	app.buildMiddlewares(webconf)
+	// 加载固有的中间件，需要在 app 初始化之后调用
+	app.buildMiddlewares(conf)
 
 	return app, nil
 }
@@ -87,6 +108,11 @@ func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
 	}
 
 	return nil
+}
+
+// Mux 返回相关的 mux.Mux 实例
+func (app *App) Mux() *mux.Mux {
+	return app.router.Mux()
 }
 
 // IsDebug 是否处于调试模式
@@ -196,6 +222,11 @@ func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
 // Location 当前设置的时区信息
 func (app *App) Location() *time.Location {
 	return app.webConfig.Location
+}
+
+// Logs 返回 logs.Logs 实例
+func (app *App) Logs() *logs.Logs {
+	return app.logs
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
