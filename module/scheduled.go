@@ -14,14 +14,8 @@ import (
 // JobFunc 定时任务执行的函数
 type JobFunc = scheduled.JobFunc
 
-// Job 描述计划任务的信息。
-type Job struct {
-	State     scheduled.State
-	Title     string
-	Prev      time.Time
-	Next      time.Time
-	Scheduled string
-}
+// Job 定时任务实例
+type Job = scheduled.Job
 
 // AddCron 添加新的定时任务
 //
@@ -58,22 +52,9 @@ func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 	}, "注册计划任务"+title)
 }
 
-// Jobs 返回所有的计划任务
-func (ms *Modules) Jobs() []*Job {
-	jobs := ms.scheduled.Jobs()
-
-	ret := make([]*Job, 0, len(jobs))
-	for _, job := range jobs {
-		ret = append(ret, &Job{
-			State:     job.State(),
-			Title:     job.Name(),
-			Prev:      job.Prev(),
-			Next:      job.Next(),
-			Scheduled: job.Scheduler.Title(),
-		})
-	}
-
-	return ret
+// Schedulers 返回所有的计划任务
+func (ms *Modules) Schedulers() []*Job {
+	return ms.scheduled.Jobs()
 }
 
 func (ms *Modules) scheduledService(ctx context.Context) error {
