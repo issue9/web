@@ -248,16 +248,21 @@ func Messages(p *message.Printer) map[int]string {
 	return defaultApp.Messages(p)
 }
 
+// Location 返回当前配置文件中指定的时区信息
+func Location() *time.Location {
+	return defaultApp.Location()
+}
+
 // Now 返回当前时间。
 //
 // 与 time.Now() 的区别在于 Now() 基于当前时区
 func Now() time.Time {
-	return time.Now().In(defaultApp.Location())
+	return time.Now().In(Location())
 }
 
 // ParseTime 分析时间格式，基于当前时间
 func ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, defaultApp.Location())
+	return time.ParseInLocation(layout, value, Location())
 }
 
 // NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
