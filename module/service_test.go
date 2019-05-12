@@ -142,7 +142,7 @@ func TestService_srv1(t *testing.T) {
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
 	<-start
 	time.Sleep(20 * time.Microsecond) // 等待其它内容初始化完成
-	a.Equal(1, len(ms.services))
+	a.Equal(2, len(ms.services))      // 自带一个 scheduled
 	s1 := ms.services[0]
 	a.Equal(s1.Module, m)
 	a.Equal(s1.State(), ServiceRunning)

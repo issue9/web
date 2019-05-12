@@ -63,7 +63,7 @@ func TestModules_Init(t *testing.T) {
 
 	a.Equal(0, len(ms.Services()))
 	a.NotError(ms.Init("", log.New(os.Stdout, "", 0)))
-	a.Equal(3, len(ms.Services()))
+	a.Equal(4, len(ms.Services())) // 自带 ms.scheduled
 
 	// 等待启动完成
 	wg := &sync.WaitGroup{}
