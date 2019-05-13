@@ -119,7 +119,7 @@ type WebConfig struct {
 	// Timezone 时区名称，可以是 Asia/Shanghai 等，具体可参考：
 	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 	//
-	// 为空和 local 值都会被初始化本地时间。
+	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	Location *time.Location `yaml:"-" json:"-" xml:"-"`
 

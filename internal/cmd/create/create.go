@@ -85,7 +85,8 @@ MOD:
 		return err
 	}
 
-	if err = createModules(path); err != nil {
+	// 创建模块目录，并输出默认的配置内容。
+	if err = os.MkdirAll(filepath.Join(path, "modules"), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -105,8 +106,7 @@ func createCmd(path, dir, mod string) error {
 	}
 
 	// 输出 main.go
-	data := fmt.Sprintf(maingo, mod+"/modules")
-	if err := dumpFile(filepath.Join(path, "main.go"), data); err != nil {
+	if err := dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
 		return err
 	}
 
@@ -139,20 +139,6 @@ func createConfig(path, dir string) error {
 		return err
 	}
 	return dumpFile(filepath.Join(path, "web.yaml"), string(data))
-}
-
-// 创建模块目录，并输出默认的配置内容。
-//
-// path 为项目的根目录
-func createModules(path string) error {
-	path = filepath.Join(path, "modules")
-
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
-		return err
-	}
-
-	// 输出 modules.go
-	return dumpFile(filepath.Join(path, "modules.go"), modulesgo)
 }
 
 func dumpFile(path string, content string) error {

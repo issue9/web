@@ -27,28 +27,20 @@ import (
     "encoding/xml"
 
     "github.com/issue9/web"
-
-    "%s"
 )
 
 func main() {
     web.Classic(appconfig)
 
     // 所有的模块初始化在此函数
-    modules.Init()
+    initModules()
 
     web.Fatal(2, web.Serve())
 }
-`
 
-const modulesgo = `// 内容由 web 自动生成，可根据需求自由修改！
-
-// Package modules 完成所有模块的初始化
-package modules
-
-// Init 所有模块的初始化操作可在此处进行。
-func Init() {
-    // TODO
+// initModules 所有模块的初始化操作可在此处进行。
+func initModules() {
+	// TODO
 }
 `
 
