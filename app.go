@@ -59,7 +59,7 @@ func Classic(path string, get app.GetResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, filename, get); err != nil {
+	if err = Init(mgr, filename, "logs.xml", get); err != nil {
 		return err
 	}
 
@@ -87,8 +87,12 @@ func Classic(path string, get app.GetResultFunc) error {
 
 // Init 初始化整个应用环境
 //
+// mgr 为配置文件管理工具；
+// configFilename 为相对于 mgr 目录下的配置文件地址；
+// logsFilename 为相对于 mgr 目录下的日志配置文件地址；
+//
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (err error) {
+func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetResultFunc) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
@@ -103,13 +107,11 @@ func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (er
 	}
 
 	l := logs.New()
-	if webconf.Logs != "" {
-		lc := &lconf.Config{}
-		if err = mgr.LoadFile(webconf.Logs, lc); err != nil {
-			return err
-		}
-		l.Init(lc)
+	lc := &lconf.Config{}
+	if err = mgr.LoadFile(logsFilename, lc); err != nil {
+		return err
 	}
+	l.Init(lc)
 
 	defaultConfigs = mgr
 	defaultApp, err = app.New(webconf, l, get)
