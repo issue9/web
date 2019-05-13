@@ -6,7 +6,6 @@
 package command
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,10 +13,6 @@ import (
 )
 
 var commands = map[string]*command{}
-
-// ErrNotFound 子命令未注册，通过 web hep [subcommnad]
-// 时，返回此错误信息。
-var ErrNotFound = errors.New("找不到该子命令")
 
 // 每个子命令的结构
 type command struct {
@@ -68,7 +63,9 @@ func helpDo(output io.Writer) error {
 		}
 	}
 
-	return ErrNotFound
+	_, err := fmt.Fprintf(output, `找不到当前的子命令
+目前仅支持以下子命令：%s`, strings.Join(cmds(), ","))
+	return err
 }
 
 func helpUsage(output io.Writer) {
@@ -78,16 +75,20 @@ func helpUsage(output io.Writer) {
 }
 
 func usage(output io.Writer) error {
+	_, err := fmt.Fprintf(output, `web 命令是 github.com/issue9/web 框架提供的辅助工具。
+
+目前支持以下子命令：%s
+详情可以通过 web help [subcommand] 进行查看。
+`, strings.Join(cmds(), ","))
+
+	return err
+}
+
+func cmds() []string {
 	keys := make([]string, 0, len(commands))
 	for k := range commands {
 		keys = append(keys, k)
 	}
 
-	_, err := fmt.Fprintf(output, `web 命令是 github.com/issue9/web 框架提供的辅助工具。
-
-目前支持以下子命令：%s
-详情可以通过 web help [subcommand] 进行查看。
-`, strings.Join(keys, ","))
-
-	return err
+	return keys
 }
