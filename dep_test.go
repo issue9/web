@@ -20,11 +20,7 @@ func m(name string, f func() error, deps ...string) *Module {
 }
 
 func newDep(ms []*Module, log *log.Logger) *dependency {
-	return newDepencency(ms, func(v ...interface{}) {
-		if log != nil {
-			log.Println(v...)
-		}
-	})
+	return newDepencency(ms, log)
 }
 
 func TestDependency_isDep(t *testing.T) {

@@ -108,30 +108,24 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 // InitModules 初始化所有的模块或是模块下指定标签名称的函数。
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
-//
-// 指定 log 参数，可以输出详细的初始化步骤。
 func InitModules(tag string) error {
-	l := func(v ...interface{}) {
-		INFO().Println(v...)
-	}
+	INFO().Println("开始初始化模块...")
 
-	l("开始初始化模块...")
-
-	if err := newDepencency(modules, l).init(tag); err != nil {
+	if err := newDepencency(modules, INFO()).init(tag); err != nil {
 		return err
 	}
 
 	if tag == "" { // 只有模块的初始化才带路由
 		all := defaultApp.Mux().All(true, true)
 		if len(all) > 0 {
-			l("模块加载了以下路由项：")
+			INFO().Println("模块加载了以下路由项：")
 			for path, methods := range all {
-				l(path, methods)
+				INFO().Println(path, methods)
 			}
 		}
 	}
 
-	l("模块初始化完成！")
+	INFO().Println("模块初始化完成！")
 
 	return nil
 }

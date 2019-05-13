@@ -4,7 +4,10 @@
 
 package web
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type mod struct {
 	*Module
@@ -14,11 +17,11 @@ type mod struct {
 // 模块管理工具，管理模块的初始化顺序
 type dependency struct {
 	modules map[string]*mod
-	l       func(v ...interface{})
+	l       *log.Logger
 }
 
 // l 表示输出一些执行过程中的提示信息
-func newDepencency(ms []*Module, l func(v ...interface{})) *dependency {
+func newDepencency(ms []*Module, l *log.Logger) *dependency {
 	dep := &dependency{
 		modules: make(map[string]*mod, len(ms)),
 		l:       l,
@@ -81,13 +84,13 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		inits = t.inits
 	}
 
-	dep.l("\n开始初始化模块：", m.Name)
+	dep.l.Println("\n开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
 	for _, init := range inits {
 		title := init.title
 
-		dep.l("  执行初始化函数：", title)
+		dep.l.Println("  执行初始化函数：", title)
 		if err := init.f(); err != nil {
 			return err
 		}
