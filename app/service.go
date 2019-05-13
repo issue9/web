@@ -41,26 +41,22 @@ type Service struct {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (m *Module) AddService(f ServiceFunc, title string) {
-	srv := &Service{
+func (app *App) AddService(f ServiceFunc, title string) {
+	app.services = append(app.services, &Service{
 		Title: title,
 		f:     f,
-	}
-
-	m.AddInit(func() error {
-		m.app.services = append(m.app.services, srv)
-		return nil
-	}, "注册服务："+title)
-
-	m.app.coreModule.AddInit(func() error {
-		srv.Run()
-		return nil
-	}, "启动服务："+srv.Title)
+	})
 }
 
 // Services 返回所有的服务列表
 func (app *App) Services() []*Service {
 	return app.services
+}
+
+func (app *App) stopServices() {
+	for _, srv := range app.services {
+		srv.Stop()
+	}
 }
 
 // State 获取当前服务的状态
@@ -71,6 +67,12 @@ func (srv *Service) State() ServiceState {
 // Err 上次的错误信息，不会清空。
 func (srv *Service) Err() error {
 	return srv.err
+}
+
+func (app *App) runServices() {
+	for _, srv := range app.services {
+		srv.Run()
+	}
 }
 
 // Run 开始执行该服务

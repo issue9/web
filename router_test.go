@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"net/http"
@@ -22,10 +22,12 @@ var (
 
 func TestModule_Prefix(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
-	srv := rest.NewServer(t, app.Mux(), nil)
+	srv := rest.NewServer(t, Mux(), nil)
+	Mux().Clean()
 
-	p := app.Prefix("/p")
+	m := newModule("m1", "m1 desc")
+	a.NotNil(m)
+	p := m.Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
@@ -43,11 +45,14 @@ func TestModule_Prefix(t *testing.T) {
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
-	srv := rest.NewServer(t, app.Mux(), nil)
+	srv := rest.NewServer(t, Mux(), nil)
+	Mux().Clean()
+
+	m := newModule("m1", "m1 desc")
+	a.NotNil(m)
 
 	path := "/path"
-	app.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	m.Handle(path, h1, http.MethodGet, http.MethodDelete)
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
@@ -60,7 +65,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
-	app.Handle(path, h1)
+	m.Handle(path, h1)
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)
@@ -71,64 +76,68 @@ func TestModule_Handle(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
-	srv := rest.NewServer(t, app.Mux(), nil)
+	srv := rest.NewServer(t, Mux(), nil)
+	Mux().Clean()
 
 	path := "/path"
+	m := newModule("m1", "m1 desc")
+	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusNotFound)
 
-	app.Get(path, h1)
+	m.Get(path, h1)
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.Post(path, h1)
+	m.Post(path, h1)
 	srv.NewRequest(http.MethodPost, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.Patch(path, h1)
+	m.Patch(path, h1)
 	srv.NewRequest(http.MethodPatch, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.Put(path, h1)
+	m.Put(path, h1)
 	srv.NewRequest(http.MethodPut, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.Delete(path, h1)
+	m.Delete(path, h1)
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)
 
 	// *Func
 	path = "/path1"
+	m = newModule("m1", "m1 desc")
+	a.NotNil(m)
 
-	app.GetFunc(path, f1)
+	m.GetFunc(path, f1)
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.PostFunc(path, f1)
+	m.PostFunc(path, f1)
 	srv.NewRequest(http.MethodPost, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.PatchFunc(path, f1)
+	m.PatchFunc(path, f1)
 	srv.NewRequest(http.MethodPatch, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.PutFunc(path, f1)
+	m.PutFunc(path, f1)
 	srv.NewRequest(http.MethodPut, path).
 		Do().
 		Status(http.StatusOK)
 
-	app.DeleteFunc(path, f1)
+	m.DeleteFunc(path, f1)
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)

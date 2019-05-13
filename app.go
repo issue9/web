@@ -22,6 +22,7 @@ import (
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
+	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 
@@ -112,6 +113,13 @@ func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (er
 
 	defaultConfigs = mgr
 	defaultApp, err = app.New(webconf, l, get)
+
+	// loadPlugins 用到 defaultApp，所以要在 app.New 之后调用
+	if webconf.Plugins != "" {
+		if err := loadPlugins(webconf.Plugins); err != nil {
+			return err
+		}
+	}
 	return
 }
 
@@ -161,11 +169,6 @@ func Serve() error {
 	return defaultApp.Serve()
 }
 
-// InitModules 初始化指定标签的模块
-func InitModules(tag string) error {
-	return defaultApp.Init(tag, INFO())
-}
-
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
@@ -190,29 +193,14 @@ func Path(path string) string {
 	return defaultApp.Path(path)
 }
 
-// Modules 当前系统使用的所有模块信息
-func Modules() []*app.Module {
-	return defaultApp.Modules()
-}
-
 // Services 返回所有的服务列表
 func Services() []*app.Service {
 	return defaultApp.Services()
 }
 
-// Tags 获取所有的子模块名称
-func Tags() []string {
-	return defaultApp.Tags()
-}
-
 // Server 获取 http.Server 实例
 func Server() *http.Server {
 	return defaultApp.Server()
-}
-
-// NewModule 注册一个模块
-func NewModule(name, desc string, deps ...string) *Module {
-	return defaultApp.NewModule(name, desc, deps...)
 }
 
 // File 获取配置目录下的文件。
@@ -247,9 +235,14 @@ func Messages(p *message.Printer) map[int]string {
 	return defaultApp.Messages(p)
 }
 
+// Scheduled 获取 scheduled.Server 实例
+func Scheduled() *scheduled.Server {
+	return defaultApp.Scheduled()
+}
+
 // Schedulers 返回所有的计划任务
-func Schedulers() []*app.Job {
-	return defaultApp.Schedulers()
+func Schedulers() []*scheduled.Job {
+	return Scheduled().Jobs()
 }
 
 // Location 返回当前配置文件中指定的时区信息

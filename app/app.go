@@ -31,7 +31,6 @@ import (
 type App struct {
 	middleware.Manager
 
-	modules       []*Module
 	router        *mux.Prefix
 	services      []*Service
 	scheduled     *scheduled.Server
@@ -44,10 +43,6 @@ type App struct {
 	getResult     GetResultFunc
 	messages      map[int]*message
 
-	// 框架自身用到的模块，除了配置文件中的静态文件服务之外，
-	// 还有包含了启动服务等。
-	coreModule *Module
-
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
@@ -58,7 +53,6 @@ func New(conf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, e
 
 	app := &App{
 		Manager:       *middleware.NewManager(mux),
-		modules:       make([]*Module, 0, 100),
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
 		scheduled:     scheduled.NewServer(conf.Location),
@@ -81,13 +75,7 @@ func New(conf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, e
 		},
 	}
 
-	app.buildCoreModule(conf)
-
-	if conf.Plugins != "" {
-		if err := app.loadPlugins(conf.Plugins); err != nil {
-			return nil, err
-		}
-	}
+	app.AddService(app.scheduledService, "计划任务")
 
 	app.server.Handler = app
 
@@ -150,6 +138,14 @@ func (app *App) URL(path string) string {
 func (app *App) Serve() (err error) {
 	conf := app.webConfig
 
+	// TODO 放在 New ?
+	for url, dir := range conf.Static {
+		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
+		app.router.Get(url+"{path}", h)
+	}
+
+	app.runServices()
+
 	if !conf.HTTPS {
 		err = app.server.ListenAndServe()
 	} else {
@@ -173,7 +169,7 @@ func (app *App) LocalPrinter(tag language.Tag, opts ...xmessage.Option) *xmessag
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	app.Stop() // 关闭服务
+	app.stopServices() // 关闭服务
 
 	defer func() {
 		app.closed <- struct{}{}
@@ -189,7 +185,7 @@ func (app *App) Shutdown() error {
 		return app.Close()
 	}
 
-	app.Stop() // 关闭服务
+	app.stopServices() // 关闭服务
 	dur := app.webConfig.ShutdownTimeout.Duration()
 	ctx, cancel := context.WithTimeout(context.Background(), dur)
 

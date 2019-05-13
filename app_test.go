@@ -83,7 +83,7 @@ func TestApp(t *testing.T) {
 
 	a.NotError(InitModules(""))
 
-	a.Equal(3, len(Modules())) //  m1,m2，以及自带的模块 web-core
+	a.Equal(2, len(Modules())) //  m1,m2
 
 	go func() {
 		err := Serve()

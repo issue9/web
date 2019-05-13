@@ -8,8 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -112,34 +110,16 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 	}, start, exit
 }
 
-func TestModule_AddService(t *testing.T) {
-	a := assert.New(t)
-	app := newApp(a)
-	m := newModule(app, "m1", "m1 desc")
-	a.NotNil(m)
-
-	srv1 := func(ctx context.Context) error { return nil }
-
-	ml := len(m.inits)
-	m.AddService(srv1, "srv1")
-	a.Equal(ml+1, len(m.inits))
-}
-
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	m := app.NewModule("m1", "m1 desc")
-	a.NotNil(m)
-	a.Empty(app.services)
-
 	srv1, start, exit := buildSrv1()
-	m.AddService(srv1, "srv1")
-	a.NotError(app.Init("", log.New(os.Stdout, "", 0))) // 注册并运行服务
+	app.AddService(srv1, "srv1")
+	app.runServices()
 	<-start
-	time.Sleep(20 * time.Microsecond) // 等待其它内容初始化完成
-	a.Equal(2, len(app.services))     // 自带一个 scheduled
-	s1 := app.services[0]
+	a.Equal(2, len(app.services)) // 自带一个 scheduled
+	s1 := app.services[1]         // 0 为 scheduled
 	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
 	<-exit
@@ -158,16 +138,11 @@ func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	m := app.NewModule("m1", "m1 desc")
-	a.NotNil(m)
-	a.Empty(app.services)
-
 	srv2, start, exit := buildSrv2()
-	m.AddService(srv2, "srv2")
-	a.NotError(app.Init("", nil)) // 注册并运行服务
-	s2 := app.services[0]
+	app.AddService(srv2, "srv2")
+	app.runServices()     // 注册并运行服务
+	s2 := app.services[1] // 0 为 scheduled
 	<-start
-	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(s2.State(), ServiceRunning)
 	s2.Stop()
 	<-exit
@@ -193,16 +168,11 @@ func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 
-	m := app.NewModule("m1", "m1 desc")
-	a.NotNil(m)
-	a.Empty(app.services)
-
 	srv3, start, exit := buildSrv3()
-	m.AddService(srv3, "srv3")
-	a.NotError(app.Init("", nil)) // 注册并运行服务
-	s3 := app.services[0]
+	app.AddService(srv3, "srv3")
+	app.runServices()
+	s3 := app.services[1] // 0 为 scheduled
 	<-start
-	time.Sleep(20 * time.Microsecond) // 等待服务启动完成
 	a.Equal(s3.State(), ServiceRunning)
 
 	<-exit // 等待超过返回错误

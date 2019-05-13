@@ -31,11 +31,8 @@ func TestMiddlewares(t *testing.T) {
 		w.Write([]byte("error handler test"))
 	}, http.StatusNotFound)
 
-	m1 := app.NewModule("m1", "m1 desc")
-	a.NotNil(m1)
-	m1.GetFunc("/m1/test", f201)
+	app.Mux().GetFunc("/m1/test", f201)
 
-	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())

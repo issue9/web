@@ -71,7 +71,6 @@ func newApp(a *assert.Assertion) *App {
 
 	// 以下内容由配置文件决定
 	a.True(app.IsDebug()).
-		True(len(app.Modules()) > 0). // 最起码有 web-core 模板
 		NotNil(app.webConfig.Compress).
 		NotEmpty(app.compresses)
 
@@ -79,7 +78,6 @@ func newApp(a *assert.Assertion) *App {
 	a.NotNil(app.server).Equal(app.server, app.Server())
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
 	a.NotNil(app.Logs())
-	a.Equal(app.modules[0].Name, CoreModuleName)
 	a.NotNil(app.Mux())
 	a.Equal(app.Mux(), app.router.Mux())
 
@@ -113,15 +111,10 @@ func TestApp_Serve(t *testing.T) {
 		w.Write([]byte("error handler test"))
 	}, http.StatusNotFound)
 
-	m1 := app.NewModule("m1", "m1 desc", "m2")
-	a.NotNil(m1)
-	m2 := app.NewModule("m2", "m2 desc")
-	a.NotNil(m2)
-	m1.GetFunc("/m1/test", f202)
-	m2.GetFunc("/m2/test", f202)
+	app.Mux().GetFunc("/m1/test", f202)
+	app.Mux().GetFunc("/m2/test", f202)
 	app.Mux().GetFunc("/mux/test", f202)
 
-	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
@@ -178,7 +171,6 @@ func TestApp_Close(t *testing.T) {
 		a.NotError(app.Close())
 	})
 
-	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -214,7 +206,6 @@ func TestApp_Shutdown(t *testing.T) {
 		app.Shutdown()
 	})
 
-	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
@@ -251,7 +242,6 @@ func TestApp_Shutdown_timeout(t *testing.T) {
 		app.Shutdown()
 	})
 
-	a.NotError(app.Init("", nil))
 	go func() {
 		err := app.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)

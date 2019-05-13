@@ -2,25 +2,16 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
-	"log"
-	"net/http"
 	"sort"
+	"time"
 
-	"github.com/issue9/web/internal/webconfig"
+	"github.com/issue9/web/app"
 )
 
-const (
-	// CoreModuleName 框架自带的模块名称
-	//
-	// 该模块会在所有模块初始化之后，进行最后的初始化操作，包括了以下内容：
-	// - 配置文件中指定的静态文件服务内容 static；
-	// - 所有模块注册的服务，也由此模块负责启动。
-	CoreModuleName        = "web-core"
-	coreModuleDescription = "web 框架自带的模块，包括启动服务等，最后加载运行"
-)
+var modules []*Module
 
 // Module 表示模块信息
 type Module struct {
@@ -29,7 +20,7 @@ type Module struct {
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
-	app         *App
+	app         *app.App
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
@@ -46,17 +37,9 @@ type initialization struct {
 	f     func() error
 }
 
-func (app *App) buildCoreModule(conf *webconfig.WebConfig) {
-	app.coreModule = newModule(app, CoreModuleName, coreModuleDescription)
-	app.modules = append(app.modules, app.coreModule)
-
-	// 初始化静态文件处理
-	for url, dir := range conf.Static {
-		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		app.coreModule.Get(url+"{path}", h)
-	}
-
-	app.coreModule.AddService(app.scheduledService, "定时服务监控")
+// Modules 当前系统使用的所有模块信息
+func Modules() []*Module {
+	return modules
 }
 
 // 声明一个新的模块
@@ -64,12 +47,12 @@ func (app *App) buildCoreModule(conf *webconfig.WebConfig) {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func newModule(app *App, name, desc string, deps ...string) *Module {
+func newModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		app:         app,
+		app:         defaultApp,
 	}
 }
 
@@ -92,9 +75,9 @@ func (m *Module) NewTag(tag string) *Tag {
 }
 
 // NewModule 声明一个新的模块
-func (app *App) NewModule(name, desc string, deps ...string) *Module {
-	m := newModule(app, name, desc, deps...)
-	app.appendModules(m)
+func NewModule(name, desc string, deps ...string) *Module {
+	m := newModule(name, desc, deps...)
+	modules = append(modules, m)
 	return m
 }
 
@@ -123,42 +106,24 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 	return t
 }
 
-// Modules 获取所有的模块信息
-func (app *App) Modules() []*Module {
-	return app.modules
-}
-
-// 收录模块到当前实例，并更 coreModule 的依赖项。
-func (app *App) appendModules(modules ...*Module) {
-	for _, m := range modules {
-		app.modules = append(app.modules, m)
-
-		// 让 coreModule 依赖所有模块，保证其在最后进行初始化
-		app.coreModule.Deps = append(app.coreModule.Deps, m.Name)
-	}
-}
-
-// Init 初始化所有的模块或是模块下指定标签名称的函数。
+// InitModules 初始化所有的模块或是模块下指定标签名称的函数。
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
 //
 // 指定 log 参数，可以输出详细的初始化步骤。
-func (app *App) Init(tag string, log *log.Logger) error {
+func InitModules(tag string) error {
 	l := func(v ...interface{}) {
-		if log != nil {
-			log.Println(v...)
-		}
+		INFO().Println(v...)
 	}
 
 	l("开始初始化模块...")
 
-	if err := newDepencency(app, l).init(tag); err != nil {
-		app.reset()
+	if err := newDepencency(modules, l).init(tag); err != nil {
 		return err
 	}
 
 	if tag == "" { // 只有模块的初始化才带路由
-		all := app.Mux().All(true, true)
+		all := defaultApp.Mux().All(true, true)
 		if len(all) > 0 {
 			l("模块加载了以下路由项：")
 			for path, methods := range all {
@@ -172,26 +137,11 @@ func (app *App) Init(tag string, log *log.Logger) error {
 	return nil
 }
 
-// 重置状态为未初始化时的状态
-func (app *App) reset() {
-	app.router.Clean()
-
-	app.Stop() // 先停止停止服务
-	app.services = app.services[:0]
-}
-
-// Stop 停止服务
-func (app *App) Stop() {
-	for _, srv := range app.services {
-		srv.Stop()
-	}
-}
-
 // Tags 返回所有的子模块名称
-func (app *App) Tags() []string {
-	tags := make([]string, 0, len(app.modules)*2)
+func Tags() []string {
+	tags := make([]string, 0, len(modules)*2)
 
-	for _, m := range app.modules {
+	for _, m := range modules {
 	LOOP:
 		for k := range m.tags {
 			for _, v := range tags {
@@ -207,3 +157,57 @@ func (app *App) Tags() []string {
 
 	return tags
 }
+
+// AddCron 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// spec cron 表达式，支持秒；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddCron(title string, f app.JobFunc, spec string, delay bool) {
+	m.AddInit(func() error {
+		return m.app.Scheduled().NewCron(title, f, spec, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddTicker 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, delay bool) {
+	m.AddInit(func() error {
+		return m.app.Scheduled().NewTicker(title, f, dur, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddAt 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// spec 指定的时间点；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddAt(title string, f app.JobFunc, spec string, delay bool) {
+	m.AddInit(func() error {
+		return m.app.Scheduled().NewAt(title, f, spec, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddService 添加新的服务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明。
+func (m *Module) AddService(f app.ServiceFunc, title string) {
+	m.AddInit(func() error {
+		m.app.AddService(f, title)
+		return nil
+	}, "注册服务："+title)
+}
+
+/*
+	if conf.Plugins != "" {
+		if err := app.loadPlugins(conf.Plugins); err != nil {
+			return nil, err
+		}
+	}
+*/

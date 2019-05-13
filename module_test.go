@@ -2,23 +2,18 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"errors"
-	"log"
-	"os"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 )
 
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
-	m := newModule(app, "user1", "user1 desc")
+	m := newModule("user1", "user1 desc")
 	a.NotNil(m)
 
 	v := m.NewTag("0.1.0")
@@ -36,15 +31,14 @@ func TestModule_NewTag(t *testing.T) {
 func TestModule_Plugin(t *testing.T) {
 	a := assert.New(t)
 
-	app := newApp(a)
-	m := newModule(app, "user1", "user1 desc")
+	m := newModule("user1", "user1 desc")
 	a.NotNil(m)
 
 	a.Panic(func() {
 		m.Plugin("p1", "p1 desc")
 	})
 
-	m = newModule(app, "", "")
+	m = newModule("", "")
 	a.NotPanic(func() {
 		m.Plugin("p1", "p1 desc")
 	})
@@ -52,8 +46,7 @@ func TestModule_Plugin(t *testing.T) {
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
-	m := newModule(app, "m1", "m1 desc")
+	m := newModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)
@@ -73,11 +66,11 @@ func TestModule_AddInit(t *testing.T) {
 		NotNil(m.inits[2].f)
 }
 
+/*
 func TestApp_Init(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 
-	m1 := app.NewModule("users1", "user1 module", "users2", "users3")
+	m1 := NewModule("users1", "user1 module", "users2", "users3")
 	srv1, start1, exit1 := buildSrv1()
 	m1.AddService(srv1, "服务 1")
 	srv2, start2, exit2 := buildSrv1()
@@ -86,7 +79,7 @@ func TestApp_Init(t *testing.T) {
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 
-	m2 := app.NewModule("users2", "user2 module", "users3")
+	m2 := NewModule("users2", "user2 module", "users3")
 	srv3, start3, exit3 := buildSrv1()
 	m2.AddService(srv3, "服务 3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
@@ -148,26 +141,27 @@ func TestApp_Init(t *testing.T) {
 		a.Equal(srv.State(), ServiceStop)
 	}
 }
+*/
 
 func TestApp_Tags(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	modules = modules[:0]
 
-	m1 := app.NewModule("users1", "user1 module", "users2", "users3")
+	m1 := NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
-	m2 := app.NewModule("users2", "user2 module", "users3")
+	m2 := NewModule("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
-	m3 := app.NewModule("users3", "user3 mdoule")
+	m3 := NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
 	m3.NewTag("v4")
 
-	tags := app.Tags()
+	tags := Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
 }

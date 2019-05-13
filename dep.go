@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import "fmt"
 
@@ -18,13 +18,13 @@ type dependency struct {
 }
 
 // l 表示输出一些执行过程中的提示信息
-func newDepencency(app *App, l func(v ...interface{})) *dependency {
+func newDepencency(ms []*Module, l func(v ...interface{})) *dependency {
 	dep := &dependency{
-		modules: make(map[string]*mod, len(app.modules)),
+		modules: make(map[string]*mod, len(ms)),
 		l:       l,
 	}
 
-	for _, m := range app.modules {
+	for _, m := range ms {
 		dep.modules[m.Name] = &mod{Module: m}
 	}
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package app
+package web
 
 import (
 	"log"
@@ -11,25 +11,16 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/middleware"
-	"github.com/issue9/mux/v2"
 )
 
-func m(app *App, name string, f func() error, deps ...string) *Module {
-	m := newModule(app, name, name, deps...)
+func m(name string, f func() error, deps ...string) *Module {
+	m := newModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }
 
-func newDep(app []*Module, log *log.Logger) *dependency {
-	mux := mux.New(false, false, false, nil, nil)
-
-	return newDepencency(&App{
-		Manager:  *middleware.NewManager(mux),
-		modules:  app,
-		router:   mux.Prefix(""),
-		services: make([]*Service, 0, 100),
-	}, func(v ...interface{}) {
+func newDep(ms []*Module, log *log.Logger) *dependency {
+	return newDepencency(ms, func(v ...interface{}) {
 		if log != nil {
 			log.Println(v...)
 		}
@@ -38,11 +29,10 @@ func newDep(app []*Module, log *log.Logger) *dependency {
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 
 	dep := newDep([]*Module{
-		m(app, "m1", nil, "d1", "d2"),
-		m(app, "d1", nil, "d3"),
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
 	}, nil)
 	a.NotNil(dep)
 
@@ -53,9 +43,9 @@ func TestDependency_isDep(t *testing.T) {
 
 	// 循环依赖
 	dep = newDep([]*Module{
-		m(app, "m1", nil, "d1", "d2"),
-		m(app, "d1", nil, "d3"),
-		m(app, "d3", nil, "d1"),
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d3", nil, "d1"),
 	}, nil)
 	a.True(dep.isDep("d1", "d1"))
 
@@ -65,29 +55,28 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 
 	dep := newDep([]*Module{
-		m(app, "m1", nil, "d1", "d2"),
-		m(app, "d1", nil, "d3"),
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
 	}, nil)
 
 	m1 := dep.modules["m1"]
 	a.Error(dep.checkDeps(m1)) // 依赖项不存在
 
 	dep = newDep([]*Module{
-		m(app, "m1", nil, "d1", "d2"),
-		m(app, "d1", nil, "d3"),
-		m(app, "d2", nil, "d3"),
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d2", nil, "d3"),
 	}, nil)
 	a.NotError(dep.checkDeps(m1))
 
 	// 自我依赖
 	dep = newDep([]*Module{
-		m(app, "m1", nil, "d1", "d2"),
-		m(app, "d1", nil, "d3"),
-		m(app, "d2", nil, "d3"),
-		m(app, "d3", nil, "d2"),
+		m("m1", nil, "d1", "d2"),
+		m("d1", nil, "d3"),
+		m("d2", nil, "d3"),
+		m("d3", nil, "d2"),
 	}, nil)
 	d2 := dep.modules["d2"]
 	a.Error(dep.checkDeps(d2))
@@ -95,7 +84,6 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
 
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
@@ -112,19 +100,19 @@ func TestDependency_init(t *testing.T) {
 
 	// 缺少依赖项 d3
 	dep := newDep([]*Module{
-		m(app, "m1", i("m1"), "d1", "d2"),
-		m(app, "d1", i("d1"), "d3"),
-		m(app, "d2", i("d2"), "d3"),
+		m("m1", i("m1"), "d1", "d2"),
+		m("d1", i("d1"), "d3"),
+		m("d2", i("d2"), "d3"),
 	}, infolog)
 	a.Error(dep.init(""))
 
-	m1 := m(app, "m1", i("m1"), "d1", "d2")
+	m1 := m("m1", i("m1"), "d1", "d2")
 	m1.PutFunc("/put", f1)
 	apps := []*Module{
 		m1,
-		m(app, "d1", i("d1"), "d3"),
-		m(app, "d2", i("d2"), "d3"),
-		m(app, "d3", i("d3")),
+		m("d1", i("d1"), "d3"),
+		m("d2", i("d2"), "d3"),
+		m("d3", i("d3")),
 	}
 
 	dep = newDep(apps, infolog)

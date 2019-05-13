@@ -17,9 +17,6 @@ const (
 	// MinimumGoVersion 需求的最低 Go 版本
 	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖以及 README.md 中的相关信息。
 	MinimumGoVersion = "1.11"
-
-	// CoreModuleName 框架自带的模块名称
-	CoreModuleName = app.CoreModuleName
 )
 
 type (
@@ -28,9 +25,6 @@ type (
 
 	// Result 等同于 app.Resut，方便调用者使用
 	Result = app.Result
-
-	// Module 等同于 app.Module，方便调用者使用
-	Module = app.Module
 
 	// Service 等同于 app.Service，方便调用者使用
 	Service = app.Service

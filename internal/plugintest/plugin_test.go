@@ -28,7 +28,7 @@ func TestPlugins(t *testing.T) {
 	a.NotError(web.Classic("./testdata/web.yaml", getResult))
 
 	ms := web.Modules()
-	a.Equal(3, len(ms)) // web-core 和两个插件
+	a.Equal(2, len(ms))
 
 	sort.SliceStable(ms, func(i, j int) bool {
 		return ms[i].Name < ms[j].Name
