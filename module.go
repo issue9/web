@@ -42,11 +42,6 @@ func Modules() []*Module {
 	return modules
 }
 
-// 声明一个新的模块
-//
-// name 模块名称，需要全局唯一；
-// desc 模块的详细信息；
-// deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func newModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
@@ -75,6 +70,10 @@ func (m *Module) NewTag(tag string) *Tag {
 }
 
 // NewModule 声明一个新的模块
+//
+// name 模块名称，需要全局唯一；
+// desc 模块的详细信息；
+// deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(name, desc string, deps ...string) *Module {
 	m := newModule(name, desc, deps...)
 	modules = append(modules, m)
@@ -203,11 +202,3 @@ func (m *Module) AddService(f app.ServiceFunc, title string) {
 		return nil
 	}, "注册服务："+title)
 }
-
-/*
-	if conf.Plugins != "" {
-		if err := app.loadPlugins(conf.Plugins); err != nil {
-			return nil, err
-		}
-	}
-*/
