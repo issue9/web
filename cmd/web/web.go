@@ -8,6 +8,7 @@ package main
 import (
 	"os"
 
+	"github.com/issue9/web/internal/cmd/build"
 	"github.com/issue9/web/internal/cmd/command"
 	"github.com/issue9/web/internal/cmd/create"
 	"github.com/issue9/web/internal/cmd/version"
@@ -21,6 +22,7 @@ func main() {
 	command.Register("version", version.Do, version.Usage)
 	command.Register("watch", watch.Do, watch.Usage)
 	command.Register("create", create.Do, create.Usage)
+	command.Register("build", build.Do, build.Usage)
 
 	if err := command.Exec(output); err != nil {
 		panic(err)
