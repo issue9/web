@@ -123,7 +123,7 @@ func TestService_srv1(t *testing.T) {
 	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
 	<-exit
-	a.Equal(s1.State(), ServiceStop)
+	a.Equal(s1.State(), ServiceStoped)
 
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
@@ -131,7 +131,7 @@ func TestService_srv1(t *testing.T) {
 	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
 	<-exit
-	a.Equal(s1.State(), ServiceStop)
+	a.Equal(s1.State(), ServiceStoped)
 }
 
 func TestService_srv2(t *testing.T) {
@@ -146,7 +146,7 @@ func TestService_srv2(t *testing.T) {
 	a.Equal(s2.State(), ServiceRunning)
 	s2.Stop()
 	<-exit
-	a.Equal(s2.State(), ServiceStop)
+	a.Equal(s2.State(), ServiceStoped)
 
 	// 再次运行，等待 panic
 	s2.Run()
@@ -161,7 +161,7 @@ func TestService_srv2(t *testing.T) {
 	a.Equal(s2.State(), ServiceRunning)
 	s2.Stop()
 	<-exit
-	a.Equal(s2.State(), ServiceStop)
+	a.Equal(s2.State(), ServiceStoped)
 }
 
 func TestService_srv3(t *testing.T) {
@@ -185,5 +185,5 @@ func TestService_srv3(t *testing.T) {
 	a.Equal(s3.State(), ServiceRunning)
 	s3.Stop()
 	<-exit
-	a.Equal(s3.State(), ServiceStop)
+	a.Equal(s3.State(), ServiceStoped)
 }
