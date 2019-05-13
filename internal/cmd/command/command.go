@@ -44,7 +44,11 @@ func Exec(output io.Writer) error {
 	return fn(output)
 }
 
-// Register 注册 usage 函数，注册的功能会在调用 web help xx 时调用。
+// Register 注册新的子命令
+//
+// name 表示子命令的名称；
+// do 表示子命令的执行函数，若有参数，也需要在此处理；
+// usage 表示子命令的帮助内容，在 web help xx 时显示。
 func Register(name string, do func(io.Writer) error, usage func(io.Writer)) {
 	if _, exists := commands[name]; exists {
 		panic("存在同名的子命令:" + name)
