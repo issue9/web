@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v2"
 	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
@@ -63,9 +62,15 @@ func Classic(dir string, get app.GetResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, ConfigFilename, LogsFilename, get); err != nil {
+	if err = Init(mgr, ConfigFilename, get); err != nil {
 		return err
 	}
+
+	lc := &lconf.Config{}
+	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
+		return err
+	}
+	defaultApp.Logs().Init(lc)
 
 	err = AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,
@@ -96,7 +101,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 // logsFilename 为相对于 mgr 目录下的日志配置文件地址；
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetResultFunc) (err error) {
+func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (err error) {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
@@ -110,15 +115,8 @@ func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetR
 		return err
 	}
 
-	l := logs.New()
-	lc := &lconf.Config{}
-	if err = mgr.LoadFile(logsFilename, lc); err != nil {
-		return err
-	}
-	l.Init(lc)
-
 	defaultConfigs = mgr
-	defaultApp, err = app.New(webconf, l, get)
+	defaultApp, err = app.New(webconf, get)
 
 	// loadPlugins 用到 defaultApp，所以要在 app.New 之后调用
 	if webconf.Plugins != "" {
@@ -383,9 +381,4 @@ func Panic(v ...interface{}) {
 // Panicf 输出错误信息，然后触发 panic。
 func Panicf(format string, v ...interface{}) {
 	defaultApp.Logs().Panicf(format, v...)
-}
-
-// FlushLogs 立即输出所有的日志信息。
-func FlushLogs() {
-	defaultApp.Logs().Flush()
 }

@@ -48,7 +48,7 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-func New(conf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, error) {
+func New(conf *webconfig.WebConfig, get GetResultFunc) (*App, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 
 	app := &App{
@@ -56,7 +56,7 @@ func New(conf *webconfig.WebConfig, logs *logs.Logs, get GetResultFunc) (*App, e
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
 		scheduled:     scheduled.NewServer(conf.Location),
-		logs:          logs,
+		logs:          logs.New(),
 		webConfig:     conf,
 		closed:        make(chan struct{}, 1),
 		mt:            mimetype.New(),
