@@ -48,7 +48,6 @@ var webconf = &webconfig.WebConfig{
 	HTTPS:  false,
 	Domain: "localhost",
 	Port:   8080,
-	Logs:   "logs.yaml",
 }
 
 var logsconf = &config.Config{

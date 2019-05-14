@@ -129,7 +129,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	if err = dumpFile(filepath.Join(path, "logs.yaml"), string(data)); err != nil {
+	if err = dumpFile(filepath.Join(path, web.LogsFilename), string(data)); err != nil {
 		return err
 	}
 
@@ -138,7 +138,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, "web.yaml"), string(data))
+	return dumpFile(filepath.Join(path, web.ConfigFilename), string(data))
 }
 
 func dumpFile(path string, content string) error {

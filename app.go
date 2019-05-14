@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/issue9/config"
@@ -32,6 +31,14 @@ import (
 	"github.com/issue9/web/mimetype"
 )
 
+// 两个配置文件的名称。
+//
+// 在 Classic 中，采用了这两个文件名作为日志和框架的配置文件名。
+const (
+	LogsFilename   = "logs.xml"
+	ConfigFilename = "web.yaml"
+)
+
 var (
 	defaultConfigs *config.Manager
 	defaultApp     *app.App
@@ -39,11 +46,8 @@ var (
 
 // Classic 初始化一个可运行的框架环境
 //
-// path 配置文件地址，该文件所在的目录，会成为项目所有配置文件的根地址。
-func Classic(path string, get app.GetResultFunc) error {
-	dir := filepath.Dir(path)
-	filename := filepath.Base(path)
-
+// dir 为配置文件的根目录
+func Classic(dir string, get app.GetResultFunc) error {
 	mgr, err := config.NewManager(dir)
 	if err != nil {
 		return err
@@ -59,7 +63,7 @@ func Classic(path string, get app.GetResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, filename, "logs.xml", get); err != nil {
+	if err = Init(mgr, ConfigFilename, LogsFilename, get); err != nil {
 		return err
 	}
 
