@@ -48,7 +48,7 @@ type App struct {
 }
 
 // New 声明一个新的 App 实例
-func New(conf *webconfig.WebConfig, get GetResultFunc) (*App, error) {
+func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 
 	app := &App{
@@ -76,13 +76,12 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) (*App, error) {
 	}
 
 	app.AddService(app.scheduledService, "计划任务")
-
 	app.server.Handler = app
 
 	// 加载固有的中间件，需要在 app 初始化之后调用
 	app.buildMiddlewares(conf)
 
-	return app, nil
+	return app
 }
 
 // AddCompresses 添加压缩处理函数

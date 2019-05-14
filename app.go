@@ -100,7 +100,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 // configFilename 为相对于 mgr 目录下的配置文件地址；
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (err error) {
+func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
@@ -110,12 +110,12 @@ func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (er
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err = mgr.LoadFile(configFilename, webconf); err != nil {
+	if err := mgr.LoadFile(configFilename, webconf); err != nil {
 		return err
 	}
 
 	defaultConfigs = mgr
-	defaultApp, err = app.New(webconf, get)
+	defaultApp = app.New(webconf, get)
 
 	// loadPlugins 用到 defaultApp，所以要在 app.New 之后调用
 	if webconf.Plugins != "" {
@@ -123,7 +123,7 @@ func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (er
 			return err
 		}
 	}
-	return
+	return nil
 }
 
 // App 返回 defaultApp 实例

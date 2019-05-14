@@ -76,8 +76,8 @@ func newApp(a *assert.Assertion) *app.App {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app, err := app.New(webconf, getResult)
-	a.NotError(err).NotNil(app)
+	app := app.New(webconf, getResult)
+	a.NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
