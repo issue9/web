@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/web/internal/cmd/build"
 	"github.com/issue9/web/internal/cmd/command"
 	"github.com/issue9/web/internal/cmd/create"
+	"github.com/issue9/web/internal/cmd/release"
 	"github.com/issue9/web/internal/cmd/version"
 	"github.com/issue9/web/internal/cmd/watch"
 )
@@ -23,6 +24,7 @@ func main() {
 	command.Register("watch", watch.Do, watch.Usage)
 	command.Register("create", create.Do, create.Usage)
 	command.Register("build", build.Do, build.Usage)
+	command.Register("release", release.Do, release.Usage)
 
 	if err := command.Exec(output); err != nil {
 		panic(err)
