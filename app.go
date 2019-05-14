@@ -98,7 +98,6 @@ func Classic(dir string, get app.GetResultFunc) error {
 //
 // mgr 为配置文件管理工具；
 // configFilename 为相对于 mgr 目录下的配置文件地址；
-// logsFilename 为相对于 mgr 目录下的日志配置文件地址；
 //
 // 重复调用会直接 panic
 func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) (err error) {
