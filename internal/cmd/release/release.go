@@ -2,22 +2,38 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
+// Package release 发布版本号管理
 package release
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+
+	"github.com/issue9/utils"
+	"github.com/issue9/version"
 )
+
+// 指定版本化文件的路 径
+const path = "internal/version/version.go"
 
 // Do 执行子命令
 func Do(output io.Writer) error {
-	tag := os.Args[2]
+	ver := os.Args[2]
 
-	// TODO 更新版本号
+	if !version.SemVerValid(ver) {
+		_, err := fmt.Fprintln(output, "无效的版本号格式！")
+		return err
+	}
 
-	cmd := exec.Command("git", "tag", tag)
+	// 输出到 internal/version/version.go
+	dumpFile(ver)
+
+	// 输出 git 标签
+	cmd := exec.Command("git", "tag", "v"+ver)
 	cmd.Stderr = output
 	cmd.Stdout = output
 
@@ -26,6 +42,46 @@ func Do(output io.Writer) error {
 	}
 
 	return nil
+}
+
+func findAppRoot(curr string) (string, error) {
+	path, err := filepath.Abs(curr)
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if utils.FileExists(filepath.Join(path, "go.mod")) {
+			return path, nil
+		}
+
+		p1 := filepath.Dir(path)
+		if path == p1 {
+			return "", errors.New("未找到根目录")
+		}
+		path = p1
+	}
+}
+
+func dumpFile(ver string) error {
+	root, err := findAppRoot("./")
+	if err != nil {
+		return err
+	}
+
+	p := filepath.Join(root, path)
+	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
+		return err
+	}
+
+	file, err := os.Create(p)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(fmt.Sprintf(versiongo, ver))
+	return err
 }
 
 // Usage 当前子命令的用法

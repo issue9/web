@@ -28,7 +28,7 @@ type GetResultFunc func(status, code int, message string) Result
 // 用户可以根据自己的需求，在出错时，展示自定义的错误码以及相关的错误信息。
 // 其中通过 Add 和 Set 可以添加具体的字段错误信息。
 //
-// 可以查看 internal/resulttest 查看 Result 的实现方式。
+// 可以在 internal/resulttest 查看 Result 的实现方式。
 type Result interface {
 	error
 
