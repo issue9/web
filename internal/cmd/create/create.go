@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -81,7 +82,7 @@ func createMod(mod, wd string, ask *prompt.Prompt) error {
 
 MOD:
 	content := fmt.Sprintf(gomod, mod, web.Version)
-	if err = dumpFile(filepath.Join(path, "go.mod"), content); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(path, "go.mod"), []byte(content), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -106,7 +107,7 @@ func createCmd(path, dir, mod string) error {
 	}
 
 	// 输出 main.go
-	if err := dumpFile(filepath.Join(path, "main.go"), maingo); err != nil {
+	if err := utils.DumpGoFile(filepath.Join(path, "main.go"), maingo); err != nil {
 		return err
 	}
 
@@ -129,7 +130,7 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	if err = dumpFile(filepath.Join(path, "logs.yaml"), string(data)); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(path, "logs.yaml"), data, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -138,21 +139,5 @@ func createConfig(path, dir string) error {
 	if err != nil {
 		return err
 	}
-	return dumpFile(filepath.Join(path, "web.yaml"), string(data))
-}
-
-func dumpFile(path string, content string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err = file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	_, err = file.WriteString(content)
-	return err
+	return ioutil.WriteFile(filepath.Join(path, "web.yaml"), data, os.ModePerm)
 }
