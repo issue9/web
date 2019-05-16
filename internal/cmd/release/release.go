@@ -74,14 +74,7 @@ func dumpFile(ver string) error {
 		return err
 	}
 
-	file, err := os.Create(p)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.WriteString(fmt.Sprintf(versiongo, ver))
-	return err
+	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver))
 }
 
 // Usage 当前子命令的用法
