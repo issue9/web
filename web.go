@@ -10,14 +10,8 @@ import (
 	"github.com/issue9/web/context"
 )
 
-const (
-	// Version 当前框架的版本
-	Version = "0.26.0"
-
-	// MinimumGoVersion 需求的最低 Go 版本
-	// 修改此值，记得同时修改 .travis.yml 文件中的版本依赖以及 README.md 中的相关信息。
-	MinimumGoVersion = "1.11"
-)
+// Version 当前框架的版本
+const Version = "0.26.0"
 
 type (
 	// Context 等同于 context.Context，方便调用者使用
