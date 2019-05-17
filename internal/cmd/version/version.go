@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/issue9/cmdopt"
 	"github.com/issue9/web"
 )
 
@@ -36,18 +37,18 @@ var (
 	flagset *flag.FlagSet
 )
 
-func init() {
+// Init 初始化函数
+func Init(opt *cmdopt.CmdOpt) {
 	if buildDate != "" {
 		localVersion += ("+" + buildDate)
 	}
 
-	flagset = flag.NewFlagSet("version", flag.ExitOnError)
+	flagset = opt.New("version", do, usage)
 	flagset.BoolVar(&check, "c", false, "是否检测线上的最新版本")
 	flagset.BoolVar(&list, "l", false, "显示所有版本号")
 }
 
-// Do 执行子命令
-func Do(output io.Writer) error {
+func do(output io.Writer) error {
 	if err := flagset.Parse(os.Args[2:]); err != nil {
 		return err
 	}
@@ -124,12 +125,17 @@ func getRemoteTags() ([]string, error) {
 	return tags, nil
 }
 
-// Usage 当前子命令的用法
-func Usage(output io.Writer) {
-	fmt.Fprintln(output, `显示当前程序的版本号
+func usage(output io.Writer) error {
+	_, err := fmt.Fprintln(output, `显示当前程序的版本号
 
 语法：web version [options]
 options`)
-	flagset.SetOutput(output)
+
+	if err != nil {
+		return err
+	}
+
 	flagset.PrintDefaults()
+
+	return nil
 }
