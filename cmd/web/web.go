@@ -30,6 +30,7 @@ func main() {
 	build.Init(opt)
 	create.Init(opt)
 	watch.Init(opt)
+	release.Init(opt)
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
 		panic(err)

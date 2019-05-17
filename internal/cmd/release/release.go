@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/issue9/cmdopt"
 	"github.com/issue9/utils"
 	"github.com/issue9/version"
 )
@@ -20,8 +21,12 @@ import (
 // 指定版本化文件的路 径
 const path = "internal/version/version.go"
 
-// Do 执行子命令
-func Do(output io.Writer) error {
+// Init 初始化函数
+func Init(opt *cmdopt.CmdOpt) {
+	opt.New("release", do, usage)
+}
+
+func do(output io.Writer) error {
 	ver := os.Args[2]
 
 	if !version.SemVerValid(ver) {
@@ -37,11 +42,7 @@ func Do(output io.Writer) error {
 	cmd.Stderr = output
 	cmd.Stdout = output
 
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func findAppRoot(curr string) (string, error) {
@@ -77,11 +78,12 @@ func dumpFile(ver string) error {
 	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver))
 }
 
-// Usage 当前子命令的用法
-func Usage(output io.Writer) {
-	fmt.Fprintln(output, `为当前程序发布一个新版本
+func usage(output io.Writer) error {
+	_, err := fmt.Fprintln(output, `为当前程序发布一个新版本
 
 将会执行以下操作：
 1 添加新的 git tag；
 2 更新本地代码的版本号。`)
+
+	return err
 }
