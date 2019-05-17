@@ -6,25 +6,41 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"io"
 	"os"
+	"strings"
+
+	"github.com/issue9/cmdopt"
 
 	"github.com/issue9/web/internal/cmd/build"
-	"github.com/issue9/web/internal/cmd/command"
 	"github.com/issue9/web/internal/cmd/create"
 	"github.com/issue9/web/internal/cmd/version"
 	"github.com/issue9/web/internal/cmd/watch"
 )
 
-// 帮助信息的输出通道
-var output = os.Stdout
+var opt *cmdopt.CmdOpt
 
 func main() {
-	command.Register("version", version.Do, version.Usage)
-	command.Register("watch", watch.Do, watch.Usage)
-	command.Register("create", create.Do, create.Usage)
-	command.Register("build", build.Do, build.Usage)
+	opt = cmdopt.New(os.Stdout, flag.ExitOnError, usage)
 
-	if err := command.Exec(output); err != nil {
+	version.Init(opt)
+	build.Init(opt)
+	create.Init(opt)
+	watch.Init(opt)
+
+	if err := opt.Exec(os.Args[1:]); err != nil {
 		panic(err)
 	}
+}
+
+func usage(output io.Writer) error {
+	_, err := fmt.Fprintf(output, `web 命令是 github.com/issue9/web 框架提供的辅助工具。
+
+目前支持以下子命令：%s
+详情可以通过 web help [subcommand] 进行查看。
+`, strings.Join(opt.Commands(), ","))
+
+	return err
 }
