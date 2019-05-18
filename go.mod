@@ -12,7 +12,7 @@ require (
 	github.com/issue9/middleware v1.5.3
 	github.com/issue9/mux/v2 v2.3.2
 	github.com/issue9/query v1.0.1
-	github.com/issue9/scheduled v0.3.0
+	github.com/issue9/scheduled v0.3.1
 	github.com/issue9/term v1.1.0
 	github.com/issue9/upload v1.1.2
 	github.com/issue9/utils v1.1.0
