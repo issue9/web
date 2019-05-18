@@ -25,6 +25,7 @@ var opt *cmdopt.CmdOpt
 func main() {
 	opt = cmdopt.New(os.Stdout, flag.ExitOnError, usage)
 
+	opt.Help("help")
 	version.Init(opt)
 	build.Init(opt)
 	create.Init(opt)
