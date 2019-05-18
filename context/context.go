@@ -273,3 +273,29 @@ func (ctx *Context) ClientIP() string {
 func (ctx *Context) NewResult(code int) app.Result {
 	return ctx.App.NewResult(code)
 }
+
+// Created 201
+func (ctx *Context) Created(v interface{}, location string) {
+	if location == "" {
+		ctx.Render(http.StatusCreated, v, nil)
+	} else {
+		ctx.Render(http.StatusCreated, v, map[string]string{
+			"Location": location,
+		})
+	}
+}
+
+// NoContent 204
+func (ctx *Context) NoContent() {
+	ctx.Render(http.StatusNoContent, nil, nil)
+}
+
+// ResetContent 205
+func (ctx *Context) ResetContent() {
+	ctx.Render(http.StatusResetContent, nil, nil)
+}
+
+// NotImplemented 501
+func (ctx *Context) NotImplemented() {
+	ctx.Render(http.StatusNotImplemented, nil, nil)
+}
