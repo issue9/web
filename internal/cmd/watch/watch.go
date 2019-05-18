@@ -4,7 +4,7 @@
 
 // Package watch 提供热编译功能。
 //
-// 功能与 github.com/caixw/gobuild 相似。
+// 功能与 github.com/caixw/gobuild 相同。
 package watch
 
 import (
@@ -14,18 +14,19 @@ import (
 	"os"
 
 	"github.com/caixw/gobuild"
+	"github.com/issue9/cmdopt"
 )
-
-// TODO 自动编译 .proto 文件？
 
 var (
 	recursive, showIgnore                     bool
 	mainFiles, outputName, extString, appArgs string
 
-	flagset = flag.NewFlagSet("watch", flag.ExitOnError)
+	flagset *flag.FlagSet
 )
 
-func init() {
+// Init 初始化函数
+func Init(opt *cmdopt.CmdOpt) {
+	flagset = opt.New("watch", do, usage)
 	flagset.BoolVar(&recursive, "r", true, "是否查找子目录；")
 	flagset.BoolVar(&showIgnore, "i", false, "是否显示被标记为 IGNORE 的日志内容；")
 	flagset.StringVar(&outputName, "o", "", "指定输出名称，程序的工作目录随之改变；")
@@ -34,8 +35,7 @@ func init() {
 	flagset.StringVar(&mainFiles, "main", "", "指定需要编译的文件；")
 }
 
-// Do 执行子命令
-func Do(output io.Writer) error {
+func do(output io.Writer) error {
 	if err := flagset.Parse(os.Args[2:]); err != nil {
 		return err
 	}
@@ -51,19 +51,21 @@ func Do(output io.Writer) error {
 	return gobuild.Build(logs.Logs, mainFiles, outputName, extString, recursive, appArgs, dirs...)
 }
 
-// Usage 当前子命令的用法
-func Usage(output io.Writer) {
-	fmt.Fprintln(output, `热编译当前目录下的项目
+func usage(output io.Writer) error {
+	_, err := fmt.Fprintln(output, `热编译当前目录下的项目
 
 命令行语法：
  web watch [options] [dependents]
 
  options:`)
 
-	flagset.SetOutput(output)
+	if err != nil {
+		return err
+	}
+
 	flagset.PrintDefaults()
 
-	fmt.Fprintln(output, `
+	_, err = fmt.Fprintln(output, `
  dependents:
   指定其它依赖的目录，只能出现在命令的尾部。
 
@@ -81,4 +83,6 @@ func Usage(output io.Writer) {
 
 
 NOTE: 不会监视隐藏文件和隐藏目录下的文件。`)
+
+	return err
 }
