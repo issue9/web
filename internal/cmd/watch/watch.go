@@ -36,10 +36,6 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	if err := flagset.Parse(os.Args[2:]); err != nil {
-		return err
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

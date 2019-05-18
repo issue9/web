@@ -7,6 +7,7 @@ package create
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,9 +23,11 @@ import (
 	"github.com/issue9/web"
 )
 
+var flagset *flag.FlagSet
+
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	opt.New("create", do, usage)
+	flagset = opt.New("create", do, usage)
 }
 
 func usage(output io.Writer) error {
@@ -46,8 +49,8 @@ func do(output io.Writer) error {
 
 	ask := prompt.New('\n', os.Stdin, output, colors.Green)
 
-	if len(os.Args) == 3 {
-		return createMod(os.Args[2], wd, ask)
+	if len(flagset.Args()) == 1 {
+		return createMod(flagset.Arg(0), wd, ask)
 	}
 
 	mod, err := ask.String("模块名", "")
