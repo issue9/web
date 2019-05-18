@@ -11,7 +11,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -49,10 +48,6 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	if err := flagset.Parse(os.Args[2:]); err != nil {
-		return err
-	}
-
 	if check {
 		return checkRemoteVersion(output)
 	}

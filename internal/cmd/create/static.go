@@ -20,14 +20,14 @@ const maingo = `// 内容由 web 自动生成，可根据需求自由修改！
 
 package main
 
-const appconfig = "./appconfig"
-
 import (
     "encoding/json"
     "encoding/xml"
 
     "github.com/issue9/web"
 )
+
+const appconfig = "./appconfig"
 
 func main() {
     web.Classic(appconfig)
@@ -48,7 +48,6 @@ var webconf = &webconfig.WebConfig{
 	HTTPS:  false,
 	Domain: "localhost",
 	Port:   8080,
-	Logs:   "logs.yaml",
 }
 
 var logsconf = &config.Config{

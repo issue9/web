@@ -122,15 +122,6 @@ type WebConfig struct {
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	Location *time.Location `yaml:"-" json:"-" xml:"-"`
-
-	// Logs 指定配置文件
-	//
-	// 相对于配置文件目录。如果不存在，则日志内容采用默认设置，
-	// 不会输出到任何地方。
-	//
-	// 配置文件的类型可以是任意支持的格式类型。
-	// 最终的加载的方式也是通过与 app.App 关联的 config.Manager 进行加载。
-	Logs string `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。

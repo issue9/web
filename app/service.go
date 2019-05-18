@@ -21,7 +21,7 @@ type ServiceState int8
 
 // 几种可能的状态值
 const (
-	ServiceStop    ServiceState = iota // 当前处理停止状态，默认状态
+	ServiceStoped  ServiceState = iota // 当前处理停止状态，默认状态
 	ServiceRunning                     // 正在运行
 	ServiceFailed                      // 出错，不再执行后续操作
 )
@@ -35,6 +35,19 @@ type Service struct {
 	cancelFunc context.CancelFunc
 	locker     sync.Mutex
 	err        error // 保存上次的出错内容
+}
+
+func (s ServiceState) String() string {
+	switch s {
+	case ServiceStoped:
+		return "stoped"
+	case ServiceRunning:
+		return "running"
+	case ServiceFailed:
+		return "failed"
+	default:
+		return "<unknown>"
+	}
 }
 
 // AddService 添加新的服务
@@ -101,7 +114,7 @@ func (srv *Service) serve() {
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
 	srv.err = srv.f(ctx)
-	state := ServiceStop
+	state := ServiceStoped
 	if srv.err != nil && srv.err != context.Canceled {
 		state = ServiceFailed
 	}

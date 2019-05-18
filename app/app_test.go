@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
@@ -49,8 +48,8 @@ func newApp(a *assert.Assertion) *App {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app, err := New(webconf, logs.New(), getResult)
-	a.NotError(err).NotNil(app)
+	app := New(webconf, getResult)
+	a.NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,

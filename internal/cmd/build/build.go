@@ -6,21 +6,26 @@
 package build
 
 import (
+	"flag"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 
 	"github.com/issue9/cmdopt"
 )
 
+var flagset *flag.FlagSet
+
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	opt.New("build", do, usage)
+	flagset = opt.New("build", do, usage)
 }
 
 func do(output io.Writer) error {
-	cmd := exec.Command("go", os.Args[1:]...)
+	args := make([]string, 0, len(flagset.Args())+1)
+	args = append(args, "build")
+	args = append(args, flagset.Args()...)
+	cmd := exec.Command("go", args...)
 	cmd.Stderr = output
 	cmd.Stdout = output
 

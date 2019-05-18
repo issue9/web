@@ -12,11 +12,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v2"
 	lconf "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
@@ -32,6 +30,14 @@ import (
 	"github.com/issue9/web/mimetype"
 )
 
+// 两个配置文件的名称。
+//
+// 在 Classic 中，采用了这两个文件名作为日志和框架的配置文件名。
+const (
+	LogsFilename   = "logs.xml"
+	ConfigFilename = "web.yaml"
+)
+
 var (
 	defaultConfigs *config.Manager
 	defaultApp     *app.App
@@ -39,11 +45,8 @@ var (
 
 // Classic 初始化一个可运行的框架环境
 //
-// path 配置文件地址，该文件所在的目录，会成为项目所有配置文件的根地址。
-func Classic(path string, get app.GetResultFunc) error {
-	dir := filepath.Dir(path)
-	filename := filepath.Base(path)
-
+// dir 为配置文件的根目录
+func Classic(dir string, get app.GetResultFunc) error {
 	mgr, err := config.NewManager(dir)
 	if err != nil {
 		return err
@@ -59,9 +62,15 @@ func Classic(path string, get app.GetResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, filename, "logs.xml", get); err != nil {
+	if err = Init(mgr, ConfigFilename, get); err != nil {
 		return err
 	}
+
+	lc := &lconf.Config{}
+	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
+		return err
+	}
+	defaultApp.Logs().Init(lc)
 
 	err = AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,
@@ -87,12 +96,15 @@ func Classic(path string, get app.GetResultFunc) error {
 
 // Init 初始化整个应用环境
 //
+// 构建了一个最基本的服务器运行环境，大部分内容采用默认设置。
+// 比如日志为不输出任何内容，如有需要，要调用 Logs() 进行输出通道的设置；
+// 也不会解析任意的 content-type 内容的数据，需要通过 Mimetype 进行进一步的设置。
+//
 // mgr 为配置文件管理工具；
-// configFilename 为相对于 mgr 目录下的配置文件地址；
-// logsFilename 为相对于 mgr 目录下的日志配置文件地址；
+// configFilename 为相对于 mgr 目录下的配置文件地址。
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetResultFunc) (err error) {
+func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
@@ -102,19 +114,12 @@ func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetR
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err = mgr.LoadFile(configFilename, webconf); err != nil {
+	if err := mgr.LoadFile(configFilename, webconf); err != nil {
 		return err
 	}
-
-	l := logs.New()
-	lc := &lconf.Config{}
-	if err = mgr.LoadFile(logsFilename, lc); err != nil {
-		return err
-	}
-	l.Init(lc)
 
 	defaultConfigs = mgr
-	defaultApp, err = app.New(webconf, l, get)
+	defaultApp = app.New(webconf, get)
 
 	// loadPlugins 用到 defaultApp，所以要在 app.New 之后调用
 	if webconf.Plugins != "" {
@@ -122,7 +127,7 @@ func Init(mgr *config.Manager, configFilename, logsFilename string, get app.GetR
 			return err
 		}
 	}
-	return
+	return nil
 }
 
 // App 返回 defaultApp 实例
@@ -379,9 +384,4 @@ func Panic(v ...interface{}) {
 // Panicf 输出错误信息，然后触发 panic。
 func Panicf(format string, v ...interface{}) {
 	defaultApp.Logs().Panicf(format, v...)
-}
-
-// FlushLogs 立即输出所有的日志信息。
-func FlushLogs() {
-	defaultApp.Logs().Flush()
 }
