@@ -7,6 +7,7 @@ package release
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -21,16 +22,22 @@ import (
 // 指定版本化文件的路径
 const path = "internal/version/version.go"
 
+var flagset *flag.FlagSet
+
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	opt.New("release", do, usage)
+	flagset = opt.New("release", do, usage)
 }
 
 func do(output io.Writer) error {
-	ver := os.Args[2]
+	ver := flagset.Arg(0)
+
+	if ver == "" {
+		return errors.New("必须指定一个版本号")
+	}
 
 	if !version.SemVerValid(ver) {
-		_, err := fmt.Fprintln(output, "无效的版本号格式！")
+		_, err := fmt.Fprintf(output, "无效的版本号格式：%s", ver)
 		return err
 	}
 
