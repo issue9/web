@@ -28,6 +28,9 @@ func do(output io.Writer) error {
 }
 
 func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `编译当前程序，功能与 go build 完全相同！`)
+	_, err := fmt.Fprintln(output, `编译当前程序，功能与 go build 完全相同！
+
+如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
+固定格式为 YYYYMMDD。`)
 	return err
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/version"
 )
 
-// 指定版本化文件的路 径
+// 指定版本化文件的路径
 const path = "internal/version/version.go"
 
 // Init 初始化函数
@@ -79,11 +79,16 @@ func dumpFile(ver string) error {
 }
 
 func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `为当前程序发布一个新版本
+	_, err := fmt.Fprintf(output, `为当前程序发布一个新版本
 
-将会执行以下操作：
-1 添加新的 git tag；
-2 更新本地代码的版本号。`)
+该操作会在当前目录下添加 %s 文件，
+并在其中写入版本信息。同时会通过 git tag 命令添加一条 tag 信息。
+之后的 web build 会更新 %s 中的
+buildDate 信息，但不会写入文件。
+
+版本号的固定格式为 major.minjor.patch，比如 1.0.1，
+git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
+`, path, path)
 
 	return err
 }
