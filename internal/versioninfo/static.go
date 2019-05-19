@@ -4,9 +4,13 @@
 
 package versioninfo
 
-const versiongo = `// 由 web release 生成
+const versiongo = `// 由工具自动生成，无需手动修改！
+
+package version
 
 // Version 版本号
+//
+// 版本号规则遵循 https://semver.org/lang/zh-CN/
 const Version = "%s"
 
 // buildDate 编译日期，可以由编译器指定
@@ -16,7 +20,7 @@ var fullVersion = Version
 
 func init()  {
 	if buildDate !=""{
-		fullVersion += "+" + buildDate
+		fullVersion = Version + "+" + buildDate
 	}
 }
 
