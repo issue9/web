@@ -29,7 +29,7 @@ func do(output io.Writer) error {
 	args = append(args, "build")
 	args = append(args, flagset.Args()...)
 
-	mp, err := versioninfo.VarPath()
+	mp, err := versioninfo.VarPath("./")
 	if err != nil {
 		return err
 	}

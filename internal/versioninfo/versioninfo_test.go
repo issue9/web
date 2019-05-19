@@ -28,3 +28,19 @@ func TestFindRoot(t *testing.T) {
 	path, err = FindRoot("./../../../../")
 	a.Error(err).Empty(path)
 }
+
+func TestVarPath(t *testing.T) {
+	a := assert.New(t)
+
+	p, err := VarPath("./testdata")
+	a.NotError(err)
+	a.Equal(p, "testdata/v2/internal/version")
+
+	p, err = VarPath("./")
+	a.NotError(err)
+	a.Equal(p, "github.com/issue9/web/internal/version")
+
+	// 不存在 go.mod
+	p, err = VarPath("../../../")
+	a.Error(err).Empty(p)
+}

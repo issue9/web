@@ -46,9 +46,10 @@ func FindRoot(curr string) (string, error) {
 
 // DumpFile 输出版本信息文件
 //
+// path 表示从哪里开始定位，位依次向上查找，直到找到 go.mod
 // ver 为需要指定的版本号
-func DumpFile(ver string) error {
-	root, err := FindRoot("./")
+func DumpFile(path, ver string) error {
+	root, err := FindRoot(path)
 	if err != nil {
 		return err
 	}
@@ -62,8 +63,8 @@ func DumpFile(ver string) error {
 }
 
 // VarPath 获取 buildDate 的路径
-func VarPath() (string, error) {
-	p, err := FindRoot("./")
+func VarPath(p string) (string, error) {
+	p, err := FindRoot(p)
 	if err != nil {
 		return "", err
 	}
@@ -78,9 +79,10 @@ func VarPath() (string, error) {
 	for s.Scan() {
 		line := strings.TrimSpace(s.Text())
 		if strings.HasPrefix(line, "module ") {
-			return path.Join(line[len("module "):], Path), nil
+			p = path.Join(line[len("module "):], Path)
+			return path.Dir(p), nil
 		}
 	}
 
-	return "", errors.New("未找到模块名称")
+	return "", errors.New("go.mod 中未找到 module 语句")
 }
