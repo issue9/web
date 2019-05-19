@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/issue9/web/module"
 	"io"
 	"log"
 	"net/http"
@@ -114,20 +115,16 @@ func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) err
 	}
 
 	webconf := &webconfig.WebConfig{}
-	if err := mgr.LoadFile(configFilename, webconf); err != nil {
+	err := mgr.LoadFile(configFilename, webconf)
+	if err != nil {
 		return err
 	}
 
 	defaultConfigs = mgr
 	defaultApp = app.New(webconf, get)
 
-	// loadPlugins 用到 defaultApp，所以要在 app.New 之后调用
-	if webconf.Plugins != "" {
-		if err := loadPlugins(webconf.Plugins); err != nil {
-			return err
-		}
-	}
-	return nil
+	modules, err = module.NewModules(defaultApp, webconf.Plugins)
+	return err
 }
 
 // App 返回 defaultApp 实例

@@ -6,8 +6,10 @@ package web
 
 import (
 	"github.com/issue9/scheduled"
+
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/module"
 )
 
 // Version 当前框架的版本
@@ -28,4 +30,7 @@ type (
 
 	// Scheduler 等同于 scheduled.Job，方便调用者使用
 	Scheduler = scheduled.Job
+
+	// Module 等同于 module.Module，方便调用者使用
+	Module = module.Module
 )

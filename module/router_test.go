@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package module
 
 import (
 	"net/http"
@@ -22,10 +22,11 @@ var (
 
 func TestModule_Prefix(t *testing.T) {
 	a := assert.New(t)
-	srv := rest.NewServer(t, Mux(), nil)
-	Mux().Clean()
+	ms := newModules(a)
 
-	m := newModule("m1", "m1 desc")
+	srv := rest.NewServer(t, ms.app.Mux(), nil)
+
+	m := ms.newModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -45,10 +46,11 @@ func TestModule_Prefix(t *testing.T) {
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
-	srv := rest.NewServer(t, Mux(), nil)
-	Mux().Clean()
+	ms := newModules(a)
 
-	m := newModule("m1", "m1 desc")
+	srv := rest.NewServer(t, ms.app.Mux(), nil)
+
+	m := ms.newModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -76,11 +78,12 @@ func TestModule_Handle(t *testing.T) {
 
 func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
-	srv := rest.NewServer(t, Mux(), nil)
-	Mux().Clean()
+	ms := newModules(a)
+
+	srv := rest.NewServer(t, ms.app.Mux(), nil)
 
 	path := "/path"
-	m := newModule("m1", "m1 desc")
+	m := ms.newModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).
@@ -114,7 +117,7 @@ func TestModule_Handles(t *testing.T) {
 
 	// *Func
 	path = "/path1"
-	m = newModule("m1", "m1 desc")
+	m = ms.newModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	m.GetFunc(path, f1)

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package module
 
 import (
 	"errors"
@@ -13,7 +13,8 @@ import (
 
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
-	m := newModule("user1", "user1 desc")
+	ms := newModules(a)
+	m := ms.newModule("user1", "user1 desc")
 	a.NotNil(m)
 
 	v := m.NewTag("0.1.0")
@@ -30,15 +31,16 @@ func TestModule_NewTag(t *testing.T) {
 
 func TestModule_Plugin(t *testing.T) {
 	a := assert.New(t)
+	ms := newModules(a)
 
-	m := newModule("user1", "user1 desc")
+	m := ms.newModule("user1", "user1 desc")
 	a.NotNil(m)
 
 	a.Panic(func() {
 		m.Plugin("p1", "p1 desc")
 	})
 
-	m = newModule("", "")
+	m = ms.newModule("", "")
 	a.NotPanic(func() {
 		m.Plugin("p1", "p1 desc")
 	})
@@ -46,7 +48,9 @@ func TestModule_Plugin(t *testing.T) {
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	m := newModule("m1", "m1 desc")
+	ms := newModules(a)
+
+	m := ms.newModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)
@@ -66,25 +70,25 @@ func TestModule_AddInit(t *testing.T) {
 		NotNil(m.inits[2].f)
 }
 
-func TestApp_Tags(t *testing.T) {
+func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
-	modules = modules[:0]
+	ms := newModules(a)
 
-	m1 := NewModule("users1", "user1 module", "users2", "users3")
+	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
-	m2 := NewModule("users2", "user2 module", "users3")
+	m2 := ms.NewModule("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
-	m3 := NewModule("users3", "user3 mdoule")
+	m3 := ms.NewModule("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
 	m3.NewTag("v4")
 
-	tags := Tags()
+	tags := ms.Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
 }

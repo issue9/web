@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package web
+package module
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ func isPluginOS() bool {
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func loadPlugins(glob string) error {
+func (ms *Modules) loadPlugins(glob string) error {
 	if !isPluginOS() {
 		return errors.New("当前平台并未实现插件功能！")
 	}
@@ -42,7 +42,7 @@ func loadPlugins(glob string) error {
 	}
 
 	for _, path := range fs {
-		if err := loadPlugin(path); err != nil {
+		if err := ms.loadPlugin(path); err != nil {
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func loadPlugins(glob string) error {
 	return nil
 }
 
-func loadPlugin(path string) error {
+func (ms *Modules) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func loadPlugin(path string) error {
 	}
 	init := symbol.(func(*Module))
 
-	m := newModule("", "")
+	m := ms.newModule("", "")
 	init(m)
 
 	if m.Name == "" || m.Description == "" {
@@ -70,7 +70,7 @@ func loadPlugin(path string) error {
 	}
 
 	// 只有在插件不出问题的情况下，才将其添加到 modules 表中
-	modules = append(modules, m)
+	ms.modules = append(ms.modules, m)
 
 	return nil
 }
