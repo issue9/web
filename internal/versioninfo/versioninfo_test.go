@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package release
+package versioninfo
 
 import (
 	"path/filepath"
@@ -14,7 +14,7 @@ import (
 func TestFindRoot(t *testing.T) {
 	a := assert.New(t)
 
-	abs, err := filepath.Abs("./../../..")
+	abs, err := filepath.Abs("../..")
 	a.NotError(err)
 	path, err := FindRoot("./")
 	a.NotError(err).Equal(path, abs)

@@ -6,22 +6,15 @@
 package build
 
 import (
-	"bufio"
-	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os/exec"
-	"path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/issue9/cmdopt"
 
-	"github.com/issue9/web/internal/cmd/release"
+	"github.com/issue9/web/internal/versioninfo"
 )
 
 var flagset *flag.FlagSet
@@ -36,11 +29,10 @@ func do(output io.Writer) error {
 	args = append(args, "build")
 	args = append(args, flagset.Args()...)
 
-	mp, err := getModuleName()
+	mp, err := versioninfo.VarPath()
 	if err != nil {
 		return err
 	}
-	mp = path.Join(mp, release.Path)
 	arg := `"-X ` + mp + ".buildDate=" + time.Now().Format("20060102") + `"`
 	args = append(args, "ldflags", arg)
 
@@ -57,27 +49,4 @@ func usage(output io.Writer) error {
 如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
 固定格式为 YYYYMMDD。`)
 	return err
-}
-
-func getModuleName() (string, error) {
-	path, err := release.FindRoot("./")
-	if err != nil {
-		return "", err
-	}
-
-	data, err := ioutil.ReadFile(filepath.Join(path, "/go.mod"))
-	if err != nil {
-		return "", err
-	}
-
-	s := bufio.NewScanner(bytes.NewBuffer(data))
-	s.Split(bufio.ScanLines)
-	for s.Scan() {
-		line := strings.TrimSpace(s.Text())
-		if strings.HasPrefix(line, "module ") {
-			return line[len("module "):], nil
-		}
-	}
-
-	return "", errors.New("未找到模块名称")
 }

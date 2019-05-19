@@ -10,17 +10,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/issue9/cmdopt"
-	"github.com/issue9/utils"
 	"github.com/issue9/version"
-)
 
-// Path 指定版本化文件的路径
-const Path = "internal/version/version.go"
+	"github.com/issue9/web/internal/versioninfo"
+)
 
 var flagset *flag.FlagSet
 
@@ -42,7 +38,9 @@ func do(output io.Writer) error {
 	}
 
 	// 输出到 internal/version/version.go
-	dumpFile(ver)
+	if err := versioninfo.DumpFile(ver); err != nil {
+		return err
+	}
 
 	// 输出 git 标签
 	cmd := exec.Command("git", "tag", "v"+ver)
@@ -50,42 +48,6 @@ func do(output io.Writer) error {
 	cmd.Stdout = output
 
 	return cmd.Run()
-}
-
-// FindRoot 查找项目的根目录
-//
-// 从当前目录开始向上查找，以找到 go.mod 为准，如果没有 go.mod 则会失败。
-func FindRoot(curr string) (string, error) {
-	path, err := filepath.Abs(curr)
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if utils.FileExists(filepath.Join(path, "go.mod")) {
-			return path, nil
-		}
-
-		p1 := filepath.Dir(path)
-		if path == p1 {
-			return "", errors.New("未找到根目录")
-		}
-		path = p1
-	}
-}
-
-func dumpFile(ver string) error {
-	root, err := FindRoot("./")
-	if err != nil {
-		return err
-	}
-
-	p := filepath.Join(root, Path)
-	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
-		return err
-	}
-
-	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver))
 }
 
 func usage(output io.Writer) error {
@@ -98,7 +60,7 @@ buildDate 信息，但不会写入文件。
 
 版本号的固定格式为 major.minjor.patch，比如 1.0.1，
 git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
-`, Path, Path)
+`, versioninfo.Path, versioninfo.Path)
 
 	return err
 }

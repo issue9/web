@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT
 // license that can be found in the LICENSE file.
 
-package release
+package versioninfo
 
 const versiongo = `// 由 web release 生成
 
