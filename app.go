@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/issue9/web/module"
 	"io"
 	"log"
 	"net/http"
@@ -29,6 +28,7 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/module"
 )
 
 // 两个配置文件的名称。
