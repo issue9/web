@@ -19,8 +19,8 @@ import (
 	"github.com/issue9/version"
 )
 
-// 指定版本化文件的路径
-const path = "internal/version/version.go"
+// Path 指定版本化文件的路径
+const Path = "internal/version/version.go"
 
 var flagset *flag.FlagSet
 
@@ -52,7 +52,10 @@ func do(output io.Writer) error {
 	return cmd.Run()
 }
 
-func findAppRoot(curr string) (string, error) {
+// FindRoot 查找项目的根目录
+//
+// 从当前目录开始向上查找，以找到 go.mod 为准，如果没有 go.mod 则会失败。
+func FindRoot(curr string) (string, error) {
 	path, err := filepath.Abs(curr)
 	if err != nil {
 		return "", err
@@ -72,12 +75,12 @@ func findAppRoot(curr string) (string, error) {
 }
 
 func dumpFile(ver string) error {
-	root, err := findAppRoot("./")
+	root, err := FindRoot("./")
 	if err != nil {
 		return err
 	}
 
-	p := filepath.Join(root, path)
+	p := filepath.Join(root, Path)
 	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
 		return err
 	}
@@ -95,7 +98,7 @@ buildDate 信息，但不会写入文件。
 
 版本号的固定格式为 major.minjor.patch，比如 1.0.1，
 git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
-`, path, path)
+`, Path, Path)
 
 	return err
 }

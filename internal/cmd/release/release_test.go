@@ -16,10 +16,10 @@ func TestFindRoot(t *testing.T) {
 
 	abs, err := filepath.Abs("./../../..")
 	a.NotError(err)
-	path, err := findAppRoot("./")
+	path, err := FindRoot("./")
 	a.NotError(err).Equal(path, abs)
 
 	// 该目录不存在 go.mod
-	path, err = findAppRoot("./../../../../")
+	path, err = FindRoot("./../../../../")
 	a.Error(err).Empty(path)
 }
