@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"time"
 
 	"github.com/issue9/cmdopt"
 
@@ -29,12 +28,11 @@ func do(output io.Writer) error {
 	args = append(args, "build")
 	args = append(args, flagset.Args()...)
 
-	mp, err := versioninfo.VarPath("./")
+	flag, err := versioninfo.LDFlags()
 	if err != nil {
 		return err
 	}
-	arg := `"-X ` + mp + ".buildDate=" + time.Now().Format("20060102") + `"`
-	args = append(args, "ldflags", arg)
+	args = append(args, "ldflags", flag)
 
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = output

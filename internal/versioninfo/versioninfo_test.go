@@ -5,8 +5,10 @@
 package versioninfo
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 )
@@ -29,18 +31,26 @@ func TestFindRoot(t *testing.T) {
 	a.Error(err).Empty(path)
 }
 
-func TestVarPath(t *testing.T) {
+func TestDumpFile(t *testing.T) {
 	a := assert.New(t)
 
-	p, err := VarPath("./testdata")
-	a.NotError(err)
-	a.Equal(p, "testdata/v2/internal/version")
+	a.NotError(DumpFile("./testdata", "1.1.1"))
+	a.FileExists(filepath.Join("./testdata/", Path))
+}
 
-	p, err = VarPath("./")
+func TestLDFlags(t *testing.T) {
+	a := assert.New(t)
+	now := time.Now().Format(buildDateLayout)
+
+	p, err := LDFlags("./testdata")
 	a.NotError(err)
-	a.Equal(p, "github.com/issue9/web/internal/version")
+	a.Equal(p, fmt.Sprintf("\"-X testdata/v2/internal/version.buildDate=%s\"", now))
+
+	p, err = LDFlags("./")
+	a.NotError(err)
+	a.Equal(p, fmt.Sprintf("\"-X github.com/issue9/web/internal/version.buildDate=%s\"", now))
 
 	// 不存在 go.mod
-	p, err = VarPath("../../../")
+	p, err = LDFlags("../../../")
 	a.Error(err).Empty(p)
 }

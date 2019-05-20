@@ -37,7 +37,6 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	// 输出到 internal/version/version.go
 	if err := versioninfo.DumpFile("./", ver); err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ package version
 const Version = "%s"
 
 // buildDate 编译日期，可以由编译器指定
-var buildDate string
+var %s string
 
 var fullVersion = Version
 

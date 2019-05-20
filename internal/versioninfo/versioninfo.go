@@ -15,12 +15,18 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/issue9/utils"
 )
 
 // Path 指定版本化文件的路径
-const Path = "internal/version/version.go"
+const Path = "internal/version/_info.go"
+
+const (
+	buildDateName   = "buildDate"
+	buildDateLayout = "20060102"
+)
 
 // FindRoot 查找项目的根目录
 //
@@ -59,11 +65,15 @@ func DumpFile(path, ver string) error {
 		return err
 	}
 
-	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver))
+	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName))
 }
 
-// VarPath 获取 buildDate 的路径
-func VarPath(p string) (string, error) {
+// LDFlags 获取 ldflags 的参数
+//
+// p 为开始查找的目录；
+// 返回格式为：
+//  -X xx.buildDate=20060102
+func LDFlags(p string) (string, error) {
 	p, err := FindRoot(p)
 	if err != nil {
 		return "", err
@@ -80,7 +90,10 @@ func VarPath(p string) (string, error) {
 		line := strings.TrimSpace(s.Text())
 		if strings.HasPrefix(line, "module ") {
 			p = path.Join(line[len("module "):], Path)
-			return path.Dir(p), nil
+			p = path.Dir(p)
+
+			date := time.Now().Format(buildDateLayout)
+			return fmt.Sprintf(`"-X %s.%s=%s"`, p, buildDateName, date), nil
 		}
 	}
 
