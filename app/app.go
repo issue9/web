@@ -29,13 +29,14 @@ import (
 
 // App 程序运行实例
 type App struct {
+	http.Server
+
 	middlewares   *middleware.Manager
 	router        *mux.Prefix
 	services      []*Service
 	scheduled     *scheduled.Server
 	logs          *logs.Logs
 	webConfig     *webconfig.WebConfig
-	server        *http.Server
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
@@ -52,6 +53,16 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 	middlewares := middleware.NewManager(mux)
 
 	app := &App{
+		Server: http.Server{
+			Addr:              ":" + strconv.Itoa(conf.Port),
+			ErrorLog:          logs.ERROR(),
+			ReadTimeout:       conf.ReadTimeout.Duration(),
+			WriteTimeout:      conf.WriteTimeout.Duration(),
+			IdleTimeout:       conf.IdleTimeout.Duration(),
+			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
+			MaxHeaderBytes:    conf.MaxHeaderBytes,
+			Handler:           middlewares,
+		},
 		middlewares:   middlewares,
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
@@ -64,16 +75,6 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 		compresses:    make(map[string]compress.WriterFunc, 5),
 		getResult:     get,
 		messages:      map[int]*message{},
-		server: &http.Server{
-			Addr:              ":" + strconv.Itoa(conf.Port),
-			ErrorLog:          logs.ERROR(),
-			ReadTimeout:       conf.ReadTimeout.Duration(),
-			WriteTimeout:      conf.WriteTimeout.Duration(),
-			IdleTimeout:       conf.IdleTimeout.Duration(),
-			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
-			MaxHeaderBytes:    conf.MaxHeaderBytes,
-			Handler:           middlewares,
-		},
 	}
 
 	app.AddService(app.scheduledService, "计划任务")
@@ -146,9 +147,9 @@ func (app *App) Serve() (err error) {
 	app.runServices()
 
 	if !conf.HTTPS {
-		err = app.server.ListenAndServe()
+		err = app.ListenAndServe()
 	} else {
-		err = app.server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
+		err = app.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
 	}
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
@@ -173,7 +174,7 @@ func (app *App) Close() error {
 	defer func() {
 		app.closed <- struct{}{}
 	}()
-	return app.server.Close()
+	return app.Server.Close()
 }
 
 // Shutdown 关闭所有服务。
@@ -192,16 +193,11 @@ func (app *App) Shutdown() error {
 		cancel()
 		app.closed <- struct{}{}
 	}()
-	err := app.server.Shutdown(ctx)
+	err := app.Server.Shutdown(ctx)
 	if err != nil && err != context.DeadlineExceeded {
 		return err
 	}
 	return nil
-}
-
-// Server 获取 http.Server 实例
-func (app *App) Server() *http.Server {
-	return app.server
 }
 
 // Mimetypes 返回 mimetype.Mimetypes

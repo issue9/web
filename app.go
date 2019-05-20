@@ -202,11 +202,6 @@ func Services() []*app.Service {
 	return defaultApp.Services()
 }
 
-// Server 获取 http.Server 实例
-func Server() *http.Server {
-	return defaultApp.Server()
-}
-
 // File 获取配置目录下的文件。
 func File(path string) string {
 	return defaultConfigs.File(path)

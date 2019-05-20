@@ -74,7 +74,7 @@ func newApp(a *assert.Assertion) *App {
 		NotEmpty(app.compresses)
 
 	a.NotNil(app.mt).Equal(app.mt, app.Mimetypes())
-	a.NotNil(app.server).Equal(app.server, app.Server())
+	a.NotNil(app.Server.Handler)
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
 	a.NotNil(app.Logs())
 	a.NotNil(app.Mux())
