@@ -291,7 +291,8 @@ func (ctx *Context) ResetContent() {
 }
 
 // NotImplemented 501
+//
+// 接受统一的 errorhandler 模板支配
 func (ctx *Context) NotImplemented() {
-	// 接收统一的 errorhandlers 模板支配
 	ctx.Response.WriteHeader(http.StatusNotImplemented)
 }
