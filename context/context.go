@@ -269,11 +269,6 @@ func (ctx *Context) ClientIP() string {
 	return strings.TrimSpace(ip)
 }
 
-// NewResult 返回 Result 实例
-func (ctx *Context) NewResult(code int) app.Result {
-	return ctx.App.NewResult(code)
-}
-
 // Created 201
 func (ctx *Context) Created(v interface{}, location string) {
 	if location == "" {

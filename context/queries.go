@@ -8,8 +8,6 @@ import (
 	"strconv"
 
 	"github.com/issue9/query"
-
-	"github.com/issue9/web/app"
 )
 
 // Queries 用于处理路径中的查询参数。
@@ -125,12 +123,8 @@ func (q *Queries) Errors() map[string]string {
 //
 // code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
 // Queries.errors 将会作为 Result.Detail 的内容。
-func (q *Queries) Result(code int) app.Result {
-	rslt := q.ctx.NewResult(code)
-	for k, v := range q.Errors() {
-		rslt.Add(k, v)
-	}
-	return rslt
+func (q *Queries) Result(code int) *Result {
+	return q.ctx.NewResultWithDetail(code, q.Errors())
 }
 
 // QueryObject 将查询参数解析到一个对象中。
