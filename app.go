@@ -150,7 +150,7 @@ func AddCompresses(m map[string]compress.WriterFunc) error {
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
 func AddMiddlewares(m middleware.Middleware) {
-	defaultApp.After(m)
+	defaultApp.AddMiddlewares(m)
 }
 
 // IsDebug 是否处在调试模式

@@ -10,6 +10,7 @@ import (
 	"net/http/pprof"
 	"strings"
 
+	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/host"
@@ -26,32 +27,37 @@ const (
 	debugVarsPath = "/debug/vars"
 )
 
+// AddMiddlewares 设置全局的中间件，可多次调用。
+func (app *App) AddMiddlewares(m middleware.Middleware) {
+	app.middlewares.After(m)
+}
+
 // 通过配置文件加载相关的中间件。
 //
 // 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
 func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	// domains
 	if len(conf.AllowedDomains) > 0 {
-		app.Before(func(h http.Handler) http.Handler {
+		app.middlewares.Before(func(h http.Handler) http.Handler {
 			return host.New(h, conf.AllowedDomains...)
 		})
 	}
 
 	// headers
 	if len(conf.Headers) > 0 {
-		app.Before(func(h http.Handler) http.Handler {
+		app.middlewares.Before(func(h http.Handler) http.Handler {
 			return header.New(h, conf.Headers, nil)
 		})
 	}
 
-	app.Before(func(h http.Handler) http.Handler {
+	app.middlewares.Before(func(h http.Handler) http.Handler {
 		return app.errorhandlers.New(h)
 	})
 
 	// compress
 	// app.errorhandlers.New 可能会输出大段内容。所以放在其之后。
 	if conf.Compress != nil {
-		app.Before(func(h http.Handler) http.Handler {
+		app.middlewares.Before(func(h http.Handler) http.Handler {
 			return compress.New(h, &compress.Options{
 				Funcs:    app.compresses,
 				Types:    conf.Compress,
@@ -61,13 +67,13 @@ func (app *App) buildMiddlewares(conf *webconfig.WebConfig) {
 	}
 
 	// recovery
-	app.Before(func(h http.Handler) http.Handler {
+	app.middlewares.Before(func(h http.Handler) http.Handler {
 		return recovery.New(h, app.errorhandlers.Recovery(app.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 	if conf.Debug {
-		app.Before(func(h http.Handler) http.Handler {
+		app.middlewares.Before(func(h http.Handler) http.Handler {
 			return debug(h)
 		})
 	}

@@ -29,8 +29,7 @@ import (
 
 // App 程序运行实例
 type App struct {
-	middleware.Manager
-
+	middlewares   *middleware.Manager
 	router        *mux.Prefix
 	services      []*Service
 	scheduled     *scheduled.Server
@@ -50,9 +49,10 @@ type App struct {
 // New 声明一个新的 App 实例
 func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
+	middlewares := middleware.NewManager(mux)
 
 	app := &App{
-		Manager:       *middleware.NewManager(mux),
+		middlewares:   middlewares,
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
 		scheduled:     scheduled.NewServer(conf.Location),
@@ -72,11 +72,11 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 			IdleTimeout:       conf.IdleTimeout.Duration(),
 			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
+			Handler:           middlewares,
 		},
 	}
 
 	app.AddService(app.scheduledService, "计划任务")
-	app.server.Handler = app
 
 	// 加载固有的中间件，需要在 app 初始化之后调用
 	app.buildMiddlewares(conf)
