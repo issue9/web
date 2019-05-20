@@ -9,7 +9,10 @@ import (
 	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"runtime"
+	"syscall"
 	"testing"
 	"time"
 
@@ -29,14 +32,17 @@ func getResult(status, code int, message string) app.Result {
 	return resulttest.New(status, code, message)
 }
 
-func TestApp(t *testing.T) {
-	a := assert.New(t)
+func initApp(a *assert.Assertion) {
 	defaultApp = nil
-	exit := make(chan bool, 1)
-
 	a.NotError(Classic("./testdata", getResult))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
+}
+
+func TestApp(t *testing.T) {
+	a := assert.New(t)
+	exit := make(chan bool, 1)
+	initApp(a)
 
 	a.Panic(func() {
 		Classic("./testdata", getResult)
@@ -59,8 +65,6 @@ func TestApp(t *testing.T) {
 	a.True(IsDebug())
 
 	a.Equal(URL("/test/abc.png"), "http://localhost:8082/test/abc.png")
-
-	testFile(a)
 
 	// m1 的路由项依赖 m2 的初始化数据
 	m1 := NewModule("m1", "m1 desc", "m2")
@@ -113,7 +117,9 @@ func TestApp(t *testing.T) {
 	<-exit
 }
 
-func testFile(a *assert.Assertion) {
+func TestFile(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
 	path, err := filepath.Abs("./testdata/abc.yaml")
 	a.NotError(err)
 	a.Equal(File("/abc.yaml"), path)
@@ -121,13 +127,38 @@ func testFile(a *assert.Assertion) {
 
 func TestNewContext(t *testing.T) {
 	a := assert.New(t)
+	initApp(a)
+
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
+	r.Header.Set("Accept", "application/json")
 	ctx := NewContext(w, r)
 	a.NotNil(ctx).
 		Equal(ctx.Response, w).
 		Equal(ctx.Request, r).
 		Equal(ctx.OutputCharsetName, "utf-8").
-		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
+		Equal(ctx.OutputMimeTypeName, "application/json")
+}
+
+func TestGrace(t *testing.T) {
+	if runtime.GOOS == "windows" { // windows 不支持 os.Process.Signal
+		return
+	}
+
+	a := assert.New(t)
+	exit := make(chan bool, 1)
+	initApp(a)
+
+	Grace(300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		Serve()
+		exit <- true
+	}()
+	time.Sleep(300 * time.Microsecond)
+
+	p, err := os.FindProcess(os.Getpid())
+	a.NotError(err).NotNil(p)
+	p.Signal(syscall.SIGTERM)
+
+	<-exit
 }

@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/issue9/config"
@@ -139,7 +140,22 @@ func App() *app.App {
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(dur time.Duration, sig ...os.Signal) {
-	defaultApp.Grace(dur, sig...)
+	go func() {
+		signalChannel := make(chan os.Signal)
+		signal.Notify(signalChannel, sig...)
+
+		<-signalChannel
+		signal.Stop(signalChannel)
+		close(signalChannel)
+
+		ctx, c := context.WithTimeout(context.Background(), dur)
+		defer c()
+
+		if err := App().Shutdown(ctx); err != nil {
+			App().Logs().Error(err)
+		}
+		App().Logs().Flush() // 保证内容会被正常输出到日志。
+	}()
 }
 
 // AddCompresses 添加压缩处理函数

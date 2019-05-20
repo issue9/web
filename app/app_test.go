@@ -9,9 +9,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
-	"os"
-	"runtime"
-	"syscall"
 	"testing"
 	"time"
 
@@ -234,30 +231,6 @@ func TestApp_Shutdown(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8082/test")
 	a.Error(err).Nil(resp)
-
-	<-exit
-}
-
-func TestGrace(t *testing.T) {
-	// windows 不支持 os.Process.Signal
-	if runtime.GOOS == "windows" {
-		return
-	}
-
-	a := assert.New(t)
-	app := newApp(a)
-	exit := make(chan bool, 1)
-
-	app.Grace(300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	go func() {
-		app.Run()
-		exit <- true
-	}()
-	time.Sleep(300 * time.Microsecond)
-
-	p, err := os.FindProcess(os.Getpid())
-	a.NotError(err).NotNil(p)
-	p.Signal(syscall.SIGTERM)
 
 	<-exit
 }
