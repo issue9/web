@@ -77,6 +77,11 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 		messages:      map[int]*message{},
 	}
 
+	for url, dir := range conf.Static {
+		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
+		app.router.Get(url+"{path}", h)
+	}
+
 	app.AddService(app.scheduledService, "计划任务")
 
 	// 加载固有的中间件，需要在 app 初始化之后调用
@@ -138,12 +143,6 @@ func (app *App) URL(path string) string {
 func (app *App) Serve() (err error) {
 	conf := app.webConfig
 
-	// TODO 放在 New ?
-	for url, dir := range conf.Static {
-		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		app.router.Get(url+"{path}", h)
-	}
-
 	app.runServices()
 
 	if !conf.HTTPS {
@@ -169,30 +168,23 @@ func (app *App) LocalPrinter(tag language.Tag, opts ...xmessage.Option) *xmessag
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (app *App) Close() error {
-	app.stopServices() // 关闭服务
-
 	defer func() {
+		app.stopServices()
 		app.closed <- struct{}{}
 	}()
+
 	return app.Server.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-func (app *App) Shutdown() error {
-	if app.webConfig.ShutdownTimeout <= 0 {
-		return app.Close()
-	}
-
-	app.stopServices() // 关闭服务
-	dur := app.webConfig.ShutdownTimeout.Duration()
-	ctx, cancel := context.WithTimeout(context.Background(), dur)
-
+func (app *App) Shutdown(ctx context.Context) error {
 	defer func() {
-		cancel()
+		app.stopServices()
 		app.closed <- struct{}{}
 	}()
+
 	err := app.Server.Shutdown(ctx)
 	if err != nil && err != context.DeadlineExceeded {
 		return err
@@ -227,18 +219,21 @@ func (app *App) Logs() *logs.Logs {
 //
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
-func Grace(app *App, sig ...os.Signal) {
+func Grace(app *App, dur time.Duration, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal)
 		signal.Notify(signalChannel, sig...)
 
 		<-signalChannel
 		signal.Stop(signalChannel)
+		close(signalChannel)
 
-		if err := app.Shutdown(); err != nil {
+		ctx, c := context.WithTimeout(context.Background(), dur)
+		defer c()
+
+		if err := app.Shutdown(ctx); err != nil {
 			app.Logs().Error(err)
 		}
 		app.Logs().Flush() // 保证内容会被正常输出到日志。
-		close(signalChannel)
 	}()
 }

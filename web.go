@@ -5,6 +5,8 @@
 package web
 
 import (
+	"net/http"
+
 	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/app"
@@ -42,3 +44,8 @@ type (
 	// Tag 等同于 module.Tag，方便调用者使用
 	Tag = module.Tag
 )
+
+// NewContext 生成 *Context 对象，若是出错则 panic
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	return context.New(w, r, App())
+}

@@ -5,6 +5,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
@@ -195,50 +196,16 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	exit := make(chan bool, 1)
-	app := newApp(a)
-	app.webConfig.ShutdownTimeout = 0
-
-	app.Mux().GetFunc("/test", f202)
-	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("shutdown"))
-		app.Shutdown()
-	})
-
-	go func() {
-		err := app.Serve()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
-		exit <- true
-	}()
-
-	// 等待 app.Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Microsecond)
-
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
-		Do().
-		Status(http.StatusAccepted)
-
-	// 调用关闭操作，连接被关闭，返回错误内容
-	resp, err := http.Get("http://localhost:8082/close")
-	a.Error(err).Nil(resp)
-
-	// 立即关闭
-	resp, err = http.Get("http://localhost:8082/test")
-	a.Error(err).Nil(resp)
-
-	<-exit
-}
-
-func TestApp_Shutdown_timeout(t *testing.T) {
-	a := assert.New(t)
 	app := newApp(a)
 	exit := make(chan bool, 1)
 
 	app.Mux().GetFunc("/test", f202)
 	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("shutdown with timeout"))
-		app.Shutdown()
+		w.Write([]byte("shutdown with ctx"))
+		ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
+		defer c()
+		app.Shutdown(ctx)
 	})
 
 	go func() {
@@ -281,7 +248,7 @@ func TestGrace(t *testing.T) {
 	app := newApp(a)
 	exit := make(chan bool, 1)
 
-	Grace(app, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	Grace(app, 300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		app.Serve()
 		exit <- true

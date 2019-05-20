@@ -5,12 +5,12 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -25,7 +25,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
-	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
@@ -139,8 +138,8 @@ func App() *app.App {
 //
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
-func Grace(sig ...os.Signal) {
-	app.Grace(defaultApp, sig...)
+func Grace(dur time.Duration, sig ...os.Signal) {
+	app.Grace(defaultApp, dur, sig...)
 }
 
 // AddCompresses 添加压缩处理函数
@@ -183,8 +182,8 @@ func Close() error {
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-func Shutdown() error {
-	return defaultApp.Shutdown()
+func Shutdown(ctx context.Context) error {
+	return defaultApp.Shutdown(ctx)
 }
 
 // URL 构建一条完整 URL
@@ -259,11 +258,6 @@ func Now() time.Time {
 // ParseTime 分析时间格式，基于当前时间
 func ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, Location())
-}
-
-// NewContext 生成 *Context 对象，若是出错则 panic
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, App())
 }
 
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。

@@ -5,6 +5,7 @@
 package web
 
 import (
+	"context"
 	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
@@ -105,7 +106,9 @@ func TestApp(t *testing.T) {
 		Status(http.StatusCreated).
 		StringBody(testdata)
 
-	a.NotError(Shutdown())
+	ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer c()
+	a.NotError(Shutdown(ctx))
 
 	<-exit
 }
