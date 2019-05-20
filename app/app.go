@@ -219,7 +219,7 @@ func (app *App) Logs() *logs.Logs {
 //
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
-func Grace(app *App, dur time.Duration, sig ...os.Signal) {
+func (app *App) Grace(dur time.Duration, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal)
 		signal.Notify(signalChannel, sig...)

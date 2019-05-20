@@ -248,7 +248,7 @@ func TestGrace(t *testing.T) {
 	app := newApp(a)
 	exit := make(chan bool, 1)
 
-	Grace(app, 300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	app.Grace(300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		app.Run()
 		exit <- true

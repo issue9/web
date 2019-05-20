@@ -139,7 +139,7 @@ func App() *app.App {
 // NOTE: 传递空值，与不调用，其结果是不同的。
 // 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
 func Grace(dur time.Duration, sig ...os.Signal) {
-	app.Grace(defaultApp, dur, sig...)
+	defaultApp.Grace(dur, sig...)
 }
 
 // AddCompresses 添加压缩处理函数
