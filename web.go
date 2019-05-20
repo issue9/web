@@ -13,7 +13,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.26.0"
+const Version = "0.27.0"
 
 type (
 	// Context 等同于 context.Context，方便调用者使用
