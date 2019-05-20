@@ -102,7 +102,7 @@ func TestApp_Path(t *testing.T) {
 	a.Equal(app.Path(""), "")
 }
 
-func TestApp_Serve(t *testing.T) {
+func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 	exit := make(chan bool, 1)
@@ -116,7 +116,7 @@ func TestApp_Serve(t *testing.T) {
 	app.Mux().GetFunc("/mux/test", f202)
 
 	go func() {
-		err := app.Serve()
+		err := app.Run()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 		exit <- true
 	}()
@@ -172,7 +172,7 @@ func TestApp_Close(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Serve()
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
@@ -209,7 +209,7 @@ func TestApp_Shutdown(t *testing.T) {
 	})
 
 	go func() {
-		err := app.Serve()
+		err := app.Run()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
@@ -250,7 +250,7 @@ func TestGrace(t *testing.T) {
 
 	Grace(app, 300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
-		app.Serve()
+		app.Run()
 		exit <- true
 	}()
 	time.Sleep(300 * time.Microsecond)

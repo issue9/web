@@ -167,9 +167,9 @@ func Mimetypes() *mimetype.Mimetypes {
 	return defaultApp.Mimetypes()
 }
 
-// Serve 运行路由，执行监听程序。
+// Serve 执行监听程序。
 func Serve() error {
-	return defaultApp.Serve()
+	return defaultApp.Run()
 }
 
 // Close 关闭服务。

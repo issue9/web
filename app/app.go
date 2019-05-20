@@ -137,10 +137,10 @@ func (app *App) URL(path string) string {
 	return app.webConfig.URL + path
 }
 
-// Serve 加载各个模块的数据，运行路由，执行监听程序。
+// Run 执行监听程序。
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
-func (app *App) Serve() (err error) {
+func (app *App) Run() (err error) {
 	conf := app.webConfig
 
 	app.runServices()

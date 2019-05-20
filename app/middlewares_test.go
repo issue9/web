@@ -34,7 +34,7 @@ func TestMiddlewares(t *testing.T) {
 	app.Mux().GetFunc("/m1/test", f201)
 
 	go func() {
-		err := app.Serve()
+		err := app.Run()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
 		exit <- true
 	}()
