@@ -282,15 +282,16 @@ func (ctx *Context) Created(v interface{}, location string) {
 
 // NoContent 204
 func (ctx *Context) NoContent() {
-	ctx.Render(http.StatusNoContent, nil, nil)
+	errorhandler.Exit(http.StatusNoContent)
 }
 
 // ResetContent 205
 func (ctx *Context) ResetContent() {
-	ctx.Render(http.StatusResetContent, nil, nil)
+	errorhandler.Exit(http.StatusResetContent)
 }
 
 // NotImplemented 501
 func (ctx *Context) NotImplemented() {
-	ctx.Render(http.StatusNotImplemented, nil, nil)
+	// 接收统一的 errorhandlers 模板支配
+	ctx.Response.WriteHeader(http.StatusNotImplemented)
 }

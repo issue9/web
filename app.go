@@ -266,9 +266,9 @@ func ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, Location())
 }
 
-// NewContext 根据当前配置，生成 context.Context 对象，若是出错则 panic
+// NewContext 生成 *Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, defaultApp)
+	return context.New(w, r, App())
 }
 
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。
