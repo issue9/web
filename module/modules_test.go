@@ -5,6 +5,8 @@
 package module
 
 import (
+	"time"
+
 	"github.com/issue9/assert"
 	"github.com/issue9/config"
 	"gopkg.in/yaml.v2"
@@ -13,6 +15,11 @@ import (
 	"github.com/issue9/web/internal/resulttest"
 	"github.com/issue9/web/internal/webconfig"
 )
+
+func job(time.Time) error {
+	println("job")
+	return nil
+}
 
 func newModules(a *assert.Assertion) *Modules {
 	var configUnmarshals = map[string]config.UnmarshalFunc{

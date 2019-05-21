@@ -64,12 +64,12 @@ func (m *Module) NewTag(tag string) *Tag {
 	return m.tags[tag]
 }
 
-// NewModule 声明一个新的模块
+// New 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (ms *Modules) NewModule(name, desc string, deps ...string) *Module {
+func (ms *Modules) New(name, desc string, deps ...string) *Module {
 	m := ms.newModule(name, desc, deps...)
 	ms.modules = append(ms.modules, m)
 	return m

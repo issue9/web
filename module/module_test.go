@@ -6,7 +6,10 @@ package module
 
 import (
 	"errors"
+	"log"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 )
@@ -27,6 +30,22 @@ func TestModule_NewTag(t *testing.T) {
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)
+}
+
+func TestModules_Init(t *testing.T) {
+	a := assert.New(t)
+	ms := newModules(a)
+
+	m1 := ms.New("m1", "m1 desc", "m2")
+	m1.AddCron("test cron", job, "* * 8 * * *", true)
+	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
+
+	m2 := ms.New("m2", "m2 desc")
+	m2.AddTicker("ticker test", job, 5*time.Second, false)
+
+	a.Equal(len(ms.Modules()), 2)
+
+	a.NotError(ms.Init("", log.New(os.Stdout, "[INFO]", 0)))
 }
 
 func TestModule_Plugin(t *testing.T) {
@@ -74,16 +93,16 @@ func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
 	ms := newModules(a)
 
-	m1 := ms.NewModule("users1", "user1 module", "users2", "users3")
+	m1 := ms.New("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
-	m2 := ms.NewModule("users2", "user2 module", "users3")
+	m2 := ms.New("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
-	m3 := ms.NewModule("users3", "user3 mdoule")
+	m3 := ms.New("users3", "user3 mdoule")
 	tag := m3.NewTag("v1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")

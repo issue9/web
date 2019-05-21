@@ -19,7 +19,7 @@ func Modules() []*Module {
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(name, desc string, deps ...string) *Module {
-	return modules.NewModule(name, desc, deps...)
+	return modules.New(name, desc, deps...)
 }
 
 // InitModules 初始化所有的模块或是模块下指定标签名称的函数。
