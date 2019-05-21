@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.27.0"
+const Version = "0.28.1"
 
 type (
 	// Context 一般在 http.ServeHTTP 中根据 http.ResponseWriter

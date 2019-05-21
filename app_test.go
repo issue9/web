@@ -5,7 +5,6 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"encoding/xml"
 	"net/http"
@@ -180,33 +179,4 @@ func TestGrace(t *testing.T) {
 	p.Signal(syscall.SIGTERM)
 
 	<-exit
-}
-
-func TestLogs(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
-
-	debug := new(bytes.Buffer)
-	App().Logs().DEBUG().SetOutput(debug)
-	Debug("1,2,3")
-	a.Contains(debug.String(), "1,2,3")
-	debug.Reset()
-	Debugf("%d,%d,%d", 1, 2, 3)
-	a.Contains(debug.String(), "1,2,3")
-
-	err := new(bytes.Buffer)
-	App().Logs().ERROR().SetOutput(err)
-	Error("1,2,3")
-	a.Contains(err.String(), "1,2,3")
-	err.Reset()
-	Errorf("%d,%d,%d", 1, 2, 3)
-	a.Contains(err.String(), "1,2,3")
-
-	critical := new(bytes.Buffer)
-	App().Logs().CRITICAL().SetOutput(critical)
-	Critical("1,2,3")
-	a.Contains(critical.String(), "1,2,3")
-	critical.Reset()
-	Criticalf("%d,%d,%d", 1, 2, 3)
-	a.Contains(critical.String(), "1,2,3")
 }
