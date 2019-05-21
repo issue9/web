@@ -158,19 +158,10 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 
 #### 错误处理
 
-框架中提供了一个统一的错误返回类型：Result，其输出格式是固定的，类似以下：
-```json
-{
-    "code": 400001,
-    "message": "error message",
-    "detail": [
-        {"field": "username", "message": "不能为空"},
-        {"field": "password", "message": "不能为空"},
-    ]
-}
-```
+框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，
+即可自定义输出的错误信息格式。
 
-具体可参考代码文档中的有关 web.Result 的定义。
+具体可参考代 internal/resulttest 中的相关代码。
 
 
 
