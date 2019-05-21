@@ -32,8 +32,9 @@ func (ctx *Context) NewResultWithDetail(code int, detail map[string]string) *Res
 }
 
 // Add 添加详细的内容
-func (rslt *Result) Add(key, val string) {
+func (rslt *Result) Add(key, val string) *Result {
 	rslt.rslt.Add(key, val)
+	return rslt
 }
 
 // HasDetail 是否存在详细的错误信息
