@@ -14,3 +14,4 @@ headers:
 readTimeout: 3s
 allowedDomains:
   - "127.0.0.1"
+timezone: UTC

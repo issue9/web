@@ -71,7 +71,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
 		return err
 	}
-	defaultApp.Logs().Init(lc)
+	App().Logs().Init(lc)
 
 	err = AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,
@@ -160,61 +160,61 @@ func Grace(dur time.Duration, sig ...os.Signal) {
 
 // AddCompresses 添加压缩处理函数
 func AddCompresses(m map[string]compress.WriterFunc) error {
-	return defaultApp.AddCompresses(m)
+	return App().AddCompresses(m)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
 func AddMiddlewares(m middleware.Middleware) {
-	defaultApp.AddMiddlewares(m)
+	App().AddMiddlewares(m)
 }
 
 // IsDebug 是否处在调试模式
 func IsDebug() bool {
-	return defaultApp.IsDebug()
+	return App().IsDebug()
 }
 
 // Mux 返回 mux.Mux 实例。
 func Mux() *mux.Mux {
-	return defaultApp.Mux()
+	return App().Mux()
 }
 
 // Mimetypes 返回 mimetype.Mimetypes
 func Mimetypes() *mimetype.Mimetypes {
-	return defaultApp.Mimetypes()
+	return App().Mimetypes()
 }
 
 // Serve 执行监听程序。
 func Serve() error {
-	return defaultApp.Run()
+	return App().Run()
 }
 
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func Close() error {
-	return defaultApp.Close()
+	return App().Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func Shutdown(ctx context.Context) error {
-	return defaultApp.Shutdown(ctx)
+	return App().Shutdown(ctx)
 }
 
 // URL 构建一条完整 URL
 func URL(path string) string {
-	return defaultApp.URL(path)
+	return App().URL(path)
 }
 
 // Path 构建 URL 的 Path 部分
 func Path(path string) string {
-	return defaultApp.Path(path)
+	return App().Path(path)
 }
 
 // Services 返回所有的服务列表
 func Services() []*app.Service {
-	return defaultApp.Services()
+	return App().Services()
 }
 
 // File 获取配置目录下的文件。
@@ -234,24 +234,24 @@ func Load(r io.Reader, typ string, v interface{}) error {
 
 // AddMessages 添加新的错误消息代码
 func AddMessages(status int, messages map[int]string) {
-	defaultApp.AddMessages(status, messages)
+	App().AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
 func ErrorHandlers() *errorhandler.ErrorHandler {
-	return defaultApp.ErrorHandlers()
+	return App().ErrorHandlers()
 }
 
 // Messages 获取所有的错误消息代码
 //
 // 如果指定 p 的值，则返回本地化的消息内容。
 func Messages(p *message.Printer) map[int]string {
-	return defaultApp.Messages(p)
+	return App().Messages(p)
 }
 
 // Scheduled 获取 scheduled.Server 实例
 func Scheduled() *scheduled.Server {
-	return defaultApp.Scheduled()
+	return App().Scheduled()
 }
 
 // Schedulers 返回所有的计划任务
@@ -261,7 +261,7 @@ func Schedulers() []*scheduled.Job {
 
 // Location 返回当前配置文件中指定的时区信息
 func Location() *time.Location {
-	return defaultApp.Location()
+	return App().Location()
 }
 
 // Now 返回当前时间。
@@ -278,7 +278,7 @@ func ParseTime(layout, value string) (time.Time, error) {
 
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。
 func INFO() *log.Logger {
-	return defaultApp.Logs().INFO()
+	return App().Logs().INFO()
 }
 
 // Info 相当于 INFO().Println(v...) 的简写方式
@@ -295,7 +295,7 @@ func Infof(format string, v ...interface{}) {
 
 // DEBUG 获取 DEBUG 级别的 log.Logger 实例，在未指定 debug 级别的日志时，该实例返回一个 nil。
 func DEBUG() *log.Logger {
-	return defaultApp.Logs().DEBUG()
+	return App().Logs().DEBUG()
 }
 
 // Debug 相当于 DEBUG().Println(v...) 的简写方式
@@ -310,7 +310,7 @@ func Debugf(format string, v ...interface{}) {
 
 // TRACE 获取 TRACE 级别的 log.Logger 实例，在未指定 trace 级别的日志时，该实例返回一个 nil。
 func TRACE() *log.Logger {
-	return defaultApp.Logs().TRACE()
+	return App().Logs().TRACE()
 }
 
 // Trace 相当于 TRACE().Println(v...) 的简写方式
@@ -325,7 +325,7 @@ func Tracef(format string, v ...interface{}) {
 
 // WARN 获取 WARN 级别的 log.Logger 实例，在未指定 warn 级别的日志时，该实例返回一个 nil。
 func WARN() *log.Logger {
-	return defaultApp.Logs().WARN()
+	return App().Logs().WARN()
 }
 
 // Warn 相当于 WARN().Println(v...) 的简写方式
@@ -340,7 +340,7 @@ func Warnf(format string, v ...interface{}) {
 
 // ERROR 获取 ERROR 级别的 log.Logger 实例，在未指定 error 级别的日志时，该实例返回一个 nil。
 func ERROR() *log.Logger {
-	return defaultApp.Logs().ERROR()
+	return App().Logs().ERROR()
 }
 
 // Error 相当于 ERROR().Println(v...) 的简写方式
@@ -355,7 +355,7 @@ func Errorf(format string, v ...interface{}) {
 
 // CRITICAL 获取 CRITICAL 级别的 log.Logger 实例，在未指定 critical 级别的日志时，该实例返回一个 nil。
 func CRITICAL() *log.Logger {
-	return defaultApp.Logs().CRITICAL()
+	return App().Logs().CRITICAL()
 }
 
 // Critical 相当于 CRITICAL().Println(v...)的简写方式
@@ -370,20 +370,20 @@ func Criticalf(format string, v ...interface{}) {
 
 // Fatal 输出错误信息，然后退出程序。
 func Fatal(code int, v ...interface{}) {
-	defaultApp.Logs().Fatal(code, v...)
+	App().Logs().Fatal(code, v...)
 }
 
 // Fatalf 输出错误信息，然后退出程序。
 func Fatalf(code int, format string, v ...interface{}) {
-	defaultApp.Logs().Fatalf(code, format, v...)
+	App().Logs().Fatalf(code, format, v...)
 }
 
 // Panic 输出错误信息，然后触发 panic。
 func Panic(v ...interface{}) {
-	defaultApp.Logs().Panic(v...)
+	App().Logs().Panic(v...)
 }
 
 // Panicf 输出错误信息，然后触发 panic。
 func Panicf(format string, v ...interface{}) {
-	defaultApp.Logs().Panicf(format, v...)
+	App().Logs().Panicf(format, v...)
 }

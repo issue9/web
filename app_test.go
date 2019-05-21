@@ -21,12 +21,11 @@ import (
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/resulttest"
+	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
 )
-
-var testdata = ""
 
 func getResult(status, code int, message string) app.Result {
 	return resulttest.New(status, code, message)
@@ -37,16 +36,6 @@ func initApp(a *assert.Assertion) {
 	a.NotError(Classic("./testdata", getResult))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
-}
-
-func TestApp(t *testing.T) {
-	a := assert.New(t)
-	exit := make(chan bool, 1)
-	initApp(a)
-
-	a.Panic(func() {
-		Classic("./testdata", getResult)
-	})
 
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/xml":        xml.Marshal,
@@ -61,33 +50,49 @@ func TestApp(t *testing.T) {
 		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
+}
+
+func TestClassic(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
+
+	a.Panic(func() {
+		Classic("./testdata", getResult)
+	})
 
 	a.True(IsDebug())
-
 	a.Equal(URL("/test/abc.png"), "http://localhost:8082/test/abc.png")
+	a.Equal(Path("/test/abc.png"), "/test/abc.png")
+}
 
-	// m1 的路由项依赖 m2 的初始化数据
+func TestTime(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
+
+	a.Equal(Location(), time.UTC)
+	a.Equal(Now().Location(), Location())
+	a.Equal(Now().Unix(), time.Now().Unix())
+}
+
+func TestModules(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
+	exit := make(chan bool, 1)
+
 	m1 := NewModule("m1", "m1 desc", "m2")
 	m1.AddInit(func() error {
-		if testdata != "m2" {
-			panic("testdata!=m2")
-		}
-
-		Mux().PostFunc("/post/"+testdata, func(w http.ResponseWriter, r *http.Request) {
-			ctx := NewContext(w, r)
-			ctx.Render(http.StatusCreated, testdata, nil)
-		})
+		println("m1")
 		return nil
 	}, "init")
+	m1.PostFunc("/post/m1", func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(w, r)
+		ctx.Render(http.StatusCreated, "m1", nil)
+	})
 
 	m2 := NewModule("m2", "m2 desc")
-	m2.AddInit(func() error {
-		testdata = "m2"
-		return nil
-	}, "init")
+	a.NotNil(m2)
 
 	a.NotError(InitModules(""))
-
 	a.Equal(2, len(Modules())) //  m1,m2
 
 	go func() {
@@ -100,15 +105,15 @@ func TestApp(t *testing.T) {
 	time.Sleep(500 * time.Microsecond)
 
 	rest.NewRequest(a, nil, http.MethodPost, URL("/post")).
-		Header("Accept", mimetype.DefaultMimetype).
+		Header("Accept", "application/json").
 		Do().
 		Status(http.StatusNotFound)
 
-	rest.NewRequest(a, nil, http.MethodPost, URL("/post/m2")).
-		Header("Accept", mimetypetest.MimeType).
+	rest.NewRequest(a, nil, http.MethodPost, URL("/post/m1")).
+		Header("Accept", "application/json").
 		Do().
 		Status(http.StatusCreated).
-		StringBody(testdata)
+		StringBody("\"m1\"") // json 格式的字符串
 
 	ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer c()
@@ -120,9 +125,22 @@ func TestApp(t *testing.T) {
 func TestFile(t *testing.T) {
 	a := assert.New(t)
 	initApp(a)
-	path, err := filepath.Abs("./testdata/abc.yaml")
+
+	path, err := filepath.Abs("./testdata/web.yaml")
 	a.NotError(err)
-	a.Equal(File("/abc.yaml"), path)
+
+	a.Equal(File("web.yaml"), path)
+
+	conf1 := &webconfig.WebConfig{}
+	a.NotError(LoadFile("web.yaml", conf1))
+	a.NotNil(conf1)
+
+	file, err := os.Open(path)
+	a.NotError(err).NotNil(file)
+	conf2 := &webconfig.WebConfig{}
+	a.NotError(Load(file, ".yaml", conf2))
+	a.NotNil(conf2)
+	a.Equal(conf1, conf2)
 }
 
 func TestNewContext(t *testing.T) {
