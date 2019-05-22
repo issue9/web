@@ -12,8 +12,8 @@ import (
 	"github.com/issue9/web/mimetype"
 )
 
-// MimeType 当前包能解析的编码类型
-const MimeType = "text/plain"
+// Mimetype 当前包能解析的编码类型
+const Mimetype = "text/plain"
 
 var errUnsupported = errors.New("对象没有有效的转换方法")
 

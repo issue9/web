@@ -19,7 +19,7 @@ func BenchmarkMimetypes_Marshal(b *testing.B) {
 	m := New()
 	a.NotNil(m)
 
-	a.NotError(m.AddMarshal(gob.MimeType, gob.Marshal))
+	a.NotError(m.AddMarshal(gob.Mimetype, gob.Marshal))
 	a.NotError(m.AddMarshal("application/json", json.Marshal))
 	a.NotError(m.AddMarshal("application/xml", xml.Marshal))
 	a.NotError(m.AddMarshal("font/wottf", xml.Marshal))
@@ -37,7 +37,7 @@ func BenchmarkMimetypes_Unmarshal(b *testing.B) {
 	m := New()
 	a.NotNil(m)
 
-	a.NotError(m.AddUnmarshal(gob.MimeType, gob.Unmarshal))
+	a.NotError(m.AddUnmarshal(gob.Mimetype, gob.Unmarshal))
 	a.NotError(m.AddUnmarshal("application/json", json.Unmarshal))
 	a.NotError(m.AddUnmarshal("application/xml", xml.Unmarshal))
 	a.NotError(m.AddUnmarshal("font/wottf", xml.Unmarshal))

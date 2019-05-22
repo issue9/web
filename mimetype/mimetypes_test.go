@@ -40,6 +40,11 @@ func TestMimetypes_Marshal(t *testing.T) {
 		Nil(marshal).
 		Empty(name)
 
+	name, marshal, err = m.Marshal("")
+	a.Equal(err, ErrNotFound).
+		Nil(marshal).
+		Empty(name)
+
 	a.NotError(m.AddMarshal(DefaultMimetype, gob.Marshal))
 	a.NotError(m.AddMarshal("text/plain", gob.Marshal))
 
@@ -105,6 +110,7 @@ func TestMimetypes_AddMarshal(t *testing.T) {
 func TestMimetypes_AddUnmarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
+	a.NotNil(m)
 
 	a.NotError(m.AddUnmarshal(DefaultMimetype, nil))
 	a.Error(m.AddUnmarshal(DefaultMimetype, nil))
@@ -122,6 +128,31 @@ func TestMimetypes_AddUnmarshal(t *testing.T) {
 	a.Equal(m.unmarshals[0].name, DefaultMimetype) // 默认始终在第一
 }
 
+func TestMimetypes_AddUnmarshals(t *testing.T) {
+	a := assert.New(t)
+	m := New()
+	a.NotNil(m)
+
+	err := m.AddUnmarshals(map[string]UnmarshalFunc{
+		DefaultMimetype:    nil,
+		"text":             nil,
+		"application/json": nil,
+		"application/xml":  nil,
+	})
+	a.NotError(err)
+
+	a.Equal(m.unmarshals[0].name, DefaultMimetype)
+	a.Equal(m.unmarshals[1].name, "application/json")
+	a.Equal(m.unmarshals[2].name, "application/xml")
+	a.Equal(m.unmarshals[3].name, "text")
+
+	_, err = m.Unmarshal("*/*")
+	a.Equal(err, ErrNotFound)
+
+	_, err = m.Unmarshal("text")
+	a.NotError(err)
+}
+
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
@@ -133,6 +164,13 @@ func TestMimetypes_findMarshal(t *testing.T) {
 		"application/aa": nil, // aa 排名靠前
 		"application/bb": nil, // aa 排名靠前
 	}))
+
+	// 检测排序
+	a.Equal(m.marshals[0].name, "application/aa")
+	a.Equal(m.marshals[1].name, "application/bb")
+	a.Equal(m.marshals[2].name, "text")
+	a.Equal(m.marshals[3].name, "text/plain")
+	a.Equal(m.marshals[4].name, "text/text")
 
 	mm := m.findMarshal("text")
 	a.Equal(mm.name, "text")

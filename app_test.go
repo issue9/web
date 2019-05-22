@@ -40,14 +40,14 @@ func initApp(a *assert.Assertion) {
 	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.MimeType:    mimetypetest.TextMarshal,
+		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
 
 	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
+		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
 
@@ -181,7 +181,7 @@ func TestNewContext(t *testing.T) {
 		Equal(ctx.Response, w).
 		Equal(ctx.Request, r).
 		Equal(ctx.OutputCharsetName, "utf-8").
-		Equal(ctx.OutputMimeTypeName, "application/json")
+		Equal(ctx.OutputMimetypeName, "application/json")
 }
 
 func TestGrace(t *testing.T) {

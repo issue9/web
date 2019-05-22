@@ -14,8 +14,8 @@ import (
 // Version 当前支持的协议版本号
 const Version = "3"
 
-// MimeType 当前协议的 mimetype 值
-const MimeType = "application/octet-stream"
+// Mimetype 当前协议的 mimetype 值
+const Mimetype = "application/octet-stream"
 
 var errInvalidType = errors.New("无效的类型，只能是 protof.Message")
 

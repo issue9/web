@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-type tagObject struct {
+type TagObject struct {
 	Name     string
 	Age      int      `form:"age"`
 	Friend   []string `form:"friend"`
@@ -18,15 +18,35 @@ type tagObject struct {
 	unexport bool
 }
 
-var formTagString = "Name=Ava&age=10&friend=Jess&friend=Sarah&friend=Zoe"
-
-var tagObjectData = &tagObject{
-	Name:     "Ava",
-	Age:      10,
-	Friend:   []string{"Jess", "Sarah", "Zoe"},
-	Ignore:   "i",
-	unexport: true,
+type anonymousObject struct {
+	*TagObject
+	Address string `form:"address"`
+	F       func()
 }
+
+var (
+	formTagString = "Name=Ava&age=10&friend=Jess&friend=Sarah&friend=Zoe"
+
+	tagObjectData = &TagObject{
+		Name:     "Ava",
+		Age:      10,
+		Friend:   []string{"Jess", "Sarah", "Zoe"},
+		Ignore:   "i",
+		unexport: true,
+	}
+)
+
+var (
+	anonymousString = "Name=Ava&address=1&age=10&friend=Jess&friend=Sarah&friend=Zoe"
+	anonymousData   = &anonymousObject{
+		TagObject: &TagObject{
+			Name:   "Ava",
+			Age:    10,
+			Friend: []string{"Jess", "Sarah", "Zoe"},
+		},
+		Address: "1",
+	}
+)
 
 func TestTagForm(t *testing.T) {
 	a := assert.New(t)
@@ -37,10 +57,19 @@ func TestTagForm(t *testing.T) {
 		Equal(string(data), formTagString)
 
 	// Unmarshal
-	obj := &tagObject{
+	obj := &TagObject{
 		Ignore:   "i",
 		unexport: true,
 	}
 	a.NotError(Unmarshal([]byte(formTagString), obj))
 	a.Equal(obj, tagObjectData)
+
+	// anonymous marhsal
+	data, err = Marshal(anonymousData)
+	a.NotError(err).
+		Equal(string(data), anonymousString)
+
+	anoobj := &anonymousObject{}
+	a.NotError(Unmarshal([]byte(anonymousString), anoobj))
+	a.Equal(anoobj, anonymousData)
 }

@@ -20,8 +20,8 @@ package form
 
 import "net/url"
 
-// MimeType 当前编码的媒体类型
-const MimeType = "application/x-www-form-urlencoded"
+// Mimetype 当前编码的媒体类型
+const Mimetype = "application/x-www-form-urlencoded"
 
 // Marshaler 将一个普通对象转换成 form 类型
 type Marshaler interface {

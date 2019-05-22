@@ -46,5 +46,5 @@ func (rslt *Result) HasDetail() bool {
 
 // Render 渲染内容
 func (rslt *Result) Render() {
-	rslt.ctx.Render(rslt.rslt.Status(), rslt, nil)
+	rslt.ctx.Render(rslt.rslt.Status(), rslt.rslt, nil)
 }

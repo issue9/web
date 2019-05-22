@@ -19,7 +19,7 @@ const Tag = "form"
 // 将 v 转换成 form-data 格式的数据
 func marshal(v interface{}) (url.Values, error) {
 	objs := map[string]reflect.Value{}
-	if err := getObjectMap(objs, v); err != nil {
+	if err := getObjectMap(objs, reflect.ValueOf(v)); err != nil {
 		return nil, err
 	}
 
@@ -40,9 +40,9 @@ func marshal(v interface{}) (url.Values, error) {
 }
 
 // 将  form-data 数据转换到 v 中
-func unmarshal(vals url.Values, v interface{}) error {
+func unmarshal(vals url.Values, obj interface{}) error {
 	objs := map[string]reflect.Value{}
-	if err := getObjectMap(objs, v); err != nil {
+	if err := getObjectMap(objs, reflect.ValueOf(obj)); err != nil {
 		return err
 	}
 
@@ -68,29 +68,37 @@ func unmarshal(vals url.Values, v interface{}) error {
 	return nil
 }
 
-func getObjectMap(kv map[string]reflect.Value, v interface{}) error {
-	rval := reflect.ValueOf(v)
+func getObjectMap(kv map[string]reflect.Value, rval reflect.Value) error {
 	for rval.Kind() == reflect.Ptr {
-		rval = rval.Elem()
+		if rval.IsNil() {
+			rval.Set(reflect.New(rval.Type().Elem()))
+		} else {
+			rval = rval.Elem()
+		}
 	}
-	rtype := rval.Type()
 
+	rtype := rval.Type()
 	for i := 0; i < rtype.NumField(); i++ {
 		field := rtype.Field(i)
-
-		kind := field.Type.Kind()
-		if kind == reflect.Map ||
-			kind == reflect.Chan ||
-			kind == reflect.Struct ||
-			kind == reflect.Ptr {
-			panic("不能嵌套")
-		}
 
 		if field.Anonymous {
 			if err := getObjectMap(kv, rval.Field(i)); err != nil {
 				return err
 			}
 			continue
+		}
+
+		kind := field.Type.Kind()
+
+		if kind == reflect.Func {
+			continue
+		}
+
+		if kind == reflect.Map ||
+			kind == reflect.Chan ||
+			kind == reflect.Struct ||
+			kind == reflect.Ptr {
+			panic("无效的类型")
 		}
 
 		if unicode.IsLower(rune(field.Name[0])) { // 忽略以小写字母开头的字段

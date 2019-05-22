@@ -6,6 +6,7 @@ package context
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,20 +18,29 @@ func TestResult(t *testing.T) {
 	a := assert.New(t)
 
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("Accept", "*/*")
+	r.Header.Set("Accept", "application/json")
 	w := httptest.NewRecorder()
-	ctx := newContext(a, w, r, nil, nil)
-	ctx.App.AddMessages(400, map[int]string{
+	ctx := &Context{
+		App: newApp(a),
+
+		Response:       w,
+		Request:        r,
+		OutputCharset:  nil,
+		OutputMimetype: json.Marshal,
+
+		InputCharset:  nil,
+		InputMimetype: json.Unmarshal,
+	}
+	ctx.App.AddMessages(http.StatusBadRequest, map[int]string{
 		40010: "40010",
 		40011: "40011",
 	})
 
 	rslt := ctx.NewResultWithDetail(40010, map[string]string{
 		"k1": "v1",
-		"k2": "v2",
 	})
 	a.True(rslt.HasDetail())
 
 	rslt.Render()
-	a.NotEmpty(w.Body.String())
+	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"detail":[{"field":"k1","message":"v1"}]}`)
 }

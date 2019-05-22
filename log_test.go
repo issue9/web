@@ -15,6 +15,12 @@ func TestLogs(t *testing.T) {
 	a := assert.New(t)
 	initApp(a)
 
+	info := new(bytes.Buffer)
+	Info("1,2,3")
+	a.Empty(info.String())
+	Infof("%d,%d,%d", 1, 2, 3)
+	a.Empty(info.String())
+
 	debug := new(bytes.Buffer)
 	App().Logs().DEBUG().SetOutput(debug)
 	Debug("1,2,3")
@@ -39,6 +45,7 @@ func TestLogs(t *testing.T) {
 	Criticalf("%d,%d,%d", 1, 2, 3)
 	a.Contains(critical.String(), "1,2,3")
 
+	// Panic
 	debug.Reset()
 	err.Reset()
 	critical.Reset()
@@ -48,4 +55,16 @@ func TestLogs(t *testing.T) {
 	a.Contains(debug.String(), "panic!")
 	a.Contains(err.String(), "panic!")
 	a.Contains(critical.String(), "panic!")
+
+	// Panicf
+	debug.Reset()
+	err.Reset()
+	critical.Reset()
+	a.Panic(func() {
+		Panicf("panicf!")
+	})
+	a.Empty(info.String())
+	a.Contains(debug.String(), "panicf!")
+	a.Contains(err.String(), "panicf!")
+	a.Contains(critical.String(), "panicf!")
 }

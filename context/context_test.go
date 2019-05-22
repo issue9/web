@@ -50,10 +50,10 @@ func newContext(a *assert.Assertion,
 		Response:       w,
 		Request:        r,
 		OutputCharset:  outputCharset,
-		OutputMimeType: mimetypetest.TextMarshal,
+		OutputMimetype: mimetypetest.TextMarshal,
 
 		InputCharset:  InputCharset,
-		InputMimeType: mimetypetest.TextUnmarshal,
+		InputMimetype: mimetypetest.TextUnmarshal,
 	}
 }
 
@@ -83,7 +83,7 @@ func newApp(a *assert.Assertion) *app.App {
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.MimeType:    mimetypetest.TextMarshal,
+		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
 
@@ -91,7 +91,7 @@ func newApp(a *assert.Assertion) *app.App {
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
+		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
 
@@ -145,7 +145,7 @@ func TestNew(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
-	r.Header.Set("content-type", buildContentType(mimetypetest.MimeType, "utf-"))
+	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-"))
 	a.Panic(func() {
 		New(w, r, app)
 	})
@@ -171,7 +171,7 @@ func TestNew(t *testing.T) {
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype).
+		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
 
@@ -185,20 +185,20 @@ func TestNew(t *testing.T) {
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
+		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
-	r.Header.Set("content-type", buildContentType(mimetypetest.MimeType, "utf-8"))
+	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 	a.NotPanic(func() {
 		ctx = New(w, r, app)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimeTypeName, mimetype.DefaultMimetype)
+		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype)
 }
 
 func TestContext_Body(t *testing.T) {

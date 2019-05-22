@@ -37,8 +37,8 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的媒体类型，以及名称
-	OutputMimeType     mimetype.MarshalFunc
-	OutputMimeTypeName string
+	OutputMimetype     mimetype.MarshalFunc
+	OutputMimetypeName string
 
 	// 输出到客户端的字符集
 	//
@@ -47,7 +47,7 @@ type Context struct {
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型。
-	InputMimeType mimetype.UnmarshalFunc
+	InputMimetype mimetype.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//
@@ -84,7 +84,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimeTypeName, marshal, err := a.Mimetypes().Marshal(header)
+	outputMimetypeName, marshal, err := a.Mimetypes().Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -98,8 +98,8 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		App:                a,
 		Response:           w,
 		Request:            r,
-		OutputMimeType:     marshal,
-		OutputMimeTypeName: outputMimeTypeName,
+		OutputMimetype:     marshal,
+		OutputMimetypeName: outputMimetypeName,
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
@@ -110,7 +110,7 @@ func New(w http.ResponseWriter, r *http.Request, a *app.App) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimeType, err = ctx.App.Mimetypes().Unmarshal(encName)
+		ctx.InputMimetype, err = ctx.App.Mimetypes().Unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
@@ -154,8 +154,8 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 		return err
 	}
 
-	if ctx.InputMimeType != nil {
-		return ctx.InputMimeType(body, v)
+	if ctx.InputMimetype != nil {
+		return ctx.InputMimetype(body, v)
 	}
 
 	return nil
@@ -184,7 +184,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if !contentTypeFound {
-		ct := buildContentType(ctx.OutputMimeTypeName, ctx.OutputCharsetName)
+		ct := buildContentType(ctx.OutputMimetypeName, ctx.OutputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 
@@ -197,7 +197,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return nil
 	}
 
-	data, err := ctx.OutputMimeType(v)
+	data, err := ctx.OutputMimetype(v)
 	if err != nil {
 		return err
 	}

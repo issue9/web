@@ -20,8 +20,8 @@ import (
 	"html/template"
 )
 
-// MimeType HTML 的 mimetype 值
-const MimeType = "text/html"
+// Mimetype HTML 的 mimetype 值
+const Mimetype = "text/html"
 
 var errUnsupported = errors.New("当前不支持该对象的解析")
 

@@ -10,8 +10,8 @@ import (
 	"encoding/gob"
 )
 
-// MimeType 当前编码默认情况下使用的编码名称。
-const MimeType = "application/octet-stream"
+// Mimetype 当前编码默认情况下使用的编码名称。
+const Mimetype = "application/octet-stream"
 
 // Marshal 针对 GOB 内容的 MarshalFunc 实现
 func Marshal(v interface{}) ([]byte, error) {
