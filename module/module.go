@@ -104,6 +104,10 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
 func (ms *Modules) Init(tag string, info *log.Logger) error {
+	flag := info.Flags()
+	info.SetFlags(0)
+	defer info.SetFlags(flag)
+
 	info.Println("开始初始化模块...")
 
 	if err := newDepencency(ms.modules, info).init(tag); err != nil {

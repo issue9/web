@@ -84,7 +84,7 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		inits = t.inits
 	}
 
-	dep.l.Println("\n开始初始化模块：", m.Name)
+	dep.l.Println("开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
 	for _, init := range inits {
