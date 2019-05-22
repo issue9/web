@@ -7,8 +7,9 @@ package resulttest
 import (
 	"encoding/json"
 	"encoding/xml"
-	yaml "gopkg.in/yaml.v2"
 	"testing"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/assert"
 )

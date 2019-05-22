@@ -29,7 +29,7 @@ func TestModule_Prefix(t *testing.T) {
 	a.NotNil(p)
 
 	path := "/path"
-	p.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	a.NotError(p.Handle(path, h1, http.MethodGet, http.MethodDelete))
 	srv.NewRequest(http.MethodGet, "/p"+path).
 		Do().
 		Status(http.StatusOK)
@@ -47,7 +47,7 @@ func TestModule_Handle(t *testing.T) {
 	srv := rest.NewServer(t, app.Mux(), nil)
 
 	path := "/path"
-	app.Handle(path, h1, http.MethodGet, http.MethodDelete)
+	a.NotError(app.Handle(path, h1, http.MethodGet, http.MethodDelete))
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
@@ -60,7 +60,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
-	app.Handle(path, h1)
+	a.NotError(app.Handle(path, h1))
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)

@@ -52,16 +52,16 @@ var webconf = &webconfig.WebConfig{
 
 var logsconf = &config.Config{
 	Items: map[string]*config.Config{
-		"info": &config.Config{
+		"info": {
 			Attrs: map[string]string{
 				"prefix": "INFO",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"buffer": &config.Config{
+				"buffer": {
 					Attrs: map[string]string{"size": "100"},
 					Items: map[string]*config.Config{
-						"rotate": &config.Config{
+						"rotate": {
 							Attrs: map[string]string{
 								"filename": "info-%Y%m%d.%i.log",
 								"dir":      "./logs",
@@ -73,13 +73,13 @@ var logsconf = &config.Config{
 			},
 		},
 
-		"debug": &config.Config{
+		"debug": {
 			Attrs: map[string]string{
 				"prefix": "DEBUG",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"rotate": &config.Config{
+				"rotate": {
 					Attrs: map[string]string{
 						"filename": "debug-%Y%m%d.%i.log",
 						"dir":      "./logs",
@@ -89,13 +89,13 @@ var logsconf = &config.Config{
 			},
 		},
 
-		"warn": &config.Config{
+		"warn": {
 			Attrs: map[string]string{
 				"prefix": "WARN",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"rotate": &config.Config{
+				"rotate": {
 					Attrs: map[string]string{
 						"filename": "warn-%Y%m%d.%i.log",
 						"dir":      "./logs",
@@ -105,13 +105,13 @@ var logsconf = &config.Config{
 			},
 		},
 
-		"trace": &config.Config{
+		"trace": {
 			Attrs: map[string]string{
 				"prefix": "TRACE",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"rotate": &config.Config{
+				"rotate": {
 					Attrs: map[string]string{
 						"filename": "trace-%Y%m%d.%i.log",
 						"dir":      "./logs",
@@ -121,13 +121,13 @@ var logsconf = &config.Config{
 			},
 		},
 
-		"error": &config.Config{
+		"error": {
 			Attrs: map[string]string{
 				"prefix": "ERROR",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"rotate": &config.Config{
+				"rotate": {
 					Attrs: map[string]string{
 						"filename": "error-%Y%m%d.%i.log",
 						"dir":      "./logs",
@@ -137,13 +137,13 @@ var logsconf = &config.Config{
 			},
 		},
 
-		"critical": &config.Config{
+		"critical": {
 			Attrs: map[string]string{
 				"prefix": "CRITICAL",
 				"flag":   "log.Llongfile|log.Ldate|log.Ltime",
 			},
 			Items: map[string]*config.Config{
-				"rotate": &config.Config{
+				"rotate": {
 					Attrs: map[string]string{
 						"filename": "critical-%Y%m%d.%i.log",
 						"dir":      "./logs",

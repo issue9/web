@@ -97,7 +97,7 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 				return ctx.Err()
 			case <-timer.C:
 				fmt.Println("panic srv2")
-				return errors.New("Error")
+				return errors.New("error")
 			default:
 				fmt.Println("srv3:", now)
 				if !inited {

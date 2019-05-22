@@ -19,13 +19,13 @@ const Version = "0.28.1"
 
 type (
 	// Context 一般在 http.ServeHTTP 中根据 http.ResponseWriter
-	// 和 http.Request初始化获得。
+	// 和 http.Request 初始化获得。
 	// 可以在整个函数生命周期中操作相关功能。
 	//
 	// 等同于 context.Context，方便调用者使用
 	Context = context.Context
 
-	// Result 等同于 app.Resut，方便调用者使用
+	// Result 等同于 app.Result，方便调用者使用
 	Result = app.Result
 
 	// ServiceFunc 服务的报告函数签名。

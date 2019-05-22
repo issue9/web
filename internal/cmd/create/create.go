@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/term/colors"
 	"github.com/issue9/term/prompt"
 	"github.com/issue9/utils"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
 )
@@ -100,15 +100,14 @@ MOD:
 		return err
 	}
 
-	return createCmd(path, "cmd/main", mod)
+	return createCmd(path, "cmd/main")
 }
 
 // 创建 cmd 目录内容
 //
 // path 表示项目的根目录；
 // dir 表示相对于 path 的 cmd 目录名称；
-// mod 表示模块的包名。
-func createCmd(path, dir, mod string) error {
+func createCmd(path, dir string) error {
 	path = filepath.Join(path, dir)
 
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {

@@ -178,8 +178,8 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	for k, v := range headers {
 		k = http.CanonicalHeaderKey(k)
 
-		contentTypeFound = (contentTypeFound || k == contentTypeKey)
-		contentLanguageFound = (contentLanguageFound || k == contentLanguageKey)
+		contentTypeFound = contentTypeFound || k == contentTypeKey
+		contentLanguageFound = contentLanguageFound || k == contentLanguageKey
 		header.Set(k, v)
 	}
 

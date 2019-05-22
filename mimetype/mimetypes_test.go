@@ -31,7 +31,7 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 	a.Error(err).Nil(um)
 }
 
-func TestMImetypes_Marshal(t *testing.T) {
+func TestMimetypes_Marshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -81,7 +81,7 @@ func TestMImetypes_Marshal(t *testing.T) {
 		Nil(marshal)
 }
 
-func TestMImetypes_AddMarshal(t *testing.T) {
+func TestMimetypes_AddMarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -90,15 +90,19 @@ func TestMImetypes_AddMarshal(t *testing.T) {
 	a.Error(m.AddMarshal(DefaultMimetype, nil))
 
 	// 不能添加以 /* 结属的名称
-	a.Panic(func() { m.AddMarshal("application/*", nil) })
-	a.Panic(func() { m.AddMarshal("/*", nil) })
+	a.Panic(func() {
+		a.NotError(m.AddMarshal("application/*", nil))
+	})
+	a.Panic(func() {
+		a.NotError(m.AddMarshal("/*", nil))
+	})
 
 	// 排序是否正常
 	a.NotError(m.AddMarshal("application/json", nil))
 	a.Equal(m.marshals[0].name, DefaultMimetype) // 默认始终在第一
 }
 
-func TestMImetypes_AddUnmarshal(t *testing.T) {
+func TestMimetypes_AddUnmarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 
@@ -106,15 +110,19 @@ func TestMImetypes_AddUnmarshal(t *testing.T) {
 	a.Error(m.AddUnmarshal(DefaultMimetype, nil))
 
 	// 不能添加包含 * 字符的名称
-	a.Panic(func() { m.AddUnmarshal("application/*", nil) })
-	a.Panic(func() { m.AddUnmarshal("*", nil) })
+	a.Panic(func() {
+		a.NotError(m.AddUnmarshal("application/*", nil))
+	})
+	a.Panic(func() {
+		a.NotError(m.AddUnmarshal("*", nil))
+	})
 
 	// 排序是否正常
 	a.NotError(m.AddUnmarshal("application/json", nil))
 	a.Equal(m.unmarshals[0].name, DefaultMimetype) // 默认始终在第一
 }
 
-func TestMImetypes_findMarshal(t *testing.T) {
+func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t)
 	m := New()
 

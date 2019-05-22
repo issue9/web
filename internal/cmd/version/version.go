@@ -39,7 +39,7 @@ var (
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
 	if buildDate != "" {
-		localVersion += ("+" + buildDate)
+		localVersion += "+" + buildDate
 	}
 
 	flagset = opt.New("version", do, usage)

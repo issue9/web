@@ -95,14 +95,14 @@ func TestModules_Tags(t *testing.T) {
 
 	m1 := ms.New("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
-		AddInit(func() error { return errors.New("falid message") }, "安装数据表 users1")
+		AddInit(func() error { return errors.New("failed message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
 	m2 := ms.New("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
-	m3 := ms.New("users3", "user3 mdoule")
+	m3 := ms.New("users3", "user3 module")
 	tag := m3.NewTag("v1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")

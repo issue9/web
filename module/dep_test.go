@@ -87,7 +87,8 @@ func TestDependency_init(t *testing.T) {
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
 	f1 := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("f1"))
+		_, err := w.Write([]byte("f1"))
+		a.NotError(err)
 		w.WriteHeader(http.StatusAccepted)
 	}
 	i := func(name string) func() error {

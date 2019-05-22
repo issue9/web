@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/resulttest"

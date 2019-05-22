@@ -12,10 +12,14 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 如果你只是需要一个简单的路由工具，那么你可以移步到 [mux](https://github.com/issue9/mux)。
 
 ```go
+package main
+
+import "github.com/issue9/web"
+
 // main.go
 func main() {
     web.Classic("./appconfig/web.yaml")
-    web.NewMessages(map[int]string{...})
+    web.AddMessages(400, map[int]string{...})
 
     // 注册模块信息
     m1.Init()
@@ -69,14 +73,18 @@ func Init() {
 项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
 用于向框架注册当前模块的一些主要信息。通过 `web.NewModule` 注册模块：
 ```go
+package m1
+
+import "github.com/issue9/web"
+
 m := web.NewModule("test", "测试模块")
 
-m.AddInit(func()error {
+m.AddInit(func() error {
     // TODO 此处可以添加初始化模块的相关代码
     return nil
 }, "初始化函数描述")
 
-m.AddService(func(ctx context.Context)error {
+m.AddService(func(ctx context.Context) error {
     // TODO 此处添加服务代码
 }, "服务描述")
 ```

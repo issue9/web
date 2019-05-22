@@ -7,10 +7,11 @@ package webconfig
 import (
 	"encoding/json"
 	"encoding/xml"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/config"
@@ -175,42 +176,42 @@ func TestWebConfig_buildHTTPS(t *testing.T) {
 func TestWebConfig_buildURL(t *testing.T) {
 	a := assert.New(t)
 	conf := &WebConfig{Port: 80}
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "")
 
 	conf.Root = "/path"
 	conf.URL = "" // 重置为空
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "/path").
 		Equal(conf.URLPath, "/path")
 
 	conf.Domain = localhostURL
 	conf.URL = "" // 重置为空
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "http://localhost/path").
 		Equal(conf.URLPath, "/path")
 
 	conf.Port = 443
 	conf.URL = "" // 重置为空
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "http://localhost:443/path")
 
 	conf.Port = 80
 	conf.HTTPS = true
 	conf.URL = "" // 重置为空
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "https://localhost:80/path")
 
 	conf.Port = 443
 	conf.HTTPS = true
 	conf.URL = "" // 重置为空
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "https://localhost/path")
 
 	// 强制指定 URL，不受其它参数的影响
 	conf.URL = "https://example.com"
 	conf.Port = 8082
-	conf.buildURL()
+	a.NotError(conf.buildURL())
 	a.Equal(conf.URL, "https://example.com").
 		Equal(conf.URLPath, "")
 }

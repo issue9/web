@@ -8,6 +8,7 @@ package mimetypetest
 import (
 	"encoding"
 	"errors"
+
 	"github.com/issue9/web/mimetype"
 )
 

@@ -32,7 +32,7 @@ func TestApp_Messages(t *testing.T) {
 	a.NotError(xmessage.SetString(language.Und, "lang", "und"))
 	a.NotError(xmessage.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(xmessage.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotPanic(func() { (app.AddMessages(400, map[int]string{40010: "lang"})) })
+	a.NotPanic(func() { app.AddMessages(400, map[int]string{40010: "lang"}) })
 
 	rslt := app.NewResult(40010)
 	r, ok := rslt.(*resulttest.Result)
@@ -42,7 +42,7 @@ func TestApp_Messages(t *testing.T) {
 
 	// 不存在
 	a.Panic(func() {
-		app.NewResult(40010001)
+		a.NotError(app.NewResult(40010001))
 	})
 
 	lmsgs := app.Messages(xmessage.NewPrinter(language.Und))

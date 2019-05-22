@@ -25,7 +25,11 @@ import (
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
-	w.Write([]byte("1234567890"))
+	_, err := w.Write([]byte("1234567890"))
+	if err != nil {
+		println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // 声明一个 App 实例
@@ -103,10 +107,12 @@ func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
 	app := newApp(a)
 	exit := make(chan bool, 1)
-	app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
+	err := app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
-		w.Write([]byte("error handler test"))
+		_, err := w.Write([]byte("error handler test"))
+		a.NotError(err)
 	}, http.StatusNotFound)
+	a.NotError(err)
 
 	app.Mux().GetFunc("/m1/test", f202)
 	app.Mux().GetFunc("/m2/test", f202)
@@ -164,7 +170,10 @@ func TestApp_Close(t *testing.T) {
 
 	app.Mux().GetFunc("/test", f202)
 	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("closed"))
+		_, err := w.Write([]byte("closed"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		a.NotError(app.Close())
 	})
 
@@ -199,7 +208,8 @@ func TestApp_Shutdown(t *testing.T) {
 	app.Mux().GetFunc("/test", f202)
 	app.Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("shutdown with ctx"))
+		_, err := w.Write([]byte("shutdown with ctx"))
+		a.NotError(err)
 		ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		defer c()
 		app.Shutdown(ctx)

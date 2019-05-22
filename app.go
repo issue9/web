@@ -69,7 +69,9 @@ func Classic(dir string, get app.GetResultFunc) error {
 	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
 		return err
 	}
-	App().Logs().Init(lc)
+	if err = App().Logs().Init(lc); err != nil {
+		return err
+	}
 
 	err = AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,

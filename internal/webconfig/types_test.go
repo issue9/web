@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -64,7 +64,7 @@ func TestPairs(t *testing.T) {
 </testPairs>`)
 
 	rm := &testPairs{}
-	xml.Unmarshal(bs, rm)
+	a.NotError(xml.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 
 	// 空值
@@ -90,7 +90,7 @@ func TestDuration_YAML(t *testing.T) {
 `)
 
 	rm := &testDuration{}
-	yaml.Unmarshal(bs, rm)
+	a.NotError(yaml.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 }
 
@@ -108,7 +108,7 @@ func TestDuration_XML(t *testing.T) {
 </testDuration>`)
 
 	rm := &testDuration{}
-	xml.Unmarshal(bs, rm)
+	a.NotError(xml.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 }
 
@@ -124,6 +124,6 @@ func TestDuration_JSON(t *testing.T) {
 	a.Equal(string(bs), `{"dur":"5ns"}`)
 
 	rm := &testDuration{}
-	json.Unmarshal(bs, rm)
+	a.NotError(json.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 }

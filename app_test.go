@@ -57,7 +57,7 @@ func TestClassic(t *testing.T) {
 	initApp(a)
 
 	a.Panic(func() {
-		Classic("./testdata", getResult)
+		a.NotError(Classic("./testdata", getResult))
 	})
 
 	a.True(IsDebug())
@@ -176,7 +176,7 @@ func TestGrace(t *testing.T) {
 
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
-	p.Signal(syscall.SIGTERM)
+	a.NotError(p.Signal(syscall.SIGTERM))
 
 	<-exit
 }
