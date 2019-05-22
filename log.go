@@ -102,6 +102,7 @@ func Criticalf(format string, v ...interface{}) {
 	CRITICAL().Output(2, fmt.Sprintf(format, v...))
 }
 
+// 输出 msg 到所有日志通道，并立即刷新内容。
 func all(msg string) {
 	INFO().Output(3, msg)
 	DEBUG().Output(3, msg)
@@ -109,19 +110,18 @@ func all(msg string) {
 	TRACE().Output(3, msg)
 	ERROR().Output(3, msg)
 	CRITICAL().Output(3, msg)
+	App().Logs().Flush()
 }
 
 // Fatal 输出错误信息，然后退出程序。
 func Fatal(code int, v ...interface{}) {
 	all(fmt.Sprint(v...))
-	App().Logs().Flush()
 	os.Exit(code)
 }
 
 // Fatalf 输出错误信息，然后退出程序。
 func Fatalf(code int, format string, v ...interface{}) {
 	all(fmt.Sprintf(format, v...))
-	App().Logs().Flush()
 	os.Exit(code)
 }
 
@@ -129,7 +129,6 @@ func Fatalf(code int, format string, v ...interface{}) {
 func Panic(v ...interface{}) {
 	msg := fmt.Sprint(v...)
 	all(msg)
-	App().Logs().Flush()
 	panic(msg)
 }
 
@@ -137,6 +136,5 @@ func Panic(v ...interface{}) {
 func Panicf(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
 	all(msg)
-	App().Logs().Flush()
 	panic(msg)
 }

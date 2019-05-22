@@ -244,7 +244,7 @@ func ErrorHandlers() *errorhandler.ErrorHandler {
 
 // Messages 获取所有的错误消息代码
 //
-// 如果指定 p 的值，则返回本地化的消息内容。
+// p 用于返回特定语言的内容。如果为空，则表示返回原始值。
 func Messages(p *message.Printer) map[int]string {
 	return App().Messages(p)
 }

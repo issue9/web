@@ -50,6 +50,9 @@ func initApp(a *assert.Assertion) {
 		mimetypetest.MimeType:    mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
+
+	a.NotNil(ErrorHandlers())
+	a.Equal(1, len(Services())) // 默认有 scheduled 的服务在运行
 }
 
 func TestClassic(t *testing.T) {
@@ -63,6 +66,29 @@ func TestClassic(t *testing.T) {
 	a.True(IsDebug())
 	a.Equal(URL("/test/abc.png"), "http://localhost:8082/test/abc.png")
 	a.Equal(Path("/test/abc.png"), "/test/abc.png")
+}
+
+func TestSchedulers(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
+
+	a.Empty(Schedulers())
+	Scheduled().NewAt("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
+	a.Equal(1, len(Schedulers()))
+}
+
+func TestMessages(t *testing.T) {
+	a := assert.New(t)
+	initApp(a)
+
+	a.Empty(Messages(nil))
+
+	AddMessages(http.StatusNotImplemented, map[int]string{
+		50010: "50010",
+		50011: "50011",
+	})
+
+	a.Equal(2, len(Messages(nil)))
 }
 
 func TestTime(t *testing.T) {
