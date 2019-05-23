@@ -16,6 +16,7 @@ import (
 
 	"github.com/issue9/web/internal/cmd/build"
 	"github.com/issue9/web/internal/cmd/create"
+	"github.com/issue9/web/internal/cmd/release"
 	"github.com/issue9/web/internal/cmd/version"
 	"github.com/issue9/web/internal/cmd/watch"
 )
@@ -30,6 +31,7 @@ func main() {
 	build.Init(opt)
 	create.Init(opt)
 	watch.Init(opt)
+	release.Init(opt)
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
 		panic(err)

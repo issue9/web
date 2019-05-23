@@ -12,6 +12,8 @@ import (
 	"os/exec"
 
 	"github.com/issue9/cmdopt"
+
+	"github.com/issue9/web/internal/versioninfo"
 )
 
 var flagset *flag.FlagSet
@@ -25,6 +27,13 @@ func do(output io.Writer) error {
 	args := make([]string, 0, len(flagset.Args())+1)
 	args = append(args, "build")
 	args = append(args, flagset.Args()...)
+
+	flag, err := versioninfo.LDFlags()
+	if err != nil {
+		return err
+	}
+	args = append(args, "ldflags", flag)
+
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = output
 	cmd.Stdout = output
@@ -33,6 +42,9 @@ func do(output io.Writer) error {
 }
 
 func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `编译当前程序，功能与 go build 完全相同！`)
+	_, err := fmt.Fprintln(output, `编译当前程序，功能与 go build 完全相同！
+
+如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
+固定格式为 YYYYMMDD。`)
 	return err
 }
