@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/version"
@@ -46,11 +47,18 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	// TODO 缓存 文件到 git
-	// 检测是否已经存在相同的 git tag
+	// 添加到 git 缓存中
+	cmd := exec.Command("git", "add", filepath.Join(v.Path(versioninfo.Path)))
+	cmd.Stderr = output
+	cmd.Stdout = output
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// TODO 检测是否已经存在相同的 git tag
 
 	// 输出 git 标签
-	cmd := exec.Command("git", "tag", "v"+ver)
+	cmd = exec.Command("git", "tag", "v"+ver)
 	cmd.Stderr = output
 	cmd.Stdout = output
 

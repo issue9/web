@@ -67,11 +67,16 @@ func findRoot(curr string) (string, error) {
 	}
 }
 
+// Path 返回基于当前项目根目录的文件地址
+func (v *VersionInfo) Path(p string) string {
+	return filepath.Join(v.root, p)
+}
+
 // DumpFile 输出版本信息文件
 //
 // ver 为需要指定的版本号
 func (v *VersionInfo) DumpFile(ver string) error {
-	p := filepath.Join(v.root, Path)
+	p := v.Path(Path)
 	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
 		return err
 	}
@@ -85,7 +90,7 @@ func (v *VersionInfo) DumpFile(ver string) error {
 // 返回格式为：
 //  -X xx.buildDate=20060102
 func (v *VersionInfo) LDFlags() (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(v.root, "go.mod"))
+	data, err := ioutil.ReadFile(v.Path("go.mod"))
 	if err != nil {
 		return "", err
 	}
