@@ -11,11 +11,12 @@ import (
 
 	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
+	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/module"
 )
 
 // Version 当前框架的版本
-const Version = "0.28.1"
+const Version = version.Version
 
 type (
 	// Context 一般在 http.ServeHTTP 中根据 http.ResponseWriter

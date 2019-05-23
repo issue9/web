@@ -17,18 +17,13 @@ import (
 	"strings"
 
 	"github.com/issue9/cmdopt"
-	"github.com/issue9/web"
+	"github.com/issue9/web/internal/version"
 )
 
 // 用于获取版本信息的 git 仓库地址
 //
 // 在测试环境会被修改为当前目录
 var repoURL = "https://github.com/issue9/web"
-
-var (
-	localVersion = web.Version
-	buildDate    string
-)
 
 var (
 	check   bool
@@ -38,9 +33,6 @@ var (
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	if buildDate != "" {
-		localVersion += "+" + buildDate
-	}
 
 	flagset = opt.New("version", do, usage)
 	flagset.BoolVar(&check, "c", false, "是否检测线上的最新版本")
@@ -56,7 +48,7 @@ func do(output io.Writer) error {
 		return getRemoteVersions(output)
 	}
 
-	_, err := fmt.Fprintf(output, "web:%s build with %s\n", localVersion, runtime.Version())
+	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version.FullVersion(), runtime.Version())
 	return err
 }
 
@@ -69,7 +61,7 @@ func checkRemoteVersion(output io.Writer) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(output, "local:%s build with %s\n", localVersion, runtime.Version())
+	_, err = fmt.Fprintf(output, "local:%s build with %s\n", version.FullVersion(), runtime.Version())
 	if err != nil {
 		return err
 	}

@@ -21,7 +21,7 @@ import (
 )
 
 // Path 指定版本化文件的路径
-const Path = "internal/version/_info.go"
+const Path = "internal/version/info.go"
 
 const (
 	buildDateName   = "buildDate"

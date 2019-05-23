@@ -1,25 +1,19 @@
-// Copyright 2019 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
-
-package versioninfo
-
-const versiongo = `// 由工具自动生成，不能修改！
+// 由工具自动生成，无需手动修改！
 
 package version
 
 // Version 版本号
 //
 // 版本号规则遵循 https://semver.org/lang/zh-CN/
-const Version = "%s"
+const Version = "0.28.3"
 
 // buildDate 编译日期，可以由编译器指定
-var %s string
+var buildDate string
 
 var fullVersion = Version
 
-func init()  {
-	if buildDate !=""{
+func init() {
+	if buildDate != "" {
 		fullVersion = Version + "+" + buildDate
 	}
 }
@@ -28,4 +22,3 @@ func init()  {
 func FullVersion() string {
 	return fullVersion
 }
-`

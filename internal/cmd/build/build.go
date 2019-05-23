@@ -28,7 +28,7 @@ func do(output io.Writer) error {
 	args = append(args, "build")
 	args = append(args, flagset.Args()...)
 
-	flag, err := versioninfo.LDFlags()
+	flag, err := versioninfo.LDFlags("./")
 	if err != nil {
 		return err
 	}
