@@ -28,10 +28,27 @@ const (
 	buildDateLayout = "20060102"
 )
 
-// FindRoot 查找项目的根目录
+// VersionInfo 版本信息的相关数据
+type VersionInfo struct {
+	root string
+}
+
+// New 声明 VersionInfo 变量
+func New(curr string) (*VersionInfo, error) {
+	root, err := findRoot(curr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &VersionInfo{
+		root: root,
+	}, nil
+}
+
+// findRoot 查找项目的根目录
 //
 // 从当前目录开始向上查找，以找到 go.mod 为准，如果没有 go.mod 则会失败。
-func FindRoot(curr string) (string, error) {
+func findRoot(curr string) (string, error) {
 	path, err := filepath.Abs(curr)
 	if err != nil {
 		return "", err
@@ -52,15 +69,9 @@ func FindRoot(curr string) (string, error) {
 
 // DumpFile 输出版本信息文件
 //
-// path 表示从哪里开始定位，位依次向上查找，直到找到 go.mod
 // ver 为需要指定的版本号
-func DumpFile(path, ver string) error {
-	root, err := FindRoot(path)
-	if err != nil {
-		return err
-	}
-
-	p := filepath.Join(root, Path)
+func (v *VersionInfo) DumpFile(ver string) error {
+	p := filepath.Join(v.root, Path)
 	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
 		return err
 	}
@@ -73,13 +84,8 @@ func DumpFile(path, ver string) error {
 // p 为开始查找的目录；
 // 返回格式为：
 //  -X xx.buildDate=20060102
-func LDFlags(p string) (string, error) {
-	p, err := FindRoot(p)
-	if err != nil {
-		return "", err
-	}
-
-	data, err := ioutil.ReadFile(filepath.Join(p, "/go.mod"))
+func (v *VersionInfo) LDFlags() (string, error) {
+	data, err := ioutil.ReadFile(filepath.Join(v.root, "go.mod"))
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +95,7 @@ func LDFlags(p string) (string, error) {
 	for s.Scan() {
 		line := strings.TrimSpace(s.Text())
 		if strings.HasPrefix(line, "module ") {
-			p = path.Join(line[len("module "):], Path)
+			p := path.Join(line[len("module "):], Path)
 			p = path.Dir(p)
 
 			date := time.Now().Format(buildDateLayout)

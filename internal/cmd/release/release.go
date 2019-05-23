@@ -37,9 +37,17 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	if err := versioninfo.DumpFile("./", ver); err != nil {
+	v, err := versioninfo.New("./")
+	if err != nil {
 		return err
 	}
+
+	if err := v.DumpFile(ver); err != nil {
+		return err
+	}
+
+	// TODO 缓存 文件到 git
+	// 检测是否已经存在相同的 git tag
 
 	// 输出 git 标签
 	cmd := exec.Command("git", "tag", "v"+ver)

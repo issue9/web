@@ -18,39 +18,42 @@ func TestFindRoot(t *testing.T) {
 
 	abs, err := filepath.Abs("../..")
 	a.NotError(err)
-	path, err := FindRoot("./")
+	path, err := findRoot("./")
 	a.NotError(err).Equal(path, abs)
 
 	abs, err = filepath.Abs("./testdata")
 	a.NotError(err)
-	path, err = FindRoot("./testdata")
+	path, err = findRoot("./testdata")
 	a.NotError(err).Equal(path, abs)
 
 	// 该目录不存在 go.mod
-	path, err = FindRoot("./../../../../")
+	path, err = findRoot("./../../../../")
 	a.Error(err).Empty(path)
 }
 
-func TestDumpFile(t *testing.T) {
+func TestVersionInfo_DumpFile(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(DumpFile("./testdata", "1.1.1"))
+	v, err := New("./testdata")
+	a.NotError(err).NotNil(v)
+
+	a.NotError(v.DumpFile("1.1.1"))
 	a.FileExists(filepath.Join("./testdata/", Path))
 }
 
-func TestLDFlags(t *testing.T) {
+func TestVersionInfoLDFlags(t *testing.T) {
 	a := assert.New(t)
 	now := time.Now().Format(buildDateLayout)
 
-	p, err := LDFlags("./testdata")
+	v, err := New("./testdata")
+	a.NotError(err).NotNil(v)
+	p, err := v.LDFlags()
 	a.NotError(err)
 	a.Equal(p, fmt.Sprintf("\"-X testdata/v2/internal/version.buildDate=%s\"", now))
 
-	p, err = LDFlags("./")
+	v, err = New("./")
+	a.NotError(err).NotNil(v)
+	p, err = v.LDFlags()
 	a.NotError(err)
 	a.Equal(p, fmt.Sprintf("\"-X github.com/issue9/web/internal/version.buildDate=%s\"", now))
-
-	// 不存在 go.mod
-	p, err = LDFlags("../../../")
-	a.Error(err).Empty(p)
 }
