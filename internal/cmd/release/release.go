@@ -55,6 +55,13 @@ func do(output io.Writer) error {
 		return err
 	}
 
+	cmd = exec.Command("git", "commit", "-m", "v"+ver)
+	cmd.Stderr = output
+	cmd.Stdout = output
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
 	// TODO 检测是否已经存在相同的 git tag
 
 	// 输出 git 标签
