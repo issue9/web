@@ -12,6 +12,7 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/version"
@@ -55,7 +56,12 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	cmd = exec.Command("git", "commit", "-m", "v"+ver)
+	var message string
+	if len(flagset.Args()) > 1 {
+		message = strings.Join(flagset.Args()[:1], " ")
+	}
+
+	cmd = exec.Command("git", "commit", "-m", message)
 	cmd.Stderr = output
 	cmd.Stdout = output
 	if err := cmd.Run(); err != nil {
