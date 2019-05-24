@@ -25,7 +25,6 @@ func Init(opt *cmdopt.CmdOpt) {
 
 func do(output io.Writer) error {
 	args := make([]string, 0, len(flagset.Args())+1)
-	args = append(args, "build")
 	args = append(args, flagset.Args()...)
 
 	v, err := versioninfo.New("./")
@@ -37,7 +36,9 @@ func do(output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	args = append(args, "ldflags", flag)
+	if flag != "" {
+		args = append(args, "-ldflags", flag)
+	}
 
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = output
