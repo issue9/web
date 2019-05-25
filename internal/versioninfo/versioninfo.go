@@ -104,7 +104,7 @@ func (v *VersionInfo) LDFlags() (string, error) {
 			p = path.Dir(p)
 
 			date := time.Now().Format(buildDateLayout)
-			return fmt.Sprintf(`"-X %s.%s=%s"`, p, buildDateName, date), nil
+			return fmt.Sprintf("-X %s.%s=%s", p, buildDateName, date), nil
 		}
 	}
 
