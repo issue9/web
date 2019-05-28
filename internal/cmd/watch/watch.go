@@ -15,6 +15,8 @@ import (
 
 	"github.com/caixw/gobuild"
 	"github.com/issue9/cmdopt"
+
+	"github.com/issue9/web/internal/versioninfo"
 )
 
 var (
@@ -42,9 +44,19 @@ func do(output io.Writer) error {
 	}
 	dirs := append([]string{wd}, flag.Args()...)
 
+	v, err := versioninfo.New("./")
+	if err != nil {
+		return err
+	}
+	ld, err := v.LDFlags()
+	if err != nil {
+		return err
+	}
+	flags := map[string]string{"ld": ld}
+
 	logs := gobuild.NewConsoleLogs(showIgnore)
 	defer logs.Stop()
-	return gobuild.Build(logs.Logs, mainFiles, outputName, extString, recursive, appArgs, dirs...)
+	return gobuild.Build(logs.Logs, mainFiles, outputName, flags, extString, recursive, appArgs, dirs...)
 }
 
 func usage(output io.Writer) error {
