@@ -19,8 +19,8 @@ var %s string
 var fullVersion = Version
 
 func init()  {
-	if buildDate !=""{
-		fullVersion = Version + "+" + buildDate
+	if %s !=""{
+		fullVersion = Version + "+" + %s
 	}
 }
 

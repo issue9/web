@@ -81,7 +81,7 @@ func (v *VersionInfo) DumpFile(ver string) error {
 		return err
 	}
 
-	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName))
+	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName, buildDateName, buildDateName))
 }
 
 // LDFlags 获取 ldflags 的参数
