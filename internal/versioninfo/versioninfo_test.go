@@ -49,11 +49,11 @@ func TestVersionInfoLDFlags(t *testing.T) {
 	a.NotError(err).NotNil(v)
 	p, err := v.LDFlags()
 	a.NotError(err)
-	a.Equal(p, fmt.Sprintf("\"-X testdata/v2/internal/version.buildDate=%s\"", now))
+	a.Equal(p, fmt.Sprintf("-X testdata/v2/internal/version.buildDate=%s", now))
 
 	v, err = New("./")
 	a.NotError(err).NotNil(v)
 	p, err = v.LDFlags()
 	a.NotError(err)
-	a.Equal(p, fmt.Sprintf("\"-X github.com/issue9/web/internal/version.buildDate=%s\"", now))
+	a.Equal(p, fmt.Sprintf("-X github.com/issue9/web/internal/version.buildDate=%s", now))
 }

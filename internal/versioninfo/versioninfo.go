@@ -86,7 +86,6 @@ func (v *VersionInfo) DumpFile(ver string) error {
 
 // LDFlags 获取 ldflags 的参数
 //
-// p 为开始查找的目录；
 // 返回格式为：
 //  -X xx.buildDate=20060102
 func (v *VersionInfo) LDFlags() (string, error) {
