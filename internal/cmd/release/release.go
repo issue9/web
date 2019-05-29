@@ -103,7 +103,7 @@ func usage(output io.Writer) error {
 git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
 
 一般用法：
-git release 0.1.1 [commit message]
+web release 0.1.1 [commit message]
 `, versioninfo.Path, versioninfo.Path)
 
 	return err
