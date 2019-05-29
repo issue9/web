@@ -29,6 +29,7 @@ import (
 type App struct {
 	http.Server
 
+	uptime        time.Time
 	middlewares   *middleware.Manager
 	router        *mux.Prefix
 	services      []*Service
@@ -61,6 +62,7 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
 			Handler:           middlewares,
 		},
+		uptime:        time.Now().In(conf.Location),
 		middlewares:   middlewares,
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
@@ -86,6 +88,13 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 	app.buildMiddlewares(conf)
 
 	return app
+}
+
+// Uptime 启动的时间
+//
+// 时区信息与配置文件中的相同
+func (app *App) Uptime() time.Time {
+	return app.uptime
 }
 
 // AddCompresses 添加压缩处理函数

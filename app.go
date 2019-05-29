@@ -275,3 +275,10 @@ func Now() time.Time {
 func ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, Location())
 }
+
+// Uptime 启动的时间
+//
+// 时区信息与配置文件中的相同
+func Uptime() time.Time {
+	return App().Uptime()
+}
