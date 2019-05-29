@@ -87,6 +87,8 @@ func getRemoteVersions(output io.Writer) error {
 
 // 获取线上的标签列表。
 func getRemoteTags() ([]string, error) {
+	// 返回以下格式内容
+	// a07f91201239035ebf85a6423016a6b736b0d037	refs/tags/v0.16.2
 	cmd := exec.Command("git", "ls-remote", "--tags", repoURL)
 	buf := new(bytes.Buffer)
 	cmd.Stdout = buf

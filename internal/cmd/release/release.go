@@ -6,7 +6,7 @@
 package release
 
 import (
-	"errors"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -28,10 +28,18 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	ver := flagset.Arg(0)
+	ver := flagset.Arg(1)
 
+	// 没有多余的参数，则会显示当前已有的版本号列表
 	if ver == "" {
-		return errors.New("必须指定一个版本号")
+		buf, err := tags()
+		if err != nil {
+			return err
+		}
+		if _, err = buf.WriteTo(output); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if !version.SemVerValid(ver) {
@@ -48,17 +56,20 @@ func do(output io.Writer) error {
 		return err
 	}
 
+	// 没有提交消息，则不提交内容到 VCS
+	if len(flagset.Args()) <= 2 {
+		return nil
+	}
+
+	var message string
+	message = strings.Join(flagset.Args()[:2], " ")
+
 	// 添加到 git 缓存中
 	cmd := exec.Command("git", "add", filepath.Join(v.Path(versioninfo.Path)))
 	cmd.Stderr = output
 	cmd.Stdout = output
 	if err := cmd.Run(); err != nil {
 		return err
-	}
-
-	var message string
-	if len(flagset.Args()) > 1 {
-		message = strings.Join(flagset.Args()[:1], " ")
 	}
 
 	cmd = exec.Command("git", "commit", "-m", message)
@@ -76,6 +87,18 @@ func do(output io.Writer) error {
 	cmd.Stdout = output
 
 	return cmd.Run()
+}
+
+func tags() (*bytes.Buffer, error) {
+	cmd := exec.Command("git", "tag")
+	buf := new(bytes.Buffer)
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }
 
 func usage(output io.Writer) error {
