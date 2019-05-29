@@ -34,6 +34,10 @@ func do(output io.Writer) error {
 		return outputTags(output)
 	}
 
+	if ver[0] == 'v' || ver[0] == 'V' {
+		ver = ver[1:]
+	}
+
 	if !version.SemVerValid(ver) {
 		_, err := fmt.Fprintf(output, "无效的版本号格式：%s", ver)
 		return err
@@ -71,8 +75,6 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	// TODO 检测是否已经存在相同的 git tag
-
 	// 输出 git 标签
 	cmd = exec.Command("git", "tag", "v"+ver)
 	cmd.Stderr = output
@@ -92,11 +94,12 @@ func usage(output io.Writer) error {
 	_, err := fmt.Fprintf(output, `为当前程序发布一个新版本
 
 该操作会在项目的根目录下添加 %s 文件，
-并在其中写入版本信息。同时会通过 git tag 命令添加一条 tag 信息。
-之后通过 web build 编译，会更新 %s 中的
-buildDate 信息，但不会写入文件。
+并在其中写入版本信息。之后通过 web build 编译，
+会更新 %s 中的 buildDate 信息，但不会写入文件。
+同时根据参数决定是否用 git tag 命令添加一条 tag 信息。
 
-版本号的固定格式为 major.minjor.patch，比如 1.0.1，
+
+版本号的固定格式为 major.minjor.patch，比如 1.0.1，当然 v1.0.1 也会被正确处理。
 git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
 
 一般用法：
