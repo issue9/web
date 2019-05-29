@@ -6,7 +6,6 @@
 package release
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -32,14 +31,7 @@ func do(output io.Writer) error {
 
 	// 没有多余的参数，则会显示当前已有的版本号列表
 	if ver == "" {
-		buf, err := tags()
-		if err != nil {
-			return err
-		}
-		if _, err = buf.WriteTo(output); err != nil {
-			return err
-		}
-		return nil
+		return outputTags(output)
 	}
 
 	if !version.SemVerValid(ver) {
@@ -89,16 +81,11 @@ func do(output io.Writer) error {
 	return cmd.Run()
 }
 
-func tags() (*bytes.Buffer, error) {
+func outputTags(output io.Writer) error {
 	cmd := exec.Command("git", "tag")
-	buf := new(bytes.Buffer)
-	cmd.Stdout = buf
+	cmd.Stdout = output
 
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-
-	return buf, nil
+	return cmd.Run()
 }
 
 func usage(output io.Writer) error {
