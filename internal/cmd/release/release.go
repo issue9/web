@@ -58,7 +58,7 @@ func do(output io.Writer) error {
 	}
 
 	var message string
-	message = strings.Join(flagset.Args()[:2], " ")
+	message = strings.Join(flagset.Args()[2:], " ")
 
 	// 添加到 git 缓存中
 	cmd := exec.Command("git", "add", filepath.Join(v.Path(versioninfo.Path)))
