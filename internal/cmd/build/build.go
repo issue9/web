@@ -32,6 +32,7 @@ func do(output io.Writer) error {
 		return err
 	}
 
+	// flag 参数添加在最后，保证不会被其它设置顶替
 	flag, err := v.LDFlags()
 	if err != nil {
 		return err
