@@ -109,5 +109,8 @@ func TestModules_Tags(t *testing.T) {
 	m3.NewTag("v4")
 
 	tags := ms.Tags()
-	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+	a.Equal(3, len(tags))
+	a.Equal(tags["users1"], []string{"v1", "v2"}).
+		Equal(tags["users2"], []string{"v1", "v3"}).
+		Equal(tags["users3"], []string{"v1", "v4"})
 }

@@ -13,6 +13,11 @@ func Modules() []*Module {
 	return modules.Modules()
 }
 
+// Tags 按模块返回各自的标签列表
+func Tags() map[string][]string {
+	return modules.Tags()
+}
+
 // NewModule 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；

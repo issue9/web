@@ -130,24 +130,19 @@ func (ms *Modules) Init(tag string, info *log.Logger) error {
 }
 
 // Tags 返回所有的子模块名称
-func (ms *Modules) Tags() []string {
-	tags := make([]string, 0, len(ms.modules)*2)
+func (ms *Modules) Tags() map[string][]string {
+	ret := make(map[string][]string, len(ms.modules)*2)
 
 	for _, m := range ms.modules {
-	LOOP:
+		tags := make([]string, 0, len(m.tags))
 		for k := range m.tags {
-			for _, v := range tags {
-				if v == k {
-					continue LOOP
-				}
-			}
 			tags = append(tags, k)
 		}
+		sort.Strings(tags)
+		ret[m.Name] = tags
 	}
 
-	sort.Strings(tags)
-
-	return tags
+	return ret
 }
 
 // Modules 当前系统使用的所有模块信息
