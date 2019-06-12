@@ -20,7 +20,7 @@ func (app *App) Scheduled() *scheduled.Server {
 
 func (app *App) scheduledService(ctx context.Context) error {
 	go func() {
-		if err := app.scheduled.Serve(app.logs.ERROR()); err != nil {
+		if err := app.scheduled.Serve(app.logs.ERROR(), app.logs.INFO()); err != nil {
 			app.Logs().Error(err)
 		}
 	}()
