@@ -290,6 +290,13 @@ func (ctx *Context) ResetContent() {
 	errorhandler.Exit(http.StatusResetContent)
 }
 
+// NotFound 404
+//
+// 接受统一的 errorhandler 模板支配
+func (ctx *Context) NotFound() {
+	ctx.Response.WriteHeader(http.StatusNotFound)
+}
+
 // NotImplemented 501
 //
 // 接受统一的 errorhandler 模板支配

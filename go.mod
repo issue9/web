@@ -4,7 +4,7 @@ require (
 	github.com/caixw/gobuild v0.8.0
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/golang/protobuf v1.3.1
-	github.com/issue9/assert v1.3.2
+	github.com/issue9/assert v1.3.3
 	github.com/issue9/cmdopt v0.3.2
 	github.com/issue9/config v0.1.0
 	github.com/issue9/conv v1.1.0
