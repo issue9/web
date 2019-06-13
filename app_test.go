@@ -73,7 +73,7 @@ func TestSchedulers(t *testing.T) {
 	initApp(a)
 
 	a.Empty(Schedulers())
-	Scheduled().NewAt("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
+	Scheduled().At("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
 	a.Equal(1, len(Schedulers()))
 }
 

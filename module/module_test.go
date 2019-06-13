@@ -41,7 +41,7 @@ func TestModules_Init(t *testing.T) {
 	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
 
 	m2 := ms.New("m2", "m2 desc")
-	m2.AddTicker("ticker test", job, 5*time.Second, false)
+	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
 
 	a.Equal(len(ms.Modules()), 2)
 

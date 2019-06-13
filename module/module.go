@@ -160,7 +160,7 @@ func (ms *Modules) Modules() []*Module {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddCron(title string, f app.JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().NewCron(title, f, spec, delay)
+		return m.ms.app.Scheduled().Cron(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -168,10 +168,11 @@ func (m *Module) AddCron(title string, f app.JobFunc, spec string, delay bool) {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明；
+// imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, delay bool) {
+func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, imm, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().NewTicker(title, f, dur, delay)
+		return m.ms.app.Scheduled().Tick(title, f, dur, imm, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -183,7 +184,7 @@ func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, delay
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddAt(title string, f app.JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().NewAt(title, f, spec, delay)
+		return m.ms.app.Scheduled().At(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
