@@ -130,6 +130,8 @@ func (ms *Modules) Init(tag string, info *log.Logger) error {
 }
 
 // Tags 返回所有的子模块名称
+//
+// 键名为模块名称，键值为该模块下的标签列表
 func (ms *Modules) Tags() map[string][]string {
 	ret := make(map[string][]string, len(ms.modules)*2)
 
