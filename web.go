@@ -7,6 +7,7 @@ package web
 import (
 	"net/http"
 
+	"github.com/issue9/config"
 	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/app"
@@ -44,7 +45,17 @@ type (
 
 	// Tag 等同于 module.Tag，方便调用者使用
 	Tag = module.Tag
+
+	// ConfigManager 配置管理
+	//
+	// 管理不同类型的文件加载，等同于 github.com/issue9/config.Manager
+	ConfigManager = config.Manager
 )
+
+// NewConfigManager 声明 ConfigManager 实例
+func NewConfigManager(dir string) (*ConfigManager, error) {
+	return config.NewManager(dir)
+}
 
 // NewContext 生成 *Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {

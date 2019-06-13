@@ -13,8 +13,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/issue9/config"
-	lconf "github.com/issue9/logs/v2/config"
+	"github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/recovery/errorhandler"
@@ -38,7 +37,7 @@ const (
 )
 
 var (
-	defaultConfigs *config.Manager
+	defaultConfigs *ConfigManager
 	defaultApp     *app.App
 )
 
@@ -46,7 +45,7 @@ var (
 //
 // dir 为配置文件的根目录
 func Classic(dir string, get app.GetResultFunc) error {
-	mgr, err := config.NewManager(dir)
+	mgr, err := NewConfigManager(dir)
 	if err != nil {
 		return err
 	}
@@ -65,7 +64,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 		return err
 	}
 
-	lc := &lconf.Config{}
+	lc := &config.Config{}
 	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
 		return err
 	}
@@ -105,7 +104,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 // configFilename 为相对于 mgr 目录下的配置文件地址。
 //
 // 重复调用会直接 panic
-func Init(mgr *config.Manager, configFilename string, get app.GetResultFunc) error {
+func Init(mgr *ConfigManager, configFilename string, get app.GetResultFunc) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
