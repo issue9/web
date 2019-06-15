@@ -33,7 +33,7 @@ func FullVersion() string {
 }
 
 // CommitHash 最后一次提示我的 hash 值
-func FullVersion() string {
-	return fullVersion
+func CommitHash() string {
+	return %s
 }
 `
