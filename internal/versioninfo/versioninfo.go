@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,7 @@ const Path = "internal/version/info.go"
 const (
 	buildDateName   = "buildDate"
 	buildDateLayout = "20060102"
+	commitHashName  = "commitHash"
 )
 
 // VersionInfo 版本信息的相关数据
@@ -81,18 +83,20 @@ func (v *VersionInfo) DumpFile(ver string) error {
 		return err
 	}
 
-	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName, buildDateName, buildDateName))
+	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName))
 }
 
 // LDFlags 获取 ldflags 的参数
 //
 // 返回格式为：
-//  -X xx.buildDate=20060102
+//  -X xx.buildDate=20060102 xx.commitHash=adfaewfwex
 func (v *VersionInfo) LDFlags() (string, error) {
 	data, err := ioutil.ReadFile(v.Path("go.mod"))
 	if err != nil {
 		return "", err
 	}
+
+	var moduleName string
 
 	s := bufio.NewScanner(bytes.NewBuffer(data))
 	s.Split(bufio.ScanLines)
@@ -100,12 +104,21 @@ func (v *VersionInfo) LDFlags() (string, error) {
 		line := strings.TrimSpace(s.Text())
 		if strings.HasPrefix(line, "module ") {
 			p := path.Join(line[len("module "):], Path)
-			p = path.Dir(p)
-
-			date := time.Now().Format(buildDateLayout)
-			return fmt.Sprintf("-X %s.%s=%s", p, buildDateName, date), nil
+			moduleName = path.Dir(p)
+			break
 		}
 	}
+	if moduleName == "" {
+		return "", errors.New("go.mod 中未找到 module 语句")
+	}
 
-	return "", errors.New("go.mod 中未找到 module 语句")
+	var buf strings.Builder
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	cmd.Stdout = &buf
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	date := time.Now().Format(buildDateLayout)
+	return fmt.Sprintf("-X %s.%s=%s %s.%s=%s", moduleName, buildDateName, date, moduleName, commitHashName, buf.String()), nil
 }
