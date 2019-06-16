@@ -49,6 +49,11 @@ func do(output io.Writer) error {
 	}
 
 	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version.FullVersion(), runtime.Version())
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(output, "commit hash %s\n", version.CommitHash())
 	return err
 }
 

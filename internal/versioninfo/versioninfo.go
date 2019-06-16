@@ -120,5 +120,5 @@ func (v *VersionInfo) LDFlags() (string, error) {
 	}
 
 	date := time.Now().Format(buildDateLayout)
-	return fmt.Sprintf("-X %s.%s=%s %s.%s=%s", moduleName, buildDateName, date, moduleName, commitHashName, buf.String()), nil
+	return fmt.Sprintf("-X %s.%s=%s -X %s.%s=%s", moduleName, buildDateName, date, moduleName, commitHashName, buf.String()), nil
 }
