@@ -4,14 +4,15 @@ require (
 	github.com/caixw/gobuild v0.8.0
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/golang/protobuf v1.3.1
-	github.com/issue9/assert v1.3.3
+	github.com/issue9/assert v1.3.4
 	github.com/issue9/cmdopt v0.3.2
 	github.com/issue9/config v0.1.0
 	github.com/issue9/conv v1.1.0
-	github.com/issue9/is v1.3.0
+	github.com/issue9/is v1.3.3
 	github.com/issue9/logs/v2 v2.4.0
 	github.com/issue9/middleware v1.6.0
 	github.com/issue9/mux/v2 v2.3.2
+	github.com/issue9/qheader v0.2.0
 	github.com/issue9/query v1.0.1
 	github.com/issue9/scheduled v0.5.0
 	github.com/issue9/term v1.1.0

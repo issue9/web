@@ -19,6 +19,6 @@
 # macOS
 .DS_Store
 
-.idea/
-.vscode/
+.idea
+.vscode
 **/testdata/logs/*
