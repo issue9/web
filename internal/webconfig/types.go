@@ -7,6 +7,7 @@ package webconfig
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"io"
 	"time"
 )
@@ -45,7 +46,7 @@ func (p *pairs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 	for {
 		e := &entry{}
-		if err := d.Decode(e); err == io.EOF {
+		if err := d.Decode(e); errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return err

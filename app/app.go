@@ -160,7 +160,7 @@ func (app *App) Run() (err error) {
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		<-app.closed
 	}
 	return err
