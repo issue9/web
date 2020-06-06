@@ -20,6 +20,11 @@ import (
 	"github.com/issue9/web/internal/version"
 )
 
+const usage = `显示当前程序的版本号
+
+语法：web version [options]
+options`
+
 // 用于获取版本信息的 git 仓库地址
 //
 // 在测试环境会被修改为当前目录
@@ -34,7 +39,7 @@ var (
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
 
-	flagset = opt.New("version", do, usage)
+	flagset = opt.New("version", usage, do)
 	flagset.BoolVar(&check, "c", false, "是否检测线上的最新版本")
 	flagset.BoolVar(&list, "l", false, "显示所有版本号")
 }
@@ -117,19 +122,4 @@ func getRemoteTags() ([]string, error) {
 	sort.Sort(sort.Reverse(sort.StringSlice(tags)))
 
 	return tags, nil
-}
-
-func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `显示当前程序的版本号
-
-语法：web version [options]
-options`)
-
-	if err != nil {
-		return err
-	}
-
-	flagset.PrintDefaults()
-
-	return nil
 }

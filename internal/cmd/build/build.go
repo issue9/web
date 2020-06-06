@@ -7,7 +7,6 @@ package build
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"os/exec"
 
@@ -16,11 +15,16 @@ import (
 	"github.com/issue9/web/internal/versioninfo"
 )
 
+const usage = `编译当前程序，功能与 go build 完全相同！
+
+如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
+固定格式为 YYYYMMDD。`
+
 var flagset *flag.FlagSet
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	flagset = opt.New("build", do, usage)
+	flagset = opt.New("build", usage, do)
 }
 
 func do(output io.Writer) error {
@@ -46,12 +50,4 @@ func do(output io.Writer) error {
 	cmd.Stdout = output
 
 	return cmd.Run()
-}
-
-func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `编译当前程序，功能与 go build 完全相同！
-
-如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
-固定格式为 YYYYMMDD。`)
-	return err
 }

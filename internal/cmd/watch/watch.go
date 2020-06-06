@@ -9,7 +9,6 @@ package watch
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"os"
 
@@ -18,6 +17,28 @@ import (
 
 	"github.com/issue9/web/internal/versioninfo"
 )
+
+const usage = `热编译当前目录下的项目
+
+常见用法:
+
+ web watch 
+   监视当前目录，若有变动，则重新编译当前目录下的 *.go 文件；
+
+ web watch -main=main.go
+   监视当前目录，若有变动，则重新编译当前目录下的 main.go 文件；
+
+ web watch -main="main.go" dir1 dir2
+   监视当前目录及 dir1 和 dir2，若有变动，则重新编译当前目录下的 main.go 文件；
+
+命令行语法：
+ web watch [options] [dependents]
+
+ dependents:
+  指定其它依赖的目录，只能出现在命令的尾部。
+
+
+NOTE: 不会监视隐藏文件和隐藏目录下的文件。`
 
 var (
 	recursive, showIgnore                     bool
@@ -28,7 +49,7 @@ var (
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	flagset = opt.New("watch", do, usage)
+	flagset = opt.New("watch", usage, do)
 	flagset.BoolVar(&recursive, "r", true, "是否查找子目录；")
 	flagset.BoolVar(&showIgnore, "i", false, "是否显示被标记为 IGNORE 的日志内容；")
 	flagset.StringVar(&outputName, "o", "", "指定输出名称，程序的工作目录随之改变；")
@@ -57,40 +78,4 @@ func do(output io.Writer) error {
 	logs := gobuild.NewConsoleLogs(showIgnore)
 	defer logs.Stop()
 	return gobuild.Build(logs.Logs, mainFiles, outputName, flags, extString, recursive, appArgs, dirs...)
-}
-
-func usage(output io.Writer) error {
-	_, err := fmt.Fprintln(output, `热编译当前目录下的项目
-
-命令行语法：
- web watch [options] [dependents]
-
- options:`)
-
-	if err != nil {
-		return err
-	}
-
-	flagset.PrintDefaults()
-
-	_, err = fmt.Fprintln(output, `
- dependents:
-  指定其它依赖的目录，只能出现在命令的尾部。
-
-
-常见用法:
-
- web watch 
-   监视当前目录，若有变动，则重新编译当前目录下的 *.go 文件；
-
- web watch -main=main.go
-   监视当前目录，若有变动，则重新编译当前目录下的 main.go 文件；
-
- web watch -main="main.go" dir1 dir2
-   监视当前目录及 dir1 和 dir2，若有变动，则重新编译当前目录下的 main.go 文件；
-
-
-NOTE: 不会监视隐藏文件和隐藏目录下的文件。`)
-
-	return err
 }

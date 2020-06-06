@@ -23,7 +23,7 @@ var flagset *flag.FlagSet
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-	flagset = opt.New("release", do, usage)
+	flagset = opt.New("release", usage(), do)
 }
 
 func do(output io.Writer) error {
@@ -90,8 +90,8 @@ func outputTags(output io.Writer) error {
 	return cmd.Run()
 }
 
-func usage(output io.Writer) error {
-	_, err := fmt.Fprintf(output, `为当前程序发布一个新版本
+func usage() string {
+	return fmt.Sprintf(`为当前程序发布一个新版本
 
 该操作会在项目的根目录下添加 %s 文件，
 并在其中写入版本信息。之后通过 web build 编译，
@@ -105,6 +105,4 @@ git tag 标签中会自动加上 v 前缀，变成 v1.0.1。
 一般用法：
 web release 0.1.1 [commit message]
 `, versioninfo.Path, versioninfo.Path)
-
-	return err
 }

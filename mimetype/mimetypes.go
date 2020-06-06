@@ -81,7 +81,7 @@ func (m *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 		return "", nil, ErrNotFound
 	}
 
-	accepts, err := qheader.Parse(header)
+	accepts, err := qheader.Parse(header, "*/*")
 	if err != nil {
 		return "", nil, err
 	}

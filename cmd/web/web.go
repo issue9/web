@@ -8,9 +8,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/issue9/cmdopt"
 
@@ -24,9 +22,11 @@ import (
 var opt *cmdopt.CmdOpt
 
 func main() {
-	opt = cmdopt.New(os.Stdout, flag.ExitOnError, usage)
+	opt = cmdopt.New(os.Stdout, flag.ExitOnError, header, "", "选项：", "子命令：", func(name string) string {
+		return fmt.Sprintf("未找到子命令 %s", name)
+	})
 
-	opt.Help("help")
+	opt.Help("help", "显示当前内容")
 	version.Init(opt)
 	build.Init(opt)
 	create.Init(opt)
@@ -38,12 +38,8 @@ func main() {
 	}
 }
 
-func usage(output io.Writer) error {
-	_, err := fmt.Fprintf(output, `web 命令是 github.com/issue9/web 框架提供的辅助工具。
+const header = `web 命令是 github.com/issue9/web 框架提供的辅助工具。
 
 目前支持以下子命令：%s
 详情可以通过 web help [subcommand] 进行查看。
-`, strings.Join(opt.Commands(), ","))
-
-	return err
-}
+`
