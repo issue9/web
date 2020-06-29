@@ -148,29 +148,41 @@ func TestWebConfig_buildHTTPS(t *testing.T) {
 
 	conf := &WebConfig{HTTPS: false}
 	a.NotError(conf.buildHTTPS())
-	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 80)
+	a.False(conf.HTTPS).
+		Nil(conf.Certificates).
+		Equal(conf.Port, 80)
 
 	// 指定端口
 	conf.Port = 8080
 	a.NotError(conf.buildHTTPS())
-	a.False(conf.HTTPS).Empty(conf.CertFile).Equal(conf.Port, 8080)
+	a.False(conf.HTTPS).
+		Nil(conf.Certificates).
+		Equal(conf.Port, 8080)
 
 	// 未指定 cert 和 key
 	conf.HTTPS = true
 	a.Error(conf.buildHTTPS())
 
 	conf = &WebConfig{
-		HTTPS:    true,
-		CertFile: "./testdata/cert.pem",
-		KeyFile:  "./testdata/key.pem",
+		HTTPS: true,
+		Certificates: []*Certificate{
+			{
+				Cert: "./testdata/cert.pem",
+				Key:  "./testdata/key.pem",
+			},
+		},
 	}
 	a.NotError(conf.buildHTTPS())
-	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 443)
+	a.True(conf.HTTPS).
+		Equal(1, len(conf.Certificates)).
+		Equal(conf.Port, 443)
 
 	// 指定端口
 	conf.Port = 8080
 	a.NotError(conf.buildHTTPS())
-	a.True(conf.HTTPS).NotEmpty(conf.CertFile).Equal(conf.Port, 8080)
+	a.True(conf.HTTPS).
+		Equal(1, len(conf.Certificates)).
+		Equal(conf.Port, 8080)
 }
 
 func TestWebConfig_buildURL(t *testing.T) {

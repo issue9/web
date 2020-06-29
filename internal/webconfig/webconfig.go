@@ -7,6 +7,7 @@ package webconfig
 
 import (
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -54,10 +55,9 @@ type WebConfig struct {
 	// 这两个文件最终会被传递给 http.ListenAndServeTLS() 的两个参数。
 	//
 	// 此值还会影响 Port 的默认值。
-	HTTPS    bool   `yaml:"https,omitempty" json:"https,omitempty" xml:"https,omitempty"`
-	CertFile string `yaml:"certFile,omitempty" json:"certFile,omitempty" xml:"certFile,omitempty"`
-	KeyFile  string `yaml:"keyFile,omitempty" json:"keyFile,omitempty" xml:"keyFile,omitempty"`
-	Port     int    `yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
+	HTTPS        bool           `yaml:"https,omitempty" json:"https,omitempty" xml:"https,omitempty"`
+	Port         int            `yaml:"port,omitempty" json:"port,omitempty" xml:"port,omitempty"`
+	Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
 
 	// DisableOptions 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
 	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,omitempty"`
@@ -117,6 +117,29 @@ type WebConfig struct {
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	Location *time.Location `yaml:"-" json:"-" xml:"-"`
+}
+
+// Certificate 证书管理
+type Certificate struct {
+	Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
+	Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+}
+
+func (cert *Certificate) sanitize() *config.Error {
+	exists := func(path string) bool {
+		_, err := os.Stat(path)
+		return err == nil || os.IsExist(err)
+	}
+
+	if !exists(cert.Cert) {
+		return &config.Error{Field: "cert", Message: "文件不存在"}
+	}
+
+	if !exists(cert.Key) {
+		return &config.Error{Field: "key", Message: "文件不存在"}
+	}
+
+	return nil
 }
 
 // Sanitize 修正可修正的内容，返回不可修正的错误。
@@ -220,12 +243,15 @@ func isURLPath(path string) bool {
 
 func (conf *WebConfig) buildHTTPS() error {
 	if conf.HTTPS {
-		if !utils.FileExists(conf.CertFile) {
-			return &config.Error{Field: "certFile", Message: "文件不存在"}
+		if len(conf.Certificates) == 0 {
+			return &config.Error{Field: "certificates", Message: "必须指定证书"}
 		}
 
-		if !utils.FileExists(conf.KeyFile) {
-			return &config.Error{Field: "keyFile", Message: "文件不存在"}
+		for i, cert := range conf.Certificates {
+			if err := cert.sanitize(); err != nil {
+				err.Field = "certificates[" + strconv.Itoa(i) + "]." + err.Field
+				return err
+			}
 		}
 	}
 

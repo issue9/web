@@ -7,6 +7,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"strconv"
@@ -155,7 +156,18 @@ func (app *App) Run() (err error) {
 	if !conf.HTTPS {
 		err = app.ListenAndServe()
 	} else {
-		err = app.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
+		cfg := &tls.Config{}
+		for _, certificate := range conf.Certificates {
+			cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
+			if err != nil {
+				return err
+			}
+			cfg.Certificates = append(cfg.Certificates, cert)
+		}
+		cfg.BuildNameToCertificate()
+
+		app.TLSConfig = cfg
+		err = app.ListenAndServeTLS("", "")
 	}
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
