@@ -10,7 +10,7 @@
 //
 //  func handle(w http.ResponseWriter, r *http.Request) {
 //      ctx := web.New(w, r)
-//      ctx.Render(html.Tpl("index", map[string]interface{}{...}))
+//      ctx.Render(200, html.Tpl("index", map[string]interface{}{...}), nil)
 //  }
 package html
 

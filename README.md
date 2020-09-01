@@ -1,11 +1,11 @@
 web
 [![Build Status](https://travis-ci.org/issue9/web.svg?branch=master)](https://travis-ci.org/issue9/web)
-[![Go version](https://img.shields.io/badge/Go-1.11-brightgreen.svg?style=flat)](https://golang.org)
+[![Go version](https://img.shields.io/badge/Go-1.13-brightgreen.svg?style=flat)](https://golang.org)
 [![Go Report Card](https://goreportcard.com/badge/github.com/issue9/web)](https://goreportcard.com/report/github.com/issue9/web)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/issue9/web/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/web)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/web)](https://pkg.go.dev/github.com/issue9/web)
 ======
-
 
 web 是一个比较完整的 API 开发框架，相对于简单的路由，提供了更多的便利功能。
 
@@ -43,11 +43,12 @@ func Init() {
 }
 ```
 
-
-#### 项目结构
+项目结构
+---
 
 这只是推荐的目录结构，但不是必须按照此来。
-```
+
+```text
 +----- common 一些公用的包
 |
 +----- modules 各个模块的代码
@@ -68,10 +69,12 @@ func Init() {
 |
 ```
 
-##### 模块
+模块
+---
 
 项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
 用于向框架注册当前模块的一些主要信息。通过 `web.NewModule` 注册模块：
+
 ```go
 package m1
 
@@ -89,14 +92,13 @@ m.AddService(func(ctx context.Context) error {
 }, "服务描述")
 ```
 
-
-
-#### 配置文件
+配置文件
+---
 
 通过 web.Classic() 函数，可以在初始化时指定配置文件，文件格式可以是 XML、JSON 和
 YAML。用户也可以自行添加新的格式支持。
 
-##### web.yaml
+#### web.yaml
 
 以下是该文件的所有配置项：
 
@@ -126,29 +128,24 @@ YAML。用户也可以自行添加新的格式支持。
 
 *详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*
 
-
 在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
 
-
-
-##### logs.xml
+#### logs.xml
 
 `logs.xml` 采用 [logs](https://github.com/issue9/logs) 包的功能，具体的配置可参考其文档。
-
-
 
 #### 字符集
 
 字符集用户无须任何操作，会自动根据 `Content-Type` 中的 charset 属性自动解析其字符集，
 输出时，也会根据 `Accept-Charset` 报头内容，作自动转换之后再输出。以下字符集都被支持：
-https://www.iana.org/assignments/character-sets/character-sets.xhtml
-
+<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
 
 #### 媒体类型
 
 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
 `Mimetypes().AddMarshals()` 和 `Mimetypes().AddUnmarshals()` 添加相关的处理函数。
 添加方式如下：
+
 ```go
 Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
     "application/json": json.Marshal,
@@ -157,12 +154,11 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
     "application/json": json.Unmarshal,
 })
 ```
+
 之后，通过 `web.NewContext()` 获得的 `Context` 对象，会根据用户的
 `Accept` 和 `Content-Type` 自动使用相应的解析和输出格式。
 
 当然用户也可以直接构建一个 `Context` 对象来生成一个一次性的对象。
-
-
 
 #### 错误处理
 
@@ -171,9 +167,8 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 
 具体可参考代 internal/resulttest 中的相关代码。
 
-
-
-### 安装
+安装
+---
 
 ```shell
 go get github.com/issue9/web
@@ -181,15 +176,13 @@ go get github.com/issue9/web
 
 同时还提供了一个辅助工具 web，可通过调用 `./build/web.sh` 进行编译。
 
-
-
-### 文档
+文档
+----
 
 [![Go Walker](https://gowalker.org/api/v1/badge)](https://gowalker.org/github.com/issue9/web)
-[![GoDoc](https://godoc.org/github.com/issue9/web?status.svg)](https://godoc.org/github.com/issue9/web)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/web)](https://pkg.go.dev/github.com/issue9/web)
 
-
-
-### 版权
+版权
+---
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 开源授权许可证，完整的授权说明可在 [LICENSE](LICENSE) 文件中找到。
