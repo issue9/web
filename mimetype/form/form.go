@@ -5,7 +5,7 @@
 //  func read(w http.ResponseWriter, r *http.Request) {
 //      ctx := web.New(w, r)
 //      vals := urls.Values{}
-//      !ctx.Read(vals)
+//      ctx.Read(vals)
 //  }
 //
 //  func write(w http.ResponseWriter, r *http.Request) {

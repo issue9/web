@@ -3,9 +3,11 @@
 package form
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"github.com/issue9/conv"
@@ -15,9 +17,11 @@ import (
 const Tag = "form"
 
 // 将 v 转换成 form-data 格式的数据
+//
+// NOTE: form-data 中不需要考虑 omitempt 的情况，因为无法处理数组和切片在有没有 omitempty 下的区别。
 func marshal(v interface{}) (url.Values, error) {
 	objs := map[string]reflect.Value{}
-	if err := getObjectMap(objs, reflect.ValueOf(v)); err != nil {
+	if err := getFields(objs, "", reflect.ValueOf(v)); err != nil {
 		return nil, err
 	}
 
@@ -39,26 +43,135 @@ func marshal(v interface{}) (url.Values, error) {
 
 // 将  form-data 数据转换到 v 中
 func unmarshal(vals url.Values, obj interface{}) error {
-	objs := map[string]reflect.Value{}
-	if err := getObjectMap(objs, reflect.ValueOf(obj)); err != nil {
-		return err
+	val := reflect.ValueOf(obj)
+	for k, v := range vals {
+		if err := setField(val, strings.Split(k, "."), v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setField(obj reflect.Value, names []string, val []string) error {
+	for obj.Kind() == reflect.Ptr {
+		if obj.IsNil() {
+			obj.Set(reflect.New(obj.Type().Elem()))
+		}
+		obj = obj.Elem()
 	}
 
-	for k, v := range vals {
-		field, found := objs[k]
-		if !found { // 忽略未定义的字段
-			continue
+	if len(names) == 0 {
+		ok := obj.Kind()
+		if ok == reflect.Slice || ok == reflect.Array {
+			return conv.Value(val, obj)
+		}
+		return conv.Value(val[0], obj)
+	}
+
+	switch obj.Kind() {
+	case reflect.Struct:
+		return setStructField(obj, names, val)
+	case reflect.Map:
+		if obj.Type().Key().Kind() != reflect.String {
+			return errors.New("map 类型的键值只能是字符串")
 		}
 
-		kind := field.Kind()
-		if kind != reflect.Array && kind != reflect.Slice {
-			if err := conv.Value(v[0], field); err != nil {
+		if obj.IsNil() {
+			obj.Set(reflect.MakeMap(obj.Type()))
+		}
+		return setMapField(obj, names, val)
+	case reflect.Func, reflect.Chan:
+		return nil
+	default:
+		return errors.New("无法找到对应的字段")
+	}
+}
+
+func setStructField(obj reflect.Value, names []string, val []string) error {
+	rtype := obj.Type()
+	l := obj.NumField()
+	for i := 0; i < l; i++ {
+		rf := rtype.Field(i)
+		if rf.Anonymous {
+			if err := setField(obj.Field(i), names, val); err != nil {
 				return err
 			}
 			continue
 		}
 
-		if err := conv.Value(v, field); err != nil {
+		if name := parseTag(rf); name == "-" || name != names[0] { // 名称不匹配或是 struct tag 中标记为忽略
+			continue
+		}
+
+		return setField(obj.Field(i), names[1:], val)
+	}
+
+	return nil
+}
+
+func setMapField(obj reflect.Value, names []string, val []string) error {
+	// NOET: map 元素是 unaddressable 的
+
+	key := reflect.ValueOf(names[0])
+	elem := reflect.New(obj.Type().Elem()).Elem()
+	if e := obj.MapIndex(key); e.IsValid() {
+		elem.Set(e)
+	}
+	if err := setField(elem, names[1:], val); err != nil {
+		return err
+	}
+	obj.SetMapIndex(key, elem)
+	return nil
+}
+
+func getFields(kv map[string]reflect.Value, name string, rval reflect.Value) error {
+	for rval.Kind() == reflect.Ptr {
+		if rval.IsNil() {
+			rval.Set(reflect.New(rval.Type().Elem()))
+		}
+		rval = rval.Elem()
+	}
+
+	if rval.Kind() == reflect.Map && rval.IsNil() {
+		rval.Set(reflect.MakeMap(rval.Type()))
+	}
+
+	switch rval.Kind() {
+	case reflect.Struct:
+		return getStructFields(kv, name, rval)
+	case reflect.Map:
+		if rval.Type().Key().Kind() != reflect.String {
+			return errors.New("map 类型的键值只能是字符串")
+		}
+		return getMapFields(kv, name, rval)
+	case reflect.Chan, reflect.Func:
+		return nil
+	default:
+		kv[name] = rval
+		return nil
+	}
+}
+
+func getStructFields(kv map[string]reflect.Value, parent string, rval reflect.Value) error {
+	rtype := rval.Type()
+	for i := 0; i < rtype.NumField(); i++ {
+		field := rtype.Field(i)
+
+		if field.Anonymous {
+			if err := getFields(kv, parent, rval.Field(i)); err != nil {
+				return err
+			}
+			continue
+		}
+
+		name := parseTag(field)
+		if name == "-" {
+			continue
+		}
+		if parent != "" {
+			name = parent + "." + name
+		}
+		if err := getFields(kv, name, rval.Field(i)); err != nil {
 			return err
 		}
 	}
@@ -66,55 +179,30 @@ func unmarshal(vals url.Values, obj interface{}) error {
 	return nil
 }
 
-func getObjectMap(kv map[string]reflect.Value, rval reflect.Value) error {
-	for rval.Kind() == reflect.Ptr {
-		if rval.IsNil() {
-			rval.Set(reflect.New(rval.Type().Elem()))
-		} else {
-			rval = rval.Elem()
+func getMapFields(kv map[string]reflect.Value, parent string, rval reflect.Value) error {
+	for iter := rval.MapRange(); iter.Next(); {
+		name := iter.Key().String()
+		if parent != "" {
+			name = parent + "." + name
+		}
+
+		if err := getFields(kv, name, iter.Value()); err != nil {
+			return err
 		}
 	}
-
-	rtype := rval.Type()
-	for i := 0; i < rtype.NumField(); i++ {
-		field := rtype.Field(i)
-
-		if field.Anonymous {
-			if err := getObjectMap(kv, rval.Field(i)); err != nil {
-				return err
-			}
-			continue
-		}
-
-		kind := field.Type.Kind()
-
-		if kind == reflect.Func {
-			continue
-		}
-
-		if kind == reflect.Map ||
-			kind == reflect.Chan ||
-			kind == reflect.Struct ||
-			kind == reflect.Ptr {
-			panic("无效的类型")
-		}
-
-		if unicode.IsLower(rune(field.Name[0])) { // 忽略以小写字母开头的字段
-			continue
-		}
-
-		tag := field.Tag.Get(Tag)
-		if tag == "-" {
-			continue
-		}
-
-		name := field.Name
-		if tag != "" {
-			name = tag
-		}
-
-		kv[name] = rval.Field(i)
-	}
-
 	return nil
+}
+
+func parseTag(sf reflect.StructField) string {
+	if unicode.IsLower(rune(sf.Name[0])) {
+		return "-"
+	}
+
+	tag := strings.TrimSpace(sf.Tag.Get(Tag))
+	switch tag {
+	case "":
+		return sf.Name
+	default: // '-' 也原样返回即可
+		return tag
+	}
 }
