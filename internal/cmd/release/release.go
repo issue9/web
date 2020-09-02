@@ -1,6 +1,4 @@
-// Copyright 2019 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package release 发布版本号管理
 package release

@@ -1,6 +1,4 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package protobuf 提供对 Google protocol buffers 的支持
 package protobuf

@@ -1,6 +1,4 @@
-// Copyright 2019 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package resulttest 提供了 app.Result 接口的默认实现，方便测试用。
 package resulttest

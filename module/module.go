@@ -1,6 +1,4 @@
-// Copyright 2018 by caixw, All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// SPDX-License-Identifier: MIT
 
 // Package module 模块的管理
 package module
@@ -24,7 +22,7 @@ type Module struct {
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
-// 依附地模块，共享模块的依赖关系。
+// 依附于模块，共享模块的依赖关系。
 //
 // 一般是各个模块下的安装脚本使用。
 type Tag struct {
