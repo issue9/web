@@ -1,8 +1,7 @@
 module github.com/issue9/web
 
 require (
-	github.com/caixw/gobuild v0.8.0
-	github.com/fsnotify/fsnotify v1.4.7 // indirect
+	github.com/caixw/gobuild v0.8.1
 	github.com/golang/protobuf v1.4.2
 	github.com/issue9/assert v1.4.0
 	github.com/issue9/cmdopt v0.6.1

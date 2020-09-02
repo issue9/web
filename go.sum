@@ -1,8 +1,8 @@
 github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
-github.com/caixw/gobuild v0.8.0 h1:mqPkmncEXWPYk5fTJ5umAyyXyc4Kgw0AyyHCuACQH4c=
-github.com/caixw/gobuild v0.8.0/go.mod h1:TlCe8hb/s1VbNVPBLvOnddBOGSOgsSxt1uhTOavzbXc=
-github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
-github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
+github.com/caixw/gobuild v0.8.1 h1:C3G7cDrJrGh5TwmRwXA9K3AZUoUpXuzBniAxcBdVBWI=
+github.com/caixw/gobuild v0.8.1/go.mod h1:lr2/KlgYbn6PvGWjIXJGZKerwB4TIS5hQbL+a4Ma280=
+github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
+github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/golang/protobuf v1.4.0-rc.1/go.mod h1:ceaxUfeHdC40wWswd/P6IGgMaK3YpKi5j83Wpe3EHw8=
 github.com/golang/protobuf v1.4.0-rc.1.0.20200221234624-67d41d38c208/go.mod h1:xKAWHe0F5eneWXFV3EuXVDTCmh+JuBKY0li0aMyXATA=
 github.com/golang/protobuf v1.4.0-rc.2/go.mod h1:LlEzMj4AhA7rCAGe4KMBDvJI+AwstrUpVNzEA03Pprs=
@@ -58,8 +58,6 @@ github.com/issue9/sliceutil v0.1.0 h1:RSuzHcDJeSz7L++Ujojov9Ac8QcLSbSCcB8iPvM8qG
 github.com/issue9/sliceutil v0.1.0/go.mod h1:SdCbkqIiNbrNUaNLpd5miXyaaKCwlmV2eucQJ1YDWAw=
 github.com/issue9/source v0.1.0 h1:+zbu5kH9Rwhko/DFL4jb7msIjvAail6B/Jy4aLW+B+w=
 github.com/issue9/source v0.1.0/go.mod h1:/dQhfcVFiwNLIdXlQZE7i54dbTDOuc7AAT+NEaZZZyQ=
-github.com/issue9/term v1.0.2 h1:biU1UquHr1q50AVVtcuKOxbzwnHOYkqy/ZP1uO8ryAA=
-github.com/issue9/term v1.0.2/go.mod h1:R6IrF1ip/wqkXb/wnTGhC0ZyPo5Eg09PnZHYMtOqDD8=
 github.com/issue9/term v1.1.0 h1:vKTjD4c0rxw+B7LLfwSypMaVTkyP9DrqyLLgFWsVTVw=
 github.com/issue9/term v1.1.0/go.mod h1:9/YTi/aRSKOIy44Wso2xDWXJvMLAEYWskjutTkyUBN0=
 github.com/issue9/unique v1.2.0 h1:ZLRNTZnKYk7Bw0jW2kZ79vbbHDMfc1FzM7B15S19jmc=
@@ -76,8 +74,8 @@ github.com/issue9/watermark v1.0.5 h1:LqKWTp16/GM17zrFWn3vcOQEV5yOwRK7BnkLLTpI5u
 github.com/issue9/watermark v1.0.5/go.mod h1:RbznIF4p4hl3DENArELltXbgV31N8TcOagHifeKO09g=
 golang.org/x/sys v0.0.0-20190310054646-10058d7d4faa h1:lqti/xP+yD/6zH5TqEwx2MilNIJY5Vbc6Qr8J3qyPIQ=
 golang.org/x/sys v0.0.0-20190310054646-10058d7d4faa/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20190524152521-dbbf3f1254d4 h1:VSJ45BzqrVgR4clSx415y1rHH7QAGhGt71J0ZmhLYrc=
-golang.org/x/sys v0.0.0-20190524152521-dbbf3f1254d4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9 h1:L2auWcuQIvxz9xSEqzESnV/QN/gNRXNApHi3fYwl2w0=
+golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.3 h1:cokOdA+Jmi5PJGXLlLllQSgYigAEfHXJAERHVMaCc2k=
 golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
@@ -92,8 +90,6 @@ google.golang.org/protobuf v1.23.0 h1:4MY060fB1DLGMB/7MBTLnwQUY6+F09GEiz6SsrNqyz
 google.golang.org/protobuf v1.23.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
-gopkg.in/fsnotify.v1 v1.4.7 h1:xOHLXZwVvI9hhs+cLKq5+I5onOuwQLhQwiu63xxlHs4=
-gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.3.0 h1:clyUAQHOM3G0M3f5vQj7LuJrETvjVot3Z5el9nffUtU=
