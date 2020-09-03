@@ -14,6 +14,26 @@
 //      vals.Add("name", "caixw")
 //      ctx.Render(http.StatusOK, vals, nil)
 //  }
+//
+//
+// form
+//
+// 用户可以通过定义 form 标签自定义输出的名称，比如：
+//  type Username struct {
+//      Name string `form:"name"`
+//      Age int
+//  }
+// 转换成 form-data 可能是以下样式：
+//  name=jjj&age=18
+// 该方式对数据类型有一定限制：
+//  1. 如果是 map 类型，要求键值类型必须为 string；
+//  2. 如果是 array 或是 slice，则要求元素类型必须是 go 的基本数据类型，不能是 struct 类型；
+//
+//
+// 接口
+//
+// 对于复杂类型，用户可以自定义实现 Marshaler 和 Unmarshaler 接口进行编解码，
+// 其功能与用户与 encoding/json 中的 Marshaler 和 Unmarshaler 接口相似。
 package form
 
 import "net/url"

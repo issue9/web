@@ -18,7 +18,7 @@ const Tag = "form"
 
 // 将 v 转换成 form-data 格式的数据
 //
-// NOTE: form-data 中不需要考虑 omitempt 的情况，因为无法处理数组和切片在有没有 omitempty 下的区别。
+// NOTE: form-data 中不需要考虑 omitempty 的情况，因为无法处理数组和切片在有没有 omitempty 下的区别。
 func marshal(v interface{}) (url.Values, error) {
 	objs := map[string]reflect.Value{}
 	if err := getFields(objs, "", reflect.ValueOf(v)); err != nil {
@@ -33,6 +33,7 @@ func marshal(v interface{}) (url.Values, error) {
 			continue
 		}
 
+		chkSliceType(v)
 		for i := 0; i < v.Len(); i++ {
 			vals.Add(k, fmt.Sprint(v.Index(i).Interface()))
 		}
@@ -63,6 +64,7 @@ func setField(obj reflect.Value, names []string, val []string) error {
 	if len(names) == 0 {
 		ok := obj.Kind()
 		if ok == reflect.Slice || ok == reflect.Array {
+			chkSliceType(obj)
 			return conv.Value(val, obj)
 		}
 		return conv.Value(val[0], obj)
@@ -204,5 +206,13 @@ func parseTag(sf reflect.StructField) string {
 		return sf.Name
 	default: // '-' 也原样返回即可
 		return tag
+	}
+}
+
+func chkSliceType(v reflect.Value) {
+	k := v.Type().Elem().Kind()
+	if (k < reflect.Bool || k > reflect.Float64) && k != reflect.String {
+		msg := fmt.Sprintf("slice 和 array 的元素类型只能是介于 [reflect.Bool, reflect.Float64] 之间或是 reflect.String，当前为 %s", k)
+		panic(msg)
 	}
 }
