@@ -179,8 +179,8 @@ func (app *App) Run() (err error) {
 	return err
 }
 
-// LocalPrinter 获取本地化的输出对象
-func (app *App) LocalPrinter(tag language.Tag, opts ...xmessage.Option) *xmessage.Printer {
+// LocalePrinter 获取本地化的输出对象
+func (app *App) LocalePrinter(tag language.Tag, opts ...xmessage.Option) *xmessage.Printer {
 	return xmessage.NewPrinter(tag, opts...)
 }
 
