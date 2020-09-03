@@ -20,10 +20,10 @@ var (
 func TestContext_Exit(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app := newApp(a)
+	b := newBuilder(a)
 	ctx := &Context{
 		Response: w,
-		App:      app,
+		builder:  b,
 	}
 
 	a.Panic(func() {
@@ -34,12 +34,12 @@ func TestContext_Exit(t *testing.T) {
 func TestContext_Error(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app := newApp(a)
+	b := newBuilder(a)
 	errLog.Reset()
-	app.Logs().ERROR().SetOutput(errLog)
+	b.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
-		App:      app,
+		builder:  b,
 	}
 
 	ctx.Error(http.StatusInternalServerError, "log1", "log2")
@@ -51,11 +51,11 @@ func TestContext_Critical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	criticalLog.Reset()
-	app := newApp(a)
-	app.Logs().CRITICAL().SetOutput(criticalLog)
+	b := newBuilder(a)
+	b.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
-		App:      app,
+		builder:  b,
 	}
 
 	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
@@ -66,12 +66,12 @@ func TestContext_Critical(t *testing.T) {
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app := newApp(a)
+	b := newBuilder(a)
 	errLog.Reset()
-	app.Logs().ERROR().SetOutput(errLog)
+	b.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
-		App:      app,
+		builder:  b,
 	}
 
 	ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
@@ -82,12 +82,12 @@ func TestContext_Errorf(t *testing.T) {
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app := newApp(a)
+	b := newBuilder(a)
 	criticalLog.Reset()
-	app.Logs().CRITICAL().SetOutput(criticalLog)
+	b.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
-		App:      app,
+		builder:  b,
 	}
 
 	ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)

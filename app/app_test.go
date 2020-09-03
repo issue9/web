@@ -16,11 +16,14 @@ import (
 	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
+	wctx "github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/result"
 )
+
+var _ wctx.Builder = &App{}
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)

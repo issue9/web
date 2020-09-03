@@ -15,7 +15,7 @@ type Result struct {
 // NewResult 返回 Result 实例
 func (ctx *Context) NewResult(code int) *Result {
 	return &Result{
-		rslt: ctx.App.Results().NewResult(code),
+		rslt: ctx.builder.Results().NewResult(code),
 		ctx:  ctx,
 	}
 }

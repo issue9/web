@@ -19,7 +19,7 @@ func TestResult(t *testing.T) {
 	r.Header.Set("Accept", "application/json")
 	w := httptest.NewRecorder()
 	ctx := &Context{
-		App: newApp(a),
+		builder: newBuilder(a),
 
 		Response:       w,
 		Request:        r,
@@ -29,7 +29,7 @@ func TestResult(t *testing.T) {
 		InputCharset:  nil,
 		InputMimetype: json.Unmarshal,
 	}
-	ctx.App.Results().AddMessages(http.StatusBadRequest, map[int]string{
+	ctx.builder.Results().AddMessages(http.StatusBadRequest, map[int]string{
 		40010: "40010",
 		40011: "40011",
 	})

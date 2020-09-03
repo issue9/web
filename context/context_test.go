@@ -4,26 +4,18 @@ package context
 
 import (
 	"bytes"
-	"encoding/json"
-	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/config"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/app"
-	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
-	"github.com/issue9/web/result"
 )
 
 func init() {
@@ -39,7 +31,7 @@ func newContext(a *assert.Assertion,
 	outputCharset encoding.Encoding,
 	InputCharset encoding.Encoding) *Context {
 	return &Context{
-		App: newApp(a),
+		builder: newBuilder(a),
 
 		Response:       w,
 		Request:        r,
@@ -51,60 +43,19 @@ func newContext(a *assert.Assertion,
 	}
 }
 
-// 声明一个 App 实例
-func newApp(a *assert.Assertion) *app.App {
-	var configUnmarshals = map[string]config.UnmarshalFunc{
-		".yaml": yaml.Unmarshal,
-		".yml":  yaml.Unmarshal,
-		".xml":  xml.Unmarshal,
-		".json": json.Unmarshal,
-	}
-
-	mgr, err := config.NewManager("../testdata")
-	a.NotError(err).NotNil(mgr)
-
-	for k, v := range configUnmarshals {
-		a.NotError(mgr.AddUnmarshal(v, k))
-	}
-
-	webconf := &webconfig.WebConfig{}
-	a.NotError(mgr.LoadFile("web.yaml", webconf))
-
-	app := app.New(webconf, result.DefaultResultBuilder)
-	a.NotNil(app)
-
-	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
-		"application/json":       json.Marshal,
-		"application/xml":        xml.Marshal,
-		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
-	})
-	a.NotError(err)
-
-	err = app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
-		"application/json":       json.Unmarshal,
-		"application/xml":        xml.Unmarshal,
-		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
-	})
-	a.NotError(err)
-
-	return app
-}
-
 func TestNew(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	app := newApp(a)
+	b := newBuilder(a)
 	logwriter := new(bytes.Buffer)
-	app.Logs().ERROR().SetOutput(logwriter)
+	b.Logs().ERROR().SetOutput(logwriter)
 
 	// 错误的 accept
 	logwriter.Reset()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -114,7 +65,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -123,7 +74,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 
 	// 错误的 content-type,有输入内容
@@ -131,7 +82,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -141,7 +92,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-"))
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 
 	// 错误的 Accept-Language
@@ -150,7 +101,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	a.Panic(func() {
-		New(w, r, app)
+		New(w, r, b)
 	})
 
 	// 正常，指定 Accept-Language
@@ -160,7 +111,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	var ctx *Context
 	a.NotPanic(func() {
-		ctx = New(w, r, app)
+		ctx = New(w, r, b)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -174,7 +125,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	a.NotPanic(func() {
-		ctx = New(w, r, app)
+		ctx = New(w, r, b)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -187,7 +138,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 	a.NotPanic(func() {
-		ctx = New(w, r, app)
+		ctx = New(w, r, b)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -352,15 +303,15 @@ func TestContext_ClientIP(t *testing.T) {
 
 func TestContext_NewResult(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	b := newBuilder(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := New(w, r, app)
+	ctx := New(w, r, b)
 
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })
 
-	a.NotPanic(func() { app.Results().AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { b.Results().AddMessages(400, map[int]string{40000: "400"}) })
 	a.NotPanic(func() { ctx.NewResult(40000) })
 	a.Panic(func() { ctx.NewResult(50000) })
 }

@@ -17,9 +17,8 @@ import (
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/scheduled"
-	"golang.org/x/text/language"
-	xmessage "golang.org/x/text/message"
 
+	wctx "github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/result"
@@ -179,11 +178,6 @@ func (app *App) Run() (err error) {
 	return err
 }
 
-// LocalePrinter 获取本地化的输出对象
-func (app *App) LocalePrinter(tag language.Tag, opts ...xmessage.Option) *xmessage.Printer {
-	return xmessage.NewPrinter(tag, opts...)
-}
-
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
@@ -230,4 +224,8 @@ func (app *App) Location() *time.Location {
 // Logs 返回 logs.Logs 实例
 func (app *App) Logs() *logs.Logs {
 	return app.logs
+}
+
+func (app *App) ContextInterceptor(ctx *wctx.Context) {
+	ctx.Location = app.Location()
 }
