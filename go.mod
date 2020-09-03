@@ -2,7 +2,6 @@ module github.com/issue9/web
 
 require (
 	github.com/caixw/gobuild v0.8.1
-	github.com/golang/protobuf v1.4.2
 	github.com/issue9/assert v1.4.0
 	github.com/issue9/cmdopt v0.6.1
 	github.com/issue9/config v0.1.0
