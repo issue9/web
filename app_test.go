@@ -17,21 +17,16 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
-	"github.com/issue9/web/app"
-	"github.com/issue9/web/internal/resulttest"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
+	"github.com/issue9/web/result"
 )
-
-func getResult(status, code int, message string) app.Result {
-	return resulttest.New(status, code, message)
-}
 
 func initApp(a *assert.Assertion) {
 	defaultApp = nil
-	a.NotError(Classic("./testdata", getResult))
+	a.NotError(Classic("./testdata", result.DefaultResultBuilder))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
 
@@ -58,7 +53,7 @@ func TestClassic(t *testing.T) {
 	initApp(a)
 
 	a.Panic(func() {
-		a.NotError(Classic("./testdata", getResult))
+		a.NotError(Classic("./testdata", result.DefaultResultBuilder))
 	})
 
 	a.True(IsDebug())

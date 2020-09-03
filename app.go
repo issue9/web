@@ -24,6 +24,7 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
+	"github.com/issue9/web/result"
 )
 
 // 两个配置文件的名称。
@@ -42,7 +43,7 @@ var (
 // Classic 初始化一个可运行的框架环境
 //
 // dir 为配置文件的根目录
-func Classic(dir string, get app.GetResultFunc) error {
+func Classic(dir string, get result.BuildResultFunc) error {
 	mgr, err := NewConfigManager(dir)
 	if err != nil {
 		return err
@@ -102,7 +103,7 @@ func Classic(dir string, get app.GetResultFunc) error {
 // configFilename 为相对于 mgr 目录下的配置文件地址。
 //
 // 重复调用会直接 panic
-func Init(mgr *ConfigManager, configFilename string, get app.GetResultFunc) error {
+func Init(mgr *ConfigManager, configFilename string, get result.BuildResultFunc) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
@@ -231,7 +232,7 @@ func Load(r io.Reader, typ string, v interface{}) error {
 
 // AddMessages 添加新的错误消息代码
 func AddMessages(status int, messages map[int]string) {
-	App().AddMessages(status, messages)
+	App().Results().AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
@@ -243,7 +244,7 @@ func ErrorHandlers() *errorhandler.ErrorHandler {
 //
 // p 用于返回特定语言的内容。如果为空，则表示返回原始值。
 func Messages(p *message.Printer) map[int]string {
-	return App().Messages(p)
+	return App().Results().Messages(p)
 }
 
 // Scheduled 获取 scheduled.Server 实例

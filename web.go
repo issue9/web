@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/module"
+	"github.com/issue9/web/result"
 )
 
 // Version 当前框架的版本
@@ -26,7 +27,7 @@ type (
 	Context = context.Context
 
 	// Result 等同于 app.Result，方便调用者使用
-	Result = app.Result
+	Result = result.Result
 
 	// ServiceFunc 服务的报告函数签名。
 	//

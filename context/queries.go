@@ -120,7 +120,7 @@ func (q *Queries) Errors() map[string]string {
 // Result 转换成 Result 对象
 //
 // code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Queries.errors 将会作为 Result.Detail 的内容。
+// Queries.errors 将会作为 Result.Fields 的内容。
 func (q *Queries) Result(code int) *Result {
 	return q.ctx.NewResultWithDetail(code, q.Errors())
 }

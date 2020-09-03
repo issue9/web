@@ -19,6 +19,7 @@ import (
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
+	"github.com/issue9/web/result"
 )
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +49,7 @@ func newApp(a *assert.Assertion) *App {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app := New(webconf, getResult)
+	app := New(webconf, result.DefaultResultBuilder)
 	a.NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{

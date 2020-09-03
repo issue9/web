@@ -166,7 +166,7 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，
 即可自定义输出的错误信息格式。
 
-具体可参考代 internal/resulttest 中的相关代码。
+具体可参考代 result 中的相关代码。
 
 安装
 ---

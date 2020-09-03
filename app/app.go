@@ -22,6 +22,7 @@ import (
 
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/result"
 )
 
 // App 程序运行实例
@@ -38,15 +39,14 @@ type App struct {
 	errorhandlers *errorhandler.ErrorHandler
 	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
-	getResult     GetResultFunc
-	messages      map[int]*message
+	results       *result.Results
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
 
 // New 声明一个新的 App 实例
-func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
+func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *App {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	middlewares := middleware.NewManager(mux)
 
@@ -72,8 +72,7 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 		mt:            mimetype.New(),
 		errorhandlers: errorhandler.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
-		getResult:     get,
-		messages:      map[int]*message{},
+		results:       result.NewResults(get),
 	}
 
 	for url, dir := range conf.Static {
@@ -87,6 +86,10 @@ func New(conf *webconfig.WebConfig, get GetResultFunc) *App {
 	app.buildMiddlewares(conf)
 
 	return app
+}
+
+func (app *App) Results() *result.Results {
+	return app.results
 }
 
 // Uptime 启动的时间

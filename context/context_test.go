@@ -19,11 +19,11 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/app"
-	"github.com/issue9/web/internal/resulttest"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/mimetypetest"
+	"github.com/issue9/web/result"
 )
 
 func init() {
@@ -31,10 +31,6 @@ func init() {
 	message.SetString(language.SimplifiedChinese, "test", "简体")
 	message.SetString(language.TraditionalChinese, "test", "繁体")
 	message.SetString(language.English, "test", "english")
-}
-
-func getResult(status, code int, message string) app.Result {
-	return resulttest.New(status, code, message)
 }
 
 func newContext(a *assert.Assertion,
@@ -74,7 +70,7 @@ func newApp(a *assert.Assertion) *app.App {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app := app.New(webconf, getResult)
+	app := app.New(webconf, result.DefaultResultBuilder)
 	a.NotNil(app)
 
 	err = app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
@@ -364,7 +360,7 @@ func TestContext_NewResult(t *testing.T) {
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })
 
-	a.NotPanic(func() { app.AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { app.Results().AddMessages(400, map[int]string{40000: "400"}) })
 	a.NotPanic(func() { ctx.NewResult(40000) })
 	a.Panic(func() { ctx.NewResult(50000) })
 }

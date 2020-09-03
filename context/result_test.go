@@ -29,7 +29,7 @@ func TestResult(t *testing.T) {
 		InputCharset:  nil,
 		InputMimetype: json.Unmarshal,
 	}
-	ctx.App.AddMessages(http.StatusBadRequest, map[int]string{
+	ctx.App.Results().AddMessages(http.StatusBadRequest, map[int]string{
 		40010: "40010",
 		40011: "40011",
 	})
@@ -40,5 +40,5 @@ func TestResult(t *testing.T) {
 	a.True(rslt.HasDetail())
 
 	rslt.Render()
-	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"detail":[{"field":"k1","message":"v1"}]}`)
+	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1"]}]}`)
 }

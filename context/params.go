@@ -218,7 +218,7 @@ func (p *Params) Errors() map[string]string {
 // Result 转换成 Result 对象
 //
 // code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Params.errors 将会作为 Result.Detail 的内容。
+// Params.errors 将会作为 Result.Fields 的内容。
 func (p *Params) Result(code int) *Result {
 	return p.ctx.NewResultWithDetail(code, p.Errors())
 }

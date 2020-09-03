@@ -2,18 +2,20 @@
 
 package context
 
-import "github.com/issue9/web/app"
+import (
+	"github.com/issue9/web/result"
+)
 
 // Result 输出内容
 type Result struct {
-	rslt app.Result
+	rslt result.Result
 	ctx  *Context
 }
 
 // NewResult 返回 Result 实例
 func (ctx *Context) NewResult(code int) *Result {
 	return &Result{
-		rslt: ctx.App.NewResult(code),
+		rslt: ctx.App.Results().NewResult(code),
 		ctx:  ctx,
 	}
 }
