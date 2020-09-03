@@ -4,6 +4,7 @@ package context
 
 import (
 	"io"
+	"time"
 
 	"golang.org/x/text/message"
 )
@@ -51,4 +52,16 @@ func (ctx *Context) Sprintf(key message.Reference, v ...interface{}) string {
 // Sprintln 相当于 ctx.LocalePrinter.Sprintln
 func (ctx *Context) Sprintln(v ...interface{}) string {
 	return ctx.LocalePrinter.Sprintln(v...)
+}
+
+// Now 返回当前时间
+//
+// 与 time.Now() 的区别在于 Now() 基于当前时区
+func (ctx *Context) Now() time.Time {
+	return time.Now().In(ctx.Location)
+}
+
+// ParseTime 分析基于当前时区的时间
+func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, ctx.Location)
 }

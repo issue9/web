@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package context 用于处理单个请求的上下文关系。
+// Package context 用于处理单个请求的上下文关系
 package context
 
 import (
@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"golang.org/x/text/encoding"
@@ -44,7 +45,7 @@ type Context struct {
 	OutputCharset     encoding.Encoding
 	OutputCharsetName string
 
-	// 客户端内容所使用的媒体类型。
+	// 客户端内容所使用的媒体类型
 	InputMimetype mimetype.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
@@ -52,9 +53,12 @@ type Context struct {
 	// 若值为 encoding.Nop 或是空，表示为 utf-8
 	InputCharset encoding.Encoding
 
-	// 输出语言的相关设置项。
+	// 输出语言的相关设置项
 	OutputTag     language.Tag
 	LocalePrinter *message.Printer
+
+	// 与当前对话相关的时区
+	Location *time.Location
 
 	// 保存着从 http.Request.Body 中获取的内容。
 	//
@@ -145,7 +149,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 	return ctx.body, err
 }
 
-// Unmarshal 将提交的内容转换成 v 对象。
+// Unmarshal 将提交的内容转换成 v 对象
 func (ctx *Context) Unmarshal(v interface{}) error {
 	body, err := ctx.Body()
 	if err != nil {
@@ -155,11 +159,10 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 	if ctx.InputMimetype != nil {
 		return ctx.InputMimetype(body, v)
 	}
-
 	return nil
 }
 
-// Marshal 将 v 解码并发送给客户端。
+// Marshal 将 v 解码并发送给客户端
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
@@ -211,13 +214,15 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
 	if _, err = w.Write(data); err != nil {
-		w.Close()
+		if err2 := w.Close(); err != nil {
+			return fmt.Errorf("在处理错误 %w 时再次抛出错误 %s", err, err2.Error())
+		}
 		return err
 	}
 	return w.Close()
 }
 
-// Read 从客户端读取数据并转换成 v 对象。
+// Read 从客户端读取数据并转换成 v 对象
 //
 // 功能与 Unmarshal() 相同，只不过 Read() 在出错时，
 // 会直接调用 Error() 处理：输出 422 的状态码，
@@ -227,11 +232,10 @@ func (ctx *Context) Read(v interface{}) (ok bool) {
 		ctx.Error(http.StatusUnprocessableEntity, err)
 		return false
 	}
-
 	return true
 }
 
-// Render 将 v 渲染给客户端。
+// Render 将 v 渲染给客户端
 //
 // 功能与 Marshal() 相同，只不过 Render() 在出错时，
 // 会直接调用 Error() 处理，输出 500 的状态码。
@@ -246,7 +250,7 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 	}
 }
 
-// ClientIP 返回客户端的 IP 地址。
+// ClientIP 返回客户端的 IP 地址
 //
 // 获取顺序如下：
 //  - X-Forwarded-For 的第一个元素

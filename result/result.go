@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package result 管理返回给用户的错误信息
+// Package result 统一了在出错时返回给用户的错误信息处理方式
 package result
 
 import (

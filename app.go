@@ -262,7 +262,7 @@ func Location() *time.Location {
 	return App().Location()
 }
 
-// Now 返回当前时间。
+// Now 返回当前时间
 //
 // 与 time.Now() 的区别在于 Now() 基于当前时区
 func Now() time.Time {
