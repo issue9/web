@@ -110,7 +110,7 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 
 	srv1, start, exit := buildSrv1()
 	app.AddService(srv1, "srv1")
@@ -134,7 +134,7 @@ func TestService_srv1(t *testing.T) {
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 
 	srv2, start, exit := buildSrv2()
 	app.AddService(srv2, "srv2")
@@ -164,7 +164,7 @@ func TestService_srv2(t *testing.T) {
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 
 	srv3, start, exit := buildSrv3()
 	app.AddService(srv3, "srv3")

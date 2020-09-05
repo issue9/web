@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package server
 
 import (
 	"log"
@@ -11,8 +11,8 @@ import (
 	"github.com/issue9/assert"
 )
 
-func m(ms *Modules, name string, f func() error, deps ...string) *Module {
-	m := ms.newModule(name, name, deps...)
+func m(srv *Server, name string, f func() error, deps ...string) *Module {
+	m := srv.newModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }
@@ -23,11 +23,11 @@ func newDep(ms []*Module, log *log.Logger) *dependency {
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	ms := newModules(a)
+	srv := newServer(a)
 
 	dep := newDep([]*Module{
-		m(ms, "m1", nil, "d1", "d2"),
-		m(ms, "d1", nil, "d3"),
+		m(srv, "m1", nil, "d1", "d2"),
+		m(srv, "d1", nil, "d3"),
 	}, nil)
 	a.NotNil(dep)
 
@@ -38,9 +38,9 @@ func TestDependency_isDep(t *testing.T) {
 
 	// 循环依赖
 	dep = newDep([]*Module{
-		m(ms, "m1", nil, "d1", "d2"),
-		m(ms, "d1", nil, "d3"),
-		m(ms, "d3", nil, "d1"),
+		m(srv, "m1", nil, "d1", "d2"),
+		m(srv, "d1", nil, "d3"),
+		m(srv, "d3", nil, "d1"),
 	}, nil)
 	a.True(dep.isDep("d1", "d1"))
 
@@ -50,29 +50,29 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	ms := newModules(a)
+	srv := newServer(a)
 
 	dep := newDep([]*Module{
-		m(ms, "m1", nil, "d1", "d2"),
-		m(ms, "d1", nil, "d3"),
+		m(srv, "m1", nil, "d1", "d2"),
+		m(srv, "d1", nil, "d3"),
 	}, nil)
 
 	m1 := dep.modules["m1"]
 	a.Error(dep.checkDeps(m1)) // 依赖项不存在
 
 	dep = newDep([]*Module{
-		m(ms, "m1", nil, "d1", "d2"),
-		m(ms, "d1", nil, "d3"),
-		m(ms, "d2", nil, "d3"),
+		m(srv, "m1", nil, "d1", "d2"),
+		m(srv, "d1", nil, "d3"),
+		m(srv, "d2", nil, "d3"),
 	}, nil)
 	a.NotError(dep.checkDeps(m1))
 
 	// 自我依赖
 	dep = newDep([]*Module{
-		m(ms, "m1", nil, "d1", "d2"),
-		m(ms, "d1", nil, "d3"),
-		m(ms, "d2", nil, "d3"),
-		m(ms, "d3", nil, "d2"),
+		m(srv, "m1", nil, "d1", "d2"),
+		m(srv, "d1", nil, "d3"),
+		m(srv, "d2", nil, "d3"),
+		m(srv, "d3", nil, "d2"),
 	}, nil)
 	d2 := dep.modules["d2"]
 	a.Error(dep.checkDeps(d2))
@@ -80,7 +80,7 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
-	ms := newModules(a)
+	srv := newServer(a)
 
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
@@ -98,19 +98,19 @@ func TestDependency_init(t *testing.T) {
 
 	// 缺少依赖项 d3
 	dep := newDep([]*Module{
-		m(ms, "m1", i("m1"), "d1", "d2"),
-		m(ms, "d1", i("d1"), "d3"),
-		m(ms, "d2", i("d2"), "d3"),
+		m(srv, "m1", i("m1"), "d1", "d2"),
+		m(srv, "d1", i("d1"), "d3"),
+		m(srv, "d2", i("d2"), "d3"),
 	}, infolog)
 	a.Error(dep.init(""))
 
-	m1 := m(ms, "m1", i("m1"), "d1", "d2")
+	m1 := m(srv, "m1", i("m1"), "d1", "d2")
 	m1.PutFunc("/put", f1)
 	apps := []*Module{
 		m1,
-		m(ms, "d1", i("d1"), "d3"),
-		m(ms, "d2", i("d2"), "d3"),
-		m(ms, "d3", i("d3")),
+		m(srv, "d1", i("d1"), "d3"),
+		m(srv, "d2", i("d2"), "d3"),
+		m(srv, "d3", i("d3")),
 	}
 
 	dep = newDep(apps, infolog)

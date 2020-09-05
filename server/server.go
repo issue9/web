@@ -39,13 +39,14 @@ type Server struct {
 	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
 	results       *result.Results
+	modules       []*Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
 
 // New 声明一个新的 Server 实例
-func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *Server {
+func New(conf *webconfig.WebConfig, get result.BuildResultFunc) (*Server, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	middlewares := middleware.NewManager(mux)
 
@@ -84,7 +85,13 @@ func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *Server {
 	// 加载固有的中间件，需要在 app 初始化之后调用
 	app.buildMiddlewares(conf)
 
-	return app
+	if conf.Plugins != "" {
+		if err := app.loadPlugins(conf.Plugins); err != nil {
+			return nil, err
+		}
+	}
+
+	return app, nil
 }
 
 func (srv *Server) Results() *result.Results {

@@ -52,6 +52,17 @@ func (s ServiceState) String() string {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
+func (m *Module) AddService(f ServiceFunc, title string) {
+	m.AddInit(func() error {
+		m.srv.AddService(f, title)
+		return nil
+	}, "注册服务："+title)
+}
+
+// AddService 添加新的服务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明。
 func (srv *Server) AddService(f ServiceFunc, title string) {
 	srv.services = append(srv.services, &Service{
 		Title: title,

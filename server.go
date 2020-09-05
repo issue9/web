@@ -22,7 +22,6 @@ import (
 
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
@@ -119,9 +118,7 @@ func Init(mgr *ConfigManager, configFilename string, get result.BuildResultFunc)
 	}
 
 	defaultConfigs = mgr
-	defaultApp = server.New(webconf, get)
-
-	modules, err = module.NewModules(defaultApp, webconf.Plugins)
+	defaultApp, err = server.New(webconf, get)
 	return err
 }
 

@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-// Package module 模块的管理
-package module
+package server
 
 import (
 	"log"
 	"sort"
 	"time"
-
-	"github.com/issue9/web/server"
 )
 
 // Module 表示模块信息
@@ -18,7 +15,7 @@ type Module struct {
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
-	ms          *Modules
+	srv         *Server
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
@@ -35,12 +32,12 @@ type initialization struct {
 	f     func() error
 }
 
-func (ms *Modules) newModule(name, desc string, deps ...string) *Module {
+func (srv *Server) newModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		ms:          ms,
+		srv:         srv,
 	}
 }
 
@@ -67,9 +64,9 @@ func (m *Module) NewTag(tag string) *Tag {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (ms *Modules) New(name, desc string, deps ...string) *Module {
-	m := ms.newModule(name, desc, deps...)
-	ms.modules = append(ms.modules, m)
+func (srv *Server) New(name, desc string, deps ...string) *Module {
+	m := srv.newModule(name, desc, deps...)
+	srv.modules = append(srv.modules, m)
 	return m
 }
 
@@ -98,22 +95,22 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 	return t
 }
 
-// Init 初始化所有的模块或是模块下指定标签名称的函数。
+// Init 初始化模块下指定标签名称的函数
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
-func (ms *Modules) Init(tag string, info *log.Logger) error {
+func (srv *Server) Init(tag string, info *log.Logger) error {
 	flag := info.Flags()
 	info.SetFlags(0)
 	defer info.SetFlags(flag)
 
 	info.Println("开始初始化模块...")
 
-	if err := newDepencency(ms.modules, info).init(tag); err != nil {
+	if err := newDepencency(srv.modules, info).init(tag); err != nil {
 		return err
 	}
 
 	if tag == "" { // 只有模块的初始化才带路由
-		all := ms.app.Mux().All(true, true)
+		all := srv.Mux().All(true, true)
 		if len(all) > 0 {
 			info.Println("模块加载了以下路由项：")
 			for path, methods := range all {
@@ -130,10 +127,10 @@ func (ms *Modules) Init(tag string, info *log.Logger) error {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表
-func (ms *Modules) Tags() map[string][]string {
-	ret := make(map[string][]string, len(ms.modules)*2)
+func (srv *Server) Tags() map[string][]string {
+	ret := make(map[string][]string, len(srv.modules)*2)
 
-	for _, m := range ms.modules {
+	for _, m := range srv.modules {
 		tags := make([]string, 0, len(m.tags))
 		for k := range m.tags {
 			tags = append(tags, k)
@@ -146,8 +143,8 @@ func (ms *Modules) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (ms *Modules) Modules() []*Module {
-	return ms.modules
+func (srv *Server) Modules() []*Module {
+	return srv.modules
 }
 
 // AddCron 添加新的定时任务
@@ -156,9 +153,9 @@ func (ms *Modules) Modules() []*Module {
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddCron(title string, f server.JobFunc, spec string, delay bool) {
+func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().Cron(title, f, spec, delay)
+		return m.srv.Scheduled().Cron(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -168,9 +165,9 @@ func (m *Module) AddCron(title string, f server.JobFunc, spec string, delay bool
 // title 是对该服务的简要说明；
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f server.JobFunc, dur time.Duration, imm, delay bool) {
+func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().Tick(title, f, dur, imm, delay)
+		return m.srv.Scheduled().Tick(title, f, dur, imm, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -180,19 +177,8 @@ func (m *Module) AddTicker(title string, f server.JobFunc, dur time.Duration, im
 // title 是对该服务的简要说明；
 // spec 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f server.JobFunc, spec string, delay bool) {
+func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.ms.app.Scheduled().At(title, f, spec, delay)
+		return m.srv.Scheduled().At(title, f, spec, delay)
 	}, "注册计划任务"+title)
-}
-
-// AddService 添加新的服务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明。
-func (m *Module) AddService(f server.ServiceFunc, title string) {
-	m.AddInit(func() error {
-		m.ms.app.AddService(f, title)
-		return nil
-	}, "注册服务："+title)
 }

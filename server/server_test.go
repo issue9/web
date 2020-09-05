@@ -35,7 +35,7 @@ var f202 = func(w http.ResponseWriter, r *http.Request) {
 }
 
 // 声明一个 Server 实例
-func newApp(a *assert.Assertion) *Server {
+func newServer(a *assert.Assertion) *Server {
 	var configUnmarshals = map[string]config.UnmarshalFunc{
 		".yaml": yaml.Unmarshal,
 		".yml":  yaml.Unmarshal,
@@ -52,8 +52,8 @@ func newApp(a *assert.Assertion) *Server {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app := New(webconf, result.DefaultResultBuilder)
-	a.NotNil(app)
+	app, err := New(webconf, result.DefaultResultBuilder)
+	a.NotError(err).NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,
@@ -89,7 +89,7 @@ func newApp(a *assert.Assertion) *Server {
 
 func TestApp_URL(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 
 	a.Equal(app.URL("/abc"), "http://localhost:8082/abc")
 	a.Equal(app.URL("abc/def"), "http://localhost:8082/abc/def")
@@ -98,7 +98,7 @@ func TestApp_URL(t *testing.T) {
 
 func TestApp_Path(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 
 	a.Equal(app.Path("/abc"), "/abc")
 	a.Equal(app.Path("abc/def"), "/abc/def")
@@ -107,7 +107,7 @@ func TestApp_Path(t *testing.T) {
 
 func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 	exit := make(chan bool, 1)
 	err := app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
@@ -167,7 +167,7 @@ func TestApp_Run(t *testing.T) {
 
 func TestApp_Close(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 	exit := make(chan bool, 1)
 
 	app.Mux().GetFunc("/test", f202)
@@ -204,7 +204,7 @@ func TestApp_Close(t *testing.T) {
 
 func TestApp_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 	exit := make(chan bool, 1)
 
 	app.Mux().GetFunc("/test", f202)

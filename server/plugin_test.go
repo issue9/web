@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package server
 
 import (
 	"testing"

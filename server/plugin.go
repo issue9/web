@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package server
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ func isPluginOS() bool {
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func (ms *Modules) loadPlugins(glob string) error {
+func (srv *Server) loadPlugins(glob string) error {
 	if !isPluginOS() {
 		return errors.New("当前平台并未实现插件功能！")
 	}
@@ -40,7 +40,7 @@ func (ms *Modules) loadPlugins(glob string) error {
 	}
 
 	for _, path := range fs {
-		if err := ms.loadPlugin(path); err != nil {
+		if err := srv.loadPlugin(path); err != nil {
 			return err
 		}
 	}
@@ -48,7 +48,7 @@ func (ms *Modules) loadPlugins(glob string) error {
 	return nil
 }
 
-func (ms *Modules) loadPlugin(path string) error {
+func (srv *Server) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (ms *Modules) loadPlugin(path string) error {
 	}
 	init := symbol.(func(*Module))
 
-	m := ms.newModule("", "")
+	m := srv.newModule("", "")
 	init(m)
 
 	if m.Name == "" || m.Description == "" {
@@ -68,7 +68,7 @@ func (ms *Modules) loadPlugin(path string) error {
 	}
 
 	// 只有在插件不出问题的情况下，才将其添加到 modules 表中
-	ms.modules = append(ms.modules, m)
+	srv.modules = append(srv.modules, m)
 
 	return nil
 }

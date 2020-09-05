@@ -26,7 +26,7 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 
 func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
-	app := newApp(a)
+	app := newServer(a)
 	exit := make(chan bool, 1)
 	err := app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)

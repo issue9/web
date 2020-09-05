@@ -10,7 +10,6 @@ import (
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
-	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
@@ -40,10 +39,10 @@ type (
 	SchedulerFunc = scheduled.JobFunc
 
 	// Module 等同于 module.Module，方便调用者使用
-	Module = module.Module
+	Module = server.Module
 
 	// Tag 等同于 module.Tag，方便调用者使用
-	Tag = module.Tag
+	Tag = server.Tag
 
 	// ConfigManager 配置管理
 	//
