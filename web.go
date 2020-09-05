@@ -8,11 +8,11 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/scheduled"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/server"
 )
 
 // Version 当前框架的版本
@@ -31,8 +31,8 @@ type (
 
 	// ServiceFunc 服务的报告函数签名。
 	//
-	// 等同于 app.ServiceFunc，方便调用者使用
-	ServiceFunc = app.ServiceFunc
+	// 等同于 server.ServiceFunc，方便调用者使用
+	ServiceFunc = server.ServiceFunc
 
 	// SchedulerFunc 计划任务的执行函数签名。
 	//

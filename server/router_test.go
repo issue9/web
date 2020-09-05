@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"net/http"

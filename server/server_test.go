@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"github.com/issue9/web/result"
 )
 
-var _ wctx.Builder = &App{}
+var _ wctx.Builder = &Server{}
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
@@ -34,8 +34,8 @@ var f202 = func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// 声明一个 App 实例
-func newApp(a *assert.Assertion) *App {
+// 声明一个 Server 实例
+func newApp(a *assert.Assertion) *Server {
 	var configUnmarshals = map[string]config.UnmarshalFunc{
 		".yaml": yaml.Unmarshal,
 		".yml":  yaml.Unmarshal,

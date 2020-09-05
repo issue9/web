@@ -20,11 +20,11 @@ import (
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/mimetype"
 	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/server"
 )
 
 // 两个配置文件的名称。
@@ -37,7 +37,7 @@ const (
 
 var (
 	defaultConfigs *ConfigManager
-	defaultApp     *app.App
+	defaultApp     *server.Server
 )
 
 // Classic 初始化一个可运行的框架环境
@@ -119,14 +119,14 @@ func Init(mgr *ConfigManager, configFilename string, get result.BuildResultFunc)
 	}
 
 	defaultConfigs = mgr
-	defaultApp = app.New(webconf, get)
+	defaultApp = server.New(webconf, get)
 
 	modules, err = module.NewModules(defaultApp, webconf.Plugins)
 	return err
 }
 
 // App 返回 defaultApp 实例
-func App() *app.App {
+func App() *server.Server {
 	return defaultApp
 }
 
@@ -211,7 +211,7 @@ func Path(path string) string {
 }
 
 // Services 返回所有的服务列表
-func Services() []*app.Service {
+func Services() []*server.Service {
 	return App().Services()
 }
 

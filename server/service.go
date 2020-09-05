@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"context"
@@ -52,20 +52,20 @@ func (s ServiceState) String() string {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (app *App) AddService(f ServiceFunc, title string) {
-	app.services = append(app.services, &Service{
+func (srv *Server) AddService(f ServiceFunc, title string) {
+	srv.services = append(srv.services, &Service{
 		Title: title,
 		f:     f,
 	})
 }
 
 // Services 返回所有的服务列表
-func (app *App) Services() []*Service {
-	return app.services
+func (srv *Server) Services() []*Service {
+	return srv.services
 }
 
-func (app *App) stopServices() {
-	for _, srv := range app.services {
+func (srv *Server) stopServices() {
+	for _, srv := range srv.services {
 		srv.Stop()
 	}
 }
@@ -80,8 +80,8 @@ func (srv *Service) Err() error {
 	return srv.err
 }
 
-func (app *App) runServices() {
-	for _, srv := range app.services {
+func (srv *Server) runServices() {
+	for _, srv := range srv.services {
 		srv.Run()
 	}
 }

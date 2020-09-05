@@ -9,9 +9,9 @@ import (
 	"github.com/issue9/config"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/webconfig"
 	"github.com/issue9/web/result"
+	"github.com/issue9/web/server"
 )
 
 func job(time.Time) error {
@@ -34,7 +34,7 @@ func newModules(a *assert.Assertion) *Modules {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app := app.New(webconf, result.DefaultResultBuilder)
+	app := server.New(webconf, result.DefaultResultBuilder)
 	a.NotNil(app)
 
 	ms, err := NewModules(app, "")

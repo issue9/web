@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/issue9/web/app"
+	"github.com/issue9/web/server"
 )
 
 // Module 表示模块信息
@@ -156,7 +156,7 @@ func (ms *Modules) Modules() []*Module {
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddCron(title string, f app.JobFunc, spec string, delay bool) {
+func (m *Module) AddCron(title string, f server.JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
 		return m.ms.app.Scheduled().Cron(title, f, spec, delay)
 	}, "注册计划任务"+title)
@@ -168,7 +168,7 @@ func (m *Module) AddCron(title string, f app.JobFunc, spec string, delay bool) {
 // title 是对该服务的简要说明；
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, imm, delay bool) {
+func (m *Module) AddTicker(title string, f server.JobFunc, dur time.Duration, imm, delay bool) {
 	m.AddInit(func() error {
 		return m.ms.app.Scheduled().Tick(title, f, dur, imm, delay)
 	}, "注册计划任务"+title)
@@ -180,7 +180,7 @@ func (m *Module) AddTicker(title string, f app.JobFunc, dur time.Duration, imm, 
 // title 是对该服务的简要说明；
 // spec 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f app.JobFunc, spec string, delay bool) {
+func (m *Module) AddAt(title string, f server.JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
 		return m.ms.app.Scheduled().At(title, f, spec, delay)
 	}, "注册计划任务"+title)
@@ -190,7 +190,7 @@ func (m *Module) AddAt(title string, f app.JobFunc, spec string, delay bool) {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (m *Module) AddService(f app.ServiceFunc, title string) {
+func (m *Module) AddService(f server.ServiceFunc, title string) {
 	m.AddInit(func() error {
 		m.ms.app.AddService(f, title)
 		return nil

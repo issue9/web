@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 核心功能的实现
-package app
+// Package server 核心功能的实现
+package server
 
 import (
 	"context"
@@ -24,8 +24,8 @@ import (
 	"github.com/issue9/web/result"
 )
 
-// App 程序运行实例
-type App struct {
+// Server 程序运行实例
+type Server struct {
 	http.Server
 
 	uptime        time.Time
@@ -44,12 +44,12 @@ type App struct {
 	closed chan struct{}
 }
 
-// New 声明一个新的 App 实例
-func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *App {
+// New 声明一个新的 Server 实例
+func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *Server {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	middlewares := middleware.NewManager(mux)
 
-	app := &App{
+	app := &Server{
 		Server: http.Server{
 			Addr:              ":" + strconv.Itoa(conf.Port),
 			ErrorLog:          logs.ERROR(),
@@ -87,45 +87,45 @@ func New(conf *webconfig.WebConfig, get result.BuildResultFunc) *App {
 	return app
 }
 
-func (app *App) Results() *result.Results {
-	return app.results
+func (srv *Server) Results() *result.Results {
+	return srv.results
 }
 
 // Uptime 启动的时间
 //
 // 时区信息与配置文件中的相同
-func (app *App) Uptime() time.Time {
-	return app.uptime
+func (srv *Server) Uptime() time.Time {
+	return srv.uptime
 }
 
 // AddCompresses 添加压缩处理函数
-func (app *App) AddCompresses(m map[string]compress.WriterFunc) error {
+func (srv *Server) AddCompresses(m map[string]compress.WriterFunc) error {
 	for k, v := range m {
-		if _, found := app.compresses[k]; found {
+		if _, found := srv.compresses[k]; found {
 			return errors.New("已经存在")
 		}
 
-		app.compresses[k] = v
+		srv.compresses[k] = v
 	}
 
 	return nil
 }
 
 // Mux 返回相关的 mux.Mux 实例
-func (app *App) Mux() *mux.Mux {
-	return app.router.Mux()
+func (srv *Server) Mux() *mux.Mux {
+	return srv.router.Mux()
 }
 
 // IsDebug 是否处于调试模式
-func (app *App) IsDebug() bool {
-	return app.webConfig.Debug
+func (srv *Server) IsDebug() bool {
+	return srv.webConfig.Debug
 }
 
 // Path 生成路径部分的地址
 //
 // 基于 app.webConfig.URL 中的路径部分。
-func (app *App) Path(p string) string {
-	p = app.webConfig.URLPath + p
+func (srv *Server) Path(p string) string {
+	p = srv.webConfig.URLPath + p
 	if p != "" && p[0] != '/' {
 		p = "/" + p
 	}
@@ -134,27 +134,27 @@ func (app *App) Path(p string) string {
 }
 
 // URL 构建一条基于 app.webconfig.URL 的完整 URL
-func (app *App) URL(path string) string {
+func (srv *Server) URL(path string) string {
 	if len(path) == 0 {
-		return app.webConfig.URL
+		return srv.webConfig.URL
 	}
 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	return app.webConfig.URL + path
+	return srv.webConfig.URL + path
 }
 
 // Run 执行监听程序。
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
-func (app *App) Run() (err error) {
-	conf := app.webConfig
+func (srv *Server) Run() (err error) {
+	conf := srv.webConfig
 
-	app.runServices()
+	srv.runServices()
 
 	if !conf.HTTPS {
-		err = app.ListenAndServe()
+		err = srv.ListenAndServe()
 	} else {
 		cfg := &tls.Config{}
 		for _, certificate := range conf.Certificates {
@@ -166,14 +166,14 @@ func (app *App) Run() (err error) {
 		}
 		cfg.BuildNameToCertificate()
 
-		app.TLSConfig = cfg
-		err = app.ListenAndServeTLS("", "")
+		srv.TLSConfig = cfg
+		err = srv.ListenAndServeTLS("", "")
 	}
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 	if errors.Is(err, http.ErrServerClosed) {
-		<-app.closed
+		<-srv.closed
 	}
 	return err
 }
@@ -181,25 +181,25 @@ func (app *App) Run() (err error) {
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
-func (app *App) Close() error {
+func (srv *Server) Close() error {
 	defer func() {
-		app.stopServices()
-		app.closed <- struct{}{}
+		srv.stopServices()
+		srv.closed <- struct{}{}
 	}()
 
-	return app.Server.Close()
+	return srv.Server.Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-func (app *App) Shutdown(ctx context.Context) error {
+func (srv *Server) Shutdown(ctx context.Context) error {
 	defer func() {
-		app.stopServices()
-		app.closed <- struct{}{}
+		srv.stopServices()
+		srv.closed <- struct{}{}
 	}()
 
-	err := app.Server.Shutdown(ctx)
+	err := srv.Server.Shutdown(ctx)
 	if err != nil && err != context.DeadlineExceeded {
 		return err
 	}
@@ -207,25 +207,25 @@ func (app *App) Shutdown(ctx context.Context) error {
 }
 
 // Mimetypes 返回 mimetype.Mimetypes
-func (app *App) Mimetypes() *mimetype.Mimetypes {
-	return app.mt
+func (srv *Server) Mimetypes() *mimetype.Mimetypes {
+	return srv.mt
 }
 
 // ErrorHandlers 错误处理功能
-func (app *App) ErrorHandlers() *errorhandler.ErrorHandler {
-	return app.errorhandlers
+func (srv *Server) ErrorHandlers() *errorhandler.ErrorHandler {
+	return srv.errorhandlers
 }
 
 // Location 当前设置的时区信息
-func (app *App) Location() *time.Location {
-	return app.webConfig.Location
+func (srv *Server) Location() *time.Location {
+	return srv.webConfig.Location
 }
 
 // Logs 返回 logs.Logs 实例
-func (app *App) Logs() *logs.Logs {
-	return app.logs
+func (srv *Server) Logs() *logs.Logs {
+	return srv.logs
 }
 
-func (app *App) ContextInterceptor(ctx *wctx.Context) {
-	ctx.Location = app.Location()
+func (srv *Server) ContextInterceptor(ctx *wctx.Context) {
+	ctx.Location = srv.Location()
 }
