@@ -25,12 +25,12 @@
 // 媒体类型
 //
 // 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
-// Mimetypes().AddMarshals() 和 Mimetypes().AddUnmarshals() 添加相关的处理函数。
+// Builder().AddMarshals() 和 Builder().AddUnmarshals() 添加相关的处理函数。
 // 添加方式如下：
-//  Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+//  Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 //      "application/json": json.Marshal,
 //  })
-//  Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+//  Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 //      "application/json": json.Unmarshal,
 //  })
 // 之后，通过 web.NewContext() 获得的 context 对象，会根据用户的

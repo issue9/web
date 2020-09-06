@@ -201,10 +201,10 @@ func (conf *WebConfig) buildTimezone() error {
 }
 
 func (conf *WebConfig) checkStatic() (err error) {
-	for url, path := range conf.Static {
-		if !isURLPath(url) {
+	for u, path := range conf.Static {
+		if !isURLPath(u) {
 			return &config.Error{
-				Field:   "static." + url,
+				Field:   "static." + u,
 				Message: "必须以 / 开头且不能以 / 结尾",
 			}
 		}
@@ -212,14 +212,14 @@ func (conf *WebConfig) checkStatic() (err error) {
 		if !filepath.IsAbs(path) {
 			path, err = filepath.Abs(path)
 			if err != nil {
-				return &config.Error{Field: "static." + url, Message: err.Error()}
+				return &config.Error{Field: "static." + u, Message: err.Error()}
 			}
 		}
 
 		if !utils.FileExists(path) {
-			return &config.Error{Field: "static." + url, Message: "对应的路径不存在"}
+			return &config.Error{Field: "static." + u, Message: "对应的路径不存在"}
 		}
-		conf.Static[url] = path
+		conf.Static[u] = path
 	}
 
 	return nil

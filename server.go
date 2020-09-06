@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
@@ -20,9 +21,9 @@ import (
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 
+	context2 "github.com/issue9/web/context"
+	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/internal/webconfig"
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
 
@@ -42,7 +43,7 @@ var (
 // Classic 初始化一个可运行的框架环境
 //
 // dir 为配置文件的根目录
-func Classic(dir string, get result.BuildResultFunc) error {
+func Classic(dir string, get context2.BuildResultFunc) error {
 	mgr, err := NewConfigManager(dir)
 	if err != nil {
 		return err
@@ -58,7 +59,7 @@ func Classic(dir string, get result.BuildResultFunc) error {
 		return err
 	}
 
-	if err = Init(mgr, ConfigFilename, get); err != nil {
+	if err = Init(mgr, ConfigFilename, LogsFilename, get); err != nil {
 		return err
 	}
 
@@ -78,7 +79,7 @@ func Classic(dir string, get result.BuildResultFunc) error {
 		return err
 	}
 
-	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":    json.Unmarshal,
 		"multipart/form-data": nil,
 	})
@@ -86,7 +87,7 @@ func Classic(dir string, get result.BuildResultFunc) error {
 		return err
 	}
 
-	return Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	return Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":    json.Marshal,
 		"multipart/form-data": nil,
 	})
@@ -102,13 +103,25 @@ func Classic(dir string, get result.BuildResultFunc) error {
 // configFilename 为相对于 mgr 目录下的配置文件地址。
 //
 // 重复调用会直接 panic
-func Init(mgr *ConfigManager, configFilename string, get result.BuildResultFunc) error {
+func Init(mgr *ConfigManager, configFilename, logsFilename string, get context2.BuildResultFunc) error {
 	if defaultApp != nil {
 		panic("不能重复调用 Init")
 	}
 
 	if configFilename == "" {
 		panic("参数 configFilename 不能为空")
+	}
+	if logsFilename == "" {
+		panic("参数 logsFilename 不能为空")
+	}
+
+	lc := &config.Config{}
+	if err := mgr.LoadFile(LogsFilename, lc); err != nil {
+		return err
+	}
+	l := logs.New()
+	if err := l.Init(lc); err != nil {
+		return err
 	}
 
 	webconf := &webconfig.WebConfig{}
@@ -118,7 +131,7 @@ func Init(mgr *ConfigManager, configFilename string, get result.BuildResultFunc)
 	}
 
 	defaultConfigs = mgr
-	defaultApp, err = server.New(webconf, get)
+	defaultApp, err = server.New(webconf, l, get)
 	return err
 }
 
@@ -173,9 +186,9 @@ func Mux() *mux.Mux {
 	return App().Mux()
 }
 
-// Mimetypes 返回 mimetype.Mimetypes
-func Mimetypes() *mimetype.Mimetypes {
-	return App().Mimetypes()
+// Builder 返回 mimetype.Builder
+func Builder() *context2.Builder {
+	return App().Builder()
 }
 
 // Serve 执行监听程序。
@@ -229,7 +242,7 @@ func Load(r io.Reader, typ string, v interface{}) error {
 
 // AddMessages 添加新的错误消息代码
 func AddMessages(status int, messages map[int]string) {
-	App().Results().AddMessages(status, messages)
+	App().Builder().AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
@@ -241,7 +254,7 @@ func ErrorHandlers() *errorhandler.ErrorHandler {
 //
 // p 用于返回特定语言的内容。如果为空，则表示返回原始值。
 func Messages(p *message.Printer) map[int]string {
-	return App().Results().Messages(p)
+	return App().Builder().Messages(p)
 }
 
 // Scheduled 获取 scheduled.Server 实例

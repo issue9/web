@@ -5,16 +5,16 @@ package context
 import (
 	"errors"
 	"strings"
-	stdunicode "unicode"
+	"unicode"
 
 	"github.com/issue9/middleware/compress/accept"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
-	"golang.org/x/text/encoding/unicode"
+	xunicode "golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/context/mimetype"
 )
 
 const utfName = "utf-8"
@@ -24,7 +24,7 @@ var errInvalidCharset = errors.New("无效的字符集")
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {
 	return enc == nil ||
-		enc == unicode.UTF8 ||
+		enc == xunicode.UTF8 ||
 		enc == encoding.Nop
 }
 
@@ -44,8 +44,8 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 		return "", nil, err
 	}
 
-	for _, accept := range accepts {
-		enc, err = htmlindex.Get(accept.Value)
+	for _, apt := range accepts {
+		enc, err = htmlindex.Get(apt.Value)
 		if err != nil { // err != nil 表示未找到，继续查找
 			continue
 		}
@@ -53,7 +53,7 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 		// 转换成官方的名称
 		name, err = htmlindex.Name(enc)
 		if err != nil {
-			name = accept.Value // 不存在，直接使用用户上传的名称
+			name = apt.Value // 不存在，直接使用用户上传的名称
 		}
 
 		return name, enc, nil
@@ -109,7 +109,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 
 	for index > 0 {
 		// 去掉左边的空白字符
-		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return stdunicode.IsSpace(r) })
+		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return unicode.IsSpace(r) })
 
 		if !strings.HasPrefix(v, "charset=") {
 			index = strings.IndexByte(v, ';')

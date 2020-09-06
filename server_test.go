@@ -17,27 +17,27 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 
+	context2 "github.com/issue9/web/context"
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/gob"
+	"github.com/issue9/web/context/mimetype/mimetypetest"
 	"github.com/issue9/web/internal/webconfig"
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/gob"
-	"github.com/issue9/web/mimetype/mimetypetest"
-	"github.com/issue9/web/result"
 )
 
 func initApp(a *assert.Assertion) {
 	defaultApp = nil
-	a.NotError(Classic("./testdata", result.DefaultResultBuilder))
+	a.NotError(Classic("./testdata", context2.DefaultResultBuilder))
 	a.NotNil(defaultApp)
 	a.Equal(defaultApp, App())
 
-	err := Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	err := Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
 		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
 
-	err = Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
 		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
@@ -53,7 +53,7 @@ func TestClassic(t *testing.T) {
 	initApp(a)
 
 	a.Panic(func() {
-		a.NotError(Classic("./testdata", result.DefaultResultBuilder))
+		a.NotError(Classic("./testdata", context2.DefaultResultBuilder))
 	})
 
 	a.True(IsDebug())

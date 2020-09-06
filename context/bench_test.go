@@ -4,6 +4,8 @@ package context
 
 import (
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +16,9 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/mimetypetest"
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/gob"
+	"github.com/issue9/web/context/mimetype/mimetypetest"
 )
 
 var (
@@ -220,5 +223,40 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		obj.Name = "中文2"
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), gbkdata2)
+	}
+}
+
+func BenchmarkMimetypes_Marshal(b *testing.B) {
+	a := assert.New(b)
+	m := NewBuilder(DefaultResultBuilder)
+	a.NotNil(m)
+
+	a.NotError(m.AddMarshal(gob.Mimetype, gob.Marshal))
+	a.NotError(m.AddMarshal("application/json", json.Marshal))
+	a.NotError(m.AddMarshal("application/xml", xml.Marshal))
+	a.NotError(m.AddMarshal("font/wottf", xml.Marshal))
+
+	for i := 0; i < b.N; i++ {
+		name, marshal, err := m.Marshal("font/wottf;q=0.9")
+		a.NotError(err).
+			NotEmpty(name).
+			NotNil(marshal)
+	}
+}
+
+func BenchmarkMimetypes_Unmarshal(b *testing.B) {
+	a := assert.New(b)
+	m := NewBuilder(DefaultResultBuilder)
+	a.NotNil(m)
+
+	a.NotError(m.AddUnmarshal(gob.Mimetype, gob.Unmarshal))
+	a.NotError(m.AddUnmarshal("application/json", json.Unmarshal))
+	a.NotError(m.AddUnmarshal("application/xml", xml.Unmarshal))
+	a.NotError(m.AddUnmarshal("font/wottf", xml.Unmarshal))
+
+	for i := 0; i < b.N; i++ {
+		marshal, err := m.Unmarshal("font/wottf")
+		a.NotError(err).
+			NotNil(marshal)
 	}
 }

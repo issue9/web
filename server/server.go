@@ -20,8 +20,6 @@ import (
 
 	wctx "github.com/issue9/web/context"
 	"github.com/issue9/web/internal/webconfig"
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/result"
 )
 
 // Server 程序运行实例
@@ -36,9 +34,8 @@ type Server struct {
 	logs          *logs.Logs
 	webConfig     *webconfig.WebConfig
 	errorhandlers *errorhandler.ErrorHandler
-	mt            *mimetype.Mimetypes
 	compresses    map[string]compress.WriterFunc
-	results       *result.Results
+	builder       *wctx.Builder
 	modules       []*Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
@@ -46,11 +43,11 @@ type Server struct {
 }
 
 // New 声明一个新的 Server 实例
-func New(conf *webconfig.WebConfig, get result.BuildResultFunc) (*Server, error) {
+func New(conf *webconfig.WebConfig, logs *logs.Logs, get wctx.BuildResultFunc) (*Server, error) {
 	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
 	middlewares := middleware.NewManager(mux)
 
-	app := &Server{
+	srv := &Server{
 		Server: http.Server{
 			Addr:              ":" + strconv.Itoa(conf.Port),
 			ErrorLog:          logs.ERROR(),
@@ -61,41 +58,41 @@ func New(conf *webconfig.WebConfig, get result.BuildResultFunc) (*Server, error)
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
 			Handler:           middlewares,
 		},
-		uptime:        time.Now().In(conf.Location),
+		uptime:        time.Now(),
 		middlewares:   middlewares,
 		router:        mux.Prefix(conf.Root),
 		services:      make([]*Service, 0, 100),
 		scheduled:     scheduled.NewServer(conf.Location),
-		logs:          logs.New(),
+		logs:          logs,
 		webConfig:     conf,
 		closed:        make(chan struct{}, 1),
-		mt:            mimetype.New(),
 		errorhandlers: errorhandler.New(),
 		compresses:    make(map[string]compress.WriterFunc, 5),
-		results:       result.NewResults(get),
+		builder:       wctx.NewBuilder(get),
 	}
 
 	for url, dir := range conf.Static {
 		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		app.router.Get(url+"{path}", h)
+		srv.router.Get(url+"{path}", h)
 	}
 
-	app.AddService(app.scheduledService, "计划任务")
+	srv.AddService(srv.scheduledService, "计划任务")
 
-	// 加载固有的中间件，需要在 app 初始化之后调用
-	app.buildMiddlewares(conf)
+	// 加载固有的中间件，需要在 srv 初始化之后调用
+	srv.buildMiddlewares(conf)
 
 	if conf.Plugins != "" {
-		if err := app.loadPlugins(conf.Plugins); err != nil {
+		if err := srv.loadPlugins(conf.Plugins); err != nil {
 			return nil, err
 		}
 	}
 
-	return app, nil
+	return srv, nil
 }
 
-func (srv *Server) Results() *result.Results {
-	return srv.results
+// Builder 管理返回给客户端的错误信息
+func (srv *Server) Builder() *wctx.Builder {
+	return srv.builder
 }
 
 // Uptime 启动的时间
@@ -211,11 +208,6 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-// Mimetypes 返回 mimetype.Mimetypes
-func (srv *Server) Mimetypes() *mimetype.Mimetypes {
-	return srv.mt
 }
 
 // ErrorHandlers 错误处理功能

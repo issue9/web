@@ -7,7 +7,7 @@ import (
 	"encoding"
 	"errors"
 
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/context/mimetype"
 )
 
 // Mimetype 当前包能解析的编码类型

@@ -117,12 +117,12 @@ func (q *Queries) Errors() map[string]string {
 	return q.errors
 }
 
-// Result 转换成 Result 对象
+// CTXResult 转换成 CTXResult 对象
 //
-// code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Queries.errors 将会作为 Result.Fields 的内容。
-func (q *Queries) Result(code int) *Result {
-	return q.ctx.NewResultWithDetail(code, q.Errors())
+// code 是作为 CTXResult.Code 从错误消息中查找，如果不存在，则 panic。
+// Queries.errors 将会作为 CTXResult.Fields 的内容。
+func (q *Queries) Result(code int) *CTXResult {
+	return q.ctx.NewResultWithFields(code, q.Errors())
 }
 
 // QueryObject 将查询参数解析到一个对象中。

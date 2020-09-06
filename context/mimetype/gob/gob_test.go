@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/gob"
+
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/gob"
 )
 
 var (

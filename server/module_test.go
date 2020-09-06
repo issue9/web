@@ -39,16 +39,16 @@ func TestModules_Init(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
-	m1 := srv.New("m1", "m1 desc", "m2")
+	m1 := srv.NewModule("m1", "m1 desc", "m2")
 	m1.AddCron("test cron", job, "* * 8 * * *", true)
 	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
 
-	m2 := srv.New("m2", "m2 desc")
+	m2 := srv.NewModule("m2", "m2 desc")
 	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
 
 	a.Equal(len(srv.Modules()), 2)
 
-	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
+	a.NotError(srv.InitModules("", log.New(os.Stdout, "[INFO]", 0)))
 }
 
 func TestModule_Plugin(t *testing.T) {
@@ -96,16 +96,16 @@ func TestModules_Tags(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
-	m1 := srv.New("users1", "user1 module", "users2", "users3")
+	m1 := srv.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
 		AddInit(func() error { return errors.New("failed message") }, "安装数据表 users1")
 	m1.NewTag("v2")
 
-	m2 := srv.New("users2", "user2 module", "users3")
+	m2 := srv.NewModule("users2", "user2 module", "users3")
 	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
 	m2.NewTag("v3")
 
-	m3 := srv.New("users3", "user3 module")
+	m3 := srv.NewModule("users3", "user3 module")
 	tag := m3.NewTag("v1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
 	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")

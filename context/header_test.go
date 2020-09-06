@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/context/mimetype"
 )
 
 func TestAcceptCharset(t *testing.T) {

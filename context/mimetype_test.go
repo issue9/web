@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 
-package mimetype
+package context
 
 import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/mimetype/gob"
+
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/gob"
 )
 
 func TestMimetypes_Unmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 	um, err := m.Unmarshal("")
 	a.Error(err).
 		Nil(um)
 
-	a.NotError(m.AddUnmarshal(DefaultMimetype, gob.Unmarshal))
-	a.NotError(m.AddMarshal(DefaultMimetype, gob.Marshal))
+	a.NotError(m.AddUnmarshal(mimetype.DefaultMimetype, gob.Unmarshal))
+	a.NotError(m.AddMarshal(mimetype.DefaultMimetype, gob.Marshal))
 
 	// 未指定 mimetype
 	um, err = m.Unmarshal("")
@@ -31,9 +33,9 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 
 func TestMimetypes_Marshal(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 
-	name, marshal, err := m.Marshal(DefaultMimetype)
+	name, marshal, err := m.Marshal(mimetype.DefaultMimetype)
 	a.Error(err).
 		Nil(marshal).
 		Empty(name)
@@ -43,34 +45,34 @@ func TestMimetypes_Marshal(t *testing.T) {
 		Nil(marshal).
 		Empty(name)
 
-	a.NotError(m.AddMarshal(DefaultMimetype, gob.Marshal))
+	a.NotError(m.AddMarshal(mimetype.DefaultMimetype, gob.Marshal))
 	a.NotError(m.AddMarshal("text/plain", gob.Marshal))
 
-	name, marshal, err = m.Marshal(DefaultMimetype)
+	name, marshal, err = m.Marshal(mimetype.DefaultMimetype)
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(gob.Marshal)).
-		Equal(name, DefaultMimetype)
+		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
+		Equal(name, mimetype.DefaultMimetype)
 
-	name, marshal, err = m.Marshal(DefaultMimetype)
+	name, marshal, err = m.Marshal(mimetype.DefaultMimetype)
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(gob.Marshal)).
-		Equal(name, DefaultMimetype)
+		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
+		Equal(name, mimetype.DefaultMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, err = m.Marshal("*/*")
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(gob.Marshal)).
-		Equal(name, DefaultMimetype)
+		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
+		Equal(name, mimetype.DefaultMimetype)
 
 	// 同 */*
 	name, marshal, err = m.Marshal("")
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(gob.Marshal)).
-		Equal(name, DefaultMimetype)
+		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
+		Equal(name, mimetype.DefaultMimetype)
 
 	name, marshal, err = m.Marshal("*/*,text/plain")
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(gob.Marshal)).
+		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, "text/plain")
 
 	name, marshal, err = m.Marshal("font/wottf;q=x.9")
@@ -86,11 +88,11 @@ func TestMimetypes_Marshal(t *testing.T) {
 
 func TestMimetypes_AddMarshal(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 
 	// 不能添加同名的多次
-	a.NotError(m.AddMarshal(DefaultMimetype, nil))
-	a.Error(m.AddMarshal(DefaultMimetype, nil))
+	a.NotError(m.AddMarshal(mimetype.DefaultMimetype, nil))
+	a.Error(m.AddMarshal(mimetype.DefaultMimetype, nil))
 
 	// 不能添加以 /* 结属的名称
 	a.Panic(func() {
@@ -102,16 +104,16 @@ func TestMimetypes_AddMarshal(t *testing.T) {
 
 	// 排序是否正常
 	a.NotError(m.AddMarshal("application/json", nil))
-	a.Equal(m.marshals[0].name, DefaultMimetype) // 默认始终在第一
+	a.Equal(m.marshals[0].name, mimetype.DefaultMimetype) // 默认始终在第一
 }
 
 func TestMimetypes_AddUnmarshal(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 	a.NotNil(m)
 
-	a.NotError(m.AddUnmarshal(DefaultMimetype, nil))
-	a.Error(m.AddUnmarshal(DefaultMimetype, nil))
+	a.NotError(m.AddUnmarshal(mimetype.DefaultMimetype, nil))
+	a.Error(m.AddUnmarshal(mimetype.DefaultMimetype, nil))
 
 	// 不能添加包含 * 字符的名称
 	a.Panic(func() {
@@ -123,23 +125,23 @@ func TestMimetypes_AddUnmarshal(t *testing.T) {
 
 	// 排序是否正常
 	a.NotError(m.AddUnmarshal("application/json", nil))
-	a.Equal(m.unmarshals[0].name, DefaultMimetype) // 默认始终在第一
+	a.Equal(m.unmarshals[0].name, mimetype.DefaultMimetype) // 默认始终在第一
 }
 
 func TestMimetypes_AddUnmarshals(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 	a.NotNil(m)
 
-	err := m.AddUnmarshals(map[string]UnmarshalFunc{
-		DefaultMimetype:    nil,
-		"text":             nil,
-		"application/json": nil,
-		"application/xml":  nil,
+	err := m.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+		mimetype.DefaultMimetype: nil,
+		"text":                   nil,
+		"application/json":       nil,
+		"application/xml":        nil,
 	})
 	a.NotError(err)
 
-	a.Equal(m.unmarshals[0].name, DefaultMimetype)
+	a.Equal(m.unmarshals[0].name, mimetype.DefaultMimetype)
 	a.Equal(m.unmarshals[1].name, "application/json")
 	a.Equal(m.unmarshals[2].name, "application/xml")
 	a.Equal(m.unmarshals[3].name, "text")
@@ -153,9 +155,9 @@ func TestMimetypes_AddUnmarshals(t *testing.T) {
 
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t)
-	m := New()
+	m := NewBuilder(DefaultResultBuilder)
 
-	a.NotError(m.AddMarshals(map[string]MarshalFunc{
+	a.NotError(m.AddMarshals(map[string]mimetype.MarshalFunc{
 		"text":           nil,
 		"text/plain":     nil,
 		"text/text":      nil,
@@ -188,9 +190,9 @@ func TestMimetypes_findMarshal(t *testing.T) {
 	a.Equal(mm.name, "application/aa")
 
 	// 有默认值，则始终在第一
-	a.NotError(m.AddMarshal(DefaultMimetype, nil))
+	a.NotError(m.AddMarshal(mimetype.DefaultMimetype, nil))
 	mm = m.findMarshal("*/*")
-	a.Equal(mm.name, DefaultMimetype)
+	a.Equal(mm.name, mimetype.DefaultMimetype)
 
 	// 不存在
 	a.Nil(m.findMarshal("xx/*"))

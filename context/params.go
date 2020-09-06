@@ -215,12 +215,12 @@ func (p *Params) Errors() map[string]string {
 	return p.errors
 }
 
-// Result 转换成 Result 对象
+// CTXResult 转换成 CTXResult 对象
 //
-// code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Params.errors 将会作为 Result.Fields 的内容。
-func (p *Params) Result(code int) *Result {
-	return p.ctx.NewResultWithDetail(code, p.Errors())
+// code 是作为 CTXResult.Code 从错误消息中查找，如果不存在，则 panic。
+// Params.errors 将会作为 CTXResult.Fields 的内容。
+func (p *Params) Result(code int) *CTXResult {
+	return p.ctx.NewResultWithFields(code, p.Errors())
 }
 
 // ParamID 获取地址参数中表示 ID 的值。相对于 ParamInt64，该值必须大于 0。

@@ -14,8 +14,8 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/mimetypetest"
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/mimetypetest"
 )
 
 func init() {
@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 	w := httptest.NewRecorder()
 	b := newBuilder(a)
 	logwriter := new(bytes.Buffer)
-	b.Logs().ERROR().SetOutput(logwriter)
+	b.Logs.ERROR().SetOutput(logwriter)
 
 	// 错误的 accept
 	logwriter.Reset()
@@ -112,9 +112,9 @@ func TestNew(t *testing.T) {
 	var ctx *Context
 	a.NotPanic(func() {
 		ctx = New(w, r, b)
+		a.NotNil(ctx)
 	})
-	a.NotNil(ctx).
-		Equal(logwriter.Len(), 0).
+	a.Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
 		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
@@ -311,7 +311,7 @@ func TestContext_NewResult(t *testing.T) {
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })
 
-	a.NotPanic(func() { b.Results().AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { b.AddMessages(400, map[int]string{40000: "400"}) })
 	a.NotPanic(func() { ctx.NewResult(40000) })
 	a.Panic(func() { ctx.NewResult(50000) })
 }

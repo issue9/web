@@ -10,7 +10,6 @@ import (
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
-	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
 
@@ -25,8 +24,8 @@ type (
 	// 等同于 context.Context，方便调用者使用
 	Context = context.Context
 
-	// Result 等同于 app.Result，方便调用者使用
-	Result = result.Result
+	// Result 等同于 result.Result，方便调用者使用
+	Result = context.Result
 
 	// ServiceFunc 服务的报告函数签名。
 	//
@@ -57,5 +56,5 @@ func NewConfigManager(dir string) (*ConfigManager, error) {
 
 // NewContext 生成 *Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, App())
+	return context.New(w, r, App().Builder())
 }

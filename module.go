@@ -18,12 +18,12 @@ func Tags() map[string][]string {
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(name, desc string, deps ...string) *Module {
-	return defaultApp.New(name, desc, deps...)
+	return defaultApp.NewModule(name, desc, deps...)
 }
 
 // InitModules 初始化所有的模块或是模块下指定标签名称的函数。
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
 func InitModules(tag string) error {
-	return defaultApp.Init(tag, INFO())
+	return defaultApp.InitModules(tag, INFO())
 }

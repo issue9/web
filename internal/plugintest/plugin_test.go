@@ -11,14 +11,14 @@ import (
 	"github.com/issue9/assert"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/result"
+	"github.com/issue9/web/context"
 )
 
 // 测试插件系统是否正常
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(web.Classic("./testdata", result.DefaultResultBuilder))
+	a.NotError(web.Classic("./testdata", context.DefaultResultBuilder))
 
 	ms := web.Modules()
 	a.Equal(2, len(ms))

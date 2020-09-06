@@ -64,7 +64,7 @@ func (m *Module) NewTag(tag string) *Tag {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) New(name, desc string, deps ...string) *Module {
+func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
 	m := srv.newModule(name, desc, deps...)
 	srv.modules = append(srv.modules, m)
 	return m
@@ -95,10 +95,10 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 	return t
 }
 
-// Init 初始化模块下指定标签名称的函数
+// InitModules 初始化模块下指定标签名称的函数
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
-func (srv *Server) Init(tag string, info *log.Logger) error {
+func (srv *Server) InitModules(tag string, info *log.Logger) error {
 	flag := info.Flags()
 	info.SetFlags(0)
 	defer info.SetFlags(flag)

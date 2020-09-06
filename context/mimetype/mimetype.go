@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mimetype 提供了对编码的支持。
+// Package mimetype 提供对各类媒体数据类型的处理
 package mimetype
 
 // DefaultMimetype 默认的媒体类型，在不能获取输入和输出的媒体类型时，

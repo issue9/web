@@ -13,17 +13,15 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/compress"
 	"gopkg.in/yaml.v2"
 
 	wctx "github.com/issue9/web/context"
+	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/mimetype/gob"
 	"github.com/issue9/web/internal/webconfig"
-	"github.com/issue9/web/mimetype"
-	"github.com/issue9/web/mimetype/gob"
-	"github.com/issue9/web/result"
 )
-
-var _ wctx.Builder = &Server{}
 
 var f202 = func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
@@ -52,7 +50,7 @@ func newServer(a *assert.Assertion) *Server {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app, err := New(webconf, result.DefaultResultBuilder)
+	app, err := New(webconf, logs.New(), wctx.DefaultResultBuilder)
 	a.NotError(err).NotNil(app)
 
 	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
@@ -60,13 +58,13 @@ func newServer(a *assert.Assertion) *Server {
 		"deflate": compress.NewDeflate,
 	}))
 
-	a.NotError(app.Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+	a.NotError(app.Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
 	}))
 
-	a.NotError(app.Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	a.NotError(app.Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
@@ -77,7 +75,7 @@ func newServer(a *assert.Assertion) *Server {
 		NotNil(app.webConfig.Compress).
 		NotEmpty(app.compresses)
 
-	a.NotNil(app.mt).Equal(app.mt, app.Mimetypes())
+	a.NotNil(app.Builder()).Equal(app.Builder(), app.builder)
 	a.NotNil(app.Server.Handler)
 	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
 	a.NotNil(app.Logs())
@@ -122,7 +120,7 @@ func TestApp_Run(t *testing.T) {
 
 	go func() {
 		err := app.Run()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
 	time.Sleep(500 * time.Microsecond) // 等待 go func() 完成

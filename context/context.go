@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/context/mimetype"
 )
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
@@ -29,7 +29,7 @@ var (
 
 // Context 是对当前请求内容的封装，仅与当前请求相关。
 type Context struct {
-	builder Builder
+	builder *Builder
 
 	Response http.ResponseWriter
 	Request  *http.Request
@@ -71,18 +71,18 @@ type Context struct {
 //
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
-func New(w http.ResponseWriter, r *http.Request, b Builder) *Context {
+func New(w http.ResponseWriter, r *http.Request, b *Builder) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
-		b.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		b.Logs.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
 		errorhandler.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, err := b.Mimetypes().Marshal(header)
+	outputMimetypeName, marshal, err := b.Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -108,7 +108,7 @@ func New(w http.ResponseWriter, r *http.Request, b Builder) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimetype, err = ctx.builder.Mimetypes().Unmarshal(encName)
+		ctx.InputMimetype, err = ctx.builder.Unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
@@ -117,7 +117,9 @@ func New(w http.ResponseWriter, r *http.Request, b Builder) *Context {
 		ctx.readed = true
 	}
 
-	b.ContextInterceptor(ctx)
+	if b.ContextInterceptor != nil {
+		b.ContextInterceptor(ctx)
+	}
 
 	return ctx
 }
