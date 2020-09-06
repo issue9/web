@@ -43,7 +43,7 @@ func newContext(a *assert.Assertion,
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestBuilder_New(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	b := newBuilder(a)
@@ -55,7 +55,7 @@ func TestNew(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -74,7 +74,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 
 	// 错误的 content-type,有输入内容
@@ -82,7 +82,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -92,7 +92,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-"))
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 
 	// 错误的 Accept-Language
@@ -101,7 +101,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	a.Panic(func() {
-		New(w, r, b)
+		b.New(w, r)
 	})
 
 	// 正常，指定 Accept-Language
@@ -111,7 +111,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	var ctx *Context
 	a.NotPanic(func() {
-		ctx = New(w, r, b)
+		ctx = b.New(w, r)
 		a.NotNil(ctx)
 	})
 	a.Equal(logwriter.Len(), 0).
@@ -125,7 +125,7 @@ func TestNew(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	a.NotPanic(func() {
-		ctx = New(w, r, b)
+		ctx = b.New(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -138,7 +138,7 @@ func TestNew(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 	a.NotPanic(func() {
-		ctx = New(w, r, b)
+		ctx = b.New(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -306,7 +306,7 @@ func TestContext_NewResult(t *testing.T) {
 	b := newBuilder(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := New(w, r, b)
+	ctx := b.New(w, r)
 
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })

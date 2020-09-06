@@ -10,7 +10,7 @@ import (
 
 // INFO 获取 INFO 级别的 log.Logger 实例，在未指定 info 级别的日志时，该实例返回一个 nil。
 func INFO() *log.Logger {
-	return App().Logs().INFO()
+	return Server().Logs().INFO()
 }
 
 // Info 相当于 INFO().Println(v...) 的简写方式
@@ -27,7 +27,7 @@ func Infof(format string, v ...interface{}) {
 
 // DEBUG 获取 DEBUG 级别的 log.Logger 实例，在未指定 debug 级别的日志时，该实例返回一个 nil。
 func DEBUG() *log.Logger {
-	return App().Logs().DEBUG()
+	return Server().Logs().DEBUG()
 }
 
 // Debug 相当于 DEBUG().Println(v...) 的简写方式
@@ -42,7 +42,7 @@ func Debugf(format string, v ...interface{}) {
 
 // TRACE 获取 TRACE 级别的 log.Logger 实例，在未指定 trace 级别的日志时，该实例返回一个 nil。
 func TRACE() *log.Logger {
-	return App().Logs().TRACE()
+	return Server().Logs().TRACE()
 }
 
 // Trace 相当于 TRACE().Println(v...) 的简写方式
@@ -57,7 +57,7 @@ func Tracef(format string, v ...interface{}) {
 
 // WARN 获取 WARN 级别的 log.Logger 实例，在未指定 warn 级别的日志时，该实例返回一个 nil。
 func WARN() *log.Logger {
-	return App().Logs().WARN()
+	return Server().Logs().WARN()
 }
 
 // Warn 相当于 WARN().Println(v...) 的简写方式
@@ -72,7 +72,7 @@ func Warnf(format string, v ...interface{}) {
 
 // ERROR 获取 ERROR 级别的 log.Logger 实例，在未指定 error 级别的日志时，该实例返回一个 nil。
 func ERROR() *log.Logger {
-	return App().Logs().ERROR()
+	return Server().Logs().ERROR()
 }
 
 // Error 相当于 ERROR().Println(v...) 的简写方式
@@ -87,7 +87,7 @@ func Errorf(format string, v ...interface{}) {
 
 // CRITICAL 获取 CRITICAL 级别的 log.Logger 实例，在未指定 critical 级别的日志时，该实例返回一个 nil。
 func CRITICAL() *log.Logger {
-	return App().Logs().CRITICAL()
+	return Server().Logs().CRITICAL()
 }
 
 // Critical 相当于 CRITICAL().Println(v...)的简写方式
@@ -108,7 +108,7 @@ func all(msg string) {
 	TRACE().Output(3, msg)
 	ERROR().Output(3, msg)
 	CRITICAL().Output(3, msg)
-	App().Logs().Flush()
+	Server().Logs().Flush()
 }
 
 // Fatal 输出错误信息，然后退出程序。

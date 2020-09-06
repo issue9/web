@@ -49,7 +49,7 @@ func (srv *Server) buildMiddlewares(conf *webconfig.WebConfig) {
 	}
 
 	srv.middlewares.Before(func(h http.Handler) http.Handler {
-		return srv.errorhandlers.New(h)
+		return srv.ErrorHandlers().New(h)
 	})
 
 	// compress
@@ -66,7 +66,7 @@ func (srv *Server) buildMiddlewares(conf *webconfig.WebConfig) {
 
 	// recovery
 	srv.middlewares.Before(func(h http.Handler) http.Handler {
-		return recovery.New(h, srv.errorhandlers.Recovery(srv.Logs().ERROR()))
+		return recovery.New(h, srv.ErrorHandlers().Recovery(srv.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。

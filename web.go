@@ -56,5 +56,5 @@ func NewConfigManager(dir string) (*ConfigManager, error) {
 
 // NewContext 生成 *Context 对象，若是出错则 panic
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return context.New(w, r, App().Builder())
+	return defaultServer.Builder().New(w, r)
 }

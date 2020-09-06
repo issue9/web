@@ -20,7 +20,7 @@ func TestLogs(t *testing.T) {
 	a.Empty(info.String())
 
 	debug := new(bytes.Buffer)
-	App().Logs().DEBUG().SetOutput(debug)
+	Server().Logs().DEBUG().SetOutput(debug)
 	Debug("1,2,3")
 	a.Contains(debug.String(), "1,2,3")
 	debug.Reset()
@@ -28,7 +28,7 @@ func TestLogs(t *testing.T) {
 	a.Contains(debug.String(), "1,2,3")
 
 	err := new(bytes.Buffer)
-	App().Logs().ERROR().SetOutput(err)
+	Server().Logs().ERROR().SetOutput(err)
 	Error("1,2,3")
 	a.Contains(err.String(), "1,2,3")
 	err.Reset()
@@ -36,7 +36,7 @@ func TestLogs(t *testing.T) {
 	a.Contains(err.String(), "1,2,3")
 
 	critical := new(bytes.Buffer)
-	App().Logs().CRITICAL().SetOutput(critical)
+	Server().Logs().CRITICAL().SetOutput(critical)
 	Critical("1,2,3")
 	a.Contains(critical.String(), "1,2,3")
 	critical.Reset()

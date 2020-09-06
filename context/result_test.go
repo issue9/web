@@ -224,27 +224,26 @@ func TestResult(t *testing.T) {
 
 func TestBuilder_AddMessages(t *testing.T) {
 	a := assert.New(t)
-	rslt := NewBuilder(DefaultResultBuilder)
-	a.NotNil(rslt)
+	builder := newBuilder(a)
 
 	a.NotPanic(func() {
-		rslt.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]string{
 			1:   "1",
 			100: "100",
 		})
 	})
 
-	msg, found := rslt.messages[1]
+	msg, found := builder.messages[1]
 	a.True(found).
 		Equal(msg.status, 400).
 		Equal(msg.message, "1")
 
-	msg, found = rslt.messages[401]
+	msg, found = builder.messages[401]
 	a.False(found).Nil(msg)
 
 	// 消息不能为空
 	a.Panic(func() {
-		rslt.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]string{
 			1:   "",
 			100: "100",
 		})
@@ -252,7 +251,7 @@ func TestBuilder_AddMessages(t *testing.T) {
 
 	// 重复的 ID
 	a.Panic(func() {
-		rslt.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]string{
 			1:   "1",
 			100: "100",
 		})
@@ -261,17 +260,17 @@ func TestBuilder_AddMessages(t *testing.T) {
 
 func TestBuilder_Messages(t *testing.T) {
 	a := assert.New(t)
-	rslt := NewBuilder(DefaultResultBuilder)
-	a.NotNil(rslt)
+	builder := newBuilder(a)
+	a.NotNil(builder)
 
 	a.NotError(message.SetString(language.Und, "lang", "und"))
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotPanic(func() {
-		rslt.AddMessages(400, map[int]string{40010: "lang"})
+		builder.AddMessages(400, map[int]string{40010: "lang"})
 	})
 
-	r := rslt.NewResult(40010)
+	r := builder.NewResult(40010)
 	rr, ok := r.(*defaultResult)
 	a.True(ok).NotNil(rr)
 	a.Equal(rr.Message, "lang").
@@ -279,21 +278,21 @@ func TestBuilder_Messages(t *testing.T) {
 
 	// 不存在
 	a.Panic(func() {
-		a.NotError(rslt.NewResult(40010001))
+		a.NotError(builder.NewResult(40010001))
 	})
 
-	lmsgs := rslt.Messages(message.NewPrinter(language.Und))
+	lmsgs := builder.Messages(message.NewPrinter(language.Und))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = rslt.Messages(message.NewPrinter(language.SimplifiedChinese))
+	lmsgs = builder.Messages(message.NewPrinter(language.SimplifiedChinese))
 	a.Equal(lmsgs[40010], "hans")
 
-	lmsgs = rslt.Messages(message.NewPrinter(language.TraditionalChinese))
+	lmsgs = builder.Messages(message.NewPrinter(language.TraditionalChinese))
 	a.Equal(lmsgs[40010], "hant")
 
-	lmsgs = rslt.Messages(message.NewPrinter(language.English))
+	lmsgs = builder.Messages(message.NewPrinter(language.English))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = rslt.Messages(nil)
+	lmsgs = builder.Messages(nil)
 	a.Equal(lmsgs[40010], "lang")
 }

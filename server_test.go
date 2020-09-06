@@ -25,10 +25,10 @@ import (
 )
 
 func initApp(a *assert.Assertion) {
-	defaultApp = nil
+	defaultServer = nil
 	a.NotError(Classic("./testdata", context2.DefaultResultBuilder))
-	a.NotNil(defaultApp)
-	a.Equal(defaultApp, App())
+	a.NotNil(defaultServer)
+	a.Equal(defaultServer, Server())
 
 	err := Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/xml":        xml.Marshal,

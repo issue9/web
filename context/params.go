@@ -215,7 +215,7 @@ func (p *Params) Errors() map[string]string {
 	return p.errors
 }
 
-// CTXResult 转换成 CTXResult 对象
+// Result 转换成 CTXResult 对象
 //
 // code 是作为 CTXResult.Code 从错误消息中查找，如果不存在，则 panic。
 // Params.errors 将会作为 CTXResult.Fields 的内容。

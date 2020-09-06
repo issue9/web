@@ -13,9 +13,6 @@ import (
 	"github.com/issue9/web/context/mimetype"
 )
 
-// ErrNotFound 表示指定名称的 mimetype 解析函数未找到
-var ErrNotFound = errors.New("未找到指定名称的 mimetype")
-
 type marshaler struct {
 	f    mimetype.MarshalFunc
 	name string
@@ -26,8 +23,8 @@ type unmarshaler struct {
 	name string
 }
 
-func nameExists(name string) error {
-	return fmt.Errorf("该名称 %s 已经存在", name)
+func mimetypeExists(name string) error {
+	return fmt.Errorf("该名称 %s 的 mimetype 已经存在", name)
 }
 
 // Unmarshal 查找指定名称的 UnmarshalFunc
@@ -40,7 +37,7 @@ func (b *Builder) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 		}
 	}
 	if unmarshal == nil {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("未找到 %s 类型的解码函数", name)
 	}
 
 	return unmarshal.f, nil
@@ -64,7 +61,7 @@ func (b *Builder) Marshal(header string) (string, mimetype.MarshalFunc, error) {
 		if mm := b.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.f, nil
 		}
-		return "", nil, ErrNotFound
+		return "", nil, errors.New("请求中未指定 accept 报头，且服务端也未指定匹配 */* 的解码函数")
 	}
 
 	accepts, err := qheader.Parse(header, "*/*")
@@ -78,7 +75,7 @@ func (b *Builder) Marshal(header string) (string, mimetype.MarshalFunc, error) {
 		}
 	}
 
-	return "", nil, ErrNotFound
+	return "", nil, errors.New("未找到符合客户端要求的解码函数")
 }
 
 // AddMarshals 添加多个编码函数
@@ -103,8 +100,12 @@ func (b *Builder) AddMarshal(name string, mf mimetype.MarshalFunc) error {
 
 	for _, mt := range b.marshals {
 		if mt.name == name {
-			return nameExists(name)
+			return mimetypeExists(name)
 		}
+	}
+
+	if b.marshals == nil {
+		b.marshals = make([]*marshaler, 0, 10)
 	}
 
 	b.marshals = append(b.marshals, &marshaler{
@@ -149,8 +150,12 @@ func (b *Builder) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 
 	for _, mt := range b.unmarshals {
 		if mt.name == name {
-			return nameExists(name)
+			return mimetypeExists(name)
 		}
+	}
+
+	if b.unmarshals == nil {
+		b.unmarshals = make([]*unmarshaler, 0, 10)
 	}
 
 	b.unmarshals = append(b.unmarshals, &unmarshaler{

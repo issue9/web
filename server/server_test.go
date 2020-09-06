@@ -77,7 +77,7 @@ func newServer(a *assert.Assertion) *Server {
 
 	a.NotNil(app.Builder()).Equal(app.Builder(), app.builder)
 	a.NotNil(app.Server.Handler)
-	a.NotNil(app.errorhandlers).Equal(app.errorhandlers, app.ErrorHandlers())
+	a.NotNil(app.ErrorHandlers())
 	a.NotNil(app.Logs())
 	a.NotNil(app.Mux())
 	a.Equal(app.Mux(), app.router.Mux())
@@ -107,7 +107,7 @@ func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
 	app := newServer(a)
 	exit := make(chan bool, 1)
-	err := app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
+	err := app.ErrorHandlers().Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)

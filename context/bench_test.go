@@ -4,7 +4,6 @@ package context
 
 import (
 	"bytes"
-	"encoding/json"
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
@@ -17,7 +16,6 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/gob"
 	"github.com/issue9/web/context/mimetype/mimetypetest"
 )
 
@@ -60,7 +58,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 	}
 }
 
-func BenchmarkNew(b *testing.B) {
+func BenchmarkBuilder_New(b *testing.B) {
 	a := assert.New(b)
 	bb := newBuilder(a)
 
@@ -71,7 +69,7 @@ func BenchmarkNew(b *testing.B) {
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 		a.NotNil(ctx)
 	}
 }
@@ -84,7 +82,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -101,7 +99,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "utf-8")
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -118,7 +116,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -135,7 +133,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -153,7 +151,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkstr1))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -171,7 +169,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk")
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -189,7 +187,7 @@ func BenchmarkPost(b *testing.B) {
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -213,7 +211,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := New(w, r, bb)
+		ctx := bb.New(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -226,36 +224,30 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	}
 }
 
-func BenchmarkMimetypes_Marshal(b *testing.B) {
+func BenchmarkBuilder_Marshal(b *testing.B) {
 	a := assert.New(b)
-	m := NewBuilder(DefaultResultBuilder)
-	a.NotNil(m)
+	builder := newBuilder(a)
+	a.NotNil(builder)
 
-	a.NotError(m.AddMarshal(gob.Mimetype, gob.Marshal))
-	a.NotError(m.AddMarshal("application/json", json.Marshal))
-	a.NotError(m.AddMarshal("application/xml", xml.Marshal))
-	a.NotError(m.AddMarshal("font/wottf", xml.Marshal))
+	a.NotError(builder.AddMarshal("font/wottf", xml.Marshal))
 
 	for i := 0; i < b.N; i++ {
-		name, marshal, err := m.Marshal("font/wottf;q=0.9")
+		name, marshal, err := builder.Marshal("font/wottf;q=0.9")
 		a.NotError(err).
 			NotEmpty(name).
 			NotNil(marshal)
 	}
 }
 
-func BenchmarkMimetypes_Unmarshal(b *testing.B) {
+func BenchmarkBuilder_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	m := NewBuilder(DefaultResultBuilder)
-	a.NotNil(m)
+	builder := newBuilder(a)
+	a.NotNil(builder)
 
-	a.NotError(m.AddUnmarshal(gob.Mimetype, gob.Unmarshal))
-	a.NotError(m.AddUnmarshal("application/json", json.Unmarshal))
-	a.NotError(m.AddUnmarshal("application/xml", xml.Unmarshal))
-	a.NotError(m.AddUnmarshal("font/wottf", xml.Unmarshal))
+	a.NotError(builder.AddUnmarshal("font/wottf", xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
-		marshal, err := m.Unmarshal("font/wottf")
+		marshal, err := builder.Unmarshal("font/wottf")
 		a.NotError(err).
 			NotNil(marshal)
 	}

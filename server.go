@@ -37,7 +37,7 @@ const (
 
 var (
 	defaultConfigs *ConfigManager
-	defaultApp     *server.Server
+	defaultServer  *server.Server
 )
 
 // Classic 初始化一个可运行的框架环境
@@ -67,7 +67,7 @@ func Classic(dir string, get context2.BuildResultFunc) error {
 	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
 		return err
 	}
-	if err = App().Logs().Init(lc); err != nil {
+	if err = Server().Logs().Init(lc); err != nil {
 		return err
 	}
 
@@ -104,7 +104,7 @@ func Classic(dir string, get context2.BuildResultFunc) error {
 //
 // 重复调用会直接 panic
 func Init(mgr *ConfigManager, configFilename, logsFilename string, get context2.BuildResultFunc) error {
-	if defaultApp != nil {
+	if defaultServer != nil {
 		panic("不能重复调用 Init")
 	}
 
@@ -131,13 +131,13 @@ func Init(mgr *ConfigManager, configFilename, logsFilename string, get context2.
 	}
 
 	defaultConfigs = mgr
-	defaultApp, err = server.New(webconf, l, get)
+	defaultServer, err = server.New(webconf, l, get)
 	return err
 }
 
-// App 返回 defaultApp 实例
-func App() *server.Server {
-	return defaultApp
+// Server 返回 defaultServer 实例
+func Server() *server.Server {
+	return defaultServer
 }
 
 // Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
@@ -159,70 +159,70 @@ func Grace(dur time.Duration, sig ...os.Signal) {
 		ctx, c := context.WithTimeout(context.Background(), dur)
 		defer c()
 
-		if err := App().Shutdown(ctx); err != nil {
-			App().Logs().Error(err)
+		if err := Server().Shutdown(ctx); err != nil {
+			Server().Logs().Error(err)
 		}
-		App().Logs().Flush() // 保证内容会被正常输出到日志。
+		Server().Logs().Flush() // 保证内容会被正常输出到日志。
 	}()
 }
 
 // AddCompresses 添加压缩处理函数
 func AddCompresses(m map[string]compress.WriterFunc) error {
-	return App().AddCompresses(m)
+	return Server().AddCompresses(m)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
 func AddMiddlewares(m middleware.Middleware) {
-	App().AddMiddlewares(m)
+	Server().AddMiddlewares(m)
 }
 
 // IsDebug 是否处在调试模式
 func IsDebug() bool {
-	return App().IsDebug()
+	return Server().IsDebug()
 }
 
 // Mux 返回 mux.Mux 实例。
 func Mux() *mux.Mux {
-	return App().Mux()
+	return Server().Mux()
 }
 
 // Builder 返回 mimetype.Builder
 func Builder() *context2.Builder {
-	return App().Builder()
+	return Server().Builder()
 }
 
 // Serve 执行监听程序。
 func Serve() error {
-	return App().Run()
+	return Server().Run()
 }
 
 // Close 关闭服务。
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func Close() error {
-	return App().Close()
+	return Server().Close()
 }
 
 // Shutdown 关闭所有服务。
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func Shutdown(ctx context.Context) error {
-	return App().Shutdown(ctx)
+	return Server().Shutdown(ctx)
 }
 
 // URL 构建一条完整 URL
 func URL(path string) string {
-	return App().URL(path)
+	return Server().URL(path)
 }
 
 // Path 构建 URL 的 Path 部分
 func Path(path string) string {
-	return App().Path(path)
+	return Server().Path(path)
 }
 
 // Services 返回所有的服务列表
 func Services() []*server.Service {
-	return App().Services()
+	return Server().Services()
 }
 
 // File 获取配置目录下的文件。
@@ -242,24 +242,24 @@ func Load(r io.Reader, typ string, v interface{}) error {
 
 // AddMessages 添加新的错误消息代码
 func AddMessages(status int, messages map[int]string) {
-	App().Builder().AddMessages(status, messages)
+	Server().Builder().AddMessages(status, messages)
 }
 
 // ErrorHandlers 错误处理功能
 func ErrorHandlers() *errorhandler.ErrorHandler {
-	return App().ErrorHandlers()
+	return Server().ErrorHandlers()
 }
 
 // Messages 获取所有的错误消息代码
 //
 // p 用于返回特定语言的内容。如果为空，则表示返回原始值。
 func Messages(p *message.Printer) map[int]string {
-	return App().Builder().Messages(p)
+	return Server().Builder().Messages(p)
 }
 
 // Scheduled 获取 scheduled.Server 实例
 func Scheduled() *scheduled.Server {
-	return App().Scheduled()
+	return Server().Scheduled()
 }
 
 // Schedulers 返回所有的计划任务
@@ -269,7 +269,7 @@ func Schedulers() []*scheduled.Job {
 
 // Location 返回当前配置文件中指定的时区信息
 func Location() *time.Location {
-	return App().Location()
+	return Server().Location()
 }
 
 // Now 返回当前时间
@@ -288,5 +288,5 @@ func ParseTime(layout, value string) (time.Time, error) {
 //
 // 时区信息与配置文件中的相同
 func Uptime() time.Time {
-	return App().Uptime()
+	return Server().Uptime()
 }

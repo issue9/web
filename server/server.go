@@ -26,17 +26,15 @@ import (
 type Server struct {
 	http.Server
 
-	uptime        time.Time
-	middlewares   *middleware.Manager
-	router        *mux.Prefix
-	services      []*Service
-	scheduled     *scheduled.Server
-	logs          *logs.Logs
-	webConfig     *webconfig.WebConfig
-	errorhandlers *errorhandler.ErrorHandler
-	compresses    map[string]compress.WriterFunc
-	builder       *wctx.Builder
-	modules       []*Module
+	uptime      time.Time
+	middlewares *middleware.Manager
+	router      *mux.Prefix
+	services    []*Service
+	scheduled   *scheduled.Server
+	webConfig   *webconfig.WebConfig
+	compresses  map[string]compress.WriterFunc
+	builder     *wctx.Builder
+	modules     []*Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
@@ -58,17 +56,19 @@ func New(conf *webconfig.WebConfig, logs *logs.Logs, get wctx.BuildResultFunc) (
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
 			Handler:           middlewares,
 		},
-		uptime:        time.Now(),
-		middlewares:   middlewares,
-		router:        mux.Prefix(conf.Root),
-		services:      make([]*Service, 0, 100),
-		scheduled:     scheduled.NewServer(conf.Location),
-		logs:          logs,
-		webConfig:     conf,
-		closed:        make(chan struct{}, 1),
-		errorhandlers: errorhandler.New(),
-		compresses:    make(map[string]compress.WriterFunc, 5),
-		builder:       wctx.NewBuilder(get),
+		builder: &wctx.Builder{
+			ResultBuilder: get,
+			Logs:          logs,
+			ErrorHandlers: errorhandler.New(),
+		},
+		uptime:      time.Now(),
+		middlewares: middlewares,
+		router:      mux.Prefix(conf.Root),
+		services:    make([]*Service, 0, 100),
+		scheduled:   scheduled.NewServer(conf.Location),
+		webConfig:   conf,
+		closed:      make(chan struct{}, 1),
+		compresses:  make(map[string]compress.WriterFunc, 5),
 	}
 
 	for url, dir := range conf.Static {
@@ -212,7 +212,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 
 // ErrorHandlers 错误处理功能
 func (srv *Server) ErrorHandlers() *errorhandler.ErrorHandler {
-	return srv.errorhandlers
+	return srv.builder.ErrorHandlers
 }
 
 // Location 当前设置的时区信息
@@ -222,9 +222,5 @@ func (srv *Server) Location() *time.Location {
 
 // Logs 返回 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs {
-	return srv.logs
-}
-
-func (srv *Server) ContextInterceptor(ctx *wctx.Context) {
-	ctx.Location = srv.Location()
+	return srv.builder.Logs
 }

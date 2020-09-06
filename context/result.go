@@ -100,6 +100,10 @@ func (b *Builder) Messages(p *message.Printer) map[int]string {
 // msgs 中，键名表示的是该错误的错误代码；
 // 键值表示具体的错误描述内容。
 func (b *Builder) AddMessages(status int, msgs map[int]string) {
+	if b.messages == nil {
+		b.messages = make(map[int]*resultMessage, len(msgs))
+	}
+
 	for code, msg := range msgs {
 		if msg == "" {
 			panic("参数 msg 不能为空值")
@@ -120,7 +124,7 @@ func (b *Builder) NewResult(code int) Result {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return b.build(msg.status, code, msg.message)
+	return b.ResultBuilder(msg.status, code, msg.message)
 }
 
 // NewResult 返回 CTXResult 实例

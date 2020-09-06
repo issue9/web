@@ -27,7 +27,7 @@ var (
 	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
 )
 
-// Context 是对当前请求内容的封装，仅与当前请求相关。
+// Context 是对当次 HTTP 请求内容的封装
 type Context struct {
 	builder *Builder
 
@@ -71,7 +71,7 @@ type Context struct {
 //
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
-func New(w http.ResponseWriter, r *http.Request, b *Builder) *Context {
+func (b *Builder) New(w http.ResponseWriter, r *http.Request) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
@@ -117,8 +117,8 @@ func New(w http.ResponseWriter, r *http.Request, b *Builder) *Context {
 		ctx.readed = true
 	}
 
-	if b.ContextInterceptor != nil {
-		b.ContextInterceptor(ctx)
+	if b.Interceptor != nil {
+		b.Interceptor(ctx)
 	}
 
 	return ctx

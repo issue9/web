@@ -28,7 +28,7 @@ func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
 	app := newServer(a)
 	exit := make(chan bool, 1)
-	err := app.errorhandlers.Add(func(w http.ResponseWriter, status int) {
+	err := app.ErrorHandlers().Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
@@ -39,7 +39,7 @@ func TestMiddlewares(t *testing.T) {
 
 	go func() {
 		err := app.Run()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err.Error())
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
 	time.Sleep(500 * time.Microsecond)

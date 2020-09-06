@@ -5,6 +5,7 @@ package context
 import (
 	"encoding/json"
 	"encoding/xml"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs/v2"
@@ -17,8 +18,7 @@ import (
 
 // 声明一个 builder 实例
 func newBuilder(a *assert.Assertion) *Builder {
-	b := NewBuilder(DefaultResultBuilder)
-	a.NotNil(b)
+	b := newEmptyBuilder(a)
 
 	err := b.AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
@@ -36,8 +36,16 @@ func newBuilder(a *assert.Assertion) *Builder {
 	})
 	a.NotError(err)
 
-	b.ErrorHandlers = errorhandler.New()
-	b.Logs = logs.New()
-	b.ContextInterceptor = func(ctx *Context) {}
 	return b
+}
+
+func newEmptyBuilder(a *assert.Assertion) *Builder {
+	return &Builder{
+		Logs:          logs.New(),
+		ResultBuilder: DefaultResultBuilder,
+		ErrorHandlers: errorhandler.New(),
+		Interceptor: func(ctx *Context) {
+			ctx.Location = time.UTC
+		},
+	}
 }

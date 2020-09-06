@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/issue9/middleware/compress/accept"
+	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"
@@ -39,7 +39,7 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 		return utfName, nil, nil
 	}
 
-	accepts, err := accept.Parse(header)
+	accepts, err := qheader.Parse(header, "*")
 	if err != nil {
 		return "", nil, err
 	}
@@ -67,7 +67,7 @@ func acceptLanguage(header string) (language.Tag, error) {
 		return language.Und, nil
 	}
 
-	al, err := accept.Parse(header)
+	al, err := qheader.Parse(header, "*")
 	if err != nil {
 		return language.Und, err
 	}
