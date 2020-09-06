@@ -16,6 +16,8 @@ import (
 	"bytes"
 	"errors"
 	"html/template"
+
+	"github.com/issue9/web/context/mimetype"
 )
 
 // Mimetype HTML 的 mimetype 值
@@ -72,6 +74,10 @@ func (html *HTML) SetTemplate(tpl *template.Template) {
 
 // Marshal 针对 HTML 内容的 MarshalFunc 实现
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
+	if v == mimetype.Nil {
+		return nil, nil
+	}
+
 	obj, ok := v.(*Template)
 	if !ok {
 		return nil, errUnsupported
