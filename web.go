@@ -24,23 +24,23 @@ type (
 	// 等同于 context.Context，方便调用者使用
 	Context = context.Context
 
-	// Result 等同于 result.Result，方便调用者使用
+	// Result 等同于 context.Result，方便调用者使用
 	Result = context.Result
 
-	// ServiceFunc 服务的报告函数签名。
+	// ServiceFunc 服务的报告函数签名
 	//
 	// 等同于 server.ServiceFunc，方便调用者使用
 	ServiceFunc = server.ServiceFunc
 
-	// SchedulerFunc 计划任务的执行函数签名。
+	// SchedulerFunc 计划任务的执行函数签名
 	//
 	// 等同于 scheduled.JobFunc，方便调用者使用
 	SchedulerFunc = scheduled.JobFunc
 
-	// Module 等同于 module.Module，方便调用者使用
+	// Module 等同于 server.Module，方便调用者使用
 	Module = server.Module
 
-	// Tag 等同于 module.Tag，方便调用者使用
+	// Tag 等同于 server.Tag，方便调用者使用
 	Tag = server.Tag
 
 	// ConfigManager 配置管理

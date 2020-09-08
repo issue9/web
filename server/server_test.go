@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/config"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/compress"
+	"github.com/issue9/mux/v2"
 	"gopkg.in/yaml.v2"
 
 	wctx "github.com/issue9/web/context"
@@ -50,13 +50,8 @@ func newServer(a *assert.Assertion) *Server {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app, err := New(webconf, logs.New(), wctx.DefaultResultBuilder)
+	app, err := New(webconf, wctx.NewBuilder(logs.New(), mux.New(false, false, false, nil, nil).Prefix(""), wctx.DefaultResultBuilder))
 	a.NotError(err).NotNil(app)
-
-	a.NotError(app.AddCompresses(map[string]compress.WriterFunc{
-		"gzip":    compress.NewGzip,
-		"deflate": compress.NewDeflate,
-	}))
 
 	a.NotError(app.Builder().AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
@@ -71,16 +66,13 @@ func newServer(a *assert.Assertion) *Server {
 	}))
 
 	// 以下内容由配置文件决定
-	a.True(app.IsDebug()).
-		NotNil(app.webConfig.Compress).
-		NotEmpty(app.compresses)
+	a.True(app.IsDebug())
 
 	a.NotNil(app.Builder()).Equal(app.Builder(), app.builder)
 	a.NotNil(app.Server.Handler)
-	a.NotNil(app.ErrorHandlers())
-	a.NotNil(app.Logs())
+	a.NotNil(app.Builder().Logs())
 	a.NotNil(app.Mux())
-	a.Equal(app.Mux(), app.router.Mux())
+	a.Equal(app.Mux(), app.Builder().Router().Mux())
 
 	return app
 }
@@ -107,12 +99,6 @@ func TestApp_Run(t *testing.T) {
 	a := assert.New(t)
 	app := newServer(a)
 	exit := make(chan bool, 1)
-	err := app.ErrorHandlers().Add(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
-		_, err := w.Write([]byte("error handler test"))
-		a.NotError(err)
-	}, http.StatusNotFound)
-	a.NotError(err)
 
 	app.Mux().GetFunc("/m1/test", f202)
 	app.Mux().GetFunc("/m2/test", f202)
@@ -137,13 +123,6 @@ func TestApp_Run(t *testing.T) {
 		Do().
 		Status(http.StatusAccepted)
 
-	// not found
-	// 返回 ErrorHandler 内容
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/mux/not-exists.txt").
-		Do().
-		Status(http.StatusNotFound).
-		StringBody("error handler test")
-
 	// static 中定义的静态文件
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/file1.txt").
 		Do().
@@ -152,12 +131,6 @@ func TestApp_Run(t *testing.T) {
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/dir/file2.txt").
 		Do().
 		Status(http.StatusOK)
-
-	// 不存在的文件，测试 internal/fileserver 是否启作用
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/client/dir/not-exists.txt").
-		Do().
-		Status(http.StatusNotFound).
-		StringBody("error handler test")
 
 	a.NotError(app.Close())
 	<-exit

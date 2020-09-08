@@ -11,10 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/compress"
-	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/scheduled"
 
@@ -26,54 +22,41 @@ import (
 type Server struct {
 	http.Server
 
-	uptime      time.Time
-	middlewares *middleware.Manager
-	router      *mux.Prefix
-	services    []*Service
-	scheduled   *scheduled.Server
-	webConfig   *webconfig.WebConfig
-	compresses  map[string]compress.WriterFunc
-	builder     *wctx.Builder
-	modules     []*Module
+	builder   *wctx.Builder
+	uptime    time.Time
+	services  []*Service
+	scheduled *scheduled.Server
+	webConfig *webconfig.WebConfig
+	modules   []*Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	closed chan struct{}
 }
 
 // New 声明一个新的 Server 实例
-func New(conf *webconfig.WebConfig, logs *logs.Logs, get wctx.BuildResultFunc) (*Server, error) {
-	mux := mux.New(conf.DisableOptions, conf.DisableHead, false, nil, nil)
-	middlewares := middleware.NewManager(mux)
-
+func New(conf *webconfig.WebConfig, builder *wctx.Builder) (*Server, error) {
 	srv := &Server{
 		Server: http.Server{
 			Addr:              ":" + strconv.Itoa(conf.Port),
-			ErrorLog:          logs.ERROR(),
+			ErrorLog:          builder.Logs().ERROR(),
 			ReadTimeout:       conf.ReadTimeout.Duration(),
 			WriteTimeout:      conf.WriteTimeout.Duration(),
 			IdleTimeout:       conf.IdleTimeout.Duration(),
 			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
-			Handler:           middlewares,
+			Handler:           builder.Handler(),
 		},
-		builder: &wctx.Builder{
-			ResultBuilder: get,
-			Logs:          logs,
-			ErrorHandlers: errorhandler.New(),
-		},
-		uptime:      time.Now(),
-		middlewares: middlewares,
-		router:      mux.Prefix(conf.Root),
-		services:    make([]*Service, 0, 100),
-		scheduled:   scheduled.NewServer(conf.Location),
-		webConfig:   conf,
-		closed:      make(chan struct{}, 1),
-		compresses:  make(map[string]compress.WriterFunc, 5),
+		builder:   builder,
+		uptime:    time.Now(),
+		services:  make([]*Service, 0, 100),
+		scheduled: scheduled.NewServer(conf.Location),
+		webConfig: conf,
+		closed:    make(chan struct{}, 1),
 	}
 
 	for url, dir := range conf.Static {
 		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		srv.router.Get(url+"{path}", h)
+		srv.builder.Router().Get(url+"{path}", h)
 	}
 
 	srv.AddService(srv.scheduledService, "计划任务")
@@ -102,22 +85,9 @@ func (srv *Server) Uptime() time.Time {
 	return srv.uptime
 }
 
-// AddCompresses 添加压缩处理函数
-func (srv *Server) AddCompresses(m map[string]compress.WriterFunc) error {
-	for k, v := range m {
-		if _, found := srv.compresses[k]; found {
-			return errors.New("已经存在")
-		}
-
-		srv.compresses[k] = v
-	}
-
-	return nil
-}
-
 // Mux 返回相关的 mux.Mux 实例
 func (srv *Server) Mux() *mux.Mux {
-	return srv.router.Mux()
+	return srv.builder.Router().Mux()
 }
 
 // IsDebug 是否处于调试模式
@@ -149,7 +119,7 @@ func (srv *Server) URL(path string) string {
 	return srv.webConfig.URL + path
 }
 
-// Run 执行监听程序。
+// Run 执行监听程序
 //
 // 当调用 Shutdown 关闭服务时，会等待其完成未完的服务，才返回 http.ErrServerClosed
 func (srv *Server) Run() (err error) {
@@ -182,7 +152,7 @@ func (srv *Server) Run() (err error) {
 	return err
 }
 
-// Close 关闭服务。
+// Close 关闭服务
 //
 // 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (srv *Server) Close() error {
@@ -194,7 +164,7 @@ func (srv *Server) Close() error {
 	return srv.Server.Close()
 }
 
-// Shutdown 关闭所有服务。
+// Shutdown 关闭所有服务
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (srv *Server) Shutdown(ctx context.Context) error {
@@ -210,17 +180,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// ErrorHandlers 错误处理功能
-func (srv *Server) ErrorHandlers() *errorhandler.ErrorHandler {
-	return srv.builder.ErrorHandlers
-}
-
 // Location 当前设置的时区信息
 func (srv *Server) Location() *time.Location {
 	return srv.webConfig.Location
-}
-
-// Logs 返回 logs.Logs 实例
-func (srv *Server) Logs() *logs.Logs {
-	return srv.builder.Logs
 }

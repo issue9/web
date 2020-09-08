@@ -222,6 +222,21 @@ func TestResult(t *testing.T) {
 	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1"]}]}`)
 }
 
+func TestContext_NewResult(t *testing.T) {
+	a := assert.New(t)
+	b := newBuilder(a)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx := b.New(w, r)
+
+	// 不存在
+	a.Panic(func() { ctx.NewResult(400) })
+
+	a.NotPanic(func() { b.AddMessages(400, map[int]string{40000: "400"}) })
+	a.NotPanic(func() { ctx.NewResult(40000) })
+	a.Panic(func() { ctx.NewResult(50000) })
+}
+
 func TestBuilder_AddMessages(t *testing.T) {
 	a := assert.New(t)
 	builder := newBuilder(a)

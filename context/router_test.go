@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package context
 
 import (
 	"net/http"
@@ -8,25 +8,16 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-
-	"github.com/issue9/web/context"
 )
 
-var (
-	f1 = func(ctx *context.Context) {
-		ctx.Render(http.StatusOK, nil, nil)
-	}
-)
+var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
 
-func TestModule_Prefix(t *testing.T) {
+func TestBuilder_Prefix(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	builder := newBuilder(a)
+	srv := rest.NewServer(t, builder.Handler(), nil)
 
-	srv := rest.NewServer(t, server.Mux(), nil)
-
-	m := server.newModule("m1", "m1 desc")
-	a.NotNil(m)
-	p := m.Prefix("/p")
+	p := builder.Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
@@ -40,19 +31,30 @@ func TestModule_Prefix(t *testing.T) {
 	srv.NewRequest(http.MethodPost, "/p"+path).
 		Do().
 		Status(http.StatusMethodNotAllowed)
+
+	p.Post(path, f1)
+	srv.NewRequest(http.MethodPost, "/p"+path).
+		Do().
+		Status(http.StatusOK)
+
+	p.Patch(path, f1)
+	srv.NewRequest(http.MethodPatch, "/p"+path).
+		Do().
+		Status(http.StatusOK)
+
+	p.Options(path, f1)
+	srv.NewRequest(http.MethodOptions, "/p"+path).
+		Do().
+		Status(http.StatusOK)
 }
 
-func TestModule_Handle(t *testing.T) {
+func TestBuilder_Handle(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
-
-	srv := rest.NewServer(t, server.Mux(), nil)
-
-	m := server.newModule("m1", "m1 desc")
-	a.NotNil(m)
+	builder := newBuilder(a)
+	srv := rest.NewServer(t, builder.Handler(), nil)
 
 	path := "/path"
-	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
+	a.NotError(builder.Handle(path, f1, http.MethodGet, http.MethodDelete))
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
@@ -65,7 +67,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
-	a.NotError(m.Handle(path, f1))
+	a.NotError(builder.Handle(path, f1))
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)
@@ -74,41 +76,38 @@ func TestModule_Handle(t *testing.T) {
 		Status(http.StatusOK)
 }
 
-func TestModule_Handles(t *testing.T) {
+func TestBuilder_Handles(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
-
-	srv := rest.NewServer(t, server.Mux(), nil)
+	builder := newBuilder(a)
+	srv := rest.NewServer(t, builder.Handler(), nil)
 
 	path := "/path"
-	m := server.newModule("m1", "m1 desc")
-	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusNotFound)
 
-	m.Get(path, f1)
+	builder.Get(path, f1)
 	srv.NewRequest(http.MethodGet, path).
 		Do().
 		Status(http.StatusOK)
 
-	m.Post(path, f1)
+	builder.Post(path, f1)
 	srv.NewRequest(http.MethodPost, path).
 		Do().
 		Status(http.StatusOK)
 
-	m.Patch(path, f1)
+	builder.Patch(path, f1)
 	srv.NewRequest(http.MethodPatch, path).
 		Do().
 		Status(http.StatusOK)
 
-	m.Put(path, f1)
+	builder.Put(path, f1)
 	srv.NewRequest(http.MethodPut, path).
 		Do().
 		Status(http.StatusOK)
 
-	m.Delete(path, f1)
+	builder.Delete(path, f1)
 	srv.NewRequest(http.MethodDelete, path).
 		Do().
 		Status(http.StatusOK)

@@ -14,8 +14,6 @@ import (
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/compress"
-	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
@@ -67,17 +65,17 @@ func Classic(dir string, get context2.BuildResultFunc) error {
 	if err = mgr.LoadFile(LogsFilename, lc); err != nil {
 		return err
 	}
-	if err = Server().Logs().Init(lc); err != nil {
+	if err = Server().Builder().Logs().Init(lc); err != nil {
 		return err
 	}
 
-	err = AddCompresses(map[string]compress.WriterFunc{
+	/*err = AddCompresses(map[string]compress.WriterFunc{
 		"gzip":    compress.NewGzip,
 		"deflate": compress.NewDeflate,
 	})
 	if err != nil {
 		return err
-	}
+	}*/
 
 	err = Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":    json.Unmarshal,
@@ -131,7 +129,8 @@ func Init(mgr *ConfigManager, configFilename, logsFilename string, get context2.
 	}
 
 	defaultConfigs = mgr
-	defaultServer, err = server.New(webconf, l, get)
+	builder := context2.NewBuilder(l, mux.New(false, false, false, nil, nil).Prefix(""), get)
+	defaultServer, err = server.New(webconf, builder)
 	return err
 }
 
@@ -160,15 +159,10 @@ func Grace(dur time.Duration, sig ...os.Signal) {
 		defer c()
 
 		if err := Server().Shutdown(ctx); err != nil {
-			Server().Logs().Error(err)
+			Server().Builder().Logs().Error(err)
 		}
-		Server().Logs().Flush() // 保证内容会被正常输出到日志。
+		Server().Builder().Logs().Flush() // 保证内容会被正常输出到日志。
 	}()
-}
-
-// AddCompresses 添加压缩处理函数
-func AddCompresses(m map[string]compress.WriterFunc) error {
-	return Server().AddCompresses(m)
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
@@ -243,11 +237,6 @@ func Load(r io.Reader, typ string, v interface{}) error {
 // AddMessages 添加新的错误消息代码
 func AddMessages(status int, messages map[int]string) {
 	Server().Builder().AddMessages(status, messages)
-}
-
-// ErrorHandlers 错误处理功能
-func ErrorHandlers() *errorhandler.ErrorHandler {
-	return Server().ErrorHandlers()
 }
 
 // Messages 获取所有的错误消息代码

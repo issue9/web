@@ -44,7 +44,6 @@ func initApp(a *assert.Assertion) {
 	})
 	a.NotError(err)
 
-	a.NotNil(ErrorHandlers())
 	a.Equal(1, len(Services())) // 默认有 scheduled 的服务在运行
 }
 
@@ -66,7 +65,8 @@ func TestSchedulers(t *testing.T) {
 	initApp(a)
 
 	a.Empty(Schedulers())
-	Scheduled().At("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
+	err := Scheduled().At("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
+	a.NotError(err)
 	a.Equal(1, len(Schedulers()))
 }
 
@@ -103,8 +103,7 @@ func TestModules(t *testing.T) {
 		println("m1")
 		return nil
 	}, "init")
-	m1.PostFunc("/post/m1", func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewContext(w, r)
+	m1.Post("/post/m1", func(ctx *Context) {
 		ctx.Render(http.StatusCreated, "m1", nil)
 	})
 

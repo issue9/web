@@ -27,8 +27,8 @@ func mimetypeExists(name string) error {
 	return fmt.Errorf("该名称 %s 的 mimetype 已经存在", name)
 }
 
-// Unmarshal 查找指定名称的 UnmarshalFunc
-func (b *Builder) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
+// unmarshal 查找指定名称的 UnmarshalFunc
+func (b *Builder) unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 	var unmarshal *unmarshaler
 	for _, mt := range b.unmarshals {
 		if mt.name == name {
@@ -43,7 +43,7 @@ func (b *Builder) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 	return unmarshal.f, nil
 }
 
-// Marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
+// marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
@@ -56,7 +56,7 @@ func (b *Builder) Unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (b *Builder) Marshal(header string) (string, mimetype.MarshalFunc, error) {
+func (b *Builder) marshal(header string) (string, mimetype.MarshalFunc, error) {
 	if header == "" {
 		if mm := b.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.f, nil
@@ -104,10 +104,6 @@ func (b *Builder) AddMarshal(name string, mf mimetype.MarshalFunc) error {
 		}
 	}
 
-	if b.marshals == nil {
-		b.marshals = make([]*marshaler, 0, 10)
-	}
-
 	b.marshals = append(b.marshals, &marshaler{
 		f:    mf,
 		name: name,
@@ -152,10 +148,6 @@ func (b *Builder) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 		if mt.name == name {
 			return mimetypeExists(name)
 		}
-	}
-
-	if b.unmarshals == nil {
-		b.unmarshals = make([]*unmarshaler, 0, 10)
 	}
 
 	b.unmarshals = append(b.unmarshals, &unmarshaler{

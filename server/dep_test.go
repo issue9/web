@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/context"
 )
 
 func m(srv *Server, name string, f func() error, deps ...string) *Module {
@@ -84,10 +86,8 @@ func TestDependency_init(t *testing.T) {
 
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
-	f1 := func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("f1"))
-		a.NotError(err)
-		w.WriteHeader(http.StatusAccepted)
+	f1 := func(ctx *context.Context) {
+		ctx.Render(http.StatusAccepted, "f1", nil)
 	}
 	i := func(name string) func() error {
 		return func() error {
@@ -105,7 +105,7 @@ func TestDependency_init(t *testing.T) {
 	a.Error(dep.init(""))
 
 	m1 := m(srv, "m1", i("m1"), "d1", "d2")
-	m1.PutFunc("/put", f1)
+	m1.Put("/put", f1)
 	apps := []*Module{
 		m1,
 		m(srv, "d1", i("d1"), "d3"),

@@ -20,8 +20,8 @@ func Init(m *web.Module) {
 	m.NewTag("install").AddInit(install1, "title")
 	m.NewTag("v1.0").AddInit(install2, "title")
 
-	m.GetFunc("/plugin1", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("plugin1"))
+	m.Get("/plugin1", func(ctx *web.Context) {
+		ctx.Render(http.StatusOK, "plugin1", nil)
 	})
 }
 

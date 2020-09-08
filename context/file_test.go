@@ -25,7 +25,7 @@ func TestContext_ServeFile(t *testing.T) {
 
 	// 存在的文件
 	a.NotPanic(func() {
-		ctx.ServeFile("./testdata/file", map[string]string{"Test": "Test"})
+		ctx.ServeFile("./testdata/file1.txt", map[string]string{"Test": "Test"})
 		a.Equal(w.Header().Get("Test"), "Test")
 	})
 
@@ -41,13 +41,13 @@ func TestContext_ServeFile(t *testing.T) {
 func TestContext_ServeContent(t *testing.T) {
 	a := assert.New(t)
 	b := newBuilder(a)
-	buf, err := ioutil.ReadFile("./testdata/file")
+	buf, err := ioutil.ReadFile("./testdata/file1.txt")
 	a.NotError(err).NotNil(buf)
 
 	w := httptest.NewRecorder()
 	ctx := &Context{
 		Response: w,
-		Request:  httptest.NewRequest(http.MethodGet, "/file", nil),
+		Request:  httptest.NewRequest(http.MethodGet, "/file1.txt", nil),
 		builder:  b,
 	}
 

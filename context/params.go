@@ -28,15 +28,15 @@ type Params struct {
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
-	params := mux.Params(ctx.Request)
-	if params == nil {
-		params = emptyParams
+	ps := mux.Params(ctx.Request)
+	if ps == nil {
+		ps = emptyParams
 	}
 
 	return &Params{
 		ctx:    ctx,
-		params: params,
-		errors: make(map[string]string, len(params)),
+		params: ps,
+		errors: make(map[string]string, len(ps)),
 	}
 }
 

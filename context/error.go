@@ -17,10 +17,10 @@ import (
 // 即使该值小于 400。
 func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.builder.Logs.CRITICAL().Output(2, fmt.Sprint(v...))
+		ctx.builder.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.builder.ErrorHandlers.Render(ctx.Response, status)
+	ctx.builder.errorHandlers.Render(ctx.Response, status)
 }
 
 // Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -32,10 +32,10 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 // 即使该值小于 400。
 func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.builder.Logs.ERROR().Output(2, fmt.Sprint(v...))
+		ctx.builder.Logs().ERROR().Output(2, fmt.Sprint(v...))
 	}
 
-	ctx.builder.ErrorHandlers.Render(ctx.Response, status)
+	ctx.builder.errorHandlers.Render(ctx.Response, status)
 }
 
 // Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
@@ -47,10 +47,10 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 // 即使该值小于 400。
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.builder.Logs.CRITICAL().Output(2, fmt.Sprintf(format, v...))
+		ctx.builder.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.builder.ErrorHandlers.Render(ctx.Response, status)
+	ctx.builder.errorHandlers.Render(ctx.Response, status)
 }
 
 // Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
@@ -62,10 +62,10 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 // 即使该值小于 400。
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
-		ctx.builder.Logs.ERROR().Output(2, fmt.Sprintf(format, v...))
+		ctx.builder.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 
-	ctx.builder.ErrorHandlers.Render(ctx.Response, status)
+	ctx.builder.errorHandlers.Render(ctx.Response, status)
 }
 
 // Exit 以指定的状态码退出当前协程

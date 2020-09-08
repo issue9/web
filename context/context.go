@@ -77,12 +77,12 @@ func (b *Builder) New(w http.ResponseWriter, r *http.Request) *Context {
 			return
 		}
 
-		b.Logs.ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		b.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
 		errorhandler.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, err := b.Marshal(header)
+	outputMimetypeName, marshal, err := b.marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -108,7 +108,7 @@ func (b *Builder) New(w http.ResponseWriter, r *http.Request) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimetype, err = ctx.builder.Unmarshal(encName)
+		ctx.InputMimetype, err = ctx.builder.unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)

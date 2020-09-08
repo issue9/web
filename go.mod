@@ -8,7 +8,7 @@ require (
 	github.com/issue9/conv v1.2.0
 	github.com/issue9/is v1.4.2
 	github.com/issue9/logs/v2 v2.4.1
-	github.com/issue9/middleware v1.6.0
+	github.com/issue9/middleware v1.6.2
 	github.com/issue9/mux/v2 v2.3.3
 	github.com/issue9/qheader v0.3.0
 	github.com/issue9/query v1.0.1

@@ -19,10 +19,16 @@ import (
 )
 
 func init() {
-	message.SetString(language.Chinese, "test", "中文")
-	message.SetString(language.SimplifiedChinese, "test", "简体")
-	message.SetString(language.TraditionalChinese, "test", "繁体")
-	message.SetString(language.English, "test", "english")
+	chk := func(err error) {
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	chk(message.SetString(language.Chinese, "test", "中文"))
+	chk(message.SetString(language.SimplifiedChinese, "test", "简体"))
+	chk(message.SetString(language.TraditionalChinese, "test", "繁体"))
+	chk(message.SetString(language.English, "test", "english"))
 }
 
 func newContext(a *assert.Assertion,
@@ -48,7 +54,7 @@ func TestBuilder_New(t *testing.T) {
 	w := httptest.NewRecorder()
 	b := newBuilder(a)
 	logwriter := new(bytes.Buffer)
-	b.Logs.ERROR().SetOutput(logwriter)
+	b.Logs().ERROR().SetOutput(logwriter)
 
 	// 错误的 accept
 	logwriter.Reset()
@@ -299,19 +305,4 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newContext(a, w, r, nil, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
-}
-
-func TestContext_NewResult(t *testing.T) {
-	a := assert.New(t)
-	b := newBuilder(a)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := b.New(w, r)
-
-	// 不存在
-	a.Panic(func() { ctx.NewResult(400) })
-
-	a.NotPanic(func() { b.AddMessages(400, map[int]string{40000: "400"}) })
-	a.NotPanic(func() { ctx.NewResult(40000) })
-	a.Panic(func() { ctx.NewResult(50000) })
 }

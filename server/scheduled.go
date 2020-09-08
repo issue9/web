@@ -18,8 +18,8 @@ func (srv *Server) Scheduled() *scheduled.Server {
 
 func (srv *Server) scheduledService(ctx context.Context) error {
 	go func() {
-		if err := srv.scheduled.Serve(srv.Logs().ERROR(), srv.Logs().INFO()); err != nil {
-			srv.Logs().Error(err)
+		if err := srv.scheduled.Serve(srv.Builder().Logs().ERROR(), srv.Builder().Logs().INFO()); err != nil {
+			srv.Builder().Logs().Error(err)
 		}
 	}()
 

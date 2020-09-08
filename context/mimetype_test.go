@@ -15,7 +15,7 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 	a := assert.New(t)
 
 	b := newEmptyBuilder(a)
-	um, err := b.Unmarshal("")
+	um, err := b.unmarshal("")
 	a.Error(err).
 		Nil(um)
 
@@ -23,11 +23,11 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 	a.NotError(b.AddMarshal(mimetype.DefaultMimetype, gob.Marshal))
 
 	// 未指定 mimetype
-	um, err = b.Unmarshal("")
+	um, err = b.unmarshal("")
 	a.Error(err).Nil(um)
 
 	// mimetype 无法找到
-	um, err = b.Unmarshal("not-exists")
+	um, err = b.unmarshal("not-exists")
 	a.Error(err).Nil(um)
 }
 
@@ -35,12 +35,12 @@ func TestMimetypes_Marshal(t *testing.T) {
 	a := assert.New(t)
 	b := newEmptyBuilder(a)
 
-	name, marshal, err := b.Marshal(mimetype.DefaultMimetype)
+	name, marshal, err := b.marshal(mimetype.DefaultMimetype)
 	a.Error(err).
 		Nil(marshal).
 		Empty(name)
 
-	name, marshal, err = b.Marshal("")
+	name, marshal, err = b.marshal("")
 	a.ErrorString(err, "请求中未指定 accept 报头，且服务端也未指定匹配 */* 的解码函数").
 		Nil(marshal).
 		Empty(name)
@@ -48,39 +48,39 @@ func TestMimetypes_Marshal(t *testing.T) {
 	a.NotError(b.AddMarshal(mimetype.DefaultMimetype, gob.Marshal))
 	a.NotError(b.AddMarshal("text/plain", gob.Marshal))
 
-	name, marshal, err = b.Marshal(mimetype.DefaultMimetype)
+	name, marshal, err = b.marshal(mimetype.DefaultMimetype)
 	a.NotError(err).
 		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, mimetype.DefaultMimetype)
 
-	name, marshal, err = b.Marshal(mimetype.DefaultMimetype)
+	name, marshal, err = b.marshal(mimetype.DefaultMimetype)
 	a.NotError(err).
 		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, mimetype.DefaultMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
-	name, marshal, err = b.Marshal("*/*")
+	name, marshal, err = b.marshal("*/*")
 	a.NotError(err).
 		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, mimetype.DefaultMimetype)
 
 	// 同 */*
-	name, marshal, err = b.Marshal("")
+	name, marshal, err = b.marshal("")
 	a.NotError(err).
 		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, mimetype.DefaultMimetype)
 
-	name, marshal, err = b.Marshal("*/*,text/plain")
+	name, marshal, err = b.marshal("*/*,text/plain")
 	a.NotError(err).
 		Equal(marshal, mimetype.MarshalFunc(gob.Marshal)).
 		Equal(name, "text/plain")
 
-	name, marshal, err = b.Marshal("font/wottf;q=x.9")
+	name, marshal, err = b.marshal("font/wottf;q=x.9")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
 
-	name, marshal, err = b.Marshal("font/wottf")
+	name, marshal, err = b.marshal("font/wottf")
 	a.Error(err).
 		Empty(name).
 		Nil(marshal)
@@ -146,10 +146,10 @@ func TestMimetypes_AddUnmarshals(t *testing.T) {
 	a.Equal(b.unmarshals[2].name, "application/xml")
 	a.Equal(b.unmarshals[3].name, "text")
 
-	_, err = b.Unmarshal("*/*")
+	_, err = b.unmarshal("*/*")
 	a.ErrorString(err, "未找到 */* 类型的解码函数")
 
-	_, err = b.Unmarshal("text")
+	_, err = b.unmarshal("text")
 	a.NotError(err)
 }
 
