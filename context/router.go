@@ -27,7 +27,7 @@ func (b *Builder) Router() *mux.Prefix {
 // Handle 添加路由请求项
 func (b *Builder) Handle(path string, h HandlerFunc, method ...string) error {
 	return b.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		h(b.New(w, r))
+		h(b.newContext(w, r))
 	}, method...)
 }
 

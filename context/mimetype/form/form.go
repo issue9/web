@@ -2,14 +2,12 @@
 
 // Package form 用于处理 www-form-urlencoded 编码
 //
-//  func read(w http.ResponseWriter, r *http.Request) {
-//      ctx := web.New(w, r)
+//  func read(ctx *web.Context) {
 //      vals := urls.Values{}
 //      ctx.Read(vals)
 //  }
 //
-//  func write(w http.ResponseWriter, r *http.Request) {
-//      ctx := web.New(w, r)
+//  func write(ctx *web.Context) {
 //      vals := urls.Values{}
 //      vals.Add("name", "caixw")
 //      ctx.Render(http.StatusOK, vals, nil)

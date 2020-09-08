@@ -6,8 +6,7 @@
 //  mgr := html.New(tpl)
 //  mimetype.AddMarshal("text/html", mgr.Marshal)
 //
-//  func handle(w http.ResponseWriter, r *http.Request) {
-//      ctx := web.New(w, r)
+//  func handle(ctx *web.Context) {
 //      ctx.Render(200, html.Tpl("index", map[string]interface{}{...}), nil)
 //  }
 package html

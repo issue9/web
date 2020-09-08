@@ -28,7 +28,7 @@ const (
 type Builder struct {
 	Debug bool
 
-	// 在调用 Builder.New 生成 Context
+	// 在调用 Builder.newContext 生成 Context
 	// 之前可能通过此方法对其进行一次统一的修改，不需要则为 nil。
 	Interceptor func(*Context)
 

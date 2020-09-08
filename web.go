@@ -3,8 +3,6 @@
 package web
 
 import (
-	"net/http"
-
 	"github.com/issue9/config"
 	"github.com/issue9/scheduled"
 
@@ -52,9 +50,4 @@ type (
 // NewConfigManager 声明 ConfigManager 实例
 func NewConfigManager(dir string) (*ConfigManager, error) {
 	return config.NewManager(dir)
-}
-
-// NewContext 生成 *Context 对象，若是出错则 panic
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return defaultServer.Builder().New(w, r)
 }

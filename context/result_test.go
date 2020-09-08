@@ -227,7 +227,7 @@ func TestContext_NewResult(t *testing.T) {
 	b := newBuilder(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := b.New(w, r)
+	ctx := b.newContext(w, r)
 
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })

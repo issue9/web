@@ -67,11 +67,9 @@ type Context struct {
 	readed bool
 }
 
-// New 根据当前请求内容生成 Context 对象
-//
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
-func (b *Builder) New(w http.ResponseWriter, r *http.Request) *Context {
+func (b *Builder) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
