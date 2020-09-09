@@ -24,9 +24,11 @@ type Server struct {
 
 	builder   *wctx.Builder
 	uptime    time.Time
+	webConfig *webconfig.WebConfig
+
+	// modules
 	services  []*Service
 	scheduled *scheduled.Server
-	webConfig *webconfig.WebConfig
 	modules   []*Module
 
 	// 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。

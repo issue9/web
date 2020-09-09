@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/xml"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -159,21 +158,6 @@ func TestFile(t *testing.T) {
 	a.NotError(Load(file, ".yaml", conf2))
 	a.NotNil(conf2)
 	a.Equal(conf1, conf2)
-}
-
-func TestNewContext(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	r.Header.Set("Accept", "application/json")
-	ctx := NewContext(w, r)
-	a.NotNil(ctx).
-		Equal(ctx.Response, w).
-		Equal(ctx.Request, r).
-		Equal(ctx.OutputCharsetName, "utf-8").
-		Equal(ctx.OutputMimetypeName, "application/json")
 }
 
 func TestGrace(t *testing.T) {
