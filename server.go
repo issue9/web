@@ -129,7 +129,7 @@ func Init(mgr *ConfigManager, configFilename, logsFilename string, get context2.
 	}
 
 	defaultConfigs = mgr
-	builder := context2.NewBuilder(l, mux.New(false, false, false, nil, nil).Prefix(""), get)
+	builder := context2.NewServer(l, mux.New(false, false, false, nil, nil).Prefix(""), get)
 	defaultServer, err = server.New(webconf, builder)
 	return err
 }
@@ -180,8 +180,8 @@ func Mux() *mux.Mux {
 	return Server().Mux()
 }
 
-// Builder 返回 mimetype.Builder
-func Builder() *context2.Builder {
+// Builder 返回 context.Server
+func Builder() *context2.Server {
 	return Server().Builder()
 }
 
@@ -277,5 +277,5 @@ func ParseTime(layout, value string) (time.Time, error) {
 //
 // 时区信息与配置文件中的相同
 func Uptime() time.Time {
-	return Server().Uptime()
+	return Server().Builder().Uptime()
 }

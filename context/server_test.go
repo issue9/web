@@ -32,9 +32,9 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// 声明一个 builder 实例
-func newBuilder(a *assert.Assertion) *Builder {
-	b := newEmptyBuilder(a)
+// 声明一个 server 实例
+func newServer(a *assert.Assertion) *Server {
+	b := newEmptyServer(a)
 
 	err := b.AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
@@ -60,16 +60,16 @@ func newBuilder(a *assert.Assertion) *Builder {
 	return b
 }
 
-func newEmptyBuilder(a *assert.Assertion) *Builder {
+func newEmptyServer(a *assert.Assertion) *Server {
 	p := mux.New(false, false, false, nil, nil).Prefix("")
 	a.NotNil(p)
 
-	return NewBuilder(logs.New(), p, DefaultResultBuilder)
+	return NewServer(logs.New(), p, DefaultResultBuilder)
 }
 
 func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
-	app := newBuilder(a)
+	app := newServer(a)
 	err := app.errorHandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
@@ -138,7 +138,7 @@ func TestMiddlewares(t *testing.T) {
 func TestBuiler_buildDebug(t *testing.T) {
 	a := assert.New(t)
 
-	b := newBuilder(a)
+	b := newServer(a)
 	srv := rest.NewServer(t, b.buildDebug(http.HandlerFunc(f201)), nil)
 	defer srv.Close()
 

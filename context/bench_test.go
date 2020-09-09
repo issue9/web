@@ -60,7 +60,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 
 func BenchmarkBuilder_newContext(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -76,7 +76,7 @@ func BenchmarkBuilder_newContext(b *testing.B) {
 
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -92,7 +92,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -109,7 +109,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -126,7 +126,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -144,7 +144,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -180,7 +180,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -203,7 +203,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkPostWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newBuilder(a)
+	bb := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -226,7 +226,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 func BenchmarkBuilder_Marshal(b *testing.B) {
 	a := assert.New(b)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	a.NotNil(builder)
 
 	a.NotError(builder.AddMarshal("font/wottf", xml.Marshal))
@@ -241,7 +241,7 @@ func BenchmarkBuilder_Marshal(b *testing.B) {
 
 func BenchmarkBuilder_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	a.NotNil(builder)
 
 	a.NotError(builder.AddUnmarshal("font/wottf", xml.Unmarshal))

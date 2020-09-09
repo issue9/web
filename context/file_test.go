@@ -14,13 +14,13 @@ import (
 
 func TestContext_ServeFile(t *testing.T) {
 	a := assert.New(t)
-	b := newBuilder(a)
+	b := newServer(a)
 
 	w := httptest.NewRecorder()
 	ctx := &Context{
 		Response: w,
 		Request:  httptest.NewRequest(http.MethodGet, "/file", nil),
-		builder:  b,
+		server:   b,
 	}
 
 	// 存在的文件
@@ -40,7 +40,7 @@ func TestContext_ServeFile(t *testing.T) {
 
 func TestContext_ServeContent(t *testing.T) {
 	a := assert.New(t)
-	b := newBuilder(a)
+	b := newServer(a)
 	buf, err := ioutil.ReadFile("./testdata/file1.txt")
 	a.NotError(err).NotNil(buf)
 
@@ -48,7 +48,7 @@ func TestContext_ServeContent(t *testing.T) {
 	ctx := &Context{
 		Response: w,
 		Request:  httptest.NewRequest(http.MethodGet, "/file1.txt", nil),
-		builder:  b,
+		server:   b,
 	}
 
 	a.NotPanic(func() {

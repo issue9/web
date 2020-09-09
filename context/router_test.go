@@ -14,7 +14,7 @@ var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
 
 func TestBuilder_Prefix(t *testing.T) {
 	a := assert.New(t)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	srv := rest.NewServer(t, builder.Handler(), nil)
 
 	p := builder.Prefix("/p")
@@ -50,7 +50,7 @@ func TestBuilder_Prefix(t *testing.T) {
 
 func TestBuilder_Handle(t *testing.T) {
 	a := assert.New(t)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	srv := rest.NewServer(t, builder.Handler(), nil)
 
 	path := "/path"
@@ -78,7 +78,7 @@ func TestBuilder_Handle(t *testing.T) {
 
 func TestBuilder_Handles(t *testing.T) {
 	a := assert.New(t)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	srv := rest.NewServer(t, builder.Handler(), nil)
 
 	path := "/path"

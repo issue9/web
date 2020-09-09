@@ -28,9 +28,9 @@ func mimetypeExists(name string) error {
 }
 
 // unmarshal 查找指定名称的 UnmarshalFunc
-func (b *Builder) unmarshal(name string) (mimetype.UnmarshalFunc, error) {
+func (srv *Server) unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 	var unmarshal *unmarshaler
-	for _, mt := range b.unmarshals {
+	for _, mt := range srv.unmarshals {
 		if mt.name == name {
 			unmarshal = mt
 			break
@@ -56,9 +56,9 @@ func (b *Builder) unmarshal(name string) (mimetype.UnmarshalFunc, error) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (b *Builder) marshal(header string) (string, mimetype.MarshalFunc, error) {
+func (srv *Server) marshal(header string) (string, mimetype.MarshalFunc, error) {
 	if header == "" {
-		if mm := b.findMarshal("*/*"); mm != nil {
+		if mm := srv.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.f, nil
 		}
 		return "", nil, errors.New("请求中未指定 accept 报头，且服务端也未指定匹配 */* 的解码函数")
@@ -70,7 +70,7 @@ func (b *Builder) marshal(header string) (string, mimetype.MarshalFunc, error) {
 	}
 
 	for _, accept := range accepts {
-		if mm := b.findMarshal(accept.Value); mm != nil {
+		if mm := srv.findMarshal(accept.Value); mm != nil {
 			return mm.name, mm.f, nil
 		}
 	}
@@ -79,9 +79,9 @@ func (b *Builder) marshal(header string) (string, mimetype.MarshalFunc, error) {
 }
 
 // AddMarshals 添加多个编码函数
-func (b *Builder) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+func (srv *Server) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
 	for k, v := range ms {
-		if err := b.AddMarshal(k, v); err != nil {
+		if err := srv.AddMarshal(k, v); err != nil {
 			return err
 		}
 	}
@@ -93,41 +93,41 @@ func (b *Builder) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
 //
 // mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
 // 另作处理，比如下载，上传等内容。
-func (b *Builder) AddMarshal(name string, mf mimetype.MarshalFunc) error {
+func (srv *Server) AddMarshal(name string, mf mimetype.MarshalFunc) error {
 	if strings.HasSuffix(name, "/*") || name == "*" {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
 
-	for _, mt := range b.marshals {
+	for _, mt := range srv.marshals {
 		if mt.name == name {
 			return mimetypeExists(name)
 		}
 	}
 
-	b.marshals = append(b.marshals, &marshaler{
+	srv.marshals = append(srv.marshals, &marshaler{
 		f:    mf,
 		name: name,
 	})
 
-	sort.SliceStable(b.marshals, func(i, j int) bool {
-		if b.marshals[i].name == mimetype.DefaultMimetype {
+	sort.SliceStable(srv.marshals, func(i, j int) bool {
+		if srv.marshals[i].name == mimetype.DefaultMimetype {
 			return true
 		}
 
-		if b.marshals[j].name == mimetype.DefaultMimetype {
+		if srv.marshals[j].name == mimetype.DefaultMimetype {
 			return false
 		}
 
-		return b.marshals[i].name < b.marshals[j].name
+		return srv.marshals[i].name < srv.marshals[j].name
 	})
 
 	return nil
 }
 
 // AddUnmarshals 添加多个编码函数
-func (b *Builder) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+func (srv *Server) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 	for k, v := range ms {
-		if err := b.AddUnmarshal(k, v); err != nil {
+		if err := srv.AddUnmarshal(k, v); err != nil {
 			return err
 		}
 	}
@@ -139,52 +139,52 @@ func (b *Builder) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 //
 // mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
 // 另作处理，比如下载，上传等内容。
-func (b *Builder) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+func (srv *Server) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
 
-	for _, mt := range b.unmarshals {
+	for _, mt := range srv.unmarshals {
 		if mt.name == name {
 			return mimetypeExists(name)
 		}
 	}
 
-	b.unmarshals = append(b.unmarshals, &unmarshaler{
+	srv.unmarshals = append(srv.unmarshals, &unmarshaler{
 		f:    mm,
 		name: name,
 	})
 
-	sort.SliceStable(b.unmarshals, func(i, j int) bool {
-		if b.unmarshals[i].name == mimetype.DefaultMimetype {
+	sort.SliceStable(srv.unmarshals, func(i, j int) bool {
+		if srv.unmarshals[i].name == mimetype.DefaultMimetype {
 			return true
 		}
 
-		if b.unmarshals[j].name == mimetype.DefaultMimetype {
+		if srv.unmarshals[j].name == mimetype.DefaultMimetype {
 			return false
 		}
 
-		return b.unmarshals[i].name < b.unmarshals[j].name
+		return srv.unmarshals[i].name < srv.unmarshals[j].name
 	})
 
 	return nil
 }
 
-func (b *Builder) findMarshal(name string) *marshaler {
+func (srv *Server) findMarshal(name string) *marshaler {
 	switch {
-	case len(b.marshals) == 0:
+	case len(srv.marshals) == 0:
 		return nil
 	case name == "" || name == "*/*":
-		return b.marshals[0] // 由 len(marshals) == 0 确保最少有一个元素
+		return srv.marshals[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
-		for _, mt := range b.marshals {
+		for _, mt := range srv.marshals {
 			if strings.HasPrefix(mt.name, prefix) {
 				return mt
 			}
 		}
 	default:
-		for _, mt := range b.marshals {
+		for _, mt := range srv.marshals {
 			if mt.name == name {
 				return mt
 			}

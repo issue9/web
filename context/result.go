@@ -78,15 +78,15 @@ type fieldDetail struct {
 // Messages 错误信息列表
 //
 // p 用于返回特定语言的内容。如果为空，则表示返回原始值。
-func (b *Builder) Messages(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(b.messages))
+func (srv *Server) Messages(p *message.Printer) map[int]string {
+	msgs := make(map[int]string, len(srv.messages))
 
 	if p == nil {
-		for code, msg := range b.messages {
+		for code, msg := range srv.messages {
 			msgs[code] = msg.message
 		}
 	} else {
-		for code, msg := range b.messages {
+		for code, msg := range srv.messages {
 			msgs[code] = p.Sprintf(msg.message)
 		}
 	}
@@ -99,34 +99,33 @@ func (b *Builder) Messages(p *message.Printer) map[int]string {
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
 // msgs 中，键名表示的是该错误的错误代码；
 // 键值表示具体的错误描述内容。
-func (b *Builder) AddMessages(status int, msgs map[int]string) {
+func (srv *Server) AddMessages(status int, msgs map[int]string) {
 	for code, msg := range msgs {
 		if msg == "" {
 			panic("参数 msg 不能为空值")
 		}
 
-		if _, found := b.messages[code]; found {
+		if _, found := srv.messages[code]; found {
 			panic(fmt.Sprintf("重复的消息 ID: %d", code))
 		}
 
-		b.messages[code] = &resultMessage{message: msg, status: status}
+		srv.messages[code] = &resultMessage{message: msg, status: status}
 	}
 }
 
-// NewResult 查找指定代码的错误信息
-func (b *Builder) NewResult(code int) Result {
-	msg, found := b.messages[code]
+func (srv *Server) newResult(code int) Result {
+	msg, found := srv.messages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return b.resultBuilder(msg.status, code, msg.message)
+	return srv.resultBuilder(msg.status, code, msg.message)
 }
 
 // NewResult 返回 CTXResult 实例
 func (ctx *Context) NewResult(code int) *CTXResult {
 	return &CTXResult{
-		rslt: ctx.builder.NewResult(code),
+		rslt: ctx.server.newResult(code),
 		ctx:  ctx,
 	}
 }

@@ -50,7 +50,7 @@ func newServer(a *assert.Assertion) *Server {
 	webconf := &webconfig.WebConfig{}
 	a.NotError(mgr.LoadFile("web.yaml", webconf))
 
-	app, err := New(webconf, wctx.NewBuilder(logs.New(), mux.New(false, false, false, nil, nil).Prefix(""), wctx.DefaultResultBuilder))
+	app, err := New(webconf, wctx.NewServer(logs.New(), mux.New(false, false, false, nil, nil).Prefix(""), wctx.DefaultResultBuilder))
 	a.NotError(err).NotNil(app)
 
 	a.NotError(app.Builder().AddMarshals(map[string]mimetype.MarshalFunc{

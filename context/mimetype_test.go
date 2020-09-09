@@ -14,7 +14,7 @@ import (
 func TestMimetypes_Unmarshal(t *testing.T) {
 	a := assert.New(t)
 
-	b := newEmptyBuilder(a)
+	b := newEmptyServer(a)
 	um, err := b.unmarshal("")
 	a.Error(err).
 		Nil(um)
@@ -33,7 +33,7 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 
 func TestMimetypes_Marshal(t *testing.T) {
 	a := assert.New(t)
-	b := newEmptyBuilder(a)
+	b := newEmptyServer(a)
 
 	name, marshal, err := b.marshal(mimetype.DefaultMimetype)
 	a.Error(err).
@@ -88,7 +88,7 @@ func TestMimetypes_Marshal(t *testing.T) {
 
 func TestMimetypes_AddMarshal(t *testing.T) {
 	a := assert.New(t)
-	b := newEmptyBuilder(a)
+	b := newEmptyServer(a)
 
 	// 不能添加同名的多次
 	a.NotError(b.AddMarshal(mimetype.DefaultMimetype, nil))
@@ -109,7 +109,7 @@ func TestMimetypes_AddMarshal(t *testing.T) {
 
 func TestMimetypes_AddUnmarshal(t *testing.T) {
 	a := assert.New(t)
-	builder := newEmptyBuilder(a)
+	builder := newEmptyServer(a)
 	a.NotNil(builder)
 
 	a.NotError(builder.AddUnmarshal(mimetype.DefaultMimetype, nil))
@@ -130,7 +130,7 @@ func TestMimetypes_AddUnmarshal(t *testing.T) {
 
 func TestMimetypes_AddUnmarshals(t *testing.T) {
 	a := assert.New(t)
-	b := newEmptyBuilder(a)
+	b := newEmptyServer(a)
 	a.NotNil(b)
 
 	err := b.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
@@ -155,7 +155,7 @@ func TestMimetypes_AddUnmarshals(t *testing.T) {
 
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t)
-	b := newEmptyBuilder(a)
+	b := newEmptyServer(a)
 
 	a.NotError(b.AddMarshals(map[string]mimetype.MarshalFunc{
 		"text":           nil,

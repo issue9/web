@@ -22,8 +22,7 @@ import (
 type Server struct {
 	http.Server
 
-	builder   *wctx.Builder
-	uptime    time.Time
+	builder   *wctx.Server
 	webConfig *webconfig.WebConfig
 
 	// modules
@@ -36,7 +35,7 @@ type Server struct {
 }
 
 // New 声明一个新的 Server 实例
-func New(conf *webconfig.WebConfig, builder *wctx.Builder) (*Server, error) {
+func New(conf *webconfig.WebConfig, builder *wctx.Server) (*Server, error) {
 	srv := &Server{
 		Server: http.Server{
 			Addr:              ":" + strconv.Itoa(conf.Port),
@@ -49,7 +48,6 @@ func New(conf *webconfig.WebConfig, builder *wctx.Builder) (*Server, error) {
 			Handler:           builder.Handler(),
 		},
 		builder:   builder,
-		uptime:    time.Now(),
 		services:  make([]*Service, 0, 100),
 		scheduled: scheduled.NewServer(conf.Location),
 		webConfig: conf,
@@ -76,15 +74,8 @@ func New(conf *webconfig.WebConfig, builder *wctx.Builder) (*Server, error) {
 }
 
 // Builder 管理返回给客户端的错误信息
-func (srv *Server) Builder() *wctx.Builder {
+func (srv *Server) Builder() *wctx.Server {
 	return srv.builder
-}
-
-// Uptime 启动的时间
-//
-// 时区信息与配置文件中的相同
-func (srv *Server) Uptime() time.Time {
-	return srv.uptime
 }
 
 // Mux 返回相关的 mux.Mux 实例
@@ -184,5 +175,5 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 
 // Location 当前设置的时区信息
 func (srv *Server) Location() *time.Location {
-	return srv.webConfig.Location
+	return srv.builder.Location
 }

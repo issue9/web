@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"strings"
+	"time"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
+	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
@@ -24,11 +26,11 @@ const (
 	debugVarsPath = "/debug/vars"
 )
 
-// Builder 定义了构建 Context 对象的一些通用数据选项
-type Builder struct {
+// Server 定义了构建 Context 对象的一些通用数据选项
+type Server struct {
 	Debug bool
 
-	// 在调用 Builder.newContext 生成 Context
+	// 在调用 Server.newContext 生成 Context
 	// 之前可能通过此方法对其进行一次统一的修改，不需要则为 nil。
 	Interceptor func(*Context)
 
@@ -42,9 +44,23 @@ type Builder struct {
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 	Static map[string]string
 
+	// Location 指定服务器的时区信息
+	//
+	// 如果未指定，则会采用 time.Local 作为默认值。
+	// 在构建 Context 对象时，该时区信息也会分配给 Context，
+	// 如果每个 Context 对象需要不同的值，可以在 Interceptor 中进行修改。
+	Location *time.Location
+
+	// 额外输出给客户端的报头
+	//
+	// 这些报头在用户添加的中间件的外层，用户可以通过添加中件间覆盖这些报头。
+	Headers map[string]string
+
 	logs        *logs.Logs
 	interceptor func(ctx *Context)
+	uptime      time.Time
 
+	// routes
 	middlewares   *middleware.Manager
 	errorHandlers *errorhandler.ErrorHandler
 	router        *mux.Prefix
@@ -58,13 +74,13 @@ type Builder struct {
 	unmarshals []*unmarshaler
 }
 
-// NewBuilder 返回 *Builder 实例
-func NewBuilder(logs *logs.Logs, router *mux.Prefix, builder BuildResultFunc) *Builder {
+// NewServer 返回 *Server 实例
+func NewServer(logs *logs.Logs, router *mux.Prefix, builder BuildResultFunc) *Server {
 	if builder == nil {
 		builder = DefaultResultBuilder
 	}
 
-	return &Builder{
+	return &Server{
 		logs: logs,
 
 		middlewares:   middleware.NewManager(router.Mux()),
@@ -80,54 +96,65 @@ func NewBuilder(logs *logs.Logs, router *mux.Prefix, builder BuildResultFunc) *B
 }
 
 // Logs 返回关联的 logs.Logs 实例
-func (b *Builder) Logs() *logs.Logs {
-	return b.logs
+func (srv *Server) Logs() *logs.Logs {
+	return srv.logs
 }
 
-func (b *Builder) Handler() http.Handler {
-	for url, dir := range b.Static {
+// Handler 将当前服务转换为 http.Handler 接口对象
+func (srv *Server) Handler() http.Handler {
+	for url, dir := range srv.Static {
 		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		b.Router().Get(url+"{path}", h)
+		srv.Router().Get(url+"{path}", h)
 	}
 
-	b.buildMiddlewares()
+	srv.uptime = time.Now()
 
-	return b.middlewares
+	if srv.Location == nil {
+		srv.Location = time.Local
+	}
+
+	srv.buildMiddlewares()
+
+	return srv.middlewares
 }
 
 // AddMiddlewares 设置全局的中间件，可多次调用。
-func (b *Builder) AddMiddlewares(m middleware.Middleware) {
-	b.middlewares.After(m)
+func (srv *Server) AddMiddlewares(m middleware.Middleware) {
+	srv.middlewares.After(m)
 }
 
 // 通过配置文件加载相关的中间件
 //
 // 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
-func (b *Builder) buildMiddlewares() {
-	b.middlewares.Before(func(h http.Handler) http.Handler { return b.errorHandlers.New(h) })
+func (srv *Server) buildMiddlewares() {
+	srv.middlewares.Before(func(h http.Handler) http.Handler {
+		return header.New(h, srv.Headers, nil)
+	})
+
+	srv.middlewares.Before(func(h http.Handler) http.Handler { return srv.errorHandlers.New(h) })
 
 	// srv.errorhandlers.New 可能会输出大段内容。所以放在其之后。
-	b.middlewares.Before(func(h http.Handler) http.Handler {
+	srv.middlewares.Before(func(h http.Handler) http.Handler {
 		return compress.New(h, &compress.Options{
-			ErrorLog: b.Logs().ERROR(),
+			ErrorLog: srv.Logs().ERROR(),
 			Types:    []string{"*"},
-			Funcs:    b.Compresses,
+			Funcs:    srv.Compresses,
 		})
 	})
 
 	// recovery
-	b.middlewares.Before(func(h http.Handler) http.Handler {
-		return recovery.New(h, b.errorHandlers.Recovery(b.Logs().ERROR()))
+	srv.middlewares.Before(func(h http.Handler) http.Handler {
+		return recovery.New(h, srv.errorHandlers.Recovery(srv.Logs().ERROR()))
 	})
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	b.middlewares.Before(func(h http.Handler) http.Handler { return b.buildDebug(h) })
+	srv.middlewares.Before(func(h http.Handler) http.Handler { return srv.buildDebug(h) })
 }
 
-func (b *Builder) buildDebug(h http.Handler) http.Handler {
+func (srv *Server) buildDebug(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case b.Debug && strings.HasPrefix(r.URL.Path, debugPprofPath):
+		case srv.Debug && strings.HasPrefix(r.URL.Path, debugPprofPath):
 			path := r.URL.Path[len(debugPprofPath):]
 			switch path {
 			case "cmdline":
@@ -141,10 +168,20 @@ func (b *Builder) buildDebug(h http.Handler) http.Handler {
 			default:
 				pprof.Index(w, r)
 			}
-		case b.Debug && strings.HasPrefix(r.URL.Path, debugVarsPath):
+		case srv.Debug && strings.HasPrefix(r.URL.Path, debugVarsPath):
 			expvar.Handler().ServeHTTP(w, r)
 		default:
 			h.ServeHTTP(w, r)
 		}
 	})
+}
+
+// Server 返回关联的 *Server 实例
+func (ctx *Context) Server() *Server {
+	return ctx.server
+}
+
+// Uptime 当前服务的运行时间
+func (srv *Server) Uptime() time.Time {
+	return srv.uptime
 }

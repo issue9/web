@@ -37,7 +37,7 @@ func newContext(a *assert.Assertion,
 	outputCharset encoding.Encoding,
 	InputCharset encoding.Encoding) *Context {
 	return &Context{
-		builder: newBuilder(a),
+		server: newServer(a),
 
 		Response:       w,
 		Request:        r,
@@ -52,7 +52,7 @@ func newContext(a *assert.Assertion,
 func TestBuilder_newContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	b := newBuilder(a)
+	b := newServer(a)
 	logwriter := new(bytes.Buffer)
 	b.Logs().ERROR().SetOutput(logwriter)
 

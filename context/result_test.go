@@ -198,7 +198,7 @@ func TestResult(t *testing.T) {
 	r.Header.Set("Accept", "application/json")
 	w := httptest.NewRecorder()
 	ctx := &Context{
-		builder: newBuilder(a),
+		server: newServer(a),
 
 		Response:       w,
 		Request:        r,
@@ -208,7 +208,7 @@ func TestResult(t *testing.T) {
 		InputCharset:  nil,
 		InputMimetype: json.Unmarshal,
 	}
-	ctx.builder.AddMessages(http.StatusBadRequest, map[int]string{
+	ctx.server.AddMessages(http.StatusBadRequest, map[int]string{
 		40010: "40010",
 		40011: "40011",
 	})
@@ -224,7 +224,7 @@ func TestResult(t *testing.T) {
 
 func TestContext_NewResult(t *testing.T) {
 	a := assert.New(t)
-	b := newBuilder(a)
+	b := newServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := b.newContext(w, r)
@@ -239,7 +239,7 @@ func TestContext_NewResult(t *testing.T) {
 
 func TestBuilder_AddMessages(t *testing.T) {
 	a := assert.New(t)
-	builder := newBuilder(a)
+	builder := newServer(a)
 
 	a.NotPanic(func() {
 		builder.AddMessages(400, map[int]string{
@@ -275,7 +275,7 @@ func TestBuilder_AddMessages(t *testing.T) {
 
 func TestBuilder_Messages(t *testing.T) {
 	a := assert.New(t)
-	builder := newBuilder(a)
+	builder := newServer(a)
 	a.NotNil(builder)
 
 	a.NotError(message.SetString(language.Und, "lang", "und"))
@@ -285,7 +285,7 @@ func TestBuilder_Messages(t *testing.T) {
 		builder.AddMessages(400, map[int]string{40010: "lang"})
 	})
 
-	r := builder.NewResult(40010)
+	r := builder.newResult(40010)
 	rr, ok := r.(*defaultResult)
 	a.True(ok).NotNil(rr)
 	a.Equal(rr.Message, "lang").
@@ -293,7 +293,7 @@ func TestBuilder_Messages(t *testing.T) {
 
 	// 不存在
 	a.Panic(func() {
-		a.NotError(builder.NewResult(40010001))
+		a.NotError(builder.newResult(40010001))
 	})
 
 	lmsgs := builder.Messages(message.NewPrinter(language.Und))

@@ -87,7 +87,7 @@ func TestTime(t *testing.T) {
 	a := assert.New(t)
 	initApp(a)
 
-	a.Equal(Location(), time.UTC)
+	a.Equal(Location(), time.Local)
 	a.Equal(Now().Location(), Location())
 	a.Equal(Now().Unix(), time.Now().Unix())
 }

@@ -29,7 +29,7 @@ var (
 
 // Context 是对当次 HTTP 请求内容的封装
 type Context struct {
-	builder *Builder
+	server *Server
 
 	Response http.ResponseWriter
 	Request  *http.Request
@@ -69,18 +69,18 @@ type Context struct {
 
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
-func (b *Builder) newContext(w http.ResponseWriter, r *http.Request) *Context {
+func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
 			return
 		}
 
-		b.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
+		srv.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
 		errorhandler.Exit(status)
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, err := b.marshal(header)
+	outputMimetypeName, marshal, err := srv.marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -91,7 +91,7 @@ func (b *Builder) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	checkError("Accept-Language", err, http.StatusNotAcceptable)
 
 	ctx := &Context{
-		builder:            b,
+		server:             srv,
 		Response:           w,
 		Request:            r,
 		OutputMimetype:     marshal,
@@ -106,7 +106,7 @@ func (b *Builder) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		encName, charsetName, err := parseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
-		ctx.InputMimetype, err = ctx.builder.unmarshal(encName)
+		ctx.InputMimetype, err = ctx.server.unmarshal(encName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
@@ -115,8 +115,8 @@ func (b *Builder) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		ctx.readed = true
 	}
 
-	if b.Interceptor != nil {
-		b.Interceptor(ctx)
+	if srv.Interceptor != nil {
+		srv.Interceptor(ctx)
 	}
 
 	return ctx

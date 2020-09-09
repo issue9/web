@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/issue9/middleware"
-	"github.com/issue9/middleware/header"
 	"github.com/issue9/middleware/host"
 
 	"github.com/issue9/web/internal/webconfig"
@@ -21,13 +20,6 @@ func (srv *Server) AddMiddlewares(m middleware.Middleware) {
 //
 // 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
 func (srv *Server) buildMiddlewares(conf *webconfig.WebConfig) {
-	// headers
-	if len(conf.Headers) > 0 {
-		srv.Builder().AddMiddlewares(func(h http.Handler) http.Handler {
-			return header.New(h, conf.Headers, nil)
-		})
-	}
-
 	// domains
 	if len(conf.AllowedDomains) > 0 {
 		srv.Builder().AddMiddlewares(func(h http.Handler) http.Handler {
