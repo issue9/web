@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/issue9/middleware"
 	"github.com/issue9/mux/v2"
 	"github.com/issue9/scheduled"
 
@@ -36,6 +37,9 @@ type Server struct {
 
 // New 声明一个新的 Server 实例
 func New(conf *webconfig.WebConfig, builder *wctx.Server) (*Server, error) {
+	builder.Static = conf.Static // TODO 临时性代码
+	builder.Debug = conf.Debug
+
 	srv := &Server{
 		Server: http.Server{
 			Addr:              ":" + strconv.Itoa(conf.Port),
@@ -54,15 +58,7 @@ func New(conf *webconfig.WebConfig, builder *wctx.Server) (*Server, error) {
 		closed:    make(chan struct{}, 1),
 	}
 
-	for url, dir := range conf.Static {
-		h := http.StripPrefix(url, http.FileServer(http.Dir(dir)))
-		srv.builder.Router().Get(url+"{path}", h)
-	}
-
 	srv.AddService(srv.scheduledService, "计划任务")
-
-	// 加载固有的中间件，需要在 srv 初始化之后调用
-	srv.buildMiddlewares(conf)
 
 	if conf.Plugins != "" {
 		if err := srv.loadPlugins(conf.Plugins); err != nil {
@@ -85,7 +81,7 @@ func (srv *Server) Mux() *mux.Mux {
 
 // IsDebug 是否处于调试模式
 func (srv *Server) IsDebug() bool {
-	return srv.webConfig.Debug
+	return srv.builder.Debug
 }
 
 // Path 生成路径部分的地址
@@ -157,7 +153,7 @@ func (srv *Server) Close() error {
 	return srv.Server.Close()
 }
 
-// Shutdown 关闭所有服务
+// Shutdown 等待完成所有请求并关闭服务
 //
 // 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
 func (srv *Server) Shutdown(ctx context.Context) error {
@@ -166,8 +162,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 		srv.closed <- struct{}{}
 	}()
 
-	err := srv.Server.Shutdown(ctx)
-	if err != nil && err != context.DeadlineExceeded {
+	if err := srv.Server.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 	return nil
@@ -176,4 +171,9 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 // Location 当前设置的时区信息
 func (srv *Server) Location() *time.Location {
 	return srv.builder.Location
+}
+
+// AddMiddlewares 设置全局的中间件，可多次调用。
+func (srv *Server) AddMiddlewares(m middleware.Middleware) {
+	srv.Builder().AddMiddlewares(m)
 }

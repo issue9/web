@@ -75,7 +75,7 @@ type WebConfig struct {
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 	Static pairs `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
-	// AllowedDomains 限定访问域名。
+	// AllowedDomains 限定访问域名
 	//
 	// 若指定了此值，则只有此列表中指定的域名可以访问当前网页。
 	// 诸如 IP 和其它域名的指向将不再启作用。

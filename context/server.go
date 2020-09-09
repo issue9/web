@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/middleware"
 	"github.com/issue9/middleware/compress"
 	"github.com/issue9/middleware/header"
+	"github.com/issue9/middleware/host"
 	"github.com/issue9/middleware/recovery"
 	"github.com/issue9/middleware/recovery/errorhandler"
 	"github.com/issue9/mux/v2"
@@ -27,7 +28,14 @@ const (
 )
 
 // Server 定义了构建 Context 对象的一些通用数据选项
+//
+// 所有公开的变量，均可为零值，在调用 Handler() 转换之前，
+// 这些值可以随意设置，但是在调用 Handler() 之后再修改，
+// 则相关的修改未必是有效的。
 type Server struct {
+	// 调试模式
+	//
+	// 会额外提供 /debug/pprof/* 和 /debug/vars 用于输出调试信息。
 	Debug bool
 
 	// 在调用 Server.newContext 生成 Context
@@ -43,6 +51,14 @@ type Server struct {
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 	Static map[string]string
+
+	// AllowedDomains 限定访问域名
+	//
+	// 若指定了此值，则只有此列表中指定的域名可以访问当前网页。
+	// 诸如 IP 和其它域名的指向将不再启作用。
+	//
+	// 可以指定泛域名，比如 *.example.com
+	AllowedDomains []string
 
 	// Location 指定服务器的时区信息
 	//
@@ -118,7 +134,7 @@ func (srv *Server) Handler() http.Handler {
 	return srv.middlewares
 }
 
-// AddMiddlewares 设置全局的中间件，可多次调用。
+// AddMiddlewares 设置全局的中间件，可多次调用
 func (srv *Server) AddMiddlewares(m middleware.Middleware) {
 	srv.middlewares.After(m)
 }
@@ -130,6 +146,12 @@ func (srv *Server) buildMiddlewares() {
 	srv.middlewares.Before(func(h http.Handler) http.Handler {
 		return header.New(h, srv.Headers, nil)
 	})
+
+	if len(srv.AllowedDomains) > 0 {
+		srv.middlewares.Before(func(h http.Handler) http.Handler {
+			return host.New(h, srv.AllowedDomains...)
+		})
+	}
 
 	srv.middlewares.Before(func(h http.Handler) http.Handler { return srv.errorHandlers.New(h) })
 
@@ -174,11 +196,6 @@ func (srv *Server) buildDebug(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 		}
 	})
-}
-
-// Server 返回关联的 *Server 实例
-func (ctx *Context) Server() *Server {
-	return ctx.server
 }
 
 // Uptime 当前服务的运行时间

@@ -4,7 +4,7 @@ package server
 
 import "github.com/issue9/web/context"
 
-// Prefix 声明一个 Prefix 实例。
+// Prefix 声明一个 Prefix 实例
 func (m *Module) Prefix(prefix string) *context.Prefix {
 	return m.srv.builder.Prefix(prefix)
 }

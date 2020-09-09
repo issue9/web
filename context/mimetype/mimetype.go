@@ -10,7 +10,7 @@ package mimetype
 // 若编码函数中指定该类型的函数，则会使用该编码优先匹配 */* 等格式的请求。
 const DefaultMimetype = "application/octet-stream"
 
-// Nil 表示向客户端输出 nil 值。
+// Nil 表示向客户端输出 nil 值
 //
 // 这是一个只有类型但是值为空的变量。在某些特殊情况下，
 // 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
