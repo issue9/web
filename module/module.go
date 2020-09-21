@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-package server
+// Package module 提供模块管理的相关功能
+package module
 
 import (
 	"log"
 	"sort"
 	"time"
+
+	"github.com/issue9/web/config"
 )
 
 // Module 表示模块信息
@@ -15,7 +18,7 @@ type Module struct {
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
-	srv         *Server
+	ms          *Modules
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
@@ -32,12 +35,12 @@ type initialization struct {
 	f     func() error
 }
 
-func (srv *Server) newModule(name, desc string, deps ...string) *Module {
+func (srv *Modules) newModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		srv:         srv,
+		ms:          srv,
 	}
 }
 
@@ -59,12 +62,12 @@ func (m *Module) NewTag(tag string) *Tag {
 	return m.tags[tag]
 }
 
-// New 声明一个新的模块
+// NewModule 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
+func (srv *Modules) NewModule(name, desc string, deps ...string) *Module {
 	m := srv.newModule(name, desc, deps...)
 	srv.modules = append(srv.modules, m)
 	return m
@@ -98,7 +101,7 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 // InitModules 初始化模块下指定标签名称的函数
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
-func (srv *Server) InitModules(tag string, info *log.Logger) error {
+func (srv *Modules) InitModules(tag string, info *log.Logger) error {
 	flag := info.Flags()
 	info.SetFlags(0)
 	defer info.SetFlags(flag)
@@ -110,7 +113,7 @@ func (srv *Server) InitModules(tag string, info *log.Logger) error {
 	}
 
 	if tag == "" { // 只有模块的初始化才带路由
-		all := srv.Mux().All(true, true)
+		all := srv.ctxServer.Router().Mux().All(true, true)
 		if len(all) > 0 {
 			info.Println("模块加载了以下路由项：")
 			for path, methods := range all {
@@ -127,7 +130,7 @@ func (srv *Server) InitModules(tag string, info *log.Logger) error {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表
-func (srv *Server) Tags() map[string][]string {
+func (srv *Modules) Tags() map[string][]string {
 	ret := make(map[string][]string, len(srv.modules)*2)
 
 	for _, m := range srv.modules {
@@ -143,7 +146,7 @@ func (srv *Server) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*Module {
+func (srv *Modules) Modules() []*Module {
 	return srv.modules
 }
 
@@ -155,7 +158,7 @@ func (srv *Server) Modules() []*Module {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.srv.Scheduled().Cron(title, f, spec, delay)
+		return m.ms.Scheduled().Cron(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -167,7 +170,7 @@ func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, delay bool) {
 	m.AddInit(func() error {
-		return m.srv.Scheduled().Tick(title, f, dur, imm, delay)
+		return m.ms.Scheduled().Tick(title, f, dur, imm, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -179,6 +182,16 @@ func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, dela
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.srv.Scheduled().At(title, f, spec, delay)
+		return m.ms.Scheduled().At(title, f, spec, delay)
 	}, "注册计划任务"+title)
+}
+
+// RegisterConfig 注册配置项
+func (m *Module) RegisterConfig(id, config string, v interface{}, f config.UnmarshalFunc, notify func()) error {
+	return m.ms.config.Register(id, config, v, f, notify)
+}
+
+// RefreshConfig 刷新指定 ID 的配置项
+func (m *Module) RefreshConfig(id string) error {
+	return m.ms.config.Refresh(id)
 }

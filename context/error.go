@@ -5,7 +5,7 @@ package context
 import (
 	"fmt"
 
-	"github.com/issue9/middleware/recovery/errorhandler"
+	"github.com/issue9/middleware/v2/errorhandler"
 )
 
 // Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。

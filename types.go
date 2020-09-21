@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package webconfig
+package web
 
 import (
 	"encoding/json"

@@ -64,11 +64,7 @@ func (srv *Server) marshal(header string) (string, mimetype.MarshalFunc, error) 
 		return "", nil, errors.New("请求中未指定 accept 报头，且服务端也未指定匹配 */* 的解码函数")
 	}
 
-	accepts, err := qheader.Parse(header, "*/*")
-	if err != nil {
-		return "", nil, err
-	}
-
+	accepts := qheader.Parse(header, "*/*")
 	for _, accept := range accepts {
 		if mm := srv.findMarshal(accept.Value); mm != nil {
 			return mm.name, mm.f, nil

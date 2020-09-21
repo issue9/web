@@ -13,12 +13,13 @@ import (
 	"path/filepath"
 
 	"github.com/issue9/cmdopt"
+	"github.com/issue9/source"
 	"github.com/issue9/term/colors"
 	"github.com/issue9/term/prompt"
-	"github.com/issue9/utils"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/filesystem"
 )
 
 const usage = `构建一个新的 web 项目
@@ -69,7 +70,7 @@ func createMod(mod, wd string, ask *prompt.Prompt) error {
 	}
 
 	// 创建文件夹
-	if utils.FileExists(path) {
+	if filesystem.Exists(path) {
 		cover, err := ask.Bool("存在同名文件夹，是否覆盖", false)
 		if err != nil {
 			return err
@@ -109,7 +110,7 @@ func createCmd(path, dir string) error {
 	}
 
 	// 输出 main.go
-	if err := utils.DumpGoFile(filepath.Join(path, "main.go"), maingo); err != nil {
+	if err := source.DumpGoSource(filepath.Join(path, "main.go"), []byte(maingo)); err != nil {
 		return err
 	}
 

@@ -69,6 +69,7 @@ func (srv *Server) Patch(path string, h HandlerFunc) *Server {
 	return srv.handle(path, h, http.MethodPatch)
 }
 
+// Prefix 返回特定前缀的路由设置对象
 func (srv *Server) Prefix(prefix string) *Prefix {
 	return &Prefix{
 		prefix: prefix,

@@ -16,7 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/utils"
+	"github.com/issue9/source"
+
+	"github.com/issue9/web/internal/filesystem"
 )
 
 // Path 指定版本化文件的路径
@@ -55,7 +57,7 @@ func findRoot(curr string) (string, error) {
 	}
 
 	for {
-		if utils.FileExists(filepath.Join(path, "go.mod")) {
+		if filesystem.Exists(filepath.Join(path, "go.mod")) {
 			return path, nil
 		}
 
@@ -81,7 +83,8 @@ func (v *VersionInfo) DumpFile(ver string) error {
 		return err
 	}
 
-	return utils.DumpGoFile(p, fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName, commitHashName))
+	content := []byte(fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName, commitHashName))
+	return source.DumpGoSource(p, content)
 }
 
 // LDFlags 获取 ldflags 的参数

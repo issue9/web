@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package module
 
 import (
 	"net/http"
@@ -22,7 +22,7 @@ func TestModule_Prefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 
-	srv := rest.NewServer(t, server.Mux(), nil)
+	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
 	m := server.newModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -46,7 +46,7 @@ func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 
-	srv := rest.NewServer(t, server.Mux(), nil)
+	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
 	m := server.newModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -78,7 +78,7 @@ func TestModule_Handles(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 
-	srv := rest.NewServer(t, server.Mux(), nil)
+	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
 	path := "/path"
 	m := server.newModule("m1", "m1 desc")

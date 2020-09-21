@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/middleware/recovery/errorhandler"
+	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
@@ -87,8 +87,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputCharsetName, outputCharset, err := acceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
-	tag, err := acceptLanguage(r.Header.Get("Accept-Language"))
-	checkError("Accept-Language", err, http.StatusNotAcceptable)
+	tag := acceptLanguage(r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		server:             srv,

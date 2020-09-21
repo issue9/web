@@ -44,9 +44,9 @@ func TestAcceptCharset(t *testing.T) {
 
 	// q 错解析错误
 	name, enc, err = acceptCharset("utf-8;q=x.9,gbk;q=0.8")
-	a.Error(err).
-		Equal(name, "").
-		Nil(enc)
+	a.NotError(err).
+		Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
 
 	// 不支持的编码
 	name, enc, err = acceptCharset("not-supported")
@@ -57,23 +57,20 @@ func TestAcceptCharset(t *testing.T) {
 
 func TestAcceptLanguage(t *testing.T) {
 	a := assert.New(t)
-	tag, err := acceptLanguage("")
-	a.NotError(err).Equal(tag, language.Und)
+	tag := acceptLanguage("")
+	a.Equal(tag, language.Und)
 
-	tag, err = acceptLanguage("xx;q=xxx")
-	a.Error(err).Equal(tag, language.Und)
+	tag = acceptLanguage("zh")
+	a.Equal(tag, language.Chinese)
 
-	tag, err = acceptLanguage("zh")
-	a.NotError(err).Equal(tag, language.Chinese)
+	tag = acceptLanguage("zh-Hant")
+	a.Equal(tag, language.TraditionalChinese)
 
-	tag, err = acceptLanguage("zh-Hant")
-	a.NotError(err).Equal(tag, language.TraditionalChinese)
+	tag = acceptLanguage("zh-Hans")
+	a.Equal(tag, language.SimplifiedChinese)
 
-	tag, err = acceptLanguage("zh-Hans")
-	a.NotError(err).Equal(tag, language.SimplifiedChinese)
-
-	tag, err = acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
-	a.NotError(err).Equal(tag, language.English)
+	tag = acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	a.Equal(tag, language.English)
 }
 
 func TestParseContentType(t *testing.T) {

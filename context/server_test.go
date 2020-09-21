@@ -14,8 +14,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/compress"
-	"github.com/issue9/mux/v2"
 
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
@@ -52,19 +50,13 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	b.Compresses = map[string]compress.WriterFunc{
-		"gzip":    compress.NewGzip,
-		"deflate": compress.NewDeflate,
-	}
-
 	return b
 }
 
 func newEmptyServer(a *assert.Assertion) *Server {
-	p := mux.New(false, false, false, nil, nil).Prefix("")
-	a.NotNil(p)
-
-	return NewServer(logs.New(), p, DefaultResultBuilder)
+	srv, err := NewServer(logs.New(), DefaultResultBuilder, false, false, "")
+	a.NotError(err).NotNil(srv)
+	return srv
 }
 
 func TestMiddlewares(t *testing.T) {
@@ -78,9 +70,7 @@ func TestMiddlewares(t *testing.T) {
 	a.NotError(err)
 
 	app.Router().Mux().GetFunc("/m1/test", f201)
-	app.Static = map[string]string{
-		"/client": "./testdata/",
-	}
+	app.AddStatic("/client", "./testdata/")
 	app.errorHandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
@@ -135,7 +125,7 @@ func TestMiddlewares(t *testing.T) {
 		StringBody("error handler test")
 }
 
-func TestBuiler_buildDebug(t *testing.T) {
+func TestServer_buildDebug(t *testing.T) {
 	a := assert.New(t)
 
 	b := newServer(a)
@@ -174,4 +164,65 @@ func TestBuiler_buildDebug(t *testing.T) {
 	srv.NewRequest(http.MethodGet, "/debug/").
 		Do().
 		Status(http.StatusCreated)
+}
+
+func TestServer_URL_Path(t *testing.T) {
+	a := assert.New(t)
+
+	data := []*struct {
+		root, input, url, path string
+	}{
+		{},
+
+		{
+			root:  "",
+			input: "/abc",
+			url:   "/abc",
+			path:  "/abc",
+		},
+
+		{
+			root:  "/",
+			input: "/abc/def",
+			url:   "/abc/def",
+			path:  "/abc/def",
+		},
+
+		{
+			root:  "https://localhost/",
+			input: "/abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+
+		{
+			root:  "https://localhost/",
+			input: "",
+			url:   "https://localhost",
+			path:  "",
+		},
+
+		{
+			root:  "https://example.com:8080/def/",
+			input: "",
+			url:   "https://example.com:8080/def",
+			path:  "/def",
+		},
+
+		{
+			root:  "https://example.com:8080/def/",
+			input: "abc",
+			url:   "https://example.com:8080/def/abc",
+			path:  "/def/abc",
+		},
+	}
+
+	for i, item := range data {
+		srv, err := NewServer(logs.New(), DefaultResultBuilder, false, false, item.root)
+		a.NotError(err, "error %s at %d", err, i).
+			NotNil(srv)
+
+		a.Equal(srv.URL(item.input), item.url, "not equal @%d,v1=%s,v2=%s", i, srv.URL(item.input), item.url)
+		a.Equal(srv.Path(item.input), item.path, "not equal @%d,v1=%s,v2=%s", i, srv.Path(item.input), item.path)
+	}
 }

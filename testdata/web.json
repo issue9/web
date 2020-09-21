@@ -1,10 +1,6 @@
 {
   "debug": true,
-  "https": false,
-  "domain": "localhost",
-  "keyFile": "keyFile",
-  "certFile": "certFile",
-  "port": 8082,
+  "root": "http://localhost:8082",
   "static":{
     "/admin": "./testdata"
   },

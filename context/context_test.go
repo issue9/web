@@ -106,20 +106,17 @@ func TestBuilder_newContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
-	a.Panic(func() {
-		b.newContext(w, r)
-	})
+	ctx := b.newContext(w, r)
+	a.NotNil(ctx)
+	a.Equal(ctx.OutputTag, language.MustParse("zh-hans"))
 
 	// 正常，指定 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
-	var ctx *Context
-	a.NotPanic(func() {
-		ctx = b.newContext(w, r)
-		a.NotNil(ctx)
-	})
+	ctx = b.newContext(w, r)
+	a.NotNil(ctx)
 	a.Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
 		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype).

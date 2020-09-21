@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package module
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 type JobFunc = scheduled.JobFunc
 
 // Scheduled 获取 scheduled.Server 实例
-func (srv *Server) Scheduled() *scheduled.Server {
+func (srv *Modules) Scheduled() *scheduled.Server {
 	return srv.scheduled
 }
 
-func (srv *Server) scheduledService(ctx context.Context) error {
+func (srv *Modules) scheduledService(ctx context.Context) error {
 	go func() {
-		if err := srv.scheduled.Serve(srv.Builder().Logs().ERROR(), srv.Builder().Logs().INFO()); err != nil {
-			srv.Builder().Logs().Error(err)
+		if err := srv.scheduled.Serve(srv.ctxServer.Logs().ERROR(), srv.ctxServer.Logs().INFO()); err != nil {
+			srv.ctxServer.Logs().Error(err)
 		}
 	}()
 

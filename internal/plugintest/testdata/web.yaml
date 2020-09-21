@@ -1,9 +1,5 @@
 debug: true
-https: false
-domain: localhost
-keyFile: keyFile
-certFile: certFile
-port: 8082
+root: localhost
 static:
   /admin: ./testdata
 headers:

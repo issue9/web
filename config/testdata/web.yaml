@@ -1,0 +1,5 @@
+# webconfig 的测试文件，需要与其它内容数值相同
+
+debug: true
+root: http://localhost:8082
+timezone: Africa/Addis_Ababa

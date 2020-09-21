@@ -1,0 +1,6 @@
+<!-- webconfig 的测试文件，需要与其它内容数值相同 -->
+
+<webconfig debug="true">
+    <root>http://localhost:8082</root>
+    <timezone>Africa/Addis_Ababa</timezone>
+</webconfig>

@@ -39,11 +39,7 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 		return utfName, nil, nil
 	}
 
-	accepts, err := qheader.Parse(header, "*")
-	if err != nil {
-		return "", nil, err
-	}
-
+	accepts := qheader.Parse(header, "*")
 	for _, apt := range accepts {
 		enc, err = htmlindex.Get(apt.Value)
 		if err != nil { // err != nil 表示未找到，继续查找
@@ -62,23 +58,19 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 	return "", nil, errInvalidCharset
 }
 
-func acceptLanguage(header string) (language.Tag, error) {
+func acceptLanguage(header string) language.Tag {
 	if header == "" {
-		return language.Und, nil
+		return language.Und
 	}
 
-	al, err := qheader.Parse(header, "*")
-	if err != nil {
-		return language.Und, err
-	}
-
+	al := qheader.Parse(header, "*")
 	prefs := make([]language.Tag, 0, len(al))
 	for _, l := range al {
 		prefs = append(prefs, language.Make(l.Value))
 	}
 
 	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
-	return tag, nil
+	return tag
 }
 
 var errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部分")

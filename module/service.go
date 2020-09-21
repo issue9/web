@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package module
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func (s ServiceState) String() string {
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
-		m.srv.AddService(f, title)
+		m.ms.AddService(f, title)
 		return nil
 	}, "注册服务："+title)
 }
@@ -63,7 +63,7 @@ func (m *Module) AddService(f ServiceFunc, title string) {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (srv *Server) AddService(f ServiceFunc, title string) {
+func (srv *Modules) AddService(f ServiceFunc, title string) {
 	srv.services = append(srv.services, &Service{
 		Title: title,
 		f:     f,
@@ -71,11 +71,12 @@ func (srv *Server) AddService(f ServiceFunc, title string) {
 }
 
 // Services 返回所有的服务列表
-func (srv *Server) Services() []*Service {
+func (srv *Modules) Services() []*Service {
 	return srv.services
 }
 
-func (srv *Server) stopServices() {
+// Stop 停止服务
+func (srv *Modules) Stop() {
 	for _, srv := range srv.services {
 		srv.Stop()
 	}
@@ -91,7 +92,8 @@ func (srv *Service) Err() error {
 	return srv.err
 }
 
-func (srv *Server) runServices() {
+// Run 运行所有的服务
+func (srv *Modules) Run() {
 	for _, srv := range srv.services {
 		srv.Run()
 	}
@@ -133,7 +135,7 @@ func (srv *Service) serve() {
 	srv.locker.Unlock()
 }
 
-// Stop 停止服务。
+// Stop 停止服务
 func (srv *Service) Stop() {
 	if srv.state != ServiceRunning {
 		return

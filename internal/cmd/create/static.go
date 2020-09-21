@@ -5,7 +5,7 @@ package create
 import (
 	"github.com/issue9/logs/v2/config"
 
-	"github.com/issue9/web/internal/webconfig"
+	"github.com/issue9/web"
 )
 
 // go.mod
@@ -42,10 +42,8 @@ func initModules() {
 }
 `
 
-var webconf = &webconfig.WebConfig{
-	HTTPS:  false,
-	Domain: "localhost",
-	Port:   8080,
+var webconf = &web.Web{
+	Root: "http://localhost:8080/",
 }
 
 var logsconf = &config.Config{

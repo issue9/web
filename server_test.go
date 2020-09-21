@@ -4,181 +4,158 @@ package web
 
 import (
 	"context"
-	"encoding/xml"
 	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-
-	context2 "github.com/issue9/web/context"
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/gob"
-	"github.com/issue9/web/context/mimetype/mimetypetest"
-	"github.com/issue9/web/internal/webconfig"
 )
 
-func initApp(a *assert.Assertion) {
-	defaultServer = nil
-	a.NotError(Classic("./testdata", context2.DefaultResultBuilder))
-	a.NotNil(defaultServer)
-	a.Equal(defaultServer, Server())
-
-	err := Builder().AddMarshals(map[string]mimetype.MarshalFunc{
-		"application/xml":        xml.Marshal,
-		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
-	})
-	a.NotError(err)
-
-	err = Builder().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
-		"application/xml":        xml.Unmarshal,
-		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
-	})
-	a.NotError(err)
-
-	a.Equal(1, len(Services())) // 默认有 scheduled 的服务在运行
+var f202 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+	_, err := w.Write([]byte("1234567890"))
+	if err != nil {
+		println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
-func TestClassic(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
+// 声明一个 Server 实例
+func newServer(a *assert.Assertion) *Web {
+	conf, err := Classic("./testdata")
+	a.NotError(err).NotNil(conf)
 
-	a.Panic(func() {
-		a.NotError(Classic("./testdata", context2.DefaultResultBuilder))
-	})
+	a.NotNil(conf.CTXServer())
+	a.NotNil(conf.HTTPServer().Handler)
+	a.NotNil(conf.CTXServer().Logs())
 
-	a.True(IsDebug())
-	a.Equal(URL("/test/abc.png"), "http://localhost:8082/test/abc.png")
-	a.Equal(Path("/test/abc.png"), "/test/abc.png")
+	// 以下内容由配置文件决定
+	a.True(conf.Debug)
+
+	return conf
 }
 
-func TestSchedulers(t *testing.T) {
+func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
-	initApp(a)
-
-	a.Empty(Schedulers())
-	err := Scheduled().At("test", func(time.Time) error { return nil }, "2001-01-02 17:18:19", false)
-	a.NotError(err)
-	a.Equal(1, len(Schedulers()))
-}
-
-func TestMessages(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
-
-	a.Empty(Messages(nil))
-
-	AddMessages(http.StatusNotImplemented, map[int]string{
-		50010: "50010",
-		50011: "50011",
-	})
-
-	a.Equal(2, len(Messages(nil)))
-}
-
-func TestTime(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
-
-	a.Equal(Location(), time.Local)
-	a.Equal(Now().Location(), Location())
-	a.Equal(Now().Unix(), time.Now().Unix())
-}
-
-func TestModules(t *testing.T) {
-	a := assert.New(t)
-	initApp(a)
+	srv := newServer(a)
 	exit := make(chan bool, 1)
 
-	m1 := NewModule("m1", "m1 desc", "m2")
-	m1.AddInit(func() error {
-		println("m1")
-		return nil
-	}, "init")
-	m1.Post("/post/m1", func(ctx *Context) {
-		ctx.Render(http.StatusCreated, "m1", nil)
-	})
-
-	m2 := NewModule("m2", "m2 desc")
-	a.NotNil(m2)
-
-	a.NotError(InitModules(""))
-	a.Equal(2, len(Modules())) //  m1,m2
+	r := srv.CTXServer().Router()
+	r.Mux().GetFunc("/m1/test", f202)
+	r.Mux().GetFunc("/m2/test", f202)
+	r.Mux().GetFunc("/mux/test", f202)
 
 	go func() {
-		err := Serve()
-		if err != http.ErrServerClosed {
-			a.NotError(err)
-		}
+		err := srv.Serve()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
+	time.Sleep(500 * time.Microsecond) // 等待 go func() 完成
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m1/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m2/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/mux/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// static 中定义的静态文件
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/admin/logs.xml").
+		Do().
+		Status(http.StatusOK)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/admin/logs.xml").
+		Do().
+		Status(http.StatusOK)
+
+	a.NotError(srv.Close())
+	<-exit
+}
+
+func TestWeb_Close(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	exit := make(chan bool, 1)
+
+	srv.CTXServer().Router().Mux().GetFunc("/test", f202)
+	srv.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("closed"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		a.NotError(srv.Close())
+	})
+
+	go func() {
+		err := srv.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
+	}()
+
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Microsecond)
 
-	rest.NewRequest(a, nil, http.MethodPost, URL("/post")).
-		Header("Accept", "application/json").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
 		Do().
-		Status(http.StatusNotFound)
+		Status(http.StatusAccepted)
 
-	rest.NewRequest(a, nil, http.MethodPost, URL("/post/m1")).
-		Header("Accept", "application/json").
-		Do().
-		Status(http.StatusCreated).
-		StringBody("\"m1\"") // json 格式的字符串
+	// 连接被关闭，返回错误内容
+	resp, err := http.Get("http://localhost:8082/close")
+	a.Error(err).Nil(resp)
 
-	ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
-	defer c()
-	a.NotError(Shutdown(ctx))
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
 
 	<-exit
 }
 
-func TestFile(t *testing.T) {
+func TestWeb_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	initApp(a)
-
-	path, err := filepath.Abs("./testdata/web.yaml")
-	a.NotError(err)
-
-	a.Equal(File("web.yaml"), path)
-
-	conf1 := &webconfig.WebConfig{}
-	a.NotError(LoadFile("web.yaml", conf1))
-	a.NotNil(conf1)
-
-	file, err := os.Open(path)
-	a.NotError(err).NotNil(file)
-	conf2 := &webconfig.WebConfig{}
-	a.NotError(Load(file, ".yaml", conf2))
-	a.NotNil(conf2)
-	a.Equal(conf1, conf2)
-}
-
-func TestGrace(t *testing.T) {
-	if runtime.GOOS == "windows" { // windows 不支持 os.Process.Signal
-		return
-	}
-
-	a := assert.New(t)
+	srv := newServer(a)
 	exit := make(chan bool, 1)
-	initApp(a)
 
-	Grace(300*time.Millisecond, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	srv.CTXServer().Router().Mux().GetFunc("/test", f202)
+	srv.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, err := w.Write([]byte("shutdown with ctx"))
+		a.NotError(err)
+		ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
+		defer c()
+		srv.Shutdown(ctx)
+	})
+
 	go func() {
-		Serve()
+		err := srv.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
-	time.Sleep(300 * time.Microsecond)
 
-	p, err := os.FindProcess(os.Getpid())
-	a.NotError(err).NotNil(p)
-	a.NotError(p.Signal(syscall.SIGTERM))
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// 关闭指令可以正常执行
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/close").
+		Do().
+		Status(http.StatusCreated)
+
+	// 未超时，但是拒绝新的链接
+	resp, err := http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+
+	// 已被关闭
+	time.Sleep(30 * time.Microsecond)
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
 
 	<-exit
 }

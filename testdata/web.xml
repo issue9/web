@@ -1,11 +1,7 @@
 <!-- webconfig 的测试文件，需要与其它内容数值相同 -->
 
 <webconfig debug="true">
-    <domain>localhost</domain>
-    <https>false</https>
-    <keyFile>keyFile</keyFile>
-    <certFile>certFile</certFile>
-    <port>8082</port>
+    <root>http://localhost:8082</root>
     <static>
         <key name="/admin">./testdata</key>
     </static>
