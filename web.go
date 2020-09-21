@@ -99,18 +99,15 @@ type Web struct {
 	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	Location *time.Location `yaml:"-" json:"-" xml:"-"`
 
-	Marshalers   map[string]mimetype.MarshalFunc
-	Unmarshalers map[string]mimetype.UnmarshalFunc
+	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
+	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
+	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`
+	ContextInterceptor func(*context.Context)            `yaml:"-" json:"-" xml:"-"`
+	LogsConfig         *lc.Config                        `yaml:"-" json:"-" xml:"-" config:".xml,logs.xml"`
 
-	ResultBuilder context.BuildResultFunc `yaml:"-" json:"-" xml:"-"`
-
-	ContextInterceptor func(*context.Context) `yaml:"-" json:"-" xml:"-"`
-
-	Logs *logs.Logs `yaml:"-" json:"-" xml:"-" config:".xml,logs.xml"`
-
+	logs       *logs.Logs
 	httpServer *http.Server
 	ctxServer  *context.Server
-	config     *config.Config
 	modules    *module.Modules
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 }
@@ -274,39 +271,22 @@ func (web *Web) Grace(dur time.Duration, sig ...os.Signal) {
 		defer c()
 
 		if err := web.Shutdown(ctx); err != nil {
-			web.Logs.Error(err)
+			web.logs.Error(err)
 		}
-		web.Logs.Flush() // 保证内容会被正常输出到日志。
+		web.logs.Flush() // 保证内容会被正常输出到日志。
 	}()
 }
 
 func loadConfig(configPath, logsPath string) (web *Web, err error) {
-	conf := &config.Config{}
-
 	web = &Web{}
-	err = conf.Register("webconfig.yaml", configPath, web, config.LoadYAML, nil)
-	if err != nil {
-		return nil, err
-	}
-	if err = conf.Refresh("webconfig.yaml"); err != nil {
+	if err = config.LoadFile(configPath, web); err != nil {
 		return nil, err
 	}
 
-	logsConf := &lc.Config{}
-	if err = conf.Register("logs.xml", logsPath, logsConf, config.LoadXML, nil); err != nil {
+	web.LogsConfig = &lc.Config{}
+	if err = config.LoadFile(logsPath, web.LogsConfig); err != nil {
 		return nil, err
 	}
-	if err = conf.Refresh("logs.xml"); err != nil {
-		return nil, err
-	}
-
-	l := logs.New()
-	if err = l.Init(logsConf); err != nil {
-		return nil, err
-	}
-
-	web.Logs = l
-	web.config = conf
 
 	return web, nil
 }
@@ -318,25 +298,21 @@ func Classic(dir string) (*Web, error) {
 		return nil, err
 	}
 
-	if err = web.Init(); err != nil {
-		return nil, err
-	}
-
-	err = web.CTXServer().AddMarshals(map[string]mimetype.MarshalFunc{
+	web.Marshalers = map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	err = web.CTXServer().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	web.Unmarshalers = map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
-	})
-	if err != nil {
+	}
+
+	web.ResultBuilder = context.DefaultResultBuilder
+
+	if err = web.Init(); err != nil {
 		return nil, err
 	}
 

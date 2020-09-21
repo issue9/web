@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/issue9/logs/v2"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/module"
 )
@@ -77,7 +78,12 @@ func (web *Web) Init() (err error) {
 		return err
 	}
 
-	web.ctxServer, err = context.NewServer(web.Logs, web.ResultBuilder, web.DisableOptions, web.DisableHead, web.url.Path)
+	web.logs = logs.New()
+	if err = web.logs.Init(web.LogsConfig); err != nil {
+		return err
+	}
+
+	web.ctxServer, err = context.NewServer(web.logs, web.ResultBuilder, web.DisableOptions, web.DisableHead, web.url.Path)
 	if err != nil {
 		return err
 	}
@@ -91,6 +97,12 @@ func (web *Web) Init() (err error) {
 		web.ctxServer.SetHeader(k, v)
 	}
 	web.ctxServer.Interceptor = web.ContextInterceptor
+	if err = web.ctxServer.AddMarshals(web.Marshalers); err != nil {
+		return err
+	}
+	if err = web.ctxServer.AddUnmarshals(web.Unmarshalers); err != nil {
+		return err
+	}
 
 	web.httpServer = &http.Server{
 		Addr:              web.addr,
@@ -100,7 +112,7 @@ func (web *Web) Init() (err error) {
 		WriteTimeout:      web.WriteTimeout.Duration(),
 		IdleTimeout:       web.IdleTimeout.Duration(),
 		MaxHeaderBytes:    web.MaxHeaderBytes,
-		ErrorLog:          web.Logs.ERROR(),
+		ErrorLog:          web.logs.ERROR(),
 	}
 
 	if web.isTLS {
@@ -113,6 +125,6 @@ func (web *Web) Init() (err error) {
 
 	web.closed = make(chan struct{}, 1)
 
-	web.modules, err = module.NewModules(web.ctxServer, web.config, web.Plugins)
+	web.modules, err = module.NewModules(web.ctxServer, web.Plugins)
 	return err
 }

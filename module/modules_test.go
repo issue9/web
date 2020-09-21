@@ -9,7 +9,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/logs/v2"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
@@ -18,7 +17,7 @@ import (
 func newServer(a *assert.Assertion) *Modules {
 	ctx, err := context.NewServer(logs.New(), context.DefaultResultBuilder, false, false, "")
 	a.NotError(err).NotNil(ctx)
-	ms, err := NewModules(ctx, &config.Config{}, "")
+	ms, err := NewModules(ctx, "")
 	a.NotError(err).NotNil(ms)
 
 	a.NotError(ms.ctxServer.AddMarshals(map[string]mimetype.MarshalFunc{

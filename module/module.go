@@ -7,8 +7,6 @@ import (
 	"log"
 	"sort"
 	"time"
-
-	"github.com/issue9/web/config"
 )
 
 // Module 表示模块信息
@@ -184,14 +182,4 @@ func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
 		return m.ms.Scheduled().At(title, f, spec, delay)
 	}, "注册计划任务"+title)
-}
-
-// RegisterConfig 注册配置项
-func (m *Module) RegisterConfig(id, config string, v interface{}, f config.UnmarshalFunc, notify func()) error {
-	return m.ms.config.Register(id, config, v, f, notify)
-}
-
-// RefreshConfig 刷新指定 ID 的配置项
-func (m *Module) RefreshConfig(id string) error {
-	return m.ms.config.Refresh(id)
 }
