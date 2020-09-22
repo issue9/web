@@ -24,7 +24,7 @@ func main() {
 		return fmt.Sprintf("未找到子命令 %s", name)
 	})
 
-	opt.Help("help", "显示当前内容")
+	opt.Help("help", "显示当前内容\n")
 	version.Init(opt)
 	build.Init(opt)
 	create.Init(opt)
@@ -37,7 +37,4 @@ func main() {
 }
 
 const header = `web 命令是 github.com/issue9/web 框架提供的辅助工具。
-
-目前支持以下子命令：%s
-详情可以通过 web help [subcommand] 进行查看。
 `

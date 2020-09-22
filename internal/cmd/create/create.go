@@ -14,8 +14,8 @@ import (
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/source"
-	"github.com/issue9/term/colors"
-	"github.com/issue9/term/prompt"
+	"github.com/issue9/term/v2/colors"
+	"github.com/issue9/term/v2/prompt"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web"

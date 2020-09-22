@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package build 编译程，直接引用 go build
+// Package build 提供编译相关的功能
 package build
 
 import (
