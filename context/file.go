@@ -40,7 +40,7 @@ func (ctx *Context) ServeContent(buf io.ReadSeeker, name string, headers map[str
 	http.ServeContent(ctx.Response, ctx.Request, name, time.Now(), buf)
 }
 
-// Upload 执行上传文件的相关操作。
+// Upload 执行上传文件的相关操作
 //
 // 返回的是文件列表
 func (ctx *Context) Upload(field string, u *upload.Upload) ([]string, error) {

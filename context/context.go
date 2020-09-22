@@ -121,7 +121,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return ctx
 }
 
-// Body 获取用户提交的内容。
+// Body 获取用户提交的内容
 //
 // 相对于 ctx.Request.Body，此函数可多次读取。
 // 不存在 body 时，返回 nil

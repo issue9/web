@@ -8,9 +8,15 @@ import (
 	"errors"
 	"io"
 	"time"
+
+	"github.com/issue9/web/config"
+	"github.com/issue9/web/internal/filesystem"
 )
 
-type pairs map[string]string
+// Map 定义 map[string]string 类型
+//
+// 唯一的功能是为了 xml 能支持 map。
+type Map map[string]string
 
 type entry struct {
 	XMLName struct{} `xml:"key"`
@@ -21,7 +27,14 @@ type entry struct {
 // Duration 封装 time.Duration，实现 JSON、XML 和 YAML 的解析
 type Duration time.Duration
 
-func (p pairs) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+// Certificate 证书管理
+type Certificate struct {
+	Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
+	Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+}
+
+// MarshalXML implement xml.Marshaler
+func (p Map) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	if len(p) == 0 {
 		return nil
 	}
@@ -39,8 +52,9 @@ func (p pairs) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(start.End())
 }
 
-func (p *pairs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	*p = pairs{}
+// UnmarshalXML implement xml.Unmarshaler
+func (p *Map) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	*p = Map{}
 
 	for {
 		e := &entry{}
@@ -116,6 +130,18 @@ func (d *Duration) UnmarshalXML(de *xml.Decoder, start xml.StartElement) error {
 	}
 
 	*d = Duration(dur)
+
+	return nil
+}
+
+func (cert *Certificate) sanitize() *config.FieldError {
+	if !filesystem.Exists(cert.Cert) {
+		return &config.FieldError{Field: "cert", Message: "文件不存在"}
+	}
+
+	if !filesystem.Exists(cert.Key) {
+		return &config.FieldError{Field: "key", Message: "文件不存在"}
+	}
 
 	return nil
 }

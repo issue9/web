@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	_ xml.Marshaler   = &pairs{}
-	_ xml.Unmarshaler = &pairs{}
+	_ xml.Marshaler   = &Map{}
+	_ xml.Unmarshaler = &Map{}
 
 	dur time.Duration
 
@@ -29,7 +29,7 @@ var (
 )
 
 type testPairs struct {
-	Pairs pairs `xml:"pairs"`
+	Pairs Map `xml:"pairs"`
 }
 
 type testDuration struct {
@@ -48,7 +48,7 @@ func TestPairs(t *testing.T) {
 	a := assert.New(t)
 
 	m := &testPairs{
-		Pairs: pairs{ // 多个字段，注意 map 顺序问题
+		Pairs: Map{ // 多个字段，注意 map 顺序问题
 			"key1": "val1",
 		},
 	}
@@ -67,7 +67,7 @@ func TestPairs(t *testing.T) {
 
 	// 空值
 	m = &testPairs{
-		Pairs: pairs{},
+		Pairs: Map{},
 	}
 
 	bs, err = xml.MarshalIndent(m, "", "  ")

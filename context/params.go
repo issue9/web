@@ -12,7 +12,7 @@ import (
 
 var emptyParams = params.Params(map[string]string{})
 
-// Params 用于处理路径中包含的参数。
+// Params 用于处理路径中包含的参数
 //  p := ctx.Params()
 //  aid := p.Int64("aid")
 //  bid := p.Int64("bid")
@@ -40,7 +40,9 @@ func (ctx *Context) Params() *Params {
 	}
 }
 
-// ID 获取参数 key 所代表的值，并转换成 int 且值必须大于 0。
+// ID 获取参数 key 所代表的值并转换成 int64
+//
+// 值必须大于 0，否则会输出错误信息，并返回零值。
 func (p *Params) ID(key string) int64 {
 	id := p.Int64(key)
 	if id <= 0 {
@@ -50,7 +52,10 @@ func (p *Params) ID(key string) int64 {
 	return id
 }
 
-// MustID 获取参数 key 所代表的值，转换成 int64 且必须大于 0。
+// MustID 获取参数 key 所代表的值并转换成 int64
+//
+// 值必须大于 0，否则会输出错误信息，并返回零值。
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错或是小于零时，才会向 errors 写入错误信息。
 func (p *Params) MustID(key string, def int64) int64 {
@@ -75,12 +80,13 @@ func (p *Params) MustID(key string, def int64) int64 {
 	return ret
 }
 
-// Int 获取参数 key 所代表的值，并转换成 int。
+// Int 获取参数 key 所代表的值并转换成 int
 func (p *Params) Int(key string) int {
 	return int(p.Int64(key))
 }
 
-// MustInt 获取参数 key 所代表的值，并转换成 int。
+// MustInt 获取参数 key 所代表的值并转换成 int
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt(key string, def int) int {
@@ -97,7 +103,8 @@ func (p *Params) Int64(key string) int64 {
 	return ret
 }
 
-// MustInt64 获取参数 key 所代表的值，并转换成 int64。
+// MustInt64 获取参数 key 所代表的值并转换成 int64
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt64(key string, def int64) int64 {
@@ -117,7 +124,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 	return ret
 }
 
-// String 获取参数 key 所代表的值，并转换成 string。
+// String 获取参数 key 所代表的值并转换成 string
 func (p *Params) String(key string) string {
 	ret, err := p.params.String(key)
 	if err != nil {
@@ -127,7 +134,8 @@ func (p *Params) String(key string) string {
 	return ret
 }
 
-// MustString 获取参数 key 所代表的值，并转换成 string。
+// MustString 获取参数 key 所代表的值并转换成 string
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustString(key, def string) string {
 	ret, found := p.params[key]
@@ -139,7 +147,7 @@ func (p *Params) MustString(key, def string) string {
 	return ret
 }
 
-// Bool 获取参数 key 所代表的值，并转换成 bool。
+// Bool 获取参数 key 所代表的值并转换成 bool
 //
 // 最终会调用 strconv.ParseBool 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
@@ -152,7 +160,8 @@ func (p *Params) Bool(key string) bool {
 	return ret
 }
 
-// MustBool 获取参数 key 所代表的值，并转换成 bool。
+// MustBool 获取参数 key 所代表的值并转换成 bool
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 //
@@ -175,7 +184,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 	return ret
 }
 
-// Float64 获取参数 key 所代表的值，并转换成 float64。
+// Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Params) Float64(key string) float64 {
 	ret, err := p.params.Float(key)
 	if err != nil {
@@ -185,7 +194,8 @@ func (p *Params) Float64(key string) float64 {
 	return ret
 }
 
-// MustFloat64 获取参数 key 所代表的值，并转换成 float64。
+// MustFloat64 获取参数 key 所代表的值并转换成 float64
+//
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustFloat64(key string, def float64) float64 {
@@ -223,7 +233,9 @@ func (p *Params) Result(code int) *CTXResult {
 	return p.ctx.NewResultWithFields(code, p.Errors())
 }
 
-// ParamID 获取地址参数中表示 ID 的值。相对于 ParamInt64，该值必须大于 0。
+// ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
+//
+// 相对于 Context.ParamInt64()，该值必须大于 0。
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamID(key string) (int64, error) {
@@ -240,14 +252,14 @@ func (ctx *Context) ParamID(key string) (int64, error) {
 	return id, nil
 }
 
-// ParamInt64 取地址参数中的 int64 值。
+// ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamInt64(key string) (int64, error) {
 	return ctx.Params().params.Int(key)
 }
 
-// ParamString 取地址参数中的 string 值。
+// ParamString 取地址参数中的 key 表示的 string 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamString(key string) (string, error) {

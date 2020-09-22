@@ -3,14 +3,12 @@
 package web
 
 import (
-	ctx "context"
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"time"
 
@@ -34,7 +32,7 @@ const (
 
 // Web 项目的配置内容
 type Web struct {
-	XMLName struct{} `yaml:"-" json:"-" xml:"webconfig"`
+	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// Debug 是否启用调试模式
 	//
@@ -67,14 +65,14 @@ type Web struct {
 	// 一些诸如跨域等报头信息，可以在此作设置。
 	//
 	// 报头信息可能在其它处理器被修改。
-	Headers pairs `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
+	Headers Map `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
 
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-	Static pairs `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
+	Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
 	// AllowedDomains 限定访问域名
 	//
@@ -103,31 +101,27 @@ type Web struct {
 	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`
 	ContextInterceptor func(*context.Context)            `yaml:"-" json:"-" xml:"-"`
-	LogsConfig         *lc.Config                        `yaml:"-" json:"-" xml:"-" config:".xml,logs.xml"`
+
+	// 用于初始化日志系统的参数
+	LogsConfig *lc.Config `yaml:"-" json:"-" xml:"-"`
+
+	// 指定用于触发关闭服务的信号
+	//
+	// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
+	// 如果指定了多个相同的值，则该信号有可能多次触发。
+	ShutdownSignal []os.Signal `yaml:"-" json:"-" xml:"-"`
+
+	// 指定关闭服务时的超时时间
+	//
+	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
+	// Shutdown 即为该方法的等待时间。
+	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
 
 	logs       *logs.Logs
 	httpServer *http.Server
 	ctxServer  *context.Server
 	modules    *module.Modules
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
-}
-
-// Certificate 证书管理
-type Certificate struct {
-	Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
-	Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
-}
-
-func (cert *Certificate) sanitize() *config.FieldError {
-	if !filesystem.Exists(cert.Cert) {
-		return &config.FieldError{Field: "cert", Message: "文件不存在"}
-	}
-
-	if !filesystem.Exists(cert.Key) {
-		return &config.FieldError{Field: "key", Message: "文件不存在"}
-	}
-
-	return nil
 }
 
 func (web *Web) sanitize() (err error) {
@@ -185,6 +179,7 @@ func (web *Web) buildTimezone() error {
 	if web.Timezone == "" {
 		web.Timezone = "Local"
 	}
+
 	loc, err := time.LoadLocation(web.Timezone)
 	if err != nil {
 		return &config.FieldError{Field: "timezone", Message: err.Error()}
@@ -251,32 +246,6 @@ func (web *Web) toTLSConfig() (*tls.Config, error) {
 	return cfg, nil
 }
 
-// Grace 指定触发 Shutdown() 的信号，若为空，则任意信号都触发。
-//
-// 多次调用，则每次指定的信号都会起作用，如果由传递了相同的值，
-// 则有可能多次触发 Shutdown()。
-//
-// NOTE: 传递空值，与不调用，其结果是不同的。
-// 若是不调用，则不会处理任何信号；若是传递空值调用，则是处理任何要信号。
-func (web *Web) Grace(dur time.Duration, sig ...os.Signal) {
-	go func() {
-		signalChannel := make(chan os.Signal)
-		signal.Notify(signalChannel, sig...)
-
-		<-signalChannel
-		signal.Stop(signalChannel)
-		close(signalChannel)
-
-		ctx, c := ctx.WithTimeout(ctx.Background(), dur)
-		defer c()
-
-		if err := web.Shutdown(ctx); err != nil {
-			web.logs.Error(err)
-		}
-		web.logs.Flush() // 保证内容会被正常输出到日志。
-	}()
-}
-
 func loadConfig(configPath, logsPath string) (web *Web, err error) {
 	web = &Web{}
 	if err = config.LoadFile(configPath, web); err != nil {
@@ -311,10 +280,6 @@ func Classic(dir string) (*Web, error) {
 	}
 
 	web.ResultBuilder = context.DefaultResultBuilder
-
-	if err = web.Init(); err != nil {
-		return nil, err
-	}
 
 	return web, nil
 }

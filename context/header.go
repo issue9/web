@@ -28,7 +28,7 @@ func charsetIsNop(enc encoding.Encoding) bool {
 		enc == encoding.Nop
 }
 
-// 根据 Accept-Charset 报头的内容获取其最值的字符集信息。
+// 根据 Accept-Charset 报头的内容获取其最值的字符集信息
 //
 // 传递 * 获取返回默认的字符集相关信息，即 utf-8
 // 其它值则按值查找，或是在找不到时返回空值。

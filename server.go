@@ -6,6 +6,8 @@ import (
 	ctx "context"
 	"errors"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/web/context"
@@ -46,26 +48,18 @@ func (web *Web) Serve() (err error) {
 }
 
 // Close 关闭服务
-//
-// 无论配置文件如果设置，此函数都是直接关闭服务，不会等待。
 func (web *Web) Close() error {
 	defer func() {
 		web.modules.Stop()
 		web.closed <- struct{}{}
 	}()
 
-	return web.httpServer.Close()
-}
+	if web.ShutdownTimeout == 0 {
+		return web.httpServer.Close()
+	}
 
-// Shutdown 等待完成所有请求并关闭服务
-//
-// 根据配置文件中的配置项，决定当前是直接关闭还是延时之后关闭。
-func (web *Web) Shutdown(c ctx.Context) error {
-	defer func() {
-		web.modules.Stop()
-		web.closed <- struct{}{}
-	}()
-
+	c, cancel := ctx.WithTimeout(ctx.Background(), web.ShutdownTimeout.Duration())
+	defer cancel()
 	if err := web.httpServer.Shutdown(c); err != nil && !errors.Is(err, ctx.DeadlineExceeded) {
 		return err
 	}
@@ -73,14 +67,19 @@ func (web *Web) Shutdown(c ctx.Context) error {
 }
 
 // Init 根据内容进行初始化相关信息
+//
+// 当调用此函数之后，会根据 Web 的字段初始化所有的私有实例，之后再改变字段内容，不会再启作用。
+// 但是可以通过 web.CTXServer() 返回的实例直接修改相关的参数。
 func (web *Web) Init() (err error) {
 	if err = web.sanitize(); err != nil {
 		return err
 	}
 
 	web.logs = logs.New()
-	if err = web.logs.Init(web.LogsConfig); err != nil {
-		return err
+	if web.LogsConfig != nil {
+		if err = web.logs.Init(web.LogsConfig); err != nil {
+			return err
+		}
 	}
 
 	web.ctxServer, err = context.NewServer(web.logs, web.ResultBuilder, web.DisableOptions, web.DisableHead, web.url.Path)
@@ -125,6 +124,29 @@ func (web *Web) Init() (err error) {
 
 	web.closed = make(chan struct{}, 1)
 
-	web.modules, err = module.NewModules(web.ctxServer, web.Plugins)
-	return err
+	if web.modules, err = module.NewModules(web.ctxServer, web.Plugins); err != nil {
+		return err
+	}
+
+	if web.ShutdownSignal != nil {
+		web.grace(web.ShutdownSignal...)
+	}
+
+	return nil
+}
+
+func (web *Web) grace(sig ...os.Signal) {
+	go func() {
+		signalChannel := make(chan os.Signal)
+		signal.Notify(signalChannel, sig...)
+
+		<-signalChannel
+		signal.Stop(signalChannel)
+		close(signalChannel)
+
+		if err := web.Close(); err != nil {
+			web.logs.Error(err)
+		}
+		web.logs.Flush() // 保证内容会被正常输出到日志。
+	}()
 }

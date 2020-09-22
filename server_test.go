@@ -3,7 +3,6 @@
 package web
 
 import (
-	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -26,10 +25,6 @@ func newServer(a *assert.Assertion) *Web {
 	conf, err := Classic("./testdata")
 	a.NotError(err).NotNil(conf)
 
-	a.NotNil(conf.CTXServer())
-	a.NotNil(conf.HTTPServer().Handler)
-	a.NotNil(conf.CTXServer().Logs())
-
 	// 以下内容由配置文件决定
 	a.True(conf.Debug)
 
@@ -38,16 +33,17 @@ func newServer(a *assert.Assertion) *Web {
 
 func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	web := newServer(a)
+	a.NotError(web.Init())
 	exit := make(chan bool, 1)
 
-	r := srv.CTXServer().Router()
+	r := web.CTXServer().Router()
 	r.Mux().GetFunc("/m1/test", f202)
 	r.Mux().GetFunc("/m2/test", f202)
 	r.Mux().GetFunc("/mux/test", f202)
 
 	go func() {
-		err := srv.Serve()
+		err := web.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -74,26 +70,27 @@ func TestWeb_Run(t *testing.T) {
 		Do().
 		Status(http.StatusOK)
 
-	a.NotError(srv.Close())
+	a.NotError(web.Close())
 	<-exit
 }
 
 func TestWeb_Close(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	web := newServer(a)
+	a.NotError(web.Init())
 	exit := make(chan bool, 1)
 
-	srv.CTXServer().Router().Mux().GetFunc("/test", f202)
-	srv.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	web.CTXServer().Router().Mux().GetFunc("/test", f202)
+	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("closed"))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		a.NotError(srv.Close())
+		a.NotError(web.Close())
 	})
 
 	go func() {
-		err := srv.Serve()
+		err := web.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
@@ -117,21 +114,21 @@ func TestWeb_Close(t *testing.T) {
 
 func TestWeb_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	web := newServer(a)
+	web.ShutdownTimeout = Duration(300 * time.Millisecond)
+	a.NotError(web.Init())
 	exit := make(chan bool, 1)
 
-	srv.CTXServer().Router().Mux().GetFunc("/test", f202)
-	srv.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+	web.CTXServer().Router().Mux().GetFunc("/test", f202)
+	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		_, err := w.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		ctx, c := context.WithTimeout(context.Background(), 300*time.Millisecond)
-		defer c()
-		srv.Shutdown(ctx)
+		web.Close()
 	})
 
 	go func() {
-		err := srv.Serve()
+		err := web.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()

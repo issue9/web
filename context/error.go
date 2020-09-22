@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/middleware/v2/errorhandler"
 )
 
-// Critical 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
+// Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
@@ -23,7 +23,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 	ctx.server.errorHandlers.Render(ctx.Response, status)
 }
 
-// Error 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
+// Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
@@ -38,7 +38,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 	ctx.server.errorHandlers.Render(ctx.Response, status)
 }
 
-// Criticalf 输出一条日志到 CRITICAL 日志通道，并向用户输出一个指定状态码的页面。
+// Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
@@ -53,7 +53,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	ctx.server.errorHandlers.Render(ctx.Response, status)
 }
 
-// Errorf 输出一条日志到 ERROR 日志通道，并向用户输出一个指定状态码的页面。
+// Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 //
 // 若是输出日志的过程中出错，则 panic
 // 若没有错误信息，则仅向客户端输出一条状态码信息。
