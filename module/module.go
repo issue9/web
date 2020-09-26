@@ -35,15 +35,6 @@ type initialization struct {
 	f     func() error
 }
 
-func (srv *Server) newModule(name, desc string, deps ...string) *Module {
-	return &Module{
-		Name:        name,
-		Description: desc,
-		Deps:        deps,
-		srv:         srv,
-	}
-}
-
 // NewTag 为当前模块生成特定名称的子模块。若已经存在，则直接返回该子模块。
 //
 // Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
@@ -68,7 +59,12 @@ func (m *Module) NewTag(tag string) *Tag {
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
-	m := srv.newModule(name, desc, deps...)
+	m := &Module{
+		Name:        name,
+		Description: desc,
+		Deps:        deps,
+		srv:         srv,
+	}
 	srv.modules = append(srv.modules, m)
 	return m
 }

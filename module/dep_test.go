@@ -14,7 +14,7 @@ import (
 )
 
 func m(srv *Server, name string, f func() error, deps ...string) *Module {
-	m := srv.newModule(name, name, deps...)
+	m := srv.NewModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }

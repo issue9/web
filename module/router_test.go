@@ -24,7 +24,7 @@ func TestModule_Prefix(t *testing.T) {
 
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
-	m := server.newModule("m1", "m1 desc")
+	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -48,7 +48,7 @@ func TestModule_Handle(t *testing.T) {
 
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
-	m := server.newModule("m1", "m1 desc")
+	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -81,7 +81,7 @@ func TestModule_Handles(t *testing.T) {
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 
 	path := "/path"
-	m := server.newModule("m1", "m1 desc")
+	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	srv.NewRequest(http.MethodDelete, path).

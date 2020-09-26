@@ -20,7 +20,7 @@ func job(time.Time) error {
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	m := srv.newModule("user1", "user1 desc")
+	m := srv.NewModule("user1", "user1 desc")
 	a.NotNil(m)
 
 	v := m.NewTag("0.1.0")
@@ -55,7 +55,7 @@ func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
-	m := srv.newModule("m1", "m1 desc")
+	m := srv.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	a.Nil(m.inits)
