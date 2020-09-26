@@ -54,7 +54,7 @@ func (s ServiceState) String() string {
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
-		m.ms.AddService(f, title)
+		m.srv.AddService(f, title)
 		return nil
 	}, "注册服务："+title)
 }
@@ -63,7 +63,7 @@ func (m *Module) AddService(f ServiceFunc, title string) {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (srv *Modules) AddService(f ServiceFunc, title string) {
+func (srv *Server) AddService(f ServiceFunc, title string) {
 	srv.services = append(srv.services, &Service{
 		Title: title,
 		f:     f,
@@ -71,14 +71,14 @@ func (srv *Modules) AddService(f ServiceFunc, title string) {
 }
 
 // Services 返回所有的服务列表
-func (srv *Modules) Services() []*Service {
+func (srv *Server) Services() []*Service {
 	return srv.services
 }
 
 // Stop 停止服务
-func (srv *Modules) Stop() {
-	for _, srv := range srv.services {
-		srv.Stop()
+func (srv *Server) Stop() {
+	for _, s := range srv.services {
+		s.Stop()
 	}
 }
 
@@ -93,9 +93,9 @@ func (srv *Service) Err() error {
 }
 
 // Run 运行所有的服务
-func (srv *Modules) Run() {
-	for _, srv := range srv.services {
-		srv.Run()
+func (srv *Server) Run() {
+	for _, s := range srv.services {
+		s.Run()
 	}
 }
 

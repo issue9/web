@@ -4,6 +4,7 @@ package module
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"plugin"
 	"runtime"
@@ -29,7 +30,7 @@ func isPluginOS() bool {
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func (srv *Modules) loadPlugins(glob string) error {
+func (srv *Server) loadPlugins(glob string) error {
 	if !isPluginOS() {
 		return errors.New("当前平台并未实现插件功能！")
 	}
@@ -48,7 +49,7 @@ func (srv *Modules) loadPlugins(glob string) error {
 	return nil
 }
 
-func (srv *Modules) loadPlugin(path string) error {
+func (srv *Server) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -58,17 +59,13 @@ func (srv *Modules) loadPlugin(path string) error {
 	if err != nil {
 		return err
 	}
-	init := symbol.(func(*Module))
 
-	m := srv.newModule("", "")
-	init(m)
-
-	if m.Name == "" || m.Description == "" {
-		return errors.New("name 和 description 都不能为空")
+	init, ok := symbol.(func(*Server))
+	if !ok {
+		return fmt.Errorf("插件 %s 未找到初始化函数", path)
 	}
 
-	// 只有在插件不出问题的情况下，才将其添加到 modules 表中
-	srv.modules = append(srv.modules, m)
+	InitFunc(init)(srv)
 
 	return nil
 }

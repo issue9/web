@@ -37,6 +37,9 @@ type (
 	// Module 等同于 server.Module，方便调用者使用
 	Module = module.Module
 
+	// MODServer 等同于 server.MODServer，方便调用者使用
+	MODServer = module.Server
+
 	// Tag 等同于 server.Tag，方便调用者使用
 	Tag = module.Tag
 )

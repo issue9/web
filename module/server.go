@@ -8,8 +8,8 @@ import (
 	"github.com/issue9/web/context"
 )
 
-// Modules 提供模块管理功能
-type Modules struct {
+// Server 提供模块管理功能
+type Server struct {
 	ctxServer *context.Server
 
 	// modules
@@ -18,9 +18,9 @@ type Modules struct {
 	modules   []*Module
 }
 
-// NewModules 声明一个新的 Modules 实例
-func NewModules(server *context.Server, plugin string) (*Modules, error) {
-	srv := &Modules{
+// NewServer 声明一个新的 Modules 实例
+func NewServer(server *context.Server, plugin string) (*Server, error) {
+	srv := &Server{
 		ctxServer: server,
 
 		services:  make([]*Service, 0, 100),

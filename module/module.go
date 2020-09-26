@@ -6,8 +6,10 @@ package module
 import (
 	"log"
 	"sort"
-	"time"
 )
+
+// InitFunc 指定初始化模块的函数签名
+type InitFunc func(*Server)
 
 // Module 表示模块信息
 type Module struct {
@@ -16,7 +18,7 @@ type Module struct {
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
-	ms          *Modules
+	srv         *Server
 }
 
 // Tag 表示与特写标签相关联的初始化函数列表。
@@ -33,12 +35,12 @@ type initialization struct {
 	f     func() error
 }
 
-func (srv *Modules) newModule(name, desc string, deps ...string) *Module {
+func (srv *Server) newModule(name, desc string, deps ...string) *Module {
 	return &Module{
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		ms:          srv,
+		srv:         srv,
 	}
 }
 
@@ -65,28 +67,15 @@ func (m *Module) NewTag(tag string) *Tag {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Modules) NewModule(name, desc string, deps ...string) *Module {
+func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
 	m := srv.newModule(name, desc, deps...)
 	srv.modules = append(srv.modules, m)
 	return m
 }
 
-// Plugin 设置插件信息
-//
-// 在将模块设置为插件模式时，可以在插件的初始化函数中，采用此方法设置插件的基本信息。
-func (m *Module) Plugin(name, description string, deps ...string) {
-	if m.Name != "" || m.Description != "" || len(m.Deps) > 0 {
-		panic("不能多次调用该函数")
-	}
-
-	m.Name = name
-	m.Description = description
-	m.Deps = deps
-}
-
 // AddInit 添加一个初始化函数
 //
-// title 该初始化函数的名称。没有则会自动生成一个序号，多个，则取第一个元素。
+// title 该初始化函数的名称。
 func (t *Tag) AddInit(f func() error, title string) *Tag {
 	if t.inits == nil {
 		t.inits = make([]*initialization, 0, 5)
@@ -99,7 +88,7 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 // InitModules 初始化模块下指定标签名称的函数
 //
 // 若指定了 tag 参数，则只初始化该名称的子模块内容。
-func (srv *Modules) InitModules(tag string, info *log.Logger) error {
+func (srv *Server) InitModules(tag string, info *log.Logger) error {
 	flag := info.Flags()
 	info.SetFlags(0)
 	defer info.SetFlags(flag)
@@ -128,7 +117,7 @@ func (srv *Modules) InitModules(tag string, info *log.Logger) error {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表
-func (srv *Modules) Tags() map[string][]string {
+func (srv *Server) Tags() map[string][]string {
 	ret := make(map[string][]string, len(srv.modules)*2)
 
 	for _, m := range srv.modules {
@@ -144,42 +133,6 @@ func (srv *Modules) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Modules) Modules() []*Module {
+func (srv *Server) Modules() []*Module {
 	return srv.modules
-}
-
-// AddCron 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// spec cron 表达式，支持秒；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
-	m.AddInit(func() error {
-		return m.ms.Scheduled().Cron(title, f, spec, delay)
-	}, "注册计划任务"+title)
-}
-
-// AddTicker 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// imm 是否立即执行一次该任务；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, delay bool) {
-	m.AddInit(func() error {
-		return m.ms.Scheduled().Tick(title, f, dur, imm, delay)
-	}, "注册计划任务"+title)
-}
-
-// AddAt 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// spec 指定的时间点；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
-	m.AddInit(func() error {
-		return m.ms.Scheduled().At(title, f, spec, delay)
-	}, "注册计划任务"+title)
 }

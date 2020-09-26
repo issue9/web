@@ -51,23 +51,6 @@ func TestModules_Init(t *testing.T) {
 	a.NotError(srv.InitModules("", log.New(os.Stdout, "[INFO]", 0)))
 }
 
-func TestModule_Plugin(t *testing.T) {
-	a := assert.New(t)
-	srv := newServer(a)
-
-	m := srv.newModule("user1", "user1 desc")
-	a.NotNil(m)
-
-	a.Panic(func() {
-		m.Plugin("p1", "p1 desc")
-	})
-
-	m = srv.newModule("", "")
-	a.NotPanic(func() {
-		m.Plugin("p1", "p1 desc")
-	})
-}
-
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)

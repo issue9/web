@@ -20,7 +20,9 @@ func TestPlugins(t *testing.T) {
 	w, err := web.Classic("./testdata")
 	a.NotError(err).NotNil(w)
 
-	ms := w.Modules().Modules()
+	a.NotError(w.Init())
+
+	ms := w.MODServer().Modules()
 	a.Equal(2, len(ms))
 
 	sort.SliceStable(ms, func(i, j int) bool {

@@ -24,14 +24,14 @@ func (web *Web) HTTPServer() *http.Server {
 	return web.httpServer
 }
 
-// Modules 返回 *module.Modules 实例
-func (web *Web) Modules() *module.Modules {
-	return web.modules
+// MODServer 返回 *module.MODServer 实例
+func (web *Web) MODServer() *module.Server {
+	return web.modServer
 }
 
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.modules.Run()
+	web.modServer.Run()
 
 	if web.isTLS {
 		err = web.httpServer.ListenAndServeTLS("", "")
@@ -50,7 +50,7 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.modules.Stop()
+		web.modServer.Stop()
 		web.closed <- struct{}{}
 	}()
 
@@ -124,7 +124,7 @@ func (web *Web) Init() (err error) {
 
 	web.closed = make(chan struct{}, 1)
 
-	if web.modules, err = module.NewModules(web.ctxServer, web.Plugins); err != nil {
+	if web.modServer, err = module.NewServer(web.ctxServer, web.Plugins); err != nil {
 		return err
 	}
 

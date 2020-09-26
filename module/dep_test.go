@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web/context"
 )
 
-func m(srv *Modules, name string, f func() error, deps ...string) *Module {
+func m(srv *Server, name string, f func() error, deps ...string) *Module {
 	m := srv.newModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m

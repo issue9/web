@@ -120,7 +120,7 @@ type Web struct {
 	logs       *logs.Logs
 	httpServer *http.Server
 	ctxServer  *context.Server
-	modules    *module.Modules
+	modServer  *module.Server
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 }
 

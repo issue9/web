@@ -10,7 +10,7 @@ require (
 	github.com/issue9/mux/v2 v2.3.3
 	github.com/issue9/qheader v0.4.0
 	github.com/issue9/query v1.0.1
-	github.com/issue9/scheduled v0.5.0
+	github.com/issue9/scheduled v0.5.1
 	github.com/issue9/sliceutil v0.5.0
 	github.com/issue9/source v0.1.1
 	github.com/issue9/term/v2 v2.1.1
