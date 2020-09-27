@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -83,24 +84,42 @@ type Web struct {
 	// AllowedDomains 为空时，并不会限定域名为 Domain 指定的域名。
 	AllowedDomains []string `yaml:"allowedDomains,omitempty" json:"allowedDomains,omitempty" xml:"allowedDomains,omitempty"`
 
-	// 应用于 http.Server 的几个变量。
+	// 应用于 http.Server 的几个变量
 	ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
 	WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,omitempty"`
 	IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,omitempty"`
 	ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
 	MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
 
-	// Timezone 时区名称，可以是 Asia/Shanghai 等，具体可参考：
+	// 指定关闭服务时的超时时间
+	//
+	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
+	// Shutdown 即为该方法的等待时间。
+	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
+
+	// Timezone 时区名称
+	//
+	// 可以是 Asia/Shanghai 等，具体可参考：
 	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 	//
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
-	Location *time.Location `yaml:"-" json:"-" xml:"-"`
+	location *time.Location `yaml:"-" json:"-" xml:"-"`
 
 	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
 	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`
 	ContextInterceptor func(*context.Context)            `yaml:"-" json:"-" xml:"-"`
+
+	// 返回给用户的错误提示信息
+	//
+	// 对键名作了一定的要求：要求最高的三位数必须是一个 HTTP 状态码，
+	// 比如 40001，在返回给客户端时，会将 400 作为状态码展示给用户，
+	// 同时又会将 40001 和对应的消息发送给用户。
+	//
+	// 该数据最终由 context.Server.AddMessages 添加。
+	Results map[int]string `yaml:"-" json:"-" xml:"-"`
+	results map[int]map[int]string
 
 	// 用于初始化日志系统的参数
 	LogsConfig *lc.Config `yaml:"-" json:"-" xml:"-"`
@@ -110,12 +129,6 @@ type Web struct {
 	// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
 	// 如果指定了多个相同的值，则该信号有可能多次触发。
 	ShutdownSignal []os.Signal `yaml:"-" json:"-" xml:"-"`
-
-	// 指定关闭服务时的超时时间
-	//
-	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
-	// Shutdown 即为该方法的等待时间。
-	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
 
 	logs       *logs.Logs
 	httpServer *http.Server
@@ -158,6 +171,10 @@ func (web *Web) sanitize() (err error) {
 		}
 	}
 
+	if err = web.parseResults(); err != nil {
+		return err
+	}
+
 	if err := web.buildTimezone(); err != nil {
 		return err
 	}
@@ -175,6 +192,29 @@ func (web *Web) sanitize() (err error) {
 	return web.buildAllowedDomains()
 }
 
+func (web *Web) parseResults() error {
+	web.results = map[int]map[int]string{}
+
+	for code, msg := range web.Results {
+		if code < 999 {
+			return fmt.Errorf("无效的错误代码 %d，必须是 HTTP 状态码的 10 倍以上", code)
+		}
+
+		status := code / 10
+		for ; status > 999; status /= 10 {
+		}
+
+		rslt, found := web.results[status]
+		if found {
+			rslt[code] = msg
+		} else {
+			web.results[status] = map[int]string{code: msg}
+		}
+	}
+
+	return nil
+}
+
 func (web *Web) buildTimezone() error {
 	if web.Timezone == "" {
 		web.Timezone = "Local"
@@ -184,7 +224,7 @@ func (web *Web) buildTimezone() error {
 	if err != nil {
 		return &config.FieldError{Field: "timezone", Message: err.Error()}
 	}
-	web.Location = loc
+	web.location = loc
 
 	return nil
 }
@@ -277,6 +317,13 @@ func Classic(dir string) (*Web, error) {
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
+	}
+
+	web.Results = map[int]string{
+		40001: "无效的报头",
+		40002: "无效的地址",
+		40003: "无效的查询参数",
+		40004: "无效的报文",
 	}
 
 	web.ResultBuilder = context.DefaultResultBuilder

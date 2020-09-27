@@ -42,12 +42,12 @@ func TestWeb_buildTimezone(t *testing.T) {
 
 	conf := &Web{}
 	a.NotError(conf.buildTimezone())
-	a.Equal(conf.Location, time.Local).
+	a.Equal(conf.location, time.Local).
 		Equal(conf.Timezone, "Local")
 
 	conf = &Web{Timezone: "Africa/Addis_Ababa"}
 	a.NotError(conf.buildTimezone())
-	a.Equal(conf.Location.String(), "Africa/Addis_Ababa").
+	a.Equal(conf.location.String(), "Africa/Addis_Ababa").
 		Equal(conf.Timezone, "Africa/Addis_Ababa")
 
 	conf = &Web{Timezone: "not-exists-time-zone"}
@@ -83,6 +83,29 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path/"))
 	a.False(isURLPath("/path/"))
 	a.False(isURLPath("path"))
+}
+
+func TestWeb_parseResults(t *testing.T) {
+	a := assert.New(t)
+	conf := &Web{
+		Results: map[int]string{
+			4001:  "4001",
+			4002:  "4002",
+			50001: "50001",
+		},
+	}
+
+	a.NotError(conf.parseResults())
+	a.Equal(conf.results, map[int]map[int]string{
+		400: map[int]string{
+			4001: "4001",
+			4002: "4002",
+		},
+		500: map[int]string{50001: "50001"},
+	})
+
+	conf.Results[400] = "400"
+	a.Error(conf.parseResults())
 }
 
 func TestWeb_buildAllowedDomains(t *testing.T) {

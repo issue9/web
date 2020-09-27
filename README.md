@@ -18,28 +18,27 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    web.Classic("./appconfig/web.yaml")
-    web.AddMessages(400, map[int]string{...})
+    conf := web.Classic("./appconfig/web.yaml")
 
     // 注册模块信息
     m1.Init()
     m2.Init()
 
-    web.Fatal(2, web.Serve())
+    web.Serve()
 }
 
 // modules/m1/module.go
-func Init() {
-    web.NewModule("m1", "模块描述信息").
-        GetFunc("/admins", getAdmins).
-        GetFunc("/groups", getGroups)
+func Init(s *web.MODServer) {
+    s.NewModule("m1", "模块描述信息").
+        Get("/admins", getAdmins).
+        Get("/groups", getGroups)
 }
 
 // modules/m2/module.go
-func Init() {
-    web.NewModule("m2", "模块描述信息", "m1").
-        GetFunc("/admins", getAdmins).
-        GetFunc("/groups", getGroups)
+func Init(s *web.MODServer) {
+    s.NewModule("m2", "模块描述信息", "m1").
+        Get("/admins", getAdmins).
+        Get("/groups", getGroups)
 }
 ```
 
@@ -73,23 +72,25 @@ func Init() {
 ---
 
 项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
-用于向框架注册当前模块的一些主要信息。通过 `web.NewModule` 注册模块：
+用于向框架注册当前模块的一些主要信息。通过 `web.MODServer` 注册模块：
 
 ```go
 package m1
 
 import "github.com/issue9/web"
 
-m := web.NewModule("test", "测试模块")
+func Init(s *web.MODServer) {
+    m := s.NewModule("test", "测试模块")
 
-m.AddInit(func() error {
-    // TODO 此处可以添加初始化模块的相关代码
-    return nil
-}, "初始化函数描述")
+    m.AddInit(func() error {
+        // TODO 此处可以添加初始化模块的相关代码
+        return nil
+    }, "初始化函数描述")
 
-m.AddService(func(ctx context.Context) error {
-    // TODO 此处添加服务代码
-}, "服务描述")
+    m.AddService(func(ctx context.Context) error {
+        // TODO 此处添加服务代码
+    }, "服务描述")
+}
 ```
 
 配置文件

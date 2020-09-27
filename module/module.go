@@ -12,6 +12,9 @@ import (
 type InitFunc func(*Server)
 
 // Module 表示模块信息
+//
+// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
+// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
 type Module struct {
 	Tag
 	Name        string

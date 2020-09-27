@@ -93,7 +93,7 @@ func (web *Web) Init() (err error) {
 		return err
 	}
 	web.ctxServer.Debug = web.Debug
-	web.ctxServer.Location = web.Location
+	web.ctxServer.Location = web.location
 	web.ctxServer.AllowedDomain(web.AllowedDomains...)
 	for path, dir := range web.Static {
 		web.ctxServer.AddStatic(path, dir)
@@ -107,6 +107,9 @@ func (web *Web) Init() (err error) {
 	}
 	if err = web.ctxServer.AddUnmarshals(web.Unmarshalers); err != nil {
 		return err
+	}
+	for status, rslt := range web.results {
+		web.ctxServer.AddMessages(status, rslt)
 	}
 
 	web.httpServer = &http.Server{

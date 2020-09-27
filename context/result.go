@@ -94,7 +94,7 @@ func (srv *Server) Messages(p *message.Printer) map[int]string {
 	return msgs
 }
 
-// AddMessages 添加一组错误信息。
+// AddMessages 添加一组错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
 // msgs 中，键名表示的是该错误的错误代码；
