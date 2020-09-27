@@ -114,7 +114,7 @@ func TestService_srv1(t *testing.T) {
 
 	srv1, start, exit := buildSrv1()
 	app.AddService(srv1, "srv1")
-	app.Run()
+	app.RunServices()
 	<-start
 	a.Equal(2, len(app.services)) // 自带一个 scheduled
 	s1 := app.services[1]         // 0 为 scheduled
@@ -138,7 +138,7 @@ func TestService_srv2(t *testing.T) {
 
 	srv2, start, exit := buildSrv2()
 	app.AddService(srv2, "srv2")
-	app.Run()             // 注册并运行服务
+	app.RunServices()     // 注册并运行服务
 	s2 := app.services[1] // 0 为 scheduled
 	<-start
 	a.Equal(s2.State(), ServiceRunning)
@@ -168,7 +168,7 @@ func TestService_srv3(t *testing.T) {
 
 	srv3, start, exit := buildSrv3()
 	app.AddService(srv3, "srv3")
-	app.Run()
+	app.RunServices()
 	s3 := app.services[1] // 0 为 scheduled
 	<-start
 	a.Equal(s3.State(), ServiceRunning)

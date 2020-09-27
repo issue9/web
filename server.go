@@ -5,6 +5,7 @@ package web
 import (
 	ctx "context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +14,11 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/module"
 )
+
+type contextKey int
+
+// ContextKeyWeb 可以从 http.Request 中获取 Web 实例的关键字
+const ContextKeyWeb contextKey = 0
 
 // CTXServer 返回 context.Server 实例
 func (web *Web) CTXServer() *context.Server {
@@ -31,7 +37,7 @@ func (web *Web) MODServer() *module.Server {
 
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.modServer.Run()
+	web.modServer.RunServices()
 
 	if web.isTLS {
 		err = web.httpServer.ListenAndServeTLS("", "")
@@ -50,7 +56,7 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.modServer.Stop()
+		web.modServer.StopServices()
 		web.closed <- struct{}{}
 	}()
 
@@ -112,6 +118,9 @@ func (web *Web) Init() (err error) {
 		IdleTimeout:       web.IdleTimeout.Duration(),
 		MaxHeaderBytes:    web.MaxHeaderBytes,
 		ErrorLog:          web.logs.ERROR(),
+		BaseContext: func(net.Listener) ctx.Context {
+			return ctx.WithValue(ctx.Background(), ContextKeyWeb, web)
+		},
 	}
 
 	if web.isTLS {

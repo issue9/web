@@ -75,8 +75,8 @@ func (srv *Server) Services() []*Service {
 	return srv.services
 }
 
-// Stop 停止服务
-func (srv *Server) Stop() {
+// StopServices 停止服务
+func (srv *Server) StopServices() {
 	for _, s := range srv.services {
 		s.Stop()
 	}
@@ -92,8 +92,8 @@ func (srv *Service) Err() error {
 	return srv.err
 }
 
-// Run 运行所有的服务
-func (srv *Server) Run() {
+// RunServices 运行所有的服务
+func (srv *Server) RunServices() {
 	for _, s := range srv.services {
 		s.Run()
 	}
