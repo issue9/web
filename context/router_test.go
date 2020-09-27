@@ -12,103 +12,132 @@ import (
 
 var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
 
-func TestBuilder_Prefix(t *testing.T) {
+func TestPrefix(t *testing.T) {
 	a := assert.New(t)
-	builder := newServer(a)
-	srv := rest.NewServer(t, builder.Handler(), nil)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.Handler(), nil)
 
-	p := builder.Prefix("/p")
+	p := server.Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
 	a.NotError(p.Handle(path, f1, http.MethodGet, http.MethodDelete))
-	srv.NewRequest(http.MethodGet, "/p"+path).
-		Do().
-		Status(http.StatusOK)
-	srv.NewRequest(http.MethodDelete, "/p"+path).
-		Do().
-		Status(http.StatusOK)
-	srv.NewRequest(http.MethodPost, "/p"+path).
-		Do().
-		Status(http.StatusMethodNotAllowed)
+	srv.Get("/p" + path).Do().Status(http.StatusOK)
+	srv.Delete("/p" + path).Do().Status(http.StatusOK)
+	srv.Post("/p"+path, nil).Do().Status(http.StatusMethodNotAllowed)
 
 	p.Post(path, f1)
-	srv.NewRequest(http.MethodPost, "/p"+path).
-		Do().
-		Status(http.StatusOK)
+	srv.Post("/p"+path, nil).Do().Status(http.StatusOK)
 
 	p.Patch(path, f1)
-	srv.NewRequest(http.MethodPatch, "/p"+path).
-		Do().
-		Status(http.StatusOK)
+	srv.Patch("/p"+path, nil).Do().Status(http.StatusOK)
 
-	p.Options(path, f1)
+	p.Options(path, "abc")
 	srv.NewRequest(http.MethodOptions, "/p"+path).
 		Do().
-		Status(http.StatusOK)
+		Status(http.StatusOK).
+		Header("allow", "abc")
+
+	p.Remove(path, http.MethodDelete)
+	srv.Delete("/p" + path).Do().Status(http.StatusMethodNotAllowed)
+
+	// resource
+
+	path = "/resources/{id}"
+	res := p.Resource(path)
+	res.Get(f1).Delete(f1)
+	srv.Get("/p" + path).Do().Status(http.StatusOK)
+	srv.Delete("/p" + path).Do().Status(http.StatusOK)
+
+	res.Remove(http.MethodDelete)
+	srv.Delete("/p" + path).Do().Status(http.StatusMethodNotAllowed)
+	res.Remove(http.MethodGet)
+	srv.Delete("/p" + path).Do().Status(http.StatusNotFound)
 }
 
-func TestBuilder_Handle(t *testing.T) {
+func TestResource(t *testing.T) {
 	a := assert.New(t)
-	builder := newServer(a)
-	srv := rest.NewServer(t, builder.Handler(), nil)
+
+	server := newServer(a)
 
 	path := "/path"
-	a.NotError(builder.Handle(path, f1, http.MethodGet, http.MethodDelete))
-	srv.NewRequest(http.MethodGet, path).
-		Do().
-		Status(http.StatusOK)
-	srv.NewRequest(http.MethodDelete, path).
-		Do().
-		Status(http.StatusOK)
-	srv.NewRequest(http.MethodPost, path).
-		Do().
-		Status(http.StatusMethodNotAllowed)
+	res := server.Resource(path)
+	a.NotNil(res)
+
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	res.Get(f1)
+	srv.Get(path).Do().Status(http.StatusOK)
+
+	res.Delete(f1)
+	srv.Delete(path).Do().Status(http.StatusOK)
+
+	res.Patch(f1)
+	srv.Patch(path, nil).Do().Status(http.StatusOK)
+
+	res.Put(f1)
+	srv.Put(path, nil).Do().Status(http.StatusOK)
+
+	res.Post(f1)
+	srv.Post(path, nil).Do().Status(http.StatusOK)
+
+	res.Remove(http.MethodPost)
+	srv.Post(path, nil).Do().Status(http.StatusMethodNotAllowed)
+
+	res.Options("def")
+	srv.NewRequest(http.MethodOptions, path).Do().Header("allow", "def")
+}
+
+func TestServer_Handle(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	path := "/path"
+	a.NotError(server.Handle(path, f1, http.MethodGet, http.MethodDelete))
+	srv.Get(path).Do().Status(http.StatusOK)
+	srv.Delete(path).Do().Status(http.StatusOK)
+	srv.Post(path, nil).Do().Status(http.StatusMethodNotAllowed)
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
-	a.NotError(builder.Handle(path, f1))
-	srv.NewRequest(http.MethodDelete, path).
-		Do().
-		Status(http.StatusOK)
-	srv.NewRequest(http.MethodPatch, path).
-		Do().
-		Status(http.StatusOK)
-}
+	a.NotError(server.Handle(path, f1))
+	srv.Delete(path).Do().Status(http.StatusOK)
+	srv.Patch(path, nil).Do().Status(http.StatusOK)
 
-func TestBuilder_Handles(t *testing.T) {
-	a := assert.New(t)
-	builder := newServer(a)
-	srv := rest.NewServer(t, builder.Handler(), nil)
+	path = "/path2"
 
-	path := "/path"
+	srv.Delete(path).Do().Status(http.StatusNotFound)
 
-	srv.NewRequest(http.MethodDelete, path).
+	server.Delete(path, f1)
+	srv.Delete(path).Do().Status(http.StatusOK)
+
+	server.Get(path, f1)
+	srv.Get(path).Do().Status(http.StatusOK)
+
+	server.Post(path, f1)
+	srv.Post(path, nil).Do().Status(http.StatusOK)
+
+	server.Patch(path, f1)
+	srv.Patch(path, nil).Do().Status(http.StatusOK)
+
+	server.Put(path, f1)
+	srv.Put(path, nil).Do().Status(http.StatusOK)
+
+	srv.NewRequest(http.MethodOptions, path).
 		Do().
-		Status(http.StatusNotFound)
+		Status(http.StatusOK).
+		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
 
-	builder.Get(path, f1)
-	srv.NewRequest(http.MethodGet, path).
+	// 自定义 options
+	server.Options(path, "abc")
+	srv.NewRequest(http.MethodOptions, path).
 		Do().
-		Status(http.StatusOK)
+		Status(http.StatusOK).
+		Header("Allow", "abc")
 
-	builder.Post(path, f1)
-	srv.NewRequest(http.MethodPost, path).
+	server.Remove(path, http.MethodOptions)
+	srv.NewRequest(http.MethodOptions, path).
 		Do().
-		Status(http.StatusOK)
-
-	builder.Patch(path, f1)
-	srv.NewRequest(http.MethodPatch, path).
-		Do().
-		Status(http.StatusOK)
-
-	builder.Put(path, f1)
-	srv.NewRequest(http.MethodPut, path).
-		Do().
-		Status(http.StatusOK)
-
-	builder.Delete(path, f1)
-	srv.NewRequest(http.MethodDelete, path).
-		Do().
-		Status(http.StatusOK)
+		Status(http.StatusMethodNotAllowed)
 }
