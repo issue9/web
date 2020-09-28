@@ -42,7 +42,7 @@ func initModules() {
 }
 `
 
-var webconf = &web.Web{
+var webconf = &web.Config{
 	Root: "http://localhost:8080/",
 }
 

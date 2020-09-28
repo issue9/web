@@ -3,151 +3,150 @@
 package web
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"io/ioutil"
-	"net/url"
+	"net/http"
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 )
 
-func TestWeb(t *testing.T) {
-	a := assert.New(t)
-
-	bs, err := ioutil.ReadFile("./testdata/web.yaml")
-	a.NotError(err).NotNil(bs)
-	confYAML := &Web{}
-	a.NotError(yaml.Unmarshal(bs, confYAML))
-
-	bs, err = ioutil.ReadFile("./testdata/web.json")
-	a.NotError(err).NotNil(bs)
-	confJSON := &Web{}
-	a.NotError(json.Unmarshal(bs, confJSON))
-
-	bs, err = ioutil.ReadFile("./testdata/web.xml")
-	a.NotError(err).NotNil(bs)
-	confXML := &Web{}
-	a.NotError(xml.Unmarshal(bs, confXML))
-
-	a.Equal(confJSON, confXML)
-	a.Equal(confJSON, confYAML)
+var f202 = func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+	_, err := w.Write([]byte("1234567890"))
+	if err != nil {
+		println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
-func TestWeb_buildTimezone(t *testing.T) {
-	a := assert.New(t)
+// 声明一个 Server 实例
+func newServer(a *assert.Assertion) *Web {
+	web, err := Classic("./testdata")
+	a.NotError(err).NotNil(web)
 
-	conf := &Web{}
-	a.NotError(conf.buildTimezone())
-	a.Equal(conf.location, time.Local).
-		Equal(conf.Timezone, "Local")
-
-	conf = &Web{Timezone: "Africa/Addis_Ababa"}
-	a.NotError(conf.buildTimezone())
-	a.Equal(conf.location.String(), "Africa/Addis_Ababa").
-		Equal(conf.Timezone, "Africa/Addis_Ababa")
-
-	conf = &Web{Timezone: "not-exists-time-zone"}
-	a.Error(conf.buildTimezone())
+	return web
 }
 
-func TestWeb_checkStatic(t *testing.T) {
+func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
+	web := newServer(a)
+	exit := make(chan bool, 1)
 
-	conf := &Web{}
-	a.NotError(conf.checkStatic())
+	r := web.CTXServer().Router()
+	r.Mux().GetFunc("/m1/test", f202)
+	r.Mux().GetFunc("/m2/test", f202)
+	r.Mux().GetFunc("/mux/test", f202)
 
-	conf.Static = map[string]string{
-		"/admin": "./testdata",
-	}
-	a.NotError(conf.checkStatic())
+	go func() {
+		err := web.Serve()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		exit <- true
+	}()
+	time.Sleep(500 * time.Microsecond) // 等待 go func() 完成
 
-	conf.Static = map[string]string{
-		"/admin": "./not-exists",
-	}
-	a.Error(conf.checkStatic())
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m1/test").
+		Do().
+		Status(http.StatusAccepted)
 
-	conf.Static = map[string]string{
-		"admin": "./testdata",
-	}
-	a.Error(conf.checkStatic())
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/m2/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/mux/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// static 中定义的静态文件
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/admin/logs.xml").
+		Do().
+		Status(http.StatusOK)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/admin/logs.xml").
+		Do().
+		Status(http.StatusOK)
+
+	a.NotError(web.Close())
+	<-exit
 }
 
-func TestIsURLPath(t *testing.T) {
+func TestWeb_Close(t *testing.T) {
 	a := assert.New(t)
+	web := newServer(a)
+	exit := make(chan bool, 1)
 
-	a.True(isURLPath("/path"))
-	a.False(isURLPath("path/"))
-	a.False(isURLPath("/path/"))
-	a.False(isURLPath("path"))
-}
-
-func TestWeb_parseResults(t *testing.T) {
-	a := assert.New(t)
-	conf := &Web{
-		Results: map[int]string{
-			4001:  "4001",
-			4002:  "4002",
-			50001: "50001",
-		},
-	}
-
-	a.NotError(conf.parseResults())
-	a.Equal(conf.results, map[int]map[int]string{
-		400: {
-			4001: "4001",
-			4002: "4002",
-		},
-		500: {50001: "50001"},
+	web.CTXServer().Router().Mux().GetFunc("/test", f202)
+	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("closed"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		a.NotError(web.Close())
 	})
 
-	conf.Results[400] = "400"
-	a.Error(conf.parseResults())
+	go func() {
+		err := web.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
+	}()
+
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// 连接被关闭，返回错误内容
+	resp, err := http.Get("http://localhost:8082/close")
+	a.Error(err).Nil(resp)
+
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
+
+	<-exit
 }
 
-func TestWeb_buildAllowedDomains(t *testing.T) {
+func TestWeb_Shutdown(t *testing.T) {
 	a := assert.New(t)
+	web := newServer(a)
+	web.shutdownTimeout = 300 * time.Millisecond
+	exit := make(chan bool, 1)
 
-	conf := &Web{
-		url: &url.URL{},
-	}
-	a.NotError(conf.buildAllowedDomains())
-	a.Empty(conf.AllowedDomains)
+	web.CTXServer().Router().Mux().GetFunc("/test", f202)
+	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, err := w.Write([]byte("shutdown with ctx"))
+		a.NotError(err)
+		web.Close()
+	})
 
-	// 未指定 allowedDomains
-	conf.url.Host = "example.com"
-	a.NotError(conf.buildAllowedDomains())
-	a.Empty(conf.AllowedDomains)
+	go func() {
+		err := web.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
+	}()
 
-	// 与 domain 同一个域名
-	conf.url.Host = "example.com"
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(1, len(conf.AllowedDomains))
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(500 * time.Microsecond)
 
-	conf.url.Host = "localhost"
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(2, len(conf.AllowedDomains))
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/test").
+		Do().
+		Status(http.StatusAccepted)
 
-	conf.url.Host = ""
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(1, len(conf.AllowedDomains))
+	// 关闭指令可以正常执行
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8082/close").
+		Do().
+		Status(http.StatusCreated)
 
-	conf.AllowedDomains = []string{"*.example.com"}
-	a.NotError(conf.buildAllowedDomains())
-}
+	// 未超时，但是拒绝新的链接
+	resp, err := http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
 
-func TestLoadConfig(t *testing.T) {
-	a := assert.New(t)
+	// 已被关闭
+	time.Sleep(30 * time.Microsecond)
+	resp, err = http.Get("http://localhost:8082/test")
+	a.Error(err).Nil(resp)
 
-	conf, err := loadConfig("./testdata/web.yaml", "./testdata/logs.xml")
-	a.NotError(err).NotNil(conf)
-
-	a.True(conf.Debug).
-		Equal(conf.Root, "http://localhost:8082")
+	<-exit
 }

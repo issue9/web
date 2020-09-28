@@ -20,8 +20,6 @@ func TestPlugins(t *testing.T) {
 	w, err := web.Classic("./testdata")
 	a.NotError(err).NotNil(w)
 
-	a.NotError(w.Init())
-
 	ms := w.MODServer().Modules()
 	a.Equal(2, len(ms))
 
