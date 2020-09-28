@@ -97,11 +97,11 @@ func TestWeb_parseResults(t *testing.T) {
 
 	a.NotError(conf.parseResults())
 	a.Equal(conf.results, map[int]map[int]string{
-		400: map[int]string{
+		400: {
 			4001: "4001",
 			4002: "4002",
 		},
-		500: map[int]string{50001: "50001"},
+		500: {50001: "50001"},
 	})
 
 	conf.Results[400] = "400"

@@ -103,8 +103,8 @@ type Web struct {
 	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 	//
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
-	Timezone string         `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
-	location *time.Location `yaml:"-" json:"-" xml:"-"`
+	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	location *time.Location
 
 	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
 	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
@@ -301,6 +301,9 @@ func loadConfig(configPath, logsPath string) (web *Web, err error) {
 }
 
 // Classic 返回一个开箱即用的 Web 实例
+//
+// 会加载 dir 目录下的 web.yaml 和 logs.xml 两个配置文件内容，
+// 并用于初始化 Web 实例。
 func Classic(dir string) (*Web, error) {
 	web, err := loadConfig(filepath.Join(dir, ConfigFilename), filepath.Join(dir, LogsFilename))
 	if err != nil {

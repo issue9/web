@@ -106,13 +106,8 @@ YAML。用户也可以自行添加新的格式支持。
 | 名称              | 类型   | 描述
 |:------------------|:-------|:-----
 | debug             | bool   | 是否启用调试模式
-| domain            | string | 项目的域名，若存在 allowedDomains 同时会加入到 allowedDomains 字段中
 | root              | string | 项目的根路径，比如 `/blog`
 | plugins           | string | 指定需要加载的插件，可以使用 glob 模式，仅支持部分系统，具体可见 https://golang.org/pkg/plugin/
-| https             | bool   | 是否启用 HTTPS
-| certFile          | string | 当启用 HTTPS 时的 cert 文件
-| keyFile           | string | 当启用 HTTPS 时的 key 文件
-| port              | int    | 监听的端口号
 | headers           | object | 输出的报头，键名为报头名称，键值为对应的值
 | static            | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
 | disableOptions    | bool   | 是否禁用 OPTIONS 请求方法
@@ -123,8 +118,7 @@ YAML。用户也可以自行添加新的格式支持。
 | idleTimeout       | string | 与 http.Server.IdleTimeout 相同
 | maxHeaderBytes    | int    | 与 http.Server.MaxHeaderBytes 相同
 | readHeaderTimeout | string | 与 http.Server.ReadHeaderTimeout 相同
-| compress          | array  | 指定可以使用 accept-encoding 输出的 mimetype 值
-| url               | string | 网站首页地址，一般由 domain、root 和 port 自动拼成，但也有可能存在类似于反向代理的情况，需要自行指定不同的值。
+| shutdownTimeout   | string | 当请求关闭时，可用于处理剩余请求的时间。
 | timezone          | string | 时区信息，名称为 IAAN 注册的名称，为空则为 Local
 | certificates      | object | 多域名的证书信息
 
