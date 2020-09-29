@@ -166,12 +166,12 @@ func (web *Web) InitModules(tag string) error {
 
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.modServer.RunServices()
+	web.MODServer().RunServices()
 
 	if web.isTLS {
-		err = web.httpServer.ListenAndServeTLS("", "")
+		err = web.HTTPServer().ListenAndServeTLS("", "")
 	} else {
-		err = web.httpServer.ListenAndServe()
+		err = web.HTTPServer().ListenAndServe()
 	}
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
@@ -185,17 +185,17 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.modServer.StopServices()
+		web.MODServer().StopServices()
 		web.closed <- struct{}{}
 	}()
 
 	if web.shutdownTimeout == 0 {
-		return web.httpServer.Close()
+		return web.HTTPServer().Close()
 	}
 
 	c, cancel := ctx.WithTimeout(ctx.Background(), web.shutdownTimeout)
 	defer cancel()
-	if err := web.httpServer.Shutdown(c); err != nil && !errors.Is(err, ctx.DeadlineExceeded) {
+	if err := web.HTTPServer().Shutdown(c); err != nil && !errors.Is(err, ctx.DeadlineExceeded) {
 		return err
 	}
 	return nil

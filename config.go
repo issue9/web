@@ -88,7 +88,7 @@ type Config struct {
 	// 指定关闭服务时的超时时间
 	//
 	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
-	// Shutdown 即为该方法的等待时间。
+	// 否则直接采用 http.Server.Close 立即关闭服务。
 	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
 
 	// Timezone 时区名称
@@ -125,65 +125,81 @@ type Config struct {
 	ShutdownSignal []os.Signal `yaml:"-" json:"-" xml:"-"`
 }
 
-func (web *Config) sanitize() (err error) {
-	if web.ReadTimeout < 0 {
+func (conf *Config) sanitize() (err error) {
+	if conf.ReadTimeout < 0 {
 		return &config.FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.WriteTimeout < 0 {
+	if conf.WriteTimeout < 0 {
 		return &config.FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.IdleTimeout < 0 {
+	if conf.IdleTimeout < 0 {
 		return &config.FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.ReadHeaderTimeout < 0 {
+	if conf.ReadHeaderTimeout < 0 {
 		return &config.FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.MaxHeaderBytes < 0 {
+	if conf.MaxHeaderBytes < 0 {
 		return &config.FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
-	if web.url, err = url.Parse(web.Root); err != nil {
+	if conf.ShutdownTimeout < 0 {
+		return &config.FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
+	}
+
+	if conf.url, err = url.Parse(conf.Root); err != nil {
 		return err
 	}
-	web.addr = ":" + web.url.Port()
-	if web.addr == "" {
-		if web.url.Scheme == "http" {
-			web.addr = ":80"
-		} else if web.url.Scheme == "https" {
-			web.addr = ":443"
-			web.isTLS = true
+	if conf.url.Port() == "" {
+		switch conf.url.Scheme {
+		case "http", "":
+			conf.addr = ":80"
+		case "https":
+			conf.addr = ":443"
+			conf.isTLS = true
+		default:
+			return &config.FieldError{Field: "root", Message: "无效的 scheme"}
 		}
+	} else {
+		conf.addr = ":" + conf.url.Port()
 	}
 
-	if err = web.parseResults(); err != nil {
+	if err = conf.parseResults(); err != nil {
 		return err
 	}
 
-	if err := web.buildTimezone(); err != nil {
+	if err = conf.buildTimezone(); err != nil {
 		return err
 	}
 
-	if err := web.checkStatic(); err != nil {
+	if err = conf.checkStatic(); err != nil {
 		return err
 	}
 
-	for _, c := range web.Certificates {
+	for _, c := range conf.Certificates {
 		if err := c.sanitize(); err != nil {
 			return err
 		}
 	}
 
-	return web.buildAllowedDomains()
+	if err = conf.buildAllowedDomains(); err != nil {
+		return err
+	}
+
+	if conf.isTLS && len(conf.Certificates) == 0 {
+		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
+	}
+
+	return nil
 }
 
-func (web *Config) parseResults() error {
-	web.results = map[int]map[int]string{}
+func (conf *Config) parseResults() error {
+	conf.results = map[int]map[int]string{}
 
-	for code, msg := range web.Results {
+	for code, msg := range conf.Results {
 		if code < 999 {
 			return fmt.Errorf("无效的错误代码 %d，必须是 HTTP 状态码的 10 倍以上", code)
 		}
@@ -192,33 +208,33 @@ func (web *Config) parseResults() error {
 		for ; status > 999; status /= 10 {
 		}
 
-		rslt, found := web.results[status]
+		rslt, found := conf.results[status]
 		if found {
 			rslt[code] = msg
 		} else {
-			web.results[status] = map[int]string{code: msg}
+			conf.results[status] = map[int]string{code: msg}
 		}
 	}
 
 	return nil
 }
 
-func (web *Config) buildTimezone() error {
-	if web.Timezone == "" {
-		web.Timezone = "Local"
+func (conf *Config) buildTimezone() error {
+	if conf.Timezone == "" {
+		conf.Timezone = "Local"
 	}
 
-	loc, err := time.LoadLocation(web.Timezone)
+	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
 		return &config.FieldError{Field: "timezone", Message: err.Error()}
 	}
-	web.location = loc
+	conf.location = loc
 
 	return nil
 }
 
-func (web *Config) checkStatic() (err error) {
-	for u, path := range web.Static {
+func (conf *Config) checkStatic() (err error) {
+	for u, path := range conf.Static {
 		if !isURLPath(u) {
 			return &config.FieldError{
 				Field:   "static." + u,
@@ -236,7 +252,7 @@ func (web *Config) checkStatic() (err error) {
 		if !filesystem.Exists(path) {
 			return &config.FieldError{Field: "static." + u, Message: "对应的路径不存在"}
 		}
-		web.Static[u] = path
+		conf.Static[u] = path
 	}
 
 	return nil
@@ -246,24 +262,24 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (web *Config) buildAllowedDomains() error {
-	if len(web.AllowedDomains) == 0 {
+func (conf *Config) buildAllowedDomains() error {
+	if len(conf.AllowedDomains) == 0 {
 		return nil
 	}
 
-	hostname := web.url.Hostname()
+	hostname := conf.url.Hostname()
 	if hostname != "" {
-		cnt := sliceutil.Count(web.AllowedDomains, func(i int) bool { return web.AllowedDomains[i] == hostname })
+		cnt := sliceutil.Count(conf.AllowedDomains, func(i int) bool { return conf.AllowedDomains[i] == hostname })
 		if cnt == 0 {
-			web.AllowedDomains = append(web.AllowedDomains, hostname)
+			conf.AllowedDomains = append(conf.AllowedDomains, hostname)
 		}
 	}
 	return nil
 }
 
-func (web *Config) toTLSConfig() (*tls.Config, error) {
+func (conf *Config) toTLSConfig() (*tls.Config, error) {
 	cfg := &tls.Config{}
-	for _, certificate := range web.Certificates {
+	for _, certificate := range conf.Certificates {
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
 			return nil, err

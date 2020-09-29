@@ -3,41 +3,75 @@
 package web
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"io/ioutil"
 	"net/url"
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/issue9/assert"
+	"github.com/issue9/web/config"
 )
 
-func TestWeb(t *testing.T) {
+func TestConfig(t *testing.T) {
 	a := assert.New(t)
 
-	bs, err := ioutil.ReadFile("./testdata/web.yaml")
-	a.NotError(err).NotNil(bs)
 	confYAML := &Config{}
-	a.NotError(yaml.Unmarshal(bs, confYAML))
+	a.NotError(config.LoadFile("./testdata/web.yaml", confYAML))
 
-	bs, err = ioutil.ReadFile("./testdata/web.json")
-	a.NotError(err).NotNil(bs)
 	confJSON := &Config{}
-	a.NotError(json.Unmarshal(bs, confJSON))
+	a.NotError(config.LoadFile("./testdata/web.json", confJSON))
 
-	bs, err = ioutil.ReadFile("./testdata/web.xml")
-	a.NotError(err).NotNil(bs)
 	confXML := &Config{}
-	a.NotError(xml.Unmarshal(bs, confXML))
+	a.NotError(config.LoadFile("./testdata/web.xml", confXML))
 
 	a.Equal(confJSON, confXML)
 	a.Equal(confJSON, confYAML)
 }
 
-func TestWeb_buildTimezone(t *testing.T) {
+func TestConfig_sanitize(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Config{}
+	a.NotError(conf.sanitize())
+	a.False(conf.isTLS).Equal(":80", conf.addr)
+	a.Equal("Local", conf.Timezone).Equal(time.Local, conf.location)
+
+	conf.ReadTimeout = -1
+	err := conf.sanitize()
+	a.Error(err)
+	ferr, ok := err.(*config.FieldError)
+	a.True(ok).Equal(ferr.Field, "readTimeout")
+
+	conf.ReadTimeout = 0
+	conf.ShutdownTimeout = -1
+	err = conf.sanitize()
+	a.Error(err)
+	ferr, ok = err.(*config.FieldError)
+	a.True(ok).Equal(ferr.Field, "shutdownTimeout")
+
+	conf.ReadTimeout = 0
+	conf.ShutdownTimeout = 0
+	conf.ReadHeaderTimeout = -1
+	err = conf.sanitize()
+	a.Error(err)
+	ferr, ok = err.(*config.FieldError)
+	a.True(ok).Equal(ferr.Field, "readHeaderTimeout")
+
+	// 指定了 https，但是未指定 certificates
+	conf = &Config{Root: "https://example.com"}
+	err = conf.sanitize()
+	a.Error(err)
+	ferr, ok = err.(*config.FieldError)
+	a.True(ok).Equal(ferr.Field, "certificates")
+
+	// 无效的 scheme
+	conf = &Config{Root: "ftp://example.com"}
+	err = conf.sanitize()
+	a.Error(err)
+	ferr, ok = err.(*config.FieldError)
+	a.True(ok).Equal(ferr.Field, "root")
+}
+
+func TestConfig_buildTimezone(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &Config{}
@@ -54,7 +88,7 @@ func TestWeb_buildTimezone(t *testing.T) {
 	a.Error(conf.buildTimezone())
 }
 
-func TestWeb_checkStatic(t *testing.T) {
+func TestConfig_checkStatic(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &Config{}
@@ -85,7 +119,7 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestWeb_parseResults(t *testing.T) {
+func TestConfig_parseResults(t *testing.T) {
 	a := assert.New(t)
 	conf := &Config{
 		Results: map[int]string{
@@ -108,7 +142,7 @@ func TestWeb_parseResults(t *testing.T) {
 	a.Error(conf.parseResults())
 }
 
-func TestWeb_buildAllowedDomains(t *testing.T) {
+func TestConfig_buildAllowedDomains(t *testing.T) {
 	a := assert.New(t)
 
 	conf := &Config{

@@ -125,3 +125,16 @@ func TestDuration_JSON(t *testing.T) {
 	a.NotError(json.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 }
+
+func TestCertificate_sanitize(t *testing.T) {
+	a := assert.New(t)
+
+	cert := &Certificate{}
+	a.Error(cert.sanitize())
+
+	cert.Cert = "./testdata/cert.pem"
+	a.Error(cert.sanitize())
+
+	cert.Key = "./testdata/key.pem"
+	a.NotError(cert.sanitize())
+}
