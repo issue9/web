@@ -11,7 +11,7 @@ import (
 )
 
 // 插件中的初始化函数名称，必须为可导出的函数名称
-const moduleInitFuncName = "Init"
+const moduleInstallFuncName = "Init"
 
 // 指定支持 plugin 模式的系统类型，需要保持该值与
 // internal/plugintest/plugintest.go 中的 +build 指令中的值一致
@@ -55,17 +55,17 @@ func (srv *Server) loadPlugin(path string) error {
 		return err
 	}
 
-	symbol, err := p.Lookup(moduleInitFuncName)
+	symbol, err := p.Lookup(moduleInstallFuncName)
 	if err != nil {
 		return err
 	}
 
-	init, ok := symbol.(func(*Server))
+	install, ok := symbol.(func(*Server))
 	if !ok {
-		return fmt.Errorf("插件 %s 未找到初始化函数", path)
+		return fmt.Errorf("插件 %s 未找到安装函数", path)
 	}
 
-	InitFunc(init)(srv)
+	InstallFunc(install)(srv)
 
 	return nil
 }

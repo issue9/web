@@ -6,10 +6,11 @@ package module
 import (
 	"log"
 	"sort"
+	"strings"
 )
 
-// InitFunc 指定初始化模块的函数签名
-type InitFunc func(*Server)
+// InstallFunc 安装模块的函数签名
+type InstallFunc func(*Server)
 
 // Module 表示模块信息
 //
@@ -89,7 +90,7 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 
 // InitModules 初始化模块下指定标签名称的函数
 //
-// 若指定了 tag 参数，则只初始化该名称的子模块内容。
+// 若指定了 tag 参数，则只初始化与该标签相关联的内容。
 func (srv *Server) InitModules(tag string, info *log.Logger) error {
 	flag := info.Flags()
 	info.SetFlags(0)
@@ -101,13 +102,10 @@ func (srv *Server) InitModules(tag string, info *log.Logger) error {
 		return err
 	}
 
-	if tag == "" { // 只有模块的初始化才带路由
-		all := srv.ctxServer.Router().Mux().All(true, true)
-		if len(all) > 0 {
-			info.Println("模块加载了以下路由项：")
-			for path, methods := range all {
-				info.Println(path, methods)
-			}
+	if all := srv.ctxServer.Router().Mux().All(true, true); len(all) > 0 {
+		info.Println("模块加载了以下路由项：")
+		for path, methods := range all {
+			info.Printf("[%s] %s\n", strings.Join(methods, ", "), path)
 		}
 	}
 

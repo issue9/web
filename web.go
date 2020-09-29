@@ -154,19 +154,24 @@ func (web *Web) HTTPServer() *http.Server {
 	return web.httpServer
 }
 
-// MODServer 返回 *module.MODServer 实例
-func (web *Web) MODServer() *module.Server {
-	return web.modServer
+// Modules 返回模块列表
+func (web *Web) Modules() []*Module {
+	return web.modServer.Modules()
+}
+
+// Services 返回服务列表
+func (web *Web) Services() []*Service {
+	return web.modServer.Services()
 }
 
 // InitModules 初始化模块
 func (web *Web) InitModules(tag string) error {
-	return web.MODServer().InitModules(tag, web.logs.INFO())
+	return web.modServer.InitModules(tag, web.logs.INFO())
 }
 
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.MODServer().RunServices()
+	web.modServer.RunServices()
 
 	if web.isTLS {
 		err = web.HTTPServer().ListenAndServeTLS("", "")
@@ -185,7 +190,7 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.MODServer().StopServices()
+		web.modServer.StopServices()
 		web.closed <- struct{}{}
 	}()
 

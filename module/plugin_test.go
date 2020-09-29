@@ -12,5 +12,5 @@ import (
 func TestModuleInitFuncName(t *testing.T) {
 	a := assert.New(t)
 
-	a.True(unicode.IsUpper(rune(moduleInitFuncName[0])))
+	a.True(unicode.IsUpper(rune(moduleInstallFuncName[0])))
 }

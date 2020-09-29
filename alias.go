@@ -3,8 +3,6 @@
 package web
 
 import (
-	"github.com/issue9/scheduled"
-
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/module"
@@ -14,32 +12,26 @@ import (
 const Version = version.Version
 
 type (
-	// Context 一般在 http.ServeHTTP 中根据 http.ResponseWriter
-	// 和 http.Request 初始化获得。
-	// 可以在整个函数生命周期中操作相关功能。
+	// Context 定义了在单个 HTTP 请求期间的上下文环境
 	//
-	// 等同于 context.Context，方便调用者使用
+	// 是对 http.ResponseWriter 和 http.Request 的简单包装。
 	Context = context.Context
 
-	// Result 等同于 context.Result，方便调用者使用
+	// Result 定义了返回给用户的错误信息
 	Result = context.Result
 
-	// ServiceFunc 服务的报告函数签名
-	//
-	// 等同于 server.ServiceFunc，方便调用者使用
-	ServiceFunc = module.ServiceFunc
-
 	// SchedulerFunc 计划任务的执行函数签名
-	//
-	// 等同于 scheduled.JobFunc，方便调用者使用
-	SchedulerFunc = scheduled.JobFunc
+	SchedulerFunc = module.JobFunc
 
-	// Module 等同于 server.Module，方便调用者使用
+	// Module 定义了模块的相关信息
 	Module = module.Module
 
-	// MODServer 等同于 server.MODServer，方便调用者使用
-	MODServer = module.Server
+	// Service 常驻后台运行的服务描述
+	Service = module.Service
 
-	// Tag 等同于 server.Tag，方便调用者使用
-	Tag = module.Tag
+	// ServiceFunc 服务的执行函数签名
+	ServiceFunc = module.ServiceFunc
+
+	// MODServer 模块的管理服务
+	MODServer = module.Server
 )
