@@ -5,6 +5,10 @@ package module
 import (
 	"encoding/json"
 	"encoding/xml"
+	"log"
+	"os"
+	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/logs/v2"
@@ -36,4 +40,23 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotNil(srv.ctxServer.Logs())
 
 	return srv
+}
+
+func TestServer_Init(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+
+	m1 := srv.NewModule("m1", "m1 desc", "m2")
+	m1.AddCron("test cron", job, "* * 8 * * *", true)
+	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
+
+	m2 := srv.NewModule("m2", "m2 desc")
+	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
+
+	a.Equal(len(srv.Modules()), 2)
+
+	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
+
+	// 不能多次调用
+	a.Equal(srv.Init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
 }

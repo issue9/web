@@ -4,9 +4,7 @@
 package module
 
 import (
-	"log"
 	"sort"
-	"strings"
 )
 
 // InstallFunc 安装模块的函数签名
@@ -88,35 +86,9 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 	return t
 }
 
-// InitModules 初始化模块下指定标签名称的函数
-//
-// 若指定了 tag 参数，则只初始化与该标签相关联的内容。
-func (srv *Server) InitModules(tag string, info *log.Logger) error {
-	flag := info.Flags()
-	info.SetFlags(0)
-	defer info.SetFlags(flag)
-
-	info.Println("开始初始化模块...")
-
-	if err := newDepencency(srv.modules, info).init(tag); err != nil {
-		return err
-	}
-
-	if all := srv.ctxServer.Router().Mux().All(true, true); len(all) > 0 {
-		info.Println("模块加载了以下路由项：")
-		for path, methods := range all {
-			info.Printf("[%s] %s\n", strings.Join(methods, ", "), path)
-		}
-	}
-
-	info.Println("模块初始化完成！")
-
-	return nil
-}
-
 // Tags 返回所有的子模块名称
 //
-// 键名为模块名称，键值为该模块下的标签列表
+// 键名为模块名称，键值为该模块下的标签列表。
 func (srv *Server) Tags() map[string][]string {
 	ret := make(map[string][]string, len(srv.modules)*2)
 

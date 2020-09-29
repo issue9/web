@@ -4,8 +4,6 @@ package module
 
 import (
 	"errors"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -35,22 +33,6 @@ func TestModule_NewTag(t *testing.T) {
 	a.NotEqual(v2, v)
 }
 
-func TestModules_Init(t *testing.T) {
-	a := assert.New(t)
-	srv := newServer(a)
-
-	m1 := srv.NewModule("m1", "m1 desc", "m2")
-	m1.AddCron("test cron", job, "* * 8 * * *", true)
-	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
-
-	m2 := srv.NewModule("m2", "m2 desc")
-	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
-
-	a.Equal(len(srv.Modules()), 2)
-
-	a.NotError(srv.InitModules("", log.New(os.Stdout, "[INFO]", 0)))
-}
-
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
@@ -75,7 +57,7 @@ func TestModule_AddInit(t *testing.T) {
 		NotNil(m.inits[2].f)
 }
 
-func TestModules_Tags(t *testing.T) {
+func TestServer_Tags(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 

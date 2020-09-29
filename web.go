@@ -164,9 +164,16 @@ func (web *Web) Services() []*Service {
 	return web.modServer.Services()
 }
 
+// Tags 返回所有标签列表
+//
+// 键名为模块名称，键值为该模块下的标签列表。
+func (web *Web) Tags() map[string][]string {
+	return web.modServer.Tags()
+}
+
 // InitModules 初始化模块
 func (web *Web) InitModules(tag string) error {
-	return web.modServer.InitModules(tag, web.logs.INFO())
+	return web.modServer.Init(tag, web.logs.INFO())
 }
 
 // Serve 运行 HTTP 服务

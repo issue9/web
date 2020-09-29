@@ -38,7 +38,7 @@ func TestResource(t *testing.T) {
 	res.Put(f1)
 	res.Options("abcdef")
 
-	a.NotError(server.InitModules("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
 	srv.Delete("/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/p" + path).Do().Status(http.StatusOK)
@@ -68,7 +68,7 @@ func TestPrefix(t *testing.T) {
 	p.Put(path, f1)
 	p.Options(path, "abcdef")
 
-	a.NotError(server.InitModules("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
 	srv.Delete("/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/p" + path).Do().Status(http.StatusOK)
@@ -92,7 +92,7 @@ func TestModule_Handle(t *testing.T) {
 	path := "/path"
 	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
 
-	a.NotError(server.InitModules("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
 	srv.Get(path).Do().Status(http.StatusOK)
 	srv.Delete(path).Do().Status(http.StatusOK)
@@ -107,7 +107,7 @@ func TestModule_Handle(t *testing.T) {
 	path = "/path1"
 	a.NotError(m.Handle(path, f1))
 
-	a.NotError(server.InitModules("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
 	srv.Delete(path).Do().Status(http.StatusOK)
 	srv.Patch(path, nil).Do().Status(http.StatusOK)
@@ -125,7 +125,7 @@ func TestModule_Handle(t *testing.T) {
 	m.Patch(path, f1)
 	m.Put(path, f1)
 
-	a.NotError(server.InitModules("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
 	srv.Delete(path).Do().Status(http.StatusOK)
 	srv.Get(path).Do().Status(http.StatusOK)
