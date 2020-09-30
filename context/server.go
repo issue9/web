@@ -32,6 +32,7 @@ type Server struct {
 	Location *time.Location
 
 	// middleware
+	middlewares   *middleware.Manager
 	headers       *header.Header
 	domains       *host.Host
 	compress      *compress.Compress
@@ -39,15 +40,12 @@ type Server struct {
 	debugger      *debugger.Debugger
 
 	// url
-	root string
-	url  *url.URL
+	root   string
+	url    *url.URL
+	router *mux.Prefix
 
 	logs   *logs.Logs
 	uptime time.Time
-
-	// routes
-	middlewares *middleware.Manager
-	router      *mux.Prefix
 
 	// result
 	resultBuilder BuildResultFunc
@@ -80,8 +78,9 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 	srv := &Server{
 		Location: time.Local,
 
-		headers: header.New(nil, nil),
-		domains: host.New(true),
+		middlewares: middleware.NewManager(router.Mux()),
+		headers:     header.New(nil, nil),
+		domains:     host.New(true),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
 			"gzip":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
@@ -90,14 +89,12 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		root: root,
-		url:  u,
+		root:   root,
+		url:    u,
+		router: router,
 
 		logs:   logs,
 		uptime: time.Now(),
-
-		middlewares: middleware.NewManager(router.Mux()),
-		router:      router,
 
 		resultBuilder: builder,
 		messages:      make(map[int]*resultMessage, 20),

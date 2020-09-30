@@ -28,7 +28,7 @@ var (
 	_ json.Unmarshaler = (*Duration)(&dur)
 )
 
-type testPairs struct {
+type testMap struct {
 	Pairs Map `xml:"pairs"`
 }
 
@@ -47,7 +47,7 @@ func TestDuration_Duration(t *testing.T) {
 func TestPairs(t *testing.T) {
 	a := assert.New(t)
 
-	m := &testPairs{
+	m := &testMap{
 		Pairs: Map{ // 多个字段，注意 map 顺序问题
 			"key1": "val1",
 		},
@@ -55,24 +55,24 @@ func TestPairs(t *testing.T) {
 
 	bs, err := xml.MarshalIndent(m, "", "  ")
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testPairs>
+	a.Equal(string(bs), `<testMap>
   <pairs>
     <key name="key1">val1</key>
   </pairs>
-</testPairs>`)
+</testMap>`)
 
-	rm := &testPairs{}
+	rm := &testMap{}
 	a.NotError(xml.Unmarshal(bs, rm))
 	a.Equal(rm, m)
 
 	// 空值
-	m = &testPairs{
+	m = &testMap{
 		Pairs: Map{},
 	}
 
 	bs, err = xml.MarshalIndent(m, "", "  ")
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testPairs></testPairs>`)
+	a.Equal(string(bs), `<testMap></testMap>`)
 }
 
 func TestDuration_YAML(t *testing.T) {
@@ -137,4 +137,23 @@ func TestCertificate_sanitize(t *testing.T) {
 
 	cert.Key = "./testdata/key.pem"
 	a.NotError(cert.sanitize())
+}
+
+func TestDebug_sanitize(t *testing.T) {
+	a := assert.New(t)
+
+	var dbg *Debug
+	a.NotError(dbg.sanitize())
+
+	dbg = &Debug{}
+	a.NotError(dbg.sanitize())
+
+	dbg.Pprof = "abc/"
+	err := dbg.sanitize()
+	a.Error(err).Equal(err.Field, "pprof")
+
+	dbg.Pprof = ""
+	dbg.Vars = "abc/"
+	err = dbg.sanitize()
+	a.Error(err).Equal(err.Field, "vars")
 }

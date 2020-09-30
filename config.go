@@ -123,7 +123,7 @@ type Config struct {
 	ShutdownSignal []os.Signal `yaml:"-" json:"-" xml:"-"`
 }
 
-func (conf *Config) sanitize() (err error) {
+func (conf *Config) sanitize() error {
 	if conf.ReadTimeout < 0 {
 		return &config.FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
@@ -148,9 +148,15 @@ func (conf *Config) sanitize() (err error) {
 		return &config.FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
 
-	if conf.url, err = url.Parse(conf.Root); err != nil {
+	if err := conf.Debug.sanitize(); err != nil {
 		return err
 	}
+
+	u, err := url.Parse(conf.Root)
+	if err != nil {
+		return err
+	}
+	conf.url = u
 	if conf.url.Port() == "" {
 		switch conf.url.Scheme {
 		case "http", "":
@@ -165,15 +171,15 @@ func (conf *Config) sanitize() (err error) {
 		conf.addr = ":" + conf.url.Port()
 	}
 
-	if err = conf.parseResults(); err != nil {
+	if err := conf.parseResults(); err != nil {
 		return err
 	}
 
-	if err = conf.buildTimezone(); err != nil {
+	if err := conf.buildTimezone(); err != nil {
 		return err
 	}
 
-	if err = conf.checkStatic(); err != nil {
+	if err := conf.checkStatic(); err != nil {
 		return err
 	}
 
@@ -183,7 +189,7 @@ func (conf *Config) sanitize() (err error) {
 		}
 	}
 
-	if err = conf.buildAllowedDomains(); err != nil {
+	if err := conf.buildAllowedDomains(); err != nil {
 		return err
 	}
 

@@ -151,3 +151,19 @@ func (cert *Certificate) sanitize() *config.FieldError {
 
 	return nil
 }
+
+func (dbg *Debug) sanitize() *config.FieldError {
+	if dbg == nil {
+		return nil
+	}
+
+	if dbg.Pprof != "" && (dbg.Pprof[0] != '/' || dbg.Pprof[len(dbg.Pprof)-1] != '/') {
+		return &config.FieldError{Field: "pprof", Message: "必须以 / 开始和结束"}
+	}
+
+	if dbg.Vars != "" && dbg.Vars[0] != '/' {
+		return &config.FieldError{Field: "vars", Message: "必须以 / 开头"}
+	}
+
+	return nil
+}
