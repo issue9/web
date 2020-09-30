@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// 简单的辅助功能命令行工具。
+// 简单的辅助功能命令行工具
 package main
 
 import (
@@ -20,7 +20,7 @@ import (
 var opt *cmdopt.CmdOpt
 
 func main() {
-	opt = cmdopt.New(os.Stdout, flag.ExitOnError, header, "", "选项：", "子命令：", func(name string) string {
+	opt = cmdopt.New(os.Stdout, flag.ExitOnError, header, footer, "选项：", "子命令：", func(name string) string {
 		return fmt.Sprintf("未找到子命令 %s", name)
 	})
 
@@ -37,4 +37,7 @@ func main() {
 }
 
 const header = `web 命令是 github.com/issue9/web 框架提供的辅助工具。
+`
+
+const footer = `当前项目源码以 MIT 许可发布于 https://github.com/issue9/web
 `

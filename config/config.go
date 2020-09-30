@@ -11,6 +11,7 @@ import (
 // ErrNotFound 未找到与 ID 相关的项
 var ErrNotFound = errors.New("id 值已经存在")
 
+// Config 管理配置项的加载和刷新
 type Config struct {
 	config    string
 	rValue    reflect.Value

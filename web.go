@@ -88,7 +88,6 @@ func New(conf *Config) (web *Web, err error) {
 	if err != nil {
 		return nil, err
 	}
-	web.ctxServer.Debug = conf.Debug
 	web.ctxServer.Location = conf.location
 	web.ctxServer.AllowedDomain(conf.AllowedDomains...)
 	for path, dir := range conf.Static {
@@ -106,6 +105,9 @@ func New(conf *Config) (web *Web, err error) {
 	}
 	for status, rslt := range conf.results {
 		web.ctxServer.AddMessages(status, rslt)
+	}
+	if conf.Debug != nil {
+		web.ctxServer.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
 	}
 
 	web.httpServer = &http.Server{

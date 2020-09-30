@@ -29,10 +29,8 @@ const (
 type Config struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
-	// Debug 是否启用调试模式
-	//
-	// 该值可能会同时影响多个方面，比如是否启用 Pprof、panic 时的输出处理等
-	Debug bool `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,attr,omitempty"`
+	// Debug 调试信息的设置
+	Debug *Debug `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,omitempty"`
 
 	// Root 网站的根目录所在
 	//

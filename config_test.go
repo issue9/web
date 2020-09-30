@@ -182,6 +182,7 @@ func TestLoadConfig(t *testing.T) {
 	conf, err := LoadConfig("./testdata")
 	a.NotError(err).NotNil(conf)
 
-	a.True(conf.Debug).
+	a.NotNil(conf.Debug).
+		Equal(conf.Debug.Pprof, "/debug/pprof/").
 		Equal(conf.Root, "http://localhost:8082")
 }

@@ -1,6 +1,10 @@
 <!-- web 的测试文件，需要与其它内容数值相同 -->
 
-<web debug="true">
+<web>
+    <debug>
+        <pprof>/debug/pprof/</pprof>
+        <vars>/debug/vars</vars>
+    </debug>
     <root>http://localhost:8082</root>
     <static>
         <key name="/admin">./testdata</key>

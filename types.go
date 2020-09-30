@@ -24,6 +24,12 @@ type entry struct {
 	Value   string   `xml:",chardata"`
 }
 
+// Debug 调试信息的配置
+type Debug struct {
+	Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
+	Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
+}
+
 // Duration 封装 time.Duration，实现 JSON、XML 和 YAML 的解析
 type Duration time.Duration
 

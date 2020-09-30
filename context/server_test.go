@@ -61,27 +61,27 @@ func newEmptyServer(a *assert.Assertion) *Server {
 
 func TestMiddlewares(t *testing.T) {
 	a := assert.New(t)
-	app := newServer(a)
-	err := app.errorHandlers.Add(func(w http.ResponseWriter, status int) {
+	server := newServer(a)
+	err := server.errorHandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
 	a.NotError(err)
 
-	app.Router().Mux().GetFunc("/m1/test", f201)
-	app.AddStatic("/client", "./testdata/")
-	app.errorHandlers.Add(func(w http.ResponseWriter, status int) {
+	server.Router().Mux().GetFunc("/m1/test", f201)
+	server.AddStatic("/client", "./testdata/")
+	server.errorHandlers.Add(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, app.Handler(), nil)
+	srv := rest.NewServer(t, server.Handler(), nil)
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
-	srv.NewRequest(http.MethodGet, "/m1/test").
+	srv.Get("/m1/test").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusCreated).
@@ -97,14 +97,14 @@ func TestMiddlewares(t *testing.T) {
 
 	// not found
 	// 返回 ErrorHandler 内容
-	srv.NewRequest(http.MethodGet, "/not-exists.txt").
+	srv.Get("/not-exists.txt").
 		Do().
 		Status(http.StatusNotFound).
 		StringBody("error handler test")
 
 	// static 中定义的静态文件
 	buf.Reset()
-	srv.NewRequest(http.MethodGet, "/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).
@@ -119,51 +119,18 @@ func TestMiddlewares(t *testing.T) {
 	a.Equal(string(data), "file1")
 
 	// 不存在的文件，测试 internal/fileserver 是否启作用
-	srv.NewRequest(http.MethodGet, "/client/dir/not-exists.txt").
+	srv.Get("/client/dir/not-exists.txt").
 		Do().
 		Status(http.StatusNotFound).
 		StringBody("error handler test")
-}
 
-func TestServer_buildDebug(t *testing.T) {
-	a := assert.New(t)
+	// debug
 
-	b := newServer(a)
-	srv := rest.NewServer(t, b.buildDebug(http.HandlerFunc(f201)), nil)
-	defer srv.Close()
-
-	// Debug = false
-	srv.NewRequest(http.MethodGet, "/debug/pprof/").
-		Do().
-		Status(http.StatusCreated)
-
-	// 命中 /debug/pprof/cmdline
-	b.Debug = true
-	srv.NewRequest(http.MethodGet, "/debug/pprof/").
-		Do().
-		Status(http.StatusOK)
-
-	srv.NewRequest(http.MethodGet, "/debug/pprof/cmdline").
-		Do().
-		Status(http.StatusOK)
-
-	srv.NewRequest(http.MethodGet, "/debug/pprof/trace").
-		Do().
-		Status(http.StatusOK)
-
-	srv.NewRequest(http.MethodGet, "/debug/pprof/symbol").
-		Do().
-		Status(http.StatusOK)
-
-	// /debug/vars
-	srv.NewRequest(http.MethodGet, "/debug/vars").
-		Do().
-		Status(http.StatusOK)
-
-	// 命中 h201
-	srv.NewRequest(http.MethodGet, "/debug/").
-		Do().
-		Status(http.StatusCreated)
+	srv.Get("/debug/pprof/").Do().Status(http.StatusNotFound)
+	srv.Get("/debug/vars").Do().Status(http.StatusNotFound)
+	server.SetDebugger("/debug/pprof/", "/vars")
+	srv.Get("/debug/pprof/").Do().Status(http.StatusOK)
+	srv.Get("/vars").Do().Status(http.StatusOK)
 }
 
 func TestServer_URL_Path(t *testing.T) {

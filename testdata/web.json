@@ -1,5 +1,8 @@
 {
-  "debug": true,
+  "debug": {
+    "pprof": "/debug/pprof/",
+    "vars": "/debug/vars"
+  },
   "root": "http://localhost:8082",
   "static":{
     "/admin": "./testdata"

@@ -3,38 +3,23 @@
 package context
 
 import (
-	"expvar"
 	"net/http"
-	"net/http/pprof"
 	"net/url"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/compress"
+	"github.com/issue9/middleware/v2/debugger"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"github.com/issue9/middleware/v2/header"
 	"github.com/issue9/middleware/v2/host"
 	"github.com/issue9/mux/v2"
 )
 
-const (
-	// 此变量理论上可以更改，但实际上，更改之后，所有的子页面都会不可用。
-	debugPprofPath = "/debug/pprof/"
-
-	// 此地址可以修改。
-	debugVarsPath = "/debug/vars"
-)
-
 // Server 定义了构建 Context 对象的一些通用数据选项
 type Server struct {
-	// 调试模式
-	//
-	// 会额外提供 /debug/pprof/* 和 /debug/vars 用于输出调试信息。
-	Debug bool
-
 	// 在调用 Server.newContext 生成 Context
 	// 之前可能通过此方法对其进行一次统一的修改，不需要则为 nil。
 	Interceptor func(*Context)
@@ -47,9 +32,11 @@ type Server struct {
 	Location *time.Location
 
 	// middleware
-	headers  *header.Header
-	domains  *host.Host
-	compress *compress.Compress
+	headers       *header.Header
+	domains       *host.Host
+	compress      *compress.Compress
+	errorHandlers *errorhandler.ErrorHandler
+	debugger      *debugger.Debugger
 
 	// url
 	root string
@@ -59,9 +46,8 @@ type Server struct {
 	uptime time.Time
 
 	// routes
-	middlewares   *middleware.Manager
-	errorHandlers *errorhandler.ErrorHandler
-	router        *mux.Prefix
+	middlewares *middleware.Manager
+	router      *mux.Prefix
 
 	// result
 	resultBuilder BuildResultFunc
@@ -101,6 +87,8 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 			"deflate": compress.NewDeflate,
 			"br":      compress.NewBrotli,
 		}, "*"),
+		errorHandlers: errorhandler.New(),
+		debugger:      &debugger.Debugger{},
 
 		root: root,
 		url:  u,
@@ -108,9 +96,8 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		logs:   logs,
 		uptime: time.Now(),
 
-		middlewares:   middleware.NewManager(router.Mux()),
-		errorHandlers: errorhandler.New(),
-		router:        router,
+		middlewares: middleware.NewManager(router.Mux()),
+		router:      router,
 
 		resultBuilder: builder,
 		messages:      make(map[int]*resultMessage, 20),
@@ -167,14 +154,20 @@ func (srv *Server) SetHeader(name, value string) {
 	}
 }
 
-// Handler 将当前服务转换为 http.Handler 接口对象
-func (srv *Server) Handler() http.Handler {
-	return srv.middlewares
-}
-
 // AddMiddlewares 设置全局的中间件，可多次调用
 func (srv *Server) AddMiddlewares(m middleware.Middleware) {
 	srv.middlewares.After(m)
+}
+
+// SetDebugger 设置调试地址
+func (srv *Server) SetDebugger(pprof, vars string) {
+	srv.debugger.Pprof = pprof
+	srv.debugger.Vars = vars
+}
+
+// Handler 将当前服务转换为 http.Handler 接口对象
+func (srv *Server) Handler() http.Handler {
+	return srv.middlewares
 }
 
 // 通过配置文件加载相关的中间件
@@ -195,32 +188,7 @@ func (srv *Server) buildMiddlewares() {
 	srv.middlewares.Before(rf.Middleware)
 
 	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	srv.middlewares.Before(func(h http.Handler) http.Handler { return srv.buildDebug(h) })
-}
-
-func (srv *Server) buildDebug(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case srv.Debug && strings.HasPrefix(r.URL.Path, debugPprofPath):
-			path := r.URL.Path[len(debugPprofPath):]
-			switch path {
-			case "cmdline":
-				pprof.Cmdline(w, r)
-			case "profile":
-				pprof.Profile(w, r)
-			case "symbol":
-				pprof.Symbol(w, r)
-			case "trace":
-				pprof.Trace(w, r)
-			default:
-				pprof.Index(w, r)
-			}
-		case srv.Debug && strings.HasPrefix(r.URL.Path, debugVarsPath):
-			expvar.Handler().ServeHTTP(w, r)
-		default:
-			h.ServeHTTP(w, r)
-		}
-	})
+	srv.middlewares.Before(srv.debugger.Middleware)
 }
 
 // Uptime 当前服务的运行时间
