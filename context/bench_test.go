@@ -232,7 +232,7 @@ func BenchmarkBuilder_Marshal(b *testing.B) {
 	a.NotError(srv.AddMarshal("font/wottf", xml.Marshal))
 
 	for i := 0; i < b.N; i++ {
-		name, marshal, err := srv.marshal("font/wottf;q=0.9")
+		name, marshal, err := srv.mimetypes.Marshal("font/wottf;q=0.9")
 		a.NotError(err).
 			NotEmpty(name).
 			NotNil(marshal)
@@ -247,7 +247,7 @@ func BenchmarkBuilder_Unmarshal(b *testing.B) {
 	a.NotError(srv.AddUnmarshal("font/wottf", xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
-		marshal, err := srv.unmarshal("font/wottf")
+		marshal, err := srv.mimetypes.Unmarshal("font/wottf")
 		a.NotError(err).
 			NotNil(marshal)
 	}

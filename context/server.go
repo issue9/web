@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/middleware/v2/debugger"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"github.com/issue9/mux/v2"
+	"github.com/issue9/web/context/mimetype"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 )
@@ -50,16 +51,13 @@ type Server struct {
 	url    *url.URL
 	router *mux.Prefix
 
-	logs   *logs.Logs
-	uptime time.Time
+	logs      *logs.Logs
+	uptime    time.Time
+	mimetypes *mimetype.Mimetypes
 
 	// result
 	resultBuilder BuildResultFunc
 	messages      map[int]*resultMessage
-
-	// mimetype
-	marshals   []*marshaler
-	unmarshals []*unmarshaler
 }
 
 // NewServer 返回 *Server 实例
@@ -99,14 +97,12 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		url:    u,
 		router: router,
 
-		logs:   logs,
-		uptime: time.Now(),
+		logs:      logs,
+		uptime:    time.Now(),
+		mimetypes: mimetype.NewMimetypes(),
 
 		resultBuilder: builder,
 		messages:      make(map[int]*resultMessage, 20),
-
-		marshals:   make([]*marshaler, 0, 10),
-		unmarshals: make([]*unmarshaler, 0, 10),
 	}
 
 	srv.buildMiddlewares()
@@ -215,4 +211,30 @@ func (srv *Server) URL(p string) string {
 	default:
 		return srv.root + "/" + p
 	}
+}
+
+// AddMarshals 添加多个编码函数
+func (srv *Server) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+	return srv.mimetypes.AddMarshals(ms)
+}
+
+// AddMarshal 添加编码函数
+//
+// mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
+// 另作处理，比如下载，上传等内容。
+func (srv *Server) AddMarshal(name string, mf mimetype.MarshalFunc) error {
+	return srv.mimetypes.AddMarshal(name, mf)
+}
+
+// AddUnmarshals 添加多个编码函数
+func (srv *Server) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+	return srv.mimetypes.AddUnmarshals(ms)
+}
+
+// AddUnmarshal 添加编码函数
+//
+// mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
+// 另作处理，比如下载，上传等内容。
+func (srv *Server) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+	return srv.mimetypes.AddUnmarshal(name, mm)
 }
