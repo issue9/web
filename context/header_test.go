@@ -55,21 +55,23 @@ func TestAcceptCharset(t *testing.T) {
 		Nil(enc)
 }
 
-func TestAcceptLanguage(t *testing.T) {
+func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
-	tag := acceptLanguage("")
+	srv := newServer(a)
+
+	tag := srv.acceptLanguage("")
 	a.Equal(tag, language.Und)
 
-	tag = acceptLanguage("zh")
+	tag = srv.acceptLanguage("zh")
 	a.Equal(tag, language.Chinese)
 
-	tag = acceptLanguage("zh-Hant")
+	tag = srv.acceptLanguage("zh-Hant")
 	a.Equal(tag, language.TraditionalChinese)
 
-	tag = acceptLanguage("zh-Hans")
+	tag = srv.acceptLanguage("zh-Hans")
 	a.Equal(tag, language.SimplifiedChinese)
 
-	tag = acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	tag = srv.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
 	a.Equal(tag, language.English)
 }
 

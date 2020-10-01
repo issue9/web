@@ -12,7 +12,6 @@ import (
 	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/context/mimetype"
 )
@@ -23,9 +22,7 @@ var errInvalidCharset = errors.New("无效的字符集")
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {
-	return enc == nil ||
-		enc == xunicode.UTF8 ||
-		enc == encoding.Nop
+	return enc == nil || enc == xunicode.UTF8 || enc == encoding.Nop
 }
 
 // 根据 Accept-Charset 报头的内容获取其最值的字符集信息
@@ -58,18 +55,18 @@ func acceptCharset(header string) (name string, enc encoding.Encoding, err error
 	return "", nil, errInvalidCharset
 }
 
-func acceptLanguage(header string) language.Tag {
+func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
 		return language.Und
 	}
 
 	al := qheader.Parse(header, "*")
-	prefs := make([]language.Tag, 0, len(al))
+	tags := make([]language.Tag, 0, len(al))
 	for _, l := range al {
-		prefs = append(prefs, language.Make(l.Value))
+		tags = append(tags, language.Make(l.Value))
 	}
 
-	tag, _, _ := message.DefaultCatalog.Matcher().Match(prefs...)
+	tag, _, _ := srv.Catalog.Matcher().Match(tags...)
 	return tag
 }
 

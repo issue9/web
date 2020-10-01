@@ -87,7 +87,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputCharsetName, outputCharset, err := acceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
-	tag := acceptLanguage(r.Header.Get("Accept-Language"))
+	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		server:             srv,
