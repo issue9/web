@@ -89,12 +89,8 @@ func New(conf *Config) (web *Web, err error) {
 		return nil, err
 	}
 	web.ctxServer.Location = conf.location
-	web.ctxServer.AllowedDomain(conf.AllowedDomains...)
 	for path, dir := range conf.Static {
 		web.ctxServer.AddStatic(path, dir)
-	}
-	for k, v := range conf.Headers {
-		web.ctxServer.SetHeader(k, v)
 	}
 	web.ctxServer.Interceptor = conf.ContextInterceptor
 	if err = web.ctxServer.AddMarshals(conf.Marshalers); err != nil {

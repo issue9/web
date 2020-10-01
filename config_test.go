@@ -3,7 +3,6 @@
 package web
 
 import (
-	"net/url"
 	"testing"
 	"time"
 
@@ -140,40 +139,6 @@ func TestConfig_parseResults(t *testing.T) {
 
 	conf.Results[400] = "400"
 	a.Error(conf.parseResults())
-}
-
-func TestConfig_buildAllowedDomains(t *testing.T) {
-	a := assert.New(t)
-
-	conf := &Config{
-		url: &url.URL{},
-	}
-	a.NotError(conf.buildAllowedDomains())
-	a.Empty(conf.AllowedDomains)
-
-	// 未指定 allowedDomains
-	conf.url.Host = "example.com"
-	a.NotError(conf.buildAllowedDomains())
-	a.Empty(conf.AllowedDomains)
-
-	// 与 domain 同一个域名
-	conf.url.Host = "example.com"
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(1, len(conf.AllowedDomains))
-
-	conf.url.Host = "localhost"
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(2, len(conf.AllowedDomains))
-
-	conf.url.Host = ""
-	conf.AllowedDomains = []string{"example.com"}
-	a.NotError(conf.buildAllowedDomains())
-	a.Equal(1, len(conf.AllowedDomains))
-
-	conf.AllowedDomains = []string{"*.example.com"}
-	a.NotError(conf.buildAllowedDomains())
 }
 
 func TestLoadConfig(t *testing.T) {

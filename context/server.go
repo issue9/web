@@ -13,8 +13,6 @@ import (
 	"github.com/issue9/middleware/v2/compress"
 	"github.com/issue9/middleware/v2/debugger"
 	"github.com/issue9/middleware/v2/errorhandler"
-	"github.com/issue9/middleware/v2/header"
-	"github.com/issue9/middleware/v2/host"
 	"github.com/issue9/mux/v2"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -43,8 +41,6 @@ type Server struct {
 
 	// middleware
 	middlewares   *middleware.Manager
-	headers       *header.Header
-	domains       *host.Host
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	debugger      *debugger.Debugger
@@ -91,8 +87,6 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		Catalog: message.DefaultCatalog,
 
 		middlewares: middleware.NewManager(router.Mux()),
-		headers:     header.New(nil, nil),
-		domains:     host.New(true),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
 			"gzip":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
@@ -137,32 +131,6 @@ func (srv *Server) AddStatic(path, dir string) {
 	srv.Router().Get(path+"{path}", h)
 }
 
-// AllowedDomain 添加允许访问的域名
-//
-// 若指定了此值，则只有此列表中指定的域名可以访问当前网页。
-// 诸如 IP 和其它域名的指向将不再启作用。
-//
-// 可以指定泛域名，比如 *.example.com
-func (srv *Server) AllowedDomain(domain ...string) {
-	// NOTE: 如果要检测域名的合法性，请注意 *.example.com 的泛域名格式。
-	srv.domains.Add(domain...)
-}
-
-// SetHeader 附加的报头信息
-//
-// 一些诸如跨域等报头信息，可以在此作设置。
-//
-// NOTE: 报头信息可能在其它处理器被修改。
-//
-// name 表示报头名称；value 表示报头的值，如果为空，表示删除该报头。
-func (srv *Server) SetHeader(name, value string) {
-	if value == "" {
-		srv.headers.Delete(name)
-	} else {
-		srv.headers.Set(name, value)
-	}
-}
-
 // SetErrorHandle 设置指定状态码页面的处理函数
 //
 // 如果状态码已经存在处理函数，则修改，否则就添加。
@@ -191,10 +159,6 @@ func (srv *Server) Handler() http.Handler {
 //
 // 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
 func (srv *Server) buildMiddlewares() {
-	srv.middlewares.Before(srv.headers.Middleware)
-
-	srv.middlewares.Before(srv.domains.Middleware)
-
 	srv.middlewares.Before(srv.errorHandlers.Middleware)
 
 	// srv.errorhandlers.New 可能会输出大段内容。所以放在其之后。

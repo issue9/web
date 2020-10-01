@@ -137,19 +137,6 @@ func TestServer_SetDebugger(t *testing.T) {
 	srv.Get("/vars").Do().Status(http.StatusOK)
 }
 
-func TestServer_SetHeader(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
-	defer srv.Close()
-
-	srv.Get("/path").Do().Header("Server", "")
-	server.SetHeader("Server", "web")
-	srv.Get("/path").Do().Header("Server", "web")
-	server.SetHeader("Server", "")
-	srv.Get("/path").Do().Header("Server", "")
-}
-
 func TestServer_URL_Path(t *testing.T) {
 	a := assert.New(t)
 

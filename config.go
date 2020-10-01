@@ -11,7 +11,6 @@ import (
 	"time"
 
 	lc "github.com/issue9/logs/v2/config"
-	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
@@ -53,28 +52,12 @@ type Config struct {
 	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,omitempty"`
 	DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,omitempty"`
 
-	// Headers 附加的报头信息
-	//
-	// 一些诸如跨域等报头信息，可以在此作设置。
-	//
-	// 报头信息可能在其它处理器被修改。
-	Headers Map `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
-
 	// Static 静态内容，键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
 	// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 	Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
-
-	// AllowedDomains 限定访问域名
-	//
-	// 若指定了此值，则只有此列表中指定的域名可以访问当前网页。
-	// 诸如 IP 和其它域名的指向将不再启作用。
-	//
-	// 在 AllowedDomains 中至少存在一个及以上的域名时，Root 中所指的值会自动添加到此处。
-	// AllowedDomains 为空时，并不会限定域名为 Domain 指定的域名。
-	AllowedDomains []string `yaml:"allowedDomains,omitempty" json:"allowedDomains,omitempty" xml:"allowedDomains,omitempty"`
 
 	// 应用于 http.Server 的几个变量
 	ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
@@ -189,10 +172,6 @@ func (conf *Config) sanitize() error {
 		}
 	}
 
-	if err := conf.buildAllowedDomains(); err != nil {
-		return err
-	}
-
 	if conf.isTLS && len(conf.Certificates) == 0 {
 		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
@@ -264,21 +243,6 @@ func (conf *Config) checkStatic() (err error) {
 
 func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
-}
-
-func (conf *Config) buildAllowedDomains() error {
-	if len(conf.AllowedDomains) == 0 {
-		return nil
-	}
-
-	hostname := conf.url.Hostname()
-	if hostname != "" {
-		cnt := sliceutil.Count(conf.AllowedDomains, func(i int) bool { return conf.AllowedDomains[i] == hostname })
-		if cnt == 0 {
-			conf.AllowedDomains = append(conf.AllowedDomains, hostname)
-		}
-	}
-	return nil
 }
 
 func (conf *Config) toTLSConfig() (*tls.Config, error) {
