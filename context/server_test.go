@@ -32,9 +32,9 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	b := newEmptyServer(a)
+	srv := newEmptyServer(a)
 
-	err := b.AddMarshals(map[string]mimetype.MarshalFunc{
+	err := srv.AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
@@ -42,7 +42,7 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	err = b.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+	err = srv.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
 		"application/xml":        xml.Unmarshal,
 		mimetype.DefaultMimetype: gob.Unmarshal,
@@ -50,28 +50,27 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	return b
+	return srv
 }
 
 func newEmptyServer(a *assert.Assertion) *Server {
-	srv, err := NewServer(logs.New(), DefaultResultBuilder, false, false, "")
+	srv, err := NewServer(logs.New(), nil, false, false, "")
 	a.NotError(err).NotNil(srv)
 	return srv
 }
 
-func TestMiddlewares(t *testing.T) {
+func TestServer_AddStatic(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	err := server.errorHandlers.Add(func(w http.ResponseWriter, status int) {
+	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
-	a.NotError(err)
 
 	server.Router().Mux().GetFunc("/m1/test", f201)
 	server.AddStatic("/client", "./testdata/")
-	server.errorHandlers.Add(func(w http.ResponseWriter, status int) {
+	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
@@ -123,14 +122,32 @@ func TestMiddlewares(t *testing.T) {
 		Do().
 		Status(http.StatusNotFound).
 		StringBody("error handler test")
+}
 
-	// debug
+func TestServer_SetDebugger(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.Handler(), nil)
+	defer srv.Close()
 
 	srv.Get("/debug/pprof/").Do().Status(http.StatusNotFound)
 	srv.Get("/debug/vars").Do().Status(http.StatusNotFound)
 	server.SetDebugger("/debug/pprof/", "/vars")
 	srv.Get("/debug/pprof/").Do().Status(http.StatusOK)
 	srv.Get("/vars").Do().Status(http.StatusOK)
+}
+
+func TestServer_SetHeader(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.Handler(), nil)
+	defer srv.Close()
+
+	srv.Get("/path").Do().Header("Server", "")
+	server.SetHeader("Server", "web")
+	srv.Get("/path").Do().Header("Server", "web")
+	server.SetHeader("Server", "")
+	srv.Get("/path").Do().Header("Server", "")
 }
 
 func TestServer_URL_Path(t *testing.T) {
@@ -158,6 +175,18 @@ func TestServer_URL_Path(t *testing.T) {
 		{
 			root:  "https://localhost/",
 			input: "/abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+		{
+			root:  "https://localhost",
+			input: "/abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+		{
+			root:  "https://localhost",
+			input: "abc/def",
 			url:   "https://localhost/abc/def",
 			path:  "/abc/def",
 		},

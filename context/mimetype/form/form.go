@@ -55,7 +55,7 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// Marshal 针对 www-form-urlencoded 内容的 MarshalFunc 实现
+// Marshal 针对 www-form-urlencoded 内容的 mimetype.MarshalFunc 实现
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Marshaler 接口，则调用该接口；
@@ -82,7 +82,8 @@ func Marshal(v interface{}) ([]byte, error) {
 	return []byte(vals.Encode()), nil
 }
 
-// Unmarshal 针对 www-form-urlencoded 内容的 UnmarshalFunc 实现
+// Unmarshal 针对 www-form-urlencoded 内容的 mimetype.UnmarshalFunc 实现
+//
 // 按以下顺序解析内容：
 //  - 如果实现 Unmarshaler 接口，则调用该接口；
 //  - 如果是 url.Values 对象，则依次赋值每个对象；

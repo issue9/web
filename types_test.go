@@ -44,7 +44,7 @@ func TestDuration_Duration(t *testing.T) {
 	a.Equal(dur, Duration(dur).Duration())
 }
 
-func TestPairs(t *testing.T) {
+func TestMap(t *testing.T) {
 	a := assert.New(t)
 
 	m := &testMap{

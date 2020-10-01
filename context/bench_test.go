@@ -58,9 +58,9 @@ func BenchmarkBuildContentType(b *testing.B) {
 	}
 }
 
-func BenchmarkBuilder_newContext(b *testing.B) {
+func BenchmarkServer_newContext(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -69,20 +69,20 @@ func BenchmarkBuilder_newContext(b *testing.B) {
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 		a.NotNil(ctx)
 	}
 }
 
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -92,14 +92,14 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "utf-8")
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -109,14 +109,14 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
@@ -126,14 +126,14 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -144,14 +144,14 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkstr1))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -161,7 +161,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -169,7 +169,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk")
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -180,14 +180,14 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -203,7 +203,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkPostWithCharset(b *testing.B) {
 	a := assert.New(b)
-	bb := newServer(a)
+	srv := newServer(a)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -211,7 +211,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-		ctx := bb.newContext(w, r)
+		ctx := srv.newContext(w, r)
 
 		obj := &mimetypetest.TextObject{}
 		a.NotError(ctx.Unmarshal(obj))
@@ -226,13 +226,13 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 func BenchmarkBuilder_Marshal(b *testing.B) {
 	a := assert.New(b)
-	builder := newServer(a)
-	a.NotNil(builder)
+	srv := newServer(a)
+	a.NotNil(srv)
 
-	a.NotError(builder.AddMarshal("font/wottf", xml.Marshal))
+	a.NotError(srv.AddMarshal("font/wottf", xml.Marshal))
 
 	for i := 0; i < b.N; i++ {
-		name, marshal, err := builder.marshal("font/wottf;q=0.9")
+		name, marshal, err := srv.marshal("font/wottf;q=0.9")
 		a.NotError(err).
 			NotEmpty(name).
 			NotNil(marshal)
@@ -241,13 +241,13 @@ func BenchmarkBuilder_Marshal(b *testing.B) {
 
 func BenchmarkBuilder_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	builder := newServer(a)
-	a.NotNil(builder)
+	srv := newServer(a)
+	a.NotNil(srv)
 
-	a.NotError(builder.AddUnmarshal("font/wottf", xml.Unmarshal))
+	a.NotError(srv.AddUnmarshal("font/wottf", xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
-		marshal, err := builder.unmarshal("font/wottf")
+		marshal, err := srv.unmarshal("font/wottf")
 		a.NotError(err).
 			NotNil(marshal)
 	}

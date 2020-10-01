@@ -237,7 +237,7 @@ func TestContext_NewResult(t *testing.T) {
 	a.Panic(func() { ctx.NewResult(50000) })
 }
 
-func TestBuilder_AddMessages(t *testing.T) {
+func TestServer_AddMessages(t *testing.T) {
 	a := assert.New(t)
 	builder := newServer(a)
 
@@ -273,7 +273,7 @@ func TestBuilder_AddMessages(t *testing.T) {
 	})
 }
 
-func TestBuilder_Messages(t *testing.T) {
+func TestServer_Messages(t *testing.T) {
 	a := assert.New(t)
 	builder := newServer(a)
 	a.NotNil(builder)

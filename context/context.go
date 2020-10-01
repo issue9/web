@@ -62,9 +62,9 @@ type Context struct {
 	// 保存着从 http.Request.Body 中获取的内容。
 	//
 	// body 用于缓存从 http.Request.Body 中读取的内容；
-	// readed 表示是否需要从 http.Request.Body 读取内容。
-	body   []byte
-	readed bool
+	// read 表示是否需要从 http.Request.Body 读取内容。
+	body []byte
+	read bool
 }
 
 // 如果 Accept 的内容与当前配置无法匹配，
@@ -99,6 +99,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      message.NewPrinter(tag),
+		Location:           srv.Location,
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
@@ -111,7 +112,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		ctx.InputCharset, err = htmlindex.Get(charsetName)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 	} else {
-		ctx.readed = true
+		ctx.read = true
 	}
 
 	if srv.Interceptor != nil {
@@ -126,23 +127,22 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 // 相对于 ctx.Request.Body，此函数可多次读取。
 // 不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
-	if ctx.readed {
+	if ctx.read {
 		return ctx.body, nil
 	}
 
 	if ctx.body, err = ioutil.ReadAll(ctx.Request.Body); err != nil {
 		return nil, err
 	}
+	ctx.read = true
 
 	if charsetIsNop(ctx.InputCharset) {
-		ctx.readed = true
 		return ctx.body, nil
 	}
 
 	d := ctx.InputCharset.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
 	ctx.body, err = ioutil.ReadAll(reader)
-	ctx.readed = true
 	return ctx.body, err
 }
 
@@ -168,8 +168,8 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称。
 //
-// 通过 Render 输出的内容，即使 status 的值大于 399，
-// 依赖能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容。
+// 通过 Marshal 输出的内容，即使 status 的值大于 399，
+// 依然能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容。
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
 	header := ctx.Response.Header()
 	var contentTypeFound, contentLanguageFound bool
@@ -240,7 +240,8 @@ func (ctx *Context) Read(v interface{}) (ok bool) {
 // 如果需要具体控制出错后的处理方式，可以使用 Marshal 函数。
 //
 // 通过 Render 输出的内容，即使 status 的值大于 399，
-// 依赖能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容。
+// 依然能正常输出 v 的内容，而不是转向 errorhandler 中的相关内容，
+// 但是渲染出错时，依然转换 errorhandler。
 func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
 	if err := ctx.Marshal(status, v, headers); err != nil {
 		ctx.Error(http.StatusInternalServerError, err)

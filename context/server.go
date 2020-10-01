@@ -20,8 +20,7 @@ import (
 
 // Server 定义了构建 Context 对象的一些通用数据选项
 type Server struct {
-	// 在调用 Server.newContext 生成 Context
-	// 之前可能通过此方法对其进行一次统一的修改，不需要则为 nil。
+	// Interceptor 可以对生成的 Context 在使用前进行修改
 	Interceptor func(*Context)
 
 	// Location 指定服务器的时区信息
@@ -151,7 +150,15 @@ func (srv *Server) SetHeader(name, value string) {
 	}
 }
 
-// AddMiddlewares 设置全局的中间件，可多次调用
+// SetErrorHandle 设置指定状态码页面的处理函数
+//
+// 如果状态码已经存在处理函数，则修改，否则就添加。
+// 仅对状态码 >= 400 的有效果。
+func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
+	srv.errorHandlers.Set(h, status...)
+}
+
+// AddMiddlewares 设置全局的中间件
 func (srv *Server) AddMiddlewares(m middleware.Middleware) {
 	srv.middlewares.After(m)
 }
@@ -226,14 +233,9 @@ func (srv *Server) URL(p string) string {
 	case len(p) == 0:
 		return srv.root
 	case p[0] == '/':
-		if len(srv.root) > 0 && srv.root[len(srv.root)-1] == '/' {
-			return srv.root + p[1:]
-		}
+		// 由 NewServer 保证 root 不能 / 结尾
 		return srv.root + p
 	default:
-		if len(srv.root) > 0 && srv.root[len(srv.root)-1] == '/' {
-			return srv.root + p
-		}
 		return srv.root + "/" + p
 	}
 }

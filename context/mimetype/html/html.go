@@ -29,7 +29,7 @@ type HTML struct {
 	tpl *template.Template
 }
 
-// Template 传递给 mimetype.MarshalFunc 的参数。
+// Template 传递给 mimetype.MarshalFunc 的参数
 //
 // 因为 mimetype.MarshalFunc 限定了只能有一个参数，
 // 而模板解析，除了传递的值，最起码还要一个模板名称，
@@ -39,7 +39,7 @@ type Template struct {
 	Data interface{}
 }
 
-// Tpl 声明一个 *Template 变量。
+// Tpl 声明一个 *Template 变量
 //
 // 其中 name 表示需要引用的模板名称，
 // 而 data 则是传递给该模板的所有变量。
@@ -71,7 +71,7 @@ func (html *HTML) SetTemplate(tpl *template.Template) {
 	html.tpl = tpl
 }
 
-// Marshal 针对 HTML 内容的 MarshalFunc 实现
+// Marshal 针对 HTML 内容的 mimetype.MarshalFunc 实现
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
 	if v == mimetype.Nil {
 		return nil, nil

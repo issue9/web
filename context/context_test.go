@@ -49,19 +49,19 @@ func newContext(a *assert.Assertion,
 	}
 }
 
-func TestBuilder_newContext(t *testing.T) {
+func TestServer_newContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	b := newServer(a)
+	srv := newServer(a)
 	logwriter := new(bytes.Buffer)
-	b.Logs().ERROR().SetOutput(logwriter)
+	srv.Logs().ERROR().SetOutput(logwriter)
 
 	// 错误的 accept
 	logwriter.Reset()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
 	a.Panic(func() {
-		b.newContext(w, r)
+		srv.newContext(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -71,7 +71,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
-		b.newContext(w, r)
+		srv.newContext(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -80,7 +80,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		b.newContext(w, r)
+		srv.newContext(w, r)
 	})
 
 	// 错误的 content-type,有输入内容
@@ -88,7 +88,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	a.Panic(func() {
-		b.newContext(w, r)
+		srv.newContext(w, r)
 	})
 	a.True(logwriter.Len() > 0)
 
@@ -98,7 +98,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-"))
 	a.Panic(func() {
-		b.newContext(w, r)
+		srv.newContext(w, r)
 	})
 
 	// 错误的 Accept-Language
@@ -106,16 +106,17 @@ func TestBuilder_newContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
-	ctx := b.newContext(w, r)
+	ctx := srv.newContext(w, r)
 	a.NotNil(ctx)
 	a.Equal(ctx.OutputTag, language.MustParse("zh-hans"))
+	a.Equal(ctx.Server(), srv)
 
 	// 正常，指定 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
-	ctx = b.newContext(w, r)
+	ctx = srv.newContext(w, r)
 	a.NotNil(ctx)
 	a.Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
@@ -128,7 +129,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	a.NotPanic(func() {
-		ctx = b.newContext(w, r)
+		ctx = srv.newContext(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -141,7 +142,7 @@ func TestBuilder_newContext(t *testing.T) {
 	r.Header.Set("Accept", mimetype.DefaultMimetype)
 	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
 	a.NotPanic(func() {
-		ctx = b.newContext(w, r)
+		ctx = srv.newContext(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
@@ -302,4 +303,23 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newContext(a, w, r, nil, nil)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+}
+
+func TestContext_Created(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+
+	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	ctx := newContext(a, w, r, nil, nil)
+	ctx.Created(&mimetypetest.TextObject{Name: "test", Age: 123}, "")
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), `test,123`)
+
+	w.Body.Reset()
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	ctx = newContext(a, w, r, nil, nil)
+	ctx.Created(&mimetypetest.TextObject{Name: "test", Age: 123}, "/test")
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), `test,123`).
+		Equal(w.Header().Get("Location"), "/test")
 }
