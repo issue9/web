@@ -16,6 +16,8 @@ import (
 	"github.com/issue9/middleware/v2/header"
 	"github.com/issue9/middleware/v2/host"
 	"github.com/issue9/mux/v2"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 )
 
 // Server 定义了构建 Context 对象的一些通用数据选项
@@ -26,9 +28,18 @@ type Server struct {
 	// Location 指定服务器的时区信息
 	//
 	// 如果未指定，则会采用 time.Local 作为默认值。
+	//
 	// 在构建 Context 对象时，该时区信息也会分配给 Context，
 	// 如果每个 Context 对象需要不同的值，可以在 Interceptor 中进行修改。
 	Location *time.Location
+
+	// Catalog 当前使用的本地化组件
+	//
+	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog。
+	//
+	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
+	// 等方式构建 Catalog 接口实例。
+	Catalog catalog.Catalog
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -76,6 +87,8 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 
 	srv := &Server{
 		Location: time.Local,
+
+		Catalog: message.DefaultCatalog,
 
 		middlewares: middleware.NewManager(router.Mux()),
 		headers:     header.New(nil, nil),
