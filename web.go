@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v2"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
@@ -70,7 +71,13 @@ func Classic(dir string) (*Web, error) {
 		40004: "无效的报文",
 	}
 
-	conf.ResultBuilder = context.DefaultResultBuilder
+	if conf.ResultBuilder == nil {
+		conf.ResultBuilder = context.DefaultResultBuilder
+	}
+
+	if conf.Catalog == nil {
+		conf.Catalog = message.DefaultCatalog
+	}
 
 	return New(conf)
 }
@@ -84,8 +91,8 @@ func New(conf *Config) (web *Web, err error) {
 	web = &Web{}
 
 	web.logs = logs.New()
-	if conf.LogsConfig != nil {
-		if err = web.logs.Init(conf.LogsConfig); err != nil {
+	if conf.Logs != nil {
+		if err = web.logs.Init(conf.Logs); err != nil {
 			return nil, err
 		}
 	}
@@ -126,10 +133,7 @@ func New(conf *Config) (web *Web, err error) {
 
 	if conf.isTLS {
 		web.isTLS = true
-		web.httpServer.TLSConfig, err = conf.toTLSConfig()
-		if err != nil {
-			return nil, err
-		}
+		web.httpServer.TLSConfig = conf.TLSConfig
 	}
 
 	web.closed = make(chan struct{}, 1)

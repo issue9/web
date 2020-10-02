@@ -46,7 +46,9 @@ type Config struct {
 	// 当前仅支持部分系统：https://golang.org/pkg/plugin/
 	Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty" xml:"plugins,omitempty"`
 
-	// 网站的域名证书
+	// Certificates 网站的域名证书
+	//
+	// 该设置并不总是生效的，具体的说明可参考 TLSConfig 字段的说明。
 	Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
 
 	// DisableOptions 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
@@ -82,7 +84,10 @@ type Config struct {
 	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	location *time.Location
 
-	// Catalog 本地化的消息管理组件
+	// 用于初始化日志系统的参数
+	Logs *lc.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
+
+	// Catalog 本地化消息的管理组件
 	//
 	// 为空的情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
 	//
@@ -95,6 +100,13 @@ type Config struct {
 	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`
 	ContextInterceptor func(*context.Context)            `yaml:"-" json:"-" xml:"-"`
 
+	// TLSConfig 指定 https 模式下的证书配置项
+	//
+	// 如果用户指定了 Certificates 字段，则会根据此字段生成，
+	// 用户也可以自已覆盖此值，比如采用 golang.org/x/crypto/acme/autocert.Manager.TLSConfig
+	// 配置 Let's Encrypt。
+	TLSConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
+
 	// 返回给用户的错误提示信息
 	//
 	// 对键名作了一定的要求：要求最高的三位数必须是一个 HTTP 状态码，
@@ -104,9 +116,6 @@ type Config struct {
 	// 该数据最终由 context.Server.AddMessages 添加。
 	Results map[int]string `yaml:"-" json:"-" xml:"-"`
 	results map[int]map[int]string
-
-	// 用于初始化日志系统的参数
-	LogsConfig *lc.Config `yaml:"-" json:"-" xml:"-"`
 
 	// 指定用于触发关闭服务的信号
 	//
@@ -184,8 +193,8 @@ func (conf *Config) sanitize() error {
 	if conf.isTLS && len(conf.Certificates) == 0 {
 		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
-
-	return nil
+	conf.TLSConfig, err = conf.toTLSConfig()
+	return err
 }
 
 func (conf *Config) parseResults() error {
@@ -268,18 +277,22 @@ func (conf *Config) toTLSConfig() (*tls.Config, error) {
 }
 
 // LoadConfig 加载指定目录下的配置文件用于初始化 *Config 实例
+//
+// 当前加后的 conf.Logs == nil 时，会将 dir 目录下的 logs.xml 当作实例加载。
 func LoadConfig(dir string) (conf *Config, err error) {
 	confPath := filepath.Join(dir, ConfigFilename)
-	logsPath := filepath.Join(dir, LogsFilename)
 
 	conf = &Config{}
 	if err = config.LoadFile(confPath, conf); err != nil {
 		return nil, err
 	}
 
-	conf.LogsConfig = &lc.Config{}
-	if err = config.LoadFile(logsPath, conf.LogsConfig); err != nil {
-		return nil, err
+	if conf.Logs == nil {
+		logsPath := filepath.Join(dir, LogsFilename)
+		conf.Logs = &lc.Config{}
+		if err = config.LoadFile(logsPath, conf.Logs); err != nil {
+			return nil, err
+		}
 	}
 
 	return conf, nil
