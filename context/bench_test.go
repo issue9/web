@@ -45,7 +45,7 @@ func BenchmarkParseContentType(b *testing.B) {
 	a := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
-		_, _, err := parseContentType("application/json;charset=utf-8")
+		_, _, err := parseContentType("appliCation/json;Charset=utf-8")
 		a.NotError(err)
 	}
 }

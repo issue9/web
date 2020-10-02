@@ -18,7 +18,10 @@ import (
 
 const utfName = "utf-8"
 
-var errInvalidCharset = errors.New("无效的字符集")
+var (
+	errInvalidCharset          = errors.New("无效的字符集")
+	errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部分")
+)
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {
@@ -70,8 +73,6 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	return tag
 }
 
-var errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部分")
-
 // 从 content-type 中获取编码和字符集
 //
 // 若客户端传回的是空值，则会使用默认值代替。
@@ -80,9 +81,7 @@ var errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部
 //
 // https://tools.ietf.org/html/rfc7231#section-3.1.1.1
 func parseContentType(v string) (mime, charset string, err error) {
-	v = strings.TrimSpace(v)
-
-	if v == "" {
+	if v = strings.ToLower(strings.TrimSpace(v)); v == "" {
 		return mimetype.DefaultMimetype, utfName, nil
 	}
 
@@ -100,7 +99,7 @@ func parseContentType(v string) (mime, charset string, err error) {
 		// 去掉左边的空白字符
 		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return unicode.IsSpace(r) })
 
-		if !strings.HasPrefix(v, "charset=") {
+		if !strings.HasPrefix(v, "charset=") { // 按规定，不用考虑 = 两边没有空白字符。
 			index = strings.IndexByte(v, ';')
 			continue
 		}

@@ -14,12 +14,13 @@ import (
 	"github.com/issue9/middleware/v2/debugger"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"github.com/issue9/mux/v2"
-	"github.com/issue9/web/context/mimetype"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/context/mimetype"
 )
 
-// Server 定义了构建 Context 对象的一些通用数据选项
+// Server 提供了用于构建 Context 对象的基本数据
 type Server struct {
 	// Interceptor 可以对生成的 Context 在使用前进行修改
 	Interceptor func(*Context)
@@ -151,13 +152,11 @@ func (srv *Server) Handler() http.Handler {
 	return srv.middlewares
 }
 
-// 通过配置文件加载相关的中间件
-//
-// 始终保持这些中间件在最后初始化。用户添加的中间件由 app.modules.After 添加。
+// 始终保持这些中间件在最后初始化。用户添加的中间件由 Server.AddMiddlewares 添加。
 func (srv *Server) buildMiddlewares() {
 	srv.middlewares.Before(srv.errorHandlers.Middleware)
 
-	// srv.errorhandlers.New 可能会输出大段内容。所以放在其之后。
+	// srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
 	srv.middlewares.Before(srv.compress.Middleware)
 
 	// recovery

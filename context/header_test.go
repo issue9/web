@@ -93,13 +93,13 @@ func TestParseContentType(t *testing.T) {
 	e, c, err = parseContentType("application/XML;")
 	a.NotError(err).Equal(e, "application/xml").Equal(c, utfName)
 
-	e, c, err = parseContentType("text/html;charset=utf-8")
+	e, c, err = parseContentType("text/html;charset=utF-8")
 	a.NotError(err).Equal(e, "text/html").Equal(c, "utf-8")
 
 	e, c, err = parseContentType(`Text/HTML;Charset="gbk"`)
-	a.NotError(err).Equal(e, "text/html").Equal(c, utfName)
+	a.NotError(err).Equal(e, "text/html").Equal(c, "gbk")
 
-	e, c, err = parseContentType(`Text/HTML; charset="gbk"`)
+	e, c, err = parseContentType(`Text/HTML; charset="Gbk"`)
 	a.NotError(err).Equal(e, "text/html").Equal(c, "gbk")
 
 	e, c, err = parseContentType(`multipart/form-data; boundary=AaB03x`)
