@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"log"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -19,8 +20,8 @@ import (
 )
 
 func newServer(a *assert.Assertion) *Server {
-	ctx, err := context.NewServer(logs.New(), context.DefaultResultBuilder, false, false, "")
-	a.NotError(err).NotNil(ctx)
+	ctx := context.NewServer(logs.New(), context.DefaultResultBuilder, false, false, &url.URL{})
+	a.NotNil(ctx)
 	srv, err := NewServer(ctx, "")
 	a.NotError(err).NotNil(srv)
 

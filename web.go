@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v2"
+
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
@@ -84,10 +85,7 @@ func New(conf *Config) (web *Web, err error) {
 		}
 	}
 
-	web.ctxServer, err = context.NewServer(web.logs, conf.ResultBuilder, conf.DisableOptions, conf.DisableHead, conf.url.Path)
-	if err != nil {
-		return nil, err
-	}
+	web.ctxServer = context.NewServer(web.logs, conf.ResultBuilder, conf.DisableOptions, conf.DisableHead, conf.url)
 	web.ctxServer.Location = conf.location
 	for path, dir := range conf.Static {
 		web.ctxServer.AddStatic(path, dir)

@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -54,8 +55,8 @@ func newServer(a *assert.Assertion) *Server {
 }
 
 func newEmptyServer(a *assert.Assertion) *Server {
-	srv, err := NewServer(logs.New(), nil, false, false, "")
-	a.NotError(err).NotNil(srv)
+	srv := NewServer(logs.New(), nil, false, false, &url.URL{})
+	a.NotNil(srv)
 	return srv
 }
 
@@ -201,9 +202,10 @@ func TestServer_URL_Path(t *testing.T) {
 	}
 
 	for i, item := range data {
-		srv, err := NewServer(logs.New(), DefaultResultBuilder, false, false, item.root)
-		a.NotError(err, "error %s at %d", err, i).
-			NotNil(srv)
+		u, err := url.Parse(item.root)
+		a.NotError(err).NotNil(u)
+		srv := NewServer(logs.New(), DefaultResultBuilder, false, false, u)
+		a.NotNil(srv, "nil at %d", i)
 
 		a.Equal(srv.URL(item.input), item.url, "not equal @%d,v1=%s,v2=%s", i, srv.URL(item.input), item.url)
 		a.Equal(srv.Path(item.input), item.path, "not equal @%d,v1=%s,v2=%s", i, srv.Path(item.input), item.path)

@@ -62,23 +62,18 @@ type Server struct {
 }
 
 // NewServer 返回 *Server 实例
-func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disableHead bool, root string) (*Server, error) {
+func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disableHead bool, root *url.URL) *Server {
 	if builder == nil {
 		builder = DefaultResultBuilder
 	}
 
 	// 保证不以 / 结尾
-	if len(root) > 0 && root[len(root)-1] == '/' {
-		root = root[:len(root)-1]
-	}
-
-	u, err := url.Parse(root)
-	if err != nil {
-		return nil, err
+	if len(root.Path) > 0 && root.Path[len(root.Path)-1] == '/' {
+		root.Path = root.Path[:len(root.Path)-1]
 	}
 
 	mux := mux.New(disableOptions, disableHead, false, nil, nil)
-	router := mux.Prefix(u.Path)
+	router := mux.Prefix(root.Path)
 
 	srv := &Server{
 		Location: time.Local,
@@ -94,8 +89,8 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		root:   root,
-		url:    u,
+		root:   root.String(),
+		url:    root,
 		router: router,
 
 		logs:      logs,
@@ -108,7 +103,7 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 
 	srv.buildMiddlewares()
 
-	return srv, nil
+	return srv
 }
 
 // Logs 返回关联的 logs.Logs 实例
