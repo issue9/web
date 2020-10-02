@@ -139,22 +139,19 @@ YAML。用户也可以自行添加新的格式支持。
 #### 媒体类型
 
 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
-`Mimetypes().AddMarshals()` 和 `Mimetypes().AddUnmarshals()` 添加相关的处理函数。
+`web.CTXServer().AddMarshals()` 和 `web.CTXServer().AddUnmarshals()` 添加相关的处理函数。
 添加方式如下：
 
 ```go
-Mimetypes().AddMarshals(map[string]mimetype.MarshalFunc{
+web := Classic("path")
+
+web.CTXServer().AddMarshals(map[string]mimetype.MarshalFunc{
     "application/json": json.Marshal,
 })
-Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
+web.CTXServer().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
     "application/json": json.Unmarshal,
 })
 ```
-
-之后，通过 `web.NewContext()` 获得的 `Context` 对象，会根据用户的
-`Accept` 和 `Content-Type` 自动使用相应的解析和输出格式。
-
-当然用户也可以直接构建一个 `Context` 对象来生成一个一次性的对象。
 
 #### 错误处理
 
@@ -169,8 +166,6 @@ Mimetypes().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 ```shell
 go get github.com/issue9/web
 ```
-
-同时还提供了一个辅助工具 web，可通过调用 `./build/web.sh` 进行编译。
 
 版权
 ---

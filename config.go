@@ -11,6 +11,7 @@ import (
 	"time"
 
 	lc "github.com/issue9/logs/v2/config"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
@@ -80,6 +81,14 @@ type Config struct {
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	location *time.Location
+
+	// Catalog 本地化的消息管理组件
+	//
+	// 为空的情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
+	//
+	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
+	// 等方式构建 Catalog 接口实例。
+	Catalog catalog.Catalog `yaml:"-" json:"-" xml:"-"`
 
 	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
 	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`

@@ -35,7 +35,7 @@ type Server struct {
 
 	// Catalog 当前使用的本地化组件
 	//
-	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog。
+	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
 	//
 	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
 	// 等方式构建 Catalog 接口实例。
@@ -127,6 +127,7 @@ func (srv *Server) AddStatic(path, dir string) {
 //
 // 如果状态码已经存在处理函数，则修改，否则就添加。
 // 仅对状态码 >= 400 的有效果。
+// 如果 status 为零表示所有未设置的状态码都采用该函数处理。
 func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
 }

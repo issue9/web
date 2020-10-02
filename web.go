@@ -37,6 +37,11 @@ type Web struct {
 	shutdownTimeout time.Duration
 }
 
+// GetWeb 从 ctx 中获取 *Web 实例
+func GetWeb(ctx *Context) *Web {
+	return ctx.Request.Context().Value(ContextKeyWeb).(*Web)
+}
+
 // Classic 返回一个开箱即用的 Web 实例
 //
 // 会加载 dir 目录下的 web.yaml 和 logs.xml 两个配置文件内容，并用于初始化 Web 实例。
@@ -86,11 +91,12 @@ func New(conf *Config) (web *Web, err error) {
 	}
 
 	web.ctxServer = context.NewServer(web.logs, conf.ResultBuilder, conf.DisableOptions, conf.DisableHead, conf.url)
+	web.ctxServer.Interceptor = conf.ContextInterceptor
 	web.ctxServer.Location = conf.location
 	for path, dir := range conf.Static {
 		web.ctxServer.AddStatic(path, dir)
 	}
-	web.ctxServer.Interceptor = conf.ContextInterceptor
+	web.ctxServer.Catalog = conf.Catalog
 	if err = web.ctxServer.AddMarshals(conf.Marshalers); err != nil {
 		return nil, err
 	}
