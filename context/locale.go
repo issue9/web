@@ -6,8 +6,14 @@ import (
 	"io"
 	"time"
 
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
+
+// NewLocalePrinter 返回指定语言的 message.Printer
+func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
+	return message.NewPrinter(tag, message.Catalog(srv.Catalog))
+}
 
 // Fprint 相当于 ctx.LocalePrinter.Fprint
 func (ctx *Context) Fprint(w io.Writer, v ...interface{}) (int, error) {

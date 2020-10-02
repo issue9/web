@@ -98,7 +98,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
-		LocalePrinter:      message.NewPrinter(tag, message.Catalog(srv.Catalog)),
+		LocalePrinter:      srv.NewLocalePrinter(tag),
 		Location:           srv.Location,
 	}
 
