@@ -5,7 +5,7 @@ package version
 // Version 版本号
 //
 // 版本号规则遵循 https://semver.org/lang/zh-CN/
-const Version = "0.31.0"
+const Version = "0.32.0"
 
 // 编译日期，可以由编译器指定
 var buildDate string
@@ -21,7 +21,9 @@ func init() {
 	}
 }
 
-// FullVersion 完整的版本号，可能包括了编译日期。
+// FullVersion 完整的版本号
+//
+// 可能包括了编译日期。
 func FullVersion() string {
 	return fullVersion
 }
