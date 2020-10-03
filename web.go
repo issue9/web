@@ -116,6 +116,7 @@ func New(conf *Config) (web *Web, err error) {
 	if conf.Debug != nil {
 		web.ctxServer.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
 	}
+	web.ctxServer.AddMiddlewares(conf.Middlewares...)
 
 	web.httpServer = &http.Server{
 		Addr:              conf.addr,

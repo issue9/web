@@ -3,6 +3,7 @@
 package web
 
 import (
+	"github.com/issue9/middleware/v2"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/module"
@@ -16,6 +17,9 @@ type (
 	//
 	// 是对 http.ResponseWriter 和 http.Request 的简单包装。
 	Context = context.Context
+
+	// Middleware 中间件的类型定义
+	Middleware = middleware.Middleware
 
 	// Result 定义了返回给用户的错误信息
 	Result = context.Result

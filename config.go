@@ -95,6 +95,9 @@ type Config struct {
 	// 等方式构建 Catalog 接口实例。
 	Catalog catalog.Catalog `yaml:"-" json:"-" xml:"-"`
 
+	// Middlewares 可用于应用的中间件
+	Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
+
 	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
 	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`

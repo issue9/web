@@ -6,7 +6,7 @@ require (
 	github.com/issue9/cmdopt v0.6.1
 	github.com/issue9/conv v1.2.0
 	github.com/issue9/logs/v2 v2.5.0
-	github.com/issue9/middleware/v2 v2.1.0
+	github.com/issue9/middleware/v2 v2.2.0
 	github.com/issue9/mux/v2 v2.3.3
 	github.com/issue9/qheader v0.4.0
 	github.com/issue9/query v1.0.1

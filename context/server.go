@@ -133,8 +133,12 @@ func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 }
 
 // AddMiddlewares 设置全局的中间件
-func (srv *Server) AddMiddlewares(m middleware.Middleware) {
-	srv.middlewares.After(m)
+//
+// 按给定参数的顺序依次调用中间件。
+func (srv *Server) AddMiddlewares(middlewares ...middleware.Middleware) {
+	for _, m := range middlewares {
+		srv.middlewares.After(m)
+	}
 }
 
 // SetDebugger 设置调试地址
@@ -150,17 +154,13 @@ func (srv *Server) Handler() http.Handler {
 
 // 始终保持这些中间件在最后初始化。用户添加的中间件由 Server.AddMiddlewares 添加。
 func (srv *Server) buildMiddlewares() {
-	srv.middlewares.Before(srv.errorHandlers.Middleware)
-
-	// srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
-	srv.middlewares.Before(srv.compress.Middleware)
-
-	// recovery
 	rf := srv.errorHandlers.Recovery(srv.logs.ERROR())
-	srv.middlewares.Before(rf.Middleware)
-
-	// NOTE: 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	srv.middlewares.Before(srv.debugger.Middleware)
+	srv.AddMiddlewares(
+		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+		rf.Middleware,
+		srv.compress.Middleware, // srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
+		srv.errorHandlers.Middleware,
+	)
 }
 
 // Uptime 当前服务的运行时间
