@@ -11,12 +11,12 @@ import (
 	"github.com/issue9/assert/rest"
 )
 
-var f202 = func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-	_, err := w.Write([]byte("1234567890"))
+var f202 = func(ctx *Context) {
+	ctx.Response.WriteHeader(http.StatusAccepted)
+	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		ctx.Response.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -30,13 +30,34 @@ func newServer(a *assert.Assertion) *Web {
 
 func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
-	web := newServer(a)
 	exit := make(chan bool, 1)
 
-	r := web.CTXServer().Router()
-	r.Mux().GetFunc("/m1/test", f202)
-	r.Mux().GetFunc("/m2/test", f202)
-	r.Mux().GetFunc("/mux/test", f202)
+	web := newServer(a)
+	web.CTXServer().Get("/mux/test", f202)
+
+	m1 := web.modServer.NewModule("m1", "m1 desc")
+	m1.Get("/m1/test", f202)
+	m1.NewTag("tag1")
+
+	m2 := web.modServer.NewModule("m2", "m2 desc", "m1")
+	m2.Get("/m2/test", func(ctx *Context) {
+		w := GetWeb(ctx)
+		a.NotNil(w)
+		a.Equal(2, len(w.Modules()))
+		a.Equal(2, len(w.Tags())).
+			Equal(w.Tags()["m1"], []string{"tag1"}).
+			Empty(w.Tags()["m2"])
+		a.Equal(1, len(w.Services())) // 默认启动的 scheduled
+
+		ctx.Response.WriteHeader(http.StatusAccepted)
+		_, err := ctx.Response.Write([]byte("1234567890"))
+		if err != nil {
+			println(err)
+			ctx.Response.WriteHeader(http.StatusInternalServerError)
+		}
+	})
+
+	a.NotError(web.InitModules(""))
 
 	go func() {
 		err := web.Serve()
@@ -75,11 +96,11 @@ func TestWeb_Close(t *testing.T) {
 	web := newServer(a)
 	exit := make(chan bool, 1)
 
-	web.CTXServer().Router().Mux().GetFunc("/test", f202)
-	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte("closed"))
+	web.CTXServer().Get("/test", f202)
+	web.CTXServer().Get("/close", func(ctx *Context) {
+		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
 		a.NotError(web.Close())
 	})
@@ -113,10 +134,10 @@ func TestWeb_Shutdown(t *testing.T) {
 	web.shutdownTimeout = 300 * time.Millisecond
 	exit := make(chan bool, 1)
 
-	web.CTXServer().Router().Mux().GetFunc("/test", f202)
-	web.CTXServer().Router().Mux().GetFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusCreated)
-		_, err := w.Write([]byte("shutdown with ctx"))
+	web.CTXServer().Get("/test", f202)
+	web.CTXServer().Get("/close", func(ctx *Context) {
+		ctx.Response.WriteHeader(http.StatusCreated)
+		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
 		web.Close()
 	})

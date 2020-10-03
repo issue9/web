@@ -141,6 +141,21 @@ func TestConfig_parseResults(t *testing.T) {
 	a.Error(conf.parseResults())
 }
 
+func TestConfig_buildTLSConfig(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Config{
+		Certificates: []*Certificate{
+			{
+				Cert: "./testdata/cert.pem",
+				Key:  "./testdata/key.pem",
+			},
+		},
+	}
+	a.NotError(conf.buildTLSConfig())
+	a.Equal(1, len(conf.TLSConfig.Certificates))
+}
+
 func TestLoadConfig(t *testing.T) {
 	a := assert.New(t)
 

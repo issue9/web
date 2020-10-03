@@ -25,7 +25,7 @@ const (
 	ConfigFilename = "web.yaml"
 )
 
-// Config 用于初始化 Web 对象的基本参数
+// Config 提供了初始化 Web 对象的基本参数
 type Config struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
@@ -184,17 +184,10 @@ func (conf *Config) sanitize() error {
 		return err
 	}
 
-	for _, c := range conf.Certificates {
-		if err := c.sanitize(); err != nil {
-			return err
-		}
-	}
-
 	if conf.isTLS && len(conf.Certificates) == 0 {
 		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
-	conf.TLSConfig, err = conf.toTLSConfig()
-	return err
+	return conf.buildTLSConfig()
 }
 
 func (conf *Config) parseResults() error {
@@ -243,13 +236,6 @@ func (conf *Config) checkStatic() (err error) {
 			}
 		}
 
-		if !filepath.IsAbs(path) {
-			path, err = filepath.Abs(path)
-			if err != nil {
-				return &config.FieldError{Field: "static." + u, Message: err.Error()}
-			}
-		}
-
 		if !filesystem.Exists(path) {
 			return &config.FieldError{Field: "static." + u, Message: "对应的路径不存在"}
 		}
@@ -263,17 +249,22 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (conf *Config) toTLSConfig() (*tls.Config, error) {
+func (conf *Config) buildTLSConfig() error {
 	cfg := &tls.Config{}
 	for _, certificate := range conf.Certificates {
+		if err := certificate.sanitize(); err != nil {
+			return err
+		}
+
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
 
-	return cfg, nil
+	conf.TLSConfig = cfg
+	return nil
 }
 
 // LoadConfig 加载指定目录下的配置文件用于初始化 *Config 实例
