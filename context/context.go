@@ -59,6 +59,9 @@ type Context struct {
 	// 与当前对话相关的时区
 	Location *time.Location
 
+	// 保存 Context 在存续期间的可复用变量值
+	Vars map[string]interface{}
+
 	// 保存着从 http.Request.Body 中获取的内容。
 	//
 	// body 用于缓存从 http.Request.Body 中读取的内容；
@@ -100,6 +103,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		OutputTag:          tag,
 		LocalePrinter:      srv.NewLocalePrinter(tag),
 		Location:           srv.Location,
+		Vars:               map[string]interface{}{},
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
