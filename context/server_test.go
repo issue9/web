@@ -55,7 +55,7 @@ func newServer(a *assert.Assertion) *Server {
 }
 
 func newEmptyServer(a *assert.Assertion) *Server {
-	srv := NewServer(logs.New(), nil, false, false, &url.URL{})
+	srv := NewServer(logs.New(), false, false, &url.URL{})
 	a.NotNil(srv)
 	return srv
 }
@@ -204,7 +204,7 @@ func TestServer_URL_Path(t *testing.T) {
 	for i, item := range data {
 		u, err := url.Parse(item.root)
 		a.NotError(err).NotNil(u)
-		srv := NewServer(logs.New(), DefaultResultBuilder, false, false, u)
+		srv := NewServer(logs.New(), false, false, u)
 		a.NotNil(srv, "nil at %d", i)
 
 		a.Equal(srv.URL(item.input), item.url, "not equal @%d,v1=%s,v2=%s", i, srv.URL(item.input), item.url)

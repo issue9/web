@@ -97,7 +97,10 @@ func New(conf *Config) (web *Web, err error) {
 		}
 	}
 
-	web.ctxServer = context.NewServer(web.logs, conf.ResultBuilder, conf.DisableOptions, conf.DisableHead, conf.url)
+	web.ctxServer = context.NewServer(web.logs, conf.DisableOptions, conf.DisableHead, conf.url)
+	if conf.ResultBuilder != nil {
+		web.ctxServer.ResultBuilder = conf.ResultBuilder
+	}
 	web.ctxServer.Interceptor = conf.ContextInterceptor
 	web.ctxServer.Location = conf.location
 	for path, dir := range conf.Static {

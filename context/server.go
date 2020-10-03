@@ -41,6 +41,11 @@ type Server struct {
 	// 等方式构建 Catalog 接口实例。
 	Catalog catalog.Catalog
 
+	// ResultBuilder 指定生成 Result 数据的方法
+	//
+	// 默认情况下指向  DefaultResultBuilder。
+	ResultBuilder BuildResultFunc
+
 	// middleware
 	middlewares   *middleware.Manager
 	compress      *compress.Compress
@@ -57,16 +62,11 @@ type Server struct {
 	mimetypes *mimetype.Mimetypes
 
 	// result
-	resultBuilder BuildResultFunc
-	messages      map[int]*resultMessage
+	messages map[int]*resultMessage
 }
 
 // NewServer 返回 *Server 实例
-func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disableHead bool, root *url.URL) *Server {
-	if builder == nil {
-		builder = DefaultResultBuilder
-	}
-
+func NewServer(logs *logs.Logs, disableOptions, disableHead bool, root *url.URL) *Server {
 	// 保证不以 / 结尾
 	if len(root.Path) > 0 && root.Path[len(root.Path)-1] == '/' {
 		root.Path = root.Path[:len(root.Path)-1]
@@ -76,9 +76,9 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 	router := mux.Prefix(root.Path)
 
 	srv := &Server{
-		Location: time.Local,
-
-		Catalog: message.DefaultCatalog,
+		Location:      time.Local,
+		Catalog:       message.DefaultCatalog,
+		ResultBuilder: DefaultResultBuilder,
 
 		middlewares: middleware.NewManager(router.Mux()),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -97,8 +97,7 @@ func NewServer(logs *logs.Logs, builder BuildResultFunc, disableOptions, disable
 		uptime:    time.Now(),
 		mimetypes: mimetype.NewMimetypes(),
 
-		resultBuilder: builder,
-		messages:      make(map[int]*resultMessage, 20),
+		messages: make(map[int]*resultMessage, 20),
 	}
 
 	srv.buildMiddlewares()

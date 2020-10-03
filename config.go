@@ -69,7 +69,7 @@ type Config struct {
 	ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
 	MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
 
-	// 指定关闭服务时的超时时间
+	// ShutdownTimeout 指定关闭服务时的超时时间
 	//
 	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
 	// 否则直接采用 http.Server.Close 立即关闭服务。
@@ -84,7 +84,7 @@ type Config struct {
 	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	location *time.Location
 
-	// 用于初始化日志系统的参数
+	// Logs 用于初始化日志系统的参数
 	Logs *lc.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 
 	// Catalog 本地化消息的管理组件
@@ -98,10 +98,17 @@ type Config struct {
 	// Middlewares 可用于应用的中间件
 	Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
 
-	Marshalers         map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
-	Unmarshalers       map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
-	ResultBuilder      context.BuildResultFunc           `yaml:"-" json:"-" xml:"-"`
-	ContextInterceptor func(*context.Context)            `yaml:"-" json:"-" xml:"-"`
+	// 指定各类媒体类型的编解码函数
+	Marshalers   map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
+	Unmarshalers map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
+
+	// ResultBuilder 指定生成 Result 的方法
+	//
+	// 可以为空，表示采用 CTXServer 的默认值。
+	ResultBuilder context.BuildResultFunc `yaml:"-" json:"-" xml:"-"`
+
+	// ContextInterceptor 表示 CTXServer 在生成 Context 对象是可用的统一修改方法
+	ContextInterceptor func(*context.Context) `yaml:"-" json:"-" xml:"-"`
 
 	// TLSConfig 指定 https 模式下的证书配置项
 	//
@@ -110,7 +117,7 @@ type Config struct {
 	// 配置 Let's Encrypt。
 	TLSConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
 
-	// 返回给用户的错误提示信息
+	// Results 返回给用户的错误提示信息
 	//
 	// 对键名作了一定的要求：要求最高的三位数必须是一个 HTTP 状态码，
 	// 比如 40001，在返回给客户端时，会将 400 作为状态码展示给用户，
@@ -120,7 +127,7 @@ type Config struct {
 	Results map[int]string `yaml:"-" json:"-" xml:"-"`
 	results map[int]map[int]string
 
-	// 指定用于触发关闭服务的信号
+	// ShutdownSignal 指定用于触发关闭服务的信号
 	//
 	// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
 	// 如果指定了多个相同的值，则该信号有可能多次触发。

@@ -119,7 +119,7 @@ func (srv *Server) newResult(code int) Result {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return srv.resultBuilder(msg.status, code, msg.message)
+	return srv.ResultBuilder(msg.status, code, msg.message)
 }
 
 // NewResult 返回 CTXResult 实例

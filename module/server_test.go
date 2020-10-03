@@ -20,7 +20,7 @@ import (
 )
 
 func newServer(a *assert.Assertion) *Server {
-	ctx := context.NewServer(logs.New(), context.DefaultResultBuilder, false, false, &url.URL{})
+	ctx := context.NewServer(logs.New(), false, false, &url.URL{})
 	a.NotNil(ctx)
 	srv, err := NewServer(ctx, "")
 	a.NotError(err).NotNil(srv)
