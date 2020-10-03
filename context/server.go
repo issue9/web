@@ -134,8 +134,8 @@ func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 // AddMiddlewares 设置全局的中间件
 //
 // 按给定参数的顺序依次调用中间件。
-func (srv *Server) AddMiddlewares(middlewares ...middleware.Middleware) {
-	for _, m := range middlewares {
+func (srv *Server) AddMiddlewares(middleware ...middleware.Middleware) {
+	for _, m := range middleware {
 		srv.middlewares.After(m)
 	}
 }

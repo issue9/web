@@ -34,34 +34,40 @@ func (p *Prefix) Resource(pattern string) *Resource {
 }
 
 // Handle 添加路由项
-func (r *Resource) Handle(h HandlerFunc, method ...string) *Resource {
-	r.srv.Handle(r.pattern, h, method...)
+func (r *Resource) Handle(h HandlerFunc, method ...string) error {
+	return r.srv.Handle(r.pattern, h, method...)
+}
+
+func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
+	if err := r.Handle(h, method...); err != nil {
+		panic(err)
+	}
 	return r
 }
 
 // Get 指定一个 GET 请求
 func (r *Resource) Get(h HandlerFunc) *Resource {
-	return r.Handle(h, http.MethodGet)
+	return r.handle(h, http.MethodGet)
 }
 
 // Post 指定个 POST 请求处理
 func (r *Resource) Post(h HandlerFunc) *Resource {
-	return r.Handle(h, http.MethodPost)
+	return r.handle(h, http.MethodPost)
 }
 
 // Delete 指定个 Delete 请求处理
 func (r *Resource) Delete(h HandlerFunc) *Resource {
-	return r.Handle(h, http.MethodDelete)
+	return r.handle(h, http.MethodDelete)
 }
 
 // Put 指定个 Put 请求处理
 func (r *Resource) Put(h HandlerFunc) *Resource {
-	return r.Handle(h, http.MethodPut)
+	return r.handle(h, http.MethodPut)
 }
 
 // Patch 指定个 Patch 请求处理
 func (r *Resource) Patch(h HandlerFunc) *Resource {
-	return r.Handle(h, http.MethodPatch)
+	return r.handle(h, http.MethodPatch)
 }
 
 // Remove 删除指定的路由项
