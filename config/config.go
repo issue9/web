@@ -3,13 +3,7 @@
 // Package config 提供了加载配置项内容的各类方法
 package config
 
-import (
-	"errors"
-	"reflect"
-)
-
-// ErrNotFound 未找到与 ID 相关的项
-var ErrNotFound = errors.New("id 值已经存在")
+import "reflect"
 
 // Config 管理配置项的加载和刷新
 type Config struct {
@@ -41,7 +35,7 @@ func New(config string, v interface{}, f UnmarshalFunc, notify func()) *Config {
 	}
 }
 
-// Refresh 刷新指定 ID 的配置项
+// Refresh 刷新指定配置项
 func (cfg *Config) Refresh() error {
 	v := reflect.New(cfg.rType)
 	if err := cfg.unmarshal(cfg.config, v.Interface()); err != nil {
