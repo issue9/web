@@ -25,7 +25,7 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	ver := flagset.Arg(1)
+	ver := flagset.Arg(0)
 
 	// 没有多余的参数，则会显示当前已有的版本号列表
 	if ver == "" {
@@ -51,12 +51,12 @@ func do(output io.Writer) error {
 	}
 
 	// 没有提交消息，则不提交内容到 VCS
-	if len(flagset.Args()) <= 2 {
+	if flagset.NArg() <= 1 {
 		return nil
 	}
 
 	var message string
-	message = strings.Join(flagset.Args()[2:], " ")
+	message = strings.Join(flagset.Args()[1:], " ")
 
 	// 添加到 git 缓存中
 	cmd := exec.Command("git", "add", filepath.Join(v.Path(versioninfo.Path)))

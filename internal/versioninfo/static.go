@@ -25,7 +25,9 @@ func init()  {
 	}
 }
 
-// FullVersion 完整的版本号，可能包括了编译日期。
+// FullVersion 完整的版本号
+//
+// 可能包括了编译日期。
 func FullVersion() string {
 	return fullVersion
 }
