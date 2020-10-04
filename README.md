@@ -18,13 +18,13 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    conf := web.Classic("./appconfig/web.yaml")
+    w, _ := web.Classic("./appconfig")
 
     // 注册模块信息
     m1.Init()
     m2.Init()
 
-    web.Serve()
+    w.Serve()
 }
 
 // modules/m1/module.go
@@ -122,7 +122,7 @@ YAML。用户也可以自行添加新的格式支持。
 | timezone          | string | 时区信息，名称为 IAAN 注册的名称，为空则为 Local
 | certificates      | object | 多域名的证书信息
 
-*详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述*
+*详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述。*
 
 在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
 

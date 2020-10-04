@@ -28,6 +28,18 @@ func newServer(a *assert.Assertion) *Web {
 	return web
 }
 
+func TestNew(t *testing.T) {
+	a := assert.New(t)
+
+	a.Panic(func() {
+		New(nil)
+	})
+
+	a.NotPanic(func() {
+		New(&Config{})
+	})
+}
+
 func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)

@@ -30,7 +30,7 @@ type Debug struct {
 	Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
 }
 
-// Duration 封装 time.Duration，实现 JSON、XML 和 YAML 的解析
+// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
 type Duration time.Duration
 
 // Certificate 证书管理

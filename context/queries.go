@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/query"
 )
 
-// Queries 用于处理路径中的查询参数。
+// Queries 用于处理路径中的查询参数
 //  q,_ := ctx.Queries()
 //  page := q.Int64("page", 1)
 //  size := q.Int64("size", 20)

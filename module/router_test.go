@@ -186,3 +186,60 @@ func TestPrefix_Filters(t *testing.T) {
 		Do().
 		Status(http.StatusAccepted) // 验证状态码是否正确
 }
+
+func TestModule_Options(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m1 := server.NewModule("m1", "m1 desc")
+	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
+		return context.HandlerFunc(func(ctx *context.Context) {
+			ctx.Response.Header().Set("Server", "m1")
+			next(ctx)
+		})
+	})
+
+	m1.Get("/test", func(ctx *context.Context) {
+		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
+	})
+	m1.Options("/test", "GET, OPTIONS, PUT")
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
+
+	srv.Get("/test").
+		Do().
+		Header("Server", "m1").
+		Status(http.StatusCreated) // 验证状态码是否正确
+
+	// OPTIONS 不添加中间件
+	srv.NewRequest(http.MethodOptions, "/test").
+		Do().
+		Header("Server", "").
+		Status(http.StatusOK)
+
+	// 通 Handle 修改的 OPTIONS，正常接受中间件
+
+	server = newServer(a)
+	m1 = server.NewModule("m1", "m1 desc")
+	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
+		return context.HandlerFunc(func(ctx *context.Context) {
+			ctx.Response.Header().Set("Server", "m1")
+			next(ctx)
+		})
+	})
+
+	m1.Get("/test", func(ctx *context.Context) {
+		ctx.Render(http.StatusCreated, nil, nil)
+	})
+	m1.Handle("/test", func(ctx *context.Context) {
+		ctx.Render(http.StatusAccepted, nil, nil)
+	}, http.MethodOptions)
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
+	srv.NewRequest(http.MethodOptions, "/test").
+		Do().
+		Header("Server", "m1").
+		Status(http.StatusAccepted)
+}
