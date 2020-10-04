@@ -137,3 +137,52 @@ func TestModule_Handle(t *testing.T) {
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
 }
+
+func buildFilter(num int) context.Filter {
+	return context.Filter(func(next context.HandlerFunc) context.HandlerFunc {
+		return context.HandlerFunc(func(ctx *context.Context) {
+			fs, found := ctx.Vars["filters"]
+			if !found {
+				ctx.Vars["filters"] = []int{num}
+			} else {
+				filters := fs.([]int)
+				filters = append(filters, num)
+				ctx.Vars["filters"] = filters
+			}
+
+			next(ctx)
+		})
+	})
+}
+
+func TestPrefix_Filters(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m1 := server.NewModule("m1", "m1 desc")
+	m1.AddFilters(buildFilter(1), buildFilter(2))
+	p1 := m1.Prefix("/p1", buildFilter(3), buildFilter(4))
+	m1.AddFilters(buildFilter(8), buildFilter(9))
+
+	m1.Get("/test", func(ctx *context.Context) {
+		a.Equal(ctx.Vars["filters"], []int{1, 2, 8, 9})
+		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
+	})
+
+	p1.Get("/test", func(ctx *context.Context) {
+		a.Equal(ctx.Vars["filters"], []int{1, 2, 8, 9, 3, 4}) // 必须要是 server 的先于 prefix 的
+		ctx.Render(http.StatusAccepted, nil, nil)             // 不能输出 200 的状态码
+	})
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
+
+	srv.Get("/test").
+		Do().
+		Status(http.StatusCreated) // 验证状态码是否正确
+
+	srv.Get("/p1/test").
+		Do().
+		Status(http.StatusAccepted) // 验证状态码是否正确
+}

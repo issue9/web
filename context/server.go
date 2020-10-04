@@ -22,9 +22,6 @@ import (
 
 // Server 提供了用于构建 Context 对象的基本数据
 type Server struct {
-	// Interceptor 可以对生成的 Context 在使用前进行修改
-	Interceptor func(*Context)
-
 	// Location 指定服务器的时区信息
 	//
 	// 如果未指定，则会采用 time.Local 作为默认值。
@@ -51,6 +48,7 @@ type Server struct {
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	debugger      *debugger.Debugger
+	filters       []Filter
 
 	// url
 	root   string
@@ -120,46 +118,6 @@ func (srv *Server) Logs() *logs.Logs {
 func (srv *Server) AddStatic(path, dir string) {
 	h := http.StripPrefix(path, http.FileServer(http.Dir(dir)))
 	srv.Router().Get(path+"{path}", h)
-}
-
-// SetErrorHandle 设置指定状态码页面的处理函数
-//
-// 如果状态码已经存在处理函数，则修改，否则就添加。
-// 仅对状态码 >= 400 的有效果。
-// 如果 status 为零表示所有未设置的状态码都采用该函数处理。
-func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
-	srv.errorHandlers.Set(h, status...)
-}
-
-// AddMiddlewares 设置全局的中间件
-//
-// 按给定参数的顺序依次调用中间件。
-func (srv *Server) AddMiddlewares(middleware ...middleware.Middleware) {
-	for _, m := range middleware {
-		srv.middlewares.After(m)
-	}
-}
-
-// SetDebugger 设置调试地址
-func (srv *Server) SetDebugger(pprof, vars string) {
-	srv.debugger.Pprof = pprof
-	srv.debugger.Vars = vars
-}
-
-// Handler 将当前服务转换为 http.Handler 接口对象
-func (srv *Server) Handler() http.Handler {
-	return srv.middlewares
-}
-
-// 始终保持这些中间件在最后初始化。用户添加的中间件由 Server.AddMiddlewares 添加。
-func (srv *Server) buildMiddlewares() {
-	rf := srv.errorHandlers.Recovery(srv.logs.ERROR())
-	srv.AddMiddlewares(
-		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		rf.Middleware,
-		srv.compress.Middleware, // srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
-		srv.errorHandlers.Middleware,
-	)
 }
 
 // Uptime 当前服务的运行时间

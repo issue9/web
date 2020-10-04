@@ -5,6 +5,8 @@ package module
 
 import (
 	"sort"
+
+	"github.com/issue9/web/context"
 )
 
 // InstallFunc 安装模块的函数签名
@@ -21,6 +23,7 @@ type Module struct {
 	Deps        []string
 	tags        map[string]*Tag
 	srv         *Server
+	filters     []context.Filter
 }
 
 // Tag 表示与特定标签相关联的初始化函数列表

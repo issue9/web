@@ -13,24 +13,34 @@ type HandlerFunc func(*Context)
 
 // Prefix 管理带有统一前缀的路由项
 type Prefix struct {
-	prefix string
-	srv    *Server
+	prefix  string
+	srv     *Server
+	filters []Filter
 }
 
 // Resource 以资源地址为对象的路由配置
 type Resource struct {
 	srv     *Server
 	pattern string
+	filters []Filter
 }
 
 // Resource 生成资源项
-func (srv *Server) Resource(pattern string) *Resource {
-	return &Resource{srv: srv, pattern: pattern}
+func (srv *Server) Resource(pattern string, filter ...Filter) *Resource {
+	return &Resource{
+		srv:     srv,
+		pattern: pattern,
+		filters: filter,
+	}
 }
 
 // Resource 生成资源项
-func (p *Prefix) Resource(pattern string) *Resource {
-	return &Resource{srv: p.srv, pattern: p.prefix + pattern}
+func (p *Prefix) Resource(pattern string, filter ...Filter) *Resource {
+	return &Resource{
+		srv:     p.srv,
+		pattern: p.prefix + pattern,
+		filters: filter,
+	}
 }
 
 // Handle 添加路由项
@@ -39,7 +49,7 @@ func (r *Resource) Handle(h HandlerFunc, method ...string) error {
 }
 
 func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
-	if err := r.Handle(h, method...); err != nil {
+	if err := r.Handle(FilterHandler(h, r.filters...), method...); err != nil {
 		panic(err)
 	}
 	return r
@@ -91,7 +101,7 @@ func (srv *Server) Router() *mux.Prefix {
 // Handle 添加路由请求项
 func (srv *Server) Handle(path string, h HandlerFunc, method ...string) error {
 	return srv.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		h(srv.newContext(w, r))
+		FilterHandler(h, srv.filters...)(srv.newContext(w, r))
 	}, method...)
 }
 
@@ -140,10 +150,11 @@ func (srv *Server) Patch(path string, h HandlerFunc) *Server {
 }
 
 // Prefix 返回特定前缀的路由设置对象
-func (srv *Server) Prefix(prefix string) *Prefix {
+func (srv *Server) Prefix(prefix string, filter ...Filter) *Prefix {
 	return &Prefix{
-		prefix: prefix,
-		srv:    srv,
+		prefix:  prefix,
+		srv:     srv,
+		filters: filter,
 	}
 }
 
@@ -154,6 +165,7 @@ func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
 
 // Handle 添加路由请求项
 func (p *Prefix) handle(path string, h HandlerFunc, method ...string) *Prefix {
+	h = FilterHandler(h, p.filters...)
 	if err := p.Handle(path, h, method...); err != nil {
 		panic(err)
 	}

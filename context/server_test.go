@@ -125,19 +125,6 @@ func TestServer_AddStatic(t *testing.T) {
 		StringBody("error handler test")
 }
 
-func TestServer_SetDebugger(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
-	defer srv.Close()
-
-	srv.Get("/debug/pprof/").Do().Status(http.StatusNotFound)
-	srv.Get("/debug/vars").Do().Status(http.StatusNotFound)
-	server.SetDebugger("/debug/pprof/", "/vars")
-	srv.Get("/debug/pprof/").Do().Status(http.StatusOK)
-	srv.Get("/vars").Do().Status(http.StatusOK)
-}
-
 func TestServer_URL_Path(t *testing.T) {
 	a := assert.New(t)
 

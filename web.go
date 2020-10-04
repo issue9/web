@@ -101,7 +101,6 @@ func New(conf *Config) (web *Web, err error) {
 	if conf.ResultBuilder != nil {
 		web.ctxServer.ResultBuilder = conf.ResultBuilder
 	}
-	web.ctxServer.Interceptor = conf.ContextInterceptor
 	web.ctxServer.Location = conf.location
 	for path, dir := range conf.Static {
 		web.ctxServer.AddStatic(path, dir)

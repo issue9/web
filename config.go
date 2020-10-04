@@ -107,9 +107,6 @@ type Config struct {
 	// 可以为空，表示采用 CTXServer 的默认值。
 	ResultBuilder context.BuildResultFunc `yaml:"-" json:"-" xml:"-"`
 
-	// ContextInterceptor 表示 CTXServer 在生成 Context 对象是可用的统一修改方法
-	ContextInterceptor func(*context.Context) `yaml:"-" json:"-" xml:"-"`
-
 	// TLSConfig 指定 https 模式下的证书配置项
 	//
 	// 如果用户指定了 Certificates 字段，则会根据此字段生成，

@@ -119,10 +119,6 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
 		ctx.read = true
 	}
 
-	if srv.Interceptor != nil {
-		srv.Interceptor(ctx)
-	}
-
 	return ctx
 }
 

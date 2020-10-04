@@ -185,3 +185,17 @@ func TestService_srv3(t *testing.T) {
 	<-exit
 	a.Equal(s3.State(), ServiceStopped)
 }
+
+func TestService_String(t *testing.T) {
+	a := assert.New(t)
+
+	var state ServiceState
+	a.Equal(state.String(), "stopped")
+
+	a.Equal(ServiceFailed.String(), "failed")
+	a.Equal(ServiceRunning.String(), "running")
+	a.Equal(ServiceStopped.String(), "stopped")
+
+	state = -1
+	a.Equal(state.String(), "<unknown>")
+}

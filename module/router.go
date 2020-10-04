@@ -12,29 +12,42 @@ import (
 
 // Prefix 管理带有统一前缀的路由项
 type Prefix struct {
-	p string
-	m *Module
+	p       string
+	m       *Module
+	filters []context.Filter
 }
 
 // Resource 以资源地址为对象的路由配置
 type Resource struct {
-	m *Module
-	p string
+	m       *Module
+	p       string
+	filters []context.Filter
+}
+
+// AddFilters 添加过滤器
+//
+// 按给定参数的顺序反向依次调用。
+func (m *Module) AddFilters(filter ...context.Filter) {
+	m.filters = append(m.filters, filter...)
 }
 
 // Resource 生成资源项
-func (m *Module) Resource(pattern string) *Resource {
-	return &Resource{m: m, p: pattern}
+func (m *Module) Resource(pattern string, filter ...context.Filter) *Resource {
+	return &Resource{
+		m:       m,
+		p:       pattern,
+		filters: filter,
+	}
 }
 
 // Resource 生成资源项
-func (p *Prefix) Resource(pattern string) *Resource {
-	return p.m.Resource(p.p + pattern)
+func (p *Prefix) Resource(pattern string, filter ...context.Filter) *Resource {
+	return p.m.Resource(p.p+pattern, filter...)
 }
 
 // Handle 添加路由项
 func (r *Resource) Handle(h context.HandlerFunc, method ...string) *Resource {
-	r.m.Handle(r.p, h, method...)
+	r.m.handle(r.p, h, r.filters, method...)
 	return r
 }
 
@@ -76,7 +89,7 @@ func (p *Prefix) Module() *Module {
 
 // Handle 添加路由项
 func (p *Prefix) Handle(path string, h context.HandlerFunc, method ...string) *Prefix {
-	p.Module().Handle(p.p+path, h, method...)
+	p.Module().handle(p.p+path, h, p.filters, method...)
 	return p
 }
 
@@ -112,13 +125,27 @@ func (p *Prefix) Options(path, allow string) *Prefix {
 }
 
 // Prefix 声明一个 Prefix 实例
-func (m *Module) Prefix(prefix string) *Prefix {
-	return &Prefix{m: m, p: prefix}
+func (m *Module) Prefix(prefix string, filter ...context.Filter) *Prefix {
+	return &Prefix{
+		m:       m,
+		p:       prefix,
+		filters: filter,
+	}
 }
 
 // Handle 添加路由项
 func (m *Module) Handle(path string, h context.HandlerFunc, method ...string) *Module {
+	m.handle(path, h, nil, method...)
+	return m
+}
+
+func (m *Module) handle(path string, h context.HandlerFunc, filter []context.Filter, method ...string) *Module {
 	m.AddInit(func() error {
+		filters := make([]context.Filter, len(m.filters)+len(filter))
+		l := copy(filters, m.filters)
+		copy(filters[l:], filter)
+
+		h = context.FilterHandler(h, filters...)
 		return m.srv.ctxServer.Handle(path, h, method...)
 	}, fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path))
 	return m

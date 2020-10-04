@@ -18,6 +18,9 @@ type (
 	// 是对 http.ResponseWriter 和 http.Request 的简单包装。
 	Context = context.Context
 
+	// Filter 针对 Context 的中间件
+	Filter = context.Filter
+
 	// Middleware 中间件的类型定义
 	Middleware = middleware.Middleware
 
