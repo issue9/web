@@ -11,7 +11,7 @@ import (
 )
 
 // Init 初始化模块
-func Init(srv *web.MODServer) {
+func Init(srv *web.Web) {
 	m := srv.NewModule("plugin1", "p1 desc", "plugin2")
 
 	m.AddInit(init1, "init1")

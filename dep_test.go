@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package web
 
 import (
 	"log"
@@ -13,8 +13,8 @@ import (
 	"github.com/issue9/web/context"
 )
 
-func m(srv *Server, name string, f func() error, deps ...string) *Module {
-	m := srv.NewModule(name, name, deps...)
+func m(web *Web, name string, f func() error, deps ...string) *Module {
+	m := web.NewModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }

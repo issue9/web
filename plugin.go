@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package web
 
 import (
 	"errors"
@@ -30,7 +30,7 @@ func isPluginOS() bool {
 // 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func (srv *Server) loadPlugins(glob string) error {
+func (web *Web) loadPlugins(glob string) error {
 	if !isPluginOS() {
 		return errors.New("当前平台并未实现插件功能！")
 	}
@@ -41,7 +41,7 @@ func (srv *Server) loadPlugins(glob string) error {
 	}
 
 	for _, path := range fs {
-		if err := srv.loadPlugin(path); err != nil {
+		if err := web.loadPlugin(path); err != nil {
 			return err
 		}
 	}
@@ -49,7 +49,7 @@ func (srv *Server) loadPlugins(glob string) error {
 	return nil
 }
 
-func (srv *Server) loadPlugin(path string) error {
+func (web *Web) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -60,12 +60,12 @@ func (srv *Server) loadPlugin(path string) error {
 		return err
 	}
 
-	install, ok := symbol.(func(*Server))
+	install, ok := symbol.(func(*Web))
 	if !ok {
 		return fmt.Errorf("插件 %s 未找到安装函数", path)
 	}
 
-	InstallFunc(install)(srv)
+	InstallFunc(install)(web)
 
 	return nil
 }

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package web
 
 import (
 	"errors"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -57,7 +59,7 @@ func TestModule_AddInit(t *testing.T) {
 		NotNil(m.inits[2].f)
 }
 
-func TestServer_Tags(t *testing.T) {
+func TestWeb_Tags(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
@@ -81,4 +83,23 @@ func TestServer_Tags(t *testing.T) {
 	a.Equal(tags["users1"], []string{"v1", "v2"}).
 		Equal(tags["users2"], []string{"v1", "v3"}).
 		Equal(tags["users3"], []string{"v1", "v4"})
+}
+
+func TestWeb_Init(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+
+	m1 := srv.NewModule("m1", "m1 desc", "m2")
+	m1.AddCron("test cron", job, "* * 8 * * *", true)
+	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
+
+	m2 := srv.NewModule("m2", "m2 desc")
+	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
+
+	a.Equal(len(srv.Modules()), 2)
+
+	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
+
+	// 不能多次调用
+	a.Equal(srv.Init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
 }

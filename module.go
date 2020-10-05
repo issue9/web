@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-// Package module 提供模块管理的相关功能
-package module
+package web
 
 import (
+	"errors"
+	"log"
 	"sort"
-
-	"github.com/issue9/web/context"
+	"strings"
 )
 
+// ErrInited 当模块被多次初始化时返回此错误
+var ErrInited = errors.New("模块已经初始化")
+
 // InstallFunc 安装模块的函数签名
-type InstallFunc func(*Server)
+type InstallFunc func(*Web)
 
 // Module 表示模块信息
 //
@@ -22,8 +25,8 @@ type Module struct {
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
-	srv         *Server
-	filters     []context.Filter
+	web         *Web
+	filters     []Filter
 }
 
 // Tag 表示与特定标签相关联的初始化函数列表
@@ -66,14 +69,14 @@ func (m *Module) NewTag(tag string) *Tag {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
+func (web *Web) NewModule(name, desc string, deps ...string) *Module {
 	m := &Module{
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		srv:         srv,
+		web:         web,
 	}
-	srv.modules = append(srv.modules, m)
+	web.modules = append(web.modules, m)
 	return m
 }
 
@@ -92,10 +95,10 @@ func (t *Tag) AddInit(f func() error, title string) *Tag {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表。
-func (srv *Server) Tags() map[string][]string {
-	ret := make(map[string][]string, len(srv.modules)*2)
+func (web *Web) Tags() map[string][]string {
+	ret := make(map[string][]string, len(web.modules)*2)
 
-	for _, m := range srv.modules {
+	for _, m := range web.modules {
 		tags := make([]string, 0, len(m.tags))
 		for k := range m.tags {
 			tags = append(tags, k)
@@ -108,6 +111,44 @@ func (srv *Server) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*Module {
-	return srv.modules
+func (web *Web) Modules() []*Module {
+	return web.modules
+}
+
+// Init 初始化模块
+//
+// 若指定了 tag 参数，则只初始化与该标签相关联的内容。
+//
+// 一旦初始化完成，则不再接受添加新模块，也不能再次进行初始化。
+// Server 和 Module 之中的大部分功能将失去操作意义，比如 Server.NewModule
+// 虽然能添加新模块到 Server，但并不能真正初始化新的模块并挂载。
+func (web *Web) Init(tag string, info *log.Logger) error {
+	if web.inited && tag == "" {
+		return ErrInited
+	}
+
+	flag := info.Flags()
+	info.SetFlags(0)
+	defer info.SetFlags(flag)
+
+	info.Println("开始初始化模块...")
+
+	if err := newDepencency(web.modules, info).init(tag); err != nil {
+		return err
+	}
+
+	if all := web.ctxServer.Router().Mux().All(true, true); len(all) > 0 {
+		info.Println("模块加载了以下路由项：")
+		for path, methods := range all {
+			info.Printf("[%s] %s\n", strings.Join(methods, ", "), path)
+		}
+	}
+
+	info.Println("模块初始化完成！")
+
+	if tag == "" {
+		web.inited = true
+	}
+
+	return nil
 }

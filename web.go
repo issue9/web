@@ -14,29 +14,57 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v2"
+	"github.com/issue9/middleware/v2"
+	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
-	"github.com/issue9/web/module"
+	"github.com/issue9/web/internal/version"
+	"github.com/issue9/web/service"
 )
 
-type contextKey int
+// Version 当前框架的版本
+const Version = version.Version
+
+type (
+	// Context 定义了在单个 HTTP 请求期间的上下文环境
+	//
+	// 是对 http.ResponseWriter 和 http.Request 的简单包装。
+	Context = context.Context
+
+	// Filter 针对 Context 的中间件
+	Filter = context.Filter
+
+	// Middleware 中间件的类型定义
+	Middleware = middleware.Middleware
+
+	// Result 定义了返回给用户的错误信息
+	Result = context.Result
+
+	// Web 管理整个项目所有实例
+	Web struct {
+		isTLS     bool
+		logs      *logs.Logs
+		ctxServer *context.Server
+
+		httpServer      *http.Server
+		closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
+		shutdownTimeout time.Duration
+
+		// modules
+		services  *service.Manager
+		scheduled *scheduled.Server
+		modules   []*Module
+		inited    bool
+	}
+
+	contextKey int
+)
 
 // ContextKeyWeb 可以从 http.Request 中获取 Web 实例的关键字
 const ContextKeyWeb contextKey = 0
-
-// Web 管理整个项目所有实例
-type Web struct {
-	isTLS           bool
-	logs            *logs.Logs
-	httpServer      *http.Server
-	ctxServer       *context.Server
-	modServer       *module.Server
-	closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
-	shutdownTimeout time.Duration
-}
 
 // GetWeb 从 ctx 中获取 *Web 实例
 func GetWeb(ctx *Context) *Web {
@@ -88,50 +116,59 @@ func New(conf *Config) (web *Web, err error) {
 		return nil, err
 	}
 
-	web = &Web{}
-
-	web.logs = logs.New()
+	l := logs.New()
 	if conf.Logs != nil {
-		if err = web.logs.Init(conf.Logs); err != nil {
+		if err = l.Init(conf.Logs); err != nil {
 			return nil, err
 		}
 	}
 
-	web.ctxServer = context.NewServer(web.logs, conf.DisableOptions, conf.DisableHead, conf.url)
+	ctxServer := context.NewServer(l, conf.DisableOptions, conf.DisableHead, conf.url)
 	if conf.ResultBuilder != nil {
-		web.ctxServer.ResultBuilder = conf.ResultBuilder
+		ctxServer.ResultBuilder = conf.ResultBuilder
 	}
-	web.ctxServer.Location = conf.location
+	ctxServer.Location = conf.location
 	for path, dir := range conf.Static {
-		web.ctxServer.AddStatic(path, dir)
+		ctxServer.AddStatic(path, dir)
 	}
-	web.ctxServer.Catalog = conf.Catalog
-	if err = web.ctxServer.AddMarshals(conf.Marshalers); err != nil {
+	ctxServer.Catalog = conf.Catalog
+	if err = ctxServer.AddMarshals(conf.Marshalers); err != nil {
 		return nil, err
 	}
-	if err = web.ctxServer.AddUnmarshals(conf.Unmarshalers); err != nil {
+	if err = ctxServer.AddUnmarshals(conf.Unmarshalers); err != nil {
 		return nil, err
 	}
 	for status, rslt := range conf.results {
-		web.ctxServer.AddMessages(status, rslt)
+		ctxServer.AddMessages(status, rslt)
 	}
 	if conf.Debug != nil {
-		web.ctxServer.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
+		ctxServer.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
 	}
-	web.ctxServer.AddMiddlewares(conf.Middlewares...)
+	ctxServer.AddMiddlewares(conf.Middlewares...)
 
-	web.httpServer = &http.Server{
-		Addr:              conf.addr,
-		Handler:           web.ctxServer.Handler(),
-		ReadTimeout:       conf.ReadTimeout.Duration(),
-		ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
-		WriteTimeout:      conf.WriteTimeout.Duration(),
-		IdleTimeout:       conf.IdleTimeout.Duration(),
-		MaxHeaderBytes:    conf.MaxHeaderBytes,
-		ErrorLog:          web.logs.ERROR(),
-		BaseContext: func(net.Listener) ctx.Context {
-			return ctx.WithValue(ctx.Background(), ContextKeyWeb, web)
+	web = &Web{
+		logs:      l,
+		ctxServer: ctxServer,
+
+		httpServer: &http.Server{
+			Addr:              conf.addr,
+			Handler:           ctxServer.Handler(),
+			ReadTimeout:       conf.ReadTimeout.Duration(),
+			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
+			WriteTimeout:      conf.WriteTimeout.Duration(),
+			IdleTimeout:       conf.IdleTimeout.Duration(),
+			MaxHeaderBytes:    conf.MaxHeaderBytes,
+			ErrorLog:          l.ERROR(),
+			BaseContext: func(net.Listener) ctx.Context {
+				return ctx.WithValue(ctx.Background(), ContextKeyWeb, web)
+			},
 		},
+		closed:          make(chan struct{}, 1),
+		shutdownTimeout: conf.ShutdownTimeout.Duration(),
+
+		services:  service.NewManager(),
+		scheduled: scheduled.NewServer(conf.location),
+		modules:   make([]*Module, 0, 10),
 	}
 
 	if conf.isTLS {
@@ -139,15 +176,16 @@ func New(conf *Config) (web *Web, err error) {
 		web.httpServer.TLSConfig = conf.TLSConfig
 	}
 
-	web.closed = make(chan struct{}, 1)
-	web.shutdownTimeout = conf.ShutdownTimeout.Duration()
-
-	if web.modServer, err = module.NewServer(web.ctxServer, conf.Plugins); err != nil {
-		return nil, err
-	}
+	web.AddService(web.scheduledService, "计划任务")
 
 	if conf.ShutdownSignal != nil {
 		web.grace(conf.ShutdownSignal...)
+	}
+
+	if conf.Plugins != "" {
+		if err := web.loadPlugins(conf.Plugins); err != nil {
+			return nil, err
+		}
 	}
 
 	return web, nil
@@ -163,31 +201,9 @@ func (web *Web) HTTPServer() *http.Server {
 	return web.httpServer
 }
 
-// Modules 返回模块列表
-func (web *Web) Modules() []*Module {
-	return web.modServer.Modules()
-}
-
-// Services 返回服务列表
-func (web *Web) Services() []*Service {
-	return web.modServer.Services()
-}
-
-// Tags 返回所有标签列表
-//
-// 键名为模块名称，键值为该模块下的标签列表。
-func (web *Web) Tags() map[string][]string {
-	return web.modServer.Tags()
-}
-
-// InitModules 初始化模块
-func (web *Web) InitModules(tag string) error {
-	return web.modServer.Init(tag, web.logs.INFO())
-}
-
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.modServer.RunServices()
+	web.services.Run()
 
 	if web.isTLS {
 		err = web.HTTPServer().ListenAndServeTLS("", "")
@@ -206,7 +222,7 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.modServer.StopServices()
+		web.services.Stop()
 		web.closed <- struct{}{}
 	}()
 

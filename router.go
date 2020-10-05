@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package web
 
 import (
 	"fmt"
@@ -9,6 +9,9 @@ import (
 
 	"github.com/issue9/web/context"
 )
+
+// HandlerFunc 路由项处理函数原型
+type HandlerFunc = context.HandlerFunc
 
 // Prefix 管理带有统一前缀的路由项
 type Prefix struct {
@@ -27,12 +30,12 @@ type Resource struct {
 // AddFilters 添加过滤器
 //
 // 按给定参数的顺序反向依次调用。
-func (m *Module) AddFilters(filter ...context.Filter) {
+func (m *Module) AddFilters(filter ...Filter) {
 	m.filters = append(m.filters, filter...)
 }
 
 // Resource 生成资源项
-func (m *Module) Resource(pattern string, filter ...context.Filter) *Resource {
+func (m *Module) Resource(pattern string, filter ...Filter) *Resource {
 	return &Resource{
 		m:       m,
 		p:       pattern,
@@ -41,38 +44,38 @@ func (m *Module) Resource(pattern string, filter ...context.Filter) *Resource {
 }
 
 // Resource 生成资源项
-func (p *Prefix) Resource(pattern string, filter ...context.Filter) *Resource {
+func (p *Prefix) Resource(pattern string, filter ...Filter) *Resource {
 	return p.m.Resource(p.p+pattern, filter...)
 }
 
 // Handle 添加路由项
-func (r *Resource) Handle(h context.HandlerFunc, method ...string) *Resource {
+func (r *Resource) Handle(h HandlerFunc, method ...string) *Resource {
 	r.m.handle(r.p, h, r.filters, method...)
 	return r
 }
 
 // Get 指定一个 GET 请求
-func (r *Resource) Get(h context.HandlerFunc) *Resource {
+func (r *Resource) Get(h HandlerFunc) *Resource {
 	return r.Handle(h, http.MethodGet)
 }
 
 // Post 指定个 POST 请求处理
-func (r *Resource) Post(h context.HandlerFunc) *Resource {
+func (r *Resource) Post(h HandlerFunc) *Resource {
 	return r.Handle(h, http.MethodPost)
 }
 
 // Delete 指定个 DELETE 请求处理
-func (r *Resource) Delete(h context.HandlerFunc) *Resource {
+func (r *Resource) Delete(h HandlerFunc) *Resource {
 	return r.Handle(h, http.MethodDelete)
 }
 
 // Put 指定个 PUT 请求处理
-func (r *Resource) Put(h context.HandlerFunc) *Resource {
+func (r *Resource) Put(h HandlerFunc) *Resource {
 	return r.Handle(h, http.MethodPut)
 }
 
 // Patch 指定个 PATCH 请求处理
-func (r *Resource) Patch(h context.HandlerFunc) *Resource {
+func (r *Resource) Patch(h HandlerFunc) *Resource {
 	return r.Handle(h, http.MethodPatch)
 }
 
@@ -88,33 +91,33 @@ func (p *Prefix) Module() *Module {
 }
 
 // Handle 添加路由项
-func (p *Prefix) Handle(path string, h context.HandlerFunc, method ...string) *Prefix {
+func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
 	p.Module().handle(p.p+path, h, p.filters, method...)
 	return p
 }
 
 // Get 指定一个 GET 请求
-func (p *Prefix) Get(path string, h context.HandlerFunc) *Prefix {
+func (p *Prefix) Get(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodGet)
 }
 
 // Post 指定个 POST 请求处理
-func (p *Prefix) Post(path string, h context.HandlerFunc) *Prefix {
+func (p *Prefix) Post(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPost)
 }
 
 // Delete 指定个 DELETE 请求处理
-func (p *Prefix) Delete(path string, h context.HandlerFunc) *Prefix {
+func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodDelete)
 }
 
 // Put 指定个 PUT 请求处理
-func (p *Prefix) Put(path string, h context.HandlerFunc) *Prefix {
+func (p *Prefix) Put(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPut)
 }
 
 // Patch 指定个 PATCH 请求处理
-func (p *Prefix) Patch(path string, h context.HandlerFunc) *Prefix {
+func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPatch)
 }
 
@@ -125,7 +128,7 @@ func (p *Prefix) Options(path, allow string) *Prefix {
 }
 
 // Prefix 声明一个 Prefix 实例
-func (m *Module) Prefix(prefix string, filter ...context.Filter) *Prefix {
+func (m *Module) Prefix(prefix string, filter ...Filter) *Prefix {
 	return &Prefix{
 		m:       m,
 		p:       prefix,
@@ -134,52 +137,52 @@ func (m *Module) Prefix(prefix string, filter ...context.Filter) *Prefix {
 }
 
 // Handle 添加路由项
-func (m *Module) Handle(path string, h context.HandlerFunc, method ...string) *Module {
+func (m *Module) Handle(path string, h HandlerFunc, method ...string) *Module {
 	m.handle(path, h, nil, method...)
 	return m
 }
 
-func (m *Module) handle(path string, h context.HandlerFunc, filter []context.Filter, method ...string) *Module {
+func (m *Module) handle(path string, h HandlerFunc, filter []Filter, method ...string) *Module {
 	m.AddInit(func() error {
-		filters := make([]context.Filter, len(m.filters)+len(filter))
+		filters := make([]Filter, len(m.filters)+len(filter))
 		l := copy(filters, m.filters)
 		copy(filters[l:], filter)
 
 		h = context.FilterHandler(h, filters...)
-		return m.srv.ctxServer.Handle(path, h, method...)
+		return m.web.ctxServer.Handle(path, h, method...)
 	}, fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path))
 	return m
 }
 
 // Get 指定一个 GET 请求
-func (m *Module) Get(path string, h context.HandlerFunc) *Module {
+func (m *Module) Get(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodGet)
 }
 
 // Post 指定个 POST 请求处理
-func (m *Module) Post(path string, h context.HandlerFunc) *Module {
+func (m *Module) Post(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPost)
 }
 
 // Delete 指定个 DELETE 请求处理
-func (m *Module) Delete(path string, h context.HandlerFunc) *Module {
+func (m *Module) Delete(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodDelete)
 }
 
 // Put 指定个 PUT 请求处理
-func (m *Module) Put(path string, h context.HandlerFunc) *Module {
+func (m *Module) Put(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPut)
 }
 
 // Patch 指定个 PATCH 请求处理
-func (m *Module) Patch(path string, h context.HandlerFunc) *Module {
+func (m *Module) Patch(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPatch)
 }
 
 // Options 指定个 OPTIONS 请求处理
 func (m *Module) Options(path, allow string) *Module {
 	m.AddInit(func() error {
-		m.srv.ctxServer.Options(path, allow)
+		m.web.ctxServer.Options(path, allow)
 		return nil
 	}, fmt.Sprintf("注册路由：OPTIONS %s", path))
 	return m

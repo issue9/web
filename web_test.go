@@ -47,11 +47,11 @@ func TestWeb_Run(t *testing.T) {
 	web := newServer(a)
 	web.CTXServer().Get("/mux/test", f202)
 
-	m1 := web.modServer.NewModule("m1", "m1 desc")
+	m1 := web.NewModule("m1", "m1 desc")
 	m1.Get("/m1/test", f202)
 	m1.NewTag("tag1")
 
-	m2 := web.modServer.NewModule("m2", "m2 desc", "m1")
+	m2 := web.NewModule("m2", "m2 desc", "m1")
 	m2.Get("/m2/test", func(ctx *Context) {
 		w := GetWeb(ctx)
 		a.NotNil(w)
@@ -69,7 +69,7 @@ func TestWeb_Run(t *testing.T) {
 		}
 	})
 
-	a.NotError(web.InitModules(""))
+	a.NotError(web.Init("", web.logs.ERROR()))
 
 	go func() {
 		err := web.Serve()

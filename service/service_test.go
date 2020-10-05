@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package module
+package service
 
 import (
 	"context"
@@ -17,7 +17,7 @@ const (
 	panicTimer = 50 * tickTimer // windows 下此值不能过小，否则测试容易出错
 )
 
-func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
+func buildSrv1() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -45,7 +45,7 @@ func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
 }
 
 // panic
-func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
+func buildSrv2() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -77,7 +77,7 @@ func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
 }
 
 // error
-func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
+func buildSrv3() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -110,91 +110,91 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
-	app := newServer(a)
+	srv := NewManager()
 
 	srv1, start, exit := buildSrv1()
-	app.AddService(srv1, "srv1")
-	app.RunServices()
+	srv.AddService(srv1, "srv1")
+	srv.Run()
 	<-start
-	a.Equal(2, len(app.services)) // 自带一个 scheduled
-	s1 := app.services[1]         // 0 为 scheduled
-	a.Equal(s1.State(), ServiceRunning)
+	a.Equal(1, len(srv.services))
+	s1 := srv.services[0]
+	a.Equal(s1.State(), Running)
 	s1.Stop()
 	<-exit
-	a.Equal(s1.State(), ServiceStopped)
+	a.Equal(s1.State(), Stopped)
 
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
 	<-start
-	a.Equal(s1.State(), ServiceRunning)
+	a.Equal(s1.State(), Running)
 	s1.Stop()
 	<-exit
-	a.Equal(s1.State(), ServiceStopped)
+	a.Equal(s1.State(), Stopped)
 }
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
-	app := newServer(a)
+	srv := NewManager()
 
 	srv2, start, exit := buildSrv2()
-	app.AddService(srv2, "srv2")
-	app.RunServices()     // 注册并运行服务
-	s2 := app.services[1] // 0 为 scheduled
+	srv.AddService(srv2, "srv2")
+	srv.Run() // 注册并运行服务
+	s2 := srv.services[0]
 	<-start
-	a.Equal(s2.State(), ServiceRunning)
+	a.Equal(s2.State(), Running)
 	s2.Stop()
 	<-exit
-	a.Equal(s2.State(), ServiceStopped)
+	a.Equal(s2.State(), Stopped)
 
 	// 再次运行，等待 panic
 	s2.Run()
 	<-start
 	<-exit
-	a.Equal(s2.State(), ServiceFailed)
+	a.Equal(s2.State(), Failed)
 	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
 	s2.Run()
 	<-start
-	a.Equal(s2.State(), ServiceRunning)
+	a.Equal(s2.State(), Running)
 	s2.Stop()
 	<-exit
-	a.Equal(s2.State(), ServiceStopped)
+	a.Equal(s2.State(), Stopped)
 }
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
-	app := newServer(a)
+	srv := NewManager()
 
 	srv3, start, exit := buildSrv3()
-	app.AddService(srv3, "srv3")
-	app.RunServices()
-	s3 := app.services[1] // 0 为 scheduled
+	srv.AddService(srv3, "srv3")
+	srv.Run()
+	s3 := srv.services[0]
 	<-start
-	a.Equal(s3.State(), ServiceRunning)
+	a.Equal(s3.State(), Running)
 
 	<-exit // 等待超过返回错误
-	a.Equal(s3.State(), ServiceFailed)
+	a.Equal(s3.State(), Failed)
 	a.NotNil(s3.Err())
 
 	// 再次运行
 	s3.Run()
 	<-start
-	a.Equal(s3.State(), ServiceRunning)
+	a.Equal(s3.State(), Running)
 	s3.Stop()
 	<-exit
-	a.Equal(s3.State(), ServiceStopped)
+	a.Equal(s3.State(), Stopped)
 }
 
 func TestService_String(t *testing.T) {
 	a := assert.New(t)
 
-	var state ServiceState
+	var state State
 	a.Equal(state.String(), "stopped")
 
-	a.Equal(ServiceFailed.String(), "failed")
-	a.Equal(ServiceRunning.String(), "running")
-	a.Equal(ServiceStopped.String(), "stopped")
+	a.Equal(Failed.String(), "failed")
+	a.Equal(Running.String(), "running")
+	a.Equal(Stopped.String(), "stopped")
 
 	state = -1
 	a.Equal(state.String(), "<unknown>")
