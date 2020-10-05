@@ -14,9 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/v2"
 	"github.com/issue9/scheduled"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
@@ -28,40 +26,32 @@ import (
 // Version 当前框架的版本
 const Version = version.Version
 
-type (
-	// Context 定义了在单个 HTTP 请求期间的上下文环境
-	//
-	// 是对 http.ResponseWriter 和 http.Request 的简单包装。
-	Context = context.Context
+// Context 定义了在单个 HTTP 请求期间的上下文环境
+//
+// 是对 http.ResponseWriter 和 http.Request 的简单包装。
+type Context = context.Context
 
-	// Filter 针对 Context 的中间件
-	Filter = context.Filter
+// Result 定义了返回给用户的错误信息
+type Result = context.Result
 
-	// Middleware 中间件的类型定义
-	Middleware = middleware.Middleware
+// Web 管理整个项目所有实例
+type Web struct {
+	isTLS     bool
+	logs      *logs.Logs
+	ctxServer *context.Server
 
-	// Result 定义了返回给用户的错误信息
-	Result = context.Result
+	httpServer      *http.Server
+	closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
+	shutdownTimeout time.Duration
 
-	// Web 管理整个项目所有实例
-	Web struct {
-		isTLS     bool
-		logs      *logs.Logs
-		ctxServer *context.Server
+	// modules
+	services  *service.Manager
+	scheduled *scheduled.Server
+	modules   []*Module
+	inited    bool
+}
 
-		httpServer      *http.Server
-		closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
-		shutdownTimeout time.Duration
-
-		// modules
-		services  *service.Manager
-		scheduled *scheduled.Server
-		modules   []*Module
-		inited    bool
-	}
-
-	contextKey int
-)
+type contextKey int
 
 // ContextKeyWeb 可以从 http.Request 中获取 Web 实例的关键字
 const ContextKeyWeb contextKey = 0
@@ -99,14 +89,6 @@ func Classic(dir string) (*Web, error) {
 		40004: "无效的报文",
 	}
 
-	if conf.ResultBuilder == nil {
-		conf.ResultBuilder = context.DefaultResultBuilder
-	}
-
-	if conf.Catalog == nil {
-		conf.Catalog = message.DefaultCatalog
-	}
-
 	return New(conf)
 }
 
@@ -123,30 +105,13 @@ func New(conf *Config) (web *Web, err error) {
 		}
 	}
 
-	ctxServer := context.NewServer(l, conf.DisableOptions, conf.DisableHead, conf.url)
-	if conf.ResultBuilder != nil {
-		ctxServer.ResultBuilder = conf.ResultBuilder
-	}
-	ctxServer.Location = conf.location
-	for path, dir := range conf.Static {
-		ctxServer.AddStatic(path, dir)
-	}
-	ctxServer.Catalog = conf.Catalog
-	if err = ctxServer.AddMarshals(conf.Marshalers); err != nil {
+	ctxServer, err := conf.toCTXServer(l)
+	if err != nil {
 		return nil, err
 	}
-	if err = ctxServer.AddUnmarshals(conf.Unmarshalers); err != nil {
-		return nil, err
-	}
-	for status, rslt := range conf.results {
-		ctxServer.AddMessages(status, rslt)
-	}
-	if conf.Debug != nil {
-		ctxServer.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
-	}
-	ctxServer.AddMiddlewares(conf.Middlewares...)
 
 	web = &Web{
+		isTLS:     conf.isTLS,
 		logs:      l,
 		ctxServer: ctxServer,
 
@@ -159,6 +124,7 @@ func New(conf *Config) (web *Web, err error) {
 			IdleTimeout:       conf.IdleTimeout.Duration(),
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
 			ErrorLog:          l.ERROR(),
+			TLSConfig:         conf.TLSConfig,
 			BaseContext: func(net.Listener) ctx.Context {
 				return ctx.WithValue(ctx.Background(), ContextKeyWeb, web)
 			},
@@ -169,11 +135,6 @@ func New(conf *Config) (web *Web, err error) {
 		services:  service.NewManager(),
 		scheduled: scheduled.NewServer(conf.location),
 		modules:   make([]*Module, 0, 10),
-	}
-
-	if conf.isTLS {
-		web.isTLS = true
-		web.httpServer.TLSConfig = conf.TLSConfig
 	}
 
 	web.services.AddService(web.scheduledService, "计划任务")
@@ -189,6 +150,53 @@ func New(conf *Config) (web *Web, err error) {
 	}
 
 	return web, nil
+}
+
+func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
+	srv = context.NewServer(l, conf.DisableOptions, conf.DisableHead, conf.url)
+
+	if conf.ResultBuilder != nil {
+		srv.ResultBuilder = conf.ResultBuilder
+	}
+
+	srv.Location = conf.location
+
+	for path, dir := range conf.Static {
+		srv.AddStatic(path, dir)
+	}
+
+	if conf.Catalog != nil {
+		srv.Catalog = conf.Catalog
+	}
+
+	if err = srv.AddMarshals(conf.Marshalers); err != nil {
+		return nil, err
+	}
+	if err = srv.AddUnmarshals(conf.Unmarshalers); err != nil {
+		return nil, err
+	}
+
+	for status, rslt := range conf.results {
+		srv.AddMessages(status, rslt)
+	}
+
+	if conf.Debug != nil {
+		srv.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
+	}
+
+	if len(conf.Middlewares) > 0 {
+		srv.AddMiddlewares(conf.Middlewares...)
+	}
+	if len(conf.Filters) > 0 {
+		srv.AddFilters(conf.Filters...)
+	}
+
+	return srv, nil
+}
+
+// Logs 返回日志实例
+func (web *Web) Logs() *logs.Logs {
+	return web.logs
 }
 
 // CTXServer 返回 context.Server 实例

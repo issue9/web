@@ -11,6 +11,7 @@ import (
 	"time"
 
 	lc "github.com/issue9/logs/v2/config"
+	"github.com/issue9/middleware/v2"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
@@ -25,14 +26,22 @@ const (
 	ConfigFilename = "web.yaml"
 )
 
+type (
+	// Filter 针对 Context 的中间件
+	Filter = context.Filter
+
+	// Middleware 中间件的类型定义
+	Middleware = middleware.Middleware
+)
+
 // Config 提供了初始化 Web 对象的基本参数
 type Config struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
-	// Debug 调试信息的设置
+	// 调试信息的设置
 	Debug *Debug `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,omitempty"`
 
-	// Root 网站的根目录所在
+	// 网站的根目录所在
 	//
 	// 比如 https://example.com/api/
 	Root  string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
@@ -40,22 +49,27 @@ type Config struct {
 	addr  string
 	isTLS bool
 
-	// Plugins 指定插件，通过 glob 语法指定，比如：~/plugins/*.so
+	// 指定插件的搜索方式
+	//
+	// 通过 glob 语法搜索插件，比如：
+	//  ~/plugins/*.so
 	// 为空表示没有插件。
 	//
-	// 当前仅支持部分系统：https://golang.org/pkg/plugin/
+	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
 	Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty" xml:"plugins,omitempty"`
 
-	// Certificates 网站的域名证书
+	// 网站的域名证书
 	//
 	// 该设置并不总是生效的，具体的说明可参考 TLSConfig 字段的说明。
 	Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
 
-	// DisableOptions 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
+	// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
 	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,omitempty"`
 	DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,omitempty"`
 
-	// Static 静态内容，键名为 URL 路径，键值为文件地址
+	// 指定静态内容
+	//
+	// 键名为 URL 路径，键值为文件地址
 	//
 	// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 	// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
@@ -69,13 +83,13 @@ type Config struct {
 	ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
 	MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
 
-	// ShutdownTimeout 指定关闭服务时的超时时间
+	// 指定关闭服务时的超时时间
 	//
 	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
 	// 否则直接采用 http.Server.Close 立即关闭服务。
 	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
 
-	// Timezone 时区名称
+	// 时区名称
 	//
 	// 可以是 Asia/Shanghai 等，具体可参考：
 	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -84,10 +98,13 @@ type Config struct {
 	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	location *time.Location
 
-	// Logs 用于初始化日志系统的参数
+	// 用于初始化日志系统的参数
+	//
+	// 如果你是采用 LoadConfig 加载配置文件的话，此值可以留空，
+	// 会自动读取 logs.xml 作为其内容。
 	Logs *lc.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 
-	// Catalog 本地化消息的管理组件
+	// 本地化消息的管理组件
 	//
 	// 为空的情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
 	//
@@ -95,26 +112,35 @@ type Config struct {
 	// 等方式构建 Catalog 接口实例。
 	Catalog catalog.Catalog `yaml:"-" json:"-" xml:"-"`
 
-	// Middlewares 可用于应用的中间件
+	// 指定中间件
+	//
+	// Middlewares 和 Filters 都表示中间件，两者的功能没有本质上的差别。
+	// 之所以提供了两个类型，是因为 Middlewares 兼容 http.Handler 类型，
+	// 可以对市面上大部分的中间件稍加改造即可使用，而 Filter
+	// 则提供了部分 http.Handler 不存在的数据字段，且两者不能交替出现，
+	// 二脆同时提供两种中间件。
+	//
+	// 在使用上，永远是 Middlewares 中的在 Filters 之前调用。
 	Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
+	Filters     []Filter     `yaml:"-" json:"-" xml:"-"`
 
 	// 指定各类媒体类型的编解码函数
 	Marshalers   map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
 	Unmarshalers map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 
-	// ResultBuilder 指定生成 Result 的方法
+	// 指定生成 Result 的方法
 	//
 	// 可以为空，表示采用 CTXServer 的默认值。
 	ResultBuilder context.BuildResultFunc `yaml:"-" json:"-" xml:"-"`
 
-	// TLSConfig 指定 https 模式下的证书配置项
+	// 指定 https 模式下的证书配置项
 	//
 	// 如果用户指定了 Certificates 字段，则会根据此字段生成，
 	// 用户也可以自已覆盖此值，比如采用 golang.org/x/crypto/acme/autocert.Manager.TLSConfig
 	// 配置 Let's Encrypt。
 	TLSConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
 
-	// Results 返回给用户的错误提示信息
+	// 返回给用户的错误提示信息
 	//
 	// 对键名作了一定的要求：要求最高的三位数必须是一个 HTTP 状态码，
 	// 比如 40001，在返回给客户端时，会将 400 作为状态码展示给用户，
@@ -124,7 +150,7 @@ type Config struct {
 	Results map[int]string `yaml:"-" json:"-" xml:"-"`
 	results map[int]map[int]string
 
-	// ShutdownSignal 指定用于触发关闭服务的信号
+	// 指定用于触发关闭服务的信号
 	//
 	// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
 	// 如果指定了多个相同的值，则该信号有可能多次触发。
@@ -276,7 +302,7 @@ func (conf *Config) buildTLSConfig() error {
 
 // LoadConfig 加载指定目录下的配置文件用于初始化 *Config 实例
 //
-// 当前加后的 conf.Logs == nil 时，会将 dir 目录下的 logs.xml 当作实例加载。
+// 当前加载后的 conf.Logs == nil 时，会将 dir 目录下的 logs.xml 当作实例加载。
 func LoadConfig(dir string) (conf *Config, err error) {
 	confPath := filepath.Join(dir, ConfigFilename)
 
