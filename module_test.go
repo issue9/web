@@ -105,7 +105,9 @@ func TestWeb_Init(t *testing.T) {
 
 	a.Equal(len(srv.Modules()), 2)
 
+	a.Equal(0, len(srv.Jobs())) // 需要初始化模块之后，才有计划任务
 	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
+	a.Equal(3, len(srv.Jobs()))
 
 	// 不能多次调用
 	a.Equal(srv.Init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
