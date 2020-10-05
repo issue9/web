@@ -24,7 +24,7 @@
 //
 // 媒体类型
 //
-// 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过 Web
+// 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过 Config
 // 对象中的 Marshalers 和 Unmarshalers 字段指定相应的解码和编码函数，
 // context/mimetype/ 之下也包含部分已经实现的编解码函数。
 //
@@ -38,6 +38,6 @@
 // 模块
 //
 // 用户可以把功能相对独立的内容当作一个模块进行封装。框架本身提供了 web.MODServer
-// 对模块进行了依赖管理。用户可以在 web.MODServer.NewModule() 返回对象中，
-// 对模块进行初始化和路由项的添加。所有模块会在 Web.InitModules() 中进行初始化。
+// 对模块进行了依赖管理。用户可以在 Web.NewModule() 返回对象中，
+// 对模块进行初始化和路由项的添加。所有模块会在 Web.Init() 中进行初始化。
 package web

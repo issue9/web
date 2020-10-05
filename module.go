@@ -4,10 +4,16 @@ package web
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"path/filepath"
+	"plugin"
 	"sort"
 	"strings"
 )
+
+// 插件中的初始化函数名称，必须为可导出的函数名称
+const moduleInstallFuncName = "Init"
 
 // ErrInited 当模块被多次初始化时返回此错误
 var ErrInited = errors.New("模块已经初始化")
@@ -151,4 +157,40 @@ func (web *Web) Init(tag string, info *log.Logger) error {
 	}
 
 	return nil
+}
+
+// 加载所有的插件
+//
+// 如果 glob 为空，则不会加载任何内容，返回空值
+func (web *Web) loadPlugins(glob string) error {
+	fs, err := filepath.Glob(glob)
+	if err != nil {
+		return err
+	}
+
+	for _, path := range fs {
+		if err := web.loadPlugin(path); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (web *Web) loadPlugin(path string) error {
+	p, err := plugin.Open(path)
+	if err != nil {
+		return err
+	}
+
+	symbol, err := p.Lookup(moduleInstallFuncName)
+	if err != nil {
+		return err
+	}
+
+	if install, ok := symbol.(func(*Web)); ok {
+		InstallFunc(install)(web)
+		return nil
+	}
+	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }

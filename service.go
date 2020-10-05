@@ -35,7 +35,7 @@ type (
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
-		m.web.AddService(f, title)
+		m.web.services.AddService(f, title)
 		return nil
 	}, "注册服务："+title)
 }
@@ -86,14 +86,6 @@ func (m *Module) AddJob(title string, f JobFunc, scheduler schedulers.Scheduler,
 	m.AddInit(func() error {
 		return m.web.scheduled.New(title, f, scheduler, delay)
 	}, "注册计划任务"+title)
-}
-
-// AddService 添加新的服务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明。
-func (web *Web) AddService(f ServiceFunc, title string) {
-	web.services.AddService(f, title)
 }
 
 // Services 返回所有的服务列表

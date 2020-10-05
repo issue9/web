@@ -176,7 +176,7 @@ func New(conf *Config) (web *Web, err error) {
 		web.httpServer.TLSConfig = conf.TLSConfig
 	}
 
-	web.AddService(web.scheduledService, "计划任务")
+	web.services.AddService(web.scheduledService, "计划任务")
 
 	if conf.ShutdownSignal != nil {
 		web.grace(conf.ShutdownSignal...)

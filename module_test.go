@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"unicode"
 
 	"github.com/issue9/assert"
 )
@@ -15,6 +16,12 @@ import (
 func job(time.Time) error {
 	println("job")
 	return nil
+}
+
+func TestModuleInitFuncName(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(unicode.IsUpper(rune(moduleInstallFuncName[0])))
 }
 
 func TestModule_NewTag(t *testing.T) {

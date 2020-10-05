@@ -35,9 +35,9 @@ func TestNew(t *testing.T) {
 		New(nil)
 	})
 
-	a.NotPanic(func() {
-		New(&Config{})
-	})
+	web, err := New(&Config{})
+	a.NotError(err).NotNil(web)
+	a.Equal(1, len(web.Services())) // 至少注册了 scheduled
 }
 
 func TestWeb_Run(t *testing.T) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// +build linux darwin
+// +build linux darwin freebsd
 
 package plugintest
 
