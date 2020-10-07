@@ -69,8 +69,11 @@ func TestConfig_sanitize(t *testing.T) {
 
 	conf := &Config{}
 	a.NotError(conf.sanitize())
-	a.False(conf.isTLS).Equal(":80", conf.addr)
-	a.Equal("Local", conf.Timezone).Equal(time.Local, conf.location)
+	a.False(conf.isTLS).
+		Equal(":80", conf.addr).
+		Equal("", conf.url.Path)
+	a.Equal("Local", conf.Timezone).
+		Equal(time.Local, conf.location)
 
 	conf.ReadTimeout = -1
 	err := conf.sanitize()

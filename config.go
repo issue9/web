@@ -56,6 +56,7 @@ type (
 		//
 		// 通过 glob 语法搜索插件，比如：
 		//  ~/plugins/*.so
+		// 具体可参考：https://golang.org/pkg/path/filepath/#Glob
 		// 为空表示没有插件。
 		//
 		// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
@@ -123,7 +124,7 @@ type (
 		// 则提供了部分 http.Handler 不存在的数据字段，且两者不能交替出现，
 		// 二脆同时提供两种中间件。
 		//
-		// 在使用上，永远是 Middlewares 中的在 Filters 之前调用。
+		// 在使用上，永远是 Middlewares 在 Filters 之前调用。
 		Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
 		Filters     []Filter     `yaml:"-" json:"-" xml:"-"`
 

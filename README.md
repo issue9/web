@@ -28,14 +28,14 @@ func main() {
 }
 
 // modules/m1/module.go
-func Init(s *web.MODServer) {
+func Init(s *web.Web) {
     s.NewModule("m1", "模块描述信息").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)
 }
 
 // modules/m2/module.go
-func Init(s *web.MODServer) {
+func Init(s *web.Web) {
     s.NewModule("m2", "模块描述信息", "m1").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)
@@ -79,7 +79,7 @@ package m1
 
 import "github.com/issue9/web"
 
-func Init(s *web.MODServer) {
+func Init(s *web.Web) {
     m := s.NewModule("test", "测试模块")
 
     m.AddInit(func() error {
@@ -105,7 +105,8 @@ YAML。用户也可以自行添加新的格式支持。
 
 | 名称              | 类型   | 描述
 |:------------------|:-------|:-----
-| debug             | bool   | 是否启用调试模式
+| debug.vars        | string | 不为空表示指定 expvar 的展示地址
+| debug.pprof       | string | 不为空表示指定 net/http/pprof 的相关调试地址前缀
 | root              | string | 项目的根路径，比如 `/blog`
 | plugins           | string | 指定需要加载的插件，可以使用 glob 模式，仅支持部分系统，具体可见 https://golang.org/pkg/plugin/
 | headers           | object | 输出的报头，键名为报头名称，键值为对应的值
@@ -122,7 +123,7 @@ YAML。用户也可以自行添加新的格式支持。
 | timezone          | string | 时区信息，名称为 IAAN 注册的名称，为空则为 Local
 | certificates      | object | 多域名的证书信息
 
-*详细的介绍可以参考 /internal/webconfig/webconfig.go 文件中的描述。*
+*详细的介绍可以参考 ./config.go 文件中的描述。*
 
 在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
 
@@ -139,26 +140,28 @@ YAML。用户也可以自行添加新的格式支持。
 #### 媒体类型
 
 默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
-`web.CTXServer().AddMarshals()` 和 `web.CTXServer().AddUnmarshals()` 添加相关的处理函数。
+`Config.Marhsalers` 和 `Config.Unmarshalers` 添加相关的处理函数。
 添加方式如下：
 
 ```go
-web := Classic("path")
+conf := &web.Config {
+    Marshalers: map[string]mimetype.MarhsalFunc{
+        "application/json": json.Marshal,
+    },
+    Unmarshalers: map[string]mimetype.UnmarhsalFunc{
+        "application/json": json.Unmarshal,
+    },
+    // 其它设置项
+}
 
-web.CTXServer().AddMarshals(map[string]mimetype.MarshalFunc{
-    "application/json": json.Marshal,
-})
-web.CTXServer().AddUnmarshals(map[string]mimetype.UnmarshalFunc{
-    "application/json": json.Unmarshal,
-})
+srv := web.New(conf)
+srv.Serve()
 ```
 
 #### 错误处理
 
-框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，
-即可自定义输出的错误信息格式。
-
-具体可参考代 result 中的相关代码。
+框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
+具体实现可参考 context.defaultResult 的实现。
 
 安装
 ---
