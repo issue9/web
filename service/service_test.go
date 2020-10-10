@@ -116,19 +116,24 @@ func TestService_srv1(t *testing.T) {
 	srv.AddService(srv1, "srv1")
 	srv.Run()
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(1, len(srv.services))
 	s1 := srv.services[0]
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Running)
 	s1.Stop()
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Stopped)
 
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Running)
 	s1.Stop()
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Stopped)
 }
 
@@ -141,24 +146,29 @@ func TestService_srv2(t *testing.T) {
 	srv.Run() // 注册并运行服务
 	s2 := srv.services[0]
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Running)
 	s2.Stop()
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Stopped)
 
 	// 再次运行，等待 panic
 	s2.Run()
 	<-start
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Failed)
 	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
 	s2.Run()
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Running)
 	s2.Stop()
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Stopped)
 }
 
@@ -171,18 +181,22 @@ func TestService_srv3(t *testing.T) {
 	srv.Run()
 	s3 := srv.services[0]
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Running)
 
-	<-exit // 等待超过返回错误
+	<-exit                             // 等待超过返回错误
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Failed)
 	a.NotNil(s3.Err())
 
 	// 再次运行
 	s3.Run()
 	<-start
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Running)
 	s3.Stop()
 	<-exit
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Stopped)
 }
 
