@@ -17,5 +17,3 @@ CONTRIBUTING
 ```shell
 go generate ./...
 ```
-
-或是执行 `build` 目录下的 `test.sh` 或 `test.bat` 文件运行测试内容。

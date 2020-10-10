@@ -16,6 +16,7 @@ import (
 
 	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/v2"
+	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
@@ -36,6 +37,9 @@ type (
 
 	// Middleware 中间件的类型定义
 	Middleware = middleware.Middleware
+
+	// ErrorHandlerFunc 错误状态码对应的处理函数原型
+	ErrorHandlerFunc = errorhandler.HandleFunc
 
 	// Config 提供了初始化 Web 对象的基本参数
 	Config struct {
@@ -154,6 +158,9 @@ type (
 		Results map[int]string `yaml:"-" json:"-" xml:"-"`
 		results map[int]map[int]string
 
+		// 指定错误页面的处理方式
+		ErrorHandlers []*ErrorHandler `yaml:"-" json:"-" xml:"-"`
+
 		// 指定用于触发关闭服务的信号
 		//
 		// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
@@ -176,6 +183,12 @@ type (
 	Debug struct {
 		Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
 		Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
+	}
+
+	// ErrorHandler 错误处理的配置
+	ErrorHandler struct {
+		Status  []int
+		Handler ErrorHandlerFunc
 	}
 
 	// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析

@@ -191,6 +191,10 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 		srv.AddFilters(conf.Filters...)
 	}
 
+	for _, h := range conf.ErrorHandlers {
+		srv.SetErrorHandle(h.Handler, h.Status...)
+	}
+
 	return srv, nil
 }
 
