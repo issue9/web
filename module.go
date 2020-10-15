@@ -126,7 +126,7 @@ func (web *Web) Modules() []*Module {
 // 若指定了 tag 参数，则只初始化与该标签相关联的内容。
 //
 // 一旦初始化完成，则不再接受添加新模块，也不能再次进行初始化。
-// Server 和 Module 之中的大部分功能将失去操作意义，比如 Server.NewModule
+// Web 的大部分功能将失去操作意义，比如 Web.NewModule
 // 虽然能添加新模块到 Server，但并不能真正初始化新的模块并挂载。
 func (web *Web) Init(tag string, info *log.Logger) error {
 	if web.inited && tag == "" {

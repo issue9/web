@@ -11,11 +11,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/issue9/logs/v2"
+	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/scheduled"
 
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
@@ -65,8 +68,23 @@ func GetWeb(ctx *Context) *Web {
 //
 // 会加载 dir 目录下的 web.yaml 和 logs.xml 两个配置文件内容，并用于初始化 Web 实例。
 func Classic(dir string) (*Web, error) {
-	conf, err := LoadConfig(dir)
-	if err != nil {
+	logsPath := filepath.Join(dir, LogsFilename)
+	logConf := &lc.Config{}
+	if err := config.LoadFile(logsPath, logConf); err != nil {
+		return nil, err
+	}
+	if err := logConf.Sanitize(); err != nil {
+		return nil, err
+	}
+
+	l := logs.New()
+	if err := l.Init(logConf); err != nil {
+		return nil, err
+	}
+
+	confPath := filepath.Join(dir, ConfigFilename)
+	conf := &Config{}
+	if err := config.LoadFile(confPath, conf); err != nil {
 		return nil, err
 	}
 
@@ -89,20 +107,13 @@ func Classic(dir string) (*Web, error) {
 		40004: "无效的报文",
 	}
 
-	return New(conf)
+	return New(l, conf)
 }
 
-// New 根据内容进行初始化 Web 对象
-func New(conf *Config) (web *Web, err error) {
+// New 返回 Web 对象
+func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 	if err = conf.sanitize(); err != nil {
 		return nil, err
-	}
-
-	l := logs.New()
-	if conf.Logs != nil {
-		if err = l.Init(conf.Logs); err != nil {
-			return nil, err
-		}
 	}
 
 	ctxServer, err := conf.toCTXServer(l)

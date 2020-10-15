@@ -53,17 +53,6 @@ func TestConfig(t *testing.T) {
 	a.Equal(confJSON, confYAML)
 }
 
-func TestLoadConfig(t *testing.T) {
-	a := assert.New(t)
-
-	conf, err := LoadConfig("./testdata")
-	a.NotError(err).NotNil(conf)
-
-	a.NotNil(conf.Debug).
-		Equal(conf.Debug.Pprof, "/debug/pprof/").
-		Equal(conf.Root, "http://localhost:8082")
-}
-
 func TestConfig_sanitize(t *testing.T) {
 	a := assert.New(t)
 

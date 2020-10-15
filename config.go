@@ -11,10 +11,8 @@ import (
 	"io"
 	"net/url"
 	"os"
-	"path/filepath"
 	"time"
 
-	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message/catalog"
@@ -105,12 +103,6 @@ type (
 		// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 		Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 		location *time.Location
-
-		// 用于初始化日志系统的参数
-		//
-		// 如果你是采用 LoadConfig 加载配置文件的话，此值可以留空，
-		// 会自动读取 logs.xml 作为其内容。
-		Logs *lc.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 
 		// 本地化消息的管理组件
 		//
@@ -344,28 +336,6 @@ func (conf *Config) buildTLSConfig() error {
 
 	conf.TLSConfig = cfg
 	return nil
-}
-
-// LoadConfig 加载指定目录下的配置文件用于初始化 *Config 实例
-//
-// 当前加载后的 conf.Logs == nil 时，会将 dir 目录下的 logs.xml 当作实例加载。
-func LoadConfig(dir string) (conf *Config, err error) {
-	confPath := filepath.Join(dir, ConfigFilename)
-
-	conf = &Config{}
-	if err = config.LoadFile(confPath, conf); err != nil {
-		return nil, err
-	}
-
-	if conf.Logs == nil {
-		logsPath := filepath.Join(dir, LogsFilename)
-		conf.Logs = &lc.Config{}
-		if err = config.LoadFile(logsPath, conf.Logs); err != nil {
-			return nil, err
-		}
-	}
-
-	return conf, nil
 }
 
 // MarshalXML implement xml.Marshaler

@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/logs/v2"
 )
 
 var f202 = func(ctx *Context) {
@@ -32,10 +33,10 @@ func TestNew(t *testing.T) {
 	a := assert.New(t)
 
 	a.Panic(func() {
-		New(nil)
+		New(logs.New(), nil)
 	})
 
-	web, err := New(&Config{})
+	web, err := New(logs.New(), &Config{})
 	a.NotError(err).NotNil(web)
 	a.Equal(1, len(web.Services())) // 至少注册了 scheduled
 }
