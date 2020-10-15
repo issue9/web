@@ -16,7 +16,8 @@ import (
 const usage = `编译当前程序，功能与 go build 完全相同！
 
 如果你使用 web release 发布了版本号，则当前操作还会在每一次编译时指定个编译日期，
-固定格式为 YYYYMMDD。`
+固定格式为 YYYYMMDD。
+`
 
 var flagset *flag.FlagSet
 
@@ -26,13 +27,14 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	args := make([]string, 0, len(flagset.Args())+1)
-	args = append(args, flagset.Args()...)
-
 	v, err := versioninfo.New("./")
 	if err != nil {
 		return err
 	}
+
+	args := make([]string, 0, len(flagset.Args())+1)
+	args = append(args, "build")
+	args = append(args, flagset.Args()...)
 
 	// flag 参数添加在最后，保证不会被其它设置顶替
 	flag, err := v.LDFlags()

@@ -15,13 +15,14 @@ import (
 	"strings"
 
 	"github.com/issue9/cmdopt"
+
 	"github.com/issue9/web/internal/version"
 )
 
 const usage = `显示当前程序的版本号
 
 语法：web version [options]
-options`
+`
 
 // 用于获取版本信息的 git 仓库地址
 //
@@ -36,10 +37,9 @@ var (
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
-
 	flagset = opt.New("version", usage, do)
 	flagset.BoolVar(&check, "c", false, "是否检测线上的最新版本")
-	flagset.BoolVar(&list, "l", false, "显示所有版本号")
+	flagset.BoolVar(&list, "l", false, "显示线上的所有版本号")
 }
 
 func do(output io.Writer) error {
@@ -51,12 +51,11 @@ func do(output io.Writer) error {
 		return getRemoteVersions(output)
 	}
 
-	_, err := fmt.Fprintf(output, "web:%s build with %s\n", version.FullVersion(), runtime.Version())
-	if err != nil {
+	if err := printLocalVersion(output); err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(output, "commit hash %s\n", version.CommitHash())
+	_, err := fmt.Fprintf(output, "commit hash %s\n", version.CommitHash())
 	return err
 }
 
@@ -69,12 +68,16 @@ func checkRemoteVersion(output io.Writer) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(output, "local:%s build with %s\n", version.FullVersion(), runtime.Version())
-	if err != nil {
+	if err = printLocalVersion(output); err != nil {
 		return err
 	}
 
 	_, err = fmt.Fprintf(output, "latest:%s\n", tags[0])
+	return err
+}
+
+func printLocalVersion(output io.Writer) error {
+	_, err := fmt.Fprintf(output, "web: %s\ngo: %s\n", version.FullVersion(), runtime.Version())
 	return err
 }
 

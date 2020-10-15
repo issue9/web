@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package watch 提供热编译功能。
+// Package watch 提供热编译功能
 //
 // 功能与 github.com/caixw/gobuild 相同。
 package watch

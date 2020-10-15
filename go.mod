@@ -3,7 +3,7 @@ module github.com/issue9/web
 require (
 	github.com/caixw/gobuild v0.8.2
 	github.com/issue9/assert v1.4.1
-	github.com/issue9/cmdopt v0.6.1
+	github.com/issue9/cmdopt v0.7.0
 	github.com/issue9/conv v1.2.0
 	github.com/issue9/logs/v2 v2.5.0
 	github.com/issue9/middleware/v2 v2.3.0
@@ -12,7 +12,6 @@ require (
 	github.com/issue9/query v1.0.1
 	github.com/issue9/scheduled v0.5.1
 	github.com/issue9/source v0.1.1
-	github.com/issue9/term/v2 v2.1.1
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/version v1.0.4
 	golang.org/x/text v0.3.3
