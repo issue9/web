@@ -43,20 +43,14 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	if check {
+	switch {
+	case check:
 		return checkRemoteVersion(output)
+	case list:
+		return checkRemoteVersion(output)
+	default:
+		return printLocalVersion(output)
 	}
-
-	if list {
-		return getRemoteVersions(output)
-	}
-
-	if err := printLocalVersion(output); err != nil {
-		return err
-	}
-
-	_, err := fmt.Fprintf(output, "commit hash %s\n", version.CommitHash())
-	return err
 }
 
 // 检测框架的最新版本号
@@ -77,7 +71,7 @@ func checkRemoteVersion(output io.Writer) error {
 }
 
 func printLocalVersion(output io.Writer) error {
-	_, err := fmt.Fprintf(output, "web: %s\ngo: %s\n", version.FullVersion(), runtime.Version())
+	_, err := fmt.Fprintf(output, "web: %s\ngo: %s\n", version.FullVersion(), strings.TrimPrefix(runtime.Version(), "go"))
 	return err
 }
 

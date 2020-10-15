@@ -83,7 +83,7 @@ func (v *VersionInfo) DumpFile(ver string) error {
 		return err
 	}
 
-	content := []byte(fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName, commitHashName))
+	content := []byte(fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName, commitHashName, commitHashName))
 	return source.DumpGoSource(p, content)
 }
 

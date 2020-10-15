@@ -23,6 +23,10 @@ func init()  {
 	if %s !=""{
 		fullVersion = Version + "+" + %s
 	}
+
+	if %s !=""{
+		fullVersion += "." + %s
+	}
 }
 
 // FullVersion 完整的版本号
@@ -30,10 +34,5 @@ func init()  {
 // 可能包括了编译日期。
 func FullVersion() string {
 	return fullVersion
-}
-
-// CommitHash 最后一次提示我的 hash 值
-func CommitHash() string {
-	return %s
 }
 `
