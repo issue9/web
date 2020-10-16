@@ -1,7 +1,7 @@
 module github.com/issue9/web
 
 require (
-	github.com/caixw/gobuild v0.8.2
+	github.com/caixw/gobuild v0.9.0
 	github.com/issue9/assert v1.4.1
 	github.com/issue9/cmdopt v0.7.0
 	github.com/issue9/conv v1.2.0

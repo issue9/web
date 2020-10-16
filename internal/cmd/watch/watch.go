@@ -6,6 +6,7 @@
 package watch
 
 import (
+	"context"
 	"flag"
 	"io"
 	"os"
@@ -39,8 +40,9 @@ const usage = `热编译当前目录下的项目
 NOTE: 不会监视隐藏文件和隐藏目录下的文件。`
 
 var (
-	recursive, showIgnore                     bool
-	mainFiles, outputName, extString, appArgs string
+	gobuildOpt = &gobuild.Options{}
+
+	showIgnore bool
 
 	flagset *flag.FlagSet
 )
@@ -48,12 +50,12 @@ var (
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
 	flagset = opt.New("watch", usage, do)
-	flagset.BoolVar(&recursive, "r", true, "是否查找子目录；")
+	flagset.BoolVar(&gobuildOpt.Recursive, "r", true, "是否查找子目录；")
 	flagset.BoolVar(&showIgnore, "i", false, "是否显示被标记为 IGNORE 的日志内容；")
-	flagset.StringVar(&outputName, "o", "", "指定输出名称，程序的工作目录随之改变；")
-	flagset.StringVar(&appArgs, "x", "", "传递给编译程序的参数；")
-	flagset.StringVar(&extString, "ext", "go", "指定监视的文件扩展，区分大小写。* 表示监视所有类型文件，空值代表不监视任何文件；")
-	flagset.StringVar(&mainFiles, "main", "", "指定需要编译的文件；")
+	flagset.StringVar(&gobuildOpt.OutputName, "o", "", "指定输出名称，程序的工作目录随之改变；")
+	flagset.StringVar(&gobuildOpt.AppArgs, "x", "", "传递给编译程序的参数；")
+	flagset.StringVar(&gobuildOpt.Exts, "ext", "go", "指定监视的文件扩展，区分大小写。* 表示监视所有类型文件，空值代表不监视任何文件；")
+	flagset.StringVar(&gobuildOpt.MainFiles, "main", "", "指定需要编译的文件；")
 }
 
 func do(output io.Writer) error {
@@ -61,7 +63,7 @@ func do(output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	dirs := append([]string{wd}, flag.Args()...)
+	gobuildOpt.Dirs = append([]string{wd}, flag.Args()...)
 
 	v, err := versioninfo.New("./")
 	if err != nil {
@@ -71,9 +73,9 @@ func do(output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	flags := map[string]string{"ld": ld}
+	gobuildOpt.Flags = map[string]string{"ld": ld}
 
 	logs := gobuild.NewConsoleLogs(showIgnore)
 	defer logs.Stop()
-	return gobuild.Build(logs.Logs, mainFiles, outputName, flags, extString, recursive, appArgs, dirs...)
+	return gobuild.Build(context.Background(), logs.Logs, gobuildOpt)
 }

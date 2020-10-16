@@ -1,8 +1,8 @@
 github.com/andybalholm/brotli v1.0.1 h1:KqhlKozYbRtJvsPrrEeXcO+N2l6NYT5A2QAFmSULpEc=
 github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
 github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b/go.mod h1:H0wQNHz2YrLsuXOZozoeDmnHXkNCRmMW0gwFWDfEZDA=
-github.com/caixw/gobuild v0.8.2 h1:DdaILwIWKptnvYBse+d9DIu3mHsB1/Ww7BfF4k8qBGM=
-github.com/caixw/gobuild v0.8.2/go.mod h1:HnFLyTbZg7KflYSHSqFTdMi4zbr9cx55IAXqeas6HjY=
+github.com/caixw/gobuild v0.9.0 h1:uJg6cZg6tW+pKXv21B2/h7IEXl5eutOdFYx/WuIdnko=
+github.com/caixw/gobuild v0.9.0/go.mod h1:HnFLyTbZg7KflYSHSqFTdMi4zbr9cx55IAXqeas6HjY=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/issue9/assert v1.3.1 h1:L8pRpbnzMIPFJqrMKR/oG03uWrtVeZyYBpI2U2Jx1JE=
