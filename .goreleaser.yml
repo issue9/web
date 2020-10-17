@@ -21,6 +21,9 @@ builds:
 
     binary: web
 
+    flags:
+      - -trimpath
+
     ldflags:
       - -s -w -X github.com/issue9/web/internal/version.commitHash={{.Commit}} -X github.com/issue9/web/internal/version.buildDate={{time "20060102"}}
 
