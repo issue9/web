@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"time"
 
 	"github.com/issue9/logs/v2"
@@ -65,12 +64,9 @@ func GetWeb(ctx *Context) *Web {
 }
 
 // Classic 返回一个开箱即用的 Web 实例
-//
-// 会加载 dir 目录下的 web.yaml 和 logs.xml 两个配置文件内容，并用于初始化 Web 实例。
-func Classic(dir string) (*Web, error) {
-	logsPath := filepath.Join(dir, LogsFilename)
+func Classic(logConfigFile, configFile string) (*Web, error) {
 	logConf := &lc.Config{}
-	if err := config.LoadFile(logsPath, logConf); err != nil {
+	if err := config.LoadFile(logConfigFile, logConf); err != nil {
 		return nil, err
 	}
 	if err := logConf.Sanitize(); err != nil {
@@ -82,9 +78,8 @@ func Classic(dir string) (*Web, error) {
 		return nil, err
 	}
 
-	confPath := filepath.Join(dir, ConfigFilename)
 	conf := &Config{}
-	if err := config.LoadFile(confPath, conf); err != nil {
+	if err := config.LoadFile(configFile, conf); err != nil {
 		return nil, err
 	}
 

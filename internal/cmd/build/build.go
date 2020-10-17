@@ -32,9 +32,8 @@ func do(output io.Writer) error {
 		return err
 	}
 
-	args := make([]string, 0, len(flagset.Args())+1)
+	args := make([]string, 0, flagset.NArg()+1)
 	args = append(args, "build")
-	args = append(args, flagset.Args()...)
 
 	// flag 参数添加在最后，保证不会被其它设置顶替
 	flag, err := v.LDFlags()
@@ -44,6 +43,8 @@ func do(output io.Writer) error {
 	if flag != "" {
 		args = append(args, "-ldflags", flag)
 	}
+
+	args = append(args, flagset.Args()...)
 
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = output

@@ -23,7 +23,7 @@ var f202 = func(ctx *Context) {
 
 // 声明一个 Server 实例
 func newServer(a *assert.Assertion) *Web {
-	web, err := Classic("./testdata")
+	web, err := Classic("./testdata/logs.xml", "./testdata/web.yaml")
 	a.NotError(err).NotNil(web)
 
 	return web

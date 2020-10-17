@@ -23,12 +23,6 @@ import (
 	"github.com/issue9/web/internal/filesystem"
 )
 
-// 两个配置文件的名称
-const (
-	LogsFilename   = "logs.xml"
-	ConfigFilename = "web.yaml"
-)
-
 type (
 	// Filter 针对 Context 的中间件
 	Filter = context.Filter

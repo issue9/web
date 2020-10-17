@@ -17,7 +17,7 @@ import (
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	w, err := web.Classic("./testdata")
+	w, err := web.Classic("./testdata/logs.xml", "./testdata/web.yaml")
 	a.NotError(err).NotNil(w)
 
 	ms := w.Modules()
