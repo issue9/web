@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/cache/memory"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message/catalog"
@@ -103,6 +104,9 @@ type (
 		//
 		// 可看查看 github.com/issue9/cache 中相关的实现，
 		// 用户也可以自己实现 github.com/issue9/cache.Cache 接口。
+		//
+		// 如果用户未指定，则会采用以下方式提供默认值：
+		//  github.com/issue9/cache/memory.New(24 * time.Hour)
 		Cache cache.Cache
 
 		// 本地化消息的管理组件
@@ -226,7 +230,7 @@ func (conf *Config) sanitize() error {
 	}
 
 	if conf.Cache == nil {
-		return &config.FieldError{Field: "cache", Message: "不能为空"}
+		conf.Cache = memory.New(24 * time.Hour)
 	}
 
 	u, err := url.Parse(conf.Root)
