@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 
 	"github.com/issue9/web/context/mimetype"
@@ -55,8 +57,9 @@ func newServer(a *assert.Assertion) *Server {
 }
 
 func newEmptyServer(a *assert.Assertion) *Server {
-	srv := NewServer(logs.New(), false, false, &url.URL{})
+	srv := NewServer(logs.New(), memory.New(time.Hour), false, false, &url.URL{})
 	a.NotNil(srv)
+	a.NotNil(srv.Logs()).NotNil(srv.Cache())
 	return srv
 }
 
@@ -191,7 +194,7 @@ func TestServer_URL_Path(t *testing.T) {
 	for i, item := range data {
 		u, err := url.Parse(item.root)
 		a.NotError(err).NotNil(u)
-		srv := NewServer(logs.New(), false, false, u)
+		srv := NewServer(logs.New(), memory.New(time.Hour), false, false, u)
 		a.NotNil(srv, "nil at %d", i)
 
 		a.Equal(srv.URL(item.input), item.url, "not equal @%d,v1=%s,v2=%s", i, srv.URL(item.input), item.url)

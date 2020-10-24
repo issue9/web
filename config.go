@@ -13,6 +13,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message/catalog"
@@ -97,6 +98,12 @@ type (
 		// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 		Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 		location *time.Location
+
+		// Cache 指定缓存对象
+		//
+		// 可看查看 github.com/issue9/cache 中相关的实现，
+		// 用户也可以自己实现 github.com/issue9/cache.Cache 接口。
+		Cache cache.Cache
 
 		// 本地化消息的管理组件
 		//
@@ -216,6 +223,10 @@ func (conf *Config) sanitize() error {
 		if err := conf.Debug.sanitize(); err != nil {
 			return err
 		}
+	}
+
+	if conf.Cache == nil {
+		return &config.FieldError{Field: "cache", Message: "不能为空"}
 	}
 
 	u, err := url.Parse(conf.Root)

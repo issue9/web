@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/scheduled"
@@ -82,6 +83,8 @@ func Classic(logConfigFile, configFile string) (*Web, error) {
 	if err := config.LoadFile(configFile, conf); err != nil {
 		return nil, err
 	}
+
+	conf.Cache = memory.New(time.Hour * 24)
 
 	conf.Marshalers = map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
@@ -159,7 +162,7 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 }
 
 func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
-	srv = context.NewServer(l, conf.DisableOptions, conf.DisableHead, conf.url)
+	srv = context.NewServer(l, conf.Cache, conf.DisableOptions, conf.DisableHead, conf.url)
 
 	if conf.ResultBuilder != nil {
 		srv.ResultBuilder = conf.ResultBuilder

@@ -8,6 +8,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/compress"
@@ -43,6 +44,8 @@ type Server struct {
 	// 默认情况下指向  DefaultResultBuilder。
 	ResultBuilder BuildResultFunc
 
+	cache cache.Cache
+
 	// middleware
 	middlewares   *middleware.Manager
 	compress      *compress.Compress
@@ -64,7 +67,7 @@ type Server struct {
 }
 
 // NewServer 返回 *Server 实例
-func NewServer(logs *logs.Logs, disableOptions, disableHead bool, root *url.URL) *Server {
+func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead bool, root *url.URL) *Server {
 	// 保证不以 / 结尾
 	if len(root.Path) > 0 && root.Path[len(root.Path)-1] == '/' {
 		root.Path = root.Path[:len(root.Path)-1]
@@ -77,6 +80,8 @@ func NewServer(logs *logs.Logs, disableOptions, disableHead bool, root *url.URL)
 		Location:      time.Local,
 		Catalog:       message.DefaultCatalog,
 		ResultBuilder: DefaultResultBuilder,
+
+		cache: cache,
 
 		middlewares: middleware.NewManager(router.Mux()),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -106,6 +111,11 @@ func NewServer(logs *logs.Logs, disableOptions, disableHead bool, root *url.URL)
 // Logs 返回关联的 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs {
 	return srv.logs
+}
+
+// Cache 返回缓存的相关接口
+func (srv *Server) Cache() cache.Cache {
+	return srv.cache
 }
 
 // AddStatic 添加静态路由
