@@ -49,6 +49,31 @@ func newContext(a *assert.Assertion,
 	}
 }
 
+func TestContext_Vars(t *testing.T) {
+	a := assert.New(t)
+	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r.Header.Set("Accept", "*/*")
+	w := httptest.NewRecorder()
+	ctx := newServer(a).newContext(w, r)
+
+	type (
+		t1 int
+		t2 int64
+		t3 = t2
+	)
+	var (
+		v1 t1 = 1
+		v2 t2 = 1
+		v3 t3 = 1
+	)
+
+	ctx.Vars[v1] = 1
+	ctx.Vars[v2] = 2
+	ctx.Vars[v3] = 3
+
+	a.Equal(ctx.Vars[v1], 1).Equal(ctx.Vars[v2], 3)
+}
+
 func TestServer_newContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()

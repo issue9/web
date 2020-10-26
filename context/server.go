@@ -28,7 +28,7 @@ type Server struct {
 	// 如果未指定，则会采用 time.Local 作为默认值。
 	//
 	// 在构建 Context 对象时，该时区信息也会分配给 Context，
-	// 如果每个 Context 对象需要不同的值，可以在 Interceptor 中进行修改。
+	// 如果每个 Context 对象需要不同的值，可以通过 AddFilters 进行修改。
 	Location *time.Location
 
 	// Catalog 当前使用的本地化组件
