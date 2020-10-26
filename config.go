@@ -107,7 +107,7 @@ type (
 		//
 		// 如果用户未指定，则会采用以下方式提供默认值：
 		//  github.com/issue9/cache/memory.New(24 * time.Hour)
-		Cache cache.Cache
+		Cache cache.Cache `yaml:"-" json:"-" xml:"-"`
 
 		// 本地化消息的管理组件
 		//

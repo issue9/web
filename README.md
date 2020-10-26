@@ -18,7 +18,7 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    w, _ := web.Classic("./appconfig")
+    w, _ := web.Classic("./appconfig/logs.xml", "./appconfig/web.yaml")
 
     // 注册模块信息
     m1.Init()
@@ -72,7 +72,7 @@ func Init(s *web.Web) {
 ---
 
 项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
-用于向框架注册当前模块的一些主要信息。通过 `web.MODServer` 注册模块：
+用于向框架注册当前模块的一些主要信息。通过 `web.Web` 注册模块：
 
 ```go
 package m1
@@ -92,44 +92,6 @@ func Init(s *web.Web) {
     }, "服务描述")
 }
 ```
-
-配置文件
----
-
-通过 web.Classic() 函数，可以在初始化时指定配置文件，文件格式可以是 XML、JSON 和
-YAML。用户也可以自行添加新的格式支持。
-
-#### web.yaml
-
-以下是该文件的所有配置项：
-
-| 名称              | 类型   | 描述
-|:------------------|:-------|:-----
-| debug.vars        | string | 不为空表示指定 expvar 的展示地址
-| debug.pprof       | string | 不为空表示指定 net/http/pprof 的相关调试地址前缀
-| root              | string | 项目的根路径，比如 `/blog`
-| plugins           | string | 指定需要加载的插件，可以使用 glob 模式，仅支持部分系统，具体可见 https://golang.org/pkg/plugin/
-| headers           | object | 输出的报头，键名为报头名称，键值为对应的值
-| static            | object | 静态内容，键名为 URL 地址，键值为对应的文件夹
-| disableOptions    | bool   | 是否禁用 OPTIONS 请求方法
-| disableHead       | bool   | 是否禁用自动生成 HEAD 请求方法
-| allowedDomains    | array  | 限定访问域名，可以是多个，若不指定，表示不限定
-| readTimeout       | string | 与 http.Server.ReadTimeout 相同
-| writeTimeout      | string | 与 http.Server.WriteTimeout 相同
-| idleTimeout       | string | 与 http.Server.IdleTimeout 相同
-| maxHeaderBytes    | int    | 与 http.Server.MaxHeaderBytes 相同
-| readHeaderTimeout | string | 与 http.Server.ReadHeaderTimeout 相同
-| shutdownTimeout   | string | 当请求关闭时，可用于处理剩余请求的时间。
-| timezone          | string | 时区信息，名称为 IAAN 注册的名称，为空则为 Local
-| certificates      | object | 多域名的证书信息
-
-*详细的介绍可以参考 ./config.go 文件中的描述。*
-
-在 debug 模式下，会添加两个调试用的地址：`/debug/pprof/` 和 `/debug/vars`
-
-#### logs.xml
-
-`logs.xml` 采用 [logs](https://github.com/issue9/logs) 包的功能，具体的配置可参考其文档。
 
 #### 字符集
 
@@ -162,13 +124,6 @@ srv.Serve()
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
 具体实现可参考 context.defaultResult 的实现。
-
-安装
----
-
-```shell
-go get github.com/issue9/web
-```
 
 版权
 ---
