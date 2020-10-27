@@ -139,7 +139,7 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
 
 		services:  service.NewManager(),
-		scheduled: scheduled.NewServer(conf.location),
+		scheduled: scheduled.NewServer(conf.location, l.ERROR(), l.INFO()),
 		modules:   make([]*Module, 0, 10),
 	}
 

@@ -27,6 +27,9 @@ type (
 
 	// Job 计划任务的模型
 	Job = scheduled.Job
+
+	// Scheduler 计划任务的调试方法需要实现的接口
+	Scheduler = schedulers.Scheduler
 )
 
 // AddService 添加新的服务
@@ -82,9 +85,10 @@ func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 // title 是对该服务的简要说明；
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddJob(title string, f JobFunc, scheduler schedulers.Scheduler, delay bool) {
+func (m *Module) AddJob(title string, f JobFunc, scheduler Scheduler, delay bool) {
 	m.AddInit(func() error {
-		return m.web.scheduled.New(title, f, scheduler, delay)
+		m.web.scheduled.New(title, f, scheduler, delay)
+		return nil
 	}, "注册计划任务"+title)
 }
 
@@ -100,11 +104,12 @@ func (web *Web) Jobs() []*Job {
 
 func (web *Web) scheduledService(ctx context.Context) error {
 	go func() {
-		if err := web.scheduled.Serve(web.logs.ERROR(), web.logs.INFO()); err != nil {
+		if err := web.scheduled.Serve(); err != nil {
 			web.logs.Error(err)
 		}
 	}()
 
 	<-ctx.Done()
+	web.scheduled.Stop()
 	return context.Canceled
 }
