@@ -18,40 +18,42 @@ const moduleInstallFuncName = "Init"
 // ErrInited 当模块被多次初始化时返回此错误
 var ErrInited = errors.New("模块已经初始化")
 
-// InstallFunc 安装模块的函数签名
-type InstallFunc func(*Web)
+type (
+	// InstallFunc 安装模块的函数签名
+	InstallFunc func(*Web)
 
-// Module 表示模块信息
-//
-// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
-// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
-type Module struct {
-	Name        string
-	Description string
-	Deps        []string
-	tags        map[string]*Tag
-	web         *Web
-	filters     []Filter
-	inits       []*initialization
+	// Module 表示模块信息
+	//
+	// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
+	// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
+	Module struct {
+		Name        string
+		Description string
+		Deps        []string
+		tags        map[string]*Tag
+		web         *Web
+		filters     []Filter
+		inits       []*initialization
 
-	inited bool
-}
+		inited bool
+	}
 
-// Tag 表示与特定标签相关联的初始化函数列表
-//
-// 依附于模块，共享模块的依赖关系。
-//
-// 一般是各个模块下的安装脚本使用。
-type Tag struct {
-	m     *Module
-	inits []*initialization
-}
+	// Tag 表示与特定标签相关联的初始化函数列表
+	//
+	// 依附于模块，共享模块的依赖关系。
+	//
+	// 一般是各个模块下的安装脚本使用。
+	Tag struct {
+		m     *Module
+		inits []*initialization
+	}
 
-// 表示初始化功能的相关数据
-type initialization struct {
-	title string
-	f     func() error
-}
+	// 表示初始化功能的相关数据
+	initialization struct {
+		title string
+		f     func() error
+	}
+)
 
 // AddInit 添加一个初始化函数
 //
@@ -144,7 +146,8 @@ func (web *Web) Modules() []*Module {
 
 // Init 初始化模块
 //
-// 若指定了 tag 参数，则只初始化与该标签相关联的内容。
+// 若指定了 tag 参数，则只初始化与该标签相关联的内容；
+// info 用于打印初始化过程的一些信息，如果为空，则采用 web.logs.INFO()。
 //
 // 一旦初始化完成，则不再接受添加新模块，也不能再次进行初始化。
 // Web 的大部分功能将失去操作意义，比如 Web.NewModule
@@ -154,9 +157,9 @@ func (web *Web) Init(tag string, info *log.Logger) error {
 		return ErrInited
 	}
 
-	flag := info.Flags()
-	info.SetFlags(0)
-	defer info.SetFlags(flag)
+	if info == nil {
+		info = web.Logs().INFO()
+	}
 
 	info.Println("开始初始化模块...")
 

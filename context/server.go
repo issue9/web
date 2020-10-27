@@ -44,6 +44,13 @@ type Server struct {
 	// 默认情况下指向  DefaultResultBuilder。
 	ResultBuilder BuildResultFunc
 
+	// 保存 Context 在存续期间的可复用变量
+	//
+	// 这是比 context.Value 更经济的传递变量方式。
+	//
+	// 如果仅需要在单次请求中传递参数，可直接使用 Context.Vars。
+	Vars map[interface{}]interface{}
+
 	cache cache.Cache
 
 	// middleware
@@ -80,6 +87,8 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 		Location:      time.Local,
 		Catalog:       message.DefaultCatalog,
 		ResultBuilder: DefaultResultBuilder,
+
+		Vars: map[interface{}]interface{}{},
 
 		cache: cache,
 

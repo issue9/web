@@ -64,6 +64,11 @@ func TestModule_AddInit(t *testing.T) {
 	a.Equal(len(m.inits), 3).
 		Equal(m.inits[2].title, "t1").
 		NotNil(m.inits[2].f)
+
+	srv.initDeps("", srv.logs.INFO())
+	a.Panic(func() {
+		m.AddInit(func() error { return nil }, "t1")
+	})
 }
 
 func TestWeb_Tags(t *testing.T) {

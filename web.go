@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -60,7 +59,7 @@ const ContextKeyWeb contextKey = 0
 
 // GetWeb 从 ctx 中获取 *Web 实例
 func GetWeb(ctx *Context) *Web {
-	return ctx.Request.Context().Value(ContextKeyWeb).(*Web)
+	return ctx.Server().Vars[ContextKeyWeb].(*Web)
 }
 
 // Classic 返回一个开箱即用的 Web 实例
@@ -131,9 +130,6 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 			MaxHeaderBytes:    conf.MaxHeaderBytes,
 			ErrorLog:          l.ERROR(),
 			TLSConfig:         conf.TLSConfig,
-			BaseContext: func(net.Listener) ctx.Context {
-				return ctx.WithValue(ctx.Background(), ContextKeyWeb, web)
-			},
 		},
 		closed:          make(chan struct{}, 1),
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
@@ -142,6 +138,7 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 		scheduled: scheduled.NewServer(conf.location, l.ERROR(), l.INFO()),
 		modules:   make([]*Module, 0, 10),
 	}
+	ctxServer.Vars[ContextKeyWeb] = web
 
 	web.services.AddService(web.scheduledService, "计划任务")
 

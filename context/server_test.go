@@ -63,6 +63,28 @@ func newEmptyServer(a *assert.Assertion) *Server {
 	return srv
 }
 
+func TestServer_Vars(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+
+	type (
+		t1 int
+		t2 int64
+		t3 = t2
+	)
+	var (
+		v1 t1 = 1
+		v2 t2 = 1
+		v3 t3 = 1
+	)
+
+	srv.Vars[v1] = 1
+	srv.Vars[v2] = 2
+	srv.Vars[v3] = 3
+
+	a.Equal(srv.Vars[v1], 1).Equal(srv.Vars[v2], 3)
+}
+
 func TestServer_AddStatic(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
