@@ -7,44 +7,19 @@ import (
 	"log"
 )
 
-type mod struct {
-	*Module
-	inited bool
-}
-
-// 模块管理工具，管理模块的初始化顺序
-type dependency struct {
-	modules map[string]*mod
-	l       *log.Logger
-}
-
-// l 表示输出一些执行过程中的提示信息
-func newDepencency(ms []*Module, l *log.Logger) *dependency {
-	dep := &dependency{
-		modules: make(map[string]*mod, len(ms)),
-		l:       l,
-	}
-
-	for _, m := range ms {
-		dep.modules[m.Name] = &mod{Module: m}
-	}
-
-	return dep
-}
-
 // 对所有的模块进行初始化操作，会进行依赖检测。
 // 若模块初始化出错，则会中断并返回出错信息。
-func (dep *dependency) init(tag string) error {
+func (web *Web) initDeps(tag string, info *log.Logger) error {
 	// 检测依赖
-	for _, m := range dep.modules {
-		if err := dep.checkDeps(m); err != nil {
+	for _, m := range web.modules {
+		if err := web.checkDeps(m); err != nil {
 			return err
 		}
 	}
 
 	// 进行初如化
-	for _, m := range dep.modules {
-		if err := dep.initModule(m, tag); err != nil {
+	for _, m := range web.modules {
+		if err := web.initModule(m, tag, info); err != nil {
 			return err
 		}
 	}
@@ -56,19 +31,19 @@ func (dep *dependency) init(tag string) error {
 //
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
 // 若 tag 不为空，表示只调用该标签下的初始化函数。
-func (dep *dependency) initModule(m *mod, tag string) error {
+func (web *Web) initModule(m *Module, tag string, info *log.Logger) error {
 	if m.inited {
 		return nil
 	}
 
 	// 先初始化依赖项
 	for _, d := range m.Deps {
-		depm, found := dep.modules[d]
-		if !found {
+		depm := web.module(d)
+		if depm == nil {
 			return fmt.Errorf("依赖项[%s]未找到", d)
 		}
 
-		if err := dep.initModule(depm, tag); err != nil {
+		if err := web.initModule(depm, tag, info); err != nil {
 			return err
 		}
 	}
@@ -82,13 +57,13 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 		inits = t.inits
 	}
 
-	dep.l.Println("开始初始化模块：", m.Name)
+	info.Println("开始初始化模块：", m.Name)
 
 	// 执行当前模块的初始化函数
 	for _, init := range inits {
 		title := init.title
 
-		dep.l.Println("  执行初始化函数：", title)
+		info.Println("  执行初始化函数：", title)
 		if err := init.f(); err != nil {
 			return err
 		}
@@ -100,16 +75,15 @@ func (dep *dependency) initModule(m *mod, tag string) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (dep *dependency) checkDeps(m *mod) error {
+func (web *Web) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, d := range m.Deps {
-		_, found := dep.modules[d]
-		if !found {
+		if web.module(d) == nil {
 			return fmt.Errorf("未找到[%v]的依赖模块[%v]", m.Name, d)
 		}
 	}
 
-	if dep.isDep(m.Name, m.Name) {
+	if web.isDep(m.Name, m.Name) {
 		return fmt.Errorf("存在循环依赖项:[%v]", m.Name)
 	}
 
@@ -117,9 +91,9 @@ func (dep *dependency) checkDeps(m *mod) error {
 }
 
 // m1 是否依赖 m2
-func (dep *dependency) isDep(m1, m2 string) bool {
-	module1, found := dep.modules[m1]
-	if !found {
+func (web *Web) isDep(m1, m2 string) bool {
+	module1 := web.module(m1)
+	if module1 == nil {
 		return false
 	}
 
@@ -128,12 +102,21 @@ func (dep *dependency) isDep(m1, m2 string) bool {
 			return true
 		}
 
-		if _, found = dep.modules[d]; found {
-			if dep.isDep(d, m2) {
+		if web.module(d) != nil {
+			if web.isDep(d, m2) {
 				return true
 			}
 		}
 	}
 
 	return false
+}
+
+func (web *Web) module(name string) *Module {
+	for _, m := range web.modules {
+		if m.Name == name {
+			return m
+		}
+	}
+	return nil
 }

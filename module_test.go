@@ -36,10 +36,10 @@ func TestModule_NewTag(t *testing.T) {
 	a.Equal(v.inits[0].title, "title1")
 
 	vv := m.NewTag("0.1.0")
-	a.Equal(vv, v)
+	a.Equal(vv, v).Equal(vv.m, m)
 
 	v2 := m.NewTag("0.2.0")
-	a.NotEqual(v2, v)
+	a.NotEqual(v2, v).Equal(v2.m, m)
 }
 
 func TestModule_AddInit(t *testing.T) {

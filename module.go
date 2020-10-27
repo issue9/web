@@ -26,13 +26,15 @@ type InstallFunc func(*Web)
 // 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
 // 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
 type Module struct {
-	Tag
 	Name        string
 	Description string
 	Deps        []string
 	tags        map[string]*Tag
 	web         *Web
 	filters     []Filter
+	inits       []*initialization
+
+	inited bool
 }
 
 // Tag 表示与特定标签相关联的初始化函数列表
@@ -41,6 +43,7 @@ type Module struct {
 //
 // 一般是各个模块下的安装脚本使用。
 type Tag struct {
+	m     *Module
 	inits []*initialization
 }
 
@@ -48,6 +51,21 @@ type Tag struct {
 type initialization struct {
 	title string
 	f     func() error
+}
+
+// AddInit 添加一个初始化函数
+//
+// title 该初始化函数的名称。
+func (m *Module) AddInit(f func() error, title string) {
+	if m.inited {
+		panic(ErrInited)
+	}
+
+	if m.inits == nil {
+		m.inits = make([]*initialization, 0, 5)
+	}
+
+	m.inits = append(m.inits, &initialization{f: f, title: title})
 }
 
 // NewTag 为当前模块生成特定名称的子模块
@@ -63,6 +81,7 @@ func (m *Module) NewTag(tag string) *Tag {
 
 	if _, found := m.tags[tag]; !found {
 		m.tags[tag] = &Tag{
+			m:     m,
 			inits: make([]*initialization, 0, 5),
 		}
 	}
@@ -89,13 +108,15 @@ func (web *Web) NewModule(name, desc string, deps ...string) *Module {
 // AddInit 添加一个初始化函数
 //
 // title 该初始化函数的名称。
-func (t *Tag) AddInit(f func() error, title string) *Tag {
+func (t *Tag) AddInit(f func() error, title string) {
+	if t.m.inited {
+		panic(ErrInited)
+	}
+
 	if t.inits == nil {
 		t.inits = make([]*initialization, 0, 5)
 	}
-
 	t.inits = append(t.inits, &initialization{f: f, title: title})
-	return t
 }
 
 // Tags 返回所有的子模块名称
@@ -139,7 +160,7 @@ func (web *Web) Init(tag string, info *log.Logger) error {
 
 	info.Println("开始初始化模块...")
 
-	if err := newDepencency(web.modules, info).init(tag); err != nil {
+	if err := web.initDeps(tag, info); err != nil {
 		return err
 	}
 
