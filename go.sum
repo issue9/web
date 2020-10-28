@@ -43,6 +43,8 @@ github.com/issue9/scheduled v0.6.0 h1:ZARPUF6n62O2qxmuEZ6BJIqJxJ1cigNHx87Tdi+e6h
 github.com/issue9/scheduled v0.6.0/go.mod h1:IBqJ/nYmTeisJCGuszBWY5efatEhWJ+x379qxSvaWmU=
 github.com/issue9/sliceutil v0.5.0 h1:17O5o8e3/7iI/QkmWz6KRjUsJJ4xuo6viIbKt4nUJvg=
 github.com/issue9/sliceutil v0.5.0/go.mod h1:71sjJIhUr1jjSpDfLB702gkxe5ClGtMz+qofUdmh9DI=
+github.com/issue9/sliceutil v0.6.0 h1:qff0GiuTf5ThPfm+Vgp3+XDzAiHA3o98Dlx/TU7Gj8w=
+github.com/issue9/sliceutil v0.6.0/go.mod h1:FUxZQC4oEw6V46afC+JOdCjOv84BA6WBNQRYGS9V4Dg=
 github.com/issue9/source v0.1.1 h1:Xemp2xP1m2t9r2+9mg/zYldYQCs0T13ggE69I65WNQ0=
 github.com/issue9/source v0.1.1/go.mod h1:oyj2OUvab/aVFsHqRTS8uI8KcvGZb0ZFoh9b3FzzAYU=
 github.com/issue9/term/v2 v2.1.1 h1:sRNToylz+SObLFnfShJ1kafVl95XaiNiz6zPfKBEhNQ=
