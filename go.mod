@@ -10,12 +10,12 @@ require (
 	github.com/issue9/middleware/v2 v2.3.0
 	github.com/issue9/mux/v2 v2.3.3
 	github.com/issue9/qheader v0.4.0
-	github.com/issue9/query v1.0.1
+	github.com/issue9/query/v2 v2.0.1
 	github.com/issue9/scheduled v0.6.0
 	github.com/issue9/source v0.1.1
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/version v1.0.4
-	golang.org/x/text v0.3.3
+	golang.org/x/text v0.3.4
 	gopkg.in/yaml.v2 v2.3.0
 )
 

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/query/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
@@ -213,13 +214,13 @@ func TestResult(t *testing.T) {
 		40011: "40011",
 	})
 
-	rslt := ctx.NewResultWithFields(40010, map[string]string{
-		"k1": "v1",
+	rslt := ctx.NewResultWithFields(40010, query.Errors{
+		"k1": []string{"v1", "v2"},
 	})
 	a.True(rslt.HasFields())
 
 	rslt.Render()
-	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1"]}]}`)
+	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }
 
 func TestContext_NewResult(t *testing.T) {

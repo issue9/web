@@ -8,8 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/issue9/query/v2"
 	"golang.org/x/text/message"
 )
+
+// ResultFieldMessage 表示字段的错误信息列表
+//
+// 类型为 map[string][]string
+type ResultFieldMessage = query.Errors
 
 // BuildResultFunc 用于生成 Result 接口对象的函数
 type BuildResultFunc func(status, code int, message string) Result
@@ -36,10 +42,14 @@ type resultMessage struct {
 //
 // 可以在 default.go 查看 Result 的实现方式。
 type Result interface {
-	// 添加详细的内容
+	// 添加详细的错误信息
+	//
+	// 相同的 key 应该能关联多个 val 值。
 	Add(key, val string)
 
-	// 设置详细的内容
+	// 设置详细的错误信息
+	//
+	// 如果已经相同的 key，会被覆盖。
 	Set(key, val string)
 
 	// 是否存在详细的错误信息
@@ -131,11 +141,13 @@ func (ctx *Context) NewResult(code int) *CTXResult {
 }
 
 // NewResultWithFields 返回 CTXResult 实例
-func (ctx *Context) NewResultWithFields(code int, detail map[string]string) *CTXResult {
+func (ctx *Context) NewResultWithFields(code int, detail ResultFieldMessage) *CTXResult {
 	rslt := ctx.NewResult(code)
 
-	for k, v := range detail {
-		rslt.Add(k, v)
+	for k, vals := range detail {
+		for _, v := range vals {
+			rslt.Add(k, v)
+		}
 	}
 
 	return rslt

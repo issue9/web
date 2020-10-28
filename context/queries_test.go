@@ -23,7 +23,8 @@ func newContextWithQuery(a *assert.Assertion, path string) *Context {
 func TestQueries_Int(t *testing.T) {
 	a := assert.New(t)
 	ctx := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
-	q := ctx.Queries()
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Int("i1", 9), 1)
 	a.Equal(q.Int("i2", 9), 2)
@@ -37,7 +38,8 @@ func TestQueries_Int(t *testing.T) {
 func TestQueries_Int64(t *testing.T) {
 	a := assert.New(t)
 	ctx := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
-	q := ctx.Queries()
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Int64("i1", 9), 1)
 	a.Equal(q.Int64("i2", 9), 2)
@@ -51,7 +53,8 @@ func TestQueries_Int64(t *testing.T) {
 func TestQueries_String(t *testing.T) {
 	a := assert.New(t)
 	ctx := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
-	q := ctx.Queries()
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
 
 	a.Equal(q.String("s1", "9"), "1")
 	a.Equal(q.String("s2", "9"), "2")
@@ -62,7 +65,8 @@ func TestQueries_String(t *testing.T) {
 func TestQueries_Bool(t *testing.T) {
 	a := assert.New(t)
 	ctx := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
-	q := ctx.Queries()
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
 
 	a.True(q.Bool("b1", false))
 	a.True(q.Bool("b2", false))
@@ -76,7 +80,8 @@ func TestQueries_Bool(t *testing.T) {
 func TestQueries_Float64(t *testing.T) {
 	a := assert.New(t)
 	ctx := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
-	q := ctx.Queries()
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Float64("i1", 9.9), 1.1)
 	a.Equal(q.Float64("i2", 9.9), 2)

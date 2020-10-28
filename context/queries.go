@@ -3,9 +3,10 @@
 package context
 
 import (
+	"net/url"
 	"strconv"
 
-	"github.com/issue9/query"
+	"github.com/issue9/query/v2"
 )
 
 // Queries 用于处理路径中的查询参数
@@ -17,16 +18,30 @@ import (
 //      return
 //  }
 type Queries struct {
-	ctx    *Context
-	errors map[string]string
+	ctx     *Context
+	errors  ResultFieldMessage
+	queries url.Values
 }
 
 // Queries 声明一个新的 Queries 实例
-func (ctx *Context) Queries() *Queries {
-	return &Queries{
-		ctx:    ctx,
-		errors: map[string]string{},
+func (ctx *Context) Queries() (*Queries, error) {
+	queries, err := url.ParseQuery(ctx.Request.URL.RawQuery)
+	if err != nil {
+		return nil, err
 	}
+
+	return &Queries{
+		ctx:     ctx,
+		errors:  ResultFieldMessage{},
+		queries: queries,
+	}, nil
+}
+
+func (q *Queries) getItem(key string) (val string) {
+	if v, found := q.queries[key]; found {
+		val = v[0]
+	}
+	return
 }
 
 // Int 从查询参数中获取指定名称的值
@@ -34,7 +49,7 @@ func (ctx *Context) Queries() *Queries {
 // 若不存在则返回 def 作为其默认值。
 // 若是无法转换，则会保存错误信息
 func (q *Queries) Int(key string, def int) int {
-	str := q.ctx.Request.FormValue(key)
+	str := q.getItem(key)
 
 	// 不存在，返回默认值
 	if len(str) == 0 {
@@ -44,7 +59,7 @@ func (q *Queries) Int(key string, def int) int {
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil {
-		q.errors[key] = err.Error()
+		q.errors.Add(key, err.Error())
 		return def
 	}
 
@@ -55,14 +70,14 @@ func (q *Queries) Int(key string, def int) int {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) Int64(key string, def int64) int64 {
-	str := q.ctx.Request.FormValue(key)
+	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
 	}
 
 	v, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		q.errors[key] = err.Error()
+		q.errors.Add(key, err.Error())
 		return def
 	}
 
@@ -73,7 +88,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
-	str := q.ctx.Request.FormValue(key)
+	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
 	}
@@ -84,14 +99,14 @@ func (q *Queries) String(key, def string) string {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) Bool(key string, def bool) bool {
-	str := q.ctx.Request.FormValue(key)
+	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
 	}
 
 	v, err := strconv.ParseBool(str)
 	if err != nil {
-		q.errors[key] = err.Error()
+		q.errors.Add(key, err.Error())
 		return def
 	}
 
@@ -102,14 +117,14 @@ func (q *Queries) Bool(key string, def bool) bool {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) Float64(key string, def float64) float64 {
-	str := q.ctx.Request.FormValue(key)
+	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
 	}
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil {
-		q.errors[key] = err.Error()
+		q.errors.Add(key, err.Error())
 		return def
 	}
 
@@ -122,7 +137,7 @@ func (q *Queries) HasErrors() bool {
 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() map[string]string {
+func (q *Queries) Errors() ResultFieldMessage {
 	return q.errors
 }
 
@@ -134,11 +149,23 @@ func (q *Queries) Result(code int) *CTXResult {
 	return q.ctx.NewResultWithFields(code, q.Errors())
 }
 
-// QueryObject 将查询参数解析到一个对象中
+// Object 将查询参数解析到一个对象中
 //
 // 返回的是每一个字段对应的错误信息。
 //
 // 具体的文档信息可以参考 https://github.com/issue9/query
-func (ctx *Context) QueryObject(v interface{}) (errors map[string]string) {
-	return query.Parse(ctx.Request, v)
+func (q *Queries) Object(v interface{}) ResultFieldMessage {
+	return query.Parse(q.queries, v)
+}
+
+// QueryObject 将查询参数解析到一个对象中
+//
+// errors 表示每一个字段对应的错误信息。
+// err 表示解析 ctx.Request.URL.RawQuery 出错时返回的错误。
+func (ctx *Context) QueryObject(v interface{}) (errors ResultFieldMessage, err error) {
+	q, err := ctx.Queries()
+	if err != nil {
+		return nil, err
+	}
+	return q.Object(v), nil
 }
