@@ -3,6 +3,8 @@
 // Package validation 数据验证相关功能
 package validation
 
+import "github.com/issue9/query/v2"
+
 // 当验证出错时的几种可用处理方式
 const (
 	ContinueAtError ErrorHandling = iota
@@ -16,7 +18,7 @@ type ErrorHandling int8
 // Validation 验证器
 type Validation struct {
 	errorHandling ErrorHandling
-	errors        map[string][]string
+	errors        query.Errors
 }
 
 // New 返回新的 Validation 实例
@@ -25,7 +27,7 @@ type Validation struct {
 func New(errorHandling ErrorHandling) *Validation {
 	return &Validation{
 		errorHandling: errorHandling,
-		errors:        map[string][]string{},
+		errors:        query.Errors{},
 	}
 }
 
@@ -49,6 +51,6 @@ func (v *Validation) NewField(val interface{}, name string, rules ...Ruler) *Val
 }
 
 // Result 返回结果
-func (v *Validation) Result() map[string][]string {
+func (v *Validation) Result() query.Errors {
 	return v.errors
 }
