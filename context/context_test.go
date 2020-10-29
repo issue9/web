@@ -206,11 +206,11 @@ func TestContext_Read(t *testing.T) {
 	ctx := newServer(a).newContext(w, r)
 
 	obj := &mimetypetest.TextObject{}
-	a.True(ctx.Read(obj))
+	a.True(ctx.Read(obj, 41110))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
 	o := &struct{}{}
-	a.False(ctx.Read(o))
+	a.False(ctx.Read(o, 41110))
 }
 
 func TestContext_Marshal(t *testing.T) {

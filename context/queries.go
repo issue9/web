@@ -153,24 +153,36 @@ func (q *Queries) Result(code int) *CTXResult {
 //
 // 具体的文档信息可以参考 https://github.com/issue9/query
 func (q *Queries) Object(v interface{}) {
-	q.errors = query.Parse(q.queries, v)
-}
+	errors := query.Parse(q.queries, v)
+	for key, vals := range errors {
+		q.errors.Add(key, vals...)
+	}
 
-// ObjectResult 将查询参数解析到一个对象中
-//
-// 并将解析错误以 CTXResult 的形式返回。
-func (q *Queries) ObjectResult(v interface{}, code int) *CTXResult {
-	q.Object(v)
-	return q.Result(code)
+	if vv, ok := v.(Validator); ok {
+		errors = vv.Validate(q.ctx)
+		for key, vals := range errors {
+			q.errors.Add(key, vals...)
+		}
+	}
 }
 
 // QueryObject 将查询参数解析到一个对象中
 //
-// 相当于 ctx.Queries() 和 ctx.ObjectResult() 两个方法的结合。
-func (ctx *Context) QueryObject(v interface{}, code int) (rslt *CTXResult, err error) {
+// 如果 err 不为 nil，表示 URL 中的查询参数格式有误；
+// ok 表示是否正常解析和验证了查询参数，true 表示一切正常，false
+// 表示解析或是验证出错，并以 code 作为错误代码输出到客户端。
+func (ctx *Context) QueryObject(v interface{}, code int) (ok bool, err error) {
 	q, err := ctx.Queries()
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	return q.ObjectResult(v, code), nil
+
+	q.Object(v)
+
+	if len(q.errors) > 0 {
+		q.Result(code).Render()
+		return false, nil
+	}
+
+	return true, nil
 }

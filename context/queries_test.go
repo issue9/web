@@ -91,3 +91,29 @@ func TestQueries_Float64(t *testing.T) {
 	a.Equal(q.Float64("str", 3), 3)
 	a.True(q.HasErrors())
 }
+
+func TestQueries_Object(t *testing.T) {
+	a := assert.New(t)
+	ctx := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
+	q, err := ctx.Queries()
+	a.NotError(err).NotNil(q)
+
+	o := struct {
+		I1  float32 `query:"i1"`
+		I2  int     `query:"i2"`
+		Str string  `query:"str"`
+	}{}
+	ok, err := ctx.QueryObject(&o, 41110)
+	a.NotError(err).True(ok)
+	a.Equal(o.I1, float32(1.1)).
+		Equal(o.I2, 2).
+		Equal(o.Str, "str")
+
+	o2 := struct {
+		I1  float32 `query:"i1"`
+		I2  int     `query:"i2"`
+		Str int     `query:"str"`
+	}{}
+	ok, err = ctx.QueryObject(&o2, 41110)
+	a.NotError(err).False(ok)
+}

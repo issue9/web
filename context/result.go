@@ -141,10 +141,10 @@ func (ctx *Context) NewResult(code int) *CTXResult {
 }
 
 // NewResultWithFields 返回 CTXResult 实例
-func (ctx *Context) NewResultWithFields(code int, detail query.Errors) *CTXResult {
+func (ctx *Context) NewResultWithFields(code int, fields ResultFields) *CTXResult {
 	rslt := ctx.NewResult(code)
 
-	for k, vals := range detail {
+	for k, vals := range fields {
 		for _, v := range vals {
 			rslt.rslt.Add(k, v)
 		}

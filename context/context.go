@@ -74,6 +74,14 @@ type Context struct {
 	read bool
 }
 
+// Validator 数据验证接口
+//
+// 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
+// 中会在解析数据成功之后，调用该接口进行数据验证。
+type Validator interface {
+	Validate(*Context) ResultFields
+}
+
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -228,11 +236,21 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 // 功能与 Unmarshal() 相同，只不过 Read() 在出错时，
 // 会直接调用 Error() 处理：输出 422 的状态码，
 // 并返回一个 false，告知用户转换失败。
-func (ctx *Context) Read(v interface{}) (ok bool) {
+// 如果是数据类型验证失败，则会输出以 code 作为错误代码的错误信息，
+// 并返回 false，作为执行失败的通知。
+func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
 		ctx.Error(http.StatusUnprocessableEntity, err)
 		return false
 	}
+
+	if vv, ok := v.(Validator); ok {
+		if errors := vv.Validate(ctx); len(errors) > 0 {
+			ctx.NewResultWithFields(code, errors).Render()
+			return false
+		}
+	}
+
 	return true
 }
 
