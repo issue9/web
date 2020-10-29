@@ -19,7 +19,7 @@ import (
 //  }
 type Queries struct {
 	ctx     *Context
-	errors  ResultFieldMessage
+	errors  ResultFields
 	queries url.Values
 }
 
@@ -32,7 +32,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		errors:  ResultFieldMessage{},
+		errors:  ResultFields{},
 		queries: queries,
 	}, nil
 }
@@ -137,7 +137,7 @@ func (q *Queries) HasErrors() bool {
 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() ResultFieldMessage {
+func (q *Queries) Errors() ResultFields {
 	return q.errors
 }
 
@@ -151,21 +151,26 @@ func (q *Queries) Result(code int) *CTXResult {
 
 // Object 将查询参数解析到一个对象中
 //
-// 返回的是每一个字段对应的错误信息。
-//
 // 具体的文档信息可以参考 https://github.com/issue9/query
-func (q *Queries) Object(v interface{}) ResultFieldMessage {
-	return query.Parse(q.queries, v)
+func (q *Queries) Object(v interface{}) {
+	q.errors = query.Parse(q.queries, v)
+}
+
+// ObjectResult 将查询参数解析到一个对象中
+//
+// 并将解析错误以 CTXResult 的形式返回。
+func (q *Queries) ObjectResult(v interface{}, code int) *CTXResult {
+	q.Object(v)
+	return q.Result(code)
 }
 
 // QueryObject 将查询参数解析到一个对象中
 //
-// errors 表示每一个字段对应的错误信息。
-// err 表示解析 ctx.Request.URL.RawQuery 出错时返回的错误。
-func (ctx *Context) QueryObject(v interface{}) (errors ResultFieldMessage, err error) {
+// 相当于 ctx.Queries() 和 ctx.ObjectResult() 两个方法的结合。
+func (ctx *Context) QueryObject(v interface{}, code int) (rslt *CTXResult, err error) {
 	q, err := ctx.Queries()
 	if err != nil {
 		return nil, err
 	}
-	return q.Object(v), nil
+	return q.ObjectResult(v, code), nil
 }

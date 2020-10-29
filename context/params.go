@@ -23,7 +23,7 @@ var emptyParams = params.Params(map[string]string{})
 type Params struct {
 	ctx    *Context
 	params params.Params
-	errors ResultFieldMessage
+	errors ResultFields
 }
 
 // Params 声明一个新的 Params 实例
@@ -36,7 +36,7 @@ func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
 		params: ps,
-		errors: make(ResultFieldMessage, len(ps)),
+		errors: make(ResultFields, len(ps)),
 	}
 }
 
@@ -221,7 +221,7 @@ func (p *Params) HasErrors() bool {
 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() ResultFieldMessage {
+func (p *Params) Errors() ResultFields {
 	return p.errors
 }
 

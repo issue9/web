@@ -12,10 +12,10 @@ import (
 	"golang.org/x/text/message"
 )
 
-// ResultFieldMessage 表示字段的错误信息列表
+// ResultFields 表示字段的错误信息列表
 //
 // 类型为 map[string][]string
-type ResultFieldMessage = query.Errors
+type ResultFields = query.Errors
 
 // BuildResultFunc 用于生成 Result 接口对象的函数
 type BuildResultFunc func(status, code int, message string) Result
@@ -141,21 +141,15 @@ func (ctx *Context) NewResult(code int) *CTXResult {
 }
 
 // NewResultWithFields 返回 CTXResult 实例
-func (ctx *Context) NewResultWithFields(code int, detail ResultFieldMessage) *CTXResult {
+func (ctx *Context) NewResultWithFields(code int, detail query.Errors) *CTXResult {
 	rslt := ctx.NewResult(code)
 
 	for k, vals := range detail {
 		for _, v := range vals {
-			rslt.Add(k, v)
+			rslt.rslt.Add(k, v)
 		}
 	}
 
-	return rslt
-}
-
-// Add 添加详细的内容
-func (rslt *CTXResult) Add(key, val string) *CTXResult {
-	rslt.rslt.Add(key, val)
 	return rslt
 }
 
