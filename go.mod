@@ -6,6 +6,7 @@ require (
 	github.com/issue9/cache v0.2.0
 	github.com/issue9/cmdopt v0.7.0
 	github.com/issue9/conv v1.2.0
+	github.com/issue9/is v1.4.2
 	github.com/issue9/logs/v2 v2.5.0
 	github.com/issue9/middleware/v2 v2.3.0
 	github.com/issue9/mux/v2 v2.3.3
