@@ -5,10 +5,8 @@ package validation
 import "regexp"
 
 // Match 定义正则匹配的验证规则
-func Match(msg, reg string) Ruler {
+func Match(msg string, exp *regexp.Regexp) Ruler {
 	return RuleFunc(func(v interface{}) (ret string) {
-		exp := regexp.MustCompile(reg)
-
 		var ok bool
 		switch vv := v.(type) {
 		case string:
