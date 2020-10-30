@@ -3,6 +3,7 @@
 package context
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -168,21 +169,22 @@ func (q *Queries) Object(v interface{}) {
 
 // QueryObject 将查询参数解析到一个对象中
 //
-// 如果 err 不为 nil，表示 URL 中的查询参数格式有误；
-// ok 表示是否正常解析和验证了查询参数，true 表示一切正常，false
-// 表示解析或是验证出错，并以 code 作为错误代码输出到客户端。
-func (ctx *Context) QueryObject(v interface{}, code int) (ok bool, err error) {
+// 功能有点类似于 Context.Read，只不过当前是从查询参数中读取数据到对象。
+//
+// 如果 URL 有问题，导致无法正确解析查询参数的数据，则会直接返回 422 的错误码给用户。
+func (ctx *Context) QueryObject(v interface{}, code int) (ok bool) {
 	q, err := ctx.Queries()
 	if err != nil {
-		return false, err
+		ctx.Error(http.StatusUnprocessableEntity, err)
+		return false
 	}
 
 	q.Object(v)
 
 	if len(q.errors) > 0 {
 		q.Result(code).Render()
-		return false, nil
+		return false
 	}
 
-	return true, nil
+	return true
 }

@@ -11,18 +11,18 @@ import (
 	"github.com/issue9/assert"
 )
 
-func newContextWithQuery(a *assert.Assertion, path string) *Context {
+func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
-	w := httptest.NewRecorder()
-	ctx := newServer(a).newContext(w, r)
+	w = httptest.NewRecorder()
+	ctx = newServer(a).newContext(w, r)
 
-	return ctx
+	return ctx, w
 }
 
 func TestQueries_Int(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
+	ctx, _ := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -37,7 +37,7 @@ func TestQueries_Int(t *testing.T) {
 
 func TestQueries_Int64(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
+	ctx, _ := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -52,7 +52,7 @@ func TestQueries_Int64(t *testing.T) {
 
 func TestQueries_String(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
+	ctx, _ := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -64,7 +64,7 @@ func TestQueries_String(t *testing.T) {
 
 func TestQueries_Bool(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
+	ctx, _ := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -79,7 +79,7 @@ func TestQueries_Bool(t *testing.T) {
 
 func TestQueries_Float64(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
+	ctx, _ := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -92,9 +92,9 @@ func TestQueries_Float64(t *testing.T) {
 	a.True(q.HasErrors())
 }
 
-func TestQueries_Object(t *testing.T) {
+func TestContext_QueryObject(t *testing.T) {
 	a := assert.New(t)
-	ctx := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
+	ctx, w := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
 	q, err := ctx.Queries()
 	a.NotError(err).NotNil(q)
 
@@ -103,8 +103,9 @@ func TestQueries_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str string  `query:"str"`
 	}{}
-	ok, err := ctx.QueryObject(&o, 41110)
-	a.NotError(err).True(ok)
+	ok := ctx.QueryObject(&o, 41110)
+	a.True(ok).
+		Equal(w.Code, http.StatusOK)
 	a.Equal(o.I1, float32(1.1)).
 		Equal(o.I2, 2).
 		Equal(o.Str, "str")
@@ -114,6 +115,8 @@ func TestQueries_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str int     `query:"str"`
 	}{}
-	ok, err = ctx.QueryObject(&o2, 41110)
-	a.NotError(err).False(ok)
+	ok = ctx.QueryObject(&o2, 41110)
+	a.False(ok).
+		Equal(w.Code, 411)
+
 }
