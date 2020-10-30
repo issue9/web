@@ -12,6 +12,10 @@ import (
 func TestRange(t *testing.T) {
 	a := assert.New(t)
 
+	a.Panic(func() {
+		Range("msg", 100, 5)
+	})
+
 	r := Range("msg", 5, math.MaxInt16)
 	a.Empty(r.Validate(5))
 	a.Empty(r.Validate(5.1))
@@ -30,4 +34,5 @@ func TestRange(t *testing.T) {
 	a.Empty(r.Validate(6))
 	a.Equal(r.Validate(10), "msg")
 	a.Empty(r.Validate(5))
+	a.Empty(r.Validate(uint(5)))
 }
