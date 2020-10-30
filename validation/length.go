@@ -5,34 +5,32 @@ package validation
 import "reflect"
 
 type lengthRule struct {
-	msg, invalidType string
-	min, max         int64
+	msg      string
+	min, max int64
 }
 
 // Length 声明判断内容长度的验证规则
 //
 // msg 无法验过验证时的信息；
-// invalidType 类型无效时的验证信息；
 // 如果 min 和 max 有值为 -1，表示忽略该值的比较，都为 -1 表示不限制长度。
 //
 // 只能验证类型为 string、Map、Slice 和 Array 的数据。
-func Length(msg, invalidType string, min, max int64) Ruler {
+func Length(msg string, min, max int64) Ruler {
 	return &lengthRule{
-		msg:         msg,
-		invalidType: invalidType,
-		min:         min,
-		max:         max,
+		msg: msg,
+		min: min,
+		max: max,
 	}
 }
 
 // MinLength 声明判断内容长度不小于 min 的验证规则
-func MinLength(msg, invalidType string, min int64) Ruler {
-	return Length(msg, invalidType, min, -1)
+func MinLength(msg string, min int64) Ruler {
+	return Length(msg, min, -1)
 }
 
 // MaxLength 声明判断内容长度不大于 max 的验证规则
-func MaxLength(msg, invalidType string, max int64) Ruler {
-	return Length(msg, invalidType, -1, max)
+func MaxLength(msg string, max int64) Ruler {
+	return Length(msg, -1, max)
 }
 
 func (rule *lengthRule) Validate(v interface{}) (msg string) {
@@ -46,7 +44,7 @@ func (rule *lengthRule) Validate(v interface{}) (msg string) {
 		case reflect.Array, reflect.Map, reflect.Slice:
 			l = int64(rv.Len())
 		default:
-			return rule.invalidType
+			return rule.msg
 		}
 	}
 
