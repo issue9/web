@@ -17,22 +17,38 @@ import (
 	"github.com/issue9/web/context/mimetype/mimetypetest"
 )
 
-// 用于测试的对象
-type objectWithValidate struct {
-	Name string
-	Age  int
-}
+type (
+	root struct {
+		O1 *objectWithValidate
+		O2 *objectWithoutValidate
+	}
 
-var _ context.Validator = &objectWithValidate{}
+	objectWithValidate struct {
+		Name string
+		Age  int
+	}
 
-type objectWithoutValidate struct {
-	Name string
-	Age  int
-}
+	objectWithoutValidate struct {
+		Name string
+		Age  int
+	}
+)
+
+var (
+	_ context.Validator = &root{}
+	_ context.Validator = &objectWithValidate{}
+)
 
 func (obj *objectWithValidate) Validate(ctx *context.Context) context.ResultFields {
 	return New(ctx, ContinueAtError).
-		NewField(obj.Age, ".age", Min("不能小于 18", "invalid", 18)).
+		NewField(obj.Age, ".age", Min("不能小于 18", 18)).
+		Result()
+}
+
+func (root *root) Validate(ctx *context.Context) context.ResultFields {
+	return New(ctx, ContinueAtError).
+		NewField(root.O1, "o1", If(root.O2 == nil, Required("o1 required", true)).Rules()...).
+		NewField(root.O2, "o2", If(root.O1 == nil, Required("o2 required", true)).Rules()...).
 		Result()
 }
 
@@ -89,5 +105,21 @@ func TestValidation_NewObject(t *testing.T) {
 		NewField(obj, "obj")
 	a.Equal(v.Result(), map[string][]string{
 		"obj.age": {"不能小于 18"},
+	})
+
+	//
+	ctx = newContext(a)
+	r := root{}
+	errs := r.Validate(ctx)
+	a.Equal(errs, map[string][]string{
+		"o1": {"o1 required"},
+		"o2": {"o2 required"},
+	})
+
+	ctx = newContext(a)
+	r = root{O1: &objectWithValidate{}}
+	errs = r.Validate(ctx)
+	a.Equal(errs, map[string][]string{
+		"o1.age": {"不能小于 18"},
 	})
 }

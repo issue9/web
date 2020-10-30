@@ -33,32 +33,30 @@ func New(ctx *context.Context, errorHandling ErrorHandling) *Validation {
 	}
 }
 
-// NewObject 验证对象内的数据
-func (v *Validation) NewObject(validator context.Validator, name string) *Validation {
-	if errors := validator.Validate(v.ctx); len(errors) > 0 {
-		for key, vals := range errors {
-			v.errors.Add(name+key, vals...)
-		}
-	}
-	return v
-}
-
 // NewField 验证新的字段
 func (v *Validation) NewField(val interface{}, name string, rules ...Ruler) *Validation {
 	if len(v.errors) > 0 && v.errorHandling == ExitAtError {
 		return v
 	}
 
-	if vv, ok := val.(context.Validator); ok {
-		return v.NewObject(vv, name)
-	}
-
 	for _, rule := range rules {
 		if msg := rule.Validate(val); msg != "" {
-			v.errors[name] = append(v.errors[name], msg)
+			v.errors.Add(name, msg)
 
 			if v.errorHandling != ContinueAtError {
 				return v
+			}
+		}
+	}
+
+	if len(v.errors[name]) > 0 { // 当前验证规则有错，则不验证子元素。
+		return v
+	}
+
+	if vv, ok := val.(context.Validator); ok {
+		if errors := vv.Validate(v.ctx); len(errors) > 0 {
+			for key, vals := range errors {
+				v.errors.Add(name+key, vals...)
 			}
 		}
 	}
