@@ -57,24 +57,24 @@ func TestValidation_ErrorHandling(t *testing.T) {
 	ctx := newContext(a)
 
 	v := New(ctx, ContinueAtError).
-		NewField(1, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
-		NewField(100, "f2", Max("50", "invalid", 50), Min("-4", "invalid", -4))
+		NewField(-100, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
+		NewField(100, "f2", Max("50", "invalid", 50), Max("-4", "invalid", -4))
 	a.Equal(v.Result(), map[string][]string{
 		"f1": {"-2", "-3"},
 		"f2": {"50", "-4"},
 	})
 
 	v = New(ctx, ExitFieldAtError).
-		NewField(1, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
-		NewField(100, "f2", Max("50", "invalid", 50), Min("-4", "invalid", -4))
+		NewField(-100, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
+		NewField(100, "f2", Max("50", "invalid", 50), Max("-4", "invalid", -4))
 	a.Equal(v.Result(), map[string][]string{
 		"f1": {"-2"},
 		"f2": {"50"},
 	})
 
 	v = New(ctx, ExitAtError).
-		NewField(1, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
-		NewField(100, "f2", Max("50", "invalid", 50), Min("-4", "invalid", -4))
+		NewField(-100, "f1", Min("-2", "invalid", -2), Min("-3", "invalid", -3)).
+		NewField(100, "f2", Max("50", "invalid", 50), Max("-4", "invalid", -4))
 	a.Equal(v.Result(), map[string][]string{
 		"f1": {"-2"},
 	})
