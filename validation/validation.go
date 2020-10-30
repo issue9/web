@@ -3,7 +3,7 @@
 // Package validation 数据验证相关功能
 package validation
 
-import "github.com/issue9/query/v2"
+import "github.com/issue9/web/context"
 
 // 当验证出错时的几种可用处理方式
 const (
@@ -18,7 +18,7 @@ type ErrorHandling int8
 // Validation 验证器
 type Validation struct {
 	errorHandling ErrorHandling
-	errors        query.Errors
+	errors        context.ResultFields
 }
 
 // New 返回新的 Validation 实例
@@ -27,7 +27,7 @@ type Validation struct {
 func New(errorHandling ErrorHandling) *Validation {
 	return &Validation{
 		errorHandling: errorHandling,
-		errors:        query.Errors{},
+		errors:        context.ResultFields{},
 	}
 }
 
@@ -51,6 +51,6 @@ func (v *Validation) NewField(val interface{}, name string, rules ...Ruler) *Val
 }
 
 // Result 返回结果
-func (v *Validation) Result() query.Errors {
+func (v *Validation) Result() context.ResultFields {
 	return v.errors
 }
