@@ -13,7 +13,7 @@ import (
 
 func newContextWithParam(w http.ResponseWriter, r *http.Request, a *assert.Assertion) *Context {
 	r.Header.Set("Accept", "*/*")
-	ctx := newServer(a).newContext(w, r)
+	ctx := newServer(a).NewContext(w, r)
 
 	return ctx
 }
