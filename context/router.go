@@ -101,7 +101,7 @@ func (srv *Server) Router() *mux.Prefix {
 // Handle 添加路由请求项
 func (srv *Server) Handle(path string, h HandlerFunc, method ...string) error {
 	return srv.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		FilterHandler(h, srv.filters...)(srv.newContext(w, r))
+		FilterHandler(h, srv.filters...)(srv.NewContext(w, r))
 	}, method...)
 }
 

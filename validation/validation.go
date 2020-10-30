@@ -7,9 +7,9 @@ import "github.com/issue9/web/context"
 
 // 当验证出错时的几种可用处理方式
 const (
-	ContinueAtError ErrorHandling = iota
-	ExitAtError
-	ExitFieldAtError
+	ContinueAtError  ErrorHandling = iota // 碰到错误不中断验证
+	ExitAtError                           // 碰到错误中断验证
+	ExitFieldAtError                      // 碰到错误中断当前字段的验证
 )
 
 // ErrorHandling 当验证出错时的处理方式

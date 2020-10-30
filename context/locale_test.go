@@ -71,7 +71,7 @@ func TestContext_Now(t *testing.T) {
 	srv := newServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
-	ctx := srv.newContext(w, r)
+	ctx := srv.NewContext(w, r)
 
 	now := ctx.Now()
 	a.Equal(now.Location(), srv.Location)
