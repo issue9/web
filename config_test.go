@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/web/config"
+	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 )
 
@@ -151,7 +152,7 @@ func TestIsURLPath(t *testing.T) {
 func TestConfig_parseResults(t *testing.T) {
 	a := assert.New(t)
 	conf := &Config{
-		Results: map[int]string{
+		Results: map[int]message.Reference{
 			4001:  "4001",
 			4002:  "4002",
 			50001: "50001",
@@ -159,7 +160,7 @@ func TestConfig_parseResults(t *testing.T) {
 	}
 
 	a.NotError(conf.parseResults())
-	a.Equal(conf.results, map[int]map[int]string{
+	a.Equal(conf.results, map[int]map[int]message.Reference{
 		400: {
 			4001: "4001",
 			4002: "4002",

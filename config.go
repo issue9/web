@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
+	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
@@ -152,8 +153,8 @@ type (
 		// 同时又会将 40001 和对应的消息发送给用户。
 		//
 		// 该数据最终由 context.Server.AddMessages 添加。
-		Results map[int]string `yaml:"-" json:"-" xml:"-"`
-		results map[int]map[int]string
+		Results map[int]message.Reference `yaml:"-" json:"-" xml:"-"`
+		results map[int]map[int]message.Reference
 
 		// 指定错误页面的处理方式
 		ErrorHandlers []*ErrorHandler `yaml:"-" json:"-" xml:"-"`
@@ -271,7 +272,7 @@ func (conf *Config) sanitize() error {
 }
 
 func (conf *Config) parseResults() error {
-	conf.results = map[int]map[int]string{}
+	conf.results = map[int]map[int]message.Reference{}
 
 	for code, msg := range conf.Results {
 		if code < 999 {
@@ -286,7 +287,7 @@ func (conf *Config) parseResults() error {
 		if found {
 			rslt[code] = msg
 		} else {
-			conf.results[status] = map[int]string{code: msg}
+			conf.results[status] = map[int]message.Reference{code: msg}
 		}
 	}
 

@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/logs/v2"
 	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/scheduled"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
@@ -94,7 +95,7 @@ func Classic(logConfigFile, configFile string) (*Web, error) {
 		mimetype.DefaultMimetype: gob.Unmarshal,
 	}
 
-	conf.Results = map[int]string{
+	conf.Results = map[int]message.Reference{
 		40001: "无效的报头",
 		40002: "无效的地址",
 		40003: "无效的查询参数",
