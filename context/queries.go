@@ -160,7 +160,7 @@ func (q *Queries) Object(v interface{}) {
 	}
 
 	if vv, ok := v.(Validator); ok {
-		errors = vv.Validate(q.ctx)
+		errors = vv.CTXValidate(q.ctx)
 		for key, vals := range errors {
 			q.errors.Add(key, vals...)
 		}

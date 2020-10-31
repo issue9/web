@@ -74,14 +74,6 @@ type Context struct {
 	read bool
 }
 
-// Validator 数据验证接口
-//
-// 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
-// 中会在解析数据成功之后，调用该接口进行数据验证。
-type Validator interface {
-	Validate(*Context) ResultFields
-}
-
 // NewContext 构建 *Context 实例
 //
 // 如果 Accept 的内容与当前配置无法匹配，
@@ -247,7 +239,7 @@ func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	}
 
 	if vv, ok := v.(Validator); ok {
-		if errors := vv.Validate(ctx); len(errors) > 0 {
+		if errors := vv.CTXValidate(ctx); len(errors) > 0 {
 			ctx.NewResultWithFields(code, errors).Render()
 			return false
 		}

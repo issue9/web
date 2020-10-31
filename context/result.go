@@ -8,82 +8,92 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/query/v2"
+	"github.com/issue9/validation"
 	"golang.org/x/text/message"
 )
 
-// ResultFields 表示字段的错误信息列表
-//
-// 类型为 map[string][]string
-type ResultFields = query.Errors
-
-// BuildResultFunc 用于生成 Result 接口对象的函数
-type BuildResultFunc func(status, code int, message string) Result
-
-type resultMessage struct {
-	message string
-	status  int // 对应的 HTTP 状态码
-}
-
-// Result 自定义错误代码的实现接口
-//
-// 用户可以根据自己的需求，在出错时，展示自定义的错误码以及相关的错误信息格式。
-// 只要该对象实现了 Result 接口即可。
-//
-// 比如类似以下的错误内容：
-//  {
-//      'message': 'error message',
-//      'code': 4000001,
-//      'detail':[
-//          {'field': 'username': 'message': '已经存在相同用户名'},
-//          {'field': 'username': 'message': '已经存在相同用户名'},
-//      ]
-//  }
-//
-// 可以在 default.go 查看 Result 的实现方式。
-type Result interface {
-	// 添加详细的错误信息
+type (
+	// ResultFields 表示字段的错误信息列表
 	//
-	// 相同的 key 应该能关联多个 val 值。
-	Add(key, val string)
+	// 类型为 map[string][]string
+	ResultFields = validation.Messages
 
-	// 设置详细的错误信息
+	// Validator 数据验证接口
 	//
-	// 如果已经相同的 key，会被覆盖。
-	Set(key, val string)
+	// 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
+	// 中会在解析数据成功之后，调用该接口进行数据验证。
+	Validator interface {
+		CTXValidate(*Context) ResultFields
+	}
 
-	// 是否存在详细的错误信息
+	// BuildResultFunc 用于生成 Result 接口对象的函数
+	BuildResultFunc func(status, code int, message string) Result
+
+	resultMessage struct {
+		message string
+		status  int // 对应的 HTTP 状态码
+	}
+
+	// Result 自定义错误代码的实现接口
 	//
-	// 如果有通过 Add 添加内容，那么应该返回 true
-	HasFields() bool
-
-	// HTTP 状态码
+	// 用户可以根据自己的需求，在出错时，展示自定义的错误码以及相关的错误信息格式。
+	// 只要该对象实现了 Result 接口即可。
 	//
-	// 最终会经此值作为 HTTP 状态会返回给用户
-	Status() int
-}
+	// 比如类似以下的错误内容：
+	//  {
+	//      'message': 'error message',
+	//      'code': 4000001,
+	//      'detail':[
+	//          {'field': 'username': 'message': '已经存在相同用户名'},
+	//          {'field': 'username': 'message': '已经存在相同用户名'},
+	//      ]
+	//  }
+	//
+	// 可以在 default.go 查看 Result 的实现方式。
+	Result interface {
+		// 添加详细的错误信息
+		//
+		// 相同的 key 应该能关联多个 val 值。
+		Add(key, val string)
 
-// CTXResult Result 与 Context 相结合的实现
-type CTXResult struct {
-	rslt Result
-	ctx  *Context
-}
+		// 设置详细的错误信息
+		//
+		// 如果已经相同的 key，会被覆盖。
+		Set(key, val string)
 
-// 这是对 Result 的默认实现
-type defaultResult struct {
-	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
+		// 是否存在详细的错误信息
+		//
+		// 如果有通过 Add 添加内容，那么应该返回 true
+		HasFields() bool
 
-	status int // 当前的信息所对应的 HTTP 状态码
+		// HTTP 状态码
+		//
+		// 最终会经此值作为 HTTP 状态会返回给用户
+		Status() int
+	}
 
-	Message string         `json:"message" xml:"message" yaml:"message"`
-	Code    int            `json:"code" xml:"code,attr" yaml:"code"`
-	Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty"`
-}
+	// CTXResult Result 与 Context 相结合的实现
+	CTXResult struct {
+		rslt Result
+		ctx  *Context
+	}
 
-type fieldDetail struct {
-	Name    string   `json:"name" xml:"name,attr" yaml:"name"`
-	Message []string `json:"message" xml:"message" yaml:"message"`
-}
+	// 这是对 Result 的默认实现
+	defaultResult struct {
+		XMLName struct{} `json:"-" xml:"result" yaml:"-"`
+
+		status int // 当前的信息所对应的 HTTP 状态码
+
+		Message string         `json:"message" xml:"message" yaml:"message"`
+		Code    int            `json:"code" xml:"code,attr" yaml:"code"`
+		Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty"`
+	}
+
+	fieldDetail struct {
+		Name    string   `json:"name" xml:"name,attr" yaml:"name"`
+		Message []string `json:"message" xml:"message" yaml:"message"`
+	}
+)
 
 // Messages 错误信息列表
 //
