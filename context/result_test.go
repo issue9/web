@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/query/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
@@ -197,24 +196,15 @@ func TestResult(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "application/json")
+	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	ctx := &Context{
-		server: newServer(a),
-
-		Response:       w,
-		Request:        r,
-		OutputCharset:  nil,
-		OutputMimetype: json.Marshal,
-
-		InputCharset:  nil,
-		InputMimetype: json.Unmarshal,
-	}
-	ctx.server.AddMessages(http.StatusBadRequest, map[int]string{
+	ctx := newServer(a).NewContext(w, r)
+	ctx.server.AddMessages(http.StatusBadRequest, map[int]message.Reference{
 		40010: "40010",
 		40011: "40011",
 	})
 
-	rslt := ctx.NewResultWithFields(40010, query.Errors{
+	rslt := ctx.NewResultWithFields(40010, ResultFields{
 		"k1": []string{"v1", "v2"},
 	})
 	a.True(rslt.HasFields())
@@ -225,16 +215,35 @@ func TestResult(t *testing.T) {
 
 func TestContext_NewResult(t *testing.T) {
 	a := assert.New(t)
-	b := newServer(a)
+	srv := newServer(a)
+	srv.AddMessages(400, map[int]message.Reference{40000: "lang"}) // lang 有翻译
 	w := httptest.NewRecorder()
+
+	// 能正常翻译错误信息
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := b.NewContext(w, r)
+	r.Header.Set("accept-language", language.SimplifiedChinese.String())
+	ctx := srv.NewContext(w, r)
+	rslt, ok := ctx.NewResult(40000).rslt.(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "hans")
+
+	// 未指定 accept-language，采用默认的 und
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx = srv.NewContext(w, r)
+	rslt, ok = ctx.NewResult(40000).rslt.(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "und")
+
+	// 不存在的本地化信息，采用默认的 und
+	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set("accept-language", "en-US")
+	ctx = srv.NewContext(w, r)
+	rslt, ok = ctx.NewResult(40000).rslt.(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "und")
 
 	// 不存在
 	a.Panic(func() { ctx.NewResult(400) })
-
-	a.NotPanic(func() { b.AddMessages(400, map[int]string{40000: "400"}) })
-	a.NotPanic(func() { ctx.NewResult(40000) })
 	a.Panic(func() { ctx.NewResult(50000) })
 }
 
@@ -243,7 +252,7 @@ func TestServer_AddMessages(t *testing.T) {
 	builder := newServer(a)
 
 	a.NotPanic(func() {
-		builder.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]message.Reference{
 			1:   "1",
 			100: "100",
 		})
@@ -259,7 +268,7 @@ func TestServer_AddMessages(t *testing.T) {
 
 	// 消息不能为空
 	a.Panic(func() {
-		builder.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]message.Reference{
 			1:   "",
 			100: "100",
 		})
@@ -267,7 +276,7 @@ func TestServer_AddMessages(t *testing.T) {
 
 	// 重复的 ID
 	a.Panic(func() {
-		builder.AddMessages(400, map[int]string{
+		builder.AddMessages(400, map[int]message.Reference{
 			1:   "1",
 			100: "100",
 		})
@@ -276,39 +285,25 @@ func TestServer_AddMessages(t *testing.T) {
 
 func TestServer_Messages(t *testing.T) {
 	a := assert.New(t)
-	builder := newServer(a)
-	a.NotNil(builder)
+	srv := newServer(a)
+	a.NotNil(srv)
 
-	a.NotError(message.SetString(language.Und, "lang", "und"))
-	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotPanic(func() {
-		builder.AddMessages(400, map[int]string{40010: "lang"})
+		srv.AddMessages(400, map[int]message.Reference{40010: "lang"})
 	})
 
-	r := builder.newResult(40010)
-	rr, ok := r.(*defaultResult)
-	a.True(ok).NotNil(rr)
-	a.Equal(rr.Message, "lang").
-		Equal(rr.Status(), 400)
-
-	// 不存在
-	a.Panic(func() {
-		a.NotError(builder.newResult(40010001))
-	})
-
-	lmsgs := builder.Messages(message.NewPrinter(language.Und))
+	lmsgs := srv.Messages(message.NewPrinter(language.Und, message.Catalog(srv.Catalog)))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = builder.Messages(message.NewPrinter(language.SimplifiedChinese))
+	lmsgs = srv.Messages(message.NewPrinter(language.SimplifiedChinese, message.Catalog(srv.Catalog)))
 	a.Equal(lmsgs[40010], "hans")
 
-	lmsgs = builder.Messages(message.NewPrinter(language.TraditionalChinese))
+	lmsgs = srv.Messages(message.NewPrinter(language.TraditionalChinese, message.Catalog(srv.Catalog)))
 	a.Equal(lmsgs[40010], "hant")
 
-	lmsgs = builder.Messages(message.NewPrinter(language.English))
+	lmsgs = srv.Messages(message.NewPrinter(language.English, message.Catalog(srv.Catalog)))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = builder.Messages(nil)
-	a.Equal(lmsgs[40010], "lang")
+	lmsgs = srv.Messages(nil)
+	a.Equal(lmsgs[40010], "und")
 }

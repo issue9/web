@@ -37,6 +37,10 @@ type Server struct {
 	//
 	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
 	// 等方式构建 Catalog 接口实例。
+	//
+	// NOTE: Context.LocalePrinter 在初始化时与当前值进行关联。
+	// 如果中途修改 Catalog 的值，已经建立的 Context 实例中的
+	// LocalePrinter 并不会与新的 Catalog 进行关联，依然指向旧值。
 	Catalog catalog.Catalog
 
 	// ResultBuilder 指定生成 Result 数据的方法
@@ -75,6 +79,9 @@ type Server struct {
 
 // NewServer 返回 *Server 实例
 func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead bool, root *url.URL) *Server {
+	// NOTE: Server 中在初始化之后不能修改的都由 NewServer 指定，
+	// 其它字段的内容给定一个初始值，后期由用户自行决定。
+
 	// 保证不以 / 结尾
 	if len(root.Path) > 0 && root.Path[len(root.Path)-1] == '/' {
 		root.Path = root.Path[:len(root.Path)-1]

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/issue9/validation"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
@@ -30,7 +31,7 @@ type (
 	BuildResultFunc func(status, code int, message string) Result
 
 	resultMessage struct {
-		message string
+		message message.Reference
 		status  int // 对应的 HTTP 状态码
 	}
 
@@ -99,18 +100,15 @@ type (
 //
 // p 用于返回特定语言的内容。如果为空，则表示返回原始值。
 func (srv *Server) Messages(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(srv.messages))
 
 	if p == nil {
-		for code, msg := range srv.messages {
-			msgs[code] = msg.message
-		}
-	} else {
-		for code, msg := range srv.messages {
-			msgs[code] = p.Sprintf(msg.message)
-		}
+		p = srv.NewLocalePrinter(language.Und)
 	}
 
+	msgs := make(map[int]string, len(srv.messages))
+	for code, msg := range srv.messages {
+		msgs[code] = p.Sprintf(msg.message)
+	}
 	return msgs
 }
 
@@ -118,8 +116,8 @@ func (srv *Server) Messages(p *message.Printer) map[int]string {
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
 // msgs 中，键名表示的是该错误的错误代码；
-// 键值表示具体的错误描述内容。
-func (srv *Server) AddMessages(status int, msgs map[int]string) {
+// 键值表示具体的错误描述内容的翻译 ID。
+func (srv *Server) AddMessages(status int, msgs map[int]message.Reference) {
 	for code, msg := range msgs {
 		if msg == "" {
 			panic("参数 msg 不能为空值")
@@ -133,19 +131,15 @@ func (srv *Server) AddMessages(status int, msgs map[int]string) {
 	}
 }
 
-func (srv *Server) newResult(code int) Result {
-	msg, found := srv.messages[code]
+// NewResult 返回 CTXResult 实例
+func (ctx *Context) NewResult(code int) *CTXResult {
+	msg, found := ctx.server.messages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return srv.ResultBuilder(msg.status, code, msg.message)
-}
-
-// NewResult 返回 CTXResult 实例
-func (ctx *Context) NewResult(code int) *CTXResult {
 	return &CTXResult{
-		rslt: ctx.server.newResult(code),
+		rslt: ctx.server.ResultBuilder(msg.status, code, ctx.Sprintf(msg.message)),
 		ctx:  ctx,
 	}
 }

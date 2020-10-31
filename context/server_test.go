@@ -17,6 +17,8 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/context/mimetype"
 	"github.com/issue9/web/context/mimetype/gob"
@@ -37,6 +39,11 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 func newServer(a *assert.Assertion) *Server {
 	srv := newEmptyServer(a)
 
+	// srv.Catalog 默认指向 message.DefaultCatalog
+	a.NotError(message.SetString(language.Und, "lang", "und"))
+	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
+
 	err := srv.AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
@@ -53,7 +60,7 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	srv.AddMessages(411, map[int]string{41110: "41110"})
+	srv.AddMessages(411, map[int]message.Reference{41110: "41110"})
 
 	return srv
 }
