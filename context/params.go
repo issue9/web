@@ -80,19 +80,6 @@ func (p *Params) MustID(key string, def int64) int64 {
 	return ret
 }
 
-// Int 获取参数 key 所代表的值并转换成 int
-func (p *Params) Int(key string) int {
-	return int(p.Int64(key))
-}
-
-// MustInt 获取参数 key 所代表的值并转换成 int
-//
-// 若不存在或是转换出错，则返回 def 作为其默认值。
-// 仅在类型转换出错时，才会向 errors 写入错误信息。
-func (p *Params) MustInt(key string, def int) int {
-	return int(p.MustInt64(key, int64(def)))
-}
-
 // Int64 获取参数 key 所代表的值，并转换成 int64。
 func (p *Params) Int64(key string) int64 {
 	ret, err := p.params.Int(key)

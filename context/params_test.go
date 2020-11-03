@@ -28,8 +28,8 @@ func TestParams_empty(t *testing.T) {
 		ctx := newContextWithParam(w, r, a)
 		ps := ctx.Params()
 
-		a.Equal(ps.Int("id1"), 0)
-		a.Equal(ps.MustInt("id2", 2), 2)
+		a.Equal(ps.Int64("id1"), 0)
+		a.Equal(ps.MustInt64("id2", 2), 2)
 		a.True(ps.HasErrors()).
 			Equal(1, len(ps.Errors())) // MustInt 在不存在的情况，并不会生成错误信息
 	})
@@ -89,23 +89,23 @@ func TestParams_Int_MustInt(t *testing.T) {
 		ctx := newContextWithParam(w, r, a)
 		ps := ctx.Params()
 
-		a.Equal(ps.Int("i1"), 1)
-		a.Equal(ps.Int("i2"), 2)
+		a.Equal(ps.Int64("i1"), 1)
+		a.Equal(ps.Int64("i2"), 2)
 
 		// 不存在的参数，添加错误信息
-		a.Equal(ps.Int("i3"), 0)
+		a.Equal(ps.Int64("i3"), 0)
 		a.Equal(len(ps.errors), 1)
 
 		// MustInt() 不会增加错误信息
-		a.Equal(ps.MustInt("i3", 3), 3)
+		a.Equal(ps.MustInt64("i3", 3), 3)
 		a.Equal(len(ps.errors), 1)
 
 		// MustInt() 无法转换，会返回默认值，且添加错误信息
-		a.Equal(ps.MustInt("str", 3), 3)
+		a.Equal(ps.MustInt64("str", 3), 3)
 		a.Equal(len(ps.errors), 2)
 
 		// MustInt() 正常转换
-		a.Equal(ps.MustInt("i1", 3), 1)
+		a.Equal(ps.MustInt64("i1", 3), 1)
 		a.Equal(len(ps.errors), 2)
 	})
 
