@@ -58,7 +58,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 	}
 }
 
-func BenchmarkServer_newContext(b *testing.B) {
+func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b)
 	srv := newServer(a)
 
@@ -224,7 +224,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	}
 }
 
-func BenchmarkBuilder_Marshal(b *testing.B) {
+func BenchmarkServer_Marshal(b *testing.B) {
 	a := assert.New(b)
 	srv := newServer(a)
 	a.NotNil(srv)
@@ -239,7 +239,7 @@ func BenchmarkBuilder_Marshal(b *testing.B) {
 	}
 }
 
-func BenchmarkBuilder_Unmarshal(b *testing.B) {
+func BenchmarkServer_Unmarshal(b *testing.B) {
 	a := assert.New(b)
 	srv := newServer(a)
 	a.NotNil(srv)

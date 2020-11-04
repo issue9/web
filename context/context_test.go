@@ -55,7 +55,7 @@ func TestContext_Vars(t *testing.T) {
 	a.Equal(ctx.Vars[v1], 1).Equal(ctx.Vars[v2], 3)
 }
 
-func TestServer_newContext(t *testing.T) {
+func TestServer_NewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	srv := newServer(a)
