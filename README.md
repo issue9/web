@@ -42,37 +42,14 @@ func Init(s *web.Web) {
 }
 ```
 
-项目结构
----
-
-这只是推荐的目录结构，但不是必须按照此来。
-
-```text
-+----- common 一些公用的包
-|
-+----- modules 各个模块的代码
-|        |
-|        +----- module1
-|        |
-|        +----- module2
-|
-+----- cmd
-|        |
-|        +----- main.go
-|        |
-|        |----- appconfig 配置文存放路径
-|                  |
-|                  +----- web.yaml 框架本身的配置文件
-|                  |
-|                  +----- logs.xml 日志配置文件
-|
-```
-
 模块
 ---
 
-项目主要代码都在 modules 下的各个模块里，每一个模块需要包含一个初始化函数，
-用于向框架注册当前模块的一些主要信息。通过 `web.Web` 注册模块：
+在 web 中项目以模块进行划分。每个模块返回一个 *web.Module 实例，
+向项目注册自己的模块信息，在项目进行初始化时，会按照模块的依赖关系进行初始化。
+
+用户可以在模块信息中添加当前模块的路由信息、服务、计划任务等，
+这些功能在模块初始化时进行统一的注册初始化。
 
 ```go
 package m1
@@ -93,25 +70,29 @@ func Init(s *web.Web) {
 }
 ```
 
-#### 字符集
+#### 插件
 
-字符集用户无须任何操作，会自动根据 `Content-Type` 中的 charset 属性自动解析其字符集，
-输出时，也会根据 `Accept-Charset` 报头内容，作自动转换之后再输出。以下字符集都被支持：
-<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
+web 支持以插件的形式分发模块内容，只需要以 `-buildmode=plugin` 的形式编译每个模块，
+之后将编译后的模块文件放至 `Config.Plugins` 配置项所指定的目录下即可。具体的可参考下 internal/plugintest 下的插件示例。
 
-#### 媒体类型
+Go 并不是在所有的平台下都支持插件模式，支持列表可查看：<https://golang.org/pkg/plugin/>
 
-默认情况下，框架不会处理任何的 mimetype 类型的数据。需要用户通过
-`Config.Marhsalers` 和 `Config.Unmarshalers` 添加相关的处理函数。
-添加方式如下：
+字符集和文档类型
+---
+
+文档类型由 `Config.Marshalers` 和 `Config.Unmarshalers` 两个选项指定，分别对应编码和解码。
+字符类型无需用户指定，<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
+中列出的字符集都能自动转换。
 
 ```go
 conf := &web.Config {
     Marshalers: map[string]mimetype.MarhsalFunc{
         "application/json": json.Marshal,
+        "application/xml": xml.Marshal,
     },
     Unmarshalers: map[string]mimetype.UnmarhsalFunc{
         "application/json": json.Unmarshal,
+        "application/xml": xml.Unmarshal,
     },
     // 其它设置项
 }
@@ -120,7 +101,11 @@ srv := web.New(conf)
 srv.Serve()
 ```
 
-#### 错误处理
+客户端只要在请求时设置 Accept 报头就可返回相应类型的数据，而 Accept-Charset 报头可设置接收的字符集。
+Content-Type 则可以有向服务器指定提交内容的文档类型和字符集。
+
+错误处理
+---
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
 具体实现可参考 context.defaultResult 的实现。

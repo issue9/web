@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-func BenchmarkServer_Marshal(b *testing.B) {
+func BenchmarkMimetypes_Marshal(b *testing.B) {
 	a := assert.New(b)
 	srv := NewMimetypes()
 	a.NotNil(srv)
@@ -24,7 +24,7 @@ func BenchmarkServer_Marshal(b *testing.B) {
 	}
 }
 
-func BenchmarkServer_Unmarshal(b *testing.B) {
+func BenchmarkMimetypes_Unmarshal(b *testing.B) {
 	a := assert.New(b)
 	srv := NewMimetypes()
 	a.NotNil(srv)

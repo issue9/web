@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package web 一个微型的 RESTful API 框架
 package web
 
 import (
