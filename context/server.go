@@ -139,11 +139,16 @@ func (srv *Server) Cache() cache.Cache {
 // 键名为 URL 的路径部分，相对于项目根路径，键值为文件地址。
 //
 // 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
-// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
+// 将参数指定为 /admin 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 func (srv *Server) AddStatic(path, dir string) {
 	h := http.StripPrefix(path, http.FileServer(http.Dir(dir)))
 	srv.Router().Get(path+"{path}", h)
+}
+
+// RemoveStatic 删除静态路由项
+func (srv *Server) RemoveStatic(path string) {
+	srv.Router().Remove(path + "{path}")
 }
 
 // Uptime 当前服务的运行时间

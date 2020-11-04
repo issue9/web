@@ -152,11 +152,11 @@ func TestServer_AddStatic(t *testing.T) {
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), "file1")
 
-	// 不存在的文件，测试 internal/fileserver 是否启作用
-	srv.Get("/client/dir/not-exists.txt").
+	// 删除
+	server.RemoveStatic("/client")
+	srv.Get("/client/file1.txt").
 		Do().
-		Status(http.StatusNotFound).
-		StringBody("error handler test")
+		Status(http.StatusNotFound)
 }
 
 func TestServer_URL_Path(t *testing.T) {
