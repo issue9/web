@@ -41,18 +41,12 @@ func NewMimetypes() *Mimetypes {
 
 // Unmarshal 查找指定名称的 UnmarshalFunc
 func (srv *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
-	var unmarshal *unmarshaler
 	for _, mt := range srv.unmarshals {
 		if mt.name == name {
-			unmarshal = mt
-			break
+			return mt.f, nil
 		}
 	}
-	if unmarshal == nil {
-		return nil, fmt.Errorf("未找到 %s 类型的解码函数", name)
-	}
-
-	return unmarshal.f, nil
+	return nil, fmt.Errorf("未找到 %s 类型的解码函数", name)
 }
 
 // Marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数

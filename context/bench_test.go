@@ -4,7 +4,6 @@ package context
 
 import (
 	"bytes"
-	"encoding/xml"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -221,34 +220,5 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		obj.Name = "中文2"
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), gbkdata2)
-	}
-}
-
-func BenchmarkServer_Marshal(b *testing.B) {
-	a := assert.New(b)
-	srv := newServer(a)
-	a.NotNil(srv)
-
-	a.NotError(srv.AddMarshal("font/wottf", xml.Marshal))
-
-	for i := 0; i < b.N; i++ {
-		name, marshal, err := srv.mimetypes.Marshal("font/wottf;q=0.9")
-		a.NotError(err).
-			NotEmpty(name).
-			NotNil(marshal)
-	}
-}
-
-func BenchmarkServer_Unmarshal(b *testing.B) {
-	a := assert.New(b)
-	srv := newServer(a)
-	a.NotNil(srv)
-
-	a.NotError(srv.AddUnmarshal("font/wottf", xml.Unmarshal))
-
-	for i := 0; i < b.N; i++ {
-		marshal, err := srv.mimetypes.Unmarshal("font/wottf")
-		a.NotError(err).
-			NotNil(marshal)
 	}
 }

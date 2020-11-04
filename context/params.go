@@ -80,7 +80,7 @@ func (p *Params) MustID(key string, def int64) int64 {
 	return ret
 }
 
-// Int64 获取参数 key 所代表的值，并转换成 int64。
+// Int64 获取参数 key 所代表的值，并转换成 int64
 func (p *Params) Int64(key string) int64 {
 	ret, err := p.params.Int(key)
 	if err != nil {
