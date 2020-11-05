@@ -46,11 +46,11 @@ func TestPrefix_Filters(t *testing.T) {
 
 	srv := rest.NewServer(t, server.Handler(), nil)
 
-	srv.Get("/test").
+	srv.Get("/root/test").
 		Do().
 		Status(http.StatusCreated) // 验证状态码是否正确
 
-	srv.Get("/p2/test").
+	srv.Get("/root/p2/test").
 		Do().
 		Status(http.StatusAccepted) // 验证状态码是否正确
 }
@@ -65,7 +65,7 @@ func TestServer_AddFilters(t *testing.T) {
 	})
 
 	rest.NewServer(t, server.Handler(), nil).
-		Get("/test").
+		Get("/root/test").
 		Do().
 		Status(http.StatusAccepted) // 验证状态码是否正确
 }

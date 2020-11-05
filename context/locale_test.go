@@ -38,28 +38,28 @@ func TestContext_Sprintf(t *testing.T) {
 	s := rest.NewServer(t, srv.Handler(), nil)
 	defer s.Close()
 
-	s.Get("/sprintf").
+	s.Get("/root/sprintf").
 		Header("accept-language", "cmn-hant").
 		Header("accept", "application/json").
 		Do().
 		StringBody(`"測試"`)
 
-	s.Get("/sprintf").
+	s.Get("/root/sprintf").
 		Header("accept-language", "cmn-hans").
 		Header("accept", "application/json").
 		Do().
 		StringBody(`"测试"`)
 
 	// 切换 catalog
-	s.Get("/change").Do().Status(http.StatusOK)
+	s.Get("/root/change").Do().Status(http.StatusOK)
 
-	s.Get("/fprintf").
+	s.Get("/root/fprintf").
 		Header("accept-language", "cmn-hant").
 		Header("accept", "application/json").
 		Do().
 		StringBody("測試1")
 
-	s.Get("/fprintf").
+	s.Get("/root/fprintf").
 		Header("accept-language", "cmn-hans").
 		Header("accept", "application/json").
 		Do().

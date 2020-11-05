@@ -3,7 +3,6 @@
 package context
 
 import (
-	"net/http"
 	"net/url"
 	"path"
 	"time"
@@ -132,23 +131,6 @@ func (srv *Server) Logs() *logs.Logs {
 // Cache 返回缓存的相关接口
 func (srv *Server) Cache() cache.Cache {
 	return srv.cache
-}
-
-// AddStatic 添加静态路由
-//
-// 键名为 URL 的路径部分，相对于项目根路径，键值为文件地址。
-//
-// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
-// 将参数指定为 /admin 和 ~/data/assets/admin
-// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (srv *Server) AddStatic(path, dir string) {
-	h := http.StripPrefix(path, http.FileServer(http.Dir(dir)))
-	srv.Router().Get(path+"{path}", h)
-}
-
-// RemoveStatic 删除静态路由项
-func (srv *Server) RemoveStatic(path string) {
-	srv.Router().Remove(path + "{path}")
 }
 
 // Uptime 当前服务的运行时间

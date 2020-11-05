@@ -4,6 +4,7 @@ package context
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/issue9/mux/v2"
 )
@@ -43,54 +44,6 @@ func (p *Prefix) Resource(pattern string, filter ...Filter) *Resource {
 	}
 }
 
-// Handle 添加路由项
-func (r *Resource) Handle(h HandlerFunc, method ...string) error {
-	return r.srv.Handle(r.pattern, h, method...)
-}
-
-func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
-	if err := r.Handle(FilterHandler(h, r.filters...), method...); err != nil {
-		panic(err)
-	}
-	return r
-}
-
-// Get 指定一个 GET 请求
-func (r *Resource) Get(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodGet)
-}
-
-// Post 指定个 POST 请求处理
-func (r *Resource) Post(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPost)
-}
-
-// Delete 指定个 Delete 请求处理
-func (r *Resource) Delete(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodDelete)
-}
-
-// Put 指定个 Put 请求处理
-func (r *Resource) Put(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPut)
-}
-
-// Patch 指定个 Patch 请求处理
-func (r *Resource) Patch(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPatch)
-}
-
-// Remove 删除指定的路由项
-func (r *Resource) Remove(method ...string) {
-	r.srv.Remove(r.pattern, method...)
-}
-
-// Options 添加 OPTIONS 请求处理项
-func (r *Resource) Options(allow string) *Resource {
-	r.srv.Options(r.pattern, allow)
-	return r
-}
-
 // Router 返回操作路由项的实例
 //
 // Router 可以处理兼容标准库的 net/http.Handler。
@@ -100,14 +53,40 @@ func (srv *Server) Router() *mux.Prefix {
 
 // Handle 添加路由请求项
 func (srv *Server) Handle(path string, h HandlerFunc, method ...string) error {
-	return srv.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	return srv.Router().HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		FilterHandler(h, srv.filters...)(srv.NewContext(w, r))
 	}, method...)
 }
 
 // Remove 删除指定的路由项
 func (srv *Server) Remove(path string, method ...string) {
-	srv.router.Remove(path, method...)
+	srv.Router().Remove(path, method...)
+}
+
+// AddStatic 添加静态路由
+//
+// dir 为指向静态文件的路径；
+// path 如果不是 URL，表示相对于当前项目根目录的路径，相当于直接调用
+//  http.StripPrefix(path, http.FileServer(http.Dir(dir)))
+// 如果是完整的 URL，则表示限定域名的静态路径，路径部分不再相对项目根目录。
+//
+// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
+// 将参数指定为 /admin 和 ~/data/assets/admin
+// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
+func (srv *Server) AddStatic(path, dir string) error {
+	if path != "" && path[0] != '/' {
+		index := strings.IndexByte(path, '/')
+		h := http.StripPrefix(path[index:], http.FileServer(http.Dir(dir)))
+		return srv.Router().Mux().Handle(path+"{path}", h, http.MethodGet)
+	}
+
+	h := http.StripPrefix(srv.Path(path), http.FileServer(http.Dir(dir)))
+	return srv.Router().Handle(path+"{path}", h, http.MethodGet)
+}
+
+// RemoveStatic 删除静态路由项
+func (srv *Server) RemoveStatic(path string) {
+	srv.Router().Remove(path + "{path}")
 }
 
 // Handle 添加路由请求项
@@ -160,6 +139,9 @@ func (srv *Server) Prefix(prefix string, filter ...Filter) *Prefix {
 
 // Handle 添加路由请求项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
+	if path != "" && path[0] != '/' {
+		return p.srv.Handle(path, h, method...)
+	}
 	return p.srv.Handle(p.prefix+path, h, method...)
 }
 
@@ -206,4 +188,52 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 // Remove 删除指定的路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.srv.Remove(p.prefix+path, method...)
+}
+
+// Handle 添加路由项
+func (r *Resource) Handle(h HandlerFunc, method ...string) error {
+	return r.srv.Handle(r.pattern, h, method...)
+}
+
+func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
+	if err := r.Handle(FilterHandler(h, r.filters...), method...); err != nil {
+		panic(err)
+	}
+	return r
+}
+
+// Get 指定一个 GET 请求
+func (r *Resource) Get(h HandlerFunc) *Resource {
+	return r.handle(h, http.MethodGet)
+}
+
+// Post 指定个 POST 请求处理
+func (r *Resource) Post(h HandlerFunc) *Resource {
+	return r.handle(h, http.MethodPost)
+}
+
+// Delete 指定个 Delete 请求处理
+func (r *Resource) Delete(h HandlerFunc) *Resource {
+	return r.handle(h, http.MethodDelete)
+}
+
+// Put 指定个 Put 请求处理
+func (r *Resource) Put(h HandlerFunc) *Resource {
+	return r.handle(h, http.MethodPut)
+}
+
+// Patch 指定个 Patch 请求处理
+func (r *Resource) Patch(h HandlerFunc) *Resource {
+	return r.handle(h, http.MethodPatch)
+}
+
+// Remove 删除指定的路由项
+func (r *Resource) Remove(method ...string) {
+	r.srv.Remove(r.pattern, method...)
+}
+
+// Options 添加 OPTIONS 请求处理项
+func (r *Resource) Options(allow string) *Resource {
+	r.srv.Options(r.pattern, allow)
+	return r
 }

@@ -3,18 +3,14 @@
 package context
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	"golang.org/x/text/language"
@@ -37,14 +33,17 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	srv := newEmptyServer(a)
+	u, err := url.Parse("/root")
+	a.NotError(err).NotNil(u)
+	srv := NewServer(logs.New(), memory.New(time.Hour), false, false, u)
+	a.NotNil(srv)
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
 	a.NotError(message.SetString(language.Und, "lang", "und"))
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	err := srv.AddMarshals(map[string]mimetype.MarshalFunc{
+	err = srv.AddMarshals(map[string]mimetype.MarshalFunc{
 		"application/json":       json.Marshal,
 		"application/xml":        xml.Marshal,
 		mimetype.DefaultMimetype: gob.Marshal,
@@ -65,11 +64,22 @@ func newServer(a *assert.Assertion) *Server {
 	return srv
 }
 
-func newEmptyServer(a *assert.Assertion) *Server {
-	srv := NewServer(logs.New(), memory.New(time.Hour), false, false, &url.URL{})
+func TestNewServer(t *testing.T) {
+	a := assert.New(t)
+	l := logs.New()
+	srv := NewServer(l, memory.New(time.Hour), false, false, &url.URL{})
 	a.NotNil(srv)
-	a.NotNil(srv.Logs()).NotNil(srv.Cache())
-	return srv
+	a.False(srv.Uptime().IsZero())
+	a.Equal(l, srv.Logs())
+	a.NotNil(srv.Cache())
+	a.Equal(srv.Catalog, message.DefaultCatalog)
+	a.Equal(srv.Location, time.Local)
+	a.Equal(srv.root, "")
+
+	u, err := url.Parse("/root")
+	a.NotError(err).NotNil(u)
+	srv = NewServer(l, memory.New(time.Hour), false, false, u)
+	a.Equal(srv.root, "/root")
 }
 
 func TestServer_Vars(t *testing.T) {
@@ -92,71 +102,6 @@ func TestServer_Vars(t *testing.T) {
 	srv.Vars[v3] = 3
 
 	a.Equal(srv.Vars[v1], 1).Equal(srv.Vars[v2], 3)
-}
-
-func TestServer_AddStatic(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
-		_, err := w.Write([]byte("error handler test"))
-		a.NotError(err)
-	}, http.StatusNotFound)
-
-	server.Router().Mux().GetFunc("/m1/test", f201)
-	server.AddStatic("/client", "./testdata/")
-	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
-		_, err := w.Write([]byte("error handler test"))
-		a.NotError(err)
-	}, http.StatusNotFound)
-
-	srv := rest.NewServer(t, server.Handler(), nil)
-	defer srv.Close()
-
-	buf := new(bytes.Buffer)
-	srv.Get("/m1/test").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do().
-		Status(http.StatusCreated).
-		ReadBody(buf).
-		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-	reader, err := gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err := ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "1234567890")
-
-	// not found
-	// 返回 ErrorHandler 内容
-	srv.Get("/not-exists.txt").
-		Do().
-		Status(http.StatusNotFound).
-		StringBody("error handler test")
-
-	// static 中定义的静态文件
-	buf.Reset()
-	srv.Get("/client/file1.txt").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do().
-		Status(http.StatusOK).
-		ReadBody(buf).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-	reader, err = gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err = ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "file1")
-
-	// 删除
-	server.RemoveStatic("/client")
-	srv.Get("/client/file1.txt").
-		Do().
-		Status(http.StatusNotFound)
 }
 
 func TestServer_URL_Path(t *testing.T) {

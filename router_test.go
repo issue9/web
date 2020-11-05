@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -49,6 +50,23 @@ func TestResource(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "abcdef")
+
+	// 带域名
+	server = newServer(a)
+	m = server.NewModule("m1", "m1 desc")
+	res = m.Resource("example.com/res")
+	res.Delete(f1)
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/root/res", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/res", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestPrefix(t *testing.T) {
@@ -79,6 +97,23 @@ func TestPrefix(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "abcdef")
+
+	// prefix 带域名
+	server = newServer(a)
+	m = server.NewModule("m1", "m1 desc")
+	p = m.Prefix("/p")
+	p.Delete("example.com/domain", f1)
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/root/p/domain", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/domain", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestModule_Handle(t *testing.T) {
@@ -136,6 +171,22 @@ func TestModule_Handle(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
+
+	// 带域名
+	server = newServer(a)
+	m = server.NewModule("m1", "m1 desc")
+	m.Delete("example.com/domain", f1)
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/root/domain", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/domain", nil)
+	server.CTXServer().Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func buildFilter(num int) context.Filter {
