@@ -25,7 +25,7 @@ func newDepWeb(ms []*Module) *Web {
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	dep := newDepWeb([]*Module{
 		m(srv, "m1", nil, "d1", "d2"),
@@ -52,7 +52,7 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	dep := newDepWeb([]*Module{
 		m(srv, "m1", nil, "d1", "d2"),
@@ -84,7 +84,7 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)

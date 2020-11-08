@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -24,7 +23,7 @@ var (
 func TestResource(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
+	server := newWeb(a)
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -50,29 +49,12 @@ func TestResource(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "abcdef")
-
-	// 带域名
-	server = newServer(a)
-	m = server.NewModule("m1", "m1 desc")
-	res = m.Resource("example.com/res")
-	res.Delete(f1)
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/root/res", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/res", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestPrefix(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
+	server := newWeb(a)
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -97,29 +79,12 @@ func TestPrefix(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "abcdef")
-
-	// prefix 带域名
-	server = newServer(a)
-	m = server.NewModule("m1", "m1 desc")
-	p = m.Prefix("/p")
-	p.Delete("example.com/domain", f1)
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/root/p/domain", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/domain", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
+	server := newWeb(a)
 	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
 	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -135,7 +100,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 
-	server = newServer(a)
+	server = newWeb(a)
 	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
 	m = server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -149,7 +114,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 各个请求方法
 
-	server = newServer(a)
+	server = newWeb(a)
 	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
 	m = server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -171,22 +136,6 @@ func TestModule_Handle(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
-
-	// 带域名
-	server = newServer(a)
-	m = server.NewModule("m1", "m1 desc")
-	m.Delete("example.com/domain", f1)
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/root/domain", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/domain", nil)
-	server.CTXServer().Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func buildFilter(num int) context.Filter {
@@ -209,7 +158,7 @@ func buildFilter(num int) context.Filter {
 func TestPrefix_Filters(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
+	server := newWeb(a)
 	m1 := server.NewModule("m1", "m1 desc")
 	m1.AddFilters(buildFilter(1), buildFilter(2))
 	p1 := m1.Prefix("/p1", buildFilter(3), buildFilter(4))
@@ -241,7 +190,7 @@ func TestPrefix_Filters(t *testing.T) {
 func TestModule_Options(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
+	server := newWeb(a)
 	m1 := server.NewModule("m1", "m1 desc")
 	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
 		return context.HandlerFunc(func(ctx *context.Context) {
@@ -271,7 +220,7 @@ func TestModule_Options(t *testing.T) {
 
 	// 通 Handle 修改的 OPTIONS，正常接受中间件
 
-	server = newServer(a)
+	server = newWeb(a)
 	m1 = server.NewModule("m1", "m1 desc")
 	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
 		return context.HandlerFunc(func(ctx *context.Context) {

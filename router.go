@@ -92,10 +92,7 @@ func (p *Prefix) Module() *Module {
 
 // Handle 添加路由项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
-	if path == "" || path[0] == '/' {
-		path = p.p + path
-	}
-	p.Module().handle(path, h, p.filters, method...)
+	p.Module().handle(p.p+path, h, p.filters, method...)
 	return p
 }
 

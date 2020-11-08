@@ -4,9 +4,8 @@ package context
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/issue9/mux/v2"
+	"github.com/issue9/mux/v3"
 )
 
 // HandlerFunc 路由项处理函数原型
@@ -65,21 +64,13 @@ func (srv *Server) Remove(path string, method ...string) {
 
 // AddStatic 添加静态路由
 //
+// path 为路由地址；
 // dir 为指向静态文件的路径；
-// path 如果不是 URL，表示相对于当前项目根目录的路径，相当于直接调用
-//  http.StripPrefix(path, http.FileServer(http.Dir(dir)))
-// 如果是完整的 URL，则表示限定域名的静态路径，路径部分不再相对项目根目录。
 //
 // 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
 // 将参数指定为 /admin 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 func (srv *Server) AddStatic(path, dir string) error {
-	if path != "" && path[0] != '/' {
-		index := strings.IndexByte(path, '/')
-		h := http.StripPrefix(path[index:], http.FileServer(http.Dir(dir)))
-		return srv.Router().Mux().Handle(path+"{path}", h, http.MethodGet)
-	}
-
 	h := http.StripPrefix(srv.Path(path), http.FileServer(http.Dir(dir)))
 	return srv.Router().Handle(path+"{path}", h, http.MethodGet)
 }
@@ -139,9 +130,6 @@ func (srv *Server) Prefix(prefix string, filter ...Filter) *Prefix {
 
 // Handle 添加路由请求项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
-	if path != "" && path[0] != '/' {
-		return p.srv.Handle(path, h, method...)
-	}
 	return p.srv.Handle(p.prefix+path, h, method...)
 }
 

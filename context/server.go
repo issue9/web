@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/middleware/v2/compress"
 	"github.com/issue9/middleware/v2/debugger"
 	"github.com/issue9/middleware/v2/errorhandler"
-	"github.com/issue9/mux/v2"
+	"github.com/issue9/mux/v3"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 

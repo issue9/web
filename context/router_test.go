@@ -7,7 +7,6 @@ import (
 	"compress/gzip"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -57,18 +56,6 @@ func TestPrefix(t *testing.T) {
 	srv.Delete("/root/p" + path).Do().Status(http.StatusMethodNotAllowed)
 	res.Remove(http.MethodGet)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusNotFound)
-
-	// prefix 带域名
-	p.Delete("example.com/domain", f1)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/root/p/domain", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/domain", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestResource(t *testing.T) {
@@ -102,20 +89,6 @@ func TestResource(t *testing.T) {
 
 	res.Options("def")
 	srv.NewRequest(http.MethodOptions, "/root"+path).Do().Header("allow", "def")
-
-	// 带域名
-	server = newServer(a)
-	res = server.Resource("example.com/resource")
-	res.Delete(f1)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/root/resource", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "http://example.com:88/resource", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestServer_Handle(t *testing.T) {
@@ -170,18 +143,6 @@ func TestServer_Handle(t *testing.T) {
 	srv.NewRequest(http.MethodOptions, "/root"+path).
 		Do().
 		Status(http.StatusMethodNotAllowed)
-
-	//  带域名
-	server.Get("example.com/domain", f1)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/root/domain", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "http://example.com:88/domain", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestServer_Static(t *testing.T) {
@@ -247,11 +208,4 @@ func TestServer_Static(t *testing.T) {
 	srv.Get("/root/client/file1.txt").
 		Do().
 		Status(http.StatusNotFound)
-
-	// 带域名
-	server.AddStatic("example.com/client", "./testdata/")
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "http://example.com/client/file1.txt", nil)
-	server.Handler().ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }

@@ -169,8 +169,11 @@ func (web *Web) Init(tag string, info *log.Logger) error {
 
 	if all := web.ctxServer.Router().Mux().All(true, true); len(all) > 0 {
 		info.Println("模块加载了以下路由项：")
-		for path, methods := range all {
-			info.Printf("[%s] %s\n", strings.Join(methods, ", "), path)
+		for _, router := range all {
+			info.Println(router.Name)
+			for path, methods := range router.Routes {
+				info.Printf("    [%s] %s\n", strings.Join(methods, ", "), path)
+			}
 		}
 	}
 

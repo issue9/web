@@ -26,7 +26,7 @@ func TestModuleInitFuncName(t *testing.T) {
 
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 	m := srv.NewModule("user1", "user1 desc")
 	a.NotNil(m)
 
@@ -44,7 +44,7 @@ func TestModule_NewTag(t *testing.T) {
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	m := srv.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -73,7 +73,7 @@ func TestModule_AddInit(t *testing.T) {
 
 func TestWeb_Tags(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	m1 := srv.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
@@ -99,7 +99,7 @@ func TestWeb_Tags(t *testing.T) {
 
 func TestWeb_Init(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newWeb(a)
 
 	m1 := srv.NewModule("m1", "m1 desc", "m2")
 	m1.AddCron("test cron", job, "* * 8 * * *", true)

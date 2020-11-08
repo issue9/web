@@ -22,7 +22,7 @@ var f202 = func(ctx *Context) {
 }
 
 // 声明一个 Server 实例
-func newServer(a *assert.Assertion) *Web {
+func newWeb(a *assert.Assertion) *Web {
 	web, err := Classic("./testdata/logs.xml", "./testdata/web.yaml")
 	a.NotError(err).NotNil(web)
 
@@ -45,7 +45,7 @@ func TestWeb_Run(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	web := newServer(a)
+	web := newWeb(a)
 	web.CTXServer().Get("/mux/test", f202)
 
 	m1 := web.NewModule("m1", "m1 desc")
@@ -106,7 +106,7 @@ func TestWeb_Run(t *testing.T) {
 
 func TestWeb_Close(t *testing.T) {
 	a := assert.New(t)
-	web := newServer(a)
+	web := newWeb(a)
 	exit := make(chan bool, 1)
 
 	web.CTXServer().Get("/test", f202)
@@ -143,7 +143,7 @@ func TestWeb_Close(t *testing.T) {
 
 func TestWeb_Shutdown(t *testing.T) {
 	a := assert.New(t)
-	web := newServer(a)
+	web := newWeb(a)
 	web.shutdownTimeout = 300 * time.Millisecond
 	exit := make(chan bool, 1)
 
