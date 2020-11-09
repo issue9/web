@@ -7,20 +7,96 @@ import (
 	"compress/gzip"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/mux/v3"
 )
 
 var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
+
+func TestRouter(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.Handler(), nil)
+	router := server.Router()
+
+	path := "/path"
+	a.NotError(router.Handle(path, f1, http.MethodGet, http.MethodDelete))
+	srv.Get("/root" + path).Do().Status(http.StatusOK)
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+	srv.Post("/root"+path, nil).Do().Status(http.StatusMethodNotAllowed)
+
+	// 不指定请求方法，表示所有请求方法
+	path = "/path1"
+	a.NotError(router.Handle(path, f1))
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
+
+	path = "/path2"
+
+	srv.Delete("/root" + path).Do().Status(http.StatusNotFound)
+
+	router.Delete(path, f1)
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+
+	router.Get(path, f1)
+	srv.Get("/root" + path).Do().Status(http.StatusOK)
+
+	router.Post(path, f1)
+	srv.Post("/root"+path, nil).Do().Status(http.StatusOK)
+
+	router.Patch(path, f1)
+	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
+
+	router.Put(path, f1)
+	srv.Put("/root"+path, nil).Do().Status(http.StatusOK)
+
+	srv.NewRequest(http.MethodOptions, "/root"+path).
+		Do().
+		Status(http.StatusOK).
+		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
+
+	// 自定义 options
+	router.Options(path, "abc")
+	srv.NewRequest(http.MethodOptions, "/root"+path).
+		Do().
+		Status(http.StatusOK).
+		Header("Allow", "abc")
+
+	router.Remove(path, http.MethodOptions)
+	srv.NewRequest(http.MethodOptions, "/root"+path).
+		Do().
+		Status(http.StatusMethodNotAllowed)
+}
+
+func TestRouter_NewRoute(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	router, ok := srv.Router().NewRouter("host", mux.NewHosts("example.com"))
+	a.True(ok).NotNil(router)
+
+	router.Prefix("/p1").Delete("/path", f1)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	srv.Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
+
+	router.Prefix("/p1").Prefix("/p2").Put("/path", f1)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodPut, "https://example.com:88/p1/p2/path", nil)
+	srv.Handler().ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
+}
 
 func TestPrefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 	srv := rest.NewServer(t, server.Handler(), nil)
 
-	p := server.Prefix("/p")
+	p := server.Router().Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
@@ -64,7 +140,7 @@ func TestResource(t *testing.T) {
 	server := newServer(a)
 
 	path := "/path"
-	res := server.Resource(path)
+	res := server.Router().Resource(path)
 	a.NotNil(res)
 
 	srv := rest.NewServer(t, server.Handler(), nil)
@@ -91,60 +167,6 @@ func TestResource(t *testing.T) {
 	srv.NewRequest(http.MethodOptions, "/root"+path).Do().Header("allow", "def")
 }
 
-func TestServer_Handle(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
-
-	path := "/path"
-	a.NotError(server.Handle(path, f1, http.MethodGet, http.MethodDelete))
-	srv.Get("/root" + path).Do().Status(http.StatusOK)
-	srv.Delete("/root" + path).Do().Status(http.StatusOK)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusMethodNotAllowed)
-
-	// 不指定请求方法，表示所有请求方法
-	path = "/path1"
-	a.NotError(server.Handle(path, f1))
-	srv.Delete("/root" + path).Do().Status(http.StatusOK)
-	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
-
-	path = "/path2"
-
-	srv.Delete("/root" + path).Do().Status(http.StatusNotFound)
-
-	server.Delete(path, f1)
-	srv.Delete("/root" + path).Do().Status(http.StatusOK)
-
-	server.Get(path, f1)
-	srv.Get("/root" + path).Do().Status(http.StatusOK)
-
-	server.Post(path, f1)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusOK)
-
-	server.Patch(path, f1)
-	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
-
-	server.Put(path, f1)
-	srv.Put("/root"+path, nil).Do().Status(http.StatusOK)
-
-	srv.NewRequest(http.MethodOptions, "/root"+path).
-		Do().
-		Status(http.StatusOK).
-		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
-
-	// 自定义 options
-	server.Options(path, "abc")
-	srv.NewRequest(http.MethodOptions, "/root"+path).
-		Do().
-		Status(http.StatusOK).
-		Header("Allow", "abc")
-
-	server.Remove(path, http.MethodOptions)
-	srv.NewRequest(http.MethodOptions, "/root"+path).
-		Do().
-		Status(http.StatusMethodNotAllowed)
-}
-
 func TestServer_Static(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
@@ -155,7 +177,7 @@ func TestServer_Static(t *testing.T) {
 	}, http.StatusNotFound)
 
 	server.Router().Mux().GetFunc("/m1/test", f201)
-	server.AddStatic("/client", "./testdata/")
+	server.Router().AddStatic("/client", "./testdata/")
 	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
@@ -204,7 +226,7 @@ func TestServer_Static(t *testing.T) {
 	a.Equal(string(data), "file1")
 
 	// 删除
-	server.RemoveStatic("/client")
+	server.Router().RemoveStatic("/client")
 	srv.Get("/root/client/file1.txt").
 		Do().
 		Status(http.StatusNotFound)

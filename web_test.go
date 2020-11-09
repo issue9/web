@@ -46,7 +46,7 @@ func TestWeb_Run(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	web := newWeb(a)
-	web.CTXServer().Get("/mux/test", f202)
+	web.CTXServer().Router().Get("/mux/test", f202)
 
 	m1 := web.NewModule("m1", "m1 desc")
 	m1.Get("/m1/test", f202)
@@ -109,8 +109,8 @@ func TestWeb_Close(t *testing.T) {
 	web := newWeb(a)
 	exit := make(chan bool, 1)
 
-	web.CTXServer().Get("/test", f202)
-	web.CTXServer().Get("/close", func(ctx *Context) {
+	web.CTXServer().Router().Get("/test", f202)
+	web.CTXServer().Router().Get("/close", func(ctx *Context) {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
@@ -147,8 +147,8 @@ func TestWeb_Shutdown(t *testing.T) {
 	web.shutdownTimeout = 300 * time.Millisecond
 	exit := make(chan bool, 1)
 
-	web.CTXServer().Get("/test", f202)
-	web.CTXServer().Get("/close", func(ctx *Context) {
+	web.CTXServer().Router().Get("/test", f202)
+	web.CTXServer().Router().Get("/close", func(ctx *Context) {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)

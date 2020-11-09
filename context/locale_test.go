@@ -25,13 +25,13 @@ func TestContext_Sprintf(t *testing.T) {
 	a := assert.New(t)
 
 	srv := newServer(a)
-	srv.Get("/sprintf", func(ctx *Context) {
+	srv.Router().Get("/sprintf", func(ctx *Context) {
 		ctx.Render(http.StatusOK, ctx.Sprintf("test"), nil)
 	})
-	srv.Get("/change", func(ctx *Context) {
+	srv.Router().Get("/change", func(ctx *Context) {
 		ctx.Server().Catalog = cat
 	})
-	srv.Get("/fprintf", func(ctx *Context) {
+	srv.Router().Get("/fprintf", func(ctx *Context) {
 		ctx.Fprintf(ctx.Response, "test")
 	})
 

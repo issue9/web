@@ -149,7 +149,7 @@ func (m *Module) handle(path string, h HandlerFunc, filter []Filter, method ...s
 		copy(filters[l:], filter)
 
 		h = context.FilterHandler(h, filters...)
-		return m.web.ctxServer.Handle(path, h, method...)
+		return m.web.ctxServer.Router().Handle(path, h, method...)
 	}, fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path))
 	return m
 }
@@ -182,7 +182,7 @@ func (m *Module) Patch(path string, h HandlerFunc) *Module {
 // Options 指定个 OPTIONS 请求处理
 func (m *Module) Options(path, allow string) *Module {
 	m.AddInit(func() error {
-		m.web.ctxServer.Options(path, allow)
+		m.web.ctxServer.Router().Options(path, allow)
 		return nil
 	}, fmt.Sprintf("注册路由：OPTIONS %s", path))
 	return m

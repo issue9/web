@@ -4,7 +4,6 @@ package context
 
 import (
 	"net/url"
-	"path"
 	"time"
 
 	"github.com/issue9/cache"
@@ -65,8 +64,8 @@ type Server struct {
 
 	// url
 	root   string
-	url    *url.URL
-	router *mux.Prefix
+	mux    *mux.Mux
+	router *Router
 
 	logs      *logs.Logs
 	uptime    time.Time
@@ -87,7 +86,6 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 	}
 
 	mux := mux.New(disableOptions, disableHead, false, nil, nil)
-	router := mux.Prefix(root.Path)
 
 	srv := &Server{
 		Location:      time.Local,
@@ -98,7 +96,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 
 		cache: cache,
 
-		middlewares: middleware.NewManager(router.Mux()),
+		middlewares: middleware.NewManager(mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
 			"gzip":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
@@ -107,9 +105,8 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		root:   root.String(),
-		url:    root,
-		router: router,
+		root: root.String(),
+		mux:  mux,
 
 		logs:      logs,
 		uptime:    time.Now(),
@@ -117,6 +114,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 
 		messages: make(map[int]*resultMessage, 20),
 	}
+	srv.router = buildRouter(srv, mux, root.Path)
 
 	srv.buildMiddlewares()
 
@@ -157,12 +155,7 @@ func (ctx *Context) Server() *Server {
 
 // Path 生成路径部分的地址
 func (srv *Server) Path(p string) string {
-	p = path.Join(srv.url.Path, p)
-	if p != "" && p[0] != '/' {
-		p = "/" + p
-	}
-
-	return p
+	return srv.Router().path(p)
 }
 
 // URL 构建一条基于 Root 的完整 URL

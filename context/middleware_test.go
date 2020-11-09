@@ -32,9 +32,9 @@ func TestPrefix_Filters(t *testing.T) {
 
 	server := newServer(a)
 	server.AddFilters(buildFilter(1), buildFilter(2))
-	p2 := server.Prefix("/p2", buildFilter(3), buildFilter(4))
+	p2 := server.Router().Prefix("/p2", buildFilter(3), buildFilter(4))
 
-	server.Get("/test", func(ctx *Context) {
+	server.Router().Get("/test", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []int{1, 2})
 		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
 	})
@@ -59,7 +59,7 @@ func TestServer_AddFilters(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 	server.AddFilters(buildFilter(1), buildFilter(2))
-	server.Get("/test", func(ctx *Context) {
+	server.Router().Get("/test", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []int{1, 2}) // 查看调用顺序是否正确
 		ctx.Render(http.StatusAccepted, nil, nil) // 不能输出 200 的状态码
 	})

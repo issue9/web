@@ -50,6 +50,7 @@ func newServer(a *assert.Assertion) *Server {
 		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
+	a.Error(srv.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal))
 
 	err = srv.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
 		"application/json":       json.Unmarshal,
@@ -58,6 +59,7 @@ func newServer(a *assert.Assertion) *Server {
 		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
+	a.Error(srv.AddUnmarshal(mimetypetest.Mimetype, mimetypetest.TextUnmarshal))
 
 	srv.AddMessages(411, map[int]message.Reference{41110: "41110"})
 
