@@ -177,7 +177,15 @@ func TestServer_Static(t *testing.T) {
 	}, http.StatusNotFound)
 
 	server.Router().Mux().GetFunc("/m1/test", f201)
-	server.Router().AddStatic("/client", "./testdata/")
+
+	r := server.Router()
+	a.Error(r.Static("/path", "./testdata"))      // 不包含命名参数
+	a.Error(r.Static("/path/{abc", "./testdata")) // 格式无效
+	a.Error(r.Static("/path/abc}", "./testdata")) // 格式无效
+	a.Error(r.Static("/path/{}", "./testdata"))   // 命名参数未指定名称
+	a.Error(r.Static("/path/{}}", "./testdata"))  // 格式无效
+
+	r.Static("/client/{path}", "./testdata/")
 	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
@@ -226,7 +234,7 @@ func TestServer_Static(t *testing.T) {
 	a.Equal(string(data), "file1")
 
 	// 删除
-	server.Router().RemoveStatic("/client")
+	r.Remove("/client/{path}")
 	srv.Get("/root/client/file1.txt").
 		Do().
 		Status(http.StatusNotFound)

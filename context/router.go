@@ -3,8 +3,10 @@
 package context
 
 import (
+	"errors"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/issue9/mux/v3"
 )
@@ -94,23 +96,25 @@ func (router *Router) NewRouter(name string, matcher mux.Matcher, filter ...Filt
 	return buildRouter(router.srv, m, "", filter...), true
 }
 
-// AddStatic 添加静态路由
+// Static 添加静态路由
 //
-// path 为路由地址；
+// path 为路由地址，必须以命名参数结尾，比如 /assets/{path}，之后可以通过此值删除路由项；
 // dir 为指向静态文件的路径；
 //
+// 如果要删除该静态路由，则可以将 path 传递给 Remove 进行删除。
+//
 // 比如在 Root 的值为 example.com/blog 时，
-// 将参数指定为 /admin 和 ~/data/assets/admin
+// 将参数指定为 /admin/{path} 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (router *Router) AddStatic(path, dir string) error {
+func (router *Router) Static(path, dir string) error {
 	path = router.path(path)
-	h := http.StripPrefix(path, http.FileServer(http.Dir(dir)))
-	return router.Mux().Handle(path+"{path}", h, http.MethodGet)
-}
+	lastStart := strings.LastIndexByte(path, '{')
+	if lastStart < 0 || len(path) == 0 || path[len(path)-1] != '}' || lastStart+2 == len(path) {
+		return errors.New("path 必须是命名参数结尾：比如 /assets/{path}。")
+	}
 
-// RemoveStatic 删除静态路由项
-func (router *Router) RemoveStatic(path string) {
-	router.Remove(path + "{path}")
+	h := http.StripPrefix(path[:lastStart], http.FileServer(http.Dir(dir)))
+	return router.Mux().Handle(path, h, http.MethodGet)
 }
 
 // Resource 生成资源项

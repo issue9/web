@@ -167,7 +167,7 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 	srv.Location = conf.location
 
 	for path, dir := range conf.Static {
-		srv.Router().AddStatic(path, dir)
+		srv.Router().Static(path, dir)
 	}
 
 	if conf.Catalog != nil {
