@@ -20,8 +20,8 @@ import (
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/gob"
+	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/gob"
 	"github.com/issue9/web/internal/version"
 	"github.com/issue9/web/service"
 )
@@ -84,16 +84,16 @@ func Classic(logConfigFile, configFile string) (*Web, error) {
 		return nil, err
 	}
 
-	conf.Marshalers = map[string]mimetype.MarshalFunc{
-		"application/json":       json.Marshal,
-		"application/xml":        xml.Marshal,
-		mimetype.DefaultMimetype: gob.Marshal,
+	conf.Marshalers = map[string]contentype.MarshalFunc{
+		"application/json":         json.Marshal,
+		"application/xml":          xml.Marshal,
+		contentype.DefaultMimetype: gob.Marshal,
 	}
 
-	conf.Unmarshalers = map[string]mimetype.UnmarshalFunc{
-		"application/json":       json.Unmarshal,
-		"application/xml":        xml.Unmarshal,
-		mimetype.DefaultMimetype: gob.Unmarshal,
+	conf.Unmarshalers = map[string]contentype.UnmarshalFunc{
+		"application/json":         json.Unmarshal,
+		"application/xml":          xml.Unmarshal,
+		contentype.DefaultMimetype: gob.Unmarshal,
 	}
 
 	conf.Results = map[int]message.Reference{

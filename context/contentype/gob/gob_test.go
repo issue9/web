@@ -7,13 +7,13 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/gob"
+	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/gob"
 )
 
 var (
-	_ mimetype.MarshalFunc   = gob.Marshal
-	_ mimetype.UnmarshalFunc = gob.Unmarshal
+	_ contentype.MarshalFunc   = gob.Marshal
+	_ contentype.UnmarshalFunc = gob.Unmarshal
 )
 
 func TestGOB(t *testing.T) {

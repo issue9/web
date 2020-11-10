@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package mimetype
+package contentype
 
 import (
 	"encoding/json"

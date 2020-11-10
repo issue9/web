@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-// Package html 提供输出 HTML 内容的 mimetype.MarshalFunc 函数
+// Package html 提供输出 HTML 内容的 contentype.MarshalFunc 函数
 //
 //  tpl := template.ParseFiles(...)
 //  mgr := html.New(tpl)
-//  mimetype.AddMarshal("text/html", mgr.Marshal)
+//  contentype.AddMarshal("text/html", mgr.Marshal)
 //
 //  func handle(ctx *web.Context) {
 //      ctx.Render(200, html.Tpl("index", map[string]interface{}{...}), nil)
@@ -16,7 +16,7 @@ import (
 	"errors"
 	"html/template"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 // Mimetype HTML 的 mimetype 值
@@ -29,9 +29,9 @@ type HTML struct {
 	tpl *template.Template
 }
 
-// Template 传递给 mimetype.MarshalFunc 的参数
+// Template 传递给 contentype.MarshalFunc 的参数
 //
-// 因为 mimetype.MarshalFunc 限定了只能有一个参数，
+// 因为 contentype.MarshalFunc 限定了只能有一个参数，
 // 而模板解析，除了传递的值，最起码还要一个模板名称，
 // 所以采用 Template 作了一个简单的包装。
 type Template struct {
@@ -64,9 +64,9 @@ func (html *HTML) SetTemplate(tpl *template.Template) {
 	html.tpl = tpl
 }
 
-// Marshal 针对 HTML 内容的 mimetype.MarshalFunc 实现
+// Marshal 针对 HTML 内容的 contentype.MarshalFunc 实现
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
-	if v == mimetype.Nil {
+	if v == contentype.Nil {
 		return nil, nil
 	}
 

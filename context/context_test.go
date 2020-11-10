@@ -13,8 +13,8 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/mimetypetest"
+	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/mimetypetest"
 )
 
 func init() {
@@ -74,7 +74,7 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 accept-charset
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
+	r.Header.Set("Accept", contentype.DefaultMimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	a.Panic(func() {
 		srv.NewContext(w, r)
@@ -101,8 +101,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
-	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-"))
+	r.Header.Set("Accept", contentype.DefaultMimetype)
+	r.Header.Set("content-type", contentype.BuildContentType(mimetypetest.Mimetype, "utf-"))
 	a.Panic(func() {
 		srv.NewContext(w, r)
 	})
@@ -110,7 +110,7 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
+	r.Header.Set("Accept", contentype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
@@ -120,40 +120,40 @@ func TestServer_NewContext(t *testing.T) {
 	// 正常，指定 Accept-Language
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
+	r.Header.Set("Accept", contentype.DefaultMimetype)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	ctx = srv.NewContext(w, r)
 	a.NotNil(ctx)
 	a.Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype).
+		Equal(ctx.OutputMimetypeName, contentype.DefaultMimetype).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
+	r.Header.Set("Accept", contentype.DefaultMimetype)
 	a.NotPanic(func() {
 		ctx = srv.NewContext(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
 		Equal(ctx.InputCharset, nil).
-		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype)
+		Equal(ctx.OutputMimetypeName, contentype.DefaultMimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("Accept", mimetype.DefaultMimetype)
-	r.Header.Set("content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
+	r.Header.Set("Accept", contentype.DefaultMimetype)
+	r.Header.Set("content-type", contentype.BuildContentType(mimetypetest.Mimetype, "utf-8"))
 	a.NotPanic(func() {
 		ctx = srv.NewContext(w, r)
 	})
 	a.NotNil(ctx).
 		Equal(logwriter.Len(), 0).
-		True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimetypeName, mimetype.DefaultMimetype)
+		True(contentype.CharsetIsNop(ctx.InputCharset)).
+		Equal(ctx.OutputMimetypeName, contentype.DefaultMimetype)
 }
 
 func TestContext_Body(t *testing.T) {
@@ -257,7 +257,7 @@ func TestContext_Marshal(t *testing.T) {
 	r.Header.Set("Content-Type", mimetypetest.Mimetype)
 	r.Header.Set("Accept", mimetypetest.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, mimetype.Nil, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, contentype.Nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), mimetypetest.Nil)
 

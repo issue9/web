@@ -119,8 +119,8 @@ func (router *Router) Static(path, dir string) error {
 
 // Resource 生成资源项
 func (router *Router) Resource(pattern string, filter ...Filter) *Resource {
-	filters := make([]Filter, 0, len(router.srv.filters)+len(filter))
-	filters = append(filters, router.srv.filters...)
+	filters := make([]Filter, 0, len(router.filters)+len(filter))
+	filters = append(filters, router.filters...)
 	filters = append(filters, filter...)
 
 	return &Resource{
@@ -134,12 +134,15 @@ func (router *Router) Resource(pattern string, filter ...Filter) *Resource {
 
 // Prefix 返回特定前缀的路由设置对象
 func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
-	return buildPrefix(router.srv, router.mux, router.root+prefix, filter...)
+	filters := make([]Filter, 0, len(router.filters)+len(filter))
+	filters = append(filters, router.filters...)
+	filters = append(filters, filter...)
+	return buildPrefix(router.srv, router.mux, router.root+prefix, filters...)
 }
 
 // Handle 添加路由请求项
 func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
-	filters := make([]Filter, 0, len(router.filters)+len(router.srv.filters))
+	filters := make([]Filter, 0, len(router.srv.filters)+len(router.srv.filters))
 	filters = append(filters, router.srv.filters...) // p.srv 可以动态改动
 	filters = append(filters, router.filters...)
 
@@ -177,6 +180,8 @@ func (router *Router) Delete(path string, h HandlerFunc) *Router {
 }
 
 // Options 添加 OPTIONS 请求处理项
+//
+// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
 func (router *Router) Options(path, allow string) *Router {
 	router.Mux().Options(router.root+path, allow)
 	return router
@@ -209,6 +214,9 @@ func (p *Prefix) Resource(pattern string, filter ...Filter) *Resource {
 
 // Prefix 返回特定前缀的路由设置对象
 func (p *Prefix) Prefix(prefix string, filter ...Filter) *Prefix {
+	filters := make([]Filter, 0, len(p.filters)+len(filter))
+	filters = append(filters, p.filters...)
+	filters = append(filters, filter...)
 	return buildPrefix(p.srv, p.mux, p.prefix+prefix, filter...)
 }
 
@@ -252,6 +260,8 @@ func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
 }
 
 // Options 添加 OPTIONS 请求处理项
+//
+// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
 func (p *Prefix) Options(path, allow string) *Prefix {
 	p.mux.Options(p.prefix+path, allow)
 	return p
@@ -316,6 +326,8 @@ func (r *Resource) Remove(method ...string) {
 }
 
 // Options 添加 OPTIONS 请求处理项
+//
+// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
 func (r *Resource) Options(allow string) *Resource {
 	r.mux.Options(r.pattern, allow)
 	return r

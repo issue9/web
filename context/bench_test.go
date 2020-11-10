@@ -14,8 +14,8 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/mimetypetest"
+	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/mimetypetest"
 )
 
 var (
@@ -40,23 +40,6 @@ func init() {
 	gbkdata2 = gbkdata
 }
 
-func BenchmarkParseContentType(b *testing.B) {
-	a := assert.New(b)
-
-	for i := 0; i < b.N; i++ {
-		_, _, err := parseContentType("appliCation/json;Charset=utf-8")
-		a.NotError(err)
-	}
-}
-
-func BenchmarkBuildContentType(b *testing.B) {
-	a := assert.New(b)
-
-	for i := 0; i < b.N; i++ {
-		a.True(len(buildContentType(mimetype.DefaultMimetype, utfName)) > 0)
-	}
-}
-
 func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b)
 	srv := newServer(a)
@@ -64,7 +47,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 
@@ -130,7 +113,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -148,7 +131,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkstr1))
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -165,7 +148,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk")
 		ctx := srv.NewContext(w, r)
@@ -184,7 +167,7 @@ func BenchmarkPost(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "utf-8"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -207,7 +190,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkdata1))
-		r.Header.Set("Content-type", buildContentType(mimetypetest.Mimetype, "gbk"))
+		r.Header.Set("Content-type", contentype.BuildContentType(mimetypetest.Mimetype, "gbk"))
 		r.Header.Set("Accept", mimetypetest.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := srv.NewContext(w, r)

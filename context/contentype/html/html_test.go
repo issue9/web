@@ -8,10 +8,10 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
-var _ mimetype.MarshalFunc = (&HTML{}).Marshal
+var _ contentype.MarshalFunc = (&HTML{}).Marshal
 
 func TestHTML(t *testing.T) {
 	a := assert.New(t)

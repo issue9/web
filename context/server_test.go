@@ -16,9 +16,9 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/context/mimetype"
-	"github.com/issue9/web/context/mimetype/gob"
-	"github.com/issue9/web/context/mimetype/mimetypetest"
+	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/gob"
+	"github.com/issue9/web/context/contentype/mimetypetest"
 )
 
 var f201 = func(w http.ResponseWriter, r *http.Request) {
@@ -43,20 +43,20 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	err = srv.AddMarshals(map[string]mimetype.MarshalFunc{
-		"application/json":       json.Marshal,
-		"application/xml":        xml.Marshal,
-		mimetype.DefaultMimetype: gob.Marshal,
-		mimetypetest.Mimetype:    mimetypetest.TextMarshal,
+	err = srv.AddMarshals(map[string]contentype.MarshalFunc{
+		"application/json":         json.Marshal,
+		"application/xml":          xml.Marshal,
+		contentype.DefaultMimetype: gob.Marshal,
+		mimetypetest.Mimetype:      mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
 	a.Error(srv.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal))
 
-	err = srv.AddUnmarshals(map[string]mimetype.UnmarshalFunc{
-		"application/json":       json.Unmarshal,
-		"application/xml":        xml.Unmarshal,
-		mimetype.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.Mimetype:    mimetypetest.TextUnmarshal,
+	err = srv.AddUnmarshals(map[string]contentype.UnmarshalFunc{
+		"application/json":         json.Unmarshal,
+		"application/xml":          xml.Unmarshal,
+		contentype.DefaultMimetype: gob.Unmarshal,
+		mimetypetest.Mimetype:      mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
 	a.Error(srv.AddUnmarshal(mimetypetest.Mimetype, mimetypetest.TextUnmarshal))

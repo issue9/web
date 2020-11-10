@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package mimetype
+package contentype
 
 import (
 	"encoding/xml"
@@ -8,6 +8,23 @@ import (
 
 	"github.com/issue9/assert"
 )
+
+func BenchmarkParseContentType(b *testing.B) {
+	a := assert.New(b)
+
+	for i := 0; i < b.N; i++ {
+		_, _, err := ParseContentType("appliCation/json;Charset=utf-8")
+		a.NotError(err)
+	}
+}
+
+func BenchmarkBuildContentType(b *testing.B) {
+	a := assert.New(b)
+
+	for i := 0; i < b.N; i++ {
+		a.True(len(BuildContentType(DefaultMimetype, DefaultCharset)) > 0)
+	}
+}
 
 func BenchmarkMimetypes_Marshal(b *testing.B) {
 	a := assert.New(b)

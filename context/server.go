@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 // Server 提供了用于构建 Context 对象的基本数据
@@ -69,7 +69,7 @@ type Server struct {
 
 	logs      *logs.Logs
 	uptime    time.Time
-	mimetypes *mimetype.Mimetypes
+	mimetypes *contentype.Mimetypes
 
 	// result
 	messages map[int]*resultMessage
@@ -110,7 +110,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 
 		logs:      logs,
 		uptime:    time.Now(),
-		mimetypes: mimetype.NewMimetypes(),
+		mimetypes: contentype.NewMimetypes(),
 
 		messages: make(map[int]*resultMessage, 20),
 	}
@@ -172,7 +172,7 @@ func (srv *Server) URL(p string) string {
 }
 
 // AddMarshals 添加多个编码函数
-func (srv *Server) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
+func (srv *Server) AddMarshals(ms map[string]contentype.MarshalFunc) error {
 	return srv.mimetypes.AddMarshals(ms)
 }
 
@@ -180,12 +180,12 @@ func (srv *Server) AddMarshals(ms map[string]mimetype.MarshalFunc) error {
 //
 // mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
 // 另作处理，比如下载，上传等内容。
-func (srv *Server) AddMarshal(name string, mf mimetype.MarshalFunc) error {
+func (srv *Server) AddMarshal(name string, mf contentype.MarshalFunc) error {
 	return srv.mimetypes.AddMarshal(name, mf)
 }
 
 // AddUnmarshals 添加多个编码函数
-func (srv *Server) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
+func (srv *Server) AddUnmarshals(ms map[string]contentype.UnmarshalFunc) error {
 	return srv.mimetypes.AddUnmarshals(ms)
 }
 
@@ -193,6 +193,6 @@ func (srv *Server) AddUnmarshals(ms map[string]mimetype.UnmarshalFunc) error {
 //
 // mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
 // 另作处理，比如下载，上传等内容。
-func (srv *Server) AddUnmarshal(name string, mm mimetype.UnmarshalFunc) error {
+func (srv *Server) AddUnmarshal(name string, mm contentype.UnmarshalFunc) error {
 	return srv.mimetypes.AddUnmarshal(name, mm)
 }

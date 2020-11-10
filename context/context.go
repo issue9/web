@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
@@ -35,7 +35,7 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的媒体类型，以及名称
-	OutputMimetype     mimetype.MarshalFunc
+	OutputMimetype     contentype.MarshalFunc
 	OutputMimetypeName string
 
 	// 输出到客户端的字符集
@@ -45,7 +45,7 @@ type Context struct {
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型
-	InputMimetype mimetype.UnmarshalFunc
+	InputMimetype contentype.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//
@@ -93,10 +93,10 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset, err := acceptCharset(header)
+	outputCharsetName, outputCharset, err := contentype.AcceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
-	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
+	tag := contentype.AcceptLanguage(srv.Catalog, r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		server:             srv,
@@ -113,7 +113,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
-		encName, charsetName, err := parseContentType(header)
+		encName, charsetName, err := contentype.ParseContentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 
 		ctx.InputMimetype, err = ctx.server.mimetypes.Unmarshal(encName)
@@ -142,7 +142,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 	}
 	ctx.read = true
 
-	if charsetIsNop(ctx.InputCharset) {
+	if contentype.CharsetIsNop(ctx.InputCharset) {
 		return ctx.body, nil
 	}
 
@@ -169,7 +169,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
-// 可以使用 mimetype.Nil 变量代替。
+// 可以使用 contentype.Nil 变量代替。
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称。
@@ -188,7 +188,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if !contentTypeFound {
-		ct := buildContentType(ctx.OutputMimetypeName, ctx.OutputCharsetName)
+		ct := contentype.BuildContentType(ctx.OutputMimetypeName, ctx.OutputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 
@@ -210,7 +210,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	// https://github.com/golang/go/issues/17083
 	errorhandler.WriteHeader(ctx.Response, status)
 
-	if charsetIsNop(ctx.OutputCharset) {
+	if contentype.CharsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
 		return err
 	}

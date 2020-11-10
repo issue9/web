@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/message"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/context/mimetype/form"
+	"github.com/issue9/web/context/contentype/form"
 )
 
 var (

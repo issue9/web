@@ -7,12 +7,12 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 var (
-	_ mimetype.MarshalFunc   = TextMarshal
-	_ mimetype.UnmarshalFunc = TextUnmarshal
+	_ contentype.MarshalFunc   = TextMarshal
+	_ contentype.UnmarshalFunc = TextUnmarshal
 )
 
 func TestTextMarshal(t *testing.T) {

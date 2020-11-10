@@ -22,7 +22,7 @@ import (
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 	"github.com/issue9/web/internal/filesystem"
 )
 
@@ -131,8 +131,8 @@ type (
 		Filters     []Filter     `yaml:"-" json:"-" xml:"-"`
 
 		// 指定各类媒体类型的编解码函数
-		Marshalers   map[string]mimetype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
-		Unmarshalers map[string]mimetype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
+		Marshalers   map[string]contentype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
+		Unmarshalers map[string]contentype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 
 		// 指定生成 Result 的方法
 		//

@@ -8,12 +8,12 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 var (
-	_ mimetype.MarshalFunc   = Marshal
-	_ mimetype.UnmarshalFunc = Unmarshal
+	_ contentype.MarshalFunc   = Marshal
+	_ contentype.UnmarshalFunc = Unmarshal
 
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData

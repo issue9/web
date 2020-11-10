@@ -37,7 +37,7 @@ package form
 import (
 	"net/url"
 
-	"github.com/issue9/web/context/mimetype"
+	"github.com/issue9/web/context/contentype"
 )
 
 // Mimetype 当前编码的媒体类型
@@ -55,14 +55,14 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// Marshal 针对 www-form-urlencoded 内容的 mimetype.MarshalFunc 实现
+// Marshal 针对 www-form-urlencoded 内容的 contentype.MarshalFunc 实现
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Marshaler 接口，则调用该接口；
 //  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
 //  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v interface{}) ([]byte, error) {
-	if v == mimetype.Nil {
+	if v == contentype.Nil {
 		return nilValue, nil
 	}
 
@@ -82,7 +82,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return []byte(vals.Encode()), nil
 }
 
-// Unmarshal 针对 www-form-urlencoded 内容的 mimetype.UnmarshalFunc 实现
+// Unmarshal 针对 www-form-urlencoded 内容的 contentype.UnmarshalFunc 实现
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Unmarshaler 接口，则调用该接口；
