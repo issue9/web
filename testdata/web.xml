@@ -7,7 +7,7 @@
     </debug>
     <root>http://localhost:8082</root>
     <static>
-        <key name="/admin">./testdata</key>
+        <key name="/admin/{path}">./testdata</key>
     </static>
     <headers>
         <key name="Access-Control-Allow-Origin">*</key>

@@ -5,7 +5,7 @@
   },
   "root": "http://localhost:8082",
   "static":{
-    "/admin": "./testdata"
+    "/admin/{path}": "./testdata"
   },
   "headers":{
     "Access-Control-Allow-Origin": "*",

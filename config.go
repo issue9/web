@@ -74,8 +74,8 @@ type (
 		//
 		// 键名为 URL 路径，键值为文件地址
 		//
-		// 比如在 Domain 和 Root 的值分别为 example.com 和 blog 时，
-		// 将 Static 的值设置为 /admin ==> ~/data/assets/admin
+		// 在 Root 的值为 example.com/blog 时，
+		// 将 Static 的值设置为 /admin/{path} ==> ~/data/assets/admin
 		// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 		Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
