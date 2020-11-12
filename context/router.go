@@ -149,7 +149,7 @@ func (router *Router) Resource(pattern string, filter ...Filter) *Resource {
 		srv: router.srv,
 		mux: router.Mux(),
 
-		pattern: router.root + pattern,
+		pattern: router.url.Path + pattern,
 		filters: filters,
 	}
 }
@@ -159,7 +159,7 @@ func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 	filters := make([]Filter, 0, len(router.filters)+len(filter))
 	filters = append(filters, router.filters...)
 	filters = append(filters, filter...)
-	return buildPrefix(router.srv, router.mux, router.root+prefix, filters...)
+	return buildPrefix(router.srv, router.mux, router.url.Path+prefix, filters...)
 }
 
 // Handle 添加路由请求项
@@ -168,7 +168,7 @@ func (router *Router) Handle(path string, h HandlerFunc, method ...string) error
 	filters = append(filters, router.srv.filters...) // p.srv 可以动态改动
 	filters = append(filters, router.filters...)
 
-	return router.Mux().HandleFunc(router.root+path, func(w http.ResponseWriter, r *http.Request) {
+	return router.Mux().HandleFunc(router.url.Path+path, func(w http.ResponseWriter, r *http.Request) {
 		FilterHandler(h, filters...)(router.srv.NewContext(w, r))
 	}, method...)
 }
@@ -205,7 +205,7 @@ func (router *Router) Delete(path string, h HandlerFunc) *Router {
 //
 // 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
 func (router *Router) Options(path, allow string) *Router {
-	router.Mux().Options(router.root+path, allow)
+	router.Mux().Options(router.url.Path+path, allow)
 	return router
 }
 
@@ -216,7 +216,7 @@ func (router *Router) Patch(path string, h HandlerFunc) *Router {
 
 // Remove 删除指定的路由项
 func (router *Router) Remove(path string, method ...string) {
-	router.Mux().Remove(router.root+path, method...)
+	router.Mux().Remove(router.url.Path+path, method...)
 }
 
 // Resource 生成资源项
