@@ -76,12 +76,10 @@ func TestNewServer(t *testing.T) {
 	a.NotNil(srv.Cache())
 	a.Equal(srv.Catalog, message.DefaultCatalog)
 	a.Equal(srv.Location, time.Local)
-	a.Equal(srv.root, "")
 
 	u, err := url.Parse("/root")
 	a.NotError(err).NotNil(u)
 	srv = NewServer(l, memory.New(time.Hour), false, false, u)
-	a.Equal(srv.root, "/root")
 }
 
 func TestServer_Vars(t *testing.T) {
@@ -104,78 +102,4 @@ func TestServer_Vars(t *testing.T) {
 	srv.Vars[v3] = 3
 
 	a.Equal(srv.Vars[v1], 1).Equal(srv.Vars[v2], 3)
-}
-
-func TestServer_URL_Path(t *testing.T) {
-	a := assert.New(t)
-
-	data := []*struct {
-		root, input, url, path string
-	}{
-		{},
-
-		{
-			root:  "",
-			input: "/abc",
-			url:   "/abc",
-			path:  "/abc",
-		},
-
-		{
-			root:  "/",
-			input: "/abc/def",
-			url:   "/abc/def",
-			path:  "/abc/def",
-		},
-
-		{
-			root:  "https://localhost/",
-			input: "/abc/def",
-			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
-		},
-		{
-			root:  "https://localhost",
-			input: "/abc/def",
-			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
-		},
-		{
-			root:  "https://localhost",
-			input: "abc/def",
-			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
-		},
-
-		{
-			root:  "https://localhost/",
-			input: "",
-			url:   "https://localhost",
-			path:  "",
-		},
-
-		{
-			root:  "https://example.com:8080/def/",
-			input: "",
-			url:   "https://example.com:8080/def",
-			path:  "/def",
-		},
-
-		{
-			root:  "https://example.com:8080/def/",
-			input: "abc",
-			url:   "https://example.com:8080/def/abc",
-			path:  "/def/abc",
-		},
-	}
-
-	for i, item := range data {
-		u, err := url.Parse(item.root)
-		a.NotError(err).NotNil(u)
-		srv := NewServer(logs.New(), memory.New(time.Hour), false, false, u)
-		a.NotNil(srv, "nil at %d", i)
-
-		a.Equal(srv.URL(item.input), item.url, "not equal @%d,v1=%s,v2=%s", i, srv.URL(item.input), item.url)
-		a.Equal(srv.Path(item.input), item.path, "not equal @%d,v1=%s,v2=%s", i, srv.Path(item.input), item.path)
-	}
 }

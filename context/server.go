@@ -63,7 +63,6 @@ type Server struct {
 	filters       []Filter
 
 	// url
-	root   string
 	mux    *mux.Mux
 	router *Router
 
@@ -79,11 +78,6 @@ type Server struct {
 func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead bool, root *url.URL) *Server {
 	// NOTE: Server 中在初始化之后不能修改的都由 NewServer 指定，
 	// 其它字段的内容给定一个初始值，后期由用户自行决定。
-
-	// 保证不以 / 结尾
-	if len(root.Path) > 0 && root.Path[len(root.Path)-1] == '/' {
-		root.Path = root.Path[:len(root.Path)-1]
-	}
 
 	mux := mux.New(disableOptions, disableHead, false, nil, nil)
 
@@ -105,8 +99,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		root: root.String(),
-		mux:  mux,
+		mux: mux,
 
 		logs:      logs,
 		uptime:    time.Now(),
@@ -114,7 +107,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 
 		messages: make(map[int]*resultMessage, 20),
 	}
-	srv.router = buildRouter(srv, mux, root.Path)
+	srv.router = buildRouter(srv, mux, root)
 
 	srv.buildMiddlewares()
 
@@ -151,24 +144,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // Server 获取关联的 context.Server 实例
 func (ctx *Context) Server() *Server {
 	return ctx.server
-}
-
-// Path 生成路径部分的地址
-func (srv *Server) Path(p string) string {
-	return srv.Router().path(p)
-}
-
-// URL 构建一条基于 Root 的完整 URL
-func (srv *Server) URL(p string) string {
-	switch {
-	case len(p) == 0:
-		return srv.root
-	case p[0] == '/':
-		// 由 NewServer 保证 root 不能 / 结尾
-		return srv.root + p
-	default:
-		return srv.root + "/" + p
-	}
 }
 
 // AddMarshals 添加多个编码函数

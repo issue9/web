@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -72,10 +73,86 @@ func TestRouter(t *testing.T) {
 		Status(http.StatusMethodNotAllowed)
 }
 
-func TestRouter_NewRoute(t *testing.T) {
+func TestRouter_URL_Path(t *testing.T) {
+	a := assert.New(t)
+
+	data := []*struct {
+		root, input, url, path string
+	}{
+		{},
+
+		{
+			root:  "",
+			input: "/abc",
+			url:   "/abc",
+			path:  "/abc",
+		},
+
+		{
+			root:  "/",
+			input: "/abc/def",
+			url:   "/abc/def",
+			path:  "/abc/def",
+		},
+
+		{
+			root:  "https://localhost/",
+			input: "/abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+		{
+			root:  "https://localhost",
+			input: "/abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+		{
+			root:  "https://localhost",
+			input: "abc/def",
+			url:   "https://localhost/abc/def",
+			path:  "/abc/def",
+		},
+
+		{
+			root:  "https://localhost/",
+			input: "",
+			url:   "https://localhost",
+			path:  "",
+		},
+
+		{
+			root:  "https://example.com:8080/def/",
+			input: "",
+			url:   "https://example.com:8080/def",
+			path:  "/def",
+		},
+
+		{
+			root:  "https://example.com:8080/def/",
+			input: "abc",
+			url:   "https://example.com:8080/def/abc",
+			path:  "/def/abc",
+		},
+	}
+
+	for i, item := range data {
+		u, err := url.Parse(item.root)
+		a.NotError(err).NotNil(u)
+		router := buildRouter(nil, nil, u)
+		a.NotNil(router)
+
+		a.Equal(router.URL(item.input), item.url, "url not equal @%d,v1=%s,v2=%s", i, router.URL(item.input), item.url)
+		a.Equal(router.Path(item.input), item.path, "path not equal @%d,v1=%s,v2=%s", i, router.Path(item.input), item.path)
+	}
+}
+
+func TestRouter_NewRouter(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	router, ok := srv.Router().NewRouter("host", mux.NewHosts("example.com"))
+	u, err := url.Parse("https://example.com")
+	a.NotError(err).NotNil(u)
+	router, ok := srv.Router().NewRouter("host", u, mux.NewHosts("example.com"))
 	a.True(ok).NotNil(router)
 
 	router.Prefix("/p1").Delete("/path", f1)

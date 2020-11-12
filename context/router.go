@@ -5,6 +5,7 @@ package context
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -20,6 +21,7 @@ type Router struct {
 	mux *mux.Mux
 
 	root    string
+	url     *url.URL
 	filters []Filter
 }
 
@@ -51,12 +53,18 @@ func buildPrefix(srv *Server, mux *mux.Mux, prefix string, filter ...Filter) *Pr
 	}
 }
 
-func buildRouter(srv *Server, mux *mux.Mux, root string, filter ...Filter) *Router {
+func buildRouter(srv *Server, mux *mux.Mux, u *url.URL, filter ...Filter) *Router {
+	// 保证不以 / 结尾
+	if len(u.Path) > 0 && u.Path[len(u.Path)-1] == '/' {
+		u.Path = u.Path[:len(u.Path)-1]
+	}
+
 	return &Router{
 		srv: srv,
 		mux: mux,
 
-		root:    root,
+		url:     u,
+		root:    u.String(),
 		filters: filter,
 	}
 }
@@ -74,8 +82,9 @@ func (router *Router) Mux() *mux.Mux {
 	return router.mux
 }
 
-func (router *Router) path(p string) string {
-	p = path.Join(router.root, p)
+// Path 生成路径部分的地址
+func (router *Router) Path(p string) string {
+	p = path.Join(router.url.Path, p)
 	if p != "" && p[0] != '/' {
 		p = "/" + p
 	}
@@ -83,17 +92,30 @@ func (router *Router) path(p string) string {
 	return p
 }
 
+// URL 构建一条基于 Root 的完整 URL
+func (router *Router) URL(p string) string {
+	switch {
+	case len(p) == 0:
+		return router.root
+	case p[0] == '/':
+		// 由 buildRouter 保证 root 不能 / 结尾
+		return router.root + p
+	default:
+		return router.root + "/" + p
+	}
+}
+
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
 // 路由地址不再基于 root 的值。
 // 也不会应用通过 Server.AddFilters 添加的中间件，但是会应用 Server.AddMiddlewares 添加的中间件。
-func (router *Router) NewRouter(name string, matcher mux.Matcher, filter ...Filter) (*Router, bool) {
+func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, filter ...Filter) (*Router, bool) {
 	m, ok := router.Mux().NewMux(name, matcher)
 	if !ok {
 		return nil, false
 	}
 
-	return buildRouter(router.srv, m, "", filter...), true
+	return buildRouter(router.srv, m, url, filter...), true
 }
 
 // Static 添加静态路由
@@ -107,7 +129,7 @@ func (router *Router) NewRouter(name string, matcher mux.Matcher, filter ...Filt
 // 将参数指定为 /admin/{path} 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
 func (router *Router) Static(path, dir string) error {
-	path = router.path(path)
+	path = router.Path(path)
 	lastStart := strings.LastIndexByte(path, '{')
 	if lastStart < 0 || len(path) == 0 || path[len(path)-1] != '}' || lastStart+2 == len(path) {
 		return errors.New("path 必须是命名参数结尾：比如 /assets/{path}。")
