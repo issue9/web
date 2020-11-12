@@ -82,33 +82,49 @@ func (router *Router) Mux() *mux.Mux {
 	return router.mux
 }
 
-// Path 生成路径部分的地址
-func (router *Router) Path(p string) string {
-	p = path.Join(router.url.Path, p)
-	if p != "" && p[0] != '/' {
-		p = "/" + p
-	}
-
-	return p
+// Path 返回相对于域名的绝对路由地址
+//
+// 功能与 mux.URL 相似，但是加上了关联的域名地址的根路径。比如根地址是 https://example.com/blog
+// pattern 为 /posts/{id}，则返回为 /blog/posts/1。
+// 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
+func (router *Router) Path(pattern string, params map[string]string) (string, error) {
+	return router.buildURL(router.url.Path, pattern, params)
 }
 
-// URL 构建一条基于 Root 的完整 URL
-func (router *Router) URL(p string) string {
+// URL 构建完整的 URL
+//
+// 功能与 mux.URL 相似，但是加上了关联的域名地址。比如根地址是 https://example.com/blog
+// pattern 为 /posts/{id}，则返回为 https://example.com/blog/posts/1。
+// 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
+func (router *Router) URL(pattern string, params map[string]string) (string, error) {
+	return router.buildURL(router.root, pattern, params)
+}
+
+func (router *Router) buildURL(prefix, pattern string, params map[string]string) (string, error) {
+	if len(pattern) == 0 {
+		return prefix, nil
+	}
+
+	if len(params) > 0 {
+		p, err := router.Mux().URL(pattern, params)
+		if err != nil {
+			return "", err
+		}
+		pattern = p
+	}
+
 	switch {
-	case len(p) == 0:
-		return router.root
-	case p[0] == '/':
+	case pattern[0] == '/':
 		// 由 buildRouter 保证 root 不能 / 结尾
-		return router.root + p
+		return prefix + pattern, nil
 	default:
-		return router.root + "/" + p
+		return prefix + "/" + pattern, nil
 	}
 }
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
-// 路由地址不再基于 root 的值。
-// 也不会应用通过 Server.AddFilters 添加的中间件，但是会应用 Server.AddMiddlewares 添加的中间件。
+// 不会应用通过 Server.AddFilters 添加的中间件，但是会应用 Server.AddMiddlewares 添加的中间件。
 func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, filter ...Filter) (*Router, bool) {
 	m, ok := router.Mux().NewMux(name, matcher)
 	if !ok {
@@ -128,15 +144,19 @@ func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, 
 // 比如在 Root 的值为 example.com/blog 时，
 // 将参数指定为 /admin/{path} 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (router *Router) Static(path, dir string) error {
-	path = router.Path(path)
-	lastStart := strings.LastIndexByte(path, '{')
-	if lastStart < 0 || len(path) == 0 || path[len(path)-1] != '}' || lastStart+2 == len(path) {
+func (router *Router) Static(p, dir string) error {
+	p = path.Join(router.url.Path, p)
+	if p != "" && p[0] != '/' {
+		p = "/" + p
+	}
+
+	lastStart := strings.LastIndexByte(p, '{')
+	if lastStart < 0 || len(p) == 0 || p[len(p)-1] != '}' || lastStart+2 == len(p) {
 		return errors.New("path 必须是命名参数结尾：比如 /assets/{path}。")
 	}
 
-	h := http.StripPrefix(path[:lastStart], http.FileServer(http.Dir(dir)))
-	return router.Mux().Handle(path, h, http.MethodGet)
+	h := http.StripPrefix(p[:lastStart], http.FileServer(http.Dir(dir)))
+	return router.Mux().Handle(p, h, http.MethodGet)
 }
 
 // Resource 生成资源项

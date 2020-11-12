@@ -73,14 +73,15 @@ func TestRouter(t *testing.T) {
 		Status(http.StatusMethodNotAllowed)
 }
 
-func TestRouter_URL_Path(t *testing.T) {
+func TestRouter_URL(t *testing.T) {
 	a := assert.New(t)
 
 	data := []*struct {
-		root, input, url, path string
+		root      string            // 项目根路径
+		input     string            // 输入的内容
+		params    map[string]string // 输入路径中带的参数
+		url, path string            // 输出内容，分别为 onlyPath 不同值的表现。
 	}{
-		{},
-
 		{
 			root:  "",
 			input: "/abc",
@@ -115,36 +116,45 @@ func TestRouter_URL_Path(t *testing.T) {
 		},
 
 		{
-			root:  "https://localhost/",
-			input: "",
-			url:   "https://localhost",
-			path:  "",
-		},
-
-		{
-			root:  "https://example.com:8080/def/",
-			input: "",
-			url:   "https://example.com:8080/def",
-			path:  "/def",
-		},
-
-		{
 			root:  "https://example.com:8080/def/",
 			input: "abc",
 			url:   "https://example.com:8080/def/abc",
 			path:  "/def/abc",
+		},
+
+		{
+			root:   "https://example.com:8080/blog",
+			input:  "/posts/{id}/content",
+			params: map[string]string{"id": "5"},
+			url:    "https://example.com:8080/blog/posts/5/content",
+			path:   "/blog/posts/5/content",
 		},
 	}
 
 	for i, item := range data {
 		u, err := url.Parse(item.root)
 		a.NotError(err).NotNil(u)
-		router := buildRouter(nil, nil, u)
+		router := buildRouter(newServer(a), mux.Default(), u)
 		a.NotNil(router)
+		router.Get(item.input, f1)
 
-		a.Equal(router.URL(item.input), item.url, "url not equal @%d,v1=%s,v2=%s", i, router.URL(item.input), item.url)
-		a.Equal(router.Path(item.input), item.path, "path not equal @%d,v1=%s,v2=%s", i, router.Path(item.input), item.path)
+		url, err := router.URL(item.input, item.params)
+		a.NotError(err)
+		a.Equal(url, item.url, "url not equal @%d,v1=%s,v2=%s", i, url, item.url)
+		path, err := router.Path(item.input, item.params)
+		a.NotError(err)
+		a.Equal(path, item.path, "path not equal @%d,v1=%s,v2=%s", i, path, item.path)
 	}
+
+	u, err := url.Parse("https://example.com/blog")
+	a.NotError(err).NotNil(u)
+	router := buildRouter(newServer(a), mux.Default(), u)
+	a.NotNil(router)
+	url, err := router.URL("", nil)
+	a.NotError(err).Equal(url, "https://example.com/blog")
+
+	p, err := router.Path("", nil)
+	a.NotError(err).Equal(p, "/blog")
 }
 
 func TestRouter_NewRouter(t *testing.T) {
@@ -154,6 +164,11 @@ func TestRouter_NewRouter(t *testing.T) {
 	a.NotError(err).NotNil(u)
 	router, ok := srv.Router().NewRouter("host", u, mux.NewHosts("example.com"))
 	a.True(ok).NotNil(router)
+
+	url, err := router.URL("/posts/1", nil)
+	a.Equal("https://example.com/posts/1", url)
+	path, err := router.Path("/posts/1", nil)
+	a.Equal("/posts/1", path)
 
 	router.Prefix("/p1").Delete("/path", f1)
 	w := httptest.NewRecorder()
