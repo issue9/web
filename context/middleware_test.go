@@ -10,64 +10,21 @@ import (
 	"github.com/issue9/assert/rest"
 )
 
-func buildFilter(num int) Filter {
+func buildFilter(txt string) Filter {
 	return Filter(func(next HandlerFunc) HandlerFunc {
 		return HandlerFunc(func(ctx *Context) {
 			fs, found := ctx.Vars["filters"]
 			if !found {
-				ctx.Vars["filters"] = []int{num}
+				ctx.Vars["filters"] = []string{txt}
 			} else {
-				filters := fs.([]int)
-				filters = append(filters, num)
+				filters := fs.([]string)
+				filters = append(filters, txt)
 				ctx.Vars["filters"] = filters
 			}
 
 			next(ctx)
 		})
 	})
-}
-
-func TestPrefix_Filters(t *testing.T) {
-	a := assert.New(t)
-
-	server := newServer(a)
-	server.AddFilters(buildFilter(1), buildFilter(2))
-	p2 := server.Router().Prefix("/p2", buildFilter(3), buildFilter(4))
-
-	server.Router().Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []int{1, 2})
-		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
-	})
-
-	p2.Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []int{1, 2, 3, 4}) // 必须要是 server 的先于 prefix 的
-		ctx.Render(http.StatusAccepted, nil, nil)       // 不能输出 200 的状态码
-	})
-
-	srv := rest.NewServer(t, server.Handler(), nil)
-
-	srv.Get("/root/test").
-		Do().
-		Status(http.StatusCreated) // 验证状态码是否正确
-
-	srv.Get("/root/p2/test").
-		Do().
-		Status(http.StatusAccepted) // 验证状态码是否正确
-}
-
-func TestServer_AddFilters(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-	server.AddFilters(buildFilter(1), buildFilter(2))
-	server.Router().Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []int{1, 2}) // 查看调用顺序是否正确
-		ctx.Render(http.StatusAccepted, nil, nil) // 不能输出 200 的状态码
-	})
-
-	rest.NewServer(t, server.Handler(), nil).
-		Get("/root/test").
-		Do().
-		Status(http.StatusAccepted) // 验证状态码是否正确
 }
 
 func TestServer_SetDebugger(t *testing.T) {

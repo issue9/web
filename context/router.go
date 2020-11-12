@@ -77,6 +77,16 @@ func (srv *Server) Router() *Router {
 	return srv.router
 }
 
+// handle
+func (srv *Server) handle(mux *mux.Mux, path string, next HandlerFunc, filters []Filter, method ...string) error {
+	return mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		fs := make([]Filter, 0, len(filters)+len(srv.filters))
+		fs = append(fs, srv.filters...)
+		fs = append(fs, filters...)
+		FilterHandler(next, fs...)(srv.NewContext(w, r))
+	}, method...)
+}
+
 // Mux 返回 mux.Mux 实例
 func (router *Router) Mux() *mux.Mux {
 	return router.mux
@@ -184,13 +194,7 @@ func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 
 // Handle 添加路由请求项
 func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
-	filters := make([]Filter, 0, len(router.srv.filters)+len(router.srv.filters))
-	filters = append(filters, router.srv.filters...) // p.srv 可以动态改动
-	filters = append(filters, router.filters...)
-
-	return router.Mux().HandleFunc(router.url.Path+path, func(w http.ResponseWriter, r *http.Request) {
-		FilterHandler(h, filters...)(router.srv.NewContext(w, r))
-	}, method...)
+	return router.srv.handle(router.Mux(), router.url.Path+path, h, router.filters, method...)
 }
 
 // Handle 添加路由请求项
@@ -259,18 +263,12 @@ func (p *Prefix) Prefix(prefix string, filter ...Filter) *Prefix {
 	filters := make([]Filter, 0, len(p.filters)+len(filter))
 	filters = append(filters, p.filters...)
 	filters = append(filters, filter...)
-	return buildPrefix(p.srv, p.mux, p.prefix+prefix, filter...)
+	return buildPrefix(p.srv, p.mux, p.prefix+prefix, filters...)
 }
 
 // Handle 添加路由请求项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
-	filters := make([]Filter, 0, len(p.filters)+len(p.srv.filters))
-	filters = append(filters, p.srv.filters...) // p.srv 可以动态改动
-	filters = append(filters, p.filters...)
-
-	return p.mux.HandleFunc(p.prefix+path, func(w http.ResponseWriter, r *http.Request) {
-		FilterHandler(h, filters...)(p.srv.NewContext(w, r))
-	}, method...)
+	return p.srv.handle(p.mux, p.prefix+path, h, p.filters, method...)
 }
 
 // Handle 添加路由请求项
@@ -321,17 +319,11 @@ func (p *Prefix) Remove(path string, method ...string) {
 
 // Handle 添加路由项
 func (r *Resource) Handle(h HandlerFunc, method ...string) error {
-	filters := make([]Filter, 0, len(r.filters)+len(r.srv.filters))
-	filters = append(filters, r.srv.filters...)
-	filters = append(filters, r.filters...)
-
-	return r.mux.HandleFunc(r.pattern, func(w http.ResponseWriter, req *http.Request) {
-		FilterHandler(h, filters...)(r.srv.NewContext(w, req))
-	}, method...)
+	return r.srv.handle(r.mux, r.pattern, h, r.filters, method...)
 }
 
 func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
-	if err := r.Handle(FilterHandler(h, r.filters...), method...); err != nil {
+	if err := r.Handle(h, method...); err != nil {
 		panic(err)
 	}
 	return r

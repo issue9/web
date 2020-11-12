@@ -259,7 +259,7 @@ func TestResource(t *testing.T) {
 	srv.NewRequest(http.MethodOptions, "/root"+path).Do().Header("allow", "def")
 }
 
-func TestServer_Static(t *testing.T) {
+func TestRouter_Static(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
@@ -330,4 +330,98 @@ func TestServer_Static(t *testing.T) {
 	srv.Get("/root/client/file1.txt").
 		Do().
 		Status(http.StatusNotFound)
+
+	// 带域名
+	server = newServer(a)
+	u, err := url.Parse("https://example.com/blog")
+	a.NotError(err).NotNil(u)
+	r, ok := server.Router().NewRouter("example", u, mux.NewHosts("example.com"))
+	a.True(ok).NotNil(r)
+	r.Static("/admin/{path}", "./testdata")
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/blog/admin/file1.txt", nil)
+	server.Handler().ServeHTTP(w, req)
+	a.Equal(w.Result().StatusCode, http.StatusOK)
+}
+
+func TestFilters(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
+	router := server.Router()
+	p1 := router.Prefix("/p1", buildFilter("p11"), buildFilter("p12"))
+	p2 := p1.Prefix("/p2", buildFilter("p21"), buildFilter("p22"))
+	r1 := router.Resource("/r1", buildFilter("r11"), buildFilter("r12"))
+	r2 := p1.Resource("/r2", buildFilter("r21"), buildFilter("r22"))
+
+	server.Router().Get("/test", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2"})
+		ctx.Render(201, nil, nil)
+	})
+
+	p1.Get("/test/202", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12"}) // 必须要是 server 的先于 prefix 的
+		ctx.Render(202, nil, nil)
+	})
+
+	p2.Get("/test/202", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12", "p21", "p22"})
+		ctx.Render(202, nil, nil)
+	})
+
+	// 以下为动态添加中间件之后的对比方式
+
+	p1.Get("/test/203", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12"})
+		ctx.Render(203, nil, nil)
+	})
+
+	p2.Get("/test/203", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12", "p21", "p22"})
+		ctx.Render(203, nil, nil)
+	})
+
+	r1.Get(func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "r11", "r12"})
+		ctx.Render(204, nil, nil)
+	})
+
+	r2.Get(func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12", "r21", "r22"})
+		ctx.Render(205, nil, nil)
+	})
+
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	srv.Get("/root/test").
+		Do().
+		Status(201)
+
+	srv.Get("/root/p1/test/202").
+		Do().
+		Status(202)
+
+	srv.Get("/root/p1/p2/test/202").
+		Do().
+		Status(202)
+
+	// 运行中添加中间件
+	server.AddFilters(buildFilter("s3"), buildFilter("s4"))
+
+	srv.Get("/root/p1/test/203").
+		Do().
+		Status(203)
+
+	srv.Get("/root/p1/p2/test/203").
+		Do().
+		Status(203)
+
+	srv.Get("/root/r1").
+		Do().
+		Status(204)
+
+	srv.Get("/root/p1/r2").
+		Do().
+		Status(205)
 }
