@@ -162,7 +162,6 @@ func TestPrefix_Filters(t *testing.T) {
 	m1 := server.NewModule("m1", "m1 desc")
 	m1.AddFilters(buildFilter(1), buildFilter(2))
 	p1 := m1.Prefix("/p1", buildFilter(3), buildFilter(4))
-	m1.AddFilters(buildFilter(8), buildFilter(9))
 
 	m1.Get("/test", func(ctx *context.Context) {
 		a.Equal(ctx.Vars["filters"], []int{1, 2, 8, 9})
@@ -173,6 +172,9 @@ func TestPrefix_Filters(t *testing.T) {
 		a.Equal(ctx.Vars["filters"], []int{1, 2, 8, 9, 3, 4}) // 必须要是 server 的先于 prefix 的
 		ctx.Render(http.StatusAccepted, nil, nil)             // 不能输出 200 的状态码
 	})
+
+	// 在所有的路由项注册之后才添加中间件
+	m1.AddFilters(buildFilter(8), buildFilter(9))
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
