@@ -38,7 +38,6 @@ func TestNew(t *testing.T) {
 
 	web, err := New(logs.New(), &Config{})
 	a.NotError(err).NotNil(web)
-	a.Equal(1, len(web.Services())) // 至少注册了 scheduled
 }
 
 func TestWeb_Run(t *testing.T) {
@@ -60,7 +59,6 @@ func TestWeb_Run(t *testing.T) {
 		a.Equal(2, len(w.Tags())).
 			Equal(w.Tags()["m1"], []string{"tag1"}).
 			Empty(w.Tags()["m2"])
-		a.Equal(1, len(w.Services())) // 默认启动的 scheduled
 
 		ctx.Response.WriteHeader(http.StatusAccepted)
 		_, err := ctx.Response.Write([]byte("1234567890"))

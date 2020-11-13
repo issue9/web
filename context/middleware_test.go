@@ -30,7 +30,7 @@ func buildFilter(txt string) Filter {
 func TestServer_SetDebugger(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
 	srv.Get("/debug/pprof/").Do().Status(http.StatusNotFound)

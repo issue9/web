@@ -53,11 +53,19 @@ func (s State) String() string {
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
+//
+// NOTE: 如果 Manager 的所有服务已经处于运行的状态，则会自动运行新添加的服务。
 func (mgr *Manager) AddService(f Func, title string) {
-	mgr.services = append(mgr.services, &Service{
+	srv := &Service{
 		Title: title,
 		f:     f,
-	})
+	}
+
+	mgr.services = append(mgr.services, srv)
+
+	if mgr.running {
+		srv.Run()
+	}
 }
 
 // Services 返回所有的服务列表

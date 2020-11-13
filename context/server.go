@@ -3,6 +3,7 @@
 package context
 
 import (
+	"net/http"
 	"net/url"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/service"
 )
 
 // Server 提供了用于构建 Context 对象的基本数据
@@ -69,6 +71,7 @@ type Server struct {
 	logs      *logs.Logs
 	uptime    time.Time
 	mimetypes *contentype.Mimetypes
+	services  *service.Manager
 
 	// result
 	messages map[int]*resultMessage
@@ -104,6 +107,7 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 		logs:      logs,
 		uptime:    time.Now(),
 		mimetypes: contentype.NewMimetypes(),
+		services:  service.NewManager(time.Local, logs),
 
 		messages: make(map[int]*resultMessage, 20),
 	}
@@ -146,28 +150,40 @@ func (ctx *Context) Server() *Server {
 	return ctx.server
 }
 
-// AddMarshals 添加多个编码函数
-func (srv *Server) AddMarshals(ms map[string]contentype.MarshalFunc) error {
-	return srv.mimetypes.AddMarshals(ms)
+// Mimetypes 返回内容编解码的管理接口
+func (srv *Server) Mimetypes() *contentype.Mimetypes {
+	return srv.mimetypes
 }
 
-// AddMarshal 添加编码函数
+// Services 返回服务内容的管理接口
+func (srv *Server) Services() *service.Manager {
+	return srv.services
+}
+
+// Close 关闭服务
+func (srv *Server) Close() {
+	srv.Services().Stop()
+}
+
+// Handler 将当前服务转换为 http.Handler 接口对象
+func (srv *Server) Handler() http.Handler {
+	return srv.middlewares
+}
+
+// Serve 启动服务
 //
-// mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
-// 另作处理，比如下载，上传等内容。
-func (srv *Server) AddMarshal(name string, mf contentype.MarshalFunc) error {
-	return srv.mimetypes.AddMarshal(name, mf)
-}
-
-// AddUnmarshals 添加多个编码函数
-func (srv *Server) AddUnmarshals(ms map[string]contentype.UnmarshalFunc) error {
-	return srv.mimetypes.AddUnmarshals(ms)
-}
-
-// AddUnmarshal 添加编码函数
+// httpServer.Handler 会被 srv 的相关内容替换
 //
-// mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
-// 另作处理，比如下载，上传等内容。
-func (srv *Server) AddUnmarshal(name string, mm contentype.UnmarshalFunc) error {
-	return srv.mimetypes.AddUnmarshal(name, mm)
+// 根据是否有配置 httpServer.TLSConfig.GetCertificate 或是 httpServer.TLSConfig.Certificates
+// 决定是调用 ListenAndServeTLS 还是 ListenAndServe。
+func (srv *Server) Serve(httpServer *http.Server) error {
+	httpServer.Handler = srv.middlewares
+
+	srv.Services().Run()
+
+	cfg := httpServer.TLSConfig
+	if cfg.GetCertificate != nil || len(cfg.Certificates) > 0 {
+		return httpServer.ListenAndServeTLS("", "")
+	}
+	return httpServer.ListenAndServe()
 }

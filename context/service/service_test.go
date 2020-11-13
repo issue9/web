@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/logs/v2"
 )
 
 const (
@@ -110,15 +111,15 @@ func buildSrv3() (f Func, start, exit chan struct{}) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
-	srv := NewManager()
+	srv := NewManager(time.Local, logs.New())
 
 	srv1, start, exit := buildSrv1()
 	srv.AddService(srv1, "srv1")
 	srv.Run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(1, len(srv.services))
-	s1 := srv.services[0]
+	a.Equal(2, len(srv.services))
+	s1 := srv.services[1]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Running)
 	s1.Stop()
@@ -139,12 +140,12 @@ func TestService_srv1(t *testing.T) {
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
-	srv := NewManager()
+	srv := NewManager(time.Local, logs.New())
 
 	srv2, start, exit := buildSrv2()
 	srv.AddService(srv2, "srv2")
 	srv.Run() // 注册并运行服务
-	s2 := srv.services[0]
+	s2 := srv.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Running)
@@ -174,12 +175,12 @@ func TestService_srv2(t *testing.T) {
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
-	srv := NewManager()
+	srv := NewManager(time.Local, logs.New())
 
 	srv3, start, exit := buildSrv3()
 	srv.AddService(srv3, "srv3")
 	srv.Run()
-	s3 := srv.services[0]
+	s3 := srv.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Running)

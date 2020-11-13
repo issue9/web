@@ -139,7 +139,7 @@ func (ctx *Context) NewResult(code int) *CTXResult {
 	}
 
 	return &CTXResult{
-		rslt: ctx.server.ResultBuilder(msg.status, code, ctx.Sprintf(msg.message)),
+		rslt: ctx.server.ResultBuilder(msg.status, code, ctx.LocalePrinter.Sprintf(msg.message)),
 		ctx:  ctx,
 	}
 }

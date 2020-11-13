@@ -3,13 +3,12 @@
 package web
 
 import (
-	"context"
 	"time"
 
 	"github.com/issue9/scheduled"
 	"github.com/issue9/scheduled/schedulers"
 
-	"github.com/issue9/web/service"
+	"github.com/issue9/web/context/service"
 )
 
 type (
@@ -38,7 +37,7 @@ type (
 // title 是对该服务的简要说明。
 func (m *Module) AddService(f ServiceFunc, title string) {
 	m.AddInit(func() error {
-		m.web.services.AddService(f, title)
+		m.web.CTXServer().Services().AddService(f, title)
 		return nil
 	}, "注册服务："+title)
 }
@@ -51,7 +50,7 @@ func (m *Module) AddService(f ServiceFunc, title string) {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.web.scheduled.Cron(title, f, spec, delay)
+		return m.web.CTXServer().Services().AddCron(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -63,7 +62,7 @@ func (m *Module) AddCron(title string, f JobFunc, spec string, delay bool) {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, delay bool) {
 	m.AddInit(func() error {
-		return m.web.scheduled.Tick(title, f, dur, imm, delay)
+		return m.web.CTXServer().Services().AddTicker(title, f, dur, imm, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -75,7 +74,7 @@ func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, dela
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 	m.AddInit(func() error {
-		return m.web.scheduled.At(title, f, spec, delay)
+		return m.web.CTXServer().Services().AddAt(title, f, spec, delay)
 	}, "注册计划任务"+title)
 }
 
@@ -87,29 +86,7 @@ func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (m *Module) AddJob(title string, f JobFunc, scheduler Scheduler, delay bool) {
 	m.AddInit(func() error {
-		m.web.scheduled.New(title, f, scheduler, delay)
+		m.web.CTXServer().Services().AddJob(title, f, scheduler, delay)
 		return nil
 	}, "注册计划任务"+title)
-}
-
-// Services 返回所有的服务列表
-func (web *Web) Services() []*Service {
-	return web.services.Services()
-}
-
-// Jobs 返回计划任务列表
-func (web *Web) Jobs() []*Job {
-	return web.scheduled.Jobs()
-}
-
-func (web *Web) scheduledService(ctx context.Context) error {
-	go func() {
-		if err := web.scheduled.Serve(); err != nil {
-			web.logs.Error(err)
-		}
-	}()
-
-	<-ctx.Done()
-	web.scheduled.Stop()
-	return context.Canceled
 }

@@ -43,23 +43,21 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	err = srv.AddMarshals(map[string]contentype.MarshalFunc{
+	err = srv.Mimetypes().AddMarshals(map[string]contentype.MarshalFunc{
 		"application/json":         json.Marshal,
 		"application/xml":          xml.Marshal,
 		contentype.DefaultMimetype: gob.Marshal,
 		mimetypetest.Mimetype:      mimetypetest.TextMarshal,
 	})
 	a.NotError(err)
-	a.Error(srv.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal))
 
-	err = srv.AddUnmarshals(map[string]contentype.UnmarshalFunc{
+	err = srv.Mimetypes().AddUnmarshals(map[string]contentype.UnmarshalFunc{
 		"application/json":         json.Unmarshal,
 		"application/xml":          xml.Unmarshal,
 		contentype.DefaultMimetype: gob.Unmarshal,
 		mimetypetest.Mimetype:      mimetypetest.TextUnmarshal,
 	})
 	a.NotError(err)
-	a.Error(srv.AddUnmarshal(mimetypetest.Mimetype, mimetypetest.TextUnmarshal))
 
 	srv.AddMessages(411, map[int]message.Reference{41110: "41110"})
 

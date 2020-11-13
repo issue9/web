@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/logs/v2"
 	lc "github.com/issue9/logs/v2/config"
-	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/config"
@@ -23,7 +22,6 @@ import (
 	"github.com/issue9/web/context/contentype"
 	"github.com/issue9/web/context/contentype/gob"
 	"github.com/issue9/web/internal/version"
-	"github.com/issue9/web/service"
 )
 
 // Version 当前框架的版本
@@ -47,10 +45,8 @@ type Web struct {
 	shutdownTimeout time.Duration
 
 	// modules
-	services  *service.Manager
-	scheduled *scheduled.Server
-	modules   []*Module
-	inited    bool
+	modules []*Module
+	inited  bool
 }
 
 type contextKey int
@@ -122,7 +118,6 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 
 		httpServer: &http.Server{
 			Addr:              conf.addr,
-			Handler:           ctxServer.Handler(),
 			ReadTimeout:       conf.ReadTimeout.Duration(),
 			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
 			WriteTimeout:      conf.WriteTimeout.Duration(),
@@ -134,13 +129,9 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 		closed:          make(chan struct{}, 1),
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
 
-		services:  service.NewManager(),
-		scheduled: scheduled.NewServer(conf.location, l.ERROR(), l.INFO()),
-		modules:   make([]*Module, 0, 10),
+		modules: make([]*Module, 0, 10),
 	}
 	ctxServer.Vars[ContextKeyWeb] = web
-
-	web.services.AddService(web.scheduledService, "计划任务")
 
 	if conf.ShutdownSignal != nil {
 		web.grace(conf.ShutdownSignal...)
@@ -174,10 +165,10 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 		srv.Catalog = conf.Catalog
 	}
 
-	if err = srv.AddMarshals(conf.Marshalers); err != nil {
+	if err = srv.Mimetypes().AddMarshals(conf.Marshalers); err != nil {
 		return nil, err
 	}
-	if err = srv.AddUnmarshals(conf.Unmarshalers); err != nil {
+	if err = srv.Mimetypes().AddUnmarshals(conf.Unmarshalers); err != nil {
 		return nil, err
 	}
 
@@ -220,8 +211,6 @@ func (web *Web) HTTPServer() *http.Server {
 
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	web.services.Run()
-
 	err = web.CTXServer().Serve(web.HTTPServer())
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
@@ -235,7 +224,7 @@ func (web *Web) Serve() (err error) {
 // Close 关闭服务
 func (web *Web) Close() error {
 	defer func() {
-		web.services.Stop()
+		web.CTXServer().Close()
 		web.closed <- struct{}{}
 	}()
 

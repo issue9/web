@@ -23,9 +23,8 @@ var (
 func TestResource(t *testing.T) {
 	a := assert.New(t)
 
-	server := newWeb(a)
-	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
-	m := server.NewModule("m1", "m1 desc")
+	web := newWeb(a)
+	m := web.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -38,8 +37,9 @@ func TestResource(t *testing.T) {
 	res.Put(f1)
 	res.Options("abcdef")
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
 
+	srv := rest.NewServer(t, web.ctxServer.Handler(), nil)
 	srv.Delete("/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/p" + path).Do().Status(http.StatusOK)
 	srv.Post("/p"+path, nil).Do().Status(http.StatusOK)
@@ -54,9 +54,8 @@ func TestResource(t *testing.T) {
 func TestPrefix(t *testing.T) {
 	a := assert.New(t)
 
-	server := newWeb(a)
-	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
-	m := server.NewModule("m1", "m1 desc")
+	web := newWeb(a)
+	m := web.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -68,8 +67,9 @@ func TestPrefix(t *testing.T) {
 	p.Put(path, f1)
 	p.Options(path, "abcdef")
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
 
+	srv := rest.NewServer(t, web.ctxServer.Handler(), nil)
 	srv.Delete("/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/p" + path).Do().Status(http.StatusOK)
 	srv.Post("/p"+path, nil).Do().Status(http.StatusOK)
@@ -84,15 +84,15 @@ func TestPrefix(t *testing.T) {
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 
-	server := newWeb(a)
-	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
-	m := server.NewModule("m1", "m1 desc")
+	web := newWeb(a)
+	m := web.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
 	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
+	srv := rest.NewServer(t, web.ctxServer.Handler(), nil)
 
 	srv.Get(path).Do().Status(http.StatusOK)
 	srv.Delete(path).Do().Status(http.StatusOK)
@@ -100,23 +100,22 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 
-	server = newWeb(a)
-	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
-	m = server.NewModule("m1", "m1 desc")
+	web = newWeb(a)
+	m = web.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	path = "/path1"
 	a.NotError(m.Handle(path, f1))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
+	srv = rest.NewServer(t, web.ctxServer.Handler(), nil)
 
 	srv.Delete(path).Do().Status(http.StatusOK)
 	srv.Patch(path, nil).Do().Status(http.StatusOK)
 
 	// 各个请求方法
 
-	server = newWeb(a)
-	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
-	m = server.NewModule("m1", "m1 desc")
+	web = newWeb(a)
+	m = web.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	path = "/path2"
 	m.Delete(path, f1)
@@ -125,7 +124,8 @@ func TestModule_Handle(t *testing.T) {
 	m.Patch(path, f1)
 	m.Put(path, f1)
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
+	srv = rest.NewServer(t, web.ctxServer.Handler(), nil)
 
 	srv.Delete(path).Do().Status(http.StatusOK)
 	srv.Get(path).Do().Status(http.StatusOK)
@@ -158,8 +158,8 @@ func buildFilter(num int) context.Filter {
 func TestPrefix_Filters(t *testing.T) {
 	a := assert.New(t)
 
-	server := newWeb(a)
-	m1 := server.NewModule("m1", "m1 desc")
+	web := newWeb(a)
+	m1 := web.NewModule("m1", "m1 desc")
 	m1.AddFilters(buildFilter(1), buildFilter(2))
 	p1 := m1.Prefix("/p1", buildFilter(3), buildFilter(4))
 
@@ -176,9 +176,9 @@ func TestPrefix_Filters(t *testing.T) {
 	// 在所有的路由项注册之后才添加中间件
 	m1.AddFilters(buildFilter(8), buildFilter(9))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
+	srv := rest.NewServer(t, web.ctxServer.Handler(), nil)
 
 	srv.Get("/test").
 		Do().
@@ -192,8 +192,8 @@ func TestPrefix_Filters(t *testing.T) {
 func TestModule_Options(t *testing.T) {
 	a := assert.New(t)
 
-	server := newWeb(a)
-	m1 := server.NewModule("m1", "m1 desc")
+	web := newWeb(a)
+	m1 := web.NewModule("m1", "m1 desc")
 	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
 		return context.HandlerFunc(func(ctx *context.Context) {
 			ctx.Response.Header().Set("Server", "m1")
@@ -205,9 +205,9 @@ func TestModule_Options(t *testing.T) {
 		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
 	})
 	m1.Options("/test", "GET, OPTIONS, PUT")
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv := rest.NewServer(t, server.ctxServer.Handler(), nil)
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
+	srv := rest.NewServer(t, web.ctxServer.Handler(), nil)
 
 	srv.Get("/test").
 		Do().
@@ -222,8 +222,8 @@ func TestModule_Options(t *testing.T) {
 
 	// 通 Handle 修改的 OPTIONS，正常接受中间件
 
-	server = newWeb(a)
-	m1 = server.NewModule("m1", "m1 desc")
+	web = newWeb(a)
+	m1 = web.NewModule("m1", "m1 desc")
 	m1.AddFilters(func(next context.HandlerFunc) context.HandlerFunc {
 		return context.HandlerFunc(func(ctx *context.Context) {
 			ctx.Response.Header().Set("Server", "m1")
@@ -237,9 +237,9 @@ func TestModule_Options(t *testing.T) {
 	m1.Handle("/test", func(ctx *context.Context) {
 		ctx.Render(http.StatusAccepted, nil, nil)
 	}, http.MethodOptions)
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(web.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv = rest.NewServer(t, server.ctxServer.Handler(), nil)
+	srv = rest.NewServer(t, web.ctxServer.Handler(), nil)
 	srv.NewRequest(http.MethodOptions, "/test").
 		Do().
 		Header("Server", "m1").

@@ -21,7 +21,7 @@ var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
 func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 	router := server.Router()
 
 	path := "/path"
@@ -173,20 +173,20 @@ func TestRouter_NewRouter(t *testing.T) {
 	router.Prefix("/p1").Delete("/path", f1)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	srv.Handler().ServeHTTP(w, r)
+	srv.middlewares.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 
 	router.Prefix("/p1").Prefix("/p2").Put("/path", f1)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPut, "https://example.com:88/p1/p2/path", nil)
-	srv.Handler().ServeHTTP(w, r)
+	srv.middlewares.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestPrefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	p := server.Router().Prefix("/p")
 	a.NotNil(p)
@@ -235,7 +235,7 @@ func TestResource(t *testing.T) {
 	res := server.Router().Resource(path)
 	a.NotNil(res)
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	res.Get(f1)
 	srv.Get("/root" + path).Do().Status(http.StatusOK)
@@ -284,7 +284,7 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
@@ -340,7 +340,7 @@ func TestRouter_Static(t *testing.T) {
 	r.Static("/admin/{path}", "./testdata")
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/blog/admin/file1.txt", nil)
-	server.Handler().ServeHTTP(w, req)
+	server.middlewares.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
@@ -392,7 +392,7 @@ func TestFilters(t *testing.T) {
 		ctx.Render(205, nil, nil)
 	})
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root/test").
 		Do().
