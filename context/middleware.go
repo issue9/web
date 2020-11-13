@@ -73,3 +73,19 @@ func (srv *Server) SetDebugger(pprof, vars string) {
 func (srv *Server) Handler() http.Handler {
 	return srv.middlewares
 }
+
+// Serve 启动服务
+//
+// httpServer.Handler 会被 srv 的相关内容替换
+//
+// 根据是否有配置 httpServer.TLSConfig.GetCertificate 或是 httpServer.TLSConfig.Certificates
+// 决定是调用 ListenAndServeTLS 还是 ListenAndServe。
+func (srv *Server) Serve(httpServer *http.Server) error {
+	httpServer.Handler = srv.middlewares
+
+	cfg := httpServer.TLSConfig
+	if cfg.GetCertificate != nil || len(cfg.Certificates) > 0 {
+		return httpServer.ListenAndServeTLS("", "")
+	}
+	return httpServer.ListenAndServe()
+}

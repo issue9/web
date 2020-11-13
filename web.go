@@ -39,7 +39,6 @@ type Result = context.Result
 
 // Web 管理整个项目所有实例
 type Web struct {
-	isTLS     bool
 	logs      *logs.Logs
 	ctxServer *context.Server
 
@@ -118,7 +117,6 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 	}
 
 	web = &Web{
-		isTLS:     conf.isTLS,
 		logs:      l,
 		ctxServer: ctxServer,
 
@@ -224,11 +222,7 @@ func (web *Web) HTTPServer() *http.Server {
 func (web *Web) Serve() (err error) {
 	web.services.Run()
 
-	if web.isTLS {
-		err = web.HTTPServer().ListenAndServeTLS("", "")
-	} else {
-		err = web.HTTPServer().ListenAndServe()
-	}
+	err = web.CTXServer().Serve(web.HTTPServer())
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。

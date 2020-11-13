@@ -46,10 +46,9 @@ type (
 		// 网站的根目录所在
 		//
 		// 比如 https://example.com/api/
-		Root  string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
-		url   *url.URL
-		addr  string
-		isTLS bool
+		Root string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
+		url  *url.URL
+		addr string
 
 		// 指定插件的搜索方式
 		//
@@ -245,7 +244,6 @@ func (conf *Config) sanitize() error {
 			conf.addr = ":80"
 		case "https":
 			conf.addr = ":443"
-			conf.isTLS = true
 		default:
 			return &config.FieldError{Field: "root", Message: "无效的 scheme"}
 		}
@@ -265,7 +263,7 @@ func (conf *Config) sanitize() error {
 		return err
 	}
 
-	if conf.isTLS && len(conf.Certificates) == 0 {
+	if conf.url.Scheme == "https" && len(conf.Certificates) == 0 {
 		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
 	return conf.buildTLSConfig()
