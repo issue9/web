@@ -67,6 +67,7 @@ type (
 		// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
 		DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,omitempty"`
 		DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,omitempty"`
+		SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,omitempty"`
 
 		// 指定静态内容
 		//

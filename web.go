@@ -141,7 +141,7 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 		DisableOptions: conf.DisableOptions,
 		Catalog:        conf.Catalog,
 		ResultBuilder:  conf.ResultBuilder,
-		SkipCleanPath:  false, // TODO
+		SkipCleanPath:  conf.SkipCleanPath,
 		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
 			srv.Addr = conf.addr
