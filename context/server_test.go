@@ -6,12 +6,10 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -33,10 +31,9 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	u, err := url.Parse("/root")
-	a.NotError(err).NotNil(u)
-	srv := NewServer(logs.New(), memory.New(time.Hour), false, false, u)
-	a.NotNil(srv)
+	o := &Options{Root: "/root"}
+	srv, err := NewServer(logs.New(), o)
+	a.NotError(err).NotNil(srv)
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
 	a.NotError(message.SetString(language.Und, "lang", "und"))
@@ -67,17 +64,13 @@ func newServer(a *assert.Assertion) *Server {
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 	l := logs.New()
-	srv := NewServer(l, memory.New(time.Hour), false, false, &url.URL{})
-	a.NotNil(srv)
+	srv, err := NewServer(l, &Options{})
+	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
 	a.Equal(l, srv.Logs())
 	a.NotNil(srv.Cache())
-	a.Equal(srv.Catalog, message.DefaultCatalog)
-	a.Equal(srv.Location, time.Local)
-
-	u, err := url.Parse("/root")
-	a.NotError(err).NotNil(u)
-	srv = NewServer(l, memory.New(time.Hour), false, false, u)
+	a.Equal(srv.catalog, message.DefaultCatalog)
+	a.Equal(srv.Location(), time.Local)
 }
 
 func TestServer_Vars(t *testing.T) {

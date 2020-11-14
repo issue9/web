@@ -147,22 +147,25 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 }
 
 func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
-	srv = context.NewServer(l, conf.Cache, conf.DisableOptions, conf.DisableHead, conf.url)
-
-	if conf.ResultBuilder != nil {
-		srv.ResultBuilder = conf.ResultBuilder
+	o := &context.Options{
+		Location:       conf.location,
+		Cache:          conf.Cache,
+		DisableHead:    conf.DisableHead,
+		DisableOptions: conf.DisableOptions,
+		Catalog:        conf.Catalog,
+		ResultBuilder:  conf.ResultBuilder,
+		SkipCleanPath:  false, // TODO
+		Root:           conf.Root,
 	}
-
-	srv.Location = conf.location
+	srv, err = context.NewServer(l, o)
+	if err != nil {
+		return nil, err
+	}
 
 	for path, dir := range conf.Static {
 		if err := srv.Router().Static(path, dir); err != nil {
 			return nil, err
 		}
-	}
-
-	if conf.Catalog != nil {
-		srv.Catalog = conf.Catalog
 	}
 
 	if err = srv.Mimetypes().AddMarshals(conf.Marshalers); err != nil {

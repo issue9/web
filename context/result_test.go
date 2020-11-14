@@ -292,16 +292,16 @@ func TestServer_Messages(t *testing.T) {
 		srv.AddMessages(400, map[int]message.Reference{40010: "lang"})
 	})
 
-	lmsgs := srv.Messages(message.NewPrinter(language.Und, message.Catalog(srv.Catalog)))
+	lmsgs := srv.Messages(message.NewPrinter(language.Und, message.Catalog(srv.catalog)))
 	a.Equal(lmsgs[40010], "und")
 
-	lmsgs = srv.Messages(message.NewPrinter(language.SimplifiedChinese, message.Catalog(srv.Catalog)))
+	lmsgs = srv.Messages(message.NewPrinter(language.SimplifiedChinese, message.Catalog(srv.catalog)))
 	a.Equal(lmsgs[40010], "hans")
 
-	lmsgs = srv.Messages(message.NewPrinter(language.TraditionalChinese, message.Catalog(srv.Catalog)))
+	lmsgs = srv.Messages(message.NewPrinter(language.TraditionalChinese, message.Catalog(srv.catalog)))
 	a.Equal(lmsgs[40010], "hant")
 
-	lmsgs = srv.Messages(message.NewPrinter(language.English, message.Catalog(srv.Catalog)))
+	lmsgs = srv.Messages(message.NewPrinter(language.English, message.Catalog(srv.catalog)))
 	a.Equal(lmsgs[40010], "und")
 
 	lmsgs = srv.Messages(nil)

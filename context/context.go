@@ -96,7 +96,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputCharsetName, outputCharset, err := contentype.AcceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
-	tag := contentype.AcceptLanguage(srv.Catalog, r.Header.Get("Accept-Language"))
+	tag := contentype.AcceptLanguage(srv.catalog, r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		server:             srv,
@@ -108,7 +108,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      srv.NewLocalePrinter(tag),
-		Location:           srv.Location,
+		Location:           srv.Location(),
 		Vars:               map[interface{}]interface{}{},
 	}
 
@@ -322,7 +322,7 @@ func (ctx *Context) NotImplemented() {
 
 // NewLocalePrinter 返回指定语言的 message.Printer
 func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return message.NewPrinter(tag, message.Catalog(srv.Catalog))
+	return message.NewPrinter(tag, message.Catalog(srv.catalog))
 }
 
 // Now 返回当前时间

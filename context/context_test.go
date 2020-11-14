@@ -361,6 +361,6 @@ func TestContext_Now(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 
 	now := ctx.Now()
-	a.Equal(now.Location(), srv.Location)
+	a.Equal(now.Location(), srv.Location())
 	a.Equal(now.Location(), srv.Now().Location())
 }

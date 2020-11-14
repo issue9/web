@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/compress"
@@ -21,33 +22,43 @@ import (
 	"github.com/issue9/web/context/service"
 )
 
-// Server 提供了用于构建 Context 对象的基本数据
-type Server struct {
-	// Location 指定服务器的时区信息
+// Options 初始化 Server 的参数
+type Options struct {
+	// 服务器的时区
 	//
-	// 如果未指定，则会采用 time.Local 作为默认值。
-	//
-	// 在构建 Context 对象时，该时区信息也会分配给 Context，
-	// 如果每个 Context 对象需要不同的值，可以通过 AddFilters 进行修改。
+	// 默认值为 time.Local
 	Location *time.Location
 
-	// Catalog 当前使用的本地化组件
+	// 当前使用的本地化组件
 	//
 	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
 	//
 	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
 	// 等方式构建 Catalog 接口实例。
-	//
-	// NOTE: Context.LocalePrinter 在初始化时与当前值进行关联。
-	// 如果中途修改 Catalog 的值，已经建立的 Context 实例中的
-	// LocalePrinter 并不会与新的 Catalog 进行关联，依然指向旧值。
 	Catalog catalog.Catalog
 
-	// ResultBuilder 指定生成 Result 数据的方法
+	// 指定生成 Result 数据的方法
 	//
 	// 默认情况下指向  DefaultResultBuilder。
 	ResultBuilder BuildResultFunc
 
+	// 缓存系统
+	//
+	// 默认值为内存类型。
+	Cache cache.Cache
+
+	// 初始化 MUX 的参数
+	DisableHead    bool
+	DisableOptions bool
+	SkipCleanPath  bool
+
+	// 网站的根目录
+	Root string
+	root *url.URL
+}
+
+// Server 提供了用于构建 Context 对象的基本数据
+type Server struct {
 	// 保存 Context 在存续期间的可复用变量
 	//
 	// 这是比 context.Value 更经济的传递变量方式。
@@ -55,7 +66,7 @@ type Server struct {
 	// 如果仅需要在单次请求中传递参数，可直接使用 Context.Vars。
 	Vars map[interface{}]interface{}
 
-	cache cache.Cache
+	logs *logs.Logs
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -64,11 +75,12 @@ type Server struct {
 	debugger      *debugger.Debugger
 	filters       []Filter
 
-	// url
-	mux    *mux.Mux
-	router *Router
+	catalog       catalog.Catalog
+	resultBuilder BuildResultFunc
+	location      *time.Location
+	cache         cache.Cache
 
-	logs      *logs.Logs
+	router    *Router
 	uptime    time.Time
 	mimetypes *contentype.Mimetypes
 	services  *service.Manager
@@ -77,21 +89,39 @@ type Server struct {
 	messages map[int]*resultMessage
 }
 
-// NewServer 返回 *Server 实例
-func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead bool, root *url.URL) *Server {
-	// NOTE: Server 中在初始化之后不能修改的都由 NewServer 指定，
-	// 其它字段的内容给定一个初始值，后期由用户自行决定。
+func (o *Options) sanitize() (err error) {
+	if o.Location == nil {
+		o.Location = time.Local
+	}
 
-	mux := mux.New(disableOptions, disableHead, false, nil, nil)
+	if o.Catalog == nil {
+		o.Catalog = message.DefaultCatalog
+	}
+
+	if o.ResultBuilder == nil {
+		o.ResultBuilder = DefaultResultBuilder
+	}
+
+	if o.Cache == nil {
+		o.Cache = memory.New(24 * time.Hour)
+	}
+
+	o.root, err = url.Parse(o.Root)
+	return err
+}
+
+// NewServer 返回 *Server 实例
+func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
+	if err := o.sanitize(); err != nil {
+		return nil, err
+	}
+
+	mux := mux.New(o.DisableOptions, o.DisableHead, o.SkipCleanPath, nil, nil)
 
 	srv := &Server{
-		Location:      time.Local,
-		Catalog:       message.DefaultCatalog,
-		ResultBuilder: DefaultResultBuilder,
+		logs: logs,
 
 		Vars: map[interface{}]interface{}{},
-
-		cache: cache,
 
 		middlewares: middleware.NewManager(mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -102,20 +132,27 @@ func NewServer(logs *logs.Logs, cache cache.Cache, disableOptions, disableHead b
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		mux: mux,
+		catalog:       o.Catalog,
+		resultBuilder: o.ResultBuilder,
+		location:      o.Location,
+		cache:         o.Cache,
 
-		logs:      logs,
 		uptime:    time.Now(),
 		mimetypes: contentype.NewMimetypes(),
-		services:  service.NewManager(time.Local, logs),
+		services:  service.NewManager(o.Location, logs),
 
 		messages: make(map[int]*resultMessage, 20),
 	}
-	srv.router = buildRouter(srv, mux, root)
+	srv.router = buildRouter(srv, mux, o.root)
 
 	srv.buildMiddlewares()
 
-	return srv
+	return srv, nil
+}
+
+// Location 指定服务器的时区信息
+func (srv *Server) Location() *time.Location {
+	return srv.location
 }
 
 // Logs 返回关联的 logs.Logs 实例
@@ -137,12 +174,12 @@ func (srv *Server) Uptime() time.Time {
 //
 // 与 time.Now() 的区别在于 Now() 基于当前时区
 func (srv *Server) Now() time.Time {
-	return time.Now().In(srv.Location)
+	return time.Now().In(srv.Location())
 }
 
 // ParseTime 分析基于当前时区的时间
 func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, srv.Location)
+	return time.ParseInLocation(layout, value, srv.Location())
 }
 
 // Server 获取关联的 context.Server 实例
