@@ -70,11 +70,11 @@ func (m *Module) AddTicker(title string, f JobFunc, dur time.Duration, imm, dela
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明；
-// spec 指定的时间点；
+// t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f JobFunc, spec string, delay bool) {
+func (m *Module) AddAt(title string, f JobFunc, t time.Time, delay bool) {
 	m.AddInit(func() error {
-		return m.web.CTXServer().Services().AddAt(title, f, spec, delay)
+		return m.web.CTXServer().Services().AddAt(title, f, t, delay)
 	}, "注册计划任务"+title)
 }
 

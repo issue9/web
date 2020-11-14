@@ -103,7 +103,7 @@ func TestWeb_Init(t *testing.T) {
 
 	m1 := srv.NewModule("m1", "m1 desc", "m2")
 	m1.AddCron("test cron", job, "* * 8 * * *", true)
-	m1.AddAt("test cron", job, "2020-01-02 17:55:11", true)
+	m1.AddAt("test cron", job, time.Now().Add(-time.Hour), true)
 
 	m2 := srv.NewModule("m2", "m2 desc")
 	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
