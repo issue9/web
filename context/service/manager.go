@@ -49,4 +49,5 @@ func (mgr *Manager) Stop() {
 	for _, s := range mgr.services {
 		s.Stop()
 	}
+	mgr.running = false
 }

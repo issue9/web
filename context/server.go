@@ -3,6 +3,8 @@
 package context
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -51,6 +53,11 @@ type Options struct {
 	DisableHead    bool
 	DisableOptions bool
 	SkipCleanPath  bool
+	mux            *mux.Mux
+
+	// 可以对 http.Server 的内容进行个性
+	HTTPServer func(*http.Server)
+	httpServer *http.Server
 
 	// 网站的根目录
 	Root string
@@ -66,7 +73,8 @@ type Server struct {
 	// 如果仅需要在单次请求中传递参数，可直接使用 Context.Vars。
 	Vars map[interface{}]interface{}
 
-	logs *logs.Logs
+	logs       *logs.Logs
+	httpServer *http.Server
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -106,8 +114,25 @@ func (o *Options) sanitize() (err error) {
 		o.Cache = memory.New(24 * time.Hour)
 	}
 
-	o.root, err = url.Parse(o.Root)
-	return err
+	o.mux = mux.New(o.DisableOptions, o.DisableHead, o.SkipCleanPath, nil, nil)
+
+	o.httpServer = &http.Server{}
+	if o.HTTPServer != nil {
+		o.HTTPServer(o.httpServer)
+	}
+
+	if o.root, err = url.Parse(o.Root); err != nil {
+		return err
+	}
+	if o.httpServer.Addr == "" {
+		if p := o.root.Port(); p != "" {
+			o.httpServer.Addr = ":" + p
+		} else if o.root.Scheme == "https" {
+			o.httpServer.Addr = ":https"
+		}
+	}
+
+	return nil
 }
 
 // NewServer 返回 *Server 实例
@@ -116,14 +141,13 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	mux := mux.New(o.DisableOptions, o.DisableHead, o.SkipCleanPath, nil, nil)
-
 	srv := &Server{
-		logs: logs,
+		logs:       logs,
+		httpServer: o.httpServer,
 
 		Vars: map[interface{}]interface{}{},
 
-		middlewares: middleware.NewManager(mux),
+		middlewares: middleware.NewManager(o.mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
 			"gzip":    compress.NewGzip,
 			"deflate": compress.NewDeflate,
@@ -143,7 +167,8 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 
 		messages: make(map[int]*resultMessage, 20),
 	}
-	srv.router = buildRouter(srv, mux, o.root)
+	srv.router = buildRouter(srv, o.mux, o.root)
+	srv.httpServer.Handler = srv.middlewares
 
 	srv.buildMiddlewares()
 
@@ -197,30 +222,34 @@ func (srv *Server) Services() *service.Manager {
 	return srv.services
 }
 
-// Close 关闭服务
-func (srv *Server) Close() {
-	srv.Services().Stop()
-}
-
 // Handler 将当前服务转换为 http.Handler 接口对象
 func (srv *Server) Handler() http.Handler {
 	return srv.middlewares
 }
 
 // Serve 启动服务
-//
-// httpServer.Handler 会被 srv 的相关内容替换
-//
-// 根据是否有配置 httpServer.TLSConfig.GetCertificate 或是 httpServer.TLSConfig.Certificates
-// 决定是调用 ListenAndServeTLS 还是 ListenAndServe。
-func (srv *Server) Serve(httpServer *http.Server) error {
-	httpServer.Handler = srv.middlewares
-
+func (srv *Server) Serve() error {
 	srv.Services().Run()
 
-	cfg := httpServer.TLSConfig
+	cfg := srv.httpServer.TLSConfig
 	if cfg.GetCertificate != nil || len(cfg.Certificates) > 0 {
-		return httpServer.ListenAndServeTLS("", "")
+		return srv.httpServer.ListenAndServeTLS("", "")
 	}
-	return httpServer.ListenAndServe()
+	return srv.httpServer.ListenAndServe()
+}
+
+// Close 关闭服务
+func (srv *Server) Close(shutdownTimeout time.Duration) error {
+	srv.Services().Stop()
+
+	if shutdownTimeout == 0 {
+		return srv.httpServer.Close()
+	}
+
+	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return nil
 }

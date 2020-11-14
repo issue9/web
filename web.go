@@ -4,7 +4,6 @@
 package web
 
 import (
-	ctx "context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -40,7 +39,6 @@ type Web struct {
 	logs      *logs.Logs
 	ctxServer *context.Server
 
-	httpServer      *http.Server
 	closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	shutdownTimeout time.Duration
 
@@ -113,19 +111,8 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 	}
 
 	web = &Web{
-		logs:      l,
-		ctxServer: ctxServer,
-
-		httpServer: &http.Server{
-			Addr:              conf.addr,
-			ReadTimeout:       conf.ReadTimeout.Duration(),
-			ReadHeaderTimeout: conf.ReadHeaderTimeout.Duration(),
-			WriteTimeout:      conf.WriteTimeout.Duration(),
-			IdleTimeout:       conf.IdleTimeout.Duration(),
-			MaxHeaderBytes:    conf.MaxHeaderBytes,
-			ErrorLog:          l.ERROR(),
-			TLSConfig:         conf.TLSConfig,
-		},
+		logs:            l,
+		ctxServer:       ctxServer,
 		closed:          make(chan struct{}, 1),
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
 
@@ -156,6 +143,16 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 		ResultBuilder:  conf.ResultBuilder,
 		SkipCleanPath:  false, // TODO
 		Root:           conf.Root,
+		HTTPServer: func(srv *http.Server) {
+			srv.Addr = conf.addr
+			srv.ReadTimeout = conf.ReadTimeout.Duration()
+			srv.ReadHeaderTimeout = conf.ReadHeaderTimeout.Duration()
+			srv.WriteTimeout = conf.WriteTimeout.Duration()
+			srv.IdleTimeout = conf.IdleTimeout.Duration()
+			srv.MaxHeaderBytes = conf.MaxHeaderBytes
+			srv.ErrorLog = l.ERROR()
+			srv.TLSConfig = conf.TLSConfig
+		},
 	}
 	srv, err = context.NewServer(l, o)
 	if err != nil {
@@ -207,14 +204,9 @@ func (web *Web) CTXServer() *context.Server {
 	return web.ctxServer
 }
 
-// HTTPServer 返回 http.Server 实例
-func (web *Web) HTTPServer() *http.Server {
-	return web.httpServer
-}
-
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	err = web.CTXServer().Serve(web.HTTPServer())
+	err = web.CTXServer().Serve()
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
@@ -226,20 +218,8 @@ func (web *Web) Serve() (err error) {
 
 // Close 关闭服务
 func (web *Web) Close() error {
-	defer func() {
-		web.CTXServer().Close()
-		web.closed <- struct{}{}
-	}()
-
-	if web.shutdownTimeout == 0 {
-		return web.HTTPServer().Close()
-	}
-
-	c, cancel := ctx.WithTimeout(ctx.Background(), web.shutdownTimeout)
-	defer cancel()
-	if err := web.HTTPServer().Shutdown(c); err != nil && !errors.Is(err, ctx.DeadlineExceeded) {
-		return err
-	}
+	web.CTXServer().Close(web.shutdownTimeout)
+	web.closed <- struct{}{}
 	return nil
 }
 

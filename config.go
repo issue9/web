@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/cache/memory"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message"
@@ -227,10 +226,6 @@ func (conf *Config) sanitize() error {
 		if err := conf.Debug.sanitize(); err != nil {
 			return err
 		}
-	}
-
-	if conf.Cache == nil {
-		conf.Cache = memory.New(24 * time.Hour)
 	}
 
 	u, err := url.Parse(conf.Root)
