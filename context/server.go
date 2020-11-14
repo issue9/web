@@ -163,7 +163,7 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 
 		uptime:    time.Now(),
 		mimetypes: contentype.NewMimetypes(),
-		services:  service.NewManager(o.Location, logs),
+		services:  service.NewManager(logs, o.Location),
 
 		messages: make(map[int]*resultMessage, 20),
 	}

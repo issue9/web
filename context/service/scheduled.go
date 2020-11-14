@@ -34,10 +34,10 @@ func (mgr *Manager) AddTicker(title string, f scheduled.JobFunc, dur time.Durati
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明；
-// spec 指定的时间点；
+// t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (mgr *Manager) AddAt(title string, f scheduled.JobFunc, spec string, delay bool) error {
-	return mgr.scheduled.At(title, f, spec, delay)
+func (mgr *Manager) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) error {
+	return mgr.scheduled.At(title, f, t, delay)
 }
 
 // AddJob 添加新的计划任务

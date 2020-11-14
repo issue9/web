@@ -8,10 +8,10 @@ require (
 	github.com/issue9/conv v1.2.0
 	github.com/issue9/logs/v2 v2.5.0
 	github.com/issue9/middleware/v2 v2.3.0
-	github.com/issue9/mux/v3 v3.1.0
+	github.com/issue9/mux/v3 v3.1.1
 	github.com/issue9/qheader v0.5.0
 	github.com/issue9/query/v2 v2.1.2
-	github.com/issue9/scheduled v0.6.0
+	github.com/issue9/scheduled v0.7.0
 	github.com/issue9/source v0.1.1
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/validation v0.2.0

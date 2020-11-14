@@ -19,7 +19,7 @@ type Manager struct {
 }
 
 // NewManager 返回 Manager
-func NewManager(loc *time.Location, logs *logs.Logs) *Manager {
+func NewManager(logs *logs.Logs, loc *time.Location) *Manager {
 	mgr := &Manager{
 		services:  make([]*Service, 0, 100),
 		scheduled: scheduled.NewServer(loc, logs.ERROR(), logs.INFO()),
