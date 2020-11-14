@@ -14,12 +14,12 @@ import (
 
 	"github.com/issue9/logs/v2"
 	lc "github.com/issue9/logs/v2/config"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/contentype"
 	"github.com/issue9/web/context/contentype/gob"
+	"github.com/issue9/web/context/result"
 	"github.com/issue9/web/internal/version"
 )
 
@@ -32,7 +32,7 @@ const Version = version.Version
 type Context = context.Context
 
 // Result 定义了返回给用户的错误信息
-type Result = context.Result
+type Result = result.Result
 
 // Web 管理整个项目所有实例
 type Web struct {
@@ -89,11 +89,11 @@ func Classic(logConfigFile, configFile string) (*Web, error) {
 		contentype.DefaultMimetype: gob.Unmarshal,
 	}
 
-	conf.Results = map[int]message.Reference{
-		40001: "无效的报头",
-		40002: "无效的地址",
-		40003: "无效的查询参数",
-		40004: "无效的报文",
+	conf.Results = map[int]Locale{
+		40001: {Key: "无效的报头"},
+		40002: {Key: "无效的地址"},
+		40003: {Key: "无效的查询参数"},
+		40004: {Key: "无效的报文"},
 	}
 
 	return New(l, conf)
@@ -172,7 +172,9 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 	}
 
 	for status, rslt := range conf.results {
-		srv.AddMessages(status, rslt)
+		for code, l := range rslt {
+			srv.AddMessage(status, code, l.Key, l.vals...)
+		}
 	}
 
 	if conf.Debug != nil {

@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
-	xunicode "golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/encoding/unicode"
 )
 
 // DefaultCharset 默认的字符集
@@ -21,7 +21,7 @@ var (
 
 // CharsetIsNop 指定的编码是否不需要任何额外操作
 func CharsetIsNop(enc encoding.Encoding) bool {
-	return enc == nil || enc == xunicode.UTF8 || enc == encoding.Nop
+	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
 }
 
 // AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息

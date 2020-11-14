@@ -8,6 +8,8 @@ import (
 
 	"github.com/issue9/mux/v3"
 	"github.com/issue9/mux/v3/params"
+
+	"github.com/issue9/web/context/result"
 )
 
 var emptyParams = params.Params(map[string]string{})
@@ -23,7 +25,7 @@ var emptyParams = params.Params(map[string]string{})
 type Params struct {
 	ctx    *Context
 	params params.Params
-	errors ResultFields
+	errors result.Fields
 }
 
 // Params 声明一个新的 Params 实例
@@ -36,7 +38,7 @@ func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
 		params: ps,
-		errors: make(ResultFields, len(ps)),
+		errors: make(result.Fields, len(ps)),
 	}
 }
 
@@ -208,7 +210,7 @@ func (p *Params) HasErrors() bool {
 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() ResultFields {
+func (p *Params) Errors() result.Fields {
 	return p.errors
 }
 
@@ -216,7 +218,7 @@ func (p *Params) Errors() ResultFields {
 //
 // code 是作为 CTXResult.Code 从错误消息中查找，如果不存在，则 panic。
 // Params.errors 将会作为 CTXResult.Fields 的内容。
-func (p *Params) Result(code int) *CTXResult {
+func (p *Params) Result(code int) *Result {
 	return p.ctx.NewResultWithFields(code, p.Errors())
 }
 

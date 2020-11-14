@@ -56,7 +56,7 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	srv.AddMessages(411, map[int]message.Reference{41110: "41110"})
+	srv.AddMessage(411, 41110, "41110")
 
 	return srv
 }

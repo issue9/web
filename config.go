@@ -22,6 +22,7 @@ import (
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/result"
 	"github.com/issue9/web/internal/filesystem"
 )
 
@@ -134,7 +135,7 @@ type (
 		// 指定生成 Result 的方法
 		//
 		// 可以为空，表示采用 CTXServer 的默认值。
-		ResultBuilder context.BuildResultFunc `yaml:"-" json:"-" xml:"-"`
+		ResultBuilder result.BuildFunc `yaml:"-" json:"-" xml:"-"`
 
 		// 指定 https 模式下的证书配置项
 		//
@@ -149,9 +150,9 @@ type (
 		// 比如 40001，在返回给客户端时，会将 400 作为状态码展示给用户，
 		// 同时又会将 40001 和对应的消息发送给用户。
 		//
-		// 该数据最终由 context.Server.AddMessages 添加。
-		Results map[int]message.Reference `yaml:"-" json:"-" xml:"-"`
-		results map[int]map[int]message.Reference
+		// 该数据最终由 context.Server.AddMessage 添加。
+		Results map[int]Locale `yaml:"-" json:"-" xml:"-"`
+		results map[int]map[int]Locale
 
 		// 指定错误页面的处理方式
 		ErrorHandlers []*ErrorHandler `yaml:"-" json:"-" xml:"-"`
@@ -161,6 +162,12 @@ type (
 		// 如果为 nil，表示未指定任何信息，如果是长度为 0 的数组，则表示任意信号，
 		// 如果指定了多个相同的值，则该信号有可能多次触发。
 		ShutdownSignal []os.Signal `yaml:"-" json:"-" xml:"-"`
+	}
+
+	// Locale 用于描述本地化信息
+	Locale struct {
+		Key  message.Reference
+		vals []interface{}
 	}
 
 	// Map 定义 map[string]string 类型
@@ -250,7 +257,7 @@ func (conf *Config) sanitize() error {
 }
 
 func (conf *Config) parseResults() error {
-	conf.results = map[int]map[int]message.Reference{}
+	conf.results = map[int]map[int]Locale{}
 
 	for code, msg := range conf.Results {
 		if code < 999 {
@@ -265,7 +272,7 @@ func (conf *Config) parseResults() error {
 		if found {
 			rslt[code] = msg
 		} else {
-			conf.results[status] = map[int]message.Reference{code: msg}
+			conf.results[status] = map[int]Locale{code: msg}
 		}
 	}
 

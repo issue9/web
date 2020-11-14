@@ -21,6 +21,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/result"
 	"github.com/issue9/web/context/service"
 )
 
@@ -41,8 +42,8 @@ type Options struct {
 
 	// 指定生成 Result 数据的方法
 	//
-	// 默认情况下指向  DefaultResultBuilder。
-	ResultBuilder BuildResultFunc
+	// 默认情况下指向  result.DefaultBuilder。
+	ResultBuilder result.BuildFunc
 
 	// 缓存系统
 	//
@@ -83,18 +84,16 @@ type Server struct {
 	debugger      *debugger.Debugger
 	filters       []Filter
 
-	catalog       catalog.Catalog
-	resultBuilder BuildResultFunc
-	location      *time.Location
-	cache         cache.Cache
+	catalog  catalog.Catalog
+	location *time.Location
+	cache    cache.Cache
 
-	router    *Router
-	uptime    time.Time
+	router *Router
+	uptime time.Time
+
 	mimetypes *contentype.Mimetypes
 	services  *service.Manager
-
-	// result
-	messages map[int]*resultMessage
+	results   *result.Manager
 }
 
 func (o *Options) sanitize() (err error) {
@@ -107,7 +106,7 @@ func (o *Options) sanitize() (err error) {
 	}
 
 	if o.ResultBuilder == nil {
-		o.ResultBuilder = DefaultResultBuilder
+		o.ResultBuilder = result.DefaultBuilder
 	}
 
 	if o.Cache == nil {
@@ -156,16 +155,15 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
-		catalog:       o.Catalog,
-		resultBuilder: o.ResultBuilder,
-		location:      o.Location,
-		cache:         o.Cache,
+		catalog:  o.Catalog,
+		location: o.Location,
+		cache:    o.Cache,
 
-		uptime:    time.Now(),
+		uptime: time.Now(),
+
 		mimetypes: contentype.NewMimetypes(),
 		services:  service.NewManager(logs, o.Location),
-
-		messages: make(map[int]*resultMessage, 20),
+		results:   result.NewManager(o.ResultBuilder),
 	}
 	srv.router = buildRouter(srv, o.mux, o.root)
 	srv.httpServer.Handler = srv.middlewares

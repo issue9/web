@@ -77,7 +77,6 @@ func (srv *Server) Router() *Router {
 	return srv.router
 }
 
-// handle
 func (srv *Server) handle(mux *mux.Mux, path string, next HandlerFunc, filters []Filter, method ...string) error {
 	return mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		fs := make([]Filter, 0, len(filters)+len(srv.filters))

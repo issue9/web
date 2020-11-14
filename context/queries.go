@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/issue9/query/v2"
+
+	"github.com/issue9/web/context/result"
 )
 
 // Queries 用于处理路径中的查询参数
@@ -20,7 +22,7 @@ import (
 //  }
 type Queries struct {
 	ctx     *Context
-	errors  ResultFields
+	errors  result.Fields
 	queries url.Values
 }
 
@@ -33,7 +35,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		errors:  ResultFields{},
+		errors:  result.Fields{},
 		queries: queries,
 	}, nil
 }
@@ -138,7 +140,7 @@ func (q *Queries) HasErrors() bool {
 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() ResultFields {
+func (q *Queries) Errors() result.Fields {
 	return q.errors
 }
 
@@ -146,7 +148,7 @@ func (q *Queries) Errors() ResultFields {
 //
 // code 是作为 CTXResult.Code 从错误消息中查找，如果不存在，则 panic。
 // Queries.errors 将会作为 CTXResult.Fields 的内容。
-func (q *Queries) Result(code int) *CTXResult {
+func (q *Queries) Result(code int) *Result {
 	return q.ctx.NewResultWithFields(code, q.Errors())
 }
 
