@@ -46,8 +46,6 @@ type (
 		//
 		// 比如 https://example.com/api/
 		Root string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
-		url  *url.URL
-		addr string
 
 		// 指定插件的搜索方式
 		//
@@ -229,24 +227,6 @@ func (conf *Config) sanitize() error {
 		}
 	}
 
-	u, err := url.Parse(conf.Root)
-	if err != nil {
-		return err
-	}
-	conf.url = u
-	if conf.url.Port() == "" {
-		switch conf.url.Scheme {
-		case "http", "":
-			conf.addr = ":80"
-		case "https":
-			conf.addr = ":443"
-		default:
-			return &config.FieldError{Field: "root", Message: "无效的 scheme"}
-		}
-	} else {
-		conf.addr = ":" + conf.url.Port()
-	}
-
 	if err := conf.parseResults(); err != nil {
 		return err
 	}
@@ -259,7 +239,11 @@ func (conf *Config) sanitize() error {
 		return err
 	}
 
-	if conf.url.Scheme == "https" && len(conf.Certificates) == 0 {
+	u, err := url.Parse(conf.Root)
+	if err != nil {
+		return err
+	}
+	if u.Scheme == "https" && len(conf.Certificates) == 0 {
 		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
 	return conf.buildTLSConfig()

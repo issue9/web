@@ -59,8 +59,6 @@ func TestConfig_sanitize(t *testing.T) {
 
 	conf := &Config{}
 	a.NotError(conf.sanitize())
-	a.Equal(":80", conf.addr).
-		Equal("", conf.url.Path)
 	a.Equal("Local", conf.Timezone).
 		Equal(time.Local, conf.location)
 
@@ -91,13 +89,6 @@ func TestConfig_sanitize(t *testing.T) {
 	a.Error(err)
 	ferr, ok = err.(*config.FieldError)
 	a.True(ok).Equal(ferr.Field, "certificates")
-
-	// 无效的 scheme
-	conf = &Config{Root: "ftp://example.com"}
-	err = conf.sanitize()
-	a.Error(err)
-	ferr, ok = err.(*config.FieldError)
-	a.True(ok).Equal(ferr.Field, "root")
 }
 
 func TestConfig_buildTimezone(t *testing.T) {

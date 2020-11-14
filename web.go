@@ -144,7 +144,6 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 		SkipCleanPath:  conf.SkipCleanPath,
 		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
-			srv.Addr = conf.addr
 			srv.ReadTimeout = conf.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = conf.ReadHeaderTimeout.Duration()
 			srv.WriteTimeout = conf.WriteTimeout.Duration()
