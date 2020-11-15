@@ -16,7 +16,7 @@ type Validator interface {
 	CTXValidate(*Context) result.Fields
 }
 
-// Result Result 与 Context 相结合的实现
+// Result result.Result 与 Context 相结合的实现
 type Result struct {
 	result.Result
 	ctx *Context
@@ -38,12 +38,12 @@ func (srv *Server) AddMessage(status, code int, key message.Reference, v ...inte
 	srv.results.AddMessage(status, code, key, v...)
 }
 
-// NewResult 返回 CTXResult 实例
+// NewResult 返回 Result 实例
 func (ctx *Context) NewResult(code int) *Result {
 	return ctx.newResult(ctx.server.results.NewResult(ctx.LocalePrinter, code))
 }
 
-// NewResultWithFields 返回 CTXResult 实例
+// NewResultWithFields 返回 Result 实例
 func (ctx *Context) NewResultWithFields(code int, fields result.Fields) *Result {
 	return ctx.newResult(ctx.server.results.NewResultWithFields(ctx.LocalePrinter, code, fields))
 }
