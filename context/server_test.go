@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 	"github.com/issue9/logs/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -26,6 +27,15 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+var f202 = func(ctx *Context) {
+	ctx.Response.WriteHeader(http.StatusAccepted)
+	_, err := ctx.Response.Write([]byte("1234567890"))
+	if err != nil {
+		println(err)
+		ctx.Response.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -93,4 +103,145 @@ func TestServer_Vars(t *testing.T) {
 	srv.Vars[v3] = 3
 
 	a.Equal(srv.Vars[v1], 1).Equal(srv.Vars[v2], 3)
+}
+
+func TestServer_Serve(t *testing.T) {
+	a := assert.New(t)
+	exit := make(chan bool, 1)
+
+	server := newServer(a)
+	server.Router().Get("/mux/test", f202)
+
+	m1 := server.NewModule("m1", "m1 desc")
+	m1.Get("/m1/test", f202)
+	m1.NewTag("tag1")
+
+	m2 := server.NewModule("m2", "m2 desc", "m1")
+	m2.Get("/m2/test", func(ctx *Context) {
+		srv := ctx.Server()
+		a.NotNil(srv)
+		a.Equal(2, len(srv.Modules()))
+		a.Equal(2, len(srv.Tags())).
+			Equal(srv.Tags()["m1"], []string{"tag1"}).
+			Empty(srv.Tags()["m2"])
+
+		ctx.Response.WriteHeader(http.StatusAccepted)
+		_, err := ctx.Response.Write([]byte("1234567890"))
+		if err != nil {
+			println(err)
+			ctx.Response.WriteHeader(http.StatusInternalServerError)
+		}
+	})
+
+	go func() {
+		err := server.Serve()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		exit <- true
+	}()
+	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/m1/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/m2/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/mux/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// static 中定义的静态文件
+	server.Router().Static("/admin/{path}", "./testdata")
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/admin/file1.txt").
+		Do().
+		Status(http.StatusOK)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/admin/file1.txt").
+		Do().
+		Status(http.StatusOK)
+
+	a.NotError(server.Close(0))
+	<-exit
+}
+
+func TestServer_Close(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	exit := make(chan bool, 1)
+
+	srv.Router().Get("/test", f202)
+	srv.Router().Get("/close", func(ctx *Context) {
+		_, err := ctx.Response.Write([]byte("closed"))
+		if err != nil {
+			ctx.Response.WriteHeader(http.StatusInternalServerError)
+		}
+		a.NotError(srv.Close(0))
+	})
+
+	go func() {
+		err := srv.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
+	}()
+
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(5000 * time.Microsecond)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// 连接被关闭，返回错误内容
+	resp, err := http.Get("http://localhost/root/close")
+	a.Error(err).Nil(resp)
+
+	resp, err = http.Get("http://localhost/root/test")
+	a.Error(err).Nil(resp)
+
+	<-exit
+}
+
+func TestServer_CloseWithTimeout(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	exit := make(chan bool, 1)
+
+	srv.Router().Get("/test", f202)
+	srv.Router().Get("/close", func(ctx *Context) {
+		ctx.Response.WriteHeader(http.StatusCreated)
+		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
+		a.NotError(err)
+		srv.Close(300 * time.Millisecond)
+	})
+
+	go func() {
+		err := srv.Serve()
+		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		exit <- true
+	}()
+
+	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
+	time.Sleep(5000 * time.Microsecond)
+
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// 关闭指令可以正常执行
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/close").
+		Do().
+		Status(http.StatusCreated)
+
+	// 未超时，但是拒绝新的链接
+	resp, err := http.Get("http://localhost/root/test")
+	a.Error(err).Nil(resp)
+
+	// 已被关闭
+	time.Sleep(30 * time.Microsecond)
+	resp, err = http.Get("http://localhost/root/test")
+	a.Error(err).Nil(resp)
+
+	<-exit
 }

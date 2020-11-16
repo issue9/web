@@ -76,6 +76,9 @@ type Server struct {
 
 	logs       *logs.Logs
 	httpServer *http.Server
+	modules    []*Module
+	inited     bool          // 模块是否已经初始化
+	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -86,8 +89,8 @@ type Server struct {
 
 	catalog  catalog.Catalog
 	location *time.Location
-	cache    cache.Cache
 
+	cache  cache.Cache
 	router *Router
 	uptime time.Time
 
@@ -143,6 +146,8 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 	srv := &Server{
 		logs:       logs,
 		httpServer: o.httpServer,
+		modules:    make([]*Module, 0, 10),
+		closed:     make(chan struct{}, 1),
 
 		Vars: map[interface{}]interface{}{},
 
@@ -220,24 +225,34 @@ func (srv *Server) Services() *service.Manager {
 	return srv.services
 }
 
-// Handler 将当前服务转换为 http.Handler 接口对象
-func (srv *Server) Handler() http.Handler {
-	return srv.middlewares
-}
-
 // Serve 启动服务
-func (srv *Server) Serve() error {
+func (srv *Server) Serve() (err error) {
+	if err = srv.init("", srv.Logs().INFO()); err != nil {
+		return err
+	}
+
 	srv.Services().Run()
 
 	cfg := srv.httpServer.TLSConfig
-	if cfg.GetCertificate != nil || len(cfg.Certificates) > 0 {
-		return srv.httpServer.ListenAndServeTLS("", "")
+	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
+		err = srv.httpServer.ListenAndServeTLS("", "")
 	}
-	return srv.httpServer.ListenAndServe()
+	err = srv.httpServer.ListenAndServe()
+
+	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
+	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
+	if errors.Is(err, http.ErrServerClosed) {
+		<-srv.closed
+	}
+	return err
 }
 
 // Close 关闭服务
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
+	defer func() {
+		srv.closed <- struct{}{}
+	}()
+
 	srv.Services().Stop()
 
 	if shutdownTimeout == 0 {
