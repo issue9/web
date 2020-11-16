@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package context
 
 import (
 	"errors"
@@ -10,6 +10,12 @@ import (
 	"plugin"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/issue9/scheduled"
+	"github.com/issue9/scheduled/schedulers"
+
+	"github.com/issue9/web/context/service"
 )
 
 // 插件中的初始化函数名称，必须为可导出的函数名称
@@ -20,22 +26,22 @@ var ErrInited = errors.New("模块已经初始化")
 
 type (
 	// InstallFunc 安装模块的函数签名
-	InstallFunc func(*Web)
+	InstallFunc func(*Server)
 
 	// Module 表示模块信息
 	//
 	// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
 	// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
 	Module struct {
+		srv *Server
+
 		Name        string
 		Description string
 		Deps        []string
 		tags        map[string]*Tag
-		web         *Web
 		filters     []Filter
 		inits       []*initialization
-
-		inited bool
+		inited      bool
 	}
 
 	// Tag 表示与特定标签相关联的初始化函数列表
@@ -96,14 +102,14 @@ func (m *Module) NewTag(tag string) *Tag {
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (web *Web) NewModule(name, desc string, deps ...string) *Module {
+func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
 	m := &Module{
+		srv:         srv,
 		Name:        name,
 		Description: desc,
 		Deps:        deps,
-		web:         web,
 	}
-	web.modules = append(web.modules, m)
+	srv.modules = append(srv.modules, m)
 	return m
 }
 
@@ -124,10 +130,10 @@ func (t *Tag) AddInit(f func() error, title string) {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表。
-func (web *Web) Tags() map[string][]string {
-	ret := make(map[string][]string, len(web.modules)*2)
+func (srv *Server) Tags() map[string][]string {
+	ret := make(map[string][]string, len(srv.modules)*2)
 
-	for _, m := range web.modules {
+	for _, m := range srv.modules {
 		tags := make([]string, 0, len(m.tags))
 		for k := range m.tags {
 			tags = append(tags, k)
@@ -140,8 +146,8 @@ func (web *Web) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (web *Web) Modules() []*Module {
-	return web.modules
+func (srv *Server) Modules() []*Module {
+	return srv.modules
 }
 
 // Init 初始化模块
@@ -152,22 +158,22 @@ func (web *Web) Modules() []*Module {
 // 一旦初始化完成，则不再接受添加新模块，也不能再次进行初始化。
 // Web 的大部分功能将失去操作意义，比如 Web.NewModule
 // 虽然能添加新模块到 Server，但并不能真正初始化新的模块并挂载。
-func (web *Web) Init(tag string, info *log.Logger) error {
-	if web.inited && tag == "" {
+func (srv *Server) Init(tag string, info *log.Logger) error {
+	if srv.inited && tag == "" {
 		return ErrInited
 	}
 
 	if info == nil {
-		info = web.Logs().INFO()
+		info = srv.Logs().INFO()
 	}
 
 	info.Println("开始初始化模块...")
 
-	if err := web.initDeps(tag, info); err != nil {
+	if err := srv.initDeps(tag, info); err != nil {
 		return err
 	}
 
-	if all := web.ctxServer.Router().Mux().All(true, true); len(all) > 0 {
+	if all := srv.Router().Mux().All(true, true); len(all) > 0 {
 		info.Println("模块加载了以下路由项：")
 		for _, router := range all {
 			info.Println(router.Name)
@@ -180,23 +186,23 @@ func (web *Web) Init(tag string, info *log.Logger) error {
 	info.Println("模块初始化完成！")
 
 	if tag == "" {
-		web.inited = true
+		srv.inited = true
 	}
 
 	return nil
 }
 
-// 加载所有的插件
+// LoadPlugins 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值
-func (web *Web) loadPlugins(glob string) error {
+func (srv *Server) LoadPlugins(glob string) error {
 	fs, err := filepath.Glob(glob)
 	if err != nil {
 		return err
 	}
 
 	for _, path := range fs {
-		if err := web.loadPlugin(path); err != nil {
+		if err := srv.LoadPlugin(path); err != nil {
 			return err
 		}
 	}
@@ -204,7 +210,8 @@ func (web *Web) loadPlugins(glob string) error {
 	return nil
 }
 
-func (web *Web) loadPlugin(path string) error {
+// LoadPlugin 将指定的插件当作模块进行加载
+func (srv *Server) LoadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
@@ -215,9 +222,69 @@ func (web *Web) loadPlugin(path string) error {
 		return err
 	}
 
-	if install, ok := symbol.(func(*Web)); ok {
-		InstallFunc(install)(web)
+	if install, ok := symbol.(func(*Server)); ok {
+		InstallFunc(install)(srv)
 		return nil
 	}
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
+}
+
+// AddService 添加新的服务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明。
+func (m *Module) AddService(f service.Func, title string) {
+	m.AddInit(func() error {
+		m.srv.Services().AddService(f, title)
+		return nil
+	}, "注册服务："+title)
+}
+
+// AddCron 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// spec cron 表达式，支持秒；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) {
+	m.AddInit(func() error {
+		return m.srv.Services().AddCron(title, f, spec, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddTicker 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// imm 是否立即执行一次该任务；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) {
+	m.AddInit(func() error {
+		return m.srv.Services().AddTicker(title, f, dur, imm, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddAt 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// t 指定的时间点；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) {
+	m.AddInit(func() error {
+		return m.srv.Services().AddAt(title, f, t, delay)
+	}, "注册计划任务"+title)
+}
+
+// AddJob 添加新的计划任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// scheduler 计划任务的时间调度算法实现；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) {
+	m.AddInit(func() error {
+		m.srv.Services().AddJob(title, f, scheduler, delay)
+		return nil
+	}, "注册计划任务"+title)
 }

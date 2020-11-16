@@ -76,6 +76,8 @@ type Server struct {
 
 	logs       *logs.Logs
 	httpServer *http.Server
+	modules    []*Module
+	inited     bool // 模块是否已经初始化
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -227,6 +229,7 @@ func (srv *Server) Handler() http.Handler {
 
 // Serve 启动服务
 func (srv *Server) Serve() error {
+	// TODO initModules
 	srv.Services().Run()
 
 	cfg := srv.httpServer.TLSConfig

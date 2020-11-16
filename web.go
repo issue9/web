@@ -34,17 +34,15 @@ type Context = context.Context
 // Result 定义了返回给用户的错误信息
 type Result = result.Result
 
+// Server 服务
+type Server = context.Server
+
 // Web 管理整个项目所有实例
 type Web struct {
-	logs      *logs.Logs
-	ctxServer *context.Server
+	*context.Server
 
 	closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	shutdownTimeout time.Duration
-
-	// modules
-	modules []*Module
-	inited  bool
 }
 
 type contextKey int
@@ -111,12 +109,9 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 	}
 
 	web = &Web{
-		logs:            l,
-		ctxServer:       ctxServer,
+		Server:          ctxServer,
 		closed:          make(chan struct{}, 1),
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
-
-		modules: make([]*Module, 0, 10),
 	}
 	ctxServer.Vars[ContextKeyWeb] = web
 
@@ -125,7 +120,7 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 	}
 
 	if conf.Plugins != "" {
-		if err := web.loadPlugins(conf.Plugins); err != nil {
+		if err := web.LoadPlugins(conf.Plugins); err != nil {
 			return nil, err
 		}
 	}
@@ -195,19 +190,9 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 	return srv, nil
 }
 
-// Logs 返回日志实例
-func (web *Web) Logs() *logs.Logs {
-	return web.logs
-}
-
-// CTXServer 返回 context.Server 实例
-func (web *Web) CTXServer() *context.Server {
-	return web.ctxServer
-}
-
 // Serve 运行 HTTP 服务
 func (web *Web) Serve() (err error) {
-	err = web.CTXServer().Serve()
+	err = web.Server.Serve()
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
@@ -219,7 +204,7 @@ func (web *Web) Serve() (err error) {
 
 // Close 关闭服务
 func (web *Web) Close() error {
-	web.CTXServer().Close(web.shutdownTimeout)
+	web.Server.Close(web.shutdownTimeout)
 	web.closed <- struct{}{}
 	return nil
 }
@@ -234,8 +219,8 @@ func (web *Web) grace(sig ...os.Signal) {
 		close(signalChannel)
 
 		if err := web.Close(); err != nil {
-			web.logs.Error(err)
+			web.Logs().Error(err)
 		}
-		web.logs.Flush() // 保证内容会被正常输出到日志。
+		web.Logs().Flush() // 保证内容会被正常输出到日志。
 	}()
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,6 +15,14 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/mux/v3"
+)
+
+var (
+	_ Prefix = &routerPrefix{}
+	_ Prefix = &modulePrefix{}
+
+	_ Resource = &routerResource{}
+	_ Resource = &moduleResource{}
 )
 
 var f1 = func(ctx *Context) { ctx.Render(http.StatusOK, nil, nil) }
@@ -183,7 +192,7 @@ func TestRouter_NewRouter(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
-func TestPrefix(t *testing.T) {
+func TestRouterPrefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 	srv := rest.NewServer(t, server.middlewares, nil)
@@ -226,7 +235,7 @@ func TestPrefix(t *testing.T) {
 	srv.Delete("/root/p" + path).Do().Status(http.StatusNotFound)
 }
 
-func TestResource(t *testing.T) {
+func TestRouterResource(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
@@ -344,7 +353,7 @@ func TestRouter_Static(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
-func TestFilters(t *testing.T) {
+func TestServerFilters(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
@@ -424,4 +433,213 @@ func TestFilters(t *testing.T) {
 	srv.Get("/root/p1/r2").
 		Do().
 		Status(205)
+}
+
+func TestModuleResource(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m := server.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	p := m.Prefix("/p")
+	a.NotNil(p)
+	path := "/path"
+	res := p.Resource(path)
+	res.Delete(f1)
+	res.Get(f1)
+	res.Post(f1)
+	res.Patch(f1)
+	res.Put(f1)
+	res.Options("abcdef")
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv := rest.NewServer(t, server.Handler(), nil)
+	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
+	srv.Get("/root/p" + path).Do().Status(http.StatusOK)
+	srv.Post("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.Patch("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.Put("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.NewRequest(http.MethodOptions, "/root/p"+path).
+		Do().
+		Status(http.StatusOK).
+		Header("Allow", "abcdef")
+}
+
+func TestModulePrefix(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m := server.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	p := m.Prefix("/p")
+	a.NotNil(p)
+	path := "/path"
+	p.Delete(path, f1)
+	p.Get(path, f1)
+	p.Post(path, f1)
+	p.Patch(path, f1)
+	p.Put(path, f1)
+	p.Options(path, "abcdef")
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv := rest.NewServer(t, server.Handler(), nil)
+	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
+	srv.Get("/root/p" + path).Do().Status(http.StatusOK)
+	srv.Post("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.Patch("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.Put("/root/p"+path, nil).Do().Status(http.StatusOK)
+	srv.NewRequest(http.MethodOptions, "/root/p"+path).
+		Do().
+		Status(http.StatusOK).
+		Header("Allow", "abcdef")
+}
+
+func TestModule_Handle(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m := server.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+
+	path := "/path"
+	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	srv.Get("/root" + path).Do().Status(http.StatusOK)
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+	srv.Post("/root"+path, nil).Do().Status(http.StatusMethodNotAllowed)
+
+	// 不指定请求方法，表示所有请求方法
+
+	server = newServer(a)
+	m = server.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	path = "/path1"
+	a.NotError(m.Handle(path, f1))
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	srv = rest.NewServer(t, server.Handler(), nil)
+
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
+
+	// 各个请求方法
+
+	server = newServer(a)
+	m = server.NewModule("m1", "m1 desc")
+	a.NotNil(m)
+	path = "/path2"
+	m.Delete(path, f1)
+	m.Get(path, f1)
+	m.Post(path, f1)
+	m.Patch(path, f1)
+	m.Put(path, f1)
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	srv = rest.NewServer(t, server.Handler(), nil)
+
+	srv.Delete("/root" + path).Do().Status(http.StatusOK)
+	srv.Get("/root" + path).Do().Status(http.StatusOK)
+	srv.Post("/root"+path, nil).Do().Status(http.StatusOK)
+	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
+	srv.Put("/root"+path, nil).Do().Status(http.StatusOK)
+	srv.NewRequest(http.MethodOptions, "/root"+path).
+		Do().
+		Status(http.StatusOK).
+		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
+}
+
+func TestModulePrefix_Filters(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m1 := server.NewModule("m1", "m1 desc")
+	m1.AddFilters(buildFilter("m1"), buildFilter("m2"))
+	p1 := m1.Prefix("/p1", buildFilter("p1"), buildFilter("p2"))
+
+	m1.Get("/test", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"m1", "m2", "s1", "s2"})
+		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
+	})
+
+	p1.Get("/test", func(ctx *Context) {
+		a.Equal(ctx.Vars["filters"], []string{"m1", "m2", "s1", "s2", "p1", "p2"}) // 必须要是 server 的先于 prefix 的
+		ctx.Render(http.StatusAccepted, nil, nil)                                  // 不能输出 200 的状态码
+	})
+
+	// 在所有的路由项注册之后才添加中间件
+	m1.AddFilters(buildFilter("s1"), buildFilter("s2"))
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	srv.Get("/root/test").
+		Do().
+		Status(http.StatusCreated) // 验证状态码是否正确
+
+	srv.Get("/root/p1/test").
+		Do().
+		Status(http.StatusAccepted) // 验证状态码是否正确
+}
+
+func TestModule_Options(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	m1 := server.NewModule("m1", "m1 desc")
+	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
+		return HandlerFunc(func(ctx *Context) {
+			ctx.Response.Header().Set("Server", "m1")
+			next(ctx)
+		})
+	})
+
+	m1.Get("/test", func(ctx *Context) {
+		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
+	})
+	m1.Options("/test", "GET, OPTIONS, PUT")
+
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	srv := rest.NewServer(t, server.Handler(), nil)
+
+	srv.Get("/root/test").
+		Do().
+		Header("Server", "m1").
+		Status(http.StatusCreated) // 验证状态码是否正确
+
+	// OPTIONS 不添加中间件
+	srv.NewRequest(http.MethodOptions, "/root/test").
+		Do().
+		Header("Server", "").
+		Status(http.StatusOK)
+
+	// 通 Handle 修改的 OPTIONS，正常接受中间件
+
+	server = newServer(a)
+	m1 = server.NewModule("m1", "m1 desc")
+	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
+		return HandlerFunc(func(ctx *Context) {
+			ctx.Response.Header().Set("Server", "m1")
+			next(ctx)
+		})
+	})
+
+	m1.Get("/test", func(ctx *Context) {
+		ctx.Render(http.StatusCreated, nil, nil)
+	})
+	m1.Handle("/test", func(ctx *Context) {
+		ctx.Render(http.StatusAccepted, nil, nil)
+	}, http.MethodOptions)
+	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+
+	srv = rest.NewServer(t, server.Handler(), nil)
+	srv.NewRequest(http.MethodOptions, "/root/test").
+		Do().
+		Header("Server", "m1").
+		Status(http.StatusAccepted)
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package context
 
 import (
 	"errors"
@@ -26,7 +26,7 @@ func TestModuleInitFuncName(t *testing.T) {
 
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 	m := srv.NewModule("user1", "user1 desc")
 	a.NotNil(m)
 
@@ -44,7 +44,7 @@ func TestModule_NewTag(t *testing.T) {
 
 func TestModule_AddInit(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	m := srv.NewModule("m1", "m1 desc")
 	a.NotNil(m)
@@ -73,7 +73,7 @@ func TestModule_AddInit(t *testing.T) {
 
 func TestWeb_Tags(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	m1 := srv.NewModule("users1", "user1 module", "users2", "users3")
 	m1.NewTag("v1").
@@ -99,7 +99,7 @@ func TestWeb_Tags(t *testing.T) {
 
 func TestWeb_Init(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	m1 := srv.NewModule("m1", "m1 desc", "m2")
 	m1.AddCron("test cron", job, "* * 8 * * *", true)
@@ -110,9 +110,9 @@ func TestWeb_Init(t *testing.T) {
 
 	a.Equal(len(srv.Modules()), 2)
 
-	a.Equal(0, len(srv.CTXServer().Services().Jobs())) // 需要初始化模块之后，才有计划任务
+	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
 	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
-	a.Equal(3, len(srv.CTXServer().Services().Jobs()))
+	a.Equal(3, len(srv.Services().Jobs()))
 
 	// 不能多次调用
 	a.Equal(srv.Init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)

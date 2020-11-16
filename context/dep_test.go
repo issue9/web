@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package context
 
 import (
 	"log"
@@ -9,23 +9,21 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/context"
 )
 
-func m(web *Web, name string, f func() error, deps ...string) *Module {
+func m(web *Server, name string, f func() error, deps ...string) *Module {
 	m := web.NewModule(name, name, deps...)
 	m.AddInit(f, "init")
 	return m
 }
 
-func newDepWeb(ms []*Module) *Web {
-	return &Web{modules: ms}
+func newDepWeb(ms []*Module) *Server {
+	return &Server{modules: ms}
 }
 
 func TestDependency_isDep(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	dep := newDepWeb([]*Module{
 		m(srv, "m1", nil, "d1", "d2"),
@@ -52,7 +50,7 @@ func TestDependency_isDep(t *testing.T) {
 
 func TestDependency_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	dep := newDepWeb([]*Module{
 		m(srv, "m1", nil, "d1", "d2"),
@@ -84,11 +82,11 @@ func TestDependency_checkDeps(t *testing.T) {
 
 func TestDependency_init(t *testing.T) {
 	a := assert.New(t)
-	srv := newWeb(a)
+	srv := newServer(a)
 
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
-	f1 := func(ctx *context.Context) {
+	f1 := func(ctx *Context) {
 		ctx.Render(http.StatusAccepted, "f1", nil)
 	}
 	i := func(name string) func() error {
