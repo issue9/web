@@ -234,7 +234,7 @@ func (srv *Server) Serve() (err error) {
 	srv.Services().Run()
 
 	cfg := srv.httpServer.TLSConfig
-	if cfg.GetCertificate != nil || len(cfg.Certificates) > 0 {
+	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
 	}
 	err = srv.httpServer.ListenAndServe()
