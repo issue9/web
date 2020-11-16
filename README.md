@@ -86,11 +86,11 @@ Go 并不是在所有的平台下都支持插件模式，支持列表可查看�
 
 ```go
 conf := &web.Config {
-    Marshalers: map[string]contentype.MarhsalFunc{
+    Marshalers: map[string]content.MarhsalFunc{
         "application/json": json.Marshal,
         "application/xml": xml.Marshal,
     },
-    Unmarshalers: map[string]contentype.UnmarhsalFunc{
+    Unmarshalers: map[string]content.UnmarhsalFunc{
         "application/json": json.Unmarshal,
         "application/xml": xml.Unmarshal,
     },

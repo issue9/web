@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-type web struct {
+type object struct {
 	XMLName  struct{} `yaml:"-" json:"-" xml:"web"`
 	Root     string   `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
 	Timezone string   `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
@@ -18,10 +18,10 @@ type web struct {
 func TestConfig(t *testing.T) {
 	a := assert.New(t)
 
-	w := &web{}
+	w := &object{}
 	var cnt int
 	cfg := New("memory", w, func(config string, v interface{}) error {
-		v.(*web).Count = cnt
+		v.(*object).Count = cnt
 		return nil
 	}, func() { cnt++ })
 

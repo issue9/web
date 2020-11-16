@@ -23,16 +23,16 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/context"
-	"github.com/issue9/web/context/contentype"
-	"github.com/issue9/web/context/contentype/gob"
-	"github.com/issue9/web/context/result"
+	"github.com/issue9/web"
+	"github.com/issue9/web/content"
+	"github.com/issue9/web/content/gob"
 	"github.com/issue9/web/internal/filesystem"
+	"github.com/issue9/web/result"
 )
 
 type (
 	// Filter 针对 Context 的中间件
-	Filter = context.Filter
+	Filter = web.Filter
 
 	// Middleware 中间件的类型定义
 	Middleware = middleware.Middleware
@@ -133,8 +133,8 @@ type (
 		Filters     []Filter     `yaml:"-" json:"-" xml:"-"`
 
 		// 指定各类媒体类型的编解码函数
-		Marshalers   map[string]contentype.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
-		Unmarshalers map[string]contentype.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
+		Marshalers   map[string]content.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
+		Unmarshalers map[string]content.UnmarshalFunc `yaml:"-" json:"-" xml:"-"`
 
 		// 指定生成 Result 的方法
 		//
@@ -154,7 +154,7 @@ type (
 		// 比如 40001，在返回给客户端时，会将 400 作为状态码展示给用户，
 		// 同时又会将 40001 和对应的消息发送给用户。
 		//
-		// 该数据最终由 context.Server.AddMessage 添加。
+		// 该数据最终由 web.Server.AddMessage 添加。
 		Results map[int]Locale `yaml:"-" json:"-" xml:"-"`
 		results map[int]map[int]Locale
 
@@ -208,7 +208,7 @@ type (
 )
 
 // Classic 返回一个开箱即用的 Server 实例
-func Classic(logConfigFile, configFile string) (*context.Server, error) {
+func Classic(logConfigFile, configFile string) (*web.Server, error) {
 	logConf := &lc.Config{}
 	if err := LoadFile(logConfigFile, logConf); err != nil {
 		return nil, err
@@ -227,16 +227,16 @@ func Classic(logConfigFile, configFile string) (*context.Server, error) {
 		return nil, err
 	}
 
-	web.Marshalers = map[string]contentype.MarshalFunc{
-		"application/json":         json.Marshal,
-		"application/xml":          xml.Marshal,
-		contentype.DefaultMimetype: gob.Marshal,
+	web.Marshalers = map[string]content.MarshalFunc{
+		"application/json":      json.Marshal,
+		"application/xml":       xml.Marshal,
+		content.DefaultMimetype: gob.Marshal,
 	}
 
-	web.Unmarshalers = map[string]contentype.UnmarshalFunc{
-		"application/json":         json.Unmarshal,
-		"application/xml":          xml.Unmarshal,
-		contentype.DefaultMimetype: gob.Unmarshal,
+	web.Unmarshalers = map[string]content.UnmarshalFunc{
+		"application/json":      json.Unmarshal,
+		"application/xml":       xml.Unmarshal,
+		content.DefaultMimetype: gob.Unmarshal,
 	}
 
 	web.Results = map[int]Locale{
@@ -250,84 +250,84 @@ func Classic(logConfigFile, configFile string) (*context.Server, error) {
 }
 
 // NewServer 返回 Server 对象
-func (web *Web) NewServer(l *logs.Logs) (*context.Server, error) {
-	if err := web.sanitize(); err != nil {
+func (conf *Web) NewServer(l *logs.Logs) (*web.Server, error) {
+	if err := conf.sanitize(); err != nil {
 		return nil, err
 	}
 
-	srv, err := web.toCTXServer(l)
+	srv, err := conf.toCTXServer(l)
 	if err != nil {
 		return nil, err
 	}
 
-	if web.ShutdownSignal != nil {
-		grace(srv, web.ShutdownTimeout.Duration(), web.ShutdownSignal...)
+	if conf.ShutdownSignal != nil {
+		grace(srv, conf.ShutdownTimeout.Duration(), conf.ShutdownSignal...)
 	}
 
 	return srv, nil
 }
 
-func (web *Web) toCTXServer(l *logs.Logs) (*context.Server, error) {
-	o := &context.Options{
-		Location:       web.location,
-		Cache:          web.Cache,
-		DisableHead:    web.DisableHead,
-		DisableOptions: web.DisableOptions,
-		Catalog:        web.Catalog,
-		ResultBuilder:  web.ResultBuilder,
-		SkipCleanPath:  web.SkipCleanPath,
-		Root:           web.Root,
+func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
+	o := &web.Options{
+		Location:       conf.location,
+		Cache:          conf.Cache,
+		DisableHead:    conf.DisableHead,
+		DisableOptions: conf.DisableOptions,
+		Catalog:        conf.Catalog,
+		ResultBuilder:  conf.ResultBuilder,
+		SkipCleanPath:  conf.SkipCleanPath,
+		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
-			srv.ReadTimeout = web.ReadTimeout.Duration()
-			srv.ReadHeaderTimeout = web.ReadHeaderTimeout.Duration()
-			srv.WriteTimeout = web.WriteTimeout.Duration()
-			srv.IdleTimeout = web.IdleTimeout.Duration()
-			srv.MaxHeaderBytes = web.MaxHeaderBytes
+			srv.ReadTimeout = conf.ReadTimeout.Duration()
+			srv.ReadHeaderTimeout = conf.ReadHeaderTimeout.Duration()
+			srv.WriteTimeout = conf.WriteTimeout.Duration()
+			srv.IdleTimeout = conf.IdleTimeout.Duration()
+			srv.MaxHeaderBytes = conf.MaxHeaderBytes
 			srv.ErrorLog = l.ERROR()
-			srv.TLSConfig = web.TLSConfig
+			srv.TLSConfig = conf.TLSConfig
 		},
 	}
-	srv, err := context.NewServer(l, o)
+	srv, err := web.NewServer(l, o)
 	if err != nil {
 		return nil, err
 	}
 
-	for path, dir := range web.Static {
+	for path, dir := range conf.Static {
 		if err := srv.Router().Static(path, dir); err != nil {
 			return nil, err
 		}
 	}
 
-	if err = srv.Mimetypes().AddMarshals(web.Marshalers); err != nil {
+	if err = srv.Mimetypes().AddMarshals(conf.Marshalers); err != nil {
 		return nil, err
 	}
-	if err = srv.Mimetypes().AddUnmarshals(web.Unmarshalers); err != nil {
+	if err = srv.Mimetypes().AddUnmarshals(conf.Unmarshalers); err != nil {
 		return nil, err
 	}
 
-	for status, rslt := range web.results {
+	for status, rslt := range conf.results {
 		for code, l := range rslt {
 			srv.AddMessage(status, code, l.Key, l.vals...)
 		}
 	}
 
-	if web.Debug != nil {
-		srv.SetDebugger(web.Debug.Pprof, web.Debug.Vars)
+	if conf.Debug != nil {
+		srv.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
 	}
 
-	if len(web.Middlewares) > 0 {
-		srv.AddMiddlewares(web.Middlewares...)
+	if len(conf.Middlewares) > 0 {
+		srv.AddMiddlewares(conf.Middlewares...)
 	}
-	if len(web.Filters) > 0 {
-		srv.AddFilters(web.Filters...)
+	if len(conf.Filters) > 0 {
+		srv.AddFilters(conf.Filters...)
 	}
 
-	for _, h := range web.ErrorHandlers {
+	for _, h := range conf.ErrorHandlers {
 		srv.SetErrorHandle(h.Handler, h.Status...)
 	}
 
-	if web.Plugins != "" {
-		if err := srv.LoadPlugins(web.Plugins); err != nil {
+	if conf.Plugins != "" {
+		if err := srv.LoadPlugins(conf.Plugins); err != nil {
 			return nil, err
 		}
 	}
@@ -335,7 +335,7 @@ func (web *Web) toCTXServer(l *logs.Logs) (*context.Server, error) {
 	return srv, nil
 }
 
-func grace(srv *context.Server, shutdownTimeout time.Duration, sig ...os.Signal) {
+func grace(srv *web.Server, shutdownTimeout time.Duration, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal)
 		signal.Notify(signalChannel, sig...)
@@ -351,63 +351,63 @@ func grace(srv *context.Server, shutdownTimeout time.Duration, sig ...os.Signal)
 	}()
 }
 
-func (web *Web) sanitize() error {
-	if web.ReadTimeout < 0 {
+func (conf *Web) sanitize() error {
+	if conf.ReadTimeout < 0 {
 		return &FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.WriteTimeout < 0 {
+	if conf.WriteTimeout < 0 {
 		return &FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.IdleTimeout < 0 {
+	if conf.IdleTimeout < 0 {
 		return &FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.ReadHeaderTimeout < 0 {
+	if conf.ReadHeaderTimeout < 0 {
 		return &FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.MaxHeaderBytes < 0 {
+	if conf.MaxHeaderBytes < 0 {
 		return &FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
-	if web.ShutdownTimeout < 0 {
+	if conf.ShutdownTimeout < 0 {
 		return &FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
 
-	if web.Debug != nil {
-		if err := web.Debug.sanitize(); err != nil {
+	if conf.Debug != nil {
+		if err := conf.Debug.sanitize(); err != nil {
 			return err
 		}
 	}
 
-	if err := web.parseResults(); err != nil {
+	if err := conf.parseResults(); err != nil {
 		return err
 	}
 
-	if err := web.buildTimezone(); err != nil {
+	if err := conf.buildTimezone(); err != nil {
 		return err
 	}
 
-	if err := web.checkStatic(); err != nil {
+	if err := conf.checkStatic(); err != nil {
 		return err
 	}
 
-	u, err := url.Parse(web.Root)
+	u, err := url.Parse(conf.Root)
 	if err != nil {
 		return err
 	}
-	if u.Scheme == "https" && len(web.Certificates) == 0 {
+	if u.Scheme == "https" && len(conf.Certificates) == 0 {
 		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
-	return web.buildTLSConfig()
+	return conf.buildTLSConfig()
 }
 
-func (web *Web) parseResults() error {
-	web.results = map[int]map[int]Locale{}
+func (conf *Web) parseResults() error {
+	conf.results = map[int]map[int]Locale{}
 
-	for code, msg := range web.Results {
+	for code, msg := range conf.Results {
 		if code < 999 {
 			return fmt.Errorf("无效的错误代码 %d，必须是 HTTP 状态码的 10 倍以上", code)
 		}
@@ -416,33 +416,33 @@ func (web *Web) parseResults() error {
 		for ; status > 999; status /= 10 {
 		}
 
-		rslt, found := web.results[status]
+		rslt, found := conf.results[status]
 		if found {
 			rslt[code] = msg
 		} else {
-			web.results[status] = map[int]Locale{code: msg}
+			conf.results[status] = map[int]Locale{code: msg}
 		}
 	}
 
 	return nil
 }
 
-func (web *Web) buildTimezone() error {
-	if web.Timezone == "" {
-		web.Timezone = "Local"
+func (conf *Web) buildTimezone() error {
+	if conf.Timezone == "" {
+		conf.Timezone = "Local"
 	}
 
-	loc, err := time.LoadLocation(web.Timezone)
+	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
 		return &FieldError{Field: "timezone", Message: err.Error()}
 	}
-	web.location = loc
+	conf.location = loc
 
 	return nil
 }
 
-func (web *Web) checkStatic() (err error) {
-	for u, path := range web.Static {
+func (conf *Web) checkStatic() (err error) {
+	for u, path := range conf.Static {
 		if !isURLPath(u) {
 			return &FieldError{
 				Field:   "static." + u,
@@ -453,7 +453,7 @@ func (web *Web) checkStatic() (err error) {
 		if !filesystem.Exists(path) {
 			return &FieldError{Field: "static." + u, Message: "对应的路径不存在"}
 		}
-		web.Static[u] = path
+		conf.Static[u] = path
 	}
 
 	return nil
@@ -463,9 +463,9 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (web *Web) buildTLSConfig() error {
+func (conf *Web) buildTLSConfig() error {
 	cfg := &tls.Config{}
-	for _, certificate := range web.Certificates {
+	for _, certificate := range conf.Certificates {
 		if err := certificate.sanitize(); err != nil {
 			return err
 		}
@@ -477,7 +477,7 @@ func (web *Web) buildTLSConfig() error {
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
 
-	web.TLSConfig = cfg
+	conf.TLSConfig = cfg
 	return nil
 }
 

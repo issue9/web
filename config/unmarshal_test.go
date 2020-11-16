@@ -12,7 +12,7 @@ import (
 func TestLoadYAML(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &web{}
+	conf := &object{}
 	a.NotError(LoadYAML("./testdata/web.yaml", conf))
 	a.Equal(conf.Root, "http://localhost:8082")
 
@@ -23,7 +23,7 @@ func TestLoadYAML(t *testing.T) {
 func TestLoadJSON(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &web{}
+	conf := &object{}
 	a.NotError(LoadJSON("./testdata/web.json", conf))
 	a.Equal(conf.Root, "http://localhost:8082")
 
@@ -34,7 +34,7 @@ func TestLoadJSON(t *testing.T) {
 func TestLoadXML(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &web{}
+	conf := &object{}
 	a.NotError(LoadXML("./testdata/web.xml", conf))
 	a.Equal(conf.Root, "http://localhost:8082")
 
@@ -45,9 +45,9 @@ func TestLoadXML(t *testing.T) {
 func TestLoadFile(t *testing.T) {
 	a := assert.New(t)
 
-	xmlConf := &web{}
-	yamlConf := &web{}
-	jsonConf := &web{}
+	xmlConf := &object{}
+	yamlConf := &object{}
+	jsonConf := &object{}
 
 	a.NotError(LoadFile("./testdata/web.xml", xmlConf))
 	a.NotError(LoadFile("./testdata/web.yaml", yamlConf))
