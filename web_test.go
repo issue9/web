@@ -53,12 +53,12 @@ func TestWeb_Run(t *testing.T) {
 
 	m2 := web.NewModule("m2", "m2 desc", "m1")
 	m2.Get("/m2/test", func(ctx *Context) {
-		w := GetWeb(ctx)
-		a.NotNil(w)
-		a.Equal(2, len(w.Modules()))
-		a.Equal(2, len(w.Tags())).
-			Equal(w.Tags()["m1"], []string{"tag1"}).
-			Empty(w.Tags()["m2"])
+		srv := ctx.Server()
+		a.NotNil(srv)
+		a.Equal(2, len(srv.Modules()))
+		a.Equal(2, len(srv.Tags())).
+			Equal(srv.Tags()["m1"], []string{"tag1"}).
+			Empty(srv.Tags()["m2"])
 
 		ctx.Response.WriteHeader(http.StatusAccepted)
 		_, err := ctx.Response.Write([]byte("1234567890"))
@@ -67,8 +67,6 @@ func TestWeb_Run(t *testing.T) {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
 	})
-
-	a.NotError(web.Init("", web.Logs().ERROR()))
 
 	go func() {
 		err := web.Serve()
@@ -98,7 +96,7 @@ func TestWeb_Run(t *testing.T) {
 		Do().
 		Status(http.StatusOK)
 
-	a.NotError(web.Close())
+	a.NotError(web.Close(web.shutdownTimeout))
 	<-exit
 }
 
@@ -113,7 +111,7 @@ func TestWeb_Close(t *testing.T) {
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
-		a.NotError(web.Close())
+		a.NotError(web.Close(web.shutdownTimeout))
 	})
 
 	go func() {
@@ -150,7 +148,7 @@ func TestWeb_Shutdown(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		web.Close()
+		web.Close(web.shutdownTimeout)
 	})
 
 	go func() {

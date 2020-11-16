@@ -6,7 +6,6 @@ package web
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +18,6 @@ import (
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/contentype"
 	"github.com/issue9/web/context/contentype/gob"
-	"github.com/issue9/web/context/result"
 	"github.com/issue9/web/internal/version"
 )
 
@@ -31,28 +29,13 @@ const Version = version.Version
 // 是对 http.ResponseWriter 和 http.Request 的简单包装。
 type Context = context.Context
 
-// Result 定义了返回给用户的错误信息
-type Result = result.Result
-
 // Server 服务
 type Server = context.Server
 
 // Web 管理整个项目所有实例
 type Web struct {
 	*context.Server
-
-	closed          chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 	shutdownTimeout time.Duration
-}
-
-type contextKey int
-
-// ContextKeyWeb 可以从 http.Request 中获取 Web 实例的关键字
-const ContextKeyWeb contextKey = 0
-
-// GetWeb 从 ctx 中获取 *Web 实例
-func GetWeb(ctx *Context) *Web {
-	return ctx.Server().Vars[ContextKeyWeb].(*Web)
 }
 
 // Classic 返回一个开箱即用的 Web 实例
@@ -110,10 +93,8 @@ func New(l *logs.Logs, conf *Config) (web *Web, err error) {
 
 	web = &Web{
 		Server:          ctxServer,
-		closed:          make(chan struct{}, 1),
 		shutdownTimeout: conf.ShutdownTimeout.Duration(),
 	}
-	ctxServer.Vars[ContextKeyWeb] = web
 
 	if conf.ShutdownSignal != nil {
 		web.grace(conf.ShutdownSignal...)
@@ -190,25 +171,6 @@ func (conf *Config) toCTXServer(l *logs.Logs) (srv *context.Server, err error) {
 	return srv, nil
 }
 
-// Serve 运行 HTTP 服务
-func (web *Web) Serve() (err error) {
-	err = web.Server.Serve()
-
-	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
-	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
-	if errors.Is(err, http.ErrServerClosed) {
-		<-web.closed
-	}
-	return err
-}
-
-// Close 关闭服务
-func (web *Web) Close() error {
-	web.Server.Close(web.shutdownTimeout)
-	web.closed <- struct{}{}
-	return nil
-}
-
 func (web *Web) grace(sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal)
@@ -218,7 +180,7 @@ func (web *Web) grace(sig ...os.Signal) {
 		signal.Stop(signalChannel)
 		close(signalChannel)
 
-		if err := web.Close(); err != nil {
+		if err := web.Close(web.shutdownTimeout); err != nil {
 			web.Logs().Error(err)
 		}
 		web.Logs().Flush() // 保证内容会被正常输出到日志。

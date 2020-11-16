@@ -452,7 +452,7 @@ func TestModuleResource(t *testing.T) {
 	res.Put(f1)
 	res.Options("abcdef")
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 
 	srv := rest.NewServer(t, server.middlewares, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
@@ -482,7 +482,7 @@ func TestModulePrefix(t *testing.T) {
 	p.Put(path, f1)
 	p.Options(path, "abcdef")
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 
 	srv := rest.NewServer(t, server.middlewares, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
@@ -506,7 +506,7 @@ func TestModule_Handle(t *testing.T) {
 	path := "/path"
 	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root" + path).Do().Status(http.StatusOK)
@@ -521,7 +521,7 @@ func TestModule_Handle(t *testing.T) {
 	path = "/path1"
 	a.NotError(m.Handle(path, f1))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 	srv = rest.NewServer(t, server.middlewares, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusOK)
@@ -539,7 +539,7 @@ func TestModule_Handle(t *testing.T) {
 	m.Patch(path, f1)
 	m.Put(path, f1)
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 	srv = rest.NewServer(t, server.middlewares, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusOK)
@@ -574,7 +574,7 @@ func TestModulePrefix_Filters(t *testing.T) {
 	// 在所有的路由项注册之后才添加中间件
 	m1.AddFilters(buildFilter("s1"), buildFilter("s2"))
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 
 	srv := rest.NewServer(t, server.middlewares, nil)
 
@@ -604,7 +604,7 @@ func TestModule_Options(t *testing.T) {
 	})
 	m1.Options("/test", "GET, OPTIONS, PUT")
 
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root/test").
@@ -635,7 +635,7 @@ func TestModule_Options(t *testing.T) {
 	m1.Handle("/test", func(ctx *Context) {
 		ctx.Render(http.StatusAccepted, nil, nil)
 	}, http.MethodOptions)
-	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
+	a.NotError(server.init("", log.New(ioutil.Discard, "", 0)))
 
 	srv = rest.NewServer(t, server.middlewares, nil)
 	srv.NewRequest(http.MethodOptions, "/root/test").

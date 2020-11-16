@@ -150,15 +150,18 @@ func (srv *Server) Modules() []*Module {
 	return srv.modules
 }
 
-// Init 初始化模块
+// InitTag 初始化模块下的子标签
 //
-// 若指定了 tag 参数，则只初始化与该标签相关联的内容；
 // info 用于打印初始化过程的一些信息，如果为空，则采用 web.logs.INFO()。
-//
-// 一旦初始化完成，则不再接受添加新模块，也不能再次进行初始化。
-// Web 的大部分功能将失去操作意义，比如 Web.NewModule
-// 虽然能添加新模块到 Server，但并不能真正初始化新的模块并挂载。
-func (srv *Server) Init(tag string, info *log.Logger) error {
+func (srv *Server) InitTag(tag string, info *log.Logger) error {
+	if tag == "" {
+		panic("tag 不能为空")
+	}
+
+	return srv.init("", srv.Logs().INFO())
+}
+
+func (srv *Server) init(tag string, info *log.Logger) error {
 	if srv.inited && tag == "" {
 		return ErrInited
 	}

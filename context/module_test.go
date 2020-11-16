@@ -71,7 +71,7 @@ func TestModule_AddInit(t *testing.T) {
 	})
 }
 
-func TestWeb_Tags(t *testing.T) {
+func TestServer_Tags(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
@@ -97,7 +97,7 @@ func TestWeb_Tags(t *testing.T) {
 		Equal(tags["users3"], []string{"v1", "v4"})
 }
 
-func TestWeb_Init(t *testing.T) {
+func TestServer_Init(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
@@ -111,9 +111,9 @@ func TestWeb_Init(t *testing.T) {
 	a.Equal(len(srv.Modules()), 2)
 
 	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(srv.Init("", log.New(os.Stdout, "[INFO]", 0)))
+	a.NotError(srv.init("", log.New(os.Stdout, "[INFO]", 0)))
 	a.Equal(3, len(srv.Services().Jobs()))
 
 	// 不能多次调用
-	a.Equal(srv.Init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
+	a.Equal(srv.init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
 }
