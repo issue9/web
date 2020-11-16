@@ -1,5 +1,19 @@
 {
-  "debug": true,
+  "debug": {
+    "pprof": "/debug/pprof/",
+    "vars": "/debug/vars"
+  },
   "root": "http://localhost:8082",
+  "static":{
+    "/admin/{path}": "./testdata"
+  },
+  "headers":{
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST,GET,PUT,PATCH,OPTIONS,DELETE",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept,X-Requested-With",
+    "Server": "Windows/IIS7"
+  },
+  "readTimeout": "3s",
+  "allowedDomains": ["127.0.0.1","127.0.0.2"],
   "timezone": "Africa/Addis_Ababa"
 }

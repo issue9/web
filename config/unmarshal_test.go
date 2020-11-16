@@ -14,8 +14,7 @@ func TestLoadYAML(t *testing.T) {
 
 	conf := &web{}
 	a.NotError(LoadYAML("./testdata/web.yaml", conf))
-	a.True(conf.Debug).
-		Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Root, "http://localhost:8082")
 
 	a.Error(LoadYAML("./testdata/web.xml", conf))
 	a.ErrorIs(LoadYAML("./testdata/not-exists", conf), os.ErrNotExist)
@@ -26,8 +25,7 @@ func TestLoadJSON(t *testing.T) {
 
 	conf := &web{}
 	a.NotError(LoadJSON("./testdata/web.json", conf))
-	a.True(conf.Debug).
-		Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Root, "http://localhost:8082")
 
 	a.Error(LoadYAML("./testdata/web.xml", conf))
 	a.ErrorIs(LoadJSON("./testdata/not-exists", conf), os.ErrNotExist)
@@ -38,8 +36,7 @@ func TestLoadXML(t *testing.T) {
 
 	conf := &web{}
 	a.NotError(LoadXML("./testdata/web.xml", conf))
-	a.True(conf.Debug).
-		Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Root, "http://localhost:8082")
 
 	a.Error(LoadYAML("./testdata/web.xml", conf))
 	a.ErrorIs(LoadXML("./testdata/not-exists", conf), os.ErrNotExist)

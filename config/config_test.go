@@ -9,8 +9,7 @@ import (
 )
 
 type web struct {
-	XMLName  struct{} `yaml:"-" json:"-" xml:"webconfig"`
-	Debug    bool     `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,attr,omitempty"`
+	XMLName  struct{} `yaml:"-" json:"-" xml:"web"`
 	Root     string   `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
 	Timezone string   `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	Count    int      `yaml:"-" json:"-" xml:"-"`

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package config
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/config"
 	"gopkg.in/yaml.v2"
 )
 
@@ -37,26 +36,33 @@ type testDuration struct {
 	Duration Duration `xml:"dur" json:"dur" yaml:"dur"`
 }
 
-func TestConfig(t *testing.T) {
+func TestWeb(t *testing.T) {
 	a := assert.New(t)
 
-	confYAML := &Config{}
-	a.NotError(config.LoadFile("./testdata/web.yaml", confYAML))
+	confYAML := &Web{}
+	a.NotError(LoadFile("./testdata/web.yaml", confYAML))
 
-	confJSON := &Config{}
-	a.NotError(config.LoadFile("./testdata/web.json", confJSON))
+	confJSON := &Web{}
+	a.NotError(LoadFile("./testdata/web.json", confJSON))
 
-	confXML := &Config{}
-	a.NotError(config.LoadFile("./testdata/web.xml", confXML))
+	confXML := &Web{}
+	a.NotError(LoadFile("./testdata/web.xml", confXML))
 
 	a.Equal(confJSON, confXML)
 	a.Equal(confJSON, confYAML)
 }
 
-func TestConfig_sanitize(t *testing.T) {
+func TestClassic(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	srv, err := Classic("./testdata/logs.xml", "./testdata/web.yaml")
+	a.NotError(err).NotNil(srv)
+}
+
+func TestWeb_sanitize(t *testing.T) {
+	a := assert.New(t)
+
+	conf := &Web{}
 	a.NotError(conf.sanitize())
 	a.Equal("Local", conf.Timezone).
 		Equal(time.Local, conf.location)
@@ -64,14 +70,14 @@ func TestConfig_sanitize(t *testing.T) {
 	conf.ReadTimeout = -1
 	err := conf.sanitize()
 	a.Error(err)
-	ferr, ok := err.(*config.FieldError)
+	ferr, ok := err.(*FieldError)
 	a.True(ok).Equal(ferr.Field, "readTimeout")
 
 	conf.ReadTimeout = 0
 	conf.ShutdownTimeout = -1
 	err = conf.sanitize()
 	a.Error(err)
-	ferr, ok = err.(*config.FieldError)
+	ferr, ok = err.(*FieldError)
 	a.True(ok).Equal(ferr.Field, "shutdownTimeout")
 
 	conf.ReadTimeout = 0
@@ -79,38 +85,38 @@ func TestConfig_sanitize(t *testing.T) {
 	conf.ReadHeaderTimeout = -1
 	err = conf.sanitize()
 	a.Error(err)
-	ferr, ok = err.(*config.FieldError)
+	ferr, ok = err.(*FieldError)
 	a.True(ok).Equal(ferr.Field, "readHeaderTimeout")
 
 	// 指定了 https，但是未指定 certificates
-	conf = &Config{Root: "https://example.com"}
+	conf = &Web{Root: "https://example.com"}
 	err = conf.sanitize()
 	a.Error(err)
-	ferr, ok = err.(*config.FieldError)
+	ferr, ok = err.(*FieldError)
 	a.True(ok).Equal(ferr.Field, "certificates")
 }
 
-func TestConfig_buildTimezone(t *testing.T) {
+func TestWeb_buildTimezone(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	conf := &Web{}
 	a.NotError(conf.buildTimezone())
 	a.Equal(conf.location, time.Local).
 		Equal(conf.Timezone, "Local")
 
-	conf = &Config{Timezone: "Africa/Addis_Ababa"}
+	conf = &Web{Timezone: "Africa/Addis_Ababa"}
 	a.NotError(conf.buildTimezone())
 	a.Equal(conf.location.String(), "Africa/Addis_Ababa").
 		Equal(conf.Timezone, "Africa/Addis_Ababa")
 
-	conf = &Config{Timezone: "not-exists-time-zone"}
+	conf = &Web{Timezone: "not-exists-time-zone"}
 	a.Error(conf.buildTimezone())
 }
 
-func TestConfig_checkStatic(t *testing.T) {
+func TestWeb_checkStatic(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{}
+	conf := &Web{}
 	a.NotError(conf.checkStatic())
 
 	conf.Static = map[string]string{
@@ -138,9 +144,9 @@ func TestIsURLPath(t *testing.T) {
 	a.False(isURLPath("path"))
 }
 
-func TestConfig_parseResults(t *testing.T) {
+func TestWeb_parseResults(t *testing.T) {
 	a := assert.New(t)
-	conf := &Config{
+	conf := &Web{
 		Results: map[int]Locale{
 			4001:  {Key: "4001"},
 			4002:  {Key: "4002"},
@@ -161,10 +167,10 @@ func TestConfig_parseResults(t *testing.T) {
 	a.Error(conf.parseResults())
 }
 
-func TestConfig_buildTLSConfig(t *testing.T) {
+func TestWeb_buildTLSConfig(t *testing.T) {
 	a := assert.New(t)
 
-	conf := &Config{
+	conf := &Web{
 		Certificates: []*Certificate{
 			{
 				Cert: "./testdata/cert.pem",

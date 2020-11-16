@@ -10,14 +10,14 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web"
+	"github.com/issue9/web/config"
 )
 
 // 测试插件系统是否正常
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	w, err := web.Classic("./testdata/logs.xml", "./testdata/web.yaml")
+	w, err := config.Classic("./testdata/logs.xml", "./testdata/web.yaml")
 	a.NotError(err).NotNil(w)
 
 	ms := w.Modules()

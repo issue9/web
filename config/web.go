@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package config
 
 import (
 	"crypto/tls"
@@ -9,19 +9,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/logs/v2"
+	lc "github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/context"
 	"github.com/issue9/web/context/contentype"
+	"github.com/issue9/web/context/contentype/gob"
 	"github.com/issue9/web/context/result"
 	"github.com/issue9/web/internal/filesystem"
 )
@@ -36,8 +40,8 @@ type (
 	// ErrorHandlerFunc 错误状态码对应的处理函数原型
 	ErrorHandlerFunc = errorhandler.HandleFunc
 
-	// Config 提供了初始化 Web 对象的基本参数
-	Config struct {
+	// Web 提供了初始化 Server 对象的基本参数
+	Web struct {
 		XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 		// 调试信息的设置
@@ -203,63 +207,207 @@ type (
 	}
 )
 
-func (conf *Config) sanitize() error {
-	if conf.ReadTimeout < 0 {
-		return &config.FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
+// Classic 返回一个开箱即用的 Server 实例
+func Classic(logConfigFile, configFile string) (*context.Server, error) {
+	logConf := &lc.Config{}
+	if err := LoadFile(logConfigFile, logConf); err != nil {
+		return nil, err
+	}
+	if err := logConf.Sanitize(); err != nil {
+		return nil, err
 	}
 
-	if conf.WriteTimeout < 0 {
-		return &config.FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
+	l := logs.New()
+	if err := l.Init(logConf); err != nil {
+		return nil, err
 	}
 
-	if conf.IdleTimeout < 0 {
-		return &config.FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
+	web := &Web{}
+	if err := LoadFile(configFile, web); err != nil {
+		return nil, err
 	}
 
-	if conf.ReadHeaderTimeout < 0 {
-		return &config.FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
+	web.Marshalers = map[string]contentype.MarshalFunc{
+		"application/json":         json.Marshal,
+		"application/xml":          xml.Marshal,
+		contentype.DefaultMimetype: gob.Marshal,
 	}
 
-	if conf.MaxHeaderBytes < 0 {
-		return &config.FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
+	web.Unmarshalers = map[string]contentype.UnmarshalFunc{
+		"application/json":         json.Unmarshal,
+		"application/xml":          xml.Unmarshal,
+		contentype.DefaultMimetype: gob.Unmarshal,
 	}
 
-	if conf.ShutdownTimeout < 0 {
-		return &config.FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
+	web.Results = map[int]Locale{
+		40001: {Key: "无效的报头"},
+		40002: {Key: "无效的地址"},
+		40003: {Key: "无效的查询参数"},
+		40004: {Key: "无效的报文"},
 	}
 
-	if conf.Debug != nil {
-		if err := conf.Debug.sanitize(); err != nil {
+	return web.NewServer(l)
+}
+
+// NewServer 返回 Server 对象
+func (web *Web) NewServer(l *logs.Logs) (*context.Server, error) {
+	if err := web.sanitize(); err != nil {
+		return nil, err
+	}
+
+	srv, err := web.toCTXServer(l)
+	if err != nil {
+		return nil, err
+	}
+
+	if web.ShutdownSignal != nil {
+		grace(srv, web.ShutdownTimeout.Duration(), web.ShutdownSignal...)
+	}
+
+	return srv, nil
+}
+
+func (web *Web) toCTXServer(l *logs.Logs) (*context.Server, error) {
+	o := &context.Options{
+		Location:       web.location,
+		Cache:          web.Cache,
+		DisableHead:    web.DisableHead,
+		DisableOptions: web.DisableOptions,
+		Catalog:        web.Catalog,
+		ResultBuilder:  web.ResultBuilder,
+		SkipCleanPath:  web.SkipCleanPath,
+		Root:           web.Root,
+		HTTPServer: func(srv *http.Server) {
+			srv.ReadTimeout = web.ReadTimeout.Duration()
+			srv.ReadHeaderTimeout = web.ReadHeaderTimeout.Duration()
+			srv.WriteTimeout = web.WriteTimeout.Duration()
+			srv.IdleTimeout = web.IdleTimeout.Duration()
+			srv.MaxHeaderBytes = web.MaxHeaderBytes
+			srv.ErrorLog = l.ERROR()
+			srv.TLSConfig = web.TLSConfig
+		},
+	}
+	srv, err := context.NewServer(l, o)
+	if err != nil {
+		return nil, err
+	}
+
+	for path, dir := range web.Static {
+		if err := srv.Router().Static(path, dir); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = srv.Mimetypes().AddMarshals(web.Marshalers); err != nil {
+		return nil, err
+	}
+	if err = srv.Mimetypes().AddUnmarshals(web.Unmarshalers); err != nil {
+		return nil, err
+	}
+
+	for status, rslt := range web.results {
+		for code, l := range rslt {
+			srv.AddMessage(status, code, l.Key, l.vals...)
+		}
+	}
+
+	if web.Debug != nil {
+		srv.SetDebugger(web.Debug.Pprof, web.Debug.Vars)
+	}
+
+	if len(web.Middlewares) > 0 {
+		srv.AddMiddlewares(web.Middlewares...)
+	}
+	if len(web.Filters) > 0 {
+		srv.AddFilters(web.Filters...)
+	}
+
+	for _, h := range web.ErrorHandlers {
+		srv.SetErrorHandle(h.Handler, h.Status...)
+	}
+
+	if web.Plugins != "" {
+		if err := srv.LoadPlugins(web.Plugins); err != nil {
+			return nil, err
+		}
+	}
+
+	return srv, nil
+}
+
+func grace(srv *context.Server, shutdownTimeout time.Duration, sig ...os.Signal) {
+	go func() {
+		signalChannel := make(chan os.Signal)
+		signal.Notify(signalChannel, sig...)
+
+		<-signalChannel
+		signal.Stop(signalChannel)
+		close(signalChannel)
+
+		if err := srv.Close(shutdownTimeout); err != nil {
+			srv.Logs().Error(err)
+		}
+		srv.Logs().Flush() // 保证内容会被正常输出到日志。
+	}()
+}
+
+func (web *Web) sanitize() error {
+	if web.ReadTimeout < 0 {
+		return &FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
+	}
+
+	if web.WriteTimeout < 0 {
+		return &FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
+	}
+
+	if web.IdleTimeout < 0 {
+		return &FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
+	}
+
+	if web.ReadHeaderTimeout < 0 {
+		return &FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
+	}
+
+	if web.MaxHeaderBytes < 0 {
+		return &FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
+	}
+
+	if web.ShutdownTimeout < 0 {
+		return &FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
+	}
+
+	if web.Debug != nil {
+		if err := web.Debug.sanitize(); err != nil {
 			return err
 		}
 	}
 
-	if err := conf.parseResults(); err != nil {
+	if err := web.parseResults(); err != nil {
 		return err
 	}
 
-	if err := conf.buildTimezone(); err != nil {
+	if err := web.buildTimezone(); err != nil {
 		return err
 	}
 
-	if err := conf.checkStatic(); err != nil {
+	if err := web.checkStatic(); err != nil {
 		return err
 	}
 
-	u, err := url.Parse(conf.Root)
+	u, err := url.Parse(web.Root)
 	if err != nil {
 		return err
 	}
-	if u.Scheme == "https" && len(conf.Certificates) == 0 {
-		return &config.FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
+	if u.Scheme == "https" && len(web.Certificates) == 0 {
+		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
-	return conf.buildTLSConfig()
+	return web.buildTLSConfig()
 }
 
-func (conf *Config) parseResults() error {
-	conf.results = map[int]map[int]Locale{}
+func (web *Web) parseResults() error {
+	web.results = map[int]map[int]Locale{}
 
-	for code, msg := range conf.Results {
+	for code, msg := range web.Results {
 		if code < 999 {
 			return fmt.Errorf("无效的错误代码 %d，必须是 HTTP 状态码的 10 倍以上", code)
 		}
@@ -268,44 +416,44 @@ func (conf *Config) parseResults() error {
 		for ; status > 999; status /= 10 {
 		}
 
-		rslt, found := conf.results[status]
+		rslt, found := web.results[status]
 		if found {
 			rslt[code] = msg
 		} else {
-			conf.results[status] = map[int]Locale{code: msg}
+			web.results[status] = map[int]Locale{code: msg}
 		}
 	}
 
 	return nil
 }
 
-func (conf *Config) buildTimezone() error {
-	if conf.Timezone == "" {
-		conf.Timezone = "Local"
+func (web *Web) buildTimezone() error {
+	if web.Timezone == "" {
+		web.Timezone = "Local"
 	}
 
-	loc, err := time.LoadLocation(conf.Timezone)
+	loc, err := time.LoadLocation(web.Timezone)
 	if err != nil {
-		return &config.FieldError{Field: "timezone", Message: err.Error()}
+		return &FieldError{Field: "timezone", Message: err.Error()}
 	}
-	conf.location = loc
+	web.location = loc
 
 	return nil
 }
 
-func (conf *Config) checkStatic() (err error) {
-	for u, path := range conf.Static {
+func (web *Web) checkStatic() (err error) {
+	for u, path := range web.Static {
 		if !isURLPath(u) {
-			return &config.FieldError{
+			return &FieldError{
 				Field:   "static." + u,
 				Message: "必须以 / 开头且不能以 / 结尾",
 			}
 		}
 
 		if !filesystem.Exists(path) {
-			return &config.FieldError{Field: "static." + u, Message: "对应的路径不存在"}
+			return &FieldError{Field: "static." + u, Message: "对应的路径不存在"}
 		}
-		conf.Static[u] = path
+		web.Static[u] = path
 	}
 
 	return nil
@@ -315,9 +463,9 @@ func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
-func (conf *Config) buildTLSConfig() error {
+func (web *Web) buildTLSConfig() error {
 	cfg := &tls.Config{}
-	for _, certificate := range conf.Certificates {
+	for _, certificate := range web.Certificates {
 		if err := certificate.sanitize(); err != nil {
 			return err
 		}
@@ -329,7 +477,7 @@ func (conf *Config) buildTLSConfig() error {
 		cfg.Certificates = append(cfg.Certificates, cert)
 	}
 
-	conf.TLSConfig = cfg
+	web.TLSConfig = cfg
 	return nil
 }
 
@@ -434,25 +582,25 @@ func (d *Duration) UnmarshalXML(de *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
-func (cert *Certificate) sanitize() *config.FieldError {
+func (cert *Certificate) sanitize() *FieldError {
 	if !filesystem.Exists(cert.Cert) {
-		return &config.FieldError{Field: "cert", Message: "文件不存在"}
+		return &FieldError{Field: "cert", Message: "文件不存在"}
 	}
 
 	if !filesystem.Exists(cert.Key) {
-		return &config.FieldError{Field: "key", Message: "文件不存在"}
+		return &FieldError{Field: "key", Message: "文件不存在"}
 	}
 
 	return nil
 }
 
-func (dbg *Debug) sanitize() *config.FieldError {
+func (dbg *Debug) sanitize() *FieldError {
 	if dbg.Pprof != "" && (dbg.Pprof[0] != '/' || dbg.Pprof[len(dbg.Pprof)-1] != '/') {
-		return &config.FieldError{Field: "pprof", Message: "必须以 / 开始和结束"}
+		return &FieldError{Field: "pprof", Message: "必须以 / 开始和结束"}
 	}
 
 	if dbg.Vars != "" && dbg.Vars[0] != '/' {
-		return &config.FieldError{Field: "vars", Message: "必须以 / 开头"}
+		return &FieldError{Field: "vars", Message: "必须以 / 开头"}
 	}
 
 	return nil
