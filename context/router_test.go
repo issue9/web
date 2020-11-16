@@ -454,7 +454,7 @@ func TestModuleResource(t *testing.T) {
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/root/p" + path).Do().Status(http.StatusOK)
 	srv.Post("/root/p"+path, nil).Do().Status(http.StatusOK)
@@ -484,7 +484,7 @@ func TestModulePrefix(t *testing.T) {
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusOK)
 	srv.Get("/root/p" + path).Do().Status(http.StatusOK)
 	srv.Post("/root/p"+path, nil).Do().Status(http.StatusOK)
@@ -507,7 +507,7 @@ func TestModule_Handle(t *testing.T) {
 	a.NotError(m.Handle(path, f1, http.MethodGet, http.MethodDelete))
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root" + path).Do().Status(http.StatusOK)
 	srv.Delete("/root" + path).Do().Status(http.StatusOK)
@@ -522,7 +522,7 @@ func TestModule_Handle(t *testing.T) {
 	a.NotError(m.Handle(path, f1))
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-	srv = rest.NewServer(t, server.Handler(), nil)
+	srv = rest.NewServer(t, server.middlewares, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusOK)
 	srv.Patch("/root"+path, nil).Do().Status(http.StatusOK)
@@ -540,7 +540,7 @@ func TestModule_Handle(t *testing.T) {
 	m.Put(path, f1)
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-	srv = rest.NewServer(t, server.Handler(), nil)
+	srv = rest.NewServer(t, server.middlewares, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusOK)
 	srv.Get("/root" + path).Do().Status(http.StatusOK)
@@ -576,7 +576,7 @@ func TestModulePrefix_Filters(t *testing.T) {
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root/test").
 		Do().
@@ -605,7 +605,7 @@ func TestModule_Options(t *testing.T) {
 	m1.Options("/test", "GET, OPTIONS, PUT")
 
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
-	srv := rest.NewServer(t, server.Handler(), nil)
+	srv := rest.NewServer(t, server.middlewares, nil)
 
 	srv.Get("/root/test").
 		Do().
@@ -637,7 +637,7 @@ func TestModule_Options(t *testing.T) {
 	}, http.MethodOptions)
 	a.NotError(server.Init("", log.New(ioutil.Discard, "", 0)))
 
-	srv = rest.NewServer(t, server.Handler(), nil)
+	srv = rest.NewServer(t, server.middlewares, nil)
 	srv.NewRequest(http.MethodOptions, "/root/test").
 		Do().
 		Header("Server", "m1").

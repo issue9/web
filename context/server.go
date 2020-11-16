@@ -222,11 +222,6 @@ func (srv *Server) Services() *service.Manager {
 	return srv.services
 }
 
-// Handler 将当前服务转换为 http.Handler 接口对象
-func (srv *Server) Handler() http.Handler {
-	return srv.middlewares
-}
-
 // Serve 启动服务
 func (srv *Server) Serve() error {
 	// TODO initModules
