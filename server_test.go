@@ -66,7 +66,7 @@ func newServer(a *assert.Assertion) *Server {
 	})
 	a.NotError(err)
 
-	srv.AddMessage(411, 41110, "41110")
+	srv.AddResultMessage(411, 41110, "41110")
 
 	return srv
 }
@@ -98,11 +98,11 @@ func TestServer_Vars(t *testing.T) {
 		v3 t3 = 1
 	)
 
-	srv.Vars[v1] = 1
-	srv.Vars[v2] = 2
-	srv.Vars[v3] = 3
+	srv.Set(v1, 1)
+	srv.Set(v2, 2)
+	srv.Set(v3, 3)
 
-	a.Equal(srv.Vars[v1], 1).Equal(srv.Vars[v2], 3)
+	a.Equal(srv.Get(v1), 1).Equal(srv.Get(v2), 3)
 }
 
 func TestServer_Serve(t *testing.T) {

@@ -67,18 +67,14 @@ type Options struct {
 
 // Server 提供了用于构建 Context 对象的基本数据
 type Server struct {
-	// 保存 Context 在存续期间的可复用变量
-	//
-	// 这是比 context.Value 更经济的传递变量方式。
-	//
-	// 如果仅需要在单次请求中传递参数，可直接使用 Context.Vars。
-	Vars map[interface{}]interface{}
-
 	logs       *logs.Logs
 	httpServer *http.Server
-	modules    []*Module
-	inited     bool          // 模块是否已经初始化
-	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
+	vars       map[interface{}]interface{}
+
+	// modules
+	modules []*Module
+	inited  bool          // 模块是否已经初始化
+	closed  chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -146,10 +142,10 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 	srv := &Server{
 		logs:       logs,
 		httpServer: o.httpServer,
-		modules:    make([]*Module, 0, 10),
-		closed:     make(chan struct{}, 1),
+		vars:       map[interface{}]interface{}{},
 
-		Vars: map[interface{}]interface{}{},
+		modules: make([]*Module, 0, 10),
+		closed:  make(chan struct{}, 1),
 
 		middlewares: middleware.NewManager(o.mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -176,6 +172,16 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 	srv.buildMiddlewares()
 
 	return srv, nil
+}
+
+// Get 返回指定键名的值
+func (srv *Server) Get(key interface{}) interface{} {
+	return srv.vars[key]
+}
+
+// Set 保存指定键名的值
+func (srv *Server) Set(key, val interface{}) {
+	srv.vars[key] = val
 }
 
 // Location 指定服务器的时区信息

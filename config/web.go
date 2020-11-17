@@ -17,7 +17,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
-	lc "github.com/issue9/logs/v2/config"
+	"github.com/issue9/logs/v2/config"
 	"github.com/issue9/middleware/v2"
 	"github.com/issue9/middleware/v2/errorhandler"
 	"golang.org/x/text/message"
@@ -31,9 +31,6 @@ import (
 )
 
 type (
-	// Filter 针对 Context 的中间件
-	Filter = web.Filter
-
 	// Middleware 中间件的类型定义
 	Middleware = middleware.Middleware
 
@@ -130,7 +127,7 @@ type (
 		//
 		// 在使用上，永远是 Middlewares 在 Filters 之前调用。
 		Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
-		Filters     []Filter     `yaml:"-" json:"-" xml:"-"`
+		Filters     []web.Filter `yaml:"-" json:"-" xml:"-"`
 
 		// 指定各类媒体类型的编解码函数
 		Marshalers   map[string]content.MarshalFunc   `yaml:"-" json:"-" xml:"-"`
@@ -209,7 +206,7 @@ type (
 
 // Classic 返回一个开箱即用的 Server 实例
 func Classic(logConfigFile, configFile string) (*web.Server, error) {
-	logConf := &lc.Config{}
+	logConf := &config.Config{}
 	if err := LoadFile(logConfigFile, logConf); err != nil {
 		return nil, err
 	}
@@ -307,7 +304,7 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 
 	for status, rslt := range conf.results {
 		for code, l := range rslt {
-			srv.AddMessage(status, code, l.Key, l.vals...)
+			srv.AddResultMessage(status, code, l.Key, l.vals...)
 		}
 	}
 

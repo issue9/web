@@ -22,19 +22,19 @@ type Result struct {
 	ctx *Context
 }
 
-// Messages 错误信息列表
+// ResultMessages 错误信息列表
 //
 // p 用于返回特定语言的内容。
-func (srv *Server) Messages(p *message.Printer) map[int]string {
+func (srv *Server) ResultMessages(p *message.Printer) map[int]string {
 	return srv.results.Messages(p)
 }
 
-// AddMessage 添加一组错误信息
+// AddResultMessage 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
 // code 错误代码；
 // key 和 v 表示错误信息的翻译项内容，最终会传递给 message.Printer.Sprintf 进行翻译；
-func (srv *Server) AddMessage(status, code int, key message.Reference, v ...interface{}) {
+func (srv *Server) AddResultMessage(status, code int, key message.Reference, v ...interface{}) {
 	srv.results.AddMessage(status, code, key, v...)
 }
 

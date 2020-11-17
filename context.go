@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// Package context 用于处理单个请求的上下文关系
 package web
 
 import (
