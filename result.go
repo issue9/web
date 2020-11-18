@@ -39,11 +39,15 @@ func (srv *Server) AddResultMessage(status, code int, key message.Reference, v .
 }
 
 // NewResult 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) NewResult(code int) *Result {
 	return ctx.newResult(ctx.server.results.NewResult(ctx.LocalePrinter, code))
 }
 
 // NewResultWithFields 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) NewResultWithFields(code int, fields result.Fields) *Result {
 	return ctx.newResult(ctx.server.results.NewResultWithFields(ctx.LocalePrinter, code, fields))
 }
@@ -58,4 +62,10 @@ func (ctx *Context) newResult(rslt result.Result) *Result {
 // Render 渲染内容
 func (rslt *Result) Render() {
 	rslt.ctx.Render(rslt.Status(), rslt.Result, nil)
+}
+
+// RenderAndExit 渲染内容并退出当前的请求处理
+func (rslt *Result) RenderAndExit() {
+	rslt.Render()
+	rslt.ctx.Exit(0)
 }

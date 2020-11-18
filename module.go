@@ -61,42 +61,6 @@ type (
 	}
 )
 
-// AddInit 添加一个初始化函数
-//
-// title 该初始化函数的名称。
-func (m *Module) AddInit(f func() error, title string) {
-	if m.inited {
-		panic(ErrInited)
-	}
-
-	if m.inits == nil {
-		m.inits = make([]*initialization, 0, 5)
-	}
-
-	m.inits = append(m.inits, &initialization{f: f, title: title})
-}
-
-// NewTag 为当前模块生成特定名称的子模块
-//
-// 若已经存在，则直接返回该子模块。
-//
-// Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
-// 一般用于功能更新等操作。
-func (m *Module) NewTag(tag string) *Tag {
-	if m.tags == nil {
-		m.tags = make(map[string]*Tag, 5)
-	}
-
-	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = &Tag{
-			m:     m,
-			inits: make([]*initialization, 0, 5),
-		}
-	}
-
-	return m.tags[tag]
-}
-
 // NewModule 声明一个新的模块
 //
 // name 模块名称，需要全局唯一；
@@ -290,4 +254,40 @@ func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.
 		m.srv.Services().AddJob(title, f, scheduler, delay)
 		return nil
 	}, "注册计划任务"+title)
+}
+
+// AddInit 添加一个初始化函数
+//
+// title 该初始化函数的名称。
+func (m *Module) AddInit(f func() error, title string) {
+	if m.inited {
+		panic(ErrInited)
+	}
+
+	if m.inits == nil {
+		m.inits = make([]*initialization, 0, 5)
+	}
+
+	m.inits = append(m.inits, &initialization{f: f, title: title})
+}
+
+// NewTag 为当前模块生成特定名称的子模块
+//
+// 若已经存在，则直接返回该子模块。
+//
+// Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
+// 一般用于功能更新等操作。
+func (m *Module) NewTag(tag string) *Tag {
+	if m.tags == nil {
+		m.tags = make(map[string]*Tag, 5)
+	}
+
+	if _, found := m.tags[tag]; !found {
+		m.tags[tag] = &Tag{
+			m:     m,
+			inits: make([]*initialization, 0, 5),
+		}
+	}
+
+	return m.tags[tag]
 }

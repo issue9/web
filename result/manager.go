@@ -50,6 +50,8 @@ func (mgr *Manager) AddMessage(status, code int, key message.Reference, v ...int
 }
 
 // NewResult 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
 func (mgr *Manager) NewResult(p *message.Printer, code int) Result {
 	msg, found := mgr.messages[code]
 	if !found {
@@ -60,6 +62,8 @@ func (mgr *Manager) NewResult(p *message.Printer, code int) Result {
 }
 
 // NewResultWithFields 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
 func (mgr *Manager) NewResultWithFields(p *message.Printer, code int, fields Fields) Result {
 	rslt := mgr.NewResult(p, code)
 
