@@ -9,6 +9,9 @@ type Module interface {
 	// 模块的唯一
 	ID() string
 
+	// 当前模块的详细说明
+	Description() string
+
 	// 当前模块依赖的其它模块 ID
 	Deps() []string
 

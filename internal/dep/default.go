@@ -18,15 +18,17 @@ type Initialization struct {
 // 包含了一个函数列表，当作模块的初始化功能。
 type Default struct {
 	id     string
+	desc   string
 	deps   []string
 	inited bool
 	inits  []Initialization
 }
 
 // NewDefaultModule 返回 Default 实例
-func NewDefaultModule(id string, dep ...string) *Default {
+func NewDefaultModule(id, desc string, dep ...string) *Default {
 	return &Default{
 		id:    id,
+		desc:  desc,
 		deps:  dep,
 		inits: make([]Initialization, 0, 5),
 	}
@@ -35,6 +37,11 @@ func NewDefaultModule(id string, dep ...string) *Default {
 // ID 唯一 ID
 func (m *Default) ID() string {
 	return m.id
+}
+
+// Description 详细描述
+func (m *Default) Description() string {
+	return m.desc
 }
 
 // Deps 返回依赖列表
@@ -63,7 +70,7 @@ func (m *Default) Init(info *log.Logger) error {
 }
 
 // AddInit 添加初始化函数
-func (m *Default) AddInit(title string, f func() error) {
+func (m *Default) AddInit(f func() error, title string) {
 	if m.Inited() {
 		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID()))
 	}
