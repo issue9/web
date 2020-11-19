@@ -52,7 +52,7 @@ func initModule(ms []Module, m Module, info *log.Logger) error {
 
 	info.Println("开始初始化模块：", m.ID())
 
-	return m.Init()
+	return m.Init(info)
 }
 
 // 检测模块的依赖关系。比如：

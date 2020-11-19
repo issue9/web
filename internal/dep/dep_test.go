@@ -72,9 +72,10 @@ func TestInit(t *testing.T) {
 	inits := map[string]int{}
 	infolog := log.New(os.Stderr, "", 0)
 
-	f := func(name string) func() {
-		return func() {
+	f := func(name string) func() error {
+		return func() error {
 			inits[name] = inits[name] + 1
+			return nil
 		}
 	}
 
