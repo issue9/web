@@ -11,6 +11,13 @@ import (
 	"unicode"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/internal/dep"
+)
+
+var (
+	_ dep.Module = &mod{}
+	_ Module     = &mod{}
 )
 
 func job(time.Time) error {
@@ -27,67 +34,46 @@ func TestModuleInitFuncName(t *testing.T) {
 func TestModule_NewTag(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	m := srv.NewModule("user1", "user1 desc")
-	a.NotNil(m)
+	m, err := srv.NewModule("user1", "user1 desc")
+	a.NotError(err).NotNil(m)
 
-	v := m.NewTag("0.1.0")
-	a.NotNil(v).NotNil(m.tags["0.1.0"])
-	v.AddInit(nil, "title1")
-	a.Equal(v.inits[0].title, "title1")
+	v, err := m.NewTag("0.1.0")
+	a.NotError(err).NotNil(v).NotNil(srv.tags["0.1.0"])
+	v.AddInit("title1", nil)
+	def, ok := v.(*dep.Default)
+	a.True(ok).Equal(def.ID(), "user1") // 与模块相同的 ID
 
-	vv := m.NewTag("0.1.0")
-	a.Equal(vv, v).Equal(vv.m, m)
+	vv, err := m.NewTag("0.1.0")
+	a.NotError(err).Equal(vv, v)
 
-	v2 := m.NewTag("0.2.0")
-	a.NotEqual(v2, v).Equal(v2.m, m)
-}
-
-func TestModule_AddInit(t *testing.T) {
-	a := assert.New(t)
-	srv := newServer(a)
-
-	m := srv.NewModule("m1", "m1 desc")
-	a.NotNil(m)
-
-	a.Nil(m.inits)
-	m.AddInit(func() error { return nil }, "t1")
-	a.Equal(len(m.inits), 1).
-		Equal(m.inits[0].title, "t1").
-		NotNil(m.inits[0].f)
-
-	m.AddInit(func() error { return nil }, "t1")
-	a.Equal(len(m.inits), 2).
-		Equal(m.inits[1].title, "t1").
-		NotNil(m.inits[1].f)
-
-	m.AddInit(func() error { return nil }, "t1")
-	a.Equal(len(m.inits), 3).
-		Equal(m.inits[2].title, "t1").
-		NotNil(m.inits[2].f)
-
-	srv.initDeps("", srv.logs.INFO())
-	a.Panic(func() {
-		m.AddInit(func() error { return nil }, "t1")
-	})
+	v2, err := m.NewTag("0.2.0")
+	a.NotError(err).NotEqual(v2, v)
 }
 
 func TestServer_Tags(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
-	m1 := srv.NewModule("users1", "user1 module", "users2", "users3")
-	m1.NewTag("v1").
-		AddInit(func() error { return errors.New("failed message") }, "安装数据表 users1")
+	m1, err := srv.NewModule("users1", "user1 module", "users2", "users3")
+	a.NotError(err).NotNil(m1)
+	t1, err := m1.NewTag("v1")
+	a.NotError(err).NotNil(t1)
+	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
 	m1.NewTag("v2")
 
-	m2 := srv.NewModule("users2", "user2 module", "users3")
-	m2.NewTag("v1").AddInit(func() error { return nil }, "安装数据表 users2")
+	m2, err := srv.NewModule("users2", "user2 module", "users3")
+	a.NotError(err).NotNil(m2)
+	t2, err := m2.NewTag("v1")
+	a.NotError(err).NotNil(t2)
+	t2.AddInit("安装数据表 users2", func() error { return nil })
 	m2.NewTag("v3")
 
-	m3 := srv.NewModule("users3", "user3 module")
-	tag := m3.NewTag("v1")
-	tag.AddInit(func() error { return nil }, "安装数据表 users3-1")
-	tag.AddInit(func() error { return nil }, "安装数据表 users3-2")
+	m3, err := srv.NewModule("users3", "user3 module")
+	a.NotError(err).NotNil(m3)
+	tag, err := m3.NewTag("v1")
+	a.NotError(err).NotNil(tag)
+	tag.AddInit("安装数据表 users3-1", func() error { return nil })
+	tag.AddInit("安装数据表 users3-2", func() error { return nil })
 	m3.NewTag("v4")
 
 	tags := srv.Tags()
@@ -101,19 +87,21 @@ func TestServer_Init(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
-	m1 := srv.NewModule("m1", "m1 desc", "m2")
+	m1, err := srv.NewModule("m1", "m1 desc", "m2")
+	a.NotError(err).NotNil(m1)
 	m1.AddCron("test cron", job, "* * 8 * * *", true)
 	m1.AddAt("test cron", job, time.Now().Add(-time.Hour), true)
 
-	m2 := srv.NewModule("m2", "m2 desc")
+	m2, err := srv.NewModule("m2", "m2 desc")
+	a.NotError(err).NotNil(m2)
 	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
 
 	a.Equal(len(srv.Modules()), 2)
 
 	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(srv.init("", log.New(os.Stdout, "[INFO]", 0)))
+	a.NotError(srv.InitModules(log.New(os.Stdout, "[INFO]", 0)))
 	a.Equal(3, len(srv.Services().Jobs()))
 
 	// 不能多次调用
-	a.Equal(srv.init("", log.New(os.Stdout, "[INFO]", 0)), ErrInited)
+	a.Equal(srv.InitModules(log.New(os.Stdout, "[INFO]", 0)), dep.ErrInited)
 }

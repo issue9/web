@@ -24,8 +24,8 @@ func TestPlugins(t *testing.T) {
 	a.Equal(2, len(ms))
 
 	sort.SliceStable(ms, func(i, j int) bool {
-		return ms[i].Name < ms[j].Name
+		return ms[i].ID() < ms[j].ID()
 	})
-	a.Equal(ms[0].Name, "plugin1")
-	a.Equal(ms[1].Name, "plugin2")
+	a.Equal(ms[0].ID(), "plugin1")
+	a.Equal(ms[1].ID(), "plugin2")
 }

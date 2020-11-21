@@ -11,18 +11,32 @@ import (
 )
 
 // Init 初始化模块
-func Init(srv *web.Server) {
-	m := srv.NewModule("plugin1", "p1 desc", "plugin2")
+func Init(srv *web.Server) error {
+	m, err := srv.NewModule("plugin1", "p1 desc", "plugin2")
+	if err != nil {
+		return err
+	}
 
-	m.AddInit(init1, "init1")
-	m.AddInit(init2, "init2")
+	m.AddInit("init1", init1)
+	m.AddInit("init2", init2)
 
-	m.NewTag("install").AddInit(install1, "title")
-	m.NewTag("v1.0").AddInit(install2, "title")
+	t1, err := m.NewTag("install")
+	if err != nil {
+		return err
+	}
+	t1.AddInit("title", install1)
+
+	t2, err := m.NewTag("v1.0")
+	if err != nil {
+		return err
+	}
+	t2.AddInit("title", install2)
 
 	m.Get("/plugin1", func(ctx *web.Context) {
 		ctx.Render(http.StatusOK, "plugin1", nil)
 	})
+
+	return nil
 }
 
 func init1() error {

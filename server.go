@@ -21,6 +21,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/dep"
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/service"
 )
@@ -70,11 +71,11 @@ type Server struct {
 	logs       *logs.Logs
 	httpServer *http.Server
 	vars       map[interface{}]interface{}
+	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// modules
-	modules []*Module
-	inited  bool          // 模块是否已经初始化
-	closed  chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
+	modules *dep.Dep
+	tags    map[string]*dep.Dep // 键名为标签名称
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -143,9 +144,10 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		logs:       logs,
 		httpServer: o.httpServer,
 		vars:       map[interface{}]interface{}{},
+		closed:     make(chan struct{}, 1),
 
-		modules: make([]*Module, 0, 10),
-		closed:  make(chan struct{}, 1),
+		modules: dep.New(logs.INFO()),
+		tags:    make(map[string]*dep.Dep, 10),
 
 		middlewares: middleware.NewManager(o.mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -233,7 +235,7 @@ func (srv *Server) Services() *service.Manager {
 
 // Serve 启动服务
 func (srv *Server) Serve() (err error) {
-	if err = srv.init("", srv.Logs().INFO()); err != nil {
+	if err = srv.modules.Init(); err != nil {
 		return err
 	}
 

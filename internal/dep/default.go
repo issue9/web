@@ -70,7 +70,7 @@ func (m *Default) Init(info *log.Logger) error {
 }
 
 // AddInit 添加初始化函数
-func (m *Default) AddInit(f func() error, title string) {
+func (m *Default) AddInit(title string, f func() error) {
 	if m.Inited() {
 		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID()))
 	}

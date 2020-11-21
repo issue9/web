@@ -112,18 +112,20 @@ func TestServer_Serve(t *testing.T) {
 	server := newServer(a)
 	server.Router().Get("/mux/test", f202)
 
-	m1 := server.NewModule("m1", "m1 desc")
+	m1, err := server.NewModule("m1", "m1 desc")
+	a.NotError(err).NotNil(m1)
 	m1.Get("/m1/test", f202)
 	m1.NewTag("tag1")
 
-	m2 := server.NewModule("m2", "m2 desc", "m1")
+	m2, err := server.NewModule("m2", "m2 desc", "m1")
+	a.NotError(err).NotNil(m2)
 	m2.Get("/m2/test", func(ctx *Context) {
 		srv := ctx.Server()
 		a.NotNil(srv)
 		a.Equal(2, len(srv.Modules()))
-		a.Equal(2, len(srv.Tags())).
+		a.Equal(1, len(srv.Tags())).
 			Equal(srv.Tags()["m1"], []string{"tag1"}).
-			Empty(srv.Tags()["m2"])
+			Nil(srv.Tags()["m2"])
 
 		ctx.Response.WriteHeader(http.StatusAccepted)
 		_, err := ctx.Response.Write([]byte("1234567890"))

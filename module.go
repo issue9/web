@@ -3,7 +3,6 @@
 package web
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -15,33 +14,105 @@ import (
 	"github.com/issue9/scheduled"
 	"github.com/issue9/scheduled/schedulers"
 
+	"github.com/issue9/web/internal/dep"
 	"github.com/issue9/web/service"
 )
 
 // 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInstallFuncName = "Init"
 
-// ErrInited 当模块被多次初始化时返回此错误
-var ErrInited = errors.New("模块已经初始化")
-
 type (
 	// InstallFunc 安装模块的函数签名
-	InstallFunc func(*Server)
+	InstallFunc func(*Server) error
 
 	// Module 表示模块信息
 	//
 	// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
 	// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
-	Module struct {
-		srv *Server
+	Module interface {
+		// 唯一 ID
+		ID() string
 
-		Name        string
-		Description string
-		Deps        []string
-		tags        map[string]*Tag
-		filters     []Filter
-		inits       []*initialization
-		inited      bool
+		// 模块的详细说明
+		Description() string
+
+		// 依赖的其它模块
+		Deps() []string
+
+		// 与当前模块关联的子标签
+		Tags() []string
+
+		// 添加新的服务
+		//
+		// f 表示服务的运行函数；
+		// title 是对该服务的简要说明。
+		AddService(title string, f service.Func)
+
+		// AddCron 添加新的定时任务
+		//
+		// f 表示服务的运行函数；
+		// title 是对该服务的简要说明；
+		// spec cron 表达式，支持秒；
+		// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+		AddCron(title string, f scheduled.JobFunc, spec string, delay bool)
+
+		// AddTicker 添加新的定时任务
+		//
+		// f 表示服务的运行函数；
+		// title 是对该服务的简要说明；
+		// imm 是否立即执行一次该任务；
+		// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+		AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool)
+
+		// AddAt 添加新的定时任务
+		//
+		// f 表示服务的运行函数；
+		// title 是对该服务的简要说明；
+		// t 指定的时间点；
+		// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+		AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool)
+
+		// AddJob 添加新的计划任务
+		//
+		// f 表示服务的运行函数；
+		// title 是对该服务的简要说明；
+		// scheduler 计划任务的时间调度算法实现；
+		// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+		AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool)
+
+		// AddInit 添加一个初始化函数
+		//
+		// title 该初始化函数的名称。
+		AddInit(title string, f func() error)
+
+		// NewTag 为当前模块生成特定名称的子模块
+		//
+		// 若已经存在，则直接返回该子模块。
+		//
+		// Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
+		// 一般用于功能更新等操作。
+		NewTag(tag string) (Tag, error)
+
+		// AddFilters 添加过滤器
+		//
+		// 按给定参数的顺序反向依次调用。
+		AddFilters(filter ...Filter) Module
+		Resource(pattern string, filter ...Filter) Resource
+		Prefix(prefix string, filter ...Filter) Prefix
+		Handle(path string, h HandlerFunc, method ...string) Module
+		Get(path string, h HandlerFunc) Module
+		Post(path string, h HandlerFunc) Module
+		Delete(path string, h HandlerFunc) Module
+		Put(path string, h HandlerFunc) Module
+		Patch(path string, h HandlerFunc) Module
+		Options(path, allow string) Module
+		Remove(path string, method ...string) Module
+	}
+
+	mod struct {
+		*dep.Default
+		srv     *Server
+		filters []Filter
 	}
 
 	// Tag 表示与特定标签相关联的初始化函数列表
@@ -49,15 +120,8 @@ type (
 	// 依附于模块，共享模块的依赖关系。
 	//
 	// 一般是各个模块下的安装脚本使用。
-	Tag struct {
-		m     *Module
-		inits []*initialization
-	}
-
-	// 表示初始化功能的相关数据
-	initialization struct {
-		title string
-		f     func() error
+	Tag interface {
+		AddInit(string, func() error)
 	}
 )
 
@@ -66,77 +130,57 @@ type (
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(name, desc string, deps ...string) *Module {
-	m := &Module{
-		srv:         srv,
-		Name:        name,
-		Description: desc,
-		Deps:        deps,
-	}
-	srv.modules = append(srv.modules, m)
-	return m
-}
-
-// AddInit 添加一个初始化函数
-//
-// title 该初始化函数的名称。
-func (t *Tag) AddInit(f func() error, title string) {
-	if t.m.inited {
-		panic(ErrInited)
+func (srv *Server) NewModule(id, desc string, deps ...string) (Module, error) {
+	m := &mod{
+		Default: dep.NewDefaultModule(id, desc, deps...),
+		srv:     srv,
 	}
 
-	if t.inits == nil {
-		t.inits = make([]*initialization, 0, 5)
+	if err := srv.modules.AddModule(m); err != nil {
+		return nil, err
 	}
-	t.inits = append(t.inits, &initialization{f: f, title: title})
+	return m, nil
 }
 
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表。
 func (srv *Server) Tags() map[string][]string {
-	ret := make(map[string][]string, len(srv.modules)*2)
+	ret := make(map[string][]string, len(srv.tags))
 
-	for _, m := range srv.modules {
-		tags := make([]string, 0, len(m.tags))
-		for k := range m.tags {
-			tags = append(tags, k)
+	for name, d := range srv.tags {
+		for _, tag := range d.Modules() {
+			ret[tag.ID()] = append(ret[tag.ID()], name)
+			sort.Strings(ret[tag.ID()])
 		}
-		sort.Strings(tags)
-		ret[m.Name] = tags
 	}
 
 	return ret
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*Module {
-	return srv.modules
+func (srv *Server) Modules() []dep.Module {
+	return srv.modules.Modules()
 }
 
 // InitTag 初始化模块下的子标签
-//
-// info 用于打印初始化过程的一些信息，如果为空，则采用 web.logs.INFO()。
 func (srv *Server) InitTag(tag string, info *log.Logger) error {
 	if tag == "" {
 		panic("tag 不能为空")
 	}
 
-	return srv.init("", srv.Logs().INFO())
+	tags, found := srv.tags[tag]
+	if !found {
+		return fmt.Errorf("标签 %s 不存在", tag)
+	}
+	return tags.Init()
 }
 
-func (srv *Server) init(tag string, info *log.Logger) error {
-	if srv.inited && tag == "" {
-		return ErrInited
-	}
-
-	if info == nil {
-		info = srv.Logs().INFO()
-	}
-
+// InitModules 初始化模块
+func (srv *Server) InitModules(info *log.Logger) error {
 	info.Println("开始初始化模块...")
 
-	if err := srv.initDeps(tag, info); err != nil {
+	if err := srv.modules.Init(); err != nil {
 		return err
 	}
 
@@ -151,10 +195,6 @@ func (srv *Server) init(tag string, info *log.Logger) error {
 	}
 
 	info.Println("模块初始化完成！")
-
-	if tag == "" {
-		srv.inited = true
-	}
 
 	return nil
 }
@@ -189,105 +229,70 @@ func (srv *Server) LoadPlugin(path string) error {
 		return err
 	}
 
-	if install, ok := symbol.(func(*Server)); ok {
-		InstallFunc(install)(srv)
-		return nil
+	if install, ok := symbol.(func(*Server) error); ok {
+		return InstallFunc(install)(srv)
 	}
+
+	// TODO 如果已经 inited，那么直接初始化插件
+
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
-// AddService 添加新的服务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明。
-func (m *Module) AddService(f service.Func, title string) {
-	m.AddInit(func() error {
+func (m *mod) AddService(title string, f service.Func) {
+	m.AddInit("注册服务："+title, func() error {
 		m.srv.Services().AddService(f, title)
 		return nil
-	}, "注册服务："+title)
+	})
 }
 
-// AddCron 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// spec cron 表达式，支持秒；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) {
-	m.AddInit(func() error {
+func (m *mod) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) {
+	m.AddInit("注册计划任务"+title, func() error {
 		return m.srv.Services().AddCron(title, f, spec, delay)
-	}, "注册计划任务"+title)
+	})
 }
 
-// AddTicker 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// imm 是否立即执行一次该任务；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) {
-	m.AddInit(func() error {
+func (m *mod) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) {
+	m.AddInit("注册计划任务"+title, func() error {
 		return m.srv.Services().AddTicker(title, f, dur, imm, delay)
-	}, "注册计划任务"+title)
+	})
 }
 
-// AddAt 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// t 指定的时间点；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) {
-	m.AddInit(func() error {
+func (m *mod) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) {
+	m.AddInit("注册计划任务"+title, func() error {
 		return m.srv.Services().AddAt(title, f, t, delay)
-	}, "注册计划任务"+title)
+	})
 }
 
-// AddJob 添加新的计划任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// scheduler 计划任务的时间调度算法实现；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) {
-	m.AddInit(func() error {
+func (m *mod) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) {
+	m.AddInit("注册计划任务"+title, func() error {
 		m.srv.Services().AddJob(title, f, scheduler, delay)
 		return nil
-	}, "注册计划任务"+title)
+	})
 }
 
-// AddInit 添加一个初始化函数
-//
-// title 该初始化函数的名称。
-func (m *Module) AddInit(f func() error, title string) {
-	if m.inited {
-		panic(ErrInited)
+func (m *mod) NewTag(tag string) (Tag, error) {
+	if m.srv.tags == nil {
+		m.srv.tags = make(map[string]*dep.Dep, 5)
 	}
 
-	if m.inits == nil {
-		m.inits = make([]*initialization, 0, 5)
+	d, found := m.srv.tags[tag]
+	if !found {
+		d = dep.New(m.srv.Logs().INFO())
+		m.srv.tags[tag] = d
 	}
 
-	m.inits = append(m.inits, &initialization{f: f, title: title})
+	if mod := d.FindModule(m.ID()); mod != nil {
+		return mod.(Tag), nil
+	}
+
+	t := dep.NewDefaultModule(m.ID(), m.Description(), m.Deps()...)
+	if err := d.AddModule(t); err != nil {
+		return nil, err
+	}
+	return t, nil
 }
 
-// NewTag 为当前模块生成特定名称的子模块
-//
-// 若已经存在，则直接返回该子模块。
-//
-// Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
-// 一般用于功能更新等操作。
-func (m *Module) NewTag(tag string) *Tag {
-	if m.tags == nil {
-		m.tags = make(map[string]*Tag, 5)
-	}
-
-	if _, found := m.tags[tag]; !found {
-		m.tags[tag] = &Tag{
-			m:     m,
-			inits: make([]*initialization, 0, 5),
-		}
-	}
-
-	return m.tags[tag]
+func (m *mod) Tags() []string {
+	// TODO
+	return nil
 }

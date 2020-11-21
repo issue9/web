@@ -10,14 +10,28 @@ import (
 )
 
 // Init 初始化模块
-func Init(srv *web.Server) {
-	m := srv.NewModule("plugin2", "p2 desc")
+func Init(srv *web.Server) error {
+	m, err := srv.NewModule("plugin2", "p2 desc")
+	if err != nil {
+		return err
+	}
 
-	m.AddInit(init1, "init1")
-	m.AddInit(init2, "init2")
+	m.AddInit("init1", init1)
+	m.AddInit("init2", init2)
 
-	m.NewTag("install").AddInit(install1, "title")
-	m.NewTag("v1.0").AddInit(install2, "title")
+	t1, err := m.NewTag("install")
+	if err != nil {
+		return err
+	}
+	t1.AddInit("title", install1)
+
+	t2, err := m.NewTag("v1.0")
+	if err != nil {
+		return err
+	}
+	t2.AddInit("title", install2)
+
+	return nil
 }
 
 func init1() error {
