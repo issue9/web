@@ -30,17 +30,11 @@ type (
 	// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
 	// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
 	Module interface {
-		// 唯一 ID
 		ID() string
-
-		// 模块的详细说明
 		Description() string
-
-		// 依赖的其它模块
 		Deps() []string
 
-		// 与当前模块关联的子标签
-		Tags() []string
+		Tags() []string // 与当前模块关联的子标签
 
 		// 添加新的服务
 		//
@@ -109,19 +103,18 @@ type (
 		Remove(path string, method ...string) Module
 	}
 
+	// Tag 表示与特定标签相关联的初始化函数列表
+	//
+	// 依附于模块，共享模块的依赖关系。
+	// 一般是各个模块下的安装脚本使用。
+	Tag interface {
+		AddInit(string, func() error)
+	}
+
 	mod struct {
 		*dep.Default
 		srv     *Server
 		filters []Filter
-	}
-
-	// Tag 表示与特定标签相关联的初始化函数列表
-	//
-	// 依附于模块，共享模块的依赖关系。
-	//
-	// 一般是各个模块下的安装脚本使用。
-	Tag interface {
-		AddInit(string, func() error)
 	}
 )
 

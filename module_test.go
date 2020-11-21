@@ -83,7 +83,7 @@ func TestServer_Tags(t *testing.T) {
 		Equal(tags["users3"], []string{"v1", "v4"})
 }
 
-func TestServer_Init(t *testing.T) {
+func TestServer_InitModules(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 

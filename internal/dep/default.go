@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-// Initialization 表示模块初始化函数的基本数据
-type Initialization struct {
+// 表示模块初始化函数的基本数据
+type initialization struct {
 	title string
 	f     func() error
 }
@@ -21,7 +21,7 @@ type Default struct {
 	desc   string
 	deps   []string
 	inited bool
-	inits  []Initialization
+	inits  []initialization
 }
 
 // NewDefaultModule 返回 Default 实例
@@ -30,7 +30,7 @@ func NewDefaultModule(id, desc string, dep ...string) *Default {
 		id:    id,
 		desc:  desc,
 		deps:  dep,
-		inits: make([]Initialization, 0, 5),
+		inits: make([]initialization, 0, 5),
 	}
 }
 
@@ -75,5 +75,5 @@ func (m *Default) AddInit(title string, f func() error) {
 		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID()))
 	}
 
-	m.inits = append(m.inits, Initialization{title: title, f: f})
+	m.inits = append(m.inits, initialization{title: title, f: f})
 }
