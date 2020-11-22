@@ -23,6 +23,51 @@ func newDep(a *assert.Assertion, ms []Module) *Dep {
 	return d
 }
 
+func TestDep_NewItem(t *testing.T) {
+	a := assert.New(t)
+	d := New(log.New(ioutil.Discard, "", 0))
+
+	d1 := d.NewItem("d1")
+	d2 := d.NewItem("d2")
+	a.False(d1 == d2) // 指向不同的内在
+	d11 := d.NewItem("d1")
+	a.True(d1 == d11) // 指向相同的地址
+}
+
+func TestDep_Items(t *testing.T) {
+	a := assert.New(t)
+	d := New(log.New(ioutil.Discard, "", 0))
+
+	d1 := d.NewItem("d1")
+	d2 := d.NewItem("d2")
+
+	a.Empty(d.Items())
+	a.Empty(d.Items("d1"))
+
+	a.NotError(d1.AddModule(NewDefaultModule("m1", "m1 desc")))
+	a.NotError(d2.AddModule(NewDefaultModule("m2", "m2 desc")))
+	a.NotError(d2.AddModule(NewDefaultModule("m1", "m1 desc")))
+	a.Equal(d.Items(), map[string][]string{"m1": {"d1", "d2"}, "m2": {"d2"}})
+	a.Equal(d.Items("m2"), map[string][]string{"m2": {"d2"}})
+}
+
+func TestDep_InitItem(t *testing.T) {
+	a := assert.New(t)
+	d := New(log.New(ioutil.Discard, "", 0))
+	d1 := d.NewItem("d1")
+	d2 := d.NewItem("d2")
+
+	a.Panic(func() {
+		d.InitItem("")
+	})
+
+	a.False(d1.inited).False(d2.inited)
+	d.InitItem("d1")
+	a.True(d1.inited).False(d2.inited)
+
+	a.Error(d.InitItem("exists"))
+}
+
 func TestDep_isDep(t *testing.T) {
 	a := assert.New(t)
 
@@ -113,10 +158,12 @@ func TestDep_Init(t *testing.T) {
 		Equal(inits["d2"], 1).
 		Equal(inits["d3"], 1)
 
-	a.ErrorIs(d.Init(), ErrInited)
+	a.Panic(func() {
+		d.Init()
+	})
 
 	// 添加已经存在的模块
-	a.ErrorIs(d.AddModule(newMod("m1", f("m1"), "d1")), ErrModExists)
+	a.ErrorString(d.AddModule(newMod("m1", f("m1"), "d1")), "已经存在")
 
 	// 添加新模块，会自动调用初始化函数
 	a.NotError(d.AddModule(newMod("d4", f("d4"), "d1")))

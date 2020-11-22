@@ -38,7 +38,7 @@ func TestModule_NewTag(t *testing.T) {
 	a.NotError(err).NotNil(m)
 
 	v, err := m.NewTag("0.1.0")
-	a.NotError(err).NotNil(v).NotNil(srv.tags["0.1.0"])
+	a.NotError(err).NotNil(v)
 	v.AddInit("title1", nil)
 	def, ok := v.(*dep.Default)
 	a.True(ok).Equal(def.ID(), "user1") // 与模块相同的 ID
@@ -83,7 +83,7 @@ func TestServer_Tags(t *testing.T) {
 		Equal(tags["users3"], []string{"v1", "v4"})
 }
 
-func TestServer_InitModules(t *testing.T) {
+func TestServer_initModules(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
@@ -99,9 +99,9 @@ func TestServer_InitModules(t *testing.T) {
 	a.Equal(len(srv.Modules()), 2)
 
 	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(srv.InitModules(log.New(os.Stdout, "[INFO]", 0)))
+	a.NotError(srv.initModules(log.New(os.Stdout, "[INFO]", 0)))
 	a.Equal(3, len(srv.Services().Jobs()))
 
 	// 不能多次调用
-	a.Equal(srv.InitModules(log.New(os.Stdout, "[INFO]", 0)), dep.ErrInited)
+	a.Equal(srv.initModules(log.New(os.Stdout, "[INFO]", 0)), ErrInited)
 }

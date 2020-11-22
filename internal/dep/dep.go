@@ -4,17 +4,9 @@
 package dep
 
 import (
-	"errors"
 	"fmt"
 	"log"
-)
-
-var (
-	// ErrInited 当模块被多次初始化时返回此错误
-	ErrInited = errors.New("模块已经初始化")
-
-	// ErrModExists 已经添加了相同 ID 的模块实现
-	ErrModExists = errors.New("模块已经存在")
+	"sort"
 )
 
 // Dep 依赖管理
@@ -22,6 +14,8 @@ type Dep struct {
 	ms     []Module
 	inited bool
 	info   *log.Logger
+
+	items map[string]*Dep
 }
 
 // New 声明新的 Dep 变量
@@ -32,13 +26,72 @@ func New(info *log.Logger) *Dep {
 	}
 }
 
+// NewItem 声明指定名称的 *Dep
+func (d *Dep) NewItem(name string) *Dep {
+	if d.items == nil {
+		d.items = make(map[string]*Dep, 5)
+	}
+
+	if item, found := d.items[name]; found {
+		return item
+	}
+	item := New(d.info)
+	d.items[name] = item
+	return item
+}
+
+// Items 返回所有的子模块名称
+//
+// 键名为模块名称，键值为该模块下的子模块列表。
+func (d *Dep) Items(mod ...string) map[string][]string {
+	ret := make(map[string][]string, len(mod))
+
+	enable := func(id string) bool {
+		if len(mod) == 0 {
+			return true
+		}
+		for _, m := range mod {
+			if m == id {
+				return true
+			}
+		}
+		return false
+	}
+
+	for name, dep := range d.items {
+		for _, tag := range dep.Modules() {
+			if !enable(tag.ID()) {
+				continue
+			}
+
+			ret[tag.ID()] = append(ret[tag.ID()], name)
+			sort.Strings(ret[tag.ID()])
+		}
+	}
+
+	return ret
+}
+
+// InitItem 初始化模块下的子模块
+func (d *Dep) InitItem(tag string) error {
+	if tag == "" {
+		panic("tag 不能为空")
+	}
+
+	tags, found := d.items[tag]
+	if !found {
+		return fmt.Errorf("标签 %s 不存在", tag)
+	}
+	return tags.Init()
+}
+
 // AddModule 添加新模块
 //
 // 如果所有的模块都已经初始化，则会尝试初始化 m。
 func (d *Dep) AddModule(m Module) error {
 	for _, mod := range d.ms {
 		if mod.ID() == m.ID() {
-			return ErrModExists
+			return fmt.Errorf("模块 %s 已经存在", m.ID())
 		}
 	}
 	d.ms = append(d.ms, m)
@@ -50,12 +103,17 @@ func (d *Dep) AddModule(m Module) error {
 	return nil
 }
 
+// Inited 是否已经初始化
+func (d *Dep) Inited() bool {
+	return d.inited
+}
+
 // Init 对所有的模块进行初始化操作
 //
 // 会进行依赖检测。若模块初始化出错，则会中断并返回出错信息。
 func (d *Dep) Init() error {
-	if d.inited {
-		return ErrInited
+	if d.Inited() {
+		panic("已经初始化")
 	}
 
 	for _, m := range d.ms { // 检测依赖

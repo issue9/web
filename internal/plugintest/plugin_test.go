@@ -17,10 +17,10 @@ import (
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	w, err := config.Classic("./testdata/logs.xml", "./testdata/web.yaml")
-	a.NotError(err).NotNil(w)
+	srv, err := config.Classic("./testdata/logs.xml", "./testdata/web.yaml")
+	a.NotError(err).NotNil(srv)
 
-	ms := w.Modules()
+	ms := srv.Modules()
 	a.Equal(2, len(ms))
 
 	sort.SliceStable(ms, func(i, j int) bool {

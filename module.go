@@ -3,11 +3,11 @@
 package web
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
 	"plugin"
-	"sort"
 	"strings"
 	"time"
 
@@ -20,6 +20,9 @@ import (
 
 // 插件中的初始化函数名称，必须为可导出的函数名称
 const moduleInstallFuncName = "Init"
+
+// ErrInited 当模块被多次初始化时返回此错误
+var ErrInited = errors.New("模块已经初始化")
 
 type (
 	// InstallFunc 安装模块的函数签名
@@ -139,16 +142,7 @@ func (srv *Server) NewModule(id, desc string, deps ...string) (Module, error) {
 //
 // 键名为模块名称，键值为该模块下的标签列表。
 func (srv *Server) Tags() map[string][]string {
-	ret := make(map[string][]string, len(srv.tags))
-
-	for name, d := range srv.tags {
-		for _, tag := range d.Modules() {
-			ret[tag.ID()] = append(ret[tag.ID()], name)
-			sort.Strings(ret[tag.ID()])
-		}
-	}
-
-	return ret
+	return srv.modules.Items()
 }
 
 // Modules 当前系统使用的所有模块信息
@@ -157,20 +151,16 @@ func (srv *Server) Modules() []dep.Module {
 }
 
 // InitTag 初始化模块下的子标签
-func (srv *Server) InitTag(tag string, info *log.Logger) error {
-	if tag == "" {
-		panic("tag 不能为空")
-	}
-
-	tags, found := srv.tags[tag]
-	if !found {
-		return fmt.Errorf("标签 %s 不存在", tag)
-	}
-	return tags.Init()
+func (srv *Server) InitTag(tag string) error {
+	return srv.modules.InitItem(tag)
 }
 
-// InitModules 初始化模块
-func (srv *Server) InitModules(info *log.Logger) error {
+// initModules 初始化模块
+func (srv *Server) initModules(info *log.Logger) error {
+	if srv.modules.Inited() {
+		return ErrInited
+	}
+
 	info.Println("开始初始化模块...")
 
 	if err := srv.modules.Init(); err != nil {
@@ -226,8 +216,6 @@ func (srv *Server) LoadPlugin(path string) error {
 		return InstallFunc(install)(srv)
 	}
 
-	// TODO 如果已经 inited，那么直接初始化插件
-
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
@@ -264,15 +252,7 @@ func (m *mod) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Sch
 }
 
 func (m *mod) NewTag(tag string) (Tag, error) {
-	if m.srv.tags == nil {
-		m.srv.tags = make(map[string]*dep.Dep, 5)
-	}
-
-	d, found := m.srv.tags[tag]
-	if !found {
-		d = dep.New(m.srv.Logs().INFO())
-		m.srv.tags[tag] = d
-	}
+	d := m.srv.modules.NewItem(tag)
 
 	if mod := d.FindModule(m.ID()); mod != nil {
 		return mod.(Tag), nil
@@ -286,6 +266,5 @@ func (m *mod) NewTag(tag string) (Tag, error) {
 }
 
 func (m *mod) Tags() []string {
-	// TODO
-	return nil
+	return m.srv.modules.Items(m.ID())[m.ID()]
 }

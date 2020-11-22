@@ -75,7 +75,6 @@ type Server struct {
 
 	// modules
 	modules *dep.Dep
-	tags    map[string]*dep.Dep // 键名为标签名称
 
 	// middleware
 	middlewares   *middleware.Manager
@@ -147,7 +146,6 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		closed:     make(chan struct{}, 1),
 
 		modules: dep.New(logs.INFO()),
-		tags:    make(map[string]*dep.Dep, 10),
 
 		middlewares: middleware.NewManager(o.mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
@@ -235,7 +233,7 @@ func (srv *Server) Services() *service.Manager {
 
 // Serve 启动服务
 func (srv *Server) Serve() (err error) {
-	if err = srv.modules.Init(); err != nil {
+	if err = srv.initModules(srv.Logs().INFO()); err != nil {
 		return err
 	}
 
