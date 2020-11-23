@@ -15,10 +15,11 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 package main
 
 import "github.com/issue9/web"
+import "github.com/issue9/web/config"
 
 // main.go
 func main() {
-    w, _ := web.Classic("./appconfig/logs.xml", "./appconfig/web.yaml")
+    w, _ := config.Classic("./appconfig/logs.xml", "./appconfig/web.yaml")
 
     // 注册模块信息
     m1.Init()
@@ -28,14 +29,14 @@ func main() {
 }
 
 // modules/m1/module.go
-func Init(s *web.Web) {
+func Init(s *web.Server) {
     s.NewModule("m1", "模块描述信息").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)
 }
 
 // modules/m2/module.go
-func Init(s *web.Web) {
+func Init(s *web.Server) {
     s.NewModule("m2", "模块描述信息", "m1").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)

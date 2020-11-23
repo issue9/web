@@ -3,9 +3,12 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -81,6 +84,77 @@ func TestNewServer(t *testing.T) {
 	a.NotNil(srv.Cache())
 	a.Equal(srv.catalog, message.DefaultCatalog)
 	a.Equal(srv.Location(), time.Local)
+	a.Equal(srv.httpServer.Handler, srv.middlewares)
+	a.NotNil(srv.httpServer.BaseContext)
+}
+
+func TestGetServer(t *testing.T) {
+	a := assert.New(t)
+	type key int
+	var k key = 0
+
+	srv, err := NewServer(logs.New(), &Options{})
+	srv.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
+	a.NotError(err).NotNil(srv)
+	var isRequested bool
+
+	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+		s1 := GetServer(r)
+		a.NotNil(s1).Equal(s1, srv)
+
+		v := r.Context().Value(k)
+		a.Nil(v)
+
+		ctx := NewContext(w, r)
+		a.NotNil(ctx)
+
+		isRequested = true
+	})
+	go func() {
+		srv.Serve()
+	}()
+	time.Sleep(500 * time.Millisecond)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
+		Header("Accept", mimetypetest.Mimetype).
+		Do().
+		Success("未正确返回状态码")
+	a.NotError(srv.Close(0))
+	a.True(isRequested, "未正常访问 /path")
+
+	// 不是从 Server 生成的 *http.Request，则会 panic
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	a.Panic(func() {
+		GetServer(r)
+	})
+
+	// BaseContext
+
+	srv, err = NewServer(logs.New(), &Options{
+		HTTPServer: func(s *http.Server) {
+			s.BaseContext = func(n net.Listener) context.Context {
+				return context.WithValue(context.Background(), k, 1)
+			}
+		},
+	})
+	a.NotError(err).NotNil(srv)
+
+	isRequested = false
+	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+		s1 := GetServer(r)
+		a.NotNil(s1).Equal(s1, srv)
+
+		v := r.Context().Value(k)
+		a.Equal(v, 1)
+
+		isRequested = true
+	})
+	go func() {
+		srv.Serve()
+	}()
+	time.Sleep(500 * time.Millisecond)
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").Do().Success()
+	a.NotError(srv.Close(0))
+	a.True(isRequested, "未正常访问 /path")
 }
 
 func TestServer_Vars(t *testing.T) {

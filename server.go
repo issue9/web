@@ -5,6 +5,7 @@ package web
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -25,6 +26,15 @@ import (
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/service"
 )
+
+type contextKey int
+
+// ContextKeyServer 从 context.Value 中获取 *Server 实例的键名
+//
+// 在某些极端的情况下，用户可能需要用到 Server.Router().Mux().GetFunc()
+// 等比较原始的接口去添加路由，此时无法像 Context.Server() 的方式获取
+// Server 变量，便可通过 r.Context().Value(ContextKeyServer) 获取。
+var ContextKeyServer contextKey = 0
 
 // Options 初始化 Server 的参数
 type Options struct {
@@ -58,6 +68,8 @@ type Options struct {
 	mux            *mux.Mux
 
 	// 可以对 http.Server 的内容进行个性
+	//
+	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.middlewares
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
 
@@ -169,9 +181,32 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 	srv.router = buildRouter(srv, o.mux, o.root)
 	srv.httpServer.Handler = srv.middlewares
 
+	if srv.httpServer.BaseContext == nil {
+		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
+			return context.WithValue(context.Background(), ContextKeyServer, srv)
+		}
+	} else {
+		ctx := srv.httpServer.BaseContext
+		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
+			return context.WithValue(ctx(n), ContextKeyServer, srv)
+		}
+	}
+
 	srv.buildMiddlewares()
 
 	return srv, nil
+}
+
+// GetServer 从请求中获取 *Server 实例
+//
+// r 必须得是由 Server 生成的，否则会 panic。
+func GetServer(r *http.Request) *Server {
+	v := r.Context().Value(ContextKeyServer)
+	if v == nil {
+		panic("无法从 http.Request.Context() 中获取 ContentKeyServer 对应的值")
+	}
+
+	return v.(*Server)
 }
 
 // Get 返回指定键名的值

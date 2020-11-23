@@ -74,6 +74,11 @@ type Context struct {
 }
 
 // NewContext 构建 *Context 实例
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	return GetServer(r).NewContext(w, r)
+}
+
+// NewContext 构建 *Context 实例
 //
 // 如果 Accept 的内容与当前配置无法匹配，
 // 则退出(panic)并输出 NotAcceptable 状态码。
