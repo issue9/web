@@ -323,20 +323,3 @@ func (ctx *Context) NotFound() {
 func (ctx *Context) NotImplemented() {
 	ctx.Response.WriteHeader(http.StatusNotImplemented)
 }
-
-// NewLocalePrinter 返回指定语言的 message.Printer
-func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return message.NewPrinter(tag, message.Catalog(srv.catalog))
-}
-
-// Now 返回当前时间
-//
-// 与 time.Now() 的区别在于 Now() 基于当前时区
-func (ctx *Context) Now() time.Time {
-	return time.Now().In(ctx.Location)
-}
-
-// ParseTime 分析基于当前时区的时间
-func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, ctx.Location)
-}

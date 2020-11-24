@@ -352,15 +352,3 @@ func TestContext_Created(t *testing.T) {
 		Equal(w.Body.String(), `test,123`).
 		Equal(w.Header().Get("Location"), "/test")
 }
-
-func TestContext_Now(t *testing.T) {
-	a := assert.New(t)
-	srv := newServer(a)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/test", nil)
-	ctx := srv.NewContext(w, r)
-
-	now := ctx.Now()
-	a.Equal(now.Location(), srv.Location())
-	a.Equal(now.Location(), srv.Now().Location())
-}
