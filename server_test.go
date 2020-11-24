@@ -74,6 +74,29 @@ func newServer(a *assert.Assertion) *Server {
 	return srv
 }
 
+func TestOptions_sanitize(t *testing.T) {
+	a := assert.New(t)
+
+	o := &Options{}
+	a.NotError(o.sanitize())
+
+	// 无效的 Root
+	o = &Options{Root: ":8080/api"}
+	a.Error(o.sanitize())
+
+	o = &Options{Root: "http://example.com:8080/api"}
+	a.NotError(o.sanitize()).
+		Equal(o.httpServer.Addr, ":8080")
+
+	o = &Options{Root: "http://example.com/api"}
+	a.NotError(o.sanitize()).
+		Empty(o.httpServer.Addr)
+
+	o = &Options{Root: "https://example.com/api"}
+	a.NotError(o.sanitize()).
+		Equal(o.httpServer.Addr, ":https")
+}
+
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 	l := logs.New()

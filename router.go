@@ -25,6 +25,7 @@ type (
 		Post(string, HandlerFunc) Prefix
 		Patch(string, HandlerFunc) Prefix
 		Delete(string, HandlerFunc) Prefix
+
 		//  添加 OPTIONS 请求处理项
 		//
 		// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
@@ -77,14 +78,14 @@ type (
 	}
 
 	modulePrefix struct {
-		p       string
 		m       *mod
+		prefix  string
 		filters []Filter
 	}
 
 	moduleResource struct {
 		m       *mod
-		p       string
+		pattern string
 		filters []Filter
 	}
 )
@@ -397,7 +398,7 @@ func (m *mod) AddFilters(filter ...Filter) Module {
 func (m *mod) Resource(pattern string, filter ...Filter) Resource {
 	return &moduleResource{
 		m:       m,
-		p:       pattern,
+		pattern: pattern,
 		filters: filter,
 	}
 }
@@ -405,7 +406,7 @@ func (m *mod) Resource(pattern string, filter ...Filter) Resource {
 func (m *mod) Prefix(prefix string, filter ...Filter) Prefix {
 	return &modulePrefix{
 		m:       m,
-		p:       prefix,
+		prefix:  prefix,
 		filters: filter,
 	}
 }
@@ -469,16 +470,16 @@ func (r *routerResource) Options(allow string) Resource {
 }
 
 func (p *modulePrefix) Resource(pattern string, filter ...Filter) Resource {
-	return p.m.Resource(p.p+pattern, filter...)
+	return p.m.Resource(p.prefix+pattern, filter...)
 }
 
 func (r *moduleResource) Handle(h HandlerFunc, method ...string) error {
-	r.m.handle(r.p, h, r.filters, method...)
+	r.m.handle(r.pattern, h, r.filters, method...)
 	return nil
 }
 
 func (r *moduleResource) handle(h HandlerFunc, method ...string) Resource {
-	r.m.handle(r.p, h, r.filters, method...)
+	r.m.handle(r.pattern, h, r.filters, method...)
 	return r
 }
 
@@ -503,28 +504,28 @@ func (r *moduleResource) Patch(h HandlerFunc) Resource {
 }
 
 func (r *moduleResource) Options(allow string) Resource {
-	r.m.Options(r.p, allow)
+	r.m.Options(r.pattern, allow)
 	return r
 }
 
 func (r *moduleResource) Remove(method ...string) {
-	r.m.Remove(r.p, method...)
+	r.m.Remove(r.pattern, method...)
 }
 
 func (p *modulePrefix) Prefix(prefix string, filter ...Filter) Prefix {
 	return &modulePrefix{
 		m:       p.m,
-		p:       p.p + prefix,
+		prefix:  p.prefix + prefix,
 		filters: filter,
 	}
 }
 
 func (p *modulePrefix) Remove(path string, method ...string) {
-	p.m.Remove(p.p+path, method...)
+	p.m.Remove(p.prefix+path, method...)
 }
 
 func (p *modulePrefix) Handle(path string, h HandlerFunc, method ...string) error {
-	p.m.handle(p.p+path, h, p.filters, method...)
+	p.m.handle(p.prefix+path, h, p.filters, method...)
 	return nil
 }
 
@@ -554,6 +555,6 @@ func (p *modulePrefix) Patch(path string, h HandlerFunc) Prefix {
 }
 
 func (p *modulePrefix) Options(path, allow string) Prefix {
-	p.m.Options(p.p+path, allow)
+	p.m.Options(p.prefix+path, allow)
 	return p
 }

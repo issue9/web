@@ -100,6 +100,13 @@ func TestRouter_URL(t *testing.T) {
 
 		{
 			root:  "/",
+			input: "/",
+			url:   "/",
+			path:  "/",
+		},
+
+		{
+			root:  "/",
 			input: "/abc/def",
 			url:   "/abc/def",
 			path:  "/abc/def",

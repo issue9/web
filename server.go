@@ -74,6 +74,9 @@ type Options struct {
 	httpServer *http.Server
 
 	// 网站的根目录
+	//
+	// 可以带上域名：https://example.com/api；或是仅路径部分 /api；
+	// 两者的区别在于 Router.URL 返回的内容，前者带域名部分，后者不带。
 	Root string
 	root *url.URL
 }
