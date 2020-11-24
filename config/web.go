@@ -41,13 +41,13 @@ type (
 	Web struct {
 		XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
-		// 调试信息的设置
-		Debug *Debug `yaml:"debug,omitempty" json:"debug,omitempty" xml:"debug,omitempty"`
-
 		// 网站的根目录所在
 		//
 		// 比如 https://example.com/api/
 		Root string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
+
+		// 与路由设置相关的配置项
+		Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
 
 		// 指定插件的搜索方式
 		//
@@ -63,20 +63,6 @@ type (
 		//
 		// 该设置并不总是生效的，具体的说明可参考 TLSConfig 字段的说明。
 		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
-
-		// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
-		DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,omitempty"`
-		DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,omitempty"`
-		SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,omitempty"`
-
-		// 指定静态内容
-		//
-		// 键名为 URL 路径，键值为文件地址
-		//
-		// 在 Root 的值为 example.com/blog 时，
-		// 将 Static 的值设置为 /admin/{path} ==> ~/data/assets/admin
-		// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-		Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
 		// 应用于 http.Server 的几个变量
 		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
@@ -182,8 +168,23 @@ type (
 		Value   string   `xml:",chardata"`
 	}
 
-	// Debug 调试信息的配置
-	Debug struct {
+	// Router 路由的相关配置
+	Router struct {
+		// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
+		DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,attr,omitempty"`
+		DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
+		SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,attr,omitempty"`
+
+		// 指定静态内容
+		//
+		// 键名为 URL 路径，键值为文件地址
+		//
+		// 在 Root 的值为 example.com/blog 时，
+		// 将 Static 的值设置为 /admin/{path} ==> ~/data/assets/admin
+		// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
+		Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
+
+		// 调试相关的路由设置项
 		Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
 		Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
 	}
@@ -268,11 +269,11 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 	o := &web.Options{
 		Location:       conf.location,
 		Cache:          conf.Cache,
-		DisableHead:    conf.DisableHead,
-		DisableOptions: conf.DisableOptions,
+		DisableHead:    conf.Router.DisableHead,
+		DisableOptions: conf.Router.DisableOptions,
 		Catalog:        conf.Catalog,
 		ResultBuilder:  conf.ResultBuilder,
-		SkipCleanPath:  conf.SkipCleanPath,
+		SkipCleanPath:  conf.Router.SkipCleanPath,
 		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = conf.ReadTimeout.Duration()
@@ -289,7 +290,7 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 		return nil, err
 	}
 
-	for path, dir := range conf.Static {
+	for path, dir := range conf.Router.Static {
 		if err := srv.Router().Static(path, dir); err != nil {
 			return nil, err
 		}
@@ -308,8 +309,8 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 		}
 	}
 
-	if conf.Debug != nil {
-		srv.SetDebugger(conf.Debug.Pprof, conf.Debug.Vars)
+	if conf.Router != nil {
+		srv.SetDebugger(conf.Router.Pprof, conf.Router.Vars)
 	}
 
 	if len(conf.Middlewares) > 0 {
@@ -373,10 +374,12 @@ func (conf *Web) sanitize() error {
 		return &FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
 
-	if conf.Debug != nil {
-		if err := conf.Debug.sanitize(); err != nil {
-			return err
-		}
+	if conf.Router == nil {
+		conf.Router = &Router{}
+	}
+	if err := conf.Router.sanitize(); err != nil {
+		err.Field = "router." + err.Field
+		return err
 	}
 
 	if err := conf.parseResults(); err != nil {
@@ -387,18 +390,11 @@ func (conf *Web) sanitize() error {
 		return err
 	}
 
-	if err := conf.checkStatic(); err != nil {
-		return err
-	}
-
-	u, err := url.Parse(conf.Root)
+	root, err := url.Parse(conf.Root)
 	if err != nil {
 		return err
 	}
-	if u.Scheme == "https" && len(conf.Certificates) == 0 {
-		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
-	}
-	return conf.buildTLSConfig()
+	return conf.buildTLSConfig(root)
 }
 
 func (conf *Web) parseResults() error {
@@ -438,30 +434,21 @@ func (conf *Web) buildTimezone() error {
 	return nil
 }
 
-func (conf *Web) checkStatic() (err error) {
-	for u, path := range conf.Static {
-		if !isURLPath(u) {
-			return &FieldError{
-				Field:   "static." + u,
-				Message: "必须以 / 开头且不能以 / 结尾",
-			}
-		}
-
-		if !filesystem.Exists(path) {
-			return &FieldError{Field: "static." + u, Message: "对应的路径不存在"}
-		}
-		conf.Static[u] = path
+func (conf *Web) buildTLSConfig(root *url.URL) error {
+	if root.Scheme == "https" &&
+		len(conf.Certificates) == 0 &&
+		(conf.TLSConfig == nil || conf.TLSConfig.GetCertificate == nil) {
+		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
 	}
 
-	return nil
-}
+	if conf.TLSConfig == nil && len(conf.Certificates) == 0 {
+		return nil
+	}
 
-func isURLPath(path string) bool {
-	return path[0] == '/' && path[len(path)-1] != '/'
-}
+	if conf.TLSConfig == nil {
+		conf.TLSConfig = &tls.Config{}
+	}
 
-func (conf *Web) buildTLSConfig() error {
-	cfg := &tls.Config{}
 	for _, certificate := range conf.Certificates {
 		if err := certificate.sanitize(); err != nil {
 			return err
@@ -471,10 +458,9 @@ func (conf *Web) buildTLSConfig() error {
 		if err != nil {
 			return err
 		}
-		cfg.Certificates = append(cfg.Certificates, cert)
+		conf.TLSConfig.Certificates = append(conf.TLSConfig.Certificates, cert)
 	}
 
-	conf.TLSConfig = cfg
 	return nil
 }
 
@@ -591,14 +577,36 @@ func (cert *Certificate) sanitize() *FieldError {
 	return nil
 }
 
-func (dbg *Debug) sanitize() *FieldError {
-	if dbg.Pprof != "" && (dbg.Pprof[0] != '/' || dbg.Pprof[len(dbg.Pprof)-1] != '/') {
+func (router *Router) sanitize() *FieldError {
+	if router.Pprof != "" && (router.Pprof[0] != '/' || router.Pprof[len(router.Pprof)-1] != '/') {
 		return &FieldError{Field: "pprof", Message: "必须以 / 开始和结束"}
 	}
 
-	if dbg.Vars != "" && dbg.Vars[0] != '/' {
+	if router.Vars != "" && router.Vars[0] != '/' {
 		return &FieldError{Field: "vars", Message: "必须以 / 开头"}
 	}
 
+	return router.checkStatic()
+}
+
+func (router *Router) checkStatic() *FieldError {
+	for u, path := range router.Static {
+		if !isURLPath(u) {
+			return &FieldError{
+				Field:   "static." + u,
+				Message: "必须以 / 开头且不能以 / 结尾",
+			}
+		}
+
+		if !filesystem.Exists(path) {
+			return &FieldError{Field: "static." + u, Message: "对应的路径不存在"}
+		}
+		router.Static[u] = path
+	}
+
 	return nil
+}
+
+func isURLPath(path string) bool {
+	return path[0] == '/' && path[len(path)-1] != '/'
 }

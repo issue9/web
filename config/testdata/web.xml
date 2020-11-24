@@ -1,22 +1,14 @@
 <!-- web 的测试文件，需要与其它内容数值相同 -->
 
 <web>
-    <debug>
+    <root>http://localhost:8082</root>
+    <router disableHead="false">
         <pprof>/debug/pprof/</pprof>
         <vars>/debug/vars</vars>
-    </debug>
-    <root>http://localhost:8082</root>
-    <static>
-        <key name="/admin/{path}">./testdata</key>
-    </static>
-    <headers>
-        <key name="Access-Control-Allow-Origin">*</key>
-        <key name="Access-Control-Allow-Methods">POST,GET,PUT,PATCH,OPTIONS,DELETE</key>
-        <key name="Access-Control-Allow-Headers">Content-Type, Authorization, Accept,X-Requested-With</key>
-        <key name="Server">Windows/IIS7</key>
-    </headers>
+        <static>
+            <key name="/admin/{path}">./testdata</key>
+        </static>
+    </router>
     <readTimeout>3s</readTimeout>
-    <allowedDomains>127.0.0.1</allowedDomains>
-    <allowedDomains>127.0.0.2</allowedDomains>
     <timezone>Africa/Addis_Ababa</timezone>
 </web>

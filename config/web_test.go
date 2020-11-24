@@ -5,6 +5,7 @@ package config
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/url"
 	"testing"
 	"time"
 
@@ -113,37 +114,6 @@ func TestWeb_buildTimezone(t *testing.T) {
 	a.Error(conf.buildTimezone())
 }
 
-func TestWeb_checkStatic(t *testing.T) {
-	a := assert.New(t)
-
-	conf := &Web{}
-	a.NotError(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"/admin": "./testdata",
-	}
-	a.NotError(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"/admin": "./not-exists",
-	}
-	a.Error(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"admin": "./testdata",
-	}
-	a.Error(conf.checkStatic())
-}
-
-func TestIsURLPath(t *testing.T) {
-	a := assert.New(t)
-
-	a.True(isURLPath("/path"))
-	a.False(isURLPath("path/"))
-	a.False(isURLPath("/path/"))
-	a.False(isURLPath("path"))
-}
-
 func TestWeb_parseResults(t *testing.T) {
 	a := assert.New(t)
 	conf := &Web{
@@ -169,6 +139,8 @@ func TestWeb_parseResults(t *testing.T) {
 
 func TestWeb_buildTLSConfig(t *testing.T) {
 	a := assert.New(t)
+	u, err := url.Parse("/")
+	a.NotError(err).NotNil(u)
 
 	conf := &Web{
 		Certificates: []*Certificate{
@@ -178,7 +150,7 @@ func TestWeb_buildTLSConfig(t *testing.T) {
 			},
 		},
 	}
-	a.NotError(conf.buildTLSConfig())
+	a.NotError(conf.buildTLSConfig(u))
 	a.Equal(1, len(conf.TLSConfig.Certificates))
 }
 
@@ -285,18 +257,49 @@ func TestCertificate_sanitize(t *testing.T) {
 	a.NotError(cert.sanitize())
 }
 
-func TestDebug_sanitize(t *testing.T) {
+func TestRouter_sanitize(t *testing.T) {
 	a := assert.New(t)
 
-	dbg := &Debug{}
-	a.NotError(dbg.sanitize())
+	r := &Router{}
+	a.NotError(r.sanitize())
 
-	dbg.Pprof = "abc/"
-	err := dbg.sanitize()
+	r.Pprof = "abc/"
+	err := r.sanitize()
 	a.Error(err).Equal(err.Field, "pprof")
 
-	dbg.Pprof = ""
-	dbg.Vars = "abc/"
-	err = dbg.sanitize()
+	r.Pprof = ""
+	r.Vars = "abc/"
+	err = r.sanitize()
 	a.Error(err).Equal(err.Field, "vars")
+}
+
+func TestRouter_checkStatic(t *testing.T) {
+	a := assert.New(t)
+
+	router := &Router{}
+	a.NotError(router.checkStatic())
+
+	router.Static = map[string]string{
+		"/admin": "./testdata",
+	}
+	a.NotError(router.checkStatic())
+
+	router.Static = map[string]string{
+		"/admin": "./not-exists",
+	}
+	a.Error(router.checkStatic())
+
+	router.Static = map[string]string{
+		"admin": "./testdata",
+	}
+	a.Error(router.checkStatic())
+}
+
+func TestIsURLPath(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(isURLPath("/path"))
+	a.False(isURLPath("path/"))
+	a.False(isURLPath("/path/"))
+	a.False(isURLPath("path"))
 }
