@@ -7,6 +7,8 @@
       "/admin/{path}": "./testdata"
     }
   },
-  "readTimeout": "3s",
+  "http":{
+    "readTimeout": "3s"
+  },
   "timezone": "Africa/Addis_Ababa"
 }

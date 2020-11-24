@@ -9,6 +9,6 @@
             <key name="/admin/{path}">./testdata</key>
         </static>
     </router>
-    <readTimeout>3s</readTimeout>
+    <http readTimeout="3s"></http>
     <timezone>Africa/Addis_Ababa</timezone>
 </web>

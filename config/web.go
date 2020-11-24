@@ -49,6 +49,9 @@ type (
 		// 与路由设置相关的配置项
 		Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
 
+		// 与 HTTP 请求相关的设置项
+		HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
+
 		// 指定插件的搜索方式
 		//
 		// 通过 glob 语法搜索插件，比如：
@@ -58,18 +61,6 @@ type (
 		//
 		// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
 		Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty" xml:"plugins,omitempty"`
-
-		// 网站的域名证书
-		//
-		// 该设置并不总是生效的，具体的说明可参考 TLSConfig 字段的说明。
-		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
-
-		// 应用于 http.Server 的几个变量
-		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,omitempty"`
-		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,omitempty"`
-		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,omitempty"`
-		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,omitempty"`
-		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,omitempty"`
 
 		// 指定关闭服务时的超时时间
 		//
@@ -123,13 +114,6 @@ type (
 		//
 		// 可以为空，表示采用 CTXServer 的默认值。
 		ResultBuilder result.BuildFunc `yaml:"-" json:"-" xml:"-"`
-
-		// 指定 https 模式下的证书配置项
-		//
-		// 如果用户指定了 Certificates 字段，则会根据此字段生成，
-		// 用户也可以自已覆盖此值，比如采用 golang.org/x/crypto/acme/autocert.Manager.TLSConfig
-		// 配置 Let's Encrypt。
-		TLSConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
 
 		// 返回给用户的错误提示信息
 		//
@@ -187,6 +171,28 @@ type (
 		// 调试相关的路由设置项
 		Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
 		Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
+	}
+
+	// HTTP 与 http 请求相关的设置
+	HTTP struct {
+		// 网站的域名证书
+		//
+		// 该设置并不总是生效的，具体的说明可参考 TLSConfig 字段的说明。
+		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
+
+		// 应用于 http.Server 的几个变量
+		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
+		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
+		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
+		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
+		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
+
+		// 指定 https 模式下的证书配置项
+		//
+		// 如果用户指定了 Certificates 字段，则会根据此字段生成，
+		// 用户也可以自已覆盖此值，比如采用 golang.org/x/crypto/acme/autocert.Manager.TLSConfig
+		// 配置 Let's Encrypt。
+		TLSConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
 	}
 
 	// ErrorHandler 错误处理的配置
@@ -276,13 +282,13 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 		SkipCleanPath:  conf.Router.SkipCleanPath,
 		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
-			srv.ReadTimeout = conf.ReadTimeout.Duration()
-			srv.ReadHeaderTimeout = conf.ReadHeaderTimeout.Duration()
-			srv.WriteTimeout = conf.WriteTimeout.Duration()
-			srv.IdleTimeout = conf.IdleTimeout.Duration()
-			srv.MaxHeaderBytes = conf.MaxHeaderBytes
+			srv.ReadTimeout = conf.HTTP.ReadTimeout.Duration()
+			srv.ReadHeaderTimeout = conf.HTTP.ReadHeaderTimeout.Duration()
+			srv.WriteTimeout = conf.HTTP.WriteTimeout.Duration()
+			srv.IdleTimeout = conf.HTTP.IdleTimeout.Duration()
+			srv.MaxHeaderBytes = conf.HTTP.MaxHeaderBytes
 			srv.ErrorLog = l.ERROR()
-			srv.TLSConfig = conf.TLSConfig
+			srv.TLSConfig = conf.HTTP.TLSConfig
 		},
 	}
 	srv, err := web.NewServer(l, o)
@@ -350,26 +356,6 @@ func grace(srv *web.Server, shutdownTimeout time.Duration, sig ...os.Signal) {
 }
 
 func (conf *Web) sanitize() error {
-	if conf.ReadTimeout < 0 {
-		return &FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
-	}
-
-	if conf.WriteTimeout < 0 {
-		return &FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
-	}
-
-	if conf.IdleTimeout < 0 {
-		return &FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
-	}
-
-	if conf.ReadHeaderTimeout < 0 {
-		return &FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
-	}
-
-	if conf.MaxHeaderBytes < 0 {
-		return &FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
-	}
-
 	if conf.ShutdownTimeout < 0 {
 		return &FieldError{Field: "shutdownTimeout", Message: "必须大于等于 0"}
 	}
@@ -390,11 +376,18 @@ func (conf *Web) sanitize() error {
 		return err
 	}
 
+	if conf.HTTP == nil {
+		conf.HTTP = &HTTP{}
+	}
 	root, err := url.Parse(conf.Root)
 	if err != nil {
 		return err
 	}
-	return conf.buildTLSConfig(root)
+	if ferr := conf.HTTP.sanitize(root); ferr != nil {
+		ferr.Field = "http." + ferr.Field
+		return ferr
+	}
+	return nil
 }
 
 func (conf *Web) parseResults() error {
@@ -430,36 +423,6 @@ func (conf *Web) buildTimezone() error {
 		return &FieldError{Field: "timezone", Message: err.Error()}
 	}
 	conf.location = loc
-
-	return nil
-}
-
-func (conf *Web) buildTLSConfig(root *url.URL) error {
-	if root.Scheme == "https" &&
-		len(conf.Certificates) == 0 &&
-		(conf.TLSConfig == nil || conf.TLSConfig.GetCertificate == nil) {
-		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
-	}
-
-	if conf.TLSConfig == nil && len(conf.Certificates) == 0 {
-		return nil
-	}
-
-	if conf.TLSConfig == nil {
-		conf.TLSConfig = &tls.Config{}
-	}
-
-	for _, certificate := range conf.Certificates {
-		if err := certificate.sanitize(); err != nil {
-			return err
-		}
-
-		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
-		if err != nil {
-			return err
-		}
-		conf.TLSConfig.Certificates = append(conf.TLSConfig.Certificates, cert)
-	}
 
 	return nil
 }
@@ -545,7 +508,7 @@ func (d *Duration) UnmarshalYAML(u func(interface{}) error) error {
 
 // MarshalXML xml.Marshaler 接口
 func (d Duration) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.EncodeElement(time.Duration(d).String(), start)
+	return e.EncodeElement(d.Duration().String(), start)
 }
 
 // UnmarshalXML xml.Unmarshaler 接口
@@ -562,6 +525,22 @@ func (d *Duration) UnmarshalXML(de *xml.Decoder, start xml.StartElement) error {
 
 	*d = Duration(dur)
 
+	return nil
+}
+
+// MarshalXMLAttr xml.MarshalerAttr
+func (d Duration) MarshalXMLAttr(name xml.Name) (xml.Attr, error) {
+	return xml.Attr{Name: name, Value: d.Duration().String()}, nil
+}
+
+// UnmarshalXMLAttr xml.UnmarshalerAttr
+func (d *Duration) UnmarshalXMLAttr(attr xml.Attr) error {
+	dur, err := time.ParseDuration(attr.Value)
+	if err != nil {
+		return err
+	}
+
+	*d = Duration(dur)
 	return nil
 }
 
@@ -609,4 +588,58 @@ func (router *Router) checkStatic() *FieldError {
 
 func isURLPath(path string) bool {
 	return path[0] == '/' && path[len(path)-1] != '/'
+}
+
+func (http *HTTP) sanitize(root *url.URL) *FieldError {
+	if http.ReadTimeout < 0 {
+		return &FieldError{Field: "readTimeout", Message: "必须大于等于 0"}
+	}
+
+	if http.WriteTimeout < 0 {
+		return &FieldError{Field: "writeTimeout", Message: "必须大于等于 0"}
+	}
+
+	if http.IdleTimeout < 0 {
+		return &FieldError{Field: "idleTimeout", Message: "必须大于等于 0"}
+	}
+
+	if http.ReadHeaderTimeout < 0 {
+		return &FieldError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
+	}
+
+	if http.MaxHeaderBytes < 0 {
+		return &FieldError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
+	}
+
+	return http.buildTLSConfig(root)
+}
+
+func (http *HTTP) buildTLSConfig(root *url.URL) *FieldError {
+	if root.Scheme == "https" &&
+		len(http.Certificates) == 0 &&
+		(http.TLSConfig == nil || http.TLSConfig.GetCertificate == nil) {
+		return &FieldError{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
+	}
+
+	if http.TLSConfig == nil && len(http.Certificates) == 0 {
+		return nil
+	}
+
+	if http.TLSConfig == nil {
+		http.TLSConfig = &tls.Config{}
+	}
+
+	for _, certificate := range http.Certificates {
+		if err := certificate.sanitize(); err != nil {
+			return err
+		}
+
+		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
+		if err != nil {
+			return &FieldError{Field: "certificates", Message: err.Error()}
+		}
+		http.TLSConfig.Certificates = append(http.TLSConfig.Certificates, cert)
+	}
+
+	return nil
 }
