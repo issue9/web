@@ -62,7 +62,21 @@ func (srv *Server) AddMiddlewares(middleware ...middleware.Middleware) {
 }
 
 // SetDebugger 设置调试地址
-func (srv *Server) SetDebugger(pprof, vars string) {
+func (srv *Server) SetDebugger(pprof, vars string) (err error) {
+	if pprof != "" {
+		if pprof, err = srv.Router().Path(pprof, nil); err != nil {
+			return err
+		}
+	}
+
+	if vars != "" {
+		if vars, err = srv.Router().Path(vars, nil); err != nil {
+			return err
+		}
+	}
+
 	srv.debugger.Pprof = pprof
 	srv.debugger.Vars = vars
+
+	return nil
 }

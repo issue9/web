@@ -88,9 +88,6 @@ type Server struct {
 	vars       map[interface{}]interface{}
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
-	// modules
-	modules *dep.Dep
-
 	// middleware
 	middlewares   *middleware.Manager
 	compress      *compress.Compress
@@ -98,12 +95,14 @@ type Server struct {
 	debugger      *debugger.Debugger
 	filters       []Filter
 
+	// locale
 	catalog  catalog.Catalog
 	location *time.Location
 
-	cache  cache.Cache
-	router *Router
-	uptime time.Time
+	cache   cache.Cache
+	router  *Router
+	uptime  time.Time
+	modules *dep.Dep
 
 	mimetypes *content.Mimetypes
 	services  *service.Manager
@@ -160,8 +159,6 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		vars:       map[interface{}]interface{}{},
 		closed:     make(chan struct{}, 1),
 
-		modules: dep.New(logs.INFO()),
-
 		middlewares: middleware.NewManager(o.mux),
 		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
 			"gzip":    compress.NewGzip,
@@ -173,9 +170,10 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 
 		catalog:  o.Catalog,
 		location: o.Location,
-		cache:    o.Cache,
 
-		uptime: time.Now(),
+		cache:   o.Cache,
+		modules: dep.New(logs.INFO()),
+		uptime:  time.Now(),
 
 		mimetypes: content.NewMimetypes(),
 		services:  service.NewManager(logs, o.Location),

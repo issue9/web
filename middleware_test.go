@@ -33,9 +33,9 @@ func TestServer_SetDebugger(t *testing.T) {
 	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
-	srv.Get("/debug/pprof/").Do().Status(http.StatusNotFound)
-	srv.Get("/debug/vars").Do().Status(http.StatusNotFound)
-	server.SetDebugger("/debug/pprof/", "/vars")
-	srv.Get("/debug/pprof/").Do().Status(http.StatusOK)
-	srv.Get("/vars").Do().Status(http.StatusOK)
+	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
+	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
+	server.SetDebugger("/d/pprof/", "/vars")
+	srv.Get("/root/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
+	srv.Get("/root/vars").Do().Status(http.StatusOK)
 }
