@@ -14,9 +14,6 @@ import (
 )
 
 var (
-	_ xml.Marshaler   = &Map{}
-	_ xml.Unmarshaler = &Map{}
-
 	dur time.Duration
 
 	_ xml.Marshaler       = Duration(1)
@@ -30,10 +27,6 @@ var (
 	_ json.Marshaler   = Duration(1)
 	_ json.Unmarshaler = (*Duration)(&dur)
 )
-
-type testMap struct {
-	Pairs Map `xml:"pairs"`
-}
 
 type testDuration struct {
 	Duration Duration `xml:"dur" json:"dur" yaml:"dur"`
@@ -125,37 +118,6 @@ func TestDuration_Duration(t *testing.T) {
 	dur := time.Second * 2
 
 	a.Equal(dur, Duration(dur).Duration())
-}
-
-func TestMap(t *testing.T) {
-	a := assert.New(t)
-
-	m := &testMap{
-		Pairs: Map{ // 多个字段，注意 map 顺序问题
-			"key1": "val1",
-		},
-	}
-
-	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testMap>
-  <pairs>
-    <key name="key1">val1</key>
-  </pairs>
-</testMap>`)
-
-	rm := &testMap{}
-	a.NotError(xml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
-
-	// 空值
-	m = &testMap{
-		Pairs: Map{},
-	}
-
-	bs, err = xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testMap></testMap>`)
 }
 
 func TestDuration_YAML(t *testing.T) {
@@ -255,37 +217,6 @@ func TestRouter_sanitize(t *testing.T) {
 	r.Vars = "abc/"
 	err = r.sanitize()
 	a.Error(err).Equal(err.Field, "vars")
-}
-
-func TestRouter_checkStatic(t *testing.T) {
-	a := assert.New(t)
-
-	router := &Router{}
-	a.NotError(router.checkStatic())
-
-	router.Static = map[string]string{
-		"/admin": "./testdata",
-	}
-	a.NotError(router.checkStatic())
-
-	router.Static = map[string]string{
-		"/admin": "./not-exists",
-	}
-	a.Error(router.checkStatic())
-
-	router.Static = map[string]string{
-		"admin": "./testdata",
-	}
-	a.Error(router.checkStatic())
-}
-
-func TestIsURLPath(t *testing.T) {
-	a := assert.New(t)
-
-	a.True(isURLPath("/path"))
-	a.False(isURLPath("path/"))
-	a.False(isURLPath("/path/"))
-	a.False(isURLPath("path"))
 }
 
 func TestHTTP_sanitize(t *testing.T) {

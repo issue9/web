@@ -4,8 +4,6 @@ root: http://localhost:8082
 router:
   pprof: /debug/pprof/
   vars: /debug/vars
-  static:
-    /admin/{path}: ./testdata
 http:
   readTimeout: 3s
 timezone: Africa/Addis_Ababa

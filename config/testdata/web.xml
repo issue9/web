@@ -5,9 +5,6 @@
     <router disableHead="false">
         <pprof>/debug/pprof/</pprof>
         <vars>/debug/vars</vars>
-        <static>
-            <key name="/admin/{path}">./testdata</key>
-        </static>
     </router>
     <http readTimeout="3s"></http>
     <timezone>Africa/Addis_Ababa</timezone>

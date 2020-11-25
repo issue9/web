@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -141,32 +140,12 @@ type (
 		vals []interface{}
 	}
 
-	// Map 定义 map[string]string 类型
-	//
-	// 唯一的功能是为了 xml 能支持 map。
-	Map map[string]string
-
-	entry struct {
-		XMLName struct{} `xml:"key"`
-		Name    string   `xml:"name,attr"`
-		Value   string   `xml:",chardata"`
-	}
-
 	// Router 路由的相关配置
 	Router struct {
 		// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
 		DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,attr,omitempty"`
 		DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
 		SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,attr,omitempty"`
-
-		// 指定静态内容
-		//
-		// 键名为 URL 路径，键值为文件地址
-		//
-		// 在 Root 的值为 example.com/blog 时，
-		// 将 Static 的值设置为 /admin/{path} ==> ~/data/assets/admin
-		// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-		Static Map `yaml:"static,omitempty" json:"static,omitempty" xml:"static,omitempty"`
 
 		// 调试相关的路由设置项
 		Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
@@ -296,12 +275,6 @@ func (conf *Web) toCTXServer(l *logs.Logs) (*web.Server, error) {
 		return nil, err
 	}
 
-	for path, dir := range conf.Router.Static {
-		if err := srv.Router().Static(path, dir); err != nil {
-			return nil, err
-		}
-	}
-
 	if err = srv.Mimetypes().AddMarshals(conf.Marshalers); err != nil {
 		return nil, err
 	}
@@ -427,43 +400,6 @@ func (conf *Web) buildTimezone() error {
 	return nil
 }
 
-// MarshalXML implement xml.Marshaler
-func (p Map) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	if len(p) == 0 {
-		return nil
-	}
-
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-
-	for k, v := range p {
-		if err := e.Encode(entry{Name: k, Value: v}); err != nil {
-			return err
-		}
-	}
-
-	return e.EncodeToken(start.End())
-}
-
-// UnmarshalXML implement xml.Unmarshaler
-func (p *Map) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	*p = Map{}
-
-	for {
-		e := &entry{}
-		if err := d.Decode(e); errors.Is(err, io.EOF) {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		(*p)[e.Name] = e.Value
-	}
-
-	return nil
-}
-
 // Duration 转换成 time.Duration
 func (d Duration) Duration() time.Duration {
 	return time.Duration(d)
@@ -565,29 +501,7 @@ func (router *Router) sanitize() *FieldError {
 		return &FieldError{Field: "vars", Message: "必须以 / 开头"}
 	}
 
-	return router.checkStatic()
-}
-
-func (router *Router) checkStatic() *FieldError {
-	for u, path := range router.Static {
-		if !isURLPath(u) {
-			return &FieldError{
-				Field:   "static." + u,
-				Message: "必须以 / 开头且不能以 / 结尾",
-			}
-		}
-
-		if !filesystem.Exists(path) {
-			return &FieldError{Field: "static." + u, Message: "对应的路径不存在"}
-		}
-		router.Static[u] = path
-	}
-
 	return nil
-}
-
-func isURLPath(path string) bool {
-	return path[0] == '/' && path[len(path)-1] != '/'
 }
 
 func (http *HTTP) sanitize(root *url.URL) *FieldError {
