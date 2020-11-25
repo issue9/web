@@ -116,7 +116,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := NewServer(logs.New(), &Options{})
+	srv, err := NewServer(logs.New(), &Options{Root: "http://localhost:8081/"})
 	srv.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
 	a.NotError(err).NotNil(srv)
 	var isRequested bool
@@ -137,7 +137,7 @@ func TestGetServer(t *testing.T) {
 		srv.Serve()
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").
 		Header("Accept", mimetypetest.Mimetype).
 		Do().
 		Success("未正确返回状态码")
@@ -175,7 +175,7 @@ func TestGetServer(t *testing.T) {
 		srv.Serve()
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").Do().Success()
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").Do().Success()
 	a.NotError(srv.Close(0))
 	a.True(isRequested, "未正常访问 /path")
 }
