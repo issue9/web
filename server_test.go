@@ -153,6 +153,7 @@ func TestGetServer(t *testing.T) {
 	// BaseContext
 
 	srv, err = NewServer(logs.New(), &Options{
+		Root: "http://localhost:8081/",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
