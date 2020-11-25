@@ -30,7 +30,6 @@ type (
 		//
 		// 忽略 Filter 类型的中间件，如果有需要，可以采用 Handle 处理 Options 请求。
 		Options(string, string) Prefix
-		Prefix(string, ...Filter) Prefix
 		Resource(string, ...Filter) Resource
 		Remove(string, ...string)
 	}
@@ -302,13 +301,6 @@ func (p *routerPrefix) Resource(pattern string, filter ...Filter) Resource {
 	}
 }
 
-func (p *routerPrefix) Prefix(prefix string, filter ...Filter) Prefix {
-	filters := make([]Filter, 0, len(p.filters)+len(filter))
-	filters = append(filters, p.filters...)
-	filters = append(filters, filter...)
-	return buildRouterPrefix(p.srv, p.mux, p.prefix+prefix, filters...)
-}
-
 func (p *routerPrefix) Handle(path string, h HandlerFunc, method ...string) error {
 	return p.srv.handle(p.mux, p.prefix+path, h, p.filters, method...)
 }
@@ -510,14 +502,6 @@ func (r *moduleResource) Options(allow string) Resource {
 
 func (r *moduleResource) Remove(method ...string) {
 	r.m.Remove(r.pattern, method...)
-}
-
-func (p *modulePrefix) Prefix(prefix string, filter ...Filter) Prefix {
-	return &modulePrefix{
-		m:       p.m,
-		prefix:  p.prefix + prefix,
-		filters: filter,
-	}
 }
 
 func (p *modulePrefix) Remove(path string, method ...string) {

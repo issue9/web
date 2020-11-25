@@ -191,12 +191,6 @@ func TestRouter_NewRouter(t *testing.T) {
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
 	srv.middlewares.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
-
-	router.Prefix("/p1").Prefix("/p2").Put("/path", f1)
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPut, "https://example.com:88/p1/p2/path", nil)
-	srv.middlewares.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
 func TestRouterPrefix(t *testing.T) {
@@ -367,7 +361,6 @@ func TestServerFilters(t *testing.T) {
 	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
 	router := server.Router()
 	p1 := router.Prefix("/p1", buildFilter("p11"), buildFilter("p12"))
-	p2 := p1.Prefix("/p2", buildFilter("p21"), buildFilter("p22"))
 	r1 := router.Resource("/r1", buildFilter("r11"), buildFilter("r12"))
 	r2 := p1.Resource("/r2", buildFilter("r21"), buildFilter("r22"))
 
@@ -381,20 +374,10 @@ func TestServerFilters(t *testing.T) {
 		ctx.Render(202, nil, nil)
 	})
 
-	p2.Get("/test/202", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12", "p21", "p22"})
-		ctx.Render(202, nil, nil)
-	})
-
 	// 以下为动态添加中间件之后的对比方式
 
 	p1.Get("/test/203", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12"})
-		ctx.Render(203, nil, nil)
-	})
-
-	p2.Get("/test/203", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12", "p21", "p22"})
 		ctx.Render(203, nil, nil)
 	})
 
@@ -418,18 +401,10 @@ func TestServerFilters(t *testing.T) {
 		Do().
 		Status(202)
 
-	srv.Get("/root/p1/p2/test/202").
-		Do().
-		Status(202)
-
 	// 运行中添加中间件
 	server.AddFilters(buildFilter("s3"), buildFilter("s4"))
 
 	srv.Get("/root/p1/test/203").
-		Do().
-		Status(203)
-
-	srv.Get("/root/p1/p2/test/203").
 		Do().
 		Status(203)
 
