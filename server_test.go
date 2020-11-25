@@ -44,7 +44,7 @@ var f202 = func(ctx *Context) {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	o := &Options{Root: "/root"}
+	o := &Options{Root: "http://localhost:8080/root"}
 	srv, err := NewServer(logs.New(), o)
 	a.NotError(err).NotNil(srv)
 
@@ -239,25 +239,25 @@ func TestServer_Serve(t *testing.T) {
 	}()
 	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/m1/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/m1/test").
 		Do().
 		Status(http.StatusAccepted)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/m2/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/m2/test").
 		Do().
 		Status(http.StatusAccepted)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/mux/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/mux/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
 	server.Router().Static("/admin/{path}", "./testdata")
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/admin/file1.txt").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/admin/file1.txt").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
 
@@ -288,15 +288,15 @@ func TestServer_Close(t *testing.T) {
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(5000 * time.Microsecond)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	resp, err := http.Get("http://localhost/root/close")
+	resp, err := http.Get("http://localhost:8080/root/close")
 	a.Error(err).Nil(resp)
 
-	resp, err = http.Get("http://localhost/root/test")
+	resp, err = http.Get("http://localhost:8080/root/test")
 	a.Error(err).Nil(resp)
 
 	<-exit
@@ -324,22 +324,22 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(5000 * time.Microsecond)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// 关闭指令可以正常执行
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/root/close").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/close").
 		Do().
 		Status(http.StatusCreated)
 
 	// 未超时，但是拒绝新的链接
-	resp, err := http.Get("http://localhost/root/test")
+	resp, err := http.Get("http://localhost:8080/root/test")
 	a.Error(err).Nil(resp)
 
 	// 已被关闭
 	time.Sleep(30 * time.Microsecond)
-	resp, err = http.Get("http://localhost/root/test")
+	resp, err = http.Get("http://localhost:8080/root/test")
 	a.Error(err).Nil(resp)
 
 	<-exit
