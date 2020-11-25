@@ -5,6 +5,7 @@ package config
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/url"
 	"testing"
 	"time"
 
@@ -13,13 +14,12 @@ import (
 )
 
 var (
-	_ xml.Marshaler   = &Map{}
-	_ xml.Unmarshaler = &Map{}
-
 	dur time.Duration
 
-	_ xml.Marshaler   = Duration(1)
-	_ xml.Unmarshaler = (*Duration)(&dur)
+	_ xml.Marshaler       = Duration(1)
+	_ xml.Unmarshaler     = (*Duration)(&dur)
+	_ xml.MarshalerAttr   = Duration(1)
+	_ xml.UnmarshalerAttr = (*Duration)(&dur)
 
 	_ yaml.Marshaler   = Duration(1)
 	_ yaml.Unmarshaler = (*Duration)(&dur)
@@ -27,10 +27,6 @@ var (
 	_ json.Marshaler   = Duration(1)
 	_ json.Unmarshaler = (*Duration)(&dur)
 )
-
-type testMap struct {
-	Pairs Map `xml:"pairs"`
-}
 
 type testDuration struct {
 	Duration Duration `xml:"dur" json:"dur" yaml:"dur"`
@@ -56,7 +52,8 @@ func TestClassic(t *testing.T) {
 	a := assert.New(t)
 
 	srv, err := Classic("./testdata/logs.xml", "./testdata/web.yaml")
-	a.NotError(err).NotNil(srv)
+	a.NotError(err).
+		NotNil(srv)
 }
 
 func TestWeb_sanitize(t *testing.T) {
@@ -67,33 +64,12 @@ func TestWeb_sanitize(t *testing.T) {
 	a.Equal("Local", conf.Timezone).
 		Equal(time.Local, conf.location)
 
-	conf.ReadTimeout = -1
+	// 指定了 https，但是未指定 certificates
+	conf = &Web{Root: "https://example.com"}
 	err := conf.sanitize()
 	a.Error(err)
 	ferr, ok := err.(*FieldError)
-	a.True(ok).Equal(ferr.Field, "readTimeout")
-
-	conf.ReadTimeout = 0
-	conf.ShutdownTimeout = -1
-	err = conf.sanitize()
-	a.Error(err)
-	ferr, ok = err.(*FieldError)
-	a.True(ok).Equal(ferr.Field, "shutdownTimeout")
-
-	conf.ReadTimeout = 0
-	conf.ShutdownTimeout = 0
-	conf.ReadHeaderTimeout = -1
-	err = conf.sanitize()
-	a.Error(err)
-	ferr, ok = err.(*FieldError)
-	a.True(ok).Equal(ferr.Field, "readHeaderTimeout")
-
-	// 指定了 https，但是未指定 certificates
-	conf = &Web{Root: "https://example.com"}
-	err = conf.sanitize()
-	a.Error(err)
-	ferr, ok = err.(*FieldError)
-	a.True(ok).Equal(ferr.Field, "certificates")
+	a.True(ok).Equal(ferr.Field, "http.certificates")
 }
 
 func TestWeb_buildTimezone(t *testing.T) {
@@ -111,37 +87,6 @@ func TestWeb_buildTimezone(t *testing.T) {
 
 	conf = &Web{Timezone: "not-exists-time-zone"}
 	a.Error(conf.buildTimezone())
-}
-
-func TestWeb_checkStatic(t *testing.T) {
-	a := assert.New(t)
-
-	conf := &Web{}
-	a.NotError(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"/admin": "./testdata",
-	}
-	a.NotError(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"/admin": "./not-exists",
-	}
-	a.Error(conf.checkStatic())
-
-	conf.Static = map[string]string{
-		"admin": "./testdata",
-	}
-	a.Error(conf.checkStatic())
-}
-
-func TestIsURLPath(t *testing.T) {
-	a := assert.New(t)
-
-	a.True(isURLPath("/path"))
-	a.False(isURLPath("path/"))
-	a.False(isURLPath("/path/"))
-	a.False(isURLPath("path"))
 }
 
 func TestWeb_parseResults(t *testing.T) {
@@ -167,58 +112,12 @@ func TestWeb_parseResults(t *testing.T) {
 	a.Error(conf.parseResults())
 }
 
-func TestWeb_buildTLSConfig(t *testing.T) {
-	a := assert.New(t)
-
-	conf := &Web{
-		Certificates: []*Certificate{
-			{
-				Cert: "./testdata/cert.pem",
-				Key:  "./testdata/key.pem",
-			},
-		},
-	}
-	a.NotError(conf.buildTLSConfig())
-	a.Equal(1, len(conf.TLSConfig.Certificates))
-}
-
 func TestDuration_Duration(t *testing.T) {
 	a := assert.New(t)
 
 	dur := time.Second * 2
 
 	a.Equal(dur, Duration(dur).Duration())
-}
-
-func TestMap(t *testing.T) {
-	a := assert.New(t)
-
-	m := &testMap{
-		Pairs: Map{ // 多个字段，注意 map 顺序问题
-			"key1": "val1",
-		},
-	}
-
-	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testMap>
-  <pairs>
-    <key name="key1">val1</key>
-  </pairs>
-</testMap>`)
-
-	rm := &testMap{}
-	a.NotError(xml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
-
-	// 空值
-	m = &testMap{
-		Pairs: Map{},
-	}
-
-	bs, err = xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testMap></testMap>`)
 }
 
 func TestDuration_YAML(t *testing.T) {
@@ -256,6 +155,25 @@ func TestDuration_XML(t *testing.T) {
 	a.Equal(rm, m)
 }
 
+func TestDuration_XMLAttr(t *testing.T) {
+	a := assert.New(t)
+
+	type obj struct {
+		D Duration `xml:"d,attr"`
+	}
+	m := &obj{
+		D: Duration(time.Nanosecond * 5),
+	}
+
+	bs, err := xml.MarshalIndent(m, "", "  ")
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `<obj d="5ns"></obj>`)
+
+	rm := &obj{}
+	a.NotError(xml.Unmarshal(bs, rm))
+	a.Equal(rm, m)
+}
+
 func TestDuration_JSON(t *testing.T) {
 	a := assert.New(t)
 
@@ -285,18 +203,56 @@ func TestCertificate_sanitize(t *testing.T) {
 	a.NotError(cert.sanitize())
 }
 
-func TestDebug_sanitize(t *testing.T) {
+func TestRouter_sanitize(t *testing.T) {
 	a := assert.New(t)
 
-	dbg := &Debug{}
-	a.NotError(dbg.sanitize())
+	r := &Router{}
+	a.NotError(r.sanitize())
 
-	dbg.Pprof = "abc/"
-	err := dbg.sanitize()
+	r.Pprof = "abc/"
+	err := r.sanitize()
 	a.Error(err).Equal(err.Field, "pprof")
 
-	dbg.Pprof = ""
-	dbg.Vars = "abc/"
-	err = dbg.sanitize()
+	r.Pprof = ""
+	r.Vars = "abc/"
+	err = r.sanitize()
 	a.Error(err).Equal(err.Field, "vars")
+}
+
+func TestHTTP_sanitize(t *testing.T) {
+	a := assert.New(t)
+	u, err := url.Parse("/")
+	a.NotError(err).NotNil(u)
+
+	http := &HTTP{}
+	http.ReadTimeout = -1
+	ferr := http.sanitize(u)
+	a.Equal(ferr.Field, "readTimeout")
+
+	http.ReadTimeout = 0
+	http.IdleTimeout = -1
+	ferr = http.sanitize(u)
+	a.Equal(ferr.Field, "idleTimeout")
+
+	http.IdleTimeout = 0
+	http.ReadHeaderTimeout = -1
+	ferr = http.sanitize(u)
+	a.Equal(ferr.Field, "readHeaderTimeout")
+}
+
+func TestHTTP_buildTLSConfig(t *testing.T) {
+	a := assert.New(t)
+	u, err := url.Parse("/")
+	a.NotError(err).NotNil(u)
+
+	http := &HTTP{
+		Certificates: []*Certificate{
+			{
+				Cert: "./testdata/cert.pem",
+				Key:  "./testdata/key.pem",
+			},
+		},
+	}
+	a.NotError(http.buildTLSConfig(u))
+	a.Equal(1, len(http.TLSConfig.Certificates))
 }

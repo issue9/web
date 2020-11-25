@@ -1,18 +1,9 @@
-# webconfig 的测试文件，需要与其它内容数值相同
+# web.yaml 的测试文件，需要与其它内容数值相同
 
-debug:
+root: http://localhost:8082
+router:
   pprof: /debug/pprof/
   vars: /debug/vars
-root: http://localhost:8082
-static:
-  /admin/{path}: ./testdata
-headers:
-  Access-Control-Allow-Origin: "*"  
-  Access-Control-Allow-Methods: POST,GET,PUT,PATCH,OPTIONS,DELETE
-  Access-Control-Allow-Headers: Content-Type, Authorization, Accept,X-Requested-With
-  Server: Windows/IIS7
-readTimeout: 3s
-allowedDomains:
-  - "127.0.0.1"
-  - "127.0.0.2"
+http:
+  readTimeout: 3s
 timezone: Africa/Addis_Ababa
