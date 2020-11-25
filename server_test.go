@@ -55,7 +55,7 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
 	o := &Options{Root: "http://localhost:8080/root"}
-	srv, err := NewServer(logs.New(), o)
+	srv, err := NewServer(newLogs(a), o)
 	a.NotError(err).NotNil(srv)
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
@@ -109,7 +109,7 @@ func TestOptions_sanitize(t *testing.T) {
 
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
-	l := logs.New()
+	l := newLogs(a)
 	srv, err := NewServer(l, &Options{})
 	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
@@ -126,7 +126,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := NewServer(logs.New(), &Options{Root: "http://localhost:8081/"})
+	srv, err := NewServer(newLogs(a), &Options{Root: "http://localhost:8081/"})
 	srv.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
 	a.NotError(err).NotNil(srv)
 	var isRequested bool
@@ -162,7 +162,7 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv, err = NewServer(logs.New(), &Options{
+	srv, err = NewServer(newLogs(a), &Options{
 		Root: "http://localhost:8081/",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
