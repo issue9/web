@@ -4,11 +4,13 @@ package web
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -40,6 +42,14 @@ var f202 = func(ctx *Context) {
 		println(err)
 		ctx.Response.WriteHeader(http.StatusInternalServerError)
 	}
+}
+
+func newLogs(a *assert.Assertion) *logs.Logs {
+	l := logs.New()
+
+	a.NotError(l.SetOutput(logs.LevelError, os.Stderr, "", 0))
+	a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr, "", 0))
+	return l
 }
 
 // 声明一个 server 实例
@@ -268,6 +278,53 @@ func TestServer_Serve(t *testing.T) {
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
+
+	a.NotError(server.Close(0))
+	<-exit
+}
+
+func TestServer_Serve_HTTPS(t *testing.T) {
+	a := assert.New(t)
+	exit := make(chan bool, 1)
+
+	server, err := NewServer(newLogs(a), &Options{
+		Root: "https://localhost:8088/api",
+		HTTPServer: func(srv *http.Server) {
+			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
+			a.NotError(err).NotNil(cert)
+			srv.TLSConfig = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+		},
+	})
+	server.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
+	server.mimetypes.AddUnmarshal(mimetypetest.Mimetype, mimetypetest.TextUnmarshal)
+	a.NotError(err).NotNil(server)
+	server.Router().Get("/mux/test", f202)
+
+	go func() {
+		err := server.Serve()
+		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		exit <- true
+	}()
+	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	rest.NewRequest(a, client, http.MethodGet, "https://localhost:8088/api/mux/test").
+		Do().
+		Status(http.StatusAccepted)
+
+	// 无效的 http 请求
+	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/api/mux/test").
+		Do().
+		Status(http.StatusBadRequest)
+	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/api/mux").
+		Do().
+		Status(http.StatusBadRequest)
 
 	a.NotError(server.Close(0))
 	<-exit
