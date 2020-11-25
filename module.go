@@ -126,6 +126,8 @@ type (
 // name 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
+//
+// 可以在运行过程中添加模块，该模块会在加载时直接初始化，前提是模块的依赖模块都已经初始化。
 func (srv *Server) NewModule(id, desc string, deps ...string) (Module, error) {
 	m := &mod{
 		Default: dep.NewDefaultModule(id, desc, deps...),

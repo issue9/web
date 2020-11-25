@@ -28,4 +28,14 @@ func TestPlugins(t *testing.T) {
 	})
 	a.Equal(ms[0].ID(), "plugin1")
 	a.Equal(ms[1].ID(), "plugin2")
+
+	// 手动加载插件
+	a.NotError(srv.LoadPlugin("./testdata/plugin3.so"))
+	ms = srv.Modules()
+	a.Equal(3, len(ms)).Equal(ms[2].ID(), "plugin3")
+
+	// 加载已经加载的插件
+	a.Error(srv.LoadPlugins("./testdata/plugin*.so"))
+	ms = srv.Modules()
+	a.Equal(3, len(ms))
 }

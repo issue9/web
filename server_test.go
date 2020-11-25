@@ -181,7 +181,7 @@ func TestGetServer(t *testing.T) {
 	a.True(isRequested, "未正常访问 /path")
 }
 
-func TestServer_Vars(t *testing.T) {
+func TestServer_vars(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 
@@ -231,6 +231,13 @@ func TestServer_Serve(t *testing.T) {
 			println(err)
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
+
+		// 动态加载模块
+		m3, err := ctx.Server().NewModule("m3", "m3 desc", "m1")
+		a.NotError(err).NotNil(m3)
+		a.Equal(3, len(srv.Modules()))
+		m, ok := m3.(*mod)
+		a.True(ok).True(m.Inited())
 	})
 
 	go func() {
