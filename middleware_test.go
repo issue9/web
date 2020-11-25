@@ -39,3 +39,38 @@ func TestServer_SetDebugger(t *testing.T) {
 	srv.Get("/root/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
 	srv.Get("/root/vars").Do().Status(http.StatusOK)
 }
+
+func TestServer_Compress(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.middlewares, nil)
+	defer srv.Close()
+
+	server.Router().Static("/client/{path}", "./testdata/")
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+
+	// 删除 gzip
+	server.SetCompressAlgorithm("gzip", nil)
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "deflate").
+		Header("Vary", "Content-Encoding")
+
+	// 禁用所有的
+	server.DeleteCompressTypes("*")
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "")
+}

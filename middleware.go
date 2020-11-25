@@ -4,6 +4,7 @@ package web
 
 import (
 	"github.com/issue9/middleware/v2"
+	"github.com/issue9/middleware/v2/compress"
 	"github.com/issue9/middleware/v2/errorhandler"
 )
 
@@ -79,4 +80,31 @@ func (srv *Server) SetDebugger(pprof, vars string) (err error) {
 	srv.debugger.Vars = vars
 
 	return nil
+}
+
+// SetCompressAlgorithm 设置压缩的算法
+//
+// 默认情况下，支持 gzip、deflate 和 br 三种。
+// 如果 w 为 nil，表示删除对该算法的支持。
+func (srv *Server) SetCompressAlgorithm(name string, w compress.WriterFunc) {
+	srv.compress.SetWriter(name, w)
+}
+
+// AddCompressTypes 指定哪些内容可以进行压缩传输
+//
+// 默认情况下是所有内容都将进行压缩传输，
+// * 表示所有；
+// text/* 表示以 text/ 开头的类型；
+// text/plain 表示具体类型 text/plain；
+func (srv *Server) AddCompressTypes(types ...string) {
+	srv.compress.AddType(types...)
+}
+
+// DeleteCompressTypes 删除指定内容的压缩支持
+//
+// 仅用于删除通过 AddType 添加的内容。
+//
+// NOTE: 如果指定 * 之后的所有内容都将不支持。
+func (srv *Server) DeleteCompressTypes(types ...string) {
+	srv.compress.DeleteType(types...)
 }
