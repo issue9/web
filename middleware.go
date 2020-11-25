@@ -35,7 +35,6 @@ func (srv *Server) AddFilters(filter ...Filter) {
 	srv.filters = append(srv.filters, filter...)
 }
 
-// 始终保持这些中间件在最后初始化。用户添加的中间件由 Server.AddMiddlewares 添加。
 func (srv *Server) buildMiddlewares() {
 	rf := srv.errorHandlers.Recovery(srv.logs.ERROR())
 	srv.AddMiddlewares(

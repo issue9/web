@@ -28,7 +28,7 @@ type (
 
 		//  添加 OPTIONS 请求处理项
 		//
-		// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
+		// 忽略 Filter 类型的中间件，如果有需要，可以采用 Handle 处理 Options 请求。
 		Options(string, string) Prefix
 		Prefix(string, ...Filter) Prefix
 		Resource(string, ...Filter) Resource
@@ -46,7 +46,7 @@ type (
 
 		//  添加 OPTIONS 请求处理项
 		//
-		// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
+		// 忽略 Filter 类型的中间件，如果有需要，可以采用 Handle 处理 Options 请求。
 		Options(string) Resource
 		Remove(...string)
 	}
@@ -90,7 +90,7 @@ type (
 	}
 )
 
-func buildPrefix(srv *Server, mux *mux.Mux, prefix string, filter ...Filter) *routerPrefix {
+func buildRouterPrefix(srv *Server, mux *mux.Mux, prefix string, filter ...Filter) *routerPrefix {
 	return &routerPrefix{
 		srv: srv,
 		mux: mux,
@@ -235,7 +235,7 @@ func (router *Router) Prefix(prefix string, filter ...Filter) Prefix {
 	filters := make([]Filter, 0, len(router.filters)+len(filter))
 	filters = append(filters, router.filters...)
 	filters = append(filters, filter...)
-	return buildPrefix(router.srv, router.mux, router.url.Path+prefix, filters...)
+	return buildRouterPrefix(router.srv, router.mux, router.url.Path+prefix, filters...)
 }
 
 // Handle 添加路由请求项
@@ -306,7 +306,7 @@ func (p *routerPrefix) Prefix(prefix string, filter ...Filter) Prefix {
 	filters := make([]Filter, 0, len(p.filters)+len(filter))
 	filters = append(filters, p.filters...)
 	filters = append(filters, filter...)
-	return buildPrefix(p.srv, p.mux, p.prefix+prefix, filters...)
+	return buildRouterPrefix(p.srv, p.mux, p.prefix+prefix, filters...)
 }
 
 func (p *routerPrefix) Handle(path string, h HandlerFunc, method ...string) error {
