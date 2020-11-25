@@ -100,7 +100,7 @@ type (
 		// 之所以提供了两个类型，是因为 Middlewares 兼容 http.Handler 类型，
 		// 可以对市面上大部分的中间件稍加改造即可使用，而 Filter
 		// 则提供了部分 http.Handler 不存在的数据字段，且两者不能交替出现，
-		// 二脆同时提供两种中间件。
+		// 干脆同时提供两种中间件。
 		//
 		// 在使用上，永远是 Middlewares 在 Filters 之前调用。
 		Middlewares []Middleware `yaml:"-" json:"-" xml:"-"`
