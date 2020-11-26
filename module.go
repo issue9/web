@@ -94,8 +94,8 @@ type (
 		//
 		// 按给定参数的顺序反向依次调用。
 		AddFilters(filter ...Filter) Module
-		Resource(pattern string, filter ...Filter) Resource
-		Prefix(prefix string, filter ...Filter) Prefix
+		Resource(pattern string, filter ...Filter) *Resource
+		Prefix(prefix string, filter ...Filter) *Prefix
 		Handle(path string, h HandlerFunc, method ...string) Module
 		Get(path string, h HandlerFunc) Module
 		Post(path string, h HandlerFunc) Module
