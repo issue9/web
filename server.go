@@ -13,10 +13,10 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/v2"
-	"github.com/issue9/middleware/v2/compress"
-	"github.com/issue9/middleware/v2/debugger"
-	"github.com/issue9/middleware/v2/errorhandler"
+	"github.com/issue9/middleware/v3"
+	"github.com/issue9/middleware/v3/compress"
+	"github.com/issue9/middleware/v3/debugger"
+	"github.com/issue9/middleware/v3/errorhandler"
 	"github.com/issue9/mux/v3"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -159,12 +159,8 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		vars:       map[interface{}]interface{}{},
 		closed:     make(chan struct{}, 1),
 
-		middlewares: middleware.NewManager(o.mux),
-		compress: compress.New(logs.ERROR(), map[string]compress.WriterFunc{
-			"gzip":    compress.NewGzip,
-			"deflate": compress.NewDeflate,
-			"br":      compress.NewBrotli,
-		}, "*"),
+		middlewares:   middleware.NewManager(o.mux),
+		compress:      compress.New(logs.ERROR(), "*"),
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
@@ -193,7 +189,9 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		}
 	}
 
-	srv.buildMiddlewares()
+	if err := srv.buildMiddlewares(); err != nil {
+		return nil, err
+	}
 
 	return srv, nil
 }

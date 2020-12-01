@@ -17,8 +17,8 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/logs/v2/config"
-	"github.com/issue9/middleware/v2"
-	"github.com/issue9/middleware/v2/errorhandler"
+	"github.com/issue9/middleware/v3"
+	"github.com/issue9/middleware/v3/errorhandler"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 

@@ -3,9 +3,12 @@
 package web
 
 import (
-	"github.com/issue9/middleware/v2"
-	"github.com/issue9/middleware/v2/compress"
-	"github.com/issue9/middleware/v2/errorhandler"
+	"net/http"
+
+	"github.com/issue9/middleware/v3"
+	"github.com/issue9/middleware/v3/compress"
+	"github.com/issue9/middleware/v3/errorhandler"
+	"github.com/issue9/middleware/v3/recovery"
 )
 
 // Filter 针对 Context 的中间件
@@ -35,14 +38,28 @@ func (srv *Server) AddFilters(filter ...Filter) {
 	srv.filters = append(srv.filters, filter...)
 }
 
-func (srv *Server) buildMiddlewares() {
-	rf := srv.errorHandlers.Recovery(srv.logs.ERROR())
+func (srv *Server) buildMiddlewares() error {
+	if err := srv.compress.AddAlgorithm("deflate", compress.NewDeflate); err != nil {
+		return err
+	}
+
+	if err := srv.compress.AddAlgorithm("gzip", compress.NewGzip); err != nil {
+		return err
+	}
+
+	if err := srv.compress.AddAlgorithm("br", compress.NewBrotli); err != nil {
+		return err
+	}
+
+	rf := srv.errorHandlers.Recovery(recovery.DefaultRecoverFunc(http.StatusInternalServerError))
 	srv.AddMiddlewares(
 		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 		rf.Middleware,
 		srv.compress.Middleware, // srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
 		srv.errorHandlers.Middleware,
 	)
+
+	return nil
 }
 
 // SetErrorHandle 设置指定状态码页面的处理函数
@@ -86,7 +103,7 @@ func (srv *Server) SetDebugger(pprof, vars string) (err error) {
 // 默认情况下，支持 gzip、deflate 和 br 三种。
 // 如果 w 为 nil，表示删除对该算法的支持。
 func (srv *Server) SetCompressAlgorithm(name string, w compress.WriterFunc) {
-	srv.compress.SetWriter(name, w)
+	srv.compress.SetAlgorithm(name, w)
 }
 
 // AddCompressTypes 指定哪些内容可以进行压缩传输

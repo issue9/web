@@ -5,7 +5,7 @@ package web
 import (
 	"fmt"
 
-	"github.com/issue9/middleware/v2/errorhandler"
+	"github.com/issue9/middleware/v3/errorhandler"
 )
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面

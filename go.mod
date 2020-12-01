@@ -6,10 +6,10 @@ require (
 	github.com/issue9/cache v0.2.0
 	github.com/issue9/cmdopt v0.7.0
 	github.com/issue9/conv v1.2.0
-	github.com/issue9/logs/v2 v2.5.0
-	github.com/issue9/middleware/v2 v2.4.0
+	github.com/issue9/logs/v2 v2.5.2
+	github.com/issue9/middleware/v3 v3.0.0
 	github.com/issue9/mux/v3 v3.1.1
-	github.com/issue9/qheader v0.5.0
+	github.com/issue9/qheader v0.5.3
 	github.com/issue9/query/v2 v2.1.2
 	github.com/issue9/scheduled v0.7.0
 	github.com/issue9/source v0.1.1
@@ -17,7 +17,7 @@ require (
 	github.com/issue9/validation v0.2.0
 	github.com/issue9/version v1.0.4
 	golang.org/x/text v0.3.4
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 go 1.14

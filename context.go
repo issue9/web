@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/middleware/v2/errorhandler"
+	"github.com/issue9/middleware/v3/errorhandler"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
