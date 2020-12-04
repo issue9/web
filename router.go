@@ -17,6 +17,16 @@ type (
 	// HandlerFunc 路由项处理函数原型
 	HandlerFunc func(*Context)
 
+	// Router 路由管理
+	Router struct {
+		srv *Server
+		mux *mux.Mux
+
+		root    string
+		url     *url.URL
+		filters []Filter
+	}
+
 	// Prefix 带有统一前缀的路由管理
 	Prefix struct {
 		handler       func(path string, h HandlerFunc, filters []Filter, method ...string) error
@@ -36,16 +46,6 @@ type (
 		srv     *Server
 		mux     *mux.Mux
 		pattern string
-		filters []Filter
-	}
-
-	// Router 路由管理
-	Router struct {
-		srv *Server
-		mux *mux.Mux
-
-		root    string
-		url     *url.URL
 		filters []Filter
 	}
 )
@@ -381,23 +381,6 @@ func (m *mod) AddFilters(filter ...Filter) Module {
 	return m
 }
 
-func (m *mod) Resource(pattern string, filter ...Filter) *Resource {
-	return &Resource{
-		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
-			m.handle(pattern, h, filters, method...)
-			return nil
-		},
-		optionHandler: func(allow string) {
-			m.Options(pattern, allow)
-		},
-
-		srv:     m.srv,
-		mux:     m.srv.router.mux,
-		pattern: pattern,
-		filters: filter,
-	}
-}
-
 func (m *mod) Handle(path string, h HandlerFunc, method ...string) Module {
 	m.handle(path, h, nil, method...)
 	return m
@@ -454,24 +437,31 @@ func (m *mod) Remove(path string, method ...string) Module {
 func (m *mod) Prefix(prefix string, filter ...Filter) *Prefix {
 	return &Prefix{
 		handler: func(path string, h HandlerFunc, filters []Filter, method ...string) error {
-			m.AddInit(fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path), func() error {
-				filters := make([]Filter, len(m.filters)+len(filter))
-				l := copy(filters, m.filters)
-				copy(filters[l:], filter)
-
-				h = FilterHandler(h, filters...)
-				return m.srv.Router().Handle(path, h, method...)
-			})
+			m.handle(path, h, filters, method...)
 			return nil
 		},
 		optionHandler: func(path, allow string) {
-			m.AddInit(fmt.Sprintf("注册路由：OPTIONS %s", path), func() error {
-				m.srv.Router().Options(path, allow)
-				return nil
-			})
+			m.Options(path, allow)
 		},
 
 		prefix:  prefix,
+		filters: filter,
+	}
+}
+
+func (m *mod) Resource(pattern string, filter ...Filter) *Resource {
+	return &Resource{
+		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
+			m.handle(pattern, h, filters, method...)
+			return nil
+		},
+		optionHandler: func(allow string) {
+			m.Options(pattern, allow)
+		},
+
+		srv:     m.srv,
+		mux:     m.srv.router.mux,
+		pattern: pattern,
 		filters: filter,
 	}
 }

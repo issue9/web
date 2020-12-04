@@ -527,41 +527,6 @@ func TestModule_Handle(t *testing.T) {
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
 }
 
-func TestModulePrefix_Filters(t *testing.T) {
-	a := assert.New(t)
-
-	server := newServer(a)
-	m1, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m1)
-	m1.AddFilters(buildFilter("m1"), buildFilter("m2"))
-	p1 := m1.Prefix("/p1", buildFilter("p1"), buildFilter("p2"))
-
-	m1.Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"m1", "m2", "s1", "s2"})
-		ctx.Render(http.StatusCreated, nil, nil) // 不能输出 200 的状态码
-	})
-
-	p1.Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"m1", "m2", "s1", "s2", "p1", "p2"}) // 必须要是 server 的先于 prefix 的
-		ctx.Render(http.StatusAccepted, nil, nil)                                  // 不能输出 200 的状态码
-	})
-
-	// 在所有的路由项注册之后才添加中间件
-	m1.AddFilters(buildFilter("s1"), buildFilter("s2"))
-
-	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
-
-	srv := rest.NewServer(t, server.middlewares, nil)
-
-	srv.Get("/root/test").
-		Do().
-		Status(http.StatusCreated) // 验证状态码是否正确
-
-	srv.Get("/root/p1/test").
-		Do().
-		Status(http.StatusAccepted) // 验证状态码是否正确
-}
-
 func TestModule_Options(t *testing.T) {
 	a := assert.New(t)
 
