@@ -220,13 +220,13 @@ func TestServer_Serve(t *testing.T) {
 	server := newServer(a)
 	server.Router().Get("/mux/test", f202)
 
-	m1, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m1)
+	m1 := NewModule("m1", "m1 desc")
+	a.NotNil(m1)
 	m1.Get("/m1/test", f202)
 	m1.NewTag("tag1")
 
-	m2, err := server.NewModule("m2", "m2 desc", "m1")
-	a.NotError(err).NotNil(m2)
+	m2 := NewModule("m2", "m2 desc", "m1")
+	a.NotNil(m2)
 	m2.Get("/m2/test", func(ctx *Context) {
 		srv := ctx.Server()
 		a.NotNil(srv)
@@ -243,13 +243,16 @@ func TestServer_Serve(t *testing.T) {
 		}
 
 		// 动态加载模块
-		m3, err := ctx.Server().NewModule("m3", "m3 desc", "m1")
-		a.NotError(err).NotNil(m3)
+		m3 := NewModule("m3", "m3 desc", "m1")
+		a.NotNil(m3)
 		m3.AddInit("init3", func() error { return nil })
+		a.NotError(server.AddModule(m3))
+
 		a.Equal(3, len(srv.Modules()))
-		m, ok := m3.(*mod)
-		a.True(ok).True(m.Inited())
+		a.True(m3.depModule.Inited())
 	})
+
+	a.NotError(server.AddModule(m1, m2))
 
 	go func() {
 		err := server.Serve()

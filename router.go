@@ -376,17 +376,13 @@ func (r *Resource) Options(allow string) *Resource {
 	return r
 }
 
-func (m *mod) AddFilters(filter ...Filter) Module {
-	m.filters = append(m.filters, filter...)
-	return m
-}
-
-func (m *mod) Handle(path string, h HandlerFunc, method ...string) Module {
+// Handle 添加路由项
+func (m *Module) Handle(path string, h HandlerFunc, method ...string) *Module {
 	m.handle(path, h, nil, method...)
 	return m
 }
 
-func (m *mod) handle(path string, h HandlerFunc, filter []Filter, method ...string) Module {
+func (m *Module) handle(path string, h HandlerFunc, filter []Filter, method ...string) *Module {
 	m.AddInit(fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path), func() error {
 		filters := make([]Filter, len(m.filters)+len(filter))
 		l := copy(filters, m.filters)
@@ -398,27 +394,33 @@ func (m *mod) handle(path string, h HandlerFunc, filter []Filter, method ...stri
 	return m
 }
 
-func (m *mod) Get(path string, h HandlerFunc) Module {
+// Get 添加 GET 请求处理项
+func (m *Module) Get(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodGet)
 }
 
-func (m *mod) Post(path string, h HandlerFunc) Module {
+// Post 添加 POST 请求处理项
+func (m *Module) Post(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPost)
 }
 
-func (m *mod) Delete(path string, h HandlerFunc) Module {
+// Delete 添加 DELETE 请求处理项
+func (m *Module) Delete(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodDelete)
 }
 
-func (m *mod) Put(path string, h HandlerFunc) Module {
+// Put 添加 PUT 请求处理项
+func (m *Module) Put(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPut)
 }
 
-func (m *mod) Patch(path string, h HandlerFunc) Module {
+// Patch 添加 Patch 请求处理
+func (m *Module) Patch(path string, h HandlerFunc) *Module {
 	return m.Handle(path, h, http.MethodPatch)
 }
 
-func (m *mod) Options(path, allow string) Module {
+// Options 指定 OPTIONS 请求的返回内容
+func (m *Module) Options(path, allow string) *Module {
 	m.AddInit(fmt.Sprintf("注册路由：OPTIONS %s", path), func() error {
 		m.srv.Router().Options(path, allow)
 		return nil
@@ -426,7 +428,8 @@ func (m *mod) Options(path, allow string) Module {
 	return m
 }
 
-func (m *mod) Remove(path string, method ...string) Module {
+// Remove 删除路由项
+func (m *Module) Remove(path string, method ...string) *Module {
 	m.AddInit(fmt.Sprintf("删除路由项：%s", path), func() error {
 		m.srv.Router().Remove(path, method...)
 		return nil
@@ -434,7 +437,8 @@ func (m *mod) Remove(path string, method ...string) Module {
 	return m
 }
 
-func (m *mod) Prefix(prefix string, filter ...Filter) *Prefix {
+// Prefix 返回特定前缀的路由设置对象
+func (m *Module) Prefix(prefix string, filter ...Filter) *Prefix {
 	return &Prefix{
 		handler: func(path string, h HandlerFunc, filters []Filter, method ...string) error {
 			m.handle(path, h, filters, method...)
@@ -449,7 +453,8 @@ func (m *mod) Prefix(prefix string, filter ...Filter) *Prefix {
 	}
 }
 
-func (m *mod) Resource(pattern string, filter ...Filter) *Resource {
+// Resource 生成 Resource 对象
+func (m *Module) Resource(pattern string, filter ...Filter) *Resource {
 	return &Resource{
 		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
 			m.handle(pattern, h, filters, method...)

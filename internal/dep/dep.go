@@ -11,33 +11,19 @@ import (
 
 // Dep 依赖管理
 type Dep struct {
-	ms     []Module
+	ms     []*Module
 	inited bool
 	info   *log.Logger
-
-	items map[string]*Dep
+	items  map[string]*Dep
 }
 
 // New 声明新的 Dep 变量
 func New(info *log.Logger) *Dep {
 	return &Dep{
-		ms:   make([]Module, 0, 20),
-		info: info,
+		ms:    make([]*Module, 0, 20),
+		info:  info,
+		items: make(map[string]*Dep, 5),
 	}
-}
-
-// NewItem 声明指定名称的 *Dep
-func (d *Dep) NewItem(name string) *Dep {
-	if d.items == nil {
-		d.items = make(map[string]*Dep, 5)
-	}
-
-	if item, found := d.items[name]; found {
-		return item
-	}
-	item := New(d.info)
-	d.items[name] = item
-	return item
 }
 
 // Items 返回所有的子模块名称
@@ -88,13 +74,31 @@ func (d *Dep) InitItem(tag string) error {
 // AddModule 添加新模块
 //
 // 如果所有的模块都已经初始化，则会尝试初始化 m。
-func (d *Dep) AddModule(m Module) error {
+func (d *Dep) AddModule(m ...*Module) error {
+	for _, mod := range m {
+		if err := d.addModule(mod); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *Dep) addModule(m *Module) error {
 	for _, mod := range d.ms {
 		if mod.ID() == m.ID() {
 			return fmt.Errorf("模块 %s 已经存在", m.ID())
 		}
 	}
 	d.ms = append(d.ms, m)
+
+	for name, mod := range m.items {
+		dep, found := d.items[name]
+		if !found {
+			dep = New(d.info)
+			d.items[name] = dep
+		}
+		dep.AddModule(mod)
+	}
 
 	if d.inited {
 		return m.Init(d.info)
@@ -133,7 +137,7 @@ func (d *Dep) Init() error {
 }
 
 // Modules 模块列表
-func (d *Dep) Modules() []Module {
+func (d *Dep) Modules() []*Module {
 	return d.ms
 }
 
@@ -141,7 +145,7 @@ func (d *Dep) Modules() []Module {
 //
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
 // 若 tag 不为空，表示只调用该标签下的初始化函数。
-func (d *Dep) initModule(m Module, info *log.Logger) error {
+func (d *Dep) initModule(m *Module, info *log.Logger) error {
 	if m.Inited() {
 		return nil
 	}
@@ -164,7 +168,7 @@ func (d *Dep) initModule(m Module, info *log.Logger) error {
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (d *Dep) checkDeps(m Module) error {
+func (d *Dep) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, depID := range m.Deps() {
 		if d.FindModule(depID) == nil {
@@ -202,7 +206,7 @@ func (d *Dep) isDep(m1, m2 string) bool {
 }
 
 // FindModule 查找指定 ID 的模块实例
-func (d *Dep) FindModule(id string) Module {
+func (d *Dep) FindModule(id string) *Module {
 	for _, m := range d.ms {
 		if m.ID() == id {
 			return m

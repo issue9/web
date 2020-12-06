@@ -38,6 +38,14 @@ func (srv *Server) AddFilters(filter ...Filter) {
 	srv.filters = append(srv.filters, filter...)
 }
 
+// AddFilters 添加过滤器
+//
+// 按给定参数的顺序反向依次调用。
+func (m *Module) AddFilters(filter ...Filter) *Module {
+	m.filters = append(m.filters, filter...)
+	return m
+}
+
 func (srv *Server) buildMiddlewares() error {
 	if err := srv.compress.AddAlgorithm("deflate", compress.NewDeflate); err != nil {
 		return err

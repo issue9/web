@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-func newDep(a *assert.Assertion, ms []Module) *Dep {
+func newDep(a *assert.Assertion, ms []*Module) *Dep {
 	d := New(log.New(ioutil.Discard, "", 0))
 	a.NotNil(d)
 
@@ -23,30 +23,23 @@ func newDep(a *assert.Assertion, ms []Module) *Dep {
 	return d
 }
 
-func TestDep_NewItem(t *testing.T) {
-	a := assert.New(t)
-	d := New(log.New(ioutil.Discard, "", 0))
-
-	d1 := d.NewItem("d1")
-	d2 := d.NewItem("d2")
-	a.False(d1 == d2) // 指向不同的内在
-	d11 := d.NewItem("d1")
-	a.True(d1 == d11) // 指向相同的地址
-}
-
 func TestDep_Items(t *testing.T) {
 	a := assert.New(t)
 	d := New(log.New(ioutil.Discard, "", 0))
-
-	d1 := d.NewItem("d1")
-	d2 := d.NewItem("d2")
-
 	a.Empty(d.Items())
+
+	m1 := newMod("m1", nil)
+	a.NotNil(m1.New("d1"))
+	a.NotNil(m1.New("d2"))
+	a.NotNil(m1.New("d2"))
+	a.NotError(d.AddModule(m1))
+
+	m2 := newMod("m2", nil)
+	a.NotNil(m2.New("d2"))
+	a.NotError(d.AddModule(m2))
+
 	a.Empty(d.Items("d1"))
 
-	a.NotError(d1.AddModule(NewDefaultModule("m1", "m1 desc")))
-	a.NotError(d2.AddModule(NewDefaultModule("m2", "m2 desc")))
-	a.NotError(d2.AddModule(NewDefaultModule("m1", "m1 desc")))
 	a.Equal(d.Items(), map[string][]string{"m1": {"d1", "d2"}, "m2": {"d2"}})
 	a.Equal(d.Items("m2"), map[string][]string{"m2": {"d2"}})
 }
@@ -54,13 +47,17 @@ func TestDep_Items(t *testing.T) {
 func TestDep_InitItem(t *testing.T) {
 	a := assert.New(t)
 	d := New(log.New(ioutil.Discard, "", 0))
-	d1 := d.NewItem("d1")
-	d2 := d.NewItem("d2")
+	m1 := newMod("m1", nil)
+	a.NotNil(m1.New("d1"))
+	a.NotNil(m1.New("d2"))
+	a.NotError(d.AddModule(m1))
 
 	a.Panic(func() {
 		d.InitItem("")
 	})
 
+	d1 := d.items["d1"]
+	d2 := d.items["d2"]
 	a.False(d1.inited).False(d2.inited)
 	d.InitItem("d1")
 	a.True(d1.inited).False(d2.inited)
@@ -71,7 +68,7 @@ func TestDep_InitItem(t *testing.T) {
 func TestDep_isDep(t *testing.T) {
 	a := assert.New(t)
 
-	d := newDep(a, []Module{
+	d := newDep(a, []*Module{
 		newMod("m1", nil, "d1", "d2"),
 		newMod("d1", nil, "d3"),
 	})
@@ -82,7 +79,7 @@ func TestDep_isDep(t *testing.T) {
 	a.False(d.isDep("m1", "m1"))
 
 	// 循环依赖
-	d = newDep(a, []Module{
+	d = newDep(a, []*Module{
 		newMod("m1", nil, "d1", "d2"),
 		newMod("d1", nil, "d3"),
 		newMod("d3", nil, "d1"),
@@ -96,7 +93,7 @@ func TestDep_isDep(t *testing.T) {
 func TestDep_checkDeps(t *testing.T) {
 	a := assert.New(t)
 
-	d := newDep(a, []Module{
+	d := newDep(a, []*Module{
 		newMod("m1", nil, "d1", "d2"),
 		newMod("d1", nil, "d3"),
 	})
@@ -105,7 +102,7 @@ func TestDep_checkDeps(t *testing.T) {
 	a.NotNil(m1).
 		Error(d.checkDeps(m1)) // 依赖项不存在
 
-	d = newDep(a, []Module{
+	d = newDep(a, []*Module{
 		newMod("m1", nil, "d1", "d2"),
 		newMod("d1", nil, "d3"),
 		newMod("d2", nil, "d3"),
@@ -113,7 +110,7 @@ func TestDep_checkDeps(t *testing.T) {
 	a.NotError(d.checkDeps(m1))
 
 	// 自我依赖
-	d = newDep(a, []Module{
+	d = newDep(a, []*Module{
 		newMod("m1", nil, "d1", "d2"),
 		newMod("d1", nil, "d3"),
 		newMod("d2", nil, "d3"),
@@ -137,14 +134,14 @@ func TestDep_Init(t *testing.T) {
 	}
 
 	// 缺少依赖项 d3
-	d := newDep(a, []Module{
+	d := newDep(a, []*Module{
 		newMod("m1", f("m1"), "d1", "d2"),
 		newMod("d1", f("d1"), "d3"),
 		newMod("d2", f("d2"), "d3"),
 	})
 	a.Error(d.Init())
 
-	d = newDep(a, []Module{
+	d = newDep(a, []*Module{
 		newMod("m1", f("m1"), "d1", "d2"),
 		newMod("d1", f("d1"), "d3"),
 		newMod("d2", f("d2"), "d3"),

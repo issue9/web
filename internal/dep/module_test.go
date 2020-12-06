@@ -10,10 +10,8 @@ import (
 	"github.com/issue9/assert"
 )
 
-var _ Module = &Default{}
-
-func newMod(id string, f func() error, dep ...string) *Default {
-	d := NewDefaultModule(id, id+" description", dep...)
+func newMod(id string, f func() error, dep ...string) *Module {
+	d := NewModule(id, id+" description", dep...)
 	d.AddInit(id, f)
 	return d
 }
@@ -21,7 +19,7 @@ func newMod(id string, f func() error, dep ...string) *Default {
 func TestDefault_AddInit(t *testing.T) {
 	a := assert.New(t)
 
-	m := NewDefaultModule("m1", "m1 dexc")
+	m := NewModule("m1", "m1 dexc")
 
 	a.Empty(m.inits)
 	m.AddInit("t1", func() error { return nil })

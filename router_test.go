@@ -412,9 +412,8 @@ func TestServerFilters(t *testing.T) {
 func TestModuleResource(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
-	m, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m := NewModule("m1", "m1 desc")
+	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
 	path := "/path"
@@ -426,6 +425,8 @@ func TestModuleResource(t *testing.T) {
 	res.Put(f204)
 	res.Options("abcdef")
 
+	server := newServer(a)
+	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 
 	srv := rest.NewServer(t, server.middlewares, nil)
@@ -443,9 +444,8 @@ func TestModuleResource(t *testing.T) {
 func TestModulePrefix(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
-	m, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m := NewModule("m1", "m1 desc")
+	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
 	path := "/path"
@@ -456,6 +456,8 @@ func TestModulePrefix(t *testing.T) {
 	p.Put(path, f204)
 	p.Options(path, "abcdef")
 
+	server := newServer(a)
+	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 
 	srv := rest.NewServer(t, server.middlewares, nil)
@@ -473,13 +475,14 @@ func TestModulePrefix(t *testing.T) {
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
-	m, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m := NewModule("m1", "m1 desc")
+	a.NotNil(m)
 
 	path := "/path"
 	a.NotError(m.Handle(path, f204, http.MethodGet, http.MethodDelete))
 
+	server := newServer(a)
+	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 	srv := rest.NewServer(t, server.middlewares, nil)
 
@@ -489,12 +492,13 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 
-	server = newServer(a)
-	m, err = server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m = NewModule("m1", "m1 desc")
+	a.NotNil(m)
 	path = "/path1"
 	a.NotError(m.Handle(path, f204))
 
+	server = newServer(a)
+	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 	srv = rest.NewServer(t, server.middlewares, nil)
 
@@ -503,9 +507,8 @@ func TestModule_Handle(t *testing.T) {
 
 	// 各个请求方法
 
-	server = newServer(a)
-	m, err = server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m)
+	m = NewModule("m1", "m1 desc")
+	a.NotNil(m)
 	path = "/path2"
 	m.Delete(path, f204)
 	m.Get(path, f204)
@@ -513,6 +516,8 @@ func TestModule_Handle(t *testing.T) {
 	m.Patch(path, f204)
 	m.Put(path, f204)
 
+	server = newServer(a)
+	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 	srv = rest.NewServer(t, server.middlewares, nil)
 
@@ -530,9 +535,8 @@ func TestModule_Handle(t *testing.T) {
 func TestModule_Options(t *testing.T) {
 	a := assert.New(t)
 
-	server := newServer(a)
-	m1, err := server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m1)
+	m1 := NewModule("m1", "m1 desc")
+	a.NotNil(m1)
 	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
 		return HandlerFunc(func(ctx *Context) {
 			ctx.Response.Header().Set("Server", "m1")
@@ -545,6 +549,8 @@ func TestModule_Options(t *testing.T) {
 	})
 	m1.Options("/test", "GET, OPTIONS, PUT")
 
+	server := newServer(a)
+	a.NotError(server.AddModule(m1))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 	srv := rest.NewServer(t, server.middlewares, nil)
 
@@ -561,9 +567,8 @@ func TestModule_Options(t *testing.T) {
 
 	// 通 Handle 修改的 OPTIONS，正常接受中间件
 
-	server = newServer(a)
-	m1, err = server.NewModule("m1", "m1 desc")
-	a.NotError(err).NotNil(m1)
+	m1 = NewModule("m1", "m1 desc")
+	a.NotNil(m1)
 	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
 		return HandlerFunc(func(ctx *Context) {
 			ctx.Response.Header().Set("Server", "m1")
@@ -577,6 +582,9 @@ func TestModule_Options(t *testing.T) {
 	m1.Handle("/test", func(ctx *Context) {
 		ctx.Render(http.StatusAccepted, nil, nil)
 	}, http.MethodOptions)
+
+	server = newServer(a)
+	a.NotError(server.AddModule(m1))
 	a.NotError(server.initModules(log.New(ioutil.Discard, "", 0)))
 
 	srv = rest.NewServer(t, server.middlewares, nil)
