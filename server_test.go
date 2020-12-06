@@ -245,6 +245,7 @@ func TestServer_Serve(t *testing.T) {
 		// 动态加载模块
 		m3, err := ctx.Server().NewModule("m3", "m3 desc", "m1")
 		a.NotError(err).NotNil(m3)
+		m3.AddInit("init3", func() error { return nil })
 		a.Equal(3, len(srv.Modules()))
 		m, ok := m3.(*mod)
 		a.True(ok).True(m.Inited())

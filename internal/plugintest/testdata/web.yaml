@@ -1,5 +1,0 @@
-root: localhost
-http:
-  readTimeout: 3s
-shutdownTimeout: 300ms
-plugins: ./testdata/plugin_*.so

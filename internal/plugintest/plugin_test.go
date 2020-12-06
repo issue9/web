@@ -7,18 +7,28 @@ package plugintest
 import (
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/logs/v2"
 
-	"github.com/issue9/web/config"
+	"github.com/issue9/web"
 )
 
 // 测试插件系统是否正常
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := config.Classic("./testdata/logs.xml", "./testdata/web.yaml")
+	srv, err := web.NewServer(logs.New(), &web.Options{})
 	a.NotError(err).NotNil(srv)
+
+	a.NotError(srv.LoadPlugins("./testdata/plugin_*.so"))
+
+	go func() {
+		srv.Serve()
+	}()
+	time.Sleep(500 * time.Millisecond)
+	defer srv.Close(0)
 
 	ms := srv.Modules()
 	a.Equal(2, len(ms))
