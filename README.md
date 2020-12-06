@@ -19,27 +19,31 @@ import "github.com/issue9/web/config"
 
 // main.go
 func main() {
-    w, _ := config.Classic("./appconfig/logs.xml", "./appconfig/web.yaml")
+    srv, _ := web.NewServer(&web.Options{})
 
     // 注册模块信息
     m1.Init()
     m2.Init()
 
-    w.Serve()
+    srv.Serve()
 }
 
 // modules/m1/module.go
-func Init(s *web.Server) {
-    s.NewModule("m1", "模块描述信息").
+func Init(s *web.Server) error {
+    m := web.NewModule("m1", "模块描述信息").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)
+
+    return s.AddModule(m)
 }
 
 // modules/m2/module.go
-func Init(s *web.Server) {
-    s.NewModule("m2", "模块描述信息", "m1").
+func Init(s *web.Server) error {
+    m := web.NewModule("m2", "模块描述信息", "m1").
         Get("/admins", getAdmins).
         Get("/groups", getGroups)
+
+    return s.AddModule(m)
 }
 ```
 
@@ -57,8 +61,8 @@ package m1
 
 import "github.com/issue9/web"
 
-func Init(s *web.Web) {
-    m := s.NewModule("test", "测试模块")
+func Init(s *web.Web) error {
+    m := web.NewModule("test", "测试模块")
 
     m.AddInit(func() error {
         // TODO 此处可以添加初始化模块的相关代码
@@ -68,37 +72,40 @@ func Init(s *web.Web) {
     m.AddService(func(ctx context.Context) error {
         // TODO 此处添加服务代码
     }, "服务描述")
+
+    return s.AddModule(m)
 }
 ```
 
 #### 插件
 
 web 支持以插件的形式分发模块内容，只需要以 `-buildmode=plugin` 的形式编译每个模块，
-之后将编译后的模块文件放至 `Config.Plugins` 配置项所指定的目录下即可。具体的可参考下 internal/plugintest 下的插件示例。
+之后将编译后的模块通过 Server.LoadPlugin() 加载即可。具体的可参考下 internal/plugintest 下的插件示例。
 
 Go 并不是在所有的平台下都支持插件模式，支持列表可查看：<https://golang.org/pkg/plugin/>
 
 字符集和文档类型
 ---
 
-文档类型由 `Config.Marshalers` 和 `Config.Unmarshalers` 两个选项指定，分别对应编码和解码。
+文档类型由 `Server.Mimetypes` 指定。
 字符类型无需用户指定，<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
 中列出的字符集都能自动转换。
 
 ```go
-conf := &web.Config {
-    Marshalers: map[string]content.MarhsalFunc{
-        "application/json": json.Marshal,
-        "application/xml": xml.Marshal,
-    },
-    Unmarshalers: map[string]content.UnmarhsalFunc{
-        "application/json": json.Unmarshal,
-        "application/xml": xml.Unmarshal,
-    },
-    // 其它设置项
-}
+import "github.com/issue9/web"
 
-srv := web.New(conf)
+srv := web.NewServer(&web.Options{})
+
+srv.Mimetypes().AddMarshalers(map[string]content.MarshalFunc{
+    "application/json": json.Marshal,
+    "application/xml": xml.Marshal,
+})
+
+srv.Mimetypes().AddUnmarshalers(map[string]content.UnmarshalFunc{
+    "application/json": json.Unmarshal,
+    "application/xml": xml.Unmarshal,
+})
+
 srv.Serve()
 ```
 
