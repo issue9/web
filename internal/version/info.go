@@ -5,7 +5,7 @@ package version
 // Version 版本号
 //
 // 版本号规则遵循 https://semver.org/lang/zh-CN/
-const Version = "0.33.0"
+const Version = "0.35.0"
 
 // 编译日期，可以由编译器指定
 var buildDate string
