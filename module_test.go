@@ -23,7 +23,7 @@ func job(time.Time) error {
 func TestModuleInitFuncName(t *testing.T) {
 	a := assert.New(t)
 
-	a.True(unicode.IsUpper(rune(moduleInstallFuncName[0])))
+	a.True(unicode.IsUpper(rune(PluginInstallFuncName[0])))
 }
 
 func TestModule_NewTag(t *testing.T) {

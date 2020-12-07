@@ -18,34 +18,32 @@ import (
 	"github.com/issue9/web/service"
 )
 
-// 插件中的初始化函数名称，必须为可导出的函数名称
-const moduleInstallFuncName = "Init"
+// PluginInstallFuncName 插件中的初始化函数名称
+//
+// NOTE: 必须为可导出的函数名称
+const PluginInstallFuncName = "Init"
 
 // ErrInited 当模块被多次初始化时返回此错误
 var ErrInited = errors.New("模块已经初始化")
 
-type (
-	// InstallFunc 安装模块的函数签名
-	InstallFunc func(*Server) error
+// PluginInstallFunc 安装插件的函数签名
+type PluginInstallFunc func(*Server) error
 
-	// Tag 表示与特定标签相关联的初始化函数列表
-	//
-	// 依附于模块，共享模块的依赖关系。
-	// 一般是各个模块下的安装脚本使用。
-	Tag interface {
-		AddInit(string, func() error)
-	}
+// Module 表示模块信息
+//
+// 模块可以作为代码的一种组织方式。将一组关联的功能合并为一个模块。
+type Module struct {
+	depModule *dep.Module
+	srv       *Server
+	filters   []Filter
+}
 
-	// Module 表示模块信息
-	//
-	// 模块仅作为在初始化时在代码上的一种分类，一旦初始化完成，
-	// 则不再有模块的概念，修改模块的相关属性，也不会对代码有实质性的改变。
-	Module struct {
-		depModule *dep.Module
-		srv       *Server
-		filters   []Filter
-	}
-)
+// Tag 表示与特定标签相关联的初始化函数列表
+//
+// 依附于模块，共享模块的依赖关系。一般是各个模块下的安装脚本使用。
+type Tag interface {
+	AddInit(string, func() error)
+}
 
 // NewModule 声明一个新的模块
 //
@@ -135,19 +133,26 @@ func (srv *Server) LoadPlugins(glob string) error {
 }
 
 // LoadPlugin 将指定的插件当作模块进行加载
+//
+// path 为插件的路径；
+//
+// 插件必须是以 buildmode=plugin 的方式编译的，且要求其引用的 github.com/issue9/web
+// 版本与当前的相同。
+// LoadPlugin 会在插件中查找函数名为 Init 的方法名，同时要求其函数类型为 func(*Server)error，
+// 如果存在，会调用该方法将插件加载到 Server 对象中，否则返回相应的错误信息。
 func (srv *Server) LoadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
 	}
 
-	symbol, err := p.Lookup(moduleInstallFuncName)
+	symbol, err := p.Lookup(PluginInstallFuncName)
 	if err != nil {
 		return err
 	}
 
 	if install, ok := symbol.(func(*Server) error); ok {
-		return InstallFunc(install)(srv)
+		return PluginInstallFunc(install)(srv)
 	}
 
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
