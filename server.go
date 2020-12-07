@@ -266,6 +266,8 @@ func (srv *Server) Services() *service.Manager {
 }
 
 // Serve 启动服务
+//
+// 会自动对模块进行初始化。
 func (srv *Server) Serve() (err error) {
 	if err = srv.initModules(srv.Logs().INFO()); err != nil {
 		return err
