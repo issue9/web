@@ -12,7 +12,6 @@ import (
 
 	"github.com/issue9/middleware/v3/errorhandler"
 	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
@@ -93,7 +92,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, err := srv.mimetypes.Marshal(header)
+	outputMimetypeName, marshal, err := srv.Mimetypes().Marshal(header)
 	checkError("Accept", err, http.StatusNotAcceptable)
 
 	header = r.Header.Get("Accept-Charset")
@@ -117,13 +116,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	if header = r.Header.Get(contentTypeKey); header != "" {
-		encName, charsetName, err := content.ParseContentType(header)
-		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
-
-		ctx.InputMimetype, err = ctx.server.mimetypes.Unmarshal(encName)
-		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
-
-		ctx.InputCharset, err = htmlindex.Get(charsetName)
+		ctx.InputMimetype, ctx.InputCharset, err = srv.Mimetypes().ConentType(header)
 		checkError(contentTypeKey, err, http.StatusUnsupportedMediaType)
 	} else {
 		ctx.read = true

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/issue9/qheader"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 )
 
 // DefaultMimetype 默认的媒体类型
@@ -59,11 +61,31 @@ func NewMimetypes() *Mimetypes {
 	}
 }
 
+// ConentType 从 content-type 报头解析出需要用到的解码函数
+func (mt *Mimetypes) ConentType(header string) (UnmarshalFunc, encoding.Encoding, error) {
+	encName, charsetName, err := ParseContentType(header)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	f, err := mt.Unmarshal(encName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	e, err := htmlindex.Get(charsetName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return f, e, nil
+}
+
 // Unmarshal 查找指定名称的 UnmarshalFunc
-func (srv *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
-	for _, mt := range srv.codecs {
-		if mt.name == name {
-			return mt.unmarshal, nil
+func (mt *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
+	for _, c := range mt.codecs {
+		if c.name == name {
+			return c.unmarshal, nil
 		}
 	}
 	return nil, ErrNotFound
@@ -82,9 +104,9 @@ func (srv *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (srv *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
+func (mt *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 	if header == "" {
-		if mm := srv.findMarshal("*/*"); mm != nil {
+		if mm := mt.findMarshal("*/*"); mm != nil {
 			return mm.name, mm.marshal, nil
 		}
 		return "", nil, ErrNotFound
@@ -92,7 +114,7 @@ func (srv *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 
 	accepts := qheader.Parse(header, "*/*")
 	for _, accept := range accepts {
-		if mm := srv.findMarshal(accept.Value); mm != nil {
+		if mm := mt.findMarshal(accept.Value); mm != nil {
 			return mm.name, mm.marshal, nil
 		}
 	}
@@ -103,55 +125,55 @@ func (srv *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 // Add 添加编解码函数
 //
 // m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理。
-func (srv *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc) error {
+func (mt *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
 
-	for _, mt := range srv.codecs {
-		if mt.name == name {
+	for _, c := range mt.codecs {
+		if c.name == name {
 			return ErrExists
 		}
 	}
 
-	srv.codecs = append(srv.codecs, &codec{
+	mt.codecs = append(mt.codecs, &codec{
 		name:      name,
 		marshal:   m,
 		unmarshal: u,
 	})
 
-	sort.SliceStable(srv.codecs, func(i, j int) bool {
-		if srv.codecs[i].name == DefaultMimetype {
+	sort.SliceStable(mt.codecs, func(i, j int) bool {
+		if mt.codecs[i].name == DefaultMimetype {
 			return true
 		}
 
-		if srv.codecs[j].name == DefaultMimetype {
+		if mt.codecs[j].name == DefaultMimetype {
 			return false
 		}
 
-		return srv.codecs[i].name < srv.codecs[j].name
+		return mt.codecs[i].name < mt.codecs[j].name
 	})
 
 	return nil
 }
 
-func (srv *Mimetypes) findMarshal(name string) *codec {
+func (mt *Mimetypes) findMarshal(name string) *codec {
 	switch {
-	case len(srv.codecs) == 0:
+	case len(mt.codecs) == 0:
 		return nil
 	case name == "" || name == "*/*":
-		return srv.codecs[0] // 由 len(marshals) == 0 确保最少有一个元素
+		return mt.codecs[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
-		for _, mt := range srv.codecs {
-			if strings.HasPrefix(mt.name, prefix) {
-				return mt
+		for _, c := range mt.codecs {
+			if strings.HasPrefix(c.name, prefix) {
+				return c
 			}
 		}
 	default:
-		for _, mt := range srv.codecs {
-			if mt.name == name {
-				return mt
+		for _, c := range mt.codecs {
+			if c.name == name {
+				return c
 			}
 		}
 	}
