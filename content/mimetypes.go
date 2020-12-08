@@ -4,7 +4,6 @@ package content
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -24,48 +23,50 @@ const DefaultMimetype = "application/octet-stream"
 // 如果需要向客户端输出一个 nil 值的内容，可以使用此值。
 var Nil *struct{}
 
-// MarshalFunc 将一个对象转换成 []byte 内容时，所采用的接口。
+var (
+	// ErrNotFound 表示未找到指定名称的编解码函数
+	//
+	// 在 Mimetypes.Marshal 和 Mimetypes.Unmarshal 中会返回该错误。
+	ErrNotFound = errors.New("未找到指定名称的编解码函数")
+
+	// ErrExists 存在相同中名称的编解码函数
+	//
+	// 在 Mimetypes.AddMarshal 和 Mimetypes.AddUnmarshal 时如果已经存在相同名称，返回此错误。
+	ErrExists = errors.New("已经存在相同名称的编解码函数")
+)
+
+// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
 type MarshalFunc func(v interface{}) ([]byte, error)
 
-// UnmarshalFunc 将客户端内容转换成一个对象时，所采用的接口。
+// UnmarshalFunc 将客户端内容转换成一个对象时所采用的接口
 type UnmarshalFunc func([]byte, interface{}) error
 
-type marshaler struct {
-	f    MarshalFunc
-	name string
-}
-
-type unmarshaler struct {
-	f    UnmarshalFunc
-	name string
-}
-
-func mimetypeExists(name string) error {
-	return fmt.Errorf("该名称 %s 的 mimetype 已经存在", name)
+type codec struct {
+	name      string
+	marshal   MarshalFunc
+	unmarshal UnmarshalFunc
 }
 
 // Mimetypes 管理 mimetype 的增删改查
 type Mimetypes struct {
-	marshals   []*marshaler
-	unmarshals []*unmarshaler
+	codecs []*codec
 }
 
 // NewMimetypes 返回 *Mimetypes 实例
 func NewMimetypes() *Mimetypes {
 	return &Mimetypes{
-		marshals:   make([]*marshaler, 0, 10),
-		unmarshals: make([]*unmarshaler, 0, 10),
+		codecs: make([]*codec, 0, 10),
 	}
 }
 
 // Unmarshal 查找指定名称的 UnmarshalFunc
 func (srv *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
-	for _, mt := range srv.unmarshals {
+	for _, mt := range srv.codecs {
 		if mt.name == name {
-			return mt.f, nil
+			return mt.unmarshal, nil
 		}
 	}
-	return nil, fmt.Errorf("未找到 %s 类型的解码函数", name)
+	return nil, ErrNotFound
 }
 
 // Marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
@@ -84,128 +85,71 @@ func (srv *Mimetypes) Unmarshal(name string) (UnmarshalFunc, error) {
 func (srv *Mimetypes) Marshal(header string) (string, MarshalFunc, error) {
 	if header == "" {
 		if mm := srv.findMarshal("*/*"); mm != nil {
-			return mm.name, mm.f, nil
+			return mm.name, mm.marshal, nil
 		}
-		return "", nil, errors.New("请求中未指定 accept 报头，且服务端也未指定匹配 */* 的解码函数")
+		return "", nil, ErrNotFound
 	}
 
 	accepts := qheader.Parse(header, "*/*")
 	for _, accept := range accepts {
 		if mm := srv.findMarshal(accept.Value); mm != nil {
-			return mm.name, mm.f, nil
+			return mm.name, mm.marshal, nil
 		}
 	}
 
-	return "", nil, errors.New("未找到符合客户端要求的解码函数")
+	return "", nil, ErrNotFound
 }
 
-// AddMarshals 添加多个编码函数
-func (srv *Mimetypes) AddMarshals(ms map[string]MarshalFunc) error {
-	for k, v := range ms {
-		if err := srv.AddMarshal(k, v); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddMarshal 添加编码函数
+// Add 添加编解码函数
 //
-// mf 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
-// 另作处理，比如下载，上传等内容。
-func (srv *Mimetypes) AddMarshal(name string, mf MarshalFunc) error {
-	if strings.HasSuffix(name, "/*") || name == "*" {
-		panic("name 不是一个有效的 mimetype 名称格式")
-	}
-
-	for _, mt := range srv.marshals {
-		if mt.name == name {
-			return mimetypeExists(name)
-		}
-	}
-
-	srv.marshals = append(srv.marshals, &marshaler{
-		f:    mf,
-		name: name,
-	})
-
-	sort.SliceStable(srv.marshals, func(i, j int) bool {
-		if srv.marshals[i].name == DefaultMimetype {
-			return true
-		}
-
-		if srv.marshals[j].name == DefaultMimetype {
-			return false
-		}
-
-		return srv.marshals[i].name < srv.marshals[j].name
-	})
-
-	return nil
-}
-
-// AddUnmarshals 添加多个编码函数
-func (srv *Mimetypes) AddUnmarshals(ms map[string]UnmarshalFunc) error {
-	for k, v := range ms {
-		if err := srv.AddUnmarshal(k, v); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddUnmarshal 添加编码函数
-//
-// mm 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP
-// 另作处理，比如下载，上传等内容。
-func (srv *Mimetypes) AddUnmarshal(name string, mm UnmarshalFunc) error {
+// m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理。
+func (srv *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}
 
-	for _, mt := range srv.unmarshals {
+	for _, mt := range srv.codecs {
 		if mt.name == name {
-			return mimetypeExists(name)
+			return ErrExists
 		}
 	}
 
-	srv.unmarshals = append(srv.unmarshals, &unmarshaler{
-		f:    mm,
-		name: name,
+	srv.codecs = append(srv.codecs, &codec{
+		name:      name,
+		marshal:   m,
+		unmarshal: u,
 	})
 
-	sort.SliceStable(srv.unmarshals, func(i, j int) bool {
-		if srv.unmarshals[i].name == DefaultMimetype {
+	sort.SliceStable(srv.codecs, func(i, j int) bool {
+		if srv.codecs[i].name == DefaultMimetype {
 			return true
 		}
 
-		if srv.unmarshals[j].name == DefaultMimetype {
+		if srv.codecs[j].name == DefaultMimetype {
 			return false
 		}
 
-		return srv.unmarshals[i].name < srv.unmarshals[j].name
+		return srv.codecs[i].name < srv.codecs[j].name
 	})
 
 	return nil
 }
 
-func (srv *Mimetypes) findMarshal(name string) *marshaler {
+func (srv *Mimetypes) findMarshal(name string) *codec {
 	switch {
-	case len(srv.marshals) == 0:
+	case len(srv.codecs) == 0:
 		return nil
 	case name == "" || name == "*/*":
-		return srv.marshals[0] // 由 len(marshals) == 0 确保最少有一个元素
+		return srv.codecs[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
-		for _, mt := range srv.marshals {
+		for _, mt := range srv.codecs {
 			if strings.HasPrefix(mt.name, prefix) {
 				return mt
 			}
 		}
 	default:
-		for _, mt := range srv.marshals {
+		for _, mt := range srv.codecs {
 			if mt.name == name {
 				return mt
 			}

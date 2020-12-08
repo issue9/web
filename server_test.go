@@ -63,21 +63,11 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	err = srv.Mimetypes().AddMarshals(map[string]content.MarshalFunc{
-		"application/json":      json.Marshal,
-		"application/xml":       xml.Marshal,
-		content.DefaultMimetype: gob.Marshal,
-		mimetypetest.Mimetype:   mimetypetest.TextMarshal,
-	})
-	a.NotError(err)
-
-	err = srv.Mimetypes().AddUnmarshals(map[string]content.UnmarshalFunc{
-		"application/json":      json.Unmarshal,
-		"application/xml":       xml.Unmarshal,
-		content.DefaultMimetype: gob.Unmarshal,
-		mimetypetest.Mimetype:   mimetypetest.TextUnmarshal,
-	})
-	a.NotError(err)
+	mt := srv.Mimetypes()
+	a.NotError(mt.Add("application/json", json.Marshal, json.Unmarshal))
+	a.NotError(mt.Add("application/xml", xml.Marshal, xml.Unmarshal))
+	a.NotError(mt.Add(content.DefaultMimetype, gob.Marshal, gob.Unmarshal))
+	a.NotError(mt.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal))
 
 	srv.AddResultMessage(411, 41110, "41110")
 
@@ -127,8 +117,9 @@ func TestGetServer(t *testing.T) {
 	var k key = 0
 
 	srv, err := NewServer(newLogs(a), &Options{Root: "http://localhost:8081/"})
-	srv.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
 	a.NotError(err).NotNil(srv)
+	err = srv.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	a.NotError(err)
 	var isRequested bool
 
 	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
@@ -301,9 +292,9 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 			}
 		},
 	})
-	server.mimetypes.AddMarshal(mimetypetest.Mimetype, mimetypetest.TextMarshal)
-	server.mimetypes.AddUnmarshal(mimetypetest.Mimetype, mimetypetest.TextUnmarshal)
 	a.NotError(err).NotNil(server)
+	err = server.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	a.NotError(err)
 	server.Router().Get("/mux/test", f202)
 
 	go func() {
