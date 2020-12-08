@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/issue9/qheader"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 )
@@ -155,6 +156,27 @@ func (mt *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc) error {
 	})
 
 	return nil
+}
+
+// Set 修改编解码函数
+func (mt *Mimetypes) Set(name string, m MarshalFunc, u UnmarshalFunc) error {
+	for _, c := range mt.codecs {
+		if c.name == name {
+			c.marshal = m
+			c.unmarshal = u
+			return nil
+		}
+	}
+
+	return ErrNotFound
+}
+
+// Delete 删除指定名称的数据
+func (mt *Mimetypes) Delete(name string) {
+	size := sliceutil.Delete(mt.codecs, func(i int) bool {
+		return mt.codecs[i].name == name
+	})
+	mt.codecs = mt.codecs[:size]
 }
 
 func (mt *Mimetypes) findMarshal(name string) *codec {

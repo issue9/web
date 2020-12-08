@@ -4,6 +4,7 @@ package content
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -69,18 +70,21 @@ func TestMimetypes_Marshal(t *testing.T) {
 		Nil(marshal).
 		Empty(name)
 
-	a.NotError(mt.Add(DefaultMimetype, json.Marshal, json.Unmarshal))
+	a.NotError(mt.Add(DefaultMimetype, xml.Marshal, xml.Unmarshal))
 	a.NotError(mt.Add("text/plain", json.Marshal, json.Unmarshal))
 
 	name, marshal, err = mt.Marshal(DefaultMimetype)
 	a.NotError(err).
-		Equal(marshal, MarshalFunc(json.Marshal)).
+		Equal(marshal, MarshalFunc(xml.Marshal)).
 		Equal(name, DefaultMimetype)
 
+	a.NotError(mt.Set(DefaultMimetype, json.Marshal, json.Unmarshal))
 	name, marshal, err = mt.Marshal(DefaultMimetype)
 	a.NotError(err).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, DefaultMimetype)
+
+	a.ErrorIs(mt.Set("not-exists", nil, nil), ErrNotFound)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, err = mt.Marshal("*/*")
@@ -110,7 +114,7 @@ func TestMimetypes_Marshal(t *testing.T) {
 		Nil(marshal)
 }
 
-func TestMimetypes_Add(t *testing.T) {
+func TestMimetypes_Add_Delete(t *testing.T) {
 	a := assert.New(t)
 	mt := NewMimetypes()
 	a.NotNil(mt)
@@ -145,6 +149,16 @@ func TestMimetypes_Add(t *testing.T) {
 	a.Equal(mt.codecs[4].name, "text")
 	a.Equal(mt.codecs[5].name, "text/plain")
 	a.Equal(mt.codecs[6].name, "text/text")
+
+	// 删除
+	mt.Delete("text")
+	mt.Delete(DefaultMimetype)
+	mt.Delete("not-exists")
+	a.Equal(mt.codecs[0].name, "application/aa")
+	a.Equal(mt.codecs[1].name, "application/bb")
+	a.Equal(mt.codecs[2].name, "application/json")
+	a.Equal(mt.codecs[3].name, "text/plain")
+	a.Equal(mt.codecs[4].name, "text/text")
 }
 
 func TestMimetypes_findMarshal(t *testing.T) {
