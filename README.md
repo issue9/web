@@ -19,29 +19,23 @@ import "github.com/issue9/web"
 func main() {
     srv, _ := web.NewServer(&web.Options{})
 
-    // 注册模块信息
-    m1.Init()
-    m2.Init()
+    srv.AddModuleFunc(m1.Module, m2.Module) // 注册模块信息
 
     srv.Serve()
 }
 
 // modules/m1/module.go
-func Init(s *web.Server) error {
-    m := web.NewModule("m1", "模块描述信息").
+func Module(s *web.Server) (*web.Module, error) {
+    return web.NewModule("m1", "模块描述信息").
         Get("/admins", getAdmins).
-        Get("/groups", getGroups)
-
-    return s.AddModule(m)
+        Get("/groups", getGroups), nil
 }
 
 // modules/m2/module.go
-func Init(s *web.Server) error {
-    m := web.NewModule("m2", "模块描述信息", "m1").
+func Module(s *web.Server) (*web.Module, error) {
+    return web.NewModule("m2", "模块描述信息", "m1").
         Get("/admins", getAdmins).
-        Get("/groups", getGroups)
-
-    return s.AddModule(m)
+        Get("/groups", getGroups), nil
 }
 ```
 
@@ -58,7 +52,7 @@ package m1
 
 import "github.com/issue9/web"
 
-func Init(s *web.Web) error {
+func Module(s *web.Server) (*web.Module, error) {
     m := web.NewModule("test", "测试模块")
 
     m.AddInit(func() error {
@@ -70,7 +64,7 @@ func Init(s *web.Web) error {
         // TODO 此处添加服务代码
     }, "服务描述")
 
-    return s.AddModule(m)
+    return m
 }
 ```
 
@@ -92,15 +86,8 @@ import "github.com/issue9/web"
 
 srv := web.NewServer(&web.Options{})
 
-srv.Mimetypes().AddMarshalers(map[string]content.MarshalFunc{
-    "application/json": json.Marshal,
-    "application/xml": xml.Marshal,
-})
-
-srv.Mimetypes().AddUnmarshalers(map[string]content.UnmarshalFunc{
-    "application/json": json.Unmarshal,
-    "application/xml": xml.Unmarshal,
-})
+srv.Mimetypes().Add("application/json", json.Marshal, json.Unmarshal)
+srv.Mimetypes().Add("application/xml", xml.Marshal, xml.Unmarshal)
 
 srv.Serve()
 ```
