@@ -35,6 +35,7 @@
 package form
 
 import (
+	"encoding"
 	"net/url"
 
 	"github.com/issue9/web/content"
@@ -59,6 +60,7 @@ type Unmarshaler interface {
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Marshaler 接口，则调用该接口；
+//  - 如果实现 encoding.TextMarshaler 接口，则调用该接口；
 //  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
 //  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v interface{}) ([]byte, error) {
@@ -68,6 +70,10 @@ func Marshal(v interface{}) ([]byte, error) {
 
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
+	}
+
+	if m, ok := v.(encoding.TextMarshaler); ok {
+		return m.MarshalText()
 	}
 
 	if vals, ok := v.(url.Values); ok {
