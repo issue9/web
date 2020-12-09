@@ -9,8 +9,8 @@ import (
 	"github.com/issue9/web"
 )
 
-// Init 初始化模块
-func Init(srv *web.Server) error {
+// Module 返回模块信息
+func Module(*web.Server) (*web.Module, error) {
 	m := web.NewModule("plugin2", "p2 desc")
 
 	m.AddInit("init1", init1)
@@ -22,7 +22,7 @@ func Init(srv *web.Server) error {
 	t2 := m.NewTag("v1.0")
 	t2.AddInit("title", install2)
 
-	return srv.AddModule(m)
+	return m, nil
 }
 
 func init1() error {

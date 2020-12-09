@@ -99,10 +99,10 @@ type Server struct {
 	catalog  catalog.Catalog
 	location *time.Location
 
-	cache   cache.Cache
-	router  *Router
-	uptime  time.Time
-	modules *dep.Dep
+	cache  cache.Cache
+	router *Router
+	uptime time.Time
+	dep    *dep.Dep
 
 	mimetypes *content.Mimetypes
 	services  *service.Manager
@@ -167,9 +167,9 @@ func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
 		catalog:  o.Catalog,
 		location: o.Location,
 
-		cache:   o.Cache,
-		modules: dep.New(logs.INFO()),
-		uptime:  time.Now(),
+		cache:  o.Cache,
+		dep:    dep.New(logs.INFO()),
+		uptime: time.Now(),
 
 		mimetypes: content.NewMimetypes(),
 		services:  service.NewManager(logs, o.Location),

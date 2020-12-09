@@ -18,16 +18,16 @@ import (
 	"github.com/issue9/web/service"
 )
 
-// PluginInstallFuncName 插件中的初始化函数名称
+// ModuleFuncName 插件中的用于获取模块信息的函数名
 //
 // NOTE: 必须为可导出的函数名称
-const PluginInstallFuncName = "Init"
+const ModuleFuncName = "Module"
 
 // ErrInited 当模块被多次初始化时返回此错误
 var ErrInited = errors.New("模块已经初始化")
 
-// PluginInstallFunc 安装插件的函数签名
-type PluginInstallFunc func(*Server) error
+// ModuleFunc 安装插件的函数签名
+type ModuleFunc func(*Server) (*Module, error)
 
 // Module 表示模块信息
 //
@@ -56,6 +56,20 @@ func NewModule(id, desc string, deps ...string) *Module {
 	}
 }
 
+// AddModuleFunc 从 PluginModuleFunc 添加模块
+func (srv *Server) AddModuleFunc(module ...ModuleFunc) error {
+	ms := make([]*Module, 0, len(module))
+	for _, f := range module {
+		m, err := f(srv)
+		if err != nil {
+			return err
+		}
+		ms = append(ms, m)
+	}
+
+	return srv.AddModule(ms...)
+}
+
 // AddModule 添加模块
 //
 // 可以在运行过程中添加模块，该模块会在加载时直接初始化，前提是模块的依赖模块都已经初始化。
@@ -63,7 +77,7 @@ func (srv *Server) AddModule(module ...*Module) error {
 	for _, m := range module {
 		m.srv = srv
 
-		if err := srv.modules.AddModule(m.depModule); err != nil {
+		if err := srv.dep.AddModule(m.depModule); err != nil {
 			return err
 		}
 	}
@@ -74,28 +88,28 @@ func (srv *Server) AddModule(module ...*Module) error {
 //
 // 键名为模块名称，键值为该模块下的标签列表。
 func (srv *Server) Tags() map[string][]string {
-	return srv.modules.Items()
+	return srv.dep.Items()
 }
 
 // Modules 当前系统使用的所有模块信息
 func (srv *Server) Modules() []*dep.Module {
-	return srv.modules.Modules()
+	return srv.dep.Modules()
 }
 
 // InitTag 初始化模块下的子标签
 func (srv *Server) InitTag(tag string) error {
-	return srv.modules.InitItem(tag)
+	return srv.dep.InitItem(tag)
 }
 
 // initModules 初始化模块
 func (srv *Server) initModules(info *log.Logger) error {
-	if srv.modules.Inited() {
+	if srv.dep.Inited() {
 		return ErrInited
 	}
 
 	info.Println("开始初始化模块...")
 
-	if err := srv.modules.Init(); err != nil {
+	if err := srv.dep.Init(); err != nil {
 		return err
 	}
 
@@ -138,7 +152,7 @@ func (srv *Server) LoadPlugins(glob string) error {
 //
 // 插件必须是以 buildmode=plugin 的方式编译的，且要求其引用的 github.com/issue9/web
 // 版本与当前的相同。
-// LoadPlugin 会在插件中查找函数名为 Init 的方法名，同时要求其函数类型为 func(*Server)error，
+// LoadPlugin 会在插件中查找固定名称和类型的函数名（参考 ModuleFunc 和 ModuleFuncName），
 // 如果存在，会调用该方法将插件加载到 Server 对象中，否则返回相应的错误信息。
 func (srv *Server) LoadPlugin(path string) error {
 	p, err := plugin.Open(path)
@@ -146,13 +160,13 @@ func (srv *Server) LoadPlugin(path string) error {
 		return err
 	}
 
-	symbol, err := p.Lookup(PluginInstallFuncName)
+	symbol, err := p.Lookup(ModuleFuncName)
 	if err != nil {
 		return err
 	}
 
-	if install, ok := symbol.(func(*Server) error); ok {
-		return PluginInstallFunc(install)(srv)
+	if install, ok := symbol.(func(*Server) (*Module, error)); ok {
+		return srv.AddModuleFunc(ModuleFunc(install))
 	}
 
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
@@ -252,5 +266,5 @@ func (m *Module) NewTag(tag string) Tag {
 
 // Tags 与当前模块关联的子标签
 func (m *Module) Tags() []string {
-	return m.srv.modules.Items(m.ID())[m.ID()]
+	return m.srv.dep.Items(m.ID())[m.ID()]
 }

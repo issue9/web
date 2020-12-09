@@ -20,10 +20,20 @@ func job(time.Time) error {
 	return nil
 }
 
-func TestModuleInitFuncName(t *testing.T) {
+func TestModuleFuncName(t *testing.T) {
 	a := assert.New(t)
 
-	a.True(unicode.IsUpper(rune(PluginInstallFuncName[0])))
+	a.True(unicode.IsUpper(rune(ModuleFuncName[0])))
+}
+
+func TestNewModule(t *testing.T) {
+	a := assert.New(t)
+
+	m := NewModule("id", "desc", "id1", "id2")
+	a.NotNil(m).
+		Equal(m.ID(), "id").
+		Equal(m.Description(), "desc").
+		Equal(m.Deps(), []string{"id1", "id2"})
 }
 
 func TestModule_NewTag(t *testing.T) {
@@ -42,6 +52,30 @@ func TestModule_NewTag(t *testing.T) {
 
 	v2 := m.NewTag("0.2.0")
 	a.NotEqual(v2, v)
+}
+
+func TestServer_AddModuleFunc(t *testing.T) {
+	a := assert.New(t)
+
+	m1 := func(*Server) (*Module, error) {
+		return NewModule("m1", "m1 desc"), nil
+	}
+
+	m2 := func(*Server) (*Module, error) {
+		return NewModule("m2", "m2 desc"), nil
+	}
+
+	m3 := func(*Server) (*Module, error) {
+		return nil, errors.New("m3")
+	}
+
+	srv := newServer(a)
+
+	a.ErrorString(srv.AddModuleFunc(m1, m2, m3), "m3")
+	a.Empty(srv.Modules())
+
+	a.NotError(srv.AddModuleFunc(m1, m2))
+	a.Equal(len(srv.Modules()), 2)
 }
 
 func TestServer_Tags(t *testing.T) {
