@@ -5,12 +5,12 @@ require (
 	github.com/issue9/assert v1.4.1
 	github.com/issue9/cache v0.2.0
 	github.com/issue9/cmdopt v0.7.0
-	github.com/issue9/conv v1.2.0
+	github.com/issue9/conv v1.2.1
 	github.com/issue9/logs/v2 v2.5.2
 	github.com/issue9/middleware/v3 v3.0.0
 	github.com/issue9/mux/v3 v3.1.1
 	github.com/issue9/qheader v0.5.3
-	github.com/issue9/query/v2 v2.2.0
+	github.com/issue9/query/v2 v2.2.1
 	github.com/issue9/scheduled v0.7.0
 	github.com/issue9/sliceutil v0.6.0
 	github.com/issue9/source v0.1.1
