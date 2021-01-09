@@ -55,8 +55,10 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
 	o := &Options{Root: "http://localhost:8080/root"}
-	srv, err := NewServer(newLogs(a), o)
+	srv, err := NewServer("app", "0.1.0", newLogs(a), o)
 	a.NotError(err).NotNil(srv)
+
+	a.Equal(srv.AppName(), "app").Equal(srv.AppVersion(), "0.1.0")
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
 	a.NotError(message.SetString(language.Und, "lang", "und"))
@@ -100,7 +102,7 @@ func TestOptions_sanitize(t *testing.T) {
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 	l := newLogs(a)
-	srv, err := NewServer(l, &Options{})
+	srv, err := NewServer("app", "0.1.0", l, &Options{})
 	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
 	a.Equal(l, srv.Logs())
@@ -116,7 +118,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := NewServer(newLogs(a), &Options{Root: "http://localhost:8081/"})
+	srv, err := NewServer("app", "0.1.0", newLogs(a), &Options{Root: "http://localhost:8081/"})
 	a.NotError(err).NotNil(srv)
 	err = srv.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
@@ -153,7 +155,7 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv, err = NewServer(newLogs(a), &Options{
+	srv, err = NewServer("app", "0.1.0", newLogs(a), &Options{
 		Root: "http://localhost:8081/",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
@@ -282,7 +284,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	server, err := NewServer(newLogs(a), &Options{
+	server, err := NewServer("app", "0.1.0", newLogs(a), &Options{
 		Root: "https://localhost:8088/api",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")

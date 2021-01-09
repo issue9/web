@@ -19,7 +19,7 @@ import (
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := web.NewServer(logs.New(), &web.Options{})
+	srv, err := web.NewServer("app", "0.1.0", logs.New(), &web.Options{})
 	a.NotError(err).NotNil(srv)
 
 	a.NotError(srv.LoadPlugins("./testdata/plugin_*.so"))

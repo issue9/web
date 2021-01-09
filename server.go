@@ -83,6 +83,8 @@ type Options struct {
 
 // Server 提供了用于构建 Context 对象的基本数据
 type Server struct {
+	name       string
+	version    string
 	logs       *logs.Logs
 	httpServer *http.Server
 	vars       map[interface{}]interface{}
@@ -148,12 +150,14 @@ func (o *Options) sanitize() (err error) {
 }
 
 // NewServer 返回 *Server 实例
-func NewServer(logs *logs.Logs, o *Options) (*Server, error) {
+func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	if err := o.sanitize(); err != nil {
 		return nil, err
 	}
 
 	srv := &Server{
+		name:       name,
+		version:    version,
 		logs:       logs,
 		httpServer: o.httpServer,
 		vars:       map[interface{}]interface{}{},
@@ -206,6 +210,16 @@ func GetServer(r *http.Request) *Server {
 	}
 
 	return v.(*Server)
+}
+
+// AppName 应用的名称
+func (srv *Server) AppName() string {
+	return srv.name
+}
+
+// AppVersion 应用的版本
+func (srv *Server) AppVersion() string {
+	return srv.version
 }
 
 // Get 返回指定键名的值
