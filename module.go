@@ -38,6 +38,13 @@ type Module struct {
 	filters   []Filter
 }
 
+// ModuleInfo 模块的描述信息
+type ModuleInfo struct {
+	ID          string
+	Description string
+	Deps        []string
+}
+
 // Tag 表示与特定标签相关联的初始化函数列表
 //
 // 依附于模块，共享模块的依赖关系。一般是各个模块下的安装脚本使用。
@@ -92,8 +99,17 @@ func (srv *Server) Tags() map[string][]string {
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*dep.Module {
-	return srv.dep.Modules()
+func (srv *Server) Modules() []*ModuleInfo {
+	ms := srv.dep.Modules()
+	info := make([]*ModuleInfo, 0, len(ms))
+	for _, m := range ms {
+		info = append(info, &ModuleInfo{
+			ID:          m.ID(),
+			Description: m.Description(),
+			Deps:        m.Deps(),
+		})
+	}
+	return info
 }
 
 // InitTag 初始化模块下的子标签
