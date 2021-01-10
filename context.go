@@ -235,8 +235,8 @@ func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 		return false
 	}
 
-	if vv, ok := v.(Validator); ok {
-		if errors := vv.CTXValidate(ctx); len(errors) > 0 {
+	if vv, ok := v.(CTXSanitizer); ok {
+		if errors := vv.CTXSanitize(ctx); len(errors) > 0 {
 			ctx.NewResultWithFields(code, errors).Render()
 			return false
 		}

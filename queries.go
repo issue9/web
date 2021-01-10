@@ -161,8 +161,8 @@ func (q *Queries) Object(v interface{}) {
 		q.errors.Add(key, vals...)
 	}
 
-	if vv, ok := v.(Validator); ok {
-		errors = vv.CTXValidate(q.ctx)
+	if vv, ok := v.(CTXSanitizer); ok {
+		errors = vv.CTXSanitize(q.ctx)
 		for key, vals := range errors {
 			q.errors.Add(key, vals...)
 		}

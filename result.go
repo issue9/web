@@ -8,12 +8,12 @@ import (
 	"github.com/issue9/web/result"
 )
 
-// Validator 数据验证接口
+// CTXSanitizer 提供对数据的验证和修正
 //
 // 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
 // 中会在解析数据成功之后，调用该接口进行数据验证。
-type Validator interface {
-	CTXValidate(*Context) result.Fields
+type CTXSanitizer interface {
+	CTXSanitize(*Context) result.Fields
 }
 
 // Result result.Result 与 Context 相结合的实现
