@@ -3,7 +3,6 @@
 package web
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/issue9/mux/v3"
@@ -226,31 +225,46 @@ func (p *Params) Result(code int) *Result {
 //
 // 相对于 Context.ParamInt64()，该值必须大于 0。
 //
-// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamID(key string) (int64, error) {
-	id, err := ctx.ParamInt64(key)
-
-	if err != nil {
-		return 0, err
+// NOTE: 若需要获取多个参数，使用 Context.Params 会更方便。
+func (ctx *Context) ParamID(key string, code int) (int64, bool) {
+	id, ok := ctx.ParamInt64(key, code)
+	if !ok {
+		return 0, false
 	}
 
 	if id <= 0 {
-		return 0, errors.New("必须大于 0")
+		rslt := ctx.NewResult(code)
+		rslt.Add(key, "必须大于 0")
+		rslt.Render()
+		return 0, false
 	}
-
-	return id, nil
+	return id, true
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamInt64(key string) (int64, error) {
-	return ctx.Params().params.Int(key)
+func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
+	v, err := ctx.Params().params.Int(key)
+	if err != nil {
+		rslt := ctx.NewResult(code)
+		rslt.Add(key, err.Error())
+		rslt.Render()
+		return 0, false
+	}
+	return v, true
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamString(key string) (string, error) {
-	return ctx.Params().params.String(key)
+func (ctx *Context) ParamString(key string, code int) (string, bool) {
+	v, err := ctx.Params().params.String(key)
+	if err != nil {
+		rslt := ctx.NewResult(code)
+		rslt.Add(key, err.Error())
+		rslt.Render()
+		return "", false
+	}
+	return v, true
 }
