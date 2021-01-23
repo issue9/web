@@ -123,6 +123,10 @@ func (srv *Server) initModules(info *log.Logger) error {
 		return ErrInited
 	}
 
+	// 以下输出日志不需要标出文件位置。
+	flags := info.Flags()
+	info.SetFlags(log.Ldate | log.Lmicroseconds)
+
 	info.Println("开始初始化模块...")
 
 	if err := srv.dep.Init(); err != nil {
@@ -140,6 +144,8 @@ func (srv *Server) initModules(info *log.Logger) error {
 	}
 
 	info.Println("模块初始化完成！")
+
+	info.SetFlags(flags)
 
 	return nil
 }
