@@ -5,6 +5,7 @@ package web
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -79,6 +80,8 @@ type Options struct {
 	// 两者的区别在于 Router.URL 返回的内容，前者带域名部分，后者不带。
 	Root string
 	root *url.URL
+
+	Config fs.FS
 }
 
 // Server 提供了用于构建 Context 对象的基本数据

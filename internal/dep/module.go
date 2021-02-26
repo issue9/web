@@ -17,9 +17,9 @@ type initialization struct {
 //
 // 包含了一个函数列表，当作模块的初始化功能。
 type Module struct {
-	id     string
-	desc   string
-	deps   []string
+	ID     string
+	Desc   string
+	Deps   []string
 	inited bool
 	inits  []initialization
 	items  map[string]*Module
@@ -28,26 +28,11 @@ type Module struct {
 // NewModule 返回 Default 实例
 func NewModule(id, desc string, dep ...string) *Module {
 	return &Module{
-		id:    id,
-		desc:  desc,
-		deps:  dep,
+		ID:    id,
+		Desc:  desc,
+		Deps:  dep,
 		inits: make([]initialization, 0, 5),
 	}
-}
-
-// ID 唯一 ID
-func (m *Module) ID() string {
-	return m.id
-}
-
-// Description 详细描述
-func (m *Module) Description() string {
-	return m.desc
-}
-
-// Deps 返回依赖列表
-func (m *Module) Deps() []string {
-	return m.deps
 }
 
 // Inited 是否已经初始化
@@ -73,7 +58,7 @@ func (m *Module) Init(info *log.Logger) error {
 // AddInit 添加初始化函数
 func (m *Module) AddInit(title string, f func() error) {
 	if m.Inited() {
-		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID()))
+		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID))
 	}
 
 	m.inits = append(m.inits, initialization{title: title, f: f})
@@ -82,7 +67,7 @@ func (m *Module) AddInit(title string, f func() error) {
 // New 获取指定名称的子模块
 func (m *Module) New(name string) *Module {
 	if m.Inited() {
-		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID()))
+		panic(fmt.Sprintf("模块 %s 已经初始化，不能再添加初始化函数", m.ID))
 	}
 
 	if m.items == nil {
@@ -92,7 +77,7 @@ func (m *Module) New(name string) *Module {
 	if item, found := m.items[name]; found {
 		return item
 	}
-	item := NewModule(m.id, m.desc, m.deps...)
+	item := NewModule(m.ID, m.Desc, m.Deps...)
 	m.items[name] = item
 	return item
 }

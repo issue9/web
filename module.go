@@ -104,9 +104,9 @@ func (srv *Server) Modules() []*ModuleInfo {
 	info := make([]*ModuleInfo, 0, len(ms))
 	for _, m := range ms {
 		info = append(info, &ModuleInfo{
-			ID:          m.ID(),
-			Description: m.Description(),
-			Deps:        m.Deps(),
+			ID:          m.ID,
+			Description: m.Desc,
+			Deps:        m.Deps,
 		})
 	}
 	return info
@@ -196,17 +196,17 @@ func (srv *Server) LoadPlugin(path string) error {
 
 // ID 唯一 ID
 func (m *Module) ID() string {
-	return m.depModule.ID()
+	return m.depModule.ID
 }
 
 // Description 模块的详细说明
 func (m *Module) Description() string {
-	return m.depModule.Description()
+	return m.depModule.Desc
 }
 
 // Deps 模块的依赖项
 func (m *Module) Deps() []string {
-	return m.depModule.Deps()
+	return m.depModule.Deps
 }
 
 // AddService 添加新的服务

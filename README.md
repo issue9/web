@@ -98,7 +98,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 ## 错误处理
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
-具体实现可参考 context.defaultResult 的实现。
+具体实现可参考 `result.defaultResult` 的实现。
 
 ## 版权
 

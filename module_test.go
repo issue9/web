@@ -45,7 +45,7 @@ func TestModule_NewTag(t *testing.T) {
 	a.NotNil(v)
 	v.AddInit("title1", nil)
 	def, ok := v.(*dep.Module)
-	a.True(ok).Equal(def.ID(), "user1") // 与模块相同的 ID
+	a.True(ok).Equal(def.ID, "user1") // 与模块相同的 ID
 
 	vv := m.NewTag("0.1.0")
 	a.Equal(vv, v)

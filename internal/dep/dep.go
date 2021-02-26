@@ -46,12 +46,12 @@ func (d *Dep) Items(mod ...string) map[string][]string {
 
 	for name, dep := range d.items {
 		for _, tag := range dep.Modules() {
-			if !enable(tag.ID()) {
+			if !enable(tag.ID) {
 				continue
 			}
 
-			ret[tag.ID()] = append(ret[tag.ID()], name)
-			sort.Strings(ret[tag.ID()])
+			ret[tag.ID] = append(ret[tag.ID], name)
+			sort.Strings(ret[tag.ID])
 		}
 	}
 
@@ -85,8 +85,8 @@ func (d *Dep) AddModule(m ...*Module) error {
 
 func (d *Dep) addModule(m *Module) error {
 	for _, mod := range d.ms {
-		if mod.ID() == m.ID() {
-			return fmt.Errorf("模块 %s 已经存在", m.ID())
+		if mod.ID == m.ID {
+			return fmt.Errorf("模块 %s 已经存在", m.ID)
 		}
 	}
 	d.ms = append(d.ms, m)
@@ -150,7 +150,7 @@ func (d *Dep) initModule(m *Module, info *log.Logger) error {
 		return nil
 	}
 
-	for _, depID := range m.Deps() { // 先初始化依赖项
+	for _, depID := range m.Deps { // 先初始化依赖项
 		depMod := d.FindModule(depID)
 		if depMod == nil {
 			return fmt.Errorf("依赖项 %s 未找到", depID)
@@ -161,7 +161,7 @@ func (d *Dep) initModule(m *Module, info *log.Logger) error {
 		}
 	}
 
-	info.Println("开始初始化模块：", m.ID())
+	info.Println("开始初始化模块：", m.ID)
 
 	return m.Init(info)
 }
@@ -170,14 +170,14 @@ func (d *Dep) initModule(m *Module, info *log.Logger) error {
 // 依赖项是否存在；是否存在自我依赖等。
 func (d *Dep) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
-	for _, depID := range m.Deps() {
+	for _, depID := range m.Deps {
 		if d.FindModule(depID) == nil {
-			return fmt.Errorf("未找到 %s 的依赖模块 %s", m.ID(), depID)
+			return fmt.Errorf("未找到 %s 的依赖模块 %s", m.ID, depID)
 		}
 	}
 
-	if d.isDep(m.ID(), m.ID()) {
-		return fmt.Errorf("存在循环依赖项:%s", m.ID())
+	if d.isDep(m.ID, m.ID) {
+		return fmt.Errorf("存在循环依赖项:%s", m.ID)
 	}
 
 	return nil
@@ -190,7 +190,7 @@ func (d *Dep) isDep(m1, m2 string) bool {
 		return false
 	}
 
-	for _, depID := range module1.Deps() {
+	for _, depID := range module1.Deps {
 		if depID == m2 {
 			return true
 		}
@@ -208,7 +208,7 @@ func (d *Dep) isDep(m1, m2 string) bool {
 // FindModule 查找指定 ID 的模块实例
 func (d *Dep) FindModule(id string) *Module {
 	for _, m := range d.ms {
-		if m.ID() == id {
+		if m.ID == id {
 			return m
 		}
 	}
