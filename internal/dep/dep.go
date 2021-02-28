@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"sort"
+
+	"github.com/issue9/sliceutil"
 )
 
 // Dep 依赖管理
@@ -34,15 +36,8 @@ func (d *Dep) Items(mod ...string) map[string][]string {
 	ret := make(map[string][]string, len(mod))
 
 	enable := func(id string) bool {
-		if len(mod) == 0 {
-			return true
-		}
-		for _, m := range mod {
-			if m == id {
-				return true
-			}
-		}
-		return false
+		return len(mod) == 0 ||
+			sliceutil.Count(mod, func(i int) bool { return mod[i] == id }) > 0
 	}
 
 	for name, dep := range d.items {
@@ -85,10 +80,8 @@ func (d *Dep) AddModule(m ...*Module) error {
 }
 
 func (d *Dep) addModule(m *Module) error {
-	for _, mod := range d.ms {
-		if mod.ID == m.ID {
-			return fmt.Errorf("模块 %s 已经存在", m.ID)
-		}
+	if sliceutil.Count(d.ms, func(i int) bool { return d.ms[i].ID == m.ID }) > 0 {
+		return fmt.Errorf("模块 %s 已经存在", m.ID)
 	}
 	d.ms = append(d.ms, m)
 
