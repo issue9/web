@@ -26,8 +26,9 @@ func New(info *log.Logger) *Dep {
 	}
 }
 
-// Items 返回所有的子模块名称
+// Items 返回指定名称的模块的子模块列表
 //
+// mod 表示需要查询的模块名称，如果为空，表示返回所有模块的子模块列表。
 // 键名为模块名称，键值为该模块下的子模块列表。
 func (d *Dep) Items(mod ...string) map[string][]string {
 	ret := make(map[string][]string, len(mod))
@@ -127,7 +128,7 @@ func (d *Dep) Init() error {
 	}
 
 	for _, m := range d.ms { // 进行初如化
-		if err := d.initModule(m, d.info); err != nil {
+		if err := d.initModule(m); err != nil {
 			return err
 		}
 	}
@@ -145,7 +146,7 @@ func (d *Dep) Modules() []*Module {
 //
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
 // 若 tag 不为空，表示只调用该标签下的初始化函数。
-func (d *Dep) initModule(m *Module, info *log.Logger) error {
+func (d *Dep) initModule(m *Module) error {
 	if m.Inited() {
 		return nil
 	}
@@ -156,14 +157,14 @@ func (d *Dep) initModule(m *Module, info *log.Logger) error {
 			return fmt.Errorf("依赖项 %s 未找到", depID)
 		}
 
-		if err := d.initModule(depMod, info); err != nil {
+		if err := d.initModule(depMod); err != nil {
 			return err
 		}
 	}
 
-	info.Println("开始初始化模块：", m.ID)
+	d.info.Println("开始初始化模块：", m.ID)
 
-	return m.Init(info)
+	return m.Init(d.info)
 }
 
 // 检测模块的依赖关系。比如：

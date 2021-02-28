@@ -62,7 +62,7 @@ func TestDep_InitItem(t *testing.T) {
 	d.InitItem("d1")
 	a.True(d1.inited).False(d2.inited)
 
-	a.Error(d.InitItem("exists"))
+	a.ErrorString(d.InitItem("not exists"), "不存在")
 }
 
 func TestDep_isDep(t *testing.T) {
