@@ -16,22 +16,21 @@ type Dep struct {
 	ms     []*Module
 	inited bool
 	info   *log.Logger
-	items  map[string]*Dep
 }
 
 // New 声明新的 Dep 变量
 func New(info *log.Logger) *Dep {
 	return &Dep{
-		ms:    make([]*Module, 0, 20),
-		info:  info,
-		items: make(map[string]*Dep, 5),
+		ms:   make([]*Module, 0, 20),
+		info: info,
 	}
 }
 
 // Items 返回指定名称的模块的子模块列表
 //
 // mod 表示需要查询的模块名称，如果为空，表示返回所有模块的子模块列表。
-// 键名为模块名称，键值为该模块下的子模块列表。
+//
+// 返回值中键名为模块名称，键值为该模块下的子模块列表。
 func (d *Dep) Items(mod ...string) map[string][]string {
 	ret := make(map[string][]string, len(mod))
 
@@ -40,31 +39,20 @@ func (d *Dep) Items(mod ...string) map[string][]string {
 			sliceutil.Count(mod, func(i int) bool { return mod[i] == id }) > 0
 	}
 
-	for name, dep := range d.items {
-		for _, tag := range dep.Modules() {
-			if !enable(tag.ID) {
-				continue
-			}
-
-			ret[tag.ID] = append(ret[tag.ID], name)
-			sort.Strings(ret[tag.ID])
+	for _, m := range d.ms {
+		if !enable(m.ID) {
+			continue
 		}
+
+		names := make([]string, 0, len(m.items))
+		for name := range m.items {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		ret[m.ID] = names
 	}
 
 	return ret
-}
-
-// InitItem 初始化模块下的子模块
-func (d *Dep) InitItem(tag string) error {
-	if tag == "" {
-		panic("tag 不能为空")
-	}
-
-	tags, found := d.items[tag]
-	if !found {
-		return fmt.Errorf("标签 %s 不存在", tag)
-	}
-	return tags.Init()
 }
 
 // AddModule 添加新模块
@@ -85,19 +73,9 @@ func (d *Dep) addModule(m *Module) error {
 	}
 	d.ms = append(d.ms, m)
 
-	for name, mod := range m.items {
-		dep, found := d.items[name]
-		if !found {
-			dep = New(d.info)
-			d.items[name] = dep
-		}
-		dep.AddModule(mod)
-	}
-
 	if d.inited {
 		return m.Init(d.info)
 	}
-
 	return nil
 }
 
@@ -109,7 +87,7 @@ func (d *Dep) Inited() bool {
 // Init 对所有的模块进行初始化操作
 //
 // 会进行依赖检测。若模块初始化出错，则会中断并返回出错信息。
-func (d *Dep) Init() error {
+func (d *Dep) Init(tag string) error {
 	if d.Inited() {
 		panic("已经初始化")
 	}
@@ -121,7 +99,7 @@ func (d *Dep) Init() error {
 	}
 
 	for _, m := range d.ms { // 进行初如化
-		if err := d.initModule(m); err != nil {
+		if err := d.initModule(m, tag); err != nil {
 			return err
 		}
 	}
@@ -139,7 +117,14 @@ func (d *Dep) Modules() []*Module {
 //
 // 若该模块已经初始化，则不会作任何操作，包括依赖模块的初始化，也不会执行。
 // 若 tag 不为空，表示只调用该标签下的初始化函数。
-func (d *Dep) initModule(m *Module) error {
+func (d *Dep) initModule(m *Module, tag string) error {
+	if tag != "" {
+		m = m.items[tag]
+		if m == nil {
+			return nil
+		}
+	}
+
 	if m.Inited() {
 		return nil
 	}
@@ -150,7 +135,7 @@ func (d *Dep) initModule(m *Module) error {
 			return fmt.Errorf("依赖项 %s 未找到", depID)
 		}
 
-		if err := d.initModule(depMod); err != nil {
+		if err := d.initModule(depMod, tag); err != nil {
 			return err
 		}
 	}

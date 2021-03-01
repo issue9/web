@@ -114,7 +114,7 @@ func (srv *Server) Modules() []*ModuleInfo {
 
 // InitTag 初始化模块下的子标签
 func (srv *Server) InitTag(tag string) error {
-	return srv.dep.InitItem(tag)
+	return srv.dep.Init(tag)
 }
 
 // initModules 初始化模块
@@ -129,7 +129,7 @@ func (srv *Server) initModules(info *log.Logger) error {
 
 	info.Println("开始初始化模块...")
 
-	if err := srv.dep.Init(); err != nil {
+	if err := srv.dep.Init(""); err != nil {
 		return err
 	}
 

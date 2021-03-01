@@ -38,9 +38,12 @@ func TestDep_Items(t *testing.T) {
 	a.NotNil(m2.New("d2"))
 	a.NotError(d.AddModule(m2))
 
+	m3 := newMod("m3", nil)
+	a.NotError(d.AddModule(m3))
+
 	a.Empty(d.Items("d1"))
 
-	a.Equal(d.Items(), map[string][]string{"m1": {"d1", "d2"}, "m2": {"d2"}})
+	a.Equal(d.Items(), map[string][]string{"m1": {"d1", "d2"}, "m2": {"d2"}, "m3": {}})
 	a.Equal(d.Items("m2"), map[string][]string{"m2": {"d2"}})
 }
 
@@ -52,17 +55,8 @@ func TestDep_InitItem(t *testing.T) {
 	a.NotNil(m1.New("d2"))
 	a.NotError(d.AddModule(m1))
 
-	a.Panic(func() {
-		d.InitItem("")
-	})
-
-	d1 := d.items["d1"]
-	d2 := d.items["d2"]
-	a.False(d1.inited).False(d2.inited)
-	d.InitItem("d1")
-	a.True(d1.inited).False(d2.inited)
-
-	a.ErrorString(d.InitItem("not exists"), "不存在")
+	d.Init("d1")
+	a.PanicString(func() { d.Init("d1") }, "已经初始化")
 }
 
 func TestDep_isDep(t *testing.T) {
@@ -139,7 +133,7 @@ func TestDep_Init(t *testing.T) {
 		newMod("d1", f("d1"), "d3"),
 		newMod("d2", f("d2"), "d3"),
 	})
-	a.Error(d.Init())
+	a.Error(d.Init(""))
 
 	d = newDep(a, []*Module{
 		newMod("m1", f("m1"), "d1", "d2"),
@@ -148,16 +142,16 @@ func TestDep_Init(t *testing.T) {
 		newMod("d3", f("d3")),
 	})
 
-	a.NotError(d.Init())
+	a.NotError(d.Init(""))
 	a.Equal(len(inits), 4).
 		Equal(inits["m1"], 1). // 为 1 表示不会被多次调用
 		Equal(inits["d1"], 1).
 		Equal(inits["d2"], 1).
 		Equal(inits["d3"], 1)
 
-	a.Panic(func() {
-		d.Init()
-	})
+	a.PanicString(func() {
+		d.Init("")
+	}, "已经初始化")
 
 	// 添加已经存在的模块
 	a.ErrorString(d.AddModule(newMod("m1", f("m1"), "d1")), "已经存在")
