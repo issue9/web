@@ -71,13 +71,7 @@ func (srv *Server) buildMiddlewares() error {
 
 func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				srv.recoverFunc(w, err)
-			}
-		}()
-
-		next.ServeHTTP(w, r)
+		srv.recoverFunc.Middleware(next).ServeHTTP(w, r)
 	})
 }
 
