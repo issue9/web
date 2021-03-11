@@ -92,7 +92,7 @@ func TestDep_checkDeps(t *testing.T) {
 		newMod("d1", nil, "d3"),
 	})
 
-	m1 := d.FindModule("m1")
+	m1 := d.findModule("m1")
 	a.NotNil(m1).
 		Error(d.checkDeps(m1)) // 依赖项不存在
 
@@ -110,7 +110,7 @@ func TestDep_checkDeps(t *testing.T) {
 		newMod("d2", nil, "d3"),
 		newMod("d3", nil, "d2"),
 	})
-	d2 := d.FindModule("d2")
+	d2 := d.findModule("d2")
 	a.NotNil(d2).
 		Error(d.checkDeps(d2))
 }

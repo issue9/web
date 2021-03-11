@@ -3,6 +3,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -25,6 +26,25 @@ func buildFilter(txt string) Filter {
 			next(ctx)
 		})
 	})
+}
+
+func TestServer_SetRecovery(t *testing.T) {
+	a := assert.New(t)
+
+	server := newServer(a)
+	server.Router().Get("/panic", func(ctx *Context) { panic("panic") })
+	srv := rest.NewServer(t, server.middlewares, nil)
+	defer srv.Close()
+
+	// 默认值，返回 500
+	srv.Get("/root/panic").Do().Status(http.StatusInternalServerError)
+
+	// 自定义 Recovery
+	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(fmt.Sprint(msg)))
+	})
+	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).StringBody("panic")
 }
 
 func TestServer_SetDebugger(t *testing.T) {

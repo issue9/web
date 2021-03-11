@@ -59,15 +59,33 @@ func (srv *Server) buildMiddlewares() error {
 		return err
 	}
 
-	rf := srv.errorHandlers.Recovery(recovery.DefaultRecoverFunc(http.StatusInternalServerError))
 	srv.AddMiddlewares(
 		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		rf.Middleware,
+		srv.recoveryMiddleware,
 		srv.compress.Middleware, // srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
 		srv.errorHandlers.Middleware,
 	)
 
 	return nil
+}
+
+func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				srv.recoverFunc(w, err)
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// SetRecovery 设置在 panic 时的处理函数
+//
+// 默认情况下，会向用户输出 500 的错误信息。
+func (srv *Server) SetRecovery(f recovery.RecoverFunc) {
+	srv.recoverFunc = f
 }
 
 // SetErrorHandle 设置指定状态码页面的处理函数

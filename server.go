@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/middleware/v3/compress"
 	"github.com/issue9/middleware/v3/debugger"
 	"github.com/issue9/middleware/v3/errorhandler"
+	"github.com/issue9/middleware/v3/recovery"
 	"github.com/issue9/mux/v3"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -92,6 +93,7 @@ type Server struct {
 
 	// middleware
 	middlewares   *middleware.Manager
+	recoverFunc   recovery.RecoverFunc
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	debugger      *debugger.Debugger
@@ -155,6 +157,8 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 		return nil, err
 	}
 
+	eh := errorhandler.New()
+
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -164,8 +168,9 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 		closed:     make(chan struct{}, 1),
 
 		middlewares:   middleware.NewManager(o.mux),
+		recoverFunc:   eh.Recovery(recovery.DefaultRecoverFunc(http.StatusInternalServerError)),
 		compress:      compress.New(logs.ERROR(), "*"),
-		errorHandlers: errorhandler.New(),
+		errorHandlers: eh,
 		debugger:      &debugger.Debugger{},
 
 		catalog:  o.Catalog,

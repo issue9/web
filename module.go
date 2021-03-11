@@ -63,7 +63,7 @@ func NewModule(id, desc string, deps ...string) *Module {
 	}
 }
 
-// AddModuleFunc 从 PluginModuleFunc 添加模块
+// AddModuleFunc 从 ModuleFunc 添加模块
 func (srv *Server) AddModuleFunc(module ...ModuleFunc) error {
 	ms := make([]*Module, 0, len(module))
 	for _, f := range module {

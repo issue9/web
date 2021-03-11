@@ -130,7 +130,7 @@ func (d *Dep) initModule(m *Module, tag string) error {
 	}
 
 	for _, depID := range m.Deps { // 先初始化依赖项
-		depMod := d.FindModule(depID)
+		depMod := d.findModule(depID)
 		if depMod == nil {
 			return fmt.Errorf("依赖项 %s 未找到", depID)
 		}
@@ -150,7 +150,7 @@ func (d *Dep) initModule(m *Module, tag string) error {
 func (d *Dep) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, depID := range m.Deps {
-		if d.FindModule(depID) == nil {
+		if d.findModule(depID) == nil {
 			return fmt.Errorf("未找到 %s 的依赖模块 %s", m.ID, depID)
 		}
 	}
@@ -164,7 +164,7 @@ func (d *Dep) checkDeps(m *Module) error {
 
 // m1 是否依赖 m2
 func (d *Dep) isDep(m1, m2 string) bool {
-	module1 := d.FindModule(m1)
+	module1 := d.findModule(m1)
 	if module1 == nil {
 		return false
 	}
@@ -174,7 +174,7 @@ func (d *Dep) isDep(m1, m2 string) bool {
 			return true
 		}
 
-		if d.FindModule(depID) != nil {
+		if d.findModule(depID) != nil {
 			if d.isDep(depID, m2) {
 				return true
 			}
@@ -184,8 +184,7 @@ func (d *Dep) isDep(m1, m2 string) bool {
 	return false
 }
 
-// FindModule 查找指定 ID 的模块实例
-func (d *Dep) FindModule(id string) *Module {
+func (d *Dep) findModule(id string) *Module {
 	for _, m := range d.ms {
 		if m.ID == id {
 			return m
