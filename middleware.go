@@ -62,7 +62,7 @@ func (srv *Server) buildMiddlewares() error {
 	srv.AddMiddlewares(
 		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 		srv.recoveryMiddleware,
-		srv.compress.Middleware, // srv.errorhandlers.New 可能会输出大段内容。所以放在其之前。
+		srv.compress.Middleware, // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
 		srv.errorHandlers.Middleware,
 	)
 
@@ -79,7 +79,7 @@ func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
 //
 // 默认情况下，会向用户输出 500 的错误信息。
 func (srv *Server) SetRecovery(f recovery.RecoverFunc) {
-	srv.recoverFunc = f
+	srv.recoverFunc = srv.errorHandlers.Recovery(f)
 }
 
 // SetErrorHandle 设置指定状态码页面的处理函数
