@@ -9,6 +9,7 @@ import (
 	"github.com/issue9/middleware/v3/compress"
 	"github.com/issue9/middleware/v3/errorhandler"
 	"github.com/issue9/middleware/v3/recovery"
+	"github.com/issue9/source"
 )
 
 // Filter 针对 Context 的中间件
@@ -47,21 +48,29 @@ func (m *Module) AddFilters(filter ...Filter) *Module {
 }
 
 func (srv *Server) buildMiddlewares() error {
-	if err := srv.compress.AddAlgorithm("deflate", compress.NewDeflate); err != nil {
+	srv.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
+		data, err := source.TraceStack(5, msg)
+		if err != nil {
+			panic(err)
+		}
+		srv.Logs().Error(data)
+	}, http.StatusInternalServerError)
+
+	if err := srv.SetCompressAlgorithm("deflate", compress.NewDeflate); err != nil {
 		return err
 	}
 
-	if err := srv.compress.AddAlgorithm("gzip", compress.NewGzip); err != nil {
+	if err := srv.SetCompressAlgorithm("gzip", compress.NewGzip); err != nil {
 		return err
 	}
 
-	if err := srv.compress.AddAlgorithm("br", compress.NewBrotli); err != nil {
+	if err := srv.SetCompressAlgorithm("br", compress.NewBrotli); err != nil {
 		return err
 	}
 
 	srv.AddMiddlewares(
-		srv.debugger.Middleware, // 在最外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		srv.recoveryMiddleware,
+		srv.recoveryMiddleware,  // 在最外层，防止协程 panic，崩了整个进程。
+		srv.debugger.Middleware, // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
 		srv.compress.Middleware, // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
 		srv.errorHandlers.Middleware,
 	)
@@ -77,9 +86,17 @@ func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
 
 // SetRecovery 设置在 panic 时的处理函数
 //
-// 默认情况下，会向用户输出 500 的错误信息。
-func (srv *Server) SetRecovery(f recovery.RecoverFunc) {
-	srv.recoverFunc = srv.errorHandlers.Recovery(f)
+// f 为处理 panic 的函数；
+// status 用于指定调用 ErrorHandler 中的哪个理函数展示给终端用户。
+// 仅在 status > 0 时才会有效果。f 中也可以向终端输出状态码和页面内容，
+// 如果在 f 也输出了相关的状态，同时又指定了 status，则会依次调用 status 和 f。
+func (srv *Server) SetRecovery(f recovery.RecoverFunc, status int) {
+	srv.recoverFunc = srv.errorHandlers.Recovery(func(w http.ResponseWriter, msg interface{}) {
+		if status > 0 {
+			srv.errorHandlers.Render(w, status)
+		}
+		f(w, msg)
+	})
 }
 
 // SetErrorHandle 设置指定状态码页面的处理函数
@@ -122,8 +139,8 @@ func (srv *Server) SetDebugger(pprof, vars string) (err error) {
 //
 // 默认情况下，支持 gzip、deflate 和 br 三种。
 // 如果 w 为 nil，表示删除对该算法的支持。
-func (srv *Server) SetCompressAlgorithm(name string, w compress.WriterFunc) {
-	srv.compress.SetAlgorithm(name, w)
+func (srv *Server) SetCompressAlgorithm(name string, w compress.WriterFunc) error {
+	return srv.compress.SetAlgorithm(name, w)
 }
 
 // AddCompressTypes 指定哪些内容可以进行压缩传输

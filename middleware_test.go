@@ -41,10 +41,24 @@ func TestServer_SetRecovery(t *testing.T) {
 
 	// 自定义 Recovery
 	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(http.StatusBadGateway)
 		w.Write([]byte(fmt.Sprint(msg)))
-	})
-	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).StringBody("panic")
+	}, http.StatusBadGateway)
+	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).
+		StringBody(http.StatusText(http.StatusBadGateway) + "\npanic")
+
+	// 将 status 设置为 0
+	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprint(msg)))
+	}, 0)
+	srv.Get("/root/panic").Do().Status(http.StatusBadRequest).StringBody("panic")
+
+	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {}, http.StatusBadGateway)
+	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
+		w.WriteHeader(status)
+		w.Write([]byte("error-handler"))
+	}, http.StatusBadGateway)
+	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).StringBody("error-handler")
 }
 
 func TestServer_SetDebugger(t *testing.T) {

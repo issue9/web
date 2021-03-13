@@ -157,8 +157,6 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 		return nil, err
 	}
 
-	eh := errorhandler.New()
-
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -168,9 +166,8 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 		closed:     make(chan struct{}, 1),
 
 		middlewares:   middleware.NewManager(o.mux),
-		recoverFunc:   eh.Recovery(recovery.DefaultRecoverFunc(http.StatusInternalServerError)),
 		compress:      compress.New(logs.ERROR(), "*"),
-		errorHandlers: eh,
+		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
 
 		catalog:  o.Catalog,
