@@ -42,8 +42,9 @@ func TestContext_Error(t *testing.T) {
 		server:   b,
 	}
 
-	ctx.Error(http.StatusInternalServerError, "log1", "log2")
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.PanicString(func() {
+		ctx.Error(http.StatusInternalServerError, "log1", "log2")
+	}, "500")
 	a.True(strings.HasPrefix(errLog.String(), "log1log2"))
 }
 
@@ -58,8 +59,9 @@ func TestContext_Critical(t *testing.T) {
 		server:   b,
 	}
 
-	ctx.Critical(http.StatusInternalServerError, "log1", "log2")
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.PanicString(func() {
+		ctx.Critical(http.StatusInternalServerError, "log1", "log2")
+	}, "500")
 	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
 }
 
@@ -74,8 +76,9 @@ func TestContext_Errorf(t *testing.T) {
 		server:   b,
 	}
 
-	ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.PanicString(func() {
+		ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
+	}, "500")
 	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 }
 
@@ -90,7 +93,8 @@ func TestContext_Criticalf(t *testing.T) {
 		server:   b,
 	}
 
-	ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+	a.PanicString(func() {
+		ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51)
+	}, "500")
 	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
 }

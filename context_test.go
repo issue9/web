@@ -209,8 +209,11 @@ func TestContext_Read(t *testing.T) {
 	a.True(ctx.Read(obj, 41110))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
-	o := &struct{}{}
-	a.False(ctx.Read(o, 41110))
+	// 触发 ctx.Error 退出
+	a.PanicString(func() {
+		o := &struct{}{}
+		ctx.Read(o, 41110)
+	}, "422")
 }
 
 func TestContext_Marshal(t *testing.T) {
@@ -286,14 +289,16 @@ func TestContext_Render(t *testing.T) {
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
-	w = httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
-	ctx = newServer(a).NewContext(w, r)
-	obj1 := &struct{ Name string }{Name: "name"}
-	ctx.Render(http.StatusCreated, obj1, nil)
-	a.Equal(w.Code, http.StatusInternalServerError)
+	// 触发 ctx.Error 退出
+	a.PanicString(func() {
+		r = httptest.NewRequest(http.MethodPost, "/path", nil)
+		w = httptest.NewRecorder()
+		r.Header.Set("Content-Type", mimetypetest.Mimetype)
+		r.Header.Set("Accept", mimetypetest.Mimetype)
+		ctx = newServer(a).NewContext(w, r)
+		obj1 := &struct{ Name string }{Name: "name"}
+		ctx.Render(http.StatusCreated, obj1, nil)
+	}, "500")
 }
 
 func TestContext_ClientIP(t *testing.T) {

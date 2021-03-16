@@ -102,8 +102,6 @@ func (srv *Server) SetRecovery(f recovery.RecoverFunc, status int) {
 // SetErrorHandle 设置指定状态码页面的处理函数
 //
 // 如果状态码已经存在处理函数，则修改，否则就添加。
-// 仅对状态码 >= 400 的有效果。
-// 如果 status 为零表示所有未设置的状态码都采用该函数处理。
 func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
 }

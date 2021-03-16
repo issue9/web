@@ -232,7 +232,6 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
 		ctx.Error(http.StatusUnprocessableEntity, err)
-		return false
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {

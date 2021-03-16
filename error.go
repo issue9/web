@@ -19,8 +19,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
 	}
-
-	ctx.server.errorHandlers.Render(ctx.Response, status)
+	ctx.Exit(status)
 }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
@@ -34,8 +33,7 @@ func (ctx *Context) Error(status int, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(v...))
 	}
-
-	ctx.server.errorHandlers.Render(ctx.Response, status)
+	ctx.Exit(status)
 }
 
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
@@ -49,8 +47,7 @@ func (ctx *Context) Criticalf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
-
-	ctx.server.errorHandlers.Render(ctx.Response, status)
+	ctx.Exit(status)
 }
 
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
@@ -64,8 +61,7 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 	if len(v) > 0 {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
-
-	ctx.server.errorHandlers.Render(ctx.Response, status)
+	ctx.Exit(status)
 }
 
 // Exit 以指定的状态码退出当前协程
@@ -80,8 +76,8 @@ func (ctx *Context) Exit(status int) {
 // ExitContext 最终是以 panic 的形式退出，所以如果你的代码里截获了 panic，
 // 那么 ExitContext 并不能达到退出当前请求的操作。
 //
-// 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 ExitContext 则会触发 panic，退出当前协程。
+// 与 Contet.Error 的不同在于：
+// Contet.Error 不会主动退出当前协程，而 ExitContext 则会触发 panic，退出当前协程。
 func ExitContext(status int) {
 	errorhandler.Exit(status)
 }
