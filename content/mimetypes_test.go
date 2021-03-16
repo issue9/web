@@ -23,7 +23,7 @@ func TestMimetypes_ContentType(t *testing.T) {
 	f, e, err = mt.ConentType(BuildContentType(DefaultMimetype, DefaultCharset))
 	a.Error(err).Nil(f).Nil(e)
 
-	mt.Add(DefaultMimetype, json.Marshal, json.Unmarshal)
+	mt.Add(DefaultMimetype, nil, json.Unmarshal)
 	f, e, err = mt.ConentType(BuildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)
 
@@ -54,6 +54,11 @@ func TestMimetypes_Unmarshal(t *testing.T) {
 	// mimetype 无法找到
 	um, err = mt.Unmarshal("not-exists")
 	a.ErrorIs(err, ErrNotFound).Nil(um)
+
+	// 空的 unmarshal
+	a.NotError(mt.Add("empty", json.Marshal, nil))
+	um, err = mt.Unmarshal("empty")
+	a.NotError(err).Nil(um)
 }
 
 func TestMimetypes_Marshal(t *testing.T) {
@@ -72,6 +77,7 @@ func TestMimetypes_Marshal(t *testing.T) {
 
 	a.NotError(mt.Add(DefaultMimetype, xml.Marshal, xml.Unmarshal))
 	a.NotError(mt.Add("text/plain", json.Marshal, json.Unmarshal))
+	a.NotError(mt.Add("empty", nil, nil))
 
 	name, marshal, err = mt.Marshal(DefaultMimetype)
 	a.NotError(err).
@@ -111,6 +117,12 @@ func TestMimetypes_Marshal(t *testing.T) {
 	name, marshal, err = mt.Marshal("font/wottf")
 	a.Error(err).
 		Empty(name).
+		Nil(marshal)
+
+	// 匹配 empty
+	name, marshal, err = mt.Marshal("empty")
+	a.NotError(err).
+		Equal(name, "empty").
 		Nil(marshal)
 }
 

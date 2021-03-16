@@ -58,7 +58,7 @@ func newServer(a *assert.Assertion) *Server {
 	srv, err := NewServer("app", "0.1.0", newLogs(a), o)
 	a.NotError(err).NotNil(srv)
 
-	a.Equal(srv.AppName(), "app").Equal(srv.AppVersion(), "0.1.0")
+	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
 	a.NotError(message.SetString(language.Und, "lang", "und"))

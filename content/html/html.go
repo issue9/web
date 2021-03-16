@@ -2,9 +2,10 @@
 
 // Package html 提供输出 HTML 内容的 content.MarshalFunc 函数
 //
+//  mt := content.NewMimetypes()
 //  tpl := template.ParseFiles(...)
 //  mgr := html.New(tpl)
-//  content.AddMarshal("text/html", mgr.Marshal)
+//  mt.Add("text/html", mgr.Marshal, nil)
 //
 //  func handle(ctx *web.Context) {
 //      ctx.Render(200, html.Tpl("index", map[string]interface{}{...}), nil)
@@ -65,6 +66,8 @@ func (html *HTML) SetTemplate(tpl *template.Template) {
 }
 
 // Marshal 针对 HTML 内容的 content.MarshalFunc 实现
+//
+// 参数 v 限定为 *Template 类型，否则将返回错误。
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
 	if v == content.Nil {
 		return nil, nil
