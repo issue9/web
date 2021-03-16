@@ -1,0 +1,9 @@
+# web.yaml 的测试文件，需要与其它内容数值相同
+
+root: http://localhost:8082
+router:
+  pprof: /debug/pprof/
+  vars: /debug/vars
+http:
+  readTimeout: 3s
+timezone: Africa/Addis_Ababa
