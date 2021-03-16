@@ -214,13 +214,13 @@ func GetServer(r *http.Request) *Server {
 	return v.(*Server)
 }
 
-// AppName 应用的名称
-func (srv *Server) AppName() string {
+// Name 应用的名称
+func (srv *Server) Name() string {
 	return srv.name
 }
 
-// AppVersion 应用的版本
-func (srv *Server) AppVersion() string {
+// Version 应用的版本
+func (srv *Server) Version() string {
 	return srv.version
 }
 
