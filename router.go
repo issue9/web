@@ -204,7 +204,7 @@ func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 		srv:     router.srv,
 		mux:     router.mux,
 		prefix:  router.url.Path + prefix,
-		filters: filter,
+		filters: filters,
 	}
 }
 

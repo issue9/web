@@ -165,7 +165,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // Marshal 将 v 解码并发送给客户端
 //
 // 若 v 是一个 nil 值，则不会向客户端输出任何内容；
-// 若是需要正常输出一个 nil 类型到客户端（JSON 中会输出 null），
+// 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
 // 可以使用 content.Nil 变量代替。
 //
 // NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，

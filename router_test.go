@@ -174,9 +174,9 @@ func TestRouter_NewRouter(t *testing.T) {
 	a.True(ok).NotNil(router)
 
 	url, err := router.URL("/posts/1", nil)
-	a.Equal("https://example.com/posts/1", url)
+	a.NotError(err).Equal("https://example.com/posts/1", url)
 	path, err := router.Path("/posts/1", nil)
-	a.Equal("/posts/1", path)
+	a.NotError(err).Equal("/posts/1", path)
 
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()

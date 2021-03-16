@@ -69,10 +69,10 @@ func (srv *Server) buildMiddlewares() error {
 	}
 
 	srv.AddMiddlewares(
-		srv.recoveryMiddleware,  // 在最外层，防止协程 panic，崩了整个进程。
-		srv.debugger.Middleware, // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		srv.compress.Middleware, // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
-		srv.errorHandlers.Middleware,
+		srv.recoveryMiddleware,       // 在最外层，防止协程 panic，崩了整个进程。
+		srv.debugger.Middleware,      // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+		srv.compress.Middleware,      // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
+		srv.errorHandlers.Middleware, // errorHandler 依赖 recovery，必须要在 recovery 之后。
 	)
 
 	return nil

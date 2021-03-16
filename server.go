@@ -294,8 +294,9 @@ func (srv *Server) Serve() (err error) {
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
+	} else {
+		err = srv.httpServer.ListenAndServe()
 	}
-	err = srv.httpServer.ListenAndServe()
 
 	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。

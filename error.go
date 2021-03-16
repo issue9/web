@@ -70,18 +70,18 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) {
 
 // Exit 以指定的状态码退出当前协程
 func (ctx *Context) Exit(status int) {
-	Exit(status)
+	ExitContext(status)
 }
 
-// Exit 以指定的状态码退出当前协程
+// ExitContext 以指定的状态码退出当前协程
 //
 // status 表示输出的状态码，如果为 0，则不会作任何状态码输出。
 //
-// Exit 最终是以 panic 的形式退出，所以如果你的代码里截获了 panic，
-// 那么 Exit 并不能达到退出当前请求的操作。
+// ExitContext 最终是以 panic 的形式退出，所以如果你的代码里截获了 panic，
+// 那么 ExitContext 并不能达到退出当前请求的操作。
 //
 // 与 Error 的不同在于：
-// Error 不会主动退出当前协程，而 Exit 则会触发 panic，退出当前协程。
-func Exit(status int) {
+// Error 不会主动退出当前协程，而 ExitContext 则会触发 panic，退出当前协程。
+func ExitContext(status int) {
 	errorhandler.Exit(status)
 }
