@@ -7,43 +7,48 @@ release:
   name_template: '{{.Tag}}'
 
 builds:
-  - id: web
+- id: web
 
-    goos:
-    - darwin
-    - linux
-    - windows
+  goos:
+  - darwin
+  - linux
+  - windows
 
-    goarch:
-    - amd64
+  goarch:
+  - amd64
+  - arm64
 
-    main: ./cmd/web
+  ignore:
+  - goos: windows
+    goarch: arm64
 
-    binary: web
+  main: ./cmd/web
 
-    flags:
-      - -trimpath
+  binary: web
 
-    ldflags:
-      - -s -w -X github.com/issue9/web/internal/version.commitHash={{.Commit}} -X github.com/issue9/web/internal/version.buildDate={{time "20060102"}}
+  flags:
+  - -trimpath
+
+  ldflags:
+  - -s -w -X github.com/issue9/web/internal/version.commitHash={{.Commit}} -X github.com/issue9/web/internal/version.buildDate={{time "20060102"}}
 
 archives:
-  - builds:
-    - web
-    replacements:
-      darwin: macOS
-    format_overrides:
-    - goos: windows
-      format: zip
-    files:
-    - licence*
-    - LICENCE*
-    - license*
-    - LICENSE*
-    - readme*
-    - README*
-    - changelog*
-    - CHANGELOG*
+- builds:
+  - web
+  replacements:
+    darwin: macOS
+  format_overrides:
+  - goos: windows
+    format: zip
+  files:
+  - licence*
+  - LICENCE*
+  - license*
+  - LICENSE*
+  - readme*
+  - README*
+  - changelog*
+  - CHANGELOG*
 
 checksum:
   name_template: checksums.txt
