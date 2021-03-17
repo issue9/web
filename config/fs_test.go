@@ -14,8 +14,11 @@ var _ Loader = &FS{}
 func TestFS(t *testing.T) {
 	a := assert.New(t)
 
-	f := &FS{FS: os.DirFS("./testdata/")}
-	f.Selector(EncodingSelector(f))
+	fs := os.DirFS("./testdata")
+	f := &FS{
+		FS:       fs,
+		Selector: EncodingSelector(fs),
+	}
 
 	conf := &object{}
 	_, err := f.Load("web.yaml", conf)
