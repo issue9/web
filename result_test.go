@@ -18,6 +18,10 @@ import (
 func TestContext_NewResult(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
+	srv.SetErrorHandle(func(w http.ResponseWriter, status int) {
+		w.WriteHeader(status)
+		w.Write([]byte("error-handler"))
+	}, 400) // 此处用于检测是否影响 result.Render() 的输出
 	srv.AddResultMessage(400, 40000, "lang") // lang 有翻译
 	w := httptest.NewRecorder()
 
