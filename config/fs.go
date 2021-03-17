@@ -15,15 +15,8 @@ import (
 
 // FS 基于文件系统的配置项管理
 type FS struct {
-	fs       fs.FS
+	FS       fs.FS
 	selector SelectorFunc
-}
-
-// NewFS 声明一个空的 FS 对象
-func NewFS(fs fs.FS) *FS {
-	return &FS{
-		fs: fs,
-	}
 }
 
 // EncodingSelector 返回常用编码的选择器
@@ -34,11 +27,11 @@ func EncodingSelector(fs *FS) SelectorFunc {
 		ext := strings.ToLower(path.Ext(name))
 		switch ext {
 		case ".json":
-			return LoadJSON(fs.fs)
+			return LoadJSON(fs.FS)
 		case ".xml":
-			return LoadXML(fs.fs)
+			return LoadXML(fs.FS)
 		case ".yaml", ".yml":
-			return LoadYAML(fs.fs)
+			return LoadYAML(fs.FS)
 		default:
 			return nil
 		}
@@ -46,7 +39,7 @@ func EncodingSelector(fs *FS) SelectorFunc {
 }
 
 // Selector 设置选择器
-func (f *FS) Selector(selector func(string) UnmarshalFunc) {
+func (f *FS) Selector(selector SelectorFunc) {
 	f.selector = selector
 }
 
@@ -56,7 +49,7 @@ func (f *FS) Load(name string, v interface{}) (*Refresher, error) {
 	if u == nil {
 		return nil, errors.New("无法处理的文档类型")
 	}
-	return Load(name, v, u), nil
+	return Load(name, v, u)
 }
 
 // LoadYAML 加载 YAML 的配置文件并转换成 v 对象的内容

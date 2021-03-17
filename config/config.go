@@ -35,18 +35,22 @@ type Refresher struct {
 // config 表示配置项的配置内容，比如文件名、SQL 的 DSN 等；
 // v 配置项导出对象的实例指针，最终 config 指向的数据会被解析到 v 中;
 // f 从 config 导入到 v 的实现方法；
-func Load(config string, v interface{}, f UnmarshalFunc) *Refresher {
+func Load(config string, v interface{}, f UnmarshalFunc) (*Refresher, error) {
 	rv := reflect.ValueOf(v)
 	for rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
 
-	return &Refresher{
+	ref := &Refresher{
 		config:    config,
 		rValue:    rv,
 		rType:     rv.Type(),
 		unmarshal: f,
 	}
+	if err := ref.Refresh(); err != nil {
+		return nil, err
+	}
+	return ref, nil
 }
 
 // Refresh 刷新与当前对象关联的配置项对象

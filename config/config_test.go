@@ -19,14 +19,15 @@ func TestRefresher(t *testing.T) {
 	a := assert.New(t)
 
 	w := &object{}
-	r := Load("memory", w, func(config string, v interface{}) error {
+	r, err := Load("memory", w, func(config string, v interface{}) error {
 		v.(*object).Count++
 		return nil
 	})
+	a.NotError(err).NotNil(r)
 
 	a.NotError(r.Refresh())
 	a.Equal(w.Count, 1)
 
 	a.NotError(r.Refresh())
-	a.Equal(w.Count, 2)
+	a.Equal(w.Count, 1) // Refresh 会重新创建一个新对象并赋值给 w，不会增加 w.Count 的值。
 }
