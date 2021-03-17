@@ -51,7 +51,7 @@ func (f *FS) Selector(selector func(string) UnmarshalFunc) {
 }
 
 // Load Loader.Load 接口方法实现
-func (f *FS) Load(name string, v interface{}) (Refresher, error) {
+func (f *FS) Load(name string, v interface{}) (*Refresher, error) {
 	u := f.selector(name)
 	if u == nil {
 		return nil, errors.New("无法处理的文档类型")
