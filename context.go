@@ -4,6 +4,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -74,6 +75,9 @@ type Context struct {
 
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	if ctx := r.Context().Value(contextKeyContext); ctx != nil {
+		return ctx.(*Context)
+	}
 	return GetServer(r).NewContext(w, r)
 }
 
@@ -121,6 +125,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	} else {
 		ctx.read = true
 	}
+
+	ctx.Request = r.WithContext(context.WithValue(r.Context(), contextKeyContext, ctx))
 
 	return ctx
 }

@@ -30,12 +30,10 @@ import (
 
 type contextKey int
 
-// ContextKeyServer 从 context.Value 中获取 *Server 实例的键名
-//
-// 在某些极端的情况下，用户可能需要用到 Server.Router().Mux().GetFunc()
-// 等比较原始的接口去添加路由，此时无法像 Context.Server() 的方式获取
-// Server 变量，便可通过 r.Context().Value(ContextKeyServer) 获取。
-var ContextKeyServer contextKey = 0
+const (
+	contextKeyServer contextKey = iota
+	contextKeyContext
+)
 
 // Options 初始化 Server 的参数
 type Options struct {
@@ -186,12 +184,12 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
-			return context.WithValue(context.Background(), ContextKeyServer, srv)
+			return context.WithValue(context.Background(), contextKeyServer, srv)
 		}
 	} else {
 		ctx := srv.httpServer.BaseContext
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
-			return context.WithValue(ctx(n), ContextKeyServer, srv)
+			return context.WithValue(ctx(n), contextKeyServer, srv)
 		}
 	}
 
@@ -206,7 +204,7 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 //
 // r 必须得是由 Server 生成的，否则会 panic。
 func GetServer(r *http.Request) *Server {
-	v := r.Context().Value(ContextKeyServer)
+	v := r.Context().Value(contextKeyServer)
 	if v == nil {
 		panic("无法从 http.Request.Context() 中获取 ContentKeyServer 对应的值")
 	}

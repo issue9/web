@@ -131,8 +131,10 @@ func TestGetServer(t *testing.T) {
 		v := r.Context().Value(k)
 		a.Nil(v)
 
-		ctx := NewContext(w, r)
-		a.NotNil(ctx)
+		ctx1 := NewContext(w, r)
+		a.NotNil(ctx1)
+		ctx2 := NewContext(w, ctx1.Request)
+		a.Equal(ctx1, ctx2)
 
 		isRequested = true
 	})
@@ -144,14 +146,15 @@ func TestGetServer(t *testing.T) {
 		Header("Accept", mimetypetest.Mimetype).
 		Do().
 		Success("未正确返回状态码")
-	a.NotError(srv.Close(0))
-	a.True(isRequested, "未正常访问 /path")
 
 	// 不是从 Server 生成的 *http.Request，则会 panic
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	a.Panic(func() {
 		GetServer(r)
 	})
+
+	a.NotError(srv.Close(0))
+	a.True(isRequested, "未正常访问 /path")
 
 	// BaseContext
 
@@ -170,7 +173,7 @@ func TestGetServer(t *testing.T) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
-		v := r.Context().Value(k)
+		v := r.Context().Value(k) // BaseContext 中设置了 k 的值
 		a.Equal(v, 1)
 
 		isRequested = true
