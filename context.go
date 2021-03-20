@@ -262,6 +262,8 @@ func (ctx *Context) Render(status int, v interface{}, headers map[string]string)
 
 // ClientIP 返回客户端的 IP 地址
 //
+// NOTE: 包含了端口部分。
+//
 // 获取顺序如下：
 //  - X-Forwarded-For 的第一个元素
 //  - Remote-Addr 报头
