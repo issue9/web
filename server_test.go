@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,8 @@ import (
 	"github.com/issue9/web/content/gob"
 	"github.com/issue9/web/content/mimetypetest"
 )
+
+var _ fs.FS = &Server{}
 
 var f201 = func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")

@@ -5,9 +5,12 @@ package web
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/issue9/cache"
@@ -37,6 +40,11 @@ const (
 
 // Options 初始化 Server 的参数
 type Options struct {
+	// 项目默认可存取的文件系统
+	//
+	// 默认情况下为可执行文件所在的目录。
+	FS fs.FS
+
 	// 服务器的时区
 	//
 	// 默认值为 time.Local
@@ -85,6 +93,7 @@ type Server struct {
 	name       string
 	version    string
 	logs       *logs.Logs
+	fs         fs.FS
 	httpServer *http.Server
 	vars       map[interface{}]interface{}
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
@@ -112,6 +121,14 @@ type Server struct {
 }
 
 func (o *Options) sanitize() (err error) {
+	if o.FS == nil {
+		dir, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		o.FS = os.DirFS(filepath.Dir(dir))
+	}
+
 	if o.Location == nil {
 		o.Location = time.Local
 	}
@@ -159,6 +176,7 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 		name:       name,
 		version:    version,
 		logs:       logs,
+		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       map[interface{}]interface{}{},
 		closed:     make(chan struct{}, 1),
@@ -220,6 +238,11 @@ func (srv *Server) Name() string {
 // Version 应用的版本
 func (srv *Server) Version() string {
 	return srv.version
+}
+
+// Open 实现 fs.FS 接口
+func (srv *Server) Open(name string) (fs.File, error) {
+	return srv.fs.Open(name)
 }
 
 // Get 返回指定键名的值
