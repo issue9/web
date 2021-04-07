@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
 	o := &Options{Root: "http://localhost:8080/root"}
-	srv, err := NewServer("app", "0.1.0", newLogs(a), o)
+	srv, err := New("app", "0.1.0", newLogs(a), o)
 	a.NotError(err).NotNil(srv)
 
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -105,7 +105,7 @@ func TestOptions_sanitize(t *testing.T) {
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 	l := newLogs(a)
-	srv, err := NewServer("app", "0.1.0", l, &Options{})
+	srv, err := New("app", "0.1.0", l, &Options{})
 	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
 	a.Equal(l, srv.Logs())
@@ -121,7 +121,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := NewServer("app", "0.1.0", newLogs(a), &Options{Root: "http://localhost:8081/"})
+	srv, err := New("app", "0.1.0", newLogs(a), &Options{Root: "http://localhost:8081/"})
 	a.NotError(err).NotNil(srv)
 	err = srv.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
@@ -161,7 +161,7 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv, err = NewServer("app", "0.1.0", newLogs(a), &Options{
+	srv, err = New("app", "0.1.0", newLogs(a), &Options{
 		Root: "http://localhost:8081/",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
@@ -290,7 +290,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	server, err := NewServer("app", "0.1.0", newLogs(a), &Options{
+	server, err := New("app", "0.1.0", newLogs(a), &Options{
 		Root: "https://localhost:8088/api",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")

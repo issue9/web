@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
 	"errors"
@@ -54,7 +54,7 @@ type Tag interface {
 
 // NewModule 声明一个新的模块
 //
-// name 模块名称，需要全局唯一；
+// id 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(id, desc string, deps ...string) *Module {

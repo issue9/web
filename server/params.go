@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
 	"strconv"
