@@ -14,10 +14,7 @@ import (
 // DefaultCharset 默认的字符集
 const DefaultCharset = "utf-8"
 
-var (
-	errInvalidCharset          = errors.New("无效的字符集")
-	errContentTypeMissMimetype = errors.New("content-type 不存在 mimetype 部分")
-)
+var errInvalidCharset = errors.New("无效的字符集")
 
 // CharsetIsNop 指定的编码是否不需要任何额外操作
 func CharsetIsNop(enc encoding.Encoding) bool {

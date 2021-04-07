@@ -4,8 +4,8 @@
 package content
 
 import (
+	"mime"
 	"strings"
-	"unicode"
 
 	"github.com/issue9/qheader"
 	"golang.org/x/text/language"
@@ -35,47 +35,31 @@ func AcceptLanguage(cl catalog.Catalog, header string) language.Tag {
 // 返回值中，mimetype 一律返回小写的值，charset 则原样返回
 //
 // https://tools.ietf.org/html/rfc7231#section-3.1.1.1
-func ParseContentType(v string) (mime, charset string, err error) {
-	if v = strings.ToLower(strings.TrimSpace(v)); v == "" {
+func ParseContentType(v string) (mimetype, charset string, err error) {
+	if v = strings.TrimSpace(v); v == "" {
 		return DefaultMimetype, DefaultCharset, nil
 	}
 
-	index := strings.IndexByte(v, ';')
-	switch {
-	case index < 0: // 只有编码
-		return strings.ToLower(v), DefaultCharset, nil
-	case index == 0: // mimetype 不可省略
-		return "", "", errContentTypeMissMimetype
+	mt, params, err := mime.ParseMediaType(v)
+	if err != nil {
+		return "", "", err
 	}
-
-	mime = strings.ToLower(v[:index])
-
-	for index > 0 {
-		// 去掉左边的空白字符
-		v = strings.TrimLeftFunc(v[index+1:], func(r rune) bool { return unicode.IsSpace(r) })
-
-		if !strings.HasPrefix(v, "charset=") { // 按规定，不用考虑 = 两边没有空白字符。
-			index = strings.IndexByte(v, ';')
-			continue
-		}
-
-		v = strings.TrimPrefix(v, "charset=")
-		return mime, strings.TrimFunc(v, func(r rune) bool { return r == '"' }), nil
+	if charset = params["charset"]; charset == "" {
+		charset = DefaultCharset
 	}
-
-	return mime, DefaultCharset, nil
+	return mt, charset, nil
 }
 
 // BuildContentType 生成一个 content-type
 //
 // 若值为空，则会使用默认值代替
-func BuildContentType(mime, charset string) string {
-	if mime == "" {
-		mime = DefaultMimetype
+func BuildContentType(mt, charset string) string {
+	if mt == "" {
+		mt = DefaultMimetype
 	}
 	if charset == "" {
 		charset = DefaultCharset
 	}
 
-	return mime + "; charset=" + charset
+	return mt + "; charset=" + charset
 }
