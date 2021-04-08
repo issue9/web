@@ -11,11 +11,13 @@ import (
 )
 
 type (
-	Server  = server.Server
-	Context = server.Context
-	Options = server.Options
-	Filter  = server.Filter
-	Module  = server.Module
+	Server      = server.Server
+	Context     = server.Context
+	Options     = server.Options
+	Filter      = server.Filter
+	Module      = server.Module
+	Tag         = server.Tag
+	HandlerFunc = server.HandlerFunc
 )
 
 // New 返回 *Server 实例

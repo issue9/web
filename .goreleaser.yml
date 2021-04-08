@@ -32,6 +32,21 @@ builds:
   ldflags:
   - -s -w -X github.com/issue9/web/internal/version.commitHash={{.Commit}} -X github.com/issue9/web/internal/version.buildDate={{time "20060102"}}
 
+brews:
+- tap:
+    owner: caixw
+    name: homebrew-caixw
+  url_template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@carlosbecker.com
+  folder: Formula
+  homepage: "https://github.com/issue9/web"
+  description: 框架 web 的辅助工具
+  license: MIT
+
+
 archives:
 - builds:
   - web
