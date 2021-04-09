@@ -1,7 +1,9 @@
 module github.com/issue9/web
 
 require (
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/caixw/gobuild v0.9.5
+	github.com/gomodule/redigo v1.8.4
 	github.com/issue9/assert v1.4.1
 	github.com/issue9/cache v0.2.1
 	github.com/issue9/cmdopt v0.7.0
@@ -17,6 +19,7 @@ require (
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/validation v0.3.1
 	github.com/issue9/version v1.0.4
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0
 )

@@ -3,18 +3,24 @@
 // Package config 提供了加载配置项内容的各类方法
 package config
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
+
+// Error 表示配置内容字段错误
+type Error struct {
+	Config, Field, Message string
+	Value                  interface{}
+}
 
 // Loader 配置管理接口
 type Loader interface {
 	// 用于将 config 所指定的配置内容加载至 v
 	//
 	// 返回的 Refresher 对象，可以在有需要时调用其 Refresher.Refresh 对 v 的数据进行重新加载。
-	Load(config string, v interface{}) (*Refresher, error)
+	Load(config string, v interface{}, f UnmarshalFunc) (*Refresher, error)
 }
-
-// SelectorFunc 根据参数确定使用哪个解码函数
-type SelectorFunc func(string) UnmarshalFunc
 
 // UnmarshalFunc 定义了配置项的解码函数原型
 //
@@ -62,4 +68,8 @@ func (l *Refresher) Refresh() error {
 	l.rValue.Set(v.Elem())
 
 	return nil
+}
+
+func (err *Error) Error() string {
+	return fmt.Sprintf("%s:%s[%s]", err.Config, err.Field, err.Message)
 }
