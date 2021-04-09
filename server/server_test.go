@@ -95,7 +95,7 @@ func TestOptions_sanitize(t *testing.T) {
 
 	o = &Options{Root: "http://example.com/api"}
 	a.NotError(o.sanitize()).
-		Empty(o.httpServer.Addr)
+		Equal(o.httpServer.Addr, ":http")
 
 	o = &Options{Root: "https://example.com/api"}
 	a.NotError(o.sanitize()).
@@ -114,6 +114,7 @@ func TestNewServer(t *testing.T) {
 	a.Equal(srv.Location(), time.Local)
 	a.Equal(srv.httpServer.Handler, srv.middlewares)
 	a.NotNil(srv.httpServer.BaseContext)
+	a.Equal(srv.httpServer.Addr, ":http")
 }
 
 func TestGetServer(t *testing.T) {

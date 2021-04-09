@@ -160,6 +160,8 @@ func (o *Options) sanitize() (err error) {
 			o.httpServer.Addr = ":" + p
 		} else if o.root.Scheme == "https" {
 			o.httpServer.Addr = ":https"
+		} else {
+			o.httpServer.Addr = ":http"
 		}
 	}
 
