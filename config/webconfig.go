@@ -12,7 +12,6 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/v3/header"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/result"
@@ -108,10 +107,6 @@ func (conf *Webconfig) NewServer(name, version string, l *logs.Logs, c catalog.C
 		if err := srv.LoadPlugins(conf.Plugins); err != nil {
 			return nil, err
 		}
-	}
-
-	if conf.HTTP != nil && conf.HTTP.Headers != nil {
-		srv.AddMiddlewares(header.New(conf.HTTP.Headers).Middleware)
 	}
 
 	return srv, nil

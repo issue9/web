@@ -4,9 +4,6 @@ package config
 
 import (
 	"crypto/tls"
-	"encoding/xml"
-	"errors"
-	"io"
 	"net/url"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -26,13 +23,6 @@ type (
 		//
 		// 不能同时与 Certificates 生效
 		LetsEncrypt *LetsEncrypt `yaml:"letsEncrypt,omitempty" json:"letsEncrypt,omitempty" xml:"letsEncrypt,omitempty"`
-
-		// Headers 附加的报头信息
-		//
-		// 一些诸如跨域等报头信息，可以在此作设置。
-		//
-		// 报头信息可能在它处被修改。
-		Headers Pairs `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers,omitempty"`
 
 		tlsConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
 
@@ -57,17 +47,6 @@ type (
 		Email       string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 		ForceRSA    bool     `yaml:"forceRSA,omitempty" json:"forceRSA,omitempty" xml:"forceRSA,attr,omitempty"`
 		RenewBefore Duration `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
-	}
-
-	// Pairs 定义 map[string]string 类型
-	//
-	// 唯一的功能是为了 xml 能支持 map。
-	Pairs map[string]string
-
-	entry struct {
-		XMLName struct{} `xml:"key"`
-		Name    string   `xml:"name,attr"`
-		Value   string   `xml:",chardata"`
 	}
 
 	// Debug 调试信息的配置
@@ -171,43 +150,6 @@ func (l *LetsEncrypt) sanitize() *Error {
 
 	if len(l.Domains) == 0 {
 		return &Error{Field: "domains", Message: "不能为空"}
-	}
-
-	return nil
-}
-
-// MarshalXML implement xml.Marshaler
-func (p Pairs) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	if len(p) == 0 {
-		return nil
-	}
-
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-
-	for k, v := range p {
-		if err := e.Encode(entry{Name: k, Value: v}); err != nil {
-			return err
-		}
-	}
-
-	return e.EncodeToken(start.End())
-}
-
-// UnmarshalXML implement xml.Unmarshaler
-func (p *Pairs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	*p = Pairs{}
-
-	for {
-		e := &entry{}
-		if err := d.Decode(e); errors.Is(err, io.EOF) {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		(*p)[e.Name] = e.Value
 	}
 
 	return nil

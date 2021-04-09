@@ -3,21 +3,11 @@
 package config
 
 import (
-	"encoding/xml"
 	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
 )
-
-var (
-	_ xml.Marshaler   = &Pairs{}
-	_ xml.Unmarshaler = &Pairs{}
-)
-
-type testPairs struct {
-	Pairs Pairs `xml:"pairs"`
-}
 
 func TestCertificate_sanitize(t *testing.T) {
 	a := assert.New(t)
@@ -107,35 +97,4 @@ func TestLetEncrypt_sanitize(t *testing.T) {
 
 	l = &LetsEncrypt{Cache: "./", Domains: []string{"example.com"}}
 	a.NotError(l.sanitize())
-}
-
-func TestPairs(t *testing.T) {
-	a := assert.New(t)
-
-	m := &testPairs{
-		Pairs: Pairs{ // 多个字段，注意 map 顺序问题
-			"key1": "val1",
-		},
-	}
-
-	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testPairs>
-  <pairs>
-    <key name="key1">val1</key>
-  </pairs>
-</testPairs>`)
-
-	rm := &testPairs{}
-	a.NotError(xml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
-
-	// 空值
-	m = &testPairs{
-		Pairs: Pairs{},
-	}
-
-	bs, err = xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testPairs></testPairs>`)
 }
