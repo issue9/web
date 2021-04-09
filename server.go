@@ -20,6 +20,11 @@ type (
 	HandlerFunc = server.HandlerFunc
 )
 
+// DefaultServer 返回一个采用默认值进初始化的 *Server 实例
+func DefaultServer(name, version, url string) (*Server, error) {
+	return NewServer(name, version, logs.New(), &Options{Root: url})
+}
+
 // New 返回 *Server 实例
 func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	return server.New(name, version, logs, o)
