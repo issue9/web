@@ -330,6 +330,7 @@ func (srv *Server) Serve() (err error) {
 // Close 关闭服务
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
+		srv.Logs().Flush()
 		srv.closed <- struct{}{}
 	}()
 
