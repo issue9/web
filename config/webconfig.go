@@ -3,9 +3,6 @@
 package config
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -167,77 +164,16 @@ func (d Duration) Duration() time.Duration {
 	return time.Duration(d)
 }
 
-// MarshalJSON json.Marshaler 接口
-func (d Duration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(time.Duration(d).String())
+// MarshalText encoding.TextMarshaler 接口
+func (d Duration) MarshalText() ([]byte, error) {
+	return []byte(time.Duration(d).String()), nil
 }
 
-// UnmarshalJSON json.Unmarshaler 接口
-func (d *Duration) UnmarshalJSON(b []byte) error {
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
+// UnmarshalText encoding.TextUnmarshaler 接口
+func (d *Duration) UnmarshalText(b []byte) error {
+	v, err := time.ParseDuration(string(b))
+	if err == nil {
+		*d = Duration(v)
 	}
-
-	tmp, err := time.ParseDuration(s)
-	if err != nil {
-		return err
-	}
-
-	*d = Duration(tmp)
-	return nil
-}
-
-// MarshalYAML yaml.Marshaler 接口
-func (d Duration) MarshalYAML() (interface{}, error) {
-	return time.Duration(d).String(), nil
-}
-
-// UnmarshalYAML yaml.Unmarshaler 接口
-func (d *Duration) UnmarshalYAML(u func(interface{}) error) error {
-	var dur time.Duration
-	if err := u(&dur); err != nil {
-		return err
-	}
-
-	*d = Duration(dur)
-	return nil
-}
-
-// MarshalXML xml.Marshaler 接口
-func (d Duration) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.EncodeElement(d.Duration().String(), start)
-}
-
-// UnmarshalXML xml.Unmarshaler 接口
-func (d *Duration) UnmarshalXML(de *xml.Decoder, start xml.StartElement) error {
-	var str string
-	if err := de.DecodeElement(&str, &start); err != nil && err != io.EOF {
-		return err
-	}
-
-	dur, err := time.ParseDuration(str)
-	if err != nil {
-		return err
-	}
-
-	*d = Duration(dur)
-
-	return nil
-}
-
-// MarshalXMLAttr xml.MarshalerAttr
-func (d Duration) MarshalXMLAttr(name xml.Name) (xml.Attr, error) {
-	return xml.Attr{Name: name, Value: d.Duration().String()}, nil
-}
-
-// UnmarshalXMLAttr xml.UnmarshalerAttr
-func (d *Duration) UnmarshalXMLAttr(attr xml.Attr) error {
-	dur, err := time.ParseDuration(attr.Value)
-	if err != nil {
-		return err
-	}
-
-	*d = Duration(dur)
-	return nil
+	return err
 }

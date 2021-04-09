@@ -3,6 +3,7 @@
 package config
 
 import (
+	"encoding"
 	"encoding/json"
 	"encoding/xml"
 	"testing"
@@ -15,16 +16,8 @@ import (
 var (
 	dur time.Duration
 
-	_ xml.Marshaler       = Duration(1)
-	_ xml.Unmarshaler     = (*Duration)(&dur)
-	_ xml.MarshalerAttr   = Duration(1)
-	_ xml.UnmarshalerAttr = (*Duration)(&dur)
-
-	_ yaml.Marshaler   = Duration(1)
-	_ yaml.Unmarshaler = (*Duration)(&dur)
-
-	_ json.Marshaler   = Duration(1)
-	_ json.Unmarshaler = (*Duration)(&dur)
+	_ encoding.TextMarshaler   = Duration(1)
+	_ encoding.TextUnmarshaler = (*Duration)(&dur)
 )
 
 type testDuration struct {
