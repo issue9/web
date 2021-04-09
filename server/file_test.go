@@ -6,53 +6,108 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
 )
 
 func TestContext_ServeFile(t *testing.T) {
 	a := assert.New(t)
-	b := newServer(a)
+	exit := make(chan bool, 1)
 
-	w := httptest.NewRecorder()
-	ctx := &Context{
-		Response: w,
-		Request:  httptest.NewRequest(http.MethodGet, "/file", nil),
-		server:   b,
-	}
+	s := newServer(a)
+	defer func() {
+		a.NotError(s.Close(0))
+		<-exit
+	}()
 
-	// 存在的文件
-	a.NotPanic(func() {
+	s.Router().Get("/path", func(ctx *Context) {
 		ctx.ServeFile("./testdata/file1.txt", map[string]string{"Test": "Test"})
-		a.Equal(w.Header().Get("Test"), "Test")
 	})
 
-	// 不存在的文件
-	w = httptest.NewRecorder()
-	ctx.Response = w
-	a.NotPanic(func() {
-		ctx.ServeFile("./testdata/not-exists", nil)
-		a.Equal(w.Code, http.StatusNotFound)
+	s.Router().Get("/not-exists", func(ctx *Context) {
+		// file.text 不存在
+		ctx.ServeFile("./testdata/file1.text", map[string]string{"Test": "Test"})
 	})
+
+	go func() {
+		a.Equal(s.Serve(), http.ErrServerClosed)
+		exit <- true
+	}()
+	time.Sleep(500 * time.Millisecond)
+
+	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
+	testDownloadNotFound(a, "http://localhost:8080/root/not-exits")
+}
+
+func TestContext_ServeFileFS(t *testing.T) {
+	a := assert.New(t)
+	exit := make(chan bool, 1)
+
+	s := newServer(a)
+	defer func() {
+		a.NotError(s.Close(0))
+		<-exit
+	}()
+
+	fs := os.DirFS("./testdata")
+	s.Router().Get("/path", func(ctx *Context) {
+		ctx.ServeFileFS(fs, "file1.txt", map[string]string{"Test": "Test"})
+	})
+
+	s.Router().Get("/not-exists", func(ctx *Context) {
+		// file.text 不存在
+		ctx.ServeFileFS(fs, "file1.text", map[string]string{"Test": "Test"})
+	})
+
+	go func() {
+		a.Equal(s.Serve(), http.ErrServerClosed)
+		exit <- true
+	}()
+	time.Sleep(500 * time.Millisecond)
+
+	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
+	testDownloadNotFound(a, "http://localhost:8080/root/not-exits")
 }
 
 func TestContext_ServeContent(t *testing.T) {
 	a := assert.New(t)
-	b := newServer(a)
+	exit := make(chan bool, 1)
+
+	s := newServer(a)
+	defer func() {
+		a.NotError(s.Close(0))
+		<-exit
+	}()
+
 	buf, err := ioutil.ReadFile("./testdata/file1.txt")
 	a.NotError(err).NotNil(buf)
 
-	w := httptest.NewRecorder()
-	ctx := &Context{
-		Response: w,
-		Request:  httptest.NewRequest(http.MethodGet, "/file1.txt", nil),
-		server:   b,
-	}
-
-	a.NotPanic(func() {
-		ctx.ServeContent(bytes.NewReader(buf), "name", map[string]string{"Test": "Test"})
-		a.Equal(w.Header().Get("Test"), "Test")
+	s.Router().Get("/path", func(ctx *Context) {
+		ctx.ServeContent(bytes.NewReader(buf), "name", time.Now(), map[string]string{"Test": "Test"})
 	})
+
+	go func() {
+		a.Equal(s.Serve(), http.ErrServerClosed)
+		exit <- true
+	}()
+	time.Sleep(500 * time.Millisecond)
+
+	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
+	testDownloadNotFound(a, "http://localhost:8080/root/path/not-exits")
+}
+
+func testDownload(a *assert.Assertion, path string, status int) {
+	rest.NewRequest(a, nil, http.MethodGet, path).Do().
+		Status(status).
+		BodyNotNil().
+		Header("Test", "Test")
+}
+
+func testDownloadNotFound(a *assert.Assertion, path string) {
+	rest.NewRequest(a, nil, http.MethodGet, path).Do().
+		Status(http.StatusNotFound)
 }
