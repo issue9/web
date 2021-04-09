@@ -5,6 +5,7 @@ package config
 import (
 	"crypto/tls"
 	"net/url"
+	"time"
 
 	"golang.org/x/crypto/acme/autocert"
 
@@ -42,11 +43,13 @@ type (
 
 	// LetsEncrypt Let's Encrypt 的相关设置
 	LetsEncrypt struct {
-		Domains     []string `yaml:"domains" json:"domains" xml:"domains"`
-		Cache       string   `yaml:"cache" json:"cache" xml:"cache"`
-		Email       string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-		ForceRSA    bool     `yaml:"forceRSA,omitempty" json:"forceRSA,omitempty" xml:"forceRSA,attr,omitempty"`
-		RenewBefore Duration `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
+		Domains  []string `yaml:"domains" json:"domains" xml:"domains"`
+		Cache    string   `yaml:"cache" json:"cache" xml:"cache"`
+		Email    string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+		ForceRSA bool     `yaml:"forceRSA,omitempty" json:"forceRSA,omitempty" xml:"forceRSA,attr,omitempty"`
+
+		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
+		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
 	}
 
 	// Debug 调试信息的配置
@@ -131,11 +134,13 @@ func (http *HTTP) buildTLSConfig(root *url.URL) *Error {
 }
 
 func (l *LetsEncrypt) tlsConfig() *tls.Config {
+	const day = 24 * time.Hour
+
 	m := &autocert.Manager{
 		Cache:       autocert.DirCache(l.Cache),
 		Prompt:      autocert.AcceptTOS,
 		HostPolicy:  autocert.HostWhitelist(l.Domains...),
-		RenewBefore: l.RenewBefore.Duration(),
+		RenewBefore: time.Duration(l.RenewBefore) * day,
 		ForceRSA:    l.ForceRSA,
 		Email:       l.Email,
 	}
