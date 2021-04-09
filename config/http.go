@@ -51,12 +51,6 @@ type (
 		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
 		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
 	}
-
-	// Debug 调试信息的配置
-	Debug struct {
-		Pprof string `yaml:"pprof,omitempty" json:"pprof,omitempty" xml:"pprof,omitempty"`
-		Vars  string `yaml:"vars,omitempty" json:"vars,omitempty" xml:"vars,omitempty"`
-	}
 )
 
 func (cert *Certificate) sanitize() *Error {

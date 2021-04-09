@@ -40,12 +40,6 @@ type Webconfig struct {
 	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
 	Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty" xml:"plugins,omitempty"`
 
-	// 指定关闭服务时的超时时间
-	//
-	// 如果此值不为 0，则在关闭服务时会调用 http.Server.Shutdown 函数等待关闭服务，
-	// 否则直接采用 http.Server.Close 立即关闭服务。
-	ShutdownTimeout Duration `yaml:"shutdownTimeout,omitempty" json:"shutdownTimeout,omitempty" xml:"shutdownTimeout,omitempty"`
-
 	// 时区名称
 	//
 	// 可以是 Asia/Shanghai 等，具体可参考：
@@ -110,10 +104,6 @@ func (conf *Webconfig) NewServer(name, version string, l *logs.Logs, c catalog.C
 }
 
 func (conf *Webconfig) sanitize() error {
-	if conf.ShutdownTimeout < 0 {
-		return &Error{Field: "shutdownTimeout", Message: "必须大于等于 0"}
-	}
-
 	if err := conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field
 		return err
