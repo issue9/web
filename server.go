@@ -3,10 +3,14 @@
 package web
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/issue9/logs/v2"
+	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/config"
+	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
 
@@ -19,6 +23,11 @@ type (
 	Tag         = server.Tag
 	HandlerFunc = server.HandlerFunc
 )
+
+// LoadServer 从配置文件加载并实例化 Server 对象
+func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build result.BuildFunc) (*Server, error) {
+	return config.NewServer(name, version, f, c, build)
+}
 
 // DefaultServer 返回一个采用默认值进初始化的 *Server 实例
 func DefaultServer(name, version, url string) (*Server, error) {

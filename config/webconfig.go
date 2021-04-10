@@ -3,6 +3,7 @@
 package config
 
 import (
+	"io/fs"
 	"net/http"
 	"net/url"
 	"time"
@@ -64,14 +65,15 @@ type Router struct {
 	SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,attr,omitempty"`
 }
 
-// NewServer 返回 server.NewServer 对象
-func (conf *Webconfig) NewServer(name, version string, l *logs.Logs, c catalog.Catalog, f result.BuildFunc) (*server.Server, error) {
+// buildServer 返回 server.buildServer 对象
+func (conf *Webconfig) buildServer(name, version string, fs fs.FS, l *logs.Logs, c catalog.Catalog, f result.BuildFunc) (*server.Server, error) {
 	if err := conf.sanitize(); err != nil {
 		return nil, err
 	}
 
 	h := conf.HTTP
 	o := &server.Options{
+		FS:             fs,
 		Location:       conf.location,
 		Cache:          conf.cache,
 		DisableHead:    conf.Router.DisableHead,
