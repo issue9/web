@@ -6,6 +6,8 @@ import (
 	"encoding"
 	"encoding/json"
 	"encoding/xml"
+	"io/fs"
+	"os"
 	"testing"
 	"time"
 
@@ -100,4 +102,14 @@ func TestDuration_JSON(t *testing.T) {
 	rm := &testDuration{}
 	a.NotError(json.Unmarshal(bs, rm))
 	a.Equal(rm, m)
+}
+
+func TestNewServer(t *testing.T) {
+	a := assert.New(t)
+
+	srv, err := NewServer("app", "1.1.1", os.DirFS("./testdata"), nil, nil)
+	a.NotError(err).NotNil(srv)
+
+	srv, err = NewServer("app", "1.1.1", os.DirFS("./testdata/not-exists"), nil, nil)
+	a.ErrorIs(err, fs.ErrNotExist).Nil(srv)
 }
