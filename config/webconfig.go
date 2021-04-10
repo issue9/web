@@ -24,7 +24,7 @@ const (
 
 // Webconfig 配置内容
 type Webconfig struct {
-	XMLName struct{} `yaml:"-" json:"-" xml:"webconfig"`
+	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 网站的根目录所在
 	//
@@ -74,7 +74,7 @@ type Router struct {
 // NewServer 从配置文件初始化 Server 实例
 func NewServer(name, version string, f fs.FS, c catalog.Catalog, b result.BuildFunc) (*server.Server, error) {
 	conf := &config.Config{}
-	if _, err := Load(logsConfigFilename, conf, LoadXML(f)); err != nil {
+	if err := LoadXML(f, logsConfigFilename, conf); err != nil {
 		return nil, err
 	}
 
@@ -84,15 +84,17 @@ func NewServer(name, version string, f fs.FS, c catalog.Catalog, b result.BuildF
 	}
 
 	webconfig := &Webconfig{}
-	if _, err := Load(webconfigFilename, webconfig, LoadYAML(f)); err != nil {
+	if err := LoadYAML(f, webconfigFilename, webconfig); err != nil {
 		return nil, err
 	}
 
-	return webconfig.buildServer(name, version, f, l, c, b)
+	return webconfig.NewServer(name, version, f, l, c, b)
 }
 
-// buildServer 返回 server.buildServer 对象
-func (conf *Webconfig) buildServer(name, version string, fs fs.FS, l *logs.Logs, c catalog.Catalog, f result.BuildFunc) (*server.Server, error) {
+// NewServer 返回 server.NewServer 对象
+func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, c catalog.Catalog, f result.BuildFunc) (*server.Server, error) {
+	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
+
 	if err := conf.sanitize(); err != nil {
 		return nil, err
 	}
