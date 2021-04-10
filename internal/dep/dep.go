@@ -92,10 +92,19 @@ func (d *Dep) Init(tag string) error {
 		panic("已经初始化")
 	}
 
+	foundTag := tag == ""
+
 	for _, m := range d.ms { // 检测依赖
 		if err := d.checkDeps(m); err != nil {
 			return err
 		}
+		if !foundTag {
+			_, foundTag = m.items[tag]
+		}
+	}
+
+	if !foundTag {
+		return fmt.Errorf("指定的标签 %s 不存在", tag)
 	}
 
 	for _, m := range d.ms { // 进行初如化
