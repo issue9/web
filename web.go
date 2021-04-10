@@ -25,13 +25,8 @@ func Version() string {
 	return version.Version
 }
 
-// Default 加载一个所有设置项都采用默认值的 *Server 实例
-func Default(name, version string) (*Server, error) {
-	return NewServer(name, version, logs.New(), &Options{})
-}
-
-// Load 从配置文件加载并实例化 Server 对象
-func Load(name, version string, f fs.FS, c catalog.Catalog, build result.BuildFunc) (*Server, error) {
+// LoadServer 从配置文件加载并实例化 Server 对象
+func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build result.BuildFunc) (*Server, error) {
 	conf := &config.Config{}
 	if _, err := cfg.Load(logsConfigFilename, conf, cfg.LoadXML(f)); err != nil {
 		return nil, err

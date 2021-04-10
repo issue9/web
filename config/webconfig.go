@@ -70,6 +70,7 @@ func (conf *Webconfig) NewServer(name, version string, l *logs.Logs, c catalog.C
 		return nil, err
 	}
 
+	h := conf.HTTP
 	o := &server.Options{
 		Location:       conf.location,
 		Cache:          conf.cache,
@@ -80,13 +81,13 @@ func (conf *Webconfig) NewServer(name, version string, l *logs.Logs, c catalog.C
 		SkipCleanPath:  conf.Router.SkipCleanPath,
 		Root:           conf.Root,
 		HTTPServer: func(srv *http.Server) {
-			srv.ReadTimeout = conf.HTTP.ReadTimeout.Duration()
-			srv.ReadHeaderTimeout = conf.HTTP.ReadHeaderTimeout.Duration()
-			srv.WriteTimeout = conf.HTTP.WriteTimeout.Duration()
-			srv.IdleTimeout = conf.HTTP.IdleTimeout.Duration()
-			srv.MaxHeaderBytes = conf.HTTP.MaxHeaderBytes
+			srv.ReadTimeout = h.ReadTimeout.Duration()
+			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
+			srv.WriteTimeout = h.WriteTimeout.Duration()
+			srv.IdleTimeout = h.IdleTimeout.Duration()
+			srv.MaxHeaderBytes = h.MaxHeaderBytes
 			srv.ErrorLog = l.ERROR()
-			srv.TLSConfig = conf.HTTP.tlsConfig
+			srv.TLSConfig = h.tlsConfig
 		},
 	}
 	srv, err := server.New(name, version, l, o)
