@@ -4,22 +4,19 @@
 package config
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io/fs"
 	"reflect"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Error 表示配置内容字段错误
 type Error struct {
 	Config, Field, Message string
 	Value                  interface{}
-}
-
-// Loader 配置管理接口
-type Loader interface {
-	// 用于将 config 所指定的配置内容加载至 v
-	//
-	// 返回的 Refresher 对象，可以在有需要时调用其 Refresher.Refresh 对 v 的数据进行重新加载。
-	Load(config string, v interface{}, f UnmarshalFunc) (*Refresher, error)
 }
 
 // UnmarshalFunc 定义了配置项的解码函数原型
@@ -72,4 +69,40 @@ func (l *Refresher) Refresh() error {
 
 func (err *Error) Error() string {
 	return fmt.Sprintf("%s:%s[%s]", err.Config, err.Field, err.Message)
+}
+
+// LoadYAML 加载 YAML 的配置文件并转换成 v 对象的内容
+func LoadYAML(f fs.FS) UnmarshalFunc {
+	return func(path string, v interface{}) error {
+		data, err := fs.ReadFile(f, path)
+		if err != nil {
+			return err
+		}
+
+		return yaml.Unmarshal(data, v)
+	}
+}
+
+// LoadJSON 加载 JSON 的配置文件并转换成 v 对象的内容
+func LoadJSON(f fs.FS) UnmarshalFunc {
+	return func(path string, v interface{}) error {
+		data, err := fs.ReadFile(f, path)
+		if err != nil {
+			return err
+		}
+
+		return json.Unmarshal(data, v)
+	}
+}
+
+// LoadXML 加载 XML 的配置文件并转换成 v 对象的内容
+func LoadXML(f fs.FS) UnmarshalFunc {
+	return func(path string, v interface{}) error {
+		data, err := fs.ReadFile(f, path)
+		if err != nil {
+			return err
+		}
+
+		return xml.Unmarshal(data, v)
+	}
 }

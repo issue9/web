@@ -169,6 +169,9 @@ func (o *Options) sanitize() (err error) {
 }
 
 // New 返回 *Server 实例
+//
+// name, version 表示服务的名称和版本号；
+// 在初始化 Server 必须指定的参数，且有默认值的，由 Options 定义。
 func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	if err := o.sanitize(); err != nil {
 		return nil, err

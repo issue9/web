@@ -10,10 +10,16 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v2/config"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
+)
+
+const (
+	logsConfigFilename = "logs.xml"
+	webconfigFilename  = "web.yaml"
 )
 
 // Webconfig 配置内容
@@ -63,6 +69,26 @@ type Router struct {
 	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,attr,omitempty"`
 	DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
 	SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,attr,omitempty"`
+}
+
+// NewServer 从配置文件初始化 Server 实例
+func NewServer(name, version string, f fs.FS, c catalog.Catalog, b result.BuildFunc) (*server.Server, error) {
+	conf := &config.Config{}
+	if _, err := Load(logsConfigFilename, conf, LoadXML(f)); err != nil {
+		return nil, err
+	}
+
+	l := logs.New()
+	if err := l.Init(conf); err != nil {
+		return nil, err
+	}
+
+	webconfig := &Webconfig{}
+	if _, err := Load(webconfigFilename, webconfig, LoadYAML(f)); err != nil {
+		return nil, err
+	}
+
+	return webconfig.buildServer(name, version, f, l, c, b)
 }
 
 // buildServer 返回 server.buildServer 对象
