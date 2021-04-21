@@ -5,8 +5,10 @@ package server
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 
@@ -142,7 +144,8 @@ func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, 
 
 // Static 添加静态路由
 //
-// path 为路由地址，必须以命名参数结尾，比如 /assets/{path}，之后可以通过此值删除路由项；
+// p 为路由地址，必须以命名参数结尾，比如 /assets/{path}，之后可以通过此值删除路由项；
+// index 可以在访问一个目录时指定默认访问的页面。
 // dir 为指向静态文件的路径；
 //
 // 如果要删除该静态路由，则可以将 path 传递给 Remove 进行删除。
@@ -150,19 +153,25 @@ func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, 
 // 比如在 Root 的值为 example.com/blog 时，
 // 将参数指定为 /admin/{path} 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (router *Router) Static(p, dir string) error {
-	p = path.Join(router.url.Path, p)
-	if p != "" && p[0] != '/' {
-		p = "/" + p
-	}
+func (router *Router) Static(p, dir, index string) error {
+	return router.StaticFS(p, os.DirFS(dir), index)
+}
 
+func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 	lastStart := strings.LastIndexByte(p, '{')
 	if lastStart < 0 || len(p) == 0 || p[len(p)-1] != '}' || lastStart+2 == len(p) {
 		return errors.New("path 必须是命名参数结尾：比如 /assets/{path}。")
 	}
+	prefix := path.Join(router.url.Path, p[:lastStart])
 
-	h := http.StripPrefix(p[:lastStart], http.FileServer(http.Dir(dir)))
-	return router.Mux().Handle(p, h, http.MethodGet)
+	return router.Handle(p, func(ctx *Context) {
+		pp := ctx.Request.URL.Path
+		pp = strings.TrimPrefix(pp, prefix)
+		if pp != "" && pp[0] == '/' {
+			pp = pp[1:]
+		}
+		ctx.ServeFileFS(f, pp, index, nil)
+	}, http.MethodGet)
 }
 
 // Resource 生成资源项

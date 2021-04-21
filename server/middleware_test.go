@@ -80,7 +80,7 @@ func TestServer_Compress(t *testing.T) {
 	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
-	server.Router().Static("/client/{path}", "./testdata/")
+	server.Router().Static("/client/{path}", "./testdata/", "index.html")
 	srv.Get("/root/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().

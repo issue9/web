@@ -274,7 +274,7 @@ func TestServer_Serve(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
-	server.Router().Static("/admin/{path}", "./testdata")
+	server.Router().Static("/admin/{path}", "./testdata", "index.html")
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)

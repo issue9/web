@@ -273,13 +273,13 @@ func TestRouter_Static(t *testing.T) {
 	server.Router().Mux().GetFunc("/m1/test", f201)
 
 	r := server.Router()
-	a.Error(r.Static("/path", "./testdata"))      // 不包含命名参数
-	a.Error(r.Static("/path/{abc", "./testdata")) // 格式无效
-	a.Error(r.Static("/path/abc}", "./testdata")) // 格式无效
-	a.Error(r.Static("/path/{}", "./testdata"))   // 命名参数未指定名称
-	a.Error(r.Static("/path/{}}", "./testdata"))  // 格式无效
+	a.Error(r.Static("/path", "./testdata", "index.html"))      // 不包含命名参数
+	a.Error(r.Static("/path/{abc", "./testdata", "index.html")) // 格式无效
+	a.Error(r.Static("/path/abc}", "./testdata", "index.html")) // 格式无效
+	a.Error(r.Static("/path/{}", "./testdata", "index.html"))   // 命名参数未指定名称
+	a.Error(r.Static("/path/{}}", "./testdata", "index.html"))  // 格式无效
 
-	r.Static("/client/{path}", "./testdata/")
+	r.Static("/client/{path}", "./testdata/", "index.html")
 	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
 		w.WriteHeader(status)
 		_, err := w.Write([]byte("error handler test"))
@@ -339,7 +339,7 @@ func TestRouter_Static(t *testing.T) {
 	a.NotError(err).NotNil(u)
 	r, ok := server.Router().NewRouter("example", u, mux.NewHosts("example.com"))
 	a.True(ok).NotNil(r)
-	r.Static("/admin/{path}", "./testdata")
+	r.Static("/admin/{path}", "./testdata", "index.html")
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/blog/admin/file1.txt", nil)
 	server.middlewares.ServeHTTP(w, req)

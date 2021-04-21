@@ -25,12 +25,16 @@ func TestContext_ServeFile(t *testing.T) {
 	}()
 
 	s.Router().Get("/path", func(ctx *Context) {
-		ctx.ServeFile("./testdata/file1.txt", map[string]string{"Test": "Test"})
+		ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
+	})
+
+	s.Router().Get("/index", func(ctx *Context) {
+		ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
 	})
 
 	s.Router().Get("/not-exists", func(ctx *Context) {
-		// file.text 不存在
-		ctx.ServeFile("./testdata/file1.text", map[string]string{"Test": "Test"})
+		// file1.text 不存在
+		ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
 	})
 
 	go func() {
@@ -40,6 +44,7 @@ func TestContext_ServeFile(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
+	testDownload(a, "http://localhost:8080/root/index", http.StatusOK)
 	testDownloadNotFound(a, "http://localhost:8080/root/not-exits")
 }
 
@@ -54,13 +59,18 @@ func TestContext_ServeFileFS(t *testing.T) {
 	}()
 
 	fs := os.DirFS("./testdata")
+
 	s.Router().Get("/path", func(ctx *Context) {
-		ctx.ServeFileFS(fs, "file1.txt", map[string]string{"Test": "Test"})
+		ctx.ServeFileFS(fs, "file1.txt", "index.html", map[string]string{"Test": "Test"})
+	})
+
+	s.Router().Get("/index", func(ctx *Context) {
+		ctx.ServeFileFS(fs, ".", "file1.txt", map[string]string{"Test": "Test"})
 	})
 
 	s.Router().Get("/not-exists", func(ctx *Context) {
 		// file.text 不存在
-		ctx.ServeFileFS(fs, "file1.text", map[string]string{"Test": "Test"})
+		ctx.ServeFileFS(fs, "file1.text", "index.html", map[string]string{"Test": "Test"})
 	})
 
 	go func() {
@@ -70,6 +80,7 @@ func TestContext_ServeFileFS(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
+	testDownload(a, "http://localhost:8080/root/index", http.StatusOK)
 	testDownloadNotFound(a, "http://localhost:8080/root/not-exits")
 }
 
