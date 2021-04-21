@@ -41,10 +41,6 @@ STAT:
 		goto STAT
 	}
 
-	for k, v := range headers {
-		ctx.Response.Header().Set(k, v)
-	}
-
 	data, err := os.ReadFile(p)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, err)
@@ -62,6 +58,9 @@ func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]str
 	if index == "" {
 		index = indexPage
 	}
+	if p == "" {
+		p = "."
+	}
 
 STAT:
 	stat, err := fs.Stat(f, p)
@@ -71,10 +70,6 @@ STAT:
 	if stat.IsDir() {
 		p = path.Join(p, index)
 		goto STAT
-	}
-
-	for k, v := range headers {
-		ctx.Response.Header().Set(k, v)
 	}
 
 	data, err := fs.ReadFile(f, p)
