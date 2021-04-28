@@ -161,7 +161,7 @@ func (dep *Dep) checkDeps(m *Module) error {
 	}
 
 	if dep.isDep(m.name, m.name) {
-		return fmt.Errorf("存在循环依赖项:%s", m.name)
+		return fmt.Errorf("%s 循环依赖自身", m.name)
 	}
 
 	return nil

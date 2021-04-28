@@ -144,7 +144,7 @@ func (l *LetsEncrypt) tlsConfig() *tls.Config {
 
 func (l *LetsEncrypt) sanitize() *Error {
 	if l.Cache == "" || !filesystem.Exists(l.Cache) {
-		return &Error{Field: "cache", Message: "不存在该目录或是为空"}
+		return &Error{Field: "cache", Message: "不存在该目录或是未指定"}
 	}
 
 	if len(l.Domains) == 0 {
