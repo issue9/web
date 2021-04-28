@@ -53,18 +53,21 @@ func (m *Module) Inited() bool {
 }
 
 // Init 初始化当前模块
+//
+// t 如果不为空，则表示只调用附加于该标签的初始化函数，且不会考虑是否已经初始化；
+// l 表示初始化信息的调用情况输出通道；
 func (m *Module) Init(t string, l *logs.Logs) error {
-	if m.Inited() {
-		err := fmt.Errorf("模块 %s 已经存在", m.ID())
-		l.Error(err)
-		return err
-	}
-
 	if t != "" {
 		if i := m.tags[t]; i != nil {
 			return i.init(l, 0)
 		}
 		return nil
+	}
+
+	if m.Inited() {
+		err := fmt.Errorf("模块 %s 已经初始化", m.ID())
+		l.Error(err)
+		return err
 	}
 
 	if err := m.init(l, 0); err != nil {
@@ -81,6 +84,10 @@ func (m *Module) AddInit(title string, f func() error) Initializer {
 
 // GetTag 获取特定名称的初始化函数
 func (m *Module) GetTag(tag string) Initializer {
+	if m.tags == nil {
+		m.tags = map[string]*initializer{}
+	}
+
 	if _, found := m.tags[tag]; !found {
 		m.tags[tag] = &initializer{name: tag}
 	}
