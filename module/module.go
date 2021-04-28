@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package module 模块之间的依赖管理
 package module
 
 import (
@@ -29,14 +30,10 @@ func NewModule(name, desc string, dep ...string) *Module {
 }
 
 // ID 模块的唯一名称
-func (m *Module) ID() string {
-	return m.name
-}
+func (m *Module) ID() string { return m.name }
 
 // Description 模块的详细描述信息
-func (m *Module) Description() string {
-	return m.desc
-}
+func (m *Module) Description() string { return m.desc }
 
 // Deps 模块的依赖模块
 func (m *Module) Deps() (deps []string) {
@@ -48,9 +45,7 @@ func (m *Module) Deps() (deps []string) {
 }
 
 // Inited 是否已经初始化
-func (m *Module) Inited() bool {
-	return m.inited
-}
+func (m *Module) Inited() bool { return m.inited }
 
 // Init 初始化当前模块
 //

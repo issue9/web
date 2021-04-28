@@ -3,12 +3,16 @@
 package module
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/sliceutil"
 )
+
+// ErrInited 当模块被多次初始化时返回此错误
+var ErrInited = errors.New("模块已经初始化")
 
 // Dep 依赖管理
 type Dep struct {
@@ -48,14 +52,10 @@ func (dep *Dep) add(m *Module) error {
 }
 
 // Inited 是否已经初始化
-func (dep *Dep) Inited() bool {
-	return dep.inited
-}
+func (dep *Dep) Inited() bool { return dep.inited }
 
 // Modules 模块列表
-func (dep *Dep) Modules() []*Module {
-	return dep.modules
-}
+func (dep *Dep) Modules() []*Module { return dep.modules }
 
 // Tags 返回指定名称的模块的标签列表
 //
@@ -91,7 +91,7 @@ func (dep *Dep) Tags(mod ...string) map[string][]string {
 // 会进行依赖检测。若模块初始化出错，则会中断并返回出错信息。
 func (dep *Dep) Init(tag string) error {
 	if dep.Inited() {
-		panic("已经初始化")
+		return ErrInited
 	}
 
 	foundTag := tag == ""

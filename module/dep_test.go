@@ -46,7 +46,7 @@ func TestDep_Tags(t *testing.T) {
 	a.Equal(d.Tags("m2"), map[string][]string{"m2": {"d2"}})
 }
 
-func TestDep_InitItem(t *testing.T) {
+func TestDep_InitTag(t *testing.T) {
 	a := assert.New(t)
 	d := NewDep(logs.New())
 	m1 := NewModule("m1", "m1 desc")
@@ -55,7 +55,7 @@ func TestDep_InitItem(t *testing.T) {
 	a.NotError(d.Add(m1))
 
 	d.Init("d1")
-	a.PanicString(func() { d.Init("d1") }, "已经初始化")
+	a.ErrorType(d.Init("d1"), ErrInited)
 }
 
 func TestDep_isDep(t *testing.T) {
@@ -150,9 +150,7 @@ func TestDep_Init(t *testing.T) {
 		Equal(inits["d2"], 1).
 		Equal(inits["d3"], 1)
 
-	a.PanicString(func() {
-		d.Init("")
-	}, "已经初始化")
+	a.ErrorType(d.Init(""), ErrInited)
 
 	// 添加已经存在的模块
 	a.ErrorString(d.Add(newMod("m1", "d1")), "已经存在")

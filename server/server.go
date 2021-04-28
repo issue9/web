@@ -311,7 +311,7 @@ func (srv *Server) Services() *service.Manager {
 //
 // 会自动对模块进行初始化。
 func (srv *Server) Serve() (err error) {
-	if err = srv.initModules(srv.Logs().INFO()); err != nil {
+	if err = srv.initModules(); err != nil {
 		return err
 	}
 

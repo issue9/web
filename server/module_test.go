@@ -4,13 +4,13 @@ package server
 
 import (
 	"errors"
-	"log"
-	"os"
 	"testing"
 	"time"
 	"unicode"
 
 	"github.com/issue9/assert"
+
+	"github.com/issue9/web/module"
 )
 
 func job(time.Time) error {
@@ -125,9 +125,9 @@ func TestServer_initModules(t *testing.T) {
 	a.Equal(len(srv.Modules()), 2)
 
 	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(srv.initModules(log.New(os.Stdout, "[INFO]", 0)))
+	a.NotError(srv.initModules())
 	a.Equal(3, len(srv.Services().Jobs()))
 
 	// 不能多次调用
-	a.Equal(srv.initModules(log.New(os.Stdout, "[INFO]", 0)), ErrInited)
+	a.Equal(srv.initModules(), module.ErrInited)
 }

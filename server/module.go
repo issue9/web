@@ -3,7 +3,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -22,9 +21,6 @@ import (
 //
 // NOTE: 必须为可导出的函数名称
 const ModuleFuncName = "Module"
-
-// ErrInited 当模块被多次初始化时返回此错误
-var ErrInited = errors.New("模块已经初始化")
 
 // ModuleFunc 安装插件的函数签名
 type ModuleFunc func(*Server) (*Module, error)
@@ -80,27 +76,18 @@ func (srv *Server) AddModule(module ...*Module) error {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表。
-func (srv *Server) Tags() map[string][]string {
-	return srv.dep.Tags()
-}
+func (srv *Server) Tags() map[string][]string { return srv.dep.Tags() }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*module.Module {
-	return srv.dep.Modules()
-}
+func (srv *Server) Modules() []*module.Module { return srv.dep.Modules() }
 
 // InitTag 初始化模块下的子标签
-func (srv *Server) InitTag(tag string) error {
-	return srv.dep.Init(tag)
-}
+func (srv *Server) InitTag(tag string) error { return srv.dep.Init(tag) }
 
 // initModules 初始化模块
-func (srv *Server) initModules(info *log.Logger) error {
-	if srv.dep.Inited() {
-		return ErrInited
-	}
-
+func (srv *Server) initModules() error {
 	// 以下输出日志不需要标出文件位置。
+	info := srv.Logs().INFO()
 	flags := info.Flags()
 	info.SetFlags(log.Ldate | log.Lmicroseconds)
 
@@ -115,7 +102,7 @@ func (srv *Server) initModules(info *log.Logger) error {
 		for _, router := range all {
 			info.Println(router.Name)
 			for path, methods := range router.Routes {
-				info.Printf("    [%s] %s\n", strings.Join(methods, ", "), path)
+				info.Printf("\t[%s] %s\n", strings.Join(methods, ", "), path)
 			}
 		}
 	}
@@ -237,11 +224,7 @@ func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.
 //
 // Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
 // 一般用于功能更新等操作。
-func (m *Module) NewTag(tag string) module.Initializer {
-	return m.GetTag(tag)
-}
+func (m *Module) NewTag(tag string) module.Initializer { return m.GetTag(tag) }
 
 // Tags 与当前模块关联的子标签
-func (m *Module) Tags() []string {
-	return m.srv.dep.Tags(m.ID())[m.ID()]
-}
+func (m *Module) Tags() []string { return m.srv.dep.Tags(m.ID())[m.ID()] }
