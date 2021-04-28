@@ -4,6 +4,7 @@ package module
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/sliceutil"
@@ -54,6 +55,35 @@ func (dep *Dep) Inited() bool {
 // Modules 模块列表
 func (dep *Dep) Modules() []*Module {
 	return dep.modules
+}
+
+// Tags 返回指定名称的模块的子模块列表
+//
+// mod 表示需要查询的模块名称，如果为空，表示返回所有模块的子模块列表。
+//
+// 返回值中键名为模块名称，键值为该模块下的子模块列表。
+func (dep *Dep) Tags(mod ...string) map[string][]string {
+	ret := make(map[string][]string, len(mod))
+
+	enable := func(id string) bool {
+		return len(mod) == 0 ||
+			sliceutil.Count(mod, func(i int) bool { return mod[i] == id }) > 0
+	}
+
+	for _, m := range dep.modules {
+		if !enable(m.ID()) {
+			continue
+		}
+
+		names := make([]string, 0, len(m.tags))
+		for name := range m.tags {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		ret[m.ID()] = names
+	}
+
+	return ret
 }
 
 // Init 对所有的模块进行初始化操作
@@ -159,8 +189,8 @@ func (dep *Dep) isDep(m1, m2 string) bool {
 	return false
 }
 
-func (d *Dep) findModule(id string) *Module {
-	for _, m := range d.modules {
+func (dep *Dep) findModule(id string) *Module {
+	for _, m := range dep.modules {
 		if m.name == id {
 			return m
 		}
