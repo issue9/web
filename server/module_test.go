@@ -74,7 +74,7 @@ func TestServer_AddModuleFunc(t *testing.T) {
 	a.Equal(len(srv.Modules()), 2)
 }
 
-func TestServer_Tags(t *testing.T) {
+func TestServer_InitTag(t *testing.T) {
 	a := assert.New(t)
 
 	m1 := NewModule("users1", "user1 module", "users2", "users3")
@@ -97,12 +97,19 @@ func TestServer_Tags(t *testing.T) {
 	a.NotNil(tag)
 	tag.AddInit("安装数据表 users3-1", func() error { return nil })
 	tag.AddInit("安装数据表 users3-2", func() error { return nil })
-	m3.NewTag("v4")
+	a.NotNil(m3.NewTag("v4"))
 
 	srv := newServer(a)
 	a.NotError(srv.AddModule(m1, m2, m3))
 	tags := srv.Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+
+	a.Panic(func() {
+		srv.InitTag("") // 空值
+	})
+	a.ErrorString(srv.InitTag("v1"), "failed message")
+	a.NotError(srv.InitTag("v2"))
+	a.ErrorString(srv.InitTag("not-exists"), "不存在")
 }
 
 func TestServer_initModules(t *testing.T) {

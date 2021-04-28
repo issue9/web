@@ -100,7 +100,7 @@ func (dep *Dep) Init(tag string) error {
 		}
 	}
 
-	dep.inited = true
+	dep.inited = tag == "" // tag 不为空时，不设置 inited
 	return nil
 }
 

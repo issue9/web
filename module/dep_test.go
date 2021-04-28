@@ -3,6 +3,7 @@
 package module
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -42,18 +43,6 @@ func TestDep_Tags(t *testing.T) {
 	a.NotError(d.Add(m3))
 
 	a.Equal(d.Tags(), []string{"d0", "d1", "d2"})
-}
-
-func TestDep_InitTag(t *testing.T) {
-	a := assert.New(t)
-	d := NewDep(logs.New())
-	m1 := NewModule("m1", "m1 desc")
-	a.NotNil(m1.GetTag("d1"))
-	a.NotNil(m1.GetTag("d2"))
-	a.NotError(d.Add(m1))
-
-	d.Init("d1")
-	a.ErrorType(d.Init("d1"), ErrInited)
 }
 
 func TestDep_isDep(t *testing.T) {
@@ -161,4 +150,19 @@ func TestDep_Init(t *testing.T) {
 		Equal(inits["d2"], 1).
 		Equal(inits["d3"], 1).
 		Equal(inits["d4"], 1)
+}
+
+func TestDep_InitTag(t *testing.T) {
+	a := assert.New(t)
+	d := NewDep(logs.New())
+	m1 := NewModule("m1", "m1 desc")
+	a.NotError(d.Add(m1))
+
+	a.NotNil(m1.GetTag("d1"))
+	m1.GetTag("d2").AddInit("d2", func() error { return errors.New("d2 error") })
+
+	a.NotError(d.Init("d1"))
+	a.NotError(d.Init("d1"))
+	a.ErrorString(d.Init("d2"), "d2 error")
+	a.ErrorString(d.Init("not-exists"), "不存在")
 }

@@ -82,7 +82,13 @@ func (srv *Server) Tags() []string { return srv.dep.Tags() }
 func (srv *Server) Modules() []*module.Module { return srv.dep.Modules() }
 
 // InitTag 初始化模块下的子标签
-func (srv *Server) InitTag(tag string) error { return srv.dep.Init(tag) }
+func (srv *Server) InitTag(tag string) error {
+	if tag == "" {
+		panic("参数  tag 不能为空")
+	}
+
+	return srv.dep.Init(tag)
+}
 
 // initModules 初始化模块
 func (srv *Server) initModules() error {
