@@ -35,15 +35,13 @@ func TestDep_Tags(t *testing.T) {
 
 	m2 := NewModule("m2", "m2 desc")
 	a.NotNil(m2.GetTag("d2"))
+	a.NotNil(m2.GetTag("d0"))
 	a.NotError(d.Add(m2))
 
 	m3 := NewModule("m3", "m3 desc")
 	a.NotError(d.Add(m3))
 
-	a.Empty(d.Tags("d1"))
-
-	a.Equal(d.Tags(), map[string][]string{"m1": {"d1", "d2"}, "m2": {"d2"}, "m3": {}})
-	a.Equal(d.Tags("m2"), map[string][]string{"m2": {"d2"}})
+	a.Equal(d.Tags(), []string{"d0", "d1", "d2"})
 }
 
 func TestDep_InitTag(t *testing.T) {

@@ -5,6 +5,7 @@ package module
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/issue9/logs/v2"
 )
@@ -87,4 +88,14 @@ func (m *Module) GetTag(tag string) Initializer {
 		m.tags[tag] = &initializer{name: tag}
 	}
 	return m.tags[tag]
+}
+
+// Tags 返回当前模块所拥有的标签
+func (m *Module) Tags() []string {
+	tags := make([]string, 0, len(m.tags))
+	for tag := range m.tags {
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+	return tags
 }

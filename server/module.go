@@ -76,7 +76,7 @@ func (srv *Server) AddModule(module ...*Module) error {
 // Tags 返回所有的子模块名称
 //
 // 键名为模块名称，键值为该模块下的标签列表。
-func (srv *Server) Tags() map[string][]string { return srv.dep.Tags() }
+func (srv *Server) Tags() []string { return srv.dep.Tags() }
 
 // Modules 当前系统使用的所有模块信息
 func (srv *Server) Modules() []*module.Module { return srv.dep.Modules() }
@@ -225,6 +225,3 @@ func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.
 // Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
 // 一般用于功能更新等操作。
 func (m *Module) NewTag(tag string) module.Initializer { return m.GetTag(tag) }
-
-// Tags 与当前模块关联的子标签
-func (m *Module) Tags() []string { return m.srv.dep.Tags(m.ID())[m.ID()] }

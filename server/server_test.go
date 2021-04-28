@@ -231,9 +231,7 @@ func TestServer_Serve(t *testing.T) {
 		srv := ctx.Server()
 		a.NotNil(srv)
 		a.Equal(2, len(srv.Modules()))
-		a.Equal(2, len(srv.Tags())).
-			Equal(srv.Tags()["m1"], []string{"tag1"}).
-			Empty(srv.Tags()["m2"])
+		a.Equal(srv.Tags(), []string{"tag1"})
 
 		ctx.Response.WriteHeader(http.StatusAccepted)
 		_, err := ctx.Response.Write([]byte("1234567890"))

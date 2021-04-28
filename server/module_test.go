@@ -102,10 +102,7 @@ func TestServer_Tags(t *testing.T) {
 	srv := newServer(a)
 	a.NotError(srv.AddModule(m1, m2, m3))
 	tags := srv.Tags()
-	a.Equal(3, len(tags))
-	a.Equal(tags["users1"], []string{"v1", "v2"}).
-		Equal(tags["users2"], []string{"v1", "v3"}).
-		Equal(tags["users3"], []string{"v1", "v4"})
+	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
 }
 
 func TestServer_initModules(t *testing.T) {

@@ -57,33 +57,18 @@ func (dep *Dep) Inited() bool { return dep.inited }
 // Modules 模块列表
 func (dep *Dep) Modules() []*Module { return dep.modules }
 
-// Tags 返回指定名称的模块的标签列表
+// Tags 返回所有模块的标签列表
 //
-// mod 表示需要查询的模块名称，如果为空，表示返回所有模块的标签列表。
-//
-// 返回值中键名为模块名称，键值为该模块下的标签列表。
-func (dep *Dep) Tags(mod ...string) map[string][]string {
-	ret := make(map[string][]string, len(mod))
-
-	enable := func(id string) bool {
-		return len(mod) == 0 ||
-			sliceutil.Count(mod, func(i int) bool { return mod[i] == id }) > 0
-	}
-
+// 如果要查看单个模块的，可调用 Module.Tags() 方法。
+func (dep *Dep) Tags() []string {
+	tags := make([]string, 0, 100)
 	for _, m := range dep.modules {
-		if !enable(m.ID()) {
-			continue
-		}
-
-		names := make([]string, 0, len(m.tags))
-		for name := range m.tags {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		ret[m.ID()] = names
+		tags = append(tags, m.Tags()...)
 	}
-
-	return ret
+	index := sliceutil.Unique(tags, func(i, j int) bool { return tags[i] == tags[j] })
+	tags = tags[:index]
+	sort.Strings(tags)
+	return tags
 }
 
 // Init 对所有的模块进行初始化操作

@@ -61,4 +61,9 @@ func TestModule_GetTag(t *testing.T) {
 	t1 := m.GetTag("t1")
 	a.NotNil(t1)
 	a.Equal(t1, m.GetTag("t1"))
+
+	a.NotNil(m.GetTag("t3"))
+	a.NotNil(m.GetTag("t2"))
+
+	a.Equal(m.Tags(), []string{"t1", "t2", "t3"})
 }
