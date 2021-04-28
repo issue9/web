@@ -11,8 +11,6 @@ import (
 	"unicode"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/internal/dep"
 )
 
 func job(time.Time) error {
@@ -43,9 +41,7 @@ func TestModule_NewTag(t *testing.T) {
 
 	v := m.NewTag("0.1.0")
 	a.NotNil(v)
-	v.AddInit("title1", nil)
-	def, ok := v.(*dep.Module)
-	a.True(ok).Equal(def.ID, "user1") // 与模块相同的 ID
+	a.NotNil(v.AddInit("title1", func() error { return nil }))
 
 	vv := m.NewTag("0.1.0")
 	a.Equal(vv, v)

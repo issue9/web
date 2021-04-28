@@ -26,7 +26,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/internal/dep"
+	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/service"
 )
@@ -113,7 +113,7 @@ type Server struct {
 	cache  cache.Cache
 	router *Router
 	uptime time.Time
-	dep    *dep.Dep
+	dep    *module.Dep
 
 	mimetypes *content.Mimetypes
 	services  *service.Manager
@@ -195,7 +195,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		location: o.Location,
 
 		cache:  o.Cache,
-		dep:    dep.New(logs.INFO()),
+		dep:    module.NewDep(logs),
 		uptime: time.Now(),
 
 		mimetypes: content.NewMimetypes(),

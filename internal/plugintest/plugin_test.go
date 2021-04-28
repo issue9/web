@@ -34,15 +34,15 @@ func TestPlugins(t *testing.T) {
 	a.Equal(2, len(ms))
 
 	sort.SliceStable(ms, func(i, j int) bool {
-		return ms[i].ID < ms[j].ID
+		return ms[i].ID() < ms[j].ID()
 	})
-	a.Equal(ms[0].ID, "plugin1")
-	a.Equal(ms[1].ID, "plugin2")
+	a.Equal(ms[0].ID(), "plugin1")
+	a.Equal(ms[1].ID(), "plugin2")
 
 	// 手动加载插件
 	a.NotError(srv.LoadPlugin("./testdata/plugin3.so"))
 	ms = srv.Modules()
-	a.Equal(3, len(ms)).Equal(ms[2].ID, "plugin3")
+	a.Equal(3, len(ms)).Equal(ms[2].ID(), "plugin3")
 
 	// 加载已经加载的插件
 	a.Error(srv.LoadPlugins("./testdata/plugin*.so"))

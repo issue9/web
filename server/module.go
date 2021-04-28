@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/scheduled"
 	"github.com/issue9/scheduled/schedulers"
 
-	"github.com/issue9/web/internal/dep"
+	"github.com/issue9/web/module"
 	"github.com/issue9/web/service"
 )
 
@@ -33,23 +33,9 @@ type ModuleFunc func(*Server) (*Module, error)
 //
 // 模块可以作为代码的一种组织方式。将一组关联的功能合并为一个模块。
 type Module struct {
-	depModule *dep.Module
-	srv       *Server
-	filters   []Filter
-}
-
-// ModuleInfo 模块的描述信息
-type ModuleInfo struct {
-	ID          string
-	Description string
-	Deps        []string
-}
-
-// Tag 表示与特定标签相关联的初始化函数列表
-//
-// 依附于模块，共享模块的依赖关系。一般是各个模块下的安装脚本使用。
-type Tag interface {
-	AddInit(string, func() error)
+	*module.Module
+	srv     *Server
+	filters []Filter
 }
 
 // NewModule 声明一个新的模块
@@ -59,7 +45,7 @@ type Tag interface {
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
 func NewModule(id, desc string, deps ...string) *Module {
 	return &Module{
-		depModule: dep.NewModule(id, desc, deps...),
+		Module: module.NewModule(id, desc, deps...),
 	}
 }
 
@@ -84,7 +70,7 @@ func (srv *Server) AddModule(module ...*Module) error {
 	for _, m := range module {
 		m.srv = srv
 
-		if err := srv.dep.AddModule(m.depModule); err != nil {
+		if err := srv.dep.Add(m.Module); err != nil {
 			return err
 		}
 	}
@@ -95,21 +81,12 @@ func (srv *Server) AddModule(module ...*Module) error {
 //
 // 键名为模块名称，键值为该模块下的标签列表。
 func (srv *Server) Tags() map[string][]string {
-	return srv.dep.Items()
+	return srv.dep.Tags()
 }
 
 // Modules 当前系统使用的所有模块信息
-func (srv *Server) Modules() []*ModuleInfo {
-	ms := srv.dep.Modules()
-	info := make([]*ModuleInfo, 0, len(ms))
-	for _, m := range ms {
-		info = append(info, &ModuleInfo{
-			ID:          m.ID,
-			Description: m.Desc,
-			Deps:        m.Deps,
-		})
-	}
-	return info
+func (srv *Server) Modules() []*module.Module {
+	return srv.dep.Modules()
 }
 
 // InitTag 初始化模块下的子标签
@@ -194,21 +171,6 @@ func (srv *Server) LoadPlugin(path string) error {
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
-// ID 唯一 ID
-func (m *Module) ID() string {
-	return m.depModule.ID
-}
-
-// Description 模块的详细说明
-func (m *Module) Description() string {
-	return m.depModule.Desc
-}
-
-// Deps 模块的依赖项
-func (m *Module) Deps() []string {
-	return m.depModule.Deps
-}
-
 // AddService 添加新的服务
 //
 // f 表示服务的运行函数；
@@ -269,24 +231,17 @@ func (m *Module) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.
 	})
 }
 
-// AddInit 添加一个初始化函数
-//
-// title 该初始化函数的名称。
-func (m *Module) AddInit(title string, f func() error) {
-	m.depModule.AddInit(title, f)
-}
-
 // NewTag 为当前模块生成特定名称的子模块
 //
 // 若已经存在，则直接返回该子模块。
 //
 // Tag 是依赖关系与当前模块相同，但是功能完全独立的模块，
 // 一般用于功能更新等操作。
-func (m *Module) NewTag(tag string) Tag {
-	return m.depModule.New(tag)
+func (m *Module) NewTag(tag string) module.Initializer {
+	return m.GetTag(tag)
 }
 
 // Tags 与当前模块关联的子标签
 func (m *Module) Tags() []string {
-	return m.srv.dep.Items(m.ID())[m.ID()]
+	return m.srv.dep.Tags(m.ID())[m.ID()]
 }

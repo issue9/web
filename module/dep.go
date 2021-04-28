@@ -57,11 +57,11 @@ func (dep *Dep) Modules() []*Module {
 	return dep.modules
 }
 
-// Tags 返回指定名称的模块的子模块列表
+// Tags 返回指定名称的模块的标签列表
 //
-// mod 表示需要查询的模块名称，如果为空，表示返回所有模块的子模块列表。
+// mod 表示需要查询的模块名称，如果为空，表示返回所有模块的标签列表。
 //
-// 返回值中键名为模块名称，键值为该模块下的子模块列表。
+// 返回值中键名为模块名称，键值为该模块下的标签列表。
 func (dep *Dep) Tags(mod ...string) map[string][]string {
 	ret := make(map[string][]string, len(mod))
 

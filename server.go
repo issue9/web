@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/module"
 	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
@@ -20,7 +21,7 @@ type (
 	Options     = server.Options
 	Filter      = server.Filter
 	Module      = server.Module
-	Tag         = server.Tag
+	Initializer = module.Initializer
 	HandlerFunc = server.HandlerFunc
 )
 

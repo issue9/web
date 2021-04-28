@@ -249,7 +249,7 @@ func TestServer_Serve(t *testing.T) {
 		a.NotError(server.AddModule(m3))
 
 		a.Equal(3, len(srv.Modules()))
-		a.True(m3.depModule.Inited())
+		a.True(m3.Inited())
 	})
 
 	a.NotError(server.AddModule(m1, m2))
