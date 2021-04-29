@@ -27,22 +27,16 @@ func Init(opt *cmdopt.CmdOpt) {
 }
 
 func do(output io.Writer) error {
-	v, err := versioninfo.New("./")
+	dir, err := versioninfo.Root("./")
 	if err != nil {
+		return err
+	}
+	if err := dir.DumpVersionFile("./"); err != nil {
 		return err
 	}
 
 	args := make([]string, 0, flagset.NArg()+1)
 	args = append(args, "build")
-
-	// flag 参数添加在最后，保证不会被其它设置顶替
-	flag, err := v.LDFlags()
-	if err != nil {
-		return err
-	}
-	if flag != "" {
-		args = append(args, "-ldflags", flag)
-	}
 
 	args = append(args, flagset.Args()...)
 

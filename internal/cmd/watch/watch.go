@@ -65,15 +65,13 @@ func do(output io.Writer) error {
 	}
 	gobuildOpt.Dirs = append([]string{wd}, flag.Args()...)
 
-	v, err := versioninfo.New("./")
+	root, err := versioninfo.Root("./")
 	if err != nil {
 		return err
 	}
-	ld, err := v.LDFlags()
-	if err != nil {
+	if root.DumpVersionFile(wd); err != nil {
 		return err
 	}
-	gobuildOpt.Flags = map[string]string{"ld": ld}
 
 	logs := gobuild.NewConsoleLogs(showIgnore)
 	defer logs.Stop()
