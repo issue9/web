@@ -3,11 +3,8 @@
 package versioninfo
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 )
@@ -17,42 +14,35 @@ func TestFindRoot(t *testing.T) {
 
 	abs, err := filepath.Abs("../..")
 	a.NotError(err)
-	path, err := findRoot("./")
+	path, err := Root("./")
 	a.NotError(err).Equal(path, abs)
 
 	abs, err = filepath.Abs("./testdata")
 	a.NotError(err)
-	path, err = findRoot("./testdata")
+	path, err = Root("./testdata")
 	a.NotError(err).Equal(path, abs)
 
 	// 该目录不存在 go.mod
-	path, err = findRoot("./../../../../")
-	a.Error(err).Empty(path)
+	path, err = Root("./../../../../")
+	a.Error(err).Equal(path, Dir(""))
 }
 
-func TestVersionInfo_DumpFile(t *testing.T) {
+func TestDir_DumpVersionFile(t *testing.T) {
 	a := assert.New(t)
 
-	v, err := New("./testdata")
+	v, err := Root("./testdata")
 	a.NotError(err).NotNil(v)
 
-	a.NotError(v.DumpFile("1.1.1"))
-	a.FileExists(filepath.Join("./testdata/", Path))
+	a.NotError(v.DumpVersionFile("./"))
+	a.FileExists(filepath.Join("./testdata/", versionPath))
 }
 
-func TestVersionInfoLDFlags(t *testing.T) {
+func TestDir_DumpInfoFile(t *testing.T) {
 	a := assert.New(t)
-	now := time.Now().Format(buildDateLayout)
 
-	v, err := New("./testdata")
+	v, err := Root("./testdata")
 	a.NotError(err).NotNil(v)
-	p, err := v.LDFlags()
-	a.NotError(err)
-	a.True(strings.HasPrefix(p, fmt.Sprintf("-X testdata/v2/internal/version.buildDate=%s -X testdata/v2/internal/version.commitHash=", now)))
 
-	v, err = New("./")
-	a.NotError(err).NotNil(v)
-	p, err = v.LDFlags()
-	a.NotError(err)
-	a.True(strings.HasPrefix(p, fmt.Sprintf("-X github.com/issue9/web/internal/version.buildDate=%s -X github.com/issue9/web/internal/version.commitHash=", now)))
+	a.NotError(v.DumpInfoFile())
+	a.FileExists(filepath.Join("./testdata/", infoPath))
 }

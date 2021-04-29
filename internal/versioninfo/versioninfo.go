@@ -4,53 +4,35 @@
 package versioninfo
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/issue9/source"
+	"github.com/issue9/version"
 
 	"github.com/issue9/web/internal/filesystem"
 )
 
-// Path 指定版本化文件的路径
-const Path = "internal/version/info.go"
-
 const (
-	buildDateName   = "buildDate"
-	buildDateLayout = "20060102"
-	commitHashName  = "commitHash"
+	//  指定版本化文件的路径
+	infoPath    = "internal/version/info.go"
+	versionPath = "internal/version/VERSION"
 )
 
-// VersionInfo 版本信息的相关数据
-type VersionInfo struct {
-	root string
-}
+// Dir 版本信息的相关数据
+type Dir string
 
-// New 声明 VersionInfo 变量
-func New(curr string) (*VersionInfo, error) {
-	root, err := findRoot(curr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &VersionInfo{
-		root: root,
-	}, nil
-}
-
-// findRoot 查找项目的根目录
+// Root 获取 curr 所在项目的根目录
 //
-// 从当前目录开始向上查找，以找到 go.mod 为准，如果没有 go.mod 则会失败。
-func findRoot(curr string) (string, error) {
+// 从 curr 向上级查找，直到找到 go.mod 文件为止，返回该文件所在的目录。
+func Root(curr string) (Dir, error) {
 	path, err := filepath.Abs(curr)
 	if err != nil {
 		return "", err
@@ -58,7 +40,7 @@ func findRoot(curr string) (string, error) {
 
 	for {
 		if filesystem.Exists(filepath.Join(path, "go.mod")) {
-			return path, nil
+			return Dir(path), nil
 		}
 
 		p1 := filepath.Dir(path)
@@ -69,57 +51,41 @@ func findRoot(curr string) (string, error) {
 	}
 }
 
-// Path 返回基于当前项目根目录的文件地址
-func (v *VersionInfo) Path(p string) string {
-	return filepath.Join(v.root, p)
-}
-
-// DumpFile 输出版本信息文件
-//
-// ver 为需要指定的版本号
-func (v *VersionInfo) DumpFile(ver string) error {
-	p := v.Path(Path)
+// DumpInfoFile 输出处理版本信息的 Go 代码
+func (dir Dir) DumpInfoFile() error {
+	p := filepath.Join(string(dir), infoPath)
 	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
 		return err
 	}
-
-	content := []byte(fmt.Sprintf(versiongo, ver, buildDateName, commitHashName, buildDateName, buildDateName, commitHashName, commitHashName))
-	return source.DumpGoSource(p, content)
+	return source.DumpGoSource(p, []byte(versionGo))
 }
 
-// LDFlags 获取 ldflags 的参数
+// DumpVersionFile 输出版本文件
 //
-// 返回格式为：
-//  -X xx.buildDate=20060102 xx.commitHash=adfaewfwex
-func (v *VersionInfo) LDFlags() (string, error) {
-	data, err := ioutil.ReadFile(v.Path("go.mod"))
-	if err != nil {
-		return "", err
-	}
+// wd 表示工作目录，主要用于确定 git 的相关信息。
+func (dir Dir) DumpVersionFile(wd string) error {
+	cmd := exec.Command("git", "describe", "--abbrev=40", "--tags", "--long")
+	cmd.Dir = wd
+	buf := new(bytes.Buffer)
+	cmd.Stdout = buf
 
-	var moduleName string
-
-	s := bufio.NewScanner(bytes.NewBuffer(data))
-	s.Split(bufio.ScanLines)
-	for s.Scan() {
-		line := strings.TrimSpace(s.Text())
-		if strings.HasPrefix(line, "module ") {
-			p := path.Join(line[len("module "):], Path)
-			moduleName = path.Dir(p)
-			break
-		}
-	}
-	if moduleName == "" {
-		return "", errors.New("go.mod 中未找到 module 语句")
-	}
-
-	var buf strings.Builder
-	cmd := exec.Command("git", "rev-parse", "HEAD")
-	cmd.Stdout = &buf
 	if err := cmd.Run(); err != nil {
-		return "", err
+		return err
 	}
 
-	date := time.Now().Format(buildDateLayout)
-	return fmt.Sprintf("-X %s.%s=%s -X %s.%s=%s", moduleName, buildDateName, date, moduleName, commitHashName, buf.String()), nil
+	// bs 格式：v0.2.4-0-ge2f5e99a3306bba28e81f507bf66c905825184e5
+	// 替换其中的第一个 - 为日期，第二个 -g 为点
+	ver := buf.String()
+	date := time.Now().Format("+20060102.")
+	ver = strings.Replace(ver, "-", date, 1)
+	ver = strings.Replace(ver, "-g", ".", 1)
+	if ver[0] == 'v' || ver[0] == 'V' {
+		ver = ver[1:]
+	}
+
+	if !version.SemVerValid(ver) {
+		return fmt.Errorf("无法生成正确的版本号：%s", ver)
+	}
+
+	return os.WriteFile(filepath.Join(string(dir), versionPath), []byte(ver), fs.ModePerm)
 }
