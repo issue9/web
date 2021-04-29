@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/cmdopt"
 
 	"github.com/issue9/web/internal/cmd/build"
-	"github.com/issue9/web/internal/cmd/release"
 	"github.com/issue9/web/internal/cmd/version"
 	"github.com/issue9/web/internal/cmd/watch"
 )
@@ -42,7 +41,6 @@ func Exec() error {
 	version.Init(opt)
 	build.Init(opt)
 	watch.Init(opt)
-	release.Init(opt)
 
 	return opt.Exec(os.Args[1:])
 }
