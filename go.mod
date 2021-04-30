@@ -18,7 +18,6 @@ require (
 	github.com/issue9/source v0.1.1
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/validation v0.3.1
-	github.com/issue9/version v1.0.4
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0

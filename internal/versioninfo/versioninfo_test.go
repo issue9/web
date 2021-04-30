@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestFindRoot(t *testing.T) {
+func TestRoot(t *testing.T) {
 	a := assert.New(t)
 
 	abs, err := filepath.Abs("../..")
@@ -33,6 +33,20 @@ func TestDir_DumpVersionFile(t *testing.T) {
 	v, err := Root("./testdata")
 	a.NotError(err).NotNil(v)
 
-	a.NotError(v.DumpVersionFile("./"))
+	a.NotError(v.DumpFile("./"))
 	a.FileExists(filepath.Join("./testdata/", infoPath))
+}
+
+func TestParseDescribe(t *testing.T) {
+	a := assert.New(t)
+
+	tag, commits, hash := parseDescribe("v0.2.4-0-ge2f5e99a3306bba28e81f507bf66c905825184e5")
+	a.Equal(tag, "0.2.4").
+		Equal("0", commits).
+		Equal(hash, "e2f5e99a3306bba28e81f507bf66c905825184e5")
+
+	tag, commits, hash = parseDescribe("0.2.4-8-ge2f5e99a3306bba28e81")
+	a.Equal(tag, "0.2.4").
+		Equal("8", commits).
+		Equal(hash, "e2f5e99a3306bba28e81")
 }

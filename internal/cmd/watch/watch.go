@@ -69,7 +69,7 @@ func do(output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if root.DumpVersionFile(wd); err != nil {
+	if root.DumpFile(wd); err != nil {
 		return err
 	}
 
