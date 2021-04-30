@@ -13,10 +13,7 @@ import (
 	"github.com/issue9/web/internal/version"
 )
 
-const usage = `显示当前程序的版本号
-
-语法：web version [options]
-`
+const usage = "显示当前程序的版本号\n"
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {

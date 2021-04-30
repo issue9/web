@@ -37,7 +37,8 @@ const usage = `热编译当前目录下的项目
   指定其它依赖的目录，只能出现在命令的尾部。
 
 
-NOTE: 不会监视隐藏文件和隐藏目录下的文件。`
+NOTE: 不会监视隐藏文件和隐藏目录下的文件。
+`
 
 var (
 	gobuildOpt = &gobuild.Options{}
