@@ -20,12 +20,10 @@ const usage = `编译当前程序，功能与 go build 完全相同！
 `
 
 var flagset *flag.FlagSet
-var i bool
 
 // Init 初始化函数
 func Init(opt *cmdopt.CmdOpt) {
 	flagset = opt.New("build", usage, do)
-	flagset.BoolVar(&i, "init", false, "在当前项目中初始化与版本相关的代码")
 }
 
 func do(output io.Writer) error {
@@ -36,10 +34,6 @@ func do(output io.Writer) error {
 
 	if err := dir.DumpVersionFile("./"); err != nil {
 		return err
-	}
-
-	if i {
-		return dir.DumpInfoFile()
 	}
 
 	// build

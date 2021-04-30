@@ -6,25 +6,23 @@ package versioninfo
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"io/fs"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/issue9/source"
-	"github.com/issue9/version"
+
+	_ "embed"
 
 	"github.com/issue9/web/internal/filesystem"
 )
 
-const (
-	//  指定版本化文件的路径
-	infoPath    = "internal/version/info.go"
-	versionPath = "internal/version/VERSION"
-)
+//  指定版本化文件的路径
+const infoPath = "internal/version/info.go"
+
+//go:embed data/version.go
+var versionCode string
 
 // Dir 版本信息的相关数据
 type Dir string
@@ -51,19 +49,12 @@ func Root(curr string) (Dir, error) {
 	}
 }
 
-// DumpInfoFile 输出处理版本信息的 Go 代码
-func (dir Dir) DumpInfoFile() error {
-	p := filepath.Join(string(dir), infoPath)
-	if err := os.MkdirAll(filepath.Dir(p), os.ModePerm); err != nil {
-		return err
-	}
-	return source.DumpGoSource(p, []byte(versionGo))
-}
-
 // DumpVersionFile 输出版本文件
 //
 // wd 表示工作目录，主要用于确定 git 的相关信息。
 func (dir Dir) DumpVersionFile(wd string) error {
+	const dateFormat = "20060102"
+
 	cmd := exec.Command("git", "describe", "--abbrev=40", "--tags", "--long")
 	cmd.Dir = wd
 	buf := new(bytes.Buffer)
@@ -75,17 +66,29 @@ func (dir Dir) DumpVersionFile(wd string) error {
 
 	// bs 格式：v0.2.4-0-ge2f5e99a3306bba28e81f507bf66c905825184e5
 	// 替换其中的第一个 - 为日期，第二个 -g 为点
-	ver := buf.String()
-	date := time.Now().Format("+20060102.")
-	ver = strings.Replace(ver, "-", date, 1)
-	ver = strings.Replace(ver, "-g", ".", 1)
-	if ver[0] == 'v' || ver[0] == 'V' {
-		ver = ver[1:]
+	ver := strings.TrimRightFunc(buf.String(), func(r rune) bool { return r == '\n' })
+
+	var main, commits, hash string
+
+	if index := strings.IndexByte(ver, '-'); index > 0 {
+		main = ver[:index]
+		ver = ver[index+1:]
+	}
+	if main[0] == 'v' || main[0] == 'V' {
+		main = main[1:]
 	}
 
-	if !version.SemVerValid(ver) {
-		return fmt.Errorf("无法生成正确的版本号：%s", ver)
+	if index := strings.IndexByte(ver, '-'); index > 0 {
+		commits = ver[:index]
+		hash = ver[index+2:] // -g
 	}
 
-	return os.WriteFile(filepath.Join(string(dir), versionPath), []byte(ver), fs.ModePerm)
+	now := time.Now().Format(dateFormat)
+
+	code := strings.Replace(versionCode, "VERSION", main, 1)
+	code = strings.Replace(code, "HASH", hash, 1)
+	code = strings.Replace(code, "5000", commits, 1)
+	code = strings.Replace(code, "DATE", now, 1)
+	code = strings.Replace(code, "FORMATE", dateFormat, 1)
+	return source.DumpGoSource(filepath.Join(string(dir), infoPath), []byte(code))
 }
