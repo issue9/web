@@ -38,7 +38,7 @@ func do(output io.Writer) error {
 	}
 
 	if v {
-		if err := dir.DumpFile("./"); err != nil {
+		if err := dir.DumpFile(); err != nil {
 			return err
 		}
 	}

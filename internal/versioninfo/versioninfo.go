@@ -50,13 +50,11 @@ func Root(curr string) (Dir, error) {
 }
 
 // DumpFile 输出版本文件
-//
-// wd 表示工作目录，主要用于确定 git 的相关信息。
-func (dir Dir) DumpFile(wd string) error {
+func (dir Dir) DumpFile() error {
 	const dateFormat = "20060102"
 
 	cmd := exec.Command("git", "describe", "--abbrev=40", "--tags", "--long")
-	cmd.Dir = wd
+	cmd.Dir = string(dir)
 	buf := new(bytes.Buffer)
 	cmd.Stdout = buf
 
