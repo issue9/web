@@ -8,8 +8,9 @@ const versionGo = `// 当前文件由 https://github.com/issue9/web 自动生成
 package version
 
 import (
-	"time"
 	"strconv"
+	"strings"
+	"time"
 
 	_ "embed"
 )
@@ -17,7 +18,7 @@ import (
 //go:embed VERSION
 var versionString string
 
-var version *Version
+var info *Info
 
 // Info 版本的相关信息
 type Info struct {
@@ -29,10 +30,10 @@ type Info struct {
 }
 
 func init() {
-	v :=&Version{Raw:versionString}
+	info =&Info{Raw:versionString}
 
 	if index :=strings.IndexByte(versionString, '+');index > 0 {
-		v.Main = versionString[:index]
+		info.Main = versionString[:index]
 		versionString = versionString[index+1:]
 	}
 
@@ -42,7 +43,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		v.Date=date
+		info.Date=date
 
 		versionString = versionString[index+1:]
 	}
@@ -53,16 +54,14 @@ func init() {
 		if err!=nil{
 			panic(err)
 		}
-		v.Commits = num
+		info.Commits = num
 
-		v.hash = versionString[index+1:]
+		info.Hash = versionString[index+1:]
 	}
-
-	return v
 }
 
 //  Version 返回版本号
 func Version() *Info{
-	return version
+	return info
 }
 `

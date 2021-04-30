@@ -71,7 +71,7 @@ func checkRemoteVersion(output io.Writer) error {
 }
 
 func printLocalVersion(output io.Writer) error {
-	_, err := fmt.Fprintf(output, "web: %s\ngo: %s\n", version.FullVersion(), strings.TrimPrefix(runtime.Version(), "go"))
+	_, err := fmt.Fprintf(output, "web: %s\ngo: %s\n", version.Version().Raw, strings.TrimPrefix(runtime.Version(), "go"))
 	return err
 }
 
