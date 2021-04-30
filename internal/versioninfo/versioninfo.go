@@ -6,6 +6,7 @@ package versioninfo
 import (
 	"bytes"
 	"errors"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -69,7 +70,13 @@ func (dir Dir) DumpFile() error {
 	code = strings.Replace(code, "5000", commits, 1)
 	code = strings.Replace(code, "DATE", now, 1)
 	code = strings.Replace(code, "FORMATE", dateFormat, 1)
-	return source.DumpGoSource(filepath.Join(string(dir), infoPath), []byte(code))
+
+	p := filepath.Join(string(dir), infoPath)
+	d := filepath.Dir(p)
+	if err := os.MkdirAll(d, os.ModePerm); err != nil {
+		return err
+	}
+	return source.DumpGoSource(p, []byte(code))
 }
 
 // s 格式：v0.2.4-0-ge2f5e99a3306bba28e81f507bf66c905825184e5

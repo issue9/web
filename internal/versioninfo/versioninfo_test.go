@@ -34,7 +34,7 @@ func TestDir_DumpFile(t *testing.T) {
 	a.NotError(err).NotNil(v)
 
 	a.NotError(v.DumpFile())
-	a.FileExists(filepath.Join("./testdata/", infoPath))
+	a.FileExists(filepath.Join(string(v), infoPath))
 }
 
 func TestParseDescribe(t *testing.T) {
