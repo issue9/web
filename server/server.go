@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package server web 服务管理
 package server
 
 import (
@@ -104,7 +105,6 @@ type Server struct {
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	debugger      *debugger.Debugger
-	filters       []Filter
 
 	// locale
 	catalog  catalog.Catalog

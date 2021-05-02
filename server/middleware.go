@@ -35,8 +35,8 @@ func FilterHandler(next HandlerFunc, filter ...Filter) HandlerFunc {
 }
 
 // AddFilters 添加过滤器
-func (srv *Server) AddFilters(filter ...Filter) {
-	srv.filters = append(srv.filters, filter...)
+func (router *Router) AddFilters(filter ...Filter) {
+	router.filters = append(router.filters, filter...)
 }
 
 // AddFilters 添加过滤器

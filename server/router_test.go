@@ -345,12 +345,12 @@ func TestRouter_Static(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
-func TestServerFilters(t *testing.T) {
+func TestRouter_AddFilters(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
-	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
 	router := server.Router()
+	router.AddFilters(buildFilter("s1"), buildFilter("s2"))
 	p1 := router.Prefix("/p1", buildFilter("p11"), buildFilter("p12"))
 	r1 := router.Resource("/r1", buildFilter("r11"), buildFilter("r12"))
 	r2 := p1.Resource("/r2", buildFilter("r21"), buildFilter("r22"))
@@ -361,7 +361,7 @@ func TestServerFilters(t *testing.T) {
 	})
 
 	p1.Get("/test/202", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12"}) // 必须要是 server 的先于 prefix 的
+		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12"}) // 必须要是 router 的先于 prefix 的
 		ctx.Render(202, nil, nil)
 	})
 
@@ -393,7 +393,7 @@ func TestServerFilters(t *testing.T) {
 		Status(202)
 
 	// 运行中添加中间件
-	server.AddFilters(buildFilter("s3"), buildFilter("s4"))
+	router.AddFilters(buildFilter("s3"), buildFilter("s4"))
 
 	srv.Get("/root/p1/test/203").
 		Do().
