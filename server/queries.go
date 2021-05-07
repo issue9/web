@@ -135,14 +135,10 @@ func (q *Queries) Float64(key string, def float64) float64 {
 }
 
 // HasErrors 是否存在错误内容
-func (q *Queries) HasErrors() bool {
-	return len(q.errors) > 0
-}
+func (q *Queries) HasErrors() bool { return len(q.errors) > 0 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() result.Fields {
-	return q.errors
-}
+func (q *Queries) Errors() result.Fields { return q.errors }
 
 // Result 转换成 Result 对象
 //

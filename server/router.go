@@ -72,9 +72,7 @@ func buildRouter(srv *Server, mux *mux.Mux, u *url.URL, filter ...Filter) *Route
 //
 // 路由地址基于 root 的值，
 // 且所有的路由都会自动应用通过 Server.AddFilters 和 Server.AddMiddlewares 添加的中间件。
-func (srv *Server) Router() *Router {
-	return srv.router
-}
+func (srv *Server) Router() *Router { return srv.router }
 
 func (router *Router) handle(path string, next HandlerFunc, filters []Filter, method ...string) error {
 	return router.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
@@ -86,9 +84,7 @@ func (router *Router) handle(path string, next HandlerFunc, filters []Filter, me
 }
 
 // Mux 返回 mux.Mux 实例
-func (router *Router) Mux() *mux.Mux {
-	return router.mux
-}
+func (router *Router) Mux() *mux.Mux { return router.mux }
 
 // Path 返回相对于域名的绝对路由地址
 //

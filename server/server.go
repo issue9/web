@@ -236,56 +236,36 @@ func GetServer(r *http.Request) *Server {
 }
 
 // Name 应用的名称
-func (srv *Server) Name() string {
-	return srv.name
-}
+func (srv *Server) Name() string { return srv.name }
 
 // Version 应用的版本
-func (srv *Server) Version() string {
-	return srv.version
-}
+func (srv *Server) Version() string { return srv.version }
 
 // Open 实现 fs.FS 接口
-func (srv *Server) Open(name string) (fs.File, error) {
-	return srv.fs.Open(name)
-}
+func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
 
 // Get 返回指定键名的值
-func (srv *Server) Get(key interface{}) interface{} {
-	return srv.vars[key]
-}
+func (srv *Server) Get(key interface{}) interface{} { return srv.vars[key] }
 
 // Set 保存指定键名的值
-func (srv *Server) Set(key, val interface{}) {
-	srv.vars[key] = val
-}
+func (srv *Server) Set(key, val interface{}) { srv.vars[key] = val }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location {
-	return srv.location
-}
+func (srv *Server) Location() *time.Location { return srv.location }
 
 // Logs 返回关联的 logs.Logs 实例
-func (srv *Server) Logs() *logs.Logs {
-	return srv.logs
-}
+func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
-func (srv *Server) Cache() cache.Cache {
-	return srv.cache
-}
+func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
-func (srv *Server) Uptime() time.Time {
-	return srv.uptime
-}
+func (srv *Server) Uptime() time.Time { return srv.uptime }
 
 // Now 返回当前时间
 //
 // 与 time.Now() 的区别在于 Now() 基于当前时区
-func (srv *Server) Now() time.Time {
-	return time.Now().In(srv.Location())
-}
+func (srv *Server) Now() time.Time { return time.Now().In(srv.Location()) }
 
 // ParseTime 分析基于当前时区的时间
 func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
@@ -293,19 +273,13 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 }
 
 // Server 获取关联的 context.Server 实例
-func (ctx *Context) Server() *Server {
-	return ctx.server
-}
+func (ctx *Context) Server() *Server { return ctx.server }
 
 // Mimetypes 返回内容编解码的管理接口
-func (srv *Server) Mimetypes() *content.Mimetypes {
-	return srv.mimetypes
-}
+func (srv *Server) Mimetypes() *content.Mimetypes { return srv.mimetypes }
 
 // Services 返回服务内容的管理接口
-func (srv *Server) Services() *service.Manager {
-	return srv.services
-}
+func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
 //
