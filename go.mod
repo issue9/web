@@ -7,12 +7,12 @@ require (
 	github.com/issue9/cache v0.2.1
 	github.com/issue9/conv v1.2.1
 	github.com/issue9/logs/v2 v2.5.4
-	github.com/issue9/middleware/v3 v3.2.4
+	github.com/issue9/middleware/v4 v4.0.0
 	github.com/issue9/mux/v3 v3.1.2
 	github.com/issue9/qheader v0.5.4
 	github.com/issue9/query/v2 v2.2.4
 	github.com/issue9/scheduled v0.7.0
-	github.com/issue9/sliceutil v0.6.0
+	github.com/issue9/sliceutil v0.7.0
 	github.com/issue9/source v0.1.1
 	github.com/issue9/upload v1.1.3
 	github.com/issue9/validation v0.3.1

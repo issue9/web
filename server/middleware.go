@@ -5,10 +5,10 @@ package server
 import (
 	"net/http"
 
-	"github.com/issue9/middleware/v3"
-	"github.com/issue9/middleware/v3/compress"
-	"github.com/issue9/middleware/v3/errorhandler"
-	"github.com/issue9/middleware/v3/recovery"
+	"github.com/issue9/middleware/v4"
+	"github.com/issue9/middleware/v4/compress"
+	"github.com/issue9/middleware/v4/errorhandler"
+	"github.com/issue9/middleware/v4/recovery"
 	"github.com/issue9/source"
 )
 
@@ -49,12 +49,13 @@ func (m *Module) AddFilters(filter ...Filter) *Module {
 
 func (srv *Server) buildMiddlewares() error {
 	srv.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
+		w.WriteHeader(http.StatusInternalServerError)
 		data, err := source.TraceStack(5, msg)
 		if err != nil {
 			panic(err)
 		}
 		srv.Logs().Error(data)
-	}, http.StatusInternalServerError)
+	})
 
 	if err := srv.SetCompressAlgorithm("deflate", compress.NewDeflate); err != nil {
 		return err
@@ -85,19 +86,7 @@ func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
 }
 
 // SetRecovery 设置在 panic 时的处理函数
-//
-// f 为处理 panic 的函数；
-// status 用于指定调用 ErrorHandler 中的哪个理函数展示给终端用户。
-// 仅在 status > 0 时才会有效果。f 中也可以向终端输出状态码和页面内容，
-// 如果在 f 也输出了相关的状态，同时又指定了 status，则会依次调用 status 和 f。
-func (srv *Server) SetRecovery(f recovery.RecoverFunc, status int) {
-	srv.recoverFunc = srv.errorHandlers.Recovery(func(w http.ResponseWriter, msg interface{}) {
-		if status > 0 {
-			srv.errorHandlers.Render(w, status)
-		}
-		f(w, msg)
-	})
-}
+func (srv *Server) SetRecovery(f recovery.RecoverFunc) { srv.recoverFunc = f }
 
 // SetErrorHandle 设置指定状态码页面的处理函数
 //

@@ -34,7 +34,6 @@ var f201 = func(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
-		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -43,7 +42,6 @@ var f202 = func(ctx *Context) {
 	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
-		ctx.Response.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -89,7 +87,7 @@ func TestOptions_sanitize(t *testing.T) {
 	o = &Options{Root: ":8080/api"}
 	a.Error(o.sanitize())
 
-	o = &Options{Root: "http://example.com:8080/api"}
+	o = &Options{Root: "https://example.com:8080/api"}
 	a.NotError(o.sanitize()).
 		Equal(o.httpServer.Addr, ":8080")
 
@@ -143,7 +141,7 @@ func TestGetServer(t *testing.T) {
 		isRequested = true
 	})
 	go func() {
-		srv.Serve()
+		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").
@@ -183,7 +181,7 @@ func TestGetServer(t *testing.T) {
 		isRequested = true
 	})
 	go func() {
-		srv.Serve()
+		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").Do().Success()
@@ -237,7 +235,6 @@ func TestServer_Serve(t *testing.T) {
 		_, err := ctx.Response.Write([]byte("1234567890"))
 		if err != nil {
 			println(err)
-			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
 
 		// 动态加载模块
@@ -254,7 +251,7 @@ func TestServer_Serve(t *testing.T) {
 
 	go func() {
 		err := server.Serve()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
 	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
@@ -272,7 +269,7 @@ func TestServer_Serve(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
-	server.Router().Static("/admin/{path}", "./testdata", "index.html")
+	a.NotError(server.Router().Static("/admin/{path}", "./testdata", "index.html"))
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
@@ -379,7 +376,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		srv.Close(300 * time.Millisecond)
+		a.NotError(srv.Close(300 * time.Millisecond))
 	})
 
 	go func() {

@@ -12,8 +12,8 @@ import (
 )
 
 func buildFilter(txt string) Filter {
-	return Filter(func(next HandlerFunc) HandlerFunc {
-		return HandlerFunc(func(ctx *Context) {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(ctx *Context) {
 			fs, found := ctx.Vars["filters"]
 			if !found {
 				ctx.Vars["filters"] = []string{txt}
@@ -24,8 +24,8 @@ func buildFilter(txt string) Filter {
 			}
 
 			next(ctx)
-		})
-	})
+		}
+	}
 }
 
 func TestServer_SetRecovery(t *testing.T) {
@@ -36,29 +36,23 @@ func TestServer_SetRecovery(t *testing.T) {
 	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
-	// 默认值，返回 500
+	// 采用默认的 RecoveryFunc，返回 500
 	srv.Get("/root/panic").Do().Status(http.StatusInternalServerError)
 
 	// 自定义 Recovery
 	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
-		w.Write([]byte(fmt.Sprint(msg)))
-	}, http.StatusBadGateway)
+		w.WriteHeader(http.StatusBadGateway)
+		_, err := w.Write([]byte(fmt.Sprint(msg)))
+		a.NotError(err)
+	})
 	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).
-		StringBody(http.StatusText(http.StatusBadGateway) + "\npanic")
+		StringBody("panic")
 
-	// 将 status 设置为 0
-	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprint(msg)))
-	}, 0)
-	srv.Get("/root/panic").Do().Status(http.StatusBadRequest).StringBody("panic")
-
-	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {}, http.StatusBadGateway)
-	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
-		w.Write([]byte("error-handler"))
-	}, http.StatusBadGateway)
-	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).StringBody("error-handler")
+	// 空的 Recovery
+	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {})
+	srv.Get("/root/panic").Do().
+		Status(http.StatusOK). // Revoery 未输出状态码，默认的 200
+		StringBody("")
 }
 
 func TestServer_SetDebugger(t *testing.T) {
@@ -69,7 +63,7 @@ func TestServer_SetDebugger(t *testing.T) {
 
 	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
 	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
-	server.SetDebugger("/d/pprof/", "/vars")
+	a.NotError(server.SetDebugger("/d/pprof/", "/vars"))
 	srv.Get("/root/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
 	srv.Get("/root/vars").Do().Status(http.StatusOK)
 }
@@ -80,7 +74,7 @@ func TestServer_Compress(t *testing.T) {
 	srv := rest.NewServer(t, server.middlewares, nil)
 	defer srv.Close()
 
-	server.Router().Static("/client/{path}", "./testdata/", "index.html")
+	a.NotError(server.Router().Static("/client/{path}", "./testdata/", "index.html"))
 	srv.Get("/root/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
@@ -90,7 +84,7 @@ func TestServer_Compress(t *testing.T) {
 		Header("Vary", "Content-Encoding")
 
 	// 删除 gzip
-	server.SetCompressAlgorithm("gzip", nil)
+	a.NotError(server.SetCompressAlgorithm("gzip", nil))
 	srv.Get("/root/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().

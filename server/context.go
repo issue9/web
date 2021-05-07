@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/middleware/v3/errorhandler"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -92,7 +91,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		}
 
 		srv.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		errorhandler.Exit(status)
+		w.WriteHeader(status)
+		srv.errorHandlers.Exit(w, status)
 	}
 
 	header := r.Header.Get("Accept")
@@ -200,7 +200,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if v == nil {
-		errorhandler.WriteHeader(ctx.Response, status)
+		ctx.Response.WriteHeader(status)
 		return nil
 	}
 
@@ -211,7 +211,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	// 注意 WriteHeader 调用顺序。
 	// https://github.com/golang/go/issues/17083
-	errorhandler.WriteHeader(ctx.Response, status)
+	ctx.Response.WriteHeader(status)
 
 	if content.CharsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
@@ -302,12 +302,12 @@ func (ctx *Context) Created(v interface{}, location string) {
 
 // NoContent 204
 func (ctx *Context) NoContent() {
-	errorhandler.Exit(http.StatusNoContent)
+	ctx.Response.WriteHeader(http.StatusNoContent)
 }
 
 // ResetContent 205
 func (ctx *Context) ResetContent() {
-	errorhandler.Exit(http.StatusResetContent)
+	ctx.Response.WriteHeader(http.StatusResetContent)
 }
 
 // NotFound 404

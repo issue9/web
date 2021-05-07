@@ -15,14 +15,14 @@ import (
 )
 
 func TestContext_Sprintf(t *testing.T) {
-	message.SetString(language.MustParse("cmn-hans"), "test", "测试")
-	message.SetString(language.MustParse("cmn-hant"), "test", "測試")
+	a := assert.New(t)
+
+	a.NotError(message.SetString(language.MustParse("cmn-hans"), "test", "测试"))
+	a.NotError(message.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 
 	cat := catalog.NewBuilder()
-	cat.SetString(language.MustParse("cmn-hans"), "test", "测试1")
-	cat.SetString(language.MustParse("cmn-hant"), "test", "測試1")
-
-	a := assert.New(t)
+	a.NotError(cat.SetString(language.MustParse("cmn-hans"), "test", "测试1"))
+	a.NotError(cat.SetString(language.MustParse("cmn-hant"), "test", "測試1"))
 
 	srv := newServer(a)
 	srv.Router().Get("/sprintf", func(ctx *Context) {
@@ -32,7 +32,8 @@ func TestContext_Sprintf(t *testing.T) {
 		ctx.Server().catalog = cat
 	})
 	srv.Router().Get("/fprintf", func(ctx *Context) {
-		ctx.Fprintf(ctx.Response, "test")
+		_, err := ctx.Fprintf(ctx.Response, "test")
+		a.NotError(err)
 	})
 
 	s := rest.NewServer(t, srv.middlewares, nil)

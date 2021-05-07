@@ -5,6 +5,7 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -263,8 +264,7 @@ func TestRouterResource(t *testing.T) {
 func TestRouter_Static(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
+	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
@@ -279,8 +279,7 @@ func TestRouter_Static(t *testing.T) {
 	a.Error(r.Static("/path/{}}", "./testdata", "index.html"))  // 格式无效
 
 	r.Static("/client/{path}", "./testdata/", "index.html")
-	server.SetErrorHandle(func(w http.ResponseWriter, status int) {
-		w.WriteHeader(status)
+	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
