@@ -33,7 +33,7 @@ func TestServer_SetRecovery(t *testing.T) {
 
 	server := newServer(a)
 	server.Router().Get("/panic", func(ctx *Context) { panic("panic") })
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
 	// 采用默认的 RecoveryFunc，返回 500
@@ -58,7 +58,7 @@ func TestServer_SetRecovery(t *testing.T) {
 func TestServer_SetDebugger(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
 	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
@@ -71,7 +71,7 @@ func TestServer_SetDebugger(t *testing.T) {
 func TestServer_Compress(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
 	a.NotError(server.Router().Static("/client/{path}", "./testdata/", "index.html"))

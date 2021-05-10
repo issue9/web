@@ -5,10 +5,10 @@ package server
 import (
 	"net/http"
 
-	"github.com/issue9/middleware/v4"
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/errorhandler"
 	"github.com/issue9/middleware/v4/recovery"
+	"github.com/issue9/mux/v4"
 	"github.com/issue9/source"
 )
 
@@ -35,16 +35,16 @@ func FilterHandler(next HandlerFunc, filter ...Filter) HandlerFunc {
 }
 
 // AddFilters 添加过滤器
-func (router *Router) AddFilters(filter ...Filter) {
-	router.filters = append(router.filters, filter...)
+func (srv *Server) AddFilters(filter ...Filter) {
+	srv.filters = append(srv.filters, filter...)
 }
 
+// Mux 返回 mux.Mux 实例
+func (srv *Server) Mux() *mux.Mux { return srv.mux }
+
 // AddFilters 添加过滤器
-//
-// 按给定参数的顺序反向依次调用。
-func (m *Module) AddFilters(filter ...Filter) *Module {
+func (m *Module) AddFilters(filter ...Filter) {
 	m.filters = append(m.filters, filter...)
-	return m
 }
 
 func (srv *Server) buildMiddlewares() error {
@@ -96,9 +96,9 @@ func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 }
 
 // AddMiddlewares 添加中间件
-func (srv *Server) AddMiddlewares(middleware ...middleware.Middleware) {
+func (srv *Server) AddMiddlewares(middleware ...mux.MiddlewareFunc) {
 	for _, m := range middleware {
-		srv.middlewares.After(m)
+		srv.mux.AddMiddleware(true, m)
 	}
 }
 

@@ -8,7 +8,7 @@ require (
 	github.com/issue9/conv v1.2.1
 	github.com/issue9/logs/v2 v2.5.4
 	github.com/issue9/middleware/v4 v4.0.0
-	github.com/issue9/mux/v3 v3.1.2
+	github.com/issue9/mux/v4 v4.1.0
 	github.com/issue9/qheader v0.5.4
 	github.com/issue9/query/v2 v2.2.4
 	github.com/issue9/scheduled v0.7.0

@@ -24,17 +24,19 @@ func TestContext_ServeFile(t *testing.T) {
 		<-exit
 	}()
 
-	s.Router().Get("/path", func(ctx *Context) {
-		ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
-	})
+	a.NotPanic(func() {
+		s.Router().Get("/path", func(ctx *Context) {
+			ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
+		})
 
-	s.Router().Get("/index", func(ctx *Context) {
-		ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
-	})
+		s.Router().Get("/index", func(ctx *Context) {
+			ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
+		})
 
-	s.Router().Get("/not-exists", func(ctx *Context) {
-		// file1.text 不存在
-		ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
+		s.Router().Get("/not-exists", func(ctx *Context) {
+			// file1.text 不存在
+			ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
+		})
 	})
 
 	go func() {

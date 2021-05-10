@@ -14,7 +14,8 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/mux/v3"
+	"github.com/issue9/mux/v4"
+	"github.com/issue9/mux/v4/group"
 )
 
 var f204 = func(ctx *Context) { ctx.Render(http.StatusNoContent, nil, nil) }
@@ -22,7 +23,7 @@ var f204 = func(ctx *Context) { ctx.Render(http.StatusNoContent, nil, nil) }
 func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	router := server.Router()
 
 	path := "/path"
@@ -142,7 +143,10 @@ func TestRouter_URL(t *testing.T) {
 	for i, item := range data {
 		u, err := url.Parse(item.root)
 		a.NotError(err).NotNil(u)
-		router := buildRouter(newServer(a), mux.Default(), u)
+		m := mux.Default()
+		r, ok := m.NewRouter("default", nil)
+		a.True(ok).NotNil(r)
+		router := buildRouter(newServer(a), r, u)
 		a.NotNil(router)
 		router.Get(item.input, f204)
 
@@ -156,7 +160,10 @@ func TestRouter_URL(t *testing.T) {
 
 	u, err := url.Parse("https://example.com/blog")
 	a.NotError(err).NotNil(u)
-	router := buildRouter(newServer(a), mux.Default(), u)
+	m := mux.Default()
+	r, ok := m.NewRouter("default", nil)
+	a.True(ok).NotNil(r)
+	router := buildRouter(newServer(a), r, u)
 	a.NotNil(router)
 	url, err := router.URL("", nil)
 	a.NotError(err).Equal(url, "https://example.com/blog")
@@ -170,7 +177,9 @@ func TestRouter_NewRouter(t *testing.T) {
 	srv := newServer(a)
 	u, err := url.Parse("https://example.com")
 	a.NotError(err).NotNil(u)
-	router, ok := srv.Router().NewRouter("host", u, mux.NewHosts("example.com"))
+	host, err := group.NewHosts("example.com")
+	a.NotError(err).NotNil(host)
+	router, ok := srv.Router().NewRouter("host", u, host)
 	a.True(ok).NotNil(router)
 
 	url, err := router.URL("/posts/1", nil)
@@ -181,14 +190,14 @@ func TestRouter_NewRouter(t *testing.T) {
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	srv.middlewares.ServeHTTP(w, r)
+	srv.mux.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNoContent)
 }
 
 func TestRouterPrefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 
 	p := server.Router().Prefix("/p")
 	a.NotNil(p)
@@ -237,7 +246,7 @@ func TestRouterResource(t *testing.T) {
 	res := server.Router().Resource(path)
 	a.NotNil(res)
 
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 
 	res.Get(f204)
 	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
@@ -269,26 +278,25 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	server.Router().Mux().GetFunc("/m1/test", f201)
-
 	r := server.Router()
+	r.Get("/m1/test", f201)
 	a.Error(r.Static("/path", "./testdata", "index.html"))      // 不包含命名参数
 	a.Error(r.Static("/path/{abc", "./testdata", "index.html")) // 格式无效
 	a.Error(r.Static("/path/abc}", "./testdata", "index.html")) // 格式无效
 	a.Error(r.Static("/path/{}", "./testdata", "index.html"))   // 命名参数未指定名称
 	a.Error(r.Static("/path/{}}", "./testdata", "index.html"))  // 格式无效
 
-	r.Static("/client/{path}", "./testdata/", "index.html")
+	a.NotError(r.Static("/client/{path}", "./testdata/", "index.html"))
 	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
-	srv.Get("/m1/test").
+	srv.Get("/root/m1/test").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusCreated).
@@ -335,24 +343,26 @@ func TestRouter_Static(t *testing.T) {
 	server = newServer(a)
 	u, err := url.Parse("https://example.com/blog")
 	a.NotError(err).NotNil(u)
-	r, ok := server.Router().NewRouter("example", u, mux.NewHosts("example.com"))
+	host, err := group.NewHosts("example.com")
+	a.NotError(err).NotNil(host)
+	r, ok := server.Router().NewRouter("example", u, host)
 	a.True(ok).NotNil(r)
-	r.Static("/admin/{path}", "./testdata", "index.html")
+	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/blog/admin/file1.txt", nil)
-	server.middlewares.ServeHTTP(w, req)
+	server.mux.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
-func TestRouter_AddFilters(t *testing.T) {
+func testServer_AddFilters(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
 	router := server.Router()
-	router.AddFilters(buildFilter("s1"), buildFilter("s2"))
-	p1 := router.Prefix("/p1", buildFilter("p11"), buildFilter("p12"))
-	r1 := router.Resource("/r1", buildFilter("r11"), buildFilter("r12"))
-	r2 := p1.Resource("/r2", buildFilter("r21"), buildFilter("r22"))
+	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
+	p1 := router.Prefix("/p1")
+	r1 := router.Resource("/r1")
+	r2 := p1.Resource("/r2")
 
 	server.Router().Get("/test", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []string{"s1", "s2"})
@@ -381,7 +391,7 @@ func TestRouter_AddFilters(t *testing.T) {
 		ctx.Render(205, nil, nil)
 	})
 
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 
 	srv.Get("/root/test").
 		Do().
@@ -392,7 +402,7 @@ func TestRouter_AddFilters(t *testing.T) {
 		Status(202)
 
 	// 运行中添加中间件
-	router.AddFilters(buildFilter("s3"), buildFilter("s4"))
+	server.AddFilters(buildFilter("s3"), buildFilter("s4"))
 
 	srv.Get("/root/p1/test/203").
 		Do().
@@ -409,8 +419,9 @@ func TestRouter_AddFilters(t *testing.T) {
 
 func TestModuleResource(t *testing.T) {
 	a := assert.New(t)
+	server := newServer(a)
 
-	m := NewModule("m1", "m1 desc")
+	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -423,11 +434,10 @@ func TestModuleResource(t *testing.T) {
 	res.Put(f204)
 	res.Options("abcdef")
 
-	server := newServer(a)
 	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules())
 
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusNoContent)
 	srv.Get("/root/p" + path).Do().Status(http.StatusNoContent)
 	srv.Post("/root/p"+path, nil).Do().Status(http.StatusNoContent)
@@ -441,8 +451,9 @@ func TestModuleResource(t *testing.T) {
 
 func TestModulePrefix(t *testing.T) {
 	a := assert.New(t)
+	server := newServer(a)
 
-	m := NewModule("m1", "m1 desc")
+	m := server.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	p := m.Prefix("/p")
 	a.NotNil(p)
@@ -454,11 +465,10 @@ func TestModulePrefix(t *testing.T) {
 	p.Put(path, f204)
 	p.Options(path, "abcdef")
 
-	server := newServer(a)
 	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules())
 
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusNoContent)
 	srv.Get("/root/p" + path).Do().Status(http.StatusNoContent)
 	srv.Post("/root/p"+path, nil).Do().Status(http.StatusNoContent)
@@ -472,8 +482,9 @@ func TestModulePrefix(t *testing.T) {
 
 func TestModule_Handle(t *testing.T) {
 	a := assert.New(t)
+	s := newServer(a)
 
-	m := NewModule("m1", "m1 desc")
+	m := s.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 
 	path := "/path"
@@ -482,7 +493,7 @@ func TestModule_Handle(t *testing.T) {
 	server := newServer(a)
 	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules())
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 
 	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
 	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
@@ -490,7 +501,7 @@ func TestModule_Handle(t *testing.T) {
 
 	// 不指定请求方法，表示所有请求方法
 
-	m = NewModule("m1", "m1 desc")
+	m = s.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	path = "/path1"
 	a.NotError(m.Handle(path, f204))
@@ -498,14 +509,14 @@ func TestModule_Handle(t *testing.T) {
 	server = newServer(a)
 	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules())
-	srv = rest.NewServer(t, server.middlewares, nil)
+	srv = rest.NewServer(t, server.mux, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
 	srv.Patch("/root"+path, nil).Do().Status(http.StatusNoContent)
 
 	// 各个请求方法
 
-	m = NewModule("m1", "m1 desc")
+	m = s.NewModule("m1", "m1 desc")
 	a.NotNil(m)
 	path = "/path2"
 	m.Delete(path, f204)
@@ -517,7 +528,7 @@ func TestModule_Handle(t *testing.T) {
 	server = newServer(a)
 	a.NotError(server.AddModule(m))
 	a.NotError(server.initModules())
-	srv = rest.NewServer(t, server.middlewares, nil)
+	srv = rest.NewServer(t, server.mux, nil)
 
 	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
 	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
@@ -532,14 +543,15 @@ func TestModule_Handle(t *testing.T) {
 
 func TestModule_Options(t *testing.T) {
 	a := assert.New(t)
+	s := newServer(a)
 
-	m1 := NewModule("m1", "m1 desc")
+	m1 := s.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
 	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
-		return HandlerFunc(func(ctx *Context) {
+		return func(ctx *Context) {
 			ctx.Response.Header().Set("Server", "m1")
 			next(ctx)
-		})
+		}
 	})
 
 	m1.Get("/test", func(ctx *Context) {
@@ -550,7 +562,7 @@ func TestModule_Options(t *testing.T) {
 	server := newServer(a)
 	a.NotError(server.AddModule(m1))
 	a.NotError(server.initModules())
-	srv := rest.NewServer(t, server.middlewares, nil)
+	srv := rest.NewServer(t, server.mux, nil)
 
 	srv.Get("/root/test").
 		Do().
@@ -565,13 +577,13 @@ func TestModule_Options(t *testing.T) {
 
 	// 通 Handle 修改的 OPTIONS，正常接受中间件
 
-	m1 = NewModule("m1", "m1 desc")
+	m1 = s.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
 	m1.AddFilters(func(next HandlerFunc) HandlerFunc {
-		return HandlerFunc(func(ctx *Context) {
+		return func(ctx *Context) {
 			ctx.Response.Header().Set("Server", "m1")
 			next(ctx)
-		})
+		}
 	})
 
 	m1.Get("/test", func(ctx *Context) {
@@ -585,7 +597,7 @@ func TestModule_Options(t *testing.T) {
 	a.NotError(server.AddModule(m1))
 	a.NotError(server.initModules())
 
-	srv = rest.NewServer(t, server.middlewares, nil)
+	srv = rest.NewServer(t, server.mux, nil)
 	srv.NewRequest(http.MethodOptions, "/root/test").
 		Do().
 		Header("Server", "m1").

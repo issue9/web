@@ -35,7 +35,7 @@ func DefaultServer(name, version, url string) (*Server, error) {
 	return NewServer(name, version, logs.New(), &Options{Root: url})
 }
 
-// New 返回 *Server 实例
+// NewServer 返回 *Server 实例
 func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	return server.New(name, version, logs, o)
 }
@@ -48,9 +48,4 @@ func GetServer(r *http.Request) *Server {
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return server.NewContext(w, r)
-}
-
-// NewModule 声明一个新的模块
-func NewModule(id, desc string, deps ...string) *Module {
-	return server.NewModule(id, desc, deps...)
 }

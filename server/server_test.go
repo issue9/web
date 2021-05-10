@@ -28,10 +28,10 @@ import (
 
 var _ fs.FS = &Server{}
 
-var f201 = func(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusCreated)
-	_, err := w.Write([]byte("1234567890"))
+var f201 = func(ctx *Context) {
+	ctx.Response.Header().Set("Content-Type", "text/html")
+	ctx.Response.WriteHeader(http.StatusCreated)
+	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
 	}
@@ -110,7 +110,7 @@ func TestNewServer(t *testing.T) {
 	a.NotNil(srv.Cache())
 	a.Equal(srv.catalog, message.DefaultCatalog)
 	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.middlewares)
+	a.Equal(srv.httpServer.Handler, srv.mux)
 	a.NotNil(srv.httpServer.BaseContext)
 	a.Equal(srv.httpServer.Addr, ":http")
 }
@@ -126,7 +126,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err)
 	var isRequested bool
 
-	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	srv.Router().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -171,7 +171,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	isRequested = false
-	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	srv.Router().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -218,12 +218,12 @@ func TestServer_Serve(t *testing.T) {
 	server := newServer(a)
 	server.Router().Get("/mux/test", f202)
 
-	m1 := NewModule("m1", "m1 desc")
+	m1 := server.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
 	m1.Get("/m1/test", f202)
 	m1.NewTag("tag1")
 
-	m2 := NewModule("m2", "m2 desc", "m1")
+	m2 := server.NewModule("m2", "m2 desc", "m1")
 	a.NotNil(m2)
 	m2.Get("/m2/test", func(ctx *Context) {
 		srv := ctx.Server()
@@ -238,7 +238,7 @@ func TestServer_Serve(t *testing.T) {
 		}
 
 		// 动态加载模块
-		m3 := NewModule("m3", "m3 desc", "m1")
+		m3 := server.NewModule("m3", "m3 desc", "m1")
 		a.NotNil(m3)
 		m3.AddInit("init3", func() error { return nil })
 		a.NotError(server.AddModule(m3))

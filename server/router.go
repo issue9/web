@@ -12,7 +12,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/issue9/mux/v3"
+	"github.com/issue9/mux/v4"
+	"github.com/issue9/mux/v4/group"
 )
 
 type (
@@ -21,50 +22,107 @@ type (
 
 	// Router 路由管理
 	Router struct {
-		srv *Server
-		mux *mux.Mux
-
-		root    string
-		url     *url.URL
+		srv     *Server
+		router  *mux.Router
 		filters []Filter
+
+		root string
+		url  *url.URL
 	}
 
 	// Prefix 带有统一前缀的路由管理
 	Prefix struct {
-		handler       func(path string, h HandlerFunc, filters []Filter, method ...string) error
-		optionHandler func(path string, allow string)
-
-		srv     *Server
-		mux     *mux.Mux
-		prefix  string
-		filters []Filter
+		router *Router
+		prefix string
 	}
 
 	// Resource 同一资源的不同请求方法的管理
 	Resource struct {
-		handler       func(h HandlerFunc, filters []Filter, method ...string) error
-		optionHandler func(allow string)
-
-		srv     *Server
-		mux     *mux.Mux
+		router  *Router
 		pattern string
-		filters []Filter
 	}
 )
 
-func buildRouter(srv *Server, mux *mux.Mux, u *url.URL, filter ...Filter) *Router {
+func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
+	return router.router.HandleFunc(router.url.Path+path, func(w http.ResponseWriter, r *http.Request) {
+		filters := make([]Filter, 0, len(router.filters)+len(router.srv.filters))
+		filters = append(filters, router.srv.filters...)
+		filters = append(filters, router.filters...)
+		FilterHandler(h, filters...)(router.srv.NewContext(w, r))
+	}, method...)
+}
+
+func (router *Router) handle(path string, h HandlerFunc, method string) *Router {
+	if err := router.Handle(path, h, method); err != nil {
+		panic(err)
+	}
+	return router
+}
+
+func (router *Router) MuxRouter() *mux.Router {
+	return router.router
+}
+
+func (router *Router) Get(path string, h HandlerFunc) *Router {
+	return router.handle(path, h, http.MethodGet)
+}
+
+// Post 添加 POST 请求处理项
+func (router *Router) Post(path string, h HandlerFunc) *Router {
+	return router.handle(path, h, http.MethodPost)
+}
+
+// Put 添加 PUT 请求处理项
+func (router *Router) Put(path string, h HandlerFunc) *Router {
+	return router.handle(path, h, http.MethodPut)
+}
+
+// Delete 添加 DELETE 请求处理项
+func (router *Router) Delete(path string, h HandlerFunc) *Router {
+	return router.handle(path, h, http.MethodDelete)
+}
+
+// Patch 添加 PATCH 请求处理项
+func (router *Router) Patch(path string, h HandlerFunc) *Router {
+	return router.handle(path, h, http.MethodPatch)
+}
+
+// Options 添加 OPTIONS 请求处理项
+//
+// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
+func (router *Router) Options(path, allow string) *Router {
+	router.router.Options(router.url.Path+path, allow)
+	return router
+}
+
+// Remove 删除指定的路由项
+func (router *Router) Remove(path string, method ...string) {
+	router.router.Remove(router.url.Path+path, method...)
+}
+
+func (router *Router) clone() *Router {
+	filters := make([]Filter, len(router.filters))
+	copy(filters, router.filters)
+	return &Router{
+		srv:     router.srv,
+		router:  router.router,
+		filters: filters,
+		root:    router.root,
+		url:     router.url,
+	}
+}
+
+func buildRouter(srv *Server, r *mux.Router, u *url.URL) *Router {
 	// 保证不以 / 结尾
 	if len(u.Path) > 0 && u.Path[len(u.Path)-1] == '/' {
 		u.Path = u.Path[:len(u.Path)-1]
 	}
 
 	return &Router{
-		srv: srv,
-		mux: mux,
-
-		url:     u,
-		root:    u.String(),
-		filters: filter,
+		srv:    srv,
+		router: r,
+		url:    u,
+		root:   u.String(),
 	}
 }
 
@@ -73,18 +131,6 @@ func buildRouter(srv *Server, mux *mux.Mux, u *url.URL, filter ...Filter) *Route
 // 路由地址基于 root 的值，
 // 且所有的路由都会自动应用通过 Server.AddFilters 和 Server.AddMiddlewares 添加的中间件。
 func (srv *Server) Router() *Router { return srv.router }
-
-func (router *Router) handle(path string, next HandlerFunc, filters []Filter, method ...string) error {
-	return router.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		fs := make([]Filter, 0, len(filters)+len(router.filters))
-		fs = append(fs, router.filters...)
-		fs = append(fs, filters...)
-		FilterHandler(next, fs...)(router.srv.NewContext(w, r))
-	}, method...)
-}
-
-// Mux 返回 mux.Mux 实例
-func (router *Router) Mux() *mux.Mux { return router.mux }
 
 // Path 返回相对于域名的绝对路由地址
 //
@@ -110,7 +156,7 @@ func (router *Router) buildURL(prefix, pattern string, params map[string]string)
 	}
 
 	if len(params) > 0 {
-		p, err := router.Mux().URL(pattern, params)
+		p, err := router.router.URL(pattern, params)
 		if err != nil {
 			return "", err
 		}
@@ -129,13 +175,13 @@ func (router *Router) buildURL(prefix, pattern string, params map[string]string)
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
 // NOTE: 不会继承 router.filters 的过滤器.
-func (router *Router) NewRouter(name string, url *url.URL, matcher mux.Matcher, filter ...Filter) (*Router, bool) {
-	m, ok := router.Mux().NewMux(name, matcher)
+func (router *Router) NewRouter(name string, url *url.URL, matcher group.Matcher) (*Router, bool) {
+	m, ok := router.srv.Mux().NewRouter(name, matcher)
 	if !ok {
 		return nil, false
 	}
 
-	return buildRouter(router.srv, m, url, filter...), true
+	return buildRouter(router.srv, m, url), true
 }
 
 // Static 添加静态路由
@@ -171,115 +217,33 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 }
 
 // Resource 生成资源项
-func (router *Router) Resource(pattern string, filter ...Filter) *Resource {
-	pattern = router.url.Path + pattern
+func (router *Router) Resource(pattern string) *Resource {
 	return &Resource{
-		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
-			return router.handle(pattern, h, filters, method...)
-		},
-		optionHandler: func(allow string) {
-			router.mux.Options(pattern, allow)
-		},
-
-		srv:     router.srv,
-		mux:     router.Mux(),
+		router:  router.clone(),
 		pattern: pattern,
-		filters: filter,
 	}
 }
 
 // Prefix 返回特定前缀的路由设置对象
-func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
+func (router *Router) Prefix(prefix string) *Prefix {
 	return &Prefix{
-		handler: func(path string, h HandlerFunc, filters []Filter, method ...string) error {
-			return router.handle(path, h, filters, method...)
-		},
-		optionHandler: func(path, allow string) {
-			router.mux.Options(path, allow)
-		},
-
-		srv:     router.srv,
-		mux:     router.mux,
-		prefix:  router.url.Path + prefix,
-		filters: filter,
+		router: router.clone(),
+		prefix: prefix,
 	}
-}
-
-// Handle 添加路由请求项
-func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
-	return router.handle(router.url.Path+path, h, nil, method...)
-}
-
-func (router *Router) h(path string, h HandlerFunc, method ...string) *Router {
-	if err := router.Handle(path, h, method...); err != nil {
-		panic(err)
-	}
-	return router
-}
-
-// Get 添加 GET 请求处理项
-func (router *Router) Get(path string, h HandlerFunc) *Router {
-	return router.h(path, h, http.MethodGet)
-}
-
-// Post 添加 POST 请求处理项
-func (router *Router) Post(path string, h HandlerFunc) *Router {
-	return router.h(path, h, http.MethodPost)
-}
-
-// Put 添加 PUT 请求处理项
-func (router *Router) Put(path string, h HandlerFunc) *Router {
-	return router.h(path, h, http.MethodPut)
-}
-
-// Delete 添加 DELETE 请求处理项
-func (router *Router) Delete(path string, h HandlerFunc) *Router {
-	return router.h(path, h, http.MethodDelete)
-}
-
-// Options 添加 OPTIONS 请求处理项
-//
-// 忽略 Filter 类型的是间件，如果有需要，可以采用 Handle 处理 Options 请求。
-func (router *Router) Options(path, allow string) *Router {
-	router.Mux().Options(router.url.Path+path, allow)
-	return router
-}
-
-// Patch 添加 PATCH 请求处理项
-func (router *Router) Patch(path string, h HandlerFunc) *Router {
-	return router.h(path, h, http.MethodPatch)
-}
-
-// Remove 删除指定的路由项
-func (router *Router) Remove(path string, method ...string) {
-	router.Mux().Remove(router.url.Path+path, method...)
 }
 
 // Resource 生成 Resource 对象
-func (p *Prefix) Resource(pattern string, filter ...Filter) *Resource {
-	filters := make([]Filter, 0, len(p.filters)+len(filter))
-	filters = append(filters, p.filters...)
-	filters = append(filters, filter...)
-
+func (p *Prefix) Resource(pattern string) *Resource {
 	pattern = p.prefix + pattern
 	return &Resource{
-		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
-			return p.handler(pattern, h, filters, method...)
-		},
-		optionHandler: func(allow string) {
-			p.optionHandler(pattern, allow)
-		},
-
-		srv:     p.srv,
-		mux:     p.mux,
+		router:  p.router.clone(),
 		pattern: pattern,
-		filters: filters,
 	}
 }
 
 // Handle 添加路由项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
-	return p.handler(p.prefix+path, h, p.filters, method...)
+	return p.router.Handle(p.prefix+path, h, method...)
 }
 
 func (p *Prefix) handle(path string, h HandlerFunc, method ...string) *Prefix {
@@ -311,7 +275,7 @@ func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
 
 // Options 指定 OPTIONS 请求的返回内容
 func (p *Prefix) Options(path, allow string) *Prefix {
-	p.optionHandler(p.prefix+path, allow)
+	p.router.Options(p.prefix+path, allow)
 	return p
 }
 
@@ -322,12 +286,12 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 
 // Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
-	p.mux.Remove(p.prefix+path, method...)
+	p.router.Remove(p.prefix+path, method...)
 }
 
 // Handle 添加路由项
 func (r *Resource) Handle(h HandlerFunc, method ...string) error {
-	return r.handler(h, r.filters, method...)
+	return r.router.Handle(r.pattern, h, method...)
 }
 
 func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
@@ -338,38 +302,26 @@ func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
 }
 
 // Get 添加 GET 请求处理项
-func (r *Resource) Get(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodGet)
-}
+func (r *Resource) Get(h HandlerFunc) *Resource { return r.handle(h, http.MethodGet) }
 
 // Post 添加 POST 请求处理项
-func (r *Resource) Post(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPost)
-}
+func (r *Resource) Post(h HandlerFunc) *Resource { return r.handle(h, http.MethodPost) }
 
 // Delete 添加 DELETE 请求处理项
-func (r *Resource) Delete(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodDelete)
-}
+func (r *Resource) Delete(h HandlerFunc) *Resource { return r.handle(h, http.MethodDelete) }
 
 // Put 添加 PUT 请求处理项
-func (r *Resource) Put(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPut)
-}
+func (r *Resource) Put(h HandlerFunc) *Resource { return r.handle(h, http.MethodPut) }
 
 // Patch 添加 PATCH 请求处理项
-func (r *Resource) Patch(h HandlerFunc) *Resource {
-	return r.handle(h, http.MethodPatch)
-}
+func (r *Resource) Patch(h HandlerFunc) *Resource { return r.handle(h, http.MethodPatch) }
 
 // Remove 删除路由项
-func (r *Resource) Remove(method ...string) {
-	r.mux.Remove(r.pattern, method...)
-}
+func (r *Resource) Remove(method ...string) { r.router.Remove(r.pattern, method...) }
 
 // Options 指定 OPTIONS 请求的返回内容
 func (r *Resource) Options(allow string) *Resource {
-	r.optionHandler(allow)
+	r.router.Options(r.pattern, allow)
 	return r
 }
 
@@ -435,35 +387,11 @@ func (m *Module) Remove(path string, method ...string) *Module {
 }
 
 // Prefix 返回特定前缀的路由设置对象
-func (m *Module) Prefix(prefix string, filter ...Filter) *Prefix {
-	return &Prefix{
-		handler: func(path string, h HandlerFunc, filters []Filter, method ...string) error {
-			m.handle(path, h, filters, method...)
-			return nil
-		},
-		optionHandler: func(path, allow string) {
-			m.Options(path, allow)
-		},
-
-		prefix:  prefix,
-		filters: filter,
-	}
+func (m *Module) Prefix(prefix string) *Prefix {
+	return m.srv.Router().Prefix(prefix)
 }
 
 // Resource 生成 Resource 对象
-func (m *Module) Resource(pattern string, filter ...Filter) *Resource {
-	return &Resource{
-		handler: func(h HandlerFunc, filters []Filter, method ...string) error {
-			m.handle(pattern, h, filters, method...)
-			return nil
-		},
-		optionHandler: func(allow string) {
-			m.Options(pattern, allow)
-		},
-
-		srv:     m.srv,
-		mux:     m.srv.router.mux,
-		pattern: pattern,
-		filters: filter,
-	}
+func (m *Module) Resource(pattern string) *Resource {
+	return m.srv.Router().Resource(pattern)
 }

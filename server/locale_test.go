@@ -36,7 +36,7 @@ func TestContext_Sprintf(t *testing.T) {
 		a.NotError(err)
 	})
 
-	s := rest.NewServer(t, srv.middlewares, nil)
+	s := rest.NewServer(t, srv.mux, nil)
 	defer s.Close()
 
 	s.Get("/root/sprintf").

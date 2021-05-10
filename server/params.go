@@ -5,8 +5,8 @@ package server
 import (
 	"strconv"
 
-	"github.com/issue9/mux/v3"
-	"github.com/issue9/mux/v3/params"
+	"github.com/issue9/mux/v4"
+	"github.com/issue9/mux/v4/params"
 
 	"github.com/issue9/web/result"
 )

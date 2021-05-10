@@ -17,12 +17,12 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/v4"
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/debugger"
 	"github.com/issue9/middleware/v4/errorhandler"
 	"github.com/issue9/middleware/v4/recovery"
-	"github.com/issue9/mux/v3"
+	"github.com/issue9/mux/v4"
+	"github.com/issue9/mux/v4/group"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
@@ -75,7 +75,7 @@ type Options struct {
 	SkipCleanPath  bool
 	mux            *mux.Mux
 
-	// 可以对 http.Server 的内容进行个性
+	// 可以对 http.Server 的内容进行修改
 	//
 	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.middlewares
 	HTTPServer func(*http.Server)
@@ -87,6 +87,9 @@ type Options struct {
 	// 两者的区别在于 Router.URL 返回的内容，前者带域名部分，后者不带。
 	Root string
 	root *url.URL
+
+	// 主路由的限定内容
+	Matcher group.Matcher
 }
 
 // Server 提供了用于构建 Context 对象的基本数据
@@ -100,7 +103,8 @@ type Server struct {
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// middleware
-	middlewares   *middleware.Manager
+	mux           *mux.Mux
+	filters       []Filter
 	recoverFunc   recovery.RecoverFunc
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
@@ -186,7 +190,8 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		vars:       map[interface{}]interface{}{},
 		closed:     make(chan struct{}, 1),
 
-		middlewares:   middleware.NewManager(o.mux),
+		mux:           o.mux,
+		filters:       make([]Filter, 0, 10),
 		compress:      compress.New(logs.ERROR(), "*"),
 		errorHandlers: errorhandler.New(),
 		debugger:      &debugger.Debugger{},
@@ -202,8 +207,13 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		services:  service.NewManager(logs, o.Location),
 		results:   result.NewManager(o.ResultBuilder),
 	}
-	srv.router = buildRouter(srv, o.mux, o.root)
-	srv.httpServer.Handler = srv.middlewares
+	router, ok := o.mux.NewRouter("default", o.Matcher)
+	if !ok {
+		return nil, errors.New("初始化路由不成功，已经存在名为 default 的路由。")
+	}
+
+	srv.router = buildRouter(srv, router, o.root)
+	srv.httpServer.Handler = srv.mux
 
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
