@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/logs/v2"
+	"github.com/issue9/middleware/v4/compress"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -73,6 +74,10 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(mt.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal))
 
 	srv.AddResultMessage(411, 41110, "41110")
+
+	a.NotError(srv.SetCompressAlgorithm("deflate", compress.NewDeflate))
+	a.NotError(srv.SetCompressAlgorithm("gzip", compress.NewGzip))
+	a.NotError(srv.SetCompressAlgorithm("br", compress.NewBrotli))
 
 	return srv
 }

@@ -3,7 +3,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -26,33 +25,6 @@ func buildFilter(txt string) Filter {
 			next(ctx)
 		}
 	}
-}
-
-func TestServer_SetRecovery(t *testing.T) {
-	a := assert.New(t)
-
-	server := newServer(a)
-	server.DefaultRouter().Get("/panic", func(ctx *Context) { panic("panic") })
-	srv := rest.NewServer(t, server.mux, nil)
-	defer srv.Close()
-
-	// 采用默认的 RecoveryFunc，返回 500
-	srv.Get("/root/panic").Do().Status(http.StatusInternalServerError)
-
-	// 自定义 Recovery
-	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(http.StatusBadGateway)
-		_, err := w.Write([]byte(fmt.Sprint(msg)))
-		a.NotError(err)
-	})
-	srv.Get("/root/panic").Do().Status(http.StatusBadGateway).
-		StringBody("panic")
-
-	// 空的 Recovery
-	server.SetRecovery(func(w http.ResponseWriter, msg interface{}) {})
-	srv.Get("/root/panic").Do().
-		Status(http.StatusOK). // Revoery 未输出状态码，默认的 200
-		StringBody("")
 }
 
 func TestServer_SetDebugger(t *testing.T) {

@@ -88,6 +88,12 @@ type Options struct {
 	Root string
 	root *url.URL
 
+	// 在请求崩溃之后的处理方式
+	//
+	// 这是请求的最后一道防线，如果此函数处理依然 panic，则会造成整个项目退出。
+	// 如果为空，则会打印简单的错误堆栈信息。
+	Recovery recovery.RecoverFunc
+
 	// 主路由的限定内容
 	Matcher group.Matcher
 }
@@ -169,6 +175,10 @@ func (o *Options) sanitize() (err error) {
 		}
 	}
 
+	if o.Recovery == nil {
+		o.Recovery = recovery.DefaultRecoverFunc(http.StatusInternalServerError)
+	}
+
 	return nil
 }
 
@@ -225,9 +235,12 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		}
 	}
 
-	if err := srv.buildMiddlewares(); err != nil {
-		return nil, err
-	}
+	recoverFunc := srv.errorHandlers.Recovery(o.Recovery)
+	srv.Mux().
+		AddMiddleware(false, recoverFunc.Middleware).      // 在最外层，防止协程 panic，崩了整个进程。
+		AddMiddleware(false, srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在的呢的输出内容之前。
+		AddMiddleware(false, srv.debugger.Middleware).     // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+		AddMiddleware(false, srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
 
 	return srv, nil
 }

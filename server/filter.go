@@ -3,13 +3,9 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/errorhandler"
-	"github.com/issue9/middleware/v4/recovery"
 	"github.com/issue9/mux/v4"
-	"github.com/issue9/source"
 )
 
 // Filter 针对 Context 的中间件
@@ -38,45 +34,6 @@ func (srv *Server) AddFilters(filter ...Filter) {
 
 // Mux 返回 mux.Mux 实例
 func (srv *Server) Mux() *mux.Mux { return srv.mux }
-
-func (srv *Server) buildMiddlewares() error {
-	srv.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
-		w.WriteHeader(http.StatusInternalServerError)
-		data, err := source.TraceStack(5, msg)
-		if err != nil {
-			panic(err)
-		}
-		srv.Logs().Error(data)
-	})
-
-	if err := srv.SetCompressAlgorithm("deflate", compress.NewDeflate); err != nil {
-		return err
-	}
-
-	if err := srv.SetCompressAlgorithm("gzip", compress.NewGzip); err != nil {
-		return err
-	}
-
-	if err := srv.SetCompressAlgorithm("br", compress.NewBrotli); err != nil {
-		return err
-	}
-
-	srv.Mux().AddMiddleware(true, srv.recoveryMiddleware)       // 在最外层，防止协程 panic，崩了整个进程。
-	srv.Mux().AddMiddleware(true, srv.debugger.Middleware)      // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-	srv.Mux().AddMiddleware(true, srv.compress.Middleware)      // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
-	srv.Mux().AddMiddleware(true, srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
-
-	return nil
-}
-
-func (srv *Server) recoveryMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		srv.recoverFunc.Middleware(next).ServeHTTP(w, r)
-	})
-}
-
-// SetRecovery 设置在 panic 时的处理函数
-func (srv *Server) SetRecovery(f recovery.RecoverFunc) { srv.recoverFunc = f }
 
 // SetErrorHandle 设置指定状态码页面的处理函数
 //
