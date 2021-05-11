@@ -42,11 +42,6 @@ func (srv *Server) AddFilters(filter ...Filter) {
 // Mux 返回 mux.Mux 实例
 func (srv *Server) Mux() *mux.Mux { return srv.mux }
 
-// AddFilters 添加过滤器
-func (m *Module) AddFilters(filter ...Filter) {
-	m.filters = append(m.filters, filter...)
-}
-
 func (srv *Server) buildMiddlewares() error {
 	srv.SetRecovery(func(w http.ResponseWriter, msg interface{}) {
 		w.WriteHeader(http.StatusInternalServerError)

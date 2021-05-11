@@ -30,8 +30,7 @@ type ModuleFunc func(*Server) (*Module, error)
 // 模块可以作为代码的一种组织方式。将一组关联的功能合并为一个模块。
 type Module struct {
 	*module.Module
-	srv     *Server
-	filters []Filter
+	srv *Server
 }
 
 // NewModule 声明一个新的模块

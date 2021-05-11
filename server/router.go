@@ -4,7 +4,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -266,70 +265,4 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 // Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.router.Remove(p.prefix+path, method...)
-}
-
-// Handle 添加路由项
-func (m *Module) Handle(path string, h HandlerFunc, method ...string) *Module {
-	m.handle(path, h, nil, method...)
-	return m
-}
-
-func (m *Module) handle(path string, h HandlerFunc, filter []Filter, method ...string) *Module {
-	m.AddInit(fmt.Sprintf("注册路由：[%s] %s", strings.Join(method, ","), path), func() error {
-		filters := make([]Filter, len(m.filters)+len(filter))
-		l := copy(filters, m.filters)
-		copy(filters[l:], filter)
-
-		h = FilterHandler(h, filters...)
-		return m.srv.DefaultRouter().Handle(path, h, method...)
-	})
-	return m
-}
-
-// Get 添加 GET 请求处理项
-func (m *Module) Get(path string, h HandlerFunc) *Module {
-	return m.Handle(path, h, http.MethodGet)
-}
-
-// Post 添加 POST 请求处理项
-func (m *Module) Post(path string, h HandlerFunc) *Module {
-	return m.Handle(path, h, http.MethodPost)
-}
-
-// Delete 添加 DELETE 请求处理项
-func (m *Module) Delete(path string, h HandlerFunc) *Module {
-	return m.Handle(path, h, http.MethodDelete)
-}
-
-// Put 添加 PUT 请求处理项
-func (m *Module) Put(path string, h HandlerFunc) *Module {
-	return m.Handle(path, h, http.MethodPut)
-}
-
-// Patch 添加 Patch 请求处理
-func (m *Module) Patch(path string, h HandlerFunc) *Module {
-	return m.Handle(path, h, http.MethodPatch)
-}
-
-// Options 指定 OPTIONS 请求的返回内容
-func (m *Module) Options(path, allow string) *Module {
-	m.AddInit(fmt.Sprintf("注册路由：OPTIONS %s", path), func() error {
-		m.srv.DefaultRouter().Options(path, allow)
-		return nil
-	})
-	return m
-}
-
-// Remove 删除路由项
-func (m *Module) Remove(path string, method ...string) *Module {
-	m.AddInit(fmt.Sprintf("删除路由项：%s", path), func() error {
-		m.srv.DefaultRouter().Remove(path, method...)
-		return nil
-	})
-	return m
-}
-
-// Prefix 返回特定前缀的路由设置对象
-func (m *Module) Prefix(prefix string) *Prefix {
-	return m.srv.DefaultRouter().Prefix(prefix) // TODO 并没有通过 AddInit 注册路由
 }
