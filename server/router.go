@@ -37,12 +37,6 @@ type (
 		router *Router
 		prefix string
 	}
-
-	// Resource 同一资源的不同请求方法的管理
-	Resource struct {
-		router  *Router
-		pattern string
-	}
 )
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
@@ -218,28 +212,11 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 	}, http.MethodGet)
 }
 
-// Resource 生成资源项
-func (router *Router) Resource(pattern string) *Resource {
-	return &Resource{
-		router:  router.clone(),
-		pattern: pattern,
-	}
-}
-
 // Prefix 返回特定前缀的路由设置对象
 func (router *Router) Prefix(prefix string) *Prefix {
 	return &Prefix{
 		router: router.clone(),
 		prefix: prefix,
-	}
-}
-
-// Resource 生成 Resource 对象
-func (p *Prefix) Resource(pattern string) *Resource {
-	pattern = p.prefix + pattern
-	return &Resource{
-		router:  p.router.clone(),
-		pattern: pattern,
 	}
 }
 
@@ -289,42 +266,6 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 // Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.router.Remove(p.prefix+path, method...)
-}
-
-// Handle 添加路由项
-func (r *Resource) Handle(h HandlerFunc, method ...string) error {
-	return r.router.Handle(r.pattern, h, method...)
-}
-
-func (r *Resource) handle(h HandlerFunc, method ...string) *Resource {
-	if err := r.Handle(h, method...); err != nil {
-		panic(err)
-	}
-	return r
-}
-
-// Get 添加 GET 请求处理项
-func (r *Resource) Get(h HandlerFunc) *Resource { return r.handle(h, http.MethodGet) }
-
-// Post 添加 POST 请求处理项
-func (r *Resource) Post(h HandlerFunc) *Resource { return r.handle(h, http.MethodPost) }
-
-// Delete 添加 DELETE 请求处理项
-func (r *Resource) Delete(h HandlerFunc) *Resource { return r.handle(h, http.MethodDelete) }
-
-// Put 添加 PUT 请求处理项
-func (r *Resource) Put(h HandlerFunc) *Resource { return r.handle(h, http.MethodPut) }
-
-// Patch 添加 PATCH 请求处理项
-func (r *Resource) Patch(h HandlerFunc) *Resource { return r.handle(h, http.MethodPatch) }
-
-// Remove 删除路由项
-func (r *Resource) Remove(method ...string) { r.router.Remove(r.pattern, method...) }
-
-// Options 指定 OPTIONS 请求的返回内容
-func (r *Resource) Options(allow string) *Resource {
-	r.router.Options(r.pattern, allow)
-	return r
 }
 
 // Handle 添加路由项
@@ -391,9 +332,4 @@ func (m *Module) Remove(path string, method ...string) *Module {
 // Prefix 返回特定前缀的路由设置对象
 func (m *Module) Prefix(prefix string) *Prefix {
 	return m.srv.DefaultRouter().Prefix(prefix) // TODO 并没有通过 AddInit 注册路由
-}
-
-// Resource 生成 Resource 对象
-func (m *Module) Resource(pattern string) *Resource {
-	return m.srv.DefaultRouter().Resource(pattern)
 }

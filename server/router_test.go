@@ -218,52 +218,6 @@ func TestRouterPrefix(t *testing.T) {
 
 	p.Remove(path, http.MethodDelete)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusMethodNotAllowed)
-
-	// resource
-
-	path = "/resources/{id}"
-	res := p.Resource(path)
-	res.Get(f204).Delete(f204)
-	srv.Get("/root/p" + path).Do().Status(http.StatusNoContent)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusNoContent)
-
-	res.Remove(http.MethodDelete)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusMethodNotAllowed)
-	res.Remove(http.MethodGet)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusNotFound)
-}
-
-func TestRouterResource(t *testing.T) {
-	a := assert.New(t)
-
-	server := newServer(a)
-
-	path := "/path"
-	res := server.DefaultRouter().Resource(path)
-	a.NotNil(res)
-
-	srv := rest.NewServer(t, server.mux, nil)
-
-	res.Get(f204)
-	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
-
-	res.Delete(f204)
-	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
-
-	res.Patch(f204)
-	srv.Patch("/root"+path, nil).Do().Status(http.StatusNoContent)
-
-	res.Put(f204)
-	srv.Put("/root"+path, nil).Do().Status(http.StatusNoContent)
-
-	res.Post(f204)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusNoContent)
-
-	res.Remove(http.MethodPost)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusMethodNotAllowed)
-
-	res.Options("def")
-	srv.NewRequest(http.MethodOptions, "/root"+path).Do().Header("allow", "def")
 }
 
 func TestRouter_Static(t *testing.T) {
@@ -345,7 +299,7 @@ func TestRouter_Static(t *testing.T) {
 	a.True(ok).NotNil(r)
 	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "http://example.com/blog/admin/file1.txt", nil)
+	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
 	server.mux.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
@@ -357,8 +311,6 @@ func testServer_AddFilters(t *testing.T) {
 	router := server.DefaultRouter()
 	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
 	p1 := router.Prefix("/p1")
-	r1 := router.Resource("/r1")
-	r2 := p1.Resource("/r2")
 
 	server.DefaultRouter().Get("/test", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []string{"s1", "s2"})
@@ -375,16 +327,6 @@ func testServer_AddFilters(t *testing.T) {
 	p1.Get("/test/203", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12"})
 		ctx.Render(203, nil, nil)
-	})
-
-	r1.Get(func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "r11", "r12"})
-		ctx.Render(204, nil, nil) // 检测是否报 http: request method or response status code does not allow body
-	})
-
-	r2.Get(func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12", "r21", "r22"})
-		ctx.Render(205, nil, nil)
 	})
 
 	srv := rest.NewServer(t, server.mux, nil)
@@ -411,38 +353,6 @@ func testServer_AddFilters(t *testing.T) {
 	srv.Get("/root/p1/r2").
 		Do().
 		Status(205)
-}
-
-func TestModuleResource(t *testing.T) {
-	a := assert.New(t)
-	server := newServer(a)
-
-	m := server.NewModule("m1", "m1 desc")
-	a.NotNil(m)
-	p := m.Prefix("/p")
-	a.NotNil(p)
-	path := "/path"
-	res := p.Resource(path)
-	res.Delete(f204)
-	res.Get(f204)
-	res.Post(f204)
-	res.Patch(f204)
-	res.Put(f204)
-	res.Options("abcdef")
-
-	a.NotError(server.AddModule(m))
-	a.NotError(server.initModules())
-
-	srv := rest.NewServer(t, server.mux, nil)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusNoContent)
-	srv.Get("/root/p" + path).Do().Status(http.StatusNoContent)
-	srv.Post("/root/p"+path, nil).Do().Status(http.StatusNoContent)
-	srv.Patch("/root/p"+path, nil).Do().Status(http.StatusNoContent)
-	srv.Put("/root/p"+path, nil).Do().Status(http.StatusNoContent)
-	srv.NewRequest(http.MethodOptions, "/root/p"+path).
-		Do().
-		Status(http.StatusOK).
-		Header("Allow", "abcdef")
 }
 
 func TestModulePrefix(t *testing.T) {
