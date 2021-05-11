@@ -14,14 +14,11 @@ import (
 
 // Filter 针对 Context 的中间件
 //
-// Filter 和 github.com/issue9/middleware.Middleware 本质上没有任何区别，
-// 都是作用于 http.Handler 上的中间件，只因参数不同，且两者不能交替出现，
-// 派生出两套类型。
+// Filter 和 github.com/issue9/mux.MiddlewareFunc 本质上没有任何区别，
+// mux.MiddlewareFunc 更加的通用，可以复用市面上的大部分中间件，
+// Filter 则更加灵活一些，可以针对模块或是某一个路由。
 //
-// 保证针对 middleware.Middleware 的 AddMiddlewares 方法，
-// 可以最大限度地利用现有的通用中间件，而 AddFilter
-// 方便用户编写针对 Context 的中间件，且 Context 提供了
-// http.Handler 不存在的功能。
+// 如果想要使用 mux.MiddlewareFunc，可以调用 Server.Mux().AddMiddleware 方法。
 type Filter func(HandlerFunc) HandlerFunc
 
 // FilterHandler 将过滤器应用于处理函数 next
@@ -64,12 +61,10 @@ func (srv *Server) buildMiddlewares() error {
 		return err
 	}
 
-	srv.AddMiddlewares(
-		srv.recoveryMiddleware,       // 在最外层，防止协程 panic，崩了整个进程。
-		srv.debugger.Middleware,      // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		srv.compress.Middleware,      // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
-		srv.errorHandlers.Middleware, // errorHandler 依赖 recovery，必须要在 recovery 之后。
-	)
+	srv.Mux().AddMiddleware(true, srv.recoveryMiddleware)       // 在最外层，防止协程 panic，崩了整个进程。
+	srv.Mux().AddMiddleware(true, srv.debugger.Middleware)      // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
+	srv.Mux().AddMiddleware(true, srv.compress.Middleware)      // srv.errorhandlers 可能会输出大段内容。所以放在其之前。
+	srv.Mux().AddMiddleware(true, srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
 
 	return nil
 }
@@ -88,13 +83,6 @@ func (srv *Server) SetRecovery(f recovery.RecoverFunc) { srv.recoverFunc = f }
 // 如果状态码已经存在处理函数，则修改，否则就添加。
 func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
-}
-
-// AddMiddlewares 添加中间件
-func (srv *Server) AddMiddlewares(middleware ...mux.MiddlewareFunc) {
-	for _, m := range middleware {
-		srv.mux.AddMiddleware(true, m)
-	}
 }
 
 // SetDebugger 设置调试地址
