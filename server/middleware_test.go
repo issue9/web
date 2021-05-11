@@ -32,7 +32,7 @@ func TestServer_SetRecovery(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
-	server.Router().Get("/panic", func(ctx *Context) { panic("panic") })
+	server.DefaultRouter().Get("/panic", func(ctx *Context) { panic("panic") })
 	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
@@ -74,7 +74,7 @@ func TestServer_Compress(t *testing.T) {
 	srv := rest.NewServer(t, server.mux, nil)
 	defer srv.Close()
 
-	a.NotError(server.Router().Static("/client/{path}", "./testdata/", "index.html"))
+	a.NotError(server.DefaultRouter().Static("/client/{path}", "./testdata/", "index.html"))
 	srv.Get("/root/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().

@@ -14,7 +14,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/mux/v4"
 	"github.com/issue9/mux/v4/group"
 )
 
@@ -24,7 +23,7 @@ func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
 	srv := rest.NewServer(t, server.mux, nil)
-	router := server.Router()
+	router := server.DefaultRouter()
 
 	path := "/path"
 	a.NotError(router.Handle(path, f204, http.MethodGet, http.MethodDelete))
@@ -140,35 +139,32 @@ func TestRouter_URL(t *testing.T) {
 		},
 	}
 
+	srv := newServer(a)
 	for i, item := range data {
 		u, err := url.Parse(item.root)
 		a.NotError(err).NotNil(u)
-		m := mux.Default()
-		r, ok := m.NewRouter("default", nil)
-		a.True(ok).NotNil(r)
-		router := buildRouter(newServer(a), r, u)
-		a.NotNil(router)
+		router, ok := srv.NewRouter("test-router", u, group.MatcherFunc(group.Any))
+		a.True(ok).NotNil(router)
 		router.Get(item.input, f204)
 
-		url, err := router.URL(item.input, item.params)
+		uu, err := router.URL(item.input, item.params)
 		a.NotError(err)
-		a.Equal(url, item.url, "url not equal @%d,v1=%s,v2=%s", i, url, item.url)
+		a.Equal(uu, item.url, "url not equal @%d,v1=%s,v2=%s", i, uu, item.url)
 		path, err := router.Path(item.input, item.params)
 		a.NotError(err)
 		a.Equal(path, item.path, "path not equal @%d,v1=%s,v2=%s", i, path, item.path)
+
+		srv.RemoveRouter("test-router")
 	}
 
 	u, err := url.Parse("https://example.com/blog")
 	a.NotError(err).NotNil(u)
-	m := mux.Default()
-	r, ok := m.NewRouter("default", nil)
+	r, ok := srv.NewRouter("test-router", u, group.MatcherFunc(group.Any))
 	a.True(ok).NotNil(r)
-	router := buildRouter(newServer(a), r, u)
-	a.NotNil(router)
-	url, err := router.URL("", nil)
-	a.NotError(err).Equal(url, "https://example.com/blog")
+	uu, err := r.URL("", nil)
+	a.NotError(err).Equal(uu, "https://example.com/blog")
 
-	p, err := router.Path("", nil)
+	p, err := r.Path("", nil)
 	a.NotError(err).Equal(p, "/blog")
 }
 
@@ -179,11 +175,11 @@ func TestRouter_NewRouter(t *testing.T) {
 	a.NotError(err).NotNil(u)
 	host, err := group.NewHosts("example.com")
 	a.NotError(err).NotNil(host)
-	router, ok := srv.Router().NewRouter("host", u, host)
+	router, ok := srv.NewRouter("host", u, host)
 	a.True(ok).NotNil(router)
 
-	url, err := router.URL("/posts/1", nil)
-	a.NotError(err).Equal("https://example.com/posts/1", url)
+	uu, err := router.URL("/posts/1", nil)
+	a.NotError(err).Equal("https://example.com/posts/1", uu)
 	path, err := router.Path("/posts/1", nil)
 	a.NotError(err).Equal("/posts/1", path)
 
@@ -199,7 +195,7 @@ func TestRouterPrefix(t *testing.T) {
 	server := newServer(a)
 	srv := rest.NewServer(t, server.mux, nil)
 
-	p := server.Router().Prefix("/p")
+	p := server.DefaultRouter().Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
@@ -243,7 +239,7 @@ func TestRouterResource(t *testing.T) {
 	server := newServer(a)
 
 	path := "/path"
-	res := server.Router().Resource(path)
+	res := server.DefaultRouter().Resource(path)
 	a.NotNil(res)
 
 	srv := rest.NewServer(t, server.mux, nil)
@@ -278,7 +274,7 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	r := server.Router()
+	r := server.DefaultRouter()
 	r.Get("/m1/test", f201)
 	a.Error(r.Static("/path", "./testdata", "index.html"))      // 不包含命名参数
 	a.Error(r.Static("/path/{abc", "./testdata", "index.html")) // 格式无效
@@ -345,7 +341,7 @@ func TestRouter_Static(t *testing.T) {
 	a.NotError(err).NotNil(u)
 	host, err := group.NewHosts("example.com")
 	a.NotError(err).NotNil(host)
-	r, ok := server.Router().NewRouter("example", u, host)
+	r, ok := server.NewRouter("example", u, host)
 	a.True(ok).NotNil(r)
 	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))
 	w := httptest.NewRecorder()
@@ -358,13 +354,13 @@ func testServer_AddFilters(t *testing.T) {
 	a := assert.New(t)
 
 	server := newServer(a)
-	router := server.Router()
+	router := server.DefaultRouter()
 	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
 	p1 := router.Prefix("/p1")
 	r1 := router.Resource("/r1")
 	r2 := p1.Resource("/r2")
 
-	server.Router().Get("/test", func(ctx *Context) {
+	server.DefaultRouter().Get("/test", func(ctx *Context) {
 		a.Equal(ctx.Vars["filters"], []string{"s1", "s2"})
 		ctx.Render(201, nil, nil)
 	})

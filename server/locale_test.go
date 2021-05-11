@@ -25,13 +25,13 @@ func TestContext_Sprintf(t *testing.T) {
 	a.NotError(cat.SetString(language.MustParse("cmn-hant"), "test", "測試1"))
 
 	srv := newServer(a)
-	srv.Router().Get("/sprintf", func(ctx *Context) {
+	srv.DefaultRouter().Get("/sprintf", func(ctx *Context) {
 		ctx.Render(http.StatusOK, ctx.Sprintf("test"), nil)
 	})
-	srv.Router().Get("/change", func(ctx *Context) {
+	srv.DefaultRouter().Get("/change", func(ctx *Context) {
 		ctx.Server().catalog = cat
 	})
-	srv.Router().Get("/fprintf", func(ctx *Context) {
+	srv.DefaultRouter().Get("/fprintf", func(ctx *Context) {
 		_, err := ctx.Fprintf(ctx.Response, "test")
 		a.NotError(err)
 	})

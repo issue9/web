@@ -25,15 +25,15 @@ func TestContext_ServeFile(t *testing.T) {
 	}()
 
 	a.NotPanic(func() {
-		s.Router().Get("/path", func(ctx *Context) {
+		s.DefaultRouter().Get("/path", func(ctx *Context) {
 			ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
 		})
 
-		s.Router().Get("/index", func(ctx *Context) {
+		s.DefaultRouter().Get("/index", func(ctx *Context) {
 			ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
 		})
 
-		s.Router().Get("/not-exists", func(ctx *Context) {
+		s.DefaultRouter().Get("/not-exists", func(ctx *Context) {
 			// file1.text 不存在
 			ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
 		})
@@ -62,15 +62,15 @@ func TestContext_ServeFileFS(t *testing.T) {
 
 	fs := os.DirFS("./testdata")
 
-	s.Router().Get("/path", func(ctx *Context) {
+	s.DefaultRouter().Get("/path", func(ctx *Context) {
 		ctx.ServeFileFS(fs, "file1.txt", "index.html", map[string]string{"Test": "Test"})
 	})
 
-	s.Router().Get("/index", func(ctx *Context) {
+	s.DefaultRouter().Get("/index", func(ctx *Context) {
 		ctx.ServeFileFS(fs, ".", "file1.txt", map[string]string{"Test": "Test"})
 	})
 
-	s.Router().Get("/not-exists", func(ctx *Context) {
+	s.DefaultRouter().Get("/not-exists", func(ctx *Context) {
 		// file.text 不存在
 		ctx.ServeFileFS(fs, "file1.text", "index.html", map[string]string{"Test": "Test"})
 	})
@@ -99,7 +99,7 @@ func TestContext_ServeContent(t *testing.T) {
 	buf, err := ioutil.ReadFile("./testdata/file1.txt")
 	a.NotError(err).NotNil(buf)
 
-	s.Router().Get("/path", func(ctx *Context) {
+	s.DefaultRouter().Get("/path", func(ctx *Context) {
 		ctx.ServeContent(bytes.NewReader(buf), "name", time.Now(), map[string]string{"Test": "Test"})
 	})
 

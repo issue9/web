@@ -126,7 +126,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err)
 	var isRequested bool
 
-	srv.Router().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	srv.DefaultRouter().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -171,7 +171,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	isRequested = false
-	srv.Router().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	srv.DefaultRouter().MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -216,7 +216,7 @@ func TestServer_Serve(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	server := newServer(a)
-	server.Router().Get("/mux/test", f202)
+	server.DefaultRouter().Get("/mux/test", f202)
 
 	m1 := server.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
@@ -269,7 +269,7 @@ func TestServer_Serve(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
-	a.NotError(server.Router().Static("/admin/{path}", "./testdata", "index.html"))
+	a.NotError(server.DefaultRouter().Static("/admin/{path}", "./testdata", "index.html"))
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
@@ -299,7 +299,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(err).NotNil(server)
 	err = server.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
-	server.Router().Get("/mux/test", f202)
+	server.DefaultRouter().Get("/mux/test", f202)
 
 	go func() {
 		err := server.Serve()
@@ -334,8 +334,8 @@ func TestServer_Close(t *testing.T) {
 	srv := newServer(a)
 	exit := make(chan bool, 1)
 
-	srv.Router().Get("/test", f202)
-	srv.Router().Get("/close", func(ctx *Context) {
+	srv.DefaultRouter().Get("/test", f202)
+	srv.DefaultRouter().Get("/close", func(ctx *Context) {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
@@ -371,8 +371,8 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	srv := newServer(a)
 	exit := make(chan bool, 1)
 
-	srv.Router().Get("/test", f202)
-	srv.Router().Get("/close", func(ctx *Context) {
+	srv.DefaultRouter().Get("/test", f202)
+	srv.DefaultRouter().Get("/close", func(ctx *Context) {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)

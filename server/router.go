@@ -16,6 +16,8 @@ import (
 	"github.com/issue9/mux/v4/group"
 )
 
+const DefaultRouterName = "default"
+
 type (
 	// HandlerFunc 路由项处理函数原型
 	HandlerFunc func(*Context)
@@ -43,6 +45,40 @@ type (
 	}
 )
 
+// NewRouter 构建基于 matcher 匹配的路由操作实例
+//
+// NOTE: 不会继承 router.filters 的过滤器.
+func (srv *Server) NewRouter(name string, u *url.URL, matcher group.Matcher) (*Router, bool) {
+	r, ok := srv.Mux().NewRouter(name, matcher)
+	if !ok {
+		return nil, false
+	}
+
+	// 保证不以 / 结尾
+	if len(u.Path) > 0 && u.Path[len(u.Path)-1] == '/' {
+		u.Path = u.Path[:len(u.Path)-1]
+	}
+
+	return &Router{
+		srv:    srv,
+		router: r,
+		url:    u,
+		root:   u.String(),
+	}, true
+}
+
+func (srv *Server) RemoveRouter(name string) {
+	if name != DefaultRouterName {
+		srv.Mux().RemoveRouter(name)
+	}
+}
+
+// DefaultRouter 返回操作路由项的实例
+//
+// 路由地址基于 root 的值，
+// 且所有的路由都会自动应用通过 Server.AddFilters 和 Server.AddMiddlewares 添加的中间件。
+func (srv *Server) DefaultRouter() *Router { return srv.router }
+
 func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
 	return router.router.HandleFunc(router.url.Path+path, func(w http.ResponseWriter, r *http.Request) {
 		filters := make([]Filter, 0, len(router.filters)+len(router.srv.filters))
@@ -59,9 +95,7 @@ func (router *Router) handle(path string, h HandlerFunc, method string) *Router 
 	return router
 }
 
-func (router *Router) MuxRouter() *mux.Router {
-	return router.router
-}
+func (router *Router) MuxRouter() *mux.Router { return router.router }
 
 func (router *Router) Get(path string, h HandlerFunc) *Router {
 	return router.handle(path, h, http.MethodGet)
@@ -112,26 +146,6 @@ func (router *Router) clone() *Router {
 	}
 }
 
-func buildRouter(srv *Server, r *mux.Router, u *url.URL) *Router {
-	// 保证不以 / 结尾
-	if len(u.Path) > 0 && u.Path[len(u.Path)-1] == '/' {
-		u.Path = u.Path[:len(u.Path)-1]
-	}
-
-	return &Router{
-		srv:    srv,
-		router: r,
-		url:    u,
-		root:   u.String(),
-	}
-}
-
-// Router 返回操作路由项的实例
-//
-// 路由地址基于 root 的值，
-// 且所有的路由都会自动应用通过 Server.AddFilters 和 Server.AddMiddlewares 添加的中间件。
-func (srv *Server) Router() *Router { return srv.router }
-
 // Path 返回相对于域名的绝对路由地址
 //
 // 功能与 mux.URL 相似，但是加上了关联的域名地址的根路径。比如根地址是 https://example.com/blog
@@ -165,23 +179,11 @@ func (router *Router) buildURL(prefix, pattern string, params map[string]string)
 
 	switch {
 	case pattern[0] == '/':
-		// 由 buildRouter 保证 root 不能 / 结尾
+		// 由 NewRouter 保证 root 不能 / 结尾
 		return prefix + pattern, nil
 	default:
 		return prefix + "/" + pattern, nil
 	}
-}
-
-// NewRouter 构建基于 matcher 匹配的路由操作实例
-//
-// NOTE: 不会继承 router.filters 的过滤器.
-func (router *Router) NewRouter(name string, url *url.URL, matcher group.Matcher) (*Router, bool) {
-	m, ok := router.srv.Mux().NewRouter(name, matcher)
-	if !ok {
-		return nil, false
-	}
-
-	return buildRouter(router.srv, m, url), true
 }
 
 // Static 添加静态路由
@@ -338,7 +340,7 @@ func (m *Module) handle(path string, h HandlerFunc, filter []Filter, method ...s
 		copy(filters[l:], filter)
 
 		h = FilterHandler(h, filters...)
-		return m.srv.Router().Handle(path, h, method...)
+		return m.srv.DefaultRouter().Handle(path, h, method...)
 	})
 	return m
 }
@@ -371,7 +373,7 @@ func (m *Module) Patch(path string, h HandlerFunc) *Module {
 // Options 指定 OPTIONS 请求的返回内容
 func (m *Module) Options(path, allow string) *Module {
 	m.AddInit(fmt.Sprintf("注册路由：OPTIONS %s", path), func() error {
-		m.srv.Router().Options(path, allow)
+		m.srv.DefaultRouter().Options(path, allow)
 		return nil
 	})
 	return m
@@ -380,7 +382,7 @@ func (m *Module) Options(path, allow string) *Module {
 // Remove 删除路由项
 func (m *Module) Remove(path string, method ...string) *Module {
 	m.AddInit(fmt.Sprintf("删除路由项：%s", path), func() error {
-		m.srv.Router().Remove(path, method...)
+		m.srv.DefaultRouter().Remove(path, method...)
 		return nil
 	})
 	return m
@@ -388,10 +390,10 @@ func (m *Module) Remove(path string, method ...string) *Module {
 
 // Prefix 返回特定前缀的路由设置对象
 func (m *Module) Prefix(prefix string) *Prefix {
-	return m.srv.Router().Prefix(prefix)
+	return m.srv.DefaultRouter().Prefix(prefix) // TODO 并没有通过 AddInit 注册路由
 }
 
 // Resource 生成 Resource 对象
 func (m *Module) Resource(pattern string) *Resource {
-	return m.srv.Router().Resource(pattern)
+	return m.srv.DefaultRouter().Resource(pattern)
 }

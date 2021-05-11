@@ -105,13 +105,13 @@ func (srv *Server) AddMiddlewares(middleware ...mux.MiddlewareFunc) {
 // SetDebugger 设置调试地址
 func (srv *Server) SetDebugger(pprof, vars string) (err error) {
 	if pprof != "" {
-		if pprof, err = srv.Router().Path(pprof, nil); err != nil {
+		if pprof, err = srv.DefaultRouter().Path(pprof, nil); err != nil {
 			return err
 		}
 	}
 
 	if vars != "" {
-		if vars, err = srv.Router().Path(vars, nil); err != nil {
+		if vars, err = srv.DefaultRouter().Path(vars, nil); err != nil {
 			return err
 		}
 	}

@@ -207,12 +207,11 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		services:  service.NewManager(logs, o.Location),
 		results:   result.NewManager(o.ResultBuilder),
 	}
-	router, ok := o.mux.NewRouter("default", o.Matcher)
+	router, ok := srv.NewRouter(DefaultRouterName, o.root, o.Matcher)
 	if !ok {
 		return nil, errors.New("初始化路由不成功，已经存在名为 default 的路由。")
 	}
-
-	srv.router = buildRouter(srv, router, o.root)
+	srv.router = router
 	srv.httpServer.Handler = srv.mux
 
 	if srv.httpServer.BaseContext == nil {

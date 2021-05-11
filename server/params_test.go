@@ -13,7 +13,7 @@ import (
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/empty", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/empty", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("id1"), 0)
@@ -30,7 +30,7 @@ func TestParams_empty(t *testing.T) {
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.ID("i1"), 1)
@@ -68,7 +68,7 @@ func TestParams_ID_MustID(t *testing.T) {
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("i1"), 1)
@@ -99,7 +99,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.True(ps.Bool("b1"))
@@ -130,7 +130,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/string/{s1}/{s2}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/string/{s1}/{s2}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.String("s1"), "str1")
@@ -158,7 +158,7 @@ func TestParams_String_MustString(t *testing.T) {
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -190,7 +190,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) {
 		i1, ok := ctx.ParamID("i1", 41110)
 		a.True(ok).Equal(i1, 1)
 
@@ -206,7 +206,7 @@ func TestContext_ParamID(t *testing.T) {
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) {
+	server.DefaultRouter().Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) {
 		i1, ok := ctx.ParamInt64("i1", 41110)
 		a.True(ok).Equal(i1, 1)
 
