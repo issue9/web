@@ -9,12 +9,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/mux/v4/group"
+	"github.com/issue9/mux/v5/group"
 )
 
 var f204 = func(ctx *Context) { ctx.Render(http.StatusNoContent, nil, nil) }
@@ -22,8 +21,9 @@ var f204 = func(ctx *Context) { ctx.Render(http.StatusNoContent, nil, nil) }
 func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.mux, nil)
-	router := server.DefaultRouter()
+	srv := rest.NewServer(t, server.groups, nil)
+	router, err := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
 	path := "/path"
 	a.NotError(router.Handle(path, f204, http.MethodGet, http.MethodDelete))
@@ -60,18 +60,21 @@ func TestRouter(t *testing.T) {
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
+}
 
-	// 自定义 options
-	router.Options(path, "abc")
-	srv.NewRequest(http.MethodOptions, "/root"+path).
-		Do().
-		Status(http.StatusOK).
-		Header("Allow", "abc")
+func TestRouter_SetDebugger(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.groups, nil)
+	defer srv.Close()
+	r, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
 
-	router.Remove(path, http.MethodOptions)
-	srv.NewRequest(http.MethodOptions, "/root"+path).
-		Do().
-		Status(http.StatusMethodNotAllowed)
+	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
+	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
+	a.NotError(r.SetDebugger("/d/pprof/", "/vars"))
+	srv.Get("/root/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
+	srv.Get("/root/vars").Do().Status(http.StatusOK)
 }
 
 func TestRouter_URL(t *testing.T) {
@@ -141,10 +144,8 @@ func TestRouter_URL(t *testing.T) {
 
 	srv := newServer(a)
 	for i, item := range data {
-		u, err := url.Parse(item.root)
-		a.NotError(err).NotNil(u)
-		router, ok := srv.NewRouter("test-router", u, group.MatcherFunc(group.Any))
-		a.True(ok).NotNil(router)
+		router, err := srv.NewRouter("test-router", item.root, group.MatcherFunc(group.Any))
+		a.NotError(err).NotNil(router)
 		router.Get(item.input, f204)
 
 		uu, err := router.URL(item.input, item.params)
@@ -157,10 +158,8 @@ func TestRouter_URL(t *testing.T) {
 		srv.RemoveRouter("test-router")
 	}
 
-	u, err := url.Parse("https://example.com/blog")
-	a.NotError(err).NotNil(u)
-	r, ok := srv.NewRouter("test-router", u, group.MatcherFunc(group.Any))
-	a.True(ok).NotNil(r)
+	r, err := srv.NewRouter("test-router", "https://example.com/blog", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
 	uu, err := r.URL("", nil)
 	a.NotError(err).Equal(uu, "https://example.com/blog")
 
@@ -171,12 +170,11 @@ func TestRouter_URL(t *testing.T) {
 func TestRouter_NewRouter(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	u, err := url.Parse("https://example.com")
-	a.NotError(err).NotNil(u)
 	host, err := group.NewHosts("example.com")
 	a.NotError(err).NotNil(host)
-	router, ok := srv.NewRouter("host", u, host)
-	a.True(ok).NotNil(router)
+
+	router, err := srv.NewRouter("host", "https://example.com", host)
+	a.NotError(err).NotNil(router)
 
 	uu, err := router.URL("/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
@@ -186,16 +184,18 @@ func TestRouter_NewRouter(t *testing.T) {
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	srv.mux.ServeHTTP(w, r)
+	srv.groups.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNoContent)
 }
 
 func TestRouterPrefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	srv := rest.NewServer(t, server.mux, nil)
+	srv := rest.NewServer(t, server.groups, nil)
+	router, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
-	p := server.DefaultRouter().Prefix("/p")
+	p := router.Prefix("/p")
 	a.NotNil(p)
 
 	path := "/path"
@@ -210,11 +210,10 @@ func TestRouterPrefix(t *testing.T) {
 	p.Patch(path, f204)
 	srv.Patch("/root/p"+path, nil).Do().Status(http.StatusNoContent)
 
-	p.Options(path, "abc")
 	srv.NewRequest(http.MethodOptions, "/root/p"+path).
 		Do().
 		Status(http.StatusOK).
-		Header("allow", "abc")
+		Header("allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST")
 
 	p.Remove(path, http.MethodDelete)
 	srv.Delete("/root/p" + path).Do().Status(http.StatusMethodNotAllowed)
@@ -227,8 +226,9 @@ func TestRouter_Static(t *testing.T) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
+	r, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
 
-	r := server.DefaultRouter()
 	r.Get("/m1/test", f201)
 	a.Error(r.Static("/path", "./testdata", "index.html"))      // 不包含命名参数
 	a.Error(r.Static("/path/{abc", "./testdata", "index.html")) // 格式无效
@@ -242,7 +242,7 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, server.mux, nil)
+	srv := rest.NewServer(t, server.groups, nil)
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
@@ -291,66 +291,13 @@ func TestRouter_Static(t *testing.T) {
 
 	// 带域名
 	server = newServer(a)
-	u, err := url.Parse("https://example.com/blog")
-	a.NotError(err).NotNil(u)
 	host, err := group.NewHosts("example.com")
 	a.NotError(err).NotNil(host)
-	r, ok := server.NewRouter("example", u, host)
-	a.True(ok).NotNil(r)
+	r, err = server.NewRouter("example", "https://example.com/blog", host)
+	a.NotError(err).NotNil(r)
 	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
-	server.mux.ServeHTTP(w, req)
+	server.groups.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
-}
-
-func testServer_AddFilters(t *testing.T) {
-	a := assert.New(t)
-
-	server := newServer(a)
-	router := server.DefaultRouter()
-	server.AddFilters(buildFilter("s1"), buildFilter("s2"))
-	p1 := router.Prefix("/p1")
-
-	server.DefaultRouter().Get("/test", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2"})
-		ctx.Render(201, nil, nil)
-	})
-
-	p1.Get("/test/202", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "p11", "p12"}) // 必须要是 router 的先于 prefix 的
-		ctx.Render(202, nil, nil)
-	})
-
-	// 以下为动态添加中间件之后的对比方式
-
-	p1.Get("/test/203", func(ctx *Context) {
-		a.Equal(ctx.Vars["filters"], []string{"s1", "s2", "s3", "s4", "p11", "p12"})
-		ctx.Render(203, nil, nil)
-	})
-
-	srv := rest.NewServer(t, server.mux, nil)
-
-	srv.Get("/root/test").
-		Do().
-		Status(201)
-
-	srv.Get("/root/p1/test/202").
-		Do().
-		Status(202)
-
-	// 运行中添加中间件
-	server.AddFilters(buildFilter("s3"), buildFilter("s4"))
-
-	srv.Get("/root/p1/test/203").
-		Do().
-		Status(203)
-
-	srv.Get("/root/r1").
-		Do().
-		Status(204)
-
-	srv.Get("/root/p1/r2").
-		Do().
-		Status(205)
 }

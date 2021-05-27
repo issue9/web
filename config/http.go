@@ -4,7 +4,6 @@ package config
 
 import (
 	"crypto/tls"
-	"net/url"
 	"time"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -65,7 +64,7 @@ func (cert *Certificate) sanitize() *Error {
 	return nil
 }
 
-func (http *HTTP) sanitize(root *url.URL) *Error {
+func (http *HTTP) sanitize() *Error {
 	if http.ReadTimeout < 0 {
 		return &Error{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
@@ -86,16 +85,10 @@ func (http *HTTP) sanitize(root *url.URL) *Error {
 		return &Error{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
-	return http.buildTLSConfig(root)
+	return http.buildTLSConfig()
 }
 
-func (http *HTTP) buildTLSConfig(root *url.URL) *Error {
-	if root.Scheme == "https" &&
-		len(http.Certificates) == 0 &&
-		http.LetsEncrypt == nil {
-		return &Error{Field: "certificates", Message: "HTTPS 必须指定至少一张证书"}
-	}
-
+func (http *HTTP) buildTLSConfig() *Error {
 	if len(http.Certificates) > 0 && http.LetsEncrypt != nil {
 		return &Error{Field: "letsEncrypt", Message: "不能与 certificates 同时存在"}
 	}

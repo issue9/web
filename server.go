@@ -31,8 +31,8 @@ func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build result.B
 }
 
 // DefaultServer 返回一个采用默认值进初始化的 *Server 实例
-func DefaultServer(name, version, url string) (*Server, error) {
-	return NewServer(name, version, logs.New(), &Options{Root: url})
+func DefaultServer(name, version string) (*Server, error) {
+	return NewServer(name, version, logs.New(), &Options{})
 }
 
 // NewServer 返回 *Server 实例

@@ -301,25 +301,17 @@ func (ctx *Context) Created(v interface{}, location string) {
 }
 
 // NoContent 204
-func (ctx *Context) NoContent() {
-	ctx.Response.WriteHeader(http.StatusNoContent)
-}
+func (ctx *Context) NoContent() { ctx.Response.WriteHeader(http.StatusNoContent) }
 
 // ResetContent 205
-func (ctx *Context) ResetContent() {
-	ctx.Response.WriteHeader(http.StatusResetContent)
-}
+func (ctx *Context) ResetContent() { ctx.Response.WriteHeader(http.StatusResetContent) }
 
 // NotFound 404
 //
 // 接受统一的 errorhandler 模板支配
-func (ctx *Context) NotFound() {
-	ctx.Response.WriteHeader(http.StatusNotFound)
-}
+func (ctx *Context) NotFound() { ctx.Response.WriteHeader(http.StatusNotFound) }
 
 // NotImplemented 501
 //
 // 接受统一的 errorhandler 模板支配
-func (ctx *Context) NotImplemented() {
-	ctx.Response.WriteHeader(http.StatusNotImplemented)
-}
+func (ctx *Context) NotImplemented() { ctx.Response.WriteHeader(http.StatusNotImplemented) }

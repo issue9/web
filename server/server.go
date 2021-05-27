@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -18,11 +17,10 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/v4/compress"
-	"github.com/issue9/middleware/v4/debugger"
 	"github.com/issue9/middleware/v4/errorhandler"
 	"github.com/issue9/middleware/v4/recovery"
-	"github.com/issue9/mux/v4"
-	"github.com/issue9/mux/v4/group"
+	"github.com/issue9/mux/v5"
+	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
@@ -69,33 +67,32 @@ type Options struct {
 	// 默认值为内存类型。
 	Cache cache.Cache
 
-	// 初始化 MUX 的参数
-	DisableHead    bool
-	DisableOptions bool
-	SkipCleanPath  bool
-	mux            *mux.Mux
+	// 跨域的相关设置
+	//
+	// 如果为空，采用 mux.DeniedCORS
+	CORS *mux.CORS
+
+	// 端口号
+	//
+	// 格式参照 net/http.Server.Addr 字段
+	Port string
+
+	// 是否禁止自动生成 HEAD 请求
+	DisableHead bool
+
+	groups *group.Groups
 
 	// 可以对 http.Server 的内容进行修改
 	//
-	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.middlewares
+	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.mux
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
-
-	// 网站的根目录
-	//
-	// 可以带上域名：https://example.com/api；或是仅路径部分 /api；
-	// 两者的区别在于 Router.URL 返回的内容，前者带域名部分，后者不带。
-	Root string
-	root *url.URL
 
 	// 在请求崩溃之后的处理方式
 	//
 	// 这是请求的最后一道防线，如果此函数处理依然 panic，则会造成整个项目退出。
 	// 如果为空，则会打印简单的错误堆栈信息。
 	Recovery recovery.RecoverFunc
-
-	// 主路由的限定内容
-	Matcher group.Matcher
 }
 
 // Server 提供了用于构建 Context 对象的基本数据
@@ -109,19 +106,15 @@ type Server struct {
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// middleware
-	mux           *mux.Mux
-	filters       []Filter
-	recoverFunc   recovery.RecoverFunc
+	groups        *group.Groups
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
-	debugger      *debugger.Debugger
 
 	// locale
 	catalog  catalog.Catalog
 	location *time.Location
 
 	cache  cache.Cache
-	router *Router
 	uptime time.Time
 	dep    *module.Dep
 
@@ -155,24 +148,15 @@ func (o *Options) sanitize() (err error) {
 		o.Cache = memory.New(24 * time.Hour)
 	}
 
-	o.mux = mux.New(o.DisableOptions, o.DisableHead, o.SkipCleanPath, nil, nil)
+	if o.CORS == nil {
+		o.CORS = mux.DeniedCORS()
+	}
 
-	o.httpServer = &http.Server{}
+	o.groups = group.New(o.DisableHead, o.CORS, nil, nil)
+
+	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {
 		o.HTTPServer(o.httpServer)
-	}
-
-	if o.root, err = url.Parse(o.Root); err != nil {
-		return err
-	}
-	if o.httpServer.Addr == "" {
-		if p := o.root.Port(); p != "" {
-			o.httpServer.Addr = ":" + p
-		} else if o.root.Scheme == "https" {
-			o.httpServer.Addr = ":https"
-		} else {
-			o.httpServer.Addr = ":http"
-		}
 	}
 
 	if o.Recovery == nil {
@@ -187,6 +171,9 @@ func (o *Options) sanitize() (err error) {
 // name, version 表示服务的名称和版本号；
 // 在初始化 Server 必须指定的参数，且有默认值的，由 Options 定义。
 func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
+	if o == nil {
+		o = &Options{}
+	}
 	if err := o.sanitize(); err != nil {
 		return nil, err
 	}
@@ -200,11 +187,9 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		vars:       map[interface{}]interface{}{},
 		closed:     make(chan struct{}, 1),
 
-		mux:           o.mux,
-		filters:       make([]Filter, 0, 10),
+		groups:        o.groups,
 		compress:      compress.New(logs.ERROR(), "*"),
 		errorHandlers: errorhandler.New(),
-		debugger:      &debugger.Debugger{},
 
 		catalog:  o.Catalog,
 		location: o.Location,
@@ -217,12 +202,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		services:  service.NewManager(logs, o.Location),
 		results:   result.NewManager(o.ResultBuilder),
 	}
-	router, ok := srv.NewRouter(DefaultRouterName, o.root, o.Matcher)
-	if !ok {
-		return nil, errors.New("初始化路由不成功，已经存在名为 default 的路由。")
-	}
-	srv.router = router
-	srv.httpServer.Handler = srv.mux
+	srv.httpServer.Handler = srv.groups
 
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
@@ -236,11 +216,10 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	}
 
 	recoverFunc := srv.errorHandlers.Recovery(o.Recovery)
-	srv.Mux().
-		AddMiddleware(false, recoverFunc.Middleware).      // 在最外层，防止协程 panic，崩了整个进程。
-		AddMiddleware(false, srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在的呢的输出内容之前。
-		AddMiddleware(false, srv.debugger.Middleware).     // 在外层添加调试地址，保证调试内容不会被其它 handler 干扰。
-		AddMiddleware(false, srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
+	srv.MuxGroups().Middlewares().
+		Append(recoverFunc.Middleware).      // 在最外层，防止协程 panic，崩了整个进程。
+		Append(srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在的呢的输出内容之前。
+		Append(srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
 
 	return srv, nil
 }
@@ -271,6 +250,9 @@ func (srv *Server) Get(key interface{}) interface{} { return srv.vars[key] }
 
 // Set 保存指定键名的值
 func (srv *Server) Set(key, val interface{}) { srv.vars[key] = val }
+
+// Delete 删除指定键名的值
+func (srv *Server) Delete(key interface{}) { delete(srv.vars, key) }
 
 // Location 指定服务器的时区信息
 func (srv *Server) Location() *time.Location { return srv.location }

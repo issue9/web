@@ -5,7 +5,6 @@ package server
 import (
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/errorhandler"
-	"github.com/issue9/mux/v4"
 )
 
 // Filter 针对 Context 的中间件
@@ -27,39 +26,11 @@ func FilterHandler(next HandlerFunc, filter ...Filter) HandlerFunc {
 	return next
 }
 
-// AddFilters 添加过滤器
-func (srv *Server) AddFilters(filter ...Filter) {
-	srv.filters = append(srv.filters, filter...)
-}
-
-// Mux 返回 mux.Mux 实例
-func (srv *Server) Mux() *mux.Mux { return srv.mux }
-
 // SetErrorHandle 设置指定状态码页面的处理函数
 //
 // 如果状态码已经存在处理函数，则修改，否则就添加。
 func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
-}
-
-// SetDebugger 设置调试地址
-func (srv *Server) SetDebugger(pprof, vars string) (err error) {
-	if pprof != "" {
-		if pprof, err = srv.DefaultRouter().Path(pprof, nil); err != nil {
-			return err
-		}
-	}
-
-	if vars != "" {
-		if vars, err = srv.DefaultRouter().Path(vars, nil); err != nil {
-			return err
-		}
-	}
-
-	srv.debugger.Pprof = pprof
-	srv.debugger.Vars = vars
-
-	return nil
 }
 
 // SetCompressAlgorithm 设置压缩的算法

@@ -103,9 +103,9 @@ func (srv *Server) initModules() error {
 		return err
 	}
 
-	routers := srv.Mux().Routers()
+	routers := srv.MuxGroups().Routers()
 	for _, r := range routers {
-		if routes := r.Routes(true, true); len(routes) > 0 {
+		if routes := r.Routes(); len(routes) > 0 {
 			info.Printf("模块加载了 %s 的以下路由项：\n", r.Name())
 			for path, methods := range routes {
 				info.Printf("\t[%s] %s\n", strings.Join(methods, ", "), path)

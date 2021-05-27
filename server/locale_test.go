@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -25,18 +26,21 @@ func TestContext_Sprintf(t *testing.T) {
 	a.NotError(cat.SetString(language.MustParse("cmn-hant"), "test", "測試1"))
 
 	srv := newServer(a)
-	srv.DefaultRouter().Get("/sprintf", func(ctx *Context) {
+	router, err := srv.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/sprintf", func(ctx *Context) {
 		ctx.Render(http.StatusOK, ctx.Sprintf("test"), nil)
 	})
-	srv.DefaultRouter().Get("/change", func(ctx *Context) {
+	router.Get("/change", func(ctx *Context) {
 		ctx.Server().catalog = cat
 	})
-	srv.DefaultRouter().Get("/fprintf", func(ctx *Context) {
+	router.Get("/fprintf", func(ctx *Context) {
 		_, err := ctx.Fprintf(ctx.Response, "test")
 		a.NotError(err)
 	})
 
-	s := rest.NewServer(t, srv.mux, nil)
+	s := rest.NewServer(t, srv.groups, nil)
 	defer s.Close()
 
 	s.Get("/root/sprintf").
