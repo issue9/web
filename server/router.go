@@ -31,8 +31,9 @@ type (
 
 	// Prefix 带有统一前缀的路由管理
 	Prefix struct {
-		router *Router
-		prefix string
+		router  *Router
+		prefix  string
+		filters []Filter
 	}
 )
 
@@ -91,10 +92,15 @@ func (r *Router) SetDebugger(pprof, vars string) (err error) {
 	return nil
 }
 
-func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
+func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) error {
+	h = ApplyFilters(h, filters...)
 	return router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
-		FilterHandler(h, router.filters...)(router.srv.NewContext(w, r))
+		h(router.srv.NewContext(w, r))
 	}, method...)
+}
+
+func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
+	return router.handleWithFilters(path, h, router.filters, method...)
 }
 
 func (router *Router) handle(path string, h HandlerFunc, method string) *Router {
@@ -220,16 +226,17 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 }
 
 // Prefix 返回特定前缀的路由设置对象
-func (router *Router) Prefix(prefix string) *Prefix {
+func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 	return &Prefix{
-		router: router.clone(),
-		prefix: prefix,
+		router:  router.clone(),
+		prefix:  prefix,
+		filters: filter,
 	}
 }
 
 // Handle 添加路由项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
-	return p.router.Handle(p.prefix+path, h, method...)
+	return p.router.handleWithFilters(p.prefix+path, h, p.filters, method...)
 }
 
 func (p *Prefix) handle(path string, h HandlerFunc, method ...string) *Prefix {

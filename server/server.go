@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/issue9/cache"
@@ -67,11 +68,6 @@ type Options struct {
 	// 默认值为内存类型。
 	Cache cache.Cache
 
-	// 跨域的相关设置
-	//
-	// 如果为空，采用 mux.DeniedCORS
-	CORS *mux.CORS
-
 	// 端口号
 	//
 	// 格式参照 net/http.Server.Addr 字段
@@ -79,6 +75,11 @@ type Options struct {
 
 	// 是否禁止自动生成 HEAD 请求
 	DisableHead bool
+
+	// 跨域的相关设置
+	//
+	// 如果为空，采用 mux.DeniedCORS
+	CORS *mux.CORS
 
 	groups *group.Groups
 
@@ -102,7 +103,7 @@ type Server struct {
 	logs       *logs.Logs
 	fs         fs.FS
 	httpServer *http.Server
-	vars       map[interface{}]interface{}
+	vars       *sync.Map
 	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
 
 	// middleware
@@ -151,7 +152,6 @@ func (o *Options) sanitize() (err error) {
 	if o.CORS == nil {
 		o.CORS = mux.DeniedCORS()
 	}
-
 	o.groups = group.New(o.DisableHead, o.CORS, nil, nil)
 
 	o.httpServer = &http.Server{Addr: o.Port}
@@ -184,7 +184,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		logs:       logs,
 		fs:         o.FS,
 		httpServer: o.httpServer,
-		vars:       map[interface{}]interface{}{},
+		vars:       &sync.Map{},
 		closed:     make(chan struct{}, 1),
 
 		groups:        o.groups,
@@ -218,7 +218,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	recoverFunc := srv.errorHandlers.Recovery(o.Recovery)
 	srv.MuxGroups().Middlewares().
 		Append(recoverFunc.Middleware).      // 在最外层，防止协程 panic，崩了整个进程。
-		Append(srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在的呢的输出内容之前。
+		Append(srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在所有的输出内容之前。
 		Append(srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
 
 	return srv, nil
@@ -228,12 +228,10 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 //
 // r 必须得是由 Server 生成的，否则会 panic。
 func GetServer(r *http.Request) *Server {
-	v := r.Context().Value(contextKeyServer)
-	if v == nil {
-		panic("无法从 http.Request.Context() 中获取 ContentKeyServer 对应的值")
+	if v := r.Context().Value(contextKeyServer); v != nil {
+		return v.(*Server)
 	}
-
-	return v.(*Server)
+	panic("无法从 http.Request.Context() 中获取 contentKeyServer 对应的值")
 }
 
 // Name 应用的名称
@@ -246,13 +244,13 @@ func (srv *Server) Version() string { return srv.version }
 func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
 
 // Get 返回指定键名的值
-func (srv *Server) Get(key interface{}) interface{} { return srv.vars[key] }
+func (srv *Server) Get(key interface{}) (interface{}, bool) { return srv.vars.Load(key) }
 
 // Set 保存指定键名的值
-func (srv *Server) Set(key, val interface{}) { srv.vars[key] = val }
+func (srv *Server) Set(key, val interface{}) { srv.vars.Store(key, val) }
 
 // Delete 删除指定键名的值
-func (srv *Server) Delete(key interface{}) { delete(srv.vars, key) }
+func (srv *Server) Delete(key interface{}) { srv.vars.Delete(key) }
 
 // Location 指定服务器的时区信息
 func (srv *Server) Location() *time.Location { return srv.location }

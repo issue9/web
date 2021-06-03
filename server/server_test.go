@@ -202,7 +202,10 @@ func TestServer_vars(t *testing.T) {
 	srv.Set(v2, 2)
 	srv.Set(v3, 3)
 
-	a.Equal(srv.Get(v1), 1).Equal(srv.Get(v2), 3)
+	v11, found := srv.Get(v1)
+	a.True(found).Equal(v11, 1)
+	v22, found := srv.Get(v2)
+	a.True(found).Equal(v22, 3)
 }
 
 func TestServer_Serve(t *testing.T) {

@@ -41,9 +41,7 @@ func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, erro
 }
 
 // GetServer 从请求中获取 *Server 实例
-func GetServer(r *http.Request) *Server {
-	return server.GetServer(r)
-}
+func GetServer(r *http.Request) *Server { return server.GetServer(r) }
 
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {

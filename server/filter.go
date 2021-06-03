@@ -11,13 +11,13 @@ import (
 //
 // Filter 和 github.com/issue9/mux.MiddlewareFunc 本质上没有任何区别，
 // mux.MiddlewareFunc 更加的通用，可以复用市面上的大部分中间件，
-// Filter 则更加灵活一些，可以针对模块或是某一个路由。
+// Filter 则更加灵活一些，适合针对当前框架新的中间件。
 //
-// 如果想要使用 mux.MiddlewareFunc，可以调用 Server.Mux().AddMiddleware 方法。
+// 如果想要使用 mux.MiddlewareFunc，可以调用 Server.MuxGroups().Middlewares() 方法。
 type Filter func(HandlerFunc) HandlerFunc
 
-// FilterHandler 将过滤器应用于处理函数 next
-func FilterHandler(next HandlerFunc, filter ...Filter) HandlerFunc {
+// ApplyFilters 将过滤器应用于处理函数 next
+func ApplyFilters(next HandlerFunc, filter ...Filter) HandlerFunc {
 	if l := len(filter); l > 0 {
 		for i := l - 1; i >= 0; i-- {
 			next = filter[i](next)
