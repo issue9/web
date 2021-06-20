@@ -24,43 +24,22 @@ const indexPage = "index.html"
 // 所以提供了一个类似于 Render 的变体专门用于下载功能。
 //
 // p 指向本地文件的地址；
-// index 如果 pat 是一个目录的话，则会访问 path 下的 index 指定的文件，默认为 index.html；
+// index 如果 p 是一个目录的话，则会访问 p 下的 index 指定的文件，默认为 index.html；
 // headers 额外显示的报头内容。
 func (ctx *Context) ServeFile(p, index string, headers map[string]string) {
-	if index == "" {
-		index = indexPage
-	}
-
-STAT:
-	stat, err := os.Stat(p)
-	if checkFSError(ctx, err) {
-		return
-	}
-	if stat.IsDir() {
-		p = path.Join(p, index)
-		goto STAT
-	}
-
-	data, err := os.ReadFile(p)
-	if err != nil {
-		ctx.Error(http.StatusInternalServerError, err)
-		return
-	}
-	buf := bytes.NewReader(data)
-
-	ctx.ServeContent(buf, filepath.Base(p), stat.ModTime(), headers)
+	ctx.ServeFileFS(os.DirFS(filepath.Dir(p)), filepath.Base(p), index, headers)
 }
 
-// ServeFileFS 提供文件下载服务
-//
-// 基于 fs.FS 接口获取 p 指向的文件，其它功能与 Context.ServeFile 相同。
+// ServeFileFS 提供基于 fs.FS 的文件下载服
 func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) {
 	if index == "" {
 		index = indexPage
 	}
+
 	if p == "" {
 		p = "."
 	}
+	p = filepath.ToSlash(p)
 
 STAT:
 	stat, err := fs.Stat(f, p)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/issue9/mux/v5/group"
 	"github.com/issue9/web"
 )
 
@@ -23,8 +24,16 @@ func Module(s *web.Server) (*web.Module, error) {
 	t2 := m.NewTag("v1.0")
 	t2.AddInit("title", install2)
 
-	m.Get("/plugin1", func(ctx *web.Context) {
-		ctx.Render(http.StatusOK, "plugin1", nil)
+	m.AddInit("init router", func() error {
+		r, err := s.NewRouter("p1", "https://example.com", &group.Hosts{})
+		if err != nil {
+			return err
+		}
+
+		r.Get("/plugin1", func(ctx *web.Context) {
+			ctx.Render(http.StatusOK, "plugin1", nil)
+		})
+		return nil
 	})
 
 	return m, nil

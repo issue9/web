@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -53,7 +53,11 @@ func TestContext_ServeFile(t *testing.T) {
 	testDownloadNotFound(a, "http://localhost:8080/root/not-exits")
 }
 
-func TestContext_ServeFileFS(t *testing.T) {
+func TestContext_ServeFile_windows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
@@ -62,22 +66,22 @@ func TestContext_ServeFileFS(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
-	router, err := s.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	router, err := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
-	fs := os.DirFS("./testdata")
+	a.NotPanic(func() {
+		router.Get("/path", func(ctx *Context) {
+			ctx.ServeFile(".\\testdata\\file1.txt", "index.html", map[string]string{"Test": "Test"})
+		})
 
-	router.Get("/path", func(ctx *Context) {
-		ctx.ServeFileFS(fs, "file1.txt", "index.html", map[string]string{"Test": "Test"})
-	})
+		router.Get("/index", func(ctx *Context) {
+			ctx.ServeFile(".\\testdata", "file1.txt", map[string]string{"Test": "Test"})
+		})
 
-	router.Get("/index", func(ctx *Context) {
-		ctx.ServeFileFS(fs, ".", "file1.txt", map[string]string{"Test": "Test"})
-	})
-
-	router.Get("/not-exists", func(ctx *Context) {
-		// file.text 不存在
-		ctx.ServeFileFS(fs, "file1.text", "index.html", map[string]string{"Test": "Test"})
+		router.Get("/not-exists", func(ctx *Context) {
+			// file1.text 不存在
+			ctx.ServeFile("c:\\not-exists-dir\\file1.text", "index.html", map[string]string{"Test": "Test"})
+		})
 	})
 
 	go func() {

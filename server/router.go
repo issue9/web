@@ -15,6 +15,8 @@ import (
 	"github.com/issue9/mux/v5/group"
 )
 
+type routerContextKey string
+
 type (
 	// HandlerFunc 路由项处理函数原型
 	HandlerFunc func(*Context)
@@ -57,20 +59,35 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
-	return &Router{
+	rr := &Router{
 		srv:      srv,
 		router:   r,
 		filters:  filter,
 		root:     root,
 		path:     u.Path,
 		debugger: dbg,
-	}, nil
+	}
+
+	srv.Set(routerContextKey(name), rr)
+
+	return rr, nil
+}
+
+// Router 返回由 Server.NewRouter 声明的路由
+func (srv *Server) Router(name string) *Router {
+	if r, found := srv.Get(routerContextKey(name)); found {
+		return r.(*Router)
+	}
+	return nil
+}
+
+func (srv *Server) RemoveRouter(name string) {
+	srv.MuxGroups().RemoveRouter(name)
+	srv.Delete(routerContextKey(name))
 }
 
 // MuxGroups 返回 group.Groups 实例
 func (srv *Server) MuxGroups() *group.Groups { return srv.groups }
-
-func (srv *Server) RemoveRouter(name string) { srv.MuxGroups().RemoveRouter(name) }
 
 // SetDebugger 设置调试地址
 func (r *Router) SetDebugger(pprof, vars string) (err error) {
@@ -196,8 +213,8 @@ func (router *Router) buildURL(prefix, pattern string, params map[string]string)
 // Static 添加静态路由
 //
 // p 为路由地址，必须以命名参数结尾，比如 /assets/{path}，之后可以通过此值删除路由项；
-// index 可以在访问一个目录时指定默认访问的页面。
 // dir 为指向静态文件的路径；
+// index 可以在访问一个目录时指定默认访问的页面。
 //
 // 如果要删除该静态路由，则可以将 path 传递给 Remove 进行删除。
 //
