@@ -3,7 +3,6 @@
 package config
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -24,29 +23,25 @@ func TestCertificate_sanitize(t *testing.T) {
 
 func TestHTTP_sanitize(t *testing.T) {
 	a := assert.New(t)
-	u, err := url.Parse("/")
-	a.NotError(err).NotNil(u)
 
 	http := &HTTP{}
 	http.ReadTimeout = -1
-	ferr := http.sanitize(u)
+	ferr := http.sanitize()
 	a.Equal(ferr.Field, "readTimeout")
 
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
-	ferr = http.sanitize(u)
+	ferr = http.sanitize()
 	a.Equal(ferr.Field, "idleTimeout")
 
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
-	ferr = http.sanitize(u)
+	ferr = http.sanitize()
 	a.Equal(ferr.Field, "readHeaderTimeout")
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {
 	a := assert.New(t)
-	u, err := url.Parse("/")
-	a.NotError(err).NotNil(u)
 
 	http := &HTTP{
 		Certificates: []*Certificate{
@@ -56,18 +51,18 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 			},
 		},
 	}
-	a.NotError(http.buildTLSConfig(u)).NotNil(http.tlsConfig)
+	a.NotError(http.buildTLSConfig()).NotNil(http.tlsConfig)
 	a.Equal(1, len(http.tlsConfig.Certificates))
 
 	http = &HTTP{
 		LetsEncrypt: &LetsEncrypt{},
 	}
-	a.Error(http.buildTLSConfig(u)).Nil(http.tlsConfig)
+	a.Error(http.buildTLSConfig()).Nil(http.tlsConfig)
 
 	http = &HTTP{
 		LetsEncrypt: &LetsEncrypt{Cache: ".", Domains: []string{"example.com"}},
 	}
-	a.NotError(http.buildTLSConfig(u)).NotNil(http.tlsConfig)
+	a.NotError(http.buildTLSConfig()).NotNil(http.tlsConfig)
 
 	// 同时有 Certificates 和 LetsEncrypt
 	http = &HTTP{
@@ -79,7 +74,7 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 		},
 		LetsEncrypt: &LetsEncrypt{},
 	}
-	a.Error(http.buildTLSConfig(u))
+	a.Error(http.buildTLSConfig())
 }
 
 func TestLetEncrypt_sanitize(t *testing.T) {

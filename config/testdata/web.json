@@ -1,9 +1,5 @@
 {
-  "root": "http://localhost:8082",
-  "router": {
-    "pprof": "/debug/pprof/",
-    "vars": "/debug/vars"
-  },
+  "port": ":8082",
   "http":{
     "readTimeout": "3s"
   },

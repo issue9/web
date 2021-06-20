@@ -5,8 +5,8 @@ package server
 import (
 	"strconv"
 
-	"github.com/issue9/mux/v3"
-	"github.com/issue9/mux/v3/params"
+	"github.com/issue9/mux/v5"
+	"github.com/issue9/mux/v5/params"
 
 	"github.com/issue9/web/result"
 )
@@ -204,14 +204,10 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 }
 
 // HasErrors 是否有错误内容存在
-func (p *Params) HasErrors() bool {
-	return len(p.errors) > 0
-}
+func (p *Params) HasErrors() bool { return len(p.errors) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() result.Fields {
-	return p.errors
-}
+func (p *Params) Errors() result.Fields { return p.errors }
 
 // Result 转换成 Result 对象
 //

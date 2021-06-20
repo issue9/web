@@ -5,7 +5,6 @@ package config
 import (
 	"io/fs"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/issue9/cache"
@@ -26,10 +25,10 @@ const (
 type Webconfig struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
-	// 网站的根目录所在
+	// 网站端口
 	//
-	// 比如 https://example.com/api/
-	Root string `yaml:"root,omitempty" json:"root,omitempty" xml:"root,omitempty"`
+	// 格式与 net/http.Server.Addr 相同
+	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
 	// 与路由设置相关的配置项
 	Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
@@ -65,10 +64,7 @@ type Webconfig struct {
 
 // Router 路由的相关配置
 type Router struct {
-	// 是否禁用自动生成 OPTIONS 和 HEAD 请求的处理
-	DisableOptions bool `yaml:"disableOptions,omitempty" json:"disableOptions,omitempty" xml:"disableOptions,attr,omitempty"`
-	DisableHead    bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
-	SkipCleanPath  bool `yaml:"skipCleanPath,omitempty" json:"skipCleanPath,omitempty" xml:"skipCleanPath,attr,omitempty"`
+	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
 }
 
 // NewServer 从配置文件初始化 Server 实例
@@ -101,15 +97,13 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, c
 
 	h := conf.HTTP
 	o := &server.Options{
-		FS:             fs,
-		Location:       conf.location,
-		Cache:          conf.cache,
-		DisableHead:    conf.Router.DisableHead,
-		DisableOptions: conf.Router.DisableOptions,
-		Catalog:        c,
-		ResultBuilder:  f,
-		SkipCleanPath:  conf.Router.SkipCleanPath,
-		Root:           conf.Root,
+		Port:          conf.Port,
+		FS:            fs,
+		Location:      conf.location,
+		Cache:         conf.cache,
+		DisableHead:   conf.Router.DisableHead,
+		Catalog:       c,
+		ResultBuilder: f,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -151,11 +145,7 @@ func (conf *Webconfig) sanitize() error {
 	if conf.HTTP == nil {
 		conf.HTTP = &HTTP{}
 	}
-	root, err := url.Parse(conf.Root)
-	if err != nil {
-		return err
-	}
-	if err := conf.HTTP.sanitize(root); err != nil {
+	if err := conf.HTTP.sanitize(); err != nil {
 		err.Field = "http." + err.Field
 		return err
 	}

@@ -60,9 +60,7 @@ func (ctx *Context) newResult(rslt result.Result) *Result {
 }
 
 // Render 渲染内容
-func (rslt *Result) Render() {
-	rslt.ctx.Render(rslt.Status(), rslt.Result, nil)
-}
+func (rslt *Result) Render() { rslt.ctx.Render(rslt.Status(), rslt.Result, nil) }
 
 // RenderAndExit 渲染内容并退出当前的请求处理
 func (rslt *Result) RenderAndExit() {

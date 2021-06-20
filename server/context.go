@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/middleware/v3/errorhandler"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -73,6 +72,25 @@ type Context struct {
 	read bool
 }
 
+// Filter 针对 Context 的中间件
+//
+// Filter 和 github.com/issue9/mux.MiddlewareFunc 本质上没有任何区别，
+// mux.MiddlewareFunc 更加的通用，可以复用市面上的大部分中间件，
+// Filter 则更加灵活一些，适合针对当前框架新的中间件。
+//
+// 如果想要使用 mux.MiddlewareFunc，可以调用 Server.MuxGroups().Middlewares() 方法。
+type Filter func(HandlerFunc) HandlerFunc
+
+// ApplyFilters 将过滤器应用于处理函数 next
+func ApplyFilters(next HandlerFunc, filter ...Filter) HandlerFunc {
+	if l := len(filter); l > 0 {
+		for i := l - 1; i >= 0; i-- {
+			next = filter[i](next)
+		}
+	}
+	return next
+}
+
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	if ctx := r.Context().Value(contextKeyContext); ctx != nil {
@@ -92,7 +110,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		}
 
 		srv.Logs().ERROR().Output(2, fmt.Sprintf("报头 %s 出错：%s\n", name, err.Error()))
-		errorhandler.Exit(status)
+		w.WriteHeader(status)
+		srv.errorHandlers.Exit(w, status)
 	}
 
 	header := r.Header.Get("Accept")
@@ -200,7 +219,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if v == nil {
-		errorhandler.WriteHeader(ctx.Response, status)
+		ctx.Response.WriteHeader(status)
 		return nil
 	}
 
@@ -211,7 +230,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	// 注意 WriteHeader 调用顺序。
 	// https://github.com/golang/go/issues/17083
-	errorhandler.WriteHeader(ctx.Response, status)
+	ctx.Response.WriteHeader(status)
 
 	if content.CharsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
@@ -301,25 +320,13 @@ func (ctx *Context) Created(v interface{}, location string) {
 }
 
 // NoContent 204
-func (ctx *Context) NoContent() {
-	errorhandler.Exit(http.StatusNoContent)
-}
+func (ctx *Context) NoContent() { ctx.Response.WriteHeader(http.StatusNoContent) }
 
 // ResetContent 205
-func (ctx *Context) ResetContent() {
-	errorhandler.Exit(http.StatusResetContent)
-}
+func (ctx *Context) ResetContent() { ctx.Response.WriteHeader(http.StatusResetContent) }
 
 // NotFound 404
-//
-// 接受统一的 errorhandler 模板支配
-func (ctx *Context) NotFound() {
-	ctx.Response.WriteHeader(http.StatusNotFound)
-}
+func (ctx *Context) NotFound() { ctx.Response.WriteHeader(http.StatusNotFound) }
 
 // NotImplemented 501
-//
-// 接受统一的 errorhandler 模板支配
-func (ctx *Context) NotImplemented() {
-	ctx.Response.WriteHeader(http.StatusNotImplemented)
-}
+func (ctx *Context) NotImplemented() { ctx.Response.WriteHeader(http.StatusNotImplemented) }

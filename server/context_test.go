@@ -213,7 +213,7 @@ func TestContext_Read(t *testing.T) {
 	a.PanicString(func() {
 		o := &struct{}{}
 		ctx.Read(o, 41110)
-	}, "422")
+	}, "0") // 简单地抛出 0，让 recovery 捕获处理。
 }
 
 func TestContext_Marshal(t *testing.T) {
@@ -298,7 +298,7 @@ func TestContext_Render(t *testing.T) {
 		ctx = newServer(a).NewContext(w, r)
 		obj1 := &struct{ Name string }{Name: "name"}
 		ctx.Render(http.StatusCreated, obj1, nil)
-	}, "500")
+	}, "0") // 简单地抛出 0，让 recovery 捕获处理。
 }
 
 func TestContext_ClientIP(t *testing.T) {

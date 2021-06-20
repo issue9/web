@@ -30,8 +30,7 @@ type ModuleFunc func(*Server) (*Module, error)
 // 模块可以作为代码的一种组织方式。将一组关联的功能合并为一个模块。
 type Module struct {
 	*module.Module
-	srv     *Server
-	filters []Filter
+	srv *Server
 }
 
 // NewModule 声明一个新的模块
@@ -39,9 +38,10 @@ type Module struct {
 // id 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func NewModule(id, desc string, deps ...string) *Module {
+func (srv *Server) NewModule(id, desc string, deps ...string) *Module {
 	return &Module{
 		Module: module.NewModule(id, desc, deps...),
+		srv:    srv,
 	}
 }
 
@@ -103,11 +103,11 @@ func (srv *Server) initModules() error {
 		return err
 	}
 
-	if all := srv.Router().Mux().All(true, true); len(all) > 0 {
-		info.Println("模块加载了以下路由项：")
-		for _, router := range all {
-			info.Println(router.Name)
-			for path, methods := range router.Routes {
+	routers := srv.MuxGroups().Routers()
+	for _, r := range routers {
+		if routes := r.Routes(); len(routes) > 0 {
+			info.Printf("模块加载了 %s 的以下路由项：\n", r.Name())
+			for path, methods := range routes {
 				info.Printf("\t[%s] %s\n", strings.Join(methods, ", "), path)
 			}
 		}
@@ -158,7 +158,7 @@ func (srv *Server) LoadPlugin(path string) error {
 	}
 
 	if install, ok := symbol.(func(*Server) (*Module, error)); ok {
-		return srv.AddModuleFunc(ModuleFunc(install))
+		return srv.AddModuleFunc(install)
 	}
 
 	return fmt.Errorf("插件 %s 未找到安装函数", path)

@@ -31,26 +31,19 @@ func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build result.B
 }
 
 // DefaultServer 返回一个采用默认值进初始化的 *Server 实例
-func DefaultServer(name, version, url string) (*Server, error) {
-	return NewServer(name, version, logs.New(), &Options{Root: url})
+func DefaultServer(name, version string) (*Server, error) {
+	return NewServer(name, version, logs.New(), &Options{})
 }
 
-// New 返回 *Server 实例
+// NewServer 返回 *Server 实例
 func NewServer(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	return server.New(name, version, logs, o)
 }
 
 // GetServer 从请求中获取 *Server 实例
-func GetServer(r *http.Request) *Server {
-	return server.GetServer(r)
-}
+func GetServer(r *http.Request) *Server { return server.GetServer(r) }
 
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return server.NewContext(w, r)
-}
-
-// NewModule 声明一个新的模块
-func NewModule(id, desc string, deps ...string) *Module {
-	return server.NewModule(id, desc, deps...)
 }

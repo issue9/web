@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/logs/v2"
+	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -28,13 +29,12 @@ import (
 
 var _ fs.FS = &Server{}
 
-var f201 = func(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusCreated)
-	_, err := w.Write([]byte("1234567890"))
+var f201 = func(ctx *Context) {
+	ctx.Response.Header().Set("Content-Type", "text/html")
+	ctx.Response.WriteHeader(http.StatusCreated)
+	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
-		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -43,7 +43,6 @@ var f202 = func(ctx *Context) {
 	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
-		ctx.Response.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -57,10 +56,8 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	o := &Options{Root: "http://localhost:8080/root"}
-	srv, err := New("app", "0.1.0", newLogs(a), o)
+	srv, err := New("app", "0.1.0", newLogs(a), &Options{Port: ":8080"})
 	a.NotError(err).NotNil(srv)
-
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// srv.Catalog 默认指向 message.DefaultCatalog
@@ -79,42 +76,20 @@ func newServer(a *assert.Assertion) *Server {
 	return srv
 }
 
-func TestOptions_sanitize(t *testing.T) {
-	a := assert.New(t)
-
-	o := &Options{}
-	a.NotError(o.sanitize())
-
-	// 无效的 Root
-	o = &Options{Root: ":8080/api"}
-	a.Error(o.sanitize())
-
-	o = &Options{Root: "http://example.com:8080/api"}
-	a.NotError(o.sanitize()).
-		Equal(o.httpServer.Addr, ":8080")
-
-	o = &Options{Root: "http://example.com/api"}
-	a.NotError(o.sanitize()).
-		Equal(o.httpServer.Addr, ":http")
-
-	o = &Options{Root: "https://example.com/api"}
-	a.NotError(o.sanitize()).
-		Equal(o.httpServer.Addr, ":https")
-}
-
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 	l := newLogs(a)
-	srv, err := New("app", "0.1.0", l, &Options{})
+
+	srv, err := New("app", "0.1.0", l, nil)
 	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
 	a.Equal(l, srv.Logs())
 	a.NotNil(srv.Cache())
 	a.Equal(srv.catalog, message.DefaultCatalog)
 	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.middlewares)
+	a.Equal(srv.httpServer.Handler, srv.groups)
 	a.NotNil(srv.httpServer.BaseContext)
-	a.Equal(srv.httpServer.Addr, ":http")
+	a.Equal(srv.httpServer.Addr, "")
 }
 
 func TestGetServer(t *testing.T) {
@@ -122,13 +97,15 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := New("app", "0.1.0", newLogs(a), &Options{Root: "http://localhost:8081/"})
+	srv, err := New("app", "0.1.0", newLogs(a), nil)
 	a.NotError(err).NotNil(srv)
 	err = srv.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
 	var isRequested bool
 
-	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	router, err := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -142,11 +119,12 @@ func TestGetServer(t *testing.T) {
 
 		isRequested = true
 	})
+
 	go func() {
-		srv.Serve()
+		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
 		Header("Accept", mimetypetest.Mimetype).
 		Do().
 		Success("未正确返回状态码")
@@ -163,7 +141,6 @@ func TestGetServer(t *testing.T) {
 	// BaseContext
 
 	srv, err = New("app", "0.1.0", newLogs(a), &Options{
-		Root: "http://localhost:8081/",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
@@ -173,7 +150,9 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	isRequested = false
-	srv.Router().Mux().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
+	router, err = srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
 
@@ -183,10 +162,10 @@ func TestGetServer(t *testing.T) {
 		isRequested = true
 	})
 	go func() {
-		srv.Serve()
+		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8081/path").Do().Success()
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").Do().Success()
 	a.NotError(srv.Close(0))
 	a.True(isRequested, "未正常访问 /path")
 }
@@ -210,7 +189,10 @@ func TestServer_vars(t *testing.T) {
 	srv.Set(v2, 2)
 	srv.Set(v3, 3)
 
-	a.Equal(srv.Get(v1), 1).Equal(srv.Get(v2), 3)
+	v11, found := srv.Get(v1)
+	a.True(found).Equal(v11, 1)
+	v22, found := srv.Get(v2)
+	a.True(found).Equal(v22, 3)
 }
 
 func TestServer_Serve(t *testing.T) {
@@ -218,43 +200,50 @@ func TestServer_Serve(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	server := newServer(a)
-	server.Router().Get("/mux/test", f202)
+	router, err := server.NewRouter("default", "http://localhost:8080/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+	router.Get("/mux/test", f202)
 
-	m1 := NewModule("m1", "m1 desc")
+	m1 := server.NewModule("m1", "m1 desc")
 	a.NotNil(m1)
-	m1.Get("/m1/test", f202)
+	m1.AddInit("init", func() error {
+		router.Get("/m1/test", f202)
+		return nil
+	})
 	m1.NewTag("tag1")
 
-	m2 := NewModule("m2", "m2 desc", "m1")
+	m2 := server.NewModule("m2", "m2 desc", "m1")
 	a.NotNil(m2)
-	m2.Get("/m2/test", func(ctx *Context) {
-		srv := ctx.Server()
-		a.NotNil(srv)
-		a.Equal(2, len(srv.Modules()))
-		a.Equal(srv.Tags(), []string{"tag1"})
+	m2.AddInit("init m2", func() error {
+		router.Get("/m2/test", func(ctx *Context) {
+			srv := ctx.Server()
+			a.NotNil(srv)
+			a.Equal(2, len(srv.Modules()))
+			a.Equal(srv.Tags(), []string{"tag1"})
 
-		ctx.Response.WriteHeader(http.StatusAccepted)
-		_, err := ctx.Response.Write([]byte("1234567890"))
-		if err != nil {
-			println(err)
-			ctx.Response.WriteHeader(http.StatusInternalServerError)
-		}
+			ctx.Response.WriteHeader(http.StatusAccepted)
+			_, err := ctx.Response.Write([]byte("1234567890"))
+			if err != nil {
+				println(err)
+			}
 
-		// 动态加载模块
-		m3 := NewModule("m3", "m3 desc", "m1")
-		a.NotNil(m3)
-		m3.AddInit("init3", func() error { return nil })
-		a.NotError(server.AddModule(m3))
+			// 动态加载模块
+			m3 := server.NewModule("m3", "m3 desc", "m1")
+			a.NotNil(m3)
+			m3.AddInit("init3", func() error { return nil })
+			a.NotError(server.AddModule(m3))
 
-		a.Equal(3, len(srv.Modules()))
-		a.True(m3.Inited())
+			a.Equal(3, len(srv.Modules()))
+			a.True(m3.Inited())
+		})
+		return nil
 	})
 
 	a.NotError(server.AddModule(m1, m2))
 
 	go func() {
 		err := server.Serve()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
 	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
@@ -272,7 +261,7 @@ func TestServer_Serve(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
-	server.Router().Static("/admin/{path}", "./testdata", "index.html")
+	a.NotError(router.Static("/admin/{path}", "./testdata", "index.html"))
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
@@ -290,7 +279,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	server, err := New("app", "0.1.0", newLogs(a), &Options{
-		Root: "https://localhost:8088/api",
+		Port: ":8088",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
 			a.NotError(err).NotNil(cert)
@@ -302,7 +291,10 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(err).NotNil(server)
 	err = server.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
-	server.Router().Get("/mux/test", f202)
+
+	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+	router.Get("/mux/test", f202)
 
 	go func() {
 		err := server.Serve()
@@ -336,9 +328,11 @@ func TestServer_Close(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 	exit := make(chan bool, 1)
+	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
-	srv.Router().Get("/test", f202)
-	srv.Router().Get("/close", func(ctx *Context) {
+	router.Get("/test", f202)
+	router.Get("/close", func(ctx *Context) {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
@@ -347,13 +341,12 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	go func() {
-		err := srv.Serve()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
 		exit <- true
 	}()
 
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(5000 * time.Microsecond)
+	time.Sleep(500 * time.Millisecond)
 
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/test").
 		Do().
@@ -373,13 +366,15 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 	exit := make(chan bool, 1)
+	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
-	srv.Router().Get("/test", f202)
-	srv.Router().Get("/close", func(ctx *Context) {
+	router.Get("/test", f202)
+	router.Get("/close", func(ctx *Context) {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		srv.Close(300 * time.Millisecond)
+		a.NotError(srv.Close(300 * time.Millisecond))
 	})
 
 	go func() {
@@ -410,4 +405,39 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 
 	<-exit
+}
+
+func TestServer_DisableCompression(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.groups, nil)
+	defer srv.Close()
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	a.NotError(router.Static("/client/{path}", "./testdata/", "index.html"))
+
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+
+	srv.Get("/root/client/file1.txt").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "").
+		Header("Vary", "Content-Encoding")
+
+	server.DisableCompression(true)
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "").
+		Header("Vary", "")
 }

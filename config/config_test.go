@@ -17,7 +17,7 @@ func TestLoadYAML(t *testing.T) {
 
 	conf := &Webconfig{}
 	a.NotError(LoadYAML(fs, "web.yaml", conf))
-	a.Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Port, ":8082")
 
 	conf = &Webconfig{}
 	a.Error(LoadYAML(fs, "web.xml", conf))
@@ -34,7 +34,7 @@ func TestLoadJSON(t *testing.T) {
 
 	conf = &Webconfig{}
 	a.NotError(LoadJSON(fs, "web.json", conf))
-	a.Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Port, ":8082")
 
 	conf = &Webconfig{}
 	a.Error(LoadJSON(fs, "web.xml", conf))
@@ -47,7 +47,7 @@ func TestLoadXML(t *testing.T) {
 
 	conf := &Webconfig{}
 	a.NotError(LoadXML(fs, "web.xml", conf))
-	a.Equal(conf.Root, "http://localhost:8082")
+	a.Equal(conf.Port, ":8082")
 
 	conf = &Webconfig{}
 	a.Error(LoadXML(fs, "web.json", conf))

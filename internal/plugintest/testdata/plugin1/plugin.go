@@ -11,8 +11,8 @@ import (
 )
 
 // Module 返回模块信息
-func Module(*web.Server) (*web.Module, error) {
-	m := web.NewModule("plugin1", "p1 desc", "plugin2")
+func Module(s *web.Server) (*web.Module, error) {
+	m := s.NewModule("plugin1", "p1 desc", "plugin2")
 
 	m.AddInit("init1", init1)
 	m.AddInit("init2", init2)

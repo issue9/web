@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/mux/v5/group"
 )
 
 func TestContext_ServeFile(t *testing.T) {
@@ -23,18 +24,22 @@ func TestContext_ServeFile(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
+	router, err := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
-	s.Router().Get("/path", func(ctx *Context) {
-		ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
-	})
+	a.NotPanic(func() {
+		router.Get("/path", func(ctx *Context) {
+			ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
+		})
 
-	s.Router().Get("/index", func(ctx *Context) {
-		ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
-	})
+		router.Get("/index", func(ctx *Context) {
+			ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
+		})
 
-	s.Router().Get("/not-exists", func(ctx *Context) {
-		// file1.text 不存在
-		ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
+		router.Get("/not-exists", func(ctx *Context) {
+			// file1.text 不存在
+			ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
+		})
 	})
 
 	go func() {
@@ -57,18 +62,20 @@ func TestContext_ServeFileFS(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
+	router, err := s.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
 	fs := os.DirFS("./testdata")
 
-	s.Router().Get("/path", func(ctx *Context) {
+	router.Get("/path", func(ctx *Context) {
 		ctx.ServeFileFS(fs, "file1.txt", "index.html", map[string]string{"Test": "Test"})
 	})
 
-	s.Router().Get("/index", func(ctx *Context) {
+	router.Get("/index", func(ctx *Context) {
 		ctx.ServeFileFS(fs, ".", "file1.txt", map[string]string{"Test": "Test"})
 	})
 
-	s.Router().Get("/not-exists", func(ctx *Context) {
+	router.Get("/not-exists", func(ctx *Context) {
 		// file.text 不存在
 		ctx.ServeFileFS(fs, "file1.text", "index.html", map[string]string{"Test": "Test"})
 	})
@@ -93,11 +100,13 @@ func TestContext_ServeContent(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
+	router, err := s.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
 
 	buf, err := ioutil.ReadFile("./testdata/file1.txt")
 	a.NotError(err).NotNil(buf)
 
-	s.Router().Get("/path", func(ctx *Context) {
+	router.Get("/path", func(ctx *Context) {
 		ctx.ServeContent(bytes.NewReader(buf), "name", time.Now(), map[string]string{"Test": "Test"})
 	})
 

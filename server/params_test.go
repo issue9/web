@@ -8,12 +8,16 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/mux/v5/group"
 )
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/empty", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/empty", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("id1"), 0)
@@ -22,7 +26,7 @@ func TestParams_empty(t *testing.T) {
 			Equal(1, len(ps.Errors())) // MustInt 在不存在的情况，并不会生成错误信息
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/empty").Do().Status(http.StatusOK)
 }
@@ -30,7 +34,10 @@ func TestParams_empty(t *testing.T) {
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.ID("i1"), 1)
@@ -60,7 +67,7 @@ func TestParams_ID_MustID(t *testing.T) {
 		a.Equal(len(ps.Errors()), 3)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/id/1/-2/str").Do().Status(http.StatusOK)
 }
@@ -68,7 +75,10 @@ func TestParams_ID_MustID(t *testing.T) {
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("i1"), 1)
@@ -91,7 +101,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 		a.Equal(len(ps.errors), 2)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/int/1/2/str").Do().Status(http.StatusOK)
 }
@@ -99,7 +109,10 @@ func TestParams_Int_MustInt(t *testing.T) {
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.True(ps.Bool("b1"))
@@ -122,7 +135,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		a.Equal(len(ps.Errors()), 2)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/bool/true/false/str").Do().Status(http.StatusOK)
 }
@@ -130,7 +143,10 @@ func TestParams_Bool_MustBool(t *testing.T) {
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/string/{s1}/{s2}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.String("s1"), "str1")
@@ -150,7 +166,7 @@ func TestParams_String_MustString(t *testing.T) {
 		a.Equal(len(ps.Errors()), 1)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/string/str1/str2").Do().Status(http.StatusOK)
 }
@@ -158,7 +174,10 @@ func TestParams_String_MustString(t *testing.T) {
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -182,7 +201,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 		a.Equal(len(ps.Errors()), 2)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/float/1.1/2.2/str").Do().Status(http.StatusOK)
 }
@@ -190,7 +209,10 @@ func TestParams_Float_MustFloat(t *testing.T) {
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) {
 		i1, ok := ctx.ParamID("i1", 41110)
 		a.True(ok).Equal(i1, 1)
 
@@ -198,7 +220,7 @@ func TestContext_ParamID(t *testing.T) {
 		a.False(ok).Equal(i2, 0)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/paramid/1/-2/str").Do().Status(411)
 }
@@ -206,7 +228,10 @@ func TestContext_ParamID(t *testing.T) {
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a)
-	server.Router().Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) {
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) {
 		i1, ok := ctx.ParamInt64("i1", 41110)
 		a.True(ok).Equal(i1, 1)
 
@@ -217,7 +242,7 @@ func TestContext_ParamInt64(t *testing.T) {
 		a.False(ok).Equal(i3, 0)
 	})
 
-	srv := rest.NewServer(t, server.Router().Mux(), nil)
+	srv := rest.NewServer(t, server.MuxGroups(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/paramint64/1/-2/str").Do().Status(411)
 }

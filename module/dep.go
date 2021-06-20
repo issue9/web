@@ -21,7 +21,7 @@ type Dep struct {
 	logs    *logs.Logs
 }
 
-// New 声明新的 Dep 变量
+// NewDep 声明新的 Dep 变量
 func NewDep(l *logs.Logs) *Dep {
 	return &Dep{
 		modules: make([]*Module, 0, 10),

@@ -1,11 +1,6 @@
 <!-- cmfx.xml 的测试文件，需要与其它内容数值相同 -->
 
-<web>
-    <root>http://localhost:8082</root>
-    <router disableHead="false">
-        <pprof>/debug/pprof/</pprof>
-        <vars>/debug/vars</vars>
-    </router>
+<web port=":8082">
     <http readTimeout="3s"></http>
     <timezone>Africa/Addis_Ababa</timezone>
 </web>

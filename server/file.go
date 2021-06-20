@@ -116,7 +116,7 @@ func checkFSError(ctx *Context, err error) (hasError bool) {
 	case err != nil:
 		ctx.Error(http.StatusInternalServerError, err)
 		return true
+	default:
+		return false
 	}
-
-	return false
 }
