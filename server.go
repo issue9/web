@@ -31,7 +31,7 @@ func LoadServer(name, version string, f fs.FS, build content.BuildResultFunc) (*
 
 // DefaultServer 返回一个采用默认值进初始化的 *Server 实例
 func DefaultServer(name, version string) (*Server, error) {
-	return NewServer(name, version, logs.New(), &Options{})
+	return NewServer(name, version, logs.New(), nil)
 }
 
 // NewServer 返回 *Server 实例

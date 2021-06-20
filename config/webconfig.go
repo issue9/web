@@ -29,8 +29,8 @@ type Webconfig struct {
 	// 格式与 net/http.Server.Addr 相同
 	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
-	// 与路由设置相关的配置项
-	Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
+	// 是否禁用自动生成 HEAD 请求
+	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
 
 	// 与 HTTP 请求相关的设置项
 	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
@@ -59,11 +59,11 @@ type Webconfig struct {
 	// 如果为空，则会采用内存作为缓存对象。
 	Cache *Cache `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
-}
 
-// Router 路由的相关配置
-type Router struct {
-	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
+	// 此处列出的类型将不会被压缩
+	//
+	// 可以带 *，比如 text/* 表示所有 mime-type 为 text/ 开始的类型。
+	IgnoreCompressTypes []string `yaml:"ignoreCompressTypes,omitempty" json:"ignoreCompressTypes,omitempty" xml:"ignoreCompressTypes,omitempty"`
 }
 
 // NewServer 从配置文件初始化 Server 实例
@@ -90,7 +90,7 @@ func NewServer(name, version string, f fs.FS, b content.BuildResultFunc) (*serve
 func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f content.BuildResultFunc) (*server.Server, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
-	if err := conf.sanitize(); err != nil {
+	if err := conf.sanitize(l); err != nil {
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 		FS:            fs,
 		Location:      conf.location,
 		Cache:         conf.cache,
-		DisableHead:   conf.Router.DisableHead,
+		DisableHead:   conf.DisableHead,
 		ResultBuilder: f,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
@@ -111,7 +111,9 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 			srv.ErrorLog = l.ERROR()
 			srv.TLSConfig = h.tlsConfig
 		},
+		IgnoreCompressTypes: conf.IgnoreCompressTypes,
 	}
+
 	srv, err := server.New(name, version, l, o)
 	if err != nil {
 		return nil, err
@@ -126,14 +128,10 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 	return srv, nil
 }
 
-func (conf *Webconfig) sanitize() error {
-	if err := conf.buildCache(); err != nil {
+func (conf *Webconfig) sanitize(l *logs.Logs) error {
+	if err := conf.buildCache(l); err != nil {
 		err.Field = "cache." + err.Field
 		return err
-	}
-
-	if conf.Router == nil {
-		conf.Router = &Router{}
 	}
 
 	if err := conf.buildTimezone(); err != nil {
@@ -152,8 +150,8 @@ func (conf *Webconfig) sanitize() error {
 }
 
 func (conf *Webconfig) buildTimezone() error {
-	if conf.Timezone == "" {
-		conf.Timezone = "Local"
+	if conf.Timezone != "" {
+		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
