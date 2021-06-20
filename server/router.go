@@ -15,6 +15,8 @@ import (
 	"github.com/issue9/mux/v5/group"
 )
 
+type routerContextKey string
+
 type (
 	// HandlerFunc 路由项处理函数原型
 	HandlerFunc func(*Context)
@@ -57,20 +59,35 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
-	return &Router{
+	rr := &Router{
 		srv:      srv,
 		router:   r,
 		filters:  filter,
 		root:     root,
 		path:     u.Path,
 		debugger: dbg,
-	}, nil
+	}
+
+	srv.Set(routerContextKey(name), rr)
+
+	return rr, nil
+}
+
+// Router 返回由 Server.NewRouter 声明的路由
+func (srv *Server) Router(name string) *Router {
+	if r, found := srv.Get(routerContextKey(name)); found {
+		return r.(*Router)
+	}
+	return nil
+}
+
+func (srv *Server) RemoveRouter(name string) {
+	srv.MuxGroups().RemoveRouter(name)
+	srv.Delete(routerContextKey(name))
 }
 
 // MuxGroups 返回 group.Groups 实例
 func (srv *Server) MuxGroups() *group.Groups { return srv.groups }
-
-func (srv *Server) RemoveRouter(name string) { srv.MuxGroups().RemoveRouter(name) }
 
 // SetDebugger 设置调试地址
 func (r *Router) SetDebugger(pprof, vars string) (err error) {

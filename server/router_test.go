@@ -186,6 +186,13 @@ func TestRouter_NewRouter(t *testing.T) {
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
 	srv.groups.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNoContent)
+
+	// 删除整个路由
+	srv.RemoveRouter("host")
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	srv.groups.ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusNotFound)
 }
 
 func TestRouterPrefix(t *testing.T) {
@@ -300,4 +307,24 @@ func TestRouter_Static(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
 	server.groups.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
+}
+
+func TestServer_Router(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+
+	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
+	a.Equal(srv.Router("host"), r)
+
+	// 同值，不同类型
+	srv.Set("host", 123)
+	a.Equal(srv.Router("host"), r)
+	v, found := srv.Get("host")
+	a.True(found).Equal(v, 123)
+
+	srv.RemoveRouter("host")
+	a.Nil(srv.Router("host"))
+	v, found = srv.Get("host")
+	a.True(found).Equal(v, 123)
 }
