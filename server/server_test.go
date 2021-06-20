@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/logs/v2"
-	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -74,20 +73,7 @@ func newServer(a *assert.Assertion) *Server {
 
 	srv.AddResultMessage(411, 41110, "41110")
 
-	a.NotError(srv.SetCompressAlgorithm("deflate", compress.NewDeflate))
-	a.NotError(srv.SetCompressAlgorithm("gzip", compress.NewGzip))
-	a.NotError(srv.SetCompressAlgorithm("br", compress.NewBrotli))
-
 	return srv
-}
-
-func TestOptions_sanitize(t *testing.T) {
-	a := assert.New(t)
-
-	o := &Options{}
-	a.NotError(o.sanitize())
-	a.Equal(o.Location, time.Local)
-	a.NotNil(o.groups)
 }
 
 func TestNewServer(t *testing.T) {
@@ -133,6 +119,7 @@ func TestGetServer(t *testing.T) {
 
 		isRequested = true
 	})
+
 	go func() {
 		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
@@ -418,4 +405,39 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 
 	<-exit
+}
+
+func TestServer_DisableCompression(t *testing.T) {
+	a := assert.New(t)
+	server := newServer(a)
+	srv := rest.NewServer(t, server.groups, nil)
+	defer srv.Close()
+	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	a.NotError(router.Static("/client/{path}", "./testdata/", "index.html"))
+
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "gzip").
+		Header("Vary", "Content-Encoding")
+
+	srv.Get("/root/client/file1.txt").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "").
+		Header("Vary", "Content-Encoding")
+
+	server.DisableCompression(true)
+	srv.Get("/root/client/file1.txt").
+		Header("Accept-Encoding", "gzip,deflate;q=0.8").
+		Do().
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		Header("Content-Encoding", "").
+		Header("Vary", "")
 }

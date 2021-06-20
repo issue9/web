@@ -9,20 +9,14 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/cache/memory"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/errorhandler"
-	"github.com/issue9/middleware/v4/recovery"
-	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
@@ -37,64 +31,6 @@ const (
 	contextKeyServer contextKey = iota
 	contextKeyContext
 )
-
-// Options 初始化 Server 的参数
-type Options struct {
-	// 项目默认可存取的文件系统
-	//
-	// 默认情况下为可执行文件所在的目录。
-	FS fs.FS
-
-	// 服务器的时区
-	//
-	// 默认值为 time.Local
-	Location *time.Location
-
-	// 当前使用的本地化组件
-	//
-	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
-	//
-	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
-	// 等方式构建 Catalog 接口实例。
-	Catalog catalog.Catalog
-
-	// 指定生成 Result 数据的方法
-	//
-	// 默认情况下指向  result.DefaultBuilder。
-	ResultBuilder result.BuildFunc
-
-	// 缓存系统
-	//
-	// 默认值为内存类型。
-	Cache cache.Cache
-
-	// 端口号
-	//
-	// 格式参照 net/http.Server.Addr 字段
-	Port string
-
-	// 是否禁止自动生成 HEAD 请求
-	DisableHead bool
-
-	// 跨域的相关设置
-	//
-	// 如果为空，采用 mux.DeniedCORS
-	CORS *mux.CORS
-
-	groups *group.Groups
-
-	// 可以对 http.Server 的内容进行修改
-	//
-	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.mux
-	HTTPServer func(*http.Server)
-	httpServer *http.Server
-
-	// 在请求崩溃之后的处理方式
-	//
-	// 这是请求的最后一道防线，如果此函数处理依然 panic，则会造成整个项目退出。
-	// 如果为空，则会打印简单的错误堆栈信息。
-	Recovery recovery.RecoverFunc
-}
 
 // Server 提供了用于构建 Context 对象的基本数据
 type Server struct {
@@ -124,57 +60,13 @@ type Server struct {
 	results   *result.Manager
 }
 
-func (o *Options) sanitize() (err error) {
-	if o.FS == nil {
-		dir, err := os.Executable()
-		if err != nil {
-			return err
-		}
-		o.FS = os.DirFS(filepath.Dir(dir))
-	}
-
-	if o.Location == nil {
-		o.Location = time.Local
-	}
-
-	if o.Catalog == nil {
-		o.Catalog = message.DefaultCatalog
-	}
-
-	if o.ResultBuilder == nil {
-		o.ResultBuilder = result.DefaultBuilder
-	}
-
-	if o.Cache == nil {
-		o.Cache = memory.New(24 * time.Hour)
-	}
-
-	if o.CORS == nil {
-		o.CORS = mux.DeniedCORS()
-	}
-	o.groups = group.New(o.DisableHead, o.CORS, nil, nil)
-
-	o.httpServer = &http.Server{Addr: o.Port}
-	if o.HTTPServer != nil {
-		o.HTTPServer(o.httpServer)
-	}
-
-	if o.Recovery == nil {
-		o.Recovery = recovery.DefaultRecoverFunc(http.StatusInternalServerError)
-	}
-
-	return nil
-}
-
 // New 返回 *Server 实例
 //
 // name, version 表示服务的名称和版本号；
-// 在初始化 Server 必须指定的参数，且有默认值的，由 Options 定义。
+// o 指定了初始化 Server 一些非必要参数。在传递给 New 之后，再对其值进行改变，是无效的。
 func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
-	if o == nil {
-		o = &Options{}
-	}
-	if err := o.sanitize(); err != nil {
+	o, err := o.sanitize()
+	if err != nil {
 		return nil, err
 	}
 
@@ -188,7 +80,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		closed:     make(chan struct{}, 1),
 
 		groups:        o.groups,
-		compress:      compress.New(logs.ERROR(), "*"),
+		compress:      compress.Classic(logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
 
 		catalog:  o.Catalog,
@@ -327,4 +219,14 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 		return err
 	}
 	return nil
+}
+
+// DisableCompression 是否禁用压缩功能
+func (srv *Server) DisableCompression(disable bool) { srv.compress.Enable = !disable }
+
+// SetErrorHandle 设置指定状态码页面的处理函数
+//
+// 如果状态码已经存在处理函数，则修改，否则就添加。
+func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
+	srv.errorHandlers.Set(h, status...)
 }
