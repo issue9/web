@@ -2,26 +2,19 @@
 
 package result
 
-import (
-	"net/url"
-	"strconv"
-	"strings"
-)
-
-// 这是对 Result 的默认实现
 type defaultResult struct {
-	XMLName struct{} `json:"-" xml:"result" yaml:"-"`
+	XMLName struct{} `json:"-" xml:"result" yaml:"-" form:"-"`
 
 	status int // 当前的信息所对应的 HTTP 状态码
 
-	Message string         `json:"message" xml:"message" yaml:"message"`
-	Code    int            `json:"code" xml:"code,attr" yaml:"code"`
-	Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty"`
+	Message string         `json:"message" xml:"message" yaml:"message" form:"message"`
+	Code    int            `json:"code" xml:"code,attr" yaml:"code" form:"code"`
+	Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty" form:"fields"`
 }
 
 type fieldDetail struct {
-	Name    string   `json:"name" xml:"name,attr" yaml:"name"`
-	Message []string `json:"message" xml:"message" yaml:"message"`
+	Name    string   `json:"name" xml:"name,attr" yaml:"name" form:"name"`
+	Message []string `json:"message" xml:"message" yaml:"message" form:"message"`
 }
 
 // DefaultBuilder 默认的 BuildResultFunc 实现
@@ -96,46 +89,4 @@ func (rslt *defaultResult) Status() int {
 
 func (rslt *defaultResult) HasFields() bool {
 	return len(rslt.Fields) > 0
-}
-
-func (rslt *defaultResult) MarshalForm() ([]byte, error) {
-	vals := url.Values{}
-
-	vals.Add("code", strconv.Itoa(rslt.Code))
-	vals.Add("message", rslt.Message)
-
-	for _, field := range rslt.Fields {
-		k := "fields." + field.Name
-		for _, msg := range field.Message {
-			vals.Add(k, msg)
-		}
-	}
-
-	return []byte(vals.Encode()), nil
-}
-
-func (rslt *defaultResult) UnmarshalForm(b []byte) error {
-	vals, err := url.ParseQuery(string(b))
-	if err != nil {
-		return err
-	}
-
-	for key, vals := range vals {
-		switch key {
-		case "code":
-			if rslt.Code, err = strconv.Atoi(vals[0]); err != nil {
-				return err
-			}
-		case "message":
-			rslt.Message = vals[0]
-		default:
-			name := strings.TrimPrefix(key, "fields.")
-			rslt.Fields = append(rslt.Fields, &fieldDetail{
-				Name:    name,
-				Message: vals,
-			})
-		}
-	}
-
-	return nil
 }

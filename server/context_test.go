@@ -254,16 +254,6 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(w.Body.String(), "")
 	a.Equal(w.Header().Get("content-language"), "zh-Hans") // 指定了输出语言
 
-	// 输出 Nil
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
-	w = httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
-	ctx = newServer(a).NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, content.Nil, nil))
-	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Body.String(), mimetypetest.Nil)
-
 	// 输出不同编码的内容
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()

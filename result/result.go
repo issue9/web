@@ -8,7 +8,7 @@ import "github.com/issue9/validation"
 type (
 	// Fields 表示字段的错误信息列表
 	//
-	// 类型为 map[string][]string
+	// 原始类型为 map[string][]string
 	Fields = validation.Messages
 
 	// BuildFunc 用于生成 Result 接口对象的函数

@@ -37,14 +37,10 @@ package form
 import (
 	"encoding"
 	"net/url"
-
-	"github.com/issue9/web/content"
 )
 
 // Mimetype 当前编码的媒体类型
 const Mimetype = "application/x-www-form-urlencoded"
-
-var nilValue = []byte("null")
 
 // Marshaler 将一个普通对象转换成 form 类型
 type Marshaler interface {
@@ -64,10 +60,6 @@ type Unmarshaler interface {
 //  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
 //  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v interface{}) ([]byte, error) {
-	if v == content.Nil {
-		return nilValue, nil
-	}
-
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
 	}

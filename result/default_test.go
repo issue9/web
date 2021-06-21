@@ -14,11 +14,7 @@ import (
 	"github.com/issue9/web/content/form"
 )
 
-var (
-	_ BuildFunc        = DefaultBuilder
-	_ form.Marshaler   = &defaultResult{}
-	_ form.Unmarshaler = &defaultResult{}
-)
+var _ BuildFunc = DefaultBuilder
 
 var (
 	mimetypeResult = &defaultResult{
