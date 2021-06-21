@@ -2,7 +2,7 @@
 
 // Package html 提供输出 HTML 内容的 content.MarshalFunc 函数
 //
-//  mt := content.NewMimetypes()
+//  mt := content.NewContent()
 //  tpl := template.ParseFiles(...)
 //  mgr := html.New(tpl)
 //  mt.Add("text/html", mgr.Marshal, nil)

@@ -26,12 +26,12 @@ func BenchmarkBuildContentType(b *testing.B) {
 	}
 }
 
-func BenchmarkMimetypes_Marshal(b *testing.B) {
+func BenchmarkContent_Marshal(b *testing.B) {
 	a := assert.New(b)
-	srv := NewMimetypes(DefaultBuilder)
+	srv := New(DefaultBuilder)
 	a.NotNil(srv)
 
-	a.NotError(srv.Add("font/wottf", xml.Marshal, xml.Unmarshal))
+	a.NotError(srv.AddMimetype("font/wottf", xml.Marshal, xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
 		name, marshal, err := srv.Marshal("font/wottf;q=0.9")
@@ -41,12 +41,12 @@ func BenchmarkMimetypes_Marshal(b *testing.B) {
 	}
 }
 
-func BenchmarkMimetypes_Unmarshal(b *testing.B) {
+func BenchmarkContent_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	srv := NewMimetypes(DefaultBuilder)
+	srv := New(DefaultBuilder)
 	a.NotNil(srv)
 
-	a.NotError(srv.Add("font/wottf", xml.Marshal, xml.Unmarshal))
+	a.NotError(srv.AddMimetype("font/wottf", xml.Marshal, xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
 		marshal, err := srv.Unmarshal("font/wottf")

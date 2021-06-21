@@ -77,7 +77,7 @@ Go 并不是在所有的平台下都支持插件模式，支持列表可查看�
 
 ## 字符集和文档类型
 
-文档类型由 `Server.Mimetypes` 指定。
+文档类型由 `Server.Content` 指定。
 字符类型无需用户指定，<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
 中列出的字符集都能自动转换。
 
@@ -86,8 +86,8 @@ import "github.com/issue9/web"
 
 srv := web.NewServer(&web.Options{})
 
-srv.Mimetypes().Add("application/json", json.Marshal, json.Unmarshal)
-srv.Mimetypes().Add("application/xml", xml.Marshal, xml.Unmarshal)
+srv.Content().Add("application/json", json.Marshal, json.Unmarshal)
+srv.Content().Add("application/xml", xml.Marshal, xml.Unmarshal)
 
 srv.Serve()
 ```

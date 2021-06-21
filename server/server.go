@@ -54,8 +54,8 @@ type Server struct {
 	uptime time.Time
 	dep    *module.Dep
 
-	mimetypes *content.Mimetypes
-	services  *service.Manager
+	content  *content.Content
+	services *service.Manager
 }
 
 // New 返回 *Server 实例
@@ -88,8 +88,8 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		dep:    module.NewDep(logs),
 		uptime: time.Now(),
 
-		mimetypes: content.NewMimetypes(o.ResultBuilder),
-		services:  service.NewManager(logs, o.Location),
+		content:  content.New(o.ResultBuilder),
+		services: service.NewManager(logs, o.Location),
 	}
 	srv.httpServer.Handler = srv.groups
 
@@ -166,8 +166,8 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // Server 获取关联的 context.Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
 
-// Mimetypes 返回内容编解码的管理接口
-func (srv *Server) Mimetypes() *content.Mimetypes { return srv.mimetypes }
+// Content 返回内容编解码的管理接口
+func (srv *Server) Content() *content.Content { return srv.content }
 
 // Services 返回服务内容的管理接口
 func (srv *Server) Services() *service.Manager { return srv.services }

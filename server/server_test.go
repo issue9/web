@@ -65,13 +65,13 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	mt := srv.Mimetypes()
-	a.NotError(mt.Add("application/json", json.Marshal, json.Unmarshal))
-	a.NotError(mt.Add("application/xml", xml.Marshal, xml.Unmarshal))
-	a.NotError(mt.Add(content.DefaultMimetype, gob.Marshal, gob.Unmarshal))
-	a.NotError(mt.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal))
+	mt := srv.Content()
+	a.NotError(mt.AddMimetype("application/json", json.Marshal, json.Unmarshal))
+	a.NotError(mt.AddMimetype("application/xml", xml.Marshal, xml.Unmarshal))
+	a.NotError(mt.AddMimetype(content.DefaultMimetype, gob.Marshal, gob.Unmarshal))
+	a.NotError(mt.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal))
 
-	srv.AddResultMessage(411, 41110, "41110")
+	srv.Content().AddMessage(411, 41110, "41110")
 
 	return srv
 }
@@ -99,7 +99,7 @@ func TestGetServer(t *testing.T) {
 
 	srv, err := New("app", "0.1.0", newLogs(a), nil)
 	a.NotError(err).NotNil(srv)
-	err = srv.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	err = srv.content.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
 	var isRequested bool
 
@@ -289,7 +289,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(server)
-	err = server.mimetypes.Add(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	err = server.content.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
 	a.NotError(err)
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
