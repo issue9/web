@@ -21,7 +21,6 @@ import (
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/module"
-	"github.com/issue9/web/result"
 	"github.com/issue9/web/service"
 )
 
@@ -57,7 +56,6 @@ type Server struct {
 
 	mimetypes *content.Mimetypes
 	services  *service.Manager
-	results   *result.Manager
 }
 
 // New 返回 *Server 实例
@@ -90,9 +88,8 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		dep:    module.NewDep(logs),
 		uptime: time.Now(),
 
-		mimetypes: content.NewMimetypes(),
+		mimetypes: content.NewMimetypes(o.ResultBuilder),
 		services:  service.NewManager(logs, o.Location),
-		results:   result.NewManager(o.ResultBuilder),
 	}
 	srv.httpServer.Handler = srv.groups
 

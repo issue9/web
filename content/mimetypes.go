@@ -4,6 +4,7 @@ package content
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
+	"golang.org/x/text/message"
 )
 
 // DefaultMimetype 默认的媒体类型
@@ -32,27 +34,40 @@ var (
 	ErrExists = errors.New("已经存在相同名称的编解码函数")
 )
 
-// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
-type MarshalFunc func(v interface{}) ([]byte, error)
+type (
+	// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
+	MarshalFunc func(v interface{}) ([]byte, error)
 
-// UnmarshalFunc 将客户端内容转换成一个对象时所采用的接口
-type UnmarshalFunc func([]byte, interface{}) error
+	// UnmarshalFunc 将客户端内容转换成一个对象时所采用的接口
+	UnmarshalFunc func([]byte, interface{}) error
 
-type codec struct {
-	name      string
-	marshal   MarshalFunc
-	unmarshal UnmarshalFunc
-}
+	codec struct {
+		name      string
+		marshal   MarshalFunc
+		unmarshal UnmarshalFunc
+	}
 
-// Mimetypes 管理 mimetype 的增删改查
-type Mimetypes struct {
-	codecs []*codec
-}
+	// Mimetypes 管理 mimetype 的增删改查
+	Mimetypes struct {
+		codecs []*codec
+
+		messages map[int]*resultMessage
+		builder  BuildResultFunc
+	}
+
+	resultMessage struct {
+		status int
+		key    message.Reference
+		values []interface{}
+	}
+)
 
 // NewMimetypes 返回 *Mimetypes 实例
-func NewMimetypes() *Mimetypes {
+func NewMimetypes(builder BuildResultFunc) *Mimetypes {
 	return &Mimetypes{
-		codecs: make([]*codec, 0, 10),
+		codecs:   make([]*codec, 0, 10),
+		messages: make(map[int]*resultMessage, 20),
+		builder:  builder,
 	}
 }
 
@@ -194,4 +209,50 @@ func (mt *Mimetypes) findMarshal(name string) *codec {
 		}
 	}
 	return nil
+}
+
+// Messages 错误信息列表
+//
+// p 用于返回特定语言的内容。
+func (mgr *Mimetypes) Messages(p *message.Printer) map[int]string {
+	msgs := make(map[int]string, len(mgr.messages))
+	for code, msg := range mgr.messages {
+		msgs[code] = p.Sprintf(msg.key, msg.values...)
+	}
+	return msgs
+}
+
+// AddMessage 添加一条错误信息
+//
+// status 指定了该错误代码反馈给客户端的 HTTP 状态码；
+func (mgr *Mimetypes) AddMessage(status, code int, key message.Reference, v ...interface{}) {
+	if _, found := mgr.messages[code]; found {
+		panic(fmt.Sprintf("重复的消息 ID: %d", code))
+	}
+	mgr.messages[code] = &resultMessage{status: status, key: key, values: v}
+}
+
+// NewResult 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (mgr *Mimetypes) NewResult(p *message.Printer, code int) Result {
+	msg, found := mgr.messages[code]
+	if !found {
+		panic(fmt.Sprintf("不存在的错误代码: %d", code))
+	}
+
+	return mgr.builder(msg.status, code, p.Sprintf(msg.key, msg.values...))
+}
+
+// NewResultWithFields 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (mgr *Mimetypes) NewResultWithFields(p *message.Printer, code int, fields Fields) Result {
+	rslt := mgr.NewResult(p, code)
+
+	for k, vals := range fields {
+		rslt.Add(k, vals...)
+	}
+
+	return rslt
 }

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/result"
+	"github.com/issue9/web/content"
 )
 
 func TestContext_NewResult(t *testing.T) {
@@ -70,7 +70,7 @@ func TestContext_NewResultWithFields(t *testing.T) {
 	ctx.server.AddResultMessage(http.StatusBadRequest, 40010, "40010")
 	ctx.server.AddResultMessage(http.StatusBadRequest, 40011, "40011")
 
-	rslt := ctx.NewResultWithFields(40010, result.Fields{
+	rslt := ctx.NewResultWithFields(40010, content.Fields{
 		"k1": []string{"v1", "v2"},
 	})
 	a.True(rslt.HasFields())

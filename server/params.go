@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/params"
 
-	"github.com/issue9/web/result"
+	"github.com/issue9/web/content"
 )
 
 var emptyParams = params.Params(map[string]string{})
@@ -24,7 +24,7 @@ var emptyParams = params.Params(map[string]string{})
 type Params struct {
 	ctx    *Context
 	params params.Params
-	errors result.Fields
+	errors content.Fields
 }
 
 // Params 声明一个新的 Params 实例
@@ -37,7 +37,7 @@ func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
 		params: ps,
-		errors: make(result.Fields, len(ps)),
+		errors: make(content.Fields, len(ps)),
 	}
 }
 
@@ -207,7 +207,7 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 func (p *Params) HasErrors() bool { return len(p.errors) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() result.Fields { return p.errors }
+func (p *Params) Errors() content.Fields { return p.errors }
 
 // Result 转换成 Result 对象
 //

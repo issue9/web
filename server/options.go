@@ -14,10 +14,9 @@ import (
 	"github.com/issue9/middleware/v4/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/web/content"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
-
-	"github.com/issue9/web/result"
 )
 
 // Options 初始化 Server 的参数
@@ -43,7 +42,7 @@ type Options struct {
 	// 指定生成 Result 数据的方法
 	//
 	// 默认情况下指向  result.DefaultBuilder。
-	ResultBuilder result.BuildFunc
+	ResultBuilder content.BuildResultFunc
 
 	// 缓存系统
 	//
@@ -105,7 +104,7 @@ func (o *Options) sanitize() (*Options, error) {
 	}
 
 	if o.ResultBuilder == nil {
-		o.ResultBuilder = result.DefaultBuilder
+		o.ResultBuilder = content.DefaultBuilder
 	}
 
 	if o.Cache == nil {

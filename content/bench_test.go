@@ -28,7 +28,7 @@ func BenchmarkBuildContentType(b *testing.B) {
 
 func BenchmarkMimetypes_Marshal(b *testing.B) {
 	a := assert.New(b)
-	srv := NewMimetypes()
+	srv := NewMimetypes(DefaultBuilder)
 	a.NotNil(srv)
 
 	a.NotError(srv.Add("font/wottf", xml.Marshal, xml.Unmarshal))
@@ -43,7 +43,7 @@ func BenchmarkMimetypes_Marshal(b *testing.B) {
 
 func BenchmarkMimetypes_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	srv := NewMimetypes()
+	srv := NewMimetypes(DefaultBuilder)
 	a.NotNil(srv)
 
 	a.NotError(srv.Add("font/wottf", xml.Marshal, xml.Unmarshal))

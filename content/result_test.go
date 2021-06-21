@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package result
+package content
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/web/content/form"
 )
 
-var _ BuildFunc = DefaultBuilder
+var _ BuildResultFunc = DefaultBuilder
 
 var (
 	mimetypeResult = &defaultResult{

@@ -10,8 +10,8 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
+	"github.com/issue9/web/content"
 	"github.com/issue9/web/module"
-	"github.com/issue9/web/result"
 	"github.com/issue9/web/server"
 )
 
@@ -26,7 +26,7 @@ type (
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
-func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build result.BuildFunc) (*Server, error) {
+func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build content.BuildResultFunc) (*Server, error) {
 	return config.NewServer(name, version, f, c, build)
 }
 
