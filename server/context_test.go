@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/content/mimetypetest"
+	"github.com/issue9/web/content/text"
 )
 
 func init() {
@@ -102,7 +102,7 @@ func TestServer_NewContext(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", content.DefaultMimetype)
-	r.Header.Set("content-type", content.BuildContentType(mimetypetest.Mimetype, "utf-"))
+	r.Header.Set("content-type", content.BuildContentType(text.Mimetype, "utf-"))
 	a.Panic(func() {
 		srv.NewContext(w, r)
 	})
@@ -146,7 +146,7 @@ func TestServer_NewContext(t *testing.T) {
 	logwriter.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", content.DefaultMimetype)
-	r.Header.Set("content-type", content.BuildContentType(mimetypetest.Mimetype, "utf-8"))
+	r.Header.Set("content-type", content.BuildContentType(text.Mimetype, "utf-8"))
 	a.NotPanic(func() {
 		ctx = srv.NewContext(w, r)
 	})
@@ -160,7 +160,7 @@ func TestContext_Body(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
-	r.Header.Set("Content-Type", mimetypetest.Mimetype+"; charset=utf-8")
+	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
 	w := httptest.NewRecorder()
 	ctx := newServer(a).NewContext(w, r)
 
@@ -179,7 +179,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
-	r.Header.Set("Content-Type", mimetypetest.Mimetype+"; charset=utf-8")
+	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
 	ctx = newServer(a).NewContext(w, r)
 	ctx.OutputCharset = encoding.Nop
 	ctx.InputCharset = encoding.Nop
@@ -191,7 +191,7 @@ func TestContext_Body(t *testing.T) {
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
 	r.Header.Set("Accept", "*/*")
-	r.Header.Set("Content-Type", mimetypetest.Mimetype+"; charset=gb18030")
+	r.Header.Set("Content-Type", text.Mimetype+"; charset=gb18030")
 	ctx = newServer(a).NewContext(w, r)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(string(data), gbkstr1)
@@ -202,10 +202,10 @@ func TestContext_Read(t *testing.T) {
 	a := assert.New(t)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
 	w := httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype+"; charset=utf-8")
+	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
 	ctx := newServer(a).NewContext(w, r)
 
-	obj := &mimetypetest.TextObject{}
+	obj := &text.TestObject{}
 	a.True(ctx.Read(obj, 41110))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -221,10 +221,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Content-Type", text.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	obj := &mimetypetest.TextObject{Name: "test", Age: 123}
+	obj := &text.TestObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -233,10 +233,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Content-Type", text.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
-	obj = &mimetypetest.TextObject{Name: "test", Age: 1234}
+	obj = &text.TestObject{Name: "test", Age: 1234}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
@@ -245,8 +245,8 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 nil
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Content-Type", text.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
 	ctx.OutputTag = language.MustParse("zh-Hans")
 	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
@@ -257,8 +257,8 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出不同编码的内容
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	w = httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Content-Type", text.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("Accept-Charset", "gb18030")
 	ctx = newServer(a).NewContext(w, r)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkstr2, nil))
@@ -271,10 +271,10 @@ func TestContext_Render(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	w := httptest.NewRecorder()
-	r.Header.Set("Content-Type", mimetypetest.Mimetype)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Content-Type", text.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	obj := &mimetypetest.TextObject{Name: "test", Age: 123}
+	obj := &text.TestObject{Name: "test", Age: 123}
 	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -283,8 +283,8 @@ func TestContext_Render(t *testing.T) {
 	a.PanicString(func() {
 		r = httptest.NewRequest(http.MethodPost, "/path", nil)
 		w = httptest.NewRecorder()
-		r.Header.Set("Content-Type", mimetypetest.Mimetype)
-		r.Header.Set("Accept", mimetypetest.Mimetype)
+		r.Header.Set("Content-Type", text.Mimetype)
+		r.Header.Set("Accept", text.Mimetype)
 		ctx = newServer(a).NewContext(w, r)
 		obj1 := &struct{ Name string }{Name: "name"}
 		ctx.Render(http.StatusCreated, obj1, nil)
@@ -332,17 +332,17 @@ func TestContext_Created(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	ctx.Created(&mimetypetest.TextObject{Name: "test", Age: 123}, "")
+	ctx.Created(&text.TestObject{Name: "test", Age: 123}, "")
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`)
 
 	w.Body.Reset()
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set("Accept", mimetypetest.Mimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
-	ctx.Created(&mimetypetest.TextObject{Name: "test", Age: 123}, "/test")
+	ctx.Created(&text.TestObject{Name: "test", Age: 123}, "/test")
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`).
 		Equal(w.Header().Get("Location"), "/test")

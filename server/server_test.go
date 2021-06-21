@@ -24,7 +24,7 @@ import (
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/content/gob"
-	"github.com/issue9/web/content/mimetypetest"
+	"github.com/issue9/web/content/text"
 )
 
 var _ fs.FS = &Server{}
@@ -69,7 +69,7 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(mt.AddMimetype("application/json", json.Marshal, json.Unmarshal))
 	a.NotError(mt.AddMimetype("application/xml", xml.Marshal, xml.Unmarshal))
 	a.NotError(mt.AddMimetype(content.DefaultMimetype, gob.Marshal, gob.Unmarshal))
-	a.NotError(mt.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal))
+	a.NotError(mt.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
 
 	srv.Content().AddMessage(411, 41110, "41110")
 
@@ -99,7 +99,7 @@ func TestGetServer(t *testing.T) {
 
 	srv, err := New("app", "0.1.0", newLogs(a), nil)
 	a.NotError(err).NotNil(srv)
-	err = srv.content.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	err = srv.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal)
 	a.NotError(err)
 	var isRequested bool
 
@@ -125,7 +125,7 @@ func TestGetServer(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
-		Header("Accept", mimetypetest.Mimetype).
+		Header("Accept", text.Mimetype).
 		Do().
 		Success("未正确返回状态码")
 
@@ -289,7 +289,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(server)
-	err = server.content.AddMimetype(mimetypetest.Mimetype, mimetypetest.TextMarshal, mimetypetest.TextUnmarshal)
+	err = server.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal)
 	a.NotError(err)
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))

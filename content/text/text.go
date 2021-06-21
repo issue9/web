@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-// Package mimetypetest 针对文本内容的编解码实现，仅作为测试用例。
-package mimetypetest
+// Package text 针对文本内容的编解码实现
+//
+// NOTE: 仅作为测试用例
+package text
 
 import (
 	"encoding"
@@ -13,8 +15,8 @@ const Mimetype = "text/plain"
 
 var errUnsupported = errors.New("对象没有有效的转换方法")
 
-// TextMarshal 针对文本内容的 MarshalFunc 实现
-func TextMarshal(v interface{}) ([]byte, error) {
+// Marshal 针对文本内容的 MarshalFunc 实现
+func Marshal(v interface{}) ([]byte, error) {
 	switch vv := v.(type) {
 	case string:
 		return []byte(vv), nil
@@ -29,8 +31,8 @@ func TextMarshal(v interface{}) ([]byte, error) {
 	return nil, errUnsupported
 }
 
-// TextUnmarshal 针对文本内容的 UnmarshalFunc 实现
-func TextUnmarshal(data []byte, v interface{}) error {
+// Unmarshal 针对文本内容的 UnmarshalFunc 实现
+func Unmarshal(data []byte, v interface{}) error {
 	if vv, ok := v.(encoding.TextUnmarshaler); ok {
 		return vv.UnmarshalText(data)
 	}
