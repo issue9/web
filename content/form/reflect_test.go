@@ -92,7 +92,7 @@ func TestTagForm(t *testing.T) {
 	a.NotError(Unmarshal([]byte(formTagString), obj))
 	a.Equal(obj, tagObjectData)
 
-	// anonymous marhsal
+	// anonymous marshal
 	data, err = Marshal(anonymousData)
 	a.NotError(err).
 		Equal(string(data), anonymousString)

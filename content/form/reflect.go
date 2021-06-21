@@ -112,7 +112,7 @@ func setStructField(obj reflect.Value, names []string, val []string) error {
 }
 
 func setMapField(obj reflect.Value, names []string, val []string) error {
-	// NOET: map 元素是 unaddressable 的
+	// NOTE: map 元素是 unAddressable 的
 
 	key := reflect.ValueOf(names[0])
 	elem := reflect.New(obj.Type().Elem()).Elem()
