@@ -122,7 +122,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputCharsetName, outputCharset, err := content.AcceptCharset(header)
 	checkError("Accept-Charset", err, http.StatusNotAcceptable)
 
-	tag := content.AcceptLanguage(srv.catalog, r.Header.Get("Accept-Language"))
+	tag := content.AcceptLanguage(srv.Content().CatalogBuilder(), r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		server:             srv,

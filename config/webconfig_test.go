@@ -107,9 +107,9 @@ func TestDuration_JSON(t *testing.T) {
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := NewServer("app", "1.1.1", os.DirFS("./testdata"), nil, nil)
+	srv, err := NewServer("app", "1.1.1", os.DirFS("./testdata"), nil)
 	a.NotError(err).NotNil(srv)
 
-	srv, err = NewServer("app", "1.1.1", os.DirFS("./testdata/not-exists"), nil, nil)
+	srv, err = NewServer("app", "1.1.1", os.DirFS("./testdata/not-exists"), nil)
 	a.ErrorIs(err, fs.ErrNotExist).Nil(srv)
 }

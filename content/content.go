@@ -14,6 +14,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 )
 
 // DefaultMimetype 默认的媒体类型
@@ -50,9 +51,10 @@ type (
 
 	// Content 管理反馈给用户的数据相应在的处理功能
 	Content struct {
-		mimetypes []*mimetype
-		messages  map[int]*resultMessage
-		builder   BuildResultFunc
+		mimetypes      []*mimetype
+		resultMessages map[int]*resultMessage
+		resultBuilder  BuildResultFunc
+		catalog        *catalog.Builder
 	}
 
 	resultMessage struct {
@@ -65,9 +67,10 @@ type (
 // New 返回 *Content 实例
 func New(builder BuildResultFunc) *Content {
 	return &Content{
-		mimetypes: make([]*mimetype, 0, 10),
-		messages:  make(map[int]*resultMessage, 20),
-		builder:   builder,
+		mimetypes:      make([]*mimetype, 0, 10),
+		resultMessages: make(map[int]*resultMessage, 20),
+		resultBuilder:  builder,
+		catalog:        catalog.NewBuilder(),
 	}
 }
 
@@ -211,37 +214,37 @@ func (c *Content) findMarshal(name string) *mimetype {
 	return nil
 }
 
-// Messages 错误信息列表
+// Results 错误信息列表
 //
 // p 用于返回特定语言的内容。
-func (c *Content) Messages(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(c.messages))
-	for code, msg := range c.messages {
+func (c *Content) Results(p *message.Printer) map[int]string {
+	msgs := make(map[int]string, len(c.resultMessages))
+	for code, msg := range c.resultMessages {
 		msgs[code] = p.Sprintf(msg.key, msg.values...)
 	}
 	return msgs
 }
 
-// AddMessage 添加一条错误信息
+// AddResult 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (c *Content) AddMessage(status, code int, key message.Reference, v ...interface{}) {
-	if _, found := c.messages[code]; found {
+func (c *Content) AddResult(status, code int, key message.Reference, v ...interface{}) {
+	if _, found := c.resultMessages[code]; found {
 		panic(fmt.Sprintf("重复的消息 ID: %d", code))
 	}
-	c.messages[code] = &resultMessage{status: status, key: key, values: v}
+	c.resultMessages[code] = &resultMessage{status: status, key: key, values: v}
 }
 
 // NewResult 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (c *Content) NewResult(p *message.Printer, code int) Result {
-	msg, found := c.messages[code]
+	msg, found := c.resultMessages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return c.builder(msg.status, code, p.Sprintf(msg.key, msg.values...))
+	return c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
 }
 
 // NewResultWithFields 返回 Result 实例

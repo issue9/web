@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/middleware/v4/compress"
 	"github.com/issue9/middleware/v4/errorhandler"
 	"github.com/issue9/mux/v5/group"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/module"
@@ -47,7 +46,6 @@ type Server struct {
 	errorHandlers *errorhandler.ErrorHandler
 
 	// locale
-	catalog  catalog.Catalog
 	location *time.Location
 
 	cache  cache.Cache
@@ -81,7 +79,6 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		compress:      compress.Classic(logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
 
-		catalog:  o.Catalog,
 		location: o.Location,
 
 		cache:  o.Cache,

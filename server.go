@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/issue9/logs/v2"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
@@ -26,8 +25,8 @@ type (
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
-func LoadServer(name, version string, f fs.FS, c catalog.Catalog, build content.BuildResultFunc) (*Server, error) {
-	return config.NewServer(name, version, f, c, build)
+func LoadServer(name, version string, f fs.FS, build content.BuildResultFunc) (*Server, error) {
+	return config.NewServer(name, version, f, build)
 }
 
 // DefaultServer 返回一个采用默认值进初始化的 *Server 实例

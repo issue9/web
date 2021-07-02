@@ -228,7 +228,7 @@ func TestContent_findMarshal(t *testing.T) {
 func TestContent_NewResult(t *testing.T) {
 	a := assert.New(t)
 	mgr := New(DefaultBuilder)
-	mgr.AddMessage(400, 40000, "lang") // lang 有翻译
+	mgr.AddResult(400, 40000, "lang") // lang 有翻译
 
 	// 能正常翻译错误信息
 	rslt, ok := mgr.NewResult(message.NewPrinter(language.SimplifiedChinese), 40000).(*defaultResult)
@@ -253,7 +253,7 @@ func TestContent_NewResult(t *testing.T) {
 func TestContent_NewResultWithFields(t *testing.T) {
 	a := assert.New(t)
 	mgr := New(DefaultBuilder)
-	mgr.AddMessage(400, 40000, "lang") // lang 有翻译
+	mgr.AddResult(400, 40000, "lang") // lang 有翻译
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
@@ -274,21 +274,21 @@ func TestMinetypes_AddMessage(t *testing.T) {
 	mgr := New(DefaultBuilder)
 
 	a.NotPanic(func() {
-		mgr.AddMessage(400, 1, "1")
-		mgr.AddMessage(400, 100, "100")
+		mgr.AddResult(400, 1, "1")
+		mgr.AddResult(400, 100, "100")
 	})
 
-	msg, found := mgr.messages[1]
+	msg, found := mgr.resultMessages[1]
 	a.True(found).
 		Equal(msg.status, 400).
 		Equal(msg.key, "1")
 
-	msg, found = mgr.messages[401]
+	msg, found = mgr.resultMessages[401]
 	a.False(found).Nil(msg)
 
 	// 重复的 ID
 	a.Panic(func() {
-		mgr.AddMessage(400, 1, "40010")
+		mgr.AddResult(400, 1, "40010")
 	})
 }
 
@@ -298,22 +298,22 @@ func TestContent_Messages(t *testing.T) {
 	a.NotNil(mgr)
 
 	a.NotPanic(func() {
-		mgr.AddMessage(400, 40010, "lang")
+		mgr.AddResult(400, 40010, "lang")
 	})
 
-	msg := mgr.Messages(message.NewPrinter(language.Und))
+	msg := mgr.Results(message.NewPrinter(language.Und))
 	a.Equal(msg[40010], "und")
 
-	msg = mgr.Messages(message.NewPrinter(language.SimplifiedChinese))
+	msg = mgr.Results(message.NewPrinter(language.SimplifiedChinese))
 	a.Equal(msg[40010], "hans")
 
-	msg = mgr.Messages(message.NewPrinter(language.TraditionalChinese))
+	msg = mgr.Results(message.NewPrinter(language.TraditionalChinese))
 	a.Equal(msg[40010], "hant")
 
-	msg = mgr.Messages(message.NewPrinter(language.English))
+	msg = mgr.Results(message.NewPrinter(language.English))
 	a.Equal(msg[40010], "und")
 
 	a.Panic(func() {
-		mgr.Messages(nil)
+		mgr.Results(nil)
 	})
 }

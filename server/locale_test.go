@@ -11,33 +11,19 @@ import (
 	"github.com/issue9/assert/rest"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 )
 
 func TestContext_Sprintf(t *testing.T) {
 	a := assert.New(t)
 
-	a.NotError(message.SetString(language.MustParse("cmn-hans"), "test", "测试"))
-	a.NotError(message.SetString(language.MustParse("cmn-hant"), "test", "測試"))
-
-	cat := catalog.NewBuilder()
-	a.NotError(cat.SetString(language.MustParse("cmn-hans"), "test", "测试1"))
-	a.NotError(cat.SetString(language.MustParse("cmn-hant"), "test", "測試1"))
-
 	srv := newServer(a)
+	a.NotError(srv.Content().CatalogBuilder().SetString(language.MustParse("cmn-hans"), "test", "测试"))
+	a.NotError(srv.Content().CatalogBuilder().SetString(language.MustParse("cmn-hant"), "test", "測試"))
 	router, err := srv.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
 	router.Get("/sprintf", func(ctx *Context) {
 		ctx.Render(http.StatusOK, ctx.Sprintf("test"), nil)
-	})
-	router.Get("/change", func(ctx *Context) {
-		ctx.Server().catalog = cat
-	})
-	router.Get("/fprintf", func(ctx *Context) {
-		_, err := ctx.Fprintf(ctx.Response, "test")
-		a.NotError(err)
 	})
 
 	s := rest.NewServer(t, srv.groups, nil)
@@ -54,21 +40,6 @@ func TestContext_Sprintf(t *testing.T) {
 		Header("accept", "application/json").
 		Do().
 		StringBody(`"测试"`)
-
-	// 切换 catalog
-	s.Get("/root/change").Do().Status(http.StatusOK)
-
-	s.Get("/root/fprintf").
-		Header("accept-language", "cmn-hant").
-		Header("accept", "application/json").
-		Do().
-		StringBody("測試1")
-
-	s.Get("/root/fprintf").
-		Header("accept-language", "cmn-hans").
-		Header("accept", "application/json").
-		Do().
-		StringBody("测试1")
 }
 
 func TestContext_Now(t *testing.T) {

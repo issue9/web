@@ -10,7 +10,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v2"
 	"github.com/issue9/logs/v2/config"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/server"
@@ -68,7 +67,7 @@ type Router struct {
 }
 
 // NewServer 从配置文件初始化 Server 实例
-func NewServer(name, version string, f fs.FS, c catalog.Catalog, b content.BuildResultFunc) (*server.Server, error) {
+func NewServer(name, version string, f fs.FS, b content.BuildResultFunc) (*server.Server, error) {
 	conf := &config.Config{}
 	if err := LoadXML(f, logsConfigFilename, conf); err != nil {
 		return nil, err
@@ -84,11 +83,11 @@ func NewServer(name, version string, f fs.FS, c catalog.Catalog, b content.Build
 		return nil, err
 	}
 
-	return webconfig.NewServer(name, version, f, l, c, b)
+	return webconfig.NewServer(name, version, f, l, b)
 }
 
 // NewServer 返回 server.NewServer 对象
-func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, c catalog.Catalog, f content.BuildResultFunc) (*server.Server, error) {
+func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f content.BuildResultFunc) (*server.Server, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	if err := conf.sanitize(); err != nil {
@@ -102,7 +101,6 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, c
 		Location:      conf.location,
 		Cache:         conf.cache,
 		DisableHead:   conf.Router.DisableHead,
-		Catalog:       c,
 		ResultBuilder: f,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()

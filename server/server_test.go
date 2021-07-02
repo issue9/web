@@ -71,7 +71,7 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(mt.AddMimetype(content.DefaultMimetype, gob.Marshal, gob.Unmarshal))
 	a.NotError(mt.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
 
-	srv.Content().AddMessage(411, 41110, "41110")
+	srv.Content().AddResult(411, 41110, "41110")
 
 	return srv
 }
@@ -85,7 +85,6 @@ func TestNewServer(t *testing.T) {
 	a.False(srv.Uptime().IsZero())
 	a.Equal(l, srv.Logs())
 	a.NotNil(srv.Cache())
-	a.Equal(srv.catalog, message.DefaultCatalog)
 	a.Equal(srv.Location(), time.Local)
 	a.Equal(srv.httpServer.Handler, srv.groups)
 	a.NotNil(srv.httpServer.BaseContext)

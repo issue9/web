@@ -14,9 +14,8 @@ import (
 	"github.com/issue9/middleware/v4/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
+
 	"github.com/issue9/web/content"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 )
 
 // Options 初始化 Server 的参数
@@ -30,14 +29,6 @@ type Options struct {
 	//
 	// 默认值为 time.Local
 	Location *time.Location
-
-	// 当前使用的本地化组件
-	//
-	// 默认情况下会引用 golang.org/x/text/message.DefaultCatalog 对象。
-	//
-	// golang.org/x/text/message/catalog 提供了 NewBuilder 和 NewFromMap
-	// 等方式构建 Catalog 接口实例。
-	Catalog catalog.Catalog
 
 	// 指定生成 Result 数据的方法
 	//
@@ -97,10 +88,6 @@ func (o *Options) sanitize() (*Options, error) {
 
 	if o.Location == nil {
 		o.Location = time.Local
-	}
-
-	if o.Catalog == nil {
-		o.Catalog = message.DefaultCatalog
 	}
 
 	if o.ResultBuilder == nil {

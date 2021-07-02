@@ -12,7 +12,7 @@ import (
 
 // NewLocalePrinter 返回指定语言的 message.Printer
 func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return message.NewPrinter(tag, message.Catalog(srv.catalog))
+	return srv.Content().NewLocalePrinter(tag)
 }
 
 // Fprint 相当于 ctx.LocalePrinter.Fprint

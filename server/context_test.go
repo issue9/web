@@ -11,24 +11,10 @@ import (
 	"github.com/issue9/assert"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/content/text"
 )
-
-func init() {
-	chk := func(err error) {
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	chk(message.SetString(language.Chinese, "test", "中文"))
-	chk(message.SetString(language.SimplifiedChinese, "test", "简体"))
-	chk(message.SetString(language.TraditionalChinese, "test", "繁体"))
-	chk(message.SetString(language.English, "test", "english"))
-}
 
 func TestContext_Vars(t *testing.T) {
 	a := assert.New(t)
@@ -61,6 +47,12 @@ func TestServer_NewContext(t *testing.T) {
 	srv := newServer(a)
 	logwriter := new(bytes.Buffer)
 	srv.Logs().ERROR().SetOutput(logwriter)
+
+	c := srv.Content().CatalogBuilder()
+	a.NotError(c.SetString(language.Chinese, "test", "中文"))
+	a.NotError(c.SetString(language.SimplifiedChinese, "test", "简体"))
+	a.NotError(c.SetString(language.TraditionalChinese, "test", "繁体"))
+	a.NotError(c.SetString(language.English, "test", "english"))
 
 	// 错误的 accept
 	logwriter.Reset()
