@@ -4,11 +4,9 @@ package content
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -16,32 +14,10 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
-	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/internal/charsetdata"
 )
-
-var (
-	gbkString1         = "中文1,11"
-	gbkString2         = "中文2,22"
-	gbkData1, gbkData2 []byte
-)
-
-func init() {
-	reader := transform.NewReader(strings.NewReader(gbkString1), simplifiedchinese.GBK.NewEncoder())
-	gbkData, err := ioutil.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	gbkData1 = gbkData
-
-	reader = transform.NewReader(strings.NewReader(gbkString2), simplifiedchinese.GBK.NewEncoder())
-	gbkData, err = ioutil.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	gbkData2 = gbkData
-}
 
 func TestContent_NewContext(t *testing.T) {
 	a := assert.New(t)
@@ -177,24 +153,24 @@ func TestContext_Body(t *testing.T) {
 	ctx = &Context{
 		OutputCharset: encoding.Nop,
 		InputCharset:  simplifiedchinese.GB18030,
-		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkData1)),
+		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1)),
 		Response:      httptest.NewRecorder(),
 	}
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
+	a.NotError(err).Equal(string(data), charsetdata.GBKString1)
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
 	c := New(DefaultBuilder)
 	a.NotError(c.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkData1))
+	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Content-Type", BuildContentType(text.Mimetype, " gb18030"))
 	ctx, status := c.NewContext(nil, w, r)
 	a.Empty(status).NotNil(ctx)
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
+	a.NotError(err).Equal(string(data), charsetdata.GBKString1)
 	a.Equal(ctx.body, data)
 }
 
@@ -270,9 +246,9 @@ func TestContext_Marshal(t *testing.T) {
 		OutputCharset:     simplifiedchinese.GB18030,
 		OutputCharsetName: "gbk",
 	}
-	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Body.Bytes(), gbkData2)
+	a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
 }
 
 func TestAcceptCharset(t *testing.T) {

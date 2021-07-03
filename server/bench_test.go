@@ -4,41 +4,16 @@ package server
 
 import (
 	"bytes"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/internal/charsetdata"
 )
-
-var (
-	gbkstr1            = "中文1,11"
-	gbkstr2            = "中文2,22"
-	gbkdata1, gbkdata2 []byte
-)
-
-func init() {
-	reader := transform.NewReader(strings.NewReader(gbkstr1), simplifiedchinese.GBK.NewEncoder())
-	gbkdata, err := ioutil.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	gbkdata1 = gbkdata
-
-	reader = transform.NewReader(strings.NewReader(gbkstr2), simplifiedchinese.GBK.NewEncoder())
-	gbkdata, err = ioutil.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-	gbkdata2 = gbkdata
-}
 
 func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b)
@@ -68,7 +43,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 		obj := &text.TestObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), gbkstr2)
+		a.Equal(w.Body.Bytes(), charsetdata.GBKString2)
 	}
 }
 
@@ -85,7 +60,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 		obj := &text.TestObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), gbkstr2)
+		a.Equal(w.Body.Bytes(), charsetdata.GBKString2)
 	}
 }
 
@@ -102,7 +77,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 		obj := &text.TestObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), gbkdata2)
+		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
 	}
 }
 
@@ -130,7 +105,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkstr1))
+		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(charsetdata.GBKString1))
 		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "utf-8"))
 		r.Header.Set("Accept", text.Mimetype)
 		ctx := srv.NewContext(w, r)
@@ -147,7 +122,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkdata1))
+		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
 		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "gbk"))
 		r.Header.Set("Accept", text.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk")
@@ -189,7 +164,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkdata1))
+		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(charsetdata.GBKData1))
 		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "gbk"))
 		r.Header.Set("Accept", text.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
@@ -202,6 +177,6 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		obj.Age = 22
 		obj.Name = "中文2"
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), gbkdata2)
+		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
 	}
 }
