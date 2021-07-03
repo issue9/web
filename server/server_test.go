@@ -49,6 +49,7 @@ var f202 = func(ctx *Context) {
 func newLogs(a *assert.Assertion) *logs.Logs {
 	l := logs.New()
 
+	a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr, "", 0))
 	a.NotError(l.SetOutput(logs.LevelError, os.Stderr, "", 0))
 	a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr, "", 0))
 	return l
@@ -98,8 +99,8 @@ func TestGetServer(t *testing.T) {
 
 	srv, err := New("app", "0.1.0", newLogs(a), nil)
 	a.NotError(err).NotNil(srv)
-	err = srv.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal)
-	a.NotError(err)
+	a.NotError(srv.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
+	a.NotError(srv.content.AddMimetype(content.DefaultMimetype, text.Marshal, text.Unmarshal))
 	var isRequested bool
 
 	router, err := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
@@ -126,7 +127,8 @@ func TestGetServer(t *testing.T) {
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
 		Header("Accept", text.Mimetype).
 		Do().
-		Success("未正确返回状态码")
+		Status(200)
+		//Success("未正确返回状态码")
 
 	// 不是从 Server 生成的 *http.Request，则会 panic
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
@@ -288,8 +290,8 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(server)
-	err = server.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal)
-	a.NotError(err)
+	a.NotError(server.Content().AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
+	a.NotError(server.content.AddMimetype(content.DefaultMimetype, text.Marshal, text.Unmarshal))
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)

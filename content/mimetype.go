@@ -3,7 +3,6 @@
 package content
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -20,18 +19,6 @@ import (
 //
 // 若编码函数中指定该类型的函数，则会使用该编码优先匹配 */* 等格式的请求。
 const DefaultMimetype = "application/octet-stream"
-
-var (
-	// ErrNotFound 表示未找到指定名称的编解码函数
-	//
-	// 在 Content.Marshal 和 Content.Unmarshal 中会返回该错误。
-	ErrNotFound = errors.New("未找到指定名称的编解码函数")
-
-	// ErrExists 存在相同中名称的编解码函数
-	//
-	// 在 Content.AddMarshal 和 Content.AddUnmarshal 时如果已经存在相同名称，返回此错误。
-	ErrExists = errors.New("已经存在相同名称的编解码函数")
-)
 
 type (
 	// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
@@ -118,7 +105,7 @@ func (c *Content) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc) error
 
 	for _, mt := range c.mimetypes {
 		if mt.name == name {
-			return ErrExists
+			return fmt.Errorf("已经存在相同名称 %s 的编解码函数", name)
 		}
 	}
 
@@ -153,7 +140,7 @@ func (c *Content) SetMimetype(name string, m MarshalFunc, u UnmarshalFunc) error
 		}
 	}
 
-	return ErrNotFound
+	return fmt.Errorf("未找到指定名称 %s 的编解码函数", name)
 }
 
 // DeleteMimetype 删除指定名称的数据

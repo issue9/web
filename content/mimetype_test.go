@@ -89,7 +89,7 @@ func TestContent_marshal(t *testing.T) {
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, DefaultMimetype)
 
-	a.ErrorIs(mt.SetMimetype("not-exists", nil, nil), ErrNotFound)
+	a.ErrorString(mt.SetMimetype("not-exists", nil, nil), "未找到指定名称")
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, found = mt.marshal("*/*")
@@ -132,7 +132,7 @@ func TestContent_Add_Delete(t *testing.T) {
 
 	// 不能添加同名的多次
 	a.NotError(mt.AddMimetype(DefaultMimetype, nil, nil))
-	a.ErrorIs(mt.AddMimetype(DefaultMimetype, nil, nil), ErrExists)
+	a.ErrorString(mt.AddMimetype(DefaultMimetype, nil, nil), "已经存在相同名称")
 
 	// 不能添加以 /* 结属的名称
 	a.Panic(func() {

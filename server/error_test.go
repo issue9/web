@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/web/content"
 )
 
 var (
@@ -22,8 +23,8 @@ func TestContext_Exit(t *testing.T) {
 	w := httptest.NewRecorder()
 	b := newServer(a)
 	ctx := &Context{
-		Response: w,
-		server:   b,
+		Context: &content.Context{Response: w},
+		server:  b,
 	}
 
 	a.Panic(func() {
@@ -38,8 +39,8 @@ func TestContext_Error(t *testing.T) {
 	errLog.Reset()
 	b.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
-		Response: w,
-		server:   b,
+		Context: &content.Context{Response: w},
+		server:  b,
 	}
 
 	a.PanicString(func() {
@@ -55,8 +56,8 @@ func TestContext_Critical(t *testing.T) {
 	b := newServer(a)
 	b.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
-		Response: w,
-		server:   b,
+		Context: &content.Context{Response: w},
+		server:  b,
 	}
 
 	a.PanicString(func() {
@@ -72,8 +73,8 @@ func TestContext_Errorf(t *testing.T) {
 	errLog.Reset()
 	b.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
-		Response: w,
-		server:   b,
+		Context: &content.Context{Response: w},
+		server:  b,
 	}
 
 	a.PanicString(func() {
@@ -89,8 +90,8 @@ func TestContext_Criticalf(t *testing.T) {
 	criticalLog.Reset()
 	b.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
-		Response: w,
-		server:   b,
+		Context: &content.Context{Response: w},
+		server:  b,
 	}
 
 	a.PanicString(func() {
