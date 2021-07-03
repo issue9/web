@@ -34,7 +34,7 @@ func BenchmarkContent_Marshal(b *testing.B) {
 	a.NotError(srv.AddMimetype("font/wottf", xml.Marshal, xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
-		name, marshal, err := srv.Marshal("font/wottf;q=0.9")
+		name, marshal, err := srv.marshal("font/wottf;q=0.9")
 		a.NotError(err).
 			NotEmpty(name).
 			NotNil(marshal)
@@ -49,7 +49,7 @@ func BenchmarkContent_Unmarshal(b *testing.B) {
 	a.NotError(srv.AddMimetype("font/wottf", xml.Marshal, xml.Unmarshal))
 
 	for i := 0; i < b.N; i++ {
-		marshal, err := srv.Unmarshal("font/wottf")
+		marshal, err := srv.unmarshal("font/wottf")
 		a.NotError(err).
 			NotNil(marshal)
 	}

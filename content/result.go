@@ -3,11 +3,13 @@
 package content
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/issue9/validation"
+	"golang.org/x/text/message"
 )
 
 type (
@@ -70,6 +72,12 @@ type (
 	fieldDetail struct {
 		Name    string   `json:"name" xml:"name,attr" yaml:"name"`
 		Message []string `json:"message" xml:"message" yaml:"message"`
+	}
+
+	resultMessage struct {
+		status int
+		key    message.Reference
+		values []interface{}
 	}
 )
 
@@ -187,4 +195,50 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 	}
 
 	return nil
+}
+
+// Results 错误信息列表
+//
+// p 用于返回特定语言的内容。
+func (c *Content) Results(p *message.Printer) map[int]string {
+	msgs := make(map[int]string, len(c.resultMessages))
+	for code, msg := range c.resultMessages {
+		msgs[code] = p.Sprintf(msg.key, msg.values...)
+	}
+	return msgs
+}
+
+// AddResult 添加一条错误信息
+//
+// status 指定了该错误代码反馈给客户端的 HTTP 状态码；
+func (c *Content) AddResult(status, code int, key message.Reference, v ...interface{}) {
+	if _, found := c.resultMessages[code]; found {
+		panic(fmt.Sprintf("重复的消息 ID: %d", code))
+	}
+	c.resultMessages[code] = &resultMessage{status: status, key: key, values: v}
+}
+
+// NewResult 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (c *Content) NewResult(p *message.Printer, code int) Result {
+	msg, found := c.resultMessages[code]
+	if !found {
+		panic(fmt.Sprintf("不存在的错误代码: %d", code))
+	}
+
+	return c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
+}
+
+// NewResultWithFields 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (c *Content) NewResultWithFields(p *message.Printer, code int, fields Fields) Result {
+	rslt := c.NewResult(p, code)
+
+	for k, vals := range fields {
+		rslt.Add(k, vals...)
+	}
+
+	return rslt
 }

@@ -1,68 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-// Package content 提供对各类媒体数据的处理
+// Package content 提供对各类内容的处理
 package content
 
 import (
-	"errors"
-	"fmt"
-	"sort"
+	"mime"
 	"strings"
 
-	"github.com/issue9/qheader"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
-	"golang.org/x/text/message"
+	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/message/catalog"
 )
 
-// DefaultMimetype 默认的媒体类型
-//
-// 在不能获取输入和输出的媒体类型时， 会采用此值作为其默认值。
-//
-// 若编码函数中指定该类型的函数，则会使用该编码优先匹配 */* 等格式的请求。
-const DefaultMimetype = "application/octet-stream"
-
-var (
-	// ErrNotFound 表示未找到指定名称的编解码函数
-	//
-	// 在 Content.Marshal 和 Content.Unmarshal 中会返回该错误。
-	ErrNotFound = errors.New("未找到指定名称的编解码函数")
-
-	// ErrExists 存在相同中名称的编解码函数
-	//
-	// 在 Content.AddMarshal 和 Content.AddUnmarshal 时如果已经存在相同名称，返回此错误。
-	ErrExists = errors.New("已经存在相同名称的编解码函数")
-)
-
-type (
-	// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
-	MarshalFunc func(v interface{}) ([]byte, error)
-
-	// UnmarshalFunc 将客户端内容转换成一个对象时所采用的接口
-	UnmarshalFunc func([]byte, interface{}) error
-
-	mimetype struct {
-		name      string
-		marshal   MarshalFunc
-		unmarshal UnmarshalFunc
-	}
-
-	// Content 管理反馈给用户的数据相应在的处理功能
-	Content struct {
-		mimetypes      []*mimetype
-		resultMessages map[int]*resultMessage
-		resultBuilder  BuildResultFunc
-		catalog        *catalog.Builder
-	}
-
-	resultMessage struct {
-		status int
-		key    message.Reference
-		values []interface{}
-	}
-)
+// Content 管理反馈给用户的数据
+type Content struct {
+	mimetypes      []*mimetype
+	resultMessages map[int]*resultMessage
+	resultBuilder  BuildResultFunc
+	catalog        *catalog.Builder
+}
 
 // New 返回 *Content 实例
 func New(builder BuildResultFunc) *Content {
@@ -74,188 +30,43 @@ func New(builder BuildResultFunc) *Content {
 	}
 }
 
-// ConentType 从 content-type 报头解析出需要用到的解码函数
-func (c *Content) ConentType(header string) (UnmarshalFunc, encoding.Encoding, error) {
-	encName, charsetName, err := ParseContentType(header)
+// CharsetIsNop 指定的编码是否不需要任何额外操作
+func CharsetIsNop(enc encoding.Encoding) bool {
+	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
+}
+
+// ParseContentType 从 content-type 中获取编码和字符集
+//
+// 若客户端传回的是空值，则会使用默认值代替。
+//
+// 返回值中，mimetype 一律返回小写的值，charset 则原样返回
+//
+// https://tools.ietf.org/html/rfc7231#section-3.1.1.1
+func ParseContentType(v string) (mimetype, charset string, err error) {
+	if v = strings.TrimSpace(v); v == "" {
+		return DefaultMimetype, DefaultCharset, nil
+	}
+
+	mt, params, err := mime.ParseMediaType(v)
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
-
-	f, found := c.Unmarshal(encName)
-	if !found {
-		return nil, nil, ErrNotFound // TODO 此处应该返回特定的状态码？
+	if charset = params["charset"]; charset == "" {
+		charset = DefaultCharset
 	}
-
-	e, err := htmlindex.Get(charsetName)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return f, e, nil
+	return mt, charset, nil
 }
 
-// Unmarshal 查找指定名称的 UnmarshalFunc
-func (c *Content) Unmarshal(name string) (UnmarshalFunc, bool) {
-	for _, mt := range c.mimetypes {
-		if mt.name == name {
-			return mt.unmarshal, true
-		}
-	}
-	return nil, false
-}
-
-// Marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
+// BuildContentType 生成一个 content-type
 //
-// */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
-// xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
-// xx/ 表示完全匹配以 xx/ 的内容
-// 如果传递的内容如下：
-//  application/json;q=0.9,*/*;q=1
-// 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-//
-// 在不完全匹配的情况下，返回值的名称依然是具体名称。
-//  text/*;q=0.9
-// 返回的名称可能是：
-//  text/plain
-func (c *Content) Marshal(header string) (string, MarshalFunc, bool) {
-	if header == "" {
-		if mm := c.findMarshal("*/*"); mm != nil {
-			return mm.name, mm.marshal, true
-		}
-		return "", nil, false
+// 若值为空，则会使用默认值代替
+func BuildContentType(mt, charset string) string {
+	if mt == "" {
+		mt = DefaultMimetype
+	}
+	if charset == "" {
+		charset = DefaultCharset
 	}
 
-	accepts := qheader.Parse(header, "*/*")
-	for _, accept := range accepts {
-		if mm := c.findMarshal(accept.Value); mm != nil {
-			return mm.name, mm.marshal, true
-		}
-	}
-
-	return "", nil, false
-}
-
-// AddMimetype 添加编解码函数
-//
-// m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理。
-func (c *Content) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc) error {
-	if strings.IndexByte(name, '*') >= 0 {
-		panic("name 不是一个有效的 mimetype 名称格式")
-	}
-
-	for _, mt := range c.mimetypes {
-		if mt.name == name {
-			return ErrExists
-		}
-	}
-
-	c.mimetypes = append(c.mimetypes, &mimetype{
-		name:      name,
-		marshal:   m,
-		unmarshal: u,
-	})
-
-	sort.SliceStable(c.mimetypes, func(i, j int) bool {
-		if c.mimetypes[i].name == DefaultMimetype {
-			return true
-		}
-
-		if c.mimetypes[j].name == DefaultMimetype {
-			return false
-		}
-
-		return c.mimetypes[i].name < c.mimetypes[j].name
-	})
-
-	return nil
-}
-
-// SetMimetype 修改编解码函数
-func (c *Content) SetMimetype(name string, m MarshalFunc, u UnmarshalFunc) error {
-	for _, mt := range c.mimetypes {
-		if mt.name == name {
-			mt.marshal = m
-			mt.unmarshal = u
-			return nil
-		}
-	}
-
-	return ErrNotFound
-}
-
-// DeleteMimetype 删除指定名称的数据
-func (c *Content) DeleteMimetype(name string) {
-	size := sliceutil.Delete(c.mimetypes, func(i int) bool {
-		return c.mimetypes[i].name == name
-	})
-	c.mimetypes = c.mimetypes[:size]
-}
-
-func (c *Content) findMarshal(name string) *mimetype {
-	switch {
-	case len(c.mimetypes) == 0:
-		return nil
-	case name == "" || name == "*/*":
-		return c.mimetypes[0] // 由 len(marshals) == 0 确保最少有一个元素
-	case strings.HasSuffix(name, "/*"):
-		prefix := name[:len(name)-3]
-		for _, mt := range c.mimetypes {
-			if strings.HasPrefix(mt.name, prefix) {
-				return mt
-			}
-		}
-	default:
-		for _, mt := range c.mimetypes {
-			if mt.name == name {
-				return mt
-			}
-		}
-	}
-	return nil
-}
-
-// Results 错误信息列表
-//
-// p 用于返回特定语言的内容。
-func (c *Content) Results(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(c.resultMessages))
-	for code, msg := range c.resultMessages {
-		msgs[code] = p.Sprintf(msg.key, msg.values...)
-	}
-	return msgs
-}
-
-// AddResult 添加一条错误信息
-//
-// status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (c *Content) AddResult(status, code int, key message.Reference, v ...interface{}) {
-	if _, found := c.resultMessages[code]; found {
-		panic(fmt.Sprintf("重复的消息 ID: %d", code))
-	}
-	c.resultMessages[code] = &resultMessage{status: status, key: key, values: v}
-}
-
-// NewResult 返回 Result 实例
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (c *Content) NewResult(p *message.Printer, code int) Result {
-	msg, found := c.resultMessages[code]
-	if !found {
-		panic(fmt.Sprintf("不存在的错误代码: %d", code))
-	}
-
-	return c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
-}
-
-// NewResultWithFields 返回 Result 实例
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (c *Content) NewResultWithFields(p *message.Printer, code int, fields Fields) Result {
-	rslt := c.NewResult(p, code)
-
-	for k, vals := range fields {
-		rslt.Add(k, vals...)
-	}
-
-	return rslt
+	return mt + "; charset=" + charset
 }

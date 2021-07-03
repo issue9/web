@@ -6,13 +6,19 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
+	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 )
+
+// DefaultCharset 默认的字符集
+const DefaultCharset = "utf-8"
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
 var (
@@ -57,27 +63,36 @@ type Context struct {
 
 // NewContext 从用户请求中构建一个 Context 实例
 //
-// 如果不合规则，会以指定的状码退出。
-func (c *Content) NewContext(w http.ResponseWriter, r *http.Request) (*Context, int) {
+// 如果不合规则，会以指定的状码返回并向 l 输出信息。
+func (c *Content) NewContext(l *log.Logger, w http.ResponseWriter, r *http.Request) (*Context, int) {
+	printLog := func(format string, v ...interface{}) {
+		if l != nil {
+			l.Printf(format, v...)
+		}
+	}
+
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, found := c.Marshal(header)
+	outputMimetypeName, marshal, found := c.marshal(header)
 	if !found {
+		printLog("未找到符合报头 %s 的解码函数", header)
 		return nil, http.StatusNotAcceptable
 	}
 
 	header = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset := AcceptCharset(header)
+	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
+		printLog("未找到符合报头 %s 的字符集", header)
 		return nil, http.StatusNotAcceptable
 	}
 
 	header = r.Header.Get(contentTypeKey)
-	inputMimetype, inputCharset, err := c.ConentType(header)
+	inputMimetype, inputCharset, err := c.conentType(header)
 	if err != nil {
+		printLog(err.Error())
 		return nil, http.StatusUnsupportedMediaType
 	}
 
-	tag := AcceptLanguage(c.CatalogBuilder(), r.Header.Get("Accept-Language"))
+	tag := c.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
 		Response:           w,
@@ -189,4 +204,50 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return err
 	}
 	return w.Close()
+}
+
+// acceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
+//
+// 传递 * 获取返回默认的字符集相关信息，即 utf-8
+// 其它值则按值查找，或是在找不到时返回空值。
+//
+// 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
+func acceptCharset(header string) (name string, enc encoding.Encoding) {
+	if header == "" || header == "*" {
+		return DefaultCharset, nil
+	}
+
+	var err error
+	accepts := qheader.Parse(header, "*")
+	for _, apt := range accepts {
+		enc, err = htmlindex.Get(apt.Value)
+		if err != nil { // err != nil 表示未找到，继续查找
+			continue
+		}
+
+		// 转换成官方的名称
+		name, err = htmlindex.Name(enc)
+		if err != nil {
+			name = apt.Value // 不存在，直接使用用户上传的名称
+		}
+
+		return name, enc
+	}
+
+	return "", nil
+}
+
+func (c *Content) acceptLanguage(header string) language.Tag {
+	if header == "" {
+		return language.Und
+	}
+
+	al := qheader.Parse(header, "*")
+	tags := make([]language.Tag, 0, len(al))
+	for _, l := range al {
+		tags = append(tags, language.Make(l.Value))
+	}
+
+	tag, _, _ := c.CatalogBuilder().Matcher().Match(tags...)
+	return tag
 }

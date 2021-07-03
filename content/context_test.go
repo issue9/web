@@ -5,6 +5,7 @@ package content
 import (
 	"bytes"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message/catalog"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/content/text"
@@ -44,6 +46,8 @@ func init() {
 func TestContent_NewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
+	lw := &bytes.Buffer{}
+	l := log.New(lw, "", 0)
 
 	c := New(DefaultBuilder)
 	a.NotError(c.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
@@ -57,65 +61,82 @@ func TestContent_NewContext(t *testing.T) {
 	// 错误的 accept
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
-	ctx, status := c.NewContext(w, r)
+	ctx, status := c.NewContext(l, w, r)
 	a.Equal(status, http.StatusNotAcceptable).Nil(ctx)
+	a.Contains(lw.String(), "解码函数")
 
 	// 错误的 accept-charset
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("Accept", DefaultMimetype)
+	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("Accept-Charset", "unknown")
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
+	a.Contains(lw.String(), "字符集")
 	a.Equal(status, http.StatusNotAcceptable).Nil(ctx)
 
 	// 错误的 content-type,无输入内容
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
 	a.Equal(status, http.StatusUnsupportedMediaType).Nil(ctx)
+	a.NotEmpty(lw.String())
 
 	// 错误的 content-type,有输入内容
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
 	a.Equal(status, http.StatusUnsupportedMediaType).Nil(ctx)
+	a.NotEmpty(lw.String())
 
 	// 错误的 content-type，且有输入内容
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("content-type", BuildContentType(text.Mimetype, "utf-"))
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
 	a.Equal(status, http.StatusUnsupportedMediaType).Nil(ctx)
+	a.NotEmpty(lw.String())
 
-	// 错误的 Accept-Language
+	// 部分错误的 Accept-Language
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
-	ctx, status = c.NewContext(w, r)
-	a.Equal(status, 0).NotNil(ctx)
+	ctx, status = c.NewContext(l, w, r)
+	a.Empty(status).NotNil(ctx)
 	a.Equal(ctx.OutputTag, language.MustParse("zh-hans"))
+	a.Empty(lw.String())
 
 	// 正常，指定 Accept-Language
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
-	ctx, status = c.NewContext(w, r)
-	a.Equal(status, 0).NotNil(ctx)
+	ctx, status = c.NewContext(l, w, r)
+	a.Empty(status).NotNil(ctx)
+	a.Empty(lw.String())
 	a.True(CharsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
+	a.Empty(lw.String())
 	a.NotNil(ctx).Empty(status).
 		True(CharsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
+	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
-	ctx, status = c.NewContext(w, r)
+	ctx, status = c.NewContext(l, w, r)
+	a.Empty(lw.String())
 	a.NotNil(ctx).Empty(status).
 		True(CharsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype)
@@ -170,7 +191,7 @@ func TestContext_Body(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkData1))
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Content-Type", BuildContentType(text.Mimetype, " gb18030"))
-	ctx, status := c.NewContext(w, r)
+	ctx, status := c.NewContext(nil, w, r)
 	a.Empty(status).NotNil(ctx)
 	data, err = ctx.Body()
 	a.NotError(err).Equal(string(data), gbkString1)
@@ -205,7 +226,7 @@ func TestContext_Marshal(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.Header.Set("Content-Type", text.Mimetype)
 	r.Header.Set("Accept", text.Mimetype)
-	ctx, status := c.NewContext(w, r)
+	ctx, status := c.NewContext(nil, w, r)
 	a.Empty(status).NotNil(ctx)
 	obj := &text.TestObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
@@ -252,4 +273,66 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), gbkData2)
+}
+
+func TestAcceptCharset(t *testing.T) {
+	a := assert.New(t)
+
+	name, enc := acceptCharset(DefaultCharset)
+	a.Equal(name, DefaultCharset).
+		True(CharsetIsNop(enc))
+
+	name, enc = acceptCharset("")
+	a.Equal(name, DefaultCharset).
+		True(CharsetIsNop(enc))
+
+	// * 表示采用默认的编码
+	name, enc = acceptCharset("*")
+	a.Equal(name, DefaultCharset).
+		True(CharsetIsNop(enc))
+
+	name, enc = acceptCharset("gbk")
+	a.Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
+
+	// 传递一个非正规名称
+	name, enc = acceptCharset("chinese")
+	a.Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
+
+	// q 错解析错误
+	name, enc = acceptCharset("utf-8;q=x.9,gbk;q=0.8")
+	a.Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
+
+	// 不支持的编码
+	name, enc = acceptCharset("not-supported")
+	a.Empty(name).
+		Nil(enc)
+}
+
+func TestContent_acceptLanguage(t *testing.T) {
+	a := assert.New(t)
+
+	c := New(DefaultBuilder)
+	c.catalog = catalog.NewBuilder()
+	a.NotError(c.catalog.SetString(language.Und, "lang", "und"))
+	a.NotError(c.catalog.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(c.catalog.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(c.catalog.SetString(language.AmericanEnglish, "lang", "en_US"))
+
+	tag := c.acceptLanguage("")
+	a.Equal(tag, language.Und, "v1:%s, v2:%s", tag.String(), language.Und.String())
+
+	tag = c.acceptLanguage("zh") // 匹配 zh-hans
+	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
+
+	tag = c.acceptLanguage("zh-Hant")
+	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
+
+	tag = c.acceptLanguage("zh-Hans")
+	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
+
+	tag = c.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 }

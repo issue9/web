@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/content/form"
@@ -179,4 +181,112 @@ func TestDefaultResultForm(t *testing.T) {
 	obj = &defaultResult{}
 	a.NotError(form.Unmarshal(bs, obj))
 	a.Equal(obj, simpleMimetypeResult)
+}
+
+func buildResultCatalog(a *assert.Assertion) *catalog.Builder {
+	c := catalog.NewBuilder()
+	a.NotNil(c)
+
+	a.NotError(c.SetString(language.Und, "lang", "und"))
+	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(c.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	return c
+}
+
+func TestContent_NewResult(t *testing.T) {
+	a := assert.New(t)
+	c := New(DefaultBuilder)
+	c.catalog = buildResultCatalog(a)
+
+	c.AddResult(400, 40000, "lang") // lang 有翻译
+
+	// 能正常翻译错误信息
+	rslt, ok := c.NewResult(c.NewLocalePrinter(language.SimplifiedChinese), 40000).(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "hans")
+
+	// 采用 und
+	rslt, ok = c.NewResult(c.NewLocalePrinter(language.Und), 40000).(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "und")
+
+	// 不存在的本地化信息，采用默认的 und
+	rslt, ok = c.NewResult(c.NewLocalePrinter(language.Afrikaans), 40000).(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "und")
+
+	// 不存在
+	a.Panic(func() { c.NewResult(c.NewLocalePrinter(language.Afrikaans), 400) })
+	a.Panic(func() { c.NewResult(c.NewLocalePrinter(language.Afrikaans), 50000) })
+}
+
+func TestContent_NewResultWithFields(t *testing.T) {
+	a := assert.New(t)
+	c := New(DefaultBuilder)
+	c.catalog = buildResultCatalog(a)
+	c.AddResult(400, 40000, "lang") // lang 有翻译
+	fields := map[string][]string{"f1": {"v1", "v2"}}
+
+	// 能正常翻译错误信息
+	rslt, ok := c.NewResultWithFields(c.NewLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "hans").
+		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
+
+	// 采用 und
+	rslt, ok = c.NewResultWithFields(c.NewLocalePrinter(language.Und), 40000, fields).(*defaultResult)
+	a.True(ok).NotNil(rslt)
+	a.Equal(rslt.Message, "und").
+		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
+}
+
+func TestContent_AddResult(t *testing.T) {
+	a := assert.New(t)
+	mgr := New(DefaultBuilder)
+
+	a.NotPanic(func() {
+		mgr.AddResult(400, 1, "1")
+		mgr.AddResult(400, 100, "100")
+	})
+
+	msg, found := mgr.resultMessages[1]
+	a.True(found).
+		Equal(msg.status, 400).
+		Equal(msg.key, "1")
+
+	msg, found = mgr.resultMessages[401]
+	a.False(found).Nil(msg)
+
+	// 重复的 ID
+	a.Panic(func() {
+		mgr.AddResult(400, 1, "40010")
+	})
+}
+
+func TestContent_Results(t *testing.T) {
+	a := assert.New(t)
+	c := New(DefaultBuilder)
+	c.catalog = buildResultCatalog(a)
+	a.NotNil(c)
+
+	a.NotPanic(func() {
+		c.AddResult(400, 40010, "lang")
+	})
+
+	msg := c.Results(c.NewLocalePrinter(language.Und))
+	a.Equal(msg[40010], "und")
+
+	msg = c.Results(c.NewLocalePrinter(language.SimplifiedChinese))
+	a.Equal(msg[40010], "hans")
+
+	msg = c.Results(c.NewLocalePrinter(language.TraditionalChinese))
+	a.Equal(msg[40010], "hant")
+
+	msg = c.Results(c.NewLocalePrinter(language.English))
+	a.Equal(msg[40010], "und")
+
+	a.Panic(func() {
+		c.Results(nil)
+	})
 }
