@@ -3,7 +3,6 @@
 package content
 
 import (
-	"errors"
 	"mime"
 	"strings"
 
@@ -18,8 +17,6 @@ import (
 // DefaultCharset 默认的字符集
 const DefaultCharset = "utf-8"
 
-var errInvalidCharset = errors.New("无效的字符集")
-
 // CharsetIsNop 指定的编码是否不需要任何额外操作
 func CharsetIsNop(enc encoding.Encoding) bool {
 	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
@@ -31,11 +28,12 @@ func CharsetIsNop(enc encoding.Encoding) bool {
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func AcceptCharset(header string) (name string, enc encoding.Encoding, err error) {
+func AcceptCharset(header string) (name string, enc encoding.Encoding) {
 	if header == "" || header == "*" {
-		return DefaultCharset, nil, nil
+		return DefaultCharset, nil
 	}
 
+	var err error
 	accepts := qheader.Parse(header, "*")
 	for _, apt := range accepts {
 		enc, err = htmlindex.Get(apt.Value)
@@ -49,10 +47,10 @@ func AcceptCharset(header string) (name string, enc encoding.Encoding, err error
 			name = apt.Value // 不存在，直接使用用户上传的名称
 		}
 
-		return name, enc, nil
+		return name, enc
 	}
 
-	return "", nil, errInvalidCharset
+	return "", nil
 }
 
 // AcceptLanguage 从 accept-language 报头中获取最适合的本地化语言信息

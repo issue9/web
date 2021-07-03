@@ -81,9 +81,9 @@ func (c *Content) ConentType(header string) (UnmarshalFunc, encoding.Encoding, e
 		return nil, nil, err
 	}
 
-	f, err := c.Unmarshal(encName)
-	if err != nil {
-		return nil, nil, err
+	f, found := c.Unmarshal(encName)
+	if !found {
+		return nil, nil, ErrNotFound // TODO 此处应该返回特定的状态码？
 	}
 
 	e, err := htmlindex.Get(charsetName)
@@ -95,13 +95,13 @@ func (c *Content) ConentType(header string) (UnmarshalFunc, encoding.Encoding, e
 }
 
 // Unmarshal 查找指定名称的 UnmarshalFunc
-func (c *Content) Unmarshal(name string) (UnmarshalFunc, error) {
+func (c *Content) Unmarshal(name string) (UnmarshalFunc, bool) {
 	for _, mt := range c.mimetypes {
 		if mt.name == name {
-			return mt.unmarshal, nil
+			return mt.unmarshal, true
 		}
 	}
-	return nil, ErrNotFound
+	return nil, false
 }
 
 // Marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
@@ -117,22 +117,22 @@ func (c *Content) Unmarshal(name string) (UnmarshalFunc, error) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (c *Content) Marshal(header string) (string, MarshalFunc, error) {
+func (c *Content) Marshal(header string) (string, MarshalFunc, bool) {
 	if header == "" {
 		if mm := c.findMarshal("*/*"); mm != nil {
-			return mm.name, mm.marshal, nil
+			return mm.name, mm.marshal, true
 		}
-		return "", nil, ErrNotFound
+		return "", nil, false
 	}
 
 	accepts := qheader.Parse(header, "*/*")
 	for _, accept := range accepts {
 		if mm := c.findMarshal(accept.Value); mm != nil {
-			return mm.name, mm.marshal, nil
+			return mm.name, mm.marshal, true
 		}
 	}
 
-	return "", nil, ErrNotFound
+	return "", nil, false
 }
 
 // AddMimetype 添加编解码函数

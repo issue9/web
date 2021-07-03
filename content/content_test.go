@@ -54,40 +54,39 @@ func TestContent_Unmarshal(t *testing.T) {
 	mt := New(DefaultBuilder)
 	a.NotNil(mt)
 
-	um, err := mt.Unmarshal("")
-	a.Error(err).
-		Nil(um)
+	um, found := mt.Unmarshal("")
+	a.False(found).Nil(um)
 
 	a.NotError(mt.AddMimetype(DefaultMimetype, json.Marshal, json.Unmarshal))
 
-	um, err = mt.Unmarshal(DefaultMimetype)
-	a.NotError(err).NotNil(um)
+	um, found = mt.Unmarshal(DefaultMimetype)
+	a.True(found).NotNil(um)
 
 	// 未指定 mimetype
-	um, err = mt.Unmarshal("")
-	a.Error(err).Nil(um)
+	um, found = mt.Unmarshal("")
+	a.False(found).Nil(um)
 
 	// mimetype 无法找到
-	um, err = mt.Unmarshal("not-exists")
-	a.ErrorIs(err, ErrNotFound).Nil(um)
+	um, found = mt.Unmarshal("not-exists")
+	a.False(found).Nil(um)
 
 	// 空的 unmarshal
 	a.NotError(mt.AddMimetype("empty", json.Marshal, nil))
-	um, err = mt.Unmarshal("empty")
-	a.NotError(err).Nil(um)
+	um, found = mt.Unmarshal("empty")
+	a.True(found).Nil(um)
 }
 
 func TestContent_Marshal(t *testing.T) {
 	a := assert.New(t)
 	mt := New(DefaultBuilder)
 
-	name, marshal, err := mt.Marshal(DefaultMimetype)
-	a.Error(err).
+	name, marshal, found := mt.Marshal(DefaultMimetype)
+	a.False(found).
 		Nil(marshal).
 		Empty(name)
 
-	name, marshal, err = mt.Marshal("")
-	a.ErrorIs(err, ErrNotFound).
+	name, marshal, found = mt.Marshal("")
+	a.False(found).
 		Nil(marshal).
 		Empty(name)
 
@@ -95,49 +94,49 @@ func TestContent_Marshal(t *testing.T) {
 	a.NotError(mt.AddMimetype("text/plain", json.Marshal, json.Unmarshal))
 	a.NotError(mt.AddMimetype("empty", nil, nil))
 
-	name, marshal, err = mt.Marshal(DefaultMimetype)
-	a.NotError(err).
+	name, marshal, found = mt.Marshal(DefaultMimetype)
+	a.True(found).
 		Equal(marshal, MarshalFunc(xml.Marshal)).
 		Equal(name, DefaultMimetype)
 
 	a.NotError(mt.SetMimetype(DefaultMimetype, json.Marshal, json.Unmarshal))
-	name, marshal, err = mt.Marshal(DefaultMimetype)
-	a.NotError(err).
+	name, marshal, found = mt.Marshal(DefaultMimetype)
+	a.True(found).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, DefaultMimetype)
 
 	a.ErrorIs(mt.SetMimetype("not-exists", nil, nil), ErrNotFound)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
-	name, marshal, err = mt.Marshal("*/*")
-	a.NotError(err).
+	name, marshal, found = mt.Marshal("*/*")
+	a.True(found).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, DefaultMimetype)
 
 	// 同 */*
-	name, marshal, err = mt.Marshal("")
-	a.NotError(err).
+	name, marshal, found = mt.Marshal("")
+	a.True(found).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, DefaultMimetype)
 
-	name, marshal, err = mt.Marshal("*/*,text/plain")
-	a.NotError(err).
+	name, marshal, found = mt.Marshal("*/*,text/plain")
+	a.True(found).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, "text/plain")
 
-	name, marshal, err = mt.Marshal("font/wottf;q=x.9")
-	a.Error(err).
+	name, marshal, found = mt.Marshal("font/wottf;q=x.9")
+	a.False(found).
 		Empty(name).
 		Nil(marshal)
 
-	name, marshal, err = mt.Marshal("font/wottf")
-	a.Error(err).
+	name, marshal, found = mt.Marshal("font/wottf")
+	a.False(found).
 		Empty(name).
 		Nil(marshal)
 
 	// 匹配 empty
-	name, marshal, err = mt.Marshal("empty")
-	a.NotError(err).
+	name, marshal, found = mt.Marshal("empty")
+	a.True(found).
 		Equal(name, "empty").
 		Nil(marshal)
 }

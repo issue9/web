@@ -101,8 +101,9 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 // NewContext 构建 *Context 实例
 //
-// 如果 Accept 的内容与当前配置无法匹配，
-// 则退出(panic)并输出 NotAcceptable 状态码。
+//
+// 如果不合规则，会以指定的状码退出。
+// 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	checkError := func(name string, err error, status int) {
 		if err == nil {
