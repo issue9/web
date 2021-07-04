@@ -81,7 +81,7 @@ func TestContext_NewResultWithFields(t *testing.T) {
 	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }
 
-func TestServer_ResultMessages(t *testing.T) {
+func TestServer_Results(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
 	srv.Content().CatalogBuilder().SetString(language.Und, "lang", "und")

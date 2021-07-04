@@ -27,6 +27,8 @@ var (
 )
 
 // Context 单次请求生成的上下文数据
+//
+// NOTE: 用户不应该直接引用该对象，而是 server.Context。
 type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request

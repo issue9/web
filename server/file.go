@@ -27,10 +27,13 @@ const indexPage = "index.html"
 // index 如果 p 是一个目录的话，则会访问 p 下的 index 指定的文件，默认为 index.html；
 // headers 额外显示的报头内容。
 func (ctx *Context) ServeFile(p, index string, headers map[string]string) {
-	ctx.ServeFileFS(os.DirFS(filepath.Dir(p)), filepath.Base(p), index, headers)
+	base := filepath.ToSlash(filepath.Base(p))
+	ctx.ServeFileFS(os.DirFS(filepath.Dir(p)), base, index, headers)
 }
 
 // ServeFileFS 提供基于 fs.FS 的文件下载服
+//
+// 用户应该保证 p 的正确性。
 func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) {
 	if index == "" {
 		index = indexPage
@@ -39,7 +42,6 @@ func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]str
 	if p == "" {
 		p = "."
 	}
-	p = filepath.ToSlash(p)
 
 STAT:
 	stat, err := fs.Stat(f, p)

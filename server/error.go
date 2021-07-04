@@ -2,9 +2,7 @@
 
 package server
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 //

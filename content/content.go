@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package content 提供对各类内容的处理
+// Package content 与生成内容相关的功能
 package content
 
 import (

@@ -442,3 +442,15 @@ func TestServer_DisableCompression(t *testing.T) {
 		Header("Content-Encoding", "").
 		Header("Vary", "")
 }
+
+func TestContext_Now(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/test", nil)
+	ctx := srv.NewContext(w, r)
+
+	now := ctx.Now()
+	a.Equal(now.Location(), srv.Location())
+	a.Equal(now.Location(), srv.Now().Location())
+}
