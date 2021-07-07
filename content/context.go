@@ -199,13 +199,16 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
-	if _, err = w.Write(data); err != nil {
+	defer func() {
 		if err2 := w.Close(); err2 != nil {
-			return fmt.Errorf("在处理错误 %w 时再次抛出错误 %s", err, err2.Error())
+			if err != nil {
+				err2 = fmt.Errorf("在处理错误 %w 时再次抛出错误 %s", err, err2.Error())
+			}
+			err = err2
 		}
-		return err
-	}
-	return w.Close()
+	}()
+	_, err = w.Write(data)
+	return err
 }
 
 // acceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
