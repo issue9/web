@@ -16,6 +16,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/internal/charsetdata"
 )
 
@@ -183,7 +184,7 @@ func TestContext_Unmarshal(t *testing.T) {
 		InputMimetype: text.Unmarshal,
 	}
 
-	obj := &text.TestObject{}
+	obj := &testobject.TextObject{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -204,7 +205,7 @@ func TestContext_Marshal(t *testing.T) {
 	r.Header.Set("Accept", text.Mimetype)
 	ctx, status := c.NewContext(nil, w, r)
 	a.Empty(status).NotNil(ctx)
-	obj := &text.TestObject{Name: "test", Age: 123}
+	obj := &testobject.TextObject{Name: "test", Age: 123}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -217,7 +218,7 @@ func TestContext_Marshal(t *testing.T) {
 		Response:       w,
 		OutputMimetype: text.Marshal,
 	}
-	obj = &text.TestObject{Name: "test", Age: 1234}
+	obj = &testobject.TextObject{Name: "test", Age: 1234}
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")

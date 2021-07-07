@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/web/content/text"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/content/text"
 )
 
 func TestContent_catalog(t *testing.T) {

@@ -16,6 +16,7 @@ import (
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/content/text/testobject"
 )
 
 func TestContext_Vars(t *testing.T) {
@@ -79,7 +80,7 @@ func TestContext_Read(t *testing.T) {
 	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
 	ctx := newServer(a).NewContext(w, r)
 
-	obj := &text.TestObject{}
+	obj := &testobject.TextObject{}
 	a.True(ctx.Read(obj, 41110))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
@@ -98,7 +99,7 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set("Content-Type", text.Mimetype)
 	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	obj := &text.TestObject{Name: "test", Age: 123}
+	obj := &testobject.TextObject{Name: "test", Age: 123}
 	ctx.Render(http.StatusCreated, obj, nil)
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
@@ -158,7 +159,7 @@ func TestContext_Created(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	ctx.Created(&text.TestObject{Name: "test", Age: 123}, "")
+	ctx.Created(&testobject.TextObject{Name: "test", Age: 123}, "")
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`)
 
@@ -166,7 +167,7 @@ func TestContext_Created(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("Accept", text.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
-	ctx.Created(&text.TestObject{Name: "test", Age: 123}, "/test")
+	ctx.Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`).
 		Equal(w.Header().Get("Location"), "/test")

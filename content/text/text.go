@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 // Package text 针对文本内容的编解码实现
-//
-// NOTE: 仅作为测试用例
 package text
 
 import (
@@ -32,10 +30,19 @@ func Marshal(v interface{}) ([]byte, error) {
 }
 
 // Unmarshal 针对文本内容的 UnmarshalFunc 实现
-func Unmarshal(data []byte, v interface{}) error {
-	if vv, ok := v.(encoding.TextUnmarshaler); ok {
-		return vv.UnmarshalText(data)
+func Unmarshal(data []byte, v interface{}) (err error) {
+	switch vv := v.(type) {
+	case *string:
+		*vv = string(data)
+	case *[]byte:
+		*vv = data
+	case *[]rune:
+		*vv = []rune(string(data))
+	case encoding.TextUnmarshaler:
+		err = vv.UnmarshalText(data)
+	default:
+		err = errUnsupported
 	}
 
-	return errUnsupported
+	return err
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package text
+package testobject
 
 import (
 	"encoding"
@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	_ encoding.TextMarshaler   = &TestObject{}
-	_ encoding.TextUnmarshaler = &TestObject{}
+	_ encoding.TextMarshaler   = &TextObject{}
+	_ encoding.TextUnmarshaler = &TextObject{}
 )
 
 func TestTextObject(t *testing.T) {
 	a := assert.New(t)
 
-	obj := &TestObject{Name: "name", Age: 1}
+	obj := &TextObject{Name: "name", Age: 1}
 	data, err := obj.MarshalText()
 	a.NotError(err).
 		NotNil(data).
