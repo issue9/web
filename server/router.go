@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/issue9/middleware/v4/debugger"
+	"github.com/issue9/middleware/v5/debugger"
 	"github.com/issue9/mux/v5/group"
 )
 

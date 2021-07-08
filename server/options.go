@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
-	"github.com/issue9/middleware/v4/recovery"
+	"github.com/issue9/middleware/v5/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 
