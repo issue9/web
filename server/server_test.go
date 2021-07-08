@@ -97,7 +97,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := New("app", "0.1.0", newLogs(a), nil)
+	srv, err := New("app", "0.1.0", newLogs(a), &Options{Port: ":8080"})
 	a.NotError(err).NotNil(srv)
 	a.NotError(srv.content.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
 	a.NotError(srv.content.AddMimetype(content.DefaultMimetype, text.Marshal, text.Unmarshal))
@@ -124,7 +124,7 @@ func TestGetServer(t *testing.T) {
 		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").
 		Header("Accept", text.Mimetype).
 		Do().
 		Status(200)
@@ -142,6 +142,7 @@ func TestGetServer(t *testing.T) {
 	// BaseContext
 
 	srv, err = New("app", "0.1.0", newLogs(a), &Options{
+		Port: ":8080",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
@@ -166,7 +167,7 @@ func TestGetServer(t *testing.T) {
 		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost/path").Do().Success()
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").Do().Success()
 	a.NotError(srv.Close(0))
 	a.True(isRequested, "未正常访问 /path")
 }
