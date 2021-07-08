@@ -9,20 +9,11 @@ import (
 	"github.com/issue9/assert"
 )
 
-func BenchmarkParseContentType(b *testing.B) {
-	a := assert.New(b)
-
-	for i := 0; i < b.N; i++ {
-		_, _, err := ParseContentType("appliCation/json;Charset=utf-8")
-		a.NotError(err)
-	}
-}
-
 func BenchmarkBuildContentType(b *testing.B) {
 	a := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
-		a.True(len(BuildContentType(DefaultMimetype, DefaultCharset)) > 0)
+		a.True(len(buildContentType(DefaultMimetype, DefaultCharset)) > 0)
 	}
 }
 

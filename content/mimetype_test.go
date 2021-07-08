@@ -20,15 +20,15 @@ func TestContent_contentType(t *testing.T) {
 	a.Error(err).Nil(f).Nil(e)
 
 	// 不存在的 mimetype
-	f, e, err = mt.conentType(BuildContentType(DefaultMimetype, DefaultCharset))
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.Error(err).Nil(f).Nil(e)
 
 	mt.AddMimetype(DefaultMimetype, nil, json.Unmarshal)
-	f, e, err = mt.conentType(BuildContentType(DefaultMimetype, DefaultCharset))
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)
 
 	// 无效的字符集名称
-	f, e, err = mt.conentType(BuildContentType(DefaultMimetype, "invalid-charset"))
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, "invalid-charset"))
 	a.Error(err).Nil(f).Nil(e)
 }
 

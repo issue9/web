@@ -70,7 +70,7 @@ func TestContent_NewContext(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("content-type", BuildContentType(text.Mimetype, "utf-"))
+	r.Header.Set("content-type", buildContentType(text.Mimetype, "utf-"))
 	ctx, status = c.NewContext(l, w, r)
 	a.Equal(status, http.StatusUnsupportedMediaType).Nil(ctx)
 	a.NotEmpty(lw.String())
@@ -79,7 +79,7 @@ func TestContent_NewContext(t *testing.T) {
 	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
-	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
+	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx, status = c.NewContext(l, w, r)
 	a.Empty(status).NotNil(ctx)
 	a.Equal(ctx.OutputTag, language.MustParse("zh-hans"))
@@ -89,11 +89,11 @@ func TestContent_NewContext(t *testing.T) {
 	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
-	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
+	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx, status = c.NewContext(l, w, r)
 	a.Empty(status).NotNil(ctx)
 	a.Empty(lw.String())
-	a.True(CharsetIsNop(ctx.InputCharset)).
+	a.True(charsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
@@ -101,21 +101,21 @@ func TestContent_NewContext(t *testing.T) {
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
+	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx, status = c.NewContext(l, w, r)
 	a.Empty(lw.String())
 	a.NotNil(ctx).Empty(status).
-		True(CharsetIsNop(ctx.InputCharset)).
+		True(charsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
-	r.Header.Set("content-type", BuildContentType(text.Mimetype, DefaultCharset))
+	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx, status = c.NewContext(l, w, r)
 	a.Empty(lw.String())
 	a.NotNil(ctx).Empty(status).
-		True(CharsetIsNop(ctx.InputCharset)).
+		True(charsetIsNop(ctx.InputCharset)).
 		Equal(ctx.OutputMimetypeName, text.Mimetype)
 }
 
@@ -167,7 +167,7 @@ func TestContext_Body(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
 	r.Header.Set("Accept", "*/*")
-	r.Header.Set("Content-Type", BuildContentType(text.Mimetype, " gb18030"))
+	r.Header.Set("Content-Type", buildContentType(text.Mimetype, " gb18030"))
 	ctx, status := c.NewContext(nil, w, r)
 	a.Empty(status).NotNil(ctx)
 	data, err = ctx.Body()
@@ -257,16 +257,16 @@ func TestAcceptCharset(t *testing.T) {
 
 	name, enc := acceptCharset(DefaultCharset)
 	a.Equal(name, DefaultCharset).
-		True(CharsetIsNop(enc))
+		True(charsetIsNop(enc))
 
 	name, enc = acceptCharset("")
 	a.Equal(name, DefaultCharset).
-		True(CharsetIsNop(enc))
+		True(charsetIsNop(enc))
 
 	// * 表示采用默认的编码
 	name, enc = acceptCharset("*")
 	a.Equal(name, DefaultCharset).
-		True(CharsetIsNop(enc))
+		True(charsetIsNop(enc))
 
 	name, enc = acceptCharset("gbk")
 	a.Equal(name, "gbk").

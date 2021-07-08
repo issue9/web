@@ -68,7 +68,6 @@ func TestServer_NewContext(t *testing.T) {
 		ctx := srv.NewContext(w, r)
 		a.NotNil(ctx).
 			Equal(logwriter.Len(), 0).
-			True(content.CharsetIsNop(ctx.InputCharset)).
 			Equal(ctx.OutputMimetypeName, content.DefaultMimetype)
 	})
 }

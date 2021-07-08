@@ -4,6 +4,7 @@ package content
 
 import (
 	"fmt"
+	"mime"
 	"sort"
 	"strings"
 
@@ -36,17 +37,28 @@ type (
 
 // conentType 从 content-type 报头解析出需要用到的解码函数
 func (c *Content) conentType(header string) (UnmarshalFunc, encoding.Encoding, error) {
-	encName, charsetName, err := ParseContentType(header)
-	if err != nil {
-		return nil, nil, err
+	var (
+		mt      = DefaultMimetype
+		charset = DefaultCharset
+	)
+
+	if header != "" {
+		mts, params, err := mime.ParseMediaType(header)
+		if err != nil {
+			return nil, nil, err
+		}
+		mt = mts
+		if charset = params["charset"]; charset == "" {
+			charset = DefaultCharset
+		}
 	}
 
-	f, found := c.unmarshal(encName)
+	f, found := c.unmarshal(mt)
 	if !found {
-		return nil, nil, fmt.Errorf("未注册的解函数 %s", encName)
+		return nil, nil, fmt.Errorf("未注册的解函数 %s", mt)
 	}
 
-	e, err := htmlindex.Get(charsetName)
+	e, err := htmlindex.Get(charset)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -4,13 +4,13 @@ package server
 
 import (
 	"bytes"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/content/text"
 	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/internal/charsetdata"
@@ -23,7 +23,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "gbk"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
 		r.Header.Set("Accept", text.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 
@@ -89,7 +89,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "utf-8"}))
 		r.Header.Set("Accept", text.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -107,7 +107,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(charsetdata.GBKString1))
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "utf-8"}))
 		r.Header.Set("Accept", text.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -124,7 +124,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "gbk"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
 		r.Header.Set("Accept", text.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk")
 		ctx := srv.NewContext(w, r)
@@ -143,7 +143,7 @@ func BenchmarkPost(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "utf-8"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "utf-8"}))
 		r.Header.Set("Accept", text.Mimetype)
 		ctx := srv.NewContext(w, r)
 
@@ -166,7 +166,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(charsetdata.GBKData1))
-		r.Header.Set("Content-type", content.BuildContentType(text.Mimetype, "gbk"))
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
 		r.Header.Set("Accept", text.Mimetype)
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 		ctx := srv.NewContext(w, r)

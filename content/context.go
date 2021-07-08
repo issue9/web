@@ -125,7 +125,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 	}
 	ctx.read = true
 
-	if CharsetIsNop(ctx.InputCharset) {
+	if charsetIsNop(ctx.InputCharset) {
 		return ctx.body, nil
 	}
 
@@ -168,7 +168,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if !contentTypeFound {
-		ct := BuildContentType(ctx.OutputMimetypeName, ctx.OutputCharsetName)
+		ct := buildContentType(ctx.OutputMimetypeName, ctx.OutputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 
@@ -193,7 +193,7 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	// 即 Marshal 函数也接受 errorhandler 的捕获，不作特殊处理。
 	ctx.Response.WriteHeader(status)
 
-	if CharsetIsNop(ctx.OutputCharset) {
+	if charsetIsNop(ctx.OutputCharset) {
 		_, err = ctx.Response.Write(data)
 		return err
 	}
