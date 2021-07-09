@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
 )
 
 func TestScheduled(t *testing.T) {
 	a := assert.New(t)
 
-	mgr := NewManager(logs.New(), time.Local)
+	mgr := newManager(a, time.Local)
 	a.Equal(0, len(mgr.Jobs()))
 
 	err := mgr.AddAt("at", func(t time.Time) error {

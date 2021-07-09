@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
 
 var _ Initializer = &initializer{}
@@ -45,16 +45,18 @@ func TestInitializer_AddInit(t *testing.T) {
 
 func TestInitializer_init(t *testing.T) {
 	a := assert.New(t)
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
 
 	i := &initializer{name: "name-1"}
-	a.NotError(i.init(logs.New(), 0))
+	a.NotError(i.init(l, 0))
 
 	a.NotNil(i.AddInit("f1", buildFailedInit("f1-failed")))
-	a.ErrorString(i.init(logs.New(), 0), "f1-failed")
+	a.ErrorString(i.init(l, 0), "f1-failed")
 
 	i = &initializer{name: "name-1"}
 	ii := i.AddInit("f2", func() error { return nil })
 	a.NotNil(ii)
 	a.NotNil(ii.AddInit("f3", buildFailedInit("f3-failed")))
-	a.ErrorString(i.init(logs.New(), 0), "f3-failed")
+	a.ErrorString(i.init(l, 0), "f3-failed")
 }

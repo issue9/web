@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 
 	"github.com/issue9/web"
 )
@@ -18,8 +18,10 @@ import (
 // 测试插件系统是否正常
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
 
-	srv, err := web.NewServer("app", "0.1.0", logs.New(), &web.Options{})
+	srv, err := web.NewServer("app", "0.1.0", l, &web.Options{})
 	a.NotError(err).NotNil(srv)
 
 	a.NotError(srv.LoadPlugins("./testdata/plugin_*.so"))

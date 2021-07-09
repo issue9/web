@@ -7,11 +7,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
 
 func newDep(a *assert.Assertion, ms []*Module) *Dep {
-	d := NewDep(logs.New())
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
+
+	d := NewDep(l)
 	a.NotNil(d)
 
 	for _, m := range ms {
@@ -25,7 +28,9 @@ func newDep(a *assert.Assertion, ms []*Module) *Dep {
 
 func TestDep_Tags(t *testing.T) {
 	a := assert.New(t)
-	d := NewDep(logs.New())
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
+	d := NewDep(l)
 	a.Empty(d.Tags())
 
 	m1 := NewModule("m1", "m1 desc")
@@ -154,7 +159,9 @@ func TestDep_Init(t *testing.T) {
 
 func TestDep_InitTag(t *testing.T) {
 	a := assert.New(t)
-	d := NewDep(logs.New())
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
+	d := NewDep(l)
 	m1 := NewModule("m1", "m1 desc")
 	a.NotError(d.Add(m1))
 

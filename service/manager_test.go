@@ -7,12 +7,21 @@ import (
 	"time"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
+
+func newManager(a *assert.Assertion, t *time.Location) *Manager {
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
+
+	mgr := NewManager(l, t)
+	a.NotNil(mgr)
+	return mgr
+}
 
 func TestManager(t *testing.T) {
 	a := assert.New(t)
-	mgr := NewManager(logs.New(), time.Local)
+	mgr := newManager(a, time.Local)
 	a.NotNil(mgr)
 	a.Equal(1, len(mgr.Services())) // 默认的计划任务
 

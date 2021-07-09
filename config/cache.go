@@ -12,7 +12,7 @@ import (
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
 
 // Cache 缓存的相关配置

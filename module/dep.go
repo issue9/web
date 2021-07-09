@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 	"github.com/issue9/sliceutil"
 )
 

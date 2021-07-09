@@ -17,7 +17,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -51,11 +51,13 @@ var f202 = func(ctx *Context) Responser {
 }
 
 func newLogs(a *assert.Assertion) *logs.Logs {
-	l := logs.New()
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
 
-	a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr, "", 0))
-	a.NotError(l.SetOutput(logs.LevelError, os.Stderr, "", 0))
-	a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr, "", 0))
+	a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr))
+	a.NotError(l.SetOutput(logs.LevelError, os.Stderr))
+	a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr))
+
 	return l
 }
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
 
 func TestNewModule(t *testing.T) {
@@ -28,6 +28,8 @@ func TestNewModule(t *testing.T) {
 
 func TestModule_Init(t *testing.T) {
 	a := assert.New(t)
+	l, err := logs.New(nil)
+	a.NotError(err).NotNil(l)
 
 	m := NewModule("m", "m desc", "m1", "m2")
 	a.NotNil(m)
@@ -35,21 +37,21 @@ func TestModule_Init(t *testing.T) {
 	b1 := &bytes.Buffer{}
 	m.AddInit("f1", func() error { return b1.WriteByte('1') }).
 		AddInit("f2", func() error { return b1.WriteByte('2') })
-	a.NotError(m.Init("t1", logs.New())) // t1 不存在
+	a.NotError(m.Init("t1", l)) // t1 不存在
 	a.Empty(b1.Bytes()).
 		False(m.Inited())
 
-	a.NotError(m.Init("", logs.New()))
+	a.NotError(m.Init("", l))
 	a.Equal(b1.String(), "12").
 		True(m.Inited())
-	a.ErrorString(m.Init("", logs.New()), "已经初始化") // 已经初始化
+	a.ErrorString(m.Init("", l), "已经初始化") // 已经初始化
 
 	// tags
 
 	b1.Reset()
 	m.GetTag("t1").AddInit("f3", func() error { return b1.WriteByte('3') }).
 		AddInit("f4", func() error { return b1.WriteByte('4') })
-	a.NotError(m.Init("t1", logs.New()))
+	a.NotError(m.Init("t1", l))
 	a.Equal(b1.String(), "34")
 }
 

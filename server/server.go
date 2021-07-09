@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"

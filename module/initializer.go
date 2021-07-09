@@ -5,7 +5,7 @@ package module
 import (
 	"strings"
 
-	"github.com/issue9/logs/v2"
+	"github.com/issue9/logs/v3"
 )
 
 // Initializer 定义了初始化功能接口

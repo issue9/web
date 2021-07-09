@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/logs/v2"
-	"github.com/issue9/logs/v2/config"
+	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v3/config"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/server"
@@ -73,8 +73,8 @@ func NewServer(name, version string, f fs.FS, b content.BuildResultFunc) (*serve
 		return nil, err
 	}
 
-	l := logs.New()
-	if err := l.Init(conf); err != nil {
+	l, err := logs.New(conf)
+	if err != nil {
 		return nil, err
 	}
 
