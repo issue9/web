@@ -212,7 +212,7 @@ func (p *Params) Errors() content.Fields { return p.errors }
 // Result 转换成 Result 对象
 func (p *Params) Result(code int) Responser {
 	if p.HasErrors() {
-		return p.ctx.ResultWithFields(code, p.Errors())
+		return p.ctx.Result(code, p.Errors())
 	}
 	return nil
 }
@@ -229,7 +229,7 @@ func (ctx *Context) ParamID(key string, code int) (int64, Responser) {
 	}
 
 	if id <= 0 {
-		return 0, ctx.ResultWithFields(code, content.Fields{key: []string{"必须大于 0"}})
+		return 0, ctx.Result(code, content.Fields{key: []string{"必须大于 0"}})
 	}
 	return id, nil
 }
@@ -240,7 +240,7 @@ func (ctx *Context) ParamID(key string, code int) (int64, Responser) {
 func (ctx *Context) ParamInt64(key string, code int) (int64, Responser) {
 	v, err := ctx.Params().params.Int(key)
 	if err != nil {
-		return 0, ctx.ResultWithFields(code, content.Fields{key: []string{err.Error()}})
+		return 0, ctx.Result(code, content.Fields{key: []string{err.Error()}})
 	}
 	return v, nil
 }
@@ -251,7 +251,7 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, Responser) {
 func (ctx *Context) ParamString(key string, code int) (string, Responser) {
 	v, err := ctx.Params().params.String(key)
 	if err != nil {
-		return "", ctx.ResultWithFields(code, content.Fields{key: []string{err.Error()}})
+		return "", ctx.Result(code, content.Fields{key: []string{err.Error()}})
 	}
 	return v, nil
 }

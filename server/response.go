@@ -67,35 +67,35 @@ func (o *object) Headers() map[string]string { return o.headers }
 func (o *object) Body() interface{} { return o.body }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Error(statusCode int, v ...interface{}) Responser {
+func (ctx *Context) Error(status int, v ...interface{}) Responser {
 	if len(v) > 0 {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(v...))
 	}
-	return status(statusCode)
+	return Status(status)
 }
 
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Errorf(statusCode int, format string, v ...interface{}) Responser {
+func (ctx *Context) Errorf(status int, format string, v ...interface{}) Responser {
 	if len(v) > 0 {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
-	return status(statusCode)
+	return Status(status)
 }
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Critical(statusCode int, v ...interface{}) Responser {
+func (ctx *Context) Critical(status int, v ...interface{}) Responser {
 	if len(v) > 0 {
 		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
 	}
-	return status(statusCode)
+	return Status(status)
 }
 
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Criticalf(statusCode int, format string, v ...interface{}) Responser {
+func (ctx *Context) Criticalf(status int, format string, v ...interface{}) Responser {
 	if len(v) > 0 {
 		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
-	return status(statusCode)
+	return Status(status)
 }
 
 func Object(status int, body interface{}, headers map[string]string) Responser {
@@ -123,20 +123,9 @@ func Created(v interface{}, location string) Responser {
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code int) Responser {
-	return ctx.newResult(ctx.server.content.NewResult(ctx.LocalePrinter, code))
-}
-
-// ResultWithFields 返回 Result 实例
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) ResultWithFields(code int, fields content.Fields) Responser {
-	return ctx.newResult(ctx.server.content.NewResultWithFields(ctx.LocalePrinter, code, fields))
-}
-
-func (ctx *Context) newResult(rslt content.Result) Responser {
+func (ctx *Context) Result(code int, fields content.Fields) Responser {
 	return &result{
-		Result: rslt,
+		Result: ctx.server.content.Result(ctx.LocalePrinter, code, fields),
 		ctx:    ctx,
 	}
 }

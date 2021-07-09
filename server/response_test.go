@@ -77,7 +77,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 	ctx.server.Content().AddResult(http.StatusBadRequest, 40010, "40010")
 	ctx.server.Content().AddResult(http.StatusBadRequest, 40011, "40011")
 
-	resp := ctx.ResultWithFields(40010, content.Fields{
+	resp := ctx.Result(40010, content.Fields{
 		"k1": []string{"v1", "v2"},
 	})
 
@@ -103,7 +103,7 @@ func TestContext_Result(t *testing.T) {
 	r.Header.Set("accept-language", language.SimplifiedChinese.String())
 	r.Header.Set("accept", "application/json")
 	ctx := srv.NewContext(w, r)
-	resp := ctx.Result(40000)
+	resp := ctx.Result(40000, nil)
 	ctx.renderResponser(resp)
 	a.Equal(w.Body.String(), `{"message":"hans","code":40000}`)
 
@@ -112,7 +112,7 @@ func TestContext_Result(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
-	resp = ctx.Result(40000)
+	resp = ctx.Result(40000, nil)
 	ctx.renderResponser(resp)
 	a.Equal(w.Body.String(), `{"message":"und","code":40000}`)
 
@@ -122,11 +122,11 @@ func TestContext_Result(t *testing.T) {
 	r.Header.Set("accept-language", "en-US")
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
-	resp = ctx.Result(40000)
+	resp = ctx.Result(40000, nil)
 	ctx.renderResponser(resp)
 	a.Equal(w.Body.String(), `{"message":"und","code":40000}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Result(400) })
-	a.Panic(func() { ctx.Result(50000) })
+	a.Panic(func() { ctx.Result(400, nil) })
+	a.Panic(func() { ctx.Result(50000, nil) })
 }

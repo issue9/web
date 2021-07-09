@@ -147,9 +147,7 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 	rslt.Fields = append(rslt.Fields, &fieldDetail{Name: field, Message: message})
 }
 
-func (rslt *defaultResult) Status() int {
-	return rslt.status
-}
+func (rslt *defaultResult) Status() int { return rslt.status }
 
 func (rslt *defaultResult) HasFields() bool {
 	return len(rslt.Fields) > 0
@@ -218,24 +216,17 @@ func (c *Content) AddResult(status, code int, key message.Reference, v ...interf
 	c.resultMessages[code] = &resultMessage{status: status, key: key, values: v}
 }
 
-// NewResult 返回 Result 实例
+// Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (c *Content) NewResult(p *message.Printer, code int) Result {
+// fields 表示明细字段，可以为空，之后通过 Result.Add 添加。
+func (c *Content) Result(p *message.Printer, code int, fields Fields) Result {
 	msg, found := c.resultMessages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	return c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
-}
-
-// NewResultWithFields 返回 Result 实例
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (c *Content) NewResultWithFields(p *message.Printer, code int, fields Fields) Result {
-	rslt := c.NewResult(p, code)
-
+	rslt := c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
 	for k, vals := range fields {
 		rslt.Add(k, vals...)
 	}

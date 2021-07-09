@@ -143,7 +143,7 @@ func (q *Queries) Errors() content.Fields { return q.errors }
 // Result 转换成 Responser 对象
 func (q *Queries) Result(code int) Responser {
 	if q.HasErrors() {
-		return q.ctx.ResultWithFields(code, q.Errors())
+		return q.ctx.Result(code, q.Errors())
 	}
 	return nil
 }

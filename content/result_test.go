@@ -194,7 +194,7 @@ func buildResultCatalog(a *assert.Assertion) *catalog.Builder {
 	return c
 }
 
-func TestContent_NewResult(t *testing.T) {
+func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
 	c := New(DefaultBuilder)
 	c.catalog = buildResultCatalog(a)
@@ -202,40 +202,36 @@ func TestContent_NewResult(t *testing.T) {
 	c.AddResult(400, 40000, "lang") // lang 有翻译
 
 	// 能正常翻译错误信息
-	rslt, ok := c.NewResult(c.NewLocalePrinter(language.SimplifiedChinese), 40000).(*defaultResult)
+	rslt, ok := c.Result(c.NewLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans")
 
 	// 采用 und
-	rslt, ok = c.NewResult(c.NewLocalePrinter(language.Und), 40000).(*defaultResult)
+	rslt, ok = c.Result(c.NewLocalePrinter(language.Und), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在的本地化信息，采用默认的 und
-	rslt, ok = c.NewResult(c.NewLocalePrinter(language.Afrikaans), 40000).(*defaultResult)
+	rslt, ok = c.Result(c.NewLocalePrinter(language.Afrikaans), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在
-	a.Panic(func() { c.NewResult(c.NewLocalePrinter(language.Afrikaans), 400) })
-	a.Panic(func() { c.NewResult(c.NewLocalePrinter(language.Afrikaans), 50000) })
-}
+	a.Panic(func() { c.Result(c.NewLocalePrinter(language.Afrikaans), 400, nil) })
+	a.Panic(func() { c.Result(c.NewLocalePrinter(language.Afrikaans), 50000, nil) })
 
-func TestContent_NewResultWithFields(t *testing.T) {
-	a := assert.New(t)
-	c := New(DefaultBuilder)
-	c.catalog = buildResultCatalog(a)
-	c.AddResult(400, 40000, "lang") // lang 有翻译
+	// with fields
+
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
-	rslt, ok := c.NewResultWithFields(c.NewLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
+	rslt, ok = c.Result(c.NewLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 
 	// 采用 und
-	rslt, ok = c.NewResultWithFields(c.NewLocalePrinter(language.Und), 40000, fields).(*defaultResult)
+	rslt, ok = c.Result(c.NewLocalePrinter(language.Und), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})

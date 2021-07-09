@@ -105,7 +105,7 @@ func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if errors := vv.CTXSanitize(ctx); len(errors) > 0 {
-			resp := ctx.ResultWithFields(code, errors)
+			resp := ctx.Result(code, errors)
 			ctx.renderResponser(resp)
 			return false
 		}
