@@ -210,11 +210,11 @@ func (p *Params) HasErrors() bool { return len(p.errors) > 0 }
 func (p *Params) Errors() content.Fields { return p.errors }
 
 // Result 转换成 Result 对象
-//
-// code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Params.errors 将会作为 Result.Fields 的内容。
-func (p *Params) Result(code int) *Result {
-	return p.ctx.NewResultWithFields(code, p.Errors())
+func (p *Params) Result(code int) Responser {
+	if p.HasErrors() {
+		return p.ctx.ResultWithFields(code, p.Errors())
+	}
+	return nil
 }
 
 // ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
@@ -222,45 +222,36 @@ func (p *Params) Result(code int) *Result {
 // 相对于 Context.ParamInt64()，该值必须大于 0。
 //
 // NOTE: 若需要获取多个参数，使用 Context.Params 会更方便。
-func (ctx *Context) ParamID(key string, code int) (int64, bool) {
-	id, ok := ctx.ParamInt64(key, code)
-	if !ok {
-		return 0, false
+func (ctx *Context) ParamID(key string, code int) (int64, Responser) {
+	id, resp := ctx.ParamInt64(key, code)
+	if resp != nil {
+		return 0, resp
 	}
 
 	if id <= 0 {
-		rslt := ctx.NewResult(code)
-		rslt.Add(key, "必须大于 0")
-		rslt.Render()
-		return 0, false
+		return 0, ctx.ResultWithFields(code, content.Fields{key: []string{"必须大于 0"}})
 	}
-	return id, true
+	return id, nil
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamInt64(key string, code int) (int64, bool) {
+func (ctx *Context) ParamInt64(key string, code int) (int64, Responser) {
 	v, err := ctx.Params().params.Int(key)
 	if err != nil {
-		rslt := ctx.NewResult(code)
-		rslt.Add(key, err.Error())
-		rslt.Render()
-		return 0, false
+		return 0, ctx.ResultWithFields(code, content.Fields{key: []string{err.Error()}})
 	}
-	return v, true
+	return v, nil
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamString(key string, code int) (string, bool) {
+func (ctx *Context) ParamString(key string, code int) (string, Responser) {
 	v, err := ctx.Params().params.String(key)
 	if err != nil {
-		rslt := ctx.NewResult(code)
-		rslt.Add(key, err.Error())
-		rslt.Render()
-		return "", false
+		return "", ctx.ResultWithFields(code, content.Fields{key: []string{err.Error()}})
 	}
-	return v, true
+	return v, nil
 }

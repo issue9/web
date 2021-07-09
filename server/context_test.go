@@ -83,36 +83,9 @@ func TestContext_Read(t *testing.T) {
 	a.True(ctx.Read(obj, 41110))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
-	// 触发 ctx.Error 退出
-	a.PanicString(func() {
-		o := &struct{}{}
-		ctx.Read(o, 41110)
-	}, "0") // 简单地抛出 0，让 recovery 捕获处理。
-}
-
-func TestContext_Render(t *testing.T) {
-	a := assert.New(t)
-
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	w := httptest.NewRecorder()
-	r.Header.Set("Content-Type", text.Mimetype)
-	r.Header.Set("Accept", text.Mimetype)
-	ctx := newServer(a).NewContext(w, r)
-	obj := &testobject.TextObject{Name: "test", Age: 123}
-	ctx.Render(http.StatusCreated, obj, nil)
-	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Body.String(), "test,123")
-
-	// 触发 ctx.Error 退出
-	a.PanicString(func() {
-		r = httptest.NewRequest(http.MethodPost, "/path", nil)
-		w = httptest.NewRecorder()
-		r.Header.Set("Content-Type", text.Mimetype)
-		r.Header.Set("Accept", text.Mimetype)
-		ctx = newServer(a).NewContext(w, r)
-		obj1 := &struct{ Name string }{Name: "name"}
-		ctx.Render(http.StatusCreated, obj1, nil)
-	}, "0") // 简单地抛出 0，让 recovery 捕获处理。
+	o := &struct{}{}
+	a.False(ctx.Read(o, 41110))
+	a.Equal(w.Result().StatusCode, http.StatusUnprocessableEntity)
 }
 
 func TestContext_ClientIP(t *testing.T) {
@@ -158,7 +131,8 @@ func TestContext_Created(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("Accept", text.Mimetype)
 	ctx := newServer(a).NewContext(w, r)
-	ctx.Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+	ctx.renderResponser(resp)
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`)
 
@@ -166,7 +140,8 @@ func TestContext_Created(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set("Accept", text.Mimetype)
 	ctx = newServer(a).NewContext(w, r)
-	ctx.Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
+	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
+	ctx.renderResponser(resp)
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`).
 		Equal(w.Header().Get("Location"), "/test")
@@ -185,17 +160,17 @@ func TestContext_ServeFile(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	a.NotPanic(func() {
-		router.Get("/path", func(ctx *Context) {
-			ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
+		router.Get("/path", func(ctx *Context) Responser {
+			return ctx.ServeFile("./testdata/file1.txt", "index.html", map[string]string{"Test": "Test"})
 		})
 
-		router.Get("/index", func(ctx *Context) {
-			ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
+		router.Get("/index", func(ctx *Context) Responser {
+			return ctx.ServeFile("./testdata", "file1.txt", map[string]string{"Test": "Test"})
 		})
 
-		router.Get("/not-exists", func(ctx *Context) {
+		router.Get("/not-exists", func(ctx *Context) Responser {
 			// file1.text 不存在
-			ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
+			return ctx.ServeFile("./testdata/file1.text", "index.html", map[string]string{"Test": "Test"})
 		})
 	})
 
@@ -227,17 +202,17 @@ func TestContext_ServeFile_windows(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	a.NotPanic(func() {
-		router.Get("/path", func(ctx *Context) {
-			ctx.ServeFile(".\\testdata\\file1.txt", "index.html", map[string]string{"Test": "Test"})
+		router.Get("/path", func(ctx *Context) Responser {
+			return ctx.ServeFile(".\\testdata\\file1.txt", "index.html", map[string]string{"Test": "Test"})
 		})
 
-		router.Get("/index", func(ctx *Context) {
-			ctx.ServeFile(".\\testdata", "file1.txt", map[string]string{"Test": "Test"})
+		router.Get("/index", func(ctx *Context) Responser {
+			return ctx.ServeFile(".\\testdata", "file1.txt", map[string]string{"Test": "Test"})
 		})
 
-		router.Get("/not-exists", func(ctx *Context) {
+		router.Get("/not-exists", func(ctx *Context) Responser {
 			// file1.text 不存在
-			ctx.ServeFile("c:\\not-exists-dir\\file1.text", "index.html", map[string]string{"Test": "Test"})
+			return ctx.ServeFile("c:\\not-exists-dir\\file1.text", "index.html", map[string]string{"Test": "Test"})
 		})
 	})
 

@@ -15,6 +15,14 @@ import (
 	"github.com/issue9/web/content"
 )
 
+// CTXSanitizer 提供对数据的验证和修正
+//
+// 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
+// 中会在解析数据成功之后，调用该接口进行数据验证。
+type CTXSanitizer interface {
+	CTXSanitize(*Context) content.Fields
+}
+
 // Context 是对当次 HTTP 请求内容的封装
 type Context struct {
 	*content.Context
@@ -90,29 +98,20 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 // 并返回 false，作为执行失败的通知。
 func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
-		ctx.Error(http.StatusUnprocessableEntity, err)
+		resp := ctx.Error(http.StatusUnprocessableEntity, err)
+		ctx.renderResponser(resp)
+		return false
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if errors := vv.CTXSanitize(ctx); len(errors) > 0 {
-			ctx.NewResultWithFields(code, errors).Render()
+			resp := ctx.ResultWithFields(code, errors)
+			ctx.renderResponser(resp)
 			return false
 		}
 	}
 
 	return true
-}
-
-// Render 将 v 渲染给客户端
-//
-// 功能与 Marshal() 相同，只不过 Render() 在出错时，
-// 会直接调用 Error() 处理，输出 500 的状态码。
-//
-// 如果需要具体控制出错后的处理方式，可以使用 Marshal 函数。
-func (ctx *Context) Render(status int, v interface{}, headers map[string]string) {
-	if err := ctx.Marshal(status, v, headers); err != nil {
-		ctx.Error(http.StatusInternalServerError, err)
-	}
 }
 
 // ClientIP 返回客户端的 IP 地址
@@ -142,45 +141,23 @@ func (ctx *Context) ClientIP() string {
 //
 // 文件可能提供连续的下载功能，其状态码是未定的，
 // 所以提供了一个类似于 Render 的变体专门用于下载功能。
-func (ctx *Context) ServeFile(p, index string, headers map[string]string) {
+func (ctx *Context) ServeFile(p, index string, headers map[string]string) Responser {
 	dir := filepath.ToSlash(filepath.Dir(p))
 	base := filepath.ToSlash(filepath.Base(p))
-	ctx.ServeFileFS(os.DirFS(dir), base, index, headers)
+	return ctx.ServeFileFS(os.DirFS(dir), base, index, headers)
 }
 
 // ServeFileFS 提供基于 fs.FS 的文件下载服
-func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) {
+func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) Responser {
 	err := ctx.ServeFS(f, p, index, headers)
 
 	switch {
 	case errors.Is(err, fs.ErrPermission):
-		ctx.Exit(http.StatusForbidden)
+		return Status(http.StatusForbidden)
 	case errors.Is(err, fs.ErrNotExist):
-		ctx.NotFound()
+		return Status(http.StatusNotFound)
 	case err != nil:
-		ctx.Error(http.StatusInternalServerError, err)
+		return ctx.Error(http.StatusInternalServerError, err)
 	}
+	return nil
 }
-
-// Created 201
-func (ctx *Context) Created(v interface{}, location string) {
-	if location == "" {
-		ctx.Render(http.StatusCreated, v, nil)
-	} else {
-		ctx.Render(http.StatusCreated, v, map[string]string{
-			"Location": location,
-		})
-	}
-}
-
-// NoContent 204
-func (ctx *Context) NoContent() { ctx.Response.WriteHeader(http.StatusNoContent) }
-
-// ResetContent 205
-func (ctx *Context) ResetContent() { ctx.Response.WriteHeader(http.StatusResetContent) }
-
-// NotFound 404
-func (ctx *Context) NotFound() { ctx.Response.WriteHeader(http.StatusNotFound) }
-
-// NotImplemented 501
-func (ctx *Context) NotImplemented() { ctx.Response.WriteHeader(http.StatusNotImplemented) }

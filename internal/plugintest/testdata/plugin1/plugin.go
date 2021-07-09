@@ -8,7 +8,9 @@ import (
 	"net/http"
 
 	"github.com/issue9/mux/v5/group"
+
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
 // Module 返回模块信息
@@ -30,8 +32,8 @@ func Module(s *web.Server) (*web.Module, error) {
 			return err
 		}
 
-		r.Get("/plugin1", func(ctx *web.Context) {
-			ctx.Render(http.StatusOK, "plugin1", nil)
+		r.Get("/plugin1", func(ctx *web.Context) server.Responser {
+			return server.Object(http.StatusOK, "plugin1", nil)
 		})
 		return nil
 	})

@@ -154,8 +154,8 @@ func BenchmarkPost(b *testing.B) {
 
 		obj.Age++
 		obj.Name = "response"
-		ctx.Render(http.StatusCreated, obj, nil)
-		a.Equal(w.Body.String(), "response,16")
+		err := ctx.Marshal(http.StatusCreated, obj, nil)
+		a.NotError(err).Equal(w.Body.String(), "response,16")
 	}
 }
 

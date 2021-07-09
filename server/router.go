@@ -18,9 +18,6 @@ import (
 type routerContextKey string
 
 type (
-	// HandlerFunc 路由项处理函数原型
-	HandlerFunc func(*Context)
-
 	// Router 路由管理
 	Router struct {
 		srv      *Server
@@ -112,7 +109,8 @@ func (r *Router) SetDebugger(pprof, vars string) (err error) {
 func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) error {
 	h = ApplyFilters(h, filters...)
 	return router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
-		h(router.srv.NewContext(w, r))
+		ctx := router.srv.NewContext(w, r)
+		ctx.renderResponser(h(ctx))
 	}, method...)
 }
 
@@ -232,13 +230,13 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 	}
 	prefix := path.Join(router.path, p[:lastStart])
 
-	return router.Handle(p, func(ctx *Context) {
+	return router.Handle(p, func(ctx *Context) Responser {
 		pp := ctx.Request.URL.Path
 		pp = strings.TrimPrefix(pp, prefix)
 		if pp != "" && pp[0] == '/' {
 			pp = pp[1:]
 		}
-		ctx.ServeFileFS(f, pp, index, nil)
+		return ctx.ServeFileFS(f, pp, index, nil)
 	}, http.MethodGet)
 }
 

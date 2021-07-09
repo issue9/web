@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/mux/v5/group"
 )
 
-var f204 = func(ctx *Context) { ctx.Render(http.StatusNoContent, nil, nil) }
+var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 
 func TestRouter(t *testing.T) {
 	a := assert.New(t)

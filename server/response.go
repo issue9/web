@@ -1,0 +1,145 @@
+// SPDX-License-Identifier: MIT
+
+package server
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/issue9/web/content"
+)
+
+type (
+	// HandlerFunc 路由项处理函数原型
+	//
+	// 如果返回非空对象，则表示最终向终端输出此内容，不再需要处理其它情况。
+	HandlerFunc func(*Context) Responser
+
+	// Responser 表示向客户端输出的对象
+	Responser interface {
+		// Status 状态码
+		Status() int
+
+		// Headers 输出的报头
+		Headers() map[string]string
+
+		// Body 输出到 body 部分的对象
+		//
+		// 该对象最终经由 content.Marshal 转换成文本输出。
+		Body() interface{}
+	}
+
+	status int
+
+	object struct {
+		status  int
+		headers map[string]string
+		body    interface{}
+	}
+
+	result struct {
+		content.Result
+		ctx *Context
+	}
+)
+
+func (ctx *Context) renderResponser(resp Responser) {
+	if resp == nil {
+		return
+	}
+
+	err := ctx.Marshal(resp.Status(), resp.Body(), resp.Headers())
+	if err != nil {
+		ctx.Server().Logs().Error(err)
+	}
+}
+
+func (s status) Status() int { return int(s) }
+
+func (s status) Headers() map[string]string { return nil }
+
+func (s status) Body() interface{} { return nil }
+
+func (o *object) Status() int { return int(o.status) }
+
+func (o *object) Headers() map[string]string { return o.headers }
+
+func (o *object) Body() interface{} { return o.body }
+
+// Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
+func (ctx *Context) Error(statusCode int, v ...interface{}) Responser {
+	if len(v) > 0 {
+		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(v...))
+	}
+	return status(statusCode)
+}
+
+// Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
+func (ctx *Context) Errorf(statusCode int, format string, v ...interface{}) Responser {
+	if len(v) > 0 {
+		ctx.server.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
+	}
+	return status(statusCode)
+}
+
+// Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
+func (ctx *Context) Critical(statusCode int, v ...interface{}) Responser {
+	if len(v) > 0 {
+		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
+	}
+	return status(statusCode)
+}
+
+// Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
+func (ctx *Context) Criticalf(statusCode int, format string, v ...interface{}) Responser {
+	if len(v) > 0 {
+		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
+	}
+	return status(statusCode)
+}
+
+func Object(status int, body interface{}, headers map[string]string) Responser {
+	return &object{
+		status:  status,
+		headers: headers,
+		body:    body,
+	}
+}
+
+// Status 仅包含状态码的 Responser
+func Status(statusCode int) Responser { return status(statusCode) }
+
+// Created 201
+func Created(v interface{}, location string) Responser {
+	if location == "" {
+		return Object(http.StatusCreated, v, nil)
+	}
+
+	return Object(http.StatusCreated, v, map[string]string{
+		"Location": location,
+	})
+}
+
+// Result 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (ctx *Context) Result(code int) Responser {
+	return ctx.newResult(ctx.server.content.NewResult(ctx.LocalePrinter, code))
+}
+
+// ResultWithFields 返回 Result 实例
+//
+// 如果找不到 code 对应的错误信息，则会直接 panic。
+func (ctx *Context) ResultWithFields(code int, fields content.Fields) Responser {
+	return ctx.newResult(ctx.server.content.NewResultWithFields(ctx.LocalePrinter, code, fields))
+}
+
+func (ctx *Context) newResult(rslt content.Result) Responser {
+	return &result{
+		Result: rslt,
+		ctx:    ctx,
+	}
+}
+
+func (rslt *result) Body() interface{}          { return rslt.Result }
+func (rslt *result) Headers() map[string]string { return nil }

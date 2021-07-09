@@ -140,12 +140,12 @@ func (q *Queries) HasErrors() bool { return len(q.errors) > 0 }
 // Errors 所有的错误信息
 func (q *Queries) Errors() content.Fields { return q.errors }
 
-// Result 转换成 Result 对象
-//
-// code 是作为 Result.Code 从错误消息中查找，如果不存在，则 panic。
-// Queries.errors 将会作为 Result.Fields 的内容。
-func (q *Queries) Result(code int) *Result {
-	return q.ctx.NewResultWithFields(code, q.Errors())
+// Result 转换成 Responser 对象
+func (q *Queries) Result(code int) Responser {
+	if q.HasErrors() {
+		return q.ctx.ResultWithFields(code, q.Errors())
+	}
+	return nil
 }
 
 // Object 将查询参数解析到一个对象中
@@ -166,23 +166,12 @@ func (q *Queries) Object(v interface{}) {
 }
 
 // QueryObject 将查询参数解析到一个对象中
-//
-// 功能有点类似于 Context.Read，只不过当前是从查询参数中读取数据到对象。
-//
-// 如果 URL 有问题，导致无法正确解析查询参数的数据，则会直接返回 422 的错误码给用户。
-func (ctx *Context) QueryObject(v interface{}, code int) (ok bool) {
+func (ctx *Context) QueryObject(v interface{}, code int) Responser {
 	q, err := ctx.Queries()
 	if err != nil {
-		ctx.Error(http.StatusUnprocessableEntity, err)
-		return false
+		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
 
 	q.Object(v)
-
-	if len(q.errors) > 0 {
-		q.Result(code).Render()
-		return false
-	}
-
-	return true
+	return q.Result(code)
 }

@@ -29,21 +29,25 @@ import (
 
 var _ fs.FS = &Server{}
 
-var f201 = func(ctx *Context) {
+var f201 = func(ctx *Context) Responser {
 	ctx.Response.Header().Set("Content-Type", "text/html")
 	ctx.Response.WriteHeader(http.StatusCreated)
 	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
 	}
+
+	return nil
 }
 
-var f202 = func(ctx *Context) {
+var f202 = func(ctx *Context) Responser {
 	ctx.Response.WriteHeader(http.StatusAccepted)
 	_, err := ctx.Response.Write([]byte("1234567890"))
 	if err != nil {
 		println(err)
 	}
+
+	return nil
 }
 
 func newLogs(a *assert.Assertion) *logs.Logs {
@@ -217,7 +221,7 @@ func TestServer_Serve(t *testing.T) {
 	m2 := server.NewModule("m2", "m2 desc", "m1")
 	a.NotNil(m2)
 	m2.AddInit("init m2", func() error {
-		router.Get("/m2/test", func(ctx *Context) {
+		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
 			a.NotNil(srv)
 			a.Equal(2, len(srv.Modules()))
@@ -237,6 +241,8 @@ func TestServer_Serve(t *testing.T) {
 
 			a.Equal(3, len(srv.Modules()))
 			a.True(m3.Inited())
+
+			return nil
 		})
 		return nil
 	})
@@ -334,12 +340,14 @@ func TestServer_Close(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	router.Get("/test", f202)
-	router.Get("/close", func(ctx *Context) {
+	router.Get("/close", func(ctx *Context) Responser {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
 		a.NotError(srv.Close(0))
+
+		return nil
 	})
 
 	go func() {
@@ -372,11 +380,13 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	router.Get("/test", f202)
-	router.Get("/close", func(ctx *Context) {
+	router.Get("/close", func(ctx *Context) Responser {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
 		a.NotError(srv.Close(300 * time.Millisecond))
+
+		return nil
 	})
 
 	go func() {
