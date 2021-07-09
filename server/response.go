@@ -36,11 +36,6 @@ type (
 		headers map[string]string
 		body    interface{}
 	}
-
-	result struct {
-		content.Result
-		ctx *Context
-	}
 )
 
 func (ctx *Context) renderResponser(resp Responser) {
@@ -48,8 +43,7 @@ func (ctx *Context) renderResponser(resp Responser) {
 		return
 	}
 
-	err := ctx.Marshal(resp.Status(), resp.Body(), resp.Headers())
-	if err != nil {
+	if err := ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()); err != nil {
 		ctx.Server().Logs().Error(err)
 	}
 }
@@ -124,11 +118,6 @@ func Created(v interface{}, location string) Responser {
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code int, fields content.Fields) Responser {
-	return &result{
-		Result: ctx.server.content.Result(ctx.LocalePrinter, code, fields),
-		ctx:    ctx,
-	}
+	rslt := ctx.server.content.Result(ctx.LocalePrinter, code, fields)
+	return Object(rslt.Status(), rslt, nil)
 }
-
-func (rslt *result) Body() interface{}          { return rslt.Result }
-func (rslt *result) Headers() map[string]string { return nil }

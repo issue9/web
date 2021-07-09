@@ -17,8 +17,6 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/module"
@@ -225,11 +223,6 @@ func (srv *Server) DisableCompression(disable bool) { srv.compress.Enable = !dis
 // 如果状态码已经存在处理函数，则修改，否则就添加。
 func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
-}
-
-// NewLocalePrinter 返回指定语言的 message.Printer
-func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return srv.Content().NewLocalePrinter(tag)
 }
 
 // Now 返回当前时间
