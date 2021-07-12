@@ -10,11 +10,12 @@ import (
 
 // Initializer 定义了初始化功能接口
 type Initializer interface {
-	// AddInit 添加一个初始化函数
+	// AddInit 添加一个子项
 	//
-	// name 为该操作的名称；
+	// 该子项依赖于当前实例，在当前实例执行之后才执行。
+	//
+	// name 为对该操作的简要描述；
 	// f 为该操作实际执行的函数；
-	// 如果有后续的操作是依赖当前功能的，可以通过返回的实例调用其 AddInit 方法。
 	AddInit(name string, f func() error) Initializer
 }
 
@@ -24,9 +25,6 @@ type initializer struct {
 	inits []*initializer // 子模块
 }
 
-// AddInit 添加一个子项
-//
-// 该子项依赖于当前实例，在当前实例执行之后才执行。
 func (i *initializer) AddInit(name string, f func() error) Initializer {
 	if name == "" {
 		panic("参数 name 不能为空")

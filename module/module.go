@@ -73,11 +73,6 @@ func (m *Module) Init(t string, l *logs.Logs) error {
 	return nil
 }
 
-// AddInit 实现 Initializer 接口
-func (m *Module) AddInit(title string, f func() error) Initializer {
-	return m.initializer.AddInit(title, f)
-}
-
 // GetTag 获取特定名称的初始化函数
 func (m *Module) GetTag(tag string) Initializer {
 	if m.tags == nil {
