@@ -69,19 +69,13 @@ func (mgr *Manager) AddService(f Func, title string) {
 }
 
 // Services 返回所有的服务列表
-func (mgr *Manager) Services() []*Service {
-	return mgr.services
-}
+func (mgr *Manager) Services() []*Service { return mgr.services }
 
 // State 获取当前服务的状态
-func (srv *Service) State() State {
-	return srv.state
-}
+func (srv *Service) State() State { return srv.state }
 
 // Err 上次的错误信息，不会清空。
-func (srv *Service) Err() error {
-	return srv.err
-}
+func (srv *Service) Err() error { return srv.err }
 
 // Run 开始执行该服务
 func (srv *Service) Run() {
