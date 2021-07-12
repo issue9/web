@@ -21,7 +21,7 @@ type Module struct {
 	tags map[string]*initializer
 }
 
-// NewModule 返回 Default 实例
+// NewModule 返回 Module 实例
 func NewModule(name, desc string, dep ...string) *Module {
 	return &Module{
 		initializer: &initializer{name: name, inits: make([]*initializer, 0, 5)},

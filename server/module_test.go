@@ -128,14 +128,13 @@ func TestServer_initModules(t *testing.T) {
 	a.NotNil(m2)
 	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
 
-	srv := newServer(a)
-	a.NotError(srv.AddModule(m1, m2))
-	a.Equal(len(srv.Modules()), 2)
+	a.NotError(s.AddModule(m1, m2))
+	a.Equal(len(s.Modules()), 2)
 
-	a.Equal(0, len(srv.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(srv.initModules())
-	a.Equal(3, len(srv.Services().Jobs()))
+	a.Equal(0, len(s.Services().Jobs())) // 需要初始化模块之后，才有计划任务
+	a.NotError(s.initModules())
+	a.Equal(3, len(s.Services().Jobs()))
 
 	// 不能多次调用
-	a.Equal(srv.initModules(), module.ErrInited)
+	a.Equal(s.initModules(), module.ErrInited)
 }

@@ -64,8 +64,6 @@ func (srv *Server) AddModuleFunc(module ...ModuleFunc) error {
 // 可以在运行过程中添加模块，该模块会在加载时直接初始化，前提是模块的依赖模块都已经初始化。
 func (srv *Server) AddModule(module ...*Module) error {
 	for _, m := range module {
-		m.srv = srv
-
 		if err := srv.dep.Add(m.Module); err != nil {
 			return err
 		}
