@@ -30,6 +30,8 @@ func NewDep(l *logs.Logs) *Dep {
 }
 
 // Add 添加新模块
+//
+// 如果 dep.Inited() 为 true，则会尝试直接对 m 进行初始化，或是在初始化之后返回错误信息。
 func (dep *Dep) Add(m ...*Module) error {
 	for _, mod := range m {
 		if err := dep.add(mod); err != nil {
