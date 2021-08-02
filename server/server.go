@@ -48,10 +48,9 @@ type Server struct {
 	// locale
 	location *time.Location
 
-	cache  cache.Cache
-	uptime time.Time
-	dep    *module.Dep
-
+	cache    cache.Cache
+	uptime   time.Time
+	dep      *module.Dep
 	content  *content.Content
 	services *service.Manager
 }
@@ -81,10 +80,9 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 
 		location: o.Location,
 
-		cache:  o.Cache,
-		dep:    module.NewDep(logs),
-		uptime: time.Now(),
-
+		cache:    o.Cache,
+		dep:      module.NewDep(logs),
+		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
 	}
