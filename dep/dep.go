@@ -23,6 +23,10 @@ func New() *Dep {
 
 // Init 触发所有模块下指定名称的函数
 func (dep *Dep) Init(l *log.Logger, tag string) error {
+	if tag == "" {
+		panic("参数  tag 不能为空")
+	}
+
 	for _, m := range dep.modules { // 检测依赖
 		if err := dep.checkDeps(m); err != nil {
 			return err

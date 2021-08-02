@@ -37,9 +37,6 @@ func (srv *Server) Modules() []*dep.Module { return srv.dep.Modules() }
 
 // InitTag 初始化模块下的子标签
 func (srv *Server) InitModules(tag string) error {
-	if tag == "" {
-		panic("参数  tag 不能为空")
-	}
 	return srv.dep.Init(srv.Logs().INFO(), tag)
 }
 

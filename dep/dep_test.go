@@ -115,6 +115,10 @@ func TestDep_Init(t *testing.T) {
 	newMod(d, "d2", "d3")
 	a.ErrorString(d.Init(log.Default(), "default"), "未找到")
 
+	a.Panic(func() {
+		d.Init(log.Default(), "")
+	})
+
 	d = New()
 	a.NotNil(d)
 	inits = map[string]int{}

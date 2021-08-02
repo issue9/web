@@ -27,7 +27,7 @@ func TestNewModule(t *testing.T) {
 		Equal(m.Deps(), []string{"id1", "id2"})
 }
 
-func TestModule_NewTag(t *testing.T) {
+func TestModule_Tag(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 	m, err := s.NewModule("user1", "user1 desc")
