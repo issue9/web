@@ -5,18 +5,10 @@ package server
 import (
 	"errors"
 	"testing"
-	"time"
 	"unicode"
 
 	"github.com/issue9/assert"
-
-	"github.com/issue9/web/module"
 )
-
-func job(time.Time) error {
-	println("job")
-	return nil
-}
 
 func TestModuleFuncName(t *testing.T) {
 	a := assert.New(t)
@@ -28,113 +20,63 @@ func TestNewModule(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m := s.NewModule("id", "desc", "id1", "id2")
-	a.NotNil(m).
+	m, err := s.NewModule("id", "desc", "id1", "id2")
+	a.NotNil(m).NotError(err).
 		Equal(m.ID(), "id").
 		Equal(m.Description(), "desc").
 		Equal(m.Deps(), []string{"id1", "id2"})
 }
 
-func TestModule_NewTag(t *testing.T) {
+func TestModule_Tag(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m := s.NewModule("user1", "user1 desc")
-	a.NotNil(m)
+	m, err := s.NewModule("user1", "user1 desc")
+	a.NotNil(m).NotError(err)
 
-	v := m.NewTag("0.1.0")
+	v := m.Tag("0.1.0")
 	a.NotNil(v)
-	a.NotNil(v.AddInit("title1", func() error { return nil }))
+	a.NotNil(v.On("title1", func() error { return nil }))
 
-	vv := m.NewTag("0.1.0")
+	vv := m.Tag("0.1.0")
 	a.Equal(vv, v)
 
-	v2 := m.NewTag("0.2.0")
+	v2 := m.Tag("0.2.0")
 	a.NotEqual(v2, v)
 }
 
-func TestServer_AddModuleFunc(t *testing.T) {
-	a := assert.New(t)
-
-	m1 := func(s *Server) (*Module, error) {
-		return s.NewModule("m1", "m1 desc"), nil
-	}
-
-	m2 := func(s *Server) (*Module, error) {
-		return s.NewModule("m2", "m2 desc"), nil
-	}
-
-	m3 := func(*Server) (*Module, error) {
-		return nil, errors.New("m3")
-	}
-
-	srv := newServer(a)
-
-	a.ErrorString(srv.AddModuleFunc(m1, m2, m3), "m3")
-	a.Empty(srv.Modules())
-
-	a.NotError(srv.AddModuleFunc(m1, m2))
-	a.Equal(len(srv.Modules()), 2)
-}
-
-func TestServer_InitTag(t *testing.T) {
+func TestServer_InitModules(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m1 := s.NewModule("users1", "user1 module", "users2", "users3")
-	a.NotNil(m1)
-	t1 := m1.NewTag("v1")
+	m1, err := s.NewModule("users1", "user1 module", "users2", "users3")
+	a.NotNil(m1).NotError(err)
+	t1 := m1.Tag("v1")
 	a.NotNil(t1)
-	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
-	m1.NewTag("v2")
+	t1.On("安装数据表 users1", func() error { return errors.New("failed message") })
+	m1.Tag("v2")
 
-	m2 := s.NewModule("users2", "user2 module", "users3")
-	a.NotNil(m2)
-	t2 := m2.NewTag("v1")
+	m2, err := s.NewModule("users2", "user2 module", "users3")
+	a.NotNil(m2).NotError(err)
+	t2 := m2.Tag("v1")
 	a.NotNil(t2)
-	t2.AddInit("安装数据表 users2", func() error { return nil })
-	m2.NewTag("v3")
+	t2.On("安装数据表 users2", func() error { return nil })
+	m2.Tag("v3")
 
-	m3 := s.NewModule("users3", "user3 module")
-	a.NotNil(m3)
-	tag := m3.NewTag("v1")
+	m3, err := s.NewModule("users3", "user3 module")
+	a.NotNil(m3).NotError(err)
+	tag := m3.Tag("v1")
 	a.NotNil(tag)
-	tag.AddInit("安装数据表 users3-1", func() error { return nil })
-	tag.AddInit("安装数据表 users3-2", func() error { return nil })
-	a.NotNil(m3.NewTag("v4"))
+	tag.On("安装数据表 users3-1", func() error { return nil })
+	tag.On("安装数据表 users3-2", func() error { return nil })
+	a.NotNil(m3.Tag("v4"))
 
-	srv := newServer(a)
-	a.NotError(srv.AddModule(m1, m2, m3))
-	tags := srv.Tags()
+	tags := s.Tags()
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
-		srv.InitTag("") // 空值
+		s.InitModules("") // 空值
 	})
-	a.ErrorString(srv.InitTag("v1"), "failed message")
-	a.NotError(srv.InitTag("v2"))
-	a.ErrorString(srv.InitTag("not-exists"), "不存在")
-}
-
-func TestServer_initModules(t *testing.T) {
-	a := assert.New(t)
-	s := newServer(a)
-
-	m1 := s.NewModule("m1", "m1 desc", "m2")
-	a.NotNil(m1)
-	m1.AddCron("test cron", job, "* * 8 * * *", true)
-	m1.AddAt("test cron", job, time.Now().Add(-time.Hour), true)
-
-	m2 := s.NewModule("m2", "m2 desc")
-	a.NotNil(m2)
-	m2.AddTicker("ticker test", job, 5*time.Second, false, false)
-
-	a.NotError(s.AddModule(m1, m2))
-	a.Equal(len(s.Modules()), 2)
-
-	a.Equal(0, len(s.Services().Jobs())) // 需要初始化模块之后，才有计划任务
-	a.NotError(s.initModules())
-	a.Equal(3, len(s.Services().Jobs()))
-
-	// 不能多次调用
-	a.Equal(s.initModules(), module.ErrInited)
+	a.ErrorString(s.InitModules("v1"), "failed message")
+	a.NotError(s.InitModules("v2"))
+	a.NotError(s.InitModules("not-exists"))
 }

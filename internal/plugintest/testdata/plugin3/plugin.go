@@ -9,20 +9,23 @@ import (
 	"github.com/issue9/web"
 )
 
-// Module 返回模块信息
-func Module(s *web.Server) (*web.Module, error) {
-	m := s.NewModule("plugin3", "p3 desc", "plugin1")
+// InitModule 返回模块信息
+func InitModule(s *web.Server) error {
+	m, err := s.NewModule("plugin3", "p3 desc", "plugin1")
+	if err != nil {
+		return err
+	}
+	t := m.Tag("default")
 
-	m.AddInit("init1", init1)
-	m.AddInit("init2", init2)
+	t.On("init1", init1).On("init2", init2)
 
-	t1 := m.NewTag("install")
-	t1.AddInit("title", install1)
+	t1 := m.Tag("install")
+	t1.On("title", install1)
 
-	t2 := m.NewTag("v1.0")
-	t2.AddInit("title", install2)
+	t2 := m.Tag("v1.0")
+	t2.On("title", install2)
 
-	return m, nil
+	return nil
 }
 
 func init1() error {

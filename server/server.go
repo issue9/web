@@ -19,7 +19,7 @@ import (
 	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/module"
+	"github.com/issue9/web/dep"
 	"github.com/issue9/web/service"
 )
 
@@ -48,10 +48,9 @@ type Server struct {
 	// locale
 	location *time.Location
 
-	cache  cache.Cache
-	uptime time.Time
-	dep    *module.Dep
-
+	cache    cache.Cache
+	uptime   time.Time
+	dep      *dep.Dep
 	content  *content.Content
 	services *service.Manager
 }
@@ -81,10 +80,9 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 
 		location: o.Location,
 
-		cache:  o.Cache,
-		dep:    module.NewDep(logs),
-		uptime: time.Now(),
-
+		cache:    o.Cache,
+		dep:      dep.New(),
+		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
 	}
@@ -171,12 +169,8 @@ func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
 //
-// 会自动对模块进行初始化。
+// 在运行之前，请确保已经调用 InitModules。
 func (srv *Server) Serve() (err error) {
-	if err = srv.initModules(); err != nil {
-		return err
-	}
-
 	srv.Services().Run()
 
 	cfg := srv.httpServer.TLSConfig
