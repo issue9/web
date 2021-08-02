@@ -212,46 +212,35 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
-	m1 := server.NewModule("m1", "m1 desc")
-	a.NotNil(m1)
-	m1.AddInit("init", func() error {
+	m1, err := server.NewModule("m1", "m1 desc")
+	a.NotNil(m1).NotError(err)
+	m1.Tag("def").On("init", func() error {
 		router.Get("/m1/test", f202)
 		return nil
 	})
-	m1.NewTag("tag1")
+	m1.Tag("tag1")
 
-	m2 := server.NewModule("m2", "m2 desc", "m1")
-	a.NotNil(m2)
-	m2.AddInit("init m2", func() error {
+	m2, err := server.NewModule("m2", "m2 desc", "m1")
+	a.NotNil(m2).NotError(err)
+	m2.Tag("def").On("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
 			a.NotNil(srv)
 			a.Equal(2, len(srv.Modules()))
-			a.Equal(srv.Tags(), []string{"tag1"})
+			a.Equal(srv.Tags(), []string{"def", "tag1"})
 
 			ctx.Response.WriteHeader(http.StatusAccepted)
 			_, err := ctx.Response.Write([]byte("1234567890"))
 			if err != nil {
 				println(err)
 			}
-
-			// 动态加载模块
-			m3 := server.NewModule("m3", "m3 desc", "m1")
-			a.NotNil(m3)
-			m3.AddInit("init3", func() error { return nil })
-			a.NotError(server.AddModule(m3))
-
-			a.Equal(3, len(srv.Modules()))
-			a.True(m3.Inited())
-
 			return nil
 		})
 		return nil
 	})
 
-	a.NotError(server.AddModule(m1, m2))
-
 	go func() {
+		a.NotError(server.InitModules("def"))
 		err := server.Serve()
 		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true

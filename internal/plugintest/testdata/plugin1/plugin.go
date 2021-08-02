@@ -13,20 +13,25 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Module 返回模块信息
-func Module(s *web.Server) (*web.Module, error) {
-	m := s.NewModule("plugin1", "p1 desc", "plugin2")
+// InitModule 返回模块信息
+func InitModule(s *web.Server) error {
+	m, err := s.NewModule("plugin1", "p1 desc", "plugin2")
+	if err != nil {
+		return err
+	}
 
-	m.AddInit("init1", init1)
-	m.AddInit("init2", init2)
+	t := m.Tag("default")
 
-	t1 := m.NewTag("install")
-	t1.AddInit("title", install1)
+	t.On("init1", init1)
+	t.On("init2", init2)
 
-	t2 := m.NewTag("v1.0")
-	t2.AddInit("title", install2)
+	t1 := m.Tag("install")
+	t1.On("title", install1)
 
-	m.AddInit("init router", func() error {
+	t2 := m.Tag("v1.0")
+	t2.On("title", install2)
+
+	t.On("init router", func() error {
 		r, err := s.NewRouter("p1", "https://example.com", &group.Hosts{})
 		if err != nil {
 			return err
@@ -38,7 +43,7 @@ func Module(s *web.Server) (*web.Module, error) {
 		return nil
 	})
 
-	return m, nil
+	return nil
 }
 
 func init1() error {
