@@ -15,7 +15,7 @@ type Dep struct {
 	modules []*Module
 }
 
-func NewDep() *Dep {
+func New() *Dep {
 	return &Dep{
 		modules: make([]*Module, 0, 50),
 	}
@@ -29,11 +29,19 @@ func (dep *Dep) Init(l *log.Logger, tag string) error {
 		}
 	}
 
+	// 日志不需要标出文件位置。
+	flags := l.Flags()
+	l.SetFlags(log.Ldate | log.Lmicroseconds)
+
+	l.Printf("开始初始化模块中的 %s...\n", tag)
 	for _, m := range dep.modules { // 进行初如化
 		if err := dep.initModule(m, l, tag); err != nil {
 			return err
 		}
 	}
+	l.Print("初始化完成！\n\n")
+
+	l.SetFlags(flags)
 
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 
 func TestDep_NewModule(t *testing.T) {
 	a := assert.New(t)
-	dep := NewDep()
+	dep := New()
 	a.NotNil(dep)
 
 	m1, err := dep.NewModule("m1", "m1 desc")
@@ -33,7 +33,7 @@ func TestDep_NewModule(t *testing.T) {
 
 func TestModule_Init(t *testing.T) {
 	a := assert.New(t)
-	dep := NewDep()
+	dep := New()
 	a.NotNil(dep)
 
 	m1, err := dep.NewModule("m1", "m1 desc")

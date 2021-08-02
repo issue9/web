@@ -11,7 +11,7 @@ import (
 
 func TestDep_Tags(t *testing.T) {
 	a := assert.New(t)
-	d := NewDep()
+	d := New()
 	a.Empty(d.Tags())
 
 	m1, err := d.NewModule("m1", "m1 desc")
@@ -34,7 +34,7 @@ func TestDep_Tags(t *testing.T) {
 
 func TestDep_isDep(t *testing.T) {
 	a := assert.New(t)
-	d := NewDep()
+	d := New()
 	a.Empty(d.Tags())
 
 	m, err := d.NewModule("m1", "m1 desc", "d1", "d2")
@@ -48,7 +48,7 @@ func TestDep_isDep(t *testing.T) {
 	a.False(d.isDep("m1", "m1"))
 
 	// 循环依赖
-	d = NewDep()
+	d = New()
 	a.Empty(d.Tags())
 	m, err = d.NewModule("m1", "m1 desc", "d1", "d2")
 	a.NotError(err).NotNil(m)
@@ -64,7 +64,7 @@ func TestDep_isDep(t *testing.T) {
 
 func TestDep_checkDeps(t *testing.T) {
 	a := assert.New(t)
-	d := NewDep()
+	d := New()
 	a.Empty(d.Tags())
 
 	d.NewModule("m1", "m1 desc", "d1", "d2")
@@ -74,7 +74,7 @@ func TestDep_checkDeps(t *testing.T) {
 	a.NotNil(m1).
 		ErrorString(d.checkDeps(m1), "未找到") // 依赖项不存在
 
-	d = NewDep()
+	d = New()
 	a.NotNil(d)
 	d.NewModule("m1", "m1 desc", "d1", "d2")
 	d.NewModule("d1", "d1 desc", "d3")
@@ -82,7 +82,7 @@ func TestDep_checkDeps(t *testing.T) {
 	a.NotError(d.checkDeps(m1))
 
 	// 自我依赖
-	d = NewDep()
+	d = New()
 	a.NotNil(d)
 	d.NewModule("m1", "m1 desc", "d1", "d2")
 	d.NewModule("d1", "d1 desc", "d3")
@@ -108,14 +108,14 @@ func TestDep_Init(t *testing.T) {
 	}
 
 	// 缺少依赖项 d3
-	d := NewDep()
+	d := New()
 	a.NotNil(d)
 	newMod(d, "m1", "d1", "d2")
 	newMod(d, "d1", "d3")
 	newMod(d, "d2", "d3")
 	a.ErrorString(d.Init(log.Default(), "default"), "未找到")
 
-	d = NewDep()
+	d = New()
 	a.NotNil(d)
 	inits = map[string]int{}
 	newMod(d, "m1", "d1", "d2")
