@@ -10,7 +10,6 @@ import (
 
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/dep"
 	"github.com/issue9/web/server"
 )
 
@@ -19,7 +18,7 @@ type (
 	Context     = server.Context
 	Options     = server.Options
 	Filter      = server.Filter
-	Module      = dep.Module
+	Module      = server.Module
 	HandlerFunc = server.HandlerFunc
 	Responser   = server.Responser
 )

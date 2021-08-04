@@ -12,7 +12,6 @@ import (
 
 // Module 模块信息
 type Module struct {
-	dep  *Dep
 	tags map[string]*Tag
 
 	id   string
@@ -27,7 +26,6 @@ func (d *Dep) NewModule(id, desc string, deps ...string) (*Module, error) {
 	}
 
 	mod := &Module{
-		dep:  d,
 		tags: make(map[string]*Tag, 2),
 
 		id:   id,

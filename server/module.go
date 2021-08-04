@@ -4,6 +4,7 @@ package server
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"plugin"
 
@@ -18,13 +19,31 @@ const ModuleFuncName = "InitModule"
 // ModuleFunc 安装插件的函数签名
 type ModuleFunc func(*Server) error
 
+type Module struct {
+	*dep.Module
+	fs.FS
+}
+
 // NewModule 声明一个新的模块
 //
 // id 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(id, desc string, deps ...string) (*dep.Module, error) {
-	return srv.dep.NewModule(id, desc, deps...)
+func (srv *Server) NewModule(id, desc string, deps ...string) (*Module, error) {
+	m, err := srv.dep.NewModule(id, desc, deps...)
+	if err != nil {
+		return nil, err
+	}
+
+	sub, err := fs.Sub(srv.fs, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Module{
+		Module: m,
+		FS:     sub,
+	}, nil
 }
 
 // Tags 返回所有的子模块名称
