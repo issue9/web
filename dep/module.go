@@ -14,13 +14,14 @@ import (
 type Module struct {
 	tags map[string]*Tag
 
-	id   string
-	desc string
-	deps []string
+	id      string
+	desc    string
+	version string
+	deps    []string
 }
 
 // NewModule 声明新的模块
-func (d *Dep) NewModule(id, desc string, deps ...string) (*Module, error) {
+func (d *Dep) NewModule(id, version, desc string, deps ...string) (*Module, error) {
 	if sliceutil.Count(d.modules, func(i int) bool { return d.modules[i].id == id }) > 0 {
 		return nil, fmt.Errorf("存在同名的模块 %s", id)
 	}
@@ -28,9 +29,10 @@ func (d *Dep) NewModule(id, desc string, deps ...string) (*Module, error) {
 	mod := &Module{
 		tags: make(map[string]*Tag, 2),
 
-		id:   id,
-		desc: desc,
-		deps: deps,
+		id:      id,
+		version: version,
+		desc:    desc,
+		deps:    deps,
 	}
 
 	d.modules = append(d.modules, mod)

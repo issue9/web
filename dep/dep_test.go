@@ -14,18 +14,18 @@ func TestDep_Tags(t *testing.T) {
 	d := New()
 	a.Empty(d.Tags())
 
-	m1, err := d.NewModule("m1", "m1 desc")
+	m1, err := d.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotError(err).NotNil(m1)
 	a.NotNil(m1.Tag("d1"))
 	a.NotNil(m1.Tag("d2"))
 	a.NotNil(m1.Tag("d2"))
 
-	m2, err := d.NewModule("m2", "m2 desc")
+	m2, err := d.NewModule("m2", "1.0.0", "m2 desc")
 	a.NotError(err).NotNil(m2)
 	a.NotNil(m2.Tag("d2"))
 	a.NotNil(m2.Tag("d0"))
 
-	m3, err := d.NewModule("m3", "m3 desc")
+	m3, err := d.NewModule("m3", "1.0.0", "m3 desc")
 	a.NotError(err).NotNil(m3)
 
 	a.Equal(d.Tags(), []string{"d0", "d1", "d2"}).
@@ -37,9 +37,9 @@ func TestDep_isDep(t *testing.T) {
 	d := New()
 	a.Empty(d.Tags())
 
-	m, err := d.NewModule("m1", "m1 desc", "d1", "d2")
+	m, err := d.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
 	a.NotError(err).NotNil(m)
-	m, err = d.NewModule("d1", "d1 desc", "d3")
+	m, err = d.NewModule("d1", "1.0.0", "d1 desc", "d3")
 	a.NotError(err).NotNil(m)
 
 	a.True(d.isDep("m1", "d1"))
@@ -50,11 +50,11 @@ func TestDep_isDep(t *testing.T) {
 	// 循环依赖
 	d = New()
 	a.Empty(d.Tags())
-	m, err = d.NewModule("m1", "m1 desc", "d1", "d2")
+	m, err = d.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
 	a.NotError(err).NotNil(m)
-	m, err = d.NewModule("d1", "d1 desc", "d3")
+	m, err = d.NewModule("d1", "1.0.0", "d1 desc", "d3")
 	a.NotError(err).NotNil(m)
-	m, err = d.NewModule("d3", "d3 desc", "d1")
+	m, err = d.NewModule("d3", "1.0.0", "d3 desc", "d1")
 	a.NotError(err).NotNil(m)
 	a.True(d.isDep("d1", "d1"))
 
@@ -67,8 +67,8 @@ func TestDep_checkDeps(t *testing.T) {
 	d := New()
 	a.Empty(d.Tags())
 
-	d.NewModule("m1", "m1 desc", "d1", "d2")
-	d.NewModule("d1", "d1 desc", "d3")
+	d.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
+	d.NewModule("d1", "1.0.0", "d1 desc", "d3")
 
 	m1 := d.findModule("m1")
 	a.NotNil(m1).
@@ -76,18 +76,18 @@ func TestDep_checkDeps(t *testing.T) {
 
 	d = New()
 	a.NotNil(d)
-	d.NewModule("m1", "m1 desc", "d1", "d2")
-	d.NewModule("d1", "d1 desc", "d3")
-	d.NewModule("d2", "d2 desc", "d3")
+	d.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
+	d.NewModule("d1", "1.0.0", "d1 desc", "d3")
+	d.NewModule("d2", "1.0.0", "d2 desc", "d3")
 	a.NotError(d.checkDeps(m1))
 
 	// 自我依赖
 	d = New()
 	a.NotNil(d)
-	d.NewModule("m1", "m1 desc", "d1", "d2")
-	d.NewModule("d1", "d1 desc", "d3")
-	d.NewModule("d2", "d2 desc", "d3")
-	d.NewModule("d3", "d3 desc", "d2")
+	d.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
+	d.NewModule("d1", "1.0.0", "d1 desc", "d3")
+	d.NewModule("d2", "1.0.0", "d2 desc", "d3")
+	d.NewModule("d3", "1.0.0", "d3 desc", "d2")
 	d2 := d.findModule("d2")
 	a.NotNil(d2).
 		ErrorString(d.checkDeps(d2), "循环依赖自身")
@@ -99,7 +99,7 @@ func TestDep_Init(t *testing.T) {
 	inits := map[string]int{}
 
 	newMod := func(d *Dep, name string, dep ...string) {
-		m, err := d.NewModule(name, name+" desc", dep...)
+		m, err := d.NewModule(name, "v1", name+" desc", dep...)
 		a.NotError(err).NotNil(m)
 		m.Tag("default").On("init "+name, func() error {
 			inits[name] = inits[name] + 1

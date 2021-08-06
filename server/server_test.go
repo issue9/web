@@ -212,7 +212,7 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
-	m1, err := server.NewModule("m1", "m1 desc")
+	m1, err := server.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotNil(m1).NotError(err)
 	m1.Tag("def").On("init", func() error {
 		router.Get("/m1/test", f202)
@@ -220,7 +220,7 @@ func TestServer_Serve(t *testing.T) {
 	})
 	m1.Tag("tag1")
 
-	m2, err := server.NewModule("m2", "m2 desc", "m1")
+	m2, err := server.NewModule("m2", "1.0.0", "m2 desc", "m1")
 	a.NotNil(m2).NotError(err)
 	m2.Tag("def").On("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {

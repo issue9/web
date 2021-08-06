@@ -29,8 +29,8 @@ type Module struct {
 // id 模块名称，需要全局唯一；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(id, desc string, deps ...string) (*Module, error) {
-	m, err := srv.dep.NewModule(id, desc, deps...)
+func (srv *Server) NewModule(id, version, desc string, deps ...string) (*Module, error) {
+	m, err := srv.dep.NewModule(id, version, desc, deps...)
 	if err != nil {
 		return nil, err
 	}

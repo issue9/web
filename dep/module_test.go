@@ -16,12 +16,12 @@ func TestDep_NewModule(t *testing.T) {
 	dep := New()
 	a.NotNil(dep)
 
-	m1, err := dep.NewModule("m1", "m1 desc")
+	m1, err := dep.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotError(err).NotNil(m1)
-	m2, err := dep.NewModule("m2", "m2 desc", "m1")
+	m2, err := dep.NewModule("m2", "1.0.0", "m2 desc", "m1")
 	a.NotError(err).NotNil(m2)
 
-	m11, err := dep.NewModule("m1", "m1 desc")
+	m11, err := dep.NewModule("m1", "1.0.0", "m1 desc")
 	a.ErrorString(err, "存在同名的模块").Nil(m11)
 
 	a.Equal(m1.ID(), "m1").Equal(m1.Description(), "m1 desc").Empty(m1.Deps())
@@ -36,7 +36,7 @@ func TestModule_Init(t *testing.T) {
 	dep := New()
 	a.NotNil(dep)
 
-	m1, err := dep.NewModule("m1", "m1 desc")
+	m1, err := dep.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotError(err).NotNil(m1)
 
 	buf := new(bytes.Buffer)
@@ -53,7 +53,7 @@ func TestModule_Init(t *testing.T) {
 
 	// 函数返回错误
 
-	m2, err := dep.NewModule("m2", "m2 desc")
+	m2, err := dep.NewModule("m2", "1.0.0", "m2 desc")
 	a.NotError(err).NotNil(m2)
 
 	buf.Reset()

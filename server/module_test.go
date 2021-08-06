@@ -20,7 +20,7 @@ func TestNewModule(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m, err := s.NewModule("id", "desc", "id1", "id2")
+	m, err := s.NewModule("id", "1.0.0", "desc", "id1", "id2")
 	a.NotNil(m).NotError(err).
 		Equal(m.ID(), "id").
 		Equal(m.Description(), "desc").
@@ -30,7 +30,7 @@ func TestNewModule(t *testing.T) {
 func TestModule_Tag(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("user1", "user1 desc")
+	m, err := s.NewModule("user1", "1.0.0", "user1 desc")
 	a.NotNil(m).NotError(err)
 
 	v := m.Tag("0.1.0")
@@ -48,21 +48,21 @@ func TestServer_InitModules(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m1, err := s.NewModule("users1", "user1 module", "users2", "users3")
+	m1, err := s.NewModule("users1", "1.0.0", "user1 module", "users2", "users3")
 	a.NotNil(m1).NotError(err)
 	t1 := m1.Tag("v1")
 	a.NotNil(t1)
 	t1.On("安装数据表 users1", func() error { return errors.New("failed message") })
 	m1.Tag("v2")
 
-	m2, err := s.NewModule("users2", "user2 module", "users3")
+	m2, err := s.NewModule("users2", "1.0.0", "user2 module", "users3")
 	a.NotNil(m2).NotError(err)
 	t2 := m2.Tag("v1")
 	a.NotNil(t2)
 	t2.On("安装数据表 users2", func() error { return nil })
 	m2.Tag("v3")
 
-	m3, err := s.NewModule("users3", "user3 module")
+	m3, err := s.NewModule("users3", "1.0.0", "user3 module")
 	a.NotNil(m3).NotError(err)
 	tag := m3.Tag("v1")
 	a.NotNil(tag)

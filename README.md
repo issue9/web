@@ -26,14 +26,14 @@ func main() {
 
 // modules/m1/module.go
 func Module(s *web.Server) (*web.Module, error) {
-    return web.NewModule("m1", "模块描述信息").
+    return web.NewModule("m1", "1.0.0", "模块描述信息").
         Get("/admins", getAdmins).
         Get("/groups", getGroups), nil
 }
 
 // modules/m2/module.go
 func Module(s *web.Server) (*web.Module, error) {
-    return web.NewModule("m2", "模块描述信息", "m1").
+    return web.NewModule("m2", "1.0.0", "模块描述信息", "m1").
         Get("/admins", getAdmins).
         Get("/groups", getGroups), nil
 }
@@ -53,7 +53,7 @@ package m1
 import "github.com/issue9/web"
 
 func Module(s *web.Server) (*web.Module, error) {
-    m := web.NewModule("test", "测试模块")
+    m := web.NewModule("test", "1.0.0", "测试模块")
 
     m.AddInit(func() error {
         // TODO 此处可以添加初始化模块的相关代码
