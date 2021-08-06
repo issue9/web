@@ -52,6 +52,9 @@ func (m *Module) Description() string { return m.desc }
 // Deps 模块的依赖信息
 func (m *Module) Deps() []string { return m.deps }
 
+// Version 版本号
+func (m *Module) Version() string { return m.version }
+
 // Tags 模块的标签名称列表
 func (m *Module) Tags() []string {
 	tags := make([]string, 0, len(m.tags))

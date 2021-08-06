@@ -19,7 +19,9 @@ func TestDep_NewModule(t *testing.T) {
 	m1, err := dep.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotError(err).NotNil(m1)
 	m2, err := dep.NewModule("m2", "1.0.0", "m2 desc", "m1")
-	a.NotError(err).NotNil(m2)
+	a.NotError(err).NotNil(m2).
+		Equal(m2.Version(), "1.0.0").
+		Equal(m2.ID(), "m2")
 
 	m11, err := dep.NewModule("m1", "1.0.0", "m1 desc")
 	a.ErrorString(err, "存在同名的模块").Nil(m11)
