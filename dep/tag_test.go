@@ -26,15 +26,15 @@ func TestModule_Tag(t *testing.T) {
 	a.Equal(m.Tags(), []string{"t1", "t2"})
 }
 
-func TestTag_On(t *testing.T) {
+func TestTag_AddInit(t *testing.T) {
 	a := assert.New(t)
 
 	m := &Module{tags: make(map[string]*Tag, 10)}
 
 	tag := m.Tag("t1")
-	tag.On("1", func() error { return nil }).
-		On("2", func() error { return nil }).
-		On("2", func() error { return nil })
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return nil }).
+		AddInit("2", func() error { return nil })
 	a.Equal(3, len(tag.executors))
 	a.Equal(tag.executors[0].title, "1")
 	a.Equal(tag.executors[2].title, "2")
@@ -44,15 +44,15 @@ func TestTag_init(t *testing.T) {
 	a := assert.New(t)
 
 	tag := &Tag{executors: make([]executor, 0, 5)}
-	tag.On("1", func() error { return nil }).
-		On("2", func() error { return nil })
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return nil })
 
 	a.False(tag.Inited())
 	a.NotError(tag.init(log.Default()))
 	a.True(tag.Inited())
 	a.NotError(tag.Inited())
 
-	tag.On("3", func() error { return nil })
+	tag.AddInit("3", func() error { return nil })
 	a.NotError(tag.init(log.Default()))
 	a.True(tag.Inited())
 	a.Equal(3, len(tag.executors))
@@ -60,8 +60,8 @@ func TestTag_init(t *testing.T) {
 	// failed
 
 	tag = &Tag{executors: make([]executor, 0, 5)}
-	tag.On("1", func() error { return nil }).
-		On("2", func() error { return errors.New("error at 2") })
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return errors.New("error at 2") })
 	a.False(tag.Inited())
 	a.ErrorString(tag.init(log.Default()), "error at 2")
 }

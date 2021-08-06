@@ -214,7 +214,7 @@ func TestServer_Serve(t *testing.T) {
 
 	m1, err := server.NewModule("m1", "1.0.0", "m1 desc")
 	a.NotNil(m1).NotError(err)
-	m1.Tag("def").On("init", func() error {
+	m1.Tag("def").AddInit("init", func() error {
 		router.Get("/m1/test", f202)
 		return nil
 	})
@@ -222,7 +222,7 @@ func TestServer_Serve(t *testing.T) {
 
 	m2, err := server.NewModule("m2", "1.0.0", "m2 desc", "m1")
 	a.NotNil(m2).NotError(err)
-	m2.Tag("def").On("init m2", func() error {
+	m2.Tag("def").AddInit("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
 			a.NotNil(srv)

@@ -55,7 +55,7 @@ func (s State) String() string {
 // title 是对该服务的简要说明。
 //
 // NOTE: 如果 Manager 的所有服务已经处于运行的状态，则会自动运行新添加的服务。
-func (mgr *Manager) AddService(f Func, title string) {
+func (mgr *Manager) AddService(title string, f Func) {
 	srv := &Service{
 		Title: title,
 		f:     f,

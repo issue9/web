@@ -18,31 +18,31 @@ type executor struct {
 // Tag 返回指定名称的 Tag 实例
 //
 // 如果不存在则会创建。
-func (m *Module) Tag(e string) *Tag {
-	ev, found := m.tags[e]
+func (m *Module) Tag(t string) *Tag {
+	ev, found := m.tags[t]
 	if !found {
 		ev = &Tag{executors: make([]executor, 0, 5)}
-		m.tags[e] = ev
+		m.tags[t] = ev
 	}
 	return ev
 }
 
-// On 注册指执行函数
+// AddInit 注册指执行函数
 //
 // NOTE: 按添加顺序执行各个函数。
-func (e *Tag) On(title string, f func() error) *Tag {
-	e.executors = append(e.executors, executor{title: title, f: f})
-	return e
+func (t *Tag) AddInit(title string, f func() error) *Tag {
+	t.executors = append(t.executors, executor{title: title, f: f})
+	return t
 }
 
-func (e *Tag) init(l *log.Logger) error {
+func (t *Tag) init(l *log.Logger) error {
 	const indent = "\t"
 
-	if e.Inited() {
+	if t.Inited() {
 		return nil
 	}
 
-	for _, exec := range e.executors {
+	for _, exec := range t.executors {
 		l.Printf("%s%s......", indent, exec.title)
 		if err := exec.f(); err != nil {
 			l.Printf("%s%s FAIL: %s\n", indent, exec.title, err.Error())
@@ -51,7 +51,7 @@ func (e *Tag) init(l *log.Logger) error {
 		l.Printf("%s%s OK", indent, exec.title)
 	}
 
-	e.inited = true
+	t.inited = true
 	return nil
 }
 

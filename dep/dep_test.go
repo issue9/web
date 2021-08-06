@@ -101,7 +101,7 @@ func TestDep_Init(t *testing.T) {
 	newMod := func(d *Dep, name string, dep ...string) {
 		m, err := d.NewModule(name, "v1", name+" desc", dep...)
 		a.NotError(err).NotNil(m)
-		m.Tag("default").On("init "+name, func() error {
+		m.Tag("default").AddInit("init "+name, func() error {
 			inits[name] = inits[name] + 1
 			return nil
 		})

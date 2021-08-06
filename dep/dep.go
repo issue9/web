@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package dep 用于解决模块在初始化时的依赖问题
 package dep
 
 import (

@@ -26,7 +26,7 @@ func NewManager(logs *logs.Logs, loc *time.Location) *Manager {
 		logs:      logs,
 	}
 
-	mgr.AddService(mgr.scheduledService, "计划任务")
+	mgr.AddService("计划任务", mgr.scheduledService)
 
 	return mgr
 }

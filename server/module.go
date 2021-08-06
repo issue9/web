@@ -11,14 +11,15 @@ import (
 	"github.com/issue9/web/dep"
 )
 
-// ModuleFuncName 插件中的用于获取模块信息的函数名
+// PluginInitFuncName 插件中的用于获取模块信息的函数名
 //
 // NOTE: 必须为可导出的函数名称
-const ModuleFuncName = "InitModule"
+const PluginInitFuncName = "InitModule"
 
-// ModuleFunc 安装插件的函数签名
-type ModuleFunc func(*Server) error
+// PluginInitFunc 安装插件的函数签名
+type PluginInitFunc func(*Server) error
 
+// Module 用于注册初始化模块的相关功能
 type Module struct {
 	*dep.Module
 	fs.FS
@@ -85,14 +86,14 @@ func (srv *Server) LoadPlugins(glob string) error {
 // 插件必须是以 buildmode=plugin 的方式编译的，且要求其引用的 github.com/issue9/web
 // 版本与当前的相同。
 // LoadPlugin 会在插件中查找固定名称和类型的函数名（参考 ModuleFunc 和 ModuleFuncName），
-// 如果存在，会调用该方法将插件加载到 Server 对象中，否则返回相应的错误信息。
+// 如果存在，会调用该方法将插件加载到当前对象中，否则返回相应的错误信息。
 func (srv *Server) LoadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
 	}
 
-	symbol, err := p.Lookup(ModuleFuncName)
+	symbol, err := p.Lookup(PluginInitFuncName)
 	if err != nil {
 		return err
 	}

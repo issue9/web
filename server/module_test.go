@@ -10,10 +10,10 @@ import (
 	"github.com/issue9/assert"
 )
 
-func TestModuleFuncName(t *testing.T) {
+func TestPluginInitFuncName(t *testing.T) {
 	a := assert.New(t)
 
-	a.True(unicode.IsUpper(rune(ModuleFuncName[0])))
+	a.True(unicode.IsUpper(rune(PluginInitFuncName[0])))
 }
 
 func TestNewModule(t *testing.T) {
@@ -35,7 +35,7 @@ func TestModule_Tag(t *testing.T) {
 
 	v := m.Tag("0.1.0")
 	a.NotNil(v)
-	a.NotNil(v.On("title1", func() error { return nil }))
+	a.NotNil(v.AddInit("title1", func() error { return nil }))
 
 	vv := m.Tag("0.1.0")
 	a.Equal(vv, v)
@@ -52,22 +52,22 @@ func TestServer_InitModules(t *testing.T) {
 	a.NotNil(m1).NotError(err)
 	t1 := m1.Tag("v1")
 	a.NotNil(t1)
-	t1.On("安装数据表 users1", func() error { return errors.New("failed message") })
+	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
 	m1.Tag("v2")
 
 	m2, err := s.NewModule("users2", "1.0.0", "user2 module", "users3")
 	a.NotNil(m2).NotError(err)
 	t2 := m2.Tag("v1")
 	a.NotNil(t2)
-	t2.On("安装数据表 users2", func() error { return nil })
+	t2.AddInit("安装数据表 users2", func() error { return nil })
 	m2.Tag("v3")
 
 	m3, err := s.NewModule("users3", "1.0.0", "user3 module")
 	a.NotNil(m3).NotError(err)
 	tag := m3.Tag("v1")
 	a.NotNil(tag)
-	tag.On("安装数据表 users3-1", func() error { return nil })
-	tag.On("安装数据表 users3-2", func() error { return nil })
+	tag.AddInit("安装数据表 users3-1", func() error { return nil })
+	tag.AddInit("安装数据表 users3-2", func() error { return nil })
 	a.NotNil(m3.Tag("v4"))
 
 	tags := s.Tags()

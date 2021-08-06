@@ -43,8 +43,8 @@ func TestModule_Init(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	t1 := m1.Tag("t1")
-	t1.On("1", func() error { return buf.WriteByte('1') }).
-		On("2", func() error { return buf.WriteByte('2') })
+	t1.AddInit("1", func() error { return buf.WriteByte('1') }).
+		AddInit("2", func() error { return buf.WriteByte('2') })
 	a.NotError(m1.Init(log.Default(), "t1"))
 	a.True(m1.Inited("t1")).Equal(buf.String(), "12")
 
@@ -60,9 +60,9 @@ func TestModule_Init(t *testing.T) {
 
 	buf.Reset()
 	t2 := m2.Tag("t2")
-	t2.On("1", func() error { return buf.WriteByte('1') }).
-		On("2", func() error { return errors.New("error at 2") }).
-		On("3", func() error { return buf.WriteByte('3') })
+	t2.AddInit("1", func() error { return buf.WriteByte('1') }).
+		AddInit("2", func() error { return errors.New("error at 2") }).
+		AddInit("3", func() error { return buf.WriteByte('3') })
 
 	a.ErrorString(m2.Init(log.Default(), "t2"), "error at 2")
 	a.False(m2.Inited("t2")).

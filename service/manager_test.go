@@ -32,7 +32,7 @@ func TestManager(t *testing.T) {
 	a.Equal(srv0.State(), Stopped)
 
 	s1, start1, exit1 := buildSrv1()
-	mgr.AddService(s1, "srv1")
+	mgr.AddService("srv1", s1)
 	a.Equal(2, len(mgr.Services()))
 	srv1 := mgr.services[1]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
@@ -50,7 +50,7 @@ func TestManager(t *testing.T) {
 
 	// 运行中添加
 	s2, start2, exit2 := buildSrv1()
-	mgr.AddService(s2, "srv2")
+	mgr.AddService("srv2", s2)
 	a.Equal(3, len(mgr.Services()))
 	srv2 := mgr.services[2]
 	<-start2

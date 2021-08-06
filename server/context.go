@@ -68,7 +68,6 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 // NewContext 构建 *Context 实例
 //
-//
 // 如果不合规则，会以指定的状码退出。
 // 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -150,7 +149,6 @@ func (ctx *Context) ServeFile(p, index string, headers map[string]string) Respon
 // ServeFileFS 提供基于 fs.FS 的文件下载服
 func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) Responser {
 	err := ctx.ServeFS(f, p, index, headers)
-
 	switch {
 	case errors.Is(err, fs.ErrPermission):
 		return Status(http.StatusForbidden)
