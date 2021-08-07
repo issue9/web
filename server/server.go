@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/events"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
@@ -53,6 +54,7 @@ type Server struct {
 	dep      *dep.Dep
 	content  *content.Content
 	services *service.Manager
+	events   map[string]events.Eventer
 }
 
 // New 返回 *Server 实例
@@ -85,6 +87,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
+		events:   make(map[string]events.Eventer, 5),
 	}
 	srv.httpServer.Handler = srv.groups
 
