@@ -45,6 +45,7 @@ type Server struct {
 	groups        *group.Groups
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
+	routers       map[string]*Router
 
 	// locale
 	location *time.Location
@@ -79,6 +80,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		groups:        o.groups,
 		compress:      compress.Classic(logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
+		routers:       make(map[string]*Router, 3),
 
 		location: o.Location,
 

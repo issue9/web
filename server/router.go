@@ -15,8 +15,6 @@ import (
 	"github.com/issue9/mux/v5/group"
 )
 
-type routerContextKey string
-
 type (
 	// Router 路由管理
 	Router struct {
@@ -64,23 +62,17 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 		path:     u.Path,
 		debugger: dbg,
 	}
-
-	srv.Set(routerContextKey(name), rr)
+	srv.routers[name] = rr
 
 	return rr, nil
 }
 
 // Router 返回由 Server.NewRouter 声明的路由
-func (srv *Server) Router(name string) *Router {
-	if r, found := srv.Get(routerContextKey(name)); found {
-		return r.(*Router)
-	}
-	return nil
-}
+func (srv *Server) Router(name string) *Router { return srv.routers[name] }
 
 func (srv *Server) RemoveRouter(name string) {
 	srv.MuxGroups().RemoveRouter(name)
-	srv.Delete(routerContextKey(name))
+	delete(srv.routers, name)
 }
 
 // MuxGroups 返回 group.Groups 实例
