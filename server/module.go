@@ -9,8 +9,12 @@ import (
 	"path/filepath"
 	"plugin"
 	"sort"
+	"time"
 
+	"github.com/issue9/scheduled"
+	"github.com/issue9/scheduled/schedulers"
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web/service"
 )
 
 // PluginInitFuncName 插件中的用于获取模块信息的函数名
@@ -35,6 +39,7 @@ type Module struct {
 
 // Tag 模块下对执行函数的分类
 type Tag struct {
+	name      string
 	m         *Module
 	inited    bool
 	executors []executor // 保证按添加顺序执行
@@ -125,7 +130,11 @@ func (srv *Server) LoadPlugin(path string) error {
 func (m *Module) Tag(t string) *Tag {
 	ev, found := m.tags[t]
 	if !found {
-		ev = &Tag{executors: make([]executor, 0, 5), m: m}
+		ev = &Tag{
+			name:      t,
+			executors: make([]executor, 0, 5),
+			m:         m,
+		}
 		m.tags[t] = ev
 	}
 	return ev
@@ -192,3 +201,65 @@ func (t *Tag) Inited() bool { return t.inited }
 
 // Module 返回当前关联的模块
 func (t *Tag) Module() *Module { return t.m }
+
+// AddService 添加新的服务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明。
+func (t *Tag) AddService(title string, f service.Func) *Tag {
+	return t.AddInit("注册服务："+title, func() error {
+		t.Server().Services().AddService(title, f)
+		return nil
+	})
+}
+
+// AddCron 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// spec cron 表达式，支持秒；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (t *Tag) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) *Tag {
+	return t.AddInit("注册计划任务"+title, func() error {
+		return t.Server().Services().AddCron(title, f, spec, delay)
+	})
+}
+
+// AddTicker 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// imm 是否立即执行一次该任务；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (t *Tag) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) *Tag {
+	return t.AddInit("注册计划任务"+title, func() error {
+		return t.Server().Services().AddTicker(title, f, dur, imm, delay)
+	})
+}
+
+// AddAt 添加新的定时任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// t 指定的时间点；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (t *Tag) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool) *Tag {
+	return t.AddInit("注册计划任务"+title, func() error {
+		return t.Server().Services().AddAt(title, f, ti, delay)
+	})
+}
+
+// AddJob 添加新的计划任务
+//
+// f 表示服务的运行函数；
+// title 是对该服务的简要说明；
+// scheduler 计划任务的时间调度算法实现；
+// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+func (t *Tag) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) *Tag {
+	return t.AddInit("注册计划任务"+title, func() error {
+		t.Server().Services().AddJob(title, f, scheduler, delay)
+		return nil
+	})
+}
+
+func (t *Tag) Name() string { return t.name }

@@ -37,6 +37,7 @@ func TestModule_Tag(t *testing.T) {
 	v := m.Tag("0.1.0")
 	a.NotNil(v)
 	a.NotNil(v.AddInit("title1", func() error { return nil }))
+	a.Equal(v.Name(), "0.1.0")
 
 	vv := m.Tag("0.1.0")
 	a.Equal(vv, v)
