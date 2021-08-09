@@ -22,16 +22,16 @@ func InitModule(s *web.Server) error {
 
 	t := m.Tag("default")
 
-	t.On("init1", init1)
-	t.On("init2", init2)
+	t.AddInit("init1", init1)
+	t.AddInit("init2", init2)
 
 	t1 := m.Tag("install")
-	t1.On("title", install1)
+	t1.AddInit("title", install1)
 
 	t2 := m.Tag("v1.0")
-	t2.On("title", install2)
+	t2.AddInit("title", install2)
 
-	t.On("init router", func() error {
+	t.AddInit("init router", func() error {
 		r, err := s.NewRouter("p1", "https://example.com", &group.Hosts{})
 		if err != nil {
 			return err
