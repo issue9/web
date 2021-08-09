@@ -20,7 +20,6 @@ import (
 	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/content"
-	"github.com/issue9/web/dep"
 	"github.com/issue9/web/service"
 )
 
@@ -52,7 +51,7 @@ type Server struct {
 
 	cache    cache.Cache
 	uptime   time.Time
-	dep      *dep.Dep
+	modules  []*Module
 	content  *content.Content
 	services *service.Manager
 	events   map[string]events.Eventer
@@ -85,7 +84,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		location: o.Location,
 
 		cache:    o.Cache,
-		dep:      dep.New(),
+		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
@@ -163,9 +162,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Server 获取关联的 context.Server 实例
-func (ctx *Context) Server() *Server { return ctx.server }
-
 // Content 返回内容编解码的管理接口
 func (srv *Server) Content() *content.Content { return srv.content }
 
@@ -224,12 +220,11 @@ func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 	srv.errorHandlers.Set(h, status...)
 }
 
-// Now 返回当前时间
-//
-// 与 time.Now() 的区别在于 Now() 基于当前时区
-func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location) }
+// Server 获取关联的 Server 实例
+func (ctx *Context) Server() *Server { return ctx.server }
 
-// ParseTime 分析基于当前时区的时间
-func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, ctx.Location)
-}
+// Server 获取关联的 Server 实例
+func (m *Module) Server() *Server { return m.srv }
+
+// Server 获取关联的 Server 实例
+func (t *Tag) Server() *Server { return t.Module().Server() }

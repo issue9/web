@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package dep 用于解决模块在初始化时的依赖问题
-package dep
+package server
 
 import (
 	"fmt"
@@ -11,36 +10,27 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
-// Dep 管理依赖关系
-type Dep struct {
-	modules []*Module
-}
-
-func New() *Dep {
-	return &Dep{
-		modules: make([]*Module, 0, 50),
-	}
-}
-
-// Init 触发所有模块下指定名称的函数
-func (dep *Dep) Init(l *log.Logger, tag string) error {
+// InitModules 触发所有模块下指定名称的函数
+func (srv *Server) InitModules(tag string) error {
 	if tag == "" {
 		panic("参数  tag 不能为空")
 	}
 
-	for _, m := range dep.modules { // 检测依赖
-		if err := dep.checkDeps(m); err != nil {
+	for _, m := range srv.modules { // 检测依赖
+		if err := srv.checkDeps(m); err != nil {
 			return err
 		}
 	}
+
+	l := srv.Logs().INFO()
 
 	// 日志不需要标出文件位置。
 	flags := l.Flags()
 	l.SetFlags(log.Ldate | log.Lmicroseconds)
 
 	l.Printf("开始初始化模块中的 %s...\n", tag)
-	for _, m := range dep.modules { // 进行初如化
-		if err := dep.initModule(m, l, tag); err != nil {
+	for _, m := range srv.modules { // 进行初如化
+		if err := srv.initModule(m, l, tag); err != nil {
 			return err
 		}
 	}
@@ -51,32 +41,41 @@ func (dep *Dep) Init(l *log.Logger, tag string) error {
 	return nil
 }
 
-func (dep *Dep) initModule(m *Module, l *log.Logger, tag string) error {
+func (srv *Server) initModule(m *Module, l *log.Logger, tag string) error {
 	for _, depID := range m.deps { // 先初始化依赖项
-		depMod := dep.findModule(depID)
+		depMod := srv.findModule(depID)
 		if depMod == nil {
 			return fmt.Errorf("模块 %s 依赖项 %s 未找到", m.ID(), depID)
 		}
 
-		if err := dep.initModule(depMod, l, tag); err != nil {
+		if err := srv.initModule(depMod, l, tag); err != nil {
 			return err
 		}
 	}
 
-	return m.Init(l, tag)
+	l.Println(m.ID(), "...")
+
+	err := m.Tag(tag).init(l)
+	if err != nil {
+		l.Printf("%s [FAIL:%s]\n\n", m.ID(), err.Error())
+	} else {
+		l.Printf("%s [OK]\n\n", m.ID())
+	}
+
+	return err
 }
 
 // 检测模块的依赖关系。比如：
 // 依赖项是否存在；是否存在自我依赖等。
-func (dep *Dep) checkDeps(m *Module) error {
+func (srv *Server) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, depID := range m.deps {
-		if dep.findModule(depID) == nil {
+		if srv.findModule(depID) == nil {
 			return fmt.Errorf("未找到 %s 的依赖模块 %s", m.id, depID)
 		}
 	}
 
-	if dep.isDep(m.id, m.id) {
+	if srv.isDep(m.id, m.id) {
 		return fmt.Errorf("%s 循环依赖自身", m.id)
 	}
 
@@ -84,8 +83,8 @@ func (dep *Dep) checkDeps(m *Module) error {
 }
 
 // m1 是否依赖 m2
-func (dep *Dep) isDep(m1, m2 string) bool {
-	mod1 := dep.findModule(m1)
+func (srv *Server) isDep(m1, m2 string) bool {
+	mod1 := srv.findModule(m1)
 	if mod1 == nil {
 		return false
 	}
@@ -95,8 +94,8 @@ func (dep *Dep) isDep(m1, m2 string) bool {
 			return true
 		}
 
-		if dep.findModule(depID) != nil {
-			if dep.isDep(depID, m2) {
+		if srv.findModule(depID) != nil {
+			if srv.isDep(depID, m2) {
 				return true
 			}
 		}
@@ -105,8 +104,8 @@ func (dep *Dep) isDep(m1, m2 string) bool {
 	return false
 }
 
-func (dep *Dep) findModule(id string) *Module {
-	for _, m := range dep.modules {
+func (srv *Server) findModule(id string) *Module {
+	for _, m := range srv.modules {
 		if m.id == id {
 			return m
 		}
@@ -114,9 +113,9 @@ func (dep *Dep) findModule(id string) *Module {
 	return nil
 }
 
-func (dep *Dep) Tags() []string {
+func (srv *Server) Tags() []string {
 	tags := make([]string, 0, 100)
-	for _, m := range dep.modules {
+	for _, m := range srv.modules {
 		tags = append(tags, m.Tags()...)
 	}
 	size := sliceutil.Unique(tags, func(i, j int) bool { return tags[i] == tags[j] })

@@ -4,6 +4,7 @@ package server
 
 import (
 	"errors"
+	"log"
 	"testing"
 	"unicode"
 
@@ -44,39 +45,67 @@ func TestModule_Tag(t *testing.T) {
 	a.NotEqual(v2, v)
 }
 
-func TestServer_InitModules(t *testing.T) {
+func TestServer_NewModule(t *testing.T) {
+	a := assert.New(t)
+	srv := newServer(a)
+	a.NotNil(srv)
+
+	m1, err := srv.NewModule("m1", "1.0.0", "m1 desc")
+	a.NotError(err).NotNil(m1)
+	m2, err := srv.NewModule("m2", "1.0.0", "m2 desc", "m1")
+	a.NotError(err).NotNil(m2).
+		Equal(m2.Version(), "1.0.0").
+		Equal(m2.ID(), "m2")
+
+	m11, err := srv.NewModule("m1", "1.0.0", "m1 desc")
+	a.ErrorString(err, "存在同名的模块").Nil(m11)
+
+	a.Equal(m1.ID(), "m1").Equal(m1.Description(), "m1 desc").Empty(m1.Deps())
+	a.Equal(m2.ID(), "m2").Equal(m2.Description(), "m2 desc").Equal(m2.Deps(), []string{"m1"})
+
+	ms := srv.Modules()
+	a.Equal(len(ms), 2)
+}
+
+func TestTag_AddInit(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
+	m, err := s.NewModule("m1", "1.0.0", "m1 desc")
+	a.NotError(err).NotNil(m)
 
-	m1, err := s.NewModule("users1", "1.0.0", "user1 module", "users2", "users3")
-	a.NotNil(m1).NotError(err)
-	t1 := m1.Tag("v1")
-	a.NotNil(t1)
-	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
-	m1.Tag("v2")
+	tag := m.Tag("t1")
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return nil }).
+		AddInit("2", func() error { return nil })
+	a.Equal(3, len(tag.executors))
+	a.Equal(tag.executors[0].title, "1")
+	a.Equal(tag.executors[2].title, "2")
+	a.Equal(tag.Module(), m)
+	a.Equal(tag.Server(), s)
+}
 
-	m2, err := s.NewModule("users2", "1.0.0", "user2 module", "users3")
-	a.NotNil(m2).NotError(err)
-	t2 := m2.Tag("v1")
-	a.NotNil(t2)
-	t2.AddInit("安装数据表 users2", func() error { return nil })
-	m2.Tag("v3")
+func TestTag_init(t *testing.T) {
+	a := assert.New(t)
 
-	m3, err := s.NewModule("users3", "1.0.0", "user3 module")
-	a.NotNil(m3).NotError(err)
-	tag := m3.Tag("v1")
-	a.NotNil(tag)
-	tag.AddInit("安装数据表 users3-1", func() error { return nil })
-	tag.AddInit("安装数据表 users3-2", func() error { return nil })
-	a.NotNil(m3.Tag("v4"))
+	tag := &Tag{executors: make([]executor, 0, 5)}
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return nil })
 
-	tags := s.Tags()
-	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+	a.False(tag.Inited())
+	a.NotError(tag.init(log.Default()))
+	a.True(tag.Inited())
+	a.NotError(tag.Inited())
 
-	a.Panic(func() {
-		s.InitModules("") // 空值
-	})
-	a.ErrorString(s.InitModules("v1"), "failed message")
-	a.NotError(s.InitModules("v2"))
-	a.NotError(s.InitModules("not-exists"))
+	tag.AddInit("3", func() error { return nil })
+	a.NotError(tag.init(log.Default()))
+	a.True(tag.Inited())
+	a.Equal(3, len(tag.executors))
+
+	// failed
+
+	tag = &Tag{executors: make([]executor, 0, 5)}
+	tag.AddInit("1", func() error { return nil }).
+		AddInit("2", func() error { return errors.New("error at 2") })
+	a.False(tag.Inited())
+	a.ErrorString(tag.init(log.Default()), "error at 2")
 }
