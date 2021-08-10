@@ -110,7 +110,16 @@ func (c *Content) marshal(header string) (string, MarshalFunc, bool) {
 // AddMimetype 添加编解码函数
 //
 // m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理。
-func (c *Content) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc) error {
+func (c *Content) AddMimetype(m MarshalFunc, u UnmarshalFunc, name ...string) error {
+	for _, n := range name {
+		if err := c.addMimetype(n, m, u); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Content) addMimetype(name string, m MarshalFunc, u UnmarshalFunc) error {
 	if strings.IndexByte(name, '*') >= 0 {
 		panic("name 不是一个有效的 mimetype 名称格式")
 	}

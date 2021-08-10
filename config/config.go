@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package config 提供了加载配置项内容的各类方法
+// Package config 提供了从配置文件初始化 Server 的方法
 package config
 
 import (

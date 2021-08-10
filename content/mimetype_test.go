@@ -23,7 +23,7 @@ func TestContent_contentType(t *testing.T) {
 	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.Error(err).Nil(f).Nil(e)
 
-	mt.AddMimetype(DefaultMimetype, nil, json.Unmarshal)
+	mt.AddMimetype(nil, json.Unmarshal, DefaultMimetype)
 	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)
 
@@ -41,7 +41,7 @@ func TestContent_unmarshal(t *testing.T) {
 	um, found := mt.unmarshal("")
 	a.False(found).Nil(um)
 
-	a.NotError(mt.AddMimetype(DefaultMimetype, json.Marshal, json.Unmarshal))
+	a.NotError(mt.AddMimetype(json.Marshal, json.Unmarshal, DefaultMimetype))
 
 	um, found = mt.unmarshal(DefaultMimetype)
 	a.True(found).NotNil(um)
@@ -55,7 +55,7 @@ func TestContent_unmarshal(t *testing.T) {
 	a.False(found).Nil(um)
 
 	// 空的 unmarshal
-	a.NotError(mt.AddMimetype("empty", json.Marshal, nil))
+	a.NotError(mt.AddMimetype(json.Marshal, nil, "empty"))
 	um, found = mt.unmarshal("empty")
 	a.True(found).Nil(um)
 }
@@ -74,9 +74,9 @@ func TestContent_marshal(t *testing.T) {
 		Nil(marshal).
 		Empty(name)
 
-	a.NotError(mt.AddMimetype(DefaultMimetype, xml.Marshal, xml.Unmarshal))
-	a.NotError(mt.AddMimetype("text/plain", json.Marshal, json.Unmarshal))
-	a.NotError(mt.AddMimetype("empty", nil, nil))
+	a.NotError(mt.AddMimetype(xml.Marshal, xml.Unmarshal, DefaultMimetype))
+	a.NotError(mt.AddMimetype(json.Marshal, json.Unmarshal, "text/plain"))
+	a.NotError(mt.AddMimetype(nil, nil, "empty"))
 
 	name, marshal, found = mt.marshal(DefaultMimetype)
 	a.True(found).
@@ -131,26 +131,26 @@ func TestContent_Add_Delete(t *testing.T) {
 	a.NotNil(mt)
 
 	// 不能添加同名的多次
-	a.NotError(mt.AddMimetype(DefaultMimetype, nil, nil))
-	a.ErrorString(mt.AddMimetype(DefaultMimetype, nil, nil), "已经存在相同名称")
+	a.NotError(mt.AddMimetype(nil, nil, DefaultMimetype))
+	a.ErrorString(mt.AddMimetype(nil, nil, DefaultMimetype), "已经存在相同名称")
 
 	// 不能添加以 /* 结属的名称
 	a.Panic(func() {
-		a.NotError(mt.AddMimetype("application/*", nil, nil))
+		a.NotError(mt.AddMimetype(nil, nil, "application/*"))
 	})
 	a.Panic(func() {
-		a.NotError(mt.AddMimetype("/*", nil, nil))
+		a.NotError(mt.AddMimetype(nil, nil, "/*"))
 	})
 
 	// 排序是否正常
-	a.NotError(mt.AddMimetype("application/json", nil, nil))
+	a.NotError(mt.AddMimetype(nil, nil, "application/json"))
 	a.Equal(mt.mimetypes[0].name, DefaultMimetype) // 默认始终在第一
 
-	a.NotError(mt.AddMimetype("text", nil, nil))
-	a.NotError(mt.AddMimetype("text/plain", nil, nil))
-	a.NotError(mt.AddMimetype("text/text", nil, nil))
-	a.NotError(mt.AddMimetype("application/aa", nil, nil)) // aa 排名靠前
-	a.NotError(mt.AddMimetype("application/bb", nil, nil))
+	a.NotError(mt.AddMimetype(nil, nil, "text"))
+	a.NotError(mt.AddMimetype(nil, nil, "text/plain"))
+	a.NotError(mt.AddMimetype(nil, nil, "text/text"))
+	a.NotError(mt.AddMimetype(nil, nil, "application/aa")) // aa 排名靠前
+	a.NotError(mt.AddMimetype(nil, nil, "application/bb"))
 
 	// 检测排序
 	a.Equal(mt.mimetypes[0].name, DefaultMimetype)
@@ -176,11 +176,11 @@ func TestContent_findMarshal(t *testing.T) {
 	a := assert.New(t)
 	mt := New(DefaultBuilder)
 
-	a.NotError(mt.AddMimetype("text", nil, nil))
-	a.NotError(mt.AddMimetype("text/plain", nil, nil))
-	a.NotError(mt.AddMimetype("text/text", nil, nil))
-	a.NotError(mt.AddMimetype("application/aa", nil, nil)) // aa 排名靠前
-	a.NotError(mt.AddMimetype("application/bb", nil, nil))
+	a.NotError(mt.AddMimetype(nil, nil, "text"))
+	a.NotError(mt.AddMimetype(nil, nil, "text/plain"))
+	a.NotError(mt.AddMimetype(nil, nil, "text/text"))
+	a.NotError(mt.AddMimetype(nil, nil, "application/aa")) // aa 排名靠前
+	a.NotError(mt.AddMimetype(nil, nil, "application/bb"))
 
 	mm := mt.findMarshal("text")
 	a.Equal(mm.name, "text")
@@ -200,7 +200,7 @@ func TestContent_findMarshal(t *testing.T) {
 	a.Equal(mm.name, "application/aa")
 
 	// 有默认值，则始终在第一
-	a.NotError(mt.AddMimetype(DefaultMimetype, nil, nil))
+	a.NotError(mt.AddMimetype(nil, nil, DefaultMimetype))
 	mm = mt.findMarshal("*/*")
 	a.Equal(mm.name, DefaultMimetype)
 

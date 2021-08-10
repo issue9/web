@@ -33,8 +33,8 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t)
 	c := New(DefaultBuilder)
 	a.NotNil(c)
-	a.NotError(c.AddMimetype(text.Mimetype, text.Marshal, text.Unmarshal))
-	a.NotError(c.AddMimetype(DefaultMimetype, text.Marshal, text.Unmarshal))
+	a.NotError(c.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(c.AddMimetype(text.Marshal, text.Unmarshal, DefaultMimetype))
 
 	a.NotError(c.CatalogBuilder().SetString(language.MustParse("cmn-hans"), "test", "测试"))
 	a.NotError(c.CatalogBuilder().SetString(language.MustParse("cmn-hant"), "test", "測試"))
