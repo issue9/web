@@ -66,17 +66,23 @@ func (c *Content) conentType(header string) (UnmarshalFunc, encoding.Encoding, e
 	return f, e, nil
 }
 
-// unmarshal 查找指定名称的 UnmarshalFunc
-func (c *Content) unmarshal(name string) (UnmarshalFunc, bool) {
+// Mimetype 查找指定名称的编解码方法
+func (c *Content) Mimetype(name string) (MarshalFunc, UnmarshalFunc, bool) {
 	for _, mt := range c.mimetypes {
 		if mt.name == name {
-			return mt.unmarshal, true
+			return mt.marshal, mt.unmarshal, true
 		}
 	}
-	return nil, false
+	return nil, nil, false
 }
 
-// marshal 从 header 解析出当前请求所需要的解 mimetype 名称和对应的解码函数
+// unmarshal 查找指定名称的 UnmarshalFunc
+func (c *Content) unmarshal(name string) (UnmarshalFunc, bool) {
+	_, u, found := c.Mimetype(name)
+	return u, found
+}
+
+// marshal 从 header 解析出当前请求所需要的 mimetype 名称和对应的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
@@ -109,7 +115,8 @@ func (c *Content) marshal(header string) (string, MarshalFunc, bool) {
 
 // AddMimetype 添加编解码函数
 //
-// m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理。
+// m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理；
+// name 表示名称，一般为 mimetype 名称，比如 application/xml 等，
 func (c *Content) AddMimetype(m MarshalFunc, u UnmarshalFunc, name ...string) error {
 	for _, n := range name {
 		if err := c.addMimetype(n, m, u); err != nil {

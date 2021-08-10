@@ -146,9 +146,8 @@ func TestContent_Add_Delete(t *testing.T) {
 	a.NotError(mt.AddMimetype(nil, nil, "application/json"))
 	a.Equal(mt.mimetypes[0].name, DefaultMimetype) // 默认始终在第一
 
-	a.NotError(mt.AddMimetype(nil, nil, "text"))
-	a.NotError(mt.AddMimetype(nil, nil, "text/plain"))
-	a.NotError(mt.AddMimetype(nil, nil, "text/text"))
+	a.NotError(mt.AddMimetype(nil, nil, "text", "text/plain", "text/text"))
+	a.NotError(mt.AddMimetype(nil, nil))                   // 缺少 name 参数，不会添加任何内容
 	a.NotError(mt.AddMimetype(nil, nil, "application/aa")) // aa 排名靠前
 	a.NotError(mt.AddMimetype(nil, nil, "application/bb"))
 
