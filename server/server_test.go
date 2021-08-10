@@ -57,6 +57,9 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 	a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr))
 	a.NotError(l.SetOutput(logs.LevelError, os.Stderr))
 	a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr))
+	a.NotError(l.SetOutput(logs.LevelInfo, os.Stdout))
+	a.NotError(l.SetOutput(logs.LevelTrace, os.Stdout))
+	a.NotError(l.SetOutput(logs.LevelWarn, os.Stdout))
 
 	return l
 }

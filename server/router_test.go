@@ -328,3 +328,32 @@ func TestServer_Router(t *testing.T) {
 	v, found = srv.Get("host")
 	a.True(found).Equal(v, 123)
 }
+
+func TestTag_AddRoutes(t *testing.T) {
+	a := assert.New(t)
+
+	srv := newServer(a)
+	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
+
+	m, err := srv.NewModule("m1", "v1", "m1 desc")
+	a.NotError(err).NotNil(m)
+	m.Tag("install").AddRoutes(func(router *Router) {}, "")
+	a.Empty(r.MuxRouter().Routes()) // 未初始化
+	srv.InitModules("install")
+	a.Empty(r.MuxRouter().Routes()) // 已初始化，但是未指定正常的路由名称
+
+	srv = newServer(a)
+	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(r)
+	m, err = srv.NewModule("m2", "v2", "m2 desc")
+	a.NotError(err).NotNil(m)
+	m.Tag("install").AddRoutes(func(router *Router) {
+		a.Equal(r, router)
+		router.Get("p1", f201)
+	}, "host")
+
+	a.Empty(r.MuxRouter().Routes()) // 未初始化
+	srv.InitModules("install")
+	a.Equal(1, len(r.MuxRouter().Routes())) // 已初始化
+}

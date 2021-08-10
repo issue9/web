@@ -4,6 +4,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -281,4 +282,24 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 // Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.router.Remove(p.prefix+path, method...)
+}
+
+// AddRoutes 注册路由项
+//
+// f 实际执行注册路由的函数；
+// routerName 路由名称，由 Server.NewRouter 中创建，若为空值，则采用 Tag.Name 作为默认值；
+func (t *Tag) AddRoutes(f func(r *Router), routerName string) *Tag {
+	if routerName == "" {
+		routerName = t.Name()
+	}
+
+	return t.AddInit(fmt.Sprintf("向 %s 注册路由项", routerName), func() error {
+		r := t.Server().Router(routerName)
+		if r == nil {
+			return fmt.Errorf("路由名 %s 不存在", routerName)
+		}
+
+		f(r)
+		return nil
+	})
 }
