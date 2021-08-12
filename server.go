@@ -21,6 +21,7 @@ type (
 	Module      = server.Module
 	HandlerFunc = server.HandlerFunc
 	Responser   = server.Responser
+	Router      = server.Router
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象

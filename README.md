@@ -17,25 +17,30 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    srv, _ := web.NewServer(&web.Options{})
+    srv, _ := web.NewServer("web", "1.0.0", logs.New(),&web.Options{})
 
-    srv.AddModuleFunc(m1.Module, m2.Module) // 注册模块信息
+    srv.NewModule(m1.Module, m2.Module) // 注册模块信息
 
+    srv.InitModules("serve")
     srv.Serve()
 }
 
 // modules/m1/module.go
-func Module(s *web.Server) (*web.Module, error) {
-    return web.NewModule("m1", "1.0.0", "模块描述信息").
-        Get("/admins", getAdmins).
-        Get("/groups", getGroups), nil
+func Module(s *web.Server) error {
+    m := web.NewModule("m1", "1.0.0", "模块描述信息").
+    m.Tag("serve").AddRoutes(func(r*web.Router){
+        r.Get("/admins", getAdmins).
+            Get("/groups", getGroups)
+    })
 }
 
 // modules/m2/module.go
 func Module(s *web.Server) (*web.Module, error) {
-    return web.NewModule("m2", "1.0.0", "模块描述信息", "m1").
-        Get("/admins", getAdmins).
-        Get("/groups", getGroups), nil
+    m := web.NewModule("m1", "1.0.0", "模块描述信息", "m1").
+    m.Tag("serve").AddRoutes(func(r*web.Router){
+        r.Get("/admins", getAdmins).
+            Get("/groups", getGroups)
+    })
 }
 ```
 
@@ -52,19 +57,20 @@ package m1
 
 import "github.com/issue9/web"
 
-func Module(s *web.Server) (*web.Module, error) {
-    m := web.NewModule("test", "1.0.0", "测试模块")
+func Module(s *web.Server) error {
+    m := s.NewModule("test", "1.0.0", "测试模块")
 
-    m.AddInit(func() error {
+    tag := m.Tag("serve")
+    tag.AddInit(func() error {
         // TODO 此处可以添加初始化模块的相关代码
         return nil
     }, "初始化函数描述")
 
-    m.AddService(func(ctx context.Context) error {
+    tag.AddService(func(ctx context.Context) error {
         // TODO 此处添加服务代码
     }, "服务描述")
 
-    return m
+    return nil
 }
 ```
 
@@ -98,7 +104,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 ## 错误处理
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
-具体实现可参考 `result.defaultResult` 的实现。
+具体实现可参考 `content.defaultResult` 的实现。
 
 ## 版权
 
