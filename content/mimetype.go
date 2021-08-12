@@ -22,10 +22,10 @@ import (
 const DefaultMimetype = "application/octet-stream"
 
 type (
-	// MarshalFunc 将一个对象转换成 []byte 内容时所采用的接口
+	// MarshalFunc 序列化函数原型
 	MarshalFunc func(v interface{}) ([]byte, error)
 
-	// UnmarshalFunc 将客户端内容转换成一个对象时所采用的接口
+	// UnmarshalFunc 反序列化函数原型
 	UnmarshalFunc func([]byte, interface{}) error
 
 	mimetype struct {
@@ -66,14 +66,20 @@ func (c *Content) conentType(header string) (UnmarshalFunc, encoding.Encoding, e
 	return f, e, nil
 }
 
-// Mimetype 查找指定名称的编解码方法
-func (c *Content) Mimetype(name string) (MarshalFunc, UnmarshalFunc, bool) {
-	for _, mt := range c.mimetypes {
-		if mt.name == name {
-			return mt.marshal, mt.unmarshal, true
-		}
+// MimetypeFunc 以指定函数查找是否有符合要求的序列化函数
+//
+// match 为匹配函数，原型为 func(name string)bool，name 为序列化函数的名称，
+// 用户可以判断此值是否符合要求，返回 true，表示匹配，会中断后续的匹配。
+func (c *Content) MimetypeFunc(match func(string) bool) (MarshalFunc, UnmarshalFunc, bool) {
+	if m := c.mimetypeFunc(match); m != nil {
+		return m.marshal, m.unmarshal, true
 	}
 	return nil, nil, false
+}
+
+// Mimetype 查找指定名称的序列化方法
+func (c *Content) Mimetype(name string) (MarshalFunc, UnmarshalFunc, bool) {
+	return c.MimetypeFunc(func(n string) bool { return n == name })
 }
 
 // unmarshal 查找指定名称的 UnmarshalFunc
@@ -113,10 +119,13 @@ func (c *Content) marshal(header string) (string, MarshalFunc, bool) {
 	return "", nil, false
 }
 
-// AddMimetype 添加编解码函数
+// AddMimetype 添加序列化函数
 //
 // m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理；
-// name 表示名称，一般为 mimetype 名称，比如 application/xml 等，
+//
+// name 表示名称，一般为 mimetype 名称，比如 application/xml 等，用户也可以添加其它值，比如：
+//  c.AddMimetype(json.Marshal, json.Unmarshal, "application/json", ".json")
+// 后期用户可以根据文件后缀名从 c.Mimetype 直接查找相应的序列化函数。
 func (c *Content) AddMimetype(m MarshalFunc, u UnmarshalFunc, name ...string) error {
 	for _, n := range name {
 		if err := c.addMimetype(n, m, u); err != nil {
@@ -133,7 +142,7 @@ func (c *Content) addMimetype(name string, m MarshalFunc, u UnmarshalFunc) error
 
 	for _, mt := range c.mimetypes {
 		if mt.name == name {
-			return fmt.Errorf("已经存在相同名称 %s 的编解码函数", name)
+			return fmt.Errorf("已经存在相同名称 %s 的序列化函数", name)
 		}
 	}
 
@@ -187,16 +196,16 @@ func (c *Content) findMarshal(name string) *mimetype {
 		return c.mimetypes[0] // 由 len(marshals) == 0 确保最少有一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
-		for _, mt := range c.mimetypes {
-			if strings.HasPrefix(mt.name, prefix) {
-				return mt
-			}
-		}
+		return c.mimetypeFunc(func(s string) bool { return strings.HasPrefix(s, prefix) })
 	default:
-		for _, mt := range c.mimetypes {
-			if mt.name == name {
-				return mt
-			}
+		return c.mimetypeFunc(func(s string) bool { return s == name })
+	}
+}
+
+func (c *Content) mimetypeFunc(match func(string) bool) *mimetype {
+	for _, mt := range c.mimetypes {
+		if match(mt.name) {
+			return mt
 		}
 	}
 	return nil

@@ -175,9 +175,7 @@ func TestContent_findMarshal(t *testing.T) {
 	a := assert.New(t)
 	mt := New(DefaultBuilder)
 
-	a.NotError(mt.AddMimetype(nil, nil, "text"))
-	a.NotError(mt.AddMimetype(nil, nil, "text/plain"))
-	a.NotError(mt.AddMimetype(nil, nil, "text/text"))
+	a.NotError(mt.AddMimetype(nil, nil, "text", "text/plain", "text/text"))
 	a.NotError(mt.AddMimetype(nil, nil, "application/aa")) // aa 排名靠前
 	a.NotError(mt.AddMimetype(nil, nil, "application/bb"))
 
