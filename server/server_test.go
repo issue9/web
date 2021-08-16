@@ -76,10 +76,10 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
 	mt := srv.Content()
-	a.NotError(mt.AddMimetype(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(mt.AddMimetype(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(mt.AddMimetype(gob.Marshal, gob.Unmarshal, content.DefaultMimetype))
-	a.NotError(mt.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(mt.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
+	a.NotError(mt.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
+	a.NotError(mt.Mimetypes().Add(gob.Marshal, gob.Unmarshal, content.DefaultMimetype))
+	a.NotError(mt.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	srv.Content().AddResult(411, 41110, "41110")
 
@@ -108,8 +108,8 @@ func TestGetServer(t *testing.T) {
 
 	srv, err := New("app", "0.1.0", newLogs(a), &Options{Port: ":8080"})
 	a.NotError(err).NotNil(srv)
-	a.NotError(srv.content.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(srv.content.AddMimetype(text.Marshal, text.Unmarshal, content.DefaultMimetype))
+	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
 	var isRequested bool
 
 	router, err := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
@@ -291,8 +291,8 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(server)
-	a.NotError(server.Content().AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(server.content.AddMimetype(text.Marshal, text.Unmarshal, content.DefaultMimetype))
+	a.NotError(server.Content().Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(server.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)

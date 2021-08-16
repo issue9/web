@@ -8,10 +8,10 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/content"
+	"github.com/issue9/web/serialization"
 )
 
-var _ content.MarshalFunc = (&HTML{}).Marshal
+var _ serialization.MarshalFunc = (&HTML{}).Marshal
 
 func TestHTML(t *testing.T) {
 	a := assert.New(t)

@@ -27,7 +27,7 @@ func TestContent_NewContext(t *testing.T) {
 	l := log.New(lw, "", 0)
 
 	c := New(DefaultBuilder)
-	a.NotError(c.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	b := c.CatalogBuilder()
 	a.NotError(b.SetString(language.Chinese, "test", "中文"))
@@ -163,7 +163,7 @@ func TestContext_Body(t *testing.T) {
 
 	// 采用不同的编码
 	c := New(DefaultBuilder)
-	a.NotError(c.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
 	r.Header.Set("Accept", "*/*")
@@ -196,7 +196,7 @@ func TestContext_Unmarshal(t *testing.T) {
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
 	c := New(DefaultBuilder)
-	a.NotError(c.AddMimetype(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	// 自定义报头
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)

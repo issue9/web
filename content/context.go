@@ -15,6 +15,8 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
+
+	"github.com/issue9/web/serialization"
 )
 
 // DefaultCharset 默认的字符集
@@ -34,7 +36,7 @@ type Context struct {
 	Request  *http.Request
 
 	// 指定输出时所使用的媒体类型，以及名称
-	OutputMimetype     MarshalFunc
+	OutputMimetype     serialization.MarshalFunc
 	OutputMimetypeName string
 
 	// 输出到客户端的字符集
@@ -44,7 +46,7 @@ type Context struct {
 	OutputCharsetName string
 
 	// 客户端内容所使用的媒体类型
-	InputMimetype UnmarshalFunc
+	InputMimetype serialization.UnmarshalFunc
 
 	// 客户端内容所使用的字符集
 	//

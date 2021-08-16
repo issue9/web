@@ -7,11 +7,13 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/serialization"
 )
 
 // Content 管理反馈给用户的数据
 type Content struct {
-	mimetypes      []*mimetype
+	mimetypes      *serialization.Serialization
 	resultMessages map[int]*resultMessage
 	resultBuilder  BuildResultFunc
 	catalog        *catalog.Builder
@@ -20,7 +22,7 @@ type Content struct {
 // New 返回 *Content 实例
 func New(builder BuildResultFunc) *Content {
 	return &Content{
-		mimetypes:      make([]*mimetype, 0, 10),
+		mimetypes:      serialization.New(10),
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,
 		catalog:        catalog.NewBuilder(),

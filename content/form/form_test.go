@@ -8,12 +8,12 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/content"
+	"github.com/issue9/web/serialization"
 )
 
 var (
-	_ content.MarshalFunc   = Marshal
-	_ content.UnmarshalFunc = Unmarshal
+	_ serialization.MarshalFunc   = Marshal
+	_ serialization.UnmarshalFunc = Unmarshal
 
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
