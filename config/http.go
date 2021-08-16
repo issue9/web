@@ -4,11 +4,10 @@ package config
 
 import (
 	"crypto/tls"
+	"os"
 	"time"
 
 	"golang.org/x/crypto/acme/autocert"
-
-	"github.com/issue9/web/internal/filesystem"
 )
 
 type (
@@ -53,11 +52,11 @@ type (
 )
 
 func (cert *Certificate) sanitize() *Error {
-	if !filesystem.Exists(cert.Cert) {
+	if !fileExists(cert.Cert) {
 		return &Error{Field: "cert", Message: "文件不存在"}
 	}
 
-	if !filesystem.Exists(cert.Key) {
+	if !fileExists(cert.Key) {
 		return &Error{Field: "key", Message: "文件不存在"}
 	}
 
@@ -136,7 +135,7 @@ func (l *LetsEncrypt) tlsConfig() *tls.Config {
 }
 
 func (l *LetsEncrypt) sanitize() *Error {
-	if l.Cache == "" || !filesystem.Exists(l.Cache) {
+	if l.Cache == "" || !fileExists(l.Cache) {
 		return &Error{Field: "cache", Message: "不存在该目录或是未指定"}
 	}
 
@@ -145,4 +144,9 @@ func (l *LetsEncrypt) sanitize() *Error {
 	}
 
 	return nil
+}
+
+func fileExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil || os.IsExist(err)
 }
