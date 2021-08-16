@@ -20,6 +20,7 @@ import (
 	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/service"
 )
 
@@ -54,6 +55,7 @@ type Server struct {
 	modules  []*Module
 	content  *content.Content
 	services *service.Manager
+	files    *serialization.Serialization
 	events   map[string]events.Eventer
 }
 
@@ -88,6 +90,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
+		files:    serialization.New(10),
 		events:   make(map[string]events.Eventer, 5),
 	}
 	srv.httpServer.Handler = srv.groups
@@ -228,3 +231,6 @@ func (m *Module) Server() *Server { return m.srv }
 
 // Server 获取关联的 Server 实例
 func (t *Tag) Server() *Server { return t.Module().Server() }
+
+// Mimetypes 返回用于序列化 web 内容的操作接口
+func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.content.Mimetypes() }
