@@ -11,6 +11,11 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
+// DefaultMimetype 默认的媒体类型
+//
+// 在不能获取输入和输出的媒体类型时，会采用此值作为其默认值。
+const DefaultMimetype = "application/octet-stream"
+
 // Content 管理反馈给用户的数据
 type Content struct {
 	mimetypes      *serialization.Mimetypes
@@ -28,6 +33,9 @@ func New(builder BuildResultFunc) *Content {
 		catalog:        catalog.NewBuilder(),
 	}
 }
+
+// Mimetypes 管理 mimetype 的序列化操作
+func (c *Content) Mimetypes() *serialization.Mimetypes { return c.mimetypes }
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {

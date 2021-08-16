@@ -4,6 +4,7 @@ package content
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -312,4 +313,26 @@ func TestContent_acceptLanguage(t *testing.T) {
 
 	tag = c.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
+}
+
+func TestContent_contentType(t *testing.T) {
+	a := assert.New(t)
+
+	mt := New(DefaultBuilder)
+	a.NotNil(mt)
+
+	f, e, err := mt.conentType(";;;")
+	a.Error(err).Nil(f).Nil(e)
+
+	// 不存在的 mimetype
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
+	a.Error(err).Nil(f).Nil(e)
+
+	mt.Mimetypes().Add(nil, json.Unmarshal, DefaultMimetype)
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
+	a.NotError(err).NotNil(f).NotNil(e)
+
+	// 无效的字符集名称
+	f, e, err = mt.conentType(buildContentType(DefaultMimetype, "invalid-charset"))
+	a.Error(err).Nil(f).Nil(e)
 }

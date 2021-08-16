@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 
 	"github.com/issue9/qheader"
@@ -257,4 +258,35 @@ func (c *Content) acceptLanguage(header string) language.Tag {
 
 	tag, _, _ := c.CatalogBuilder().Matcher().Match(tags...)
 	return tag
+}
+
+// conentType 从 content-type 报头解析出需要用到的解码函数
+func (c *Content) conentType(header string) (serialization.UnmarshalFunc, encoding.Encoding, error) {
+	var (
+		mt      = DefaultMimetype
+		charset = DefaultCharset
+	)
+
+	if header != "" {
+		mts, params, err := mime.ParseMediaType(header)
+		if err != nil {
+			return nil, nil, err
+		}
+		mt = mts
+		if charset = params["charset"]; charset == "" {
+			charset = DefaultCharset
+		}
+	}
+
+	f, found := c.Mimetypes().UnmarshalFunc(mt)
+	if !found {
+		return nil, nil, fmt.Errorf("未注册的解函数 %s", mt)
+	}
+
+	e, err := htmlindex.Get(charset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return f, e, nil
 }
