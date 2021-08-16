@@ -10,6 +10,7 @@ import (
 )
 
 type (
+	// Serialization 管理注册的序列化函数
 	Serialization struct {
 		serializes []*serializer
 	}

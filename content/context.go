@@ -76,7 +76,7 @@ func (c *Content) NewContext(l *log.Logger, w http.ResponseWriter, r *http.Reque
 	}
 
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, found := c.marshal(header)
+	outputMimetypeName, marshal, found := c.Mimetypes().MarshalFunc(header)
 	if !found {
 		printLog("未找到符合报头 %s 的解码函数", header)
 		return nil, http.StatusNotAcceptable

@@ -13,7 +13,7 @@ import (
 
 // Content 管理反馈给用户的数据
 type Content struct {
-	mimetypes      *serialization.Serialization
+	mimetypes      *serialization.Mimetypes
 	resultMessages map[int]*resultMessage
 	resultBuilder  BuildResultFunc
 	catalog        *catalog.Builder
@@ -22,7 +22,7 @@ type Content struct {
 // New 返回 *Content 实例
 func New(builder BuildResultFunc) *Content {
 	return &Content{
-		mimetypes:      serialization.New(10),
+		mimetypes:      serialization.NewMimetypes(10),
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,
 		catalog:        catalog.NewBuilder(),
