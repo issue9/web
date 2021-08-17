@@ -27,7 +27,12 @@ func TestLocale_LoadFile(t *testing.T) {
 	p := l.Printer(language.MustParse("cmn-hans"))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
+
 	a.Equal(p.Sprintf("k2", 1), "msg-1")
 	a.Equal(p.Sprintf("k2", 3), "msg-3")
 	a.Equal(p.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
 }
