@@ -1,0 +1,16 @@
+language: cmn-hans
+messages:
+- key: k1
+  message:
+    msg: msg1
+
+- key: k2
+  message:
+    select:
+      arg: 1
+      format: '%d'
+      cases:
+        =1: msg-1
+        =2: msg-2
+        =3: msg-3
+        other: msg-other
