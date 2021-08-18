@@ -55,7 +55,6 @@ type Server struct {
 	modules  []*Module
 	content  *content.Content
 	services *service.Manager
-	files    *serialization.Files
 	events   map[string]events.Eventer
 }
 
@@ -90,7 +89,6 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
 		services: service.NewManager(logs, o.Location),
-		files:    serialization.NewFiles(10),
 		events:   make(map[string]events.Eventer, 5),
 	}
 	srv.httpServer.Handler = srv.groups
@@ -236,4 +234,7 @@ func (t *Tag) Server() *Server { return t.Module().Server() }
 func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.content.Mimetypes() }
 
 // Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() *serialization.Files { return srv.files }
+func (srv *Server) Files() *serialization.Files { return srv.Content().Files() }
+
+// Locale 返回用于序列化文件内容的操作接口
+func (srv *Server) Locale() *serialization.Locale { return srv.Content().Locale() }

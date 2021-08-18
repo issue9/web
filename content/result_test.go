@@ -10,7 +10,6 @@ import (
 
 	"github.com/issue9/assert"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/content/form"
@@ -183,21 +182,17 @@ func TestDefaultResultForm(t *testing.T) {
 	a.Equal(obj, simpleMimetypeResult)
 }
 
-func buildResultCatalog(a *assert.Assertion) *catalog.Builder {
-	c := catalog.NewBuilder()
-	a.NotNil(c)
-
-	a.NotError(c.SetString(language.Und, "lang", "und"))
-	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(c.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	return c
+func buildResultCatalog(c *Content, a *assert.Assertion) {
+	b := c.Locale().Builder()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 }
 
 func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
 	c := New(DefaultBuilder)
-	c.catalog = buildResultCatalog(a)
+	buildResultCatalog(c, a)
 
 	c.AddResult(400, 40000, "lang") // lang 有翻译
 
@@ -263,8 +258,8 @@ func TestContent_AddResult(t *testing.T) {
 func TestContent_Results(t *testing.T) {
 	a := assert.New(t)
 	c := New(DefaultBuilder)
-	c.catalog = buildResultCatalog(a)
 	a.NotNil(c)
+	buildResultCatalog(c, a)
 
 	a.NotPanic(func() {
 		c.AddResult(400, 40010, "lang")

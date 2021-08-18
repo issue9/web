@@ -256,7 +256,7 @@ func (c *Content) acceptLanguage(header string) language.Tag {
 		tags = append(tags, language.Make(l.Value))
 	}
 
-	tag, _, _ := c.CatalogBuilder().Matcher().Match(tags...)
+	tag, _, _ := c.locale.Builder().Matcher().Match(tags...)
 	return tag
 }
 

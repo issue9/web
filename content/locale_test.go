@@ -18,9 +18,10 @@ func TestContent_catalog(t *testing.T) {
 
 	c := New(DefaultBuilder)
 	a.NotNil(c)
-	l := c.LocaleBuilder(language.SimplifiedChinese)
+
+	l := c.Locale().TagBuilder(language.SimplifiedChinese)
 	l.SetString("test", "测试")
-	l = c.LocaleBuilder(language.Und)
+	l = c.Locale().TagBuilder(language.Und)
 	l.SetString("test", "und")
 
 	p := c.NewLocalePrinter(language.SimplifiedChinese)
@@ -36,8 +37,9 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 
-	a.NotError(c.CatalogBuilder().SetString(language.MustParse("cmn-hans"), "test", "测试"))
-	a.NotError(c.CatalogBuilder().SetString(language.MustParse("cmn-hant"), "test", "測試"))
+	b := c.Locale().Builder()
+	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
+	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)

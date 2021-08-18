@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content/text"
 	"github.com/issue9/web/content/text/testobject"
@@ -30,7 +29,7 @@ func TestContent_NewContext(t *testing.T) {
 	c := New(DefaultBuilder)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
-	b := c.CatalogBuilder()
+	b := c.Locale().Builder()
 	a.NotError(b.SetString(language.Chinese, "test", "中文"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "test", "简体"))
 	a.NotError(b.SetString(language.TraditionalChinese, "test", "繁体"))
@@ -293,11 +292,11 @@ func TestContent_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
 
 	c := New(DefaultBuilder)
-	c.catalog = catalog.NewBuilder()
-	a.NotError(c.catalog.SetString(language.Und, "lang", "und"))
-	a.NotError(c.catalog.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(c.catalog.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotError(c.catalog.SetString(language.AmericanEnglish, "lang", "en_US"))
+	b := c.Locale().Builder()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
 
 	tag := c.acceptLanguage("")
 	a.Equal(tag, language.Und, "v1:%s, v2:%s", tag.String(), language.Und.String())
