@@ -21,6 +21,7 @@ type (
 	HandlerFunc = server.HandlerFunc
 	Responser   = server.Responser
 	Router      = server.Router
+	Command     = config.Command
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
