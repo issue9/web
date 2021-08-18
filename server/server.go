@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
@@ -163,9 +164,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Content 返回内容编解码的管理接口
-func (srv *Server) Content() *content.Content { return srv.content }
-
 // Services 返回服务内容的管理接口
 func (srv *Server) Services() *service.Manager { return srv.services }
 
@@ -234,7 +232,20 @@ func (t *Tag) Server() *Server { return t.Module().Server() }
 func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.content.Mimetypes() }
 
 // Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() *serialization.Files { return srv.Content().Files() }
+func (srv *Server) Files() *serialization.Files { return srv.content.Files() }
 
 // Locale 返回用于序列化文件内容的操作接口
-func (srv *Server) Locale() *serialization.Locale { return srv.Content().Locale() }
+func (srv *Server) Locale() *serialization.Locale { return srv.content.Locale() }
+
+// Results 返回在指定语言下的所有代码以及关联的描述信息
+func (srv *Server) Results(p *message.Printer) map[int]string { return srv.content.Results(p) }
+
+// AddResult 添加错误代码与关联的描述信息
+func (srv *Server) AddResult(status, code int, key message.Reference, v ...interface{}) {
+	srv.content.AddResult(status, code, key, v...)
+}
+
+// Result 返回指定代码在指定语言的错误描述信息
+func (srv *Server) Result(p *message.Printer, code int, fields content.Fields) content.Result {
+	return srv.content.Result(p, code, fields)
+}

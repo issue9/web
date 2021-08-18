@@ -75,13 +75,12 @@ func newServer(a *assert.Assertion) *Server {
 	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	mt := srv.Content()
-	a.NotError(mt.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(mt.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(mt.Mimetypes().Add(gob.Marshal, gob.Unmarshal, content.DefaultMimetype))
-	a.NotError(mt.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
+	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
+	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, content.DefaultMimetype))
+	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
-	srv.Content().AddResult(411, 41110, "41110")
+	srv.AddResult(411, 41110, "41110")
 
 	return srv
 }
@@ -291,7 +290,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(server)
-	a.NotError(server.Content().Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(server.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))

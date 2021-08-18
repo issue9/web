@@ -74,8 +74,8 @@ func TestContext_ResultWithFields(t *testing.T) {
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	ctx := newServer(a).NewContext(w, r)
-	ctx.server.Content().AddResult(http.StatusBadRequest, 40010, "40010")
-	ctx.server.Content().AddResult(http.StatusBadRequest, 40011, "40011")
+	ctx.server.AddResult(http.StatusBadRequest, 40010, "40010")
+	ctx.server.AddResult(http.StatusBadRequest, 40011, "40011")
 
 	resp := ctx.Result(40010, content.Fields{
 		"k1": []string{"v1", "v2"},
@@ -95,7 +95,7 @@ func TestContext_Result(t *testing.T) {
 		_, err := w.Write([]byte("error-handler"))
 		a.NotError(err)
 	}, 400) // 此处用于检测是否影响 result.Render() 的输出
-	srv.Content().AddResult(400, 40000, "lang") // lang 有翻译
+	srv.AddResult(400, 40000, "lang") // lang 有翻译
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息

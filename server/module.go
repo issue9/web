@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/scheduled"
 	"github.com/issue9/scheduled/schedulers"
 	"github.com/issue9/sliceutil"
+
 	"github.com/issue9/web/service"
 )
 
@@ -167,6 +168,11 @@ func (m *Module) Tags() []string {
 
 // Inited 查询指定标签关联的函数是否已经被调用
 func (m *Module) Inited(tag string) bool { return m.Tag(tag).Inited() }
+
+// LoadLocale 从 m.FS 加载本地化语言文件
+func (m *Module) LoadLocale(glob string) error {
+	return m.srv.Locale().LoadFileFS(m.FS, glob)
+}
 
 // AddInit 注册指执行函数
 //

@@ -118,6 +118,6 @@ func Created(v interface{}, location string) Responser {
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code int, fields content.Fields) Responser {
-	rslt := ctx.server.content.Result(ctx.LocalePrinter, code, fields)
+	rslt := ctx.server.Result(ctx.LocalePrinter, code, fields)
 	return Object(rslt.Status(), rslt, nil)
 }

@@ -71,7 +71,7 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 // 如果不合规则，会以指定的状码退出。
 // 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	ctx, status := srv.Content().NewContext(srv.logs.DEBUG(), w, r)
+	ctx, status := srv.content.NewContext(srv.logs.DEBUG(), w, r)
 	if status != 0 {
 		srv.errorHandlers.Exit(w, status)
 	}
