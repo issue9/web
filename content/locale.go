@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-// Locale
 func (c *Content) Locale() *serialization.Locale { return c.locale }
 
 // NewLocalePrinter 返回指定语言的 message.Printer
