@@ -3,7 +3,9 @@
 package serialization
 
 import (
+	"encoding/json"
 	"encoding/xml"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -20,10 +22,54 @@ func TestLocale_LoadFile(t *testing.T) {
 
 	a.ErrorString(l.LoadFile("./testdata/*.yaml"), "未找到适合")
 
-	f.Add(xml.Marshal, xml.Unmarshal, ".xml")
-	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml")
+	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml"))
 
 	a.NotError(l.LoadFile("./testdata/*.yaml"))
+	p := l.Printer(language.MustParse("cmn-hans"))
+
+	a.Equal(p.Sprintf("k1"), "msg1")
+
+	a.Equal(p.Sprintf("k2", 1), "msg-1")
+	a.Equal(p.Sprintf("k2", 3), "msg-3")
+	a.Equal(p.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
+}
+
+func TestLocale_LoadFileFS(t *testing.T) {
+	a := assert.New(t)
+	f := NewFiles(10)
+	l := NewLocale(catalog.NewBuilder(), f)
+	a.NotNil(l)
+
+	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
+
+	a.NotError(l.LoadFileFS(os.DirFS("./testdata"), "cmn-hant.xml"))
+	p := l.Printer(language.MustParse("cmn-hant"))
+
+	a.Equal(p.Sprintf("k1"), "msg1")
+
+	a.Equal(p.Sprintf("k2", 1), "msg-1")
+	a.Equal(p.Sprintf("k2", 3), "msg-3")
+	a.Equal(p.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
+}
+
+func TestLocale_LoadFileFS_JSON(t *testing.T) {
+	a := assert.New(t)
+	f := NewFiles(10)
+	l := NewLocale(catalog.NewBuilder(), f)
+	a.NotNil(l)
+	a.NotError(f.Add(json.Marshal, json.Unmarshal, ".json"))
+
+	a.NotError(l.LoadFileFS(os.DirFS("./testdata"), "*.json"))
 	p := l.Printer(language.MustParse("cmn-hans"))
 
 	a.Equal(p.Sprintf("k1"), "msg1")

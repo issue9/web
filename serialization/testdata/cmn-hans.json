@@ -1,0 +1,52 @@
+{
+  "language": "cmn-hans",
+  "messages": [
+    {
+      "key": "k1",
+      "message": {
+        "msg": "msg1"
+      }
+    },
+    {
+      "key": "k2",
+      "message": {
+        "select": {
+          "arg": 1,
+          "format": "%d",
+          "cases": {
+            "=1": "msg-1",
+            "=2": "msg-%[1]d",
+            "=3": "msg-3",
+            "other": "msg-other"
+          }
+        }
+      }
+    },
+    {
+      "key": "k3",
+      "message": {
+        "msg": "${number}-${string}",
+        "vars": [
+          {
+            "name": "number",
+            "arg": 2,
+            "format": "%d",
+            "cases": {
+              "=1": "1",
+              "other": "2"
+            }
+          },
+          {
+            "name": "string",
+            "arg": 1,
+            "format": "%d",
+            "cases": {
+              "=1": "一",
+              "other": "二"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -3,6 +3,11 @@
 package serialization
 
 import (
+	"bytes"
+	"encoding/json"
+	"encoding/xml"
+	"errors"
+	"io"
 	"io/fs"
 	"path/filepath"
 
@@ -47,41 +52,29 @@ type (
 	}
 
 	localeSelect struct {
-		Arg    int    `xml:"arg,attr" json:"arg" yaml:"arg"`
-		Format string `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
-		Cases  pairs  `xml:"case" json:"cases" yaml:"cases"`
+		Arg    int         `xml:"arg,attr" json:"arg" yaml:"arg"`
+		Format string      `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
+		Cases  localeCases `xml:"case" json:"cases" yaml:"cases"`
 	}
 
 	localeVar struct {
-		Name   string `xml:"name,attr" json:"name" yaml:"name"`
-		Arg    int    `xml:"arg,attr" json:"arg" yaml:"arg"`
-		Format string `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
-		Cases  pairs  `xml:"case" json:"cases" yaml:"cases"`
+		Name   string      `xml:"name,attr" json:"name" yaml:"name"`
+		Arg    int         `xml:"arg,attr" json:"arg" yaml:"arg"`
+		Format string      `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
+		Cases  localeCases `xml:"case" json:"cases" yaml:"cases"`
 	}
 
-	pairs []pair
-
-	// pair 定义 map[string]string 类型
-	//
-	// 唯一的功能是为了 xml 能支持 map。
-	pair struct {
-		Cond  interface{}
-		Value interface{}
-	}
+	localeCases []interface{}
 
 	entry struct {
-		XMLName struct{} `xml:"key"`
+		XMLName struct{} `xml:"case"`
 		Cond    string   `xml:"cond,attr"`
 		Value   string   `xml:",chardata"`
 	}
 )
 
-func buildSelectf(arg int, format string, cases []pair) catalog.Message {
-	c := make([]interface{}, 0, len(cases)*2)
-	for _, v := range cases {
-		c = append(c, v.Cond, v.Value)
-	}
-	return plural.Selectf(arg, format, c...)
+func buildSelectf(arg int, format string, cases []interface{}) catalog.Message {
+	return plural.Selectf(arg, format, cases...)
 }
 
 func (v *localeVar) message() catalog.Message {
@@ -189,22 +182,48 @@ func (l *Locale) set(m *localeMessages) (err error) {
 	return nil
 }
 
-func (e *pairs) UnmarshalYAML(unmarshal func(interface{}) error) error {
+// UnmarshalXML implement xml.Unmarshaler
+func (c *localeCases) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for {
+		e := &entry{}
+		if err := d.DecodeElement(e, &start); errors.Is(err, io.EOF) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		*c = append(*c, e.Cond, e.Value)
+	}
+}
+
+func (c *localeCases) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	kv := yaml.MapSlice{}
 	if err := unmarshal(&kv); err != nil {
 		return err
 	}
 
-	*e = make(pairs, 0, len(kv))
-
-	// make sure to dereference before assignment,
-	// otherwise only the local variable will be overwritten
-	// and not the value the pointer actually points to
+	*c = make(localeCases, 0, len(kv))
 	for _, item := range kv {
-		key := item.Key
-		val := item.Value
-		*e = append(*e, pair{Cond: key, Value: val})
+		*c = append(*c, item.Key, item.Value)
 	}
 
 	return nil
+}
+
+func (c *localeCases) UnmarshalJSON(data []byte) error {
+	d := json.NewDecoder(bytes.NewBuffer(data))
+	for {
+		t, err := d.Token()
+		if errors.Is(err, io.EOF) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		if t == json.Delim('{') || t == json.Delim('}') {
+			continue
+		}
+
+		*c = append(*c, t)
+	}
 }
