@@ -11,13 +11,13 @@ require (
 	github.com/issue9/middleware/v5 v5.0.0-beta.1
 	github.com/issue9/mux/v5 v5.0.0-beta.1
 	github.com/issue9/qheader v0.5.4
-	github.com/issue9/query/v2 v2.2.4
+	github.com/issue9/query/v2 v2.2.5
 	github.com/issue9/scheduled v0.7.0
 	github.com/issue9/sliceutil v0.7.0
 	github.com/issue9/upload v1.1.4
-	github.com/issue9/validation v0.3.1
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
-	golang.org/x/text v0.3.6
+	github.com/issue9/validation v0.4.0
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
 )
 
