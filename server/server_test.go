@@ -66,7 +66,7 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion) *Server {
-	srv, err := New("app", "0.1.0", newLogs(a), &Options{Port: ":8080"})
+	srv, err := New("app", "0.1.0", &Options{Port: ":8080", Logs: newLogs(a)})
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
@@ -87,12 +87,10 @@ func newServer(a *assert.Assertion) *Server {
 
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
-	l := newLogs(a)
 
-	srv, err := New("app", "0.1.0", l, nil)
+	srv, err := New("app", "0.1.0", nil)
 	a.NotError(err).NotNil(srv)
 	a.False(srv.Uptime().IsZero())
-	a.Equal(l, srv.Logs())
 	a.NotNil(srv.Cache())
 	a.Equal(srv.Location(), time.Local)
 	a.Equal(srv.httpServer.Handler, srv.groups)
@@ -105,7 +103,7 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv, err := New("app", "0.1.0", newLogs(a), &Options{Port: ":8080"})
+	srv, err := New("app", "0.1.0", &Options{Port: ":8080", Logs: newLogs(a)})
 	a.NotError(err).NotNil(srv)
 	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
@@ -149,13 +147,14 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv, err = New("app", "0.1.0", newLogs(a), &Options{
+	srv, err = New("app", "0.1.0", &Options{
 		Port: ":8080",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
 			}
 		},
+		Logs: newLogs(a),
 	})
 	a.NotError(err).NotNil(srv)
 
@@ -279,7 +278,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	server, err := New("app", "0.1.0", newLogs(a), &Options{
+	server, err := New("app", "0.1.0", &Options{
 		Port: ":8088",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
@@ -288,6 +287,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 				Certificates: []tls.Certificate{cert},
 			}
 		},
+		Logs: newLogs(a),
 	})
 	a.NotError(err).NotNil(server)
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))

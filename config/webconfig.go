@@ -111,10 +111,11 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 			srv.ErrorLog = l.ERROR()
 			srv.TLSConfig = h.tlsConfig
 		},
+		Logs:                l,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
 	}
 
-	srv, err := server.New(name, version, l, o)
+	srv, err := server.New(name, version, o)
 	if err != nil {
 		return nil, err
 	}

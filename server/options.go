@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
+	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
@@ -71,6 +72,11 @@ type Options struct {
 	//
 	// 可以带 *，比如 text/* 表示所有 mime-type 为 text/ 开始的类型。
 	IgnoreCompressTypes []string
+
+	// 日志的输出通道设置
+	//
+	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会到任务通道，但是各个函数可用。
+	Logs *logs.Logs
 }
 
 func (o *Options) sanitize() (*Options, error) {
@@ -110,6 +116,14 @@ func (o *Options) sanitize() (*Options, error) {
 
 	if o.Recovery == nil {
 		o.Recovery = recovery.DefaultRecoverFunc(http.StatusInternalServerError)
+	}
+
+	if o.Logs == nil {
+		l, err := logs.New(nil)
+		if err != nil {
+			return nil, err
+		}
+		o.Logs = l
 	}
 
 	return o, nil

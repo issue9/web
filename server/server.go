@@ -63,7 +63,7 @@ type Server struct {
 //
 // name, version 表示服务的名称和版本号；
 // o 指定了初始化 Server 一些非必要参数。在传递给 New 之后，再对其值进行改变，是无效的。
-func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
+func New(name, version string, o *Options) (*Server, error) {
 	o, err := o.sanitize()
 	if err != nil {
 		return nil, err
@@ -72,14 +72,14 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 	srv := &Server{
 		name:       name,
 		version:    version,
-		logs:       logs,
+		logs:       o.Logs,
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
 		closed:     make(chan struct{}, 1),
 
 		groups:        o.groups,
-		compress:      compress.Classic(logs.ERROR(), o.IgnoreCompressTypes...),
+		compress:      compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
 		routers:       make(map[string]*Router, 3),
 
@@ -89,7 +89,7 @@ func New(name, version string, logs *logs.Logs, o *Options) (*Server, error) {
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder),
-		services: service.NewManager(logs, o.Location),
+		services: service.NewManager(o.Logs, o.Location),
 		events:   make(map[string]events.Eventer, 5),
 	}
 	srv.httpServer.Handler = srv.groups

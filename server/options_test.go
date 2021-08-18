@@ -21,4 +21,5 @@ func TestOptions_sanitize(t *testing.T) {
 	a.NotError(err).NotNil(oo)
 	a.Equal(oo.Location, time.Local)
 	a.NotNil(oo.groups)
+	a.NotNil(oo.Logs)
 }
