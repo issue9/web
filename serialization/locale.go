@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
+	"gopkg.in/yaml.v2"
 )
 
 type (
@@ -46,27 +47,46 @@ type (
 	}
 
 	localeSelect struct {
-		Arg    int               `xml:"arg,attr" json:"arg" yaml:"arg"`
-		Format string            `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
-		Cases  map[string]string `xml:"case" json:"cases" yaml:"cases"` // TODO 必须偶数
+		Arg    int    `xml:"arg,attr" json:"arg" yaml:"arg"`
+		Format string `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
+		Cases  pairs  `xml:"case" json:"cases" yaml:"cases"`
 	}
 
 	localeVar struct {
-		Name   string        `xml:"name" json:"name" yaml:"name"`
-		Select *localeSelect `xml:"select" json:"select" yaml:"select"`
+		Name   string `xml:"name,attr" json:"name" yaml:"name"`
+		Arg    int    `xml:"arg,attr" json:"arg" yaml:"arg"`
+		Format string `xml:"format,attr,omitempty" json:"format,omitempty" yaml:"format,omitempty"`
+		Cases  pairs  `xml:"case" json:"cases" yaml:"cases"`
+	}
+
+	pairs []pair
+
+	// pair 定义 map[string]string 类型
+	//
+	// 唯一的功能是为了 xml 能支持 map。
+	pair struct {
+		Cond  interface{}
+		Value interface{}
+	}
+
+	entry struct {
+		XMLName struct{} `xml:"key"`
+		Cond    string   `xml:"cond,attr"`
+		Value   string   `xml:",chardata"`
 	}
 )
 
-func (s *localeSelect) message() catalog.Message {
-	cases := make([]interface{}, 0, len(s.Cases))
-	for k, v := range s.Cases {
-		cases = append(cases, k, v)
+func buildSelectf(arg int, format string, cases []pair) catalog.Message {
+	c := make([]interface{}, 0, len(cases)*2)
+	for _, v := range cases {
+		c = append(c, v.Cond, v.Value)
 	}
-	return plural.Selectf(s.Arg, s.Format, cases...)
+	return plural.Selectf(arg, format, c...)
 }
 
 func (v *localeVar) message() catalog.Message {
-	return catalog.Var(v.Name, v.Select.message())
+	msg := buildSelectf(v.Arg, v.Format, v.Cases)
+	return catalog.Var(v.Name, msg)
 }
 
 func NewLocale(b *catalog.Builder, f *Files) *Locale {
@@ -156,7 +176,7 @@ func (l *Locale) set(m *localeMessages) (err error) {
 			err = tag.Set(msg.Key, msgs...)
 		case msg.Message.Select != nil:
 			s := msg.Message.Select
-			err = tag.Set(msg.Key, s.message())
+			err = tag.Set(msg.Key, buildSelectf(s.Arg, s.Format, s.Cases))
 		case msg.Message.Msg != "":
 			err = tag.SetString(msg.Key, msg.Message.Msg)
 		}
@@ -164,6 +184,26 @@ func (l *Locale) set(m *localeMessages) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (e *pairs) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	kv := yaml.MapSlice{}
+	if err := unmarshal(&kv); err != nil {
+		return err
+	}
+
+	*e = make(pairs, 0, len(kv))
+
+	// make sure to dereference before assignment,
+	// otherwise only the local variable will be overwritten
+	// and not the value the pointer actually points to
+	for _, item := range kv {
+		key := item.Key
+		val := item.Value
+		*e = append(*e, pair{Cond: key, Value: val})
 	}
 
 	return nil

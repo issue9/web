@@ -20,16 +20,14 @@ messages:
     msg: '${number}-${string}'
     vars:
       - name: number
-        select:
-          arg: 2
-          format: '%d'
-          cases:
-            =1: 1
-            other: 2
+        arg: 2
+        format: '%d'
+        cases:
+          =1: '1'
+          other: '2'
       - name: string
-        select:
-          arg: 1
-          format: '%d'
-          cases:
-            =1: 一
-            other: 二
+        arg: 1
+        format: '%d'
+        cases:
+          =1: 一
+          other: 二
