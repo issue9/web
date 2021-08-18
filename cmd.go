@@ -21,6 +21,12 @@ import (
 )
 
 // Command 提供一种简单的命令行处理方式
+//
+// 由 Command 生成的命令行带以下三个参数：
+//  - tag 运行的标签；
+//  - v 显示版本号；
+//  - fs 指定当前程序可读取的文件目录；
+// 以上三个参数的参数名称，可在配置内容中修改。
 type Command struct {
 	// 程序名称
 	Name string
@@ -55,6 +61,16 @@ type Command struct {
 
 // Exec 执行命令行操作
 func (cmd *Command) Exec() {
+	if err := cmd.sanitize(); err != nil {
+		panic(err)
+	}
+
+	if err := cmd.exec(); err != nil {
+		panic(err)
+	}
+}
+
+func (cmd *Command) sanitize() error {
 	if cmd.Out == nil {
 		cmd.Out = os.Stdout
 	}
@@ -63,15 +79,15 @@ func (cmd *Command) Exec() {
 		l := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
 
 		if err := l.Files().Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
-			panic(err)
+			return err
 		}
 
 		if err := l.Files().Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
-			panic(err)
+			return err
 		}
 
 		if err := l.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-			panic(err)
+			return err
 		}
 	}
 
@@ -92,9 +108,7 @@ func (cmd *Command) Exec() {
 		cmd.CmdVersion = "v"
 	}
 
-	if err := cmd.exec(); err != nil {
-		panic(err)
-	}
+	return nil
 }
 
 func (cmd *Command) exec() error {
