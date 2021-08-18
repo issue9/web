@@ -15,11 +15,6 @@ import (
 	"github.com/issue9/web/server"
 )
 
-const (
-	LogsFilename = "logs.xml"
-	WebFilename  = "web.yaml"
-)
-
 // Webconfig 配置内容
 type Webconfig struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
@@ -67,9 +62,9 @@ type Webconfig struct {
 }
 
 // NewServer 从配置文件初始化 Server 实例
-func NewServer(name, version string, f fs.FS, b content.BuildResultFunc) (*server.Server, error) {
+func NewServer(name, version string, b content.BuildResultFunc, f fs.FS, logsFilename, webFilename string) (*server.Server, error) {
 	conf := &config.Config{}
-	if err := LoadXML(f, LogsFilename, conf); err != nil {
+	if err := LoadXML(f, logsFilename, conf); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +74,7 @@ func NewServer(name, version string, f fs.FS, b content.BuildResultFunc) (*serve
 	}
 
 	webconfig := &Webconfig{}
-	if err := LoadYAML(f, WebFilename, webconfig); err != nil {
+	if err := LoadYAML(f, webFilename, webconfig); err != nil {
 		return nil, err
 	}
 

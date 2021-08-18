@@ -23,8 +23,10 @@ type (
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
-func LoadServer(name, version string, f fs.FS, build content.BuildResultFunc) (*Server, error) {
-	return config.NewServer(name, version, f, build)
+//
+// logs 和 web 分别表示相对于 f 的日志和项目配置文件；
+func LoadServer(name, version string, build content.BuildResultFunc, f fs.FS, logs, web string) (*Server, error) {
+	return config.NewServer(name, version, build, f, logs, web)
 }
 
 // NewServer 返回 *Server 实例
