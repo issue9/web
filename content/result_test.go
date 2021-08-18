@@ -191,7 +191,7 @@ func buildResultCatalog(c *Content, a *assert.Assertion) {
 
 func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder)
+	c := New(DefaultBuilder, newLocale(a))
 	buildResultCatalog(c, a)
 
 	c.AddResult(400, 40000, "lang") // lang 有翻译
@@ -234,7 +234,7 @@ func TestContent_Result(t *testing.T) {
 
 func TestContent_AddResult(t *testing.T) {
 	a := assert.New(t)
-	mgr := New(DefaultBuilder)
+	mgr := New(DefaultBuilder, newLocale(a))
 
 	a.NotPanic(func() {
 		mgr.AddResult(400, 1, "1")
@@ -257,7 +257,7 @@ func TestContent_AddResult(t *testing.T) {
 
 func TestContent_Results(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder)
+	c := New(DefaultBuilder, newLocale(a))
 	a.NotNil(c)
 	buildResultCatalog(c, a)
 

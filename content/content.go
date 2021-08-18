@@ -6,7 +6,6 @@ package content
 import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/serialization"
 )
@@ -26,10 +25,10 @@ type Content struct {
 }
 
 // New 返回 *Content 实例
-func New(builder BuildResultFunc) *Content {
+func New(builder BuildResultFunc, locale *serialization.Locale) *Content {
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
-		locale:    serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(10)),
+		locale:    locale,
 
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,

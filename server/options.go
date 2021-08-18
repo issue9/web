@@ -15,8 +15,10 @@ import (
 	"github.com/issue9/middleware/v5/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/serialization"
 )
 
 // Options 初始化 Server 的参数
@@ -87,6 +89,11 @@ type Options struct {
 	//
 	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
 	Plugins string
+
+	// 指定用于处理本地化的方法
+	//
+	// 可以为空。
+	Locale *serialization.Locale
 }
 
 func (o *Options) sanitize() (*Options, error) {
@@ -134,6 +141,10 @@ func (o *Options) sanitize() (*Options, error) {
 			return nil, err
 		}
 		o.Logs = l
+	}
+
+	if o.Locale == nil {
+		o.Locale = serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
 	}
 
 	return o, nil
