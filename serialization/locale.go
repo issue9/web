@@ -73,18 +73,11 @@ type (
 	}
 )
 
-func buildSelectf(arg int, format string, cases []interface{}) catalog.Message {
-	return plural.Selectf(arg, format, cases...)
-}
-
-func (v *localeVar) message() catalog.Message {
-	msg := buildSelectf(v.Arg, v.Format, v.Cases)
-	return catalog.Var(v.Name, msg)
-}
-
-func NewLocale(b *catalog.Builder, f *Files) *Locale {
-	return &Locale{b: b, f: f}
-}
+// NewLocale 返回 Locale 实例
+//
+// f 表示用于加载本地化文件的序列化方法，根据文件扩展名在 f 中查找相应的序列化方法；
+// 加载后的内容被应用在 b 之上。
+func NewLocale(b *catalog.Builder, f *Files) *Locale { return &Locale{b: b, f: f} }
 
 func (b *TagBuilder) SetString(key, msg string) error {
 	return b.builder.SetString(b.tag, key, msg)
@@ -97,6 +90,9 @@ func (b *TagBuilder) Set(key string, msg ...catalog.Message) error {
 func (b *TagBuilder) SetMacro(key string, msg ...catalog.Message) error {
 	return b.builder.SetMacro(b.tag, key, msg...)
 }
+
+// Files 返回用于序列化文件的实例
+func (l *Locale) Files() *Files { return l.f }
 
 // Builder 返回本地化操作的相关接口
 func (l *Locale) Builder() *catalog.Builder { return l.b }
@@ -163,13 +159,14 @@ func (l *Locale) set(m *localeMessages) (err error) {
 			vars := msg.Message.Vars
 			msgs := make([]catalog.Message, 0, len(vars))
 			for _, v := range vars {
-				msgs = append(msgs, v.message())
+				mm := catalog.Var(v.Name, plural.Selectf(v.Arg, v.Format, v.Cases...))
+				msgs = append(msgs, mm)
 			}
 			msgs = append(msgs, catalog.String(msg.Message.Msg))
 			err = tag.Set(msg.Key, msgs...)
 		case msg.Message.Select != nil:
 			s := msg.Message.Select
-			err = tag.Set(msg.Key, buildSelectf(s.Arg, s.Format, s.Cases))
+			err = tag.Set(msg.Key, plural.Selectf(s.Arg, s.Format, s.Cases...))
 		case msg.Message.Msg != "":
 			err = tag.SetString(msg.Key, msg.Message.Msg)
 		}
