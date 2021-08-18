@@ -111,6 +111,13 @@ func New(name, version string, o *Options) (*Server, error) {
 		Append(srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在所有的输出内容之前。
 		Append(srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。
 
+	// 加载插件，需要放在 srv 初始化完成之后。
+	if o.Plugins != "" {
+		if err := srv.LoadPlugins(o.Plugins); err != nil {
+			return nil, err
+		}
+	}
+
 	return srv, nil
 }
 

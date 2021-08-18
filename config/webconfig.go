@@ -61,8 +61,8 @@ type Webconfig struct {
 	IgnoreCompressTypes []string `yaml:"ignoreCompressTypes,omitempty" json:"ignoreCompressTypes,omitempty" xml:"ignoreCompressTypes,omitempty"`
 }
 
-// NewServer 从配置文件初始化 Server 实例
-func NewServer(name, version string, b content.BuildResultFunc, f fs.FS, logsFilename, webFilename string) (*server.Server, error) {
+// NewOptions 从配置文件初始化 server.Options 实例
+func NewOptions(b content.BuildResultFunc, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
 	conf := &config.Config{}
 	if err := LoadXML(f, logsFilename, conf); err != nil {
 		return nil, err
@@ -78,11 +78,11 @@ func NewServer(name, version string, b content.BuildResultFunc, f fs.FS, logsFil
 		return nil, err
 	}
 
-	return webconfig.NewServer(name, version, f, l, b)
+	return webconfig.NewOptions(b, f, l)
 }
 
-// NewServer 返回 server.NewServer 对象
-func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f content.BuildResultFunc) (*server.Server, error) {
+// NewOptions 返回 server.Options 对象
+func (conf *Webconfig) NewOptions(f content.BuildResultFunc, fs fs.FS, l *logs.Logs) (*server.Options, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	if err := conf.sanitize(l); err != nil {
@@ -90,7 +90,8 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 	}
 
 	h := conf.HTTP
-	o := &server.Options{
+
+	return &server.Options{
 		Port:          conf.Port,
 		FS:            fs,
 		Location:      conf.location,
@@ -108,20 +109,8 @@ func (conf *Webconfig) NewServer(name, version string, fs fs.FS, l *logs.Logs, f
 		},
 		Logs:                l,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
-	}
-
-	srv, err := server.New(name, version, o)
-	if err != nil {
-		return nil, err
-	}
-
-	if conf.Plugins != "" {
-		if err := srv.LoadPlugins(conf.Plugins); err != nil {
-			return nil, err
-		}
-	}
-
-	return srv, nil
+		Plugins:             conf.Plugins,
+	}, nil
 }
 
 func (conf *Webconfig) sanitize(l *logs.Logs) error {

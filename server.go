@@ -26,7 +26,11 @@ type (
 //
 // logs 和 web 分别表示相对于 f 的日志和项目配置文件；
 func LoadServer(name, version string, build content.BuildResultFunc, f fs.FS, logs, web string) (*Server, error) {
-	return config.NewServer(name, version, build, f, logs, web)
+	o, err := config.NewOptions(build, f, logs, web)
+	if err != nil {
+		return nil, err
+	}
+	return NewServer(name, version, o)
 }
 
 // NewServer 返回 *Server 实例

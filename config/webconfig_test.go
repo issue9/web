@@ -104,12 +104,12 @@ func TestDuration_JSON(t *testing.T) {
 	a.Equal(rm, m)
 }
 
-func TestNewServer(t *testing.T) {
+func TestNewOptions(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := NewServer("app", "1.1.1", nil, os.DirFS("./testdata"), "logs.xml", "web.yaml")
-	a.NotError(err).NotNil(srv)
+	opt, err := NewOptions(nil, os.DirFS("./testdata"), "logs.xml", "web.yaml")
+	a.NotError(err).NotNil(opt)
 
-	srv, err = NewServer("app", "1.1.1", nil, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
-	a.ErrorIs(err, fs.ErrNotExist).Nil(srv)
+	opt, err = NewOptions(nil, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
+	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)
 }
