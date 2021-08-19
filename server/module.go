@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/scheduled/schedulers"
 	"github.com/issue9/sliceutil"
 
+	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/service"
 )
 
@@ -35,7 +36,7 @@ type Module struct {
 	deps    []string
 
 	srv *Server
-	fs.FS
+	fs  *filesystem.MultipleFS
 }
 
 // Tag 模块下对执行函数的分类
@@ -75,7 +76,7 @@ func (srv *Server) NewModule(id, version, desc string, deps ...string) (*Module,
 		deps:    deps,
 
 		srv: srv,
-		FS:  sub,
+		fs:  filesystem.NewMultipleFS(sub),
 	}
 
 	srv.modules = append(srv.modules, mod)
@@ -156,6 +157,8 @@ func (m *Module) Deps() []string { return m.deps }
 // Version 版本号
 func (m *Module) Version() string { return m.version }
 
+func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
+
 // Tags 模块的标签名称列表
 func (m *Module) Tags() []string {
 	tags := make([]string, 0, len(m.tags))
@@ -171,8 +174,19 @@ func (m *Module) Inited(tag string) bool { return m.Tag(tag).Inited() }
 
 // LoadLocale 从 m.FS 加载本地化语言文件
 func (m *Module) LoadLocale(glob string) error {
-	return m.srv.Locale().LoadFileFS(m.FS, glob)
+	return m.srv.Locale().LoadFileFS(m, glob)
 }
+
+// AddFS 将多个文件系统与当前模块的文件系统进行关联
+//
+// 当采用 Module.Open 查找文件时，会根据添加的顺序依次查找文件，
+// 只要存在于某一个文件系统中，那么就当作该文件存在，并返回。
+//
+// 每个模块在初始化时，都会默认将 Server.FS + Module.ID
+// 作为模块的文件系统，通过 AddFS 可以挂载其它的文件系统，
+// 与 embed.FS 相结合，可以做到在外部相对应目录中有修改时，
+// 读取外部的文件，如果不存在，则读取 embed.FS 中的内容。
+func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
 
 // AddInit 注册指执行函数
 //

@@ -4,12 +4,15 @@ package server
 
 import (
 	"errors"
+	"io/fs"
 	"log"
 	"testing"
 	"unicode"
 
 	"github.com/issue9/assert"
 )
+
+var _ fs.FS = &Module{}
 
 func TestPluginInitFuncName(t *testing.T) {
 	a := assert.New(t)
