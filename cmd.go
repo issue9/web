@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
@@ -42,6 +43,7 @@ type Command struct {
 	// 为 nil 表示没有，如果是 []，则表示所有信息。
 	Signals []os.Signal
 
+	// 自定义命令行参数名
 	CmdVersion string
 	CmdTag     string
 	CmdFS      string
@@ -71,6 +73,16 @@ func (cmd *Command) Exec() {
 }
 
 func (cmd *Command) sanitize() error {
+	if cmd.Name == "" {
+		return &config.Error{Field: "Name", Message: "不能为空"}
+	}
+	if cmd.Version == "" {
+		return &config.Error{Field: "Version", Message: "不能为空"}
+	}
+	if cmd.ServeTag == "" {
+		return &config.Error{Field: "ServeTag", Message: "不能为空"}
+	}
+
 	if cmd.Out == nil {
 		cmd.Out = os.Stdout
 	}
