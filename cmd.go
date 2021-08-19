@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/sliceutil"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
@@ -28,34 +29,47 @@ import (
 //  - v 显示版本号；
 //  - fs 指定当前程序可读取的文件目录；
 // 以上三个参数的参数名称，可在配置内容中修改。
+//
+//  cmd := &web.Command{
+//      Name: "app",
+//      Version: "1.0.0",
+//      ServeTags: []string{"serve"},
+//      RegisterModules: func(s *Server) error {...}
+//  }
+//
+//  cmd.Exec()
 type Command struct {
-	// 程序名称
-	Name string
+	Name string // 程序名称
 
-	// 程序版本
-	Version string
+	Version string // 程序版本
+
+	RegisterModules func(*Server) error // 注册模块
 
 	// 当作服务运行的标签名
-	ServeTag string
-
-	// 退出的信号
 	//
-	// 为 nil 表示没有，如果是 []，则表示所有信息。
+	// 当标签名与此值相同时，在执行完 Server.InitModules 之后，还会执行 Server.Serve。
+	//
+	// 可以为空。
+	ServeTags []string
+
+	// 触发退出的信号
+	//
+	// 为空(nil 或是 []) 表示没有。
 	Signals []os.Signal
 
 	// 自定义命令行参数名
-	CmdVersion string
-	CmdTag     string
-	CmdFS      string
+	CmdVersion string // 默认为 v
+	CmdTag     string // 默认为 tag
+	CmdFS      string // 默认为 fs
 
-	// 信息的输出通道
+	// 命令行输出信息的通道
 	//
 	// 可以 os.Stdout 和 os.Stderr 选择，默认为 os.Stdout。
 	Out io.Writer
 
 	// 以下是初始 Server 对象的参数
 
-	ResultBuilder content.BuildResultFunc // 默认为 content.DefaultBuilder
+	ResultBuilder content.BuildResultFunc // 默认为 nil，最终会被初始化 content.DefaultBuilder
 	Locale        *serialization.Locale   // 默认情况下，能正常解析 xml、yaml 和 json
 	LogsFilename  string                  // 默认为 logs.xml
 	WebFilename   string                  // 默认为 web.yaml
@@ -79,8 +93,9 @@ func (cmd *Command) sanitize() error {
 	if cmd.Version == "" {
 		return &config.Error{Field: "Version", Message: "不能为空"}
 	}
-	if cmd.ServeTag == "" {
-		return &config.Error{Field: "ServeTag", Message: "不能为空"}
+
+	if cmd.RegisterModules == nil {
+		return &config.Error{Field: "RegisterModules", Message: "不能为空"}
 	}
 
 	if cmd.Out == nil {
@@ -139,17 +154,23 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
+	if err := cmd.RegisterModules(srv); err != nil {
+		return err
+	}
+
 	if err := srv.InitModules(*tag); err != nil {
 		return err
 	}
-	if *tag == cmd.ServeTag {
-		if cmd.Signals != nil { // nil 和 [] 处理方式不同，[] 表示所有信息
 
-			cmd.grace(srv, cmd.Signals...)
-		}
-		return srv.Serve()
+	if sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) < 0 {
+		return nil
 	}
-	return nil
+
+	if len(cmd.Signals) > 0 {
+		cmd.grace(srv, cmd.Signals...)
+	}
+	return srv.Serve()
+
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
