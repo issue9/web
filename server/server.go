@@ -113,7 +113,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 	// 加载插件，需要放在 srv 初始化完成之后。
 	if o.Plugins != "" {
-		if err := srv.LoadPlugins(o.Plugins); err != nil {
+		if err := srv.loadPlugins(o.Plugins); err != nil {
 			return nil, err
 		}
 	}

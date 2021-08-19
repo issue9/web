@@ -18,10 +18,11 @@ import (
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := web.NewServer("app", "0.1.0", &web.Options{})
+	srv, err := web.NewServer("app", "0.1.0", &web.Options{
+		Plugins: "./testdata/plugin_*.so",
+	})
 	a.NotError(err).NotNil(srv)
-
-	a.NotError(srv.LoadPlugins("./testdata/plugin_*.so"))
+	a.NotError(srv.InitModules("default"))
 
 	go func() {
 		srv.Serve()
@@ -37,14 +38,4 @@ func TestPlugins(t *testing.T) {
 	})
 	a.Equal(ms[0].ID(), "plugin1")
 	a.Equal(ms[1].ID(), "plugin2")
-
-	// 手动加载插件
-	a.NotError(srv.LoadPlugin("./testdata/plugin3.so"))
-	ms = srv.Modules()
-	a.Equal(3, len(ms)).Equal(ms[2].ID(), "plugin3")
-
-	// 加载已经加载的插件
-	a.Error(srv.LoadPlugins("./testdata/plugin*.so"))
-	ms = srv.Modules()
-	a.Equal(3, len(ms))
 }

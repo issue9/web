@@ -83,17 +83,17 @@ func (srv *Server) NewModule(id, version, desc string, deps ...string) (*Module,
 	return mod, nil
 }
 
-// LoadPlugins 加载所有的插件
+// loadPlugins 加载所有的插件
 //
-// 如果 glob 为空，则不会加载任何内容，返回空值
-func (srv *Server) LoadPlugins(glob string) error {
+// 如果 glob 为空，则不会加载任何内容，返回空值。
+func (srv *Server) loadPlugins(glob string) error {
 	fs, err := filepath.Glob(glob)
 	if err != nil {
 		return err
 	}
 
 	for _, path := range fs {
-		if err := srv.LoadPlugin(path); err != nil {
+		if err := srv.loadPlugin(path); err != nil {
 			return err
 		}
 	}
@@ -101,15 +101,15 @@ func (srv *Server) LoadPlugins(glob string) error {
 	return nil
 }
 
-// LoadPlugin 将指定的插件当作模块进行加载
+// loadPlugin 将指定的插件当作模块进行加载
 //
 // path 为插件的路径；
 //
 // 插件必须是以 buildmode=plugin 的方式编译的，且要求其引用的 github.com/issue9/web
 // 版本与当前的相同。
-// LoadPlugin 会在插件中查找固定名称和类型的函数名（参考 ModuleFunc 和 ModuleFuncName），
+// loadPlugin 会在插件中查找固定名称和类型的函数名（参考 PluginInitFunc 和 PluginInitFuncName），
 // 如果存在，会调用该方法将插件加载到当前对象中，否则返回相应的错误信息。
-func (srv *Server) LoadPlugin(path string) error {
+func (srv *Server) loadPlugin(path string) error {
 	p, err := plugin.Open(path)
 	if err != nil {
 		return err
