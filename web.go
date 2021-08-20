@@ -25,13 +25,14 @@ type (
 	HandlerFunc = server.HandlerFunc
 	Responser   = server.Responser
 	Router      = server.Router
+	Locale      = serialization.Locale
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
 //
 // locale 指定了用于加载本地化的方法，同时其关联的 serialization.Files 也用于加载配置文件；
 // logs 和 web 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-func LoadServer(name, version string, build content.BuildResultFunc, l *serialization.Locale, f fs.FS, logs, web string) (*Server, error) {
+func LoadServer(name, version string, build content.BuildResultFunc, l *Locale, f fs.FS, logs, web string) (*Server, error) {
 	o, err := config.NewOptions(build, l, f, logs, web)
 	if err != nil {
 		return nil, err

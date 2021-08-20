@@ -5,6 +5,7 @@ package filesystem
 import (
 	"embed"
 	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -22,10 +23,32 @@ func TestMultipleFS(t *testing.T) {
 	a := assert.New(t)
 
 	m := NewMultipleFS(f1, f2)
+	a.NotNil(m)
 
 	a.True(ExistsFS(m, "filesystem.go"))
 	a.True(ExistsFS(m, "filesystem_test.go"))
 	a.False(ExistsFS(m, "not-exists.go"))
 	a.False(ExistsFS(f1, "filesystem_test.go"))
 	a.False(ExistsFS(f2, "filesystem.go"))
+}
+
+func TestMultipleFS_Glob(t *testing.T) {
+	a := assert.New(t)
+
+	f1 := os.DirFS("./")
+
+	m := NewMultipleFS(f1)
+	a.NotNil(m)
+	matches, err := fs.Glob(m, "filesystem.go")
+	a.NotError(err).Equal(matches, []string{"filesystem.go"})
+
+	// f1 存在于 "./testdata"
+	matches, err = fs.Glob(m, "f1.txt")
+	a.NotError(err).Empty(matches)
+	matches, err = fs.Glob(m, "testdata/f1.txt")
+	a.NotError(err).Equal(matches, []string{"testdata/f1.txt"})
+	f2 := os.DirFS("./testdata")
+	m.Add(f2)
+	matches, err = fs.Glob(m, "f1.txt")
+	a.NotError(err).Equal(matches, []string{"f1.txt"})
 }
