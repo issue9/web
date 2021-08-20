@@ -7,6 +7,7 @@ require (
 	github.com/issue9/cache v0.3.0
 	github.com/issue9/conv v1.2.1
 	github.com/issue9/events v0.2.0
+	github.com/issue9/localeutil v0.2.1
 	github.com/issue9/logs/v3 v3.0.0-beta.2
 	github.com/issue9/middleware/v5 v5.0.0-beta.1
 	github.com/issue9/mux/v5 v5.0.0-beta.1

@@ -3,7 +3,6 @@
 package serialization
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"os"
 	"testing"
@@ -50,27 +49,6 @@ func TestLocale_LoadFileFS(t *testing.T) {
 
 	a.NotError(l.LoadFileFS(os.DirFS("./testdata"), "cmn-hant.xml"))
 	p := l.Printer(language.MustParse("cmn-hant"))
-
-	a.Equal(p.Sprintf("k1"), "msg1")
-
-	a.Equal(p.Sprintf("k2", 1), "msg-1")
-	a.Equal(p.Sprintf("k2", 3), "msg-3")
-	a.Equal(p.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
-}
-
-func TestLocale_LoadFileFS_JSON(t *testing.T) {
-	a := assert.New(t)
-	f := NewFiles(10)
-	l := NewLocale(catalog.NewBuilder(), f)
-	a.NotNil(l)
-	a.NotError(f.Add(json.Marshal, json.Unmarshal, ".json"))
-
-	a.NotError(l.LoadFileFS(os.DirFS("./testdata"), "*.json"))
-	p := l.Printer(language.MustParse("cmn-hans"))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
 
