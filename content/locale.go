@@ -15,6 +15,8 @@ func (c *Content) Locale() *serialization.Locale { return c.locale }
 
 func (c *Content) Tag() language.Tag { return c.tag }
 
+func (c *Content) LocalePrinter() *message.Printer { return c.localePrinter }
+
 func (c *Content) newLocalePrinter(tag language.Tag) *message.Printer {
 	return c.Locale().Printer(tag)
 }

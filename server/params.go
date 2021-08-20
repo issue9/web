@@ -47,7 +47,7 @@ func (ctx *Context) Params() *Params {
 func (p *Params) ID(key string) int64 {
 	id := p.Int64(key)
 	if id <= 0 {
-		p.errors.Add(key, p.ctx.LocalePrinter.Sprintf("必须大于 0"))
+		p.errors.Add(key, p.ctx.Sprintf("should great than 0"))
 	}
 
 	return id
@@ -74,7 +74,7 @@ func (p *Params) MustID(key string, def int64) int64 {
 	}
 
 	if ret <= 0 {
-		p.errors.Add(key, p.ctx.LocalePrinter.Sprintf("必须大于 0"))
+		p.errors.Add(key, p.ctx.Sprintf("should great than 0"))
 		return def
 	}
 

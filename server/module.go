@@ -227,7 +227,8 @@ func (t *Tag) Module() *Module { return t.m }
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
 func (t *Tag) AddService(title string, f service.Func) *Tag {
-	return t.AddInit("注册服务："+title, func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register service", title)
+	return t.AddInit(msg, func() error {
 		t.Server().Services().AddService(title, f)
 		return nil
 	})
@@ -240,7 +241,8 @@ func (t *Tag) AddService(title string, f service.Func) *Tag {
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Tag) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) *Tag {
-	return t.AddInit("注册计划任务"+title, func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddCron(title, f, spec, delay)
 	})
 }
@@ -252,7 +254,8 @@ func (t *Tag) AddCron(title string, f scheduled.JobFunc, spec string, delay bool
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Tag) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) *Tag {
-	return t.AddInit("注册计划任务"+title, func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddTicker(title, f, dur, imm, delay)
 	})
 }
@@ -264,7 +267,8 @@ func (t *Tag) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, im
 // t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Tag) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool) *Tag {
-	return t.AddInit("注册计划任务"+title, func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddAt(title, f, ti, delay)
 	})
 }
@@ -276,7 +280,8 @@ func (t *Tag) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool)
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Tag) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) *Tag {
-	return t.AddInit("注册计划任务"+title, func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	return t.AddInit(msg, func() error {
 		t.Server().Services().AddJob(title, f, scheduler, delay)
 		return nil
 	})

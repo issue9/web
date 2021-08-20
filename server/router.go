@@ -293,7 +293,8 @@ func (t *Tag) AddRoutes(f func(r *Router), routerName string) *Tag {
 		routerName = t.Name()
 	}
 
-	return t.AddInit(fmt.Sprintf("向 %s 注册路由项", routerName), func() error {
+	msg := t.Server().LocalePrinter().Sprintf("register router", routerName)
+	return t.AddInit(msg, func() error {
 		r := t.Server().Router(routerName)
 		if r == nil {
 			return fmt.Errorf("路由名 %s 不存在", routerName)

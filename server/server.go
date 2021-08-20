@@ -245,6 +245,8 @@ func (srv *Server) Files() *serialization.Files { return srv.content.Files() }
 // Locale 返回用于序列化文件内容的操作接口
 func (srv *Server) Locale() *serialization.Locale { return srv.content.Locale() }
 
+func (srv *Server) LocalePrinter() *message.Printer { return srv.content.LocalePrinter() }
+
 // Tag 返回默认的语言标签
 func (srv *Server) Tag() language.Tag { return srv.content.Tag() }
 

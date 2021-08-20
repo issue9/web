@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/serialization"
 )
@@ -20,8 +21,9 @@ const DefaultMimetype = "application/octet-stream"
 type Content struct {
 	mimetypes *serialization.Mimetypes
 
-	locale *serialization.Locale
-	tag    language.Tag
+	locale        *serialization.Locale
+	tag           language.Tag
+	localePrinter *message.Printer
 
 	resultMessages map[int]*resultMessage
 	resultBuilder  BuildResultFunc
@@ -32,8 +34,9 @@ func New(builder BuildResultFunc, locale *serialization.Locale, tag language.Tag
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
 
-		locale: locale,
-		tag:    tag,
+		locale:        locale,
+		tag:           tag,
+		localePrinter: message.NewPrinter(tag, message.Catalog(locale.Builder())),
 
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,

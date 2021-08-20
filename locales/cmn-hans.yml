@@ -1,0 +1,19 @@
+
+language: cmn-hans
+
+messages:
+- key: should great than 0
+  message:
+    msg: 必须大于 0
+
+- key: register router
+  message:
+    msg: '注册路由: %[1]s'
+
+- key: register cron
+  message:
+    msg: '注册计划任务: %[1]s'
+
+- key: register service
+  message:
+    msg: '注册服务: %[1]s'
