@@ -5,6 +5,7 @@ package serialization
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 
 	"github.com/issue9/localeutil"
@@ -39,24 +40,9 @@ func (l *Locale) Printer(tag language.Tag) *message.Printer {
 
 // LoadFile 从文件中加载本地化内容
 func (l *Locale) LoadFile(glob string) error {
-	matchs, err := filepath.Glob(glob)
-	if err != nil {
-		return err
-	}
-
-	for _, f := range matchs {
-		_, u := l.Files().searchByExt(f)
-		if u == nil {
-			return fmt.Errorf("未找到适合 %s 的函数", f)
-		}
-
-		if err := localeutil.LoadMessageFromFile(l.b, f, u); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
+	dir := filepath.ToSlash(filepath.Dir(glob))
+	glob = filepath.ToSlash(filepath.Base(glob))
+	return l.LoadFileFS(os.DirFS(dir), glob)
 }
 
 // LoadFileFS 从文件中加载本地化内容
