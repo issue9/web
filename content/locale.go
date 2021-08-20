@@ -13,9 +13,10 @@ import (
 
 func (c *Content) Locale() *serialization.Locale { return c.locale }
 
-// NewLocalePrinter 返回指定语言的 message.Printer
-func (c *Content) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return c.locale.Printer(tag)
+func (c *Content) Tag() language.Tag { return c.tag }
+
+func (c *Content) newLocalePrinter(tag language.Tag) *message.Printer {
+	return c.Locale().Printer(tag)
 }
 
 // Fprint 相当于 ctx.LocalePrinter.Fprint

@@ -16,23 +16,23 @@ import (
 func TestContent_catalog(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 
-	l := c.Locale().TagBuilder(language.SimplifiedChinese)
-	l.SetString("test", "测试")
-	l = c.Locale().TagBuilder(language.Und)
-	l.SetString("test", "und")
+	err := c.Locale().Builder().SetString(language.SimplifiedChinese, "test", "测试")
+	a.NotError(err)
+	err = c.Locale().Builder().SetString(language.Und, "test", "und")
+	a.NotError(err)
 
-	p := c.NewLocalePrinter(language.SimplifiedChinese)
+	p := c.newLocalePrinter(language.SimplifiedChinese)
 	a.Equal(p.Sprintf("test"), "测试")
-	p = c.NewLocalePrinter(language.Japanese)
+	p = c.newLocalePrinter(language.Japanese)
 	a.Equal(p.Sprintf("test"), "und")
 }
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))

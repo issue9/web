@@ -191,42 +191,42 @@ func buildResultCatalog(c *Content, a *assert.Assertion) {
 
 func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	buildResultCatalog(c, a)
 
 	c.AddResult(400, 40000, "lang") // lang 有翻译
 
 	// 能正常翻译错误信息
-	rslt, ok := c.Result(c.NewLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
+	rslt, ok := c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans")
 
 	// 采用 und
-	rslt, ok = c.Result(c.NewLocalePrinter(language.Und), 40000, nil).(*defaultResult)
+	rslt, ok = c.Result(c.newLocalePrinter(language.Und), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在的本地化信息，采用默认的 und
-	rslt, ok = c.Result(c.NewLocalePrinter(language.Afrikaans), 40000, nil).(*defaultResult)
+	rslt, ok = c.Result(c.newLocalePrinter(language.Afrikaans), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在
-	a.Panic(func() { c.Result(c.NewLocalePrinter(language.Afrikaans), 400, nil) })
-	a.Panic(func() { c.Result(c.NewLocalePrinter(language.Afrikaans), 50000, nil) })
+	a.Panic(func() { c.Result(c.newLocalePrinter(language.Afrikaans), 400, nil) })
+	a.Panic(func() { c.Result(c.newLocalePrinter(language.Afrikaans), 50000, nil) })
 
 	// with fields
 
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
-	rslt, ok = c.Result(c.NewLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
+	rslt, ok = c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 
 	// 采用 und
-	rslt, ok = c.Result(c.NewLocalePrinter(language.Und), 40000, fields).(*defaultResult)
+	rslt, ok = c.Result(c.newLocalePrinter(language.Und), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
@@ -234,7 +234,7 @@ func TestContent_Result(t *testing.T) {
 
 func TestContent_AddResult(t *testing.T) {
 	a := assert.New(t)
-	mgr := New(DefaultBuilder, newLocale(a))
+	mgr := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 
 	a.NotPanic(func() {
 		mgr.AddResult(400, 1, "1")
@@ -257,7 +257,7 @@ func TestContent_AddResult(t *testing.T) {
 
 func TestContent_Results(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 	buildResultCatalog(c, a)
 
@@ -265,16 +265,16 @@ func TestContent_Results(t *testing.T) {
 		c.AddResult(400, 40010, "lang")
 	})
 
-	msg := c.Results(c.NewLocalePrinter(language.Und))
+	msg := c.Results(c.newLocalePrinter(language.Und))
 	a.Equal(msg[40010], "und")
 
-	msg = c.Results(c.NewLocalePrinter(language.SimplifiedChinese))
+	msg = c.Results(c.newLocalePrinter(language.SimplifiedChinese))
 	a.Equal(msg[40010], "hans")
 
-	msg = c.Results(c.NewLocalePrinter(language.TraditionalChinese))
+	msg = c.Results(c.newLocalePrinter(language.TraditionalChinese))
 	a.Equal(msg[40010], "hant")
 
-	msg = c.Results(c.NewLocalePrinter(language.English))
+	msg = c.Results(c.newLocalePrinter(language.English))
 	a.Equal(msg[40010], "und")
 
 	a.Panic(func() {

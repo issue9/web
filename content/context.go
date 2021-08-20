@@ -107,7 +107,7 @@ func (c *Content) NewContext(l *log.Logger, w http.ResponseWriter, r *http.Reque
 		OutputCharset:      outputCharset,
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
-		LocalePrinter:      c.NewLocalePrinter(tag),
+		LocalePrinter:      c.newLocalePrinter(tag),
 		InputMimetype:      inputMimetype,
 		InputCharset:       inputCharset,
 	}
@@ -247,7 +247,7 @@ func acceptCharset(header string) (name string, enc encoding.Encoding) {
 
 func (c *Content) acceptLanguage(header string) language.Tag {
 	if header == "" {
-		return language.Und
+		return c.Tag()
 	}
 
 	al := qheader.Parse(header, "*")

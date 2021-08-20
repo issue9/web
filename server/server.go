@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
@@ -88,7 +89,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:    o.Cache,
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
-		content:  content.New(o.ResultBuilder, o.Locale),
+		content:  content.New(o.ResultBuilder, o.Locale, o.Tag),
 		services: service.NewManager(o.Logs, o.Location),
 		events:   make(map[string]events.Eventer, 5),
 	}
@@ -243,6 +244,9 @@ func (srv *Server) Files() *serialization.Files { return srv.content.Files() }
 
 // Locale 返回用于序列化文件内容的操作接口
 func (srv *Server) Locale() *serialization.Locale { return srv.content.Locale() }
+
+// Tag 返回默认的语言标签
+func (srv *Server) Tag() language.Tag { return srv.content.Tag() }
 
 // Results 返回在指定语言下的所有代码以及关联的描述信息
 func (srv *Server) Results(p *message.Printer) map[int]string { return srv.content.Results(p) }

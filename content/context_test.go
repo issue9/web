@@ -34,7 +34,7 @@ func TestContent_NewContext(t *testing.T) {
 	lw := &bytes.Buffer{}
 	l := log.New(lw, "", 0)
 
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	b := c.Locale().Builder()
@@ -170,7 +170,7 @@ func TestContext_Body(t *testing.T) {
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
@@ -203,7 +203,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	// 自定义报头
@@ -299,7 +299,7 @@ func TestAcceptCharset(t *testing.T) {
 func TestContent_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, newLocale(a))
+	c := New(DefaultBuilder, newLocale(a), language.Afrikaans)
 	b := c.Locale().Builder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
@@ -307,7 +307,7 @@ func TestContent_acceptLanguage(t *testing.T) {
 	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
 
 	tag := c.acceptLanguage("")
-	a.Equal(tag, language.Und, "v1:%s, v2:%s", tag.String(), language.Und.String())
+	a.Equal(tag, language.Afrikaans, "v1:%s, v2:%s", tag.String(), language.Und.String())
 
 	tag = c.acceptLanguage("zh") // 匹配 zh-hans
 	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
@@ -325,7 +325,7 @@ func TestContent_acceptLanguage(t *testing.T) {
 func TestContent_contentType(t *testing.T) {
 	a := assert.New(t)
 
-	mt := New(DefaultBuilder, newLocale(a))
+	mt := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(mt)
 
 	f, e, err := mt.conentType(";;;")

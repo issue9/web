@@ -11,10 +11,12 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
@@ -94,6 +96,11 @@ type Options struct {
 	//
 	// 可以为空。
 	Locale *serialization.Locale
+
+	// 默认的语言标签
+	//
+	// 如果为空，则会尝试读取当前系统的本地化信息。
+	Tag language.Tag
 }
 
 func (o *Options) sanitize() (*Options, error) {
@@ -145,6 +152,14 @@ func (o *Options) sanitize() (*Options, error) {
 
 	if o.Locale == nil {
 		o.Locale = serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
+	}
+
+	if o.Tag == language.Und {
+		tag, err := localeutil.SystemLanguageTag()
+		if err != nil {
+			return nil, err
+		}
+		o.Tag = tag
 	}
 
 	return o, nil

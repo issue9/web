@@ -6,6 +6,7 @@ package content
 import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
 )
@@ -18,17 +19,21 @@ const DefaultMimetype = "application/octet-stream"
 // Content 管理反馈给用户的数据
 type Content struct {
 	mimetypes *serialization.Mimetypes
-	locale    *serialization.Locale
+
+	locale *serialization.Locale
+	tag    language.Tag
 
 	resultMessages map[int]*resultMessage
 	resultBuilder  BuildResultFunc
 }
 
 // New 返回 *Content 实例
-func New(builder BuildResultFunc, locale *serialization.Locale) *Content {
+func New(builder BuildResultFunc, locale *serialization.Locale, tag language.Tag) *Content {
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
-		locale:    locale,
+
+		locale: locale,
+		tag:    tag,
 
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,
