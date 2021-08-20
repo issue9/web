@@ -86,7 +86,7 @@ func (cmd *Command) Exec() {
 	}
 }
 
-func (cmd *Command) sanitize() error {
+func (cmd *Command) sanitize() *config.Error {
 	if cmd.Name == "" {
 		return &config.Error{Field: "Name", Message: "不能为空"}
 	}
@@ -106,16 +106,18 @@ func (cmd *Command) sanitize() error {
 		l := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
 
 		if err := l.Files().Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
-			return err
+			return &config.Error{Field: "Locale", Message: err.Error()}
 		}
 
 		if err := l.Files().Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
-			return err
+			return &config.Error{Field: "Locale", Message: err.Error()}
 		}
 
 		if err := l.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-			return err
+			return &config.Error{Field: "Locale", Message: err.Error()}
 		}
+
+		cmd.Locale = l
 	}
 
 	if cmd.LogsFilename == "" {
@@ -142,14 +144,14 @@ func (cmd *Command) exec() error {
 	v := flag.Bool(cmd.CmdVersion, false, "显示版本号")
 	tag := flag.String(cmd.CmdTag, "", "执行的标签")
 	f := flag.String(cmd.CmdFS, "./", "可读取的目录")
-	dir := os.DirFS(*f)
+	flag.Parse()
 
 	if *v {
-		fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
-		return nil
+		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
+		return err
 	}
 
-	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.ResultBuilder, cmd.Locale, dir, cmd.LogsFilename, cmd.WebFilename)
+	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.ResultBuilder, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename)
 	if err != nil {
 		return err
 	}
@@ -170,7 +172,6 @@ func (cmd *Command) exec() error {
 		cmd.grace(srv, cmd.Signals...)
 	}
 	return srv.Serve()
-
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
