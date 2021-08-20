@@ -7,8 +7,8 @@
 //  mgr := html.New(tpl)
 //  mt.Add("text/html", mgr.Marshal, nil)
 //
-//  func handle(ctx *web.Context) {
-//      ctx.Render(200, html.Tpl("index", map[string]interface{}{...}), nil)
+//  func handle(ctx *web.Context) Responser {
+//      return Object(200, html.Tpl("index", map[string]interface{}{...}), nil)
 //  }
 package html
 

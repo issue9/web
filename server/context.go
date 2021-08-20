@@ -35,7 +35,7 @@ type Context struct {
 	//
 	// 这是比 context.Value 更经济的传递变量方式。
 	//
-	// 如果仅需要在多个请求中传递参数，可直接使用 Server.Vars。
+	// 如果需要在多个请求中传递参数，可直接使用 Server.Vars。
 	Vars map[interface{}]interface{}
 }
 
