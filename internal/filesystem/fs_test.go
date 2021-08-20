@@ -36,6 +36,7 @@ func TestMultipleFS_Glob(t *testing.T) {
 	a := assert.New(t)
 
 	f1 := os.DirFS("./")
+	f2 := os.DirFS("./testdata")
 
 	m := NewMultipleFS(f1)
 	a.NotNil(m)
@@ -47,8 +48,15 @@ func TestMultipleFS_Glob(t *testing.T) {
 	a.NotError(err).Empty(matches)
 	matches, err = fs.Glob(m, "testdata/f1.txt")
 	a.NotError(err).Equal(matches, []string{"testdata/f1.txt"})
-	f2 := os.DirFS("./testdata")
 	m.Add(f2)
 	matches, err = fs.Glob(m, "f1.txt")
 	a.NotError(err).Equal(matches, []string{"f1.txt"})
+
+	// fs_* 同时匹配多个 fs.FS
+	matches, err = fs.Glob(m, "fs_*")
+	a.NotError(err).Equal(matches, []string{"fs_test.go"})
+
+	m = NewMultipleFS(f2, f1) // 调换顺序
+	matches, err = fs.Glob(m, "fs_*")
+	a.NotError(err).Equal(matches, []string{"fs_test.txt"})
 }

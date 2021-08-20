@@ -11,13 +11,10 @@ type MultipleFS struct {
 // MultipleFS 将多个 fs.FS 合并成一个 fs.FS 对象
 //
 // 每次查找时，都顺序查找第一个存在的对象并返回。
-func NewMultipleFS(f ...fs.FS) *MultipleFS {
-	return &MultipleFS{f: f}
-}
+func NewMultipleFS(f ...fs.FS) *MultipleFS { return &MultipleFS{f: f} }
 
-func (f *MultipleFS) Add(fsys ...fs.FS) {
-	f.f = append(f.f, fsys...)
-}
+// Add 添加另一个文件系统
+func (f *MultipleFS) Add(fsys ...fs.FS) { f.f = append(f.f, fsys...) }
 
 func (f *MultipleFS) Open(name string) (fs.File, error) {
 	for _, fsys := range f.f {
