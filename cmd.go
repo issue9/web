@@ -12,10 +12,10 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"

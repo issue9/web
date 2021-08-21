@@ -14,13 +14,11 @@ import (
 	"golang.org/x/text/message/catalog"
 )
 
-type (
-	// Locale 提供了从文件中加载本地化信息的方法
-	Locale struct {
-		b *catalog.Builder
-		f *Files
-	}
-)
+// Locale 提供了从文件中加载本地化信息的方法
+type Locale struct {
+	b *catalog.Builder
+	f *Files
+}
 
 // NewLocale 返回 Locale 实例
 //
