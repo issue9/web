@@ -1,5 +1,7 @@
 
-language: cmn-hans
+languages:
+- cmn-hans
+- und
 
 messages:
 - key: should great than 0
