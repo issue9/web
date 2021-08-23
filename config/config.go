@@ -7,8 +7,10 @@ import "fmt"
 
 // Error 表示配置内容字段错误
 type Error struct {
-	Config, Field, Message string
-	Value                  interface{}
+	Config  string      // 配置文件的路径
+	Field   string      // 字段名
+	Message string      // 错误信息
+	Value   interface{} // 原始值
 }
 
 func (err *Error) Error() string {

@@ -20,7 +20,7 @@ import (
 // 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
 // 中会在解析数据成功之后，调用该接口进行数据验证。
 type CTXSanitizer interface {
-	CTXSanitize(*Context) content.Fields
+	CTXSanitize(*Context) content.ResultFields
 }
 
 // Context 是对当次 HTTP 请求内容的封装

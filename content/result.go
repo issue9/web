@@ -13,10 +13,10 @@ import (
 )
 
 type (
-	// Fields 表示字段的错误信息列表
+	// ResultFields 表示字段的错误信息列表
 	//
 	// 原始类型为 map[string][]string
-	Fields = validation.Messages
+	ResultFields = validation.Messages
 
 	// BuildResultFunc 用于生成 Result 接口对象的函数
 	BuildResultFunc func(status, code int, message string) Result
@@ -220,7 +220,7 @@ func (c *Content) AddResult(status, code int, key message.Reference, v ...interf
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 // fields 表示明细字段，可以为空，之后通过 Result.Add 添加。
-func (c *Content) Result(p *message.Printer, code int, fields Fields) Result {
+func (c *Content) Result(p *message.Printer, code int, fields ResultFields) Result {
 	msg, found := c.resultMessages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))

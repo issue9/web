@@ -18,9 +18,9 @@ func TestCommand_sanitize(t *testing.T) {
 
 	cmd = &Command{Name: "app", Version: "1.1.1"}
 	err = cmd.sanitize()
-	a.Equal(err.Field, "RegisterModules")
+	a.Equal(err.Field, "InitServer")
 
-	cmd = &Command{Name: "app", Version: "1.1.1", RegisterModules: func(s *Server) error { return nil }}
+	cmd = &Command{Name: "app", Version: "1.1.1", InitServer: func(s *Server) error { return nil }}
 	err = cmd.sanitize()
 	a.NotError(err)
 

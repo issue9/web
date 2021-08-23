@@ -117,7 +117,7 @@ func Created(v interface{}, location string) Responser {
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code int, fields content.Fields) Responser {
+func (ctx *Context) Result(code int, fields content.ResultFields) Responser {
 	rslt := ctx.server.Result(ctx.LocalePrinter, code, fields)
 	return Object(rslt.Status(), rslt, nil)
 }

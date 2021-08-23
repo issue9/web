@@ -77,7 +77,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 	ctx.server.AddResult(http.StatusBadRequest, 40010, "40010")
 	ctx.server.AddResult(http.StatusBadRequest, 40011, "40011")
 
-	resp := ctx.Result(40010, content.Fields{
+	resp := ctx.Result(40010, content.ResultFields{
 		"k1": []string{"v1", "v2"},
 	})
 

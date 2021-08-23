@@ -259,6 +259,6 @@ func (srv *Server) AddResult(status, code int, key message.Reference, v ...inter
 }
 
 // Result 返回指定代码在指定语言的错误描述信息
-func (srv *Server) Result(p *message.Printer, code int, fields content.Fields) content.Result {
+func (srv *Server) Result(p *message.Printer, code int, fields content.ResultFields) content.Result {
 	return srv.content.Result(p, code, fields)
 }

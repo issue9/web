@@ -34,7 +34,7 @@ import (
 //      Name: "app",
 //      Version: "1.0.0",
 //      ServeTags: []string{"serve"},
-//      RegisterModules: func(s *Server) error {...}
+//      InitServer: func(s *Server) error {...}
 //  }
 //
 //  cmd.Exec()
@@ -43,7 +43,8 @@ type Command struct {
 
 	Version string // 程序版本
 
-	RegisterModules func(*Server) error // 注册模块
+	// 在运行服务之前对 server 的额外操作，比如添加模块等。
+	InitServer func(*Server) error
 
 	// 当作服务运行的标签名
 	//
@@ -94,8 +95,8 @@ func (cmd *Command) sanitize() *config.Error {
 		return &config.Error{Field: "Version", Message: "不能为空"}
 	}
 
-	if cmd.RegisterModules == nil {
-		return &config.Error{Field: "RegisterModules", Message: "不能为空"}
+	if cmd.InitServer == nil {
+		return &config.Error{Field: "InitServer", Message: "不能为空"}
 	}
 
 	if cmd.Out == nil {
@@ -156,7 +157,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	if err := cmd.RegisterModules(srv); err != nil {
+	if err := cmd.InitServer(srv); err != nil {
 		return err
 	}
 
@@ -164,6 +165,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
+	// 如果不需要运行服务，则在这里退出。
 	if sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) < 0 {
 		return nil
 	}

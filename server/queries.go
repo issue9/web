@@ -22,7 +22,7 @@ import (
 //  }
 type Queries struct {
 	ctx     *Context
-	errors  content.Fields
+	errors  content.ResultFields
 	queries url.Values
 }
 
@@ -35,7 +35,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		errors:  content.Fields{},
+		errors:  content.ResultFields{},
 		queries: queries,
 	}, nil
 }
@@ -138,7 +138,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 func (q *Queries) HasErrors() bool { return len(q.errors) > 0 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() content.Fields { return q.errors }
+func (q *Queries) Errors() content.ResultFields { return q.errors }
 
 // Result 转换成 Responser 对象
 func (q *Queries) Result(code int) Responser {

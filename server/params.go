@@ -24,7 +24,7 @@ var emptyParams = params.Params(map[string]string{})
 type Params struct {
 	ctx    *Context
 	params params.Params
-	errors content.Fields
+	errors content.ResultFields
 }
 
 // Params 声明一个新的 Params 实例
@@ -37,7 +37,7 @@ func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
 		params: ps,
-		errors: make(content.Fields, len(ps)),
+		errors: make(content.ResultFields, len(ps)),
 	}
 }
 
@@ -207,7 +207,7 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 func (p *Params) HasErrors() bool { return len(p.errors) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() content.Fields { return p.errors }
+func (p *Params) Errors() content.ResultFields { return p.errors }
 
 // Result 转换成 Result 对象
 func (p *Params) Result(code int) Responser {
@@ -229,7 +229,7 @@ func (ctx *Context) ParamID(key string, code int) (int64, Responser) {
 	}
 
 	if id <= 0 {
-		return 0, ctx.Result(code, content.Fields{key: []string{"必须大于 0"}})
+		return 0, ctx.Result(code, content.ResultFields{key: []string{"必须大于 0"}})
 	}
 	return id, nil
 }
@@ -240,7 +240,7 @@ func (ctx *Context) ParamID(key string, code int) (int64, Responser) {
 func (ctx *Context) ParamInt64(key string, code int) (int64, Responser) {
 	v, err := ctx.Params().params.Int(key)
 	if err != nil {
-		return 0, ctx.Result(code, content.Fields{key: []string{err.Error()}})
+		return 0, ctx.Result(code, content.ResultFields{key: []string{err.Error()}})
 	}
 	return v, nil
 }
@@ -251,7 +251,7 @@ func (ctx *Context) ParamInt64(key string, code int) (int64, Responser) {
 func (ctx *Context) ParamString(key string, code int) (string, Responser) {
 	v, err := ctx.Params().params.String(key)
 	if err != nil {
-		return "", ctx.Result(code, content.Fields{key: []string{err.Error()}})
+		return "", ctx.Result(code, content.ResultFields{key: []string{err.Error()}})
 	}
 	return v, nil
 }

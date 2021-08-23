@@ -14,18 +14,20 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.41.0"
+const Version = "0.42.0"
 
 type (
-	Server      = server.Server
-	Context     = server.Context
-	Options     = server.Options
-	Filter      = server.Filter
-	Module      = server.Module
-	HandlerFunc = server.HandlerFunc
-	Responser   = server.Responser
-	Router      = server.Router
-	Locale      = serialization.Locale
+	Server       = server.Server
+	Context      = server.Context
+	Options      = server.Options
+	Filter       = server.Filter
+	Module       = server.Module
+	HandlerFunc  = server.HandlerFunc
+	Responser    = server.Responser
+	Router       = server.Router
+	Tag          = server.Tag
+	ResultFields = content.ResultFields
+	Locale       = serialization.Locale
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
