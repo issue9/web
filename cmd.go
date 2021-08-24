@@ -96,7 +96,7 @@ func (cmd *Command) sanitize() *config.Error {
 	}
 
 	if cmd.Init == nil {
-		return &config.Error{Field: "InitServer", Message: "不能为空"}
+		return &config.Error{Field: "Init", Message: "不能为空"}
 	}
 
 	if cmd.Out == nil {
