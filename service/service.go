@@ -12,7 +12,7 @@ import (
 // Func 服务实际需要执行的函数
 //
 // 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-// 如果是通 ctx 取消的，应该返回其错误信息。
+// 如果是通 ctx.Done 取消的，应该返回 context.Canceled。
 type Func func(ctx context.Context) error
 
 // State 服务的状态值
@@ -20,7 +20,7 @@ type State int8
 
 // 几种可能的状态值
 const (
-	Stopped State = iota // 当前处理停止状态，默认状态
+	Stopped State = iota // 当前处于停止状态，默认状态
 	Running              // 正在运行
 	Failed               // 出错，不再执行后续操作
 )

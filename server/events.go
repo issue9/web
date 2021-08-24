@@ -35,6 +35,7 @@ func (srv *Server) Eventer(name string) events.Eventer { return srv.events[name]
 // AttachEvent 订阅指定事件
 //
 // 返回的值可用于取消订阅。
+// NOTE: s 会被异步执行。
 func (srv *Server) AttachEvent(name string, s Subscriber) int {
 	return srv.Eventer(name).Attach(s)
 }

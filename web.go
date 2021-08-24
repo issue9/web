@@ -28,6 +28,7 @@ type (
 	Tag          = server.Tag
 	ResultFields = content.ResultFields
 	Locale       = serialization.Locale
+	ConfigError  = config.Error
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象

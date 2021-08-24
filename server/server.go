@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -41,7 +42,9 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	closed     chan struct{} // 当 shutdown 延时关闭时，通过此事件确定 Serve() 的返回时机。
+
+	closed      chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
+	closeEvents []func() error
 
 	// middleware
 	groups        *group.Groups
@@ -77,7 +80,9 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
-		closed:     make(chan struct{}, 1),
+
+		closed:      make(chan struct{}, 1),
+		closeEvents: make([]func() error, 0, 3),
 
 		groups:        o.groups,
 		compress:      compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),
@@ -203,7 +208,8 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 		srv.closed <- struct{}{}
 	}()
 
-	srv.Services().Stop()
+	srv.Services().Stop() // 先关闭服务
+	srv.callCloseEvents()
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()
@@ -215,6 +221,22 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 		return err
 	}
 	return nil
+}
+
+func (srv *Server) callCloseEvents() {
+	sliceutil.Reverse(srv.closeEvents)
+	for _, event := range srv.closeEvents {
+		if err := event(); err != nil {
+			srv.Logs().Error(err)
+		}
+	}
+}
+
+// RegisterOnClose 注册关闭服务时的行为
+//
+// 按注册顺序反向调用
+func (srv *Server) RegisterOnClose(f ...func() error) {
+	srv.closeEvents = append(srv.closeEvents, f...)
 }
 
 // DisableCompression 是否禁用压缩功能

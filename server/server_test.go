@@ -3,6 +3,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -343,6 +344,31 @@ func TestServer_Close(t *testing.T) {
 		return nil
 	})
 
+	buf := new(bytes.Buffer)
+	m1, err := srv.NewModule("m1", "v1.0.0", "m1 desc")
+	a.NotError(err).NotNil(m1)
+	m1.Tag("serve").AddService("srv1", func(ctx context.Context) error {
+		c := time.Tick(10 * time.Millisecond)
+		for {
+			select {
+			case <-c:
+				println("TestServer_Close tick...")
+			case <-ctx.Done():
+				buf.WriteString("canceled\n")
+				println("TestServer_Close canceled...")
+				return context.Canceled
+			}
+		}
+	}).AddInit("RegisterOnClose", func() error {
+		m1.Server().RegisterOnClose(func() error {
+			buf.WriteString("RegisterOnClose\n")
+			println("TestServer_Close RegisterOnClose...")
+			return nil
+		})
+		return nil
+	})
+
+	a.NotError(srv.InitModules("serve"))
 	go func() {
 		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
 		exit <- true
@@ -361,6 +387,10 @@ func TestServer_Close(t *testing.T) {
 
 	resp, err = http.Get("http://localhost:8080/root/test")
 	a.Error(err).Nil(resp)
+
+	str := buf.String()
+	a.Contains(str, "canceled").
+		Contains(str, "RegisterOnClose")
 
 	<-exit
 }
