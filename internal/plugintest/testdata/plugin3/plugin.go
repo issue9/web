@@ -11,7 +11,7 @@ import (
 
 // InitModule 返回模块信息
 func InitModule(s *web.Server) error {
-	m, err := s.NewModule("plugin3", "v1", "p3 desc", "plugin1")
+	m, err := s.NewModule("plugin3", "v1", web.Phrase("p3 desc"), "plugin1")
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/validation"
 	"golang.org/x/text/message"
 )
@@ -76,8 +77,7 @@ type (
 
 	resultMessage struct {
 		status int
-		key    message.Reference
-		values []interface{}
+		localeutil.Phrase
 	}
 )
 
@@ -201,7 +201,7 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 func (c *Content) Results(p *message.Printer) map[int]string {
 	msgs := make(map[int]string, len(c.resultMessages))
 	for code, msg := range c.resultMessages {
-		msgs[code] = p.Sprintf(msg.key, msg.values...)
+		msgs[code] = msg.LocaleString(p)
 	}
 	return msgs
 }
@@ -213,7 +213,7 @@ func (c *Content) AddResult(status, code int, key message.Reference, v ...interf
 	if _, found := c.resultMessages[code]; found {
 		panic(fmt.Sprintf("重复的消息 ID: %d", code))
 	}
-	c.resultMessages[code] = &resultMessage{status: status, key: key, values: v}
+	c.resultMessages[code] = &resultMessage{status: status, Phrase: localeutil.Phrase{Key: key, Values: v}}
 }
 
 // Result 返回 Result 实例
@@ -226,7 +226,7 @@ func (c *Content) Result(p *message.Printer, code int, fields ResultFields) Resu
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	rslt := c.resultBuilder(msg.status, code, p.Sprintf(msg.key, msg.values...))
+	rslt := c.resultBuilder(msg.status, code, msg.LocaleString(p))
 	for k, vals := range fields {
 		rslt.Add(k, vals...)
 	}

@@ -244,7 +244,7 @@ func TestContent_AddResult(t *testing.T) {
 	msg, found := mgr.resultMessages[1]
 	a.True(found).
 		Equal(msg.status, 400).
-		Equal(msg.key, "1")
+		Equal(msg.Key, "1")
 
 	msg, found = mgr.resultMessages[401]
 	a.False(found).Nil(msg)

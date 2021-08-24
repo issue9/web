@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
@@ -60,4 +61,9 @@ func Status(status int) Responser { return server.Status(status) }
 
 func Object(status int, body interface{}, headers map[string]string) Responser {
 	return server.Object(status, body, headers)
+}
+
+// Phrase 生成本地化的语言片段
+func Phrase(key string, v ...interface{}) localeutil.Phrase {
+	return localeutil.Phrase{Key: key, Values: v}
 }

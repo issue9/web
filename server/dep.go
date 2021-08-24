@@ -45,7 +45,7 @@ func (srv *Server) initModule(m *Module, l *log.Logger, tag string) error {
 	for _, depID := range m.deps { // 先初始化依赖项
 		depMod := srv.findModule(depID)
 		if depMod == nil {
-			return fmt.Errorf("模块 %s 依赖项 %s 未找到", m.ID(), depID)
+			return fmt.Errorf("模块 %s 依赖项 %s 未找到", m.id, depID)
 		}
 
 		if err := srv.initModule(depMod, l, tag); err != nil {
@@ -53,13 +53,13 @@ func (srv *Server) initModule(m *Module, l *log.Logger, tag string) error {
 		}
 	}
 
-	l.Println(m.ID(), "...")
+	l.Println(m.id, "...")
 
 	err := m.Tag(tag).init(l)
 	if err != nil {
-		l.Printf("%s [FAIL:%s]\n\n", m.ID(), err.Error())
+		l.Printf("%s [FAIL:%s]\n\n", m.id, err.Error())
 	} else {
-		l.Printf("%s [OK]\n\n", m.ID())
+		l.Printf("%s [OK]\n\n", m.id)
 	}
 
 	return err

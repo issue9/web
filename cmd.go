@@ -44,7 +44,7 @@ type Command struct {
 	Version string // 程序版本
 
 	// 在运行服务之前对 server 的额外操作，比如添加模块等。
-	InitServer func(*Server) error
+	Init func(*Server) error
 
 	// 当作服务运行的标签名
 	//
@@ -95,7 +95,7 @@ func (cmd *Command) sanitize() *config.Error {
 		return &config.Error{Field: "Version", Message: "不能为空"}
 	}
 
-	if cmd.InitServer == nil {
+	if cmd.Init == nil {
 		return &config.Error{Field: "InitServer", Message: "不能为空"}
 	}
 
@@ -157,7 +157,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	if err := cmd.InitServer(srv); err != nil {
+	if err := cmd.Init(srv); err != nil {
 		return err
 	}
 

@@ -11,9 +11,11 @@ import (
 	"sort"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/scheduled"
 	"github.com/issue9/scheduled/schedulers"
 	"github.com/issue9/sliceutil"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/service"
@@ -31,12 +33,19 @@ type PluginInitFunc func(*Server) error
 type Module struct {
 	tags    map[string]*Tag
 	id      string
-	desc    string
+	desc    localeutil.Phrase
 	version string
 	deps    []string
 
 	srv *Server
 	fs  *filesystem.MultipleFS
+}
+
+type ModuleInfo struct {
+	ID          string   `yaml:"id" json:"id" xml:"id,attr"`
+	Version     string   `yaml:"version" json:"version" xml:"version,attr"`
+	Description string   `yaml:"description" json:"description" xml:"description,chardata"`
+	Deps        []string `yaml:"deps" json:"deps" xml:"dep"`
 }
 
 // Tag 模块下对执行函数的分类
@@ -58,7 +67,7 @@ type executor struct {
 // version 模块的版本信息；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(id, version, desc string, deps ...string) (*Module, error) {
+func (srv *Server) NewModule(id, version string, desc localeutil.Phrase, deps ...string) (*Module, error) {
 	if sliceutil.Count(srv.modules, func(i int) bool { return srv.modules[i].id == id }) > 0 {
 		return nil, fmt.Errorf("存在同名的模块 %s", id)
 	}
@@ -143,19 +152,18 @@ func (m *Module) Tag(t string) *Tag {
 }
 
 // Modules 模块列表
-func (srv *Server) Modules() []*Module { return srv.modules }
-
-// ID 模块的唯一 ID
-func (m *Module) ID() string { return m.id }
-
-// Description 对模块的详细描述
-func (m *Module) Description() string { return m.desc }
-
-// Deps 模块的依赖信息
-func (m *Module) Deps() []string { return m.deps }
-
-// Version 版本号
-func (m *Module) Version() string { return m.version }
+func (srv *Server) Modules(p *message.Printer) []*ModuleInfo {
+	info := make([]*ModuleInfo, 0, len(srv.modules))
+	for _, m := range srv.modules {
+		info = append(info, &ModuleInfo{
+			ID:          m.id,
+			Version:     m.version,
+			Description: m.desc.LocaleString(p),
+			Deps:        m.deps,
+		})
+	}
+	return info
+}
 
 func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
 

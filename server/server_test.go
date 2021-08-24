@@ -18,6 +18,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
@@ -214,7 +215,7 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
-	m1, err := server.NewModule("m1", "1.0.0", "m1 desc")
+	m1, err := server.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.NotNil(m1).NotError(err)
 	m1.Tag("def").AddInit("init", func() error {
 		router.Get("/m1/test", f202)
@@ -222,13 +223,13 @@ func TestServer_Serve(t *testing.T) {
 	})
 	m1.Tag("tag1")
 
-	m2, err := server.NewModule("m2", "1.0.0", "m2 desc", "m1")
+	m2, err := server.NewModule("m2", "1.0.0", localeutil.Phrase{Key: "m2 desc"}, "m1")
 	a.NotNil(m2).NotError(err)
 	m2.Tag("def").AddInit("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
 			a.NotNil(srv)
-			a.Equal(2, len(srv.Modules()))
+			a.Equal(2, len(srv.Modules(message.NewPrinter(language.SimplifiedChinese))))
 			a.Equal(srv.Tags(), []string{"def", "tag1"})
 
 			ctx.Response.WriteHeader(http.StatusAccepted)
@@ -345,7 +346,7 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	buf := new(bytes.Buffer)
-	m1, err := srv.NewModule("m1", "v1.0.0", "m1 desc")
+	m1, err := srv.NewModule("m1", "v1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.NotError(err).NotNil(m1)
 	m1.Tag("serve").AddService("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)

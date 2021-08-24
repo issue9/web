@@ -9,27 +9,30 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/localeutil"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 func TestServer_InitModules(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m1, err := s.NewModule("users1", "1.0.0", "user1 module", "users2", "users3")
+	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase{Key: "user1 module"}, "users2", "users3")
 	a.NotNil(m1).NotError(err)
 	t1 := m1.Tag("v1")
 	a.NotNil(t1)
 	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
 	m1.Tag("v2")
 
-	m2, err := s.NewModule("users2", "1.0.0", "user2 module", "users3")
+	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase{Key: "user2 module"}, "users3")
 	a.NotNil(m2).NotError(err)
 	t2 := m2.Tag("v1")
 	a.NotNil(t2)
 	t2.AddInit("安装数据表 users2", func() error { return nil })
 	m2.Tag("v3")
 
-	m3, err := s.NewModule("users3", "1.0.0", "user3 module")
+	m3, err := s.NewModule("users3", "1.0.0", localeutil.Phrase{Key: "user3 module"})
 	a.NotNil(m3).NotError(err)
 	tag := m3.Tag("v1")
 	a.NotNil(tag)
@@ -53,22 +56,22 @@ func TestServer_Tags(t *testing.T) {
 	srv := newServer(a)
 	a.Empty(srv.Tags())
 
-	m1, err := srv.NewModule("m1", "1.0.0", "m1 desc")
+	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.NotError(err).NotNil(m1)
 	a.NotNil(m1.Tag("d1"))
 	a.NotNil(m1.Tag("d2"))
 	a.NotNil(m1.Tag("d2"))
 
-	m2, err := srv.NewModule("m2", "1.0.0", "m2 desc")
+	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase{Key: "m2 desc"})
 	a.NotError(err).NotNil(m2)
 	a.NotNil(m2.Tag("d2"))
 	a.NotNil(m2.Tag("d0"))
 
-	m3, err := srv.NewModule("m3", "1.0.0", "m3 desc")
+	m3, err := srv.NewModule("m3", "1.0.0", localeutil.Phrase{Key: "m3 desc"})
 	a.NotError(err).NotNil(m3)
 
 	a.Equal(srv.Tags(), []string{"d0", "d1", "d2"}).
-		Equal(srv.Modules(), []*Module{m1, m2, m3})
+		Equal(len(srv.Modules(message.NewPrinter(language.Und))), 3)
 }
 
 func TestServer_isDep(t *testing.T) {
@@ -76,9 +79,9 @@ func TestServer_isDep(t *testing.T) {
 	srv := newServer(a)
 	a.Empty(srv.Tags())
 
-	m, err := srv.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
+	m, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"}, "d1", "d2")
 	a.NotError(err).NotNil(m)
-	m, err = srv.NewModule("d1", "1.0.0", "d1 desc", "d3")
+	m, err = srv.NewModule("d1", "1.0.0", localeutil.Phrase{Key: "d1 desc"}, "d3")
 	a.NotError(err).NotNil(m)
 
 	a.True(srv.isDep("m1", "d1"))
@@ -89,11 +92,11 @@ func TestServer_isDep(t *testing.T) {
 	// 循环依赖
 	srv = newServer(a)
 	a.Empty(srv.Tags())
-	m, err = srv.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
+	m, err = srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"}, "d1", "d2")
 	a.NotError(err).NotNil(m)
-	m, err = srv.NewModule("d1", "1.0.0", "d1 desc", "d3")
+	m, err = srv.NewModule("d1", "1.0.0", localeutil.Phrase{Key: "d1 desc"}, "d3")
 	a.NotError(err).NotNil(m)
-	m, err = srv.NewModule("d3", "1.0.0", "d3 desc", "d1")
+	m, err = srv.NewModule("d3", "1.0.0", localeutil.Phrase{Key: "d3 desc"}, "d1")
 	a.NotError(err).NotNil(m)
 	a.True(srv.isDep("d1", "d1"))
 
@@ -106,8 +109,8 @@ func TestServer_checkDeps(t *testing.T) {
 	srv := newServer(a)
 	a.Empty(srv.Tags())
 
-	srv.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
-	srv.NewModule("d1", "1.0.0", "d1 desc", "d3")
+	srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"}, "d1", "d2")
+	srv.NewModule("d1", "1.0.0", localeutil.Phrase{Key: "d1 desc"}, "d3")
 
 	m1 := srv.findModule("m1")
 	a.NotNil(m1).
@@ -115,18 +118,18 @@ func TestServer_checkDeps(t *testing.T) {
 
 	srv = newServer(a)
 	a.NotNil(srv)
-	srv.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
-	srv.NewModule("d1", "1.0.0", "d1 desc", "d3")
-	srv.NewModule("d2", "1.0.0", "d2 desc", "d3")
+	srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"}, "d1", "d2")
+	srv.NewModule("d1", "1.0.0", localeutil.Phrase{Key: "d1 desc"}, "d3")
+	srv.NewModule("d2", "1.0.0", localeutil.Phrase{Key: "d2 desc"}, "d3")
 	a.NotError(srv.checkDeps(m1))
 
 	// 自我依赖
 	srv = newServer(a)
 	a.NotNil(srv)
-	srv.NewModule("m1", "1.0.0", "m1 desc", "d1", "d2")
-	srv.NewModule("d1", "1.0.0", "d1 desc", "d3")
-	srv.NewModule("d2", "1.0.0", "d2 desc", "d3")
-	srv.NewModule("d3", "1.0.0", "d3 desc", "d2")
+	srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"}, "d1", "d2")
+	srv.NewModule("d1", "1.0.0", localeutil.Phrase{Key: "d1 desc"}, "d3")
+	srv.NewModule("d2", "1.0.0", localeutil.Phrase{Key: "d2 desc"}, "d3")
+	srv.NewModule("d3", "1.0.0", localeutil.Phrase{Key: "d3 desc"}, "d2")
 	d2 := srv.findModule("d2")
 	a.NotNil(d2).
 		ErrorString(srv.checkDeps(d2), "循环依赖自身")
@@ -137,7 +140,7 @@ func TestServer_initModule(t *testing.T) {
 	dep := newServer(a)
 	a.NotNil(dep)
 
-	m1, err := dep.NewModule("m1", "1.0.0", "m1 desc")
+	m1, err := dep.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.NotError(err).NotNil(m1)
 
 	buf := new(bytes.Buffer)
@@ -154,7 +157,7 @@ func TestServer_initModule(t *testing.T) {
 
 	// 函数返回错误
 
-	m2, err := dep.NewModule("m2", "1.0.0", "m2 desc")
+	m2, err := dep.NewModule("m2", "1.0.0", localeutil.Phrase{Key: "m2 desc"})
 	a.NotError(err).NotNil(m2)
 
 	buf.Reset()

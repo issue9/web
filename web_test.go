@@ -34,7 +34,7 @@ func TestNewServer(t *testing.T) {
 	srv, err := NewServer("app", "v1.1", &Options{Locale: locale, Logs: log, Tag: language.MustParse("cmn-hans")})
 	a.NotError(err).NotNil(srv)
 
-	m1, err := srv.NewModule("m1", "1.0.0", "m1 desc")
+	m1, err := srv.NewModule("m1", "1.0.0", Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
 	m1.Tag("init").AddInit("m1 init", func() error {
 		router, err := srv.NewRouter("r1", "https://example.com", group.MatcherFunc(group.Any))

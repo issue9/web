@@ -10,6 +10,10 @@ import (
 	"unicode"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/localeutil"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 )
 
 var _ fs.FS = &Module{}
@@ -24,17 +28,14 @@ func TestNewModule(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m, err := s.NewModule("id", "1.0.0", "desc", "id1", "id2")
-	a.NotNil(m).NotError(err).
-		Equal(m.ID(), "id").
-		Equal(m.Description(), "desc").
-		Equal(m.Deps(), []string{"id1", "id2"})
+	m, err := s.NewModule("id", "1.0.0", localeutil.Phrase{Key: "desc"}, "id1", "id2")
+	a.NotNil(m).NotError(err)
 }
 
 func TestModule_Tag(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("user1", "1.0.0", "user1 desc")
+	m, err := s.NewModule("user1", "1.0.0", localeutil.Phrase{Key: "user1 desc"})
 	a.NotNil(m).NotError(err)
 
 	v := m.Tag("0.1.0")
@@ -54,27 +55,29 @@ func TestServer_NewModule(t *testing.T) {
 	srv := newServer(a)
 	a.NotNil(srv)
 
-	m1, err := srv.NewModule("m1", "1.0.0", "m1 desc")
-	a.NotError(err).NotNil(m1)
-	m2, err := srv.NewModule("m2", "1.0.0", "m2 desc", "m1")
-	a.NotError(err).NotNil(m2).
-		Equal(m2.Version(), "1.0.0").
-		Equal(m2.ID(), "m2")
+	builder := catalog.NewBuilder()
+	builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息")
+	printer := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
 
-	m11, err := srv.NewModule("m1", "1.0.0", "m1 desc")
+	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
+	a.NotError(err).NotNil(m1)
+	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase{Key: "m2 desc"}, "m1")
+	a.NotError(err).NotNil(m2)
+
+	m11, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.ErrorString(err, "存在同名的模块").Nil(m11)
 
-	a.Equal(m1.ID(), "m1").Equal(m1.Description(), "m1 desc").Empty(m1.Deps())
-	a.Equal(m2.ID(), "m2").Equal(m2.Description(), "m2 desc").Equal(m2.Deps(), []string{"m1"})
-
-	ms := srv.Modules()
-	a.Equal(len(ms), 2)
+	ms := srv.Modules(printer)
+	a.Equal(ms, []*ModuleInfo{
+		{ID: "m1", Version: "1.0.0", Description: "m1 描述信息"},
+		{ID: "m2", Version: "1.0.0", Description: "m2 desc", Deps: []string{"m1"}},
+	})
 }
 
 func TestTag_AddInit(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("m1", "1.0.0", "m1 desc")
+	m, err := s.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
 	a.NotError(err).NotNil(m)
 
 	tag := m.Tag("t1")
