@@ -10,8 +10,6 @@ import (
 
 // Subscriber 订阅者函数
 //
-// 每个订阅函数都是通过 go 异步执行。
-//
 // data 为事件传递过来的数据，可能存在多个订阅者，
 // 用户不应该直接修改 data 数据，否则结果是未知的。
 type Subscriber = events.Subscriber
@@ -32,6 +30,8 @@ func (p *publisher) Destory() {
 }
 
 // Publisher 创建事件发布者
+//
+// name 不应该以 _ 开头，该系列预留给框架自身使用。
 func (srv *Server) Publisher(name string) events.Publisher {
 	if _, found := srv.events[name]; found {
 		panic(fmt.Sprintf("事件 %s 已经存在", name))

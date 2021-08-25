@@ -236,6 +236,7 @@ func (srv *Server) callCloseEvents() {
 //
 // 按注册顺序反向调用
 func (srv *Server) RegisterOnClose(f ...func() error) {
+	// NOTE: 不采用 events，此方法调用顺序有要求
 	srv.closeEvents = append(srv.closeEvents, f...)
 }
 
