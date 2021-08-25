@@ -21,8 +21,7 @@ func main() {
 
     srv.NewModule(m1.Module, m2.Module) // 注册模块信息
 
-    srv.InitModules("serve")
-    srv.Serve()
+    srv.Serve("serve", true)
 }
 
 // modules/m1/module.go

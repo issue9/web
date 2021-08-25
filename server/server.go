@@ -181,9 +181,14 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
-//
-// 在运行之前，请确保已经调用 InitModules。
-func (srv *Server) Serve() (err error) {
+func (srv *Server) Serve(tag string, serve bool) (err error) {
+	if err := srv.initModules(tag); err != nil {
+		return err
+	}
+	if !serve {
+		return nil
+	}
+
 	srv.Services().Run()
 
 	cfg := srv.httpServer.TLSConfig

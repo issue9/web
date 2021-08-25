@@ -25,10 +25,9 @@ func TestPlugins(t *testing.T) {
 		Plugins: "./testdata/plugin_*.so",
 	})
 	a.NotError(err).NotNil(srv)
-	a.NotError(srv.InitModules("default"))
 
 	go func() {
-		srv.Serve()
+		srv.Serve("default", true)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	defer srv.Close(0)

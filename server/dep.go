@@ -10,8 +10,8 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
-// InitModules 触发所有模块下指定名称的函数
-func (srv *Server) InitModules(tag string) error {
+// initModules 触发所有模块下指定名称的函数
+func (srv *Server) initModules(tag string) error {
 	if tag == "" {
 		panic("参数  tag 不能为空")
 	}

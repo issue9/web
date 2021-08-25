@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/message"
 )
 
-func TestServer_InitModules(t *testing.T) {
+func TestServer_initModules(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
@@ -44,11 +44,11 @@ func TestServer_InitModules(t *testing.T) {
 	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
-		s.InitModules("") // 空值
+		s.initModules("") // 空值
 	})
-	a.ErrorString(s.InitModules("v1"), "failed message")
-	a.NotError(s.InitModules("v2"))
-	a.NotError(s.InitModules("not-exists"))
+	a.ErrorString(s.initModules("v1"), "failed message")
+	a.NotError(s.initModules("v2"))
+	a.NotError(s.initModules("not-exists"))
 }
 
 func TestServer_Tags(t *testing.T) {

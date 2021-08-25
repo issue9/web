@@ -161,19 +161,12 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	if err := srv.InitModules(*tag); err != nil {
-		return err
-	}
-
-	// 如果不需要运行服务，则在这里退出。
-	if sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) < 0 {
-		return nil
-	}
-
 	if len(cmd.Signals) > 0 {
 		cmd.grace(srv, cmd.Signals...)
 	}
-	return srv.Serve()
+
+	serve := sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) >= 0
+	return srv.Serve(*tag, serve)
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {

@@ -129,7 +129,7 @@ func TestGetServer(t *testing.T) {
 	})
 
 	go func() {
-		a.Equal(srv.Serve(), http.ErrServerClosed)
+		a.Equal(srv.Serve("default", true), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").
@@ -173,7 +173,7 @@ func TestGetServer(t *testing.T) {
 		isRequested = true
 	})
 	go func() {
-		a.Equal(srv.Serve(), http.ErrServerClosed)
+		a.Equal(srv.Serve("default", true), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").Do().Success()
@@ -243,8 +243,7 @@ func TestServer_Serve(t *testing.T) {
 	})
 
 	go func() {
-		a.NotError(server.InitModules("def"))
-		err := server.Serve()
+		err := server.Serve("def", true)
 		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -300,7 +299,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	router.Get("/mux/test", f202)
 
 	go func() {
-		err := server.Serve()
+		err := server.Serve("default", true)
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -369,9 +368,8 @@ func TestServer_Close(t *testing.T) {
 		return nil
 	})
 
-	a.NotError(srv.InitModules("serve"))
 	go func() {
-		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
+		a.ErrorIs(srv.Serve("serve", true), http.ErrServerClosed)
 		exit <- true
 	}()
 
@@ -414,7 +412,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	})
 
 	go func() {
-		err := srv.Serve()
+		err := srv.Serve("default", true)
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
