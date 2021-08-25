@@ -263,7 +263,7 @@ func TestContent_Results(t *testing.T) {
 	buildResultCatalog(c, a)
 
 	a.NotPanic(func() {
-		c.AddResults(map[int]localeutil.Phrase{40010: localeutil.Phrase{Key: "lang"}})
+		c.AddResults(map[int]localeutil.Phrase{40010: {Key: "lang"}})
 	})
 
 	msg := c.Results(c.newLocalePrinter(language.Und))

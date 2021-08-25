@@ -147,14 +147,8 @@ func (srv *Server) Version() string { return srv.version }
 // Open 实现 fs.FS 接口
 func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
 
-// Get 返回指定键名的值
-func (srv *Server) Get(key interface{}) (interface{}, bool) { return srv.vars.Load(key) }
-
-// Set 保存指定键名的值
-func (srv *Server) Set(key, val interface{}) { srv.vars.Store(key, val) }
-
-// Delete 删除指定键名的值
-func (srv *Server) Delete(key interface{}) { srv.vars.Delete(key) }
+// Vars 操纵共享变量的接口
+func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
 func (srv *Server) Location() *time.Location { return srv.location }

@@ -30,6 +30,9 @@ type Content struct {
 }
 
 // New 返回 *Content 实例
+//
+// locale 本地化数据，context 从此处查找对应的本地化信息；
+// tag 默认的本地化语言标签，context 查找不到数据时采用此值，同时也作为非 context 实例的默认输出语言。
 func New(builder BuildResultFunc, locale *serialization.Locale, tag language.Tag) *Content {
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),

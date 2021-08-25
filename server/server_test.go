@@ -196,13 +196,13 @@ func TestServer_vars(t *testing.T) {
 		v3 t3 = 1
 	)
 
-	srv.Set(v1, 1)
-	srv.Set(v2, 2)
-	srv.Set(v3, 3)
+	srv.Vars().Store(v1, 1)
+	srv.Vars().Store(v2, 2)
+	srv.Vars().Store(v3, 3)
 
-	v11, found := srv.Get(v1)
+	v11, found := srv.Vars().Load(v1)
 	a.True(found).Equal(v11, 1)
-	v22, found := srv.Get(v2)
+	v22, found := srv.Vars().Load(v2)
 	a.True(found).Equal(v22, 3)
 }
 

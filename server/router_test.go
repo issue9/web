@@ -319,14 +319,14 @@ func TestServer_Router(t *testing.T) {
 	a.Equal(srv.Router("host"), r)
 
 	// 同值，不同类型
-	srv.Set("host", 123)
+	srv.Vars().Store("host", 123)
 	a.Equal(srv.Router("host"), r)
-	v, found := srv.Get("host")
+	v, found := srv.Vars().Load("host")
 	a.True(found).Equal(v, 123)
 
 	srv.RemoveRouter("host")
 	a.Nil(srv.Router("host"))
-	v, found = srv.Get("host")
+	v, found = srv.Vars().Load("host")
 	a.True(found).Equal(v, 123)
 }
 
