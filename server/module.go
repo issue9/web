@@ -44,8 +44,8 @@ type Module struct {
 type ModuleInfo struct {
 	ID          string   `yaml:"id" json:"id" xml:"id,attr"`
 	Version     string   `yaml:"version" json:"version" xml:"version,attr"`
-	Description string   `yaml:"description" json:"description" xml:"description,chardata"`
-	Deps        []string `yaml:"deps" json:"deps" xml:"dep"`
+	Description string   `yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	Deps        []string `yaml:"deps,omitempty" json:"deps,omitempty" xml:"dep,omitempty"`
 }
 
 // Tag 模块下对执行函数的分类
