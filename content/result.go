@@ -206,14 +206,25 @@ func (c *Content) Results(p *message.Printer) map[int]string {
 	return msgs
 }
 
+// AddResults 添加多条错误信息
+//
+// 键名为错误信息的数字代码，键值是具体的错误信息描述。
+// 同时键名向下取整，直到三位长度的整数作为其返回给客户端的状态码。
+func (c *Content) AddResults(messages map[int]localeutil.Phrase) {
+	for code, phrase := range messages {
+		status := calcStatus(code)
+		c.AddResult(status, code, phrase)
+	}
+}
+
 // AddResult 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (c *Content) AddResult(status, code int, key message.Reference, v ...interface{}) {
+func (c *Content) AddResult(status, code int, phrase localeutil.Phrase) {
 	if _, found := c.resultMessages[code]; found {
 		panic(fmt.Sprintf("重复的消息 ID: %d", code))
 	}
-	c.resultMessages[code] = &resultMessage{status: status, Phrase: localeutil.Phrase{Key: key, Values: v}}
+	c.resultMessages[code] = &resultMessage{status: status, Phrase: phrase}
 }
 
 // Result 返回 Result 实例
@@ -232,4 +243,16 @@ func (c *Content) Result(p *message.Printer, code int, fields ResultFields) Resu
 	}
 
 	return rslt
+}
+
+func calcStatus(code int) int {
+	if code < 1000 {
+		panic("无效的 code")
+	}
+
+	status := code / 10
+	for status > 999 {
+		status = status / 10
+	}
+	return status
 }

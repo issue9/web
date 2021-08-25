@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
@@ -194,7 +195,7 @@ func TestContent_Result(t *testing.T) {
 	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	buildResultCatalog(c, a)
 
-	c.AddResult(400, 40000, "lang") // lang 有翻译
+	c.AddResult(400, 40000, localeutil.Phrase{Key: "lang"}) // lang 有翻译
 
 	// 能正常翻译错误信息
 	rslt, ok := c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
@@ -237,8 +238,8 @@ func TestContent_AddResult(t *testing.T) {
 	mgr := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 
 	a.NotPanic(func() {
-		mgr.AddResult(400, 1, "1")
-		mgr.AddResult(400, 100, "100")
+		mgr.AddResult(400, 1, localeutil.Phrase{Key: "1"})
+		mgr.AddResult(400, 100, localeutil.Phrase{Key: "100"})
 	})
 
 	msg, found := mgr.resultMessages[1]
@@ -251,7 +252,7 @@ func TestContent_AddResult(t *testing.T) {
 
 	// 重复的 ID
 	a.Panic(func() {
-		mgr.AddResult(400, 1, "40010")
+		mgr.AddResult(400, 1, localeutil.Phrase{Key: "40010"})
 	})
 }
 
@@ -262,7 +263,7 @@ func TestContent_Results(t *testing.T) {
 	buildResultCatalog(c, a)
 
 	a.NotPanic(func() {
-		c.AddResult(400, 40010, "lang")
+		c.AddResults(map[int]localeutil.Phrase{40010: localeutil.Phrase{Key: "lang"}})
 	})
 
 	msg := c.Results(c.newLocalePrinter(language.Und))
@@ -279,5 +280,21 @@ func TestContent_Results(t *testing.T) {
 
 	a.Panic(func() {
 		c.Results(nil)
+	})
+}
+
+func TestCalcStatus(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(calcStatus(40010), 400)
+	a.Equal(calcStatus(40011), 400)
+	a.Equal(calcStatus(400111), 400)
+	a.Equal(calcStatus(401111), 401)
+
+	a.Panic(func() {
+		calcStatus(999)
+	})
+	a.Panic(func() {
+		calcStatus(-1)
 	})
 }

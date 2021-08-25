@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/events"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
@@ -281,8 +282,13 @@ func (srv *Server) Tag() language.Tag { return srv.content.Tag() }
 func (srv *Server) Results(p *message.Printer) map[int]string { return srv.content.Results(p) }
 
 // AddResult 添加错误代码与关联的描述信息
-func (srv *Server) AddResult(status, code int, key message.Reference, v ...interface{}) {
-	srv.content.AddResult(status, code, key, v...)
+func (srv *Server) AddResult(status, code int, phrase localeutil.Phrase) {
+	srv.content.AddResult(status, code, phrase)
+}
+
+// AddResult 添加多条错误代码与关联的描述信息
+func (srv *Server) AddResults(messages map[int]localeutil.Phrase) {
+	srv.content.AddResults(messages)
 }
 
 // Result 返回指定代码在指定语言的错误描述信息

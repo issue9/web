@@ -34,7 +34,7 @@ import (
 //      Name: "app",
 //      Version: "1.0.0",
 //      ServeTags: []string{"serve"},
-//      InitServer: func(s *Server) error {...}
+//      Init: func(s *Server) error {...}
 //  }
 //
 //  cmd.Exec()
@@ -48,9 +48,7 @@ type Command struct {
 
 	// 当作服务运行的标签名
 	//
-	// 当标签名与此值相同时，在执行完 Server.InitModules 之后，还会执行 Server.Serve。
-	//
-	// 可以为空。
+	// 当标签名在此列表时，Server.Serve 的第二个参数为 true。
 	ServeTags []string
 
 	// 触发退出的信号
