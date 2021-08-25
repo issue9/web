@@ -22,8 +22,8 @@ github.com/issue9/conv v1.2.1/go.mod h1:rxUsUvpb1/3rZt0Uf/UtEC6BogEO2BV3bCWbh2DO
 github.com/issue9/errwrap v0.1.2/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
 github.com/issue9/errwrap v0.2.0 h1:EPisAVHfGj8ZnR3aNlLFpih/ahDWdMXTOOA+3QaELpk=
 github.com/issue9/errwrap v0.2.0/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
-github.com/issue9/events v0.2.0 h1:zaROXA2YqHNIS8Wf6JIZNz/SqnKD4v+QuK4Ae2ay7Mc=
-github.com/issue9/events v0.2.0/go.mod h1:tahghVFV/u9o7MBcyyN0gnjQ67Si05Pb+MrykcqdWpQ=
+github.com/issue9/events v0.3.0 h1:D9RXUxQg2u1syYilgVARjPafeLKmn1DPku5eHY994HA=
+github.com/issue9/events v0.3.0/go.mod h1:tahghVFV/u9o7MBcyyN0gnjQ67Si05Pb+MrykcqdWpQ=
 github.com/issue9/localeutil v0.4.0 h1:rUqUAb1FSrna+YunGcNP5YTvAeK8+pR89/hWcfzk4qU=
 github.com/issue9/localeutil v0.4.0/go.mod h1:1hx4Qo57RAQgRSy0zihp6XKTkTbaAVu26Qc0bz/770s=
 github.com/issue9/logs/v3 v3.0.0-beta.2 h1:tWIja3KWBukITan7yQFZL/FX7Ee7+cpkPbf8aPsO/6c=

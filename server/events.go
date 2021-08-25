@@ -16,6 +16,21 @@ import (
 // 用户不应该直接修改 data 数据，否则结果是未知的。
 type Subscriber = events.Subscriber
 
+type publisher struct {
+	name string
+	s    *Server
+	p    events.Publisher
+}
+
+func (p *publisher) Publish(sync bool, data interface{}) error {
+	return p.p.Publish(sync, data)
+}
+
+func (p *publisher) Destory() {
+	delete(p.s.events, p.name)
+	p.p.Destory()
+}
+
 // Publisher 创建事件发布者
 func (srv *Server) Publisher(name string) events.Publisher {
 	if _, found := srv.events[name]; found {
@@ -24,7 +39,11 @@ func (srv *Server) Publisher(name string) events.Publisher {
 
 	p, e := events.New()
 	srv.events[name] = e
-	return p
+	return &publisher{
+		name: name,
+		s:    srv,
+		p:    p,
+	}
 }
 
 // Eventer 返回指定名称的事件处理对象
@@ -35,8 +54,7 @@ func (srv *Server) Eventer(name string) events.Eventer { return srv.events[name]
 // AttachEvent 订阅指定事件
 //
 // 返回的值可用于取消订阅。
-// NOTE: s 会被异步执行。
-func (srv *Server) AttachEvent(name string, s Subscriber) int {
+func (srv *Server) AttachEvent(name string, s Subscriber) (int, error) {
 	return srv.Eventer(name).Attach(s)
 }
 

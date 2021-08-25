@@ -26,6 +26,9 @@ func TestServer_Publisher(t *testing.T) {
 	a.Panic(func() {
 		s.Publisher("")
 	})
+
+	p.Destory()
+	a.Nil(s.events["p1"])
 }
 
 func TestServer_Eventer(t *testing.T) {
@@ -36,13 +39,14 @@ func TestServer_Eventer(t *testing.T) {
 	p := s.Publisher("p1")
 	a.NotNil(p)
 
-	id1 := s.AttachEvent("p1", func(data interface{}) { fmt.Fprint(buf, data) })
-	p.Publish("p1")
+	id1, err := s.AttachEvent("p1", func(data interface{}) { fmt.Fprint(buf, data) })
+	a.NotError(err)
+	p.Publish(true, "p1")
 	time.Sleep(500 * time.Microsecond)
 	a.Equal(buf.String(), "p1")
 
 	s.DetachEvent("p1", id1)
-	p.Publish("p1")
+	p.Publish(false, "p1")
 	time.Sleep(500 * time.Microsecond)
 	a.Equal(buf.String(), "p1")
 }
