@@ -337,7 +337,7 @@ func TestTag_AddRoutes(t *testing.T) {
 	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
 
-	m, err := srv.NewModule("m1", "v1", localeutil.Phrase{Key: "m1 desc"})
+	m, err := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m)
 	m.Tag("install").AddRoutes(func(router *Router) {}, "")
 	a.Empty(r.MuxRouter().Routes()) // 未初始化
@@ -347,7 +347,7 @@ func TestTag_AddRoutes(t *testing.T) {
 	srv = newServer(a)
 	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
-	m, err = srv.NewModule("m2", "v2", localeutil.Phrase{Key: "m2 desc"})
+	m, err = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
 	a.NotError(err).NotNil(m)
 	m.Tag("install").AddRoutes(func(router *Router) {
 		a.Equal(r, router)

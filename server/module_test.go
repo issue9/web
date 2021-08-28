@@ -28,14 +28,14 @@ func TestNewModule(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
-	m, err := s.NewModule("id", "1.0.0", localeutil.Phrase{Key: "desc"}, "id1", "id2")
+	m, err := s.NewModule("id", "1.0.0", localeutil.Phrase("desc"), "id1", "id2")
 	a.NotNil(m).NotError(err)
 }
 
 func TestModule_Tag(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("user1", "1.0.0", localeutil.Phrase{Key: "user1 desc"})
+	m, err := s.NewModule("user1", "1.0.0", localeutil.Phrase("user1 desc"))
 	a.NotNil(m).NotError(err)
 
 	v := m.Tag("0.1.0")
@@ -59,12 +59,12 @@ func TestServer_NewModule(t *testing.T) {
 	builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息")
 	printer := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
 
-	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
+	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
-	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase{Key: "m2 desc"}, "m1")
+	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
 	a.NotError(err).NotNil(m2)
 
-	m11, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
+	m11, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.ErrorString(err, "存在同名的模块").Nil(m11)
 
 	ms := srv.Modules(printer)
@@ -77,7 +77,7 @@ func TestServer_NewModule(t *testing.T) {
 func TestTag_AddInit(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("m1", "1.0.0", localeutil.Phrase{Key: "m1 desc"})
+	m, err := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m)
 
 	tag := m.Tag("t1")

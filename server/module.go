@@ -33,7 +33,7 @@ type PluginInitFunc func(*Server) error
 type Module struct {
 	tags    map[string]*Tag
 	id      string
-	desc    localeutil.Phrase
+	desc    localeutil.LocaleStringer
 	version string
 	deps    []string
 
@@ -67,7 +67,7 @@ type executor struct {
 // version 模块的版本信息；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(id, version string, desc localeutil.Phrase, deps ...string) (*Module, error) {
+func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer, deps ...string) (*Module, error) {
 	if sliceutil.Count(srv.modules, func(i int) bool { return srv.modules[i].id == id }) > 0 {
 		return nil, fmt.Errorf("存在同名的模块 %s", id)
 	}

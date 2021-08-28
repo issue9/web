@@ -277,12 +277,12 @@ func (srv *Server) Tag() language.Tag { return srv.content.Tag() }
 func (srv *Server) Results(p *message.Printer) map[int]string { return srv.content.Results(p) }
 
 // AddResult 添加错误代码与关联的描述信息
-func (srv *Server) AddResult(status, code int, phrase localeutil.Phrase) {
+func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer) {
 	srv.content.AddResult(status, code, phrase)
 }
 
 // AddResult 添加多条错误代码与关联的描述信息
-func (srv *Server) AddResults(messages map[int]localeutil.Phrase) {
+func (srv *Server) AddResults(messages map[int]localeutil.LocaleStringer) {
 	srv.content.AddResults(messages)
 }
 

@@ -77,7 +77,7 @@ type (
 
 	resultMessage struct {
 		status int
-		localeutil.Phrase
+		localeutil.LocaleStringer
 	}
 )
 
@@ -210,7 +210,7 @@ func (c *Content) Results(p *message.Printer) map[int]string {
 //
 // 键名为错误信息的数字代码，键值是具体的错误信息描述。
 // 同时键名向下取整，直到三位长度的整数作为其返回给客户端的状态码。
-func (c *Content) AddResults(messages map[int]localeutil.Phrase) {
+func (c *Content) AddResults(messages map[int]localeutil.LocaleStringer) {
 	for code, phrase := range messages {
 		status := calcStatus(code)
 		c.AddResult(status, code, phrase)
@@ -220,11 +220,11 @@ func (c *Content) AddResults(messages map[int]localeutil.Phrase) {
 // AddResult 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (c *Content) AddResult(status, code int, phrase localeutil.Phrase) {
+func (c *Content) AddResult(status, code int, phrase localeutil.LocaleStringer) {
 	if _, found := c.resultMessages[code]; found {
 		panic(fmt.Sprintf("重复的消息 ID: %d", code))
 	}
-	c.resultMessages[code] = &resultMessage{status: status, Phrase: phrase}
+	c.resultMessages[code] = &resultMessage{status: status, LocaleStringer: phrase}
 }
 
 // Result 返回 Result 实例

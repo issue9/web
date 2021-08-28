@@ -195,7 +195,7 @@ func TestContent_Result(t *testing.T) {
 	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 	buildResultCatalog(c, a)
 
-	c.AddResult(400, 40000, localeutil.Phrase{Key: "lang"}) // lang 有翻译
+	c.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
 	rslt, ok := c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
@@ -238,21 +238,20 @@ func TestContent_AddResult(t *testing.T) {
 	mgr := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
 
 	a.NotPanic(func() {
-		mgr.AddResult(400, 1, localeutil.Phrase{Key: "1"})
-		mgr.AddResult(400, 100, localeutil.Phrase{Key: "100"})
+		mgr.AddResult(400, 1, localeutil.Phrase("1"))
+		mgr.AddResult(400, 100, localeutil.Phrase("100"))
 	})
 
 	msg, found := mgr.resultMessages[1]
 	a.True(found).
-		Equal(msg.status, 400).
-		Equal(msg.Key, "1")
+		Equal(msg.status, 400)
 
 	msg, found = mgr.resultMessages[401]
 	a.False(found).Nil(msg)
 
 	// 重复的 ID
 	a.Panic(func() {
-		mgr.AddResult(400, 1, localeutil.Phrase{Key: "40010"})
+		mgr.AddResult(400, 1, localeutil.Phrase("40010"))
 	})
 }
 
@@ -263,7 +262,7 @@ func TestContent_Results(t *testing.T) {
 	buildResultCatalog(c, a)
 
 	a.NotPanic(func() {
-		c.AddResults(map[int]localeutil.Phrase{40010: {Key: "lang"}})
+		c.AddResults(map[int]localeutil.LocaleStringer{40010: localeutil.Phrase("lang")})
 	})
 
 	msg := c.Results(c.newLocalePrinter(language.Und))
