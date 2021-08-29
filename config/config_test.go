@@ -2,4 +2,9 @@
 
 package config
 
-var _ error = &Error{}
+import "github.com/issue9/localeutil"
+
+var (
+	_ error                     = &Error{}
+	_ localeutil.LocaleStringer = &Error{}
+)

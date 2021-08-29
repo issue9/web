@@ -19,3 +19,7 @@ messages:
 - key: register service
   message:
     msg: '注册服务: %[1]s'
+
+- key: config error
+  message:
+    msg: '位于 %[1]s:%[2]s 发生了 %[3]s'

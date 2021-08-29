@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.42.0"
+const Version = "0.43.0"
 
 type (
 	Server       = server.Server
@@ -29,7 +29,16 @@ type (
 	Tag          = server.Tag
 	ResultFields = content.ResultFields
 	Locale       = serialization.Locale
-	ConfigError  = config.Error
+
+	// ConfigError 配置文件的错误信息
+	//
+	// 同时也实现了 LocaleStringer 接口。
+	ConfigError = config.Error
+
+	// LocaleStringer 本地化字符串需要实在的接口
+	//
+	// 部分 error 返回可能也实现了该接口。
+	LocaleStringer = localeutil.LocaleStringer
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
