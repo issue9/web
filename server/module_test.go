@@ -32,21 +32,21 @@ func TestNewModule(t *testing.T) {
 	a.NotNil(m).NotError(err)
 }
 
-func TestModule_Tag(t *testing.T) {
+func TestModule_Action(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 	m, err := s.NewModule("user1", "1.0.0", localeutil.Phrase("user1 desc"))
 	a.NotNil(m).NotError(err)
 
-	v := m.Tag("0.1.0")
+	v := m.Action("0.1.0")
 	a.NotNil(v)
 	a.NotNil(v.AddInit("title1", func() error { return nil }))
 	a.Equal(v.Name(), "0.1.0")
 
-	vv := m.Tag("0.1.0")
+	vv := m.Action("0.1.0")
 	a.Equal(vv, v)
 
-	v2 := m.Tag("0.2.0")
+	v2 := m.Action("0.2.0")
 	a.NotEqual(v2, v)
 }
 
@@ -74,13 +74,13 @@ func TestServer_NewModule(t *testing.T) {
 	})
 }
 
-func TestTag_AddInit(t *testing.T) {
+func TestActioon_AddInit(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 	m, err := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m)
 
-	tag := m.Tag("t1")
+	tag := m.Action("t1")
 	tag.AddInit("1", func() error { return nil }).
 		AddInit("2", func() error { return nil }).
 		AddInit("2", func() error { return nil })
@@ -91,10 +91,10 @@ func TestTag_AddInit(t *testing.T) {
 	a.Equal(tag.Server(), s)
 }
 
-func TestTag_init(t *testing.T) {
+func TestAction_init(t *testing.T) {
 	a := assert.New(t)
 
-	tag := &Tag{executors: make([]executor, 0, 5)}
+	tag := &Action{executors: make([]executor, 0, 5)}
 	tag.AddInit("1", func() error { return nil }).
 		AddInit("2", func() error { return nil })
 
@@ -110,7 +110,7 @@ func TestTag_init(t *testing.T) {
 
 	// failed
 
-	tag = &Tag{executors: make([]executor, 0, 5)}
+	tag = &Action{executors: make([]executor, 0, 5)}
 	tag.AddInit("1", func() error { return nil }).
 		AddInit("2", func() error { return errors.New("error at 2") })
 	a.False(tag.Inited())

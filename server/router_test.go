@@ -330,7 +330,7 @@ func TestServer_Router(t *testing.T) {
 	a.True(found).Equal(v, 123)
 }
 
-func TestTag_AddRoutes(t *testing.T) {
+func TestAction_AddRoutes(t *testing.T) {
 	a := assert.New(t)
 
 	srv := newServer(a)
@@ -339,7 +339,7 @@ func TestTag_AddRoutes(t *testing.T) {
 
 	m, err := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m)
-	m.Tag("install").AddRoutes(func(router *Router) {}, "")
+	m.Action("install").AddRoutes(func(router *Router) {}, "")
 	a.Empty(r.MuxRouter().Routes()) // 未初始化
 	srv.initModules("install")
 	a.Empty(r.MuxRouter().Routes()) // 已初始化，但是未指定正常的路由名称
@@ -349,7 +349,7 @@ func TestTag_AddRoutes(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	m, err = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
 	a.NotError(err).NotNil(m)
-	m.Tag("install").AddRoutes(func(router *Router) {
+	m.Action("install").AddRoutes(func(router *Router) {
 		a.Equal(r, router)
 		router.Get("p1", f201)
 	}, "host")

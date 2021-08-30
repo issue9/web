@@ -36,12 +36,12 @@ func TestNewServer(t *testing.T) {
 
 	m1, err := srv.NewModule("m1", "1.0.0", Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
-	m1.Tag("init").AddInit("m1 init", func() error {
+	m1.Action("init").AddInit("m1 init", func() error {
 		router, err := srv.NewRouter("r1", "https://example.com", group.MatcherFunc(group.Any))
 		a.NotError(err).NotNil(router)
 		return nil
 	})
-	m1.Tag("init").AddRoutes(func(r *Router) {
+	m1.Action("init").AddRoutes(func(r *Router) {
 		r.Get("/path", func(c *Context) Responser {
 			// do something
 			return Status(http.StatusCreated)

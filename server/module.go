@@ -31,7 +31,7 @@ type PluginInitFunc func(*Server) error
 
 // Module 用于注册初始化模块的相关功能
 type Module struct {
-	tags    map[string]*Tag
+	actions map[string]*Action
 	id      string
 	desc    localeutil.LocaleStringer
 	version string
@@ -48,8 +48,8 @@ type ModuleInfo struct {
 	Deps        []string `yaml:"deps,omitempty" json:"deps,omitempty" xml:"dep,omitempty"`
 }
 
-// Tag 模块下对执行函数的分类
-type Tag struct {
+// Action 模块下对初始化函数的分组
+type Action struct {
 	name      string
 	m         *Module
 	inited    bool
@@ -78,7 +78,7 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 	}
 
 	mod := &Module{
-		tags:    make(map[string]*Tag, 2),
+		actions: make(map[string]*Action, 2),
 		id:      id,
 		version: version,
 		desc:    desc,
@@ -135,18 +135,18 @@ func (srv *Server) loadPlugin(path string) error {
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
-// Tag 返回指定名称的 Tag 实例
+// Action 返回指定名称的 Action 实例
 //
 // 如果不存在则会创建。
-func (m *Module) Tag(t string) *Tag {
-	ev, found := m.tags[t]
+func (m *Module) Action(t string) *Action {
+	ev, found := m.actions[t]
 	if !found {
-		ev = &Tag{
+		ev = &Action{
 			name:      t,
 			executors: make([]executor, 0, 5),
 			m:         m,
 		}
-		m.tags[t] = ev
+		m.actions[t] = ev
 	}
 	return ev
 }
@@ -167,18 +167,17 @@ func (srv *Server) Modules(p *message.Printer) []*ModuleInfo {
 
 func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
 
-// Tags 模块的标签名称列表
-func (m *Module) Tags() []string {
-	tags := make([]string, 0, len(m.tags))
-	for name := range m.tags {
-		tags = append(tags, name)
+func (m *Module) Actions() []string {
+	actions := make([]string, 0, len(m.actions))
+	for name := range m.actions {
+		actions = append(actions, name)
 	}
-	sort.Strings(tags)
-	return tags
+	sort.Strings(actions)
+	return actions
 }
 
 // Inited 查询指定标签关联的函数是否已经被调用
-func (m *Module) Inited(tag string) bool { return m.Tag(tag).Inited() }
+func (m *Module) Inited(action string) bool { return m.Action(action).Inited() }
 
 // LoadLocale 从 m.FS 加载本地化语言文件
 func (m *Module) LoadLocale(glob string) error {
@@ -199,12 +198,12 @@ func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
 // AddInit 注册指执行函数
 //
 // NOTE: 按添加顺序执行各个函数。
-func (t *Tag) AddInit(title string, f func() error) *Tag {
+func (t *Action) AddInit(title string, f func() error) *Action {
 	t.executors = append(t.executors, executor{title: title, f: f})
 	return t
 }
 
-func (t *Tag) init(l *log.Logger) error {
+func (t *Action) init(l *log.Logger) error {
 	const indent = "\t"
 
 	if t.Inited() {
@@ -225,16 +224,16 @@ func (t *Tag) init(l *log.Logger) error {
 }
 
 // Inited 当前标签关联的函数是否已经执行过
-func (t *Tag) Inited() bool { return t.inited }
+func (t *Action) Inited() bool { return t.inited }
 
 // Module 返回当前关联的模块
-func (t *Tag) Module() *Module { return t.m }
+func (t *Action) Module() *Module { return t.m }
 
 // AddService 添加新的服务
 //
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
-func (t *Tag) AddService(title string, f service.Func) *Tag {
+func (t *Action) AddService(title string, f service.Func) *Action {
 	msg := t.Server().LocalePrinter().Sprintf("register service", title)
 	return t.AddInit(msg, func() error {
 		t.Server().Services().AddService(title, f)
@@ -248,7 +247,7 @@ func (t *Tag) AddService(title string, f service.Func) *Tag {
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Tag) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) *Tag {
+func (t *Action) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) *Action {
 	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddCron(title, f, spec, delay)
@@ -261,7 +260,7 @@ func (t *Tag) AddCron(title string, f scheduled.JobFunc, spec string, delay bool
 // title 是对该服务的简要说明；
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Tag) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) *Tag {
+func (t *Action) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) *Action {
 	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddTicker(title, f, dur, imm, delay)
@@ -274,7 +273,7 @@ func (t *Tag) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, im
 // title 是对该服务的简要说明；
 // t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Tag) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool) *Tag {
+func (t *Action) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool) *Action {
 	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddAt(title, f, ti, delay)
@@ -287,7 +286,7 @@ func (t *Tag) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool)
 // title 是对该服务的简要说明；
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Tag) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) *Tag {
+func (t *Action) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) *Action {
 	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
 	return t.AddInit(msg, func() error {
 		t.Server().Services().AddJob(title, f, scheduler, delay)
@@ -295,4 +294,4 @@ func (t *Tag) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Sch
 	})
 }
 
-func (t *Tag) Name() string { return t.name }
+func (t *Action) Name() string { return t.name }

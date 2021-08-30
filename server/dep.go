@@ -11,9 +11,9 @@ import (
 )
 
 // initModules 触发所有模块下指定名称的函数
-func (srv *Server) initModules(tag string) error {
-	if tag == "" {
-		panic("参数  tag 不能为空")
+func (srv *Server) initModules(action string) error {
+	if action == "" {
+		panic("参数  action 不能为空")
 	}
 
 	for _, m := range srv.modules { // 检测依赖
@@ -28,9 +28,9 @@ func (srv *Server) initModules(tag string) error {
 	flags := l.Flags()
 	l.SetFlags(log.Ldate | log.Lmicroseconds)
 
-	l.Printf("开始初始化模块中的 %s...\n", tag)
+	l.Printf("开始初始化模块中的 %s...\n", action)
 	for _, m := range srv.modules { // 进行初如化
-		if err := srv.initModule(m, l, tag); err != nil {
+		if err := srv.initModule(m, l, action); err != nil {
 			return err
 		}
 	}
@@ -41,21 +41,21 @@ func (srv *Server) initModules(tag string) error {
 	return nil
 }
 
-func (srv *Server) initModule(m *Module, l *log.Logger, tag string) error {
+func (srv *Server) initModule(m *Module, l *log.Logger, action string) error {
 	for _, depID := range m.deps { // 先初始化依赖项
 		depMod := srv.findModule(depID)
 		if depMod == nil {
 			return fmt.Errorf("模块 %s 依赖项 %s 未找到", m.id, depID)
 		}
 
-		if err := srv.initModule(depMod, l, tag); err != nil {
+		if err := srv.initModule(depMod, l, action); err != nil {
 			return err
 		}
 	}
 
 	l.Println(m.id, "...")
 
-	err := m.Tag(tag).init(l)
+	err := m.Action(action).init(l)
 	if err != nil {
 		l.Printf("%s [FAIL:%s]\n\n", m.id, err.Error())
 	} else {
@@ -113,13 +113,13 @@ func (srv *Server) findModule(id string) *Module {
 	return nil
 }
 
-func (srv *Server) Tags() []string {
-	tags := make([]string, 0, 100)
+func (srv *Server) Actions() []string {
+	actions := make([]string, 0, 100)
 	for _, m := range srv.modules {
-		tags = append(tags, m.Tags()...)
+		actions = append(actions, m.Actions()...)
 	}
-	size := sliceutil.Unique(tags, func(i, j int) bool { return tags[i] == tags[j] })
-	tags = tags[:size]
-	sort.Strings(tags)
-	return tags
+	size := sliceutil.Unique(actions, func(i, j int) bool { return actions[i] == actions[j] })
+	actions = actions[:size]
+	sort.Strings(actions)
+	return actions
 }

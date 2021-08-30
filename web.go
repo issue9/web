@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/localeutil"
+
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
@@ -26,7 +27,7 @@ type (
 	HandlerFunc  = server.HandlerFunc
 	Responser    = server.Responser
 	Router       = server.Router
-	Tag          = server.Tag
+	Action       = server.Action
 	ResultFields = content.ResultFields
 	Locale       = serialization.Locale
 

@@ -257,7 +257,7 @@ func (ctx *Context) Server() *Server { return ctx.server }
 func (m *Module) Server() *Server { return m.srv }
 
 // Server 获取关联的 Server 实例
-func (t *Tag) Server() *Server { return t.Module().Server() }
+func (t *Action) Server() *Server { return t.Module().Server() }
 
 // Mimetypes 返回用于序列化 web 内容的操作接口
 func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.content.Mimetypes() }

@@ -15,15 +15,15 @@ func InitModule(s *web.Server) error {
 	if err != nil {
 		return err
 	}
-	t := m.Tag("default")
+	t := m.Action("default")
 
 	t.AddInit("init1", init1)
 	t.AddInit("init2", init2)
 
-	t1 := m.Tag("install")
+	t1 := m.Action("install")
 	t1.AddInit("title", install1)
 
-	t2 := m.Tag("v1.0")
+	t2 := m.Action("v1.0")
 	t2.AddInit("title", install2)
 
 	return nil

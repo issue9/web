@@ -20,28 +20,28 @@ func TestServer_initModules(t *testing.T) {
 
 	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
 	a.NotNil(m1).NotError(err)
-	t1 := m1.Tag("v1")
+	t1 := m1.Action("v1")
 	a.NotNil(t1)
 	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
-	m1.Tag("v2")
+	m1.Action("v2")
 
 	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
 	a.NotNil(m2).NotError(err)
-	t2 := m2.Tag("v1")
+	t2 := m2.Action("v1")
 	a.NotNil(t2)
 	t2.AddInit("安装数据表 users2", func() error { return nil })
-	m2.Tag("v3")
+	m2.Action("v3")
 
 	m3, err := s.NewModule("users3", "1.0.0", localeutil.Phrase("user3 module"))
 	a.NotNil(m3).NotError(err)
-	tag := m3.Tag("v1")
-	a.NotNil(tag)
-	tag.AddInit("安装数据表 users3-1", func() error { return nil })
-	tag.AddInit("安装数据表 users3-2", func() error { return nil })
-	a.NotNil(m3.Tag("v4"))
+	action := m3.Action("v1")
+	a.NotNil(action)
+	action.AddInit("安装数据表 users3-1", func() error { return nil })
+	action.AddInit("安装数据表 users3-2", func() error { return nil })
+	a.NotNil(m3.Action("v4"))
 
-	tags := s.Tags()
-	a.Equal(tags, []string{"v1", "v2", "v3", "v4"})
+	actions := s.Actions()
+	a.Equal(actions, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
 		s.initModules("") // 空值
@@ -51,33 +51,33 @@ func TestServer_initModules(t *testing.T) {
 	a.NotError(s.initModules("not-exists"))
 }
 
-func TestServer_Tags(t *testing.T) {
+func TestServer_Actions(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	a.Empty(srv.Tags())
+	a.Empty(srv.Actions())
 
 	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
-	a.NotNil(m1.Tag("d1"))
-	a.NotNil(m1.Tag("d2"))
-	a.NotNil(m1.Tag("d2"))
+	a.NotNil(m1.Action("d1"))
+	a.NotNil(m1.Action("d2"))
+	a.NotNil(m1.Action("d2"))
 
 	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"))
 	a.NotError(err).NotNil(m2)
-	a.NotNil(m2.Tag("d2"))
-	a.NotNil(m2.Tag("d0"))
+	a.NotNil(m2.Action("d2"))
+	a.NotNil(m2.Action("d0"))
 
 	m3, err := srv.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"))
 	a.NotError(err).NotNil(m3)
 
-	a.Equal(srv.Tags(), []string{"d0", "d1", "d2"}).
+	a.Equal(srv.Actions(), []string{"d0", "d1", "d2"}).
 		Equal(len(srv.Modules(message.NewPrinter(language.Und))), 3)
 }
 
 func TestServer_isDep(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	a.Empty(srv.Tags())
+	a.Empty(srv.Actions())
 
 	m, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"), "d1", "d2")
 	a.NotError(err).NotNil(m)
@@ -91,7 +91,7 @@ func TestServer_isDep(t *testing.T) {
 
 	// 循环依赖
 	srv = newServer(a)
-	a.Empty(srv.Tags())
+	a.Empty(srv.Actions())
 	m, err = srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"), "d1", "d2")
 	a.NotError(err).NotNil(m)
 	m, err = srv.NewModule("d1", "1.0.0", localeutil.Phrase("d1 desc"), "d3")
@@ -107,7 +107,7 @@ func TestServer_isDep(t *testing.T) {
 func TestServer_checkDeps(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	a.Empty(srv.Tags())
+	a.Empty(srv.Actions())
 
 	srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"), "d1", "d2")
 	srv.NewModule("d1", "1.0.0", localeutil.Phrase("d1 desc"), "d3")
@@ -144,7 +144,7 @@ func TestServer_initModule(t *testing.T) {
 	a.NotError(err).NotNil(m1)
 
 	buf := new(bytes.Buffer)
-	t1 := m1.Tag("t1")
+	t1 := m1.Action("t1")
 	t1.AddInit("1", func() error { return buf.WriteByte('1') }).
 		AddInit("2", func() error { return buf.WriteByte('2') })
 	a.NotError(dep.initModule(m1, log.Default(), "t1"))
@@ -161,7 +161,7 @@ func TestServer_initModule(t *testing.T) {
 	a.NotError(err).NotNil(m2)
 
 	buf.Reset()
-	t2 := m2.Tag("t2")
+	t2 := m2.Action("t2")
 	t2.AddInit("1", func() error { return buf.WriteByte('1') }).
 		AddInit("2", func() error { return errors.New("error at 2") }).
 		AddInit("3", func() error { return buf.WriteByte('3') })

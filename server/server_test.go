@@ -217,20 +217,20 @@ func TestServer_Serve(t *testing.T) {
 
 	m1, err := server.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotNil(m1).NotError(err)
-	m1.Tag("def").AddInit("init", func() error {
+	m1.Action("def").AddInit("init", func() error {
 		router.Get("/m1/test", f202)
 		return nil
 	})
-	m1.Tag("tag1")
+	m1.Action("tag1")
 
 	m2, err := server.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
 	a.NotNil(m2).NotError(err)
-	m2.Tag("def").AddInit("init m2", func() error {
+	m2.Action("def").AddInit("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
 			a.NotNil(srv)
 			a.Equal(2, len(srv.Modules(message.NewPrinter(language.SimplifiedChinese))))
-			a.Equal(srv.Tags(), []string{"def", "tag1"})
+			a.Equal(srv.Actions(), []string{"def", "tag1"})
 
 			ctx.Response.WriteHeader(http.StatusAccepted)
 			_, err := ctx.Response.Write([]byte("1234567890"))
@@ -347,7 +347,7 @@ func TestServer_Close(t *testing.T) {
 	buf := new(bytes.Buffer)
 	m1, err := srv.NewModule("m1", "v1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
-	m1.Tag("serve").AddService("srv1", func(ctx context.Context) error {
+	m1.Action("serve").AddService("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)
 		for {
 			select {
