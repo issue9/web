@@ -176,7 +176,7 @@ func (m *Module) Actions() []string {
 	return actions
 }
 
-// Inited 查询指定标签关联的函数是否已经被调用
+// Inited 查询是否已经初始化
 func (m *Module) Inited(action string) bool { return m.Action(action).Inited() }
 
 // LoadLocale 从 m.FS 加载本地化语言文件
@@ -223,7 +223,6 @@ func (t *Action) init(l *log.Logger) error {
 	return nil
 }
 
-// Inited 当前标签关联的函数是否已经执行过
 func (t *Action) Inited() bool { return t.inited }
 
 // Module 返回当前关联的模块

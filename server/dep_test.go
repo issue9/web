@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/message"
 )
 
-func TestServer_initModules(t *testing.T) {
+func TestServer_InitModules(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
 
@@ -23,18 +23,17 @@ func TestServer_initModules(t *testing.T) {
 	t1 := m1.Action("v1")
 	a.NotNil(t1)
 	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
-	m1.Action("v2")
 
 	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
 	a.NotNil(m2).NotError(err)
-	t2 := m2.Action("v1")
+	t2 := m2.Action("v2")
 	a.NotNil(t2)
 	t2.AddInit("安装数据表 users2", func() error { return nil })
 	m2.Action("v3")
 
 	m3, err := s.NewModule("users3", "1.0.0", localeutil.Phrase("user3 module"))
 	a.NotNil(m3).NotError(err)
-	action := m3.Action("v1")
+	action := m3.Action("v2")
 	a.NotNil(action)
 	action.AddInit("安装数据表 users3-1", func() error { return nil })
 	action.AddInit("安装数据表 users3-2", func() error { return nil })
@@ -44,11 +43,39 @@ func TestServer_initModules(t *testing.T) {
 	a.Equal(actions, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
-		s.initModules("") // 空值
+		s.InitModules("") // 空值
 	})
-	a.ErrorString(s.initModules("v1"), "failed message")
-	a.NotError(s.initModules("v2"))
-	a.NotError(s.initModules("not-exists"))
+	a.ErrorString(s.InitModules("v1"), "failed message")
+	a.NotError(s.InitModules("v2"))
+	a.NotError(s.InitModules("not-exists"))
+}
+
+func TestServer_InitModules_with_module(t *testing.T) {
+	a := assert.New(t)
+	s := newServer(a)
+
+	i := 0
+
+	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
+	a.NotNil(m1).NotError(err)
+	t1 := m1.Action("v1")
+	a.NotNil(t1)
+	t1.AddInit("安装数据表 users1", func() error { i++; return nil })
+
+	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
+	a.NotNil(m2).NotError(err)
+	t1.AddInit("安装数据表 users2", func() error { return nil })
+
+	m3, err := s.NewModule("users3", "1.0.0", localeutil.Phrase("user3 module"))
+	a.NotNil(m3).NotError(err)
+	t1.AddInit("安装数据表 users3-1", func() error { return nil })
+	t1.AddInit("安装数据表 users3-2", func() error { return nil })
+	a.NotNil(m3.Action("v4"))
+
+	a.NotError(s.InitModules("v1", "user1"))
+	a.NotError(s.InitModules("v1", "user1"))
+	a.NotError(s.InitModules("v1"))
+	a.Equal(i, 1) // 不会多次调用 user1.v1
 }
 
 func TestServer_Actions(t *testing.T) {
@@ -137,27 +164,27 @@ func TestServer_checkDeps(t *testing.T) {
 
 func TestServer_initModule(t *testing.T) {
 	a := assert.New(t)
-	dep := newServer(a)
-	a.NotNil(dep)
+	srv := newServer(a)
+	a.NotNil(srv)
 
-	m1, err := dep.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
 
 	buf := new(bytes.Buffer)
 	t1 := m1.Action("t1")
 	t1.AddInit("1", func() error { return buf.WriteByte('1') }).
 		AddInit("2", func() error { return buf.WriteByte('2') })
-	a.NotError(dep.initModule(m1, log.Default(), "t1"))
+	a.NotError(srv.initModule(m1, log.Default(), "t1"))
 	a.True(m1.Inited("t1")).Equal(buf.String(), "12")
 
 	// 第二次不再调用
 	buf.Reset()
-	a.NotError(dep.initModule(m1, log.Default(), "t1"))
+	a.NotError(srv.initModule(m1, log.Default(), "t1"))
 	a.True(m1.Inited("t1")).Equal(buf.String(), "")
 
 	// 函数返回错误
 
-	m2, err := dep.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"))
+	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"))
 	a.NotError(err).NotNil(m2)
 
 	buf.Reset()
@@ -166,7 +193,7 @@ func TestServer_initModule(t *testing.T) {
 		AddInit("2", func() error { return errors.New("error at 2") }).
 		AddInit("3", func() error { return buf.WriteByte('3') })
 
-	a.ErrorString(dep.initModule(m2, log.Default(), "t2"), "error at 2")
+	a.ErrorString(srv.initModule(m2, log.Default(), "t2"), "error at 2")
 	a.False(m2.Inited("t2")).
 		Equal(buf.String(), "1")
 }

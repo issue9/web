@@ -10,8 +10,10 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
-// initModules 触发所有模块下指定名称的函数
-func (srv *Server) initModules(action string) error {
+// InitModules 触发所有模块下指定名称的函数
+//
+// module 表示需要初始化的模块 ID，如果为这，表示所有已经添加的模块。
+func (srv *Server) InitModules(action string, module ...string) error {
 	if action == "" {
 		panic("参数  action 不能为空")
 	}
@@ -22,6 +24,11 @@ func (srv *Server) initModules(action string) error {
 		}
 	}
 
+	needInit := func(id string) bool {
+		return len(module) == 0 ||
+			sliceutil.Count(module, func(i int) bool { return module[i] == id }) >= 0
+	}
+
 	l := srv.Logs().INFO()
 
 	// 日志不需要标出文件位置。
@@ -30,6 +37,10 @@ func (srv *Server) initModules(action string) error {
 
 	l.Printf("开始初始化模块中的 %s...\n", action)
 	for _, m := range srv.modules { // 进行初如化
+		if !needInit(m.id) {
+			continue
+		}
+
 		if err := srv.initModule(m, l, action); err != nil {
 			return err
 		}
