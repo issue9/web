@@ -23,3 +23,11 @@ messages:
 - key: config error
   message:
     msg: '位于 %[1]s:%[2]s 发生了 %[3]s'
+
+- key: cyclic dependence
+  message:
+    msg: '%[1]s 循环依赖自身'
+
+- key: not found dependence
+  message:
+    msg: '未找到 %[1]s 的依赖模块 %[2]s'

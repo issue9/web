@@ -56,13 +56,17 @@ func TestServer_InitModules_with_module(t *testing.T) {
 
 	i := 0
 
-	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
+	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"))
 	a.NotNil(m1).NotError(err)
 	t1 := m1.Action("v1")
 	a.NotNil(t1)
 	t1.AddInit("安装数据表 users1", func() error { i++; return nil })
 
-	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
+	a.NotError(s.InitModules("v1", "users1")) // 先初始化 users1
+	a.NotError(s.InitModules("v1", "users1"))
+	a.Equal(i, 1) // 不会多次调用 users1.v1
+
+	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3", "users1")
 	a.NotNil(m2).NotError(err)
 	t1.AddInit("安装数据表 users2", func() error { return nil })
 
@@ -72,8 +76,6 @@ func TestServer_InitModules_with_module(t *testing.T) {
 	t1.AddInit("安装数据表 users3-2", func() error { return nil })
 	a.NotNil(m3.Action("v4"))
 
-	a.NotError(s.InitModules("v1", "user1"))
-	a.NotError(s.InitModules("v1", "user1"))
 	a.NotError(s.InitModules("v1"))
 	a.Equal(i, 1) // 不会多次调用 user1.v1
 }

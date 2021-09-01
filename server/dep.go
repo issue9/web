@@ -3,16 +3,19 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"sort"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 )
 
 // InitModules 触发所有模块下指定名称的函数
 //
 // module 表示需要初始化的模块 ID，如果为这，表示所有已经添加的模块。
+//
+// 正常情况下，用户无须手动调用该方法，该方法由 Server.Serve 自动调用，
+// 当用户需要在其它模块初始化之前先初始化部分模块，可手动调用。
 func (srv *Server) InitModules(action string, module ...string) error {
 	if action == "" {
 		panic("参数  action 不能为空")
@@ -56,7 +59,7 @@ func (srv *Server) initModule(m *Module, l *log.Logger, action string) error {
 	for _, depID := range m.deps { // 先初始化依赖项
 		depMod := srv.findModule(depID)
 		if depMod == nil {
-			return fmt.Errorf("模块 %s 依赖项 %s 未找到", m.id, depID)
+			return localeutil.Error("not found dependence", m.id, depID)
 		}
 
 		if err := srv.initModule(depMod, l, action); err != nil {
@@ -82,12 +85,12 @@ func (srv *Server) checkDeps(m *Module) error {
 	// 检测依赖项是否都存在
 	for _, depID := range m.deps {
 		if srv.findModule(depID) == nil {
-			return fmt.Errorf("未找到 %s 的依赖模块 %s", m.id, depID)
+			return localeutil.Error("not found dependence", m.id, depID)
 		}
 	}
 
 	if srv.isDep(m.id, m.id) {
-		return fmt.Errorf("%s 循环依赖自身", m.id)
+		return localeutil.Error("cyclic dependence", m.id)
 	}
 
 	return nil
