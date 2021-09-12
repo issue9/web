@@ -89,8 +89,8 @@ func TestContext_ResultWithFields(t *testing.T) {
 func TestContext_Result(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	srv.Locale().Builder().SetString(language.Und, "lang", "und")
-	srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans")
+	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
+	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
 	srv.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error-handler"))

@@ -4,7 +4,6 @@ package server
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/issue9/web/content"
 )
@@ -102,17 +101,6 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 
 // Status 仅包含状态码的 Responser
 func Status(statusCode int) Responser { return status(statusCode) }
-
-// Created 201
-func Created(v interface{}, location string) Responser {
-	if location == "" {
-		return Object(http.StatusCreated, v, nil)
-	}
-
-	return Object(http.StatusCreated, v, map[string]string{
-		"Location": location,
-	})
-}
 
 // Result 返回 Result 实例
 //

@@ -4,7 +4,6 @@ package web
 
 import (
 	"bytes"
-	"net/http"
 	"os"
 	"testing"
 
@@ -44,7 +43,7 @@ func TestNewServer(t *testing.T) {
 	m1.Action("init").AddRoutes(func(r *Router) {
 		r.Get("/path", func(c *Context) Responser {
 			// do something
-			return Status(http.StatusCreated)
+			return Created(nil, "")
 		})
 	}, "r1")
 

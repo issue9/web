@@ -77,3 +77,20 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 func Phrase(key string, v ...interface{}) localeutil.LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
+
+// Created 201
+func Created(v interface{}, location string) Responser {
+	if location == "" {
+		return Object(http.StatusCreated, v, nil)
+	}
+
+	return Object(http.StatusCreated, v, map[string]string{
+		"Location": location,
+	})
+}
+
+// NotFound 404
+func NotFound() Responser { return Status(http.StatusNotFound) }
+
+// NoContent 204
+func NoContent() Responser { return Status(http.StatusNoContent) }
