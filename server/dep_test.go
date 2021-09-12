@@ -143,7 +143,7 @@ func TestServer_checkDeps(t *testing.T) {
 
 	m1 := srv.findModule("m1")
 	a.NotNil(m1).
-		ErrorString(srv.checkDeps(m1), "cyclic dependence") // 依赖项不存在
+		Equal(srv.checkDeps(m1), localeutil.Error("not found dependence", "m1", "d2")) // 依赖项不存在
 
 	srv = newServer(a)
 	a.NotNil(srv)
@@ -161,7 +161,7 @@ func TestServer_checkDeps(t *testing.T) {
 	srv.NewModule("d3", "1.0.0", localeutil.Phrase("d3 desc"), "d2")
 	d2 := srv.findModule("d2")
 	a.NotNil(d2).
-		ErrorString(srv.checkDeps(d2), "not found dependence")
+		Equal(srv.checkDeps(d2), localeutil.Error("cyclic dependence", "d2"))
 }
 
 func TestServer_initModule(t *testing.T) {
