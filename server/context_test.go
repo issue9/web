@@ -124,29 +124,6 @@ func TestContext_ClientIP(t *testing.T) {
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
 
-func TestContext_Created(t *testing.T) {
-	a := assert.New(t)
-	w := httptest.NewRecorder()
-
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set("Accept", text.Mimetype)
-	ctx := newServer(a).NewContext(w, r)
-	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
-	ctx.renderResponser(resp)
-	a.Equal(w.Code, http.StatusCreated).
-		Equal(w.Body.String(), `test,123`)
-
-	w.Body.Reset()
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set("Accept", text.Mimetype)
-	ctx = newServer(a).NewContext(w, r)
-	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
-	ctx.renderResponser(resp)
-	a.Equal(w.Code, http.StatusCreated).
-		Equal(w.Body.String(), `test,123`).
-		Equal(w.Header().Get("Location"), "/test")
-}
-
 func TestContext_ServeFile(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)

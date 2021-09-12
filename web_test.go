@@ -4,6 +4,8 @@ package web
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -14,6 +16,8 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/serialization"
 )
 
@@ -50,4 +54,32 @@ func TestNewServer(t *testing.T) {
 	a.NotError(srv.Serve("init", false))
 
 	a.Contains(buf.String(), "注册路由: r1") // 查看是否正确加载翻译内容
+}
+
+func TestCreated(t *testing.T) {
+	a := assert.New(t)
+	w := httptest.NewRecorder()
+	s, err := NewServer("test", "1.0", nil)
+	a.NotError(s.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(err).NotNil(s)
+
+	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("Accept", text.Mimetype)
+	r.Header.Set("content-type", text.Mimetype)
+	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+	ctx := s.NewContext(w, r)
+	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), `test,123`)
+
+	w.Body.Reset()
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set("Accept", text.Mimetype)
+	r.Header.Set("content-type", text.Mimetype)
+	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
+	ctx = s.NewContext(w, r)
+	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
+	a.Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), `test,123`).
+		Equal(w.Header().Get("Location"), "/test")
 }
