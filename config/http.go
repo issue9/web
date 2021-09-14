@@ -24,7 +24,7 @@ type (
 		// 不能同时与 Certificates 生效
 		LetsEncrypt *LetsEncrypt `yaml:"letsEncrypt,omitempty" json:"letsEncrypt,omitempty" xml:"letsEncrypt,omitempty"`
 
-		tlsConfig *tls.Config `yaml:"-" json:"-" xml:"-"`
+		tlsConfig *tls.Config
 
 		// 应用于 http.Server 的几个变量
 		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
@@ -42,10 +42,9 @@ type (
 
 	// LetsEncrypt Let's Encrypt 的相关设置
 	LetsEncrypt struct {
-		Domains  []string `yaml:"domains" json:"domains" xml:"domains"`
-		Cache    string   `yaml:"cache" json:"cache" xml:"cache"`
-		Email    string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-		ForceRSA bool     `yaml:"forceRSA,omitempty" json:"forceRSA,omitempty" xml:"forceRSA,attr,omitempty"`
+		Domains []string `yaml:"domains" json:"domains" xml:"domains"`
+		Cache   string   `yaml:"cache" json:"cache" xml:"cache"`
+		Email   string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 
 		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
 		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
@@ -128,7 +127,6 @@ func (l *LetsEncrypt) tlsConfig() *tls.Config {
 		Prompt:      autocert.AcceptTOS,
 		HostPolicy:  autocert.HostWhitelist(l.Domains...),
 		RenewBefore: time.Duration(l.RenewBefore) * day,
-		ForceRSA:    l.ForceRSA,
 		Email:       l.Email,
 	}
 
