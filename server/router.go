@@ -80,21 +80,21 @@ func (srv *Server) RemoveRouter(name string) {
 func (srv *Server) MuxGroups() *group.Groups { return srv.groups }
 
 // SetDebugger 设置调试地址
-func (r *Router) SetDebugger(pprof, vars string) (err error) {
+func (router *Router) SetDebugger(pprof, vars string) (err error) {
 	if pprof != "" {
-		if pprof, err = r.Path(pprof, nil); err != nil {
+		if pprof, err = router.Path(pprof, nil); err != nil {
 			return err
 		}
 	}
 
 	if vars != "" {
-		if vars, err = r.Path(vars, nil); err != nil {
+		if vars, err = router.Path(vars, nil); err != nil {
 			return err
 		}
 	}
 
-	r.debugger.Pprof = pprof
-	r.debugger.Vars = vars
+	router.debugger.Pprof = pprof
+	router.debugger.Vars = vars
 
 	return nil
 }

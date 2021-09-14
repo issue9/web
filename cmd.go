@@ -34,7 +34,7 @@ import (
 //      Name: "app",
 //      Version: "1.0.0",
 //      ServeTags: []string{"serve"},
-//      Init: func(s *Server) error {...}
+//      Init: func(s *Server) error {...},
 //  }
 //
 //  cmd.Exec()
@@ -42,9 +42,6 @@ type Command struct {
 	Name string // 程序名称
 
 	Version string // 程序版本
-
-	// 在运行服务之前对 server 的额外操作，比如添加模块等。
-	Init func(*Server) error
 
 	// 当作服务运行的标签名
 	//
@@ -55,6 +52,16 @@ type Command struct {
 	//
 	// 为空(nil 或是 []) 表示没有。
 	Signals []os.Signal
+
+	// 在初始化 Server 之前对 Options 的二次处理
+	//
+	// 可以为空。
+	Options func(*Options)
+
+	// 在运行服务之前对 server 的额外操作
+	//
+	// 比如添加模块等。可以为空。
+	Init func(*Server) error
 
 	// 自定义命令行参数名
 	CmdVersion string // 默认为 v
@@ -95,6 +102,10 @@ func (cmd *Command) sanitize() *config.Error {
 
 	if cmd.Init == nil {
 		return &config.Error{Field: "Init", Message: "不能为空"}
+	}
+
+	if cmd.Options == nil {
+		cmd.Options = func(*Options) {}
 	}
 
 	if cmd.Out == nil {
@@ -150,7 +161,12 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.ResultBuilder, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename)
+	opt, err := config.NewOptions(cmd.ResultBuilder, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename)
+	if err != nil {
+		return err
+	}
+	cmd.Options(opt)
+	srv, err := NewServer(cmd.Name, cmd.Version, opt)
 	if err != nil {
 		return err
 	}

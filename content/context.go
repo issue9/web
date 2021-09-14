@@ -280,7 +280,7 @@ func (c *Content) conentType(header string) (serialization.UnmarshalFunc, encodi
 
 	f, found := c.Mimetypes().UnmarshalFunc(mt)
 	if !found {
-		return nil, nil, fmt.Errorf("未注册的解函数 %s", mt)
+		return nil, nil, fmt.Errorf("未注册的解码函数 %s", mt)
 	}
 
 	e, err := htmlindex.Get(charset)

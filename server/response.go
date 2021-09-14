@@ -53,7 +53,7 @@ func (s status) Headers() map[string]string { return nil }
 
 func (s status) Body() interface{} { return nil }
 
-func (o *object) Status() int { return int(o.status) }
+func (o *object) Status() int { return o.status }
 
 func (o *object) Headers() map[string]string { return o.headers }
 
