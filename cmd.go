@@ -17,7 +17,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -56,7 +55,7 @@ type Command struct {
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
-	Options func(*Options)
+	Options OptionsFunc
 
 	// 在运行服务之前对 server 的额外操作
 	//
@@ -75,10 +74,9 @@ type Command struct {
 
 	// 以下是初始 Server 对象的参数
 
-	ResultBuilder content.BuildResultFunc // 默认为 nil，最终会被初始化 content.DefaultBuilder
-	Locale        *serialization.Locale   // 默认情况下，能正常解析 xml、yaml 和 json
-	LogsFilename  string                  // 默认为 logs.xml
-	WebFilename   string                  // 默认为 web.yaml
+	Locale       *serialization.Locale // 默认情况下，能正常解析 xml、yaml 和 json
+	LogsFilename string                // 默认为 logs.xml
+	WebFilename  string                // 默认为 web.yaml
 }
 
 // Exec 执行命令行操作
@@ -102,10 +100,6 @@ func (cmd *Command) sanitize() *config.Error {
 
 	if cmd.Init == nil {
 		return &config.Error{Field: "Init", Message: "不能为空"}
-	}
-
-	if cmd.Options == nil {
-		cmd.Options = func(*Options) {}
 	}
 
 	if cmd.Out == nil {
@@ -161,12 +155,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	opt, err := config.NewOptions(cmd.ResultBuilder, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename)
-	if err != nil {
-		return err
-	}
-	cmd.Options(opt)
-	srv, err := NewServer(cmd.Name, cmd.Version, opt)
+	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename, cmd.Options)
 	if err != nil {
 		return err
 	}

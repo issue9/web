@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/logs/v3/config"
 
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -66,7 +65,7 @@ type Webconfig struct {
 //
 // locale 指定了用于加载本地化的方法，同时其关联的 serialization.Files 也用于加载配置文件；
 // logsFilename 和 webFilename 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-func NewOptions(b content.BuildResultFunc, locale *serialization.Locale, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
+func NewOptions(locale *serialization.Locale, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
 	conf := &config.Config{}
 	if err := locale.Files().LoadFS(f, logsFilename, conf); err != nil {
 		return nil, err
@@ -82,11 +81,11 @@ func NewOptions(b content.BuildResultFunc, locale *serialization.Locale, f fs.FS
 		return nil, err
 	}
 
-	return webconfig.NewOptions(b, locale, f, l)
+	return webconfig.NewOptions(locale, f, l)
 }
 
 // NewOptions 返回 server.Options 对象
-func (conf *Webconfig) NewOptions(f content.BuildResultFunc, locale *serialization.Locale, fs fs.FS, l *logs.Logs) (*server.Options, error) {
+func (conf *Webconfig) NewOptions(locale *serialization.Locale, fs fs.FS, l *logs.Logs) (*server.Options, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	if err := conf.sanitize(l); err != nil {
@@ -96,12 +95,11 @@ func (conf *Webconfig) NewOptions(f content.BuildResultFunc, locale *serializati
 	h := conf.HTTP
 
 	return &server.Options{
-		Port:          conf.Port,
-		FS:            fs,
-		Location:      conf.location,
-		Cache:         conf.cache,
-		DisableHead:   conf.DisableHead,
-		ResultBuilder: f,
+		Port:        conf.Port,
+		FS:          fs,
+		Location:    conf.location,
+		Cache:       conf.cache,
+		DisableHead: conf.DisableHead,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -151,26 +149,4 @@ func (conf *Webconfig) buildTimezone() error {
 	conf.location = loc
 
 	return nil
-}
-
-// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
-type Duration time.Duration
-
-// Duration 转换成 time.Duration
-func (d Duration) Duration() time.Duration {
-	return time.Duration(d)
-}
-
-// MarshalText encoding.TextMarshaler 接口
-func (d Duration) MarshalText() ([]byte, error) {
-	return []byte(time.Duration(d).String()), nil
-}
-
-// UnmarshalText encoding.TextUnmarshaler 接口
-func (d *Duration) UnmarshalText(b []byte) error {
-	v, err := time.ParseDuration(string(b))
-	if err == nil {
-		*d = Duration(v)
-	}
-	return err
 }

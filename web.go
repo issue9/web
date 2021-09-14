@@ -40,18 +40,25 @@ type (
 	//
 	// 部分 error 返回可能也实现了该接口。
 	LocaleStringer = localeutil.LocaleStringer
+
+	// OptionsFunc 用于对 Options 对象进行修改
+	OptionsFunc func(*Options)
 )
 
 // LoadServer 从配置文件加载并实例化 Server 对象
 //
 // locale 指定了用于加载本地化的方法，同时其关联的 serialization.Files 也用于加载配置文件；
 // logs 和 web 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-func LoadServer(name, version string, build content.BuildResultFunc, l *Locale, f fs.FS, logs, web string) (*Server, error) {
-	o, err := config.NewOptions(build, l, f, logs, web)
+// o 用于在初始化 Server 之前，加载配置文件之后，对 *Options 进行一次修改；
+func LoadServer(name, version string, l *Locale, f fs.FS, logs, web string, o OptionsFunc) (*Server, error) {
+	opt, err := config.NewOptions(l, f, logs, web)
 	if err != nil {
 		return nil, err
 	}
-	return NewServer(name, version, o)
+	if o != nil {
+		o(opt)
+	}
+	return NewServer(name, version, opt)
 }
 
 // NewServer 返回 *Server 实例

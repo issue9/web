@@ -146,3 +146,23 @@ func (l *LetsEncrypt) sanitize() *Error {
 
 	return nil
 }
+
+// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
+type Duration time.Duration
+
+// Duration 转换成 time.Duration
+func (d Duration) Duration() time.Duration { return time.Duration(d) }
+
+// MarshalText encoding.TextMarshaler 接口
+func (d Duration) MarshalText() ([]byte, error) {
+	return []byte(time.Duration(d).String()), nil
+}
+
+// UnmarshalText encoding.TextUnmarshaler 接口
+func (d *Duration) UnmarshalText(b []byte) error {
+	v, err := time.ParseDuration(string(b))
+	if err == nil {
+		*d = Duration(v)
+	}
+	return err
+}
