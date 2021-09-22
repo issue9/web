@@ -6,6 +6,7 @@
 package plugintest
 
 import (
+	"net/http"
 	"sort"
 	"testing"
 	"time"
@@ -27,7 +28,8 @@ func TestPlugins(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	go func() {
-		srv.Serve("default", true)
+		err := srv.Serve("default", true)
+		a.Equal(err, http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	defer srv.Close(0)
