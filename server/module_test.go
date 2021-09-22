@@ -56,7 +56,7 @@ func TestServer_NewModule(t *testing.T) {
 	a.NotNil(srv)
 
 	builder := catalog.NewBuilder()
-	builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息")
+	a.NotError(builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息"))
 	printer := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
 
 	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
