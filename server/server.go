@@ -234,7 +234,7 @@ func (srv *Server) callCloseEvents() {
 
 // RegisterOnClose 注册关闭服务时的行为
 //
-// 按注册顺序反向调用
+// 多次调用，按注册顺序反向调用。
 func (srv *Server) RegisterOnClose(f ...func() error) {
 	// NOTE: 不采用 events，此方法调用顺序有要求
 	srv.closeEvents = append(srv.closeEvents, f...)
@@ -281,7 +281,7 @@ func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer)
 	srv.content.AddResult(status, code, phrase)
 }
 
-// AddResult 添加多条错误代码与关联的描述信息
+// AddResults 添加多条错误代码与关联的描述信息
 func (srv *Server) AddResults(messages map[int]localeutil.LocaleStringer) {
 	srv.content.AddResults(messages)
 }

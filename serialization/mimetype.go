@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/qheader"
 )
 
-// Mimetype 提供 mimetype 的序列化操作
+// Mimetypes 提供 mimetype 的序列化操作
 type Mimetypes struct {
 	*Serialization
 }

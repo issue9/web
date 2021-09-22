@@ -37,8 +37,9 @@ type Module struct {
 	version string
 	deps    []string
 
-	srv *Server
-	fs  *filesystem.MultipleFS
+	srv    *Server
+	fs     *filesystem.MultipleFS
+	object interface{}
 }
 
 type ModuleInfo struct {
@@ -96,12 +97,12 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值。
 func (srv *Server) loadPlugins(glob string) error {
-	fs, err := filepath.Glob(glob)
+	fsys, err := filepath.Glob(glob)
 	if err != nil {
 		return err
 	}
 
-	for _, path := range fs {
+	for _, path := range fsys {
 		if err := srv.loadPlugin(path); err != nil {
 			return err
 		}
@@ -174,6 +175,27 @@ func (m *Module) Actions() []string {
 	}
 	sort.Strings(actions)
 	return actions
+}
+
+// AttachObject 为当前模块附加一个对象
+//
+// 若模块中有需要外放的数据，可以通过此方法将数据附加在模块上。
+func (m *Module) AttachObject(v interface{}) { m.object = v }
+
+// Object 获取通过 AttachObject 关联的对象
+func (m *Module) Object() interface{} { return m.object }
+
+// DepObject 获取依赖项关联的对象
+func (m *Module) DepObject(dep string) interface{} {
+	if sliceutil.Index(m.deps, func(i int) bool { return m.deps[i] == dep }) < 0 {
+		panic(fmt.Sprintf("%s 并不是 %s 的依赖对象", dep, m.id))
+	}
+
+	obj := m.srv.findModule(dep)
+	if obj == nil {
+		panic(fmt.Sprintf("依赖项 %s 未找到", dep))
+	}
+	return obj.Object()
 }
 
 // Inited 查询是否已经初始化
