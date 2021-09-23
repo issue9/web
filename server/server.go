@@ -177,7 +177,7 @@ func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
 func (srv *Server) Serve(tag string, serve bool) (err error) {
-	if err := srv.InitModules(tag); err != nil {
+	if err := srv.initModules(tag); err != nil {
 		return err
 	}
 	if !serve {

@@ -21,13 +21,11 @@ func Dep(info *log.Logger, items []*Item) error {
 	flags := info.Flags()
 	info.SetFlags(log.Ldate | log.Lmicroseconds)
 
-	//info.Printf("开始初始化模块中的 %s...\n", action)
 	for _, m := range items { // 进行初如化
 		if err := initItem(items, m, info); err != nil {
 			return err
 		}
 	}
-	//info.Print("初始化完成！\n\n")
 
 	info.SetFlags(flags)
 
@@ -47,13 +45,12 @@ func initItem(items []*Item, m *Item, l *log.Logger) error {
 	}
 
 	if m.called {
-		// TODO info
 		return nil
 	}
 
 	l.Println(m.ID, "...")
 
-	err := m.call()
+	err := m.call(l)
 	if err != nil {
 		l.Printf("%s [FAIL:%s]\n\n", m.ID, err.Error())
 	} else {

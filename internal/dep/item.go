@@ -2,6 +2,8 @@
 
 package dep
 
+import "log"
+
 type Item struct {
 	ID   string
 	Deps []string
@@ -10,12 +12,18 @@ type Item struct {
 	Executors []Executor
 }
 
-func (i *Item) call() error {
-	for _, e := range i.Executors {
-		if err := e.F(); err != nil {
+func (i *Item) call(info *log.Logger) error {
+	const indent = "\t"
+
+	for _, exec := range i.Executors {
+		info.Printf("%s%s......", indent, exec.Title)
+		if err := exec.F(); err != nil {
+			info.Printf("%s%s FAIL: %s\n", indent, exec.Title, err.Error())
 			return err
 		}
+		info.Printf("%s%s OK", indent, exec.Title)
 	}
+
 	i.called = true
 
 	return nil

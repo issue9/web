@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/internal/dep"
 	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/service"
 )
@@ -51,15 +52,42 @@ type ModuleInfo struct {
 
 // Action 模块下对初始化函数的分组
 type Action struct {
-	name      string
-	m         *Module
-	inited    bool
-	executors []executor // 保证按添加顺序执行
+	name   string
+	m      *Module
+	inited bool
+
+	inits   []dep.Executor // 保证按添加顺序执行
+	uninits []dep.Executor
 }
 
-type executor struct {
-	title string
-	f     func() error
+func (srv *Server) initModules(action string) error {
+	if action == "" {
+		panic("参数  action 不能为空")
+	}
+
+	l := srv.Logs().INFO()
+
+	// 日志不需要标出文件位置。
+	flags := l.Flags()
+	l.SetFlags(log.Ldate | log.Lmicroseconds)
+
+	items := make([]*dep.Item, 0, len(srv.modules))
+	l.Printf("开始初始化模块中的 %s...\n", action)
+	for _, m := range srv.modules { // 进行初如化
+		items = append(items, &dep.Item{
+			ID:        m.id,
+			Deps:      m.deps,
+			Executors: m.Action(action).inits,
+		})
+	}
+	if err := dep.Dep(l, items); err != nil {
+		return err
+	}
+	l.Print("初始化完成！\n\n")
+
+	l.SetFlags(flags)
+
+	return nil
 }
 
 // NewModule 声明一个新的模块
@@ -136,6 +164,17 @@ func (srv *Server) loadPlugin(path string) error {
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
+func (srv *Server) Actions() []string {
+	actions := make([]string, 0, 100)
+	for _, m := range srv.modules {
+		actions = append(actions, m.Actions()...)
+	}
+	size := sliceutil.Unique(actions, func(i, j int) bool { return actions[i] == actions[j] })
+	actions = actions[:size]
+	sort.Strings(actions)
+	return actions
+}
+
 // Action 返回指定名称的 Action 实例
 //
 // 如果不存在则会创建。
@@ -143,9 +182,10 @@ func (m *Module) Action(t string) *Action {
 	ev, found := m.actions[t]
 	if !found {
 		ev = &Action{
-			name:      t,
-			executors: make([]executor, 0, 5),
-			m:         m,
+			name:    t,
+			inits:   make([]dep.Executor, 0, 5),
+			uninits: make([]dep.Executor, 0, 5),
+			m:       m,
 		}
 		m.actions[t] = ev
 	}
@@ -191,15 +231,18 @@ func (m *Module) DepObject(dep string) interface{} {
 		panic(fmt.Sprintf("%s 并不是 %s 的依赖对象", dep, m.id))
 	}
 
-	obj := m.srv.findModule(dep)
+	var obj *Module
+	for _, mod := range m.srv.modules {
+		if mod.id == dep {
+			obj = mod
+			break
+		}
+	}
 	if obj == nil {
 		panic(fmt.Sprintf("依赖项 %s 未找到", dep))
 	}
 	return obj.Object()
 }
-
-// Inited 查询是否已经初始化
-func (m *Module) Inited(action string) bool { return m.Action(action).Inited() }
 
 // LoadLocale 从 m.FS 加载本地化语言文件
 func (m *Module) LoadLocale(glob string) error {
@@ -221,31 +264,17 @@ func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
 //
 // NOTE: 按添加顺序执行各个函数。
 func (t *Action) AddInit(title string, f func() error) *Action {
-	t.executors = append(t.executors, executor{title: title, f: f})
+	t.inits = append(t.inits, dep.Executor{Title: title, F: f})
 	return t
 }
 
-func (t *Action) init(l *log.Logger) error {
-	const indent = "\t"
-
-	if t.Inited() {
-		return nil
-	}
-
-	for _, exec := range t.executors {
-		l.Printf("%s%s......", indent, exec.title)
-		if err := exec.f(); err != nil {
-			l.Printf("%s%s FAIL: %s\n", indent, exec.title, err.Error())
-			return err
-		}
-		l.Printf("%s%s OK", indent, exec.title)
-	}
-
-	t.inited = true
-	return nil
+// AddUninit 注册指执行函数
+//
+// NOTE: 按添加顺序执行各个函数。
+func (t *Action) AddUninit(title string, f func() error) *Action {
+	t.uninits = append(t.uninits, dep.Executor{Title: title, F: f})
+	return t
 }
-
-func (t *Action) Inited() bool { return t.inited }
 
 // Module 返回当前关联的模块
 func (t *Action) Module() *Module { return t.m }
