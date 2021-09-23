@@ -26,7 +26,19 @@ type Executor struct {
 	F     func() error
 }
 
-// 反转依赖关系
-func reverseItems([]*Item) {
-	// TODO
+// Reverse 反转依赖关系
+func Reverse(items []*Item) []*Item {
+	ret := make([]*Item, 0, len(items))
+	for _, item := range items {
+		ret = append(ret, &Item{ID: item.ID, Executors: item.Executors, Deps: []string{}})
+	}
+
+	for _, item := range items {
+		for _, dep := range item.Deps {
+			d := findItem(ret, dep)
+			d.Deps = append(d.Deps, item.ID)
+		}
+	}
+
+	return ret
 }
