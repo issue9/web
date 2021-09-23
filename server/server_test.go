@@ -359,12 +359,9 @@ func TestServer_Close(t *testing.T) {
 				return context.Canceled
 			}
 		}
-	}).AddInit("RegisterOnClose", func() error {
-		m1.Server().RegisterOnClose(func() error {
-			buf.WriteString("RegisterOnClose\n")
-			println("TestServer_Close RegisterOnClose...")
-			return nil
-		})
+	}).AddUninit("RegisterOnClose", func() error {
+		buf.WriteString("RegisterOnClose\n")
+		println("TestServer_Close RegisterOnClose...")
 		return nil
 	})
 

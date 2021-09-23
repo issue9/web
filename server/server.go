@@ -6,6 +6,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -176,8 +176,8 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
-func (srv *Server) Serve(tag string, serve bool) (err error) {
-	if err := srv.initModules(tag); err != nil {
+func (srv *Server) Serve(action string, serve bool) (err error) {
+	if err := srv.initModules(action, false); err != nil {
 		return err
 	}
 	if !serve {
@@ -185,6 +185,28 @@ func (srv *Server) Serve(tag string, serve bool) (err error) {
 	}
 
 	srv.Services().Run()
+
+	// 在 Serve 中关闭服务，而不是 Close。 这样可以保证在所有的请求关闭之后执行。
+	defer func() {
+		srv.Services().Stop()
+
+		if err2 := srv.initModules(action, true); err2 != nil {
+			if err == nil {
+				err = err2
+			} else {
+				// 保证底层依然是原来的返回值，比如 http.ErrServerClosed 可能会被特殊处理等。
+				err = fmt.Errorf("在返回 %w 时，再次发生错误：%s", err, err2.Error())
+			}
+		}
+
+		if err2 := srv.Logs().Flush(); err2 != nil {
+			if err == nil {
+				err = err2
+			} else {
+				err = fmt.Errorf("在返回 %w 时，再次发生错误：%s", err, err2.Error())
+			}
+		}
+	}()
 
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
@@ -204,12 +226,8 @@ func (srv *Server) Serve(tag string, serve bool) (err error) {
 // Close 关闭服务
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
-		srv.Logs().Flush()
 		srv.closed <- struct{}{}
 	}()
-
-	srv.Services().Stop() // 先关闭服务
-	srv.callCloseEvents()
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()
@@ -221,23 +239,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 		return err
 	}
 	return nil
-}
-
-func (srv *Server) callCloseEvents() {
-	sliceutil.Reverse(srv.closeEvents)
-	for _, event := range srv.closeEvents {
-		if err := event(); err != nil {
-			srv.Logs().Error(err)
-		}
-	}
-}
-
-// RegisterOnClose 注册关闭服务时的行为
-//
-// 多次调用，按注册顺序反向调用。
-func (srv *Server) RegisterOnClose(f ...func() error) {
-	// NOTE: 不采用 events，此方法调用顺序有要求
-	srv.closeEvents = append(srv.closeEvents, f...)
 }
 
 // DisableCompression 是否禁用压缩功能

@@ -26,6 +26,7 @@ func TestServer_initModules(t *testing.T) {
 	t1 := m1.Action("v1")
 	a.NotNil(t1)
 	t1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
+	t1.AddUninit("安装数据表 users1", func() error { return nil })
 
 	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
 	a.NotNil(m2).NotError(err)
@@ -46,11 +47,14 @@ func TestServer_initModules(t *testing.T) {
 	a.Equal(actions, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
-		s.initModules("") // 空值
+		s.initModules("", false) // 空值
 	})
-	a.ErrorString(s.initModules("v1"), "failed message")
-	a.NotError(s.initModules("v2"))
-	a.NotError(s.initModules("not-exists"))
+	a.ErrorString(s.initModules("v1", false), "failed message")
+	a.NotError(s.initModules("v1", true))
+	a.NotError(s.initModules("v2", false))
+	a.NotError(s.initModules("not-exists", false))
+
+	// TODO
 }
 
 func TestPluginInitFuncName(t *testing.T) {

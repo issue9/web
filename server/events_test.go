@@ -41,12 +41,12 @@ func TestServer_Eventer(t *testing.T) {
 
 	id1, err := s.AttachEvent("p1", func(data interface{}) { fmt.Fprint(buf, data) })
 	a.NotError(err)
-	p.Publish(true, "p1")
+	a.NotError(p.Publish(true, "p1"))
 	time.Sleep(500 * time.Microsecond)
 	a.Equal(buf.String(), "p1")
 
 	s.DetachEvent("p1", id1)
-	p.Publish(false, "p1")
+	a.NotError(p.Publish(false, "p1"))
 	time.Sleep(500 * time.Microsecond)
 	a.Equal(buf.String(), "p1")
 }

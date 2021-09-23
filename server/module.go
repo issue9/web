@@ -60,32 +60,42 @@ type Action struct {
 	uninits []dep.Executor
 }
 
-func (srv *Server) initModules(action string) error {
+func (srv *Server) initModules(action string, uninit bool) error {
 	if action == "" {
 		panic("参数  action 不能为空")
 	}
 
-	l := srv.Logs().INFO()
+	items := make([]*dep.Item, 0, len(srv.modules))
+	if uninit {
+		for _, m := range srv.modules {
+			items = append(items, &dep.Item{
+				ID:        m.id,
+				Deps:      m.deps,
+				Executors: m.Action(action).uninits,
+			})
+		}
+		items = dep.Reverse(items)
+	} else {
+		for _, m := range srv.modules {
+			items = append(items, &dep.Item{
+				ID:        m.id,
+				Deps:      m.deps,
+				Executors: m.Action(action).inits,
+			})
+		}
+	}
 
-	// 日志不需要标出文件位置。
+	// 日志不需要标出文件位置
+	l := srv.Logs().INFO()
 	flags := l.Flags()
 	l.SetFlags(log.Ldate | log.Lmicroseconds)
+	defer l.SetFlags(flags)
 
-	items := make([]*dep.Item, 0, len(srv.modules))
 	l.Printf("开始初始化模块中的 %s...\n", action)
-	for _, m := range srv.modules { // 进行初如化
-		items = append(items, &dep.Item{
-			ID:        m.id,
-			Deps:      m.deps,
-			Executors: m.Action(action).inits,
-		})
-	}
 	if err := dep.Dep(l, items); err != nil {
 		return err
 	}
 	l.Print("初始化完成！\n\n")
-
-	l.SetFlags(flags)
 
 	return nil
 }

@@ -341,7 +341,7 @@ func TestAction_AddRoutes(t *testing.T) {
 	a.NotError(err).NotNil(m)
 	m.Action("install").AddRoutes(func(router *Router) {}, "")
 	a.Empty(r.MuxRouter().Routes()) // 未初始化
-	srv.initModules("install")
+	a.Error(srv.initModules("install", false))
 	a.Empty(r.MuxRouter().Routes()) // 已初始化，但是未指定正常的路由名称
 
 	srv = newServer(a)
@@ -355,6 +355,6 @@ func TestAction_AddRoutes(t *testing.T) {
 	}, "host")
 
 	a.Empty(r.MuxRouter().Routes()) // 未初始化
-	srv.initModules("install")
+	a.NotError(srv.initModules("install", false))
 	a.Equal(1, len(r.MuxRouter().Routes())) // 已初始化
 }
