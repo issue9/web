@@ -44,8 +44,7 @@ type Server struct {
 	httpServer *http.Server
 	vars       *sync.Map
 
-	closed      chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
-	closeEvents []func() error
+	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 
 	// middleware
 	groups        *group.Groups
@@ -82,8 +81,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
 
-		closed:      make(chan struct{}, 1),
-		closeEvents: make([]func() error, 0, 3),
+		closed: make(chan struct{}, 1),
 
 		groups:        o.groups,
 		compress:      compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),

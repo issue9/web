@@ -38,6 +38,9 @@ type Module struct {
 	version string
 	deps    []string
 
+	inits   []dep.Executor
+	uninits []dep.Executor
+
 	srv    *Server
 	fs     *filesystem.MultipleFS
 	object interface{}
@@ -52,9 +55,8 @@ type ModuleInfo struct {
 
 // Action 模块下对初始化函数的分组
 type Action struct {
-	name   string
-	m      *Module
-	inited bool
+	name string
+	m    *Module
 
 	inits   []dep.Executor // 保证按添加顺序执行
 	uninits []dep.Executor
@@ -68,20 +70,14 @@ func (srv *Server) initModules(action string, uninit bool) error {
 	items := make([]*dep.Item, 0, len(srv.modules))
 	if uninit {
 		for _, m := range srv.modules {
-			items = append(items, &dep.Item{
-				ID:        m.id,
-				Deps:      m.deps,
-				Executors: m.Action(action).uninits,
-			})
+			executors := append(m.uninits, m.Action(action).uninits...)
+			items = append(items, dep.NewItem(m.id, m.deps, executors))
 		}
 		items = dep.Reverse(items)
 	} else {
 		for _, m := range srv.modules {
-			items = append(items, &dep.Item{
-				ID:        m.id,
-				Deps:      m.deps,
-				Executors: m.Action(action).inits,
-			})
+			executors := append(m.inits, m.Action(action).inits...)
+			items = append(items, dep.NewItem(m.id, m.deps, executors))
 		}
 	}
 
@@ -122,6 +118,9 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 		version: version,
 		desc:    desc,
 		deps:    deps,
+
+		inits:   make([]dep.Executor, 0, 3),
+		uninits: make([]dep.Executor, 0, 3),
 
 		srv: srv,
 		fs:  filesystem.NewMultipleFS(sub),
@@ -174,6 +173,7 @@ func (srv *Server) loadPlugin(path string) error {
 	return fmt.Errorf("插件 %s 未找到安装函数", path)
 }
 
+// Actions 返回 Action 列表
 func (srv *Server) Actions() []string {
 	actions := make([]string, 0, 100)
 	for _, m := range srv.modules {
@@ -218,6 +218,7 @@ func (srv *Server) Modules(p *message.Printer) []*ModuleInfo {
 
 func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
 
+// Actions 返回 Action 列表
 func (m *Module) Actions() []string {
 	actions := make([]string, 0, len(m.actions))
 	for name := range m.actions {
@@ -254,6 +255,20 @@ func (m *Module) DepObject(dep string) interface{} {
 	return obj.Object()
 }
 
+// AddInit 注册模块初始化时执行的函数
+//
+// NOTE: 作用于所有的 Action
+func (m *Module) AddInit(title string, f func() error) {
+	m.inits = append(m.inits, dep.Executor{Title: title, F: f})
+}
+
+// AddUninit 注册卸载模块时的执行函数
+//
+// NOTE: 作用于所有的 Action
+func (m *Module) AddUninit(title string, f func() error) {
+	m.uninits = append(m.uninits, dep.Executor{Title: title, F: f})
+}
+
 // LoadLocale 从 m.FS 加载本地化语言文件
 func (m *Module) LoadLocale(glob string) error {
 	return m.srv.Locale().LoadFileFS(m, glob)
@@ -270,7 +285,7 @@ func (m *Module) LoadLocale(glob string) error {
 // 读取外部的文件，如果不存在，则读取 embed.FS 中的内容。
 func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
 
-// AddInit 注册指执行函数
+// AddInit 注册模块初始化时执行的函数
 //
 // NOTE: 按添加顺序执行各个函数。
 func (t *Action) AddInit(title string, f func() error) *Action {
@@ -278,7 +293,7 @@ func (t *Action) AddInit(title string, f func() error) *Action {
 	return t
 }
 
-// AddUninit 注册指执行函数
+// AddUninit 注册卸载模块时的执行函数
 //
 // NOTE: 按添加顺序执行各个函数。
 func (t *Action) AddUninit(title string, f func() error) *Action {

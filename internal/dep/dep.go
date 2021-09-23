@@ -33,10 +33,10 @@ func Dep(info *log.Logger, items []*Item) error {
 }
 
 func initItem(items []*Item, m *Item, l *log.Logger) error {
-	for _, depID := range m.Deps { // 先初始化依赖项
+	for _, depID := range m.deps { // 先初始化依赖项
 		depMod := findItem(items, depID)
 		if depMod == nil {
-			return localeutil.Error("not found dependence", m.ID, depID)
+			return localeutil.Error("not found dependence", m.id, depID)
 		}
 
 		if err := initItem(items, depMod, l); err != nil {
@@ -48,13 +48,13 @@ func initItem(items []*Item, m *Item, l *log.Logger) error {
 		return nil
 	}
 
-	l.Println(m.ID, "...")
+	l.Println(m.id, "...")
 
 	err := m.call(l)
 	if err != nil {
-		l.Printf("%s [FAIL:%s]\n\n", m.ID, err.Error())
+		l.Printf("%s [FAIL:%s]\n\n", m.id, err.Error())
 	} else {
-		l.Printf("%s [OK]\n\n", m.ID)
+		l.Printf("%s [OK]\n\n", m.id)
 	}
 	return err
 }
@@ -63,14 +63,14 @@ func initItem(items []*Item, m *Item, l *log.Logger) error {
 // 依赖项是否存在；是否存在自我依赖等。
 func checkDeps(items []*Item, m *Item) error {
 	// 检测依赖项是否都存在
-	for _, depID := range m.Deps {
+	for _, depID := range m.deps {
 		if findItem(items, depID) == nil {
-			return localeutil.Error("not found dependence", m.ID, depID)
+			return localeutil.Error("not found dependence", m.id, depID)
 		}
 	}
 
-	if isDep(items, m.ID, m.ID) {
-		return localeutil.Error("cyclic dependence", m.ID)
+	if isDep(items, m.id, m.id) {
+		return localeutil.Error("cyclic dependence", m.id)
 	}
 
 	return nil
@@ -83,7 +83,7 @@ func isDep(items []*Item, m1, m2 string) bool {
 		return false
 	}
 
-	for _, depID := range mod1.Deps {
+	for _, depID := range mod1.deps {
 		if depID == m2 {
 			return true
 		}
@@ -100,7 +100,7 @@ func isDep(items []*Item, m1, m2 string) bool {
 
 func findItem(items []*Item, id string) *Item {
 	for _, m := range items {
-		if m.ID == id {
+		if m.id == id {
 			return m
 		}
 	}
