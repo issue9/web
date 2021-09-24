@@ -6,10 +6,8 @@
 package plugintest
 
 import (
-	"net/http"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 	"golang.org/x/text/language"
@@ -26,13 +24,6 @@ func TestPlugins(t *testing.T) {
 		Plugins: "./testdata/plugin_*.so",
 	})
 	a.NotError(err).NotNil(srv)
-
-	go func() {
-		err := srv.Serve("default", true)
-		a.Equal(err, http.ErrServerClosed)
-	}()
-	time.Sleep(500 * time.Millisecond)
-	defer srv.Close(0)
 
 	ms := srv.Modules(message.NewPrinter(language.SimplifiedChinese))
 	a.Equal(2, len(ms))
