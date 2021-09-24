@@ -5,7 +5,10 @@ package errs
 
 import "fmt"
 
-// Wrap 包装多个错误信息
-func Wrap(origin, new error) error {
-	return fmt.Errorf("在返回 %w 时再次出现错误 %s", origin, new.Error())
+// Merge 合并多个错误实例
+func Merge(origin, err error) error {
+	if err == nil {
+		return origin
+	}
+	return fmt.Errorf("在返回 %w 时再次出现错误 %s", origin, err.Error())
 }
