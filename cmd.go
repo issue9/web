@@ -80,14 +80,12 @@ type Command struct {
 }
 
 // Exec 执行命令行操作
-func (cmd *Command) Exec() {
+func (cmd *Command) Exec() error {
 	if err := cmd.sanitize(); err != nil {
-		panic(err)
+		return err
 	}
 
-	if err := cmd.exec(); err != nil {
-		panic(err)
-	}
+	return cmd.exec()
 }
 
 func (cmd *Command) sanitize() *config.Error {
