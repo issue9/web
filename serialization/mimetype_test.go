@@ -63,13 +63,11 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 		Equal(marshal, MarshalFunc(xml.Marshal)).
 		Equal(name, testMimetype)
 
-	a.NotError(mt.Set(testMimetype, json.Marshal, json.Unmarshal))
+	mt.Set(testMimetype, json.Marshal, json.Unmarshal)
 	name, marshal, found = mt.MarshalFunc(testMimetype)
 	a.True(found).
 		Equal(marshal, MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
-
-	a.ErrorString(mt.Set("not-exists", nil, nil), "未找到指定名称")
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, found = mt.MarshalFunc("*/*")

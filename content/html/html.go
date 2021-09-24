@@ -14,14 +14,13 @@ package html
 
 import (
 	"bytes"
-	"errors"
 	"html/template"
+
+	"github.com/issue9/web/serialization"
 )
 
 // Mimetype HTML 的 mimetype 值
 const Mimetype = "text/html"
-
-var errUnsupported = errors.New("当前不支持该对象的解析")
 
 // HTML 模板管理
 type HTML struct {
@@ -69,7 +68,7 @@ func (html *HTML) SetTemplate(tpl *template.Template) {
 func (html *HTML) Marshal(v interface{}) ([]byte, error) {
 	obj, ok := v.(*Template)
 	if !ok {
-		return nil, errUnsupported
+		return nil, serialization.ErrUnsupported
 	}
 
 	w := new(bytes.Buffer)

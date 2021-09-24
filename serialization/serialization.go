@@ -4,10 +4,16 @@
 package serialization
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/issue9/sliceutil"
 )
+
+// ErrUnsupported 返回不支持序列化的错误信息
+//
+// 当一个对象无法被正常的序列化或是反序列化是，返回此错误。
+var ErrUnsupported = errors.New("不支持序列化或是反序列化")
 
 type (
 	// Serialization 管理注册的序列化函数
@@ -66,12 +72,12 @@ func (s *Serialization) add(name string, m MarshalFunc, u UnmarshalFunc) error {
 }
 
 // Set 修改或是添加
-func (s *Serialization) Set(name string, m MarshalFunc, u UnmarshalFunc) error {
+func (s *Serialization) Set(name string, m MarshalFunc, u UnmarshalFunc) {
 	for _, mt := range s.serializes {
 		if mt.Name == name {
 			mt.Marshal = m
 			mt.Unmarshal = u
-			return nil
+			return
 		}
 	}
 
@@ -80,8 +86,6 @@ func (s *Serialization) Set(name string, m MarshalFunc, u UnmarshalFunc) error {
 		Marshal:   m,
 		Unmarshal: u,
 	})
-
-	return fmt.Errorf("未找到指定名称 %s 的编解码函数", name)
 }
 
 // Delete 删除指定名称的数据
@@ -96,7 +100,7 @@ func (s *Serialization) Search(name string) (string, MarshalFunc, UnmarshalFunc)
 	return s.SearchFunc(func(n string) bool { return n == name })
 }
 
-// 如果返回的 name 为空，表示没有找到
+// SearchFunc 如果返回的 name 为空，表示没有找到
 func (s *Serialization) SearchFunc(match func(string) bool) (string, MarshalFunc, UnmarshalFunc) {
 	for _, mt := range s.serializes {
 		if match(mt.Name) {

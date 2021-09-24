@@ -5,6 +5,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -97,8 +98,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 // 并返回 false，作为执行失败的通知。
 func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
-		resp := ctx.Error(http.StatusUnprocessableEntity, err)
-		ctx.renderResponser(resp)
+		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(err))
+		ctx.renderResponser(Status(http.StatusUnprocessableEntity))
 		return false
 	}
 
