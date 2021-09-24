@@ -8,7 +8,7 @@ type MultipleFS struct {
 	f []fs.FS
 }
 
-// MultipleFS 将多个 fs.FS 合并成一个 fs.FS 对象
+// NewMultipleFS 将多个 fs.FS 合并成一个 fs.FS 对象
 //
 // 每次查找时，都顺序查找第一个存在的对象并返回。
 func NewMultipleFS(f ...fs.FS) *MultipleFS { return &MultipleFS{f: f} }

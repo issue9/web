@@ -174,6 +174,8 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 func (srv *Server) Services() *service.Manager { return srv.services }
 
 // Serve 启动服务
+//
+// serve 如果为空，表示不启动 HTTP 服务，仅执行向 action 注册的函数。
 func (srv *Server) Serve(action string, serve bool) (err error) {
 	if err := srv.initModules(action, false); err != nil {
 		return err
