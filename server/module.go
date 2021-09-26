@@ -62,7 +62,7 @@ type Action struct {
 	uninits []dep.Executor
 }
 
-func (srv *Server) initModules(action string, uninit bool) error {
+func (srv *Server) initModules(uninit bool, action string) error {
 	if action == "" {
 		panic("参数  action 不能为空")
 	}

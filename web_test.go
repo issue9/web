@@ -51,7 +51,7 @@ func TestNewServer(t *testing.T) {
 		})
 	}, "r1")
 
-	a.NotError(srv.Serve("init", false))
+	a.NotError(srv.Serve(false, "init"))
 
 	a.Contains(buf.String(), "注册路由: r1") // 查看是否正确加载翻译内容
 }

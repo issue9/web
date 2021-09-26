@@ -176,8 +176,8 @@ func (srv *Server) Services() *service.Manager { return srv.services }
 // Serve 启动服务
 //
 // serve 如果为空，表示不启动 HTTP 服务，仅执行向 action 注册的函数。
-func (srv *Server) Serve(action string, serve bool) (err error) {
-	if err := srv.initModules(action, false); err != nil {
+func (srv *Server) Serve(serve bool, action string) (err error) {
+	if err := srv.initModules(false, action); err != nil {
 		return err
 	}
 	if !serve {
@@ -190,7 +190,7 @@ func (srv *Server) Serve(action string, serve bool) (err error) {
 	defer func() {
 		srv.Services().Stop()
 
-		if err2 := srv.initModules(action, true); err2 != nil {
+		if err2 := srv.initModules(true, action); err2 != nil {
 			if err == nil {
 				err = err2
 			} else {

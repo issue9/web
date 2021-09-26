@@ -50,19 +50,19 @@ func TestServer_initModules(t *testing.T) {
 	a.Equal(actions, []string{"v1", "v2", "v3", "v4"})
 
 	a.Panic(func() {
-		s.initModules("", false) // 空值
+		s.initModules(false, "") // 空值
 	})
 
 	a.Equal(0, count)
-	a.ErrorString(s.initModules("v1", false), "failed message") // 这里执行了一次 m1.inits 中的 count++
+	a.ErrorString(s.initModules(false, "v1"), "failed message") // 这里执行了一次 m1.inits 中的 count++
 
 	a.Equal(1, count)
-	a.NotError(s.initModules("v1", true)) // 这里执行了一次 m1.uninits 中的 count--
+	a.NotError(s.initModules(true, "v1")) // 这里执行了一次 m1.uninits 中的 count--
 	a.Equal(0, count)
 
-	a.NotError(s.initModules("v2", false)) // 包括了 m1.inits 中的 count++
+	a.NotError(s.initModules(false, "v2")) // 包括了 m1.inits 中的 count++
 	a.Equal(4, count)
-	a.NotError(s.initModules("not-exists", false))
+	a.NotError(s.initModules(false, "not-exists"))
 }
 
 func TestPluginInitFuncName(t *testing.T) {

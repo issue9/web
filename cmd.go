@@ -167,7 +167,7 @@ func (cmd *Command) exec() error {
 	}
 
 	serve := sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) >= 0
-	return srv.Serve(*tag, serve)
+	return srv.Serve(serve, *tag)
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
