@@ -69,7 +69,7 @@ type Options struct {
 	// 在请求崩溃之后的处理方式
 	//
 	// 这是请求的最后一道防线，如果此函数处理依然 panic，则会造成整个项目退出。
-	// 如果为空，则会打印简单的错误堆栈信息。
+	// 如果为空，则采用 github.com/issue9/middleware/recovery.DefaultRecover。
 	Recovery recovery.RecoverFunc
 
 	// 此处列出的类型将不会被压缩
@@ -142,7 +142,7 @@ func (o *Options) sanitize() (*Options, error) {
 	}
 
 	if o.Recovery == nil {
-		o.Recovery = recovery.DefaultRecoverFunc(http.StatusInternalServerError)
+		o.Recovery = recovery.DefaultRecover(http.StatusInternalServerError)
 	}
 
 	if o.Logs == nil {

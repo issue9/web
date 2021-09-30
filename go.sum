@@ -19,7 +19,6 @@ github.com/issue9/cache v0.3.0 h1:Stnnx32BbUBHCJOpcTGVVQzzAmltDFJ02cAALSt6afc=
 github.com/issue9/cache v0.3.0/go.mod h1:hVOxjF9dr3DZv3/DOaWY9JTtuCMiB6D2yJ4wO63+vmI=
 github.com/issue9/conv v1.2.1 h1:bSRC6p0eSJqwtnN2yk04ct4F556y8i+TdiUiBvN+KdA=
 github.com/issue9/conv v1.2.1/go.mod h1:rxUsUvpb1/3rZt0Uf/UtEC6BogEO2BV3bCWbh2DORp8=
-github.com/issue9/errwrap v0.1.2/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
 github.com/issue9/errwrap v0.2.0 h1:EPisAVHfGj8ZnR3aNlLFpih/ahDWdMXTOOA+3QaELpk=
 github.com/issue9/errwrap v0.2.0/go.mod h1:yudSKP/VtwvbW8hD9riNxJd8sAAzgJUgjllibgHqdJg=
 github.com/issue9/events v0.3.0 h1:D9RXUxQg2u1syYilgVARjPafeLKmn1DPku5eHY994HA=
@@ -28,8 +27,8 @@ github.com/issue9/localeutil v0.6.0 h1:/TeKCG0VaA8tiBj1zfM/qnH7IVnRcb9zeLgiNQ3PE
 github.com/issue9/localeutil v0.6.0/go.mod h1:1hx4Qo57RAQgRSy0zihp6XKTkTbaAVu26Qc0bz/770s=
 github.com/issue9/logs/v3 v3.0.0-beta.2 h1:tWIja3KWBukITan7yQFZL/FX7Ee7+cpkPbf8aPsO/6c=
 github.com/issue9/logs/v3 v3.0.0-beta.2/go.mod h1:VJ/n21ezxYx8VlatrOHKvPtQoZptahKl91VwAj9SnSA=
-github.com/issue9/middleware/v5 v5.0.0-beta.1 h1:FiwKU4h1qSCLhYF9KMccPYn+uL99mHynla1F1t3vup4=
-github.com/issue9/middleware/v5 v5.0.0-beta.1/go.mod h1:6XV8q9KJOajQI58DcR8VNSenMhk3SVPpZqYgJJhhE2k=
+github.com/issue9/middleware/v5 v5.0.0-beta.2 h1:/UBbwcUV1xAY2vzm9F3BlJPcYiAQo+Ad7M5ni+z9/Co=
+github.com/issue9/middleware/v5 v5.0.0-beta.2/go.mod h1:80ditdAylvUjQLxb5w4UqvrKKVO4h7cocFPvA+nK1Ag=
 github.com/issue9/mux/v5 v5.0.0-beta.1 h1:TtqlhT6lCVNaU/KKw+lLC9eqvAQ5uVnnwOF6kDVck7c=
 github.com/issue9/mux/v5 v5.0.0-beta.1/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
 github.com/issue9/qheader v0.5.4 h1:EJWT4VCtto4+J4A4sYpSwBVBldklQ8iOdOJyXnsIUDo=
@@ -43,8 +42,6 @@ github.com/issue9/scheduled v0.7.0/go.mod h1:IBqJ/nYmTeisJCGuszBWY5efatEhWJ+x379
 github.com/issue9/sliceutil v0.6.0/go.mod h1:FUxZQC4oEw6V46afC+JOdCjOv84BA6WBNQRYGS9V4Dg=
 github.com/issue9/sliceutil v0.7.0 h1:PN2W75vYZeJir/cte+H5KBdfYz03hYcmdtSM8Wp0PdM=
 github.com/issue9/sliceutil v0.7.0/go.mod h1:FUxZQC4oEw6V46afC+JOdCjOv84BA6WBNQRYGS9V4Dg=
-github.com/issue9/source v0.1.1 h1:Xemp2xP1m2t9r2+9mg/zYldYQCs0T13ggE69I65WNQ0=
-github.com/issue9/source v0.1.1/go.mod h1:oyj2OUvab/aVFsHqRTS8uI8KcvGZb0ZFoh9b3FzzAYU=
 github.com/issue9/term/v2 v2.1.4 h1:WrqNR1dic8jgNyvmx2/XAjEbu4DPONJlZKe0z7d4kr0=
 github.com/issue9/term/v2 v2.1.4/go.mod h1:4grEYXC4VqxZVU0THQugQaeqlWCi43yFnCTscUoC4Ds=
 github.com/issue9/unique v1.3.0 h1:TaSD6XLbezW2YRI/Lq3GJEgpiY/jKS7QtIITg86CwY8=

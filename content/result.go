@@ -39,22 +39,22 @@ type (
 	//      ]
 	//  }
 	Result interface {
-		// 添加详细的错误信息
+		// Add 添加详细的错误信息
 		//
 		// 相同的 key 应该能关联多个 val 值。
 		Add(key string, val ...string)
 
-		// 设置详细的错误信息
+		// Set 设置详细的错误信息
 		//
 		// 如果已经相同的 key，会被覆盖。
 		Set(key string, val ...string)
 
-		// 是否存在详细的错误信息
+		// HasFields 是否存在详细的错误信息
 		//
 		// 如果有通过 Add 添加内容，那么应该返回 true
 		HasFields() bool
 
-		// HTTP 状态码
+		// Status HTTP 状态码
 		//
 		// 最终会经此值作为 HTTP 状态会返回给用户
 		Status() int

@@ -153,12 +153,13 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 
 // Marshal 将 v 解码并发送给客户端
 //
-// NOTE: 若 v 是一个 nil 值，则不会向客户端输出任何内容；
+// status 表示输出的状态码，如果出错，可能输出的不是该状态码；
+// v 输出的对象，若是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
-// 可以传递一个 *struct{} 值，或是自定义实现相应的解码函数。
-//
-// NOTE: 如果需要指定一个特定的 Content-Type 和 Content-Language，
-// 可以在 headers 中指定，否则使用当前的编码和语言名称。
+// 可以传递一个 *struct{} 值，或是自定义实现相应的解码函数；
+// headers 报头信息，如果已经存在于 ctx.Response 将覆盖 ctx.Response 中的值，
+// 如果需要指定一个特定的 Content-Type 和 Content-Language，
+// 可以在 headers 中指定，否则使用当前的编码和语言名称；
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
 	header := ctx.Response.Header()
 	var contentTypeFound, contentLanguageFound bool
@@ -184,6 +185,11 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return nil
 	}
 
+	// 没有指定编码函数，NewContext 阶段是允许 OutputMimetype 为空的，所以只能在此处判断。
+	if ctx.OutputMimetype == nil {
+		ctx.Response.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
 	data, err := ctx.OutputMimetype(v)
 	if err != nil {
 		return err
