@@ -29,9 +29,6 @@ type Context struct {
 	*content.Context
 	server *Server
 
-	// 与当前对话相关的时区
-	Location *time.Location
-
 	// 保存 Context 在存续期间的可复用变量
 	//
 	// 这是比 context.Value 更经济的传递变量方式。
@@ -78,10 +75,9 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	c := &Context{
-		server:   srv,
-		Context:  ctx,
-		Location: srv.Location(),
-		Vars:     map[interface{}]interface{}{},
+		server:  srv,
+		Context: ctx,
+		Vars:    map[interface{}]interface{}{},
 	}
 
 	c.Request = r.WithContext(context.WithValue(r.Context(), contextKeyContext, c))

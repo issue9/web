@@ -35,7 +35,7 @@ const (
 	contextKeyContext
 )
 
-// Server 提供了用于构建 Context 对象的基本数据
+// Server 提供 HTTP 服务
 type Server struct {
 	name       string
 	version    string
@@ -51,9 +51,6 @@ type Server struct {
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	routers       map[string]*Router
-
-	// locale
-	location *time.Location
 
 	cache    cache.Cache
 	uptime   time.Time
@@ -88,12 +85,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		errorHandlers: errorhandler.New(),
 		routers:       make(map[string]*Router, 3),
 
-		location: o.Location,
-
 		cache:    o.Cache,
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
-		content:  content.New(o.ResultBuilder, o.Locale, o.Tag),
+		content:  content.New(o.ResultBuilder, o.Location, o.Locale, o.Tag),
 		services: service.NewManager(o.Logs, o.Location),
 		events:   make(map[string]events.Eventer, 5),
 	}
@@ -149,7 +144,7 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.location }
+func (srv *Server) Location() *time.Location { return srv.content.Location() }
 
 // Logs 返回关联的 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs { return srv.logs }

@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/localeutil"
@@ -192,7 +193,7 @@ func buildResultCatalog(c *Content, a *assert.Assertion) {
 
 func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	buildResultCatalog(c, a)
 
 	c.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
@@ -235,7 +236,7 @@ func TestContent_Result(t *testing.T) {
 
 func TestContent_AddResult(t *testing.T) {
 	a := assert.New(t)
-	mgr := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	mgr := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 
 	a.NotPanic(func() {
 		mgr.AddResult(400, 1, localeutil.Phrase("1"))
@@ -257,7 +258,7 @@ func TestContent_AddResult(t *testing.T) {
 
 func TestContent_Results(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 	buildResultCatalog(c, a)
 

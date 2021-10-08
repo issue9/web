@@ -9,6 +9,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"time"
 
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
@@ -57,6 +58,9 @@ type Context struct {
 	// 输出语言的相关设置项
 	OutputTag     language.Tag
 	LocalePrinter *message.Printer
+
+	// 与当前对话相关的时区
+	Location *time.Location
 
 	// 保存着从 http.Request.Body 中获取的内容。
 	//
@@ -108,6 +112,7 @@ func (c *Content) NewContext(l *log.Logger, w http.ResponseWriter, r *http.Reque
 		OutputCharsetName:  outputCharsetName,
 		OutputTag:          tag,
 		LocalePrinter:      c.newLocalePrinter(tag),
+		Location:           c.location,
 		InputMimetype:      inputMimetype,
 		InputCharset:       inputCharset,
 	}

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"golang.org/x/text/encoding"
@@ -34,7 +35,7 @@ func TestContent_NewContext(t *testing.T) {
 	lw := &bytes.Buffer{}
 	l := log.New(lw, "", 0)
 
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	b := c.Locale().Builder()
@@ -170,7 +171,7 @@ func TestContext_Body(t *testing.T) {
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
@@ -203,7 +204,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	// 自定义报头
@@ -299,7 +300,7 @@ func TestAcceptCharset(t *testing.T) {
 func TestContent_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, newLocale(a), language.Afrikaans)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.Afrikaans)
 	b := c.Locale().Builder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
@@ -325,7 +326,7 @@ func TestContent_acceptLanguage(t *testing.T) {
 func TestContent_contentType(t *testing.T) {
 	a := assert.New(t)
 
-	mt := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	mt := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(mt)
 
 	f, e, err := mt.conentType(";;;")
@@ -335,7 +336,7 @@ func TestContent_contentType(t *testing.T) {
 	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.Error(err).Nil(f).Nil(e)
 
-	mt.Mimetypes().Add(nil, json.Unmarshal, DefaultMimetype)
+	a.NotError(mt.Mimetypes().Add(nil, json.Unmarshal, DefaultMimetype))
 	f, e, err = mt.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)
 

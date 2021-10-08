@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
 	"golang.org/x/text/language"
@@ -16,7 +17,7 @@ import (
 func TestContent_catalog(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 
 	err := c.Locale().Builder().SetString(language.SimplifiedChinese, "test", "测试")
@@ -32,7 +33,7 @@ func TestContent_catalog(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
 	a.NotNil(c)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))

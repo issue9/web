@@ -4,6 +4,8 @@
 package content
 
 import (
+	"time"
+
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
@@ -21,6 +23,8 @@ const DefaultMimetype = "application/octet-stream"
 type Content struct {
 	mimetypes *serialization.Mimetypes
 
+	// 本地化相关信息
+	location      *time.Location
 	locale        *serialization.Locale
 	tag           language.Tag
 	localePrinter *message.Printer
@@ -33,10 +37,11 @@ type Content struct {
 //
 // locale 本地化数据，context 从此处查找对应的本地化信息；
 // tag 默认的本地化语言标签，context 查找不到数据时采用此值，同时也作为非 context 实例的默认输出语言。
-func New(builder BuildResultFunc, locale *serialization.Locale, tag language.Tag) *Content {
+func New(builder BuildResultFunc, loc *time.Location, locale *serialization.Locale, tag language.Tag) *Content {
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
 
+		location:      loc,
 		locale:        locale,
 		tag:           tag,
 		localePrinter: message.NewPrinter(tag, message.Catalog(locale.Builder())),
@@ -51,6 +56,8 @@ func (c *Content) Mimetypes() *serialization.Mimetypes { return c.mimetypes }
 
 // Files 返回用于序列化文件内容的操作接口
 func (c *Content) Files() *serialization.Files { return c.Locale().Files() }
+
+func (c *Content) Location() *time.Location { return c.location }
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {
