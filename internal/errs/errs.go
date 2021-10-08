@@ -7,7 +7,7 @@ import "fmt"
 
 // Merge 合并多个错误实例
 //
-// 当两个值都不会 nil 时，会将 origin 作为其底层的错误类型。
+// 当两个值都不为 nil 时，会将 origin 作为其底层的错误类型，否则返回其中不为 nil 的值。
 func Merge(origin, err error) error {
 	if err == nil {
 		return origin
