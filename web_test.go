@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/issue9/assert"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/issue9/web/content/text"
 	"github.com/issue9/web/content/text/testobject"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serialization"
 )
 
@@ -27,7 +27,7 @@ func TestNewServer(t *testing.T) {
 	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
 	a.NotError(locale)
 	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-	a.NotError(locale.LoadFileFS(os.DirFS("./locales"), "*.yml"))
+	a.NotError(locale.LoadFileFS(locales.Locales, "*.yml"))
 
 	buf := new(bytes.Buffer)
 	log, err := logs.New(nil)
