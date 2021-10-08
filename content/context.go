@@ -18,6 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
 )
 
@@ -214,13 +215,9 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	w := transform.NewWriter(ctx.Response, ctx.OutputCharset.NewEncoder())
 	defer func() {
-		if err2 := w.Close(); err2 != nil {
-			if err != nil {
-				err2 = fmt.Errorf("在处理错误 %w 时再次抛出错误 %s", err, err2.Error())
-			}
-			err = err2
-		}
+		err = errs.Merge(err, w.Close())
 	}()
+
 	_, err = w.Write(data)
 	return err
 }
