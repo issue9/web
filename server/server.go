@@ -6,7 +6,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/content"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/service"
 )
@@ -185,22 +185,8 @@ func (srv *Server) Serve(serve bool, action string) (err error) {
 	defer func() {
 		srv.Services().Stop()
 
-		if err2 := srv.initModules(true, action); err2 != nil {
-			if err == nil {
-				err = err2
-			} else {
-				// 保证底层依然是原来的返回值，比如 http.ErrServerClosed 可能会被特殊处理等。
-				err = fmt.Errorf("在返回 %w 时，再次发生错误：%s", err, err2.Error())
-			}
-		}
-
-		if err2 := srv.Logs().Flush(); err2 != nil {
-			if err == nil {
-				err = err2
-			} else {
-				err = fmt.Errorf("在返回 %w 时，再次发生错误：%s", err, err2.Error())
-			}
-		}
+		err = errs.Merge(err, srv.initModules(true, action))
+		err = errs.Merge(err, srv.Logs().Flush())
 	}()
 
 	cfg := srv.httpServer.TLSConfig
