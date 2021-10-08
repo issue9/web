@@ -30,20 +30,20 @@ func TestIsDep(t *testing.T) {
 	d1 := NewItem("d1", []string{"d3"}, nil)
 	items := []*Item{m1, d1}
 
-	a.True(isDep(items, "m1", "d1"))
-	a.True(isDep(items, "m1", "d2"))
-	a.True(isDep(items, "m1", "d3")) // 通过 d1 继承
-	a.False(isDep(items, "m1", "m1"))
+	a.True(IsDep(items, "m1", "d1"))
+	a.True(IsDep(items, "m1", "d2"))
+	a.True(IsDep(items, "m1", "d3")) // 通过 d1 继承
+	a.False(IsDep(items, "m1", "m1"))
 
 	// 循环依赖
 	m1 = &Item{id: "m1", deps: []string{"d1", "d2"}}
 	d1 = &Item{id: "d1", deps: []string{"d3"}}
 	d3 := &Item{id: "d3", deps: []string{"d1"}}
 	items = []*Item{m1, d1, d3}
-	a.True(isDep(items, "d1", "d1"))
+	a.True(IsDep(items, "d1", "d1"))
 
 	// 不存在的模块
-	a.False(isDep(items, "d10", "d1"))
+	a.False(IsDep(items, "d10", "d1"))
 }
 
 func TestCheckDeps(t *testing.T) {

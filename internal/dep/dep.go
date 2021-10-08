@@ -69,15 +69,15 @@ func checkDeps(items []*Item, m *Item) error {
 		}
 	}
 
-	if isDep(items, m.id, m.id) {
+	if IsDep(items, m.id, m.id) {
 		return localeutil.Error("cyclic dependence", m.id)
 	}
 
 	return nil
 }
 
-// m1 是否依赖 m2
-func isDep(items []*Item, m1, m2 string) bool {
+// IsDep m1 是否依赖 m2
+func IsDep(items []*Item, m1, m2 string) bool {
 	mod1 := findItem(items, m1)
 	if mod1 == nil {
 		return false
@@ -89,7 +89,7 @@ func isDep(items []*Item, m1, m2 string) bool {
 		}
 
 		if findItem(items, depID) != nil {
-			if isDep(items, depID, m2) {
+			if IsDep(items, depID, m2) {
 				return true
 			}
 		}

@@ -160,22 +160,31 @@ func TestModule_Object(t *testing.T) {
 	m1, err := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)
 	m1.AttachObject(o)
-	a.Equal(m1.Object(), o)
+	a.Equal(m1.object, o)
 
 	m2, err := s.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
 	a.NotError(err).NotNil(m2)
 	a.Equal(m2.DepObject("m1"), o)
+
+	// 间接依赖
+	m3, err := s.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"), "m2")
+	a.NotError(err).NotNil(m3)
+	a.Equal(m3.DepObject("m1"), o)
+
+	// 找不到依赖对象
 	a.PanicString(func() {
 		m2.DepObject("not-dep")
-	}, "的依赖对象")
+	}, "not-dep 并不是 m2 的依赖对象")
+
+	// 循环依赖
 	a.PanicString(func() {
 		m1.DepObject("m1")
-	}, "的依赖对象")
+	}, "m1 并不是 m1 的依赖对象")
 
-	// m2 并未指定 Object
-	m3, err := s.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"), "not-exists")
-	a.NotError(err).NotNil(m3)
+	// 不存在的依赖项
+	m4, err := s.NewModule("m4", "1.0.0", localeutil.Phrase("m4 desc"), "not-exists")
+	a.NotError(err).NotNil(m4)
 	a.PanicString(func() {
-		m3.DepObject("not-exists")
+		m4.DepObject("not-exists")
 	}, "依赖项 not-exists 未找到")
 }

@@ -233,26 +233,24 @@ func (m *Module) Actions() []string {
 // 若模块中有需要外放的数据，可以通过此方法将数据附加在模块上。
 func (m *Module) AttachObject(v interface{}) { m.object = v }
 
-// Object 获取通过 AttachObject 关联的对象
-func (m *Module) Object() interface{} { return m.object }
-
 // DepObject 获取依赖项关联的对象
-func (m *Module) DepObject(dep string) interface{} {
-	if sliceutil.Index(m.deps, func(i int) bool { return m.deps[i] == dep }) < 0 {
-		panic(fmt.Sprintf("%s 并不是 %s 的依赖对象", dep, m.id))
+func (m *Module) DepObject(depID string) interface{} {
+	// TODO: 每次都需要构建 items，想办法简化掉！
+	items := make([]*dep.Item, 0, len(m.Server().modules))
+	for _, m := range m.Server().modules {
+		items = append(items, dep.NewItem(m.id, m.deps, nil))
 	}
 
-	var obj *Module
+	if !dep.IsDep(items, m.id, depID) {
+		panic(fmt.Sprintf("%s 并不是 %s 的依赖对象", depID, m.id))
+	}
+
 	for _, mod := range m.srv.modules {
-		if mod.id == dep {
-			obj = mod
-			break
+		if mod.id == depID {
+			return mod.object
 		}
 	}
-	if obj == nil {
-		panic(fmt.Sprintf("依赖项 %s 未找到", dep))
-	}
-	return obj.Object()
+	panic(fmt.Sprintf("依赖项 %s 未找到", depID))
 }
 
 // AddInit 注册模块初始化时执行的函数
