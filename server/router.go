@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/issue9/middleware/v5/debugger"
+	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 )
 
@@ -20,7 +21,7 @@ type (
 	// Router 路由管理
 	Router struct {
 		srv      *Server
-		router   *group.Router
+		router   *mux.Router
 		filters  []Filter
 		root     string
 		path     string
@@ -118,7 +119,7 @@ func (router *Router) handle(path string, h HandlerFunc, method string) *Router 
 	return router
 }
 
-func (router *Router) MuxRouter() *group.Router { return router.router }
+func (router *Router) MuxRouter() *mux.Router { return router.router }
 
 func (router *Router) Get(path string, h HandlerFunc) *Router {
 	return router.handle(path, h, http.MethodGet)

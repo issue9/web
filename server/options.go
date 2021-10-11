@@ -134,7 +134,7 @@ func (o *Options) sanitize() (*Options, error) {
 	if o.CORS == nil {
 		o.CORS = mux.DeniedCORS()
 	}
-	o.groups = group.New(o.DisableHead, o.CORS, nil, nil)
+	o.groups = group.New(o.DisableHead, o.CORS)
 
 	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {

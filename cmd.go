@@ -44,7 +44,7 @@ type Command struct {
 
 	// 当作服务运行的标签名
 	//
-	// 当标签名在此列表时，Server.Serve 的第二个参数为 true。
+	// 当标签名在此列表时，Server.Serve 的第一个参数为 true。
 	ServeTags []string
 
 	// 触发退出的信号
@@ -74,7 +74,7 @@ type Command struct {
 
 	// 以下是初始 Server 对象的参数
 
-	Locale       *serialization.Locale // 默认情况下，能正常解析 xml、yaml 和 json
+	Locale       *serialization.Locale // 为空会给定默认值，能正常解析 xml、yaml 和 json
 	LogsFilename string                // 默认为 logs.xml
 	WebFilename  string                // 默认为 web.yaml
 }
