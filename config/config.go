@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 
+	"github.com/issue9/localeutil"
 	"golang.org/x/text/message"
 )
 
@@ -13,7 +14,7 @@ import (
 type Error struct {
 	Config  string      // 配置文件的路径
 	Field   string      // 字段名
-	Message string      // 错误信息
+	Message interface{} // 错误信息
 	Value   interface{} // 原始值
 }
 
@@ -22,5 +23,12 @@ func (err *Error) Error() string {
 }
 
 func (err *Error) LocaleString(p *message.Printer) string {
-	return p.Sprintf("config error", err.Config, err.Field, err.Message)
+	var msg string
+	if ls, ok := err.Message.(localeutil.LocaleStringer); ok {
+		msg = ls.LocaleString(p)
+	} else {
+		msg = fmt.Sprint(err.Message)
+	}
+
+	return p.Sprintf("config error", err.Config, err.Field, msg)
 }

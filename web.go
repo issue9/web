@@ -16,7 +16,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.43.0"
+const Version = "0.44.0"
 
 type (
 	Server       = server.Server
@@ -30,11 +30,6 @@ type (
 	Action       = server.Action
 	ResultFields = content.ResultFields
 	Locale       = serialization.Locale
-
-	// ConfigError 配置文件的错误信息
-	//
-	// 同时也实现了 LocaleStringer 接口。
-	ConfigError = config.Error
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//

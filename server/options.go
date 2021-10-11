@@ -47,7 +47,7 @@ type Options struct {
 
 	// 端口号
 	//
-	// 格式参照 net/http.Server.Addr 字段
+	// 格式参照 net/http.Server.Addr 字段。可以为空，由 net/http.Server 确定其默认值。
 	Port string
 
 	// 是否禁止自动生成 HEAD 请求
@@ -158,7 +158,7 @@ func (o *Options) sanitize() (*Options, error) {
 	}
 
 	if o.Tag == language.Und {
-		tag, err := localeutil.SystemLanguageTag()
+		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
 			return nil, err
 		}

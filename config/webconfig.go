@@ -21,7 +21,7 @@ type Webconfig struct {
 
 	// 网站端口
 	//
-	// 格式与 net/http.Server.Addr 相同
+	// 格式与 net/http.Server.Addr 相同。可以为空，由 net/http.Server 确定其默认值。
 	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
 	// 是否禁用自动生成 HEAD 请求
