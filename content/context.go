@@ -268,7 +268,7 @@ func (c *Content) acceptLanguage(header string) language.Tag {
 	return tag
 }
 
-// conentType 从 content-type 报头解析出需要用到的解码函数
+// 从 content-type 报头解析出需要用到的解码函数
 func (c *Content) conentType(header string) (serialization.UnmarshalFunc, encoding.Encoding, error) {
 	var (
 		mt      = DefaultMimetype

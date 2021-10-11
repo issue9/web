@@ -4,8 +4,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message"
 )
@@ -19,15 +17,13 @@ type Error struct {
 }
 
 func (err *Error) Error() string {
-	return fmt.Sprintf("%s:%s[%s]", err.Config, err.Field, err.Message)
+	return err.LocaleString(localeutil.EmptyPrinter())
 }
 
 func (err *Error) LocaleString(p *message.Printer) string {
-	var msg string
+	msg := err.Message
 	if ls, ok := err.Message.(localeutil.LocaleStringer); ok {
 		msg = ls.LocaleString(p)
-	} else {
-		msg = fmt.Sprint(err.Message)
 	}
 
 	return p.Sprintf("config error", err.Config, err.Field, msg)
