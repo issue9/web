@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/localeutil"
 )
 
 type object struct {
@@ -23,16 +24,16 @@ func TestFiles_Load(t *testing.T) {
 	testdata := os.DirFS("./testdata")
 
 	v := &object{}
-	a.ErrorString(f.Load("./testdata/web.xml", v), "未找到适合")
+	a.Equal(f.Load("./testdata/web.xml", v), localeutil.Error("not found serialization function %s", "web.xml"))
 
-	f.Add(xml.Marshal, xml.Unmarshal, ".xml")
+	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{}
 	a.NotError(f.LoadFS(testdata, "web.xml", v))
 	a.Equal(v.Port, ":8082")
 
 	// 不存在的 yaml
 	v = &object{}
-	a.Error(f.LoadFS(testdata, "web.yaml", v), "未找到适合")
+	a.Error(f.LoadFS(testdata, "web.yaml", v))
 }
 
 func TestFiles_Save(t *testing.T) {
@@ -42,9 +43,9 @@ func TestFiles_Save(t *testing.T) {
 	tmp := os.TempDir()
 
 	v := &object{Port: ":333"}
-	a.ErrorString(f.Save(tmp+"/web.xml", v), "未找到适合")
+	a.Equal(f.Save(tmp+"/web.xml", v), localeutil.Error("not found serialization function %s", tmp+"/web.xml"))
 
-	f.Add(xml.Marshal, xml.Unmarshal, ".xml")
+	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{Port: ":333"}
 	a.NotError(f.Save(tmp+"/web.xml", v))
 }

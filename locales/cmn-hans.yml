@@ -8,26 +8,35 @@ messages:
   message:
     msg: 必须大于 0
 
-- key: register router
+- key: 'register router %s'
   message:
     msg: '注册路由: %[1]s'
 
-- key: register cron
+- key: 'register cron %s'
   message:
     msg: '注册计划任务: %[1]s'
 
-- key: register service
+- key: 'register service %s'
   message:
     msg: '注册服务: %[1]s'
 
-- key: config error
+- key: '%s at %s:%s'
   message:
-    msg: '位于 %[1]s:%[2]s 发生了 %[3]s'
+    msg: '位于 %[2]s:%[3]s 发生了 %[1]s'
 
-- key: cyclic dependence
+- key: '%s cyclic dependence'
   message:
     msg: '%[1]s 循环依赖自身'
 
-- key: not found dependence
+- key: 'not found dependence %s'
   message:
     msg: '未找到 %[1]s 的依赖模块 %[2]s'
+
+# 合并两个错误对象返回的提示信息
+- key: '%s when return %s'
+  message:
+    msg: '在返回 %[2]s 时再次发生了错误 %[1]s'
+
+- key: 'not found serialization function %s'
+  message:
+    msg: '未找到适合 %[1]s 的序列化函数'

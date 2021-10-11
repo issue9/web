@@ -3,10 +3,11 @@
 package serialization
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/issue9/localeutil"
 )
 
 // Files 提供针对文件的序列化操作
@@ -21,7 +22,7 @@ func NewFiles(c int) *Files { return &Files{Serialization: New(c)} }
 func (f *Files) Save(p string, v interface{}) error {
 	m, _ := f.searchByExt(p)
 	if m == nil {
-		return fmt.Errorf("未找到适合 %s 的函数", p)
+		return localeutil.Error("not found serialization function %s", p)
 	}
 
 	data, err := m(v)
@@ -43,7 +44,7 @@ func (f *Files) Load(p string, v interface{}) error {
 func (f *Files) LoadFS(fsys fs.FS, name string, v interface{}) error {
 	_, u := f.searchByExt(name)
 	if u == nil {
-		return fmt.Errorf("未找到适合 %s 的函数", name)
+		return localeutil.Error("not found serialization function %s", name)
 	}
 
 	data, err := fs.ReadFile(fsys, name)

@@ -55,7 +55,7 @@ func TestCheckDeps(t *testing.T) {
 
 	mm := findItem(items, "m1")
 	a.NotNil(mm).Equal(mm, m1).
-		Equal(checkDeps(items, m1), localeutil.Error("not found dependence", "m1", "d2")) // 依赖项不存在
+		Equal(checkDeps(items, m1), localeutil.Error("not found dependence %s", "m1", "d2")) // 依赖项不存在
 
 	m1 = NewItem("m1", []string{"d1", "d2"}, nil)
 	d1 = NewItem("d1", []string{"d3"}, nil)
@@ -70,7 +70,7 @@ func TestCheckDeps(t *testing.T) {
 	d3 := NewItem("d3", []string{"d2"}, nil)
 	items = []*Item{m1, d1, d2, d3}
 	a.NotNil(findItem(items, "d2")).
-		Equal(checkDeps(items, d2), localeutil.Error("cyclic dependence", "d2"))
+		Equal(checkDeps(items, d2), localeutil.Error("%s cyclic dependence", "d2"))
 }
 
 func TestInitItem(t *testing.T) {

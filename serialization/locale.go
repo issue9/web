@@ -3,7 +3,6 @@
 package serialization
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -53,7 +52,7 @@ func (l *Locale) LoadFileFS(fsys fs.FS, glob string) error {
 	for _, f := range matchs {
 		_, u := l.Files().searchByExt(f)
 		if u == nil {
-			return fmt.Errorf("未找到适合 %s 的函数", f)
+			return localeutil.Error("not found serialization function %s", f)
 		}
 
 		if err := localeutil.LoadMessageFromFS(l.b, fsys, f, u); err != nil {

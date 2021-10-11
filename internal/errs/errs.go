@@ -3,7 +3,15 @@
 // Package errs 对错误信息的二次处理
 package errs
 
-import "fmt"
+import (
+	"github.com/issue9/localeutil"
+	"golang.org/x/text/message"
+)
+
+type mergeErrors struct {
+	err error
+	msg localeutil.LocaleStringer
+}
 
 // Merge 合并多个错误实例
 //
@@ -17,5 +25,14 @@ func Merge(origin, err error) error {
 		return err
 	}
 
-	return fmt.Errorf("在返回 %w 时再次出现错误 %s", origin, err.Error())
+	return &mergeErrors{
+		err: origin,
+		msg: localeutil.Phrase("%s when return %s", err, origin),
+	}
 }
+
+func (err *mergeErrors) Error() string { return err.LocaleString(localeutil.EmptyPrinter()) }
+
+func (err *mergeErrors) Unwrap() error { return err.err }
+
+func (err *mergeErrors) LocaleString(p *message.Printer) string { return err.msg.LocaleString(p) }

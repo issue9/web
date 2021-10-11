@@ -26,5 +26,5 @@ func (err *Error) LocaleString(p *message.Printer) string {
 		msg = ls.LocaleString(p)
 	}
 
-	return p.Sprintf("config error", err.Config, err.Field, msg)
+	return p.Sprintf("%s at %s:%s", msg, err.Config, err.Field)
 }

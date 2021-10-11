@@ -293,7 +293,7 @@ func (t *Action) AddRoutes(f func(r *Router), routerName string) *Action {
 		routerName = t.Name()
 	}
 
-	msg := t.Server().LocalePrinter().Sprintf("register router", routerName)
+	msg := t.Server().LocalePrinter().Sprintf("register router %s", routerName)
 	return t.AddInit(msg, func() error {
 		r := t.Server().Router(routerName)
 		if r == nil {

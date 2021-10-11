@@ -307,7 +307,7 @@ func (t *Action) Module() *Module { return t.m }
 // f 表示服务的运行函数；
 // title 是对该服务的简要说明。
 func (t *Action) AddService(title string, f service.Func) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register service", title)
+	msg := t.Server().LocalePrinter().Sprintf("register service %s", title)
 	return t.AddInit(msg, func() error {
 		t.Server().Services().AddService(title, f)
 		return nil
@@ -321,7 +321,7 @@ func (t *Action) AddService(title string, f service.Func) *Action {
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Action) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddCron(title, f, spec, delay)
 	})
@@ -334,7 +334,7 @@ func (t *Action) AddCron(title string, f scheduled.JobFunc, spec string, delay b
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Action) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddTicker(title, f, dur, imm, delay)
 	})
@@ -347,7 +347,7 @@ func (t *Action) AddTicker(title string, f scheduled.JobFunc, dur time.Duration,
 // t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Action) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
 	return t.AddInit(msg, func() error {
 		return t.Server().Services().AddAt(title, f, ti, delay)
 	})
@@ -360,7 +360,7 @@ func (t *Action) AddAt(title string, f scheduled.JobFunc, ti time.Time, delay bo
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (t *Action) AddJob(title string, f scheduled.JobFunc, scheduler schedulers.Scheduler, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron", title)
+	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
 	return t.AddInit(msg, func() error {
 		t.Server().Services().AddJob(title, f, scheduler, delay)
 		return nil

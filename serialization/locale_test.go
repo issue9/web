@@ -19,7 +19,7 @@ func TestLocale_LoadFile(t *testing.T) {
 	l := NewLocale(catalog.NewBuilder(), f)
 	a.NotNil(l)
 
-	a.ErrorString(l.LoadFile("./testdata/*.yaml"), "未找到适合")
+	a.Error(l.LoadFile("./testdata/*.yaml"))
 
 	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml"))
