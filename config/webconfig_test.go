@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
@@ -27,6 +28,7 @@ func TestNewOptions(t *testing.T) {
 
 	opt, err = NewOptions(locale, os.DirFS("./testdata"), "logs.xml", "web.yaml")
 	a.NotError(err).NotNil(opt)
+	a.Equal(opt.Tag, language.Und)
 
 	opt, err = NewOptions(locale, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)

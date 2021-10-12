@@ -10,6 +10,8 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/logs/v3/config"
+	"github.com/issue9/mux/v5"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
@@ -19,6 +21,13 @@ import (
 type Webconfig struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
+	// 指定默认语言
+	//
+	// 当客户端未指定 Accept-Language 时，会采用此值，
+	// 如果为空，则会尝试当前用户的语言。
+	Language    string `yaml:"language,omitempty" json:"language,omitempty" xml:"language,attr,omitempty"`
+	languageTag language.Tag
+
 	// 网站端口
 	//
 	// 格式与 net/http.Server.Addr 相同。可以为空，由 net/http.Server 确定其默认值。
@@ -26,6 +35,11 @@ type Webconfig struct {
 
 	// 是否禁用自动生成 HEAD 请求
 	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
+
+	// 跨域的相关设置
+	//
+	// 为空表示禁用跨域的相关设置。
+	CORS *mux.CORS `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
 
 	// 与 HTTP 请求相关的设置项
 	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
@@ -100,6 +114,7 @@ func (conf *Webconfig) NewOptions(locale *serialization.Locale, fs fs.FS, l *log
 		Location:    conf.location,
 		Cache:       conf.cache,
 		DisableHead: conf.DisableHead,
+		CORS:        conf.CORS,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -120,6 +135,14 @@ func (conf *Webconfig) sanitize(l *logs.Logs) error {
 	if err := conf.buildCache(l); err != nil {
 		err.Field = "cache." + err.Field
 		return err
+	}
+
+	if conf.Language != "" {
+		tag, err := language.Parse(conf.Language)
+		if err != nil {
+			return &Error{Field: "language", Message: err}
+		}
+		conf.languageTag = tag
 	}
 
 	if err := conf.buildTimezone(); err != nil {
