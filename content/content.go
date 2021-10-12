@@ -39,15 +39,15 @@ type Content struct {
 // files 加载本地化数据的方法；
 // tag 默认的本地化语言标签，context 查找不到数据时采用此值，同时也作为 context 实例的默认输出语言。
 func New(builder BuildResultFunc, loc *time.Location, files *serialization.Files, tag language.Tag) *Content {
-	b := catalog.NewBuilder(catalog.Fallback(tag))
+	l := serialization.NewLocale(catalog.NewBuilder(catalog.Fallback(tag)), files)
 
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
 
 		location:      loc,
-		locale:        serialization.NewLocale(b, files),
+		locale:        l,
 		tag:           tag,
-		localePrinter: message.NewPrinter(tag, message.Catalog(b)),
+		localePrinter: l.Printer(tag),
 
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,

@@ -105,15 +105,11 @@ type Options struct {
 	Tag language.Tag
 }
 
-func (o *Options) sanitize() (*Options, error) {
-	if o == nil {
-		o = &Options{}
-	}
-
+func (o *Options) sanitize() error {
 	if o.FS == nil {
 		dir, err := os.Executable()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		o.FS = os.DirFS(filepath.Dir(dir))
 	}
@@ -147,22 +143,18 @@ func (o *Options) sanitize() (*Options, error) {
 	if o.Logs == nil {
 		l, err := logs.New(nil)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		o.Logs = l
 	}
 
 	if o.Tag == language.Und {
-		tag, err := localeutil.DetectUserLanguageTag()
-		if err != nil {
-			return nil, err
-		}
-		o.Tag = tag
+		o.Tag, _ = localeutil.DetectUserLanguageTag()
 	}
 
 	if o.Files == nil {
 		o.Files = serialization.NewFiles(5)
 	}
 
-	return o, nil
+	return nil
 }
