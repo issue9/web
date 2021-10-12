@@ -25,6 +25,6 @@ func TestCommand_sanitize(t *testing.T) {
 	a.NotError(err)
 
 	a.Equal(cmd.Out, os.Stdout).
-		NotNil(cmd.Locale).
+		NotNil(cmd.Files).
 		Equal(cmd.CmdFS, "fs")
 }

@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/content/form"
+	"github.com/issue9/web/serialization"
 )
 
 var _ BuildResultFunc = DefaultBuilder
@@ -193,7 +194,7 @@ func buildResultCatalog(c *Content, a *assert.Assertion) {
 
 func TestContent_Result(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
 	buildResultCatalog(c, a)
 
 	c.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
@@ -236,7 +237,7 @@ func TestContent_Result(t *testing.T) {
 
 func TestContent_AddResult(t *testing.T) {
 	a := assert.New(t)
-	mgr := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	mgr := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
 
 	a.NotPanic(func() {
 		mgr.AddResult(400, 1, localeutil.Phrase("1"))
@@ -258,7 +259,7 @@ func TestContent_AddResult(t *testing.T) {
 
 func TestContent_Results(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
 	a.NotNil(c)
 	buildResultCatalog(c, a)
 

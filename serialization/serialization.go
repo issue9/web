@@ -43,9 +43,8 @@ func New(c int) *Serialization {
 //
 // m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理；
 //
-// name 表示名称，一般为 mimetype 名称，比如 application/xml 等，用户也可以添加其它值，比如：
-//  c.Add(json.Marshal, json.Unmarshal, "application/json", ".json")
-// 后期用户可以根据文件后缀名从 c.Search 直接查找相应的序列化函数。
+// name 表示之后用于查找该序列化函数的唯一 ID，
+// 后期用户可以根据 name 从 c.Search 直接查找相应的序列化函数。
 func (s *Serialization) Add(m MarshalFunc, u UnmarshalFunc, name ...string) error {
 	for _, n := range name {
 		if err := s.add(n, m, u); err != nil {

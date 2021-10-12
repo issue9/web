@@ -29,7 +29,7 @@ type (
 	Router       = server.Router
 	Action       = server.Action
 	ResultFields = content.ResultFields
-	Locale       = serialization.Locale
+	Files        = serialization.Files
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
@@ -42,11 +42,11 @@ type (
 
 // LoadServer 从配置文件加载并实例化 Server 对象
 //
-// locale 指定了用于加载本地化的方法，同时其关联的 serialization.Files 也用于加载配置文件；
+// files 指定了用于加载本地化的方法，同时也用于加载配置文件；
 // logs 和 web 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
 // o 用于在初始化 Server 之前，加载配置文件之后，对 *Options 进行一次修改；
-func LoadServer(name, version string, l *Locale, f fs.FS, logs, web string, o OptionsFunc) (*Server, error) {
-	opt, err := config.NewOptions(l, f, logs, web)
+func LoadServer(name, version string, files *Files, f fs.FS, logs, web string, o OptionsFunc) (*Server, error) {
+	opt, err := config.NewOptions(files, f, logs, web)
 	if err != nil {
 		return nil, err
 	}

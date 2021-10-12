@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/serialization"
 )
@@ -35,16 +36,18 @@ type Content struct {
 
 // New 返回 *Content 实例
 //
-// locale 本地化数据，context 从此处查找对应的本地化信息；
+// files 加载本地化数据的方法；
 // tag 默认的本地化语言标签，context 查找不到数据时采用此值，同时也作为 context 实例的默认输出语言。
-func New(builder BuildResultFunc, loc *time.Location, locale *serialization.Locale, tag language.Tag) *Content {
+func New(builder BuildResultFunc, loc *time.Location, files *serialization.Files, tag language.Tag) *Content {
+	b := catalog.NewBuilder(catalog.Fallback(tag))
+
 	return &Content{
 		mimetypes: serialization.NewMimetypes(10),
 
 		location:      loc,
-		locale:        locale,
+		locale:        serialization.NewLocale(b, files),
 		tag:           tag,
-		localePrinter: message.NewPrinter(tag, message.Catalog(locale.Builder())),
+		localePrinter: message.NewPrinter(tag, message.Catalog(b)),
 
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  builder,

@@ -15,7 +15,6 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content/text"
 	"github.com/issue9/web/content/text/testobject"
@@ -23,19 +22,13 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-func newLocale(a *assert.Assertion) *serialization.Locale {
-	l := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(10))
-	a.NotNil(l)
-	return l
-}
-
 func TestContent_NewContext(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	lw := &bytes.Buffer{}
 	l := log.New(lw, "", 0)
 
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	b := c.Locale().Builder()
@@ -171,7 +164,7 @@ func TestContext_Body(t *testing.T) {
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
@@ -204,7 +197,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	// 自定义报头
@@ -300,7 +293,7 @@ func TestAcceptCharset(t *testing.T) {
 func TestContent_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.Afrikaans)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.Afrikaans)
 	b := c.Locale().Builder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
@@ -326,7 +319,7 @@ func TestContent_acceptLanguage(t *testing.T) {
 func TestContent_contentType(t *testing.T) {
 	a := assert.New(t)
 
-	mt := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	mt := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotNil(mt)
 
 	f, e, err := mt.conentType(";;;")

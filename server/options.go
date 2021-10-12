@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
@@ -92,10 +91,10 @@ type Options struct {
 	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
 	Plugins string
 
-	// 指定用于处理本地化的方法
+	// 指定用于序列化文件的方法
 	//
-	// 可以为空。
-	Locale *serialization.Locale
+	// 该对象同时被用于加载配置文件和序列化文件。 如果为空，会初始化一个空对象。
+	Files *serialization.Files
 
 	// 默认的语言标签
 	//
@@ -153,16 +152,16 @@ func (o *Options) sanitize() (*Options, error) {
 		o.Logs = l
 	}
 
-	if o.Locale == nil {
-		o.Locale = serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
-	}
-
 	if o.Tag == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
 			return nil, err
 		}
 		o.Tag = tag
+	}
+
+	if o.Files == nil {
+		o.Files = serialization.NewFiles(5)
 	}
 
 	return o, nil

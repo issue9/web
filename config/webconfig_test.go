@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/logs/v3"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/serialization"
@@ -19,19 +18,19 @@ import (
 
 func TestNewOptions(t *testing.T) {
 	a := assert.New(t)
-	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
+	files := serialization.NewFiles(5)
 
-	opt, err := NewOptions(locale, os.DirFS("./testdata"), "logs.xml", "web.yaml")
+	opt, err := NewOptions(files, os.DirFS("./testdata"), "logs.xml", "web.yaml")
 	a.Error(err).Nil(opt)
 
-	a.NotError(locale.Files().Add(xml.Marshal, xml.Unmarshal, ".xml"))
-	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
+	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	opt, err = NewOptions(locale, os.DirFS("./testdata"), "logs.xml", "web.yaml")
+	opt, err = NewOptions(files, os.DirFS("./testdata"), "logs.xml", "web.yaml")
 	a.NotError(err).NotNil(opt)
 	a.Equal(opt.Tag, language.Und)
 
-	opt, err = NewOptions(locale, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
+	opt, err = NewOptions(files, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)
 }
 

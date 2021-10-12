@@ -12,12 +12,13 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/serialization"
 )
 
 func TestContent_catalog(t *testing.T) {
 	a := assert.New(t)
 
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotNil(c)
 
 	err := c.Locale().Builder().SetString(language.SimplifiedChinese, "test", "测试")
@@ -33,7 +34,7 @@ func TestContent_catalog(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, newLocale(a), language.SimplifiedChinese)
+	c := New(DefaultBuilder, time.Local, serialization.NewFiles(10), language.SimplifiedChinese)
 	a.NotNil(c)
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(c.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))

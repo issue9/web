@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/config"
@@ -74,9 +73,9 @@ type Command struct {
 
 	// 以下是初始 Server 对象的参数
 
-	Locale       *serialization.Locale // 为空会给定默认值，能正常解析 xml、yaml 和 json
-	LogsFilename string                // 默认为 logs.xml
-	WebFilename  string                // 默认为 web.yaml
+	Files        *serialization.Files // 为空会给定默认值，能正常解析 xml、yaml 和 json
+	LogsFilename string               // 默认为 logs.xml
+	WebFilename  string               // 默认为 web.yaml
 }
 
 // Exec 执行命令行操作
@@ -104,22 +103,22 @@ func (cmd *Command) sanitize() *config.Error {
 		cmd.Out = os.Stdout
 	}
 
-	if cmd.Locale == nil {
-		l := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
+	if cmd.Files == nil {
+		f := serialization.NewFiles(5)
 
-		if err := l.Files().Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
-			return &config.Error{Field: "Locale", Message: err.Error()}
+		if err := f.Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
+			return &config.Error{Field: "Files", Message: err}
 		}
 
-		if err := l.Files().Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
-			return &config.Error{Field: "Locale", Message: err.Error()}
+		if err := f.Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
+			return &config.Error{Field: "Files", Message: err}
 		}
 
-		if err := l.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-			return &config.Error{Field: "Locale", Message: err.Error()}
+		if err := f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
+			return &config.Error{Field: "Files", Message: err}
 		}
 
-		cmd.Locale = l
+		cmd.Files = f
 	}
 
 	if cmd.LogsFilename == "" {
@@ -153,7 +152,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Locale, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename, cmd.Options)
+	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename, cmd.Options)
 	if err != nil {
 		return err
 	}

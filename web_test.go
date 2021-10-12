@@ -12,7 +12,6 @@ import (
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/content/text"
@@ -24,18 +23,19 @@ import (
 func TestNewServer(t *testing.T) {
 	a := assert.New(t)
 
-	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
-	a.NotError(locale)
-	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-	a.NotError(locale.LoadFileFS(locales.Locales, "*.yml"))
+	files := serialization.NewFiles(5)
+	a.NotError(files)
+	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
 	buf := new(bytes.Buffer)
 	log, err := logs.New(nil)
 	a.NotError(err).NotNil(log)
 	a.NotError(log.SetOutput(logs.LevelInfo, buf))
 
-	srv, err := NewServer("app", "v1.1", &Options{Locale: locale, Logs: log, Tag: language.MustParse("cmn-hans")})
+	srv, err := NewServer("app", "v1.1", &Options{Files: files, Logs: log, Tag: language.MustParse("cmn-hans")})
 	a.NotError(err).NotNil(srv)
+
+	a.NotError(srv.Locale().LoadFileFS(locales.Locales, "*.yml")) // 加载本地信息
 
 	m1, err := srv.NewModule("m1", "1.0.0", Phrase("m1 desc"))
 	a.NotError(err).NotNil(m1)

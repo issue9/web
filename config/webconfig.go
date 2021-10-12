@@ -73,11 +73,11 @@ type Webconfig struct {
 
 // NewOptions 从配置文件初始化 server.Options 实例
 //
-// locale 指定了用于加载本地化的方法，同时其关联的 serialization.Files 也用于加载配置文件；
+// files 指定了用于加载本地化的方法，同时也用于加载配置文件；
 // logsFilename 和 webFilename 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-func NewOptions(locale *serialization.Locale, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
+func NewOptions(files *serialization.Files, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
 	conf := &config.Config{}
-	if err := locale.Files().LoadFS(f, logsFilename, conf); err != nil {
+	if err := files.LoadFS(f, logsFilename, conf); err != nil {
 		return nil, err
 	}
 
@@ -87,15 +87,15 @@ func NewOptions(locale *serialization.Locale, f fs.FS, logsFilename, webFilename
 	}
 
 	webconfig := &Webconfig{}
-	if err := locale.Files().LoadFS(f, webFilename, webconfig); err != nil {
+	if err := files.LoadFS(f, webFilename, webconfig); err != nil {
 		return nil, err
 	}
 
-	return webconfig.NewOptions(locale, f, l)
+	return webconfig.NewOptions(files, f, l)
 }
 
 // NewOptions 返回 server.Options 对象
-func (conf *Webconfig) NewOptions(locale *serialization.Locale, fs fs.FS, l *logs.Logs) (*server.Options, error) {
+func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS, l *logs.Logs) (*server.Options, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	if err := conf.sanitize(l); err != nil {
@@ -124,7 +124,7 @@ func (conf *Webconfig) NewOptions(locale *serialization.Locale, fs fs.FS, l *log
 		Logs:                l,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
 		Plugins:             conf.Plugins,
-		Locale:              locale,
+		Files:               files,
 	}, nil
 }
 

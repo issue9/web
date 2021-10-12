@@ -88,7 +88,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:    o.Cache,
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
-		content:  content.New(o.ResultBuilder, o.Location, o.Locale, o.Tag),
+		content:  content.New(o.ResultBuilder, o.Location, o.Files, o.Tag),
 		services: service.NewManager(o.Logs, o.Location),
 		events:   make(map[string]events.Eventer, 5),
 	}
