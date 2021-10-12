@@ -238,13 +238,23 @@ func TestRouter_Static(t *testing.T) {
 	a.NotError(err).NotNil(r)
 
 	r.Get("/m1/test", f201)
-	a.Error(r.Static("/path", "./testdata", "index.html"))      // 不包含命名参数
-	a.Error(r.Static("/path/{abc", "./testdata", "index.html")) // 格式无效
-	a.Error(r.Static("/path/abc}", "./testdata", "index.html")) // 格式无效
-	a.Error(r.Static("/path/{}", "./testdata", "index.html"))   // 命名参数未指定名称
-	a.Error(r.Static("/path/{}}", "./testdata", "index.html"))  // 格式无效
+	a.Panic(func() {
+		r.Static("/path", "./testdata", "index.html") // 不包含命名参数
+	})
+	a.Panic(func() {
+		r.Static("/path/{abc", "./testdata", "index.html") // 格式无效
+	})
+	a.Panic(func() {
+		r.Static("/path/abc}", "./testdata", "index.html") // 格式无效
+	})
+	a.Panic(func() {
+		r.Static("/path/{}", "./testdata", "index.html") // 命名参数未指定名称
+	})
+	a.Panic(func() {
+		r.Static("/path/{}}", "./testdata", "index.html") // 格式无效
+	})
 
-	a.NotError(r.Static("/client/{path}", "./testdata/", "index.html"))
+	r.Static("/client/{path}", "./testdata/", "index.html")
 	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
@@ -303,7 +313,7 @@ func TestRouter_Static(t *testing.T) {
 	a.NotNil(host)
 	r, err = server.NewRouter("example", "https://example.com/blog", host)
 	a.NotError(err).NotNil(r)
-	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))
+	r.Static("/admin/{path}", "./testdata", "index.html")
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
 	server.groups.ServeHTTP(w, req)

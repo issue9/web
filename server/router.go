@@ -3,7 +3,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -203,14 +202,14 @@ func (router *Router) buildURL(prefix, pattern string, params map[string]string)
 // 比如在 Root 的值为 example.com/blog 时，
 // 将参数指定为 /admin/{path} 和 ~/data/assets/admin
 // 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (router *Router) Static(p, dir, index string) error {
-	return router.StaticFS(p, os.DirFS(dir), index)
+func (router *Router) Static(p, dir, index string) {
+	router.StaticFS(p, os.DirFS(dir), index)
 }
 
-func (router *Router) StaticFS(p string, f fs.FS, index string) error {
+func (router *Router) StaticFS(p string, f fs.FS, index string) {
 	lastStart := strings.LastIndexByte(p, '{')
 	if lastStart < 0 || len(p) == 0 || p[len(p)-1] != '}' || lastStart+2 == len(p) {
-		return errors.New("path 必须是命名参数结尾：比如 /assets/{path}。")
+		panic("path 必须是命名参数结尾：比如 /assets/{path}。")
 	}
 	prefix := path.Join(router.path, p[:lastStart])
 
@@ -222,7 +221,6 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 		}
 		return ctx.ServeFileFS(f, pp, index, nil)
 	}, http.MethodGet)
-	return nil
 }
 
 // Prefix 返回特定前缀的路由设置对象

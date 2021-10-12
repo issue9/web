@@ -262,7 +262,7 @@ func TestServer_Serve(t *testing.T) {
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
-	a.NotError(router.Static("/admin/{path}", "./testdata", "index.html"))
+	router.Static("/admin/{path}", "./testdata", "index.html")
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
@@ -446,7 +446,7 @@ func TestServer_DisableCompression(t *testing.T) {
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
-	a.NotError(router.Static("/client/{path}", "./testdata/", "index.html"))
+	router.Static("/client/{path}", "./testdata/", "index.html")
 
 	srv.Get("/root/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
