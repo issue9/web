@@ -10,7 +10,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/logs/v3/config"
-	"github.com/issue9/mux/v5"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
@@ -33,13 +32,10 @@ type Webconfig struct {
 	// 格式与 net/http.Server.Addr 相同。可以为空，由 net/http.Server 确定其默认值。
 	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
-	// 是否禁用自动生成 HEAD 请求
-	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
-
-	// 跨域的相关设置
+	// 路由的相关设置
 	//
-	// 为空表示禁用跨域的相关设置。
-	CORS *mux.CORS `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
+	// 提供了对全局路由的设置，但是用户依然可以通过 server.Server.MuxGroups().AddRouter 忽略这些设置项。
+	Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
 
 	// 与 HTTP 请求相关的设置项
 	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
@@ -107,14 +103,15 @@ func (conf *Webconfig) NewOptions(locale *serialization.Locale, fs fs.FS, l *log
 	}
 
 	h := conf.HTTP
+	r := conf.Router
 
 	return &server.Options{
 		Port:        conf.Port,
 		FS:          fs,
 		Location:    conf.location,
 		Cache:       conf.cache,
-		DisableHead: conf.DisableHead,
-		CORS:        conf.CORS,
+		DisableHead: r.DisableHead,
+		CORS:        r.cors,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -149,6 +146,14 @@ func (conf *Webconfig) sanitize(l *logs.Logs) error {
 		return err
 	}
 
+	if conf.Router == nil {
+		conf.Router = &Router{}
+	}
+	if err := conf.Router.sanitize(); err != nil {
+		err.Field = "router." + err.Field
+		return err
+	}
+
 	if conf.HTTP == nil {
 		conf.HTTP = &HTTP{}
 	}
@@ -160,14 +165,14 @@ func (conf *Webconfig) sanitize(l *logs.Logs) error {
 	return nil
 }
 
-func (conf *Webconfig) buildTimezone() error {
-	if conf.Timezone != "" {
+func (conf *Webconfig) buildTimezone() *Error {
+	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return &Error{Field: "timezone", Message: err.Error()}
+		return &Error{Field: "timezone", Message: err}
 	}
 	conf.location = loc
 

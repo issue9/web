@@ -171,8 +171,8 @@ func TestRouter_URL(t *testing.T) {
 func TestRouter_NewRouter(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a)
-	host, err := group.NewHosts("example.com")
-	a.NotError(err).NotNil(host)
+	host := group.NewHosts("example.com")
+	a.NotNil(host)
 
 	router, err := srv.NewRouter("host", "https://example.com", host)
 	a.NotError(err).NotNil(router)
@@ -299,8 +299,8 @@ func TestRouter_Static(t *testing.T) {
 
 	// 带域名
 	server = newServer(a)
-	host, err := group.NewHosts("example.com")
-	a.NotError(err).NotNil(host)
+	host := group.NewHosts("example.com")
+	a.NotNil(host)
 	r, err = server.NewRouter("example", "https://example.com/blog", host)
 	a.NotError(err).NotNil(r)
 	a.NotError(r.Static("/admin/{path}", "./testdata", "index.html"))

@@ -30,8 +30,8 @@ github.com/issue9/logs/v3 v3.0.0-beta.2/go.mod h1:VJ/n21ezxYx8VlatrOHKvPtQoZptah
 github.com/issue9/middleware/v5 v5.0.0-beta.2 h1:/UBbwcUV1xAY2vzm9F3BlJPcYiAQo+Ad7M5ni+z9/Co=
 github.com/issue9/middleware/v5 v5.0.0-beta.2/go.mod h1:80ditdAylvUjQLxb5w4UqvrKKVO4h7cocFPvA+nK1Ag=
 github.com/issue9/mux/v5 v5.0.0-beta.1/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
-github.com/issue9/mux/v5 v5.0.0-beta.3 h1:eJMHwbsGNiHGS5EEAviYiEbo6yQnxe3ACLfsDW7O/hE=
-github.com/issue9/mux/v5 v5.0.0-beta.3/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
+github.com/issue9/mux/v5 v5.0.0-beta.4 h1:gc1lA1pX0JClhcFyx79tWvcbiZjZEsopwQnMhDIXwgg=
+github.com/issue9/mux/v5 v5.0.0-beta.4/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
 github.com/issue9/qheader v0.5.4 h1:EJWT4VCtto4+J4A4sYpSwBVBldklQ8iOdOJyXnsIUDo=
 github.com/issue9/qheader v0.5.4/go.mod h1:LJk1/kJ3ydNYA3epOQD+p0adjjouW5fJTVAtpBk3org=
 github.com/issue9/query/v2 v2.2.5 h1:4y5jFHe8yIrmcIV2skHHUDgYpoKLItwCJkQgQ1LIhgo=

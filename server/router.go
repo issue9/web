@@ -38,11 +38,6 @@ type (
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, filter ...Filter) (*Router, error) {
-	r, err := srv.MuxGroups().NewRouter(name, matcher)
-	if err != nil {
-		return nil, err
-	}
-
 	u, err := url.Parse(root)
 	if err != nil {
 		return nil, err
@@ -54,6 +49,7 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 		root = u.String()
 	}
 
+	r := srv.MuxGroups().NewRouter(name, matcher)
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
 	rr := &Router{
@@ -100,49 +96,43 @@ func (router *Router) SetDebugger(pprof, vars string) (err error) {
 	return nil
 }
 
-func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) error {
+func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) {
 	h = ApplyFilters(h, filters...)
-	return router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
+	router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
 		ctx := router.srv.NewContext(w, r)
 		ctx.renderResponser(h(ctx))
 	}, method...)
 }
 
-func (router *Router) Handle(path string, h HandlerFunc, method ...string) error {
-	return router.handleWithFilters(path, h, router.filters, method...)
-}
-
-func (router *Router) handle(path string, h HandlerFunc, method string) *Router {
-	if err := router.Handle(path, h, method); err != nil {
-		panic(err)
-	}
+func (router *Router) Handle(path string, h HandlerFunc, method ...string) *Router {
+	router.handleWithFilters(path, h, router.filters, method...)
 	return router
 }
 
 func (router *Router) MuxRouter() *mux.Router { return router.router }
 
 func (router *Router) Get(path string, h HandlerFunc) *Router {
-	return router.handle(path, h, http.MethodGet)
+	return router.Handle(path, h, http.MethodGet)
 }
 
 // Post 添加 POST 请求处理项
 func (router *Router) Post(path string, h HandlerFunc) *Router {
-	return router.handle(path, h, http.MethodPost)
+	return router.Handle(path, h, http.MethodPost)
 }
 
 // Put 添加 PUT 请求处理项
 func (router *Router) Put(path string, h HandlerFunc) *Router {
-	return router.handle(path, h, http.MethodPut)
+	return router.Handle(path, h, http.MethodPut)
 }
 
 // Delete 添加 DELETE 请求处理项
 func (router *Router) Delete(path string, h HandlerFunc) *Router {
-	return router.handle(path, h, http.MethodDelete)
+	return router.Handle(path, h, http.MethodDelete)
 }
 
 // Patch 添加 PATCH 请求处理项
 func (router *Router) Patch(path string, h HandlerFunc) *Router {
-	return router.handle(path, h, http.MethodPatch)
+	return router.Handle(path, h, http.MethodPatch)
 }
 
 // Remove 删除指定的路由项
@@ -224,7 +214,7 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 	}
 	prefix := path.Join(router.path, p[:lastStart])
 
-	return router.Handle(p, func(ctx *Context) Responser {
+	router.Handle(p, func(ctx *Context) Responser {
 		pp := ctx.Request.URL.Path
 		pp = strings.TrimPrefix(pp, prefix)
 		if pp != "" && pp[0] == '/' {
@@ -232,6 +222,7 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) error {
 		}
 		return ctx.ServeFileFS(f, pp, index, nil)
 	}, http.MethodGet)
+	return nil
 }
 
 // Prefix 返回特定前缀的路由设置对象
@@ -244,40 +235,34 @@ func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 }
 
 // Handle 添加路由项
-func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) error {
-	return p.router.handleWithFilters(p.prefix+path, h, p.filters, method...)
-}
-
-func (p *Prefix) handle(path string, h HandlerFunc, method ...string) *Prefix {
-	if err := p.Handle(path, h, method...); err != nil {
-		panic(err)
-	}
+func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
+	p.router.handleWithFilters(p.prefix+path, h, p.filters, method...)
 	return p
 }
 
 // Get 添加 GET 请求处理项
 func (p *Prefix) Get(path string, h HandlerFunc) *Prefix {
-	return p.handle(path, h, http.MethodGet)
+	return p.Handle(path, h, http.MethodGet)
 }
 
 // Post 添加 POST 请求处理项
 func (p *Prefix) Post(path string, h HandlerFunc) *Prefix {
-	return p.handle(path, h, http.MethodPost)
+	return p.Handle(path, h, http.MethodPost)
 }
 
 // Put 添加 PUT 请求处理项
 func (p *Prefix) Put(path string, h HandlerFunc) *Prefix {
-	return p.handle(path, h, http.MethodPut)
+	return p.Handle(path, h, http.MethodPut)
 }
 
 // Delete 添加 DELETE 请求处理项
 func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
-	return p.handle(path, h, http.MethodDelete)
+	return p.Handle(path, h, http.MethodDelete)
 }
 
 // Patch 添加 Patch 请求处理
 func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
-	return p.handle(path, h, http.MethodPatch)
+	return p.Handle(path, h, http.MethodPatch)
 }
 
 // Remove 删除路由项
