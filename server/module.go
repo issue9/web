@@ -27,40 +27,42 @@ import (
 // NOTE: 必须为可导出的函数名称
 const PluginInitFuncName = "InitModule"
 
-// PluginInitFunc 安装插件的函数签名
-type PluginInitFunc func(*Server) error
+type (
+	// PluginInitFunc 安装插件的函数签名
+	PluginInitFunc func(*Server) error
 
-// Module 用于注册初始化模块的相关功能
-type Module struct {
-	actions map[string]*Action
-	id      string
-	desc    localeutil.LocaleStringer
-	version string
-	deps    []string
+	// Module 用于注册初始化模块的相关功能
+	Module struct {
+		actions map[string]*Action
+		id      string
+		desc    localeutil.LocaleStringer
+		version string
+		deps    []string
 
-	inits   []dep.Executor
-	uninits []dep.Executor
+		inits   []dep.Executor
+		uninits []dep.Executor
 
-	srv    *Server
-	fs     *filesystem.MultipleFS
-	object interface{}
-}
+		srv    *Server
+		fs     *filesystem.MultipleFS
+		object interface{}
+	}
 
-type ModuleInfo struct {
-	ID          string   `yaml:"id" json:"id" xml:"id,attr"`
-	Version     string   `yaml:"version" json:"version" xml:"version,attr"`
-	Description string   `yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	Deps        []string `yaml:"deps,omitempty" json:"deps,omitempty" xml:"dep,omitempty"`
-}
+	ModuleInfo struct {
+		ID          string   `yaml:"id" json:"id" xml:"id,attr"`
+		Version     string   `yaml:"version" json:"version" xml:"version,attr"`
+		Description string   `yaml:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+		Deps        []string `yaml:"deps,omitempty" json:"deps,omitempty" xml:"dep,omitempty"`
+	}
 
-// Action 模块下对初始化函数的分组
-type Action struct {
-	name string
-	m    *Module
+	// Action 模块下对初始化函数的分组
+	Action struct {
+		name string
+		m    *Module
 
-	inits   []dep.Executor // 保证按添加顺序执行
-	uninits []dep.Executor
-}
+		inits   []dep.Executor // 保证按添加顺序执行
+		uninits []dep.Executor
+	}
+)
 
 func (srv *Server) initModules(uninit bool, action string) error {
 	if action == "" {

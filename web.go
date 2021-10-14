@@ -96,3 +96,6 @@ func NotFound() Responser { return Status(http.StatusNotFound) }
 
 // NoContent 204
 func NoContent() Responser { return Status(http.StatusNoContent) }
+
+// NotImplemented 501
+func NotImplemented() Responser { return Status(http.StatusNotImplemented) }
