@@ -347,8 +347,8 @@ func TestAction_AddRoutes(t *testing.T) {
 	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
 
-	m, err := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m)
+	m := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
+	a.NotNil(m)
 	m.Action("install").AddRoutes(func(router *Router) {}, "")
 	a.Empty(r.MuxRouter().Routes()) // 未初始化
 	a.Error(srv.initModules(false, "install"))
@@ -357,8 +357,8 @@ func TestAction_AddRoutes(t *testing.T) {
 	srv = newServer(a)
 	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
-	m, err = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
-	a.NotError(err).NotNil(m)
+	m = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
+	a.NotNil(m)
 	m.Action("install").AddRoutes(func(router *Router) {
 		a.Equal(r, router)
 		router.Get("p1", f201)

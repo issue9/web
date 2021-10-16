@@ -215,16 +215,16 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
-	m1, err := server.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotNil(m1).NotError(err)
+	m1 := server.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m1)
 	m1.Action("def").AddInit("init", func() error {
 		router.Get("/m1/test", f202)
 		return nil
 	})
 	m1.Action("tag1")
 
-	m2, err := server.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
-	a.NotNil(m2).NotError(err)
+	m2 := server.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
+	a.NotNil(m2)
 	m2.Action("def").AddInit("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
 			srv := ctx.Server()
@@ -345,8 +345,8 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	buf := new(bytes.Buffer)
-	m1, err := srv.NewModule("m1", "v1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m1)
+	m1 := srv.NewModule("m1", "v1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m1)
 	m1.Action("serve").AddService("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)
 		for {

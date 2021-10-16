@@ -37,8 +37,8 @@ func TestNewServer(t *testing.T) {
 
 	a.NotError(srv.Locale().LoadFileFS(locales.Locales, "*.yml")) // 加载本地信息
 
-	m1, err := srv.NewModule("m1", "1.0.0", Phrase("m1 desc"))
-	a.NotError(err).NotNil(m1)
+	m1 := srv.NewModule("m1", "1.0.0", Phrase("m1 desc"))
+	a.NotNil(m1)
 	m1.Action("init").AddInit("m1 init", func() error {
 		router, err := srv.NewRouter("r1", "https://example.com", group.MatcherFunc(group.Any))
 		a.NotError(err).NotNil(router)

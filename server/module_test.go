@@ -22,8 +22,8 @@ func TestServer_initModules(t *testing.T) {
 	s := newServer(a)
 	var count int
 
-	m1, err := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
-	a.NotNil(m1).NotError(err)
+	m1 := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
+	a.NotNil(m1)
 	m1.AddInit("init m1", func() error { count++; return nil })   // count++
 	m1.AddUninit("init m1", func() error { count--; return nil }) // count--
 	v1 := m1.Action("v1")
@@ -31,15 +31,15 @@ func TestServer_initModules(t *testing.T) {
 	v1.AddInit("安装数据表 users1", func() error { return errors.New("failed message") })
 	v1.AddUninit("安装数据表 users1", func() error { return nil })
 
-	m2, err := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
-	a.NotNil(m2).NotError(err)
+	m2 := s.NewModule("users2", "1.0.0", localeutil.Phrase("user2 module"), "users3")
+	a.NotNil(m2)
 	v2 := m2.Action("v2")
 	a.NotNil(v2)
 	v2.AddInit("安装数据表 users2", func() error { count++; return nil }) // count++
 	m2.Action("v3")
 
-	m3, err := s.NewModule("users3", "1.0.0", localeutil.Phrase("user3 module"))
-	a.NotNil(m3).NotError(err)
+	m3 := s.NewModule("users3", "1.0.0", localeutil.Phrase("user3 module"))
+	a.NotNil(m3)
 	v2 = m3.Action("v2")
 	a.NotNil(v2)
 	v2.AddInit("安装数据表 users3-1", func() error { count++; return nil }) // count++
@@ -76,19 +76,19 @@ func TestServer_Actions(t *testing.T) {
 	srv := newServer(a)
 	a.Empty(srv.Actions())
 
-	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m1)
+	m1 := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m1)
 	a.NotNil(m1.Action("d1"))
 	a.NotNil(m1.Action("d2"))
 	a.NotNil(m1.Action("d2"))
 
-	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"))
-	a.NotError(err).NotNil(m2)
+	m2 := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"))
+	a.NotNil(m2)
 	a.NotNil(m2.Action("d2"))
 	a.NotNil(m2.Action("d0"))
 
-	m3, err := srv.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"))
-	a.NotError(err).NotNil(m3)
+	m3 := srv.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"))
+	a.NotNil(m3)
 
 	a.Equal(srv.Actions(), []string{"d0", "d1", "d2"}).
 		Equal(len(srv.Modules(message.NewPrinter(language.Und))), 3)
@@ -97,8 +97,8 @@ func TestServer_Actions(t *testing.T) {
 func TestModule_Action(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("user1", "1.0.0", localeutil.Phrase("user1 desc"))
-	a.NotNil(m).NotError(err)
+	m := s.NewModule("user1", "1.0.0", localeutil.Phrase("user1 desc"))
+	a.NotNil(m)
 
 	v := m.Action("0.1.0")
 	a.NotNil(v)
@@ -120,13 +120,15 @@ func TestServer_NewModule(t *testing.T) {
 	a.NotError(builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息"))
 	printer := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
 
-	m1, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m1)
-	m2, err := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
-	a.NotError(err).NotNil(m2)
+	m1 := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m1)
+	m2 := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
+	a.NotNil(m2)
 
-	m11, err := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.ErrorString(err, "存在同名的模块").Nil(m11)
+	a.PanicString(func() {
+		m := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+		a.Nil(m)
+	}, "存在同名的模块")
 
 	ms := srv.Modules(printer)
 	a.Equal(ms, []*ModuleInfo{
@@ -138,8 +140,8 @@ func TestServer_NewModule(t *testing.T) {
 func TestAction_AddInit(t *testing.T) {
 	a := assert.New(t)
 	s := newServer(a)
-	m, err := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m)
+	m := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m)
 
 	tag := m.Action("t1")
 	tag.AddInit("1", func() error { return nil }).
@@ -157,18 +159,18 @@ func TestModule_Object(t *testing.T) {
 	s := newServer(a)
 	o := 5
 
-	m1, err := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotError(err).NotNil(m1)
+	m1 := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	a.NotNil(m1)
 	m1.AttachObject(o)
 	a.Equal(m1.object, o)
 
-	m2, err := s.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
-	a.NotError(err).NotNil(m2)
+	m2 := s.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
+	a.NotNil(m2)
 	a.Equal(m2.DepObject("m1"), o)
 
 	// 间接依赖
-	m3, err := s.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"), "m2")
-	a.NotError(err).NotNil(m3)
+	m3 := s.NewModule("m3", "1.0.0", localeutil.Phrase("m3 desc"), "m2")
+	a.NotNil(m3)
 	a.Equal(m3.DepObject("m1"), o)
 
 	// 找不到依赖对象
@@ -182,8 +184,8 @@ func TestModule_Object(t *testing.T) {
 	}, "m1 并不是 m1 的依赖对象")
 
 	// 不存在的依赖项
-	m4, err := s.NewModule("m4", "1.0.0", localeutil.Phrase("m4 desc"), "not-exists")
-	a.NotError(err).NotNil(m4)
+	m4 := s.NewModule("m4", "1.0.0", localeutil.Phrase("m4 desc"), "not-exists")
+	a.NotNil(m4)
 	a.PanicString(func() {
 		m4.DepObject("not-exists")
 	}, "依赖项 not-exists 未找到")

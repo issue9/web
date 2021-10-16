@@ -104,14 +104,14 @@ func (srv *Server) initModules(uninit bool, action string) error {
 // version 模块的版本信息；
 // desc 模块的详细信息；
 // deps 表示当前模块的依赖模块名称，可以是插件中的模块名称。
-func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer, deps ...string) (*Module, error) {
+func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer, deps ...string) *Module {
 	if sliceutil.Count(srv.modules, func(i int) bool { return srv.modules[i].id == id }) > 0 {
-		return nil, fmt.Errorf("存在同名的模块 %s", id)
+		panic(fmt.Sprintf("存在同名的模块 %s", id))
 	}
 
 	sub, err := fs.Sub(srv.fs, id)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	mod := &Module{
@@ -129,7 +129,7 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 	}
 
 	srv.modules = append(srv.modules, mod)
-	return mod, nil
+	return mod
 }
 
 // loadPlugins 加载所有的插件
