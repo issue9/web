@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/issue9/logs/v3"
+
 	"github.com/issue9/web/content"
 )
 
@@ -166,3 +168,5 @@ func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location) }
 func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, ctx.Location)
 }
+
+func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }

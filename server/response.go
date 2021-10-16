@@ -62,7 +62,7 @@ func (o *object) Body() interface{} { return o.body }
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 func (ctx *Context) Error(status int, v ...interface{}) Responser {
 	if len(v) > 0 {
-		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(v...))
+		ctx.Logs().ERROR().Output(2, fmt.Sprint(v...))
 	}
 	return Status(status)
 }
@@ -70,7 +70,7 @@ func (ctx *Context) Error(status int, v ...interface{}) Responser {
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) Responser {
 	if len(v) > 0 {
-		ctx.server.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
+		ctx.Logs().ERROR().Output(2, fmt.Sprintf(format, v...))
 	}
 	return Status(status)
 }
@@ -78,7 +78,7 @@ func (ctx *Context) Errorf(status int, format string, v ...interface{}) Response
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 func (ctx *Context) Critical(status int, v ...interface{}) Responser {
 	if len(v) > 0 {
-		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
+		ctx.Logs().CRITICAL().Output(2, fmt.Sprint(v...))
 	}
 	return Status(status)
 }
@@ -86,7 +86,7 @@ func (ctx *Context) Critical(status int, v ...interface{}) Responser {
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) Responser {
 	if len(v) > 0 {
-		ctx.server.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
+		ctx.Logs().CRITICAL().Output(2, fmt.Sprintf(format, v...))
 	}
 	return Status(status)
 }
@@ -106,6 +106,6 @@ func Status(statusCode int) Responser { return status(statusCode) }
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code int, fields content.ResultFields) Responser {
-	rslt := ctx.server.Result(ctx.LocalePrinter, code, fields)
+	rslt := ctx.Server().Result(ctx.LocalePrinter, code, fields)
 	return Object(rslt.Status(), rslt, nil)
 }
