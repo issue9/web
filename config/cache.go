@@ -12,7 +12,6 @@ import (
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
-	"github.com/issue9/logs/v3"
 )
 
 // Cache 缓存的相关配置
@@ -37,7 +36,7 @@ type Cache struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *Webconfig) buildCache(l *logs.Logs) *Error {
+func (conf *Webconfig) buildCache() *Error {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
@@ -70,7 +69,7 @@ func (conf *Webconfig) buildCache(l *logs.Logs) *Error {
 			return &Error{Field: "dsn", Message: err.Error()}
 		}
 
-		conf.cache = file.New(args[0], gc, l.ERROR())
+		conf.cache = file.New(args[0], gc, conf.logs.ERROR())
 	default:
 		return &Error{Field: "type", Message: "无效的值"}
 	}

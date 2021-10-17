@@ -73,9 +73,8 @@ type Command struct {
 
 	// 以下是初始 Server 对象的参数
 
-	Files        *serialization.Files // 为空会给定默认值，能正常解析 xml、yaml 和 json
-	LogsFilename string               // 默认为 logs.xml
-	WebFilename  string               // 默认为 web.yaml
+	Files          *serialization.Files // 为空会给定默认值，能正常解析 xml、yaml 和 json
+	ConfigFilename string               // 默认为 web.xml
 }
 
 // Exec 执行命令行操作
@@ -121,11 +120,8 @@ func (cmd *Command) sanitize() *config.Error {
 		cmd.Files = f
 	}
 
-	if cmd.LogsFilename == "" {
-		cmd.LogsFilename = "logs.xml"
-	}
-	if cmd.WebFilename == "" {
-		cmd.WebFilename = "web.yaml"
+	if cmd.ConfigFilename == "" {
+		cmd.ConfigFilename = "web.yaml"
 	}
 
 	if cmd.CmdFS == "" {
@@ -152,7 +148,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.LogsFilename, cmd.WebFilename, cmd.Options)
+	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
 	if err != nil {
 		return err
 	}

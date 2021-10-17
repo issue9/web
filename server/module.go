@@ -23,8 +23,6 @@ import (
 )
 
 // PluginInitFuncName 插件中的用于获取模块信息的函数名
-//
-// NOTE: 必须为可导出的函数名称
 const PluginInitFuncName = "InitModule"
 
 type (
@@ -256,15 +254,11 @@ func (m *Module) DepObject(depID string) interface{} {
 }
 
 // AddInit 注册模块初始化时执行的函数
-//
-// NOTE: 作用于所有的 Action
 func (m *Module) AddInit(title string, f func() error) {
 	m.inits = append(m.inits, dep.Executor{Title: title, F: f})
 }
 
 // AddUninit 注册卸载模块时的执行函数
-//
-// NOTE: 作用于所有的 Action
 func (m *Module) AddUninit(title string, f func() error) {
 	m.uninits = append(m.uninits, dep.Executor{Title: title, F: f})
 }

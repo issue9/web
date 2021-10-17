@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
-	"github.com/issue9/logs/v3"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
@@ -20,34 +19,34 @@ func TestNewOptions(t *testing.T) {
 	a := assert.New(t)
 	files := serialization.NewFiles(5)
 
-	opt, err := NewOptions(files, os.DirFS("./testdata"), "logs.xml", "web.yaml")
+	opt, err := NewOptions(files, os.DirFS("./testdata"), "web.yaml")
 	a.Error(err).Nil(opt)
 
 	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	opt, err = NewOptions(files, os.DirFS("./testdata"), "logs.xml", "web.yaml")
+	opt, err = NewOptions(files, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(opt)
 	a.Equal(opt.Tag, language.Und)
 
-	opt, err = NewOptions(files, os.DirFS("./testdata/not-exists"), "logs.xml", "web.yaml")
+	opt, err = NewOptions(files, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)
 }
 
 func TestWebconfig_sanitize(t *testing.T) {
 	a := assert.New(t)
-	l, err := logs.New(nil)
-	a.NotError(err).NotNil(l)
 
 	conf := &Webconfig{}
-	a.NotError(conf.sanitize(l)).
+	a.NotError(conf.sanitize()).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.Router).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
 	conf = &Webconfig{Language: "zh-hans"}
-	a.NotError(conf.sanitize(l)).NotEqual(conf.languageTag, language.Und)
+	a.NotError(conf.sanitize()).
+		NotEqual(conf.languageTag, language.Und).
+		NotNil(conf.logs)
 }
 
 func TestWebconfig_buildTimezone(t *testing.T) {

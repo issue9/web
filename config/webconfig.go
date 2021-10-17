@@ -59,38 +59,34 @@ type Webconfig struct {
 	//
 	// 可以带 *，比如 text/* 表示所有 mime-type 为 text/ 开始的类型。
 	IgnoreCompressTypes []string `yaml:"ignoreCompressTypes,omitempty" json:"ignoreCompressTypes,omitempty" xml:"ignoreCompressTypes,omitempty"`
+
+	// 日志初始化参数
+	//
+	// 如果为空，则初始化一个空日志，不会输出任何日志。
+	Logs *config.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
+	logs *logs.Logs
 }
 
 // NewOptions 从配置文件初始化 server.Options 实例
 //
-// files 指定了用于加载本地化的方法，同时也用于加载配置文件；
-// logsFilename 和 webFilename 用于指定日志和项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-func NewOptions(files *serialization.Files, f fs.FS, logsFilename, webFilename string) (*server.Options, error) {
-	conf := &config.Config{}
-	if err := files.LoadFS(f, logsFilename, conf); err != nil {
+// files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
+// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
+func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
+	conf := &Webconfig{}
+	if err := files.LoadFS(f, filename, conf); err != nil {
 		return nil, err
 	}
 
-	l, err := logs.New(conf)
-	if err != nil {
+	if err := conf.sanitize(); err != nil {
 		return nil, err
 	}
 
-	webconfig := &Webconfig{}
-	if err := files.LoadFS(f, webFilename, webconfig); err != nil {
-		return nil, err
-	}
-
-	return webconfig.NewOptions(files, f, l)
+	return conf.NewOptions(files, f)
 }
 
 // NewOptions 返回 server.Options 对象
-func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS, l *logs.Logs) (*server.Options, error) {
+func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) (*server.Options, error) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
-
-	if err := conf.sanitize(l); err != nil {
-		return nil, err
-	}
 
 	h := conf.HTTP
 	r := conf.Router
@@ -108,17 +104,28 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS, l *logs.
 			srv.WriteTimeout = h.WriteTimeout.Duration()
 			srv.IdleTimeout = h.IdleTimeout.Duration()
 			srv.MaxHeaderBytes = h.MaxHeaderBytes
-			srv.ErrorLog = l.ERROR()
+			srv.ErrorLog = conf.logs.ERROR()
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:                l,
+		Logs:                conf.logs,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
 		Files:               files,
 	}, nil
 }
 
-func (conf *Webconfig) sanitize(l *logs.Logs) error {
-	if err := conf.buildCache(l); err != nil {
+func (conf *Webconfig) sanitize() error {
+	if conf.Logs != nil {
+		if err := conf.Logs.Sanitize(); err != nil {
+			return &Error{Field: "logs", Message: err}
+		}
+	}
+	l, err := logs.New(conf.Logs)
+	if err != nil {
+		return err
+	}
+	conf.logs = l
+
+	if err := conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field
 		return err
 	}
