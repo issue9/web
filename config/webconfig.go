@@ -40,16 +40,6 @@ type Webconfig struct {
 	// 与 HTTP 请求相关的设置项
 	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
-	// 指定插件的搜索方式
-	//
-	// 通过 glob 语法搜索插件，比如：
-	//  ~/plugins/*.so
-	// 具体可参考：https://golang.org/pkg/path/filepath/#Glob
-	// 为空表示没有插件。
-	//
-	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
-	Plugins string `yaml:"plugins,omitempty" json:"plugins,omitempty" xml:"plugins,omitempty"`
-
 	// 时区名称
 	//
 	// 可以是 Asia/Shanghai 等，具体可参考：
@@ -123,7 +113,6 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS, l *logs.
 		},
 		Logs:                l,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
-		Plugins:             conf.Plugins,
 		Files:               files,
 	}, nil
 }

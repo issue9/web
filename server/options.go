@@ -81,16 +81,6 @@ type Options struct {
 	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会到任务通道，但是各个函数可用。
 	Logs *logs.Logs
 
-	// 指定插件的搜索方式
-	//
-	// 通过 glob 语法搜索插件，比如：
-	//  ~/plugins/*.so
-	// 具体可参考：https://golang.org/pkg/path/filepath/#Glob
-	// 为空表示没有插件。
-	//
-	// 当前仅支持部分系统，具体可查看：https://golang.org/pkg/plugin/
-	Plugins string
-
 	// 指定用于序列化文件的方法
 	//
 	// 该对象同时被用于加载配置文件和序列化文件。 如果为空，会初始化一个空对象。

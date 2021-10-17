@@ -132,10 +132,10 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 	return mod
 }
 
-// loadPlugins 加载所有的插件
+// LoadPlugins 加载所有的插件
 //
 // 如果 glob 为空，则不会加载任何内容，返回空值。
-func (srv *Server) loadPlugins(glob string) error {
+func (srv *Server) LoadPlugins(glob string) error {
 	fsys, err := filepath.Glob(glob)
 	if err != nil {
 		return err

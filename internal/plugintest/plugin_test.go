@@ -20,10 +20,9 @@ import (
 func TestPlugins(t *testing.T) {
 	a := assert.New(t)
 
-	srv, err := web.NewServer("app", "0.1.0", &web.Options{
-		Plugins: "./testdata/plugin_*.so",
-	})
+	srv, err := web.NewServer("app", "0.1.0", nil)
 	a.NotError(err).NotNil(srv)
+	a.NotError(srv.LoadPlugins("./testdata/plugin_*.so"))
 
 	ms := srv.Modules(message.NewPrinter(language.SimplifiedChinese))
 	a.Equal(2, len(ms))
