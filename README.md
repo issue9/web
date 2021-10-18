@@ -17,26 +17,27 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    srv, _ := web.NewServer("web", "1.0.0", logs.New(),&web.Options{})
+    srv, _ := web.NewServer("web", "1.0.0", &web.Options{})
 
-    srv.NewModule(m1.Module, m2.Module) // 注册模块信息
+	m1.Module(srv)
+	m2.Module(srv)
 
-    srv.Serve("serve", true)
+    srv.Serve(true, "serve")
 }
 
 // modules/m1/module.go
 func Module(s *web.Server) error {
-    m := web.NewModule("m1", "1.0.0", "模块描述信息").
-    m.Tag("serve").AddRoutes(func(r*web.Router){
+    m := s.NewModule("m1", "1.0.0", web.Phrase("模块描述信息"))
+    m.Action("serve").AddRoutes(func(r*web.Router){
         r.Get("/admins", getAdmins).
             Get("/groups", getGroups)
     })
 }
 
 // modules/m2/module.go
-func Module(s *web.Server) (*web.Module, error) {
-    m := web.NewModule("m1", "1.0.0", "模块描述信息", "m1").
-    m.Tag("serve").AddRoutes(func(r*web.Router){
+func Module(s *web.Server) error {
+    m := s.NewModule("m1", "1.0.0", web.Phrase("模块描述信息"), "m1")
+    m.Action("serve").AddRoutes(func(r*web.Router){
         r.Get("/admins", getAdmins).
             Get("/groups", getGroups)
     })
@@ -59,13 +60,13 @@ import "github.com/issue9/web"
 func Module(s *web.Server) error {
     m := s.NewModule("test", "1.0.0", "测试模块")
 
-    tag := m.Tag("serve")
-    tag.AddInit(func() error {
+    a := m.Action("serve")
+    a.AddInit(func() error {
         // TODO 此处可以添加初始化模块的相关代码
         return nil
     }, "初始化函数描述")
 
-    tag.AddService(func(ctx context.Context) error {
+    a.AddService(func(ctx web.Context) error {
         // TODO 此处添加服务代码
     }, "服务描述")
 
@@ -91,8 +92,8 @@ import "github.com/issue9/web"
 
 srv := web.NewServer(&web.Options{})
 
-srv.Content().Add("application/json", json.Marshal, json.Unmarshal)
-srv.Content().Add("application/xml", xml.Marshal, xml.Unmarshal)
+srv.Mimetypes().Add("application/json", json.Marshal, json.Unmarshal)
+srv.Mimetypes().Add("application/xml", xml.Marshal, xml.Unmarshal)
 
 srv.Serve()
 ```
