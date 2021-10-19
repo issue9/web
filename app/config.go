@@ -16,8 +16,17 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Config 配置内容
-type Config struct {
+// Configer 自定义配置文件格式需要实现的接口
+type Configer interface {
+	// Webconfig 从配置文件中获取的 Webconfig 实例
+	Webconfig() *Webconfig
+
+	// Sanitize 对整个配置对象内容的检测
+	Sanitize() *Error
+}
+
+// Webconfig 配置内容
+type Webconfig struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
