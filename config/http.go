@@ -17,7 +17,7 @@ type (
 		// 网站的域名证书
 		//
 		// 不能同时与 LetsEncrypt 生效
-		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates,omitempty"`
+		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
 
 		// 配置 Let's Encrypt 证书
 		//

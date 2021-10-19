@@ -63,7 +63,7 @@ type Command struct {
 
 	// 自定义命令行参数名
 	CmdVersion string // 默认为 v
-	CmdTag     string // 默认为 tag
+	CmdAction  string // 默认为 tag
 	CmdFS      string // 默认为 fs
 
 	// 命令行输出信息的通道
@@ -121,14 +121,14 @@ func (cmd *Command) sanitize() *config.Error {
 	}
 
 	if cmd.ConfigFilename == "" {
-		cmd.ConfigFilename = "web.yaml"
+		cmd.ConfigFilename = "web.xml"
 	}
 
 	if cmd.CmdFS == "" {
 		cmd.CmdFS = "fs"
 	}
-	if cmd.CmdTag == "" {
-		cmd.CmdTag = "tag"
+	if cmd.CmdAction == "" {
+		cmd.CmdAction = "action"
 	}
 	if cmd.CmdVersion == "" {
 		cmd.CmdVersion = "v"
@@ -139,13 +139,17 @@ func (cmd *Command) sanitize() *config.Error {
 
 func (cmd *Command) exec() error {
 	v := flag.Bool(cmd.CmdVersion, false, "显示版本号")
-	tag := flag.String(cmd.CmdTag, "", "执行的标签")
+	action := flag.String(cmd.CmdAction, "", "执行的标签")
 	f := flag.String(cmd.CmdFS, "./", "可读取的目录")
 	flag.Parse()
 
 	if *v {
 		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
 		return err
+	}
+
+	if *action == "" {
+		return &config.Error{Field: "action", Message: "不能为空"}
 	}
 
 	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
@@ -161,8 +165,8 @@ func (cmd *Command) exec() error {
 		cmd.grace(srv, cmd.Signals...)
 	}
 
-	serve := sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *tag }) >= 0
-	return srv.Serve(serve, *tag)
+	serve := sliceutil.Index(cmd.ServeTags, func(i int) bool { return cmd.ServeTags[i] == *action }) >= 0
+	return srv.Serve(serve, *action)
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
