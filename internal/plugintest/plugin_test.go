@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 //go:build linux || darwin || freebsd
-// +build linux darwin freebsd
 
 package plugintest
 

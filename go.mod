@@ -22,4 +22,16 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-go 1.16
+require (
+	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/issue9/autoinc v1.0.6 // indirect
+	github.com/issue9/errwrap v0.2.0 // indirect
+	github.com/issue9/rands v1.1.4 // indirect
+	github.com/issue9/term/v2 v2.1.4 // indirect
+	github.com/issue9/unique v1.3.0 // indirect
+	github.com/issue9/watermark v1.2.0 // indirect
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110 // indirect
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+)
+
+go 1.17
