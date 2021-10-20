@@ -23,7 +23,7 @@ import (
 // Command 提供一种简单的命令行处理方式
 //
 // 由 Command 生成的命令行带以下三个参数：
-//  - tag 运行的标签；
+//  - action 运行的标签；
 //  - v 显示版本号；
 //  - fs 指定当前程序可读取的文件目录；
 // 以上三个参数的参数名称，可在配置内容中修改。
@@ -51,6 +51,9 @@ type Command struct {
 	// 为空(nil 或是 []) 表示没有。
 	Signals []os.Signal
 
+	// 错误代码以及对应的信息
+	ResultMessages map[int]LocaleStringer
+
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
@@ -63,7 +66,7 @@ type Command struct {
 
 	// 自定义命令行参数名
 	CmdVersion string // 默认为 v
-	CmdAction  string // 默认为 tag
+	CmdAction  string // 默认为 action
 	CmdFS      string // 默认为 fs
 
 	// 命令行输出信息的通道
@@ -156,6 +159,8 @@ func (cmd *Command) exec() error {
 	if err != nil {
 		return err
 	}
+
+	srv.AddResults(cmd.ResultMessages)
 
 	if err := cmd.Init(srv); err != nil {
 		return err
