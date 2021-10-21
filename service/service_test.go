@@ -198,17 +198,3 @@ func TestService_srv3(t *testing.T) {
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Stopped)
 }
-
-func TestService_String(t *testing.T) {
-	a := assert.New(t)
-
-	var state State
-	a.Equal(state.String(), "stopped")
-
-	a.Equal(Failed.String(), "failed")
-	a.Equal(Running.String(), "running")
-	a.Equal(Stopped.String(), "stopped")
-
-	state = -1
-	a.Equal(state.String(), "<unknown>")
-}

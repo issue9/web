@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/issue9/scheduled"
 )
 
 // Func 服务实际需要执行的函数
@@ -16,13 +18,13 @@ import (
 type Func func(ctx context.Context) error
 
 // State 服务的状态值
-type State int8
+type State = scheduled.State
 
 // 几种可能的状态值
 const (
-	Stopped State = iota // 当前处于停止状态，默认状态
-	Running              // 正在运行
-	Failed               // 出错，不再执行后续操作
+	Stopped = scheduled.Stopped // 当前处于停止状态，默认状态
+	Running = scheduled.Running // 正在运行
+	Failed  = scheduled.Failed  // 出错，不再执行后续操作
 )
 
 // Service 服务模型
@@ -34,19 +36,6 @@ type Service struct {
 	cancelFunc context.CancelFunc
 	locker     sync.Mutex
 	err        error // 保存上次的出错内容
-}
-
-func (s State) String() string {
-	switch s {
-	case Stopped:
-		return "stopped"
-	case Running:
-		return "running"
-	case Failed:
-		return "failed"
-	default:
-		return "<unknown>"
-	}
 }
 
 // AddService 添加新的服务

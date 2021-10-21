@@ -160,8 +160,11 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Services 返回服务内容的管理接口
-func (srv *Server) Services() *service.Manager { return srv.services }
+// Services 返回长期运行的服务函数列表
+func (srv *Server) Services() []*service.Service { return srv.services.Services() }
+
+// Jobs 返回所有的计划任务
+func (srv *Server) Jobs() []*service.ScheduledJob { return srv.services.Jobs() }
 
 // Serve 启动服务
 //
@@ -174,11 +177,11 @@ func (srv *Server) Serve(serve bool, action string) (err error) {
 		return nil
 	}
 
-	srv.Services().Run()
+	srv.services.Run()
 
 	// 在 Serve 中关闭服务，而不是 Close。 这样可以保证在所有的请求关闭之后执行。
 	defer func() {
-		srv.Services().Stop()
+		srv.services.Stop()
 
 		err = errs.Merge(err, srv.initModules(true, action))
 		err = errs.Merge(err, srv.Logs().Flush())
