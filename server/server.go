@@ -19,6 +19,7 @@ import (
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/scheduled"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
@@ -36,29 +37,35 @@ const (
 )
 
 // Server 提供 HTTP 服务
-type Server struct {
-	name       string
-	version    string
-	logs       *logs.Logs
-	fs         fs.FS
-	httpServer *http.Server
-	vars       *sync.Map
+type (
+	Server struct {
+		name       string
+		version    string
+		logs       *logs.Logs
+		fs         fs.FS
+		httpServer *http.Server
+		vars       *sync.Map
 
-	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
+		closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 
-	// middleware
-	groups        *group.Groups
-	compress      *compress.Compress
-	errorHandlers *errorhandler.ErrorHandler
-	routers       map[string]*Router
+		// middleware
+		groups        *group.Groups
+		compress      *compress.Compress
+		errorHandlers *errorhandler.ErrorHandler
+		routers       map[string]*Router
 
-	cache    cache.Cache
-	uptime   time.Time
-	modules  []*Module
-	content  *content.Content
-	services *service.Manager
-	events   map[string]events.Eventer
-}
+		cache    cache.Cache
+		uptime   time.Time
+		modules  []*Module
+		content  *content.Content
+		services *service.Manager
+		events   map[string]events.Eventer
+	}
+
+	ScheduledJobFunc = scheduled.JobFunc
+	ScheduledJob     = scheduled.Job
+	Scheduler        = scheduled.Scheduler
+)
 
 // New 返回 *Server 实例
 //
@@ -164,7 +171,7 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 func (srv *Server) Services() []*service.Service { return srv.services.Services() }
 
 // Jobs 返回所有的计划任务
-func (srv *Server) Jobs() []*service.ScheduledJob { return srv.services.Jobs() }
+func (srv *Server) Jobs() []*ScheduledJob { return srv.services.Scheduled().Jobs() }
 
 // Serve 启动服务
 //
