@@ -13,7 +13,7 @@ require (
 	github.com/issue9/mux/v5 v5.0.0-beta.4
 	github.com/issue9/qheader v0.5.4
 	github.com/issue9/query/v2 v2.2.5
-	github.com/issue9/scheduled v0.7.0
+	github.com/issue9/scheduled v0.8.0
 	github.com/issue9/sliceutil v0.7.0
 	github.com/issue9/upload v1.1.4
 	github.com/issue9/validation v0.4.0

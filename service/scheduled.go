@@ -16,8 +16,8 @@ import (
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (mgr *Manager) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) error {
-	return mgr.scheduled.Cron(title, f, spec, delay)
+func (mgr *Manager) AddCron(title string, f scheduled.JobFunc, spec string, delay bool) {
+	mgr.scheduled.Cron(title, f, spec, delay)
 }
 
 // AddTicker 添加新的定时任务
@@ -26,8 +26,8 @@ func (mgr *Manager) AddCron(title string, f scheduled.JobFunc, spec string, dela
 // title 是对该服务的简要说明；
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (mgr *Manager) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) error {
-	return mgr.scheduled.Tick(title, f, dur, imm, delay)
+func (mgr *Manager) AddTicker(title string, f scheduled.JobFunc, dur time.Duration, imm, delay bool) {
+	mgr.scheduled.Tick(title, f, dur, imm, delay)
 }
 
 // AddAt 添加新的定时任务
@@ -36,8 +36,8 @@ func (mgr *Manager) AddTicker(title string, f scheduled.JobFunc, dur time.Durati
 // title 是对该服务的简要说明；
 // t 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (mgr *Manager) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) error {
-	return mgr.scheduled.At(title, f, t, delay)
+func (mgr *Manager) AddAt(title string, f scheduled.JobFunc, t time.Time, delay bool) {
+	mgr.scheduled.At(title, f, t, delay)
 }
 
 // AddJob 添加新的计划任务
