@@ -98,7 +98,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
 		content:  content.New(o.ResultBuilder, o.Location, o.Files, o.Tag),
-		services: service.NewManager(o.Logs, o.Location),
+		services: service.NewManager(o.Location, o.Logs),
 		events:   make(map[string]events.Eventer, 5),
 	}
 	srv.httpServer.Handler = srv.groups

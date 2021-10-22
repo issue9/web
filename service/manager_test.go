@@ -14,7 +14,7 @@ func newManager(a *assert.Assertion, t *time.Location) *Manager {
 	l, err := logs.New(nil)
 	a.NotError(err).NotNil(l)
 
-	mgr := NewManager(l, t)
+	mgr := NewManager(t, l)
 	a.NotNil(mgr)
 	return mgr
 }
@@ -65,4 +65,17 @@ func TestManager(t *testing.T) {
 	a.Equal(srv1.State(), Stopped)
 	a.Equal(srv0.State(), Stopped)
 	a.Equal(srv2.State(), Stopped)
+}
+
+func TestScheduled(t *testing.T) {
+	a := assert.New(t)
+
+	mgr := newManager(a, time.Local)
+	a.Equal(0, len(mgr.Scheduled().Jobs()))
+
+	mgr.Scheduled().At("at", func(t time.Time) error {
+		println("at:", t.Format(time.RFC3339))
+		return nil
+	}, time.Now(), false)
+	a.Equal(1, len(mgr.Scheduled().Jobs()))
 }

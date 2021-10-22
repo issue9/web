@@ -29,13 +29,14 @@ const (
 
 // Service 服务模型
 type Service struct {
-	Title string
-
-	state      State
+	mgr        *Manager
+	Title      string
 	f          Func
 	cancelFunc context.CancelFunc
-	locker     sync.Mutex
 	err        error // 保存上次的出错内容
+
+	state    State
+	stateMux sync.Mutex
 }
 
 // AddService 添加新的服务
@@ -46,10 +47,10 @@ type Service struct {
 // NOTE: 如果 Manager 的所有服务已经处于运行的状态，则会自动运行新添加的服务。
 func (mgr *Manager) AddService(title string, f Func) {
 	srv := &Service{
+		mgr:   mgr,
 		Title: title,
 		f:     f,
 	}
-
 	mgr.services = append(mgr.services, srv)
 
 	if mgr.running {
@@ -72,10 +73,10 @@ func (srv *Service) Run() {
 		return
 	}
 
-	srv.locker.Lock()
-	defer srv.locker.Unlock()
-
+	srv.stateMux.Lock()
 	srv.state = Running
+	srv.stateMux.Unlock()
+
 	go srv.serve()
 }
 
@@ -83,9 +84,11 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.locker.Lock()
+			srv.mgr.logs.Error(srv.err)
+
+			srv.stateMux.Lock()
 			srv.state = Failed
-			srv.locker.Unlock()
+			srv.stateMux.Unlock()
 		}
 	}()
 
@@ -94,12 +97,13 @@ func (srv *Service) serve() {
 	srv.err = srv.f(ctx)
 	state := Stopped
 	if srv.err != nil && srv.err != context.Canceled {
+		srv.mgr.logs.Error(srv.err)
 		state = Failed
 	}
 
-	srv.locker.Lock()
+	srv.stateMux.Lock()
 	srv.state = state
-	srv.locker.Unlock()
+	srv.stateMux.Unlock()
 }
 
 // Stop 停止服务
