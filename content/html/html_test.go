@@ -13,7 +13,7 @@ import (
 
 var _ serialization.MarshalFunc = Marshal
 
-func TestHTML(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	a := assert.New(t)
 
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
@@ -33,4 +33,10 @@ func TestHTML(t *testing.T) {
 
 	bs, err = Marshal(5)
 	a.Error(err).Nil(bs)
+
+	bs, err = Marshal("<div>abc</div>")
+	a.Equal(string(bs), "<div>abc</div>")
+
+	bs, err = Marshal([]byte("<div>abc</div>"))
+	a.Equal(string(bs), "<div>abc</div>")
 }

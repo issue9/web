@@ -14,7 +14,6 @@ package html
 import (
 	"bytes"
 	"html/template"
-	"io"
 
 	"github.com/issue9/web/serialization"
 )
@@ -43,20 +42,26 @@ func Tpl(tpl *template.Template, name string, data interface{}) *Template {
 
 // Marshal 针对 HTML 内容的解码实现
 //
-// 参数 v 限定为 *Template 类型，否则将返回错误。
+// 参数 v 可以是以下几种类型：
+//  - string 或是 []byte 将内容作为 HTML 内容直接输出
+//  - *Template 编译模板内容并输出
+//  - 其它情况下则是返回错误。
 func Marshal(v interface{}) ([]byte, error) {
-	obj, ok := v.(*Template)
-	if !ok {
-		return nil, serialization.ErrUnsupported
+	switch obj := v.(type) {
+	case *Template:
+		return obj.executeTemplate()
+	case []byte:
+		return obj, nil
+	case string:
+		return []byte(obj), nil
 	}
+	return nil, serialization.ErrUnsupported
+}
 
+func (t *Template) executeTemplate() ([]byte, error) {
 	w := new(bytes.Buffer)
-	if err := obj.executeTemplate(w); err != nil {
+	if err := t.Template.ExecuteTemplate(w, t.Name, t.Data); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
-}
-
-func (t *Template) executeTemplate(w io.Writer) error {
-	return t.Template.ExecuteTemplate(w, t.Name, t.Data)
 }
