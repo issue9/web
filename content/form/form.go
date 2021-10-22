@@ -32,6 +32,11 @@
 //
 // 对于复杂类型，用户可以自定义实现 Marshaler 和 Unmarshaler 接口进行编解码，
 // 其功能与用户与 encoding/json 中的 Marshaler 和 Unmarshaler 接口相似。
+//
+// 与标准库中 http.Request.ParseForm 的不同点：
+// - 标准库支持从查询参数中获取数据；
+// - 当前包支持非 ascii 编码；
+// - 当前包支持将数据映射到一个对象；
 package form
 
 import (
@@ -52,7 +57,7 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// Marshal 针对 www-form-urlencoded 内容的 content.MarshalFunc 实现
+// Marshal 针对 www-form-urlencoded 内容的解码实现
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Marshaler 接口，则调用该接口；
@@ -80,7 +85,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return []byte(vals.Encode()), nil
 }
 
-// Unmarshal 针对 www-form-urlencoded 内容的 content.UnmarshalFunc 实现
+// Unmarshal 针对 www-form-urlencoded 内容的编码实现
 //
 // 按以下顺序解析内容：
 //  - 如果实现 Unmarshaler 接口，则调用该接口；

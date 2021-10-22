@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-// Package html 提供输出 HTML 内容的 content.MarshalFunc 函数
+// Package html 提供输出 HTML 内容的解码函数
 //
 //  mt := content.NewContent()
 //  tpl := template.ParseFiles(...)
-//  mgr := html.New(tpl)
-//  mt.Add("text/html", mgr.Marshal, nil)
+//  mt.Add("text/html", html.Marshal, nil)
 //
 //  func handle(ctx *web.Context) Responser {
-//      return Object(200, html.Tpl("index", map[string]interface{}{...}), nil)
+//      return Object(200, html.Tpl(tpl, "index", map[string]interface{}{...}), nil)
 //  }
 package html
 
 import (
 	"bytes"
 	"html/template"
+	"io"
 
 	"github.com/issue9/web/serialization"
 )
@@ -22,60 +22,41 @@ import (
 // Mimetype HTML 的 mimetype 值
 const Mimetype = "text/html"
 
-// HTML 模板管理
-type HTML struct {
-	tpl *template.Template
-}
-
-// Template 传递给 content.MarshalFunc 的参数
-//
-// 因为 content.MarshalFunc 限定了只能有一个参数，
-// 而模板解析，除了传递的值，最起码还要一个模板名称，
-// 所以采用 Template 作了一个简单的包装。
+// Template 传递给 Marshal 的参数
 type Template struct {
-	Name string // 模块名称
-	Data interface{}
+	Template *template.Template
+	Name     string      // 模块名称
+	Data     interface{} // 传递给模板的数据
 }
 
 // Tpl 声明一个 *Template 变量
 //
 // 其中 name 表示需要引用的模板名称，
 // 而 data 则是传递给该模板的所有变量。
-func Tpl(name string, data interface{}) *Template {
+func Tpl(tpl *template.Template, name string, data interface{}) *Template {
 	return &Template{
-		Name: name,
-		Data: data,
+		Template: tpl,
+		Name:     name,
+		Data:     data,
 	}
 }
 
-// New 声明 HTML 变量
-//
-// tpl 可以为空，通过之后的 SetTemplate 再次指定
-func New(tpl *template.Template) *HTML {
-	return &HTML{
-		tpl: tpl,
-	}
-}
-
-// SetTemplate 修改模板内容
-func (html *HTML) SetTemplate(tpl *template.Template) {
-	html.tpl = tpl
-}
-
-// Marshal 针对 HTML 内容的 content.MarshalFunc 实现
+// Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 限定为 *Template 类型，否则将返回错误。
-func (html *HTML) Marshal(v interface{}) ([]byte, error) {
+func Marshal(v interface{}) ([]byte, error) {
 	obj, ok := v.(*Template)
 	if !ok {
 		return nil, serialization.ErrUnsupported
 	}
 
 	w := new(bytes.Buffer)
-	err := html.tpl.ExecuteTemplate(w, obj.Name, obj.Data)
-	if err != nil {
+	if err := obj.executeTemplate(w); err != nil {
 		return nil, err
 	}
-
 	return w.Bytes(), nil
+}
+
+func (t *Template) executeTemplate(w io.Writer) error {
+	return t.Template.ExecuteTemplate(w, t.Name, t.Data)
 }

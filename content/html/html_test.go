@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-var _ serialization.MarshalFunc = (&HTML{}).Marshal
+var _ serialization.MarshalFunc = Marshal
 
 func TestHTML(t *testing.T) {
 	a := assert.New(t)
@@ -19,19 +19,18 @@ func TestHTML(t *testing.T) {
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
 	a.NotError(err).NotNil(tpl)
 
-	mgr := New(tpl)
-	bs, err := mgr.Marshal(Tpl("footer", map[string]interface{}{
+	bs, err := Marshal(Tpl(tpl, "footer", map[string]interface{}{
 		"Footer": "footer",
 	}))
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), "<div>footer</div>")
 
-	bs, err = mgr.Marshal(Tpl("header", &struct{ Header string }{
+	bs, err = Marshal(Tpl(tpl, "header", &struct{ Header string }{
 		Header: "header",
 	}))
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), "<div>header</div>")
 
-	bs, err = mgr.Marshal(5)
+	bs, err = Marshal(5)
 	a.Error(err).Nil(bs)
 }
