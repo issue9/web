@@ -60,6 +60,9 @@ func (o *object) Headers() map[string]string { return o.headers }
 func (o *object) Body() interface{} { return o.body }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
+//
+// NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
+// 否则出错信息的位置信息将不准确。
 func (ctx *Context) Error(status int, v ...interface{}) Responser {
 	if len(v) > 0 {
 		ctx.Logs().ERROR().Output(2, fmt.Sprint(v...))

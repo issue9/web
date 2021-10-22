@@ -141,16 +141,13 @@ func (ctx *Context) ClientIP() string {
 }
 
 // ServeFile 提供文件下载
-//
-// 文件可能提供连续的下载功能，其状态码是未定的，
-// 所以提供了一个类似于 Render 的变体专门用于下载功能。
 func (ctx *Context) ServeFile(p, index string, headers map[string]string) Responser {
 	dir := filepath.ToSlash(filepath.Dir(p))
 	base := filepath.ToSlash(filepath.Base(p))
 	return ctx.ServeFileFS(os.DirFS(dir), base, index, headers)
 }
 
-// ServeFileFS 提供基于 fs.FS 的文件下载服
+// ServeFileFS 提供基于 fs.FS 的文件下载服务
 func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) Responser {
 	err := ctx.ServeFS(f, p, index, headers)
 	switch {

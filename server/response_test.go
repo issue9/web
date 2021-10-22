@@ -5,6 +5,7 @@ package server
 import (
 	"bytes"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,13 +29,15 @@ func TestContext_Critical(t *testing.T) {
 	criticalLog.Reset()
 	b := newServer(a)
 	b.Logs().CRITICAL().SetOutput(criticalLog)
+	b.Logs().CRITICAL().SetFlags(log.Llongfile)
 	ctx := &Context{
 		Context: &content.Context{Response: w},
 		server:  b,
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.True(strings.HasPrefix(criticalLog.String(), "log1log2"))
+	a.Contains(criticalLog.String(), "response_test.go:38") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "log1log2")
 }
 
 func TestContext_Errorf(t *testing.T) {

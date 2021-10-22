@@ -33,7 +33,7 @@ var (
 
 // Context 单次请求生成的上下文数据
 //
-// NOTE: 用户不应该直接引用该对象，而是 server.Context。
+// NOTE: 用户不应该直接引用该对象，而是始终采用 server.Context。
 type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
@@ -105,17 +105,22 @@ func (c *Content) NewContext(l *log.Logger, w http.ResponseWriter, r *http.Reque
 	tag := c.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	ctx := &Context{
-		Response:           w,
-		Request:            r,
+		Response: w,
+		Request:  r,
+
 		OutputMimetype:     marshal,
 		OutputMimetypeName: outputMimetypeName,
-		OutputCharset:      outputCharset,
-		OutputCharsetName:  outputCharsetName,
-		OutputTag:          tag,
-		LocalePrinter:      c.newLocalePrinter(tag),
-		Location:           c.location,
-		InputMimetype:      inputMimetype,
-		InputCharset:       inputCharset,
+
+		OutputCharset:     outputCharset,
+		OutputCharsetName: outputCharsetName,
+
+		InputMimetype: inputMimetype,
+		InputCharset:  inputCharset,
+
+		OutputTag:     tag,
+		LocalePrinter: c.newLocalePrinter(tag),
+
+		Location: c.location,
 	}
 
 	return ctx, 0
