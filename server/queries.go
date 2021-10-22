@@ -13,6 +13,7 @@ import (
 )
 
 // Queries 用于处理路径中的查询参数
+//
 //  q,_ := ctx.Queries()
 //  page := q.Int64("page", 1)
 //  size := q.Int64("size", 20)
@@ -151,6 +152,9 @@ func (q *Queries) Result(code int) Responser {
 // Object 将查询参数解析到一个对象中
 //
 // 具体的文档信息可以参考 https://github.com/issue9/query
+//
+// 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
+// 如果验证失败，错误信息存入 q.errors。
 func (q *Queries) Object(v interface{}) {
 	errors := query.Parse(q.queries, v)
 	for key, vals := range errors {

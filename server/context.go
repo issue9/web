@@ -22,7 +22,12 @@ import (
 //
 // 但凡对象实现了该接口，那么在 Context.Read 和 Queries.Object
 // 中会在解析数据成功之后，调用该接口进行数据验证。
+//
+// 可用于 HTTP 请求中对用户提交数据的验证。
 type CTXSanitizer interface {
+	// CTXSanitize 验证和修正当前对象的数据
+	//
+	// 返回的是字段名以及对应的错误信息，一个字段可以对应多个错误信息。
 	CTXSanitize(*Context) content.ResultFields
 }
 
@@ -89,11 +94,11 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，
-// 会直接调用 Error() 处理：输出 422 的状态码，
-// 并返回一个 false，告知用户转换失败。
-// 如果是数据类型验证失败，则会输出以 code 作为错误代码的错误信息，
-// 并返回 false，作为执行失败的通知。
+// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，会直接调用 Error() 处理：
+// 输出 422 的状态码，并返回一个 false，告知用户转换失败。
+//
+// 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
+// 如果验证失败，会输出以 code 作为错误代码的错误信息，并返回 false。
 func (ctx *Context) Read(v interface{}, code int) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(err))
