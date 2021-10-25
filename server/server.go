@@ -25,7 +25,6 @@ import (
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
-	"github.com/issue9/web/service"
 )
 
 type contextKey int
@@ -44,46 +43,42 @@ const DefaultMimetype = "application/octet-stream"
 const DefaultCharset = "utf-8"
 
 // Server 提供 HTTP 服务
-type (
-	Server struct {
-		name       string
-		version    string
-		logs       *logs.Logs
-		fs         fs.FS
-		httpServer *http.Server
-		vars       *sync.Map
+type Server struct {
+	name       string
+	version    string
+	logs       *logs.Logs
+	fs         fs.FS
+	httpServer *http.Server
+	vars       *sync.Map
+	mimetypes  *serialization.Mimetypes
+	cache      cache.Cache
+	uptime     time.Time
+	modules    []*Module
+	events     map[string]events.Eventer
+	serving    bool
 
-		closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
+	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 
-		// middleware
-		groups        *group.Groups
-		compress      *compress.Compress
-		errorHandlers *errorhandler.ErrorHandler
-		routers       map[string]*Router
+	// service
+	services  []*Service
+	scheduled *scheduled.Server
 
-		cache    cache.Cache
-		uptime   time.Time
-		modules  []*Module
-		services *service.Manager
-		events   map[string]events.Eventer
+	// middleware
+	groups        *group.Groups
+	compress      *compress.Compress
+	errorHandlers *errorhandler.ErrorHandler
+	routers       map[string]*Router
 
-		// result
-		resultMessages map[int]*resultMessage
-		resultBuilder  BuildResultFunc
+	// result
+	resultMessages map[int]*resultMessage
+	resultBuilder  BuildResultFunc
 
-		mimetypes *serialization.Mimetypes
-
-		// 本地化相关信息
-		location      *time.Location
-		locale        *serialization.Locale
-		tag           language.Tag
-		localePrinter *message.Printer
-	}
-
-	ScheduledJobFunc = scheduled.JobFunc
-	ScheduledJob     = scheduled.Job
-	Scheduler        = scheduled.Scheduler
-)
+	// locale
+	location      *time.Location
+	locale        *serialization.Locale
+	tag           language.Tag
+	localePrinter *message.Printer
+}
 
 // New 返回 *Server 实例
 //
@@ -106,32 +101,48 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
+		mimetypes:  serialization.NewMimetypes(10),
+		cache:      o.Cache,
+		modules:    make([]*Module, 0, 20),
+		uptime:     time.Now(),
+		events:     make(map[string]events.Eventer, 5),
 
 		closed: make(chan struct{}, 1),
 
+		// service
+		services:  make([]*Service, 0, 100),
+		scheduled: scheduled.NewServer(o.Location),
+
+		// middleware
 		groups:        o.groups,
 		compress:      compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
 		routers:       make(map[string]*Router, 3),
 
-		cache:    o.Cache,
-		modules:  make([]*Module, 0, 20),
-		uptime:   time.Now(),
-		services: service.NewManager(o.Location, o.Logs),
-		events:   make(map[string]events.Eventer, 5),
-
+		// result
 		resultMessages: make(map[int]*resultMessage, 20),
 		resultBuilder:  o.ResultBuilder,
 
-		mimetypes: serialization.NewMimetypes(10),
-
+		// locale
 		location:      o.Location,
 		locale:        l,
 		tag:           o.Tag,
 		localePrinter: l.Printer(o.Tag),
 	}
-	srv.httpServer.Handler = srv.groups
 
+	srv.AddService("计划任务", func(ctx context.Context) error {
+		go func() {
+			if err := srv.scheduled.Serve(o.Logs.ERROR(), o.Logs.DEBUG()); err != nil {
+				o.Logs.Error(err)
+			}
+		}()
+
+		<-ctx.Done()
+		srv.scheduled.Stop()
+		return context.Canceled
+	})
+
+	srv.httpServer.Handler = srv.groups
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
 			return context.WithValue(context.Background(), contextKeyServer, srv)
@@ -196,11 +207,8 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Services 返回长期运行的服务函数列表
-func (srv *Server) Services() []*service.Service { return srv.services.Services() }
-
 // Jobs 返回所有的计划任务
-func (srv *Server) Jobs() []*ScheduledJob { return srv.services.Scheduled().Jobs() }
+func (srv *Server) Jobs() []*ScheduledJob { return srv.scheduled.Jobs() }
 
 // Serve 启动服务
 //
@@ -213,15 +221,16 @@ func (srv *Server) Serve(serve bool, action string) (err error) {
 		return nil
 	}
 
-	srv.services.Run()
+	srv.runServices()
 
 	// 在 Serve 中关闭服务，而不是 Close。 这样可以保证在所有的请求关闭之后执行。
 	defer func() {
-		srv.services.Stop()
-
+		srv.stopServices()
 		err = errs.Merge(err, srv.initModules(true, action))
 		err = errs.Merge(err, srv.Logs().Flush())
 	}()
+
+	srv.serving = true
 
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
@@ -243,6 +252,8 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
 		srv.closed <- struct{}{}
 	}()
+
+	srv.serving = false
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()
@@ -288,3 +299,6 @@ func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }
 
 // Tag 返回默认的语言标签
 func (srv *Server) Tag() language.Tag { return srv.tag }
+
+// Serving 是否处于服务状态
+func (srv *Server) Serving() bool { return srv.serving }

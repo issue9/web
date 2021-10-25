@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"plugin"
 	"sort"
-	"time"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
@@ -17,7 +16,6 @@ import (
 
 	"github.com/issue9/web/internal/dep"
 	"github.com/issue9/web/internal/filesystem"
-	"github.com/issue9/web/service"
 )
 
 // PluginInitFuncName 插件中的用于获取模块信息的函数名
@@ -295,74 +293,5 @@ func (t *Action) AddUninit(title string, f func() error) *Action {
 
 // Module 返回当前关联的模块
 func (t *Action) Module() *Module { return t.m }
-
-// AddService 添加新的服务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明。
-func (t *Action) AddService(title string, f service.Func) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register service %s", title)
-	return t.AddInit(msg, func() error {
-		t.Server().services.AddService(title, f)
-		return nil
-	})
-}
-
-// AddCron 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// spec cron 表达式，支持秒；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Action) AddCron(title string, f ScheduledJobFunc, spec string, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
-	return t.AddInit(msg, func() error {
-		t.Server().services.Scheduled().Cron(title, f, spec, delay)
-		return nil
-	})
-}
-
-// AddTicker 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// dur 时间间隔；
-// imm 是否立即执行一次该任务；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Action) AddTicker(title string, f ScheduledJobFunc, dur time.Duration, imm, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
-	return t.AddInit(msg, func() error {
-		t.Server().services.Scheduled().Tick(title, f, dur, imm, delay)
-		return nil
-	})
-}
-
-// AddAt 添加新的定时任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// t 指定的时间点；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Action) AddAt(title string, f ScheduledJobFunc, ti time.Time, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
-	return t.AddInit(msg, func() error {
-		t.Server().services.Scheduled().At(title, f, ti, delay)
-		return nil
-	})
-}
-
-// AddJob 添加新的计划任务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明；
-// scheduler 计划任务的时间调度算法实现；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (t *Action) AddJob(title string, f ScheduledJobFunc, scheduler Scheduler, delay bool) *Action {
-	msg := t.Server().LocalePrinter().Sprintf("register cron %s", title)
-	return t.AddInit(msg, func() error {
-		t.Server().services.Scheduled().New(title, f, scheduler, delay)
-		return nil
-	})
-}
 
 func (t *Action) Name() string { return t.name }

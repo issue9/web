@@ -88,6 +88,8 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 
 	srv.AddResult(411, 41110, localeutil.Phrase("41110"))
 
+	a.Equal(1, len(srv.Services())) // 默认的计划任务
+
 	return srv
 }
 
@@ -185,7 +187,7 @@ func TestGetServer(t *testing.T) {
 	a.True(isRequested, "未正常访问 /path")
 }
 
-func TestServer_vars(t *testing.T) {
+func TestServer_Vars(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a, nil)
 
@@ -214,12 +216,12 @@ func TestServer_Serve(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8080/root/", group.MatcherFunc(group.Any))
+	srv := newServer(a, nil)
+	router, err := srv.NewRouter("default", "http://localhost:8080/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
-	m1 := server.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
+	m1 := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotNil(m1)
 	m1.Action("def").AddInit("init", func() error {
 		router.Get("/m1/test", f202)
@@ -227,10 +229,14 @@ func TestServer_Serve(t *testing.T) {
 	})
 	m1.Action("tag1")
 
-	m2 := server.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
+	a.False(srv.Serving())
+
+	m2 := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
 	a.NotNil(m2)
 	m2.Action("def").AddInit("init m2", func() error {
 		router.Get("/m2/test", func(ctx *Context) Responser {
+			a.True(srv.Serving())
+
 			srv := ctx.Server()
 			a.NotNil(srv)
 			a.Equal(2, len(srv.Modules(message.NewPrinter(language.SimplifiedChinese))))
@@ -247,7 +253,7 @@ func TestServer_Serve(t *testing.T) {
 	})
 
 	go func() {
-		err := server.Serve(true, "def")
+		err := srv.Serve(true, "def")
 		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -275,8 +281,10 @@ func TestServer_Serve(t *testing.T) {
 		Do().
 		Status(http.StatusOK)
 
-	a.NotError(server.Close(0))
+	a.NotError(srv.Close(0))
 	<-exit
+
+	a.False(srv.Serving())
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {

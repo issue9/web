@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package service
+package server
 
 import (
 	"context"
@@ -110,91 +110,151 @@ func buildSrv3() (f Func, start, exit chan struct{}) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t)
-	mgr := newManager(a, time.Local)
+	srv := newServer(a, &Options{Location: time.Local})
+	defer srv.stopServices()
 
 	srv1, start, exit := buildSrv1()
-	mgr.AddService("srv1", srv1)
-	mgr.Run()
+	srv.AddService("srv1", srv1)
+	srv.runServices()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	s1 := mgr.services[1]
+	s1 := srv.services[1]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Running)
+	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Stopped)
+	a.Equal(s1.State(), ServiceStopped)
 
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Running)
+	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Stopped)
+	a.Equal(s1.State(), ServiceStopped)
 }
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t)
-	mgr := newManager(a, time.Local)
+	srv := newServer(a, &Options{Location: time.Local})
+	defer srv.stopServices()
 
 	srv2, start, exit := buildSrv2()
-	mgr.AddService("srv2", srv2)
-	mgr.Run() // 注册并运行服务
-	s2 := mgr.services[1]
+	srv.AddService("srv2", srv2)
+	srv.runServices() // 注册并运行服务
+	s2 := srv.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Running)
+	a.Equal(s2.State(), ServiceRunning)
 	s2.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Stopped)
+	a.Equal(s2.State(), ServiceStopped)
 
 	// 再次运行，等待 panic
 	s2.Run()
 	<-start
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Failed)
+	a.Equal(s2.State(), ServiceFailed)
 	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
 	s2.Run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Running)
+	a.Equal(s2.State(), ServiceRunning)
 	s2.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Stopped)
+	a.Equal(s2.State(), ServiceStopped)
 }
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t)
-	mgr := newManager(a, time.Local)
+	srv := newServer(a, &Options{Location: time.Local})
+	defer srv.stopServices()
 
 	srv3, start, exit := buildSrv3()
-	mgr.AddService("srv3", srv3)
-	mgr.Run()
-	s3 := mgr.services[1]
+	srv.AddService("srv3", srv3)
+	srv.runServices()
+	s3 := srv.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Running)
+	a.Equal(s3.State(), ServiceRunning)
 
 	<-exit                             // 等待超过返回错误
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Failed)
+	a.Equal(s3.State(), ServiceFailed)
 	a.NotNil(s3.Err())
 
 	// 再次运行
 	s3.Run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Running)
+	a.Equal(s3.State(), ServiceRunning)
 	s3.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Stopped)
+	a.Equal(s3.State(), ServiceStopped)
+}
+
+func TestServer_service(t *testing.T) {
+	a := assert.New(t)
+	mgr := newServer(a, nil)
+
+	// 未运行
+
+	a.False(mgr.Serving())
+	srv0 := mgr.services[0]
+	a.Equal(srv0.State(), ServiceStopped)
+
+	s1, start1, exit1 := buildSrv1()
+	mgr.AddService("srv1", s1)
+	a.Equal(2, len(mgr.Services()))
+	srv1 := mgr.services[1]
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
+	a.Equal(srv1.f, s1)                // 并不会改变状态
+
+	// 运行中
+
+	mgr.runServices()
+	mgr.serving = true
+	<-start1
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
+	a.Equal(ServiceRunning, srv0.State()).
+		Equal(ServiceRunning, srv1.State())
+
+	// 运行中添加
+	s2, start2, exit2 := buildSrv1()
+	mgr.AddService("srv2", s2)
+	a.Equal(3, len(mgr.Services()))
+	srv2 := mgr.services[2]
+	<-start2
+	time.Sleep(500 * time.Microsecond)    // 等待主服务设置状态值
+	a.Equal(ServiceRunning, srv2.State()) // 运行中添加自动运行服务
+
+	mgr.stopServices()
+	<-exit1
+	<-exit2
+	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
+	a.Equal(srv1.State(), ServiceStopped)
+	a.Equal(srv0.State(), ServiceStopped)
+	a.Equal(srv2.State(), ServiceStopped)
+}
+
+func TestServer_scheduled(t *testing.T) {
+	a := assert.New(t)
+	mgr := newServer(a, nil)
+
+	a.Equal(0, len(mgr.Jobs()))
+
+	mgr.scheduled.At("at", func(t time.Time) error {
+		println("at:", t.Format(time.RFC3339))
+		return nil
+	}, time.Now(), false)
+	a.Equal(1, len(mgr.scheduled.Jobs()))
 }
