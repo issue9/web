@@ -65,6 +65,20 @@ func (srv *Server) AddService(title string, f Func) {
 }
 
 func (srv *Server) runServices() {
+	l := srv.Logs()
+	msg := srv.LocalePrinter().Sprintf("scheduled job")
+	srv.AddService(msg, func(ctx context.Context) error {
+		go func() {
+			if err := srv.scheduled.Serve(l.ERROR(), l.DEBUG()); err != nil {
+				l.Error(err)
+			}
+		}()
+
+		<-ctx.Done()
+		srv.scheduled.Stop()
+		return context.Canceled
+	})
+
 	for _, s := range srv.services {
 		s.Run()
 	}

@@ -32,6 +32,10 @@ messages:
   message:
     msg: '未找到 %[1]s 的依赖模块 %[2]s'
 
+- key: 'scheduled job'
+  message:
+    msg: '计划任务'
+
 # 合并两个错误对象返回的提示信息
 - key: '%s when return %s'
   message:

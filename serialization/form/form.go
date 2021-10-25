@@ -44,7 +44,6 @@ import (
 	"net/url"
 )
 
-// Mimetype 当前编码的媒体类型
 const Mimetype = "application/x-www-form-urlencoded"
 
 // Marshaler 将一个普通对象转换成 form 类型

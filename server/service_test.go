@@ -116,9 +116,10 @@ func TestService_srv1(t *testing.T) {
 	srv1, start, exit := buildSrv1()
 	srv.AddService("srv1", srv1)
 	srv.runServices()
+	srv.serving = true
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	s1 := srv.services[1]
+	s1 := srv.services[0]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), ServiceRunning)
 	s1.Stop()
@@ -145,7 +146,8 @@ func TestService_srv2(t *testing.T) {
 	srv2, start, exit := buildSrv2()
 	srv.AddService("srv2", srv2)
 	srv.runServices() // 注册并运行服务
-	s2 := srv.services[1]
+	srv.serving = true
+	s2 := srv.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), ServiceRunning)
@@ -181,7 +183,8 @@ func TestService_srv3(t *testing.T) {
 	srv3, start, exit := buildSrv3()
 	srv.AddService("srv3", srv3)
 	srv.runServices()
-	s3 := srv.services[1]
+	srv.serving = true
+	s3 := srv.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), ServiceRunning)
@@ -204,45 +207,46 @@ func TestService_srv3(t *testing.T) {
 
 func TestServer_service(t *testing.T) {
 	a := assert.New(t)
-	mgr := newServer(a, nil)
+	srv := newServer(a, nil)
 
 	// 未运行
 
-	a.False(mgr.Serving())
-	srv0 := mgr.services[0]
-	a.Equal(srv0.State(), ServiceStopped)
+	a.False(srv.Serving())
+	a.Equal(0, len(srv.Services()))
 
 	s1, start1, exit1 := buildSrv1()
-	mgr.AddService("srv1", s1)
-	a.Equal(2, len(mgr.Services()))
-	srv1 := mgr.services[1]
-	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(srv1.f, s1)                // 并不会改变状态
+	srv.AddService("srv1", s1)
+	a.Equal(1, len(srv.Services()))
+	srv1 := srv.services[0]
+	a.Equal(srv1.f, s1) // 并不会改变状态
+	a.Equal(srv1.State(), ServiceStopped)
 
 	// 运行中
 
-	mgr.runServices()
-	mgr.serving = true
+	srv.runServices()
+	a.Equal(2, len(srv.Services())) // 在 runServices 中添加了 Scheduled 服务
+	srv.serving = true
 	<-start1
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(ServiceRunning, srv0.State()).
+	sched := srv.services[1]
+	a.Equal(ServiceRunning, sched.State()).
 		Equal(ServiceRunning, srv1.State())
 
 	// 运行中添加
 	s2, start2, exit2 := buildSrv1()
-	mgr.AddService("srv2", s2)
-	a.Equal(3, len(mgr.Services()))
-	srv2 := mgr.services[2]
+	srv.AddService("srv2", s2)
+	a.Equal(3, len(srv.Services()))
+	srv2 := srv.services[2]
 	<-start2
 	time.Sleep(500 * time.Microsecond)    // 等待主服务设置状态值
 	a.Equal(ServiceRunning, srv2.State()) // 运行中添加自动运行服务
 
-	mgr.stopServices()
+	srv.stopServices()
 	<-exit1
 	<-exit2
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(srv1.State(), ServiceStopped)
-	a.Equal(srv0.State(), ServiceStopped)
+	a.Equal(sched.State(), ServiceStopped)
 	a.Equal(srv2.State(), ServiceStopped)
 }
 

@@ -130,18 +130,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		localePrinter: l.Printer(o.Tag),
 	}
 
-	srv.AddService("计划任务", func(ctx context.Context) error {
-		go func() {
-			if err := srv.scheduled.Serve(o.Logs.ERROR(), o.Logs.DEBUG()); err != nil {
-				o.Logs.Error(err)
-			}
-		}()
-
-		<-ctx.Done()
-		srv.scheduled.Stop()
-		return context.Canceled
-	})
-
 	srv.httpServer.Handler = srv.groups
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {

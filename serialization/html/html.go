@@ -2,7 +2,7 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//  mt := content.NewContent()
+//  mt := srv.NewContent()
 //  tpl := template.ParseFiles(...)
 //  mt.Add("text/html", html.Marshal, nil)
 //
@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-// Mimetype HTML 的 mimetype 值
 const Mimetype = "text/html"
 
 // Template 传递给 Marshal 的参数

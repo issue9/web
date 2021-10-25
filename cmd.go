@@ -59,7 +59,7 @@ type Command struct {
 	// 可以为空。
 	Options OptionsFunc
 
-	// 在运行服务之前对 server 的额外操作
+	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。可以为空。
 	Init func(*Server) error
@@ -76,7 +76,7 @@ type Command struct {
 
 	// 以下是初始 Server 对象的参数
 
-	Files          *serialization.Files // 为空会给定默认值，能正常解析 xml、yaml 和 json
+	Files          *serialization.Files // 为空初始化为能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
 	ConfigFilename string               // 默认为 web.xml
 }
 
@@ -85,7 +85,6 @@ func (cmd *Command) Exec() error {
 	if err := cmd.sanitize(); err != nil {
 		return err
 	}
-
 	return cmd.exec()
 }
 

@@ -9,10 +9,8 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-// Mimetype 当前包能解析的编码类型
 const Mimetype = "text/plain"
 
-// Marshal 针对文本内容的 MarshalFunc 实现
 func Marshal(v interface{}) ([]byte, error) {
 	switch vv := v.(type) {
 	case string:
@@ -28,7 +26,6 @@ func Marshal(v interface{}) ([]byte, error) {
 	return nil, serialization.ErrUnsupported
 }
 
-// Unmarshal 针对文本内容的 UnmarshalFunc 实现
 func Unmarshal(data []byte, v interface{}) (err error) {
 	switch vv := v.(type) {
 	case *string:

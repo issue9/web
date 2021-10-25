@@ -88,8 +88,6 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 
 	srv.AddResult(411, 41110, localeutil.Phrase("41110"))
 
-	a.Equal(1, len(srv.Services())) // 默认的计划任务
-
 	return srv
 }
 
