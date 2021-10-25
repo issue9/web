@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package content
+package server
 
 import (
 	"fmt"
@@ -198,9 +198,9 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 // Results 错误信息列表
 //
 // p 用于返回特定语言的内容。
-func (c *Content) Results(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(c.resultMessages))
-	for code, msg := range c.resultMessages {
+func (srv *Server) Results(p *message.Printer) map[int]string {
+	msgs := make(map[int]string, len(srv.resultMessages))
+	for code, msg := range srv.resultMessages {
 		msgs[code] = msg.LocaleString(p)
 	}
 	return msgs
@@ -210,34 +210,34 @@ func (c *Content) Results(p *message.Printer) map[int]string {
 //
 // 键名为错误信息的数字代码，键值是具体的错误信息描述。
 // 同时键名向下取整，直到三位长度的整数作为其返回给客户端的状态码。
-func (c *Content) AddResults(messages map[int]localeutil.LocaleStringer) {
+func (srv *Server) AddResults(messages map[int]localeutil.LocaleStringer) {
 	for code, phrase := range messages {
 		status := calcStatus(code)
-		c.AddResult(status, code, phrase)
+		srv.AddResult(status, code, phrase)
 	}
 }
 
 // AddResult 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (c *Content) AddResult(status, code int, phrase localeutil.LocaleStringer) {
-	if _, found := c.resultMessages[code]; found {
+func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer) {
+	if _, found := srv.resultMessages[code]; found {
 		panic(fmt.Sprintf("重复的消息 ID: %d", code))
 	}
-	c.resultMessages[code] = &resultMessage{status: status, LocaleStringer: phrase}
+	srv.resultMessages[code] = &resultMessage{status: status, LocaleStringer: phrase}
 }
 
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 // fields 表示明细字段，可以为空，之后通过 Result.Add 添加。
-func (c *Content) Result(p *message.Printer, code int, fields ResultFields) Result {
-	msg, found := c.resultMessages[code]
+func (srv *Server) Result(p *message.Printer, code int, fields ResultFields) Result {
+	msg, found := srv.resultMessages[code]
 	if !found {
 		panic(fmt.Sprintf("不存在的错误代码: %d", code))
 	}
 
-	rslt := c.resultBuilder(msg.status, code, msg.LocaleString(p))
+	rslt := srv.resultBuilder(msg.status, code, msg.LocaleString(p))
 	for k, vals := range fields {
 		rslt.Add(k, vals...)
 	}

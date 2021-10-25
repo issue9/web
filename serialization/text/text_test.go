@@ -7,8 +7,8 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serialization/text/testobject"
 )
 
 var (

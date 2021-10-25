@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 
-package content
+package server
 
 import (
 	"encoding/json"
 	"encoding/xml"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/content/form"
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serialization/form"
 )
 
-var _ BuildResultFunc = DefaultBuilder
+var (
+	_ BuildResultFunc  = DefaultBuilder
+	_ form.Marshaler   = &defaultResult{}
+	_ form.Unmarshaler = &defaultResult{}
+)
 
 var (
 	mimetypeResult = &defaultResult{
@@ -185,98 +187,88 @@ func TestDefaultResultForm(t *testing.T) {
 	a.Equal(obj, simpleMimetypeResult)
 }
 
-func buildResultCatalog(c *Content, a *assert.Assertion) {
-	b := c.Locale().Builder()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-}
-
-func TestContent_Result(t *testing.T) {
+func TestServer_Result(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
-	buildResultCatalog(c, a)
+	srv := newServer(a, nil)
 
-	c.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
+	srv.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
-	rslt, ok := c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, nil).(*defaultResult)
+	rslt, ok := srv.Result(srv.Locale().Printer(language.SimplifiedChinese), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans")
 
 	// 采用 und
-	rslt, ok = c.Result(c.newLocalePrinter(language.Und), 40000, nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在的本地化信息，采用默认的 und
-	rslt, ok = c.Result(c.newLocalePrinter(language.Afrikaans), 40000, nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Afrikaans), 40000, nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在
-	a.Panic(func() { c.Result(c.newLocalePrinter(language.Afrikaans), 400, nil) })
-	a.Panic(func() { c.Result(c.newLocalePrinter(language.Afrikaans), 50000, nil) })
+	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), 400, nil) })
+	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), 50000, nil) })
 
 	// with fields
 
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
-	rslt, ok = c.Result(c.newLocalePrinter(language.SimplifiedChinese), 40000, fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.SimplifiedChinese), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 
 	// 采用 und
-	rslt, ok = c.Result(c.newLocalePrinter(language.Und), 40000, fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), 40000, fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 }
 
-func TestContent_AddResult(t *testing.T) {
+func TestServer_AddResult(t *testing.T) {
 	a := assert.New(t)
-	mgr := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
+	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
-		mgr.AddResult(400, 1, localeutil.Phrase("1"))
-		mgr.AddResult(400, 100, localeutil.Phrase("100"))
+		srv.AddResult(400, 1, localeutil.Phrase("1"))
+		srv.AddResult(400, 100, localeutil.Phrase("100"))
 	})
 
-	msg, found := mgr.resultMessages[1]
+	msg, found := srv.resultMessages[1]
 	a.True(found).
 		Equal(msg.status, 400)
 
-	msg, found = mgr.resultMessages[401]
+	msg, found = srv.resultMessages[401]
 	a.False(found).Nil(msg)
 
 	// 重复的 ID
 	a.Panic(func() {
-		mgr.AddResult(400, 1, localeutil.Phrase("40010"))
+		srv.AddResult(400, 1, localeutil.Phrase("40010"))
 	})
 }
 
-func TestContent_Results(t *testing.T) {
+func TestServer_Results(t *testing.T) {
 	a := assert.New(t)
-	c := New(DefaultBuilder, time.Local, serialization.NewFiles(5), language.SimplifiedChinese)
-	a.NotNil(c)
-	buildResultCatalog(c, a)
+	c := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
 		c.AddResults(map[int]localeutil.LocaleStringer{40010: localeutil.Phrase("lang")})
 	})
 
-	msg := c.Results(c.newLocalePrinter(language.Und))
+	msg := c.Results(c.Locale().Printer(language.Und))
 	a.Equal(msg[40010], "und")
 
-	msg = c.Results(c.newLocalePrinter(language.SimplifiedChinese))
+	msg = c.Results(c.Locale().Printer(language.SimplifiedChinese))
 	a.Equal(msg[40010], "hans")
 
-	msg = c.Results(c.newLocalePrinter(language.TraditionalChinese))
+	msg = c.Results(c.Locale().Printer(language.TraditionalChinese))
 	a.Equal(msg[40010], "hant")
 
-	msg = c.Results(c.newLocalePrinter(language.English))
+	msg = c.Results(c.Locale().Printer(language.English))
 	a.Equal(msg[40010], "und")
 
 	a.Panic(func() {

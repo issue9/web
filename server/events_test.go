@@ -13,7 +13,7 @@ import (
 
 func TestServer_Publisher(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 
 	p := s.Publisher("p1")
 	a.NotNil(p)
@@ -33,7 +33,7 @@ func TestServer_Publisher(t *testing.T) {
 
 func TestServer_Eventer(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 	buf := new(bytes.Buffer)
 
 	p := s.Publisher("p1")

@@ -24,9 +24,8 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/content"
-	"github.com/issue9/web/content/gob"
-	"github.com/issue9/web/content/text"
+	"github.com/issue9/web/serialization/gob"
+	"github.com/issue9/web/serialization/text"
 )
 
 var _ fs.FS = &Server{}
@@ -67,19 +66,24 @@ func newLogs(a *assert.Assertion) *logs.Logs {
 }
 
 // 声明一个 server 实例
-func newServer(a *assert.Assertion) *Server {
-	srv, err := New("app", "0.1.0", &Options{Port: ":8080", Logs: newLogs(a)})
+func newServer(a *assert.Assertion, o *Options) *Server {
+	if o == nil {
+		o = &Options{Port: ":8080", Logs: newLogs(a)}
+	}
+	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
-	// srv.Catalog 默认指向 message.DefaultCatalog
-	a.NotError(message.SetString(language.Und, "lang", "und"))
-	a.NotError(message.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(message.SetString(language.TraditionalChinese, "lang", "hant"))
+	// locale
+	b := srv.Locale().Builder()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
+	// mimetype
 	a.NotError(srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
 	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, content.DefaultMimetype))
+	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
 	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	srv.AddResult(411, 41110, localeutil.Phrase("41110"))
@@ -107,8 +111,8 @@ func TestGetServer(t *testing.T) {
 
 	srv, err := New("app", "0.1.0", &Options{Port: ":8080", Logs: newLogs(a)})
 	a.NotError(err).NotNil(srv)
-	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(srv.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
+	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 	var isRequested bool
 
 	router, err := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
@@ -183,7 +187,7 @@ func TestGetServer(t *testing.T) {
 
 func TestServer_vars(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	type (
 		t1 int
@@ -210,7 +214,7 @@ func TestServer_Serve(t *testing.T) {
 	a := assert.New(t)
 	exit := make(chan bool, 1)
 
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8080/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
@@ -292,7 +296,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	})
 	a.NotError(err).NotNil(server)
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(server.content.Mimetypes().Add(text.Marshal, text.Unmarshal, content.DefaultMimetype))
+	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 
 	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
@@ -328,7 +332,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
 	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
@@ -393,7 +397,7 @@ func TestServer_Close(t *testing.T) {
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
 	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
@@ -440,7 +444,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 func TestServer_DisableCompression(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.groups, nil)
 	defer srv.Close()
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))

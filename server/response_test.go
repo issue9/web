@@ -14,8 +14,6 @@ import (
 	"github.com/issue9/assert"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
-
-	"github.com/issue9/web/content"
 )
 
 var (
@@ -27,28 +25,28 @@ func TestContext_Critical(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
 	criticalLog.Reset()
-	b := newServer(a)
+	b := newServer(a, nil)
 	b.Logs().CRITICAL().SetOutput(criticalLog)
 	b.Logs().CRITICAL().SetFlags(log.Llongfile)
 	ctx := &Context{
-		Context: &content.Context{Response: w},
-		server:  b,
+		Response: w,
+		server:   b,
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:38") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:36") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1log2")
 }
 
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	b := newServer(a)
+	b := newServer(a, nil)
 	errLog.Reset()
 	b.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
-		Context: &content.Context{Response: w},
-		server:  b,
+		Response: w,
+		server:   b,
 	}
 
 	ctx.renderResponser(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
@@ -58,12 +56,12 @@ func TestContext_Errorf(t *testing.T) {
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t)
 	w := httptest.NewRecorder()
-	b := newServer(a)
+	b := newServer(a, nil)
 	criticalLog.Reset()
 	b.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
-		Context: &content.Context{Response: w},
-		server:  b,
+		Response: w,
+		server:   b,
 	}
 
 	ctx.renderResponser(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
@@ -77,11 +75,11 @@ func TestContext_ResultWithFields(t *testing.T) {
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	ctx := newServer(a).NewContext(w, r)
+	ctx := newServer(a, nil).NewContext(w, r)
 	ctx.server.AddResult(http.StatusBadRequest, 40010, localeutil.Phrase("40010"))
 	ctx.server.AddResult(http.StatusBadRequest, 40011, localeutil.Phrase("40011"))
 
-	resp := ctx.Result(40010, content.ResultFields{
+	resp := ctx.Result(40010, ResultFields{
 		"k1": []string{"v1", "v2"},
 	})
 
@@ -91,7 +89,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 
 func TestContext_Result(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))
 

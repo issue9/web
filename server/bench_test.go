@@ -11,14 +11,14 @@ import (
 
 	"github.com/issue9/assert"
 
-	"github.com/issue9/web/content/text"
-	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/internal/charsetdata"
+	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/serialization/text/testobject"
 )
 
 func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -34,7 +34,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -50,7 +50,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -67,7 +67,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -84,7 +84,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -119,7 +119,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -138,7 +138,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkPostWithCharset(b *testing.B) {
 	a := assert.New(b)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -179,5 +179,13 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		obj.Name = "中文2"
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+	}
+}
+
+func BenchmarkBuildContentType(b *testing.B) {
+	a := assert.New(b)
+
+	for i := 0; i < b.N; i++ {
+		a.True(len(buildContentType(DefaultMimetype, DefaultCharset)) > 0)
 	}
 }

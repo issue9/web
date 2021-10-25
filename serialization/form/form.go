@@ -10,7 +10,7 @@
 //  func write(ctx *web.Context) {
 //      vals := urls.Values{}
 //      vals.Add("name", "caixw")
-//      ctx.Render(http.StatusOK, vals, nil)
+//      return web.Object(http.StatusOK, vals, nil)
 //  }
 //
 //

@@ -14,10 +14,10 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/content/text"
-	"github.com/issue9/web/content/text/testobject"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/serialization/text/testobject"
 )
 
 func TestNewServer(t *testing.T) {

@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
 )
 
@@ -37,7 +36,7 @@ type Options struct {
 	// 指定生成 Result 数据的方法
 	//
 	// 默认情况下指向  result.DefaultBuilder。
-	ResultBuilder content.BuildResultFunc
+	ResultBuilder BuildResultFunc
 
 	// 缓存系统
 	//
@@ -109,7 +108,7 @@ func (o *Options) sanitize() error {
 	}
 
 	if o.ResultBuilder == nil {
-		o.ResultBuilder = content.DefaultBuilder
+		o.ResultBuilder = DefaultBuilder
 	}
 
 	if o.Cache == nil {

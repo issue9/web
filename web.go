@@ -10,7 +10,6 @@ import (
 	"github.com/issue9/localeutil"
 
 	"github.com/issue9/web/config"
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -28,7 +27,8 @@ type (
 	Responser    = server.Responser
 	Router       = server.Router
 	Action       = server.Action
-	ResultFields = content.ResultFields
+	ResultFields = server.ResultFields
+	Result       = server.Result
 	Files        = serialization.Files
 
 	// LocaleStringer 本地化字符串需要实在的接口

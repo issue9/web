@@ -19,7 +19,7 @@ var _ fs.FS = &Module{}
 
 func TestServer_initModules(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 	var count int
 
 	m1 := s.NewModule("users1", "1.0.0", localeutil.Phrase("user1 module"), "users2", "users3")
@@ -73,7 +73,7 @@ func TestPluginInitFuncName(t *testing.T) {
 
 func TestServer_Actions(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	a.Empty(srv.Actions())
 
 	m1 := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
@@ -96,7 +96,7 @@ func TestServer_Actions(t *testing.T) {
 
 func TestModule_Action(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 	m := s.NewModule("user1", "1.0.0", localeutil.Phrase("user1 desc"))
 	a.NotNil(m)
 
@@ -114,7 +114,7 @@ func TestModule_Action(t *testing.T) {
 
 func TestServer_NewModule(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	builder := catalog.NewBuilder()
 	a.NotError(builder.SetString(language.SimplifiedChinese, "m1 desc", "m1 描述信息"))
@@ -139,7 +139,7 @@ func TestServer_NewModule(t *testing.T) {
 
 func TestAction_AddInit(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 	m := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
 	a.NotNil(m)
 
@@ -156,7 +156,7 @@ func TestAction_AddInit(t *testing.T) {
 
 func TestModule_Object(t *testing.T) {
 	a := assert.New(t)
-	s := newServer(a)
+	s := newServer(a, nil)
 	o := 5
 
 	m1 := s.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))

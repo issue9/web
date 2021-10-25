@@ -14,7 +14,6 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/events"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/middleware/v5/errorhandler"
@@ -22,8 +21,8 @@ import (
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/content"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/service"
@@ -35,6 +34,14 @@ const (
 	contextKeyServer contextKey = iota
 	contextKeyContext
 )
+
+// DefaultMimetype 默认的媒体类型
+//
+// 在不能获取输入和输出的媒体类型时，会采用此值作为其默认值。
+const DefaultMimetype = "application/octet-stream"
+
+// DefaultCharset 默认的字符集
+const DefaultCharset = "utf-8"
 
 // Server 提供 HTTP 服务
 type (
@@ -57,9 +64,20 @@ type (
 		cache    cache.Cache
 		uptime   time.Time
 		modules  []*Module
-		content  *content.Content
 		services *service.Manager
 		events   map[string]events.Eventer
+
+		// result
+		resultMessages map[int]*resultMessage
+		resultBuilder  BuildResultFunc
+
+		mimetypes *serialization.Mimetypes
+
+		// 本地化相关信息
+		location      *time.Location
+		locale        *serialization.Locale
+		tag           language.Tag
+		localePrinter *message.Printer
 	}
 
 	ScheduledJobFunc = scheduled.JobFunc
@@ -79,6 +97,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
+	l := serialization.NewLocale(catalog.NewBuilder(catalog.Fallback(o.Tag)), o.Files)
+
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -97,9 +117,18 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:    o.Cache,
 		modules:  make([]*Module, 0, 20),
 		uptime:   time.Now(),
-		content:  content.New(o.ResultBuilder, o.Location, o.Files, o.Tag),
 		services: service.NewManager(o.Location, o.Logs),
 		events:   make(map[string]events.Eventer, 5),
+
+		resultMessages: make(map[int]*resultMessage, 20),
+		resultBuilder:  o.ResultBuilder,
+
+		mimetypes: serialization.NewMimetypes(10),
+
+		location:      o.Location,
+		locale:        l,
+		tag:           o.Tag,
+		localePrinter: l.Printer(o.Tag),
 	}
 	srv.httpServer.Handler = srv.groups
 
@@ -146,7 +175,7 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.content.Location() }
+func (srv *Server) Location() *time.Location { return srv.location }
 
 // Logs 返回关联的 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
@@ -247,33 +276,15 @@ func (m *Module) Server() *Server { return m.srv }
 func (t *Action) Server() *Server { return t.Module().Server() }
 
 // Mimetypes 返回用于序列化 web 内容的操作接口
-func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.content.Mimetypes() }
+func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.mimetypes }
 
 // Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() *serialization.Files { return srv.content.Files() }
+func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }
 
 // Locale 返回用于序列化文件内容的操作接口
-func (srv *Server) Locale() *serialization.Locale { return srv.content.Locale() }
+func (srv *Server) Locale() *serialization.Locale { return srv.locale }
 
-func (srv *Server) LocalePrinter() *message.Printer { return srv.content.LocalePrinter() }
+func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }
 
 // Tag 返回默认的语言标签
-func (srv *Server) Tag() language.Tag { return srv.content.Tag() }
-
-// Results 返回在指定语言下的所有代码以及关联的描述信息
-func (srv *Server) Results(p *message.Printer) map[int]string { return srv.content.Results(p) }
-
-// AddResult 添加错误代码与关联的描述信息
-func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer) {
-	srv.content.AddResult(status, code, phrase)
-}
-
-// AddResults 添加多条错误代码与关联的描述信息
-func (srv *Server) AddResults(messages map[int]localeutil.LocaleStringer) {
-	srv.content.AddResults(messages)
-}
-
-// Result 返回指定代码在指定语言的错误描述信息
-func (srv *Server) Result(p *message.Printer, code int, fields content.ResultFields) content.Result {
-	return srv.content.Result(p, code, fields)
-}
+func (srv *Server) Tag() language.Tag { return srv.tag }

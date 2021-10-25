@@ -13,7 +13,7 @@ import (
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -34,7 +34,7 @@ func TestParams_empty(t *testing.T) {
 
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -76,7 +76,7 @@ func TestParams_ID_MustID(t *testing.T) {
 
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -112,7 +112,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -148,7 +148,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -181,7 +181,7 @@ func TestParams_String_MustString(t *testing.T) {
 
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -218,7 +218,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -239,7 +239,7 @@ func TestContext_ParamID(t *testing.T) {
 
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 

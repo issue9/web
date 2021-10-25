@@ -21,7 +21,7 @@ var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 
 func TestRouter(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.groups, nil)
 	router, err := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
@@ -65,7 +65,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouter_SetDebugger(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.groups, nil)
 	defer srv.Close()
 	r, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
@@ -143,7 +143,7 @@ func TestRouter_URL(t *testing.T) {
 		},
 	}
 
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	for i, item := range data {
 		router, err := srv.NewRouter("test-router", item.root, group.MatcherFunc(group.Any))
 		a.NotError(err).NotNil(router)
@@ -170,7 +170,7 @@ func TestRouter_URL(t *testing.T) {
 
 func TestRouter_NewRouter(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	host := group.NewHosts("example.com")
 	a.NotNil(host)
 
@@ -196,9 +196,9 @@ func TestRouter_NewRouter(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusNotFound)
 }
 
-func TestRouterPrefix(t *testing.T) {
+func TestRouter_Prefix(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.groups, nil)
 	router, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
@@ -229,7 +229,7 @@ func TestRouterPrefix(t *testing.T) {
 
 func TestRouter_Static(t *testing.T) {
 	a := assert.New(t)
-	server := newServer(a)
+	server := newServer(a, nil)
 	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
@@ -308,7 +308,7 @@ func TestRouter_Static(t *testing.T) {
 		Status(http.StatusNotFound)
 
 	// 带域名
-	server = newServer(a)
+	server = newServer(a, nil)
 	host := group.NewHosts("example.com")
 	a.NotNil(host)
 	r, err = server.NewRouter("example", "https://example.com/blog", host)
@@ -322,7 +322,7 @@ func TestRouter_Static(t *testing.T) {
 
 func TestServer_Router(t *testing.T) {
 	a := assert.New(t)
-	srv := newServer(a)
+	srv := newServer(a, nil)
 
 	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
@@ -343,7 +343,7 @@ func TestServer_Router(t *testing.T) {
 func TestAction_AddRoutes(t *testing.T) {
 	a := assert.New(t)
 
-	srv := newServer(a)
+	srv := newServer(a, nil)
 	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
 
@@ -354,7 +354,7 @@ func TestAction_AddRoutes(t *testing.T) {
 	a.Error(srv.initModules(false, "install"))
 	a.Empty(r.MuxRouter().Routes()) // 已初始化，但是未指定正常的路由名称
 
-	srv = newServer(a)
+	srv = newServer(a, nil)
 	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
 	m = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
