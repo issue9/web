@@ -21,7 +21,6 @@ import (
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
@@ -92,8 +91,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	l := serialization.NewLocale(catalog.NewBuilder(catalog.Fallback(o.Tag)), o.Files)
-
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -125,9 +122,9 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		location:      o.Location,
-		locale:        l,
+		locale:        o.locale,
 		tag:           o.Tag,
-		localePrinter: l.Printer(o.Tag),
+		localePrinter: o.locale.Printer(o.Tag),
 	}
 
 	srv.httpServer.Handler = srv.groups

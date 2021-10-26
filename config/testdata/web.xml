@@ -1,4 +1,4 @@
-<!-- cmfx.xml 的测试文件，需要与其它内容数值相同 -->
+<!-- web.xml 的测试文件，需要与其它内容数值相同 -->
 
 <web port=":8082">
     <http readTimeout="3s" />

@@ -71,6 +71,9 @@ type Webconfig struct {
 //
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
+//
+// NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 Recovery
+// 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
 func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
 	conf := &Webconfig{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
@@ -78,14 +81,16 @@ func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.O
 	}
 
 	if err := conf.sanitize(); err != nil {
+		if err2, ok := err.(*Error); ok {
+			err2.Config = filename
+		}
 		return nil, err
 	}
 
-	return conf.NewOptions(files, f)
+	return conf.NewOptions(files, f), nil
 }
 
-// NewOptions 返回 server.Options 对象
-func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) (*server.Options, error) {
+func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) *server.Options {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	h := conf.HTTP
@@ -110,7 +115,7 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) (*server
 		Logs:                conf.logs,
 		IgnoreCompressTypes: conf.IgnoreCompressTypes,
 		Files:               files,
-	}, nil
+	}
 }
 
 func (conf *Webconfig) sanitize() error {

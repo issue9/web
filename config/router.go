@@ -70,7 +70,7 @@ func (c *CORS) sanitize() *Error {
 	for _, o := range c.Origins {
 		if o == "*" {
 			if c.AllowCredentials {
-				return &Error{Field: "allowCredentials", Message: "不能与 allowedOrigins=* 同时成立"}
+				return &Error{Field: "allowCredentials", Message: "不能与 origins=* 同时成立"}
 			}
 		}
 	}

@@ -1,0 +1,12 @@
+<!-- web.xml 的测试文件，内容错误 -->
+
+<web port=":8082">
+    <http readTimeout="3s" />
+    <timezone>Africa/Addis_Ababa</timezone>
+    <router>
+        <cors allowCredentials="true">
+            <origin>*</origin>
+        </cors>
+    </router>
+
+</web>

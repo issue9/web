@@ -17,7 +17,7 @@ func TestRouter_sanitize(t *testing.T) {
 	r = &Router{CORS: &CORS{}}
 	a.NotError(r.sanitize()).NotNil(r.cors)
 
-	r = &Router{CORS: &CORS{AllowedOrigins: []string{"*"}, AllowCredentials: true}}
+	r = &Router{CORS: &CORS{Origins: []string{"*"}, AllowCredentials: true}}
 	err := r.sanitize()
 	a.NotNil(err).Equal(err.Field, "cors.allowCredentials")
 

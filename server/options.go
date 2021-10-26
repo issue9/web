@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/serialization"
 )
@@ -92,6 +93,8 @@ type Options struct {
 	//
 	// 如果为空，则会尝试读取当前系统的本地化信息。
 	Tag language.Tag
+
+	locale *serialization.Locale
 }
 
 func (o *Options) sanitize() error {
@@ -144,6 +147,9 @@ func (o *Options) sanitize() error {
 	if o.Files == nil {
 		o.Files = serialization.NewFiles(5)
 	}
+
+	b := catalog.NewBuilder(catalog.Fallback(o.Tag))
+	o.locale = serialization.NewLocale(b, o.Files)
 
 	return nil
 }

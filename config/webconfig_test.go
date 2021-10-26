@@ -31,6 +31,13 @@ func TestNewOptions(t *testing.T) {
 
 	opt, err = NewOptions(files, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)
+
+	opt, err = NewOptions(files, os.DirFS("./testdata"), "invalid-web.xml")
+	a.Error(err).Nil(opt)
+	err2, ok := err.(*Error)
+	a.True(ok).NotNil(err2)
+	a.Equal(err2.Config, "invalid-web.xml").
+		Equal(err2.Field, "router.cors.allowCredentials")
 }
 
 func TestWebconfig_sanitize(t *testing.T) {
