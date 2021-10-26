@@ -4,16 +4,14 @@
 package serialization
 
 import (
-	"errors"
-	"fmt"
-
+	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 )
 
 // ErrUnsupported 返回不支持序列化的错误信息
 //
 // 当一个对象无法被正常的序列化或是反序列化是，返回此错误。
-var ErrUnsupported = errors.New("不支持序列化或是反序列化")
+var ErrUnsupported = localeutil.Error("unsupported serialization")
 
 type (
 	// Serialization 管理注册的序列化函数
@@ -57,7 +55,7 @@ func (s *Serialization) Add(m MarshalFunc, u UnmarshalFunc, name ...string) erro
 func (s *Serialization) add(name string, m MarshalFunc, u UnmarshalFunc) error {
 	for _, mt := range s.serializes {
 		if mt.Name == name {
-			return fmt.Errorf("已经存在相同名称 %s 的序列化函数", name)
+			return localeutil.Error("has serialization function %s", name)
 		}
 	}
 

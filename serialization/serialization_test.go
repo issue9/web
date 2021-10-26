@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/localeutil"
 )
 
 func TestSerialization(t *testing.T) {
@@ -17,7 +18,7 @@ func TestSerialization(t *testing.T) {
 	// 不能添加同名的多次
 	a.NotError(s.Add(nil, nil, "n1", "n2"))
 	a.Equal(2, s.Len())
-	a.ErrorString(s.Add(nil, nil, "n1"), "已经存在相同名称")
+	a.Equal(s.Add(nil, nil, "n1"), localeutil.Error("has serialization function %s", "n1"))
 	a.Equal(2, s.Len())
 
 	// set

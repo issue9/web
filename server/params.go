@@ -22,7 +22,7 @@ var emptyParams = params.Params(map[string]string{})
 type Params struct {
 	ctx    *Context
 	params params.Params
-	errors ResultFields
+	fields ResultFields
 }
 
 // Params 声明一个新的 Params 实例
@@ -35,7 +35,7 @@ func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
 		params: ps,
-		errors: make(ResultFields, len(ps)),
+		fields: make(ResultFields, len(ps)),
 	}
 }
 
@@ -45,7 +45,7 @@ func (ctx *Context) Params() *Params {
 func (p *Params) ID(key string) int64 {
 	id := p.Int64(key)
 	if id <= 0 {
-		p.errors.Add(key, p.ctx.LocalePrinter.Sprintf("should great than 0"))
+		p.fields.Add(key, p.ctx.LocalePrinter.Sprintf("should great than 0"))
 	}
 
 	return id
@@ -67,12 +67,12 @@ func (p *Params) MustID(key string, def int64) int64 {
 
 	ret, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 		return def
 	}
 
 	if ret <= 0 {
-		p.errors.Add(key, p.ctx.LocalePrinter.Sprintf("should great than 0"))
+		p.fields.Add(key, p.ctx.LocalePrinter.Sprintf("should great than 0"))
 		return def
 	}
 
@@ -83,7 +83,7 @@ func (p *Params) MustID(key string, def int64) int64 {
 func (p *Params) Int64(key string) int64 {
 	ret, err := p.params.Int(key)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 	}
 
 	return ret
@@ -103,7 +103,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 
 	ret, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -114,7 +114,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 func (p *Params) String(key string) string {
 	ret, err := p.params.String(key)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 	}
 
 	return ret
@@ -140,7 +140,7 @@ func (p *Params) MustString(key, def string) string {
 func (p *Params) Bool(key string) bool {
 	ret, err := p.params.Bool(key)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 	}
 
 	return ret
@@ -163,7 +163,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 
 	ret, err := strconv.ParseBool(str)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -174,7 +174,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 func (p *Params) Float64(key string) float64 {
 	ret, err := p.params.Float(key)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 	}
 
 	return ret
@@ -194,7 +194,7 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 
 	ret, err := strconv.ParseFloat(str, 64)
 	if err != nil {
-		p.errors.Add(key, err.Error())
+		p.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -202,10 +202,10 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 }
 
 // HasErrors 是否有错误内容存在
-func (p *Params) HasErrors() bool { return len(p.errors) > 0 }
+func (p *Params) HasErrors() bool { return len(p.fields) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() ResultFields { return p.errors }
+func (p *Params) Errors() ResultFields { return p.fields }
 
 // Result 转换成 Result 对象
 func (p *Params) Result(code int) Responser {

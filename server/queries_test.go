@@ -47,7 +47,7 @@ func TestQueries_Int64(t *testing.T) {
 
 	// 无法转换，会返回默认值，且添加错误信息
 	a.Equal(q.Int64("str", 3), 3)
-	a.Equal(len(q.errors), 1)
+	a.Equal(len(q.fields), 1)
 }
 
 func TestQueries_String(t *testing.T) {

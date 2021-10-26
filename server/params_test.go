@@ -45,19 +45,19 @@ func TestParams_ID_MustID(t *testing.T) {
 
 		// 负数
 		a.Equal(ps.ID("i2"), -2)
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.ID("i3"), 0)
-		a.Equal(len(ps.errors), 2)
+		a.Equal(len(ps.fields), 2)
 
 		// MustID() 不会增加错误信息
 		a.Equal(ps.MustID("i3", 3), 3)
-		a.Equal(len(ps.errors), 2)
+		a.Equal(len(ps.fields), 2)
 
 		// MustID() 负数
 		a.Equal(ps.MustID("i2", 3), 3)
-		a.Equal(len(ps.errors), 2) // 之前已经有一个名为 i2 的错误信息，所以此处为覆盖
+		a.Equal(len(ps.fields), 2) // 之前已经有一个名为 i2 的错误信息，所以此处为覆盖
 
 		// MustID() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustID("str", 3), 3)
@@ -88,19 +88,19 @@ func TestParams_Int_MustInt(t *testing.T) {
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Int64("i3"), 0)
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustInt() 不会增加错误信息
 		a.Equal(ps.MustInt64("i3", 3), 3)
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustInt() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustInt64("str", 3), 3)
-		a.Equal(len(ps.errors), 2)
+		a.Equal(len(ps.fields), 2)
 
 		// MustInt() 正常转换
 		a.Equal(ps.MustInt64("i1", 3), 1)
-		a.Equal(len(ps.errors), 2)
+		a.Equal(len(ps.fields), 2)
 
 		return nil
 	})
@@ -124,11 +124,11 @@ func TestParams_Bool_MustBool(t *testing.T) {
 
 		// 不存在的参数，添加错误信息
 		a.False(ps.Bool("b3"))
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustBool() 不会增加错误信息
 		a.True(ps.MustBool("b3", true))
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustBool() 无法转换，会返回默认值，且添加错误信息
 		a.True(ps.MustBool("str", true))
@@ -161,7 +161,7 @@ func TestParams_String_MustString(t *testing.T) {
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.String("s3"), "")
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustString() 不会增加错误信息
 		a.Equal(ps.MustString("s3", "str3"), "str3")
@@ -194,11 +194,11 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Float64("f3"), 0.0)
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustFloat64() 不会增加错误信息
 		a.Equal(ps.MustFloat64("id3", 3.3), 3.3)
-		a.Equal(len(ps.errors), 1)
+		a.Equal(len(ps.fields), 1)
 
 		// MustFloat64() 无法转换，会返回默认值，且添加错误信息
 		a.Equal(ps.MustFloat64("str", 3.3), 3.3)

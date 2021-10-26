@@ -21,7 +21,7 @@ import (
 //  }
 type Queries struct {
 	ctx     *Context
-	errors  ResultFields
+	fields  ResultFields
 	queries url.Values
 }
 
@@ -34,7 +34,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		errors:  ResultFields{},
+		fields:  ResultFields{},
 		queries: queries,
 	}, nil
 }
@@ -61,7 +61,7 @@ func (q *Queries) Int(key string, def int) int {
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil {
-		q.errors.Add(key, err.Error())
+		q.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -79,7 +79,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 
 	v, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		q.errors.Add(key, err.Error())
+		q.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -108,7 +108,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 	v, err := strconv.ParseBool(str)
 	if err != nil {
-		q.errors.Add(key, err.Error())
+		q.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -126,7 +126,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil {
-		q.errors.Add(key, err.Error())
+		q.fields.Add(key, err.Error())
 		return def
 	}
 
@@ -134,10 +134,10 @@ func (q *Queries) Float64(key string, def float64) float64 {
 }
 
 // HasErrors 是否存在错误内容
-func (q *Queries) HasErrors() bool { return len(q.errors) > 0 }
+func (q *Queries) HasErrors() bool { return len(q.fields) > 0 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() ResultFields { return q.errors }
+func (q *Queries) Errors() ResultFields { return q.fields }
 
 // Result 转换成 Responser 对象
 func (q *Queries) Result(code int) Responser {
@@ -156,13 +156,13 @@ func (q *Queries) Result(code int) Responser {
 func (q *Queries) Object(v interface{}) {
 	errors := query.Parse(q.queries, v)
 	for key, vals := range errors {
-		q.errors.Add(key, vals...)
+		q.fields.Add(key, vals...)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		errors = vv.CTXSanitize(q.ctx)
 		for key, vals := range errors {
-			q.errors.Add(key, vals...)
+			q.fields.Add(key, vals...)
 		}
 	}
 }
