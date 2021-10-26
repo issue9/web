@@ -83,11 +83,12 @@ func (srv *Server) initModules(uninit bool, action string) error {
 	l.SetFlags(log.Ldate | log.Lmicroseconds)
 	defer l.SetFlags(flags)
 
-	l.Printf("开始初始化模块中的 %s...\n", action)
+	p := srv.LocalePrinter()
+	l.Println(p.Sprintf("run action %s...", action))
 	if err := dep.Dep(l, items); err != nil {
 		return err
 	}
-	l.Print("初始化完成！\n\n")
+	l.Println(p.Sprintf("action %s complete"))
 
 	return nil
 }
@@ -166,7 +167,7 @@ func (srv *Server) loadPlugin(path string) error {
 	if install, ok := symbol.(func(*Server) error); ok {
 		return install(srv)
 	}
-	return fmt.Errorf("插件 %s 未找到安装函数", path)
+	return localeutil.Error("plugin %s not found %s", path, PluginInitFuncName)
 }
 
 // Actions 返回 Action 列表
