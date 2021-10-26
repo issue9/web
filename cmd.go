@@ -5,6 +5,7 @@ package web
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,7 +16,6 @@ import (
 	"github.com/issue9/sliceutil"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -23,10 +23,11 @@ import (
 // Command 提供一种简单的命令行处理方式
 //
 // 由 Command 生成的命令行带以下三个参数：
-//  - action 运行的标签；
 //  - v 显示版本号；
+//  - h 显示帮助信息；
+//  - action 运行的标签；
 //  - fs 指定当前程序可读取的文件目录；
-// 以上三个参数的参数名称，可在配置内容中修改。
+// 以上几个参数的参数名称，可在配置内容中修改。
 //
 //  cmd := &web.Command{
 //      Name: "app",
@@ -36,6 +37,9 @@ import (
 //  }
 //
 //  cmd.Exec()
+//
+// NOTE: Command 中的大部分内容在 LoadServer 之前就运行，所以无法适用 Server.Locale
+// 的本地化操作，若有需要对命令行作本地化操作，需要自行实现。
 type Command struct {
 	Name string // 程序名称
 
@@ -66,6 +70,7 @@ type Command struct {
 
 	// 自定义命令行参数名
 	CmdVersion string // 默认为 v
+	CmdHelp    string // 默认值 h
 	CmdAction  string // 默认为 action
 	CmdFS      string // 默认为 fs
 
@@ -83,21 +88,21 @@ type Command struct {
 // Exec 执行命令行操作
 func (cmd *Command) Exec() error {
 	if err := cmd.sanitize(); err != nil {
-		return err
+		panic(err) // Command 配置错误直接 panic
 	}
+
 	return cmd.exec()
 }
 
-func (cmd *Command) sanitize() *config.Error {
+func (cmd *Command) sanitize() error {
 	if cmd.Name == "" {
-		return &config.Error{Field: "Name", Message: "不能为空"}
+		return errors.New("字段 Name 不能为空")
 	}
 	if cmd.Version == "" {
-		return &config.Error{Field: "Version", Message: "不能为空"}
+		return errors.New("字段 Version 不能为空")
 	}
-
 	if cmd.Init == nil {
-		return &config.Error{Field: "Init", Message: "不能为空"}
+		return errors.New("字段 Init 不能为空")
 	}
 
 	if cmd.Out == nil {
@@ -108,15 +113,15 @@ func (cmd *Command) sanitize() *config.Error {
 		f := serialization.NewFiles(5)
 
 		if err := f.Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
-			return &config.Error{Field: "Files", Message: err}
+			return err
 		}
 
 		if err := f.Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
-			return &config.Error{Field: "Files", Message: err}
+			return err
 		}
 
 		if err := f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-			return &config.Error{Field: "Files", Message: err}
+			return err
 		}
 
 		cmd.Files = f
@@ -135,12 +140,16 @@ func (cmd *Command) sanitize() *config.Error {
 	if cmd.CmdVersion == "" {
 		cmd.CmdVersion = "v"
 	}
+	if cmd.CmdHelp == "" {
+		cmd.CmdHelp = "h"
+	}
 
 	return nil
 }
 
 func (cmd *Command) exec() error {
 	v := flag.Bool(cmd.CmdVersion, false, "显示版本号")
+	h := flag.Bool(cmd.CmdHelp, false, "显示帮助信息")
 	action := flag.String(cmd.CmdAction, "", "执行的标签")
 	f := flag.String(cmd.CmdFS, "./", "可读取的目录")
 	flag.Parse()
@@ -150,8 +159,14 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
+	if *h {
+		flag.CommandLine.SetOutput(cmd.Out)
+		flag.CommandLine.PrintDefaults()
+		return nil
+	}
+
 	if *action == "" {
-		return &config.Error{Field: "action", Message: "不能为空"}
+		return errors.New("参数 action 不能为空")
 	}
 
 	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)

@@ -19,8 +19,8 @@ import "github.com/issue9/web"
 func main() {
     srv, _ := web.NewServer("web", "1.0.0", &web.Options{})
 
-	m1.Module(srv)
-	m2.Module(srv)
+    m1.Module(srv)
+    m2.Module(srv)
 
     srv.Serve(true, "serve")
 }

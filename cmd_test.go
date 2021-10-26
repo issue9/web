@@ -13,16 +13,13 @@ func TestCommand_sanitize(t *testing.T) {
 	a := assert.New(t)
 
 	cmd := &Command{}
-	err := cmd.sanitize()
-	a.Equal(err.Field, "Name")
+	a.ErrorString(cmd.sanitize(), "Name")
 
 	cmd = &Command{Name: "app", Version: "1.1.1"}
-	err = cmd.sanitize()
-	a.Equal(err.Field, "Init")
+	a.ErrorString(cmd.sanitize(), "Init")
 
 	cmd = &Command{Name: "app", Version: "1.1.1", Init: func(s *Server) error { return nil }}
-	err = cmd.sanitize()
-	a.NotError(err)
+	a.NotError(cmd.sanitize())
 
 	a.Equal(cmd.Out, os.Stdout).
 		NotNil(cmd.Files).
