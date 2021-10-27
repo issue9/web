@@ -27,7 +27,6 @@ import (
 //  - h 显示帮助信息；
 //  - fs 指定当前程序可读取的文件目录；
 //  - action 运行的标签；
-// 参数名称可自行修改修改。
 //
 //  cmd := &web.Command{
 //      Name: "app",
@@ -64,12 +63,6 @@ type Command struct {
 	//
 	// 比如添加模块等。可以为空。
 	Init func(*Server) error
-
-	// 自定义命令行参数名
-	CmdVersion string // 默认为 v
-	CmdHelp    string // 默认值 h
-	CmdAction  string // 默认为 action
-	CmdFS      string // 默认为 fs
 
 	// 命令行输出信息的通道
 	//
@@ -133,30 +126,21 @@ func (cmd *Command) sanitize() error {
 		cmd.ConfigFilename = "web.xml"
 	}
 
-	if cmd.CmdFS == "" {
-		cmd.CmdFS = "fs"
-	}
-	if cmd.CmdAction == "" {
-		cmd.CmdAction = "action"
-	}
-	if cmd.CmdVersion == "" {
-		cmd.CmdVersion = "v"
-	}
-	if cmd.CmdHelp == "" {
-		cmd.CmdHelp = "h"
-	}
-
 	return nil
 }
 
 func (cmd *Command) exec() error {
-	flag.CommandLine.SetOutput(cmd.Out)
+	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
+	cl.SetOutput(cmd.Out)
 
-	v := flag.Bool(cmd.CmdVersion, false, "显示版本号")
-	h := flag.Bool(cmd.CmdHelp, false, "显示帮助信息")
-	action := flag.String(cmd.CmdAction, "", "执行的标签")
-	f := flag.String(cmd.CmdFS, "./", "可读取的目录")
-	flag.Parse()
+	v := cl.Bool("v", false, "显示版本号")
+	h := cl.Bool("h", false, "显示帮助信息")
+	action := cl.String("action", "", "执行的标签")
+	f := cl.String("fs", "./", "可读取的目录")
+
+	if err := cl.Parse(os.Args[1:]); err != nil {
+		return err
+	}
 
 	if *v {
 		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
@@ -164,12 +148,12 @@ func (cmd *Command) exec() error {
 	}
 
 	if *h {
-		flag.PrintDefaults()
+		cl.PrintDefaults()
 		return nil
 	}
 
 	if *action == "" {
-		return fmt.Errorf("参数 %s 不能为空", cmd.CmdAction)
+		return errors.New("参数 action 不能为空")
 	}
 
 	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
