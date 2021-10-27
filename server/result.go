@@ -81,7 +81,7 @@ type (
 	}
 )
 
-// DefaultBuilder 默认的 BuildResultFunc 实现
+// DefaultResultBuilder 默认的 BuildResultFunc 实现
 //
 // 定义了以下格式的返回信息：
 //
@@ -119,7 +119,7 @@ type (
 //
 // FormData:
 //  message=errormessage&code=4000001&fields.username=名称过短&fields.username=不能包含特殊符号&fields.password=不能为空
-func DefaultBuilder(status, code int, message string) Result {
+func DefaultResultBuilder(status, code int, message string) Result {
 	return &defaultResult{
 		status:  status,
 		Code:    code,

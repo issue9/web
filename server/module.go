@@ -88,7 +88,7 @@ func (srv *Server) initModules(uninit bool, action string) error {
 	if err := dep.Dep(l, items); err != nil {
 		return err
 	}
-	l.Println(p.Sprintf("action %s complete"))
+	l.Println(p.Sprintf("action %s complete", action))
 
 	return nil
 }

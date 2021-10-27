@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	_ BuildResultFunc  = DefaultBuilder
+	_ BuildResultFunc  = DefaultResultBuilder
 	_ form.Marshaler   = &defaultResult{}
 	_ form.Unmarshaler = &defaultResult{}
 )
@@ -47,7 +47,7 @@ var (
 func TestDefaultResult(t *testing.T) {
 	a := assert.New(t)
 
-	rslt := DefaultBuilder(500, 50001, "error message")
+	rslt := DefaultResultBuilder(500, 50001, "error message")
 	a.False(rslt.HasFields()).
 		Equal(rslt.Status(), 500)
 
@@ -62,7 +62,7 @@ func TestDefaultResult(t *testing.T) {
 	r, ok = rslt.(*defaultResult)
 	a.True(ok).Equal(1, len(r.Fields[0].Message))
 
-	rslt = DefaultBuilder(400, 40001, "400")
+	rslt = DefaultResultBuilder(400, 40001, "400")
 	rslt.Set("f1", "f1 msg1")
 	a.True(rslt.HasFields())
 	r, ok = rslt.(*defaultResult)

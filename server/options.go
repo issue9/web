@@ -36,7 +36,7 @@ type Options struct {
 
 	// 指定生成 Result 数据的方法
 	//
-	// 默认情况下指向  result.DefaultBuilder。
+	// 默认情况下指向  DefaultResultBuilder。
 	ResultBuilder BuildResultFunc
 
 	// 缓存系统
@@ -111,7 +111,7 @@ func (o *Options) sanitize() error {
 	}
 
 	if o.ResultBuilder == nil {
-		o.ResultBuilder = DefaultBuilder
+		o.ResultBuilder = DefaultResultBuilder
 	}
 
 	if o.Cache == nil {
