@@ -28,7 +28,7 @@ messages:
   message:
     msg: '%[1]s 循环依赖自身'
 
-- key: 'not found dependence %s'
+- key: 'not found %s dependence %s'
   message:
     msg: '未找到 %[1]s 的依赖模块 %[2]s'
 
@@ -47,20 +47,20 @@ messages:
 
 - key: unsupported serialization
   message:
-    msg: 不支持序列化或是反序列化
+    msg: '不支持序列化或是反序列化'
 
 - key: 'has serialization function %s'
   message:
-    msg: 已经存在相同名称 %[1]s 的序列化函数
+    msg: '已经存在相同名称 %[1]s 的序列化函数'
 
 - key: 'plugin %s not found %s'
   message:
-    msg: 插件 %s 中未找到函数 %s
+    msg: '插件 %s 中未找到函数 %s'
 
 - key: 'run action %s'
   message:
-    msg: 执行 %s
+    msg: '执行 %s'
 
 - key: 'action %s complete'
   message:
-    msg: 执行 %s 完毕
+    msg: '执行 %s 完毕'

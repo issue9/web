@@ -91,6 +91,9 @@ func Created(v interface{}, location string) Responser {
 	})
 }
 
+// OK 返回 200 状态码下的对象
+func OK(v interface{}) Responser { return Object(http.StatusOK, v, nil) }
+
 // NotFound 404
 func NotFound() Responser { return Status(http.StatusNotFound) }
 

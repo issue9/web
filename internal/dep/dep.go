@@ -36,7 +36,7 @@ func initItem(items []*Item, m *Item, l *log.Logger) error {
 	for _, depID := range m.deps { // 先初始化依赖项
 		depMod := findItem(items, depID)
 		if depMod == nil {
-			return localeutil.Error("not found dependence %s", m.id, depID)
+			return localeutil.Error("not found %s dependence %s", m.id, depID)
 		}
 
 		if err := initItem(items, depMod, l); err != nil {
@@ -65,7 +65,7 @@ func checkDeps(items []*Item, m *Item) error {
 	// 检测依赖项是否都存在
 	for _, depID := range m.deps {
 		if findItem(items, depID) == nil {
-			return localeutil.Error("not found dependence %s", m.id, depID)
+			return localeutil.Error("not found %s dependence %s", m.id, depID)
 		}
 	}
 

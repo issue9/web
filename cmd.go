@@ -152,10 +152,6 @@ func (cmd *Command) exec() error {
 		return nil
 	}
 
-	if *action == "" {
-		return errors.New("参数 action 不能为空")
-	}
-
 	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
 	if err != nil {
 		return err

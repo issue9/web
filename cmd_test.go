@@ -21,7 +21,5 @@ func TestCommand_sanitize(t *testing.T) {
 	cmd = &Command{Name: "app", Version: "1.1.1", Init: func(s *Server) error { return nil }}
 	a.NotError(cmd.sanitize())
 
-	a.Equal(cmd.Out, os.Stdout).
-		NotNil(cmd.Files).
-		Equal(cmd.CmdFS, "fs")
+	a.Equal(cmd.Out, os.Stdout)
 }
