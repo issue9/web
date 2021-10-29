@@ -18,24 +18,12 @@ type (
 	ResultFields = validation.Messages
 
 	// BuildResultFunc 用于生成 Result 接口对象的函数
-	BuildResultFunc func(status int, code string, message string) Result
+	//
+	// 用户可以通过 BuildResultFunc 返回自定义的 Result 对象，
+	// 在 Result 中用户可以自定义其展示方式，可参考默认的实现 DefaultResultBuilder
+	BuildResultFunc func(status int, code, message string) Result
 
-	// Result 自定义错误代码的实现接口
-	//
-	// 一般是对客户端提交数据 400 的具体反馈信息。
-	// 用户可以根据自己的需求，展示自定义的错误码以及相关的错误信息格式。
-	// 该对象最终也是调用 MarshalFunc 进行解码输出。
-	// 只要该对象同时实现了 Result 接口即可。
-	//
-	// 比如类似以下的错误内容：
-	//  {
-	//      'message': 'error message',
-	//      'code': 4000001,
-	//      'detail':[
-	//          {'field': 'username': 'message': '已经存在相同用户名'},
-	//          {'field': 'username': 'message': '已经存在相同用户名'},
-	//      ]
-	//  }
+	// Result 展示错误代码需要实现的接口
 	Result interface {
 		// Add 添加详细的错误信息
 		//
@@ -86,7 +74,7 @@ type (
 // JSON:
 //  {
 //      'message': 'error message',
-//      'code': 4000001,
+//      'code': '4000001',
 //      'fields':[
 //          {'name': 'username': 'message': ['名称过短', '不能包含特殊符号']},
 //          {'name': 'password': 'message': ['不能为空']},
@@ -105,7 +93,7 @@ type (
 //
 // YAML:
 //  message: 'error message'
-//  code: 40000001
+//  code: '40000001'
 //  fields:
 //    - name: username
 //      message:
@@ -191,9 +179,7 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 	return nil
 }
 
-// Results 错误信息列表
-//
-// p 用于返回特定语言的内容。
+// Results 返回错误代码以及对应的说明内容
 func (srv *Server) Results(p *message.Printer) map[string]string {
 	msgs := make(map[string]string, len(srv.resultMessages))
 	for code, msg := range srv.resultMessages {

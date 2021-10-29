@@ -16,7 +16,7 @@ require (
 	github.com/issue9/scheduled v0.9.1
 	github.com/issue9/sliceutil v0.7.0
 	github.com/issue9/upload v1.1.4
-	github.com/issue9/validation v0.4.0
+	github.com/issue9/validation v0.5.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
