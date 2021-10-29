@@ -76,15 +76,15 @@ func TestContext_ResultWithFields(t *testing.T) {
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	ctx := newServer(a, nil).NewContext(w, r)
-	ctx.server.AddResult(http.StatusBadRequest, 40010, localeutil.Phrase("40010"))
-	ctx.server.AddResult(http.StatusBadRequest, 40011, localeutil.Phrase("40011"))
+	ctx.server.AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
+	ctx.server.AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
 
-	resp := ctx.Result(40010, ResultFields{
+	resp := ctx.Result("40010", ResultFields{
 		"k1": []string{"v1", "v2"},
 	})
 
 	ctx.renderResponser(resp)
-	a.Equal(w.Body.String(), `{"message":"40010","code":40010,"fields":[{"name":"k1","message":["v1","v2"]}]}`)
+	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }
 
 func TestContext_Result(t *testing.T) {
@@ -97,7 +97,7 @@ func TestContext_Result(t *testing.T) {
 		_, err := w.Write([]byte("error-handler"))
 		a.NotError(err)
 	}, 400) // 此处用于检测是否影响 result.Render() 的输出
-	srv.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
+	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息
@@ -105,18 +105,18 @@ func TestContext_Result(t *testing.T) {
 	r.Header.Set("accept-language", language.SimplifiedChinese.String())
 	r.Header.Set("accept", "application/json")
 	ctx := srv.NewContext(w, r)
-	resp := ctx.Result(40000, nil)
+	resp := ctx.Result("40000", nil)
 	ctx.renderResponser(resp)
-	a.Equal(w.Body.String(), `{"message":"hans","code":40000}`)
+	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
-	resp = ctx.Result(40000, nil)
+	resp = ctx.Result("40000", nil)
 	ctx.renderResponser(resp)
-	a.Equal(w.Body.String(), `{"message":"und","code":40000}`)
+	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
@@ -124,11 +124,11 @@ func TestContext_Result(t *testing.T) {
 	r.Header.Set("accept-language", "en-US")
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
-	resp = ctx.Result(40000, nil)
+	resp = ctx.Result("40000", nil)
 	ctx.renderResponser(resp)
-	a.Equal(w.Body.String(), `{"message":"und","code":40000}`)
+	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Result(400, nil) })
-	a.Panic(func() { ctx.Result(50000, nil) })
+	a.Panic(func() { ctx.Result("400", nil) })
+	a.Panic(func() { ctx.Result("50000", nil) })
 }

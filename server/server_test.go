@@ -86,7 +86,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
 	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
-	srv.AddResult(411, 41110, localeutil.Phrase("41110"))
+	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
 
 	return srv
 }

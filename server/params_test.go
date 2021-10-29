@@ -223,10 +223,10 @@ func TestContext_ParamID(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.ParamID("i1", 41110)
+		i1, resp := ctx.ParamID("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 
-		i2, resp := ctx.ParamID("i2", 41110)
+		i2, resp := ctx.ParamID("i2", "41110")
 		a.NotNil(resp).Equal(i2, 0)
 
 		return resp
@@ -244,13 +244,13 @@ func TestContext_ParamInt64(t *testing.T) {
 	a.NotError(err).NotNil(router)
 
 	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.ParamInt64("i1", 41110)
+		i1, resp := ctx.ParamInt64("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 
-		i2, resp := ctx.ParamInt64("i2", 41110)
+		i2, resp := ctx.ParamInt64("i2", "41110")
 		a.Nil(resp).Equal(i2, -2)
 
-		i3, resp := ctx.ParamInt64("i3", 41110)
+		i3, resp := ctx.ParamInt64("i3", "41110")
 		a.NotNil(resp).Equal(i3, 0)
 
 		return resp

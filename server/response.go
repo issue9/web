@@ -106,7 +106,7 @@ func Status(statusCode int) Responser { return status(statusCode) }
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code int, fields ResultFields) Responser {
+func (ctx *Context) Result(code string, fields ResultFields) Responser {
 	rslt := ctx.Server().Result(ctx.LocalePrinter, code, fields)
 	return Object(rslt.Status(), rslt, nil)
 }

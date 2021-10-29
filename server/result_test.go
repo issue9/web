@@ -24,7 +24,7 @@ var (
 
 var (
 	mimetypeResult = &defaultResult{
-		Code:    400,
+		Code:    "400",
 		Message: "400",
 		Fields: []*fieldDetail{
 			{
@@ -39,7 +39,7 @@ var (
 	}
 
 	simpleMimetypeResult = &defaultResult{
-		Code:    400,
+		Code:    "400",
 		Message: "400",
 	}
 )
@@ -47,7 +47,7 @@ var (
 func TestDefaultResult(t *testing.T) {
 	a := assert.New(t)
 
-	rslt := DefaultResultBuilder(500, 50001, "error message")
+	rslt := DefaultResultBuilder(500, "50001", "error message")
 	a.False(rslt.HasFields()).
 		Equal(rslt.Status(), 500)
 
@@ -62,7 +62,7 @@ func TestDefaultResult(t *testing.T) {
 	r, ok = rslt.(*defaultResult)
 	a.True(ok).Equal(1, len(r.Fields[0].Message))
 
-	rslt = DefaultResultBuilder(400, 40001, "400")
+	rslt = DefaultResultBuilder(400, "40001", "400")
 	rslt.Set("f1", "f1 msg1")
 	a.True(rslt.HasFields())
 	r, ok = rslt.(*defaultResult)
@@ -84,7 +84,7 @@ func TestDefaultResultJSON(t *testing.T) {
 	// marshal mimetypeResult
 	bs, err := json.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `{"message":"400","code":400,"fields":[{"name":"field1","message":["message1","message2"]},{"name":"field2","message":["message2"]}]}`)
+	a.Equal(string(bs), `{"message":"400","code":"400","fields":[{"name":"field1","message":["message1","message2"]},{"name":"field2","message":["message2"]}]}`)
 
 	// unmarshal mimetypeResult
 	obj := &defaultResult{}
@@ -94,7 +94,7 @@ func TestDefaultResultJSON(t *testing.T) {
 	// marshal simpleMimetypesResult
 	bs, err = json.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `{"message":"400","code":400}`)
+	a.Equal(string(bs), `{"message":"400","code":"400"}`)
 
 	// unmarshal simpleMimetypesResult
 	obj = &defaultResult{}
@@ -133,7 +133,7 @@ func TestDefaultResultYAML(t *testing.T) {
 	bs, err := yaml.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `message: "400"
-code: 400
+code: "400"
 fields:
 - name: field1
   message:
@@ -153,7 +153,7 @@ fields:
 	bs, err = yaml.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), `message: "400"
-code: 400
+code: "400"
 `)
 
 	// unmarshal simpleMimetypesResult
@@ -191,39 +191,39 @@ func TestServer_Result(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a, nil)
 
-	srv.AddResult(400, 40000, localeutil.Phrase("lang")) // lang 有翻译
+	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
-	rslt, ok := srv.Result(srv.Locale().Printer(language.SimplifiedChinese), 40000, nil).(*defaultResult)
+	rslt, ok := srv.Result(srv.Locale().Printer(language.SimplifiedChinese), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans")
 
 	// 采用 und
-	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), 40000, nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在的本地化信息，采用默认的 und
-	rslt, ok = srv.Result(srv.Locale().Printer(language.Afrikaans), 40000, nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Afrikaans), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在
-	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), 400, nil) })
-	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), 50000, nil) })
+	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), "400", nil) })
+	a.Panic(func() { srv.Result(srv.Locale().Printer(language.Afrikaans), "50000", nil) })
 
 	// with fields
 
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
-	rslt, ok = srv.Result(srv.Locale().Printer(language.SimplifiedChinese), 40000, fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.SimplifiedChinese), "40000", fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 
 	// 采用 und
-	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), 40000, fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.Locale().Printer(language.Und), "40000", fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
@@ -234,20 +234,20 @@ func TestServer_AddResult(t *testing.T) {
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
-		srv.AddResult(400, 1, localeutil.Phrase("1"))
-		srv.AddResult(400, 100, localeutil.Phrase("100"))
+		srv.AddResult(400, "1", localeutil.Phrase("1"))
+		srv.AddResult(400, "100", localeutil.Phrase("100"))
 	})
 
-	msg, found := srv.resultMessages[1]
+	msg, found := srv.resultMessages["1"]
 	a.True(found).
 		Equal(msg.status, 400)
 
-	msg, found = srv.resultMessages[401]
+	msg, found = srv.resultMessages["401"]
 	a.False(found).Nil(msg)
 
 	// 重复的 ID
 	a.Panic(func() {
-		srv.AddResult(400, 1, localeutil.Phrase("40010"))
+		srv.AddResult(400, "1", localeutil.Phrase("40010"))
 	})
 }
 
@@ -256,20 +256,20 @@ func TestServer_Results(t *testing.T) {
 	c := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
-		c.AddResults(400, map[int]localeutil.LocaleStringer{40010: localeutil.Phrase("lang")})
+		c.AddResults(400, map[string]localeutil.LocaleStringer{"40010": localeutil.Phrase("lang")})
 	})
 
 	msg := c.Results(c.Locale().Printer(language.Und))
-	a.Equal(msg[40010], "und")
+	a.Equal(msg["40010"], "und")
 
 	msg = c.Results(c.Locale().Printer(language.SimplifiedChinese))
-	a.Equal(msg[40010], "hans")
+	a.Equal(msg["40010"], "hans")
 
 	msg = c.Results(c.Locale().Printer(language.TraditionalChinese))
-	a.Equal(msg[40010], "hant")
+	a.Equal(msg["40010"], "hant")
 
 	msg = c.Results(c.Locale().Printer(language.English))
-	a.Equal(msg[40010], "und")
+	a.Equal(msg["40010"], "und")
 
 	a.Panic(func() {
 		c.Results(nil)

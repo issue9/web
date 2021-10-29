@@ -69,7 +69,7 @@ type Server struct {
 	routers       map[string]*Router
 
 	// result
-	resultMessages map[int]*resultMessage
+	resultMessages map[string]*resultMessage
 	resultBuilder  BuildResultFunc
 
 	// locale
@@ -117,7 +117,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		routers:       make(map[string]*Router, 3),
 
 		// result
-		resultMessages: make(map[int]*resultMessage, 20),
+		resultMessages: make(map[string]*resultMessage, 20),
 		resultBuilder:  o.ResultBuilder,
 
 		// locale

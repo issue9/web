@@ -55,7 +55,7 @@ func TestCheckDeps(t *testing.T) {
 
 	mm := findItem(items, "m1")
 	a.NotNil(mm).Equal(mm, m1).
-		Equal(checkDeps(items, m1), localeutil.Error("not found dependence %s", "m1", "d2")) // 依赖项不存在
+		Equal(checkDeps(items, m1), localeutil.Error("not found %s dependence %s", "m1", "d2")) // 依赖项不存在
 
 	m1 = NewItem("m1", []string{"d1", "d2"}, nil)
 	d1 = NewItem("d1", []string{"d3"}, nil)

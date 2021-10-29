@@ -103,7 +103,7 @@ func TestContext_QueryObject(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str string  `query:"str"`
 	}{}
-	resp := ctx.QueryObject(&o, 41110)
+	resp := ctx.QueryObject(&o, "41110")
 	a.Nil(resp).
 		Equal(w.Code, http.StatusOK)
 	a.Equal(o.I1, float32(1.1)).
@@ -115,7 +115,7 @@ func TestContext_QueryObject(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str int     `query:"str"`
 	}{}
-	resp = ctx.QueryObject(&o2, 41110)
+	resp = ctx.QueryObject(&o2, "41110")
 	ctx.renderResponser(resp)
 	a.NotNil(resp).
 		Equal(w.Code, 411)

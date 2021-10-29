@@ -3,9 +3,7 @@
 package server
 
 import (
-	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/issue9/localeutil"
@@ -20,7 +18,7 @@ type (
 	ResultFields = validation.Messages
 
 	// BuildResultFunc 用于生成 Result 接口对象的函数
-	BuildResultFunc func(status, code int, message string) Result
+	BuildResultFunc func(status int, code string, message string) Result
 
 	// Result 自定义错误代码的实现接口
 	//
@@ -66,7 +64,7 @@ type (
 		status int // 当前的信息所对应的 HTTP 状态码
 
 		Message string         `json:"message" xml:"message" yaml:"message"`
-		Code    int            `json:"code" xml:"code,attr" yaml:"code"`
+		Code    string         `json:"code" xml:"code,attr" yaml:"code"`
 		Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty"`
 	}
 
@@ -119,7 +117,7 @@ type (
 //
 // FormData:
 //  message=errormessage&code=4000001&fields.username=名称过短&fields.username=不能包含特殊符号&fields.password=不能为空
-func DefaultResultBuilder(status, code int, message string) Result {
+func DefaultResultBuilder(status int, code, message string) Result {
 	return &defaultResult{
 		status:  status,
 		Code:    code,
@@ -156,7 +154,7 @@ func (rslt *defaultResult) HasFields() bool {
 func (rslt *defaultResult) MarshalForm() ([]byte, error) {
 	vals := url.Values{}
 
-	vals.Add("code", strconv.Itoa(rslt.Code))
+	vals.Add("code", rslt.Code)
 	vals.Add("message", rslt.Message)
 
 	for _, field := range rslt.Fields {
@@ -178,9 +176,7 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 	for key, vals := range vals {
 		switch key {
 		case "code":
-			if rslt.Code, err = strconv.Atoi(vals[0]); err != nil {
-				return err
-			}
+			rslt.Code = vals[0]
 		case "message":
 			rslt.Message = vals[0]
 		default:
@@ -198,8 +194,8 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 // Results 错误信息列表
 //
 // p 用于返回特定语言的内容。
-func (srv *Server) Results(p *message.Printer) map[int]string {
-	msgs := make(map[int]string, len(srv.resultMessages))
+func (srv *Server) Results(p *message.Printer) map[string]string {
+	msgs := make(map[string]string, len(srv.resultMessages))
 	for code, msg := range srv.resultMessages {
 		msgs[code] = msg.LocaleString(p)
 	}
@@ -207,7 +203,7 @@ func (srv *Server) Results(p *message.Printer) map[int]string {
 }
 
 // AddResults 添加多条错误信息
-func (srv *Server) AddResults(status int, messages map[int]localeutil.LocaleStringer) {
+func (srv *Server) AddResults(status int, messages map[string]localeutil.LocaleStringer) {
 	for code, phrase := range messages {
 		srv.AddResult(status, code, phrase)
 	}
@@ -216,9 +212,9 @@ func (srv *Server) AddResults(status int, messages map[int]localeutil.LocaleStri
 // AddResult 添加一条错误信息
 //
 // status 指定了该错误代码反馈给客户端的 HTTP 状态码；
-func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer) {
+func (srv *Server) AddResult(status int, code string, phrase localeutil.LocaleStringer) {
 	if _, found := srv.resultMessages[code]; found {
-		panic(fmt.Sprintf("重复的消息 ID: %d", code))
+		panic("重复的消息 ID: " + code)
 	}
 	srv.resultMessages[code] = &resultMessage{status: status, LocaleStringer: phrase}
 }
@@ -227,10 +223,10 @@ func (srv *Server) AddResult(status, code int, phrase localeutil.LocaleStringer)
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 // fields 表示明细字段，可以为空，之后通过 Result.Add 添加。
-func (srv *Server) Result(p *message.Printer, code int, fields ResultFields) Result {
+func (srv *Server) Result(p *message.Printer, code string, fields ResultFields) Result {
 	msg, found := srv.resultMessages[code]
 	if !found {
-		panic(fmt.Sprintf("不存在的错误代码: %d", code))
+		panic("不存在的错误代码: " + code)
 	}
 
 	rslt := srv.resultBuilder(msg.status, code, msg.LocaleString(p))

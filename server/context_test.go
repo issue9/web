@@ -360,11 +360,11 @@ func TestContext_Read(t *testing.T) {
 	ctx := newServer(a, nil).NewContext(w, r)
 
 	obj := &testobject.TextObject{}
-	a.True(ctx.Read(obj, 41110))
+	a.True(ctx.Read(obj, "41110"))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
 	o := &struct{}{}
-	a.False(ctx.Read(o, 41110))
+	a.False(ctx.Read(o, "41110"))
 	a.Equal(w.Result().StatusCode, http.StatusUnprocessableEntity)
 }
 

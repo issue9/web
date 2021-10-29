@@ -140,7 +140,7 @@ func (q *Queries) HasErrors() bool { return len(q.fields) > 0 }
 func (q *Queries) Errors() ResultFields { return q.fields }
 
 // Result 转换成 Responser 对象
-func (q *Queries) Result(code int) Responser {
+func (q *Queries) Result(code string) Responser {
 	if q.HasErrors() {
 		return q.ctx.Result(code, q.Errors())
 	}
@@ -168,7 +168,7 @@ func (q *Queries) Object(v interface{}) {
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(v interface{}, code int) Responser {
+func (ctx *Context) QueryObject(v interface{}, code string) Responser {
 	q, err := ctx.Queries()
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)

@@ -385,7 +385,7 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 code 作为错误代码的错误信息，并返回 false。
-func (ctx *Context) Read(v interface{}, code int) (ok bool) {
+func (ctx *Context) Read(v interface{}, code string) (ok bool) {
 	if err := ctx.Unmarshal(v); err != nil {
 		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(err))
 		ctx.renderResponser(Status(http.StatusUnprocessableEntity))
