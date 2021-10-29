@@ -256,7 +256,7 @@ func TestServer_Results(t *testing.T) {
 	c := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
-		c.AddResults(map[int]localeutil.LocaleStringer{40010: localeutil.Phrase("lang")})
+		c.AddResults(400, map[int]localeutil.LocaleStringer{40010: localeutil.Phrase("lang")})
 	})
 
 	msg := c.Results(c.Locale().Printer(language.Und))
@@ -273,21 +273,5 @@ func TestServer_Results(t *testing.T) {
 
 	a.Panic(func() {
 		c.Results(nil)
-	})
-}
-
-func TestCalcStatus(t *testing.T) {
-	a := assert.New(t)
-
-	a.Equal(calcStatus(40010), 400)
-	a.Equal(calcStatus(40011), 400)
-	a.Equal(calcStatus(400111), 400)
-	a.Equal(calcStatus(401111), 401)
-
-	a.Panic(func() {
-		calcStatus(999)
-	})
-	a.Panic(func() {
-		calcStatus(-1)
 	})
 }

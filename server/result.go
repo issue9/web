@@ -207,12 +207,8 @@ func (srv *Server) Results(p *message.Printer) map[int]string {
 }
 
 // AddResults 添加多条错误信息
-//
-// 键名为错误信息的数字代码，键值是具体的错误信息描述。
-// 同时键名向下取整，直到三位长度的整数作为其返回给客户端的状态码。
-func (srv *Server) AddResults(messages map[int]localeutil.LocaleStringer) {
+func (srv *Server) AddResults(status int, messages map[int]localeutil.LocaleStringer) {
 	for code, phrase := range messages {
-		status := calcStatus(code)
 		srv.AddResult(status, code, phrase)
 	}
 }
@@ -243,16 +239,4 @@ func (srv *Server) Result(p *message.Printer, code int, fields ResultFields) Res
 	}
 
 	return rslt
-}
-
-func calcStatus(code int) int {
-	if code < 1000 {
-		panic("无效的 code")
-	}
-
-	status := code / 10
-	for status > 999 {
-		status = status / 10
-	}
-	return status
 }
