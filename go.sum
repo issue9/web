@@ -27,11 +27,10 @@ github.com/issue9/localeutil v0.8.0 h1:5KthJjzNH69fgjKhvVLXSeqPHDLSZRDULet3ZFxcR
 github.com/issue9/localeutil v0.8.0/go.mod h1:1hx4Qo57RAQgRSy0zihp6XKTkTbaAVu26Qc0bz/770s=
 github.com/issue9/logs/v3 v3.0.0-beta.2 h1:tWIja3KWBukITan7yQFZL/FX7Ee7+cpkPbf8aPsO/6c=
 github.com/issue9/logs/v3 v3.0.0-beta.2/go.mod h1:VJ/n21ezxYx8VlatrOHKvPtQoZptahKl91VwAj9SnSA=
-github.com/issue9/middleware/v5 v5.0.0-beta.2 h1:/UBbwcUV1xAY2vzm9F3BlJPcYiAQo+Ad7M5ni+z9/Co=
-github.com/issue9/middleware/v5 v5.0.0-beta.2/go.mod h1:80ditdAylvUjQLxb5w4UqvrKKVO4h7cocFPvA+nK1Ag=
-github.com/issue9/mux/v5 v5.0.0-beta.1/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
-github.com/issue9/mux/v5 v5.0.0-beta.5 h1:IN1CsFiCGgY4Hi98ija00hNx2q1kHkoDpEQqfSFuolA=
-github.com/issue9/mux/v5 v5.0.0-beta.5/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
+github.com/issue9/middleware/v5 v5.0.0-beta.3 h1:mGHkEkwhah50oXwtmTYGRMyx26zCrWbKB3+ZA10tDUo=
+github.com/issue9/middleware/v5 v5.0.0-beta.3/go.mod h1:+AzipWUPGRSbGNxZo/tiNaCK95chgkcZ8EglSWC9Nuo=
+github.com/issue9/mux/v5 v5.0.0-beta.6 h1:Afxb6Igk7OFb6wgPMtKy/aSTugW8yzfopxumA/YWwQ8=
+github.com/issue9/mux/v5 v5.0.0-beta.6/go.mod h1:EburjchiznD1sYYNrrHXOw2c++tr/PgoPLgkRhTT/Ys=
 github.com/issue9/qheader v0.5.4 h1:EJWT4VCtto4+J4A4sYpSwBVBldklQ8iOdOJyXnsIUDo=
 github.com/issue9/qheader v0.5.4/go.mod h1:LJk1/kJ3ydNYA3epOQD+p0adjjouW5fJTVAtpBk3org=
 github.com/issue9/query/v2 v2.2.5 h1:4y5jFHe8yIrmcIV2skHHUDgYpoKLItwCJkQgQ1LIhgo=

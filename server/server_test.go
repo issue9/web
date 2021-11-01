@@ -99,7 +99,7 @@ func TestNewServer(t *testing.T) {
 	a.False(srv.Uptime().IsZero())
 	a.NotNil(srv.Cache())
 	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.groups)
+	a.Equal(srv.httpServer.Handler, srv.group)
 	a.NotNil(srv.httpServer.BaseContext)
 	a.Equal(srv.httpServer.Addr, "")
 }
@@ -451,7 +451,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 func TestServer_DisableCompression(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.groups, nil)
+	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
 	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)

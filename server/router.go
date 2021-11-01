@@ -48,7 +48,7 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 		root = u.String()
 	}
 
-	r := srv.MuxGroups().NewRouter(name, matcher)
+	r := srv.MuxGroup().New(name, matcher)
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
 	rr := &Router{
@@ -68,12 +68,12 @@ func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, fi
 func (srv *Server) Router(name string) *Router { return srv.routers[name] }
 
 func (srv *Server) RemoveRouter(name string) {
-	srv.MuxGroups().RemoveRouter(name)
+	srv.MuxGroup().Remove(name)
 	delete(srv.routers, name)
 }
 
 // MuxGroups 返回 group.Groups 实例
-func (srv *Server) MuxGroups() *group.Groups { return srv.groups }
+func (srv *Server) MuxGroup() *group.Group { return srv.group }
 
 // SetDebugger 设置调试地址
 func (router *Router) SetDebugger(pprof, vars string) (err error) {

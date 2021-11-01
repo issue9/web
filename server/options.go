@@ -57,7 +57,7 @@ type Options struct {
 	// 如果为空，采用 mux.DeniedCORS
 	CORS *mux.CORS
 
-	groups *group.Groups
+	group *group.Group
 
 	// 可以对 http.Server 的内容进行修改
 	//
@@ -121,7 +121,7 @@ func (o *Options) sanitize() error {
 	if o.CORS == nil {
 		o.CORS = mux.DeniedCORS()
 	}
-	o.groups = group.New(o.DisableHead, o.CORS)
+	o.group = group.New(o.DisableHead, o.CORS)
 
 	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {

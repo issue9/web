@@ -22,7 +22,7 @@ var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.groups, nil)
+	srv := rest.NewServer(t, server.group, nil)
 	router, err := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -66,7 +66,7 @@ func TestRouter(t *testing.T) {
 func TestRouter_SetDebugger(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.groups, nil)
+	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
 	r, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
@@ -185,21 +185,21 @@ func TestRouter_NewRouter(t *testing.T) {
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	srv.groups.ServeHTTP(w, r)
+	srv.group.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNoContent)
 
 	// 删除整个路由
 	srv.RemoveRouter("host")
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	srv.groups.ServeHTTP(w, r)
+	srv.group.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNotFound)
 }
 
 func TestRouter_Prefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.groups, nil)
+	srv := rest.NewServer(t, server.group, nil)
 	router, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
@@ -260,7 +260,7 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, server.groups, nil)
+	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
@@ -316,7 +316,7 @@ func TestRouter_Static(t *testing.T) {
 	r.Static("/admin/{path}", "./testdata", "index.html")
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
-	server.groups.ServeHTTP(w, req)
+	server.group.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
 
@@ -343,6 +343,8 @@ func TestServer_Router(t *testing.T) {
 func TestAction_AddRoutes(t *testing.T) {
 	a := assert.New(t)
 
+	defRouters := map[string][]string{"*": {http.MethodOptions}}
+
 	srv := newServer(a, nil)
 	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
@@ -350,9 +352,9 @@ func TestAction_AddRoutes(t *testing.T) {
 	m := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
 	a.NotNil(m)
 	m.Action("install").AddRoutes(func(router *Router) {}, "")
-	a.Empty(r.MuxRouter().Routes()) // 未初始化
+	a.Equal(r.MuxRouter().Routes(), defRouters) // 未初始化
 	a.Error(srv.initModules(false, "install"))
-	a.Empty(r.MuxRouter().Routes()) // 已初始化，但是未指定正常的路由名称
+	a.Equal(r.MuxRouter().Routes(), defRouters) // 已初始化，但是未指定正常的路由名称
 
 	srv = newServer(a, nil)
 	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
@@ -364,7 +366,7 @@ func TestAction_AddRoutes(t *testing.T) {
 		router.Get("p1", f201)
 	}, "host")
 
-	a.Empty(r.MuxRouter().Routes()) // 未初始化
+	a.Equal(r.MuxRouter().Routes(), defRouters) // 未初始化
 	a.NotError(srv.initModules(false, "install"))
-	a.Equal(1, len(r.MuxRouter().Routes())) // 已初始化
+	a.Equal(2, len(r.MuxRouter().Routes())) // 已初始化，包含一个默认的 OPTIONS *
 }

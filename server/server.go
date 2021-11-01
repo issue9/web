@@ -63,7 +63,7 @@ type Server struct {
 	scheduled *scheduled.Server
 
 	// middleware
-	groups        *group.Groups
+	group         *group.Group
 	compress      *compress.Compress
 	errorHandlers *errorhandler.ErrorHandler
 	routers       map[string]*Router
@@ -111,7 +111,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		scheduled: scheduled.NewServer(o.Location),
 
 		// middleware
-		groups:        o.groups,
+		group:         o.group,
 		compress:      compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),
 		errorHandlers: errorhandler.New(),
 		routers:       make(map[string]*Router, 3),
@@ -127,7 +127,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		localePrinter: o.locale.Printer(o.Tag),
 	}
 
-	srv.httpServer.Handler = srv.groups
+	srv.httpServer.Handler = srv.group
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
 			return context.WithValue(context.Background(), contextKeyServer, srv)
@@ -140,7 +140,7 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 
 	recoverFunc := srv.errorHandlers.Recovery(o.Recovery)
-	srv.MuxGroups().Middlewares().
+	srv.MuxGroup().Middlewares().
 		Append(recoverFunc.Middleware).      // 在最外层，防止协程 panic，崩了整个进程。
 		Append(srv.compress.Middleware).     // srv.compress 会输出专有报头，所以应该在所有的输出内容之前。
 		Append(srv.errorHandlers.Middleware) // errorHandler 依赖 recovery，必须要在 recovery 之后。

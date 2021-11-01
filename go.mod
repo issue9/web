@@ -9,8 +9,8 @@ require (
 	github.com/issue9/events v0.3.0
 	github.com/issue9/localeutil v0.8.0
 	github.com/issue9/logs/v3 v3.0.0-beta.2
-	github.com/issue9/middleware/v5 v5.0.0-beta.2
-	github.com/issue9/mux/v5 v5.0.0-beta.5
+	github.com/issue9/middleware/v5 v5.0.0-beta.3
+	github.com/issue9/mux/v5 v5.0.0-beta.6
 	github.com/issue9/qheader v0.5.4
 	github.com/issue9/query/v2 v2.2.5
 	github.com/issue9/scheduled v0.9.1

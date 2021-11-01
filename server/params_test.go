@@ -27,7 +27,7 @@ func TestParams_empty(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/empty").Do().Status(http.StatusOK)
 }
@@ -69,7 +69,7 @@ func TestParams_ID_MustID(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/id/1/-2/str").Do().Status(http.StatusOK)
 }
@@ -105,7 +105,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/int/1/2/str").Do().Status(http.StatusOK)
 }
@@ -141,7 +141,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/bool/true/false/str").Do().Status(http.StatusOK)
 }
@@ -174,7 +174,7 @@ func TestParams_String_MustString(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/string/str1/str2").Do().Status(http.StatusOK)
 }
@@ -211,7 +211,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/float/1.1/2.2/str").Do().Status(http.StatusOK)
 }
@@ -232,7 +232,7 @@ func TestContext_ParamID(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/paramid/1/-2/str").Do().Status(411)
 }
@@ -256,7 +256,7 @@ func TestContext_ParamInt64(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(t, server.MuxGroups(), nil)
+	srv := rest.NewServer(t, server.MuxGroup(), nil)
 	defer srv.Close()
 	srv.Get("/root/params/paramint64/1/-2/str").Do().Status(411)
 }
