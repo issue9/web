@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"path/filepath"
-	"plugin"
 	"sort"
 
 	"github.com/issue9/localeutil"
@@ -17,9 +15,6 @@ import (
 	"github.com/issue9/web/internal/dep"
 	"github.com/issue9/web/internal/filesystem"
 )
-
-// PluginInitFuncName 插件中的用于获取模块信息的函数名
-const PluginInitFuncName = "InitModule"
 
 type (
 	// PluginInitFunc 安装插件的函数签名
@@ -125,49 +120,6 @@ func (srv *Server) NewModule(id, version string, desc localeutil.LocaleStringer,
 
 	srv.modules = append(srv.modules, mod)
 	return mod
-}
-
-// LoadPlugins 加载所有的插件
-//
-// 如果 glob 为空，则不会加载任何内容，返回空值。
-func (srv *Server) LoadPlugins(glob string) error {
-	fsys, err := filepath.Glob(glob)
-	if err != nil {
-		return err
-	}
-
-	for _, path := range fsys {
-		if err := srv.loadPlugin(path); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// loadPlugin 将指定的插件当作模块进行加载
-//
-// path 为插件的路径；
-//
-// 插件必须是以 buildmode=plugin 的方式编译的，且要求其引用的 github.com/issue9/web
-// 版本与当前的相同。
-// loadPlugin 会在插件中查找固定名称和类型的函数名（参考 PluginInitFunc 和 PluginInitFuncName），
-// 如果存在，会调用该方法将插件加载到当前对象中，否则返回相应的错误信息。
-func (srv *Server) loadPlugin(path string) error {
-	p, err := plugin.Open(path)
-	if err != nil {
-		return err
-	}
-
-	symbol, err := p.Lookup(PluginInitFuncName)
-	if err != nil {
-		return err
-	}
-
-	if install, ok := symbol.(func(*Server) error); ok {
-		return install(srv)
-	}
-	return localeutil.Error("plugin %s not found %s", path, PluginInitFuncName)
 }
 
 // Actions 返回 Action 列表

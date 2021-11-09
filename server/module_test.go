@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io/fs"
 	"testing"
-	"unicode"
 
 	"github.com/issue9/assert"
 	"github.com/issue9/localeutil"
@@ -63,12 +62,6 @@ func TestServer_initModules(t *testing.T) {
 	a.NotError(s.initModules(false, "v2")) // 包括了 m1.inits 中的 count++
 	a.Equal(4, count)
 	a.NotError(s.initModules(false, "not-exists"))
-}
-
-func TestPluginInitFuncName(t *testing.T) {
-	a := assert.New(t)
-
-	a.True(unicode.IsUpper(rune(PluginInitFuncName[0])))
 }
 
 func TestServer_Actions(t *testing.T) {
