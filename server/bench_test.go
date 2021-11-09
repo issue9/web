@@ -8,13 +8,46 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert"
+	"github.com/issue9/assert/rest"
+	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/internal/charsetdata"
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
 )
+
+func BenchmarkServer_Serve(b *testing.B) {
+	a := assert.New(b)
+	srv := newServer(a, &Options{Port: ":8080"})
+	router, err := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+
+	m := srv.NewModule("id", "1.0", nil)
+	m.Action("srv").AddRoutes(func(r *Router) {
+		r.Get("/path", func(c *Context) Responser {
+			return Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
+		})
+	}, "srv")
+	go func() {
+		srv.Serve(true, "srv")
+	}()
+	time.Sleep(500 * time.Millisecond)
+
+	for i := 0; i < b.N; i++ {
+		rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").
+			Header("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"})).
+			Header("accept", text.Mimetype).
+			Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
+			Do().
+			Header("h1", "h1").
+			StringBody("/path")
+	}
+
+	srv.Close(0)
+}
 
 func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b)

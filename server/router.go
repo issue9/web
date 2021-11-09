@@ -100,6 +100,7 @@ func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Fi
 	router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
 		ctx := router.srv.NewContext(w, r)
 		ctx.renderResponser(h(ctx))
+		contextPool.Put(ctx)
 	}, method...)
 }
 

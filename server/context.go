@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/issue9/logs/v3"
@@ -40,6 +41,10 @@ var (
 	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
 	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
 )
+
+var contextPool = &sync.Pool{
+	New: func() interface{} { return &Context{} },
+}
 
 // CTXSanitizer 提供对数据的验证和修正
 //
@@ -159,28 +164,23 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
-	ctx := &Context{
-		server: srv,
-
-		Response: w,
-		Request:  r,
-
-		OutputMimetype:     marshal,
-		OutputMimetypeName: outputMimetypeName,
-
-		OutputCharset:     outputCharset,
-		OutputCharsetName: outputCharsetName,
-
-		InputMimetype: inputMimetype,
-		InputCharset:  inputCharset,
-
-		OutputTag:     tag,
-		LocalePrinter: srv.Locale().Printer(tag),
-
-		Location: srv.location,
-
-		Vars: map[interface{}]interface{}{},
-	}
+	// NOTE: ctx 是从对象池中获取的，必须所有变量都初始化
+	ctx := contextPool.Get().(*Context)
+	ctx.server = srv
+	ctx.Response = w
+	ctx.Request = r
+	ctx.OutputMimetype = marshal
+	ctx.OutputMimetypeName = outputMimetypeName
+	ctx.OutputCharset = outputCharset
+	ctx.OutputCharsetName = outputCharsetName
+	ctx.InputMimetype = inputMimetype
+	ctx.InputCharset = inputCharset
+	ctx.OutputTag = tag
+	ctx.LocalePrinter = srv.Locale().Printer(tag)
+	ctx.Location = srv.location
+	ctx.body = ctx.body[:0]
+	ctx.read = false
+	ctx.Vars = make(map[interface{}]interface{})
 
 	ctx.Request = r.WithContext(context.WithValue(r.Context(), contextKeyContext, ctx))
 	return ctx
