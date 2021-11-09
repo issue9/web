@@ -53,10 +53,6 @@ messages:
   message:
     msg: '已经存在相同名称 %[1]s 的序列化函数'
 
-- key: 'plugin %s not found %s'
-  message:
-    msg: '插件 %s 中未找到函数 %s'
-
 - key: 'run action %s'
   message:
     msg: '执行 %s'

@@ -17,9 +17,6 @@ import (
 )
 
 type (
-	// PluginInitFunc 安装插件的函数签名
-	PluginInitFunc func(*Server) error
-
 	// Module 用于注册初始化模块的相关功能
 	Module struct {
 		actions map[string]*Action
