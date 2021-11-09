@@ -133,14 +133,10 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 // 如果不合规则，会以指定的状码退出。
 // 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	printLog := func(format string, v ...interface{}) {
-		srv.Logs().Debugf(format, v)
-	}
-
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
 	if !found {
-		printLog("未找到符合报头 %s 的解码函数", header)
+		srv.Logs().Debugf(srv.localePrinter.Sprintf("no found serialization for %s", header))
 		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
 		return nil
 	}
@@ -148,7 +144,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
-		printLog("未找到符合报头 %s 的字符集", header)
+		srv.Logs().Debugf(srv.localePrinter.Sprintf("no found charset for %s", header))
 		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
 		return nil
 	}
@@ -156,7 +152,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header = r.Header.Get(contentTypeKey)
 	inputMimetype, inputCharset, err := srv.conentType(header)
 	if err != nil {
-		printLog(err.Error())
+		srv.Logs().Debugf(err.Error())
 		srv.errorHandlers.Exit(w, http.StatusUnsupportedMediaType)
 		return nil
 	}
