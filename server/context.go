@@ -376,27 +376,23 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，会直接调用 Error() 处理：
-// 输出 422 的状态码，并返回一个 false，告知用户转换失败。
+// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，返回的不是 error，
+// 而是一个表示错误信息的 Responser 对象。
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，会输出以 code 作为错误代码的错误信息，并返回 false。
-func (ctx *Context) Read(v interface{}, code string) (ok bool) {
+// 如果验证失败，会输出以 code 作为错误代码的 Responser 对象。
+func (ctx *Context) Read(v interface{}, code string) (err Responser) {
 	if err := ctx.Unmarshal(v); err != nil {
-		ctx.server.Logs().ERROR().Output(2, fmt.Sprint(err))
-		ctx.renderResponser(Status(http.StatusUnprocessableEntity))
-		return false
+		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if rslt := vv.CTXSanitize(ctx); len(rslt) > 0 {
-			resp := ctx.Result(code, rslt)
-			ctx.renderResponser(resp)
-			return false
+			return ctx.Result(code, rslt)
 		}
 	}
 
-	return true
+	return nil
 }
 
 // ClientIP 返回客户端的 IP 地址

@@ -183,35 +183,31 @@ func (p *Params) Result(code string) Responser {
 //
 // NOTE: 若需要获取多个参数，使用 Context.Params 会更方便。
 func (ctx *Context) ParamID(key, code string) (int64, Responser) {
-	id, resp := ctx.ParamInt64(key, code)
-	if resp != nil {
-		return 0, resp
+	p := ctx.Params()
+	if id := p.ID(key); !p.HasErrors() {
+		return id, nil
 	}
-
-	if id <= 0 {
-		return 0, ctx.Result(code, ResultFields{key: []string{"必须大于 0"}})
-	}
-	return id, nil
+	return 0, ctx.Result(code, p.Errors())
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamInt64(key, code string) (int64, Responser) {
-	v, err := ctx.Params().params.Int(key)
-	if err != nil {
-		return 0, ctx.Result(code, ResultFields{key: []string{err.Error()}})
+	p := ctx.Params()
+	if n := p.Int64(key); !p.HasErrors() {
+		return n, nil
 	}
-	return v, nil
+	return 0, ctx.Result(code, p.Errors())
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
 func (ctx *Context) ParamString(key, code string) (string, Responser) {
-	v, err := ctx.Params().params.String(key)
-	if err != nil {
-		return "", ctx.Result(code, ResultFields{key: []string{err.Error()}})
+	p := ctx.Params()
+	if s := p.String(key); !p.HasErrors() {
+		return s, nil
 	}
-	return v, nil
+	return "", ctx.Result(code, p.Errors())
 }
