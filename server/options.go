@@ -49,13 +49,8 @@ type Options struct {
 	// 格式参照 net/http.Server.Addr 字段。可以为空，由 net/http.Server 确定其默认值。
 	Port string
 
-	// 是否禁止自动生成 HEAD 请求
-	DisableHead bool
-
-	// 跨域的相关设置
-	//
-	// 如果为空，采用 mux.DeniedCORS
-	CORS *mux.CORS
+	// 初始化路由的参数
+	RouterOptions []mux.Option
 
 	group *group.Group
 
@@ -118,10 +113,7 @@ func (o *Options) sanitize() error {
 		o.Cache = memory.New(24 * time.Hour)
 	}
 
-	if o.CORS == nil {
-		o.CORS = mux.DeniedCORS()
-	}
-	o.group = group.New(o.DisableHead, o.CORS)
+	o.group = group.New(o.RouterOptions...)
 
 	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {

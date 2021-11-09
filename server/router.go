@@ -72,7 +72,7 @@ func (srv *Server) RemoveRouter(name string) {
 	delete(srv.routers, name)
 }
 
-// MuxGroups 返回 group.Groups 实例
+// MuxGroup 返回 group.Groups 实例
 func (srv *Server) MuxGroup() *group.Group { return srv.group }
 
 // SetDebugger 设置调试地址

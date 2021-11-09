@@ -5,14 +5,18 @@ package config
 import "github.com/issue9/mux/v5"
 
 type Router struct {
-	// 是否禁用自动生成 HEAD 请求
-	DisableHead bool `yaml:"disableHead,omitempty" json:"disableHead,omitempty" xml:"disableHead,attr,omitempty"`
+	// 是否忽略大小写
+	//
+	// 如果为 true，那么客户请求的 URL 都将被转换为小写字符。
+	// 不会影响服务端添加的路由项。
+	CaseInsensitive bool `yaml:"caseInsensitive,omitempty" json:"caseInsensitive,omitempty" xml:"caseInsensitive,attr,omitempty"`
 
 	// 跨域的相关设置
 	//
 	// 为空表示禁用跨域的相关设置。
 	CORS *CORS `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
-	cors *mux.CORS
+
+	options []mux.Option
 }
 
 // CORS 跨域设置
@@ -45,24 +49,22 @@ type CORS struct {
 }
 
 func (r *Router) sanitize() *Error {
-	if r.CORS == nil {
-		r.cors = mux.DeniedCORS()
-		return nil
+	opts := make([]mux.Option, 0, 2)
+
+	if r.CORS != nil {
+		if err := r.CORS.sanitize(); err != nil {
+			err.Field = "cors." + err.Field
+			return err
+		}
+		o := r.CORS
+		opts = append(opts, mux.CORS(o.Origins, o.AllowHeaders, o.ExposedHeaders, o.MaxAge, o.AllowCredentials))
 	}
 
-	if err := r.CORS.sanitize(); err != nil {
-		err.Field = "cors." + err.Field
-		return err
+	if r.CaseInsensitive {
+		opts = append(opts, mux.CaseInsensitive)
 	}
 
-	r.cors = &mux.CORS{
-		Origins:          r.CORS.Origins,
-		AllowHeaders:     r.CORS.AllowHeaders,
-		ExposedHeaders:   r.CORS.ExposedHeaders,
-		MaxAge:           r.CORS.MaxAge,
-		AllowCredentials: r.CORS.AllowCredentials,
-	}
-
+	r.options = opts
 	return nil
 }
 

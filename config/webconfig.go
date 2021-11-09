@@ -97,12 +97,11 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) *server.
 	r := conf.Router
 
 	return &server.Options{
-		Port:        conf.Port,
-		FS:          fs,
-		Location:    conf.location,
-		Cache:       conf.cache,
-		DisableHead: r.DisableHead,
-		CORS:        r.cors,
+		Port:          conf.Port,
+		FS:            fs,
+		Location:      conf.location,
+		Cache:         conf.cache,
+		RouterOptions: r.options,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()

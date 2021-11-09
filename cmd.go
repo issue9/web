@@ -44,6 +44,11 @@ type Command struct {
 
 	Version string // 程序版本
 
+	// 在运行服务之前对 Server 的额外操作
+	//
+	// 比如添加模块等。不可以为空。
+	Init func(*Server) error
+
 	// 当作服务运行的标签名
 	//
 	// 当标签名在此列表时，Server.Serve 的第一个参数为 true。
@@ -58,11 +63,6 @@ type Command struct {
 	//
 	// 可以为空。
 	Options OptionsFunc
-
-	// 在运行服务之前对 Server 的额外操作
-	//
-	// 比如添加模块等。可以为空。
-	Init func(*Server) error
 
 	// 命令行输出信息的通道
 	//
