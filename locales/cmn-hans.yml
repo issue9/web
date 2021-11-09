@@ -65,10 +65,10 @@ messages:
   message:
     msg: '执行 %s 完毕'
 
-- key: 'no found serialization for %s'
+- key: 'not found serialization for %s'
   message:
     msg: '未找到符合报头 %s 的序列化函数'
 
-- key: 'no found charset for %s'
+- key: 'not found charset for %s'
   message:
     msg: '未找到符合报头 %s 的字符集'

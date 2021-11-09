@@ -136,7 +136,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
 	if !found {
-		srv.Logs().Debugf(srv.localePrinter.Sprintf("no found serialization for %s", header))
+		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found serialization for %s", header))
 		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
 		return nil
 	}
@@ -144,7 +144,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
-		srv.Logs().Debugf(srv.localePrinter.Sprintf("no found charset for %s", header))
+		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found charset for %s", header))
 		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
 		return nil
 	}

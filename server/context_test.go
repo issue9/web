@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/encoding"
@@ -65,7 +66,7 @@ func TestServer_NewContext(t *testing.T) {
 		srv.NewContext(w, r)
 	})
 	a.Equal(w.Code, http.StatusNotAcceptable)
-	a.Contains(lw.String(), "解码函数")
+	a.Contains(lw.String(), localeutil.Error("not found serialization for %s", "not").Error())
 
 	// 错误的 accept-charset
 	lw.Reset()
@@ -77,7 +78,7 @@ func TestServer_NewContext(t *testing.T) {
 		srv.NewContext(w, r)
 	})
 	a.Equal(w.Code, http.StatusNotAcceptable)
-	a.Contains(lw.String(), "字符集")
+	a.Contains(lw.String(), localeutil.Error("not found charset for %s", "unknown").Error())
 
 	// 错误的 content-type,无输入内容
 	lw.Reset()
