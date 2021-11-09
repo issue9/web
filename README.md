@@ -74,13 +74,6 @@ func Module(s *web.Server) error {
 }
 ```
 
-### 插件
-
-web 支持以插件的形式分发模块内容，只需要以 `-buildmode=plugin` 的形式编译每个模块，
-之后将编译后的模块通过 Server.LoadPlugin() 加载即可。具体的可参考下 internal/plugintest 下的插件示例。
-
-Go 并不是在所有的平台下都支持插件模式，支持列表可查看：<https://golang.org/pkg/plugin/>
-
 ## 字符集和文档类型
 
 文档类型由 `Server.Content` 指定。
