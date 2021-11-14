@@ -191,3 +191,6 @@ func (srv *Server) AddAt(title string, f ScheduledJobFunc, ti time.Time, delay b
 func (srv *Server) AddJob(title string, f ScheduledJobFunc, scheduler Scheduler, delay bool) {
 	srv.scheduled.New(title, f, scheduler, delay)
 }
+
+// Jobs 返回所有的计划任务
+func (srv *Server) Jobs() []*ScheduledJob { return srv.scheduled.Jobs() }
