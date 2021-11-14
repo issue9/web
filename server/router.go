@@ -3,7 +3,6 @@
 package server
 
 import (
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -208,25 +207,4 @@ func (p *Prefix) Remove(path string, method ...string) {
 
 func (p *Prefix) URL(strict bool, path string, params map[string]string) (string, error) {
 	return p.router.URL(strict, p.prefix+path, params)
-}
-
-// AddRoutes 注册路由项
-//
-// f 实际执行注册路由的函数；
-// routerName 路由名称，由 Server.NewRouter 中创建，若为空值，则采用 Action.Name 作为默认值；
-func (t *Action) AddRoutes(f func(r *Router), routerName string) *Action {
-	if routerName == "" {
-		routerName = t.Name()
-	}
-
-	msg := t.Server().LocalePrinter().Sprintf("register router %s", routerName)
-	return t.AddInit(msg, func() error {
-		r := t.Server().Router(routerName)
-		if r == nil {
-			return fmt.Errorf("路由名 %s 不存在", routerName)
-		}
-
-		f(r)
-		return nil
-	})
 }
