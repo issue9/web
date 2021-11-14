@@ -205,16 +205,13 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Jobs 返回所有的计划任务
-func (srv *Server) Jobs() []*ScheduledJob { return srv.scheduled.Jobs() }
-
 // Serve 启动服务
 //
 // serve 如果为空，表示不启动 HTTP 服务，仅执行向 action 注册的函数。
 func (srv *Server) Serve() (err error) {
 	srv.runServices()
 
-	// 在 Serve 中关闭服务，而不是 Close。 这样可以保证在所有的请求关闭之后执行。
+	// 在 Serve 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
 	defer func() {
 		srv.stopServices()
 
