@@ -22,11 +22,9 @@ type (
 	Context      = server.Context
 	Options      = server.Options
 	Filter       = server.Filter
-	Module       = server.Module
 	HandlerFunc  = server.HandlerFunc
 	Responser    = server.Responser
 	Router       = server.Router
-	Action       = server.Action
 	ResultFields = server.ResultFields
 	Result       = server.Result
 	Files        = serialization.Files

@@ -459,7 +459,7 @@ func TestContext_ServeFile(t *testing.T) {
 	})
 
 	go func() {
-		a.Equal(s.Serve(true, "default"), http.ErrServerClosed)
+		a.Equal(s.Serve(), http.ErrServerClosed)
 		exit <- true
 	}()
 	time.Sleep(500 * time.Millisecond)
@@ -501,7 +501,7 @@ func TestContext_ServeFile_windows(t *testing.T) {
 	})
 
 	go func() {
-		a.Equal(s.Serve(true, "default"), http.ErrServerClosed)
+		a.Equal(s.Serve(), http.ErrServerClosed)
 		exit <- true
 	}()
 	time.Sleep(500 * time.Millisecond)

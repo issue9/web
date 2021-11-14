@@ -22,7 +22,6 @@ import (
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
@@ -133,7 +132,7 @@ func TestGetServer(t *testing.T) {
 	})
 
 	go func() {
-		a.Equal(srv.Serve(true, "default"), http.ErrServerClosed)
+		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").
@@ -177,7 +176,7 @@ func TestGetServer(t *testing.T) {
 		isRequested = true
 	})
 	go func() {
-		a.Equal(srv.Serve(true, "default"), http.ErrServerClosed)
+		a.Equal(srv.Serve(), http.ErrServerClosed)
 	}()
 	time.Sleep(500 * time.Millisecond)
 	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").Do().Success()
@@ -218,40 +217,26 @@ func TestServer_Serve(t *testing.T) {
 	router, err := srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
-
-	m1 := srv.NewModule("m1", "1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotNil(m1)
-	m1.Action("def").AddInit("init", func() error {
-		router.Get("/m1/test", f202)
-		return nil
-	})
-	m1.Action("tag1")
+	router.Get("/m1/test", f202)
 
 	a.False(srv.Serving())
 
-	m2 := srv.NewModule("m2", "1.0.0", localeutil.Phrase("m2 desc"), "m1")
-	a.NotNil(m2)
-	m2.Action("def").AddInit("init m2", func() error {
-		router.Get("/m2/test", func(ctx *Context) Responser {
-			a.True(srv.Serving())
+	router.Get("/m2/test", func(ctx *Context) Responser {
+		a.True(srv.Serving())
 
-			srv := ctx.Server()
-			a.NotNil(srv)
-			a.Equal(2, len(srv.Modules(message.NewPrinter(language.SimplifiedChinese))))
-			a.Equal(srv.Actions(), []string{"def", "tag1"})
+		srv := ctx.Server()
+		a.NotNil(srv)
 
-			ctx.Response.WriteHeader(http.StatusAccepted)
-			_, err := ctx.Response.Write([]byte("1234567890"))
-			if err != nil {
-				println(err)
-			}
-			return nil
-		})
+		ctx.Response.WriteHeader(http.StatusAccepted)
+		_, err := ctx.Response.Write([]byte("1234567890"))
+		if err != nil {
+			println(err)
+		}
 		return nil
 	})
 
 	go func() {
-		err := srv.Serve(true, "def")
+		err := srv.Serve()
 		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -309,7 +294,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	router.Get("/mux/test", f202)
 
 	go func() {
-		err := server.Serve(true, "default")
+		err := server.Serve()
 		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
@@ -355,9 +340,7 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	buf := new(bytes.Buffer)
-	m1 := srv.NewModule("m1", "v1.0.0", localeutil.Phrase("m1 desc"))
-	a.NotNil(m1)
-	m1.Action("serve").AddService("srv1", func(ctx context.Context) error {
+	srv.AddService("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)
 		for {
 			select {
@@ -369,14 +352,16 @@ func TestServer_Close(t *testing.T) {
 				return context.Canceled
 			}
 		}
-	}).AddUninit("RegisterOnClose", func() error {
+	})
+
+	srv.OnClose("RegisterOnClose", func() error {
 		buf.WriteString("RegisterOnClose\n")
 		println("TestServer_Close RegisterOnClose...")
 		return nil
 	})
 
 	go func() {
-		a.ErrorIs(srv.Serve(true, "serve"), http.ErrServerClosed)
+		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
 		exit <- true
 	}()
 
@@ -419,7 +404,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	})
 
 	go func() {
-		err := srv.Serve(true, "default")
+		err := srv.Serve()
 		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()

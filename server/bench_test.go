@@ -25,14 +25,11 @@ func BenchmarkServer_Serve(b *testing.B) {
 	router, err := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 
-	m := srv.NewModule("id", "1.0", nil)
-	m.Action("srv").AddRoutes(func(r *Router) {
-		r.Get("/path", func(c *Context) Responser {
-			return Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
-		})
-	}, "srv")
+	router.Get("/path", func(c *Context) Responser {
+		return Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
+	})
 	go func() {
-		srv.Serve(true, "srv")
+		srv.Serve()
 	}()
 	time.Sleep(500 * time.Millisecond)
 

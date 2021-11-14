@@ -13,7 +13,6 @@ import (
 
 	"github.com/issue9/assert"
 	"github.com/issue9/assert/rest"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v5/group"
 )
 
@@ -322,35 +321,4 @@ func TestServer_Router(t *testing.T) {
 	a.Nil(srv.Router("host"))
 	v, found = srv.Vars().Load("host")
 	a.True(found).Equal(v, 123)
-}
-
-func TestAction_AddRoutes(t *testing.T) {
-	a := assert.New(t)
-
-	defRouters := map[string][]string{"*": {http.MethodOptions}}
-
-	srv := newServer(a, nil)
-	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
-
-	m := srv.NewModule("m1", "v1", localeutil.Phrase("m1 desc"))
-	a.NotNil(m)
-	m.Action("install").AddRoutes(func(router *Router) {}, "")
-	a.Equal(r.MuxRouter().Routes(), defRouters) // 未初始化
-	a.Error(srv.initModules(false, "install"))
-	a.Equal(r.MuxRouter().Routes(), defRouters) // 已初始化，但是未指定正常的路由名称
-
-	srv = newServer(a, nil)
-	r, err = srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
-	m = srv.NewModule("m2", "v2", localeutil.Phrase("m2 desc"))
-	a.NotNil(m)
-	m.Action("install").AddRoutes(func(router *Router) {
-		a.Equal(r, router)
-		router.Get("p1", f201)
-	}, "host")
-
-	a.Equal(r.MuxRouter().Routes(), defRouters) // 未初始化
-	a.NotError(srv.initModules(false, "install"))
-	a.Equal(2, len(r.MuxRouter().Routes())) // 已初始化，包含一个默认的 OPTIONS *
 }

@@ -19,10 +19,12 @@ import (
 	"github.com/issue9/middleware/v5/errorhandler"
 	"github.com/issue9/mux/v5/group"
 	"github.com/issue9/scheduled"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/serialization"
 )
 
@@ -52,11 +54,14 @@ type Server struct {
 	mimetypes  *serialization.Mimetypes
 	cache      cache.Cache
 	uptime     time.Time
-	modules    []*Module
 	events     map[string]events.Eventer
 	serving    bool
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
+
+	// executor
+	closes  []executor
+	install []executor
 
 	// service
 	services  []*Service
@@ -77,6 +82,11 @@ type Server struct {
 	locale        *serialization.Locale
 	tag           language.Tag
 	localePrinter *message.Printer
+}
+
+type executor struct {
+	Title string
+	F     func() error
 }
 
 // New 返回 *Server 实例
@@ -100,11 +110,14 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:       &sync.Map{},
 		mimetypes:  serialization.NewMimetypes(10),
 		cache:      o.Cache,
-		modules:    make([]*Module, 0, 20),
 		uptime:     time.Now(),
 		events:     make(map[string]events.Eventer, 5),
 
 		closed: make(chan struct{}, 1),
+
+		// executor
+		closes:  make([]executor, 0, 10),
+		install: make([]executor, 0, 10),
 
 		// service
 		services:  make([]*Service, 0, 100),
@@ -198,20 +211,20 @@ func (srv *Server) Jobs() []*ScheduledJob { return srv.scheduled.Jobs() }
 // Serve 启动服务
 //
 // serve 如果为空，表示不启动 HTTP 服务，仅执行向 action 注册的函数。
-func (srv *Server) Serve(serve bool, action string) (err error) {
-	if err := srv.initModules(false, action); err != nil {
-		return err
-	}
-	if !serve {
-		return nil
-	}
-
+func (srv *Server) Serve() (err error) {
 	srv.runServices()
 
 	// 在 Serve 中关闭服务，而不是 Close。 这样可以保证在所有的请求关闭之后执行。
 	defer func() {
 		srv.stopServices()
-		err = errs.Merge(err, srv.initModules(true, action))
+
+		sliceutil.Reverse(srv.closes)
+		for _, executor := range srv.closes {
+			if err1 := executor.F(); err1 != nil {
+				err = errs.Merge(err, err1)
+				break
+			}
+		}
 		err = errs.Merge(err, srv.Logs().Flush())
 	}()
 
@@ -265,12 +278,6 @@ func (srv *Server) SetErrorHandle(h errorhandler.HandleFunc, status ...int) {
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
 
-// Server 获取关联的 Server 实例
-func (m *Module) Server() *Server { return m.srv }
-
-// Server 获取关联的 Server 实例
-func (t *Action) Server() *Server { return t.Module().Server() }
-
 // Mimetypes 返回用于序列化 web 内容的操作接口
 func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.mimetypes }
 
@@ -287,3 +294,40 @@ func (srv *Server) Tag() language.Tag { return srv.tag }
 
 // Serving 是否处于服务状态
 func (srv *Server) Serving() bool { return srv.serving }
+
+// NewFS 创建一个基于当前文件系统的子文件系统
+//
+// fsys 可以指定另外同等级的文件系统，多个文件系统可以共存，
+// 当前查找文件时，会依次查找各个文件系统，直到找到文件或是不存在于任何文件系统。
+func (srv *Server) NewFS(path string, fsys ...fs.FS) (fs.FS, error) {
+	sub, err := fs.Sub(srv, path)
+	if err != nil {
+		return nil, err
+	}
+
+	mfs := filesystem.NewMultipleFS(sub)
+	mfs.Add(fsys...)
+	return mfs, nil
+}
+
+// OnClose 注册关闭服务时需要执行的函数
+//
+// NOTE: 按注册的相反顺序执行。
+func (srv *Server) OnClose(title string, f func() error) {
+	srv.closes = append(srv.closes, executor{Title: title, F: f})
+}
+
+// OnInstall 注册安装函数
+func (srv *Server) OnInstall(title string, f func() error) {
+	srv.install = append(srv.install, executor{Title: title, F: f})
+}
+
+// Install 执行安装脚本
+func (srv *Server) Install() error {
+	for _, e := range srv.install {
+		if err := e.F(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
