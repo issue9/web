@@ -28,36 +28,36 @@ func TestRouter(t *testing.T) {
 
 	path := "/path"
 	a.NotError(router.Handle(path, f204, http.MethodGet, http.MethodDelete))
-	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
-	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusMethodNotAllowed)
+	srv.Get(path).Do().Status(http.StatusNoContent)
+	srv.Delete(path).Do().Status(http.StatusNoContent)
+	srv.Post(path, nil).Do().Status(http.StatusMethodNotAllowed)
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
 	a.NotError(router.Handle(path, f204))
-	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
-	srv.Patch("/root"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Delete(path).Do().Status(http.StatusNoContent)
+	srv.Patch(path, nil).Do().Status(http.StatusNoContent)
 
 	path = "/path2"
 
-	srv.Delete("/root" + path).Do().Status(http.StatusNotFound)
+	srv.Delete(path).Do().Status(http.StatusNotFound)
 
 	router.Delete(path, f204)
-	srv.Delete("/root" + path).Do().Status(http.StatusNoContent)
+	srv.Delete(path).Do().Status(http.StatusNoContent)
 
 	router.Get(path, f204)
-	srv.Get("/root" + path).Do().Status(http.StatusNoContent)
+	srv.Get(path).Do().Status(http.StatusNoContent)
 
 	router.Post(path, f204)
-	srv.Post("/root"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Post(path, nil).Do().Status(http.StatusNoContent)
 
 	router.Patch(path, f204)
-	srv.Patch("/root"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Patch(path, nil).Do().Status(http.StatusNoContent)
 
 	router.Put(path, f204)
-	srv.Put("/root"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Put(path, nil).Do().Status(http.StatusNoContent)
 
-	srv.NewRequest(http.MethodOptions, "/root"+path).
+	srv.NewRequest(http.MethodOptions, path).
 		Do().
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
@@ -68,70 +68,63 @@ func TestRouter_SetDebugger(t *testing.T) {
 	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
-	r, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	r, err := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
 
 	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
 	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
-	a.NotError(r.SetDebugger("/d/pprof/", "/vars"))
-	srv.Get("/root/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
-	srv.Get("/root/vars").Do().Status(http.StatusOK)
+	r.SetDebugger("/d/pprof/", "/vars")
+	srv.Get("/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
+	srv.Get("/vars").Do().Status(http.StatusOK)
 }
 
 func TestRouter_URL(t *testing.T) {
 	a := assert.New(t)
 
 	data := []*struct {
-		root      string            // 项目根路径
-		input     string            // 输入的内容
-		params    map[string]string // 输入路径中带的参数
-		url, path string            // 输出内容
+		root   string            // 项目根路径
+		input  string            // 输入的内容
+		params map[string]string // 输入路径中带的参数
+		url    string            // 输出内容
 	}{
 		{
 			root:  "",
 			input: "/abc",
 			url:   "/abc",
-			path:  "/abc",
 		},
 
 		{
 			root:  "/",
 			input: "/",
 			url:   "/",
-			path:  "/",
 		},
 
 		{
 			root:  "/",
 			input: "/abc/def",
 			url:   "/abc/def",
-			path:  "/abc/def",
 		},
 
 		{
 			root:  "https://localhost/",
 			input: "/abc/def",
 			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
 		},
 		{
 			root:  "https://localhost",
 			input: "/abc/def",
 			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
 		},
 		{
 			root:  "https://localhost",
-			input: "abc/def",
+			input: "/abc/def",
 			url:   "https://localhost/abc/def",
-			path:  "/abc/def",
 		},
 
 		{
 			root:  "https://example.com:8080/def/",
-			input: "abc",
+			input: "/abc",
 			url:   "https://example.com:8080/def/abc",
-			path:  "/def/abc",
 		},
 
 		{
@@ -139,7 +132,6 @@ func TestRouter_URL(t *testing.T) {
 			input:  "/posts/{id}/content",
 			params: map[string]string{"id": "5"},
 			url:    "https://example.com:8080/blog/posts/5/content",
-			path:   "/blog/posts/5/content",
 		},
 	}
 
@@ -149,23 +141,17 @@ func TestRouter_URL(t *testing.T) {
 		a.NotError(err).NotNil(router)
 		router.Get(item.input, f204)
 
-		uu, err := router.URL(item.input, item.params)
+		uu, err := router.URL(false, item.input, item.params)
 		a.NotError(err)
 		a.Equal(uu, item.url, "url not equal @%d,v1=%s,v2=%s", i, uu, item.url)
-		path, err := router.Path(item.input, item.params)
-		a.NotError(err)
-		a.Equal(path, item.path, "path not equal @%d,v1=%s,v2=%s", i, path, item.path)
 
 		srv.RemoveRouter("test-router")
 	}
 
 	r, err := srv.NewRouter("test-router", "https://example.com/blog", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(r)
-	uu, err := r.URL("", nil)
+	uu, err := r.URL(false, "", nil)
 	a.NotError(err).Equal(uu, "https://example.com/blog")
-
-	p, err := r.Path("", nil)
-	a.NotError(err).Equal(p, "/blog")
 }
 
 func TestRouter_NewRouter(t *testing.T) {
@@ -177,10 +163,8 @@ func TestRouter_NewRouter(t *testing.T) {
 	router, err := srv.NewRouter("host", "https://example.com", host)
 	a.NotError(err).NotNil(router)
 
-	uu, err := router.URL("/posts/1", nil)
+	uu, err := router.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
-	path, err := router.Path("/posts/1", nil)
-	a.NotError(err).Equal("/posts/1", path)
 
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()
@@ -208,23 +192,23 @@ func TestRouter_Prefix(t *testing.T) {
 
 	path := "/path"
 	a.NotError(p.Handle(path, f204, http.MethodGet, http.MethodDelete))
-	srv.Get("/root/p" + path).Do().Status(http.StatusNoContent)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusNoContent)
-	srv.Post("/root/p"+path, nil).Do().Status(http.StatusMethodNotAllowed)
+	srv.Get("/p" + path).Do().Status(http.StatusNoContent)
+	srv.Delete("/p" + path).Do().Status(http.StatusNoContent)
+	srv.Post("/p"+path, nil).Do().Status(http.StatusMethodNotAllowed)
 
 	p.Post(path, f204)
-	srv.Post("/root/p"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Post("/p"+path, nil).Do().Status(http.StatusNoContent)
 
 	p.Patch(path, f204)
-	srv.Patch("/root/p"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Patch("/p"+path, nil).Do().Status(http.StatusNoContent)
 
-	srv.NewRequest(http.MethodOptions, "/root/p"+path).
+	srv.NewRequest(http.MethodOptions, "/p"+path).
 		Do().
 		Status(http.StatusOK).
 		Header("allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST")
 
 	p.Remove(path, http.MethodDelete)
-	srv.Delete("/root/p" + path).Do().Status(http.StatusMethodNotAllowed)
+	srv.Delete("/p" + path).Do().Status(http.StatusMethodNotAllowed)
 }
 
 func TestRouter_Static(t *testing.T) {
@@ -264,7 +248,7 @@ func TestRouter_Static(t *testing.T) {
 	defer srv.Close()
 
 	buf := new(bytes.Buffer)
-	srv.Get("/root/m1/test").
+	srv.Get("/m1/test").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusCreated).
@@ -287,7 +271,7 @@ func TestRouter_Static(t *testing.T) {
 
 	// 定义的静态文件
 	buf.Reset()
-	srv.Get("/root/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).
@@ -303,7 +287,7 @@ func TestRouter_Static(t *testing.T) {
 
 	// 删除
 	r.Remove("/client/{path}")
-	srv.Get("/root/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Do().
 		Status(http.StatusNotFound)
 
@@ -315,7 +299,7 @@ func TestRouter_Static(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	r.Static("/admin/{path}", "./testdata", "index.html")
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "https://example.com/blog/admin/file1.txt", nil)
+	req := httptest.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
 	server.group.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }

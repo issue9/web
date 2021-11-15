@@ -439,9 +439,9 @@ func TestContext_ServeFile(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Millisecond)
 
-	testDownload(a, "http://localhost:8080/root/path", http.StatusOK)
-	testDownload(a, "http://localhost:8080/root/index", http.StatusOK)
-	testDownloadNotFound(a, "http://localhost:8080/root/not-exists")
+	testDownload(a, "http://localhost:8080/path", http.StatusOK)
+	testDownload(a, "http://localhost:8080/index", http.StatusOK)
+	testDownloadNotFound(a, "http://localhost:8080/not-exists")
 }
 
 func TestContext_ServeFile_windows(t *testing.T) {

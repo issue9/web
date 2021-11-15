@@ -215,7 +215,7 @@ func TestServer_Serve(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	srv := newServer(a, nil)
-	router, err := srv.NewRouter("default", "http://localhost:8080/root/", group.MatcherFunc(group.Any))
+	router, err := srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
@@ -257,25 +257,25 @@ func TestServer_Serve(t *testing.T) {
 	}()
 	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/m1/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/m1/test").
 		Do().
 		Status(http.StatusAccepted)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/m2/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/m2/test").
 		Do().
 		Status(http.StatusAccepted)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/mux/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/mux/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
 	router.Static("/admin/{path}", "./testdata", "index.html")
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/admin/file1.txt").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/admin/file1.txt").
 		Do().
 		Status(http.StatusOK)
 
@@ -304,7 +304,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 
-	router, err := server.NewRouter("default", "https://localhost/api", group.MatcherFunc(group.Any))
+	router, err := server.NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
 	a.NotError(err).NotNil(router)
 	router.Get("/mux/test", f202)
 
@@ -320,15 +320,15 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	}
 	client := &http.Client{Transport: tr}
 
-	rest.NewRequest(a, client, http.MethodGet, "https://localhost:8088/api/mux/test").
+	rest.NewRequest(a, client, http.MethodGet, "https://localhost:8088/mux/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// 无效的 http 请求
-	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/api/mux/test").
+	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/mux/test").
 		Do().
 		Status(http.StatusBadRequest)
-	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/api/mux").
+	rest.NewRequest(a, client, http.MethodGet, "http://localhost:8088/mux").
 		Do().
 		Status(http.StatusBadRequest)
 
@@ -383,15 +383,15 @@ func TestServer_Close(t *testing.T) {
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	resp, err := http.Get("http://localhost:8080/root/close")
+	resp, err := http.Get("http://localhost:8080/close")
 	a.Error(err).Nil(resp)
 
-	resp, err = http.Get("http://localhost:8080/root/test")
+	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
 	str := buf.String()
@@ -427,22 +427,22 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(5000 * time.Microsecond)
 
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/test").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/test").
 		Do().
 		Status(http.StatusAccepted)
 
 	// 关闭指令可以正常执行
-	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/root/close").
+	rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/close").
 		Do().
 		Status(http.StatusCreated)
 
 	// 未超时，但是拒绝新的链接
-	resp, err := http.Get("http://localhost:8080/root/test")
+	resp, err := http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
 	// 已被关闭
 	time.Sleep(30 * time.Microsecond)
-	resp, err = http.Get("http://localhost:8080/root/test")
+	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
 	<-exit
@@ -458,7 +458,7 @@ func TestServer_DisableCompression(t *testing.T) {
 
 	router.Static("/client/{path}", "./testdata/", "index.html")
 
-	srv.Get("/root/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).
@@ -466,7 +466,7 @@ func TestServer_DisableCompression(t *testing.T) {
 		Header("Content-Encoding", "gzip").
 		Header("Vary", "Content-Encoding")
 
-	srv.Get("/root/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Do().
 		Status(http.StatusOK).
 		Header("Content-Type", "text/plain; charset=utf-8").
@@ -474,7 +474,7 @@ func TestServer_DisableCompression(t *testing.T) {
 		Header("Vary", "Content-Encoding")
 
 	server.DisableCompression(true)
-	srv.Get("/root/client/file1.txt").
+	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).

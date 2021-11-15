@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/issue9/middleware/v5/debugger"
@@ -17,13 +15,11 @@ import (
 )
 
 type (
-	// Router 路由管理
+	// Router 路由
 	Router struct {
 		srv      *Server
 		router   *mux.Router
 		filters  []Filter
-		root     string
-		path     string
 		debugger *debugger.Debugger
 	}
 
@@ -36,27 +32,16 @@ type (
 )
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
-func (srv *Server) NewRouter(name string, root string, matcher group.Matcher, filter ...Filter) (*Router, error) {
-	u, err := url.Parse(root)
-	if err != nil {
-		return nil, err
-	}
-
-	// 保证不以 / 结尾
-	if len(u.Path) > 0 && u.Path[len(u.Path)-1] == '/' {
-		u.Path = u.Path[:len(u.Path)-1]
-		root = u.String()
-	}
-
-	r := srv.MuxGroup().New(name, matcher)
+//
+// domain 仅用于 URL 生成地址，并不会对路由本身产生影响。
+func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) (*Router, error) {
+	r := srv.MuxGroup().New(name, matcher, mux.URLDomain(domain))
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
 	rr := &Router{
 		srv:      srv,
 		router:   r,
 		filters:  filter,
-		root:     root,
-		path:     u.Path,
 		debugger: dbg,
 	}
 	srv.routers[name] = rr
@@ -76,28 +61,14 @@ func (srv *Server) RemoveRouter(name string) {
 func (srv *Server) MuxGroup() *group.Group { return srv.group }
 
 // SetDebugger 设置调试地址
-func (router *Router) SetDebugger(pprof, vars string) (err error) {
-	if pprof != "" {
-		if pprof, err = router.Path(pprof, nil); err != nil {
-			return err
-		}
-	}
-
-	if vars != "" {
-		if vars, err = router.Path(vars, nil); err != nil {
-			return err
-		}
-	}
-
+func (router *Router) SetDebugger(pprof, vars string) {
 	router.debugger.Pprof = pprof
 	router.debugger.Vars = vars
-
-	return nil
 }
 
 func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) {
 	h = ApplyFilters(h, filters...)
-	router.router.HandleFunc(router.path+path, func(w http.ResponseWriter, r *http.Request) {
+	router.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		ctx := router.srv.NewContext(w, r)
 		ctx.renderResponser(h(ctx))
 		contextPool.Put(ctx)
@@ -137,7 +108,7 @@ func (router *Router) Patch(path string, h HandlerFunc) *Router {
 
 // Remove 删除指定的路由项
 func (router *Router) Remove(path string, method ...string) {
-	router.router.Remove(router.path+path, method...)
+	router.router.Remove(path, method...)
 }
 
 func (router *Router) clone() *Router {
@@ -147,18 +118,7 @@ func (router *Router) clone() *Router {
 		srv:     router.srv,
 		router:  router.router,
 		filters: filters,
-		root:    router.root,
-		path:    router.path,
 	}
-}
-
-// Path 返回相对于域名的绝对路由地址
-//
-// 功能与 mux.Router.URL 相似，但是加上了关联的域名地址的根路径。比如根地址是 https://example.com/blog
-// pattern 为 /posts/{id}，则返回为 /blog/posts/1。
-// 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
-func (router *Router) Path(pattern string, params map[string]string) (string, error) {
-	return router.buildURL(router.path, pattern, params)
 }
 
 // URL 构建完整的 URL
@@ -166,30 +126,8 @@ func (router *Router) Path(pattern string, params map[string]string) (string, er
 // 功能与 mux.Router.URL 相似，但是加上了关联的域名地址。比如根地址是 https://example.com/blog
 // pattern 为 /posts/{id}，则返回为 https://example.com/blog/posts/1。
 // 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
-func (router *Router) URL(pattern string, params map[string]string) (string, error) {
-	return router.buildURL(router.root, pattern, params)
-}
-
-func (router *Router) buildURL(prefix, pattern string, params map[string]string) (string, error) {
-	if len(pattern) == 0 {
-		return prefix, nil
-	}
-
-	if len(params) > 0 {
-		p, err := router.router.URL(pattern, params)
-		if err != nil {
-			return "", err
-		}
-		pattern = p
-	}
-
-	switch {
-	case pattern[0] == '/':
-		// 由 NewRouter 保证 root 不能 / 结尾
-		return prefix + pattern, nil
-	default:
-		return prefix + "/" + pattern, nil
-	}
+func (router *Router) URL(strict bool, pattern string, params map[string]string) (string, error) {
+	return router.router.URL(strict, pattern, params)
 }
 
 // Static 添加静态路由
@@ -212,11 +150,10 @@ func (router *Router) StaticFS(p string, f fs.FS, index string) {
 	if lastStart < 0 || len(p) == 0 || p[len(p)-1] != '}' || lastStart+2 == len(p) {
 		panic("path 必须是命名参数结尾：比如 /assets/{path}。")
 	}
-	prefix := path.Join(router.path, p[:lastStart])
 
 	router.Handle(p, func(ctx *Context) Responser {
 		pp := ctx.Request.URL.Path
-		pp = strings.TrimPrefix(pp, prefix)
+		pp = strings.TrimPrefix(pp, p[:lastStart])
 		if pp != "" && pp[0] == '/' {
 			pp = pp[1:]
 		}
@@ -267,6 +204,10 @@ func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 // Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.router.Remove(p.prefix+path, method...)
+}
+
+func (p *Prefix) URL(strict bool, path string, params map[string]string) (string, error) {
+	return p.router.URL(strict, p.prefix+path, params)
 }
 
 // AddRoutes 注册路由项
