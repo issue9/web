@@ -28,9 +28,6 @@ jobs:
           go-version: ${{ matrix.go }}
         id: go
 
-      - name: generate
-        run: go generate -v ./...
-        
       - name: Vet
         run: go vet -v ./...
         
