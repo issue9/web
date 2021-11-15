@@ -8,29 +8,9 @@ messages:
   message:
     msg: 必须大于 0
 
-- key: 'register router %s'
-  message:
-    msg: '注册路由: %[1]s'
-
-- key: 'register cron %s'
-  message:
-    msg: '注册计划任务: %[1]s'
-
-- key: 'register service %s'
-  message:
-    msg: '注册服务: %[1]s'
-
 - key: '%s at %s:%s'
   message:
     msg: '位于 %[2]s:%[3]s 发生了 %[1]s'
-
-- key: '%s cyclic dependence'
-  message:
-    msg: '%[1]s 循环依赖自身'
-
-- key: 'not found %s dependence %s'
-  message:
-    msg: '未找到 %[1]s 的依赖模块 %[2]s'
 
 - key: 'scheduled job'
   message:
@@ -52,14 +32,6 @@ messages:
 - key: 'has serialization function %s'
   message:
     msg: '已经存在相同名称 %[1]s 的序列化函数'
-
-- key: 'run action %s'
-  message:
-    msg: '执行 %s'
-
-- key: 'action %s complete'
-  message:
-    msg: '执行 %s 完毕'
 
 - key: 'not found serialization for %s'
   message:

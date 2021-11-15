@@ -55,13 +55,11 @@ type Server struct {
 	cache      cache.Cache
 	uptime     time.Time
 	events     map[string]events.Eventer
+	install    []installExecutor
 	serving    bool
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
-
-	// executor
-	closes  []executor
-	install []executor
+	closes []func() error
 
 	// service
 	services  []*Service
@@ -84,9 +82,9 @@ type Server struct {
 	localePrinter *message.Printer
 }
 
-type executor struct {
-	Title string
-	F     func() error
+type installExecutor struct {
+	tag string
+	f   func() error
 }
 
 // New 返回 *Server 实例
@@ -112,12 +110,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:      o.Cache,
 		uptime:     time.Now(),
 		events:     make(map[string]events.Eventer, 5),
+		install:    make([]installExecutor, 0, 10),
 
 		closed: make(chan struct{}, 1),
-
-		// executor
-		closes:  make([]executor, 0, 10),
-		install: make([]executor, 0, 10),
+		closes: make([]func() error, 0, 10),
 
 		// service
 		services:  make([]*Service, 0, 100),
@@ -216,8 +212,8 @@ func (srv *Server) Serve() (err error) {
 		srv.stopServices()
 
 		sliceutil.Reverse(srv.closes)
-		for _, executor := range srv.closes {
-			if err1 := executor.F(); err1 != nil {
+		for _, f := range srv.closes {
+			if err1 := f(); err1 != nil {
 				err = errs.Merge(err, err1)
 				break
 			}
@@ -310,19 +306,27 @@ func (srv *Server) NewFS(path string, fsys ...fs.FS) (fs.FS, error) {
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(title string, f func() error) {
-	srv.closes = append(srv.closes, executor{Title: title, F: f})
-}
+func (srv *Server) OnClose(f func() error) { srv.closes = append(srv.closes, f) }
 
-// OnInstall 注册安装函数
-func (srv *Server) OnInstall(title string, f func() error) {
-	srv.install = append(srv.install, executor{Title: title, F: f})
+// OnInstall 注册安装脚本
+//
+// tag 表示将安装脚本与特定的标签关联。
+func (srv *Server) OnInstall(f func() error, tag ...string) {
+	for _, t := range tag {
+		srv.install = append(srv.install, installExecutor{f: f, tag: t})
+	}
+	srv.install = append(srv.install, installExecutor{f: f})
 }
 
 // Install 执行安装脚本
-func (srv *Server) Install() error {
+//
+// tag 表示执行特定标签的安装脚本，如果为空，表示执行所有安装脚本。
+func (srv *Server) Install(tag string) error {
 	for _, e := range srv.install {
-		if err := e.F(); err != nil {
+		if e.tag != tag {
+			continue
+		}
+		if err := e.f(); err != nil {
 			return err
 		}
 	}

@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/issue9/sliceutil"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/serialization"
@@ -25,13 +24,13 @@ import (
 // 由 Command 生成的命令行带以下几个参数：
 //  - v 显示版本号；
 //  - h 显示帮助信息；
-//  - fs 指定当前程序可读取的文件目录；
-//  - action 运行的标签；
+//  - f 指定当前程序可读取的文件目录；
+//  - i 执行安装脚本，如果参数不为空，则执行指定的标签；
+//  - s 以服务运行，与 i 不能同时出现；
 //
 //  cmd := &web.Command{
 //      Name: "app",
 //      Version: "1.0.0",
-//      ServeActions: []string{"serve"},
 //      Init: func(s *Server) error {...},
 //  }
 //
@@ -135,8 +134,9 @@ func (cmd *Command) exec() error {
 
 	v := cl.Bool("v", false, "显示版本号")
 	h := cl.Bool("h", false, "显示帮助信息")
-	action := cl.String("action", "", "执行的标签")
-	f := cl.String("fs", "./", "可读取的目录")
+	f := cl.String("f", "./", "可读取的目录")
+	i := cl.String("i", "", "执行的安装脚本")
+	s := cl.Bool("s", true, "是否运行服务")
 
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return err
@@ -161,12 +161,15 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
+	if !*s { // 非服务
+		return srv.Install(*i)
+	}
+
 	if len(cmd.Signals) > 0 {
 		cmd.grace(srv, cmd.Signals...)
 	}
 
-	serve := sliceutil.Index(cmd.ServeActions, func(i int) bool { return cmd.ServeActions[i] == *action }) >= 0
-	return srv.Serve(serve, *action)
+	return srv.Serve()
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {

@@ -354,7 +354,7 @@ func TestServer_Close(t *testing.T) {
 		}
 	})
 
-	srv.OnClose("RegisterOnClose", func() error {
+	srv.OnClose(func() error {
 		buf.WriteString("RegisterOnClose\n")
 		println("TestServer_Close RegisterOnClose...")
 		return nil
