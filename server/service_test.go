@@ -262,23 +262,3 @@ func TestServer_scheduled(t *testing.T) {
 	}, time.Now(), false)
 	a.Equal(1, len(srv.scheduled.Jobs()))
 }
-
-func TestServer_Install(t *testing.T) {
-	a := assert.New(t)
-	srv := newServer(a, nil)
-	var cnt int
-
-	srv.OnInstall(func() error {
-		cnt++
-		return nil
-	}, "tag1", "tag2")
-
-	a.NotError(srv.Install("tag1"))
-	a.Equal(cnt, 1)
-
-	a.NotError(srv.Install("tag2"))
-	a.Equal(cnt, 2)
-
-	a.NotError(srv.Install(""))
-	a.Equal(cnt, 3)
-}

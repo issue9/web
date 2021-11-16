@@ -46,7 +46,7 @@ type Command struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
-	Init func(*Server) error
+	Init func(s *Server, serve bool, install string) error
 
 	// 触发退出的信号
 	//
@@ -152,12 +152,12 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	if err := cmd.Init(srv); err != nil {
+	if err := cmd.Init(srv, *s, *i); err != nil {
 		return err
 	}
 
 	if !*s { // 非服务
-		return srv.Install(*i)
+		return nil
 	}
 
 	if len(cmd.Signals) > 0 {

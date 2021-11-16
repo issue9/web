@@ -85,27 +85,22 @@ func (router *Router) Get(path string, h HandlerFunc) *Router {
 	return router.Handle(path, h, http.MethodGet)
 }
 
-// Post 添加 POST 请求处理项
 func (router *Router) Post(path string, h HandlerFunc) *Router {
 	return router.Handle(path, h, http.MethodPost)
 }
 
-// Put 添加 PUT 请求处理项
 func (router *Router) Put(path string, h HandlerFunc) *Router {
 	return router.Handle(path, h, http.MethodPut)
 }
 
-// Delete 添加 DELETE 请求处理项
 func (router *Router) Delete(path string, h HandlerFunc) *Router {
 	return router.Handle(path, h, http.MethodDelete)
 }
 
-// Patch 添加 PATCH 请求处理项
 func (router *Router) Patch(path string, h HandlerFunc) *Router {
 	return router.Handle(path, h, http.MethodPatch)
 }
 
-// Remove 删除指定的路由项
 func (router *Router) Remove(path string, method ...string) {
 	router.router.Remove(path, method...)
 }
@@ -175,32 +170,26 @@ func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
 	return p
 }
 
-// Get 添加 GET 请求处理项
 func (p *Prefix) Get(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodGet)
 }
 
-// Post 添加 POST 请求处理项
 func (p *Prefix) Post(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPost)
 }
 
-// Put 添加 PUT 请求处理项
 func (p *Prefix) Put(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPut)
 }
 
-// Delete 添加 DELETE 请求处理项
 func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodDelete)
 }
 
-// Patch 添加 Patch 请求处理
 func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
 	return p.Handle(path, h, http.MethodPatch)
 }
 
-// Remove 删除路由项
 func (p *Prefix) Remove(path string, method ...string) {
 	p.router.Remove(p.prefix+path, method...)
 }
