@@ -48,11 +48,6 @@ type Command struct {
 	// 比如添加模块等。不可以为空。
 	Init func(*Server) error
 
-	// 当作服务运行的标签名
-	//
-	// 当标签名在此列表时，Server.Serve 的第一个参数为 true。
-	ServeActions []string
-
 	// 触发退出的信号
 	//
 	// 为空(nil 或是 []) 表示没有。
