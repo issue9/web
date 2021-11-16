@@ -295,6 +295,31 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
 }
 
+func TestContext_IsXHR(t *testing.T) {
+	a := assert.New(t)
+
+	srv := newServer(a, nil)
+	router, err := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
+	a.NotError(err).NotNil(router)
+	router.Get("/not-xhr", func(ctx *Context) Responser {
+		a.False(ctx.IsXHR())
+		return nil
+	})
+	router.Get("/xhr", func(ctx *Context) Responser {
+		a.True(ctx.IsXHR())
+		return nil
+	})
+
+	r := httptest.NewRequest(http.MethodGet, "/not-xhr", nil)
+	w := httptest.NewRecorder()
+	router.MuxRouter().ServeHTTP(w, r)
+
+	r = httptest.NewRequest(http.MethodGet, "/xhr", nil)
+	r.Header.Set("X-Requested-With", "XMLHttpRequest")
+	w = httptest.NewRecorder()
+	router.MuxRouter().ServeHTTP(w, r)
+}
+
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t)
 

@@ -509,3 +509,8 @@ func buildContentType(mt, charset string) string {
 
 	return mt + "; charset=" + charset
 }
+
+func (ctx *Context) IsXHR() bool {
+	h := strings.ToLower(ctx.Request.Header.Get("X-Requested-With"))
+	return h == "xmlhttprequest"
+}
