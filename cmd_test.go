@@ -18,7 +18,7 @@ func TestCommand_sanitize(t *testing.T) {
 	cmd = &Command{Name: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "Init")
 
-	cmd = &Command{Name: "app", Version: "1.1.1", Init: func(s *Server) error { return nil }}
+	cmd = &Command{Name: "app", Version: "1.1.1", Init: func(*Server, bool, string) error { return nil }}
 	a.NotError(cmd.sanitize())
 
 	a.Equal(cmd.Out, os.Stdout)
