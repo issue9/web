@@ -22,8 +22,9 @@ func TestRouter(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.group, nil)
-	router, err := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
+	a.Equal(server.Routers(), []*Router{router})
 
 	path := "/path"
 	a.NotError(router.Handle(path, f204, http.MethodGet, http.MethodDelete))
@@ -67,8 +68,8 @@ func TestRouter_SetDebugger(t *testing.T) {
 	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
-	r, err := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
+	r := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
+	a.NotNil(r)
 
 	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
 	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
@@ -136,8 +137,8 @@ func TestRouter_URL(t *testing.T) {
 
 	srv := newServer(a, nil)
 	for i, item := range data {
-		router, err := srv.NewRouter("test-router", item.root, group.MatcherFunc(group.Any))
-		a.NotError(err).NotNil(router)
+		router := srv.NewRouter("test-router", item.root, group.MatcherFunc(group.Any))
+		a.NotNil(router)
 		router.Get(item.input, f204)
 
 		uu, err := router.URL(false, item.input, item.params)
@@ -147,8 +148,8 @@ func TestRouter_URL(t *testing.T) {
 		srv.RemoveRouter("test-router")
 	}
 
-	r, err := srv.NewRouter("test-router", "https://example.com/blog", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
+	r := srv.NewRouter("test-router", "https://example.com/blog", group.MatcherFunc(group.Any))
+	a.NotNil(r)
 	uu, err := r.URL(false, "", nil)
 	a.NotError(err).Equal(uu, "https://example.com/blog")
 }
@@ -159,8 +160,8 @@ func TestRouter_NewRouter(t *testing.T) {
 	host := group.NewHosts(false, "example.com")
 	a.NotNil(host)
 
-	router, err := srv.NewRouter("host", "https://example.com", host)
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("host", "https://example.com", host)
+	a.NotNil(router)
 
 	uu, err := router.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
@@ -183,8 +184,8 @@ func TestRouter_Prefix(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.group, nil)
-	router, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	p := router.Prefix("/p")
 	a.NotNil(p)
@@ -217,8 +218,8 @@ func TestRouter_Static(t *testing.T) {
 		_, err := w.Write([]byte("error handler test"))
 		a.NotError(err)
 	}, http.StatusNotFound)
-	r, err := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
+	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotNil(r)
 
 	r.Get("/m1/test", f201)
 	a.Panic(func() {
@@ -294,8 +295,8 @@ func TestRouter_Static(t *testing.T) {
 	server = newServer(a, nil)
 	host := group.NewHosts(false, "example.com")
 	a.NotNil(host)
-	r, err = server.NewRouter("example", "https://example.com/blog", host)
-	a.NotError(err).NotNil(r)
+	r = server.NewRouter("example", "https://example.com/blog", host)
+	a.NotNil(r)
 	r.Static("/admin/{path}", "./testdata", "index.html")
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
@@ -307,8 +308,8 @@ func TestServer_Router(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a, nil)
 
-	r, err := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(r)
+	r := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
+	a.NotNil(r)
 	a.Equal(srv.Router("host"), r)
 
 	// 同值，不同类型

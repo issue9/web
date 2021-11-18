@@ -33,7 +33,7 @@ type (
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
 // domain 仅用于 URL 生成地址，并不会对路由本身产生影响。
-func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) (*Router, error) {
+func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) *Router {
 	r := srv.MuxGroup().New(name, matcher, mux.URLDomain(domain))
 	dbg := &debugger.Debugger{}
 	r.Middlewares().Append(dbg.Middleware)
@@ -45,7 +45,15 @@ func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter 
 	}
 	srv.routers[name] = rr
 
-	return rr, nil
+	return rr
+}
+
+func (srv *Server) Routers() []*Router {
+	routers := make([]*Router, 0, len(srv.routers))
+	for _, router := range srv.routers {
+		routers = append(routers, router)
+	}
+	return routers
 }
 
 // Router 返回由 Server.NewRouter 声明的路由

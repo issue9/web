@@ -114,8 +114,8 @@ func TestGetServer(t *testing.T) {
 	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 	var isRequested bool
 
-	router, err := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
@@ -164,8 +164,8 @@ func TestGetServer(t *testing.T) {
 	a.NotError(err).NotNil(srv)
 
 	isRequested = false
-	router, err = srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router = srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
 		s1 := GetServer(r)
 		a.NotNil(s1).Equal(s1, srv)
@@ -214,8 +214,8 @@ func TestServer_Serve(t *testing.T) {
 	exit := make(chan bool, 1)
 
 	srv := newServer(a, nil)
-	router, err := srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 	router.Get("/mux/test", f202)
 	router.Get("/m1/test", f202)
 
@@ -289,8 +289,8 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(server.Mimetypes().Add(text.Marshal, text.Unmarshal, DefaultMimetype))
 
-	router, err := server.NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 	router.Get("/mux/test", f202)
 
 	go func() {
@@ -325,8 +325,8 @@ func TestServer_Close(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
-	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/test", f202)
 	router.Get("/close", func(ctx *Context) Responser {
@@ -390,8 +390,8 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t)
 	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
-	router, err := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/test", f202)
 	router.Get("/close", func(ctx *Context) Responser {
@@ -438,8 +438,8 @@ func TestServer_DisableCompression(t *testing.T) {
 	server := newServer(a, nil)
 	srv := rest.NewServer(t, server.group, nil)
 	defer srv.Close()
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Static("/client/{path}", "./testdata/", "index.html")
 

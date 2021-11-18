@@ -14,8 +14,8 @@ import (
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/empty", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -35,8 +35,8 @@ func TestParams_empty(t *testing.T) {
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -77,8 +77,8 @@ func TestParams_ID_MustID(t *testing.T) {
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -113,8 +113,8 @@ func TestParams_Int_MustInt(t *testing.T) {
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -149,8 +149,8 @@ func TestParams_Bool_MustBool(t *testing.T) {
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -182,8 +182,8 @@ func TestParams_String_MustString(t *testing.T) {
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
@@ -219,8 +219,8 @@ func TestParams_Float_MustFloat(t *testing.T) {
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
 		i1, resp := ctx.ParamID("i1", "41110")
@@ -240,8 +240,8 @@ func TestContext_ParamID(t *testing.T) {
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t)
 	server := newServer(a, nil)
-	router, err := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
 		i1, resp := ctx.ParamInt64("i1", "41110")

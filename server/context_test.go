@@ -299,8 +299,8 @@ func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t)
 
 	srv := newServer(a, nil)
-	router, err := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 	router.Get("/not-xhr", func(ctx *Context) Responser {
 		a.False(ctx.IsXHR())
 		return nil
@@ -440,8 +440,8 @@ func TestContext_ServeFile(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
-	router, err := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	a.NotPanic(func() {
 		router.Get("/path", func(ctx *Context) Responser {
@@ -482,8 +482,8 @@ func TestContext_ServeFile_windows(t *testing.T) {
 		a.NotError(s.Close(0))
 		<-exit
 	}()
-	router, err := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := s.NewRouter("default", "http://localhost:8080/root", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	a.NotPanic(func() {
 		router.Get("/path", func(ctx *Context) Responser {

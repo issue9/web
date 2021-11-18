@@ -50,9 +50,11 @@ type Options struct {
 	Port string
 
 	// 初始化路由的参数
+	//
+	// 这些选项会应用在所有的路由上，但是 mux.URLDomain 无效，
+	// 该值始终是在 NewRouter 中指定。可以为空。
 	RouterOptions []mux.Option
-
-	group *group.Group
+	group         *group.Group
 
 	// 可以对 http.Server 的内容进行修改
 	//

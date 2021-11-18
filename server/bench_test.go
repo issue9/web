@@ -22,8 +22,8 @@ import (
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b)
 	srv := newServer(a, &Options{Port: ":8080"})
-	router, err := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
-	a.NotError(err).NotNil(router)
+	router := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
 		return Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
