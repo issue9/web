@@ -11,30 +11,30 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v5/group"
 )
 
 var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 
 func TestRouter(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.group, nil)
+	srv := rest.NewServer(a, server.group, nil)
 	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 	a.Equal(server.Routers(), []*Router{router})
 
 	path := "/path"
-	a.NotError(router.Handle(path, f204, http.MethodGet, http.MethodDelete))
+	router.Handle(path, f204, http.MethodGet, http.MethodDelete)
 	srv.Get(path).Do().Status(http.StatusNoContent)
 	srv.Delete(path).Do().Status(http.StatusNoContent)
 	srv.Post(path, nil).Do().Status(http.StatusMethodNotAllowed)
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
-	a.NotError(router.Handle(path, f204))
+	router.Handle(path, f204)
 	srv.Delete(path).Do().Status(http.StatusNoContent)
 	srv.Patch(path, nil).Do().Status(http.StatusNoContent)
 
@@ -64,10 +64,9 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_SetDebugger(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.group, nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.group, nil)
 	r := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
 	a.NotNil(r)
 
@@ -79,7 +78,7 @@ func TestRouter_SetDebugger(t *testing.T) {
 }
 
 func TestRouter_URL(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	data := []*struct {
 		root   string            // 项目根路径
@@ -155,7 +154,7 @@ func TestRouter_URL(t *testing.T) {
 }
 
 func TestRouter_NewRouter(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	host := group.NewHosts(false, "example.com")
 	a.NotNil(host)
@@ -181,9 +180,9 @@ func TestRouter_NewRouter(t *testing.T) {
 }
 
 func TestRouter_Prefix(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.group, nil)
+	srv := rest.NewServer(a, server.group, nil)
 	router := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 
@@ -191,7 +190,7 @@ func TestRouter_Prefix(t *testing.T) {
 	a.NotNil(p)
 
 	path := "/path"
-	a.NotError(p.Handle(path, f204, http.MethodGet, http.MethodDelete))
+	p.Handle(path, f204, http.MethodGet, http.MethodDelete)
 	srv.Get("/p" + path).Do().Status(http.StatusNoContent)
 	srv.Delete("/p" + path).Do().Status(http.StatusNoContent)
 	srv.Post("/p"+path, nil).Do().Status(http.StatusMethodNotAllowed)
@@ -212,7 +211,7 @@ func TestRouter_Prefix(t *testing.T) {
 }
 
 func TestRouter_Static(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	server.SetErrorHandle(func(w io.Writer, status int) {
 		_, err := w.Write([]byte("error handler test"))
@@ -244,23 +243,23 @@ func TestRouter_Static(t *testing.T) {
 		a.NotError(err)
 	}, http.StatusNotFound)
 
-	srv := rest.NewServer(t, server.group, nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.group, nil)
 
-	buf := new(bytes.Buffer)
 	srv.Get("/m1/test").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusCreated).
-		ReadBody(buf).
 		Header("Content-Type", "text/html").
 		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-	reader, err := gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err := ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "1234567890")
+		Header("Vary", "Content-Encoding").
+		BodyFunc(func(a *assert.Assertion, body []byte) {
+			buf := bytes.NewBuffer(body)
+			reader, err := gzip.NewReader(buf)
+			a.NotError(err).NotNil(reader)
+			data, err := ioutil.ReadAll(reader)
+			a.NotError(err).NotNil(data)
+			a.Equal(string(data), "1234567890")
+		})
 
 	// not found
 	// 返回 ErrorHandler 内容
@@ -270,20 +269,21 @@ func TestRouter_Static(t *testing.T) {
 		StringBody("error handler test")
 
 	// 定义的静态文件
-	buf.Reset()
 	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do().
 		Status(http.StatusOK).
-		ReadBody(buf).
 		Header("Content-Type", "text/plain; charset=utf-8").
 		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-	reader, err = gzip.NewReader(buf)
-	a.NotError(err).NotNil(reader)
-	data, err = ioutil.ReadAll(reader)
-	a.NotError(err).NotNil(data)
-	a.Equal(string(data), "file1")
+		Header("Vary", "Content-Encoding").
+		BodyFunc(func(a *assert.Assertion, body []byte) {
+			buf := bytes.NewBuffer(body)
+			reader, err := gzip.NewReader(buf)
+			a.NotError(err).NotNil(reader)
+			data, err := ioutil.ReadAll(reader)
+			a.NotError(err).NotNil(data)
+			a.Equal(string(data), "file1")
+		})
 
 	// 删除
 	r.Remove("/client/{path}")
@@ -305,7 +305,7 @@ func TestRouter_Static(t *testing.T) {
 }
 
 func TestServer_Router(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
 	r := srv.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))

@@ -7,14 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
 )
 
 func TestCreated(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	s, err := NewServer("test", "1.0", nil)
 	a.NotError(s.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/internal/charsetdata"
@@ -20,7 +20,7 @@ import (
 )
 
 func BenchmarkServer_Serve(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
 	router := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -47,7 +47,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 }
 
 func BenchmarkServer_NewContext(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -63,7 +63,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 }
 
 func BenchmarkContext_Marshal(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -79,7 +79,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 }
 
 func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -96,7 +96,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 }
 
 func BenchmarkContext_MarshalWithCharset(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -113,7 +113,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 }
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -131,7 +131,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 }
 
 func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -148,7 +148,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 }
 
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -167,7 +167,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -190,7 +190,7 @@ func BenchmarkPost(b *testing.B) {
 }
 
 func BenchmarkPostWithCharset(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
@@ -213,7 +213,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 }
 
 func BenchmarkBuildContentType(b *testing.B) {
-	a := assert.New(b)
+	a := assert.New(b, false)
 
 	for i := 0; i < b.N; i++ {
 		a.True(len(buildContentType(DefaultMimetype, DefaultCharset)) > 0)

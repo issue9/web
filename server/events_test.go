@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 func TestServer_Publisher(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	s := newServer(a, nil)
 
 	p := s.Publisher("p1")
@@ -32,7 +32,7 @@ func TestServer_Publisher(t *testing.T) {
 }
 
 func TestServer_Eventer(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	s := newServer(a, nil)
 	buf := new(bytes.Buffer)
 

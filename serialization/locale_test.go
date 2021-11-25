@@ -7,14 +7,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 )
 
 func TestLocale_LoadFile(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	f := NewFiles(10)
 	l := NewLocale(catalog.NewBuilder(), f)
 	a.NotNil(l)
@@ -39,7 +39,7 @@ func TestLocale_LoadFile(t *testing.T) {
 }
 
 func TestLocale_LoadFileFS(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	f := NewFiles(10)
 	l := NewLocale(catalog.NewBuilder(), f)
 	a.NotNil(l)

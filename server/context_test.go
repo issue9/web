@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
@@ -28,7 +28,7 @@ import (
 )
 
 func TestContext_Vars(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
@@ -53,7 +53,7 @@ func TestContext_Vars(t *testing.T) {
 }
 
 func TestServer_NewContext(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 	a.NotError(srv.Logs().SetOutput(logs.LevelDebug, lw))
@@ -165,7 +165,7 @@ func TestServer_NewContext(t *testing.T) {
 }
 
 func TestContext_Body(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	w := httptest.NewRecorder()
 
@@ -220,7 +220,7 @@ func TestContext_Body(t *testing.T) {
 }
 
 func TestContext_Unmarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	ctx := &Context{
 		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("test,123")),
@@ -238,7 +238,7 @@ func TestContext_Unmarshal(t *testing.T) {
 }
 
 func TestContext_Marshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	// 自定义报头
@@ -296,7 +296,7 @@ func TestContext_Marshal(t *testing.T) {
 }
 
 func TestContext_IsXHR(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	srv := newServer(a, nil)
 	router := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
@@ -321,7 +321,7 @@ func TestContext_IsXHR(t *testing.T) {
 }
 
 func TestServer_acceptLanguage(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	srv := newServer(a, &Options{Tag: language.Afrikaans})
 	b := srv.Locale().Builder()
@@ -347,7 +347,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 }
 
 func TestServer_contentType(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 	a.NotNil(srv)
@@ -368,7 +368,7 @@ func TestServer_contentType(t *testing.T) {
 }
 
 func TestServer_Location(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -379,7 +379,7 @@ func TestServer_Location(t *testing.T) {
 }
 
 func TestContext_Read(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
 	w := httptest.NewRecorder()
 	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
@@ -396,7 +396,7 @@ func TestContext_Read(t *testing.T) {
 }
 
 func TestContext_ClientIP(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -432,7 +432,7 @@ func TestContext_ClientIP(t *testing.T) {
 }
 
 func TestContext_ServeFile(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	exit := make(chan bool, 1)
 
 	s := newServer(a, nil)
@@ -474,7 +474,7 @@ func TestContext_ServeFile_windows(t *testing.T) {
 		return
 	}
 
-	a := assert.New(t)
+	a := assert.New(t, false)
 	exit := make(chan bool, 1)
 
 	s := newServer(a, nil)
@@ -512,9 +512,10 @@ func TestContext_ServeFile_windows(t *testing.T) {
 }
 
 func testDownload(a *assert.Assertion, path string, status int) {
+	a.TB().Helper()
 	rest.NewRequest(a, nil, http.MethodGet, path).Do().
 		Status(status).
-		BodyNotNil().
+		BodyNotEmpty().
 		Header("Test", "Test")
 }
 
@@ -524,7 +525,7 @@ func testDownloadNotFound(a *assert.Assertion, path string) {
 }
 
 func TestContext_ServeFS(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	fsys := os.DirFS("./")
 
 	w := httptest.NewRecorder()
@@ -581,7 +582,7 @@ func TestContext_ServeFS(t *testing.T) {
 }
 
 func TestBuildContentType(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	a.Equal("application/xml; charset=utf16", buildContentType("application/xml", "utf16"))
 	a.Equal("application/xml; charset="+DefaultCharset, buildContentType("application/xml", ""))
@@ -590,7 +591,7 @@ func TestBuildContentType(t *testing.T) {
 }
 
 func TestContext_LocalePrinter(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	b := srv.Locale().Builder()
@@ -618,7 +619,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 }
 
 func TestAcceptCharset(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	name, enc := acceptCharset(DefaultCharset)
 	a.Equal(name, DefaultCharset).

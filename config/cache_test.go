@@ -5,12 +5,12 @@ package config
 import (
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/logs/v3"
 )
 
 func TestWebconfig_buildCache(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	l, err := logs.New(nil)
 	a.NotError(err).NotNil(l)
 

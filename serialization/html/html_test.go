@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/web/serialization"
 )
@@ -14,7 +14,7 @@ import (
 var _ serialization.MarshalFunc = Marshal
 
 func TestMarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
 	a.NotError(err).NotNil(tpl)

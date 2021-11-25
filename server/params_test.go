@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v5/group"
 )
 
 func TestParams_empty(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -27,13 +27,12 @@ func TestParams_empty(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/empty").Do().Status(http.StatusOK)
 }
 
 func TestParams_ID_MustID(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -69,13 +68,12 @@ func TestParams_ID_MustID(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/id/1/-2/str").Do().Status(http.StatusOK)
 }
 
 func TestParams_Int_MustInt(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -105,13 +103,12 @@ func TestParams_Int_MustInt(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/int/1/2/str").Do().Status(http.StatusOK)
 }
 
 func TestParams_Bool_MustBool(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -141,13 +138,12 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/bool/true/false/str").Do().Status(http.StatusOK)
 }
 
 func TestParams_String_MustString(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -174,13 +170,12 @@ func TestParams_String_MustString(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/string/str1/str2").Do().Status(http.StatusOK)
 }
 
 func TestParams_Float_MustFloat(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -211,13 +206,12 @@ func TestParams_Float_MustFloat(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/float/1.1/2.2/str").Do().Status(http.StatusOK)
 }
 
 func TestContext_ParamID(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -232,13 +226,12 @@ func TestContext_ParamID(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/paramid/1/-2/str").Do().Status(411)
 }
 
 func TestContext_ParamInt64(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
@@ -256,7 +249,6 @@ func TestContext_ParamInt64(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(t, server.MuxGroup(), nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.MuxGroup(), nil)
 	srv.Get("/params/paramint64/1/-2/str").Do().Status(411)
 }

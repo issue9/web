@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestMerge(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
@@ -35,12 +35,12 @@ func TestMerge(t *testing.T) {
 }
 
 func TestMergeErrors_LocaleString(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
 
 	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
-	a.NotError(locale)
+	a.NotNil(locale)
 	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 	a.NotError(locale.LoadFileFS(locales.Locales, "*.yml"))
 

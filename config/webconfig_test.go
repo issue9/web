@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
@@ -16,7 +16,7 @@ import (
 )
 
 func TestNewOptions(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	files := serialization.NewFiles(5)
 
 	opt, err := NewOptions(files, os.DirFS("./testdata"), "web.yaml")
@@ -41,7 +41,7 @@ func TestNewOptions(t *testing.T) {
 }
 
 func TestWebconfig_sanitize(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	conf := &Webconfig{}
 	a.NotError(conf.sanitize()).
@@ -57,7 +57,7 @@ func TestWebconfig_sanitize(t *testing.T) {
 }
 
 func TestWebconfig_buildTimezone(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	conf := &Webconfig{}
 	a.NotError(conf.buildTimezone()).Nil(conf.location)

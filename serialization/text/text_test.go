@@ -5,7 +5,7 @@ package text
 import (
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/serialization/text/testobject"
@@ -17,7 +17,7 @@ var (
 )
 
 func TestTextMarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	v := "123"
 	data, err := Marshal(v)
@@ -39,7 +39,7 @@ func TestTextMarshal(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	v1 := &testobject.TextObject{}
 	a.NotError(Unmarshal([]byte("test,5"), v1))

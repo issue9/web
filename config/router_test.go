@@ -5,11 +5,11 @@ package config
 import (
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 func TestRouter_sanitize(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	r := &Router{}
 	a.NotError(r.sanitize()).Empty(r.options)

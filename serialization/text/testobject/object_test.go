@@ -6,7 +6,7 @@ import (
 	"encoding"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 )
 
 func TestTextObject(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	obj := &TextObject{Name: "name", Age: 1}
 	data, err := obj.MarshalText()

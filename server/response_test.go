@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 )
@@ -22,7 +22,7 @@ var (
 )
 
 func TestContext_Critical(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	criticalLog.Reset()
 	b := newServer(a, nil)
@@ -39,7 +39,7 @@ func TestContext_Critical(t *testing.T) {
 }
 
 func TestContext_Errorf(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	b := newServer(a, nil)
 	errLog.Reset()
@@ -54,7 +54,7 @@ func TestContext_Errorf(t *testing.T) {
 }
 
 func TestContext_Criticalf(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	b := newServer(a, nil)
 	criticalLog.Reset()
@@ -69,7 +69,7 @@ func TestContext_Criticalf(t *testing.T) {
 }
 
 func TestContext_ResultWithFields(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("Accept", "application/json")
@@ -88,7 +88,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 }
 
 func TestContext_Result(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))

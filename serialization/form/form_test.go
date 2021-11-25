@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/web/serialization"
 )
@@ -55,7 +55,7 @@ func (obj *object) UnmarshalForm(data []byte) error {
 }
 
 func TestMarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	formObject := url.Values{}
 	data, err := Marshal(formObject)
@@ -82,7 +82,7 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	v := url.Values{}
 	a.NotError(Unmarshal(nil, v))

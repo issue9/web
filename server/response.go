@@ -2,9 +2,7 @@
 
 package server
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type (
 	// HandlerFunc 路由项处理函数原型

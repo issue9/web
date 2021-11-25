@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 )
 
@@ -18,7 +18,7 @@ type object struct {
 }
 
 func TestFiles_Load(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	f := NewFiles(10)
 	a.NotNil(f)
 	testdata := os.DirFS("./testdata")
@@ -37,7 +37,7 @@ func TestFiles_Load(t *testing.T) {
 }
 
 func TestFiles_Save(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	f := NewFiles(10)
 	a.NotNil(f)
 	tmp := os.TempDir()

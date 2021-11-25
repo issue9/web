@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"gopkg.in/yaml.v2"
 )
 
 func TestCertificate_sanitize(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	cert := &Certificate{}
 	a.Error(cert.sanitize())
@@ -27,7 +27,7 @@ func TestCertificate_sanitize(t *testing.T) {
 }
 
 func TestHTTP_sanitize(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	http := &HTTP{}
 	http.ReadTimeout = -1
@@ -46,7 +46,7 @@ func TestHTTP_sanitize(t *testing.T) {
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	http := &HTTP{
 		Certificates: []*Certificate{
@@ -83,7 +83,7 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 }
 
 func TestLetEncrypt_sanitize(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	l := &LetsEncrypt{}
 	a.Error(l.sanitize())
@@ -111,7 +111,7 @@ type testDuration struct {
 }
 
 func TestDuration_Duration(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	dur := time.Second * 2
 
@@ -119,7 +119,7 @@ func TestDuration_Duration(t *testing.T) {
 }
 
 func TestDuration_YAML(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	m := &testDuration{
 		Duration: Duration(time.Nanosecond * 5),
@@ -136,7 +136,7 @@ func TestDuration_YAML(t *testing.T) {
 }
 
 func TestDuration_XML(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	m := &testDuration{
 		Duration: Duration(time.Nanosecond * 5),
@@ -154,7 +154,7 @@ func TestDuration_XML(t *testing.T) {
 }
 
 func TestDuration_XMLAttr(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	type obj struct {
 		D Duration `xml:"d,attr"`
@@ -173,7 +173,7 @@ func TestDuration_XMLAttr(t *testing.T) {
 }
 
 func TestDuration_JSON(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	m := &testDuration{
 		Duration: Duration(time.Nanosecond * 5),

@@ -32,7 +32,7 @@ type (
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
-// domain 仅用于 URL 生成地址，并不会对路由本身产生影响。
+// domain 仅用于 URL 生成地址，并不会对路由本身产生影响，可以为空。
 func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) *Router {
 	r := srv.MuxGroup().New(name, matcher, mux.URLDomain(domain))
 	dbg := &debugger.Debugger{}
@@ -140,9 +140,8 @@ func (router *Router) URL(strict bool, pattern string, params map[string]string)
 //
 // 如果要删除该静态路由，则可以将 path 传递给 Remove 进行删除。
 //
-// 比如在 Root 的值为 example.com/blog 时，
-// 将参数指定为 /admin/{path} 和 ~/data/assets/admin
-// 表示将 example.com/blog/admin/* 解析到 ~/data/assets/admin 目录之下。
+// 比如将参数指定为 /admin/{path} 和 ~/data/assets/admin
+// 表示将 example.com/admin/* 解析到 ~/data/assets/admin 目录之下。
 func (router *Router) Static(p, dir, index string) {
 	router.StaticFS(p, os.DirFS(dir), index)
 }

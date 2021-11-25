@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
@@ -45,7 +45,7 @@ var (
 )
 
 func TestDefaultResult(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	rslt := DefaultResultBuilder(500, "50001", "error message")
 	a.False(rslt.HasFields()).
@@ -79,7 +79,7 @@ func TestDefaultResult(t *testing.T) {
 }
 
 func TestDefaultResultJSON(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// marshal mimetypeResult
 	bs, err := json.Marshal(mimetypeResult)
@@ -103,7 +103,7 @@ func TestDefaultResultJSON(t *testing.T) {
 }
 
 func TestDefaultResultXML(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// marshal mimetypeResult
 	bs, err := xml.Marshal(mimetypeResult)
@@ -127,7 +127,7 @@ func TestDefaultResultXML(t *testing.T) {
 }
 
 func TestDefaultResultYAML(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// marshal mimetypeResult
 	bs, err := yaml.Marshal(mimetypeResult)
@@ -163,7 +163,7 @@ code: "400"
 }
 
 func TestDefaultResultForm(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// marshal mimetypeResult
 	bs, err := form.Marshal(mimetypeResult)
@@ -188,7 +188,7 @@ func TestDefaultResultForm(t *testing.T) {
 }
 
 func TestServer_Result(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
 	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
@@ -230,7 +230,7 @@ func TestServer_Result(t *testing.T) {
 }
 
 func TestServer_AddResult(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
@@ -252,7 +252,7 @@ func TestServer_AddResult(t *testing.T) {
 }
 
 func TestServer_Results(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	c := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {

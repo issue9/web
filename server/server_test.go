@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
-	"github.com/issue9/assert/rest"
+	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
@@ -91,7 +91,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 }
 
 func TestNewServer(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	srv, err := New("app", "0.1.0", nil)
 	a.NotError(err).NotNil(srv)
@@ -104,7 +104,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestGetServer(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	type key int
 	var k key = 0
 
@@ -185,7 +185,7 @@ func TestGetServer(t *testing.T) {
 }
 
 func TestServer_Vars(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
 	type (
@@ -210,7 +210,7 @@ func TestServer_Vars(t *testing.T) {
 }
 
 func TestServer_Serve(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	exit := make(chan bool, 1)
 
 	srv := newServer(a, nil)
@@ -271,7 +271,7 @@ func TestServer_Serve(t *testing.T) {
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	exit := make(chan bool, 1)
 
 	server, err := New("app", "0.1.0", &Options{
@@ -295,7 +295,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 	go func() {
 		err := server.Serve()
-		a.ErrorType(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
+		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
 		exit <- true
 	}()
 	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
@@ -322,7 +322,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 }
 
 func TestServer_Close(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
 	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
@@ -387,7 +387,7 @@ func TestServer_Close(t *testing.T) {
 }
 
 func TestServer_CloseWithTimeout(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	exit := make(chan bool, 1)
 	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
@@ -405,7 +405,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 	go func() {
 		err := srv.Serve()
-		a.Error(err).ErrorType(err, http.ErrServerClosed, "错误信息为:%v", err)
+		a.Error(err).ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
 		exit <- true
 	}()
 
@@ -434,10 +434,10 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 }
 
 func TestServer_DisableCompression(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	server := newServer(a, nil)
-	srv := rest.NewServer(t, server.group, nil)
-	defer srv.Close()
+	srv := rest.NewServer(a, server.group, nil)
+
 	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 

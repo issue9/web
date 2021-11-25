@@ -5,7 +5,7 @@ package gob
 import (
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 
 	"github.com/issue9/web/serialization"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 func TestGOB(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	str1 := "123"
 	data, err := Marshal(str1)

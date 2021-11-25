@@ -7,13 +7,13 @@ import (
 	"encoding/xml"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 const testMimetype = "application/octet-stream"
 
 func TestMimetypes_UnmarshalFunc(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	mt := NewMimetypes(10)
 	a.NotNil(mt)
@@ -41,7 +41,7 @@ func TestMimetypes_UnmarshalFunc(t *testing.T) {
 }
 
 func TestMimetypes_MarshalFunc(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	mt := NewMimetypes(10)
 
 	name, marshal, found := mt.MarshalFunc(testMimetype)
@@ -104,7 +104,7 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 }
 
 func TestMimetypes_findMarshal(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	mt := NewMimetypes(10)
 
 	a.NotError(mt.Add(nil, nil, "text", "text/plain", "text/text"))

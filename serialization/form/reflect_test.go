@@ -5,7 +5,7 @@ package form
 import (
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 type TagObject struct {
@@ -77,7 +77,7 @@ var nestData = &nestObject{
 }
 
 func TestTagForm(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	// Marshal
 	data, err := Marshal(tagObjectData)

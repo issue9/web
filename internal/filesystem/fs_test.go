@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 var _ fs.FS = &MultipleFS{}
@@ -20,7 +20,7 @@ var f1 embed.FS
 var f2 embed.FS
 
 func TestMultipleFS(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	m := NewMultipleFS(f1, f2)
 	a.NotNil(m)
@@ -33,7 +33,7 @@ func TestMultipleFS(t *testing.T) {
 }
 
 func TestMultipleFS_Glob(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 
 	f1 := os.DirFS("./")
 	f2 := os.DirFS("./testdata")

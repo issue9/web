@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 )
 
 const (
@@ -109,7 +109,7 @@ func buildSrv3() (f Func, start, exit chan struct{}) {
 }
 
 func TestService_srv1(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
@@ -139,7 +139,7 @@ func TestService_srv1(t *testing.T) {
 }
 
 func TestService_srv2(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
@@ -176,7 +176,7 @@ func TestService_srv2(t *testing.T) {
 }
 
 func TestService_srv3(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
@@ -206,7 +206,7 @@ func TestService_srv3(t *testing.T) {
 }
 
 func TestServer_service(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
 	// 未运行
@@ -251,7 +251,7 @@ func TestServer_service(t *testing.T) {
 }
 
 func TestServer_scheduled(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
 	a.Equal(0, len(srv.Jobs()))

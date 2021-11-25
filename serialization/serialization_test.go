@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/issue9/assert"
+	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 )
 
 func TestSerialization(t *testing.T) {
-	a := assert.New(t)
+	a := assert.New(t, false)
 	s := New(5)
 	a.NotNil(s)
 
