@@ -2,7 +2,12 @@
 
 package server
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/issue9/mux/v5"
+)
 
 type (
 	// HandlerFunc 路由项处理函数原型
@@ -32,6 +37,25 @@ type (
 		body    interface{}
 	}
 )
+
+// FileServer 提供静态文件服务
+//
+// fsys 为文件系统，如果是 fs.FS 接口，可以采用 http.FS 转换成 http.FileSystem；
+// name 表示参数名称；
+// index 表示 目录下的默认文件名；
+func (srv *Server) FileServer(fsys http.FileSystem, name, index string) HandlerFunc {
+	f := mux.FileServer(fsys, name, index, func(w http.ResponseWriter, status int, msg interface{}) {
+		if msg != nil {
+			srv.Logs().Error(msg)
+		}
+		http.Error(w, http.StatusText(status), status)
+	})
+
+	return func(ctx *Context) Responser {
+		f.ServeHTTP(ctx.Response, ctx.Request)
+		return nil
+	}
+}
 
 func (ctx *Context) renderResponser(resp Responser) {
 	if resp == nil {

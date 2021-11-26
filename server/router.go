@@ -3,10 +3,7 @@
 package server
 
 import (
-	"io/fs"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/issue9/middleware/v5/debugger"
 	"github.com/issue9/mux/v5"
@@ -130,36 +127,6 @@ func (router *Router) clone() *Router {
 // 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
 func (router *Router) URL(strict bool, pattern string, params map[string]string) (string, error) {
 	return router.router.URL(strict, pattern, params)
-}
-
-// Static 添加静态路由
-//
-// p 为路由地址，必须以命名参数结尾，比如 /assets/{path}，之后可以通过此值删除路由项；
-// dir 为指向静态文件的路径；
-// index 可以在访问一个目录时指定默认访问的页面。
-//
-// 如果要删除该静态路由，则可以将 path 传递给 Remove 进行删除。
-//
-// 比如将参数指定为 /admin/{path} 和 ~/data/assets/admin
-// 表示将 example.com/admin/* 解析到 ~/data/assets/admin 目录之下。
-func (router *Router) Static(p, dir, index string) {
-	router.StaticFS(p, os.DirFS(dir), index)
-}
-
-func (router *Router) StaticFS(p string, f fs.FS, index string) {
-	lastStart := strings.LastIndexByte(p, '{')
-	if lastStart < 0 || len(p) == 0 || p[len(p)-1] != '}' || lastStart+2 == len(p) {
-		panic("path 必须是命名参数结尾：比如 /assets/{path}。")
-	}
-
-	router.Handle(p, func(ctx *Context) Responser {
-		pp := ctx.Request.URL.Path
-		pp = strings.TrimPrefix(pp, p[:lastStart])
-		if pp != "" && pp[0] == '/' {
-			pp = pp[1:]
-		}
-		return ctx.ServeFileFS(f, pp, index, nil)
-	}, http.MethodGet)
 }
 
 // Prefix 返回特定前缀的路由设置对象

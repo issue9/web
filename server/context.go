@@ -5,16 +5,10 @@ package server
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"io/fs"
 	"io/ioutil"
 	"mime"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -32,9 +26,6 @@ import (
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/serialization"
 )
-
-// DefaultIndexPage ServeFileFS index 参数的默认值
-const DefaultIndexPage = "index.html"
 
 // 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
 var (
@@ -416,72 +407,6 @@ func (ctx *Context) ClientIP() string {
 	}
 
 	return strings.TrimSpace(ip)
-}
-
-// ServeFile 提供文件下载
-func (ctx *Context) ServeFile(p, index string, headers map[string]string) Responser {
-	dir := filepath.ToSlash(filepath.Dir(p))
-	base := filepath.ToSlash(filepath.Base(p))
-	return ctx.ServeFileFS(os.DirFS(dir), base, index, headers)
-}
-
-// ServeFileFS 提供基于 fs.FS 的文件下载服务
-func (ctx *Context) ServeFileFS(f fs.FS, p, index string, headers map[string]string) Responser {
-	err := ctx.ServeFS(f, p, index, headers)
-	switch {
-	case errors.Is(err, fs.ErrPermission):
-		return Status(http.StatusForbidden)
-	case errors.Is(err, fs.ErrNotExist):
-		return Status(http.StatusNotFound)
-	case err != nil:
-		return ctx.Error(http.StatusInternalServerError, err)
-	}
-	return nil
-}
-
-// ServeFS 提供基于 fs.FS 的文件下载服务
-//
-// p 表示文件地址，用户应该保证 p 的正确性；
-// 如果 p 是目录，则会自动读 p 目录下的 index 文件，
-// 如果 index 为空，则采用 DefaultIndexPage 作为其默认值。
-func (ctx *Context) ServeFS(f fs.FS, p, index string, headers map[string]string) error {
-	if index == "" {
-		index = DefaultIndexPage
-	}
-
-	if p == "" {
-		p = "."
-	}
-
-STAT:
-	stat, err := fs.Stat(f, p)
-	if err != nil {
-		return err
-	}
-	if stat.IsDir() {
-		p = path.Join(p, index)
-		goto STAT
-	}
-
-	data, err := fs.ReadFile(f, p)
-	if err != nil {
-		return err
-	}
-	buf := bytes.NewReader(data)
-
-	ctx.ServeContent(buf, filepath.Base(p), stat.ModTime(), headers)
-	return nil
-}
-
-// ServeContent 将一块内存中的内容转换为文件提供下载
-//
-// 功能与 http.ServeContent 相同，提供了可自定义报头的功能。
-func (ctx *Context) ServeContent(buf io.ReadSeeker, name string, mod time.Time, headers map[string]string) {
-	for k, v := range headers {
-		ctx.Response.Header().Set(k, v)
-	}
-
-	http.ServeContent(ctx.Response, ctx.Request, name, mod, buf)
 }
 
 // Upload 执行上传文件的相关操作
