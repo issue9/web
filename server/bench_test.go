@@ -4,6 +4,7 @@ package server
 
 import (
 	"bytes"
+	"io"
 	"mime"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v5/group"
 
 	"github.com/issue9/web/internal/charsetdata"
@@ -34,13 +34,15 @@ func BenchmarkServer_Serve(b *testing.B) {
 	time.Sleep(500 * time.Millisecond)
 
 	for i := 0; i < b.N; i++ {
-		rest.NewRequest(a, nil, http.MethodGet, "http://localhost:8080/path").
-			Header("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"})).
-			Header("accept", text.Mimetype).
-			Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
-			Do().
-			Header("h1", "h1").
-			StringBody("/path")
+		r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
+		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
+		r.Header.Set("accept", text.Mimetype)
+		r.Header.Set("accept-charset", "gbk;q=1,gb18080;q=0.1")
+		resp, err := http.DefaultClient.Do(r)
+		a.NotError(err).NotNil(resp)
+		a.Equal(resp.Header.Get("h1"), "h1")
+		body, err := io.ReadAll(resp.Body)
+		a.NotError(err).Equal(string(body), "/path")
 	}
 
 	srv.Close(0)

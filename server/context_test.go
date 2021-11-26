@@ -4,6 +4,7 @@ package server
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
@@ -513,15 +513,21 @@ func TestContext_ServeFile_windows(t *testing.T) {
 
 func testDownload(a *assert.Assertion, path string, status int) {
 	a.TB().Helper()
-	rest.NewRequest(a, nil, http.MethodGet, path).Do().
-		Status(status).
-		BodyNotEmpty().
-		Header("Test", "Test")
+
+	resp, err := http.Get(path)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, status)
+	a.Equal(resp.Header.Get("Test"), "Test")
+	body, err := io.ReadAll(resp.Body)
+	a.NotError(err).NotEmpty(body)
 }
 
 func testDownloadNotFound(a *assert.Assertion, path string) {
-	rest.NewRequest(a, nil, http.MethodGet, path).Do().
-		Status(http.StatusNotFound)
+	a.TB().Helper()
+
+	resp, err := http.Get(path)
+	a.NotError(err).NotNil(resp)
+	a.Equal(resp.StatusCode, http.StatusNotFound)
 }
 
 func TestContext_ServeFS(t *testing.T) {

@@ -28,7 +28,7 @@ func TestParams_empty(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/empty").Do().Status(http.StatusOK)
+	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
 }
 
 func TestParams_ID_MustID(t *testing.T) {
@@ -69,7 +69,7 @@ func TestParams_ID_MustID(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/id/1/-2/str").Do().Status(http.StatusOK)
+	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestParams_Int_MustInt(t *testing.T) {
@@ -104,7 +104,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/int/1/2/str").Do().Status(http.StatusOK)
+	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestParams_Bool_MustBool(t *testing.T) {
@@ -139,7 +139,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/bool/true/false/str").Do().Status(http.StatusOK)
+	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestParams_String_MustString(t *testing.T) {
@@ -171,7 +171,7 @@ func TestParams_String_MustString(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/string/str1/str2").Do().Status(http.StatusOK)
+	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
 }
 
 func TestParams_Float_MustFloat(t *testing.T) {
@@ -207,7 +207,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/float/1.1/2.2/str").Do().Status(http.StatusOK)
+	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestContext_ParamID(t *testing.T) {
@@ -227,7 +227,7 @@ func TestContext_ParamID(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/paramid/1/-2/str").Do().Status(411)
+	srv.Get("/params/paramid/1/-2/str").Do(nil).Status(411)
 }
 
 func TestContext_ParamInt64(t *testing.T) {
@@ -250,5 +250,5 @@ func TestContext_ParamInt64(t *testing.T) {
 	})
 
 	srv := rest.NewServer(a, server.MuxGroup(), nil)
-	srv.Get("/params/paramint64/1/-2/str").Do().Status(411)
+	srv.Get("/params/paramint64/1/-2/str").Do(nil).Status(411)
 }

@@ -28,37 +28,37 @@ func TestRouter(t *testing.T) {
 
 	path := "/path"
 	router.Handle(path, f204, http.MethodGet, http.MethodDelete)
-	srv.Get(path).Do().Status(http.StatusNoContent)
-	srv.Delete(path).Do().Status(http.StatusNoContent)
-	srv.Post(path, nil).Do().Status(http.StatusMethodNotAllowed)
+	srv.Get(path).Do(nil).Status(http.StatusNoContent)
+	srv.Delete(path).Do(nil).Status(http.StatusNoContent)
+	srv.Post(path, nil).Do(nil).Status(http.StatusMethodNotAllowed)
 
 	// 不指定请求方法，表示所有请求方法
 	path = "/path1"
 	router.Handle(path, f204)
-	srv.Delete(path).Do().Status(http.StatusNoContent)
-	srv.Patch(path, nil).Do().Status(http.StatusNoContent)
+	srv.Delete(path).Do(nil).Status(http.StatusNoContent)
+	srv.Patch(path, nil).Do(nil).Status(http.StatusNoContent)
 
 	path = "/path2"
 
-	srv.Delete(path).Do().Status(http.StatusNotFound)
+	srv.Delete(path).Do(nil).Status(http.StatusNotFound)
 
 	router.Delete(path, f204)
-	srv.Delete(path).Do().Status(http.StatusNoContent)
+	srv.Delete(path).Do(nil).Status(http.StatusNoContent)
 
 	router.Get(path, f204)
-	srv.Get(path).Do().Status(http.StatusNoContent)
+	srv.Get(path).Do(nil).Status(http.StatusNoContent)
 
 	router.Post(path, f204)
-	srv.Post(path, nil).Do().Status(http.StatusNoContent)
+	srv.Post(path, nil).Do(nil).Status(http.StatusNoContent)
 
 	router.Patch(path, f204)
-	srv.Patch(path, nil).Do().Status(http.StatusNoContent)
+	srv.Patch(path, nil).Do(nil).Status(http.StatusNoContent)
 
 	router.Put(path, f204)
-	srv.Put(path, nil).Do().Status(http.StatusNoContent)
+	srv.Put(path, nil).Do(nil).Status(http.StatusNoContent)
 
 	srv.NewRequest(http.MethodOptions, path).
-		Do().
+		Do(nil).
 		Status(http.StatusOK).
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
 }
@@ -70,11 +70,11 @@ func TestRouter_SetDebugger(t *testing.T) {
 	r := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
 	a.NotNil(r)
 
-	srv.Get("/d/pprof/").Do().Status(http.StatusNotFound)
-	srv.Get("/d/vars").Do().Status(http.StatusNotFound)
+	srv.Get("/d/pprof/").Do(nil).Status(http.StatusNotFound)
+	srv.Get("/d/vars").Do(nil).Status(http.StatusNotFound)
 	r.SetDebugger("/d/pprof/", "/vars")
-	srv.Get("/d/pprof/").Do().Status(http.StatusOK) // 相对于 server.Root
-	srv.Get("/vars").Do().Status(http.StatusOK)
+	srv.Get("/d/pprof/").Do(nil).Status(http.StatusOK) // 相对于 server.Root
+	srv.Get("/vars").Do(nil).Status(http.StatusOK)
 }
 
 func TestRouter_URL(t *testing.T) {
@@ -191,23 +191,23 @@ func TestRouter_Prefix(t *testing.T) {
 
 	path := "/path"
 	p.Handle(path, f204, http.MethodGet, http.MethodDelete)
-	srv.Get("/p" + path).Do().Status(http.StatusNoContent)
-	srv.Delete("/p" + path).Do().Status(http.StatusNoContent)
-	srv.Post("/p"+path, nil).Do().Status(http.StatusMethodNotAllowed)
+	srv.Get("/p" + path).Do(nil).Status(http.StatusNoContent)
+	srv.Delete("/p" + path).Do(nil).Status(http.StatusNoContent)
+	srv.Post("/p"+path, nil).Do(nil).Status(http.StatusMethodNotAllowed)
 
 	p.Post(path, f204)
-	srv.Post("/p"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Post("/p"+path, nil).Do(nil).Status(http.StatusNoContent)
 
 	p.Patch(path, f204)
-	srv.Patch("/p"+path, nil).Do().Status(http.StatusNoContent)
+	srv.Patch("/p"+path, nil).Do(nil).Status(http.StatusNoContent)
 
 	srv.NewRequest(http.MethodOptions, "/p"+path).
-		Do().
+		Do(nil).
 		Status(http.StatusOK).
 		Header("allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST")
 
 	p.Remove(path, http.MethodDelete)
-	srv.Delete("/p" + path).Do().Status(http.StatusMethodNotAllowed)
+	srv.Delete("/p" + path).Do(nil).Status(http.StatusMethodNotAllowed)
 }
 
 func TestRouter_Static(t *testing.T) {
@@ -247,7 +247,7 @@ func TestRouter_Static(t *testing.T) {
 
 	srv.Get("/m1/test").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do().
+		Do(nil).
 		Status(http.StatusCreated).
 		Header("Content-Type", "text/html").
 		Header("Content-Encoding", "gzip").
@@ -264,14 +264,14 @@ func TestRouter_Static(t *testing.T) {
 	// not found
 	// 返回 ErrorHandler 内容
 	srv.Get("/not-exists.txt").
-		Do().
+		Do(nil).
 		Status(http.StatusNotFound).
 		StringBody("error handler test")
 
 	// 定义的静态文件
 	srv.Get("/client/file1.txt").
 		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do().
+		Do(nil).
 		Status(http.StatusOK).
 		Header("Content-Type", "text/plain; charset=utf-8").
 		Header("Content-Encoding", "gzip").
@@ -288,7 +288,7 @@ func TestRouter_Static(t *testing.T) {
 	// 删除
 	r.Remove("/client/{path}")
 	srv.Get("/client/file1.txt").
-		Do().
+		Do(nil).
 		Status(http.StatusNotFound)
 
 	// 带域名
