@@ -15,7 +15,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/events"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/middleware/v5/compress"
 	"github.com/issue9/mux/v5/group"
 	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
@@ -64,9 +63,8 @@ type Server struct {
 	scheduled *scheduled.Server
 
 	// middleware
-	group    *group.Group
-	compress *compress.Compress
-	routers  map[string]*Router
+	group   *group.Group
+	routers map[string]*Router
 
 	// result
 	resultMessages map[string]*resultMessage
@@ -111,9 +109,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		scheduled: scheduled.NewServer(o.Location),
 
 		// middleware
-		group:    o.group,
-		compress: compress.Classic(o.Logs.ERROR(), o.IgnoreCompressTypes...),
-		routers:  make(map[string]*Router, 3),
+		group:   o.group,
+		routers: make(map[string]*Router, 3),
 
 		// result
 		resultMessages: make(map[string]*resultMessage, 20),
@@ -137,9 +134,6 @@ func New(name, version string, o *Options) (*Server, error) {
 			return context.WithValue(ctx(n), contextKeyServer, srv)
 		}
 	}
-
-	srv.MuxGroup().Middlewares().
-		Append(srv.compress.Middleware) // srv.compress 会输出专有报头，所以应该在所有的输出内容之前。
 
 	return srv, nil
 }
@@ -244,9 +238,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	}
 	return nil
 }
-
-// DisableCompression 是否禁用压缩功能
-func (srv *Server) DisableCompression(disable bool) { srv.compress.Enable = !disable }
 
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }

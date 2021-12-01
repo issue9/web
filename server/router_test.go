@@ -59,20 +59,6 @@ func TestRouter(t *testing.T) {
 		Header("Allow", "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT")
 }
 
-func TestRouter_SetDebugger(t *testing.T) {
-	a := assert.New(t, false)
-	server := newServer(a, nil)
-	srv := rest.NewServer(a, server.group, nil)
-	r := server.NewRouter("default", "http://localhost:8081", group.MatcherFunc(group.Any))
-	a.NotNil(r)
-
-	srv.Get("/d/pprof/").Do(nil).Status(http.StatusNotFound)
-	srv.Get("/d/vars").Do(nil).Status(http.StatusNotFound)
-	r.SetDebugger("/d/pprof/", "/vars")
-	srv.Get("/d/pprof/").Do(nil).Status(http.StatusOK) // 相对于 server.Root
-	srv.Get("/vars").Do(nil).Status(http.StatusOK)
-}
-
 func TestRouter_URL(t *testing.T) {
 	a := assert.New(t, false)
 

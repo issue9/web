@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
@@ -410,39 +409,4 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 
 	<-exit
-}
-
-func TestServer_DisableCompression(t *testing.T) {
-	a := assert.New(t, false)
-	server := newServer(a, nil)
-	srv := rest.NewServer(a, server.group, nil)
-
-	router := server.NewRouter("default", "http://localhost:8081/root", group.MatcherFunc(group.Any))
-	a.NotNil(router)
-
-	router.Get("/client/{path}", server.FileServer(http.Dir("./testdata/"), "path", "index.html"))
-
-	srv.Get("/client/file1.txt").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do(nil).
-		Status(http.StatusOK).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding")
-
-	srv.Get("/client/file1.txt").
-		Do(nil).
-		Status(http.StatusOK).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "").
-		Header("Vary", "Content-Encoding")
-
-	server.DisableCompression(true)
-	srv.Get("/client/file1.txt").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
-		Do(nil).
-		Status(http.StatusOK).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "").
-		Header("Vary", "")
 }

@@ -5,7 +5,6 @@ package server
 import (
 	"net/http"
 
-	"github.com/issue9/middleware/v5/debugger"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 )
@@ -13,10 +12,9 @@ import (
 type (
 	// Router 路由
 	Router struct {
-		srv      *Server
-		router   *mux.Router
-		filters  []Filter
-		debugger *debugger.Debugger
+		srv     *Server
+		router  *mux.Router
+		filters []Filter
 	}
 
 	// Prefix 带有统一前缀的路由管理
@@ -32,13 +30,10 @@ type (
 // domain 仅用于 URL 生成地址，并不会对路由本身产生影响，可以为空。
 func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) *Router {
 	r := srv.MuxGroup().New(name, matcher, mux.URLDomain(domain))
-	dbg := &debugger.Debugger{}
-	r.Middlewares().Append(dbg.Middleware)
 	rr := &Router{
-		srv:      srv,
-		router:   r,
-		filters:  filter,
-		debugger: dbg,
+		srv:     srv,
+		router:  r,
+		filters: filter,
 	}
 	srv.routers[name] = rr
 
@@ -63,12 +58,6 @@ func (srv *Server) RemoveRouter(name string) {
 
 // MuxGroup 返回 group.Groups 实例
 func (srv *Server) MuxGroup() *group.Group { return srv.group }
-
-// SetDebugger 设置调试地址
-func (router *Router) SetDebugger(pprof, vars string) {
-	router.debugger.Pprof = pprof
-	router.debugger.Vars = vars
-}
 
 func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) {
 	h = ApplyFilters(h, filters...)

@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/middleware/v5/recovery"
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
@@ -62,12 +61,6 @@ type Options struct {
 	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.groups
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
-
-	// 在请求崩溃之后的处理方式
-	//
-	// 这是请求的最后一道防线，如果此函数处理依然 panic，则会造成整个项目退出。
-	// 如果为空，则采用 github.com/issue9/middleware/recovery.DefaultRecover。
-	Recovery recovery.RecoverFunc
 
 	// 此处列出的类型将不会被压缩
 	//
@@ -121,10 +114,6 @@ func (o *Options) sanitize() error {
 	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {
 		o.HTTPServer(o.httpServer)
-	}
-
-	if o.Recovery == nil {
-		o.Recovery = recovery.DefaultRecover(http.StatusInternalServerError)
 	}
 
 	if o.Logs == nil {

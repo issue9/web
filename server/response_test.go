@@ -4,8 +4,6 @@ package server
 
 import (
 	"bytes"
-	"compress/gzip"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -36,37 +34,17 @@ func TestServer_FileServer(t *testing.T) {
 	srv := rest.NewServer(a, server.group, nil)
 
 	srv.Get("/m1/test").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("Content-Type", "text/html").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding").
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			buf := bytes.NewBuffer(body)
-			reader, err := gzip.NewReader(buf)
-			a.NotError(err).NotNil(reader)
-			data, err := ioutil.ReadAll(reader)
-			a.NotError(err).NotNil(data)
-			a.Equal(string(data), "1234567890")
-		})
+		StringBody("1234567890")
 
 	// 定义的静态文件
 	srv.Get("/client/file1.txt").
-		Header("Accept-Encoding", "gzip,deflate;q=0.8").
 		Do(nil).
 		Status(http.StatusOK).
 		Header("Content-Type", "text/plain; charset=utf-8").
-		Header("Content-Encoding", "gzip").
-		Header("Vary", "Content-Encoding").
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			buf := bytes.NewBuffer(body)
-			reader, err := gzip.NewReader(buf)
-			a.NotError(err).NotNil(reader)
-			data, err := ioutil.ReadAll(reader)
-			a.NotError(err).NotNil(data)
-			a.Equal(string(data), "file1")
-		})
+		StringBody("file1")
 
 	// 删除
 	r.Remove("/client/{path}")
@@ -100,7 +78,7 @@ func TestContext_Critical(t *testing.T) {
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:102") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:80") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1log2")
 }
 

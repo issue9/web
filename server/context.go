@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime"
 	"net/http"
 	"strings"
@@ -185,7 +185,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return ctx.body, nil
 	}
 
-	if ctx.body, err = ioutil.ReadAll(ctx.Request.Body); err != nil {
+	if ctx.body, err = io.ReadAll(ctx.Request.Body); err != nil {
 		return nil, err
 	}
 	ctx.read = true
@@ -196,7 +196,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 
 	d := ctx.InputCharset.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
-	ctx.body, err = ioutil.ReadAll(reader)
+	ctx.body, err = io.ReadAll(reader)
 	return ctx.body, err
 }
 

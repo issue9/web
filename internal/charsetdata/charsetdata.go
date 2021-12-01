@@ -4,7 +4,7 @@
 package charsetdata
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -22,14 +22,14 @@ var (
 
 func init() {
 	reader := transform.NewReader(strings.NewReader(GBKString1), simplifiedchinese.GBK.NewEncoder())
-	gbkData, err := ioutil.ReadAll(reader)
+	gbkData, err := io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
 	GBKData1 = gbkData
 
 	reader = transform.NewReader(strings.NewReader(GBKString2), simplifiedchinese.GBK.NewEncoder())
-	gbkData, err = ioutil.ReadAll(reader)
+	gbkData, err = io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}

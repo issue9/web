@@ -72,7 +72,7 @@ type Webconfig struct {
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
 //
-// NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 Recovery
+// NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
 func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
 	conf := &Webconfig{}
