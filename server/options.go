@@ -62,11 +62,6 @@ type Options struct {
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
 
-	// 此处列出的类型将不会被压缩
-	//
-	// 可以带 *，比如 text/* 表示所有 mime-type 为 text/ 开始的类型。
-	IgnoreCompressTypes []string
-
 	// 日志的输出通道设置
 	//
 	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会到任务通道，但是各个函数可用。

@@ -55,11 +55,6 @@ type Webconfig struct {
 	Cache *Cache `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
-	// 此处列出的类型将不会被压缩
-	//
-	// 可以带 *，比如 text/* 表示所有 mime-type 为 text/ 开始的类型。
-	IgnoreCompressTypes []string `yaml:"ignoreCompressTypes,omitempty" json:"ignoreCompressTypes,omitempty" xml:"ignoreCompressTypes,omitempty"`
-
 	// 日志初始化参数
 	//
 	// 如果为空，则初始化一个空日志，不会输出任何日志。
@@ -111,9 +106,8 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) *server.
 			srv.ErrorLog = conf.logs.ERROR()
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:                conf.logs,
-		IgnoreCompressTypes: conf.IgnoreCompressTypes,
-		Files:               files,
+		Logs:  conf.logs,
+		Files: files,
 	}
 }
 
