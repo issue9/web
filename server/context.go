@@ -133,7 +133,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
 	if !found {
 		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found serialization for %s", header))
-		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
+		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
@@ -141,7 +141,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
 		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found charset for %s", header))
-		srv.errorHandlers.Exit(w, http.StatusNotAcceptable)
+		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
@@ -149,7 +149,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	inputMimetype, inputCharset, err := srv.conentType(header)
 	if err != nil {
 		srv.Logs().Debugf(err.Error())
-		srv.errorHandlers.Exit(w, http.StatusUnsupportedMediaType)
+		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return nil
 	}
 

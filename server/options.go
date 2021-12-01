@@ -51,8 +51,9 @@ type Options struct {
 
 	// 初始化路由的参数
 	//
-	// 这些选项会应用在所有的路由上，但是 mux.URLDomain 无效，
-	// 该值始终是在 NewRouter 中指定。可以为空。
+	// 这些选项会应用在所有的路由上，但是并不是所有选项都起作用，
+	// 比如 mux.URLDomain，该值始终是在 NewRouter 中指定。
+	// 可以为空。
 	RouterOptions []mux.Option
 	group         *group.Group
 

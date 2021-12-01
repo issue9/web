@@ -3,14 +3,14 @@ module github.com/issue9/web
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/gomodule/redigo v1.8.5
-	github.com/issue9/assert/v2 v2.0.0
+	github.com/issue9/assert/v2 v2.0.1
 	github.com/issue9/cache v0.3.1
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/events v0.3.1
 	github.com/issue9/localeutil v0.8.1
 	github.com/issue9/logs/v3 v3.0.0-beta.3
-	github.com/issue9/middleware/v5 v5.0.0-beta.4
-	github.com/issue9/mux/v5 v5.2.0
+	github.com/issue9/middleware/v5 v5.0.0-beta.5
+	github.com/issue9/mux/v5 v5.3.0
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.6
 	github.com/issue9/scheduled v0.9.2
@@ -23,7 +23,7 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/issue9/autoinc v1.0.8 // indirect
 	github.com/issue9/errwrap v0.2.1 // indirect
 	github.com/issue9/rands v1.2.0 // indirect

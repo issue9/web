@@ -73,9 +73,10 @@ func (router *Router) SetDebugger(pprof, vars string) {
 func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) {
 	h = ApplyFilters(h, filters...)
 	router.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		ctx := router.srv.NewContext(w, r)
-		ctx.renderResponser(h(ctx))
-		contextPool.Put(ctx)
+		if ctx := router.srv.NewContext(w, r); ctx != nil { // NewContext 出错，则在 NewContext 中自行处理了输出内容。
+			ctx.renderResponser(h(ctx))
+			contextPool.Put(ctx)
+		}
 	}, method...)
 }
 

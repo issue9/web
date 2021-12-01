@@ -57,9 +57,7 @@ func TestServer_NewContext(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", "not")
-	a.Panic(func() {
-		srv.NewContext(w, r)
-	})
+	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusNotAcceptable)
 	a.Contains(lw.String(), localeutil.Error("not found serialization for %s", "not").Error())
 
@@ -69,9 +67,7 @@ func TestServer_NewContext(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("Accept-Charset", "unknown")
-	a.Panic(func() {
-		srv.NewContext(w, r)
-	})
+	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusNotAcceptable)
 	a.Contains(lw.String(), localeutil.Error("not found charset for %s", "unknown").Error())
 
@@ -80,9 +76,7 @@ func TestServer_NewContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
-	a.Panic(func() {
-		srv.NewContext(w, r)
-	})
+	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
 	a.NotEmpty(lw.String())
 
@@ -91,9 +85,7 @@ func TestServer_NewContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
 	r.Header.Set("Content-Type", ";charset=utf-8")
-	a.Panic(func() {
-		srv.NewContext(w, r)
-	})
+	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
 	a.NotEmpty(lw.String())
 
@@ -102,9 +94,7 @@ func TestServer_NewContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
 	r.Header.Set("content-type", buildContentType(text.Mimetype, "utf-"))
-	a.Panic(func() {
-		srv.NewContext(w, r)
-	})
+	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
 	a.NotEmpty(lw.String())
 

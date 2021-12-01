@@ -5,7 +5,6 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,20 +27,11 @@ var (
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	server.SetErrorHandle(func(w io.Writer, status int) {
-		_, err := w.Write([]byte("error handler test"))
-		a.NotError(err)
-	}, http.StatusNotFound)
+
 	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotNil(r)
-
 	r.Get("/m1/test", f201)
-
 	r.Get("/client/{path}", server.FileServer(http.Dir("./testdata"), "path", "index.html"))
-	server.SetErrorHandle(func(w io.Writer, status int) {
-		_, err := w.Write([]byte("error handler test"))
-		a.NotError(err)
-	}, http.StatusNotFound)
 
 	srv := rest.NewServer(a, server.group, nil)
 
@@ -60,13 +50,6 @@ func TestServer_FileServer(t *testing.T) {
 			a.NotError(err).NotNil(data)
 			a.Equal(string(data), "1234567890")
 		})
-
-	// not found
-	// 返回 ErrorHandler 内容
-	srv.Get("/not-exists.txt").
-		Do(nil).
-		Status(http.StatusNotFound).
-		StringBody("error handler test")
 
 	// 定义的静态文件
 	srv.Get("/client/file1.txt").
@@ -117,7 +100,7 @@ func TestContext_Critical(t *testing.T) {
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:119") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:102") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1log2")
 }
 
@@ -176,10 +159,6 @@ func TestContext_Result(t *testing.T) {
 	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
-	srv.SetErrorHandle(func(w io.Writer, status int) {
-		_, err := w.Write([]byte("error-handler"))
-		a.NotError(err)
-	}, 400) // 此处用于检测是否影响 result.Render() 的输出
 	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()
 
