@@ -252,3 +252,13 @@ func (srv *Server) Result(p *message.Printer, code string, fields ResultFields) 
 
 	return rslt
 }
+
+func (m *Module) AddResult(status int, code string, phrase localeutil.LocaleStringer) {
+	m.Server().AddResult(status, m.UniqueID(code), phrase)
+}
+
+func (m *Module) AddResults(status int, messages map[string]localeutil.LocaleStringer) {
+	for k, v := range messages {
+		m.AddResult(status, k, v)
+	}
+}

@@ -21,7 +21,6 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/serialization"
 )
 
@@ -47,6 +46,7 @@ type Server struct {
 	cache      cache.Cache
 	uptime     time.Time
 	serving    bool
+	modules    []string // 保存着模块名称，用于检测是否存在重名
 	group      *group.GroupOf[HandlerFunc]
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
@@ -258,21 +258,6 @@ func (srv *Server) Tag() language.Tag { return srv.tag }
 
 // Serving 是否处于服务状态
 func (srv *Server) Serving() bool { return srv.serving }
-
-// NewFS 创建一个基于当前文件系统的子文件系统
-//
-// fsys 可以指定另外同等级的文件系统，多个文件系统可以共存，
-// 当前查找文件时，会依次查找各个文件系统，直到找到文件或是不存在于任何文件系统。
-func (srv *Server) NewFS(path string, fsys ...fs.FS) (fs.FS, error) {
-	sub, err := fs.Sub(srv, path)
-	if err != nil {
-		return nil, err
-	}
-
-	mfs := filesystem.NewMultipleFS(sub)
-	mfs.Add(fsys...)
-	return mfs, nil
-}
 
 // OnClose 注册关闭服务时需要执行的函数
 //
