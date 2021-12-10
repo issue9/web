@@ -1,0 +1,16 @@
+// 对应 defaultResult
+
+syntax = "proto3";
+
+option go_package = ".";
+
+message Result {
+    string message = 1;
+    string code = 2;
+    repeated Field fields = 3;
+}
+
+message Field {
+    string name = 1;
+    repeated string message = 2;
+}

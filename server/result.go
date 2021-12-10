@@ -9,6 +9,7 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/validation"
 	"golang.org/x/text/message"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type (
@@ -51,14 +52,14 @@ type (
 
 		status int // 当前的信息所对应的 HTTP 状态码
 
-		Message string         `json:"message" xml:"message" yaml:"message"`
-		Code    string         `json:"code" xml:"code,attr" yaml:"code"`
-		Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty"`
+		Message string         `json:"message" xml:"message" yaml:"message" protobuf:"bytes,1,opt,name=message,proto3"`
+		Code    string         `json:"code" xml:"code,attr" yaml:"code" protobuf:"bytes,2,opt,name=code,proto3"`
+		Fields  []*fieldDetail `json:"fields,omitempty" xml:"field,omitempty" yaml:"fields,omitempty" protobuf:"bytes,3,rep,name=fields,proto3"`
 	}
 
 	fieldDetail struct {
-		Name    string   `json:"name" xml:"name,attr" yaml:"name"`
-		Message []string `json:"message" xml:"message" yaml:"message"`
+		Name    string   `json:"name" xml:"name,attr" yaml:"name" protobuf:"bytes,1,opt,name=name,proto3"`
+		Message []string `json:"message" xml:"message" yaml:"message" protobuf:"bytes,2,rep,name=message,proto3"`
 	}
 
 	resultMessage struct {
@@ -72,6 +73,7 @@ type (
 // 定义了以下格式的返回信息：
 //
 // JSON:
+//
 //  {
 //      'message': 'error message',
 //      'code': '4000001',
@@ -82,6 +84,7 @@ type (
 //  }
 //
 // XML:
+//
 //  <result code="400">
 //      <message>error message</message>
 //      <field name="username">
@@ -102,6 +105,19 @@ type (
 //    - name: password
 //      message:
 //        - 不能为空
+//
+// protobuf:
+//
+//  message Result {
+//      string message = 1;
+//      string code = 2;
+//      repeated Field fields = 3;
+//  }
+//
+//  message Field {
+//      string name = 1;
+//      repeated string message = 2;
+//  }
 //
 // FormData:
 //  message=errormessage&code=4000001&fields.username=名称过短&fields.username=不能包含特殊符号&fields.password=不能为空
@@ -177,6 +193,12 @@ func (rslt *defaultResult) UnmarshalForm(b []byte) error {
 	}
 
 	return nil
+}
+
+// ProtoReflect 实现了 proto.Message 接口
+func (rslt *defaultResult) ProtoReflect() protoreflect.Message {
+	// TODO
+	// google.golang.org/protobuf 与 github.com/golang/protobuf 不同
 }
 
 // Results 返回错误代码以及对应的说明内容
