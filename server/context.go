@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/qheader"
-	"github.com/issue9/upload"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/unicode"
@@ -407,13 +406,6 @@ func (ctx *Context) ClientIP() string {
 	}
 
 	return strings.TrimSpace(ip)
-}
-
-// Upload 执行上传文件的相关操作
-//
-// 返回的是文件列表
-func (ctx *Context) Upload(field string, u *upload.Upload) ([]string, error) {
-	return u.Do(field, ctx.Request)
 }
 
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
