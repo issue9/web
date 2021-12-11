@@ -19,7 +19,6 @@ func TestServer_NewModule(t *testing.T) {
 	m := srv.NewModule("testdata")
 	a.NotNil(m).
 		Equal(m.ID(), "testdata").
-		Equal(m.UniqueID("abc"), "testdataabc").
 		Equal(m.Server(), srv)
 
 	bs, err := fs.ReadFile(m, "file1.txt")

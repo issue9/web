@@ -254,7 +254,7 @@ func (srv *Server) Result(p *message.Printer, code string, fields ResultFields) 
 }
 
 func (m *Module) AddResult(status int, code string, phrase localeutil.LocaleStringer) {
-	m.Server().AddResult(status, m.UniqueID(code), phrase)
+	m.Server().AddResult(status, m.ID()+code, phrase)
 }
 
 func (m *Module) AddResults(status int, messages map[string]localeutil.LocaleStringer) {
