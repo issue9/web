@@ -40,6 +40,13 @@ func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter 
 	return rr
 }
 
+// Routes 返回所有路由的注册路由项
+//
+// 第一个键名表示路由名称，第二键值表示路由项地址，值表示该路由项支持的请求方法；
+func (srv *Server) Routes() map[string]map[string][]string {
+	return srv.group.Routes()
+}
+
 func (srv *Server) Routers() []*Router {
 	routers := make([]*Router, 0, len(srv.routers))
 	for _, router := range srv.routers {

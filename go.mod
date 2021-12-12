@@ -9,7 +9,7 @@ require (
 	github.com/issue9/events v0.3.1
 	github.com/issue9/localeutil v0.8.1
 	github.com/issue9/logs/v3 v3.0.0-beta.3
-	github.com/issue9/mux/v5 v5.3.1
+	github.com/issue9/mux/v5 v5.4.0
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.6
 	github.com/issue9/scheduled v0.9.2
