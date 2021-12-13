@@ -11,9 +11,6 @@ import (
 )
 
 // Module 相对独立的代码模块
-//
-// 模块带有一个唯一 ID 标记，所有通过模块向 Server 注册的内容，都会添加该 ID 值，
-// 比如 Module.AddResult。
 type Module struct {
 	srv *Server
 	id  string

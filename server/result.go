@@ -253,10 +253,16 @@ func (srv *Server) Result(p *message.Printer, code string, fields ResultFields) 
 	return rslt
 }
 
+// AddResult 注册错误代码
+//
+// 此功能与 Server.AddResult 的唯一区别是，code 参数会加上 Module.ID() 作为其前缀。
 func (m *Module) AddResult(status int, code string, phrase localeutil.LocaleStringer) {
 	m.Server().AddResult(status, m.ID()+code, phrase)
 }
 
+// AddResults 添加多条错误信息
+//
+// 此功能与 Server.AddResult 的唯一区别是，code 参数会加上 Module.ID() 作为其前缀。
 func (m *Module) AddResults(status int, messages map[string]localeutil.LocaleStringer) {
 	for k, v := range messages {
 		m.AddResult(status, k, v)
