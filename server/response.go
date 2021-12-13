@@ -25,7 +25,7 @@ type (
 
 		// Body 输出到 body 部分的对象
 		//
-		// 该对象最终经由 content.Marshal 转换成文本输出。
+		// 该对象最终经由 serialization.MarshalFunc 转换成文本输出。
 		Body() interface{}
 	}
 

@@ -21,7 +21,7 @@ messages:
   message:
     msg: '在返回 %[2]s 时再次发生了错误 %[1]s'
 
-- key: 'not found serialization function %s'
+- key: 'not found serialization function for %s'
   message:
     msg: '未找到适合 %[1]s 的序列化函数'
 

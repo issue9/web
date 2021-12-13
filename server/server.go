@@ -248,7 +248,7 @@ func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.mimetypes }
 // Files 返回用于序列化文件内容的操作接口
 func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }
 
-// Locale 返回用于序列化文件内容的操作接口
+// Locale 操作操作本地化文件的接口
 func (srv *Server) Locale() *serialization.Locale { return srv.locale }
 
 func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }

@@ -24,7 +24,7 @@ func TestFiles_Load(t *testing.T) {
 	testdata := os.DirFS("./testdata")
 
 	v := &object{}
-	a.Equal(f.Load("./testdata/web.xml", v), localeutil.Error("not found serialization function %s", "web.xml"))
+	a.Equal(f.Load("./testdata/web.xml", v), localeutil.Error("not found serialization function for %s", "web.xml"))
 
 	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{}
@@ -43,7 +43,7 @@ func TestFiles_Save(t *testing.T) {
 	tmp := os.TempDir()
 
 	v := &object{Port: ":333"}
-	a.Equal(f.Save(tmp+"/web.xml", v), localeutil.Error("not found serialization function %s", tmp+"/web.xml"))
+	a.Equal(f.Save(tmp+"/web.xml", v), localeutil.Error("not found serialization function for %s", tmp+"/web.xml"))
 
 	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{Port: ":333"}

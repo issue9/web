@@ -49,13 +49,13 @@ func (l *Locale) LoadFileFS(fsys fs.FS, glob string) error {
 		return err
 	}
 
-	for _, f := range matchs {
-		_, u := l.Files().searchByExt(f)
-		if u == nil {
-			return localeutil.Error("not found serialization function %s", f)
+	for _, m := range matchs {
+		_, u, err := l.Files().searchByExt(m)
+		if err != nil {
+			return err
 		}
 
-		if err := localeutil.LoadMessageFromFS(l.b, fsys, f, u); err != nil {
+		if err := localeutil.LoadMessageFromFS(l.b, fsys, m, u); err != nil {
 			return err
 		}
 	}
