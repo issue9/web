@@ -81,7 +81,6 @@ func (cmd *Command) Exec() error {
 	if err := cmd.sanitize(); err != nil {
 		panic(err) // Command 配置错误直接 panic
 	}
-
 	return cmd.exec()
 }
 

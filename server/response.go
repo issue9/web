@@ -40,10 +40,14 @@ type (
 
 // FileServer 提供静态文件服务
 //
-// fsys 为文件系统，如果是 fs.FS 接口，可以采用 http.FS 转换成 http.FileSystem；
+// fsys 为文件系统，如果为空则采用 srv.FS；
 // name 表示参数名称；
 // index 表示 目录下的默认文件名；
 func (srv *Server) FileServer(fsys http.FileSystem, name, index string) HandlerFunc {
+	if fsys == nil {
+		fsys = http.FS(srv)
+	}
+
 	f := mux.FileServer(fsys, name, index, func(w http.ResponseWriter, status int, msg interface{}) {
 		if msg != nil {
 			srv.Logs().Error(msg)
