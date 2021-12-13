@@ -10,13 +10,15 @@ import (
 	"github.com/issue9/web/internal/filesystem"
 )
 
-// Module 相对独立的代码模块
 type Module struct {
 	srv *Server
 	id  string
 	fs  *filesystem.MultipleFS
 }
 
+// NewModule 声明新的模块
+//
+// id 模块的 ID，需要全局唯一。会根据此 ID 从 Server 派生出文件系统。
 func (srv *Server) NewModule(id string) *Module {
 	contains := sliceutil.Index(srv.modules, func(i int) bool {
 		return srv.modules[i] == id
