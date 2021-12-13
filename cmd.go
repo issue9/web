@@ -149,7 +149,8 @@ func (cmd *Command) exec() (err error) {
 		srv, err = LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
 	} else {
 		o := &Options{
-			FS: os.DirFS(*f),
+			FS:    os.DirFS(*f),
+			Files: cmd.Files,
 		}
 		if cmd.Options != nil {
 			cmd.Options(o)

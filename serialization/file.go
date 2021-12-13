@@ -20,9 +20,9 @@ func NewFiles(c int) *Files { return &Files{Serialization: New(c)} }
 
 // Save 保存 v 到文件 p
 func (f *Files) Save(p string, v interface{}) error {
-	m, _, err := f.searchByExt(p)
-	if err != nil {
-		return err
+	m, _ := f.searchByExt(p)
+	if m == nil {
+		return localeutil.Error("not found serialization function for %s", p)
 	}
 
 	data, err := m(v)
@@ -42,9 +42,9 @@ func (f *Files) Load(p string, v interface{}) error {
 
 // LoadFS 加载文件到 v
 func (f *Files) LoadFS(fsys fs.FS, name string, v interface{}) error {
-	_, u, err := f.searchByExt(name)
-	if err != nil {
-		return err
+	_, u := f.searchByExt(name)
+	if u == nil {
+		return localeutil.Error("not found serialization function for %s", name)
 	}
 
 	data, err := fs.ReadFile(fsys, name)
@@ -55,11 +55,8 @@ func (f *Files) LoadFS(fsys fs.FS, name string, v interface{}) error {
 	return u(data, v)
 }
 
-func (f *Files) searchByExt(filename string) (MarshalFunc, UnmarshalFunc, error) {
+func (f *Files) searchByExt(filename string) (MarshalFunc, UnmarshalFunc) {
 	ext := filepath.Ext(filename)
 	_, m, u := f.SearchFunc(func(s string) bool { return s == ext })
-	if u == nil {
-		return nil, nil, localeutil.Error("not found serialization function for %s", filename)
-	}
-	return m, u, nil
+	return m, u
 }

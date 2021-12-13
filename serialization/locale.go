@@ -50,9 +50,9 @@ func (l *Locale) LoadFileFS(fsys fs.FS, glob string) error {
 	}
 
 	for _, m := range matchs {
-		_, u, err := l.Files().searchByExt(m)
-		if err != nil {
-			return err
+		_, u := l.Files().searchByExt(m)
+		if u == nil {
+			return localeutil.Error("not found serialization function for %s", m)
 		}
 
 		if err := localeutil.LoadMessageFromFS(l.b, fsys, m, u); err != nil {
