@@ -36,8 +36,9 @@ import (
 //
 //  cmd.Exec()
 //
-// NOTE: Command 中的大部分内容在 LoadServer 之前就运行，所以无法适用 Server.Locale
-// 的本地化操作，若有需要对命令行作本地化操作，需要自行实现。
+// NOTE: Command 中的大部分内容在初始化 Server 之前就运行，
+// 所以无法适用 Server.Locale 的本地化操作，
+// 若有需要对命令行作本地化操作，需要自行实现。
 type Command struct {
 	Name string // 程序名称
 
@@ -60,7 +61,7 @@ type Command struct {
 
 	// 命令行输出信息的通道
 	//
-	// 可以 os.Stdout 和 os.Stderr 选择，默认为 os.Stdout。
+	// 默认为 os.Stdout。
 	Out io.Writer
 
 	// 配置文件的加载器
@@ -70,7 +71,8 @@ type Command struct {
 
 	// 配置文件的文件名
 	//
-	// 相对于 CmdFS 参数指定的目录，默认为 web.xml。
+	// 仅是文件名，相对的路径由命令行 -f 指定。 此值可以为空，
+	// 如果为空，则表示没有配置文件， 直接采用 &Options{} 初始化 Server 对象。
 	ConfigFilename string
 }
 
@@ -116,14 +118,10 @@ func (cmd *Command) sanitize() error {
 		cmd.Files = f
 	}
 
-	if cmd.ConfigFilename == "" {
-		cmd.ConfigFilename = "web.xml"
-	}
-
 	return nil
 }
 
-func (cmd *Command) exec() error {
+func (cmd *Command) exec() (err error) {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 
@@ -133,12 +131,12 @@ func (cmd *Command) exec() error {
 	i := cl.String("i", "", "执行的安装脚本")
 	s := cl.Bool("s", true, "是否运行服务")
 
-	if err := cl.Parse(os.Args[1:]); err != nil {
+	if err = cl.Parse(os.Args[1:]); err != nil {
 		return err
 	}
 
 	if *v {
-		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
+		_, err = fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
 		return err
 	}
 
@@ -147,7 +145,18 @@ func (cmd *Command) exec() error {
 		return nil
 	}
 
-	srv, err := LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
+	var srv *Server
+	if cmd.ConfigFilename != "" {
+		srv, err = LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
+	} else {
+		o := &Options{
+			FS: os.DirFS(*f),
+		}
+		if cmd.Options != nil {
+			cmd.Options(o)
+		}
+		srv, err = NewServer(cmd.Name, cmd.Version, o)
+	}
 	if err != nil {
 		return err
 	}

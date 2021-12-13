@@ -20,7 +20,8 @@ func TestCreated(t *testing.T) {
 	a.NotError(s.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(err).NotNil(s)
 
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err := http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("content-type", text.Mimetype)
 	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
@@ -30,7 +31,8 @@ func TestCreated(t *testing.T) {
 		Equal(w.Body.String(), `test,123`)
 
 	w.Body.Reset()
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err = http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("content-type", text.Mimetype)
 	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")

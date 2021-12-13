@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package web 一个微型的 RESTful API 框架
+// Package web 一个微型的 web 框架
 package web
 
 import (
@@ -38,7 +38,7 @@ type (
 	OptionsFunc func(*Options)
 )
 
-// LoadServer 从配置文件加载并实例化 Server 对象
+// LoadServer 从配置文件初始化 Server 对象
 //
 // files 指定了用于加载本地化的方法，同时也用于加载配置文件；
 // conf 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
@@ -54,17 +54,9 @@ func LoadServer(name, version string, files *Files, f fs.FS, conf string, o Opti
 	return NewServer(name, version, opt)
 }
 
-// NewServer 返回 *Server 实例
+// NewServer 从 Options 初始化 Server 对象
 func NewServer(name, version string, o *Options) (*Server, error) {
 	return server.New(name, version, o)
-}
-
-// GetServer 从请求中获取 *Server 实例
-func GetServer(r *http.Request) *Server { return server.GetServer(r) }
-
-// NewContext 构建 *Context 实例
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return server.NewContext(w, r)
 }
 
 func Status(status int) Responser { return server.Status(status) }
@@ -78,7 +70,6 @@ func Phrase(key string, v ...interface{}) localeutil.LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 
-// Created 201
 func Created(v interface{}, location string) Responser {
 	if location == "" {
 		return Object(http.StatusCreated, v, nil)
@@ -92,11 +83,8 @@ func Created(v interface{}, location string) Responser {
 // OK 返回 200 状态码下的对象
 func OK(v interface{}) Responser { return Object(http.StatusOK, v, nil) }
 
-// NotFound 404
 func NotFound() Responser { return Status(http.StatusNotFound) }
 
-// NoContent 204
 func NoContent() Responser { return Status(http.StatusNoContent) }
 
-// NotImplemented 501
 func NotImplemented() Responser { return Status(http.StatusNotImplemented) }
