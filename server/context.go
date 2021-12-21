@@ -96,25 +96,6 @@ type Context struct {
 	Vars map[interface{}]interface{}
 }
 
-// Filter 针对 Context 的中间件
-//
-// Filter 和 github.com/issue9/mux.MiddlewareFunc 本质上没有任何区别，
-// mux.MiddlewareFunc 更加的通用，可以复用市面上的大部分中间件，
-// Filter 则更加灵活一些，适合针对当前框架新的中间件。
-//
-// 如果想要使用 mux.MiddlewareFunc，可以调用 Server.MuxGroups().Middlewares() 方法。
-type Filter func(HandlerFunc) HandlerFunc
-
-// ApplyFilters 将过滤器应用于处理函数 next
-func ApplyFilters(next HandlerFunc, filter ...Filter) HandlerFunc {
-	if l := len(filter); l > 0 {
-		for i := l - 1; i >= 0; i-- {
-			next = filter[i](next)
-		}
-	}
-	return next
-}
-
 // NewContext 构建 *Context 实例
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	if ctx := r.Context().Value(contextKeyContext); ctx != nil {
@@ -131,7 +112,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
 	if !found {
-		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found serialization for %s", header))
+		srv.Logs().Debug(srv.localePrinter.Sprintf("not found serialization for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -139,7 +120,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
-		srv.Logs().Debugf(srv.localePrinter.Sprintf("not found charset for %s", header))
+		srv.Logs().Debug(srv.localePrinter.Sprintf("not found charset for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -147,7 +128,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header = r.Header.Get(contentTypeKey)
 	inputMimetype, inputCharset, err := srv.conentType(header)
 	if err != nil {
-		srv.Logs().Debugf(err.Error())
+		srv.Logs().Debug(err)
 		w.WriteHeader(http.StatusUnsupportedMediaType)
 		return nil
 	}
@@ -258,9 +239,6 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 
 	// 注意 WriteHeader 调用顺序。
 	// https://github.com/golang/go/issues/17083
-	//
-	// NOTE: 此处由原来的 errorhandler.WriteHeader 改为 ctx.Response.WriteHeader
-	// 即 Marshal 函数也接受 errorhandler 的捕获，不作特殊处理。
 	ctx.Response.WriteHeader(status)
 
 	if charsetIsNop(ctx.OutputCharset) {

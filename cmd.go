@@ -67,12 +67,12 @@ type Command struct {
 	// 配置文件的加载器
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
-	Files *serialization.Files
+	Files *Files
 
 	// 配置文件的文件名
 	//
-	// 仅是文件名，相对的路径由命令行 -f 指定。 此值可以为空，
-	// 如果为空，则表示没有配置文件， 直接采用 &Options{} 初始化 Server 对象。
+	// 仅是文件名，相对的路径由命令行 -f 指定。
+	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
 	ConfigFilename string
 }
 

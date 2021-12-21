@@ -7,6 +7,8 @@ import (
 
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v5/middleware"
+	"github.com/issue9/sliceutil"
 )
 
 type (
@@ -23,13 +25,22 @@ type (
 		prefix  string
 		filters []Filter
 	}
+
+	// Filter 适用于 Context 的中间件
+	//
+	// Filter 和 github.com/issue9/middleware.Func 本质上没有任何区别，
+	// middleware.Func 更加的通用，可以复用市面上的大部分中间件，
+	// Filter 则更加灵活一些，适合针对当前框架的中间件。
+	//
+	// 如果想要使用 middleware.Func，可以调用 Server.MuxGroups().Middlewares() 方法。
+	Filter func(HandlerFunc) HandlerFunc
 )
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
 // domain 仅用于 URL 生成地址，并不会对路由本身产生影响，可以为空。
 func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) *Router {
-	r := srv.MuxGroup().New(name, matcher, mux.URLDomain(domain))
+	r := srv.group.New(name, matcher, mux.URLDomain(domain))
 	rr := &Router{
 		srv:     srv,
 		router:  r,
@@ -55,19 +66,23 @@ func (srv *Server) Routers() []*Router {
 	return routers
 }
 
-// Router 返回由 Server.NewRouter 声明的路由
 func (srv *Server) Router(name string) *Router { return srv.routers[name] }
 
 func (srv *Server) RemoveRouter(name string) {
-	srv.MuxGroup().Remove(name)
+	srv.group.Remove(name)
 	delete(srv.routers, name)
 }
 
-// MuxGroup 返回 group.Groups 实例
-func (srv *Server) MuxGroup() *group.Group { return srv.group }
+func (srv *Server) Middlewares() *middleware.Middlewares {
+	return srv.group.Middlewares()
+}
 
-func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Filter, method ...string) {
-	h = ApplyFilters(h, filters...)
+func (router *Router) handle(path string, h HandlerFunc, filters []Filter, method ...string) {
+	sliceutil.Reverse(filters)
+	for _, f := range filters {
+		h = f(h)
+	}
+
 	router.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		if ctx := router.srv.NewContext(w, r); ctx != nil { // NewContext 出错，则在 NewContext 中自行处理了输出内容。
 			ctx.renderResponser(h(ctx))
@@ -77,7 +92,7 @@ func (router *Router) handleWithFilters(path string, h HandlerFunc, filters []Fi
 }
 
 func (router *Router) Handle(path string, h HandlerFunc, method ...string) *Router {
-	router.handleWithFilters(path, h, router.filters, method...)
+	router.handle(path, h, router.filters, method...)
 	return router
 }
 
@@ -107,16 +122,6 @@ func (router *Router) Remove(path string, method ...string) {
 	router.router.Remove(path, method...)
 }
 
-func (router *Router) clone() *Router {
-	filters := make([]Filter, len(router.filters))
-	copy(filters, router.filters)
-	return &Router{
-		srv:     router.srv,
-		router:  router.router,
-		filters: filters,
-	}
-}
-
 // URL 构建完整的 URL
 //
 // 功能与 mux.Router.URL 相似，但是加上了关联的域名地址。比如根地址是 https://example.com/blog
@@ -128,16 +133,19 @@ func (router *Router) URL(strict bool, pattern string, params map[string]string)
 
 // Prefix 返回特定前缀的路由设置对象
 func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
+	filters := make([]Filter, 0, len(router.filters)+len(filter))
+	filters = append(filters, router.filters...)
+	filters = append(filters, filter...)
 	return &Prefix{
-		router:  router.clone(),
+		router:  router,
 		prefix:  prefix,
-		filters: filter,
+		filters: filters,
 	}
 }
 
 // Handle 添加路由项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
-	p.router.handleWithFilters(p.prefix+path, h, p.filters, method...)
+	p.router.handle(p.prefix+path, h, p.filters, method...)
 	return p
 }
 
