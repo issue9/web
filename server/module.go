@@ -5,6 +5,7 @@ package server
 import (
 	"io/fs"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/internal/filesystem"
@@ -57,3 +58,10 @@ func (m *Module) Server() *Server { return m.srv }
 func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
 
 func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
+
+// Cache 获取缓存对象
+//
+// 该缓存对象的 key 会自动添加 Module.ID 作为其前缀。
+func (m *Module) Cache() cache.Access {
+	return cache.Prefix(m.ID(), m.Server().Cache())
+}
