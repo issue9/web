@@ -5,7 +5,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
@@ -309,19 +309,20 @@ func (srv *Server) conentType(header string) (serialization.UnmarshalFunc, encod
 	)
 
 	if header != "" {
-		mts, params, err := mime.ParseMediaType(header)
+		m, params, err := mime.ParseMediaType(header)
 		if err != nil {
 			return nil, nil, err
 		}
-		mt = mts
-		if charset = params["charset"]; charset == "" {
-			charset = DefaultCharset
+		mt = m
+
+		if c := params["charset"]; c != "" {
+			charset = c
 		}
 	}
 
 	f, found := srv.Mimetypes().UnmarshalFunc(mt)
 	if !found {
-		return nil, nil, fmt.Errorf("未注册的解码函数 %s", mt)
+		return nil, nil, localeutil.Error("not found serialization function for %s", mt)
 	}
 
 	e, err := htmlindex.Get(charset)

@@ -342,7 +342,7 @@ func TestServer_contentType(t *testing.T) {
 
 	// 不存在的 mimetype
 	f, e, err = srv.conentType(buildContentType("not-exists", DefaultCharset))
-	a.ErrorString(err, "未注册的解码函数").Nil(f).Nil(e)
+	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
 	f, e, err = srv.conentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)

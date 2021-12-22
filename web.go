@@ -66,7 +66,7 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key string, v ...interface{}) localeutil.LocaleStringer {
+func Phrase(key string, v ...interface{}) LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 
