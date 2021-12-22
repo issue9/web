@@ -247,7 +247,7 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
 
 	// static 中定义的静态文件
-	router.Get("/admin/{path}", srv.FileServer(http.Dir("./testdata"), "path", "index.html"))
+	router.Get("/admin/{path}", srv.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	resp, err = http.Get("http://localhost:8080/admin/file1.txt")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusOK)
 

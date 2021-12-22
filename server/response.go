@@ -4,6 +4,7 @@ package server
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
 
 	"github.com/issue9/mux/v5"
@@ -12,7 +13,8 @@ import (
 type (
 	// HandlerFunc 路由项处理函数原型
 	//
-	// 如果返回非空对象，则表示最终向终端输出此内容，不再需要处理其它情况。
+	// 如果返回 nil，表示未出现任何错误，可以继续后续操作，
+	// 非 nil，表示需要中断执行并向用户输出返回的对象。
 	HandlerFunc func(*Context) Responser
 
 	// Responser 表示向客户端输出的对象
@@ -36,19 +38,23 @@ type (
 		headers map[string]string
 		body    interface{}
 	}
+
+	exit struct{}
 )
+
+var exited exit
 
 // FileServer 提供静态文件服务
 //
 // fsys 为文件系统，如果为空则采用 srv.FS；
 // name 表示参数名称；
 // index 表示 目录下的默认文件名；
-func (srv *Server) FileServer(fsys http.FileSystem, name, index string) HandlerFunc {
+func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	if fsys == nil {
-		fsys = http.FS(srv)
+		fsys = srv
 	}
 
-	f := mux.FileServer(fsys, name, index, func(w http.ResponseWriter, status int, msg interface{}) {
+	f := mux.FileServer(http.FS(fsys), name, index, func(w http.ResponseWriter, status int, msg interface{}) {
 		if msg != nil {
 			srv.Logs().Error(msg)
 		}
@@ -57,12 +63,12 @@ func (srv *Server) FileServer(fsys http.FileSystem, name, index string) HandlerF
 
 	return func(ctx *Context) Responser {
 		f.ServeHTTP(ctx.Response, ctx.Request)
-		return nil
+		return Exit()
 	}
 }
 
 func (ctx *Context) renderResponser(resp Responser) {
-	if resp == nil {
+	if resp == nil || resp == exited {
 		return
 	}
 
@@ -76,6 +82,12 @@ func (s status) Status() int { return int(s) }
 func (s status) Headers() map[string]string { return nil }
 
 func (s status) Body() interface{} { return nil }
+
+func (e exit) Status() int { return 0 }
+
+func (e exit) Headers() map[string]string { return nil }
+
+func (e exit) Body() interface{} { return nil }
 
 func (o *object) Status() int { return o.status }
 
@@ -129,10 +141,19 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 // Status 仅包含状态码的 Responser
 func Status(statusCode int) Responser { return status(statusCode) }
 
+// Exit 不再执行后续操作退出当前请求
+func Exit() Responser { return exited }
+
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) Responser {
 	rslt := ctx.Server().Result(ctx.LocalePrinter, code, fields)
 	return Object(rslt.Status(), rslt, nil)
+}
+
+// Redirect 重定向至新的 URL
+func (ctx *Context) Redirect(status int, url string) Responser {
+	http.Redirect(ctx.Response, ctx.Request, url, status)
+	return Exit()
 }

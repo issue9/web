@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestServer_FileServer(t *testing.T) {
 	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotNil(r)
 	r.Get("/m1/test", f201)
-	r.Get("/client/{path}", server.FileServer(http.Dir("./testdata"), "path", "index.html"))
+	r.Get("/client/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 	srv := rest.NewServer(a, server.group, nil)
 
@@ -46,6 +47,10 @@ func TestServer_FileServer(t *testing.T) {
 		Header("Content-Type", "text/plain; charset=utf-8").
 		StringBody("file1")
 
+	srv.Get("/client/not-exists").
+		Do(nil).
+		Status(http.StatusNotFound)
+
 	// 删除
 	r.Remove("/client/{path}")
 	srv.Get("/client/file1.txt").
@@ -58,7 +63,7 @@ func TestServer_FileServer(t *testing.T) {
 	a.NotNil(host)
 	r = server.NewRouter("example", "https://example.com/blog", host)
 	a.NotNil(r)
-	r.Get("/admin/{path}", server.FileServer(http.Dir("./testdata"), "path", "index.html"))
+	r.Get("/admin/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
 	server.group.ServeHTTP(w, req)
@@ -78,7 +83,7 @@ func TestContext_Critical(t *testing.T) {
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:80") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:85") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1log2")
 }
 
@@ -171,4 +176,18 @@ func TestContext_Result(t *testing.T) {
 	// 不存在
 	a.Panic(func() { ctx.Result("400", nil) })
 	a.Panic(func() { ctx.Result("50000", nil) })
+}
+
+func TestContext_Redirect(t *testing.T) {
+	a := assert.New(t, false)
+
+	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r.Header.Set("Accept", "application/json")
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	ctx := newServer(a, nil).NewContext(w, r)
+	a.Equal(ctx.Redirect(301, "https://example.com"), exited)
+	a.Equal(w.Result().StatusCode, 301).
+		Equal(w.Header().Get("Location"), "https://example.com")
+
 }
