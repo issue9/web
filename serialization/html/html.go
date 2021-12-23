@@ -2,9 +2,9 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//  mt := srv.NewContent()
+//  srv := NewServer()
 //  tpl := template.ParseFiles(...)
-//  mt.Add("text/html", html.Marshal, nil)
+//  srv.Mimetypes().Add("text/html", html.Marshal, nil)
 //
 //  func handle(ctx *web.Context) Responser {
 //      return Object(200, html.Tpl(tpl, "index", map[string]interface{}{...}), nil)

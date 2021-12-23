@@ -35,8 +35,8 @@ func TestMarshal(t *testing.T) {
 	a.Error(err).Nil(bs)
 
 	bs, err = Marshal("<div>abc</div>")
-	a.Equal(string(bs), "<div>abc</div>")
+	a.NotError(err).Equal(string(bs), "<div>abc</div>")
 
 	bs, err = Marshal([]byte("<div>abc</div>"))
-	a.Equal(string(bs), "<div>abc</div>")
+	a.NotError(err).Equal(string(bs), "<div>abc</div>")
 }
