@@ -3,6 +3,7 @@
 package text
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/issue9/assert/v2"
@@ -35,6 +36,9 @@ func TestTextMarshal(t *testing.T) {
 
 	// 未实现 TextMarshaler 接口的对象
 	data, err = Marshal(&struct{}{})
+	a.Error(err).Nil(data)
+
+	data, err = Marshal(errors.New("abc"))
 	a.Error(err).Nil(data)
 }
 

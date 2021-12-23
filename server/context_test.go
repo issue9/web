@@ -4,6 +4,7 @@ package server
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -278,6 +279,35 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+
+	// OutputMimetype == nil
+	w = httptest.NewRecorder()
+	ctx = &Context{
+		Request:  httptest.NewRequest(http.MethodGet, "/path", nil),
+		Response: w,
+	}
+	a.NotError(ctx.Marshal(http.StatusCreated, "val", nil))
+	a.Equal(w.Code, http.StatusNotAcceptable)
+
+	// OutputMimetype 返回 serialization.ErrUnsupported
+	w = httptest.NewRecorder()
+	ctx = &Context{
+		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Response:       w,
+		OutputMimetype: text.Marshal,
+	}
+	a.NotError(ctx.Marshal(http.StatusCreated, &struct{}{}, nil))
+	a.Equal(w.Code, http.StatusNotAcceptable)
+
+	// OutputMimetype 返回错误
+	w = httptest.NewRecorder()
+	ctx = &Context{
+		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Response:       w,
+		OutputMimetype: text.Marshal,
+	}
+	a.Error(ctx.Marshal(http.StatusCreated, errors.New("error"), nil))
+	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
 func TestContext_IsXHR(t *testing.T) {

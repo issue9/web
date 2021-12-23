@@ -5,6 +5,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"mime"
 	"net/http"
@@ -233,7 +234,12 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return nil
 	}
 	data, err := ctx.OutputMimetype(v)
-	if err != nil {
+	switch {
+	case errors.Is(err, serialization.ErrUnsupported):
+		ctx.Response.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	case err != nil:
+		ctx.Response.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 

@@ -21,6 +21,8 @@ func Marshal(v interface{}) ([]byte, error) {
 		return []byte(string(vv)), nil
 	case encoding.TextMarshaler:
 		return vv.MarshalText()
+	case error:
+		return nil, vv
 	}
 
 	return nil, serialization.ErrUnsupported
