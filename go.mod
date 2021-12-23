@@ -6,6 +6,7 @@ require (
 	github.com/issue9/assert/v2 v2.0.1
 	github.com/issue9/cache v0.3.2
 	github.com/issue9/conv v1.2.2
+	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/events v0.3.1
 	github.com/issue9/localeutil v0.8.2
 	github.com/issue9/logs/v3 v3.1.0
@@ -21,7 +22,6 @@ require (
 )
 
 require (
-	github.com/issue9/errwrap v0.2.1 // indirect
 	github.com/issue9/term/v2 v2.1.5 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
