@@ -84,7 +84,7 @@ func TestContext_Critical(t *testing.T) {
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
 	a.Contains(criticalLog.String(), "response_test.go:85") // NOTE: 此测试依赖上一行的行号
-	a.Contains(criticalLog.String(), "log1log2")
+	a.Contains(criticalLog.String(), "log1 log2")
 }
 
 func TestContext_Errorf(t *testing.T) {

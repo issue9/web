@@ -395,6 +395,20 @@ func (ctx *Context) ClientIP() string {
 
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 
+// Log 输出日志并以指定的状态码退出
+//
+// deep 为 0 表示 Log 本身；
+func (ctx *Context) Log(level, deep, status int, v ...interface{}) {
+	ctx.Logs().Print(level, deep, v...)
+}
+
+// Logf 输出日志并以指定的状态码退出
+//
+// deep 为 0 表示 Logf 本身；
+func (ctx *Context) Logf(level, deep, status int, format string, v ...interface{}) {
+	ctx.Logs().Printf(level, deep, format, v...)
+}
+
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {
 	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
@@ -415,4 +429,9 @@ func buildContentType(mt, charset string) string {
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request.Header.Get("X-Requested-With"))
 	return h == "xmlhttprequest"
+}
+
+// Sprintf 返回翻译后的结果
+func (ctx *Context) Sprintf(key message.Reference, v ...interface{}) string {
+	return ctx.LocalePrinter.Sprintf(key, v...)
 }

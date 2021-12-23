@@ -469,7 +469,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	r.Header.Set("accept", text.Mimetype)
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
-	a.NotError(ctx.Marshal(http.StatusOK, ctx.LocalePrinter.Sprintf("test"), nil))
+	a.NotError(ctx.Marshal(http.StatusOK, ctx.Sprintf("test"), nil))
 	a.Equal(w.Body.String(), "測試")
 
 	w = httptest.NewRecorder()
