@@ -16,10 +16,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Webconfig 配置文件定义
-//
-// T 表示用户自定义的数据项，可以实现 Sanitizer 接口，用于对加载后的数据进行自检。
-type Webconfig[T any] struct {
+type webconfig[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
@@ -37,10 +34,10 @@ type Webconfig[T any] struct {
 	// 路由的相关设置
 	//
 	// 提供了对全局路由的设置，但是用户依然可以通过 server.Server.MuxGroups().AddRouter 忽略这些设置项。
-	Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
+	Router *router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
 
 	// 与 HTTP 请求相关的设置项
-	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
+	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
 	// 时区名称
 	//
@@ -54,7 +51,7 @@ type Webconfig[T any] struct {
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
-	Cache *Cache `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
+	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
 	// 日志初始化参数
@@ -74,8 +71,10 @@ type Webconfig[T any] struct {
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
+//
+// T 表示用户自定义的数据项，可以实现 Sanitizer 接口，用于对加载后的数据进行自检。
 func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
-	conf := &Webconfig[T]{}
+	conf := &webconfig[T]{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
 		return nil, nil, err
 	}
@@ -87,13 +86,11 @@ func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*s
 		return nil, nil, err
 	}
 
-	opt, t := conf.NewOptions(files, f)
+	opt, t := conf.newOptions(files, f)
 	return opt, t, nil
 }
 
-func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) (*server.Options, *T) {
-	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
-
+func (conf *webconfig[T]) newOptions(files *serialization.Files, fs fs.FS) (*server.Options, *T) {
 	h := conf.HTTP
 	r := conf.Router
 
@@ -117,7 +114,7 @@ func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) (*ser
 	}, conf.User
 }
 
-func (conf *Webconfig[T]) sanitize() error {
+func (conf *webconfig[T]) sanitize() error {
 	if conf.Logs != nil {
 		if err := conf.Logs.Sanitize(); err != nil {
 			return &Error{Field: "logs", Message: err}
@@ -147,7 +144,7 @@ func (conf *Webconfig[T]) sanitize() error {
 	}
 
 	if conf.Router == nil {
-		conf.Router = &Router{}
+		conf.Router = &router{}
 	}
 	if err := conf.Router.sanitize(); err != nil {
 		err.Field = "router." + err.Field
@@ -155,7 +152,7 @@ func (conf *Webconfig[T]) sanitize() error {
 	}
 
 	if conf.HTTP == nil {
-		conf.HTTP = &HTTP{}
+		conf.HTTP = &httpConfig{}
 	}
 	if err := conf.HTTP.sanitize(); err != nil {
 		err.Field = "http." + err.Field
@@ -174,7 +171,7 @@ func (conf *Webconfig[T]) sanitize() error {
 	return nil
 }
 
-func (conf *Webconfig[T]) buildTimezone() *Error {
+func (conf *webconfig[T]) buildTimezone() *Error {
 	if conf.Timezone == "" {
 		return nil
 	}
