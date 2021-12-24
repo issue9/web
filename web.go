@@ -4,12 +4,10 @@
 package web
 
 import (
-	"io/fs"
 	"net/http"
 
 	"github.com/issue9/localeutil"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -37,22 +35,6 @@ type (
 	// OptionsFunc 用于对 Options 对象进行修改
 	OptionsFunc func(*Options)
 )
-
-// LoadServer 从配置文件初始化 Server 对象
-//
-// files 指定了用于加载本地化的方法，同时也用于加载配置文件；
-// conf 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
-// o 用于在初始化 Server 之前，加载配置文件之后，对 *Options 进行一次修改；
-func LoadServer(name, version string, files *Files, f fs.FS, conf string, o OptionsFunc) (*Server, error) {
-	opt, err := config.NewOptions(files, f, conf)
-	if err != nil {
-		return nil, err
-	}
-	if o != nil {
-		o(opt)
-	}
-	return NewServer(name, version, opt)
-}
 
 // NewServer 从 Options 初始化 Server 对象
 func NewServer(name, version string, o *Options) (*Server, error) {

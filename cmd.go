@@ -9,12 +9,18 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/signal"
 	"time"
 
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/localeutil"
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -36,8 +42,8 @@ import (
 //
 //  cmd.Exec()
 //
-// NOTE: Command 中的大部分内容在初始化 Server 之前就运行，
-// 所以无法适用 Server.Locale，若有需要对命令行作本地化操作，需要自行实现。
+// NOTE: Command 的本地化信息采用当前用户的默认语言，
+// 由 github.com/issue9/localeutil.DetectUserLanguageTag 读取。
 type Command struct {
 	Name string // 程序名称
 
@@ -73,6 +79,20 @@ type Command struct {
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
 	ConfigFilename string
+
+	// 本地化的相关操作接口
+	//
+	// 如果为空，则会被初始化一个空对象。
+	//
+	// 当前命令行的翻译信息也由此对象提供，目前必须提供以下几个翻译项：
+	//  -v  show version
+	//  -h  show help
+	//  -f  set file system
+	//  -i  install key
+	//  -s  run as server
+	Catalog *catalog.Builder
+
+	tag language.Tag
 }
 
 // Exec 执行命令行操作
@@ -92,6 +112,16 @@ func (cmd *Command) sanitize() error {
 	}
 	if cmd.Init == nil {
 		return errors.New("字段 Init 不能为空")
+	}
+
+	tag, err := localeutil.DetectUserLanguageTag()
+	if err != nil {
+		fmt.Println(err) // 输出错误，但是不中断执行
+	}
+	cmd.tag = tag
+
+	if cmd.Catalog == nil {
+		cmd.Catalog = catalog.NewBuilder(catalog.Fallback(cmd.tag))
 	}
 
 	if cmd.Out == nil {
@@ -119,22 +149,23 @@ func (cmd *Command) sanitize() error {
 	return nil
 }
 
-func (cmd *Command) exec() (err error) {
+func (cmd *Command) exec() error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
+	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
 
-	v := cl.Bool("v", false, "显示版本号")
-	h := cl.Bool("h", false, "显示帮助信息")
-	f := cl.String("f", "./", "可读取的目录")
-	i := cl.String("i", "", "执行的安装脚本")
-	s := cl.Bool("s", true, "是否运行服务")
+	v := cl.Bool("v", false, p.Sprintf("show version"))
+	h := cl.Bool("h", false, p.Sprintf("show help"))
+	f := cl.String("f", "./", p.Sprintf("set file system"))
+	i := cl.String("i", "", p.Sprintf("install key"))
+	s := cl.Bool("s", true, p.Sprintf("run as server"))
 
-	if err = cl.Parse(os.Args[1:]); err != nil {
+	if err := cl.Parse(os.Args[1:]); err != nil {
 		return err
 	}
 
 	if *v {
-		_, err = fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
+		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
 		return err
 	}
 
@@ -143,19 +174,12 @@ func (cmd *Command) exec() (err error) {
 		return nil
 	}
 
-	var srv *Server
-	if cmd.ConfigFilename != "" {
-		srv, err = LoadServer(cmd.Name, cmd.Version, cmd.Files, os.DirFS(*f), cmd.ConfigFilename, cmd.Options)
-	} else {
-		o := &Options{
-			FS:    os.DirFS(*f),
-			Files: cmd.Files,
-		}
-		if cmd.Options != nil {
-			cmd.Options(o)
-		}
-		srv, err = NewServer(cmd.Name, cmd.Version, o)
+	opt, err := cmd.initOptions(os.DirFS(*f))
+	if err != nil {
+		return err
 	}
+
+	srv, err := NewServer(cmd.Name, cmd.Version, opt)
 	if err != nil {
 		return err
 	}
@@ -173,6 +197,27 @@ func (cmd *Command) exec() (err error) {
 	}
 
 	return srv.Serve()
+}
+
+func (cmd *Command) initOptions(fsys fs.FS) (opt *Options, err error) {
+	if cmd.ConfigFilename != "" {
+		opt, err = config.NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		opt = &Options{
+			FS:    fsys,
+			Files: cmd.Files,
+		}
+	}
+	opt.Catalog = cmd.Catalog
+
+	if cmd.Options != nil {
+		cmd.Options(opt)
+	}
+
+	return opt, nil
 }
 
 func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {

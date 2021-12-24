@@ -83,6 +83,11 @@ type Options struct {
 	// 如果为空，则会尝试读取当前系统的本地化信息。
 	Tag language.Tag
 
+	// 本地化操作的对象
+	//
+	// 与 Files 组合构建 serialization.Locale 对象，可以为空。
+	Catalog *catalog.Builder
+
 	locale *serialization.Locale
 }
 
@@ -132,8 +137,11 @@ func (o *Options) sanitize() (err error) {
 		o.Files = serialization.NewFiles(5)
 	}
 
-	b := catalog.NewBuilder(catalog.Fallback(o.Tag))
-	o.locale = serialization.NewLocale(b, o.Files)
+	if o.Catalog == nil {
+		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Tag))
+	}
+
+	o.locale = serialization.NewLocale(o.Catalog, o.Files)
 
 	return nil
 }
