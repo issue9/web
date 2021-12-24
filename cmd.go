@@ -37,8 +37,7 @@ import (
 //  cmd.Exec()
 //
 // NOTE: Command 中的大部分内容在初始化 Server 之前就运行，
-// 所以无法适用 Server.Locale 的本地化操作，
-// 若有需要对命令行作本地化操作，需要自行实现。
+// 所以无法适用 Server.Locale，若有需要对命令行作本地化操作，需要自行实现。
 type Command struct {
 	Name string // 程序名称
 

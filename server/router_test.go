@@ -28,16 +28,23 @@ func TestFilter(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 
-	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any), buildFilter(a, "b1"), buildFilter(a, "b2"))
+	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any), buildFilter(a, "b1"), buildFilter(a, "b2-"))
 	a.NotNil(router)
+	router.Get("/path", f201)
 	prefix := router.Prefix("/p1", buildFilter(a, "p1"), buildFilter(a, "p2-"))
+	a.NotNil(prefix)
 	prefix.Get("/path", f201)
 
 	srv := rest.NewServer(a, server.group, nil)
 	srv.Get("/p1/path").
 		Do(nil).
 		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
-		StringBody("b1b2p1p2-1234567890")
+		StringBody("b1b2-p1p2-1234567890")
+
+	srv.Get("/path").
+		Do(nil).
+		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
+		StringBody("b1b2-1234567890")
 }
 
 func TestRouter(t *testing.T) {

@@ -86,7 +86,7 @@ type Options struct {
 	locale *serialization.Locale
 }
 
-func (o *Options) sanitize() error {
+func (o *Options) sanitize() (err error) {
 	if o.FS == nil {
 		dir, err := os.Executable()
 		if err != nil {
@@ -123,9 +123,7 @@ func (o *Options) sanitize() error {
 	}
 
 	if o.Tag == language.Und {
-		var err error
-		o.Tag, err = localeutil.DetectUserLanguageTag()
-		if err != nil {
+		if o.Tag, err = localeutil.DetectUserLanguageTag(); err != nil {
 			o.Logs.Error(err) // 输出错误，但是没必要中断程序。
 		}
 	}

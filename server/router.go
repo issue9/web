@@ -8,7 +8,6 @@ import (
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
 	"github.com/issue9/mux/v5/middleware"
-	"github.com/issue9/sliceutil"
 )
 
 type (
@@ -78,9 +77,8 @@ func (srv *Server) Middlewares() *middleware.Middlewares {
 }
 
 func (router *Router) handle(path string, h HandlerFunc, filters []Filter, method ...string) {
-	sliceutil.Reverse(filters)
-	for _, f := range filters {
-		h = f(h)
+	for i := len(filters) - 1; i >= 0; i-- {
+		h = filters[i](h)
 	}
 
 	router.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
