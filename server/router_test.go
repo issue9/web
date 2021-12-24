@@ -14,6 +14,32 @@ import (
 
 var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 
+func buildFilter(a *assert.Assertion, v string) Filter {
+	return func(next HandlerFunc) HandlerFunc {
+		return func(ctx *Context) Responser {
+			_, err := ctx.Response.Write([]byte(v))
+			a.NotError(err)
+			return next(ctx)
+		}
+	}
+}
+
+func TestFilter(t *testing.T) {
+	a := assert.New(t, false)
+	server := newServer(a, nil)
+
+	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any), buildFilter(a, "b1"), buildFilter(a, "b2"))
+	a.NotNil(router)
+	prefix := router.Prefix("/p1", buildFilter(a, "p1"), buildFilter(a, "p2-"))
+	prefix.Get("/path", f201)
+
+	srv := rest.NewServer(a, server.group, nil)
+	srv.Get("/p1/path").
+		Do(nil).
+		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
+		StringBody("b1b2p1p2-1234567890")
+}
+
 func TestRouter(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
