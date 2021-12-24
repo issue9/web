@@ -43,7 +43,7 @@ type (
 
 // FileServer 返回以当前模块作为文件系统的静态文件服务
 func (m *Module) FileServer(name, index string) HandlerFunc {
-	return m.Server().FileServer(http.FS(m), name, index)
+	return m.Server().FileServer(m, name, index)
 }
 
 func (ctx *Context) renderResponser(resp Responser) {
