@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package config
 
 import (
 	"testing"
@@ -14,19 +14,19 @@ func TestWebconfig_buildCache(t *testing.T) {
 	l, err := logs.New(nil)
 	a.NotError(err).NotNil(l)
 
-	cfg := &Config{logs: l}
+	cfg := &Webconfig[empty]{logs: l}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Config{Cache: &Cache{DSN: "1h"}}
+	cfg = &Webconfig[empty]{Cache: &Cache{DSN: "1h"}}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Config{Cache: &Cache{Type: "memory", DSN: "1h"}}
+	cfg = &Webconfig[empty]{Cache: &Cache{Type: "memory", DSN: "1h"}}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Config{Cache: &Cache{Type: "not-exists"}}
+	cfg = &Webconfig[empty]{Cache: &Cache{Type: "not-exists"}}
 	a.Error(cfg.buildCache())
 	a.Nil(cfg.cache)
 }

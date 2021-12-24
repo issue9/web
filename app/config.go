@@ -16,8 +16,10 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Webconfig 配置内容
-type Webconfig[T Sanitizer] struct {
+// Webconfig 配置文件定义
+//
+// T 表示用户自定义的数据项，可以实现 Sanitizer 接口，用于对加载后的数据进行自检。
+type Webconfig[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
@@ -61,8 +63,8 @@ type Webconfig[T Sanitizer] struct {
 	Logs *config.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 	logs *logs.Logs
 
-	// 自定义的配置项
-	Data T `yaml:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+	// 用户自定义的配置项
+	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
 // NewOptions 从配置文件初始化 server.Options 实例
@@ -72,23 +74,24 @@ type Webconfig[T Sanitizer] struct {
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-func NewOptions[T Sanitizer](files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
+func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
 	conf := &Webconfig[T]{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := conf.sanitize(); err != nil {
 		if err2, ok := err.(*Error); ok {
 			err2.Config = filename
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	return conf.NewOptions(files, f), nil
+	opt, t := conf.NewOptions(files, f)
+	return opt, t, nil
 }
 
-func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) *server.Options {
+func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) (*server.Options, *T) {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	h := conf.HTTP
@@ -111,7 +114,7 @@ func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) *serv
 		},
 		Logs:  conf.logs,
 		Files: files,
-	}
+	}, conf.User
 }
 
 func (conf *Webconfig[T]) sanitize() error {
@@ -159,10 +162,12 @@ func (conf *Webconfig[T]) sanitize() error {
 		return err
 	}
 
-	if conf.Data != nil {
-		if err := conf.Data.Sanitize(); err != nil {
-			err.Field = "data." + err.Field
-			return err
+	if conf.User != nil {
+		if s, ok := (interface{})(conf.User).(Sanitizer); ok {
+			if err := s.Sanitize(); err != nil {
+				err.Field = "user." + err.Field
+				return err
+			}
 		}
 	}
 
