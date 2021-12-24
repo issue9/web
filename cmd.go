@@ -92,6 +92,9 @@ type Command struct {
 	//  -s  run as server
 	Catalog *catalog.Builder
 
+	// 通过信号触发退出时的等待时间
+	SignalTimeout time.Duration
+
 	tag language.Tag
 }
 
@@ -229,7 +232,7 @@ func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
 		signal.Stop(signalChannel)
 		close(signalChannel)
 
-		if err := s.Close(3 * time.Second); err != nil {
+		if err := s.Close(cmd.SignalTimeout); err != nil {
 			s.Logs().Error(err)
 		}
 		s.Logs().Flush() // 保证内容会被正常输出到日志。
