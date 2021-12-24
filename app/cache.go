@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package config
 
 import (
 	"strings"
@@ -36,7 +36,7 @@ type Cache struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *Config) buildCache() *Error {
+func (conf *Webconfig[T]) buildCache() *Error {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil

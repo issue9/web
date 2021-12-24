@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package config
 
 import (
 	"io/fs"
@@ -16,17 +16,8 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Configer 自定义配置文件格式需要实现的接口
-type Configer interface {
-	// Webconfig 从配置文件中获取的 Webconfig 实例
-	Webconfig() *Webconfig
-
-	// Sanitize 对整个配置对象内容的检测
-	Sanitize() *Error
-}
-
 // Webconfig 配置内容
-type Webconfig struct {
+type Webconfig[T Sanitizer] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
@@ -69,6 +60,9 @@ type Webconfig struct {
 	// 如果为空，则初始化一个空日志，不会输出任何日志。
 	Logs *config.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 	logs *logs.Logs
+
+	// 自定义的配置项
+	Data T `yaml:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
 }
 
 // NewOptions 从配置文件初始化 server.Options 实例
@@ -78,8 +72,8 @@ type Webconfig struct {
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
-	conf := &Config{}
+func NewOptions[T Sanitizer](files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
+	conf := &Webconfig[T]{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
 		return nil, err
 	}
@@ -94,7 +88,7 @@ func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.O
 	return conf.NewOptions(files, f), nil
 }
 
-func (conf *Config) NewOptions(files *serialization.Files, fsys fs.FS) *server.Options {
+func (conf *Webconfig[T]) NewOptions(files *serialization.Files, fs fs.FS) *server.Options {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	h := conf.HTTP
@@ -102,7 +96,7 @@ func (conf *Config) NewOptions(files *serialization.Files, fsys fs.FS) *server.O
 
 	return &server.Options{
 		Port:          conf.Port,
-		FS:            fsys,
+		FS:            fs,
 		Location:      conf.location,
 		Cache:         conf.cache,
 		RouterOptions: r.options,
@@ -120,7 +114,7 @@ func (conf *Config) NewOptions(files *serialization.Files, fsys fs.FS) *server.O
 	}
 }
 
-func (conf *Config) sanitize() error {
+func (conf *Webconfig[T]) sanitize() error {
 	if conf.Logs != nil {
 		if err := conf.Logs.Sanitize(); err != nil {
 			return &Error{Field: "logs", Message: err}
@@ -165,10 +159,17 @@ func (conf *Config) sanitize() error {
 		return err
 	}
 
+	if conf.Data != nil {
+		if err := conf.Data.Sanitize(); err != nil {
+			err.Field = "data." + err.Field
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (conf *Config) buildTimezone() *Error {
+func (conf *Webconfig[T]) buildTimezone() *Error {
 	if conf.Timezone == "" {
 		return nil
 	}
