@@ -21,8 +21,6 @@ type Sanitizer interface {
 	Sanitize() *Error
 }
 
-type EmptyData struct{}
-
 func (err *Error) Error() string {
 	return err.LocaleString(localeutil.EmptyPrinter())
 }
@@ -35,5 +33,3 @@ func (err *Error) LocaleString(p *message.Printer) string {
 
 	return p.Sprintf("%s at %s:%s", msg, err.Config, err.Field)
 }
-
-func (d *EmptyData) Sanitize() *Error { return nil }
