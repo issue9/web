@@ -68,7 +68,7 @@ type Command struct {
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
-	Options OptionsFunc
+	Options func(*Options)
 
 	// 命令行输出信息的通道
 	//

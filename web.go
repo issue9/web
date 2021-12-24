@@ -31,9 +31,6 @@ type (
 	//
 	// 部分 error 返回可能也实现了该接口。
 	LocaleStringer = localeutil.LocaleStringer
-
-	// OptionsFunc 用于对 Options 对象进行修改
-	OptionsFunc func(*Options)
 )
 
 // NewServer 从 Options 初始化 Server 对象
