@@ -15,6 +15,14 @@ type Error struct {
 	Value   interface{} // 原始值
 }
 
+// Sanitizer 自定义配置文件格式需要实现的接口
+type Sanitizer interface {
+	// Sanitize 对整个配置对象内容的检测
+	Sanitize() *Error
+}
+
+type EmptyData struct{}
+
 func (err *Error) Error() string {
 	return err.LocaleString(localeutil.EmptyPrinter())
 }
@@ -27,3 +35,5 @@ func (err *Error) LocaleString(p *message.Printer) string {
 
 	return p.Sprintf("%s at %s:%s", msg, err.Config, err.Field)
 }
+
+func (d *EmptyData) Sanitize() *Error { return nil }
