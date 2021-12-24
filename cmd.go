@@ -34,10 +34,16 @@ import (
 //  - i 执行安装脚本，如果参数不为空，则执行指定的标签；
 //  - s 以服务运行，与 i 不能同时出现；
 //
+//  // 本地化命令行的帮助信息
+//  builder := catalog.NewBuilder()
+//  builder.SetString("show help", "显示帮助信息")
+//  builder.SetString("show version", "显示版本信息")
+//
 //  cmd := &web.Command{
 //      Name: "app",
 //      Version: "1.0.0",
 //      Init: func(s *Server) error {...},
+//      Catalog: builder,
 //  }
 //
 //  cmd.Exec()
@@ -72,6 +78,7 @@ type Command struct {
 	// 配置文件的加载器
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
+	// 该值可能会被 Options 操作所覆盖。
 	Files *Files
 
 	// 配置文件的文件名
@@ -82,7 +89,7 @@ type Command struct {
 
 	// 本地化的相关操作接口
 	//
-	// 如果为空，则会被初始化一个空对象。
+	// 如果为空，则会被初始化一个空对象，该值可能会被 Options 操作所覆盖。
 	//
 	// 当前命令行的翻译信息也由此对象提供，目前必须提供以下几个翻译项：
 	//  -v  show version

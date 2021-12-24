@@ -85,7 +85,7 @@ func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.O
 	return conf.NewOptions(files, f), nil
 }
 
-func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) *server.Options {
+func (conf *Webconfig) NewOptions(files *serialization.Files, fsys fs.FS) *server.Options {
 	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
 
 	h := conf.HTTP
@@ -93,7 +93,7 @@ func (conf *Webconfig) NewOptions(files *serialization.Files, fs fs.FS) *server.
 
 	return &server.Options{
 		Port:          conf.Port,
-		FS:            fs,
+		FS:            fsys,
 		Location:      conf.location,
 		Cache:         conf.cache,
 		RouterOptions: r.options,

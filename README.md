@@ -76,7 +76,7 @@ func Module(s *web.Server) error {
 
 ## 字符集和文档类型
 
-文档类型由 `Server.Content` 指定。
+文档类型由 `Server.Mimetypes` 指定。
 字符类型无需用户指定，<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
 中列出的字符集都能自动转换。
 
@@ -97,7 +97,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 ## 错误处理
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
-具体实现可参考 `content.defaultResult` 的实现。
+具体实现可参考 `server.defaultResult` 的实现。
 
 ## 版权
 
