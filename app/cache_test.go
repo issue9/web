@@ -14,19 +14,19 @@ func TestWebconfig_buildCache(t *testing.T) {
 	l, err := logs.New(nil)
 	a.NotError(err).NotNil(l)
 
-	cfg := &Webconfig[empty]{logs: l}
+	cfg := &webconfig[empty]{logs: l}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Webconfig[empty]{Cache: &Cache{DSN: "1h"}}
+	cfg = &webconfig[empty]{Cache: &cacheConfig{DSN: "1h"}}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Webconfig[empty]{Cache: &Cache{Type: "memory", DSN: "1h"}}
+	cfg = &webconfig[empty]{Cache: &cacheConfig{Type: "memory", DSN: "1h"}}
 	a.NotError(cfg.buildCache())
 	a.NotNil(cfg.cache)
 
-	cfg = &Webconfig[empty]{Cache: &Cache{Type: "not-exists"}}
+	cfg = &webconfig[empty]{Cache: &cacheConfig{Type: "not-exists"}}
 	a.Error(cfg.buildCache())
 	a.Nil(cfg.cache)
 }

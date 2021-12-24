@@ -61,14 +61,14 @@ func TestNewOptions(t *testing.T) {
 func TestWebconfig_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	conf := &Webconfig[empty]{}
+	conf := &webconfig[empty]{}
 	a.NotError(conf.sanitize()).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.Router).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
-	conf = &Webconfig[empty]{Language: "zh-hans"}
+	conf = &webconfig[empty]{Language: "zh-hans"}
 	a.NotError(conf.sanitize()).
 		NotEqual(conf.languageTag, language.Und).
 		NotNil(conf.logs)
@@ -77,13 +77,13 @@ func TestWebconfig_sanitize(t *testing.T) {
 func TestWebconfig_buildTimezone(t *testing.T) {
 	a := assert.New(t, false)
 
-	conf := &Webconfig[empty]{}
+	conf := &webconfig[empty]{}
 	a.NotError(conf.buildTimezone()).Nil(conf.location)
 
-	conf = &Webconfig[empty]{Timezone: "Asia/Shanghai"}
+	conf = &webconfig[empty]{Timezone: "Asia/Shanghai"}
 	a.NotError(conf.buildTimezone()).NotNil(conf.location)
 
-	conf = &Webconfig[empty]{Timezone: "undefined"}
+	conf = &webconfig[empty]{Timezone: "undefined"}
 	err := conf.buildTimezone()
 	a.NotNil(err).Equal(err.Field, "timezone")
 }

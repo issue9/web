@@ -4,7 +4,7 @@ package app
 
 import "github.com/issue9/mux/v5"
 
-type Router struct {
+type router struct {
 	// 是否忽略大小写
 	//
 	// 如果为 true，那么客户请求的 URL 都将被转换为小写字符。
@@ -14,13 +14,12 @@ type Router struct {
 	// 跨域的相关设置
 	//
 	// 为空表示禁用跨域的相关设置。
-	CORS *CORS `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
+	CORS *cors `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
 
 	options []mux.Option
 }
 
-// CORS 跨域设置
-type CORS struct {
+type cors struct {
 	// Origins 对应 Origin
 	//
 	// 可以是 *，如果包含了 *，那么其它的设置将不再启作用。
@@ -48,7 +47,7 @@ type CORS struct {
 	AllowCredentials bool `yaml:"allowCredentials,omitempty" json:"allowCredentials,omitempty" xml:"allowCredentials,attr,omitempty"`
 }
 
-func (r *Router) sanitize() *Error {
+func (r *router) sanitize() *Error {
 	opts := make([]mux.Option, 0, 2)
 
 	if r.CORS != nil {
@@ -68,7 +67,7 @@ func (r *Router) sanitize() *Error {
 	return nil
 }
 
-func (c *CORS) sanitize() *Error {
+func (c *cors) sanitize() *Error {
 	for _, o := range c.Origins {
 		if o == "*" {
 			if c.AllowCredentials {
