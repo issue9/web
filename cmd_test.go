@@ -22,7 +22,7 @@ func TestCommand_sanitize(t *testing.T) {
 	cmd = &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, bool, string) error { return nil },
+		Init:    func(*Server, string) error { return nil },
 	}
 	a.NotError(cmd.sanitize())
 
@@ -35,7 +35,7 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd := &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, bool, string) error { return nil },
+		Init:    func(*Server, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
 	}
 	a.NotError(cmd.sanitize())
@@ -49,7 +49,7 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd = &Command{
 		Name:           "app",
 		Version:        "1.1.1",
-		Init:           func(*Server, bool, string) error { return nil },
+		Init:           func(*Server, string) error { return nil },
 		ConfigFilename: "testdata/web.yaml",
 	}
 	a.NotError(cmd.sanitize())
@@ -61,7 +61,7 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd = &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, bool, string) error { return nil },
+		Init:    func(*Server, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
 		Options: func(o *Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
 	}

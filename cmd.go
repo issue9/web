@@ -30,9 +30,9 @@ import (
 // 由 Command 生成的命令行带以下几个参数：
 //  - v 显示版本号；
 //  - h 显示帮助信息；
-//  - f 指定当前程序可读取的文件目录；
-//  - i 执行安装脚本，如果参数不为空，则执行指定的标签；
-//  - s 以服务运行，与 i 不能同时出现；
+//  - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
+//  - a 执行的动作，该值传递给 Init，由用户根据 a 决定初始化的方式，比如是安装数据还是注册路由等；
+//  - s 以服务的形式运行；
 //
 //  // 本地化命令行的帮助信息
 //  builder := catalog.NewBuilder()
@@ -48,8 +48,17 @@ import (
 //
 //  cmd.Exec()
 //
-// NOTE: Command 的本地化信息采用当前用户的默认语言，
-// 由 github.com/issue9/localeutil.DetectUserLanguageTag 读取。
+// Command 的本地化信息采用当前用户的默认语言，
+// 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
+// 如果想让 Command 支持本地化操作，最起码需要向 Catalog 注册以下几条信息：
+//  -v  show version
+//  -h  show help
+//  -f  set file system
+//  -a  action
+//  -s  run as server
+//
+// NOTE: Command 并不是必须的，只是为用户提供了一种简便的方式生成命令行，
+// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 NewServer 初始化 Server。
 type Command struct {
 	Name string // 程序名称
 
@@ -58,7 +67,7 @@ type Command struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
-	Init func(s *Server, serve bool, install string) error
+	Init func(s *Server, action string) error
 
 	// 触发退出的信号
 	//
@@ -90,13 +99,6 @@ type Command struct {
 	// 本地化的相关操作接口
 	//
 	// 如果为空，则会被初始化一个空对象，该值可能会被 Options 操作所覆盖。
-	//
-	// 当前命令行的翻译信息也由此对象提供，目前必须提供以下几个翻译项：
-	//  -v  show version
-	//  -h  show help
-	//  -f  set file system
-	//  -i  install key
-	//  -s  run as server
 	Catalog *catalog.Builder
 
 	// 通过信号触发退出时的等待时间
@@ -167,8 +169,8 @@ func (cmd *Command) exec() error {
 	v := cl.Bool("v", false, p.Sprintf("show version"))
 	h := cl.Bool("h", false, p.Sprintf("show help"))
 	f := cl.String("f", "./", p.Sprintf("set file system"))
-	i := cl.String("i", "", p.Sprintf("install key"))
-	s := cl.Bool("s", true, p.Sprintf("run as server"))
+	a := cl.String("a", "", p.Sprintf("action"))
+	s := cl.Bool("s", false, p.Sprintf("run as server"))
 
 	if err := cl.Parse(os.Args[1:]); err != nil {
 		return err
@@ -194,7 +196,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	if err := cmd.Init(srv, *s, *i); err != nil {
+	if err := cmd.Init(srv, *a); err != nil {
 		return err
 	}
 
