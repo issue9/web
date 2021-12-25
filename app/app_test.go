@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package web
 
 import (
 	"bytes"
@@ -8,10 +8,19 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/web/server"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/server"
 )
 
+type empty struct{}
+
+// 定义的与 config/testdata/user.xml/user 相同的数据
+type userData struct {
+	ID int `json:"id" yaml:"id" xml:"id,attr"`
+}
+
+func TestCommand_sanitize(t *testing.T) {
 func TestApp_Exec(t *testing.T) {
 	a := assert.New(t, false)
 
@@ -37,62 +46,64 @@ func TestApp_Exec(t *testing.T) {
 func TestApp_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &App{}
+	cmd := &Command[empty]{}
 	a.ErrorString(cmd.sanitize(), "Name")
 
-	cmd = &App{Name: "app", Version: "1.1.1"}
+	cmd = &Command[empty]{Name: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "Init")
 
-	cmd = &App{
+	cmd = &Command[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*server.Server, string) error { return nil },
+		Init:    func(*Server, *empty, string) error { return nil },
 	}
 	a.NotError(cmd.sanitize())
 
 	a.Equal(cmd.Out, os.Stdout)
 }
 
-func TestApp_initOptions(t *testing.T) {
+func TestCommand_initOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &App{
+	cmd := &Command[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*server.Server, string) error { return nil },
+		Init:    func(*Server, *empty, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
 	}
 	a.NotError(cmd.sanitize())
-	opt, err := cmd.initOptions(os.DirFS("./"))
-	a.NotError(err).NotNil(opt)
+	opt, user, err := cmd.initOptions(os.DirFS("./"))
+	a.NotError(err).NotNil(opt).Nil(user)
 	a.NotNil(opt.Catalog).
 		Equal(opt.Files, cmd.Files).
 		True(opt.Catalog == cmd.Catalog)
 
-	// 包含 ConfigFilename
-	cmd = &App{
-		Name:           "app",
-		Version:        "1.1.1",
-		Init:           func(*server.Server, string) error { return nil },
-		ConfigFilename: "web.yaml",
-	}
-	a.NotError(cmd.sanitize())
-	opt, err = cmd.initOptions(os.DirFS("./testdata"))
-	a.NotError(err).NotNil(opt)
-	a.NotNil(opt.Catalog).Equal(opt.Files, cmd.Files)
-
 	// 包含 Options
-	cmd = &App{
+	cmd = &Command[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*server.Server, string) error { return nil },
+		Init:    func(*Server, *empty, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
-		Options: func(o *server.Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
+		Options: func(o *Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
 	}
 	a.NotError(cmd.sanitize())
-	opt, err = cmd.initOptions(os.DirFS("./config"))
-	a.NotError(err).NotNil(opt)
+	opt, user, err = cmd.initOptions(os.DirFS("./config"))
+	a.NotError(err).NotNil(opt).Nil(user)
 	a.NotNil(opt.Catalog).
 		Equal(opt.Files, cmd.Files).
 		False(opt.Catalog == cmd.Catalog) // 不指向同一个对象
+
+	// 包含 ConfigFilename
+	cmd2 := &Command[userData]{
+		Name:           "app",
+		Version:        "1.1.1",
+		Init:           func(*Server, *userData, string) error { return nil },
+		ConfigFilename: "testdata/user.xml",
+	}
+	a.NotError(cmd2.sanitize())
+	opt2, user2, err := cmd2.initOptions(os.DirFS("./config"))
+	a.NotError(err).NotNil(opt2).NotNil(user2)
+	a.NotNil(opt2.Catalog).
+		Equal(opt2.Files, cmd2.Files).
+		Equal(user2.ID, 1)
 }

@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 提供可选的初始化程序的方法
-//
-// NOTE: app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
-// 相对地也会有诸多限制，如果觉得不适用，可以直接使用 server.New 下的内容。
-package app
+package web
 
 import (
 	"encoding/json"
@@ -24,11 +20,12 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
+	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
 
-// App 提供一种简单的命令行生成方式
+// Command 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
 //  - v 显示版本号；
@@ -39,7 +36,7 @@ import (
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 App 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+// 如果想让 Command 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
 //  -v  show version
 //  -h  show help
 //  -f  set file system
@@ -59,8 +56,13 @@ import (
 //      Catalog: builder,
 //  }
 //
-//  app.Exec()
-type App struct {
+//  cmd.Exec()
+//
+// T 表示的是配置文件中的用户自定义数据类型，如果不需要可以为空，即 struct{}。
+//
+// NOTE: Command 并不是必须的，只是为用户提供了一种简便的方式生成命令行，
+// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 NewServer 初始化 Server。
+type Command[T any] struct {
 	Name string // 程序名称
 
 	Version string // 程序版本
@@ -68,12 +70,12 @@ type App struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
-	Init func(s *server.Server, action string) error
+	Init func(s *Server, user *T, action string) error
 
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
-	Options func(*server.Options)
+	Options func(*Options)
 
 	// 命令行输出信息的通道
 	//
@@ -84,7 +86,7 @@ type App struct {
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
 	// 该值可能会被 Options 操作所覆盖。
-	Files *serialization.Files
+	Files *Files
 
 	// 配置文件的文件名
 	//
@@ -111,14 +113,14 @@ type App struct {
 // Exec 执行命令行操作
 //
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
-func (cmd *App) Exec(args []string) error {
+func (cmd *Command[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
 		panic(err) // Command 配置错误直接 panic
 	}
 	return cmd.exec(args)
 }
 
-func (cmd *App) sanitize() error {
+func (cmd *Command[T]) sanitize() error {
 	if cmd.Name == "" {
 		return errors.New("字段 Name 不能为空")
 	}
@@ -164,7 +166,7 @@ func (cmd *App) sanitize() error {
 	return nil
 }
 
-func (cmd *App) exec(args []string) error {
+func (cmd *Command[T]) exec(args []string) error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
@@ -189,17 +191,17 @@ func (cmd *App) exec(args []string) error {
 		return nil
 	}
 
-	opt, err := cmd.initOptions(os.DirFS(*f))
+	opt, user, err := cmd.initOptions(os.DirFS(*f))
 	if err != nil {
 		return err
 	}
 
-	srv, err := server.New(cmd.Name, cmd.Version, opt)
+	srv, err := NewServer(cmd.Name, cmd.Version, opt)
 	if err != nil {
 		return err
 	}
 
-	if err := cmd.Init(srv, *a); err != nil {
+	if err := cmd.Init(srv, user, *a); err != nil {
 		return err
 	}
 
@@ -214,14 +216,14 @@ func (cmd *App) exec(args []string) error {
 	return srv.Serve()
 }
 
-func (cmd *App) initOptions(fsys fs.FS) (opt *server.Options, err error) {
+func (cmd *Command[T]) initOptions(fsys fs.FS) (opt *Options, user *T, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, err = NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
+		opt, user, err = config.NewOptions[T](cmd.Files, fsys, cmd.ConfigFilename)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
-		opt = &server.Options{
+		opt = &Options{
 			FS:    fsys,
 			Files: cmd.Files,
 		}
@@ -232,10 +234,10 @@ func (cmd *App) initOptions(fsys fs.FS) (opt *server.Options, err error) {
 		cmd.Options(opt)
 	}
 
-	return opt, nil
+	return opt, user, nil
 }
 
-func (cmd *App) grace(s *server.Server, sig ...os.Signal) {
+func (cmd *Command[T]) grace(s *server.Server, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, sig...)
