@@ -128,6 +128,30 @@ func TestDefaultResultXML(t *testing.T) {
 	a.Equal(obj, simpleMimetypeResult)
 }
 
+func TestDefaultResultProtobuf(t *testing.T) {
+	a := assert.New(t, false)
+
+	// marshal mimetypeResult
+	bs, err := proto.Marshal(mimetypeResult)
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `TODO`)
+
+	// unmarshal mimetypeResult
+	obj := &defaultResult{}
+	a.NotError(proto.Unmarshal(bs, obj))
+	a.Equal(obj, mimetypeResult)
+
+	// marshal simpleMimetypesResult
+	bs, err = proto.Marshal(simpleMimetypeResult)
+	a.NotError(err).NotNil(bs)
+	a.Equal(string(bs), `TODO`)
+
+	// unmarshal simpleMimetypesResult
+	obj = &defaultResult{}
+	a.NotError(proto.Unmarshal(bs, obj))
+	a.Equal(obj, simpleMimetypeResult)
+}
+
 func TestDefaultResultYAML(t *testing.T) {
 	a := assert.New(t, false)
 
