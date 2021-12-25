@@ -25,7 +25,8 @@ import (
 
 func TestContext_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
 	ctx := newServer(a, nil).NewContext(w, r)
@@ -56,7 +57,8 @@ func TestServer_NewContext(t *testing.T) {
 
 	// 错误的 accept
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err := http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "not")
 	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusNotAcceptable)
@@ -65,7 +67,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 accept-charset
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", text.Mimetype)
 	r.Header.Set("Accept-Charset", "unknown")
 	srv.NewContext(w, r)
@@ -75,7 +78,7 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 content-type,无输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
@@ -84,7 +87,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 content-type,有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
+	r, err = http.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("[]"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
@@ -93,7 +97,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("content-type", buildContentType(text.Mimetype, "utf-"))
 	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
@@ -102,7 +107,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 部分错误的 Accept-Language
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx")
 	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx := srv.NewContext(w, r)
@@ -113,7 +119,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 正常，指定 Accept-Language，采用默认的 accept
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7")
 	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	ctx = srv.NewContext(w, r)
@@ -128,7 +135,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	r.Header.Set("accept", "application/json;q=0.2,text/plain;q=0.9")
 	ctx = srv.NewContext(w, r)
@@ -140,7 +148,8 @@ func TestServer_NewContext(t *testing.T) {
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("content-type", buildContentType(text.Mimetype, DefaultCharset))
 	r.Header.Set("accept", "application/json;q=0.2,text/*;q=0.9")
 	ctx = srv.NewContext(w, r)
@@ -152,7 +161,8 @@ func TestServer_NewContext(t *testing.T) {
 
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t, false)
-	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
 
 	// 未缓存
@@ -171,21 +181,25 @@ func TestContext_Body(t *testing.T) {
 	a.Equal(ctx.body, data)
 
 	// 采用 Nop 即 utf-8 编码
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
 		OutputCharset: encoding.Nop,
 		InputCharset:  encoding.Nop,
-		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123")),
 		Response:      httptest.NewRecorder(),
+		Request:       r,
 	}
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
 		OutputCharset: encoding.Nop,
 		InputCharset:  simplifiedchinese.GB18030,
-		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1)),
+		Request:       r,
 		Response:      httptest.NewRecorder(),
 	}
 	data, err = ctx.Body()
@@ -195,7 +209,8 @@ func TestContext_Body(t *testing.T) {
 	// 采用不同的编码
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Content-Type", buildContentType(text.Mimetype, " gb18030"))
 	ctx = srv.NewContext(w, r)
@@ -208,8 +223,10 @@ func TestContext_Body(t *testing.T) {
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
 
+	r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("test,123"))
+	a.NotError(err).NotNil(r)
 	ctx := &Context{
-		Request:       httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("test,123")),
+		Request:       r,
 		Response:      httptest.NewRecorder(),
 		InputMimetype: text.Unmarshal,
 	}
@@ -228,7 +245,8 @@ func TestContext_Marshal(t *testing.T) {
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	// 自定义报头
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err := http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
 	r.Header.Set("Content-Type", text.Mimetype)
 	r.Header.Set("Accept", text.Mimetype)
@@ -242,8 +260,10 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(w.Header().Get("content-language"), "zh-hans")
 
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:        r,
 		Response:       w,
 		OutputMimetype: text.Marshal,
 	}
@@ -255,8 +275,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	// 输出 nil
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:        r,
 		Response:       w,
 		OutputMimetype: text.Marshal,
 		OutputTag:      language.MustParse("zh-Hans"),
@@ -268,8 +290,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	// 输出不同编码的内容
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:           httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:           r,
 		Response:          w,
 		OutputMimetype:    text.Marshal,
 		OutputTag:         language.MustParse("zh-Hans"),
@@ -282,8 +306,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	// OutputMimetype == nil
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:  httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:  r,
 		Response: w,
 	}
 	a.NotError(ctx.Marshal(http.StatusCreated, "val", nil))
@@ -291,8 +317,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	// OutputMimetype 返回 serialization.ErrUnsupported
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:        r,
 		Response:       w,
 		OutputMimetype: text.Marshal,
 	}
@@ -301,8 +329,10 @@ func TestContext_Marshal(t *testing.T) {
 
 	// OutputMimetype 返回错误
 	w = httptest.NewRecorder()
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx = &Context{
-		Request:        httptest.NewRequest(http.MethodGet, "/path", nil),
+		Request:        r,
 		Response:       w,
 		OutputMimetype: text.Marshal,
 	}
@@ -325,11 +355,13 @@ func TestContext_IsXHR(t *testing.T) {
 		return nil
 	})
 
-	r := httptest.NewRequest(http.MethodGet, "/not-xhr", nil)
+	r, err := http.NewRequest(http.MethodGet, "/not-xhr", nil)
+	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
 	router.MuxRouter().ServeHTTP(w, r)
 
-	r = httptest.NewRequest(http.MethodGet, "/xhr", nil)
+	r, err = http.NewRequest(http.MethodGet, "/xhr", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("X-Requested-With", "XMLHttpRequest")
 	w = httptest.NewRecorder()
 	router.MuxRouter().ServeHTTP(w, r)
@@ -386,7 +418,8 @@ func TestServer_Location(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/test", nil)
+	r, err := http.NewRequest(http.MethodGet, "/test", nil)
+	a.NotError(err).NotNil(r)
 	ctx := srv.NewContext(w, r)
 
 	now := ctx.Now()
@@ -395,7 +428,8 @@ func TestServer_Location(t *testing.T) {
 
 func TestContext_Read(t *testing.T) {
 	a := assert.New(t, false)
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
+	r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("test,123"))
+	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
 	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
 	ctx := newServer(a, nil).NewContext(w, r)
@@ -414,31 +448,34 @@ func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err := http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	ctx := newServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)
 
-	// httptest.NewRequest 会直接将  remote-addr 赋值为 192.0.2.1 无法测试
-	r, err := http.NewRequest(http.MethodPost, "/path", nil)
+	r, err = http.NewRequest(http.MethodPost, "/path", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("x-real-ip", "192.168.1.1:8080")
 	ctx = newServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.1.1:8080")
 
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err = http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	ctx = newServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 
 	// 测试获取 IP 报头的优先级
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err = http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	r.Header.Set("x-real-ip", "192.168.2.2")
 	ctx = newServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 
 	// 测试获取 IP 报头的优先级
-	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r, err = http.NewRequest(http.MethodPost, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Remote-Addr", "192.168.2.0")
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	r.Header.Set("x-real-ip", "192.168.2.2")
@@ -464,7 +501,8 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err := http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("accept-language", "cmn-hant")
 	r.Header.Set("accept", text.Mimetype)
 	ctx := srv.NewContext(w, r)
@@ -473,7 +511,8 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a.Equal(w.Body.String(), "測試")
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("accept-language", "cmn-hans")
 	r.Header.Set("accept", text.Mimetype)
 	ctx = srv.NewContext(w, r)

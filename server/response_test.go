@@ -65,7 +65,8 @@ func TestServer_FileServer(t *testing.T) {
 	a.NotNil(r)
 	r.Get("/admin/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
+	a.NotError(err).NotNil(req)
 	server.group.ServeHTTP(w, req)
 	a.Equal(w.Result().StatusCode, http.StatusOK)
 }
@@ -83,7 +84,7 @@ func TestContext_Critical(t *testing.T) {
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:85") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:86") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1 log2")
 }
 
@@ -120,7 +121,8 @@ func TestContext_Criticalf(t *testing.T) {
 func TestContext_ResultWithFields(t *testing.T) {
 	a := assert.New(t, false)
 
-	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -146,7 +148,8 @@ func TestContext_Result(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err := http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("accept-language", language.SimplifiedChinese.String())
 	r.Header.Set("accept", "application/json")
 	ctx := srv.NewContext(w, r)
@@ -156,7 +159,8 @@ func TestContext_Result(t *testing.T) {
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
@@ -165,7 +169,8 @@ func TestContext_Result(t *testing.T) {
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("accept-language", "en-US")
 	r.Header.Set("accept", "application/json")
 	ctx = srv.NewContext(w, r)
@@ -181,7 +186,8 @@ func TestContext_Result(t *testing.T) {
 func TestContext_Redirect(t *testing.T) {
 	a := assert.New(t, false)
 
-	r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

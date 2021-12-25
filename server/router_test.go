@@ -182,14 +182,16 @@ func TestRouter_NewRouter(t *testing.T) {
 
 	router.Prefix("/p1").Delete("/path", f204)
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	r, err := http.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	a.NotError(err).NotNil(r)
 	srv.group.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNoContent)
 
 	// 删除整个路由
 	srv.RemoveRouter("host")
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	r, err = http.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
+	a.NotError(err).NotNil(r)
 	srv.group.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusNotFound)
 }
