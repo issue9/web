@@ -27,12 +27,22 @@ import (
 
 // Command 提供一种简单的命令行生成方式
 //
-// 由 Command 生成的命令行带以下几个参数：
+// 生成的命令行带以下几个参数：
 //  - v 显示版本号；
 //  - h 显示帮助信息；
 //  - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
 //  - a 执行的动作，该值传递给 Init，由用户根据 a 决定初始化的方式，比如是安装数据还是注册路由等；
 //  - s 以服务的形式运行；
+//
+// 本地化信息采用当前用户的默认语言，
+// 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
+// 如果想让 Command 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+//  -v  show version
+//  -h  show help
+//  -f  set file system
+//  -a  action
+//  -s  run as server
+// 对于 Command 的初始化错误产生的 panic 信息是不支持本地的。
 //
 //  // 本地化命令行的帮助信息
 //  builder := catalog.NewBuilder()
@@ -48,15 +58,6 @@ import (
 //
 //  cmd.Exec()
 //
-// Command 的本地化信息采用当前用户的默认语言，
-// 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 Command 支持本地化操作，最起码需要向 Catalog 注册以下几条信息：
-//  -v  show version
-//  -h  show help
-//  -f  set file system
-//  -a  action
-//  -s  run as server
-//
 // NOTE: Command 并不是必须的，只是为用户提供了一种简便的方式生成命令行，
 // 相对地也会有诸多限制，如果觉得不适用，可以自行调用 NewServer 初始化 Server。
 type Command struct {
@@ -68,11 +69,6 @@ type Command struct {
 	//
 	// 比如添加模块等。不可以为空。
 	Init func(s *Server, action string) error
-
-	// 触发退出的信号
-	//
-	// 为空(nil 或是 []) 表示没有。
-	Signals []os.Signal
 
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
@@ -100,6 +96,11 @@ type Command struct {
 	//
 	// 如果为空，则会被初始化一个空对象，该值可能会被 Options 操作所覆盖。
 	Catalog *catalog.Builder
+
+	// 触发退出的信号
+	//
+	// 为空(nil 或是 []) 表示没有。
+	Signals []os.Signal
 
 	// 通过信号触发退出时的等待时间
 	SignalTimeout time.Duration

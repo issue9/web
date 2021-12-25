@@ -17,7 +17,7 @@ const (
 	panicTimer = 50 * tickTimer // windows 下此值不能过小，否则测试容易出错
 )
 
-func buildSrv1() (f Func, start, exit chan struct{}) {
+func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -45,7 +45,7 @@ func buildSrv1() (f Func, start, exit chan struct{}) {
 }
 
 // panic
-func buildSrv2() (f Func, start, exit chan struct{}) {
+func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -77,7 +77,7 @@ func buildSrv2() (f Func, start, exit chan struct{}) {
 }
 
 // error
-func buildSrv3() (f Func, start, exit chan struct{}) {
+func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 

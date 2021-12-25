@@ -19,17 +19,17 @@ const (
 )
 
 type (
-	// Func 服务实际需要执行的函数
+	// ServiceFunc 服务实际需要执行的函数
 	//
 	// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
 	// 如果是通 ctx.Done 取消的，应该返回 context.Canceled。
-	Func func(ctx context.Context) error
+	ServiceFunc func(ctx context.Context) error
 
 	// Service 服务模型
 	Service struct {
 		srv        *Server
 		Title      string
-		f          Func
+		f          ServiceFunc
 		cancelFunc context.CancelFunc
 		err        error // 保存上次的出错内容
 
@@ -51,7 +51,7 @@ type (
 // title 是对该服务的简要说明。
 //
 // NOTE: 如果 Manager 的所有服务已经处于运行的状态，则会自动运行新添加的服务。
-func (srv *Server) AddService(title string, f Func) {
+func (srv *Server) AddService(title string, f ServiceFunc) {
 	s := &Service{
 		srv:   srv,
 		Title: title,

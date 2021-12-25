@@ -44,36 +44,6 @@ func Module(s *web.Server) error {
 }
 ```
 
-## 模块
-
-在 web 中项目以模块进行划分。每个模块返回一个 *web.Module 实例，
-向项目注册自己的模块信息，在项目进行初始化时，会按照模块的依赖关系进行初始化。
-
-用户可以在模块信息中添加当前模块的路由信息、服务、计划任务等，
-这些功能在模块初始化时进行统一的注册初始化。
-
-```go
-package m1
-
-import "github.com/issue9/web"
-
-func Module(s *web.Server) error {
-    m := s.NewModule("test", "1.0.0", "测试模块")
-
-    a := m.Action("serve")
-    a.AddInit(func() error {
-        // TODO 此处可以添加初始化模块的相关代码
-        return nil
-    }, "初始化函数描述")
-
-    a.AddService(func(ctx web.Context) error {
-        // TODO 此处添加服务代码
-    }, "服务描述")
-
-    return nil
-}
-```
-
 ## 字符集和文档类型
 
 文档类型由 `Server.Mimetypes` 指定。
