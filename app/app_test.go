@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package app
 
 import (
 	"bytes"
@@ -13,24 +13,16 @@ import (
 	"github.com/issue9/web/server"
 )
 
-type empty struct{}
-
-// 定义的与 config/testdata/user.xml/user 相同的数据
-type userData struct {
-	ID int `json:"id" yaml:"id" xml:"id,attr"`
-}
-
-func TestCommand_sanitize(t *testing.T) {
 func TestApp_Exec(t *testing.T) {
 	a := assert.New(t, false)
 
 	bs := new(bytes.Buffer)
 	var action string
-	aa := &App{
+	aa := &App[empty]{
 		Name:    "test",
 		Version: "1.0.0",
 		Out:     bs,
-		Init: func(s *server.Server, act string) error {
+		Init: func(s *server.Server, user *empty, act string) error {
 			action = act
 			return nil
 		},
@@ -46,16 +38,16 @@ func TestApp_Exec(t *testing.T) {
 func TestApp_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &Command[empty]{}
+	cmd := &App[empty]{}
 	a.ErrorString(cmd.sanitize(), "Name")
 
-	cmd = &Command[empty]{Name: "app", Version: "1.1.1"}
+	cmd = &App[empty]{Name: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "Init")
 
-	cmd = &Command[empty]{
+	cmd = &App[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, *empty, string) error { return nil },
+		Init:    func(*server.Server, *empty, string) error { return nil },
 	}
 	a.NotError(cmd.sanitize())
 
@@ -65,10 +57,10 @@ func TestApp_sanitize(t *testing.T) {
 func TestCommand_initOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &Command[empty]{
+	cmd := &App[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, *empty, string) error { return nil },
+		Init:    func(*server.Server, *empty, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
 	}
 	a.NotError(cmd.sanitize())
@@ -79,29 +71,29 @@ func TestCommand_initOptions(t *testing.T) {
 		True(opt.Catalog == cmd.Catalog)
 
 	// 包含 Options
-	cmd = &Command[empty]{
+	cmd = &App[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, *empty, string) error { return nil },
+		Init:    func(*server.Server, *empty, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
-		Options: func(o *Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
+		Options: func(o *server.Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
 	}
 	a.NotError(cmd.sanitize())
-	opt, user, err = cmd.initOptions(os.DirFS("./config"))
+	opt, user, err = cmd.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt).Nil(user)
 	a.NotNil(opt.Catalog).
 		Equal(opt.Files, cmd.Files).
 		False(opt.Catalog == cmd.Catalog) // 不指向同一个对象
 
 	// 包含 ConfigFilename
-	cmd2 := &Command[userData]{
+	cmd2 := &App[userData]{
 		Name:           "app",
 		Version:        "1.1.1",
-		Init:           func(*Server, *userData, string) error { return nil },
-		ConfigFilename: "testdata/user.xml",
+		Init:           func(*server.Server, *userData, string) error { return nil },
+		ConfigFilename: "user.xml",
 	}
 	a.NotError(cmd2.sanitize())
-	opt2, user2, err := cmd2.initOptions(os.DirFS("./config"))
+	opt2, user2, err := cmd2.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt2).NotNil(user2)
 	a.NotNil(opt2.Catalog).
 		Equal(opt2.Files, cmd2.Files).
