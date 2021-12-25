@@ -14,12 +14,12 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"

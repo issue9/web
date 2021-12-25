@@ -121,10 +121,6 @@ func (router *Router) Remove(path string, method ...string) {
 }
 
 // URL 构建完整的 URL
-//
-// 功能与 mux.Router.URL 相似，但是加上了关联的域名地址。比如根地址是 https://example.com/blog
-// pattern 为 /posts/{id}，则返回为 https://example.com/blog/posts/1。
-// 如果 params 为空的话，则会直接将 pattern 作为从 mux 转换之后的内容与 router.root 合并返回。
 func (router *Router) URL(strict bool, pattern string, params map[string]string) (string, error) {
 	return router.router.URL(strict, pattern, params)
 }
@@ -141,7 +137,6 @@ func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
 	}
 }
 
-// Handle 添加路由项
 func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
 	p.router.handle(p.prefix+path, h, p.filters, method...)
 	return p
