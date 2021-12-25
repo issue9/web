@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package config
 
 import (
 	"os"
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/web/server"
 	"golang.org/x/text/message/catalog"
 )
 
@@ -22,7 +23,7 @@ func TestCommand_sanitize(t *testing.T) {
 	cmd = &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, string) error { return nil },
+		Init:    func(*server.Server, string) error { return nil },
 	}
 	a.NotError(cmd.sanitize())
 
@@ -35,7 +36,7 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd := &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, string) error { return nil },
+		Init:    func(*server.Server, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
 	}
 	a.NotError(cmd.sanitize())
@@ -49,11 +50,11 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd = &Command{
 		Name:           "app",
 		Version:        "1.1.1",
-		Init:           func(*Server, string) error { return nil },
-		ConfigFilename: "testdata/web.yaml",
+		Init:           func(*server.Server, string) error { return nil },
+		ConfigFilename: "web.yaml",
 	}
 	a.NotError(cmd.sanitize())
-	opt, err = cmd.initOptions(os.DirFS("./config"))
+	opt, err = cmd.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt)
 	a.NotNil(opt.Catalog).Equal(opt.Files, cmd.Files)
 
@@ -61,9 +62,9 @@ func TestCommand_initOptions(t *testing.T) {
 	cmd = &Command{
 		Name:    "app",
 		Version: "1.1.1",
-		Init:    func(*Server, string) error { return nil },
+		Init:    func(*server.Server, string) error { return nil },
 		Catalog: catalog.NewBuilder(),
-		Options: func(o *Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
+		Options: func(o *server.Options) { o.Catalog = catalog.NewBuilder() }, // 改变了 Catalog
 	}
 	a.NotError(cmd.sanitize())
 	opt, err = cmd.initOptions(os.DirFS("./config"))

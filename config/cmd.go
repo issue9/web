@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package config
 
 import (
 	"encoding/json"
@@ -20,7 +20,6 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/config"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -68,12 +67,12 @@ type Command struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
-	Init func(s *Server, action string) error
+	Init func(s *server.Server, action string) error
 
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
-	Options func(*Options)
+	Options func(*server.Options)
 
 	// 命令行输出信息的通道
 	//
@@ -84,7 +83,7 @@ type Command struct {
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
 	// 该值可能会被 Options 操作所覆盖。
-	Files *Files
+	Files *serialization.Files
 
 	// 配置文件的文件名
 	//
@@ -192,7 +191,7 @@ func (cmd *Command) exec() error {
 		return err
 	}
 
-	srv, err := NewServer(cmd.Name, cmd.Version, opt)
+	srv, err := server.New(cmd.Name, cmd.Version, opt)
 	if err != nil {
 		return err
 	}
@@ -212,14 +211,14 @@ func (cmd *Command) exec() error {
 	return srv.Serve()
 }
 
-func (cmd *Command) initOptions(fsys fs.FS) (opt *Options, err error) {
+func (cmd *Command) initOptions(fsys fs.FS) (opt *server.Options, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, err = config.NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
+		opt, err = NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		opt = &Options{
+		opt = &server.Options{
 			FS:    fsys,
 			Files: cmd.Files,
 		}
