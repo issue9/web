@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package config
+package app
 
 import "github.com/issue9/mux/v5"
 

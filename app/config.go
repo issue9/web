@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package config 提供了从配置文件初始化 server.Options 的方法
-package config
+package app
 
 import (
 	"github.com/issue9/localeutil"

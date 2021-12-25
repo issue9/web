@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-package config
+// Package app 提供可选的初始化程序的方法
+//
+// NOTE: app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
+// 相对地也会有诸多限制，如果觉得不适用，可以直接使用 server.New 下的内容。
+package app
 
 import (
 	"encoding/json"
@@ -24,7 +28,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Command 提供一种简单的命令行生成方式
+// App 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
 //  - v 显示版本号；
@@ -35,31 +39,28 @@ import (
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 Command 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+// 如果想让 App 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
 //  -v  show version
 //  -h  show help
 //  -f  set file system
 //  -a  action
 //  -s  run as server
-// 对于 Command 的初始化错误产生的 panic 信息是不支持本地的。
+// 对于 App 的初始化错误产生的 panic 信息是不支持本地的。
 //
 //  // 本地化命令行的帮助信息
 //  builder := catalog.NewBuilder()
 //  builder.SetString("show help", "显示帮助信息")
 //  builder.SetString("show version", "显示版本信息")
 //
-//  cmd := &web.Command{
+//  app := &web.App{
 //      Name: "app",
 //      Version: "1.0.0",
 //      Init: func(s *Server) error {...},
 //      Catalog: builder,
 //  }
 //
-//  cmd.Exec()
-//
-// NOTE: Command 并不是必须的，只是为用户提供了一种简便的方式生成命令行，
-// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 NewServer 初始化 Server。
-type Command struct {
+//  app.Exec()
+type App struct {
 	Name string // 程序名称
 
 	Version string // 程序版本
@@ -108,14 +109,14 @@ type Command struct {
 }
 
 // Exec 执行命令行操作
-func (cmd *Command) Exec() error {
+func (cmd *App) Exec() error {
 	if err := cmd.sanitize(); err != nil {
 		panic(err) // Command 配置错误直接 panic
 	}
 	return cmd.exec()
 }
 
-func (cmd *Command) sanitize() error {
+func (cmd *App) sanitize() error {
 	if cmd.Name == "" {
 		return errors.New("字段 Name 不能为空")
 	}
@@ -161,7 +162,7 @@ func (cmd *Command) sanitize() error {
 	return nil
 }
 
-func (cmd *Command) exec() error {
+func (cmd *App) exec() error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
@@ -211,7 +212,7 @@ func (cmd *Command) exec() error {
 	return srv.Serve()
 }
 
-func (cmd *Command) initOptions(fsys fs.FS) (opt *server.Options, err error) {
+func (cmd *App) initOptions(fsys fs.FS) (opt *server.Options, err error) {
 	if cmd.ConfigFilename != "" {
 		opt, err = NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
 		if err != nil {
@@ -232,7 +233,7 @@ func (cmd *Command) initOptions(fsys fs.FS) (opt *server.Options, err error) {
 	return opt, nil
 }
 
-func (cmd *Command) grace(s *server.Server, sig ...os.Signal) {
+func (cmd *App) grace(s *server.Server, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, sig...)

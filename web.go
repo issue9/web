@@ -8,8 +8,7 @@ import (
 
 	"github.com/issue9/localeutil"
 
-	"github.com/issue9/web/config"
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/server"
 )
 
@@ -26,8 +25,7 @@ type (
 	Router       = server.Router
 	ResultFields = server.ResultFields
 	Result       = server.Result
-	Files        = serialization.Files
-	Command      = config.Command
+	App          = app.App
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//

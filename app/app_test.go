@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package config
+package app
 
 import (
 	"os"
@@ -11,16 +11,16 @@ import (
 	"golang.org/x/text/message/catalog"
 )
 
-func TestCommand_sanitize(t *testing.T) {
+func TestApp_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &Command{}
+	cmd := &App{}
 	a.ErrorString(cmd.sanitize(), "Name")
 
-	cmd = &Command{Name: "app", Version: "1.1.1"}
+	cmd = &App{Name: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "Init")
 
-	cmd = &Command{
+	cmd = &App{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, string) error { return nil },
@@ -30,10 +30,10 @@ func TestCommand_sanitize(t *testing.T) {
 	a.Equal(cmd.Out, os.Stdout)
 }
 
-func TestCommand_initOptions(t *testing.T) {
+func TestApp_initOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &Command{
+	cmd := &App{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, string) error { return nil },
@@ -47,7 +47,7 @@ func TestCommand_initOptions(t *testing.T) {
 		True(opt.Catalog == cmd.Catalog)
 
 	// 包含 ConfigFilename
-	cmd = &Command{
+	cmd = &App{
 		Name:           "app",
 		Version:        "1.1.1",
 		Init:           func(*server.Server, string) error { return nil },
@@ -59,7 +59,7 @@ func TestCommand_initOptions(t *testing.T) {
 	a.NotNil(opt.Catalog).Equal(opt.Files, cmd.Files)
 
 	// 包含 Options
-	cmd = &Command{
+	cmd = &App{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, string) error { return nil },
