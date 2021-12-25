@@ -79,6 +79,7 @@ func TestServer_NewContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
 	r.Header.Set("Content-Type", ";charset=utf-8")
 	srv.NewContext(w, r)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
