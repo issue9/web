@@ -36,7 +36,7 @@ type Cache struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *Webconfig) buildCache() *Error {
+func (conf *Config) buildCache() *Error {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil

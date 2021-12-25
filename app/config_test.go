@@ -3,42 +3,69 @@
 package app
 
 import (
+	"encoding/xml"
+	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v2"
 
-	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serialization"
 )
 
-var (
-	_ error                     = &Error{}
-	_ localeutil.LocaleStringer = &Error{}
-)
-
-func TestError_LocaleString(t *testing.T) {
+func TestNewOptions(t *testing.T) {
 	a := assert.New(t, false)
-	hans := language.MustParse("cmn-hans")
-	hant := language.MustParse("cmn-hant")
+	files := serialization.NewFiles(5)
 
-	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
-	a.NotNil(locale)
-	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-	a.NotError(locale.LoadFileFS(locales.Locales, "*.yml"))
+	opt, err := NewOptions(files, os.DirFS("./testdata"), "web.yaml")
+	a.Error(err).Nil(opt)
 
-	b := locale.Builder()
-	a.NotError(b.SetString(hans, "k1", "cn1"))
-	a.NotError(b.SetString(hant, "k1", "tw1"))
+	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	cnp := locale.Printer(hans)
-	twp := locale.Printer(hant)
+	opt, err = NewOptions(files, os.DirFS("./testdata"), "web.yaml")
+	a.NotError(err).NotNil(opt)
+	a.Equal(opt.Tag, language.Und)
 
-	err := &Error{Message: localeutil.Error("k1"), Config: "path"}
-	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))
-	a.Equal("位于 path: 发生了 tw1", err.LocaleString(twp))
-	a.Equal("k1 at path:", err.LocaleString(localeutil.EmptyPrinter()))
+	opt, err = NewOptions(files, os.DirFS("./testdata/not-exists"), "web.yaml")
+	a.ErrorIs(err, fs.ErrNotExist).Nil(opt)
+
+	opt, err = NewOptions(files, os.DirFS("./testdata"), "invalid-web.xml")
+	a.Error(err).Nil(opt)
+	err2, ok := err.(*Error)
+	a.True(ok).NotNil(err2)
+	a.Equal(err2.Config, "invalid-web.xml").
+		Equal(err2.Field, "router.cors.allowCredentials")
+}
+
+func TestWebconfig_sanitize(t *testing.T) {
+	a := assert.New(t, false)
+
+	conf := &Config{}
+	a.NotError(conf.sanitize()).
+		Equal(conf.languageTag, language.Und).
+		NotNil(conf.Router).
+		NotNil(conf.HTTP).
+		Nil(conf.location)
+
+	conf = &Config{Language: "zh-hans"}
+	a.NotError(conf.sanitize()).
+		NotEqual(conf.languageTag, language.Und).
+		NotNil(conf.logs)
+}
+
+func TestWebconfig_buildTimezone(t *testing.T) {
+	a := assert.New(t, false)
+
+	conf := &Config{}
+	a.NotError(conf.buildTimezone()).Nil(conf.location)
+
+	conf = &Config{Timezone: "Asia/Shanghai"}
+	a.NotError(conf.buildTimezone()).NotNil(conf.location)
+
+	conf = &Config{Timezone: "undefined"}
+	err := conf.buildTimezone()
+	a.NotNil(err).Equal(err.Field, "timezone")
 }
