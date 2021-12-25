@@ -86,20 +86,13 @@ func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*s
 		return nil, nil, err
 	}
 
-	opt, t := conf.newOptions(files, f)
-	return opt, t, nil
-}
-
-func (conf *webconfig[T]) newOptions(files *serialization.Files, fs fs.FS) (*server.Options, *T) {
 	h := conf.HTTP
-	r := conf.Router
-
 	return &server.Options{
 		Port:          conf.Port,
-		FS:            fs,
+		FS:            f,
 		Location:      conf.location,
 		Cache:         conf.cache,
-		RouterOptions: r.options,
+		RouterOptions: conf.Router.options,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -111,7 +104,7 @@ func (conf *webconfig[T]) newOptions(files *serialization.Files, fs fs.FS) (*ser
 		},
 		Logs:  conf.logs,
 		Files: files,
-	}, conf.User
+	}, conf.User, nil
 }
 
 func (conf *webconfig[T]) sanitize() error {
