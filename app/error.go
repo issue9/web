@@ -15,9 +15,8 @@ type Error struct {
 	Value   interface{} // 原始值
 }
 
-// Sanitizer 自定义配置文件格式需要实现的接口
+// Sanitizer 实现了数据验证和检测功能
 type Sanitizer interface {
-	// Sanitize 对整个配置对象内容的检测
 	Sanitize() *Error
 }
 
