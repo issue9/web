@@ -22,20 +22,25 @@ const Mimetype = "text/html"
 
 // Template 传递给 Marshal 的参数
 type Template struct {
-	Template *template.Template
-	Name     string      // 模块名称
-	Data     interface{} // 传递给模板的数据
+	// NOTE: Template 的字段值不能是可导出的。
+	//
+	// 当用户的 accept 报头是 json 时，输出 Template
+	// 会使其所有的公开字段都被输出到客户端，
+	// 存在一定的安全隐患。
+	tpl  *template.Template
+	name string      // 模块名称
+	data interface{} // 传递给模板的数据
 }
 
-// Tpl 声明一个 *Template 变量
+// Tpl 声明 *Template 实例
 //
-// 其中 name 表示需要引用的模板名称，
-// 而 data 则是传递给该模板的所有变量。
+// name 表示需要引用的模板名称；
+// data 则是传递给该模板的所有变量；
 func Tpl(tpl *template.Template, name string, data interface{}) *Template {
 	return &Template{
-		Template: tpl,
-		Name:     name,
-		Data:     data,
+		tpl:  tpl,
+		name: name,
+		data: data,
 	}
 }
 
@@ -59,7 +64,7 @@ func Marshal(v interface{}) ([]byte, error) {
 
 func (t *Template) executeTemplate() ([]byte, error) {
 	w := new(bytes.Buffer)
-	if err := t.Template.ExecuteTemplate(w, t.Name, t.Data); err != nil {
+	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
