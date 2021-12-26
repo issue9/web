@@ -69,7 +69,7 @@ type (
 
 // DefaultResultBuilder 默认的 BuildResultFunc 实现
 //
-// 定义了以下格式的返回信息：
+// 支持以下格式的返回信息：
 //
 // JSON:
 //
@@ -94,6 +94,7 @@ type (
 //  </result>
 //
 // YAML:
+//
 //  message: 'error message'
 //  code: '40000001'
 //  fields:

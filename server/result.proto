@@ -1,8 +1,8 @@
-// 对应 defaultResult
+// 对应 server.defaultResult
 
 syntax = "proto3";
 
-option go_package = ".";
+option go_package = "./testdata";
 
 message Result {
     string message = 1;

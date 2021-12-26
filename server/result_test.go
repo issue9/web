@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/serialization/form"
+	"github.com/issue9/web/server/testdata"
 )
 
 var (
@@ -134,22 +135,25 @@ func TestDefaultResultProtobuf(t *testing.T) {
 	// marshal mimetypeResult
 	bs, err := proto.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `TODO`)
 
 	// unmarshal mimetypeResult
-	obj := &defaultResult{}
+	obj := &testdata.Result{}
 	a.NotError(proto.Unmarshal(bs, obj))
-	a.Equal(obj, mimetypeResult)
+	a.Equal(obj.Message, mimetypeResult.Message).
+		Equal(obj.Code, mimetypeResult.Code).
+		Equal(2, len(obj.Fields)).
+		Equal(obj.Fields[0].Name, "field1").
+		Equal(obj.Fields[0].Message, []string{"message1", "message2"})
 
 	// marshal simpleMimetypesResult
 	bs, err = proto.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `TODO`)
 
 	// unmarshal simpleMimetypesResult
-	obj = &defaultResult{}
+	obj = &testdata.Result{}
 	a.NotError(proto.Unmarshal(bs, obj))
-	a.Equal(obj, simpleMimetypeResult)
+	a.Equal(obj.Message, simpleMimetypeResult.Message).
+		Equal(obj.Code, simpleMimetypeResult.Code)
 }
 
 func TestDefaultResultYAML(t *testing.T) {
