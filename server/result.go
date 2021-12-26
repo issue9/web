@@ -69,9 +69,10 @@ type (
 
 // DefaultResultBuilder 默认的 BuildResultFunc 实现
 //
-// 定义了以下格式的返回信息：
+// 支持以下格式的返回信息：
 //
 // JSON:
+//
 //  {
 //      'message': 'error message',
 //      'code': '4000001',
@@ -82,6 +83,7 @@ type (
 //  }
 //
 // XML:
+//
 //  <result code="400">
 //      <message>error message</message>
 //      <field name="username">
@@ -92,6 +94,7 @@ type (
 //  </result>
 //
 // YAML:
+//
 //  message: 'error message'
 //  code: '40000001'
 //  fields:
@@ -103,8 +106,35 @@ type (
 //      message:
 //        - 不能为空
 //
+// protobuf:
+//
+//  message Result {
+//      string message = 1;
+//      string code = 2;
+//      repeated Field fields = 3;
+//  }
+//
+//  message Field {
+//      string name = 1;
+//      repeated string message = 2;
+//  }
+//
 // FormData:
+//
 //  message=errormessage&code=4000001&fields.username=名称过短&fields.username=不能包含特殊符号&fields.password=不能为空
+//
+// protobuf
+//
+//  message Result {
+//      string message = 1;
+//      string code = 2;
+//      repeated Field fields = 3;
+//  }
+//
+//  message Field {
+//      string name = 1;
+//      repeated string message = 2;
+//  }
 func DefaultResultBuilder(status int, code, message string) Result {
 	return &defaultResult{
 		status:  status,

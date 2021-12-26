@@ -16,15 +16,16 @@ require (
 	github.com/issue9/scheduled v0.9.2
 	github.com/issue9/sliceutil v0.7.1
 	github.com/issue9/validation v0.5.1
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
+	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
 	golang.org/x/text v0.3.7
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/issue9/term/v2 v2.1.5 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
+	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
+	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
 )
 
 go 1.17

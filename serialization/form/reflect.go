@@ -126,41 +126,41 @@ func setMapField(obj reflect.Value, names []string, val []string) error {
 	return nil
 }
 
-func getFields(kv map[string]reflect.Value, name string, rval reflect.Value) error {
-	for rval.Kind() == reflect.Ptr {
-		if rval.IsNil() {
-			rval.Set(reflect.New(rval.Type().Elem()))
+func getFields(kv map[string]reflect.Value, name string, rv reflect.Value) error {
+	for rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			rv.Set(reflect.New(rv.Type().Elem()))
 		}
-		rval = rval.Elem()
+		rv = rv.Elem()
 	}
 
-	if rval.Kind() == reflect.Map && rval.IsNil() {
-		rval.Set(reflect.MakeMap(rval.Type()))
+	if rv.Kind() == reflect.Map && rv.IsNil() {
+		rv.Set(reflect.MakeMap(rv.Type()))
 	}
 
-	switch rval.Kind() {
+	switch rv.Kind() {
 	case reflect.Struct:
-		return getStructFields(kv, name, rval)
+		return getStructFields(kv, name, rv)
 	case reflect.Map:
-		if rval.Type().Key().Kind() != reflect.String {
+		if rv.Type().Key().Kind() != reflect.String {
 			return errors.New("map 类型的键值只能是字符串")
 		}
-		return getMapFields(kv, name, rval)
+		return getMapFields(kv, name, rv)
 	case reflect.Chan, reflect.Func:
 		return nil
 	default:
-		kv[name] = rval
+		kv[name] = rv
 		return nil
 	}
 }
 
-func getStructFields(kv map[string]reflect.Value, parent string, rval reflect.Value) error {
-	rtype := rval.Type()
+func getStructFields(kv map[string]reflect.Value, parent string, rv reflect.Value) error {
+	rtype := rv.Type()
 	for i := 0; i < rtype.NumField(); i++ {
 		field := rtype.Field(i)
 
 		if field.Anonymous {
-			if err := getFields(kv, parent, rval.Field(i)); err != nil {
+			if err := getFields(kv, parent, rv.Field(i)); err != nil {
 				return err
 			}
 			continue
@@ -173,7 +173,7 @@ func getStructFields(kv map[string]reflect.Value, parent string, rval reflect.Va
 		if parent != "" {
 			name = parent + "." + name
 		}
-		if err := getFields(kv, name, rval.Field(i)); err != nil {
+		if err := getFields(kv, name, rv.Field(i)); err != nil {
 			return err
 		}
 	}
@@ -181,8 +181,8 @@ func getStructFields(kv map[string]reflect.Value, parent string, rval reflect.Va
 	return nil
 }
 
-func getMapFields(kv map[string]reflect.Value, parent string, rval reflect.Value) error {
-	for iter := rval.MapRange(); iter.Next(); {
+func getMapFields(kv map[string]reflect.Value, parent string, rv reflect.Value) error {
+	for iter := rv.MapRange(); iter.Next(); {
 		name := iter.Key().String()
 		if parent != "" {
 			name = parent + "." + name

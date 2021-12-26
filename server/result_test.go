@@ -11,15 +11,19 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
+	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/serialization/form"
+	"github.com/issue9/web/serialization/protobuf"
+	"github.com/issue9/web/server/testdata"
 )
 
 var (
 	_ BuildResultFunc  = DefaultResultBuilder
 	_ form.Marshaler   = &defaultResult{}
 	_ form.Unmarshaler = &defaultResult{}
+	_ proto.Message    = &defaultResult{}
 )
 
 var (
@@ -124,6 +128,33 @@ func TestDefaultResultXML(t *testing.T) {
 	obj = &defaultResult{}
 	a.NotError(xml.Unmarshal(bs, obj))
 	a.Equal(obj, simpleMimetypeResult)
+}
+
+func TestDefaultResultProtobuf(t *testing.T) {
+	a := assert.New(t, false)
+
+	// marshal mimetypeResult
+	bs, err := protobuf.Marshal(mimetypeResult)
+	a.NotError(err).NotNil(bs)
+
+	// unmarshal mimetypeResult
+	obj := &testdata.Result{}
+	a.NotError(protobuf.Unmarshal(bs, obj))
+	a.Equal(obj.Message, mimetypeResult.Message).
+		Equal(obj.Code, mimetypeResult.Code).
+		Equal(2, len(obj.Fields)).
+		Equal(obj.Fields[0].Name, "field1").
+		Equal(obj.Fields[0].Message, []string{"message1", "message2"})
+
+	// marshal simpleMimetypesResult
+	bs, err = protobuf.Marshal(simpleMimetypeResult)
+	a.NotError(err).NotNil(bs)
+
+	// unmarshal simpleMimetypesResult
+	obj = &testdata.Result{}
+	a.NotError(protobuf.Unmarshal(bs, obj))
+	a.Equal(obj.Message, simpleMimetypeResult.Message).
+		Equal(obj.Code, simpleMimetypeResult.Code)
 }
 
 func TestDefaultResultYAML(t *testing.T) {
