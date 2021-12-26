@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/issue9/web/serialization/form"
+	"github.com/issue9/web/serialization/protobuf"
 	"github.com/issue9/web/server/testdata"
 )
 
@@ -133,12 +134,12 @@ func TestDefaultResultProtobuf(t *testing.T) {
 	a := assert.New(t, false)
 
 	// marshal mimetypeResult
-	bs, err := proto.Marshal(mimetypeResult)
+	bs, err := protobuf.Marshal(mimetypeResult)
 	a.NotError(err).NotNil(bs)
 
 	// unmarshal mimetypeResult
 	obj := &testdata.Result{}
-	a.NotError(proto.Unmarshal(bs, obj))
+	a.NotError(protobuf.Unmarshal(bs, obj))
 	a.Equal(obj.Message, mimetypeResult.Message).
 		Equal(obj.Code, mimetypeResult.Code).
 		Equal(2, len(obj.Fields)).
@@ -146,12 +147,12 @@ func TestDefaultResultProtobuf(t *testing.T) {
 		Equal(obj.Fields[0].Message, []string{"message1", "message2"})
 
 	// marshal simpleMimetypesResult
-	bs, err = proto.Marshal(simpleMimetypeResult)
+	bs, err = protobuf.Marshal(simpleMimetypeResult)
 	a.NotError(err).NotNil(bs)
 
 	// unmarshal simpleMimetypesResult
 	obj = &testdata.Result{}
-	a.NotError(proto.Unmarshal(bs, obj))
+	a.NotError(protobuf.Unmarshal(bs, obj))
 	a.Equal(obj.Message, simpleMimetypeResult.Message).
 		Equal(obj.Code, simpleMimetypeResult.Code)
 }
