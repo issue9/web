@@ -102,12 +102,12 @@ func TestLetEncrypt_sanitize(t *testing.T) {
 var (
 	dur time.Duration
 
-	_ encoding.TextMarshaler   = Duration(1)
-	_ encoding.TextUnmarshaler = (*Duration)(&dur)
+	_ encoding.TextMarshaler   = duration(1)
+	_ encoding.TextUnmarshaler = (*duration)(&dur)
 )
 
 type testDuration struct {
-	Duration Duration `xml:"dur" json:"dur" yaml:"dur"`
+	Duration duration `xml:"dur" json:"dur" yaml:"dur"`
 }
 
 func TestDuration_Duration(t *testing.T) {
@@ -115,14 +115,14 @@ func TestDuration_Duration(t *testing.T) {
 
 	dur := time.Second * 2
 
-	a.Equal(dur, Duration(dur).Duration())
+	a.Equal(dur, duration(dur).Duration())
 }
 
 func TestDuration_YAML(t *testing.T) {
 	a := assert.New(t, false)
 
 	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
+		Duration: duration(time.Nanosecond * 5),
 	}
 
 	bs, err := yaml.Marshal(m)
@@ -139,7 +139,7 @@ func TestDuration_XML(t *testing.T) {
 	a := assert.New(t, false)
 
 	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
+		Duration: duration(time.Nanosecond * 5),
 	}
 
 	bs, err := xml.MarshalIndent(m, "", "  ")
@@ -157,10 +157,10 @@ func TestDuration_XMLAttr(t *testing.T) {
 	a := assert.New(t, false)
 
 	type obj struct {
-		D Duration `xml:"d,attr"`
+		D duration `xml:"d,attr"`
 	}
 	m := &obj{
-		D: Duration(time.Nanosecond * 5),
+		D: duration(time.Nanosecond * 5),
 	}
 
 	bs, err := xml.MarshalIndent(m, "", "  ")
@@ -176,7 +176,7 @@ func TestDuration_JSON(t *testing.T) {
 	a := assert.New(t, false)
 
 	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
+		Duration: duration(time.Nanosecond * 5),
 	}
 
 	bs, err := json.Marshal(m)
