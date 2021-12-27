@@ -26,10 +26,10 @@ type (
 		tlsConfig *tls.Config
 
 		// 应用于 http.Server 的几个变量
-		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
-		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
-		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
-		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
+		ReadTimeout       duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
+		WriteTimeout      duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
+		IdleTimeout       duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
+		ReadHeaderTimeout duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
 		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
 	}
 
@@ -144,22 +144,22 @@ func (l *letsEncrypt) sanitize() *Error {
 	return nil
 }
 
-// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
-type Duration time.Duration
+// 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
+type duration time.Duration
 
 // Duration 转换成 time.Duration
-func (d Duration) Duration() time.Duration { return time.Duration(d) }
+func (d duration) Duration() time.Duration { return time.Duration(d) }
 
 // MarshalText encoding.TextMarshaler 接口
-func (d Duration) MarshalText() ([]byte, error) {
+func (d duration) MarshalText() ([]byte, error) {
 	return []byte(time.Duration(d).String()), nil
 }
 
 // UnmarshalText encoding.TextUnmarshaler 接口
-func (d *Duration) UnmarshalText(b []byte) error {
+func (d *duration) UnmarshalText(b []byte) error {
 	v, err := time.ParseDuration(string(b))
 	if err == nil {
-		*d = Duration(v)
+		*d = duration(v)
 	}
 	return err
 }
