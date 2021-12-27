@@ -3,6 +3,7 @@
 package app
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -10,6 +11,28 @@ import (
 	"github.com/issue9/web/server"
 	"golang.org/x/text/message/catalog"
 )
+
+func TestApp_Exec(t *testing.T) {
+	a := assert.New(t, false)
+
+	bs := new(bytes.Buffer)
+	var action string
+	aa := &App{
+		Name:    "test",
+		Version: "1.0.0",
+		Out:     bs,
+		Init: func(s *server.Server, act string) error {
+			action = act
+			return nil
+		},
+	}
+	aa.Exec([]string{"app", "-v"})
+	a.Contains(bs.String(), aa.Version)
+
+	bs.Reset()
+	aa.Exec([]string{"app", "-f=./testdata", "-a=install"})
+	a.Equal(action, "install")
+}
 
 func TestApp_sanitize(t *testing.T) {
 	a := assert.New(t, false)

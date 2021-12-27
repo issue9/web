@@ -34,7 +34,7 @@ import (
 //  - v 显示版本号；
 //  - h 显示帮助信息；
 //  - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
-//  - a 执行的动作，该值传递给 Init，由用户根据 a 决定初始化的方式，比如是安装数据还是注册路由等；
+//  - a 执行的动作，该值会传递给 Init，由用户根据 a 初始化方式；
 //  - s 以服务的形式运行；
 //
 // 本地化信息采用当前用户的默认语言，
@@ -109,11 +109,13 @@ type App struct {
 }
 
 // Exec 执行命令行操作
-func (cmd *App) Exec() error {
+//
+// args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
+func (cmd *App) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
 		panic(err) // Command 配置错误直接 panic
 	}
-	return cmd.exec()
+	return cmd.exec(args)
 }
 
 func (cmd *App) sanitize() error {
@@ -162,7 +164,7 @@ func (cmd *App) sanitize() error {
 	return nil
 }
 
-func (cmd *App) exec() error {
+func (cmd *App) exec(args []string) error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
@@ -173,7 +175,7 @@ func (cmd *App) exec() error {
 	a := cl.String("a", "", p.Sprintf("action"))
 	s := cl.Bool("s", false, p.Sprintf("run as server"))
 
-	if err := cl.Parse(os.Args[1:]); err != nil {
+	if err := cl.Parse(args[1:]); err != nil {
 		return err
 	}
 
