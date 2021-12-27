@@ -31,7 +31,7 @@ type (
 	// middleware.Func 更加的通用，可以复用市面上的大部分中间件，
 	// Filter 则更加灵活一些，适合针对当前框架的中间件。
 	//
-	// 如果想要使用 middleware.Func，可以调用 Server.MuxGroups().Middlewares() 方法。
+	// 如果想要使用 middleware.Func，可以调用 Server.Middlewares() 方法。
 	Filter func(HandlerFunc) HandlerFunc
 )
 
