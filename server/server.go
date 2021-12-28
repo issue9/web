@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/events"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v5/group"
 	"github.com/issue9/scheduled"
@@ -52,7 +51,6 @@ type Server struct {
 	mimetypes  *serialization.Mimetypes
 	cache      cache.Cache
 	uptime     time.Time
-	events     map[string]events.Eventer
 	serving    bool
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
@@ -99,7 +97,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		mimetypes:  serialization.NewMimetypes(10),
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		events:     make(map[string]events.Eventer, 5),
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
