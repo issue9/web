@@ -7,7 +7,6 @@ import (
 
 	"github.com/issue9/mux/v5"
 	"github.com/issue9/mux/v5/group"
-	"github.com/issue9/mux/v5/middleware"
 )
 
 type (
@@ -24,15 +23,6 @@ type (
 		prefix  string
 		filters []Filter
 	}
-
-	// Filter 适用于 Context 的中间件
-	//
-	// Filter 和 github.com/issue9/middleware.Func 本质上没有任何区别，
-	// middleware.Func 更加的通用，可以复用市面上的大部分中间件，
-	// Filter 则更加灵活一些，适合针对当前框架的中间件。
-	//
-	// 如果想要使用 middleware.Func，可以调用 Server.Middlewares() 方法。
-	Filter func(HandlerFunc) HandlerFunc
 )
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
@@ -70,10 +60,6 @@ func (srv *Server) Router(name string) *Router { return srv.routers[name] }
 func (srv *Server) RemoveRouter(name string) {
 	srv.group.Remove(name)
 	delete(srv.routers, name)
-}
-
-func (srv *Server) Middlewares() *middleware.Middlewares {
-	return srv.group.Middlewares()
 }
 
 func (router *Router) handle(path string, h HandlerFunc, filters []Filter, method ...string) {
