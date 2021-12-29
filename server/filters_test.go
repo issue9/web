@@ -32,15 +32,15 @@ func TestAccept(t *testing.T) {
 	s.Get("/path").
 		Header("Accept", text.Mimetype).
 		Do(nil).
-		Status(http.StatusNotAcceptable)
+		Status(http.StatusCreated)
 
 	s.Get("/path").
 		Header("Accept", "application/json").
 		Do(nil).
-		Status(http.StatusCreated)
+		Status(http.StatusNotAcceptable)
 
 	s.Get("/path").
 		Header("Accept", "text/json").
 		Do(nil).
-		Status(http.StatusNotAcceptable)
+		Status(http.StatusCreated)
 }

@@ -33,9 +33,9 @@ func Accept(next HandlerFunc, ct ...string) HandlerFunc {
 	return func(ctx *Context) Responser {
 		for _, c := range ct {
 			if c == ctx.OutputMimetypeName {
-				return Status(http.StatusNotAcceptable)
+				return next(ctx)
 			}
 		}
-		return next(ctx)
+		return Status(http.StatusNotAcceptable)
 	}
 }
