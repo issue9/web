@@ -100,25 +100,25 @@ func (o *object) Body() interface{} { return o.body }
 // NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
 // 否则出错信息的位置信息将不准确。
 func (ctx *Context) Error(status int, v ...interface{}) Responser {
-	ctx.Log(logs.LevelError, 2, status, v...)
+	ctx.Log(logs.LevelError, 2, v...)
 	return Status(status)
 }
 
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 func (ctx *Context) Errorf(status int, format string, v ...interface{}) Responser {
-	ctx.Logf(logs.LevelError, 2, status, format, v...)
+	ctx.Logf(logs.LevelError, 2, format, v...)
 	return Status(status)
 }
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 func (ctx *Context) Critical(status int, v ...interface{}) Responser {
-	ctx.Log(logs.LevelCritical, 2, status, v...)
+	ctx.Log(logs.LevelCritical, 2, v...)
 	return Status(status)
 }
 
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
 func (ctx *Context) Criticalf(status int, format string, v ...interface{}) Responser {
-	ctx.Logf(logs.LevelCritical, 2, status, format, v...)
+	ctx.Logf(logs.LevelCritical, 2, format, v...)
 	return Status(status)
 }
 

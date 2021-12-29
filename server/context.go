@@ -398,14 +398,14 @@ func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 // Log 输出日志并以指定的状态码退出
 //
 // deep 为 0 表示 Log 本身；
-func (ctx *Context) Log(level, deep, status int, v ...interface{}) {
+func (ctx *Context) Log(level, deep int, v ...interface{}) {
 	ctx.Logs().Print(level, deep, v...)
 }
 
 // Logf 输出日志并以指定的状态码退出
 //
 // deep 为 0 表示 Logf 本身；
-func (ctx *Context) Logf(level, deep, status int, format string, v ...interface{}) {
+func (ctx *Context) Logf(level, deep int, format string, v ...interface{}) {
 	ctx.Logs().Printf(level, deep, format, v...)
 }
 
