@@ -16,8 +16,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// Config 配置内容
-type Config struct {
+type webconfig[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
@@ -35,10 +34,10 @@ type Config struct {
 	// 路由的相关设置
 	//
 	// 提供了对全局路由的设置，但是用户依然可以通过 server.Server.MuxGroups().AddRouter 忽略这些设置项。
-	Router *Router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
+	Router *router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
 
 	// 与 HTTP 请求相关的设置项
-	HTTP *HTTP `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
+	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
 	// 时区名称
 	//
@@ -52,7 +51,7 @@ type Config struct {
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
-	Cache *Cache `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
+	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
 	// 日志初始化参数
@@ -60,6 +59,9 @@ type Config struct {
 	// 如果为空，则初始化一个空日志，不会输出任何日志。
 	Logs *config.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
 	logs *logs.Logs
+
+	// 用户自定义的配置项
+	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
 // NewOptions 从配置文件初始化 server.Options 实例
@@ -69,34 +71,28 @@ type Config struct {
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-func NewOptions(files *serialization.Files, f fs.FS, filename string) (*server.Options, error) {
-	conf := &Config{}
+//
+// T 表示用户自定义的数据项，可以实现 Sanitizer 接口，用于对加载后的数据进行自检。
+func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
+	conf := &webconfig[T]{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := conf.sanitize(); err != nil {
 		if err2, ok := err.(*Error); ok {
 			err2.Config = filename
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	return conf.NewOptions(files, f), nil
-}
-
-func (conf *Config) NewOptions(files *serialization.Files, fsys fs.FS) *server.Options {
-	// NOTE: 公开此函数，方便第三方将 Webconfig 集成到自己的代码中
-
 	h := conf.HTTP
-	r := conf.Router
-
 	return &server.Options{
 		Port:          conf.Port,
-		FS:            fsys,
+		FS:            f,
 		Location:      conf.location,
 		Cache:         conf.cache,
-		RouterOptions: r.options,
+		RouterOptions: conf.Router.options,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -108,10 +104,10 @@ func (conf *Config) NewOptions(files *serialization.Files, fsys fs.FS) *server.O
 		},
 		Logs:  conf.logs,
 		Files: files,
-	}
+	}, conf.User, nil
 }
 
-func (conf *Config) sanitize() error {
+func (conf *webconfig[T]) sanitize() error {
 	if conf.Logs != nil {
 		if err := conf.Logs.Sanitize(); err != nil {
 			return &Error{Field: "logs", Message: err}
@@ -141,7 +137,7 @@ func (conf *Config) sanitize() error {
 	}
 
 	if conf.Router == nil {
-		conf.Router = &Router{}
+		conf.Router = &router{}
 	}
 	if err := conf.Router.sanitize(); err != nil {
 		err.Field = "router." + err.Field
@@ -149,17 +145,26 @@ func (conf *Config) sanitize() error {
 	}
 
 	if conf.HTTP == nil {
-		conf.HTTP = &HTTP{}
+		conf.HTTP = &httpConfig{}
 	}
 	if err := conf.HTTP.sanitize(); err != nil {
 		err.Field = "http." + err.Field
 		return err
 	}
 
+	if conf.User != nil {
+		if s, ok := (interface{})(conf.User).(Sanitizer); ok {
+			if err := s.Sanitize(); err != nil {
+				err.Field = "user." + err.Field
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
-func (conf *Config) buildTimezone() *Error {
+func (conf *webconfig[T]) buildTimezone() *Error {
 	if conf.Timezone == "" {
 		return nil
 	}

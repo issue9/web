@@ -12,36 +12,35 @@ import (
 )
 
 type (
-	// HTTP 与 http 请求相关的设置
-	HTTP struct {
+	httpConfig struct {
 		// 网站的域名证书
 		//
 		// 不能同时与 LetsEncrypt 生效
-		Certificates []*Certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
+		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
 
 		// 配置 Let's Encrypt 证书
 		//
 		// 不能同时与 Certificates 生效
-		LetsEncrypt *LetsEncrypt `yaml:"letsEncrypt,omitempty" json:"letsEncrypt,omitempty" xml:"letsEncrypt,omitempty"`
+		LetsEncrypt *letsEncrypt `yaml:"letsEncrypt,omitempty" json:"letsEncrypt,omitempty" xml:"letsEncrypt,omitempty"`
 
 		tlsConfig *tls.Config
 
 		// 应用于 http.Server 的几个变量
-		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
-		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
-		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
-		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
+		ReadTimeout       duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
+		WriteTimeout      duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
+		IdleTimeout       duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
+		ReadHeaderTimeout duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
 		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
 	}
 
-	// Certificate 证书管理
-	Certificate struct {
+	// 证书管理
+	certificate struct {
 		Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
 		Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
 	}
 
-	// LetsEncrypt Let's Encrypt 的相关设置
-	LetsEncrypt struct {
+	// Let's Encrypt 的相关设置
+	letsEncrypt struct {
 		Domains []string `yaml:"domains" json:"domains" xml:"domains"`
 		Cache   string   `yaml:"cache" json:"cache" xml:"cache"`
 		Email   string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
@@ -51,7 +50,7 @@ type (
 	}
 )
 
-func (cert *Certificate) sanitize() *Error {
+func (cert *certificate) sanitize() *Error {
 	if !filesystem.Exists(cert.Cert) {
 		return &Error{Field: "cert", Message: "文件不存在"}
 	}
@@ -63,7 +62,7 @@ func (cert *Certificate) sanitize() *Error {
 	return nil
 }
 
-func (http *HTTP) sanitize() *Error {
+func (http *httpConfig) sanitize() *Error {
 	if http.ReadTimeout < 0 {
 		return &Error{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
@@ -87,7 +86,7 @@ func (http *HTTP) sanitize() *Error {
 	return http.buildTLSConfig()
 }
 
-func (http *HTTP) buildTLSConfig() *Error {
+func (http *httpConfig) buildTLSConfig() *Error {
 	if len(http.Certificates) > 0 && http.LetsEncrypt != nil {
 		return &Error{Field: "letsEncrypt", Message: "不能与 certificates 同时存在"}
 	}
@@ -119,7 +118,7 @@ func (http *HTTP) buildTLSConfig() *Error {
 	return nil
 }
 
-func (l *LetsEncrypt) tlsConfig() *tls.Config {
+func (l *letsEncrypt) tlsConfig() *tls.Config {
 	const day = 24 * time.Hour
 
 	m := &autocert.Manager{
@@ -133,7 +132,7 @@ func (l *LetsEncrypt) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *LetsEncrypt) sanitize() *Error {
+func (l *letsEncrypt) sanitize() *Error {
 	if l.Cache == "" || !filesystem.Exists(l.Cache) {
 		return &Error{Field: "cache", Message: "不存在该目录或是未指定"}
 	}
@@ -145,22 +144,22 @@ func (l *LetsEncrypt) sanitize() *Error {
 	return nil
 }
 
-// Duration 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
-type Duration time.Duration
+// 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
+type duration time.Duration
 
 // Duration 转换成 time.Duration
-func (d Duration) Duration() time.Duration { return time.Duration(d) }
+func (d duration) Duration() time.Duration { return time.Duration(d) }
 
 // MarshalText encoding.TextMarshaler 接口
-func (d Duration) MarshalText() ([]byte, error) {
+func (d duration) MarshalText() ([]byte, error) {
 	return []byte(time.Duration(d).String()), nil
 }
 
 // UnmarshalText encoding.TextUnmarshaler 接口
-func (d *Duration) UnmarshalText(b []byte) error {
+func (d *duration) UnmarshalText(b []byte) error {
 	v, err := time.ParseDuration(string(b))
 	if err == nil {
-		*d = Duration(v)
+		*d = duration(v)
 	}
 	return err
 }

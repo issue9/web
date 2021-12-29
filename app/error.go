@@ -15,6 +15,11 @@ type Error struct {
 	Value   interface{} // 原始值
 }
 
+// Sanitizer 实现了数据验证和检测功能
+type Sanitizer interface {
+	Sanitize() *Error
+}
+
 func (err *Error) Error() string {
 	return err.LocaleString(localeutil.EmptyPrinter())
 }

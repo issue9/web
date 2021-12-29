@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 提供可选的初始化程序的方法
+// Package app 提供构建程序的简便方法
 //
 // NOTE: app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
-// 相对地也会有诸多限制，如果觉得不适用，可以直接使用 server.New 下的内容。
+// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 server.New。
 package app
 
 import (
@@ -34,7 +34,7 @@ import (
 //  - v 显示版本号；
 //  - h 显示帮助信息；
 //  - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
-//  - a 执行的动作，该值会传递给 Init，由用户根据 a 初始化方式；
+//  - a 执行的动作，该值会传递给 Init，由用户根据 a 决定初始化方式；
 //  - s 以服务的形式运行；
 //
 // 本地化信息采用当前用户的默认语言，
@@ -52,15 +52,17 @@ import (
 //  builder.SetString("show help", "显示帮助信息")
 //  builder.SetString("show version", "显示版本信息")
 //
-//  app := &web.App{
+//  cmd := &web.App{
 //      Name: "app",
 //      Version: "1.0.0",
 //      Init: func(s *Server) error {...},
 //      Catalog: builder,
 //  }
 //
-//  app.Exec()
-type App struct {
+//  cmd.Exec()
+//
+// T 表示的是配置文件中的用户自定义数据类型，如果不需要可以为空，即 struct{}。
+type App[T any] struct {
 	Name string // 程序名称
 
 	Version string // 程序版本
@@ -68,7 +70,7 @@ type App struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
-	Init func(s *server.Server, action string) error
+	Init func(s *server.Server, user *T, action string) error
 
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
@@ -111,14 +113,14 @@ type App struct {
 // Exec 执行命令行操作
 //
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
-func (cmd *App) Exec(args []string) error {
+func (cmd *App[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
-		panic(err) // Command 配置错误直接 panic
+		panic(err) // App 配置错误直接 panic
 	}
 	return cmd.exec(args)
 }
 
-func (cmd *App) sanitize() error {
+func (cmd *App[T]) sanitize() error {
 	if cmd.Name == "" {
 		return errors.New("字段 Name 不能为空")
 	}
@@ -164,7 +166,7 @@ func (cmd *App) sanitize() error {
 	return nil
 }
 
-func (cmd *App) exec(args []string) error {
+func (cmd *App[T]) exec(args []string) error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
@@ -189,7 +191,7 @@ func (cmd *App) exec(args []string) error {
 		return nil
 	}
 
-	opt, err := cmd.initOptions(os.DirFS(*f))
+	opt, user, err := cmd.initOptions(os.DirFS(*f))
 	if err != nil {
 		return err
 	}
@@ -199,7 +201,7 @@ func (cmd *App) exec(args []string) error {
 		return err
 	}
 
-	if err := cmd.Init(srv, *a); err != nil {
+	if err := cmd.Init(srv, user, *a); err != nil {
 		return err
 	}
 
@@ -214,11 +216,11 @@ func (cmd *App) exec(args []string) error {
 	return srv.Serve()
 }
 
-func (cmd *App) initOptions(fsys fs.FS) (opt *server.Options, err error) {
+func (cmd *App[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, err = NewOptions(cmd.Files, fsys, cmd.ConfigFilename)
+		opt, user, err = NewOptions[T](cmd.Files, fsys, cmd.ConfigFilename)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
 		opt = &server.Options{
@@ -232,10 +234,10 @@ func (cmd *App) initOptions(fsys fs.FS) (opt *server.Options, err error) {
 		cmd.Options(opt)
 	}
 
-	return opt, nil
+	return opt, user, nil
 }
 
-func (cmd *App) grace(s *server.Server, sig ...os.Signal) {
+func (cmd *App[T]) grace(s *server.Server, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, sig...)

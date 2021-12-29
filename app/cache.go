@@ -14,8 +14,8 @@ import (
 	cr "github.com/issue9/cache/redis"
 )
 
-// Cache 缓存的相关配置
-type Cache struct {
+// 缓存的相关配置
+type cacheConfig struct {
 	// 表示缓存的方式
 	//
 	// 目前支持以下几种试：
@@ -36,7 +36,7 @@ type Cache struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *Config) buildCache() *Error {
+func (conf *webconfig[T]) buildCache() *Error {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
