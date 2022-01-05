@@ -25,8 +25,7 @@ type Template struct {
 	// NOTE: Template 的字段值不能是可导出的。
 	//
 	// 当用户的 accept 报头是 json 时，输出 Template
-	// 会使其所有的公开字段都被输出到客户端，
-	// 存在一定的安全隐患。
+	// 会使其所有的公开字段都被输出到客户端，存在一定的安全隐患。
 	tpl  *template.Template
 	name string      // 模块名称
 	data interface{} // 传递给模板的数据

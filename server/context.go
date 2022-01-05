@@ -91,7 +91,8 @@ type Context struct {
 
 	// 保存 Context 在存续期间的可复用变量
 	//
-	// 这是比 context.Value 更经济的传递变量方式。
+	// 这是比 context.Value 更经济的传递变量方式，
+	// 相较于 context.Value，这并不是协程安全的。
 	//
 	// 如果需要在多个请求中传递参数，可直接使用 Server.Vars。
 	Vars map[interface{}]interface{}
