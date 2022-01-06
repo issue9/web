@@ -27,4 +27,8 @@ func TestServer_NewModule(t *testing.T) {
 	a.PanicString(func() {
 		srv.NewModule("testdata")
 	}, "存在同名模块")
+
+	a.PanicString(func() {
+		srv.NewModule("//")
+	}, "无效的 id 格式")
 }

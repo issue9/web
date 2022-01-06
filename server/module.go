@@ -4,6 +4,8 @@ package server
 
 import (
 	"io/fs"
+	"path/filepath"
+	"unicode"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
@@ -17,10 +19,23 @@ type Module struct {
 	fs  *filesystem.MultipleFS
 }
 
+func isValidID(id string) bool {
+	for _, b := range id {
+		if unicode.IsSpace(b) || b == filepath.Separator || b == '/' {
+			return false
+		}
+	}
+	return fs.ValidPath(id) // 会根据 id 创建 fs.FS，所以必须符合 ValidPath
+}
+
 // NewModule 声明新的模块
 //
-// id 模块的 ID，需要全局唯一。会根据此 ID 从 Server 派生出文件系统。
+// id 模块的 ID，需要全局唯一。会根据此值从 Server 派生出子文件系统。
 func (srv *Server) NewModule(id string) *Module {
+	if !isValidID(id) {
+		panic("无效的 id 格式。")
+	}
+
 	contains := sliceutil.Index(srv.modules, func(i int) bool {
 		return srv.modules[i] == id
 	}) >= 0
