@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6/group"
 
 	"github.com/issue9/web/internal/charsetdata"
 	"github.com/issue9/web/serialization/text"

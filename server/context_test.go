@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6/group"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
@@ -359,13 +359,13 @@ func TestContext_IsXHR(t *testing.T) {
 	r, err := http.NewRequest(http.MethodGet, "/not-xhr", nil)
 	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
-	router.MuxRouter().ServeHTTP(w, r)
+	router.ServeHTTP(w, r)
 
 	r, err = http.NewRequest(http.MethodGet, "/xhr", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("X-Requested-With", "XMLHttpRequest")
 	w = httptest.NewRecorder()
-	router.MuxRouter().ServeHTTP(w, r)
+	router.ServeHTTP(w, r)
 }
 
 func TestServer_acceptLanguage(t *testing.T) {

@@ -13,8 +13,7 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v5"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
@@ -57,7 +56,6 @@ type Options struct {
 	// 比如 mux.URLDomain，该值始终是在 NewRouter 中指定。
 	// 可以为空。
 	RouterOptions []mux.Option
-	group         *group.Group
 
 	// 可以对 http.Server 的内容进行修改
 	//
@@ -111,8 +109,6 @@ func (o *Options) sanitize() (err error) {
 	if o.Cache == nil {
 		o.Cache = memory.New(24 * time.Hour)
 	}
-
-	o.group = group.New(o.RouterOptions...)
 
 	o.httpServer = &http.Server{Addr: o.Port}
 	if o.HTTPServer != nil {

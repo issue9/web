@@ -16,16 +16,16 @@ import (
 const Version = "0.45.0"
 
 type (
-	Server       = server.Server
-	Context      = server.Context
-	Options      = server.Options
-	Filter       = server.Filter
-	HandlerFunc  = server.HandlerFunc
-	Responser    = server.Responser
-	Router       = server.Router
-	ResultFields = server.ResultFields
-	Result       = server.Result
-	App          = app.App
+	Server         = server.Server
+	Context        = server.Context
+	Options        = server.Options
+	MiddlewareFunc = server.MiddlewareFunc
+	HandlerFunc    = server.HandlerFunc
+	Responser      = server.Responser
+	Router         = server.Router
+	ResultFields   = server.ResultFields
+	Result         = server.Result
+	App            = app.App
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//

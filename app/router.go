@@ -2,7 +2,7 @@
 
 package app
 
-import "github.com/issue9/mux/v5"
+import "github.com/issue9/mux/v6"
 
 type router struct {
 	// 是否忽略大小写

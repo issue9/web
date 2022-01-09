@@ -7,14 +7,11 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v5/group"
 	"golang.org/x/text/language"
 )
 
@@ -22,54 +19,6 @@ var (
 	errLog      = new(bytes.Buffer)
 	criticalLog = new(bytes.Buffer)
 )
-
-func TestServer_FileServer(t *testing.T) {
-	a := assert.New(t, false)
-	server := newServer(a, nil)
-
-	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotNil(r)
-	r.Get("/m1/test", f201)
-	r.Get("/client/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-
-	srv := rest.NewServer(a, server.group, nil)
-
-	srv.Get("/m1/test").
-		Do(nil).
-		Status(http.StatusCreated).
-		Header("Content-Type", "text/html").
-		StringBody("1234567890")
-
-	// 定义的静态文件
-	srv.Get("/client/file1.txt").
-		Do(nil).
-		Status(http.StatusOK).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		StringBody("file1")
-
-	srv.Get("/client/not-exists").
-		Do(nil).
-		Status(http.StatusNotFound)
-
-	// 删除
-	r.Remove("/client/{path}")
-	srv.Get("/client/file1.txt").
-		Do(nil).
-		Status(http.StatusNotFound)
-
-	// 带域名
-	server = newServer(a, nil)
-	host := group.NewHosts(false, "example.com")
-	a.NotNil(host)
-	r = server.NewRouter("example", "https://example.com/blog", host)
-	a.NotNil(r)
-	r.Get("/admin/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
-	a.NotError(err).NotNil(req)
-	server.group.ServeHTTP(w, req)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
-}
 
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t, false)
@@ -84,7 +33,7 @@ func TestContext_Critical(t *testing.T) {
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:86") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:35") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1 log2")
 }
 

@@ -3,13 +3,13 @@ module github.com/issue9/web
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/gomodule/redigo v1.8.6
-	github.com/issue9/assert/v2 v2.0.1
+	github.com/issue9/assert/v2 v2.1.0
 	github.com/issue9/cache v0.3.2
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.8.2
 	github.com/issue9/logs/v3 v3.1.0
-	github.com/issue9/mux/v5 v5.4.1
+	github.com/issue9/mux/v6 v6.0.0-beta.1
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.6
 	github.com/issue9/scheduled v0.9.2

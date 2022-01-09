@@ -14,7 +14,8 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6/group"
+	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -52,6 +53,7 @@ type Server struct {
 	cache      cache.Cache
 	uptime     time.Time
 	serving    bool
+	group      *group.GroupOf[HandlerFunc]
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 	closes []func() error
@@ -59,10 +61,6 @@ type Server struct {
 	// service
 	services  []*Service
 	scheduled *scheduled.Server
-
-	// middleware
-	group   *group.Group
-	routers map[string]*Router
 
 	// result
 	resultMessages map[string]*resultMessage
@@ -105,10 +103,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		services:  make([]*Service, 0, 100),
 		scheduled: scheduled.NewServer(o.Location),
 
-		// middleware
-		group:   o.group,
-		routers: make(map[string]*Router, 3),
-
 		// result
 		resultMessages: make(map[string]*resultMessage, 20),
 		resultBuilder:  o.ResultBuilder,
@@ -119,6 +113,15 @@ func New(name, version string, o *Options) (*Server, error) {
 		tag:           o.Tag,
 		localePrinter: o.locale.Printer(o.Tag),
 	}
+
+	f := func(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
+		if ctx := srv.NewContext(w, r); ctx != nil {
+			ctx.params = ps
+			ctx.renderResponser(f(ctx))
+			contextPool.Put(ctx)
+		}
+	}
+	srv.group = group.NewOf[HandlerFunc](f, nil, o.RouterOptions...)
 
 	srv.httpServer.Handler = srv.group
 	if srv.httpServer.BaseContext == nil {

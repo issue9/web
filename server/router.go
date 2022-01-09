@@ -3,41 +3,45 @@
 package server
 
 import (
+	"errors"
+	"io/fs"
 	"net/http"
 
-	"github.com/issue9/mux/v5"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6"
+	"github.com/issue9/mux/v6/group"
 )
 
-type (
-	// Router 路由
-	Router struct {
-		srv     *Server
-		router  *mux.Router
-		filters []Filter
-	}
+const defaultIndex = "index.html"
 
-	// Prefix 带有统一前缀的路由管理
-	Prefix struct {
-		router  *Router
-		prefix  string
-		filters []Filter
+type Router = mux.RouterOf[HandlerFunc]
+
+// MiddlewareFunc 中间件函数
+type MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
+
+// AcceptMiddleware 提供限定 accept 的中间件
+func AcceptMiddleware(ct ...string) MiddlewareFunc {
+	return func(next HandlerFunc) HandlerFunc {
+		return Accept(next, ct...)
 	}
-)
+}
+
+// Accept 提供限定 accept 的中间件
+func Accept(next HandlerFunc, ct ...string) HandlerFunc {
+	return func(ctx *Context) Responser {
+		for _, c := range ct {
+			if c == ctx.OutputMimetypeName {
+				return next(ctx)
+			}
+		}
+		return Status(http.StatusNotAcceptable)
+	}
+}
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
 // domain 仅用于 URL 生成地址，并不会对路由本身产生影响，可以为空。
-func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, filter ...Filter) *Router {
-	r := srv.group.New(name, matcher, mux.URLDomain(domain))
-	rr := &Router{
-		srv:     srv,
-		router:  r,
-		filters: filter,
-	}
-	srv.routers[name] = rr
-
-	return rr
+func (srv *Server) NewRouter(name, domain string, matcher group.Matcher, m ...MiddlewareFunc) *Router {
+	return srv.group.New(name, matcher, m, mux.URLDomain(domain))
 }
 
 // Routes 返回所有路由的注册路由项
@@ -47,111 +51,43 @@ func (srv *Server) Routes() map[string]map[string][]string {
 	return srv.group.Routes()
 }
 
-func (srv *Server) Routers() []*Router {
-	routers := make([]*Router, 0, len(srv.routers))
-	for _, router := range srv.routers {
-		routers = append(routers, router)
-	}
-	return routers
-}
+func (srv *Server) Routers() []*Router { return srv.group.Routers() }
 
-func (srv *Server) Router(name string) *Router { return srv.routers[name] }
+func (srv *Server) Router(name string) *Router { return srv.group.Router(name) }
 
-func (srv *Server) RemoveRouter(name string) {
-	srv.group.Remove(name)
-	delete(srv.routers, name)
-}
+func (srv *Server) RemoveRouter(name string) { srv.group.Remove(name) }
 
-func (router *Router) handle(path string, h HandlerFunc, filters []Filter, method ...string) {
-	for i := len(filters) - 1; i >= 0; i-- {
-		h = filters[i](h)
+// FileServer 提供静态文件服务
+//
+// fsys 为文件系统，如果为空则采用 srv.FS；
+// name 表示参数名称；
+// index 表示目录下的默认文件名；
+func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
+	if fsys == nil {
+		fsys = srv
 	}
 
-	router.router.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		if ctx := router.srv.NewContext(w, r); ctx != nil { // NewContext 出错，则在 NewContext 中自行处理了输出内容。
-			ctx.renderResponser(h(ctx))
-			contextPool.Put(ctx)
+	if name == "" {
+		panic("参数 name 不能为空")
+	}
+
+	if index == "" {
+		index = defaultIndex
+	}
+
+	return func(ctx *Context) Responser {
+		p, _ := ctx.params.Get(name) // 空值也是允许的值
+
+		err := mux.ServeFile(fsys, p, index, ctx.Response, ctx.Request)
+		switch {
+		case errors.Is(err, fs.ErrPermission):
+			return ctx.Error(http.StatusForbidden, err)
+		case errors.Is(err, fs.ErrNotExist):
+			return ctx.Error(http.StatusNotFound, err)
+		case err != nil:
+			return ctx.Error(http.StatusInternalServerError, err)
+		default:
+			return nil
 		}
-	}, method...)
-}
-
-func (router *Router) Handle(path string, h HandlerFunc, method ...string) *Router {
-	router.handle(path, h, router.filters, method...)
-	return router
-}
-
-func (router *Router) MuxRouter() *mux.Router { return router.router }
-
-func (router *Router) Get(path string, h HandlerFunc) *Router {
-	return router.Handle(path, h, http.MethodGet)
-}
-
-func (router *Router) Post(path string, h HandlerFunc) *Router {
-	return router.Handle(path, h, http.MethodPost)
-}
-
-func (router *Router) Put(path string, h HandlerFunc) *Router {
-	return router.Handle(path, h, http.MethodPut)
-}
-
-func (router *Router) Delete(path string, h HandlerFunc) *Router {
-	return router.Handle(path, h, http.MethodDelete)
-}
-
-func (router *Router) Patch(path string, h HandlerFunc) *Router {
-	return router.Handle(path, h, http.MethodPatch)
-}
-
-func (router *Router) Remove(path string, method ...string) {
-	router.router.Remove(path, method...)
-}
-
-// URL 构建完整的 URL
-func (router *Router) URL(strict bool, pattern string, params map[string]string) (string, error) {
-	return router.router.URL(strict, pattern, params)
-}
-
-// Prefix 返回特定前缀的路由设置对象
-func (router *Router) Prefix(prefix string, filter ...Filter) *Prefix {
-	filters := make([]Filter, 0, len(router.filters)+len(filter))
-	filters = append(filters, router.filters...)
-	filters = append(filters, filter...)
-	return &Prefix{
-		router:  router,
-		prefix:  prefix,
-		filters: filters,
 	}
-}
-
-func (p *Prefix) Handle(path string, h HandlerFunc, method ...string) *Prefix {
-	p.router.handle(p.prefix+path, h, p.filters, method...)
-	return p
-}
-
-func (p *Prefix) Get(path string, h HandlerFunc) *Prefix {
-	return p.Handle(path, h, http.MethodGet)
-}
-
-func (p *Prefix) Post(path string, h HandlerFunc) *Prefix {
-	return p.Handle(path, h, http.MethodPost)
-}
-
-func (p *Prefix) Put(path string, h HandlerFunc) *Prefix {
-	return p.Handle(path, h, http.MethodPut)
-}
-
-func (p *Prefix) Delete(path string, h HandlerFunc) *Prefix {
-	return p.Handle(path, h, http.MethodDelete)
-}
-
-func (p *Prefix) Patch(path string, h HandlerFunc) *Prefix {
-	return p.Handle(path, h, http.MethodPatch)
-}
-
-func (p *Prefix) Remove(path string, method ...string) {
-	p.router.Remove(p.prefix+path, method...)
-}
-
-func (p *Prefix) URL(strict bool, path string, params map[string]string) (string, error) {
-	return p.router.URL(strict, p.prefix+path, params)
 }

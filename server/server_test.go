@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v5/group"
+	"github.com/issue9/mux/v6/group"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization/gob"
@@ -47,6 +47,8 @@ var f202 = func(ctx *Context) Responser {
 
 	return nil
 }
+
+var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion, o *Options) *Server {
@@ -110,19 +112,21 @@ func TestGetServer(t *testing.T) {
 
 	router := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
-	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
-		s1 := GetServer(r)
+	router.Get("/path", func(ctx *Context) Responser {
+		s1 := GetServer(ctx.Request)
 		a.NotNil(s1).Equal(s1, srv)
 
-		v := r.Context().Value(k)
+		v := ctx.Request.Context().Value(k)
 		a.Nil(v)
 
-		ctx1 := NewContext(w, r)
+		ctx1 := NewContext(ctx.Response, ctx.Request)
 		a.NotNil(ctx1)
-		ctx2 := NewContext(w, ctx1.Request)
+		ctx2 := NewContext(ctx.Response, ctx1.Request)
 		a.Equal(ctx1, ctx2)
 
 		isRequested = true
+
+		return nil
 	})
 
 	go func() {
@@ -159,14 +163,16 @@ func TestGetServer(t *testing.T) {
 	isRequested = false
 	router = srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
-	router.MuxRouter().GetFunc("/path", func(w http.ResponseWriter, r *http.Request) {
-		s1 := GetServer(r)
+	router.Get("/path", func(ctx *Context) Responser {
+		s1 := GetServer(ctx.Request)
 		a.NotNil(s1).Equal(s1, srv)
 
-		v := r.Context().Value(k) // BaseContext 中设置了 k 的值
+		v := ctx.Request.Context().Value(k) // BaseContext 中设置了 k 的值
 		a.Equal(v, 1)
 
 		isRequested = true
+
+		return nil
 	})
 	go func() {
 		a.Equal(srv.Serve(), http.ErrServerClosed)

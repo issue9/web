@@ -3,12 +3,12 @@
 package server
 
 import (
-	"io/fs"
 	"net/http"
 
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v5"
 )
+
+const exited exit = 0
 
 type (
 	// HandlerFunc 路由项处理函数原型
@@ -39,33 +39,8 @@ type (
 		body    interface{}
 	}
 
-	exit struct{}
+	exit int
 )
-
-var exited exit
-
-// FileServer 提供静态文件服务
-//
-// fsys 为文件系统，如果为空则采用 srv.FS；
-// name 表示参数名称；
-// index 表示 目录下的默认文件名；
-func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
-	if fsys == nil {
-		fsys = srv
-	}
-
-	f := mux.FileServer(http.FS(fsys), name, index, func(w http.ResponseWriter, status int, msg interface{}) {
-		if msg != nil {
-			srv.Logs().Error(msg)
-		}
-		http.Error(w, http.StatusText(status), status)
-	})
-
-	return func(ctx *Context) Responser {
-		f.ServeHTTP(ctx.Response, ctx.Request)
-		return Exit()
-	}
-}
 
 func (ctx *Context) renderResponser(resp Responser) {
 	if resp == nil || resp == exited {

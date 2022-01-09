@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
+	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
@@ -53,6 +54,7 @@ type CTXSanitizer interface {
 // Context 是对当次 HTTP 请求内容的封装
 type Context struct {
 	server *Server
+	params params.Params
 
 	Response http.ResponseWriter
 	Request  *http.Request

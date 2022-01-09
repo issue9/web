@@ -2,10 +2,7 @@
 
 package server
 
-import (
-	"github.com/issue9/mux/v5"
-	"github.com/issue9/mux/v5/params"
-)
+import "github.com/issue9/mux/v6/params"
 
 // Params 用于处理路径中包含的参数
 //  p := ctx.Params()
@@ -17,17 +14,14 @@ import (
 //  }
 type Params struct {
 	ctx    *Context
-	params params.Params
 	fields ResultFields
 }
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
-	ps := mux.GetParams(ctx.Request)
 	return &Params{
 		ctx:    ctx,
-		params: ps,
-		fields: make(ResultFields, ps.Count()),
+		fields: make(ResultFields, ctx.params.Count()),
 	}
 }
 
@@ -60,7 +54,7 @@ func (p *Params) MustID(key string, def int64) int64 {
 
 // Int64 获取参数 key 所代表的值，并转换成 int64
 func (p *Params) Int64(key string) int64 {
-	ret, err := p.params.Int(key)
+	ret, err := p.ctx.params.Int(key)
 	if err != nil {
 		p.fields.Add(key, err.Error())
 	}
@@ -73,7 +67,7 @@ func (p *Params) Int64(key string) int64 {
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt64(key string, def int64) int64 {
-	id, err := p.params.Int(key)
+	id, err := p.ctx.params.Int(key)
 	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
@@ -85,7 +79,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Params) String(key string) string {
-	ret, err := p.params.String(key)
+	ret, err := p.ctx.params.String(key)
 	if err != nil {
 		p.fields.Add(key, err.Error())
 	}
@@ -97,7 +91,7 @@ func (p *Params) String(key string) string {
 //
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustString(key, def string) string {
-	ret, err := p.params.String(key)
+	ret, err := p.ctx.params.String(key)
 	if err == params.ErrParamNotExists {
 		return def
 	} else if err != nil {
@@ -112,7 +106,7 @@ func (p *Params) MustString(key, def string) string {
 // 最终会调用 strconv.ParseBool 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) Bool(key string) bool {
-	ret, err := p.params.Bool(key)
+	ret, err := p.ctx.params.Bool(key)
 	if err != nil {
 		p.fields.Add(key, err.Error())
 	}
@@ -128,7 +122,7 @@ func (p *Params) Bool(key string) bool {
 // 最终会调用 strconv.ParseBool 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) MustBool(key string, def bool) bool {
-	b, err := p.params.Bool(key)
+	b, err := p.ctx.params.Bool(key)
 	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
@@ -140,7 +134,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Params) Float64(key string) float64 {
-	ret, err := p.params.Float(key)
+	ret, err := p.ctx.params.Float(key)
 	if err != nil {
 		p.fields.Add(key, err.Error())
 	}
@@ -153,7 +147,7 @@ func (p *Params) Float64(key string) float64 {
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustFloat64(key string, def float64) float64 {
-	f, err := p.params.Float(key)
+	f, err := p.ctx.params.Float(key)
 	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {

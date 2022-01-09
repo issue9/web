@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        go: ['1.18beta1']
+        go: ['1.18.0-beta1']
         
     steps:
 
@@ -25,6 +25,7 @@ jobs:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v2
         with:
+          stable: '!contains(${{ matrix.go }}, "beta") && !contains(${{ matrix.go }}, "rc")'
           go-version: ${{ matrix.go }}
         id: go
 

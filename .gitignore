@@ -13,12 +13,14 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# vim
-*.swp
-
 # macOS
 .DS_Store
 
+# ide
 .idea
 .vscode
+*.swp
 **/testdata/logs/*
+
+# go
+go.work
