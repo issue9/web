@@ -11,31 +11,10 @@ import (
 	"github.com/issue9/mux/v6/group"
 )
 
-const defaultIndex = "index.html"
-
 type Router = mux.RouterOf[HandlerFunc]
 
 // MiddlewareFunc 中间件函数
 type MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
-
-// AcceptMiddleware 提供限定 accept 的中间件
-func AcceptMiddleware(ct ...string) MiddlewareFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		return Accept(next, ct...)
-	}
-}
-
-// Accept 提供限定 accept 的中间件
-func Accept(next HandlerFunc, ct ...string) HandlerFunc {
-	return func(ctx *Context) Responser {
-		for _, c := range ct {
-			if c == ctx.OutputMimetypeName {
-				return next(ctx)
-			}
-		}
-		return Status(http.StatusNotAcceptable)
-	}
-}
 
 // NewRouter 构建基于 matcher 匹配的路由操作实例
 //
@@ -69,10 +48,6 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 
 	if name == "" {
 		panic("参数 name 不能为空")
-	}
-
-	if index == "" {
-		index = defaultIndex
 	}
 
 	return func(ctx *Context) Responser {

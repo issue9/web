@@ -3,7 +3,6 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -26,37 +25,6 @@ func buildMiddleware(a *assert.Assertion, v string) MiddlewareFunc {
 	}
 }
 
-func TestAccept(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv := newServer(a, nil)
-	err := srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "text/json")
-	a.NotError(err)
-
-	ct := AcceptMiddleware(text.Mimetype, "text/json")
-	r1 := srv.NewRouter("r1", "https://example.com", group.MatcherFunc(group.Any), ct)
-	a.NotNil(r1)
-	r1.Get("/path", func(*Context) Responser {
-		return Status(http.StatusCreated)
-	})
-
-	s := rest.NewServer(a, srv.group, nil)
-	s.Get("/path").
-		Header("Accept", text.Mimetype).
-		Do(nil).
-		Status(http.StatusCreated)
-
-	s.Get("/path").
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusNotAcceptable)
-
-	s.Get("/path").
-		Header("Accept", "text/json").
-		Do(nil).
-		Status(http.StatusCreated)
-}
-
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
@@ -70,11 +38,13 @@ func TestMiddleware(t *testing.T) {
 
 	srv := rest.NewServer(a, server.group, nil)
 	srv.Get("/p1/path").
+		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
 		StringBody("p2-p1b2-b11234567890")
 
 	srv.Get("/path").
+		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
 		StringBody("b2-b11234567890")
@@ -126,6 +96,7 @@ func TestServer_FileServer(t *testing.T) {
 	srv := rest.NewServer(a, server.group, nil)
 
 	srv.Get("/m1/test").
+		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("Content-Type", "text/html").

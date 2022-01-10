@@ -318,13 +318,13 @@ func (srv *Server) conentType(header string) (serialization.UnmarshalFunc, encod
 	)
 
 	if header != "" {
-		m, params, err := mime.ParseMediaType(header)
+		m, ps, err := mime.ParseMediaType(header)
 		if err != nil {
 			return nil, nil, err
 		}
 		mt = m
 
-		if c := params["charset"]; c != "" {
+		if c := ps["charset"]; c != "" {
 			charset = c
 		}
 	}

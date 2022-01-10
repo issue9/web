@@ -28,7 +28,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// App 提供一种简单的命令行生成方式
+// AppOf 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
 //  - v 显示版本号；
@@ -39,20 +39,20 @@ import (
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 App 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+// 如果想让 AppOf 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
 //  -v  show version
 //  -h  show help
 //  -f  set file system
 //  -a  action
 //  -s  run as server
-// 对于 App 的初始化错误产生的 panic 信息是不支持本地的。
+// 对于 AppOf 的初始化错误产生的 panic 信息是不支持本地的。
 //
 //  // 本地化命令行的帮助信息
 //  builder := catalog.NewBuilder()
 //  builder.SetString("show help", "显示帮助信息")
 //  builder.SetString("show version", "显示版本信息")
 //
-//  cmd := &web.App{
+//  cmd := &app.AppOf[struct{}]{
 //      Name: "app",
 //      Version: "1.0.0",
 //      Init: func(s *Server) error {...},
@@ -61,8 +61,8 @@ import (
 //
 //  cmd.Exec()
 //
-// T 表示的是配置文件中的用户自定义数据类型，如果不需要可以为空，即 struct{}。
-type App[T any] struct {
+// T 表示的是配置文件中的用户自定义数据类型，如果不需要可以设置为 struct{}。
+type AppOf[T any] struct {
 	Name string // 程序名称
 
 	Version string // 程序版本
@@ -113,14 +113,14 @@ type App[T any] struct {
 // Exec 执行命令行操作
 //
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
-func (cmd *App[T]) Exec(args []string) error {
+func (cmd *AppOf[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
-		panic(err) // App 配置错误直接 panic
+		panic(err) // AppOf 配置错误直接 panic
 	}
 	return cmd.exec(args)
 }
 
-func (cmd *App[T]) sanitize() error {
+func (cmd *AppOf[T]) sanitize() error {
 	if cmd.Name == "" {
 		return errors.New("字段 Name 不能为空")
 	}
@@ -166,7 +166,7 @@ func (cmd *App[T]) sanitize() error {
 	return nil
 }
 
-func (cmd *App[T]) exec(args []string) error {
+func (cmd *AppOf[T]) exec(args []string) error {
 	cl := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	cl.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
@@ -216,9 +216,9 @@ func (cmd *App[T]) exec(args []string) error {
 	return srv.Serve()
 }
 
-func (cmd *App[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
+func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, user, err = NewOptions[T](cmd.Files, fsys, cmd.ConfigFilename)
+		opt, user, err = NewOptionsOf[T](cmd.Files, fsys, cmd.ConfigFilename)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -237,7 +237,7 @@ func (cmd *App[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err er
 	return opt, user, nil
 }
 
-func (cmd *App[T]) grace(s *server.Server, sig ...os.Signal) {
+func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, sig...)

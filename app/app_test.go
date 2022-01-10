@@ -18,7 +18,7 @@ func TestApp_Exec(t *testing.T) {
 
 	bs := new(bytes.Buffer)
 	var action string
-	aa := &App[empty]{
+	aa := &AppOf[empty]{
 		Name:    "test",
 		Version: "1.0.0",
 		Out:     bs,
@@ -38,13 +38,13 @@ func TestApp_Exec(t *testing.T) {
 func TestApp_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &App[empty]{}
+	cmd := &AppOf[empty]{}
 	a.ErrorString(cmd.sanitize(), "Name")
 
-	cmd = &App[empty]{Name: "app", Version: "1.1.1"}
+	cmd = &AppOf[empty]{Name: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "Init")
 
-	cmd = &App[empty]{
+	cmd = &AppOf[empty]{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, *empty, string) error { return nil },
@@ -57,7 +57,7 @@ func TestApp_sanitize(t *testing.T) {
 func TestCommand_initOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &App[empty]{
+	cmd := &AppOf[empty]{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, *empty, string) error { return nil },
@@ -71,7 +71,7 @@ func TestCommand_initOptions(t *testing.T) {
 		True(opt.Catalog == cmd.Catalog)
 
 	// 包含 Options
-	cmd = &App[empty]{
+	cmd = &AppOf[empty]{
 		Name:    "app",
 		Version: "1.1.1",
 		Init:    func(*server.Server, *empty, string) error { return nil },
@@ -86,7 +86,7 @@ func TestCommand_initOptions(t *testing.T) {
 		False(opt.Catalog == cmd.Catalog) // 不指向同一个对象
 
 	// 包含 ConfigFilename
-	cmd2 := &App[userData]{
+	cmd2 := &AppOf[userData]{
 		Name:           "app",
 		Version:        "1.1.1",
 		Init:           func(*server.Server, *userData, string) error { return nil },

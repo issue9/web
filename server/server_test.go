@@ -25,30 +25,23 @@ import (
 	"github.com/issue9/web/serialization/text"
 )
 
-var _ fs.FS = &Server{}
+var (
+	_ fs.FS = &Server{}
 
-var f201 = func(ctx *Context) Responser {
-	ctx.Response.Header().Set("Content-Type", "text/html")
-	ctx.Response.WriteHeader(http.StatusCreated)
-	_, err := ctx.Response.Write([]byte("1234567890"))
-	if err != nil {
-		println(err)
+	// 需要 accept 为 text/plian 否则可能输出内容会有误。
+	f201 = func(ctx *Context) Responser {
+		return Object(http.StatusCreated, []byte("1234567890"), map[string]string{
+			"Content-type": "text/html",
+		})
 	}
 
-	return nil
-}
-
-var f202 = func(ctx *Context) Responser {
-	ctx.Response.WriteHeader(http.StatusAccepted)
-	_, err := ctx.Response.Write([]byte("1234567890"))
-	if err != nil {
-		println(err)
+	// 需要 accept 为 text/plian 否则可能输出内容会有误。
+	f202 = func(ctx *Context) Responser {
+		return Object(http.StatusAccepted, []byte("1234567890"), nil)
 	}
 
-	return nil
-}
-
-var f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
+	f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
+)
 
 // 声明一个 server 实例
 func newServer(a *assert.Assertion, o *Options) *Server {

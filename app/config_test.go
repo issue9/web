@@ -32,20 +32,20 @@ func TestNewOptions(t *testing.T) {
 	a := assert.New(t, false)
 	files := serialization.NewFiles(5)
 
-	opt, data, err := NewOptions[empty](files, os.DirFS("./testdata"), "web.yaml")
+	opt, data, err := NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
 	a.Error(err).Nil(opt).Nil(data)
 
 	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	opt, data, err = NewOptions[empty](files, os.DirFS("./testdata"), "web.yaml")
+	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(opt).Nil(data)
 	a.Equal(opt.Tag, language.Und)
 
-	opt, data, err = NewOptions[empty](files, os.DirFS("./testdata/not-exists"), "web.yaml")
+	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt).Nil(data)
 
-	opt, data, err = NewOptions[empty](files, os.DirFS("./testdata"), "invalid-web.xml")
+	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "invalid-web.xml")
 	a.Error(err).Nil(opt).Nil(data)
 	err2, ok := err.(*Error)
 	a.True(ok).NotNil(err2)
@@ -53,7 +53,7 @@ func TestNewOptions(t *testing.T) {
 		Equal(err2.Field, "router.cors.allowCredentials")
 
 	// 自定义 T
-	opt, user, err := NewOptions[userData](files, os.DirFS("./testdata"), "user.xml")
+	opt, user, err := NewOptionsOf[userData](files, os.DirFS("./testdata"), "user.xml")
 	a.NotError(err).NotNil(opt).NotNil(user)
 	a.Equal(user.ID, 1).Equal(opt.Port, ":8082")
 }
@@ -61,14 +61,14 @@ func TestNewOptions(t *testing.T) {
 func TestWebconfig_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	conf := &webconfig[empty]{}
+	conf := &configOf[empty]{}
 	a.NotError(conf.sanitize()).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.Router).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
-	conf = &webconfig[empty]{Language: "zh-hans"}
+	conf = &configOf[empty]{Language: "zh-hans"}
 	a.NotError(conf.sanitize()).
 		NotEqual(conf.languageTag, language.Und).
 		NotNil(conf.logs)
@@ -77,13 +77,13 @@ func TestWebconfig_sanitize(t *testing.T) {
 func TestWebconfig_buildTimezone(t *testing.T) {
 	a := assert.New(t, false)
 
-	conf := &webconfig[empty]{}
+	conf := &configOf[empty]{}
 	a.NotError(conf.buildTimezone()).Nil(conf.location)
 
-	conf = &webconfig[empty]{Timezone: "Asia/Shanghai"}
+	conf = &configOf[empty]{Timezone: "Asia/Shanghai"}
 	a.NotError(conf.buildTimezone()).NotNil(conf.location)
 
-	conf = &webconfig[empty]{Timezone: "undefined"}
+	conf = &configOf[empty]{Timezone: "undefined"}
 	err := conf.buildTimezone()
 	a.NotNil(err).Equal(err.Field, "timezone")
 }

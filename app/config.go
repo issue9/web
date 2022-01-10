@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-type webconfig[T any] struct {
+type configOf[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 指定默认语言
@@ -64,17 +64,18 @@ type webconfig[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
-// NewOptions 从配置文件初始化 server.Options 实例
+// NewOptionsOf 从配置文件初始化 server.Options 实例
 //
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
 //
+// T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
+// 如果实现了 Sanitizer 接口，则在加载后进行自检；
+//
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-//
-// T 表示用户自定义的数据项，可以实现 Sanitizer 接口，用于对加载后的数据进行自检。
-func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
-	conf := &webconfig[T]{}
+func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
+	conf := &configOf[T]{}
 	if err := files.LoadFS(f, filename, conf); err != nil {
 		return nil, nil, err
 	}
@@ -107,7 +108,7 @@ func NewOptions[T any](files *serialization.Files, f fs.FS, filename string) (*s
 	}, conf.User, nil
 }
 
-func (conf *webconfig[T]) sanitize() error {
+func (conf *configOf[T]) sanitize() error {
 	if conf.Logs != nil {
 		if err := conf.Logs.Sanitize(); err != nil {
 			return &Error{Field: "logs", Message: err}
@@ -164,7 +165,7 @@ func (conf *webconfig[T]) sanitize() error {
 	return nil
 }
 
-func (conf *webconfig[T]) buildTimezone() *Error {
+func (conf *configOf[T]) buildTimezone() *Error {
 	if conf.Timezone == "" {
 		return nil
 	}
