@@ -121,7 +121,7 @@ func New(name, version string, o *Options) (*Server, error) {
 			contextPool.Put(ctx)
 		}
 	}
-	srv.group = group.NewOf[HandlerFunc](f, nil, o.RouterOptions...)
+	srv.group = group.NewOf[HandlerFunc](f, o.Middlewares, o.RouterOptions...)
 
 	srv.httpServer.Handler = srv.group
 	if srv.httpServer.BaseContext == nil {

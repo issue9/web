@@ -57,6 +57,11 @@ type Options struct {
 	// 可以为空。
 	RouterOptions []mux.Option
 
+	// 应用于全局的中间件
+	//
+	// 所有通过 NewRouter 的路由都会应用此中间件。
+	Middlewares []MiddlewareFunc
+
 	// 可以对 http.Server 的内容进行修改
 	//
 	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.groups
