@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/issue9/term/v2 v2.1.5 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
+	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
 )
 
 go 1.18
