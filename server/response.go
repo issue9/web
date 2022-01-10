@@ -3,12 +3,13 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/issue9/logs/v3"
 )
 
-const exited exit = 0
+const exited status = 0
 
 type (
 	// HandlerFunc 路由项处理函数原型
@@ -38,8 +39,6 @@ type (
 		headers map[string]string
 		body    interface{}
 	}
-
-	exit int
 )
 
 func (ctx *Context) renderResponser(resp Responser) {
@@ -57,12 +56,6 @@ func (s status) Status() int { return int(s) }
 func (s status) Headers() map[string]string { return nil }
 
 func (s status) Body() interface{} { return nil }
-
-func (e exit) Status() int { return 0 }
-
-func (e exit) Headers() map[string]string { return nil }
-
-func (e exit) Body() interface{} { return nil }
 
 func (o *object) Status() int { return o.status }
 
@@ -106,7 +99,12 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 }
 
 // Status 仅包含状态码的 Responser
-func Status(statusCode int) Responser { return status(statusCode) }
+func Status(statusCode int) Responser {
+	if statusCode < 100 || statusCode >= 600 {
+		panic(fmt.Sprintf("无效的状态码 %d", statusCode))
+	}
+	return status(statusCode)
+}
 
 // Exit 不再执行后续操作退出当前请求
 //

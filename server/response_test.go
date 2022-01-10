@@ -24,12 +24,12 @@ func TestContext_Critical(t *testing.T) {
 	a := assert.New(t, false)
 	w := httptest.NewRecorder()
 	criticalLog.Reset()
-	b := newServer(a, nil)
-	b.Logs().CRITICAL().SetOutput(criticalLog)
-	b.Logs().CRITICAL().SetFlags(log.Llongfile)
+	srv := newServer(a, nil)
+	srv.Logs().CRITICAL().SetOutput(criticalLog)
+	srv.Logs().CRITICAL().SetFlags(log.Llongfile)
 	ctx := &Context{
 		Response: w,
-		server:   b,
+		server:   srv,
 	}
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
@@ -40,12 +40,12 @@ func TestContext_Critical(t *testing.T) {
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t, false)
 	w := httptest.NewRecorder()
-	b := newServer(a, nil)
+	srv := newServer(a, nil)
 	errLog.Reset()
-	b.Logs().ERROR().SetOutput(errLog)
+	srv.Logs().ERROR().SetOutput(errLog)
 	ctx := &Context{
 		Response: w,
-		server:   b,
+		server:   srv,
 	}
 
 	ctx.renderResponser(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
@@ -55,16 +55,47 @@ func TestContext_Errorf(t *testing.T) {
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t, false)
 	w := httptest.NewRecorder()
-	b := newServer(a, nil)
+	srv := newServer(a, nil)
 	criticalLog.Reset()
-	b.Logs().CRITICAL().SetOutput(criticalLog)
+	srv.Logs().CRITICAL().SetOutput(criticalLog)
 	ctx := &Context{
 		Response: w,
-		server:   b,
+		server:   srv,
 	}
 
 	ctx.renderResponser(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
 	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
+}
+
+func TestStatus(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.Panic(func() {
+		Status(50)
+	})
+
+	a.Panic(func() {
+		Status(600)
+	})
+
+	s := Status(201)
+	a.NotNil(s)
+
+	srv := newServer(a, nil)
+
+	r, err := http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
+	w := httptest.NewRecorder()
+	ctx := srv.NewContext(w, r)
+	ctx.renderResponser(s)
+	a.Equal(w.Code, 201)
+
+	r, err = http.NewRequest(http.MethodGet, "/path", nil)
+	a.NotError(err).NotNil(r)
+	w = httptest.NewRecorder()
+	ctx = srv.NewContext(w, r)
+	ctx.renderResponser(Exit())
+	a.Equal(w.Code, 200) // 默认值 200
 }
 
 func TestContext_ResultWithFields(t *testing.T) {
