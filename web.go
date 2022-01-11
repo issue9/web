@@ -66,6 +66,8 @@ func NotFound() Responser { return Status(http.StatusNotFound) }
 
 func NoContent() Responser { return Status(http.StatusNoContent) }
 
+func Exit() Responser { return server.Exit() }
+
 func NotImplemented() Responser { return Status(http.StatusNotImplemented) }
 
 // RetryAfter 返回 Retry-After 报头内容

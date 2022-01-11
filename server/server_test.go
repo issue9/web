@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package server_test
 
 import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
-	"encoding/xml"
 	"io/fs"
 	"net"
 	"net/http"
@@ -16,105 +14,42 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6/group"
-	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
 var (
-	_ fs.FS = &Server{}
+	_ fs.FS = &server.Server{}
 
 	// 需要 accept 为 text/plian 否则可能输出内容会有误。
-	f201 = func(ctx *Context) Responser {
-		return Object(http.StatusCreated, []byte("1234567890"), map[string]string{
-			"Content-type": "text/html",
-		})
+	f202 = func(ctx *server.Context) server.Responser {
+		return server.Object(http.StatusAccepted, []byte("1234567890"), nil)
 	}
-
-	// 需要 accept 为 text/plian 否则可能输出内容会有误。
-	f202 = func(ctx *Context) Responser {
-		return Object(http.StatusAccepted, []byte("1234567890"), nil)
-	}
-
-	f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 )
-
-// 声明一个 server 实例
-func newServer(a *assert.Assertion, o *Options) *Server {
-	if o == nil {
-		o = &Options{Port: ":8080"}
-	}
-	if o.Logs == nil { // 默认重定向到 os.Stderr
-		l, err := logs.New(nil)
-		a.NotError(err).NotNil(l)
-
-		a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelError, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelInfo, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelTrace, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelWarn, os.Stdout))
-		o.Logs = l
-	}
-
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// locale
-	b := srv.Locale().Builder()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	// mimetype
-	a.NotError(srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
-	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
-
-	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
-
-	return srv
-}
-
-func TestNewServer(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv, err := New("app", "0.1.0", nil)
-	a.NotError(err).NotNil(srv)
-	a.False(srv.Uptime().IsZero())
-	a.NotNil(srv.Cache())
-	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.group)
-	a.NotNil(srv.httpServer.BaseContext)
-	a.Equal(srv.httpServer.Addr, "")
-}
 
 func TestGetServer(t *testing.T) {
 	a := assert.New(t, false)
 	type key int
 	var k key = 0
 
-	srv := newServer(a, &Options{Port: ":8080"})
+	srv := servertest.NewServer(a, &server.Options{Port: ":8080"})
 	var isRequested bool
 
-	router := srv.NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
+	router := srv.Server().NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
-	router.Get("/path", func(ctx *Context) Responser {
-		s1 := GetServer(ctx.Request)
-		a.NotNil(s1).Equal(s1, srv)
+	router.Get("/path", func(ctx *server.Context) server.Responser {
+		s1 := server.GetServer(ctx.Request)
+		a.NotNil(s1).Equal(s1, srv.Server())
 
 		v := ctx.Request.Context().Value(k)
 		a.Nil(v)
 
-		ctx1 := NewContext(ctx.Response, ctx.Request)
+		ctx1 := server.NewContext(ctx.Response, ctx.Request)
 		a.NotNil(ctx1)
-		ctx2 := NewContext(ctx.Response, ctx1.Request)
+		ctx2 := server.NewContext(ctx.Response, ctx1.Request)
 		a.Equal(ctx1, ctx2)
 
 		isRequested = true
@@ -122,10 +57,8 @@ func TestGetServer(t *testing.T) {
 		return nil
 	})
 
-	go func() {
-		a.Equal(srv.Serve(), http.ErrServerClosed)
-	}()
-	time.Sleep(500 * time.Millisecond)
+	srv.GoServe()
+
 	r, err := http.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", text.Mimetype)
@@ -136,15 +69,17 @@ func TestGetServer(t *testing.T) {
 	r, err = http.NewRequest(http.MethodGet, "/path", nil)
 	a.NotError(err).NotNil(r)
 	a.Panic(func() {
-		GetServer(r)
+		server.GetServer(r)
 	})
 
-	a.NotError(srv.Close(0))
+	a.NotError(srv.Server().Close(0))
 	a.True(isRequested, "未正常访问 /path")
+
+	srv.Wait()
 
 	// BaseContext
 
-	srv = newServer(a, &Options{
+	srv = servertest.NewServer(a, &server.Options{
 		Port: ":8080",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
@@ -154,11 +89,11 @@ func TestGetServer(t *testing.T) {
 	})
 
 	isRequested = false
-	router = srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	router = srv.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
-	router.Get("/path", func(ctx *Context) Responser {
-		s1 := GetServer(ctx.Request)
-		a.NotNil(s1).Equal(s1, srv)
+	router.Get("/path", func(ctx *server.Context) server.Responser {
+		s1 := server.GetServer(ctx.Request)
+		a.NotNil(s1).Equal(s1, srv.Server())
 
 		v := ctx.Request.Context().Value(k) // BaseContext 中设置了 k 的值
 		a.Equal(v, 1)
@@ -167,20 +102,19 @@ func TestGetServer(t *testing.T) {
 
 		return nil
 	})
-	go func() {
-		a.Equal(srv.Serve(), http.ErrServerClosed)
-	}()
-	time.Sleep(500 * time.Millisecond)
+	srv.GoServe()
 	resp, err = http.Get("http://localhost:8080/path")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusOK)
 
-	a.NotError(srv.Close(0))
+	a.NotError(srv.Server().Close(0))
 	a.True(isRequested, "未正常访问 /path")
+
+	srv.Wait()
 }
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := servertest.NewServer(a, nil)
 
 	type (
 		t1 int
@@ -193,30 +127,29 @@ func TestServer_Vars(t *testing.T) {
 		v3 t3 = 1
 	)
 
-	srv.Vars().Store(v1, 1)
-	srv.Vars().Store(v2, 2)
-	srv.Vars().Store(v3, 3)
+	srv.Server().Vars().Store(v1, 1)
+	srv.Server().Vars().Store(v2, 2)
+	srv.Server().Vars().Store(v3, 3)
 
-	v11, found := srv.Vars().Load(v1)
+	v11, found := srv.Server().Vars().Load(v1)
 	a.True(found).Equal(v11, 1)
-	v22, found := srv.Vars().Load(v2)
+	v22, found := srv.Server().Vars().Load(v2)
 	a.True(found).Equal(v22, 3)
 }
 
 func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
-	exit := make(chan bool, 1)
 
-	srv := newServer(a, nil)
-	router := srv.NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	srv := servertest.NewServer(a, nil)
+	router := srv.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 	router.Get("/mux/test", f202)
 	router.Get("/m1/test", f202)
 
-	a.False(srv.Serving())
+	a.False(srv.Server().Serving())
 
-	router.Get("/m2/test", func(ctx *Context) Responser {
-		a.True(srv.Serving())
+	router.Get("/m2/test", func(ctx *server.Context) server.Responser {
+		a.True(srv.Server().Serving())
 
 		srv := ctx.Server()
 		a.NotNil(srv)
@@ -229,12 +162,7 @@ func TestServer_Serve(t *testing.T) {
 		return nil
 	})
 
-	go func() {
-		err := srv.Serve()
-		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
-		exit <- true
-	}()
-	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
+	srv.GoServe()
 
 	resp, err := http.Get("http://localhost:8080/m1/test")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
@@ -246,21 +174,20 @@ func TestServer_Serve(t *testing.T) {
 	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
 
 	// static 中定义的静态文件
-	router.Get("/admin/{path}", srv.FileServer(os.DirFS("./testdata"), "path", "index.html"))
+	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	resp, err = http.Get("http://localhost:8080/admin/file1.txt")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusOK)
 
-	a.NotError(srv.Close(0))
-	<-exit
+	a.NotError(srv.Server().Close(0))
+	srv.Wait()
 
-	a.False(srv.Serving())
+	a.False(srv.Server().Serving())
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
-	exit := make(chan bool, 1)
 
-	srv := newServer(a, &Options{
+	srv := servertest.NewServer(a, &server.Options{
 		Port: ":8088",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
@@ -271,16 +198,11 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 
-	router := srv.NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
+	router := srv.Server().NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 	router.Get("/mux/test", f202)
 
-	go func() {
-		err := srv.Serve()
-		a.ErrorIs(err, http.ErrServerClosed, "assert.ErrorType 错误，%v", err)
-		exit <- true
-	}()
-	time.Sleep(5000 * time.Microsecond) // 等待 go func() 完成
+	srv.GoServe()
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -297,30 +219,29 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	resp, err = client.Get("http://localhost:8088/mux")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
 
-	a.NotError(srv.Close(0))
-	<-exit
+	a.NotError(srv.Server().Close(0))
+	srv.Wait()
 }
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
-	exit := make(chan bool, 1)
-	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	srv := servertest.NewServer(a, nil)
+	router := srv.Server().NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 
 	router.Get("/test", f202)
-	router.Get("/close", func(ctx *Context) Responser {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
 			ctx.Response.WriteHeader(http.StatusInternalServerError)
 		}
-		a.NotError(srv.Close(0))
+		a.NotError(srv.Server().Close(0))
 
 		return nil
 	})
 
 	buf := new(bytes.Buffer)
-	srv.AddService("srv1", func(ctx context.Context) error {
+	srv.Server().AddService("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)
 		for {
 			select {
@@ -334,16 +255,13 @@ func TestServer_Close(t *testing.T) {
 		}
 	})
 
-	srv.OnClose(func() error {
+	srv.Server().OnClose(func() error {
 		buf.WriteString("RegisterOnClose\n")
 		println("TestServer_Close RegisterOnClose...")
 		return nil
 	})
 
-	go func() {
-		a.ErrorIs(srv.Serve(), http.ErrServerClosed)
-		exit <- true
-	}()
+	srv.GoServe()
 
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
@@ -362,34 +280,26 @@ func TestServer_Close(t *testing.T) {
 	a.Contains(str, "canceled").
 		Contains(str, "RegisterOnClose")
 
-	<-exit
+	srv.Wait()
 }
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
-	exit := make(chan bool, 1)
-	router := srv.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
+	srv := servertest.NewServer(a, nil)
+	router := srv.Server().NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 
 	router.Get("/test", f202)
-	router.Get("/close", func(ctx *Context) Responser {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		a.NotError(srv.Close(300 * time.Millisecond))
+		a.NotError(srv.Server().Close(300 * time.Millisecond))
 
 		return nil
 	})
 
-	go func() {
-		err := srv.Serve()
-		a.Error(err).ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
-		exit <- true
-	}()
-
-	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(5000 * time.Microsecond)
+	srv.GoServe()
 
 	resp, err := http.Get("http://localhost:8080/test")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
@@ -407,5 +317,5 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
-	<-exit
+	srv.Wait()
 }

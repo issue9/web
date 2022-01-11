@@ -114,14 +114,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		localePrinter: o.locale.Printer(o.Tag),
 	}
 
-	f := func(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
-		if ctx := srv.NewContext(w, r); ctx != nil {
-			ctx.params = ps
-			ctx.renderResponser(f(ctx))
-			contextPool.Put(ctx)
-		}
-	}
-	srv.group = group.NewOf[HandlerFunc](f, o.Middlewares, o.RouterOptions...)
+	srv.group = group.NewOf[HandlerFunc](srv.call, o.Middlewares, o.RouterOptions...)
 
 	srv.httpServer.Handler = srv.group
 	if srv.httpServer.BaseContext == nil {
@@ -136,6 +129,14 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 
 	return srv, nil
+}
+
+func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
+	if ctx := srv.NewContext(w, r); ctx != nil {
+		ctx.params = ps
+		ctx.renderResponser(f(ctx))
+		contextPool.Put(ctx)
+	}
 }
 
 // GetServer 从请求中获取 *Server 实例

@@ -13,11 +13,28 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/mux/v6/group"
+	"github.com/issue9/mux/v6/routertest"
 
 	"github.com/issue9/web/internal/charsetdata"
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
 )
+
+func BenchmarkRouter(b *testing.B) {
+	a := assert.New(b, false)
+	srv := newServer(a, &Options{Port: ":8080"})
+
+	h := func(c *Context) Responser {
+		_, err := c.Response.Write([]byte(c.Request.URL.Path))
+		if err != nil {
+			b.Error(err)
+		}
+		return nil
+	}
+
+	t := routertest.NewTester[HandlerFunc](srv.call)
+	t.Bench(b, h)
+}
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
