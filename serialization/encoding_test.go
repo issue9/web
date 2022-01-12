@@ -8,7 +8,6 @@ import (
 	"log"
 	"testing"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v2"
 )
 
@@ -50,14 +49,14 @@ func TestEncodings_Add(t *testing.T) {
 
 	e.Add(map[string]EncodingWriter{
 		"gzip": gzip.NewWriter(&bytes.Buffer{}),
-		"br":   brotli.NewWriter(&bytes.Buffer{}),
+		"br":   gzip.NewWriter(&bytes.Buffer{}),
 	})
 	a.Equal(2, len(e.algorithms))
 
 	// 重复添加
 	a.PanicString(func() {
 		e.Add(map[string]EncodingWriter{
-			"gzip": brotli.NewWriter(&bytes.Buffer{}),
+			"gzip": gzip.NewWriter(&bytes.Buffer{}),
 		})
 	}, "存在相同名称的函数")
 
@@ -69,13 +68,13 @@ func TestEncodings_Add(t *testing.T) {
 
 	a.PanicString(func() {
 		e.Add(map[string]EncodingWriter{
-			"*": brotli.NewWriter(&bytes.Buffer{}),
+			"*": gzip.NewWriter(&bytes.Buffer{}),
 		})
 	}, "name 值不能为 identity 和 *")
 
 	a.PanicString(func() {
 		e.Add(map[string]EncodingWriter{
-			"identity": brotli.NewWriter(&bytes.Buffer{}),
+			"identity": gzip.NewWriter(&bytes.Buffer{}),
 		})
 	}, "name 值不能为 identity 和 *")
 }
@@ -90,7 +89,7 @@ func TestEncodings_Search(t *testing.T) {
 		Equal(e.ignoreTypePrefix, []string{"text"})
 	e.Add(map[string]EncodingWriter{
 		"gzip": gzip.NewWriter(&bytes.Buffer{}),
-		"br":   brotli.NewWriter(&bytes.Buffer{}),
+		"br":   gzip.NewWriter(&bytes.Buffer{}),
 	})
 
 	name, w, notAccept := e.Search("application/json", "gzip;q=0.9,br")

@@ -59,7 +59,7 @@ type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
 
-	// 指定输出时所使用的媒体类型，以及名称
+	// 指定 Marshal 输出时所使用的媒体类型，以及名称
 	OutputMimetype     serialization.MarshalFunc
 	OutputMimetypeName string
 
@@ -68,6 +68,12 @@ type Context struct {
 	// 若值为 encoding.Nop 或是空，表示为 utf-8
 	OutputCharset     encoding.Encoding
 	OutputCharsetName string
+
+	// 压缩格式
+	//
+	// 可以为空，表示不需要压缩。
+	OutputEncoding     serialization.EncodingWriter
+	OutputEncodingName string
 
 	// 客户端内容所使用的媒体类型
 	InputMimetype serialization.UnmarshalFunc
@@ -129,6 +135,13 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		return nil
 	}
 
+	header = r.Header.Get("Accept-Encoding")
+	outputEncodingName, outputEncoding, notAcceptable := srv.Encodings().Search(outputMimetypeName, header)
+	if notAcceptable {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
+
 	header = r.Header.Get(contentTypeKey)
 	inputMimetype, inputCharset, err := srv.conentType(header)
 	if err != nil {
@@ -148,6 +161,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.OutputMimetypeName = outputMimetypeName
 	ctx.OutputCharset = outputCharset
 	ctx.OutputCharsetName = outputCharsetName
+	ctx.OutputEncoding = outputEncoding
+	ctx.OutputEncodingName = outputEncodingName
 	ctx.InputMimetype = inputMimetype
 	ctx.InputCharset = inputCharset
 	ctx.OutputTag = tag
@@ -208,6 +223,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
 	header := ctx.Response.Header()
+
 	var contentTypeFound, contentLanguageFound bool
 	for k, v := range headers {
 		k = http.CanonicalHeaderKey(k)
@@ -244,6 +260,13 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	case err != nil:
 		ctx.Response.WriteHeader(http.StatusInternalServerError)
 		return err
+	}
+
+	if ctx.OutputEncoding != nil && bodyAllowedForStatus(status) {
+		header.Del("Content-Length") // https://github.com/golang/go/issues/14975
+		ctx.OutputEncoding.Reset(ctx.Response)
+		header.Set("Content-Encoding", ctx.OutputEncodingName)
+		header.Add("Vary", "Content-Encoding")
 	}
 
 	// 注意 WriteHeader 调用顺序。
@@ -437,4 +460,20 @@ func (ctx *Context) IsXHR() bool {
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...interface{}) string {
 	return ctx.LocalePrinter.Sprintf(key, v...)
+}
+
+// 以下内容复制于官方标准库
+//
+// bodyAllowedForStatus reports whether a given response status code
+// permits a body. See RFC 7230, section 3.3.
+func bodyAllowedForStatus(status int) bool {
+	switch {
+	case status >= 100 && status <= 199:
+		return false
+	case status == 204:
+		return false
+	case status == 304:
+		return false
+	}
+	return true
 }

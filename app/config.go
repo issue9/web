@@ -39,6 +39,11 @@ type configOf[T any] struct {
 	// 与 HTTP 请求相关的设置项
 	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
+	// 忽略的压缩类型
+	//
+	// 可以有通配符，比如 image/* 表示任意 image/ 开头的内容。
+	IgnoreEncodings []string `yaml:"ignoreEncodings,omitempty" json:"ignoreEncodings,omitempty" xml:"ignoreEncoding,omitempty"`
+
 	// 时区名称
 	//
 	// 可以是 Asia/Shanghai 等，具体可参考：
@@ -89,10 +94,10 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 
 	h := conf.HTTP
 	return &server.Options{
-		Port:          conf.Port,
 		FS:            f,
 		Location:      conf.location,
 		Cache:         conf.cache,
+		Port:          conf.Port,
 		RouterOptions: conf.Router.options,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
@@ -103,8 +108,10 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 			srv.ErrorLog = conf.logs.ERROR()
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:  conf.logs,
-		Files: files,
+		Logs:            conf.logs,
+		Files:           files,
+		IgnoreEncodings: conf.IgnoreEncodings,
+		Tag:             conf.languageTag,
 	}, conf.User, nil
 }
 

@@ -50,6 +50,7 @@ type Server struct {
 	httpServer *http.Server
 	vars       *sync.Map
 	mimetypes  *serialization.Mimetypes
+	encodings  *serialization.Encodings
 	cache      cache.Cache
 	uptime     time.Time
 	serving    bool
@@ -93,6 +94,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
 		mimetypes:  serialization.NewMimetypes(10),
+		encodings:  serialization.NewEncodings(o.Logs.ERROR(), o.IgnoreEncodings...),
 		cache:      o.Cache,
 		uptime:     time.Now(),
 
@@ -243,8 +245,9 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
 
-// Mimetypes 返回用于序列化 web 内容的操作接口
 func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.mimetypes }
+
+func (srv *Server) Encodings() *serialization.Encodings { return srv.encodings }
 
 // Files 返回用于序列化文件内容的操作接口
 func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }
