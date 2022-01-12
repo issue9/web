@@ -408,6 +408,9 @@ func TestServer_acceptLanguage(t *testing.T) {
 	tag = srv.acceptLanguage("zh-Hans")
 	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
 
+	tag = srv.acceptLanguage("english") // english 非正确的 tag，但是常用。
+	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
+
 	tag = srv.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 }

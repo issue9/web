@@ -321,14 +321,7 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
 		return srv.Tag()
 	}
-
-	al := qheader.Parse(header, "*")
-	tags := make([]language.Tag, 0, len(al))
-	for _, l := range al {
-		tags = append(tags, language.Make(l.Value))
-	}
-
-	tag, _, _ := srv.locale.Builder().Matcher().Match(tags...)
+	tag, _ := language.MatchStrings(srv.locale.Builder().Matcher(), header)
 	return tag
 }
 
