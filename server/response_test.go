@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 )
@@ -22,15 +23,14 @@ var (
 
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t, false)
-	w := httptest.NewRecorder()
-	criticalLog.Reset()
 	srv := newServer(a, nil)
+	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
 	srv.Logs().CRITICAL().SetFlags(log.Llongfile)
-	ctx := &Context{
-		Response: w,
-		server:   srv,
-	}
+
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := srv.NewContext(w, r)
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
 	a.Contains(criticalLog.String(), "response_test.go:35") // NOTE: 此测试依赖上一行的行号
@@ -39,14 +39,13 @@ func TestContext_Critical(t *testing.T) {
 
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t, false)
-	w := httptest.NewRecorder()
 	srv := newServer(a, nil)
 	errLog.Reset()
 	srv.Logs().ERROR().SetOutput(errLog)
-	ctx := &Context{
-		Response: w,
-		server:   srv,
-	}
+
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := srv.NewContext(w, r)
 
 	ctx.renderResponser(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
 	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
@@ -54,14 +53,13 @@ func TestContext_Errorf(t *testing.T) {
 
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t, false)
-	w := httptest.NewRecorder()
 	srv := newServer(a, nil)
 	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
-	ctx := &Context{
-		Response: w,
-		server:   srv,
-	}
+
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := srv.NewContext(w, r)
 
 	ctx.renderResponser(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
 	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
