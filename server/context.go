@@ -4,7 +4,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io"
 	"mime"
@@ -107,14 +106,6 @@ type Context struct {
 }
 
 // NewContext 构建 *Context 实例
-func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	if ctx := r.Context().Value(contextKeyContext); ctx != nil {
-		return ctx.(*Context)
-	}
-	return GetServer(r).NewContext(w, r)
-}
-
-// NewContext 构建 *Context 实例
 //
 // 如果不合规则，会以指定的状码退出。
 // 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
@@ -171,8 +162,6 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.body = ctx.body[:0]
 	ctx.read = false
 	ctx.Vars = make(map[interface{}]interface{})
-
-	ctx.Request = r.WithContext(context.WithValue(r.Context(), contextKeyContext, ctx))
 	return ctx
 }
 

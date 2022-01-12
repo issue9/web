@@ -28,10 +28,7 @@ import (
 
 type contextKey int
 
-const (
-	contextKeyServer contextKey = iota
-	contextKeyContext
-)
+const contextKeyServer contextKey = iota
 
 // DefaultMimetype 默认的媒体类型
 //

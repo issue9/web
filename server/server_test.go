@@ -47,11 +47,6 @@ func TestGetServer(t *testing.T) {
 		v := ctx.Request.Context().Value(k)
 		a.Nil(v)
 
-		ctx1 := server.NewContext(ctx.Response, ctx.Request)
-		a.NotNil(ctx1)
-		ctx2 := server.NewContext(ctx.Response, ctx1.Request)
-		a.Equal(ctx1, ctx2)
-
 		isRequested = true
 
 		return nil
