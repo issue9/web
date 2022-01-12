@@ -3,10 +3,12 @@
 package serialization
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
@@ -14,27 +16,50 @@ import (
 
 // Encodings 压缩功能管理
 type Encodings struct {
-	// 如果指定了这个值，那么会把错误日志输出到此。
-	// 若未指定，则不输出内容。
 	errlog *log.Logger
 
-	algorithms []*algorithm // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	builders []*EncodingWriterBuilder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
 	ignoreTypePrefix []string // 保存通配符匹配的值列表；
 	ignoreTypes      []string // 表示完全匹配的值列表。
 	allowAny         bool
 }
 
-// EncodingWriter 所有压缩对象实现的接口
-type EncodingWriter interface {
+type WriteCloseRester interface {
 	io.WriteCloser
 	Reset(io.Writer)
 }
 
-type algorithm struct {
-	name   string
-	writer EncodingWriter
+type EncodingWriterBuilder struct {
+	name string
+	pool *sync.Pool
 }
+
+// EncodingWriterFunc 将普通的 io.Writer 封装成 WriteCloseRester 接口对象
+type EncodingWriterFunc func(w io.Writer) (WriteCloseRester, error)
+
+func newEncodingWriterBuilder(name string, f EncodingWriterFunc) *EncodingWriterBuilder {
+	return &EncodingWriterBuilder{
+		name: name,
+		pool: &sync.Pool{New: func() interface{} {
+			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
+			if err != nil {
+				panic(err)
+			}
+			return w
+		}},
+	}
+}
+
+func (e *EncodingWriterBuilder) Build(w io.Writer) io.WriteCloser {
+	ww := e.pool.Get().(WriteCloseRester)
+	ww.Reset(w)
+	return ww
+}
+
+func (e *EncodingWriterBuilder) Put(v interface{}) { e.pool.Put(v) }
+
+func (e *EncodingWriterBuilder) Name() string { return e.name }
 
 // NewEncodings 构建一个支持压缩的中间件
 //
@@ -49,8 +74,8 @@ func NewEncodings(errlog *log.Logger, ignoreTypes ...string) *Encodings {
 	}
 
 	c := &Encodings{
-		algorithms: make([]*algorithm, 0, 4),
-		errlog:     errlog,
+		builders: make([]*EncodingWriterBuilder, 0, 4),
+		errlog:   errlog,
 	}
 
 	c.ignoreTypePrefix = make([]string, 0, len(ignoreTypes))
@@ -74,23 +99,20 @@ func NewEncodings(errlog *log.Logger, ignoreTypes ...string) *Encodings {
 	return c
 }
 
-func (c *Encodings) add(name string, w EncodingWriter) {
+func (c *Encodings) add(name string, f EncodingWriterFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
 
-	if w == nil {
+	if f == nil {
 		panic("参数 w 不能为空")
 	}
 
-	if sliceutil.Count(c.algorithms, func(i int) bool { return c.algorithms[i].name == name }) > 0 {
+	if sliceutil.Count(c.builders, func(i int) bool { return c.builders[i].name == name }) > 0 {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
-	c.algorithms = append(c.algorithms, &algorithm{
-		name:   name,
-		writer: w, // NOTE: 必须传递非空值，否则在 Close 时会出错
-	})
+	c.builders = append(c.builders, newEncodingWriterBuilder(name, f))
 }
 
 // Add 添加压缩算法
@@ -101,7 +123,7 @@ func (c *Encodings) add(name string, w EncodingWriter) {
 // 如果未添加任何算法，则每个请求都相当于是 identity 规则。
 //
 // 返回值表示是否添加成功，若为 false，则表示已经存在相同名称的对象。
-func (c *Encodings) Add(algos map[string]EncodingWriter) {
+func (c *Encodings) Add(algos map[string]EncodingWriterFunc) {
 	for name, algo := range algos {
 		c.add(name, algo)
 	}
@@ -110,8 +132,8 @@ func (c *Encodings) Add(algos map[string]EncodingWriter) {
 // Search 从报头中查找最合适的算法
 //
 //NOTE: 如果返回的 writer 为空值表示不需要压缩
-func (c *Encodings) Search(mimetype, header string) (name string, w EncodingWriter, notAcceptable bool) {
-	if len(c.algorithms) == 0 || !c.canCompressed(mimetype) {
+func (c *Encodings) Search(mimetype, header string) (w *EncodingWriterBuilder, notAcceptable bool) {
+	if len(c.builders) == 0 || !c.canCompressed(mimetype) {
 		return
 	}
 
@@ -119,15 +141,15 @@ func (c *Encodings) Search(mimetype, header string) (name string, w EncodingWrit
 	last := accepts[len(accepts)-1]
 	if last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {
-			return "", nil, true
+			return nil, true
 		}
 
-		for _, a := range c.algorithms {
+		for _, a := range c.builders {
 			index := sliceutil.Index(accepts, func(i int) bool {
 				return accepts[i].Value == a.name
 			})
 			if index < 0 {
-				return a.name, a.writer, false
+				return a, false
 			}
 		}
 		return
@@ -144,15 +166,15 @@ func (c *Encodings) Search(mimetype, header string) (name string, w EncodingWrit
 			identity = accept
 		}
 
-		for _, a := range c.algorithms {
+		for _, a := range c.builders {
 			if a.name == accept.Value {
-				return a.name, a.writer, false
+				return a, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		a := c.algorithms[0]
-		return a.name, a.writer, false
+		a := c.builders[0]
+		return a, false
 	}
 
 	return // 没有匹配，表示不需要进行压缩
