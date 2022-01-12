@@ -147,6 +147,10 @@ func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcce
 	}
 
 	accepts := qheader.Parse(header, "*")
+	if len(accepts) == 0 {
+		return
+	}
+
 	last := accepts[len(accepts)-1]
 	if last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {

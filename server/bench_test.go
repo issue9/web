@@ -4,6 +4,7 @@ package server
 
 import (
 	"bytes"
+	"compress/flate"
 	"io"
 	"mime"
 	"net/http"
@@ -133,6 +134,29 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
 		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+	}
+}
+
+func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
+	a := assert.New(b, false)
+	srv := newServer(a, nil)
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r, err := http.NewRequest(http.MethodGet, "/path", nil)
+		a.NotError(err).NotNil(r)
+		r.Header.Set("Accept", text.Mimetype)
+		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
+		r.Header.Set("Accept-Encoding", "gzip;q=0.9,deflate")
+
+		ctx := srv.NewContext(w, r)
+		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
+		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.destory()
+
+		data, err := io.ReadAll(flate.NewReader(w.Body))
+		a.NotError(err).NotNil(data)
+		a.Equal(data, charsetdata.GBKData2)
 	}
 }
 

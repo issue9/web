@@ -111,6 +111,9 @@ func TestEncodings_Search(t *testing.T) {
 	b, notAccept = e.Search("text/plian", "gzip,br")
 	a.False(notAccept).Nil(b)
 
+	b, notAccept = e.Search("text/plian", "")
+	a.False(notAccept).Nil(b)
+
 	// *
 
 	b, notAccept = e.Search("application/xml", "*;q=0")

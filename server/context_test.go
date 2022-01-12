@@ -4,7 +4,9 @@ package server
 
 import (
 	"bytes"
+	"compress/flate"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -182,7 +184,6 @@ func TestContext_Body(t *testing.T) {
 	// 采用 Nop 即 utf-8 编码
 	r = rest.Post(a, "/path", []byte("123")).Request()
 	ctx = srv.NewContext(w, r)
-	ctx.OutputCharset = encoding.Nop
 	ctx.InputCharset = encoding.Nop
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
@@ -194,7 +195,6 @@ func TestContext_Body(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r)
-	ctx.OutputCharset = encoding.Nop
 	data, err = ctx.Body()
 	a.NotError(err).Equal(string(data), charsetdata.GBKString1)
 	a.Equal(ctx.body, data)
@@ -274,7 +274,7 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(w.Body.String(), "")
 	a.Equal(w.Header().Get("content-language"), "zh-Hans") // 指定了输出语言
 
-	// 输出不同编码的内容
+	// accept,accept-language,accept-charset
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept", text.Mimetype).
@@ -285,6 +285,56 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+
+	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
+	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").
+		Header("Accept", text.Mimetype).
+		Header("Accept-Language", "zh-Hans").
+		Header("Accept-Charset", "gbk").
+		Header("Accept-Encoding", "gzip;q=0.9,deflate").
+		Request()
+	ctx = srv.NewContext(w, r)
+	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
+	ctx.destory()
+	a.Equal(w.Code, http.StatusCreated)
+	data, err := io.ReadAll(flate.NewReader(w.Body))
+	a.NotError(err).Equal(data, charsetdata.GBKData2)
+
+	// 同时通过 ctx.Response.Write 和 ctx.Marshal 输出内容，可以正常压缩
+	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").
+		Header("Accept", text.Mimetype).
+		Header("Accept-Encoding", "gzip;q=0.9,deflate").
+		Request()
+	ctx = srv.NewContext(w, r)
+	_, err = ctx.Response.Write([]byte("123")) // 因为压缩的关系，此操作并未调用 WriteHeader(200)
+	a.NotError(err)
+	a.NotError(ctx.Marshal(http.StatusCreated, "456", nil))
+	ctx.destory()
+	a.Equal(w.Code, http.StatusCreated)
+	data, err = io.ReadAll(flate.NewReader(w.Body))
+	a.NotError(err).Equal(string(data), "123456")
+
+	// accept,accept-language,accept-charset 和 accept-encoding，部分 Response.Write 输出
+	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").
+		Header("Accept", text.Mimetype).
+		Header("Accept-Language", "zh-Hans").
+		Header("Accept-Charset", "gbk").
+		Header("Accept-Encoding", "gzip;q=0.9,deflate").
+		Request()
+	ctx = srv.NewContext(w, r)
+	_, err = ctx.Response.Write([]byte(charsetdata.GBKString1))
+	a.NotError(err)
+	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
+	ctx.destory()
+	a.Equal(w.Code, http.StatusCreated)
+	data, err = io.ReadAll(flate.NewReader(w.Body))
+	data2 := make([]byte, 0, len(data))
+	data2 = append(data2, charsetdata.GBKData1...)
+	data2 = append(data2, charsetdata.GBKData2...)
+	a.NotError(err).Equal(data, data2)
 
 	// OutputMimetype == nil
 	w = httptest.NewRecorder()

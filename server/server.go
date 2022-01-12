@@ -134,7 +134,7 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params
 	if ctx := srv.NewContext(w, r); ctx != nil {
 		ctx.params = ps
 		ctx.renderResponser(f(ctx))
-		contextPool.Put(ctx)
+		ctx.destory()
 	}
 }
 

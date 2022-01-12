@@ -14,7 +14,7 @@ import (
 type (
 	// ResultFields 表示字段的错误信息列表
 	//
-	// 原始类型为 map[string][]string
+	// 原始类型为 map[string][]string，键名为字段名，键值为错误信息列表。
 	ResultFields = validation.Messages
 
 	// BuildResultFunc 用于生成 Result 接口对象的函数

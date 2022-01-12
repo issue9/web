@@ -4,8 +4,12 @@
 package servertest
 
 import (
+	"bytes"
+	"compress/flate"
+	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -15,6 +19,7 @@ import (
 	"github.com/issue9/logs/v3"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
@@ -61,6 +66,16 @@ func NewServer(a *assert.Assertion, o *server.Options) *Server {
 	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
 
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
+
+	// encoding
+	srv.Encodings().Add(map[string]serialization.EncodingWriterFunc{
+		"gzip": func(w io.Writer) (serialization.WriteCloseRester, error) {
+			return gzip.NewWriter(w), nil
+		},
+		"deflate": func(w io.Writer) (serialization.WriteCloseRester, error) {
+			return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
+		},
+	})
 
 	return &Server{
 		s:    srv,
