@@ -220,10 +220,11 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 		return err
 	}
 
-	if ctx.InputMimetype != nil {
-		return ctx.InputMimetype(body, v)
+	// 此值为空，只能是人为修改导致。
+	if ctx.InputMimetype == nil {
+		panic("Context.InputMimetype 不能为空")
 	}
-	return nil
+	return ctx.InputMimetype(body, v)
 }
 
 // Marshal 将 v 解码并发送给客户端

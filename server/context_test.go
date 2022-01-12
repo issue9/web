@@ -229,6 +229,12 @@ func TestContext_Unmarshal(t *testing.T) {
 	// 无法转换
 	o := &struct{}{}
 	a.Error(ctx.Unmarshal(o))
+
+	ctx.InputMimetype = nil
+	a.PanicString(func() {
+		obj = &testobject.TextObject{}
+		_ = ctx.Unmarshal(obj)
+	}, "Context.InputMimetype 不能为空")
 }
 
 func TestContext_Marshal(t *testing.T) {
