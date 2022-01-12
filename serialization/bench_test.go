@@ -66,7 +66,5 @@ func BenchmarkEncodingWriterBuilder_Build(b *testing.B) {
 		a.NotError(err).NotNil(r)
 		data, err := io.ReadAll(r)
 		a.NotError(err).NotNil(data).Equal(string(data), "123456")
-
-		builder.Put(wc)
 	}
 }

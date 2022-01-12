@@ -18,7 +18,7 @@ import (
 type Encodings struct {
 	errlog *log.Logger
 
-	builders []*EncodingWriterBuilder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	builders []*EncodingBuilder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
 	ignoreTypePrefix []string // 保存通配符匹配的值列表；
 	ignoreTypes      []string // 表示完全匹配的值列表。
@@ -30,16 +30,27 @@ type WriteCloseRester interface {
 	Reset(io.Writer)
 }
 
-type EncodingWriterBuilder struct {
+type EncodingBuilder struct {
 	name string
 	pool *sync.Pool
+}
+
+type encodingW struct {
+	WriteCloseRester
+	b *EncodingBuilder
+}
+
+func (e *encodingW) Close() error {
+	err := e.WriteCloseRester.Close()
+	e.b.pool.Put(e.WriteCloseRester)
+	return err
 }
 
 // EncodingWriterFunc 将普通的 io.Writer 封装成 WriteCloseRester 接口对象
 type EncodingWriterFunc func(w io.Writer) (WriteCloseRester, error)
 
-func newEncodingWriterBuilder(name string, f EncodingWriterFunc) *EncodingWriterBuilder {
-	return &EncodingWriterBuilder{
+func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
+	return &EncodingBuilder{
 		name: name,
 		pool: &sync.Pool{New: func() interface{} {
 			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
@@ -51,15 +62,13 @@ func newEncodingWriterBuilder(name string, f EncodingWriterFunc) *EncodingWriter
 	}
 }
 
-func (e *EncodingWriterBuilder) Build(w io.Writer) io.WriteCloser {
-	ww := e.pool.Get().(WriteCloseRester)
+func (b *EncodingBuilder) Build(w io.Writer) io.WriteCloser {
+	ww := b.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
-	return ww
+	return &encodingW{b: b, WriteCloseRester: ww}
 }
 
-func (e *EncodingWriterBuilder) Put(v interface{}) { e.pool.Put(v) }
-
-func (e *EncodingWriterBuilder) Name() string { return e.name }
+func (b *EncodingBuilder) Name() string { return b.name }
 
 // NewEncodings 构建一个支持压缩的中间件
 //
@@ -74,7 +83,7 @@ func NewEncodings(errlog *log.Logger, ignoreTypes ...string) *Encodings {
 	}
 
 	c := &Encodings{
-		builders: make([]*EncodingWriterBuilder, 0, 4),
+		builders: make([]*EncodingBuilder, 0, 4),
 		errlog:   errlog,
 	}
 
@@ -112,7 +121,7 @@ func (c *Encodings) add(name string, f EncodingWriterFunc) {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
-	c.builders = append(c.builders, newEncodingWriterBuilder(name, f))
+	c.builders = append(c.builders, newEncodingBuilder(name, f))
 }
 
 // Add 添加压缩算法
@@ -132,7 +141,7 @@ func (c *Encodings) Add(algos map[string]EncodingWriterFunc) {
 // Search 从报头中查找最合适的算法
 //
 //NOTE: 如果返回的 writer 为空值表示不需要压缩
-func (c *Encodings) Search(mimetype, header string) (w *EncodingWriterBuilder, notAcceptable bool) {
+func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcceptable bool) {
 	if len(c.builders) == 0 || !c.canCompressed(mimetype) {
 		return
 	}
