@@ -21,7 +21,6 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/serialization"
 )
@@ -184,22 +183,23 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 
 // Serve 启动服务
 //
-// serve 如果为空，表示不启动 HTTP 服务，仅执行向 action 注册的函数。
+// 会等待 Server.Close() 执行完之后，此函数才会返回，这一点与 Http.ListenAndServe 稍有不同。
+// 一旦返回，整个 Server 对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	srv.runServices()
 
-	// 在 Serve 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
+	// 在 Serve.defer 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
 	defer func() {
 		srv.stopServices()
 
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes {
-			if err1 := f(); err1 != nil {
-				err = errs.Merge(err, err1)
-				break
+			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
+				srv.Logs().Error(err1)
 			}
 		}
-		err = errs.Merge(err, srv.Logs().Flush())
+
+		srv.Logs().Close()
 	}()
 
 	srv.serving = true
@@ -211,7 +211,7 @@ func (srv *Server) Serve() (err error) {
 		err = srv.httpServer.ListenAndServe()
 	}
 
-	// 由 Shutdown() 或 Close() 主动触发的关闭事件，才需要等待其执行完成，
+	// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成，
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 	if errors.Is(err, http.ErrServerClosed) {
 		<-srv.closed
@@ -219,7 +219,9 @@ func (srv *Server) Serve() (err error) {
 	return err
 }
 
-// Close 关闭服务
+// Close 触发关闭操作
+//
+// 需要等待 Server.Serve 返回才能证整个服务被关闭。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
 		srv.closed <- struct{}{}
@@ -233,7 +235,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 
 	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
-	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+	if err := srv.httpServer.Shutdown(c); !errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 	return nil

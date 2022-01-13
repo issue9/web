@@ -246,9 +246,9 @@ func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {
 		signal.Stop(signalChannel)
 		close(signalChannel)
 
+		// s.Close 同时关闭了 s.Logs。
 		if err := s.Close(cmd.SignalTimeout); err != nil {
-			s.Logs().Error(err)
+			io.WriteString(cmd.Out, err.Error())
 		}
-		s.Logs().Flush() // 保证内容会被正常输出到日志。
 	}()
 }

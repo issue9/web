@@ -25,8 +25,8 @@ github.com/issue9/mux/v6 v6.0.0-beta.3 h1:qjJCk0C6Lm2+sxJutjGExsfzIcB6r6+aiRDqge
 github.com/issue9/mux/v6 v6.0.0-beta.3/go.mod h1:zL0fVN7tBiQIYymLKmRkKxeSuylChVIHUzXXnYlxHj4=
 github.com/issue9/qheader v0.5.5 h1:6LxVoqnxIthEuoZn2rFBGxOdoxN9gh+n1GI1TiGQe4Q=
 github.com/issue9/qheader v0.5.5/go.mod h1:oZVXJYWaO2ha6yFlYPrdkTpEpg8InAIRo65fGytoWRo=
-github.com/issue9/query/v2 v2.2.6 h1:S/i7i/QUvGOUccMWVxqfZEq52nuf4miP1RsJhjIay1o=
-github.com/issue9/query/v2 v2.2.6/go.mod h1:FtRzaS5PiTTA7OGUO+L3M76e11pWG/OZegM91rwUFGM=
+github.com/issue9/query/v2 v2.2.7 h1:Oz+LDTdeVP+p6H24wRxcpa60UQeCCfDr1E+5mTDp6D4=
+github.com/issue9/query/v2 v2.2.7/go.mod h1:lOJhIssccyG8gud+pY6D25eiL7u1VucboCJzsW6jXwI=
 github.com/issue9/scheduled v0.9.2 h1:/BoWM5IyF2iQXKIUTLSCStMzV6B/jXQIymSmMUlTvOc=
 github.com/issue9/scheduled v0.9.2/go.mod h1:XEQH1Lm33F8ppK7cjzcsSHyWBPzegtF//mFZAD1tiTc=
 github.com/issue9/sliceutil v0.7.1 h1:lnzYryF50+mxqvnsPZRZ1on+gxx0Khx5t5G7q0Cf7gU=

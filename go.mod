@@ -11,7 +11,7 @@ require (
 	github.com/issue9/logs/v3 v3.1.0
 	github.com/issue9/mux/v6 v6.0.0-beta.3
 	github.com/issue9/qheader v0.5.5
-	github.com/issue9/query/v2 v2.2.6
+	github.com/issue9/query/v2 v2.2.7
 	github.com/issue9/scheduled v0.9.2
 	github.com/issue9/sliceutil v0.7.1
 	github.com/issue9/validation v0.5.1
