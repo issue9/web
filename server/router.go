@@ -56,9 +56,9 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		err := mux.ServeFile(fsys, p, index, ctx.Response, ctx.Request)
 		switch {
 		case errors.Is(err, fs.ErrPermission):
-			return ctx.Error(http.StatusForbidden, err)
+			return Status(http.StatusForbidden)
 		case errors.Is(err, fs.ErrNotExist):
-			return ctx.Error(http.StatusNotFound, err)
+			return Status(http.StatusNotFound)
 		case err != nil:
 			return ctx.Error(http.StatusInternalServerError, err)
 		default:

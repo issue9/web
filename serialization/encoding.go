@@ -140,7 +140,7 @@ func (c *Encodings) Add(algos map[string]EncodingWriterFunc) {
 
 // Search 从报头中查找最合适的算法
 //
-//NOTE: 如果返回的 writer 为空值表示不需要压缩
+// 如果返回的 w 为空值表示不需要压缩。
 func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcceptable bool) {
 	if len(c.builders) == 0 || !c.canCompressed(mimetype) {
 		return

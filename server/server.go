@@ -25,17 +25,14 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
+const (
+	DefaultMimetype = "application/octet-stream"
+	DefaultCharset  = "utf-8"
+
+	contextKeyServer contextKey = iota
+)
+
 type contextKey int
-
-const contextKeyServer contextKey = iota
-
-// DefaultMimetype 默认的媒体类型
-//
-// 在不能获取输入和输出的媒体类型时，会采用此值作为其默认值。
-const DefaultMimetype = "application/octet-stream"
-
-// DefaultCharset 默认的字符集
-const DefaultCharset = "utf-8"
 
 // Server 提供 HTTP 服务
 type Server struct {
