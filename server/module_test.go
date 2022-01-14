@@ -37,7 +37,7 @@ func TestServer_NewModule(t *testing.T) {
 	}, "无效的 id 格式")
 }
 
-func TestModule_FS(t *testing.T) {
+func TestModule_Glob(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newServer(a, &Options{FS: os.DirFS("./")})
