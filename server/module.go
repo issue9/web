@@ -4,19 +4,18 @@ package server
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"unicode"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
-
-	"github.com/issue9/web/internal/filesystem"
 )
 
 type Module struct {
 	srv *Server
 	id  string
-	fs  *filesystem.MultipleFS
+	fs  []fs.FS
 }
 
 func isValidID(id string) bool {
@@ -43,13 +42,11 @@ func (srv *Server) NewModule(id string) *Module {
 		panic("存在同名模块")
 	}
 
-	var f *filesystem.MultipleFS
-	fsys, err := fs.Sub(srv, id)
-	if err != nil {
-		srv.Logs().Error(err) // 不退出，创建一个空的 filesystem.MultipleFS
-		f = filesystem.NewMultipleFS()
+	f := make([]fs.FS, 0, 2)
+	if fsys, err := fs.Sub(srv, id); err != nil {
+		srv.Logs().Error(err) // 不退出
 	} else {
-		f = filesystem.NewMultipleFS(fsys)
+		f = append(f, fsys)
 	}
 
 	srv.modules = append(srv.modules, id)
@@ -69,14 +66,37 @@ func (m *Module) Server() *Server { return m.srv }
 //
 // Module 默认以 id 为名称相对于 Server 创建了一个文件系统，
 // 此操作会将 fsys 作为 Module 另一个文件系统与 Module 相关联，
-// 当执行 Open 等操作时，会依然以关联顺序查找相应的文件系统， 直到找到。
-func (m *Module) AddFS(fsys ...fs.FS) { m.fs.Add(fsys...) }
+// 当执行 Open 等操作时，会依然以关联顺序查找相应的文件系统，直到找到。
+//
+// 需要注意的是，fs.Glob 不是搜索所有的 fsys 然后返回集合。
+func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
 
-func (m *Module) Open(name string) (fs.File, error) { return m.fs.Open(name) }
+func (m *Module) Open(name string) (fs.File, error) {
+	for _, fsys := range m.fs {
+		if existsFS(fsys, name) {
+			return fsys.Open(name)
+		}
+	}
+	return nil, fs.ErrNotExist
+}
+
+func (m *Module) Glob(pattern string) ([]string, error) {
+	for _, fsys := range m.fs {
+		if matches, err := fs.Glob(fsys, pattern); len(matches) > 0 {
+			return matches, err
+		}
+	}
+	return nil, nil
+}
 
 // Cache 获取缓存对象
 //
 // 该缓存对象的 key 会自动添加 Module.ID 作为其前缀。
 func (m *Module) Cache() cache.Access {
 	return cache.Prefix(m.ID(), m.Server().Cache())
+}
+
+func existsFS(fsys fs.FS, p string) bool {
+	_, err := fs.Stat(fsys, p)
+	return err == nil || os.IsExist(err)
 }
