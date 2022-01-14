@@ -20,10 +20,19 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/internal/charsetdata"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
+)
+
+const (
+	gbkString1 = "中文1,11"
+	gbkString2 = "中文2,22"
+)
+
+var (
+	gbkBytes1 = []byte{214, 208, 206, 196, 49, 44, 49, 49}
+	gbkBytes2 = []byte{214, 208, 206, 196, 50, 44, 50, 50}
 )
 
 func TestContext_Vars(t *testing.T) {
@@ -190,25 +199,25 @@ func TestContext_Body(t *testing.T) {
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
-	r = rest.Post(a, "/path", charsetdata.GBKData1).
+	r = rest.Post(a, "/path", gbkBytes1).
 		Header("Content-type", "text/plain;charset=gb18030").
 		Request()
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r)
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), charsetdata.GBKString1)
+	a.NotError(err).Equal(string(data), gbkString1)
 	a.Equal(ctx.body, data)
 
 	// 采用不同的编码
 	w = httptest.NewRecorder()
-	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+	r, err = http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkBytes1))
 	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "*/*")
 	r.Header.Set("Content-Type", buildContentType(text.Mimetype, " gb18030"))
 	ctx = srv.NewContext(w, r)
 	a.NotNil(ctx)
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), charsetdata.GBKString1)
+	a.NotError(err).Equal(string(data), gbkString1)
 	a.Equal(ctx.body, data)
 }
 
@@ -288,9 +297,9 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Charset", "gbk").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
-	a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+	a.Equal(w.Body.Bytes(), gbkBytes2)
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	w = httptest.NewRecorder()
@@ -301,11 +310,11 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	ctx.destory()
 	a.Equal(w.Code, http.StatusCreated)
 	data, err := io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(data, charsetdata.GBKData2)
+	a.NotError(err).Equal(data, gbkBytes2)
 
 	// 同时通过 ctx.Response.Write 和 ctx.Marshal 输出内容，可以正常压缩
 	w = httptest.NewRecorder()
@@ -331,15 +340,15 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	_, err = ctx.Response.Write([]byte(charsetdata.GBKString1))
+	_, err = ctx.Response.Write([]byte(gbkString1))
 	a.NotError(err)
-	a.NotError(ctx.Marshal(http.StatusCreated, charsetdata.GBKString2, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	ctx.destory()
 	a.Equal(w.Code, http.StatusCreated)
 	data, err = io.ReadAll(flate.NewReader(w.Body))
 	data2 := make([]byte, 0, len(data))
-	data2 = append(data2, charsetdata.GBKData1...)
-	data2 = append(data2, charsetdata.GBKData2...)
+	data2 = append(data2, gbkBytes1...)
+	data2 = append(data2, gbkBytes2...)
 	a.NotError(err).Equal(data, data2)
 
 	// OutputMimetype == nil

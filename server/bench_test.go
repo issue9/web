@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/mux/v6/group"
 	"github.com/issue9/mux/v6/routertest"
 
-	"github.com/issue9/web/internal/charsetdata"
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
 )
@@ -97,7 +96,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), charsetdata.GBKString2)
+		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
@@ -115,7 +114,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), charsetdata.GBKString2)
+		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
@@ -133,7 +132,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
 
@@ -156,7 +155,7 @@ func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
 		a.NotError(err).NotNil(data)
-		a.Equal(data, charsetdata.GBKData2)
+		a.Equal(data, gbkBytes2)
 	}
 }
 
@@ -185,7 +184,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(charsetdata.GBKString1))
+		r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkString1))
 		a.NotError(err).NotNil(r)
 		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "utf-8"}))
 		r.Header.Set("Accept", text.Mimetype)
@@ -203,7 +202,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+		r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkBytes1))
 		a.NotError(err).NotNil(r)
 		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
 		r.Header.Set("Accept", text.Mimetype)
@@ -247,7 +246,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(charsetdata.GBKData1))
+		r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkBytes1))
 		a.NotError(err).NotNil(r)
 		r.Header.Set("Content-type", mime.FormatMediaType(text.Mimetype, map[string]string{"charset": "gbk"}))
 		r.Header.Set("Accept", text.Mimetype)
@@ -261,7 +260,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 		obj.Age = 22
 		obj.Name = "中文2"
 		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
-		a.Equal(w.Body.Bytes(), charsetdata.GBKData2)
+		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
 
