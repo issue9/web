@@ -92,8 +92,7 @@ type Context struct {
 
 // NewContext 构建 *Context 实例
 //
-// 如果不合规则，会以指定的状码退出。
-// 比如 Accept 的内容与当前配置无法匹配，则退出(panic)并输出 NotAcceptable 状态码。
+// 如果不合规则，则会 w 输出状态码并返回 nil。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
@@ -229,7 +228,10 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 
 // Marshal 将 v 解码并发送给客户端
 //
-// status 表示输出的状态码，如果出错，可能输出的不是该状态码；
+// status 表示输出的状态码，如果出错，可能输出的不是该状态码。
+// Response 之上可能加了一层压缩相关的 Write，其向真实的 Response
+// 输出内容并不是实时的，所以在 Marshal 之前调用 Resopnse.Write，
+// 有一定的可能性导致 status 参数不启作用。
 //
 // v 输出的对象，若是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
@@ -279,15 +281,12 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 		return err
 	}
 
-	// 注意 WriteHeader 调用顺序。
-	// https://github.com/golang/go/issues/17083
 	ctx.Response.WriteHeader(status)
-
 	_, err = ctx.Response.Write(data)
 	return err
 }
 
-// acceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
+// 根据 Accept-Charset 报头的内容获取其最值的字符集信息
 //
 // 传递 * 获取返回默认的字符集相关信息，即 utf-8
 // 其它值则按值查找，或是在找不到时返回空值。

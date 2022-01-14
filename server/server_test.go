@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/mux/v6/group"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
@@ -35,11 +34,10 @@ func TestGetServer(t *testing.T) {
 	type key int
 	var k key = 0
 
-	srv := servertest.NewServer(a, &server.Options{Port: ":8080"})
+	srv := servertest.NewServer(a, server.NewTestServer(a, &server.Options{Port: ":8080"}))
 	var isRequested bool
 
-	router := srv.Server().NewRouter("default", "http://localhost:8081/", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	router := srv.NewRouter()
 	router.Get("/path", func(ctx *server.Context) server.Responser {
 		s1 := server.GetServer(ctx.Request)
 		a.NotNil(s1).Equal(s1, srv.Server())
@@ -74,18 +72,17 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv = servertest.NewServer(a, &server.Options{
+	srv = servertest.NewServer(a, server.NewTestServer(a, &server.Options{
 		Port: ":8080",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
 			}
 		},
-	})
+	}))
 
 	isRequested = false
-	router = srv.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	router = srv.NewRouter()
 	router.Get("/path", func(ctx *server.Context) server.Responser {
 		s1 := server.GetServer(ctx.Request)
 		a.NotNil(s1).Equal(s1, srv.Server())
@@ -109,7 +106,7 @@ func TestGetServer(t *testing.T) {
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
+	srv := server.NewTestServer(a, nil)
 
 	type (
 		t1 int
@@ -122,22 +119,21 @@ func TestServer_Vars(t *testing.T) {
 		v3 t3 = 1
 	)
 
-	srv.Server().Vars().Store(v1, 1)
-	srv.Server().Vars().Store(v2, 2)
-	srv.Server().Vars().Store(v3, 3)
+	srv.Vars().Store(v1, 1)
+	srv.Vars().Store(v2, 2)
+	srv.Vars().Store(v3, 3)
 
-	v11, found := srv.Server().Vars().Load(v1)
+	v11, found := srv.Vars().Load(v1)
 	a.True(found).Equal(v11, 1)
-	v22, found := srv.Server().Vars().Load(v2)
+	v22, found := srv.Vars().Load(v2)
 	a.True(found).Equal(v22, 3)
 }
 
 func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewServer(a, nil)
-	router := srv.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	router := srv.NewRouter()
 	router.Get("/mux/test", f202)
 	router.Get("/m1/test", f202)
 
@@ -182,7 +178,7 @@ func TestServer_Serve(t *testing.T) {
 func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewServer(a, &server.Options{
+	srv := servertest.NewServer(a, server.NewTestServer(a, &server.Options{
 		Port: ":8088",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
@@ -191,10 +187,9 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 				Certificates: []tls.Certificate{cert},
 			}
 		},
-	})
+	}))
 
-	router := srv.Server().NewRouter("default", "https://localhost/root", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	router := srv.NewRouter()
 	router.Get("/mux/test", f202)
 
 	srv.GoServe()
@@ -220,9 +215,8 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
-	router := srv.Server().NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	router := srv.NewRouter()
 
 	router.Get("/test", f202)
 	router.Get("/close", func(ctx *server.Context) server.Responser {
@@ -280,9 +274,8 @@ func TestServer_Close(t *testing.T) {
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
-	router := srv.Server().NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any))
-	a.NotNil(router)
+	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	router := srv.NewRouter()
 
 	router.Get("/test", f202)
 	router.Get("/close", func(ctx *server.Context) server.Responser {

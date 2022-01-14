@@ -37,8 +37,7 @@ var ( // 需要 accept 为 text/plian 否则可能输出内容会有误。
 	f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
 )
 
-// 声明一个 server 实例
-func newServer(a *assert.Assertion, o *Options) *Server {
+func NewTestServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
 		o = &Options{Port: ":8080"}
 	}
@@ -111,7 +110,7 @@ func buildMiddleware(a *assert.Assertion, v string) MiddlewareFunc {
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := NewTestServer(a, nil)
 
 	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any), buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"))
 	a.NotNil(router)
@@ -136,7 +135,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestRouter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := NewTestServer(a, nil)
 	host := group.NewHosts(false, "example.com")
 	a.NotNil(host)
 
@@ -170,7 +169,7 @@ func TestRouter(t *testing.T) {
 
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := NewTestServer(a, nil)
 
 	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
 	a.NotNil(r)
@@ -204,7 +203,7 @@ func TestServer_FileServer(t *testing.T) {
 		Status(http.StatusNotFound)
 
 	// 带域名
-	server = newServer(a, nil)
+	server = NewTestServer(a, nil)
 	host := group.NewHosts(false, "example.com")
 	a.NotNil(host)
 	r = server.NewRouter("example", "https://example.com/blog", host)

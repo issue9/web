@@ -110,7 +110,7 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 
 func TestService_srv1(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Location: time.Local})
+	srv := NewTestServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
 	srv1, start, exit := buildSrv1()
@@ -140,7 +140,7 @@ func TestService_srv1(t *testing.T) {
 
 func TestService_srv2(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Location: time.Local})
+	srv := NewTestServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
 	srv2, start, exit := buildSrv2()
@@ -177,7 +177,7 @@ func TestService_srv2(t *testing.T) {
 
 func TestService_srv3(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Location: time.Local})
+	srv := NewTestServer(a, &Options{Location: time.Local})
 	defer srv.stopServices()
 
 	srv3, start, exit := buildSrv3()
@@ -207,7 +207,7 @@ func TestService_srv3(t *testing.T) {
 
 func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := NewTestServer(a, nil)
 
 	// 未运行
 
@@ -252,7 +252,7 @@ func TestServer_service(t *testing.T) {
 
 func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := NewTestServer(a, nil)
 
 	a.Equal(0, len(srv.Jobs()))
 

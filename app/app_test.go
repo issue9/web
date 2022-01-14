@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-func TestApp_Exec(t *testing.T) {
+func TestAppOf_Exec(t *testing.T) {
 	a := assert.New(t, false)
 
 	bs := new(bytes.Buffer)
@@ -27,15 +27,15 @@ func TestApp_Exec(t *testing.T) {
 			return nil
 		},
 	}
-	aa.Exec([]string{"app", "-v"})
+	a.NotError(aa.Exec([]string{"app", "-v"}))
 	a.Contains(bs.String(), aa.Version)
 
 	bs.Reset()
-	aa.Exec([]string{"app", "-f=./testdata", "-a=install"})
+	a.NotError(aa.Exec([]string{"app", "-f=./testdata", "-a=install"}))
 	a.Equal(action, "install")
 }
 
-func TestApp_sanitize(t *testing.T) {
+func TestAppOf_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	cmd := &AppOf[empty]{}
@@ -54,7 +54,7 @@ func TestApp_sanitize(t *testing.T) {
 	a.Equal(cmd.Out, os.Stdout)
 }
 
-func TestCommand_initOptions(t *testing.T) {
+func TestAppOf_initOptions(t *testing.T) {
 	a := assert.New(t, false)
 
 	cmd := &AppOf[empty]{

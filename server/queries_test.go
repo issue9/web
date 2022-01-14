@@ -16,7 +16,7 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "*/*")
 	w = httptest.NewRecorder()
-	ctx = newServer(a, nil).NewContext(w, r)
+	ctx = NewTestServer(a, nil).NewContext(w, r)
 
 	return ctx, w
 }

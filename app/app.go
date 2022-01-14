@@ -201,7 +201,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return err
 	}
 
-	if err := cmd.Init(srv, user, *a); err != nil {
+	if err = cmd.Init(srv, user, *a); err != nil {
 		return err
 	}
 

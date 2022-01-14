@@ -41,7 +41,7 @@ func TestContext_Vars(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	r.Header.Set("Accept", "*/*")
 	w := httptest.NewRecorder()
-	ctx := newServer(a, nil).NewContext(w, r)
+	ctx := NewTestServer(a, nil).NewContext(w, r)
 
 	type (
 		t1 int
@@ -64,7 +64,7 @@ func TestContext_Vars(t *testing.T) {
 func TestServer_NewContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 	a.NotError(srv.Logs().SetOutput(logs.LevelDebug, lw))
 
 	// 错误的 accept
@@ -174,7 +174,7 @@ func TestServer_NewContext(t *testing.T) {
 
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	// 未缓存
 	r := rest.Post(a, "/path", []byte("123")).Request()
@@ -223,7 +223,7 @@ func TestContext_Body(t *testing.T) {
 
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := NewTestServer(a, nil)
 
 	r := rest.Post(a, "/path", []byte("test,123")).
 		Header("content-type", text.Mimetype).
@@ -248,7 +248,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	// 自定义报头
 	w := httptest.NewRecorder()
@@ -377,7 +377,7 @@ func TestContext_Marshal(t *testing.T) {
 func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, nil)
+	srv := NewTestServer(a, nil)
 	router := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 	router.Get("/not-xhr", func(ctx *Context) Responser {
@@ -404,7 +404,7 @@ func TestContext_IsXHR(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, &Options{Tag: language.Afrikaans})
+	srv := NewTestServer(a, &Options{Tag: language.Afrikaans})
 	b := srv.Locale().Builder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
@@ -433,7 +433,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 func TestServer_contentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 	a.NotNil(srv)
 
 	f, e, err := srv.conentType(";;;")
@@ -453,7 +453,7 @@ func TestServer_contentType(t *testing.T) {
 
 func TestServer_Location(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest(http.MethodGet, "/test", nil)
 	a.NotError(err).NotNil(r)
@@ -469,7 +469,7 @@ func TestContext_Read(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	w := httptest.NewRecorder()
 	r.Header.Set("Content-Type", text.Mimetype+"; charset=utf-8")
-	ctx := newServer(a, nil).NewContext(w, r)
+	ctx := NewTestServer(a, nil).NewContext(w, r)
 
 	obj := &testobject.TextObject{}
 	a.Nil(ctx.Read(obj, "41110"))
@@ -487,19 +487,19 @@ func TestContext_ClientIP(t *testing.T) {
 
 	r, err := http.NewRequest(http.MethodPost, "/path", nil)
 	a.NotError(err).NotNil(r)
-	ctx := newServer(a, nil).NewContext(w, r)
+	ctx := NewTestServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)
 
 	r, err = http.NewRequest(http.MethodPost, "/path", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("x-real-ip", "192.168.1.1:8080")
-	ctx = newServer(a, nil).NewContext(w, r)
+	ctx = NewTestServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.1.1:8080")
 
 	r, err = http.NewRequest(http.MethodPost, "/path", nil)
 	a.NotError(err).NotNil(r)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
-	ctx = newServer(a, nil).NewContext(w, r)
+	ctx = NewTestServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 
 	// 测试获取 IP 报头的优先级
@@ -507,7 +507,7 @@ func TestContext_ClientIP(t *testing.T) {
 	a.NotError(err).NotNil(r)
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	r.Header.Set("x-real-ip", "192.168.2.2")
-	ctx = newServer(a, nil).NewContext(w, r)
+	ctx = NewTestServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 
 	// 测试获取 IP 报头的优先级
@@ -516,7 +516,7 @@ func TestContext_ClientIP(t *testing.T) {
 	r.Header.Set("Remote-Addr", "192.168.2.0")
 	r.Header.Set("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111")
 	r.Header.Set("x-real-ip", "192.168.2.2")
-	ctx = newServer(a, nil).NewContext(w, r)
+	ctx = NewTestServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
 
@@ -531,7 +531,7 @@ func TestBuildContentType(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := NewTestServer(a, &Options{Tag: language.SimplifiedChinese})
 
 	b := srv.Locale().Builder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
