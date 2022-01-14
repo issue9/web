@@ -4,11 +4,10 @@ package app
 
 import (
 	"crypto/tls"
+	"os"
 	"time"
 
 	"golang.org/x/crypto/acme/autocert"
-
-	"github.com/issue9/web/internal/filesystem"
 )
 
 type (
@@ -51,11 +50,11 @@ type (
 )
 
 func (cert *certificate) sanitize() *Error {
-	if !filesystem.Exists(cert.Cert) {
+	if !exists(cert.Cert) {
 		return &Error{Field: "cert", Message: "文件不存在"}
 	}
 
-	if !filesystem.Exists(cert.Key) {
+	if !exists(cert.Key) {
 		return &Error{Field: "key", Message: "文件不存在"}
 	}
 
@@ -133,7 +132,7 @@ func (l *letsEncrypt) tlsConfig() *tls.Config {
 }
 
 func (l *letsEncrypt) sanitize() *Error {
-	if l.Cache == "" || !filesystem.Exists(l.Cache) {
+	if l.Cache == "" || !exists(l.Cache) {
 		return &Error{Field: "cache", Message: "不存在该目录或是未指定"}
 	}
 
@@ -147,19 +146,21 @@ func (l *letsEncrypt) sanitize() *Error {
 // 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
 type duration time.Duration
 
-// Duration 转换成 time.Duration
 func (d duration) Duration() time.Duration { return time.Duration(d) }
 
-// MarshalText encoding.TextMarshaler 接口
 func (d duration) MarshalText() ([]byte, error) {
 	return []byte(time.Duration(d).String()), nil
 }
 
-// UnmarshalText encoding.TextUnmarshaler 接口
 func (d *duration) UnmarshalText(b []byte) error {
 	v, err := time.ParseDuration(string(b))
 	if err == nil {
 		*d = duration(v)
 	}
 	return err
+}
+
+func exists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil || os.IsExist(err)
 }

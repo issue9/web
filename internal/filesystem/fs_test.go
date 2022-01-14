@@ -25,17 +25,17 @@ func TestMultipleFS(t *testing.T) {
 	m := NewMultipleFS(f1, f2)
 	a.NotNil(m)
 
-	a.True(ExistsFS(m, "filesystem.go"))
-	a.True(ExistsFS(m, "filesystem_test.go"))
-	a.False(ExistsFS(m, "not-exists.go"))
-	a.False(ExistsFS(f1, "filesystem_test.go"))
-	a.False(ExistsFS(f2, "filesystem.go"))
+	a.True(existsFS(m, "filesystem.go"))
+	a.True(existsFS(m, "filesystem_test.go"))
+	a.False(existsFS(m, "not-exists.go"))
+	a.False(existsFS(f1, "filesystem_test.go"))
+	a.False(existsFS(f2, "filesystem.go"))
 
 	m = NewMultipleFS()
 	a.NotNil(m)
-	a.False(ExistsFS(m, "filesystem.go"))
+	a.False(existsFS(m, "filesystem.go"))
 	m.Add(f1)
-	a.True(ExistsFS(m, "filesystem.go"))
+	a.True(existsFS(m, "filesystem.go"))
 }
 
 func TestMultipleFS_Glob(t *testing.T) {

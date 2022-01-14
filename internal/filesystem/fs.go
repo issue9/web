@@ -2,7 +2,9 @@
 
 package filesystem
 
-import "io/fs"
+import (
+	"io/fs"
+)
 
 type MultipleFS struct {
 	f []fs.FS
@@ -18,11 +20,9 @@ func (f *MultipleFS) Add(fsys ...fs.FS) { f.f = append(f.f, fsys...) }
 
 func (f *MultipleFS) Open(name string) (fs.File, error) {
 	for _, fsys := range f.f {
-		if !ExistsFS(fsys, name) {
-			continue
+		if existsFS(fsys, name) {
+			return fsys.Open(name)
 		}
-
-		return fsys.Open(name)
 	}
 
 	return nil, fs.ErrNotExist

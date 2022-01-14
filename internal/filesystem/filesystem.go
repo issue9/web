@@ -8,12 +8,7 @@ import (
 	"os"
 )
 
-func Exists(p string) bool {
-	_, err := os.Stat(p)
-	return err == nil || os.IsExist(err)
-}
-
-func ExistsFS(fsys fs.FS, p string) bool {
+func existsFS(fsys fs.FS, p string) bool {
 	_, err := fs.Stat(fsys, p)
 	return err == nil || os.IsExist(err)
 }
