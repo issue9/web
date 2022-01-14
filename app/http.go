@@ -49,45 +49,45 @@ type (
 	}
 )
 
-func (cert *certificate) sanitize() *Error {
+func (cert *certificate) sanitize() *ConfigError {
 	if !exists(cert.Cert) {
-		return &Error{Field: "cert", Message: "文件不存在"}
+		return &ConfigError{Field: "cert", Message: "文件不存在"}
 	}
 
 	if !exists(cert.Key) {
-		return &Error{Field: "key", Message: "文件不存在"}
+		return &ConfigError{Field: "key", Message: "文件不存在"}
 	}
 
 	return nil
 }
 
-func (http *httpConfig) sanitize() *Error {
+func (http *httpConfig) sanitize() *ConfigError {
 	if http.ReadTimeout < 0 {
-		return &Error{Field: "readTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
 
 	if http.WriteTimeout < 0 {
-		return &Error{Field: "writeTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "writeTimeout", Message: "必须大于等于 0"}
 	}
 
 	if http.IdleTimeout < 0 {
-		return &Error{Field: "idleTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "idleTimeout", Message: "必须大于等于 0"}
 	}
 
 	if http.ReadHeaderTimeout < 0 {
-		return &Error{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
 	}
 
 	if http.MaxHeaderBytes < 0 {
-		return &Error{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
 	return http.buildTLSConfig()
 }
 
-func (http *httpConfig) buildTLSConfig() *Error {
+func (http *httpConfig) buildTLSConfig() *ConfigError {
 	if len(http.Certificates) > 0 && http.LetsEncrypt != nil {
-		return &Error{Field: "letsEncrypt", Message: "不能与 certificates 同时存在"}
+		return &ConfigError{Field: "letsEncrypt", Message: "不能与 certificates 同时存在"}
 	}
 
 	if http.LetsEncrypt != nil {
@@ -108,7 +108,7 @@ func (http *httpConfig) buildTLSConfig() *Error {
 
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return &Error{Field: "certificates", Message: err.Error()}
+			return &ConfigError{Field: "certificates", Message: err.Error()}
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
@@ -131,13 +131,13 @@ func (l *letsEncrypt) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *letsEncrypt) sanitize() *Error {
+func (l *letsEncrypt) sanitize() *ConfigError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return &Error{Field: "cache", Message: "不存在该目录或是未指定"}
+		return &ConfigError{Field: "cache", Message: "不存在该目录或是未指定"}
 	}
 
 	if len(l.Domains) == 0 {
-		return &Error{Field: "domains", Message: "不能为空"}
+		return &ConfigError{Field: "domains", Message: "不能为空"}
 	}
 
 	return nil

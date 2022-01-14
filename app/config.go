@@ -75,7 +75,7 @@ type configOf[T any] struct {
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
-// 如果实现了 Sanitizer 接口，则在加载后进行自检；
+// 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
@@ -86,9 +86,7 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 	}
 
 	if err := conf.sanitize(); err != nil {
-		if err2, ok := err.(*Error); ok {
-			err2.Config = filename
-		}
+		err.Path = filename
 		return nil, nil, err
 	}
 
@@ -115,15 +113,15 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 	}, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize() error {
+func (conf *configOf[T]) sanitize() *ConfigError {
 	if conf.Logs != nil {
 		if err := conf.Logs.Sanitize(); err != nil {
-			return &Error{Field: "logs", Message: err}
+			return &ConfigError{Field: "logs", Message: err}
 		}
 	}
 	l, err := logs.New(conf.Logs)
 	if err != nil {
-		return err
+		return &ConfigError{Field: "logs", Message: err}
 	}
 	conf.logs = l
 
@@ -135,7 +133,7 @@ func (conf *configOf[T]) sanitize() error {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return &Error{Field: "language", Message: err}
+			return &ConfigError{Field: "language.", Message: err}
 		}
 		conf.languageTag = tag
 	}
@@ -161,8 +159,8 @@ func (conf *configOf[T]) sanitize() error {
 	}
 
 	if conf.User != nil {
-		if s, ok := (interface{})(conf.User).(Sanitizer); ok {
-			if err := s.Sanitize(); err != nil {
+		if s, ok := (interface{})(conf.User).(ConfigSanitizer); ok {
+			if err := s.SanitizeConfig(); err != nil {
 				err.Field = "user." + err.Field
 				return err
 			}
@@ -172,14 +170,14 @@ func (conf *configOf[T]) sanitize() error {
 	return nil
 }
 
-func (conf *configOf[T]) buildTimezone() *Error {
+func (conf *configOf[T]) buildTimezone() *ConfigError {
 	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return &Error{Field: "timezone", Message: err}
+		return &ConfigError{Field: "timezone", Message: err}
 	}
 	conf.location = loc
 

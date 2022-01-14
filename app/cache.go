@@ -36,7 +36,7 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *Error {
+func (conf *configOf[T]) buildCache() *ConfigError {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
@@ -46,7 +46,7 @@ func (conf *configOf[T]) buildCache() *Error {
 	case "memory", "":
 		d, err := time.ParseDuration(conf.Cache.DSN)
 		if err != nil {
-			return &Error{Field: "dsn", Message: err.Error()}
+			return &ConfigError{Field: "dsn", Message: err.Error()}
 		}
 		conf.cache = memory.New(d)
 	case "memcached", "memcache":
@@ -55,23 +55,23 @@ func (conf *configOf[T]) buildCache() *Error {
 	case "redis":
 		c, err := redis.DialURL(conf.Cache.DSN)
 		if err != nil {
-			return &Error{Field: "dsn", Message: err.Error()}
+			return &ConfigError{Field: "dsn", Message: err.Error()}
 		}
 		conf.cache = cr.New(c)
 	case "file":
 		args := strings.SplitN(conf.Cache.DSN, ";", 2)
 		if len(args) != 2 {
-			return &Error{Field: "dsn", Message: "必须指定 path 和 gc 两个参数"}
+			return &ConfigError{Field: "dsn", Message: "必须指定 path 和 gc 两个参数"}
 		}
 
 		gc, err := time.ParseDuration(args[1])
 		if err != nil {
-			return &Error{Field: "dsn", Message: err.Error()}
+			return &ConfigError{Field: "dsn", Message: err.Error()}
 		}
 
 		conf.cache = file.New(args[0], gc, conf.logs.ERROR())
 	default:
-		return &Error{Field: "type", Message: "无效的值"}
+		return &ConfigError{Field: "type", Message: "无效的值"}
 	}
 	return nil
 }

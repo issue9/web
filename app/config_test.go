@@ -21,9 +21,9 @@ type userData struct {
 	ID int `json:"id" yaml:"id" xml:"id,attr"`
 }
 
-func (u *userData) Sanitize() *Error {
+func (u *userData) SanitizeConfig() *ConfigError {
 	if u.ID < 0 {
-		return &Error{Field: "ID", Message: "必须大于 0"}
+		return &ConfigError{Field: "ID", Message: "必须大于 0"}
 	}
 	return nil
 }
@@ -47,9 +47,9 @@ func TestNewOptions(t *testing.T) {
 
 	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "invalid-web.xml")
 	a.Error(err).Nil(opt).Nil(data)
-	err2, ok := err.(*Error)
+	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
-	a.Equal(err2.Config, "invalid-web.xml").
+	a.Equal(err2.Path, "invalid-web.xml").
 		Equal(err2.Field, "router.cors.allowCredentials")
 
 	// 自定义 T

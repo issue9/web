@@ -7,28 +7,28 @@ import (
 	"golang.org/x/text/message"
 )
 
-// Error 表示配置内容字段错误
-type Error struct {
-	Config  string      // 配置文件的路径
+// ConfigError 表示配置内容字段错误
+type ConfigError struct {
+	Path    string      // 配置文件的路径
 	Field   string      // 字段名
 	Message interface{} // 错误信息
-	Value   interface{} // 原始值
+	Value   interface{} // 字段的原始值
 }
 
-// Sanitizer 实现了数据验证和检测功能
-type Sanitizer interface {
-	Sanitize() *Error
+// ConfigSanitizer 对配置文件的数据验证和修正接口
+type ConfigSanitizer interface {
+	SanitizeConfig() *ConfigError
 }
 
-func (err *Error) Error() string {
+func (err *ConfigError) Error() string {
 	return err.LocaleString(localeutil.EmptyPrinter())
 }
 
-func (err *Error) LocaleString(p *message.Printer) string {
+func (err *ConfigError) LocaleString(p *message.Printer) string {
 	msg := err.Message
 	if ls, ok := err.Message.(localeutil.LocaleStringer); ok {
 		msg = ls.LocaleString(p)
 	}
 
-	return p.Sprintf("%s at %s:%s", msg, err.Config, err.Field)
+	return p.Sprintf("%s at %s:%s", msg, err.Path, err.Field)
 }

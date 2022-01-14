@@ -47,7 +47,7 @@ type cors struct {
 	AllowCredentials bool `yaml:"allowCredentials,omitempty" json:"allowCredentials,omitempty" xml:"allowCredentials,attr,omitempty"`
 }
 
-func (r *router) sanitize() *Error {
+func (r *router) sanitize() *ConfigError {
 	opts := make([]mux.Option, 0, 2)
 
 	if r.CORS != nil {
@@ -67,17 +67,17 @@ func (r *router) sanitize() *Error {
 	return nil
 }
 
-func (c *cors) sanitize() *Error {
+func (c *cors) sanitize() *ConfigError {
 	for _, o := range c.Origins {
 		if o == "*" {
 			if c.AllowCredentials {
-				return &Error{Field: "allowCredentials", Message: "不能与 origins=* 同时成立"}
+				return &ConfigError{Field: "allowCredentials", Message: "不能与 origins=* 同时成立"}
 			}
 		}
 	}
 
 	if c.MaxAge < -1 {
-		return &Error{Field: "maxAge", Message: "必须 >= -1"}
+		return &ConfigError{Field: "maxAge", Message: "必须 >= -1"}
 	}
 
 	return nil
