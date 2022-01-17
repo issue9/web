@@ -3,18 +3,16 @@
 package server
 
 import (
-	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
-	r, err := http.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", "*/*")
+	r := rest.Post(a, path, []byte("123")).Header("Accept", "*/*").Request()
 	w = httptest.NewRecorder()
 	ctx = NewTestServer(a, nil).NewContext(w, r)
 

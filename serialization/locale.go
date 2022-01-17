@@ -31,7 +31,7 @@ func (l *Locale) Files() *Files { return l.f }
 // Builder 返回本地化操作的相关接口
 func (l *Locale) Builder() *catalog.Builder { return l.b }
 
-func (l *Locale) Printer(tag language.Tag) *message.Printer {
+func (l *Locale) NewPrinter(tag language.Tag) *message.Printer {
 	return message.NewPrinter(tag, message.Catalog(l.Builder()))
 }
 

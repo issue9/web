@@ -106,7 +106,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		location:      o.Location,
 		locale:        o.locale,
 		tag:           o.Tag,
-		localePrinter: o.locale.Printer(o.Tag),
+		localePrinter: o.locale.NewPrinter(o.Tag),
 	}
 
 	srv.group = group.NewOf[HandlerFunc](srv.call, o.Middlewares, o.RouterOptions...)

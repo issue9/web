@@ -25,7 +25,7 @@ func TestLocale_LoadFile(t *testing.T) {
 	a.NotError(f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml"))
 
 	a.NotError(l.LoadFile("./testdata/*.yaml"))
-	p := l.Printer(language.MustParse("cmn-hans"))
+	p := l.NewPrinter(language.MustParse("cmn-hans"))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
 
@@ -48,7 +48,7 @@ func TestLocale_LoadFileFS(t *testing.T) {
 	a.NotError(f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
 	a.NotError(l.LoadFileFS(os.DirFS("./testdata"), "cmn-hant.xml"))
-	p := l.Printer(language.MustParse("cmn-hant"))
+	p := l.NewPrinter(language.MustParse("cmn-hant"))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
@@ -21,21 +22,21 @@ func TestCreated(t *testing.T) {
 	a.NotError(err).NotNil(s)
 
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest(http.MethodPost, "/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	r.Header.Set("content-type", text.Mimetype)
-	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+	r := rest.Post(a, "/path", nil).
+		Header("Accept", text.Mimetype).
+		Header("content-type", text.Mimetype).
+		Request()
 	ctx := s.NewContext(w, r)
+	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
 	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
 	a.Equal(w.Code, http.StatusCreated).
 		Equal(w.Body.String(), `test,123`)
 
 	w.Body.Reset()
-	r, err = http.NewRequest(http.MethodPost, "/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	r.Header.Set("content-type", text.Mimetype)
+	r = rest.Post(a, "/path", nil).
+		Header("Accept", text.Mimetype).
+		Header("content-type", text.Mimetype).
+		Request()
 	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
 	ctx = s.NewContext(w, r)
 	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
@@ -51,10 +52,10 @@ func TestStatus(t *testing.T) {
 	a.NotError(err).NotNil(s)
 
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest(http.MethodPost, "/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	r.Header.Set("content-type", text.Mimetype)
+	r := rest.Post(a, "/path", nil).
+		Header("Accept", text.Mimetype).
+		Header("content-type", text.Mimetype).
+		Request()
 	resp := NotImplemented()
 	ctx := s.NewContext(w, r)
 	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
@@ -62,12 +63,12 @@ func TestStatus(t *testing.T) {
 
 	// Retry-After
 	w = httptest.NewRecorder()
-	r, err = http.NewRequest(http.MethodPost, "/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	r.Header.Set("content-type", text.Mimetype)
-	resp = RetryAfter(http.StatusServiceUnavailable, 120)
+	r = rest.Post(a, "/path", nil).
+		Header("Accept", text.Mimetype).
+		Header("content-type", text.Mimetype).
+		Request()
 	ctx = s.NewContext(w, r)
+	resp = RetryAfter(http.StatusServiceUnavailable, 120)
 	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
 	a.Equal(w.Code, http.StatusServiceUnavailable).
 		Empty(w.Body.String()).
@@ -76,12 +77,12 @@ func TestStatus(t *testing.T) {
 	// Retry-After
 	now := time.Now()
 	w = httptest.NewRecorder()
-	r, err = http.NewRequest(http.MethodPost, "/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	r.Header.Set("content-type", text.Mimetype)
-	resp = RetryAt(http.StatusMovedPermanently, now)
+	r = rest.Post(a, "/path", nil).
+		Header("Accept", text.Mimetype).
+		Header("content-type", text.Mimetype).
+		Request()
 	ctx = s.NewContext(w, r)
+	resp = RetryAt(http.StatusMovedPermanently, now)
 	a.NotError(ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()))
 	a.Equal(w.Code, http.StatusMovedPermanently).
 		Empty(w.Body.String()).

@@ -67,7 +67,8 @@ type Context struct {
 	Response http.ResponseWriter
 	Request  *http.Request
 
-	// 指定 Marshal 输出时所使用的媒体类型，以及名称
+	// 指定 Marshal 输出时所使用的媒体类型，以及名称。
+	// 在不调用 Marshal 的时候可以为空。比如下载文件等，并没有特定的序列化函数对应。
 	OutputMimetype     serialization.MarshalFunc
 	OutputMimetypeName string
 
@@ -142,7 +143,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.InputMimetype = inputMimetype
 	ctx.InputCharset = inputCharset
 	ctx.OutputTag = tag
-	ctx.LocalePrinter = srv.Locale().Printer(tag)
+	ctx.LocalePrinter = srv.Locale().NewPrinter(tag)
 	ctx.Location = srv.location
 	ctx.body = ctx.body[:0]
 	ctx.read = false
@@ -219,8 +220,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 		return err
 	}
 
-	// 此值为空，只能是人为修改导致。
-	if ctx.InputMimetype == nil {
+	if ctx.InputMimetype == nil { // 为空表是 NewContext 之后被人为修改。
 		panic("Context.InputMimetype 不能为空")
 	}
 	return ctx.InputMimetype(body, v)

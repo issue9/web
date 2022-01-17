@@ -10,7 +10,6 @@ import (
 	"encoding/xml"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -146,11 +145,7 @@ func TestRouter(t *testing.T) {
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
 	router.Prefix("/p1").Delete("/path", f204)
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	a.NotError(err).NotNil(r)
-	srv.group.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNoContent)
+	rest.Delete(a, "https://example.com:88/p1/path").Do(srv.group).Status(http.StatusNoContent)
 
 	rr := srv.Router("host")
 	a.Equal(rr, router)
@@ -160,11 +155,7 @@ func TestRouter(t *testing.T) {
 	// 删除整个路由
 	srv.RemoveRouter("host")
 	a.Equal(0, len(srv.Routers()))
-	w = httptest.NewRecorder()
-	r, err = http.NewRequest(http.MethodDelete, "https://example.com:88/p1/path", nil)
-	a.NotError(err).NotNil(r)
-	srv.group.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+	rest.Delete(a, "https://example.com:88/p1/path").Do(srv.group).Status(http.StatusNotFound)
 }
 
 func TestServer_FileServer(t *testing.T) {
@@ -209,9 +200,6 @@ func TestServer_FileServer(t *testing.T) {
 	r = server.NewRouter("example", "https://example.com/blog", host)
 	a.NotNil(r)
 	r.Get("/admin/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, "https://example.com/admin/file1.txt", nil)
-	a.NotError(err).NotNil(req)
-	server.group.ServeHTTP(w, req)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
+
+	rest.Get(a, "https://example.com/admin/file1.txt").Do(server.group).Status(http.StatusOK)
 }

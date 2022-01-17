@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
@@ -52,15 +53,12 @@ func TestGetServer(t *testing.T) {
 
 	srv.GoServe()
 
-	r, err := http.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
-	a.NotError(err).NotNil(r)
-	r.Header.Set("Accept", text.Mimetype)
-	resp, err := http.DefaultClient.Do(r)
-	a.NotError(err).Equal(resp.StatusCode, 200)
+	srv.Get("http://localhost:8080/path").Header("Accept", text.Mimetype).
+		Do(nil).
+		Status(http.StatusOK)
 
 	// 不是从 Server 生成的 *http.Request，则会 panic
-	r, err = http.NewRequest(http.MethodGet, "/path", nil)
-	a.NotError(err).NotNil(r)
+	r := rest.Get(a, "/path").Request()
 	a.Panic(func() {
 		server.GetServer(r)
 	})
@@ -95,8 +93,7 @@ func TestGetServer(t *testing.T) {
 		return nil
 	})
 	srv.GoServe()
-	resp, err = http.Get("http://localhost:8080/path")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusOK)
+	srv.Get("http://localhost:8080/path").Do(nil).Status(http.StatusOK)
 
 	a.NotError(srv.Server().Close(0))
 	a.True(isRequested, "未正常访问 /path")
@@ -155,19 +152,15 @@ func TestServer_Serve(t *testing.T) {
 
 	srv.GoServe()
 
-	resp, err := http.Get("http://localhost:8080/m1/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
+	srv.Get("http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
 
-	resp, err = http.Get("http://localhost:8080/m2/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
+	srv.Get("http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
 
-	resp, err = http.Get("http://localhost:8080/mux/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
+	srv.Get("http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 
 	// static 中定义的静态文件
 	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	resp, err = http.Get("http://localhost:8080/admin/file1.txt")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusOK)
+	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 
 	a.NotError(srv.Server().Close(0))
 	srv.Wait()
@@ -194,10 +187,9 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 	srv.GoServe()
 
-	tr := &http.Transport{
+	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
+	}}
 
 	resp, err := client.Get("https://localhost:8088/mux/test")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
@@ -255,11 +247,10 @@ func TestServer_Close(t *testing.T) {
 	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
 	time.Sleep(500 * time.Millisecond)
 
-	resp, err := http.Get("http://localhost:8080/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
+	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	resp, err = http.Get("http://localhost:8080/close")
+	resp, err := http.Get("http://localhost:8080/close")
 	a.Error(err).Nil(resp)
 
 	resp, err = http.Get("http://localhost:8080/test")
@@ -289,15 +280,13 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 	srv.GoServe()
 
-	resp, err := http.Get("http://localhost:8080/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
+	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 关闭指令可以正常执行
-	resp, err = http.Get("http://localhost:8080/close")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusCreated)
+	srv.Get("http://localhost:8080/close").Do(nil).Status(http.StatusCreated)
 
 	// 未超时，但是拒绝新的链接
-	resp, err = http.Get("http://localhost:8080/test")
+	resp, err := http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
 	// 已被关闭

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v6/group"
 
 	"github.com/issue9/web/server"
@@ -60,3 +61,11 @@ func (s *Server) NewRouter() *server.Router {
 
 // Wait 等待 GoServe 退出
 func (s *Server) Wait() { <-s.exit }
+
+func (s *Server) NewRequest(method, path string) *rest.Request {
+	return rest.NewRequest(s.a, method, path).Client(http.DefaultClient)
+}
+
+func (s *Server) Get(path string) *rest.Request {
+	return s.NewRequest(http.MethodGet, path)
+}
