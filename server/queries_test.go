@@ -14,7 +14,7 @@ import (
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
 	r := rest.Post(a, path, []byte("123")).Header("Accept", "*/*").Request()
 	w = httptest.NewRecorder()
-	ctx = NewTestServer(a, nil).NewContext(w, r)
+	ctx = newServer(a, nil).NewContext(w, r)
 
 	return ctx, w
 }

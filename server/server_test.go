@@ -21,21 +21,14 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var (
-	_ fs.FS = &server.Server{}
-
-	// 需要 accept 为 text/plian 否则可能输出内容会有误。
-	f202 = func(ctx *server.Context) server.Responser {
-		return server.Object(http.StatusAccepted, []byte("1234567890"), nil)
-	}
-)
+var _ fs.FS = &server.Server{}
 
 func TestGetServer(t *testing.T) {
 	a := assert.New(t, false)
 	type key int
 	var k key = 0
 
-	srv := servertest.NewServer(a, server.NewTestServer(a, &server.Options{Port: ":8080"}))
+	srv := servertest.NewTester(a, &server.Options{Port: ":8080"})
 	var isRequested bool
 
 	router := srv.NewRouter()
@@ -70,14 +63,14 @@ func TestGetServer(t *testing.T) {
 
 	// BaseContext
 
-	srv = servertest.NewServer(a, server.NewTestServer(a, &server.Options{
+	srv = servertest.NewTester(a, &server.Options{
 		Port: ":8080",
 		HTTPServer: func(s *http.Server) {
 			s.BaseContext = func(n net.Listener) context.Context {
 				return context.WithValue(context.Background(), k, 1)
 			}
 		},
-	}))
+	})
 
 	isRequested = false
 	router = srv.NewRouter()
@@ -103,7 +96,8 @@ func TestGetServer(t *testing.T) {
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	srv := server.NewTestServer(a, nil)
+	srv, err := server.New("app", "1.0.0", nil)
+	a.NotError(err).NotNil(srv)
 
 	type (
 		t1 int
@@ -129,10 +123,10 @@ func TestServer_Vars(t *testing.T) {
 func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	srv := servertest.NewTester(a, nil)
 	router := srv.NewRouter()
-	router.Get("/mux/test", f202)
-	router.Get("/m1/test", f202)
+	router.Get("/mux/test", servertest.BuildHandler(202))
+	router.Get("/m1/test", servertest.BuildHandler(202))
 
 	a.False(srv.Server().Serving())
 
@@ -171,7 +165,7 @@ func TestServer_Serve(t *testing.T) {
 func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewServer(a, server.NewTestServer(a, &server.Options{
+	srv := servertest.NewTester(a, &server.Options{
 		Port: ":8088",
 		HTTPServer: func(srv *http.Server) {
 			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
@@ -180,10 +174,10 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 				Certificates: []tls.Certificate{cert},
 			}
 		},
-	}))
+	})
 
 	router := srv.NewRouter()
-	router.Get("/mux/test", f202)
+	router.Get("/mux/test", servertest.BuildHandler(202))
 
 	srv.GoServe()
 
@@ -207,10 +201,10 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	srv := servertest.NewTester(a, nil)
 	router := srv.NewRouter()
 
-	router.Get("/test", f202)
+	router.Get("/test", servertest.BuildHandler(202))
 	router.Get("/close", func(ctx *server.Context) server.Responser {
 		_, err := ctx.Response.Write([]byte("closed"))
 		if err != nil {
@@ -265,10 +259,10 @@ func TestServer_Close(t *testing.T) {
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, server.NewTestServer(a, nil))
+	srv := servertest.NewTester(a, nil)
 	router := srv.NewRouter()
 
-	router.Get("/test", f202)
+	router.Get("/test", servertest.BuildHandler(202))
 	router.Get("/close", func(ctx *server.Context) server.Responser {
 		ctx.Response.WriteHeader(http.StatusCreated)
 		_, err := ctx.Response.Write([]byte("shutdown with ctx"))

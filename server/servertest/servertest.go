@@ -5,6 +5,9 @@ package servertest
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/issue9/assert/v2"
@@ -14,58 +17,90 @@ import (
 	"github.com/issue9/web/server"
 )
 
-type Server struct {
-	a    *assert.Assertion
-	s    *server.Server
-	exit chan struct{}
+type Tester struct {
+	a        *assert.Assertion
+	s        *server.Server
+	hostname string
+	wg       sync.WaitGroup
 }
 
-// NewServer 声明一个 server 实例
-func NewServer(a *assert.Assertion, s *server.Server) *Server {
+// NewTester 声明一个 server 实例
+func NewTester(a *assert.Assertion, o *server.Options) *Tester {
 	a.TB().Helper()
-	a.NotNil(s)
 
-	return &Server{
-		s:    s,
-		a:    a,
-		exit: make(chan struct{}, 1),
+	s, o := newServer(a, o)
+	a.NotNil(s).NotNil(o)
+
+	return &Tester{
+		s:        s,
+		a:        a,
+		hostname: "http://localhost" + o.Port,
 	}
 }
 
-func (s *Server) Server() *server.Server { return s.s }
+func (s *Tester) Server() *server.Server { return s.s }
 
-func (s *Server) GoServe() {
+func (s *Tester) GoServe() {
+	s.wg.Add(1)
 	go func() {
 		s.a.TB().Helper()
 
+		defer s.wg.Done()
+
 		err := s.s.Serve()
 		s.a.Error(err).ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
-		s.exit <- struct{}{}
 	}()
-
-	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(5000 * time.Microsecond)
 }
 
 // NewRouter 创建一个默认的路由
 //
 // 相当于：
 //  s.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
-func (s *Server) NewRouter() *server.Router {
+//
+// NOTE: 如果需要多个路由，请使用 Server().NewRouter 并指定正确的 group.Matcher 对象，
+// 或是将 Tester.NewRouter 放在最后。
+func (s *Tester) NewRouter(ms ...server.MiddlewareFunc) *server.Router {
 	s.a.TB().Helper()
 
-	router := s.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	router := s.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any), ms...)
 	s.a.NotNil(router)
 	return router
 }
 
 // Wait 等待 GoServe 退出
-func (s *Server) Wait() { <-s.exit }
+func (s *Tester) Wait() { s.wg.Wait() }
 
-func (s *Server) NewRequest(method, path string) *rest.Request {
-	return rest.NewRequest(s.a, method, path).Client(http.DefaultClient)
+// NewRequest 发起新的请求
+//
+// path 为请求路径，如果没有 http:// 和 https:// 前缀，则会自动加上 http://localhost 作为其域名地址；
+// client 如果为空，则采用 http.DefaultClient 作为默认值；
+func (s *Tester) NewRequest(method, path string, client *http.Client) *rest.Request {
+	if !strings.HasPrefix(path, "http://") && !strings.HasPrefix(path, "https://") {
+		path = s.hostname + path
+	}
+
+	if client == nil {
+		client = http.DefaultClient
+	}
+
+	return rest.NewRequest(s.a, method, path).Client(client)
 }
 
-func (s *Server) Get(path string) *rest.Request {
-	return s.NewRequest(http.MethodGet, path)
+func (s *Tester) Get(path string) *rest.Request {
+	return s.NewRequest(http.MethodGet, path, nil)
+}
+
+func (s *Tester) Delete(path string) *rest.Request {
+	return s.NewRequest(http.MethodDelete, path, nil)
+}
+
+func (s *Tester) Close(shutdown time.Duration) {
+	s.a.NotError(s.Server().Close(shutdown))
+}
+
+// BuildHandler 生成以 code 作为状态码和内容输出的路由处理函数
+func BuildHandler(code int) server.HandlerFunc {
+	return func(next *server.Context) server.Responser {
+		return server.Object(code, []byte(strconv.Itoa(code)), nil)
+	}
 }

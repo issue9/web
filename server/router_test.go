@@ -1,105 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package server_test
 
 import (
-	"bytes"
-	"compress/flate"
-	"compress/gzip"
-	"encoding/json"
-	"encoding/xml"
-	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
-	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6/group"
-	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serialization"
-	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
-var ( // 需要 accept 为 text/plian 否则可能输出内容会有误。
-	f201 = func(ctx *Context) Responser {
-		return Object(http.StatusCreated, []byte("1234567890"), map[string]string{
-			"Content-type": "text/html",
-		})
-	}
-
-	f204 = func(ctx *Context) Responser { return Status(http.StatusNoContent) }
-)
-
-func NewTestServer(a *assert.Assertion, o *Options) *Server {
-	if o == nil {
-		o = &Options{Port: ":8080"}
-	}
-	if o.Logs == nil { // 默认重定向到 os.Stderr
-		l, err := logs.New(nil)
-		a.NotError(err).NotNil(l)
-
-		a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelError, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelInfo, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelTrace, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelWarn, os.Stdout))
-		o.Logs = l
-	}
-
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// locale
-	b := srv.Locale().Builder()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	// mimetype
-	a.NotError(srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
-	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
-
-	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
-
-	// encoding
-	srv.Encodings().Add(map[string]serialization.EncodingWriterFunc{
-		"gzip": func(w io.Writer) (serialization.WriteCloseRester, error) {
-			return gzip.NewWriter(w), nil
-		},
-		"deflate": func(w io.Writer) (serialization.WriteCloseRester, error) {
-			return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
-		},
-	})
-
-	return srv
-}
-
-func TestNewServer(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv, err := New("app", "0.1.0", nil)
-	a.NotError(err).NotNil(srv)
-	a.False(srv.Uptime().IsZero())
-	a.NotNil(srv.Cache())
-	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.group)
-	a.NotNil(srv.httpServer.BaseContext)
-	a.Equal(srv.httpServer.Addr, "")
-}
-
-func buildMiddleware(a *assert.Assertion, v string) MiddlewareFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		return func(ctx *Context) Responser {
+func buildMiddleware(a *assert.Assertion, v string) server.MiddlewareFunc {
+	return func(next server.HandlerFunc) server.HandlerFunc {
+		return func(ctx *server.Context) server.Responser {
 			_, err := ctx.Response.Write([]byte(v))
 			a.NotError(err)
 			return next(ctx)
@@ -109,97 +28,123 @@ func buildMiddleware(a *assert.Assertion, v string) MiddlewareFunc {
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
-	server := NewTestServer(a, nil)
+	srv := servertest.NewTester(a, nil)
 
-	router := server.NewRouter("default", "https://localhost:8088/root", group.MatcherFunc(group.Any), buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"))
+	router := srv.NewRouter(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"))
 	a.NotNil(router)
-	router.Get("/path", f201)
+	router.Get("/path", servertest.BuildHandler(201))
 	prefix := router.Prefix("/p1", buildMiddleware(a, "p1"), buildMiddleware(a, "p2-"))
 	a.NotNil(prefix)
-	prefix.Get("/path", f201)
+	prefix.Get("/path", servertest.BuildHandler(201))
 
-	srv := rest.NewServer(a, server.group, nil)
+	srv.GoServe()
+
 	srv.Get("/p1/path").
 		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
-		StringBody("p2-p1b2-b11234567890")
+		StringBody("p2-p1b2-b1201")
 
 	srv.Get("/path").
 		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
-		StringBody("b2-b11234567890")
+		StringBody("b2-b1201")
+
+	srv.Close(0)
+	srv.Wait()
 }
 
 func TestRouter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, nil)
-	host := group.NewHosts(false, "example.com")
-	a.NotNil(host)
+	s := servertest.NewTester(a, nil)
+	srv := s.Server()
 
-	router := srv.NewRouter("host", "https://example.com", host)
+	s.GoServe()
+
+	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
+	a.NotNil(ver)
+	router := srv.NewRouter("ver", "https://example.com", ver)
 	a.NotNil(router)
 
 	uu, err := router.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
-	router.Prefix("/p1").Delete("/path", f204)
-	rest.Delete(a, "https://example.com:88/p1/path").Do(srv.group).Status(http.StatusNoContent)
+	router.Prefix("/p1").Delete("/path", servertest.BuildHandler(204))
+	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusNoContent)
 
-	rr := srv.Router("host")
+	rr := srv.Router("ver")
 	a.Equal(rr, router)
 	a.Equal(1, len(srv.Routers())).
-		Equal(srv.Routers()[0].Name(), "host")
+		Equal(srv.Routers()[0].Name(), "ver")
 
 	// 删除整个路由
-	srv.RemoveRouter("host")
+	srv.RemoveRouter("ver")
 	a.Equal(0, len(srv.Routers()))
-	rest.Delete(a, "https://example.com:88/p1/path").Do(srv.group).Status(http.StatusNotFound)
+	s.Delete("/p1/path").
+		Header("Accept", "text/plain;v=2").
+		Do(nil).
+		Status(http.StatusNotFound)
+
+	s.Close(0)
+	s.Wait()
 }
 
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
-	server := NewTestServer(a, nil)
+	s := servertest.NewTester(a, nil)
+	s.GoServe()
 
-	r := server.NewRouter("host", "http://localhost:8081/root/", group.MatcherFunc(group.Any))
-	a.NotNil(r)
-	r.Get("/m1/test", f201)
-	r.Get("/client/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
+	// 带版本
 
-	srv := rest.NewServer(a, server.group, nil)
+	ver := group.NewHeaderVersion("ver", "vv", log.Default(), "2")
+	a.NotNil(ver)
+	r := s.Server().NewRouter("ver", "https://example.com/version", ver)
+	r.Get("/ver/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
-	srv.Get("/m1/test").
+	s.Get("/ver/file1.txt").
+		Header("Accept", "text/plain;vv=2").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("file1")
+
+	p := group.NewPathVersion("vv", "v2")
+	a.NotNil(p)
+	r = s.Server().NewRouter("path", "https://example.com/path", p)
+	r.Get("/path/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+
+	s.Get("/v2/path/file1.txt").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("file1")
+
+	r = s.NewRouter()
+	r.Get("/m1/test", servertest.BuildHandler(201))
+	r.Get("/client/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+
+	s.Get("/m1/test").
 		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusCreated).
-		Header("Content-Type", "text/html").
-		StringBody("1234567890")
+		StringBody("201")
 
 	// 定义的静态文件
-	srv.Get("/client/file1.txt").
+	s.Get("/client/file1.txt").
 		Do(nil).
 		Status(http.StatusOK).
 		Header("Content-Type", "text/plain; charset=utf-8").
 		StringBody("file1")
 
-	srv.Get("/client/not-exists").
+	s.Get("/client/not-exists").
 		Do(nil).
 		Status(http.StatusNotFound)
 
 	// 删除
 	r.Remove("/client/{path}")
-	srv.Get("/client/file1.txt").
+	s.Get("/client/file1.txt").
 		Do(nil).
 		Status(http.StatusNotFound)
 
-	// 带域名
-	server = NewTestServer(a, nil)
-	host := group.NewHosts(false, "example.com")
-	a.NotNil(host)
-	r = server.NewRouter("example", "https://example.com/blog", host)
-	a.NotNil(r)
-	r.Get("/admin/{path}", server.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-
-	rest.Get(a, "https://example.com/admin/file1.txt").Do(server.group).Status(http.StatusOK)
+	s.Close(0)
+	s.Wait()
 }

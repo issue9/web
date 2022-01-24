@@ -15,7 +15,8 @@ var _ fs.GlobFS = &Module{}
 func TestServer_NewModule(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := NewTestServer(a, &Options{FS: os.DirFS("./")})
+	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("./")})
+	a.NotError(err).NotNil(srv)
 	m := srv.NewModule("testdata")
 	a.NotNil(m).
 		Equal(m.ID(), "testdata").
@@ -39,7 +40,8 @@ func TestServer_NewModule(t *testing.T) {
 
 func TestModule_NewModule(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, &Options{FS: os.DirFS("../")})
+	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("../")})
+	a.NotError(err).NotNil(srv)
 
 	m := srv.NewModule("server")
 	a.NotNil(m)
@@ -53,7 +55,8 @@ func TestModule_NewModule(t *testing.T) {
 func TestModule_Glob(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := NewTestServer(a, &Options{FS: os.DirFS("./")})
+	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("./")})
+	a.NotError(err).NotNil(srv)
 
 	m := srv.NewModule("testdata")
 	a.True(existsFS(m, "file1.txt"))
@@ -80,7 +83,7 @@ func TestModule_Glob(t *testing.T) {
 	a.False(existsFS(m, "not-exists.txt"))
 	a.True(existsFS(m, "servertest.go"))
 	matches, err = fs.Glob(m, "*.go")
-	a.NotError(err).Equal(matches, []string{"servertest.go"})
+	a.NotError(err).Equal(matches, []string{"server.go", "servertest.go"})
 	matches, err = fs.Glob(m, "*.pem")
 	a.NotError(err).Empty(matches)
 
@@ -88,7 +91,7 @@ func TestModule_Glob(t *testing.T) {
 	m.AddFS(os.DirFS("./testdata"))
 	a.True(existsFS(m, "file1.txt"))
 	matches, err = fs.Glob(m, "*.go")
-	a.NotError(err).Equal(matches, []string{"servertest.go"})
+	a.NotError(err).Equal(matches, []string{"server.go", "servertest.go"})
 	matches, err = fs.Glob(m, "*.pem")
 	a.NotError(err).Equal(matches, []string{"cert.pem", "key.pem"})
 }

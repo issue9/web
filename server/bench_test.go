@@ -22,7 +22,7 @@ import (
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, &Options{Port: ":8080"})
+	srv := newServer(a, &Options{Port: ":8080"})
 
 	h := func(c *Context) Responser {
 		_, err := c.Response.Write([]byte(c.Request.URL.Path))
@@ -38,7 +38,7 @@ func BenchmarkRouter(b *testing.B) {
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, &Options{Port: ":8080"})
+	srv := newServer(a, &Options{Port: ":8080"})
 	router := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
 	a.NotNil(router)
 
@@ -68,7 +68,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 
 func BenchmarkServer_NewContext(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -85,7 +85,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 
 func BenchmarkContext_Marshal(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func BenchmarkContext_Marshal(b *testing.B) {
 
 func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -120,7 +120,7 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -138,7 +138,7 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 
 func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -180,7 +180,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -198,7 +198,7 @@ func BenchmarkContext_UnmarshalWithUTF8(b *testing.B) {
 
 func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -218,7 +218,7 @@ func BenchmarkContext_UnmarshalWithCharset(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -242,7 +242,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkPostWithCharset(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()

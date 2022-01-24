@@ -23,7 +23,7 @@ var (
 
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
 	srv.Logs().CRITICAL().SetFlags(log.Llongfile)
@@ -39,7 +39,7 @@ func TestContext_Critical(t *testing.T) {
 
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 	errLog.Reset()
 	srv.Logs().ERROR().SetOutput(errLog)
 
@@ -53,7 +53,7 @@ func TestContext_Errorf(t *testing.T) {
 
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
 
@@ -79,7 +79,7 @@ func TestStatus(t *testing.T) {
 	s := Status(201)
 	a.NotNil(s)
 
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 
 	r := rest.Get(a, "/path").Request()
 	w := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 		Header("Content-Type", "application/json").
 		Request()
 	w := httptest.NewRecorder()
-	ctx := NewTestServer(a, nil).NewContext(w, r)
+	ctx := newServer(a, nil).NewContext(w, r)
 	ctx.server.AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
 	ctx.server.AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
 
@@ -116,7 +116,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 
 func TestContext_Result(t *testing.T) {
 	a := assert.New(t, false)
-	srv := NewTestServer(a, nil)
+	srv := newServer(a, nil)
 	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
@@ -167,7 +167,7 @@ func TestContext_Redirect(t *testing.T) {
 		Header("Content-Type", "application/json").
 		Request()
 	w := httptest.NewRecorder()
-	ctx := NewTestServer(a, nil).NewContext(w, r)
+	ctx := newServer(a, nil).NewContext(w, r)
 	a.Equal(ctx.Redirect(301, "https://example.com"), exited)
 	a.Equal(w.Result().StatusCode, 301).
 		Equal(w.Header().Get("Location"), "https://example.com")
