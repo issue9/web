@@ -196,7 +196,10 @@ func (srv *Server) Serve() (err error) {
 			}
 		}
 
-		srv.Logs().Close()
+		// 在退出时还出错，直接 panic 问题也不大。
+		if err2 := srv.Logs().Flush(); err2 != nil {
+			panic(err2)
+		}
 	}()
 
 	srv.serving = true

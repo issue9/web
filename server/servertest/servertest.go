@@ -48,7 +48,7 @@ func (s *Tester) GoServe() {
 
 		defer s.wg.Done()
 
-		err := s.s.Serve()
+		err := s.Server().Serve()
 		s.a.Error(err).ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
 }

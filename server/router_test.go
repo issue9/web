@@ -65,19 +65,19 @@ func TestServer_Routers(t *testing.T) {
 
 	ver := muxutil.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
-	router := rs.New("ver", ver, &server.RouterOptions{
+	r1 := rs.New("ver", ver, &server.RouterOptions{
 		URLDomain: "https://example.com",
 	})
-	a.NotNil(router)
+	a.NotNil(r1)
 
-	uu, err := router.URL(false, "/posts/1", nil)
+	uu, err := r1.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
-	router.Prefix("/p1").Delete("/path", servertest.BuildHandler(204))
-	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusNoContent)
+	r1.Prefix("/p1").Delete("/path", servertest.BuildHandler(http.StatusCreated))
+	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusCreated)
 
-	rr := rs.Router("ver")
-	a.Equal(rr, router)
+	r2 := rs.Router("ver")
+	a.Equal(r2, r1)
 	a.Equal(1, len(rs.Routers())).
 		Equal(rs.Routers()[0].Name(), "ver")
 

@@ -36,12 +36,8 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		l, err := logs.New(nil)
 		a.NotError(err).NotNil(l)
 
-		a.NotError(l.SetOutput(logs.LevelDebug, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelError, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelCritical, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelInfo, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelTrace, os.Stdout))
-		a.NotError(l.SetOutput(logs.LevelWarn, os.Stdout))
+		a.NotError(l.SetOutput(logs.LevelDebug|logs.LevelError|logs.LevelCritical, os.Stderr))
+		a.NotError(l.SetOutput(logs.LevelInfo|logs.LevelTrace|logs.LevelWarn, os.Stdout))
 		o.Logs = l
 	}
 

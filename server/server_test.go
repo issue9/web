@@ -59,6 +59,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(srv.Server().Close(0))
 	a.True(isRequested, "未正常访问 /path")
 
+	srv.Close(0)
 	srv.Wait()
 
 	// BaseContext
@@ -91,6 +92,7 @@ func TestGetServer(t *testing.T) {
 	a.NotError(srv.Server().Close(0))
 	a.True(isRequested, "未正常访问 /path")
 
+	srv.Close(0)
 	srv.Wait()
 }
 
@@ -156,7 +158,7 @@ func TestServer_Serve(t *testing.T) {
 	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 
-	a.NotError(srv.Server().Close(0))
+	srv.Close(0)
 	srv.Wait()
 
 	a.False(srv.Server().Serving())
@@ -195,7 +197,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	resp, err = client.Get("http://localhost:8088/mux")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
 
-	a.NotError(srv.Server().Close(0))
+	srv.Close(0)
 	srv.Wait()
 }
 
@@ -254,6 +256,7 @@ func TestServer_Close(t *testing.T) {
 	a.Contains(str, "canceled").
 		Contains(str, "RegisterOnClose")
 
+	srv.Close(0)
 	srv.Wait()
 }
 
@@ -288,5 +291,6 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 
+	srv.Close(0)
 	srv.Wait()
 }
