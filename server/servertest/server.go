@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v6"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
@@ -44,10 +43,6 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		a.NotError(l.SetOutput(logs.LevelTrace, os.Stdout))
 		a.NotError(l.SetOutput(logs.LevelWarn, os.Stdout))
 		o.Logs = l
-	}
-
-	if len(o.RouterOptions) == 0 {
-		o.RouterOptions = []mux.Option{mux.WriterRecovery(500, os.Stderr)}
 	}
 
 	srv, err := server.New("app", "0.1.0", o)

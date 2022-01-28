@@ -14,7 +14,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v6/group"
+	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
@@ -47,7 +47,7 @@ type Server struct {
 	uptime     time.Time
 	serving    bool
 	modules    []string // 保存着模块名称，用于检测是否存在重名
-	group      *group.GroupOf[HandlerFunc]
+	routers    *Routers
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 	closes []func() error
@@ -109,9 +109,9 @@ func New(name, version string, o *Options) (*Server, error) {
 		localePrinter: o.locale.NewPrinter(o.Tag),
 	}
 
-	srv.group = group.NewOf[HandlerFunc](srv.call, o.Middlewares, o.RouterOptions...)
+	srv.routers = mux.NewRoutersOf[HandlerFunc](srv.call, nil)
 
-	srv.httpServer.Handler = srv.group
+	srv.httpServer.Handler = srv.routers
 	if srv.httpServer.BaseContext == nil {
 		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
 			return context.WithValue(context.Background(), contextKeyServer, srv)

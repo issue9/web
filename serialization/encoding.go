@@ -117,7 +117,7 @@ func (c *Encodings) add(name string, f EncodingWriterFunc) {
 		panic("参数 w 不能为空")
 	}
 
-	if sliceutil.Count(c.builders, func(i int) bool { return c.builders[i].name == name }) > 0 {
+	if sliceutil.Count(c.builders, func(e *EncodingBuilder) bool { return e.name == name }) > 0 {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
@@ -158,8 +158,8 @@ func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcce
 		}
 
 		for _, a := range c.builders {
-			index := sliceutil.Index(accepts, func(i int) bool {
-				return accepts[i].Value == a.name
+			index := sliceutil.Index(accepts, func(e *qheader.Header) bool {
+				return e.Value == a.name
 			})
 			if index < 0 {
 				return a, false

@@ -31,11 +31,6 @@ type configOf[T any] struct {
 	// 格式与 net/http.Server.Addr 相同。可以为空，表示由 net/http.Server 确定其默认值。
 	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
-	// 路由的相关设置
-	//
-	// 提供了对全局路由的设置，但是用户依然可以通过 server.Server.MuxGroups().AddRouter 忽略这些设置项。
-	Router *router `yaml:"router,omitempty" json:"router,omitempty" xml:"router,omitempty"`
-
 	// 与 HTTP 请求相关的设置项
 	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
@@ -92,11 +87,10 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 
 	h := conf.HTTP
 	return &server.Options{
-		FS:            f,
-		Location:      conf.location,
-		Cache:         conf.cache,
-		Port:          conf.Port,
-		RouterOptions: conf.Router.options,
+		FS:       f,
+		Location: conf.location,
+		Cache:    conf.cache,
+		Port:     conf.Port,
 		HTTPServer: func(srv *http.Server) {
 			srv.ReadTimeout = h.ReadTimeout.Duration()
 			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
@@ -139,14 +133,6 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	}
 
 	if err := conf.buildTimezone(); err != nil {
-		return err
-	}
-
-	if conf.Router == nil {
-		conf.Router = &router{}
-	}
-	if err := conf.Router.sanitize(); err != nil {
-		err.Field = "router." + err.Field
 		return err
 	}
 

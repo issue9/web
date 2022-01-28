@@ -9,11 +9,11 @@ require (
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.8.2
 	github.com/issue9/logs/v3 v3.1.0
-	github.com/issue9/mux/v6 v6.0.0-beta.3
+	github.com/issue9/mux/v6 v6.0.0-beta.4
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.7
 	github.com/issue9/scheduled v0.9.2
-	github.com/issue9/sliceutil v0.7.1
+	github.com/issue9/sliceutil v0.8.0
 	github.com/issue9/validation v0.5.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	golang.org/x/text v0.3.7

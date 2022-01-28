@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v6"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
@@ -50,21 +49,9 @@ type Options struct {
 	// NOTE: 该值可能会被 HTTPServer 的操作所覆盖。
 	Port string
 
-	// 初始化路由的参数
-	//
-	// 这些选项会应用在所有的路由上，但是并不是所有选项都起作用，
-	// 比如 mux.URLDomain，该值始终是在 NewRouter 中指定。
-	// 可以为空。
-	RouterOptions []mux.Option
-
-	// 应用于全局的中间件
-	//
-	// 所有通过 NewRouter 的路由都会应用此中间件。
-	Middlewares []MiddlewareFunc
-
 	// 可以对 http.Server 的内容进行修改
 	//
-	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.groups
+	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.routers
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/mux/v6/group"
+	"github.com/issue9/mux/v6/muxutil"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
@@ -55,16 +55,19 @@ func TestMiddleware(t *testing.T) {
 	srv.Wait()
 }
 
-func TestRouter(t *testing.T) {
+func TestServer_Routers(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
 	srv := s.Server()
+	rs := srv.Routers()
 
 	s.GoServe()
 
-	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
+	ver := muxutil.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
-	router := srv.NewRouter("ver", "https://example.com", ver)
+	router := rs.New("ver", ver, &server.RouterOptions{
+		URLDomain: "https://example.com",
+	})
 	a.NotNil(router)
 
 	uu, err := router.URL(false, "/posts/1", nil)
@@ -73,14 +76,14 @@ func TestRouter(t *testing.T) {
 	router.Prefix("/p1").Delete("/path", servertest.BuildHandler(204))
 	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusNoContent)
 
-	rr := srv.Router("ver")
+	rr := rs.Router("ver")
 	a.Equal(rr, router)
-	a.Equal(1, len(srv.Routers())).
-		Equal(srv.Routers()[0].Name(), "ver")
+	a.Equal(1, len(rs.Routers())).
+		Equal(rs.Routers()[0].Name(), "ver")
 
 	// 删除整个路由
-	srv.RemoveRouter("ver")
-	a.Equal(0, len(srv.Routers()))
+	rs.Remove("ver")
+	a.Equal(0, len(rs.Routers()))
 	s.Delete("/p1/path").
 		Header("Accept", "text/plain;v=2").
 		Do(nil).
@@ -93,13 +96,17 @@ func TestRouter(t *testing.T) {
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
+	rs := s.Server().Routers()
+
 	s.GoServe()
 
 	// 带版本
 
-	ver := group.NewHeaderVersion("ver", "vv", log.Default(), "2")
+	ver := muxutil.NewHeaderVersion("ver", "vv", log.Default(), "2")
 	a.NotNil(ver)
-	r := s.Server().NewRouter("ver", "https://example.com/version", ver)
+	r := rs.New("ver", ver, &server.RouterOptions{
+		URLDomain: "https://example.com/version",
+	})
 	r.Get("/ver/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 	s.Get("/ver/file1.txt").
@@ -108,9 +115,11 @@ func TestServer_FileServer(t *testing.T) {
 		Status(http.StatusOK).
 		StringBody("file1")
 
-	p := group.NewPathVersion("vv", "v2")
+	p := muxutil.NewPathVersion("vv", "v2")
 	a.NotNil(p)
-	r = s.Server().NewRouter("path", "https://example.com/path", p)
+	r = rs.New("path", p, &server.RouterOptions{
+		URLDomain: "https://example.com/path",
+	})
 	r.Get("/path/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 	s.Get("/v2/path/file1.txt").

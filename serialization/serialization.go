@@ -87,10 +87,9 @@ func (s *Serialization) Set(name string, m MarshalFunc, u UnmarshalFunc) {
 
 // Delete 删除指定名称的数据
 func (s *Serialization) Delete(name string) {
-	size := sliceutil.Delete(s.serializes, func(i int) bool {
-		return s.serializes[i].Name == name
+	s.serializes = sliceutil.Delete(s.serializes, func(e *serializer) bool {
+		return e.Name == name
 	})
-	s.serializes = s.serializes[:size]
 }
 
 func (s *Serialization) Search(name string) (string, MarshalFunc, UnmarshalFunc) {

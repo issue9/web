@@ -20,7 +20,6 @@ import (
 	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
-	"github.com/issue9/mux/v6/group"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
@@ -97,7 +96,7 @@ func TestNew(t *testing.T) {
 	a.False(srv.Uptime().IsZero())
 	a.NotNil(srv.Cache())
 	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.group)
+	a.Equal(srv.httpServer.Handler, srv.routers)
 	a.NotNil(srv.httpServer.BaseContext)
 	a.Equal(srv.httpServer.Addr, "")
 }
@@ -437,7 +436,7 @@ func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newServer(a, nil)
-	router := srv.NewRouter("router", "https://example.com", group.MatcherFunc(group.Any))
+	router := srv.Routers().New("router", nil, &RouterOptions{URLDomain: "https://example.com"})
 	a.NotNil(router)
 	router.Get("/not-xhr", func(ctx *Context) Responser {
 		a.False(ctx.IsXHR())

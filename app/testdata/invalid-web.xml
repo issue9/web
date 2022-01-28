@@ -1,12 +1,10 @@
 <!-- web.xml 的测试文件，内容错误 -->
 
 <web port=":8082">
-    <http readTimeout="3s" />
+    <http readTimeout="3s">
+        <letsEncrypt><!-- 缺少必要的元素 domains -->
+            <cache>./</cache>
+        </letsEncrypt>
+    </http>
     <timezone>Africa/Addis_Ababa</timezone>
-    <router>
-        <cors allowCredentials="true">
-            <origin>*</origin>
-        </cors>
-    </router>
-
 </web>

@@ -50,7 +50,7 @@ func TestNewOptions(t *testing.T) {
 	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
 	a.Equal(err2.Path, "invalid-web.xml").
-		Equal(err2.Field, "router.cors.allowCredentials")
+		Equal(err2.Field, "http.letsEncrypt.domains")
 
 	// 自定义 T
 	opt, user, err := NewOptionsOf[userData](files, os.DirFS("./testdata"), "user.xml")
@@ -64,7 +64,6 @@ func TestWebconfig_sanitize(t *testing.T) {
 	conf := &configOf[empty]{}
 	a.NotError(conf.sanitize()).
 		Equal(conf.languageTag, language.Und).
-		NotNil(conf.Router).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 

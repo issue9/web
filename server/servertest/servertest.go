@@ -5,6 +5,7 @@ package servertest
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
-	"github.com/issue9/mux/v6/group"
+	"github.com/issue9/mux/v6"
 
 	"github.com/issue9/web/server"
 )
@@ -55,14 +56,19 @@ func (s *Tester) GoServe() {
 // NewRouter 创建一个默认的路由
 //
 // 相当于：
-//  s.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any))
+//  s.Server().NewRouter("default", "http://localhost:8080/", nil)
 //
 // NOTE: 如果需要多个路由，请使用 Server().NewRouter 并指定正确的 group.Matcher 对象，
 // 或是将 Tester.NewRouter 放在最后。
 func (s *Tester) NewRouter(ms ...server.MiddlewareFunc) *server.Router {
 	s.a.TB().Helper()
 
-	router := s.Server().NewRouter("default", "http://localhost:8080/", group.MatcherFunc(group.Any), ms...)
+	rs := s.Server().Routers()
+	router := rs.New("default", nil, &server.RouterOptions{
+		Middlewares: ms,
+		URLDomain:   "http://localhost:8080/",
+		RecoverFunc: mux.WriterRecovery(http.StatusInternalServerError, os.Stderr),
+	})
 	s.a.NotNil(router)
 	return router
 }

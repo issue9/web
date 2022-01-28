@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/mux/v6/group"
 	"github.com/issue9/mux/v6/routertest"
 
 	"github.com/issue9/web/serialization/text"
@@ -32,14 +31,13 @@ func BenchmarkRouter(b *testing.B) {
 		return nil
 	}
 
-	t := routertest.NewTester[HandlerFunc](srv.call)
-	t.Bench(b, h)
+	routertest.NewTester[HandlerFunc](srv.call).Bench(b, h)
 }
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
-	router := srv.NewRouter("srv", "http://localhost:8080/", group.MatcherFunc(group.Any))
+	router := srv.Routers().New("srv", nil, &RouterOptions{URLDomain: "http://localhost:8080/"})
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
