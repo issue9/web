@@ -16,14 +16,14 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-func buildMiddleware(a *assert.Assertion, v string) server.MiddlewareFunc {
-	return func(next server.HandlerFunc) server.HandlerFunc {
+func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
+	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 		return func(ctx *server.Context) server.Responser {
 			_, err := ctx.Response.Write([]byte(v))
 			a.NotError(err)
 			return next(ctx)
 		}
-	}
+	})
 }
 
 func TestMiddleware(t *testing.T) {

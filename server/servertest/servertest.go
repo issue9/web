@@ -60,7 +60,7 @@ func (s *Tester) GoServe() {
 //
 // NOTE: 如果需要多个路由，请使用 Server().NewRouter 并指定正确的 group.Matcher 对象，
 // 或是将 Tester.NewRouter 放在最后。
-func (s *Tester) NewRouter(ms ...server.MiddlewareFunc) *server.Router {
+func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
 	s.a.TB().Helper()
 
 	rs := s.Server().Routers()

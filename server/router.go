@@ -14,8 +14,9 @@ import (
 type (
 	Router         = mux.RouterOf[HandlerFunc]
 	Routers        = mux.RoutersOf[HandlerFunc]
-	MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
 	RouterOptions  = mux.OptionsOf[HandlerFunc]
+	MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
+	Middleware     = mux.MiddlewareOf[HandlerFunc]
 )
 
 // Routers 路由管理接口
