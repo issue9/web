@@ -9,7 +9,7 @@ require (
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.8.2
 	github.com/issue9/logs/v3 v3.2.0
-	github.com/issue9/mux/v6 v6.0.0-beta.5
+	github.com/issue9/mux/v6 v6.0.0-beta.6
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.7
 	github.com/issue9/scheduled v0.9.2
