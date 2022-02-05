@@ -19,7 +19,7 @@ import (
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 		return func(ctx *server.Context) server.Responser {
-			_, err := ctx.Response.Write([]byte(v))
+			_, err := ctx.Write([]byte(v))
 			a.NotError(err)
 			return next(ctx)
 		}

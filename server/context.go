@@ -31,8 +31,7 @@ var (
 	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
 	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
 
-	contextPool  = &sync.Pool{New: func() interface{} { return &Context{} }}
-	responsePool = &sync.Pool{New: func() interface{} { return &response{} }}
+	contextPool = &sync.Pool{New: func() interface{} { return &Context{} }}
 )
 
 // CTXSanitizer 提供对数据的验证和修正
@@ -45,27 +44,23 @@ type CTXSanitizer interface {
 	CTXSanitize(*Context) ResultFields
 }
 
-type response struct {
-	http.ResponseWriter
-	w io.Writer
-}
-
-func (r *response) Write(bs []byte) (int, error) { return r.w.Write(bs) }
-
-func getResponse() *response { return responsePool.Get().(*response) }
-
-// Context 是对当次 HTTP 请求内容的封装
+// Context 根据当次 HTTP 请求生成的上下文内容
+//
+// Context 同时也实现了 http.ResponseWriter 接口，
+// 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
+// 而是采用返回 Responser 接口对象的方式向客户端输出内容。
 type Context struct {
 	server            *Server
 	params            params.Params
 	outputCharsetName string
 
 	// 以下两个值可能为空
-	encodingCloser io.Closer
-	charsetCloser  io.Closer
+	encodingCloser io.WriteCloser
+	charsetCloser  io.WriteCloser
+	resp           http.ResponseWriter
+	respWriter     io.Writer
 
-	Response http.ResponseWriter
-	Request  *http.Request
+	Request *http.Request
 
 	// 指定 Marshal 输出时所使用的媒体类型，以及名称。
 	// 在不调用 Marshal 的时候可以为空。比如下载文件等，并没有特定的序列化函数对应。
@@ -129,14 +124,14 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	// NOTE: ctx 是从对象池中获取的，必须所有变量都初始化
-	resp, ec, cc := srv.buildResponse(w, outputCharset, outputEncoding)
 	ctx := contextPool.Get().(*Context)
 	ctx.server = srv
 	ctx.params = nil
 	ctx.outputCharsetName = outputCharsetName
-	ctx.encodingCloser = ec
-	ctx.charsetCloser = cc
-	ctx.Response = resp
+
+	// 初始化 encodingCloser, charsetCloser, resp, respWriter
+	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
+
 	ctx.Request = r
 	ctx.OutputMimetype = marshal
 	ctx.OutputMimetypeName = outputMimetypeName
@@ -151,30 +146,34 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return ctx
 }
 
-func (srv *Server) buildResponse(
-	w http.ResponseWriter, c encoding.Encoding, b *serialization.EncodingBuilder,
-) (r http.ResponseWriter, encodingCloser, charsetCloser io.WriteCloser) {
-	h := w.Header()
-	var ww io.Writer = w
+func (ctx *Context) Write(bs []byte) (int, error) {
+	return ctx.respWriter.Write(bs)
+}
+
+func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
+
+func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
+
+func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
+	ctx.resp = resp
+	ctx.respWriter = resp
+	ctx.encodingCloser = nil
+	ctx.charsetCloser = nil
+
+	h := resp.Header()
 
 	if b != nil {
-		encodingCloser = b.Build(ww)
-		ww = encodingCloser
+		ctx.encodingCloser = b.Build(ctx.respWriter)
+		ctx.respWriter = ctx.encodingCloser
 		h.Del("Content-Length") // https://github.com/golang/go/issues/14975
 		h.Set("Content-Encoding", b.Name())
 		h.Add("Vary", "Content-Encoding")
 	}
 
 	if !charsetIsNop(c) {
-		charsetCloser = transform.NewWriter(ww, c.NewEncoder())
-		ww = charsetCloser
+		ctx.charsetCloser = transform.NewWriter(ctx.respWriter, c.NewEncoder())
+		ctx.respWriter = ctx.charsetCloser
 	}
-
-	resp := getResponse()
-	resp.ResponseWriter = w
-	resp.w = ww
-
-	return resp, encodingCloser, charsetCloser
 }
 
 func (ctx *Context) destory() {
@@ -186,7 +185,6 @@ func (ctx *Context) destory() {
 		ctx.encodingCloser.Close()
 	}
 
-	responsePool.Put(ctx.Response)
 	contextPool.Put(ctx)
 }
 
@@ -241,7 +239,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
-	header := ctx.Response.Header()
+	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
 	for k, v := range headers {
@@ -262,27 +260,27 @@ func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string
 	}
 
 	if v == nil {
-		ctx.Response.WriteHeader(status)
+		ctx.WriteHeader(status)
 		return nil
 	}
 
 	// 没有指定编码函数，NewContext 阶段是允许 OutputMimetype 为空的，所以只能在此处判断。
 	if ctx.OutputMimetype == nil {
-		ctx.Response.WriteHeader(http.StatusNotAcceptable)
+		ctx.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 	data, err := ctx.OutputMimetype(v)
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
-		ctx.Response.WriteHeader(http.StatusNotAcceptable)
+		ctx.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	case err != nil:
-		ctx.Response.WriteHeader(http.StatusInternalServerError)
+		ctx.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 
-	ctx.Response.WriteHeader(status)
-	_, err = ctx.Response.Write(data)
+	ctx.WriteHeader(status)
+	_, err = ctx.Write(data)
 	return err
 }
 

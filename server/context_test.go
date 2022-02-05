@@ -377,7 +377,7 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	_, err = ctx.Response.Write([]byte("123")) // 因为压缩的关系，此操作并未调用 WriteHeader(200)
+	_, err = ctx.Write([]byte("123")) // 因为压缩的关系，此操作并未调用 WriteHeader(200)
 	a.NotError(err)
 	a.NotError(ctx.Marshal(http.StatusCreated, "456", nil))
 	ctx.destory()
@@ -394,7 +394,7 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	_, err = ctx.Response.Write([]byte(gbkString1))
+	_, err = ctx.Write([]byte(gbkString1))
 	a.NotError(err)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	ctx.destory()
@@ -602,7 +602,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	a.NotNil(ctx)
-	n, err := ctx.LocalePrinter.Fprintf(ctx.Response, "test")
+	n, err := ctx.LocalePrinter.Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试"))
 	a.Equal(w.Body.String(), "测试")
 }

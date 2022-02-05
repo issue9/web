@@ -138,8 +138,8 @@ func TestServer_Serve(t *testing.T) {
 		srv := ctx.Server()
 		a.NotNil(srv)
 
-		ctx.Response.WriteHeader(http.StatusAccepted)
-		_, err := ctx.Response.Write([]byte("1234567890"))
+		ctx.WriteHeader(http.StatusAccepted)
+		_, err := ctx.Write([]byte("1234567890"))
 		if err != nil {
 			println(err)
 		}
@@ -208,9 +208,9 @@ func TestServer_Close(t *testing.T) {
 
 	router.Get("/test", servertest.BuildHandler(202))
 	router.Get("/close", func(ctx *server.Context) server.Responser {
-		_, err := ctx.Response.Write([]byte("closed"))
+		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
-			ctx.Response.WriteHeader(http.StatusInternalServerError)
+			ctx.WriteHeader(http.StatusInternalServerError)
 		}
 		a.NotError(srv.Server().Close(0))
 
@@ -267,8 +267,8 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 	router.Get("/test", servertest.BuildHandler(202))
 	router.Get("/close", func(ctx *server.Context) server.Responser {
-		ctx.Response.WriteHeader(http.StatusCreated)
-		_, err := ctx.Response.Write([]byte("shutdown with ctx"))
+		ctx.WriteHeader(http.StatusCreated)
+		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
 		a.NotError(srv.Server().Close(300 * time.Millisecond))
 

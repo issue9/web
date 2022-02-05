@@ -39,7 +39,7 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	return func(ctx *Context) Responser {
 		p, _ := ctx.params.Get(name) // 空值也是允许的值
 
-		err := muxutil.ServeFile(fsys, p, index, ctx.Response, ctx.Request)
+		err := muxutil.ServeFile(fsys, p, index, ctx, ctx.Request)
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			return Status(http.StatusForbidden)

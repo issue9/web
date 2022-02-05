@@ -17,6 +17,8 @@ import (
 )
 
 var (
+	_ http.ResponseWriter = &Context{}
+
 	errLog      = new(bytes.Buffer)
 	criticalLog = new(bytes.Buffer)
 )
@@ -33,7 +35,7 @@ func TestContext_Critical(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 
 	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "response_test.go:35") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "response_test.go:37") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1 log2")
 }
 

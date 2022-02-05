@@ -24,6 +24,8 @@ type (
 		Status() int
 
 		// Headers 输出的报头
+		//
+		// NOTE: 不应该修改返回值的元素，有可能返回 nil。
 		Headers() map[string]string
 
 		// Body 输出到 body 部分的对象
@@ -113,7 +115,8 @@ func Status(statusCode int) Responser {
 
 // Exit 不再执行后续操作退出当前请求
 //
-// 与其它返回的区别在于，Exit 表示已经向客户端输出相关内容，仅作退出。
+// 与其它返回的区别在于，Exit 表示已经向客户端输出相关内容，
+// 仅作退出，比如通过 Context.Resopnse.WriteHeader 写了状态码。
 func Exit() Responser { return exited }
 
 // Result 返回 Result 实例
@@ -126,6 +129,6 @@ func (ctx *Context) Result(code string, fields ResultFields) Responser {
 
 // Redirect 重定向至新的 URL
 func (ctx *Context) Redirect(status int, url string) Responser {
-	http.Redirect(ctx.Response, ctx.Request, url, status)
+	http.Redirect(ctx, ctx.Request, url, status)
 	return Exit()
 }
