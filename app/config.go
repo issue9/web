@@ -145,7 +145,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	}
 
 	if conf.User != nil {
-		if s, ok := (interface{})(conf.User).(ConfigSanitizer); ok {
+		if s, ok := (any)(conf.User).(ConfigSanitizer); ok {
 			if err := s.SanitizeConfig(); err != nil {
 				err.Field = "user." + err.Field
 				return err

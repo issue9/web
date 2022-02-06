@@ -16,7 +16,7 @@ const Version = "3"
 const Mimetype = "application/protobuf"
 
 // Marshal 提供对 protobuf 的支持
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	if p, ok := v.(proto.Message); ok {
 		return proto.Marshal(p)
 	}
@@ -24,7 +24,7 @@ func Marshal(v interface{}) ([]byte, error) {
 }
 
 // Unmarshal 提供对 protobuf 的支持
-func Unmarshal(buf []byte, v interface{}) error {
+func Unmarshal(buf []byte, v any) error {
 	if p, ok := v.(proto.Message); ok {
 		return proto.Unmarshal(buf, p)
 	}

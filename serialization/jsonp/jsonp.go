@@ -13,7 +13,7 @@ const Mimetype = "application/javascript"
 
 type jsonp struct {
 	callback string
-	data     interface{}
+	data     any
 }
 
 // JSONP 返回 JSONP 对象
@@ -21,7 +21,7 @@ type jsonp struct {
 // 采用与 JSON 相同的解析方式。
 // callback 表示回调的函数名称，如果为空，则直接返回 data，
 // 在输出时也将被当作普通的 JSON 输出。
-func JSONP(callback string, data interface{}) interface{} {
+func JSONP(callback string, data any) any {
 	if callback == "" {
 		return data
 	}
@@ -43,7 +43,7 @@ func (j *jsonp) marshal() ([]byte, error) {
 //
 // v 如果是由 JSONP 构建的对象，则返回带 callback 的 js 函数；
 // 如果是普通的对象，则采用 json.Marshal 将其转换成普通的 JSON 对象返回；
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
 	case *jsonp:
 		return obj.marshal()

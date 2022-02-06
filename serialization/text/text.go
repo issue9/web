@@ -11,7 +11,7 @@ import (
 
 const Mimetype = "text/plain"
 
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	switch vv := v.(type) {
 	case string:
 		return []byte(vv), nil
@@ -28,7 +28,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return nil, serialization.ErrUnsupported
 }
 
-func Unmarshal(data []byte, v interface{}) (err error) {
+func Unmarshal(data []byte, v any) (err error) {
 	switch vv := v.(type) {
 	case *string:
 		*vv = string(data)

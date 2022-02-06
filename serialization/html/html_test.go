@@ -19,7 +19,7 @@ func TestMarshal(t *testing.T) {
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
 	a.NotError(err).NotNil(tpl)
 
-	bs, err := Marshal(Tpl(tpl, "footer", map[string]interface{}{
+	bs, err := Marshal(Tpl(tpl, "footer", map[string]any{
 		"Footer": "footer",
 	}))
 	a.NotError(err).NotNil(bs)

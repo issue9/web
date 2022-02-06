@@ -9,10 +9,10 @@ import (
 
 // ConfigError 表示配置内容字段错误
 type ConfigError struct {
-	Path    string      // 配置文件的路径
-	Field   string      // 字段名
-	Message interface{} // 错误信息
-	Value   interface{} // 字段的原始值
+	Path    string // 配置文件的路径
+	Field   string // 字段名
+	Message any    // 错误信息
+	Value   any    // 字段的原始值
 }
 
 // ConfigSanitizer 对配置文件的数据验证和修正接口

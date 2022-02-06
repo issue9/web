@@ -31,7 +31,7 @@ var (
 	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
 	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
 
-	contextPool = &sync.Pool{New: func() interface{} { return &Context{} }}
+	contextPool = &sync.Pool{New: func() any { return &Context{} }}
 )
 
 // CTXSanitizer 提供对数据的验证和修正
@@ -82,7 +82,7 @@ type Context struct {
 	// 保存 Context 在存续期间的可复用变量
 	//
 	// 这是比 context.Value 更经济的传递变量方式，但是这并不是协程安全的。
-	Vars map[interface{}]interface{}
+	Vars map[any]any
 }
 
 // NewContext 构建 *Context 实例
@@ -141,7 +141,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.Location = srv.location
 	ctx.body = ctx.body[:0]
 	ctx.read = false
-	ctx.Vars = make(map[interface{}]interface{})
+	ctx.Vars = make(map[any]any)
 	return ctx
 }
 
@@ -213,7 +213,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 }
 
 // Unmarshal 将提交的内容转换成 v 对象
-func (ctx *Context) Unmarshal(v interface{}) error {
+func (ctx *Context) Unmarshal(v any) error {
 	body, err := ctx.Body()
 	if err != nil {
 		return err
@@ -239,7 +239,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // headers 报头信息，如果已经存在于 ctx.Header() 将覆盖 ctx.Header() 中的值，
 // 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
-func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
+func (ctx *Context) Marshal(status int, v any, headers map[string]string) error {
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
@@ -367,7 +367,7 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 code 作为错误代码的 Responser 对象。
-func (ctx *Context) Read(v interface{}, code string) Responser {
+func (ctx *Context) Read(v any, code string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
@@ -407,14 +407,14 @@ func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 // Log 输出日志并以指定的状态码退出
 //
 // deep 为 0 表示 Log 本身；
-func (ctx *Context) Log(level, deep int, v ...interface{}) {
+func (ctx *Context) Log(level, deep int, v ...any) {
 	ctx.Logs().Print(level, deep, v...)
 }
 
 // Logf 输出日志并以指定的状态码退出
 //
 // deep 为 0 表示 Logf 本身；
-func (ctx *Context) Logf(level, deep int, format string, v ...interface{}) {
+func (ctx *Context) Logf(level, deep int, format string, v ...any) {
 	ctx.Logs().Printf(level, deep, format, v...)
 }
 
@@ -441,6 +441,6 @@ func (ctx *Context) IsXHR() bool {
 }
 
 // Sprintf 返回翻译后的结果
-func (ctx *Context) Sprintf(key message.Reference, v ...interface{}) string {
+func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter.Sprintf(key, v...)
 }

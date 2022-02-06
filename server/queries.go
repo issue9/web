@@ -153,7 +153,7 @@ func (q *Queries) Result(code string) Responser {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，错误信息存入 q.errors。
-func (q *Queries) Object(v interface{}) {
+func (q *Queries) Object(v any) {
 	errors := query.Parse(q.queries, v)
 	for key, vals := range errors {
 		q.fields.Add(key, vals...)
@@ -168,7 +168,7 @@ func (q *Queries) Object(v interface{}) {
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(v interface{}, code string) Responser {
+func (ctx *Context) QueryObject(v any, code string) Responser {
 	q, err := ctx.Queries()
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)

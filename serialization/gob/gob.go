@@ -10,7 +10,7 @@ import (
 
 const Mimetype = "application/octet-stream"
 
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	w := new(bytes.Buffer)
 	enc := gob.NewEncoder(w)
 	if err := enc.Encode(v); err != nil {
@@ -20,6 +20,6 @@ func Marshal(v interface{}) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal(data []byte, v interface{}) error {
+func Unmarshal(data []byte, v any) error {
 	return gob.NewDecoder(bytes.NewReader(data)).Decode(v)
 }

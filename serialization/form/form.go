@@ -63,7 +63,7 @@ type Unmarshaler interface {
 //  - 如果实现 encoding.TextMarshaler 接口，则调用该接口；
 //  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
 //  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
 	}
@@ -90,7 +90,7 @@ func Marshal(v interface{}) ([]byte, error) {
 //  - 如果实现 Unmarshaler 接口，则调用该接口；
 //  - 如果是 url.Values 对象，则依次赋值每个对象；
 //  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func Unmarshal(data []byte, v interface{}) error {
+func Unmarshal(data []byte, v any) error {
 	if m, ok := v.(Unmarshaler); ok {
 		return m.UnmarshalForm(data)
 	}

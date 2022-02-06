@@ -27,15 +27,15 @@ type Template struct {
 	// 当用户的 accept 报头是 json 时，输出 Template
 	// 会使其所有的公开字段都被输出到客户端，存在一定的安全隐患。
 	tpl  *template.Template
-	name string      // 模块名称
-	data interface{} // 传递给模板的数据
+	name string // 模块名称
+	data any    // 传递给模板的数据
 }
 
 // Tpl 声明 *Template 实例
 //
 // name 表示需要引用的模板名称；
 // data 则是传递给该模板的所有变量；
-func Tpl(tpl *template.Template, name string, data interface{}) *Template {
+func Tpl(tpl *template.Template, name string, data any) *Template {
 	return &Template{
 		tpl:  tpl,
 		name: name,
@@ -49,7 +49,7 @@ func Tpl(tpl *template.Template, name string, data interface{}) *Template {
 //  - string 或是 []byte 将内容作为 HTML 内容直接输出
 //  - *Template 编译模板内容并输出
 //  - 其它情况下则是返回错误。
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
 	case *Template:
 		return obj.executeTemplate()

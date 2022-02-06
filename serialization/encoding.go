@@ -52,7 +52,7 @@ type EncodingWriterFunc func(w io.Writer) (WriteCloseRester, error)
 func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
 	return &EncodingBuilder{
 		name: name,
-		pool: &sync.Pool{New: func() interface{} {
+		pool: &sync.Pool{New: func() any {
 			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
 			if err != nil {
 				panic(err)

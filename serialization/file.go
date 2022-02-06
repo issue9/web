@@ -19,7 +19,7 @@ type Files struct {
 func NewFiles(c int) *Files { return &Files{Serialization: New(c)} }
 
 // Save 保存 v 到文件 p
-func (f *Files) Save(p string, v interface{}) error {
+func (f *Files) Save(p string, v any) error {
 	m, _ := f.searchByExt(p)
 	if m == nil {
 		return localeutil.Error("not found serialization function for %s", p)
@@ -34,14 +34,14 @@ func (f *Files) Save(p string, v interface{}) error {
 }
 
 // Load 加载文件到 v
-func (f *Files) Load(p string, v interface{}) error {
+func (f *Files) Load(p string, v any) error {
 	dir := filepath.ToSlash(filepath.Dir(p))
 	name := filepath.ToSlash(filepath.Base(p))
 	return f.LoadFS(os.DirFS(dir), name, v)
 }
 
 // LoadFS 加载文件到 v
-func (f *Files) LoadFS(fsys fs.FS, name string, v interface{}) error {
+func (f *Files) LoadFS(fsys fs.FS, name string, v any) error {
 	_, u := f.searchByExt(name)
 	if u == nil {
 		return localeutil.Error("not found serialization function for %s", name)

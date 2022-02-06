@@ -42,16 +42,16 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 
 func Status(status int) Responser { return server.Status(status) }
 
-func Object(status int, body interface{}, headers map[string]string) Responser {
+func Object(status int, body any, headers map[string]string) Responser {
 	return server.Object(status, body, headers)
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key string, v ...interface{}) LocaleStringer {
+func Phrase(key string, v ...any) LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 
-func Created(v interface{}, location string) Responser {
+func Created(v any, location string) Responser {
 	if location == "" {
 		return Object(http.StatusCreated, v, nil)
 	}
@@ -62,7 +62,7 @@ func Created(v interface{}, location string) Responser {
 }
 
 // OK 返回 200 状态码下的对象
-func OK(v interface{}) Responser { return Object(http.StatusOK, v, nil) }
+func OK(v any) Responser { return Object(http.StatusOK, v, nil) }
 
 func NotFound() Responser { return Status(http.StatusNotFound) }
 

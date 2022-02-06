@@ -20,10 +20,10 @@ type (
 	}
 
 	// MarshalFunc 序列化函数原型
-	MarshalFunc func(v interface{}) ([]byte, error)
+	MarshalFunc func(v any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
-	UnmarshalFunc func([]byte, interface{}) error
+	UnmarshalFunc func([]byte, any) error
 
 	serializer struct {
 		Name      string

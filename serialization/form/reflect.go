@@ -19,7 +19,7 @@ const Tag = "form"
 // 将 v 转换成 form-data 格式的数据
 //
 // NOTE: form-data 中不需要考虑 omitempty 的情况，因为无法处理数组和切片在有没有 omitempty 下的区别。
-func marshal(v interface{}) (url.Values, error) {
+func marshal(v any) (url.Values, error) {
 	objs := map[string]reflect.Value{}
 	if err := getFields(objs, "", reflect.ValueOf(v)); err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func marshal(v interface{}) (url.Values, error) {
 }
 
 // 将  form-data 数据转换到 v 中
-func unmarshal(vals url.Values, obj interface{}) error {
+func unmarshal(vals url.Values, obj any) error {
 	val := reflect.ValueOf(obj)
 	for k, v := range vals {
 		if err := setField(val, strings.Split(k, "."), v); err != nil {

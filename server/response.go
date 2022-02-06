@@ -31,7 +31,7 @@ type (
 		// Body 输出到 body 部分的对象
 		//
 		// 该对象最终经由 serialization.MarshalFunc 转换成文本输出。
-		Body() interface{}
+		Body() any
 	}
 
 	status int
@@ -39,7 +39,7 @@ type (
 	object struct {
 		status  int
 		headers map[string]string
-		body    interface{}
+		body    any
 	}
 )
 
@@ -62,42 +62,42 @@ func (s status) Status() int { return int(s) }
 
 func (s status) Headers() map[string]string { return nil }
 
-func (s status) Body() interface{} { return nil }
+func (s status) Body() any { return nil }
 
 func (o *object) Status() int { return o.status }
 
 func (o *object) Headers() map[string]string { return o.headers }
 
-func (o *object) Body() interface{} { return o.body }
+func (o *object) Body() any { return o.body }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 //
 // NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
 // 否则出错信息的位置信息将不准确。
-func (ctx *Context) Error(status int, v ...interface{}) Responser {
+func (ctx *Context) Error(status int, v ...any) Responser {
 	ctx.Log(logs.LevelError, 2, v...)
 	return Status(status)
 }
 
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Errorf(status int, format string, v ...interface{}) Responser {
+func (ctx *Context) Errorf(status int, format string, v ...any) Responser {
 	ctx.Logf(logs.LevelError, 2, format, v...)
 	return Status(status)
 }
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Critical(status int, v ...interface{}) Responser {
+func (ctx *Context) Critical(status int, v ...any) Responser {
 	ctx.Log(logs.LevelCritical, 2, v...)
 	return Status(status)
 }
 
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Criticalf(status int, format string, v ...interface{}) Responser {
+func (ctx *Context) Criticalf(status int, format string, v ...any) Responser {
 	ctx.Logf(logs.LevelCritical, 2, format, v...)
 	return Status(status)
 }
 
-func Object(status int, body interface{}, headers map[string]string) Responser {
+func Object(status int, body any, headers map[string]string) Responser {
 	return &object{
 		status:  status,
 		headers: headers,
