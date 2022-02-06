@@ -24,7 +24,7 @@ func BenchmarkRouter(b *testing.B) {
 	srv := newServer(a, &Options{Port: ":8080"})
 
 	h := func(c *Context) Responser {
-		_, err := c.Write([]byte(c.Request.URL.Path))
+		_, err := c.Write([]byte(c.Request().URL.Path))
 		if err != nil {
 			b.Error(err)
 		}

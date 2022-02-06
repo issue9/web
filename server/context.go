@@ -53,14 +53,13 @@ type Context struct {
 	server            *Server
 	params            params.Params
 	outputCharsetName string
+	request           *http.Request
 
-	// 以下两个值可能为空
+	// Response
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
-
-	Request *http.Request
 
 	// 指定 Marshal 输出时所使用的媒体类型，以及名称。
 	// 在不调用 Marshal 的时候可以为空。比如下载文件等，并没有特定的序列化函数对应。
@@ -128,11 +127,11 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.server = srv
 	ctx.params = nil
 	ctx.outputCharsetName = outputCharsetName
+	ctx.request = r
 
 	// 初始化 encodingCloser, charsetCloser, resp, respWriter
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
-	ctx.Request = r
 	ctx.OutputMimetype = marshal
 	ctx.OutputMimetypeName = outputMimetypeName
 	ctx.InputMimetype = inputMimetype
@@ -153,6 +152,8 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
+
+func (ctx *Context) Request() *http.Request { return ctx.request }
 
 func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
 	ctx.resp = resp
@@ -190,13 +191,13 @@ func (ctx *Context) destory() {
 
 // Body 获取用户提交的内容
 //
-// 相对于 ctx.Request.Body，此函数可多次读取。不存在 body 时，返回 nil
+// 相对于 ctx.Request().Body，此函数可多次读取。不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
 	if ctx.read {
 		return ctx.body, nil
 	}
 
-	if ctx.body, err = io.ReadAll(ctx.Request.Body); err != nil {
+	if ctx.body, err = io.ReadAll(ctx.Request().Body); err != nil {
 		return nil, err
 	}
 	ctx.read = true
@@ -235,7 +236,7 @@ func (ctx *Context) Unmarshal(v interface{}) error {
 // 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
 // 可以传递一个 *struct{} 值，或是自定义实现相应的解码函数；
 //
-// headers 报头信息，如果已经存在于 ctx.Response 将覆盖 ctx.Response 中的值，
+// headers 报头信息，如果已经存在于 ctx.Header() 将覆盖 ctx.Header() 中的值，
 // 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
 func (ctx *Context) Marshal(status int, v interface{}, headers map[string]string) error {
@@ -387,15 +388,15 @@ func (ctx *Context) Read(v interface{}, code string) Responser {
 //  - Remote-Addr 报头
 //  - X-Read-IP 报头
 func (ctx *Context) ClientIP() string {
-	ip := ctx.Request.Header.Get("X-Forwarded-For")
+	ip := ctx.Request().Header.Get("X-Forwarded-For")
 	if index := strings.IndexByte(ip, ','); index > 0 {
 		ip = ip[:index]
 	}
-	if ip == "" && ctx.Request.RemoteAddr != "" {
-		ip = ctx.Request.RemoteAddr
+	if ip == "" && ctx.Request().RemoteAddr != "" {
+		ip = ctx.Request().RemoteAddr
 	}
 	if ip == "" {
-		ip = ctx.Request.Header.Get("X-Real-IP")
+		ip = ctx.Request().Header.Get("X-Real-IP")
 	}
 
 	return strings.TrimSpace(ip)
@@ -435,7 +436,7 @@ func buildContentType(mt, charset string) string {
 }
 
 func (ctx *Context) IsXHR() bool {
-	h := strings.ToLower(ctx.Request.Header.Get("X-Requested-With"))
+	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))
 	return h == "xmlhttprequest"
 }
 

@@ -33,10 +33,10 @@ func TestGetServer(t *testing.T) {
 
 	router := srv.NewRouter()
 	router.Get("/path", func(ctx *server.Context) server.Responser {
-		s1 := server.GetServer(ctx.Request)
+		s1 := server.GetServer(ctx.Request())
 		a.NotNil(s1).Equal(s1, srv.Server())
 
-		v := ctx.Request.Context().Value(k)
+		v := ctx.Request().Context().Value(k)
 		a.Nil(v)
 
 		isRequested = true
@@ -76,10 +76,10 @@ func TestGetServer(t *testing.T) {
 	isRequested = false
 	router = srv.NewRouter()
 	router.Get("/path", func(ctx *server.Context) server.Responser {
-		s1 := server.GetServer(ctx.Request)
+		s1 := server.GetServer(ctx.Request())
 		a.NotNil(s1).Equal(s1, srv.Server())
 
-		v := ctx.Request.Context().Value(k) // BaseContext 中设置了 k 的值
+		v := ctx.Request().Context().Value(k) // BaseContext 中设置了 k 的值
 		a.Equal(v, 1)
 
 		isRequested = true

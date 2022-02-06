@@ -27,7 +27,7 @@ type Queries struct {
 
 // Queries 声明一个新的 Queries 实例
 func (ctx *Context) Queries() (*Queries, error) {
-	queries, err := url.ParseQuery(ctx.Request.URL.RawQuery)
+	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
 		return nil, err
 	}

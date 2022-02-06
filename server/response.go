@@ -129,6 +129,6 @@ func (ctx *Context) Result(code string, fields ResultFields) Responser {
 
 // Redirect 重定向至新的 URL
 func (ctx *Context) Redirect(status int, url string) Responser {
-	http.Redirect(ctx, ctx.Request, url, status)
+	http.Redirect(ctx, ctx.Request(), url, status)
 	return Exit()
 }
