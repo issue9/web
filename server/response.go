@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 )
 
@@ -54,7 +55,13 @@ func (ctx *Context) renderResponser(resp Responser) {
 	}
 
 	if err := ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()); err != nil {
-		ctx.Server().Logs().Error(err)
+		var msg string
+		if ls, ok := err.(localeutil.LocaleStringer); ok {
+			msg = ls.LocaleString(ctx.Server().LocalePrinter())
+		} else {
+			msg = err.Error()
+		}
+		ctx.Server().Logs().Error(msg)
 	}
 }
 

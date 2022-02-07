@@ -19,9 +19,14 @@ import (
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 		return func(ctx *server.Context) server.Responser {
-			_, err := ctx.Write([]byte(v))
-			a.NotError(err)
-			return next(ctx)
+			resp := next(ctx)
+			a.NotNil(resp)
+
+			h := resp.Headers()
+			a.NotNil(h)
+			h["h"] += v
+
+			return resp
 		}
 	})
 }
@@ -42,14 +47,16 @@ func TestMiddleware(t *testing.T) {
 	srv.Get("/p1/path").
 		Header("accept", text.Mimetype).
 		Do(nil).
-		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
-		StringBody("p2-p1b2-b1201")
+		Status(http.StatusCreated).
+		Header("h", "b1b2-p1p2-").
+		StringBody("201")
 
 	srv.Get("/path").
 		Header("accept", text.Mimetype).
 		Do(nil).
-		Status(http.StatusOK). // 在 WriteHeader 之前有内容输出了
-		StringBody("b2-b1201")
+		Status(http.StatusCreated).
+		Header("h", "b1b2-").
+		StringBody("201")
 
 	srv.Close(0)
 	srv.Wait()

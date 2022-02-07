@@ -377,13 +377,13 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	_, err = ctx.Write([]byte("123")) // 因为压缩的关系，此操作并未调用 WriteHeader(200)
+	_, err = ctx.Write([]byte("123"))
 	a.NotError(err)
-	a.NotError(ctx.Marshal(http.StatusCreated, "456", nil))
+	a.Error(ctx.Marshal(http.StatusCreated, "456", nil), localeutil.Error("rendered"))
 	ctx.destory()
-	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Code, http.StatusOK)
 	data, err = io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(string(data), "123456")
+	a.NotError(err).Equal(string(data), "123")
 
 	// accept,accept-language,accept-charset 和 accept-encoding，部分 Response.Write 输出
 	w = httptest.NewRecorder()
@@ -396,14 +396,11 @@ func TestContext_Marshal(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	_, err = ctx.Write([]byte(gbkString1))
 	a.NotError(err)
-	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
+	a.Error(ctx.Marshal(http.StatusCreated, gbkString2, nil), localeutil.Error("rendered"))
 	ctx.destory()
-	a.Equal(w.Code, http.StatusCreated)
+	a.Equal(w.Code, http.StatusOK)
 	data, err = io.ReadAll(flate.NewReader(w.Body))
-	data2 := make([]byte, 0, len(data))
-	data2 = append(data2, gbkBytes1...)
-	data2 = append(data2, gbkBytes2...)
-	a.NotError(err).Equal(data, data2)
+	a.NotError(err).Equal(data, gbkBytes1)
 
 	// OutputMimetype == nil
 	w = httptest.NewRecorder()

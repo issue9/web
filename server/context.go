@@ -60,6 +60,7 @@ type Context struct {
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
+	rendered       bool
 
 	// 指定 Marshal 输出时所使用的媒体类型，以及名称。
 	// 在不调用 Marshal 的时候可以为空。比如下载文件等，并没有特定的序列化函数对应。
@@ -129,7 +130,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.outputCharsetName = outputCharsetName
 	ctx.request = r
 
-	// 初始化 encodingCloser, charsetCloser, resp, respWriter
+	// 初始化 encodingCloser, charsetCloser, resp, respWriter, rendered
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
 	ctx.OutputMimetype = marshal
@@ -146,10 +147,14 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 }
 
 func (ctx *Context) Write(bs []byte) (int, error) {
+	ctx.rendered = true
 	return ctx.respWriter.Write(bs)
 }
 
-func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
+func (ctx *Context) WriteHeader(status int) {
+	ctx.rendered = true
+	ctx.resp.WriteHeader(status)
+}
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
@@ -160,6 +165,7 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	ctx.respWriter = resp
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
+	ctx.rendered = false
 
 	h := resp.Header()
 
@@ -240,6 +246,10 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
 func (ctx *Context) Marshal(status int, v any, headers map[string]string) error {
+	if ctx.rendered {
+		return localeutil.Error("rendered")
+	}
+
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
