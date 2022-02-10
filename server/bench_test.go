@@ -23,7 +23,7 @@ func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
 
-	h := func(c *Context) *Responser {
+	h := func(c *Context) *Response {
 		_, err := c.Write([]byte(c.Request().URL.Path))
 		if err != nil {
 			b.Error(err)
@@ -40,8 +40,8 @@ func BenchmarkServer_Serve(b *testing.B) {
 	router := srv.Routers().New("srv", nil, &RouterOptions{URLDomain: "http://localhost:8080/"})
 	a.NotNil(router)
 
-	router.Get("/path", func(c *Context) *Responser {
-		return Status(http.StatusOK).Body("/path").SetHeader("h1", "h1")
+	router.Get("/path", func(c *Context) *Response {
+		return Resp(http.StatusOK).Body("/path").SetHeader("h1", "h1")
 	})
 	go func() {
 		srv.Serve()
@@ -81,7 +81,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 	}
 }
 
-func BenchmarkContext_Marshal(b *testing.B) {
+func BenchmarkContext_Render(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -93,12 +93,12 @@ func BenchmarkContext_Marshal(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
-func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
+func BenchmarkContext_RenderWithUTF8(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -111,12 +111,12 @@ func BenchmarkContext_MarshalWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
-func BenchmarkContext_MarshalWithCharset(b *testing.B) {
+func BenchmarkContext_RenderWithCharset(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -129,12 +129,12 @@ func BenchmarkContext_MarshalWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
 
-func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
+func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -148,7 +148,7 @@ func BenchmarkContext_MarshalWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
 		ctx.destory()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -233,8 +233,8 @@ func BenchmarkPost(b *testing.B) {
 
 		obj.Age++
 		obj.Name = "response"
-		err = ctx.Marshal(http.StatusCreated, obj, nil)
-		a.NotError(err).Equal(w.Body.String(), "response,16")
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		a.Equal(w.Body.String(), "response,16")
 	}
 }
 
@@ -257,7 +257,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		obj.Age = 22
 		obj.Name = "中文2"
-		a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+		ctx.Render(Resp(http.StatusCreated).Body(obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }

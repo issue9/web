@@ -23,7 +23,7 @@ type (
 	MiddlewareFunc = server.MiddlewareFunc
 	Middleware     = server.Middleware
 	HandlerFunc    = server.HandlerFunc
-	Responser      = server.Responser
+	Response       = server.Response
 	Router         = server.Router
 	ResultFields   = server.ResultFields
 	Result         = server.Result
@@ -40,15 +40,17 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 	return server.New(name, version, o)
 }
 
-func Status(status int) *Responser { return server.Status(status) }
-
 // Phrase 生成本地化的语言片段
 func Phrase(key string, v ...any) LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 
-func Created(v any, location string) *Responser {
-	resp := Status(http.StatusCreated).Body(v)
+func Status(status int) *Response { return server.Resp(status) }
+
+func Object(status int, body interface{}) *Response { return Status(status).Body(body) }
+
+func Created(v any, location string) *Response {
+	resp := Object(http.StatusCreated, v)
 	if location != "" {
 		resp.SetHeader("Location", location)
 	}
@@ -56,13 +58,13 @@ func Created(v any, location string) *Responser {
 }
 
 // OK 返回 200 状态码下的对象
-func OK(v any) *Responser { return Status(http.StatusOK).Body(v) }
+func OK(v any) *Response { return Object(http.StatusOK, v) }
 
-func NotFound() *Responser { return Status(http.StatusNotFound) }
+func NotFound() *Response { return Status(http.StatusNotFound) }
 
-func NoContent() *Responser { return Status(http.StatusNoContent) }
+func NoContent() *Response { return Status(http.StatusNoContent) }
 
-func NotImplemented() *Responser { return Status(http.StatusNotImplemented) }
+func NotImplemented() *Response { return Status(http.StatusNotImplemented) }
 
 // RetryAfter 返回 Retry-After 报头内容
 //
@@ -70,10 +72,10 @@ func NotImplemented() *Responser { return Status(http.StatusNotImplemented) }
 //
 // status 表示返回的状态码；seconds 表示秒数，如果想定义为时间格式，
 // 可以采用 RetryAt 函数，两个功能是相同的，仅是时间格式上有差别。
-func RetryAfter(status int, seconds uint64) *Responser {
+func RetryAfter(status int, seconds uint64) *Response {
 	return Status(status).SetHeader("Retry-After", strconv.FormatUint(seconds, 10))
 }
 
-func RetryAt(status int, at time.Time) *Responser {
+func RetryAt(status int, at time.Time) *Response {
 	return Status(status).SetHeader("Retry-After", at.UTC().Format(http.TimeFormat))
 }

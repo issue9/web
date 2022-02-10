@@ -300,7 +300,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	}, "Context.InputMimetype 不能为空")
 }
 
-func TestContext_Marshal(t *testing.T) {
+func TestContext_marshal(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
 
@@ -313,7 +313,7 @@ func TestContext_Marshal(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 	obj := &testobject.TextObject{Name: "test", Age: 123}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
+	a.NotError(ctx.marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
 	a.Equal(w.Header().Get("content-type"), "json")
@@ -326,7 +326,7 @@ func TestContext_Marshal(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	obj = &testobject.TextObject{Name: "test", Age: 1234}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, nil))
+	a.NotError(ctx.marshal(http.StatusCreated, obj, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,1234")
 	a.Equal(w.Header().Get("content-language"), language.SimplifiedChinese.String()) // 未指定，采用默认值
@@ -338,7 +338,7 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-language", "zh-hans").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, nil, nil))
+	a.NotError(ctx.marshal(http.StatusCreated, nil, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "")
 	a.Equal(w.Header().Get("content-language"), "zh-Hans") // 指定了输出语言
@@ -351,7 +351,7 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Charset", "gbk").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
+	a.NotError(ctx.marshal(http.StatusCreated, gbkString2, nil))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.Bytes(), gbkBytes2)
 
@@ -364,13 +364,13 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
+	a.NotError(ctx.marshal(http.StatusCreated, gbkString2, nil))
 	ctx.destory()
 	a.Equal(w.Code, http.StatusCreated)
 	data, err := io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(data, gbkBytes2)
 
-	// 同时通过 ctx.Response.Write 和 ctx.Marshal 输出内容，可以正常压缩
+	// 同时通过 ctx.Response.Write 和 ctx.marshal 输出内容，可以正常压缩
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept", text.Mimetype).
@@ -379,7 +379,7 @@ func TestContext_Marshal(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	_, err = ctx.Write([]byte("123"))
 	a.NotError(err)
-	a.Error(ctx.Marshal(http.StatusCreated, "456", nil), localeutil.Error("rendered"))
+	a.Error(ctx.marshal(http.StatusCreated, "456", nil), localeutil.Error("rendered"))
 	ctx.destory()
 	a.Equal(w.Code, http.StatusOK)
 	data, err = io.ReadAll(flate.NewReader(w.Body))
@@ -396,7 +396,7 @@ func TestContext_Marshal(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	_, err = ctx.Write([]byte(gbkString1))
 	a.NotError(err)
-	a.Error(ctx.Marshal(http.StatusCreated, gbkString2, nil), localeutil.Error("rendered"))
+	a.Error(ctx.marshal(http.StatusCreated, gbkString2, nil), localeutil.Error("rendered"))
 	ctx.destory()
 	a.Equal(w.Code, http.StatusOK)
 	data, err = io.ReadAll(flate.NewReader(w.Body))
@@ -407,21 +407,21 @@ func TestContext_Marshal(t *testing.T) {
 	r = rest.Get(a, "/path").Request()
 	ctx = srv.NewContext(w, r)
 	ctx.OutputMimetype = nil
-	a.NotError(ctx.Marshal(http.StatusCreated, "val", nil))
+	a.NotError(ctx.marshal(http.StatusCreated, "val", nil))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// OutputMimetype 返回 serialization.ErrUnsupported
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, &struct{}{}, nil))
+	a.NotError(ctx.marshal(http.StatusCreated, &struct{}{}, nil))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// OutputMimetype 返回错误
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.NewContext(w, r)
-	a.Error(ctx.Marshal(http.StatusCreated, errors.New("error"), nil))
+	a.Error(ctx.marshal(http.StatusCreated, errors.New("error"), nil))
 	a.Equal(w.Code, http.StatusInternalServerError)
 }
 
@@ -431,11 +431,11 @@ func TestContext_IsXHR(t *testing.T) {
 	srv := newServer(a, nil)
 	router := srv.Routers().New("router", nil, &RouterOptions{URLDomain: "https://example.com"})
 	a.NotNil(router)
-	router.Get("/not-xhr", func(ctx *Context) *Responser {
+	router.Get("/not-xhr", func(ctx *Context) *Response {
 		a.False(ctx.IsXHR())
 		return nil
 	})
-	router.Get("/xhr", func(ctx *Context) *Responser {
+	router.Get("/xhr", func(ctx *Context) *Response {
 		a.True(ctx.IsXHR())
 		return nil
 	})
@@ -589,7 +589,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
-	a.NotError(ctx.Marshal(http.StatusOK, ctx.Sprintf("test"), nil))
+	a.NotError(ctx.marshal(http.StatusOK, ctx.Sprintf("test"), nil))
 	a.Equal(w.Body.String(), "測試")
 
 	w = httptest.NewRecorder()

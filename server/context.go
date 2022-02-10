@@ -48,7 +48,7 @@ type CTXSanitizer interface {
 //
 // Context 同时也实现了 http.ResponseWriter 接口，
 // 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
-// 而是采用返回 Responser 接口对象的方式向客户端输出内容。
+// 而是采用返回 Response 的方式向客户端输出内容。
 type Context struct {
 	server            *Server
 	params            params.Params
@@ -62,8 +62,8 @@ type Context struct {
 	respWriter     io.Writer
 	rendered       bool
 
-	// 指定 Marshal 输出时所使用的媒体类型，以及名称。
-	// 在不调用 Marshal 的时候可以为空。比如下载文件等，并没有特定的序列化函数对应。
+	// 指定将 Response 输出时所使用的媒体类型，以及名称。
+	// 如果是调用 Context.Write 输出内容，可以为空。
 	OutputMimetype     serialization.MarshalFunc
 	OutputMimetypeName string
 
@@ -231,21 +231,10 @@ func (ctx *Context) Unmarshal(v any) error {
 	return ctx.InputMimetype(body, v)
 }
 
-// Marshal 将 v 解码并发送给客户端
-//
-// status 表示输出的状态码，如果出错，可能输出的不是该状态码。
-// Response 之上可能加了一层压缩相关的 Write，其向真实的 Response
-// 输出内容并不是实时的，所以在 Marshal 之前调用 Resopnse.Write，
-// 有一定的可能性导致 status 参数不启作用。
-//
-// v 输出的对象，若是一个 nil 值，则不会向客户端输出任何内容；
-// 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
-// 可以传递一个 *struct{} 值，或是自定义实现相应的解码函数；
-//
 // headers 报头信息，如果已经存在于 ctx.Header() 将覆盖 ctx.Header() 中的值，
 // 如果需要指定一个特定的 Content-Type 和 Content-Language，
 // 可以在 headers 中指定，否则使用当前的编码和语言名称；
-func (ctx *Context) Marshal(status int, v any, headers map[string]string) error {
+func (ctx *Context) marshal(status int, v any, headers map[string]string) error {
 	if ctx.rendered {
 		return localeutil.Error("rendered")
 	}
@@ -373,11 +362,11 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 // Read 从客户端读取数据并转换成 v 对象
 //
 // 功能与 Unmarshal() 相同，只不过 Read() 在出错时，返回的不是 error，
-// 而是一个表示错误信息的 Responser 对象。
+// 而是一个表示错误信息的 Response 对象。
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，会输出以 code 作为错误代码的 Responser 对象。
-func (ctx *Context) Read(v any, code string) *Responser {
+// 如果验证失败，会输出以 code 作为错误代码的 Response 对象。
+func (ctx *Context) Read(v any, code string) *Response {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}

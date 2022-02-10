@@ -32,7 +32,7 @@ func TestGetServer(t *testing.T) {
 	var isRequested bool
 
 	router := srv.NewRouter()
-	router.Get("/path", func(ctx *server.Context) *server.Responser {
+	router.Get("/path", func(ctx *server.Context) *server.Response {
 		s1 := server.GetServer(ctx.Request())
 		a.NotNil(s1).Equal(s1, srv.Server())
 
@@ -75,7 +75,7 @@ func TestGetServer(t *testing.T) {
 
 	isRequested = false
 	router = srv.NewRouter()
-	router.Get("/path", func(ctx *server.Context) *server.Responser {
+	router.Get("/path", func(ctx *server.Context) *server.Response {
 		s1 := server.GetServer(ctx.Request())
 		a.NotNil(s1).Equal(s1, srv.Server())
 
@@ -132,7 +132,7 @@ func TestServer_Serve(t *testing.T) {
 
 	a.False(srv.Server().Serving())
 
-	router.Get("/m2/test", func(ctx *server.Context) *server.Responser {
+	router.Get("/m2/test", func(ctx *server.Context) *server.Response {
 		a.True(srv.Server().Serving())
 
 		srv := ctx.Server()
@@ -207,7 +207,7 @@ func TestServer_Close(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) *server.Responser {
+	router.Get("/close", func(ctx *server.Context) *server.Response {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
@@ -266,7 +266,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) *server.Responser {
+	router.Get("/close", func(ctx *server.Context) *server.Response {
 		ctx.WriteHeader(http.StatusCreated)
 		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
