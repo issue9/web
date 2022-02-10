@@ -40,6 +40,8 @@ var (
 	gbkBytes2 = []byte{214, 208, 206, 196, 50, 44, 50, 50}
 )
 
+var _ http.ResponseWriter = &Context{}
+
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
 		o = &Options{Port: ":8080"}

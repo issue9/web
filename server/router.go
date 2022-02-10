@@ -123,8 +123,14 @@ func (o *Response) SetHeader(k, v string) *Response {
 	return o
 }
 
-func (o *Response) GetHeader(k string) string {
-	return o.headers[k]
+func (o *Response) GetHeader(k string) (v string, found bool) {
+	v, found = o.headers[k]
+	return
+}
+
+func (o *Response) DelHeader(k string) *Response {
+	delete(o.headers, k)
+	return o
 }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面

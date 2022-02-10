@@ -22,20 +22,14 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var (
-	_ http.ResponseWriter = &server.Context{}
-
-	errLog      = new(bytes.Buffer)
-	criticalLog = new(bytes.Buffer)
-)
-
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 		return func(ctx *server.Context) *server.Response {
 			resp := next(ctx)
 			a.NotNil(resp)
 
-			resp = resp.SetHeader("h", resp.GetHeader("h")+v)
+			val, _ := resp.GetHeader("h")
+			resp = resp.SetHeader("h", val+v)
 			a.NotNil(resp)
 
 			return resp
@@ -179,6 +173,8 @@ func TestServer_FileServer(t *testing.T) {
 
 func TestContext_Critical(t *testing.T) {
 	a := assert.New(t, false)
+	criticalLog := new(bytes.Buffer)
+
 	srv := servertest.NewServer(a, nil)
 	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
@@ -189,12 +185,14 @@ func TestContext_Critical(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 
 	ctx.Render(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "router_test.go:191") // NOTE: 此测试依赖上一行的行号
+	a.Contains(criticalLog.String(), "router_test.go:187") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1 log2")
 }
 
 func TestContext_Errorf(t *testing.T) {
 	a := assert.New(t, false)
+	errLog := new(bytes.Buffer)
+
 	srv := servertest.NewServer(a, nil)
 	errLog.Reset()
 	srv.Logs().ERROR().SetOutput(errLog)
@@ -209,6 +207,8 @@ func TestContext_Errorf(t *testing.T) {
 
 func TestContext_Criticalf(t *testing.T) {
 	a := assert.New(t, false)
+	criticalLog := new(bytes.Buffer)
+
 	srv := servertest.NewServer(a, nil)
 	criticalLog.Reset()
 	srv.Logs().CRITICAL().SetOutput(criticalLog)
@@ -234,6 +234,16 @@ func TestResp(t *testing.T) {
 
 	s := server.Resp(201)
 	a.NotNil(s)
+
+	s.SetHeader("h", "1")
+	v, found := s.GetHeader("h")
+	a.True(found).Equal(v, "1")
+	s.SetHeader("h", "2")
+	v, found = s.GetHeader("h")
+	a.True(found).Equal(v, "2")
+	s.DelHeader("h")
+	v, found = s.GetHeader("h")
+	a.False(found).Equal(v, "")
 
 	srv := servertest.NewServer(a, nil)
 
