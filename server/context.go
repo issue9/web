@@ -231,10 +231,7 @@ func (ctx *Context) Unmarshal(v any) error {
 	return ctx.InputMimetype(body, v)
 }
 
-// headers 报头信息，如果已经存在于 ctx.Header() 将覆盖 ctx.Header() 中的值，
-// 如果需要指定一个特定的 Content-Type 和 Content-Language，
-// 可以在 headers 中指定，否则使用当前的编码和语言名称；
-func (ctx *Context) marshal(status int, v any, headers map[string]string) error {
+func (ctx *Context) marshal(resp *Response) error {
 	if ctx.rendered {
 		return localeutil.Error("rendered")
 	}
@@ -242,7 +239,7 @@ func (ctx *Context) marshal(status int, v any, headers map[string]string) error 
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
-	for k, v := range headers {
+	for k, v := range resp.headers {
 		k = http.CanonicalHeaderKey(k)
 
 		contentTypeFound = contentTypeFound || k == contentTypeKey
@@ -259,8 +256,8 @@ func (ctx *Context) marshal(status int, v any, headers map[string]string) error 
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	if v == nil {
-		ctx.WriteHeader(status)
+	if resp.body == nil {
+		ctx.WriteHeader(resp.status)
 		return nil
 	}
 
@@ -269,7 +266,7 @@ func (ctx *Context) marshal(status int, v any, headers map[string]string) error 
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
-	data, err := ctx.OutputMimetype(v)
+	data, err := ctx.OutputMimetype(resp.body)
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
@@ -279,7 +276,7 @@ func (ctx *Context) marshal(status int, v any, headers map[string]string) error 
 		return err
 	}
 
-	ctx.WriteHeader(status)
+	ctx.WriteHeader(resp.status)
 	_, err = ctx.Write(data)
 	return err
 }

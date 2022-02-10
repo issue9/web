@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"sync"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/muxutil"
 )
+
+var respPool = sync.Pool{New: func() interface{} { return &Response{} }}
 
 type (
 	// HandlerFunc 路由项处理函数原型
@@ -79,7 +82,7 @@ func (ctx *Context) Render(resp *Response) {
 		return
 	}
 
-	if err := ctx.marshal(resp.status, resp.body, resp.headers); err != nil {
+	if err := ctx.marshal(resp); err != nil {
 		var msg string
 		if ls, ok := err.(localeutil.LocaleStringer); ok {
 			msg = ls.LocaleString(ctx.Server().LocalePrinter())
@@ -88,6 +91,8 @@ func (ctx *Context) Render(resp *Response) {
 		}
 		ctx.Server().Logs().Error(msg)
 	}
+
+	respPool.Put(resp)
 }
 
 // Status 设置输出的状态码
@@ -150,7 +155,13 @@ func (ctx *Context) Criticalf(status int, format string, v ...any) *Response {
 }
 
 func Resp(status int) *Response {
-	return (&Response{}).Status(status)
+	resp := respPool.Get().(*Response)
+	resp.body = nil
+	resp.headers = nil
+	resp.status = 0
+
+	resp.Status(status)
+	return resp
 }
 
 // Result 返回 Result 实例
