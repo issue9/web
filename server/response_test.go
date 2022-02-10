@@ -34,7 +34,7 @@ func TestContext_Critical(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	ctx := srv.NewContext(w, r)
 
-	ctx.renderResponser(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
+	ctx.Render(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
 	a.Contains(criticalLog.String(), "response_test.go:37") // NOTE: 此测试依赖上一行的行号
 	a.Contains(criticalLog.String(), "log1 log2")
 }
@@ -49,7 +49,7 @@ func TestContext_Errorf(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	ctx := srv.NewContext(w, r)
 
-	ctx.renderResponser(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
+	ctx.Render(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
 	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 }
 
@@ -63,7 +63,7 @@ func TestContext_Criticalf(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	ctx := srv.NewContext(w, r)
 
-	ctx.renderResponser(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
+	ctx.Render(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
 	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
 }
 
@@ -86,13 +86,13 @@ func TestStatus(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	w := httptest.NewRecorder()
 	ctx := srv.NewContext(w, r)
-	ctx.renderResponser(s)
+	ctx.Render(s)
 	a.Equal(w.Code, 201)
 
 	r = rest.Get(a, "/path").Request()
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r)
-	ctx.renderResponser(Exit())
+	ctx.Render(nil)
 	a.Equal(w.Code, 200) // 默认值 200
 }
 
@@ -112,7 +112,7 @@ func TestContext_ResultWithFields(t *testing.T) {
 		"k1": []string{"v1", "v2"},
 	})
 
-	ctx.renderResponser(resp)
+	ctx.Render(resp)
 	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }
 
@@ -132,7 +132,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	resp := ctx.Result("40000", nil)
-	ctx.renderResponser(resp)
+	ctx.Render(resp)
 	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
 
 	// 未指定 accept-language，采用默认的 und
@@ -142,7 +142,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	ctx.renderResponser(resp)
+	ctx.Render(resp)
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在的本地化信息，采用默认的 und
@@ -153,7 +153,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	ctx.renderResponser(resp)
+	ctx.Render(resp)
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在
@@ -170,7 +170,7 @@ func TestContext_Redirect(t *testing.T) {
 		Request()
 	w := httptest.NewRecorder()
 	ctx := newServer(a, nil).NewContext(w, r)
-	a.Equal(ctx.Redirect(301, "https://example.com"), exited)
+	a.Nil(ctx.Redirect(301, "https://example.com"))
 	a.Equal(w.Result().StatusCode, 301).
 		Equal(w.Header().Get("Location"), "https://example.com")
 }

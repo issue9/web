@@ -129,7 +129,7 @@ func New(name, version string, o *Options) (*Server, error) {
 func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
 	if ctx := srv.NewContext(w, r); ctx != nil {
 		ctx.params = ps
-		ctx.renderResponser(f(ctx))
+		ctx.Render(f(ctx))
 		ctx.destory()
 	}
 }

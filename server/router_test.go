@@ -18,13 +18,12 @@ import (
 
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) server.Responser {
+		return func(ctx *server.Context) *server.Responser {
 			resp := next(ctx)
 			a.NotNil(resp)
 
-			h := resp.Headers()
-			a.NotNil(h)
-			h["h"] += v
+			resp = resp.SetHeader("h", resp.GetHeader("h")+v)
+			a.NotNil(resp)
 
 			return resp
 		}

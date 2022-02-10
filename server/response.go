@@ -10,37 +10,18 @@ import (
 	"github.com/issue9/logs/v3"
 )
 
-const exited status = 0
-
 type (
 	// HandlerFunc 路由项处理函数原型
 	//
 	// 如果返回 nil，表示未出现任何错误，可以继续后续操作，
 	// 非 nil，表示需要中断执行并向用户输出返回的对象。
-	HandlerFunc func(*Context) Responser
+	HandlerFunc func(*Context) *Responser
 
 	// Responser 表示向客户端输出的对象
-	Responser interface {
-		// Status 状态码
-		Status() int
-
-		// Headers 输出的报头
-		//
-		// NOTE: 不应该修改返回值的元素，有可能返回 nil。
-		Headers() map[string]string
-
-		// Body 输出到 body 部分的对象
-		//
-		// 该对象最终经由 serialization.MarshalFunc 转换成文本输出。
-		Body() any
-	}
-
-	status int
-
-	object struct {
+	Responser struct {
 		status  int
-		headers map[string]string
 		body    any
+		headers map[string]string
 	}
 )
 
@@ -49,12 +30,12 @@ func (m *Module) FileServer(name, index string) HandlerFunc {
 	return m.Server().FileServer(m, name, index)
 }
 
-func (ctx *Context) renderResponser(resp Responser) {
-	if resp == nil || resp == exited {
+func (ctx *Context) Render(resp *Responser) {
+	if resp == nil {
 		return
 	}
 
-	if err := ctx.Marshal(resp.Status(), resp.Body(), resp.Headers()); err != nil {
+	if err := ctx.Marshal(resp.status, resp.body, resp.headers); err != nil {
 		var msg string
 		if ls, ok := err.(localeutil.LocaleStringer); ok {
 			msg = ls.LocaleString(ctx.Server().LocalePrinter())
@@ -65,77 +46,72 @@ func (ctx *Context) renderResponser(resp Responser) {
 	}
 }
 
-func (s status) Status() int { return int(s) }
+func (o *Responser) Status(status int) *Responser {
+	o.status = status
+	return o
+}
 
-func (s status) Headers() map[string]string { return nil }
+func (o *Responser) Body(body any) *Responser {
+	o.body = body
+	return o
+}
 
-func (s status) Body() any { return nil }
+func (o *Responser) SetHeader(k, v string) *Responser {
+	if o.headers == nil {
+		o.headers = map[string]string{}
+	}
+	o.headers[k] = v
+	return o
+}
 
-func (o *object) Status() int { return o.status }
-
-func (o *object) Headers() map[string]string { return o.headers }
-
-func (o *object) Body() any { return o.body }
+func (o *Responser) GetHeader(k string) string {
+	return o.headers[k]
+}
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 //
 // NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
 // 否则出错信息的位置信息将不准确。
-func (ctx *Context) Error(status int, v ...any) Responser {
+func (ctx *Context) Error(status int, v ...any) *Responser {
 	ctx.Log(logs.LevelError, 2, v...)
 	return Status(status)
 }
 
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Errorf(status int, format string, v ...any) Responser {
+func (ctx *Context) Errorf(status int, format string, v ...any) *Responser {
 	ctx.Logf(logs.LevelError, 2, format, v...)
 	return Status(status)
 }
 
 // Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Critical(status int, v ...any) Responser {
+func (ctx *Context) Critical(status int, v ...any) *Responser {
 	ctx.Log(logs.LevelCritical, 2, v...)
 	return Status(status)
 }
 
 // Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Criticalf(status int, format string, v ...any) Responser {
+func (ctx *Context) Criticalf(status int, format string, v ...any) *Responser {
 	ctx.Logf(logs.LevelCritical, 2, format, v...)
 	return Status(status)
 }
 
-func Object(status int, body any, headers map[string]string) Responser {
-	return &object{
-		status:  status,
-		headers: headers,
-		body:    body,
+func Status(status int) *Responser {
+	if status < 100 || status >= 600 {
+		panic(fmt.Sprintf("无效的状态码 %d", status))
 	}
+	return &Responser{status: status}
 }
-
-// Status 仅包含状态码的 Responser
-func Status(statusCode int) Responser {
-	if statusCode < 100 || statusCode >= 600 {
-		panic(fmt.Sprintf("无效的状态码 %d", statusCode))
-	}
-	return status(statusCode)
-}
-
-// Exit 不再执行后续操作退出当前请求
-//
-// 与其它返回的区别在于，Exit 表示已经向客户端输出相关内容，
-// 仅作退出，比如通过 Context.Resopnse.WriteHeader 写了状态码。
-func Exit() Responser { return exited }
 
 // Result 返回 Result 实例
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code string, fields ResultFields) Responser {
+func (ctx *Context) Result(code string, fields ResultFields) *Responser {
 	rslt := ctx.Server().Result(ctx.LocalePrinter, code, fields)
-	return Object(rslt.Status(), rslt, nil)
+	return Status(rslt.Status()).Body(rslt)
 }
 
 // Redirect 重定向至新的 URL
-func (ctx *Context) Redirect(status int, url string) Responser {
+func (ctx *Context) Redirect(status int, url string) *Responser {
 	http.Redirect(ctx, ctx.Request(), url, status)
-	return Exit()
+	return nil
 }

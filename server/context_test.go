@@ -431,11 +431,11 @@ func TestContext_IsXHR(t *testing.T) {
 	srv := newServer(a, nil)
 	router := srv.Routers().New("router", nil, &RouterOptions{URLDomain: "https://example.com"})
 	a.NotNil(router)
-	router.Get("/not-xhr", func(ctx *Context) Responser {
+	router.Get("/not-xhr", func(ctx *Context) *Responser {
 		a.False(ctx.IsXHR())
 		return nil
 	})
-	router.Get("/xhr", func(ctx *Context) Responser {
+	router.Get("/xhr", func(ctx *Context) *Responser {
 		a.True(ctx.IsXHR())
 		return nil
 	})
@@ -526,7 +526,7 @@ func TestContext_Read(t *testing.T) {
 	o := &struct{}{}
 	resp := ctx.Read(o, "41110")
 	a.NotNil(resp)
-	a.Equal(resp.Status(), http.StatusUnprocessableEntity)
+	a.Equal(resp.status, http.StatusUnprocessableEntity)
 }
 
 func TestContext_ClientIP(t *testing.T) {

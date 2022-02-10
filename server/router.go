@@ -36,7 +36,7 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		panic("参数 name 不能为空")
 	}
 
-	return func(ctx *Context) Responser {
+	return func(ctx *Context) *Responser {
 		p, _ := ctx.params.Get(name) // 空值也是允许的值
 
 		err := muxutil.ServeFile(fsys, p, index, ctx, ctx.Request())

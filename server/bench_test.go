@@ -23,7 +23,7 @@ func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
 
-	h := func(c *Context) Responser {
+	h := func(c *Context) *Responser {
 		_, err := c.Write([]byte(c.Request().URL.Path))
 		if err != nil {
 			b.Error(err)
@@ -40,8 +40,8 @@ func BenchmarkServer_Serve(b *testing.B) {
 	router := srv.Routers().New("srv", nil, &RouterOptions{URLDomain: "http://localhost:8080/"})
 	a.NotNil(router)
 
-	router.Get("/path", func(c *Context) Responser {
-		return Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
+	router.Get("/path", func(c *Context) *Responser {
+		return Status(http.StatusOK).Body("/path").SetHeader("h1", "h1")
 	})
 	go func() {
 		srv.Serve()
