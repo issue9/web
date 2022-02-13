@@ -47,7 +47,7 @@ func Phrase(key string, v ...any) LocaleStringer {
 
 func Status(status int) *Response { return server.Resp(status) }
 
-func Object(status int, body interface{}) *Response { return Status(status).Body(body) }
+func Object(status int, body interface{}) *Response { return Status(status).SetBody(body) }
 
 func Created(v any, location string) *Response {
 	resp := Object(http.StatusCreated, v)

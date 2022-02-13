@@ -95,8 +95,11 @@ func (ctx *Context) Render(resp *Response) {
 	respPool.Put(resp)
 }
 
-// Status 设置输出的状态码
-func (o *Response) Status(status int) *Response {
+func (o *Response) Status() int { return o.status }
+
+func (o *Response) Body() any { return o.body }
+
+func (o *Response) SetStatus(status int) *Response {
 	if status < 100 || status >= 600 {
 		panic(fmt.Sprintf("无效的状态码 %d", status))
 	}
@@ -104,12 +107,12 @@ func (o *Response) Status(status int) *Response {
 	return o
 }
 
-// Body 指定输出的对象
+// SetBody 指定输出的对象
 //
 // 若是一个 nil 值，则不会向客户端输出任何内容；
 // 若是需要正常输出一个 nil 类型到客户端（比如JSON 中的 null），
 // 可以传递一个 *struct{} 值，或是自定义实现相应的解码函数；
-func (o *Response) Body(body any) *Response {
+func (o *Response) SetBody(body any) *Response {
 	o.body = body
 	return o
 }
@@ -165,9 +168,7 @@ func Resp(status int) *Response {
 	resp.body = nil
 	resp.headers = nil
 	resp.status = 0
-
-	resp.Status(status)
-	return resp
+	return resp.SetStatus(status)
 }
 
 // Result 返回 Result 实例
@@ -175,7 +176,7 @@ func Resp(status int) *Response {
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) *Response {
 	rslt := ctx.Server().Result(ctx.LocalePrinter, code, fields)
-	return Resp(rslt.Status()).Body(rslt)
+	return Resp(rslt.Status()).SetBody(rslt)
 }
 
 // Redirect 重定向至新的 URL

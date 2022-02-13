@@ -41,7 +41,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) *Response {
-		return Resp(http.StatusOK).Body("/path").SetHeader("h1", "h1")
+		return Resp(http.StatusOK).SetBody("/path").SetHeader("h1", "h1")
 	})
 	go func() {
 		srv.Serve()
@@ -93,7 +93,7 @@ func BenchmarkContext_Render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -111,7 +111,7 @@ func BenchmarkContext_RenderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -129,7 +129,7 @@ func BenchmarkContext_RenderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -148,7 +148,7 @@ func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		ctx.destory()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -233,7 +233,7 @@ func BenchmarkPost(b *testing.B) {
 
 		obj.Age++
 		obj.Name = "response"
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -257,7 +257,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		obj.Age = 22
 		obj.Name = "中文2"
-		ctx.Render(Resp(http.StatusCreated).Body(obj))
+		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }

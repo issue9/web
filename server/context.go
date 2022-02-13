@@ -256,8 +256,8 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	if resp.body == nil {
-		ctx.WriteHeader(resp.status)
+	if resp.Body() == nil {
+		ctx.WriteHeader(resp.Status())
 		return nil
 	}
 
@@ -266,7 +266,7 @@ func (ctx *Context) marshal(resp *Response) error {
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
-	data, err := ctx.OutputMimetype(resp.body)
+	data, err := ctx.OutputMimetype(resp.Body())
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
