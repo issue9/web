@@ -26,7 +26,7 @@ func (srv *Server) NewModule(id string) *Module {
 
 	index := sliceutil.Index(srv.modules, func(e string) bool { return e == id })
 	if index >= 0 {
-		panic("存在同名模块")
+		panic("存在同名模块：" + id)
 	}
 
 	f := make([]fs.FS, 0, 2)

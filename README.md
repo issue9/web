@@ -19,15 +19,14 @@ import "github.com/issue9/web"
 func main() {
     srv, _ := web.NewServer("web", "1.0.0", &web.Options{})
 
-    m1.Module(srv)
-    m2.Module(srv)
+    m1.Module(srv.NewModule("m1"))
+    m2.Module(srv.NewModule("m2"))
 
-    srv.Serve(true, "serve")
+    srv.Serve()
 }
 
 // modules/m1/module.go
-func Module(s *web.Server) error {
-    m := s.NewModule("m1", "1.0.0", web.Phrase("模块描述信息"))
+func Module(m *web.Module) error {
     m.Action("serve").AddRoutes(func(r*web.Router){
         r.Get("/admins", getAdmins).
             Get("/groups", getGroups)
@@ -35,8 +34,7 @@ func Module(s *web.Server) error {
 }
 
 // modules/m2/module.go
-func Module(s *web.Server) error {
-    m := s.NewModule("m1", "1.0.0", web.Phrase("模块描述信息"), "m1")
+func Module(m *web.Module) error {
     m.Action("serve").AddRoutes(func(r*web.Router){
         r.Get("/admins", getAdmins).
             Get("/groups", getGroups)
