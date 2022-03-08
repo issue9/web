@@ -149,7 +149,7 @@ func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
 		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
-		ctx.destory()
+		a.NotError(ctx.destroy())
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
 		a.NotError(err).NotNil(data)

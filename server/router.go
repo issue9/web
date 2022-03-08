@@ -171,7 +171,7 @@ func Resp(status int) *Response {
 	return resp.SetStatus(status)
 }
 
-// Result 返回 Result 实例
+// Result 向客户端输出指定代码的错误信息
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) *Response {

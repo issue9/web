@@ -88,7 +88,7 @@ type Context struct {
 
 // NewContext 构建 *Context 实例
 //
-// 如果不合规则，则会 w 输出状态码并返回 nil。
+// 如果不合规则，则会向 w 输出状态码并返回 nil。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
@@ -183,16 +183,21 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	}
 }
 
-func (ctx *Context) destory() {
+func (ctx *Context) destroy() error {
 	if ctx.charsetCloser != nil {
-		ctx.charsetCloser.Close()
+		if err := ctx.charsetCloser.Close(); err != nil {
+			return err
+		}
 	}
 
 	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
-		ctx.encodingCloser.Close()
+		if err := ctx.encodingCloser.Close(); err != nil {
+			return err
+		}
 	}
 
 	contextPool.Put(ctx)
+	return nil
 }
 
 // Body 获取用户提交的内容

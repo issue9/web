@@ -130,7 +130,9 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params
 	if ctx := srv.NewContext(w, r); ctx != nil {
 		ctx.params = ps
 		ctx.Render(f(ctx))
-		ctx.destory()
+		if err := ctx.destroy(); err != nil {
+			srv.Logs().Error(err)
+		}
 	}
 }
 
