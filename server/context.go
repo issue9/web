@@ -158,6 +158,9 @@ func (ctx *Context) WriteHeader(status int) {
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
+// Request 返回原始的请求对象
+//
+// NOTE: 如果需要使用 context.Value 在 Request 中附加值，请使用 ctx.Vars
 func (ctx *Context) Request() *http.Request { return ctx.request }
 
 func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
@@ -252,6 +255,16 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(k, v)
 	}
 
+	if resp.Body() == nil {
+		ctx.WriteHeader(resp.Status())
+		return nil
+	}
+
+	if ctx.OutputMimetype == nil { // NewContext 阶段是允许 OutputMimetype 为空的
+		ctx.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
+
 	if !contentTypeFound {
 		ct := buildContentType(ctx.OutputMimetypeName, ctx.outputCharsetName)
 		header.Set(contentTypeKey, ct)
@@ -261,16 +274,6 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	if resp.Body() == nil {
-		ctx.WriteHeader(resp.Status())
-		return nil
-	}
-
-	// 没有指定编码函数，NewContext 阶段是允许 OutputMimetype 为空的，所以只能在此处判断。
-	if ctx.OutputMimetype == nil {
-		ctx.WriteHeader(http.StatusNotAcceptable)
-		return nil
-	}
 	data, err := ctx.OutputMimetype(resp.Body())
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):

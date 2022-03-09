@@ -333,7 +333,7 @@ func TestContext_marshal(t *testing.T) {
 	a.Equal(w.Body.String(), "test,1234")
 	a.Equal(w.Header().Get("content-language"), language.SimplifiedChinese.String()) // 未指定，采用默认值
 
-	// 输出 nil
+	// 输出 nil，content-type 和 content-language 均为空
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept", text.Mimetype).
@@ -343,7 +343,8 @@ func TestContext_marshal(t *testing.T) {
 	a.NotError(ctx.marshal(Resp(http.StatusCreated)))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "")
-	a.Equal(w.Header().Get("content-language"), "zh-Hans") // 指定了输出语言
+	a.Equal(w.Header().Get("content-language"), "") // 指定了输出语言，也返回空。
+	a.Equal(w.Header().Get("content-Type"), "")
 
 	// accept,accept-language,accept-charset
 	w = httptest.NewRecorder()
