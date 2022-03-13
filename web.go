@@ -41,9 +41,7 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key string, v ...any) LocaleStringer {
-	return localeutil.Phrase(key, v...)
-}
+func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 func Status(status int) *Response { return server.Resp(status) }
 

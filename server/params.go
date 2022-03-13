@@ -2,7 +2,11 @@
 
 package server
 
-import "github.com/issue9/mux/v6/params"
+import (
+	"errors"
+
+	"github.com/issue9/mux/v6/params"
+)
 
 // Params 用于处理路径中包含的参数
 //  p := ctx.Params()
@@ -68,7 +72,7 @@ func (p *Params) Int64(key string) int64 {
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustInt64(key string, def int64) int64 {
 	id, err := p.ctx.params.Int(key)
-	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
+	if errors.Is(err, params.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
 		p.fields.Add(key, err.Error())
@@ -92,7 +96,7 @@ func (p *Params) String(key string) string {
 // 若不存在或是转换出错，则返回 def 作为其默认值。
 func (p *Params) MustString(key, def string) string {
 	ret, err := p.ctx.params.String(key)
-	if err == params.ErrParamNotExists {
+	if errors.Is(err, params.ErrParamNotExists) {
 		return def
 	} else if err != nil {
 		p.fields.Add(key, err.Error())
@@ -123,7 +127,7 @@ func (p *Params) Bool(key string) bool {
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) MustBool(key string, def bool) bool {
 	b, err := p.ctx.params.Bool(key)
-	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
+	if errors.Is(err, params.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
 		p.fields.Add(key, err.Error())
@@ -148,7 +152,7 @@ func (p *Params) Float64(key string) float64 {
 // 仅在类型转换出错时，才会向 errors 写入错误信息。
 func (p *Params) MustFloat64(key string, def float64) float64 {
 	f, err := p.ctx.params.Float(key)
-	if err == params.ErrParamNotExists { // 不存在，仅返回默认值，不算错误
+	if errors.Is(err, params.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
 		p.fields.Add(key, err.Error())
