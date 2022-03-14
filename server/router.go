@@ -136,6 +136,22 @@ func (o *Response) DelHeader(k string) *Response {
 	return o
 }
 
+// InternalServerError 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
+//
+// 注意事项参考 Error
+func (ctx *Context) InternalServerError(v ...any) *Response {
+	ctx.Log(logs.LevelError, 2, v...)
+	return Resp(http.StatusInternalServerError)
+}
+
+// InternalServerErrorf 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
+//
+// 注意事项参考 Error
+func (ctx *Context) InternalServerErrorf(format string, v ...any) *Response {
+	ctx.Logf(logs.LevelError, 2, format, v...)
+	return Resp(http.StatusInternalServerError)
+}
+
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 //
 // NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
@@ -148,18 +164,6 @@ func (ctx *Context) Error(status int, v ...any) *Response {
 // Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
 func (ctx *Context) Errorf(status int, format string, v ...any) *Response {
 	ctx.Logf(logs.LevelError, 2, format, v...)
-	return Resp(status)
-}
-
-// Critical 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Critical(status int, v ...any) *Response {
-	ctx.Log(logs.LevelCritical, 2, v...)
-	return Resp(status)
-}
-
-// Criticalf 输出日志到 CRITICAL 通道并向用户输出指定状态码的页面
-func (ctx *Context) Criticalf(status int, format string, v ...any) *Response {
-	ctx.Logf(logs.LevelCritical, 2, format, v...)
 	return Resp(status)
 }
 

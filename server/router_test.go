@@ -171,54 +171,57 @@ func TestServer_FileServer(t *testing.T) {
 	s.Wait()
 }
 
-func TestContext_Critical(t *testing.T) {
-	a := assert.New(t, false)
-	criticalLog := new(bytes.Buffer)
-
-	srv := servertest.NewServer(a, nil)
-	criticalLog.Reset()
-	srv.Logs().CRITICAL().SetOutput(criticalLog)
-	srv.Logs().CRITICAL().SetFlags(log.Llongfile)
-
-	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
-	ctx := srv.NewContext(w, r)
-
-	ctx.Render(ctx.Critical(http.StatusInternalServerError, "log1", "log2"))
-	a.Contains(criticalLog.String(), "router_test.go:187") // NOTE: 此测试依赖上一行的行号
-	a.Contains(criticalLog.String(), "log1 log2")
-}
-
-func TestContext_Errorf(t *testing.T) {
+func TestContext_Error(t *testing.T) {
 	a := assert.New(t, false)
 	errLog := new(bytes.Buffer)
 
 	srv := servertest.NewServer(a, nil)
 	errLog.Reset()
 	srv.Logs().ERROR().SetOutput(errLog)
+	srv.Logs().ERROR().SetFlags(log.Llongfile)
 
-	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
-	ctx := srv.NewContext(w, r)
+	a.Run("Error", func(a *assert.Assertion) {
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.NewContext(w, r)
+		ctx.Render(ctx.Error(http.StatusNotImplemented, "log1", "log2"))
+		a.Contains(errLog.String(), "router_test.go:187") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, http.StatusNotImplemented)
+	})
 
-	ctx.Render(ctx.Errorf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
-	a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
-}
+	a.Run("InternalServerError", func(a *assert.Assertion) {
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.NewContext(w, r)
+		ctx.Render(ctx.InternalServerError("log1", "log2"))
+		a.Contains(errLog.String(), "router_test.go:198") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, http.StatusInternalServerError)
+	})
 
-func TestContext_Criticalf(t *testing.T) {
-	a := assert.New(t, false)
-	criticalLog := new(bytes.Buffer)
+	srv.Logs().ERROR().SetFlags(0)
 
-	srv := servertest.NewServer(a, nil)
-	criticalLog.Reset()
-	srv.Logs().CRITICAL().SetOutput(criticalLog)
+	a.Run("Errorf", func(a *assert.Assertion) {
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.NewContext(w, r)
+		ctx.Render(ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51))
+		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
+		a.Equal(w.Code, http.StatusNotImplemented)
+	})
 
-	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
-	ctx := srv.NewContext(w, r)
-
-	ctx.Render(ctx.Criticalf(http.StatusInternalServerError, "error @%s:%d", "file.go", 51))
-	a.True(strings.HasPrefix(criticalLog.String(), "error @file.go:51"))
+	a.Run("InternalServerErrorf", func(a *assert.Assertion) {
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.NewContext(w, r)
+		ctx.Render(ctx.InternalServerErrorf("error @%s:%d", "file.go", 51))
+		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
+		a.Equal(w.Code, http.StatusInternalServerError)
+	})
 }
 
 func TestResp(t *testing.T) {
