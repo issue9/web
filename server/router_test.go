@@ -337,7 +337,8 @@ func TestContext_Redirect(t *testing.T) {
 		Request()
 	w := httptest.NewRecorder()
 	ctx := servertest.NewServer(a, nil).NewContext(w, r)
-	a.Nil(ctx.Redirect(301, "https://example.com"))
+	ctx.Render(ctx.Redirect(301, "https://example.com"))
+
 	a.Equal(w.Result().StatusCode, 301).
 		Equal(w.Header().Get("Location"), "https://example.com")
 }

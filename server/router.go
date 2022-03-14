@@ -185,6 +185,5 @@ func (ctx *Context) Result(code string, fields ResultFields) *Response {
 
 // Redirect 重定向至新的 URL
 func (ctx *Context) Redirect(status int, url string) *Response {
-	http.Redirect(ctx, ctx.Request(), url, status)
-	return nil
+	return Resp(status).SetHeader("Location", url)
 }
