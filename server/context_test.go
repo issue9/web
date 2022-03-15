@@ -299,6 +299,16 @@ func TestContext_Unmarshal(t *testing.T) {
 		obj = &testobject.TextObject{}
 		_ = ctx.Unmarshal(obj)
 	}, "Context.InputMimetype 不能为空")
+
+	// 空提交
+	r = rest.Post(a, "/path", nil).
+		Header("content-type", text.Mimetype).
+		Request()
+	w = httptest.NewRecorder()
+	ctx = srv.NewContext(w, r)
+	obj = &testobject.TextObject{}
+	a.NotError(ctx.Unmarshal(obj))
+	a.Equal(obj.Name, "").Equal(obj.Age, 0)
 }
 
 func TestContext_marshal(t *testing.T) {

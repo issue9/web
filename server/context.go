@@ -63,9 +63,8 @@ type Context struct {
 	rendered       bool
 
 	// 指定将 Response 输出时所使用的媒体类型，以及名称。
-	// 如果是调用 Context.Write 输出内容，可以为空。
-	OutputMimetype     serialization.MarshalFunc
-	OutputMimetypeName string
+	OutputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
+	OutputMimetypeName string                    // 如果为空，则采用 DefaultMimetype
 
 	// 客户端提交的 content-type 内容
 	InputMimetype serialization.UnmarshalFunc // 可以为空
@@ -231,6 +230,10 @@ func (ctx *Context) Unmarshal(v any) error {
 	body, err := ctx.Body()
 	if err != nil {
 		return err
+	}
+
+	if len(body) == 0 {
+		return nil
 	}
 
 	if ctx.InputMimetype == nil { // 为空表是 NewContext 之后被人为修改。

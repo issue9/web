@@ -165,9 +165,7 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 
 func (rslt *defaultResult) Status() int { return rslt.status }
 
-func (rslt *defaultResult) HasFields() bool {
-	return len(rslt.Fields) > 0
-}
+func (rslt *defaultResult) HasFields() bool { return len(rslt.Fields) > 0 }
 
 func (rslt *defaultResult) MarshalForm() ([]byte, error) {
 	vals := url.Values{}
