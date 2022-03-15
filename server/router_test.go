@@ -263,26 +263,6 @@ func TestResp(t *testing.T) {
 	a.Equal(w.Code, 200) // 默认值 200
 }
 
-func TestContext_ResultWithFields(t *testing.T) {
-	a := assert.New(t, false)
-
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("Accept", "application/json").
-		Header("Content-Type", "application/json").
-		Request()
-	w := httptest.NewRecorder()
-	ctx := servertest.NewServer(a, nil).NewContext(w, r)
-	ctx.Server().AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
-	ctx.Server().AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
-
-	resp := ctx.Result("40010", server.ResultFields{
-		"k1": []string{"v1", "v2"},
-	})
-
-	ctx.Render(resp)
-	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
-}
-
 func TestContext_Result(t *testing.T) {
 	a := assert.New(t, false)
 	srv := servertest.NewServer(a, nil)
@@ -326,6 +306,24 @@ func TestContext_Result(t *testing.T) {
 	// 不存在
 	a.Panic(func() { ctx.Result("400", nil) })
 	a.Panic(func() { ctx.Result("50000", nil) })
+
+	// with field
+
+	r = rest.Post(a, "/path", []byte("123")).
+		Header("Accept", "application/json").
+		Header("Content-Type", "application/json").
+		Request()
+	w = httptest.NewRecorder()
+	ctx = servertest.NewServer(a, nil).NewContext(w, r)
+	ctx.Server().AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
+	ctx.Server().AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
+
+	resp = ctx.Result("40010", server.ResultFields{
+		"k1": []string{"v1", "v2"},
+	})
+
+	ctx.Render(resp)
+	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }
 
 func TestContext_Redirect(t *testing.T) {

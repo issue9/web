@@ -95,7 +95,6 @@ func TestNew(t *testing.T) {
 	a.NotNil(srv.Cache())
 	a.Equal(srv.Location(), time.Local)
 	a.Equal(srv.httpServer.Handler, srv.routers)
-	a.NotNil(srv.httpServer.BaseContext)
 	a.Equal(srv.httpServer.Addr, "")
 }
 

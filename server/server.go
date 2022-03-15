@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -27,11 +26,7 @@ import (
 const (
 	DefaultMimetype = "application/octet-stream"
 	DefaultCharset  = "utf-8"
-
-	contextKeyServer contextKey = iota
 )
-
-type contextKey int
 
 // Server 提供 HTTP 服务
 type Server struct {
@@ -108,20 +103,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		tag:           o.Tag,
 		localePrinter: o.locale.NewPrinter(o.Tag),
 	}
-
 	srv.routers = mux.NewRoutersOf[HandlerFunc](srv.call, nil)
-
 	srv.httpServer.Handler = srv.routers
-	if srv.httpServer.BaseContext == nil {
-		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
-			return context.WithValue(context.Background(), contextKeyServer, srv)
-		}
-	} else {
-		ctx := srv.httpServer.BaseContext
-		srv.httpServer.BaseContext = func(n net.Listener) context.Context {
-			return context.WithValue(ctx(n), contextKeyServer, srv)
-		}
-	}
 
 	return srv, nil
 }
@@ -134,16 +117,6 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params
 			srv.Logs().Error(err)
 		}
 	}
-}
-
-// GetServer 从请求中获取 *Server 实例
-//
-// r 必须得是由 Server 生成的，否则会 panic。
-func GetServer(r *http.Request) *Server {
-	if v := r.Context().Value(contextKeyServer); v != nil {
-		return v.(*Server)
-	}
-	panic("无法从 http.Request.Context() 中获取 contentKeyServer 对应的值")
 }
 
 // Name 应用的名称

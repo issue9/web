@@ -7,94 +7,18 @@ import (
 	"context"
 	"crypto/tls"
 	"io/fs"
-	"net"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
 
-	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
 var _ fs.FS = &server.Server{}
-
-func TestGetServer(t *testing.T) {
-	a := assert.New(t, false)
-	type key int
-	var k key = 0
-
-	srv := servertest.NewTester(a, &server.Options{Port: ":8080"})
-	var isRequested bool
-
-	router := srv.NewRouter()
-	router.Get("/path", func(ctx *server.Context) *server.Response {
-		s1 := server.GetServer(ctx.Request())
-		a.NotNil(s1).Equal(s1, srv.Server())
-
-		v := ctx.Request().Context().Value(k)
-		a.Nil(v)
-
-		isRequested = true
-
-		return nil
-	})
-
-	srv.GoServe()
-
-	srv.Get("http://localhost:8080/path").Header("Accept", text.Mimetype).
-		Do(nil).
-		Status(http.StatusOK)
-
-	// 不是从 Server 生成的 *http.Request，则会 panic
-	r := rest.Get(a, "/path").Request()
-	a.Panic(func() {
-		server.GetServer(r)
-	})
-
-	a.NotError(srv.Server().Close(0))
-	a.True(isRequested, "未正常访问 /path")
-
-	srv.Close(0)
-	srv.Wait()
-
-	// BaseContext
-
-	srv = servertest.NewTester(a, &server.Options{
-		Port: ":8080",
-		HTTPServer: func(s *http.Server) {
-			s.BaseContext = func(n net.Listener) context.Context {
-				return context.WithValue(context.Background(), k, 1)
-			}
-		},
-	})
-
-	isRequested = false
-	router = srv.NewRouter()
-	router.Get("/path", func(ctx *server.Context) *server.Response {
-		s1 := server.GetServer(ctx.Request())
-		a.NotNil(s1).Equal(s1, srv.Server())
-
-		v := ctx.Request().Context().Value(k) // BaseContext 中设置了 k 的值
-		a.Equal(v, 1)
-
-		isRequested = true
-
-		return nil
-	})
-	srv.GoServe()
-	srv.Get("http://localhost:8080/path").Do(nil).Status(http.StatusOK)
-
-	a.NotError(srv.Server().Close(0))
-	a.True(isRequested, "未正常访问 /path")
-
-	srv.Close(0)
-	srv.Wait()
-}
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
