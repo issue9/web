@@ -55,20 +55,20 @@ type Context struct {
 	outputCharsetName string
 	request           *http.Request
 
-	// Response
+	// http.ResponseWriter
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
 	rendered       bool
 
-	// 指定将 Response 输出时所使用的媒体类型，以及名称。
-	OutputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
-	OutputMimetypeName string                    // 如果为空，则采用 DefaultMimetype
+	// 指定将 Response 输出时所使用的媒体类型，以及名称。从 Accept 报头解析得到。
+	outputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
+	outputMimetypeName string                    // 如果为空，则采用 DefaultMimetype
 
-	// 客户端提交的 content-type 内容
-	InputMimetype serialization.UnmarshalFunc // 可以为空
-	InputCharset  encoding.Encoding           // 若值为 encoding.Nop 或是 nil，表示为 utf-8
+	// 从客户端提交的 Content-Type 报头解析到的内容
+	inputMimetype serialization.UnmarshalFunc // 可以为空
+	inputCharset  encoding.Encoding           // 若值为 encoding.Nop 或是 nil，表示为 utf-8
 
 	// 输出语言的相关设置项
 	OutputTag     language.Tag
@@ -132,10 +132,10 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	// 初始化 encodingCloser, charsetCloser, resp, respWriter, rendered
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
-	ctx.OutputMimetype = marshal
-	ctx.OutputMimetypeName = outputMimetypeName
-	ctx.InputMimetype = inputMimetype
-	ctx.InputCharset = inputCharset
+	ctx.outputMimetype = marshal
+	ctx.outputMimetypeName = outputMimetypeName
+	ctx.inputMimetype = inputMimetype
+	ctx.inputCharset = inputCharset
 	ctx.OutputTag = tag
 	ctx.LocalePrinter = srv.Locale().NewPrinter(tag)
 	ctx.Location = srv.location
@@ -215,11 +215,11 @@ func (ctx *Context) Body() (body []byte, err error) {
 	}
 	ctx.read = true
 
-	if charsetIsNop(ctx.InputCharset) {
+	if charsetIsNop(ctx.inputCharset) {
 		return ctx.body, nil
 	}
 
-	d := ctx.InputCharset.NewDecoder()
+	d := ctx.inputCharset.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
 	ctx.body, err = io.ReadAll(reader)
 	return ctx.body, err
@@ -235,11 +235,7 @@ func (ctx *Context) Unmarshal(v any) error {
 	if len(body) == 0 {
 		return nil
 	}
-
-	if ctx.InputMimetype == nil { // 为空表是 NewContext 之后被人为修改。
-		panic("Context.InputMimetype 不能为空")
-	}
-	return ctx.InputMimetype(body, v)
+	return ctx.inputMimetype(body, v)
 }
 
 func (ctx *Context) marshal(resp *Response) error {
@@ -263,13 +259,14 @@ func (ctx *Context) marshal(resp *Response) error {
 		return nil
 	}
 
-	if ctx.OutputMimetype == nil { // NewContext 阶段是允许 OutputMimetype 为空的
+	// 如果 outputMimetype 为空，那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的，需要另行处理。
+	if ctx.outputMimetype == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	if !contentTypeFound {
-		ct := buildContentType(ctx.OutputMimetypeName, ctx.outputCharsetName)
+		ct := buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName)
 		header.Set(contentTypeKey, ct)
 	}
 
@@ -277,7 +274,7 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	data, err := ctx.OutputMimetype(resp.Body())
+	data, err := ctx.outputMimetype(resp.Body())
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)

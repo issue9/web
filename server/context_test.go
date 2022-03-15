@@ -70,6 +70,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
 	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
 	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(srv.Mimetypes().Add(nil, nil, "nil"))
 
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
 
@@ -194,9 +195,9 @@ func TestServer_NewContext(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	a.NotNil(ctx)
 	a.Empty(lw.String())
-	a.True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimetypeName, "application/json").
-		Equal(ctx.InputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
+	a.True(charsetIsNop(ctx.inputCharset)).
+		Equal(ctx.outputMimetypeName, "application/json").
+		Equal(ctx.inputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
 
@@ -210,8 +211,8 @@ func TestServer_NewContext(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
-		True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimetypeName, text.Mimetype)
+		True(charsetIsNop(ctx.inputCharset)).
+		Equal(ctx.outputMimetypeName, text.Mimetype)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
@@ -223,8 +224,8 @@ func TestServer_NewContext(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
-		True(charsetIsNop(ctx.InputCharset)).
-		Equal(ctx.OutputMimetypeName, text.Mimetype)
+		True(charsetIsNop(ctx.inputCharset)).
+		Equal(ctx.outputMimetypeName, text.Mimetype)
 }
 
 func TestContext_Body(t *testing.T) {
@@ -248,7 +249,7 @@ func TestContext_Body(t *testing.T) {
 	// 采用 Nop 即 utf-8 编码
 	r = rest.Post(a, "/path", []byte("123")).Request()
 	ctx = srv.NewContext(w, r)
-	ctx.InputCharset = encoding.Nop
+	ctx.inputCharset = encoding.Nop
 	data, err = ctx.Body()
 	a.NotError(err).Equal(data, []byte("123"))
 	a.Equal(ctx.body, data)
@@ -293,12 +294,6 @@ func TestContext_Unmarshal(t *testing.T) {
 	// 无法转换
 	o := &struct{}{}
 	a.Error(ctx.Unmarshal(o))
-
-	ctx.InputMimetype = nil
-	a.PanicString(func() {
-		obj = &testobject.TextObject{}
-		_ = ctx.Unmarshal(obj)
-	}, "Context.InputMimetype 不能为空")
 
 	// 空提交
 	r = rest.Post(a, "/path", nil).
@@ -414,22 +409,22 @@ func TestContext_marshal(t *testing.T) {
 	data, err = io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(data, gbkBytes1)
 
-	// OutputMimetype == nil
+	// outputMimetype == nil
 	w = httptest.NewRecorder()
-	r = rest.Get(a, "/path").Request()
+	r = rest.Get(a, "/path").Header("Accept", "nil").Request()
 	ctx = srv.NewContext(w, r)
-	ctx.OutputMimetype = nil
+	a.Nil(ctx.outputMimetype).Equal(ctx.outputMimetypeName, "nil")
 	a.NotError(ctx.marshal(Resp(http.StatusCreated).SetBody("val")))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
-	// OutputMimetype 返回 serialization.ErrUnsupported
+	// outputMimetype 返回 serialization.ErrUnsupported
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.NewContext(w, r)
 	a.NotError(ctx.marshal(Resp(http.StatusCreated).SetBody(&struct{}{})))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
-	// OutputMimetype 返回错误
+	// outputMimetype 返回错误
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.NewContext(w, r)
