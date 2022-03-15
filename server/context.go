@@ -245,7 +245,7 @@ func (ctx *Context) Unmarshal(v any) error {
 	return ctx.inputMimetype(body, v)
 }
 
-func (ctx *Context) marshal(resp *Response) error {
+func (ctx *Context) Marshal(status int, body any, headers map[string]string) error {
 	if ctx.rendered {
 		return localeutil.Error("rendered")
 	}
@@ -253,7 +253,7 @@ func (ctx *Context) marshal(resp *Response) error {
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
-	for k, v := range resp.headers {
+	for k, v := range headers {
 		k = http.CanonicalHeaderKey(k)
 
 		contentTypeFound = contentTypeFound || k == contentTypeKey
@@ -261,8 +261,8 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(k, v)
 	}
 
-	if resp.Body() == nil {
-		ctx.WriteHeader(resp.Status())
+	if body == nil {
+		ctx.WriteHeader(status)
 		return nil
 	}
 
@@ -281,7 +281,7 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	data, err := ctx.outputMimetype(resp.Body())
+	data, err := ctx.outputMimetype(body)
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
@@ -291,7 +291,7 @@ func (ctx *Context) marshal(resp *Response) error {
 		return err
 	}
 
-	ctx.WriteHeader(resp.status)
+	ctx.WriteHeader(status)
 	_, err = ctx.Write(data)
 	return err
 }
@@ -378,7 +378,7 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 code 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, code string) *Response {
+func (ctx *Context) Read(v any, code string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}

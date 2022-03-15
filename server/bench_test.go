@@ -23,7 +23,7 @@ func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
 
-	h := func(c *Context) *Response {
+	h := func(c *Context) Responser {
 		_, err := c.Write([]byte(c.Request().URL.Path))
 		if err != nil {
 			b.Error(err)
@@ -40,8 +40,8 @@ func BenchmarkServer_Serve(b *testing.B) {
 	router := srv.Routers().New("srv", nil, &RouterOptions{URLDomain: "http://localhost:8080/"})
 	a.NotNil(router)
 
-	router.Get("/path", func(c *Context) *Response {
-		return Resp(http.StatusOK).SetBody("/path").SetHeader("h1", "h1")
+	router.Get("/path", func(c *Context) Responser {
+		return Body(http.StatusOK, "/path").Header("h1", "h1")
 	})
 	go func() {
 		srv.Serve()
@@ -93,7 +93,7 @@ func BenchmarkContext_Render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -111,7 +111,7 @@ func BenchmarkContext_RenderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -129,7 +129,7 @@ func BenchmarkContext_RenderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -148,7 +148,7 @@ func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.NotError(ctx.destroy())
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -233,7 +233,7 @@ func BenchmarkPost(b *testing.B) {
 
 		obj.Age++
 		obj.Name = "response"
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -257,7 +257,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		obj.Age = 22
 		obj.Name = "中文2"
-		ctx.Render(Resp(http.StatusCreated).SetBody(obj))
+		ctx.Render(Body(http.StatusCreated, obj))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }

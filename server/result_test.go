@@ -48,17 +48,19 @@ var (
 	}
 )
 
-func TestDefaultResult(t *testing.T) {
+func TestDefaultResultBuilder(t *testing.T) {
 	a := assert.New(t, false)
 
 	rslt := DefaultResultBuilder(500, "50001", "error message")
-	a.False(rslt.HasFields()).
-		Equal(rslt.Status(), 500)
+	r, ok := rslt.(*defaultResult)
+	a.True(ok).
+		False(r.HasFields()).
+		Equal(r.status, 500)
 
 	rslt.Add("f1", "f1 msg1")
 	rslt.Add("f1", "f1 msg2")
 	a.True(rslt.HasFields())
-	r, ok := rslt.(*defaultResult)
+	r, ok = rslt.(*defaultResult)
 	a.True(ok).Equal(2, len(r.Fields[0].Message))
 
 	rslt.Set("f1", "f1 msg")
