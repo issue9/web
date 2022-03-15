@@ -26,6 +26,9 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
+// 在 sync.Pool 回收 Context 时，如果 body 长度超过此值，则不回收，以免造成占用过高的内存。
+const poolContextBodyMaxSize = 1 << 16
+
 var (
 	// 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
 	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
@@ -198,7 +201,11 @@ func (ctx *Context) destroy() error {
 		}
 	}
 
-	contextPool.Put(ctx)
+	// 过大的对象不回收，以免造成内存占用过高。
+	if len(ctx.body) < poolContextBodyMaxSize {
+		contextPool.Put(ctx)
+	}
+
 	return nil
 }
 
