@@ -538,7 +538,7 @@ func TestContext_Read(t *testing.T) {
 	o := &struct{}{}
 	resp := ctx.Read(o, "41110")
 	a.NotNil(resp)
-	ctx.Render(resp)
+	a.NotError(resp.Apply(ctx))
 	a.Equal(w.Code, http.StatusUnprocessableEntity)
 }
 

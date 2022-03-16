@@ -7,25 +7,37 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/muxutil"
 )
 
 type (
-	// HandlerFunc 路由项处理函数原型
-	//
-	// 如果返回 nil，表示未出现任何错误，可以继续后续操作，
-	// 非 nil，表示需要中断执行并向用户输出返回的对象。
-	HandlerFunc func(*Context) Responser
-
 	Router         = mux.RouterOf[HandlerFunc]
 	Routers        = mux.RoutersOf[HandlerFunc]
 	RouterOptions  = mux.OptionsOf[HandlerFunc]
 	MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
 	Middleware     = mux.MiddlewareOf[HandlerFunc]
+
+	// HandlerFunc 路由项处理函数原型
+	//
+	// 最终调用 Responser.Apply 向客户端输出信息。
+	HandlerFunc func(*Context) Responser
+
+	Responser interface {
+		Apply(*Context) error
+	}
+
+	status int
 )
+
+// Status 仅向客户端输出状态码
+func Status(code int) Responser { return status(code) }
+
+func (s status) Apply(ctx *Context) error {
+	ctx.WriteHeader(int(s))
+	return nil
+}
 
 // Routers 路由管理接口
 func (srv *Server) Routers() *Routers { return srv.routers }
@@ -66,22 +78,6 @@ func (m *Module) FileServer(name, index string) HandlerFunc {
 	return m.Server().FileServer(m, name, index)
 }
 
-func (ctx *Context) Render(resp Responser) {
-	if resp == nil {
-		return
-	}
-
-	if err := resp.Apply(ctx); err != nil {
-		var msg string
-		if ls, ok := err.(localeutil.LocaleStringer); ok {
-			msg = ls.LocaleString(ctx.Server().LocalePrinter())
-		} else {
-			msg = err.Error()
-		}
-		ctx.Server().Logs().Error(msg)
-	}
-}
-
 // InternalServerError 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
 //
 // 注意事项参考 Error
@@ -118,9 +114,4 @@ func (ctx *Context) Errorf(status int, format string, v ...any) Responser {
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) Responser {
 	return ctx.Server().Result(ctx.LocalePrinter, code, fields)
-}
-
-// Redirect 重定向至新的 URL
-func (ctx *Context) Redirect(status int, url string) Responser {
-	return Body(status, nil).Header("Location", url)
 }

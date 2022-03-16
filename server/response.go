@@ -3,25 +3,12 @@
 package server
 
 type (
-	Responser interface {
-		Apply(*Context) error
-	}
-
-	status int
-
 	Object struct {
 		status  int
 		body    any
 		headers map[string]string
 	}
 )
-
-func Status(code int) Responser { return status(code) }
-
-func (s status) Apply(ctx *Context) error {
-	ctx.WriteHeader(int(s))
-	return nil
-}
 
 func (o *Object) Apply(ctx *Context) error {
 	return ctx.Marshal(o.status, o.body, o.headers)

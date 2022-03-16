@@ -46,3 +46,8 @@ func RetryAfter(status int, seconds uint64) Responser {
 func RetryAt(status int, at time.Time) Responser {
 	return Object(status, nil).Header("Retry-After", at.UTC().Format(http.TimeFormat))
 }
+
+// Redirect 重定向至新的 URL
+func Redirect(status int, url string) Responser {
+	return Object(status, nil).Header("Location", url)
+}

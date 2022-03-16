@@ -81,7 +81,7 @@ func BenchmarkServer_NewContext(b *testing.B) {
 	}
 }
 
-func BenchmarkContext_Render(b *testing.B) {
+func BenchmarkContext_render(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -93,12 +93,12 @@ func BenchmarkContext_Render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
-func BenchmarkContext_RenderWithUTF8(b *testing.B) {
+func BenchmarkContext_renderWithUTF8(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -111,12 +111,12 @@ func BenchmarkContext_RenderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
 
-func BenchmarkContext_RenderWithCharset(b *testing.B) {
+func BenchmarkContext_renderWithCharset(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -129,12 +129,12 @@ func BenchmarkContext_RenderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
 
-func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
+func BenchmarkContext_renderWithCharsetEncoding(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, nil)
 
@@ -148,7 +148,7 @@ func BenchmarkContext_RenderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		obj := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.NotError(ctx.destroy())
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -233,7 +233,7 @@ func BenchmarkPost(b *testing.B) {
 
 		obj.Age++
 		obj.Name = "response"
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -257,7 +257,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		obj.Age = 22
 		obj.Name = "中文2"
-		ctx.Render(Body(http.StatusCreated, obj))
+		a.NotError(Body(http.StatusCreated, obj).Apply(ctx))
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
