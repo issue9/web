@@ -31,7 +31,7 @@ func BenchmarkRouter(b *testing.B) {
 		return nil
 	}
 
-	routertest.NewTester[HandlerFunc](srv.call).Bench(b, h)
+	routertest.NewTester(srv.call).Bench(b, h)
 }
 
 func BenchmarkServer_Serve(b *testing.B) {

@@ -103,7 +103,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		tag:           o.Tag,
 		localePrinter: o.locale.NewPrinter(o.Tag),
 	}
-	srv.routers = mux.NewRoutersOf[HandlerFunc](srv.call, nil)
+	srv.routers = mux.NewRoutersOf(srv.call, nil)
 	srv.httpServer.Handler = srv.routers
 
 	return srv, nil
