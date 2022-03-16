@@ -16,6 +16,8 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
+var _ Responser = &object{}
+
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewServer(a, nil)
