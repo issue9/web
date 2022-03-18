@@ -377,7 +377,7 @@ func TestContext_Marshal(t *testing.T) {
 	data, err := io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(data, gbkBytes2)
 
-	// 同时通过 ctx.Response.Write 和 ctx.Marshal 输出内容
+	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept", text.Mimetype).
@@ -386,11 +386,11 @@ func TestContext_Marshal(t *testing.T) {
 	ctx = srv.NewContext(w, r)
 	_, err = ctx.Write([]byte("123"))
 	a.NotError(err)
-	a.Error(ctx.Marshal(http.StatusCreated, "456", nil), localeutil.Error("rendered"))
+	a.NotError(ctx.Marshal(http.StatusCreated, "456", nil))
 	a.NotError(ctx.destroy())
-	a.Equal(w.Code, http.StatusOK)
+	a.Equal(w.Code, http.StatusCreated) // 压缩对象缓存了 WriteHeader 的发送
 	data, err = io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(string(data), "123")
+	a.NotError(err).Equal(string(data), "123456")
 
 	// accept,accept-language,accept-charset 和 accept-encoding，部分 Response.Write 输出
 	w = httptest.NewRecorder()
@@ -398,16 +398,18 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept", text.Mimetype).
 		Header("Accept-Language", "zh-Hans").
 		Header("Accept-Charset", "gbk").
-		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
 	_, err = ctx.Write([]byte(gbkString1))
 	a.NotError(err)
-	a.Error(ctx.Marshal(http.StatusCreated, gbkString2, nil), localeutil.Error("rendered"))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
 	a.NotError(ctx.destroy())
-	a.Equal(w.Code, http.StatusOK)
-	data, err = io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(data, gbkBytes1)
+	a.Equal(w.Code, http.StatusOK) // 未指定压缩，WriteHeader 直接发送
+	data, err = io.ReadAll(w.Body)
+	a.NotError(err)
+	bs := make([]byte, 0, len(gbkBytes1)+len(gbkBytes2))
+	bs = append(append(bs, gbkBytes1...), gbkBytes2...)
+	a.Equal(data, bs)
 
 	// outputMimetype == nil
 	w = httptest.NewRecorder()
@@ -421,7 +423,7 @@ func TestContext_Marshal(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, &struct{}{}, nil))
+	a.ErrorIs(ctx.Marshal(http.StatusCreated, &struct{}{}, nil), serialization.ErrUnsupported)
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// outputMimetype 返回错误

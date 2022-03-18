@@ -63,7 +63,6 @@ type Context struct {
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
-	rendered       bool
 
 	// 指定将 Response 输出时所使用的媒体类型，以及名称。从 Accept 报头解析得到。
 	outputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
@@ -132,7 +131,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.outputCharsetName = outputCharsetName
 	ctx.request = r
 
-	// 初始化 encodingCloser, charsetCloser, resp, respWriter, rendered
+	// 初始化 encodingCloser, charsetCloser, resp, respWriter
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
 	ctx.outputMimetype = marshal
@@ -148,15 +147,9 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return ctx
 }
 
-func (ctx *Context) Write(bs []byte) (int, error) {
-	ctx.rendered = true
-	return ctx.respWriter.Write(bs)
-}
+func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(bs) }
 
-func (ctx *Context) WriteHeader(status int) {
-	ctx.rendered = true
-	ctx.resp.WriteHeader(status)
-}
+func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
@@ -170,7 +163,6 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	ctx.respWriter = resp
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
-	ctx.rendered = false
 
 	h := resp.Header()
 
@@ -245,11 +237,8 @@ func (ctx *Context) Unmarshal(v any) error {
 	return ctx.inputMimetype(body, v)
 }
 
+// Marshal 向客户端输出内容
 func (ctx *Context) Marshal(status int, body any, headers map[string]string) error {
-	if ctx.rendered {
-		return localeutil.Error("rendered")
-	}
-
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
@@ -285,7 +274,7 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		return err
 	case err != nil:
 		ctx.WriteHeader(http.StatusInternalServerError)
 		return err
