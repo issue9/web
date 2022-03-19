@@ -3,7 +3,6 @@
 package server
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"mime"
@@ -209,18 +208,14 @@ func (ctx *Context) Body() (body []byte, err error) {
 		return ctx.body, nil
 	}
 
-	if ctx.body, err = io.ReadAll(ctx.Request().Body); err != nil {
-		return nil, err
-	}
-	ctx.read = true
-
-	if charsetIsNop(ctx.inputCharset) {
-		return ctx.body, nil
+	var reader io.Reader = ctx.Request().Body
+	if !charsetIsNop(ctx.inputCharset) {
+		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
-	d := ctx.inputCharset.NewDecoder()
-	reader := transform.NewReader(bytes.NewReader(ctx.body), d)
-	ctx.body, err = io.ReadAll(reader)
+	if ctx.body, err = io.ReadAll(reader); err == nil {
+		ctx.read = true
+	}
 	return ctx.body, err
 }
 
