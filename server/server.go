@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/params"
@@ -110,12 +111,26 @@ func New(name, version string, o *Options) (*Server, error) {
 }
 
 func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
-	if ctx := srv.NewContext(w, r); ctx != nil {
-		ctx.params = ps
-		ctx.Render(f(ctx))
-		if err := ctx.destroy(); err != nil {
-			srv.Logs().Error(err)
+	ctx := srv.NewContext(w, r)
+	if ctx == nil {
+		return
+	}
+
+	ctx.params = ps
+	if resp := f(ctx); resp != nil {
+		if err := resp.Apply(ctx); err != nil {
+			var msg string
+			if ls, ok := err.(localeutil.LocaleStringer); ok {
+				msg = ls.LocaleString(ctx.Server().LocalePrinter())
+			} else {
+				msg = err.Error()
+			}
+			ctx.Server().Logs().Error(msg)
 		}
+	}
+
+	if err := ctx.destroy(); err != nil {
+		srv.Logs().Error(err)
 	}
 }
 

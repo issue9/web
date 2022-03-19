@@ -56,7 +56,7 @@ func TestServer_Serve(t *testing.T) {
 
 	a.False(srv.Server().Serving())
 
-	router.Get("/m2/test", func(ctx *server.Context) *server.Response {
+	router.Get("/m2/test", func(ctx *server.Context) server.Responser {
 		a.True(srv.Server().Serving())
 
 		srv := ctx.Server()
@@ -131,7 +131,7 @@ func TestServer_Close(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) *server.Response {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
@@ -190,7 +190,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) *server.Response {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		ctx.WriteHeader(http.StatusCreated)
 		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)

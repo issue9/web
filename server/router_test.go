@@ -24,14 +24,13 @@ import (
 
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) *server.Response {
+		return func(ctx *server.Context) server.Responser {
+			h := ctx.Header()
+			val := h.Get("h")
+			h.Set("h", v+val)
+
 			resp := next(ctx)
 			a.NotNil(resp)
-
-			val, _ := resp.GetHeader("h")
-			resp = resp.SetHeader("h", val+v)
-			a.NotNil(resp)
-
 			return resp
 		}
 	})
@@ -184,8 +183,8 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.Render(ctx.Error(http.StatusNotImplemented, "log1", "log2"))
-		a.Contains(errLog.String(), "router_test.go:187") // NOTE: 此测试依赖上一行的行号
+		a.NotError(ctx.Error(http.StatusNotImplemented, "log1", "log2").Apply(ctx))
+		a.Contains(errLog.String(), "router_test.go:186") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -195,8 +194,8 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.Render(ctx.InternalServerError("log1", "log2"))
-		a.Contains(errLog.String(), "router_test.go:198") // NOTE: 此测试依赖上一行的行号
+		a.NotError(ctx.InternalServerError("log1", "log2").Apply(ctx))
+		a.Contains(errLog.String(), "router_test.go:197") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
@@ -208,7 +207,7 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.Render(ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51))
+		a.NotError(ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51).Apply(ctx))
 		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -218,49 +217,10 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.Render(ctx.InternalServerErrorf("error @%s:%d", "file.go", 51))
+		a.NotError(ctx.InternalServerErrorf("error @%s:%d", "file.go", 51).Apply(ctx))
 		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
-}
-
-func TestResp(t *testing.T) {
-	a := assert.New(t, false)
-
-	a.Panic(func() {
-		server.Resp(50)
-	})
-
-	a.Panic(func() {
-		server.Resp(600)
-	})
-
-	s := server.Resp(201)
-	a.NotNil(s)
-
-	s.SetHeader("h", "1")
-	v, found := s.GetHeader("h")
-	a.True(found).Equal(v, "1")
-	s.SetHeader("h", "2")
-	v, found = s.GetHeader("h")
-	a.True(found).Equal(v, "2")
-	s.DelHeader("h")
-	v, found = s.GetHeader("h")
-	a.False(found).Equal(v, "")
-
-	srv := servertest.NewServer(a, nil)
-
-	r := rest.Get(a, "/path").Request()
-	w := httptest.NewRecorder()
-	ctx := srv.NewContext(w, r)
-	ctx.Render(s)
-	a.Equal(w.Code, 201)
-
-	r = rest.Get(a, "/path").Request()
-	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r)
-	ctx.Render(nil)
-	a.Equal(w.Code, 200) // 默认值 200
 }
 
 func TestContext_Result(t *testing.T) {
@@ -279,7 +239,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	resp := ctx.Result("40000", nil)
-	ctx.Render(resp)
+	a.NotError(resp.Apply(ctx))
 	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
 
 	// 未指定 accept-language，采用默认的 und
@@ -289,7 +249,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	ctx.Render(resp)
+	a.NotError(resp.Apply(ctx))
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在的本地化信息，采用默认的 und
@@ -300,7 +260,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	ctx.Render(resp)
+	a.NotError(resp.Apply(ctx))
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在
@@ -322,21 +282,6 @@ func TestContext_Result(t *testing.T) {
 		"k1": []string{"v1", "v2"},
 	})
 
-	ctx.Render(resp)
+	a.NotError(resp.Apply(ctx))
 	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
-}
-
-func TestContext_Redirect(t *testing.T) {
-	a := assert.New(t, false)
-
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("Accept", "application/json").
-		Header("Content-Type", "application/json").
-		Request()
-	w := httptest.NewRecorder()
-	ctx := servertest.NewServer(a, nil).NewContext(w, r)
-	ctx.Render(ctx.Redirect(301, "https://example.com"))
-
-	a.Equal(w.Result().StatusCode, 301).
-		Equal(w.Header().Get("Location"), "https://example.com")
 }

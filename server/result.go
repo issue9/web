@@ -25,6 +25,8 @@ type (
 
 	// Result 展示错误代码需要实现的接口
 	Result interface {
+		Responser
+
 		// Add 添加详细的错误信息
 		//
 		// 相同的 key 应该能关联多个 val 值。
@@ -39,11 +41,6 @@ type (
 		//
 		// 如果有通过 Add 添加内容，那么应该返回 true
 		HasFields() bool
-
-		// Status HTTP 状态码
-		//
-		// 最终会经此值作为 HTTP 状态会返回给用户
-		Status() int
 	}
 
 	defaultResult struct {
@@ -163,7 +160,9 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 	rslt.Fields = append(rslt.Fields, &fieldDetail{Name: field, Message: message})
 }
 
-func (rslt *defaultResult) Status() int { return rslt.status }
+func (rslt *defaultResult) Apply(ctx *Context) error {
+	return ctx.Marshal(rslt.status, rslt, nil)
+}
 
 func (rslt *defaultResult) HasFields() bool { return len(rslt.Fields) > 0 }
 

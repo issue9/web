@@ -16,7 +16,7 @@ func TestParams_empty(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/empty", func(ctx *Context) *Response {
+	router.Get("/params/empty", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("id1"), 0)
@@ -36,7 +36,7 @@ func TestParams_ID_MustID(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.Equal(ps.ID("i1"), 1)
@@ -77,7 +77,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("i1"), 1)
@@ -112,7 +112,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081"})
 	a.NotNil(router)
 
-	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.True(ps.Bool("b1"))
@@ -147,7 +147,7 @@ func TestParams_String_MustString(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) *Response {
+	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.Equal(ps.String("s1"), "str1")
@@ -179,7 +179,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
 		ps := ctx.Params()
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -215,7 +215,7 @@ func TestContext_ParamID(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
 		i1, resp := ctx.ParamID("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 
@@ -235,7 +235,7 @@ func TestContext_ParamInt64(t *testing.T) {
 	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
 	a.NotNil(router)
 
-	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) *Response {
+	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
 		i1, resp := ctx.ParamInt64("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 

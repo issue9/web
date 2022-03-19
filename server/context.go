@@ -63,7 +63,6 @@ type Context struct {
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
-	rendered       bool
 
 	// 指定将 Response 输出时所使用的媒体类型，以及名称。从 Accept 报头解析得到。
 	outputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
@@ -132,7 +131,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.outputCharsetName = outputCharsetName
 	ctx.request = r
 
-	// 初始化 encodingCloser, charsetCloser, resp, respWriter, rendered
+	// 初始化 encodingCloser, charsetCloser, resp, respWriter
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
 	ctx.outputMimetype = marshal
@@ -148,15 +147,9 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return ctx
 }
 
-func (ctx *Context) Write(bs []byte) (int, error) {
-	ctx.rendered = true
-	return ctx.respWriter.Write(bs)
-}
+func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(bs) }
 
-func (ctx *Context) WriteHeader(status int) {
-	ctx.rendered = true
-	ctx.resp.WriteHeader(status)
-}
+func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
@@ -170,7 +163,6 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	ctx.respWriter = resp
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
-	ctx.rendered = false
 
 	h := resp.Header()
 
@@ -245,15 +237,12 @@ func (ctx *Context) Unmarshal(v any) error {
 	return ctx.inputMimetype(body, v)
 }
 
-func (ctx *Context) marshal(resp *Response) error {
-	if ctx.rendered {
-		return localeutil.Error("rendered")
-	}
-
+// Marshal 向客户端输出内容
+func (ctx *Context) Marshal(status int, body any, headers map[string]string) error {
 	header := ctx.Header()
 
 	var contentTypeFound, contentLanguageFound bool
-	for k, v := range resp.headers {
+	for k, v := range headers {
 		k = http.CanonicalHeaderKey(k)
 
 		contentTypeFound = contentTypeFound || k == contentTypeKey
@@ -261,8 +250,8 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(k, v)
 	}
 
-	if resp.Body() == nil {
-		ctx.WriteHeader(resp.Status())
+	if body == nil {
+		ctx.WriteHeader(status)
 		return nil
 	}
 
@@ -281,17 +270,17 @@ func (ctx *Context) marshal(resp *Response) error {
 		header.Set(contentLanguageKey, ctx.OutputTag.String())
 	}
 
-	data, err := ctx.outputMimetype(resp.Body())
+	data, err := ctx.outputMimetype(body)
 	switch {
 	case errors.Is(err, serialization.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		return err
 	case err != nil:
 		ctx.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 
-	ctx.WriteHeader(resp.status)
+	ctx.WriteHeader(status)
 	_, err = ctx.Write(data)
 	return err
 }
@@ -378,7 +367,7 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 code 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, code string) *Response {
+func (ctx *Context) Read(v any, code string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
