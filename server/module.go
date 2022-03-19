@@ -24,8 +24,7 @@ func (srv *Server) NewModule(id string) *Module {
 		panic("无效的 id 格式。")
 	}
 
-	index := sliceutil.Index(srv.modules, func(e string) bool { return e == id })
-	if index >= 0 {
+	if sliceutil.Exists(srv.modules, func(e string) bool { return e == id }) {
 		panic("存在同名模块：" + id)
 	}
 
