@@ -196,7 +196,7 @@ func TestServer_NewContext(t *testing.T) {
 	a.NotNil(ctx)
 	a.Empty(lw.String())
 	a.True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, "application/json").
+		Equal(ctx.contentType, "application/json; charset=utf-8").
 		Equal(ctx.inputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
 		Equal(ctx.OutputTag, language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter)
@@ -212,7 +212,7 @@ func TestServer_NewContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, text.Mimetype)
+		Equal(ctx.contentType, buildContentType(text.Mimetype, DefaultCharset))
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
@@ -225,7 +225,7 @@ func TestServer_NewContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, text.Mimetype)
+		Equal(ctx.contentType, buildContentType(text.Mimetype, DefaultCharset))
 }
 
 func TestContext_Body(t *testing.T) {
@@ -417,7 +417,7 @@ func TestContext_Marshal(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", "nil").Request()
 	ctx = srv.NewContext(w, r)
-	a.Nil(ctx.outputMimetype).Equal(ctx.outputMimetypeName, "nil")
+	a.Nil(ctx.outputMimetype).Equal(ctx.contentType, buildContentType("nil", DefaultCharset))
 	a.NotError(ctx.Marshal(http.StatusCreated, "val", nil))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 

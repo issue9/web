@@ -46,10 +46,10 @@ type CTXSanitizer interface {
 // 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
 // 而是采用返回 Response 的方式向客户端输出内容。
 type Context struct {
-	server            *Server
-	params            params.Params
-	outputCharsetName string
-	request           *http.Request
+	server      *Server
+	params      params.Params
+	request     *http.Request
+	contentType string
 
 	// http.ResponseWriter
 	encodingCloser io.WriteCloser
@@ -57,9 +57,9 @@ type Context struct {
 	resp           http.ResponseWriter
 	respWriter     io.Writer
 
-	// 指定将 Response 输出时所使用的媒体类型，以及名称。从 Accept 报头解析得到。
-	outputMimetype     serialization.MarshalFunc // 如果是调用 Context.Write 输出内容，可以为空。
-	outputMimetypeName string                    // 如果为空，则采用 DefaultMimetype
+	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
+	// 如果是调用 Context.Write 输出内容，可以为空。
+	outputMimetype serialization.MarshalFunc
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype serialization.UnmarshalFunc // 可以为空
@@ -121,14 +121,13 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx := contextPool.Get().(*Context)
 	ctx.server = srv
 	ctx.params = nil
-	ctx.outputCharsetName = outputCharsetName
 	ctx.request = r
+	ctx.contentType = buildContentType(outputMimetypeName, outputCharsetName)
 
 	// 初始化 encodingCloser, charsetCloser, resp, respWriter
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
 	ctx.outputMimetype = marshal
-	ctx.outputMimetypeName = outputMimetypeName
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.OutputTag = tag
@@ -245,8 +244,7 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 		return nil
 	}
 
-	ct := buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName)
-	header.Set("Content-Type", ct)
+	header.Set("Content-Type", ctx.contentType)
 	if ctx.OutputTag != language.Und {
 		header.Set("Content-Language", ctx.OutputTag.String())
 	}
