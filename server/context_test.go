@@ -319,11 +319,12 @@ func TestContext_Marshal(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 	obj := &testobject.TextObject{Name: "test", Age: 123}
-	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hans"}))
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, map[string]string{"contEnt-type": "json", "content-lanGuage": "zh-hant", "content-encoding": "123"}))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
-	a.Equal(w.Header().Get("content-type"), "json")
-	a.Equal(w.Header().Get("content-language"), "zh-hans")
+	a.Equal(w.Header().Get("content-type"), buildContentType(text.Mimetype, "utf-8"))
+	a.Equal(w.Header().Get("content-language"), "zh-Hans")
+	a.Equal(w.Header().Get("content-encoding"), "123") // 未指定，所有采用 headers 参数的值
 
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
@@ -371,11 +372,12 @@ func TestContext_Marshal(t *testing.T) {
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.NewContext(w, r)
-	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
+	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, map[string]string{"content-encoding": "123"}))
 	a.NotError(ctx.destroy())
 	a.Equal(w.Code, http.StatusCreated)
 	data, err := io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(data, gbkBytes2)
+	a.Equal(w.Header().Get("content-encoding"), "deflate")
 
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()

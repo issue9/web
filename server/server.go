@@ -119,19 +119,23 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params
 	ctx.params = ps
 	if resp := f(ctx); resp != nil {
 		if err := resp.Apply(ctx); err != nil {
-			var msg string
-			if ls, ok := err.(localeutil.LocaleStringer); ok {
-				msg = ls.LocaleString(ctx.Server().LocalePrinter())
-			} else {
-				msg = err.Error()
-			}
-			ctx.Server().Logs().Error(msg)
+			srv.logError(err)
 		}
 	}
 
 	if err := ctx.destroy(); err != nil {
-		srv.Logs().Error(err)
+		srv.logError(err)
 	}
+}
+
+func (srv *Server) logError(err error) {
+	var msg string
+	if ls, ok := err.(localeutil.LocaleStringer); ok {
+		msg = ls.LocaleString(srv.LocalePrinter())
+	} else {
+		msg = err.Error()
+	}
+	srv.Logs().Error(msg)
 }
 
 // Name 应用的名称

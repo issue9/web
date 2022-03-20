@@ -28,13 +28,7 @@ import (
 // 在 sync.Pool 回收 Context 时，如果 body 长度超过此值，则不回收，以免造成占用过高的内存。
 const poolContextBodyMaxSize = 1 << 16
 
-var (
-	// 需要作比较，所以得是经过 http.CanonicalHeaderKey 处理的标准名称。
-	contentTypeKey     = http.CanonicalHeaderKey("Content-Type")
-	contentLanguageKey = http.CanonicalHeaderKey("Content-Language")
-
-	contextPool = &sync.Pool{New: func() any { return &Context{} }}
-)
+var contextPool = &sync.Pool{New: func() any { return &Context{} }}
 
 // CTXSanitizer 提供对数据的验证和修正
 //
@@ -115,7 +109,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
-	header = r.Header.Get(contentTypeKey)
+	header = r.Header.Get("Content-Type")
 	inputMimetype, inputCharset, err := srv.conentType(header)
 	if err != nil {
 		srv.Logs().Debug(err)
@@ -163,9 +157,8 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
 
-	h := resp.Header()
-
 	if b != nil {
+		h := resp.Header()
 		ctx.encodingCloser = b.Build(ctx.respWriter)
 		ctx.respWriter = ctx.encodingCloser
 		h.Del("Content-Length") // https://github.com/golang/go/issues/14975
@@ -233,16 +226,12 @@ func (ctx *Context) Unmarshal(v any) error {
 }
 
 // Marshal 向客户端输出内容
+//
+// headers 的内容将是以 ctx.Header().Add 的形式加入到报头中，Content-* 系列报头在有内容输出时会被强行覆盖；
 func (ctx *Context) Marshal(status int, body any, headers map[string]string) error {
 	header := ctx.Header()
-
-	var contentTypeFound, contentLanguageFound bool
 	for k, v := range headers {
-		k = http.CanonicalHeaderKey(k)
-
-		contentTypeFound = contentTypeFound || k == contentTypeKey
-		contentLanguageFound = contentLanguageFound || k == contentLanguageKey
-		header.Set(k, v)
+		header.Add(k, v)
 	}
 
 	if body == nil {
@@ -256,13 +245,10 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 		return nil
 	}
 
-	if !contentTypeFound {
-		ct := buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName)
-		header.Set(contentTypeKey, ct)
-	}
-
-	if !contentLanguageFound && ctx.OutputTag != language.Und {
-		header.Set(contentLanguageKey, ctx.OutputTag.String())
+	ct := buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName)
+	header.Set("Content-Type", ct)
+	if ctx.OutputTag != language.Und {
+		header.Set("Content-Language", ctx.OutputTag.String())
 	}
 
 	data, err := ctx.outputMimetype(body)
