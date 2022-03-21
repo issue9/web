@@ -25,8 +25,10 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
-// 在 sync.Pool 回收 Context 时，如果 body 长度超过此值，则不回收，以免造成占用过高的内存。
-const poolContextBodyMaxSize = 1 << 16
+const (
+	poolBodyBufferMaxSize = 1 << 16
+	defaultBodyBufferSize = 256 // TODO 放到配置项 Options 中？
+)
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
 
@@ -133,7 +135,9 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.OutputTag = tag
 	ctx.LocalePrinter = srv.Locale().NewPrinter(tag)
 	ctx.Location = srv.location
-	ctx.body = ctx.body[:0]
+	if len(ctx.body) > 0 {
+		ctx.body = ctx.body[:0]
+	}
 	ctx.read = false
 	ctx.Vars = make(map[any]any)
 	return ctx
@@ -184,8 +188,7 @@ func (ctx *Context) destroy() error {
 		}
 	}
 
-	// 过大的对象不回收，以免造成内存占用过高。
-	if len(ctx.body) < poolContextBodyMaxSize {
+	if len(ctx.body) < poolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
 
@@ -205,9 +208,24 @@ func (ctx *Context) Body() (body []byte, err error) {
 		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
-	if ctx.body, err = io.ReadAll(reader); err == nil {
-		ctx.read = true
+	if ctx.body == nil {
+		ctx.body = make([]byte, 0, defaultBodyBufferSize)
 	}
+
+	for {
+		if len(ctx.body) == cap(ctx.body) {
+			ctx.body = append(ctx.body, 0)[:len(ctx.body)]
+		}
+		n, err := reader.Read(ctx.body[len(ctx.body):cap(ctx.body)])
+		ctx.body = ctx.body[:len(ctx.body)+n]
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+	}
+
+	ctx.read = true
 	return ctx.body, err
 }
 
