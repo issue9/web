@@ -113,5 +113,5 @@ func (ctx *Context) Errorf(status int, format string, v ...any) Responser {
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) Responser {
-	return ctx.Server().Result(ctx.LocalePrinter, code, fields)
+	return ctx.Server().Result(ctx.LocalePrinter(), code, fields)
 }

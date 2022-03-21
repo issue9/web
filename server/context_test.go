@@ -182,7 +182,7 @@ func TestServer_NewContext(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
-	a.Equal(ctx.OutputTag, language.MustParse("zh-hans"))
+	a.Equal(ctx.languageTag, language.MustParse("zh-hans"))
 	a.Empty(lw.String())
 
 	// 正常，指定 Accept-Language，采用默认的 accept
@@ -198,8 +198,8 @@ func TestServer_NewContext(t *testing.T) {
 	a.True(charsetIsNop(ctx.inputCharset)).
 		Equal(ctx.contentType, "application/json; charset=utf-8").
 		Equal(ctx.inputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
-		Equal(ctx.OutputTag, language.SimplifiedChinese).
-		NotNil(ctx.LocalePrinter)
+		Equal(ctx.languageTag, language.SimplifiedChinese).
+		NotNil(ctx.LocalePrinter())
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
 	lw.Reset()
@@ -513,13 +513,21 @@ func TestServer_contentType(t *testing.T) {
 
 func TestServer_Location(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, nil)
+
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/test").Request()
 	ctx := srv.NewContext(w, r)
-
 	now := ctx.Now()
-	a.Equal(now.Location(), srv.Location())
+	a.Equal(now.Location(), srv.Location()).
+		Equal(now.Location(), ctx.Location())
+
+	a.NotError(ctx.SetLocation("UTC"))
+	now2 := ctx.Now()
+	a.Equal(now2.Location(), ctx.Location())
+	if now2.Location() != srv.Location() {
+		a.NotEqual(ctx.Location(), srv.Location())
+	}
 }
 
 func TestContext_Read(t *testing.T) {
@@ -616,7 +624,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	a.NotNil(ctx)
-	n, err := ctx.LocalePrinter.Fprintf(ctx, "test")
+	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试"))
 	a.Equal(w.Body.String(), "测试")
 }

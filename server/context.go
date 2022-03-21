@@ -67,11 +67,10 @@ type Context struct {
 	inputMimetype serialization.UnmarshalFunc // 可以为空
 	inputCharset  encoding.Encoding           // 若值为 encoding.Nop 或是 nil，表示为 utf-8
 
-	// 输出语言的相关设置项
-	OutputTag     language.Tag
-	LocalePrinter *message.Printer
-
-	Location *time.Location
+	// 区域和本地相关信息
+	languageTag   language.Tag
+	localePrinter *message.Printer
+	location      *time.Location
 
 	body []byte // 缓存从 http.Request.Body 中获取的内容
 	read bool   // 表示是已经读取 body
@@ -132,9 +131,9 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.outputMimetype = marshal
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
-	ctx.OutputTag = tag
-	ctx.LocalePrinter = srv.Locale().NewPrinter(tag)
-	ctx.Location = srv.location
+	ctx.languageTag = tag
+	ctx.localePrinter = srv.Locale().NewPrinter(tag)
+	ctx.location = srv.location
 	if len(ctx.body) > 0 {
 		ctx.body = ctx.body[:0]
 	}
@@ -148,6 +147,35 @@ func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(
 func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
+
+// SetLanguage 设置输出的语言
+//
+// 默认情况下，会根据用户提交的 Accept-Language 报头设置默认值。
+func (ctx *Context) SetLanguage(l string) error {
+	tag, err := language.Parse(l)
+	if err == nil {
+		ctx.languageTag = tag
+		ctx.localePrinter = ctx.Server().Locale().NewPrinter(tag)
+	}
+	return err
+}
+
+func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter }
+
+func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
+
+// SetLocation 设置时区信息
+//
+// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocataion
+func (ctx *Context) SetLocation(name string) error {
+	l, err := time.LoadLocation(name)
+	if err == nil {
+		ctx.location = l
+	}
+	return err
+}
+
+func (ctx *Context) Location() *time.Location { return ctx.location }
 
 // Request 返回原始的请求对象
 //
@@ -263,8 +291,8 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 	}
 
 	header.Set("Content-Type", ctx.contentType)
-	if ctx.OutputTag != language.Und {
-		header.Set("Content-Language", ctx.OutputTag.String())
+	if ctx.languageTag != language.Und {
+		header.Set("Content-Language", ctx.languageTag.String())
 	}
 
 	data, err := ctx.outputMimetype(body)
@@ -350,11 +378,11 @@ func (srv *Server) conentType(header string) (serialization.UnmarshalFunc, encod
 }
 
 // Now 返回以 ctx.Location 为时区的当前时间
-func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location) }
+func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location()) }
 
 // ParseTime 分析基于当前时区的时间
 func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, ctx.Location)
+	return time.ParseInLocation(layout, value, ctx.Location())
 }
 
 // Read 从客户端读取数据并转换成 v 对象
@@ -439,5 +467,5 @@ func (ctx *Context) IsXHR() bool {
 
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
-	return ctx.LocalePrinter.Sprintf(key, v...)
+	return ctx.LocalePrinter().Sprintf(key, v...)
 }
