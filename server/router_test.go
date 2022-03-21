@@ -39,8 +39,16 @@ func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
 	srv := servertest.NewTester(a, nil)
+	count := 0
 
-	router := srv.NewRouter(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"))
+	router := srv.NewRouter(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
+		return func(ctx *server.Context) server.Responser {
+			ctx.OnExit(func(status int) {
+				count++
+			})
+			return next(ctx)
+		}
+	}))
 	a.NotNil(router)
 	router.Get("/path", servertest.BuildHandler(201))
 	prefix := router.Prefix("/p1", buildMiddleware(a, "p1"), buildMiddleware(a, "p2-"))
@@ -55,6 +63,7 @@ func TestMiddleware(t *testing.T) {
 		Status(http.StatusCreated).
 		Header("h", "b1b2-p1p2-").
 		StringBody("201")
+	a.Equal(count, 1)
 
 	srv.Get("/path").
 		Header("accept", text.Mimetype).
@@ -62,6 +71,7 @@ func TestMiddleware(t *testing.T) {
 		Status(http.StatusCreated).
 		Header("h", "b1b2-").
 		StringBody("201")
+	a.Equal(count, 2)
 
 	srv.Close(0)
 	srv.Wait()
@@ -184,7 +194,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
 		a.NotError(ctx.Error(http.StatusNotImplemented, "log1", "log2").Apply(ctx))
-		a.Contains(errLog.String(), "router_test.go:186") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:196") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -195,7 +205,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
 		a.NotError(ctx.InternalServerError("log1", "log2").Apply(ctx))
-		a.Contains(errLog.String(), "router_test.go:197") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:207") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})

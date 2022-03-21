@@ -46,18 +46,20 @@ type CTXSanitizer interface {
 //
 // Context 同时也实现了 http.ResponseWriter 接口，
 // 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
-// 而是采用返回 Response 的方式向客户端输出内容。
+// 而是采用返回 Responser 的方式向客户端输出内容。
 type Context struct {
 	server      *Server
 	params      params.Params
 	request     *http.Request
 	contentType string
+	exits       []func(int)
 
 	// http.ResponseWriter
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
 	resp           http.ResponseWriter
 	respWriter     io.Writer
+	status         int
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，可以为空。
@@ -124,8 +126,11 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	ctx.params = nil
 	ctx.request = r
 	ctx.contentType = buildContentType(outputMimetypeName, outputCharsetName)
+	if len(ctx.exits) > 0 {
+		ctx.exits = ctx.exits[:0]
+	}
 
-	// 初始化 encodingCloser, charsetCloser, resp, respWriter
+	// 初始化 encodingCloser, charsetCloser, resp, respWriter, status
 	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
 
 	ctx.outputMimetype = marshal
@@ -144,7 +149,10 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 
 func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(bs) }
 
-func (ctx *Context) WriteHeader(status int) { ctx.resp.WriteHeader(status) }
+func (ctx *Context) WriteHeader(status int) {
+	ctx.status = status
+	ctx.resp.WriteHeader(status)
+}
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
@@ -187,6 +195,7 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	ctx.respWriter = resp
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
+	ctx.status = http.StatusOK
 
 	if b != nil {
 		h := resp.Header()
@@ -216,11 +225,27 @@ func (ctx *Context) destroy() error {
 		}
 	}
 
+	for _, exit := range ctx.exits {
+		exit(ctx.status)
+	}
+
 	if len(ctx.body) < poolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
 
 	return nil
+}
+
+// OnExit 注册退出当前请求时的处理函数
+//
+// f 的原型为
+//  func(status int)
+// 其中 status 为最终输出到客户端的状态码。
+func (ctx *Context) OnExit(f func(int)) {
+	if ctx.exits == nil {
+		ctx.exits = make([]func(int), 0, 3)
+	}
+	ctx.exits = append(ctx.exits, f)
 }
 
 // Body 获取用户提交的内容
