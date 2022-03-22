@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/issue9/logs/v3"
+
 	"github.com/issue9/web/server"
 )
 
@@ -26,7 +28,11 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 	return &object{status: status, body: body, headers: headers}
 }
 
-func (o *object) Apply(ctx *Context) { ctx.Marshal(o.status, o.body, o.headers) }
+func (o *object) Apply(ctx *Context) {
+	if err := ctx.Marshal(o.status, o.body, o.headers); err != nil {
+		ctx.Log(logs.LevelError, 1, err)
+	}
+}
 
 func Created(v any, location string) Responser {
 	if location != "" {
