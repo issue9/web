@@ -24,8 +24,10 @@ type (
 	// 最终调用 Responser.Apply 向客户端输出信息。
 	HandlerFunc func(*Context) Responser
 
+	// Responser 表示向客户端输出对象最终需要实现的接口
 	Responser interface {
-		Apply(*Context) error
+		// Apply 通过 *Context 将当前内容渲染到客户端
+		Apply(*Context)
 	}
 
 	status int
@@ -34,10 +36,7 @@ type (
 // Status 仅向客户端输出状态码
 func Status(code int) Responser { return status(code) }
 
-func (s status) Apply(ctx *Context) error {
-	ctx.WriteHeader(int(s))
-	return nil
-}
+func (s status) Apply(ctx *Context) { ctx.WriteHeader(int(s)) }
 
 // Routers 路由管理接口
 func (srv *Server) Routers() *Routers { return srv.routers }

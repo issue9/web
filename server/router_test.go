@@ -193,7 +193,7 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		a.NotError(ctx.Error(http.StatusNotImplemented, "log1", "log2").Apply(ctx))
+		ctx.Error(http.StatusNotImplemented, "log1", "log2").Apply(ctx)
 		a.Contains(errLog.String(), "router_test.go:196") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
@@ -204,7 +204,7 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		a.NotError(ctx.InternalServerError("log1", "log2").Apply(ctx))
+		ctx.InternalServerError("log1", "log2").Apply(ctx)
 		a.Contains(errLog.String(), "router_test.go:207") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
@@ -217,7 +217,7 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		a.NotError(ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51).Apply(ctx))
+		ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51).Apply(ctx)
 		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -227,7 +227,7 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		a.NotError(ctx.InternalServerErrorf("error @%s:%d", "file.go", 51).Apply(ctx))
+		ctx.InternalServerErrorf("error @%s:%d", "file.go", 51).Apply(ctx)
 		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
@@ -249,7 +249,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	resp := ctx.Result("40000", nil)
-	a.NotError(resp.Apply(ctx))
+	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
 
 	// 未指定 accept-language，采用默认的 und
@@ -259,7 +259,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	a.NotError(resp.Apply(ctx))
+	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在的本地化信息，采用默认的 und
@@ -270,7 +270,7 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	resp = ctx.Result("40000", nil)
-	a.NotError(resp.Apply(ctx))
+	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
 
 	// 不存在
@@ -292,6 +292,6 @@ func TestContext_Result(t *testing.T) {
 		"k1": []string{"v1", "v2"},
 	})
 
-	a.NotError(resp.Apply(ctx))
+	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
 }

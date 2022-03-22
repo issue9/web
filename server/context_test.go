@@ -373,7 +373,7 @@ func TestContext_Marshal(t *testing.T) {
 		Request()
 	ctx = srv.NewContext(w, r)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, map[string]string{"content-encoding": "123"}))
-	a.NotError(ctx.destroy())
+	ctx.destroy()
 	a.Equal(w.Code, http.StatusCreated)
 	data, err := io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(data, gbkBytes2)
@@ -389,7 +389,7 @@ func TestContext_Marshal(t *testing.T) {
 	_, err = ctx.Write([]byte("123"))
 	a.NotError(err)
 	a.NotError(ctx.Marshal(http.StatusCreated, "456", nil))
-	a.NotError(ctx.destroy())
+	ctx.destroy()
 	a.Equal(w.Code, http.StatusCreated) // 压缩对象缓存了 WriteHeader 的发送
 	data, err = io.ReadAll(flate.NewReader(w.Body))
 	a.NotError(err).Equal(string(data), "123456")
@@ -405,7 +405,7 @@ func TestContext_Marshal(t *testing.T) {
 	_, err = ctx.Write([]byte(gbkString1))
 	a.NotError(err)
 	a.NotError(ctx.Marshal(http.StatusCreated, gbkString2, nil))
-	a.NotError(ctx.destroy())
+	ctx.destroy()
 	a.Equal(w.Code, http.StatusOK) // 未指定压缩，WriteHeader 直接发送
 	data, err = io.ReadAll(w.Body)
 	a.NotError(err)
@@ -550,7 +550,7 @@ func TestContext_Read(t *testing.T) {
 	o := &struct{}{}
 	resp := ctx.Read(o, "41110")
 	a.NotNil(resp)
-	a.NotError(resp.Apply(ctx))
+	resp.Apply(ctx)
 	a.Equal(w.Code, http.StatusUnprocessableEntity)
 }
 

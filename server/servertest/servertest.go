@@ -116,6 +116,8 @@ type object struct {
 	body   any
 }
 
-func (o *object) Apply(ctx *server.Context) error {
-	return ctx.Marshal(o.status, o.body, nil)
+func (o *object) Apply(ctx *server.Context) {
+	if err := ctx.Marshal(o.status, o.body, nil); err != nil {
+		ctx.Server().Logs().Error(err)
+	}
 }

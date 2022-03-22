@@ -115,7 +115,7 @@ func TestContext_QueryObject(t *testing.T) {
 		Str int     `query:"str"`
 	}{}
 	resp = ctx.QueryObject(&o2, "41110")
-	a.NotNil(resp).
-		NotError(resp.Apply(ctx)).
-		Equal(w.Code, 411)
+	a.NotNil(resp)
+	resp.Apply(ctx)
+	a.Equal(w.Code, 411)
 }

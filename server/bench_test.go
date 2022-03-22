@@ -24,8 +24,10 @@ type object struct {
 	headers map[string]string
 }
 
-func (o *object) Apply(ctx *Context) error {
-	return ctx.Marshal(o.status, o.body, o.headers)
+func (o *object) Apply(ctx *Context) {
+	if err := ctx.Marshal(o.status, o.body, o.headers); err != nil {
+		ctx.Server().Logs().Error(err)
+	}
 }
 
 func obj(status int, body any, headers map[string]string) Responser {
@@ -106,7 +108,7 @@ func BenchmarkContext_render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
+		obj(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -124,7 +126,7 @@ func BenchmarkContext_renderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
+		obj(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -142,7 +144,7 @@ func BenchmarkContext_renderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
+		obj(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -161,8 +163,8 @@ func BenchmarkContext_renderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
-		a.NotError(ctx.destroy())
+		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.destroy()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
 		a.NotError(err).NotNil(data)
@@ -281,7 +283,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
+		obj(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -305,7 +307,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		o.Age = 22
 		o.Name = "中文2"
-		a.NotError(obj(http.StatusCreated, o, nil).Apply(ctx))
+		obj(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }

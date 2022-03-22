@@ -26,9 +26,7 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 	return &object{status: status, body: body, headers: headers}
 }
 
-func (o *object) Apply(ctx *Context) error {
-	return ctx.Marshal(o.status, o.body, o.headers)
-}
+func (o *object) Apply(ctx *Context) { ctx.Marshal(o.status, o.body, o.headers) }
 
 func Created(v any, location string) Responser {
 	if location != "" {

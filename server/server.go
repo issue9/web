@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v3"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/params"
@@ -118,24 +117,10 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params
 
 	ctx.params = ps
 	if resp := f(ctx); resp != nil {
-		if err := resp.Apply(ctx); err != nil {
-			srv.logError(err)
-		}
+		resp.Apply(ctx)
 	}
 
-	if err := ctx.destroy(); err != nil {
-		srv.logError(err)
-	}
-}
-
-func (srv *Server) logError(err error) {
-	var msg string
-	if ls, ok := err.(localeutil.LocaleStringer); ok {
-		msg = ls.LocaleString(srv.LocalePrinter())
-	} else {
-		msg = err.Error()
-	}
-	srv.Logs().Error(msg)
+	ctx.destroy()
 }
 
 // Name 应用的名称

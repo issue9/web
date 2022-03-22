@@ -160,9 +160,7 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 	rslt.Fields = append(rslt.Fields, &fieldDetail{Name: field, Message: message})
 }
 
-func (rslt *defaultResult) Apply(ctx *Context) error {
-	return ctx.Marshal(rslt.status, rslt, nil)
-}
+func (rslt *defaultResult) Apply(ctx *Context) { ctx.Marshal(rslt.status, rslt, nil) }
 
 func (rslt *defaultResult) HasFields() bool { return len(rslt.Fields) > 0 }
 

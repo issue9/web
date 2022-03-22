@@ -212,16 +212,18 @@ func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encod
 	}
 }
 
-func (ctx *Context) destroy() error {
+func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
 		if err := ctx.charsetCloser.Close(); err != nil {
-			return err
+			ctx.Logs().Error(err)
+			return
 		}
 	}
 
 	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
 		if err := ctx.encodingCloser.Close(); err != nil {
-			return err
+			ctx.Logs().Error(err)
+			return
 		}
 	}
 
@@ -232,8 +234,6 @@ func (ctx *Context) destroy() error {
 	if len(ctx.body) < poolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
-
-	return nil
 }
 
 // OnExit 注册退出当前请求时的处理函数
