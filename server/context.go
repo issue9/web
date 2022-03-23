@@ -297,13 +297,9 @@ func (ctx *Context) Unmarshal(v any) error {
 
 // Marshal 向客户端输出内容
 //
-// headers 的内容将是以 ctx.Header().Add 的形式加入到报头中，Content-* 系列报头在有内容输出时会被强行覆盖；
-func (ctx *Context) Marshal(status int, body any, headers map[string]string) error {
-	header := ctx.Header()
-	for k, v := range headers {
-		header.Add(k, v)
-	}
-
+// status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
+// body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
+func (ctx *Context) Marshal(status int, body any) error {
 	if body == nil {
 		ctx.WriteHeader(status)
 		return nil
@@ -315,9 +311,9 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 		return errors.New("ctx.outputMimetype 不能为空")
 	}
 
-	header.Set("Content-Type", ctx.contentType)
+	ctx.Header().Set("Content-Type", ctx.contentType)
 	if id := ctx.languageTag.String(); id != "" {
-		header.Set("Content-Language", id)
+		ctx.Header().Set("Content-Language", id)
 	}
 
 	data, err := ctx.outputMimetype(body)

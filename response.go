@@ -36,7 +36,11 @@ func Object(status int, body interface{}, headers map[string]string) Responser {
 }
 
 func (o *object) Apply(ctx *Context) {
-	if err := ctx.Marshal(o.status, o.body, o.headers); err != nil {
+	for k, v := range o.headers {
+		ctx.Header().Set(k, v)
+	}
+
+	if err := ctx.Marshal(o.status, o.body); err != nil {
 		ctx.Log(logs.LevelError, 1, err)
 	}
 	objectPool.Put(o)

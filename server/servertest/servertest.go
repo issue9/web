@@ -117,7 +117,7 @@ type object struct {
 }
 
 func (o *object) Apply(ctx *server.Context) {
-	if err := ctx.Marshal(o.status, o.body, nil); err != nil {
+	if err := ctx.Marshal(o.status, o.body); err != nil {
 		ctx.Server().Logs().Error(err)
 	}
 }

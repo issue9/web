@@ -162,7 +162,7 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 }
 
 func (rslt *defaultResult) Apply(ctx *Context) {
-	if err := ctx.Marshal(rslt.status, rslt, nil); err != nil {
+	if err := ctx.Marshal(rslt.status, rslt); err != nil {
 		ctx.Log(logs.LevelError, 1, err)
 	}
 }

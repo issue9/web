@@ -25,7 +25,10 @@ type object struct {
 }
 
 func (o *object) Apply(ctx *Context) {
-	if err := ctx.Marshal(o.status, o.body, o.headers); err != nil {
+	for k, v := range o.headers {
+		ctx.Header().Set(k, v)
+	}
+	if err := ctx.Marshal(o.status, o.body); err != nil {
 		ctx.Server().Logs().Error(err)
 	}
 }
