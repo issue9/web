@@ -316,8 +316,8 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 	}
 
 	header.Set("Content-Type", ctx.contentType)
-	if ctx.languageTag != language.Und {
-		header.Set("Content-Language", ctx.languageTag.String())
+	if id := ctx.languageTag.String(); id != "" {
+		header.Set("Content-Language", id)
 	}
 
 	data, err := ctx.outputMimetype(body)
@@ -454,14 +454,14 @@ func (ctx *Context) ClientIP() string {
 
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 
-// Log 输出日志并以指定的状态码退出
+// Log 输出日志
 //
 // deep 为 0 表示 Log 本身；
 func (ctx *Context) Log(level, deep int, v ...any) {
 	ctx.Logs().Print(level, deep, v...)
 }
 
-// Logf 输出日志并以指定的状态码退出
+// Logf 输出日志
 //
 // deep 为 0 表示 Logf 本身；
 func (ctx *Context) Logf(level, deep int, format string, v ...any) {

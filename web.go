@@ -23,6 +23,7 @@ type (
 	ResultFields   = server.ResultFields
 	Result         = server.Result
 	Module         = server.Module
+	RouterOptions  = server.RouterOptions
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
