@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v3"
 	"github.com/issue9/validation"
 	"golang.org/x/text/message"
 )
@@ -160,7 +161,11 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 	rslt.Fields = append(rslt.Fields, &fieldDetail{Name: field, Message: message})
 }
 
-func (rslt *defaultResult) Apply(ctx *Context) { ctx.Marshal(rslt.status, rslt, nil) }
+func (rslt *defaultResult) Apply(ctx *Context) {
+	if err := ctx.Marshal(rslt.status, rslt, nil); err != nil {
+		ctx.Log(logs.LevelError, 1, err)
+	}
+}
 
 func (rslt *defaultResult) HasFields() bool { return len(rslt.Fields) > 0 }
 

@@ -312,7 +312,7 @@ func (ctx *Context) Marshal(status int, body any, headers map[string]string) err
 	// 如果 outputMimetype 为空，那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的，需要另行处理。
 	if ctx.outputMimetype == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		return nil
+		return errors.New("ctx.outputMimetype 不能为空")
 	}
 
 	header.Set("Content-Type", ctx.contentType)

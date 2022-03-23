@@ -418,7 +418,7 @@ func TestContext_Marshal(t *testing.T) {
 	r = rest.Get(a, "/path").Header("Accept", "nil").Request()
 	ctx = srv.NewContext(w, r)
 	a.Nil(ctx.outputMimetype).Equal(ctx.contentType, buildContentType("nil", DefaultCharset))
-	a.NotError(ctx.Marshal(http.StatusCreated, "val", nil))
+	a.ErrorString(ctx.Marshal(http.StatusCreated, "val", nil), "ctx.outputMimetype 不能为空")
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// outputMimetype 返回 serialization.ErrUnsupported
