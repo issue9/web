@@ -5,12 +5,15 @@ package web
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/issue9/logs/v3"
 
 	"github.com/issue9/web/server"
 )
+
+var objectPool = &sync.Pool{New: func() any { return &object{} }}
 
 type (
 	Responser = server.Responser
@@ -25,13 +28,18 @@ type (
 func Status(status int) Responser { return server.Status(status) }
 
 func Object(status int, body interface{}, headers map[string]string) Responser {
-	return &object{status: status, body: body, headers: headers}
+	o := objectPool.Get().(*object)
+	o.status = status
+	o.body = body
+	o.headers = headers
+	return o
 }
 
 func (o *object) Apply(ctx *Context) {
 	if err := ctx.Marshal(o.status, o.body, o.headers); err != nil {
 		ctx.Log(logs.LevelError, 1, err)
 	}
+	objectPool.Put(o)
 }
 
 func Created(v any, location string) Responser {
