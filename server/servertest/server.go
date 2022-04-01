@@ -13,7 +13,8 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
+	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
@@ -33,12 +34,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		o = &server.Options{Port: ":8080"}
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		l, err := logs.New(nil)
-		a.NotError(err).NotNil(l)
-
-		a.NotError(l.SetOutput(logs.LevelDebug|logs.LevelError|logs.LevelCritical, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelInfo|logs.LevelTrace|logs.LevelWarn, os.Stdout))
-		o.Logs = l
+		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr))
 	}
 
 	srv, err := server.New("app", "0.1.0", o)

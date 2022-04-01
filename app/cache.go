@@ -3,6 +3,7 @@
 package app
 
 import (
+	"log"
 	"strings"
 	"time"
 
@@ -36,7 +37,7 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *ConfigError {
+func (conf *configOf[T]) buildCache(errlog *log.Logger) *ConfigError {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
@@ -69,7 +70,7 @@ func (conf *configOf[T]) buildCache() *ConfigError {
 			return &ConfigError{Field: "dsn", Message: err.Error()}
 		}
 
-		conf.cache = file.New(args[0], gc, conf.logs.ERROR())
+		conf.cache = file.New(args[0], gc, errlog)
 	default:
 		return &ConfigError{Field: "type", Message: "无效的值"}
 	}

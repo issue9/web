@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/muxutil"
 )
@@ -78,33 +78,17 @@ func (m *Module) FileServer(name, index string) HandlerFunc {
 }
 
 // InternalServerError 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
-//
-// 注意事项参考 Error
-func (ctx *Context) InternalServerError(v ...any) Responser {
-	ctx.Log(logs.LevelError, 2, v...)
-	return Status(http.StatusInternalServerError)
-}
-
-// InternalServerErrorf 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
-//
-// 注意事项参考 Error
-func (ctx *Context) InternalServerErrorf(format string, v ...any) Responser {
-	ctx.Logf(logs.LevelError, 2, format, v...)
-	return Status(http.StatusInternalServerError)
+func (ctx *Context) InternalServerError(err error) Responser {
+	return ctx.err(3, http.StatusInternalServerError, err)
 }
 
 // Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-//
-// NOTE:应该在出错的地方直接调用 Error，而不是将 Error 嵌套在另外的函数里，
-// 否则出错信息的位置信息将不准确。
-func (ctx *Context) Error(status int, v ...any) Responser {
-	ctx.Log(logs.LevelError, 2, v...)
-	return Status(status)
-}
+func (ctx *Context) Error(status int, err error) Responser { return ctx.err(3, status, err) }
 
-// Errorf 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Errorf(status int, format string, v ...any) Responser {
-	ctx.Logf(logs.LevelError, 2, format, v...)
+func (ctx *Context) err(depth, status int, err error) Responser {
+	entry := ctx.Logs().NewEntry(logs.LevelError).Location(depth)
+	entry.Message = err.Error()
+	ctx.Logs().Output(entry)
 	return Status(status)
 }
 

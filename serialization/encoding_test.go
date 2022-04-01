@@ -7,7 +7,6 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"io"
-	"log"
 	"testing"
 
 	"github.com/issue9/assert/v2"
@@ -25,26 +24,22 @@ func TestNewEncodings(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		NewEncodings(nil)
-	}, "参数 errlog 不能为空")
-
-	a.PanicString(func() {
-		NewEncodings(log.Default(), "*")
+		NewEncodings(nil, "*")
 	}, "无效的值 *")
 
-	e := NewEncodings(log.Default())
+	e := NewEncodings(nil)
 	a.NotNil(e)
 	a.True(e.allowAny).
 		Empty(e.ignoreTypes).
 		Empty(e.ignoreTypePrefix)
 
-	e = NewEncodings(log.Default(), "text*")
+	e = NewEncodings(nil, "text*")
 	a.NotNil(e)
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
 
-	e = NewEncodings(log.Default(), "text*", "text/*")
+	e = NewEncodings(nil, "text*", "text/*")
 	a.NotNil(e)
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
@@ -54,7 +49,7 @@ func TestNewEncodings(t *testing.T) {
 func TestEncodings_Add(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewEncodings(log.Default())
+	e := NewEncodings(nil)
 	a.NotNil(e)
 
 	e.Add(map[string]EncodingWriterFunc{
@@ -92,7 +87,7 @@ func TestEncodings_Add(t *testing.T) {
 func TestEncodings_Search(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewEncodings(log.Default(), "text*")
+	e := NewEncodings(nil, "text*")
 	a.NotNil(e)
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
@@ -145,7 +140,7 @@ func TestEncodings_Search(t *testing.T) {
 func TestEncodings_Compress(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewEncodings(log.Default(), "text*")
+	e := NewEncodings(nil, "text*")
 	a.NotNil(e)
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).

@@ -4,16 +4,17 @@ package server_test
 
 import (
 	"bytes"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6/muxutil"
 	"golang.org/x/text/language"
 
@@ -184,17 +185,17 @@ func TestContext_Error(t *testing.T) {
 	a := assert.New(t, false)
 	errLog := new(bytes.Buffer)
 
-	srv := servertest.NewServer(a, nil)
+	srv := servertest.NewServer(a, &server.Options{
+		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), logs.Created, logs.Caller),
+	})
 	errLog.Reset()
-	srv.Logs().ERROR().SetOutput(errLog)
-	srv.Logs().ERROR().SetFlags(log.Llongfile)
 
 	a.Run("Error", func(a *assert.Assertion) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.Error(http.StatusNotImplemented, "log1", "log2").Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:196") // NOTE: 此测试依赖上一行的行号
+		ctx.Error(http.StatusNotImplemented, errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "router_test.go:197") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -204,31 +205,9 @@ func TestContext_Error(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.NewContext(w, r)
-		ctx.InternalServerError("log1", "log2").Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:207") // NOTE: 此测试依赖上一行的行号
+		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "router_test.go:208") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
-		a.Equal(w.Code, http.StatusInternalServerError)
-	})
-
-	srv.Logs().ERROR().SetFlags(0)
-
-	a.Run("Errorf", func(a *assert.Assertion) {
-		errLog.Reset()
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Request()
-		ctx := srv.NewContext(w, r)
-		ctx.Errorf(http.StatusNotImplemented, "error @%s:%d", "file.go", 51).Apply(ctx)
-		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
-		a.Equal(w.Code, http.StatusNotImplemented)
-	})
-
-	a.Run("InternalServerErrorf", func(a *assert.Assertion) {
-		errLog.Reset()
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Request()
-		ctx := srv.NewContext(w, r)
-		ctx.InternalServerErrorf("error @%s:%d", "file.go", 51).Apply(ctx)
-		a.True(strings.HasPrefix(errLog.String(), "error @file.go:51"))
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
 }

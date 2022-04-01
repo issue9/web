@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/logs/v3"
-
 	"github.com/issue9/web/server"
 )
 
@@ -41,7 +39,7 @@ func (o *object) Apply(ctx *Context) {
 	}
 
 	if err := ctx.Marshal(o.status, o.body); err != nil {
-		ctx.Log(logs.LevelError, 1, err)
+		ctx.Logs().ERROR().Error(err)
 	}
 	objectPool.Put(o)
 }

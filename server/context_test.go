@@ -19,7 +19,8 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
+	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
@@ -47,12 +48,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		o = &Options{Port: ":8080"}
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		l, err := logs.New(nil)
-		a.NotError(err).NotNil(l)
-
-		a.NotError(l.SetOutput(logs.LevelDebug|logs.LevelError|logs.LevelCritical, os.Stderr))
-		a.NotError(l.SetOutput(logs.LevelInfo|logs.LevelTrace|logs.LevelWarn, os.Stdout))
-		o.Logs = l
+		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr))
 	}
 
 	srv, err := New("app", "0.1.0", o)
@@ -127,7 +123,8 @@ func TestServer_NewContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
 	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
-	a.NotError(srv.Logs().SetOutput(logs.LevelDebug, lw))
+	srv.Logs().SetOutput(logs.NewTextWriter("2006-01-02", lw))
+	srv.Logs().Enable(logs.LevelDebug)
 
 	// 错误的 accept
 	w := httptest.NewRecorder()
@@ -182,7 +179,7 @@ func TestServer_NewContext(t *testing.T) {
 		Request()
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
-	a.Equal(ctx.languageTag, language.MustParse("zh-hans"))
+	a.Equal(ctx.LanguageTag(), language.MustParse("zh-hans"))
 	a.Empty(lw.String())
 
 	// 正常，指定 Accept-Language，采用默认的 accept
@@ -198,7 +195,7 @@ func TestServer_NewContext(t *testing.T) {
 	a.True(charsetIsNop(ctx.inputCharset)).
 		Equal(ctx.contentType, "application/json; charset=utf-8").
 		Equal(ctx.inputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
-		Equal(ctx.languageTag, language.SimplifiedChinese).
+		Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter())
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头

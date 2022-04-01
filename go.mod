@@ -8,7 +8,7 @@ require (
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.9.0
-	github.com/issue9/logs/v3 v3.2.0
+	github.com/issue9/logs/v4 v4.0.0-beta.1
 	github.com/issue9/mux/v6 v6.0.0
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.7
@@ -22,9 +22,11 @@ require (
 )
 
 require (
-	github.com/issue9/term/v2 v2.1.5 // indirect
+	github.com/issue9/term/v3 v3.0.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
+	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 )
+
+replace github.com/issue9/logs/v4 => /Users/caixw/dev.localized/issue9/logs
 
 go 1.18

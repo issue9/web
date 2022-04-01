@@ -7,7 +7,6 @@ import (
 	"compress/gzip"
 	"encoding/xml"
 	"io"
-	"log"
 	"testing"
 
 	"github.com/issue9/assert/v2"
@@ -42,7 +41,7 @@ func BenchmarkMimetypes_UnmarshalFunc(b *testing.B) {
 func BenchmarkEncodingWriterBuilder_Build(b *testing.B) {
 	a := assert.New(b, false)
 
-	e := NewEncodings(log.Default(), "text*")
+	e := NewEncodings(nil, "text*")
 	a.NotNil(e)
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).

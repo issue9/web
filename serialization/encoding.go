@@ -6,17 +6,16 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"strings"
 	"sync"
 
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
 )
 
-// Encodings 压缩功能管理
 type Encodings struct {
-	errlog *log.Logger
+	errlog logs.Logger
 
 	builders []*EncodingBuilder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
@@ -70,18 +69,14 @@ func (b *EncodingBuilder) Build(w io.Writer) io.WriteCloser {
 
 func (b *EncodingBuilder) Name() string { return b.name }
 
-// NewEncodings 构建一个支持压缩的中间件
+// NewEncodings 创建 *Encodings
 //
-// errlog 错误日志的输出通道；
+// errlog 处理过程中的错误信息输出通道，如果为空表示忽加这些信息；
 // ignoreTypes 表示不需要进行压缩处理的 mimetype 类型，可以是以下格式：
 //  - application/json 具体类型；
 //  - text* 表示以 text 开头的所有类型；
 // 不能传递 *。
-func NewEncodings(errlog *log.Logger, ignoreTypes ...string) *Encodings {
-	if errlog == nil {
-		panic("参数 errlog 不能为空")
-	}
-
+func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 	c := &Encodings{
 		builders: make([]*EncodingBuilder, 0, 4),
 		errlog:   errlog,
@@ -171,7 +166,9 @@ func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcce
 	var identity *qheader.Header
 	for _, accept := range accepts {
 		if accept.Err != nil {
-			c.errlog.Println(accept.Err)
+			if c.errlog != nil {
+				c.errlog.Error(accept.Err)
+			}
 			continue
 		}
 

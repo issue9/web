@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 
@@ -32,20 +33,20 @@ func TestNewOptions(t *testing.T) {
 	a := assert.New(t, false)
 	files := serialization.NewFiles(5)
 
-	opt, data, err := NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
+	opt, data, err := NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata"), "web.yaml")
 	a.Error(err).Nil(opt).Nil(data)
 
 	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
+	opt, data, err = NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(opt).Nil(data)
 	a.Equal(opt.Tag, language.Und)
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata/not-exists"), "web.yaml")
+	opt, data, err = NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt).Nil(data)
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "invalid-web.xml")
+	opt, data, err = NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata"), "invalid-web.xml")
 	a.Error(err).Nil(opt).Nil(data)
 	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
@@ -53,24 +54,24 @@ func TestNewOptions(t *testing.T) {
 		Equal(err2.Field, "http.letsEncrypt.domains")
 
 	// 自定义 T
-	opt, user, err := NewOptionsOf[userData](files, os.DirFS("./testdata"), "user.xml")
+	opt, user, err := NewOptionsOf[userData](logs.New(nil), files, os.DirFS("./testdata"), "user.xml")
 	a.NotError(err).NotNil(opt).NotNil(user)
 	a.Equal(user.ID, 1).Equal(opt.Port, ":8082")
 }
 
 func TestWebconfig_sanitize(t *testing.T) {
 	a := assert.New(t, false)
+	l := logs.New(nil)
 
 	conf := &configOf[empty]{}
-	a.NotError(conf.sanitize()).
+	a.NotError(conf.sanitize(l)).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
 	conf = &configOf[empty]{Language: "zh-hans"}
-	a.NotError(conf.sanitize()).
-		NotEqual(conf.languageTag, language.Und).
-		NotNil(conf.logs)
+	a.NotError(conf.sanitize(l)).
+		NotEqual(conf.languageTag, language.Und)
 }
 
 func TestWebconfig_buildTimezone(t *testing.T) {

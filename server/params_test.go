@@ -26,7 +26,7 @@ func TestParams_empty(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
 }
 
@@ -67,7 +67,7 @@ func TestParams_ID_MustID(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
 }
 
@@ -102,7 +102,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
 }
 
@@ -137,7 +137,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
 }
 
@@ -169,7 +169,7 @@ func TestParams_String_MustString(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
 }
 
@@ -205,7 +205,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
 
@@ -225,7 +225,7 @@ func TestContext_ParamID(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/paramid/1/-2/str").Do(nil).Status(411)
 }
 
@@ -248,6 +248,6 @@ func TestContext_ParamInt64(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/paramint64/1/-2/str").Do(nil).Status(411)
 }

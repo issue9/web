@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/logs/v3"
-	"github.com/issue9/logs/v3/config"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/serialization"
@@ -54,40 +53,40 @@ type configOf[T any] struct {
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
-	// 日志初始化参数
-	//
-	// 如果为空，则初始化一个空日志，不会输出任何日志。
-	Logs *config.Config `yaml:"logs,omitempty" json:"logs,omitempty" xml:"logs,omitempty"`
-	logs *logs.Logs
-
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
 // NewOptionsOf 从配置文件初始化 server.Options 实例
 //
+// l 日志系统；
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
-// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 f 查找文件加载；
+// fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
+// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (*server.Options, *T, error) {
+func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, filename string) (*server.Options, *T, error) {
+	if l == nil {
+		panic("l 不能为空值")
+	}
+
 	conf := &configOf[T]{}
-	if err := files.LoadFS(f, filename, conf); err != nil {
+	if err := files.LoadFS(fsys, filename, conf); err != nil {
 		return nil, nil, err
 	}
 
-	if err := conf.sanitize(); err != nil {
+	if err := conf.sanitize(l); err != nil {
 		err.Path = filename
 		return nil, nil, err
 	}
 
 	h := conf.HTTP
 	return &server.Options{
-		FS:       f,
+		FS:       fsys,
 		Location: conf.location,
 		Cache:    conf.cache,
 		Port:     conf.Port,
@@ -97,29 +96,18 @@ func NewOptionsOf[T any](files *serialization.Files, f fs.FS, filename string) (
 			srv.WriteTimeout = h.WriteTimeout.Duration()
 			srv.IdleTimeout = h.IdleTimeout.Duration()
 			srv.MaxHeaderBytes = h.MaxHeaderBytes
-			srv.ErrorLog = conf.logs.ERROR()
+			srv.ErrorLog = l.StdLogger(logs.LevelError)
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:            conf.logs,
+		Logs:            l,
 		Files:           files,
 		IgnoreEncodings: conf.IgnoreEncodings,
 		Tag:             conf.languageTag,
 	}, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize() *ConfigError {
-	if conf.Logs != nil {
-		if err := conf.Logs.Sanitize(); err != nil {
-			return &ConfigError{Field: "logs", Message: err}
-		}
-	}
-	l, err := logs.New(conf.Logs)
-	if err != nil {
-		return &ConfigError{Field: "logs", Message: err}
-	}
-	conf.logs = l
-
-	if err := conf.buildCache(); err != nil {
+func (conf *configOf[T]) sanitize(l *logs.Logs) *ConfigError {
+	if err := conf.buildCache(l.StdLogger(logs.LevelError)); err != nil {
 		err.Field = "cache." + err.Field
 		return err
 	}

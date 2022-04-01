@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
@@ -449,20 +449,6 @@ func (ctx *Context) ClientIP() string {
 }
 
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
-
-// Log 输出日志
-//
-// deep 为 0 表示 Log 本身；
-func (ctx *Context) Log(level, deep int, v ...any) {
-	ctx.Logs().Print(level, deep, v...)
-}
-
-// Logf 输出日志
-//
-// deep 为 0 表示 Logf 本身；
-func (ctx *Context) Logf(level, deep int, format string, v ...any) {
-	ctx.Logs().Printf(level, deep, format, v...)
-}
 
 // 指定的编码是否不需要任何额外操作
 func charsetIsNop(enc encoding.Encoding) bool {

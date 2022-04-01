@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/scheduled"
 )
 
@@ -69,8 +70,8 @@ func (srv *Server) runServices() {
 	msg := srv.LocalePrinter().Sprintf("scheduled job")
 	srv.AddService(msg, func(ctx context.Context) error {
 		go func() {
-			if err := srv.scheduled.Serve(l.ERROR(), l.DEBUG()); err != nil {
-				l.Error(err)
+			if err := srv.scheduled.Serve(l.StdLogger(logs.LevelError), l.StdLogger(logs.LevelDebug)); err != nil {
+				l.ERROR().Error(err)
 			}
 		}()
 

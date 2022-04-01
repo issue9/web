@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
@@ -115,11 +115,7 @@ func (o *Options) sanitize() (err error) {
 	}
 
 	if o.Logs == nil {
-		l, err := logs.New(nil)
-		if err != nil {
-			return err
-		}
-		o.Logs = l
+		o.Logs = logs.New(nil)
 	}
 
 	if o.Tag == language.Und {

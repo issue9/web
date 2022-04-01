@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/logs/v3"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/scheduled"
@@ -173,11 +173,6 @@ func (srv *Server) Serve() (err error) {
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
 				srv.Logs().Error(err1)
 			}
-		}
-
-		// 在退出时还出错，直接 panic 问题也不大。
-		if err2 := srv.Logs().Flush(); err2 != nil {
-			panic(err2)
 		}
 	}()
 
