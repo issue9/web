@@ -6,11 +6,16 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/muxutil"
 )
+
+var objectPool = &sync.Pool{New: func() any { return &object{} }}
 
 type (
 	Router         = mux.RouterOf[HandlerFunc]
@@ -31,6 +36,12 @@ type (
 	}
 
 	status int
+
+	object struct {
+		status  int
+		body    any
+		headers map[string]string
+	}
 )
 
 // Status 仅向客户端输出状态码
@@ -97,4 +108,62 @@ func (ctx *Context) err(depth, status int, err error) Responser {
 // 如果找不到 code 对应的错误信息，则会直接 panic。
 func (ctx *Context) Result(code string, fields ResultFields) Responser {
 	return ctx.Server().Result(ctx.LocalePrinter(), code, fields)
+}
+
+func (ctx *Context) Object(status int, body interface{}, headers map[string]string) Responser {
+	o := objectPool.Get().(*object)
+	o.status = status
+	o.body = body
+	o.headers = headers
+	return o
+}
+
+func (o *object) Apply(ctx *Context) {
+	for k, v := range o.headers {
+		ctx.Header().Set(k, v)
+	}
+
+	if err := ctx.Marshal(o.status, o.body); err != nil {
+		ctx.Logs().ERROR().Error(err)
+	}
+	objectPool.Put(o)
+}
+
+func (ctx *Context) Created(v any, location string) Responser {
+	if location != "" {
+		return ctx.Object(http.StatusCreated, v, map[string]string{"Location": location})
+	}
+	return ctx.Object(http.StatusCreated, v, nil)
+}
+
+// OK 返回 200 状态码下的对象
+func (ctx *Context) OK(v any) Responser { return ctx.Object(http.StatusOK, v, nil) }
+
+func (ctx *Context) NotFound() Responser { return Status(http.StatusNotFound) }
+
+func (ctx *Context) NoContent() Responser { return Status(http.StatusNoContent) }
+
+func (ctx *Context) NotImplemented() Responser { return Status(http.StatusNotImplemented) }
+
+// RetryAfter 返回 Retry-After 报头内容
+//
+// 一般适用于 301 和 503 报文。
+//
+// status 表示返回的状态码；seconds 表示秒数，如果想定义为时间格式，
+// 可以采用 RetryAt 函数，两个功能是相同的，仅是时间格式上有差别。
+func (ctx *Context) RetryAfter(status int, seconds uint64) Responser {
+	return ctx.Object(status, nil, map[string]string{
+		"Retry-After": strconv.FormatUint(seconds, 10),
+	})
+}
+
+func (ctx *Context) RetryAt(status int, at time.Time) Responser {
+	return ctx.Object(status, nil, map[string]string{
+		"Retry-After": at.UTC().Format(http.TimeFormat),
+	})
+}
+
+// Redirect 重定向至新的 URL
+func (ctx *Context) Redirect(status int, url string) Responser {
+	return ctx.Object(status, nil, map[string]string{"Location": url})
 }

@@ -12,30 +12,12 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/mux/v6/routertest"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
 )
-
-type object struct {
-	status  int
-	body    any
-	headers map[string]string
-}
-
-func (o *object) Apply(ctx *Context) {
-	for k, v := range o.headers {
-		ctx.Header().Set(k, v)
-	}
-	if err := ctx.Marshal(o.status, o.body); err != nil {
-		ctx.Server().Logs().Error(err)
-	}
-}
-
-func obj(status int, body any, headers map[string]string) Responser {
-	return &object{status: status, body: body, headers: headers}
-}
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
@@ -59,7 +41,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
-		return obj(http.StatusOK, "/path", map[string]string{"h1": "h1"})
+		return c.Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
 	})
 	go func() {
 		srv.Serve()
@@ -111,7 +93,7 @@ func BenchmarkContext_render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -129,7 +111,7 @@ func BenchmarkContext_renderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -147,7 +129,7 @@ func BenchmarkContext_renderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -166,7 +148,7 @@ func BenchmarkContext_renderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		ctx.destroy()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -286,7 +268,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -310,7 +292,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		o.Age = 22
 		o.Name = "中文2"
-		obj(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -320,5 +302,37 @@ func BenchmarkBuildContentType(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		a.True(len(buildContentType(DefaultMimetype, DefaultCharset)) > 0)
+	}
+}
+
+func BenchmarkContext_Object(b *testing.B) {
+	a := assert.New(b, false)
+	s := newServer(a, nil)
+	o := &testobject.TextObject{}
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r := rest.Post(a, "/path", nil).
+			Header("Accept", text.Mimetype).
+			Header("content-type", text.Mimetype).
+			Request()
+		ctx := s.NewContext(w, r)
+		ctx.Object(http.StatusTeapot, o, nil).Apply(ctx)
+	}
+}
+
+func BenchmarkContext_Object_withHeader(b *testing.B) {
+	a := assert.New(b, false)
+	s := newServer(a, nil)
+	o := &testobject.TextObject{}
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		r := rest.Post(a, "/path", nil).
+			Header("Accept", text.Mimetype).
+			Header("content-type", text.Mimetype).
+			Request()
+		ctx := s.NewContext(w, r)
+		ctx.Object(http.StatusTeapot, o, map[string]string{"Location": "https://example.com"}).Apply(ctx)
 	}
 }
