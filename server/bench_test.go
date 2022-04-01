@@ -41,7 +41,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
-		return c.Object(http.StatusOK, "/path", map[string]string{"h1": "h1"})
+		return c.Object(http.StatusOK, "/path", "h1", "h1")
 	})
 	go func() {
 		srv.Serve()
@@ -93,7 +93,7 @@ func BenchmarkContext_render(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -111,7 +111,7 @@ func BenchmarkContext_renderWithUTF8(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -129,7 +129,7 @@ func BenchmarkContext_renderWithCharset(b *testing.B) {
 		ctx := srv.NewContext(w, r)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -148,7 +148,7 @@ func BenchmarkContext_renderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.NewContext(w, r)
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		ctx.destroy()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -268,7 +268,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -292,7 +292,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		o.Age = 22
 		o.Name = "中文2"
-		ctx.Object(http.StatusCreated, o, nil).Apply(ctx)
+		ctx.Object(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -317,7 +317,7 @@ func BenchmarkContext_Object(b *testing.B) {
 			Header("content-type", text.Mimetype).
 			Request()
 		ctx := s.NewContext(w, r)
-		ctx.Object(http.StatusTeapot, o, nil).Apply(ctx)
+		ctx.Object(http.StatusTeapot, o).Apply(ctx)
 	}
 }
 
@@ -333,6 +333,6 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 			Header("content-type", text.Mimetype).
 			Request()
 		ctx := s.NewContext(w, r)
-		ctx.Object(http.StatusTeapot, o, map[string]string{"Location": "https://example.com"}).Apply(ctx)
+		ctx.Object(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
 }

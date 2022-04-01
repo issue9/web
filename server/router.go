@@ -38,9 +38,8 @@ type (
 	status int
 
 	object struct {
-		status  int
-		body    any
-		headers map[string]string
+		status int
+		body   any
 	}
 )
 
@@ -110,19 +109,42 @@ func (ctx *Context) Result(code string, fields ResultFields) Responser {
 	return ctx.Server().Result(ctx.LocalePrinter(), code, fields)
 }
 
-func (ctx *Context) Object(status int, body interface{}, headers map[string]string) Responser {
+// Status 仅向客户端输出状态码和报头
+//
+// kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；
+func (ctx *Context) Status(code int, kv ...string) Responser {
+	if l := len(kv); l > 0 {
+		if l%2 != 0 {
+			panic("kv 必须偶数位")
+		}
+		for i := 0; i < l; i += 2 {
+			ctx.Header().Add(kv[i], kv[i+1])
+		}
+	}
+	return status(code)
+}
+
+// Object 输出状态和对象至客户端
+//
+// body 表示需要输出的对象，该对象最终会被转换成相应的编码；
+// kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；
+func (ctx *Context) Object(status int, body interface{}, kv ...string) Responser {
 	o := objectPool.Get().(*object)
 	o.status = status
 	o.body = body
-	o.headers = headers
+
+	if l := len(kv); l > 0 {
+		if l%2 != 0 {
+			panic("kv 必须偶数位")
+		}
+		for i := 0; i < l; i += 2 {
+			ctx.Header().Add(kv[i], kv[i+1])
+		}
+	}
 	return o
 }
 
 func (o *object) Apply(ctx *Context) {
-	for k, v := range o.headers {
-		ctx.Header().Set(k, v)
-	}
-
 	if err := ctx.Marshal(o.status, o.body); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
@@ -131,13 +153,13 @@ func (o *object) Apply(ctx *Context) {
 
 func (ctx *Context) Created(v any, location string) Responser {
 	if location != "" {
-		return ctx.Object(http.StatusCreated, v, map[string]string{"Location": location})
+		return ctx.Object(http.StatusCreated, v, "Location", location)
 	}
-	return ctx.Object(http.StatusCreated, v, nil)
+	return ctx.Object(http.StatusCreated, v)
 }
 
 // OK 返回 200 状态码下的对象
-func (ctx *Context) OK(v any) Responser { return ctx.Object(http.StatusOK, v, nil) }
+func (ctx *Context) OK(v any) Responser { return ctx.Object(http.StatusOK, v) }
 
 func (ctx *Context) NotFound() Responser { return Status(http.StatusNotFound) }
 
@@ -152,18 +174,14 @@ func (ctx *Context) NotImplemented() Responser { return Status(http.StatusNotImp
 // status 表示返回的状态码；seconds 表示秒数，如果想定义为时间格式，
 // 可以采用 RetryAt 函数，两个功能是相同的，仅是时间格式上有差别。
 func (ctx *Context) RetryAfter(status int, seconds uint64) Responser {
-	return ctx.Object(status, nil, map[string]string{
-		"Retry-After": strconv.FormatUint(seconds, 10),
-	})
+	return ctx.Status(status, "Retry-After", strconv.FormatUint(seconds, 10))
 }
 
 func (ctx *Context) RetryAt(status int, at time.Time) Responser {
-	return ctx.Object(status, nil, map[string]string{
-		"Retry-After": at.UTC().Format(http.TimeFormat),
-	})
+	return ctx.Status(status, "Retry-After", at.UTC().Format(http.TimeFormat))
 }
 
 // Redirect 重定向至新的 URL
 func (ctx *Context) Redirect(status int, url string) Responser {
-	return ctx.Object(status, nil, map[string]string{"Location": url})
+	return ctx.Status(status, "Location", url)
 }
