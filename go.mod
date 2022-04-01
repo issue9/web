@@ -8,25 +8,23 @@ require (
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.9.0
-	github.com/issue9/logs/v4 v4.0.0-beta.1
+	github.com/issue9/logs/v4 v4.0.0-beta.2
 	github.com/issue9/mux/v6 v6.0.0
 	github.com/issue9/qheader v0.5.5
 	github.com/issue9/query/v2 v2.2.7
 	github.com/issue9/scheduled v0.9.2
 	github.com/issue9/sliceutil v0.10.1
+	github.com/issue9/term/v3 v3.0.0
 	github.com/issue9/validation v0.5.1
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/text v0.3.7
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
-	github.com/issue9/term/v3 v3.0.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 )
-
-replace github.com/issue9/logs/v4 => /Users/caixw/dev.localized/issue9/logs
 
 go 1.18

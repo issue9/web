@@ -92,7 +92,7 @@ func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 			case typ == "*":
 				panic("无效的值 *")
 			case typ[len(typ)-1] == '*':
-				// TODO text/* 和 text* 同时存在时，应该删除 text/*
+				// TODO text/* 和 text* 同时存在时，后者包含了前者所有的情况，应该删除 text/*
 				c.ignoreTypePrefix = append(c.ignoreTypePrefix, typ[:len(typ)-1])
 			default:
 				c.ignoreTypes = append(c.ignoreTypes, typ)
