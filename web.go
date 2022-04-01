@@ -24,6 +24,7 @@ type (
 	Result         = server.Result
 	Module         = server.Module
 	RouterOptions  = server.RouterOptions
+	Responser      = server.Responser
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
