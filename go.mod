@@ -7,7 +7,7 @@ require (
 	github.com/issue9/cache v0.3.2
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/errwrap v0.2.1
-	github.com/issue9/localeutil v0.9.0
+	github.com/issue9/localeutil v0.11.0
 	github.com/issue9/logs/v4 v4.0.0-beta.2
 	github.com/issue9/mux/v6 v6.0.0
 	github.com/issue9/qheader v0.5.5

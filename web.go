@@ -5,12 +5,14 @@ package web
 
 import (
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
+	"golang.org/x/text/message"
 
 	"github.com/issue9/web/server"
 )
 
 // Version 当前框架的版本
-const Version = "0.50.0"
+const Version = "0.50.2"
 
 type (
 	Server         = server.Server
@@ -25,6 +27,7 @@ type (
 	Module         = server.Module
 	RouterOptions  = server.RouterOptions
 	Responser      = server.Responser
+	Logger         = logs.Logger
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
@@ -38,4 +41,4 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
+func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }

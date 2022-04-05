@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6"
 	"github.com/issue9/mux/v6/muxutil"
@@ -97,7 +98,11 @@ func (ctx *Context) Error(status int, err error) Responser { return ctx.err(3, s
 
 func (ctx *Context) err(depth, status int, err error) Responser {
 	entry := ctx.Logs().NewEntry(logs.LevelError).Location(depth)
-	entry.Message = err.Error()
+	if le, ok := err.(localeutil.LocaleStringer); ok {
+		entry.Message = le.LocaleString(ctx.Server().LocalePrinter())
+	} else {
+		entry.Message = err.Error()
+	}
 	ctx.Logs().Output(entry)
 	return Status(status)
 }

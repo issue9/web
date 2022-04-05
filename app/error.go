@@ -3,6 +3,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message"
 )
@@ -21,7 +23,17 @@ type ConfigSanitizer interface {
 }
 
 func (err *ConfigError) Error() string {
-	return err.LocaleString(localeutil.EmptyPrinter())
+	var msg string
+	switch inst := err.Message.(type) {
+	case fmt.Stringer:
+		msg = inst.String()
+	case error:
+		msg = inst.Error()
+	default:
+		msg = fmt.Sprint(err.Message)
+	}
+
+	return fmt.Sprintf("%s at %s:%s", msg, err.Path, err.Field)
 }
 
 func (err *ConfigError) LocaleString(p *message.Printer) string {

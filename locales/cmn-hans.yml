@@ -40,3 +40,7 @@ messages:
 - key: 'not found charset for %s'
   message:
     msg: '未找到符合报头 %s 的字符集'
+
+- key: '%s can not be empty'
+  message:
+    msg: '%s 不能为空'
