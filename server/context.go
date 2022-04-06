@@ -54,12 +54,15 @@ type Context struct {
 	contentType string
 	exits       []func(int)
 
-	// http.ResponseWriter
+	// response
+	resp           http.ResponseWriter // 原始的 http.ResponseWriter
+	respWriter     io.Writer           // http.ResponseWriter.Write 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	resp           http.ResponseWriter // 原始的 http.ResponseWriter 实现
-	respWriter     io.Writer           // 实现 http.ResponseWriter.Write 写入的对象
-	status         int                 // http.ResponseWriter.WriteHeader 调用之后保存的状态码
+	outputEncoding *serialization.EncodingBuilder
+	outputCharset  encoding.Encoding
+	status         int // http.ResponseWriter.WriteHeader 保存的副本
+	wrote          bool
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，可以为空。
@@ -120,7 +123,8 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		return nil
 	}
 
-	// NOTE: ctx 是从对象池中获取的，必须所有变量都初始化
+	// NOTE: ctx 是从对象池中获取的，必须所有变量都初始化。
+
 	ctx := contextPool.Get().(*Context)
 	ctx.server = srv
 	ctx.params = nil
@@ -130,8 +134,20 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		ctx.exits = ctx.exits[:0]
 	}
 
-	// 初始化 encodingCloser, charsetCloser, resp, respWriter, status
-	srv.buildResponse(w, ctx, outputCharset, outputEncoding)
+	// response
+	ctx.resp = w
+	ctx.respWriter = w
+	ctx.encodingCloser = nil
+	ctx.charsetCloser = nil
+	ctx.outputEncoding = outputEncoding
+	ctx.outputCharset = outputCharset
+	ctx.status = http.StatusOK // 需是 http.StatusOK，否则在未调用 WriteHeader 的情况下会与默认情况不符。
+	ctx.wrote = false
+	if ctx.outputEncoding != nil {
+		h := ctx.Header()
+		h.Set("Content-Encoding", ctx.outputEncoding.Name())
+		h.Add("Vary", "Content-Encoding")
+	}
 
 	ctx.outputMimetype = marshal
 	ctx.inputMimetype = inputMimetype
@@ -144,34 +160,30 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 	ctx.read = false
 	ctx.Vars = make(map[any]any)
+
 	return ctx
 }
 
-func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
-	ctx.resp = resp
-	ctx.respWriter = resp
-	ctx.encodingCloser = nil
-	ctx.charsetCloser = nil
-	ctx.status = http.StatusOK
+func (ctx *Context) Write(bs []byte) (int, error) {
+	if !ctx.wrote { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
+		ctx.wrote = true
 
-	if b != nil {
-		h := resp.Header()
-		ctx.encodingCloser = b.Build(ctx.respWriter)
-		ctx.respWriter = ctx.encodingCloser
-		h.Del("Content-Length") // https://github.com/golang/go/issues/14975
-		h.Set("Content-Encoding", b.Name())
-		h.Add("Vary", "Content-Encoding")
+		if ctx.outputEncoding != nil {
+			ctx.encodingCloser = ctx.outputEncoding.Build(ctx.respWriter)
+			ctx.respWriter = ctx.encodingCloser
+		}
+
+		if !charsetIsNop(ctx.outputCharset) {
+			ctx.charsetCloser = transform.NewWriter(ctx.respWriter, ctx.outputCharset.NewEncoder())
+			ctx.respWriter = ctx.charsetCloser
+		}
 	}
 
-	if !charsetIsNop(c) {
-		ctx.charsetCloser = transform.NewWriter(ctx.respWriter, c.NewEncoder())
-		ctx.respWriter = ctx.charsetCloser
-	}
+	return ctx.respWriter.Write(bs)
 }
 
-func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(bs) }
-
 func (ctx *Context) WriteHeader(status int) {
+	ctx.Header().Del("Content-Length") // https://github.com/golang/go/issues/14975
 	ctx.status = status
 	ctx.resp.WriteHeader(status)
 }
