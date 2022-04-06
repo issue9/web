@@ -57,9 +57,9 @@ type Context struct {
 	// http.ResponseWriter
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	resp           http.ResponseWriter
-	respWriter     io.Writer
-	status         int
+	resp           http.ResponseWriter // 原始的 http.ResponseWriter 实现
+	respWriter     io.Writer           // 实现 http.ResponseWriter.Write 写入的对象
+	status         int                 // http.ResponseWriter.WriteHeader 调用之后保存的状态码
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，可以为空。
@@ -147,6 +147,28 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return ctx
 }
 
+func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
+	ctx.resp = resp
+	ctx.respWriter = resp
+	ctx.encodingCloser = nil
+	ctx.charsetCloser = nil
+	ctx.status = http.StatusOK
+
+	if b != nil {
+		h := resp.Header()
+		ctx.encodingCloser = b.Build(ctx.respWriter)
+		ctx.respWriter = ctx.encodingCloser
+		h.Del("Content-Length") // https://github.com/golang/go/issues/14975
+		h.Set("Content-Encoding", b.Name())
+		h.Add("Vary", "Content-Encoding")
+	}
+
+	if !charsetIsNop(c) {
+		ctx.charsetCloser = transform.NewWriter(ctx.respWriter, c.NewEncoder())
+		ctx.respWriter = ctx.charsetCloser
+	}
+}
+
 func (ctx *Context) Write(bs []byte) (int, error) { return ctx.respWriter.Write(bs) }
 
 func (ctx *Context) WriteHeader(status int) {
@@ -190,39 +212,17 @@ func (ctx *Context) Location() *time.Location { return ctx.location }
 // NOTE: 如果需要使用 context.Value 在 Request 中附加值，请使用 ctx.Vars
 func (ctx *Context) Request() *http.Request { return ctx.request }
 
-func (srv *Server) buildResponse(resp http.ResponseWriter, ctx *Context, c encoding.Encoding, b *serialization.EncodingBuilder) {
-	ctx.resp = resp
-	ctx.respWriter = resp
-	ctx.encodingCloser = nil
-	ctx.charsetCloser = nil
-	ctx.status = http.StatusOK
-
-	if b != nil {
-		h := resp.Header()
-		ctx.encodingCloser = b.Build(ctx.respWriter)
-		ctx.respWriter = ctx.encodingCloser
-		h.Del("Content-Length") // https://github.com/golang/go/issues/14975
-		h.Set("Content-Encoding", b.Name())
-		h.Add("Vary", "Content-Encoding")
-	}
-
-	if !charsetIsNop(c) {
-		ctx.charsetCloser = transform.NewWriter(ctx.respWriter, c.NewEncoder())
-		ctx.respWriter = ctx.charsetCloser
-	}
-}
-
 func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
 		if err := ctx.charsetCloser.Close(); err != nil {
-			ctx.Logs().Error(err)
+			ctx.Logs().ERROR().Error(err)
 			return
 		}
 	}
 
 	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
 		if err := ctx.encodingCloser.Close(); err != nil {
-			ctx.Logs().Error(err)
+			ctx.Logs().ERROR().Error(err)
 			return
 		}
 	}

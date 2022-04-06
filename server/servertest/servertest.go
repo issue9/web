@@ -86,7 +86,7 @@ func (s *Tester) NewRequest(method, path string, client *http.Client) *rest.Requ
 	}
 
 	if client == nil {
-		client = http.DefaultClient
+		client = &http.Client{}
 	}
 
 	return rest.NewRequest(s.a, method, path).Client(client)

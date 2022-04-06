@@ -362,3 +362,29 @@ func TestContext_Redirect(t *testing.T) {
 	a.Equal(w.Result().StatusCode, 301).
 		Equal(w.Header().Get("Location"), "https://example.com")
 }
+
+// 检测 204 是否存在 http: request method or response status code does not allow body
+func TestContext_NoContent(t *testing.T) {
+	a := assert.New(t, false)
+	buf := new(bytes.Buffer)
+	s := servertest.NewTester(a, &server.Options{Port: ":8080", Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
+
+	s.NewRouter().Get("/204", func(ctx *server.Context) server.Responser {
+		// 即使是 204，在用户请求了 accept-encoding=gzip 之后，依然会有一个空的压缩对象输出。
+		return ctx.NoContent()
+	})
+
+	s.GoServe()
+
+	s.Get("/204").
+		Header("Accept-Encoding", "gzip").
+		Header("Accept", "application/json;charset=gbk").
+		Do(nil).
+		Status(http.StatusNoContent)
+
+	s.Close(0)
+
+	a.NotContains(buf.String(), "request method or response status code does not allow body")
+
+	s.Wait()
+}

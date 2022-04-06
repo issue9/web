@@ -48,7 +48,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		o = &Options{Port: ":8080"}
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr))
+		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
 	}
 
 	srv, err := New("app", "0.1.0", o)
