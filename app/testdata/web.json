@@ -1,73 +1,7 @@
 {
-  "port": ":8082",
-  "http":{
-    "readTimeout": "3s"
-  },
-  "timezone": "Africa/Addis_Ababa",
-  "logs":{
-    "items": {
-      "debug":{
-        "attrs":{
-          "prefix": "DEBUG"
-        },
-        "items":{
-          "console":{
-            "attrs":{
-              "output": "stderr",
-              "foreground": "green",
-              "background": "default"
-            }
-          }
-        }
-      },
-      "trace":{
-        "items":{
-          "console":{
-            "attrs":{
-              "output": "stderr",
-              "foreground": "green",
-              "background": "default"
-            }
-          }
-        }
-      },
-
-      "warn":{
-        "items":{
-          "console":{
-            "attrs":{
-              "output": "stderr",
-              "foreground": "green",
-              "background": "default"
-            }
-          }
-        }
-      },
-
-      "error":{
-        "items":{
-          "console":{
-            "attrs":{
-              "output": "stderr",
-              "foreground": "green",
-              "background": "default"
-            }
-          }
-        }
-      },
-
-      "critical":{
-        "items":{
-          "console":{
-            "attrs":{
-              "output": "stderr",
-              "foreground": "green",
-              "background": "default"
-            }
-          }
-        }
-      }
-    }
-  }
-
+    "port": ":8082",
+    "http": {
+        "readTimeout": "3s"
+    },
+    "timezone": "Africa/Addis_Ababa"
 }

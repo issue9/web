@@ -2,51 +2,5 @@
 
 port: :8082
 http:
-  readTimeout: 3s
+    readTimeout: 3s
 timezone: Africa/Addis_Ababa
-
-logs:
-  items:
-    debug:
-      attrs:
-        prefix: DEBUG
-      items:
-        console:
-          attrs:
-            output: stderr
-            foreground: red
-            background: blue
-
-    trace:
-      items:
-        console:
-          attrs:
-            output: stderr
-            foreground: red
-            background: blue
-
-
-    warn:
-      items:
-        console:
-          attrs:
-            output: stderr
-            foreground: red
-            background: blue
-
-
-    error:
-      items:
-        console:
-          attrs:
-            output: stderr
-            foreground: red
-            background: blue
-
-    critical:
-      items:
-        console:
-          attrs:
-            output: stderr
-            foreground: red
-            background: blue

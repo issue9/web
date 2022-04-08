@@ -3,31 +3,5 @@
 <web port=":8082">
     <http readTimeout="3s" />
     <timezone>Africa/Addis_Ababa</timezone>
-    <logs>
-        <info prefix="[INFO]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stdout" foreground="green" background="default" />
-        </info>
-
-        <debug prefix="[DEBUG]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stderr" foreground="yellow" background="default" />
-        </debug>
-
-        <trace prefix="[TRACE]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stderr" foreground="yellow" background="default" />
-        </trace>
-
-        <warn prefix="[WARNNING]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stderr" foreground="yellow" background="default" />
-        </warn>
-
-        <error prefix="[ERROR]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stderr" foreground="red" background="default" />
-        </error>
-
-        <critical prefix="[CRITICAL]" flag="log.Lshortfile|log.Ldate|log.Ltime">
-            <console output="stderr" foreground="red" background="default" />
-        </critical>
-    </logs>
-
     <user id="1" />
 </web>
