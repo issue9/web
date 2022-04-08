@@ -5,11 +5,16 @@ package server
 import (
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/validation"
 	"golang.org/x/text/message"
 )
+
+const defaultResultPoolFieldMaxSize = 20
+
+var defaultResultPool = &sync.Pool{New: func() any { return &defaultResult{} }}
 
 type (
 	// ResultFields 表示字段的错误信息列表
@@ -133,11 +138,14 @@ type (
 //      repeated string message = 2;
 //  }
 func DefaultResultBuilder(status int, code, message string) Result {
-	return &defaultResult{
-		status:  status,
-		Code:    code,
-		Message: message,
+	rslt := defaultResultPool.Get().(*defaultResult)
+	rslt.status = status
+	rslt.Code = code
+	rslt.Message = message
+	if len(rslt.Fields) > 0 {
+		rslt.Fields = rslt.Fields[:0]
 	}
+	return rslt
 }
 
 func (rslt *defaultResult) Add(field string, message ...string) {
@@ -163,6 +171,9 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 func (rslt *defaultResult) Apply(ctx *Context) {
 	if err := ctx.Marshal(rslt.status, rslt); err != nil {
 		ctx.Logs().ERROR().Error(err)
+	}
+	if len(rslt.Fields) < defaultResultPoolFieldMaxSize {
+		defaultResultPool.Put(rslt)
 	}
 }
 

@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	poolBodyBufferMaxSize = 1 << 16
-	defaultBodyBufferSize = 256 // TODO 放到配置项 Options 中？
+	contextPoolBodyBufferMaxSize = 1 << 16
+	defaultBodyBufferSize        = 256
 )
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
@@ -243,7 +243,7 @@ func (ctx *Context) destroy() {
 		exit(ctx.status)
 	}
 
-	if len(ctx.body) < poolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
+	if len(ctx.body) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
 }

@@ -33,6 +33,9 @@ type (
 	// Responser 表示向客户端输出对象最终需要实现的接口
 	Responser interface {
 		// Apply 通过 *Context 将当前内容渲染到客户端
+		//
+		// 在调用 Apply 之后，就不再使用 Responser 对象，
+		// 如果你的对象支持 sync.Pool 复用，可以在 Apply 退出之际进行回收至 sync.Pool。
 		Apply(*Context)
 	}
 
