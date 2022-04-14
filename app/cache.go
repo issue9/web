@@ -3,23 +3,29 @@
 package app
 
 import (
+	"errors"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gomodule/redigo/redis"
+	"github.com/issue9/cache"
 	"github.com/issue9/cache/file"
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
 )
 
+var cacheFactories = map[string]CacheBuilder{}
+
+type CacheBuilder func(dsn string) (cache.Cache, error)
+
 // 缓存的相关配置
 type cacheConfig struct {
 	// 表示缓存的方式
 	//
-	// 目前支持以下几种试：
+	// 该值可通过 RegisterCache 注册， 默认支持以下几种：
 	// - memory 以内存作为缓存；
 	// - memcached 以 memcached 作为缓存；
 	// - redis 以 redis 作为缓存；
@@ -37,42 +43,69 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache(errlog *log.Logger) *ConfigError {
+func (conf *configOf[T]) buildCache() *ConfigError {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
 	}
 
-	switch conf.Cache.Type {
-	case "memory", "":
-		d, err := time.ParseDuration(conf.Cache.DSN)
+	b, found := cacheFactories[conf.Cache.Type]
+	if !found {
+		return &ConfigError{Field: "type", Message: "无效的值"}
+	}
+
+	c, err := b(conf.Cache.DSN)
+	if err != nil {
+		return &ConfigError{Field: "dsn", Message: err}
+	}
+	conf.cache = c
+
+	return nil
+}
+
+// RegisterCache 注册新的缓存方式
+func RegisterCache(b CacheBuilder, name ...string) {
+	if len(name) == 0 {
+		panic("参数 name 不能为空")
+	}
+
+	for _, n := range name {
+		cacheFactories[n] = b
+	}
+}
+
+func init() {
+	RegisterCache(func(dsn string) (cache.Cache, error) {
+		d, err := time.ParseDuration(dsn)
 		if err != nil {
-			return &ConfigError{Field: "dsn", Message: err.Error()}
+			return nil, err
 		}
-		conf.cache = memory.New(d)
-	case "memcached", "memcache":
-		c := memcache.New(strings.Split(conf.Cache.DSN, ";")...)
-		conf.cache = cm.New(c)
-	case "redis":
-		c, err := redis.DialURL(conf.Cache.DSN)
+		return memory.New(d), nil
+	}, "", "memory")
+
+	RegisterCache(func(dsn string) (cache.Cache, error) {
+		return cm.New(memcache.New(strings.Split(dsn, ";")...)), nil
+	}, "memcached", "memcache")
+
+	RegisterCache(func(dsn string) (cache.Cache, error) {
+		c, err := redis.DialURL(dsn)
 		if err != nil {
-			return &ConfigError{Field: "dsn", Message: err.Error()}
+			return nil, err
 		}
-		conf.cache = cr.New(c)
-	case "file":
-		args := strings.SplitN(conf.Cache.DSN, ";", 2)
+		return cr.New(c), nil
+	}, "redis")
+
+	RegisterCache(func(dsn string) (cache.Cache, error) {
+		args := strings.SplitN(dsn, ";", 2)
 		if len(args) != 2 {
-			return &ConfigError{Field: "dsn", Message: "必须指定 path 和 gc 两个参数"}
+			return nil, errors.New("必须指定 path 和 gc 两个参数")
 		}
 
 		gc, err := time.ParseDuration(args[1])
 		if err != nil {
-			return &ConfigError{Field: "dsn", Message: err.Error()}
+			return nil, err
 		}
 
-		conf.cache = file.New(args[0], gc, errlog)
-	default:
-		return &ConfigError{Field: "type", Message: "无效的值"}
-	}
-	return nil
+		return file.New(args[0], gc, log.Default()), nil
+	}, "file")
 }

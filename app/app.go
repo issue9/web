@@ -2,7 +2,7 @@
 
 // Package app 提供构建程序的简便方法
 //
-// NOTE: app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
+// app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
 // 相对地也会有诸多限制，如果觉得不适用，可以自行调用 server.New。
 package app
 
@@ -92,7 +92,7 @@ type AppOf[T any] struct {
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
 	// 该值可能会被 Options 操作所覆盖。
-	Files *serialization.Files
+	FileSerializers *serialization.Files
 
 	// 配置文件的文件名
 	//
@@ -156,7 +156,7 @@ func (cmd *AppOf[T]) sanitize() error {
 		cmd.Out = os.Stdout
 	}
 
-	if cmd.Files == nil {
+	if cmd.FileSerializers == nil {
 		f := serialization.NewFiles(5)
 
 		if err := f.Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
@@ -171,7 +171,7 @@ func (cmd *AppOf[T]) sanitize() error {
 			return err
 		}
 
-		cmd.Files = f
+		cmd.FileSerializers = f
 	}
 
 	return nil
@@ -229,17 +229,17 @@ func (cmd *AppOf[T]) exec(args []string) error {
 
 func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, user, err = NewOptionsOf[T](cmd.Logs, cmd.Files, fsys, cmd.ConfigFilename)
+		opt, user, err = NewOptionsOf[T](cmd.Logs, cmd.FileSerializers, fsys, cmd.ConfigFilename)
 		if err != nil {
 			return nil, nil, err
 		}
 	} else {
 		opt = &server.Options{
 			FS:              fsys,
-			FileSerializers: cmd.Files,
+			FileSerializers: cmd.FileSerializers,
 		}
 	}
-	opt.Catalog = cmd.Catalog
+	opt.Catalog = cmd.Catalog // NewOptionsOf 返回的对象必定是一个默认的空对象，可以放心覆盖。
 
 	if cmd.Options != nil {
 		cmd.Options(opt)

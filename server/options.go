@@ -84,8 +84,7 @@ type Options struct {
 	//
 	// 与 FileSerializers 组合构建 serialization.Locale 对象，可以为空。
 	Catalog *catalog.Builder
-
-	locale *serialization.Locale
+	locale  *serialization.Locale
 }
 
 func (o *Options) sanitize() (err error) {
@@ -131,7 +130,6 @@ func (o *Options) sanitize() (err error) {
 	if o.Catalog == nil {
 		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.LanguageTag))
 	}
-
 	o.locale = serialization.NewLocale(o.Catalog, o.FileSerializers)
 
 	return nil

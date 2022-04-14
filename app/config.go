@@ -107,7 +107,7 @@ func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, f
 }
 
 func (conf *configOf[T]) sanitize(l *logs.Logs) *ConfigError {
-	if err := conf.buildCache(l.StdLogger(logs.LevelError)); err != nil {
+	if err := conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field
 		return err
 	}
