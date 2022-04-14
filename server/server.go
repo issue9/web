@@ -100,8 +100,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		// locale
 		location:      o.Location,
 		locale:        o.locale,
-		tag:           o.Tag,
-		localePrinter: o.locale.NewPrinter(o.Tag),
+		tag:           o.LanguageTag,
+		localePrinter: o.locale.NewPrinter(o.LanguageTag),
 	}
 	srv.routers = mux.NewRoutersOf(srv.call, nil)
 	srv.httpServer.Handler = srv.routers

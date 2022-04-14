@@ -122,7 +122,7 @@ func TestContext_Vars(t *testing.T) {
 func TestServer_NewContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 	srv.Logs().SetOutput(logs.NewTextWriter("2006-01-02", lw))
 	srv.Logs().Enable(logs.LevelDebug)
 
@@ -227,7 +227,7 @@ func TestServer_NewContext(t *testing.T) {
 
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
 	// 未缓存
 	r := rest.Post(a, "/path", []byte("123")).Request()
@@ -305,7 +305,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
 	// 自定义报头
 	w := httptest.NewRecorder()
@@ -460,7 +460,7 @@ func TestContext_IsXHR(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, &Options{Tag: language.Afrikaans})
+	srv := newServer(a, &Options{LanguageTag: language.Afrikaans})
 	b := srv.Locale().Builder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
@@ -489,7 +489,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 func TestServer_contentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 	a.NotNil(srv)
 
 	f, e, err := srv.conentType(";;;")
@@ -597,7 +597,7 @@ func TestBuildContentType(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
 	b := srv.Locale().Builder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))

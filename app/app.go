@@ -88,11 +88,6 @@ type AppOf[T any] struct {
 	// 默认为 os.Stdout。
 	Out io.Writer
 
-	// 日志的输出对象
-	//
-	// 可以为空。
-	LogsWriter logs.Writer
-
 	// 配置文件的加载器
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
@@ -103,6 +98,7 @@ type AppOf[T any] struct {
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
+	// 如果为非空，那么会传递给 NewOptionsOf 函数。
 	ConfigFilename string
 
 	// 本地化的相关操作接口
@@ -239,8 +235,8 @@ func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err 
 		}
 	} else {
 		opt = &server.Options{
-			FS:    fsys,
-			Files: cmd.Files,
+			FS:              fsys,
+			FileSerializers: cmd.Files,
 		}
 	}
 	opt.Catalog = cmd.Catalog

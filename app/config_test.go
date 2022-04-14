@@ -41,7 +41,7 @@ func TestNewOptions(t *testing.T) {
 
 	opt, data, err = NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(opt).Nil(data)
-	a.Equal(opt.Tag, language.Und)
+	a.Equal(opt.LanguageTag, language.Und)
 
 	opt, data, err = NewOptionsOf[empty](logs.New(nil), files, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(opt).Nil(data)

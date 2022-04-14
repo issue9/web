@@ -67,7 +67,7 @@ func TestAppOf_initOptions(t *testing.T) {
 	opt, user, err := cmd.initOptions(os.DirFS("./"))
 	a.NotError(err).NotNil(opt).Nil(user)
 	a.NotNil(opt.Catalog).
-		Equal(opt.Files, cmd.Files).
+		Equal(opt.FileSerializers, cmd.Files).
 		True(opt.Catalog == cmd.Catalog)
 
 	// 包含 Options
@@ -82,7 +82,7 @@ func TestAppOf_initOptions(t *testing.T) {
 	opt, user, err = cmd.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt).Nil(user)
 	a.NotNil(opt.Catalog).
-		Equal(opt.Files, cmd.Files).
+		Equal(opt.FileSerializers, cmd.Files).
 		False(opt.Catalog == cmd.Catalog) // 不指向同一个对象
 
 	// 包含 ConfigFilename
@@ -96,6 +96,6 @@ func TestAppOf_initOptions(t *testing.T) {
 	opt2, user2, err := cmd2.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt2).NotNil(user2)
 	a.NotNil(opt2.Catalog).
-		Equal(opt2.Files, cmd2.Files).
+		Equal(opt2.FileSerializers, cmd2.Files).
 		Equal(user2.ID, 1)
 }

@@ -100,9 +100,9 @@ func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, f
 			srv.TLSConfig = h.tlsConfig
 		},
 		Logs:            l,
-		Files:           files,
+		FileSerializers: files,
 		IgnoreEncodings: conf.IgnoreEncodings,
-		Tag:             conf.languageTag,
+		LanguageTag:     conf.languageTag,
 	}, conf.User, nil
 }
 

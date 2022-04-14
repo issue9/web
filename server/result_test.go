@@ -264,7 +264,7 @@ func TestServer_Result(t *testing.T) {
 
 func TestServer_AddResult(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
 		srv.AddResult(400, "1", localeutil.Phrase("1"))
@@ -286,7 +286,7 @@ func TestServer_AddResult(t *testing.T) {
 
 func TestServer_Results(t *testing.T) {
 	a := assert.New(t, false)
-	c := newServer(a, &Options{Tag: language.SimplifiedChinese})
+	c := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
 	a.NotPanic(func() {
 		c.AddResults(400, map[string]localeutil.LocaleStringer{"40010": localeutil.Phrase("lang")})

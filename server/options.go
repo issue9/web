@@ -62,8 +62,8 @@ type Options struct {
 
 	// 指定用于序列化文件的方法
 	//
-	// 该对象同时被用于加载配置文件和序列化文件。 如果为空，会初始化一个空对象。
-	Files *serialization.Files
+	// 该对象同时被用于加载配置文件和序列化文件。如果为空，会初始化一个空对象。
+	FileSerializers *serialization.Files
 
 	// 忽略的压缩类型
 	//
@@ -78,11 +78,11 @@ type Options struct {
 	// 同时也用来初始化 Server.LocalePrinter。
 	//
 	// 如果为空，则会尝试读取当前系统的本地化信息。
-	Tag language.Tag
+	LanguageTag language.Tag
 
 	// 本地化操作的对象
 	//
-	// 与 Files 组合构建 serialization.Locale 对象，可以为空。
+	// 与 FileSerializers 组合构建 serialization.Locale 对象，可以为空。
 	Catalog *catalog.Builder
 
 	locale *serialization.Locale
@@ -118,21 +118,21 @@ func (o *Options) sanitize() (err error) {
 		o.Logs = logs.New(nil)
 	}
 
-	if o.Tag == language.Und {
-		if o.Tag, err = localeutil.DetectUserLanguageTag(); err != nil {
+	if o.LanguageTag == language.Und {
+		if o.LanguageTag, err = localeutil.DetectUserLanguageTag(); err != nil {
 			o.Logs.Error(err) // 输出错误，但是没必要中断程序。
 		}
 	}
 
-	if o.Files == nil {
-		o.Files = serialization.NewFiles(5)
+	if o.FileSerializers == nil {
+		o.FileSerializers = serialization.NewFiles(5)
 	}
 
 	if o.Catalog == nil {
-		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Tag))
+		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.LanguageTag))
 	}
 
-	o.locale = serialization.NewLocale(o.Catalog, o.Files)
+	o.locale = serialization.NewLocale(o.Catalog, o.FileSerializers)
 
 	return nil
 }
