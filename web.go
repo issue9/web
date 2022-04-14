@@ -15,6 +15,7 @@ import (
 const Version = "0.50.4"
 
 type (
+	Cache          = server.Cache
 	Server         = server.Server
 	Context        = server.Context
 	Options        = server.Options

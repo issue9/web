@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
@@ -51,7 +50,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，则会采用内存作为缓存对象。
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
-	cache cache.Cache
+	cache server.Cache
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
