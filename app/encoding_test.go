@@ -22,12 +22,12 @@ func TestEncodingConfig_build(t *testing.T) {
 	conf = &encodingsConfig{}
 	e = conf.build(l.ERROR())
 	a.NotNil(e)
-	w, notAccept := e.Search("application/json", "*/*")
+	w, notAccept := e.Search("application/json", "*")
 	a.False(notAccept).Nil(w)
 
 	conf = &encodingsConfig{Encodings: map[string]serialization.EncodingWriterFunc{"br": serialization.BrotliWriter}}
 	e = conf.build(l.ERROR())
 	a.NotNil(e)
-	w, notAccept = e.Search("application/json", "*/*")
+	w, notAccept = e.Search("application/json", "*")
 	a.False(notAccept).NotNil(w)
 }

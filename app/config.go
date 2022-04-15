@@ -17,6 +17,14 @@ import (
 type configOf[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
+	cleanup []server.CleanupFunc
+
+	// 日志系统的配置项
+	//
+	// 如果为空，所有日志输出都将被抛弃。
+	Logs *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
+	logs *logs.Logs
+
 	// 指定默认语言
 	//
 	// 当客户端未指定 Accept-Language 时，会采用此值，
@@ -60,7 +68,6 @@ type configOf[T any] struct {
 
 // NewOptionsOf 从配置文件初始化 server.Options 实例
 //
-// l 日志系统；
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载；
@@ -70,17 +77,13 @@ type configOf[T any] struct {
 //
 // NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
 // 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
-func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, filename string) (*server.Options, *T, error) {
-	if l == nil {
-		panic("l 不能为空值")
-	}
-
+func NewOptionsOf[T any](files *serialization.Files, fsys fs.FS, filename string) (*server.Options, *T, error) {
 	conf := &configOf[T]{}
 	if err := files.LoadFS(fsys, filename, conf); err != nil {
 		return nil, nil, err
 	}
 
-	if err := conf.sanitize(l); err != nil {
+	if err := conf.sanitize(); err != nil {
 		err.Path = filename
 		return nil, nil, err
 	}
@@ -97,17 +100,26 @@ func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, f
 			srv.WriteTimeout = h.WriteTimeout.Duration()
 			srv.IdleTimeout = h.IdleTimeout.Duration()
 			srv.MaxHeaderBytes = h.MaxHeaderBytes
-			srv.ErrorLog = l.StdLogger(logs.LevelError)
+			srv.ErrorLog = conf.logs.StdLogger(logs.LevelError)
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:            l,
+		Logs:            conf.logs,
 		FileSerializers: files,
 		Encodings:       conf.encoding,
 		LanguageTag:     conf.languageTag,
+		Cleanup:         conf.cleanup,
 	}, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize(l *logs.Logs) *ConfigError {
+func (conf *configOf[T]) sanitize() *ConfigError {
+	l, cleanup, err := conf.Logs.build()
+	if err != nil {
+		err.Field = "logs." + err.Field
+		return err
+	}
+	conf.logs = l
+	conf.cleanup = append(conf.cleanup, cleanup...)
+
 	if err := conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field
 		return err

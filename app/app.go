@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -72,11 +71,6 @@ type AppOf[T any] struct {
 	//
 	// 比如添加模块等。不可以为空。
 	Init func(s *server.Server, user *T, action string) error
-
-	// 项目的日志系统
-	//
-	// 如果为空，那么会初始化一个不输出任何内容的空对象。
-	Logs *logs.Logs
 
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
@@ -136,10 +130,6 @@ func (cmd *AppOf[T]) sanitize() error {
 	}
 	if cmd.Init == nil {
 		return errors.New("字段 Init 不能为空")
-	}
-
-	if cmd.Logs == nil {
-		cmd.Logs = logs.New(nil)
 	}
 
 	tag, err := localeutil.DetectUserLanguageTag()
@@ -229,7 +219,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 
 func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
 	if cmd.ConfigFilename != "" {
-		opt, user, err = NewOptionsOf[T](cmd.Logs, cmd.FileSerializers, fsys, cmd.ConfigFilename)
+		opt, user, err = NewOptionsOf[T](cmd.FileSerializers, fsys, cmd.ConfigFilename)
 		if err != nil {
 			return nil, nil, err
 		}

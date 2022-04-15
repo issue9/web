@@ -44,3 +44,11 @@ messages:
 - key: '%s can not be empty'
   message:
     msg: '%s 不能为空'
+
+- key: '%s not found'
+  message:
+      msg: '%s 不存在'
+
+- key: 'invalid value %s'
+  message:
+      msg: '%s 无效的值'
