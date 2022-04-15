@@ -37,6 +37,28 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
 	}
 
+	// encoding
+	if o.Encodings == nil {
+		o.Encodings = serialization.NewEncodings(o.Logs.ERROR())
+		o.Encodings.Add(map[string]serialization.EncodingWriterFunc{
+			"gzip": func(w io.Writer) (serialization.WriteCloseRester, error) {
+				return gzip.NewWriter(w), nil
+			},
+			"deflate": func(w io.Writer) (serialization.WriteCloseRester, error) {
+				return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
+			},
+		})
+	}
+
+	// mimetype
+	mimetype := serialization.NewMimetypes(10)
+	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
+	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
+	a.NotError(mimetype.Add(gob.Marshal, gob.Unmarshal, server.DefaultMimetype))
+	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
+	a.NotError(mimetype.Add(nil, nil, "nil"))
+	o.Mimetypes = mimetype
+
 	srv, err := server.New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -47,23 +69,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	// mimetype
-	a.NotError(srv.Mimetypes().Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(srv.Mimetypes().Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(srv.Mimetypes().Add(gob.Marshal, gob.Unmarshal, server.DefaultMimetype))
-	a.NotError(srv.Mimetypes().Add(text.Marshal, text.Unmarshal, text.Mimetype))
-
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
-
-	// encoding
-	srv.Encodings().Add(map[string]serialization.EncodingWriterFunc{
-		"gzip": func(w io.Writer) (serialization.WriteCloseRester, error) {
-			return gzip.NewWriter(w), nil
-		},
-		"deflate": func(w io.Writer) (serialization.WriteCloseRester, error) {
-			return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
-		},
-	})
 
 	return srv, o
 }

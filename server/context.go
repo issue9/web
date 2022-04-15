@@ -91,7 +91,7 @@ type Context struct {
 // 如果不合规则，则会向 w 输出状态码并返回 nil。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, found := srv.Mimetypes().MarshalFunc(header)
+	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
 	if !found {
 		srv.Logs().Debug(srv.localePrinter.Sprintf("not found serialization for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -107,7 +107,7 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	header = r.Header.Get("Accept-Encoding")
-	outputEncoding, notAcceptable := srv.Encodings().Search(outputMimetypeName, header)
+	outputEncoding, notAcceptable := srv.encodings.Search(outputMimetypeName, header)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -398,7 +398,7 @@ func (srv *Server) conentType(header string) (serialization.UnmarshalFunc, encod
 		}
 	}
 
-	f, found := srv.Mimetypes().UnmarshalFunc(mt)
+	f, found := srv.mimetypes.UnmarshalFunc(mt)
 	if !found {
 		return nil, nil, localeutil.Error("not found serialization function for %s", mt)
 	}

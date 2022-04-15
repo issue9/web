@@ -45,7 +45,7 @@ func (e *encodingW) Close() error {
 	return err
 }
 
-// EncodingWriterFunc 将普通的 io.Writer 封装成 WriteCloseRester 接口对象
+// EncodingWriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象并以 WriteCloseRester 接口返回。
 type EncodingWriterFunc func(w io.Writer) (WriteCloseRester, error)
 
 func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {

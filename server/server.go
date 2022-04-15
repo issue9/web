@@ -83,8 +83,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
-		mimetypes:  serialization.NewMimetypes(10),
-		encodings:  serialization.NewEncodings(o.Logs.ERROR(), o.IgnoreEncodings...),
+		mimetypes:  o.Mimetypes,
+		encodings:  o.Encodings,
 		cache:      o.Cache,
 		uptime:     time.Now(),
 
@@ -219,10 +219,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
-
-func (srv *Server) Mimetypes() *serialization.Mimetypes { return srv.mimetypes }
-
-func (srv *Server) Encodings() *serialization.Encodings { return srv.encodings }
 
 // Files 返回用于序列化文件内容的操作接口
 func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }

@@ -8,12 +8,10 @@ import (
 	"github.com/issue9/qheader"
 )
 
-// Mimetypes 提供 mimetype 的序列化操作
 type Mimetypes struct {
 	*Serialization
 }
 
-// NewMimetypes 返回 Mimetypes 实例
 func NewMimetypes(c int) *Mimetypes { return &Mimetypes{Serialization: New(c)} }
 
 // UnmarshalFunc 查找指定名称的 UnmarshalFunc

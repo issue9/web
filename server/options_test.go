@@ -16,5 +16,7 @@ func TestOptions_sanitize(t *testing.T) {
 	a.NotError(o.sanitize())
 	a.Equal(o.Location, time.Local).
 		NotNil(o.Logs).
-		NotNil(o.ResultBuilder)
+		NotNil(o.ResultBuilder).
+		NotNil(o.Encodings).
+		NotNil(o.Mimetypes)
 }
