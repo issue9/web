@@ -4,11 +4,14 @@ package serialization
 
 import (
 	"bytes"
+	"compress/flate"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
@@ -24,7 +27,8 @@ type Encodings struct {
 	allowAny         bool
 }
 
-type WriteCloseRester interface {
+// EncodingWriter 每种压缩实例需要实现的最小接口
+type EncodingWriter interface {
 	io.WriteCloser
 	Reset(io.Writer)
 }
@@ -35,18 +39,33 @@ type EncodingBuilder struct {
 }
 
 type encodingW struct {
-	WriteCloseRester
+	EncodingWriter
 	b *EncodingBuilder
 }
 
 func (e *encodingW) Close() error {
-	err := e.WriteCloseRester.Close()
-	e.b.pool.Put(e.WriteCloseRester)
+	err := e.EncodingWriter.Close()
+	e.b.pool.Put(e.EncodingWriter)
 	return err
 }
 
-// EncodingWriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象并以 WriteCloseRester 接口返回。
-type EncodingWriterFunc func(w io.Writer) (WriteCloseRester, error)
+// EncodingWriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
+type EncodingWriterFunc func(w io.Writer) (EncodingWriter, error)
+
+// GZipWriter gzip
+func GZipWriter(w io.Writer) (EncodingWriter, error) {
+	return gzip.NewWriter(w), nil
+}
+
+// DeflateWriter deflate
+func DeflateWriter(w io.Writer) (EncodingWriter, error) {
+	return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
+}
+
+// BrotliWriter br
+func BrotliWriter(w io.Writer) (EncodingWriter, error) {
+	return brotli.NewWriter(w), nil
+}
 
 func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
 	return &EncodingBuilder{
@@ -62,9 +81,9 @@ func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
 }
 
 func (b *EncodingBuilder) Build(w io.Writer) io.WriteCloser {
-	ww := b.pool.Get().(WriteCloseRester)
+	ww := b.pool.Get().(EncodingWriter)
 	ww.Reset(w)
-	return &encodingW{b: b, WriteCloseRester: ww}
+	return &encodingW{b: b, EncodingWriter: ww}
 }
 
 func (b *EncodingBuilder) Name() string { return b.name }

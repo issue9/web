@@ -12,11 +12,11 @@ import (
 	"github.com/issue9/assert/v2"
 )
 
-func gzipWriterFunc(w io.Writer) (WriteCloseRester, error) {
+func gzipWriterFunc(w io.Writer) (EncodingWriter, error) {
 	return gzip.NewWriter(w), nil
 }
 
-func brWriterFunc(w io.Writer) (WriteCloseRester, error) {
+func brWriterFunc(w io.Writer) (EncodingWriter, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
 }
 

@@ -3,12 +3,8 @@
 package servertest
 
 import (
-	"bytes"
-	"compress/flate"
-	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
-	"io"
 	"os"
 
 	"github.com/issue9/assert/v2"
@@ -41,12 +37,8 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	if o.Encodings == nil {
 		o.Encodings = serialization.NewEncodings(o.Logs.ERROR())
 		o.Encodings.Add(map[string]serialization.EncodingWriterFunc{
-			"gzip": func(w io.Writer) (serialization.WriteCloseRester, error) {
-				return gzip.NewWriter(w), nil
-			},
-			"deflate": func(w io.Writer) (serialization.WriteCloseRester, error) {
-				return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
-			},
+			"gzip":    serialization.GZipWriter,
+			"deflate": serialization.DeflateWriter,
 		})
 	}
 
