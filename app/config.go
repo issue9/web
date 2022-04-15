@@ -32,11 +32,6 @@ type configOf[T any] struct {
 	// 与 HTTP 请求相关的设置项
 	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
 
-	// 忽略的压缩类型
-	//
-	// 可以有通配符，比如 image/* 表示任意 image/ 开头的内容。
-	IgnoreEncodings []string `yaml:"ignoreEncodings,omitempty" json:"ignoreEncodings,omitempty" xml:"ignoreEncoding,omitempty"`
-
 	// 时区名称
 	//
 	// 可以是 Asia/Shanghai 等，具体可参考：
@@ -51,6 +46,13 @@ type configOf[T any] struct {
 	// 如果为空，则会采用内存作为缓存对象。
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache server.Cache
+
+	// 压缩的相关配置
+	//
+	// 如果为空，那么不支持压缩功能。
+	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、br 和 deflate 三种类型。
+	Encodings *encodingsConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
+	encoding  *serialization.Encodings
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -100,7 +102,7 @@ func NewOptionsOf[T any](l *logs.Logs, files *serialization.Files, fsys fs.FS, f
 		},
 		Logs:            l,
 		FileSerializers: files,
-		IgnoreEncodings: conf.IgnoreEncodings,
+		Encodings:       conf.encoding,
 		LanguageTag:     conf.languageTag,
 	}, conf.User, nil
 }
@@ -130,6 +132,8 @@ func (conf *configOf[T]) sanitize(l *logs.Logs) *ConfigError {
 		err.Field = "http." + err.Field
 		return err
 	}
+
+	conf.encoding = conf.Encodings.build(l.ERROR())
 
 	if conf.User != nil {
 		if s, ok := (any)(conf.User).(ConfigSanitizer); ok {
