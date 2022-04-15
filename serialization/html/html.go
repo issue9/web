@@ -68,3 +68,5 @@ func (t *Template) executeTemplate() ([]byte, error) {
 	}
 	return w.Bytes(), nil
 }
+
+func Unmarshal(data []byte, v any) error { return serialization.ErrUnsupported }
