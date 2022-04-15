@@ -47,7 +47,7 @@ type Server struct {
 	routers    *Routers
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
-	closes []func() error
+	closes []CleanupFunc
 
 	// service
 	services  []*Service
@@ -89,7 +89,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		uptime:     time.Now(),
 
 		closed: make(chan struct{}, 1),
-		closes: make([]func() error, 0, 10),
+		closes: o.Cleanup,
 
 		// service
 		services:  make([]*Service, 0, 100),
@@ -107,6 +107,8 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 	srv.routers = mux.NewRoutersOf(srv.call, nil)
 	srv.httpServer.Handler = srv.routers
+
+	//
 
 	return srv, nil
 }
@@ -237,4 +239,4 @@ func (srv *Server) Serving() bool { return srv.serving }
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f func() error) { srv.closes = append(srv.closes, f) }
+func (srv *Server) OnClose(f CleanupFunc) { srv.closes = append(srv.closes, f) }

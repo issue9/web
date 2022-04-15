@@ -18,6 +18,8 @@ import (
 	"github.com/issue9/web/serialization"
 )
 
+type CleanupFunc func() error
+
 // Options 初始化 Server 的参数
 type Options struct {
 	// 项目默认可存取的文件系统
@@ -87,6 +89,11 @@ type Options struct {
 	// 与 FileSerializers 组合构建 serialization.Locale 对象，可以为空。
 	Catalog *catalog.Builder
 	locale  *serialization.Locale
+
+	// 退出项目时执行的操作
+	//
+	// 数组的元素越靠后越早执行，且在此处指定的项目会晚于 Server.OnClose 执行。
+	Cleanup []CleanupFunc
 }
 
 func (o *Options) sanitize() (err error) {
