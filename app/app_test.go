@@ -66,9 +66,9 @@ func TestAppOf_initOptions(t *testing.T) {
 	a.NotError(cmd.sanitize())
 	opt, user, err := cmd.initOptions(os.DirFS("./"))
 	a.NotError(err).NotNil(opt).Nil(user)
-	a.NotNil(opt.Catalog).
-		Equal(opt.FileSerializers, cmd.FileSerializers).
-		True(opt.Catalog == cmd.Catalog)
+	a.Nil(opt.Catalog). // 不会传递给 opt.Catalog
+				Equal(opt.FileSerializers, cmd.FileSerializers).
+				False(opt.Catalog == cmd.Catalog) // 不指向同一个对象
 
 	// 包含 Options
 	cmd = &AppOf[empty]{
@@ -95,7 +95,7 @@ func TestAppOf_initOptions(t *testing.T) {
 	a.NotError(cmd2.sanitize())
 	opt2, user2, err := cmd2.initOptions(os.DirFS("./testdata"))
 	a.NotError(err).NotNil(opt2).NotNil(user2)
-	a.NotNil(opt2.Catalog).
+	a.Nil(opt2.Catalog).
 		Equal(opt2.FileSerializers, cmd2.FileSerializers).
 		Equal(user2.ID, 1)
 }

@@ -63,8 +63,7 @@ import (
 //
 // T 表示的是配置文件中的用户自定义数据类型，如果不需要可以设置为 struct{}。
 type AppOf[T any] struct {
-	Name string // 程序名称
-
+	Name    string // 程序名称
 	Version string // 程序版本
 
 	// 在运行服务之前对 Server 的额外操作
@@ -85,20 +84,22 @@ type AppOf[T any] struct {
 	// 配置文件的加载器
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
-	// 该值可能会被 Options 操作所覆盖。
+	// 该值也也会传递给 server.Options 对象如果不需要可用 Options 字段进行修改。
 	FileSerializers *serialization.Files
 
 	// 配置文件的文件名
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
-	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
 	// 如果为非空，那么会传递给 NewOptionsOf 函数。
+	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
+	// 之后可以通过 Options 字段对内容进行初始化。
 	ConfigFilename string
 
-	// 本地化的相关操作接口
+	// 本地化 AppOf 中的命令行信息
 	//
-	// 如果为空，则会被初始化一个空对象，该值可能会被 Options 操作所覆盖。
-	Catalog *catalog.Builder
+	// 可以为空，那么这些命令行信息将显示默认内容。
+	// 这与 server.Server.Catalog 并不是同一个对象。
+	Catalog catalog.Catalog
 
 	// 触发退出的信号
 	//
@@ -229,7 +230,6 @@ func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err 
 			FileSerializers: cmd.FileSerializers,
 		}
 	}
-	opt.Catalog = cmd.Catalog // NewOptionsOf 返回的对象必定是一个默认的空对象，可以放心覆盖。
 
 	if cmd.Options != nil {
 		cmd.Options(opt)

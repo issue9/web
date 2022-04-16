@@ -68,15 +68,20 @@ type configOf[T any] struct {
 
 // NewOptionsOf 从配置文件初始化 server.Options 实例
 //
+// 并不是所有的 server.Options 字段都能从 NewOptionsOf 中获得值，
+// 像 Mimetypes、ResultBuilder 等可能改变程序行为的字段，
+// 并不允许从配置文件中进行修改。
+//  opt, user, err := app.NeOptionsOf(...)
+//  opt.Mimetypes = serialization.NewMimetypes()
+//  opt.Mimetypes.Add(...)
+//  srv := server.New("app", "1.0.0", opt)
+//
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
 // filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-//
-// NOTE: 并不是所有的 server.Options 字段都是可序列化的，部分字段，比如 RouterOptions
-// 需要用户在返回的对象上，自行作修改，当然这些本身有默认值，不修改也可以正常使用。
 func NewOptionsOf[T any](files *serialization.Files, fsys fs.FS, filename string) (*server.Options, *T, error) {
 	conf := &configOf[T]{}
 	if err := files.LoadFS(fsys, filename, conf); err != nil {
