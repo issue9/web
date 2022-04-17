@@ -91,3 +91,8 @@ func existsFS(fsys fs.FS, p string) bool {
 	_, err := fs.Stat(fsys, p)
 	return err == nil || os.IsExist(err)
 }
+
+// LoadLocale 加载当前模块文件系统下的本地化文件
+func (m *Module) LoadLocale(glob string) error {
+	return m.Server().Locale().LoadFileFS(m, glob)
+}
