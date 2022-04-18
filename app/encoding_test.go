@@ -23,13 +23,13 @@ func TestEncodingConfig_build(t *testing.T) {
 	w, notAccept := e.Search("application/json", "*")
 	a.False(notAccept).Nil(w)
 
-	conf = &encodingsConfig{Encodings: map[string]string{"br": "brotli"}}
+	conf = &encodingsConfig{Encodings: []*encodingConfig{{Name: "br", Encoding: "brotli"}}}
 	e, err = conf.build(l.ERROR())
 	a.NotNil(e).NotError(err)
 	w, notAccept = e.Search("application/json", "*")
 	a.False(notAccept).NotNil(w)
 
-	conf = &encodingsConfig{Encodings: map[string]string{"br": "br"}}
+	conf = &encodingsConfig{Encodings: []*encodingConfig{{Name: "br", Encoding: "br"}}}
 	e, err = conf.build(l.ERROR())
 	a.Nil(e).Error(err).
 		Equal(err.Field, "encodings[br]")

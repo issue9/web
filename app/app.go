@@ -74,7 +74,7 @@ type AppOf[T any] struct {
 	// 在初始化 Server 之前对 Options 的二次处理
 	//
 	// 可以为空。
-	Options func(*server.Options)
+	Options func(*server.Options) error
 
 	// 命令行输出信息的通道
 	//
@@ -232,7 +232,9 @@ func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err 
 	}
 
 	if cmd.Options != nil {
-		cmd.Options(opt)
+		if err := cmd.Options(opt); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return opt, user, nil

@@ -171,7 +171,7 @@ func newFileLogsWriter(args []string) (LogsWriter, server.CleanupFunc, error) {
 		return nil, nil, err
 	}
 
-	w, err := rotate.New(args[1], args[2], size)
+	w, err := rotate.New(args[2], args[1], size)
 	if err != nil {
 		return nil, nil, err
 	}
