@@ -58,7 +58,7 @@ type configOf[T any] struct {
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、br 和 deflate 三种类型。
+	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、brotli 和 deflate 三种类型。
 	Encodings *encodingsConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
 	encoding  *serialization.Encodings
 
@@ -125,7 +125,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	conf.logs = l
 	conf.cleanup = append(conf.cleanup, cleanup...)
 
-	if err := conf.buildCache(); err != nil {
+	if err = conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field
 		return err
 	}
@@ -138,19 +138,23 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 		conf.languageTag = tag
 	}
 
-	if err := conf.buildTimezone(); err != nil {
+	if err = conf.buildTimezone(); err != nil {
 		return err
 	}
 
 	if conf.HTTP == nil {
 		conf.HTTP = &httpConfig{}
 	}
-	if err := conf.HTTP.sanitize(); err != nil {
+	if err = conf.HTTP.sanitize(); err != nil {
 		err.Field = "http." + err.Field
 		return err
 	}
 
-	conf.encoding = conf.Encodings.build(l.ERROR())
+	conf.encoding, err = conf.Encodings.build(l.ERROR())
+	if err != nil {
+		err.Field = "encodings." + err.Field
+		return err
+	}
 
 	if conf.User != nil {
 		if s, ok := (any)(conf.User).(ConfigSanitizer); ok {

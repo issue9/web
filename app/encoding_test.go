@@ -7,8 +7,6 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/logs/v4"
-
-	"github.com/issue9/web/serialization"
 )
 
 func TestEncodingConfig_build(t *testing.T) {
@@ -16,18 +14,23 @@ func TestEncodingConfig_build(t *testing.T) {
 	l := logs.New(logs.NewNopWriter())
 
 	var conf *encodingsConfig = nil
-	e := conf.build(l.ERROR())
-	a.NotNil(e)
+	e, err := conf.build(l.ERROR())
+	a.NotNil(e).NotError(err)
 
 	conf = &encodingsConfig{}
-	e = conf.build(l.ERROR())
-	a.NotNil(e)
+	e, err = conf.build(l.ERROR())
+	a.NotNil(e).NotError(err)
 	w, notAccept := e.Search("application/json", "*")
 	a.False(notAccept).Nil(w)
 
-	conf = &encodingsConfig{Encodings: map[string]serialization.EncodingWriterFunc{"br": serialization.BrotliWriter}}
-	e = conf.build(l.ERROR())
-	a.NotNil(e)
+	conf = &encodingsConfig{Encodings: map[string]string{"br": "brotli"}}
+	e, err = conf.build(l.ERROR())
+	a.NotNil(e).NotError(err)
 	w, notAccept = e.Search("application/json", "*")
 	a.False(notAccept).NotNil(w)
+
+	conf = &encodingsConfig{Encodings: map[string]string{"br": "br"}}
+	e, err = conf.build(l.ERROR())
+	a.Nil(e).Error(err).
+		Equal(err.Field, "encodings[br]")
 }

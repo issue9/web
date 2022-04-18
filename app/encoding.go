@@ -3,6 +3,7 @@
 package app
 
 import (
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 
 	"github.com/issue9/web/serialization"
@@ -22,16 +23,26 @@ type encodingsConfig struct {
 	//
 	// 键名为压缩名，比如 gzip，flate 等，键值为生成对象的方法。
 	// 若为空，则不支持压缩功能。
-	Encodings map[string]serialization.EncodingWriterFunc
+	Encodings map[string]string
 }
 
-func (conf *encodingsConfig) build(l logs.Logger) *serialization.Encodings {
+func (conf *encodingsConfig) build(l logs.Logger) (*serialization.Encodings, *ConfigError) {
 	if conf == nil {
-		return serialization.NewEncodings(l)
+		return serialization.NewEncodings(l), nil
 	}
+
+	es := make(map[string]serialization.EncodingWriterFunc)
+	for name, fu := range conf.Encodings {
+		f, found := encodingFactory[fu]
+		if !found {
+			return nil, &ConfigError{Field: "encodings[" + fu + "]", Message: localeutil.Error("%s not found", fu)}
+		}
+		es[name] = f
+	}
+
 	encoding := serialization.NewEncodings(l, conf.Ignores...)
-	encoding.Add(conf.Encodings)
-	return encoding
+	encoding.Add(es)
+	return encoding, nil
 }
 
 func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
@@ -40,6 +51,6 @@ func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
 
 func init() {
 	RegisterEncoding(serialization.DeflateWriter, "deflate")
-	RegisterEncoding(serialization.BrotliWriter, "br")
+	RegisterEncoding(serialization.BrotliWriter, "brotli")
 	RegisterEncoding(serialization.GZipWriter, "gzip")
 }
