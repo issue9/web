@@ -11,9 +11,10 @@ import (
 )
 
 type Module struct {
-	srv *Server
-	id  string
-	fs  []fs.FS
+	srv      *Server
+	id       string
+	idPrefix string
+	fs       []fs.FS
 }
 
 // NewModule 声明新的模块
@@ -37,9 +38,10 @@ func (srv *Server) NewModule(id string) *Module {
 
 	srv.modules = append(srv.modules, id)
 	return &Module{
-		srv: srv,
-		fs:  f,
-		id:  id,
+		srv:      srv,
+		id:       id,
+		idPrefix: id + "_",
+		fs:       f,
 	}
 }
 
@@ -50,6 +52,9 @@ func (m *Module) NewModule(id string) *Module {
 
 // ID 模块的唯一 ID
 func (m *Module) ID() string { return m.id }
+
+// BuildID 以 Module.ID() + "_" 为前缀生成一个新的字符串
+func (m *Module) BuildID(suffix string) string { return m.idPrefix + suffix }
 
 func (m *Module) Server() *Server { return m.srv }
 

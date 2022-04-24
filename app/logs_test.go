@@ -37,7 +37,7 @@ func TestLogsConfig_output(t *testing.T) {
 		Writers: []*logWritterConfig{
 			{
 				Type: "file",
-				Args: []string{"2006", "1504-%i.log", "./testdata", "1024"},
+				Args: []string{"2006", "./testdata", "1504-%i.log", "1024"},
 			},
 			{
 				Type: "term",
