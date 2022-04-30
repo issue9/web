@@ -65,11 +65,11 @@ func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
 
 	rs := s.Server().Routers()
 	router := rs.New("default", nil, &server.RouterOptions{
-		Middlewares: ms,
 		URLDomain:   "http://localhost:8080/",
 		RecoverFunc: mux.WriterRecovery(http.StatusInternalServerError, os.Stderr),
 	})
 	s.a.NotNil(router)
+	router.Use(ms...)
 	return router
 }
 
@@ -79,7 +79,7 @@ func (s *Tester) Wait() { s.wg.Wait() }
 // NewRequest 发起新的请求
 //
 // path 为请求路径，如果没有 http:// 和 https:// 前缀，则会自动加上 http://localhost 作为其域名地址；
-// client 如果为空，则采用 http.DefaultClient 作为默认值；
+// client 如果为空，则采用 &http.Client{} 作为默认值；
 func (s *Tester) NewRequest(method, path string, client *http.Client) *rest.Request {
 	if !strings.HasPrefix(path, "http://") && !strings.HasPrefix(path, "https://") {
 		path = s.hostname + path
@@ -101,6 +101,8 @@ func (s *Tester) Delete(path string) *rest.Request {
 }
 
 func (s *Tester) Close(shutdown time.Duration) {
+	// NOTE: Tester 主要用于第三方测试，
+	// 所以不主动将 Close 注册至 a.TB().Cleanup，由调用方决定何时调用。
 	s.a.NotError(s.Server().Close(shutdown))
 }
 

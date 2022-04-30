@@ -64,7 +64,7 @@ func TestMiddleware(t *testing.T) {
 		Header("accept", text.Mimetype).
 		Do(nil).
 		Status(http.StatusCreated).
-		Header("h", "b1b2-p1p2-").
+		Header("h", "p1p2-b1b2-").
 		StringBody("201")
 	a.Equal(count, 1)
 

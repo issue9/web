@@ -108,8 +108,6 @@ func New(name, version string, o *Options) (*Server, error) {
 	srv.routers = mux.NewRoutersOf(srv.call, nil)
 	srv.httpServer.Handler = srv.routers
 
-	//
-
 	return srv, nil
 }
 

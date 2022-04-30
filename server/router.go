@@ -21,7 +21,7 @@ var objectPool = &sync.Pool{New: func() any { return &object{} }}
 type (
 	Router         = mux.RouterOf[HandlerFunc]
 	Routers        = mux.RoutersOf[HandlerFunc]
-	RouterOptions  = mux.OptionsOf[HandlerFunc]
+	RouterOptions  = mux.Options
 	MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
 	Middleware     = mux.MiddlewareOf[HandlerFunc]
 
