@@ -5,6 +5,7 @@ package server
 import (
 	"io/fs"
 	"os"
+	"strings"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
@@ -19,9 +20,9 @@ type Module struct {
 
 // NewModule 声明新的模块
 //
-// id 模块的 ID，需要全局唯一，且要符合 fs.ValidPath 的要求。
+// id 模块的 ID，需要全局唯一，只能是字母、数字以及下划线。
 func (srv *Server) NewModule(id string) *Module {
-	if !fs.ValidPath(id) {
+	if !fs.ValidPath(id) || strings.ContainsRune(id, '/') {
 		panic("无效的 id 格式。")
 	}
 
@@ -45,16 +46,24 @@ func (srv *Server) NewModule(id string) *Module {
 	}
 }
 
-// NewModule 声明 id 值为 m.ID + "/" + id 的新模块
-func (m *Module) NewModule(id string) *Module {
-	return m.Server().NewModule(m.ID() + "/" + id)
-}
-
 // ID 模块的唯一 ID
 func (m *Module) ID() string { return m.id }
 
 // BuildID 以 Module.ID() + "_" 为前缀生成一个新的字符串
-func (m *Module) BuildID(suffix string) string { return m.idPrefix + suffix }
+func (m *Module) BuildID(suffix ...string) string {
+	switch len(suffix) {
+	case 0:
+		return m.idPrefix
+	case 1:
+		return m.idPrefix + suffix[0]
+	default:
+		ret := m.idPrefix
+		for _, s := range suffix {
+			ret += s
+		}
+		return ret
+	}
+}
 
 func (m *Module) Server() *Server { return m.srv }
 
@@ -89,7 +98,7 @@ func (m *Module) Glob(pattern string) ([]string, error) {
 //
 // 该缓存对象的 key 会自动添加 Module.ID 作为其前缀。
 func (m *Module) Cache() cache.Access {
-	return cache.Prefix(m.ID(), m.Server().Cache())
+	return cache.Prefix(m.BuildID(""), m.Server().Cache())
 }
 
 func existsFS(fsys fs.FS, p string) bool {

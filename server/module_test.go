@@ -14,9 +14,8 @@ var _ fs.GlobFS = &Module{}
 
 func TestServer_NewModule(t *testing.T) {
 	a := assert.New(t, false)
+	srv := newServer(a, &Options{FS: os.DirFS("./")})
 
-	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("./")})
-	a.NotError(err).NotNil(srv)
 	m := srv.NewModule("testdata")
 	a.NotNil(m).
 		Equal(m.ID(), "testdata").
@@ -38,25 +37,20 @@ func TestServer_NewModule(t *testing.T) {
 	}, "无效的 id 格式")
 }
 
-func TestModule_NewModule(t *testing.T) {
+func TestModule_BuildID(t *testing.T) {
 	a := assert.New(t, false)
-	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("../")})
-	a.NotError(err).NotNil(srv)
+	srv := newServer(a, nil)
 
-	m := srv.NewModule("server")
-	a.NotNil(m)
-	m2 := m.NewModule("testdata")
-	a.NotNil(m2).Equal(m2.id, "server/testdata")
-
-	a.True(existsFS(m2, "file1.txt"))
-	a.False(existsFS(m, "file1.txt"))
+	m := srv.NewModule("id")
+	a.Equal(m.ID(), "id").
+		Equal(m.BuildID(), "id_").
+		Equal(m.BuildID("1"), "id_1").
+		Equal(m.BuildID("1", "2"), "id_12")
 }
 
 func TestModule_Glob(t *testing.T) {
 	a := assert.New(t, false)
-
-	srv, err := New("app", "1.0.0", &Options{FS: os.DirFS("./")})
-	a.NotError(err).NotNil(srv)
+	srv := newServer(a, &Options{FS: os.DirFS("./")})
 
 	m := srv.NewModule("testdata")
 	a.True(existsFS(m, "file1.txt"))
