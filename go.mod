@@ -12,11 +12,11 @@ require (
 	github.com/issue9/logs/v4 v4.0.0-beta.4
 	github.com/issue9/mux/v6 v6.1.0
 	github.com/issue9/qheader v0.5.5
-	github.com/issue9/query/v2 v2.2.7
+	github.com/issue9/query/v2 v2.2.8
 	github.com/issue9/scheduled v0.9.2
 	github.com/issue9/sliceutil v0.10.1
 	github.com/issue9/term/v3 v3.0.0
-	github.com/issue9/validation v0.5.1
+	github.com/issue9/validation v0.6.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543

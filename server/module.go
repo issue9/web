@@ -5,7 +5,6 @@ package server
 import (
 	"io/fs"
 	"os"
-	"strings"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
@@ -18,12 +17,33 @@ type Module struct {
 	fs       []fs.FS
 }
 
+// IsValidID 是否为合法的 ID
+//
+// ID 只能是字母、数字、_ 以及 -
+func IsValidID(id string) bool {
+	if len(id) == 0 {
+		return false
+	}
+
+	for _, c := range id {
+		ok := c == '_' ||
+			c == '-' ||
+			(c >= '0' && c <= '9') ||
+			(c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z')
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // NewModule 声明新的模块
 //
 // id 模块的 ID，需要全局唯一，只能是字母、数字以及下划线。
 func (srv *Server) NewModule(id string) *Module {
-	if !fs.ValidPath(id) || strings.ContainsRune(id, '/') {
-		panic("无效的 id 格式。")
+	if !IsValidID(id) {
+		panic("无效的 id 格式")
 	}
 
 	if sliceutil.Exists(srv.modules, func(e string) bool { return e == id }) {

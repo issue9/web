@@ -153,17 +153,14 @@ func (q *Queries) Result(code string) Responser {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，错误信息存入 q.errors。
+//
+// NOTE: query.Sanitizer 接口和 CTXSanitizer 接口同时拥有验证数据的功能，
+// v 只要实现其中的一个接口即可，否则会多次调用验证。
 func (q *Queries) Object(v any) {
-	errors := query.Parse(q.queries, v)
-	for key, vals := range errors {
-		q.fields.Add(key, vals...)
-	}
+	q.fields.Merge(query.Parse(q.queries, v))
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		errors = vv.CTXSanitize(q.ctx)
-		for key, vals := range errors {
-			q.fields.Add(key, vals...)
-		}
+		q.fields.Merge(vv.CTXSanitize(q.ctx))
 	}
 }
 

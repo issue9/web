@@ -17,6 +17,8 @@ type stackError struct {
 //
 // 位置从调用 StackError 开始。
 // 如果 err 为 nil，则返回 nil，如果 err 本身就为 StackError 返回的类型，则原样返回。
+//
+// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
 func StackError(err error) error {
 	if err == nil {
 		return nil

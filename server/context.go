@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v6/params"
 	"github.com/issue9/qheader"
+	"github.com/issue9/validation"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/encoding/unicode"
@@ -488,4 +489,27 @@ func (ctx *Context) IsXHR() bool {
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
+}
+
+// NewValidation 声明验证器
+//
+// separator 用于指定字段名称上下级元素名称之间的连接符。比如在返回 xml 元素时，
+// 可能会采用 root/element 的格式表示上下级，此时 separator 应设置为 /。
+// 而在 json 中，可能会被转换成 root.element 的格式。
+//
+// 可以配置 CTXSanitizer 接口使用：
+//  type User struct {
+//      Name string
+//      Age int
+//  }
+//  func(o *User) CTXSanitize(ctx* web.Context) web.ResultFields {
+//      v := ctx.NewValidation(".")
+//      return v.NewField(o.Name, "name", validator.Required().Message("不能为空")).
+//          NewField(o.Age, "age", validator.Min(18).Message("不能小于 18 岁")).
+//          Messages()
+//  }
+//
+// 如果需要更加精细的控制，可以调用 github.com/issue9/validation.New 进行声明。
+func (ctx *Context) NewValidation(separator string) *validation.Validation {
+	return validation.New(validation.ContinueAtError, ctx.LocalePrinter(), separator)
 }
