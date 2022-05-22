@@ -40,7 +40,7 @@ type (
 
 	// Let's Encrypt 的相关设置
 	letsEncrypt struct {
-		Domains []string `yaml:"domains" json:"domains" xml:"domains"`
+		Domains []string `yaml:"domains" json:"domains" xml:"domain"`
 		Cache   string   `yaml:"cache" json:"cache" xml:"cache"`
 		Email   string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 

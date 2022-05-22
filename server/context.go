@@ -228,15 +228,13 @@ func (ctx *Context) Request() *http.Request { return ctx.request }
 func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
 		if err := ctx.charsetCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Error(err)
-			return
+			ctx.Logs().ERROR().Error(err) // 出错记录日志但不退出，之后的 Exit 还是要调用
 		}
 	}
 
 	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
 		if err := ctx.encodingCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Error(err)
-			return
+			ctx.Logs().ERROR().Error(err) // 出错记录日志但不退出，之后的 Exit 还是要调用
 		}
 	}
 
