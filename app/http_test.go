@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestCertificate_sanitize(t *testing.T) {

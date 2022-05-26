@@ -10,7 +10,7 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/serialization"
 )

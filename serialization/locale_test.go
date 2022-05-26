@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/assert/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestLocale_LoadFile(t *testing.T) {

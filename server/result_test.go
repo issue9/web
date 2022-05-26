@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/serialization/form"
 	"github.com/issue9/web/serialization/protobuf"
@@ -168,13 +168,13 @@ func TestDefaultResultYAML(t *testing.T) {
 	a.Equal(string(bs), `message: "400"
 code: "400"
 fields:
-- name: field1
-  message:
-  - message1
-  - message2
-- name: field2
-  message:
-  - message2
+    - name: field1
+      message:
+        - message1
+        - message2
+    - name: field2
+      message:
+        - message2
 `)
 
 	// unmarshal mimetypeResult

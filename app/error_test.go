@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serialization"
