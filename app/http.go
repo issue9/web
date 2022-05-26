@@ -14,13 +14,13 @@ type (
 	httpConfig struct {
 		// 网站的域名证书
 		//
-		// 不能同时与 LetsEncrypt 生效
+		// 不能同时与 ACME 生效
 		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
 
-		// 配置 Let's Encrypt 证书
+		// ACME 协议的证书
 		//
 		// 不能同时与 Certificates 生效
-		LetsEncrypt *letsEncrypt `yaml:"letsEncrypt,omitempty" json:"letsEncrypt,omitempty" xml:"letsEncrypt,omitempty"`
+		ACME *acme `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty"`
 
 		tlsConfig *tls.Config
 
@@ -38,8 +38,7 @@ type (
 		Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
 	}
 
-	// Let's Encrypt 的相关设置
-	letsEncrypt struct {
+	acme struct {
 		Domains []string `yaml:"domains" json:"domains" xml:"domain"`
 		Cache   string   `yaml:"cache" json:"cache" xml:"cache"`
 		Email   string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
@@ -86,17 +85,17 @@ func (http *httpConfig) sanitize() *ConfigError {
 }
 
 func (http *httpConfig) buildTLSConfig() *ConfigError {
-	if len(http.Certificates) > 0 && http.LetsEncrypt != nil {
-		return &ConfigError{Field: "letsEncrypt", Message: "不能与 certificates 同时存在"}
+	if len(http.Certificates) > 0 && http.ACME != nil {
+		return &ConfigError{Field: "acme", Message: "不能与 certificates 同时存在"}
 	}
 
-	if http.LetsEncrypt != nil {
-		if err := http.LetsEncrypt.sanitize(); err != nil {
-			err.Field = "letsEncrypt." + err.Field
+	if http.ACME != nil {
+		if err := http.ACME.sanitize(); err != nil {
+			err.Field = "acme." + err.Field
 			return err
 		}
 
-		http.tlsConfig = http.LetsEncrypt.tlsConfig()
+		http.tlsConfig = http.ACME.tlsConfig()
 		return nil
 	}
 
@@ -117,7 +116,7 @@ func (http *httpConfig) buildTLSConfig() *ConfigError {
 	return nil
 }
 
-func (l *letsEncrypt) tlsConfig() *tls.Config {
+func (l *acme) tlsConfig() *tls.Config {
 	const day = 24 * time.Hour
 
 	m := &autocert.Manager{
@@ -131,7 +130,7 @@ func (l *letsEncrypt) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *letsEncrypt) sanitize() *ConfigError {
+func (l *acme) sanitize() *ConfigError {
 	if l.Cache == "" || !exists(l.Cache) {
 		return &ConfigError{Field: "cache", Message: "不存在该目录或是未指定"}
 	}

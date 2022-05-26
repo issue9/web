@@ -50,7 +50,7 @@ func TestNewOptions(t *testing.T) {
 	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
 	a.Equal(err2.Path, "invalid-web.xml").
-		Equal(err2.Field, "http.letsEncrypt.domains")
+		Equal(err2.Field, "http.acme.domains")
 
 	// 自定义 T
 	opt, user, err := NewOptionsOf[userData](files, os.DirFS("./testdata"), "user.xml")

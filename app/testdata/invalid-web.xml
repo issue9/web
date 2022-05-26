@@ -2,9 +2,9 @@
 
 <web port=":8082">
     <http readTimeout="3s">
-        <letsEncrypt><!-- 缺少必要的元素 domains -->
+        <acme><!-- 缺少必要的元素 domains -->
             <cache>./</cache>
-        </letsEncrypt>
+        </acme>
     </http>
     <timezone>Africa/Addis_Ababa</timezone>
 </web>

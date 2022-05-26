@@ -60,12 +60,12 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 	a.Equal(1, len(h.tlsConfig.Certificates))
 
 	h = &httpConfig{
-		LetsEncrypt: &letsEncrypt{},
+		ACME: &acme{},
 	}
 	a.Error(h.buildTLSConfig()).Nil(h.tlsConfig)
 
 	h = &httpConfig{
-		LetsEncrypt: &letsEncrypt{Cache: ".", Domains: []string{"example.com"}},
+		ACME: &acme{Cache: ".", Domains: []string{"example.com"}},
 	}
 	a.NotError(h.buildTLSConfig()).NotNil(h.tlsConfig)
 
@@ -77,25 +77,25 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 				Key:  "./testdata/key.pem",
 			},
 		},
-		LetsEncrypt: &letsEncrypt{},
+		ACME: &acme{},
 	}
 	a.Error(h.buildTLSConfig())
 }
 
-func TestLetEncrypt_sanitize(t *testing.T) {
+func TestACME_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := &letsEncrypt{}
+	l := &acme{}
 	a.Error(l.sanitize())
 
-	l = &letsEncrypt{Cache: "./not-exists"}
+	l = &acme{Cache: "./not-exists"}
 	a.Error(l.sanitize())
 
 	// 未指定域名
-	l = &letsEncrypt{Cache: "./"}
+	l = &acme{Cache: "./"}
 	a.Error(l.sanitize())
 
-	l = &letsEncrypt{Cache: "./", Domains: []string{"example.com"}}
+	l = &acme{Cache: "./", Domains: []string{"example.com"}}
 	a.NotError(l.sanitize())
 }
 
