@@ -2,10 +2,10 @@ module github.com/issue9/web
 
 require (
 	github.com/andybalholm/brotli v1.0.4
-	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
-	github.com/gomodule/redigo v1.8.6
+	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
+	github.com/gomodule/redigo v1.8.8
 	github.com/issue9/assert/v2 v2.3.2
-	github.com/issue9/cache v0.3.2
+	github.com/issue9/cache v0.3.3
 	github.com/issue9/conv v1.2.2
 	github.com/issue9/errwrap v0.2.1
 	github.com/issue9/localeutil v0.12.0
@@ -17,11 +17,11 @@ require (
 	github.com/issue9/sliceutil v0.10.1
 	github.com/issue9/term/v3 v3.0.0
 	github.com/issue9/validation v0.6.1
-	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	google.golang.org/protobuf v1.28.0
-	gopkg.in/yaml.v3 v3.0.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

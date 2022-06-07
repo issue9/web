@@ -42,10 +42,7 @@ func TestModule_BuildID(t *testing.T) {
 	srv := newServer(a, nil)
 
 	m := srv.NewModule("id")
-	a.Equal(m.ID(), "id").
-		Equal(m.BuildID(), "id_").
-		Equal(m.BuildID("1"), "id_1").
-		Equal(m.BuildID("1", "2"), "id_12")
+	a.Equal(m.ID(), "id").Equal(m.BuildID("1"), "id_1")
 }
 
 func TestModule_Glob(t *testing.T) {

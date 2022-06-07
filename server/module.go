@@ -11,10 +11,9 @@ import (
 )
 
 type Module struct {
-	srv      *Server
-	id       string
-	idPrefix string
-	fs       []fs.FS
+	srv *Server
+	id  string
+	fs  []fs.FS
 }
 
 // IsValidID 是否为合法的 ID
@@ -59,31 +58,17 @@ func (srv *Server) NewModule(id string) *Module {
 
 	srv.modules = append(srv.modules, id)
 	return &Module{
-		srv:      srv,
-		id:       id,
-		idPrefix: id + "_",
-		fs:       f,
+		srv: srv,
+		id:  id,
+		fs:  f,
 	}
 }
 
 // ID 模块的唯一 ID
 func (m *Module) ID() string { return m.id }
 
-// BuildID 以 Module.ID() + "_" 为前缀生成一个新的字符串
-func (m *Module) BuildID(suffix ...string) string {
-	switch len(suffix) {
-	case 0:
-		return m.idPrefix
-	case 1:
-		return m.idPrefix + suffix[0]
-	default:
-		ret := m.idPrefix
-		for _, s := range suffix {
-			ret += s
-		}
-		return ret
-	}
-}
+// BuildID 根据当前模块的 ID 生成一个新的 ID
+func (m *Module) BuildID(suffix string) string { return m.ID() + "_" + suffix }
 
 func (m *Module) Server() *Server { return m.srv }
 

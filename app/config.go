@@ -52,6 +52,7 @@ type configOf[T any] struct {
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
+	// 值可以为：memcached，redis，memory 和 file，用户也要以用 RegisterCache 注册新的缓存对象。
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache server.Cache
 
