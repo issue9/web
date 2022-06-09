@@ -28,23 +28,23 @@ type (
 	// 在 Result 中用户可以自定义其展示方式，可参考默认的实现 DefaultResultBuilder
 	BuildResultFunc func(status int, code, message string) Result
 
-	// Result 展示错误代码需要实现的接口
+	// Result 向客户端输出错误代码时的对象需要实现的接口
 	Result interface {
 		Responser
 
 		// Add 添加详细的错误信息
 		//
-		// 相同的 key 应该能关联多个 val 值。
+		// 一般用于添加具体的字段错误信息，key 表示字段名，val 表示该字段下的具体错误信息。
 		Add(key string, val ...string)
 
 		// Set 设置详细的错误信息
 		//
-		// 如果已经相同的 key，会被覆盖。
+		// 与 Add 的区别在于 Set 是覆盖之前的，而 Add 是追加新的。
 		Set(key string, val ...string)
 
 		// HasFields 是否存在详细的错误信息
 		//
-		// 如果有通过 Add 添加内容，那么应该返回 true
+		// 如果有通过 Add 或是 Set 添加内容，那么应该返回 true。
 		HasFields() bool
 	}
 
@@ -124,19 +124,6 @@ type (
 // FormData:
 //
 //  message=errormessage&code=4000001&fields.username=名称过短&fields.username=不能包含特殊符号&fields.password=不能为空
-//
-// protobuf
-//
-//  message Result {
-//      string message = 1;
-//      string code = 2;
-//      repeated Field fields = 3;
-//  }
-//
-//  message Field {
-//      string name = 1;
-//      repeated string message = 2;
-//  }
 func DefaultResultBuilder(status int, code, message string) Result {
 	rslt := defaultResultPool.Get().(*defaultResult)
 	rslt.status = status
@@ -277,4 +264,28 @@ func (m *Module) AddResults(status int, messages map[string]localeutil.LocaleStr
 	for k, v := range messages {
 		m.AddResult(status, k, v)
 	}
+}
+
+// NewValidation 声明验证器
+//
+// separator 用于指定字段名称上下级元素名称之间的连接符。比如在返回 xml 元素时，
+// 可能会采用 root/element 的格式表示上下级，此时 separator 应设置为 /。
+// 而在 json 中，可能会被转换成 root.element 的格式。
+//
+// 可以配置 CTXSanitizer 接口使用：
+//  type User struct {
+//      Name string
+//      Age int
+//  }
+//
+//  func(o *User) CTXSanitize(ctx* web.Context) web.ResultFields {
+//      v := ctx.NewValidation(".")
+//      return v.NewField(o.Name, "name", validator.Required().Message("不能为空")).
+//          NewField(o.Age, "age", validator.Min(18).Message("不能小于 18 岁")).
+//          Messages()
+//  }
+//
+// 如果需要更加精细的控制，可以调用 github.com/issue9/validation.New 进行声明。
+func (ctx *Context) NewValidation(separator string) *validation.Validation {
+	return validation.New(validation.ContinueAtError, ctx.LocalePrinter(), separator)
 }
