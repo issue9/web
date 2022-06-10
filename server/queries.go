@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/issue9/query/v2"
+	"github.com/issue9/query/v3"
 )
 
 // Queries 用于处理路径中的查询参数
@@ -157,7 +157,10 @@ func (q *Queries) Result(code string) Responser {
 // NOTE: query.Sanitizer 接口和 CTXSanitizer 接口同时拥有验证数据的功能，
 // v 只要实现其中的一个接口即可，否则会多次调用验证。
 func (q *Queries) Object(v any) {
-	q.fields.Merge(query.Parse(q.queries, v))
+	errs := query.Parse(q.queries, v)
+	for k, err := range errs {
+		q.fields.Add(k, err.Error())
+	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		q.fields.Merge(vv.CTXSanitize(q.ctx))

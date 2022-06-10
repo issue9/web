@@ -32,16 +32,6 @@ const (
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
 
-// CTXSanitizer 提供对数据的验证和修正
-//
-// 在 Context.Read 和 Queries.Object 中会在解析数据成功之后，调用该接口进行数据验证。
-type CTXSanitizer interface {
-	// CTXSanitize 验证和修正当前对象的数据
-	//
-	// 如果验证有误，则需要返回这些错误信息。
-	CTXSanitize(*Context) ResultFields
-}
-
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
 // Context 同时也实现了 http.ResponseWriter 接口，
