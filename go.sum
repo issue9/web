@@ -36,8 +36,8 @@ github.com/issue9/sliceutil v0.10.1 h1:zoI2YWYSaAcp1uQUNSiApVVlOHF+wBjTOMrB8AnwI
 github.com/issue9/sliceutil v0.10.1/go.mod h1:zzOSPwPHTsowvoCCx2RqCxQvPTKsxlb5eaPWWbSNAQ8=
 github.com/issue9/term/v3 v3.0.0 h1:MJ0eavCCqZ9lv2souDyCkSDeVo3XM9auqFVE0s2Esos=
 github.com/issue9/term/v3 v3.0.0/go.mod h1:D/UzioFydVy7DKLRit8ttJdGDkAa1Ni5fA9ZDWVD3lw=
-github.com/issue9/validation v0.7.0 h1:pe3OZVJNwPWp5VKAs9C5byU9guLeK1CDRwfeirFeRqA=
-github.com/issue9/validation v0.7.0/go.mod h1:6nBzRwLfihVfSfKbmno6P0UfoOnyQZc6Qw7CApwHRxE=
+github.com/issue9/validation v0.7.1 h1:q1Ap1yS9eimgfr/lfFXrdjz32eV2EC8lVJgmFCZuzO8=
+github.com/issue9/validation v0.7.1/go.mod h1:6nBzRwLfihVfSfKbmno6P0UfoOnyQZc6Qw7CApwHRxE=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
