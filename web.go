@@ -6,6 +6,7 @@ package web
 import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/validation"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/server"
@@ -43,3 +44,8 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 
 // Phrase 生成本地化的语言片段
 func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
+
+// NewRule 新建验证规则
+func NewRule(v validation.Validator, key message.Reference, val ...any) *validation.Rule {
+	return validation.NewRule(v, key, val...)
+}
