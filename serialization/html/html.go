@@ -7,7 +7,7 @@
 //  srv.Mimetypes().Add("text/html", html.Marshal, nil)
 //
 //  func handle(ctx *web.Context) Responser {
-//      return Object(200, html.Tpl(tpl, "index", map[string]interface{}{...}), nil)
+//      return Object(200, html.Tpl(tpl, "index", map[string]any{...}), nil)
 //  }
 package html
 
@@ -69,4 +69,4 @@ func (t *Template) executeTemplate() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal(data []byte, v any) error { return serialization.ErrUnsupported }
+func Unmarshal([]byte, any) error { return serialization.ErrUnsupported }

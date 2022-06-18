@@ -3,5 +3,6 @@
     "http": {
         "readTimeout": "3s"
     },
-    "timezone": "Africa/Addis_Ababa"
+    "timezone": "Africa/Addis_Ababa",
+    "mimetypes": ["application/json", "text/xml"]
 }

@@ -64,6 +64,8 @@ func (conf *configOf[T]) buildCache() *ConfigError {
 }
 
 // RegisterCache 注册新的缓存方式
+//
+// name 为缓存的名称，如果存在同名，则会覆盖。
 func RegisterCache(b CacheBuilder, name ...string) {
 	if len(name) == 0 {
 		panic("参数 name 不能为空")

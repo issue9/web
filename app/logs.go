@@ -150,6 +150,9 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []server.CleanupFunc, *Config
 	return logs.NewDispatchWriter(d), cleanup, nil
 }
 
+// RegisterLogsWriter 注册日志的 LogsWriterBuilder
+//
+// name 为缓存的名称，如果存在同名，则会覆盖。
 func RegisterLogsWriter(b LogsWriterBuilder, name ...string) {
 	if len(name) == 0 {
 		panic("参数 name 不能为空")

@@ -51,6 +51,9 @@ func (conf *encodingsConfig) build(l logs.Logger) (*serialization.Encodings, *Co
 }
 
 func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
+	if _, found := encodingFactory[name]; found {
+		panic("已经存在相同的 name:" + name)
+	}
 	encodingFactory[name] = f
 }
 

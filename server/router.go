@@ -138,7 +138,7 @@ func (ctx *Context) Status(code int, kv ...string) Responser {
 //
 // body 表示需要输出的对象，该对象最终会被转换成相应的编码；
 // kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；
-func (ctx *Context) Object(status int, body interface{}, kv ...string) Responser {
+func (ctx *Context) Object(status int, body any, kv ...string) Responser {
 	o := objectPool.Get().(*object)
 	o.status = status
 	o.body = body

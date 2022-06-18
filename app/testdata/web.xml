@@ -3,4 +3,6 @@
 <web port=":8082">
     <http readTimeout="3s" />
     <timezone>Africa/Addis_Ababa</timezone>
+    <mimetype>application/json</mimetype>
+    <mimetype>text/xml</mimetype>
 </web>

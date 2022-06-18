@@ -48,8 +48,7 @@ func (q *Queries) getItem(key string) (val string) {
 
 // Int 从查询参数中获取指定名称的值
 //
-// 若不存在则返回 def 作为其默认值。
-// 若是无法转换，则会保存错误信息
+// 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int(key string, def int) int {
 	str := q.getItem(key)
 
@@ -70,7 +69,7 @@ func (q *Queries) Int(key string, def int) int {
 
 // Int64 从查询参数中获取指定名称的值
 //
-// 若不存在则返回 def 作为其默认值。
+// 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int64(key string, def int64) int64 {
 	str := q.getItem(key)
 	if len(str) == 0 {
@@ -99,7 +98,7 @@ func (q *Queries) String(key, def string) string {
 
 // Bool 从查询参数中获取指定名称的值
 //
-// 若不存在则返回 def 作为其默认值。
+// 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Bool(key string, def bool) bool {
 	str := q.getItem(key)
 	if len(str) == 0 {
@@ -117,7 +116,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 // Float64 从查询参数中获取指定名称的值
 //
-// 若不存在则返回 def 作为其默认值。
+// 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Float64(key string, def float64) float64 {
 	str := q.getItem(key)
 	if len(str) == 0 {
@@ -153,9 +152,6 @@ func (q *Queries) Result(code string) Responser {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，错误信息存入 q.errors。
-//
-// NOTE: query.Sanitizer 接口和 CTXSanitizer 接口同时拥有验证数据的功能，
-// v 只要实现其中的一个接口即可，否则会多次调用验证。
 func (q *Queries) Object(v any) {
 	errs := query.Parse(q.queries, v)
 	for k, err := range errs {
