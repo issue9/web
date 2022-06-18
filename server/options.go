@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
@@ -40,7 +41,7 @@ type Options struct {
 	// 缓存系统
 	//
 	// 默认值为内存类型。
-	Cache Cache
+	Cache cache.Cache
 
 	// 端口号
 	//

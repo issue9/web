@@ -67,6 +67,10 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
 具体实现可参考 `server.defaultResult` 的实现。
 
+## 中间件
+
+<https://github.com/issue9/middleware> 提供了部分中间件。
+
 ## 版权
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 开源授权许可证，完整的授权说明可在 [LICENSE](LICENSE) 文件中找到。

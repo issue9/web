@@ -10,17 +10,16 @@ import (
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gomodule/redigo/redis"
+	"github.com/issue9/cache"
 	"github.com/issue9/cache/file"
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
-
-	"github.com/issue9/web/server"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
 
-type CacheBuilder func(dsn string) (server.Cache, error)
+type CacheBuilder func(dsn string) (cache.Cache, error)
 
 // 缓存的相关配置
 type cacheConfig struct {
@@ -76,7 +75,7 @@ func RegisterCache(b CacheBuilder, name ...string) {
 }
 
 func init() {
-	RegisterCache(func(dsn string) (server.Cache, error) {
+	RegisterCache(func(dsn string) (cache.Cache, error) {
 		d, err := time.ParseDuration(dsn)
 		if err != nil {
 			return nil, err
@@ -84,11 +83,11 @@ func init() {
 		return memory.New(d), nil
 	}, "", "memory")
 
-	RegisterCache(func(dsn string) (server.Cache, error) {
+	RegisterCache(func(dsn string) (cache.Cache, error) {
 		return cm.New(memcache.New(strings.Split(dsn, ";")...)), nil
 	}, "memcached", "memcache")
 
-	RegisterCache(func(dsn string) (server.Cache, error) {
+	RegisterCache(func(dsn string) (cache.Cache, error) {
 		c, err := redis.DialURL(dsn)
 		if err != nil {
 			return nil, err
@@ -96,7 +95,7 @@ func init() {
 		return cr.New(c), nil
 	}, "redis")
 
-	RegisterCache(func(dsn string) (server.Cache, error) {
+	RegisterCache(func(dsn string) (cache.Cache, error) {
 		args := strings.SplitN(dsn, ";", 2)
 		if len(args) != 2 {
 			return nil, errors.New("必须指定 path 和 gc 两个参数")

@@ -7,13 +7,17 @@ import (
 	"context"
 	"crypto/tls"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/logs/v4"
+	"github.com/issue9/mux/v6/muxutil"
 
+	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -217,4 +221,187 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 	srv.Close(0)
 	srv.Wait()
+}
+
+func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
+	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
+		return func(ctx *server.Context) server.Responser {
+			h := ctx.Header()
+			val := h.Get("h")
+			h.Set("h", v+val)
+
+			resp := next(ctx)
+			a.NotNil(resp)
+			return resp
+		}
+	})
+}
+
+func TestMiddleware(t *testing.T) {
+	a := assert.New(t, false)
+	srv := servertest.NewTester(a, nil)
+	count := 0
+
+	router := srv.NewRouter(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
+		return func(ctx *server.Context) server.Responser {
+			ctx.OnExit(func(status int) {
+				count++
+			})
+			return next(ctx)
+		}
+	}))
+	a.NotNil(router)
+	router.Get("/path", servertest.BuildHandler(201))
+	prefix := router.Prefix("/p1", buildMiddleware(a, "p1"), buildMiddleware(a, "p2-"))
+	a.NotNil(prefix)
+	prefix.Get("/path", servertest.BuildHandler(201))
+
+	srv.GoServe()
+
+	srv.Get("/p1/path").
+		Header("accept", text.Mimetype).
+		Do(nil).
+		Status(http.StatusCreated).
+		Header("h", "p1p2-b1b2-").
+		StringBody("201")
+	a.Equal(count, 1)
+
+	srv.Get("/path").
+		Header("accept", text.Mimetype).
+		Do(nil).
+		Status(http.StatusCreated).
+		Header("h", "b1b2-").
+		StringBody("201")
+	a.Equal(count, 2)
+
+	srv.Close(0)
+	srv.Wait()
+}
+
+func TestServer_Routers(t *testing.T) {
+	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	srv := s.Server()
+	rs := srv.Routers()
+
+	s.GoServe()
+
+	ver := muxutil.NewHeaderVersion("ver", "v", log.Default(), "2")
+	a.NotNil(ver)
+	r1 := rs.New("ver", ver, &server.RouterOptions{
+		URLDomain: "https://example.com",
+	})
+	a.NotNil(r1)
+
+	uu, err := r1.URL(false, "/posts/1", nil)
+	a.NotError(err).Equal("https://example.com/posts/1", uu)
+
+	r1.Prefix("/p1").Delete("/path", servertest.BuildHandler(http.StatusCreated))
+	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusCreated)
+
+	r2 := rs.Router("ver")
+	a.Equal(r2, r1)
+	a.Equal(1, len(rs.Routers())).
+		Equal(rs.Routers()[0].Name(), "ver")
+
+	// 删除整个路由
+	rs.Remove("ver")
+	a.Equal(0, len(rs.Routers()))
+	s.Delete("/p1/path").
+		Header("Accept", "text/plain;v=2").
+		Do(nil).
+		Status(http.StatusNotFound)
+
+	s.Close(0)
+	s.Wait()
+}
+
+func TestServer_FileServer(t *testing.T) {
+	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	rs := s.Server().Routers()
+
+	s.GoServe()
+
+	// 带版本
+
+	ver := muxutil.NewHeaderVersion("ver", "vv", log.Default(), "2")
+	a.NotNil(ver)
+	r := rs.New("ver", ver, &server.RouterOptions{
+		URLDomain: "https://example.com/version",
+	})
+	r.Get("/ver/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+
+	s.Get("/ver/file1.txt").
+		Header("Accept", "text/plain;vv=2").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("file1")
+
+	p := muxutil.NewPathVersion("vv", "v2")
+	a.NotNil(p)
+	r = rs.New("path", p, &server.RouterOptions{
+		URLDomain: "https://example.com/path",
+	})
+	r.Get("/path/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+
+	s.Get("/v2/path/file1.txt").
+		Do(nil).
+		Status(http.StatusOK).
+		StringBody("file1")
+
+	r = s.NewRouter()
+	r.Get("/m1/test", servertest.BuildHandler(201))
+	r.Get("/client/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+
+	s.Get("/m1/test").
+		Header("accept", text.Mimetype).
+		Do(nil).
+		Status(http.StatusCreated).
+		StringBody("201")
+
+	// 定义的静态文件
+	s.Get("/client/file1.txt").
+		Do(nil).
+		Status(http.StatusOK).
+		Header("Content-Type", "text/plain; charset=utf-8").
+		StringBody("file1")
+
+	s.Get("/client/not-exists").
+		Do(nil).
+		Status(http.StatusNotFound)
+
+	// 删除
+	r.Remove("/client/{path}")
+	s.Get("/client/file1.txt").
+		Do(nil).
+		Status(http.StatusNotFound)
+
+	s.Close(0)
+	s.Wait()
+}
+
+// 检测 204 是否存在 http: request method or response status code does not allow body
+func TestContext_NoContent(t *testing.T) {
+	a := assert.New(t, false)
+	buf := new(bytes.Buffer)
+	s := servertest.NewTester(a, &server.Options{Port: ":8080", Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
+
+	s.NewRouter().Get("/204", func(ctx *server.Context) server.Responser {
+		return ctx.NoContent()
+	})
+
+	s.GoServe()
+
+	s.Get("/204").
+		Header("Accept-Encoding", "gzip"). // 服务端不应该构建压缩对象
+		Header("Accept", "application/json;charset=gbk").
+		Do(nil).
+		Status(http.StatusNoContent)
+
+	s.Close(0)
+
+	a.NotContains(buf.String(), "request method or response status code does not allow body")
+
+	s.Wait()
 }

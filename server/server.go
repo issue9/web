@@ -28,8 +28,6 @@ const (
 	DefaultCharset  = "utf-8"
 )
 
-type Cache cache.Cache
-
 // Server 提供 HTTP 服务
 type Server struct {
 	name       string
@@ -40,7 +38,7 @@ type Server struct {
 	vars       *sync.Map
 	mimetypes  *serialization.Mimetypes
 	encodings  *serialization.Encodings
-	cache      Cache
+	cache      cache.Cache
 	uptime     time.Time
 	serving    bool
 	modules    []string // 保存着模块名称，用于检测是否存在重名
@@ -112,17 +110,12 @@ func New(name, version string, o *Options) (*Server, error) {
 }
 
 func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
-	ctx := srv.NewContext(w, r)
-	if ctx == nil {
-		return
+	if ctx := srv.newContext(w, r, ps); ctx != nil {
+		if resp := f(ctx); resp != nil {
+			resp.Apply(ctx)
+		}
+		ctx.destroy()
 	}
-
-	ctx.params = ps
-	if resp := f(ctx); resp != nil {
-		resp.Apply(ctx)
-	}
-
-	ctx.destroy()
 }
 
 // Name 应用的名称
@@ -144,7 +137,7 @@ func (srv *Server) Location() *time.Location { return srv.location }
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
-func (srv *Server) Cache() Cache { return srv.cache }
+func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }

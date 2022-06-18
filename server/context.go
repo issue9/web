@@ -76,10 +76,8 @@ type Context struct {
 	Vars map[any]any
 }
 
-// NewContext 构建 *Context 实例
-//
-// 如果不合规则，则会向 w 输出状态码并返回 nil。
-func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
+// 如果出错，则会向 w 输出状态码并返回 nil。
+func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, ps params.Params) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
 	if !found {
@@ -113,11 +111,11 @@ func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 		return nil
 	}
 
-	// NOTE: ctx 是从对象池中获取的，必须所有变量都初始化。
+	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
 	ctx.server = srv
-	ctx.params = nil
+	ctx.params = ps
 	ctx.request = r
 	ctx.contentType = buildContentType(outputMimetypeName, outputCharsetName)
 	if len(ctx.exits) > 0 {
