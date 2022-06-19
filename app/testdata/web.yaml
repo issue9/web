@@ -5,5 +5,9 @@ http:
     readTimeout: 3s
 timezone: Africa/Addis_Ababa
 mimetypes:
-    - application/json
-    - text/xml
+    - encoding: application/json
+      target: json
+    - encoding: text/xml
+      target: xml
+    - encoding: multipart/form-data
+      target: nil

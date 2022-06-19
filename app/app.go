@@ -89,6 +89,8 @@ type AppOf[T any] struct {
 
 	// 配置文件的文件名
 	//
+	// 需要保证 FileSerializers 能解析此文件指定的内容；
+	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	// 如果为非空，那么会传递给 NewOptionsOf 函数。
 	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
@@ -117,7 +119,7 @@ type AppOf[T any] struct {
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
 func (cmd *AppOf[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
-		panic(err) // AppOf 配置错误直接 panic
+		panic(err) // 配置错误直接 panic
 	}
 	return cmd.exec(args)
 }

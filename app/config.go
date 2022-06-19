@@ -67,14 +67,7 @@ type configOf[T any] struct {
 	// 指定可用的 mimetype
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
-	// 可通过 RegisterMimetype 注册新的格式，默认可用为：
-	//  - application/json
-	//  - application/xml、text/xml
-	//  - application/protobuf
-	//  - application/octet-stream
-	//  - application/x-www-form-urlencoded
-	//  - text/html。
-	Mimetypes []string `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetype,omitempty"`
+	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetype,omitempty"`
 	mimetypes *serialization.Mimetypes
 
 	// 用户自定义的配置项
