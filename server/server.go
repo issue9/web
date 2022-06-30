@@ -174,7 +174,7 @@ func (srv *Server) Serve() (err error) {
 	srv.serving = true
 
 	cfg := srv.httpServer.TLSConfig
-	if cfg != nil && (cfg.GetCertificate != nil || len(cfg.Certificates) > 0) {
+	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
 	} else {
 		err = srv.httpServer.ListenAndServe()

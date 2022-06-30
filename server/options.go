@@ -53,7 +53,10 @@ type Options struct {
 
 	// 可以对 http.Server 的内容进行修改
 	//
-	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.routers
+	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.routers。
+	//
+	// 一旦设置了 http.Server.TLSConfig 且 http.Server.TLSConfig.Certificates
+	// 和 http.Server.TLSConfig.GetCertificates 之一不为空那么将启用 TLS 访问。
 	HTTPServer func(*http.Server)
 	httpServer *http.Server
 

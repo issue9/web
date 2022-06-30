@@ -29,6 +29,7 @@ type (
 	RouterOptions  = server.RouterOptions
 	Responser      = server.Responser
 	Logger         = logs.Logger
+	Rule           = validation.Rule
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
@@ -45,6 +46,6 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 // NewRule 新建验证规则
-func NewRule(v validation.Validator, key message.Reference, val ...any) *validation.Rule {
+func NewRule(v validation.Validator, key message.Reference, val ...any) *Rule {
 	return validation.NewRule(v, key, val...)
 }
