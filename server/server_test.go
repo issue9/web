@@ -169,9 +169,6 @@ func TestServer_Close(t *testing.T) {
 
 	srv.GoServe()
 
-	// 等待 srv.Serve() 启动完毕，不同机器可能需要的时间会不同
-	time.Sleep(500 * time.Millisecond)
-
 	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容

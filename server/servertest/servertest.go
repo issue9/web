@@ -43,14 +43,20 @@ func (s *Tester) Server() *server.Server { return s.s }
 
 func (s *Tester) GoServe() {
 	s.wg.Add(1)
+	ok := make(chan struct{}, 1)
+
 	go func() {
 		s.a.TB().Helper()
 
 		defer s.wg.Done()
 
+		ok <- struct{}{} // 最起码等待协程启动
+
 		err := s.Server().Serve()
 		s.a.Error(err).ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
 	}()
+
+	<-ok
 }
 
 // NewRouter 创建一个默认的路由
