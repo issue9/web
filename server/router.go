@@ -12,18 +12,18 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/mux/v6"
-	"github.com/issue9/mux/v6/muxutil"
+	"github.com/issue9/mux/v7"
+	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/mux/v7/types"
 )
 
 var objectPool = &sync.Pool{New: func() any { return &object{} }}
 
 type (
 	Router         = mux.RouterOf[HandlerFunc]
-	Routers        = mux.RoutersOf[HandlerFunc]
-	RouterOptions  = mux.Options
-	MiddlewareFunc = mux.MiddlewareFuncOf[HandlerFunc]
-	Middleware     = mux.MiddlewareOf[HandlerFunc]
+	Routers        = group.GroupOf[HandlerFunc]
+	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
+	Middleware     = types.MiddlewareOf[HandlerFunc]
 
 	// HandlerFunc 路由项处理函数原型
 	//
@@ -46,6 +46,26 @@ type (
 		body   any
 	}
 )
+
+func notFound(ctx *Context) Responser { return ctx.NotFound() }
+
+func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
+	return func(n types.Node) HandlerFunc {
+		return func(ctx *Context) Responser {
+			ctx.Header().Set("Allow", n.AllowHeader())
+			return ctx.Status(status)
+		}
+	}
+}
+
+func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps types.Route, f HandlerFunc) {
+	if ctx := srv.newContext(w, r, ps); ctx != nil {
+		if resp := f(ctx); resp != nil {
+			resp.Apply(ctx)
+		}
+		ctx.destroy()
+	}
+}
 
 // Status 仅向客户端输出状态码
 func Status(code int) Responser { return status(code) }
@@ -70,9 +90,9 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	}
 
 	return func(ctx *Context) Responser {
-		p, _ := ctx.params.Get(name) // 空值也是允许的值
+		p, _ := ctx.route.Params().Get(name) // 空值也是允许的值
 
-		err := muxutil.ServeFile(fsys, p, index, ctx, ctx.Request())
+		err := mux.ServeFile(fsys, p, index, ctx, ctx.Request())
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)

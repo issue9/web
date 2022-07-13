@@ -13,7 +13,7 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
-	"github.com/issue9/mux/v6"
+	"github.com/issue9/mux/v7"
 
 	"github.com/issue9/web/server"
 )
@@ -64,10 +64,7 @@ func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
 	s.a.TB().Helper()
 
 	rs := s.Server().Routers()
-	router := rs.New("default", nil, &server.RouterOptions{
-		URLDomain:   "http://localhost:8080/",
-		RecoverFunc: mux.WriterRecovery(http.StatusInternalServerError, os.Stderr),
-	})
+	router := rs.New("default", nil, mux.URLDomain("http://localhost:8080/"), mux.WriterRecovery(http.StatusInternalServerError, os.Stderr))
 	s.a.NotNil(router)
 	router.Use(ms...)
 	return router

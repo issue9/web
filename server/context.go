@@ -13,7 +13,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/mux/v6/params"
+	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
@@ -39,7 +39,7 @@ var contextPool = &sync.Pool{New: func() any { return &Context{} }}
 // 而是采用返回 Responser 的方式向客户端输出内容。
 type Context struct {
 	server      *Server
-	params      params.Params
+	route       types.Route
 	request     *http.Request
 	contentType string
 	exits       []func(int)
@@ -77,7 +77,7 @@ type Context struct {
 }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, ps params.Params) *Context {
+func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
 	if !found {
@@ -115,7 +115,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, ps params.
 
 	ctx := contextPool.Get().(*Context)
 	ctx.server = srv
-	ctx.params = ps
+	ctx.route = route
 	ctx.request = r
 	ctx.contentType = buildContentType(outputMimetypeName, outputCharsetName)
 	if len(ctx.exits) > 0 {

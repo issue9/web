@@ -15,7 +15,8 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/mux/v6/muxutil"
+	"github.com/issue9/mux/v7"
+	"github.com/issue9/mux/v7/group"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/server"
@@ -286,11 +287,9 @@ func TestServer_Routers(t *testing.T) {
 
 	s.GoServe()
 
-	ver := muxutil.NewHeaderVersion("ver", "v", log.Default(), "2")
+	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
-	r1 := rs.New("ver", ver, &server.RouterOptions{
-		URLDomain: "https://example.com",
-	})
+	r1 := rs.New("ver", ver, mux.URLDomain("https://example.com"))
 	a.NotNil(r1)
 
 	uu, err := r1.URL(false, "/posts/1", nil)
@@ -325,11 +324,9 @@ func TestServer_FileServer(t *testing.T) {
 
 	// 带版本
 
-	ver := muxutil.NewHeaderVersion("ver", "vv", log.Default(), "2")
+	ver := group.NewHeaderVersion("ver", "vv", log.Default(), "2")
 	a.NotNil(ver)
-	r := rs.New("ver", ver, &server.RouterOptions{
-		URLDomain: "https://example.com/version",
-	})
+	r := rs.New("ver", ver, mux.URLDomain("https://example.com/version"))
 	r.Get("/ver/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 	s.Get("/ver/file1.txt").
@@ -338,11 +335,9 @@ func TestServer_FileServer(t *testing.T) {
 		Status(http.StatusOK).
 		StringBody("file1")
 
-	p := muxutil.NewPathVersion("vv", "v2")
+	p := group.NewPathVersion("vv", "v2")
 	a.NotNil(p)
-	r = rs.New("path", p, &server.RouterOptions{
-		URLDomain: "https://example.com/path",
-	})
+	r = rs.New("path", p, mux.URLDomain("https://example.com/path"))
 	r.Get("/path/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 	s.Get("/v2/path/file1.txt").

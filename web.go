@@ -13,7 +13,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.54.0"
+const Version = "0.55.0"
 
 type (
 	Server         = server.Server
@@ -26,7 +26,6 @@ type (
 	ResultFields   = server.ResultFields
 	Result         = server.Result
 	Module         = server.Module
-	RouterOptions  = server.RouterOptions
 	Responser      = server.Responser
 	Logger         = logs.Logger
 	Rule           = validation.Rule

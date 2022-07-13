@@ -13,7 +13,8 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
-	"github.com/issue9/mux/v6/routertest"
+	"github.com/issue9/mux/v7"
+	"github.com/issue9/mux/v7/routertest"
 
 	"github.com/issue9/web/serialization/text"
 	"github.com/issue9/web/serialization/text/testobject"
@@ -31,13 +32,13 @@ func BenchmarkRouter(b *testing.B) {
 		return nil
 	}
 
-	routertest.NewTester(srv.call).Bench(b, h)
+	routertest.NewTester(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
 }
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{Port: ":8080"})
-	router := srv.Routers().New("srv", nil, &RouterOptions{URLDomain: "http://localhost:8080/"})
+	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {

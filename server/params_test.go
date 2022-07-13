@@ -8,12 +8,13 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/assert/v2/rest"
+	"github.com/issue9/mux/v7"
 )
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/empty", func(ctx *Context) Responser {
@@ -33,7 +34,7 @@ func TestParams_empty(t *testing.T) {
 func TestParams_ID_MustID(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
@@ -74,7 +75,7 @@ func TestParams_ID_MustID(t *testing.T) {
 func TestParams_Int_MustInt(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
@@ -109,7 +110,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 func TestParams_Bool_MustBool(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081"))
 	a.NotNil(router)
 
 	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
@@ -144,7 +145,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 func TestParams_String_MustString(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
@@ -176,7 +177,7 @@ func TestParams_String_MustString(t *testing.T) {
 func TestParams_Float_MustFloat(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
@@ -212,7 +213,7 @@ func TestParams_Float_MustFloat(t *testing.T) {
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
@@ -232,7 +233,7 @@ func TestContext_ParamID(t *testing.T) {
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
-	router := server.Routers().New("default", nil, &RouterOptions{URLDomain: "http://localhost:8081/root"})
+	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {

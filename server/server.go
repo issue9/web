@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package server web 服务管理
+// Package server 服务管理
 package server
 
 import (
@@ -13,8 +13,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/mux/v6"
-	"github.com/issue9/mux/v6/params"
+	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -103,19 +102,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		tag:           o.LanguageTag,
 		localePrinter: o.locale.NewPrinter(o.LanguageTag),
 	}
-	srv.routers = mux.NewRoutersOf(srv.call, nil)
+	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
 
 	return srv, nil
-}
-
-func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps params.Params, f HandlerFunc) {
-	if ctx := srv.newContext(w, r, ps); ctx != nil {
-		if resp := f(ctx); resp != nil {
-			resp.Apply(ctx)
-		}
-		ctx.destroy()
-	}
 }
 
 // Name 应用的名称
