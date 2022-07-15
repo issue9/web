@@ -50,7 +50,7 @@ type Context struct {
 	respWriter     io.Writer           // http.ResponseWriter.Write 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *xencoding.Builder
+	outputEncoding *xencoding.Pool
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
@@ -158,7 +158,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Build(ctx.respWriter)
+			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.respWriter)
 			ctx.respWriter = ctx.encodingCloser
 		}
 

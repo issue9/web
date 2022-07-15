@@ -8,27 +8,28 @@ import (
 	"sync"
 )
 
-type Builder struct {
+// Pool 压缩对象池
+//
+// 每个 Pool 对象与特定的压缩对象关联，可以复用这些压缩对象。
+type Pool struct {
 	name string
 	pool *sync.Pool
 }
 
-type encodingW struct {
+// 当调用 poolWriter.Close 时自动回收到 Pool 中
+type poolWriter struct {
 	WriteCloseRester
-	b *Builder
+	b *Pool
 }
 
-func (e *encodingW) Close() error {
+func (e *poolWriter) Close() error {
 	err := e.WriteCloseRester.Close()
 	e.b.pool.Put(e.WriteCloseRester)
 	return err
 }
 
-// WriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
-type WriterFunc func(w io.Writer) (WriteCloseRester, error)
-
-func newBuilder(name string, f WriterFunc) *Builder {
-	return &Builder{
+func newBuilder(name string, f WriterFunc) *Pool {
+	return &Pool{
 		name: name,
 		pool: &sync.Pool{New: func() any {
 			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
@@ -40,10 +41,10 @@ func newBuilder(name string, f WriterFunc) *Builder {
 	}
 }
 
-func (b *Builder) Build(w io.Writer) io.WriteCloser {
+func (b *Pool) Get(w io.Writer) io.WriteCloser {
 	ww := b.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
-	return &encodingW{b: b, WriteCloseRester: ww}
+	return &poolWriter{b: b, WriteCloseRester: ww}
 }
 
-func (b *Builder) Name() string { return b.name }
+func (b *Pool) Name() string { return b.name }

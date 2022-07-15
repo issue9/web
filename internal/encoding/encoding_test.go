@@ -56,7 +56,7 @@ func TestEncodings_Add(t *testing.T) {
 		"gzip": gzipWriterFunc,
 		"br":   brWriterFunc,
 	})
-	a.Equal(2, len(e.builders))
+	a.Equal(2, len(e.pools))
 
 	// 重复添加
 	a.PanicString(func() {
@@ -154,7 +154,7 @@ func TestEncodings_Compress(t *testing.T) {
 	a.False(notAccept).NotNil(b).Equal(b.name, "br")
 
 	w := &bytes.Buffer{}
-	wc := b.Build(w)
+	wc := b.Get(w)
 	_, err := wc.Write([]byte("123456"))
 	a.NotError(err)
 	a.NotError(wc.Close())

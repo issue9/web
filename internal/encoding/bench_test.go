@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/assert/v2"
 )
 
-func BenchmarkEncodingWriterBuilder_Build(b *testing.B) {
+func BenchmarkPool_Get(b *testing.B) {
 	a := assert.New(b, false)
 
 	e := NewEncodings(nil, "text*")
@@ -24,12 +24,12 @@ func BenchmarkEncodingWriterBuilder_Build(b *testing.B) {
 		"br":   gzipWriterFunc,
 	})
 
-	builder, notAccept := e.Search("application/json", "gzip;q=0.9,br")
-	a.False(notAccept).NotNil(builder).Equal(builder.name, "br")
+	pool, notAccept := e.Search("application/json", "gzip;q=0.9,br")
+	a.False(notAccept).NotNil(pool).Equal(pool.name, "br")
 
 	for i := 0; i < b.N; i++ {
 		w := &bytes.Buffer{}
-		wc := builder.Build(w)
+		wc := pool.Get(w)
 		_, err := wc.Write([]byte("123456"))
 		a.NotError(err)
 		a.NotError(wc.Close())

@@ -5,6 +5,7 @@ package encoding
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/issue9/logs/v4"
@@ -15,12 +16,15 @@ import (
 type Encodings struct {
 	errlog logs.Logger
 
-	builders []*Builder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	pools []*Pool // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
 	ignoreTypePrefix []string // 保存通配符匹配的值列表；
 	ignoreTypes      []string // 表示完全匹配的值列表。
 	allowAny         bool
 }
+
+// WriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
+type WriterFunc func(w io.Writer) (WriteCloseRester, error)
 
 // NewEncodings 创建 *Encodings
 //
@@ -31,8 +35,8 @@ type Encodings struct {
 // 不能传递 *。
 func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 	c := &Encodings{
-		builders: make([]*Builder, 0, 4),
-		errlog:   errlog,
+		pools:  make([]*Pool, 0, 4),
+		errlog: errlog,
 	}
 
 	c.ignoreTypePrefix = make([]string, 0, len(ignoreTypes))
@@ -65,11 +69,11 @@ func (c *Encodings) add(name string, f WriterFunc) {
 		panic("参数 w 不能为空")
 	}
 
-	if sliceutil.Count(c.builders, func(e *Builder) bool { return e.name == name }) > 0 {
+	if sliceutil.Count(c.pools, func(e *Pool) bool { return e.name == name }) > 0 {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
-	c.builders = append(c.builders, newBuilder(name, f))
+	c.pools = append(c.pools, newBuilder(name, f))
 }
 
 // Add 添加压缩算法
@@ -89,8 +93,8 @@ func (c *Encodings) Add(algos map[string]WriterFunc) {
 // Search 从报头中查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
-func (c *Encodings) Search(mimetype, header string) (w *Builder, notAcceptable bool) {
-	if len(c.builders) == 0 || !c.canCompressed(mimetype) {
+func (c *Encodings) Search(mimetype, header string) (w *Pool, notAcceptable bool) {
+	if len(c.pools) == 0 || !c.canCompressed(mimetype) {
 		return
 	}
 
@@ -105,7 +109,7 @@ func (c *Encodings) Search(mimetype, header string) (w *Builder, notAcceptable b
 			return nil, true
 		}
 
-		for _, a := range c.builders {
+		for _, a := range c.pools {
 			index := sliceutil.Index(accepts.Items, func(e *qheader.Item) bool {
 				return e.Value == a.name
 			})
@@ -129,14 +133,14 @@ func (c *Encodings) Search(mimetype, header string) (w *Builder, notAcceptable b
 			identity = accept
 		}
 
-		for _, a := range c.builders {
+		for _, a := range c.pools {
 			if a.name == accept.Value {
 				return a, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		a := c.builders[0]
+		a := c.pools[0]
 		return a, false
 	}
 
