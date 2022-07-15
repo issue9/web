@@ -25,6 +25,7 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
+	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
@@ -53,10 +54,10 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 
 	// encoding
 	if o.Encodings == nil {
-		o.Encodings = serialization.NewEncodings(o.Logs.ERROR())
-		o.Encodings.Add(map[string]serialization.EncodingWriterFunc{
-			"gzip":    serialization.GZipWriter,
-			"deflate": serialization.DeflateWriter,
+		o.Encodings = xencoding.NewEncodings(o.Logs.ERROR())
+		o.Encodings.Add(map[string]xencoding.WriterFunc{
+			"gzip":    xencoding.GZipWriter,
+			"deflate": xencoding.DeflateWriter,
 		})
 	}
 

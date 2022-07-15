@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/serialization/gob"
 	"github.com/issue9/web/serialization/text"
@@ -35,10 +36,10 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 
 	// encoding
 	if o.Encodings == nil {
-		o.Encodings = serialization.NewEncodings(o.Logs.ERROR())
-		o.Encodings.Add(map[string]serialization.EncodingWriterFunc{
-			"gzip":    serialization.GZipWriter,
-			"deflate": serialization.DeflateWriter,
+		o.Encodings = encoding.NewEncodings(o.Logs.ERROR())
+		o.Encodings.Add(map[string]encoding.WriterFunc{
+			"gzip":    encoding.GZipWriter,
+			"deflate": encoding.DeflateWriter,
 		})
 	}
 

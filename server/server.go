@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 )
 
@@ -36,7 +37,7 @@ type Server struct {
 	httpServer *http.Server
 	vars       *sync.Map
 	mimetypes  *serialization.Mimetypes
-	encodings  *serialization.Encodings
+	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
 	serving    bool

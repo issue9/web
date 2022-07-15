@@ -22,6 +22,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
+	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 )
 
@@ -49,7 +50,7 @@ type Context struct {
 	respWriter     io.Writer           // http.ResponseWriter.Write 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *serialization.EncodingBuilder
+	outputEncoding *xencoding.Builder
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool

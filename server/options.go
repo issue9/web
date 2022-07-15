@@ -16,6 +16,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 )
 
@@ -73,7 +74,7 @@ type Options struct {
 	// 压缩对象
 	//
 	// 可以为空，表示不支持压缩功能。
-	Encodings *serialization.Encodings
+	Encodings *encoding.Encodings
 
 	// 对数据编解码的支持
 	//
@@ -141,7 +142,7 @@ func (o *Options) sanitize() (err error) {
 	}
 
 	if o.Encodings == nil {
-		o.Encodings = serialization.NewEncodings(o.Logs.ERROR())
+		o.Encodings = encoding.NewEncodings(o.Logs.ERROR())
 	}
 
 	if o.Mimetypes == nil {

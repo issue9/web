@@ -6,10 +6,10 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/internal/encoding"
 )
 
-var encodingFactory = map[string]serialization.EncodingWriterFunc{}
+var encodingFactory = map[string]encoding.WriterFunc{}
 
 type encodingsConfig struct {
 	// 忽略对此类 mimetype 内容的压缩
@@ -31,12 +31,12 @@ type encodingConfig struct {
 	Encoding string `json:"encoding" xml:"encoding,attr" yaml:"encoding"`
 }
 
-func (conf *encodingsConfig) build(l logs.Logger) (*serialization.Encodings, *ConfigError) {
+func (conf *encodingsConfig) build(l logs.Logger) (*encoding.Encodings, *ConfigError) {
 	if conf == nil {
-		return serialization.NewEncodings(l), nil
+		return encoding.NewEncodings(l), nil
 	}
 
-	es := make(map[string]serialization.EncodingWriterFunc)
+	es := make(map[string]encoding.WriterFunc)
 	for _, e := range conf.Encodings {
 		f, found := encodingFactory[e.Encoding]
 		if !found {
@@ -45,12 +45,12 @@ func (conf *encodingsConfig) build(l logs.Logger) (*serialization.Encodings, *Co
 		es[e.Name] = f
 	}
 
-	encoding := serialization.NewEncodings(l, conf.Ignores...)
+	encoding := encoding.NewEncodings(l, conf.Ignores...)
 	encoding.Add(es)
 	return encoding, nil
 }
 
-func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
+func RegisterEncoding(f encoding.WriterFunc, name string) {
 	if _, found := encodingFactory[name]; found {
 		panic("已经存在相同的 name:" + name)
 	}
@@ -58,7 +58,7 @@ func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
 }
 
 func init() {
-	RegisterEncoding(serialization.DeflateWriter, "deflate")
-	RegisterEncoding(serialization.BrotliWriter, "brotli")
-	RegisterEncoding(serialization.GZipWriter, "gzip")
+	RegisterEncoding(encoding.DeflateWriter, "deflate")
+	RegisterEncoding(encoding.BrotliWriter, "brotli")
+	RegisterEncoding(encoding.GZipWriter, "gzip")
 }

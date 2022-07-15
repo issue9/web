@@ -1,18 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-package serialization
+// Package encoding 处理 Accept-encoding 报头内容
+package encoding
 
 import (
-	"bytes"
-	"compress/flate"
-	"compress/gzip"
-	"compress/lzw"
 	"fmt"
-	"io"
 	"strings"
-	"sync"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
@@ -21,94 +15,12 @@ import (
 type Encodings struct {
 	errlog logs.Logger
 
-	builders []*EncodingBuilder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	builders []*Builder // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
 	ignoreTypePrefix []string // 保存通配符匹配的值列表；
 	ignoreTypes      []string // 表示完全匹配的值列表。
 	allowAny         bool
 }
-
-// EncodingWriter 每种压缩实例需要实现的最小接口
-type EncodingWriter interface {
-	io.WriteCloser
-	Reset(io.Writer)
-}
-
-type EncodingBuilder struct {
-	name string
-	pool *sync.Pool
-}
-
-type encodingW struct {
-	EncodingWriter
-	b *EncodingBuilder
-}
-
-type compressWriter struct {
-	*lzw.Writer
-	order lzw.Order
-	width int
-}
-
-func newCompressWriter(w io.Writer, order lzw.Order, width int) *compressWriter {
-	return &compressWriter{
-		Writer: lzw.NewWriter(w, order, width).(*lzw.Writer),
-	}
-}
-
-func (cw *compressWriter) Reset(w io.Writer) {
-	cw.Writer.Reset(w, cw.order, cw.width)
-}
-
-func (e *encodingW) Close() error {
-	err := e.EncodingWriter.Close()
-	e.b.pool.Put(e.EncodingWriter)
-	return err
-}
-
-// EncodingWriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
-type EncodingWriterFunc func(w io.Writer) (EncodingWriter, error)
-
-// GZipWriter gzip
-func GZipWriter(w io.Writer) (EncodingWriter, error) {
-	return gzip.NewWriter(w), nil
-}
-
-// DeflateWriter deflate
-func DeflateWriter(w io.Writer) (EncodingWriter, error) {
-	return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
-}
-
-// BrotliWriter br
-func BrotliWriter(w io.Writer) (EncodingWriter, error) {
-	return brotli.NewWriter(w), nil
-}
-
-// CompressWriter compress
-func CompressWriter(w io.Writer) (EncodingWriter, error) {
-	return newCompressWriter(w, lzw.LSB, 5), nil
-}
-
-func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
-	return &EncodingBuilder{
-		name: name,
-		pool: &sync.Pool{New: func() any {
-			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
-			if err != nil {
-				panic(err)
-			}
-			return w
-		}},
-	}
-}
-
-func (b *EncodingBuilder) Build(w io.Writer) io.WriteCloser {
-	ww := b.pool.Get().(EncodingWriter)
-	ww.Reset(w)
-	return &encodingW{b: b, EncodingWriter: ww}
-}
-
-func (b *EncodingBuilder) Name() string { return b.name }
 
 // NewEncodings 创建 *Encodings
 //
@@ -119,7 +31,7 @@ func (b *EncodingBuilder) Name() string { return b.name }
 // 不能传递 *。
 func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 	c := &Encodings{
-		builders: make([]*EncodingBuilder, 0, 4),
+		builders: make([]*Builder, 0, 4),
 		errlog:   errlog,
 	}
 
@@ -144,7 +56,7 @@ func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 	return c
 }
 
-func (c *Encodings) add(name string, f EncodingWriterFunc) {
+func (c *Encodings) add(name string, f WriterFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
@@ -153,11 +65,11 @@ func (c *Encodings) add(name string, f EncodingWriterFunc) {
 		panic("参数 w 不能为空")
 	}
 
-	if sliceutil.Count(c.builders, func(e *EncodingBuilder) bool { return e.name == name }) > 0 {
+	if sliceutil.Count(c.builders, func(e *Builder) bool { return e.name == name }) > 0 {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
-	c.builders = append(c.builders, newEncodingBuilder(name, f))
+	c.builders = append(c.builders, newBuilder(name, f))
 }
 
 // Add 添加压缩算法
@@ -168,7 +80,7 @@ func (c *Encodings) add(name string, f EncodingWriterFunc) {
 // 如果未添加任何算法，则每个请求都相当于是 identity 规则。
 //
 // 返回值表示是否添加成功，若为 false，则表示已经存在相同名称的对象。
-func (c *Encodings) Add(algos map[string]EncodingWriterFunc) {
+func (c *Encodings) Add(algos map[string]WriterFunc) {
 	for name, algo := range algos {
 		c.add(name, algo)
 	}
@@ -177,7 +89,7 @@ func (c *Encodings) Add(algos map[string]EncodingWriterFunc) {
 // Search 从报头中查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
-func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcceptable bool) {
+func (c *Encodings) Search(mimetype, header string) (w *Builder, notAcceptable bool) {
 	if len(c.builders) == 0 || !c.canCompressed(mimetype) {
 		return
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
@@ -62,7 +63,7 @@ type configOf[T any] struct {
 	// 如果为空，那么不支持压缩功能。
 	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、brotli 和 deflate 三种类型。
 	Encodings *encodingsConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
-	encoding  *serialization.Encodings
+	encoding  *encoding.Encodings
 
 	// 指定可用的 mimetype
 	//
