@@ -19,13 +19,12 @@ import (
 type configOf[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
-	cleanup []server.CleanupFunc
-
 	// 日志系统的配置项
 	//
 	// 如果为空，所有日志输出都将被抛弃。
-	Logs *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
-	logs *logs.Logs
+	Logs    *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
+	logs    *logs.Logs
+	cleanup []server.CleanupFunc
 
 	// 指定默认语言
 	//
@@ -75,23 +74,21 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
-// NewOptionsOf 从配置文件初始化 server.Options 实例
-//
-// 并不是所有的 server.Options 字段都能从 NewOptionsOf 中获得值，
-// 像 Mimetypes、ResultBuilder 等可能改变程序行为的字段，
-// 并不允许从配置文件中进行修改。
-//  opt, user, err := app.NeOptionsOf(...)
-//  opt.Mimetypes = serialization.NewMimetypes()
-//  opt.Mimetypes.Add(...)
-//  srv := server.New("app", "1.0.0", opt)
+// NewServerOf 从配置文件初始化 server.Server 实例
 //
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载；
+// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载，
+// 如果此值为空，将以 &server.Options{FS: fsys, FileSerializers: files} 作为初始化条件；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-func NewOptionsOf[T any](files *serialization.Files, fsys fs.FS, filename string) (*server.Options, *T, error) {
+func NewServerOf[T any](name, version string, files *serialization.Files, fsys fs.FS, filename string) (*server.Server, *T, error) {
+	if filename == "" {
+		s, err := server.New(name, version, &server.Options{FS: fsys, FileSerializers: files})
+		return s, nil, err
+	}
+
 	conf := &configOf[T]{}
 	if err := files.LoadFS(fsys, filename, conf); err != nil {
 		return nil, nil, err
@@ -103,7 +100,7 @@ func NewOptionsOf[T any](files *serialization.Files, fsys fs.FS, filename string
 	}
 
 	h := conf.HTTP
-	return &server.Options{
+	opt := &server.Options{
 		FS:       fsys,
 		Location: conf.location,
 		Cache:    conf.cache,
@@ -122,8 +119,16 @@ func NewOptionsOf[T any](files *serialization.Files, fsys fs.FS, filename string
 		Encodings:       conf.encoding,
 		Mimetypes:       conf.mimetypes,
 		LanguageTag:     conf.languageTag,
-		Cleanup:         conf.cleanup,
-	}, conf.User, nil
+	}
+
+	s, err := server.New(name, version, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	s.OnClose(conf.cleanup...)
+
+	return s, conf.User, nil
 }
 
 func (conf *configOf[T]) sanitize() *ConfigError {
@@ -133,7 +138,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 		return err
 	}
 	conf.logs = l
-	conf.cleanup = append(conf.cleanup, cleanup...)
+	conf.cleanup = cleanup
 
 	if err = conf.buildCache(); err != nil {
 		err.Field = "cache." + err.Field

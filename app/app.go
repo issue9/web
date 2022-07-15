@@ -13,7 +13,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"os/signal"
 	"time"
@@ -70,11 +69,6 @@ type AppOf[T any] struct {
 	//
 	// 比如添加模块等。不可以为空。
 	Init func(s *server.Server, user *T, action string) error
-
-	// 在初始化 Server 之前对 Options 的二次处理
-	//
-	// 可以为空。
-	Options func(*server.Options) error
 
 	// 命令行输出信息的通道
 	//
@@ -195,12 +189,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	opt, user, err := cmd.initOptions(os.DirFS(*f))
-	if err != nil {
-		return err
-	}
-
-	srv, err := server.New(cmd.Name, cmd.Version, opt)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.FileSerializers, os.DirFS(*f), cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}
@@ -218,28 +207,6 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	}
 
 	return srv.Serve()
-}
-
-func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
-	if cmd.ConfigFilename != "" {
-		opt, user, err = NewOptionsOf[T](cmd.FileSerializers, fsys, cmd.ConfigFilename)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		opt = &server.Options{
-			FS:              fsys,
-			FileSerializers: cmd.FileSerializers,
-		}
-	}
-
-	if cmd.Options != nil {
-		if err := cmd.Options(opt); err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return opt, user, nil
 }
 
 func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {

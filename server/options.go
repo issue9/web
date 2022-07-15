@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
@@ -88,17 +87,6 @@ type Options struct {
 	//
 	// 如果为空，则会尝试读取当前系统的本地化信息。
 	LanguageTag language.Tag
-
-	// 本地化操作的对象
-	//
-	// 与 FileSerializers 组合构建 serialization.Locale 对象，可以为空。
-	Catalog *catalog.Builder
-	locale  *serialization.Locale
-
-	// 退出项目时执行的操作
-	//
-	// 数组的元素越靠后越早执行，且在此处指定的项目会晚于 Server.OnClose 执行。
-	Cleanup []CleanupFunc
 }
 
 func (o *Options) sanitize() (err error) {
@@ -148,11 +136,6 @@ func (o *Options) sanitize() (err error) {
 	if o.Mimetypes == nil {
 		o.Mimetypes = serialization.NewMimetypes(10)
 	}
-
-	if o.Catalog == nil {
-		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.LanguageTag))
-	}
-	o.locale = serialization.NewLocale(o.Catalog, o.FileSerializers)
 
 	return nil
 }

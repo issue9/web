@@ -28,35 +28,37 @@ func (u *userData) SanitizeConfig() *ConfigError {
 	return nil
 }
 
-func TestNewOptions(t *testing.T) {
+func TestNewServerOf(t *testing.T) {
 	a := assert.New(t, false)
 	files := serialization.NewFiles(5)
+	const name = "app"
+	const ver = "1.0"
 
-	opt, data, err := NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
-	a.Error(err).Nil(opt).Nil(data)
+	s, data, err := NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "web.yaml")
+	a.Error(err).Nil(s).Nil(data)
 
 	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "web.yaml")
-	a.NotError(err).NotNil(opt).Nil(data).
-		Equal(opt.LanguageTag, language.Und).
-		Equal(opt.Mimetypes.Len(), 3)
+	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "web.yaml")
+	a.NotError(err).NotNil(s).Nil(data)
+	//Equal(s.Tag(), language.Und) // TODO 恢复
+	//Equal(s., 3)
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata/not-exists"), "web.yaml")
-	a.ErrorIs(err, fs.ErrNotExist).Nil(opt).Nil(data)
+	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata/not-exists"), "web.yaml")
+	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
 
-	opt, data, err = NewOptionsOf[empty](files, os.DirFS("./testdata"), "invalid-web.xml")
-	a.Error(err).Nil(opt).Nil(data)
+	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "invalid-web.xml")
+	a.Error(err).Nil(s).Nil(data)
 	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
 	a.Equal(err2.Path, "invalid-web.xml").
 		Equal(err2.Field, "http.acme.domains")
 
 	// 自定义 T
-	opt, user, err := NewOptionsOf[userData](files, os.DirFS("./testdata"), "user.xml")
-	a.NotError(err).NotNil(opt).NotNil(user)
-	a.Equal(user.ID, 1).Equal(opt.Port, ":8082")
+	s, user, err := NewServerOf[userData](name, ver, files, os.DirFS("./testdata"), "user.xml")
+	a.NotError(err).NotNil(s).NotNil(user)
+	a.Equal(user.ID, 1)
 }
 
 func TestWebconfig_sanitize(t *testing.T) {

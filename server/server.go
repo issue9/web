@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serialization"
@@ -74,6 +75,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
+	l := serialization.NewLocale(catalog.NewBuilder(catalog.Fallback(o.LanguageTag)), o.FileSerializers)
+
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -87,7 +90,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		uptime:     time.Now(),
 
 		closed: make(chan struct{}, 1),
-		closes: o.Cleanup,
 
 		// service
 		services:  make([]*Service, 0, 100),
@@ -99,9 +101,9 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		location:      o.Location,
-		locale:        o.locale,
+		locale:        l,
 		tag:           o.LanguageTag,
-		localePrinter: o.locale.NewPrinter(o.LanguageTag),
+		localePrinter: l.NewPrinter(o.LanguageTag),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
@@ -221,4 +223,4 @@ func (srv *Server) Serving() bool { return srv.serving }
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f CleanupFunc) { srv.closes = append(srv.closes, f) }
+func (srv *Server) OnClose(f ...CleanupFunc) { srv.closes = append(srv.closes, f...) }
