@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"compress/lzw"
 	"fmt"
 	"io"
 	"strings"
@@ -43,6 +44,22 @@ type encodingW struct {
 	b *EncodingBuilder
 }
 
+type compressWriter struct {
+	*lzw.Writer
+	order lzw.Order
+	width int
+}
+
+func newCompressWriter(w io.Writer, order lzw.Order, width int) *compressWriter {
+	return &compressWriter{
+		Writer: lzw.NewWriter(w, order, width).(*lzw.Writer),
+	}
+}
+
+func (cw *compressWriter) Reset(w io.Writer) {
+	cw.Writer.Reset(w, cw.order, cw.width)
+}
+
 func (e *encodingW) Close() error {
 	err := e.EncodingWriter.Close()
 	e.b.pool.Put(e.EncodingWriter)
@@ -65,6 +82,11 @@ func DeflateWriter(w io.Writer) (EncodingWriter, error) {
 // BrotliWriter br
 func BrotliWriter(w io.Writer) (EncodingWriter, error) {
 	return brotli.NewWriter(w), nil
+}
+
+// CompressWriter compress
+func CompressWriter(w io.Writer) (EncodingWriter, error) {
+	return newCompressWriter(w, lzw.LSB, 5), nil
 }
 
 func newEncodingBuilder(name string, f EncodingWriterFunc) *EncodingBuilder {
@@ -161,18 +183,18 @@ func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcce
 	}
 
 	accepts := qheader.Parse(header, "*")
-	if len(accepts) == 0 {
+	if accepts == nil || len(accepts.Items) == 0 {
 		return
 	}
 
-	last := accepts[len(accepts)-1]
+	last := accepts.Items[len(accepts.Items)-1]
 	if last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {
 			return nil, true
 		}
 
 		for _, a := range c.builders {
-			index := sliceutil.Index(accepts, func(e *qheader.Header) bool {
+			index := sliceutil.Index(accepts.Items, func(e *qheader.Item) bool {
 				return e.Value == a.name
 			})
 			if index < 0 {
@@ -182,8 +204,8 @@ func (c *Encodings) Search(mimetype, header string) (w *EncodingBuilder, notAcce
 		return
 	}
 
-	var identity *qheader.Header
-	for _, accept := range accepts {
+	var identity *qheader.Item
+	for _, accept := range accepts.Items {
 		if accept.Err != nil {
 			if c.errlog != nil {
 				c.errlog.Error(accept.Err)

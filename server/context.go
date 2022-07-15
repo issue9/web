@@ -342,9 +342,9 @@ func acceptCharset(header string) (name string, enc encoding.Encoding) {
 	}
 
 	var err error
-	accepts := qheader.Parse(header, "*")
-	for _, apt := range accepts {
-		enc, err = htmlindex.Get(apt.Value)
+	qh := qheader.Parse(header, "*")
+	for _, item := range qh.Items {
+		enc, err = htmlindex.Get(item.Value)
 		if err != nil { // err != nil 表示未找到，继续查找
 			continue
 		}
@@ -352,7 +352,7 @@ func acceptCharset(header string) (name string, enc encoding.Encoding) {
 		// 转换成官方的名称
 		name, err = htmlindex.Name(enc)
 		if err != nil {
-			name = apt.Value // 不存在，直接使用用户上传的名称
+			name = item.Value // 不存在，直接使用用户上传的名称
 		}
 
 		return name, enc

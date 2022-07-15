@@ -25,8 +25,8 @@ github.com/issue9/logs/v4 v4.0.0-beta.4 h1:t/plOb33/Qcu+Urin+h7jYlPNHWwlLcPy/as+
 github.com/issue9/logs/v4 v4.0.0-beta.4/go.mod h1:sgOg5KZhp9fvmpoGfFY+HXC/O671o5xIO3Jg9EaCEuo=
 github.com/issue9/mux/v7 v7.0.0-beta.1 h1:+DRHX39AG7zyA5H9GSZx+Bnh9KNTrNo+eJXCREXtUZE=
 github.com/issue9/mux/v7 v7.0.0-beta.1/go.mod h1:8OqP6HjpMwIHEf3vczpMohzEI7GgRD0mIHSG8irY/dc=
-github.com/issue9/qheader v0.5.5 h1:6LxVoqnxIthEuoZn2rFBGxOdoxN9gh+n1GI1TiGQe4Q=
-github.com/issue9/qheader v0.5.5/go.mod h1:oZVXJYWaO2ha6yFlYPrdkTpEpg8InAIRo65fGytoWRo=
+github.com/issue9/qheader v0.6.1 h1:PRfTpBnqY6SF8Gb9xDb24o8wQH6ToCtlSSnKSsf1A3U=
+github.com/issue9/qheader v0.6.1/go.mod h1:U6EZ9suKnvsMQjgmXG4XJbsNnF+X0SH0ltTPiXKryks=
 github.com/issue9/query/v3 v3.0.0 h1:3w6RAmKhridWZoHBHrtS0l2zfzIc6VYMbRySdKttQ0Q=
 github.com/issue9/query/v3 v3.0.0/go.mod h1:LyQUNVX4rGBWAzXvojy4HJFiehudoWw1TWjTYibHRps=
 github.com/issue9/scheduled v0.9.2 h1:/BoWM5IyF2iQXKIUTLSCStMzV6B/jXQIymSmMUlTvOc=

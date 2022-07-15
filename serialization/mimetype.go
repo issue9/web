@@ -41,10 +41,11 @@ func (ms *Mimetypes) MarshalFunc(header string) (string, MarshalFunc, bool) {
 		return "", nil, false
 	}
 
-	accepts := qheader.Parse(header, "*/*")
-	for _, accept := range accepts {
-		if name, m := ms.findMarshal(accept.Value); name != "" {
-			return name, m, true
+	if qh := qheader.Parse(header, "*/*"); qh != nil {
+		for _, item := range qh.Items {
+			if name, m := ms.findMarshal(item.Value); name != "" {
+				return name, m, true
+			}
 		}
 	}
 
