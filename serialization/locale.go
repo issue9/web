@@ -44,12 +44,12 @@ func (l *Locale) LoadFile(glob string) error {
 
 // LoadFileFS 从文件中加载本地化内容
 func (l *Locale) LoadFileFS(fsys fs.FS, glob string) error {
-	matchs, err := fs.Glob(fsys, glob)
+	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
 		return err
 	}
 
-	for _, m := range matchs {
+	for _, m := range matches {
 		_, u := l.Files().searchByExt(m)
 		if u == nil {
 			return localeutil.Error("not found serialization function for %s", m)

@@ -42,21 +42,19 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) buildMimetypes() (*serialization.Mimetypes, *ConfigError) {
-	mt := serialization.NewMimetypes(len(conf.Mimetypes))
-
+func (conf *configOf[T]) buildMimetypes(mt *serialization.Serialization) *ConfigError {
 	for _, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return nil, &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
+			return &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
 		}
 
 		if err := mt.Add(m.m, m.u, item.Encoding); err != nil {
-			return nil, &ConfigError{Field: item.Target, Message: err}
+			return &ConfigError{Field: item.Target, Message: err}
 		}
 	}
 
-	return mt, nil
+	return nil
 }
 
 // RegisterMimetype 注册 mimetype

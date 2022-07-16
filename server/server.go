@@ -21,6 +21,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/serialization"
 )
 
@@ -37,7 +38,7 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	mimetypes  *serialization.Mimetypes
+	mimetypes  *mimetypes.Mimetypes
 	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
@@ -84,7 +85,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
-		mimetypes:  o.Mimetypes,
+		mimetypes:  mimetypes.New(10),
 		encodings:  o.Encodings,
 		cache:      o.Cache,
 		uptime:     time.Now(),
@@ -134,6 +135,9 @@ func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
+
+// Mimetypes 编解码控制
+func (srv *Server) Mimetypes() *serialization.Serialization { return srv.mimetypes.Serialization }
 
 // Now 返回当前时间
 //

@@ -32,14 +32,13 @@ type (
 	}
 )
 
-// New 声明 Serialization 对象
 func New(c int) *Serialization {
 	return &Serialization{serializes: make([]*serializer, 0, c)}
 }
 
 // Add 添加序列化函数
 //
-// m 和 u 可以为 nil，表示仅作为一个占位符使用，具体处理要在 ServeHTTP 中另作处理；
+// m 和 u 可以为 nil，表示仅作为一个占位符使用；
 //
 // name 表示之后用于查找该序列化函数的唯一 ID，
 // 后期用户可以根据 name 从 c.Search 直接查找相应的序列化函数。
@@ -92,11 +91,14 @@ func (s *Serialization) Delete(name string) {
 	})
 }
 
+// Search 根据注册时的名称查找
 func (s *Serialization) Search(name string) (string, MarshalFunc, UnmarshalFunc) {
 	return s.SearchFunc(func(n string) bool { return n == name })
 }
 
-// SearchFunc 如果返回的 name 为空，表示没有找到
+// SearchFunc 按指定方法查找序列化方法
+//
+// 如果返回的 name 为空，表示没有找到
 func (s *Serialization) SearchFunc(match func(string) bool) (string, MarshalFunc, UnmarshalFunc) {
 	for _, mt := range s.serializes {
 		if match(mt.Name) {

@@ -68,7 +68,6 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetype,omitempty"`
-	mimetypes *serialization.Mimetypes
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -117,12 +116,17 @@ func NewServerOf[T any](name, version string, files *serialization.Files, fsys f
 		Logs:            conf.logs,
 		FileSerializers: files,
 		Encodings:       conf.encoding,
-		Mimetypes:       conf.mimetypes,
 		LanguageTag:     conf.languageTag,
 	}
 
 	s, err := server.New(name, version, opt)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := conf.buildMimetypes(s.Mimetypes()); err != nil {
+		err.Field = "mimetypes." + err.Field
+		err.Path = filename
 		return nil, nil, err
 	}
 
@@ -168,12 +172,6 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	conf.encoding, err = conf.Encodings.build(l.ERROR())
 	if err != nil {
 		err.Field = "encodings." + err.Field
-		return err
-	}
-
-	conf.mimetypes, err = conf.buildMimetypes()
-	if err != nil {
-		err.Field = "mimetypes." + err.Field
 		return err
 	}
 

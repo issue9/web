@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package serialization
+package mimetypes
 
 import (
 	"encoding/json"
@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
+
+	"github.com/issue9/web/serialization"
 )
 
 const testMimetype = "application/octet-stream"
@@ -15,7 +17,7 @@ const testMimetype = "application/octet-stream"
 func TestMimetypes_UnmarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := NewMimetypes(10)
+	mt := New(10)
 	a.NotNil(mt)
 
 	um, found := mt.UnmarshalFunc("")
@@ -42,7 +44,7 @@ func TestMimetypes_UnmarshalFunc(t *testing.T) {
 
 func TestMimetypes_MarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
-	mt := NewMimetypes(10)
+	mt := New(10)
 
 	name, marshal, found := mt.MarshalFunc(testMimetype)
 	a.False(found).
@@ -60,30 +62,30 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 
 	name, marshal, found = mt.MarshalFunc(testMimetype)
 	a.True(found).
-		Equal(marshal, MarshalFunc(xml.Marshal)).
+		Equal(marshal, serialization.MarshalFunc(xml.Marshal)).
 		Equal(name, testMimetype)
 
 	mt.Set(testMimetype, json.Marshal, json.Unmarshal)
 	name, marshal, found = mt.MarshalFunc(testMimetype)
 	a.True(found).
-		Equal(marshal, MarshalFunc(json.Marshal)).
+		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, found = mt.MarshalFunc("*/*")
 	a.True(found).
-		Equal(marshal, MarshalFunc(json.Marshal)).
+		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	// 同 */*
 	name, marshal, found = mt.MarshalFunc("")
 	a.True(found).
-		Equal(marshal, MarshalFunc(json.Marshal)).
+		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	name, marshal, found = mt.MarshalFunc("*/*,text/plain")
 	a.True(found).
-		Equal(marshal, MarshalFunc(json.Marshal)).
+		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
 		Equal(name, "text/plain")
 
 	name, marshal, found = mt.MarshalFunc("font/wottf;q=x.9")
@@ -105,7 +107,7 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mt := NewMimetypes(10)
+	mt := New(10)
 
 	a.NotError(mt.Add(nil, nil, "text", "text/plain", "text/text"))
 	a.NotError(mt.Add(nil, nil, "application/aa"))

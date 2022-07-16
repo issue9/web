@@ -75,11 +75,6 @@ type Options struct {
 	// 可以为空，表示不支持压缩功能。
 	Encodings *encoding.Encodings
 
-	// 对数据编解码的支持
-	//
-	// 如果此内容为空，那么所有请求都将返回 404，且无法解析任意的提交的内容。
-	Mimetypes *serialization.Mimetypes
-
 	// 默认的语言标签
 	//
 	// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
@@ -131,10 +126,6 @@ func (o *Options) sanitize() (err error) {
 
 	if o.Encodings == nil {
 		o.Encodings = encoding.NewEncodings(o.Logs.ERROR())
-	}
-
-	if o.Mimetypes == nil {
-		o.Mimetypes = serialization.NewMimetypes(10)
 	}
 
 	return nil

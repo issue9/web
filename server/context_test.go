@@ -61,18 +61,17 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		})
 	}
 
+	srv, err := New("app", "0.1.0", o)
+	a.NotError(err).NotNil(srv)
+	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+
 	// mimetype
-	mimetype := serialization.NewMimetypes(10)
+	mimetype := srv.Mimetypes()
 	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
 	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
 	a.NotError(mimetype.Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
 	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(mimetype.Add(nil, nil, "nil"))
-	o.Mimetypes = mimetype
-
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// locale
 	b := srv.Locale().Builder()
