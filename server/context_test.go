@@ -494,18 +494,18 @@ func TestServer_contentType(t *testing.T) {
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 	a.NotNil(srv)
 
-	f, e, err := srv.conentType(";;;")
+	f, e, err := srv.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
 
 	// 不存在的 mimetype
-	f, e, err = srv.conentType(buildContentType("not-exists", DefaultCharset))
+	f, e, err = srv.contentType(buildContentType("not-exists", DefaultCharset))
 	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
-	f, e, err = srv.conentType(buildContentType(DefaultMimetype, DefaultCharset))
+	f, e, err = srv.contentType(buildContentType(DefaultMimetype, DefaultCharset))
 	a.NotError(err).NotNil(f).NotNil(e)
 
 	// 无效的字符集名称
-	f, e, err = srv.conentType(buildContentType(DefaultMimetype, "invalid-charset"))
+	f, e, err = srv.contentType(buildContentType(DefaultMimetype, "invalid-charset"))
 	a.Error(err).Nil(f).Nil(e)
 }
 

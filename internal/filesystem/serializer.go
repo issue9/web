@@ -51,7 +51,7 @@ func (f *Serializer) Load(fsys fs.FS, name string, v any) error {
 
 func (f *Serializer) searchByExt(filename string) (serializer.MarshalFunc, serializer.UnmarshalFunc) {
 	ext := filepath.Ext(filename)
-	_, m, u := f.Serializer().SearchFunc(func(s string) bool { return s == ext })
+	_, m, u := f.Serializer().Search(ext)
 	return m, u
 }
 

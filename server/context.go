@@ -82,7 +82,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
 	if !found {
-		srv.Logs().Debug(srv.localePrinter.Sprintf("not found serialization for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -90,7 +90,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
-		srv.Logs().Debug(srv.localePrinter.Sprintf("not found charset for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found charset for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -105,7 +105,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	header = r.Header.Get("Content-Type")
-	inputMimetype, inputCharset, err := srv.conentType(header)
+	inputMimetype, inputCharset, err := srv.contentType(header)
 	if err != nil {
 		srv.Logs().Debug(err)
 		w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -143,7 +143,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
 	ctx.localePrinter = srv.NewPrinter(tag)
-	ctx.location = srv.location
+	ctx.location = srv.Location()
 	if len(ctx.body) > 0 {
 		ctx.body = ctx.body[:0]
 	}
@@ -197,7 +197,7 @@ func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // SetLocation 设置时区信息
 //
-// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocataion
+// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocation
 func (ctx *Context) SetLocation(name string) error {
 	l, err := time.LoadLocation(name)
 	if err == nil {
@@ -370,7 +370,7 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	return tag
 }
 
-func (srv *Server) conentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
+func (srv *Server) contentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
 	var mt, charset = DefaultMimetype, DefaultCharset
 
 	if header != "" {
