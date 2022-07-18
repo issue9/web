@@ -61,4 +61,5 @@ func init() {
 	RegisterEncoding(encoding.DeflateWriter, "deflate")
 	RegisterEncoding(encoding.BrotliWriter, "brotli")
 	RegisterEncoding(encoding.GZipWriter, "gzip")
+	RegisterEncoding(encoding.CompressWriter, "compress")
 }
