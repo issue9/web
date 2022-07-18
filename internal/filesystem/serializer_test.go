@@ -25,7 +25,7 @@ type object struct {
 	Timezone string   `xml:"timezone" yaml:"timezone"`
 }
 
-func TestFiles_Load(t *testing.T) {
+func TestSerializer_Load(t *testing.T) {
 	a := assert.New(t, false)
 	f := NewSerializer(serializer.New(5))
 	a.NotNil(f)
@@ -44,7 +44,7 @@ func TestFiles_Load(t *testing.T) {
 	a.Error(f.Load(testdata, "web.yaml", v))
 }
 
-func TestFiles_Save(t *testing.T) {
+func TestSerializer_Save(t *testing.T) {
 	a := assert.New(t, false)
 	f := NewSerializer(serializer.New(10))
 	a.NotNil(f)
@@ -58,7 +58,7 @@ func TestFiles_Save(t *testing.T) {
 	a.NotError(f.Save(tmp+"/web.xml", v))
 }
 
-func TestLoadLocale(t *testing.T) {
+func TestLoadLocaleFiles(t *testing.T) {
 	a := assert.New(t, false)
 	f := NewSerializer(serializer.New(5))
 	b := catalog.NewBuilder()
