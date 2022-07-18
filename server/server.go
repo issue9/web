@@ -32,6 +32,8 @@ const (
 	DefaultCharset  = "utf-8"
 )
 
+type CleanupFunc func() error
+
 // Server 提供 HTTP 服务
 type Server struct {
 	name       string
@@ -100,7 +102,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),
-		files:  filesystem.NewSerializer(o.FileSerializer),
+		files:  filesystem.NewSerializer(serializer.New(5)),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers

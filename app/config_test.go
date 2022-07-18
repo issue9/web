@@ -3,16 +3,12 @@
 package app
 
 import (
-	"encoding/xml"
 	"io/fs"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert/v2"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v3"
-
-	"github.com/issue9/web/serializer"
 )
 
 type empty struct{}
@@ -30,25 +26,18 @@ func (u *userData) SanitizeConfig() *ConfigError {
 
 func TestNewServerOf(t *testing.T) {
 	a := assert.New(t, false)
-	files := serializer.New(5)
 	const name = "app"
 	const ver = "1.0"
 
-	s, data, err := NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "web.yaml")
-	a.Error(err).Nil(s).Nil(data)
-
-	a.NotError(files.Add(xml.Marshal, xml.Unmarshal, ".xml"))
-	a.NotError(files.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-
-	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "web.yaml")
+	s, data, err := NewServerOf[empty](name, ver, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(s).Nil(data)
 	//Equal(s.Tag(), language.Und) // TODO 恢复
 	//Equal(s., 3)
 
-	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata/not-exists"), "web.yaml")
+	s, data, err = NewServerOf[empty](name, ver, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
 
-	s, data, err = NewServerOf[empty](name, ver, files, os.DirFS("./testdata"), "invalid-web.xml")
+	s, data, err = NewServerOf[empty](name, ver, os.DirFS("./testdata"), "invalid-web.xml")
 	a.Error(err).Nil(s).Nil(data)
 	err2, ok := err.(*ConfigError)
 	a.True(ok).NotNil(err2)
@@ -56,7 +45,7 @@ func TestNewServerOf(t *testing.T) {
 		Equal(err2.Field, "http.acme.domains")
 
 	// 自定义 T
-	s, user, err := NewServerOf[userData](name, ver, files, os.DirFS("./testdata"), "user.xml")
+	s, user, err := NewServerOf[userData](name, ver, os.DirFS("./testdata"), "user.xml")
 	a.NotError(err).NotNil(s).NotNil(user)
 	a.Equal(user.ID, 1)
 }

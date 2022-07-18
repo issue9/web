@@ -59,7 +59,7 @@ func (conf *configOf[T]) buildMimetypes(mt *serializer.Serializer) *ConfigError 
 
 // RegisterMimetype 注册 mimetype
 //
-// name 为缓存的名称，如果存在同名，则会覆盖。
+// name 为名称，如果存在同名，则会覆盖。
 func RegisterMimetype(m serializer.MarshalFunc, u serializer.UnmarshalFunc, name string) {
 	mimetypesFactory[name] = mimetype{m: m, u: u}
 }

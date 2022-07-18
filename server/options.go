@@ -16,10 +16,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serializer"
 )
-
-type CleanupFunc func() error
 
 // Options 初始化 Server 的参数
 type Options struct {
@@ -64,11 +61,6 @@ type Options struct {
 	//
 	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会输出到任何通道。
 	Logs *logs.Logs
-
-	// 指定用于序列化文件的方法
-	//
-	// 该对象同时被用于加载配置文件和序列化文件。如果为空，会初始化一个空对象。
-	FileSerializer *serializer.Serializer
 
 	// 压缩对象
 	//
@@ -118,10 +110,6 @@ func (o *Options) sanitize() (err error) {
 		if o.LanguageTag, err = localeutil.DetectUserLanguageTag(); err != nil {
 			o.Logs.Error(err) // 输出错误，但是没必要中断程序。
 		}
-	}
-
-	if o.FileSerializer == nil {
-		o.FileSerializer = serializer.New(5)
 	}
 
 	if o.Encodings == nil {
