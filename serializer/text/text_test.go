@@ -8,13 +8,13 @@ import (
 
 	"github.com/issue9/assert/v2"
 
-	"github.com/issue9/web/serialization"
-	"github.com/issue9/web/serialization/text/testobject"
+	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/serializer/text/testobject"
 )
 
 var (
-	_ serialization.MarshalFunc   = Marshal
-	_ serialization.UnmarshalFunc = Unmarshal
+	_ serializer.MarshalFunc   = Marshal
+	_ serializer.UnmarshalFunc = Unmarshal
 )
 
 func TestTextMarshal(t *testing.T) {

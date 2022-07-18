@@ -14,8 +14,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serialization/gob"
-	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/serializer/gob"
+	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
 )
 
@@ -55,7 +55,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(mimetype.Add(nil, nil, "nil"))
 
 	// locale
-	b := srv.Locale().Builder()
+	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))

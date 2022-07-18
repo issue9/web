@@ -12,7 +12,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/internal/filesystem"
+	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/server"
 )
 
@@ -77,19 +78,20 @@ type configOf[T any] struct {
 //
 // files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，根据扩展由 serialization.Files 负责在 fsys 查找文件加载，
-// 如果此值为空，将以 &server.Options{FS: fsys, FileSerializers: files} 作为初始化条件；
+// filename 用于指定项目的配置文件，根据扩展由 serializer.Files 负责在 fsys 查找文件加载，
+// 如果此值为空，将以 &server.Options{FS: fsys, FileSerializer: files} 作为初始化条件；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, files *serialization.Files, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, files *serializer.Serializer, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
-		s, err := server.New(name, version, &server.Options{FS: fsys, FileSerializers: files})
+		s, err := server.New(name, version, &server.Options{FS: fsys, FileSerializer: files})
 		return s, nil, err
 	}
 
+	s := filesystem.NewSerializer(files)
 	conf := &configOf[T]{}
-	if err := files.LoadFS(fsys, filename, conf); err != nil {
+	if err := s.Load(fsys, filename, conf); err != nil {
 		return nil, nil, err
 	}
 
@@ -113,26 +115,26 @@ func NewServerOf[T any](name, version string, files *serialization.Files, fsys f
 			srv.ErrorLog = conf.logs.StdLogger(logs.LevelError)
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:            conf.logs,
-		FileSerializers: files,
-		Encodings:       conf.encoding,
-		LanguageTag:     conf.languageTag,
+		Logs:           conf.logs,
+		FileSerializer: files,
+		Encodings:      conf.encoding,
+		LanguageTag:    conf.languageTag,
 	}
 
-	s, err := server.New(name, version, opt)
+	srv, err := server.New(name, version, opt)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if err := conf.buildMimetypes(s.Mimetypes()); err != nil {
+	if err := conf.buildMimetypes(srv.Mimetypes()); err != nil {
 		err.Field = "mimetypes." + err.Field
 		err.Path = filename
 		return nil, nil, err
 	}
 
-	s.OnClose(conf.cleanup...)
+	srv.OnClose(conf.cleanup...)
 
-	return s, conf.User, nil
+	return srv, conf.User, nil
 }
 
 func (conf *configOf[T]) sanitize() *ConfigError {

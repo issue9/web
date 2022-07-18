@@ -9,7 +9,7 @@ import (
 
 	"github.com/issue9/assert/v2"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 const testMimetype = "application/octet-stream"
@@ -62,30 +62,30 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 
 	name, marshal, found = mt.MarshalFunc(testMimetype)
 	a.True(found).
-		Equal(marshal, serialization.MarshalFunc(xml.Marshal)).
+		Equal(marshal, serializer.MarshalFunc(xml.Marshal)).
 		Equal(name, testMimetype)
 
 	mt.Set(testMimetype, json.Marshal, json.Unmarshal)
 	name, marshal, found = mt.MarshalFunc(testMimetype)
 	a.True(found).
-		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
+		Equal(marshal, serializer.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	name, marshal, found = mt.MarshalFunc("*/*")
 	a.True(found).
-		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
+		Equal(marshal, serializer.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	// 同 */*
 	name, marshal, found = mt.MarshalFunc("")
 	a.True(found).
-		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
+		Equal(marshal, serializer.MarshalFunc(json.Marshal)).
 		Equal(name, testMimetype)
 
 	name, marshal, found = mt.MarshalFunc("*/*,text/plain")
 	a.True(found).
-		Equal(marshal, serialization.MarshalFunc(json.Marshal)).
+		Equal(marshal, serializer.MarshalFunc(json.Marshal)).
 		Equal(name, "text/plain")
 
 	name, marshal, found = mt.MarshalFunc("font/wottf;q=x.9")

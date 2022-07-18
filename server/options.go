@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 type CleanupFunc func() error
@@ -68,7 +68,7 @@ type Options struct {
 	// 指定用于序列化文件的方法
 	//
 	// 该对象同时被用于加载配置文件和序列化文件。如果为空，会初始化一个空对象。
-	FileSerializers *serialization.Files
+	FileSerializer *serializer.Serializer
 
 	// 压缩对象
 	//
@@ -120,8 +120,8 @@ func (o *Options) sanitize() (err error) {
 		}
 	}
 
-	if o.FileSerializers == nil {
-		o.FileSerializers = serialization.NewFiles(5)
+	if o.FileSerializer == nil {
+		o.FileSerializer = serializer.New(5)
 	}
 
 	if o.Encodings == nil {

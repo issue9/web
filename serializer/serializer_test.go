@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package serialization
+package serializer
 
 import (
 	"encoding/json"

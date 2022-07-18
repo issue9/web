@@ -23,7 +23,7 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/server"
 )
 
@@ -79,11 +79,11 @@ type AppOf[T any] struct {
 	//
 	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
 	// 该值也也会传递给 server.Options 对象如果不需要可用 Options 字段进行修改。
-	FileSerializers *serialization.Files
+	FileSerializer *serializer.Serializer
 
 	// 配置文件的文件名
 	//
-	// 需要保证 FileSerializers 能解析此文件指定的内容；
+	// 需要保证 FileSerializer 能解析此文件指定的内容；
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	// 如果为非空，那么会传递给 NewOptionsOf 函数。
@@ -143,8 +143,8 @@ func (cmd *AppOf[T]) sanitize() error {
 		cmd.Out = os.Stdout
 	}
 
-	if cmd.FileSerializers == nil {
-		f := serialization.NewFiles(5)
+	if cmd.FileSerializer == nil {
+		f := serializer.New(5)
 
 		if err := f.Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
 			return err
@@ -158,7 +158,7 @@ func (cmd *AppOf[T]) sanitize() error {
 			return err
 		}
 
-		cmd.FileSerializers = f
+		cmd.FileSerializer = f
 	}
 
 	return nil
@@ -189,7 +189,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.FileSerializers, os.DirFS(*f), cmd.ConfigFilename)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.FileSerializer, os.DirFS(*f), cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}

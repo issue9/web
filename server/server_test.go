@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 
-	"github.com/issue9/web/serialization/text"
+	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )

@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/routertest"
 
-	"github.com/issue9/web/serialization/text"
-	"github.com/issue9/web/serialization/text/testobject"
+	"github.com/issue9/web/serializer/text"
+	"github.com/issue9/web/serializer/text/testobject"
 )
 
 func BenchmarkRouter(b *testing.B) {

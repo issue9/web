@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 type empty struct{}
@@ -30,7 +30,7 @@ func (u *userData) SanitizeConfig() *ConfigError {
 
 func TestNewServerOf(t *testing.T) {
 	a := assert.New(t, false)
-	files := serialization.NewFiles(5)
+	files := serializer.New(5)
 	const name = "app"
 	const ver = "1.0"
 
