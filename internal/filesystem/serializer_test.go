@@ -9,10 +9,6 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/serializer"
 )
@@ -56,27 +52,4 @@ func TestSerializer_Save(t *testing.T) {
 	a.NotError(f.Serializer().Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{Port: ":333"}
 	a.NotError(f.Save(tmp+"/web.xml", v))
-}
-
-func TestLoadLocaleFiles(t *testing.T) {
-	a := assert.New(t, false)
-	f := NewSerializer(serializer.New(5))
-	b := catalog.NewBuilder()
-	a.NotNil(b)
-
-	a.NotError(f.Serializer().Add(xml.Marshal, xml.Unmarshal, ".xml"))
-	a.NotError(f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-
-	a.NotError(LoadLocaleFiles(f, b, os.DirFS("./testdata"), "cmn-hant.xml"))
-	p := message.NewPrinter(language.MustParse("cmn-hant"), message.Catalog(b))
-
-	a.Equal(p.Sprintf("k1"), "msg1")
-
-	a.Equal(p.Sprintf("k2", 1), "msg-1")
-	a.Equal(p.Sprintf("k2", 3), "msg-3")
-	a.Equal(p.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
 }
