@@ -22,6 +22,7 @@ import (
 
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/filesystem"
+	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/serializer"
 )
@@ -59,11 +60,8 @@ type Server struct {
 	resultBuilder  BuildResultFunc
 
 	// locale
-	location      *time.Location
-	files         *filesystem.Serializer
-	catalog       *catalog.Builder
-	tag           language.Tag
-	localePrinter *message.Printer
+	locale *locale.Locale
+	files  *filesystem.Serializer
 }
 
 // New 返回 *Server 实例
@@ -77,8 +75,6 @@ func New(name, version string, o *Options) (*Server, error) {
 	if err := o.sanitize(); err != nil {
 		return nil, err
 	}
-
-	c := catalog.NewBuilder(catalog.Fallback(o.LanguageTag))
 
 	srv := &Server{
 		name:       name,
@@ -103,11 +99,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		resultBuilder:  o.ResultBuilder,
 
 		// locale
-		location:      o.Location,
-		files:         filesystem.NewSerializer(o.FileSerializer),
-		catalog:       c,
-		tag:           o.LanguageTag,
-		localePrinter: message.NewPrinter(o.LanguageTag, message.Catalog(c)),
+		locale: locale.New(o.Location, o.LanguageTag),
+		files:  filesystem.NewSerializer(o.FileSerializer),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
@@ -128,7 +121,7 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.location }
+func (srv *Server) Location() *time.Location { return srv.locale.Location }
 
 // Logs 返回关联的 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
@@ -221,19 +214,19 @@ func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 	if fsys == nil {
 		fsys = srv
 	}
-	return filesystem.LoadLocaleFiles(srv.files, srv.CatalogBuilder(), fsys, glob)
+	return srv.locale.LoadLocaleFiles(fsys, glob, srv.files)
 }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
-	return message.NewPrinter(tag, message.Catalog(srv.CatalogBuilder()))
+	return srv.locale.NewPrinter(tag)
 }
 
-func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
+func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.locale.Catalog }
 
-func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }
+func (srv *Server) LocalePrinter() *message.Printer { return srv.locale.Printer }
 
 // Tag 返回默认的语言标签
-func (srv *Server) Tag() language.Tag { return srv.tag }
+func (srv *Server) Tag() language.Tag { return srv.locale.Tag }
 
 // Serving 是否处于服务状态
 func (srv *Server) Serving() bool { return srv.serving }

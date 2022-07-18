@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
+
+	"github.com/issue9/web/internal/filesystem"
 )
 
 var _ fs.GlobFS = &Module{}
@@ -50,9 +52,9 @@ func TestModule_Glob(t *testing.T) {
 	srv := newServer(a, &Options{FS: os.DirFS("./")})
 
 	m := srv.NewModule("testdata")
-	a.True(existsFS(m, "file1.txt"))
-	a.False(existsFS(m, "not-exists.txt"))
-	a.False(existsFS(m, "servertest.go"))
+	a.True(filesystem.ExistsFS(m, "file1.txt"))
+	a.False(filesystem.ExistsFS(m, "not-exists.txt"))
+	a.False(filesystem.ExistsFS(m, "servertest.go"))
 	matches, err := fs.Glob(m, "*.go")
 	a.NotError(err).Equal(matches, []string{"result.pb.go"})
 
@@ -61,7 +63,7 @@ func TestModule_Glob(t *testing.T) {
 
 	// AddFS
 	m.AddFS(os.DirFS("./servertest"))
-	a.True(existsFS(m, "servertest.go"))
+	a.True(filesystem.ExistsFS(m, "servertest.go"))
 	matches, err = fs.Glob(m, "*.go")
 	a.NotError(err).Equal(matches, []string{"result.pb.go"})
 	matches, err = fs.Glob(m, "*.pem")
@@ -70,9 +72,9 @@ func TestModule_Glob(t *testing.T) {
 	// 反向顺序
 
 	m = srv.NewModule("servertest")
-	a.False(existsFS(m, "file1.txt"))
-	a.False(existsFS(m, "not-exists.txt"))
-	a.True(existsFS(m, "servertest.go"))
+	a.False(filesystem.ExistsFS(m, "file1.txt"))
+	a.False(filesystem.ExistsFS(m, "not-exists.txt"))
+	a.True(filesystem.ExistsFS(m, "servertest.go"))
 	matches, err = fs.Glob(m, "*.go")
 	a.NotError(err).Equal(matches, []string{"server.go", "servertest.go"})
 	matches, err = fs.Glob(m, "*.pem")
@@ -80,7 +82,7 @@ func TestModule_Glob(t *testing.T) {
 
 	// AddFS
 	m.AddFS(os.DirFS("./testdata"))
-	a.True(existsFS(m, "file1.txt"))
+	a.True(filesystem.ExistsFS(m, "file1.txt"))
 	matches, err = fs.Glob(m, "*.go")
 	a.NotError(err).Equal(matches, []string{"server.go", "servertest.go"})
 	matches, err = fs.Glob(m, "*.pem")

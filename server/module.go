@@ -4,10 +4,11 @@ package server
 
 import (
 	"io/fs"
-	"os"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
+
+	"github.com/issue9/web/internal/filesystem"
 )
 
 type Module struct {
@@ -83,7 +84,7 @@ func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
 
 func (m *Module) Open(name string) (fs.File, error) {
 	for _, fsys := range m.fs {
-		if existsFS(fsys, name) {
+		if filesystem.ExistsFS(fsys, name) {
 			return fsys.Open(name)
 		}
 	}
@@ -104,11 +105,6 @@ func (m *Module) Glob(pattern string) ([]string, error) {
 // 该缓存对象的 key 会自动添加 Module.ID 作为其前缀。
 func (m *Module) Cache() cache.Access {
 	return cache.Prefix(m.BuildID(""), m.Server().Cache())
-}
-
-func existsFS(fsys fs.FS, p string) bool {
-	_, err := fs.Stat(fsys, p)
-	return err == nil || os.IsExist(err)
 }
 
 // LoadLocale 加载当前模块文件系统下的本地化文件
