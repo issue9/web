@@ -7,8 +7,6 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
-
-	"github.com/issue9/web/internal/filesystem"
 )
 
 type Module struct {
@@ -84,8 +82,8 @@ func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
 
 func (m *Module) Open(name string) (fs.File, error) {
 	for _, fsys := range m.fs {
-		if filesystem.ExistsFS(fsys, name) {
-			return fsys.Open(name)
+		if f, err := fsys.Open(name); err == nil {
+			return f, nil
 		}
 	}
 	return nil, fs.ErrNotExist

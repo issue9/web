@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mimetypes 用户数据编解码
-package mimetypes
+package serialization
 
 import (
 	"strings"
@@ -12,10 +11,10 @@ import (
 )
 
 type Mimetypes struct {
-	*serializer.Serializer
+	serializer.Serializer
 }
 
-func New(c int) *Mimetypes { return &Mimetypes{Serializer: serializer.New(c)} }
+func NewMimetypes(c int) *Mimetypes { return &Mimetypes{Serializer: New(c)} }
 
 // UnmarshalFunc 查找指定名称的 UnmarshalFunc
 func (ms *Mimetypes) UnmarshalFunc(name string) (serializer.UnmarshalFunc, bool) {

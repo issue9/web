@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package filesystem
+package serialization
 
 import (
 	"encoding/xml"
@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web/serializer"
 )
 
-var _ serializer.FS = &Serializer{}
+var _ serializer.FS = &FileSystem{}
 
 type object struct {
 	XMLName  struct{} `xml:"web" yaml:"-"`
@@ -23,7 +23,7 @@ type object struct {
 
 func TestSerializer_Load(t *testing.T) {
 	a := assert.New(t, false)
-	f := NewSerializer(serializer.New(5))
+	f := NewSerializer(5)
 	a.NotNil(f)
 	testdata := os.DirFS("./testdata")
 
@@ -42,7 +42,7 @@ func TestSerializer_Load(t *testing.T) {
 
 func TestSerializer_Save(t *testing.T) {
 	a := assert.New(t, false)
-	f := NewSerializer(serializer.New(10))
+	f := NewSerializer(10)
 	a.NotNil(f)
 	tmp := os.TempDir()
 

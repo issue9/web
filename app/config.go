@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/server"
 )
 
@@ -69,8 +70,8 @@ type configOf[T any] struct {
 	// 如果为空，表示默认不支持，后续可通过 Server.Files 进行添加。
 	//
 	// 可用类型为 .yaml、.yml、.xml 和 .json，可通过 RegisterFileSerializer 进行添加额外的序列化方法。
-	Serializers []string `yaml:"serializers,omitempty" json:"serializers,omitempty" xml:"serializers,omitempty"`
-	serializers map[string]mimetype
+	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
+	files map[string]serialization.Item
 
 	// 指定可用的 mimetype
 	//
@@ -130,9 +131,9 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 		return nil, nil, err
 	}
 
-	for name, s := range conf.serializers {
-		if err := srv.Files().Serializer().Add(s.m, s.u, name); err != nil {
-			return nil, nil, err
+	for name, s := range conf.files {
+		if err := srv.Files().Serializer().Add(s.Marshal, s.Unmarshal, name); err != nil {
+			return nil, nil, &ConfigError{Message: err, Field: "files", Path: filename}
 		}
 	}
 
@@ -187,13 +188,13 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 		return err
 	}
 
-	conf.serializers = make(map[string]mimetype, len(conf.Serializers))
-	for _, name := range conf.Serializers {
+	conf.files = make(map[string]serialization.Item, len(conf.Files))
+	for _, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return &ConfigError{Field: "serializers", Message: localeutil.Error("not found serialization function for %s", name)}
+			return &ConfigError{Field: "files", Message: localeutil.Error("not found serialization function for %s", name)}
 		}
-		conf.serializers[name] = s
+		conf.files[name] = s
 	}
 
 	if conf.User != nil {
