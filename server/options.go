@@ -40,22 +40,10 @@ type Options struct {
 	// 默认值为内存类型。
 	Cache cache.Cache
 
-	// 端口号
+	// http.Server 实例的值
 	//
-	// 格式参照 net/http.Server.Addr 字段。
-	// 可以为空，表示由 net/http.Server 确定其默认值。
-	//
-	// NOTE: 该值可能会被 HTTPServer 的操作所覆盖。
-	Port string
-
-	// 可以对 http.Server 的内容进行修改
-	//
-	// NOTE: 对 http.Server.Handler 的修改不会启作用，该值始终会指向 Server.routers。
-	//
-	// 一旦设置了 http.Server.TLSConfig 且 http.Server.TLSConfig.Certificates
-	// 和 http.Server.TLSConfig.GetCertificates 之一不为空那么将启用 TLS 访问。
-	HTTPServer func(*http.Server)
-	httpServer *http.Server
+	// 如果为空，表示 &http.Server{} 对象。
+	HTTPServer *http.Server
 
 	// 日志的输出通道设置
 	//
@@ -97,9 +85,8 @@ func (o *Options) sanitize() (err error) {
 		o.Cache = memory.New(24 * time.Hour)
 	}
 
-	o.httpServer = &http.Server{Addr: o.Port}
-	if o.HTTPServer != nil {
-		o.HTTPServer(o.httpServer)
+	if o.HTTPServer == nil {
+		o.HTTPServer = &http.Server{}
 	}
 
 	if o.Logs == nil {

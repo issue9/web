@@ -1,7 +1,7 @@
 <!-- web.xml 的测试文件，内容错误 -->
 
-<web port=":8082">
-    <http readTimeout="3s">
+<web>
+    <http readTimeout="3s" port=":8082">
         <acme><!-- 缺少必要的元素 domains -->
             <cache>./</cache>
         </acme>

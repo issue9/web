@@ -22,7 +22,7 @@ import (
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, &Options{Port: ":8080"})
+	srv := newServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
 
 	h := func(c *Context) Responser {
 		_, err := c.Write([]byte(c.Request().URL.Path))
@@ -37,7 +37,7 @@ func BenchmarkRouter(b *testing.B) {
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, &Options{Port: ":8080"})
+	srv := newServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
 	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 

@@ -34,7 +34,7 @@ func TestLogsConfig_output(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &logsConfig{
-		Writers: []*logWritterConfig{
+		Writers: []*logWriterConfig{
 			{
 				Type: "file",
 				Args: []string{"2006", "./testdata", "1504-%i.log", "1024"},

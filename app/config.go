@@ -34,13 +34,9 @@ type configOf[T any] struct {
 	Language    string `yaml:"language,omitempty" json:"language,omitempty" xml:"language,attr,omitempty"`
 	languageTag language.Tag
 
-	// 网站端口
-	//
-	// 格式与 net/http.Server.Addr 相同。可以为空，表示由 net/http.Server 确定其默认值。
-	Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
-
 	// 与 HTTP 请求相关的设置项
 	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
+	http *http.Server
 
 	// 时区名称
 	//
@@ -106,21 +102,11 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 		return nil, nil, err
 	}
 
-	h := conf.HTTP
 	opt := &server.Options{
-		FS:       fsys,
-		Location: conf.location,
-		Cache:    conf.cache,
-		Port:     conf.Port,
-		HTTPServer: func(srv *http.Server) {
-			srv.ReadTimeout = h.ReadTimeout.Duration()
-			srv.ReadHeaderTimeout = h.ReadHeaderTimeout.Duration()
-			srv.WriteTimeout = h.WriteTimeout.Duration()
-			srv.IdleTimeout = h.IdleTimeout.Duration()
-			srv.MaxHeaderBytes = h.MaxHeaderBytes
-			srv.ErrorLog = conf.logs.StdLogger(logs.LevelError)
-			srv.TLSConfig = h.tlsConfig
-		},
+		FS:          fsys,
+		Location:    conf.location,
+		Cache:       conf.cache,
+		HTTPServer:  conf.http,
 		Logs:        conf.logs,
 		Encodings:   conf.encoding,
 		LanguageTag: conf.languageTag,
@@ -181,6 +167,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 		err.Field = "http." + err.Field
 		return err
 	}
+	conf.http = conf.HTTP.buildHTTPServer(conf.logs.StdLogger(logs.LevelError))
 
 	conf.encoding, err = conf.Encodings.build(l.ERROR())
 	if err != nil {

@@ -96,14 +96,14 @@ func TestServer_Serve(t *testing.T) {
 func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 
+	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
+	a.NotError(err).NotNil(cert)
 	srv := servertest.NewTester(a, &server.Options{
-		Port: ":8088",
-		HTTPServer: func(srv *http.Server) {
-			cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
-			a.NotError(err).NotNil(cert)
-			srv.TLSConfig = &tls.Config{
+		HTTPServer: &http.Server{
+			Addr: ":8088",
+			TLSConfig: &tls.Config{
 				Certificates: []tls.Certificate{cert},
-			}
+			},
 		},
 	})
 
@@ -377,7 +377,7 @@ func TestServer_FileServer(t *testing.T) {
 func TestContext_NoContent(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	s := servertest.NewTester(a, &server.Options{Port: ":8080", Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
+	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
 
 	s.NewRouter().Get("/204", func(ctx *server.Context) server.Responser {
 		return ctx.NoContent()

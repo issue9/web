@@ -38,10 +38,10 @@ type logsConfig struct {
 	// 日志输出对象的配置
 	//
 	// 为空表示 logs.NewNopWriter 返回的对象。
-	Writers []*logWritterConfig `xml:"writer" json:"writers" yaml:"writers"`
+	Writers []*logWriterConfig `xml:"writer" json:"writers" yaml:"writers"`
 }
 
-type logWritterConfig struct {
+type logWriterConfig struct {
 	// 当前 Writer 支持的通道
 	//
 	// 为空表示 logsConfig.Levels 的值。

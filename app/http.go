@@ -6,6 +6,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"io/fs"
+	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -14,6 +16,11 @@ import (
 
 type (
 	httpConfig struct {
+		// 网站端口
+		//
+		// 格式与 net/http.Server.Addr 相同。可以为空，表示由 net/http.Server 确定其默认值。
+		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
+
 		// 网站的域名证书
 		//
 		// 不能同时与 ACME 生效
@@ -67,47 +74,60 @@ func (cert *certificate) sanitize() *ConfigError {
 	return nil
 }
 
-func (http *httpConfig) sanitize() *ConfigError {
-	if http.ReadTimeout < 0 {
+func (h *httpConfig) sanitize() *ConfigError {
+	if h.ReadTimeout < 0 {
 		return &ConfigError{Field: "readTimeout", Message: "必须大于等于 0"}
 	}
 
-	if http.WriteTimeout < 0 {
+	if h.WriteTimeout < 0 {
 		return &ConfigError{Field: "writeTimeout", Message: "必须大于等于 0"}
 	}
 
-	if http.IdleTimeout < 0 {
+	if h.IdleTimeout < 0 {
 		return &ConfigError{Field: "idleTimeout", Message: "必须大于等于 0"}
 	}
 
-	if http.ReadHeaderTimeout < 0 {
+	if h.ReadHeaderTimeout < 0 {
 		return &ConfigError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
 	}
 
-	if http.MaxHeaderBytes < 0 {
+	if h.MaxHeaderBytes < 0 {
 		return &ConfigError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
 	}
 
-	return http.buildTLSConfig()
+	return h.buildTLSConfig()
 }
 
-func (http *httpConfig) buildTLSConfig() *ConfigError {
-	if len(http.Certificates) > 0 && http.ACME != nil {
+func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
+	return &http.Server{
+		Addr:              h.Port,
+		ReadTimeout:       h.ReadTimeout.Duration(),
+		ReadHeaderTimeout: h.ReadHeaderTimeout.Duration(),
+		WriteTimeout:      h.WriteTimeout.Duration(),
+		IdleTimeout:       h.IdleTimeout.Duration(),
+		MaxHeaderBytes:    h.MaxHeaderBytes,
+		ErrorLog:          err,
+		TLSConfig:         h.tlsConfig,
+	}
+}
+
+func (h *httpConfig) buildTLSConfig() *ConfigError {
+	if len(h.Certificates) > 0 && h.ACME != nil {
 		return &ConfigError{Field: "acme", Message: "不能与 certificates 同时存在"}
 	}
 
-	if http.ACME != nil {
-		if err := http.ACME.sanitize(); err != nil {
+	if h.ACME != nil {
+		if err := h.ACME.sanitize(); err != nil {
 			err.Field = "acme." + err.Field
 			return err
 		}
 
-		http.tlsConfig = http.ACME.tlsConfig()
+		h.tlsConfig = h.ACME.tlsConfig()
 		return nil
 	}
 
-	tlsConfig := &tls.Config{Certificates: make([]tls.Certificate, 0, len(http.Certificates))}
-	for _, certificate := range http.Certificates {
+	tlsConfig := &tls.Config{Certificates: make([]tls.Certificate, 0, len(h.Certificates))}
+	for _, certificate := range h.Certificates {
 		if err := certificate.sanitize(); err != nil {
 			return err
 		}
@@ -118,7 +138,7 @@ func (http *httpConfig) buildTLSConfig() *ConfigError {
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
-	http.tlsConfig = tlsConfig
+	h.tlsConfig = tlsConfig
 
 	return nil
 }

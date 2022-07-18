@@ -5,6 +5,7 @@ package servertest
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/http"
 	"os"
 
 	"github.com/issue9/assert/v2"
@@ -27,7 +28,7 @@ func NewServer(a *assert.Assertion, o *server.Options) *server.Server {
 
 func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.Options) {
 	if o == nil {
-		o = &server.Options{Port: ":8080"}
+		o = &server.Options{HTTPServer: &http.Server{Addr: ":8080"}}
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)

@@ -82,7 +82,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		version:    version,
 		logs:       o.Logs,
 		fs:         o.FS,
-		httpServer: o.httpServer,
+		httpServer: o.HTTPServer,
 		vars:       &sync.Map{},
 		mimetypes:  serialization.NewMimetypes(10),
 		encodings:  o.Encodings,
