@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package serialization
+package serializer
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-func TestSerialization(t *testing.T) {
+func TestSerializer(t *testing.T) {
 	a := assert.New(t, false)
 	s := New(5)
 	a.NotNil(s)

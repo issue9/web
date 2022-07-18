@@ -6,7 +6,7 @@ package text
 import (
 	"encoding"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 const Mimetype = "text/plain"
@@ -25,7 +25,7 @@ func Marshal(v any) ([]byte, error) {
 		return nil, vv
 	}
 
-	return nil, serialization.ErrUnsupported
+	return nil, serializer.ErrUnsupported
 }
 
 func Unmarshal(data []byte, v any) (err error) {
@@ -39,7 +39,7 @@ func Unmarshal(data []byte, v any) (err error) {
 	case encoding.TextUnmarshaler:
 		err = vv.UnmarshalText(data)
 	default:
-		err = serialization.ErrUnsupported
+		err = serializer.ErrUnsupported
 	}
 
 	return err

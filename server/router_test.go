@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serialization/text"
-	"github.com/issue9/web/serialization/text/testobject"
+	"github.com/issue9/web/serializer/text"
+	"github.com/issue9/web/serializer/text/testobject"
 )
 
 func TestContext_Error(t *testing.T) {
@@ -54,8 +54,8 @@ func TestContext_Error(t *testing.T) {
 func TestContext_Result(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, nil)
-	a.NotError(srv.Locale().Builder().SetString(language.Und, "lang", "und"))
-	a.NotError(srv.Locale().Builder().SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
+	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
 	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()

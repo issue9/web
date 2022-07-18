@@ -14,8 +14,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/serialization/form"
-	"github.com/issue9/web/serialization/protobuf"
+	"github.com/issue9/web/serializer/form"
+	"github.com/issue9/web/serializer/protobuf"
 	"github.com/issue9/web/server/testdata"
 )
 
@@ -227,36 +227,36 @@ func TestServer_Result(t *testing.T) {
 	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
-	rslt, ok := srv.Result(srv.Locale().NewPrinter(language.SimplifiedChinese), "40000", nil).(*defaultResult)
+	rslt, ok := srv.Result(srv.NewPrinter(language.SimplifiedChinese), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans")
 
 	// 采用 und
-	rslt, ok = srv.Result(srv.Locale().NewPrinter(language.Und), "40000", nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.NewPrinter(language.Und), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在的本地化信息，采用默认的 und
-	rslt, ok = srv.Result(srv.Locale().NewPrinter(language.Afrikaans), "40000", nil).(*defaultResult)
+	rslt, ok = srv.Result(srv.NewPrinter(language.Afrikaans), "40000", nil).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und")
 
 	// 不存在
-	a.Panic(func() { srv.Result(srv.Locale().NewPrinter(language.Afrikaans), "400", nil) })
-	a.Panic(func() { srv.Result(srv.Locale().NewPrinter(language.Afrikaans), "50000", nil) })
+	a.Panic(func() { srv.Result(srv.NewPrinter(language.Afrikaans), "400", nil) })
+	a.Panic(func() { srv.Result(srv.NewPrinter(language.Afrikaans), "50000", nil) })
 
 	// with fields
 
 	fields := map[string][]string{"f1": {"v1", "v2"}}
 
 	// 能正常翻译错误信息
-	rslt, ok = srv.Result(srv.Locale().NewPrinter(language.SimplifiedChinese), "40000", fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.NewPrinter(language.SimplifiedChinese), "40000", fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "hans").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
 
 	// 采用 und
-	rslt, ok = srv.Result(srv.Locale().NewPrinter(language.Und), "40000", fields).(*defaultResult)
+	rslt, ok = srv.Result(srv.NewPrinter(language.Und), "40000", fields).(*defaultResult)
 	a.True(ok).NotNil(rslt)
 	a.Equal(rslt.Message, "und").
 		Equal(rslt.Fields, []*fieldDetail{{Name: "f1", Message: []string{"v1", "v2"}}})
@@ -292,16 +292,16 @@ func TestServer_Results(t *testing.T) {
 		c.AddResults(400, map[string]localeutil.LocaleStringer{"40010": localeutil.Phrase("lang")})
 	})
 
-	msg := c.Results(c.Locale().NewPrinter(language.Und))
+	msg := c.Results(c.NewPrinter(language.Und))
 	a.Equal(msg["40010"], "und")
 
-	msg = c.Results(c.Locale().NewPrinter(language.SimplifiedChinese))
+	msg = c.Results(c.NewPrinter(language.SimplifiedChinese))
 	a.Equal(msg["40010"], "hans")
 
-	msg = c.Results(c.Locale().NewPrinter(language.TraditionalChinese))
+	msg = c.Results(c.NewPrinter(language.TraditionalChinese))
 	a.Equal(msg["40010"], "hant")
 
-	msg = c.Results(c.Locale().NewPrinter(language.English))
+	msg = c.Results(c.NewPrinter(language.English))
 	a.Equal(msg["40010"], "und")
 
 	a.Panic(func() {

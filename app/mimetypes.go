@@ -8,18 +8,18 @@ import (
 
 	"github.com/issue9/localeutil"
 
-	"github.com/issue9/web/serialization"
-	"github.com/issue9/web/serialization/form"
-	"github.com/issue9/web/serialization/gob"
-	"github.com/issue9/web/serialization/html"
-	"github.com/issue9/web/serialization/protobuf"
+	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/serializer/form"
+	"github.com/issue9/web/serializer/gob"
+	"github.com/issue9/web/serializer/html"
+	"github.com/issue9/web/serializer/protobuf"
 )
 
 var mimetypesFactory = map[string]mimetype{}
 
 type mimetype struct {
-	m serialization.MarshalFunc
-	u serialization.UnmarshalFunc
+	m serializer.MarshalFunc
+	u serializer.UnmarshalFunc
 }
 
 type mimetypeConfig struct {
@@ -42,27 +42,25 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) buildMimetypes() (*serialization.Mimetypes, *ConfigError) {
-	mt := serialization.NewMimetypes(len(conf.Mimetypes))
-
+func (conf *configOf[T]) buildMimetypes(mt *serializer.Serializer) *ConfigError {
 	for _, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return nil, &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
+			return &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
 		}
 
 		if err := mt.Add(m.m, m.u, item.Encoding); err != nil {
-			return nil, &ConfigError{Field: item.Target, Message: err}
+			return &ConfigError{Field: item.Target, Message: err}
 		}
 	}
 
-	return mt, nil
+	return nil
 }
 
 // RegisterMimetype 注册 mimetype
 //
 // name 为缓存的名称，如果存在同名，则会覆盖。
-func RegisterMimetype(m serialization.MarshalFunc, u serialization.UnmarshalFunc, name string) {
+func RegisterMimetype(m serializer.MarshalFunc, u serializer.UnmarshalFunc, name string) {
 	mimetypesFactory[name] = mimetype{m: m, u: u}
 }
 

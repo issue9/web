@@ -7,12 +7,12 @@ import (
 
 	"github.com/issue9/assert/v2"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 var (
-	_ serialization.MarshalFunc   = Marshal
-	_ serialization.UnmarshalFunc = Unmarshal
+	_ serializer.MarshalFunc   = Marshal
+	_ serializer.UnmarshalFunc = Unmarshal
 )
 
 func TestGOB(t *testing.T) {

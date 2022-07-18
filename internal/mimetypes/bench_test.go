@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package serialization
+package mimetypes
 
 import (
 	"encoding/xml"
@@ -11,7 +11,7 @@ import (
 
 func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewMimetypes(10)
+	srv := New(10)
 	a.NotNil(srv)
 
 	a.NotError(srv.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
@@ -24,7 +24,7 @@ func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 
 func BenchmarkMimetypes_UnmarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
-	srv := NewMimetypes(10)
+	srv := New(10)
 	a.NotNil(srv)
 
 	a.NotError(srv.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))

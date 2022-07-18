@@ -25,11 +25,12 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/serializer/gob"
+	"github.com/issue9/web/serializer/text"
+	"github.com/issue9/web/serializer/text/testobject"
+
 	xencoding "github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serialization"
-	"github.com/issue9/web/serialization/gob"
-	"github.com/issue9/web/serialization/text"
-	"github.com/issue9/web/serialization/text/testobject"
 )
 
 const (
@@ -61,21 +62,20 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		})
 	}
 
+	srv, err := New("app", "0.1.0", o)
+	a.NotError(err).NotNil(srv)
+	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+
 	// mimetype
-	mimetype := serialization.NewMimetypes(10)
+	mimetype := srv.Mimetypes()
 	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
 	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
 	a.NotError(mimetype.Add(gob.Marshal, gob.Unmarshal, DefaultMimetype))
 	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(mimetype.Add(nil, nil, "nil"))
-	o.Mimetypes = mimetype
-
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// locale
-	b := srv.Locale().Builder()
+	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
@@ -196,7 +196,7 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.True(charsetIsNop(ctx.inputCharset)).
 		Equal(ctx.contentType, "application/json; charset=utf-8").
-		Equal(ctx.inputMimetype, serialization.UnmarshalFunc(text.Unmarshal)).
+		Equal(ctx.inputMimetype, serializer.UnmarshalFunc(text.Unmarshal)).
 		Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter())
 
@@ -419,11 +419,11 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(ctx.Marshal(http.StatusCreated, "val"), localeutil.Error("%s can not be empty", "ctx.outputMimetype"))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
-	// outputMimetype 返回 serialization.ErrUnsupported
+	// outputMimetype 返回 serializer.ErrUnsupported
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 	ctx = srv.newContext(w, r, nil)
-	a.ErrorIs(ctx.Marshal(http.StatusCreated, &struct{}{}), serialization.ErrUnsupported)
+	a.ErrorIs(ctx.Marshal(http.StatusCreated, &struct{}{}), serializer.ErrUnsupported)
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// outputMimetype 返回错误
@@ -463,7 +463,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newServer(a, &Options{LanguageTag: language.Afrikaans})
-	b := srv.Locale().Builder()
+	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
@@ -601,7 +601,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
 
-	b := srv.Locale().Builder()
+	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 

@@ -21,7 +21,9 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/internal/filesystem"
+	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/serializer"
 )
 
 const (
@@ -37,7 +39,7 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	mimetypes  *serialization.Mimetypes
+	mimetypes  *mimetypes.Mimetypes
 	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
@@ -58,7 +60,8 @@ type Server struct {
 
 	// locale
 	location      *time.Location
-	locale        *serialization.Locale
+	files         *filesystem.Serializer
+	catalog       *catalog.Builder
 	tag           language.Tag
 	localePrinter *message.Printer
 }
@@ -75,7 +78,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	l := serialization.NewLocale(catalog.NewBuilder(catalog.Fallback(o.LanguageTag)), o.FileSerializers)
+	c := catalog.NewBuilder(catalog.Fallback(o.LanguageTag))
 
 	srv := &Server{
 		name:       name,
@@ -84,7 +87,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
-		mimetypes:  o.Mimetypes,
+		mimetypes:  mimetypes.New(10),
 		encodings:  o.Encodings,
 		cache:      o.Cache,
 		uptime:     time.Now(),
@@ -101,9 +104,10 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		location:      o.Location,
-		locale:        l,
+		files:         filesystem.NewSerializer(o.FileSerializer),
+		catalog:       c,
 		tag:           o.LanguageTag,
-		localePrinter: l.NewPrinter(o.LanguageTag),
+		localePrinter: message.NewPrinter(o.LanguageTag, message.Catalog(c)),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
@@ -134,6 +138,9 @@ func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
+
+// Mimetypes 编解码控制
+func (srv *Server) Mimetypes() *serializer.Serializer { return srv.mimetypes.Serializer }
 
 // Now 返回当前时间
 //
@@ -207,10 +214,21 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 func (ctx *Context) Server() *Server { return ctx.server }
 
 // Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }
+func (srv *Server) Files() serializer.FS { return srv.files }
 
 // Locale 操作操作本地化文件的接口
-func (srv *Server) Locale() *serialization.Locale { return srv.locale }
+func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
+	if fsys == nil {
+		fsys = srv
+	}
+	return filesystem.LoadLocaleFiles(srv.files, srv.CatalogBuilder(), fsys, glob)
+}
+
+func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
+	return message.NewPrinter(tag, message.Catalog(srv.CatalogBuilder()))
+}
+
+func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
 
 func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }
 
