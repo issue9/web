@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/filesystem"
+	"github.com/issue9/web/internal/serialization"
 )
 
 type Locale struct {
@@ -37,7 +37,7 @@ func (l *Locale) NewPrinter(tag language.Tag) *message.Printer {
 	return message.NewPrinter(tag, message.Catalog(l.Catalog))
 }
 
-func (l *Locale) LoadLocaleFiles(fsys fs.FS, glob string, f *filesystem.Serializer) error {
+func (l *Locale) LoadLocaleFiles(fsys fs.FS, glob string, f *serialization.FileSystem) error {
 	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
 		return err

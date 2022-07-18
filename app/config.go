@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/filesystem"
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/server"
 )
 
@@ -65,6 +65,14 @@ type configOf[T any] struct {
 	Encodings *encodingsConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
 	encoding  *encoding.Encodings
 
+	// 默认的文件序列化列表
+	//
+	// 如果为空，表示默认不支持，后续可通过 Server.Files 进行添加。
+	//
+	// 可用类型为 .yaml、.yml、.xml 和 .json，可通过 RegisterFileSerializer 进行添加额外的序列化方法。
+	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
+	files map[string]serialization.Item
+
 	// 指定可用的 mimetype
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
@@ -76,22 +84,20 @@ type configOf[T any] struct {
 
 // NewServerOf 从配置文件初始化 server.Server 实例
 //
-// files 指定从文件到对象的转换方法，同时用于配置文件和翻译内容；
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，根据扩展由 serializer.Files 负责在 fsys 查找文件加载，
-// 如果此值为空，将以 &server.Options{FS: fsys, FileSerializer: files} 作为初始化条件；
+// filename 用于指定项目的配置文件，根据扩展由 RegisterFileSerializer 负责在 fsys
+// 查找文件加载，如果此值为空，将以 &server.Options{FS: fsys} 作为初始化条件；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, files *serializer.Serializer, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
-		s, err := server.New(name, version, &server.Options{FS: fsys, FileSerializer: files})
+		s, err := server.New(name, version, &server.Options{FS: fsys})
 		return s, nil, err
 	}
 
-	s := filesystem.NewSerializer(files)
-	conf := &configOf[T]{}
-	if err := s.Load(fsys, filename, conf); err != nil {
+	conf, err := loadConfigOf[T](fsys, filename)
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -115,15 +121,20 @@ func NewServerOf[T any](name, version string, files *serializer.Serializer, fsys
 			srv.ErrorLog = conf.logs.StdLogger(logs.LevelError)
 			srv.TLSConfig = h.tlsConfig
 		},
-		Logs:           conf.logs,
-		FileSerializer: files,
-		Encodings:      conf.encoding,
-		LanguageTag:    conf.languageTag,
+		Logs:        conf.logs,
+		Encodings:   conf.encoding,
+		LanguageTag: conf.languageTag,
 	}
 
 	srv, err := server.New(name, version, opt)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	for name, s := range conf.files {
+		if err := srv.Files().Serializer().Add(s.Marshal, s.Unmarshal, name); err != nil {
+			return nil, nil, &ConfigError{Message: err, Field: "files", Path: filename}
+		}
 	}
 
 	if err := conf.buildMimetypes(srv.Mimetypes()); err != nil {
@@ -175,6 +186,15 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	if err != nil {
 		err.Field = "encodings." + err.Field
 		return err
+	}
+
+	conf.files = make(map[string]serialization.Item, len(conf.Files))
+	for _, name := range conf.Files {
+		s, found := filesFactory[name]
+		if !found {
+			return &ConfigError{Field: "files", Message: localeutil.Error("not found serialization function for %s", name)}
+		}
+		conf.files[name] = s
 	}
 
 	if conf.User != nil {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package mimetypes
+package serialization
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ const testMimetype = "application/octet-stream"
 func TestMimetypes_UnmarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := New(10)
+	mt := NewMimetypes(10)
 	a.NotNil(mt)
 
 	um, found := mt.UnmarshalFunc("")
@@ -44,7 +44,7 @@ func TestMimetypes_UnmarshalFunc(t *testing.T) {
 
 func TestMimetypes_MarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(10)
+	mt := NewMimetypes(10)
 
 	name, marshal, found := mt.MarshalFunc(testMimetype)
 	a.False(found).
@@ -107,7 +107,7 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(10)
+	mt := NewMimetypes(10)
 
 	a.NotError(mt.Add(nil, nil, "text", "text/plain", "text/text"))
 	a.NotError(mt.Add(nil, nil, "application/aa"))

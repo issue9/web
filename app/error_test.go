@@ -11,10 +11,9 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/serializer"
 )
 
 var (
@@ -27,7 +26,7 @@ func TestError_LocaleString(t *testing.T) {
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
 
-	f := filesystem.NewSerializer(serializer.New(5))
+	f := serialization.NewSerializer(5)
 	l := locale.New(time.UTC, language.MustParse("cmn-hans"))
 	a.NotError(f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 	a.NotError(l.LoadLocaleFiles(locales.Locales, "*.yml", f))

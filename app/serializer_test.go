@@ -11,7 +11,7 @@ import (
 func TestRegisterMimetype(t *testing.T) {
 	a := assert.New(t, false)
 
-	a.NotNil(mimetypesFactory["json"].m)
+	a.NotNil(mimetypesFactory["json"].Marshal)
 	RegisterMimetype(nil, nil, "json")
-	a.Nil(mimetypesFactory["json"].m)
+	a.Nil(mimetypesFactory["json"].Marshal)
 }

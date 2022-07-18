@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package mimetypes
+package serialization
 
 import (
 	"encoding/xml"
@@ -11,26 +11,26 @@ import (
 
 func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
-	srv := New(10)
-	a.NotNil(srv)
+	mt := NewMimetypes(10)
+	a.NotNil(mt)
 
-	a.NotError(srv.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
 
 	for i := 0; i < b.N; i++ {
-		name, marshal, ok := srv.MarshalFunc("font/wottf;q=0.9")
+		name, marshal, ok := mt.MarshalFunc("font/wottf;q=0.9")
 		a.True(ok).NotEmpty(name).NotNil(marshal)
 	}
 }
 
 func BenchmarkMimetypes_UnmarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
-	srv := New(10)
-	a.NotNil(srv)
+	mt := NewMimetypes(10)
+	a.NotNil(mt)
 
-	a.NotError(srv.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
 
 	for i := 0; i < b.N; i++ {
-		marshal, ok := srv.UnmarshalFunc("font/wottf")
+		marshal, ok := mt.UnmarshalFunc("font/wottf")
 		a.True(ok).NotNil(marshal)
 	}
 }

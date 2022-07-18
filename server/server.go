@@ -21,9 +21,8 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/filesystem"
 	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/serializer"
 )
 
@@ -31,6 +30,8 @@ const (
 	DefaultMimetype = "application/octet-stream"
 	DefaultCharset  = "utf-8"
 )
+
+type CleanupFunc func() error
 
 // Server 提供 HTTP 服务
 type Server struct {
@@ -40,7 +41,7 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	mimetypes  *mimetypes.Mimetypes
+	mimetypes  *serialization.Mimetypes
 	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
@@ -61,7 +62,7 @@ type Server struct {
 
 	// locale
 	locale *locale.Locale
-	files  *filesystem.Serializer
+	files  *serialization.FileSystem
 }
 
 // New 返回 *Server 实例
@@ -83,7 +84,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.httpServer,
 		vars:       &sync.Map{},
-		mimetypes:  mimetypes.New(10),
+		mimetypes:  serialization.NewMimetypes(10),
 		encodings:  o.Encodings,
 		cache:      o.Cache,
 		uptime:     time.Now(),
@@ -100,7 +101,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),
-		files:  filesystem.NewSerializer(o.FileSerializer),
+		files:  serialization.NewSerializer(5),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
@@ -133,7 +134,7 @@ func (srv *Server) Cache() cache.Cache { return srv.cache }
 func (srv *Server) Uptime() time.Time { return srv.uptime }
 
 // Mimetypes 编解码控制
-func (srv *Server) Mimetypes() *serializer.Serializer { return srv.mimetypes.Serializer }
+func (srv *Server) Mimetypes() serializer.Serializer { return srv.mimetypes }
 
 // Now 返回当前时间
 //
