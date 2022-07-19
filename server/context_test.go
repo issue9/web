@@ -25,12 +25,11 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
+	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/gob"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
-
-	xencoding "github.com/issue9/web/internal/encoding"
 )
 
 const (
@@ -53,15 +52,6 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
 	}
 
-	// encoding
-	if o.Encodings == nil {
-		o.Encodings = xencoding.NewEncodings(o.Logs.ERROR())
-		o.Encodings.Add(map[string]xencoding.WriterFunc{
-			"gzip":    xencoding.GZipWriter,
-			"deflate": xencoding.DeflateWriter,
-		})
-	}
-
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -79,6 +69,11 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	// encoding
+	srv.Encodings().Add("gzip", "gzip", xencoding.GZipWriter(8))
+	srv.Encodings().Add("deflate", "deflate", xencoding.DeflateWriter(8))
+	srv.Encodings().Allow("*", "gzip", "deflate")
 
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
 

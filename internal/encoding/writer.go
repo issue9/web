@@ -3,7 +3,6 @@
 package encoding
 
 import (
-	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
@@ -12,11 +11,13 @@ import (
 	"github.com/andybalholm/brotli"
 )
 
-//  每种压缩实例需要实现的最小接口
+//  WriteCloseRester 每种压缩实例需要实现的最小接口
 type WriteCloseRester interface {
 	io.WriteCloser
 	Reset(io.Writer)
 }
+
+type NewEncodingFunc func() WriteCloseRester
 
 type compressWriter struct {
 	*lzw.Writer
@@ -24,32 +25,44 @@ type compressWriter struct {
 	width int
 }
 
-func newCompressWriter(w io.Writer, order lzw.Order, width int) *compressWriter {
-	return &compressWriter{
-		Writer: lzw.NewWriter(w, order, width).(*lzw.Writer),
-	}
-}
-
 func (cw *compressWriter) Reset(w io.Writer) {
 	cw.Writer.Reset(w, cw.order, cw.width)
 }
 
 // GZipWriter gzip
-func GZipWriter(w io.Writer) (WriteCloseRester, error) {
-	return gzip.NewWriter(w), nil
+func GZipWriter(level int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		w, err := gzip.NewWriterLevel(nil, level)
+		if err != nil {
+			panic(err)
+		}
+		return w
+	}
 }
 
 // DeflateWriter deflate
-func DeflateWriter(w io.Writer) (WriteCloseRester, error) {
-	return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
+func DeflateWriter(level int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		w, err := flate.NewWriter(nil, level)
+		if err != nil {
+			panic(err)
+		}
+		return w
+	}
 }
 
 // BrotliWriter br
-func BrotliWriter(w io.Writer) (WriteCloseRester, error) {
-	return brotli.NewWriter(w), nil
+func BrotliWriter(o brotli.WriterOptions) NewEncodingFunc {
+	return func() WriteCloseRester {
+		return brotli.NewWriterOptions(nil, o)
+	}
 }
 
 // CompressWriter compress
-func CompressWriter(w io.Writer) (WriteCloseRester, error) {
-	return newCompressWriter(w, lzw.LSB, 5), nil
+func CompressWriter(order lzw.Order, width int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		return &compressWriter{
+			Writer: lzw.NewWriter(nil, order, width).(*lzw.Writer),
+		}
+	}
 }

@@ -34,15 +34,6 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
 	}
 
-	// encoding
-	if o.Encodings == nil {
-		o.Encodings = encoding.NewEncodings(o.Logs.ERROR())
-		o.Encodings.Add(map[string]encoding.WriterFunc{
-			"gzip":    encoding.GZipWriter,
-			"deflate": encoding.DeflateWriter,
-		})
-	}
-
 	srv, err := server.New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -60,6 +51,11 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	// encoding
+	srv.Encodings().Add("gzip", "gzip", encoding.GZipWriter(8))
+	srv.Encodings().Add("deflate", "deflate", encoding.DeflateWriter(8))
+	srv.Encodings().Allow("*", "gzip", "deflate")
 
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
 

@@ -33,6 +33,25 @@ const (
 
 type CleanupFunc func() error
 
+type NewEncodingFunc = encoding.NewEncodingFunc
+
+type Encodings interface {
+	// Add 添加压缩算法
+	//
+	// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
+	// name 表示通过 Accept-Encoding 匹配的名称；
+	// f 表示生成压缩对象的方法；
+	Add(id, name string, f NewEncodingFunc)
+
+	// Allow 允许 contentType 采用的压缩方式
+	//
+	// id 是指由 Add 中指定的值；
+	// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
+	//
+	// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
+	Allow(contentType string, id ...string)
+}
+
 // Server 提供 HTTP 服务
 type Server struct {
 	name       string
@@ -85,7 +104,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		httpServer: o.HTTPServer,
 		vars:       &sync.Map{},
 		mimetypes:  serialization.NewMimetypes(10),
-		encodings:  o.Encodings,
+		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
 
@@ -236,3 +255,6 @@ func (srv *Server) Serving() bool { return srv.serving }
 //
 // NOTE: 按注册的相反顺序执行。
 func (srv *Server) OnClose(f ...CleanupFunc) { srv.closes = append(srv.closes, f...) }
+
+// Encodings 返回压缩相关的功能
+func (srv *Server) Encodings() Encodings { return srv.encodings }

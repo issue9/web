@@ -3,10 +3,11 @@
 package encoding
 
 import (
-	"bytes"
 	"io"
 	"sync"
 )
+
+var poolWriterPool = sync.Pool{New: func() any { return &poolWriter{} }}
 
 // Pool 压缩对象池
 //
@@ -25,26 +26,25 @@ type poolWriter struct {
 func (e *poolWriter) Close() error {
 	err := e.WriteCloseRester.Close()
 	e.b.pool.Put(e.WriteCloseRester)
+	poolWriterPool.Put(e)
 	return err
 }
 
-func newBuilder(name string, f WriterFunc) *Pool {
+func newPool(name string, f NewEncodingFunc) *Pool {
 	return &Pool{
 		name: name,
-		pool: &sync.Pool{New: func() any {
-			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
-			if err != nil {
-				panic(err)
-			}
-			return w
-		}},
+		pool: &sync.Pool{New: func() any { return f() }},
 	}
 }
 
-func (b *Pool) Get(w io.Writer) io.WriteCloser {
-	ww := b.pool.Get().(WriteCloseRester)
+func (p *Pool) Get(w io.Writer) io.WriteCloser {
+	ww := p.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
-	return &poolWriter{b: b, WriteCloseRester: ww}
+
+	pw := poolWriterPool.Get().(*poolWriter)
+	pw.b = p
+	pw.WriteCloseRester = ww
+	return pw
 }
 
-func (b *Pool) Name() string { return b.name }
+func (p *Pool) Name() string { return p.name }
