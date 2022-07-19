@@ -37,7 +37,7 @@ func (l *Locale) NewPrinter(tag language.Tag) *message.Printer {
 	return message.NewPrinter(tag, message.Catalog(l.Catalog))
 }
 
-func (l *Locale) LoadLocaleFiles(fsys fs.FS, glob string, f *serialization.FileSystem) error {
+func (l *Locale) LoadLocaleFiles(fsys fs.FS, glob string, f *serialization.FS) error {
 	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
 		return err

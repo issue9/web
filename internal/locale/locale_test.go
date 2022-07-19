@@ -18,7 +18,7 @@ import (
 func TestLocale(t *testing.T) {
 	a := assert.New(t, false)
 
-	f := serialization.NewSerializer(5)
+	f := serialization.NewFS(5)
 	a.NotError(f.Serializer().Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	a.NotError(f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 

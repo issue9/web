@@ -75,7 +75,7 @@ func RegisterFileSerializer(m serializer.MarshalFunc, u serializer.UnmarshalFunc
 }
 
 func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
-	f := serialization.NewSerializer(len(filesFactory))
+	f := serialization.NewFS(len(filesFactory))
 	s := f.Serializer()
 	for name, ss := range filesFactory {
 		if err := s.Add(ss.Marshal, ss.Unmarshal, name); err != nil {
@@ -87,6 +87,12 @@ func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
 	if err := f.Load(fsys, path, conf); err != nil {
 		return nil, err
 	}
+
+	if err := conf.sanitize(); err != nil {
+		err.Path = path
+		return nil, err
+	}
+
 	return conf, nil
 }
 

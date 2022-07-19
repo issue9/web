@@ -97,11 +97,6 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 		return nil, nil, err
 	}
 
-	if err := conf.sanitize(); err != nil {
-		err.Path = filename
-		return nil, nil, err
-	}
-
 	opt := &server.Options{
 		FS:          fsys,
 		Location:    conf.location,
@@ -111,7 +106,6 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 		Encodings:   conf.encoding,
 		LanguageTag: conf.languageTag,
 	}
-
 	srv, err := server.New(name, version, opt)
 	if err != nil {
 		return nil, nil, err

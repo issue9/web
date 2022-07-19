@@ -12,15 +12,15 @@ import (
 	"github.com/issue9/web/serializer"
 )
 
-type FileSystem struct {
+type FS struct {
 	s serializer.Serializer
 }
 
-func NewSerializer(cap int) *FileSystem { return &FileSystem{s: New(cap)} }
+func NewFS(cap int) *FS { return &FS{s: New(cap)} }
 
-func (f *FileSystem) Serializer() serializer.Serializer { return f.s }
+func (f *FS) Serializer() serializer.Serializer { return f.s }
 
-func (f *FileSystem) Save(p string, v any) error {
+func (f *FS) Save(p string, v any) error {
 	m, _ := f.SearchByExt(p)
 	if m == nil {
 		return localeutil.Error("not found serialization function for %s", p)
@@ -34,7 +34,7 @@ func (f *FileSystem) Save(p string, v any) error {
 	return os.WriteFile(p, data, fs.ModePerm)
 }
 
-func (f *FileSystem) Load(fsys fs.FS, name string, v any) error {
+func (f *FS) Load(fsys fs.FS, name string, v any) error {
 	_, u := f.SearchByExt(name)
 	if u == nil {
 		return localeutil.Error("not found serialization function for %s", name)
@@ -48,7 +48,7 @@ func (f *FileSystem) Load(fsys fs.FS, name string, v any) error {
 	return u(data, v)
 }
 
-func (f *FileSystem) SearchByExt(filename string) (serializer.MarshalFunc, serializer.UnmarshalFunc) {
+func (f *FS) SearchByExt(filename string) (serializer.MarshalFunc, serializer.UnmarshalFunc) {
 	ext := filepath.Ext(filename)
 	_, m, u := f.Serializer().Search(ext)
 	return m, u

@@ -62,7 +62,7 @@ type Server struct {
 
 	// locale
 	locale *locale.Locale
-	files  *serialization.FileSystem
+	files  *serialization.FS
 }
 
 // New 返回 *Server 实例
@@ -101,7 +101,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),
-		files:  serialization.NewSerializer(5),
+		files:  serialization.NewFS(5),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers

@@ -34,7 +34,7 @@ import (
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 AppOf 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+// 如果想让 AppOf 支持本地化操作，需要向 Catalog 注册命令行参数的本地化信息：
 //  -v  show version
 //  -h  show help
 //  -f  set file system
@@ -64,6 +64,8 @@ type AppOf[T any] struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
+	// user 为用户自定义的数据类型；
+	// action 为 -a 命令行指定的参数；
 	Init func(s *server.Server, user *T, action string) error
 
 	// 命令行输出信息的通道
@@ -76,9 +78,6 @@ type AppOf[T any] struct {
 	// 需要保证 RegisterFileSerializer 能解析此文件指定的内容；
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
-	// 如果为非空，那么会传递给 NewOptionsOf 函数。
-	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
-	// 之后可以通过 Options 字段对内容进行初始化。
 	ConfigFilename string
 
 	// 本地化 AppOf 中的命令行信息
