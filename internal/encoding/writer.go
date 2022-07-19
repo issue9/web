@@ -18,6 +18,9 @@ type WriteCloseRester interface {
 	Reset(io.Writer)
 }
 
+// WriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
+type WriterFunc func(w io.Writer) (WriteCloseRester, error)
+
 type compressWriter struct {
 	*lzw.Writer
 	order lzw.Order

@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+var poolWriterPool = sync.Pool{New: func() any { return &poolWriter{} }}
+
 // Pool 压缩对象池
 //
 // 每个 Pool 对象与特定的压缩对象关联，可以复用这些压缩对象。
@@ -25,10 +27,11 @@ type poolWriter struct {
 func (e *poolWriter) Close() error {
 	err := e.WriteCloseRester.Close()
 	e.b.pool.Put(e.WriteCloseRester)
+	poolWriterPool.Put(e)
 	return err
 }
 
-func newBuilder(name string, f WriterFunc) *Pool {
+func newPool(name string, f WriterFunc) *Pool {
 	return &Pool{
 		name: name,
 		pool: &sync.Pool{New: func() any {
@@ -44,7 +47,10 @@ func newBuilder(name string, f WriterFunc) *Pool {
 func (b *Pool) Get(w io.Writer) io.WriteCloser {
 	ww := b.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
-	return &poolWriter{b: b, WriteCloseRester: ww}
+	pw := poolWriterPool.Get().(*poolWriter)
+	pw.b = b
+	pw.WriteCloseRester = ww
+	return pw
 }
 
 func (b *Pool) Name() string { return b.name }

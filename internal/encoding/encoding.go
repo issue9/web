@@ -5,7 +5,6 @@ package encoding
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/issue9/logs/v4"
@@ -22,9 +21,6 @@ type Encodings struct {
 	ignoreTypes      []string // 表示完全匹配的值列表。
 	allowAny         bool
 }
-
-// WriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
-type WriterFunc func(w io.Writer) (WriteCloseRester, error)
 
 // NewEncodings 创建 *Encodings
 //
@@ -73,7 +69,7 @@ func (c *Encodings) add(name string, f WriterFunc) {
 		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
 	}
 
-	c.pools = append(c.pools, newBuilder(name, f))
+	c.pools = append(c.pools, newPool(name, f))
 }
 
 // Add 添加压缩算法
