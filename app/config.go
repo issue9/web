@@ -12,7 +12,6 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/server"
 )
@@ -58,8 +57,8 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、brotli 和 deflate 三种类型。
-	Encodings *encodingsConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
-	encoding  *encoding.Encodings
+	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
+	encodings map[string]enc    // 启用的 ID
 
 	// 默认的文件序列化列表
 	//
@@ -108,7 +107,6 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 		Cache:       conf.cache,
 		HTTPServer:  conf.http,
 		Logs:        conf.logs,
-		Encodings:   conf.encoding,
 		LanguageTag: conf.languageTag,
 	}
 
@@ -124,6 +122,12 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 	}
 
 	if err := conf.buildMimetypes(srv.Mimetypes()); err != nil {
+		err.Field = "mimetypes." + err.Field
+		err.Path = filename
+		return nil, nil, err
+	}
+
+	if err := conf.buildEncodings(srv.Encodings()); err != nil {
 		err.Field = "mimetypes." + err.Field
 		err.Path = filename
 		return nil, nil, err
@@ -169,9 +173,8 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	}
 	conf.http = conf.HTTP.buildHTTPServer(conf.logs.StdLogger(logs.LevelError))
 
-	conf.encoding, err = conf.Encodings.build(l.ERROR())
-	if err != nil {
-		err.Field = "encodings." + err.Field
+	if err = conf.sanitizeEncodings(); err != nil {
+		err.Field = "encodings"
 		return err
 	}
 

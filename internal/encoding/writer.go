@@ -25,36 +25,44 @@ type compressWriter struct {
 	width int
 }
 
-func newCompressWriter(w io.Writer, order lzw.Order, width int) *compressWriter {
-	return &compressWriter{
-		Writer: lzw.NewWriter(w, order, width).(*lzw.Writer),
-	}
-}
-
 func (cw *compressWriter) Reset(w io.Writer) {
 	cw.Writer.Reset(w, cw.order, cw.width)
 }
 
 // GZipWriter gzip
-func GZipWriter() WriteCloseRester {
-	return gzip.NewWriter(nil)
+func GZipWriter(level int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		w, err := gzip.NewWriterLevel(nil, level)
+		if err != nil {
+			panic(err)
+		}
+		return w
+	}
 }
 
 // DeflateWriter deflate
-func DeflateWriter() WriteCloseRester {
-	w, err := flate.NewWriter(nil, flate.DefaultCompression)
-	if err != nil {
-		panic(err)
+func DeflateWriter(level int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		w, err := flate.NewWriter(nil, level)
+		if err != nil {
+			panic(err)
+		}
+		return w
 	}
-	return w
 }
 
 // BrotliWriter br
-func BrotliWriter() WriteCloseRester {
-	return brotli.NewWriter(nil)
+func BrotliWriter(o brotli.WriterOptions) NewEncodingFunc {
+	return func() WriteCloseRester {
+		return brotli.NewWriterOptions(nil, o)
+	}
 }
 
 // CompressWriter compress
-func CompressWriter() WriteCloseRester {
-	return newCompressWriter(nil, lzw.LSB, 5)
+func CompressWriter(order lzw.Order, width int) NewEncodingFunc {
+	return func() WriteCloseRester {
+		return &compressWriter{
+			Writer: lzw.NewWriter(nil, order, width).(*lzw.Writer),
+		}
+	}
 }

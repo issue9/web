@@ -8,24 +8,22 @@ import (
 	"io"
 	"testing"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v2"
 )
 
 func BenchmarkPool_Get(b *testing.B) {
 	a := assert.New(b, false)
 
-	e := NewEncodings(nil, "text*")
+	e := NewEncodings(nil)
 	a.NotNil(e)
-	a.False(e.allowAny).
-		Empty(e.ignoreTypes).
-		Equal(e.ignoreTypePrefix, []string{"text"})
-	e.Add(map[string]NewEncodingFunc{
-		"gzip": GZipWriter,
-		"br":   GZipWriter,
-	})
+	e.Add("gzip-3", "gzip", GZipWriter(3))
+	e.Add("gzip-9", "gzip", GZipWriter(9))
+	e.Add("br-3-10", "br", BrotliWriter(brotli.WriterOptions{Quality: 3, LGWin: 10}))
+	e.Allow("application/*", "gzip-3", "br-3-10")
 
-	pool, notAccept := e.Search("application/json", "gzip;q=0.9,br")
-	a.False(notAccept).NotNil(pool).Equal(pool.name, "br")
+	pool, notAccept := e.Search("application/json", "gzip,br;q=0.9")
+	a.False(notAccept).NotNil(pool).Equal(pool.name, "gzip")
 
 	for i := 0; i < b.N; i++ {
 		w := &bytes.Buffer{}

@@ -5,6 +5,7 @@ package encoding
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/issue9/logs/v4"
@@ -15,48 +16,80 @@ import (
 type Encodings struct {
 	errlog logs.Logger
 
-	pools []*Pool // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	pools map[string]*Pool // 按添加顺序保存，查找 * 时按添加顺序进行比对。
 
-	ignoreTypePrefix []string // 保存通配符匹配的值列表；
-	ignoreTypes      []string // 表示完全匹配的值列表。
-	allowAny         bool
+	// contentType 是具体值的，比如 text/xml
+	allowTypes map[string][]*Pool
+
+	// contentType 是模糊类型的，比如 text/*，
+	// 只有在 allowTypes 找不到时，才在此处查找。
+	allowTypesPrefix []prefix
 }
 
-// NewEncodings 创建 *Encodings
-//
-// errlog 处理过程中的错误信息输出通道，如果为空表示忽加这些信息；
-// ignoreTypes 表示不需要进行压缩处理的 mimetype 类型，可以是以下格式：
-//  - application/json 具体类型；
-//  - text* 表示以 text 开头的所有类型；
-// 不能传递 *。
-func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
-	c := &Encodings{
-		pools:  make([]*Pool, 0, 4),
+type prefix struct {
+	prefix string
+	pools  []*Pool
+}
+
+func NewEncodings(errlog logs.Logger) *Encodings {
+	return &Encodings{
+		pools:  make(map[string]*Pool, 10),
 		errlog: errlog,
-	}
 
-	c.ignoreTypePrefix = make([]string, 0, len(ignoreTypes))
-	c.ignoreTypes = make([]string, 0, len(ignoreTypes))
-	if len(ignoreTypes) == 0 {
-		c.allowAny = true
-	} else {
-		for _, typ := range ignoreTypes {
-			switch {
-			case typ == "*":
-				panic("无效的值 *")
-			case typ[len(typ)-1] == '*':
-				// TODO text/* 和 text* 同时存在时，后者包含了前者所有的情况，应该删除 text/*
-				c.ignoreTypePrefix = append(c.ignoreTypePrefix, typ[:len(typ)-1])
-			default:
-				c.ignoreTypes = append(c.ignoreTypes, typ)
-			}
-		}
+		allowTypes:       make(map[string][]*Pool, 10),
+		allowTypesPrefix: make([]prefix, 0, 10),
 	}
-
-	return c
 }
 
-func (c *Encodings) add(name string, f NewEncodingFunc) {
+// Allow 允许 contentType 采用的压缩方式
+//
+// id 是指由 Add 中指定的值；
+// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
+//
+// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
+func (c *Encodings) Allow(contentType string, id ...string) {
+	if len(id) == 0 {
+		panic("id 不能为空")
+	}
+
+	pools := make([]*Pool, 0, len(id))
+	for _, i := range id {
+		p, found := c.pools[i]
+		if !found {
+			panic(fmt.Sprintf("未找到 id 为 %s 表示的算法", i))
+		}
+		pools = append(pools, p)
+	}
+	if indexes := sliceutil.Dup(pools, func(i, j *Pool) bool { return i.name == j.name }); len(indexes) > 0 {
+		panic(fmt.Sprintf("id 引用中存在多个名为 %s 的算法", pools[indexes[0]].name))
+	}
+
+	switch {
+	case contentType[len(contentType)-1] == '*':
+		p := contentType[:len(contentType)-1]
+		if sliceutil.Exists(c.allowTypesPrefix, func(e prefix) bool { return e.prefix == p }) {
+			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
+		}
+
+		c.allowTypesPrefix = append(c.allowTypesPrefix, prefix{pools: pools, prefix: p})
+		// 按 prefix 从长到短排序
+		sort.SliceStable(c.allowTypesPrefix, func(i, j int) bool {
+			return len(c.allowTypesPrefix[i].prefix) > len(c.allowTypesPrefix[j].prefix)
+		})
+	default:
+		if _, found := c.allowTypes[contentType]; found {
+			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
+		}
+		c.allowTypes[contentType] = pools
+	}
+}
+
+// Add 添加压缩算法
+//
+// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
+// name 表示通过 Accept-Encoding 匹配的名称；
+// f 表示生成压缩对象的方法；
+func (c *Encodings) Add(id, name string, f NewEncodingFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
@@ -65,32 +98,17 @@ func (c *Encodings) add(name string, f NewEncodingFunc) {
 		panic("参数 w 不能为空")
 	}
 
-	if sliceutil.Count(c.pools, func(e *Pool) bool { return e.name == name }) > 0 {
-		panic(fmt.Sprintf("存在相同名称的函数 %s", name))
+	if _, found := c.pools[id]; found {
+		panic(fmt.Sprintf("存在相同 ID %s 的函数", id))
 	}
-
-	c.pools = append(c.pools, newPool(name, f))
-}
-
-// Add 添加压缩算法
-//
-// 当前用户的 Accept-Encoding 的匹配到 * 时，按添加顺序查找真正的匹配项。
-// 不能添加名为 identity 和 * 的算法。
-//
-// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
-//
-// 返回值表示是否添加成功，若为 false，则表示已经存在相同名称的对象。
-func (c *Encodings) Add(algos map[string]NewEncodingFunc) {
-	for name, algo := range algos {
-		c.add(name, algo)
-	}
+	c.pools[id] = newPool(name, f)
 }
 
 // Search 从报头中查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
-func (c *Encodings) Search(mimetype, header string) (w *Pool, notAcceptable bool) {
-	if len(c.pools) == 0 || !c.canCompressed(mimetype) {
+func (c *Encodings) Search(contentType, header string) (w *Pool, notAcceptable bool) {
+	if len(c.pools) == 0 {
 		return
 	}
 
@@ -99,18 +117,22 @@ func (c *Encodings) Search(mimetype, header string) (w *Pool, notAcceptable bool
 		return
 	}
 
-	last := accepts.Items[len(accepts.Items)-1]
-	if last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
+	pools := c.getPools(contentType)
+	if len(pools) == 0 {
+		return
+	}
+
+	if last := accepts.Items[len(accepts.Items)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {
 			return nil, true
 		}
 
-		for _, a := range c.pools {
-			index := sliceutil.Index(accepts.Items, func(e *qheader.Item) bool {
-				return e.Value == a.name
+		for _, p := range pools {
+			exists := sliceutil.Exists(accepts.Items, func(e *qheader.Item) bool {
+				return e.Value == p.name
 			})
-			if index < 0 {
-				return a, false
+			if !exists {
+				return p, false
 			}
 		}
 		return
@@ -129,14 +151,14 @@ func (c *Encodings) Search(mimetype, header string) (w *Pool, notAcceptable bool
 			identity = accept
 		}
 
-		for _, a := range c.pools {
+		for _, a := range pools {
 			if a.name == accept.Value {
 				return a, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		a := c.pools[0]
+		a := pools[0]
 		return a, false
 	}
 
@@ -144,22 +166,18 @@ func (c *Encodings) Search(mimetype, header string) (w *Pool, notAcceptable bool
 }
 
 // 调用者需要保证 mimetype 的正确性，不能有参数
-func (c *Encodings) canCompressed(mimetype string) bool {
-	if c.allowAny {
-		return true
-	}
-
-	for _, val := range c.ignoreTypes {
-		if val == mimetype {
-			return false
+func (c *Encodings) getPools(contentType string) []*Pool {
+	for t, pools := range c.allowTypes {
+		if t == contentType {
+			return pools
 		}
 	}
 
-	for _, prefix := range c.ignoreTypePrefix {
-		if strings.HasPrefix(mimetype, prefix) {
-			return false
+	for _, p := range c.allowTypesPrefix {
+		if strings.HasPrefix(contentType, p.prefix) {
+			return p.pools
 		}
 	}
 
-	return true
+	return nil
 }
