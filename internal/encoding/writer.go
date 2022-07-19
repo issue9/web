@@ -11,13 +11,13 @@ import (
 	"github.com/andybalholm/brotli"
 )
 
-//  每种压缩实例需要实现的最小接口
+//  WriteCloseRester 每种压缩实例需要实现的最小接口
 type WriteCloseRester interface {
 	io.WriteCloser
 	Reset(io.Writer)
 }
 
-type NewEncodingFunc func() (WriteCloseRester, error)
+type NewEncodingFunc func() WriteCloseRester
 
 type compressWriter struct {
 	*lzw.Writer
@@ -36,21 +36,25 @@ func (cw *compressWriter) Reset(w io.Writer) {
 }
 
 // GZipWriter gzip
-func GZipWriter() (WriteCloseRester, error) {
-	return gzip.NewWriter(nil), nil
+func GZipWriter() WriteCloseRester {
+	return gzip.NewWriter(nil)
 }
 
 // DeflateWriter deflate
-func DeflateWriter() (WriteCloseRester, error) {
-	return flate.NewWriter(nil, flate.DefaultCompression)
+func DeflateWriter() WriteCloseRester {
+	w, err := flate.NewWriter(nil, flate.DefaultCompression)
+	if err != nil {
+		panic(err)
+	}
+	return w
 }
 
 // BrotliWriter br
-func BrotliWriter() (WriteCloseRester, error) {
-	return brotli.NewWriter(nil), nil
+func BrotliWriter() WriteCloseRester {
+	return brotli.NewWriter(nil)
 }
 
 // CompressWriter compress
-func CompressWriter() (WriteCloseRester, error) {
-	return newCompressWriter(nil, lzw.LSB, 5), nil
+func CompressWriter() WriteCloseRester {
+	return newCompressWriter(nil, lzw.LSB, 5)
 }

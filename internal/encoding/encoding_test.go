@@ -4,21 +4,12 @@ package encoding
 
 import (
 	"bytes"
-	"compress/flate"
 	"compress/gzip"
 	"io"
 	"testing"
 
 	"github.com/issue9/assert/v2"
 )
-
-func gzipWriterFunc() (WriteCloseRester, error) {
-	return gzip.NewWriter(nil), nil
-}
-
-func brWriterFunc() (WriteCloseRester, error) {
-	return flate.NewWriter(nil, flate.DefaultCompression)
-}
 
 func TestNewEncodings(t *testing.T) {
 	a := assert.New(t, false)
@@ -53,15 +44,15 @@ func TestEncodings_Add(t *testing.T) {
 	a.NotNil(e)
 
 	e.Add(map[string]NewEncodingFunc{
-		"gzip": gzipWriterFunc,
-		"br":   brWriterFunc,
+		"gzip": GZipWriter,
+		"br":   BrotliWriter,
 	})
 	a.Equal(2, len(e.pools))
 
 	// 重复添加
 	a.PanicString(func() {
 		e.Add(map[string]NewEncodingFunc{
-			"gzip": gzipWriterFunc,
+			"gzip": GZipWriter,
 		})
 	}, "存在相同名称的函数")
 
@@ -73,13 +64,13 @@ func TestEncodings_Add(t *testing.T) {
 
 	a.PanicString(func() {
 		e.Add(map[string]NewEncodingFunc{
-			"*": gzipWriterFunc,
+			"*": GZipWriter,
 		})
 	}, "name 值不能为 identity 和 *")
 
 	a.PanicString(func() {
 		e.Add(map[string]NewEncodingFunc{
-			"identity": gzipWriterFunc,
+			"identity": GZipWriter,
 		})
 	}, "name 值不能为 identity 和 *")
 }
@@ -93,8 +84,8 @@ func TestEncodings_Search(t *testing.T) {
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
 	e.Add(map[string]NewEncodingFunc{
-		"gzip": gzipWriterFunc,
-		"br":   gzipWriterFunc,
+		"gzip": GZipWriter,
+		"br":   GZipWriter,
 	})
 
 	b, notAccept := e.Search("application/json", "gzip;q=0.9,br")
@@ -146,8 +137,8 @@ func TestEncodings_Compress(t *testing.T) {
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
 	e.Add(map[string]NewEncodingFunc{
-		"gzip": gzipWriterFunc,
-		"br":   gzipWriterFunc,
+		"gzip": GZipWriter,
+		"br":   GZipWriter,
 	})
 
 	b, notAccept := e.Search("application/json", "gzip;q=0.9,br")

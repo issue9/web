@@ -33,24 +33,18 @@ func (e *poolWriter) Close() error {
 func newPool(name string, f NewEncodingFunc) *Pool {
 	return &Pool{
 		name: name,
-		pool: &sync.Pool{New: func() any {
-			w, err := f()
-			if err != nil {
-				panic(err)
-			}
-			return w
-		}},
+		pool: &sync.Pool{New: func() any { return f() }},
 	}
 }
 
-func (b *Pool) Get(w io.Writer) io.WriteCloser {
-	ww := b.pool.Get().(WriteCloseRester)
+func (p *Pool) Get(w io.Writer) io.WriteCloser {
+	ww := p.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
 
 	pw := poolWriterPool.Get().(*poolWriter)
-	pw.b = b
+	pw.b = p
 	pw.WriteCloseRester = ww
 	return pw
 }
 
-func (b *Pool) Name() string { return b.name }
+func (p *Pool) Name() string { return p.name }

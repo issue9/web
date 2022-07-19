@@ -20,8 +20,8 @@ func BenchmarkPool_Get(b *testing.B) {
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
 	e.Add(map[string]NewEncodingFunc{
-		"gzip": gzipWriterFunc,
-		"br":   gzipWriterFunc,
+		"gzip": GZipWriter,
+		"br":   GZipWriter,
 	})
 
 	pool, notAccept := e.Search("application/json", "gzip;q=0.9,br")
