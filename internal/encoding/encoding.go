@@ -56,7 +56,7 @@ func NewEncodings(errlog logs.Logger, ignoreTypes ...string) *Encodings {
 	return c
 }
 
-func (c *Encodings) add(name string, f WriterFunc) {
+func (c *Encodings) add(name string, f NewEncodingFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
@@ -80,7 +80,7 @@ func (c *Encodings) add(name string, f WriterFunc) {
 // 如果未添加任何算法，则每个请求都相当于是 identity 规则。
 //
 // 返回值表示是否添加成功，若为 false，则表示已经存在相同名称的对象。
-func (c *Encodings) Add(algos map[string]WriterFunc) {
+func (c *Encodings) Add(algos map[string]NewEncodingFunc) {
 	for name, algo := range algos {
 		c.add(name, algo)
 	}

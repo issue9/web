@@ -3,7 +3,6 @@
 package encoding
 
 import (
-	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
@@ -18,8 +17,7 @@ type WriteCloseRester interface {
 	Reset(io.Writer)
 }
 
-// WriterFunc 将普通的 io.Writer 封装成支持压缩功能的对象
-type WriterFunc func(w io.Writer) (WriteCloseRester, error)
+type NewEncodingFunc func() (WriteCloseRester, error)
 
 type compressWriter struct {
 	*lzw.Writer
@@ -38,21 +36,21 @@ func (cw *compressWriter) Reset(w io.Writer) {
 }
 
 // GZipWriter gzip
-func GZipWriter(w io.Writer) (WriteCloseRester, error) {
-	return gzip.NewWriter(w), nil
+func GZipWriter() (WriteCloseRester, error) {
+	return gzip.NewWriter(nil), nil
 }
 
 // DeflateWriter deflate
-func DeflateWriter(w io.Writer) (WriteCloseRester, error) {
-	return flate.NewWriter(&bytes.Buffer{}, flate.DefaultCompression)
+func DeflateWriter() (WriteCloseRester, error) {
+	return flate.NewWriter(nil, flate.DefaultCompression)
 }
 
 // BrotliWriter br
-func BrotliWriter(w io.Writer) (WriteCloseRester, error) {
-	return brotli.NewWriter(w), nil
+func BrotliWriter() (WriteCloseRester, error) {
+	return brotli.NewWriter(nil), nil
 }
 
 // CompressWriter compress
-func CompressWriter(w io.Writer) (WriteCloseRester, error) {
-	return newCompressWriter(w, lzw.LSB, 5), nil
+func CompressWriter() (WriteCloseRester, error) {
+	return newCompressWriter(nil, lzw.LSB, 5), nil
 }

@@ -19,7 +19,7 @@ func BenchmarkPool_Get(b *testing.B) {
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
-	e.Add(map[string]WriterFunc{
+	e.Add(map[string]NewEncodingFunc{
 		"gzip": gzipWriterFunc,
 		"br":   gzipWriterFunc,
 	})

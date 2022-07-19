@@ -12,12 +12,12 @@ import (
 	"github.com/issue9/assert/v2"
 )
 
-func gzipWriterFunc(w io.Writer) (WriteCloseRester, error) {
-	return gzip.NewWriter(w), nil
+func gzipWriterFunc() (WriteCloseRester, error) {
+	return gzip.NewWriter(nil), nil
 }
 
-func brWriterFunc(w io.Writer) (WriteCloseRester, error) {
-	return flate.NewWriter(w, flate.DefaultCompression)
+func brWriterFunc() (WriteCloseRester, error) {
+	return flate.NewWriter(nil, flate.DefaultCompression)
 }
 
 func TestNewEncodings(t *testing.T) {
@@ -52,7 +52,7 @@ func TestEncodings_Add(t *testing.T) {
 	e := NewEncodings(nil)
 	a.NotNil(e)
 
-	e.Add(map[string]WriterFunc{
+	e.Add(map[string]NewEncodingFunc{
 		"gzip": gzipWriterFunc,
 		"br":   brWriterFunc,
 	})
@@ -60,25 +60,25 @@ func TestEncodings_Add(t *testing.T) {
 
 	// 重复添加
 	a.PanicString(func() {
-		e.Add(map[string]WriterFunc{
+		e.Add(map[string]NewEncodingFunc{
 			"gzip": gzipWriterFunc,
 		})
 	}, "存在相同名称的函数")
 
 	a.PanicString(func() {
-		e.Add(map[string]WriterFunc{
+		e.Add(map[string]NewEncodingFunc{
 			"gzip": nil,
 		})
 	}, "参数 w 不能为空")
 
 	a.PanicString(func() {
-		e.Add(map[string]WriterFunc{
+		e.Add(map[string]NewEncodingFunc{
 			"*": gzipWriterFunc,
 		})
 	}, "name 值不能为 identity 和 *")
 
 	a.PanicString(func() {
-		e.Add(map[string]WriterFunc{
+		e.Add(map[string]NewEncodingFunc{
 			"identity": gzipWriterFunc,
 		})
 	}, "name 值不能为 identity 和 *")
@@ -92,7 +92,7 @@ func TestEncodings_Search(t *testing.T) {
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
-	e.Add(map[string]WriterFunc{
+	e.Add(map[string]NewEncodingFunc{
 		"gzip": gzipWriterFunc,
 		"br":   gzipWriterFunc,
 	})
@@ -145,7 +145,7 @@ func TestEncodings_Compress(t *testing.T) {
 	a.False(e.allowAny).
 		Empty(e.ignoreTypes).
 		Equal(e.ignoreTypePrefix, []string{"text"})
-	e.Add(map[string]WriterFunc{
+	e.Add(map[string]NewEncodingFunc{
 		"gzip": gzipWriterFunc,
 		"br":   gzipWriterFunc,
 	})

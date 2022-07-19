@@ -56,7 +56,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	// encoding
 	if o.Encodings == nil {
 		o.Encodings = xencoding.NewEncodings(o.Logs.ERROR())
-		o.Encodings.Add(map[string]xencoding.WriterFunc{
+		o.Encodings.Add(map[string]xencoding.NewEncodingFunc{
 			"gzip":    xencoding.GZipWriter,
 			"deflate": xencoding.DeflateWriter,
 		})

@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/web/internal/encoding"
 )
 
-var encodingFactory = map[string]encoding.WriterFunc{}
+var encodingFactory = map[string]encoding.NewEncodingFunc{}
 
 type encodingsConfig struct {
 	// 忽略对此类 mimetype 内容的压缩
@@ -36,7 +36,7 @@ func (conf *encodingsConfig) build(l logs.Logger) (*encoding.Encodings, *ConfigE
 		return encoding.NewEncodings(l), nil
 	}
 
-	es := make(map[string]encoding.WriterFunc)
+	es := make(map[string]encoding.NewEncodingFunc)
 	for _, e := range conf.Encodings {
 		f, found := encodingFactory[e.Encoding]
 		if !found {
@@ -50,7 +50,7 @@ func (conf *encodingsConfig) build(l logs.Logger) (*encoding.Encodings, *ConfigE
 	return encoding, nil
 }
 
-func RegisterEncoding(f encoding.WriterFunc, name string) {
+func RegisterEncoding(f encoding.NewEncodingFunc, name string) {
 	if _, found := encodingFactory[name]; found {
 		panic("已经存在相同的 name:" + name)
 	}

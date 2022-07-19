@@ -3,7 +3,6 @@
 package encoding
 
 import (
-	"bytes"
 	"io"
 	"sync"
 )
@@ -31,11 +30,11 @@ func (e *poolWriter) Close() error {
 	return err
 }
 
-func newPool(name string, f WriterFunc) *Pool {
+func newPool(name string, f NewEncodingFunc) *Pool {
 	return &Pool{
 		name: name,
 		pool: &sync.Pool{New: func() any {
-			w, err := f(&bytes.Buffer{}) // NOTE: 必须传递非空值，否则在 Close 时会出错
+			w, err := f()
 			if err != nil {
 				panic(err)
 			}
@@ -47,6 +46,7 @@ func newPool(name string, f WriterFunc) *Pool {
 func (b *Pool) Get(w io.Writer) io.WriteCloser {
 	ww := b.pool.Get().(WriteCloseRester)
 	ww.Reset(w)
+
 	pw := poolWriterPool.Get().(*poolWriter)
 	pw.b = b
 	pw.WriteCloseRester = ww
