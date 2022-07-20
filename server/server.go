@@ -31,26 +31,7 @@ const (
 	DefaultCharset  = "utf-8"
 )
 
-type CleanupFunc func() error
-
 type NewEncodingFunc = encoding.NewEncodingFunc
-
-type Encodings interface {
-	// Add 添加压缩算法
-	//
-	// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
-	// name 表示通过 Accept-Encoding 匹配的名称；
-	// f 表示生成压缩对象的方法；
-	Add(id, name string, f NewEncodingFunc)
-
-	// Allow 允许 contentType 采用的压缩方式
-	//
-	// id 是指由 Add 中指定的值；
-	// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
-	//
-	// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
-	Allow(contentType string, id ...string)
-}
 
 // Server 提供 HTTP 服务
 type Server struct {
@@ -69,7 +50,7 @@ type Server struct {
 	routers    *Routers
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
-	closes []CleanupFunc
+	closes []func() error
 
 	// service
 	services  []*Service
@@ -254,7 +235,16 @@ func (srv *Server) Serving() bool { return srv.serving }
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f ...CleanupFunc) { srv.closes = append(srv.closes, f...) }
+func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
 
-// Encodings 返回压缩相关的功能
-func (srv *Server) Encodings() Encodings { return srv.encodings }
+// AddEncoding 注册可用的压缩方式
+func (srv *Server) AddEncoding(id, name string, f NewEncodingFunc) {
+	srv.encodings.Add(id, name, f)
+}
+
+// AllowEncoding 为指定的 contentType 指派压缩方式
+//
+// id 必须是由 AddEncoding 中指定的值。
+func (srv *Server) AllowEncoding(contentType string, id ...string) {
+	srv.encodings.Allow(contentType, id...)
+}

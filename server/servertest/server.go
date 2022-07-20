@@ -53,9 +53,9 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
 	// encoding
-	srv.Encodings().Add("gzip", "gzip", encoding.GZipWriter(8))
-	srv.Encodings().Add("deflate", "deflate", encoding.DeflateWriter(8))
-	srv.Encodings().Allow("*", "gzip", "deflate")
+	srv.AddEncoding("gzip", "gzip", encoding.GZipWriter(8))
+	srv.AddEncoding("deflate", "deflate", encoding.DeflateWriter(8))
+	srv.AllowEncoding("*", "gzip", "deflate")
 
 	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
 

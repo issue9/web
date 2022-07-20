@@ -7,21 +7,21 @@ import (
 
 	"github.com/issue9/assert/v2"
 
-	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/server/servertest"
 )
 
 func TestConfigOf_sanitizeEncodings(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{Encodings: []*encodingConfig{
-		{Name: "text/*", IDs: []string{"br-default", "compress-msb-8"}},
-		{Name: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
+		{Type: "text/*", IDs: []string{"br-default", "compress-msb-8"}},
+		{Type: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
 	}}
 	a.NotError(conf.sanitizeEncodings())
 
 	conf = &configOf[empty]{Encodings: []*encodingConfig{
-		{Name: "text/*", IDs: []string{"br-default", "compress-msb-8", "not-exists-id"}},
-		{Name: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
+		{Type: "text/*", IDs: []string{"br-default", "compress-msb-8", "not-exists-id"}},
+		{Type: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
 	}}
 	err := conf.sanitizeEncodings()
 	a.Error(err).Equal(err.Field, "ids")
@@ -30,11 +30,11 @@ func TestConfigOf_sanitizeEncodings(t *testing.T) {
 func TestConfigOf_buildEncodings(t *testing.T) {
 	a := assert.New(t, false)
 	conf := &configOf[empty]{Encodings: []*encodingConfig{
-		{Name: "text/*", IDs: []string{"br-default", "compress-msb-8"}},
-		{Name: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
+		{Type: "text/*", IDs: []string{"br-default", "compress-msb-8"}},
+		{Type: "application/*", IDs: []string{"gzip-default", "compress-msb-8"}},
 	}}
 	a.NotError(conf.sanitizeEncodings())
 
-	e := encoding.NewEncodings(nil)
+	e := servertest.NewServer(a, nil)
 	a.NotError(conf.buildEncodings(e))
 }

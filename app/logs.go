@@ -12,8 +12,6 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
-
-	"github.com/issue9/web/server"
 )
 
 var logWritersFactory = map[string]LogsWriterBuilder{}
@@ -21,7 +19,7 @@ var logWritersFactory = map[string]LogsWriterBuilder{}
 type LogsWriter = logs.Writer
 
 // LogsWriterBuilder 构建 LogsWriter 的方法
-type LogsWriterBuilder func(args []string) (LogsWriter, server.CleanupFunc, error)
+type LogsWriterBuilder func(args []string) (LogsWriter, func() error, error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
@@ -78,7 +76,7 @@ type logWriterConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (conf *logsConfig) build() (*logs.Logs, []server.CleanupFunc, *ConfigError) {
+func (conf *logsConfig) build() (*logs.Logs, []func() error, *ConfigError) {
 	if conf == nil {
 		return logs.New(logs.NewNopWriter()), nil, nil
 	}
@@ -105,12 +103,12 @@ func (conf *logsConfig) build() (*logs.Logs, []server.CleanupFunc, *ConfigError)
 	return l, c, nil
 }
 
-func (conf *logsConfig) buildWriter() (LogsWriter, []server.CleanupFunc, *ConfigError) {
+func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *ConfigError) {
 	if len(conf.Writers) == 0 {
 		return logs.NewNopWriter(), nil, nil
 	}
 
-	cleanup := make([]server.CleanupFunc, 0, 10)
+	cleanup := make([]func() error, 0, 10)
 
 	m := make(map[logs.Level][]LogsWriter, 6)
 	for i, w := range conf.Writers {
@@ -168,7 +166,7 @@ func init() {
 	RegisterLogsWriter(newTermLogsWriter, "term")
 }
 
-func newFileLogsWriter(args []string) (LogsWriter, server.CleanupFunc, error) {
+func newFileLogsWriter(args []string) (LogsWriter, func() error, error) {
 	size, err := strconv.ParseInt(args[3], 10, 64)
 	if err != nil {
 		return nil, nil, err
@@ -202,7 +200,7 @@ var colorMap = map[string]colors.Color{
 // 2: 为输出通道，以下值有效：
 //  - stdout
 //  - stderr
-func newTermLogsWriter(args []string) (LogsWriter, server.CleanupFunc, error) {
+func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	if len(args) != 3 {
 		return nil, nil, &ConfigError{Field: "Args", Message: localeutil.Error("invalid value %s", args)}
 	}

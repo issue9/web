@@ -23,10 +23,10 @@ type enc struct {
 }
 
 type encodingConfig struct {
-	// Name content-type 的值
+	// Type content-type 的值
 	//
 	// 可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。
-	Name string `json:"name" xml:"name,attr" yaml:"name"`
+	Type string `json:"type" xml:"type,attr" yaml:"type"`
 
 	// IDs 压缩方法的 ID 列表
 	//
@@ -63,13 +63,13 @@ func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	return nil
 }
 
-func (conf *configOf[T]) buildEncodings(e server.Encodings) *ConfigError {
+func (conf *configOf[T]) buildEncodings(s *server.Server) *ConfigError {
 	for id, item := range conf.encodings {
-		e.Add(id, item.name, item.f)
+		s.AddEncoding(id, item.name, item.f)
 	}
 
 	for _, enc := range conf.Encodings {
-		e.Allow(enc.Name, enc.IDs...)
+		s.AllowEncoding(enc.Type, enc.IDs...)
 	}
 
 	return nil

@@ -24,7 +24,7 @@ type configOf[T any] struct {
 	// 如果为空，所有日志输出都将被抛弃。
 	Logs    *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
 	logs    *logs.Logs
-	cleanup []server.CleanupFunc
+	cleanup []func() error
 
 	// 指定默认语言
 	//
@@ -122,7 +122,7 @@ func NewServerOf[T any](name, version string, b server.BuildResultFunc, fsys fs.
 		return nil, nil, err
 	}
 
-	if err := conf.buildEncodings(srv.Encodings()); err != nil {
+	if err := conf.buildEncodings(srv); err != nil {
 		err.Field = "mimetypes." + err.Field
 		err.Path = filename
 		return nil, nil, err
