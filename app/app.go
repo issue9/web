@@ -68,6 +68,11 @@ type AppOf[T any] struct {
 	// action 为 -a 命令行指定的参数；
 	Init func(s *server.Server, user *T, action string) error
 
+	// 用于生成 server.Result 接口对象的方法
+	//
+	// 如果为空，则采用 server.DefaultResultBuilder
+	ResultBuilder server.BuildResultFunc
+
 	// 命令行输出信息的通道
 	//
 	// 默认为 os.Stdout。
@@ -160,7 +165,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, os.DirFS(*f), cmd.ConfigFilename)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ResultBuilder, os.DirFS(*f), cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}
