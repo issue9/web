@@ -57,7 +57,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	srv.AddEncoding("deflate", "deflate", encoding.DeflateWriter(8))
 	srv.AllowEncoding("*", "gzip", "deflate")
 
-	srv.AddResult(411, "41110", localeutil.Phrase("41110"))
+	srv.AddErrInfo(411, "41110", localeutil.Phrase("41110"))
 
 	return srv, o
 }

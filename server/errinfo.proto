@@ -1,10 +1,10 @@
-// 对应 server.defaultResult
+// 对应 server.errInfo
 
 syntax = "proto3";
 
 option go_package = "./testdata";
 
-message Result {
+message Errors {
     string message = 1;
     string code = 2;
     repeated Field fields = 3;

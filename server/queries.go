@@ -21,7 +21,7 @@ import (
 //  }
 type Queries struct {
 	ctx     *Context
-	fields  ResultFields
+	fields  FieldErrs
 	queries url.Values
 }
 
@@ -34,7 +34,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		fields:  ResultFields{},
+		fields:  FieldErrs{},
 		queries: queries,
 	}, nil
 }
@@ -136,7 +136,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 func (q *Queries) HasErrors() bool { return len(q.fields) > 0 }
 
 // Errors 所有的错误信息
-func (q *Queries) Errors() ResultFields { return q.fields }
+func (q *Queries) Errors() FieldErrs { return q.fields }
 
 // Result 转换成 Response 对象
 func (q *Queries) Result(code string) Responser {

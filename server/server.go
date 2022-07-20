@@ -56,9 +56,9 @@ type Server struct {
 	services  []*Service
 	scheduled *scheduled.Server
 
-	// result
-	resultMessages map[string]*resultMessage
-	resultBuilder  BuildResultFunc
+	// errInfo
+	errInfo        map[string]*errMessage
+	errInfoBuilder BuildErrInfoFunc
 
 	// locale
 	locale *locale.Locale
@@ -95,9 +95,9 @@ func New(name, version string, o *Options) (*Server, error) {
 		services:  make([]*Service, 0, 100),
 		scheduled: scheduled.NewServer(o.Location),
 
-		// result
-		resultMessages: make(map[string]*resultMessage, 20),
-		resultBuilder:  o.ResultBuilder,
+		// errInfo
+		errInfo:        make(map[string]*errMessage, 20),
+		errInfoBuilder: o.ErrInfoBuilder,
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),

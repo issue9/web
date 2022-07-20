@@ -57,7 +57,7 @@ func TestContext_Result(t *testing.T) {
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
-	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
+	srv.AddErrInfo(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息
@@ -103,10 +103,10 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = newServer(a, nil).newContext(w, r, nil)
-	ctx.Server().AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
-	ctx.Server().AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
+	ctx.Server().AddErrInfo(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
+	ctx.Server().AddErrInfo(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
 
-	resp = ctx.Result("40010", ResultFields{
+	resp = ctx.Result("40010", FieldErrs{
 		"k1": []string{"v1", "v2"},
 	})
 

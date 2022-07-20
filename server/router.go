@@ -135,8 +135,8 @@ func (ctx *Context) err(depth, status int, err error) Responser {
 // Result 向客户端输出指定代码的错误信息
 //
 // 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code string, fields ResultFields) Responser {
-	return ctx.Server().Result(ctx.LocalePrinter(), code, fields)
+func (ctx *Context) Result(code string, fields FieldErrs) Responser {
+	return ctx.Server().ErrInfo(ctx.LocalePrinter(), code, fields)
 }
 
 // Status 仅向客户端输出状态码和报头

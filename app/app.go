@@ -71,7 +71,7 @@ type AppOf[T any] struct {
 	// 用于生成 server.Result 接口对象的方法
 	//
 	// 如果为空，则采用 server.DefaultResultBuilder
-	ResultBuilder server.BuildResultFunc
+	ResultBuilder server.BuildErrInfoFunc
 
 	// 命令行输出信息的通道
 	//

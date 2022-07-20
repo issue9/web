@@ -15,7 +15,7 @@ var (
 
 	pb = &descriptorpb.FileDescriptorProto{
 		Syntax:  proto.String("proto3"),
-		Name:    proto.String("result.proto"),
+		Name:    proto.String("errinfo.proto"),
 		Package: proto.String("server"),
 		MessageType: []*descriptorpb.DescriptorProto{
 			{
@@ -53,7 +53,7 @@ var (
 				},
 			},
 			{
-				Name: proto.String("Result"),
+				Name: proto.String("Errors"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{
 						Name:   proto.String("message"),
@@ -87,8 +87,8 @@ func init() {
 }
 
 // ProtoReflect 实现了 proto.Message 接口
-func (rslt *defaultResult) ProtoReflect() protoreflect.Message {
-	m := pf.Messages().ByName("Result")
+func (rslt *errInfo) ProtoReflect() protoreflect.Message {
+	m := pf.Messages().ByName("Errors")
 	msg := dynamicpb.NewMessage(m)
 	msg.Set(m.Fields().ByName("code"), protoreflect.ValueOfString(rslt.Code))
 	msg.Set(m.Fields().ByName("message"), protoreflect.ValueOfString(rslt.Message))

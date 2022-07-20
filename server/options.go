@@ -28,10 +28,10 @@ type Options struct {
 	// 默认值为 time.Local
 	Location *time.Location
 
-	// 指定生成 Result 数据的方法
+	// 指定生成 ErrInfo 数据的方法
 	//
-	// 默认情况下指向  DefaultResultBuilder。
-	ResultBuilder BuildResultFunc
+	// 默认情况下指向  DefaultErrInfoBuilder。
+	ErrInfoBuilder BuildErrInfoFunc
 
 	// 缓存系统
 	//
@@ -70,8 +70,8 @@ func (o *Options) sanitize() (err error) {
 		o.Location = time.Local
 	}
 
-	if o.ResultBuilder == nil {
-		o.ResultBuilder = DefaultResultBuilder
+	if o.ErrInfoBuilder == nil {
+		o.ErrInfoBuilder = DefaultErrInfoBuilder
 	}
 
 	if o.Cache == nil {

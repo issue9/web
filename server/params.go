@@ -18,14 +18,14 @@ import (
 //  }
 type Params struct {
 	ctx    *Context
-	fields ResultFields
+	fields FieldErrs
 }
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
-		fields: make(ResultFields, ctx.route.Params().Count()),
+		fields: make(FieldErrs, ctx.route.Params().Count()),
 	}
 }
 
@@ -165,7 +165,7 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 func (p *Params) HasErrors() bool { return len(p.fields) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() ResultFields { return p.fields }
+func (p *Params) Errors() FieldErrs { return p.fields }
 
 // Result 转换成 Result 对象
 func (p *Params) Result(code string) Responser {
