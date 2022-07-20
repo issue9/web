@@ -18,14 +18,39 @@ import (
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/internal/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 const (
 	DefaultMimetype = "application/octet-stream"
 	DefaultCharset  = "utf-8"
 )
+
+type CleanupFunc func() error
+
+type NewEncodingFunc = encoding.NewEncodingFunc
+
+type Encodings interface {
+	// Add 添加压缩算法
+	//
+	// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
+	// name 表示通过 Accept-Encoding 匹配的名称；
+	// f 表示生成压缩对象的方法；
+	Add(id, name string, f NewEncodingFunc)
+
+	// Allow 允许 contentType 采用的压缩方式
+	//
+	// id 是指由 Add 中指定的值；
+	// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
+	//
+	// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
+	Allow(contentType string, id ...string)
+}
 
 // Server 提供 HTTP 服务
 type Server struct {
@@ -36,7 +61,7 @@ type Server struct {
 	httpServer *http.Server
 	vars       *sync.Map
 	mimetypes  *serialization.Mimetypes
-	encodings  *serialization.Encodings
+	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
 	serving    bool
@@ -55,10 +80,8 @@ type Server struct {
 	resultBuilder  BuildResultFunc
 
 	// locale
-	location      *time.Location
-	locale        *serialization.Locale
-	tag           language.Tag
-	localePrinter *message.Printer
+	locale *locale.Locale
+	files  *serialization.FS
 }
 
 // New 返回 *Server 实例
@@ -78,15 +101,14 @@ func New(name, version string, o *Options) (*Server, error) {
 		version:    version,
 		logs:       o.Logs,
 		fs:         o.FS,
-		httpServer: o.httpServer,
+		httpServer: o.HTTPServer,
 		vars:       &sync.Map{},
-		mimetypes:  o.Mimetypes,
-		encodings:  o.Encodings,
+		mimetypes:  serialization.NewMimetypes(10),
+		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
 
 		closed: make(chan struct{}, 1),
-		closes: o.Cleanup,
 
 		// service
 		services:  make([]*Service, 0, 100),
@@ -97,10 +119,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		resultBuilder:  o.ResultBuilder,
 
 		// locale
-		location:      o.Location,
-		locale:        o.locale,
-		tag:           o.LanguageTag,
-		localePrinter: o.locale.NewPrinter(o.LanguageTag),
+		locale: locale.New(o.Location, o.LanguageTag),
+		files:  serialization.NewFS(5),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
@@ -121,7 +141,7 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.location }
+func (srv *Server) Location() *time.Location { return srv.locale.Location }
 
 // Logs 返回关联的 logs.Logs 实例
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
@@ -131,6 +151,9 @@ func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
+
+// Mimetypes 编解码控制
+func (srv *Server) Mimetypes() serializer.Serializer { return srv.mimetypes }
 
 // Now 返回当前时间
 //
@@ -204,15 +227,26 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 func (ctx *Context) Server() *Server { return ctx.server }
 
 // Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() *serialization.Files { return srv.Locale().Files() }
+func (srv *Server) Files() serializer.FS { return srv.files }
 
 // Locale 操作操作本地化文件的接口
-func (srv *Server) Locale() *serialization.Locale { return srv.locale }
+func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
+	if fsys == nil {
+		fsys = srv
+	}
+	return srv.locale.LoadLocaleFiles(fsys, glob, srv.files)
+}
 
-func (srv *Server) LocalePrinter() *message.Printer { return srv.localePrinter }
+func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
+	return srv.locale.NewPrinter(tag)
+}
+
+func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.locale.Catalog }
+
+func (srv *Server) LocalePrinter() *message.Printer { return srv.locale.Printer }
 
 // Tag 返回默认的语言标签
-func (srv *Server) Tag() language.Tag { return srv.tag }
+func (srv *Server) Tag() language.Tag { return srv.locale.Tag }
 
 // Serving 是否处于服务状态
 func (srv *Server) Serving() bool { return srv.serving }
@@ -220,4 +254,7 @@ func (srv *Server) Serving() bool { return srv.serving }
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f CleanupFunc) { srv.closes = append(srv.closes, f) }
+func (srv *Server) OnClose(f ...CleanupFunc) { srv.closes = append(srv.closes, f...) }
+
+// Encodings 返回压缩相关的功能
+func (srv *Server) Encodings() Encodings { return srv.encodings }

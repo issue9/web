@@ -4,15 +4,16 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
+	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/serialization"
 )
 
 var (
@@ -25,17 +26,16 @@ func TestError_LocaleString(t *testing.T) {
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
 
-	locale := serialization.NewLocale(catalog.NewBuilder(), serialization.NewFiles(5))
-	a.NotNil(locale)
-	a.NotError(locale.Files().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
-	a.NotError(locale.LoadFileFS(locales.Locales, "*.yml"))
+	f := serialization.NewFS(5)
+	l := locale.New(time.UTC, language.MustParse("cmn-hans"))
+	a.NotError(f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
+	a.NotError(l.LoadLocaleFiles(locales.Locales, "*.yml", f))
 
-	b := locale.Builder()
-	a.NotError(b.SetString(hans, "k1", "cn1"))
-	a.NotError(b.SetString(hant, "k1", "tw1"))
+	a.NotError(l.Catalog.SetString(hans, "k1", "cn1"))
+	a.NotError(l.Catalog.SetString(hant, "k1", "tw1"))
 
-	cnp := locale.NewPrinter(hans)
-	twp := locale.NewPrinter(hant)
+	cnp := l.NewPrinter(hans)
+	twp := l.NewPrinter(hant)
 
 	err := &ConfigError{Message: localeutil.Error("k1"), Path: "path"}
 	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))

@@ -9,7 +9,11 @@ import (
 
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/serializer"
 )
+
+var _ serializer.FS = &FS{}
 
 type object struct {
 	XMLName  struct{} `xml:"web" yaml:"-"`
@@ -17,35 +21,35 @@ type object struct {
 	Timezone string   `xml:"timezone" yaml:"timezone"`
 }
 
-func TestFiles_Load(t *testing.T) {
+func TestSerializer_Load(t *testing.T) {
 	a := assert.New(t, false)
-	f := NewFiles(10)
+	f := NewFS(5)
 	a.NotNil(f)
 	testdata := os.DirFS("./testdata")
 
 	v := &object{}
-	a.Equal(f.Load("./testdata/web.xml", v), localeutil.Error("not found serialization function for %s", "web.xml"))
+	a.Equal(f.Load(os.DirFS("./testdata"), "web.xml", v), localeutil.Error("not found serialization function for %s", "web.xml"))
 
-	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(f.Serializer().Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{}
-	a.NotError(f.LoadFS(testdata, "web.xml", v))
+	a.NotError(f.Load(testdata, "web.xml", v))
 	a.Equal(v.Port, ":8082")
 
 	// 不存在的 yaml
 	v = &object{}
-	a.Error(f.LoadFS(testdata, "web.yaml", v))
+	a.Error(f.Load(testdata, "web.yaml", v))
 }
 
-func TestFiles_Save(t *testing.T) {
+func TestSerializer_Save(t *testing.T) {
 	a := assert.New(t, false)
-	f := NewFiles(10)
+	f := NewFS(10)
 	a.NotNil(f)
 	tmp := os.TempDir()
 
 	v := &object{Port: ":333"}
 	a.Equal(f.Save(tmp+"/web.xml", v), localeutil.Error("not found serialization function for %s", tmp+"/web.xml"))
 
-	a.NotError(f.Add(xml.Marshal, xml.Unmarshal, ".xml"))
+	a.NotError(f.Serializer().Add(xml.Marshal, xml.Unmarshal, ".xml"))
 	v = &object{Port: ":333"}
 	a.NotError(f.Save(tmp+"/web.xml", v))
 }

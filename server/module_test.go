@@ -3,6 +3,7 @@
 package server
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"testing"
@@ -48,6 +49,11 @@ func TestModule_BuildID(t *testing.T) {
 func TestModule_Glob(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{FS: os.DirFS("./")})
+
+	existsFS := func(fsys fs.FS, p string) bool {
+		_, err := fs.Stat(fsys, p)
+		return err == nil || errors.Is(err, fs.ErrExist)
+	}
 
 	m := srv.NewModule("testdata")
 	a.True(existsFS(m, "file1.txt"))

@@ -15,7 +15,7 @@ import (
 	"bytes"
 	"html/template"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 const Mimetype = "text/html"
@@ -58,7 +58,7 @@ func Marshal(v any) ([]byte, error) {
 	case string:
 		return []byte(obj), nil
 	}
-	return nil, serialization.ErrUnsupported
+	return nil, serializer.ErrUnsupported
 }
 
 func (t *Template) executeTemplate() ([]byte, error) {
@@ -69,4 +69,4 @@ func (t *Template) executeTemplate() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal([]byte, any) error { return serialization.ErrUnsupported }
+func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }

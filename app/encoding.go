@@ -3,62 +3,103 @@
 package app
 
 import (
-	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
+	"compress/flate"
+	"compress/gzip"
+	"compress/lzw"
 
-	"github.com/issue9/web/serialization"
+	"github.com/andybalholm/brotli"
+	"github.com/issue9/localeutil"
+	"github.com/issue9/sliceutil"
+
+	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/server"
 )
 
-var encodingFactory = map[string]serialization.EncodingWriterFunc{}
+var encodingFactory = map[string]enc{}
 
-type encodingsConfig struct {
-	// 忽略对此类 mimetype 内容的压缩
-	//
-	// 当用户请求的 accept 报头与此列表相匹配时，将不会对此请求的内容进行压缩。
-	// 可以有通配符，比如 image/* 表示任意 image/ 开头的内容。
-	// 默认为空。
-	Ignores []string `json:"ignores,omitempty" xml:"ignore,omitempty" yaml:"ignores,omitempty"`
-
-	// 压缩方法
-	//
-	// 键名为压缩名，比如 gzip，flate 等，键值为生成对象的方法。
-	// 若为空，则不支持压缩功能。
-	Encodings []*encodingConfig `xml:"encoding,omitempty" yaml:"encodings,omitempty" json:"encodings,omitempty"`
+type enc struct {
+	name string
+	f    server.NewEncodingFunc
 }
 
 type encodingConfig struct {
-	Name     string `json:"name" xml:"name,attr" yaml:"name"`
-	Encoding string `json:"encoding" xml:"encoding,attr" yaml:"encoding"`
+	// Name content-type 的值
+	//
+	// 可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。
+	Name string `json:"name" xml:"name,attr" yaml:"name"`
+
+	// IDs 压缩方法的 ID 列表
+	//
+	// 这些 ID 值必须是由 RegisterEncoding 注册的，否则无效，默认情况下支持以下类型：
+	// - deflate-default
+	// - deflate-best-compression
+	// - deflate-best-speed
+	// - gzip-default
+	// - gzip-best-compression
+	// - gzip-best-speed
+	// - compress-lsb-8
+	// - compress-msb-8
+	// - br-default
+	// - br-best-compression
+	// - br-best-speed
+	IDs []string `json:"ids" xml:"id" yaml:"ids"`
 }
 
-func (conf *encodingsConfig) build(l logs.Logger) (*serialization.Encodings, *ConfigError) {
-	if conf == nil {
-		return serialization.NewEncodings(l), nil
-	}
-
-	es := make(map[string]serialization.EncodingWriterFunc)
+func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
+	ids := make([]string, 0, len(encodingFactory))
 	for _, e := range conf.Encodings {
-		f, found := encodingFactory[e.Encoding]
-		if !found {
-			return nil, &ConfigError{Field: "encodings[" + e.Encoding + "]", Message: localeutil.Error("%s not found", e.Encoding)}
-		}
-		es[e.Name] = f
+		ids = append(ids, e.IDs...)
 	}
+	ids = sliceutil.Unique(ids, func(i, j string) bool { return i == j })
 
-	encoding := serialization.NewEncodings(l, conf.Ignores...)
-	encoding.Add(es)
-	return encoding, nil
+	conf.encodings = make(map[string]enc, len(ids))
+	for _, id := range ids {
+		item, found := encodingFactory[id]
+		if !found {
+			return &ConfigError{Message: localeutil.Error("%s not found", id), Field: "ids"}
+		}
+		conf.encodings[id] = item
+	}
+	return nil
 }
 
-func RegisterEncoding(f serialization.EncodingWriterFunc, name string) {
-	if _, found := encodingFactory[name]; found {
-		panic("已经存在相同的 name:" + name)
+func (conf *configOf[T]) buildEncodings(e server.Encodings) *ConfigError {
+	for id, item := range conf.encodings {
+		e.Add(id, item.name, item.f)
 	}
-	encodingFactory[name] = f
+
+	for _, enc := range conf.Encodings {
+		e.Allow(enc.Name, enc.IDs...)
+	}
+
+	return nil
+}
+
+// RegisterEncoding 注册压缩方法
+//
+// id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
+// name 表示此压缩方法的名称，可以相同；
+// f 生成压缩对象的方法；
+func RegisterEncoding(id, name string, f server.NewEncodingFunc) {
+	if _, found := encodingFactory[id]; found {
+		panic("已经存在相同的 id:" + id)
+	}
+	encodingFactory[id] = enc{name: name, f: f}
 }
 
 func init() {
-	RegisterEncoding(serialization.DeflateWriter, "deflate")
-	RegisterEncoding(serialization.BrotliWriter, "brotli")
-	RegisterEncoding(serialization.GZipWriter, "gzip")
+	RegisterEncoding("deflate-default", "deflate", encoding.DeflateWriter(flate.DefaultCompression))
+	RegisterEncoding("deflate-best-compression", "deflate", encoding.DeflateWriter(flate.BestCompression))
+	RegisterEncoding("deflate-best-speed", "deflate", encoding.DeflateWriter(flate.BestSpeed))
+
+	RegisterEncoding("gzip-default", "gzip", encoding.GZipWriter(gzip.DefaultCompression))
+	RegisterEncoding("gzip-best-compression", "gzip", encoding.GZipWriter(gzip.BestCompression))
+	RegisterEncoding("gzip-best-speed", "gzip", encoding.GZipWriter(gzip.BestSpeed))
+
+	RegisterEncoding("compress-lsb-8", "compress", encoding.CompressWriter(lzw.LSB, 8))
+	RegisterEncoding("compress-msb-8", "compress", encoding.CompressWriter(lzw.MSB, 8))
+
+	RegisterEncoding("br-default", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterEncoding("br-best-compression", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterEncoding("br-best-speed", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 }

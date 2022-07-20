@@ -1,7 +1,7 @@
 <!-- web.xml 的测试文件，需要与其它内容数值相同 -->
 
-<web port=":8082">
-    <http readTimeout="3s" />
+<web>
+    <http readTimeout="3s" port=":8082" />
     <timezone>Africa/Addis_Ababa</timezone>
     <mimetype encoding="application/json" target="json" />
     <mimetype encoding="text/xml" target="xml" />

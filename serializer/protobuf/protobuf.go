@@ -6,7 +6,7 @@ package protobuf
 import (
 	"google.golang.org/protobuf/proto"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
 // Version 当前支持的协议版本号
@@ -20,7 +20,7 @@ func Marshal(v any) ([]byte, error) {
 	if p, ok := v.(proto.Message); ok {
 		return proto.Marshal(p)
 	}
-	return nil, serialization.ErrUnsupported
+	return nil, serializer.ErrUnsupported
 }
 
 // Unmarshal 提供对 protobuf 的支持
@@ -28,5 +28,5 @@ func Unmarshal(buf []byte, v any) error {
 	if p, ok := v.(proto.Message); ok {
 		return proto.Unmarshal(buf, p)
 	}
-	return serialization.ErrUnsupported
+	return serializer.ErrUnsupported
 }

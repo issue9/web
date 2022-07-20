@@ -7,13 +7,10 @@
 package app
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"os/signal"
 	"time"
@@ -22,9 +19,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/serialization"
 	"github.com/issue9/web/server"
 )
 
@@ -39,7 +34,7 @@ import (
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
-// 如果想让 AppOf 支持本地化操作，最起码需要向 Catalog 注册命令行参数的本地化信息：
+// 如果想让 AppOf 支持本地化操作，需要向 Catalog 注册命令行参数的本地化信息：
 //  -v  show version
 //  -h  show help
 //  -f  set file system
@@ -69,32 +64,25 @@ type AppOf[T any] struct {
 	// 在运行服务之前对 Server 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
+	// user 为用户自定义的数据类型；
+	// action 为 -a 命令行指定的参数；
 	Init func(s *server.Server, user *T, action string) error
 
-	// 在初始化 Server 之前对 Options 的二次处理
+	// 用于生成 server.Result 接口对象的方法
 	//
-	// 可以为空。
-	Options func(*server.Options) error
+	// 如果为空，则采用 server.DefaultResultBuilder
+	ResultBuilder server.BuildResultFunc
 
 	// 命令行输出信息的通道
 	//
 	// 默认为 os.Stdout。
 	Out io.Writer
 
-	// 配置文件的加载器
-	//
-	// 为空则会给定一个能解析 .xml、.yaml、.yml 和 .json 文件的默认对象。
-	// 该值也也会传递给 server.Options 对象如果不需要可用 Options 字段进行修改。
-	FileSerializers *serialization.Files
-
 	// 配置文件的文件名
 	//
-	// 需要保证 FileSerializers 能解析此文件指定的内容；
+	// 需要保证 RegisterFileSerializer 能解析此文件指定的内容；
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
-	// 如果为非空，那么会传递给 NewOptionsOf 函数。
-	// 如果为空，则直接采用 &Options{} 初始化 Server 对象。
-	// 之后可以通过 Options 字段对内容进行初始化。
 	ConfigFilename string
 
 	// 本地化 AppOf 中的命令行信息
@@ -149,24 +137,6 @@ func (cmd *AppOf[T]) sanitize() error {
 		cmd.Out = os.Stdout
 	}
 
-	if cmd.FileSerializers == nil {
-		f := serialization.NewFiles(5)
-
-		if err := f.Add(json.Marshal, json.Unmarshal, ".json"); err != nil {
-			return err
-		}
-
-		if err := f.Add(xml.Marshal, xml.Unmarshal, ".xml"); err != nil {
-			return err
-		}
-
-		if err := f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"); err != nil {
-			return err
-		}
-
-		cmd.FileSerializers = f
-	}
-
 	return nil
 }
 
@@ -195,12 +165,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	opt, user, err := cmd.initOptions(os.DirFS(*f))
-	if err != nil {
-		return err
-	}
-
-	srv, err := server.New(cmd.Name, cmd.Version, opt)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ResultBuilder, os.DirFS(*f), cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}
@@ -218,28 +183,6 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	}
 
 	return srv.Serve()
-}
-
-func (cmd *AppOf[T]) initOptions(fsys fs.FS) (opt *server.Options, user *T, err error) {
-	if cmd.ConfigFilename != "" {
-		opt, user, err = NewOptionsOf[T](cmd.FileSerializers, fsys, cmd.ConfigFilename)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		opt = &server.Options{
-			FS:              fsys,
-			FileSerializers: cmd.FileSerializers,
-		}
-	}
-
-	if cmd.Options != nil {
-		if err := cmd.Options(opt); err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return opt, user, nil
 }
 
 func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {

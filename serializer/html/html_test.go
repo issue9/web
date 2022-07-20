@@ -8,10 +8,10 @@ import (
 
 	"github.com/issue9/assert/v2"
 
-	"github.com/issue9/web/serialization"
+	"github.com/issue9/web/serializer"
 )
 
-var _ serialization.MarshalFunc = Marshal
+var _ serializer.MarshalFunc = Marshal
 
 func TestMarshal(t *testing.T) {
 	a := assert.New(t, false)

@@ -4,7 +4,6 @@ package server
 
 import (
 	"io/fs"
-	"os"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/sliceutil"
@@ -83,8 +82,8 @@ func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
 
 func (m *Module) Open(name string) (fs.File, error) {
 	for _, fsys := range m.fs {
-		if existsFS(fsys, name) {
-			return fsys.Open(name)
+		if f, err := fsys.Open(name); err == nil {
+			return f, nil
 		}
 	}
 	return nil, fs.ErrNotExist
@@ -106,12 +105,7 @@ func (m *Module) Cache() cache.Access {
 	return cache.Prefix(m.BuildID(""), m.Server().Cache())
 }
 
-func existsFS(fsys fs.FS, p string) bool {
-	_, err := fs.Stat(fsys, p)
-	return err == nil || os.IsExist(err)
-}
-
 // LoadLocale 加载当前模块文件系统下的本地化文件
 func (m *Module) LoadLocale(glob string) error {
-	return m.Server().Locale().LoadFileFS(m, glob)
+	return m.Server().LoadLocale(m, glob)
 }

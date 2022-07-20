@@ -1,6 +1,6 @@
 {
-    "port": ":8082",
     "http": {
+        "port": ":8082",
         "readTimeout": "3s"
     },
     "timezone": "Africa/Addis_Ababa",

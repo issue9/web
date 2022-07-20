@@ -35,7 +35,7 @@ func NewTester(a *assert.Assertion, o *server.Options) *Tester {
 	return &Tester{
 		s:        s,
 		a:        a,
-		hostname: "http://localhost" + o.Port,
+		hostname: "http://localhost" + o.HTTPServer.Addr,
 	}
 }
 

@@ -6,16 +6,18 @@ import (
 	"strings"
 
 	"github.com/issue9/qheader"
+
+	"github.com/issue9/web/serializer"
 )
 
 type Mimetypes struct {
-	*Serialization
+	serializer.Serializer
 }
 
-func NewMimetypes(c int) *Mimetypes { return &Mimetypes{Serialization: New(c)} }
+func NewMimetypes(c int) *Mimetypes { return &Mimetypes{Serializer: New(c)} }
 
 // UnmarshalFunc 查找指定名称的 UnmarshalFunc
-func (ms *Mimetypes) UnmarshalFunc(name string) (UnmarshalFunc, bool) {
+func (ms *Mimetypes) UnmarshalFunc(name string) (serializer.UnmarshalFunc, bool) {
 	name, _, u := ms.Search(name)
 	return u, name != ""
 }
@@ -33,7 +35,7 @@ func (ms *Mimetypes) UnmarshalFunc(name string) (UnmarshalFunc, bool) {
 //  text/*;q=0.9
 // 返回的名称可能是：
 //  text/plain
-func (ms *Mimetypes) MarshalFunc(header string) (string, MarshalFunc, bool) {
+func (ms *Mimetypes) MarshalFunc(header string) (string, serializer.MarshalFunc, bool) {
 	if header == "" {
 		if name, m := ms.findMarshal("*/*"); name != "" {
 			return name, m, true
@@ -52,7 +54,7 @@ func (ms *Mimetypes) MarshalFunc(header string) (string, MarshalFunc, bool) {
 	return "", nil, false
 }
 
-func (ms *Mimetypes) findMarshal(name string) (n string, m MarshalFunc) {
+func (ms *Mimetypes) findMarshal(name string) (n string, m serializer.MarshalFunc) {
 	switch {
 	case ms.Len() == 0:
 		return "", nil

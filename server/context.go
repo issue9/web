@@ -22,7 +22,8 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/serialization"
+	xencoding "github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/serializer"
 )
 
 const (
@@ -49,18 +50,18 @@ type Context struct {
 	respWriter     io.Writer           // http.ResponseWriter.Write 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *serialization.EncodingBuilder
+	outputEncoding *xencoding.Pool
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，可以为空。
-	outputMimetype serialization.MarshalFunc
+	outputMimetype serializer.MarshalFunc
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputMimetype serialization.UnmarshalFunc // 可以为空
-	inputCharset  encoding.Encoding           // 若值为 encoding.Nop 或是 nil，表示为 utf-8
+	inputMimetype serializer.UnmarshalFunc // 可以为空
+	inputCharset  encoding.Encoding        // 若值为 encoding.Nop 或是 nil，表示为 utf-8
 
 	// 区域和本地相关信息
 	languageTag   language.Tag
@@ -81,7 +82,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	header := r.Header.Get("Accept")
 	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
 	if !found {
-		srv.Logs().Debug(srv.localePrinter.Sprintf("not found serialization for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -89,7 +90,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	header = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := acceptCharset(header)
 	if outputCharsetName == "" {
-		srv.Logs().Debug(srv.localePrinter.Sprintf("not found charset for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found charset for %s", header))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -104,7 +105,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	header = r.Header.Get("Content-Type")
-	inputMimetype, inputCharset, err := srv.conentType(header)
+	inputMimetype, inputCharset, err := srv.contentType(header)
 	if err != nil {
 		srv.Logs().Debug(err)
 		w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -141,8 +142,8 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = srv.Locale().NewPrinter(tag)
-	ctx.location = srv.location
+	ctx.localePrinter = srv.NewPrinter(tag)
+	ctx.location = srv.Location()
 	if len(ctx.body) > 0 {
 		ctx.body = ctx.body[:0]
 	}
@@ -157,7 +158,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Build(ctx.respWriter)
+			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.respWriter)
 			ctx.respWriter = ctx.encodingCloser
 		}
 
@@ -185,7 +186,7 @@ func (ctx *Context) SetLanguage(l string) error {
 	tag, err := language.Parse(l)
 	if err == nil {
 		ctx.languageTag = tag
-		ctx.localePrinter = ctx.Server().Locale().NewPrinter(tag)
+		ctx.localePrinter = ctx.Server().NewPrinter(tag)
 	}
 	return err
 }
@@ -196,7 +197,7 @@ func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // SetLocation 设置时区信息
 //
-// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocataion
+// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocation
 func (ctx *Context) SetLocation(name string) error {
 	l, err := time.LoadLocation(name)
 	if err == nil {
@@ -317,7 +318,7 @@ func (ctx *Context) Marshal(status int, body any) error {
 
 	data, err := ctx.outputMimetype(body)
 	switch {
-	case errors.Is(err, serialization.ErrUnsupported):
+	case errors.Is(err, serializer.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		return err
 	case err != nil:
@@ -365,11 +366,11 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
 		return srv.Tag()
 	}
-	tag, _ := language.MatchStrings(srv.locale.Builder().Matcher(), header)
+	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
 	return tag
 }
 
-func (srv *Server) conentType(header string) (serialization.UnmarshalFunc, encoding.Encoding, error) {
+func (srv *Server) contentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
 	var mt, charset = DefaultMimetype, DefaultCharset
 
 	if header != "" {
