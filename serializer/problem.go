@@ -2,153 +2,96 @@
 
 package serializer
 
-import (
-	"encoding/json"
-	"encoding/xml"
-	"reflect"
-	"sync"
+import "sync"
 
-	"github.com/issue9/errwrap"
-	"gopkg.in/yaml.v3"
-)
-
-var problemPool = &sync.Pool{New: func() any {
-	return &Problem{
-		Keys: make([]string, 5),
-		Vals: make([]any, 5),
-	}
+var standardsProblemPool = &sync.Pool{New: func() any {
+	return &StandardsProblem{}
 }}
 
-const problemPoolMaxSize = 20
+// Problem [RFC7807] 定义的数据接口
+//
+// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+type Problem interface {
+	GetType() string
+	SetType(string)
 
-const problemXMLNS = "urn:ietf:rfc:7807"
+	GetTitle() string
+	SetTitle(string)
 
-// Problem 表示错误时返回给用户的数据结构
+	GetDetail() string
+	SetDetail(string)
+
+	GetStatus() int
+	SetStatus(int)
+
+	GetInstance() string
+	SetInstance(string)
+
+	// Destroy 销毁当前对象
+	//
+	// 如果当前对象采用了类似 sync.Pool 的技术对内容进行了保留，
+	// 那么可以在此方法中调用 [sync.Pool.Put] 方法返回给对象池。
+	// 否则的话可以实现为一个空方法即可。
+	Destroy()
+}
+
+// StandardsProblem 表示错误时返回给用户的数据结构
 //
 // 这是对 [RFC7807] 数据格式的定义，目前仅有 JSON 和 XML 的格式定义，
 // 其它格式，可能需要用户在各自的 [MarshalFunc] 方法自行实现。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-type Problem struct {
-	// NOTE: Problem 不能定义为接口，否则在 MarshalFunc 判断类型时，
-	// 可能会将部分无意实现该接口的数据按 Problem 进行序列化。
-
-	// NOTE: map 本身是无序的，每次输出的结果，顺序会不同，不方便测试。
-	// 且无法复用，采用双数组的形式，可以通过 sync.Pool 复用对象。
-
-	// NOTE: 需要序列化的内容必须为公开类型，否则 GOB 无法序列化。
-
-	Keys []string
-	Vals []any
+type StandardsProblem struct {
+	XMLName  struct{} `json:"-" yaml:"-" xml:"urn:ietf:rfc:7807 problem"`
+	Type     string   `json:"type" yaml:"type" xml:"type"`
+	Title    string   `json:"title" yaml:"title" xml:"title"`
+	Detail   string   `json:"detail,omitempty" yaml:"detail,omitempty" xml:"detail,omitempty"`
+	Status   int      `json:"status,omitempty" yaml:"status,omitempty" xml:"status,omitempty"`
+	Instance string   `json:"instance,omitempty" yaml:"instance,omitempty" xml:"instance,omitempty"`
 }
 
-// InvalidParam 表示参数验证错误
+// InvalidParamsProblem 表示参数验证错误时返回给用户的 Problem 对象
 //
 // 这不是 RFC7807 的一部分，但是比较常用。
+type InvalidParamsProblem struct {
+	StandardsProblem
+	InvalidParams []*InvalidParam `json:"invalid-params" yaml:"invalid-params" xml:"invalid-params"`
+}
+
 type InvalidParam struct {
 	XMLName struct{} `json:"-" yaml:"-" xml:"i"`
 	Name    string   `json:"name" xml:"name" yaml:"name"`
 	Reason  string   `json:"reason" xml:"reason" yaml:"reason"`
 }
 
-type xmlProblemEntry struct {
-	XMLName xml.Name
-	Value   any `xml:",chardata"`
-}
-
-type xmlProblemObjectEntry struct {
-	XMLName xml.Name
-	Value   any
-}
-
-func NewProblem() *Problem {
-	p := problemPool.Get().(*Problem)
-	p.Keys = p.Keys[:0]
-	p.Vals = p.Vals[:0]
+func NewStandardsProblem() Problem {
+	p := standardsProblemPool.Get().(*StandardsProblem)
+	p.Type = ""
+	p.Title = ""
+	p.Detail = ""
+	p.Instance = ""
+	p.Status = 0
 	return p
 }
 
-func (p *Problem) Destroy() {
-	if len(p.Keys) < problemPoolMaxSize {
-		problemPool.Put(p)
-	}
-}
+func (p *StandardsProblem) GetType() string { return p.Type }
 
-func (p *Problem) Set(key string, val any) {
-	p.Keys = append(p.Keys, key)
-	p.Vals = append(p.Vals, val)
-}
+func (p *StandardsProblem) SetType(t string) { p.Type = t }
 
-func (p *Problem) MarshalJSON() ([]byte, error) {
-	b := errwrap.Buffer{}
-	b.WByte('{')
-	for index, key := range p.Keys {
-		b.WByte('"').WString(key).WString(`":`)
+func (p *StandardsProblem) GetTitle() string { return p.Title }
 
-		v, err := json.Marshal(p.Vals[index])
-		if err != nil {
-			return nil, err
-		}
-		b.WBytes(v).WByte(',')
-	}
-	b.Truncate(b.Len() - 1)
-	b.WByte('}')
+func (p *StandardsProblem) SetTitle(title string) { p.Title = title }
 
-	return b.Bytes(), b.Err
-}
+func (p *StandardsProblem) GetDetail() string { return p.Detail }
 
-func (p *Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	start.Name.Local = "problem"
-	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: problemXMLNS})
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
+func (p *StandardsProblem) SetDetail(d string) { p.Detail = d }
 
-	for index, key := range p.Keys {
-		val := p.Vals[index]
-		v := reflect.ValueOf(val)
-		for v.Kind() == reflect.Pointer {
-			v = v.Elem()
-		}
+func (p *StandardsProblem) GetStatus() int { return p.Status }
 
-		var err error
-		if k := v.Kind(); k <= reflect.Complex128 || k == reflect.String {
-			err = e.Encode(xmlProblemEntry{XMLName: xml.Name{Local: key}, Value: val})
-		} else if k == reflect.Array || k == reflect.Slice {
-			s := xml.StartElement{Name: xml.Name{Local: key}}
-			if err = e.EncodeToken(s); err == nil {
-				for i := 0; i < v.Len(); i++ {
-					if err = e.EncodeElement(v.Index(i).Interface(), xml.StartElement{Name: xml.Name{Local: "i"}}); err != nil {
-						return err
-					}
-				}
-				err = e.EncodeToken(s.End())
-			}
-		} else {
-			err = e.EncodeElement(val, xml.StartElement{Name: xml.Name{Local: key}})
-		}
-		if err != nil {
-			return err
-		}
-	}
+func (p *StandardsProblem) SetStatus(s int) { p.Status = s }
 
-	return e.EncodeToken(start.End())
-}
+func (p *StandardsProblem) GetInstance() string { return p.Instance }
 
-func (p *Problem) MarshalYAML() (any, error) {
-	n := &yaml.Node{Kind: yaml.MappingNode}
+func (p *StandardsProblem) SetInstance(url string) { p.Instance = url }
 
-	for index, key := range p.Keys {
-		v := &yaml.Node{}
-		if err := v.Encode(p.Vals[index]); err != nil {
-			return nil, err
-		}
-
-		n.Content = append(n.Content, &yaml.Node{
-			Value: key,
-			Kind:  yaml.ScalarNode,
-		}, v)
-	}
-
-	return n, nil
-}
+func (p *StandardsProblem) Destroy() { standardsProblemPool.Put(p) }
