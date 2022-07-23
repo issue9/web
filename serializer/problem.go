@@ -35,10 +35,7 @@ type Problem interface {
 	Destroy()
 }
 
-// StandardsProblem 表示错误时返回给用户的数据结构
-//
-// 这是对 [RFC7807] 数据格式的定义，目前仅有 JSON 和 XML 的格式定义，
-// 其它格式，可能需要用户在各自的 [MarshalFunc] 方法自行实现。
+// StandardsProblem [RFC7807] 中定义的标准字段
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 type StandardsProblem struct {
@@ -50,9 +47,7 @@ type StandardsProblem struct {
 	Instance string   `json:"instance,omitempty" yaml:"instance,omitempty" xml:"instance,omitempty"`
 }
 
-// InvalidParamsProblem 表示参数验证错误时返回给用户的 Problem 对象
-//
-// 这不是 RFC7807 的一部分，但是比较常用。
+// InvalidParamsProblem 这是对 RFC7807 的扩展表示参数验证错误时的对象
 type InvalidParamsProblem struct {
 	StandardsProblem
 	InvalidParams []*InvalidParam `json:"invalid-params" yaml:"invalid-params" xml:"invalid-params"`

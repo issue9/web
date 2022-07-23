@@ -59,6 +59,7 @@ type Server struct {
 	// errInfo
 	errInfo        map[string]*errMessage
 	errInfoBuilder BuildErrInfoFunc
+	problems       *Problems
 
 	// locale
 	locale *locale.Locale
@@ -98,6 +99,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		// errInfo
 		errInfo:        make(map[string]*errMessage, 20),
 		errInfoBuilder: o.ErrInfoBuilder,
+		problems:       newProblems(),
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),
