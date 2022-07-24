@@ -7,30 +7,45 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/validation"
 
 	"github.com/issue9/web/serializer"
 )
 
 var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 
-type Problems struct {
-	typeBaseURL     string
-	instanceBaseURL string
-	problems        map[string]*statusProblem
-	blank           bool // 在输出时所有的 Type 强制为 about:blank
-}
+type FieldErrs = serializer.FieldErrs
 
-type statusProblem struct {
-	status        int
-	title, detail localeutil.LocaleStringer
-}
+// CTXSanitizer 提供对数据的验证和修正
+//
+// 在 Context.Read 和 Queries.Object 中会在解析数据成功之后，调用该接口进行数据验证。
+type (
+	CTXSanitizer interface {
+		// CTXSanitize 验证和修正当前对象的数据
+		//
+		// 如果验证有误，则需要返回这些错误信息。
+		CTXSanitize(*Context) FieldErrs
+	}
 
-type Problem struct {
-	id string
-	ps *Problems
-	sp *statusProblem
-	p  serializer.Problem
-}
+	Problems struct {
+		typeBaseURL     string
+		instanceBaseURL string
+		problems        map[string]*statusProblem
+		blank           bool // 在输出时所有的 Type 强制为 about:blank
+	}
+
+	statusProblem struct {
+		status        int
+		title, detail localeutil.LocaleStringer
+	}
+
+	Problem struct {
+		id string
+		ps *Problems
+		sp *statusProblem
+		p  serializer.Problem
+	}
+)
 
 func newProblems() *Problems { return &Problems{problems: make(map[string]*statusProblem, 50)} }
 
@@ -163,4 +178,29 @@ func (p *Problem) Apply(ctx *Context) {
 
 	p.p.Destroy()
 	problemPool.Put(p)
+}
+
+func (ctx *Context) Problem(obj serializer.Problem, id string) Responser {
+	return ctx.Server().Problems().Problem(obj, id)
+}
+
+// NewValidation 声明验证器
+//
+// 一般配合 CTXSanitizer 接口使用：
+//
+//  type User struct {
+//      Name string
+//      Age int
+//  }
+//
+//  func(o *User) CTXSanitize(ctx* web.Context) web.FieldErrs {
+//      v := ctx.NewValidation(10)
+//      return v.NewField(o.Name, "name", validator.Required().Message("不能为空")).
+//          NewField(o.Age, "age", validator.Min(18).Message("不能小于 18 岁")).
+//          LocaleMessages(ctx.localePrinter())
+//  }
+//
+// cap 表示为错误信息预分配的大小；
+func (ctx *Context) NewValidation(cap int) *validation.Validation {
+	return validation.New(validation.ContinueAtError, cap)
 }

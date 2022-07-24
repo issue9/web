@@ -132,13 +132,6 @@ func (ctx *Context) err(depth, status int, err error) Responser {
 	return Status(status)
 }
 
-// Result 向客户端输出指定代码的错误信息
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code string, fields FieldErrs) Responser {
-	return ctx.Server().ErrInfo(ctx.LocalePrinter(), code, fields)
-}
-
 // Status 仅向客户端输出状态码和报头
 //
 // kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；

@@ -2,11 +2,17 @@
 
 package serializer
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/issue9/validation"
+)
 
 var standardsProblemPool = &sync.Pool{New: func() any {
 	return &StandardsProblem{}
 }}
+
+type FieldErrs = validation.LocaleMessages
 
 // Problem [RFC7807] 定义的数据接口
 //
@@ -57,6 +63,16 @@ type InvalidParam struct {
 	XMLName struct{} `json:"-" yaml:"-" xml:"i"`
 	Name    string   `json:"name" xml:"name" yaml:"name"`
 	Reason  string   `json:"reason" xml:"reason" yaml:"reason"`
+}
+
+func NewInvalidParamsProblem(err FieldErrs) Problem {
+	p := &InvalidParamsProblem{}
+	for key, vals := range err {
+		for _, val := range vals {
+			p.InvalidParams = append(p.InvalidParams, &InvalidParam{Name: key, Reason: val})
+		}
+	}
+	return p
 }
 
 func NewStandardsProblem() Problem {

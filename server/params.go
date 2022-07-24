@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/web/serializer"
 )
 
 // Params 用于处理路径中包含的参数
@@ -170,7 +171,7 @@ func (p *Params) Errors() FieldErrs { return p.fields }
 // Result 转换成 Result 对象
 func (p *Params) Result(code string) Responser {
 	if p.HasErrors() {
-		return p.ctx.Result(code, p.Errors())
+		return p.ctx.Problem(serializer.NewInvalidParamsProblem(p.Errors()), code)
 	}
 	return nil
 }
@@ -185,7 +186,7 @@ func (ctx *Context) ParamID(key, code string) (int64, Responser) {
 	if id := p.ID(key); !p.HasErrors() {
 		return id, nil
 	}
-	return 0, ctx.Result(code, p.Errors())
+	return 0, ctx.Problem(serializer.NewInvalidParamsProblem(p.Errors()), code)
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
@@ -196,7 +197,7 @@ func (ctx *Context) ParamInt64(key, code string) (int64, Responser) {
 	if n := p.Int64(key); !p.HasErrors() {
 		return n, nil
 	}
-	return 0, ctx.Result(code, p.Errors())
+	return 0, ctx.Problem(serializer.NewInvalidParamsProblem(p.Errors()), code)
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
@@ -207,5 +208,5 @@ func (ctx *Context) ParamString(key, code string) (string, Responser) {
 	if s := p.String(key); !p.HasErrors() {
 		return s, nil
 	}
-	return "", ctx.Result(code, p.Errors())
+	return "", ctx.Problem(serializer.NewInvalidParamsProblem(p.Errors()), code)
 }

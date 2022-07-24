@@ -413,14 +413,14 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 code 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, code string) Responser {
+func (ctx *Context) Read(v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if rslt := vv.CTXSanitize(ctx); len(rslt) > 0 {
-			return ctx.Result(code, rslt)
+			return ctx.Problem(serializer.NewInvalidParamsProblem(rslt), id)
 		}
 	}
 

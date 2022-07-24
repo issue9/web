@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
 )
@@ -34,7 +35,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(http.StatusNotImplemented, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:36") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:37") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -45,7 +46,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:47") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:48") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
@@ -57,7 +58,7 @@ func TestContext_Result(t *testing.T) {
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
-	srv.AddErrInfo(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
+	srv.Problems().Add("40000", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息
@@ -66,9 +67,9 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx := srv.newContext(w, r, nil)
-	resp := ctx.Result("40000", nil)
+	resp := ctx.Problem(nil, "40000")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","detail":"hans","status":400}`)
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
@@ -76,9 +77,9 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Result("40000", nil)
+	resp = ctx.Problem(nil, "40000")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
@@ -87,13 +88,13 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Result("40000", nil)
+	resp = ctx.Problem(nil, "40000")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Result("400", nil) })
-	a.Panic(func() { ctx.Result("50000", nil) })
+	a.Panic(func() { ctx.Problem(nil, "400") })
+	a.Panic(func() { ctx.Problem(nil, "50000") })
 
 	// with field
 
@@ -103,15 +104,15 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = newServer(a, nil).newContext(w, r, nil)
-	ctx.Server().AddErrInfo(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
-	ctx.Server().AddErrInfo(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
+	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
+	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Result("40010", FieldErrs{
+	resp = ctx.Problem(serializer.NewInvalidParamsProblem(FieldErrs{
 		"k1": []string{"v1", "v2"},
-	})
+	}), "40010")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","detail":"40010","status":400,"invalid-params":[{"name":"k1","reason":"v1"},{"name":"k1","reason":"v2"}]}`)
 }
 
 func TestContext_Created(t *testing.T) {

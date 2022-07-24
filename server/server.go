@@ -48,6 +48,7 @@ type Server struct {
 	serving    bool
 	modules    []string // 保存着模块名称，用于检测是否存在重名
 	routers    *Routers
+	problems   *Problems
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 	closes []func() error
@@ -55,11 +56,6 @@ type Server struct {
 	// service
 	services  []*Service
 	scheduled *scheduled.Server
-
-	// errInfo
-	errInfo        map[string]*errMessage
-	errInfoBuilder BuildErrInfoFunc
-	problems       *Problems
 
 	// locale
 	locale *locale.Locale
@@ -89,17 +85,13 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
+		problems:   newProblems(),
 
 		closed: make(chan struct{}, 1),
 
 		// service
 		services:  make([]*Service, 0, 100),
 		scheduled: scheduled.NewServer(o.Location),
-
-		// errInfo
-		errInfo:        make(map[string]*errMessage, 20),
-		errInfoBuilder: o.ErrInfoBuilder,
-		problems:       newProblems(),
 
 		// locale
 		locale: locale.New(o.Location, o.LanguageTag),
