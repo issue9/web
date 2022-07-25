@@ -9,12 +9,12 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/validation"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/problem"
 )
 
 var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 
-type FieldErrs = serializer.FieldErrs
+type FieldErrs = problem.FieldErrs
 
 // CTXSanitizer 提供对数据的验证和修正
 //
@@ -43,7 +43,7 @@ type (
 		id string
 		ps *Problems
 		sp *statusProblem
-		p  serializer.Problem
+		p  problem.Problem
 	}
 )
 
@@ -101,14 +101,14 @@ func (p *Problems) Visit(f func(id string, status int, title, detail localeutil.
 //
 // id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
 // obj 表示实际的返回对象，如果为空，会采用 [serializer.StandardsProblem]；
-func (p *Problems) Problem(id string, obj serializer.Problem) *Problem {
+func (p *Problems) Problem(id string, obj problem.Problem) *Problem {
 	sp, found := p.problems[id]
 	if !found {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 
 	if obj == nil {
-		obj = serializer.NewRFC7807Problem()
+		obj = problem.NewRFC7807Problem()
 	}
 
 	pp := problemPool.Get().(*Problem)
@@ -180,7 +180,7 @@ func (p *Problem) Apply(ctx *Context) {
 	problemPool.Put(p)
 }
 
-func (ctx *Context) Problem(obj serializer.Problem, id string) Responser {
+func (ctx *Context) Problem(obj problem.Problem, id string) Responser {
 	return ctx.Server().Problems().Problem(id, obj)
 }
 

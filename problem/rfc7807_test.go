@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package serializer
+package problem
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	_ Problem = &RFC7807Problem{}
+	_ Problem = &RFC7807{}
 	_ Problem = &InvalidParamsProblem{}
 )
 

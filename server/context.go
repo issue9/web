@@ -23,6 +23,7 @@ import (
 	"golang.org/x/text/transform"
 
 	xencoding "github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
 )
 
@@ -420,7 +421,7 @@ func (ctx *Context) Read(v any, id string) Responser {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if rslt := vv.CTXSanitize(ctx); len(rslt) > 0 {
-			return ctx.Problem(serializer.NewInvalidParamsProblem(rslt), id)
+			return ctx.Problem(problem.NewInvalidParamsProblem(rslt), id)
 		}
 	}
 

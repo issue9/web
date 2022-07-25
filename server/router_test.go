@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
 )
@@ -107,7 +107,7 @@ func TestContext_Result(t *testing.T) {
 	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
 	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Problem(serializer.NewInvalidParamsProblem(FieldErrs{
+	resp = ctx.Problem(problem.NewInvalidParamsProblem(FieldErrs{
 		"k1": []string{"v1", "v2"},
 	}), "40010")
 

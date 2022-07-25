@@ -8,7 +8,8 @@ import (
 	"strconv"
 
 	"github.com/issue9/query/v3"
-	"github.com/issue9/web/serializer"
+
+	"github.com/issue9/web/problem"
 )
 
 // Queries 用于处理路径中的查询参数
@@ -142,7 +143,7 @@ func (q *Queries) Errors() FieldErrs { return q.fields }
 // Result 转换成 Response 对象
 func (q *Queries) Result(id string) Responser {
 	if q.HasErrors() {
-		return q.ctx.Problem(serializer.NewInvalidParamsProblem(q.Errors()), id)
+		return q.ctx.Problem(problem.NewInvalidParamsProblem(q.Errors()), id)
 	}
 	return nil
 }

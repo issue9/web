@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/problem"
 )
 
 var _ Responser = &Problem{}
@@ -85,7 +85,7 @@ func TestProblems_Problem(t *testing.T) {
 	a.NotNil(p).
 		Equal(p.id, "40010").
 		NotNil(p.p).
-		TypeEqual(true, p.p, serializer.NewRFC7807Problem()).
+		TypeEqual(true, p.p, problem.NewRFC7807Problem()).
 		Zero(p.p.GetStatus()).
 		Empty(p.p.GetType()).
 		Empty(p.p.GetTitle()).
@@ -101,11 +101,11 @@ func TestProblems_Problem(t *testing.T) {
 		Equal(p.p.GetDetail(), "detail").
 		Equal(p.p.GetInstance(), "/instance")
 
-	p = ps.Problem("40010", &serializer.InvalidParamsProblem{})
+	p = ps.Problem("40010", &problem.InvalidParamsProblem{})
 	a.NotNil(p).
 		Equal(p.id, "40010").
 		NotNil(p.p).
-		TypeEqual(true, p.p, &serializer.InvalidParamsProblem{}).
+		TypeEqual(true, p.p, &problem.InvalidParamsProblem{}).
 		Zero(p.p.GetStatus()).
 		Empty(p.p.GetType()).
 		Empty(p.p.GetTitle()).
@@ -124,7 +124,7 @@ func TestProblem_Apply(t *testing.T) {
 	ctx := s.newContext(w, r, nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp := serializer.NewRFC7807Problem()
+	pp := problem.NewRFC7807Problem()
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
 	a.Equal(pp.GetDetail(), "und").
 		Equal(pp.GetType(), "40010").
@@ -143,7 +143,7 @@ func TestProblem_Apply(t *testing.T) {
 	ctx = s.newContext(w, r, nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp = serializer.NewRFC7807Problem()
+	pp = problem.NewRFC7807Problem()
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
 	a.Equal(pp.GetDetail(), "hans").
 		Equal(pp.GetType(), "https://example.com/problems/40010").
