@@ -78,14 +78,14 @@ func TestProblems_Problem(t *testing.T) {
 	ps.Add("40010", 400, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
 
 	a.PanicString(func() {
-		ps.Problem(nil, "not-exists")
+		ps.Problem("not-exists", nil)
 	}, "未找到有关 not-exists 的定义")
 
-	p := ps.Problem(nil, "40010")
+	p := ps.Problem("40010", nil)
 	a.NotNil(p).
 		Equal(p.id, "40010").
 		NotNil(p.p).
-		TypeEqual(true, p.p, serializer.NewStandardsProblem()).
+		TypeEqual(true, p.p, serializer.NewRFC7807Problem()).
 		Zero(p.p.GetStatus()).
 		Empty(p.p.GetType()).
 		Empty(p.p.GetTitle()).
@@ -101,7 +101,7 @@ func TestProblems_Problem(t *testing.T) {
 		Equal(p.p.GetDetail(), "detail").
 		Equal(p.p.GetInstance(), "/instance")
 
-	p = ps.Problem(&serializer.InvalidParamsProblem{}, "40010")
+	p = ps.Problem("40010", &serializer.InvalidParamsProblem{})
 	a.NotNil(p).
 		Equal(p.id, "40010").
 		NotNil(p.p).
@@ -120,11 +120,11 @@ func TestProblem_Apply(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Header("accept", "application/json;charset=utf-8").Request()
-	p := s.Problems().Problem(nil, "40010")
+	p := s.Problems().Problem("40010", nil)
 	ctx := s.newContext(w, r, nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp := serializer.NewStandardsProblem()
+	pp := serializer.NewRFC7807Problem()
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
 	a.Equal(pp.GetDetail(), "und").
 		Equal(pp.GetType(), "40010").
@@ -134,7 +134,7 @@ func TestProblem_Apply(t *testing.T) {
 
 	s.Problems().SetInstanceBaseURL("https://example.com/instance/")
 	s.Problems().SetTypeBaseURL("https://example.com/problems/")
-	p = s.Problems().Problem(nil, "40010").WithTitle("title").WithInstance("instance")
+	p = s.Problems().Problem("40010", nil).WithTitle("title").WithInstance("instance")
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("accept", "application/json;charset=utf-8").
@@ -143,7 +143,7 @@ func TestProblem_Apply(t *testing.T) {
 	ctx = s.newContext(w, r, nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp = serializer.NewStandardsProblem()
+	pp = serializer.NewRFC7807Problem()
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
 	a.Equal(pp.GetDetail(), "hans").
 		Equal(pp.GetType(), "https://example.com/problems/40010").

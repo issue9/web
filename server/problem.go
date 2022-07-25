@@ -99,16 +99,16 @@ func (p *Problems) Visit(f func(id string, status int, title, detail localeutil.
 
 // Problem 向客户端输出错误信息
 //
-// t 表示 type 值，通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
+// id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
 // obj 表示实际的返回对象，如果为空，会采用 [serializer.StandardsProblem]；
-func (p *Problems) Problem(obj serializer.Problem, id string) *Problem {
+func (p *Problems) Problem(id string, obj serializer.Problem) *Problem {
 	sp, found := p.problems[id]
 	if !found {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 
 	if obj == nil {
-		obj = serializer.NewStandardsProblem()
+		obj = serializer.NewRFC7807Problem()
 	}
 
 	pp := problemPool.Get().(*Problem)
@@ -181,7 +181,7 @@ func (p *Problem) Apply(ctx *Context) {
 }
 
 func (ctx *Context) Problem(obj serializer.Problem, id string) Responser {
-	return ctx.Server().Problems().Problem(obj, id)
+	return ctx.Server().Problems().Problem(id, obj)
 }
 
 // NewValidation 声明验证器

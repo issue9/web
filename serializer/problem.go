@@ -8,13 +8,16 @@ import (
 	"github.com/issue9/validation"
 )
 
-var standardsProblemPool = &sync.Pool{New: func() any {
-	return &StandardsProblem{}
+var rfc7807ProblemPool = &sync.Pool{New: func() any {
+	return &RFC7807Problem{}
 }}
 
 type FieldErrs = validation.LocaleMessages
 
-// Problem [RFC7807] 定义的数据接口
+// Problem 错误信息对象需要实现的接口
+//
+// 字段参考了 [RFC7807]，但是没有固定具体的呈现方式，
+// 用户可以自定义具体的渲染方法。可以使用 [RFC7807Problem]。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 type Problem interface {
@@ -41,10 +44,10 @@ type Problem interface {
 	Destroy()
 }
 
-// StandardsProblem [RFC7807] 中定义的标准字段
+// RFC7807Problem [Problem] 接口的 [RFC7807] 标准实现
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-type StandardsProblem struct {
+type RFC7807Problem struct {
 	XMLName  struct{} `json:"-" yaml:"-" xml:"urn:ietf:rfc:7807 problem"`
 	Type     string   `json:"type" yaml:"type" xml:"type"`
 	Title    string   `json:"title" yaml:"title" xml:"title"`
@@ -53,9 +56,9 @@ type StandardsProblem struct {
 	Instance string   `json:"instance,omitempty" yaml:"instance,omitempty" xml:"instance,omitempty"`
 }
 
-// InvalidParamsProblem 这是对 RFC7807 的扩展表示参数验证错误时的对象
+// InvalidParamsProblem 这是表示参数错误的 RFC7807 扩展
 type InvalidParamsProblem struct {
-	StandardsProblem
+	RFC7807Problem
 	InvalidParams []*InvalidParam `json:"invalid-params" yaml:"invalid-params" xml:"invalid-params"`
 }
 
@@ -75,8 +78,8 @@ func NewInvalidParamsProblem(err FieldErrs) Problem {
 	return p
 }
 
-func NewStandardsProblem() Problem {
-	p := standardsProblemPool.Get().(*StandardsProblem)
+func NewRFC7807Problem() Problem {
+	p := rfc7807ProblemPool.Get().(*RFC7807Problem)
 	p.Type = ""
 	p.Title = ""
 	p.Detail = ""
@@ -85,24 +88,24 @@ func NewStandardsProblem() Problem {
 	return p
 }
 
-func (p *StandardsProblem) GetType() string { return p.Type }
+func (p *RFC7807Problem) GetType() string { return p.Type }
 
-func (p *StandardsProblem) SetType(t string) { p.Type = t }
+func (p *RFC7807Problem) SetType(t string) { p.Type = t }
 
-func (p *StandardsProblem) GetTitle() string { return p.Title }
+func (p *RFC7807Problem) GetTitle() string { return p.Title }
 
-func (p *StandardsProblem) SetTitle(title string) { p.Title = title }
+func (p *RFC7807Problem) SetTitle(title string) { p.Title = title }
 
-func (p *StandardsProblem) GetDetail() string { return p.Detail }
+func (p *RFC7807Problem) GetDetail() string { return p.Detail }
 
-func (p *StandardsProblem) SetDetail(d string) { p.Detail = d }
+func (p *RFC7807Problem) SetDetail(d string) { p.Detail = d }
 
-func (p *StandardsProblem) GetStatus() int { return p.Status }
+func (p *RFC7807Problem) GetStatus() int { return p.Status }
 
-func (p *StandardsProblem) SetStatus(s int) { p.Status = s }
+func (p *RFC7807Problem) SetStatus(s int) { p.Status = s }
 
-func (p *StandardsProblem) GetInstance() string { return p.Instance }
+func (p *RFC7807Problem) GetInstance() string { return p.Instance }
 
-func (p *StandardsProblem) SetInstance(url string) { p.Instance = url }
+func (p *RFC7807Problem) SetInstance(url string) { p.Instance = url }
 
-func (p *StandardsProblem) Destroy() { standardsProblemPool.Put(p) }
+func (p *RFC7807Problem) Destroy() { rfc7807ProblemPool.Put(p) }

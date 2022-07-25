@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	_ Problem = &StandardsProblem{}
+	_ Problem = &RFC7807Problem{}
 	_ Problem = &InvalidParamsProblem{}
 )
 
 func TestProblem(t *testing.T) {
 	a := assert.New(t, false)
-	p := NewStandardsProblem()
+	p := NewRFC7807Problem()
 	a.NotNil(p)
 
 	p.SetType("https://example.com/problem/400")
@@ -36,6 +36,6 @@ func TestProblem(t *testing.T) {
 
 	p.Destroy()
 
-	p = NewStandardsProblem()
+	p = NewRFC7807Problem()
 	a.Equal(p.GetType(), "")
 }
