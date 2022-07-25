@@ -23,6 +23,7 @@ import (
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/serialization"
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
 )
 
@@ -48,7 +49,7 @@ type Server struct {
 	serving    bool
 	modules    []string // 保存着模块名称，用于检测是否存在重名
 	routers    *Routers
-	problems   *Problems
+	problems   *problem.Problems
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 	closes []func() error
@@ -85,7 +86,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		problems:   newProblems(),
+		problems:   problem.NewProblems(problem.RFC7807Builder, "", false), // TODO
 
 		closed: make(chan struct{}, 1),
 

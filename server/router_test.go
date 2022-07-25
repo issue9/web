@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
 )
@@ -35,7 +34,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(http.StatusNotImplemented, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:37") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:36") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
@@ -46,7 +45,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "router_test.go:48") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "router_test.go:47") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})
@@ -107,9 +106,9 @@ func TestContext_Result(t *testing.T) {
 	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
 	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Problem("40010", problem.NewRFC7807(FieldErrs{
+	resp = ctx.Problem("40010", FieldErrs{
 		"k1": []string{"v1", "v2"},
-	}))
+	})
 
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","detail":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}]}`)
