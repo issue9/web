@@ -72,47 +72,6 @@ func TestProblems_Visit(t *testing.T) {
 	a.Equal(1, cnt)
 }
 
-func TestProblems_Problem(t *testing.T) {
-	a := assert.New(t, false)
-	ps := newProblems()
-	ps.Add("40010", 400, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
-
-	a.PanicString(func() {
-		ps.Problem("not-exists", nil)
-	}, "未找到有关 not-exists 的定义")
-
-	p := ps.Problem("40010", nil)
-	a.NotNil(p).
-		Equal(p.id, "40010").
-		NotNil(p.p).
-		TypeEqual(true, p.p, problem.NewRFC7807Problem()).
-		Zero(p.p.GetStatus()).
-		Empty(p.p.GetType()).
-		Empty(p.p.GetTitle()).
-		Empty(p.p.GetDetail()).
-		Empty(p.p.GetInstance())
-
-	p.WithTitle("title").WithStatus(201).WithDetail("detail").WithInstance("/instance")
-	a.NotNil(p).
-		Equal(p.id, "40010").
-		Empty(p.p.GetType()).
-		Equal(p.p.GetStatus(), 201).
-		Equal(p.p.GetTitle(), "title").
-		Equal(p.p.GetDetail(), "detail").
-		Equal(p.p.GetInstance(), "/instance")
-
-	p = ps.Problem("40010", &problem.InvalidParamsProblem{})
-	a.NotNil(p).
-		Equal(p.id, "40010").
-		NotNil(p.p).
-		TypeEqual(true, p.p, &problem.InvalidParamsProblem{}).
-		Zero(p.p.GetStatus()).
-		Empty(p.p.GetType()).
-		Empty(p.p.GetTitle()).
-		Empty(p.p.GetDetail()).
-		Empty(p.p.GetInstance())
-}
-
 func TestProblem_Apply(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, nil)
@@ -120,34 +79,33 @@ func TestProblem_Apply(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Header("accept", "application/json;charset=utf-8").Request()
-	p := s.Problems().Problem("40010", nil)
 	ctx := s.newContext(w, r, nil)
+	p := ctx.Problem("40010", nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp := problem.NewRFC7807Problem()
+	pp := &problem.RFC7807{}
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
-	a.Equal(pp.GetDetail(), "und").
-		Equal(pp.GetType(), "40010").
-		Equal(pp.GetTitle(), "40010").
-		Equal(pp.GetStatus(), 400).
-		Empty(pp.GetInstance())
+	a.Equal(pp.Detail, "und").
+		Equal(pp.Type, "40010").
+		Equal(pp.Title, "40010").
+		Equal(pp.Status, 400).
+		Empty(pp.Instance)
 
-	s.Problems().SetInstanceBaseURL("https://example.com/instance/")
 	s.Problems().SetTypeBaseURL("https://example.com/problems/")
-	p = s.Problems().Problem("40010", nil).WithTitle("title").WithInstance("instance")
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("accept", "application/json;charset=utf-8").
 		Header("accept-language", language.SimplifiedChinese.String()).
 		Request()
 	ctx = s.newContext(w, r, nil)
+	p = ctx.Problem("40010", nil).WithTitle("title").WithInstance("/instance")
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
-	pp = problem.NewRFC7807Problem()
+	pp = &problem.RFC7807{}
 	a.NotError(json.Unmarshal(w.Body.Bytes(), pp))
-	a.Equal(pp.GetDetail(), "hans").
-		Equal(pp.GetType(), "https://example.com/problems/40010").
-		Equal(pp.GetTitle(), "title").
-		Equal(pp.GetStatus(), 400).
-		Equal(pp.GetInstance(), "https://example.com/instance/instance")
+	a.Equal(pp.Detail, "hans").
+		Equal(pp.Type, "https://example.com/problems/40010").
+		Equal(pp.Title, "title").
+		Equal(pp.Status, 400).
+		Equal(pp.Instance, "/instance")
 }

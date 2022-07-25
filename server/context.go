@@ -421,7 +421,7 @@ func (ctx *Context) Read(v any, id string) Responser {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if rslt := vv.CTXSanitize(ctx); len(rslt) > 0 {
-			return ctx.Problem(problem.NewInvalidParamsProblem(rslt), id)
+			return ctx.Problem(id, problem.NewRFC7807(rslt))
 		}
 	}
 

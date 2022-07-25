@@ -8,24 +8,27 @@ import "github.com/issue9/validation"
 // Problem 错误信息对象需要实现的接口
 //
 // 字段参考了 [RFC7807]，但是没有固定具体的呈现方式，
-// 用户可以自定义具体的渲染方法。可以使用 [RFC7807Problem]。
+// 用户可以自定义具体的渲染方法。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 type Problem interface {
-	GetType() string
+	// SetType 设置当前错误的唯一值
 	SetType(string)
 
-	GetTitle() string
+	// 设置简要的错误说明
 	SetTitle(string)
 
-	GetDetail() string
+	// 设置详细的错误说明
 	SetDetail(string)
 
-	GetStatus() int
+	// 设置输出的状态码
 	SetStatus(int)
 
-	GetInstance() string
+	// 设置错误的出处
 	SetInstance(string)
+
+	// 添加验证错误的信息
+	AddParam(name string, reason ...string)
 
 	// Destroy 销毁当前对象
 	//

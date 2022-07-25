@@ -172,7 +172,7 @@ func (p *Params) Errors() FieldErrs { return p.fields }
 // Result 转换成 Result 对象
 func (p *Params) Result(code string) Responser {
 	if p.HasErrors() {
-		return p.ctx.Problem(problem.NewInvalidParamsProblem(p.Errors()), code)
+		return p.ctx.Problem(code, problem.NewRFC7807(p.Errors()))
 	}
 	return nil
 }
@@ -187,7 +187,7 @@ func (ctx *Context) ParamID(key, code string) (int64, Responser) {
 	if id := p.ID(key); !p.HasErrors() {
 		return id, nil
 	}
-	return 0, ctx.Problem(problem.NewInvalidParamsProblem(p.Errors()), code)
+	return 0, ctx.Problem(code, problem.NewRFC7807(p.Errors()))
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
@@ -198,7 +198,7 @@ func (ctx *Context) ParamInt64(key, code string) (int64, Responser) {
 	if n := p.Int64(key); !p.HasErrors() {
 		return n, nil
 	}
-	return 0, ctx.Problem(problem.NewInvalidParamsProblem(p.Errors()), code)
+	return 0, ctx.Problem(code, problem.NewRFC7807(p.Errors()))
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
@@ -209,5 +209,5 @@ func (ctx *Context) ParamString(key, code string) (string, Responser) {
 	if s := p.String(key); !p.HasErrors() {
 		return s, nil
 	}
-	return "", ctx.Problem(problem.NewInvalidParamsProblem(p.Errors()), code)
+	return "", ctx.Problem(code, problem.NewRFC7807(p.Errors()))
 }

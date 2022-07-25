@@ -67,7 +67,7 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx := srv.newContext(w, r, nil)
-	resp := ctx.Problem(nil, "40000")
+	resp := ctx.Problem("40000", nil)
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","detail":"hans","status":400}`)
 
@@ -77,7 +77,7 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem(nil, "40000")
+	resp = ctx.Problem("40000", nil)
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
 
@@ -88,13 +88,13 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem(nil, "40000")
+	resp = ctx.Problem("40000", nil)
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Problem(nil, "400") })
-	a.Panic(func() { ctx.Problem(nil, "50000") })
+	a.Panic(func() { ctx.Problem("400", nil) })
+	a.Panic(func() { ctx.Problem("50000", nil) })
 
 	// with field
 
@@ -107,12 +107,12 @@ func TestContext_Result(t *testing.T) {
 	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
 	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Problem(problem.NewInvalidParamsProblem(FieldErrs{
+	resp = ctx.Problem("40010", problem.NewRFC7807(FieldErrs{
 		"k1": []string{"v1", "v2"},
-	}), "40010")
+	}))
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","detail":"40010","status":400,"invalid-params":[{"name":"k1","reason":"v1"},{"name":"k1","reason":"v2"}]}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","detail":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}]}`)
 }
 
 func TestContext_Created(t *testing.T) {

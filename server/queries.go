@@ -143,7 +143,7 @@ func (q *Queries) Errors() FieldErrs { return q.fields }
 // Result 转换成 Response 对象
 func (q *Queries) Result(id string) Responser {
 	if q.HasErrors() {
-		return q.ctx.Problem(problem.NewInvalidParamsProblem(q.Errors()), id)
+		return q.ctx.Problem(id, problem.NewRFC7807(q.Errors()))
 	}
 	return nil
 }

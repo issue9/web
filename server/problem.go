@@ -28,10 +28,9 @@ type (
 	}
 
 	Problems struct {
-		typeBaseURL     string
-		instanceBaseURL string
-		problems        map[string]*statusProblem
-		blank           bool // 在输出时所有的 Type 强制为 about:blank
+		typeBaseURL string
+		problems    map[string]*statusProblem
+		blank       bool // 在输出时所有的 Type 强制为 about:blank
 	}
 
 	statusProblem struct {
@@ -40,10 +39,9 @@ type (
 	}
 
 	Problem struct {
-		id string
-		ps *Problems
-		sp *statusProblem
-		p  problem.Problem
+		status int
+		ps     *Problems
+		p      problem.Problem
 	}
 )
 
@@ -62,11 +60,6 @@ func (p *Problems) SetTypeBaseURL(base string) { p.typeBaseURL = base }
 // 如果设置了此值，那么在输出内容时，所有的 type 字段会变成 about:blank。
 // 此方法只影响由 [Problems.Problem] 生成的对象。
 func (p *Problems) DisableType() { p.blank = true }
-
-// SetInstanceBaseURL 设置 instance 字段的基地址
-//
-// 仅在用户设置了 instance 字段的时候才启作用。
-func (p *Problems) SetInstanceBaseURL(base string) { p.instanceBaseURL = base }
 
 // AddProblem 添加新的错误类型
 //
@@ -95,28 +88,6 @@ func (p *Problems) Visit(f func(id string, status int, title, detail localeutil.
 			return
 		}
 	}
-}
-
-// Problem 向客户端输出错误信息
-//
-// id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
-// obj 表示实际的返回对象，如果为空，会采用 [serializer.StandardsProblem]；
-func (p *Problems) Problem(id string, obj problem.Problem) *Problem {
-	sp, found := p.problems[id]
-	if !found {
-		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
-	}
-
-	if obj == nil {
-		obj = problem.NewRFC7807Problem()
-	}
-
-	pp := problemPool.Get().(*Problem)
-	pp.id = id
-	pp.ps = p
-	pp.sp = sp
-	pp.p = obj
-	return pp
 }
 
 // WithTitle 修改 title 字段内容
@@ -150,29 +121,7 @@ func (p *Problem) WithInstance(i string) *Problem {
 }
 
 func (p *Problem) Apply(ctx *Context) {
-	printer := ctx.LocalePrinter()
-
-	if p.ps.blank {
-		p.p.SetType("about:blank")
-	} else {
-		p.p.SetType(p.ps.typeBaseURL + p.id)
-	}
-
-	p.p.SetStatus(p.sp.status)
-
-	if p.p.GetTitle() == "" {
-		p.p.SetTitle(p.sp.title.LocaleString(printer))
-	}
-
-	if p.p.GetDetail() == "" && p.sp.detail != nil {
-		p.p.SetDetail(p.sp.detail.LocaleString(printer))
-	}
-
-	if i := p.p.GetInstance(); i != "" && p.ps.instanceBaseURL != "" {
-		p.p.SetInstance(p.ps.instanceBaseURL + i)
-	}
-
-	if err := ctx.Marshal(p.sp.status, p.p); err != nil {
+	if err := ctx.Marshal(p.status, p.p); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
 
@@ -180,8 +129,35 @@ func (p *Problem) Apply(ctx *Context) {
 	problemPool.Put(p)
 }
 
-func (ctx *Context) Problem(obj problem.Problem, id string) Responser {
-	return ctx.Server().Problems().Problem(id, obj)
+// Problem 向客户端输出错误信息
+//
+// id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
+// obj 表示实际的返回对象，如果为空，会采用 [problem.RFC7807]；
+func (ctx *Context) Problem(id string, obj problem.Problem) *Problem {
+	ps := ctx.Server().Problems()
+
+	sp, found := ps.problems[id]
+	if !found {
+		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
+	}
+
+	if obj == nil {
+		obj = problem.NewRFC7807(nil)
+	}
+	if ps.blank {
+		obj.SetType("about:blank")
+	} else {
+		obj.SetType(ps.typeBaseURL + id)
+	}
+	obj.SetTitle(sp.title.LocaleString(ctx.LocalePrinter()))
+	obj.SetDetail(sp.detail.LocaleString(ctx.LocalePrinter()))
+	obj.SetStatus(sp.status)
+
+	pp := problemPool.Get().(*Problem)
+	pp.status = sp.status
+	pp.ps = ctx.Server().Problems()
+	pp.p = obj
+	return pp
 }
 
 // NewValidation 声明验证器
