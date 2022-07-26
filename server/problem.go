@@ -26,8 +26,7 @@ type (
 	}
 
 	Problem struct {
-		status int
-		p      problem.Problem
+		p problem.Problem
 	}
 )
 
@@ -36,9 +35,9 @@ type (
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func (srv *Server) Problems() *problem.Problems { return srv.problems }
 
-// WithInstance 指定 instance 字段
-func (p *Problem) WithInstance(i string) *Problem {
-	p.p.SetInstance(i)
+// With 添加新的字段名和值
+func (p *Problem) With(key string, val any) *Problem {
+	p.p.With(key, val)
 	return p
 }
 
@@ -48,7 +47,7 @@ func (p *Problem) AddParam(name string, reason ...string) *Problem {
 }
 
 func (p *Problem) Apply(ctx *Context) {
-	if err := ctx.Marshal(p.status, p.p); err != nil {
+	if err := ctx.Marshal(p.p.Status(), p.p); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
 
@@ -68,7 +67,6 @@ func (ctx *Context) Problem(id string, errs FieldErrs) *Problem {
 
 	pp := problemPool.Get().(*Problem)
 	pp.p = p
-	pp.status = p.Status()
 	return pp
 }
 

@@ -86,10 +86,10 @@ func TestProblems_Problem(t *testing.T) {
 	p := ps.Problem("40010", cnp)
 	a.NotNil(p).Equal(p.Status(), 400)
 	pp, ok := p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.Title, "hans")
+	a.True(ok).NotNil(pp).Equal(pp.title, "hans")
 
 	p = ps.Problem("40010", twp)
 	a.NotNil(p).Equal(p.Status(), 400)
 	pp, ok = p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.Title, "lang")
+	a.True(ok).NotNil(pp).Equal(pp.title, "lang")
 }

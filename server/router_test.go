@@ -51,7 +51,7 @@ func TestContext_Error(t *testing.T) {
 	})
 }
 
-func TestContext_Result(t *testing.T) {
+func TestContext_Problem(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
@@ -68,7 +68,7 @@ func TestContext_Result(t *testing.T) {
 	ctx := srv.newContext(w, r, nil)
 	resp := ctx.Problem("40000", nil)
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","detail":"hans","status":400}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","status":400}`)
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
@@ -78,7 +78,7 @@ func TestContext_Result(t *testing.T) {
 	ctx = srv.newContext(w, r, nil)
 	resp = ctx.Problem("40000", nil)
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400}`)
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
@@ -87,9 +87,9 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem("40000", nil)
+	resp = ctx.Problem("40000", nil).With("with", "abc")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"und","detail":"und","status":400}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
 
 	// 不存在
 	a.Panic(func() { ctx.Problem("400", nil) })
@@ -108,10 +108,10 @@ func TestContext_Result(t *testing.T) {
 
 	resp = ctx.Problem("40010", FieldErrs{
 		"k1": []string{"v1", "v2"},
-	})
+	}).With("detail", "40010")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","detail":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}]}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}],"detail":"40010"}`)
 }
 
 func TestContext_Created(t *testing.T) {

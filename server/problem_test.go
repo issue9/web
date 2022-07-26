@@ -17,7 +17,7 @@ var _ Responser = &Problem{}
 func TestProblem_Apply(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, nil)
-	s.Problems().Add("40010", 400, localeutil.Phrase("40010"), localeutil.Phrase("lang"))
+	s.Problems().Add("40010", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang"))
 
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").
@@ -25,13 +25,11 @@ func TestProblem_Apply(t *testing.T) {
 		Header("accept-language", language.SimplifiedChinese.String()).
 		Request()
 	ctx := s.newContext(w, r, nil)
-	p := ctx.Problem("40010", nil).WithInstance("/instance")
+	p := ctx.Problem("40010", nil)
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
 	body := w.Body.String()
 	a.Contains(body, `"title"`).
-		Contains(body, `"40010"`).
 		Contains(body, `"hans"`).
-		Contains(body, "400").
-		Contains(body, `"/instance"`)
+		Contains(body, "400")
 }

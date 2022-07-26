@@ -13,7 +13,7 @@ type Problems struct {
 	builder     BuildFunc
 	typeBaseURL string
 	problems    map[string]*statusProblem
-	blank       bool // 在输出时所有的 Type 强制为 about:blank
+	blank       bool // Problems.Problem 不输出 id 值
 }
 
 type statusProblem struct {
@@ -40,8 +40,7 @@ func NewProblems(f BuildFunc, base string, blank bool) *Problems {
 // id 表示该错误的唯一值。
 // [Problems.Problem] 会根据此值查找相应的文字说明给予 title 和 detail 字段；
 // status 表示输出给客户端的状态码；
-// title 和 detail 表示此 id 关联的简要说明和详细说明，
-// 这些值有可能会赋予实现 [Problem] 接口的对象；
+// title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
 	if p.problems == nil {
 	}
@@ -81,5 +80,5 @@ func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 	} else {
 		id = p.typeBaseURL + id
 	}
-	return p.builder(id, sp.title.LocaleString(printer), sp.detail.LocaleString(printer), sp.status)
+	return p.builder(id, sp.title.LocaleString(printer), sp.status)
 }
