@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/mux/v7"
 
 	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/response"
 )
 
 type Tester struct {
@@ -111,7 +112,7 @@ func (s *Tester) Close(shutdown time.Duration) {
 
 // BuildHandler 生成以 code 作为状态码和内容输出的路由处理函数
 func BuildHandler(code int) server.HandlerFunc {
-	return func(next *server.Context) server.Responser {
-		return next.Object(code, []byte(strconv.Itoa(code)))
+	return func(*server.Context) response.Responser {
+		return response.Object(code, []byte(strconv.Itoa(code)))
 	}
 }

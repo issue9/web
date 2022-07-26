@@ -10,6 +10,8 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/validation"
 	"golang.org/x/text/message"
+
+	"github.com/issue9/web/server/response"
 )
 
 const defaultResultPoolFieldMaxSize = 20
@@ -40,7 +42,7 @@ type (
 
 	// Result 向客户端输出错误代码时的对象需要实现的接口
 	Result interface {
-		Responser
+		response.Responser
 
 		// Add 添加详细的错误信息
 		//
@@ -165,7 +167,7 @@ func (rslt *defaultResult) Set(field string, message ...string) {
 	rslt.Fields = append(rslt.Fields, &fieldDetail{Name: field, Message: message})
 }
 
-func (rslt *defaultResult) Apply(ctx *Context) {
+func (rslt *defaultResult) Apply(ctx response.Context) {
 	if err := ctx.Marshal(rslt.status, rslt); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
