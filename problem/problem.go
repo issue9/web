@@ -3,6 +3,8 @@
 // Package problem 对客户端输出非正常信息的处理
 package problem
 
+import "github.com/issue9/web/server/response"
+
 // Problem API 错误信息对象需要实现的接口
 //
 // 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
@@ -12,16 +14,18 @@ package problem
 // 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 实现了一个简要的
 // RFC7807 标准的错误信息对象。
 type Problem interface {
+	response.Responser
+
 	// 获取反馈给客户端的状态码
 	Status() int
 
 	// 添加新的输出字段
 	//
 	// 如果添加的字段名称与现有的字段重名，应当 panic。
-	With(key string, val any)
+	With(key string, val any) Problem
 
 	// 添加验证错误的信息
-	AddParam(name string, reason ...string)
+	AddParam(name string, reason ...string) Problem
 
 	// Destroy 销毁当前对象
 	//

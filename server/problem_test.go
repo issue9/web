@@ -12,8 +12,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-var _ Responser = &Problem{}
-
 func TestProblem_Apply(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, nil)

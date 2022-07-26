@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web/server/response"
 )
 
 const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
@@ -66,17 +67,20 @@ type rfc8707ObjectEntry struct {
 
 func (p *rfc7807) Status() int { return p.status }
 
-func (p *rfc7807) AddParam(name string, reason ...string) {
+func (p *rfc7807) AddParam(name string, reason ...string) Problem {
 	param, found := sliceutil.At(p.params, func(pp *invalidParam) bool { return pp.Name == name })
 	if found {
 		param.Reason = append(param.Reason, reason...)
 	}
 	p.params = append(p.params, &invalidParam{Name: name, Reason: reason})
+
+	return p
 }
 
-func (p *rfc7807) With(key string, val any) {
+func (p *rfc7807) With(key string, val any) Problem {
 	p.keys = append(p.keys, key)
 	p.vals = append(p.vals, val)
+	return p
 }
 
 func (p *rfc7807) Destroy() { rfc7807ProblemPool.Put(p) }
@@ -180,4 +184,10 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	return e.EncodeToken(start.End())
+}
+
+func (p *rfc7807) Apply(ctx response.Context) {
+	if err := ctx.Marshal(p.Status(), p); err != nil {
+		ctx.Logs().ERROR().Error(err)
+	}
 }

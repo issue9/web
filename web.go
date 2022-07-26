@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/response"
 )
 
 // Version 当前框架的版本
@@ -25,7 +26,7 @@ type (
 	Router         = server.Router
 	FieldErrs      = server.FieldErrs
 	Module         = server.Module
-	Responser      = server.Responser
+	Responser      = response.Responser
 	Logger         = logs.Logger
 	Rule           = validation.Rule
 

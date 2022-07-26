@@ -30,6 +30,7 @@ import (
 	"github.com/issue9/web/serializer/gob"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
+	"github.com/issue9/web/server/response"
 )
 
 const (
@@ -42,7 +43,7 @@ var (
 	gbkBytes2 = []byte{214, 208, 206, 196, 50, 44, 50, 50}
 )
 
-var _ http.ResponseWriter = &Context{}
+var _ response.Context = &Context{}
 
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
@@ -435,11 +436,11 @@ func TestContext_IsXHR(t *testing.T) {
 	srv := newServer(a, nil)
 	router := srv.Routers().New("router", nil, mux.URLDomain("https://example.com"))
 	a.NotNil(router)
-	router.Get("/not-xhr", func(ctx *Context) Responser {
+	router.Get("/not-xhr", func(ctx *Context) response.Responser {
 		a.False(ctx.IsXHR())
 		return nil
 	})
-	router.Get("/xhr", func(ctx *Context) Responser {
+	router.Get("/xhr", func(ctx *Context) response.Responser {
 		a.True(ctx.IsXHR())
 		return nil
 	})
