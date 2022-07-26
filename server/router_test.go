@@ -47,13 +47,13 @@ func TestContext_Error(t *testing.T) {
 	})
 }
 
-func TestContext_Result(t *testing.T) {
+func TestContext_Problem(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, nil)
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
 
-	srv.AddResult(400, "40000", localeutil.Phrase("lang")) // lang 有翻译
+	srv.Problems().Add("40000", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang")) // lang 有翻译
 	w := httptest.NewRecorder()
 
 	// 能正常翻译错误信息
@@ -62,9 +62,9 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx := srv.newContext(w, r, nil)
-	resp := ctx.Result("40000", nil)
+	resp := ctx.Problem("40000", nil)
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"hans","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","status":400}`)
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
@@ -72,9 +72,9 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Result("40000", nil)
+	resp = ctx.Problem("40000", nil)
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400}`)
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
@@ -83,13 +83,13 @@ func TestContext_Result(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Result("40000", nil)
+	resp = ctx.Problem("40000", nil).With("with", "abc")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"und","code":"40000"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Result("400", nil) })
-	a.Panic(func() { ctx.Result("50000", nil) })
+	a.Panic(func() { ctx.Problem("400", nil) })
+	a.Panic(func() { ctx.Problem("50000", nil) })
 
 	// with field
 
@@ -99,13 +99,13 @@ func TestContext_Result(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = newServer(a, nil).newContext(w, r, nil)
-	ctx.Server().AddResult(http.StatusBadRequest, "40010", localeutil.Phrase("40010"))
-	ctx.Server().AddResult(http.StatusBadRequest, "40011", localeutil.Phrase("40011"))
+	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
+	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Result("40010", ResultFields{
+	resp = ctx.Problem("40010", FieldErrs{
 		"k1": []string{"v1", "v2"},
-	})
+	}).With("detail", "40010")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"message":"40010","code":"40010","fields":[{"name":"k1","message":["v1","v2"]}]}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}],"detail":"40010"}`)
 }

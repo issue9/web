@@ -20,14 +20,14 @@ import (
 //  }
 type Params struct {
 	ctx    *Context
-	fields ResultFields
+	fields FieldErrs
 }
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx:    ctx,
-		fields: make(ResultFields, ctx.route.Params().Count()),
+		fields: make(FieldErrs, ctx.route.Params().Count()),
 	}
 }
 
@@ -167,12 +167,12 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 func (p *Params) HasErrors() bool { return len(p.fields) > 0 }
 
 // Errors 返回所有的错误信息
-func (p *Params) Errors() ResultFields { return p.fields }
+func (p *Params) Errors() FieldErrs { return p.fields }
 
 // Result 转换成 Result 对象
 func (p *Params) Result(code string) response.Responser {
 	if p.HasErrors() {
-		return p.ctx.Result(code, p.Errors())
+		return p.ctx.Problem(code, p.Errors())
 	}
 	return nil
 }
@@ -187,7 +187,7 @@ func (ctx *Context) ParamID(key, code string) (int64, response.Responser) {
 	if id := p.ID(key); !p.HasErrors() {
 		return id, nil
 	}
-	return 0, ctx.Result(code, p.Errors())
+	return 0, ctx.Problem(code, p.Errors())
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
@@ -198,7 +198,7 @@ func (ctx *Context) ParamInt64(key, code string) (int64, response.Responser) {
 	if n := p.Int64(key); !p.HasErrors() {
 		return n, nil
 	}
-	return 0, ctx.Result(code, p.Errors())
+	return 0, ctx.Problem(code, p.Errors())
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
@@ -209,5 +209,5 @@ func (ctx *Context) ParamString(key, code string) (string, response.Responser) {
 	if s := p.String(key); !p.HasErrors() {
 		return s, nil
 	}
-	return "", ctx.Result(code, p.Errors())
+	return "", ctx.Problem(code, p.Errors())
 }

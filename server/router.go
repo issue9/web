@@ -108,10 +108,3 @@ func (ctx *Context) err(depth, status int, err error) response.Responser {
 	ctx.Logs().Output(entry)
 	return response.Status(status)
 }
-
-// Result 向客户端输出指定代码的错误信息
-//
-// 如果找不到 code 对应的错误信息，则会直接 panic。
-func (ctx *Context) Result(code string, fields ResultFields) response.Responser {
-	return ctx.Server().Result(ctx.LocalePrinter(), code, fields)
-}

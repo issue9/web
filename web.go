@@ -24,8 +24,7 @@ type (
 	Middleware     = server.Middleware
 	HandlerFunc    = server.HandlerFunc
 	Router         = server.Router
-	ResultFields   = server.ResultFields
-	Result         = server.Result
+	FieldErrs      = server.FieldErrs
 	Module         = server.Module
 	Responser      = response.Responser
 	Logger         = logs.Logger
