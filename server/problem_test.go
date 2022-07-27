@@ -23,7 +23,7 @@ func TestProblem_Apply(t *testing.T) {
 		Header("accept-language", language.SimplifiedChinese.String()).
 		Request()
 	ctx := s.newContext(w, r, nil)
-	p := ctx.Problem("40010", nil)
+	p := ctx.Problem("40010")
 	p.Apply(ctx)
 	a.Equal(w.Result().StatusCode, 400)
 	body := w.Body.String()

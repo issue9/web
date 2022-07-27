@@ -420,8 +420,8 @@ func (ctx *Context) Read(v any, id string) response.Responser {
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		if params := vv.CTXSanitize(ctx); len(params) > 0 {
-			return ctx.Problem(id, params)
+		if problem := vv.CTXSanitize(ctx); problem != nil {
+			return problem
 		}
 	}
 

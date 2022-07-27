@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/sliceutil"
+
 	"github.com/issue9/web/server/response"
 )
 
@@ -52,7 +53,7 @@ type rfc7807 struct {
 type invalidParam struct {
 	XMLName struct{} `xml:"i"`
 	Name    string   `xml:"name"`
-	Reason  []string `xml:"reason"`
+	Reason  string   `xml:"reason"`
 }
 
 type rfc8707Entry struct {
@@ -67,23 +68,22 @@ type rfc8707ObjectEntry struct {
 
 func (p *rfc7807) Status() int { return p.status }
 
-func (p *rfc7807) AddParam(name string, reason ...string) Problem {
-	param, found := sliceutil.At(p.params, func(pp *invalidParam) bool { return pp.Name == name })
-	if found {
-		param.Reason = append(param.Reason, reason...)
+func (p *rfc7807) AddParam(name string, reason string) Problem {
+	if _, found := sliceutil.At(p.params, func(pp *invalidParam) bool { return pp.Name == name }); found {
+		panic("已经存在")
 	}
 	p.params = append(p.params, &invalidParam{Name: name, Reason: reason})
 
 	return p
 }
 
+func (p *rfc7807) Params() int { return len(p.params) }
+
 func (p *rfc7807) With(key string, val any) Problem {
 	p.keys = append(p.keys, key)
 	p.vals = append(p.vals, val)
 	return p
 }
-
-func (p *rfc7807) Destroy() { rfc7807ProblemPool.Put(p) }
 
 func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}
@@ -96,12 +96,7 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	if len(p.params) > 0 {
 		b.WString(`"params":[`)
 		for _, param := range p.params {
-			b.WString(`{"name":"`).WString(param.Name).WString(`","reason":[`)
-			for _, r := range param.Reason {
-				b.WByte('"').WString(r).WString(`",`)
-			}
-			b.Truncate(b.Len() - 1)
-			b.WString(`]},`)
+			b.WString(`{"name":"`).WString(param.Name).WString(`","reason":"`).WString(param.Reason).WString(`"},`)
 		}
 		b.Truncate(b.Len() - 1)
 		b.WString("],")
@@ -190,4 +185,5 @@ func (p *rfc7807) Apply(ctx response.Context) {
 	if err := ctx.Marshal(p.Status(), p); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
+	rfc7807ProblemPool.Put(p)
 }

@@ -62,7 +62,7 @@ func TestContext_Problem(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx := srv.newContext(w, r, nil)
-	resp := ctx.Problem("40000", nil)
+	resp := ctx.Problem("40000")
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","status":400}`)
 
@@ -72,7 +72,7 @@ func TestContext_Problem(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem("40000", nil)
+	resp = ctx.Problem("40000")
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400}`)
 
@@ -83,13 +83,13 @@ func TestContext_Problem(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem("40000", nil).With("with", "abc")
+	resp = ctx.Problem("40000").With("with", "abc")
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Problem("400", nil) })
-	a.Panic(func() { ctx.Problem("50000", nil) })
+	a.Panic(func() { ctx.Problem("400") })
+	a.Panic(func() { ctx.Problem("50000") })
 
 	// with field
 
@@ -102,10 +102,9 @@ func TestContext_Problem(t *testing.T) {
 	ctx.Server().Problems().Add("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010"))
 	ctx.Server().Problems().Add("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
-	resp = ctx.Problem("40010", FieldErrs{
-		"k1": []string{"v1", "v2"},
-	}).With("detail", "40010")
+	resp = ctx.Problem("40010").With("detail", "40010")
+	resp.AddParam("k1", "v1")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":["v1","v2"]}],"detail":"40010"}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":"v1"}],"detail":"40010"}`)
 }

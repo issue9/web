@@ -16,23 +16,16 @@ import "github.com/issue9/web/server/response"
 type Problem interface {
 	response.Responser
 
-	// 获取反馈给客户端的状态码
-	Status() int
-
-	// 添加新的输出字段
+	// With 添加新的输出字段
 	//
 	// 如果添加的字段名称与现有的字段重名，应当 panic。
 	With(key string, val any) Problem
 
-	// 添加验证错误的信息
-	AddParam(name string, reason ...string) Problem
+	// AddParam 添加一条新的错误信息
+	AddParam(name string, reason string) Problem
 
-	// Destroy 销毁当前对象
-	//
-	// 如果当前对象采用了类似 sync.Pool 的技术对内容进行了保留，
-	// 那么可以在此方法中调用 [sync.Pool.Put] 方法返回给对象池。
-	// 否则的话可以实现为一个空方法即可。
-	Destroy()
+	// Params 返回错误信息的数量
+	Params() int
 }
 
 // BuildFunc 生成 [Problem] 对象的方法

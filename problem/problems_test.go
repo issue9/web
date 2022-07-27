@@ -84,12 +84,12 @@ func TestProblems_Problem(t *testing.T) {
 	}, "未找到有关 not-exists 的定义")
 
 	p := ps.Problem("40010", cnp)
-	a.NotNil(p).Equal(p.Status(), 400)
+	a.NotNil(p)
 	pp, ok := p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.title, "hans")
+	a.True(ok).NotNil(pp).Equal(pp.title, "hans").Equal(pp.status, 400)
 
 	p = ps.Problem("40010", twp)
-	a.NotNil(p).Equal(p.Status(), 400)
+	a.NotNil(p)
 	pp, ok = p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.title, "lang")
+	a.True(ok).NotNil(pp).Equal(pp.title, "lang").Equal(pp.status, 400)
 }

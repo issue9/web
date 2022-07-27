@@ -14,6 +14,7 @@ type Problems struct {
 	typeBaseURL string
 	problems    map[string]*statusProblem
 	blank       bool // Problems.Problem 不输出 id 值
+	exitAtError bool
 }
 
 type statusProblem struct {

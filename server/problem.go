@@ -3,12 +3,9 @@
 package server
 
 import (
-	"github.com/issue9/validation"
-
 	"github.com/issue9/web/problem"
+	"github.com/issue9/web/server/response"
 )
-
-type FieldErrs = problem.FieldErrs
 
 // CTXSanitizer 提供对数据的验证和修正
 //
@@ -17,8 +14,8 @@ type (
 	CTXSanitizer interface {
 		// CTXSanitize 验证和修正当前对象的数据
 		//
-		// 如果验证有误，则需要返回这些错误信息。
-		CTXSanitize(*Context) FieldErrs
+		// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
+		CTXSanitize(*Context) response.Responser
 	}
 )
 
@@ -31,12 +28,8 @@ func (srv *Server) Problems() *problem.Problems { return srv.problems }
 //
 // id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
 // obj 表示实际的返回对象，如果为空，会采用 [problem.RFC7807]；
-func (ctx *Context) Problem(id string, errs FieldErrs) problem.Problem {
-	p := ctx.Server().Problems().Problem(id, ctx.LocalePrinter())
-	for name, reason := range errs {
-		p.AddParam(name, reason...)
-	}
-	return p
+func (ctx *Context) Problem(id string) problem.Problem {
+	return ctx.Server().Problems().Problem(id, ctx.LocalePrinter())
 }
 
 // NewValidation 声明验证器
@@ -56,6 +49,6 @@ func (ctx *Context) Problem(id string, errs FieldErrs) problem.Problem {
 //  }
 //
 // cap 表示为错误信息预分配的大小；
-func (ctx *Context) NewValidation(cap int) *validation.Validation {
-	return validation.New(validation.ContinueAtError, cap)
+func (ctx *Context) NewValidation() *problem.Validation {
+	return ctx.Server().Problems().NewValidation()
 }

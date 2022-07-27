@@ -5,29 +5,29 @@ package server
 import (
 	"errors"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/types"
 
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server/response"
 )
+
+var tGreatThanZero = localeutil.Phrase("should great than 0")
 
 // Params 用于处理路径中包含的参数
 //  p := ctx.Params()
 //  aid := p.Int64("aid")
 //  bid := p.Int64("bid")
-//  if p.HasErrors() {
-//      // do something
-//      return
-//  }
 type Params struct {
-	ctx    *Context
-	fields FieldErrs
+	ctx *Context
+	v   *problem.Validation
 }
 
 // Params 声明一个新的 Params 实例
 func (ctx *Context) Params() *Params {
 	return &Params{
-		ctx:    ctx,
-		fields: make(FieldErrs, ctx.route.Params().Count()),
+		ctx: ctx,
+		v:   ctx.Server().Problems().NewValidation(),
 	}
 }
 
@@ -37,7 +37,7 @@ func (ctx *Context) Params() *Params {
 func (p *Params) ID(key string) int64 {
 	id := p.Int64(key)
 	if id <= 0 {
-		p.fields.Add(key, p.ctx.Sprintf("should great than 0"))
+		p.v.Add(key, tGreatThanZero)
 	}
 
 	return id
@@ -52,7 +52,7 @@ func (p *Params) ID(key string) int64 {
 func (p *Params) MustID(key string, def int64) int64 {
 	id := p.MustInt64(key, def)
 	if id <= 0 {
-		p.fields.Add(key, p.ctx.Sprintf("should great than 0"))
+		p.v.Add(key, tGreatThanZero)
 		return def
 	}
 	return id
@@ -62,9 +62,8 @@ func (p *Params) MustID(key string, def int64) int64 {
 func (p *Params) Int64(key string) int64 {
 	ret, err := p.ctx.route.Params().Int(key)
 	if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
-
 	return ret
 }
 
@@ -77,7 +76,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 	if errors.Is(err, types.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 	return id
@@ -87,7 +86,7 @@ func (p *Params) MustInt64(key string, def int64) int64 {
 func (p *Params) String(key string) string {
 	ret, err := p.ctx.route.Params().String(key)
 	if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
 
 	return ret
@@ -101,7 +100,7 @@ func (p *Params) MustString(key, def string) string {
 	if errors.Is(err, types.ErrParamNotExists) {
 		return def
 	} else if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 	return ret
@@ -114,7 +113,7 @@ func (p *Params) MustString(key, def string) string {
 func (p *Params) Bool(key string) bool {
 	ret, err := p.ctx.route.Params().Bool(key)
 	if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
 
 	return ret
@@ -132,7 +131,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 	if errors.Is(err, types.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 	return b
@@ -142,7 +141,7 @@ func (p *Params) MustBool(key string, def bool) bool {
 func (p *Params) Float64(key string) float64 {
 	ret, err := p.ctx.route.Params().Float(key)
 	if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
 
 	return ret
@@ -157,24 +156,14 @@ func (p *Params) MustFloat64(key string, def float64) float64 {
 	if errors.Is(err, types.ErrParamNotExists) { // 不存在，仅返回默认值，不算错误
 		return def
 	} else if err != nil {
-		p.fields.Add(key, err.Error())
+		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 	return f
 }
 
-// HasErrors 是否有错误内容存在
-func (p *Params) HasErrors() bool { return len(p.fields) > 0 }
-
-// Errors 返回所有的错误信息
-func (p *Params) Errors() FieldErrs { return p.fields }
-
-// Result 转换成 Result 对象
-func (p *Params) Result(code string) response.Responser {
-	if p.HasErrors() {
-		return p.ctx.Problem(code, p.Errors())
-	}
-	return nil
+func (p *Params) Problem(id string) response.Responser {
+	return p.v.Problem(id, p.ctx.LocalePrinter())
 }
 
 // ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
@@ -182,32 +171,35 @@ func (p *Params) Result(code string) response.Responser {
 // 相对于 Context.ParamInt64()，该值必须大于 0。
 //
 // NOTE: 若需要获取多个参数，使用 Context.Params 会更方便。
-func (ctx *Context) ParamID(key, code string) (int64, response.Responser) {
+func (ctx *Context) ParamID(key, id string) (int64, response.Responser) {
 	p := ctx.Params()
-	if id := p.ID(key); !p.HasErrors() {
-		return id, nil
+	num := p.ID(key)
+	if pp := p.Problem(id); pp != nil {
+		return 0, pp
 	}
-	return 0, ctx.Problem(code, p.Errors())
+	return num, nil
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamInt64(key, code string) (int64, response.Responser) {
+func (ctx *Context) ParamInt64(key, id string) (int64, response.Responser) {
 	p := ctx.Params()
-	if n := p.Int64(key); !p.HasErrors() {
-		return n, nil
+	num := p.Int64(key)
+	if pp := p.Problem(id); pp != nil {
+		return 0, pp
 	}
-	return 0, ctx.Problem(code, p.Errors())
+	return num, nil
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
 //
 // NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamString(key, code string) (string, response.Responser) {
+func (ctx *Context) ParamString(key, id string) (string, response.Responser) {
 	p := ctx.Params()
-	if s := p.String(key); !p.HasErrors() {
-		return s, nil
+	s := p.String(key)
+	if pp := p.Problem(id); pp != nil {
+		return "", pp
 	}
-	return "", ctx.Problem(code, p.Errors())
+	return s, nil
 }
