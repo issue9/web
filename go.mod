@@ -16,7 +16,6 @@ require (
 	github.com/issue9/scheduled v0.9.2
 	github.com/issue9/sliceutil v0.10.1
 	github.com/issue9/term/v3 v3.0.0
-	github.com/issue9/validation v0.8.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f

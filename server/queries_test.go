@@ -31,7 +31,6 @@ func TestQueries_Int(t *testing.T) {
 
 	// 无法转换，会返回默认值，且添加错误信息
 	a.Equal(q.Int("str", 3), 3)
-	a.True(q.HasErrors())
 }
 
 func TestQueries_Int64(t *testing.T) {
@@ -46,7 +45,7 @@ func TestQueries_Int64(t *testing.T) {
 
 	// 无法转换，会返回默认值，且添加错误信息
 	a.Equal(q.Int64("str", 3), 3)
-	a.Equal(len(q.fields), 1)
+	a.NotNil(q.Problem("41110"))
 }
 
 func TestQueries_String(t *testing.T) {
@@ -58,7 +57,6 @@ func TestQueries_String(t *testing.T) {
 	a.Equal(q.String("s1", "9"), "1")
 	a.Equal(q.String("s2", "9"), "2")
 	a.Equal(q.String("s3", "9"), "9")
-
 }
 
 func TestQueries_Bool(t *testing.T) {
@@ -73,7 +71,7 @@ func TestQueries_Bool(t *testing.T) {
 
 	// 无法转换，会返回默认值，且添加错误信息
 	a.False(q.Bool("str", false))
-	a.Equal(len(q.Errors()), 1)
+	a.NotNil(q.Problem("41110"))
 }
 
 func TestQueries_Float64(t *testing.T) {
@@ -88,10 +86,10 @@ func TestQueries_Float64(t *testing.T) {
 
 	// 无法转换，会返回默认值，且添加错误信息
 	a.Equal(q.Float64("str", 3), 3)
-	a.True(q.HasErrors())
+	a.NotNil(q.Problem("41110"))
 }
 
-func TestContext_QueryObject(t *testing.T) {
+func TestContext_Object(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, w := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
 	q, err := ctx.Queries()

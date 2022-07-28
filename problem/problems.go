@@ -82,3 +82,21 @@ func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 	}
 	return p.builder(id, sp.title.LocaleString(printer), sp.status)
 }
+
+// Problem 将验证结果转换成 [Problem] 对象
+//
+// 转换成 Problem 对象之后，v 随之将被释放。
+// 如果 v.Count() == 0，那么将返回 nil。
+func (v *Validation) Problem(ps *Problems, id string, p *message.Printer) Problem {
+	if v.Count() > 0 {
+		pp := ps.Problem(id, p)
+		v.Visit(func(key string, reason localeutil.LocaleStringer) bool {
+			pp.AddParam(key, reason.LocaleString(p))
+			return true
+		})
+		v.Destroy()
+		return pp
+	}
+	v.Destroy()
+	return nil
+}

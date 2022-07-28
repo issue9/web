@@ -243,3 +243,8 @@ func (srv *Server) AddEncoding(id, name string, f NewEncodingFunc) {
 func (srv *Server) AllowEncoding(contentType string, id ...string) {
 	srv.encodings.Allow(contentType, id...)
 }
+
+// Problems [RFC7807] 错误代码管理
+//
+// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+func (srv *Server) Problems() *problem.Problems { return srv.problems }

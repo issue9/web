@@ -23,6 +23,7 @@ import (
 	"golang.org/x/text/transform"
 
 	xencoding "github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/server/response"
 )
@@ -33,6 +34,16 @@ const (
 )
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
+
+// CTXSanitizer 在 Context 关联的上下文环境中提供对数据的验证和修正
+//
+// 在 Context.Read 和 Queries.Object 中会在解析数据成功之后，调用该接口进行数据验证。
+type CTXSanitizer interface {
+	// CTXSanitize 验证和修正当前对象的数据
+	//
+	// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
+	CTXSanitize(*Context) *problem.Validation
+}
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
@@ -420,8 +431,8 @@ func (ctx *Context) Read(v any, id string) response.Responser {
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		if params := vv.CTXSanitize(ctx); len(params) > 0 {
-			return ctx.Problem(id, params)
+		if va := vv.CTXSanitize(ctx); va != nil {
+			return va.Problem(ctx.Server().Problems(), id, ctx.LocalePrinter())
 		}
 	}
 
@@ -476,4 +487,32 @@ func (ctx *Context) IsXHR() bool {
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
+}
+
+// Problem 向客户端输出错误信息
+//
+// id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
+// obj 表示实际的返回对象，如果为空，会采用 [problem.RFC7807]；
+func (ctx *Context) Problem(id string) problem.Problem {
+	return ctx.Server().Problems().Problem(id, ctx.LocalePrinter())
+}
+
+// NewValidation 声明验证器
+//
+// 一般配合 CTXSanitizer 接口使用：
+//
+//  type User struct {
+//      Name string
+//      Age int
+//  }
+//
+//  func(o *User) CTXSanitize(ctx* web.Context) *problem.Validation {
+//      v := ctx.NewValidation()
+//      return v.NewField(o.Name, "name", validator.Required().Message("不能为空")).
+//          NewField(o.Age, "age", validator.Min(18).Message("不能小于 18 岁"))
+//  }
+//
+// cap 表示为错误信息预分配的大小；
+func (ctx *Context) NewValidation() *problem.Validation {
+	return problem.NewValidation(true)
 }

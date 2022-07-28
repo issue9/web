@@ -7,8 +7,10 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
 
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server/response"
 )
 
@@ -17,13 +19,9 @@ import (
 //  q,_ := ctx.Queries()
 //  page := q.Int64("page", 1)
 //  size := q.Int64("size", 20)
-//  if q.HasErrors() {
-//      // do something
-//      return
-//  }
 type Queries struct {
 	ctx     *Context
-	fields  FieldErrs
+	v       *problem.Validation
 	queries url.Values
 }
 
@@ -36,17 +34,12 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		fields:  FieldErrs{},
+		v:       ctx.NewValidation(),
 		queries: queries,
 	}, nil
 }
 
-func (q *Queries) getItem(key string) (val string) {
-	if v, found := q.queries[key]; found {
-		val = v[0]
-	}
-	return
-}
+func (q *Queries) getItem(key string) (val string) { return q.queries.Get(key) }
 
 // Int 从查询参数中获取指定名称的值
 //
@@ -62,7 +55,7 @@ func (q *Queries) Int(key string, def int) int {
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil {
-		q.fields.Add(key, err.Error())
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -80,7 +73,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 
 	v, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		q.fields.Add(key, err.Error())
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -109,7 +102,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 	v, err := strconv.ParseBool(str)
 	if err != nil {
-		q.fields.Add(key, err.Error())
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -127,25 +120,18 @@ func (q *Queries) Float64(key string, def float64) float64 {
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil {
-		q.fields.Add(key, err.Error())
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
 	return v
 }
 
-// HasErrors 是否存在错误内容
-func (q *Queries) HasErrors() bool { return len(q.fields) > 0 }
-
-// Errors 所有的错误信息
-func (q *Queries) Errors() FieldErrs { return q.fields }
-
-// Result 转换成 Response 对象
-func (q *Queries) Result(id string) response.Responser {
-	if q.HasErrors() {
-		return q.ctx.Problem(id, q.Errors())
-	}
-	return nil
+// Problem 转换成 Responser 对象
+//
+// 如果没有错误，则返回 nil。
+func (q *Queries) Problem(id string) response.Responser {
+	return q.v.Problem(q.ctx.Server().Problems(), id, q.ctx.LocalePrinter())
 }
 
 // Object 将查询参数解析到一个对象中
@@ -153,25 +139,28 @@ func (q *Queries) Result(id string) response.Responser {
 // 具体的文档信息可以参考 https://github.com/issue9/query
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，错误信息存入 q.errors。
-func (q *Queries) Object(v any) {
-	errs := query.Parse(q.queries, v)
-	for k, err := range errs {
-		q.fields.Add(k, err.Error())
+func (q *Queries) Object(v any, id string) {
+	for k, err := range query.Parse(q.queries, v) {
+		q.v.Add(k, localeutil.Phrase(err.Error()))
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		q.fields.Merge(vv.CTXSanitize(q.ctx))
+		if va := vv.CTXSanitize(q.ctx); va != nil {
+			va.Visit(func(name string, reason localeutil.LocaleStringer) bool {
+				q.v.Add(name, reason)
+				return true
+			})
+		}
 	}
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(v any, code string) response.Responser {
+func (ctx *Context) QueryObject(v any, id string) response.Responser {
 	q, err := ctx.Queries()
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
+	q.Object(v, id)
 
-	q.Object(v)
-	return q.Result(code)
+	return q.Problem(id)
 }
