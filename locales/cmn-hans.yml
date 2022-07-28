@@ -42,8 +42,16 @@ messages:
 
 - key: '%s not found'
   message:
-      msg: '%s 不存在'
+    msg: '%s 不存在'
 
 - key: 'invalid value %s'
   message:
-      msg: '%s 无效的值'
+    msg: '%s 无效的值'
+
+- key: the type is not slice or array
+  message:
+    msg: 非数组类型
+
+- key: the type is not map
+  message:
+    msg: 非 map 类型

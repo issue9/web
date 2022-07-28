@@ -17,6 +17,8 @@ import (
 
 const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 
+const rfc8707PoolMaxSize = 10
+
 var rfc7807ProblemPool = &sync.Pool{New: func() any {
 	return &rfc7807{}
 }}
@@ -33,7 +35,8 @@ func RFC7807Builder(id, title string, status int) Problem {
 	p.typ = id
 	p.title = title
 	p.status = status
-	p.params = p.params[:0]
+	p.pKeys = p.pKeys[:0]
+	p.pReasons = p.pReasons[:0]
 	p.keys = p.keys[:0]
 	p.vals = p.vals[:0]
 
@@ -44,16 +47,14 @@ type rfc7807 struct {
 	typ    string
 	title  string
 	status int
-	params []*invalidParam
 
+	// params
+	pKeys    []string
+	pReasons []string
+
+	// with
 	keys []string
 	vals []any
-}
-
-type invalidParam struct {
-	XMLName struct{} `xml:"i"`
-	Name    string   `xml:"name"`
-	Reason  string   `xml:"reason"`
 }
 
 type rfc8707Entry struct {
@@ -61,23 +62,15 @@ type rfc8707Entry struct {
 	Value   any `xml:",chardata"`
 }
 
-type rfc8707ObjectEntry struct {
-	XMLName xml.Name
-	Value   any
-}
-
-func (p *rfc7807) Status() int { return p.status }
-
 func (p *rfc7807) AddParam(name string, reason string) Problem {
-	if _, found := sliceutil.At(p.params, func(pp *invalidParam) bool { return pp.Name == name }); found {
+	if _, found := sliceutil.At(p.pKeys, func(pp string) bool { return pp == name }); found {
 		panic("已经存在")
 	}
-	p.params = append(p.params, &invalidParam{Name: name, Reason: reason})
+	p.pKeys = append(p.pKeys, name)
+	p.pReasons = append(p.pReasons, reason)
 
 	return p
 }
-
-func (p *rfc7807) Params() int { return len(p.params) }
 
 func (p *rfc7807) With(key string, val any) Problem {
 	p.keys = append(p.keys, key)
@@ -93,10 +86,10 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 		WString(`"title":"`).WString(p.title).WString(`",`).
 		WString(`"status":`).WString(strconv.Itoa(p.status)).WByte(',')
 
-	if len(p.params) > 0 {
+	if len(p.pKeys) > 0 {
 		b.WString(`"params":[`)
-		for _, param := range p.params {
-			b.WString(`{"name":"`).WString(param.Name).WString(`","reason":"`).WString(param.Reason).WString(`"},`)
+		for index, key := range p.pKeys {
+			b.WString(`{"name":"`).WString(key).WString(`","reason":"`).WString(p.pReasons[index]).WString(`"},`)
 		}
 		b.Truncate(b.Len() - 1)
 		b.WString("],")
@@ -135,17 +128,31 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		return err
 	}
 
-	if len(p.params) > 0 {
-		s := xml.StartElement{Name: xml.Name{Local: "params"}}
-		if err := e.EncodeToken(s); err != nil {
+	if len(p.pKeys) > 0 {
+		pStart := xml.StartElement{Name: xml.Name{Local: "params"}}
+		if err := e.EncodeToken(pStart); err != nil {
 			return err
 		}
 
-		if err := e.Encode(p.params); err != nil {
-			return err
+		for index, key := range p.pKeys {
+			iStart := xml.StartElement{Name: xml.Name{Local: "i"}}
+			if err := e.EncodeToken(iStart); err != nil {
+				return err
+			}
+
+			if err := e.EncodeElement(key, xml.StartElement{Name: xml.Name{Local: "name"}}); err != nil {
+				return err
+			}
+			if err := e.EncodeElement(p.pReasons[index], xml.StartElement{Name: xml.Name{Local: "reason"}}); err != nil {
+				return err
+			}
+
+			if err := e.EncodeToken(iStart.End()); err != nil {
+				return err
+			}
 		}
 
-		if err := e.EncodeToken(s.End()); err != nil {
+		if err := e.EncodeToken(pStart.End()); err != nil {
 			return err
 		}
 	}
@@ -182,8 +189,11 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 
 func (p *rfc7807) Apply(ctx response.Context) {
-	if err := ctx.Marshal(p.Status(), p); err != nil {
+	if err := ctx.Marshal(p.status, p); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
-	rfc7807ProblemPool.Put(p)
+
+	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
+		rfc7807ProblemPool.Put(p)
+	}
 }

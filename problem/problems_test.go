@@ -93,3 +93,30 @@ func TestProblems_Problem(t *testing.T) {
 	pp, ok = p.(*rfc7807)
 	a.True(ok).NotNil(pp).Equal(pp.title, "lang").Equal(pp.status, 400)
 }
+
+func TestValidation_Locale(t *testing.T) {
+	a := assert.New(t, false)
+
+	builder := catalog.NewBuilder()
+	a.NotError(builder.SetString(language.SimplifiedChinese, "lang", "chn"))
+	a.NotError(builder.SetString(language.TraditionalChinese, "lang", "cht"))
+	cnp := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
+	twp := message.NewPrinter(language.TraditionalChinese, message.Catalog(builder))
+
+	ps := NewProblems(RFC7807Builder, "https://example.com/problems", false)
+	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
+
+	max4 := NewRule(max(4), "lang")
+
+	v := NewValidation(false).
+		AddField(5, "obj", max4)
+	p := v.Problem(ps, "40010", cnp)
+	pp, ok := p.(*rfc7807)
+	a.True(ok).Equal(pp.pReasons[0], "chn")
+
+	v = NewValidation(false).
+		AddField(5, "obj", max4)
+	p = v.Problem(ps, "40010", twp)
+	pp, ok = p.(*rfc7807)
+	a.True(ok).Equal(pp.pReasons[0], "cht")
+}

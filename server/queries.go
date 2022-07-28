@@ -128,8 +128,10 @@ func (q *Queries) Float64(key string, def float64) float64 {
 }
 
 // Problem 转换成 Responser 对象
+//
+// 如果没有错误，则返回 nil。
 func (q *Queries) Problem(id string) response.Responser {
-	return q.v.Problem(id, q.ctx.LocalePrinter())
+	return q.v.Problem(q.ctx.Server().Problems(), id, q.ctx.LocalePrinter())
 }
 
 // Object 将查询参数解析到一个对象中
@@ -137,19 +139,19 @@ func (q *Queries) Problem(id string) response.Responser {
 // 具体的文档信息可以参考 https://github.com/issue9/query
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
-func (q *Queries) Object(v any, id string) response.Responser {
-	errs := query.Parse(q.queries, v)
-	for k, err := range errs {
+func (q *Queries) Object(v any, id string) {
+	for k, err := range query.Parse(q.queries, v) {
 		q.v.Add(k, localeutil.Phrase(err.Error()))
-	}
-	if len(errs) > 0 {
-		return q.Problem(id)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		return vv.CTXSanitize(q.ctx)
+		if va := vv.CTXSanitize(q.ctx); va != nil {
+			va.Visit(func(name string, reason localeutil.LocaleStringer) bool {
+				q.v.Add(name, reason)
+				return true
+			})
+		}
 	}
-	return nil
 }
 
 // QueryObject 将查询参数解析到一个对象中
@@ -158,6 +160,7 @@ func (ctx *Context) QueryObject(v any, id string) response.Responser {
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
+	q.Object(v, id)
 
-	return q.Object(v, id)
+	return q.Problem(id)
 }

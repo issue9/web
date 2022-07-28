@@ -23,7 +23,6 @@ func TestParams_empty(t *testing.T) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("id1"), 0)
-		a.Equal(ps.MustInt64("id2", 2), 2)
 		a.NotNil(ps.Problem("41110"))
 		return nil
 	})
@@ -32,8 +31,7 @@ func TestParams_empty(t *testing.T) {
 	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
 }
 
-/*
-func TestParams_ID_MustID(t *testing.T) {
+func TestParams_ID(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
@@ -42,31 +40,17 @@ func TestParams_ID_MustID(t *testing.T) {
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) response.Responser {
 		ps := ctx.Params()
 
-		a.Equal(ps.ID("i1"), 1)
+		a.Equal(ps.ID("i1"), 1).
+			Equal(ps.v.Count(), 0)
 
 		// 负数
-		a.Equal(ps.ID("i2"), -2)
-		a.Equal(len(ps.fields), 1)
+		a.Equal(ps.ID("i2"), -2).
+			Equal(ps.v.Count(), 1)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.ID("i3"), 0)
-		a.Equal(len(ps.fields), 2)
+		a.Equal(ps.v.Count(), 2)
 
-		// MustID() 不会增加错误信息
-		a.Equal(ps.MustID("i3", 3), 3)
-		a.Equal(len(ps.fields), 2)
-
-		// MustID() 负数
-		a.Equal(ps.MustID("i2", 3), 3)
-		a.Equal(len(ps.fields), 2) // 之前已经有一个名为 i2 的错误信息，所以此处为覆盖
-
-		// MustID() 无法转换，会返回默认值，且添加错误信息
-		a.Equal(ps.MustID("str", 3), 3)
-		a.Equal(len(ps.Errors()), 3)
-
-		// MustID() 能正常转换
-		a.Equal(ps.MustID("i1", 3), 1)
-		a.Equal(len(ps.Errors()), 3)
 		return nil
 	})
 
@@ -74,7 +58,7 @@ func TestParams_ID_MustID(t *testing.T) {
 	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Int_MustInt(t *testing.T) {
+func TestParams_Int(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
@@ -84,23 +68,11 @@ func TestParams_Int_MustInt(t *testing.T) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("i1"), 1)
-		a.Equal(ps.Int64("i2"), 2)
+		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.Count(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Int64("i3"), 0)
-		a.Equal(len(ps.fields), 1)
-
-		// MustInt() 不会增加错误信息
-		a.Equal(ps.MustInt64("i3", 3), 3)
-		a.Equal(len(ps.fields), 1)
-
-		// MustInt() 无法转换，会返回默认值，且添加错误信息
-		a.Equal(ps.MustInt64("str", 3), 3)
-		a.Equal(len(ps.fields), 2)
-
-		// MustInt() 正常转换
-		a.Equal(ps.MustInt64("i1", 3), 1)
-		a.Equal(len(ps.fields), 2)
+		a.Equal(ps.v.Count(), 1)
 
 		return nil
 	})
@@ -109,7 +81,7 @@ func TestParams_Int_MustInt(t *testing.T) {
 	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Bool_MustBool(t *testing.T) {
+func TestParams_Bool(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081"))
@@ -119,23 +91,11 @@ func TestParams_Bool_MustBool(t *testing.T) {
 		ps := ctx.Params()
 
 		a.True(ps.Bool("b1"))
-		a.False(ps.Bool("b2"))
+		a.False(ps.Bool("b2")).Equal(ps.v.Count(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.False(ps.Bool("b3"))
-		a.Equal(len(ps.fields), 1)
-
-		// MustBool() 不会增加错误信息
-		a.True(ps.MustBool("b3", true))
-		a.Equal(len(ps.fields), 1)
-
-		// MustBool() 无法转换，会返回默认值，且添加错误信息
-		a.True(ps.MustBool("str", true))
-		a.Equal(len(ps.Errors()), 2)
-
-		// MustBool() 能正常转换
-		a.True(ps.MustBool("b1", false))
-		a.Equal(len(ps.Errors()), 2)
+		a.Equal(ps.v.Count(), 1)
 
 		return nil
 	})
@@ -144,7 +104,7 @@ func TestParams_Bool_MustBool(t *testing.T) {
 	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_String_MustString(t *testing.T) {
+func TestParams_String(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
@@ -155,19 +115,11 @@ func TestParams_String_MustString(t *testing.T) {
 
 		a.Equal(ps.String("s1"), "str1")
 		a.Equal(ps.String("s2"), "str2")
-		a.False(ps.HasErrors())
+		a.Zero(ps.v.Count())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.String("s3"), "")
-		a.Equal(len(ps.fields), 1)
-
-		// MustString() 不会增加错误信息
-		a.Equal(ps.MustString("s3", "str3"), "str3")
-		a.Equal(len(ps.Errors()), 1)
-
-		// MustString() 能正常转换
-		a.Equal(ps.MustString("s1", "str3"), "str1")
-		a.Equal(len(ps.Errors()), 1)
+		a.Equal(ps.v.Count(), 1)
 
 		return nil
 	})
@@ -176,7 +128,7 @@ func TestParams_String_MustString(t *testing.T) {
 	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Float_MustFloat(t *testing.T) {
+func TestParams_Float(t *testing.T) {
 	a := assert.New(t, false)
 	server := newServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
@@ -187,23 +139,11 @@ func TestParams_Float_MustFloat(t *testing.T) {
 
 		a.Equal(ps.Float64("f1"), 1.1)
 		a.Equal(ps.Float64("f2"), 2.2)
-		a.False(ps.HasErrors())
+		a.Zero(ps.v.Count())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Float64("f3"), 0.0)
-		a.Equal(len(ps.fields), 1)
-
-		// MustFloat64() 不会增加错误信息
-		a.Equal(ps.MustFloat64("id3", 3.3), 3.3)
-		a.Equal(len(ps.fields), 1)
-
-		// MustFloat64() 无法转换，会返回默认值，且添加错误信息
-		a.Equal(ps.MustFloat64("str", 3.3), 3.3)
-		a.Equal(len(ps.Errors()), 2)
-
-		// MustFloat64() 正常转换
-		a.Equal(ps.MustFloat64("f1", 3.3), 1.1)
-		a.Equal(len(ps.Errors()), 2)
+		a.Equal(ps.v.Count(), 1)
 
 		return nil
 	})
@@ -211,7 +151,6 @@ func TestParams_Float_MustFloat(t *testing.T) {
 	srv := rest.NewServer(a, server.Routers(), nil)
 	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
-*/
 
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t, false)

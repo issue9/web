@@ -21,11 +21,8 @@ type Problem interface {
 	// 如果添加的字段名称与现有的字段重名，应当 panic。
 	With(key string, val any) Problem
 
-	// AddParam 添加一条新的错误信息
+	// AddParam 添加数据验证错误信息
 	AddParam(name string, reason string) Problem
-
-	// Params 返回错误信息的数量
-	Params() int
 }
 
 // BuildFunc 生成 [Problem] 对象的方法

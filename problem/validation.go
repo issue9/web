@@ -5,26 +5,38 @@ package problem
 import (
 	"reflect"
 	"strconv"
+	"sync"
 
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message"
 )
 
+const validationPoolMaxSize = 20
+
+var validationPool = &sync.Pool{New: func() any {
+	return &Validation{
+		keys:    make([]string, 0, 5),
+		reasons: make([]localeutil.LocaleStringer, 0, 5),
+	}
+}}
+
+var (
+	isNotSlice = localeutil.Phrase("the type is not slice or array")
+	isNotMap   = localeutil.Phrase("the type is not map")
+)
+
 type (
+	// Validation 验证工具
 	Validation struct {
 		exitAtError bool
-		problems    *Problems
-		params      []localeParam
-	}
 
-	localeParam struct {
-		name   string
-		reason localeutil.LocaleStringer
+		keys    []string
+		reasons []localeutil.LocaleStringer
 	}
 
 	// Rule 验证规则
 	//
-	// 这是对 Validator 的二次包装，保存着未本地化的错误信息，用以在验证失败之后返回给 Validation。
+	// 与 Validator 相比，包含了本地化的错误信息。
 	Rule struct {
 		validator Validator
 		message   localeutil.LocaleStringer
@@ -40,9 +52,9 @@ type (
 	ValidateFunc func(any) bool
 )
 
-// IsValid 将当前函数作为 Validator 使用
 func (f ValidateFunc) IsValid(v any) bool { return f(v) }
 
+// OrValidators 将多个验证函数以与的形式合并为一个验证函数
 func AndValidators(v ...Validator) Validator {
 	return ValidateFunc(func(a any) bool {
 		for _, validator := range v {
@@ -54,6 +66,7 @@ func AndValidators(v ...Validator) Validator {
 	})
 }
 
+// OrValidators 将多个验证函数以或的形式合并为一个验证函数
 func OrValidators(v ...Validator) Validator {
 	return ValidateFunc(func(a any) bool {
 		for _, validator := range v {
@@ -65,10 +78,6 @@ func OrValidators(v ...Validator) Validator {
 	})
 }
 
-func FalseValidator(any) bool { return false }
-
-func TrueValidator(any) bool { return true }
-
 func NewRule(validator Validator, key message.Reference, v ...any) *Rule {
 	return &Rule{
 		validator: validator,
@@ -76,28 +85,44 @@ func NewRule(validator Validator, key message.Reference, v ...any) *Rule {
 	}
 }
 
-// New 返回 Validation 对象
-func (p *Problems) NewValidation() *Validation {
-	return &Validation{
-		exitAtError: p.exitAtError,
-		problems:    p,
-		params:      make([]localeParam, 0, 5),
+// NewValidation 声明验证对象
+//
+// exitAtError 表示是在验证出错时，是否还继续其它字段的验证。
+func NewValidation(exitAtError bool) *Validation {
+	v := validationPool.Get().(*Validation)
+	v.exitAtError = exitAtError
+	v.keys = v.keys[:0]
+	v.reasons = v.reasons[:0]
+	return v
+}
+
+func (v *Validation) Count() int { return len(v.keys) }
+
+// Visit 依次访问每一条错误信息
+//
+// f 为访问错误信息的方法，其原型为：
+//  func(key string, reason localeutil.LocaleStringer) (ok bool)
+// 其中的 key 为名称，reason 为出错原因，返回值 ok 表示是否继续下一条信息的访问。
+func (v *Validation) Visit(f func(string, localeutil.LocaleStringer) bool) {
+	for index, key := range v.keys {
+		if !f(key, v.reasons[index]) {
+			break
+		}
 	}
 }
 
-func (v *Validation) Problem(id string, p *message.Printer) Problem {
-	if len(v.params) > 0 {
-		pp := v.problems.Problem(id, p)
-		for _, param := range v.params {
-			pp.AddParam(param.name, param.reason.LocaleString(p))
-		}
-		return pp
+// Destroy 回收当前对象
+//
+// 这不是一个必须调用的方法，但是该方法在大量频繁地的使用 Validation 时有一定的性能提升。
+func (v *Validation) Destroy() {
+	if v.Count() < validationPoolMaxSize {
+		validationPool.Put(v)
 	}
-	return nil
 }
 
 func (v *Validation) Add(name string, reason localeutil.LocaleStringer) {
-	v.params = append(v.params, localeParam{name: name, reason: reason})
+	v.keys = append(v.keys, name)
+	v.reasons = append(v.reasons, reason)
 }
 
 // AddField 验证新的字段
@@ -106,7 +131,7 @@ func (v *Validation) Add(name string, reason localeutil.LocaleStringer) {
 // name 表示当前字段的名称，当验证出错时，以此值作为名称返回给用户；
 // rules 表示验证的规则，按顺序依次验证。
 func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation {
-	if len(v.params) > 0 && v.problems.exitAtError {
+	if v.Count() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -121,16 +146,18 @@ func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation 
 
 // AddSliceField 验证数组字段
 //
-// 如果字段类型不是数组或是字符串，将直接返回错误。
+// 如果字段类型不是数组或是字符串，将添加一条错误信息，并退出验证。
 func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 []T
+
+	if v.Count() > 0 && v.exitAtError {
+		return v
+	}
 
 	rv := reflect.ValueOf(val)
 
 	if kind := rv.Kind(); kind != reflect.Array && kind != reflect.Slice && kind != reflect.String {
-		// 非数组，取第一个规则的错误信息。
-		// TODO: 改成专门的错误信息
-		v.Add(name, rules[0].message)
+		v.Add(name, isNotSlice)
 		return v
 	}
 
@@ -150,16 +177,17 @@ func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Valida
 
 // AddMapField 验证 map 字段
 //
-// 如果字段类型不是 map，将直接返回错误。
+// 如果字段类型不是 map，将添加一条错误信息，并退出验证。
 func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 map[T]T
 
-	rv := reflect.ValueOf(val)
+	if v.Count() > 0 && v.exitAtError {
+		return v
+	}
 
+	rv := reflect.ValueOf(val)
 	if kind := rv.Kind(); kind != reflect.Map {
-		// 非数组，取第一个规则的错误信息。
-		// TODO: 改成专门的错误信息
-		v.Add(name, rules[0].message)
+		v.Add(name, isNotMap)
 		return v
 	}
 
