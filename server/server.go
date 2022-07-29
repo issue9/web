@@ -86,7 +86,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		problems:   problem.NewProblems(problem.RFC7807Builder, "", false), // TODO
+		problems:   problem.NewProblems(o.ProblemBuilder),
 
 		closed: make(chan struct{}, 1),
 

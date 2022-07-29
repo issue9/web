@@ -9,11 +9,13 @@ import (
 	"golang.org/x/text/message"
 )
 
+const aboutBlank = "about:blank"
+
 type Problems struct {
-	builder     BuildFunc
-	typeBaseURL string
-	problems    map[string]*statusProblem
-	blank       bool // Problems.Problem 不输出 id 值
+	builder  BuildFunc
+	baseURL  string
+	problems map[string]*statusProblem
+	blank    bool // Problems.Problem 不输出 id 值
 }
 
 type statusProblem struct {
@@ -22,23 +24,36 @@ type statusProblem struct {
 	detail localeutil.LocaleStringer
 }
 
-// NewProblems 声明 [Problems] 对象
-//
-// base type 字段的基地址；
-// blank [Problems.Problem] 生成的对象是否包含 id。
-func NewProblems(f BuildFunc, base string, blank bool) *Problems {
+func NewProblems(f BuildFunc) *Problems {
 	return &Problems{
-		builder:     f,
-		typeBaseURL: base,
-		blank:       blank,
-		problems:    make(map[string]*statusProblem, 50),
+		builder:  f,
+		problems: make(map[string]*statusProblem, 50),
 	}
+}
+
+// BaseURL [BuildFunc] 参数 id 的前缀
+//
+// 返回的内容说明，可参考 [Problems.SetBaseURL]。
+func (p *Problems) BaseURL() string { return p.baseURL }
+
+// SetBaseURL 设置传递给 [BuildFunc] 中 id 参数的前缀
+//
+// [Problem] 实现者可以根据自由决定 id 字终以什么形式展示，
+// 此处的设置只是决定了传递给 [BuildFunc] 的 id 参数格式。
+// 可以有以下三种形式：
+//
+//  - 空值 不作任何改变；
+//  - about:blank 将传递空值给 [BuildFunc]；
+//  - 其它非空值 以前缀形式附加在原本的 id 之上；
+func (p *Problems) SetBaseURL(base string) {
+	p.baseURL = base
+	p.blank = base == aboutBlank
 }
 
 // AddProblem 添加新的错误类型
 //
-// id 表示该错误的唯一值。
-// [Problems.Problem] 会根据此值查找相应的文字说明给予 title 和 detail 字段；
+// id 表示该错误的唯一值；
+// [Problems.Problem] 会根据此值查找相应的文字说明给予 title 字段；
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
@@ -68,7 +83,7 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 
 // Problem 根据 id 生成 [Problem] 对象
 //
-// id 通过此值查找相应的 title 和 detail 值；
+// id 通过此值查找相应的 title；
 func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 	sp, found := p.problems[id]
 	if !found {
@@ -78,7 +93,7 @@ func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 	if p.blank {
 		id = ""
 	} else {
-		id = p.typeBaseURL + id
+		id = p.baseURL + id
 	}
 	return p.builder(id, sp.title.LocaleString(printer), sp.status)
 }

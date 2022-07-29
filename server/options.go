@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/problem"
 )
 
 // Options 初始化 Server 的参数
@@ -37,6 +39,11 @@ type Options struct {
 	//
 	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会输出到任何通道。
 	Logs *logs.Logs
+
+	// 生成 [problem.Problem] 对象的方法
+	//
+	// 如果为空，那么将采用 [problem.RFC7807Builder] 作为默认值。
+	ProblemBuilder problem.BuildFunc
 
 	// 默认的语言标签
 	//
@@ -75,6 +82,10 @@ func (o *Options) sanitize() (err error) {
 
 	if o.Logs == nil {
 		o.Logs = logs.New(nil)
+	}
+
+	if o.ProblemBuilder == nil {
+		o.ProblemBuilder = problem.RFC7807Builder
 	}
 
 	if o.LanguageTag == language.Und {

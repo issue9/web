@@ -20,6 +20,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server"
 )
 
@@ -61,7 +62,7 @@ type AppOf[T any] struct {
 	Name    string // 程序名称
 	Version string // 程序版本
 
-	// 在运行服务之前对 Server 的额外操作
+	// 在运行服务之前对 [server.Server] 的额外操作
 	//
 	// 比如添加模块等。不可以为空。
 	// user 为用户自定义的数据类型；
@@ -75,15 +76,20 @@ type AppOf[T any] struct {
 
 	// 配置文件的文件名
 	//
-	// 需要保证 RegisterFileSerializer 能解析此文件指定的内容；
+	// 需要保证 [RegisterFileSerializer] 能解析此文件指定的内容；
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	ConfigFilename string
 
+	// 设置生成 [problem.Problem] 对象的方法
+	//
+	// 如果为空，则由 [server.Server.New] 决定其默认值。
+	ProblemBuilder problem.BuildFunc
+
 	// 本地化 AppOf 中的命令行信息
 	//
 	// 可以为空，那么这些命令行信息将显示默认内容。
-	// 这与 server.Server.Catalog 并不是同一个对象。
+	// 这与 [server.Server.CatalogBuilder()] 并不是同一个对象。
 	Catalog catalog.Catalog
 
 	// 触发退出的信号
@@ -160,7 +166,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, os.DirFS(*f), cmd.ConfigFilename)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, os.DirFS(*f), cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}

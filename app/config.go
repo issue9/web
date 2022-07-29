@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/serialization"
+	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server"
 )
 
@@ -85,7 +86,7 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, pb problem.BuildFunc, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		s, err := server.New(name, version, &server.Options{FS: fsys})
 		return s, nil, err
@@ -97,12 +98,13 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 	}
 
 	opt := &server.Options{
-		FS:          fsys,
-		Location:    conf.location,
-		Cache:       conf.cache,
-		HTTPServer:  conf.http,
-		Logs:        conf.logs,
-		LanguageTag: conf.languageTag,
+		FS:             fsys,
+		Location:       conf.location,
+		Cache:          conf.cache,
+		HTTPServer:     conf.http,
+		Logs:           conf.logs,
+		ProblemBuilder: pb,
+		LanguageTag:    conf.languageTag,
 	}
 	srv, err := server.New(name, version, opt)
 	if err != nil {
