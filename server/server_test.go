@@ -60,11 +60,7 @@ func TestServer_Serve(t *testing.T) {
 	router.Get("/mux/test", servertest.BuildHandler(202))
 	router.Get("/m1/test", servertest.BuildHandler(202))
 
-	a.False(srv.Server().Serving())
-
 	router.Get("/m2/test", func(ctx *server.Context) response.Responser {
-		a.True(srv.Server().Serving())
-
 		srv := ctx.Server()
 		a.NotNil(srv)
 
@@ -90,8 +86,6 @@ func TestServer_Serve(t *testing.T) {
 
 	srv.Close(0)
 	srv.Wait()
-
-	a.False(srv.Server().Serving())
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
@@ -148,7 +142,7 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	buf := new(bytes.Buffer)
-	srv.Server().AddService("srv1", func(ctx context.Context) error {
+	srv.Server().Services().Add("srv1", func(ctx context.Context) error {
 		c := time.Tick(10 * time.Millisecond)
 		for {
 			select {

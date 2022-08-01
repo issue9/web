@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -25,6 +24,7 @@ import (
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/service"
 )
 
 const (
@@ -46,17 +46,13 @@ type Server struct {
 	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
-	serving    bool
 	modules    []string // 保存着模块名称，用于检测是否存在重名
 	routers    *Routers
 	problems   *problem.Problems
+	services   *service.Server
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
 	closes []func() error
-
-	// service
-	services  []*Service
-	scheduled *scheduled.Server
 
 	// locale
 	locale *locale.Locale
@@ -75,6 +71,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
+	loc := locale.New(o.Location, o.LanguageTag)
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -87,15 +84,12 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:      o.Cache,
 		uptime:     time.Now(),
 		problems:   problem.NewProblems(o.ProblemBuilder),
+		services:   service.NewServer(o.Logs, o.Location, loc.Printer),
 
 		closed: make(chan struct{}, 1),
 
-		// service
-		services:  make([]*Service, 0, 100),
-		scheduled: scheduled.NewServer(o.Location),
-
 		// locale
-		locale: locale.New(o.Location, o.LanguageTag),
+		locale: loc,
 		files:  serialization.NewFS(5),
 	}
 	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
@@ -146,11 +140,11 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // 会等待 Server.Close() 执行完之后，此函数才会返回，这一点与 Http.ListenAndServe 稍有不同。
 // 一旦返回，整个 Server 对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
-	srv.runServices()
+	srv.services.Run()
 
 	// 在 Serve.defer 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
 	defer func() {
-		srv.stopServices()
+		srv.services.Stop()
 
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes {
@@ -159,8 +153,6 @@ func (srv *Server) Serve() (err error) {
 			}
 		}
 	}()
-
-	srv.serving = true
 
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
@@ -184,8 +176,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
 		srv.closed <- struct{}{}
 	}()
-
-	srv.serving = false
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()
@@ -224,9 +214,6 @@ func (srv *Server) LocalePrinter() *message.Printer { return srv.locale.Printer 
 // Tag 返回默认的语言标签
 func (srv *Server) Tag() language.Tag { return srv.locale.Tag }
 
-// Serving 是否处于服务状态
-func (srv *Server) Serving() bool { return srv.serving }
-
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
@@ -248,3 +235,6 @@ func (srv *Server) AllowEncoding(contentType string, id ...string) {
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func (srv *Server) Problems() *problem.Problems { return srv.problems }
+
+// Services 服务管理
+func (srv *Server) Services() *service.Server { return srv.services }
