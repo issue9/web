@@ -9,13 +9,13 @@ import (
 	"github.com/issue9/assert/v2"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+
+	"github.com/issue9/web/internal/locale"
 )
 
 func newServer(a *assert.Assertion) *Server {
 	a.TB().Helper()
-	p := message.NewPrinter(language.SimplifiedChinese)
-	srv := NewServer(logs.New(nil), time.Local, p)
+	srv := InternalNewServer(logs.New(nil), locale.New(time.Local, language.SimplifiedChinese))
 	a.NotNil(srv)
 	return srv
 }

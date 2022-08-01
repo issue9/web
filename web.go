@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 // Package web 一个微型的 web 框架
+//
+// NOTE: 所有以 Internal 开头的公开函数，表示这个函数是仅模块可见的。
 package web
 
 import (

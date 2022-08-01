@@ -84,7 +84,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:      o.Cache,
 		uptime:     time.Now(),
 		problems:   problem.NewProblems(o.ProblemBuilder),
-		services:   service.NewServer(o.Logs, o.Location, loc.Printer),
+		services:   service.InternalNewServer(o.Logs, loc),
 
 		closed: make(chan struct{}, 1),
 
