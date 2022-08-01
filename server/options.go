@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/web/problem"
 )
 
-// Options 初始化 Server 的参数
 type Options struct {
 	// 项目默认可存取的文件系统
 	//
@@ -59,11 +58,15 @@ type Options struct {
 	HTTPServer *http.Server
 }
 
-func (o *Options) sanitize() (err error) {
+func sanitizeOptions(o *Options) (*Options, error) {
+	if o == nil {
+		o = &Options{}
+	}
+
 	if o.FS == nil {
 		dir, err := os.Executable()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		o.FS = os.DirFS(filepath.Dir(dir))
 	}
@@ -89,10 +92,12 @@ func (o *Options) sanitize() (err error) {
 	}
 
 	if o.LanguageTag == language.Und {
-		if o.LanguageTag, err = localeutil.DetectUserLanguageTag(); err != nil {
+		tag, err := localeutil.DetectUserLanguageTag()
+		if err != nil {
 			o.Logs.Error(err) // 输出错误，但是没必要中断程序。
 		}
+		o.LanguageTag = tag
 	}
 
-	return nil
+	return o, nil
 }

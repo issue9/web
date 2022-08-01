@@ -24,7 +24,6 @@ import (
 	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
-	"github.com/issue9/web/server/response"
 )
 
 const (
@@ -260,53 +259,6 @@ func (ctx *Context) OnExit(f func(int)) {
 	ctx.exits = append(ctx.exits, f)
 }
 
-// Body 获取用户提交的内容
-//
-// 相对于 ctx.Request().Body，此函数可多次读取。不存在 body 时，返回 nil
-func (ctx *Context) Body() (body []byte, err error) {
-	if ctx.read {
-		return ctx.body, nil
-	}
-
-	var reader io.Reader = ctx.Request().Body
-	if !charsetIsNop(ctx.inputCharset) {
-		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
-	}
-
-	if ctx.body == nil {
-		ctx.body = make([]byte, 0, defaultBodyBufferSize)
-	}
-
-	for {
-		if len(ctx.body) == cap(ctx.body) {
-			ctx.body = append(ctx.body, 0)[:len(ctx.body)]
-		}
-		n, err := reader.Read(ctx.body[len(ctx.body):cap(ctx.body)])
-		ctx.body = ctx.body[:len(ctx.body)+n]
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-	}
-
-	ctx.read = true
-	return ctx.body, err
-}
-
-// Unmarshal 将提交的内容转换成 v 对象
-func (ctx *Context) Unmarshal(v any) error {
-	body, err := ctx.Body()
-	if err != nil {
-		return err
-	}
-
-	if len(body) == 0 {
-		return nil
-	}
-	return ctx.inputMimetype(body, v)
-}
-
 // Marshal 向客户端输出内容
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
@@ -389,27 +341,6 @@ func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location()) }
 // ParseTime 分析基于当前时区的时间
 func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, ctx.Location())
-}
-
-// Read 从客户端读取数据并转换成 v 对象
-//
-// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，返回的不是 error，
-// 而是一个表示错误信息的 Response 对象。
-//
-// 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，会输出以 id 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, id string) response.Responser {
-	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Error(http.StatusUnprocessableEntity, err)
-	}
-
-	if vv, ok := v.(CTXSanitizer); ok {
-		if va := vv.CTXSanitize(ctx); va != nil {
-			return va.Problem(ctx.Server().Problems(), id, ctx.LocalePrinter())
-		}
-	}
-
-	return nil
 }
 
 // ClientIP 返回客户端的 IP 地址及端口

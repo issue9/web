@@ -64,10 +64,8 @@ type Server struct {
 // name, version 表示服务的名称和版本号；
 // o 指定了初始化 Server 一些非必要参数。在传递给 New 之后，再对其值进行改变，是无效的。
 func New(name, version string, o *Options) (*Server, error) {
-	if o == nil {
-		o = &Options{}
-	}
-	if err := o.sanitize(); err != nil {
+	o, err := sanitizeOptions(o)
+	if err != nil {
 		return nil, err
 	}
 

@@ -21,7 +21,6 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/term/v3/colors"
-	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
@@ -226,84 +225,6 @@ func TestServer_newContext(t *testing.T) {
 		Equal(ctx.outputCharsetName, DefaultCharset)
 }
 
-func TestContext_Body(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
-
-	// 未缓存
-	r := rest.Post(a, "/path", []byte("123")).Request()
-	w := httptest.NewRecorder()
-	ctx := srv.newContext(w, r, nil)
-	a.Nil(ctx.body)
-	data, err := ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
-
-	// 读取缓存内容
-	data, err = ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
-
-	// 采用 Nop 即 utf-8 编码
-	r = rest.Post(a, "/path", []byte("123")).Request()
-	ctx = srv.newContext(w, r, nil)
-	ctx.inputCharset = encoding.Nop
-	data, err = ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
-
-	// 采用不同的编码
-	r = rest.Post(a, "/path", gbkBytes1).
-		Header("Content-type", "text/plain;charset=gb18030").
-		Request()
-	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
-	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
-	a.Equal(ctx.body, data)
-
-	// 采用不同的编码
-	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", gbkBytes1).
-		Header("Accept", "*/*").
-		Header("Content-Type", buildContentType(text.Mimetype, " gb18030")).
-		Request()
-	ctx = srv.newContext(w, r, nil)
-	a.NotNil(ctx)
-	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
-	a.Equal(ctx.body, data)
-}
-
-func TestContext_Unmarshal(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newServer(a, nil)
-
-	r := rest.Post(a, "/path", []byte("test,123")).
-		Header("content-type", text.Mimetype).
-		Request()
-	w := httptest.NewRecorder()
-	ctx := srv.newContext(w, r, nil)
-
-	obj := &testobject.TextObject{}
-	a.NotError(ctx.Unmarshal(obj))
-	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
-
-	// 无法转换
-	o := &struct{}{}
-	a.Error(ctx.Unmarshal(o))
-
-	// 空提交
-	r = rest.Post(a, "/path", nil).
-		Header("content-type", text.Mimetype).
-		Request()
-	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
-	obj = &testobject.TextObject{}
-	a.NotError(ctx.Unmarshal(obj))
-	a.Equal(obj.Name, "").Equal(obj.Age, 0)
-}
-
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
@@ -506,30 +427,6 @@ func TestServer_Location(t *testing.T) {
 	if now2.Location() != srv.Location() {
 		a.NotEqual(ctx.Location(), srv.Location())
 	}
-}
-
-func TestContext_Read(t *testing.T) {
-	a := assert.New(t, false)
-
-	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", buildContentType(text.Mimetype, "utf-8")).
-		Request()
-	ctx := newServer(a, nil).newContext(w, r, nil)
-	obj := &testobject.TextObject{}
-	a.Nil(ctx.Read(obj, "41110"))
-	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
-
-	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", buildContentType(text.Mimetype, "utf-8")).
-		Request()
-	ctx = newServer(a, nil).newContext(w, r, nil)
-	o := &struct{}{}
-	resp := ctx.Read(o, "41110")
-	a.NotNil(resp)
-	resp.Apply(ctx)
-	a.Equal(w.Code, http.StatusUnprocessableEntity)
 }
 
 func TestContext_ClientIP(t *testing.T) {

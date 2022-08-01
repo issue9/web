@@ -9,11 +9,11 @@ import (
 	"github.com/issue9/assert/v2"
 )
 
-func TestOptions_sanitize(t *testing.T) {
+func TestSanitizeOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	o := &Options{}
-	a.NotError(o.sanitize())
+	o, err := sanitizeOptions(nil)
+	a.NotError(err).NotNil(o)
 	a.Equal(o.Location, time.Local).
 		NotNil(o.Logs).
 		NotNil(o.ProblemBuilder)
