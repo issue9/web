@@ -50,7 +50,7 @@ func (p *Problems) SetBaseURL(base string) {
 	p.blank = base == aboutBlank
 }
 
-// AddProblem 添加新的错误类型
+// Add 添加新的错误类型
 //
 // id 表示该错误的唯一值；
 // [Problems.Problem] 会根据此值查找相应的文字说明给予 title 字段；

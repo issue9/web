@@ -8,7 +8,7 @@ import "github.com/issue9/web/server/response"
 // Problem API 错误信息对象需要实现的接口
 //
 // 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
-// 就要实现 [json.Marshaler] 接口，或是相应的 struct tag。
+// 就要实现 json.Marshaler 接口或是相应的 struct tag。
 //
 // 并未规定 [Problem] 实现都输出的字段以及布局，实现者可以根据 [BuildFunc]
 // 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 实现了一个简要的

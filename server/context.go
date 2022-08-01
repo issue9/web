@@ -5,7 +5,6 @@ package server
 import (
 	"errors"
 	"io"
-	"mime"
 	"net/http"
 	"strings"
 	"sync"
@@ -51,11 +50,12 @@ type CTXSanitizer interface {
 // 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
 // 而是采用返回 Responser 的方式向客户端输出内容。
 type Context struct {
-	server      *Server
-	route       types.Route
-	request     *http.Request
-	contentType string
-	exits       []func(int)
+	server             *Server
+	route              types.Route
+	request            *http.Request
+	outputMimetypeName string
+	outputCharsetName  string
+	exits              []func(int)
 
 	// response
 	resp           http.ResponseWriter // 原始的 http.ResponseWriter
@@ -117,7 +117,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
 	header = r.Header.Get("Content-Type")
-	inputMimetype, inputCharset, err := srv.contentType(header)
+	inputMimetype, inputCharset, err := srv.mimetypes.ContentType(header, DefaultMimetype, DefaultCharset)
 	if err != nil {
 		srv.Logs().Debug(err)
 		w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -130,7 +130,8 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.server = srv
 	ctx.route = route
 	ctx.request = r
-	ctx.contentType = buildContentType(outputMimetypeName, outputCharsetName)
+	ctx.outputMimetypeName = outputMimetypeName
+	ctx.outputCharsetName = outputCharsetName
 	if len(ctx.exits) > 0 {
 		ctx.exits = ctx.exits[:0]
 	}
@@ -323,7 +324,7 @@ func (ctx *Context) Marshal(status int, body any) error {
 		return localeutil.Error("%s can not be empty", "ctx.outputMimetype")
 	}
 
-	ctx.Header().Set("Content-Type", ctx.contentType)
+	ctx.Header().Set("Content-Type", buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}
@@ -380,34 +381,6 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	}
 	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
 	return tag
-}
-
-func (srv *Server) contentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
-	var mt, charset = DefaultMimetype, DefaultCharset
-
-	if header != "" {
-		m, ps, err := mime.ParseMediaType(header)
-		if err != nil {
-			return nil, nil, err
-		}
-		mt = m
-
-		if c := ps["charset"]; c != "" {
-			charset = c
-		}
-	}
-
-	f, found := srv.mimetypes.UnmarshalFunc(mt)
-	if !found {
-		return nil, nil, localeutil.Error("not found serialization function for %s", mt)
-	}
-
-	e, err := htmlindex.Get(charset)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return f, e, nil
 }
 
 // Now 返回以 ctx.Location 为时区的当前时间

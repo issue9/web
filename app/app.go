@@ -3,7 +3,7 @@
 // Package app 提供构建程序的简便方法
 //
 // app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
-// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 server.New。
+// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 [server.New]。
 package app
 
 import (
@@ -59,6 +59,10 @@ import (
 //
 // T 表示的是配置文件中的用户自定义数据类型，如果不需要可以设置为 struct{}。
 type AppOf[T any] struct {
+	// NOTE: AppOf 仅用于初始化 server.Server，不应当赋予 AppOf 太多的功能。
+	// AppOf 对于接口的开发应当是透明的，开发者所有的功能都可以通过 Context
+	// 和 Server 获得。
+
 	Name    string // 程序名称
 	Version string // 程序版本
 
@@ -89,7 +93,6 @@ type AppOf[T any] struct {
 	// 本地化 AppOf 中的命令行信息
 	//
 	// 可以为空，那么这些命令行信息将显示默认内容。
-	// 这与 [server.Server.CatalogBuilder()] 并不是同一个对象。
 	Catalog catalog.Catalog
 
 	// 触发退出的信号
@@ -108,7 +111,7 @@ type AppOf[T any] struct {
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
 func (cmd *AppOf[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
-		panic(err) // 配置错误直接 panic
+		os.Exit(2)
 	}
 	return cmd.exec(args)
 }

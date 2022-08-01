@@ -191,7 +191,8 @@ func TestServer_newContext(t *testing.T) {
 	a.NotNil(ctx)
 	a.Empty(lw.String())
 	a.True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.contentType, "application/json; charset=utf-8").
+		Equal(ctx.outputMimetypeName, "application/json").
+		Equal(ctx.outputCharsetName, "utf-8").
 		Equal(ctx.inputMimetype, serializer.UnmarshalFunc(text.Unmarshal)).
 		Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter())
@@ -207,7 +208,8 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.contentType, buildContentType(text.Mimetype, DefaultCharset))
+		Equal(ctx.outputMimetypeName, text.Mimetype).
+		Equal(ctx.outputCharsetName, DefaultCharset)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
@@ -220,7 +222,8 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(charsetIsNop(ctx.inputCharset)).
-		Equal(ctx.contentType, buildContentType(text.Mimetype, DefaultCharset))
+		Equal(ctx.outputMimetypeName, text.Mimetype).
+		Equal(ctx.outputCharsetName, DefaultCharset)
 }
 
 func TestContext_Body(t *testing.T) {
@@ -411,7 +414,9 @@ func TestContext_Marshal(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", "nil").Request()
 	ctx = srv.newContext(w, r, nil)
-	a.Nil(ctx.outputMimetype).Equal(ctx.contentType, buildContentType("nil", DefaultCharset))
+	a.Nil(ctx.outputMimetype).
+		Equal(ctx.outputMimetypeName, "nil").
+		Equal(ctx.outputCharsetName, DefaultCharset)
 	a.Equal(ctx.Marshal(http.StatusCreated, "val"), localeutil.Error("%s can not be empty", "ctx.outputMimetype"))
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
@@ -482,27 +487,6 @@ func TestServer_acceptLanguage(t *testing.T) {
 
 	tag = srv.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-}
-
-func TestServer_contentType(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
-	a.NotNil(srv)
-
-	f, e, err := srv.contentType(";;;")
-	a.Error(err).Nil(f).Nil(e)
-
-	// 不存在的 mimetype
-	f, e, err = srv.contentType(buildContentType("not-exists", DefaultCharset))
-	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
-
-	f, e, err = srv.contentType(buildContentType(DefaultMimetype, DefaultCharset))
-	a.NotError(err).NotNil(f).NotNil(e)
-
-	// 无效的字符集名称
-	f, e, err = srv.contentType(buildContentType(DefaultMimetype, "invalid-charset"))
-	a.Error(err).Nil(f).Nil(e)
 }
 
 func TestServer_Location(t *testing.T) {

@@ -8,38 +8,61 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/localeutil"
 
 	"github.com/issue9/web/serializer"
 )
 
 const testMimetype = "application/octet-stream"
 
-func TestMimetypes_UnmarshalFunc(t *testing.T) {
+func TestMimetypes_unmarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
 
 	mt := NewMimetypes(10)
 	a.NotNil(mt)
 
-	um, found := mt.UnmarshalFunc("")
+	um, found := mt.unmarshalFunc("")
 	a.False(found).Nil(um)
 
 	a.NotError(mt.Add(json.Marshal, json.Unmarshal, testMimetype))
 
-	um, found = mt.UnmarshalFunc(testMimetype)
+	um, found = mt.unmarshalFunc(testMimetype)
 	a.True(found).NotNil(um)
 
 	// 未指定 mimetype
-	um, found = mt.UnmarshalFunc("")
+	um, found = mt.unmarshalFunc("")
 	a.False(found).Nil(um)
 
 	// mimetype 无法找到
-	um, found = mt.UnmarshalFunc("not-exists")
+	um, found = mt.unmarshalFunc("not-exists")
 	a.False(found).Nil(um)
 
 	// 空的 UnmarshalFunc
 	a.NotError(mt.Add(json.Marshal, nil, "empty"))
-	um, found = mt.UnmarshalFunc("empty")
+	um, found = mt.unmarshalFunc("empty")
 	a.True(found).Nil(um)
+}
+
+func TestMimetypes_ContentType(t *testing.T) {
+	a := assert.New(t, false)
+
+	mt := NewMimetypes(10)
+	a.NotError(mt.Add(json.Marshal, json.Unmarshal, "application/octet-stream"))
+	a.NotNil(mt)
+
+	f, e, err := mt.ContentType(";;;", "application/octet-stream", "utf-8")
+	a.Error(err).Nil(f).Nil(e)
+
+	// 不存在的 mimetype
+	f, e, err = mt.ContentType("not-exists; charset=utf-8", "application/octet-stream", "utf-8")
+	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+
+	f, e, err = mt.ContentType("application/octet-stream; charset=utf-8", "application/octet-stream", "utf-8")
+	a.NotError(err).NotNil(f).NotNil(e)
+
+	// 无效的字符集名称
+	f, e, err = mt.ContentType("application/octet-stream; invalid-charset", "application/octet-stream", "utf-8")
+	a.Error(err).Nil(f).Nil(e)
 }
 
 func TestMimetypes_MarshalFunc(t *testing.T) {

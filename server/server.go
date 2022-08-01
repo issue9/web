@@ -205,7 +205,7 @@ func (ctx *Context) Server() *Server { return ctx.server }
 // Files 返回用于序列化文件内容的操作接口
 func (srv *Server) Files() serializer.FS { return srv.files }
 
-// Locale 操作操作本地化文件的接口
+// LoadLocale 加载本地化的文件
 func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 	if fsys == nil {
 		fsys = srv

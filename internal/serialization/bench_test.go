@@ -22,7 +22,7 @@ func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 	}
 }
 
-func BenchmarkMimetypes_UnmarshalFunc(b *testing.B) {
+func BenchmarkMimetypes_unmarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
 	mt := NewMimetypes(10)
 	a.NotNil(mt)
@@ -30,7 +30,20 @@ func BenchmarkMimetypes_UnmarshalFunc(b *testing.B) {
 	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
 
 	for i := 0; i < b.N; i++ {
-		marshal, ok := mt.UnmarshalFunc("font/wottf")
+		marshal, ok := mt.unmarshalFunc("font/wottf")
 		a.True(ok).NotNil(marshal)
+	}
+}
+
+func BenchmarkMimetypes_ContentType(b *testing.B) {
+	a := assert.New(b, false)
+	mt := NewMimetypes(10)
+	a.NotNil(mt)
+
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
+
+	for i := 0; i < b.N; i++ {
+		marshal, encoding, err := mt.ContentType("font/wottf;charset=utf-8", "application/json", "utf-8")
+		a.NotError(err).NotNil(marshal).NotNil(encoding)
 	}
 }

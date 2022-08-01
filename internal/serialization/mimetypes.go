@@ -3,9 +3,13 @@
 package serialization
 
 import (
+	"mime"
 	"strings"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/qheader"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 
 	"github.com/issue9/web/serializer"
 )
@@ -16,10 +20,40 @@ type Mimetypes struct {
 
 func NewMimetypes(c int) *Mimetypes { return &Mimetypes{Serializer: New(c)} }
 
-// UnmarshalFunc 查找指定名称的 UnmarshalFunc
-func (ms *Mimetypes) UnmarshalFunc(name string) (serializer.UnmarshalFunc, bool) {
+func (ms *Mimetypes) unmarshalFunc(name string) (serializer.UnmarshalFunc, bool) {
 	name, _, u := ms.Search(name)
 	return u, name != ""
+}
+
+// ContentType 从 content-type 报头中获取解码和字符集函数
+//
+// header 表示 content-type 报头的内容；
+// mimetype 表示默认解码名称，当 header 为空时采用此值；
+// charset 表示默认字符集，当 header 中未指定时，采用此值；
+func (ms *Mimetypes) ContentType(header, mimetype, charset string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
+	if header != "" {
+		m, ps, err := mime.ParseMediaType(header)
+		if err != nil {
+			return nil, nil, err
+		}
+		mimetype = m
+
+		if c := ps["charset"]; c != "" {
+			charset = c
+		}
+	}
+
+	f, found := ms.unmarshalFunc(mimetype)
+	if !found {
+		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
+	}
+
+	e, err := htmlindex.Get(charset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return f, e, nil
 }
 
 // MarshalFunc 从 header 解析出当前请求所需要的 mimetype 名称和对应的解码函数
