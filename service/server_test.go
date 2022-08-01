@@ -26,7 +26,7 @@ func TestServer_service(t *testing.T) {
 
 	// 未运行
 
-	a.False(srv.running)
+	a.False(srv.Running())
 	a.Equal(0, len(srv.Services()))
 
 	s1, start1, exit1 := buildSrv1()

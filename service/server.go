@@ -28,6 +28,8 @@ func NewServer(logs *logs.Logs, loc *time.Location, p *message.Printer) *Server 
 	}
 }
 
+func (srv *Server) Running() bool { return srv.running }
+
 func (srv *Server) Run() {
 	l := srv.logs
 	msg := srv.p.Sprintf("scheduled job")

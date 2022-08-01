@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package service 服务管理
 package service
 
 import (
