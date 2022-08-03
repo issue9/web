@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/form"
-	"github.com/issue9/web/serializer/gob"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/server"
 )
@@ -43,7 +42,6 @@ type mimetypeConfig struct {
 	//
 	//  - xml
 	//  - json
-	//  - gob
 	//  - form
 	//  - html
 	//  - nil
@@ -117,7 +115,6 @@ func init() {
 	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
 	RegisterMimetype(nil, nil, "nil")
-	RegisterMimetype(gob.Marshal, gob.Unmarshal, "gob")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
 

@@ -29,6 +29,7 @@ import (
 const (
 	contextPoolBodyBufferMaxSize = 1 << 16
 	defaultBodyBufferSize        = 256
+	utf8Name                     = "utf-8"
 )
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
@@ -115,12 +116,17 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 
 	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
 
+	var inputMimetype serializer.UnmarshalFunc
+	var inputCharset encoding.Encoding
 	header = r.Header.Get("Content-Type")
-	inputMimetype, inputCharset, err := srv.mimetypes.ContentType(header, DefaultMimetype, DefaultCharset)
-	if err != nil {
-		srv.Logs().Debug(err)
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		return nil
+	if header != "" {
+		var err error
+		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(header)
+		if err != nil {
+			srv.Logs().Debug(err)
+			w.WriteHeader(http.StatusUnsupportedMediaType)
+			return nil
+		}
 	}
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
@@ -160,7 +166,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		ctx.body = ctx.body[:0]
 	}
 	ctx.read = false
-	ctx.Vars = make(map[any]any)
+	ctx.Vars = map[any]any{}
 
 	return ctx
 }
@@ -308,23 +314,20 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
 func acceptCharset(header string) (name string, enc encoding.Encoding) {
 	if header == "" || header == "*" {
-		return DefaultCharset, nil
+		return utf8Name, nil
 	}
 
 	var err error
 	qh := qheader.Parse(header, "*")
 	for _, item := range qh.Items {
-		enc, err = htmlindex.Get(item.Value)
-		if err != nil { // err != nil 表示未找到，继续查找
+		if enc, err = htmlindex.Get(item.Value); err != nil { // err != nil 表示未找到，继续查找
 			continue
 		}
 
 		// 转换成官方的名称
-		name, err = htmlindex.Name(enc)
-		if err != nil {
-			name = item.Value // 不存在，直接使用用户上传的名称
+		if name, err = htmlindex.Name(enc); err != nil { // 不存在，直接使用用户上传的名称
+			name = item.Value
 		}
-
 		return name, enc
 	}
 
@@ -375,13 +378,12 @@ func charsetIsNop(enc encoding.Encoding) bool {
 	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
 }
 
-// 生成 content-type，若值为空，则会使用默认值代替。
 func buildContentType(mt, charset string) string {
 	if mt == "" {
-		mt = DefaultMimetype
+		panic("mt 不能为空")
 	}
 	if charset == "" {
-		charset = DefaultCharset
+		charset = utf8Name
 	}
 
 	return mt + "; charset=" + charset

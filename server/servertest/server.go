@@ -15,7 +15,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/serializer/gob"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
 )
@@ -42,7 +41,6 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	mimetype := srv.Mimetypes()
 	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
 	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(mimetype.Add(gob.Marshal, gob.Unmarshal, server.DefaultMimetype))
 	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
 	a.NotError(mimetype.Add(nil, nil, "nil"))
 

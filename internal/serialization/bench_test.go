@@ -40,10 +40,25 @@ func BenchmarkMimetypes_ContentType(b *testing.B) {
 	mt := NewMimetypes(10)
 	a.NotNil(mt)
 
-	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/wottf"))
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/1"))
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/2"))
+	a.NotError(mt.Add(xml.Marshal, xml.Unmarshal, "font/3"))
 
-	for i := 0; i < b.N; i++ {
-		marshal, encoding, err := mt.ContentType("font/wottf;charset=utf-8", "application/json", "utf-8")
-		a.NotError(err).NotNil(marshal).NotNil(encoding)
-	}
+	b.Run("charset=utf-8", func(b *testing.B) {
+		a := assert.New(b, false)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			marshal, encoding, err := mt.ContentType("font/2;charset=utf-8")
+			a.NotError(err).NotNil(marshal).Nil(encoding)
+		}
+	})
+
+	b.Run("charset=gbk", func(b *testing.B) {
+		a := assert.New(b, false)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			marshal, encoding, err := mt.ContentType("font/2;charset=gbk")
+			a.NotError(err).NotNil(marshal).NotNil(encoding)
+		}
+	})
 }

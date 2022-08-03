@@ -26,11 +26,6 @@ import (
 	"github.com/issue9/web/service"
 )
 
-const (
-	DefaultMimetype = "application/octet-stream"
-	DefaultCharset  = "utf-8"
-)
-
 type NewEncodingFunc = encoding.NewEncodingFunc
 
 // Server 提供 HTTP 服务

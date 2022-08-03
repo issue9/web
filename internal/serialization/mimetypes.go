@@ -3,7 +3,6 @@
 package serialization
 
 import (
-	"mime"
 	"strings"
 
 	"github.com/issue9/localeutil"
@@ -27,33 +26,53 @@ func (ms *Mimetypes) unmarshalFunc(name string) (serializer.UnmarshalFunc, bool)
 
 // ContentType 从 content-type 报头中获取解码和字符集函数
 //
-// header 表示 content-type 报头的内容；
-// mimetype 表示默认解码名称，当 header 为空时采用此值；
-// charset 表示默认字符集，当 header 中未指定时，采用此值；
-func (ms *Mimetypes) ContentType(header, mimetype, charset string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
-	if header != "" {
-		m, ps, err := mime.ParseMediaType(header)
-		if err != nil {
-			return nil, nil, err
-		}
-		mimetype = m
-
-		if c := ps["charset"]; c != "" {
-			charset = c
-		}
-	}
+// header 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
+func (ms *Mimetypes) ContentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
+	mimetype, charset := parseMimetype(header)
 
 	f, found := ms.unmarshalFunc(mimetype)
 	if !found {
 		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
 	}
 
+	if charset == "" || charset == "utf-8" {
+		return f, nil, nil
+	}
 	e, err := htmlindex.Get(charset)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return f, e, nil
+}
+
+func parseMimetype(header string) (mt, charset string) {
+	t, ps, found := strings.Cut(header, ";")
+	if !found {
+		return header, ""
+	}
+
+	for len(ps) > 0 {
+		var name, val string
+		if index := strings.IndexByte(ps, '='); index >= 0 {
+			name = ps[:index]
+			ps = ps[index+1:]
+		}
+
+		if index := strings.IndexByte(ps, ','); index >= 0 {
+			val = ps[:index]
+			ps = ps[index+1:]
+		} else {
+			val = ps
+			ps = ps[:0]
+		}
+
+		if strings.ToLower(strings.TrimSpace(name)) == "charset" {
+			return t, strings.ToLower(strings.TrimSpace(val))
+		}
+	}
+
+	return t, ""
 }
 
 // MarshalFunc 从 header 解析出当前请求所需要的 mimetype 名称和对应的解码函数

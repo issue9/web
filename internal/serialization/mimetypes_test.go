@@ -50,19 +50,36 @@ func TestMimetypes_ContentType(t *testing.T) {
 	a.NotError(mt.Add(json.Marshal, json.Unmarshal, "application/octet-stream"))
 	a.NotNil(mt)
 
-	f, e, err := mt.ContentType(";;;", "application/octet-stream", "utf-8")
+	f, e, err := mt.ContentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
 
 	// 不存在的 mimetype
-	f, e, err = mt.ContentType("not-exists; charset=utf-8", "application/octet-stream", "utf-8")
+	f, e, err = mt.ContentType("not-exists; charset=utf-8")
 	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
-	f, e, err = mt.ContentType("application/octet-stream; charset=utf-8", "application/octet-stream", "utf-8")
-	a.NotError(err).NotNil(f).NotNil(e)
+	// charset=utf-8
+	f, e, err = mt.ContentType("application/octet-stream; charset=utf-8")
+	a.NotError(err).NotNil(f).Nil(e)
 
-	// 无效的字符集名称
-	f, e, err = mt.ContentType("application/octet-stream; invalid-charset", "application/octet-stream", "utf-8")
-	a.Error(err).Nil(f).Nil(e)
+	// charset=UTF-8
+	f, e, err = mt.ContentType("application/octet-stream; charset=UTF-8,p1=k1,p2=k2")
+	a.NotError(err).NotNil(f).Nil(e)
+
+	// charset=
+	f, e, err = mt.ContentType("application/octet-stream; charset=")
+	a.NotError(err).NotNil(f).Nil(e)
+
+	// 没有 charset
+	f, e, err = mt.ContentType("application/octet-stream;")
+	a.NotError(err).NotNil(f).Nil(e)
+
+	// 没有 ;charset
+	f, e, err = mt.ContentType("application/octet-stream")
+	a.NotError(err).NotNil(f).Nil(e)
+
+	// 未指定 charset 参数
+	f, e, err = mt.ContentType("application/octet-stream; invalid-params")
+	a.NotError(err).NotNil(f).Nil(e)
 }
 
 func TestMimetypes_MarshalFunc(t *testing.T) {
