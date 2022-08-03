@@ -105,9 +105,9 @@ type AppOf[T any] struct {
 	tag language.Tag
 }
 
-// Exec 执行命令行操作
+// Exec 根据配置运行服务
 //
-// args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
+// args 表示命令行参数，一般为 os.Args。
 //
 // 如果是 AppOf 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
 func (cmd *AppOf[T]) Exec(args []string) error {
