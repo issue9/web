@@ -86,9 +86,6 @@ func (p *Problems) SetBaseURL(base string) {
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
-	if p.problems == nil {
-	}
-
 	if _, found := p.problems[id]; found {
 		panic("存在相同值的 id 参数")
 	}

@@ -19,6 +19,7 @@
 # ide
 .idea
 .vscode
+.vs
 *.swp
 **/testdata/logs/*
 

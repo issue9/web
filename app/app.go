@@ -91,7 +91,7 @@ type AppOf[T any] struct {
 
 	// 本地化 AppOf 中的命令行信息
 	//
-	// 可以为空，那么这些命令行信息将显示默认内容。
+	// 如果为空，那么这些命令行信息将显示默认内容。
 	Catalog catalog.Catalog
 
 	// 触发退出的信号
@@ -108,9 +108,11 @@ type AppOf[T any] struct {
 // Exec 执行命令行操作
 //
 // args 表示命令行参数，一般为 os.Args，采用明确的参数传递，方便测试用。
+//
+// 如果是 AppOf 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
 func (cmd *AppOf[T]) Exec(args []string) error {
 	if err := cmd.sanitize(); err != nil {
-		os.Exit(2)
+		panic(err)
 	}
 	return cmd.exec(args)
 }

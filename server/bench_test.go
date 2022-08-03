@@ -78,7 +78,7 @@ func BenchmarkServer_newContext(b *testing.B) {
 		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
 
 		ctx := srv.newContext(w, r, nil)
-		a.NotNil(ctx)
+		ctx.destroy()
 	}
 }
 
