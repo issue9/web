@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/web/serializer/gob"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/serializer/protobuf"
+	"github.com/issue9/web/server"
 )
 
 var (
@@ -29,9 +30,17 @@ type mimetypeConfig struct {
 	// 比如 application/xml 等
 	Encoding string `json:"encoding" yaml:"encoding" xml:"encoding,attr"`
 
+	// 对应 Problem 类型的编码名称
+	//
+	// 如果为空，表示与 encoding 相同，根据 [RFC7807] 最好是不相同，
+	// 比如 application/json 对应 application/problem+json。
+	//
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty"`
+
 	// 实际采用的解码方法
 	//
-	// 由 RegisterMimetype 注册而来。可通过 RegisterMimetype 注册新的格式，默认可用为：
+	// 由 [RegisterMimetype] 注册而来。默认可用为：
 	//
 	//  - xml
 	//  - json
@@ -43,16 +52,26 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) buildMimetypes(mt serializer.Serializer) *ConfigError {
+func (conf *configOf[T]) buildMimetypes(srv *server.Server) *ConfigError {
+	problems := make(map[string]string, len(conf.Mimetypes))
+
 	for _, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
 			return &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
 		}
 
-		if err := mt.Add(m.Marshal, m.Unmarshal, item.Encoding); err != nil {
+		if err := srv.Mimetypes().Add(m.Marshal, m.Unmarshal, item.Encoding); err != nil {
 			return &ConfigError{Field: item.Target, Message: err}
 		}
+
+		if item.Problem != "" {
+			problems[item.Encoding] = item.Problem
+		}
+	}
+
+	for k, v := range problems {
+		srv.Problems().AddMimetype(k, v)
 	}
 
 	return nil

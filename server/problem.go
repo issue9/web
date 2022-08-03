@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package problem
+package server
 
 import (
 	"fmt"
@@ -11,11 +11,39 @@ import (
 
 const aboutBlank = "about:blank"
 
+// Problem API 错误信息对象需要实现的接口
+//
+// 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
+// 就要实现 json.Marshaler 接口或是相应的 struct tag。
+//
+// 并未规定 [Problem] 实现都输出的字段以及布局，实现者可以根据 [BuildFunc]
+// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 实现了一个简要的
+// RFC7807 标准的错误信息对象。
+type Problem interface {
+	Responser
+
+	// With 添加新的输出字段
+	//
+	// 如果添加的字段名称与现有的字段重名，应当 panic。
+	With(key string, val any) Problem
+
+	// AddParam 添加数据验证错误信息
+	AddParam(name string, reason string) Problem
+}
+
+// BuildProblemFunc 生成 [Problem] 对象的方法
+//
+// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
+// title 错误信息的简要描述；
+// status 输出的状态码，该值将由 [Problem.Status] 返回；
+type BuildProblemFunc func(id, title string, status int) Problem
+
 type Problems struct {
-	builder  BuildFunc
-	baseURL  string
-	problems map[string]*statusProblem
-	blank    bool // Problems.Problem 不输出 id 值
+	builder   BuildProblemFunc
+	baseURL   string
+	blank     bool // Problems.Problem 不输出 id 值
+	problems  map[string]*statusProblem
+	mimetypes map[string]string
 }
 
 type statusProblem struct {
@@ -24,10 +52,11 @@ type statusProblem struct {
 	detail localeutil.LocaleStringer
 }
 
-func NewProblems(f BuildFunc) *Problems {
+func newProblems(f BuildProblemFunc) *Problems {
 	return &Problems{
-		builder:  f,
-		problems: make(map[string]*statusProblem, 50),
+		builder:   f,
+		problems:  make(map[string]*statusProblem, 50),
+		mimetypes: make(map[string]string, 10),
 	}
 }
 
@@ -66,6 +95,25 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
 }
 
+// AddMimetype 添加输出的 mimetype 值
+//
+// mimetype 为正常情况下输出的值，当输出对象为 [Problem] 时，可以指定一个特殊的值，
+// 比如 application/json 可以对应输出 application/problem+json，
+// 这也是 RFC7807 推荐的作法。
+func (p *Problems) AddMimetype(mimetype, problemType string) {
+	if _, exists := p.mimetypes[mimetype]; exists {
+		panic("已经存在的 mimetype")
+	}
+	p.mimetypes[mimetype] = problemType
+}
+
+func (p *Problems) mimetype(mimetype string) string {
+	if v, exists := p.mimetypes[mimetype]; exists {
+		return v
+	}
+	return mimetype
+}
+
 // Visit 遍历所有 Add 添加的项
 //
 // f 为遍历的函数，其原型为：
@@ -96,22 +144,4 @@ func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 		id = p.baseURL + id
 	}
 	return p.builder(id, sp.title.LocaleString(printer), sp.status)
-}
-
-// Problem 将验证结果转换成 [Problem] 对象
-//
-// 转换成 Problem 对象之后，v 随之将被释放。
-// 如果 v.Count() == 0，那么将返回 nil。
-func (v *Validation) Problem(ps *Problems, id string, p *message.Printer) Problem {
-	if v.Count() > 0 {
-		pp := ps.Problem(id, p)
-		v.Visit(func(key string, reason localeutil.LocaleStringer) bool {
-			pp.AddParam(key, reason.LocaleString(p))
-			return true
-		})
-		v.Destroy()
-		return pp
-	}
-	v.Destroy()
-	return nil
 }

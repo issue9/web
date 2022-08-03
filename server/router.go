@@ -7,13 +7,9 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
-
-	"github.com/issue9/web/server/response"
 )
 
 type (
@@ -23,18 +19,16 @@ type (
 	Middleware     = types.MiddlewareOf[HandlerFunc]
 
 	// HandlerFunc 路由项处理函数原型
-	//
-	// 最终调用 [response.Responser.Apply] 向客户端输出信息。
-	HandlerFunc func(*Context) response.Responser
+	HandlerFunc func(*Context) Responser
 )
 
-func notFound(*Context) response.Responser { return response.Status(http.StatusNotFound) }
+func notFound(*Context) Responser { return Status(http.StatusNotFound) }
 
 func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
-		return func(ctx *Context) response.Responser {
+		return func(ctx *Context) Responser {
 			ctx.Header().Set("Allow", n.AllowHeader())
-			return response.Status(status)
+			return Status(status)
 		}
 	}
 }
@@ -65,46 +59,22 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		panic("参数 name 不能为空")
 	}
 
-	return func(ctx *Context) response.Responser {
+	return func(ctx *Context) Responser {
 		p, _ := ctx.route.Params().Get(name) // 空值也是允许的值
 
 		err := mux.ServeFile(fsys, p, index, ctx, ctx.Request())
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)
-			return response.Status(http.StatusForbidden)
+			return Status(http.StatusForbidden)
 		case errors.Is(err, fs.ErrNotExist):
 			srv.Logs().WARN().Error(err)
-			return response.Status(http.StatusNotFound)
+			return Status(http.StatusNotFound)
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
-			return response.Status(http.StatusInternalServerError)
+			return Status(http.StatusInternalServerError)
 		default:
 			return nil
 		}
 	}
-}
-
-// FileServer 返回以当前模块作为文件系统的静态文件服务
-func (m *Module) FileServer(name, index string) HandlerFunc {
-	return m.Server().FileServer(m, name, index)
-}
-
-// InternalServerError 输出日志到 ERROR 通道并向用户输出 500 状态码的页面
-func (ctx *Context) InternalServerError(err error) response.Responser {
-	return ctx.err(3, http.StatusInternalServerError, err)
-}
-
-// Error 输出日志到 ERROR 通道并向用户输出指定状态码的页面
-func (ctx *Context) Error(status int, err error) response.Responser { return ctx.err(3, status, err) }
-
-func (ctx *Context) err(depth, status int, err error) response.Responser {
-	entry := ctx.Logs().NewEntry(logs.LevelError).Location(depth)
-	if le, ok := err.(localeutil.LocaleStringer); ok {
-		entry.Message = le.LocaleString(ctx.Server().LocalePrinter())
-	} else {
-		entry.Message = err.Error()
-	}
-	ctx.Logs().Output(entry)
-	return response.Status(status)
 }

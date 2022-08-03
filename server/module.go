@@ -109,3 +109,8 @@ func (m *Module) Cache() cache.Access {
 func (m *Module) LoadLocale(glob string) error {
 	return m.Server().LoadLocale(m, glob)
 }
+
+// FileServer 返回以当前模块作为文件系统的静态文件服务
+func (m *Module) FileServer(name, index string) HandlerFunc {
+	return m.Server().FileServer(m, name, index)
+}

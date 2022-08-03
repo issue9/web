@@ -10,41 +10,30 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
+	"github.com/issue9/web/validation"
 	"golang.org/x/text/transform"
-
-	"github.com/issue9/web/problem"
-	"github.com/issue9/web/server/response"
 )
 
 var tGreatThanZero = localeutil.Phrase("should great than 0")
 
 type (
-	// Params 用于处理路径中包含的参数
-	//  p := ctx.Params()
-	//  aid := p.Int64("aid")
-	//  bid := p.Int64("bid")
 	Params struct {
 		ctx *Context
-		v   *problem.Validation
+		v   *validation.Validation
 	}
 
-	// Queries 用于处理路径中的查询参数
-	//
-	//  q,_ := ctx.Queries()
-	//  page := q.Int64("page", 1)
-	//  size := q.Int64("size", 20)
 	Queries struct {
 		ctx     *Context
-		v       *problem.Validation
+		v       *validation.Validation
 		queries url.Values
 	}
 )
 
-// Params 声明一个新的 Params 实例
+// Params 声明一个用于获取路径参数的对象
 func (ctx *Context) Params() *Params {
 	return &Params{
 		ctx: ctx,
-		v:   ctx.NewValidation(),
+		v:   validation.New(false),
 	}
 }
 
@@ -100,47 +89,53 @@ func (p *Params) Float64(key string) float64 {
 	return ret
 }
 
-func (p *Params) Problem(id string) response.Responser {
-	return p.v.Problem(p.ctx.Server().Problems(), id, p.ctx.LocalePrinter())
-}
+// Problem 将当前对象转换成 [Problem] 对象
+//
+// 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
+func (p *Params) Problem(id string) Responser { return p.ctx.validation2Problem(p.v, id) }
 
 // ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
 //
-// NOTE: 若需要获取多个参数，使用 Context.Params 会更方便。
-func (ctx *Context) ParamID(key, id string) (int64, response.Responser) {
-	p := ctx.Params()
-	num := p.ID(key)
-	if pp := p.Problem(id); pp != nil {
-		return 0, pp
+// NOTE: 若需要获取多个参数，使用 [Context.Params] 会更方便。
+func (ctx *Context) ParamID(key, id string) (int64, Responser) {
+	p := ctx.LocalePrinter()
+	ps := ctx.Server().Problems()
+	ret, err := ctx.route.Params().Int(key)
+	if err != nil {
+		return 0, ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+	} else if ret <= 0 {
+		return 0, ps.Problem(id, p).AddParam(key, tGreatThanZero.LocaleString(p))
 	}
-	return num, nil
+	return ret, nil
 }
 
 // ParamInt64 取地址参数中的 key 表示的值 int64 类型值
 //
-// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamInt64(key, id string) (int64, response.Responser) {
-	p := ctx.Params()
-	num := p.Int64(key)
-	if pp := p.Problem(id); pp != nil {
-		return 0, pp
+// NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
+func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
+	ret, err := ctx.route.Params().Int(key)
+	if err != nil {
+		p := ctx.LocalePrinter()
+		ps := ctx.Server().Problems()
+		return 0, ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	}
-	return num, nil
+	return ret, nil
 }
 
 // ParamString 取地址参数中的 key 表示的 string 类型值
 //
-// NOTE: 若需要获取多个参数，可以使用 Context.Params 获取会更方便。
-func (ctx *Context) ParamString(key, id string) (string, response.Responser) {
-	p := ctx.Params()
-	s := p.String(key)
-	if pp := p.Problem(id); pp != nil {
-		return "", pp
+// NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
+func (ctx *Context) ParamString(key, id string) (string, Responser) {
+	ret, err := ctx.route.Params().String(key)
+	if err != nil {
+		p := ctx.LocalePrinter()
+		ps := ctx.Server().Problems()
+		return "", ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	}
-	return s, nil
+	return ret, nil
 }
 
-// Queries 声明一个新的 Queries 实例
+// Queries 声明一个用于获取查询参数的对象
 func (ctx *Context) Queries() (*Queries, error) {
 	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
@@ -149,7 +144,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	return &Queries{
 		ctx:     ctx,
-		v:       ctx.NewValidation(),
+		v:       validation.New(false),
 		queries: queries,
 	}, nil
 }
@@ -242,12 +237,10 @@ func (q *Queries) Float64(key string, def float64) float64 {
 	return v
 }
 
-// Problem 转换成 Responser 对象
+// Problem 将当前对象转换成 [Problem] 对象
 //
-// 如果没有错误，则返回 nil。
-func (q *Queries) Problem(id string) response.Responser {
-	return q.v.Problem(q.ctx.Server().Problems(), id, q.ctx.LocalePrinter())
-}
+// 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
+func (q *Queries) Problem(id string) Responser { return q.ctx.validation2Problem(q.v, id) }
 
 // Object 将查询参数解析到一个对象中
 //
@@ -270,7 +263,7 @@ func (q *Queries) Object(v any, id string) {
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(v any, id string) response.Responser {
+func (ctx *Context) QueryObject(v any, id string) Responser {
 	q, err := ctx.Queries()
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
@@ -334,16 +327,31 @@ func (ctx *Context) Unmarshal(v any) error {
 //
 // 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 id 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, id string) response.Responser {
+func (ctx *Context) Read(v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(ctx); va != nil {
-			return va.Problem(ctx.Server().Problems(), id, ctx.LocalePrinter())
+			return ctx.validation2Problem(va, id)
 		}
 	}
 
 	return nil
+}
+
+func (ctx *Context) validation2Problem(v *validation.Validation, id string) Problem {
+	if v.Count() == 0 {
+		return nil
+	}
+
+	p := ctx.LocalePrinter()
+	pp := ctx.Server().Problems().Problem(id, p)
+	v.Visit(func(key string, reason localeutil.LocaleStringer) bool {
+		pp.AddParam(key, reason.LocaleString(p))
+		return true
+	})
+	v.Destroy()
+	return pp
 }

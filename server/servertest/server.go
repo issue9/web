@@ -58,6 +58,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	srv.AllowEncoding("*", "gzip", "deflate")
 
 	srv.Problems().Add("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
+	srv.Problems().AddMimetype("application/json", "application/problem+json")
 
 	return srv, o
 }

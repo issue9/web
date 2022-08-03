@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-package problem
+// Package validation 验证功能
+package validation
 
 import (
 	"reflect"
@@ -8,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"golang.org/x/text/message"
 )
 
 const validationPoolMaxSize = 20
@@ -25,70 +25,18 @@ var (
 	isNotMap   = localeutil.Phrase("the type is not map")
 )
 
-type (
-	// Validation 验证工具
-	Validation struct {
-		exitAtError bool
+// Validation 验证工具
+type Validation struct {
+	exitAtError bool
 
-		keys    []string
-		reasons []localeutil.LocaleStringer
-	}
-
-	// Rule 验证规则
-	//
-	// 与 Validator 相比，包含了本地化的错误信息。
-	Rule struct {
-		validator Validator
-		message   localeutil.LocaleStringer
-	}
-
-	// Validator 用于验证指定数据的合法性
-	Validator interface {
-		// IsValid 验证 v 是否符合当前的规则
-		IsValid(v any) bool
-	}
-
-	// ValidateFunc 用于验证指定数据的合法性
-	ValidateFunc func(any) bool
-)
-
-func (f ValidateFunc) IsValid(v any) bool { return f(v) }
-
-// OrValidators 将多个验证函数以与的形式合并为一个验证函数
-func AndValidators(v ...Validator) Validator {
-	return ValidateFunc(func(a any) bool {
-		for _, validator := range v {
-			if !validator.IsValid(a) {
-				return false
-			}
-		}
-		return true
-	})
+	keys    []string
+	reasons []localeutil.LocaleStringer
 }
 
-// OrValidators 将多个验证函数以或的形式合并为一个验证函数
-func OrValidators(v ...Validator) Validator {
-	return ValidateFunc(func(a any) bool {
-		for _, validator := range v {
-			if validator.IsValid(a) {
-				return true
-			}
-		}
-		return false
-	})
-}
-
-func NewRule(validator Validator, key message.Reference, v ...any) *Rule {
-	return &Rule{
-		validator: validator,
-		message:   localeutil.Phrase(key, v...),
-	}
-}
-
-// NewValidation 声明验证对象
+// New 声明验证对象
 //
 // exitAtError 表示是在验证出错时，是否还继续其它字段的验证。
-func NewValidation(exitAtError bool) *Validation {
+func New(exitAtError bool) *Validation {
 	v := validationPool.Get().(*Validation)
 	v.exitAtError = exitAtError
 	v.keys = v.keys[:0]
@@ -120,6 +68,9 @@ func (v *Validation) Destroy() {
 	}
 }
 
+// Add 直接添加一条错误信息
+//
+// 此方法不受 exitAtError 标记位的影响。
 func (v *Validation) Add(name string, reason localeutil.LocaleStringer) {
 	v.keys = append(v.keys, name)
 	v.reasons = append(v.reasons, reason)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package problem
+package server
 
 import (
 	"encoding/json"
@@ -11,8 +11,6 @@ import (
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/sliceutil"
-
-	"github.com/issue9/web/server/response"
 )
 
 const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
@@ -188,8 +186,8 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(start.End())
 }
 
-func (p *rfc7807) Apply(ctx response.Context) {
-	if err := ctx.Marshal(p.status, p); err != nil {
+func (p *rfc7807) Apply(ctx *Context) {
+	if err := ctx.Marshal(p.status, p, true); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
 

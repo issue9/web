@@ -3,97 +3,97 @@
 package web
 
 import (
-	"bytes"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v2"
-	"github.com/issue9/logs/v4"
 
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
-	"github.com/issue9/web/server/response"
+	"github.com/issue9/web/server/servertest"
 )
-
-var _ response.Context = &textContext{}
-
-type textContext struct {
-	httptest.ResponseRecorder
-	l *logs.Logs
-}
-
-func newTextContext(a *assert.Assertion) (c *textContext) {
-	l := logs.New(logs.NewTextWriter(logs.MicroLayout, &bytes.Buffer{}))
-	return &textContext{l: l, ResponseRecorder: *httptest.NewRecorder()}
-}
-
-func (c *textContext) Marshal(status int, body any) error {
-	data, err := text.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	c.WriteHeader(status)
-	_, err = c.Write(data)
-	return err
-}
-
-func (c *textContext) Logs() *logs.Logs { return c.l }
 
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	r := s.NewRouter()
 
-	ctx := newTextContext(a)
-	resp := Created(&testobject.TextObject{Name: "test", Age: 123}, "")
-	resp.Apply(ctx)
-	a.Equal(ctx.Result().StatusCode, http.StatusCreated).
-		Equal(ctx.Body.String(), `test,123`)
+	// Location == ""
+	r.Get("/created", func(ctx *Context) Responser {
+		return Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+	})
+	// Location == "/test"
+	r.Get("/created/location", func(ctx *Context) Responser {
+		return Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
+	})
 
-	ctx = newTextContext(a)
-	resp = Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
-	resp.Apply(ctx)
-	a.Equal(ctx.Result().StatusCode, http.StatusCreated).
-		Equal(ctx.Body.String(), `test,123`).
-		Equal(ctx.Header().Get("Location"), "/test")
+	s.GoServe()
+
+	s.Get("/created").Header("accept", text.Mimetype).Do(nil).
+		Status(http.StatusCreated).
+		StringBody(`test,123`)
+
+	s.Get("/created/location").Header("accept", text.Mimetype).Do(nil).
+		Status(http.StatusCreated).
+		StringBody(`test,123`).
+		Header("Location", "/test")
+
+	s.Close(0)
+	s.Wait()
 }
 
 func TestContext_RetryAfter(t *testing.T) {
 	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	r := s.NewRouter()
 
-	ctx := newTextContext(a)
-	resp := NotImplemented()
-	resp.Apply(ctx)
-	a.Equal(ctx.Result().StatusCode, http.StatusNotImplemented)
+	r.Get("/retry-after", func(ctx *Context) Responser {
+		return RetryAfter(http.StatusServiceUnavailable, 120, "")
+	})
 
-	// Retry-After
-
-	ctx = newTextContext(a)
-	resp = RetryAfter(http.StatusServiceUnavailable, 120)
-	resp.Apply(ctx)
-	a.Equal(ctx.Result().StatusCode, http.StatusServiceUnavailable).
-		Empty(ctx.Body.String()).
-		Equal(ctx.Header().Get("Retry-After"), "120")
-
-	// Retry-After
 	now := time.Now()
+	r.Get("/retry-at", func(ctx *Context) Responser {
+		return RetryAt(http.StatusMovedPermanently, now, "/retry-after")
+	})
 
-	ctx = newTextContext(a)
-	resp = RetryAt(http.StatusMovedPermanently, now)
-	resp.Apply(ctx)
-	a.Equal(ctx.Result().StatusCode, http.StatusMovedPermanently).
-		Empty(ctx.Body.String()).
-		Contains(ctx.Header().Get("Retry-After"), "GMT")
+	s.GoServe()
+
+	s.Get("/retry-after").Do(nil).
+		Status(http.StatusServiceUnavailable).
+		Header("Retry-after", "120").
+		Header("Location", "")
+
+	// http.Client.Do 会自动重定向并请求
+	s.Get("/retry-at").Do(nil).
+		Status(http.StatusServiceUnavailable).
+		Header("Retry-after", "120").
+		Header("Location", "")
+
+	s.Close(0)
+	s.Wait()
 }
 
 func TestContext_Redirect(t *testing.T) {
 	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	r := s.NewRouter()
 
-	ctx := newTextContext(a)
-	resp := Redirect(301, "https://example.com")
-	resp.Apply(ctx)
+	r.Get("/not-implement", func(ctx *Context) Responser {
+		return NotImplemented()
+	})
+	r.Get("/redirect", func(ctx *Context) Responser {
+		return Redirect(http.StatusMovedPermanently, "https://example.com")
+	})
 
-	a.Equal(ctx.Result().StatusCode, 301).
-		Equal(ctx.Header().Get("Location"), "https://example.com")
+	s.GoServe()
+
+	s.Get("/not-implement").Do(nil).Status(http.StatusNotImplemented)
+
+	s.Get("/redirect").Do(nil).
+		Status(http.StatusOK). // http.Client.Do 会自动重定向并请求
+		Header("Location", "")
+
+	s.Close(0)
+	s.Wait()
 }

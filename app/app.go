@@ -20,7 +20,6 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server"
 )
 
@@ -85,10 +84,10 @@ type AppOf[T any] struct {
 	// 仅是文件名，相对的路径由命令行 -f 指定。
 	ConfigFilename string
 
-	// 设置生成 [problem.Problem] 对象的方法
+	// 设置生成 [server.Problem] 对象的方法
 	//
 	// 如果为空，则由 [server.Server.New] 决定其默认值。
-	ProblemBuilder problem.BuildFunc
+	ProblemBuilder server.BuildProblemFunc
 
 	// 本地化 AppOf 中的命令行信息
 	//

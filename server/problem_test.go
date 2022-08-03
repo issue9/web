@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package problem
+package server
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ import (
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := NewProblems(RFC7807Builder)
+	ps := newProblems(RFC7807Builder)
 	a.NotNil(ps)
 	a.Equal(0, len(ps.problems))
 
@@ -34,7 +34,7 @@ func TestProblems_Add(t *testing.T) {
 func TestProblems_Visit(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := NewProblems(RFC7807Builder)
+	ps := newProblems(RFC7807Builder)
 	cnt := 0
 	ps.Visit(func(id string, status int, title, detail localeutil.LocaleStringer) bool {
 		cnt++
@@ -67,6 +67,19 @@ func TestProblems_Visit(t *testing.T) {
 	a.Equal(1, cnt)
 }
 
+func TestProblems_Mimetype(t *testing.T) {
+	a := assert.New(t, false)
+	ps := newProblems(RFC7807Builder)
+	a.NotNil(ps)
+
+	a.Equal(ps.mimetype("application/json"), "application/json")
+	ps.AddMimetype("application/json", "application/problem+json")
+	a.Equal(ps.mimetype("application/json"), "application/problem+json")
+	a.PanicString(func() {
+		ps.AddMimetype("application/json", "application/problem")
+	}, "已经存在的 mimetype")
+}
+
 func TestProblems_Problem(t *testing.T) {
 	a := assert.New(t, false)
 
@@ -75,7 +88,7 @@ func TestProblems_Problem(t *testing.T) {
 	cnp := message.NewPrinter(language.SimplifiedChinese, message.Catalog(cat))
 	twp := message.NewPrinter(language.TraditionalChinese, message.Catalog(cat))
 
-	ps := NewProblems(RFC7807Builder)
+	ps := newProblems(RFC7807Builder)
 	ps.Add("40010", 400, localeutil.Phrase("lang"), localeutil.Phrase("40010"))
 	ps.Add("40011", 400, localeutil.Phrase("lang"), localeutil.Phrase("40011"))
 
@@ -92,33 +105,4 @@ func TestProblems_Problem(t *testing.T) {
 	a.NotNil(p)
 	pp, ok = p.(*rfc7807)
 	a.True(ok).NotNil(pp).Equal(pp.title, "lang").Equal(pp.status, 400)
-}
-
-func TestValidation_Locale(t *testing.T) {
-	a := assert.New(t, false)
-
-	builder := catalog.NewBuilder()
-	a.NotError(builder.SetString(language.SimplifiedChinese, "lang", "chn"))
-	a.NotError(builder.SetString(language.TraditionalChinese, "lang", "cht"))
-	cnp := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
-	twp := message.NewPrinter(language.TraditionalChinese, message.Catalog(builder))
-
-	ps := NewProblems(RFC7807Builder)
-	ps.SetBaseURL("https://example.com/problems")
-	a.Equal(ps.BaseURL(), "https://example.com/problems")
-	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-
-	max4 := NewRule(max(4), "lang")
-
-	v := NewValidation(false).
-		AddField(5, "obj", max4)
-	p := v.Problem(ps, "40010", cnp)
-	pp, ok := p.(*rfc7807)
-	a.True(ok).Equal(pp.pReasons[0], "chn")
-
-	v = NewValidation(false).
-		AddField(5, "obj", max4)
-	p = v.Problem(ps, "40010", twp)
-	pp, ok = p.(*rfc7807)
-	a.True(ok).Equal(pp.pReasons[0], "cht")
 }

@@ -20,7 +20,6 @@ import (
 
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/response"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -60,7 +59,7 @@ func TestServer_Serve(t *testing.T) {
 	router.Get("/mux/test", servertest.BuildHandler(202))
 	router.Get("/m1/test", servertest.BuildHandler(202))
 
-	router.Get("/m2/test", func(ctx *server.Context) response.Responser {
+	router.Get("/m2/test", func(ctx *server.Context) server.Responser {
 		srv := ctx.Server()
 		a.NotNil(srv)
 
@@ -131,7 +130,7 @@ func TestServer_Close(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) response.Responser {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
@@ -187,7 +186,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	router := srv.NewRouter()
 
 	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) response.Responser {
+	router.Get("/close", func(ctx *server.Context) server.Responser {
 		ctx.WriteHeader(http.StatusCreated)
 		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
@@ -218,7 +217,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) response.Responser {
+		return func(ctx *server.Context) server.Responser {
 			h := ctx.Header()
 			val := h.Get("h")
 			h.Set("h", v+val)
@@ -236,7 +235,7 @@ func TestMiddleware(t *testing.T) {
 	count := 0
 
 	router := srv.NewRouter(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) response.Responser {
+		return func(ctx *server.Context) server.Responser {
 			ctx.OnExit(func(status int) {
 				count++
 			})
@@ -374,8 +373,8 @@ func TestContext_NoContent(t *testing.T) {
 	buf := new(bytes.Buffer)
 	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
 
-	s.NewRouter().Get("/204", func(ctx *server.Context) response.Responser {
-		return response.Status(http.StatusNoContent)
+	s.NewRouter().Get("/204", func(ctx *server.Context) server.Responser {
+		return server.Status(http.StatusNoContent)
 	})
 
 	s.GoServe()

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package problem
+package server
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	_ BuildFunc = RFC7807Builder
+	_ BuildProblemFunc = RFC7807Builder
 
 	_ Problem        = &rfc7807{}
 	_ json.Marshaler = &rfc7807{}

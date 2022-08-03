@@ -22,7 +22,6 @@ import (
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/serialization"
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/service"
 )
@@ -48,7 +47,7 @@ type Server struct {
 	uptime     time.Time
 	modules    []string // 保存着模块名称，用于检测是否存在重名
 	routers    *Routers
-	problems   *problem.Problems
+	problems   *Problems
 	services   *service.Server
 
 	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
@@ -81,7 +80,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		problems:   problem.NewProblems(o.ProblemBuilder),
+		problems:   newProblems(o.ProblemBuilder),
 		services:   service.InternalNewServer(o.Logs, loc),
 
 		closed: make(chan struct{}, 1),
@@ -232,7 +231,7 @@ func (srv *Server) AllowEncoding(contentType string, id ...string) {
 // Problems [RFC7807] 错误代码管理
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func (srv *Server) Problems() *problem.Problems { return srv.problems }
+func (srv *Server) Problems() *Problems { return srv.problems }
 
 // Services 服务管理
 func (srv *Server) Services() *service.Server { return srv.services }

@@ -10,9 +10,8 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/response"
+	"github.com/issue9/web/validation"
 )
 
 // Version 当前框架的版本
@@ -27,9 +26,11 @@ type (
 	HandlerFunc    = server.HandlerFunc
 	Router         = server.Router
 	Module         = server.Module
-	Responser      = response.Responser
+	Responser      = server.Responser
 	Logger         = logs.Logger
-	Rule           = problem.Rule
+	Rule           = validation.Rule
+	Validator      = validation.Validator
+	ValidateFunc   = validation.ValidateFunc
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
@@ -46,6 +47,6 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 // NewRule 新建验证规则
-func NewRule(v problem.Validator, key message.Reference, val ...any) *Rule {
-	return problem.NewRule(v, key, val...)
+func NewRule(v Validator, key message.Reference, val ...any) *Rule {
+	return validation.NewRule(v, key, val...)
 }

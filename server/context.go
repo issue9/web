@@ -4,13 +4,13 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/qheader"
@@ -22,8 +22,8 @@ import (
 	"golang.org/x/text/transform"
 
 	xencoding "github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/validation"
 )
 
 const (
@@ -40,7 +40,7 @@ type CTXSanitizer interface {
 	// CTXSanitize 验证和修正当前对象的数据
 	//
 	// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
-	CTXSanitize(*Context) *problem.Validation
+	CTXSanitize(*Context) *validation.Validation
 }
 
 // Context 根据当次 HTTP 请求生成的上下文内容
@@ -263,7 +263,8 @@ func (ctx *Context) OnExit(f func(int)) {
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
 // body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
-func (ctx *Context) Marshal(status int, body any) error {
+// problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
+func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	if body == nil {
 		ctx.WriteHeader(status)
 		return nil
@@ -273,9 +274,12 @@ func (ctx *Context) Marshal(status int, body any) error {
 	// 那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的。
 	if ctx.outputMimetype == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		return localeutil.Error("%s can not be empty", "ctx.outputMimetype")
+		panic(fmt.Sprintf("未对 %s 作处理", ctx.outputMimetypeName))
 	}
 
+	if problem {
+		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.outputMimetypeName)
+	}
 	ctx.Header().Set("Content-Type", buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
@@ -395,28 +399,7 @@ func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 
 // Problem 向客户端输出错误信息
 //
-// id 通过此值从 [Problems] 中查找相应在的 title 和 detail 并赋值给返回对象；
-// obj 表示实际的返回对象，如果为空，会采用 [problem.RFC7807]；
-func (ctx *Context) Problem(id string) problem.Problem {
+// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
+func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().Problems().Problem(id, ctx.LocalePrinter())
-}
-
-// NewValidation 声明验证器
-//
-// 一般配合 CTXSanitizer 接口使用：
-//
-//  type User struct {
-//      Name string
-//      Age int
-//  }
-//
-//  func(o *User) CTXSanitize(ctx* web.Context) *problem.Validation {
-//      v := ctx.NewValidation()
-//      return v.NewField(o.Name, "name", validator.Required().Message("不能为空")).
-//          NewField(o.Age, "age", validator.Min(18).Message("不能小于 18 岁"))
-//  }
-//
-// cap 表示为错误信息预分配的大小；
-func (ctx *Context) NewValidation() *problem.Validation {
-	return problem.NewValidation(true)
 }

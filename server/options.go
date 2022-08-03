@@ -14,8 +14,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
-
-	"github.com/issue9/web/problem"
 )
 
 type Options struct {
@@ -42,7 +40,7 @@ type Options struct {
 	// 生成 [problem.Problem] 对象的方法
 	//
 	// 如果为空，那么将采用 [problem.RFC7807Builder] 作为默认值。
-	ProblemBuilder problem.BuildFunc
+	ProblemBuilder BuildProblemFunc
 
 	// 默认的语言标签
 	//
@@ -88,7 +86,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	if o.ProblemBuilder == nil {
-		o.ProblemBuilder = problem.RFC7807Builder
+		o.ProblemBuilder = RFC7807Builder
 	}
 
 	if o.LanguageTag == language.Und {

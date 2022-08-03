@@ -13,7 +13,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/serialization"
-	"github.com/issue9/web/problem"
 	"github.com/issue9/web/server"
 )
 
@@ -73,6 +72,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetype,omitempty"`
+	problems  map[string]string
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -86,7 +86,7 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, pb problem.BuildFunc, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		s, err := server.New(name, version, &server.Options{FS: fsys})
 		return s, nil, err
@@ -117,7 +117,7 @@ func NewServerOf[T any](name, version string, pb problem.BuildFunc, fsys fs.FS, 
 		}
 	}
 
-	if err := conf.buildMimetypes(srv.Mimetypes()); err != nil {
+	if err := conf.buildMimetypes(srv); err != nil {
 		err.Field = "mimetypes." + err.Field
 		err.Path = filename
 		return nil, nil, err
