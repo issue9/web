@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/qheader"
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web/internal/header"
 )
 
 type Encodings struct {
@@ -107,13 +107,14 @@ func (c *Encodings) Add(id, name string, f NewEncodingFunc) {
 // Search 从报头中查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
-func (c *Encodings) Search(contentType, header string) (w *Pool, notAcceptable bool) {
+func (c *Encodings) Search(contentType, h string) (w *Pool, notAcceptable bool) {
 	if len(c.pools) == 0 {
 		return
 	}
 
-	accepts := qheader.Parse(header, "*")
-	if accepts == nil || len(accepts.Items) == 0 {
+	accepts := header.ParseQHeader(h, "*")
+	defer header.PutQHeader(&accepts)
+	if len(accepts) == 0 {
 		return
 	}
 
@@ -122,13 +123,13 @@ func (c *Encodings) Search(contentType, header string) (w *Pool, notAcceptable b
 		return
 	}
 
-	if last := accepts.Items[len(accepts.Items)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
+	if last := accepts[len(accepts)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {
 			return nil, true
 		}
 
 		for _, p := range pools {
-			exists := sliceutil.Exists(accepts.Items, func(e *qheader.Item) bool {
+			exists := sliceutil.Exists(accepts, func(e *header.Item) bool {
 				return e.Value == p.name
 			})
 			if !exists {
@@ -138,8 +139,8 @@ func (c *Encodings) Search(contentType, header string) (w *Pool, notAcceptable b
 		return
 	}
 
-	var identity *qheader.Item
-	for _, accept := range accepts.Items {
+	var identity *header.Item
+	for _, accept := range accepts {
 		if accept.Err != nil {
 			if c.errlog != nil {
 				c.errlog.Error(accept.Err)

@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer"
 )
 
@@ -26,9 +26,9 @@ func (ms *Mimetypes) unmarshalFunc(name string) (serializer.UnmarshalFunc, bool)
 
 // ContentType 从 content-type 报头中获取解码和字符集函数
 //
-// header 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (ms *Mimetypes) ContentType(header string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
-	mimetype, charset := parseMimetype(header)
+// h 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
+func (ms *Mimetypes) ContentType(h string) (serializer.UnmarshalFunc, encoding.Encoding, error) {
+	mimetype, charset := header.ParseWithParam(h, "charset")
 
 	f, found := ms.unmarshalFunc(mimetype)
 	if !found {
@@ -46,61 +46,37 @@ func (ms *Mimetypes) ContentType(header string) (serializer.UnmarshalFunc, encod
 	return f, e, nil
 }
 
-func parseMimetype(header string) (mt, charset string) {
-	t, ps, found := strings.Cut(header, ";")
-	if !found {
-		return header, ""
-	}
-
-	for len(ps) > 0 {
-		var name, val string
-		if index := strings.IndexByte(ps, '='); index >= 0 {
-			name = ps[:index]
-			ps = ps[index+1:]
-		}
-
-		if index := strings.IndexByte(ps, ','); index >= 0 {
-			val = ps[:index]
-			ps = ps[index+1:]
-		} else {
-			val = ps
-			ps = ps[:0]
-		}
-
-		if strings.ToLower(strings.TrimSpace(name)) == "charset" {
-			return t, strings.ToLower(strings.TrimSpace(val))
-		}
-	}
-
-	return t, ""
-}
-
-// MarshalFunc 从 header 解析出当前请求所需要的 mimetype 名称和对应的解码函数
+// MarshalFunc 从 h 解析出当前请求所需要的 mimetype 名称和对应的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
 // xx/ 表示完全匹配以 xx/ 的内容
 // 如果传递的内容如下：
-//  application/json;q=0.9,*/*;q=1
+//
+//	application/json;q=0.9,*/*;q=1
+//
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
 //
 // 在不完全匹配的情况下，返回值的名称依然是具体名称。
-//  text/*;q=0.9
+//
+//	text/*;q=0.9
+//
 // 返回的名称可能是：
-//  text/plain
-func (ms *Mimetypes) MarshalFunc(header string) (string, serializer.MarshalFunc, bool) {
-	if header == "" {
+//
+//	text/plain
+func (ms *Mimetypes) MarshalFunc(h string) (string, serializer.MarshalFunc, bool) {
+	if h == "" {
 		if name, m := ms.findMarshal("*/*"); name != "" {
 			return name, m, true
 		}
 		return "", nil, false
 	}
 
-	if qh := qheader.Parse(header, "*/*"); qh != nil {
-		for _, item := range qh.Items {
-			if name, m := ms.findMarshal(item.Value); name != "" {
-				return name, m, true
-			}
+	items := header.ParseQHeader(h, "*/*")
+	defer header.PutQHeader(&items)
+	for _, item := range items {
+		if name, m := ms.findMarshal(item.Value); name != "" {
+			return name, m, true
 		}
 	}
 

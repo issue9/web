@@ -13,15 +13,13 @@ import (
 
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/types"
-	"github.com/issue9/qheader"
 	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
-	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
 	xencoding "github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/validation"
 )
@@ -29,7 +27,6 @@ import (
 const (
 	contextPoolBodyBufferMaxSize = 1 << 16
 	defaultBodyBufferSize        = 256
-	utf8Name                     = "utf-8"
 )
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
@@ -91,24 +88,24 @@ type Context struct {
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	header := r.Header.Get("Accept")
-	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(header)
+	h := r.Header.Get("Accept")
+	outputMimetypeName, marshal, found := srv.mimetypes.MarshalFunc(h)
 	if !found {
-		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	header = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset := acceptCharset(header)
+	h = r.Header.Get("Accept-Charset")
+	outputCharsetName, outputCharset := header.AcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found charset for %s", header))
+		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found charset for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	header = r.Header.Get("Accept-Encoding")
-	outputEncoding, notAcceptable := srv.encodings.Search(outputMimetypeName, header)
+	h = r.Header.Get("Accept-Encoding")
+	outputEncoding, notAcceptable := srv.encodings.Search(outputMimetypeName, h)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -118,10 +115,10 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 
 	var inputMimetype serializer.UnmarshalFunc
 	var inputCharset encoding.Encoding
-	header = r.Header.Get("Content-Type")
-	if header != "" {
+	h = r.Header.Get("Content-Type")
+	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(header)
+		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
 			srv.Logs().Debug(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -180,7 +177,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 			ctx.respWriter = ctx.encodingCloser
 		}
 
-		if !charsetIsNop(ctx.outputCharset) {
+		if !header.CharsetIsNop(ctx.outputCharset) {
 			ctx.charsetCloser = transform.NewWriter(ctx.respWriter, ctx.outputCharset.NewEncoder())
 			ctx.respWriter = ctx.charsetCloser
 		}
@@ -256,7 +253,9 @@ func (ctx *Context) destroy() {
 // OnExit 注册退出当前请求时的处理函数
 //
 // f 的原型为
-//  func(status int)
+//
+//	func(status int)
+//
 // 其中 status 为最终输出到客户端的状态码。
 func (ctx *Context) OnExit(f func(int)) {
 	if ctx.exits == nil {
@@ -286,7 +285,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	if problem {
 		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.outputMimetypeName)
 	}
-	ctx.Header().Set("Content-Type", buildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
+	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}
@@ -304,34 +303,6 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	ctx.WriteHeader(status)
 	_, err = ctx.Write(data)
 	return err
-}
-
-// 根据 Accept-Charset 报头的内容获取其最值的字符集信息
-//
-// 传递 * 获取返回默认的字符集相关信息，即 utf-8
-// 其它值则按值查找，或是在找不到时返回空值。
-//
-// 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func acceptCharset(header string) (name string, enc encoding.Encoding) {
-	if header == "" || header == "*" {
-		return utf8Name, nil
-	}
-
-	var err error
-	qh := qheader.Parse(header, "*")
-	for _, item := range qh.Items {
-		if enc, err = htmlindex.Get(item.Value); err != nil { // err != nil 表示未找到，继续查找
-			continue
-		}
-
-		// 转换成官方的名称
-		if name, err = htmlindex.Name(enc); err != nil { // 不存在，直接使用用户上传的名称
-			name = item.Value
-		}
-		return name, enc
-	}
-
-	return "", nil
 }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
@@ -353,9 +324,9 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 // ClientIP 返回客户端的 IP 地址及端口
 //
 // 获取顺序如下：
-//  - X-Forwarded-For 的第一个元素
-//  - Remote-Addr 报头
-//  - X-Read-IP 报头
+//   - X-Forwarded-For 的第一个元素
+//   - Remote-Addr 报头
+//   - X-Read-IP 报头
 func (ctx *Context) ClientIP() string {
 	ip := ctx.Request().Header.Get("X-Forwarded-For")
 	if index := strings.IndexByte(ip, ','); index > 0 {
@@ -372,22 +343,6 @@ func (ctx *Context) ClientIP() string {
 }
 
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
-
-// 指定的编码是否不需要任何额外操作
-func charsetIsNop(enc encoding.Encoding) bool {
-	return enc == nil || enc == unicode.UTF8 || enc == encoding.Nop
-}
-
-func buildContentType(mt, charset string) string {
-	if mt == "" {
-		panic("mt 不能为空")
-	}
-	if charset == "" {
-		charset = utf8Name
-	}
-
-	return mt + "; charset=" + charset
-}
 
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))

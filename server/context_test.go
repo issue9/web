@@ -21,10 +21,10 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/term/v3/colors"
-	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/language"
 
-	xencoding "github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
@@ -66,8 +66,8 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
 	// encoding
-	srv.AddEncoding("gzip", "gzip", xencoding.GZipWriter(8))
-	srv.AddEncoding("deflate", "deflate", xencoding.DeflateWriter(8))
+	srv.AddEncoding("gzip", "gzip", encoding.GZipWriter(8))
+	srv.AddEncoding("deflate", "deflate", encoding.DeflateWriter(8))
 	srv.AllowEncoding("*", "gzip", "deflate")
 
 	srv.Problems().Add("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
@@ -158,8 +158,8 @@ func TestServer_newContext(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", []byte("123")).Header("Content-Type", buildContentType(text.Mimetype, "utf-")).Request()
-	r.Header.Set("content-type", buildContentType(text.Mimetype, "utf-"))
+	r = rest.Post(a, "/path", []byte("123")).Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-")).Request()
+	r.Header.Set("content-type", header.BuildContentType(text.Mimetype, "utf-"))
 	srv.newContext(w, r, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
 	a.NotEmpty(lw.String())
@@ -169,7 +169,7 @@ func TestServer_newContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx").
-		Header("content-type", buildContentType(text.Mimetype, utf8Name)).
+		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
 		Request()
 	ctx := srv.newContext(w, r, nil)
 	a.NotNil(ctx)
@@ -181,12 +181,12 @@ func TestServer_newContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7").
-		Header("content-type", buildContentType(text.Mimetype, utf8Name)).
+		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.NotNil(ctx)
 	a.Empty(lw.String())
-	a.True(charsetIsNop(ctx.inputCharset)).
+	a.True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.outputMimetypeName, "application/json").
 		Equal(ctx.outputCharsetName, "utf-8").
 		Equal(ctx.inputMimetype, serializer.UnmarshalFunc(text.Unmarshal)).
@@ -197,29 +197,29 @@ func TestServer_newContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
-		Header("content-type", buildContentType(text.Mimetype, utf8Name)).
+		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
 		Header("accept", "application/json;q=0.2,text/plain;q=0.9").
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
-		True(charsetIsNop(ctx.inputCharset)).
+		True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.outputMimetypeName, text.Mimetype).
-		Equal(ctx.outputCharsetName, utf8Name)
+		Equal(ctx.outputCharsetName, header.UTF8Name)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Post(a, "/path", []byte("123")).
-		Header("content-type", buildContentType(text.Mimetype, utf8Name)).
+		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
 		Header("accept", "application/json;q=0.2,text/*;q=0.9").
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
-		True(charsetIsNop(ctx.inputCharset)).
+		True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.outputMimetypeName, text.Mimetype).
-		Equal(ctx.outputCharsetName, utf8Name)
+		Equal(ctx.outputCharsetName, header.UTF8Name)
 }
 
 func TestContext_Marshal(t *testing.T) {
@@ -238,7 +238,7 @@ func TestContext_Marshal(t *testing.T) {
 	a.NotError(ctx.Marshal(http.StatusCreated, obj, false))
 	a.Equal(w.Code, http.StatusCreated)
 	a.Equal(w.Body.String(), "test,123")
-	a.Equal(w.Header().Get("content-type"), buildContentType(text.Mimetype, "utf-8"))
+	a.Equal(w.Header().Get("content-type"), header.BuildContentType(text.Mimetype, "utf-8"))
 	a.Equal(w.Header().Get("content-language"), "zh-Hans")
 
 	w = httptest.NewRecorder()
@@ -350,7 +350,7 @@ func TestContext_Marshal(t *testing.T) {
 	ctx = srv.newContext(w, r, nil)
 	a.Nil(ctx.outputMimetype).
 		Equal(ctx.outputMimetypeName, "nil").
-		Equal(ctx.outputCharsetName, utf8Name)
+		Equal(ctx.outputCharsetName, header.UTF8Name)
 	a.PanicString(func() {
 		ctx.Marshal(http.StatusCreated, "val", false)
 	}, "未对 nil 作处理")
@@ -480,17 +480,6 @@ func TestContext_ClientIP(t *testing.T) {
 	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
 }
 
-func TestBuildContentType(t *testing.T) {
-	a := assert.New(t, false)
-
-	a.Equal("application/xml; charset=utf16", buildContentType("application/xml", "utf16"))
-	a.Equal("application/xml; charset="+utf8Name, buildContentType("application/xml", ""))
-	a.Equal("application/xml; charset="+utf8Name, buildContentType("application/xml", ""))
-	a.PanicString(func() {
-		buildContentType("", "")
-	}, "mt 不能为空")
-}
-
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
@@ -519,42 +508,6 @@ func TestContext_LocalePrinter(t *testing.T) {
 	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试"))
 	a.Equal(w.Body.String(), "测试")
-}
-
-func TestAcceptCharset(t *testing.T) {
-	a := assert.New(t, false)
-
-	name, enc := acceptCharset(utf8Name)
-	a.Equal(name, utf8Name).
-		True(charsetIsNop(enc))
-
-	name, enc = acceptCharset("")
-	a.Equal(name, utf8Name).
-		True(charsetIsNop(enc))
-
-	// * 表示采用默认的编码
-	name, enc = acceptCharset("*")
-	a.Equal(name, utf8Name).
-		True(charsetIsNop(enc))
-
-	name, enc = acceptCharset("gbk")
-	a.Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// 传递一个非正规名称
-	name, enc = acceptCharset("chinese")
-	a.Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// q 错解析错误
-	name, enc = acceptCharset("utf-8;q=x.9,gbk;q=0.8")
-	a.Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// 不支持的编码
-	name, enc = acceptCharset("not-supported")
-	a.Empty(name).
-		Nil(enc)
 }
 
 func TestContext_Problem(t *testing.T) {

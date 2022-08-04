@@ -62,7 +62,7 @@ func TestMimetypes_ContentType(t *testing.T) {
 	a.NotError(err).NotNil(f).Nil(e)
 
 	// charset=UTF-8
-	f, e, err = mt.ContentType("application/octet-stream; charset=UTF-8,p1=k1,p2=k2")
+	f, e, err = mt.ContentType("application/octet-stream; charset=UTF-8;p1=k1;p2=k2")
 	a.NotError(err).NotNil(f).Nil(e)
 
 	// charset=

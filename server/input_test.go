@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/serializer/text/testobject"
 )
@@ -346,7 +347,7 @@ func TestContext_Body(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Post(a, "/path", gbkBytes1).
 		Header("Accept", "*/*").
-		Header("Content-Type", buildContentType(text.Mimetype, " gb18030")).
+		Header("Content-Type", header.BuildContentType(text.Mimetype, " gb18030")).
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.NotNil(ctx)
@@ -389,7 +390,7 @@ func TestContext_Read(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", buildContentType(text.Mimetype, "utf-8")).
+		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-8")).
 		Request()
 	ctx := newServer(a, nil).newContext(w, r, nil)
 	obj := &testobject.TextObject{}
@@ -398,7 +399,7 @@ func TestContext_Read(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", buildContentType(text.Mimetype, "utf-8")).
+		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-8")).
 		Request()
 	ctx = newServer(a, nil).newContext(w, r, nil)
 	o := &struct{}{}

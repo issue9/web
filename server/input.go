@@ -10,8 +10,10 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
-	"github.com/issue9/web/validation"
 	"golang.org/x/text/transform"
+
+	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/validation"
 )
 
 var tGreatThanZero = localeutil.Phrase("should great than 0")
@@ -282,7 +284,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 	}
 
 	var reader io.Reader = ctx.Request().Body
-	if !charsetIsNop(ctx.inputCharset) {
+	if !header.CharsetIsNop(ctx.inputCharset) {
 		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
