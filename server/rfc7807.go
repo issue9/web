@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 )
 
@@ -24,14 +25,15 @@ var rfc7807ProblemPool = &sync.Pool{New: func() any {
 // RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func RFC7807Builder(id, title string, status int) Problem {
+func RFC7807Builder(id string, title localeutil.LocaleStringer, status int) Problem {
 	if id == "" {
 		id = aboutBlank
 	}
 
 	p := rfc7807ProblemPool.Get().(*rfc7807)
 	p.typ = id
-	p.title = title
+	p.title = "" // 此值 在 Apply 中由 localeTitle 初始化而来。
+	p.localeTitle = title
 	p.status = status
 	p.pKeys = p.pKeys[:0]
 	p.pReasons = p.pReasons[:0]
@@ -42,9 +44,10 @@ func RFC7807Builder(id, title string, status int) Problem {
 }
 
 type rfc7807 struct {
-	typ    string
-	title  string
-	status int
+	typ         string
+	title       string
+	localeTitle localeutil.LocaleStringer
+	status      int
 
 	// params
 	pKeys    []string
@@ -187,6 +190,8 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 }
 
 func (p *rfc7807) Apply(ctx *Context) {
+	p.title = p.localeTitle.LocaleString(ctx.LocalePrinter())
+
 	if err := ctx.Marshal(p.status, p, true); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/issue9/localeutil"
-	"golang.org/x/text/message"
 )
 
 const aboutBlank = "about:blank"
@@ -36,7 +35,7 @@ type Problem interface {
 // id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
 // title 错误信息的简要描述；
 // status 输出的状态码，该值将由 [Problem.Status] 返回；
-type BuildProblemFunc func(id, title string, status int) Problem
+type BuildProblemFunc func(id string, title localeutil.LocaleStringer, status int) Problem
 
 type Problems struct {
 	builder   BuildProblemFunc
@@ -131,7 +130,7 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 // Problem 根据 id 生成 [Problem] 对象
 //
 // id 通过此值查找相应的 title；
-func (p *Problems) Problem(id string, printer *message.Printer) Problem {
+func (p *Problems) Problem(id string) Problem {
 	sp, found := p.problems[id]
 	if !found {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
@@ -142,5 +141,5 @@ func (p *Problems) Problem(id string, printer *message.Printer) Problem {
 	} else {
 		id = p.baseURL + id
 	}
-	return p.builder(id, sp.title.LocaleString(printer), sp.status)
+	return p.builder(id, sp.title, sp.status)
 }

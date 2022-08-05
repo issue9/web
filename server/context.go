@@ -356,5 +356,5 @@ func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 //
 // id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
 func (ctx *Context) Problem(id string) Problem {
-	return ctx.Server().Problems().Problem(id, ctx.LocalePrinter())
+	return ctx.Server().Problems().Problem(id)
 }

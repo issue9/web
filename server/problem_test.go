@@ -3,13 +3,13 @@
 package server
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v2/rest"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 )
 
 func TestProblems_Add(t *testing.T) {
@@ -82,27 +82,23 @@ func TestProblems_Mimetype(t *testing.T) {
 
 func TestProblems_Problem(t *testing.T) {
 	a := assert.New(t, false)
-
-	cat := catalog.NewBuilder()
-	cat.SetString(language.SimplifiedChinese, "lang", "hans")
-	cnp := message.NewPrinter(language.SimplifiedChinese, message.Catalog(cat))
-	twp := message.NewPrinter(language.TraditionalChinese, message.Catalog(cat))
-
-	ps := newProblems(RFC7807Builder)
-	ps.Add("40010", 400, localeutil.Phrase("lang"), localeutil.Phrase("40010"))
-	ps.Add("40011", 400, localeutil.Phrase("lang"), localeutil.Phrase("40011"))
+	s := newServer(a, nil)
+	ps := s.Problems()
 
 	a.PanicString(func() {
-		ps.Problem("not-exists", nil)
+		ps.Problem("not-exists")
 	}, "未找到有关 not-exists 的定义")
 
-	p := ps.Problem("40010", cnp)
-	a.NotNil(p)
-	pp, ok := p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.title, "hans").Equal(pp.status, 400)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").
+		Header("Accept", "application/json").
+		Header("accept-language", language.SimplifiedChinese.String()).
+		Request()
+	ctx := s.newContext(w, r, nil)
 
-	p = ps.Problem("40010", twp)
+	p := ps.Problem("41110")
 	a.NotNil(p)
-	pp, ok = p.(*rfc7807)
-	a.True(ok).NotNil(pp).Equal(pp.title, "lang").Equal(pp.status, 400)
+	p.Apply(ctx)
+	a.Equal(w.Body.String(), `{"type":"41110","title":"hans","status":411}`).
+		Equal(w.Result().StatusCode, 411)
 }

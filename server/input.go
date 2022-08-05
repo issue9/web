@@ -104,9 +104,9 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 	ps := ctx.Server().Problems()
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
-		return 0, ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return 0, ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	} else if ret <= 0 {
-		return 0, ps.Problem(id, p).AddParam(key, tGreatThanZero.LocaleString(p))
+		return 0, ps.Problem(id).AddParam(key, tGreatThanZero.LocaleString(p))
 	}
 	return ret, nil
 }
@@ -119,7 +119,7 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 	if err != nil {
 		p := ctx.LocalePrinter()
 		ps := ctx.Server().Problems()
-		return 0, ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return 0, ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	}
 	return ret, nil
 }
@@ -132,7 +132,7 @@ func (ctx *Context) ParamString(key, id string) (string, Responser) {
 	if err != nil {
 		p := ctx.LocalePrinter()
 		ps := ctx.Server().Problems()
-		return "", ps.Problem(id, p).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return "", ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	}
 	return ret, nil
 }
@@ -346,7 +346,7 @@ func (ctx *Context) validation2Problem(v *validation.Validation, id string) Prob
 	}
 
 	p := ctx.LocalePrinter()
-	pp := ctx.Server().Problems().Problem(id, p)
+	pp := ctx.Server().Problems().Problem(id)
 	v.Visit(func(key string, reason localeutil.LocaleStringer) bool {
 		pp.AddParam(key, reason.LocaleString(p))
 		return true
