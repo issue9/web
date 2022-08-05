@@ -49,7 +49,9 @@ func (v *Validation) Count() int { return len(v.keys) }
 // Visit 依次访问每一条错误信息
 //
 // f 为访问错误信息的方法，其原型为：
-//  func(key string, reason localeutil.LocaleStringer) (ok bool)
+//
+//	func(key string, reason localeutil.LocaleStringer) (ok bool)
+//
 // 其中的 key 为名称，reason 为出错原因，返回值 ok 表示是否继续下一条信息的访问。
 func (v *Validation) Visit(f func(string, localeutil.LocaleStringer) bool) {
 	for index, key := range v.keys {

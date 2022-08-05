@@ -248,7 +248,7 @@ func (q *Queries) Problem(id string) Responser { return q.ctx.validation2Problem
 //
 // 具体的文档信息可以参考 https://github.com/issue9/query
 //
-// 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
+// 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
 func (q *Queries) Object(v any, id string) {
 	for k, err := range query.Parse(q.queries, v) {
 		q.v.Add(k, localeutil.Phrase(err.Error()))
@@ -324,10 +324,7 @@ func (ctx *Context) Unmarshal(v any) error {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 功能与 Unmarshal() 相同，只不过 Read() 在出错时，返回的不是 error，
-// 而是一个表示错误信息的 Response 对象。
-//
-// 如果 v 实现了 CTXSanitizer 接口，则在读取数据之后，会调用其接口函数。
+// 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 id 作为错误代码的 Response 对象。
 func (ctx *Context) Read(v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {

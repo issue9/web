@@ -16,24 +16,23 @@ import (
 
 type (
 	httpConfig struct {
-		// 网站端口
+		// 端口
 		//
-		// 格式与 net/http.Server.Addr 相同。可以为空，表示由 net/http.Server 确定其默认值。
+		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 net/http.Server 确定其默认值。
 		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
 		// 网站的域名证书
 		//
-		// 不能同时与 ACME 生效
+		// NOTE: 不能同时与 ACME 生效
 		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
 
 		// ACME 协议的证书
 		//
-		// 不能同时与 Certificates 生效
+		// NOTE: 不能同时与 Certificates 生效
 		ACME *acme `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty"`
 
 		tlsConfig *tls.Config
 
-		// 应用于 http.Server 的几个变量
 		ReadTimeout       duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
 		WriteTimeout      duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
 		IdleTimeout       duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`

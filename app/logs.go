@@ -195,11 +195,12 @@ var colorMap = map[string]colors.Color{
 // args 参数格式如下：
 // 0: 时间格式
 // 1: 为颜色名称，以下值有效：
-//  - default
-//  - red
+//   - default
+//   - red
+//
 // 2: 为输出通道，以下值有效：
-//  - stdout
-//  - stderr
+//   - stdout
+//   - stderr
 func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	if len(args) != 3 {
 		return nil, nil, &ConfigError{Field: "Args", Message: localeutil.Error("invalid value %s", args)}

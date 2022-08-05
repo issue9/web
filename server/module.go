@@ -100,7 +100,7 @@ func (m *Module) Glob(pattern string) ([]string, error) {
 
 // Cache 获取缓存对象
 //
-// 该缓存对象的 key 会自动添加 Module.ID 作为其前缀。
+// 该缓存对象的 key 会自动添加 [Module.ID] 作为其前缀。
 func (m *Module) Cache() cache.Access {
 	return cache.Prefix(m.BuildID(""), m.Server().Cache())
 }

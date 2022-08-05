@@ -62,7 +62,8 @@ func (s *Tester) GoServe() {
 // NewRouter 创建一个默认的路由
 //
 // 相当于：
-//  s.Server().NewRouter("default", "http://localhost:8080/", nil)
+//
+//	s.Server().NewRouter("default", "http://localhost:8080/", nil)
 //
 // NOTE: 如果需要多个路由，请使用 Server().NewRouter 并指定正确的 group.Matcher 对象，
 // 或是将 Tester.NewRouter 放在最后。

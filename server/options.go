@@ -37,15 +37,15 @@ type Options struct {
 	// 如果此值为空，那么在被初始化 logs.New(nil) 值，表示不会输出到任何通道。
 	Logs *logs.Logs
 
-	// 生成 [problem.Problem] 对象的方法
+	// 生成 [Problem] 对象的方法
 	//
-	// 如果为空，那么将采用 [problem.RFC7807Builder] 作为默认值。
+	// 如果为空，那么将采用 [RFC7807Builder] 作为默认值。
 	ProblemBuilder BuildProblemFunc
 
 	// 默认的语言标签
 	//
 	// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-	// 同时也用来初始化 Server.LocalePrinter。
+	// 同时也用来初始化 [Server.LocalePrinter]。
 	//
 	// 如果为空，则会尝试读取当前系统的本地化信息。
 	LanguageTag language.Tag

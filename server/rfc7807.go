@@ -21,7 +21,7 @@ var rfc7807ProblemPool = &sync.Pool{New: func() any {
 	return &rfc7807{}
 }}
 
-// RFC7807Builder [BuildFunc] 的 [RFC7807] 标准实现
+// RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id, title string, status int) Problem {

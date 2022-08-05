@@ -11,7 +11,7 @@ import (
 	"github.com/andybalholm/brotli"
 )
 
-//  WriteCloseRester 每种压缩实例需要实现的最小接口
+// WriteCloseRester 每种压缩实例需要实现的最小接口
 type WriteCloseRester interface {
 	io.WriteCloser
 	Reset(io.Writer)
