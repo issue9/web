@@ -6,13 +6,15 @@ import (
 	"io/fs"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/sliceutil"
+	"github.com/issue9/localeutil"
+	"golang.org/x/text/message"
 )
 
 type Module struct {
-	srv *Server
-	id  string
-	fs  []fs.FS
+	srv  *Server
+	id   string
+	fs   []fs.FS
+	desc localeutil.LocaleStringer
 }
 
 // IsValidID 是否为合法的 ID
@@ -39,12 +41,12 @@ func IsValidID(id string) bool {
 // NewModule 声明新的模块
 //
 // id 模块的 ID，需要全局唯一，只能是字母、数字以及下划线。
-func (srv *Server) NewModule(id string) *Module {
+func (srv *Server) NewModule(id string, desc localeutil.LocaleStringer) *Module {
 	if !IsValidID(id) {
 		panic("无效的 id 格式")
 	}
 
-	if sliceutil.Exists(srv.modules, func(e string) bool { return e == id }) {
+	if _, exists := srv.modules[id]; exists {
 		panic("存在同名模块：" + id)
 	}
 
@@ -55,29 +57,42 @@ func (srv *Server) NewModule(id string) *Module {
 		f = append(f, fsys)
 	}
 
-	srv.modules = append(srv.modules, id)
-	return &Module{
-		srv: srv,
-		id:  id,
-		fs:  f,
+	mod := &Module{
+		srv:  srv,
+		id:   id,
+		fs:   f,
+		desc: desc,
 	}
+	srv.modules[id] = mod
+
+	return mod
+}
+
+// Modules 所有模块的列表
+func (srv *Server) Modules(p *message.Printer) map[string]string {
+	mods := make(map[string]string, len(srv.modules))
+	for _, mod := range srv.modules {
+		mods[mod.id] = mod.desc.LocaleString(p)
+	}
+	return mods
 }
 
 // ID 模块的唯一 ID
 func (m *Module) ID() string { return m.id }
 
+// Description 模块的描述信息
+func (m *Module) Description() localeutil.LocaleStringer { return m.desc }
+
 // BuildID 根据当前模块的 ID 生成一个新的 ID
-func (m *Module) BuildID(suffix string) string { return m.ID() + "_" + suffix }
+func (m *Module) BuildID(suffix string) string { return m.ID() + suffix }
 
 func (m *Module) Server() *Server { return m.srv }
 
 // AddFS 添加文件系统
 //
-// Module 默认以 id 为名称相对于 Server 创建了一个文件系统，
-// 此操作会将 fsys 作为 Module 另一个文件系统与 Module 相关联，
-// 当执行 Open 等操作时，会依然以关联顺序查找相应的文件系统，直到找到。
-//
-// 需要注意的是，fs.Glob 不是搜索所有的 fsys 然后返回集合。
+// [Module] 默认以 id 为名称相对于 [Server] 创建了一个文件系统。
+// 此操作会将 fsys 作为 [Module] 的另一个文件系统与 Module 相关联，
+// 当查找文件时，会依次以添加顺序查找相应的文件系统，直到找到或是结束。
 func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
 
 func (m *Module) Open(name string) (fs.File, error) {
@@ -89,6 +104,9 @@ func (m *Module) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
 }
 
+// Glob 实现 fs.GlobFS 接口
+//
+// 查找到第一个返回非空集合即停止。
 func (m *Module) Glob(pattern string) ([]string, error) {
 	for _, fsys := range m.fs {
 		if matches, err := fs.Glob(fsys, pattern); len(matches) > 0 {

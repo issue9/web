@@ -40,7 +40,7 @@ type Server struct {
 	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
-	modules    []string // 保存着模块名称，用于检测是否存在重名
+	modules    map[string]*Module
 	routers    *Routers
 	problems   *Problems
 	services   *service.Server
@@ -75,6 +75,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
+		modules:    make(map[string]*Module, 20),
 		problems:   newProblems(o.ProblemBuilder),
 		services:   service.InternalNewServer(o.Logs, loc),
 
