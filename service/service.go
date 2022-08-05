@@ -25,9 +25,8 @@ type (
 	// 如果是通 ctx.Done 取消的，应该返回 context.Canceled。
 	ServiceFunc func(ctx context.Context) error
 
-	// Service 服务模型
 	Service struct {
-		srv        *Server
+		s          *Server
 		title      string
 		f          ServiceFunc
 		cancelFunc context.CancelFunc
@@ -52,28 +51,26 @@ func (srv *Service) State() State { return srv.state }
 // 不会清空该值。
 func (srv *Service) Err() error { return srv.err }
 
+func (srv *Service) setState(s State) {
+	srv.stateMux.Lock()
+	srv.state = s
+	srv.stateMux.Unlock()
+}
+
 // Run 开始执行该服务
 func (srv *Service) Run() {
-	if srv.state == Running {
-		return
+	if srv.state != Running {
+		srv.setState(Running)
+		go srv.serve()
 	}
-
-	srv.stateMux.Lock()
-	srv.state = Running
-	srv.stateMux.Unlock()
-
-	go srv.serve()
 }
 
 func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.srv.logs.Error(srv.err)
-
-			srv.stateMux.Lock()
-			srv.state = Failed
-			srv.stateMux.Unlock()
+			srv.s.logs.Error(srv.err)
+			srv.setState(Failed)
 		}
 	}()
 
@@ -82,13 +79,11 @@ func (srv *Service) serve() {
 	srv.err = srv.f(ctx)
 	state := Stopped
 	if srv.err != nil && srv.err != context.Canceled {
-		srv.srv.logs.Error(srv.err)
+		srv.s.logs.Error(srv.err)
 		state = Failed
 	}
 
-	srv.stateMux.Lock()
-	srv.state = state
-	srv.stateMux.Unlock()
+	srv.setState(state)
 }
 
 // Stop 停止服务
@@ -111,7 +106,7 @@ func (srv *Service) Stop() {
 // NOTE: 如果所有服务已经处于运行的状态，则会自动运行新添加的服务。
 func (srv *Server) Add(title string, f ServiceFunc) {
 	s := &Service{
-		srv:   srv,
+		s:     srv,
 		title: title,
 		f:     f,
 	}

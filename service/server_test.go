@@ -29,7 +29,7 @@ func TestServer_service(t *testing.T) {
 	a.False(srv.Running())
 	a.Equal(0, len(srv.Services()))
 
-	s1, start1, exit1 := buildSrv1()
+	s1, start1, exit1 := buildService()
 	srv.Add("srv1", s1)
 	a.Equal(1, len(srv.Services()))
 	srv1 := srv.services[0]
@@ -48,7 +48,7 @@ func TestServer_service(t *testing.T) {
 		Equal(Running, srv1.State())
 
 	// 运行中添加
-	s2, start2, exit2 := buildSrv1()
+	s2, start2, exit2 := buildService()
 	srv.Add("srv2", s2)
 	a.Equal(3, len(srv.Services()))
 	srv2 := srv.services[2]

@@ -12,12 +12,9 @@ import (
 	"github.com/issue9/assert/v2"
 )
 
-const (
-	tickTimer  = 500 * time.Microsecond
-	panicTimer = 50 * tickTimer // windows 下此值不能过小，否则测试容易出错
-)
+const tickTimer = 500 * time.Microsecond
 
-func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
+func buildService() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -30,10 +27,10 @@ func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
-				fmt.Println("cancel srv1")
+				fmt.Println("cancel service")
 				return ctx.Err()
 			default:
-				fmt.Println("srv1:", now)
+				fmt.Println("service:", now)
 				if !inited {
 					inited = true
 					start <- struct{}{}
@@ -44,8 +41,7 @@ func buildSrv1() (f ServiceFunc, start, exit chan struct{}) {
 	}, start, exit
 }
 
-// panic
-func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
+func buildPanicService() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -54,30 +50,32 @@ func buildSrv2() (f ServiceFunc, start, exit chan struct{}) {
 			exit <- struct{}{}
 		}()
 
-		inited := false
-		timer := time.NewTimer(panicTimer)
+		count := 0
+		p := make(chan struct{}, 1)
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
-				fmt.Println("cancel srv2")
+				fmt.Println("cancel panic service")
 				return ctx.Err()
-			case <-timer.C:
-				fmt.Println("panic srv2")
-				panic("panic srv2")
+			case <-p:
+				fmt.Println("enter panic service")
+				panic("service panic")
 			default:
-				if !inited {
-					inited = true
+				if count == 0 {
 					start <- struct{}{}
 				}
-				fmt.Println("srv2:", now)
+				count++
+				fmt.Println("panic service:", now)
+				if count >= 4 {
+					p <- struct{}{}
+				}
 			}
 		}
 		return nil
 	}, start, exit
 }
 
-// error
-func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
+func buildErrorService() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -86,21 +84,24 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 			exit <- struct{}{}
 		}()
 
-		inited := false
-		timer := time.NewTimer(panicTimer)
+		count := 0
+		p := make(chan struct{}, 1)
 		for now := range time.Tick(tickTimer) {
 			select {
 			case <-ctx.Done():
-				fmt.Println("cancel srv3")
+				fmt.Println("cancel error service")
 				return ctx.Err()
-			case <-timer.C:
-				fmt.Println("panic srv2")
-				return errors.New("error")
+			case <-p:
+				fmt.Println("enter error service")
+				return errors.New("service error")
 			default:
-				fmt.Println("srv3:", now)
-				if !inited {
-					inited = true
+				if count == 0 {
 					start <- struct{}{}
+				}
+				count++
+				fmt.Println("error service:", now)
+				if count >= 4 {
+					p <- struct{}{}
 				}
 			}
 		}
@@ -108,18 +109,18 @@ func buildSrv3() (f ServiceFunc, start, exit chan struct{}) {
 	}, start, exit
 }
 
-func TestService_srv1(t *testing.T) {
+func TestService_service(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
-	defer srv.Stop()
+	s := newServer(a)
+	defer s.Stop()
 
-	srv1, start, exit := buildSrv1()
-	srv.Add("srv1", srv1)
-	srv.Run()
-	srv.running = true
+	srv1, start, exit := buildService()
+	s.Add("srv1", srv1)
+	s.Run()
+	s.running = true
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	s1 := srv.services[0]
+	s1 := s.services[0]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), Running)
 	s1.Stop()
@@ -138,16 +139,16 @@ func TestService_srv1(t *testing.T) {
 	a.Equal(s1.State(), Stopped)
 }
 
-func TestService_srv2(t *testing.T) {
+func TestService_panic(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
-	defer srv.Stop()
+	s := newServer(a)
+	defer s.Stop()
 
-	srv2, start, exit := buildSrv2()
-	srv.Add("srv2", srv2)
-	srv.Run() // 注册并运行服务
-	srv.running = true
-	s2 := srv.services[0]
+	srv2, start, exit := buildPanicService()
+	s.Add("srv2", srv2)
+	s.Run() // 注册并运行服务
+	s.running = true
+	s2 := s.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), Running)
@@ -175,16 +176,16 @@ func TestService_srv2(t *testing.T) {
 	a.Equal(s2.State(), Stopped)
 }
 
-func TestService_srv3(t *testing.T) {
+func TestService_error(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a)
-	defer srv.Stop()
+	s := newServer(a)
+	defer s.Stop()
 
-	srv3, start, exit := buildSrv3()
-	srv.Add("srv3", srv3)
-	srv.Run()
-	srv.running = true
-	s3 := srv.services[0]
+	srv3, start, exit := buildErrorService()
+	s.Add("srv3", srv3)
+	s.Run()
+	s.running = true
+	s3 := s.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Running)
