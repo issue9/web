@@ -79,8 +79,8 @@ func TestServer_Serve(t *testing.T) {
 
 	srv.Get("http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 
-	// static 中定义的静态文件
-	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+	// 静态文件
+	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", nil))
 	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 
 	srv.Close(0)
@@ -309,59 +309,38 @@ func TestServer_Routers(t *testing.T) {
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
-	rs := s.Server().Routers()
-
+	r := s.NewRouter()
 	s.GoServe()
 
-	// 带版本
+	a.Run("problems", func(a *assert.Assertion) {
+		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", map[int]string{http.StatusNotFound: "41110"}))
 
-	ver := group.NewHeaderVersion("ver", "vv", log.Default(), "2")
-	a.NotNil(ver)
-	r := rs.New("ver", ver, mux.URLDomain("https://example.com/version"))
-	r.Get("/ver/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+		s.Get("/v1/file1.txt").
+			Header("Accept", "text/plain;vv=2").
+			Do(nil).
+			Status(http.StatusOK).
+			StringBody("file1")
 
-	s.Get("/ver/file1.txt").
-		Header("Accept", "text/plain;vv=2").
-		Do(nil).
-		Status(http.StatusOK).
-		StringBody("file1")
+		s.Get("/v1/not.exists").
+			Header("Accept", "application/json;vv=2").
+			Do(nil).
+			Status(411).
+			StringBody(`{"type":"41110","title":"41110","status":411}`)
+	})
 
-	p := group.NewPathVersion("vv", "v2")
-	a.NotNil(p)
-	r = rs.New("path", p, mux.URLDomain("https://example.com/path"))
-	r.Get("/path/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+	a.Run("no problems", func(a *assert.Assertion) {
+		r.Get("/v2/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", nil))
 
-	s.Get("/v2/path/file1.txt").
-		Do(nil).
-		Status(http.StatusOK).
-		StringBody("file1")
+		s.Get("/v2/file1.txt").
+			Do(nil).
+			Status(http.StatusOK).
+			StringBody("file1")
 
-	r = s.NewRouter()
-	r.Get("/m1/test", servertest.BuildHandler(201))
-	r.Get("/client/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
-
-	s.Get("/m1/test").
-		Header("accept", text.Mimetype).
-		Do(nil).
-		Status(http.StatusCreated).
-		StringBody("201")
-
-	// 定义的静态文件
-	s.Get("/client/file1.txt").
-		Do(nil).
-		Status(http.StatusOK).
-		Header("Content-Type", "text/plain; charset=utf-8").
-		StringBody("file1")
-
-	s.Get("/client/not-exists").
-		Do(nil).
-		Status(http.StatusNotFound)
-
-	// 删除
-	r.Remove("/client/{path}")
-	s.Get("/client/file1.txt").
-		Do(nil).
-		Status(http.StatusNotFound)
+		s.Get("/v2/not.exists").
+			Do(nil).
+			Status(http.StatusNotFound).
+			BodyEmpty()
+	})
 
 	s.Close(0)
 	s.Wait()

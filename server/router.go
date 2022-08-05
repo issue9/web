@@ -45,14 +45,24 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps types.Route, 
 // Routers 路由管理接口
 func (srv *Server) Routers() *Routers { return srv.routers }
 
-// FileServer 提供静态文件服务
+// FileServer 构建静态文件服务对象
 //
-// fsys 为文件系统，如果为空则采用 srv.FS；
+// fsys 为文件系统，如果为空则采用 [Server] 本身；
 // name 表示参数名称；
 // index 表示目录下的默认文件名；
-func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
+// problems 表示指定状态需要关联的错误 id。默认情况下，
+// 文件服务采用 [Status] 返回指定的状态码。如果需要将返回内容与 Problem 相关联，
+// 可以在此参数中指定，其中键名为状态码，键值为对应的错误 id，可以用的状态有：
+//   - http.StatusForbidden
+//   - http.StatusNotFound
+//   - http.StatusInternalServerError
+func (srv *Server) FileServer(fsys fs.FS, name, index string, problems map[int]string) HandlerFunc {
 	if fsys == nil {
 		fsys = srv
+	}
+
+	if problems == nil {
+		problems = map[int]string{}
 	}
 
 	if name == "" {
@@ -66,12 +76,21 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)
+			if id := problems[http.StatusForbidden]; id != "" {
+				return ctx.Server().Problems().Problem(id)
+			}
 			return Status(http.StatusForbidden)
 		case errors.Is(err, fs.ErrNotExist):
 			srv.Logs().WARN().Error(err)
+			if id := problems[http.StatusNotFound]; id != "" {
+				return ctx.Server().Problems().Problem(id)
+			}
 			return Status(http.StatusNotFound)
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
+			if id := problems[http.StatusInternalServerError]; id != "" {
+				return ctx.Server().Problems().Problem(id)
+			}
 			return Status(http.StatusInternalServerError)
 		default:
 			return nil

@@ -129,6 +129,8 @@ func (m *Module) LoadLocale(glob string) error {
 }
 
 // FileServer 返回以当前模块作为文件系统的静态文件服务
-func (m *Module) FileServer(name, index string) HandlerFunc {
-	return m.Server().FileServer(m, name, index)
+//
+// 参数与 [Server.FileServer] 相同，仅文件系统强制使用当前模块。
+func (m *Module) FileServer(name, index string, problems map[int]string) HandlerFunc {
+	return m.Server().FileServer(m, name, index, problems)
 }
