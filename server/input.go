@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
@@ -17,6 +18,11 @@ import (
 )
 
 var tGreatThanZero = localeutil.Phrase("should great than 0")
+
+var (
+	paramPool = &sync.Pool{New: func() any { return &Params{} }}
+	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
+)
 
 type (
 	Params struct {
@@ -33,10 +39,14 @@ type (
 
 // Params 声明一个用于获取路径参数的对象
 func (ctx *Context) Params() *Params {
-	return &Params{
-		ctx: ctx,
-		v:   validation.New(false),
-	}
+	ps := paramPool.Get().(*Params)
+	ps.ctx = ctx
+	ps.v = validation.New(false)
+	ctx.OnExit(func(i int) {
+		ps.v.Destroy()
+		paramPool.Put(ps)
+	})
+	return ps
 }
 
 // ID 获取参数 key 所代表的值并转换成 int64
@@ -144,11 +154,15 @@ func (ctx *Context) Queries() (*Queries, error) {
 		return nil, err
 	}
 
-	return &Queries{
-		ctx:     ctx,
-		v:       validation.New(false),
-		queries: queries,
-	}, nil
+	q := queryPool.Get().(*Queries)
+	q.ctx = ctx
+	q.v = validation.New(false)
+	q.queries = queries
+	ctx.OnExit(func(i int) {
+		q.v.Destroy()
+		queryPool.Put(q)
+	})
+	return q, nil
 }
 
 func (q *Queries) getItem(key string) (val string) { return q.queries.Get(key) }

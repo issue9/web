@@ -29,7 +29,11 @@ const (
 	defaultBodyBufferSize        = 256
 )
 
-var contextPool = &sync.Pool{New: func() any { return &Context{} }}
+var contextPool = &sync.Pool{New: func() any {
+	return &Context{
+		exits: make([]func(int), 0, 3), // query, params
+	}
+}}
 
 // CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
 //
@@ -134,9 +138,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.request = r
 	ctx.outputMimetypeName = outputMimetypeName
 	ctx.outputCharsetName = outputCharsetName
-	if len(ctx.exits) > 0 {
-		ctx.exits = ctx.exits[:0]
-	}
+	ctx.exits = ctx.exits[:0]
 
 	// response
 	ctx.resp = w
@@ -250,15 +252,12 @@ func (ctx *Context) destroy() {
 
 // OnExit 注册退出当前请求时的处理函数
 //
-// f 的原型为
+// f 为退出时的处理方法，其原型为：
 //
 //	func(status int)
 //
 // 其中 status 为最终输出到客户端的状态码。
 func (ctx *Context) OnExit(f func(int)) {
-	if ctx.exits == nil {
-		ctx.exits = make([]func(int), 0, 3)
-	}
 	ctx.exits = append(ctx.exits, f)
 }
 
