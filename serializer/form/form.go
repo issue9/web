@@ -2,31 +2,33 @@
 
 // Package form 用于处理 www-form-urlencoded 编码
 //
-//  func read(ctx *web.Context) {
-//      vals := urls.Values{}
-//      ctx.Read(vals)
-//  }
+//	func read(ctx *web.Context) {
+//	    vals := urls.Values{}
+//	    ctx.Read(vals)
+//	}
 //
-//  func write(ctx *web.Context) {
-//      vals := urls.Values{}
-//      vals.Add("name", "caixw")
-//      return web.Object(http.StatusOK, vals, nil)
-//  }
-//
+//	func write(ctx *web.Context) {
+//	    vals := urls.Values{}
+//	    vals.Add("name", "caixw")
+//	    return web.Object(http.StatusOK, vals, nil)
+//	}
 //
 // form
 //
 // 用户可以通过定义 form 标签自定义输出的名称，比如：
-//  type Username struct {
-//      Name string `form:"name"`
-//      Age int
-//  }
+//
+//	type Username struct {
+//	    Name string `form:"name"`
+//	    Age int
+//	}
+//
 // 转换成 form-data 可能是以下样式：
-//  name=jjj&age=18
+//
+//	name=jjj&age=18
+//
 // 该方式对数据类型有一定限制：
 //  1. 如果是 map 类型，要求键名类型必须为 string；
 //  2. 如果是 array 或是 slice，则要求元素类型必须是 go 的基本数据类型，不能是 struct 类型；
-//
 //
 // 接口
 //
@@ -59,10 +61,10 @@ type Unmarshaler interface {
 // Marshal 针对 www-form-urlencoded 内容的解码实现
 //
 // 按以下顺序解析内容：
-//  - 如果实现 Marshaler 接口，则调用该接口；
-//  - 如果实现 encoding.TextMarshaler 接口，则调用该接口；
-//  - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
-//  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
+//   - 如果实现 Marshaler 接口，则调用该接口；
+//   - 如果实现 encoding.TextMarshaler 接口，则调用该接口；
+//   - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
+//   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
@@ -87,9 +89,9 @@ func Marshal(v any) ([]byte, error) {
 // Unmarshal 针对 www-form-urlencoded 内容的编码实现
 //
 // 按以下顺序解析内容：
-//  - 如果实现 Unmarshaler 接口，则调用该接口；
-//  - 如果是 url.Values 对象，则依次赋值每个对象；
-//  - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
+//   - 如果实现 Unmarshaler 接口，则调用该接口；
+//   - 如果是 url.Values 对象，则依次赋值每个对象；
+//   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Unmarshal(data []byte, v any) error {
 	if m, ok := v.(Unmarshaler); ok {
 		return m.UnmarshalForm(data)

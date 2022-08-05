@@ -28,7 +28,7 @@ type mimetypeConfig struct {
 	// 比如 application/xml 等
 	Encoding string `json:"encoding" yaml:"encoding" xml:"encoding,attr"`
 
-	// 对应 Problem 类型的编码名称
+	// 对应 [server.Problem] 类型的编码名称
 	//
 	// 如果为空，表示与 encoding 相同，根据 [RFC7807] 最好是不相同，
 	// 比如 application/json 对应 application/problem+json。
@@ -73,14 +73,14 @@ func (conf *configOf[T]) buildMimetypes(srv *server.Server) *ConfigError {
 	return nil
 }
 
-// RegisterMimetype 注册 mimetype
+// RegisterMimetype 注册用于序列化用户提交数据的方法
 //
 // name 为名称，如果存在同名，则会覆盖。
 func RegisterMimetype(m serializer.MarshalFunc, u serializer.UnmarshalFunc, name string) {
 	mimetypesFactory[name] = serialization.Item{Marshal: m, Unmarshal: u}
 }
 
-// RegisterFileSerializer 注册 mimetype
+// RegisterFileSerializer 注册用于文件序列化的方法
 //
 // ext 为文件的扩展名，如果存在同名，则会覆盖。
 func RegisterFileSerializer(m serializer.MarshalFunc, u serializer.UnmarshalFunc, ext ...string) {

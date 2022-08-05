@@ -26,35 +26,38 @@ import (
 // AppOf 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
-//  - v 显示版本号；
-//  - h 显示帮助信息；
-//  - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
-//  - a 执行的动作，该值会传递给 Init，由用户根据 a 决定初始化方式；
-//  - s 以服务的形式运行；
+//
+//   - v 显示版本号；
+//   - h 显示帮助信息；
+//   - f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
+//   - a 执行的动作，该值会传递给 Init，由用户根据 a 决定初始化方式；
+//   - s 以服务的形式运行；
 //
 // 本地化信息采用当前用户的默认语言，
 // 由 github.com/issue9/localeutil.DetectUserLanguageTag 决定。
 // 如果想让 AppOf 支持本地化操作，需要向 Catalog 注册命令行参数的本地化信息：
-//  -v  show version
-//  -h  show help
-//  -f  set file system
-//  -a  action
-//  -s  run as server
+//
+//	-v  show version
+//	-h  show help
+//	-f  set file system
+//	-a  action
+//	-s  run as server
+//
 // 对于 AppOf 的初始化错误产生的 panic 信息是不支持本地的。
 //
-//  // 本地化命令行的帮助信息
-//  builder := catalog.NewBuilder()
-//  builder.SetString("show help", "显示帮助信息")
-//  builder.SetString("show version", "显示版本信息")
+//	// 本地化命令行的帮助信息
+//	builder := catalog.NewBuilder()
+//	builder.SetString("show help", "显示帮助信息")
+//	builder.SetString("show version", "显示版本信息")
 //
-//  cmd := &app.AppOf[struct{}]{
-//      Name: "app",
-//      Version: "1.0.0",
-//      Init: func(s *Server) error {...},
-//      Catalog: builder,
-//  }
+//	cmd := &app.AppOf[struct{}]{
+//	    Name: "app",
+//	    Version: "1.0.0",
+//	    Init: func(s *Server) error {...},
+//	    Catalog: builder,
+//	}
 //
-//  cmd.Exec()
+//	cmd.Exec()
 //
 // T 表示的是配置文件中的用户自定义数据类型，如果不需要可以设置为 struct{}。
 type AppOf[T any] struct {

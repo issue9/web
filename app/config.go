@@ -77,14 +77,14 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
-// NewServerOf 从配置文件初始化 server.Server 实例
+// NewServerOf 从配置文件初始化 [server.Server] 实例
 //
 // fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，根据扩展由 RegisterFileSerializer 负责在 fsys
+// filename 用于指定项目的配置文件，根据扩展由 [RegisterFileSerializer] 负责在 fsys
 // 查找文件加载，如果此值为空，将以 &server.Options{FS: fsys} 作为初始化条件；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
-// 如果实现了 ConfigSanitizer 接口，则在加载后进行自检；
+// 如果实现了 [ConfigSanitizer] 接口，则在加载后进行自检；
 func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		s, err := server.New(name, version, &server.Options{FS: fsys})

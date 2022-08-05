@@ -38,7 +38,7 @@ type (
 	LocaleStringer = localeutil.LocaleStringer
 )
 
-// NewServer 从 Options 初始化 Server 对象
+// NewServer 从 [Options] 初始化 [Server] 对象
 func NewServer(name, version string, o *Options) (*Server, error) {
 	return server.New(name, version, o)
 }

@@ -129,7 +129,7 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 
 // Serve 启动服务
 //
-// 会等待 Server.Close() 执行完之后，此函数才会返回，这一点与 Http.ListenAndServe 稍有不同。
+// 会等待 [Server.Close] 执行完之后，此函数才会返回，这一点与 http.ListenAndServe 稍有不同。
 // 一旦返回，整个 Server 对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	srv.services.Run()
@@ -163,7 +163,7 @@ func (srv *Server) Serve() (err error) {
 
 // Close 触发关闭操作
 //
-// 需要等待 Server.Serve 返回才能证整个服务被关闭。
+// 需要等待 [Server.Serve] 返回才能证整个服务被关闭。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
 		srv.closed <- struct{}{}
@@ -218,7 +218,7 @@ func (srv *Server) AddEncoding(id, name string, f NewEncodingFunc) {
 
 // AllowEncoding 为指定的 contentType 指派压缩方式
 //
-// id 必须是由 AddEncoding 中指定的值。
+// id 必须是由 [AddEncoding] 中指定的值。
 func (srv *Server) AllowEncoding(contentType string, id ...string) {
 	srv.encodings.Allow(contentType, id...)
 }

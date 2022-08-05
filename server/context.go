@@ -31,9 +31,9 @@ const (
 
 var contextPool = &sync.Pool{New: func() any { return &Context{} }}
 
-// CTXSanitizer 在 Context 关联的上下文环境中提供对数据的验证和修正
+// CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
 //
-// 在 Context.Read 和 Queries.Object 中会在解析数据成功之后，调用该接口进行数据验证。
+// 在 [Context.Read] 和 [Queries.Object] 中会在解析数据成功之后，调用该接口进行数据验证。
 type CTXSanitizer interface {
 	// CTXSanitize 验证和修正当前对象的数据
 	//
@@ -43,8 +43,8 @@ type CTXSanitizer interface {
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
-// Context 同时也实现了 http.ResponseWriter 接口，
-// 但是不推荐非必要情况下直接使用 http.ResponseWriter 的接口方法，
+// Context 同时也实现了 [http.ResponseWriter] 接口，
+// 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 Responser 的方式向客户端输出内容。
 type Context struct {
 	server             *Server
@@ -212,7 +212,7 @@ func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // SetLocation 设置时区信息
 //
-// name 为时区名称，比如 'America/New_York'，具体说明可参考 time.LoadLocation
+// name 为时区名称，比如 'America/New_York'，具体说明可参考 [time.LoadLocation]
 func (ctx *Context) SetLocation(name string) error {
 	l, err := time.LoadLocation(name)
 	if err == nil {
@@ -224,8 +224,6 @@ func (ctx *Context) SetLocation(name string) error {
 func (ctx *Context) Location() *time.Location { return ctx.location }
 
 // Request 返回原始的请求对象
-//
-// NOTE: 如果需要使用 context.Value 在 Request 中附加值，请使用 ctx.Vars
 func (ctx *Context) Request() *http.Request { return ctx.request }
 
 func (ctx *Context) destroy() {
@@ -313,7 +311,7 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	return tag
 }
 
-// Now 返回以 ctx.Location 为时区的当前时间
+// Now 返回以 [Context.Location] 为时区的当前时间
 func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location()) }
 
 // ParseTime 分析基于当前时区的时间

@@ -16,7 +16,7 @@ const aboutBlank = "about:blank"
 // 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
 // 就要实现 json.Marshaler 接口或是相应的 struct tag。
 //
-// 并未规定 [Problem] 实现都输出的字段以及布局，实现者可以根据 [BuildFunc]
+// 并未规定 [Problem] 实现都输出的字段以及布局，实现者可以根据 [BuildProblemFunc]
 // 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 实现了一个简要的
 // RFC7807 标准的错误信息对象。
 type Problem interface {
@@ -71,9 +71,9 @@ func (p *Problems) BaseURL() string { return p.baseURL }
 // 此处的设置只是决定了传递给 [BuildFunc] 的 id 参数格式。
 // 可以有以下三种形式：
 //
-//  - 空值 不作任何改变；
-//  - about:blank 将传递空值给 [BuildFunc]；
-//  - 其它非空值 以前缀形式附加在原本的 id 之上；
+//   - 空值 不作任何改变；
+//   - about:blank 将传递空值给 [BuildFunc]；
+//   - 其它非空值 以前缀形式附加在原本的 id 之上；
 func (p *Problems) SetBaseURL(base string) {
 	p.baseURL = base
 	p.blank = base == aboutBlank
@@ -114,7 +114,9 @@ func (p *Problems) mimetype(mimetype string) string {
 // Visit 遍历所有 Add 添加的项
 //
 // f 为遍历的函数，其原型为：
-//  func(id string, status int, title, detail localeutil.LocaleStringer)
+//
+//	func(id string, status int, title, detail localeutil.LocaleStringer)
+//
 // 分别对应 [Problems.Add] 添加时的各个参数。
 //
 // 用户可以通过此方法生成 QA 页面。

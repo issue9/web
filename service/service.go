@@ -22,7 +22,7 @@ type (
 	// ServiceFunc 服务实际需要执行的函数
 	//
 	// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-	// 如果是通 ctx.Done 取消的，应该返回 context.Canceled。
+	// 如果是通 ctx.Done 取消的，应该返回 [context.Canceled]。
 	ServiceFunc func(ctx context.Context) error
 
 	// Service 服务模型
