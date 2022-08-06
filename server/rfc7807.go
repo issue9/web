@@ -5,6 +5,7 @@ package server
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/url"
 	"reflect"
 	"strconv"
 	"sync"
@@ -21,6 +22,9 @@ const rfc8707PoolMaxSize = 10
 var rfc7807ProblemPool = &sync.Pool{New: func() any { return &rfc7807{} }}
 
 // RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
+//
+// NOTE: 由于 www-form-urlencoded 对复杂对象的处理能力不足，
+// 在此类型下，将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id string, title localeutil.LocaleStringer, status int) Problem {
@@ -190,6 +194,58 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	return e.EncodeToken(start.End())
+}
+
+func (p *rfc7807) MarshalForm() ([]byte, error) {
+	u := url.Values{}
+	u.Add("type", p.typ)
+	u.Add("title", p.title)
+	u.Add("status", strconv.Itoa(p.status))
+
+	for index, key := range p.pKeys {
+		prefix := "params[" + strconv.Itoa(index) + "]."
+		u.Add(prefix+"name", key)
+		u.Add(prefix+"reason", p.pReasons[index])
+	}
+
+	for index, key := range p.keys {
+		var val string
+		switch v := p.vals[index].(type) {
+		case bool:
+			val = strconv.FormatBool(v)
+		case int:
+			val = strconv.FormatInt(int64(v), 10)
+		case int8:
+			val = strconv.FormatInt(int64(v), 10)
+		case int16:
+			val = strconv.FormatInt(int64(v), 10)
+		case int32:
+			val = strconv.FormatInt(int64(v), 10)
+		case int64:
+			val = strconv.FormatInt(v, 10)
+		case uint:
+			val = strconv.FormatUint(uint64(v), 10)
+		case uint8:
+			val = strconv.FormatUint(uint64(v), 10)
+		case uint16:
+			val = strconv.FormatUint(uint64(v), 10)
+		case uint32:
+			val = strconv.FormatUint(uint64(v), 10)
+		case uint64:
+			val = strconv.FormatUint(v, 10)
+		case float32:
+			val = strconv.FormatFloat(float64(v), 'f', 2, 32)
+		case float64:
+			val = strconv.FormatFloat(v, 'f', 2, 32)
+		case string:
+			val = v
+		default: // 其它类型忽略
+			continue
+		}
+		u.Add(key, val)
+	}
+
+	return []byte(u.Encode()), nil
 }
 
 func (p *rfc7807) Apply(ctx *Context) {
