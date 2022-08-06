@@ -49,22 +49,33 @@ type configOf[T any] struct {
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
-	// 值可以为：memcached，redis，memory 和 file，用户也要以用 RegisterCache 注册新的缓存对象。
+	// 用户可以用 [RegisterCache] 注册新的缓存对象。默认可用值为：
+	//  -memcached
+	//  -redis
+	//  -memory
+	//  -file
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	// 可通过 RegisterEncoding 注册新的压缩方法，默认可用为 gzip、brotli 和 deflate 三种类型。
+	// 可通过 [RegisterEncoding] 注册新的压缩方法，默认可用为：
+	//  -gzip
+	//  -brotli
+	//  -deflate
 	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
 	encodings map[string]enc    // 启用的 ID
 
 	// 默认的文件序列化列表
 	//
-	// 如果为空，表示默认不支持，后续可通过 Server.Files 进行添加。
+	// 如果为空，表示默认不支持，后续可通过 [server.Server.Files] 进行添加。
 	//
-	// 可用类型为 .yaml、.yml、.xml 和 .json，可通过 RegisterFileSerializer 进行添加额外的序列化方法。
+	// 可通过 RegisterFileSerializer 进行添加额外的序列化方法。默认可用为：
+	//  -.yaml
+	//  -.yml
+	//  -.xml
+	//  -.json
 	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
 	files map[string]serialization.Item
 
@@ -77,11 +88,12 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
-// NewServerOf 从配置文件初始化 [server.Server] 实例
+// NewServerOf 从配置文件初始化 [server.Server] 对象
 //
-// fsys 项目依赖的文件系统，被用于 server.Options.FS，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，根据扩展由 [RegisterFileSerializer] 负责在 fsys
-// 查找文件加载，如果此值为空，将以 &server.Options{FS: fsys} 作为初始化条件；
+// fsys 项目依赖的文件系统，被用于 [server.Options.FS]，同时也是配置文件所在的目录；
+// filename 用于指定项目的配置文件，相对于 fsys 文件系统。
+// 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
+// 如果此值为空，将以 &server.Options{FS: fsys} 初始化 [server.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [ConfigSanitizer] 接口，则在加载后进行自检；

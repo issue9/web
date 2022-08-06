@@ -8,9 +8,6 @@ import (
 )
 
 type (
-	// Rule 验证规则
-	//
-	// 与 [Validator] 相比，包含了本地化的错误信息。
 	Rule struct {
 		validator Validator
 		message   localeutil.LocaleStringer

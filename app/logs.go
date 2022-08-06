@@ -35,7 +35,7 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 logs.NewNopWriter 返回的对象。
+	// 为空表示 [logs.NewNopWriter] 返回的对象。
 	Writers []*logWriterConfig `xml:"writer" json:"writers" yaml:"writers"`
 }
 
@@ -47,7 +47,7 @@ type logWriterConfig struct {
 
 	// Writer 的类型
 	//
-	// 可通过 RegisterLogsWriter 方法注册，默认包含了以下两个：
+	// 可通过 [RegisterLogsWriter] 方法注册，默认包含了以下两个：
 	// - file 输出至文件
 	// - term 输出至终端
 	Type string `xml:"type,attr" yaml:"type" json:"type"`
@@ -148,7 +148,7 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *ConfigError)
 	return logs.NewDispatchWriter(d), cleanup, nil
 }
 
-// RegisterLogsWriter 注册日志的 LogsWriterBuilder
+// RegisterLogsWriter 注册日志的 [LogsWriterBuilder]
 //
 // name 为缓存的名称，如果存在同名，则会覆盖。
 func RegisterLogsWriter(b LogsWriterBuilder, name ...string) {

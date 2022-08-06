@@ -18,7 +18,7 @@ type (
 	httpConfig struct {
 		// 端口
 		//
-		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 net/http.Server 确定其默认值。
+		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
 		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
 		// 网站的域名证书

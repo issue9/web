@@ -25,7 +25,7 @@ type Tester struct {
 	wg       sync.WaitGroup
 }
 
-// NewTester 声明一个 server 实例
+// NewTester 声明一个 [Tester] 实例
 func NewTester(a *assert.Assertion, o *server.Options) *Tester {
 	a.TB().Helper()
 
@@ -65,7 +65,7 @@ func (s *Tester) GoServe() {
 //
 //	s.Server().NewRouter("default", "http://localhost:8080/", nil)
 //
-// NOTE: 如果需要多个路由，请使用 Server().NewRouter 并指定正确的 group.Matcher 对象，
+// NOTE: 如果需要多个路由，请使用 Server().Routers().NewRouter() 并指定正确的 group.Matcher 对象，
 // 或是将 Tester.NewRouter 放在最后。
 func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
 	s.a.TB().Helper()
@@ -77,12 +77,9 @@ func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
 	return router
 }
 
-// Wait 等待 GoServe 退出
-func (s *Tester) Wait() { s.wg.Wait() }
-
 // NewRequest 发起新的请求
 //
-// path 为请求路径，如果没有 http:// 和 https:// 前缀，则会自动加上 http://localhost 作为其域名地址；
+// path 为请求路径，如果没有 `http://` 和 `https://` 前缀，则会自动加上 `http://localhost“ 作为其域名地址；
 // client 如果为空，则采用 &http.Client{} 作为默认值；
 func (s *Tester) NewRequest(method, path string, client *http.Client) *rest.Request {
 	if !strings.HasPrefix(path, "http://") && !strings.HasPrefix(path, "https://") {
@@ -104,10 +101,14 @@ func (s *Tester) Delete(path string) *rest.Request {
 	return s.NewRequest(http.MethodDelete, path, nil)
 }
 
+// Close 关闭测试服务
+//
+// NOTE: 会等待所有请求都退出之后，才会返回。
 func (s *Tester) Close(shutdown time.Duration) {
 	// NOTE: Tester 主要用于第三方测试，
 	// 所以不主动将 Close 注册至 a.TB().Cleanup，由调用方决定何时调用。
 	s.a.NotError(s.Server().Close(shutdown))
+	s.wg.Wait()
 }
 
 // BuildHandler 生成以 code 作为状态码和内容输出的路由处理函数

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package testobject 用于测试 mimetype 的对象
+// Package testobject 用于 text 测试对象
 package testobject
 
 import (
@@ -9,10 +9,7 @@ import (
 	"strings"
 )
 
-// TextObject 本质是实现了 encoding.TextMarshaler 和 encoding.TextUnmarshaler
-// 接口的实例。
-//
-// 可用于 mimetype 包中的 MarshalFunc 和 UnmarshalFunc 的测试。
+// TextObject 本质是实现了 encoding.TextMarshaler 和 encoding.TextUnmarshaler 接口的实例
 type TextObject struct {
 	Name string
 	Age  int

@@ -19,8 +19,8 @@ import "github.com/issue9/web"
 func main() {
     srv, _ := web.NewServer("web", "1.0.0", &web.Options{})
 
-    m1.Module(srv.NewModule("m1"))
-    m2.Module(srv.NewModule("m2"))
+    m1.Module(srv.NewModule("m1", web.Phrase("desc")))
+    m2.Module(srv.NewModule("m2", web.Phrase("desc"))
 
     srv.Serve()
 }
@@ -51,7 +51,7 @@ func Module(m *web.Module) error {
 ```go
 import "github.com/issue9/web"
 
-srv := web.NewServer(&web.Options{})
+srv := web.NewServer("app", "1.0.0", &web.Options{})
 
 srv.Mimetypes().Add("application/json", json.Marshal, json.Unmarshal)
 srv.Mimetypes().Add("application/xml", xml.Marshal, xml.Unmarshal)
@@ -64,8 +64,8 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ## 错误处理
 
-框架提供了一种输出错误信息内容的机制，用户只需要实现 Result 接口，即可自定义输出的错误信息格式。
-具体实现可参考 `server.defaultResult` 的实现。
+框架提供了一种输出错误信息内容的机制，用户只需要实现 Problem 接口，即可自定义输出的错误信息格式。
+可参考内置的 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 实现：`server.rfc7807`。
 
 ## 中间件
 

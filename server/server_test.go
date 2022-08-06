@@ -84,7 +84,6 @@ func TestServer_Serve(t *testing.T) {
 	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
@@ -121,7 +120,6 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func TestServer_Close(t *testing.T) {
@@ -177,7 +175,6 @@ func TestServer_Close(t *testing.T) {
 		Contains(str, "RegisterOnClose")
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func TestServer_CloseWithTimeout(t *testing.T) {
@@ -212,7 +209,6 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
@@ -267,7 +263,6 @@ func TestMiddleware(t *testing.T) {
 	a.Equal(count, 2)
 
 	srv.Close(0)
-	srv.Wait()
 }
 
 func TestServer_Routers(t *testing.T) {
@@ -303,7 +298,6 @@ func TestServer_Routers(t *testing.T) {
 		Status(http.StatusNotFound)
 
 	s.Close(0)
-	s.Wait()
 }
 
 func TestServer_FileServer(t *testing.T) {
@@ -343,7 +337,6 @@ func TestServer_FileServer(t *testing.T) {
 	})
 
 	s.Close(0)
-	s.Wait()
 }
 
 // 检测 204 是否存在 http: request method or response status code does not allow body
@@ -367,6 +360,4 @@ func TestContext_NoContent(t *testing.T) {
 	s.Close(0)
 
 	a.NotContains(buf.String(), "request method or response status code does not allow body")
-
-	s.Wait()
 }

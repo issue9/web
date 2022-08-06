@@ -21,25 +21,25 @@ var cacheFactory = map[string]CacheBuilder{}
 
 type CacheBuilder func(dsn string) (cache.Cache, error)
 
-// 缓存的相关配置
 type cacheConfig struct {
 	// 表示缓存的方式
 	//
-	// 该值可通过 RegisterCache 注册， 默认支持以下几种：
-	// - memory 以内存作为缓存；
-	// - memcached 以 memcached 作为缓存；
-	// - redis 以 redis 作为缓存；
-	// - file 以文件作为缓存；
+	// 该值可通过 [RegisterCache] 注册， 默认支持以下几种：
+	//  - memory 以内存作为缓存；
+	//  - memcached 以 memcached 作为缓存；
+	//  - redis 以 redis 作为缓存；
+	//  - file 以文件作为缓存；
 	Type string `yaml:"type" json:"type" xml:"type,attr"`
 
 	// 表示连接缓存服务器的参数
 	//
-	// - memory，此值为 time.Duration 格式的参数，用于表示执行回收的间隔；
-	// - memcached，则为服务器列表，多个服务器，以分号作为分隔；
-	// - redis，则为符合 Redis URI scheme 的字符串，可参考 https://www.iana.org/assignments/uri-schemes/prov/redis；
-	// - file，表示以半有分号分隔的参数列表，可以指定以下两个参数：
-	//  - path 文件路径；
-	//  - gc 执行回收的间隔，time.Duration 格式；
+	// 不同类型其参数是不同的，以下是对应的格式说明：
+	//  - memory，此值为 time.Duration 格式的参数，用于表示执行回收的间隔；
+	//  - memcached，则为服务器列表，多个服务器，以分号作为分隔；
+	//  - redis，则为符合 Redis URI scheme 的字符串，可参考 https://www.iana.org/assignments/uri-schemes/prov/redis；
+	//  - file，表示以半有分号分隔的参数列表，可以指定以下两个参数：
+	//   - path 文件路径；
+	//   - gc 执行回收的间隔，time.Duration 格式；
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 

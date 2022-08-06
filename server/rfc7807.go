@@ -18,9 +18,7 @@ const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 
 const rfc8707PoolMaxSize = 10
 
-var rfc7807ProblemPool = &sync.Pool{New: func() any {
-	return &rfc7807{}
-}}
+var rfc7807ProblemPool = &sync.Pool{New: func() any { return &rfc7807{} }}
 
 // RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
 //

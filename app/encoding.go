@@ -30,18 +30,18 @@ type encodingConfig struct {
 
 	// IDs 压缩方法的 ID 列表
 	//
-	// 这些 ID 值必须是由 RegisterEncoding 注册的，否则无效，默认情况下支持以下类型：
-	// - deflate-default
-	// - deflate-best-compression
-	// - deflate-best-speed
-	// - gzip-default
-	// - gzip-best-compression
-	// - gzip-best-speed
-	// - compress-lsb-8
-	// - compress-msb-8
-	// - br-default
-	// - br-best-compression
-	// - br-best-speed
+	// 这些 ID 值必须是由 [RegisterEncoding] 注册的，否则无效，默认情况下支持以下类型：
+	//  - deflate-default
+	//  - deflate-best-compression
+	//  - deflate-best-speed
+	//  - gzip-default
+	//  - gzip-best-compression
+	//  - gzip-best-speed
+	//  - compress-lsb-8
+	//  - compress-msb-8
+	//  - br-default
+	//  - br-best-compression
+	//  - br-best-speed
 	IDs []string `json:"ids" xml:"id" yaml:"ids"`
 }
 

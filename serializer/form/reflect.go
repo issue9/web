@@ -42,7 +42,7 @@ func marshal(v any) (url.Values, error) {
 	return vals, nil
 }
 
-// 将  form-data 数据转换到 v 中
+// 将 form-data 数据转换到 vals 中
 func unmarshal(vals url.Values, obj any) error {
 	val := reflect.ValueOf(obj)
 	for k, v := range vals {
@@ -62,8 +62,7 @@ func setField(obj reflect.Value, names []string, val []string) error {
 	}
 
 	if len(names) == 0 {
-		ok := obj.Kind()
-		if ok == reflect.Slice || ok == reflect.Array {
+		if k := obj.Kind(); k == reflect.Slice || k == reflect.Array {
 			chkSliceType(obj)
 			return conv.Value(val, obj)
 		}

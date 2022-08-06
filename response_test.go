@@ -40,7 +40,6 @@ func TestCreated(t *testing.T) {
 		Header("Location", "/test")
 
 	s.Close(0)
-	s.Wait()
 }
 
 func TestContext_RetryAfter(t *testing.T) {
@@ -71,7 +70,6 @@ func TestContext_RetryAfter(t *testing.T) {
 		Header("Location", "")
 
 	s.Close(0)
-	s.Wait()
 }
 
 func TestContext_Redirect(t *testing.T) {
@@ -95,5 +93,4 @@ func TestContext_Redirect(t *testing.T) {
 		Header("Location", "")
 
 	s.Close(0)
-	s.Wait()
 }

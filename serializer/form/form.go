@@ -32,7 +32,7 @@
 //
 // 接口
 //
-// 对于复杂类型，用户可以自定义实现 Marshaler 和 Unmarshaler 接口进行编解码，
+// 对于复杂类型，用户可以自定义实现 [Marshaler] 和 [Unmarshaler] 接口进行编解码，
 // 其功能与用户与 encoding/json 中的 Marshaler 和 Unmarshaler 接口相似。
 //
 // 与标准库中 http.Request.ParseForm 的不同点：
@@ -61,9 +61,9 @@ type Unmarshaler interface {
 // Marshal 针对 www-form-urlencoded 内容的解码实现
 //
 // 按以下顺序解析内容：
-//   - 如果实现 Marshaler 接口，则调用该接口；
-//   - 如果实现 encoding.TextMarshaler 接口，则调用该接口；
-//   - 如果是 url.Values 对象，则调用 url.Values.Encode() 解析；
+//   - 如果实现 [Marshaler] 接口，则调用该接口；
+//   - 如果实现 [encoding.TextMarshaler] 接口，则调用该接口；
+//   - 如果是 [url.Values] 对象，则调用其方法 Encode 解析；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Marshal(v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
@@ -89,8 +89,8 @@ func Marshal(v any) ([]byte, error) {
 // Unmarshal 针对 www-form-urlencoded 内容的编码实现
 //
 // 按以下顺序解析内容：
-//   - 如果实现 Unmarshaler 接口，则调用该接口；
-//   - 如果是 url.Values 对象，则依次赋值每个对象；
+//   - 如果实现 [Unmarshaler] 接口，则调用该接口；
+//   - 如果是 [url.Values] 对象，则依次赋值每个对象；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
 func Unmarshal(data []byte, v any) error {
 	if m, ok := v.(Unmarshaler); ok {
