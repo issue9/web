@@ -11,7 +11,10 @@ import (
 	"github.com/issue9/web/serializer"
 )
 
-var _ serializer.MarshalFunc = Marshal
+var (
+	_ serializer.MarshalFunc   = Marshal
+	_ serializer.UnmarshalFunc = Unmarshal
+)
 
 func TestMarshal(t *testing.T) {
 	a := assert.New(t, false)

@@ -15,9 +15,8 @@ const aboutBlank = "about:blank"
 // 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
 // 就要实现 json.Marshaler 接口或是相应的 struct tag。
 //
-// 并未规定 [Problem] 实现都输出的字段以及布局，实现者可以根据 [BuildProblemFunc]
-// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 实现了一个简要的
-// RFC7807 标准的错误信息对象。
+// 并未规定实现者输出的字段名和布局，实现者可以根据 [BuildProblemFunc]
+// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 RFC7807 的实现。
 type Problem interface {
 	Responser
 
@@ -34,7 +33,7 @@ type Problem interface {
 //
 // id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
 // title 错误信息的简要描述；
-// status 输出的状态码，该值将由 [Problem.Status] 返回；
+// status 输出的状态码；
 type BuildProblemFunc func(id string, title localeutil.LocaleStringer, status int) Problem
 
 type Problems struct {

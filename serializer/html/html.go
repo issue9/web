@@ -20,24 +20,27 @@ import (
 
 const Mimetype = "text/html"
 
-// Template 传递给 Marshal 的参数
-type Template struct {
-	// NOTE: Template 的字段值不能是可导出的。
-	//
-	// 当用户的 accept 报头是 json 时，输出 Template
+// Marshaler 实现输出 HTML 内容的接口
+type Marshaler interface {
+	MarshalHTML() ([]byte, error)
+}
+
+type tpl struct {
+	// NOTE: 所有的字段值不能是可导出的。
+	// 因为当用户的 accept 报头是 json 时，输出当前实例
 	// 会使其所有的公开字段都被输出到客户端，存在一定的安全隐患。
 	tpl  *template.Template
 	name string // 模块名称
 	data any    // 传递给模板的数据
 }
 
-// Tpl 声明 *Template 实例
+// Tpl 将模板内容打包成 [Marshaler] 接口
 //
 // name 表示需要引用的模板名称；
 // data 则是传递给该模板的所有变量；
-func Tpl(tpl *template.Template, name string, data any) *Template {
-	return &Template{
-		tpl:  tpl,
+func Tpl(t *template.Template, name string, data any) Marshaler {
+	return &tpl{
+		tpl:  t,
 		name: name,
 		data: data,
 	}
@@ -45,14 +48,14 @@ func Tpl(tpl *template.Template, name string, data any) *Template {
 
 // Marshal 针对 HTML 内容的解码实现
 //
-// 参数 v 可以是以下几种类型：
-//   - string 或是 []byte 将内容作为 HTML 内容直接输出
-//   - *Template 编译模板内容并输出
-//   - 其它情况下则是返回错误。
+// 参数 v 可以是以下几种可能：
+//   - Marshaler 接口；
+//   - string 或是 []byte 将内容作为 HTML 内容直接输出；
+//   - 其它情况下则是返回 [serializer.ErrUnsupported]；
 func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
-	case *Template:
-		return obj.executeTemplate()
+	case Marshaler:
+		return obj.MarshalHTML()
 	case []byte:
 		return obj, nil
 	case string:
@@ -61,7 +64,7 @@ func Marshal(v any) ([]byte, error) {
 	return nil, serializer.ErrUnsupported
 }
 
-func (t *Template) executeTemplate() ([]byte, error) {
+func (t *tpl) MarshalHTML() ([]byte, error) {
 	w := new(bytes.Buffer)
 	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
 		return nil, err
