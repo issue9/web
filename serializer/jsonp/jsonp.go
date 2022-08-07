@@ -11,6 +11,10 @@ import (
 
 const Mimetype = "application/javascript"
 
+type Marshaler interface {
+	MarshalJSONP() ([]byte, error)
+}
+
 type jsonp struct {
 	callback string
 	data     any
@@ -21,17 +25,18 @@ type jsonp struct {
 // 采用与 JSON 相同的解析方式。
 // callback 表示回调的函数名称，如果为空，则直接返回 data，
 // 在输出时也将被当作普通的 JSON 输出。
-func JSONP(callback string, data any) any {
-	if callback == "" {
-		return data
-	}
+func JSONP(callback string, data any) Marshaler {
 	return &jsonp{callback: callback, data: data}
 }
 
-func (j *jsonp) marshal() ([]byte, error) {
+func (j *jsonp) MarshalJSONP() ([]byte, error) {
 	data, err := json.Marshal(j.data)
 	if err != nil {
 		return nil, err
+	}
+
+	if j.callback == "" {
+		return data, nil
 	}
 
 	b := errwrap.StringBuilder{}
@@ -45,8 +50,8 @@ func (j *jsonp) marshal() ([]byte, error) {
 // 如果是普通的对象，则采用 [json.Marshal] 将其转换成普通的 JSON 对象返回；
 func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
-	case *jsonp:
-		return obj.marshal()
+	case Marshaler:
+		return obj.MarshalJSONP()
 	default:
 		return json.Marshal(v)
 	}
