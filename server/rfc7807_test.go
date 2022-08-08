@@ -25,6 +25,13 @@ func TestRFC7807Builder(t *testing.T) {
 	a.NotNil(p)
 	p.With("instance", "https://example.com/instance/1")
 
+	a.PanicString(func() {
+		p.With("instance", "instance")
+	}, "存在同名的参数")
+	a.PanicString(func() {
+		p.With("type", "1111")
+	}, "存在同名的参数")
+
 	pp, ok := p.(*rfc7807)
 	a.True(ok).NotNil(pp)
 	a.Equal(pp.vals[0], "https://example.com/instance/1").

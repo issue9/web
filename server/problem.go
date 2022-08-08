@@ -10,45 +10,47 @@ import (
 
 const aboutBlank = "about:blank"
 
-// Problem API 错误信息对象需要实现的接口
-//
-// 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
-// 就要实现 json.Marshaler 接口或是相应的 struct tag。
-//
-// 并未规定实现者输出的字段名和布局，实现者可以根据 [BuildProblemFunc]
-// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 RFC7807 的实现。
-type Problem interface {
-	Responser
-
-	// With 添加新的输出字段
+type (
+	// Problem API 错误信息对象需要实现的接口
 	//
-	// 如果添加的字段名称与现有的字段重名，应当 panic。
-	With(key string, val any) Problem
+	// 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
+	// 就要实现 json.Marshaler 接口或是相应的 struct tag。
+	//
+	// 并未规定实现者输出的字段名和布局，实现者可以根据 [BuildProblemFunc]
+	// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 RFC7807 的实现。
+	Problem interface {
+		Responser
 
-	// AddParam 添加数据验证错误信息
-	AddParam(name string, reason string) Problem
-}
+		// With 添加新的输出字段
+		//
+		// 如果添加的字段名称与现有的字段重名，应当 panic。
+		With(key string, val any) Problem
 
-// BuildProblemFunc 生成 [Problem] 对象的方法
-//
-// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
-// title 错误信息的简要描述；
-// status 输出的状态码；
-type BuildProblemFunc func(id string, title localeutil.LocaleStringer, status int) Problem
+		// AddParam 添加数据验证错误信息
+		AddParam(name string, reason string) Problem
+	}
 
-type Problems struct {
-	builder   BuildProblemFunc
-	baseURL   string
-	blank     bool // Problems.Problem 不输出 id 值
-	problems  map[string]*statusProblem
-	mimetypes map[string]string
-}
+	// BuildProblemFunc 生成 [Problem] 对象的方法
+	//
+	// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
+	// title 错误信息的简要描述；
+	// status 输出的状态码；
+	BuildProblemFunc func(id string, title localeutil.LocaleStringer, status int) Problem
 
-type statusProblem struct {
-	status int
-	title  localeutil.LocaleStringer
-	detail localeutil.LocaleStringer
-}
+	Problems struct {
+		builder   BuildProblemFunc
+		baseURL   string
+		blank     bool // Problems.Problem 不输出 id 值
+		problems  map[string]*statusProblem
+		mimetypes map[string]string
+	}
+
+	statusProblem struct {
+		status int
+		title  localeutil.LocaleStringer
+		detail localeutil.LocaleStringer
+	}
+)
 
 func newProblems(f BuildProblemFunc) *Problems {
 	return &Problems{
@@ -109,7 +111,7 @@ func (p *Problems) mimetype(mimetype string) string {
 	return mimetype
 }
 
-// Visit 遍历所有 Add 添加的项
+// Visit 遍历所有由 [Problems.Add] 添加的项
 //
 // f 为遍历的函数，其原型为：
 //

@@ -72,6 +72,11 @@ func (p *rfc7807) AddParam(name string, reason string) Problem {
 }
 
 func (p *rfc7807) With(key string, val any) Problem {
+	exists := key == "type" || key == "status" || key == "title" ||
+		sliceutil.Exists(p.keys, func(e string) bool { return e == key })
+	if exists {
+		panic("存在同名的参数")
+	}
 	p.keys = append(p.keys, key)
 	p.vals = append(p.vals, val)
 	return p
