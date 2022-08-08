@@ -26,8 +26,6 @@ import (
 	"github.com/issue9/web/service"
 )
 
-type NewEncodingFunc = encoding.NewEncodingFunc
-
 // Server 提供 HTTP 服务
 type Server struct {
 	name       string
@@ -211,23 +209,6 @@ func (srv *Server) Tag() language.Tag { return srv.locale.Tag }
 //
 // NOTE: 按注册的相反顺序执行。
 func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
-
-// AddEncoding 注册可用的压缩方式
-func (srv *Server) AddEncoding(id, name string, f NewEncodingFunc) {
-	srv.encodings.Add(id, name, f)
-}
-
-// AllowEncoding 为指定的 contentType 指派压缩方式
-//
-// id 必须是由 [AddEncoding] 中指定的值。
-func (srv *Server) AllowEncoding(contentType string, id ...string) {
-	srv.encodings.Allow(contentType, id...)
-}
-
-// Problems [RFC7807] 错误代码管理
-//
-// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func (srv *Server) Problems() *Problems { return srv.problems }
 
 // Services 服务管理
 func (srv *Server) Services() *service.Server { return srv.services }

@@ -142,3 +142,8 @@ func (p *Problems) Problem(id string) Problem {
 	}
 	return p.builder(id, sp.title, sp.status)
 }
+
+// Problems [RFC7807] 错误代码管理
+//
+// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+func (srv *Server) Problems() *Problems { return srv.problems }
