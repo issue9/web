@@ -88,6 +88,11 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
+// ConfigSanitizer 对配置文件的数据验证和修正
+type ConfigSanitizer interface {
+	SanitizeConfig() *ConfigError
+}
+
 // NewServerOf 从配置文件初始化 [server.Server] 对象
 //
 // fsys 项目依赖的文件系统，被用于 [server.Options.FS]，同时也是配置文件所在的目录；
@@ -189,7 +194,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	for _, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return &ConfigError{Field: "files", Message: localeutil.Error("not found serialization function for %s", name)}
+			return &ConfigError{Field: "files", Message: localeutil.Phrase("not found serialization function for %s", name)}
 		}
 		conf.files[name] = s
 	}

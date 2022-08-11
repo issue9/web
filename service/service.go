@@ -86,7 +86,6 @@ func (srv *Service) serve() {
 	srv.setState(state)
 }
 
-// Stop 停止服务
 func (srv *Service) Stop() {
 	if srv.state != Running {
 		return

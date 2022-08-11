@@ -125,7 +125,7 @@ func TestServer_newContext(t *testing.T) {
 	r := rest.Get(a, "/path").Header("Accept", "not").Request()
 	srv.newContext(w, r, nil)
 	a.Equal(w.Code, http.StatusNotAcceptable)
-	a.Contains(lw.String(), localeutil.Error("not found serialization for %s", "not").Error())
+	a.Contains(lw.String(), localeutil.Phrase("not found serialization for %s", "not").LocaleString(srv.LocalePrinter()))
 
 	// 错误的 accept-charset
 	lw.Reset()
@@ -136,7 +136,7 @@ func TestServer_newContext(t *testing.T) {
 		Request()
 	srv.newContext(w, r, nil)
 	a.Equal(w.Code, http.StatusNotAcceptable)
-	a.Contains(lw.String(), localeutil.Error("not found charset for %s", "unknown").Error())
+	a.Contains(lw.String(), localeutil.Phrase("not found charset for %s", "unknown").LocaleString(srv.LocalePrinter()))
 
 	// 错误的 content-type,无输入内容
 	lw.Reset()

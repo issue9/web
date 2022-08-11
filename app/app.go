@@ -37,7 +37,7 @@ import (
 //
 // 通过向 [AppOf.Catalog] 注册本地化字符串，可以让命令行支持本地化显示：
 //
-//	// 构建 catalog.Catalog
+//	// 构建 catalog.Catalog 实例
 //	builder := catalog.NewBuilder()
 //	builder.SetString("show help", "显示帮助信息")
 //	builder.SetString("show version", "显示版本信息")

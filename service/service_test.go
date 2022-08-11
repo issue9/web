@@ -13,6 +13,7 @@ import (
 )
 
 const tickTimer = 500 * time.Microsecond
+const times = 8
 
 func buildService() (f ServiceFunc, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
@@ -66,7 +67,7 @@ func buildPanicService() (f ServiceFunc, start, exit chan struct{}) {
 				}
 				count++
 				fmt.Println("panic service:", now)
-				if count >= 4 {
+				if count >= times {
 					p <- struct{}{}
 				}
 			}
@@ -100,7 +101,7 @@ func buildErrorService() (f ServiceFunc, start, exit chan struct{}) {
 				}
 				count++
 				fmt.Println("error service:", now)
-				if count >= 4 {
+				if count >= times {
 					p <- struct{}{}
 				}
 			}
@@ -190,7 +191,7 @@ func TestService_error(t *testing.T) {
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Running)
 
-	<-exit                             // 等待超过返回错误
+	<-exit                             // 等待超次数返回错误
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), Failed)
 	a.NotNil(s3.Err())

@@ -54,7 +54,7 @@ func (conf *configOf[T]) buildMimetypes(srv *server.Server) *ConfigError {
 	for _, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return &ConfigError{Field: item.Target, Message: localeutil.Error("%s not found", item.Target)}
+			return &ConfigError{Field: item.Target, Message: localeutil.Phrase("%s not found", item.Target)}
 		}
 
 		if err := srv.Mimetypes().Add(m.Marshal, m.Unmarshal, item.Encoding); err != nil {

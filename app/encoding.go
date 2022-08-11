@@ -56,7 +56,7 @@ func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	for _, id := range ids {
 		item, found := encodingFactory[id]
 		if !found {
-			return &ConfigError{Message: localeutil.Error("%s not found", id), Field: "ids"}
+			return &ConfigError{Message: localeutil.Phrase("%s not found", id), Field: "ids"}
 		}
 		conf.encodings[id] = item
 	}

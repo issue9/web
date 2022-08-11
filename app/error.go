@@ -17,11 +17,6 @@ type ConfigError struct {
 	Value   any    // 字段的原始值
 }
 
-// ConfigSanitizer 对配置文件的数据验证和修正接口
-type ConfigSanitizer interface {
-	SanitizeConfig() *ConfigError
-}
-
 func (err *ConfigError) Error() string {
 	var msg string
 	switch inst := err.Message.(type) {

@@ -37,7 +37,7 @@ func TestError_LocaleString(t *testing.T) {
 	cnp := l.NewPrinter(hans)
 	twp := l.NewPrinter(hant)
 
-	err := &ConfigError{Message: localeutil.Error("k1"), Path: "path"}
+	err := &ConfigError{Message: localeutil.Phrase("k1"), Path: "path"}
 	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))
 	a.Equal("位于 path: 发生了 tw1", err.LocaleString(twp))
 	a.Equal("k1 at path:", err.Error())
