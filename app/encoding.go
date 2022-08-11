@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
-	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/server"
 )
 
@@ -63,13 +62,13 @@ func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	return nil
 }
 
-func (conf *configOf[T]) buildEncodings(s *server.Server) *ConfigError {
+func (conf *configOf[T]) buildEncodings(s server.Encodings) *ConfigError {
 	for id, item := range conf.encodings {
-		s.AddEncoding(id, item.name, item.f)
+		s.Add(id, item.name, item.f)
 	}
 
 	for _, enc := range conf.Encodings {
-		s.AllowEncoding(enc.Type, enc.IDs...)
+		s.Allow(enc.Type, enc.IDs...)
 	}
 
 	return nil
@@ -88,18 +87,18 @@ func RegisterEncoding(id, name string, f server.NewEncodingFunc) {
 }
 
 func init() {
-	RegisterEncoding("deflate-default", "deflate", encoding.DeflateWriter(flate.DefaultCompression))
-	RegisterEncoding("deflate-best-compression", "deflate", encoding.DeflateWriter(flate.BestCompression))
-	RegisterEncoding("deflate-best-speed", "deflate", encoding.DeflateWriter(flate.BestSpeed))
+	RegisterEncoding("deflate-default", "deflate", server.EncodingDeflate(flate.DefaultCompression))
+	RegisterEncoding("deflate-best-compression", "deflate", server.EncodingDeflate(flate.BestCompression))
+	RegisterEncoding("deflate-best-speed", "deflate", server.EncodingDeflate(flate.BestSpeed))
 
-	RegisterEncoding("gzip-default", "gzip", encoding.GZipWriter(gzip.DefaultCompression))
-	RegisterEncoding("gzip-best-compression", "gzip", encoding.GZipWriter(gzip.BestCompression))
-	RegisterEncoding("gzip-best-speed", "gzip", encoding.GZipWriter(gzip.BestSpeed))
+	RegisterEncoding("gzip-default", "gzip", server.EncodingGZip(gzip.DefaultCompression))
+	RegisterEncoding("gzip-best-compression", "gzip", server.EncodingGZip(gzip.BestCompression))
+	RegisterEncoding("gzip-best-speed", "gzip", server.EncodingGZip(gzip.BestSpeed))
 
-	RegisterEncoding("compress-lsb-8", "compress", encoding.CompressWriter(lzw.LSB, 8))
-	RegisterEncoding("compress-msb-8", "compress", encoding.CompressWriter(lzw.MSB, 8))
+	RegisterEncoding("compress-lsb-8", "compress", server.EncodingCompress(lzw.LSB, 8))
+	RegisterEncoding("compress-msb-8", "compress", server.EncodingCompress(lzw.MSB, 8))
 
-	RegisterEncoding("br-default", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterEncoding("br-best-compression", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterEncoding("br-best-speed", "br", encoding.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterEncoding("br-default", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterEncoding("br-best-compression", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterEncoding("br-best-speed", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 }

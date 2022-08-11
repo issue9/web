@@ -139,7 +139,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		return nil, nil, err
 	}
 
-	if err := conf.buildEncodings(srv); err != nil {
+	if err := conf.buildEncodings(srv.Encodings()); err != nil {
 		err.Field = "mimetypes." + err.Field
 		err.Path = filename
 		return nil, nil, err

@@ -23,7 +23,6 @@ import (
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/text"
@@ -66,9 +65,10 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
 	// encoding
-	srv.AddEncoding("gzip", "gzip", encoding.GZipWriter(8))
-	srv.AddEncoding("deflate", "deflate", encoding.DeflateWriter(8))
-	srv.AllowEncoding("*", "gzip", "deflate")
+	e := srv.Encodings()
+	e.Add("gzip", "gzip", EncodingGZip(8))
+	e.Add("deflate", "deflate", EncodingDeflate(8))
+	e.Allow("*", "gzip", "deflate")
 
 	srv.Problems().Add("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
 	srv.Problems().AddMimetype("application/json", "application/problem+json")

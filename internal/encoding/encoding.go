@@ -17,7 +17,9 @@ import (
 type Encodings struct {
 	errlog logs.Logger
 
-	pools map[string]*Pool // 按添加顺序保存，查找 * 时按添加顺序进行比对。
+	// 按 id 保存着各种压缩对象的实例，
+	// allowTypes 和 allowTypesPrefix 的 pool 都是对当前字段子元素的引用。
+	pools map[string]*Pool
 
 	// contentType 是具体值的，比如 text/xml
 	allowTypes map[string][]*Pool
@@ -42,12 +44,7 @@ func NewEncodings(errlog logs.Logger) *Encodings {
 	}
 }
 
-// Allow 允许 contentType 采用的压缩方式
-//
-// id 是指由 Add 中指定的值；
-// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
-//
-// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
+// Allow 实现了 server.Encodings.Allow
 func (c *Encodings) Allow(contentType string, id ...string) {
 	if len(id) == 0 {
 		panic("id 不能为空")
@@ -65,8 +62,7 @@ func (c *Encodings) Allow(contentType string, id ...string) {
 		panic(fmt.Sprintf("id 引用中存在多个名为 %s 的算法", pools[indexes[0]].name))
 	}
 
-	switch {
-	case contentType[len(contentType)-1] == '*':
+	if contentType[len(contentType)-1] == '*' {
 		p := contentType[:len(contentType)-1]
 		if sliceutil.Exists(c.allowTypesPrefix, func(e prefix) bool { return e.prefix == p }) {
 			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
@@ -77,7 +73,7 @@ func (c *Encodings) Allow(contentType string, id ...string) {
 		sort.SliceStable(c.allowTypesPrefix, func(i, j int) bool {
 			return len(c.allowTypesPrefix[i].prefix) > len(c.allowTypesPrefix[j].prefix)
 		})
-	default:
+	} else {
 		if _, found := c.allowTypes[contentType]; found {
 			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
 		}
@@ -85,11 +81,7 @@ func (c *Encodings) Allow(contentType string, id ...string) {
 	}
 }
 
-// Add 添加压缩算法
-//
-// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
-// name 表示通过 Accept-Encoding 匹配的名称；
-// f 表示生成压缩对象的方法；
+// Allow 实现了 server.Encodings.Add
 func (c *Encodings) Add(id, name string, f NewEncodingFunc) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
