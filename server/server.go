@@ -26,7 +26,7 @@ import (
 	"github.com/issue9/web/service"
 )
 
-// Server 提供 HTTP 服务
+// Server web 服务对象
 type Server struct {
 	name       string
 	version    string
@@ -43,7 +43,7 @@ type Server struct {
 	problems   *Problems
 	services   *service.Server
 
-	closed chan struct{} // 当 Close 延时关闭时，通过此事件确定 Close() 的退出时机。
+	closed chan struct{} 
 	closes []func() error
 
 	// locale
@@ -54,7 +54,7 @@ type Server struct {
 // New 返回 *Server 实例
 //
 // name, version 表示服务的名称和版本号；
-// o 指定了初始化 Server 一些非必要参数。在传递给 New 之后，再对其值进行改变，是无效的。
+// o 指定了初始化 Server 一些非必要参数。
 func New(name, version string, o *Options) (*Server, error) {
 	o, err := sanitizeOptions(o)
 	if err != nil {
@@ -95,7 +95,6 @@ func (srv *Server) Name() string { return srv.name }
 // Version 应用的版本
 func (srv *Server) Version() string { return srv.version }
 
-// Open 实现 fs.FS 接口
 func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
 
 // Vars 操纵共享变量的接口
@@ -104,7 +103,7 @@ func (srv *Server) Vars() *sync.Map { return srv.vars }
 // Location 指定服务器的时区信息
 func (srv *Server) Location() *time.Location { return srv.locale.Location }
 
-// Logs 返回关联的 logs.Logs 实例
+// Logs 返回关联的 [logs.Logs] 实例
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
@@ -118,7 +117,7 @@ func (srv *Server) Mimetypes() serializer.Serializer { return srv.mimetypes }
 
 // Now 返回当前时间
 //
-// 与 time.Now() 的区别在于 Now() 基于当前时区
+// 与 [time.Now] 的区别在于 Now() 基于当前时区
 func (srv *Server) Now() time.Time { return time.Now().In(srv.Location()) }
 
 // ParseTime 分析基于当前时区的时间
@@ -128,7 +127,7 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 
 // Serve 启动服务
 //
-// 会等待 [Server.Close] 执行完之后，此函数才会返回，这一点与 http.ListenAndServe 稍有不同。
+// 会等待 [Server.Close] 执行完之后，此函数才会返回，这一点与 [http.ListenAndServe] 稍有不同。
 // 一旦返回，整个 Server 对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	srv.services.Run()
@@ -162,7 +161,7 @@ func (srv *Server) Serve() (err error) {
 
 // Close 触发关闭操作
 //
-// 需要等待 [Server.Serve] 返回才能证整个服务被关闭。
+// 需要等待 [Server.Serve] 返回才能证明整个服务被关闭。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	defer func() {
 		srv.closed <- struct{}{}

@@ -14,7 +14,7 @@ type (
 	Responser interface {
 		// Apply 通过 [Context] 将当前内容渲染到客户端
 		//
-		// 在调用 Apply 之后，就不再使用 [Responser] 对象，
+		// 在调用 Apply 之后，就不再使用 Responser 对象，
 		// 如果你的对象支持 sync.Pool 复用，可以在 Apply 退出之际回收。
 		Apply(*Context)
 	}

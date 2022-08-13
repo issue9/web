@@ -51,7 +51,7 @@ func (srv *Server) Routers() *Routers { return srv.routers }
 // name 表示参数名称；
 // index 表示目录下的默认文件名；
 // problems 表示指定状态需要关联的错误 id。默认情况下，
-// 文件服务采用 [Status] 返回指定的状态码。如果需要将返回内容与 Problem 相关联，
+// 文件服务采用 [Status] 返回指定的状态码。如果需要将返回内容转换成 [Problem] 对象，
 // 可以在此参数中指定，其中键名为状态码，键值为对应的错误 id，可以用的状态有：
 //   - http.StatusForbidden
 //   - http.StatusNotFound
