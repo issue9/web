@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v3"
 )
 
 func TestEncodings_Add(t *testing.T) {
@@ -102,7 +102,8 @@ func TestEncodings_Search(t *testing.T) {
 	e.Allow("text/plain", "lzw-lsb-2", "gzip-3")
 	e.Allow("application/*", "gzip-9", "lzw-lsb-2")
 
-	a.Run("一般", func(a *assert.Assertion) {
+	t.Run("一般", func(t *testing.T) {
+		a := assert.New(t, false)
 		b, notAccept := e.Search("application/json", "gzip;q=0.9,br")
 		a.False(notAccept).NotNil(b).Equal(b.name, "gzip")
 
@@ -119,7 +120,8 @@ func TestEncodings_Search(t *testing.T) {
 		a.False(notAccept).Nil(b)
 	})
 
-	a.Run("header=*", func(a *assert.Assertion) {
+	t.Run("header=*", func(t *testing.T) {
+		a := assert.New(t, false)
 		b, notAccept := e.Search("application/xml", "*;q=0")
 		a.True(notAccept).Nil(b)
 
@@ -133,7 +135,8 @@ func TestEncodings_Search(t *testing.T) {
 		a.False(notAccept).Nil(b)
 	})
 
-	a.Run("header=identity", func(a *assert.Assertion) {
+	t.Run("header=identity", func(t *testing.T) {
+		a := assert.New(t, false)
 		b, notAccept := e.Search("application/xml", "identity,gzip,br")
 		a.False(notAccept).NotNil(b).Equal(b.name, "gzip")
 
@@ -146,7 +149,8 @@ func TestEncodings_Search(t *testing.T) {
 		a.False(notAccept).Nil(b)
 	})
 
-	a.Run("同时匹配多条 contentType", func(a *assert.Assertion) {
+	t.Run("同时匹配多条 contentType", func(t *testing.T) {
+		a := assert.New(t, false)
 		b, notAccept := e.Search("image/jpg", "gzip") // image/jpg 不匹配任何 content-type
 		a.False(notAccept).Nil(b)
 

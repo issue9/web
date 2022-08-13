@@ -43,7 +43,7 @@ type Server struct {
 	problems   *Problems
 	services   *service.Server
 
-	closed chan struct{} 
+	closed chan struct{}
 	closes []func() error
 
 	// locale
@@ -83,7 +83,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		locale: loc,
 		files:  serialization.NewFS(5),
 	}
-	srv.routers = group.NewGroupOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
+	srv.routers = group.NewOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers
 
 	return srv, nil

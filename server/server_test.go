@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v3"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
@@ -306,7 +306,7 @@ func TestServer_FileServer(t *testing.T) {
 	r := s.NewRouter()
 	s.GoServe()
 
-	a.Run("problems", func(a *assert.Assertion) {
+	t.Run("problems", func(t *testing.T) {
 		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", map[int]string{http.StatusNotFound: "41110"}))
 
 		s.Get("/v1/file1.txt").
@@ -322,7 +322,7 @@ func TestServer_FileServer(t *testing.T) {
 			StringBody(`{"type":"41110","title":"41110","status":411}`)
 	})
 
-	a.Run("no problems", func(a *assert.Assertion) {
+	t.Run("no problems", func(t *testing.T) {
 		r.Get("/v2/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", nil))
 
 		s.Get("/v2/file1.txt").

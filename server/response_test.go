@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v2"
-	"github.com/issue9/assert/v2/rest"
+	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/logs/v4"
 )
 
@@ -88,23 +88,25 @@ func TestContext_Error(t *testing.T) {
 	})
 	errLog.Reset()
 
-	a.Run("Error", func(a *assert.Assertion) {
+	t.Run("Error", func(t *testing.T) {
+		a := assert.New(t, false)
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(http.StatusNotImplemented, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "response_test.go:95") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "response_test.go:96") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusNotImplemented)
 	})
 
-	a.Run("InternalServerError", func(a *assert.Assertion) {
+	t.Run("InternalServerError", func(t *testing.T) {
+		a := assert.New(t, false)
 		errLog.Reset()
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "response_test.go:106") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "response_test.go:108") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, http.StatusInternalServerError)
 	})

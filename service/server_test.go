@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v2"
+	"github.com/issue9/assert/v3"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
