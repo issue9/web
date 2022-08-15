@@ -85,11 +85,12 @@ func (p *Problems) SetBaseURL(base string) {
 // [Problems.Problem] 会根据此值查找相应的文字说明给予 title 字段；
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
-func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
+func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
 	if _, found := p.problems[id]; found {
 		panic("存在相同值的 id 参数")
 	}
 	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
+	return p
 }
 
 // AddMimetype 添加输出的 mimetype 值
@@ -97,11 +98,12 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 // mimetype 为正常情况下输出的值，当输出对象为 [Problem] 时，可以指定一个特殊的值，
 // 比如 application/json 可以对应输出 application/problem+json，
 // 这也是 RFC7807 推荐的作法。
-func (p *Problems) AddMimetype(mimetype, problemType string) {
+func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
 	if _, exists := p.mimetypes[mimetype]; exists {
 		panic("已经存在的 mimetype")
 	}
 	p.mimetypes[mimetype] = problemType
+	return p
 }
 
 func (p *Problems) mimetype(mimetype string) string {

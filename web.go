@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.55.1"
+const Version = "0.55.2"
 
 type (
 	Server         = server.Server
@@ -27,8 +27,10 @@ type (
 	Router         = server.Router
 	Module         = server.Module
 	Responser      = server.Responser
+	CTXSanitizer   = server.CTXSanitizer
 	Logger         = logs.Logger
 	Rule           = validation.Rule
+	Validation     = validation.Validation
 	Validator      = validation.Validator
 	ValidateFunc   = validation.ValidateFunc
 
@@ -47,6 +49,4 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 // NewRule 新建验证规则
-func NewRule(v Validator, key message.Reference, val ...any) *Rule {
-	return validation.NewRule(v, key, val...)
-}
+func NewRule(message LocaleStringer, v Validator) *Rule { return validation.NewRule(message, v) }

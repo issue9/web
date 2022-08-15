@@ -2,10 +2,7 @@
 
 package validation
 
-import (
-	"github.com/issue9/localeutil"
-	"golang.org/x/text/message"
-)
+import "github.com/issue9/localeutil"
 
 type (
 	Rule struct {
@@ -49,9 +46,19 @@ func Or(v ...Validator) Validator {
 	})
 }
 
-func NewRule(validator Validator, key message.Reference, v ...any) *Rule {
+func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
 	return &Rule{
 		validator: validator,
-		message:   localeutil.Phrase(key, v...),
+		message:   message,
 	}
+}
+
+// NewAndRule 以与的方式合并多条验证规则
+func NewAndRule(message localeutil.LocaleStringer, v ...Validator) *Rule {
+	return NewRule(message, And(v...))
+}
+
+// NewOrRule 以或的方式合并多条验证规则
+func NewOrRule(message localeutil.LocaleStringer, v ...Validator) *Rule {
+	return NewRule(message, Or(v...))
 }

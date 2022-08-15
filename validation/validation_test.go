@@ -16,10 +16,10 @@ import (
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
-	min_2 := NewRule(min(-2), "-2")
-	min_3 := NewRule(min(-3), "-3")
-	max50 := NewRule(max(50), "50")
-	max_4 := NewRule(max(-4), "-4")
+	min_2 := NewRule(localeutil.Phrase("-2"), min(-2))
+	min_3 := NewRule(localeutil.Phrase("-3"), min(-3))
+	max50 := NewRule(localeutil.Phrase("50"), max(50))
+	max_4 := NewRule(localeutil.Phrase("-4"), max(-4))
 
 	v := New(false).
 		AddField(-100, "f1", min_2, min_3).
@@ -37,8 +37,8 @@ func TestNew(t *testing.T) {
 func TestValidation_AddField(t *testing.T) {
 	a := assert.New(t, false)
 
-	min18 := NewRule(min(18), "不能小于 18")
-	min5 := NewRule(min(5), "min-5")
+	min18 := NewRule(localeutil.Phrase("不能小于 18"), min(18))
+	min5 := NewRule(localeutil.Phrase("min-5"), min(5))
 
 	obj := &object{}
 	v := New(false).
@@ -49,8 +49,8 @@ func TestValidation_AddField(t *testing.T) {
 	// object
 	r := root2{}
 	v = New(false)
-	v.AddField(r.O1, "o1", NewRule(ValidateFunc(required), "o1 required")).
-		AddField(r.O2, "o2", NewRule(ValidateFunc(required), "o2 required"))
+	v.AddField(r.O1, "o1", NewRule(localeutil.Phrase("o1 required"), ValidateFunc(required))).
+		AddField(r.O2, "o2", NewRule(localeutil.Phrase("o2 required"), ValidateFunc(required)))
 	a.Equal(v.keys, []string{"o1", "o2"}).
 		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("o1 required"), localeutil.Phrase("o2 required")})
 
@@ -71,7 +71,7 @@ func TestValidation_AddField(t *testing.T) {
 func TestValidation_AddSliceField(t *testing.T) {
 	a := assert.New(t, false)
 
-	min5 := NewRule(min(5), "min-5")
+	min5 := NewRule(localeutil.Phrase("min-5"), min(5))
 
 	// 将数组当普通元素处理
 	v := New(false).
@@ -106,7 +106,7 @@ func TestValidation_AddSliceField(t *testing.T) {
 func TestValidation_AddMapField(t *testing.T) {
 	a := assert.New(t, false)
 
-	min5 := NewRule(min(5), "min-5")
+	min5 := NewRule(localeutil.Phrase("min-5"), min(5))
 
 	// 将数组当普通元素处理
 	v := New(false).
@@ -141,8 +141,8 @@ func TestValidation_AddMapField(t *testing.T) {
 func TestValidation_When(t *testing.T) {
 	a := assert.New(t, false)
 
-	min18 := NewRule(min(18), "不能小于 18")
-	notEmpty := NewRule(ValidateFunc(required), "不能为空")
+	min18 := NewRule(localeutil.Phrase("不能小于 18"), min(18))
+	notEmpty := NewRule(localeutil.Phrase("不能为空"), ValidateFunc(required))
 
 	obj := &object{}
 	v := New(false).
@@ -172,7 +172,7 @@ func TestValidation_Locale(t *testing.T) {
 	cnp := message.NewPrinter(language.SimplifiedChinese, message.Catalog(builder))
 	twp := message.NewPrinter(language.TraditionalChinese, message.Catalog(builder))
 
-	max4 := NewRule(max(4), "lang")
+	max4 := NewRule(localeutil.Phrase("lang"), max(4))
 
 	v := New(false).
 		AddField(5, "obj", max4)

@@ -357,3 +357,6 @@ func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().Problems().Problem(id)
 }
+
+// NewValidation 声明验证对象
+func (ctx *Context) NewValidation() *validation.Validation { return validation.New(false) }
