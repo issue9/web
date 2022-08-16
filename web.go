@@ -50,3 +50,8 @@ func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.
 
 // NewRule 新建验证规则
 func NewRule(message LocaleStringer, v Validator) *Rule { return validation.NewRule(message, v) }
+
+// NewRuleFunc 新建验证规则
+func NewRuleFunc(message LocaleStringer, f func(any) bool) *Rule {
+	return validation.NewRuleFunc(message, f)
+}

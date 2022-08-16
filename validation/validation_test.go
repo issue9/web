@@ -49,8 +49,8 @@ func TestValidation_AddField(t *testing.T) {
 	// object
 	r := root2{}
 	v = New(false)
-	v.AddField(r.O1, "o1", NewRule(localeutil.Phrase("o1 required"), ValidateFunc(required))).
-		AddField(r.O2, "o2", NewRule(localeutil.Phrase("o2 required"), ValidateFunc(required)))
+	v.AddField(r.O1, "o1", NewRuleFunc(localeutil.Phrase("o1 required"), required)).
+		AddField(r.O2, "o2", NewRuleFunc(localeutil.Phrase("o2 required"), required))
 	a.Equal(v.keys, []string{"o1", "o2"}).
 		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("o1 required"), localeutil.Phrase("o2 required")})
 

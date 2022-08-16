@@ -27,9 +27,7 @@ type (
 	}
 )
 
-func required(v any) bool {
-	return !reflect.ValueOf(v).IsZero()
-}
+func required(v any) bool { return !reflect.ValueOf(v).IsZero() }
 
 func min(v int) ValidateFunc {
 	return func(a any) bool {
@@ -75,6 +73,27 @@ func TestOr(t *testing.T) {
 	a := assert.New(t, false)
 
 	v := Or(in(1, 2, 3), notIn(2, 3, 4))
+	a.True(v.IsValid(1))
+	a.True(v.IsValid(2))
+	a.False(v.IsValid(4))
+	a.True(v.IsValid(-1))
+	a.True(v.IsValid(100))
+}
+
+func TestAndF(t *testing.T) {
+	a := assert.New(t, false)
+
+	v := AndF(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
+	a.True(v.IsValid(1))
+	a.False(v.IsValid(2))
+	a.False(v.IsValid(-1))
+	a.False(v.IsValid(100))
+}
+
+func TestOrF(t *testing.T) {
+	a := assert.New(t, false)
+
+	v := OrF(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
 	a.True(v.IsValid(1))
 	a.True(v.IsValid(2))
 	a.False(v.IsValid(4))

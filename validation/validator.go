@@ -46,6 +46,18 @@ func Or(v ...Validator) Validator {
 	})
 }
 
+func AndF(f ...func(any) bool) Validator { return And(toValidators(f)...) }
+
+func OrF(f ...func(any) bool) Validator { return Or(toValidators(f)...) }
+
+func toValidators(f []func(any) bool) []Validator {
+	v := make([]Validator, 0, len(f))
+	for _, ff := range f {
+		v = append(v, ValidateFunc(ff))
+	}
+	return v
+}
+
 func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
 	return &Rule{
 		validator: validator,
@@ -53,12 +65,6 @@ func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
 	}
 }
 
-// NewAndRule 以与的方式合并多条验证规则
-func NewAndRule(message localeutil.LocaleStringer, v ...Validator) *Rule {
-	return NewRule(message, And(v...))
-}
-
-// NewOrRule 以或的方式合并多条验证规则
-func NewOrRule(message localeutil.LocaleStringer, v ...Validator) *Rule {
-	return NewRule(message, Or(v...))
+func NewRuleFunc(message localeutil.LocaleStringer, f func(any) bool) *Rule {
+	return NewRule(message, ValidateFunc(f))
 }

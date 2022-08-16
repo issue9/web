@@ -87,7 +87,7 @@ func (p *Problems) SetBaseURL(base string) {
 // title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
 	if _, found := p.problems[id]; found {
-		panic("存在相同值的 id 参数")
+		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
 	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
 	return p
@@ -100,7 +100,7 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 // 这也是 RFC7807 推荐的作法。
 func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
 	if _, exists := p.mimetypes[mimetype]; exists {
-		panic("已经存在的 mimetype")
+		panic(fmt.Sprintf("已经存在的 mimetype %s", mimetype))
 	}
 	p.mimetypes[mimetype] = problemType
 	return p

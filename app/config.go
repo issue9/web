@@ -50,20 +50,16 @@ type configOf[T any] struct {
 	//
 	// 如果为空，则会采用内存作为缓存对象。
 	// 用户可以用 [RegisterCache] 注册新的缓存对象。默认可用值为：
-	//  -memcached
-	//  -redis
-	//  -memory
-	//  -file
+	//  - memcached
+	//  - redis
+	//  - memory
+	//  - file
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	// 可通过 [RegisterEncoding] 注册新的压缩方法，默认可用为：
-	//  -gzip
-	//  -brotli
-	//  -deflate
 	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
 	encodings map[string]enc    // 启用的 ID
 
@@ -72,10 +68,10 @@ type configOf[T any] struct {
 	// 如果为空，表示默认不支持，后续可通过 [server.Server.Files] 进行添加。
 	//
 	// 可通过 RegisterFileSerializer 进行添加额外的序列化方法。默认可用为：
-	//  -.yaml
-	//  -.yml
-	//  -.xml
-	//  -.json
+	//  - .yaml
+	//  - .yml
+	//  - .xml
+	//  - .json
 	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
 	files map[string]serialization.Item
 
