@@ -7,6 +7,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
 )
 
@@ -92,8 +93,14 @@ func (m *Module) Server() *Server { return m.srv }
 //
 // [Module] 默认以 id 为名称相对于 [Server] 创建了一个文件系统。
 // 此操作会将 fsys 作为 [Module] 的另一个文件系统与 Module 相关联，
-// 当查找文件时，会依次以添加顺序查找相应的文件系统，直到找到或是结束。
-func (m *Module) AddFS(fsys ...fs.FS) { m.fs = append(m.fs, fsys...) }
+// 当查找文件时，会依次以添加的相反顺序查找相应的文件系统，直到找到或是结束。
+func (m *Module) AddFS(fsys ...fs.FS) {
+	f := make([]fs.FS, 0, len(m.fs)+len(fsys))
+	sliceutil.Reverse(fsys)
+	f = append(f, fsys...)
+	f = append(f, m.fs...)
+	m.fs = f
+}
 
 func (m *Module) Open(name string) (fs.File, error) {
 	for _, fsys := range m.fs {

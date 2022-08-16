@@ -110,7 +110,7 @@ func TestModule_Glob(t *testing.T) {
 	m.AddFS(os.DirFS("./testdata"))
 	a.True(existsFS(m, "file1.txt"))
 	matches, err = fs.Glob(m, "*.go")
-	a.NotError(err).Equal(matches, []string{"server.go", "servertest.go"})
+	a.NotError(err).Equal(matches, []string{"test.go"})
 	matches, err = fs.Glob(m, "*.pem")
 	a.NotError(err).Equal(matches, []string{"cert.pem", "key.pem"})
 }
