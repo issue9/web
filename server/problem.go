@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/web/validation"
 )
 
 const aboutBlank = "about:blank"
@@ -149,3 +150,6 @@ func (p *Problems) Problem(id string) Problem {
 
 // Problems 错误代码管理
 func (srv *Server) Problems() *Problems { return srv.problems }
+
+// NewValidation 声明验证对象
+func (ctx *Context) NewValidation() *validation.Validation { return validation.New(false) }

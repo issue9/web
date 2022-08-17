@@ -46,9 +46,9 @@ func Or(v ...Validator) Validator {
 	})
 }
 
-func AndF(f ...func(any) bool) Validator { return And(toValidators(f)...) }
+func AndFunc(f ...func(any) bool) Validator { return And(toValidators(f)...) }
 
-func OrF(f ...func(any) bool) Validator { return Or(toValidators(f)...) }
+func OrFunc(f ...func(any) bool) Validator { return Or(toValidators(f)...) }
 
 func toValidators(f []func(any) bool) []Validator {
 	v := make([]Validator, 0, len(f))

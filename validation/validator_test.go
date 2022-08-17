@@ -83,7 +83,7 @@ func TestOr(t *testing.T) {
 func TestAndF(t *testing.T) {
 	a := assert.New(t, false)
 
-	v := AndF(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
+	v := AndFunc(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
 	a.True(v.IsValid(1))
 	a.False(v.IsValid(2))
 	a.False(v.IsValid(-1))
@@ -93,7 +93,7 @@ func TestAndF(t *testing.T) {
 func TestOrF(t *testing.T) {
 	a := assert.New(t, false)
 
-	v := OrF(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
+	v := OrFunc(in(1, 2, 3).IsValid, notIn(2, 3, 4).IsValid)
 	a.True(v.IsValid(1))
 	a.True(v.IsValid(2))
 	a.False(v.IsValid(4))

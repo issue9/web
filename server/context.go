@@ -196,6 +196,8 @@ func (ctx *Context) WriteHeader(status int) {
 
 func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
 
+func (ctx *Context) Route() types.Route { return ctx.route }
+
 // SetLanguage 设置输出的语言
 //
 // 默认情况下，会根据用户提交的 Accept-Language 报头设置默认值。
@@ -357,6 +359,3 @@ func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().Problems().Problem(id)
 }
-
-// NewValidation 声明验证对象
-func (ctx *Context) NewValidation() *validation.Validation { return validation.New(false) }
