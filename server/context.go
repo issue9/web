@@ -306,7 +306,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
-		return srv.Tag()
+		return srv.LanguageTag()
 	}
 	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
 	return tag
@@ -351,11 +351,4 @@ func (ctx *Context) IsXHR() bool {
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
-}
-
-// Problem 向客户端输出错误信息
-//
-// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
-func (ctx *Context) Problem(id string) Problem {
-	return ctx.Server().Problems().Problem(id)
 }

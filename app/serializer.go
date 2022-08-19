@@ -26,7 +26,7 @@ type mimetypeConfig struct {
 	// 编码名称
 	//
 	// 比如 application/xml 等
-	Encoding string `json:"encoding" yaml:"encoding" xml:"encoding,attr"`
+	Type string `json:"type" yaml:"type" xml:"type,attr"`
 
 	// 对应 [server.Problem] 类型的编码名称
 	//
@@ -57,12 +57,12 @@ func (conf *configOf[T]) buildMimetypes(srv *server.Server) *ConfigError {
 			return &ConfigError{Field: item.Target, Message: localeutil.Phrase("%s not found", item.Target)}
 		}
 
-		if err := srv.Mimetypes().Add(m.Marshal, m.Unmarshal, item.Encoding); err != nil {
+		if err := srv.Mimetypes().Add(m.Marshal, m.Unmarshal, item.Type); err != nil {
 			return &ConfigError{Field: item.Target, Message: err}
 		}
 
 		if item.Problem != "" {
-			problems[item.Encoding] = item.Problem
+			problems[item.Type] = item.Problem
 		}
 	}
 

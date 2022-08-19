@@ -201,8 +201,8 @@ func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.locale.Catalog
 
 func (srv *Server) LocalePrinter() *message.Printer { return srv.locale.Printer }
 
-// Tag 返回默认的语言标签
-func (srv *Server) Tag() language.Tag { return srv.locale.Tag }
+// LanguageTag 返回默认的语言标签
+func (srv *Server) LanguageTag() language.Tag { return srv.locale.Tag }
 
 // OnClose 注册关闭服务时需要执行的函数
 //

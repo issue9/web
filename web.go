@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.55.2"
+const Version = "0.56.0"
 
 type (
 	Server         = server.Server

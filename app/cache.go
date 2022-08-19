@@ -3,15 +3,12 @@
 package app
 
 import (
-	"errors"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gomodule/redigo/redis"
 	"github.com/issue9/cache"
-	"github.com/issue9/cache/file"
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
@@ -28,18 +25,16 @@ type cacheConfig struct {
 	//  - memory 以内存作为缓存；
 	//  - memcached 以 memcached 作为缓存；
 	//  - redis 以 redis 作为缓存；
-	//  - file 以文件作为缓存；
 	Type string `yaml:"type" json:"type" xml:"type,attr"`
 
 	// 表示连接缓存服务器的参数
 	//
 	// 不同类型其参数是不同的，以下是对应的格式说明：
-	//  - memory，此值为 time.Duration 格式的参数，用于表示执行回收的间隔；
+	//  - memory，此值为 [time.Duration] 格式的参数，用于表示执行回收的间隔；
 	//  - memcached，则为服务器列表，多个服务器，以分号作为分隔；
-	//  - redis，则为符合 Redis URI scheme 的字符串，可参考 https://www.iana.org/assignments/uri-schemes/prov/redis；
-	//  - file，表示以半有分号分隔的参数列表，可以指定以下两个参数：
-	//   - path 文件路径；
-	//   - gc 执行回收的间隔，time.Duration 格式；
+	//  - redis，符合 [Redis URI scheme] 的字符串；
+	//
+	// [Redis URI scheme]: https://www.iana.org/assignments/uri-schemes/prov/redis
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
@@ -96,18 +91,4 @@ func init() {
 		}
 		return cr.New(c), nil
 	}, "redis")
-
-	RegisterCache(func(dsn string) (cache.Cache, error) {
-		args := strings.SplitN(dsn, ";", 2)
-		if len(args) != 2 {
-			return nil, errors.New("必须指定 path 和 gc 两个参数")
-		}
-
-		gc, err := time.ParseDuration(args[1])
-		if err != nil {
-			return nil, err
-		}
-
-		return file.New(args[0], gc, log.Default()), nil
-	}, "file")
 }

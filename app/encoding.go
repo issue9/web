@@ -6,6 +6,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
+	"strconv"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/localeutil"
@@ -46,7 +47,11 @@ type encodingConfig struct {
 
 func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	ids := make([]string, 0, len(encodingFactory))
-	for _, e := range conf.Encodings {
+	for i, e := range conf.Encodings {
+		if len(e.IDs) == 0 {
+			field := "[" + strconv.Itoa(i) + "].id"
+			return &ConfigError{Message: localeutil.Phrase("%s can not be empty", "id"), Field: field}
+		}
 		ids = append(ids, e.IDs...)
 	}
 	ids = sliceutil.Unique(ids, func(i, j string) bool { return i == j })

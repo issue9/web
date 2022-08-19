@@ -6,15 +6,15 @@
     "timezone": "Africa/Addis_Ababa",
     "mimetypes": [
         {
-            "encoding": "application/json",
+            "type": "application/json",
             "target": "json"
         },
         {
-            "encoding": "text/xml",
+            "type": "text/xml",
             "target": "xml"
         },
         {
-            "encoding": "multipart/form-data",
+            "type": "multipart/form-data",
             "target": "nil"
         }
     ]

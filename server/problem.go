@@ -153,3 +153,10 @@ func (srv *Server) Problems() *Problems { return srv.problems }
 
 // NewValidation 声明验证对象
 func (ctx *Context) NewValidation() *validation.Validation { return validation.New(false) }
+
+// Problem 向客户端输出错误信息
+//
+// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
+func (ctx *Context) Problem(id string) Problem {
+	return ctx.Server().Problems().Problem(id)
+}

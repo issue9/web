@@ -60,25 +60,25 @@ type configOf[T any] struct {
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings,omitempty"`
+	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings>encoding,omitempty"`
 	encodings map[string]enc    // 启用的 ID
 
 	// 默认的文件序列化列表
 	//
 	// 如果为空，表示默认不支持，后续可通过 [server.Server.Files] 进行添加。
 	//
-	// 可通过 RegisterFileSerializer 进行添加额外的序列化方法。默认可用为：
+	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
 	//  - .yaml
 	//  - .yml
 	//  - .xml
 	//  - .json
-	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files,omitempty"`
+	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files>file,omitempty"`
 	files map[string]serialization.Item
 
 	// 指定可用的 mimetype
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
-	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetype,omitempty"`
+	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
