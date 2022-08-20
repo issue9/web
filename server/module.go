@@ -89,12 +89,12 @@ func (m *Module) BuildID(suffix string) string { return m.ID() + suffix }
 
 func (m *Module) Server() *Server { return m.srv }
 
-// AddFS 添加文件系统
+// AppendFS 添加文件系统
 //
 // [Module] 默认以 id 为名称相对于 [Server] 创建了一个文件系统。
 // 此操作会将 fsys 作为 [Module] 的另一个文件系统与 Module 相关联，
 // 当查找文件时，会依次以添加的相反顺序查找相应的文件系统，直到找到或是结束。
-func (m *Module) AddFS(fsys ...fs.FS) {
+func (m *Module) AppendFS(fsys ...fs.FS) {
 	f := make([]fs.FS, 0, len(m.fs)+len(fsys))
 	sliceutil.Reverse(fsys)
 	f = append(f, fsys...)
@@ -111,7 +111,7 @@ func (m *Module) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
 }
 
-// Glob 实现 fs.GlobFS 接口
+// Glob 实现 [fs.GlobFS] 接口
 //
 // 查找到第一个返回非空集合即停止。
 func (m *Module) Glob(pattern string) ([]string, error) {

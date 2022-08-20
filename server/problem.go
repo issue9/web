@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/issue9/localeutil"
+
 	"github.com/issue9/web/validation"
 )
 
@@ -50,6 +51,11 @@ type (
 		status int
 		title  localeutil.LocaleStringer
 		detail localeutil.LocaleStringer
+	}
+
+	Validation struct {
+		v   *validation.Validation
+		ctx *Context
 	}
 )
 
@@ -151,12 +157,49 @@ func (p *Problems) Problem(id string) Problem {
 // Problems 错误代码管理
 func (srv *Server) Problems() *Problems { return srv.problems }
 
-// NewValidation 声明验证对象
-func (ctx *Context) NewValidation() *validation.Validation { return validation.New(false) }
-
 // Problem 向客户端输出错误信息
 //
 // id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
 func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().Problems().Problem(id)
+}
+
+// NewValidation 声明验证对象
+func (ctx *Context) NewValidation() *Validation {
+	return &Validation{
+		v:   validation.New(false),
+		ctx: ctx,
+	}
+}
+
+// Problem 转换成 [Problem] 对象
+func (v *Validation) Problem(id string) Problem {
+	p := v.ctx.Problem(id)
+	printer := v.ctx.LocalePrinter()
+	v.v.Visit(func(s string, ls localeutil.LocaleStringer) bool {
+		p.AddParam(s, ls.LocaleString(printer))
+		return true
+	})
+	v.v.Destroy()
+	return p
+}
+
+func (v *Validation) AddField(val any, name string, rule ...*validation.Rule) *Validation {
+	v.v.AddField(val, name, rule...)
+	return v
+}
+
+func (v *Validation) AddSliceField(val any, name string, rule ...*validation.Rule) *Validation {
+	v.v.AddSliceField(val, name, rule...)
+	return v
+}
+
+func (v *Validation) AddMapField(val any, name string, rule ...*validation.Rule) *Validation {
+	v.v.AddMapField(val, name, rule...)
+	return v
+}
+
+func (v *Validation) When(cond bool, f func(v *validation.Validation)) *Validation {
+	v.v.When(cond, f)
+	return v
 }

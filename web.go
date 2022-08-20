@@ -27,6 +27,7 @@ type (
 	Router         = server.Router
 	Module         = server.Module
 	Responser      = server.Responser
+	ResponserFunc  = server.ResponserFunc
 	CTXSanitizer   = server.CTXSanitizer
 	Logger         = logs.Logger
 	Rule           = validation.Rule

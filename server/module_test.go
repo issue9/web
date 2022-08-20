@@ -88,7 +88,7 @@ func TestModule_Glob(t *testing.T) {
 	a.NotError(err).Equal(matches, []string{"cert.pem", "key.pem"})
 
 	// AddFS
-	m.AddFS(os.DirFS("./servertest"))
+	m.AppendFS(os.DirFS("./servertest"))
 	a.True(existsFS(m, "servertest.go"))
 	matches, err = fs.Glob(m, "*.cnf")
 	a.NotError(err).Equal(matches, []string{"req.cnf"})
@@ -107,7 +107,7 @@ func TestModule_Glob(t *testing.T) {
 	a.NotError(err).Empty(matches)
 
 	// AddFS
-	m.AddFS(os.DirFS("./testdata"))
+	m.AppendFS(os.DirFS("./testdata"))
 	a.True(existsFS(m, "file1.txt"))
 	matches, err = fs.Glob(m, "*.go")
 	a.NotError(err).Equal(matches, []string{"test.go"})

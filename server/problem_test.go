@@ -10,6 +10,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/web/validation"
 	"golang.org/x/text/language"
 )
 
@@ -163,4 +164,20 @@ func TestContext_Problem(t *testing.T) {
 
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":"v1"}],"detail":"40010"}`)
+}
+
+func TestContext_NewValidation(t *testing.T) {
+	a := assert.New(t, false)
+	s := newServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := s.newContext(w, r, nil)
+	v := ctx.NewValidation()
+	p := v.AddField(5, "num", validation.NewRuleFunc(localeutil.Phrase("num"), func(a any) bool { return true })).
+		AddSliceField(5, "slice", validation.NewRuleFunc(localeutil.Phrase("slice"), func(a any) bool { return false })).
+		Problem("41110")
+	a.NotNil(p)
+	pp, ok := p.(*rfc7807)
+	a.True(ok).Equal(pp.typ, "41110").Equal(pp.status, 411)
 }
