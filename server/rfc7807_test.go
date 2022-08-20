@@ -9,6 +9,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/serializer/form"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 	_ Problem        = &rfc7807{}
 	_ json.Marshaler = &rfc7807{}
 	_ xml.Marshaler  = &rfc7807{}
+	_ form.Marshaler = &rfc7807{}
 )
 
 func TestRFC7807Builder(t *testing.T) {
@@ -69,5 +72,15 @@ func TestRFC7807_Marshal(t *testing.T) {
 		data, err = xml.Marshal(p2)
 		a.NotError(err).
 			Equal(string(data), `<problem xmlns="urn:ietf:rfc:7807"><type>400</type><title></title><status>400</status><params><i><name>n1</name><reason>r1</reason></i></params><detail>detail</detail><array><i>a</i><i>bc</i></array><object><X>x</X></object></problem>`)
+	})
+
+	t.Run("Form", func(t *testing.T) {
+		data, err := form.Marshal(p1)
+		a.NotError(err).
+			Equal(string(data), `status=200&title=&type=400`)
+
+		data, err = form.Marshal(p2)
+		a.NotError(err).
+			Equal(string(data), `detail=detail&params%5B0%5D.name=n1&params%5B0%5D.reason=r1&status=400&title=&type=400`)
 	})
 }
