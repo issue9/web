@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/validation"
 )
 
 var tGreatThanZero = localeutil.Phrase("should great than 0")
@@ -27,12 +26,12 @@ var (
 type (
 	Params struct {
 		ctx *Context
-		v   *validation.Validation
+		v   *CTXValidation
 	}
 
 	Queries struct {
 		ctx     *Context
-		v       *validation.Validation
+		v       *CTXValidation
 		queries url.Values
 	}
 )
@@ -41,9 +40,8 @@ type (
 func (ctx *Context) Params() *Params {
 	ps := paramPool.Get().(*Params)
 	ps.ctx = ctx
-	ps.v = validation.New(false)
+	ps.v = ctx.NewValidation()
 	ctx.OnExit(func(i int) {
-		ps.v.Destroy()
 		paramPool.Put(ps)
 	})
 	return ps
@@ -104,7 +102,7 @@ func (p *Params) Float64(key string) float64 {
 // Problem 将当前对象转换成 [Problem] 对象
 //
 // 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
-func (p *Params) Problem(id string) Responser { return p.ctx.validation2Problem(p.v, id) }
+func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
 
 // ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
 //
@@ -156,10 +154,9 @@ func (ctx *Context) Queries() (*Queries, error) {
 
 	q := queryPool.Get().(*Queries)
 	q.ctx = ctx
-	q.v = validation.New(false)
+	q.v = ctx.NewValidation()
 	q.queries = queries
 	ctx.OnExit(func(i int) {
-		q.v.Destroy()
 		queryPool.Put(q)
 	})
 	return q, nil
@@ -256,7 +253,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 // Problem 将当前对象转换成 [Problem] 对象
 //
 // 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
-func (q *Queries) Problem(id string) Responser { return q.ctx.validation2Problem(q.v, id) }
+func (q *Queries) Problem(id string) Responser { return q.v.Problem(id) }
 
 // Object 将查询参数解析到一个对象中
 //
@@ -270,7 +267,7 @@ func (q *Queries) Object(v any, id string) {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(q.ctx); va != nil {
-			va.Visit(func(name string, reason localeutil.LocaleStringer) bool {
+			va.v.Visit(func(name string, reason localeutil.LocaleStringer) bool {
 				q.v.Add(name, reason)
 				return true
 			})
@@ -347,24 +344,9 @@ func (ctx *Context) Read(v any, id string) Responser {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(ctx); va != nil {
-			return ctx.validation2Problem(va, id)
+			return va.Problem(id)
 		}
 	}
 
 	return nil
-}
-
-func (ctx *Context) validation2Problem(v *validation.Validation, id string) Problem {
-	if v.Count() == 0 {
-		return nil
-	}
-
-	p := ctx.LocalePrinter()
-	pp := ctx.Server().Problems().Problem(id)
-	v.Visit(func(key string, reason localeutil.LocaleStringer) bool {
-		pp.AddParam(key, reason.LocaleString(p))
-		return true
-	})
-	v.Destroy()
-	return pp
 }

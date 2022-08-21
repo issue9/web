@@ -53,9 +53,20 @@ type (
 		detail localeutil.LocaleStringer
 	}
 
-	Validation struct {
+	// CTXValidation 与 Context 相关联的验证功能
+	CTXValidation struct {
 		v   *validation.Validation
 		ctx *Context
+	}
+
+	// CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
+	//
+	// 在 [Context.Read] 和 [Queries.Object] 中会在解析数据成功之后，调用该接口进行数据验证。
+	CTXSanitizer interface {
+		// CTXSanitize 验证和修正当前对象的数据
+		//
+		// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
+		CTXSanitize(*Context) *CTXValidation
 	}
 )
 
@@ -165,15 +176,21 @@ func (ctx *Context) Problem(id string) Problem {
 }
 
 // NewValidation 声明验证对象
-func (ctx *Context) NewValidation() *Validation {
-	return &Validation{
+func (ctx *Context) NewValidation() *CTXValidation {
+	return &CTXValidation{
 		v:   validation.New(false),
 		ctx: ctx,
 	}
 }
 
 // Problem 转换成 [Problem] 对象
-func (v *Validation) Problem(id string) Problem {
+//
+// 如果当前对象没有收集到错误，那么将返回 nil。
+func (v *CTXValidation) Problem(id string) Problem {
+	if v.v.Count() == 0 {
+		return nil
+	}
+
 	p := v.ctx.Problem(id)
 	printer := v.ctx.LocalePrinter()
 	v.v.Visit(func(s string, ls localeutil.LocaleStringer) bool {
@@ -184,22 +201,27 @@ func (v *Validation) Problem(id string) Problem {
 	return p
 }
 
-func (v *Validation) AddField(val any, name string, rule ...*validation.Rule) *Validation {
+func (v *CTXValidation) Add(name string, reason localeutil.LocaleStringer) *CTXValidation {
+	v.v.Add(name, reason)
+	return v
+}
+
+func (v *CTXValidation) AddField(val any, name string, rule ...*validation.Rule) *CTXValidation {
 	v.v.AddField(val, name, rule...)
 	return v
 }
 
-func (v *Validation) AddSliceField(val any, name string, rule ...*validation.Rule) *Validation {
+func (v *CTXValidation) AddSliceField(val any, name string, rule ...*validation.Rule) *CTXValidation {
 	v.v.AddSliceField(val, name, rule...)
 	return v
 }
 
-func (v *Validation) AddMapField(val any, name string, rule ...*validation.Rule) *Validation {
+func (v *CTXValidation) AddMapField(val any, name string, rule ...*validation.Rule) *CTXValidation {
 	v.v.AddMapField(val, name, rule...)
 	return v
 }
 
-func (v *Validation) When(cond bool, f func(v *validation.Validation)) *Validation {
+func (v *CTXValidation) When(cond bool, f func(v *validation.Validation)) *CTXValidation {
 	v.v.When(cond, f)
 	return v
 }

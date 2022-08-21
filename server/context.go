@@ -21,7 +21,6 @@ import (
 	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/serializer"
-	"github.com/issue9/web/validation"
 )
 
 const (
@@ -34,16 +33,6 @@ var contextPool = &sync.Pool{New: func() any {
 		exits: make([]func(int), 0, 3), // query, params
 	}
 }}
-
-// CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
-//
-// 在 [Context.Read] 和 [Queries.Object] 中会在解析数据成功之后，调用该接口进行数据验证。
-type CTXSanitizer interface {
-	// CTXSanitize 验证和修正当前对象的数据
-	//
-	// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
-	CTXSanitize(*Context) *validation.Validation
-}
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
