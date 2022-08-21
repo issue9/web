@@ -25,25 +25,22 @@ var (
 
 type (
 	Params struct {
-		ctx *Context
-		v   *CTXValidation
+		v *CTXValidation
 	}
 
 	Queries struct {
-		ctx     *Context
 		v       *CTXValidation
 		queries url.Values
 	}
 )
 
 // Params 声明一个用于获取路径参数的对象
+//
+// 返回对象的生命周期在 Context 结束时也随之结束。
 func (ctx *Context) Params() *Params {
 	ps := paramPool.Get().(*Params)
-	ps.ctx = ctx
-	ps.v = ctx.NewValidation()
-	ctx.OnExit(func(i int) {
-		paramPool.Put(ps)
-	})
+	ps.v = ctx.NewValidation(nil)
+	ctx.OnExit(func(i int) { paramPool.Put(ps) })
 	return ps
 }
 
@@ -51,7 +48,7 @@ func (ctx *Context) Params() *Params {
 //
 // 值必须大于 0，否则会输出错误信息，并返回零值。
 func (p *Params) ID(key string) int64 {
-	id, err := p.ctx.route.Params().Int(key)
+	id, err := p.v.ctx.route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	} else if id <= 0 {
@@ -62,7 +59,7 @@ func (p *Params) ID(key string) int64 {
 
 // Int64 获取参数 key 所代表的值，并转换成 int64
 func (p *Params) Int64(key string) int64 {
-	ret, err := p.ctx.route.Params().Int(key)
+	ret, err := p.v.ctx.route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -71,7 +68,7 @@ func (p *Params) Int64(key string) int64 {
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Params) String(key string) string {
-	ret, err := p.ctx.route.Params().String(key)
+	ret, err := p.v.ctx.route.Params().String(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -83,7 +80,7 @@ func (p *Params) String(key string) string {
 // 最终会调用 strconv.ParseBool 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) Bool(key string) bool {
-	ret, err := p.ctx.route.Params().Bool(key)
+	ret, err := p.v.ctx.route.Params().Bool(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -92,7 +89,7 @@ func (p *Params) Bool(key string) bool {
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Params) Float64(key string) float64 {
-	ret, err := p.ctx.route.Params().Float(key)
+	ret, err := p.v.ctx.route.Params().Float(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -146,6 +143,8 @@ func (ctx *Context) ParamString(key, id string) (string, Responser) {
 }
 
 // Queries 声明一个用于获取查询参数的对象
+//
+// 返回对象的生命周期在 Context 结束时也随之结束。
 func (ctx *Context) Queries() (*Queries, error) {
 	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
@@ -153,12 +152,9 @@ func (ctx *Context) Queries() (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.ctx = ctx
-	q.v = ctx.NewValidation()
+	q.v = ctx.NewValidation(nil)
 	q.queries = queries
-	ctx.OnExit(func(i int) {
-		queryPool.Put(q)
-	})
+	ctx.OnExit(func(i int) { queryPool.Put(q) })
 	return q, nil
 }
 
@@ -266,7 +262,7 @@ func (q *Queries) Object(v any, id string) {
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		if va := vv.CTXSanitize(q.ctx); va != nil {
+		if va := vv.CTXSanitize(q.v.ctx); va != nil {
 			va.v.Visit(func(name string, reason localeutil.LocaleStringer) bool {
 				q.v.Add(name, reason)
 				return true

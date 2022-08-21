@@ -173,7 +173,7 @@ func TestContext_NewValidation(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
-	v := ctx.NewValidation()
+	v := ctx.NewValidation(nil)
 	p := v.AddField(5, "num", validation.NewRuleFunc(localeutil.Phrase("num"), func(a any) bool { return true })).
 		AddSliceField(5, "slice", validation.NewRuleFunc(localeutil.Phrase("slice"), func(a any) bool { return false })).
 		Problem("41110")

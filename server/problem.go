@@ -4,6 +4,7 @@ package server
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/issue9/localeutil"
 
@@ -11,6 +12,8 @@ import (
 )
 
 const aboutBlank = "about:blank"
+
+var validationPool = &sync.Pool{New: func() any { return &CTXValidation{} }}
 
 type (
 	// Problem API 错误信息对象需要实现的接口
@@ -176,11 +179,23 @@ func (ctx *Context) Problem(id string) Problem {
 }
 
 // NewValidation 声明验证对象
-func (ctx *Context) NewValidation() *CTXValidation {
-	return &CTXValidation{
-		v:   validation.New(false),
-		ctx: ctx,
+//
+// 如果 v 为空，将采用 validation.New(false) 实始化一个默认对象。
+//
+// 返回对象的生命周期在 Context 结束时也随之结束。
+func (ctx *Context) NewValidation(v *validation.Validation) *CTXValidation {
+	if v == nil {
+		v = validation.New(false)
+		ctx.OnExit(func(i int) { // 只有自身申请的 validation 对象才需要主动销毁。
+			v.Destroy()
+		})
 	}
+
+	vv := validationPool.Get().(*CTXValidation)
+	vv.v = v
+	vv.ctx = ctx
+	ctx.OnExit(func(i int) { validationPool.Put(vv) })
+	return vv
 }
 
 // Problem 转换成 [Problem] 对象
@@ -197,7 +212,6 @@ func (v *CTXValidation) Problem(id string) Problem {
 		p.AddParam(s, ls.LocaleString(printer))
 		return true
 	})
-	v.v.Destroy()
 	return p
 }
 
