@@ -54,15 +54,15 @@ func TestParams_ID(t *testing.T) {
 		ps := ctx.Params()
 
 		a.Equal(ps.ID("i1"), 1).
-			Equal(ps.v.v.Count(), 0)
+			Equal(ps.v.count(), 0)
 
 		// 负数
 		a.Equal(ps.ID("i2"), -2).
-			Equal(ps.v.v.Count(), 1)
+			Equal(ps.v.count(), 1)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.ID("i3"), 0)
-		a.Equal(ps.v.v.Count(), 2)
+		a.Equal(ps.v.count(), 2)
 
 		return nil
 	})
@@ -81,11 +81,11 @@ func TestParams_Int(t *testing.T) {
 		ps := ctx.Params()
 
 		a.Equal(ps.Int64("i1"), 1)
-		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.v.Count(), 0)
+		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.count(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Int64("i3"), 0)
-		a.Equal(ps.v.v.Count(), 1)
+		a.Equal(ps.v.count(), 1)
 
 		return nil
 	})
@@ -104,11 +104,11 @@ func TestParams_Bool(t *testing.T) {
 		ps := ctx.Params()
 
 		a.True(ps.Bool("b1"))
-		a.False(ps.Bool("b2")).Equal(ps.v.v.Count(), 0)
+		a.False(ps.Bool("b2")).Equal(ps.v.count(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.False(ps.Bool("b3"))
-		a.Equal(ps.v.v.Count(), 1)
+		a.Equal(ps.v.count(), 1)
 
 		return nil
 	})
@@ -128,11 +128,11 @@ func TestParams_String(t *testing.T) {
 
 		a.Equal(ps.String("s1"), "str1")
 		a.Equal(ps.String("s2"), "str2")
-		a.Zero(ps.v.v.Count())
+		a.Zero(ps.v.count())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.String("s3"), "")
-		a.Equal(ps.v.v.Count(), 1)
+		a.Equal(ps.v.count(), 1)
 
 		return nil
 	})
@@ -152,11 +152,11 @@ func TestParams_Float(t *testing.T) {
 
 		a.Equal(ps.Float64("f1"), 1.1)
 		a.Equal(ps.Float64("f2"), 2.2)
-		a.Zero(ps.v.v.Count())
+		a.Zero(ps.v.count())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Float64("f3"), 0.0)
-		a.Equal(ps.v.v.Count(), 1)
+		a.Equal(ps.v.count(), 1)
 
 		return nil
 	})

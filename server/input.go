@@ -25,11 +25,11 @@ var (
 
 type (
 	Params struct {
-		v *CTXValidation
+		v *Validation
 	}
 
 	Queries struct {
-		v       *CTXValidation
+		v       *Validation
 		queries url.Values
 	}
 )
@@ -39,7 +39,7 @@ type (
 // 返回对象的生命周期在 Context 结束时也随之结束。
 func (ctx *Context) Params() *Params {
 	ps := paramPool.Get().(*Params)
-	ps.v = ctx.NewValidation(nil)
+	ps.v = ctx.NewValidation(false)
 	ctx.OnExit(func(i int) { paramPool.Put(ps) })
 	return ps
 }
@@ -152,7 +152,7 @@ func (ctx *Context) Queries() (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.NewValidation(nil)
+	q.v = ctx.NewValidation(false)
 	q.queries = queries
 	ctx.OnExit(func(i int) { queryPool.Put(q) })
 	return q, nil
@@ -263,7 +263,7 @@ func (q *Queries) Object(v any, id string) {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(q.v.ctx); va != nil {
-			va.v.Visit(func(name string, reason localeutil.LocaleStringer) bool {
+			va.visit(func(name string, reason localeutil.LocaleStringer) bool {
 				q.v.Add(name, reason)
 				return true
 			})

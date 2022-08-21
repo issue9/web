@@ -4,16 +4,11 @@ package server
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/issue9/localeutil"
-
-	"github.com/issue9/web/validation"
 )
 
 const aboutBlank = "about:blank"
-
-var validationPool = &sync.Pool{New: func() any { return &CTXValidation{} }}
 
 type (
 	// Problem API 错误信息对象需要实现的接口
@@ -56,12 +51,6 @@ type (
 		detail localeutil.LocaleStringer
 	}
 
-	// CTXValidation 与 Context 相关联的验证功能
-	CTXValidation struct {
-		v   *validation.Validation
-		ctx *Context
-	}
-
 	// CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
 	//
 	// 在 [Context.Read] 和 [Queries.Object] 中会在解析数据成功之后，调用该接口进行数据验证。
@@ -69,7 +58,7 @@ type (
 		// CTXSanitize 验证和修正当前对象的数据
 		//
 		// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
-		CTXSanitize(*Context) *CTXValidation
+		CTXSanitize(*Context) *Validation
 	}
 )
 
@@ -178,64 +167,19 @@ func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().Problems().Problem(id)
 }
 
-// NewValidation 声明验证对象
-//
-// 如果 v 为空，将采用 validation.New(false) 实始化一个默认对象。
-//
-// 返回对象的生命周期在 Context 结束时也随之结束。
-func (ctx *Context) NewValidation(v *validation.Validation) *CTXValidation {
-	if v == nil {
-		v = validation.New(false)
-		ctx.OnExit(func(i int) { // 只有自身申请的 validation 对象才需要主动销毁。
-			v.Destroy()
-		})
-	}
-
-	vv := validationPool.Get().(*CTXValidation)
-	vv.v = v
-	vv.ctx = ctx
-	ctx.OnExit(func(i int) { validationPool.Put(vv) })
-	return vv
-}
-
 // Problem 转换成 [Problem] 对象
 //
 // 如果当前对象没有收集到错误，那么将返回 nil。
-func (v *CTXValidation) Problem(id string) Problem {
-	if v.v.Count() == 0 {
+func (v *Validation) Problem(id string) Problem {
+	if v.count() == 0 {
 		return nil
 	}
 
 	p := v.ctx.Problem(id)
 	printer := v.ctx.LocalePrinter()
-	v.v.Visit(func(s string, ls localeutil.LocaleStringer) bool {
+	v.visit(func(s string, ls localeutil.LocaleStringer) bool {
 		p.AddParam(s, ls.LocaleString(printer))
 		return true
 	})
 	return p
-}
-
-func (v *CTXValidation) Add(name string, reason localeutil.LocaleStringer) *CTXValidation {
-	v.v.Add(name, reason)
-	return v
-}
-
-func (v *CTXValidation) AddField(val any, name string, rule ...*validation.Rule) *CTXValidation {
-	v.v.AddField(val, name, rule...)
-	return v
-}
-
-func (v *CTXValidation) AddSliceField(val any, name string, rule ...*validation.Rule) *CTXValidation {
-	v.v.AddSliceField(val, name, rule...)
-	return v
-}
-
-func (v *CTXValidation) AddMapField(val any, name string, rule ...*validation.Rule) *CTXValidation {
-	v.v.AddMapField(val, name, rule...)
-	return v
-}
-
-func (v *CTXValidation) When(cond bool, f func(v *validation.Validation)) *CTXValidation {
-	v.v.When(cond, f)
-	return v
 }

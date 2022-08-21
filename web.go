@@ -11,7 +11,6 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/validation"
 )
 
 // Version 当前框架的版本
@@ -29,11 +28,11 @@ type (
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
 	CTXSanitizer   = server.CTXSanitizer
+	Rule           = server.Rule
+	Validation     = server.Validation
+	Validator      = server.Validator
+	ValidateFunc   = server.ValidateFunc
 	Logger         = logs.Logger
-	Rule           = validation.Rule
-	Validation     = validation.Validation
-	Validator      = validation.Validator
-	ValidateFunc   = validation.ValidateFunc
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//
@@ -51,10 +50,10 @@ func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.
 
 // NewRule 新建验证规则
 func NewRule(v Validator, key message.Reference, val ...any) *Rule {
-	return validation.NewRule(Phrase(key, val...), v)
+	return server.NewRule(Phrase(key, val...), v)
 }
 
 // NewRuleFunc 新建验证规则
 func NewRuleFunc(f func(any) bool, key message.Reference, val ...any) *Rule {
-	return validation.NewRuleFunc(Phrase(key, val...), f)
+	return server.NewRuleFunc(Phrase(key, val...), f)
 }
