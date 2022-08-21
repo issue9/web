@@ -57,7 +57,7 @@ type (
 	CTXSanitizer interface {
 		// CTXSanitize 验证和修正当前对象的数据
 		//
-		// 如果验证有误，则需要返回这些错误信息，否则应该返回 nil。
+		// 无论是否有错误内容，都不应该返回 nil。
 		CTXSanitize(*Context) *Validation
 	}
 )
@@ -171,14 +171,13 @@ func (ctx *Context) Problem(id string) Problem {
 //
 // 如果当前对象没有收集到错误，那么将返回 nil。
 func (v *Validation) Problem(id string) Problem {
-	if v.count() == 0 {
+	if v.Count() == 0 {
 		return nil
 	}
 
 	p := v.ctx.Problem(id)
-	printer := v.ctx.LocalePrinter()
-	v.visit(func(s string, ls localeutil.LocaleStringer) bool {
-		p.AddParam(s, ls.LocaleString(printer))
+	v.visit(func(name, reason string) bool {
+		p.AddParam(name, reason)
 		return true
 	})
 	return p

@@ -13,9 +13,10 @@ import (
 const validationPoolMaxSize = 20
 
 var validationPool = &sync.Pool{New: func() any {
+	const size = 5
 	return &Validation{
-		keys:    make([]string, 0, 5),
-		reasons: make([]localeutil.LocaleStringer, 0, 5),
+		keys:    make([]string, 0, size),
+		reasons: make([]string, 0, size),
 	}
 }}
 
@@ -25,13 +26,12 @@ var (
 )
 
 type (
-	// Validation 验证工具
+	// Validation 数据验证工具
 	Validation struct {
 		exitAtError bool
-
-		ctx     *Context
-		keys    []string
-		reasons []localeutil.LocaleStringer
+		ctx         *Context
+		keys        []string
+		reasons     []string
 	}
 
 	Rule struct {
@@ -41,7 +41,6 @@ type (
 
 	// Validator 用于验证指定数据的合法性
 	Validator interface {
-		// IsValid 验证 v 是否符合当前的规则
 		IsValid(v any) bool
 	}
 
@@ -68,10 +67,10 @@ func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	return v
 }
 
-func (v *Validation) count() int { return len(v.keys) }
+func (v *Validation) Count() int { return len(v.keys) }
 
 // 依次访问每一条错误信息
-func (v *Validation) visit(f func(string, localeutil.LocaleStringer) bool) {
+func (v *Validation) visit(f func(name, reason string) bool) {
 	for index, key := range v.keys {
 		if !f(key, v.reasons[index]) {
 			break
@@ -83,6 +82,10 @@ func (v *Validation) visit(f func(string, localeutil.LocaleStringer) bool) {
 //
 // 此方法不受 exitAtError 标记位的影响。
 func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validation {
+	return v.add(name, reason.LocaleString(v.ctx.LocalePrinter()))
+}
+
+func (v *Validation) add(name, reason string) *Validation {
 	v.keys = append(v.keys, name)
 	v.reasons = append(v.reasons, reason)
 	return v
@@ -94,7 +97,7 @@ func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validat
 // name 表示当前字段的名称，当验证出错时，以此值作为名称返回给用户；
 // rules 表示验证的规则，按顺序依次验证。
 func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation {
-	if v.count() > 0 && v.exitAtError {
+	if v.Count() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -113,7 +116,7 @@ func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation 
 func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 []T
 
-	if v.count() > 0 && v.exitAtError {
+	if v.Count() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -144,7 +147,7 @@ func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Valida
 func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 map[T]T
 
-	if v.count() > 0 && v.exitAtError {
+	if v.Count() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -216,6 +219,10 @@ func toValidators(f []func(any) bool) []Validator {
 	return v
 }
 
+// NewRule 声明一条验证规则
+//
+// message 表示在验证出错时的错误信息；
+// validator 为验证方法；
 func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
 	return &Rule{
 		validator: validator,

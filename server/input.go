@@ -77,7 +77,7 @@ func (p *Params) String(key string) string {
 
 // Bool 获取参数 key 所代表的值并转换成 bool
 //
-// 最终会调用 strconv.ParseBool 进行转换，
+// 最终会调用 [strconv.ParseBool] 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) Bool(key string) bool {
 	ret, err := p.v.ctx.route.Params().Bool(key)
@@ -263,8 +263,8 @@ func (q *Queries) Object(v any, id string) {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(q.v.ctx); va != nil {
-			va.visit(func(name string, reason localeutil.LocaleStringer) bool {
-				q.v.Add(name, reason)
+			va.visit(func(name, reason string) bool {
+				q.v.add(name, reason)
 				return true
 			})
 		}

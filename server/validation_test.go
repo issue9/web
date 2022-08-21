@@ -79,13 +79,13 @@ func TestContext_NewValidation(t *testing.T) {
 		AddField(-100, "f1", min_2, min_3).
 		AddField(100, "f2", max50, max_4)
 	a.Equal(v.keys, []string{"f1", "f2"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("-2"), localeutil.Phrase("50")})
+		Equal(v.reasons, []string{"-2", "50"})
 
 	v = ctx.NewValidation(true).
 		AddField(-100, "f1", min_2, min_3).
 		AddField(100, "f2", max50, max_4)
 	a.Equal(v.keys, []string{"f1"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("-2")})
+		Equal(v.reasons, []string{"-2"})
 }
 
 func TestValidation_AddField(t *testing.T) {
@@ -102,7 +102,7 @@ func TestValidation_AddField(t *testing.T) {
 	v := ctx.NewValidation(false).
 		AddField(obj.Age, "obj/age", min18)
 	a.Equal(v.keys, []string{"obj/age"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("不能小于 18")})
+		Equal(v.reasons, []string{"不能小于 18"})
 
 	// object
 	root := root2{}
@@ -110,20 +110,20 @@ func TestValidation_AddField(t *testing.T) {
 	v.AddField(root.O1, "o1", NewRuleFunc(localeutil.Phrase("o1 required"), required)).
 		AddField(root.O2, "o2", NewRuleFunc(localeutil.Phrase("o2 required"), required))
 	a.Equal(v.keys, []string{"o1", "o2"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("o1 required"), localeutil.Phrase("o2 required")})
+		Equal(v.reasons, []string{"o1 required", "o2 required"})
 
 	root = root2{O1: &object{}}
 	v = ctx.NewValidation(false)
 	v.AddField(root.O1.Age, "o1.age", min18)
 	a.Equal(v.keys, []string{"o1.age"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("不能小于 18")})
+		Equal(v.reasons, []string{"不能小于 18"})
 
 	v = ctx.NewValidation(false)
 	rv := root1{Root: &root2{O1: &object{}}}
 	v.AddField(rv.Root.O1.Age, "root/o1/age", min18).
 		AddField(rv.F1, "f1", min5)
 	a.Equal(v.keys, []string{"root/o1/age", "f1"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("不能小于 18"), localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"不能小于 18", "min-5"})
 }
 
 func TestValidation_AddSliceField(t *testing.T) {
@@ -139,30 +139,30 @@ func TestValidation_AddSliceField(t *testing.T) {
 	v := ctx.NewValidation(false).
 		AddField([]int{1, 2, 6}, "slice", min5)
 	a.Equal(v.keys, []string{"slice"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"min-5"})
 
 	// 普通元素指定为 slice
 	v = ctx.NewValidation(false).
 		AddSliceField(123456, "slice", min5)
 	a.Equal(v.keys, []string{"slice"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{isNotSlice})
+		Equal(v.reasons, []string{isNotSlice.LocaleString(ctx.LocalePrinter())})
 
 	v = ctx.NewValidation(true).
 		AddSliceField(123456, "slice", min5)
 	a.Equal(v.keys, []string{"slice"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{isNotSlice})
+		Equal(v.reasons, []string{isNotSlice.LocaleString(ctx.LocalePrinter())})
 
 	// exitAtError = false
 	v = ctx.NewValidation(false).
 		AddSliceField([]int{1, 2, 6}, "slice", min5)
 	a.Equal(v.keys, []string{"slice[0]", "slice[1]"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("min-5"), localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"min-5", "min-5"})
 
 	// exitAtError = true
 	v = ctx.NewValidation(true).
 		AddSliceField([]int{1, 2, 6}, "slice", min5)
 	a.Equal(v.keys, []string{"slice[0]"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"min-5"})
 }
 
 func TestValidation_AddMapField(t *testing.T) {
@@ -178,25 +178,25 @@ func TestValidation_AddMapField(t *testing.T) {
 	v := ctx.NewValidation(false).
 		AddField([]int{1, 2, 6}, "map", min5)
 	a.Equal(v.keys, []string{"map"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"min-5"})
 
 	// 普通元素指定为 map
 	v = ctx.NewValidation(false).
 		AddMapField(123456, "map", min5)
 	a.Equal(v.keys, []string{"map"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{isNotMap})
+		Equal(v.reasons, []string{isNotMap.LocaleString(ctx.LocalePrinter())})
 
 	v = ctx.NewValidation(true).
 		AddMapField(123456, "map", min5)
 	a.Equal(v.keys, []string{"map"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{isNotMap})
+		Equal(v.reasons, []string{isNotMap.LocaleString(ctx.LocalePrinter())})
 
 	// exitAtError = false
 	v = ctx.NewValidation(false).
 		AddMapField(map[string]int{"0": 1, "2": 2, "6": 6}, "map", min5)
 	sort.Strings(v.keys) // NOTE: 排序会破坏 v.keys 和 v.reasons 之间的关联。
 	a.Equal(v.keys, []string{"map[0]", "map[2]"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("min-5"), localeutil.Phrase("min-5")})
+		Equal(v.reasons, []string{"min-5", "min-5"})
 
 	// exitAtError = true
 	v = ctx.NewValidation(true).
@@ -221,7 +221,7 @@ func TestValidation_When(t *testing.T) {
 			v.AddField(obj.Name, "obj/name", notEmpty)
 		})
 	a.Equal(v.keys, []string{"obj/age"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("不能小于 18")})
+		Equal(v.reasons, []string{"不能小于 18"})
 
 	obj = &object{Age: 15}
 	v = ctx.NewValidation(false).
@@ -230,7 +230,7 @@ func TestValidation_When(t *testing.T) {
 			v.AddField(obj.Name, "obj/name", notEmpty)
 		})
 	a.Equal(v.keys, []string{"obj/age", "obj/name"}).
-		Equal(v.reasons, []localeutil.LocaleStringer{localeutil.Phrase("不能小于 18"), localeutil.Phrase("不能为空")})
+		Equal(v.reasons, []string{"不能小于 18", "不能为空"})
 }
 
 func TestAndValidator(t *testing.T) {
