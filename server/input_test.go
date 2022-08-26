@@ -33,7 +33,7 @@ func TestParams_empty(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/empty", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.Equal(ps.Int64("id1"), 0)
 		a.NotNil(ps.Problem("41110"))
@@ -51,13 +51,13 @@ func TestParams_ID(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.Equal(ps.ID("i1"), 1).
 			Equal(ps.v.Count(), 0)
 
 		// 负数
-		a.Equal(ps.ID("i2"), -2).
+		a.Equal(ps.ID("i2"), 0).
 			Equal(ps.v.Count(), 1)
 
 		// 不存在的参数，添加错误信息
@@ -78,7 +78,7 @@ func TestParams_Int(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.Equal(ps.Int64("i1"), 1)
 		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.Count(), 0)
@@ -101,7 +101,7 @@ func TestParams_Bool(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.True(ps.Bool("b1"))
 		a.False(ps.Bool("b2")).Equal(ps.v.Count(), 0)
@@ -124,7 +124,7 @@ func TestParams_String(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.Equal(ps.String("s1"), "str1")
 		a.Equal(ps.String("s2"), "str2")
@@ -148,7 +148,7 @@ func TestParams_Float(t *testing.T) {
 	a.NotNil(router)
 
 	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params()
+		ps := ctx.Params(false)
 
 		a.Equal(ps.Float64("f1"), 1.1)
 		a.Equal(ps.Float64("f2"), 2.2)
@@ -211,7 +211,7 @@ func TestContext_ParamInt64(t *testing.T) {
 func TestQueries_Int(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, _ := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Int("i1", 9), 1)
@@ -225,7 +225,7 @@ func TestQueries_Int(t *testing.T) {
 func TestQueries_Int64(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, _ := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Int64("i1", 9), 1)
@@ -240,7 +240,7 @@ func TestQueries_Int64(t *testing.T) {
 func TestQueries_String(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, _ := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	a.Equal(q.String("s1", "9"), "1")
@@ -251,7 +251,7 @@ func TestQueries_String(t *testing.T) {
 func TestQueries_Bool(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, _ := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	a.True(q.Bool("b1", false))
@@ -266,7 +266,7 @@ func TestQueries_Bool(t *testing.T) {
 func TestQueries_Float64(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, _ := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	a.Equal(q.Float64("i1", 9.9), 1.1)
@@ -281,7 +281,7 @@ func TestQueries_Float64(t *testing.T) {
 func TestContext_Object(t *testing.T) {
 	a := assert.New(t, false)
 	ctx, w := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
-	q, err := ctx.Queries()
+	q, err := ctx.Queries(false)
 	a.NotError(err).NotNil(q)
 
 	o := struct {
@@ -289,7 +289,7 @@ func TestContext_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str string  `query:"str"`
 	}{}
-	resp := ctx.QueryObject(&o, "41110")
+	resp := ctx.QueryObject(false, &o, "41110")
 	a.Nil(resp).
 		Equal(w.Code, http.StatusOK)
 	a.Equal(o.I1, float32(1.1)).
@@ -301,7 +301,7 @@ func TestContext_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str int     `query:"str"`
 	}{}
-	resp = ctx.QueryObject(&o2, "41110")
+	resp = ctx.QueryObject(false, &o2, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)
 	a.Equal(w.Code, 411)
@@ -394,7 +394,7 @@ func TestContext_Read(t *testing.T) {
 		Request()
 	ctx := newServer(a, nil).newContext(w, r, nil)
 	obj := &testobject.TextObject{}
-	a.Nil(ctx.Read(obj, "41110"))
+	a.Nil(ctx.Read(false, obj, "41110"))
 	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
 
 	w = httptest.NewRecorder()
@@ -403,7 +403,7 @@ func TestContext_Read(t *testing.T) {
 		Request()
 	ctx = newServer(a, nil).newContext(w, r, nil)
 	o := &struct{}{}
-	resp := ctx.Read(o, "41110")
+	resp := ctx.Read(false, o, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)
 	a.Equal(w.Code, http.StatusUnprocessableEntity)

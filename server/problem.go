@@ -51,14 +51,15 @@ type (
 		detail localeutil.LocaleStringer
 	}
 
-	// CTXSanitizer 在 [Context] 关联的上下文环境中提供对数据的验证和修正
+	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
 	//
-	// 在 [Context.Read] 和 [Queries.Object] 中会在解析数据成功之后，调用该接口进行数据验证。
+	// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
+	// 中会在解析数据成功之后会调用该接口。
 	CTXSanitizer interface {
 		// CTXSanitize 验证和修正当前对象的数据
 		//
-		// 无论是否有错误内容，都不应该返回 nil。
-		CTXSanitize(*Context) *Validation
+		// 如果要保存验证的结果，应该调用传递的 [Validation] 对象的方法。
+		CTXSanitize(*Context, *Validation)
 	}
 )
 
@@ -70,19 +71,19 @@ func newProblems(f BuildProblemFunc) *Problems {
 	}
 }
 
-// BaseURL [BuildFunc] 参数 id 的前缀
+// BaseURL [BuildProblemFunc] 参数 id 的前缀
 //
 // 返回的内容说明，可参考 [Problems.SetBaseURL]。
 func (p *Problems) BaseURL() string { return p.baseURL }
 
-// SetBaseURL 设置传递给 [BuildFunc] 中 id 参数的前缀
+// SetBaseURL 设置传递给 [BuildProblemFunc] 中 id 参数的前缀
 //
 // [Problem] 实现者可以根据自由决定 id 字终以什么形式展示，
-// 此处的设置只是决定了传递给 [BuildFunc] 的 id 参数格式。
+// 此处的设置只是决定了传递给 [BuildProblemFunc] 的 id 参数格式。
 // 可以有以下三种形式：
 //
 //   - 空值 不作任何改变；
-//   - about:blank 将传递空值给 [BuildFunc]；
+//   - about:blank 将传递空值给 [BuildProblemFunc]；
 //   - 其它非空值 以前缀形式附加在原本的 id 之上；
 func (p *Problems) SetBaseURL(base string) {
 	p.baseURL = base
@@ -171,14 +172,13 @@ func (ctx *Context) Problem(id string) Problem {
 //
 // 如果当前对象没有收集到错误，那么将返回 nil。
 func (v *Validation) Problem(id string) Problem {
-	if v.Count() == 0 {
+	if v == nil || v.Count() == 0 {
 		return nil
 	}
 
 	p := v.ctx.Problem(id)
-	v.visit(func(name, reason string) bool {
-		p.AddParam(name, reason)
-		return true
-	})
+	for index, key := range v.keys {
+		p.AddParam(key, v.reasons[index])
+	}
 	return p
 }

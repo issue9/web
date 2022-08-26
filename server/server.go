@@ -34,21 +34,20 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	mimetypes  *serialization.Mimetypes
-	encodings  *encoding.Encodings
 	cache      cache.Cache
 	uptime     time.Time
 	modules    map[string]*Module
 	routers    *Routers
 	problems   *Problems
 	services   *service.Server
+	locale     *locale.Locale
 
 	closed chan struct{}
 	closes []func() error
 
-	// locale
-	locale *locale.Locale
-	files  *serialization.FS
+	mimetypes *serialization.Mimetypes
+	encodings *encoding.Encodings
+	files     *serialization.FS
 }
 
 // New 返回 *Server 实例
@@ -69,19 +68,19 @@ func New(name, version string, o *Options) (*Server, error) {
 		fs:         o.FS,
 		httpServer: o.HTTPServer,
 		vars:       &sync.Map{},
-		mimetypes:  serialization.NewMimetypes(10),
-		encodings:  encoding.NewEncodings(o.Logs.ERROR()),
 		cache:      o.Cache,
 		uptime:     time.Now(),
 		modules:    make(map[string]*Module, 20),
 		problems:   newProblems(o.ProblemBuilder),
 		services:   service.InternalNewServer(o.Logs, loc),
+		locale:     loc,
 
 		closed: make(chan struct{}, 1),
+		closes: make([]func() error, 0, 10),
 
-		// locale
-		locale: loc,
-		files:  serialization.NewFS(5),
+		mimetypes: serialization.NewMimetypes(10),
+		encodings: encoding.NewEncodings(o.Logs.ERROR()),
+		files:     serialization.NewFS(5),
 	}
 	srv.routers = group.NewOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
 	srv.httpServer.Handler = srv.routers

@@ -53,7 +53,6 @@ type configOf[T any] struct {
 	//  - memcached
 	//  - redis
 	//  - memory
-	//  - file
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Cache
 

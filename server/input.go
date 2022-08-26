@@ -37,40 +37,54 @@ type (
 // Params 声明一个用于获取路径参数的对象
 //
 // 返回对象的生命周期在 Context 结束时也随之结束。
-func (ctx *Context) Params() *Params {
+func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
-	ps.v = ctx.NewValidation(false)
+	ps.v = ctx.newValidation(exitAtError)
 	ctx.OnExit(func(i int) { paramPool.Put(ps) })
 	return ps
 }
 
-// ID 获取参数 key 所代表的值并转换成 int64
-//
-// 值必须大于 0，否则会输出错误信息，并返回零值。
+// ID 返回 key 所表示的值且必须大于 0
 func (p *Params) ID(key string) int64 {
+	if !p.v.continueNext() {
+		return 0
+	}
+
 	id, err := p.v.ctx.route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
+		return 0
 	} else if id <= 0 {
 		p.v.Add(key, tGreatThanZero)
+		return 0
 	}
 	return id
 }
 
-// Int64 获取参数 key 所代表的值，并转换成 int64
+// Int64 获取参数 key 所代表的 int64 类型的值
 func (p *Params) Int64(key string) int64 {
+	if !p.v.continueNext() {
+		return 0
+	}
+
 	ret, err := p.v.ctx.route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
+		return 0
 	}
 	return ret
 }
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Params) String(key string) string {
+	if !p.v.continueNext() {
+		return ""
+	}
+
 	ret, err := p.v.ctx.route.Params().String(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
+		return ""
 	}
 	return ret
 }
@@ -80,6 +94,10 @@ func (p *Params) String(key string) string {
 // 最终会调用 [strconv.ParseBool] 进行转换，
 // 也只有该方法中允许的字符串会被正确转换。
 func (p *Params) Bool(key string) bool {
+	if !p.v.continueNext() {
+		return false
+	}
+
 	ret, err := p.v.ctx.route.Params().Bool(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
@@ -89,6 +107,10 @@ func (p *Params) Bool(key string) bool {
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Params) Float64(key string) float64 {
+	if !p.v.continueNext() {
+		return 0
+	}
+
 	ret, err := p.v.ctx.route.Params().Float(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
@@ -105,6 +127,7 @@ func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Params] 会更方便。
 func (ctx *Context) ParamID(key, id string) (int64, Responser) {
+	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
 	p := ctx.LocalePrinter()
 	ps := ctx.Server().Problems()
 	ret, err := ctx.route.Params().Int(key)
@@ -120,11 +143,11 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
+	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
-		p := ctx.LocalePrinter()
-		ps := ctx.Server().Problems()
-		return 0, ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
+		return 0, ctx.Server().Problems().Problem(id).AddParam(key, msg)
 	}
 	return ret, nil
 }
@@ -133,11 +156,11 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamString(key, id string) (string, Responser) {
+	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
 	ret, err := ctx.route.Params().String(key)
 	if err != nil {
-		p := ctx.LocalePrinter()
-		ps := ctx.Server().Problems()
-		return "", ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
+		return "", ctx.Server().Problems().Problem(id).AddParam(key, msg)
 	}
 	return ret, nil
 }
@@ -145,14 +168,14 @@ func (ctx *Context) ParamString(key, id string) (string, Responser) {
 // Queries 声明一个用于获取查询参数的对象
 //
 // 返回对象的生命周期在 Context 结束时也随之结束。
-func (ctx *Context) Queries() (*Queries, error) {
+func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.NewValidation(false)
+	q.v = ctx.newValidation(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(i int) { queryPool.Put(q) })
 	return q, nil
@@ -164,6 +187,10 @@ func (q *Queries) getItem(key string) (val string) { return q.queries.Get(key) }
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int(key string, def int) int {
+	if !q.v.continueNext() {
+		return 0
+	}
+
 	str := q.getItem(key)
 
 	// 不存在，返回默认值
@@ -185,6 +212,10 @@ func (q *Queries) Int(key string, def int) int {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int64(key string, def int64) int64 {
+	if !q.v.continueNext() {
+		return 0
+	}
+
 	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
@@ -203,6 +234,10 @@ func (q *Queries) Int64(key string, def int64) int64 {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
+	if !q.v.continueNext() {
+		return ""
+	}
+
 	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
@@ -214,6 +249,10 @@ func (q *Queries) String(key, def string) string {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Bool(key string, def bool) bool {
+	if !q.v.continueNext() {
+		return false
+	}
+
 	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
@@ -232,6 +271,10 @@ func (q *Queries) Bool(key string, def bool) bool {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Float64(key string, def float64) float64 {
+	if !q.v.continueNext() {
+		return 0
+	}
+
 	str := q.getItem(key)
 	if len(str) == 0 {
 		return def
@@ -261,19 +304,16 @@ func (q *Queries) Object(v any, id string) {
 		q.v.Add(s, localeutil.Phrase(err.Error()))
 	})
 
-	if vv, ok := v.(CTXSanitizer); ok {
-		if va := vv.CTXSanitize(q.v.ctx); va != nil {
-			va.visit(func(name, reason string) bool {
-				q.v.add(name, reason)
-				return true
-			})
+	if q.v.continueNext() {
+		if s, ok := v.(CTXSanitizer); ok {
+			s.CTXSanitize(q.v.ctx, q.v)
 		}
 	}
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(v any, id string) Responser {
-	q, err := ctx.Queries()
+func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
+	q, err := ctx.Queries(exitAtError)
 	if err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
@@ -284,7 +324,7 @@ func (ctx *Context) QueryObject(v any, id string) Responser {
 
 // Body 获取用户提交的内容
 //
-// 相对于 ctx.Request().Body，此函数可多次读取。不存在 body 时，返回 nil
+// 相对于 Context.Request().Body，此函数可多次读取。不存在 body 时，返回 nil
 func (ctx *Context) Body() (body []byte, err error) {
 	if ctx.read {
 		return ctx.body, nil
@@ -335,17 +375,16 @@ func (ctx *Context) Unmarshal(v any) error {
 // Read 从客户端读取数据并转换成 v 对象
 //
 // 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，会输出以 id 作为错误代码的 Response 对象。
-func (ctx *Context) Read(v any, id string) Responser {
+// 如果验证失败，会输出以 id 作为错误代码的 [Responser] 对象。
+func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(http.StatusUnprocessableEntity, err)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		if va := vv.CTXSanitize(ctx); va != nil {
-			return va.Problem(id)
-		}
+		va := ctx.newValidation(exitAtError)
+		vv.CTXSanitize(ctx, va)
+		return va.Problem(id)
 	}
-
 	return nil
 }

@@ -50,10 +50,7 @@ type (
 
 func (f ValidateFunc) IsValid(v any) bool { return f(v) }
 
-// NewValidation 声明验证对象
-//
-// 返回对象的生命周期在 Context 结束时也随之结束。
-func (ctx *Context) NewValidation(exitAtError bool) *Validation {
+func (ctx *Context) newValidation(exitAtError bool) *Validation {
 	v := validationPool.Get().(*Validation)
 	v.exitAtError = exitAtError
 	v.keys = v.keys[:0]
@@ -67,27 +64,21 @@ func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	return v
 }
 
+func (v *Validation) continueNext() bool { return !v.exitAtError || v.Count() == 0 }
+
 func (v *Validation) Count() int { return len(v.keys) }
 
-// 依次访问每一条错误信息
-func (v *Validation) visit(f func(name, reason string) bool) {
-	for index, key := range v.keys {
-		if !f(key, v.reasons[index]) {
-			break
-		}
-	}
-}
-
 // Add 直接添加一条错误信息
-//
-// 此方法不受 exitAtError 标记位的影响。
 func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validation {
-	return v.add(name, reason.LocaleString(v.ctx.LocalePrinter()))
+	if v.Count() > 0 && v.exitAtError {
+		return v
+	}
+	return v.add(name, reason)
 }
 
-func (v *Validation) add(name, reason string) *Validation {
+func (v *Validation) add(name string, reason localeutil.LocaleStringer) *Validation {
 	v.keys = append(v.keys, name)
-	v.reasons = append(v.reasons, reason)
+	v.reasons = append(v.reasons, reason.LocaleString(v.ctx.LocalePrinter()))
 	return v
 }
 
@@ -103,7 +94,7 @@ func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation 
 
 	for _, rule := range rules {
 		if !rule.validator.IsValid(val) {
-			v.Add(name, rule.message)
+			v.add(name, rule.message)
 			break
 		}
 	}
@@ -123,14 +114,14 @@ func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Valida
 	rv := reflect.ValueOf(val)
 
 	if kind := rv.Kind(); kind != reflect.Array && kind != reflect.Slice && kind != reflect.String {
-		v.Add(name, isNotSlice)
+		v.add(name, isNotSlice)
 		return v
 	}
 
 	for i := 0; i < rv.Len(); i++ {
 		for _, rule := range rules {
 			if !rule.validator.IsValid(rv.Index(i).Interface()) {
-				v.Add(name+"["+strconv.Itoa(i)+"]", rule.message)
+				v.add(name+"["+strconv.Itoa(i)+"]", rule.message)
 				if v.exitAtError {
 					return v
 				}
@@ -153,7 +144,7 @@ func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validati
 
 	rv := reflect.ValueOf(val)
 	if kind := rv.Kind(); kind != reflect.Map {
-		v.Add(name, isNotMap)
+		v.add(name, isNotMap)
 		return v
 	}
 
@@ -162,7 +153,7 @@ func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validati
 		key := keys[i]
 		for _, rule := range rules {
 			if !rule.validator.IsValid(rv.MapIndex(key).Interface()) {
-				v.Add(name+"["+key.String()+"]", rule.message)
+				v.add(name+"["+key.String()+"]", rule.message)
 				if v.exitAtError {
 					return v
 				}
