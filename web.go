@@ -8,6 +8,7 @@ package web
 import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/query/v3"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/server"
@@ -33,6 +34,9 @@ type (
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
 	Logger         = logs.Logger
+
+	// QueryUnmarshaler 对查询参数的解析接口
+	QueryUnmarshaler = query.Unmarshaler
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	//

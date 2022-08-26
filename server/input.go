@@ -257,9 +257,9 @@ func (q *Queries) Problem(id string) Responser { return q.v.Problem(id) }
 //
 // 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
 func (q *Queries) Object(v any, id string) {
-	for k, err := range query.Parse(q.queries, v) {
-		q.v.Add(k, localeutil.Phrase(err.Error()))
-	}
+	query.ParseWithLog(q.queries, v, func(s string, err error) {
+		q.v.Add(s, localeutil.Phrase(err.Error()))
+	})
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		if va := vv.CTXSanitize(q.v.ctx); va != nil {
@@ -325,6 +325,9 @@ func (ctx *Context) Unmarshal(v any) error {
 
 	if len(body) == 0 {
 		return nil
+	}
+	if ctx.inputMimetype == nil {
+		return localeutil.Error("the client did not specify content-type header")
 	}
 	return ctx.inputMimetype(body, v)
 }

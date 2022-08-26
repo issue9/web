@@ -6,8 +6,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gomodule/redigo v1.8.9 h1:Sl3u+2BI/kk+VEatbj0scLdrFhjPmbxOc1myhDP41ws=
 github.com/gomodule/redigo v1.8.9/go.mod h1:7ArFNvsTjH8GMMzB4uy1snslv2BwmginuMs06a1uzZE=
-github.com/issue9/assert/v3 v3.0.0 h1:/emHhxUb1QP9UmZLy69RhkMyvlyhyqnu+toDlSyWhZg=
-github.com/issue9/assert/v3 v3.0.0/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
+github.com/issue9/assert/v3 v3.0.1 h1:8DPOYgzX3ajiyrVZz6f3GoLn4wuy+vIV750CKFgFGmE=
+github.com/issue9/assert/v3 v3.0.1/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
 github.com/issue9/cache v0.4.0 h1:U7jo4gVjDnbcB1HxCC8KxgQigVq93OKmZah/dBoSCA8=
 github.com/issue9/cache v0.4.0/go.mod h1:qrpL9RzMBXUH9l5gE/I73XDDZICh/dMoFVQ+U5omfsE=
 github.com/issue9/conv v1.3.1 h1:c+VnP9knVnGelZ8zbO5efmACthaoAUaG1522l5XxZUs=
@@ -20,8 +20,8 @@ github.com/issue9/logs/v4 v4.0.0-beta.5 h1:+HbrsIdS6CDf1kpM4nnAxM5eTc6Ak1TLszeGG
 github.com/issue9/logs/v4 v4.0.0-beta.5/go.mod h1:JhM0t62CsCxNMU7+kioi1Ug9xM9La2n8EFaxudOpwPc=
 github.com/issue9/mux/v7 v7.0.0-beta.2 h1:bVwB7EmcXavLhivU2TCBMCfNQJ4uNbORqs9YXb9CAvk=
 github.com/issue9/mux/v7 v7.0.0-beta.2/go.mod h1:JsBw9CLJ5PF0jFVBS8G71Hmm6rGVinq85BmoF59krNw=
-github.com/issue9/query/v3 v3.0.1 h1:91HKEbJ1JW8Rgel54uTs+xocbX7m0kDrEvuv/TXebfM=
-github.com/issue9/query/v3 v3.0.1/go.mod h1:zPMNpAYV/wDjyCTC6I9+fjbLf1NdL0x+NPG+lYop+eI=
+github.com/issue9/query/v3 v3.1.0 h1:lDYQwBuuqgaljzF4Zbj5pWHt2D6onfLjYbRqmxWW+NY=
+github.com/issue9/query/v3 v3.1.0/go.mod h1:4wwaS+9KJzC2UpppPTuDyK6123eelwm5aPWJ64xn68I=
 github.com/issue9/scheduled v0.9.3 h1:yvh1ATiw7KvweQdj3x3nFOM9eb1frNIC5iyFwchD25A=
 github.com/issue9/scheduled v0.9.3/go.mod h1:+xuAijQZ/oEWVs2XJhIQz7aAJbBFEKczJgDe6llimag=
 github.com/issue9/sliceutil v0.11.0 h1:gAXOzApULwTV8MTHhu7oZm1QCClnmEIYvF3iZ6SotUg=
