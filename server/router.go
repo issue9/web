@@ -77,19 +77,19 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string, problems map[int]s
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)
 			if id := problems[http.StatusForbidden]; id != "" {
-				return ctx.Server().Problems().Problem(id)
+				return ctx.Problem(id)
 			}
 			return Status(http.StatusForbidden)
 		case errors.Is(err, fs.ErrNotExist):
 			srv.Logs().WARN().Error(err)
 			if id := problems[http.StatusNotFound]; id != "" {
-				return ctx.Server().Problems().Problem(id)
+				return ctx.Problem(id)
 			}
 			return Status(http.StatusNotFound)
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
 			if id := problems[http.StatusInternalServerError]; id != "" {
-				return ctx.Server().Problems().Problem(id)
+				return ctx.Problem(id)
 			}
 			return Status(http.StatusInternalServerError)
 		default:

@@ -61,7 +61,7 @@ func (p *Params) ID(key string) int64 {
 	return id
 }
 
-// Int64 获取参数 key 所代表的 int64 类型的值
+// Int64 获取参数 key 所代表的值并转换成 int64 类型
 func (p *Params) Int64(key string) int64 {
 	if !p.v.continueNext() {
 		return 0
@@ -91,8 +91,7 @@ func (p *Params) String(key string) string {
 
 // Bool 获取参数 key 所代表的值并转换成 bool
 //
-// 最终会调用 [strconv.ParseBool] 进行转换，
-// 也只有该方法中允许的字符串会被正确转换。
+// 由 [strconv.ParseBool] 进行转换。
 func (p *Params) Bool(key string) bool {
 	if !p.v.continueNext() {
 		return false
@@ -129,17 +128,16 @@ func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
 func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
 	p := ctx.LocalePrinter()
-	ps := ctx.Server().Problems()
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
-		return 0, ps.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return 0, ctx.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	} else if ret <= 0 {
-		return 0, ps.Problem(id).AddParam(key, tGreatThanZero.LocaleString(p))
+		return 0, ctx.Problem(id).AddParam(key, tGreatThanZero.LocaleString(p))
 	}
 	return ret, nil
 }
 
-// ParamInt64 取地址参数中的 key 表示的值 int64 类型值
+// ParamInt64 取地址参数中的 key 表示的值并尝试工转换成 int64 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
@@ -147,12 +145,12 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		return 0, ctx.Server().Problems().Problem(id).AddParam(key, msg)
+		return 0, ctx.Problem(id).AddParam(key, msg)
 	}
 	return ret, nil
 }
 
-// ParamString 取地址参数中的 key 表示的 string 类型值
+// ParamString 取地址参数中的 key 表示的值并尝试工转换成 string 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamString(key, id string) (string, Responser) {
@@ -160,7 +158,7 @@ func (ctx *Context) ParamString(key, id string) (string, Responser) {
 	ret, err := ctx.route.Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		return "", ctx.Server().Problems().Problem(id).AddParam(key, msg)
+		return "", ctx.Problem(id).AddParam(key, msg)
 	}
 	return ret, nil
 }

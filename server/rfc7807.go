@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 )
 
@@ -27,15 +26,14 @@ var rfc7807ProblemPool = &sync.Pool{New: func() any { return &rfc7807{} }}
 // 在此类型下，将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func RFC7807Builder(id string, title localeutil.LocaleStringer, status int) Problem {
+func RFC7807Builder(id, title string, status int) Problem {
 	if id == "" {
 		id = aboutBlank
 	}
 
 	p := rfc7807ProblemPool.Get().(*rfc7807)
 	p.typ = id
-	p.title = "" // 此值 在 Apply 中由 localeTitle 初始化而来。
-	p.localeTitle = title
+	p.title = title
 	p.status = status
 	p.pKeys = p.pKeys[:0]
 	p.pReasons = p.pReasons[:0]
@@ -46,10 +44,9 @@ func RFC7807Builder(id string, title localeutil.LocaleStringer, status int) Prob
 }
 
 type rfc7807 struct {
-	typ         string
-	title       string
-	localeTitle localeutil.LocaleStringer
-	status      int
+	typ    string
+	title  string
+	status int
 
 	// params
 	pKeys    []string
@@ -249,8 +246,6 @@ func (p *rfc7807) MarshalForm() ([]byte, error) {
 }
 
 func (p *rfc7807) Apply(ctx *Context) {
-	p.title = p.localeTitle.LocaleString(ctx.LocalePrinter())
-
 	if err := ctx.Marshal(p.status, p, true); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}

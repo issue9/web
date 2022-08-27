@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 func TestProblems_Add(t *testing.T) {
@@ -87,7 +88,7 @@ func TestProblems_Problem(t *testing.T) {
 	ps := s.Problems()
 
 	a.PanicString(func() {
-		ps.Problem("not-exists")
+		ps.Problem(message.NewPrinter(language.Und), "not-exists")
 	}, "未找到有关 not-exists 的定义")
 
 	w := httptest.NewRecorder()
@@ -97,7 +98,7 @@ func TestProblems_Problem(t *testing.T) {
 		Request()
 	ctx := s.newContext(w, r, nil)
 
-	p := ps.Problem("41110")
+	p := ps.Problem(ctx.LocalePrinter(), "41110")
 	a.NotNil(p)
 	p.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"41110","title":"hans","status":411}`).
