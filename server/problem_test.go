@@ -171,7 +171,7 @@ func TestContext_Problem(t *testing.T) {
 	resp.AddParam("k1", "v1")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":"v1"}],"detail":"40010"}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"detail":"40010","params":[{"name":"k1","reason":"v1"}]}`)
 }
 
 func TestContext_Log(t *testing.T) {
