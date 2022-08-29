@@ -53,11 +53,9 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 // NewRule 新建验证规则
-func NewRule(v Validator, key message.Reference, val ...any) *Rule {
-	return server.NewRule(Phrase(key, val...), v)
-}
+func NewRule(msg LocaleStringer, v Validator) *Rule { return server.NewRule(msg, v) }
 
 // NewRuleFunc 新建验证规则
-func NewRuleFunc(f func(any) bool, key message.Reference, val ...any) *Rule {
-	return server.NewRuleFunc(Phrase(key, val...), f)
+func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
+	return server.NewRuleFunc(msg, f)
 }

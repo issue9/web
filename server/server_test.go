@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
@@ -80,7 +81,7 @@ func TestServer_Serve(t *testing.T) {
 	srv.Get("http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 
 	// 静态文件
-	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", nil))
+	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 
 	srv.Close(0)
@@ -272,6 +273,7 @@ func TestServer_Routers(t *testing.T) {
 	rs := srv.Routers()
 
 	s.GoServe()
+	defer s.Close(0)
 
 	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
@@ -296,18 +298,18 @@ func TestServer_Routers(t *testing.T) {
 		Header("Accept", "text/plain;v=2").
 		Do(nil).
 		Status(http.StatusNotFound)
-
-	s.Close(0)
 }
 
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
+	s.Server().Problems().Set("404", 404, localeutil.Phrase("404 title"), localeutil.Phrase("404 detail"))
 	s.GoServe()
+	defer s.Close(0)
 
 	t.Run("problems", func(t *testing.T) {
-		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", map[int]string{http.StatusNotFound: "41110"}))
+		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 		s.Get("/v1/file1.txt").
 			Header("Accept", "text/plain;vv=2").
@@ -318,12 +320,12 @@ func TestServer_FileServer(t *testing.T) {
 		s.Get("/v1/not.exists").
 			Header("Accept", "application/json;vv=2").
 			Do(nil).
-			Status(411).
-			StringBody(`{"type":"41110","title":"41110","status":411}`)
+			Status(404).
+			StringBody(`{"type":"404","title":"404 title","status":404}`)
 	})
 
 	t.Run("no problems", func(t *testing.T) {
-		r.Get("/v2/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html", nil))
+		r.Get("/v2/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 		s.Get("/v2/file1.txt").
 			Do(nil).
@@ -333,10 +335,8 @@ func TestServer_FileServer(t *testing.T) {
 		s.Get("/v2/not.exists").
 			Do(nil).
 			Status(http.StatusNotFound).
-			BodyEmpty()
+			StringBody(`{"type":"404","title":"404 title","status":404}`)
 	})
-
-	s.Close(0)
 }
 
 // 检测 204 是否存在 http: request method or response status code does not allow body
@@ -346,7 +346,9 @@ func TestContext_NoContent(t *testing.T) {
 	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
 
 	s.NewRouter().Get("/204", func(ctx *server.Context) server.Responser {
-		return server.Status(http.StatusNoContent)
+		return server.ResponserFunc(func(ctx *server.Context) {
+			ctx.WriteHeader(http.StatusNoContent)
+		})
 	})
 
 	s.GoServe()

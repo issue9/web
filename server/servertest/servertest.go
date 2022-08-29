@@ -113,7 +113,11 @@ func (s *Tester) Close(shutdown time.Duration) {
 
 // BuildHandler 生成以 code 作为状态码和内容输出的路由处理函数
 func BuildHandler(code int) server.HandlerFunc {
-	return func(*server.Context) server.Responser {
-		return server.Object(code, []byte(strconv.Itoa(code)))
+	return func(ctx *server.Context) server.Responser {
+		return server.ResponserFunc(func(ctx *server.Context) {
+			if err := ctx.Marshal(code, []byte(strconv.Itoa(code)), false); err != nil {
+				ctx.Logs().ERROR().Error(err)
+			}
+		})
 	}
 }

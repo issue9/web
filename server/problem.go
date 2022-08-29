@@ -4,8 +4,11 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/message"
 )
 
@@ -13,6 +16,10 @@ const aboutBlank = "about:blank"
 
 type (
 	// Problem API 错误信息对象需要实现的接口
+	//
+	// Problem 是对 [Responser] 细化，用于反馈给用户非正常状态下的数据，
+	// 比如用户提交的数据错误，往往会返回 400 的状态码，
+	// 并附带一些具体的字段错误信息，此类数据都可以以 Problem 对象的方式反馈给用户。
 	//
 	// 除了当前接口，该对象可能还要实现相应的序列化接口，比如要能被 JSON 解析，
 	// 就要实现 json.Marshaler 接口或是相应的 struct tag。
@@ -33,7 +40,7 @@ type (
 
 	// BuildProblemFunc 生成 [Problem] 对象的方法
 	//
-	// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址；
+	// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址，有可能不会真实存在；
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
 	BuildProblemFunc func(id, title string, status int) Problem
@@ -64,12 +71,65 @@ type (
 	}
 )
 
+func (srv *Server) Problems() *Problems { return srv.problems }
+
 func newProblems(f BuildProblemFunc) *Problems {
-	return &Problems{
+	p := &Problems{
 		builder:   f,
 		problems:  make(map[string]*statusProblem, 50),
 		mimetypes: make(map[string]string, 10),
 	}
+
+	add := func(s int) {
+		msg := localeutil.Phrase(http.StatusText(s))
+		p.Add(strconv.Itoa(s), s, msg, msg)
+	}
+
+	// 400
+	add(http.StatusBadRequest)
+	add(http.StatusUnauthorized)
+	add(http.StatusPaymentRequired)
+	add(http.StatusForbidden)
+	add(http.StatusNotFound)
+	add(http.StatusMethodNotAllowed)
+	add(http.StatusNotAcceptable)
+	add(http.StatusProxyAuthRequired)
+	add(http.StatusRequestTimeout)
+	add(http.StatusConflict)
+	add(http.StatusGone)
+	add(http.StatusLengthRequired)
+	add(http.StatusPreconditionFailed)
+	add(http.StatusRequestEntityTooLarge)
+	add(http.StatusRequestURITooLong)
+	add(http.StatusUnsupportedMediaType)
+	add(http.StatusRequestedRangeNotSatisfiable)
+	add(http.StatusExpectationFailed)
+	add(http.StatusTeapot)
+	add(http.StatusMisdirectedRequest)
+	add(http.StatusUnprocessableEntity)
+	add(http.StatusLocked)
+	add(http.StatusFailedDependency)
+	add(http.StatusTooEarly)
+	add(http.StatusUpgradeRequired)
+	add(http.StatusPreconditionRequired)
+	add(http.StatusTooManyRequests)
+	add(http.StatusRequestHeaderFieldsTooLarge)
+	add(http.StatusUnavailableForLegalReasons)
+
+	// 500
+	add(http.StatusInternalServerError)
+	add(http.StatusNotImplemented)
+	add(http.StatusBadGateway)
+	add(http.StatusServiceUnavailable)
+	add(http.StatusGatewayTimeout)
+	add(http.StatusHTTPVersionNotSupported)
+	add(http.StatusVariantAlsoNegotiates)
+	add(http.StatusInsufficientStorage)
+	add(http.StatusLoopDetected)
+	add(http.StatusNotExtended)
+	add(http.StatusNetworkAuthenticationRequired)
+
+	return p
 }
 
 // BaseURL [BuildProblemFunc] 参数 id 的前缀
@@ -93,23 +153,32 @@ func (p *Problems) SetBaseURL(base string) {
 
 // Add 添加新的错误类型
 //
-// id 表示该错误的唯一值；
+// id 表示该错误的唯一值，如果存在相同会 panic；
 // [Problems.Problem] 会根据此值查找相应的文字说明给予 title 字段；
 // status 表示输出给客户端的状态码；
-// title 和 detail 表示此 id 关联的简要说明和详细说明。title 会出现在 [Problems.Problem] 返回的对象中。
+// title 和 detail 表示此 id 关联的简要说明和详细说明；
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
 	if _, found := p.problems[id]; found {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
+	return p.Set(id, status, title, detail)
+}
+
+// Set 添加或是修改错误信息
+//
+// 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 Add 则会 panic。
+func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
 	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
 	return p
 }
 
-// AddMimetype 添加输出的 mimetype 值
+// AddMimetype 指定 mimetype 对应的 [Problem] 时的 content-type 值
 //
-// mimetype 为正常情况下输出的值，当输出对象为 [Problem] 时，可以指定一个特殊的值，
-// 比如 application/json 可以对应输出 application/problem+json，
-// 这也是 RFC7807 推荐的作法。
+// mimetype 为正常情况下的 content-type 值，当输出对象为 [Problem] 时，
+// 可以指定一个特殊的值，比如 application/json 可以对应输出 application/problem+json，
+// 这也是 [RFC7807] 推荐的作法。
+//
+// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
 	if _, exists := p.mimetypes[mimetype]; exists {
 		panic(fmt.Sprintf("已经存在的 mimetype %s", mimetype))
@@ -143,8 +212,6 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 }
 
 // Problem 根据 id 生成 [Problem] 对象
-//
-// id 通过此值查找相应的 title；
 func (p *Problems) Problem(printer *message.Printer, id string) Problem {
 	sp, found := p.problems[id]
 	if !found {
@@ -157,16 +224,6 @@ func (p *Problems) Problem(printer *message.Printer, id string) Problem {
 		id = p.baseURL + id
 	}
 	return p.builder(id, sp.title.LocaleString(printer), sp.status)
-}
-
-// Problems 错误代码管理
-func (srv *Server) Problems() *Problems { return srv.problems }
-
-// Problem 向客户端输出错误信息
-//
-// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
-func (ctx *Context) Problem(id string) Problem {
-	return ctx.Server().Problems().Problem(ctx.LocalePrinter(), id)
 }
 
 // Problem 转换成 [Problem] 对象
@@ -183,3 +240,36 @@ func (v *Validation) Problem(id string) Problem {
 	}
 	return p
 }
+
+// Problem 返回批定 id 的错误信息
+//
+// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
+func (ctx *Context) Problem(id string) Problem {
+	return ctx.Server().Problems().Problem(ctx.LocalePrinter(), id)
+}
+
+// InternalServerError 输出 ERROR 通道并向返回 500 表示的 [Problem] 对象
+func (ctx *Context) InternalServerError(err error) Problem {
+	return ctx.logError(3, "500", logs.LevelError, err)
+}
+
+// Error 将 err 输出到日志并以指定 id 的 [Problem] 返回
+func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
+	return ctx.logError(3, id, level, err)
+}
+
+func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
+	entry := ctx.Logs().NewEntry(level).Location(depth)
+	if le, ok := err.(localeutil.LocaleStringer); ok {
+		entry.Message = le.LocaleString(ctx.LocalePrinter())
+	} else {
+		entry.Message = err.Error()
+	}
+	ctx.Logs().Output(entry)
+	return ctx.Problem(id)
+}
+
+// NotFound 返回 id 值为 404 的 [Problem] 对象
+func (ctx *Context) NotFound() Problem { return ctx.Problem("404") }
+
+func (ctx *Context) NotImplemented() Problem { return ctx.Problem("501") }

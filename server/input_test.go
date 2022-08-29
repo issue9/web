@@ -406,5 +406,5 @@ func TestContext_Read(t *testing.T) {
 	resp := ctx.Read(false, o, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)
-	a.Equal(w.Code, http.StatusUnprocessableEntity)
+	a.Equal(w.Code, 422)
 }

@@ -3,6 +3,8 @@
 package server
 
 import (
+	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +12,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -19,18 +22,22 @@ func TestProblems_Add(t *testing.T) {
 
 	ps := newProblems(RFC7807Builder)
 	a.NotNil(ps)
-	a.Equal(0, len(ps.problems))
+	a.NotZero(len(ps.problems))
+	l := len(ps.problems)
 
 	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(1, len(ps.problems))
+	a.Equal(l+1, len(ps.problems))
 
 	ps.Add("40011", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(2, len(ps.problems))
+	a.Equal(l+2, len(ps.problems))
 
 	a.PanicString(func() {
 		ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	}, "存在相同值的 id 参数")
-	a.Equal(2, len(ps.problems))
+	a.Equal(l+2, len(ps.problems))
+
+	ps.Set("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
+	a.Equal(l+2, len(ps.problems))
 }
 
 func TestProblems_Visit(t *testing.T) {
@@ -42,7 +49,8 @@ func TestProblems_Visit(t *testing.T) {
 		cnt++
 		return true
 	})
-	a.Equal(0, cnt)
+	a.Equal(len(ps.problems), cnt)
+	l := len(ps.problems)
 
 	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	cnt = 0
@@ -50,7 +58,7 @@ func TestProblems_Visit(t *testing.T) {
 		cnt++
 		return true
 	})
-	a.Equal(1, cnt)
+	a.Equal(l+1, cnt)
 
 	ps.Add("40011", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	ps.Add("40012", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
@@ -59,7 +67,7 @@ func TestProblems_Visit(t *testing.T) {
 		cnt++
 		return true
 	})
-	a.Equal(3, cnt)
+	a.Equal(l+3, cnt)
 
 	cnt = 0
 	ps.Visit(func(id string, status int, title, detail localeutil.LocaleStringer) bool {
@@ -145,7 +153,7 @@ func TestContext_Problem(t *testing.T) {
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
 
 	// 不存在
-	a.Panic(func() { ctx.Problem("400") })
+	a.Panic(func() { ctx.Problem("not-exists") })
 	a.Panic(func() { ctx.Problem("50000") })
 
 	// with field
@@ -164,4 +172,37 @@ func TestContext_Problem(t *testing.T) {
 
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"params":[{"name":"k1","reason":"v1"}],"detail":"40010"}`)
+}
+
+func TestContext_Log(t *testing.T) {
+	a := assert.New(t, false)
+	errLog := new(bytes.Buffer)
+
+	srv := newServer(a, &Options{
+		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), logs.Created, logs.Caller),
+	})
+	errLog.Reset()
+
+	t.Run("InternalServerError", func(t *testing.T) {
+		a := assert.New(t, false)
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.newContext(w, r, nil)
+		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:191") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, 500)
+	})
+
+	t.Run("Log", func(t *testing.T) {
+		a := assert.New(t, false)
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.newContext(w, r, nil)
+		ctx.Error("41110", logs.LevelError, errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:203") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, 411)
+	})
 }

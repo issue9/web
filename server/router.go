@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"strconv"
 
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
@@ -20,15 +21,28 @@ type (
 
 	// HandlerFunc 路由项处理函数原型
 	HandlerFunc func(*Context) Responser
+
+	// Responser 表示向客户端输出对象最终需要实现的接口
+	Responser interface {
+		// Apply 通过 [Context] 将当前内容渲染到客户端
+		//
+		// 在调用 Apply 之后，就不再使用 Responser 对象，
+		// 如果你的对象支持 sync.Pool 复用，可以在 Apply 退出之际回收。
+		Apply(*Context)
+	}
+
+	ResponserFunc func(*Context)
 )
 
-func notFound(*Context) Responser { return Status(http.StatusNotFound) }
+func (f ResponserFunc) Apply(c *Context) { f(c) }
+
+func notFound(ctx *Context) Responser { return ctx.Problem("404") }
 
 func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set("Allow", n.AllowHeader())
-			return Status(status)
+			return ctx.Problem(strconv.Itoa(status))
 		}
 	}
 }
@@ -50,19 +64,9 @@ func (srv *Server) Routers() *Routers { return srv.routers }
 // fsys 为文件系统，如果为空则采用 [Server] 本身；
 // name 表示参数名称；
 // index 表示目录下的默认文件名；
-// problems 表示指定状态需要关联的错误 id。默认情况下，
-// 文件服务采用 [Status] 返回指定的状态码。如果需要将返回内容转换成 [Problem] 对象，
-// 可以在此参数中指定，其中键名为状态码，键值为对应的错误 id，可以用的状态有：
-//   - http.StatusForbidden
-//   - http.StatusNotFound
-//   - http.StatusInternalServerError
-func (srv *Server) FileServer(fsys fs.FS, name, index string, problems map[int]string) HandlerFunc {
+func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	if fsys == nil {
 		fsys = srv
-	}
-
-	if problems == nil {
-		problems = map[int]string{}
 	}
 
 	if name == "" {
@@ -76,22 +80,13 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string, problems map[int]s
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)
-			if id := problems[http.StatusForbidden]; id != "" {
-				return ctx.Problem(id)
-			}
-			return Status(http.StatusForbidden)
+			return ctx.Problem("403") // http.StatusForbidden
 		case errors.Is(err, fs.ErrNotExist):
 			srv.Logs().WARN().Error(err)
-			if id := problems[http.StatusNotFound]; id != "" {
-				return ctx.Problem(id)
-			}
-			return Status(http.StatusNotFound)
+			return ctx.Problem("404") // http.StatusNotFound
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
-			if id := problems[http.StatusInternalServerError]; id != "" {
-				return ctx.Problem(id)
-			}
-			return Status(http.StatusInternalServerError)
+			return ctx.Problem("500") // http.StatusInternalServerError
 		default:
 			return nil
 		}

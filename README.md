@@ -69,7 +69,8 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ## 中间件
 
-<https://github.com/issue9/middleware> 提供了部分中间件。
+- <https://github.com/issue9/middleware> 提供了部分中间件。
+- <https://github.com/issue9/validator> 提供了部分验证方法。
 
 ## 版权
 

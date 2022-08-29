@@ -21,6 +21,17 @@ import (
 	"github.com/issue9/web/serializer/text/testobject"
 )
 
+func obj(status int, body any, kv ...string) Responser {
+	return ResponserFunc(func(ctx *Context) {
+		for i := 0; i < len(kv); i += 2 {
+			ctx.Header().Add(kv[i], kv[i+1])
+		}
+		if err := ctx.Marshal(status, body, false); err != nil {
+			ctx.Logs().ERROR().Error(err)
+		}
+	})
+}
+
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
@@ -43,7 +54,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
-		return Object(http.StatusOK, "/path", "h1", "h1")
+		return obj(http.StatusOK, "/path", "h1", "h1")
 	})
 	go func() {
 		srv.Serve()
@@ -95,7 +106,7 @@ func BenchmarkContext_render(b *testing.B) {
 		ctx := srv.newContext(w, r, nil)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -113,7 +124,7 @@ func BenchmarkContext_renderWithUTF8(b *testing.B) {
 		ctx := srv.newContext(w, r, nil)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkString2)
 	}
 }
@@ -131,7 +142,7 @@ func BenchmarkContext_renderWithCharset(b *testing.B) {
 		ctx := srv.newContext(w, r, nil)
 
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -150,7 +161,7 @@ func BenchmarkContext_renderWithCharsetEncoding(b *testing.B) {
 
 		ctx := srv.newContext(w, r, nil)
 		o := &testobject.TextObject{Age: 22, Name: "中文2"}
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		ctx.destroy()
 
 		data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -270,7 +281,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.String(), "response,16")
 	}
 }
@@ -294,7 +305,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 		o.Age = 22
 		o.Name = "中文2"
-		Object(http.StatusCreated, o).Apply(ctx)
+		obj(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.Bytes(), gbkBytes2)
 	}
 }
@@ -311,7 +322,7 @@ func BenchmarkContext_Object(b *testing.B) {
 			Header("content-type", text.Mimetype).
 			Request()
 		ctx := s.newContext(w, r, nil)
-		Object(http.StatusTeapot, o).Apply(ctx)
+		obj(http.StatusTeapot, o).Apply(ctx)
 	}
 }
 
@@ -327,6 +338,6 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 			Header("content-type", text.Mimetype).
 			Request()
 		ctx := s.newContext(w, r, nil)
-		Object(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
+		obj(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
 }

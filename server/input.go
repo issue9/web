@@ -4,12 +4,12 @@ package server
 
 import (
 	"io"
-	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
@@ -313,7 +313,7 @@ func (q *Queries) Object(v any, id string) {
 func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 	q, err := ctx.Queries(exitAtError)
 	if err != nil {
-		return ctx.Error(http.StatusUnprocessableEntity, err)
+		return ctx.Error(id, logs.LevelError, err)
 	}
 	q.Object(v, id)
 
@@ -376,7 +376,7 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果验证失败，会输出以 id 作为错误代码的 [Responser] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Error(http.StatusUnprocessableEntity, err)
+		return ctx.Error("422", logs.LevelError, err) // http.StatusUnprocessableEntity
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
