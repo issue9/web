@@ -36,10 +36,12 @@ func TestRFC7807Builder(t *testing.T) {
 
 	pp, ok := p.(*rfc7807)
 	a.True(ok).NotNil(pp)
-	a.Equal(pp.vals[0], "https://example.com/instance/1").
-		Equal(pp.keys[0], "instance").
+	a.Equal(pp.vals[3], "https://example.com/instance/1").
+		Equal(pp.keys[3], "instance").
 		Equal(pp.status, 400).
-		Equal(pp.typ, "id")
+		Equal(pp.vals[0], "id").
+		Equal(pp.vals[1], "title").
+		Equal(pp.vals[2], 400)
 }
 
 func TestRFC7807_Marshal(t *testing.T) {
@@ -60,7 +62,7 @@ func TestRFC7807_Marshal(t *testing.T) {
 
 		data, err = json.Marshal(p2)
 		a.NotError(err).
-			Equal(string(data), `{"type":"400","title":"bad request","status":400,"params":[{"name":"n1","reason":"r1"}],"detail":"detail","array":["a","bc"],"object":{"X":"x"}}`)
+			Equal(string(data), `{"type":"400","title":"bad request","status":400,"detail":"detail","array":["a","bc"],"object":{"X":"x"},"params":[{"name":"n1","reason":"r1"}]}`)
 	})
 
 	t.Run("XML", func(t *testing.T) {
@@ -70,7 +72,7 @@ func TestRFC7807_Marshal(t *testing.T) {
 
 		data, err = xml.Marshal(p2)
 		a.NotError(err).
-			Equal(string(data), `<problem xmlns="urn:ietf:rfc:7807"><type>400</type><title>bad request</title><status>400</status><params><i><name>n1</name><reason>r1</reason></i></params><detail>detail</detail><array><i>a</i><i>bc</i></array><object><X>x</X></object></problem>`)
+			Equal(string(data), `<problem xmlns="urn:ietf:rfc:7807"><type>400</type><title>bad request</title><status>400</status><detail>detail</detail><array><i>a</i><i>bc</i></array><object><X>x</X></object><params><i><name>n1</name><reason>r1</reason></i></params></problem>`)
 	})
 
 	t.Run("Form", func(t *testing.T) {

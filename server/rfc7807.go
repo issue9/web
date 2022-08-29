@@ -18,12 +18,17 @@ const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 
 const rfc8707PoolMaxSize = 10
 
-var rfc7807ProblemPool = &sync.Pool{New: func() any { return &rfc7807{} }}
+var rfc7807ProblemPool = &sync.Pool{New: func() any {
+	return &rfc7807{
+		keys: []string{"type", "title", "status"},
+		vals: make([]any, 3),
+	}
+}}
 
 // RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
 //
-// NOTE: 由于 www-form-urlencoded 对复杂对象的处理能力不足，
-// 在此类型下，将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
+// NOTE: 由于 www-form-urlencoded 对复杂对象的表现能力有限，
+// 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id, title string, status int) Problem {
@@ -32,29 +37,31 @@ func RFC7807Builder(id, title string, status int) Problem {
 	}
 
 	p := rfc7807ProblemPool.Get().(*rfc7807)
-	p.typ = id
-	p.title = title
 	p.status = status
+
+	p.keys = p.keys[:3]
+	p.vals = p.vals[:3]
+	// keys 前三个元素为固定值
+	p.vals[0] = id
+	p.vals[1] = title
+	p.vals[2] = status
+
 	p.pKeys = p.pKeys[:0]
 	p.pReasons = p.pReasons[:0]
-	p.keys = p.keys[:0]
-	p.vals = p.vals[:0]
 
 	return p
 }
 
 type rfc7807 struct {
-	typ    string
-	title  string
 	status int
-
-	// params
-	pKeys    []string
-	pReasons []string
 
 	// with
 	keys []string
 	vals []any
+
+	// params
+	pKeys    []string
+	pReasons []string
 }
 
 type rfc8707Entry struct {
@@ -73,9 +80,7 @@ func (p *rfc7807) AddParam(name string, reason string) Problem {
 }
 
 func (p *rfc7807) With(key string, val any) Problem {
-	exists := key == "type" || key == "status" || key == "title" ||
-		sliceutil.Exists(p.keys, func(e string) bool { return e == key })
-	if exists {
+	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) {
 		panic("存在同名的参数")
 	}
 	p.keys = append(p.keys, key)
@@ -87,19 +92,6 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}
 	b.WByte('{')
 
-	b.WString(`"type":"`).WString(p.typ).WString(`",`).
-		WString(`"title":"`).WString(p.title).WString(`",`).
-		WString(`"status":`).WString(strconv.Itoa(p.status)).WByte(',')
-
-	if len(p.pKeys) > 0 {
-		b.WString(`"params":[`)
-		for index, key := range p.pKeys {
-			b.WString(`{"name":"`).WString(key).WString(`","reason":"`).WString(p.pReasons[index]).WString(`"},`)
-		}
-		b.Truncate(b.Len() - 1)
-		b.WString("],")
-	}
-
 	for index, key := range p.keys {
 		b.WByte('"').WString(key).WString(`":`)
 
@@ -110,7 +102,17 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 		b.WBytes(v).WByte(',')
 	}
 
+	if len(p.pKeys) > 0 {
+		b.WString(`"params":[`)
+		for index, key := range p.pKeys {
+			b.WString(`{"name":"`).WString(key).WString(`","reason":"`).WString(p.pReasons[index]).WString(`"},`)
+		}
+		b.Truncate(b.Len() - 1)
+		b.WString("],")
+	}
+
 	b.Truncate(b.Len() - 1)
+
 	b.WByte('}')
 
 	return b.Bytes(), b.Err
@@ -123,14 +125,32 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		return err
 	}
 
-	if err := e.EncodeElement(p.typ, xml.StartElement{Name: xml.Name{Local: "type"}}); err != nil {
-		return err
-	}
-	if err := e.EncodeElement(p.title, xml.StartElement{Name: xml.Name{Local: "title"}}); err != nil {
-		return err
-	}
-	if err := e.EncodeElement(p.status, xml.StartElement{Name: xml.Name{Local: "status"}}); err != nil {
-		return err
+	for index, key := range p.keys {
+		val := p.vals[index]
+		v := reflect.ValueOf(val)
+		for v.Kind() == reflect.Pointer {
+			v = v.Elem()
+		}
+
+		var err error
+		if k := v.Kind(); k <= reflect.Complex128 || k == reflect.String {
+			err = e.Encode(rfc8707Entry{XMLName: xml.Name{Local: key}, Value: val})
+		} else if k == reflect.Array || k == reflect.Slice {
+			s := xml.StartElement{Name: xml.Name{Local: key}}
+			if err = e.EncodeToken(s); err == nil {
+				for i := 0; i < v.Len(); i++ {
+					if err = e.EncodeElement(v.Index(i).Interface(), xml.StartElement{Name: xml.Name{Local: "i"}}); err != nil {
+						return err
+					}
+				}
+				err = e.EncodeToken(s.End())
+			}
+		} else {
+			err = e.EncodeElement(val, xml.StartElement{Name: xml.Name{Local: key}})
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(p.pKeys) > 0 {
@@ -162,48 +182,11 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		}
 	}
 
-	for index, key := range p.keys {
-		val := p.vals[index]
-		v := reflect.ValueOf(val)
-		for v.Kind() == reflect.Pointer {
-			v = v.Elem()
-		}
-
-		var err error
-		if k := v.Kind(); k <= reflect.Complex128 || k == reflect.String {
-			err = e.Encode(rfc8707Entry{XMLName: xml.Name{Local: key}, Value: val})
-		} else if k == reflect.Array || k == reflect.Slice {
-			s := xml.StartElement{Name: xml.Name{Local: key}}
-			if err = e.EncodeToken(s); err == nil {
-				for i := 0; i < v.Len(); i++ {
-					if err = e.EncodeElement(v.Index(i).Interface(), xml.StartElement{Name: xml.Name{Local: "i"}}); err != nil {
-						return err
-					}
-				}
-				err = e.EncodeToken(s.End())
-			}
-		} else {
-			err = e.EncodeElement(val, xml.StartElement{Name: xml.Name{Local: key}})
-		}
-		if err != nil {
-			return err
-		}
-	}
-
 	return e.EncodeToken(start.End())
 }
 
 func (p *rfc7807) MarshalForm() ([]byte, error) {
 	u := url.Values{}
-	u.Add("type", p.typ)
-	u.Add("title", p.title)
-	u.Add("status", strconv.Itoa(p.status))
-
-	for index, key := range p.pKeys {
-		prefix := "params[" + strconv.Itoa(index) + "]."
-		u.Add(prefix+"name", key)
-		u.Add(prefix+"reason", p.pReasons[index])
-	}
 
 	for index, key := range p.keys {
 		var val string
@@ -240,6 +223,12 @@ func (p *rfc7807) MarshalForm() ([]byte, error) {
 			continue
 		}
 		u.Add(key, val)
+	}
+
+	for index, key := range p.pKeys {
+		prefix := "params[" + strconv.Itoa(index) + "]."
+		u.Add(prefix+"name", key)
+		u.Add(prefix+"reason", p.pReasons[index])
 	}
 
 	return []byte(u.Encode()), nil
