@@ -39,7 +39,7 @@ type (
 // 返回对象的生命周期在 Context 结束时也随之结束。
 func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
-	ps.v = ctx.newValidation(exitAtError)
+	ps.v = ctx.NewValidation(exitAtError)
 	ctx.OnExit(func(i int) { paramPool.Put(ps) })
 	return ps
 }
@@ -173,7 +173,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.newValidation(exitAtError)
+	q.v = ctx.NewValidation(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(i int) { queryPool.Put(q) })
 	return q, nil
@@ -380,7 +380,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {
-		va := ctx.newValidation(exitAtError)
+		va := ctx.NewValidation(exitAtError)
 		vv.CTXSanitize(ctx, va)
 		return va.Problem(id)
 	}

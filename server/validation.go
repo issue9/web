@@ -50,7 +50,7 @@ type (
 
 func (f ValidateFunc) IsValid(v any) bool { return f(v) }
 
-func (ctx *Context) newValidation(exitAtError bool) *Validation {
+func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	v := validationPool.Get().(*Validation)
 	v.exitAtError = exitAtError
 	v.keys = v.keys[:0]
