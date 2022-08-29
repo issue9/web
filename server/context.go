@@ -280,10 +280,9 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 
 	data, err := ctx.outputMimetype(body)
 	switch {
-	case err != nil && problem: // 如果在输出 problem 时出错，则记录日志即可。
-		ctx.Server().Logs().ERROR().Error(err)
+	case err != nil && problem: // 如果在输出 problem 时出错状态码不变
 		ctx.WriteHeader(status)
-		return nil
+		return err
 	case errors.Is(err, serializer.ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		return err
