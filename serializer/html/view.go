@@ -38,7 +38,6 @@ type tplView struct {
 type localeView struct {
 	b    *catalog.Builder
 	tpls map[string]*template.Template
-	def  *template.Template
 }
 
 // NewView 返回本地化的模板
@@ -60,7 +59,7 @@ func NewView(s *server.Server, fsys fs.FS, glob string) View {
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
 // def 表示默认的语言，必须是 fsys 下的目录名称；
-func NewLocaleView(s *server.Server, fsys fs.FS, glob, def string) View {
+func NewLocaleView(s *server.Server, fsys fs.FS, glob string) View {
 	fsys, funcs := initTpl(s, fsys)
 
 	dirs, err := fs.ReadDir(fsys, ".")
@@ -68,10 +67,9 @@ func NewLocaleView(s *server.Server, fsys fs.FS, glob, def string) View {
 		panic(err)
 	}
 
-	b := catalog.NewBuilder()
+	b := catalog.NewBuilder(catalog.Fallback(s.LanguageTag()))
 	tpls := make(map[string]*template.Template, len(dirs))
 
-	var defTpl *template.Template
 	for _, dir := range dirs {
 		name := dir.Name()
 
@@ -90,17 +88,9 @@ func NewLocaleView(s *server.Server, fsys fs.FS, glob, def string) View {
 
 		tpl := template.Must(template.New(name).Funcs(funcs).ParseFS(sub, glob))
 		tpls[name] = tpl
-
-		if name == def {
-			defTpl = tpl
-		}
 	}
 
-	if defTpl == nil {
-		panic(fmt.Sprintf("指定的默认模板 %s 不存在", def))
-	}
-
-	return &localeView{b: b, tpls: tpls, def: defTpl}
+	return &localeView{b: b, tpls: tpls}
 }
 
 func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
@@ -126,7 +116,7 @@ func (v *localeView) View(ctx *server.Context, name string, data any) Marshaler 
 	tagName := message.NewPrinter(tag, message.Catalog(v.b)).Sprintf(tagKey)
 	tpl := v.tpls[tagName]
 	if tpl == nil {
-		tpl = v.def
+		panic("abc")
 	}
 
 	tpl = tpl.Funcs(template.FuncMap{

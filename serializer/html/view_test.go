@@ -3,10 +3,12 @@
 package html
 
 import (
+	"net/http"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
@@ -46,9 +48,9 @@ func TestNewView(t *testing.T) {
 
 func TestNewLocaleView(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, nil)
+	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.MustParse("cmn-hans")})
 	s.Server().Mimetypes().Add(Marshal, Unmarshal, Mimetype)
-	v := NewLocaleView(s.Server(), os.DirFS("./testdata/localeview"), "*.tpl", "cmn-hans")
+	v := NewLocaleView(s.Server(), os.DirFS("./testdata/localeview"), "*.tpl")
 	a.NotNil(v)
 
 	s.GoServe()
