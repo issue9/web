@@ -166,7 +166,7 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 
 // Set 添加或是修改错误信息
 //
-// 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 Add 则会 panic。
+// 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 [Problems.Add] 则会 panic。
 func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
 	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
 	return p
@@ -204,6 +204,7 @@ func (p *Problems) mimetype(mimetype string) string {
 //
 // 用户可以通过此方法生成 QA 页面。
 func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer) bool) {
+	// BUG: 输出是无序的？
 	for t, item := range p.problems {
 		if !f(t, item.status, item.title, item.detail) {
 			return
