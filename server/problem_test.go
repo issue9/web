@@ -17,6 +17,40 @@ import (
 	"golang.org/x/text/message"
 )
 
+// 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
+func TestContext_Log(t *testing.T) {
+	a := assert.New(t, false)
+	errLog := new(bytes.Buffer)
+
+	srv := newServer(a, &Options{
+		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), logs.Created, logs.Caller),
+	})
+	errLog.Reset()
+
+	t.Run("InternalServerError", func(t *testing.T) {
+		a := assert.New(t, false)
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.newContext(w, r, nil)
+		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:35") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, 500)
+	})
+
+	t.Run("Log", func(t *testing.T) {
+		a := assert.New(t, false)
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.newContext(w, r, nil)
+		ctx.Error("41110", logs.LevelError, errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:47") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Equal(w.Code, 411)
+	})
+}
+
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
@@ -172,37 +206,4 @@ func TestContext_Problem(t *testing.T) {
 
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"detail":"40010","params":[{"name":"k1","reason":"v1"}]}`)
-}
-
-func TestContext_Log(t *testing.T) {
-	a := assert.New(t, false)
-	errLog := new(bytes.Buffer)
-
-	srv := newServer(a, &Options{
-		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), logs.Created, logs.Caller),
-	})
-	errLog.Reset()
-
-	t.Run("InternalServerError", func(t *testing.T) {
-		a := assert.New(t, false)
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Request()
-		ctx := srv.newContext(w, r, nil)
-		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:191") // NOTE: 此测试依赖上一行的行号
-		a.Contains(errLog.String(), "log1 log2")
-		a.Equal(w.Code, 500)
-	})
-
-	t.Run("Log", func(t *testing.T) {
-		a := assert.New(t, false)
-		errLog.Reset()
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Request()
-		ctx := srv.newContext(w, r, nil)
-		ctx.Error("41110", logs.LevelError, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:203") // NOTE: 此测试依赖上一行的行号
-		a.Contains(errLog.String(), "log1 log2")
-		a.Equal(w.Code, 411)
-	})
 }

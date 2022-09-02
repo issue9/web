@@ -193,6 +193,7 @@ func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
+	tag, _, _ = srv.CatalogBuilder().Matcher().Match(tag)
 	return srv.locale.NewPrinter(tag)
 }
 

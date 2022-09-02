@@ -41,7 +41,7 @@ var (
 
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}}
+		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
