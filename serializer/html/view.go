@@ -114,15 +114,14 @@ func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 func (v *localeView) View(ctx *server.Context, name string, data any) Marshaler {
 	tag, _, _ := v.b.Matcher().Match(ctx.LanguageTag())
 	tagName := message.NewPrinter(tag, message.Catalog(v.b)).Sprintf(tagKey)
-	tpl := v.tpls[tagName]
-	if tpl == nil {
-		panic("abc")
+	tpl, found := v.tpls[tagName]
+	if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
+		panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
 	}
 
 	tpl = tpl.Funcs(template.FuncMap{
 		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
 	})
-
 	return Tpl(tpl, name, data)
 }
 
