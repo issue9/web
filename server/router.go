@@ -42,6 +42,11 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set("Allow", n.AllowHeader())
+			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
+				return ResponserFunc(func(ctx *Context) {
+					ctx.WriteHeader(http.StatusOK)
+				})
+			}
 			return ctx.Problem(strconv.Itoa(status))
 		}
 	}
