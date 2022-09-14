@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
 )
 
@@ -25,7 +26,9 @@ type (
 	// 就要实现 json.Marshaler 接口或是相应的 struct tag。
 	//
 	// 并未规定实现者输出的字段名和布局，实现者可以根据 [BuildProblemFunc]
-	// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 RFC7807 的实现。
+	// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 [RFC7807] 的实现。
+	//
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem interface {
 		Responser
 
@@ -48,12 +51,13 @@ type (
 	Problems struct {
 		builder   BuildProblemFunc
 		baseURL   string
-		blank     bool // Problems.Problem 不输出 id 值
-		problems  map[string]*statusProblem
+		blank     bool             // 不输出 id 值
+		problems  []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
 		mimetypes map[string]string
 	}
 
 	statusProblem struct {
+		id     string
 		status int
 		title  localeutil.LocaleStringer
 		detail localeutil.LocaleStringer
@@ -76,7 +80,7 @@ func (srv *Server) Problems() *Problems { return srv.problems }
 func newProblems(f BuildProblemFunc) *Problems {
 	p := &Problems{
 		builder:   f,
-		problems:  make(map[string]*statusProblem, 50),
+		problems:  make([]*statusProblem, 0, 50),
 		mimetypes: make(map[string]string, 10),
 	}
 
@@ -158,27 +162,39 @@ func (p *Problems) SetBaseURL(base string) {
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明；
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	if _, found := p.problems[id]; found {
+	if p.Exists(id) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
-	return p.Set(id, status, title, detail)
+
+	sp := &statusProblem{status: status, title: title, detail: detail, id: id}
+	p.problems = append(p.problems, sp)
+	return p
 }
 
 // Set 添加或是修改错误信息
 //
 // 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 [Problems.Add] 则会 panic。
 func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
+	sp := &statusProblem{id: id, status: status, title: title, detail: detail}
+	if index := sliceutil.Index(p.problems, func(sp *statusProblem) bool { return sp.id == id }); index >= 0 {
+		p.problems[index] = sp
+	} else {
+		p.problems = append(p.problems, sp)
+	}
 	return p
 }
 
-// AddMimetype 指定 mimetype 对应的 [Problem] 时的 content-type 值
+func (p *Problems) Count() int { return len(p.problems) }
+
+func (p *Problems) Exists(id string) bool {
+	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
+}
+
+// AddMimetype 指定返回 [Problem] 时的 content-type 值
 //
 // mimetype 为正常情况下的 content-type 值，当输出对象为 [Problem] 时，
-// 可以指定一个特殊的值，比如 application/json 可以对应输出 application/problem+json，
-// 这也是 [RFC7807] 推荐的作法。
-//
-// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+// 可以指定不同的值，比如 application/json 可以对应输出 application/problem+json，
+// 这也是 RFC7807 推荐的作法。
 func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
 	if _, exists := p.mimetypes[mimetype]; exists {
 		panic(fmt.Sprintf("已经存在的 mimetype %s", mimetype))
@@ -204,9 +220,8 @@ func (p *Problems) mimetype(mimetype string) string {
 //
 // 用户可以通过此方法生成 QA 页面。
 func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer) bool) {
-	// BUG: 输出是无序的？
-	for t, item := range p.problems {
-		if !f(t, item.status, item.title, item.detail) {
+	for _, item := range p.problems {
+		if !f(item.id, item.status, item.title, item.detail) {
 			return
 		}
 	}
@@ -214,8 +229,8 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 
 // Problem 根据 id 生成 [Problem] 对象
 func (p *Problems) Problem(printer *message.Printer, id string) Problem {
-	sp, found := p.problems[id]
-	if !found {
+	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id })
+	if !found { // 这更像是编译期错误，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 

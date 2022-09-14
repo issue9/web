@@ -11,7 +11,7 @@ import (
 
 // ErrUnsupported 返回不支持序列化的错误信息
 //
-// 当一个对象无法被正常的序列化或是反序列化是，返回此错误。
+// 当一个对象无法被正常的序列化或是反序列化时返回此错误。
 var ErrUnsupported = localeutil.Error("unsupported serialization")
 
 type (
@@ -22,13 +22,13 @@ type (
 		// m 和 u 可以为 nil，表示仅作为一个占位符使用；
 		//
 		// name 表示之后用于查找该序列化函数的唯一 ID，
-		// 后期用户可以根据 name 从 c.Search 直接查找相应的序列化函数。
+		// 后期用户可以根据 name 从 Search 直接查找相应的序列化函数。
 		Add(m MarshalFunc, u UnmarshalFunc, name ...string) error
 
 		// Set 修改或是添加
 		Set(name string, m MarshalFunc, u UnmarshalFunc)
 
-		// Delete 删除指定名称的数据
+		// Delete 删除指定名称的序列化方函数
 		Delete(name string)
 
 		// Search 根据注册时的名称查找
