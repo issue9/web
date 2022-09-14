@@ -160,7 +160,7 @@ func (p *Problems) SetBaseURL(base string) {
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明；
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	if _, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id }); found {
+	if p.Exists(id) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
 
@@ -180,6 +180,12 @@ func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStr
 		p.problems = append(p.problems, sp)
 	}
 	return p
+}
+
+func (p *Problems) Count() int { return len(p.problems) }
+
+func (p *Problems) Exists(id string) bool {
+	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
 }
 
 // AddMimetype 指定 mimetype 对应的 [Problem] 时的 content-type 值
