@@ -3,6 +3,8 @@
 package html
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"html/template"
 	"testing"
 
@@ -14,6 +16,9 @@ import (
 var (
 	_ serializer.MarshalFunc   = Marshal
 	_ serializer.UnmarshalFunc = Unmarshal
+
+	_ json.Marshaler = &tpl{}
+	_ xml.Marshaler  = &tpl{}
 )
 
 func TestMarshal(t *testing.T) {

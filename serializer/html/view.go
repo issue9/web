@@ -42,7 +42,7 @@ type localeView struct {
 
 // NewView 返回本地化的模板
 //
-// 当前函数适合所有不同的本地化内容都在同一个模板中的，
+// 适合所有不同的本地化内容都在同一个模板中的，
 // 通过翻译函数 t 输出各种语言的内容，模板中不能存在本地化相关的内容。
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
@@ -58,7 +58,6 @@ func NewView(s *server.Server, fsys fs.FS, glob string) View {
 // 按目录名称加载各个本地化的模板，每个模板之间相互独立，模板内可以包含本地化相关的内容。
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
-// def 表示默认的语言，必须是 fsys 下的目录名称；
 func NewLocaleView(s *server.Server, fsys fs.FS, glob string) View {
 	fsys, funcs := initTpl(s, fsys)
 

@@ -13,6 +13,7 @@ package html
 
 import (
 	"bytes"
+	"encoding/xml"
 	"html/template"
 
 	"github.com/issue9/web/serializer"
@@ -64,6 +65,8 @@ func Marshal(v any) ([]byte, error) {
 	return nil, serializer.ErrUnsupported
 }
 
+func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }
+
 func (t *tpl) MarshalHTML() ([]byte, error) {
 	w := new(bytes.Buffer)
 	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
@@ -72,4 +75,6 @@ func (t *tpl) MarshalHTML() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }
+func (t *tpl) MarshalJSON() ([]byte, error) { return nil, serializer.ErrUnsupported }
+
+func (t *tpl) MarshalXML(*xml.Encoder, xml.StartElement) error { return serializer.ErrUnsupported }
