@@ -26,7 +26,9 @@ type (
 	// 就要实现 json.Marshaler 接口或是相应的 struct tag。
 	//
 	// 并未规定实现者输出的字段名和布局，实现者可以根据 [BuildProblemFunc]
-	// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 RFC7807 的实现。
+	// 给定的参数，结合自身需求决定。比如 [RFC7807Builder] 是对 [RFC7807] 的实现。
+	//
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem interface {
 		Responser
 
@@ -49,7 +51,7 @@ type (
 	Problems struct {
 		builder   BuildProblemFunc
 		baseURL   string
-		blank     bool             // Problems.Problem 不输出 id 值
+		blank     bool             // 不输出 id 值
 		problems  []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
 		mimetypes map[string]string
 	}
@@ -188,13 +190,11 @@ func (p *Problems) Exists(id string) bool {
 	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
 }
 
-// AddMimetype 指定 mimetype 对应的 [Problem] 时的 content-type 值
+// AddMimetype 指定返回 [Problem] 时的 content-type 值
 //
 // mimetype 为正常情况下的 content-type 值，当输出对象为 [Problem] 时，
-// 可以指定一个特殊的值，比如 application/json 可以对应输出 application/problem+json，
-// 这也是 [RFC7807] 推荐的作法。
-//
-// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+// 可以指定不同的值，比如 application/json 可以对应输出 application/problem+json，
+// 这也是 RFC7807 推荐的作法。
 func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
 	if _, exists := p.mimetypes[mimetype]; exists {
 		panic(fmt.Sprintf("已经存在的 mimetype %s", mimetype))
@@ -230,7 +230,7 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 // Problem 根据 id 生成 [Problem] 对象
 func (p *Problems) Problem(printer *message.Printer, id string) Problem {
 	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id })
-	if !found {
+	if !found { // 这更像是编译期错误，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 
