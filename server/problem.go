@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
 )
 
@@ -48,12 +49,13 @@ type (
 	Problems struct {
 		builder   BuildProblemFunc
 		baseURL   string
-		blank     bool // Problems.Problem 不输出 id 值
-		problems  map[string]*statusProblem
+		blank     bool             // Problems.Problem 不输出 id 值
+		problems  []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
 		mimetypes map[string]string
 	}
 
 	statusProblem struct {
+		id     string
 		status int
 		title  localeutil.LocaleStringer
 		detail localeutil.LocaleStringer
@@ -76,7 +78,7 @@ func (srv *Server) Problems() *Problems { return srv.problems }
 func newProblems(f BuildProblemFunc) *Problems {
 	p := &Problems{
 		builder:   f,
-		problems:  make(map[string]*statusProblem, 50),
+		problems:  make([]*statusProblem, 0, 50),
 		mimetypes: make(map[string]string, 10),
 	}
 
@@ -158,17 +160,25 @@ func (p *Problems) SetBaseURL(base string) {
 // status 表示输出给客户端的状态码；
 // title 和 detail 表示此 id 关联的简要说明和详细说明；
 func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	if _, found := p.problems[id]; found {
+	if _, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id }); found {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
-	return p.Set(id, status, title, detail)
+
+	sp := &statusProblem{status: status, title: title, detail: detail, id: id}
+	p.problems = append(p.problems, sp)
+	return p
 }
 
 // Set 添加或是修改错误信息
 //
 // 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 [Problems.Add] 则会 panic。
 func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	p.problems[id] = &statusProblem{status: status, title: title, detail: detail}
+	sp := &statusProblem{id: id, status: status, title: title, detail: detail}
+	if index := sliceutil.Index(p.problems, func(sp *statusProblem) bool { return sp.id == id }); index >= 0 {
+		p.problems[index] = sp
+	} else {
+		p.problems = append(p.problems, sp)
+	}
 	return p
 }
 
@@ -204,9 +214,8 @@ func (p *Problems) mimetype(mimetype string) string {
 //
 // 用户可以通过此方法生成 QA 页面。
 func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer) bool) {
-	// BUG: 输出是无序的？
-	for t, item := range p.problems {
-		if !f(t, item.status, item.title, item.detail) {
+	for _, item := range p.problems {
+		if !f(item.id, item.status, item.title, item.detail) {
 			return
 		}
 	}
@@ -214,7 +223,7 @@ func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeut
 
 // Problem 根据 id 生成 [Problem] 对象
 func (p *Problems) Problem(printer *message.Printer, id string) Problem {
-	sp, found := p.problems[id]
+	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id })
 	if !found {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
