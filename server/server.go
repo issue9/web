@@ -19,8 +19,8 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/internal/base"
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/service"
@@ -30,7 +30,6 @@ import (
 type Server struct {
 	name       string
 	version    string
-	logs       *logs.Logs
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
@@ -40,7 +39,7 @@ type Server struct {
 	routers    *Routers
 	problems   *Problems
 	services   *service.Server
-	locale     *locale.Locale
+	base       *base.Base
 
 	closed chan struct{}
 	closes []func() error
@@ -60,11 +59,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	loc := locale.New(o.Location, o.LanguageTag)
+	loc := base.New(o.Logs, o.Location, o.LanguageTag)
 	srv := &Server{
 		name:       name,
 		version:    version,
-		logs:       o.Logs,
 		fs:         o.FS,
 		httpServer: o.HTTPServer,
 		vars:       &sync.Map{},
@@ -72,8 +70,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		uptime:     time.Now(),
 		modules:    make(map[string]*Module, 20),
 		problems:   newProblems(o.ProblemBuilder),
-		services:   service.InternalNewServer(o.Logs, loc),
-		locale:     loc,
+		services:   service.InternalNewServer(loc),
+		base:       loc,
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
@@ -100,10 +98,10 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.locale.Location }
+func (srv *Server) Location() *time.Location { return srv.base.Location }
 
 // Logs 返回关联的 [logs.Logs] 实例
-func (srv *Server) Logs() *logs.Logs { return srv.logs }
+func (srv *Server) Logs() *logs.Logs { return srv.base.Logs }
 
 // Cache 返回缓存的相关接口
 func (srv *Server) Cache() cache.Cache { return srv.cache }
@@ -189,20 +187,20 @@ func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 	if fsys == nil {
 		fsys = srv
 	}
-	return srv.locale.LoadLocaleFiles(fsys, glob, srv.files)
+	return srv.base.LoadLocaleFiles(fsys, glob, srv.files)
 }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
 	tag, _, _ = srv.CatalogBuilder().Matcher().Match(tag)
-	return srv.locale.NewPrinter(tag)
+	return srv.base.NewPrinter(tag)
 }
 
-func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.locale.Catalog }
+func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.base.Catalog }
 
-func (srv *Server) LocalePrinter() *message.Printer { return srv.locale.Printer }
+func (srv *Server) LocalePrinter() *message.Printer { return srv.base.Printer }
 
 // LanguageTag 返回默认的语言标签
-func (srv *Server) LanguageTag() language.Tag { return srv.locale.Tag }
+func (srv *Server) LanguageTag() language.Tag { return srv.base.Tag }
 
 // OnClose 注册关闭服务时需要执行的函数
 //

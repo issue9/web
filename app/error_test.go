@@ -8,10 +8,11 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/internal/base"
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/locales"
 )
@@ -27,7 +28,7 @@ func TestError_LocaleString(t *testing.T) {
 	hant := language.MustParse("cmn-hant")
 
 	f := serialization.NewFS(5)
-	l := locale.New(time.UTC, language.MustParse("cmn-hans"))
+	l := base.New(logs.New(nil), time.UTC, language.MustParse("cmn-hans"))
 	a.NotError(f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml"))
 	a.NotError(l.LoadLocaleFiles(locales.Locales, "*.yml", f))
 

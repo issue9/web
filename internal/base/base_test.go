@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package locale
+package base
 
 import (
 	"encoding/xml"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
@@ -24,7 +25,7 @@ func TestLocale(t *testing.T) {
 
 	// cmn-hant.xml
 
-	l := New(time.Local, language.MustParse("cmn-hant"))
+	l := New(logs.New(nil), time.Local, language.MustParse("cmn-hant"))
 	a.NotNil(l)
 	a.NotError(l.LoadLocaleFiles(os.DirFS("./testdata"), "cmn-hant.xml", f))
 	p := l.NewPrinter(language.MustParse("cmn-hant"))
@@ -41,7 +42,7 @@ func TestLocale(t *testing.T) {
 
 	// cmn-hans.yaml
 
-	l = New(time.Local, language.MustParse("cmn-hans"))
+	l = New(logs.New(nil), time.Local, language.MustParse("cmn-hans"))
 	a.NotNil(l)
 	a.NotError(l.LoadLocaleFiles(os.DirFS("./testdata"), "cmn-hans.yaml", f))
 	p = l.NewPrinter(language.MustParse("cmn-hans"))

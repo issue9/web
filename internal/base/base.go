@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-// Package locale 本地化相关的功能
-package locale
+// Package base server 的基础环境
+package base
 
 import (
 	"io/fs"
 	"time"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -15,29 +16,31 @@ import (
 	"github.com/issue9/web/internal/serialization"
 )
 
-type Locale struct {
+type Base struct {
 	Location *time.Location
 	Catalog  *catalog.Builder
 	Tag      language.Tag
 	Printer  *message.Printer
+	Logs     *logs.Logs
 }
 
-func New(loc *time.Location, tag language.Tag) *Locale {
-	l := &Locale{
+func New(logs *logs.Logs, loc *time.Location, tag language.Tag) *Base {
+	l := &Base{
 		Location: loc,
 		Catalog:  catalog.NewBuilder(catalog.Fallback(tag)),
 		Tag:      tag,
+		Logs:     logs,
 	}
 	l.Printer = l.NewPrinter(tag)
 
 	return l
 }
 
-func (l *Locale) NewPrinter(tag language.Tag) *message.Printer {
+func (l *Base) NewPrinter(tag language.Tag) *message.Printer {
 	return message.NewPrinter(tag, message.Catalog(l.Catalog))
 }
 
-func (l *Locale) LoadLocaleFiles(fsys fs.FS, glob string, f *serialization.FS) error {
+func (l *Base) LoadLocaleFiles(fsys fs.FS, glob string, f *serialization.FS) error {
 	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
 		return err
