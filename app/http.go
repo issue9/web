@@ -47,7 +47,12 @@ type (
 		// 报头内容可能会被后续的中间件修改。
 		Headers []header `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
 
-		onConnections []mux.ConnectionFunc
+		// 自定义[跨域请求]设置项
+		//
+		// [跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors
+		CORS *cors `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
+
+		routersOptions []mux.Option
 	}
 
 	header struct {
@@ -55,7 +60,6 @@ type (
 		Value string `yaml:"val" json:"val" xml:",chardata"`
 	}
 
-	// 证书管理
 	certificate struct {
 		Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
 		Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
@@ -68,6 +72,30 @@ type (
 
 		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
 		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
+	}
+
+	cors struct {
+		// 指定跨域中的 Access-Control-Allow-Origin 报头内容
+		//
+		// 如果为空，表示禁止跨域请示，如果包含了 *，表示允许所有。
+		Origins []string `yaml:"origins,omitempty" json:"origins,omitempty" xml:"origins>origin,omitempty"`
+
+		// 表示 Access-Control-Allow-Headers 报头内容
+		AllowHeaders []string `yaml:"allowHeaders,omitempty" json:"allowHeaders,omitempty" xml:"allowHeaders>header,omitempty"`
+
+		// 表示 Access-Control-Expose-Headers 报头内容
+		ExposedHeaders []string `yaml:"exposedHeaders,omitempty" json:"exposedHeaders,omitempty" xml:"exposedHeaders>header,omitempty"`
+
+		// 表示 Access-Control-Max-Age 报头内容
+		//
+		// 有以下几种取值：
+		//   - 0 不输出该报头，默认值；
+		//   - -1 表示禁用；
+		//   - 其它 >= -1 的值正常输出数值；
+		MaxAge int `yaml:"maxAge,omitempty" json:"maxAge,omitempty" xml:"maxAge,attr,omitempty"`
+
+		// 表示 Access-Control-Allow-Credentials 报头内容
+		AllowCredentials bool `yaml:"allowCredentials,omitempty" json:"allowCredentials,omitempty" xml:"allowCredentials,attr,omitempty"`
 	}
 )
 
@@ -109,7 +137,7 @@ func (h *httpConfig) sanitize() *ConfigError {
 		return &ConfigError{Field: "maxHeaderBytes", Message: localeutil.Phrase("should great than 0")}
 	}
 
-	if err := h.buildConnection(); err != nil {
+	if err := h.buildRoutersOptions(); err != nil {
 		return err
 	}
 
@@ -129,20 +157,24 @@ func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
 	}
 }
 
-func (h *httpConfig) buildConnection() *ConfigError {
-	conn := make([]mux.ConnectionFunc, 0, 1)
+func (h *httpConfig) buildRoutersOptions() *ConfigError {
+	opt := make([]mux.Option, 0, 1)
 
-	for _, hh := range h.Headers {
-		conn = append(conn, func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-			w.Header().Add(hh.Key, hh.Value)
+	if len(h.Headers) > 0 {
+		opt = append(opt, mux.OnConnection(func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+			for _, hh := range h.Headers {
+				w.Header().Add(hh.Key, hh.Value)
+			}
 			return w, r
-		})
+		}))
 	}
 
-	if len(conn) > 0 {
-		h.onConnections = conn
+	if h.CORS != nil {
+		c := h.CORS
+		opt = append(opt, mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials))
 	}
 
+	h.routersOptions = opt
 	return nil
 }
 

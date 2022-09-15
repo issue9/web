@@ -56,8 +56,10 @@ type Options struct {
 	// 如果为空，表示 &http.Server{} 对象。
 	HTTPServer *http.Server
 
-	// 每次连接进入时执行的操作
-	OnConnection []mux.ConnectionFunc
+	// 路由选项
+	//
+	// 将应用 Server.Routers() 对象之上。
+	RoutersOptions []mux.Option
 }
 
 func sanitizeOptions(o *Options) (*Options, error) {
