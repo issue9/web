@@ -13,6 +13,7 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -80,7 +81,11 @@ func New(name, version string, o *Options) (*Server, error) {
 		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 		files:     serialization.NewFS(5),
 	}
-	srv.routers = group.NewOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
+	srv.routers = group.NewOf(srv.call,
+		notFound,
+		buildNodeHandle(http.StatusMethodNotAllowed),
+		buildNodeHandle(http.StatusOK),
+		mux.OnConnection(o.OnConnection...))
 	srv.httpServer.Handler = srv.routers
 
 	return srv, nil

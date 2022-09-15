@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/mux/v7"
 	"golang.org/x/text/language"
 )
 
@@ -24,7 +25,7 @@ type Options struct {
 
 	// 服务器的时区
 	//
-	// 默认值为 time.Local
+	// 默认值为 [time.Local]
 	Location *time.Location
 
 	// 缓存系统
@@ -54,6 +55,9 @@ type Options struct {
 	//
 	// 如果为空，表示 &http.Server{} 对象。
 	HTTPServer *http.Server
+
+	// 每次连接进入时执行的操作
+	OnConnection []mux.ConnectionFunc
 }
 
 func sanitizeOptions(o *Options) (*Options, error) {

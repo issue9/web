@@ -116,6 +116,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		Logs:           conf.logs,
 		ProblemBuilder: pb,
 		LanguageTag:    conf.languageTag,
+		OnConnection:   conf.HTTP.onConnections,
 	}
 	srv, err := server.New(name, version, opt)
 	if err != nil {

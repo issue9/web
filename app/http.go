@@ -11,6 +11,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/issue9/localeutil"
+	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -38,6 +40,19 @@ type (
 		IdleTimeout       duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
 		ReadHeaderTimeout duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
 		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
+
+		// 自定义报头功能
+		//
+		// 报头会输出到包括 404 在内的所有请求返回。可以为空。
+		// 报头内容可能会被后续的中间件修改。
+		Headers []header `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
+
+		onConnections []mux.ConnectionFunc
+	}
+
+	header struct {
+		Key   string `yaml:"key" json:"key" xml:"key,attr"`
+		Value string `yaml:"val" json:"val" xml:",chardata"`
 	}
 
 	// 证书管理
@@ -63,11 +78,11 @@ func exists(p string) bool {
 
 func (cert *certificate) sanitize() *ConfigError {
 	if !exists(cert.Cert) {
-		return &ConfigError{Field: "cert", Message: "文件不存在"}
+		return &ConfigError{Field: "cert", Message: localeutil.Phrase("%s not found", cert.Cert)}
 	}
 
 	if !exists(cert.Key) {
-		return &ConfigError{Field: "key", Message: "文件不存在"}
+		return &ConfigError{Field: "key", Message: localeutil.Phrase("%s not found", cert.Key)}
 	}
 
 	return nil
@@ -75,23 +90,27 @@ func (cert *certificate) sanitize() *ConfigError {
 
 func (h *httpConfig) sanitize() *ConfigError {
 	if h.ReadTimeout < 0 {
-		return &ConfigError{Field: "readTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "readTimeout", Message: localeutil.Phrase("should great than 0")}
 	}
 
 	if h.WriteTimeout < 0 {
-		return &ConfigError{Field: "writeTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "writeTimeout", Message: localeutil.Phrase("should great than 0")}
 	}
 
 	if h.IdleTimeout < 0 {
-		return &ConfigError{Field: "idleTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "idleTimeout", Message: localeutil.Phrase("should great than 0")}
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return &ConfigError{Field: "readHeaderTimeout", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "readHeaderTimeout", Message: localeutil.Phrase("should great than 0")}
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return &ConfigError{Field: "maxHeaderBytes", Message: "必须大于等于 0"}
+		return &ConfigError{Field: "maxHeaderBytes", Message: localeutil.Phrase("should great than 0")}
+	}
+
+	if err := h.buildConnection(); err != nil {
+		return err
 	}
 
 	return h.buildTLSConfig()
@@ -108,6 +127,23 @@ func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
 		ErrorLog:          err,
 		TLSConfig:         h.tlsConfig,
 	}
+}
+
+func (h *httpConfig) buildConnection() *ConfigError {
+	conn := make([]mux.ConnectionFunc, 0, 1)
+
+	for _, hh := range h.Headers {
+		conn = append(conn, func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+			w.Header().Add(hh.Key, hh.Value)
+			return w, r
+		})
+	}
+
+	if len(conn) > 0 {
+		h.onConnections = conn
+	}
+
+	return nil
 }
 
 func (h *httpConfig) buildTLSConfig() *ConfigError {

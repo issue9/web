@@ -8,7 +8,7 @@ import (
 	"github.com/issue9/assert/v3"
 )
 
-func TestWebconfig_buildCache(t *testing.T) {
+func TestConfig_buildCache(t *testing.T) {
 	a := assert.New(t, false)
 
 	cfg := &configOf[empty]{}
