@@ -58,14 +58,12 @@ import (
 //	-set file system
 //	-action
 //	-run as server
-//
-// 以及 [AppOf.Desc] 的相关翻译项。
+//	-[AppOf.Desc] 的内容
 //
 // NOTE: panic 信息是不支持本地化。
 type AppOf[T any] struct {
-	// NOTE: AppOf 仅用于初始化 server.Server，不应当赋予 AppOf 太多的功能。
-	// AppOf 对于接口的开发应当是透明的，开发者所有的功能都可以通过 Context
-	// 和 Server 获得。
+	// NOTE: AppOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
+	// 开发者所有的功能都可以通过 Context 和 Server 获得。
 
 	Name    string // 程序名称
 	Version string // 程序版本

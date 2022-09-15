@@ -13,6 +13,7 @@ package html
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"html/template"
 
@@ -75,6 +76,6 @@ func (t *tpl) MarshalHTML() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (t *tpl) MarshalJSON() ([]byte, error) { return nil, serializer.ErrUnsupported }
+func (t *tpl) MarshalJSON() ([]byte, error) { return json.Marshal(t.data) }
 
-func (t *tpl) MarshalXML(*xml.Encoder, xml.StartElement) error { return serializer.ErrUnsupported }
+func (t *tpl) MarshalXML(e *xml.Encoder, s xml.StartElement) error { return e.EncodeElement(t.data, s) }

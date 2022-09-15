@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
+const paramsKey = "params"
+
 const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 
 const rfc8707PoolMaxSize = 10
@@ -80,7 +82,7 @@ func (p *rfc7807) AddParam(name string, reason string) Problem {
 }
 
 func (p *rfc7807) With(key string, val any) Problem {
-	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) {
+	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) || key == paramsKey {
 		panic("存在同名的参数")
 	}
 	p.keys = append(p.keys, key)
@@ -103,7 +105,7 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(p.pKeys) > 0 {
-		b.WString(`"params":[`)
+		b.WByte('"').WString(paramsKey + `":[`)
 		for index, key := range p.pKeys {
 			b.WString(`{"name":"`).WString(key).WString(`","reason":"`).WString(p.pReasons[index]).WString(`"},`)
 		}
@@ -154,7 +156,7 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	if len(p.pKeys) > 0 {
-		pStart := xml.StartElement{Name: xml.Name{Local: "params"}}
+		pStart := xml.StartElement{Name: xml.Name{Local: paramsKey}}
 		if err := e.EncodeToken(pStart); err != nil {
 			return err
 		}
@@ -226,7 +228,7 @@ func (p *rfc7807) MarshalForm() ([]byte, error) {
 	}
 
 	for index, key := range p.pKeys {
-		prefix := "params[" + strconv.Itoa(index) + "]."
+		prefix := paramsKey + "[" + strconv.Itoa(index) + "]."
 		u.Add(prefix+"name", key)
 		u.Add(prefix+"reason", p.pReasons[index])
 	}
