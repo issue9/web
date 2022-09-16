@@ -11,6 +11,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/server"
 )
@@ -42,6 +43,10 @@ type encodingConfig struct {
 	//  - br-default
 	//  - br-best-compression
 	//  - br-best-speed
+	//  - zstd-default
+	//  - zstd-fastest
+	//  - zstd-better
+	//  - zstd-best
 	IDs []string `json:"ids" xml:"id" yaml:"ids"`
 }
 
@@ -106,4 +111,9 @@ func init() {
 	RegisterEncoding("br-default", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
 	RegisterEncoding("br-best-compression", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
 	RegisterEncoding("br-best-speed", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+
+	RegisterEncoding("zstd-default", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedDefault)))
+	RegisterEncoding("zstd-fastest", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedFastest)))
+	RegisterEncoding("zstd-better", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedBetterCompression)))
+	RegisterEncoding("zstd-best", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedBestCompression)))
 }

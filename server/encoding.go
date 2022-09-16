@@ -6,6 +6,7 @@ import (
 	"compress/lzw"
 
 	"github.com/andybalholm/brotli"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/encoding"
 )
@@ -45,3 +46,6 @@ func EncodingBrotli(o brotli.WriterOptions) NewEncodingFunc { return encoding.Br
 func EncodingCompress(order lzw.Order, width int) NewEncodingFunc {
 	return encoding.CompressWriter(order, width)
 }
+
+// EncodingZstd 返回指定配置的 zstd 算法
+func EncodingZstd(o ...zstd.EOption) NewEncodingFunc { return encoding.ZstdWriter(o...) }

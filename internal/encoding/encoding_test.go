@@ -11,6 +11,7 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
+	"github.com/klauspost/compress/zstd"
 )
 
 func TestEncodings_Add(t *testing.T) {
@@ -180,9 +181,13 @@ func TestEncodings_Compress(t *testing.T) {
 	e.Add("gzip-3", "gzip", GZipWriter(3))
 	e.Add("gzip-9", "gzip", GZipWriter(9))
 	e.Add("br-3-10", "br", BrotliWriter(brotli.WriterOptions{Quality: 3, LGWin: 10}))
+	e.Add("zstd-def", "zstd", ZstdWriter(zstd.WithEncoderLevel(zstd.SpeedDefault)))
 
 	e.Allow("text/*", "lzw-lsb-2", "gzip-3")
 	e.Allow("application/*", "lzw-lsb-2", "gzip-3", "br-3-10")
+	e.Allow("application/xml", "zstd-def", "lzw-lsb-2")
+
+	// br
 
 	b, notAccept := e.Search("application/json", "gzip;q=0.9,br")
 	a.False(notAccept).NotNil(b).Equal(b.name, "br")
@@ -194,8 +199,42 @@ func TestEncodings_Compress(t *testing.T) {
 	a.NotError(wc.Close())
 	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
 
-	r := brotli.NewReader(w)
-	a.NotNil(r)
-	data, err := io.ReadAll(r)
+	brotliR := brotli.NewReader(w)
+	a.NotNil(brotliR)
+	data, err := io.ReadAll(brotliR)
+	a.NotError(err).NotNil(data).Equal(string(data), "123456")
+
+	// gzip
+
+	b, notAccept = e.Search("application/json", "gzip;q=0.9")
+	a.False(notAccept).NotNil(b).Equal(b.name, "gzip")
+
+	w = &bytes.Buffer{}
+	wc = b.Get(w)
+	_, err = wc.Write([]byte("123456"))
+	a.NotError(err)
+	a.NotError(wc.Close())
+	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
+
+	gzipR, err := gzip.NewReader(w)
+	a.NotError(err).NotNil(gzipR)
+	data, err = io.ReadAll(gzipR)
+	a.NotError(err).NotNil(data).Equal(string(data), "123456")
+
+	// zstd
+
+	b, notAccept = e.Search("application/xml", "zstd")
+	a.False(notAccept).NotNil(b).Equal(b.name, "zstd")
+
+	w = &bytes.Buffer{}
+	wc = b.Get(w)
+	_, err = wc.Write([]byte("123456"))
+	a.NotError(err)
+	a.NotError(wc.Close())
+	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
+
+	zstdR, err := zstd.NewReader(w)
+	a.NotError(err).NotNil(zstdR)
+	data, err = io.ReadAll(zstdR)
 	a.NotError(err).NotNil(data).Equal(string(data), "123456")
 }

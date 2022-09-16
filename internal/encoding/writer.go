@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"github.com/andybalholm/brotli"
+	"github.com/klauspost/compress/zstd"
 )
 
 // WriteCloseRester 每种压缩实例需要实现的最小接口
@@ -64,5 +65,16 @@ func CompressWriter(order lzw.Order, width int) NewEncodingFunc {
 		return &compressWriter{
 			Writer: lzw.NewWriter(nil, order, width).(*lzw.Writer),
 		}
+	}
+}
+
+// ZstdWriter zstd
+func ZstdWriter(o ...zstd.EOption) NewEncodingFunc {
+	return func() WriteCloseRester {
+		w, err := zstd.NewWriter(nil, o...)
+		if err != nil {
+			panic(err)
+		}
+		return w
 	}
 }
