@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.58.4"
+const Version = "0.59.0"
 
 type (
 	Server         = server.Server
@@ -25,7 +25,6 @@ type (
 	Middleware     = server.Middleware
 	HandlerFunc    = server.HandlerFunc
 	Router         = server.Router
-	Module         = server.Module
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
 	CTXSanitizer   = server.CTXSanitizer
@@ -44,7 +43,6 @@ type (
 	LocaleStringer = localeutil.LocaleStringer
 )
 
-// NewServer 从 [Options] 初始化 [Server] 对象
 func NewServer(name, version string, o *Options) (*Server, error) {
 	return server.New(name, version, o)
 }

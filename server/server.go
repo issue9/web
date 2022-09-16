@@ -35,7 +35,6 @@ type Server struct {
 	vars       *sync.Map
 	cache      cache.Cache
 	uptime     time.Time
-	modules    map[string]*Module
 	routers    *Routers
 	problems   *Problems
 	services   *service.Server
@@ -68,7 +67,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:       &sync.Map{},
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		modules:    make(map[string]*Module, 20),
 		problems:   newProblems(o.ProblemBuilder),
 		services:   service.InternalNewServer(loc),
 		base:       loc,
