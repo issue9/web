@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -57,3 +58,16 @@ func NewRule(msg LocaleStringer, v Validator) *Rule { return server.NewRule(msg,
 func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 	return server.NewRuleFunc(msg, f)
 }
+
+// StackError 为 err 带上调用信息
+//
+// 位置从调用 StackError 开始。
+// 如果 err 为 nil，则返回 nil，如果 err 本身就为 StackError 返回的类型，则原样返回。
+//
+// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
+func StackError(err error) error { return errs.StackError(err) }
+
+// Errors 合并多个非空错误为一个错误
+//
+// 有关 Is 和 As 均是按顺序找第一个返回 true 的即返回。
+func Errors(err ...error) error { return errs.Errors(err...) }

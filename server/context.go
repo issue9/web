@@ -284,10 +284,10 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 		ctx.WriteHeader(status)
 		return err
 	case errors.Is(err, serializer.ErrUnsupported):
-		ctx.WriteHeader(http.StatusNotAcceptable)
+		ctx.WriteHeader(http.StatusNotAcceptable) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
 		return err
 	case err != nil:
-		ctx.WriteHeader(http.StatusInternalServerError)
+		ctx.WriteHeader(http.StatusInternalServerError) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
 		return err
 	}
 

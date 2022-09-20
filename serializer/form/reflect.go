@@ -26,20 +26,22 @@ func marshal(v any) (url.Values, error) {
 		return nil, err
 	}
 
-	marshalByInterface := func(v any) ([]byte, error) {
-		if m, ok := v.(encoding.TextMarshaler); ok {
+	marshalByInterface := func(v reflect.Value) ([]byte, error) {
+		if m, ok := v.Interface().(encoding.TextMarshaler); ok {
 			return m.MarshalText()
 		}
-
-		// 对象的字段，只考虑基本类型，不考虑 url.Values 等类型。
-
+		if v.CanAddr() {
+			if m, ok := v.Addr().Interface().(encoding.TextMarshaler); ok {
+				return m.MarshalText()
+			}
+		}
 		return []byte(fmt.Sprint(v)), nil
 	}
 
 	vals := url.Values{}
 	for k, v := range objs {
 		if kind := v.Kind(); kind != reflect.Array && kind != reflect.Slice {
-			vv, err := marshalByInterface(v.Interface())
+			vv, err := marshalByInterface(v)
 			if err != nil {
 				return nil, err
 			}
@@ -49,7 +51,7 @@ func marshal(v any) (url.Values, error) {
 
 		chkSliceType(v)
 		for i := 0; i < v.Len(); i++ {
-			vv, err := marshalByInterface(v.Index(i).Interface())
+			vv, err := marshalByInterface(v.Index(i))
 			if err != nil {
 				return nil, err
 			}

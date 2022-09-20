@@ -3,6 +3,7 @@
 package form
 
 import (
+	"encoding"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -10,50 +11,35 @@ import (
 	"github.com/issue9/web/serializer"
 )
 
-type Sex int8
+var (
+	sexValue                          = Sex(1)
+	_        encoding.TextMarshaler   = sexValue
+	_        encoding.TextUnmarshaler = &sexValue
+)
 
-func (s Sex) MarshalText() ([]byte, error) {
-	switch s {
-	case 0:
-		return []byte("male"), nil
-	case 1:
-		return []byte("female"), nil
-	default:
-		return nil, serializer.ErrUnsupported
+type (
+	Sex int8
+
+	TagObject struct {
+		Name     string
+		Age      int      `form:"age"`
+		Friend   []string `form:"friend"`
+		Ignore   string   `form:"-"`
+		Sex      Sex      `form:"sex"`
+		unexport bool
 	}
-}
 
-func (s *Sex) UnmarshalText(v []byte) error {
-	switch string(v) {
-	case "male":
-		*s = 0
-	case "female":
-		*s = 1
-	default:
-		return serializer.ErrUnsupported
+	anonymousObject struct {
+		*TagObject
+		Address string `form:"address"`
+		F       func()
 	}
-	return nil
-}
 
-type TagObject struct {
-	Name     string
-	Age      int      `form:"age"`
-	Friend   []string `form:"friend"`
-	Ignore   string   `form:"-"`
-	Sex      Sex      `form:"sex"`
-	unexport bool
-}
-
-type anonymousObject struct {
-	*TagObject
-	Address string `form:"address"`
-	F       func()
-}
-
-type nestObject struct {
-	Tag  *TagObject `form:"tags"`
-	Maps map[string]*anonymousObject
-}
+	nestObject struct {
+		Tag  *TagObject `form:"tags"`
+		Maps map[string]*anonymousObject
+	}
+)
 
 const tagObjectString = "Name=Ava&age=10&friend=Jess&friend=Sarah&friend=Zoe&sex=female"
 
@@ -104,6 +90,29 @@ var nestData = &nestObject{
 			Address: "1",
 		},
 	},
+}
+
+func (s Sex) MarshalText() ([]byte, error) {
+	switch s {
+	case 0:
+		return []byte("male"), nil
+	case 1:
+		return []byte("female"), nil
+	default:
+		return nil, serializer.ErrUnsupported
+	}
+}
+
+func (s *Sex) UnmarshalText(v []byte) error {
+	switch string(v) {
+	case "male":
+		*s = 0
+	case "female":
+		*s = 1
+	default:
+		return serializer.ErrUnsupported
+	}
+	return nil
 }
 
 func TestMarshalWithFormTag(t *testing.T) {
