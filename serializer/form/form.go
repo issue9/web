@@ -13,7 +13,7 @@
 //	    return web.Object(http.StatusOK, vals, nil)
 //	}
 //
-// form
+// ## form 标签
 //
 // 用户可以通过定义 form 标签自定义输出的名称，比如：
 //
@@ -27,10 +27,11 @@
 //	name=jjj&age=18
 //
 // 该方式对数据类型有一定限制：
-//  1. 如果是 map 类型，要求键名类型必须为 string；
-//  2. 如果是 array 或是 slice，则要求元素类型必须是 go 的基本数据类型，不能是 struct 类型；
+//   - 如果是 map 类型，要求键名类型必须为 string；
+//   - 如果是 array 或是 slice，则要求元素类型必须是 go 的基本数据类型，不能是 struct 类型；
+//   - 其它基本类型或是实现了 [encoding.TextUnmarshaler] 和 [encoding.TextMarshaler] 接口的类型；
 //
-// 接口
+// ## 接口
 //
 // 对于复杂类型，用户可以自定义实现 [Marshaler] 和 [Unmarshaler] 接口进行编解码，
 // 其功能与用户与 encoding/json 中的 Marshaler 和 Unmarshaler 接口相似。
@@ -41,10 +42,7 @@
 // - 当前包支持将数据映射到一个对象；
 package form
 
-import (
-	"encoding"
-	"net/url"
-)
+import "net/url"
 
 const Mimetype = "application/x-www-form-urlencoded"
 
@@ -68,10 +66,6 @@ type Unmarshaler interface {
 func Marshal(v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
-	}
-
-	if m, ok := v.(encoding.TextMarshaler); ok {
-		return m.MarshalText()
 	}
 
 	if vals, ok := v.(url.Values); ok {

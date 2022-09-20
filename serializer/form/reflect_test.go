@@ -6,13 +6,41 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+
+	"github.com/issue9/web/serializer"
 )
+
+type Sex int8
+
+func (s Sex) MarshalText() ([]byte, error) {
+	switch s {
+	case 0:
+		return []byte("male"), nil
+	case 1:
+		return []byte("female"), nil
+	default:
+		return nil, serializer.ErrUnsupported
+	}
+}
+
+func (s *Sex) UnmarshalText(v []byte) error {
+	switch string(v) {
+	case "male":
+		*s = 0
+	case "female":
+		*s = 1
+	default:
+		return serializer.ErrUnsupported
+	}
+	return nil
+}
 
 type TagObject struct {
 	Name     string
 	Age      int      `form:"age"`
 	Friend   []string `form:"friend"`
 	Ignore   string   `form:"-"`
+	Sex      Sex      `form:"sex"`
 	unexport bool
 }
 
@@ -27,17 +55,18 @@ type nestObject struct {
 	Maps map[string]*anonymousObject
 }
 
-const formTagString = "Name=Ava&age=10&friend=Jess&friend=Sarah&friend=Zoe"
+const tagObjectString = "Name=Ava&age=10&friend=Jess&friend=Sarah&friend=Zoe&sex=female"
 
 var tagObjectData = &TagObject{
 	Name:     "Ava",
 	Age:      10,
 	Friend:   []string{"Jess", "Sarah", "Zoe"},
+	Sex:      1,
 	Ignore:   "i",
 	unexport: true,
 }
 
-const anonymousString = "Name=Ava&address=1&age=10&friend=Jess&friend=Sarah&friend=Zoe"
+const anonymousString = "Name=Ava&address=1&age=10&friend=Jess&friend=Sarah&friend=Zoe&sex=male"
 
 var anonymousData = &anonymousObject{
 	TagObject: &TagObject{
@@ -48,7 +77,7 @@ var anonymousData = &anonymousObject{
 	Address: "1",
 }
 
-const nestString = "Maps.1.Name=Ava&Maps.1.address=1&Maps.1.age=10&Maps.1.friend=Jess&Maps.1.friend=Sarah&Maps.2.Name=Ava&Maps.2.address=1&Maps.2.age=10&Maps.2.friend=Jess&Maps.2.friend=Zoe&tags.Name=Ava&tags.age=10&tags.friend=Jess&tags.friend=Sarah&tags.friend=Zoe"
+const nestString = "Maps.1.Name=Ava&Maps.1.address=1&Maps.1.age=10&Maps.1.friend=Jess&Maps.1.friend=Sarah&Maps.1.sex=male&Maps.2.Name=Ava&Maps.2.address=1&Maps.2.age=10&Maps.2.friend=Jess&Maps.2.friend=Zoe&Maps.2.sex=female&tags.Name=Ava&tags.age=10&tags.friend=Jess&tags.friend=Sarah&tags.friend=Zoe&tags.sex=male"
 
 var nestData = &nestObject{
 	Tag: &TagObject{
@@ -70,26 +99,26 @@ var nestData = &nestObject{
 				Name:   "Ava",
 				Age:    10,
 				Friend: []string{"Jess", "Zoe"},
+				Sex:    1,
 			},
 			Address: "1",
 		},
 	},
 }
 
-func TestTagForm(t *testing.T) {
+func TestMarshalWithFormTag(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Marshal
 	data, err := Marshal(tagObjectData)
-	a.NotError(err).
-		Equal(string(data), formTagString)
+	a.NotError(err).Equal(string(data), tagObjectString)
 
 	// Unmarshal
 	obj := &TagObject{
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(Unmarshal([]byte(formTagString), obj))
+	a.NotError(Unmarshal([]byte(tagObjectString), obj))
 	a.Equal(obj, tagObjectData)
 
 	// anonymous marshal

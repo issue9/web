@@ -26,7 +26,7 @@ type (
 		// 网站的域名证书
 		//
 		// NOTE: 不能同时与 ACME 生效
-		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificate,omitempty"`
+		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates>certificate,omitempty"`
 
 		// ACME 协议的证书
 		//

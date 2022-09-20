@@ -3,6 +3,7 @@
 package form
 
 import (
+	"encoding"
 	"errors"
 	"fmt"
 	"net/url"
@@ -25,17 +26,34 @@ func marshal(v any) (url.Values, error) {
 		return nil, err
 	}
 
+	marshalByInterface := func(v any) ([]byte, error) {
+		if m, ok := v.(encoding.TextMarshaler); ok {
+			return m.MarshalText()
+		}
+
+		// 对象的字段，只考虑基本类型，不考虑 url.Values 等类型。
+
+		return []byte(fmt.Sprint(v)), nil
+	}
+
 	vals := url.Values{}
 	for k, v := range objs {
-		kind := v.Kind()
-		if kind != reflect.Array && kind != reflect.Slice {
-			vals.Add(k, fmt.Sprint(v))
+		if kind := v.Kind(); kind != reflect.Array && kind != reflect.Slice {
+			vv, err := marshalByInterface(v.Interface())
+			if err != nil {
+				return nil, err
+			}
+			vals.Add(k, string(vv))
 			continue
 		}
 
 		chkSliceType(v)
 		for i := 0; i < v.Len(); i++ {
-			vals.Add(k, fmt.Sprint(v.Index(i).Interface()))
+			vv, err := marshalByInterface(v.Index(i).Interface())
+			if err != nil {
+				return nil, err
+			}
+			vals.Add(k, string(vv))
 		}
 	}
 
@@ -61,12 +79,35 @@ func setField(obj reflect.Value, names []string, val []string) error {
 		obj = obj.Elem()
 	}
 
-	if len(names) == 0 {
-		if k := obj.Kind(); k == reflect.Slice || k == reflect.Array {
-			chkSliceType(obj)
-			return conv.Value(val, obj)
+	unmarshalByInterface := func(obj reflect.Value, val string) error {
+		if m, ok := obj.Interface().(encoding.TextUnmarshaler); ok {
+			return m.UnmarshalText([]byte(val))
 		}
-		return conv.Value(val[0], obj)
+		if obj.CanAddr() {
+			if m, ok := obj.Addr().Interface().(encoding.TextUnmarshaler); ok {
+				return m.UnmarshalText([]byte(val))
+			}
+		}
+
+		return conv.Value(val, obj)
+	}
+
+	if len(names) == 0 {
+		if k := obj.Kind(); k != reflect.Slice && k != reflect.Array {
+			return unmarshalByInterface(obj, val[0])
+		}
+
+		chkSliceType(obj)
+		slice := obj
+		for i := 0; i < len(val); i++ {
+			oo := reflect.New(obj.Type().Elem())
+			if err := unmarshalByInterface(oo, val[i]); err != nil {
+				return err
+			}
+			slice = reflect.Append(slice, oo.Elem())
+		}
+		obj.Set(slice)
+		return nil
 	}
 
 	switch obj.Kind() {
