@@ -33,9 +33,9 @@ func TestStackError(t *testing.T) {
 
 	a.ErrorIs(err, err1)
 	s := fmt.Sprintf("%v", err)
-	a.NotContains(s, "33")
+	a.NotContains(s, "32") // 依赖 StackError 的行号
 	s = fmt.Sprintf("%+v", err)
-	a.Contains(s, "33")
+	a.Contains(s, "32") // 依赖 StackError 的行号
 
 	target := &cerr{}
 	a.True(errors.As(err, &target)).Equal(target.Error(), err1.Error())
@@ -46,9 +46,9 @@ func TestStackError(t *testing.T) {
 
 	a.ErrorIs(err, err1)
 	s = fmt.Sprintf("%v", err)
-	a.NotContains(s, "33")
+	a.NotContains(s, "32") // 依赖 StackError 的行号
 	s = fmt.Sprintf("%+v", err)
-	a.Contains(s, "33")
+	a.Contains(s, "32") // 依赖 StackError 的行号
 
 	target = &cerr{}
 	a.True(errors.As(err, &target)).Equal(target.Error(), err1.Error())
