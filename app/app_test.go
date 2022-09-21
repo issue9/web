@@ -4,20 +4,22 @@ package app
 
 import (
 	"bytes"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/server"
 )
 
-func TestAppOf_Exec(t *testing.T) {
+func TestAppOf(t *testing.T) {
 	a := assert.New(t, false)
 
 	bs := new(bytes.Buffer)
 	var action string
-	aa := &AppOf[empty]{
+	cmd := &AppOf[empty]{
 		Name:    "test",
 		Version: "1.0.0",
 		Out:     bs,
@@ -26,12 +28,36 @@ func TestAppOf_Exec(t *testing.T) {
 			return nil
 		},
 	}
-	a.NotError(aa.Exec([]string{"app", "-v"}))
-	a.Contains(bs.String(), aa.Version)
+	a.NotError(cmd.Exec([]string{"app", "-v"}))
+	a.Contains(bs.String(), cmd.Version)
 
 	bs.Reset()
-	a.NotError(aa.Exec([]string{"app", "-f=./testdata", "-a=install"}))
+	a.NotError(cmd.Exec([]string{"app", "-f=./testdata", "-a=install"}))
 	a.Equal(action, "install")
+
+	// Restart
+
+	exit := make(chan struct{}, 10)
+	bs.Reset()
+	go func() {
+		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-s"}), http.ErrServerClosed)
+		exit <- struct{}{}
+	}()
+	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
+
+	s1 := cmd.srv
+	t1 := s1.Uptime()
+	cmd.Name = "restart"
+	cmd.Restart()
+	time.Sleep(500 * time.Microsecond) //////////// TODO
+	s2 := cmd.srv
+	t2 := s2.Uptime()
+	a.True(t2.After(t1)).
+		NotEqual(s1, s2)
+
+	a.NotError(cmd.srv.Close(0))
+
+	<-exit
 }
 
 func TestAppOf_sanitize(t *testing.T) {

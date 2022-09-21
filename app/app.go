@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/signal"
 	"time"
@@ -103,10 +104,14 @@ type AppOf[T any] struct {
 	// 为空(nil 或是 []) 表示没有。
 	Signals []os.Signal
 
-	// 通过信号触发退出时的等待时间
-	SignalTimeout time.Duration
+	// 每次关闭服务操作的等待时间
+	ShutdownTimeout time.Duration
 
 	tag language.Tag
+
+	// 重启服务的相关选项
+	srv     *server.Server
+	restart bool
 }
 
 // Exec 根据配置运行服务
@@ -150,22 +155,25 @@ func (cmd *AppOf[T]) sanitize() error {
 }
 
 func (cmd *AppOf[T]) exec(args []string) error {
-	fs := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
-	fs.SetOutput(cmd.Out)
+	flags := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
+	flags.SetOutput(cmd.Out)
 	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
 
-	v := fs.Bool("v", false, p.Sprintf("show version"))
-	h := fs.Bool("h", false, p.Sprintf("show help"))
-	f := fs.String("f", "./", p.Sprintf("set file system"))
-	a := fs.String("a", "", p.Sprintf("action"))
-	s := fs.Bool("s", false, p.Sprintf("run as server"))
-	fs.Usage = func() {
+	v := flags.Bool("v", false, p.Sprintf("show version"))
+	h := flags.Bool("h", false, p.Sprintf("show help"))
+	f := flags.String("f", "./", p.Sprintf("set file system"))
+	a := flags.String("a", "", p.Sprintf("action"))
+	s := flags.Bool("s", false, p.Sprintf("run as server"))
+	flags.Usage = func() {
 		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
 	}
-
-	if err := fs.Parse(args[1:]); err != nil {
+	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
+
+	// 以上完成了 flag 的初始化
+
+	fsys := os.DirFS(*f)
 
 	if *v {
 		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
@@ -173,28 +181,59 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	}
 
 	if *h {
-		fs.PrintDefaults()
+		flags.PrintDefaults()
 		return nil
 	}
 
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, os.DirFS(*f), cmd.ConfigFilename)
+	if !*s { // 非服务
+		_, err := cmd.initServer(fsys, *a)
+		return err
+	}
+
+	cnt := 0 // 重启次数
+RESTART:
+	cnt++
+	srv, err := cmd.initServer(fsys, *a)
 	if err != nil {
 		return err
 	}
 
-	if err = cmd.Init(srv, user, *a); err != nil {
-		return err
-	}
-
-	if !*s { // 非服务
-		return nil
-	}
-
-	if len(cmd.Signals) > 0 {
+	if cnt > 1 && len(cmd.Signals) > 0 { // 初始化一次
 		cmd.grace(srv, cmd.Signals...)
 	}
 
-	return srv.Serve()
+	cmd.srv = srv
+
+	cmd.restart = false
+	err = srv.Serve()
+	if cmd.restart {
+		goto RESTART
+	}
+	return err
+}
+
+// Restart 触发重启服务
+//
+// 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成，
+// 也无法知晓新服务的状态。如果返回了错误信息，只能表示关闭旧服务时出错了。
+//
+// 此操作会重新加配置文件，如果配置文件有问题，可能导致整个程序退出。
+func (cmd *AppOf[T]) Restart() error {
+	cmd.restart = true
+	return cmd.srv.Close(cmd.ShutdownTimeout)
+}
+
+func (cmd *AppOf[T]) initServer(configFS fs.FS, action string) (*server.Server, error) {
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, configFS, cmd.ConfigFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cmd.Init(srv, user, action); err != nil {
+		return nil, err
+	}
+
+	return srv, nil
 }
 
 func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {
@@ -206,7 +245,7 @@ func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {
 		signal.Stop(signalChannel)
 		close(signalChannel)
 
-		if err := s.Close(cmd.SignalTimeout); err != nil {
+		if err := s.Close(cmd.ShutdownTimeout); err != nil {
 			io.WriteString(cmd.Out, err.Error())
 		}
 	}()
