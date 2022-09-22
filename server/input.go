@@ -4,6 +4,7 @@ package server
 
 import (
 	"io"
+	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
@@ -386,3 +387,6 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	}
 	return nil
 }
+
+// Request 返回原始的请求对象
+func (ctx *Context) Request() *http.Request { return ctx.request }

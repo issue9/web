@@ -3,8 +3,6 @@
 package server
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -16,7 +14,6 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"golang.org/x/text/transform"
 
 	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
@@ -38,7 +35,7 @@ var contextPool = &sync.Pool{New: func() any {
 //
 // Context 同时也实现了 [http.ResponseWriter] 接口，
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
-// 而是采用返回 Responser 的方式向客户端输出内容。
+// 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
 	server             *Server
 	route              types.Route
@@ -159,32 +156,6 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	return ctx
 }
 
-func (ctx *Context) Write(bs []byte) (int, error) {
-	if !ctx.wrote { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
-		ctx.wrote = true
-
-		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.respWriter)
-			ctx.respWriter = ctx.encodingCloser
-		}
-
-		if !header.CharsetIsNop(ctx.outputCharset) {
-			ctx.charsetCloser = transform.NewWriter(ctx.respWriter, ctx.outputCharset.NewEncoder())
-			ctx.respWriter = ctx.charsetCloser
-		}
-	}
-
-	return ctx.respWriter.Write(bs)
-}
-
-func (ctx *Context) WriteHeader(status int) {
-	ctx.Header().Del("Content-Length") // https://github.com/golang/go/issues/14975
-	ctx.status = status
-	ctx.resp.WriteHeader(status)
-}
-
-func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
-
 func (ctx *Context) Route() types.Route { return ctx.route }
 
 // SetLanguage 设置输出的语言
@@ -215,9 +186,6 @@ func (ctx *Context) SetLocation(name string) error {
 }
 
 func (ctx *Context) Location() *time.Location { return ctx.location }
-
-// Request 返回原始的请求对象
-func (ctx *Context) Request() *http.Request { return ctx.request }
 
 func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
@@ -250,50 +218,6 @@ func (ctx *Context) destroy() {
 // 其中 status 为最终输出到客户端的状态码。
 func (ctx *Context) OnExit(f func(int)) {
 	ctx.exits = append(ctx.exits, f)
-}
-
-// Marshal 向客户端输出内容
-//
-// status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
-// body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
-// problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
-func (ctx *Context) Marshal(status int, body any, problem bool) error {
-	if body == nil {
-		ctx.WriteHeader(status)
-		return nil
-	}
-
-	// 如果 outputMimetype 为空，说明在 Server.Mimetypes() 的配置中就是 nil。
-	// 那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的。
-	if ctx.outputMimetype == nil {
-		ctx.WriteHeader(http.StatusNotAcceptable)
-		panic(fmt.Sprintf("未对 %s 作处理", ctx.outputMimetypeName))
-	}
-
-	if problem {
-		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.outputMimetypeName)
-	}
-	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
-	if id := ctx.languageTag.String(); id != "" {
-		ctx.Header().Set("Content-Language", id)
-	}
-
-	data, err := ctx.outputMimetype(body)
-	switch {
-	case err != nil && problem: // 如果在输出 problem 时出错状态码不变
-		ctx.WriteHeader(status)
-		return err
-	case errors.Is(err, serializer.ErrUnsupported):
-		ctx.WriteHeader(http.StatusNotAcceptable) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
-		return err
-	case err != nil:
-		ctx.WriteHeader(http.StatusInternalServerError) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
-		return err
-	}
-
-	ctx.WriteHeader(status)
-	_, err = ctx.Write(data)
-	return err
 }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
@@ -338,9 +262,4 @@ func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))
 	return h == "xmlhttprequest"
-}
-
-// Sprintf 返回翻译后的结果
-func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
-	return ctx.LocalePrinter().Sprintf(key, v...)
 }
