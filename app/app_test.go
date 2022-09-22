@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -45,15 +46,40 @@ func TestAppOf(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
 
+	// restart1
 	s1 := cmd.srv
 	t1 := s1.Uptime()
-	cmd.Name = "restart"
+	cmd.Name = "restart1"
 	cmd.Restart()
-	time.Sleep(500 * time.Microsecond) //////////// TODO
+	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
 	s2 := cmd.srv
 	t2 := s2.Uptime()
 	a.True(t2.After(t1)).
 		NotEqual(s1, s2)
+
+	// restart2
+	cmd.Name = "restart2"
+	cmd.Restart()
+	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	t3 := cmd.srv.Uptime()
+	a.True(t3.After(t2))
+
+	p, err := os.FindProcess(os.Getpid())
+	a.NotError(err).NotNil(p)
+
+	// hup1
+	cmd.Name = "hup1"
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	t4 := cmd.srv.Uptime()
+	a.True(t4.After(t3)).Equal(cmd.srv.Name(), "hup1")
+
+	// hup2
+	cmd.Name = "hup2"
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(800 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	t5 := cmd.srv.Uptime()
+	a.True(t5.After(t4)).Equal(cmd.srv.Name(), "hup2")
 
 	a.NotError(cmd.srv.Close(0))
 

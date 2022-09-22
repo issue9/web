@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/issue9/localeutil"
@@ -52,7 +53,8 @@ import (
 //
 //	cmd.Exec()
 //
-// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并显示，本地化命令行参数需要提供以下翻译项：
+// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并显示，
+// 本地化命令行参数需要提供以下翻译项：
 //
 //	-show version
 //	-show help
@@ -60,6 +62,9 @@ import (
 //	-action
 //	-run as server
 //	-[AppOf.Desc] 的内容
+//
+// 在系统支持的情况下，AppOf 可以接收 HUP 信号用于重启项目。
+// 其实现与直接调用 [AppOf.Restart] 是相同的。
 //
 // NOTE: panic 信息是不支持本地化。
 type AppOf[T any] struct {
@@ -98,11 +103,6 @@ type AppOf[T any] struct {
 	//
 	// 如果为空，那么这些命令行信息将显示默认内容。
 	Catalog catalog.Catalog
-
-	// 触发退出的信号
-	//
-	// 为空(nil 或是 []) 表示没有。
-	Signals []os.Signal
 
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
@@ -186,27 +186,19 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	}
 
 	if !*s { // 非服务
-		_, err := cmd.initServer(fsys, *a)
-		return err
+		return cmd.initServer(fsys, *a)
 	}
 
-	cnt := 0 // 重启次数
+	cmd.hup() // 注册 SIGHUP 信号
+
 RESTART:
-	cnt++
-	srv, err := cmd.initServer(fsys, *a)
-	if err != nil {
+	if err := cmd.initServer(fsys, *a); err != nil {
 		return err
 	}
-
-	if cnt > 1 && len(cmd.Signals) > 0 { // 初始化一次
-		cmd.grace(srv, cmd.Signals...)
-	}
-
-	cmd.srv = srv
 
 	cmd.restart = false
-	err = srv.Serve()
-	if cmd.restart {
+	err := cmd.srv.Serve()
+	if cmd.restart { // 等待 Serve 过程中，如果调用 Restart，会将 cmd.restart 设置为 true。
 		goto RESTART
 	}
 	return err
@@ -223,30 +215,28 @@ func (cmd *AppOf[T]) Restart() error {
 	return cmd.srv.Close(cmd.ShutdownTimeout)
 }
 
-func (cmd *AppOf[T]) initServer(configFS fs.FS, action string) (*server.Server, error) {
+func (cmd *AppOf[T]) initServer(configFS fs.FS, action string) error {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, configFS, cmd.ConfigFilename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err = cmd.Init(srv, user, action); err != nil {
-		return nil, err
+		return err
 	}
 
-	return srv, nil
+	cmd.srv = srv
+	return nil
 }
 
-func (cmd *AppOf[T]) grace(s *server.Server, sig ...os.Signal) {
+func (cmd *AppOf[T]) hup() {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
-		signal.Notify(signalChannel, sig...)
-
+		signal.Notify(signalChannel, syscall.SIGHUP)
 		<-signalChannel
-		signal.Stop(signalChannel)
-		close(signalChannel)
 
-		if err := s.Close(cmd.ShutdownTimeout); err != nil {
-			io.WriteString(cmd.Out, err.Error())
+		if err := cmd.Restart(); err != nil {
+			panic(err)
 		}
 	}()
 }
