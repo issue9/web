@@ -14,6 +14,23 @@ import (
 	"github.com/issue9/web/serializer"
 )
 
+type BeforeMarshalFunc func(*Context, any) any
+
+type AfterMarshalFunc func(*Context, []byte) []byte
+
+// OnMarshal 注册编码过程中的钩子函数
+func (srv *Server) OnMarshal(mimetype string, before BeforeMarshalFunc, after AfterMarshalFunc) {
+	if _, found := srv.beforeMarshals[mimetype]; found {
+		panic(fmt.Sprintf("%s 已经存在", mimetype))
+	}
+	srv.beforeMarshals[mimetype] = before
+
+	if _, found := srv.afterMarshals[mimetype]; found {
+		panic(fmt.Sprintf("%s 已经存在", mimetype))
+	}
+	srv.afterMarshals[mimetype] = after
+}
+
 // Marshal 向客户端输出内容
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
@@ -40,6 +57,10 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 		ctx.Header().Set("Content-Language", id)
 	}
 
+	if f, found := ctx.Server().beforeMarshals[ctx.outputMimetypeName]; found {
+		body = f(ctx, body)
+	}
+
 	data, err := ctx.outputMimetype(body)
 	switch {
 	case err != nil && problem: // 如果在输出 problem 时出错状态码不变
@@ -51,6 +72,10 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	case err != nil:
 		ctx.WriteHeader(http.StatusInternalServerError) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
 		return err
+	}
+
+	if f, found := ctx.Server().afterMarshals[ctx.outputMimetypeName]; found {
+		data = f(ctx, data)
 	}
 
 	ctx.WriteHeader(status)
