@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
@@ -304,7 +303,7 @@ func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
 	r := s.NewRouter()
-	s.Server().Problems().Set("404", 404, localeutil.Phrase("404 title"), localeutil.Phrase("404 detail"))
+	//s.Server().Problems().Add("404", 404, localeutil.Phrase("404 title"), localeutil.Phrase("404 detail"))
 	s.GoServe()
 	defer s.Close(0)
 
@@ -321,7 +320,7 @@ func TestServer_FileServer(t *testing.T) {
 			Header("Accept", "application/json;vv=2").
 			Do(nil).
 			Status(404).
-			StringBody(`{"type":"404","title":"404 title","status":404}`)
+			StringBody(`{"type":"404","title":"Not Found","status":404}`)
 	})
 
 	t.Run("no problems", func(t *testing.T) {
@@ -335,7 +334,7 @@ func TestServer_FileServer(t *testing.T) {
 		s.Get("/v2/not.exists").
 			Do(nil).
 			Status(http.StatusNotFound).
-			StringBody(`{"type":"404","title":"404 title","status":404}`)
+			StringBody(`{"type":"404","title":"Not Found","status":404}`)
 	})
 }
 

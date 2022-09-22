@@ -69,9 +69,6 @@ func TestProblems_Add(t *testing.T) {
 		ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	}, "存在相同值的 id 参数")
 	a.Equal(l+2, ps.Count())
-
-	ps.Set("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(l+2, ps.Count())
 }
 
 func TestProblems_Visit(t *testing.T) {

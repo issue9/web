@@ -171,19 +171,6 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 	return p
 }
 
-// Set 添加或是修改错误信息
-//
-// 与 [Problems.Add] 的不同在于：如果 id 已经存在，此方法会作修改，而 [Problems.Add] 则会 panic。
-func (p *Problems) Set(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	sp := &statusProblem{id: id, status: status, title: title, detail: detail}
-	if index := sliceutil.Index(p.problems, func(sp *statusProblem) bool { return sp.id == id }); index >= 0 {
-		p.problems[index] = sp
-	} else {
-		p.problems = append(p.problems, sp)
-	}
-	return p
-}
-
 func (p *Problems) Count() int { return len(p.problems) }
 
 func (p *Problems) Exists(id string) bool {
