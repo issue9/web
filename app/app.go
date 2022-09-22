@@ -22,6 +22,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -63,7 +64,7 @@ import (
 //	-run as server
 //	-[AppOf.Desc] 的内容
 //
-// 在系统支持的情况下，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
+// 在支持 HUP 信号的系统，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
 //
 // NOTE: panic 信息是不支持本地化。
 type AppOf[T any] struct {
@@ -121,9 +122,10 @@ type AppOf[T any] struct {
 //
 // 如果是 AppOf 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
 func (cmd *AppOf[T]) Exec(args []string) error {
-	if err := cmd.sanitize(); err != nil {
+	if err := cmd.sanitize(); err != nil { // AppOf 字段值有问题，直接 panic。
 		panic(err)
 	}
+
 	return cmd.exec(args)
 }
 
@@ -169,7 +171,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
 	}
 	if err := flags.Parse(args[1:]); err != nil {
-		return err
+		return errs.StackError(err)
 	}
 
 	// 以上完成了 flag 的初始化
@@ -224,11 +226,11 @@ func (cmd *AppOf[T]) Restart() error {
 func (cmd *AppOf[T]) initServer() error {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, cmd.fsys, cmd.ConfigFilename)
 	if err != nil {
-		return err
+		return errs.StackError(err)
 	}
 
 	if err = cmd.Init(srv, user, cmd.action); err != nil {
-		return err
+		return errs.StackError(err)
 	}
 
 	cmd.srv = srv
@@ -242,7 +244,7 @@ func (cmd *AppOf[T]) hup() {
 
 		for range signalChannel {
 			if err := cmd.Restart(); err != nil {
-				fmt.Fprintln(cmd.Out, err)
+				fmt.Fprintln(cmd.Out, errs.StackError(err))
 			}
 		}
 	}()

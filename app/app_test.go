@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"runtime"
 	"syscall"
 	"testing"
 	"time"
@@ -68,22 +69,23 @@ func TestAppOf(t *testing.T) {
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
 
-	// hup1
-	cmd.Name = "hup1"
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-	t4 := cmd.srv.Uptime()
-	a.True(t4.After(t3)).Equal(cmd.srv.Name(), "hup1")
+	if runtime.GOOS != "windows" {
+		// hup1
+		cmd.Name = "hup1"
+		a.NotError(p.Signal(syscall.SIGHUP))
+		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+		t4 := cmd.srv.Uptime()
+		a.True(t4.After(t3)).Equal(cmd.srv.Name(), "hup1")
 
-	// hup2
-	cmd.Name = "hup2"
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-	t5 := cmd.srv.Uptime()
-	a.True(t5.After(t4)).Equal(cmd.srv.Name(), "hup2")
+		// hup2
+		cmd.Name = "hup2"
+		a.NotError(p.Signal(syscall.SIGHUP))
+		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+		t5 := cmd.srv.Uptime()
+		a.True(t5.After(t4)).Equal(cmd.srv.Name(), "hup2")
+	}
 
 	a.NotError(cmd.srv.Close(0))
-
 	<-exit
 }
 
