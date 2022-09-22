@@ -233,10 +233,11 @@ func (cmd *AppOf[T]) hup() {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, syscall.SIGHUP)
-		<-signalChannel
 
-		if err := cmd.Restart(); err != nil {
-			panic(err)
+		for range signalChannel {
+			if err := cmd.Restart(); err != nil {
+				panic(err)
+			}
 		}
 	}()
 }
