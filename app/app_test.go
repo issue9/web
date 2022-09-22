@@ -21,9 +21,10 @@ func TestAppOf(t *testing.T) {
 	bs := new(bytes.Buffer)
 	var action string
 	cmd := &AppOf[empty]{
-		Name:    "test",
-		Version: "1.0.0",
-		Out:     bs,
+		Name:           "test",
+		Version:        "1.0.0",
+		ConfigFilename: "web.yaml",
+		Out:            bs,
 		Init: func(s *server.Server, user *empty, act string) error {
 			action = act
 			return nil
@@ -51,7 +52,7 @@ func TestAppOf(t *testing.T) {
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
 	cmd.Restart()
-	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
 	s2 := cmd.srv
 	t2 := s2.Uptime()
 	a.True(t2.After(t1)).
@@ -60,7 +61,7 @@ func TestAppOf(t *testing.T) {
 	// restart2
 	cmd.Name = "restart2"
 	cmd.Restart()
-	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
 	t3 := cmd.srv.Uptime()
 	a.True(t3.After(t2))
 
@@ -70,14 +71,14 @@ func TestAppOf(t *testing.T) {
 	// hup1
 	cmd.Name = "hup1"
 	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
 	t4 := cmd.srv.Uptime()
 	a.True(t4.After(t3)).Equal(cmd.srv.Name(), "hup1")
 
 	// hup2
 	cmd.Name = "hup2"
 	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(800 * time.Microsecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
 	t5 := cmd.srv.Uptime()
 	a.True(t5.After(t4)).Equal(cmd.srv.Name(), "hup2")
 

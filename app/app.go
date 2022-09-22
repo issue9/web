@@ -63,8 +63,7 @@ import (
 //	-run as server
 //	-[AppOf.Desc] 的内容
 //
-// 在系统支持的情况下，AppOf 可以接收 HUP 信号用于重启项目。
-// 其实现与直接调用 [AppOf.Restart] 是相同的。
+// 在系统支持的情况下，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
 //
 // NOTE: panic 信息是不支持本地化。
 type AppOf[T any] struct {
@@ -112,6 +111,8 @@ type AppOf[T any] struct {
 	// 重启服务的相关选项
 	srv     *server.Server
 	restart bool
+	action  string
+	fsys    fs.FS
 }
 
 // Exec 根据配置运行服务
@@ -162,7 +163,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	v := flags.Bool("v", false, p.Sprintf("show version"))
 	h := flags.Bool("h", false, p.Sprintf("show help"))
 	f := flags.String("f", "./", p.Sprintf("set file system"))
-	a := flags.String("a", "", p.Sprintf("action"))
+	flags.StringVar(&cmd.action, "a", "", p.Sprintf("action"))
 	s := flags.Bool("s", false, p.Sprintf("run as server"))
 	flags.Usage = func() {
 		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
@@ -173,7 +174,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 
 	// 以上完成了 flag 的初始化
 
-	fsys := os.DirFS(*f)
+	cmd.fsys = os.DirFS(*f)
 
 	if *v {
 		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
@@ -186,13 +187,13 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	}
 
 	if !*s { // 非服务
-		return cmd.initServer(fsys, *a)
+		return cmd.initServer()
 	}
 
 	cmd.hup() // 注册 SIGHUP 信号
 
 RESTART:
-	if err := cmd.initServer(fsys, *a); err != nil {
+	if err := cmd.initServer(); err != nil {
 		return err
 	}
 
@@ -207,21 +208,26 @@ RESTART:
 // Restart 触发重启服务
 //
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成，
-// 也无法知晓新服务的状态。如果返回了错误信息，只能表示关闭旧服务时出错了。
+// 也无法知晓新服务的状态。如果返回了错误信息，只能表示关闭旧服务时出错或是配置文件有问题。
 //
-// 此操作会重新加配置文件，如果配置文件有问题，可能导致整个程序退出。
+// 此操作会重新加配置文件，如果配置文件有问题，将不会重启且返回错误信息。
 func (cmd *AppOf[T]) Restart() error {
 	cmd.restart = true
+
+	if err := CheckConfigSyntax[T](cmd.fsys, cmd.ConfigFilename); err != nil {
+		return err
+	}
+
 	return cmd.srv.Close(cmd.ShutdownTimeout)
 }
 
-func (cmd *AppOf[T]) initServer(configFS fs.FS, action string) error {
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, configFS, cmd.ConfigFilename)
+func (cmd *AppOf[T]) initServer() error {
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, cmd.fsys, cmd.ConfigFilename)
 	if err != nil {
 		return err
 	}
 
-	if err = cmd.Init(srv, user, action); err != nil {
+	if err = cmd.Init(srv, user, cmd.action); err != nil {
 		return err
 	}
 
@@ -233,10 +239,17 @@ func (cmd *AppOf[T]) hup() {
 	go func() {
 		signalChannel := make(chan os.Signal, 1)
 		signal.Notify(signalChannel, syscall.SIGHUP)
-		<-signalChannel
 
-		if err := cmd.Restart(); err != nil {
-			panic(err)
+		for range signalChannel {
+			if err := cmd.Restart(); err != nil {
+				fmt.Fprintln(cmd.Out, err)
+			}
 		}
 	}()
+}
+
+// CheckConfigSyntax 检测配置项语法是否正确
+func CheckConfigSyntax[T any](fsys fs.FS, filename string) error {
+	_, err := loadConfigOf[T](fsys, filename)
+	return err
 }
