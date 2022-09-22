@@ -8,6 +8,10 @@ messages:
   message:
     msg: 必须大于 0
 
+- key: duplicate value
+  message:
+    msg: 重复的值
+
 - key: '%s at %s:%s'
   message:
     msg: '位于 %[2]s:%[3]s 发生了 %[1]s'

@@ -72,7 +72,7 @@ func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	return nil
 }
 
-func (conf *configOf[T]) buildEncodings(s server.Encodings) *ConfigError {
+func (conf *configOf[T]) buildEncodings(s server.Encodings) {
 	for id, item := range conf.encodings {
 		s.Add(id, item.name, item.f)
 	}
@@ -80,8 +80,6 @@ func (conf *configOf[T]) buildEncodings(s server.Encodings) *ConfigError {
 	for _, enc := range conf.Encodings {
 		s.Allow(enc.Type, enc.IDs...)
 	}
-
-	return nil
 }
 
 // RegisterEncoding 注册压缩方法

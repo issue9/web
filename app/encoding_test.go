@@ -36,5 +36,5 @@ func TestConfigOf_buildEncodings(t *testing.T) {
 	a.NotError(conf.sanitizeEncodings())
 
 	e := servertest.NewServer(a, nil)
-	a.NotError(conf.buildEncodings(e.Encodings()))
+	conf.buildEncodings(e.Encodings())
 }

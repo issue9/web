@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io/fs"
+	"strconv"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/sliceutil"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
-	"github.com/issue9/web/server"
 )
 
 var (
@@ -48,28 +49,44 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) buildMimetypes(srv *server.Server) *ConfigError {
-	problems := make(map[string]string, len(conf.Mimetypes))
+type mimetype struct {
+	m       serializer.MarshalFunc
+	u       serializer.UnmarshalFunc
+	name    string
+	problem string
+}
 
-	for _, item := range conf.Mimetypes {
+func (conf *configOf[T]) sanitizeMimetypes() *ConfigError {
+	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
+	if len(dup) > 0 {
+		value := conf.Mimetypes[dup[1]].Type
+		return &ConfigError{Field: "[" + strconv.Itoa(dup[1]) + "].target", Message: localeutil.Phrase("duplicate value"), Value: value}
+	}
+
+	ms := make([]mimetype, 0, len(conf.Mimetypes))
+	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return &ConfigError{Field: item.Target, Message: localeutil.Phrase("%s not found", item.Target)}
+			return &ConfigError{Field: "[" + strconv.Itoa(index) + "].target", Message: localeutil.Phrase("%s not found", item.Target)}
 		}
 
-		if err := srv.Mimetypes().Add(m.Marshal, m.Unmarshal, item.Type); err != nil {
-			return &ConfigError{Field: item.Target, Message: err}
-		}
-
-		if item.Problem != "" {
-			problems[item.Type] = item.Problem
-		}
+		m.Name = item.Type
+		ms = append(ms, mimetype{m: m.Marshal, u: m.Unmarshal, name: item.Type, problem: item.Problem})
 	}
+	conf.mimetypes = ms
 
-	for k, v := range problems {
-		srv.Problems().AddMimetype(k, v)
+	return nil
+}
+
+func (conf *configOf[T]) sanitizeFiles() *ConfigError {
+	conf.files = make(map[string]serialization.Item, len(conf.Files))
+	for i, name := range conf.Files {
+		s, found := filesFactory[name]
+		if !found {
+			return &ConfigError{Field: "[" + strconv.Itoa(i) + "]", Message: localeutil.Phrase("not found serialization function for %s", name)}
+		}
+		conf.files[name] = s // conf.Files 可以保证 conf.files 唯一性
 	}
-
 	return nil
 }
 

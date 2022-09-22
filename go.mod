@@ -4,7 +4,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4
 	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
 	github.com/gomodule/redigo v1.8.9
-	github.com/issue9/assert/v3 v3.0.1
+	github.com/issue9/assert/v3 v3.0.2
 	github.com/issue9/cache v0.4.0
 	github.com/issue9/conv v1.3.2
 	github.com/issue9/errwrap v0.3.1

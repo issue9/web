@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
@@ -78,6 +77,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
+	mimetypes []mimetype
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -108,6 +108,8 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		return nil, nil, err
 	}
 
+	// NOTE: 以下代码由 loadConfigOf 保证不会出错，所以所有错误一律 panic 处理。
+
 	opt := &server.Options{
 		FS:             fsys,
 		Location:       conf.location,
@@ -120,26 +122,23 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	}
 	srv, err := server.New(name, version, opt)
 	if err != nil {
-		return nil, nil, err
+		panic(err)
 	}
 
 	for name, s := range conf.files {
 		if err := srv.Files().Serializer().Add(s.Marshal, s.Unmarshal, name); err != nil {
-			return nil, nil, &ConfigError{Message: err, Field: "files", Path: filename}
+			panic(err)
 		}
 	}
 
-	if err := conf.buildMimetypes(srv); err != nil {
-		err.Field = "mimetypes." + err.Field
-		err.Path = filename
-		return nil, nil, err
+	for _, item := range conf.mimetypes {
+		if err := srv.Mimetypes().Add(item.m, item.u, item.name); err != nil {
+			panic(err)
+		}
+		srv.Problems().AddMimetype(item.name, item.problem)
 	}
 
-	if err := conf.buildEncodings(srv.Encodings()); err != nil {
-		err.Field = "mimetypes." + err.Field
-		err.Path = filename
-		return nil, nil, err
-	}
+	conf.buildEncodings(srv.Encodings())
 
 	srv.OnClose(conf.cleanup...)
 
@@ -182,17 +181,18 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	conf.http = conf.HTTP.buildHTTPServer(conf.logs.StdLogger(logs.LevelError))
 
 	if err = conf.sanitizeEncodings(); err != nil {
-		err.Field = "encodings"
+		err.Field = "encodings" + err.Field
 		return err
 	}
 
-	conf.files = make(map[string]serialization.Item, len(conf.Files))
-	for _, name := range conf.Files {
-		s, found := filesFactory[name]
-		if !found {
-			return &ConfigError{Field: "files", Message: localeutil.Phrase("not found serialization function for %s", name)}
-		}
-		conf.files[name] = s
+	if err = conf.sanitizeMimetypes(); err != nil {
+		err.Field = "mimetypes" + err.Field
+		return err
+	}
+
+	if err = conf.sanitizeFiles(); err != nil {
+		err.Field = "files" + err.Field
+		return err
 	}
 
 	if conf.User != nil {
