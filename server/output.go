@@ -20,15 +20,19 @@ type AfterMarshalFunc func(*Context, []byte) []byte
 
 // OnMarshal 注册编码过程中的钩子函数
 func (srv *Server) OnMarshal(mimetype string, before BeforeMarshalFunc, after AfterMarshalFunc) {
-	if _, found := srv.beforeMarshals[mimetype]; found {
-		panic(fmt.Sprintf("%s 已经存在", mimetype))
+	if before != nil {
+		if _, found := srv.beforeMarshals[mimetype]; found {
+			panic(fmt.Sprintf("%s 已经存在", mimetype))
+		}
+		srv.beforeMarshals[mimetype] = before
 	}
-	srv.beforeMarshals[mimetype] = before
 
-	if _, found := srv.afterMarshals[mimetype]; found {
-		panic(fmt.Sprintf("%s 已经存在", mimetype))
+	if after != nil {
+		if _, found := srv.afterMarshals[mimetype]; found {
+			panic(fmt.Sprintf("%s 已经存在", mimetype))
+		}
+		srv.afterMarshals[mimetype] = after
 	}
-	srv.afterMarshals[mimetype] = after
 }
 
 // Marshal 向客户端输出内容
