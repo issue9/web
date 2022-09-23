@@ -17,6 +17,9 @@ var ErrUnsupported = localeutil.Error("unsupported serialization")
 type (
 	// Serializer 管理注册的序列化函数
 	Serializer interface {
+		// Items 返回所有的注册项名称
+		Items() []string
+
 		// Add 添加序列化函数
 		//
 		// m 和 u 可以为 nil，表示仅作为一个占位符使用；

@@ -26,6 +26,14 @@ func New(c int) serializer.Serializer {
 	return &Serialization{items: make([]*Item, 0, c)}
 }
 
+func (s *Serialization) Items() []string {
+	items := make([]string, 0, len(s.items))
+	for _, item := range s.items {
+		items = append(items, item.Name)
+	}
+	return items
+}
+
 func (s *Serialization) Add(m serializer.MarshalFunc, u serializer.UnmarshalFunc, name ...string) error {
 	for _, n := range name {
 		if err := s.add(n, m, u); err != nil {

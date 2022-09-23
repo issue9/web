@@ -19,13 +19,15 @@ func TestSerialization(t *testing.T) {
 	a.NotError(s.Add(nil, nil, "n1", "n2"))
 	a.Equal(2, s.Len())
 	a.Equal(s.Add(nil, nil, "n1"), localeutil.Error("has serialization function %s", "n1"))
-	a.Equal(2, s.Len())
+	a.Equal(2, s.Len()).
+		Equal(s.Items(), []string{"n1", "n2"})
 
 	// set
 	s.Set("n1", json.Marshal, json.Unmarshal)
 	a.Equal(2, s.Len())
 	s.Set("n3", json.Marshal, json.Unmarshal)
-	a.Equal(3, s.Len())
+	a.Equal(3, s.Len()).
+		Equal(s.Items(), []string{"n1", "n2", "n3"})
 
 	// search
 	n, m, u := s.Search("n1")
@@ -34,7 +36,8 @@ func TestSerialization(t *testing.T) {
 	// 删除
 	s.Delete("n1")
 	s.Delete("not-exists")
-	a.Equal(2, s.Len())
+	a.Equal(2, s.Len()).
+		Equal(s.Items(), []string{"n2", "n3"})
 	n, m, u = s.Search("n1")
 	a.Empty(n).Nil(m).Nil(u)
 }
