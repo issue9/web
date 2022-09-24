@@ -16,16 +16,16 @@ require (
 	github.com/issue9/sliceutil v0.11.0
 	github.com/issue9/term/v3 v3.0.1
 	github.com/klauspost/compress v1.15.10
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
+	golang.org/x/crypto v0.0.0-20220924013350-4ba4fb4dd9e7
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	golang.org/x/exp v0.0.0-20220916125017-b168a2c6b86b // indirect
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
-	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41 // indirect
+	golang.org/x/exp v0.0.0-20220921164117-439092de6870 // indirect
+	golang.org/x/net v0.0.0-20220923203811-8be639271d50 // indirect
+	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
 )
 
 go 1.18
