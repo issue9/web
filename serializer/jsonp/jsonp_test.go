@@ -6,19 +6,32 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/web"
+
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/servertest"
 )
 
-func TestJSONP(t *testing.T) {
+func TestInstall(t *testing.T) {
 	a := assert.New(t, false)
+	s := servertest.NewTester(a, nil)
+	s.Server().Mimetypes().Add(Marshal, Unmarshal, Mimetype)
+	Install("callback", s.Server())
 
-	j := JSONP("callback", 1)
-	data, err := Marshal(j)
-	a.NotError(err).Equal(string(data), "callback(1)")
+	s.NewRouter().Get("/jsonp", func(ctx *server.Context) server.Responser {
+		return web.OK("jsonp")
+	})
 
-	j = JSONP("", 1)
-	data, err = Marshal(j)
-	a.NotError(err).Equal(string(data), "1")
+	s.GoServe()
 
-	data, err = Marshal(1)
-	a.NotError(err).Equal(string(data), "1")
+	s.Get("/jsonp").Header("accept", Mimetype).Do(nil).
+		StringBody(`"jsonp"`)
+
+	s.Get("/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
+		StringBody(`cb("jsonp")`)
+
+	s.Get("/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
+		StringBody(`"jsonp"`)
+
+	s.Close(0)
 }
