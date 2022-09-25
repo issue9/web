@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"reflect"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -16,49 +17,40 @@ import (
 
 const tagKey = "view-locale-key"
 
-// View 支持本地化的模板管理
-type View interface {
-	// View 返回输出 HTML 内容的对象
-	//
-	// 在模板中，用户可以使用 t 作为翻译函数，对内容进行翻译输出。
-	// 其本地化的语言 ID 源自 ctx.LanguageTag。
-	// t 的原型与模板内置的函数 printf 相同。
-	// 同时还提供了 tt 输出指定语言的输出，相较于 t，tt 的第一个参数为语言 ID，
-	// 比如 cmn-hans 等，要求必须能被 [language.Parse] 解析。
-	//
-	// name 为模板名称，data 为传递给模板的数据，
-	// 这两个参数与 [template.Template.Execute] 中的相同。
-	View(ctx *server.Context, name string, data any) Marshaler
-}
-
-type tplView struct {
-	template *template.Template
-}
-
-type localeView struct {
-	b    *catalog.Builder
-	tpls map[string]*template.Template
-}
-
-// NewView 返回本地化的模板
+// InstallView 返回本地化的模板
 //
 // 适合所有不同的本地化内容都在同一个模板中的，
 // 通过翻译函数 t 输出各种语言的内容，模板中不能存在本地化相关的内容。
 //
+// 提供了以下两个方法：
+//   - t 根据当前的语言（[server.Context.LanguageTag]）对参数进行翻译；
+//   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
+//
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
-func NewView(s *server.Server, fsys fs.FS, glob string) View {
+func InstallView(s *server.Server, fsys fs.FS, glob string) {
 	fsys, funcs := initTpl(s, fsys)
 	tpl := template.New(s.Name()).Funcs(funcs)
 	template.Must(tpl.ParseFS(fsys, glob))
-	return &tplView{template: tpl}
+
+	s.OnMarshal(Mimetype, func(ctx *server.Context, a any) any {
+		tpl := tpl.Funcs(template.FuncMap{
+			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
+		})
+		name := getName(a)
+		return newTpl(tpl, name, a)
+	}, nil)
 }
 
-// NewLocaleView 声明目录形式的本地化模板
+// InstallLocaleView 声明目录形式的本地化模板
 //
 // 按目录名称加载各个本地化的模板，每个模板之间相互独立，模板内可以包含本地化相关的内容。
 //
+// 提供了以下两个方法：
+//   - t 根据当前的语言（[server.Context.LaguageTag]）对参数进行翻译；
+//   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
+//
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
-func NewLocaleView(s *server.Server, fsys fs.FS, glob string) View {
+func InstallLocaleView(s *server.Server, fsys fs.FS, glob string) {
 	fsys, funcs := initTpl(s, fsys)
 
 	dirs, err := fs.ReadDir(fsys, ".")
@@ -89,7 +81,7 @@ func NewLocaleView(s *server.Server, fsys fs.FS, glob string) View {
 		tpls[name] = tpl
 	}
 
-	return &localeView{b: b, tpls: tpls}
+	installLocaleView(s, b, tpls)
 }
 
 func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
@@ -110,23 +102,44 @@ func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 	return fsys, funcs
 }
 
-func (v *localeView) View(ctx *server.Context, name string, data any) Marshaler {
-	tag, _, _ := v.b.Matcher().Match(ctx.LanguageTag())
-	tagName := message.NewPrinter(tag, message.Catalog(v.b)).Sprintf(tagKey)
-	tpl, found := v.tpls[tagName]
-	if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
-		panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
-	}
+func installLocaleView(s *server.Server, b *catalog.Builder, tpls map[string]*template.Template) {
+	s.OnMarshal(Mimetype, func(ctx *server.Context, a any) any {
+		tag, _, _ := b.Matcher().Match(ctx.LanguageTag())
+		tagName := message.NewPrinter(tag, message.Catalog(b)).Sprintf(tagKey)
+		tpl, found := tpls[tagName]
+		if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
+			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
+		}
 
-	tpl = tpl.Funcs(template.FuncMap{
-		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
-	})
-	return Tpl(tpl, name, data)
+		tpl = tpl.Funcs(template.FuncMap{
+			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
+		})
+		return newTpl(tpl, getName(a), a)
+	}, nil)
 }
 
-func (v *tplView) View(ctx *server.Context, name string, data any) Marshaler {
-	tpl := v.template.Funcs(template.FuncMap{
-		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
-	})
-	return Tpl(tpl, name, data)
+func getName(v any) string {
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+	}
+	rt := rv.Type()
+
+	if rt.Kind() != reflect.Struct {
+		if name := rt.Name(); name != "" {
+			return name
+		}
+		panic("text/html 不支持输出当前类型的对象")
+	}
+
+	field, found := rt.FieldByName("HTMLName")
+	if !found {
+		return rt.Name()
+	}
+
+	tag := field.Tag.Get("html")
+	if tag == "" {
+		tag = rt.Name()
+	}
+	return tag
 }
