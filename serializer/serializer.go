@@ -20,6 +20,9 @@ type (
 		// Items 返回所有的注册项名称
 		Items() []string
 
+		// Exists 是否指定名称的项
+		Exists(string) bool
+
 		// Add 添加序列化函数
 		//
 		// m 和 u 可以为 nil，表示仅作为一个占位符使用；

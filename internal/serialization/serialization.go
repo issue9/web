@@ -22,9 +22,7 @@ type (
 	}
 )
 
-func New(c int) serializer.Serializer {
-	return &Serialization{items: make([]*Item, 0, c)}
-}
+func New(c int) serializer.Serializer { return &Serialization{items: make([]*Item, 0, c)} }
 
 func (s *Serialization) Items() []string {
 	items := make([]string, 0, len(s.items))
@@ -44,10 +42,8 @@ func (s *Serialization) Add(m serializer.MarshalFunc, u serializer.UnmarshalFunc
 }
 
 func (s *Serialization) add(name string, m serializer.MarshalFunc, u serializer.UnmarshalFunc) error {
-	for _, mt := range s.items {
-		if mt.Name == name {
-			return localeutil.Error("has serialization function %s", name)
-		}
+	if s.Exists(name) {
+		return localeutil.Error("has serialization function %s", name)
 	}
 
 	s.items = append(s.items, &Item{
@@ -60,12 +56,10 @@ func (s *Serialization) add(name string, m serializer.MarshalFunc, u serializer.
 }
 
 func (s *Serialization) Set(name string, m serializer.MarshalFunc, u serializer.UnmarshalFunc) {
-	for _, mt := range s.items {
-		if mt.Name == name {
-			mt.Marshal = m
-			mt.Unmarshal = u
-			return
-		}
+	if item, found := sliceutil.At(s.items, func(i *Item) bool { return name == i.Name }); found {
+		item.Marshal = m
+		item.Unmarshal = u
+		return
 	}
 
 	s.items = append(s.items, &Item{
@@ -75,10 +69,12 @@ func (s *Serialization) Set(name string, m serializer.MarshalFunc, u serializer.
 	})
 }
 
+func (s *Serialization) Exists(name string) bool {
+	return sliceutil.Exists(s.items, func(item *Item) bool { return item.Name == name })
+}
+
 func (s *Serialization) Delete(name string) {
-	s.items = sliceutil.Delete(s.items, func(e *Item) bool {
-		return e.Name == name
-	})
+	s.items = sliceutil.Delete(s.items, func(e *Item) bool { return e.Name == name })
 }
 
 func (s *Serialization) Search(name string) (string, serializer.MarshalFunc, serializer.UnmarshalFunc) {
@@ -86,10 +82,8 @@ func (s *Serialization) Search(name string) (string, serializer.MarshalFunc, ser
 }
 
 func (s *Serialization) SearchFunc(match func(string) bool) (string, serializer.MarshalFunc, serializer.UnmarshalFunc) {
-	for _, mt := range s.items {
-		if match(mt.Name) {
-			return mt.Name, mt.Marshal, mt.Unmarshal
-		}
+	if item, ok := sliceutil.At(s.items, func(i *Item) bool { return match(i.Name) }); ok {
+		return item.Name, item.Marshal, item.Unmarshal
 	}
 	return "", nil, nil
 }
