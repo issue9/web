@@ -3,8 +3,6 @@
 package html
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"html/template"
 	"testing"
 
@@ -16,9 +14,6 @@ import (
 var (
 	_ serializer.MarshalFunc   = Marshal
 	_ serializer.UnmarshalFunc = Unmarshal
-
-	_ json.Marshaler = &tpl{}
-	_ xml.Marshaler  = &tpl{}
 )
 
 func TestMarshal(t *testing.T) {
@@ -27,13 +22,13 @@ func TestMarshal(t *testing.T) {
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
 	a.NotError(err).NotNil(tpl)
 
-	bs, err := Marshal(Tpl(tpl, "footer", map[string]any{
+	bs, err := Marshal(newTpl(tpl, "footer", map[string]any{
 		"Footer": "footer",
 	}))
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), "<div>footer</div>")
 
-	bs, err = Marshal(Tpl(tpl, "header", &struct{ Header string }{
+	bs, err = Marshal(newTpl(tpl, "header", &struct{ Header string }{
 		Header: "header",
 	}))
 	a.NotError(err).NotNil(bs)

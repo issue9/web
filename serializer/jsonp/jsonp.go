@@ -7,54 +7,33 @@ import (
 	"encoding/json"
 
 	"github.com/issue9/errwrap"
+
+	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
 const Mimetype = "application/javascript"
 
-type Marshaler interface {
-	MarshalJSONP() ([]byte, error)
+// Install 安装 JSONP 的处理方式
+func Install(callbackKey string, s *web.Server) {
+	s.OnMarshal(Mimetype, nil, func(ctx *server.Context, data []byte) []byte {
+		q, err := ctx.Queries(true)
+		if err != nil {
+			s.Logs().ERROR().Error(err)
+			return data
+		}
+
+		callback := q.String(callbackKey, "")
+		if callback == "" {
+			return data
+		}
+
+		b := errwrap.StringBuilder{}
+		b.WString(callback).WByte('(').WBytes(data).WByte(')')
+		return []byte(b.String())
+	})
 }
 
-type jsonp struct {
-	callback string
-	data     any
-}
-
-// JSONP 返回 JSONP 对象
-//
-// 采用与 JSON 相同的解析方式。
-// callback 表示回调的函数名称，如果为空，则直接返回 data，
-// 在输出时也将被当作普通的 JSON 输出。
-func JSONP(callback string, data any) Marshaler {
-	return &jsonp{callback: callback, data: data}
-}
-
-func (j *jsonp) MarshalJSONP() ([]byte, error) {
-	data, err := json.Marshal(j.data)
-	if err != nil {
-		return nil, err
-	}
-
-	if j.callback == "" {
-		return data, nil
-	}
-
-	b := errwrap.StringBuilder{}
-	b.WString(j.callback).WByte('(').WBytes(data).WByte(')')
-	return []byte(b.String()), b.Err
-}
-
-// Marshal 输出 JSONP 对象
-//
-// v 如果是由 JSONP 构建的对象，则返回带 callback 的 js 函数；
-// 如果是普通的对象，则采用 [json.Marshal] 将其转换成普通的 JSON 对象返回；
-func Marshal(v any) ([]byte, error) {
-	switch obj := v.(type) {
-	case Marshaler:
-		return obj.MarshalJSONP()
-	default:
-		return json.Marshal(v)
-	}
-}
+func Marshal(v any) ([]byte, error) { return json.Marshal(v) }
 
 func Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }

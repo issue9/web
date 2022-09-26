@@ -43,9 +43,11 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	mimetypes *serialization.Mimetypes
-	encodings *encoding.Encodings
-	files     *serialization.FS
+	beforeMarshals map[string]BeforeMarshalFunc
+	afterMarshals  map[string]AfterMarshalFunc
+	mimetypes      *serialization.Mimetypes
+	encodings      *encoding.Encodings
+	files          *serialization.FS
 }
 
 // New 返回 *Server 实例
@@ -53,6 +55,8 @@ type Server struct {
 // name, version 表示服务的名称和版本号；
 // o 指定了初始化 Server 一些非必要参数。
 func New(name, version string, o *Options) (*Server, error) {
+	const mimetypesCap = 10
+
 	o, err := sanitizeOptions(o)
 	if err != nil {
 		return nil, err
@@ -74,9 +78,11 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		mimetypes: serialization.NewMimetypes(10),
-		encodings: encoding.NewEncodings(o.Logs.ERROR()),
-		files:     serialization.NewFS(5),
+		beforeMarshals: make(map[string]BeforeMarshalFunc, mimetypesCap),
+		afterMarshals:  make(map[string]AfterMarshalFunc, mimetypesCap),
+		mimetypes:      serialization.NewMimetypes(mimetypesCap),
+		encodings:      encoding.NewEncodings(o.Logs.ERROR()),
+		files:          serialization.NewFS(5),
 	}
 	srv.routers = group.NewOf(srv.call,
 		notFound,

@@ -30,6 +30,30 @@ var (
 	gbkBytes2 = []byte{214, 208, 206, 196, 50, 44, 50, 50}
 )
 
+func TestServer_OnMarshal(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
+	srv.OnMarshal(text.Mimetype,
+		func(ctx *Context, a any) any {
+			a.(*testobject.TextObject).Age++
+			return a
+		},
+		func(ctx *Context, b []byte) []byte { return append(b, '-') },
+	)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", nil).
+		Header("Content-Type", text.Mimetype).
+		Header("Accept", text.Mimetype).
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+	obj := &testobject.TextObject{Name: "test", Age: 123}
+	a.NotError(ctx.Marshal(http.StatusCreated, obj, false)).
+		Equal(w.Code, http.StatusCreated).
+		Equal(w.Body.String(), "test,124-")
+}
+
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})

@@ -6,8 +6,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gomodule/redigo v1.8.9 h1:Sl3u+2BI/kk+VEatbj0scLdrFhjPmbxOc1myhDP41ws=
 github.com/gomodule/redigo v1.8.9/go.mod h1:7ArFNvsTjH8GMMzB4uy1snslv2BwmginuMs06a1uzZE=
-github.com/issue9/assert/v3 v3.0.2 h1:we+s2YC5JfB4mhQNIZ2hP9DVQUx3/rZQzadxI3cHHA4=
-github.com/issue9/assert/v3 v3.0.2/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
+github.com/issue9/assert/v3 v3.0.4 h1:WsYZQ6PQmM/pGFrbkn5GIXjWeVZHv+wcl2829UTX1Qc=
+github.com/issue9/assert/v3 v3.0.4/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
 github.com/issue9/cache v0.4.0 h1:U7jo4gVjDnbcB1HxCC8KxgQigVq93OKmZah/dBoSCA8=
 github.com/issue9/cache v0.4.0/go.mod h1:qrpL9RzMBXUH9l5gE/I73XDDZICh/dMoFVQ+U5omfsE=
 github.com/issue9/conv v1.3.2 h1:mTlpV79fusDkDLdxLu6vcufD6CBqPdNlA80+wps8VAk=
