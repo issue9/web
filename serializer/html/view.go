@@ -36,8 +36,9 @@ func InstallView(s *server.Server, fsys fs.FS, glob string) {
 		tpl := tpl.Funcs(template.FuncMap{
 			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
 		})
-		name := getName(a)
-		return newTpl(tpl, name, a)
+
+		name, v := getName(a)
+		return newTpl(tpl, name, v)
 	}, nil)
 }
 
@@ -114,11 +115,17 @@ func installLocaleView(s *server.Server, b *catalog.Builder, tpls map[string]*te
 		tpl = tpl.Funcs(template.FuncMap{
 			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
 		})
-		return newTpl(tpl, getName(a), a)
+
+		name, v := getName(a)
+		return newTpl(tpl, name, v)
 	}, nil)
 }
 
-func getName(v any) string {
+func getName(v any) (string, any) {
+	if m, ok := v.(Marshaler); ok {
+		return m.MarshalHTML()
+	}
+
 	rv := reflect.ValueOf(v)
 	for rv.Kind() == reflect.Pointer {
 		rv = rv.Elem()
@@ -127,19 +134,19 @@ func getName(v any) string {
 
 	if rt.Kind() != reflect.Struct {
 		if name := rt.Name(); name != "" {
-			return name
+			return name, v
 		}
-		panic("text/html 不支持输出当前类型的对象")
+		panic(fmt.Sprintf("text/html 不支持输出当前类型 %s", rt.Kind()))
 	}
 
 	field, found := rt.FieldByName("HTMLName")
 	if !found {
-		return rt.Name()
+		return rt.Name(), v
 	}
 
 	tag := field.Tag.Get("html")
 	if tag == "" {
 		tag = rt.Name()
 	}
-	return tag
+	return tag, v
 }

@@ -26,6 +26,15 @@ type tpl struct {
 	data any    // 传递给模板的数据
 }
 
+// Marshaler 自定义 HTML 输出需要实现的接口
+type Marshaler interface {
+	// MarshalHTML 将对象转换成可用于模板的对象结构
+	//
+	// name 表示模板名称；
+	// data 表示传递给该模板的数据；
+	MarshalHTML() (name string, data any)
+}
+
 func newTpl(t *template.Template, name string, data any) *tpl {
 	return &tpl{tpl: t, name: name, data: data}
 }
@@ -34,6 +43,7 @@ func newTpl(t *template.Template, name string, data any) *tpl {
 //
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
+//   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [serializer.ErrUnsupported]；
 func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {

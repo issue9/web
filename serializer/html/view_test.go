@@ -105,12 +105,27 @@ func TestGetName(t *testing.T) {
 
 	type obj4 map[string]string
 
-	a.Equal(getName(&obj{}), "t")
-	a.Equal(getName(&obj2{}), "obj2")
-	a.Equal(getName(&obj3{}), "obj3")
-	a.Equal(getName(&obj4{}), "obj4")
+	name, v := getName(&obj{})
+	a.Equal(name, "t").Empty(v) // 指针类型的 v
+
+	name, v = getName(&obj2{})
+	a.Equal(name, "obj2").Zero(v)
+
+	name, v = getName(&obj3{})
+	a.Equal(name, "obj3").Zero(v)
+
+	name, v = getName(&obj4{})
+	a.Equal(name, "obj4").Empty(v)
+
+	name, v = getName(server.RFC7807Builder("id", "title", 500))
+	a.Equal(name, "problem").
+		Equal(v, map[string]any{
+			"type":   "id",
+			"title":  "title",
+			"status": 500,
+		})
 
 	a.PanicString(func() {
 		getName(map[string]string{})
-	}, "text/html 不支持输出当前类型的对象")
+	}, "text/html 不支持输出当前类型 map")
 }

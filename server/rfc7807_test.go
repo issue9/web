@@ -84,4 +84,14 @@ func TestRFC7807_Marshal(t *testing.T) {
 		a.NotError(err).
 			Equal(string(data), `detail=detail&params%5B0%5D.name=n1&params%5B0%5D.reason=r1&status=400&title=bad+request&type=400`)
 	})
+
+	t.Run("HTML", func(t *testing.T) {
+		name, v := p1.(*rfc7807).MarshalHTML()
+		a.Equal(name, "problem").
+			Equal(v, map[string]any{
+				"type":   "400",
+				"title":  "bad request",
+				"status": 200,
+			})
+	})
 }

@@ -32,6 +32,9 @@ var rfc7807ProblemPool = &sync.Pool{New: func() any {
 // NOTE: 由于 www-form-urlencoded 对复杂对象的表现能力有限，
 // 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
+// 如果是用于 HTML 输出，返回的对象仅适用于由 [serializer/html.InstallView] 和
+// [serializer/html.InstallLocaleView] 函数注册的内容。
+//
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id, title string, status int) Problem {
 	if id == "" {
@@ -234,6 +237,23 @@ func (p *rfc7807) MarshalForm() ([]byte, error) {
 	}
 
 	return []byte(u.Encode()), nil
+}
+
+func (p *rfc7807) MarshalHTML() (string, any) {
+	data := make(map[string]any, len(p.keys)+1)
+	for index, key := range p.keys {
+		data[key] = p.vals[index]
+	}
+
+	if len(p.pKeys) > 0 {
+		ps := make(map[string]string, len(p.pKeys))
+		for index, key := range p.pKeys {
+			ps[key] = p.pReasons[index]
+		}
+		data[paramsKey] = ps
+	}
+
+	return "problem", data
 }
 
 func (p *rfc7807) Apply(ctx *Context) {
