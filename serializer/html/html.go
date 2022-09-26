@@ -7,7 +7,11 @@
 //	srv.Mimetypes().Add("text/html", html.Marshal, html.Unmarshal)
 //
 //	func handle(ctx *web.Context) Responser {
-//	    return Object(200, &struct{HTMLName struct{} `html:"Object"`}{}, nil)
+//          obj := &struct{
+//              HTMLName struct{} `html:"Object"`
+//              Data string
+//          }{}
+//	    return Object(200, obj, nil)
 //	}
 package html
 
@@ -27,6 +31,8 @@ type tpl struct {
 }
 
 // Marshaler 自定义 HTML 输出需要实现的接口
+//
+// 当前接口仅适用于由 [InstallView] 和 [InstallLocaleView] 管理的模板。
 type Marshaler interface {
 	// MarshalHTML 将对象转换成可用于模板的对象结构
 	//
