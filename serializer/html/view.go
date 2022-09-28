@@ -28,7 +28,7 @@ const tagKey = "view-locale-key"
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
 //
-// 通过此方法安装之后，可以正常处理用户提交的对象，而不用 [NewTpl] 包装一层：
+// 通过此方法安装之后，可以正常处理用户提交的对象：
 //   - string 直接输出字符串；
 //   - []byte 直接输出内容；
 //   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
@@ -55,7 +55,7 @@ func InstallView(s *server.Server, fsys fs.FS, glob string) {
 // 按目录名称加载各个本地化的模板，每个模板之间相互独立，模板内可以包含本地化相关的内容。
 //
 // 提供了以下两个方法：
-//   - t 根据当前的语言（[server.Context.LaguageTag]）对参数进行翻译；
+//   - t 根据当前的语言（由 [server.Context.LaguageTag] 决定）对参数进行翻译；
 //   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；

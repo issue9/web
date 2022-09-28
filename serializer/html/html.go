@@ -41,23 +41,13 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// newTpl 包装一个普通的返回对象使其能被 HTML 模板正确处理
-//
-// t 表示采用的模板；
-// name 表示模板名称；
-// data 表示传递给模板的数据，如果 data 本身是 *Tpl 类型，
-// 那么将会读取其 data 字做作为返回对象的 data 字段；
 func newTpl(t *template.Template, name string, data any) *tpl {
-	if tpl, ok := data.(*tpl); ok {
-		data = tpl.data
-	}
 	return &tpl{tpl: t, name: name, data: data}
 }
 
 // Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 可以是以下几种可能：
-//   - *Tpl 采用 Tpl.marshal 进行解析；
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [serializer.ErrUnsupported]；
