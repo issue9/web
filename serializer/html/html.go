@@ -24,7 +24,7 @@ import (
 
 const Mimetype = "text/html"
 
-type Tpl struct {
+type tpl struct {
 	tpl  *template.Template
 	name string // 模块名称
 	data any    // 传递给模板的数据
@@ -41,17 +41,17 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// NewTpl 声明 Tpl 对象
+// newTpl 包装一个普通的返回对象使其能被 HTML 模板正确处理
 //
 // t 表示采用的模板；
 // name 表示模板名称；
 // data 表示传递给模板的数据，如果 data 本身是 *Tpl 类型，
 // 那么将会读取其 data 字做作为返回对象的 data 字段；
-func NewTpl(t *template.Template, name string, data any) *Tpl {
-	if tpl, ok := data.(*Tpl); ok {
+func newTpl(t *template.Template, name string, data any) *tpl {
+	if tpl, ok := data.(*tpl); ok {
 		data = tpl.data
 	}
-	return &Tpl{tpl: t, name: name, data: data}
+	return &tpl{tpl: t, name: name, data: data}
 }
 
 // Marshal 针对 HTML 内容的解码实现
@@ -63,7 +63,7 @@ func NewTpl(t *template.Template, name string, data any) *Tpl {
 //   - 其它情况下则是返回 [serializer.ErrUnsupported]；
 func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
-	case *Tpl:
+	case *tpl:
 		return obj.marshal()
 	case []byte:
 		return obj, nil
@@ -75,7 +75,7 @@ func Marshal(v any) ([]byte, error) {
 
 func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }
 
-func (t *Tpl) marshal() ([]byte, error) {
+func (t *tpl) marshal() ([]byte, error) {
 	w := new(bytes.Buffer)
 	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
 		return nil, err

@@ -27,6 +27,14 @@ const tagKey = "view-locale-key"
 //   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；
+//
+// 通过此方法安装之后，可以正常处理用户提交的对象，而不用 [NewTpl] 包装一层：
+//   - string 直接输出字符串；
+//   - []byte 直接输出内容；
+//   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
+//   - 其它结构体，尝试读取 HTMLName 字段的 html struct tag 值作为模板名称进行查找；
+//
+// [InstallLocaleView] 与此有相同的处理方式。
 func InstallView(s *server.Server, fsys fs.FS, glob string) {
 	fsys, funcs := initTpl(s, fsys)
 	tpl := template.New(s.Name()).Funcs(funcs)
@@ -38,7 +46,7 @@ func InstallView(s *server.Server, fsys fs.FS, glob string) {
 		})
 
 		name, v := getName(a)
-		return NewTpl(tpl, name, v)
+		return newTpl(tpl, name, v)
 	}, nil)
 }
 
@@ -117,7 +125,7 @@ func installLocaleView(s *server.Server, b *catalog.Builder, tpls map[string]*te
 		})
 
 		name, v := getName(a)
-		return NewTpl(tpl, name, v)
+		return newTpl(tpl, name, v)
 	}, nil)
 }
 
