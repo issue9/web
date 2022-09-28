@@ -16,6 +16,25 @@ var (
 	_ serializer.UnmarshalFunc = Unmarshal
 )
 
+func TestNewTpl(t *testing.T) {
+	a := assert.New(t, false)
+	tt, err := template.ParseGlob("./testdata/*.tpl")
+	a.NotError(err).NotNil(tt)
+
+	obj := &struct{}{}
+	tpl := NewTpl(tt, "n1", obj)
+	a.NotNil(tpl).
+		Equal(tpl.name, "n1").
+		Equal(tpl.tpl, tt).
+		Equal(tpl.data, obj)
+
+	tpl = NewTpl(tt, "n2", tpl)
+	a.NotNil(tpl).
+		Equal(tpl.name, "n2").
+		Equal(tpl.tpl, tt).
+		Equal(tpl.data, obj)
+}
+
 func TestMarshal(t *testing.T) {
 	a := assert.New(t, false)
 

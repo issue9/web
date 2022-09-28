@@ -41,7 +41,16 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
+// NewTpl 声明 Tpl 对象
+//
+// t 表示采用的模板；
+// name 表示模板名称；
+// data 表示传递给模板的数据，如果 data 本身是 *Tpl 类型，
+// 那么将会读取其 data 字做作为返回对象的 data 字段；
 func NewTpl(t *template.Template, name string, data any) *Tpl {
+	if tpl, ok := data.(*Tpl); ok {
+		data = tpl.data
+	}
 	return &Tpl{tpl: t, name: name, data: data}
 }
 
