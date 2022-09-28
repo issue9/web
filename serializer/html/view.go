@@ -38,7 +38,7 @@ func InstallView(s *server.Server, fsys fs.FS, glob string) {
 		})
 
 		name, v := getName(a)
-		return newTpl(tpl, name, v)
+		return NewTpl(tpl, name, v)
 	}, nil)
 }
 
@@ -117,7 +117,7 @@ func installLocaleView(s *server.Server, b *catalog.Builder, tpls map[string]*te
 		})
 
 		name, v := getName(a)
-		return newTpl(tpl, name, v)
+		return NewTpl(tpl, name, v)
 	}, nil)
 }
 

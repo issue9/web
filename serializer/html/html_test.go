@@ -22,13 +22,13 @@ func TestMarshal(t *testing.T) {
 	tpl, err := template.ParseGlob("./testdata/*.tpl")
 	a.NotError(err).NotNil(tpl)
 
-	bs, err := Marshal(newTpl(tpl, "footer", map[string]any{
+	bs, err := Marshal(NewTpl(tpl, "footer", map[string]any{
 		"Footer": "footer",
 	}))
 	a.NotError(err).NotNil(bs)
 	a.Equal(string(bs), "<div>footer</div>")
 
-	bs, err = Marshal(newTpl(tpl, "header", &struct{ Header string }{
+	bs, err = Marshal(NewTpl(tpl, "header", &struct{ Header string }{
 		Header: "header",
 	}))
 	a.NotError(err).NotNil(bs)

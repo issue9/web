@@ -2,17 +2,17 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//	srv := NewServer()
-//	tpl := template.ParseFiles(...)
-//	srv.Mimetypes().Add("text/html", html.Marshal, html.Unmarshal)
+//		srv := NewServer()
+//		tpl := template.ParseFiles(...)
+//		srv.Mimetypes().Add("text/html", html.Marshal, html.Unmarshal)
 //
-//	func handle(ctx *web.Context) Responser {
-//          obj := &struct{
-//              HTMLName struct{} `html:"Object"`
-//              Data string
-//          }{}
-//	    return Object(200, obj, nil)
-//	}
+//		func handle(ctx *web.Context) Responser {
+//	         obj := &struct{
+//	             HTMLName struct{} `html:"Object"`
+//	             Data string
+//	         }{}
+//		    return Object(200, obj, nil)
+//		}
 package html
 
 import (
@@ -24,7 +24,7 @@ import (
 
 const Mimetype = "text/html"
 
-type tpl struct {
+type Tpl struct {
 	tpl  *template.Template
 	name string // 模块名称
 	data any    // 传递给模板的数据
@@ -41,19 +41,20 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-func newTpl(t *template.Template, name string, data any) *tpl {
-	return &tpl{tpl: t, name: name, data: data}
+func NewTpl(t *template.Template, name string, data any) *Tpl {
+	return &Tpl{tpl: t, name: name, data: data}
 }
 
 // Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 可以是以下几种可能：
+//   - *Tpl 采用 Tpl.marshal 进行解析；
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [serializer.ErrUnsupported]；
 func Marshal(v any) ([]byte, error) {
 	switch obj := v.(type) {
-	case *tpl:
+	case *Tpl:
 		return obj.marshal()
 	case []byte:
 		return obj, nil
@@ -65,7 +66,7 @@ func Marshal(v any) ([]byte, error) {
 
 func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }
 
-func (t *tpl) marshal() ([]byte, error) {
+func (t *Tpl) marshal() ([]byte, error) {
 	w := new(bytes.Buffer)
 	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
 		return nil, err
