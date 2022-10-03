@@ -18,7 +18,7 @@ func TestInstall(t *testing.T) {
 	s.Server().Mimetypes().Add(Marshal, Unmarshal, Mimetype)
 	Install("callback", s.Server())
 
-	s.NewRouter().Get("/jsonp", func(ctx *server.Context) server.Responser {
+	s.Router().Get("/jsonp", func(ctx *server.Context) server.Responser {
 		return web.OK("jsonp")
 	})
 

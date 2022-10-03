@@ -27,7 +27,7 @@ func TestInstallView(t *testing.T) {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.NewRouter()
+	r := s.Router()
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Marshal(200, &obj{}, false)
@@ -62,7 +62,7 @@ func TestNewLocaleView(t *testing.T) {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.NewRouter()
+	r := s.Router()
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Marshal(200, &obj{}, false)

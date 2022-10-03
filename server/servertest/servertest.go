@@ -21,6 +21,7 @@ import (
 type Tester struct {
 	a        *assert.Assertion
 	s        *server.Server
+	r        *server.Router
 	hostname string
 	wg       sync.WaitGroup
 }
@@ -59,22 +60,25 @@ func (s *Tester) GoServe() {
 	<-ok
 }
 
-// NewRouter 创建一个默认的路由
+// Router 返回默认的路由
 //
 // 相当于：
 //
 //	s.Server().NewRouter("default", "http://localhost:8080/", nil)
 //
-// NOTE: 如果需要多个路由，请使用 Server().Routers().NewRouter() 并指定正确的 group.Matcher 对象，
-// 或是将 Tester.NewRouter 放在最后。
-func (s *Tester) NewRouter(ms ...server.Middleware) *server.Router {
-	s.a.TB().Helper()
-
-	rs := s.Server().Routers()
-	router := rs.New("default", nil, mux.URLDomain("http://localhost:8080/"), mux.WriterRecovery(http.StatusInternalServerError, os.Stderr))
-	s.a.NotNil(router)
-	router.Use(ms...)
-	return router
+// NOTE: 如果需要多个路由，请使用 Server().Routers().New() 并指定正确的 group.Matcher 对象，
+// 或是将 Tester.Router 放在最后。
+//
+// 第一次调用时创建实例，多次调用返回同一个实例。
+func (s *Tester) Router() *server.Router {
+	if s.r == nil {
+		s.a.TB().Helper()
+		rs := s.Server().Routers()
+		router := rs.New("default", nil, mux.URLDomain("http://localhost:8080"), mux.WriterRecovery(http.StatusInternalServerError, os.Stderr))
+		s.a.NotNil(router)
+		s.r = router
+	}
+	return s.r
 }
 
 // NewRequest 发起新的请求
