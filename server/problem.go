@@ -69,9 +69,7 @@ type (
 	// 中会在解析数据成功之后会调用该接口。
 	CTXSanitizer interface {
 		// CTXSanitize 验证和修正当前对象的数据
-		//
-		// 如果要保存验证的结果，应该调用传递的 [Validation] 对象的方法。
-		CTXSanitize(*Context, *Validation)
+		CTXSanitize(*Validation)
 	}
 )
 
@@ -237,7 +235,7 @@ func (v *Validation) Problem(id string) Problem {
 		return nil
 	}
 
-	p := v.ctx.Problem(id)
+	p := v.Context().Problem(id)
 	for index, key := range v.keys {
 		p.AddParam(key, v.reasons[index])
 	}

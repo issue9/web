@@ -78,7 +78,7 @@ func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validat
 
 func (v *Validation) add(name string, reason localeutil.LocaleStringer) *Validation {
 	v.keys = append(v.keys, name)
-	v.reasons = append(v.reasons, reason.LocaleString(v.ctx.LocalePrinter()))
+	v.reasons = append(v.reasons, reason.LocaleString(v.Context().LocalePrinter()))
 	return v
 }
 
@@ -163,6 +163,8 @@ func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validati
 
 	return v
 }
+
+func (v *Validation) Context() *Context { return v.ctx }
 
 // When 只有满足 cond 才执行 f 中的验证
 //

@@ -51,7 +51,7 @@ func (p *Params) ID(key string) int64 {
 		return 0
 	}
 
-	id, err := p.v.ctx.route.Params().Int(key)
+	id, err := p.v.Context().route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return 0
@@ -68,7 +68,7 @@ func (p *Params) Int64(key string) int64 {
 		return 0
 	}
 
-	ret, err := p.v.ctx.route.Params().Int(key)
+	ret, err := p.v.Context().route.Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return 0
@@ -82,7 +82,7 @@ func (p *Params) String(key string) string {
 		return ""
 	}
 
-	ret, err := p.v.ctx.route.Params().String(key)
+	ret, err := p.v.Context().route.Params().String(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return ""
@@ -98,7 +98,7 @@ func (p *Params) Bool(key string) bool {
 		return false
 	}
 
-	ret, err := p.v.ctx.route.Params().Bool(key)
+	ret, err := p.v.Context().route.Params().Bool(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -111,7 +111,7 @@ func (p *Params) Float64(key string) float64 {
 		return 0
 	}
 
-	ret, err := p.v.ctx.route.Params().Float(key)
+	ret, err := p.v.Context().route.Params().Float(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -305,7 +305,7 @@ func (q *Queries) Object(v any, id string) {
 
 	if q.v.continueNext() {
 		if s, ok := v.(CTXSanitizer); ok {
-			s.CTXSanitize(q.v.ctx, q.v)
+			s.CTXSanitize(q.v)
 		}
 	}
 }
@@ -382,7 +382,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 
 	if vv, ok := v.(CTXSanitizer); ok {
 		va := ctx.NewValidation(exitAtError)
-		vv.CTXSanitize(ctx, va)
+		vv.CTXSanitize(va)
 		return va.Problem(id)
 	}
 	return nil
