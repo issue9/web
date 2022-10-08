@@ -37,6 +37,7 @@ func New(logs *logs.Logs, loc *time.Location, tag language.Tag) *Base {
 }
 
 func (l *Base) NewPrinter(tag language.Tag) *message.Printer {
+	tag, _, _ = l.Catalog.Matcher().Match(tag)
 	return message.NewPrinter(tag, message.Catalog(l.Catalog))
 }
 
