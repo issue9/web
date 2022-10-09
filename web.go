@@ -16,7 +16,54 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.59.5"
+const Version = "0.59.6"
+
+// 预定义的 Problem id 值
+const (
+	// 400
+	ProblemBadRequest                   = "400"
+	ProblemUnauthorized                 = "401"
+	ProblemPaymentRequired              = "402"
+	ProblemForbidden                    = "403"
+	ProblemNotFound                     = "404"
+	ProblemMethodNotAllowed             = "405"
+	ProblemNotAcceptable                = "406"
+	ProblemProxyAuthRequired            = "407"
+	ProblemRequestTimeout               = "408"
+	ProblemConflict                     = "409"
+	ProblemGone                         = "410"
+	ProblemLengthRequired               = "411"
+	ProblemPreconditionFailed           = "412"
+	ProblemRequestEntityTooLarge        = "413"
+	ProblemRequestURITooLong            = "414"
+	ProblemUnsupportedMediaType         = "415"
+	ProblemRequestedRangeNotSatisfiable = "416"
+	ProblemExpectationFailed            = "417"
+	ProblemTeapot                       = "418"
+	ProblemMisdirectedRequest           = "421"
+	ProblemUnprocessableEntity          = "422"
+	ProblemLocked                       = "423"
+	ProblemFailedDependency             = "424"
+	ProblemTooEarly                     = "425"
+	ProblemUpgradeRequired              = "426"
+	ProblemPreconditionRequired         = "428"
+	ProblemTooManyRequests              = "429"
+	ProblemRequestHeaderFieldsTooLarge  = "431"
+	ProblemUnavailableForLegalReasons   = "451"
+
+	// 500
+	ProblemInternalServerError           = "500"
+	ProblemNotImplemented                = "501"
+	ProblemBadGateway                    = "502"
+	ProblemServiceUnavailable            = "503"
+	ProblemGatewayTimeout                = "504"
+	ProblemHTTPVersionNotSupported       = "505"
+	ProblemVariantAlsoNegotiates         = "506"
+	ProblemInsufficientStorage           = "507"
+	ProblemLoopDetected                  = "508"
+	ProblemNotExtended                   = "510"
+	ProblemNetworkAuthenticationRequired = "511"
+)
 
 type (
 	Server         = server.Server

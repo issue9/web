@@ -36,7 +36,7 @@ type (
 
 func (f ResponserFunc) Apply(c *Context) { f(c) }
 
-func notFound(ctx *Context) Responser { return ctx.Problem("404") }
+func notFound(ctx *Context) Responser { return ctx.NotFound() }
 
 func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
@@ -85,13 +85,13 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		switch {
 		case errors.Is(err, fs.ErrPermission):
 			srv.Logs().WARN().Error(err)
-			return ctx.Problem("403") // http.StatusForbidden
+			return ctx.Problem("403")
 		case errors.Is(err, fs.ErrNotExist):
 			srv.Logs().WARN().Error(err)
-			return ctx.Problem("404") // http.StatusNotFound
+			return ctx.NotFound()
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
-			return ctx.Problem("500") // http.StatusInternalServerError
+			return ctx.Problem("500")
 		default:
 			return nil
 		}
