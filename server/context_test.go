@@ -273,7 +273,7 @@ func TestServer_Location(t *testing.T) {
 	a.Equal(now.Location(), srv.Location()).
 		Equal(now.Location(), ctx.Location())
 
-	a.NotError(ctx.SetLocation("UTC"))
+	ctx.SetLocation(time.UTC)
 	now2 := ctx.Now()
 	a.Equal(now2.Location(), ctx.Location())
 	if now2.Location() != srv.Location() {

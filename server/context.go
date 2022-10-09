@@ -158,16 +158,12 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 
 func (ctx *Context) Route() types.Route { return ctx.route }
 
-// SetLanguage 设置输出的语言
-//
-// 默认情况下，会根据用户提交的 Accept-Language 报头设置默认值。
-func (ctx *Context) SetLanguage(l string) error {
-	tag, err := language.Parse(l)
-	if err == nil {
+// SetLanguage 修改输出的语言
+func (ctx *Context) SetLanguage(tag language.Tag) {
+	if ctx.languageTag != tag {
 		ctx.languageTag = tag
 		ctx.localePrinter = ctx.Server().NewPrinter(tag)
 	}
-	return err
 }
 
 func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter }
@@ -175,15 +171,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // SetLocation 设置时区信息
-//
-// name 为时区名称，比如 'America/New_York'，具体说明可参考 [time.LoadLocation]
-func (ctx *Context) SetLocation(name string) error {
-	l, err := time.LoadLocation(name)
-	if err == nil {
-		ctx.location = l
-	}
-	return err
-}
+func (ctx *Context) SetLocation(loc *time.Location) { ctx.location = loc }
 
 func (ctx *Context) Location() *time.Location { return ctx.location }
 
