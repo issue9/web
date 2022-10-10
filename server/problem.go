@@ -261,11 +261,7 @@ func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
 
 func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
 	entry := ctx.Logs().NewEntry(level).Location(depth)
-	if le, ok := err.(localeutil.LocaleStringer); ok {
-		entry.Message = le.LocaleString(ctx.LocalePrinter())
-	} else {
-		entry.Message = err.Error()
-	}
+	entry.Message = err.Error() // NOTE: 日志信息不会根据 ctx 作翻译
 	ctx.Logs().Output(entry)
 	return ctx.Problem(id)
 }

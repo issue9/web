@@ -245,6 +245,7 @@ func (ctx *Context) ClientIP() string {
 	return strings.TrimSpace(ip)
 }
 
+// Logs 返回日志管理对象
 func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
 
 func (ctx *Context) IsXHR() bool {
