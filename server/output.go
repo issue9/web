@@ -87,13 +87,16 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	return err
 }
 
+// Wrote 是否已经有内容输出
+func (ctx *Context) Wrote() bool { return ctx.wrote }
+
 // Sprintf 返回翻译后的结果
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
 }
 
 func (ctx *Context) Write(bs []byte) (int, error) {
-	if !ctx.wrote { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
+	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
