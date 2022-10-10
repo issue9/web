@@ -125,6 +125,17 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		panic(err)
 	}
 
+	if len(conf.HTTP.Headers) > 0 {
+		srv.Routers().Use(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
+			return func(ctx *server.Context) server.Responser {
+				for _, hh := range conf.HTTP.Headers {
+					ctx.Header().Add(hh.Key, hh.Value)
+				}
+				return next(ctx)
+			}
+		}))
+	}
+
 	for name, s := range conf.files {
 		if err := srv.Files().Serializer().Add(s.Marshal, s.Unmarshal, name); err != nil {
 			panic(err)

@@ -137,9 +137,7 @@ func (h *httpConfig) sanitize() *ConfigError {
 		return &ConfigError{Field: "maxHeaderBytes", Message: localeutil.Phrase("should great than 0")}
 	}
 
-	if err := h.buildRoutersOptions(); err != nil {
-		return err
-	}
+	h.buildRoutersOptions()
 
 	return h.buildTLSConfig()
 }
@@ -157,25 +155,13 @@ func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
 	}
 }
 
-func (h *httpConfig) buildRoutersOptions() *ConfigError {
+func (h *httpConfig) buildRoutersOptions() {
 	opt := make([]mux.Option, 0, 1)
-
-	if len(h.Headers) > 0 {
-		opt = append(opt, mux.OnConnection(func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-			for _, hh := range h.Headers {
-				w.Header().Add(hh.Key, hh.Value)
-			}
-			return w, r
-		}))
-	}
-
 	if h.CORS != nil {
 		c := h.CORS
 		opt = append(opt, mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials))
 	}
-
 	h.routersOptions = opt
-	return nil
 }
 
 func (h *httpConfig) buildTLSConfig() *ConfigError {
