@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -34,9 +35,8 @@ import (
 //
 //	-v 显示版本号；
 //	-h 显示帮助信息；
-//	-f 指定当前程序可读取的文件系统，这最终会转换成 Server.FS；
+//	-f 指定当前程序可读取的文件系统，这最终会转换成 [server.Server.FS]；
 //	-a 执行的动作，该值会传递给 Init，由用户根据 a 决定初始化方式；
-//	-s 以服务的形式运行；
 //
 // 通过向 [AppOf.Catalog] 注册本地化字符串，可以让命令行支持本地化显示：
 //
@@ -61,7 +61,6 @@ import (
 //	-show help
 //	-set file system
 //	-action
-//	-run as server
 //	-[AppOf.Desc] 的内容
 //
 // 在支持 HUP 信号的系统，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
@@ -82,6 +81,9 @@ type AppOf[T any] struct {
 	// action 为 -a 命令行指定的参数；
 	Init func(s *server.Server, user *T, action string) error
 
+	// 以服务运行的指令
+	ServeActions []string
+
 	// 命令行输出信息的通道
 	//
 	// 默认为 [os.Stdout]。
@@ -92,6 +94,8 @@ type AppOf[T any] struct {
 	// 需要保证 [RegisterFileSerializer] 能解析此文件指定的内容；
 	//
 	// 仅是文件名，相对的路径由命令行 -f 指定。
+	// 如果为空，表示不采用配置文件，由一个空的 [server.Options] 初始化对象，
+	// 具体可以查看 [NewServerOf] 的实现。
 	ConfigFilename string
 
 	// 生成 [server.Problem] 对象的方法
@@ -166,7 +170,6 @@ func (cmd *AppOf[T]) exec(args []string) error {
 	h := flags.Bool("h", false, p.Sprintf("show help"))
 	f := flags.String("f", "./", p.Sprintf("set file system"))
 	flags.StringVar(&cmd.action, "a", "", p.Sprintf("action"))
-	s := flags.Bool("s", false, p.Sprintf("run as server"))
 	flags.Usage = func() {
 		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
 	}
@@ -188,7 +191,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		return nil
 	}
 
-	if !*s { // 非服务
+	if !sliceutil.Exists(cmd.ServeActions, func(e string) bool { return e == cmd.action }) { // 非服务
 		return cmd.initServer()
 	}
 

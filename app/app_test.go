@@ -26,6 +26,7 @@ func TestAppOf(t *testing.T) {
 		Version:        "1.0.0",
 		ConfigFilename: "web.yaml",
 		Out:            bs,
+		ServeActions:   []string{"serve"},
 		Init: func(s *server.Server, user *empty, act string) error {
 			action = act
 			return nil
@@ -43,7 +44,7 @@ func TestAppOf(t *testing.T) {
 	exit := make(chan struct{}, 10)
 	bs.Reset()
 	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-s"}), http.ErrServerClosed)
+		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
