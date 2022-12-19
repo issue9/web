@@ -262,25 +262,6 @@ func TestServer_acceptLanguage(t *testing.T) {
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 }
 
-func TestServer_Location(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newServer(a, nil)
-
-	w := httptest.NewRecorder()
-	r := rest.Get(a, "/test").Request()
-	ctx := srv.newContext(w, r, nil)
-	now := ctx.Now()
-	a.Equal(now.Location(), srv.Location()).
-		Equal(now.Location(), ctx.Location())
-
-	ctx.SetLocation(time.UTC)
-	now2 := ctx.Now()
-	a.Equal(now2.Location(), ctx.Location())
-	if now2.Location() != srv.Location() {
-		a.NotEqual(ctx.Location(), srv.Location())
-	}
-}
-
 func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
 	w := httptest.NewRecorder()

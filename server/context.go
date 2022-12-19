@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/types"
@@ -65,7 +64,6 @@ type Context struct {
 	// 区域和本地相关信息
 	languageTag   language.Tag
 	localePrinter *message.Printer
-	location      *time.Location
 
 	body []byte // 缓存从 http.Request.Body 中获取的内容
 	read bool   // 表示是已经读取 body
@@ -146,7 +144,6 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
 	ctx.localePrinter = srv.NewPrinter(tag)
-	ctx.location = srv.Location()
 	if len(ctx.body) > 0 {
 		ctx.body = ctx.body[:0]
 	}
@@ -169,11 +166,6 @@ func (ctx *Context) SetLanguage(tag language.Tag) {
 func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter }
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
-
-// SetLocation 设置时区信息
-func (ctx *Context) SetLocation(loc *time.Location) { ctx.location = loc }
-
-func (ctx *Context) Location() *time.Location { return ctx.location }
 
 func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
@@ -214,14 +206,6 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	}
 	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
 	return tag
-}
-
-// Now 返回以 [Context.Location] 为时区的当前时间
-func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location()) }
-
-// ParseTime 分析基于当前时区的时间
-func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, ctx.Location())
 }
 
 // ClientIP 返回客户端的 IP 地址及端口
