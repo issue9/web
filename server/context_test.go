@@ -25,6 +25,8 @@ import (
 	"github.com/issue9/web/serializer/text"
 )
 
+var _ http.ResponseWriter = &Context{}
+
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
@@ -206,6 +208,96 @@ func TestServer_newContext(t *testing.T) {
 		True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.outputMimetypeName, text.Mimetype).
 		Equal(ctx.outputCharsetName, header.UTF8Name)
+}
+
+func TestContext_SetMimetype(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", []byte("123")).
+		Header("accept", "application/json").
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+
+	a.PanicString(func() {
+		ctx.SetMimetype("not-exists")
+	}, "指定的编码 not-exists 不存在")
+
+	ctx.SetMimetype("application/xml")
+	a.Equal(ctx.Mimetype(), "application/xml")
+
+	a.NotError(ctx.Marshal(200, 200, false))
+	a.PanicString(func() {
+		ctx.SetMimetype("application/json")
+	}, "已有内容输出，不可再更改！")
+}
+
+func TestContext_SetCharset(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", []byte("123")).
+		Header("accept", "application/json").
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+
+	a.PanicString(func() {
+		ctx.SetCharset("not-exists")
+	}, "指定的字符集 not-exists 不存在")
+
+	ctx.SetCharset("gb2312")
+	a.Equal(ctx.Charset(), "gbk")
+
+	a.NotError(ctx.Marshal(200, 200, false))
+	a.PanicString(func() {
+		ctx.SetCharset("gb18030")
+	}, "已有内容输出，不可再更改！")
+}
+
+func TestContext_SetEncoding(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", []byte("123")).
+		Header("accept", "application/json").
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+
+	a.PanicString(func() {
+		ctx.SetEncoding("*;q=0")
+	}, "指定的压缩编码 *;q=0 不存在")
+
+	ctx.SetEncoding("gzip")
+	a.Equal(ctx.Encoding(), "gzip")
+
+	a.NotError(ctx.Marshal(200, 200, false))
+	a.PanicString(func() {
+		ctx.SetEncoding("br")
+	}, "已有内容输出，不可再更改！")
+}
+
+func TestContext_SetLanguage(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", []byte("123")).
+		Header("accept", "application/json").
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+
+	a.Equal(ctx.LanguageTag(), ctx.Server().LanguageTag())
+
+	cmnHant := language.MustParse("cmn-hant")
+	ctx.SetLanguage(cmnHant)
+	a.Equal(ctx.LanguageTag(), cmnHant)
 }
 
 func TestContext_IsXHR(t *testing.T) {

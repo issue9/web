@@ -3,6 +3,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -153,10 +154,84 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	return ctx
 }
 
+// Route 关联的路由信息
 func (ctx *Context) Route() types.Route { return ctx.route }
 
+// SetCharset 设置输出的字符集
+//
+// NOTE: 不会影响 [Context.Request] 的返回对象。
+func (ctx *Context) SetCharset(charset string) {
+	if ctx.wrote {
+		panic("已有内容输出，不可再更改！")
+	}
+	if ctx.Charset() == charset {
+		return
+	}
+
+	outputCharsetName, outputCharset := header.AcceptCharset(charset)
+	if outputCharsetName == "" {
+		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
+	}
+	ctx.outputCharset = outputCharset
+	ctx.outputCharsetName = outputCharsetName
+}
+
+// Charset 输出的字符集
+func (ctx *Context) Charset() string { return ctx.outputCharsetName }
+
+// SetMimetype 设置输出的格式
+//
+// NOTE: 不会影响 [Context.Request] 的返回对象。
+func (ctx *Context) SetMimetype(mimetype string) {
+	if ctx.wrote {
+		panic("已有内容输出，不可再更改！")
+	}
+	if ctx.Mimetype() == mimetype {
+		return
+	}
+
+	outputMimetypeName, marshal, found := ctx.Server().mimetypes.MarshalFunc(mimetype)
+	if !found {
+		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
+	}
+	ctx.outputMimetypeName = outputMimetypeName
+	ctx.outputMimetype = marshal
+}
+
+// Mimetype 输出编码名称
+func (ctx *Context) Mimetype() string { return ctx.outputMimetypeName }
+
+// SetEncoding 设置压缩编码
+//
+// NOTE: 不会影响 [Context.Request] 的返回对象。
+func (ctx *Context) SetEncoding(enc string) {
+	if ctx.wrote {
+		panic("已有内容输出，不可再更改！")
+	}
+	if ctx.Encoding() == enc {
+		return
+	}
+
+	outputEncoding, notAcceptable := ctx.Server().encodings.Search(ctx.outputMimetypeName, enc)
+	if notAcceptable {
+		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
+	}
+	ctx.outputEncoding = outputEncoding
+}
+
+// Encoding 输出的压缩编码名称
+func (ctx *Context) Encoding() string {
+	if ctx.outputEncoding == nil {
+		return ""
+	}
+	return ctx.outputEncoding.Name()
+}
+
 // SetLanguage 修改输出的语言
+//
+// NOTE: 不会影响 [Context.Request] 的返回对象。
 func (ctx *Context) SetLanguage(tag language.Tag) {
+	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {
 		ctx.languageTag = tag
 		ctx.localePrinter = ctx.Server().NewPrinter(tag)
