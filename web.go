@@ -16,7 +16,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.59.8"
+const Version = "0.60.0"
 
 // 预定义的 Problem id 值
 const (
@@ -113,8 +113,3 @@ func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 //
 // 如果需要输出调用堆栈信息，需要指定 %+v 标记。
 func StackError(err error) error { return errs.StackError(err) }
-
-// Errors 合并多个非空错误为一个错误
-//
-// 有关 Is 和 As 均是按顺序找第一个返回 true 的即返回。
-func Errors(err ...error) error { return errs.Errors(err...) }
