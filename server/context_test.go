@@ -146,8 +146,9 @@ func TestServer_newContext(t *testing.T) {
 	// 错误的 content-type，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", []byte("123")).Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-")).Request()
-	r.Header.Set("content-type", header.BuildContentType(text.Mimetype, "utf-"))
+	r = rest.Post(a, "/path", []byte("123")).
+		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-")).
+		Request()
 	srv.newContext(w, r, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
 	a.NotEmpty(lw.String())

@@ -65,12 +65,11 @@ func BenchmarkServer_Serve(b *testing.B) {
 	b.Run("charset", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			rest.Get(a, "http://localhost:8080/path")
-			r, err := http.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-			r.Header.Set("accept", text.Mimetype)
-			r.Header.Set("accept-charset", "gbk;q=1,gb18080;q=0.1")
+			r := rest.Get(a, "http://localhost:8080/path").
+				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+				Header("accept", text.Mimetype).
+				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
+				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
@@ -82,12 +81,12 @@ func BenchmarkServer_Serve(b *testing.B) {
 	b.Run("charset encoding", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			r, err := http.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-			r.Header.Set("accept", text.Mimetype)
-			r.Header.Set("accept-charset", "gbk;q=1,gb18080;q=0.1")
-			r.Header.Set("accept-encoding", "gzip")
+			r := rest.Get(a, "http://localhost:8080/path").
+				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+				Header("accept", text.Mimetype).
+				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
+				Header("accept-encoding", "gzip").
+				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
@@ -99,10 +98,10 @@ func BenchmarkServer_Serve(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			r, err := http.NewRequest(http.MethodGet, "http://localhost:8080/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, header.UTF8Name))
-			r.Header.Set("accept", text.Mimetype)
+			r := rest.Get(a, "http://localhost:8080/path").
+				Header("Content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
+				Header("accept", text.Mimetype).
+				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
@@ -118,12 +117,11 @@ func BenchmarkServer_newContext(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodGet, "/path", nil)
-		a.NotError(err).NotNil(r)
-		r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-		r.Header.Set("Accept", text.Mimetype)
-		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-
+		r := rest.Get(a, "/path").
+			Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+			Header("Accept", text.Mimetype).
+			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
+			Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.destroy()
 	}
@@ -136,9 +134,7 @@ func BenchmarkContext_render(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Accept", text.Mimetype)
+			r := rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
 			ctx := srv.newContext(w, r, nil)
 
 			o := &testobject.TextObject{Age: 22, Name: "中文2"}
@@ -150,10 +146,10 @@ func BenchmarkContext_render(b *testing.B) {
 	b.Run("utf8", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Accept", text.Mimetype)
-			r.Header.Set("Accept-Charset", "utf-8")
+			r := rest.Get(a, "/path").
+				Header("Accept", text.Mimetype).
+				Header("Accept-Charset", "utf-8").
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			o := &testobject.TextObject{Age: 22, Name: "中文2"}
@@ -165,10 +161,10 @@ func BenchmarkContext_render(b *testing.B) {
 	b.Run("charset", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Accept", text.Mimetype)
-			r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
+			r := rest.Get(a, "/path").
+				Header("Accept", text.Mimetype).
+				Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			o := &testobject.TextObject{Age: 22, Name: "中文2"}
@@ -180,11 +176,11 @@ func BenchmarkContext_render(b *testing.B) {
 	b.Run("charset; encoding", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", nil)
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Accept", text.Mimetype)
-			r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
-			r.Header.Set("Accept-Encoding", "gzip;q=0.9,deflate")
+			r := rest.Get(a, "/path").
+				Header("Accept", text.Mimetype).
+				Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
+				Header("Accept-Encoding", "gzip;q=0.9,deflate").
+				Request()
 
 			ctx := srv.newContext(w, r, nil)
 			o := &testobject.TextObject{Age: 22, Name: "中文2"}
@@ -205,10 +201,10 @@ func BenchmarkContext_Body(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "utf-8"))
-			r.Header.Set("Accept", text.Mimetype)
+			r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
+				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
+				Header("Accept", text.Mimetype).
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			body, err := ctx.Body()
@@ -219,11 +215,11 @@ func BenchmarkContext_Body(b *testing.B) {
 	b.Run("charset", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkBytes1))
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-			r.Header.Set("Accept", text.Mimetype)
-			r.Header.Set("Accept-Charset", "gbk")
+			r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
+				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+				Header("Accept", text.Mimetype).
+				Header("Accept-Charset", "gbk").
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			body, err := ctx.Body()
@@ -239,10 +235,10 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "utf-8"))
-			r.Header.Set("Accept", text.Mimetype)
+			r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
+				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
+				Header("Accept", text.Mimetype).
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			obj := &testobject.TextObject{}
@@ -255,10 +251,10 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	b.Run("utf8", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBufferString(gbkString1))
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "utf-8"))
-			r.Header.Set("Accept", text.Mimetype)
+			r := rest.Post(a, "/path", bytes.NewBufferString(gbkString1).Bytes()).
+				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
+				Header("Accept", text.Mimetype).
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			obj := &testobject.TextObject{}
@@ -270,11 +266,11 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	b.Run("charset", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/path", bytes.NewBuffer(gbkBytes1))
-			a.NotError(err).NotNil(r)
-			r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-			r.Header.Set("Accept", text.Mimetype)
-			r.Header.Set("Accept-Charset", "gbk")
+			r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
+				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+				Header("Accept", text.Mimetype).
+				Header("Accept-Charset", "gbk").
+				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			obj := &testobject.TextObject{}
@@ -291,10 +287,10 @@ func BenchmarkPost(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("request,15"))
-		a.NotError(err).NotNil(r)
-		r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "utf-8"))
-		r.Header.Set("Accept", text.Mimetype)
+		r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
+			Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
+			Header("Accept", text.Mimetype).
+			Request()
 		ctx := srv.newContext(w, r, nil)
 
 		o := &testobject.TextObject{}
@@ -315,11 +311,11 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(gbkBytes1))
-		a.NotError(err).NotNil(r)
-		r.Header.Set("Content-type", header.BuildContentType(text.Mimetype, "gbk"))
-		r.Header.Set("Accept", text.Mimetype)
-		r.Header.Set("Accept-Charset", "gbk;q=1,gb18080;q=0.1")
+		r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
+			Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
+			Header("Accept", text.Mimetype).
+			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
+			Request()
 		ctx := srv.newContext(w, r, nil)
 
 		o := &testobject.TextObject{}

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package errs
+package base
 
 import (
 	"errors"
