@@ -4,7 +4,6 @@ package server_test
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"io/fs"
 	"log"
@@ -72,6 +71,7 @@ func TestServer_Serve(t *testing.T) {
 	})
 
 	srv.GoServe()
+	defer srv.Close(0)
 
 	srv.Get("http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
 
@@ -82,8 +82,6 @@ func TestServer_Serve(t *testing.T) {
 	// 静态文件
 	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
-
-	srv.Close(0)
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
@@ -104,6 +102,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	router.Get("/mux/test", servertest.BuildHandler(202))
 
 	srv.GoServe()
+	defer srv.Close(0)
 
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -118,8 +117,6 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 	resp, err = client.Get("http://localhost:8088/mux")
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
-
-	srv.Close(0)
 }
 
 func TestServer_Close(t *testing.T) {
@@ -134,47 +131,27 @@ func TestServer_Close(t *testing.T) {
 			ctx.WriteHeader(http.StatusInternalServerError)
 		}
 		a.NotError(srv.Server().Close(0))
-
 		return nil
 	})
 
-	buf := new(bytes.Buffer)
-	srv.Server().Services().Add("srv1", func(ctx context.Context) error {
-		c := time.Tick(10 * time.Millisecond)
-		for {
-			select {
-			case <-c:
-				println("TestServer_Close tick...")
-			case <-ctx.Done():
-				buf.WriteString("canceled\n")
-				println("TestServer_Close canceled...")
-				return context.Canceled
-			}
-		}
-	})
-
+	close := 0
 	srv.Server().OnClose(func() error {
-		buf.WriteString("RegisterOnClose\n")
-		println("TestServer_Close RegisterOnClose...")
+		close++
 		return nil
 	})
 
 	srv.GoServe()
+	defer srv.Close(0)
 
 	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
+	a.Equal(0, close)
 	resp, err := http.Get("http://localhost:8080/close")
-	a.Error(err).Nil(resp)
+	a.Error(err).Nil(resp).True(close > 0)
 
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
-
-	str := buf.String()
-	a.Contains(str, "canceled").
-		Contains(str, "RegisterOnClose")
-
-	srv.Close(0)
 }
 
 func TestServer_CloseWithTimeout(t *testing.T) {
@@ -193,6 +170,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	})
 
 	srv.GoServe()
+	defer srv.Close(0)
 
 	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
@@ -207,8 +185,6 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
-
-	srv.Close(0)
 }
 
 func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
@@ -246,6 +222,7 @@ func TestMiddleware(t *testing.T) {
 	prefix.Get("/path", servertest.BuildHandler(201))
 
 	srv.GoServe()
+	defer srv.Close(0)
 
 	srv.Get("/p1/path").
 		Header("accept", text.Mimetype).
@@ -262,8 +239,6 @@ func TestMiddleware(t *testing.T) {
 		Header("h", "b1b2-").
 		StringBody("201")
 	a.Equal(count, 2)
-
-	srv.Close(0)
 }
 
 func TestServer_Routers(t *testing.T) {
