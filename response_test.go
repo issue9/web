@@ -28,6 +28,7 @@ func TestCreated(t *testing.T) {
 	})
 
 	s.GoServe()
+	defer s.Close(0)
 
 	s.Get("/created").Header("accept", text.Mimetype).Do(nil).
 		Status(http.StatusCreated).
@@ -37,8 +38,6 @@ func TestCreated(t *testing.T) {
 		Status(http.StatusCreated).
 		StringBody(`test,123`).
 		Header("Location", "/test")
-
-	s.Close(0)
 }
 
 func TestRedirect(t *testing.T) {
@@ -54,12 +53,11 @@ func TestRedirect(t *testing.T) {
 	})
 
 	s.GoServe()
+	defer s.Close(0)
 
 	s.Get("/not-implement").Do(nil).Status(http.StatusNotImplemented)
 
 	s.Get("/redirect").Do(nil).
 		Status(http.StatusOK). // http.Client.Do 会自动重定向并请求
 		Header("Location", "")
-
-	s.Close(0)
 }
