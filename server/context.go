@@ -311,3 +311,6 @@ func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))
 	return h == "xmlhttprequest"
 }
+
+// https://github.com/golang/go/blob/master/src/net/http/responsecontroller.go#L41
+func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.resp }
