@@ -50,7 +50,7 @@ type (
 	}
 
 	// MarshalFunc 序列化函数原型
-	MarshalFunc func(v any) ([]byte, error)
+	MarshalFunc func(any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
 	UnmarshalFunc func([]byte, any) error

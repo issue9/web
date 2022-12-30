@@ -54,20 +54,20 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	}
 
 	if problem {
-		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.outputMimetypeName)
+		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.Mimetype())
 	}
-	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.outputMimetypeName, ctx.outputCharsetName))
+	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.Mimetype(), ctx.Charset()))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}
 
-	if f, found := ctx.Server().beforeMarshals[ctx.outputMimetypeName]; found {
+	if f, found := ctx.Server().beforeMarshals[ctx.Mimetype()]; found {
 		body = f(ctx, body)
 	}
 
 	data, err := ctx.outputMimetype(body)
 	switch {
-	case err != nil && problem: // 如果在输出 problem 时出错状态码不变
+	case err != nil && problem: // 如果在输出 problem 时出错，则状态码不变
 		ctx.WriteHeader(status)
 		return err
 	case errors.Is(err, serializer.ErrUnsupported):
@@ -78,7 +78,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 		return err
 	}
 
-	if f, found := ctx.Server().afterMarshals[ctx.outputMimetypeName]; found {
+	if f, found := ctx.Server().afterMarshals[ctx.Mimetype()]; found {
 		data = f(ctx, data)
 	}
 
