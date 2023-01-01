@@ -51,7 +51,7 @@ func (p *Params) ID(key string) int64 {
 		return 0
 	}
 
-	id, err := p.v.Context().route.Params().Int(key)
+	id, err := p.v.Context().Route().Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return 0
@@ -68,7 +68,7 @@ func (p *Params) Int64(key string) int64 {
 		return 0
 	}
 
-	ret, err := p.v.Context().route.Params().Int(key)
+	ret, err := p.v.Context().Route().Params().Int(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return 0
@@ -82,7 +82,7 @@ func (p *Params) String(key string) string {
 		return ""
 	}
 
-	ret, err := p.v.Context().route.Params().String(key)
+	ret, err := p.v.Context().Route().Params().String(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 		return ""
@@ -98,7 +98,7 @@ func (p *Params) Bool(key string) bool {
 		return false
 	}
 
-	ret, err := p.v.Context().route.Params().Bool(key)
+	ret, err := p.v.Context().Route().Params().Bool(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}
@@ -111,7 +111,7 @@ func (p *Params) Float64(key string) float64 {
 		return 0
 	}
 
-	ret, err := p.v.Context().route.Params().Float(key)
+	ret, err := p.v.Context().Route().Params().Float(key)
 	if err != nil {
 		p.v.Add(key, localeutil.Phrase(err.Error()))
 	}

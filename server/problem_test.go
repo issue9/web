@@ -56,19 +56,19 @@ func TestProblems_Add(t *testing.T) {
 
 	ps := newProblems(RFC7807Builder)
 	a.NotNil(ps)
-	a.NotZero(ps.Count())
-	l := ps.Count()
+	a.NotZero(ps.Len())
+	l := ps.Len()
 
 	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(l+1, ps.Count()).True(ps.Exists("40010"))
+	a.Equal(l+1, ps.Len()).True(ps.Exists("40010"))
 
 	ps.Add("40011", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(l+2, ps.Count())
+	a.Equal(l+2, ps.Len())
 
 	a.PanicString(func() {
 		ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	}, "存在相同值的 id 参数")
-	a.Equal(l+2, ps.Count())
+	a.Equal(l+2, ps.Len())
 }
 
 func TestProblems_Visit(t *testing.T) {
@@ -80,8 +80,8 @@ func TestProblems_Visit(t *testing.T) {
 		cnt++
 		return true
 	})
-	a.Equal(ps.Count(), cnt)
-	l := ps.Count()
+	a.Equal(ps.Len(), cnt)
+	l := ps.Len()
 
 	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	cnt = 0

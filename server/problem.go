@@ -49,11 +49,10 @@ type (
 	BuildProblemFunc func(id, title string, status int) Problem
 
 	Problems struct {
-		builder   BuildProblemFunc
-		baseURL   string
-		blank     bool             // 不输出 id 值
-		problems  []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
-		mimetypes map[string]string
+		builder  BuildProblemFunc
+		baseURL  string
+		blank    bool             // 不输出 id 值
+		problems []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
 	}
 
 	statusProblem struct {
@@ -77,9 +76,8 @@ func (srv *Server) Problems() *Problems { return srv.problems }
 
 func newProblems(f BuildProblemFunc) *Problems {
 	p := &Problems{
-		builder:   f,
-		problems:  make([]*statusProblem, 0, 50),
-		mimetypes: make(map[string]string, 10),
+		builder:  f,
+		problems: make([]*statusProblem, 0, 50),
 	}
 
 	add := func(s int) {
@@ -169,7 +167,7 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 	return p
 }
 
-func (p *Problems) Count() int { return len(p.problems) }
+func (p *Problems) Len() int { return len(p.problems) }
 
 func (p *Problems) Exists(id string) bool {
 	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
