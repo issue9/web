@@ -11,29 +11,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/serializer"
 )
-
-type BeforeMarshalFunc func(*Context, any) any
-
-type AfterMarshalFunc func(*Context, []byte) []byte
-
-// OnMarshal 注册编码过程中的钩子函数
-func (srv *Server) OnMarshal(mimetype string, before BeforeMarshalFunc, after AfterMarshalFunc) {
-	if before != nil {
-		if _, found := srv.beforeMarshals[mimetype]; found {
-			panic(fmt.Sprintf("%s 已经存在", mimetype))
-		}
-		srv.beforeMarshals[mimetype] = before
-	}
-
-	if after != nil {
-		if _, found := srv.afterMarshals[mimetype]; found {
-			panic(fmt.Sprintf("%s 已经存在", mimetype))
-		}
-		srv.afterMarshals[mimetype] = after
-	}
-}
 
 // Marshal 向客户端输出内容
 //
@@ -46,40 +24,33 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 		return nil
 	}
 
-	// 如果 outputMimetype 为空，说明在 Server.Mimetypes() 的配置中就是 nil。
+	// 如果 outputMimetype.marshal 为空，说明在 Server.Mimetypes() 的配置中就是 nil。
 	// 那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的。
-	if ctx.outputMimetype == nil {
+	if ctx.outputMimetype.marshal == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		panic(fmt.Sprintf("未对 %s 作处理", ctx.outputMimetypeName))
+		panic(fmt.Sprintf("未对 %s 作处理", ctx.Mimetype()))
 	}
 
+	mimetypeName := ctx.Mimetype()
 	if problem {
-		ctx.outputMimetypeName = ctx.Server().Problems().mimetype(ctx.Mimetype())
+		mimetypeName = ctx.outputMimetype.problem
 	}
-	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.Mimetype(), ctx.Charset()))
+	ctx.Header().Set("Content-Type", header.BuildContentType(mimetypeName, ctx.Charset()))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}
 
-	if f, found := ctx.Server().beforeMarshals[ctx.Mimetype()]; found {
-		body = f(ctx, body)
-	}
-
-	data, err := ctx.outputMimetype(body)
+	data, err := ctx.outputMimetype.marshal(ctx, body)
 	switch {
 	case err != nil && problem: // 如果在输出 problem 时出错，则状态码不变
 		ctx.WriteHeader(status)
 		return err
-	case errors.Is(err, serializer.ErrUnsupported):
+	case errors.Is(err, ErrUnsupported):
 		ctx.WriteHeader(http.StatusNotAcceptable) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
 		return err
 	case err != nil:
 		ctx.WriteHeader(http.StatusInternalServerError) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
 		return err
-	}
-
-	if f, found := ctx.Server().afterMarshals[ctx.Mimetype()]; found {
-		data = f(ctx, data)
 	}
 
 	ctx.WriteHeader(status)

@@ -6,22 +6,32 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io/fs"
+	"path/filepath"
 	"strconv"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/internal/serialization"
-	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
+	"github.com/issue9/web/server"
 )
 
 var (
-	mimetypesFactory = map[string]serialization.Item{}
-	filesFactory     = map[string]serialization.Item{}
+	mimetypesFactory = map[string]serializerItem{}
+	filesFactory     = map[string]fileSerializerItem{}
 )
+
+type serializerItem struct {
+	marshal   server.MarshalFunc
+	unmarshal server.UnmarshalFunc
+}
+
+type fileSerializerItem struct {
+	marshal   server.MarshalFileFunc
+	unmarshal server.UnmarshalFileFunc
+}
 
 type mimetypeConfig struct {
 	// 编码名称
@@ -50,8 +60,8 @@ type mimetypeConfig struct {
 }
 
 type mimetype struct {
-	m       serializer.MarshalFunc
-	u       serializer.UnmarshalFunc
+	m       server.MarshalFunc
+	u       server.UnmarshalFunc
 	name    string
 	problem string
 }
@@ -70,8 +80,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *ConfigError {
 			return &ConfigError{Field: "[" + strconv.Itoa(index) + "].target", Message: localeutil.Phrase("%s not found", item.Target)}
 		}
 
-		m.Name = item.Type
-		ms = append(ms, mimetype{m: m.Marshal, u: m.Unmarshal, name: item.Type, problem: item.Problem})
+		ms = append(ms, mimetype{m: m.marshal, u: m.unmarshal, name: item.Type, problem: item.Problem})
 	}
 	conf.mimetypes = ms
 
@@ -79,7 +88,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *ConfigError {
 }
 
 func (conf *configOf[T]) sanitizeFiles() *ConfigError {
-	conf.files = make(map[string]serialization.Item, len(conf.Files))
+	conf.files = make(map[string]fileSerializerItem, len(conf.Files))
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
@@ -93,30 +102,36 @@ func (conf *configOf[T]) sanitizeFiles() *ConfigError {
 // RegisterMimetype 注册用于序列化用户提交数据的方法
 //
 // name 为名称，如果存在同名，则会覆盖。
-func RegisterMimetype(m serializer.MarshalFunc, u serializer.UnmarshalFunc, name string) {
-	mimetypesFactory[name] = serialization.Item{Marshal: m, Unmarshal: u}
+func RegisterMimetype(m server.MarshalFunc, u server.UnmarshalFunc, name string) {
+	mimetypesFactory[name] = serializerItem{marshal: m, unmarshal: u}
 }
 
 // RegisterFileSerializer 注册用于文件序列化的方法
 //
 // ext 为文件的扩展名，如果存在同名，则会覆盖。
-func RegisterFileSerializer(m serializer.MarshalFunc, u serializer.UnmarshalFunc, ext ...string) {
+func RegisterFileSerializer(m server.MarshalFileFunc, u server.UnmarshalFileFunc, ext ...string) {
 	for _, e := range ext {
-		filesFactory[e] = serialization.Item{Marshal: m, Unmarshal: u}
+		filesFactory[e] = fileSerializerItem{marshal: m, unmarshal: u}
 	}
 }
 
 func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
-	f := serialization.NewFS(len(filesFactory))
-	s := f.Serializer()
+	ext := filepath.Ext(path)
+	var item fileSerializerItem
 	for name, ss := range filesFactory {
-		if err := s.Add(ss.Marshal, ss.Unmarshal, name); err != nil {
-			return nil, err
+		if name == ext {
+			item = ss
+			break
 		}
 	}
 
+	data, err := fs.ReadFile(fsys, path)
+	if err != nil {
+		return nil, err
+	}
+
 	conf := &configOf[T]{}
-	if err := f.Load(fsys, path, conf); err != nil {
+	if err := item.unmarshal(data, conf); err != nil {
 		return nil, err
 	}
 
@@ -129,8 +144,8 @@ func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
 }
 
 func init() {
-	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
-	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
+	RegisterMimetype(server.MarshalJSON, json.Unmarshal, "json")
+	RegisterMimetype(server.MarshalXML, xml.Unmarshal, "xml")
 	RegisterMimetype(nil, nil, "nil")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")

@@ -6,16 +6,26 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"reflect"
 
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/server"
 )
 
 const tagKey = "view-locale-key"
+
+type contextType int
+
+const viewContextKey contextType = 1
+
+type view struct {
+	tpl *template.Template // 单目录模式下的模板
+
+	dir     bool
+	dirTpls map[string]*template.Template
+	b       *catalog.Builder
+}
 
 // InstallView 返回本地化的模板
 //
@@ -34,32 +44,23 @@ const tagKey = "view-locale-key"
 //   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
 //   - 其它结构体，尝试读取 HTMLName 字段的 html struct tag 值作为模板名称进行查找；
 //
-// [InstallLocaleView] 与此有相同的处理方式。
-func InstallView(s *server.Server, fsys fs.FS, glob string) {
+// dir 表示是否以目录的形式组织本地化代码；
+func InstallView(s *server.Server, dir bool, fsys fs.FS, glob string) {
+	if dir {
+		instalDirView(s, fsys, glob)
+		return
+	}
+
 	fsys, funcs := initTpl(s, fsys)
 	tpl := template.New(s.Name()).Funcs(funcs)
 	template.Must(tpl.ParseFS(fsys, glob))
 
-	s.OnMarshal(Mimetype, func(ctx *server.Context, a any) any {
-		tpl := tpl.Funcs(template.FuncMap{
-			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
-		})
-
-		name, v := getName(a)
-		return newTpl(tpl, name, v)
-	}, nil)
+	s.Vars().Store(viewContextKey, &view{
+		tpl: tpl,
+	})
 }
 
-// InstallLocaleView 声明目录形式的本地化模板
-//
-// 按目录名称加载各个本地化的模板，每个模板之间相互独立，模板内可以包含本地化相关的内容。
-//
-// 提供了以下两个方法：
-//   - t 根据当前的语言（由 [server.Context.LaguageTag] 决定）对参数进行翻译；
-//   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
-//
-// fsys 表示模板目录，如果为空则会采用 s 作为默认值；
-func InstallLocaleView(s *server.Server, fsys fs.FS, glob string) {
+func instalDirView(s *server.Server, fsys fs.FS, glob string) {
 	fsys, funcs := initTpl(s, fsys)
 
 	dirs, err := fs.ReadDir(fsys, ".")
@@ -90,7 +91,11 @@ func InstallLocaleView(s *server.Server, fsys fs.FS, glob string) {
 		tpls[name] = tpl
 	}
 
-	installLocaleView(s, b, tpls)
+	s.Vars().Store(viewContextKey, &view{
+		dir:     true,
+		dirTpls: tpls,
+		b:       b,
+	})
 }
 
 func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
@@ -109,52 +114,4 @@ func initTpl(s *server.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 	}
 
 	return fsys, funcs
-}
-
-func installLocaleView(s *server.Server, b *catalog.Builder, tpls map[string]*template.Template) {
-	s.OnMarshal(Mimetype, func(ctx *server.Context, a any) any {
-		tag, _, _ := b.Matcher().Match(ctx.LanguageTag())
-		tagName := message.NewPrinter(tag, message.Catalog(b)).Sprintf(tagKey)
-		tpl, found := tpls[tagName]
-		if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
-			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
-		}
-
-		tpl = tpl.Funcs(template.FuncMap{
-			"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
-		})
-
-		name, v := getName(a)
-		return newTpl(tpl, name, v)
-	}, nil)
-}
-
-func getName(v any) (string, any) {
-	if m, ok := v.(Marshaler); ok {
-		return m.MarshalHTML()
-	}
-
-	rv := reflect.ValueOf(v)
-	for rv.Kind() == reflect.Pointer {
-		rv = rv.Elem()
-	}
-	rt := rv.Type()
-
-	if rt.Kind() != reflect.Struct {
-		if name := rt.Name(); name != "" {
-			return name, v
-		}
-		panic(fmt.Sprintf("text/html 不支持输出当前类型 %s", rt.Kind()))
-	}
-
-	field, found := rt.FieldByName("HTMLName")
-	if !found {
-		return rt.Name(), v
-	}
-
-	tag := field.Tag.Get("html")
-	if tag == "" {
-		tag = rt.Name()
-	}
-	return tag, v
 }

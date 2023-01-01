@@ -21,8 +21,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/serializer"
-	"github.com/issue9/web/serializer/text"
 )
 
 var _ http.ResponseWriter = &Context{}
@@ -41,10 +39,11 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 
 	// mimetype
 	mimetype := srv.Mimetypes()
-	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(mimetype.Add(nil, nil, "nil"))
+	mimetype.Add("application/json", MarshalJSON, json.Unmarshal, "application/problem+json")
+	mimetype.Add("application/xml", MarshalXML, xml.Unmarshal, "")
+	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
+	mimetype.Add("nil", nil, nil, "")
+	a.Equal(mimetype.Len(), 4)
 
 	// locale
 	b := srv.CatalogBuilder()
@@ -59,7 +58,6 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	e.Allow("*", "gzip", "deflate")
 
 	srv.Problems().Add("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
-	srv.Problems().AddMimetype("application/json", "application/problem+json")
 
 	return srv
 }
@@ -119,7 +117,7 @@ func TestServer_newContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", "not").
-		Header("Accept", text.Mimetype).
+		Header("Accept", "application/json").
 		Header("Accept-Charset", "unknown").
 		Request()
 	srv.newContext(w, r, nil)
@@ -147,7 +145,7 @@ func TestServer_newContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Post(a, "/path", []byte("123")).
-		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-")).
+		Header("Content-Type", header.BuildContentType("application/json", "utf-")).
 		Request()
 	srv.newContext(w, r, nil)
 	a.Equal(w.Code, http.StatusUnsupportedMediaType)
@@ -158,7 +156,7 @@ func TestServer_newContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx").
-		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
+		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx := srv.newContext(w, r, nil)
 	a.NotNil(ctx)
@@ -170,15 +168,15 @@ func TestServer_newContext(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7").
-		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
+		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.NotNil(ctx)
 	a.Empty(lw.String())
 	a.True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, "application/json").
+		Equal(ctx.Mimetype(), "application/json").
 		Equal(ctx.outputCharsetName, "utf-8").
-		Equal(ctx.inputMimetype, serializer.UnmarshalFunc(text.Unmarshal)).
+		Equal(ctx.inputMimetype, UnmarshalFunc(json.Unmarshal)).
 		Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 		NotNil(ctx.LocalePrinter())
 
@@ -186,28 +184,28 @@ func TestServer_newContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
-		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
+		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Header("accept", "application/json;q=0.2,text/plain;q=0.9").
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, text.Mimetype).
+		Equal(ctx.Mimetype(), "application/json").
 		Equal(ctx.outputCharsetName, header.UTF8Name)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Post(a, "/path", []byte("123")).
-		Header("content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
+		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Header("accept", "application/json;q=0.2,text/*;q=0.9").
 		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.outputMimetypeName, text.Mimetype).
+		Equal(ctx.Mimetype(), "application/json").
 		Equal(ctx.outputCharsetName, header.UTF8Name)
 }
 

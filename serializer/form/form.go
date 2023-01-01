@@ -42,7 +42,11 @@
 // - 当前包支持将数据映射到一个对象；
 package form
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/issue9/web/server"
+)
 
 const Mimetype = "application/x-www-form-urlencoded"
 
@@ -63,7 +67,7 @@ type Unmarshaler interface {
 //   - 如果实现 [encoding.TextMarshaler] 接口，则调用该接口；
 //   - 如果是 [url.Values] 对象，则调用其方法 Encode 解析；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func Marshal(v any) ([]byte, error) {
+func Marshal(_ *server.Context, v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
 	}

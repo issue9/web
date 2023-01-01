@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
 )
 
@@ -38,10 +37,11 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 
 	// mimetype
 	mimetype := srv.Mimetypes()
-	a.NotError(mimetype.Add(json.Marshal, json.Unmarshal, "application/json"))
-	a.NotError(mimetype.Add(xml.Marshal, xml.Unmarshal, "application/xml"))
-	a.NotError(mimetype.Add(text.Marshal, text.Unmarshal, text.Mimetype))
-	a.NotError(mimetype.Add(nil, nil, "nil"))
+	mimetype.Add("application/json", server.MarshalJSON, json.Unmarshal, "")
+	mimetype.Add("application/xml", server.MarshalXML, xml.Unmarshal, "")
+	mimetype.Add("nil", nil, nil, "")
+	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
+	a.Equal(mimetype.Len(), 4)
 
 	// locale
 	b := srv.CatalogBuilder()
@@ -56,7 +56,19 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	e.Allow("*", "gzip", "deflate")
 
 	srv.Problems().Add("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
-	srv.Problems().AddMimetype("application/json", "application/problem+json")
 
 	return srv, o
+}
+
+func marshalTest(_ *server.Context, v any) ([]byte, error) {
+	switch vv := v.(type) {
+	case error:
+		return nil, vv
+	default:
+		return nil, server.ErrUnsupported
+	}
+}
+
+func unmarshalTest(bs []byte, v any) error {
+	return server.ErrUnsupported
 }

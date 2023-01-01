@@ -68,7 +68,7 @@ type rfc7807 struct {
 	pReasons []string
 }
 
-type rfc8707Entry struct {
+type rfc7807Entry struct {
 	XMLName xml.Name
 	Value   any `xml:",chardata"`
 }
@@ -138,7 +138,7 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 
 		var err error
 		if k := v.Kind(); k <= reflect.Complex128 || k == reflect.String {
-			err = e.Encode(rfc8707Entry{XMLName: xml.Name{Local: key}, Value: val})
+			err = e.Encode(rfc7807Entry{XMLName: xml.Name{Local: key}, Value: val})
 		} else if k == reflect.Array || k == reflect.Slice {
 			s := xml.StartElement{Name: xml.Name{Local: key}}
 			if err = e.EncodeToken(s); err == nil {

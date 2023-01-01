@@ -8,8 +8,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/serializer/text"
-	"github.com/issue9/web/serializer/text/testobject"
+	"github.com/issue9/web/internal/testdata"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -20,23 +19,23 @@ func TestCreated(t *testing.T) {
 
 	// Location == ""
 	r.Get("/created", func(ctx *Context) Responser {
-		return Created(&testobject.TextObject{Name: "test", Age: 123}, "")
+		return Created(testdata.ObjectInst, "")
 	})
 	// Location == "/test"
 	r.Get("/created/location", func(ctx *Context) Responser {
-		return Created(&testobject.TextObject{Name: "test", Age: 123}, "/test")
+		return Created(testdata.ObjectInst, "/test")
 	})
 
 	s.GoServe()
 	defer s.Close(0)
 
-	s.Get("/created").Header("accept", text.Mimetype).Do(nil).
+	s.Get("/created").Header("accept", "application/json").Do(nil).
 		Status(http.StatusCreated).
-		StringBody(`test,123`)
+		StringBody(testdata.ObjectJSONString)
 
-	s.Get("/created/location").Header("accept", text.Mimetype).Do(nil).
+	s.Get("/created/location").Header("accept", "application/json").Do(nil).
 		Status(http.StatusCreated).
-		StringBody(`test,123`).
+		StringBody(testdata.ObjectJSONString).
 		Header("Location", "/test")
 }
 

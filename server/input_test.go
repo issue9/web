@@ -14,8 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/serializer/text"
-	"github.com/issue9/web/serializer/text/testobject"
+	"github.com/issue9/web/internal/testdata"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
@@ -317,70 +316,58 @@ func TestContext_Body(t *testing.T) {
 	ctx := srv.newContext(w, r, nil)
 	a.Nil(ctx.body)
 	data, err := ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
+	a.NotError(err).Equal(data, []byte("123")).
+		Equal(ctx.body, data)
 
 	// 读取缓存内容
 	data, err = ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
+	a.NotError(err).Equal(data, []byte("123")).
+		Equal(ctx.body, data)
 
 	// 采用 Nop 即 utf-8 编码
 	r = rest.Post(a, "/path", []byte("123")).Request()
 	ctx = srv.newContext(w, r, nil)
 	ctx.inputCharset = encoding.Nop
 	data, err = ctx.Body()
-	a.NotError(err).Equal(data, []byte("123"))
-	a.Equal(ctx.body, data)
+	a.NotError(err).Equal(data, []byte("123")).
+		Equal(ctx.body, data)
 
-	// 采用不同的编码
-	r = rest.Post(a, "/path", gbkBytes1).
-		Header("Content-type", "text/plain;charset=gb18030").
+	// GBK
+	r = rest.Post(a, "/path", testdata.ObjectGBKBytes).
+		Header("Content-type", "application/json;charset=gbk").
 		Request()
 	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
-	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
-	a.Equal(ctx.body, data)
-
-	// 采用不同的编码
-	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", gbkBytes1).
-		Header("Accept", "*/*").
-		Header("Content-Type", header.BuildContentType(text.Mimetype, " gb18030")).
-		Request()
 	ctx = srv.newContext(w, r, nil)
 	a.NotNil(ctx)
 	data, err = ctx.Body()
-	a.NotError(err).Equal(string(data), gbkString1)
-	a.Equal(ctx.body, data)
+	a.NotError(err).Equal(string(data), testdata.ObjectJSONString).
+		Equal(ctx.body, data)
 }
 
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a, nil)
 
-	r := rest.Post(a, "/path", []byte("test,123")).
-		Header("content-type", text.Mimetype).
+	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+		Header("content-type", "application/json").
 		Request()
 	w := httptest.NewRecorder()
 	ctx := srv.newContext(w, r, nil)
 
-	obj := &testobject.TextObject{}
+	obj := &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
-	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
+	a.Equal(obj, testdata.ObjectInst)
 
 	// 无法转换
-	o := &struct{}{}
-	a.Error(ctx.Unmarshal(o))
+	a.Error(ctx.Unmarshal(``))
 
 	// 空提交
 	r = rest.Post(a, "/path", nil).
-		Header("content-type", text.Mimetype).
+		Header("content-type", "application/json").
 		Request()
 	w = httptest.NewRecorder()
 	ctx = srv.newContext(w, r, nil)
-	obj = &testobject.TextObject{}
+	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
 }
@@ -389,21 +376,20 @@ func TestContext_Read(t *testing.T) {
 	a := assert.New(t, false)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-8")).
+	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx := newServer(a, nil).newContext(w, r, nil)
-	obj := &testobject.TextObject{}
+	obj := &testdata.Object{}
 	a.Nil(ctx.Read(false, obj, "41110"))
-	a.Equal(obj.Name, "test").Equal(obj.Age, 123)
+	a.Equal(obj, testdata.ObjectInst)
 
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", []byte("test,123")).
-		Header("Content-Type", header.BuildContentType(text.Mimetype, "utf-8")).
+	r = rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx = newServer(a, nil).newContext(w, r, nil)
-	o := &struct{}{}
-	resp := ctx.Read(false, o, "41110")
+	resp := ctx.Read(false, ``, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)
 	a.Equal(w.Code, 422)

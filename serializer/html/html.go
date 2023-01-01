@@ -17,18 +17,15 @@ package html
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
+	"reflect"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/server"
+	"golang.org/x/text/message"
 )
 
 const Mimetype = "text/html"
-
-type tpl struct {
-	tpl  *template.Template
-	name string // 模块名称
-	data any    // 传递给模板的数据
-}
 
 // Marshaler 自定义 HTML 输出需要实现的接口
 //
@@ -41,34 +38,82 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-func newTpl(t *template.Template, name string, data any) *tpl {
-	return &tpl{tpl: t, name: name, data: data}
-}
-
 // Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
-//   - 其它情况下则是返回 [serializer.ErrUnsupported]；
-func Marshal(v any) ([]byte, error) {
+//   - 其它情况下则是返回 [server.ErrUnsupported]；
+func Marshal(ctx *server.Context, v any) ([]byte, error) {
 	switch obj := v.(type) {
-	case *tpl:
-		return obj.marshal()
 	case []byte:
 		return obj, nil
 	case string:
 		return []byte(obj), nil
+	default:
+		return marshal(ctx, v)
 	}
-	return nil, serializer.ErrUnsupported
 }
 
-func Unmarshal([]byte, any) error { return serializer.ErrUnsupported }
+func marshal(ctx *server.Context, v any) ([]byte, error) {
+	tt, found := ctx.Server().Vars().Load(viewContextKey)
+	if !found {
+		return nil, server.ErrUnsupported
+	}
+	vv := tt.(*view)
 
-func (t *tpl) marshal() ([]byte, error) {
+	tpl := vv.tpl
+	if vv.dir {
+		tag, _, _ := vv.b.Matcher().Match(ctx.LanguageTag())
+		tagName := message.NewPrinter(tag, message.Catalog(vv.b)).Sprintf(tagKey)
+		t, found := vv.dirTpls[tagName]
+		if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
+			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
+		}
+		tpl = t
+	}
+
+	tpl = tpl.Funcs(template.FuncMap{
+		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
+	})
+
+	name, v := getName(v)
+
 	w := new(bytes.Buffer)
-	if err := t.tpl.ExecuteTemplate(w, t.name, t.data); err != nil {
+	if err := tpl.ExecuteTemplate(w, name, v); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
+}
+
+func Unmarshal([]byte, any) error { return server.ErrUnsupported }
+
+func getName(v any) (string, any) {
+	if m, ok := v.(Marshaler); ok {
+		return m.MarshalHTML()
+	}
+
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+	}
+	rt := rv.Type()
+
+	if rt.Kind() != reflect.Struct {
+		if name := rt.Name(); name != "" {
+			return name, v
+		}
+		panic(fmt.Sprintf("text/html 不支持输出当前类型 %s", rt.Kind()))
+	}
+
+	field, found := rt.FieldByName("HTMLName")
+	if !found {
+		return rt.Name(), v
+	}
+
+	tag := field.Tag.Get("html")
+	if tag == "" {
+		tag = rt.Name()
+	}
+	return tag, v
 }

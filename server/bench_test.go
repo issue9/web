@@ -3,8 +3,8 @@
 package server
 
 import (
-	"bytes"
 	"compress/flate"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,8 +17,7 @@ import (
 	"github.com/issue9/mux/v7/routertest"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/serializer/text"
-	"github.com/issue9/web/serializer/text/testobject"
+	"github.com/issue9/web/internal/testdata"
 )
 
 func obj(status int, body any, kv ...string) Responser {
@@ -66,15 +65,15 @@ func BenchmarkServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := rest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-				Header("accept", text.Mimetype).
+				Header("Content-type", header.BuildContentType("application/json", "gbk")).
+				Header("accept", "application/json").
 				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
-			a.NotError(err).Equal(string(body), "/path")
+			a.NotError(err).Equal(string(body), `"/path"`)
 		}
 	})
 
@@ -82,8 +81,8 @@ func BenchmarkServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := rest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-				Header("accept", text.Mimetype).
+				Header("Content-type", header.BuildContentType("application/json", "gbk")).
+				Header("accept", "application/json").
 				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
 				Header("accept-encoding", "gzip").
 				Request()
@@ -91,7 +90,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
-			a.NotError(err).NotEqual(body, "/path")
+			a.NotError(err).NotEqual(body, `"/path"`)
 		}
 	})
 
@@ -99,14 +98,14 @@ func BenchmarkServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := rest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType(text.Mimetype, header.UTF8Name)).
-				Header("accept", text.Mimetype).
+				Header("Content-type", header.BuildContentType("application/json", header.UTF8Name)).
+				Header("accept", "application/json").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
 			a.Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
-			a.NotError(err).Equal(string(body), "/path")
+			a.NotError(err).Equal(string(body), `"/path"`)
 		}
 	})
 }
@@ -118,8 +117,8 @@ func BenchmarkServer_newContext(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").
-			Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-			Header("Accept", text.Mimetype).
+			Header("Content-type", header.BuildContentType("application/json", "gbk")).
+			Header("Accept", "application/json").
 			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
 			Request()
 		ctx := srv.newContext(w, r, nil)
@@ -134,12 +133,11 @@ func BenchmarkContext_render(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r := rest.Get(a, "/path").Header("Accept", text.Mimetype).Request()
+			r := rest.Get(a, "/path").Header("Accept", "application/json").Request()
 			ctx := srv.newContext(w, r, nil)
 
-			o := &testobject.TextObject{Age: 22, Name: "中文2"}
-			obj(http.StatusCreated, o).Apply(ctx)
-			a.Equal(w.Body.Bytes(), gbkString2)
+			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
 	})
 
@@ -147,29 +145,27 @@ func BenchmarkContext_render(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
 			r := rest.Get(a, "/path").
-				Header("Accept", text.Mimetype).
+				Header("Accept", "application/json").
 				Header("Accept-Charset", "utf-8").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			o := &testobject.TextObject{Age: 22, Name: "中文2"}
-			obj(http.StatusCreated, o).Apply(ctx)
-			a.Equal(w.Body.Bytes(), gbkString2)
+			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
 	})
 
-	b.Run("charset", func(b *testing.B) {
+	b.Run("gbk", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
 			r := rest.Get(a, "/path").
-				Header("Accept", text.Mimetype).
+				Header("Accept", "application/json").
 				Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			o := &testobject.TextObject{Age: 22, Name: "中文2"}
-			obj(http.StatusCreated, o).Apply(ctx)
-			a.Equal(w.Body.Bytes(), gbkBytes2)
+			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
 		}
 	})
 
@@ -177,19 +173,18 @@ func BenchmarkContext_render(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
 			r := rest.Get(a, "/path").
-				Header("Accept", text.Mimetype).
+				Header("Accept", "application/json").
 				Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
 				Header("Accept-Encoding", "gzip;q=0.9,deflate").
 				Request()
 
 			ctx := srv.newContext(w, r, nil)
-			o := &testobject.TextObject{Age: 22, Name: "中文2"}
-			obj(http.StatusCreated, o).Apply(ctx)
+			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
 			ctx.destroy()
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
 			a.NotError(err).NotNil(data)
-			a.Equal(data, gbkBytes2)
+			a.Equal(data, testdata.ObjectGBKBytes)
 		}
 	})
 }
@@ -201,29 +196,28 @@ func BenchmarkContext_Body(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
-				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
-				Header("Accept", text.Mimetype).
+			r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+				Header("Content-type", header.BuildContentType("application/json", "utf-8")).
+				Header("Accept", "application/json").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			body, err := ctx.Body()
-			a.NotError(err).Equal(body, []byte("request,15"))
+			a.NotError(err).Equal(body, []byte(testdata.ObjectJSONString))
 		}
 	})
 
-	b.Run("charset", func(b *testing.B) {
+	b.Run("charset=gbk", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
-				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-				Header("Accept", text.Mimetype).
-				Header("Accept-Charset", "gbk").
+			r := rest.Post(a, "/path", testdata.ObjectGBKBytes).
+				Header("Content-type", header.BuildContentType("application/json", "gbk")).
+				Header("Accept", "application/json").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
 			body, err := ctx.Body()
-			a.NotError(err).Equal(body, []byte(gbkString1))
+			a.NotError(err).Equal(body, []byte(testdata.ObjectJSONString))
 		}
 	})
 }
@@ -235,47 +229,30 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
-				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
-				Header("Accept", text.Mimetype).
+			r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+				Header("Content-type", header.BuildContentType("application/json", "utf-8")).
+				Header("Accept", "application/json").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			obj := &testobject.TextObject{}
-			a.NotError(ctx.Unmarshal(obj))
-			a.Equal(obj.Age, 15).
-				Equal(obj.Name, "request")
+			obj := &testdata.Object{}
+			a.NotError(ctx.Unmarshal(obj)).
+				Equal(obj, testdata.ObjectInst)
 		}
 	})
 
 	b.Run("utf8", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
-			r := rest.Post(a, "/path", bytes.NewBufferString(gbkString1).Bytes()).
-				Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
-				Header("Accept", text.Mimetype).
+			r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+				Header("Content-type", header.BuildContentType("application/json", "utf-8")).
+				Header("Accept", "application/json").
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			obj := &testobject.TextObject{}
-			a.NotError(ctx.Unmarshal(obj))
-			a.Equal(obj.Age, 11).Equal(obj.Name, "中文1")
-		}
-	})
-
-	b.Run("charset", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			w := httptest.NewRecorder()
-			r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
-				Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-				Header("Accept", text.Mimetype).
-				Header("Accept-Charset", "gbk").
-				Request()
-			ctx := srv.newContext(w, r, nil)
-
-			obj := &testobject.TextObject{}
-			a.NotError(ctx.Unmarshal(obj))
-			a.Equal(obj.Age, 11)
+			obj := &testdata.Object{}
+			a.NotError(ctx.Unmarshal(obj)).
+				Equal(obj, testdata.ObjectInst)
 		}
 	})
 }
@@ -287,21 +264,20 @@ func BenchmarkPost(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := rest.Post(a, "/path", bytes.NewBufferString("request,15").Bytes()).
-			Header("Content-type", header.BuildContentType(text.Mimetype, "utf-8")).
-			Header("Accept", text.Mimetype).
+		r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+			Header("Content-type", header.BuildContentType("application/json", "utf-8")).
+			Header("Accept", "application/json").
 			Request()
 		ctx := srv.newContext(w, r, nil)
 
-		o := &testobject.TextObject{}
-		a.NotError(ctx.Unmarshal(o))
-		a.Equal(o.Age, 15).
-			Equal(o.Name, "request")
+		o := &testdata.Object{}
+		a.NotError(ctx.Unmarshal(o)).
+			Equal(o, testdata.ObjectInst)
 
 		o.Age++
 		o.Name = "response"
 		obj(http.StatusCreated, o).Apply(ctx)
-		a.Equal(w.Body.String(), "response,16")
+		a.Equal(w.Body.String(), `{"name":"response","Age":457}`)
 	}
 }
 
@@ -311,34 +287,28 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := rest.Post(a, "/path", bytes.NewBuffer(gbkBytes1).Bytes()).
-			Header("Content-type", header.BuildContentType(text.Mimetype, "gbk")).
-			Header("Accept", text.Mimetype).
-			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
+		r := rest.Post(a, "/path", testdata.ObjectGBKBytes).
+			Header("Content-type", header.BuildContentType("application/json", "gbk")).
+			Header("Accept", "application/json").
 			Request()
 		ctx := srv.newContext(w, r, nil)
 
-		o := &testobject.TextObject{}
-		a.NotError(ctx.Unmarshal(o))
-		a.Equal(o.Age, 11).Equal(o.Name, "中文1")
-
-		o.Age = 22
-		o.Name = "中文2"
-		obj(http.StatusCreated, o).Apply(ctx)
-		a.Equal(w.Body.Bytes(), gbkBytes2)
+		o := &testdata.Object{}
+		a.NotError(ctx.Unmarshal(o)).
+			Equal(o, testdata.ObjectInst)
 	}
 }
 
 func BenchmarkContext_Object(b *testing.B) {
 	a := assert.New(b, false)
 	s := newServer(a, nil)
-	o := &testobject.TextObject{}
+	o := &testdata.Object{}
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := rest.Post(a, "/path", nil).
-			Header("Accept", text.Mimetype).
-			Header("content-type", text.Mimetype).
+			Header("Accept", "application/json").
+			Header("content-type", "application/json").
 			Request()
 		ctx := s.newContext(w, r, nil)
 		obj(http.StatusTeapot, o).Apply(ctx)
@@ -348,15 +318,56 @@ func BenchmarkContext_Object(b *testing.B) {
 func BenchmarkContext_Object_withHeader(b *testing.B) {
 	a := assert.New(b, false)
 	s := newServer(a, nil)
-	o := &testobject.TextObject{}
+	o := &testdata.Object{}
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
 		r := rest.Post(a, "/path", nil).
-			Header("Accept", text.Mimetype).
-			Header("content-type", text.Mimetype).
+			Header("Accept", "application/json").
+			Header("content-type", "application/json").
 			Request()
 		ctx := s.newContext(w, r, nil)
 		obj(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
+}
+
+func BenchmarkMimetypes_marshalFunc(b *testing.B) {
+	a := assert.New(b, false)
+	mt := newMimetypes()
+	a.NotNil(mt)
+
+	mt.Add("font/wottf", MarshalXML, xml.Unmarshal, "")
+
+	for i := 0; i < b.N; i++ {
+		item := mt.marshalFunc("font/wottf;q=0.9")
+		a.NotNil(item)
+	}
+}
+
+func BenchmarkMimetypes_contentType(b *testing.B) {
+	a := assert.New(b, false)
+	mt := newMimetypes()
+	a.NotNil(mt)
+
+	mt.Add("font/1", MarshalXML, xml.Unmarshal, "")
+	mt.Add("font/2", MarshalXML, xml.Unmarshal, "")
+	mt.Add("font/3", MarshalXML, xml.Unmarshal, "")
+
+	b.Run("charset=utf-8", func(b *testing.B) {
+		a := assert.New(b, false)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			marshal, encoding, err := mt.contentType("font/2;charset=utf-8")
+			a.NotError(err).NotNil(marshal).Nil(encoding)
+		}
+	})
+
+	b.Run("charset=gbk", func(b *testing.B) {
+		a := assert.New(b, false)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			marshal, encoding, err := mt.contentType("font/2;charset=gbk")
+			a.NotError(err).NotNil(marshal).NotNil(encoding)
+		}
+	})
 }

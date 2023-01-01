@@ -8,7 +8,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/server"
 )
 
 var (
@@ -99,7 +99,7 @@ func (s Sex) MarshalText() ([]byte, error) {
 	case 1:
 		return []byte("female"), nil
 	default:
-		return nil, serializer.ErrUnsupported
+		return nil, server.ErrUnsupported
 	}
 }
 
@@ -110,7 +110,7 @@ func (s *Sex) UnmarshalText(v []byte) error {
 	case "female":
 		*s = 1
 	default:
-		return serializer.ErrUnsupported
+		return server.ErrUnsupported
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Marshal
-	data, err := Marshal(tagObjectData)
+	data, err := Marshal(nil, tagObjectData)
 	a.NotError(err).Equal(string(data), tagObjectString)
 
 	// Unmarshal
@@ -131,7 +131,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a.Equal(obj, tagObjectData)
 
 	// anonymous marshal
-	data, err = Marshal(anonymousData)
+	data, err = Marshal(nil, anonymousData)
 	a.NotError(err).
 		Equal(string(data), anonymousString)
 
@@ -141,7 +141,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a.Equal(anoobj, anonymousData)
 
 	// nest marshal
-	data, err = Marshal(nestData)
+	data, err = Marshal(nil, nestData)
 	a.NotError(err).
 		Equal(string(data), nestString)
 

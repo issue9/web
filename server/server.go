@@ -21,8 +21,6 @@ import (
 
 	"github.com/issue9/web/internal/base"
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/serialization"
-	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/service"
 )
 
@@ -43,11 +41,9 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	beforeMarshals map[string]BeforeMarshalFunc
-	afterMarshals  map[string]AfterMarshalFunc
-	mimetypes      *serialization.Mimetypes
-	encodings      *encoding.Encodings
-	files          *serialization.FS
+	mimetypes *Mimetypes
+	encodings *encoding.Encodings
+	files     *Files
 }
 
 // New 返回 *Server 实例
@@ -55,8 +51,6 @@ type Server struct {
 // name, version 表示服务的名称和版本号；
 // o 指定了初始化 Server 一些非必要参数。
 func New(name, version string, o *Options) (*Server, error) {
-	const mimetypesCap = 10
-
 	o, err := sanitizeOptions(o)
 	if err != nil {
 		return nil, err
@@ -78,12 +72,11 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		beforeMarshals: make(map[string]BeforeMarshalFunc, mimetypesCap),
-		afterMarshals:  make(map[string]AfterMarshalFunc, mimetypesCap),
-		mimetypes:      serialization.NewMimetypes(mimetypesCap),
-		encodings:      encoding.NewEncodings(o.Logs.ERROR()),
-		files:          serialization.NewFS(5),
+		mimetypes: newMimetypes(),
+		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 	}
+	srv.files = newFiles(srv)
+
 	srv.routers = group.NewOf(srv.call,
 		notFound,
 		buildNodeHandle(http.StatusMethodNotAllowed),
@@ -116,9 +109,6 @@ func (srv *Server) Cache() cache.Cache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
-
-// Mimetypes 编解码控制
-func (srv *Server) Mimetypes() serializer.Serializer { return srv.mimetypes }
 
 // Now 返回当前时间
 //
@@ -186,17 +176,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
-
-// Files 返回用于序列化文件内容的操作接口
-func (srv *Server) Files() serializer.FS { return srv.files }
-
-// LoadLocale 加载本地化的文件
-func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
-	if fsys == nil {
-		fsys = srv
-	}
-	return srv.base.LoadLocaleFiles(fsys, glob, srv.files)
-}
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
 	return srv.base.NewPrinter(tag)

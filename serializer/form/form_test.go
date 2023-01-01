@@ -8,12 +8,12 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/server"
 )
 
 var (
-	_ serializer.MarshalFunc   = Marshal
-	_ serializer.UnmarshalFunc = Unmarshal
+	_ server.MarshalFunc   = Marshal
+	_ server.UnmarshalFunc = Unmarshal
 
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
@@ -58,7 +58,7 @@ func TestMarshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	formObject := url.Values{}
-	data, err := Marshal(formObject)
+	data, err := Marshal(nil, formObject)
 	a.NotError(err)
 	a.NotNil(data). // 非 nil
 			Empty(data) // 但长度为 0
@@ -67,16 +67,16 @@ func TestMarshal(t *testing.T) {
 	formObject.Add("friend", "Jess")
 	formObject.Add("friend", "Sarah")
 	formObject.Add("friend", "Zoe")
-	data, err = Marshal(formObject)
+	data, err = Marshal(nil, formObject)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), formString)
 
 	// 非 url.Values 类型
-	data, err = Marshal(&struct{}{})
+	data, err = Marshal(nil, &struct{}{})
 	a.NotError(err).Empty(data)
 
 	// Marshaler 类型
-	data, err = Marshal(objectData)
+	data, err = Marshal(nil, objectData)
 	a.NotError(err).
 		Equal(string(data), formString)
 }

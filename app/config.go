@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/internal/serialization"
 	"github.com/issue9/web/server"
 )
 
@@ -71,7 +70,7 @@ type configOf[T any] struct {
 	//  - .xml
 	//  - .json
 	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files>file,omitempty"`
-	files map[string]serialization.Item
+	files map[string]fileSerializerItem
 
 	// 指定可用的 mimetype
 	//
@@ -137,16 +136,11 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	}
 
 	for name, s := range conf.files {
-		if err := srv.Files().Serializer().Add(s.Marshal, s.Unmarshal, name); err != nil {
-			panic(err)
-		}
+		srv.Files().Add(s.marshal, s.unmarshal, name)
 	}
 
 	for _, item := range conf.mimetypes {
-		if err := srv.Mimetypes().Add(item.m, item.u, item.name); err != nil {
-			panic(err)
-		}
-		srv.Problems().AddMimetype(item.name, item.problem)
+		srv.Mimetypes().Add(item.name, item.m, item.u, item.problem)
 	}
 
 	conf.buildEncodings(srv.Encodings())

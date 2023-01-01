@@ -28,10 +28,6 @@ messages:
   message:
     msg: '不支持序列化或是反序列化'
 
-- key: 'has serialization function %s'
-  message:
-    msg: '已经存在相同名称 %[1]s 的序列化函数'
-
 - key: 'not found serialization for %s'
   message:
     msg: '未找到符合报头 %s 的序列化函数'

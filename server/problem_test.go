@@ -108,19 +108,6 @@ func TestProblems_Visit(t *testing.T) {
 	a.Equal(1, cnt)
 }
 
-func TestProblems_Mimetype(t *testing.T) {
-	a := assert.New(t, false)
-	ps := newProblems(RFC7807Builder)
-	a.NotNil(ps)
-
-	a.Equal(ps.mimetype("application/json"), "application/json")
-	ps.AddMimetype("application/json", "application/problem+json")
-	a.Equal(ps.mimetype("application/json"), "application/problem+json")
-	a.PanicString(func() {
-		ps.AddMimetype("application/json", "application/problem")
-	}, "已经存在的 mimetype")
-}
-
 func TestProblems_Problem(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, nil)

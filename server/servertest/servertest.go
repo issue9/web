@@ -6,7 +6,6 @@ package servertest
 import (
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -119,7 +118,7 @@ func (s *Tester) Close(shutdown time.Duration) {
 func BuildHandler(code int) server.HandlerFunc {
 	return func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
-			if err := ctx.Marshal(code, []byte(strconv.Itoa(code)), false); err != nil {
+			if err := ctx.Marshal(code, code, false); err != nil {
 				ctx.Logs().ERROR().Error(err)
 			}
 		})

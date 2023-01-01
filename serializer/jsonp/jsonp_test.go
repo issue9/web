@@ -12,10 +12,10 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-func TestInstall(t *testing.T) {
+func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
-	s.Server().Mimetypes().Add(Marshal, Unmarshal, Mimetype)
+	s.Server().Mimetypes().Add(Mimetype, Marshal, Unmarshal, "")
 	Install("callback", s.Server())
 
 	s.Router().Get("/jsonp", func(ctx *server.Context) server.Responser {

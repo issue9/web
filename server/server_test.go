@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 
-	"github.com/issue9/web/serializer/text"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -225,7 +224,7 @@ func TestMiddleware(t *testing.T) {
 	defer srv.Close(0)
 
 	srv.Get("/p1/path").
-		Header("accept", text.Mimetype).
+		Header("accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("h", "p1p2-b1b2-").
@@ -233,7 +232,7 @@ func TestMiddleware(t *testing.T) {
 	a.Equal(count, 1)
 
 	srv.Get("/path").
-		Header("accept", text.Mimetype).
+		Header("accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("h", "b1b2-").
@@ -259,7 +258,7 @@ func TestServer_Routers(t *testing.T) {
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
 	r1.Prefix("/p1").Delete("/path", servertest.BuildHandler(http.StatusCreated))
-	s.Delete("/p1/path").Header("Accept", "text/plain;v=2").Do(nil).Status(http.StatusCreated)
+	s.Delete("/p1/path").Header("Accept", "application/json;v=2").Do(nil).Status(http.StatusCreated)
 
 	r2 := rs.Router("ver")
 	a.Equal(r2, r1)
@@ -270,7 +269,7 @@ func TestServer_Routers(t *testing.T) {
 	rs.Remove("ver")
 	a.Equal(0, len(rs.Routers()))
 	s.Delete("/p1/path").
-		Header("Accept", "text/plain;v=2").
+		Header("Accept", "application/json;v=2").
 		Do(nil).
 		Status(http.StatusNotFound)
 }
@@ -287,7 +286,7 @@ func TestServer_FileServer(t *testing.T) {
 		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
 		s.Get("/v1/file1.txt").
-			Header("Accept", "text/plain;vv=2").
+			Header("Accept", "application/json;vv=2").
 			Do(nil).
 			Status(http.StatusOK).
 			StringBody("file1")

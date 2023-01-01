@@ -3,43 +3,53 @@
 package html
 
 import (
-	"html/template"
 	"testing"
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/server"
 )
 
 var (
-	_ serializer.MarshalFunc   = Marshal
-	_ serializer.UnmarshalFunc = Unmarshal
+	_ server.MarshalFunc   = Marshal
+	_ server.UnmarshalFunc = Unmarshal
 )
 
-func TestMarshal(t *testing.T) {
+func TestGetName(t *testing.T) {
 	a := assert.New(t, false)
 
-	tpl, err := template.ParseGlob("./testdata/*.tpl")
-	a.NotError(err).NotNil(tpl)
+	type obj struct {
+		HTMLName struct{} `html:"t"`
+	}
+	type obj2 struct {
+		HTMLName struct{}
+	}
 
-	bs, err := Marshal(newTpl(tpl, "footer", map[string]any{
-		"Footer": "footer",
-	}))
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), "<div>footer</div>")
+	type obj3 struct{}
 
-	bs, err = Marshal(newTpl(tpl, "header", &struct{ Header string }{
-		Header: "header",
-	}))
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), "<div>header</div>")
+	type obj4 map[string]string
 
-	bs, err = Marshal(5)
-	a.Error(err).Nil(bs)
+	name, v := getName(&obj{})
+	a.Equal(name, "t").Empty(v) // 指针类型的 v
 
-	bs, err = Marshal("<div>abc</div>")
-	a.NotError(err).Equal(string(bs), "<div>abc</div>")
+	name, v = getName(&obj2{})
+	a.Equal(name, "obj2").Zero(v)
 
-	bs, err = Marshal([]byte("<div>abc</div>"))
-	a.NotError(err).Equal(string(bs), "<div>abc</div>")
+	name, v = getName(&obj3{})
+	a.Equal(name, "obj3").Zero(v)
+
+	name, v = getName(&obj4{})
+	a.Equal(name, "obj4").Empty(v)
+
+	name, v = getName(server.RFC7807Builder("id", "title", 500))
+	a.Equal(name, "problem").
+		Equal(v, map[string]any{
+			"type":   "id",
+			"title":  "title",
+			"status": 500,
+		})
+
+	a.PanicString(func() {
+		getName(map[string]string{})
+	}, "text/html 不支持输出当前类型 map")
 }

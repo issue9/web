@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-
-	"github.com/issue9/web/serializer/form"
 )
 
 var (
@@ -18,7 +16,7 @@ var (
 	_ Problem        = &rfc7807{}
 	_ json.Marshaler = &rfc7807{}
 	_ xml.Marshaler  = &rfc7807{}
-	_ form.Marshaler = &rfc7807{}
+	//_ form.Marshaler = &rfc7807{}
 )
 
 func TestRFC7807Builder(t *testing.T) {
@@ -76,11 +74,11 @@ func TestRFC7807_Marshal(t *testing.T) {
 	})
 
 	t.Run("Form", func(t *testing.T) {
-		data, err := form.Marshal(p1)
+		data, err := p1.(*rfc7807).MarshalForm()
 		a.NotError(err).
 			Equal(string(data), `status=200&title=bad+request&type=400`)
 
-		data, err = form.Marshal(p2)
+		data, err = p2.(*rfc7807).MarshalForm()
 		a.NotError(err).
 			Equal(string(data), `detail=detail&params%5B0%5D.name=n1&params%5B0%5D.reason=r1&status=400&title=bad+request&type=400`)
 	})

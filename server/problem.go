@@ -175,26 +175,6 @@ func (p *Problems) Exists(id string) bool {
 	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
 }
 
-// AddMimetype 指定返回 [Problem] 时的 content-type 值
-//
-// mimetype 为正常情况下的 content-type 值，当输出对象为 [Problem] 时，
-// 可以指定不同的值，比如 application/json 可以对应输出 application/problem+json，
-// 这也是 RFC7807 推荐的作法。
-func (p *Problems) AddMimetype(mimetype, problemType string) *Problems {
-	if _, exists := p.mimetypes[mimetype]; exists {
-		panic(fmt.Sprintf("已经存在的 mimetype %s", mimetype))
-	}
-	p.mimetypes[mimetype] = problemType
-	return p
-}
-
-func (p *Problems) mimetype(mimetype string) string {
-	if v, exists := p.mimetypes[mimetype]; exists {
-		return v
-	}
-	return mimetype
-}
-
 // Visit 遍历所有由 [Problems.Add] 添加的项
 //
 // f 为遍历的函数，其原型为：
