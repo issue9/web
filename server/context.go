@@ -76,7 +76,7 @@ type Context struct {
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	h := r.Header.Get("Accept")
-	item := srv.mimetypes.marshalFunc(h)
+	item := srv.mimetypes.MarshalFunc(h)
 	if item == nil {
 		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -92,7 +92,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get("Accept-Encoding")
-	outputEncoding, notAcceptable := srv.encodings.Search(item.name, h)
+	outputEncoding, notAcceptable := srv.encodings.Search(item.Name, h)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -105,7 +105,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get("Content-Type")
 	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = srv.Mimetypes().contentType(h)
+		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
 			srv.Logs().Debug(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -187,7 +187,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.Server().mimetypes.marshalFunc(mimetype)
+	item := ctx.Server().mimetypes.MarshalFunc(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -199,9 +199,9 @@ func (ctx *Context) SetMimetype(mimetype string) {
 // problem 表示是否返回 problem 时的 mimetype 值。该值由 [Mimetypes] 设置。
 func (ctx *Context) Mimetype(problem bool) string {
 	if problem {
-		return ctx.outputMimetype.problem
+		return ctx.outputMimetype.Problem
 	}
-	return ctx.outputMimetype.name
+	return ctx.outputMimetype.Name
 }
 
 // SetEncoding 设置压缩编码
@@ -215,7 +215,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, notAcceptable := ctx.Server().encodings.Search(ctx.outputMimetype.name, enc)
+	outputEncoding, notAcceptable := ctx.Server().encodings.Search(ctx.outputMimetype.Name, enc)
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

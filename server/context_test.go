@@ -25,6 +25,19 @@ import (
 
 var _ http.ResponseWriter = &Context{}
 
+func marshalTest(_ *Context, v any) ([]byte, error) {
+	switch vv := v.(type) {
+	case error:
+		return nil, vv
+	default:
+		return nil, ErrUnsupported
+	}
+}
+
+func unmarshalTest(bs []byte, v any) error {
+	return ErrUnsupported
+}
+
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言

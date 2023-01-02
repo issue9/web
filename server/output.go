@@ -26,7 +26,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 
 	// 如果 outputMimetype.marshal 为空，说明在 Server.Mimetypes() 的配置中就是 nil。
 	// 那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的。
-	if ctx.outputMimetype.marshal == nil {
+	if ctx.outputMimetype.Marshal == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
 		panic(fmt.Sprintf("未对 %s 作处理", ctx.Mimetype(false)))
 	}
@@ -36,7 +36,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 		ctx.Header().Set("Content-Language", id)
 	}
 
-	data, err := ctx.outputMimetype.marshal(ctx, body)
+	data, err := ctx.outputMimetype.Marshal(ctx, body)
 	switch {
 	case err != nil && problem: // 如果在输出 problem 时出错，则状态码不变
 		ctx.WriteHeader(status)

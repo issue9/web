@@ -21,6 +21,7 @@ import (
 
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/service"
 )
 
@@ -46,7 +47,7 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	mimetypes *Mimetypes
+	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
 	encodings *encoding.Encodings
 	files     *Files
 }
@@ -79,7 +80,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		mimetypes: newMimetypes(),
+		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
 		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 	}
 

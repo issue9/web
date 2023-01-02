@@ -4,7 +4,6 @@ package server
 
 import (
 	"compress/flate"
-	"encoding/xml"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -329,45 +328,4 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 		ctx := s.newContext(w, r, nil)
 		obj(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
-}
-
-func BenchmarkMimetypes_marshalFunc(b *testing.B) {
-	a := assert.New(b, false)
-	mt := newMimetypes()
-	a.NotNil(mt)
-
-	mt.Add("font/wottf", MarshalXML, xml.Unmarshal, "")
-
-	for i := 0; i < b.N; i++ {
-		item := mt.marshalFunc("font/wottf;q=0.9")
-		a.NotNil(item)
-	}
-}
-
-func BenchmarkMimetypes_contentType(b *testing.B) {
-	a := assert.New(b, false)
-	mt := newMimetypes()
-	a.NotNil(mt)
-
-	mt.Add("font/1", MarshalXML, xml.Unmarshal, "")
-	mt.Add("font/2", MarshalXML, xml.Unmarshal, "")
-	mt.Add("font/3", MarshalXML, xml.Unmarshal, "")
-
-	b.Run("charset=utf-8", func(b *testing.B) {
-		a := assert.New(b, false)
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			marshal, encoding, err := mt.contentType("font/2;charset=utf-8")
-			a.NotError(err).NotNil(marshal).Nil(encoding)
-		}
-	})
-
-	b.Run("charset=gbk", func(b *testing.B) {
-		a := assert.New(b, false)
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			marshal, encoding, err := mt.contentType("font/2;charset=gbk")
-			a.NotError(err).NotNil(marshal).NotNil(encoding)
-		}
-	})
 }

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-package server
+// Package mimetype 管理
+package mimetypes
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"strings"
 
@@ -16,62 +15,40 @@ import (
 	"github.com/issue9/web/internal/header"
 )
 
-// ErrUnsupported 返回不支持序列化的错误信息
-//
-// 当一个对象无法被正常的序列化或是反序列化时返回此错误。
-var ErrUnsupported = localeutil.Error("unsupported serialization")
-
 type (
-	// MarshalFunc 序列化函数原型
-	MarshalFunc func(*Context, any) ([]byte, error)
-
-	// UnmarshalFunc 反序列化函数原型
-	UnmarshalFunc func([]byte, any) error
-
-	mimetype struct {
-		name      string
-		problem   string
-		marshal   MarshalFunc
-		unmarshal UnmarshalFunc
+	Mimetype[M any, U any] struct {
+		Name      string
+		Problem   string
+		Marshal   M
+		Unmarshal U
 	}
 
-	Mimetypes struct {
-		items []*mimetype
+	Mimetypes[M any, U any] struct {
+		items []*Mimetype[M, U]
 	}
 )
 
-func MarshalJSON(ctx *Context, obj any) ([]byte, error) {
-	return json.Marshal(obj)
-}
-
-func MarshalXML(ctx *Context, obj any) ([]byte, error) {
-	return xml.Marshal(obj)
-}
-
-// Mimetypes 编解码控制
-func (srv *Server) Mimetypes() *Mimetypes { return srv.mimetypes }
-
-func newMimetypes() *Mimetypes {
-	return &Mimetypes{
-		items: make([]*mimetype, 0, 10),
+func New[M any, U any]() *Mimetypes[M, U] {
+	return &Mimetypes[M, U]{
+		items: make([]*Mimetype[M, U], 0, 10),
 	}
 }
 
 // Exists 是否存在同名的
-func (ms *Mimetypes) Exists(name string) bool {
-	return sliceutil.Exists(ms.items, func(item *mimetype) bool { return item.name == name })
+func (ms *Mimetypes[M, U]) Exists(name string) bool {
+	return sliceutil.Exists(ms.items, func(item *Mimetype[M, U]) bool { return item.Name == name })
 }
 
 // Delete 删除指定名称的编码方法
-func (ms *Mimetypes) Delete(name string) {
-	ms.items = sliceutil.Delete(ms.items, func(item *mimetype) bool { return item.name == name })
+func (ms *Mimetypes[M, U]) Delete(name string) {
+	ms.items = sliceutil.Delete(ms.items, func(item *Mimetype[M, U]) bool { return item.Name == name })
 }
 
 // Add 添加新的编码方法
 //
 // name 为编码名称；
 // problem 为该编码在返回 [Problem] 对象时的 mimetype 报头值，如果为空，则会被赋予 name 相同的值；
-func (ms *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc, problem string) {
+func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	if ms.Exists(name) {
 		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))
 	}
@@ -80,11 +57,11 @@ func (ms *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc, problem st
 		problem = name
 	}
 
-	ms.items = append(ms.items, &mimetype{
-		name:      name,
-		problem:   problem,
-		marshal:   m,
-		unmarshal: u,
+	ms.items = append(ms.items, &Mimetype[M, U]{
+		Name:      name,
+		Problem:   problem,
+		Marshal:   m,
+		Unmarshal: u,
 	})
 }
 
@@ -92,52 +69,54 @@ func (ms *Mimetypes) Add(name string, m MarshalFunc, u UnmarshalFunc, problem st
 //
 // name 用于查找相关的编码方法；
 // 如果 problem 为空，会被赋予与 name 相同的值；
-func (ms *Mimetypes) Set(name string, m MarshalFunc, u UnmarshalFunc, problem string) {
+func (ms *Mimetypes[M, U]) Set(name string, m M, u U, problem string) {
 	if problem == "" {
 		problem = name
 	}
 
-	if item, found := sliceutil.At(ms.items, func(i *mimetype) bool { return name == i.name }); found {
-		item.marshal = m
-		item.unmarshal = u
-		item.problem = problem
+	if item, found := sliceutil.At(ms.items, func(i *Mimetype[M, U]) bool { return name == i.Name }); found {
+		item.Marshal = m
+		item.Unmarshal = u
+		item.Problem = problem
 		return
 	}
 
-	ms.items = append(ms.items, &mimetype{
-		name:      name,
-		problem:   problem,
-		marshal:   m,
-		unmarshal: u,
+	ms.items = append(ms.items, &Mimetype[M, U]{
+		Name:      name,
+		Problem:   problem,
+		Marshal:   m,
+		Unmarshal: u,
 	})
 }
 
-func (ms *Mimetypes) Len() int { return len(ms.items) }
+func (ms *Mimetypes[M, U]) Len() int { return len(ms.items) }
 
-// 从 content-type 报头中获取解码和字符集函数
+// ContentType 从 content-type 报头中获取解码和字符集函数
 //
 // h 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (ms *Mimetypes) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
+func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	mimetype, charset := header.ParseWithParam(h, "charset")
 
 	item := ms.searchFunc(func(s string) bool { return s == mimetype })
 	if item == nil {
-		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
+		var z U
+		return z, nil, localeutil.Error("not found serialization function for %s", mimetype)
 	}
-	f := item.unmarshal
+	f := item.Unmarshal
 
 	if charset == "" || charset == "utf-8" {
 		return f, nil, nil
 	}
 	e, err := htmlindex.Get(charset)
 	if err != nil {
-		return nil, nil, err
+		var z U
+		return z, nil, err
 	}
 
 	return f, e, nil
 }
 
-// 从 h 解析出当前请求所需要的 mimetype 名称和对应的解码函数
+// MarshalFunc 从 h 解析出当前请求所需要的 mimetype 名称和对应的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
@@ -155,7 +134,7 @@ func (ms *Mimetypes) contentType(h string) (UnmarshalFunc, encoding.Encoding, er
 // 返回的名称可能是：
 //
 //	text/plain
-func (ms *Mimetypes) marshalFunc(h string) *mimetype {
+func (ms *Mimetypes[M, U]) MarshalFunc(h string) *Mimetype[M, U] {
 	if h == "" {
 		if item := ms.findMarshal("*/*"); item != nil {
 			return item
@@ -174,7 +153,7 @@ func (ms *Mimetypes) marshalFunc(h string) *mimetype {
 	return nil
 }
 
-func (ms *Mimetypes) findMarshal(name string) *mimetype {
+func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 	switch {
 	case ms.Len() == 0:
 		return nil
@@ -188,7 +167,7 @@ func (ms *Mimetypes) findMarshal(name string) *mimetype {
 	}
 }
 
-func (ms *Mimetypes) searchFunc(match func(string) bool) *mimetype {
-	item, _ := sliceutil.At(ms.items, func(i *mimetype) bool { return match(i.name) })
+func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
+	item, _ := sliceutil.At(ms.items, func(i *Mimetype[M, U]) bool { return match(i.Name) })
 	return item
 }
