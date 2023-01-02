@@ -174,7 +174,7 @@ func TestServer_newContext(t *testing.T) {
 	a.NotNil(ctx)
 	a.Empty(lw.String())
 	a.True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.Mimetype(), "application/json").
+		Equal(ctx.Mimetype(false), "application/json").
 		Equal(ctx.outputCharsetName, "utf-8").
 		Equal(ctx.inputMimetype, UnmarshalFunc(json.Unmarshal)).
 		Equal(ctx.LanguageTag(), language.SimplifiedChinese).
@@ -191,7 +191,7 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.Mimetype(), "application/json").
+		Equal(ctx.Mimetype(false), "application/json").
 		Equal(ctx.outputCharsetName, header.UTF8Name)
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
@@ -205,7 +205,7 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotNil(ctx).
 		True(header.CharsetIsNop(ctx.inputCharset)).
-		Equal(ctx.Mimetype(), "application/json").
+		Equal(ctx.Mimetype(false), "application/json").
 		Equal(ctx.outputCharsetName, header.UTF8Name)
 }
 
@@ -225,7 +225,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	}, "指定的编码 not-exists 不存在")
 
 	ctx.SetMimetype("application/xml")
-	a.Equal(ctx.Mimetype(), "application/xml")
+	a.Equal(ctx.Mimetype(false), "application/xml")
 
 	a.NotError(ctx.Marshal(200, 200, false))
 	a.PanicString(func() {

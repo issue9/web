@@ -146,7 +146,7 @@ func TestContext_Marshal(t *testing.T) {
 	r = rest.Get(a, "/path").Header("Accept", "nil").Request()
 	ctx = srv.newContext(w, r, nil)
 	a.Nil(ctx.outputMimetype.marshal).
-		Equal(ctx.Mimetype(), "nil").
+		Equal(ctx.Mimetype(false), "nil").
 		Equal(ctx.Charset(), header.UTF8Name)
 	a.PanicString(func() {
 		ctx.Marshal(http.StatusCreated, "val", false)

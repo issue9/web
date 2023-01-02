@@ -28,14 +28,10 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	// 那么不应该执行到此，比如下载文件等直接从 ResponseWriter.Write 输出的。
 	if ctx.outputMimetype.marshal == nil {
 		ctx.WriteHeader(http.StatusNotAcceptable)
-		panic(fmt.Sprintf("未对 %s 作处理", ctx.Mimetype()))
+		panic(fmt.Sprintf("未对 %s 作处理", ctx.Mimetype(false)))
 	}
 
-	mimetypeName := ctx.Mimetype()
-	if problem {
-		mimetypeName = ctx.outputMimetype.problem
-	}
-	ctx.Header().Set("Content-Type", header.BuildContentType(mimetypeName, ctx.Charset()))
+	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
 	if id := ctx.languageTag.String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}

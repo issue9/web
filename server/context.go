@@ -183,7 +183,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 	if ctx.wrote {
 		panic("已有内容输出，不可再更改！")
 	}
-	if ctx.Mimetype() == mimetype {
+	if ctx.Mimetype(false) == mimetype {
 		return
 	}
 
@@ -195,7 +195,14 @@ func (ctx *Context) SetMimetype(mimetype string) {
 }
 
 // Mimetype 输出编码名称
-func (ctx *Context) Mimetype() string { return ctx.outputMimetype.name }
+//
+// problem 表示是否返回 problem 时的 mimetype 值。该值由 [Mimetypes] 设置。
+func (ctx *Context) Mimetype(problem bool) string {
+	if problem {
+		return ctx.outputMimetype.problem
+	}
+	return ctx.outputMimetype.name
+}
 
 // SetEncoding 设置压缩编码
 //

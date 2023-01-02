@@ -51,12 +51,12 @@ type (
 	Problems struct {
 		builder  BuildProblemFunc
 		baseURL  string
-		blank    bool             // 不输出 id 值
 		problems []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
 	}
 
 	statusProblem struct {
 		id     string
+		t      string // 实际的 type 值，id 仅用于查找
 		status int
 		title  localeutil.LocaleStringer
 		detail localeutil.LocaleStringer
@@ -148,7 +148,16 @@ func (p *Problems) BaseURL() string { return p.baseURL }
 //   - 其它非空值 以前缀形式附加在原本的 id 之上；
 func (p *Problems) SetBaseURL(base string) {
 	p.baseURL = base
-	p.blank = base == aboutBlank
+	if base == aboutBlank {
+		for _, s := range p.problems {
+			s.t = ""
+		}
+		return
+	}
+
+	for _, s := range p.problems {
+		s.t = base + s.id
+	}
 }
 
 // Add 添加新的错误类型
@@ -162,7 +171,11 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
 
-	sp := &statusProblem{status: status, title: title, detail: detail, id: id}
+	t := id
+	if p.baseURL == aboutBlank {
+		t = ""
+	}
+	sp := &statusProblem{status: status, title: title, detail: detail, id: id, t: t}
 	p.problems = append(p.problems, sp)
 	return p
 }
@@ -197,12 +210,7 @@ func (p *Problems) Problem(printer *message.Printer, id string) Problem {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 
-	if p.blank {
-		id = ""
-	} else {
-		id = p.baseURL + id
-	}
-	return p.builder(id, sp.title.LocaleString(printer), sp.status)
+	return p.builder(sp.t, sp.title.LocaleString(printer), sp.status)
 }
 
 // Problem 转换成 [Problem] 对象
