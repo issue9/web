@@ -19,9 +19,9 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/base"
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/service"
+	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/internal/service"
 )
 
 // Server web 服务对象
@@ -36,7 +36,12 @@ type Server struct {
 	routers    *Routers
 	problems   *Problems
 	services   *service.Server
-	base       *base.Base
+
+	location *time.Location
+	catalog  *catalog.Builder
+	tag      language.Tag
+	printer  *message.Printer
+	logs     *logs.Logs
 
 	closed chan struct{}
 	closes []func() error
@@ -56,7 +61,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	loc := base.New(o.Logs, o.Location, o.LanguageTag)
 	srv := &Server{
 		name:       name,
 		version:    version,
@@ -66,8 +70,11 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:      o.Cache,
 		uptime:     time.Now(),
 		problems:   newProblems(o.ProblemBuilder),
-		services:   service.InternalNewServer(loc),
-		base:       loc,
+
+		location: o.Location,
+		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
+		tag:      o.LanguageTag,
+		logs:     o.Logs,
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
@@ -75,8 +82,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		mimetypes: newMimetypes(),
 		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 	}
-	srv.files = newFiles(srv)
 
+	srv.printer = srv.NewPrinter(o.LanguageTag)
+	srv.services = service.NewServer(o.Location, o.Logs)
+	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
 		notFound,
 		buildNodeHandle(http.StatusMethodNotAllowed),
@@ -99,10 +108,10 @@ func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name)
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.base.Location }
+func (srv *Server) Location() *time.Location { return srv.location }
 
 // Logs 返回关联的 [logs.Logs] 实例
-func (srv *Server) Logs() *logs.Logs { return srv.base.Logs }
+func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
 func (srv *Server) Cache() cache.Cache { return srv.cache }
@@ -178,20 +187,23 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 func (ctx *Context) Server() *Server { return ctx.server }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
-	return srv.base.NewPrinter(tag)
+	tag, _, _ = srv.CatalogBuilder().Matcher().Match(tag)
+	return message.NewPrinter(tag, message.Catalog(srv.CatalogBuilder()))
 }
 
-func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.base.Catalog }
+func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
 
-func (srv *Server) LocalePrinter() *message.Printer { return srv.base.Printer }
+func (srv *Server) LocalePrinter() *message.Printer { return srv.printer }
 
 // LanguageTag 返回默认的语言标签
-func (srv *Server) LanguageTag() language.Tag { return srv.base.Tag }
+func (srv *Server) LanguageTag() language.Tag { return srv.tag }
 
 // OnClose 注册关闭服务时需要执行的函数
 //
 // NOTE: 按注册的相反顺序执行。
 func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
 
-// Services 服务管理
-func (srv *Server) Services() *service.Server { return srv.services }
+// LoadLocales 加载本地化的内容
+func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
+	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
+}

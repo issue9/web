@@ -27,9 +27,9 @@ func TestError_LocaleString(t *testing.T) {
 	hant := language.MustParse("cmn-hant")
 	s := servertest.NewServer(a, &server.Options{LanguageTag: language.MustParse("cmn-hans"), Location: time.UTC})
 	f := s.Files()
-
 	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-	a.NotError(f.LoadLocales(locales.Locales, "*.yml"))
+
+	a.NotError(s.LoadLocales(locales.Locales, "*.yml"))
 
 	a.NotError(s.CatalogBuilder().SetString(hans, "k1", "cn1"))
 	a.NotError(s.CatalogBuilder().SetString(hant, "k1", "tw1"))

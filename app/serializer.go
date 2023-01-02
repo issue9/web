@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"gopkg.in/yaml.v3"
 
+	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/server"
@@ -23,14 +24,17 @@ var (
 	filesFactory     = map[string]fileSerializerItem{}
 )
 
+type MarshalFileFunc = files.MarshalFunc
+type UnmarshalFileFunc = files.UnmarshalFunc
+
 type serializerItem struct {
 	marshal   server.MarshalFunc
 	unmarshal server.UnmarshalFunc
 }
 
 type fileSerializerItem struct {
-	marshal   server.MarshalFileFunc
-	unmarshal server.UnmarshalFileFunc
+	marshal   MarshalFileFunc
+	unmarshal UnmarshalFileFunc
 }
 
 type mimetypeConfig struct {
@@ -109,7 +113,7 @@ func RegisterMimetype(m server.MarshalFunc, u server.UnmarshalFunc, name string)
 // RegisterFileSerializer 注册用于文件序列化的方法
 //
 // ext 为文件的扩展名，如果存在同名，则会覆盖。
-func RegisterFileSerializer(m server.MarshalFileFunc, u server.UnmarshalFileFunc, ext ...string) {
+func RegisterFileSerializer(m MarshalFileFunc, u UnmarshalFileFunc, ext ...string) {
 	for _, e := range ext {
 		filesFactory[e] = fileSerializerItem{marshal: m, unmarshal: u}
 	}

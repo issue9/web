@@ -7,15 +7,14 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
-	"golang.org/x/text/language"
-
-	"github.com/issue9/web/internal/base"
+	"github.com/issue9/scheduled"
 )
 
 func newServer(a *assert.Assertion) *Server {
 	a.TB().Helper()
-	srv := InternalNewServer(base.New(logs.New(nil), time.Local, language.SimplifiedChinese))
+	srv := NewServer(time.Local, logs.New(logs.NewNopWriter()))
 	a.NotNil(srv)
 	return srv
 }
@@ -30,11 +29,11 @@ func TestServer_service(t *testing.T) {
 	a.Equal(0, len(srv.Services()))
 
 	s1, start1, exit1 := buildService()
-	srv.Add("srv1", s1)
+	srv.Add(localeutil.Phrase("srv1"), s1)
 	a.Equal(1, len(srv.Services()))
 	srv1 := srv.services[0]
 	a.Equal(srv1.f, s1) // 并不会改变状态
-	a.Equal(srv1.State(), Stopped)
+	a.Equal(srv1.State(), scheduled.Stopped)
 
 	// 运行中
 
@@ -44,23 +43,35 @@ func TestServer_service(t *testing.T) {
 	<-start1
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	sched := srv.services[1]
-	a.Equal(Running, sched.State()).
-		Equal(Running, srv1.State())
+	a.Equal(scheduled.Running, sched.State()).
+		Equal(scheduled.Running, srv1.State())
 
 	// 运行中添加
 	s2, start2, exit2 := buildService()
-	srv.Add("srv2", s2)
+	srv.Add(localeutil.Phrase("srv2"), s2)
 	a.Equal(3, len(srv.Services()))
 	srv2 := srv.services[2]
 	<-start2
-	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(Running, srv2.State())     // 运行中添加自动运行服务
+	time.Sleep(500 * time.Microsecond)       // 等待主服务设置状态值
+	a.Equal(scheduled.Running, srv2.State()) // 运行中添加自动运行服务
 
 	srv.Stop()
 	<-exit1
 	<-exit2
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(srv1.State(), Stopped)
-	a.Equal(sched.State(), Stopped)
-	a.Equal(srv2.State(), Stopped)
+	a.Equal(srv1.State(), scheduled.Stopped)
+	a.Equal(sched.State(), scheduled.Stopped)
+	a.Equal(srv2.State(), scheduled.Stopped)
+}
+
+func TestServer_scheduled(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a)
+	a.Equal(0, len(srv.Jobs()))
+
+	srv.scheduled.At("at", func(t time.Time) error {
+		println("at:", t.Format(time.RFC3339))
+		return nil
+	}, time.Now(), false)
+	a.Equal(1, len(srv.scheduled.Jobs()))
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package files
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,8 +24,7 @@ type webConfig struct {
 
 func TestFiles_Add_Set_Delete(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
-	f := s.Files()
+	f := New(os.DirFS("./testdata"))
 
 	a.Equal(0, f.Len())
 	f.Add(json.Marshal, json.Unmarshal, ".json")
@@ -46,30 +47,29 @@ func TestFiles_Add_Set_Delete(t *testing.T) {
 
 func TestFiles_Load(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
-	f := s.Files()
+	f := New(os.DirFS("./testdata"))
 
 	web := &webConfig{}
 	err := localeutil.Error("not found serialization function for %s", "web.xml")
-	a.Equal(f.Load(os.DirFS("./testdata/files"), "web.xml", web), err)
+	a.Equal(f.Load(os.DirFS("./testdata"), "web.xml", web), err)
 
 	f.Set(".xml", xml.Marshal, xml.Unmarshal)
-	a.NotError(f.Load(os.DirFS("./testdata/files"), "web.xml", web))
+	a.NotError(f.Load(os.DirFS("./testdata"), "web.xml", web))
 	a.Equal(web, &webConfig{Port: ":8082", Timezone: "Africa/Addis_Ababa"})
 }
 
-func TestFiles_LoadLocales(t *testing.T) {
+func Test_LoadLocales(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
-	f := s.Files()
+	f := New(os.DirFS("./testdata"))
 
 	f.Add(xml.Marshal, xml.Unmarshal, ".xml")
 	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	b := catalog.NewBuilder()
 
 	// cmn-hant.xml
 
-	a.NotError(f.LoadLocales(os.DirFS("./testdata/files"), "cmn-*.*"))
-	p := s.NewPrinter(language.MustParse("cmn-hant"))
+	a.NotError(LoadLocales(f, b, os.DirFS("./testdata"), "cmn-*.*"))
+	p := message.NewPrinter(language.MustParse("cmn-hant"), message.Catalog(b))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
 
@@ -83,7 +83,7 @@ func TestFiles_LoadLocales(t *testing.T) {
 
 	// cmn-hans.yaml
 
-	p = s.NewPrinter(language.MustParse("cmn-hans"))
+	p = message.NewPrinter(language.MustParse("cmn-hans"), message.Catalog(b))
 
 	a.Equal(p.Sprintf("k1"), "msg1")
 

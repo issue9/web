@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/localeutil"
+	"github.com/issue9/scheduled"
 )
 
 const tickTimer = 500 * time.Microsecond
@@ -116,28 +118,28 @@ func TestService_service(t *testing.T) {
 	defer s.Stop()
 
 	srv1, start, exit := buildService()
-	s.Add("srv1", srv1)
+	s.Add(localeutil.Phrase("srv1"), srv1)
 	s.Run()
 	s.running = true
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	s1 := s.services[0]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Running)
+	a.Equal(s1.State(), scheduled.Running)
 	s1.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Stopped)
+	a.Equal(s1.State(), scheduled.Stopped)
 
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Running)
+	a.Equal(s1.State(), scheduled.Running)
 	s1.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s1.State(), Stopped)
+	a.Equal(s1.State(), scheduled.Stopped)
 }
 
 func TestService_panic(t *testing.T) {
@@ -146,35 +148,35 @@ func TestService_panic(t *testing.T) {
 	defer s.Stop()
 
 	srv2, start, exit := buildPanicService()
-	s.Add("srv2", srv2)
+	s.Add(localeutil.Phrase("srv2"), srv2)
 	s.Run() // 注册并运行服务
 	s.running = true
 	s2 := s.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Running)
+	a.Equal(s2.State(), scheduled.Running)
 	s2.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Stopped)
+	a.Equal(s2.State(), scheduled.Stopped)
 
 	// 再次运行，等待 panic
 	s2.Run()
 	<-start
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Failed)
+	a.Equal(s2.State(), scheduled.Failed)
 	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
 	s2.Run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Running)
+	a.Equal(s2.State(), scheduled.Running)
 	s2.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s2.State(), Stopped)
+	a.Equal(s2.State(), scheduled.Stopped)
 }
 
 func TestService_error(t *testing.T) {
@@ -183,26 +185,26 @@ func TestService_error(t *testing.T) {
 	defer s.Stop()
 
 	srv3, start, exit := buildErrorService()
-	s.Add("srv3", srv3)
+	s.Add(localeutil.Phrase("srv3"), srv3)
 	s.Run()
 	s.running = true
 	s3 := s.services[0]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Running)
+	a.Equal(s3.State(), scheduled.Running)
 
 	<-exit                             // 等待超次数返回错误
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Failed)
+	a.Equal(s3.State(), scheduled.Failed)
 	a.NotNil(s3.Err())
 
 	// 再次运行
 	s3.Run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Running)
+	a.Equal(s3.State(), scheduled.Running)
 	s3.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	a.Equal(s3.State(), Stopped)
+	a.Equal(s3.State(), scheduled.Stopped)
 }

@@ -8,50 +8,44 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/scheduled"
+	"golang.org/x/text/message"
 )
 
-// 几种可能的状态值
-const (
-	Stopped = scheduled.Stopped // 当前处于停止状态，默认状态
-	Running = scheduled.Running // 正在运行
-	Failed  = scheduled.Failed  // 出错，不再执行后续操作
-)
+// ServiceFunc 服务函数的原型
+//
+// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
+// 如果是通 ctx.Done 取消的，应该返回 [context.Canceled]。
+type ServiceFunc func(ctx context.Context) error
 
 type (
-	// ServiceFunc 服务实际需要执行的函数
-	//
-	// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-	// 如果是通 ctx.Done 取消的，应该返回 [context.Canceled]。
-	ServiceFunc func(ctx context.Context) error
-
 	Service struct {
 		s          *Server
-		title      string
+		title      localeutil.LocaleStringer
 		f          ServiceFunc
 		cancelFunc context.CancelFunc
 		err        error // 保存上次的出错内容
 
-		state    State
+		state    scheduled.State
 		stateMux sync.Mutex
 	}
-
-	// State 服务的状态值
-	State = scheduled.State
 )
 
 // Title 服务名称
-func (srv *Service) Title() string { return srv.title }
+func (srv *Service) Title(p *message.Printer) string {
+	return srv.title.LocaleString(p)
+}
 
 // State 服务状态
-func (srv *Service) State() State { return srv.state }
+func (srv *Service) State() scheduled.State { return srv.state }
 
 // Err 上次的错误信息
 //
 // 不会清空该值。
 func (srv *Service) Err() error { return srv.err }
 
-func (srv *Service) setState(s State) {
+func (srv *Service) setState(s scheduled.State) {
 	srv.stateMux.Lock()
 	srv.state = s
 	srv.stateMux.Unlock()
@@ -59,8 +53,8 @@ func (srv *Service) setState(s State) {
 
 // Run 开始执行该服务
 func (srv *Service) Run() {
-	if srv.state != Running {
-		srv.setState(Running)
+	if srv.state != scheduled.Running {
+		srv.setState(scheduled.Running)
 		go srv.serve()
 	}
 }
@@ -69,25 +63,25 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.base.Logs.Error(srv.err)
-			srv.setState(Failed)
+			srv.s.logs.Error(srv.err)
+			srv.setState(scheduled.Failed)
 		}
 	}()
 
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
 	srv.err = srv.f(ctx)
-	state := Stopped
+	state := scheduled.Stopped
 	if srv.err != nil && srv.err != context.Canceled {
-		srv.s.base.Logs.Error(srv.err)
-		state = Failed
+		srv.s.logs.Error(srv.err)
+		state = scheduled.Failed
 	}
 
 	srv.setState(state)
 }
 
 func (srv *Service) Stop() {
-	if srv.state != Running {
+	if srv.state != scheduled.Running {
 		return
 	}
 
@@ -103,7 +97,7 @@ func (srv *Service) Stop() {
 // title 是对该服务的简要说明。
 //
 // NOTE: 如果所有服务已经处于运行的状态，则会自动运行新添加的服务。
-func (srv *Server) Add(title string, f ServiceFunc) {
+func (srv *Server) Add(title localeutil.LocaleStringer, f ServiceFunc) {
 	s := &Service{
 		s:     srv,
 		title: title,
@@ -116,5 +110,4 @@ func (srv *Server) Add(title string, f ServiceFunc) {
 	}
 }
 
-// Services 返回长期运行的服务函数列表
 func (srv *Server) Services() []*Service { return srv.services }

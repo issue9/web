@@ -9,9 +9,15 @@ import (
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/encoding"
+	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/internal/service"
 )
 
-type NewEncodingFunc = encoding.NewEncodingFunc
+type (
+	Services        = service.Server
+	NewEncodingFunc = encoding.NewEncodingFunc
+	Files           = files.Files
+)
 
 type Encodings interface {
 	// Add 添加压缩算法
@@ -29,6 +35,12 @@ type Encodings interface {
 	// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
 	Allow(contentType string, id ...string)
 }
+
+// Files 配置文件的相关操作
+func (srv *Server) Files() *Files { return srv.files }
+
+// Services 服务管理
+func (srv *Server) Services() *Services { return srv.services }
 
 // Encodings 返回压缩编码管理
 func (srv *Server) Encodings() Encodings { return srv.encodings }
