@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/app"
 	"github.com/issue9/web/internal/base"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/server"
@@ -67,9 +68,9 @@ const (
 	ProblemNetworkAuthenticationRequired = "511"
 )
 
-// 几种可能的状态值
+// 服务的几种状态
 const (
-	ServiceStopped = scheduled.Stopped // 当前处于停止状态，默认状态
+	ServiceStopped = scheduled.Stopped // 停止状态，默认状态
 	ServiceRunning = scheduled.Running // 正在运行
 	ServiceFailed  = scheduled.Failed  // 出错，不再执行后续操作
 )
@@ -89,12 +90,14 @@ type (
 	Validation     = server.Validation
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
-	Logger         = logs.Logger
+	Service        = service.Service
+	ConfigError    = app.ConfigError
+
+	Logger = logs.Logger
 
 	JobFunc   = scheduled.JobFunc
 	Job       = scheduled.Job
 	Scheduler = scheduled.Scheduler
-	Service   = service.Service
 
 	// QueryUnmarshaler 对查询参数的解析接口
 	QueryUnmarshaler = query.Unmarshaler

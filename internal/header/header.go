@@ -22,7 +22,7 @@ const UTF8Name = "utf-8"
 // 与 mime.ParseMediaType 最大的不同在于不会返回除 param 指定外的其它参数，
 // 所以理论上性能也会更好一些，且也不局限于 RFC1521 规定的 content-type 报头，
 // 对于 Accept 等，也可以分段解析。
-func ParseWithParam(header, param string) (mt, charset string) {
+func ParseWithParam(header, param string) (mt, paramValue string) {
 	t, ps, found := strings.Cut(header, ";")
 	if !found {
 		return header, ""

@@ -18,7 +18,25 @@ type (
 
 const testMimetype = "application/octet-stream"
 
-func TestMimetypes_contentType(t *testing.T) {
+func TestMimetypes_Add_Set_Delete_Exists(t *testing.T) {
+	a := assert.New(t, false)
+	mt := New[marshalFunc, unmarshalFunc]()
+
+	a.False(mt.Exists(testMimetype))
+	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
+	a.True(mt.Exists(testMimetype))
+
+	mt.Delete(testMimetype)
+	a.False(mt.Exists(testMimetype))
+	mt.Set(testMimetype, json.Marshal, json.Unmarshal, "")
+	a.True(mt.Exists(testMimetype))
+
+	a.Panic(func() {
+		mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
+	}, "已经存在同名 application/octet-stream 的编码方法")
+}
+
+func TestMimetypes_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
 	mt := New[marshalFunc, unmarshalFunc]()
@@ -35,6 +53,14 @@ func TestMimetypes_contentType(t *testing.T) {
 	// charset=utf-8
 	f, e, err = mt.ContentType("application/octet-stream; charset=utf-8")
 	a.NotError(err).NotNil(f).Nil(e)
+
+	// charset=gb2312
+	f, e, err = mt.ContentType("application/octet-stream; charset=gb2312")
+	a.NotError(err).NotNil(f).NotNil(e)
+
+	// charset=not-exists
+	f, e, err = mt.ContentType("application/octet-stream; charset=not-exists")
+	a.Error(err).Nil(f).Nil(e)
 
 	// charset=UTF-8
 	f, e, err = mt.ContentType("application/octet-stream; charset=UTF-8;p1=k1;p2=k2")

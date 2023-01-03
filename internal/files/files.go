@@ -69,7 +69,7 @@ func (f *Files) Delete(ext ...string) {
 //
 // 根据文件扩展名决定采用什么编码方法；
 func (f *Files) Load(fsys fs.FS, name string, v any) error {
-	s := f.searchByExt(name)
+	s := f.searchByFilename(name)
 	if s == nil {
 		return localeutil.Error("not found serialization function for %s", name)
 	}
@@ -90,7 +90,7 @@ func (f *Files) Load(fsys fs.FS, name string, v any) error {
 //
 // 根据文件扩展名决定采用什么编码方法；
 func (f *Files) Save(path string, v any) error {
-	s := f.searchByExt(path)
+	s := f.searchByFilename(path)
 	if s == nil {
 		return localeutil.Error("not found serialization function for %s", path)
 	}
@@ -102,7 +102,7 @@ func (f *Files) Save(path string, v any) error {
 	return err
 }
 
-func (f *Files) searchByExt(name string) *FileSerializer {
+func (f *Files) searchByFilename(name string) *FileSerializer {
 	return f.items[filepath.Ext(name)]
 }
 
@@ -117,7 +117,7 @@ func LoadLocales(f *Files, b *catalog.Builder, fsys fs.FS, glob string) error {
 	}
 
 	for _, m := range matches {
-		s := f.searchByExt(m)
+		s := f.searchByFilename(m)
 		if s == nil {
 			return localeutil.Error("not found serialization function for %s", m)
 		}
