@@ -76,8 +76,8 @@ type Context struct {
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	h := r.Header.Get("Accept")
-	item := srv.mimetypes.MarshalFunc(h)
-	if item == nil {
+	mt := srv.mimetypes.MarshalFunc(h)
+	if mt == nil {
 		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -92,7 +92,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get("Accept-Encoding")
-	outputEncoding, notAcceptable := srv.encodings.Search(item.Name, h)
+	outputEncoding, notAcceptable := srv.encodings.Search(mt.Name, h)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -137,7 +137,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		h.Add("Vary", "Content-Encoding")
 	}
 
-	ctx.outputMimetype = item
+	ctx.outputMimetype = mt
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
@@ -198,6 +198,10 @@ func (ctx *Context) SetMimetype(mimetype string) {
 //
 // problem 表示是否返回 problem 时的 mimetype 值。该值由 [Mimetypes] 设置。
 func (ctx *Context) Mimetype(problem bool) string {
+	if ctx.outputMimetype == nil {
+		return ""
+	}
+
 	if problem {
 		return ctx.outputMimetype.Problem
 	}

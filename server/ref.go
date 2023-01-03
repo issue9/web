@@ -4,8 +4,6 @@ package server
 
 import (
 	"compress/lzw"
-	"encoding/json"
-	"encoding/xml"
 
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
@@ -102,11 +100,3 @@ func EncodingCompress(order lzw.Order, width int) NewEncodingFunc {
 
 // EncodingZstd 返回指定配置的 zstd 算法
 func EncodingZstd(o ...zstd.EOption) NewEncodingFunc { return encoding.ZstdWriter(o...) }
-
-func MarshalJSON(ctx *Context, obj any) ([]byte, error) {
-	return json.Marshal(obj)
-}
-
-func MarshalXML(ctx *Context, obj any) ([]byte, error) {
-	return xml.Marshal(obj)
-}

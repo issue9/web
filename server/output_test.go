@@ -82,7 +82,7 @@ func TestContext_Marshal(t *testing.T) {
 	a.Equal(w.Body.Bytes(), `"abc"`).Equal(w.Header().Get("content-type"), "application/problem+json; charset=utf-8")
 
 	// problem, 未指定
-	srv.Mimetypes().Set("application/json", MarshalJSON, json.Unmarshal, "")
+	srv.Mimetypes().Set("application/json", marshalJSON, json.Unmarshal, "")
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", "application/json").Request()
 	ctx = srv.newContext(w, r, nil)

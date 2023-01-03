@@ -3,8 +3,6 @@
 package servertest
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"net/http"
 	"os"
 
@@ -14,6 +12,8 @@ import (
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/serializer/xml"
 	"github.com/issue9/web/server"
 )
 
@@ -37,8 +37,8 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 
 	// mimetype
 	mimetype := srv.Mimetypes()
-	mimetype.Add("application/json", server.MarshalJSON, json.Unmarshal, "")
-	mimetype.Add("application/xml", server.MarshalXML, xml.Unmarshal, "")
+	mimetype.Add(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype)
+	mimetype.Add(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype)
 	mimetype.Add("nil", nil, nil, "")
 	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
 	a.Equal(mimetype.Len(), 4)

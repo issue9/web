@@ -38,6 +38,14 @@ func unmarshalTest(bs []byte, v any) error {
 	return ErrUnsupported
 }
 
+func marshalJSON(ctx *Context, obj any) ([]byte, error) {
+	return json.Marshal(obj)
+}
+
+func marshalXML(ctx *Context, obj any) ([]byte, error) {
+	return xml.Marshal(obj)
+}
+
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
@@ -52,8 +60,8 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 
 	// mimetype
 	mimetype := srv.Mimetypes()
-	mimetype.Add("application/json", MarshalJSON, json.Unmarshal, "application/problem+json")
-	mimetype.Add("application/xml", MarshalXML, xml.Unmarshal, "")
+	mimetype.Add("application/json", marshalJSON, json.Unmarshal, "application/problem+json")
+	mimetype.Add("application/xml", marshalXML, xml.Unmarshal, "")
 	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
 	mimetype.Add("nil", nil, nil, "")
 	a.Equal(mimetype.Len(), 4)
@@ -236,6 +244,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	a.PanicString(func() {
 		ctx.SetMimetype("not-exists")
 	}, "指定的编码 not-exists 不存在")
+	a.Equal(ctx.Mimetype(false), "application/json") // 不改变原有的值
 
 	ctx.SetMimetype("application/xml")
 	a.Equal(ctx.Mimetype(false), "application/xml")
