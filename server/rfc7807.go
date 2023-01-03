@@ -73,25 +73,6 @@ type rfc7807Entry struct {
 	Value   any `xml:",chardata"`
 }
 
-func (p *rfc7807) AddParam(name string, reason string) Problem {
-	if _, found := sliceutil.At(p.pKeys, func(pp string) bool { return pp == name }); found {
-		panic("已经存在")
-	}
-	p.pKeys = append(p.pKeys, name)
-	p.pReasons = append(p.pReasons, reason)
-
-	return p
-}
-
-func (p *rfc7807) With(key string, val any) Problem {
-	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) || key == paramsKey {
-		panic("存在同名的参数")
-	}
-	p.keys = append(p.keys, key)
-	p.vals = append(p.vals, val)
-	return p
-}
-
 func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}
 	b.WByte('{')
@@ -263,4 +244,23 @@ func (p *rfc7807) Apply(ctx *Context) {
 	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
 		rfc7807ProblemPool.Put(p)
 	}
+}
+
+func (p *rfc7807) AddParam(name string, reason string) Problem {
+	if _, found := sliceutil.At(p.pKeys, func(pp string) bool { return pp == name }); found {
+		panic("已经存在")
+	}
+	p.pKeys = append(p.pKeys, name)
+	p.pReasons = append(p.pReasons, reason)
+
+	return p
+}
+
+func (p *rfc7807) With(key string, val any) Problem {
+	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) || key == paramsKey {
+		panic("存在同名的参数")
+	}
+	p.keys = append(p.keys, key)
+	p.vals = append(p.vals, val)
+	return p
 }

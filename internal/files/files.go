@@ -17,21 +17,21 @@ type MarshalFunc func(any) ([]byte, error)
 
 type UnmarshalFunc func([]byte, any) error
 
-type fileSerializer struct {
-	m MarshalFunc
-	u UnmarshalFunc
+type FileSerializer struct {
+	Marshal   MarshalFunc
+	Unmarshal UnmarshalFunc
 }
 
 // Files 配置文件管理
 type Files struct {
 	fs    fs.FS
-	items map[string]*fileSerializer
+	items map[string]*FileSerializer
 }
 
 func New(fsys fs.FS) *Files {
 	return &Files{
 		fs:    fsys,
-		items: make(map[string]*fileSerializer, 5),
+		items: make(map[string]*FileSerializer, 5),
 	}
 }
 
@@ -49,13 +49,13 @@ func (f *Files) Add(m MarshalFunc, u UnmarshalFunc, ext ...string) {
 		if _, found := f.items[e]; found {
 			panic(fmt.Sprintf("已经存在同名的扩展名 %s", e))
 		}
-		f.items[e] = &fileSerializer{m: m, u: u}
+		f.items[e] = &FileSerializer{Marshal: m, Unmarshal: u}
 	}
 }
 
 // Set 修改序列化方法
 func (f *Files) Set(ext string, m MarshalFunc, u UnmarshalFunc) {
-	f.items[ext] = &fileSerializer{m: m, u: u}
+	f.items[ext] = &FileSerializer{Marshal: m, Unmarshal: u}
 }
 
 // Delete 删除序列化方法
@@ -83,7 +83,7 @@ func (f *Files) Load(fsys fs.FS, name string, v any) error {
 		return err
 	}
 
-	return s.u(data, v)
+	return s.Unmarshal(data, v)
 }
 
 // Save 将 v 解码并保存至 name 中
@@ -95,14 +95,14 @@ func (f *Files) Save(path string, v any) error {
 		return localeutil.Error("not found serialization function for %s", path)
 	}
 
-	data, err := s.m(v)
+	data, err := s.Marshal(v)
 	if err == nil {
 		err = os.WriteFile(path, data, os.ModePerm)
 	}
 	return err
 }
 
-func (f *Files) searchByExt(name string) *fileSerializer {
+func (f *Files) searchByExt(name string) *FileSerializer {
 	return f.items[filepath.Ext(name)]
 }
 
@@ -122,7 +122,7 @@ func LoadLocales(f *Files, b *catalog.Builder, fsys fs.FS, glob string) error {
 			return localeutil.Error("not found serialization function for %s", m)
 		}
 
-		if err := localeutil.LoadMessageFromFS(b, fsys, m, s.u); err != nil {
+		if err := localeutil.LoadMessageFromFS(b, fsys, m, s.Unmarshal); err != nil {
 			return err
 		}
 	}
