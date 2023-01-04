@@ -3,17 +3,11 @@
 package server
 
 import (
-	"fmt"
-	"net/http"
-	"strconv"
-
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
-)
 
-const aboutBlank = "about:blank"
+	"github.com/issue9/web/internal/problems"
+)
 
 type (
 	// Problem API 错误信息对象需要实现的接口
@@ -43,24 +37,32 @@ type (
 
 	// BuildProblemFunc 生成 [Problem] 对象的方法
 	//
-	// id 表示当前错误信息的唯一值，这将是一个标准的 URL，指向线上的文档地址，有可能不会真实存在；
+	// id 表示当前错误信息的唯一值；
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
 	BuildProblemFunc func(id, title string, status int) Problem
 
-	Problems struct {
-		builder  BuildProblemFunc
-		baseURL  string
-		problems []*statusProblem // 不用 map，保证 Visit 以同样的顺序输出。
+	Problems interface {
+		// TypePrefix [BuildProblemFunc] 参数 id 的前缀
+		TypePrefix() string
+
+		// SetTypePrefix 设置 id 的前缀
+		//
+		// 如果设置成 about:blank 那么将不输出 id
+		SetTypePrefix(string)
+
+		// Add 添加新的错误类型
+		Add(...*StatusProblem)
+
+		Exists(id string) bool
+
+		Problems() []*StatusProblem
+
+		// Problem 根据 id 生成 [Problem] 对象
+		Problem(printer *message.Printer, id string) Problem
 	}
 
-	statusProblem struct {
-		id     string
-		t      string // 实际的 type 值，id 仅用于查找
-		status int
-		title  localeutil.LocaleStringer
-		detail localeutil.LocaleStringer
-	}
+	StatusProblem = problems.StatusProblem
 
 	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
 	//
@@ -72,146 +74,7 @@ type (
 	}
 )
 
-func (srv *Server) Problems() *Problems { return srv.problems }
-
-func newProblems(f BuildProblemFunc) *Problems {
-	p := &Problems{
-		builder:  f,
-		problems: make([]*statusProblem, 0, 50),
-	}
-
-	add := func(s int) {
-		msg := localeutil.Phrase(http.StatusText(s))
-		p.Add(strconv.Itoa(s), s, msg, msg)
-	}
-
-	// 400
-	add(http.StatusBadRequest)
-	add(http.StatusUnauthorized)
-	add(http.StatusPaymentRequired)
-	add(http.StatusForbidden)
-	add(http.StatusNotFound)
-	add(http.StatusMethodNotAllowed)
-	add(http.StatusNotAcceptable)
-	add(http.StatusProxyAuthRequired)
-	add(http.StatusRequestTimeout)
-	add(http.StatusConflict)
-	add(http.StatusGone)
-	add(http.StatusLengthRequired)
-	add(http.StatusPreconditionFailed)
-	add(http.StatusRequestEntityTooLarge)
-	add(http.StatusRequestURITooLong)
-	add(http.StatusUnsupportedMediaType)
-	add(http.StatusRequestedRangeNotSatisfiable)
-	add(http.StatusExpectationFailed)
-	add(http.StatusTeapot)
-	add(http.StatusMisdirectedRequest)
-	add(http.StatusUnprocessableEntity)
-	add(http.StatusLocked)
-	add(http.StatusFailedDependency)
-	add(http.StatusTooEarly)
-	add(http.StatusUpgradeRequired)
-	add(http.StatusPreconditionRequired)
-	add(http.StatusTooManyRequests)
-	add(http.StatusRequestHeaderFieldsTooLarge)
-	add(http.StatusUnavailableForLegalReasons)
-
-	// 500
-	add(http.StatusInternalServerError)
-	add(http.StatusNotImplemented)
-	add(http.StatusBadGateway)
-	add(http.StatusServiceUnavailable)
-	add(http.StatusGatewayTimeout)
-	add(http.StatusHTTPVersionNotSupported)
-	add(http.StatusVariantAlsoNegotiates)
-	add(http.StatusInsufficientStorage)
-	add(http.StatusLoopDetected)
-	add(http.StatusNotExtended)
-	add(http.StatusNetworkAuthenticationRequired)
-
-	return p
-}
-
-// BaseURL [BuildProblemFunc] 参数 id 的前缀
-//
-// 返回的内容说明，可参考 [Problems.SetBaseURL]。
-func (p *Problems) BaseURL() string { return p.baseURL }
-
-// SetBaseURL 设置传递给 [BuildProblemFunc] 中 id 参数的前缀
-//
-// [Problem] 实现者可以根据自由决定 id 字终以什么形式展示，
-// 此处的设置只是决定了传递给 [BuildProblemFunc] 的 id 参数格式。
-// 可以有以下三种形式：
-//
-//   - 空值 不作任何改变；
-//   - about:blank 将传递空值给 [BuildProblemFunc]；
-//   - 其它非空值 以前缀形式附加在原本的 id 之上；
-func (p *Problems) SetBaseURL(base string) {
-	p.baseURL = base
-	if base == aboutBlank {
-		for _, s := range p.problems {
-			s.t = ""
-		}
-		return
-	}
-
-	for _, s := range p.problems {
-		s.t = base + s.id
-	}
-}
-
-// Add 添加新的错误类型
-//
-// id 表示该错误的唯一值，如果存在相同会 panic；
-// [Problems.Problem] 会根据此值查找相应的文字说明给予 title 字段；
-// status 表示输出给客户端的状态码；
-// title 和 detail 表示此 id 关联的简要说明和详细说明；
-func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) *Problems {
-	if p.Exists(id) {
-		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
-	}
-
-	t := id
-	if p.baseURL == aboutBlank {
-		t = ""
-	}
-	sp := &statusProblem{status: status, title: title, detail: detail, id: id, t: t}
-	p.problems = append(p.problems, sp)
-	return p
-}
-
-func (p *Problems) Len() int { return len(p.problems) }
-
-func (p *Problems) Exists(id string) bool {
-	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.id == id })
-}
-
-// Visit 遍历所有由 [Problems.Add] 添加的项
-//
-// f 为遍历的函数，其原型为：
-//
-//	func(id string, status int, title, detail localeutil.LocaleStringer)
-//
-// 分别对应 [Problems.Add] 添加时的各个参数。
-//
-// 用户可以通过此方法生成 QA 页面。
-func (p *Problems) Visit(f func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer) bool) {
-	for _, item := range p.problems {
-		if !f(item.id, item.status, item.title, item.detail) {
-			return
-		}
-	}
-}
-
-// Problem 根据 id 生成 [Problem] 对象
-func (p *Problems) Problem(printer *message.Printer, id string) Problem {
-	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.id == id })
-	if !found { // 这更像是编译期错误，所以直接 panic。
-		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
-	}
-
-	return p.builder(sp.t, sp.title.LocaleString(printer), sp.status)
-}
+func (srv *Server) Problems() Problems { return srv.problems }
 
 // Problem 转换成 [Problem] 对象
 //
@@ -253,6 +116,6 @@ func (ctx *Context) logError(depth int, id string, level logs.Level, err error) 
 }
 
 // NotFound 返回 id 值为 404 的 [Problem] 对象
-func (ctx *Context) NotFound() Problem { return ctx.Problem("404") }
+func (ctx *Context) NotFound() Problem { return ctx.Problem(problems.ProblemNotFound) }
 
-func (ctx *Context) NotImplemented() Problem { return ctx.Problem("501") }
+func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.ProblemNotImplemented) }

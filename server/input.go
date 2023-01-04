@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/problems"
 )
 
 var tGreatThanZero = localeutil.Phrase("should great than 0")
@@ -377,7 +378,7 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果验证失败，会输出以 id 作为错误代码的 [Responser] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Error("422", logs.LevelError, err) // http.StatusUnprocessableEntity
+		return ctx.Error(problems.ProblemUnprocessableEntity, logs.LevelError, err)
 	}
 
 	if vv, ok := v.(CTXSanitizer); ok {

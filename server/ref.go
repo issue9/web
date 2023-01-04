@@ -6,9 +6,9 @@ import (
 	"compress/lzw"
 
 	"github.com/andybalholm/brotli"
+	"github.com/issue9/localeutil"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/internal/mimetypes"

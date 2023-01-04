@@ -22,6 +22,7 @@ import (
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
 )
 
@@ -35,7 +36,6 @@ type Server struct {
 	cache      cache.Cache
 	uptime     time.Time
 	routers    *Routers
-	problems   *Problems
 	services   *service.Server
 
 	location *time.Location
@@ -47,6 +47,7 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
+	problems  *problems.Problems[Problem]
 	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
 	encodings *encoding.Encodings
 	files     *Files
@@ -70,7 +71,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:       &sync.Map{},
 		cache:      o.Cache,
 		uptime:     time.Now(),
-		problems:   newProblems(o.ProblemBuilder),
 
 		location: o.Location,
 		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
@@ -80,6 +80,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
+		problems:  problems.New(o.ProblemBuilder),
 		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
 		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 	}

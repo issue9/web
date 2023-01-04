@@ -11,6 +11,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/problems"
 )
 
 // Marshal 向客户端输出内容
@@ -19,6 +20,10 @@ import (
 // body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
 // problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
 func (ctx *Context) Marshal(status int, body any, problem bool) error {
+	if ctx.status > 0 {
+		panic("不能多次调用 Marshal 输出状态码")
+	}
+
 	if body == nil {
 		ctx.WriteHeader(status)
 		return nil
@@ -37,15 +42,18 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	}
 
 	data, err := ctx.outputMimetype.Marshal(ctx, body)
-	switch {
-	case err != nil && problem: // 如果在输出 problem 时出错，则状态码不变
-		ctx.WriteHeader(status)
-		return err
-	case errors.Is(err, ErrUnsupported):
-		ctx.WriteHeader(http.StatusNotAcceptable) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
-		return err
-	case err != nil:
-		ctx.WriteHeader(http.StatusInternalServerError) // 此处不再输出 Problem 类型错误信息，大概率也是相同的错误。
+	if err != nil {
+		if problem { // 如果在输出 problem 时出错，则状态码不变
+			ctx.WriteHeader(status)
+		} else {
+			id := problems.ProblemInternalServerError
+			if errors.Is(err, ErrUnsupported) {
+				id = problems.ProblemNotAcceptable
+			}
+			if e := ctx.Marshal(problems.Status(id), ctx.Problem(id), true); e != nil {
+				ctx.Logs().ERROR().Error(e)
+			}
+		}
 		return err
 	}
 

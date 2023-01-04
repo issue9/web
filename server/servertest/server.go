@@ -55,7 +55,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	e.Add("deflate", "deflate", server.EncodingDeflate(8))
 	e.Allow("*", "gzip", "deflate")
 
-	srv.Problems().Add("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
+	srv.Problems().Add(&server.StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("41110"), Detail: localeutil.Phrase("41110")})
 
 	return srv, o
 }

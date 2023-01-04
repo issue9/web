@@ -12,6 +12,8 @@ import (
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/sliceutil"
+
+	"github.com/issue9/web/internal/problems"
 )
 
 const paramsKey = "params"
@@ -37,7 +39,7 @@ var rfc7807ProblemPool = &sync.Pool{New: func() any {
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id, title string, status int) Problem {
 	if id == "" {
-		id = aboutBlank
+		id = problems.AboutBlank
 	}
 
 	p := rfc7807ProblemPool.Get().(*rfc7807)

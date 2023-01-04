@@ -129,7 +129,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.charsetCloser = nil
 	ctx.outputEncoding = outputEncoding
 	ctx.outputCharset = outputCharset
-	ctx.status = http.StatusOK // 需是 http.StatusOK，否则在未调用 WriteHeader 的情况下会与默认情况不符。
+	ctx.status = 0
 	ctx.wrote = false
 	if ctx.outputEncoding != nil {
 		h := ctx.Header()

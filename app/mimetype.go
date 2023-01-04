@@ -33,7 +33,7 @@ type mimetypeConfig struct {
 
 	// 对应 [server.Problem] 类型的编码名称
 	//
-	// 如果为空，表示与 encoding 相同，根据 [RFC7807] 最好是不相同，
+	// 如果为空，表示与 Type 相同，根据 [RFC7807] 最好是不相同，
 	// 比如 application/json 对应 application/problem+json。
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
@@ -47,7 +47,7 @@ type mimetypeConfig struct {
 	//  - json
 	//  - form
 	//  - html
-	//  - nil
+	//  - nil  未实际指定序列化方法，最终需要用户自行处理，比如返回文件上传等。
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 

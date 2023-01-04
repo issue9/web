@@ -4,6 +4,10 @@
 //
 // app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
 // 相对地也会有诸多限制，如果觉得不适用，可以自行调用 [server.New]。
+//
+// 提供了两种方式构建 [server.Server] 对象：
+//   - [NewServerOf] 从配置文件构建 [server.Server] 对象；
+//   - [AppOf] 直接生成一个简单的命令行程序以及 [server.Server] 对象；
 package app
 
 import (

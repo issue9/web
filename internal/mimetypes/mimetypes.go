@@ -23,31 +23,35 @@ type (
 		Unmarshal U
 	}
 
+	// Mimetypes 提供对 mimetype 的管理
+	//
+	// M 表示解码方法地的类型；
+	// U 表示编码方法的类型；
 	Mimetypes[M any, U any] struct {
-		items []*Mimetype[M, U]
+		types []*Mimetype[M, U]
 	}
 )
 
 func New[M any, U any]() *Mimetypes[M, U] {
 	return &Mimetypes[M, U]{
-		items: make([]*Mimetype[M, U], 0, 10),
+		types: make([]*Mimetype[M, U], 0, 10),
 	}
 }
 
 // Exists 是否存在同名的
 func (ms *Mimetypes[M, U]) Exists(name string) bool {
-	return sliceutil.Exists(ms.items, func(item *Mimetype[M, U]) bool { return item.Name == name })
+	return sliceutil.Exists(ms.types, func(item *Mimetype[M, U]) bool { return item.Name == name })
 }
 
 // Delete 删除指定名称的编码方法
 func (ms *Mimetypes[M, U]) Delete(name string) {
-	ms.items = sliceutil.Delete(ms.items, func(item *Mimetype[M, U]) bool { return item.Name == name })
+	ms.types = sliceutil.Delete(ms.types, func(item *Mimetype[M, U]) bool { return item.Name == name })
 }
 
 // Add 添加新的编码方法
 //
 // name 为编码名称；
-// problem 为该编码在返回 [Problem] 对象时的 mimetype 报头值，如果为空，则会被赋予 name 相同的值；
+// problem 为该编码在返回 [server.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
 func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	if ms.Exists(name) {
 		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))
@@ -57,7 +61,7 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 		problem = name
 	}
 
-	ms.items = append(ms.items, &Mimetype[M, U]{
+	ms.types = append(ms.types, &Mimetype[M, U]{
 		Name:      name,
 		Problem:   problem,
 		Marshal:   m,
@@ -65,23 +69,23 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	})
 }
 
-// Set 修改指定名称的相关配置
+// Set 修改或添加指定名称的相关配置
 //
 // name 用于查找相关的编码方法；
-// 如果 problem 为空，会被赋予与 name 相同的值；
+// 如果 problem 为空，则会与 name 值相同；
 func (ms *Mimetypes[M, U]) Set(name string, m M, u U, problem string) {
 	if problem == "" {
 		problem = name
 	}
 
-	if item, found := sliceutil.At(ms.items, func(i *Mimetype[M, U]) bool { return name == i.Name }); found {
+	if item, found := sliceutil.At(ms.types, func(i *Mimetype[M, U]) bool { return name == i.Name }); found {
 		item.Marshal = m
 		item.Unmarshal = u
 		item.Problem = problem
 		return
 	}
 
-	ms.items = append(ms.items, &Mimetype[M, U]{
+	ms.types = append(ms.types, &Mimetype[M, U]{
 		Name:      name,
 		Problem:   problem,
 		Marshal:   m,
@@ -89,7 +93,7 @@ func (ms *Mimetypes[M, U]) Set(name string, m M, u U, problem string) {
 	})
 }
 
-func (ms *Mimetypes[M, U]) Len() int { return len(ms.items) }
+func (ms *Mimetypes[M, U]) Len() int { return len(ms.types) }
 
 // ContentType 从 content-type 报头中获取解码和字符集函数
 //
@@ -168,6 +172,6 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 }
 
 func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
-	item, _ := sliceutil.At(ms.items, func(i *Mimetype[M, U]) bool { return match(i.Name) })
+	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U]) bool { return match(i.Name) })
 	return item
 }
