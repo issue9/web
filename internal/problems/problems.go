@@ -24,8 +24,9 @@ type Problems[P any] struct {
 }
 
 type StatusProblem struct {
+	t string // 实际的 type 值，id 仅用于查找
+
 	ID     string
-	t      string // 实际的 type 值，id 仅用于查找
 	Status int
 	Title  localeutil.LocaleStringer
 	Detail localeutil.LocaleStringer

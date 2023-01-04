@@ -18,9 +18,9 @@ import (
 
 const paramsKey = "params"
 
-const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
+const rfc7807XMLNamespace = "urn:ietf:rfc:7807"
 
-const rfc8707PoolMaxSize = 10
+const rfc7807PoolMaxSize = 10
 
 var rfc7807ProblemPool = &sync.Pool{New: func() any {
 	return &rfc7807{
@@ -107,7 +107,7 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 
 func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	start.Name.Local = "problem"
-	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: rfc8707XMLNamespace})
+	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: rfc7807XMLNamespace})
 	if err := e.EncodeToken(start); err != nil {
 		return err
 	}
@@ -243,7 +243,7 @@ func (p *rfc7807) Apply(ctx *Context) {
 		ctx.Logs().ERROR().Error(err)
 	}
 
-	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
+	if len(p.keys) < rfc7807PoolMaxSize && len(p.pKeys) < rfc7807PoolMaxSize {
 		rfc7807ProblemPool.Put(p)
 	}
 }
