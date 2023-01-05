@@ -8,6 +8,7 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
@@ -51,18 +52,18 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) sanitizeMimetypes() *ConfigError {
+func (conf *configOf[T]) sanitizeMimetypes() *errs.ConfigError {
 	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
 	if len(dup) > 0 {
 		value := conf.Mimetypes[dup[1]].Type
-		return &ConfigError{Field: "[" + strconv.Itoa(dup[1]) + "].target", Message: localeutil.Phrase("duplicate value"), Value: value}
+		return errs.NewConfigError("["+strconv.Itoa(dup[1])+"].target", localeutil.Phrase("duplicate value"), "", value)
 	}
 
 	ms := make([]mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return &ConfigError{Field: "[" + strconv.Itoa(index) + "].target", Message: localeutil.Phrase("%s not found", item.Target)}
+			return errs.NewConfigError("["+strconv.Itoa(index)+"].target", localeutil.Phrase("%s not found", item.Target), "", "")
 		}
 
 		ms = append(ms, mimetype{

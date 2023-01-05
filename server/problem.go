@@ -81,8 +81,6 @@ var rfc7807Pool = problems.NewRFC7807Pool[*Context]()
 // NOTE: 由于 www-form-urlencoded 对复杂对象的表现能力有限，
 // 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
-// 如果是用于 HTML 输出，返回对象实现了 [serializer/html.Marshaler] 接口。
-//
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 func RFC7807Builder(id, title string, status int) Problem {
 	return rfc7807Pool.New(id, title, status)

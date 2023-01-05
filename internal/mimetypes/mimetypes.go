@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -104,7 +104,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	item := ms.searchFunc(func(s string) bool { return s == mimetype })
 	if item == nil {
 		var z U
-		return z, nil, localeutil.Error("not found serialization function for %s", mimetype)
+		return z, nil, errs.NewLocaleError("not found serialization function for %s", mimetype)
 	}
 	f := item.Unmarshal
 

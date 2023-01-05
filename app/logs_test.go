@@ -7,6 +7,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/logs/v4"
+
+	"github.com/issue9/web/errs"
 )
 
 func TestLogsConfig_build(t *testing.T) {
@@ -56,17 +58,17 @@ func TestNewTermWriter(t *testing.T) {
 
 	w, c, err := newTermLogsWriter(nil)
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok := err.(*ConfigError)
+	ce, ok := err.(*errs.ConfigError)
 	a.True(ok).Equal(ce.Field, "Args")
 
 	w, c, err = newTermLogsWriter([]string{"2006", "no-color", "no-output"})
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok = err.(*ConfigError)
+	ce, ok = err.(*errs.ConfigError)
 	a.True(ok).Equal(ce.Field, "Args[1]")
 
 	w, c, err = newTermLogsWriter([]string{"2006", "default", "no-output"})
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok = err.(*ConfigError)
+	ce, ok = err.(*errs.ConfigError)
 	a.True(ok).Equal(ce.Field, "Args[2]")
 
 	w, c, err = newTermLogsWriter([]string{"2006", "default", "stdout"})

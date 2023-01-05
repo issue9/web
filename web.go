@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package web 模块化的 web 框架
-//
-// NOTE: 所有以 Internal 开头的公开函数，表示这个函数是仅模块可见的。
+// Package web 通用的 web 开发框架
 package web
 
 import (
@@ -12,8 +10,7 @@ import (
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/app"
-	"github.com/issue9/web/internal/base"
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/server"
@@ -95,7 +92,7 @@ type (
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
 	Service        = service.Service
-	ConfigError    = app.ConfigError
+	ConfigError    = errs.ConfigError
 
 	Logger = logs.Logger
 
@@ -127,10 +124,9 @@ func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 	return server.NewRuleFunc(msg, f)
 }
 
-// StackError 为 err 带上调用信息
-//
-// 位置从调用 StackError 开始。
-// 如果 err 为 nil，则返回 nil，如果 err 本身就为 StackError 返回的类型，则原样返回。
-//
-// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
-func StackError(err error) error { return base.StackError(err) }
+// NewStackError 为 err 带上调用信息
+func NewStackError(err error) error { return errs.NewStackError(err) }
+
+func NewConfigError(field string, msg any, path string, val any) *ConfigError {
+	return errs.NewConfigError(field, msg, path, val)
+}

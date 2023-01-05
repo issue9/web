@@ -9,11 +9,12 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
+
+	"github.com/issue9/web/errs"
 )
 
 type webConfig struct {
@@ -50,7 +51,7 @@ func TestFiles_Load(t *testing.T) {
 	f := New(os.DirFS("./testdata"))
 
 	web := &webConfig{}
-	err := localeutil.Error("not found serialization function for %s", "web.xml")
+	err := errs.NewLocaleError("not found serialization function for %s", "web.xml")
 	a.Equal(f.Load(os.DirFS("./testdata"), "web.xml", web), err)
 
 	f.Set(".xml", xml.Marshal, xml.Unmarshal)

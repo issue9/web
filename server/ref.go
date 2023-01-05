@@ -6,9 +6,9 @@ import (
 	"compress/lzw"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/localeutil"
 	"github.com/klauspost/compress/zstd"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/internal/mimetypes"
@@ -18,7 +18,7 @@ import (
 // ErrUnsupported 返回不支持序列化的错误信息
 //
 // 当一个对象无法被正常的序列化或是反序列化时返回此错误。
-var ErrUnsupported = localeutil.Error("unsupported serialization")
+var ErrUnsupported = errs.NewLocaleError("unsupported serialization")
 
 type (
 	Services        = service.Server

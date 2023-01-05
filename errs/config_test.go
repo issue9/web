@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package errs_test
 
 import (
 	"testing"
@@ -11,17 +11,18 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
 var (
-	_ error                     = &ConfigError{}
-	_ localeutil.LocaleStringer = &ConfigError{}
+	_ error                     = &errs.ConfigError{}
+	_ localeutil.LocaleStringer = &errs.ConfigError{}
 )
 
-func TestError_LocaleString(t *testing.T) {
+func TestConfigError_LocaleString(t *testing.T) {
 	a := assert.New(t, false)
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
@@ -37,7 +38,7 @@ func TestError_LocaleString(t *testing.T) {
 	cnp := s.NewPrinter(hans)
 	twp := s.NewPrinter(hant)
 
-	err := &ConfigError{Message: localeutil.Phrase("k1"), Path: "path"}
+	err := errs.NewConfigError("", localeutil.Phrase("k1"), "path", "")
 	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))
 	a.Equal("位于 path: 发生了 tw1", err.LocaleString(twp))
 	a.Equal("k1 at path:", err.Error())

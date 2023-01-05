@@ -9,6 +9,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/errs"
 )
 
 type empty struct{}
@@ -17,9 +19,9 @@ type userData struct {
 	ID int `json:"id" yaml:"id" xml:"id,attr"`
 }
 
-func (u *userData) SanitizeConfig() *ConfigError {
+func (u *userData) SanitizeConfig() *errs.ConfigError {
 	if u.ID < 0 {
-		return &ConfigError{Field: "ID", Message: "必须大于 0"}
+		return errs.NewConfigError("ID", "必须大于 0", "", "")
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/server"
 )
@@ -85,7 +86,7 @@ type configOf[T any] struct {
 
 // ConfigSanitizer 对配置文件的数据验证和修正
 type ConfigSanitizer interface {
-	SanitizeConfig() *ConfigError
+	SanitizeConfig() *errs.ConfigError
 }
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
@@ -151,7 +152,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	return srv, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize() *ConfigError {
+func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	l, cleanup, err := conf.Logs.build()
 	if err != nil {
 		err.Field = "logs." + err.Field
@@ -168,7 +169,7 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return &ConfigError{Field: "language.", Message: err}
+			return errs.NewConfigError("language.", err, "", "")
 		}
 		conf.languageTag = tag
 	}
@@ -213,14 +214,14 @@ func (conf *configOf[T]) sanitize() *ConfigError {
 	return nil
 }
 
-func (conf *configOf[T]) buildTimezone() *ConfigError {
+func (conf *configOf[T]) buildTimezone() *errs.ConfigError {
 	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return &ConfigError{Field: "timezone", Message: err}
+		return errs.NewConfigError("timezone", err, "", "")
 	}
 	conf.location = loc
 

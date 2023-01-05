@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
+
+	"github.com/issue9/web/errs"
 )
 
 type (
@@ -104,37 +106,37 @@ func exists(p string) bool {
 	return err == nil || errors.Is(err, fs.ErrExist)
 }
 
-func (cert *certificate) sanitize() *ConfigError {
+func (cert *certificate) sanitize() *errs.ConfigError {
 	if !exists(cert.Cert) {
-		return &ConfigError{Field: "cert", Message: localeutil.Phrase("%s not found", cert.Cert)}
+		return errs.NewConfigError("cert", localeutil.Phrase("%s not found", cert.Cert), "", "")
 	}
 
 	if !exists(cert.Key) {
-		return &ConfigError{Field: "key", Message: localeutil.Phrase("%s not found", cert.Key)}
+		return errs.NewConfigError("key", localeutil.Phrase("%s not found", cert.Key), "", "")
 	}
 
 	return nil
 }
 
-func (h *httpConfig) sanitize() *ConfigError {
+func (h *httpConfig) sanitize() *errs.ConfigError {
 	if h.ReadTimeout < 0 {
-		return &ConfigError{Field: "readTimeout", Message: localeutil.Phrase("should great than 0")}
+		return errs.NewConfigError("readTimeout", localeutil.Phrase("should great than 0"), "", "")
 	}
 
 	if h.WriteTimeout < 0 {
-		return &ConfigError{Field: "writeTimeout", Message: localeutil.Phrase("should great than 0")}
+		return errs.NewConfigError("writeTimeout", localeutil.Phrase("should great than 0"), "", "")
 	}
 
 	if h.IdleTimeout < 0 {
-		return &ConfigError{Field: "idleTimeout", Message: localeutil.Phrase("should great than 0")}
+		return errs.NewConfigError("idleTimeout", localeutil.Phrase("should great than 0"), "", "")
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return &ConfigError{Field: "readHeaderTimeout", Message: localeutil.Phrase("should great than 0")}
+		return errs.NewConfigError("readHeaderTimeout", localeutil.Phrase("should great than 0"), "", "")
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return &ConfigError{Field: "maxHeaderBytes", Message: localeutil.Phrase("should great than 0")}
+		return errs.NewConfigError("maxHeaderBytes", localeutil.Phrase("should great than 0"), "", "")
 	}
 
 	h.buildRoutersOptions()
@@ -164,9 +166,9 @@ func (h *httpConfig) buildRoutersOptions() {
 	h.routersOptions = opt
 }
 
-func (h *httpConfig) buildTLSConfig() *ConfigError {
+func (h *httpConfig) buildTLSConfig() *errs.ConfigError {
 	if len(h.Certificates) > 0 && h.ACME != nil {
-		return &ConfigError{Field: "acme", Message: "不能与 certificates 同时存在"}
+		return errs.NewConfigError("acme", "不能与 certificates 同时存在", "", "")
 	}
 
 	if h.ACME != nil {
@@ -187,7 +189,7 @@ func (h *httpConfig) buildTLSConfig() *ConfigError {
 
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return &ConfigError{Field: "certificates", Message: err.Error()}
+			return errs.NewConfigError("certificates", err.Error(), "", "")
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
@@ -210,13 +212,13 @@ func (l *acme) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *acme) sanitize() *ConfigError {
+func (l *acme) sanitize() *errs.ConfigError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return &ConfigError{Field: "cache", Message: "不存在该目录或是未指定"}
+		return errs.NewConfigError("cache", "不存在该目录或是未指定", "", "")
 	}
 
 	if len(l.Domains) == 0 {
-		return &ConfigError{Field: "domains", Message: "不能为空"}
+		return errs.NewConfigError("domains", "不能为空", "", "")
 	}
 
 	return nil

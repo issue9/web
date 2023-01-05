@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/localeutil"
 	"gopkg.in/yaml.v3"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/files"
 )
 
@@ -21,12 +22,12 @@ type MarshalFileFunc = files.MarshalFunc
 
 type UnmarshalFileFunc = files.UnmarshalFunc
 
-func (conf *configOf[T]) sanitizeFiles() *ConfigError {
+func (conf *configOf[T]) sanitizeFiles() *errs.ConfigError {
 	conf.files = make(map[string]files.FileSerializer, len(conf.Files))
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return &ConfigError{Field: "[" + strconv.Itoa(i) + "]", Message: localeutil.Phrase("not found serialization function for %s", name)}
+			return errs.NewConfigError("["+strconv.Itoa(i)+"]", localeutil.Phrase("not found serialization function for %s", name), "", "")
 		}
 		conf.files[name] = s // conf.Files 可以保证 conf.files 唯一性
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 )
@@ -375,7 +376,7 @@ func (ctx *Context) Unmarshal(v any) error {
 		return nil
 	}
 	if ctx.inputMimetype == nil {
-		return localeutil.Error("the client did not specify content-type header")
+		return errs.NewLocaleError("the client did not specify content-type header")
 	}
 	return ctx.inputMimetype(body, v)
 }

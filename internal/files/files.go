@@ -11,6 +11,8 @@ import (
 
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/errs"
 )
 
 type MarshalFunc func(any) ([]byte, error)
@@ -71,7 +73,7 @@ func (f *Files) Delete(ext ...string) {
 func (f *Files) Load(fsys fs.FS, name string, v any) error {
 	s := f.searchByFilename(name)
 	if s == nil {
-		return localeutil.Error("not found serialization function for %s", name)
+		return errs.NewLocaleError("not found serialization function for %s", name)
 	}
 
 	if fsys == nil {
@@ -92,7 +94,7 @@ func (f *Files) Load(fsys fs.FS, name string, v any) error {
 func (f *Files) Save(path string, v any) error {
 	s := f.searchByFilename(path)
 	if s == nil {
-		return localeutil.Error("not found serialization function for %s", path)
+		return errs.NewLocaleError("not found serialization function for %s", path)
 	}
 
 	data, err := s.Marshal(v)
@@ -119,7 +121,7 @@ func LoadLocales(f *Files, b *catalog.Builder, fsys fs.FS, glob string) error {
 	for _, m := range matches {
 		s := f.searchByFilename(m)
 		if s == nil {
-			return localeutil.Error("not found serialization function for %s", m)
+			return errs.NewLocaleError("not found serialization function for %s", m)
 		}
 
 		if err := localeutil.LoadMessageFromFS(b, fsys, m, s.Unmarshal); err != nil {

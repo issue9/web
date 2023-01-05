@@ -12,6 +12,8 @@ import (
 	cm "github.com/issue9/cache/memcache"
 	"github.com/issue9/cache/memory"
 	cr "github.com/issue9/cache/redis"
+
+	"github.com/issue9/web/errs"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
@@ -38,7 +40,7 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *ConfigError {
+func (conf *configOf[T]) buildCache() *errs.ConfigError {
 	if conf.Cache == nil {
 		conf.cache = memory.New(time.Hour)
 		return nil
@@ -46,12 +48,12 @@ func (conf *configOf[T]) buildCache() *ConfigError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return &ConfigError{Field: "type", Message: "无效的值"}
+		return errs.NewConfigError("type", "无效的值", "", "")
 	}
 
 	c, err := b(conf.Cache.DSN)
 	if err != nil {
-		return &ConfigError{Field: "dsn", Message: err}
+		return errs.NewConfigError("dsn", err, "", "")
 	}
 	conf.cache = c
 

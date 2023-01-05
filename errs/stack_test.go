@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package base
+package errs
 
 import (
 	"errors"
@@ -25,11 +25,11 @@ func (err *cerr) Error() string { return err.msg }
 func TestStackError(t *testing.T) {
 	a := assert.New(t, false)
 
-	err := StackError(nil)
+	err := NewStackError(nil)
 	a.Nil(err)
 
 	err1 := &cerr{"abc"}
-	err = StackError(err1)
+	err = NewStackError(err1)
 
 	a.ErrorIs(err, err1)
 	s := fmt.Sprintf("%v", err)
@@ -42,7 +42,7 @@ func TestStackError(t *testing.T) {
 
 	// 二次包装
 
-	err = StackError(err)
+	err = NewStackError(err)
 
 	a.ErrorIs(err, err1)
 	s = fmt.Sprintf("%v", err)

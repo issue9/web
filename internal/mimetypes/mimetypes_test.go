@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/errs"
 )
 
 type (
@@ -48,7 +49,7 @@ func TestMimetypes_ContentType(t *testing.T) {
 
 	// 不存在的 mimetype
 	f, e, err = mt.ContentType("not-exists; charset=utf-8")
-	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+	a.Equal(err, errs.NewLocaleError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
 	// charset=utf-8
 	f, e, err = mt.ContentType("application/octet-stream; charset=utf-8")

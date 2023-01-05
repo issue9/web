@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"github.com/klauspost/compress/zstd"
 
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -50,12 +51,12 @@ type encodingConfig struct {
 	IDs []string `json:"ids" xml:"id" yaml:"ids"`
 }
 
-func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
+func (conf *configOf[T]) sanitizeEncodings() *errs.ConfigError {
 	ids := make([]string, 0, len(encodingFactory))
 	for i, e := range conf.Encodings {
 		if len(e.IDs) == 0 {
 			field := "[" + strconv.Itoa(i) + "].id"
-			return &ConfigError{Message: localeutil.Phrase("%s can not be empty", "id"), Field: field}
+			return errs.NewConfigError(field, localeutil.Phrase("%s can not be empty", "id"), "", "")
 		}
 		ids = append(ids, e.IDs...)
 	}
@@ -65,7 +66,7 @@ func (conf *configOf[T]) sanitizeEncodings() *ConfigError {
 	for _, id := range ids {
 		item, found := encodingFactory[id]
 		if !found {
-			return &ConfigError{Message: localeutil.Phrase("%s not found", id), Field: "ids"}
+			return errs.NewConfigError("ids", localeutil.Phrase("%s not found", id), "", "")
 		}
 		conf.encodings[id] = item
 	}

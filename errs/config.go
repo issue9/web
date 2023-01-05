@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package errs
 
 import (
 	"fmt"
@@ -15,6 +15,21 @@ type ConfigError struct {
 	Field   string // 字段名
 	Message any    // 错误信息
 	Value   any    // 字段的原始值
+}
+
+// NewConfigError 返回表示配置文件错误的对象
+//
+// field 表示错误的字段名；
+// msg 表示错误信息，可以是任意类型；
+// path 表示配置文件的路径；
+// val 表示错误字段的原始值；
+func NewConfigError(field string, msg any, path string, val any) *ConfigError {
+	return &ConfigError{
+		Field:   field,
+		Message: msg,
+		Path:    path,
+		Value:   val,
+	}
 }
 
 func (err *ConfigError) Error() string {

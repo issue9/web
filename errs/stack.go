@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package base
+package errs
 
 import (
 	"fmt"
@@ -13,13 +13,14 @@ type stackError struct {
 	frame xerrors.Frame
 }
 
-// StackError 为 err 带上调用信息
+// NewStackError 为 err 带上调用信息
 //
-// 位置从调用 StackError 开始。
-// 如果 err 为 nil，则返回 nil，如果 err 本身就为 StackError 返回的类型，则原样返回。
+// 位置从调用 NewStackError 开始。
+// 如果 err 为 nil，则返回 nil。
+// 多次调用 NewStackError 包装，则返回第一次包装的返回值。
 //
 // 如果需要输出调用堆栈信息，需要指定 %+v 标记。
-func StackError(err error) error {
+func NewStackError(err error) error {
 	if err == nil {
 		return nil
 	}

@@ -12,6 +12,8 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
+
+	"github.com/issue9/web/errs"
 )
 
 var logWritersFactory = map[string]LogsWriterBuilder{}
@@ -76,7 +78,7 @@ type logWriterConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (conf *logsConfig) build() (*logs.Logs, []func() error, *ConfigError) {
+func (conf *logsConfig) build() (*logs.Logs, []func() error, *errs.ConfigError) {
 	if conf == nil {
 		return logs.New(logs.NewNopWriter()), nil, nil
 	}
@@ -103,7 +105,7 @@ func (conf *logsConfig) build() (*logs.Logs, []func() error, *ConfigError) {
 	return l, c, nil
 }
 
-func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *ConfigError) {
+func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *errs.ConfigError) {
 	if len(conf.Writers) == 0 {
 		return logs.NewNopWriter(), nil, nil
 	}
@@ -116,16 +118,16 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *ConfigError)
 
 		f, found := logWritersFactory[w.Type]
 		if !found {
-			return nil, nil, &ConfigError{Field: field + ".Type", Message: localeutil.Phrase("%s not found", w.Type)}
+			return nil, nil, errs.NewConfigError(field+".Type", localeutil.Phrase("%s not found", w.Type), "", "")
 		}
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			if ce, ok := err.(*ConfigError); ok {
+			if ce, ok := err.(*errs.ConfigError); ok {
 				ce.Field = field + ce.Field
 				return nil, nil, ce
 			}
-			return nil, nil, &ConfigError{Field: field + ".Args", Message: err}
+			return nil, nil, errs.NewConfigError(field+".Args", err, "", "")
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)
@@ -203,12 +205,12 @@ var colorMap = map[string]colors.Color{
 //   - stderr
 func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	if len(args) != 3 {
-		return nil, nil, &ConfigError{Field: "Args", Message: localeutil.Phrase("invalid value %s", args)}
+		return nil, nil, errs.NewConfigError("Args", localeutil.Phrase("invalid value %s", args), "", "")
 	}
 
 	c, found := colorMap[strings.ToLower(args[1])]
 	if !found {
-		return nil, nil, &ConfigError{Field: "Args[1]", Message: localeutil.Phrase("invalid value %s", args[1])}
+		return nil, nil, errs.NewConfigError("Args[1]", localeutil.Phrase("invalid value %s", args[1]), "", "")
 	}
 
 	var w io.Writer
@@ -218,7 +220,7 @@ func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, &ConfigError{Field: "Args[2]", Message: localeutil.Phrase("invalid value %s", args[2])}
+		return nil, nil, errs.NewConfigError("Args[2]", localeutil.Phrase("invalid value %s", args[2]), "", "")
 	}
 
 	return logs.NewTermWriter(args[0], c, w), nil, nil

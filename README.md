@@ -17,28 +17,20 @@ import "github.com/issue9/web"
 
 // main.go
 func main() {
-    srv, _ := web.NewServer("web", "1.0.0", &web.Options{})
-
-    m1.Module(srv.NewModule("m1", web.Phrase("desc")))
-    m2.Module(srv.NewModule("m2", web.Phrase("desc"))
+    srv := web.NewServer("web", "1.0.0", &web.Options{})
+    router := srv.Routers().NewRouter()
+    router.Get("/admins", getAdmins).
+        Get("/groups", getGroups)
 
     srv.Serve()
 }
 
-// modules/m1/module.go
-func Module(m *web.Module) error {
-    m.Action("serve").AddRoutes(func(r*web.Router){
-        r.Get("/admins", getAdmins).
-            Get("/groups", getGroups)
-    })
+func getAdmins(ctx* web.Context) web.Responser {
+    return ctx.NotImplemented();
 }
 
-// modules/m2/module.go
-func Module(m *web.Module) error {
-    m.Action("serve").AddRoutes(func(r*web.Router){
-        r.Get("/admins", getAdmins).
-            Get("/groups", getGroups)
-    })
+func getGroups(ctx* web.Context) web.Responser {
+    return ctx.NotImplemented();
 }
 ```
 
@@ -65,7 +57,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 ## 错误处理
 
 框架提供了一种输出错误信息内容的机制，用户只需要实现 Problem 接口，即可自定义输出的错误信息格式。
-可参考内置的 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 实现：`server.rfc7807`。
+可参考内置的 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 实现：`internal/problems.rfc7807`。
 
 ## 中间件
 

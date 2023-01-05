@@ -27,7 +27,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/base"
+	"github.com/issue9/web/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -178,7 +178,7 @@ func (cmd *AppOf[T]) exec(args []string) error {
 		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
 	}
 	if err := flags.Parse(args[1:]); err != nil {
-		return base.StackError(err)
+		return errs.NewStackError(err)
 	}
 
 	// 以上完成了 flag 的初始化
@@ -232,11 +232,11 @@ func (cmd *AppOf[T]) Restart() error {
 func (cmd *AppOf[T]) initServer() error {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, cmd.fsys, cmd.ConfigFilename)
 	if err != nil {
-		return base.StackError(err)
+		return errs.NewStackError(err)
 	}
 
 	if err = cmd.Init(srv, user, cmd.action); err != nil {
-		return base.StackError(err)
+		return errs.NewStackError(err)
 	}
 
 	cmd.srv = srv
@@ -250,7 +250,7 @@ func (cmd *AppOf[T]) hup() {
 
 		for range signalChannel {
 			if err := cmd.Restart(); err != nil {
-				fmt.Fprintln(cmd.Out, base.StackError(err))
+				fmt.Fprintln(cmd.Out, errs.NewStackError(err))
 			}
 		}
 	}()
