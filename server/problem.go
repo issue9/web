@@ -29,15 +29,15 @@ type (
 		// With 添加新的输出字段
 		//
 		// 如果添加的字段名称与现有的字段重名，应当 panic。
-		With(key string, val any) Problem
+		With(key string, val any)
 
 		// AddParam 添加数据验证错误信息
-		AddParam(name string, reason string) Problem
+		AddParam(name string, reason string)
 	}
 
 	// BuildProblemFunc 生成 [Problem] 对象的方法
 	//
-	// id 表示当前错误信息的唯一值；
+	// id 表示当前错误信息的唯一值，该值有可能为 about:blank，表示不想向用户展示具体的值；
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
 	BuildProblemFunc func(id, title string, status int) Problem
@@ -73,6 +73,20 @@ type (
 		CTXSanitize(*Validation)
 	}
 )
+
+var rfc7807Pool = problems.NewRFC7807Pool[*Context]()
+
+// RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
+//
+// NOTE: 由于 www-form-urlencoded 对复杂对象的表现能力有限，
+// 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
+//
+// 如果是用于 HTML 输出，返回对象实现了 [serializer/html.Marshaler] 接口。
+//
+// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+func RFC7807Builder(id, title string, status int) Problem {
+	return rfc7807Pool.New(id, title, status)
+}
 
 func (srv *Server) Problems() Problems { return srv.problems }
 

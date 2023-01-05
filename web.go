@@ -24,6 +24,9 @@ const Version = "0.61.0"
 
 // 预定义的 Problem id 值
 const (
+	// 特殊的值，当不想向用户展示 type 值时，该对象的 type 会被设置为该值。
+	ProblemAboutBlank = problems.ProblemAboutBlank
+
 	// 400
 	ProblemBadRequest                   = problems.ProblemBadRequest
 	ProblemUnauthorized                 = problems.ProblemUnauthorized

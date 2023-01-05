@@ -16,6 +16,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+var _ BuildProblemFunc = RFC7807Builder
+
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
 func TestContext_Log(t *testing.T) {
 	a := assert.New(t, false)
@@ -32,7 +34,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:34") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:36") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 500)
 	})
@@ -44,7 +46,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error("41110", logs.LevelError, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:46") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:48") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 411)
 	})
@@ -85,7 +87,8 @@ func TestContext_Problem(t *testing.T) {
 		Header("accept", "application/json").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	resp = ctx.Problem("40000").With("with", "abc")
+	resp = ctx.Problem("40000")
+	resp.With("with", "abc")
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
 
@@ -106,7 +109,8 @@ func TestContext_Problem(t *testing.T) {
 		&StatusProblem{ID: "40011", Status: http.StatusBadRequest, Title: localeutil.Phrase("40011"), Detail: localeutil.Phrase("40011")},
 	)
 
-	resp = ctx.Problem("40010").With("detail", "40010")
+	resp = ctx.Problem("40010")
+	resp.With("detail", "40010")
 	resp.AddParam("k1", "v1")
 
 	resp.Apply(ctx)

@@ -6,7 +6,10 @@ import "net/http"
 
 // 预定义的 Problem id 值
 const (
-	// NOTE: 如果此处添加或是删除了值，应该同时处理 statuses，以及 /web.go 中的引用！
+	// 特殊值，当不希望显示 type 值时，将 type 赋予此值，不应该出现相应的状态码。
+	ProblemAboutBlank = "about:blank"
+
+	// NOTE: 如果以下添加或是删除了值，应该同时处理 statuses，以及 /web.go 中的引用！
 
 	// 400
 	ProblemBadRequest                   = "400"

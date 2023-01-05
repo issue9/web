@@ -12,8 +12,6 @@ import (
 	"golang.org/x/text/message"
 )
 
-const AboutBlank = "about:blank"
-
 // Problems 管理 Problem
 //
 // P 表示 Problem 接口类型
@@ -50,9 +48,9 @@ func (p *Problems[P]) TypePrefix() string { return p.typePrefix }
 
 func (p *Problems[P]) SetTypePrefix(prefix string) {
 	p.typePrefix = prefix
-	if prefix == AboutBlank {
+	if prefix == ProblemAboutBlank {
 		for _, s := range p.problems {
-			s.t = ""
+			s.t = ProblemAboutBlank
 		}
 		return
 	}
@@ -73,8 +71,8 @@ func (p *Problems[P]) add(s *StatusProblem) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", s.ID))
 	}
 
-	if p.typePrefix == AboutBlank {
-		s.t = ""
+	if p.typePrefix == ProblemAboutBlank {
+		s.t = ProblemAboutBlank
 	} else {
 		s.t = p.typePrefix + s.ID
 	}

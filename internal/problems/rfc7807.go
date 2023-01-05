@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package problems
 
 import (
 	"encoding/json"
@@ -11,54 +11,28 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
+	"github.com/issue9/logs/v4"
 	"github.com/issue9/sliceutil"
-
-	"github.com/issue9/web/internal/problems"
 )
 
 const paramsKey = "params"
 
-const rfc7807XMLNamespace = "urn:ietf:rfc:7807"
+const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 
-const rfc7807PoolMaxSize = 10
+const rfc8707PoolMaxSize = 10
 
-var rfc7807ProblemPool = &sync.Pool{New: func() any {
-	return &rfc7807{
-		keys: []string{"type", "title", "status"},
-		vals: make([]any, 3),
-	}
-}}
-
-// RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
-//
-// NOTE: 由于 www-form-urlencoded 对复杂对象的表现能力有限，
-// 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
-//
-// 如果是用于 HTML 输出，返回对象实现了 [serializer/html.Marshaler] 接口。
-//
-// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func RFC7807Builder(id, title string, status int) Problem {
-	if id == "" {
-		id = problems.AboutBlank
-	}
-
-	p := rfc7807ProblemPool.Get().(*rfc7807)
-	p.status = status
-
-	p.keys = p.keys[:3]
-	p.vals = p.vals[:3]
-	// keys 前三个元素为固定值
-	p.vals[0] = id
-	p.vals[1] = title
-	p.vals[2] = status
-
-	p.pKeys = p.pKeys[:0]
-	p.pReasons = p.pReasons[:0]
-
-	return p
+type ctx interface {
+	Marshal(int, any, bool) error
+	Logs() *logs.Logs
 }
 
-type rfc7807 struct {
+// RFC7807 server.Problem 接口的 rfc7807 实现
+//
+// C 表示实现的 server.Context 类型，
+// 因为此类型最终会被 server 包引用，为了拆分代码，用泛型代替。
+type RFC7807[C ctx] struct {
+	pool *RFC7807Pool[C]
+
 	status int
 
 	// with
@@ -75,7 +49,41 @@ type rfc7807Entry struct {
 	Value   any `xml:",chardata"`
 }
 
-func (p *rfc7807) MarshalJSON() ([]byte, error) {
+type RFC7807Pool[C ctx] struct {
+	pool *sync.Pool
+}
+
+func NewRFC7807Pool[C ctx]() *RFC7807Pool[C] {
+	return &RFC7807Pool[C]{
+		pool: &sync.Pool{New: func() any {
+			return &RFC7807[C]{
+				keys: []string{"type", "title", "status"},
+				vals: make([]any, 3),
+			}
+		}},
+	}
+}
+
+// New 获取 RFC7807 对象
+func (pool *RFC7807Pool[C]) New(id, title string, status int) *RFC7807[C] {
+	p := pool.pool.Get().(*RFC7807[C])
+	p.pool = pool
+	p.status = status
+
+	p.keys = p.keys[:3]
+	p.vals = p.vals[:3]
+	// keys 前三个元素为固定值
+	p.vals[0] = id
+	p.vals[1] = title
+	p.vals[2] = status
+
+	p.pKeys = p.pKeys[:0]
+	p.pReasons = p.pReasons[:0]
+
+	return p
+}
+
+func (p *RFC7807[C]) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}
 	b.WByte('{')
 
@@ -105,9 +113,9 @@ func (p *rfc7807) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), b.Err
 }
 
-func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (p *RFC7807[C]) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	start.Name.Local = "problem"
-	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: rfc7807XMLNamespace})
+	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: rfc8707XMLNamespace})
 	if err := e.EncodeToken(start); err != nil {
 		return err
 	}
@@ -172,7 +180,7 @@ func (p *rfc7807) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	return e.EncodeToken(start.End())
 }
 
-func (p *rfc7807) MarshalForm() ([]byte, error) {
+func (p *RFC7807[C]) MarshalForm() ([]byte, error) {
 	u := url.Values{}
 
 	for index, key := range p.keys {
@@ -221,7 +229,7 @@ func (p *rfc7807) MarshalForm() ([]byte, error) {
 	return []byte(u.Encode()), nil
 }
 
-func (p *rfc7807) MarshalHTML() (string, any) {
+func (p *RFC7807[C]) MarshalHTML() (string, any) {
 	data := make(map[string]any, len(p.keys)+1)
 	for index, key := range p.keys {
 		data[key] = p.vals[index]
@@ -238,31 +246,28 @@ func (p *rfc7807) MarshalHTML() (string, any) {
 	return "problem", data
 }
 
-func (p *rfc7807) Apply(ctx *Context) {
+func (p *RFC7807[C]) Apply(ctx C) {
 	if err := ctx.Marshal(p.status, p, true); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
 
-	if len(p.keys) < rfc7807PoolMaxSize && len(p.pKeys) < rfc7807PoolMaxSize {
-		rfc7807ProblemPool.Put(p)
+	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
+		p.pool.pool.Put(p)
 	}
 }
 
-func (p *rfc7807) AddParam(name string, reason string) Problem {
+func (p *RFC7807[C]) AddParam(name string, reason string) {
 	if _, found := sliceutil.At(p.pKeys, func(pp string) bool { return pp == name }); found {
 		panic("已经存在")
 	}
 	p.pKeys = append(p.pKeys, name)
 	p.pReasons = append(p.pReasons, reason)
-
-	return p
 }
 
-func (p *rfc7807) With(key string, val any) Problem {
+func (p *RFC7807[C]) With(key string, val any) {
 	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) || key == paramsKey {
 		panic("存在同名的参数")
 	}
 	p.keys = append(p.keys, key)
 	p.vals = append(p.vals, val)
-	return p
 }

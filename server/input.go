@@ -132,9 +132,13 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 	p := ctx.LocalePrinter()
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
-		return 0, ctx.Problem(id).AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		pp := ctx.Problem(id)
+		pp.AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return 0, pp
 	} else if ret <= 0 {
-		return 0, ctx.Problem(id).AddParam(key, tGreatThanZero.LocaleString(p))
+		pp := ctx.Problem(id)
+		pp.AddParam(key, tGreatThanZero.LocaleString(p))
+		return 0, pp
 	}
 	return ret, nil
 }
@@ -147,7 +151,9 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 	ret, err := ctx.route.Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		return 0, ctx.Problem(id).AddParam(key, msg)
+		pp := ctx.Problem(id)
+		pp.AddParam(key, msg)
+		return 0, pp
 	}
 	return ret, nil
 }
@@ -160,7 +166,9 @@ func (ctx *Context) ParamString(key, id string) (string, Responser) {
 	ret, err := ctx.route.Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		return "", ctx.Problem(id).AddParam(key, msg)
+		pp := ctx.Problem(id)
+		pp.AddParam(key, msg)
+		return "", pp
 	}
 	return ret, nil
 }

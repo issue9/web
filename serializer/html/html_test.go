@@ -7,12 +7,15 @@ import (
 
 	"github.com/issue9/assert/v3"
 
+	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/server"
 )
 
 var (
 	_ server.MarshalFunc   = Marshal
 	_ server.UnmarshalFunc = Unmarshal
+
+	_ Marshaler = &problems.RFC7807[*server.Context]{}
 )
 
 func TestGetName(t *testing.T) {

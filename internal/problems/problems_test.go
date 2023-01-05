@@ -57,13 +57,13 @@ func TestProblems_TypePrefix_Problem(t *testing.T) {
 		Equal(ps.Problem(printer, "40011"), "https://example.com/qa#40011").
 		Equal(ps.TypePrefix(), "https://example.com/qa#")
 
-	ps.SetTypePrefix(AboutBlank)
+	ps.SetTypePrefix(ProblemAboutBlank)
 	ps.Add(
 		&StatusProblem{ID: "40012", Status: 400, Title: localeutil.Phrase("title"), Detail: localeutil.Phrase("detail")},
 	)
-	a.Equal(ps.Problem(printer, "40010"), "").
-		Equal(ps.Problem(printer, "40012"), "").
-		Equal(ps.TypePrefix(), AboutBlank)
+	a.Equal(ps.Problem(printer, "40010"), ProblemAboutBlank).
+		Equal(ps.Problem(printer, "40012"), ProblemAboutBlank).
+		Equal(ps.TypePrefix(), ProblemAboutBlank)
 
 	a.PanicString(func() {
 		ps.Problem(printer, "not-exists")
