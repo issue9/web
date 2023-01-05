@@ -17,6 +17,7 @@ import (
 
 	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/mimetypes"
 )
 
 const (
@@ -54,7 +55,7 @@ type Context struct {
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，可以为空。
-	outputMimetype *mimetype
+	outputMimetype *mimetypes.Mimetype[MarshalFunc, UnmarshalFunc]
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc     // 可以为空

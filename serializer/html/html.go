@@ -21,8 +21,10 @@ import (
 	"html/template"
 	"reflect"
 
-	"github.com/issue9/web/server"
 	"golang.org/x/text/message"
+
+	"github.com/issue9/web/serializer"
+	"github.com/issue9/web/server"
 )
 
 const Mimetype = "text/html"
@@ -58,7 +60,7 @@ func Marshal(ctx *server.Context, v any) ([]byte, error) {
 func marshal(ctx *server.Context, v any) ([]byte, error) {
 	tt, found := ctx.Server().Vars().Load(viewContextKey)
 	if !found {
-		return nil, server.ErrUnsupported
+		return nil, serializer.ErrUnsupported()
 	}
 	vv := tt.(*view)
 
@@ -86,7 +88,7 @@ func marshal(ctx *server.Context, v any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal([]byte, any) error { return server.ErrUnsupported }
+func Unmarshal([]byte, any) error { return serializer.ErrUnsupported() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {

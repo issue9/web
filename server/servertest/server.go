@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/serializer/json"
 	"github.com/issue9/web/serializer/xml"
 	"github.com/issue9/web/server"
@@ -65,10 +66,10 @@ func marshalTest(_ *server.Context, v any) ([]byte, error) {
 	case error:
 		return nil, vv
 	default:
-		return nil, server.ErrUnsupported
+		return nil, serializer.ErrUnsupported()
 	}
 }
 
 func unmarshalTest(bs []byte, v any) error {
-	return server.ErrUnsupported
+	return serializer.ErrUnsupported()
 }

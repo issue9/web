@@ -8,23 +8,15 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/service"
 )
-
-// ErrUnsupported 返回不支持序列化的错误信息
-//
-// 当一个对象无法被正常的序列化或是反序列化时返回此错误。
-var ErrUnsupported = errs.NewLocaleError("unsupported serialization")
 
 type (
 	Services        = service.Server
 	NewEncodingFunc = encoding.NewEncodingFunc
 	Files           = files.Files
-	mimetype        = mimetypes.Mimetype[MarshalFunc, UnmarshalFunc]
 
 	// MarshalFunc 序列化函数原型
 	MarshalFunc func(*Context, any) ([]byte, error)

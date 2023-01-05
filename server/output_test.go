@@ -17,6 +17,7 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
+	"github.com/issue9/web/serializer"
 )
 
 func TestContext_Marshal(t *testing.T) {
@@ -157,7 +158,7 @@ func TestContext_Marshal(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").Header("Accept", "application/test").Request()
 	ctx = srv.newContext(w, r, nil)
-	a.ErrorIs(ctx.Marshal(http.StatusCreated, "任意值", false), ErrUnsupported)
+	a.ErrorIs(ctx.Marshal(http.StatusCreated, "任意值", false), serializer.ErrUnsupported())
 	a.Equal(w.Code, http.StatusNotAcceptable)
 
 	// outputMimetype 返回错误

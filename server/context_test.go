@@ -21,6 +21,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/serializer"
 )
 
 var _ http.ResponseWriter = &Context{}
@@ -30,12 +31,12 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	case error:
 		return nil, vv
 	default:
-		return nil, ErrUnsupported
+		return nil, serializer.ErrUnsupported()
 	}
 }
 
 func unmarshalTest(bs []byte, v any) error {
-	return ErrUnsupported
+	return serializer.ErrUnsupported()
 }
 
 func marshalJSON(ctx *Context, obj any) ([]byte, error) {

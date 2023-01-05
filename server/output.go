@@ -3,7 +3,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -12,6 +11,7 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/serializer"
 )
 
 // Marshal 向客户端输出内容
@@ -37,7 +37,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 	}
 
 	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
-	if id := ctx.languageTag.String(); id != "" {
+	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set("Content-Language", id)
 	}
 
@@ -47,7 +47,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 			ctx.WriteHeader(status)
 		} else {
 			id := problems.ProblemInternalServerError
-			if errors.Is(err, ErrUnsupported) {
+			if serializer.IsUnsupported(err) {
 				id = problems.ProblemNotAcceptable
 			}
 			if e := ctx.Marshal(problems.Status(id), ctx.Problem(id), true); e != nil {
@@ -65,7 +65,7 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 // Wrote 是否已经有内容输出
 func (ctx *Context) Wrote() bool { return ctx.wrote }
 
-// Sprintf 返回翻译后的结果
+// Sprintf 将内容翻译成当前请求的语言
 func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
 }

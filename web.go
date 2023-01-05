@@ -92,7 +92,6 @@ type (
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
 	Service        = service.Service
-	ConfigError    = errs.ConfigError
 
 	Logger = logs.Logger
 
@@ -127,6 +126,6 @@ func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 // NewStackError 为 err 带上调用信息
 func NewStackError(err error) error { return errs.NewStackError(err) }
 
-func NewConfigError(field string, msg any, path string, val any) *ConfigError {
+func NewConfigError(field string, msg any, path string, val any) *errs.ConfigError {
 	return errs.NewConfigError(field, msg, path, val)
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package problems 提供对 Problem 管理
+// Package problems 提供对 Problem 相关内容的管理
 package problems
 
 import (
