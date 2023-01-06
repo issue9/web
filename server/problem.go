@@ -60,6 +60,9 @@ type (
 
 		// Problem 根据 id 生成 [Problem] 对象
 		Problem(printer *message.Printer, id string) Problem
+
+		// Status 添加一组固定状态码的错误码
+		Status(int) *problems.StatusProblems[Problem]
 	}
 
 	StatusProblem = problems.StatusProblem

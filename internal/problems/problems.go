@@ -30,6 +30,11 @@ type StatusProblem struct {
 	Detail localeutil.LocaleStringer
 }
 
+type StatusProblems[P any] struct {
+	p      *Problems[P]
+	status int
+}
+
 func New[P any](f func(id, title string, status int) P) *Problems[P] {
 	p := &Problems[P]{
 		builder:  f,
@@ -70,6 +75,13 @@ func (p *Problems[P]) add(s *StatusProblem) {
 	if p.Exists(s.ID) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", s.ID))
 	}
+	if !isValidStatus(s.Status) {
+		panic("status 必须是一个有效的状态码")
+	}
+
+	if s.Title == nil {
+		panic("title 不能为空")
+	}
 
 	if p.typePrefix == ProblemAboutBlank {
 		s.t = ProblemAboutBlank
@@ -93,3 +105,22 @@ func (p *Problems[P]) Problem(printer *message.Printer, id string) P {
 
 	return p.builder(sp.t, sp.Title.LocaleString(printer), sp.Status)
 }
+
+// Status 声明同一个状态下的添加方式
+func (p *Problems[P]) Status(status int) *StatusProblems[P] {
+	if !isValidStatus(status) {
+		panic(fmt.Sprintf("无效的状态码 %d", status))
+	}
+
+	return &StatusProblems[P]{
+		p:      p,
+		status: status,
+	}
+}
+
+func (p *StatusProblems[P]) Add(id string, title, detail localeutil.LocaleStringer) *StatusProblems[P] {
+	p.p.Add(&StatusProblem{ID: id, Status: p.status, Title: title, Detail: detail})
+	return p
+}
+
+func isValidStatus(status int) bool { return status >= 100 && status < 600 }
