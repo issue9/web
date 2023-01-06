@@ -127,8 +127,12 @@ func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 // NewStackError 为 err 带上调用信息
 func NewStackError(err error) error { return errs.NewStackError(err) }
 
-func NewConfigError(field string, msg any, path string, val any) *errs.ConfigError {
-	return errs.NewConfigError(field, msg, path, val)
+// NewConfigError 返回表示配置文件错误的对象
+//
+// field 表示错误的字段名；
+// msg 表示错误信息，可以是任意类型，如果 msg 是 ConfigError 类型，那么此操作仅修改此类型的 Field 值；
+func NewConfigError(field string, msg any) *errs.ConfigError {
+	return errs.NewConfigError(field, msg)
 }
 
 // NewLocaleError 本地化的错误信息

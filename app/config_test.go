@@ -21,7 +21,7 @@ type userData struct {
 
 func (u *userData) SanitizeConfig() *errs.ConfigError {
 	if u.ID < 0 {
-		return errs.NewConfigError("ID", "必须大于 0", "", "")
+		return errs.NewConfigError("ID", "必须大于 0")
 	}
 	return nil
 }

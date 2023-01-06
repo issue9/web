@@ -48,12 +48,12 @@ func (conf *configOf[T]) buildCache() *errs.ConfigError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewConfigError("type", "无效的值", "", "")
+		return errs.NewConfigError("type", "无效的值")
 	}
 
 	c, err := b(conf.Cache.DSN)
 	if err != nil {
-		return errs.NewConfigError("dsn", err, "", "")
+		return errs.NewConfigError("dsn", err)
 	}
 	conf.cache = c
 

@@ -155,21 +155,19 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	l, cleanup, err := conf.Logs.build()
 	if err != nil {
-		err.Field = "logs." + err.Field
-		return err
+		return err.AddFieldParent("logs")
 	}
 	conf.logs = l
 	conf.cleanup = cleanup
 
 	if err = conf.buildCache(); err != nil {
-		err.Field = "cache." + err.Field
-		return err
+		return err.AddFieldParent("cache")
 	}
 
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return errs.NewConfigError("language.", err, "", "")
+			return errs.NewConfigError("language.", err)
 		}
 		conf.languageTag = tag
 	}
@@ -182,31 +180,26 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 		conf.HTTP = &httpConfig{}
 	}
 	if err = conf.HTTP.sanitize(); err != nil {
-		err.Field = "http." + err.Field
-		return err
+		return err.AddFieldParent("http")
 	}
 	conf.http = conf.HTTP.buildHTTPServer(conf.logs.StdLogger(logs.LevelError))
 
 	if err = conf.sanitizeEncodings(); err != nil {
-		err.Field = "encodings" + err.Field
-		return err
+		return err.AddFieldParent("encodings")
 	}
 
 	if err = conf.sanitizeMimetypes(); err != nil {
-		err.Field = "mimetypes" + err.Field
-		return err
+		return err.AddFieldParent("mimetypes")
 	}
 
 	if err = conf.sanitizeFiles(); err != nil {
-		err.Field = "files" + err.Field
-		return err
+		return err.AddFieldParent("files")
 	}
 
 	if conf.User != nil {
 		if s, ok := (any)(conf.User).(ConfigSanitizer); ok {
 			if err := s.SanitizeConfig(); err != nil {
-				err.Field = "user." + err.Field
-				return err
+				return err.AddFieldParent("user")
 			}
 		}
 	}
@@ -221,7 +214,7 @@ func (conf *configOf[T]) buildTimezone() *errs.ConfigError {
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return errs.NewConfigError("timezone", err, "", "")
+		return errs.NewConfigError("timezone", err)
 	}
 	conf.location = loc
 

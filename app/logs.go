@@ -74,7 +74,7 @@ type logWriterConfig struct {
 	//   - magenta 洋红；
 	//   - cyan 青；
 	//   - white 白；
-	//  2: 输出的终端，可以是 stdout 或 stder；
+	//  2: 输出的终端，可以是 stdout 或 stderr；
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
@@ -118,16 +118,15 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *errs.ConfigE
 
 		f, found := logWritersFactory[w.Type]
 		if !found {
-			return nil, nil, errs.NewConfigError(field+".Type", localeutil.Phrase("%s not found", w.Type), "", "")
+			return nil, nil, errs.NewConfigError(field+".Type", localeutil.Phrase("%s not found", w.Type))
 		}
 
 		ww, c, err := f(w.Args)
 		if err != nil {
 			if ce, ok := err.(*errs.ConfigError); ok {
-				ce.Field = field + ce.Field
-				return nil, nil, ce
+				return nil, nil, ce.AddFieldParent(field)
 			}
-			return nil, nil, errs.NewConfigError(field+".Args", err, "", "")
+			return nil, nil, errs.NewConfigError(field+".Args", err)
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)
@@ -205,12 +204,12 @@ var colorMap = map[string]colors.Color{
 //   - stderr
 func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	if len(args) != 3 {
-		return nil, nil, errs.NewConfigError("Args", localeutil.Phrase("invalid value %s", args), "", "")
+		return nil, nil, errs.NewConfigError("Args", localeutil.Phrase("invalid value %s", args))
 	}
 
 	c, found := colorMap[strings.ToLower(args[1])]
 	if !found {
-		return nil, nil, errs.NewConfigError("Args[1]", localeutil.Phrase("invalid value %s", args[1]), "", "")
+		return nil, nil, errs.NewConfigError("Args[1]", localeutil.Phrase("invalid value %s", args[1]))
 	}
 
 	var w io.Writer
@@ -220,7 +219,7 @@ func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, errs.NewConfigError("Args[2]", localeutil.Phrase("invalid value %s", args[2]), "", "")
+		return nil, nil, errs.NewConfigError("Args[2]", localeutil.Phrase("invalid value %s", args[2]))
 	}
 
 	return logs.NewTermWriter(args[0], c, w), nil, nil

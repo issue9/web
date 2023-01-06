@@ -21,15 +21,30 @@ type ConfigError struct {
 //
 // field 表示错误的字段名；
 // msg 表示错误信息，可以是任意类型；
-// path 表示配置文件的路径；
-// val 表示错误字段的原始值；
-func NewConfigError(field string, msg any, path string, val any) *ConfigError {
-	return &ConfigError{
-		Field:   field,
-		Message: msg,
-		Path:    path,
-		Value:   val,
+func NewConfigError(field string, msg any) *ConfigError {
+	if err, ok := msg.(*ConfigError); ok { // 如果是 ConfigError 类型，那么此操作仅修改此类型的 Field 值
+		err.AddFieldParent(field)
+		return err
 	}
+
+	return &ConfigError{Field: field, Message: msg}
+}
+
+// AddFieldParent 为字段名加上一个前缀
+//
+// 当字段名存在层级关系时，外层在处理错误时，需要为其加上当前层的字段名作为前缀。
+func (err *ConfigError) AddFieldParent(prefix string) *ConfigError {
+	if prefix == "" {
+		return err
+	}
+
+	if err.Field == "" {
+		err.Field = prefix
+		return err
+	}
+
+	err.Field = prefix + "." + err.Field
+	return err
 }
 
 func (err *ConfigError) Error() string {

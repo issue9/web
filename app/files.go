@@ -27,7 +27,7 @@ func (conf *configOf[T]) sanitizeFiles() *errs.ConfigError {
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return errs.NewConfigError("["+strconv.Itoa(i)+"]", localeutil.Phrase("not found serialization function for %s", name), "", "")
+			return errs.NewConfigError("["+strconv.Itoa(i)+"]", localeutil.Phrase("not found serialization function for %s", name))
 		}
 		conf.files[name] = s // conf.Files 可以保证 conf.files 唯一性
 	}
