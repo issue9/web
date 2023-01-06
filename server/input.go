@@ -131,7 +131,7 @@ func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
 func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
 	p := ctx.LocalePrinter()
-	ret, err := ctx.route.Params().Int(key)
+	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		pp := ctx.Problem(id)
 		pp.AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
@@ -149,7 +149,7 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
-	ret, err := ctx.route.Params().Int(key)
+	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		pp := ctx.Problem(id)
@@ -164,7 +164,7 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamString(key, id string) (string, Responser) {
 	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
-	ret, err := ctx.route.Params().String(key)
+	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		pp := ctx.Problem(id)

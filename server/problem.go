@@ -95,7 +95,7 @@ func (srv *Server) Problems() Problems { return srv.problems }
 //
 // 如果当前对象没有收集到错误，那么将返回 nil。
 func (v *Validation) Problem(id string) Problem {
-	if v == nil || v.Count() == 0 {
+	if v == nil || v.Len() == 0 {
 		return nil
 	}
 

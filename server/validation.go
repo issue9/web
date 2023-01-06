@@ -50,6 +50,7 @@ type (
 
 func (f ValidateFunc) IsValid(v any) bool { return f(v) }
 
+// NewValidation 声明验证对象
 func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	v := validationPool.Get().(*Validation)
 	v.exitAtError = exitAtError
@@ -64,13 +65,13 @@ func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	return v
 }
 
-func (v *Validation) continueNext() bool { return !v.exitAtError || v.Count() == 0 }
+func (v *Validation) continueNext() bool { return !v.exitAtError || v.Len() == 0 }
 
-func (v *Validation) Count() int { return len(v.keys) }
+func (v *Validation) Len() int { return len(v.keys) }
 
 // Add 直接添加一条错误信息
 func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validation {
-	if v.Count() > 0 && v.exitAtError {
+	if v.Len() > 0 && v.exitAtError {
 		return v
 	}
 	return v.add(name, reason)
@@ -88,7 +89,7 @@ func (v *Validation) add(name string, reason localeutil.LocaleStringer) *Validat
 // name 表示当前字段的名称，当验证出错时，以此值作为名称返回给用户；
 // rules 表示验证的规则，按顺序依次验证。
 func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation {
-	if v.Count() > 0 && v.exitAtError {
+	if v.Len() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -107,7 +108,7 @@ func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation 
 func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 []T
 
-	if v.Count() > 0 && v.exitAtError {
+	if v.Len() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -138,7 +139,7 @@ func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Valida
 func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validation {
 	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 map[T]T
 
-	if v.Count() > 0 && v.exitAtError {
+	if v.Len() > 0 && v.exitAtError {
 		return v
 	}
 
@@ -215,7 +216,6 @@ func toValidators(f []func(any) bool) []Validator {
 // NewRule 声明一条验证规则
 //
 // message 表示在验证出错时的错误信息；
-// validator 为验证方法；
 func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
 	return &Rule{
 		validator: validator,

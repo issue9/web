@@ -17,7 +17,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.61.0"
+const Version = "0.62.0"
 
 // 预定义的 Problem id 值
 const (
@@ -92,6 +92,7 @@ type (
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
 	Service        = service.Service
+	ConfigError    = errs.ConfigError
 
 	Logger = logs.Logger
 
@@ -129,3 +130,6 @@ func NewStackError(err error) error { return errs.NewStackError(err) }
 func NewConfigError(field string, msg any, path string, val any) *errs.ConfigError {
 	return errs.NewConfigError(field, msg, path, val)
 }
+
+// NewLocaleError 本地化的错误信息
+func NewLocaleError(format string, v ...any) error { return errs.NewLocaleError(format, v...) }
