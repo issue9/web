@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/issue9/assert/v3"
@@ -21,7 +22,10 @@ type Tester struct {
 	s        *server.Server
 	r        *server.Router
 	hostname string
-	exit     chan struct{}
+
+	// 采用 sync.WaitGroup 而不是 chan，
+	// 可以保证用户在不调用 GoServe 的情况下调用 Close 可以正常关闭。
+	wg sync.WaitGroup
 }
 
 // NewTester 声明一个 [Tester] 实例
@@ -35,7 +39,6 @@ func NewTester(a *assert.Assertion, o *server.Options) *Tester {
 		s:        s,
 		a:        a,
 		hostname: "http://localhost" + o.HTTPServer.Addr,
-		exit:     make(chan struct{}, 1),
 	}
 }
 
@@ -43,11 +46,11 @@ func (s *Tester) Server() *server.Server { return s.s }
 
 func (s *Tester) GoServe() {
 	ok := make(chan struct{}, 1)
+	s.wg.Add(1)
 
 	go func() {
 		s.a.TB().Helper()
-
-		defer func() { s.exit <- struct{}{} }()
+		defer s.wg.Done()
 
 		ok <- struct{}{} // 最起码等待协程启动
 
@@ -110,7 +113,7 @@ func (s *Tester) Close(shutdown time.Duration) {
 	// NOTE: Tester 主要用于第三方测试，
 	// 所以不主动将 Close 注册至 a.TB().Cleanup，由调用方决定何时调用。
 	s.a.NotError(s.Server().Close(shutdown))
-	<-s.exit
+	s.wg.Wait()
 }
 
 // BuildHandler 生成以 code 作为状态码和内容输出的路由处理函数
