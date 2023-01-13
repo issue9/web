@@ -17,7 +17,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.62.0"
+const Version = "0.62.1"
 
 // 预定义的 Problem id 值
 const (
