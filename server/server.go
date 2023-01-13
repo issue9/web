@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
@@ -19,6 +18,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/internal/mimetypes"
@@ -33,7 +33,7 @@ type Server struct {
 	fs         fs.FS
 	httpServer *http.Server
 	vars       *sync.Map
-	cache      cache.Cache
+	cache      cache.Driver
 	uptime     time.Time
 	routers    *Routers
 	services   *service.Server
@@ -116,7 +116,7 @@ func (srv *Server) Location() *time.Location { return srv.location }
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
-func (srv *Server) Cache() cache.Cache { return srv.cache }
+func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
@@ -148,6 +148,11 @@ func (srv *Server) Serve() (err error) {
 				srv.Logs().Error(err1)
 			}
 		}
+
+		if err1 := srv.cache.Close(); err != nil { // 出错不退出，继续其它操作。
+			srv.Logs().Error(err1)
+		}
+
 	}()
 
 	cfg := srv.httpServer.TLSConfig

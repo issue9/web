@@ -59,3 +59,11 @@ messages:
 - key: the client did not specify content-type header
   message:
     msg: 客户端请求时未指定 content-type 报头
+
+- key: cache miss
+  message:
+    msg: 未找到缓存项
+
+- key: invalid cache key
+  message:
+    msg: 缓存的 key 不符合要求

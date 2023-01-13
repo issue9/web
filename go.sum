@@ -8,8 +8,6 @@ github.com/gomodule/redigo v1.8.9 h1:Sl3u+2BI/kk+VEatbj0scLdrFhjPmbxOc1myhDP41ws
 github.com/gomodule/redigo v1.8.9/go.mod h1:7ArFNvsTjH8GMMzB4uy1snslv2BwmginuMs06a1uzZE=
 github.com/issue9/assert/v3 v3.0.4 h1:WsYZQ6PQmM/pGFrbkn5GIXjWeVZHv+wcl2829UTX1Qc=
 github.com/issue9/assert/v3 v3.0.4/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
-github.com/issue9/cache v0.4.1 h1:Sg6ZJmNCq8Fp/tObteaNwMUeBVQRY5iNurgC18vnNuc=
-github.com/issue9/cache v0.4.1/go.mod h1:Cb41J0a/KWyJc4JwLw+i9MB4qKJMMGWc+Nzpl01044A=
 github.com/issue9/conv v1.3.3 h1:o8r5T6u+cGU+ar6ArQGLiFCBSWPKqwVbpAUJwd48uJE=
 github.com/issue9/conv v1.3.3/go.mod h1:UODtJDXGHmNdAkTkPPeo/Y42i2lYKUEj2wAO+I0/Qdo=
 github.com/issue9/errwrap v0.3.1 h1:8g4lYJaGnoiXyZ1oZyH/7zPDGgw5RNiE9Q6ri9kE6Z8=

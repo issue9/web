@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/issue9/cache"
-	"github.com/issue9/cache/memory"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/cache"
+	"github.com/issue9/web/internal/caches"
 )
 
 type Options struct {
@@ -31,7 +32,7 @@ type Options struct {
 	// 缓存系统
 	//
 	// 默认值为内存类型。
-	Cache cache.Cache
+	Cache cache.Driver
 
 	// 日志的输出通道设置
 	//
@@ -80,7 +81,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	if o.Cache == nil {
-		o.Cache = memory.New(24 * time.Hour)
+		o.Cache = caches.NewMemory(24 * time.Hour)
 	}
 
 	if o.HTTPServer == nil {

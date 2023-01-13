@@ -6,19 +6,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/gomodule/redigo/redis"
-	"github.com/issue9/cache"
-	cm "github.com/issue9/cache/memcache"
-	"github.com/issue9/cache/memory"
-	cr "github.com/issue9/cache/redis"
-
+	"github.com/issue9/localeutil"
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/caches"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
 
-type CacheBuilder func(dsn string) (cache.Cache, error)
+type CacheBuilder func(dsn string) (cache.Driver, error)
 
 type cacheConfig struct {
 	// 表示缓存的方式
@@ -42,13 +38,13 @@ type cacheConfig struct {
 
 func (conf *configOf[T]) buildCache() *errs.ConfigError {
 	if conf.Cache == nil {
-		conf.cache = memory.New(time.Hour)
+		conf.cache = caches.NewMemory(time.Hour)
 		return nil
 	}
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewConfigError("type", "无效的值")
+		return errs.NewConfigError("type", localeutil.Phrase("invalid value %s", conf.Cache.Type))
 	}
 
 	c, err := b(conf.Cache.DSN)
@@ -74,23 +70,19 @@ func RegisterCache(b CacheBuilder, name ...string) {
 }
 
 func init() {
-	RegisterCache(func(dsn string) (cache.Cache, error) {
+	RegisterCache(func(dsn string) (cache.Driver, error) {
 		d, err := time.ParseDuration(dsn)
 		if err != nil {
 			return nil, err
 		}
-		return memory.New(d), nil
+		return caches.NewMemory(d), nil
 	}, "", "memory")
 
-	RegisterCache(func(dsn string) (cache.Cache, error) {
-		return cm.New(memcache.New(strings.Split(dsn, ";")...)), nil
+	RegisterCache(func(dsn string) (cache.Driver, error) {
+		return caches.NewMemcache(strings.Split(dsn, ";")...), nil
 	}, "memcached", "memcache")
 
-	RegisterCache(func(dsn string) (cache.Cache, error) {
-		c, err := redis.DialURL(dsn)
-		if err != nil {
-			return nil, err
-		}
-		return cr.New(c), nil
+	RegisterCache(func(dsn string) (cache.Driver, error) {
+		return caches.NewRedis(dsn)
 	}, "redis")
 }

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/cache"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/server"
@@ -54,7 +54,7 @@ type configOf[T any] struct {
 	//  - redis
 	//  - memory
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
-	cache cache.Cache
+	cache cache.Driver
 
 	// 压缩的相关配置
 	//

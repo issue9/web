@@ -11,7 +11,22 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
         go: ['1.18.x', '1.19.x']
-        
+
+    services:
+      memcached:
+        image: memcached:latest
+        ports:
+          - 11211:11211
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
 
       - name: Set git to use LF
