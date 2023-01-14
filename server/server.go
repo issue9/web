@@ -53,10 +53,10 @@ type Server struct {
 	files     *Files
 }
 
-// New 返回 *Server 实例
+// New 新建 web 服务
 //
 // name, version 表示服务的名称和版本号；
-// o 指定了初始化 Server 一些非必要参数。
+// o 指定了初始化 [Server] 一些非必要参数。
 func New(name, version string, o *Options) (*Server, error) {
 	o, err := sanitizeOptions(o)
 	if err != nil {

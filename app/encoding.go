@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"github.com/klauspost/compress/zstd"
 
@@ -56,7 +55,7 @@ func (conf *configOf[T]) sanitizeEncodings() *errs.ConfigError {
 	for i, e := range conf.Encodings {
 		if len(e.IDs) == 0 {
 			field := "[" + strconv.Itoa(i) + "].id"
-			return errs.NewConfigError(field, localeutil.Phrase("%s can not be empty", "id"))
+			return errs.NewConfigError(field, errs.NewLocaleError("can not be empty"))
 		}
 		ids = append(ids, e.IDs...)
 	}
@@ -66,7 +65,7 @@ func (conf *configOf[T]) sanitizeEncodings() *errs.ConfigError {
 	for _, id := range ids {
 		item, found := encodingFactory[id]
 		if !found {
-			return errs.NewConfigError("ids", localeutil.Phrase("%s not found", id))
+			return errs.NewConfigError("ids", errs.NewLocaleError("%s not found", id))
 		}
 		conf.encodings[id] = item
 	}

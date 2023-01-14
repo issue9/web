@@ -70,6 +70,8 @@ func TestAppOf(t *testing.T) {
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
 
+	// SIGHUP
+
 	if runtime.GOOS != "windows" {
 		// hup1
 		cmd.Name = "hup1"
@@ -105,6 +107,10 @@ func TestAppOf_sanitize(t *testing.T) {
 		Init:    func(*server.Server, *empty, string) error { return nil },
 	}
 	a.NotError(cmd.sanitize())
-
 	a.Equal(cmd.Out, os.Stdout)
+
+	cmd = &AppOf[empty]{Name: "abc"}
+	a.PanicString(func() {
+		cmd.Exec(nil)
+	}, "字段 Version 不能为空")
 }

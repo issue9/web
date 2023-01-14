@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
@@ -118,7 +117,7 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *errs.ConfigE
 
 		f, found := logWritersFactory[w.Type]
 		if !found {
-			return nil, nil, errs.NewConfigError(field+".Type", localeutil.Phrase("%s not found", w.Type))
+			return nil, nil, errs.NewConfigError(field+".Type", errs.NewLocaleError("%s not found", w.Type))
 		}
 
 		ww, c, err := f(w.Args)
@@ -204,12 +203,12 @@ var colorMap = map[string]colors.Color{
 //   - stderr
 func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	if len(args) != 3 {
-		return nil, nil, errs.NewConfigError("Args", localeutil.Phrase("invalid value %s", args))
+		return nil, nil, errs.NewConfigError("Args", errs.NewLocaleError("invalid value %s", args))
 	}
 
 	c, found := colorMap[strings.ToLower(args[1])]
 	if !found {
-		return nil, nil, errs.NewConfigError("Args[1]", localeutil.Phrase("invalid value %s", args[1]))
+		return nil, nil, errs.NewConfigError("Args[1]", errs.NewLocaleError("invalid value %s", args[1]))
 	}
 
 	var w io.Writer
@@ -219,7 +218,7 @@ func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, errs.NewConfigError("Args[2]", localeutil.Phrase("invalid value %s", args[2]))
+		return nil, nil, errs.NewConfigError("Args[2]", errs.NewLocaleError("invalid value %s", args[2]))
 	}
 
 	return logs.NewTermWriter(args[0], c, w), nil, nil

@@ -59,7 +59,7 @@ type Options struct {
 
 	// 路由选项
 	//
-	// 将应用 Server.Routers() 对象之上。
+	// 将应用 [Server.Routers] 对象之上。
 	RoutersOptions []mux.Option
 }
 
@@ -81,7 +81,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	if o.Cache == nil {
-		o.Cache = caches.NewMemory(24 * time.Hour)
+		o.Cache = caches.NewMemory(cache.OneDay)
 	}
 
 	if o.HTTPServer == nil {

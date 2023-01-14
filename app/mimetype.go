@@ -5,7 +5,6 @@ package app
 import (
 	"strconv"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/errs"
@@ -56,7 +55,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *errs.ConfigError {
 	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
 	if len(dup) > 0 {
 		value := conf.Mimetypes[dup[1]].Type
-		err := errs.NewConfigError("["+strconv.Itoa(dup[1])+"].target", localeutil.Phrase("duplicate value"))
+		err := errs.NewConfigError("["+strconv.Itoa(dup[1])+"].target", errs.NewLocaleError("duplicate value"))
 		err.Value = value
 		return err
 	}
@@ -65,7 +64,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *errs.ConfigError {
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return errs.NewConfigError("["+strconv.Itoa(index)+"].target", localeutil.Phrase("%s not found", item.Target))
+			return errs.NewConfigError("["+strconv.Itoa(index)+"].target", errs.NewLocaleError("%s not found", item.Target))
 		}
 
 		ms = append(ms, mimetype{

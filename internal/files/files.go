@@ -109,13 +109,13 @@ func (f *Files) searchByFilename(name string) *FileSerializer {
 }
 
 func LoadLocales(f *Files, b *catalog.Builder, fsys fs.FS, glob string) error {
+	if fsys == nil {
+		fsys = f.fs
+	}
+
 	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
 		return err
-	}
-
-	if fsys == nil {
-		fsys = f.fs
 	}
 
 	for _, m := range matches {

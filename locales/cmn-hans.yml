@@ -36,9 +36,9 @@ messages:
   message:
     msg: '未找到符合报头 %s 的字符集'
 
-- key: '%s can not be empty'
+- key: 'can not be empty'
   message:
-    msg: '%s 不能为空'
+    msg: '不能为空'
 
 - key: '%s not found'
   message:
@@ -67,3 +67,19 @@ messages:
 - key: invalid cache key
   message:
     msg: 缓存的 key 不符合要求
+
+- key: cmd.show_version
+  message:
+    msg: 显示版本号
+
+- key: cmd.show_help
+  message:
+    msg: 显示帮助信息
+
+- key: cmd.set_file_system
+  message:
+    msg: 指定允许访问的文件系统
+
+- key: cmd.action
+  message:
+    msg: 运行的指令

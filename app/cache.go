@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/caches"
@@ -44,7 +43,7 @@ func (conf *configOf[T]) buildCache() *errs.ConfigError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewConfigError("type", localeutil.Phrase("invalid value %s", conf.Cache.Type))
+		return errs.NewConfigError("type", errs.NewLocaleError("invalid value %s", conf.Cache.Type))
 	}
 
 	c, err := b(conf.Cache.DSN)

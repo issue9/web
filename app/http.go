@@ -11,7 +11,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
 
@@ -108,11 +107,11 @@ func exists(p string) bool {
 
 func (cert *certificate) sanitize() *errs.ConfigError {
 	if !exists(cert.Cert) {
-		return errs.NewConfigError("cert", localeutil.Phrase("%s not found", cert.Cert))
+		return errs.NewConfigError("cert", errs.NewLocaleError("%s not found", cert.Cert))
 	}
 
 	if !exists(cert.Key) {
-		return errs.NewConfigError("key", localeutil.Phrase("%s not found", cert.Key))
+		return errs.NewConfigError("key", errs.NewLocaleError("%s not found", cert.Key))
 	}
 
 	return nil
@@ -120,23 +119,23 @@ func (cert *certificate) sanitize() *errs.ConfigError {
 
 func (h *httpConfig) sanitize() *errs.ConfigError {
 	if h.ReadTimeout < 0 {
-		return errs.NewConfigError("readTimeout", localeutil.Phrase("should great than 0"))
+		return errs.NewConfigError("readTimeout", errs.NewLocaleError("should great than 0"))
 	}
 
 	if h.WriteTimeout < 0 {
-		return errs.NewConfigError("writeTimeout", localeutil.Phrase("should great than 0"))
+		return errs.NewConfigError("writeTimeout", errs.NewLocaleError("should great than 0"))
 	}
 
 	if h.IdleTimeout < 0 {
-		return errs.NewConfigError("idleTimeout", localeutil.Phrase("should great than 0"))
+		return errs.NewConfigError("idleTimeout", errs.NewLocaleError("should great than 0"))
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return errs.NewConfigError("readHeaderTimeout", localeutil.Phrase("should great than 0"))
+		return errs.NewConfigError("readHeaderTimeout", errs.NewLocaleError("should great than 0"))
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return errs.NewConfigError("maxHeaderBytes", localeutil.Phrase("should great than 0"))
+		return errs.NewConfigError("maxHeaderBytes", errs.NewLocaleError("should great than 0"))
 	}
 
 	h.buildRoutersOptions()
@@ -213,11 +212,11 @@ func (l *acme) tlsConfig() *tls.Config {
 
 func (l *acme) sanitize() *errs.ConfigError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return errs.NewConfigError("cache", "不存在该目录或是未指定")
+		return errs.NewConfigError("cache", errs.NewLocaleError("invalid value %s", l.Cache))
 	}
 
 	if len(l.Domains) == 0 {
-		return errs.NewConfigError("domains", "不能为空")
+		return errs.NewConfigError("domains", errs.NewLocaleError("can not be empty"))
 	}
 
 	return nil

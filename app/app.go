@@ -2,12 +2,11 @@
 
 // Package app 为构建程序提供相对简便的方法
 //
-// app 并不是必须的，只是为用户提供了一种简便的方式构建程序，
-// 相对地也会有诸多限制，如果觉得不适用，可以自行调用 [server.New]。
-//
-// 提供了两种方式构建 [server.Server] 对象：
+// 提供了两种方式构建服务：
 //   - [NewServerOf] 从配置文件构建 [server.Server] 对象；
-//   - [AppOf] 直接生成一个简单的命令行程序以及 [server.Server] 对象；
+//   - [AppOf] 直接生成一个简单的命令行程序；
+//
+// NOTE: 这并不一个必需的包，如果觉得不适用，可以直接采用 [server.New] 初始化服务。
 package app
 
 import (
@@ -23,64 +22,36 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
 // AppOf 提供一种简单的命令行生成方式
-//
-// T 表示的是配置文件中的用户自定义数据类型，如果不需要可以设置为 struct{}。
 //
 // 生成的命令行带以下几个参数：
 //
 //	-v 显示版本号；
 //	-h 显示帮助信息；
 //	-f 指定当前程序可读取的文件系统，这最终会转换成 [server.Server.FS]；
-//	-a 执行的动作，该值会传递给 Init，由用户根据 a 决定初始化方式；
-//
-// 通过向 [AppOf.Catalog] 注册本地化字符串，可以让命令行支持本地化显示：
-//
-//	// 构建 catalog.Catalog 实例
-//	builder := catalog.NewBuilder()
-//	builder.SetString("show help", "显示帮助信息")
-//	builder.SetString("show version", "显示版本信息")
-//
-//	cmd := &app.AppOf[struct{}]{
-//	    Name: "app",
-//	    Version: "1.0.0",
-//	    Init: func(s *Server) error {...},
-//	    Catalog: builder,
-//	}
-//
-//	cmd.Exec()
-//
-// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并显示，
-// 本地化命令行参数需要提供以下翻译项：
-//
-//	-show version
-//	-show help
-//	-set file system
-//	-action
-//	-[AppOf.Desc] 的内容
+//	-a 执行的指令，该值会传递给 [AppOf.Init]，由用户根据此值决定初始化方式；
 //
 // 在支持 HUP 信号的系统，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
 //
-// NOTE: panic 信息是不支持本地化。
+// T 表示的是配置文件中的用户自定义数据类型。
 type AppOf[T any] struct {
 	// NOTE: AppOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
 	// 开发者所有的功能都可以通过 Context 和 Server 获得。
 
 	Name    string // 程序名称
 	Version string // 程序版本
-	Desc    string // 程序描述
 
 	// 在运行服务之前对 [server.Server] 的额外操作
 	//
-	// 比如添加模块等。不可以为空。
 	// user 为用户自定义的数据结构；
 	// action 为 -a 命令行指定的参数；
 	Init func(s *server.Server, user *T, action string) error
@@ -95,11 +66,10 @@ type AppOf[T any] struct {
 
 	// 配置文件的文件名
 	//
-	// 需要保证 [RegisterFileSerializer] 能解析此文件指定的内容；
+	// 仅是文件名，相对的路径由命令行 -f 指定。如果为空，表示不采用配置文件，
+	// 由一个空的 [server.Options] 初始化对象，具体可以查看 [NewServerOf] 的实现。
 	//
-	// 仅是文件名，相对的路径由命令行 -f 指定。
-	// 如果为空，表示不采用配置文件，由一个空的 [server.Options] 初始化对象，
-	// 具体可以查看 [NewServerOf] 的实现。
+	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
 	ConfigFilename string
 
 	// 生成 [server.Problem] 对象的方法
@@ -107,15 +77,20 @@ type AppOf[T any] struct {
 	// 如果为空，则由 [server.Options] 决定其默认值。
 	ProblemBuilder server.BuildProblemFunc
 
-	// 本地化 AppOf 中的命令行信息
+	// 本地化的相关设置
 	//
-	// 如果为空，那么这些命令行信息将显示默认内容。
-	Catalog catalog.Catalog
+	// LocaleFS 本地化文件所在的文件系统，如果为空则指向 [locales.Locales]，
+	// LocaleGlob 从 LocaleFS 中查找本地化文件的匹配模式，如果为空则为 *.yaml。
+	// LocaleGlob 指定的格式必须是已经通过 [RegisterFileSerializer] 注册的。
+	// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并决定采用哪种语言。
+	//
+	// NOTE: panic 信息不支持本地化。
+	LocaleFS   fs.FS
+	LocaleGlob string
+	printer    *message.Printer
 
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
-
-	tag language.Tag
 
 	// 重启服务的相关选项
 	srv     *server.Server
@@ -134,7 +109,13 @@ func (cmd *AppOf[T]) Exec(args []string) error {
 		panic(err)
 	}
 
-	return cmd.exec(args)
+	if err := cmd.exec(args); err != nil {
+		if le, ok := err.(localeutil.LocaleStringer); ok { // 对错误信息进行本地化转换
+			return errors.New(le.LocaleString(cmd.printer))
+		}
+		return err
+	}
+	return nil
 }
 
 func (cmd *AppOf[T]) sanitize() error {
@@ -152,11 +133,17 @@ func (cmd *AppOf[T]) sanitize() error {
 	if err != nil {
 		fmt.Println(err) // 输出错误，但是不中断执行
 	}
-	cmd.tag = tag
 
-	if cmd.Catalog == nil {
-		cmd.Catalog = catalog.NewBuilder(catalog.Fallback(cmd.tag))
+	if cmd.LocaleFS == nil {
+		cmd.LocaleFS = locales.Locales
 	}
+	if cmd.LocaleGlob == "" {
+		cmd.LocaleGlob = "*.yaml"
+	}
+
+	b := catalog.NewBuilder(catalog.Fallback(tag))
+	files.LoadLocales(buildFiles(cmd.LocaleFS), b, nil, cmd.LocaleGlob)
+	cmd.printer = message.NewPrinter(tag, message.Catalog(b))
 
 	if cmd.Out == nil {
 		cmd.Out = os.Stdout
@@ -168,15 +155,11 @@ func (cmd *AppOf[T]) sanitize() error {
 func (cmd *AppOf[T]) exec(args []string) error {
 	flags := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	flags.SetOutput(cmd.Out)
-	p := message.NewPrinter(cmd.tag, message.Catalog(cmd.Catalog))
 
-	v := flags.Bool("v", false, p.Sprintf("show version"))
-	h := flags.Bool("h", false, p.Sprintf("show help"))
-	f := flags.String("f", "./", p.Sprintf("set file system"))
-	flags.StringVar(&cmd.action, "a", "", p.Sprintf("action"))
-	flags.Usage = func() {
-		fmt.Fprintln(cmd.Out, p.Sprintf(cmd.Desc))
-	}
+	v := flags.Bool("v", false, cmd.printer.Sprintf("cmd.show_version"))
+	h := flags.Bool("h", false, cmd.printer.Sprintf("cmd.show_help"))
+	f := flags.String("f", "./", cmd.printer.Sprintf("cmd.set_file_system"))
+	flags.StringVar(&cmd.action, "a", "", cmd.printer.Sprintf("cmd.action"))
 	if err := flags.Parse(args[1:]); err != nil {
 		return errs.NewStackError(err)
 	}

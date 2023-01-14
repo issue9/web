@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io/fs"
-	"path/filepath"
 	"strconv"
 
-	"github.com/issue9/localeutil"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/errs"
@@ -27,7 +25,7 @@ func (conf *configOf[T]) sanitizeFiles() *errs.ConfigError {
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return errs.NewConfigError("["+strconv.Itoa(i)+"]", localeutil.Phrase("not found serialization function for %s", name))
+			return errs.NewConfigError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
 		}
 		conf.files[name] = s // conf.Files 可以保证 conf.files 唯一性
 	}
@@ -44,22 +42,8 @@ func RegisterFileSerializer(m MarshalFileFunc, u UnmarshalFileFunc, ext ...strin
 }
 
 func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
-	ext := filepath.Ext(path)
-	var item files.FileSerializer
-	for name, ss := range filesFactory {
-		if name == ext {
-			item = ss
-			break
-		}
-	}
-
-	data, err := fs.ReadFile(fsys, path)
-	if err != nil {
-		return nil, err
-	}
-
 	conf := &configOf[T]{}
-	if err := item.Unmarshal(data, conf); err != nil {
+	if err := buildFiles(fsys).Load(fsys, path, conf); err != nil {
 		return nil, err
 	}
 
@@ -67,8 +51,15 @@ func loadConfigOf[T any](fsys fs.FS, path string) (*configOf[T], error) {
 		err.Path = path
 		return nil, err
 	}
-
 	return conf, nil
+}
+
+func buildFiles(fsys fs.FS) *files.Files {
+	f := files.New(fsys)
+	for ext, item := range filesFactory {
+		f.Add(item.Marshal, item.Unmarshal, ext)
+	}
+	return f
 }
 
 func init() {
