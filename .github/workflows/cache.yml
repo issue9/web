@@ -1,10 +1,10 @@
-name: Test
+name: Cache
 on: [push, pull_request]
 
 jobs:
 
-  test:
-    name: Test
+  cache:
+    name: Cache
     runs-on: ${{ matrix.os }}
     
     strategy:
