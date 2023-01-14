@@ -149,7 +149,7 @@ func (srv *Server) Serve() (err error) {
 			}
 		}
 
-		if err1 := srv.cache.Close(); err != nil { // 出错不退出，继续其它操作。
+		if err1 := srv.cache.Close(); err1 != nil { // 出错不退出，继续其它操作。
 			srv.Logs().Error(err1)
 		}
 
