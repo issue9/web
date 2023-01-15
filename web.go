@@ -10,6 +10,7 @@ import (
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
@@ -17,7 +18,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.63.0"
+const Version = "0.64.0"
 
 // 预定义的 Problem id 值
 const (
@@ -93,6 +94,7 @@ type (
 	ValidateFunc   = server.ValidateFunc
 	Service        = service.Service
 	ConfigError    = errs.ConfigError
+	Cache          = cache.Cache
 
 	Logger = logs.Logger
 

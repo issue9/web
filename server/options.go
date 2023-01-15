@@ -15,7 +15,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/caches"
+	"github.com/issue9/web/cache/caches"
 )
 
 type Options struct {
