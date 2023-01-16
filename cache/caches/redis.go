@@ -16,10 +16,11 @@ type redisDriver struct {
 }
 
 type redisCounter struct {
-	driver *redisDriver
-	key    string
-	val    string
-	ttl    int
+	driver    *redisDriver
+	key       string
+	val       string
+	originVal uint64
+	ttl       int
 }
 
 // NewRedis 返回 redis 的缓存实现
@@ -76,10 +77,11 @@ func (d *redisDriver) Close() error { return d.conn.Close() }
 
 func (d *redisDriver) Counter(key string, val uint64, ttl int) cache.Counter {
 	return &redisCounter{
-		driver: d,
-		key:    key,
-		val:    strconv.FormatUint(val, 10),
-		ttl:    ttl,
+		driver:    d,
+		key:       key,
+		val:       strconv.FormatUint(val, 10),
+		originVal: val,
+		ttl:       ttl,
 	}
 }
 
@@ -100,4 +102,14 @@ func (c *redisCounter) Decr(n uint64) (uint64, error) {
 func (c *redisCounter) init() error {
 	_, err := c.driver.conn.Do("SET", c.key, c.val, "EX", c.ttl, "NX")
 	return err
+}
+
+func (c *redisCounter) Value() (uint64, error) {
+	s, err := redis.String(c.driver.conn.Do("GET", c.key))
+	if errors.Is(err, redis.ErrNil) {
+		return c.originVal, cache.ErrCacheMiss()
+	} else if err != nil {
+		return c.originVal, err
+	}
+	return strconv.ParseUint(s, 10, 64)
 }

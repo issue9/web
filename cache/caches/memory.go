@@ -3,6 +3,7 @@
 package caches
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
@@ -16,11 +17,12 @@ type memoryDriver struct {
 }
 
 type memoryCounter struct {
-	driver *memoryDriver
-	key    string
-	val    uint64
-	ttl    int
-	locker sync.Locker
+	driver    *memoryDriver
+	key       string
+	val       []byte
+	originVal uint64
+	expires   time.Duration
+	locker    sync.RWMutex
 }
 
 type item struct {
@@ -143,11 +145,11 @@ func (d *memoryDriver) gc() {
 
 func (d *memoryDriver) Counter(key string, val uint64, ttl int) cache.Counter {
 	return &memoryCounter{
-		driver: d,
-		key:    key,
-		val:    val,
-		ttl:    ttl,
-		locker: &sync.Mutex{},
+		driver:    d,
+		key:       key,
+		val:       []byte(strconv.FormatUint(val, 10)),
+		originVal: val,
+		expires:   time.Second * time.Duration(ttl),
 	}
 }
 
@@ -161,8 +163,12 @@ func (c *memoryCounter) Incr(n uint64) (uint64, error) {
 	}
 
 	v += n
-	err = c.driver.Set(c.key, v, c.ttl)
-	return v, err
+	c.driver.items.Store(c.key, &item{
+		val:    []byte(strconv.FormatUint(v, 10)),
+		dur:    c.expires,
+		expire: time.Now().Add(c.expires),
+	})
+	return v, nil
 }
 
 func (c *memoryCounter) Decr(n uint64) (uint64, error) {
@@ -174,27 +180,33 @@ func (c *memoryCounter) Decr(n uint64) (uint64, error) {
 		return 0, err
 	}
 	v -= n
-	err = c.driver.Set(c.key, v, c.ttl)
-	return v, err
+	c.driver.items.Store(c.key, &item{
+		val:    []byte(strconv.FormatUint(v, 10)),
+		dur:    c.expires,
+		expire: time.Now().Add(c.expires),
+	})
+	return v, nil
 }
 
 func (c *memoryCounter) init() (uint64, error) {
-	data, err := cache.Marshal(c.val)
-	if err != nil {
-		return 0, err
-	}
-
-	dur := time.Second * time.Duration(c.ttl)
 	ret, loaded := c.driver.items.LoadOrStore(c.key, &item{
-		val:    data,
-		dur:    dur,
-		expire: time.Now().Add(dur),
+		val:    c.val,
+		dur:    c.expires,
+		expire: time.Now().Add(c.expires),
 	})
 
 	if !loaded {
-		return c.val, nil
+		return c.originVal, nil
 	}
-	var v uint64
-	err = cache.Unmarshal(ret.(*item).val, &v)
-	return v, err
+	return strconv.ParseUint(string(ret.(*item).val), 10, 64)
+}
+
+func (c *memoryCounter) Value() (uint64, error) {
+	c.locker.RLock()
+	defer c.locker.RUnlock()
+
+	if item, found := c.driver.findItem(c.key); found {
+		return strconv.ParseUint(string(item.val), 10, 64)
+	}
+	return c.originVal, cache.ErrCacheMiss()
 }

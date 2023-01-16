@@ -16,10 +16,11 @@ type memcacheDriver struct {
 }
 
 type memcacheCounter struct {
-	driver *memcacheDriver
-	key    string
-	val    []byte
-	ttl    int32
+	driver    *memcacheDriver
+	key       string
+	val       []byte
+	originVal uint64
+	ttl       int32
 }
 
 // NewFromServers 声明一个新的 Memcache 实例
@@ -70,10 +71,11 @@ func (d *memcacheDriver) Close() error {
 
 func (d *memcacheDriver) Counter(key string, val uint64, ttl int) cache.Counter {
 	return &memcacheCounter{
-		driver: d,
-		key:    key,
-		val:    []byte(strconv.FormatUint(val, 10)),
-		ttl:    int32(ttl),
+		driver:    d,
+		key:       key,
+		val:       []byte(strconv.FormatUint(val, 10)),
+		originVal: val,
+		ttl:       int32(ttl),
 	}
 }
 
@@ -119,4 +121,14 @@ func (c *memcacheCounter) init() error {
 		return nil
 	}
 	return err
+}
+
+func (c *memcacheCounter) Value() (uint64, error) {
+	item, err := c.driver.client.Get(c.key)
+	if errors.Is(err, memcache.ErrCacheMiss) {
+		return c.originVal, cache.ErrCacheMiss()
+	} else if err != nil {
+		return c.originVal, err
+	}
+	return strconv.ParseUint(string(item.Value), 10, 64)
 }

@@ -54,6 +54,11 @@ type Counter interface {
 
 	// Decr 减少数值并返回减少后的值
 	Decr(uint64) (uint64, error)
+
+	// Value 返回该计数器的当前值
+	//
+	// 如果不存在，那将返回 [ErrCacheMiss] 错误以及默认值。
+	Value() (uint64, error)
 }
 
 type CleanableCache interface {

@@ -16,10 +16,19 @@ import (
 func testCounter(a *assert.Assertion, d cache.Driver) {
 	c := d.Counter("v1", 50, 1)
 	a.NotNil(c)
-	v1, err := c.Incr(5)
+
+	v1, err := c.Value()
+	a.ErrorIs(err, cache.ErrCacheMiss()).Equal(v1, 50)
+
+	v1, err = c.Incr(5)
 	a.NotError(err).Equal(v1, 55)
+	v1, err = c.Value()
+	a.Nil(err).Equal(v1, 55)
+
 	v1, err = c.Decr(3)
 	a.NotError(err).Equal(v1, 52)
+	v1, err = c.Value()
+	a.Nil(err).Equal(v1, 52)
 
 	a.True(d.Exists("v1"))
 }
