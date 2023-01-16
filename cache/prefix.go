@@ -22,6 +22,14 @@ func (p *prefix) Set(key string, val any, seconds int) error {
 	return p.cache.Set(p.prefix+key, val, seconds)
 }
 
-func (p *prefix) Delete(key string) error { return p.cache.Delete(p.prefix + key) }
+func (p *prefix) Delete(key string) error {
+	return p.cache.Delete(p.prefix + key)
+}
 
-func (p *prefix) Exists(key string) bool { return p.cache.Exists(p.prefix + key) }
+func (p *prefix) Exists(key string) bool {
+	return p.cache.Exists(p.prefix + key)
+}
+
+func (p *prefix) Counter(key string, val uint64, ttl int) Counter {
+	return p.cache.Counter(p.prefix+key, val, ttl)
+}

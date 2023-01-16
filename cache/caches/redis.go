@@ -4,6 +4,7 @@ package caches
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/gomodule/redigo/redis"
 
@@ -12,6 +13,13 @@ import (
 
 type redisDriver struct {
 	conn redis.Conn
+}
+
+type redisCounter struct {
+	driver *redisDriver
+	key    string
+	val    string
+	ttl    int
 }
 
 // NewRedis 返回 redis 的缓存实现
@@ -55,8 +63,8 @@ func (d *redisDriver) Delete(key string) error {
 }
 
 func (d *redisDriver) Exists(key string) bool {
-	v, _ := d.conn.Do("GET", key)
-	return v != nil
+	exists, _ := redis.Bool(d.conn.Do("EXISTS", key))
+	return exists
 }
 
 func (d *redisDriver) Clean() error {
@@ -65,3 +73,31 @@ func (d *redisDriver) Clean() error {
 }
 
 func (d *redisDriver) Close() error { return d.conn.Close() }
+
+func (d *redisDriver) Counter(key string, val uint64, ttl int) cache.Counter {
+	return &redisCounter{
+		driver: d,
+		key:    key,
+		val:    strconv.FormatUint(val, 10),
+		ttl:    ttl,
+	}
+}
+
+func (c *redisCounter) Incr(n uint64) (uint64, error) {
+	if err := c.init(); err != nil {
+		return 0, err
+	}
+	return redis.Uint64(c.driver.conn.Do("INCRBY", c.key, n))
+}
+
+func (c *redisCounter) Decr(n uint64) (uint64, error) {
+	if err := c.init(); err != nil {
+		return 0, err
+	}
+	return redis.Uint64(c.driver.conn.Do("DECRBY", c.key, n))
+}
+
+func (c *redisCounter) init() error {
+	_, err := c.driver.conn.Do("SET", c.key, c.val, "EX", c.ttl, "NX")
+	return err
+}

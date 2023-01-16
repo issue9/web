@@ -15,6 +15,14 @@ type memoryDriver struct {
 	done   chan struct{}
 }
 
+type memoryCounter struct {
+	driver *memoryDriver
+	key    string
+	val    uint64
+	ttl    int
+	locker sync.Locker
+}
+
 type item struct {
 	val    []byte
 	dur    time.Duration
@@ -131,4 +139,62 @@ func (d *memoryDriver) gc() {
 		}
 		return true
 	})
+}
+
+func (d *memoryDriver) Counter(key string, val uint64, ttl int) cache.Counter {
+	return &memoryCounter{
+		driver: d,
+		key:    key,
+		val:    val,
+		ttl:    ttl,
+		locker: &sync.Mutex{},
+	}
+}
+
+func (c *memoryCounter) Incr(n uint64) (uint64, error) {
+	c.locker.Lock()
+	defer c.locker.Unlock()
+
+	v, err := c.init()
+	if err != nil {
+		return 0, err
+	}
+
+	v += n
+	err = c.driver.Set(c.key, v, c.ttl)
+	return v, err
+}
+
+func (c *memoryCounter) Decr(n uint64) (uint64, error) {
+	c.locker.Lock()
+	defer c.locker.Unlock()
+
+	v, err := c.init()
+	if err != nil {
+		return 0, err
+	}
+	v -= n
+	err = c.driver.Set(c.key, v, c.ttl)
+	return v, err
+}
+
+func (c *memoryCounter) init() (uint64, error) {
+	data, err := cache.Marshal(c.val)
+	if err != nil {
+		return 0, err
+	}
+
+	dur := time.Second * time.Duration(c.ttl)
+	ret, loaded := c.driver.items.LoadOrStore(c.key, &item{
+		val:    data,
+		dur:    dur,
+		expire: time.Now().Add(dur),
+	})
+
+	if !loaded {
+		return c.val, nil
+	}
+	var v uint64
+	err = cache.Unmarshal(ret.(*item).val, &v)
+	return v, err
 }

@@ -20,6 +20,7 @@ func TestMemcache(t *testing.T) {
 
 	testCache(a, c)
 	testObject(a, c)
+	testCounter(a, c)
 
 	a.NotError(c.Close())
 }
