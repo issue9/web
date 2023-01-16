@@ -47,7 +47,9 @@ type Cache interface {
 // 各个缓存服务都实现自有的快捷操作，无法适用自定义的序列化。
 //
 // 由 Counter 设置的值，也无法由 [Cache.Get] 读取到正确的值，
-// 但是可以由 [Cache.Exists] 和 [Cache.Set] 进行相应的操作。
+// 但是可以由 [Cache.Exists]、[Cache.Delete] 和 [Cache.Set] 进行相应的操作。
+//
+// NOTE: 只能用于正整数和零。
 type Counter interface {
 	// Incr 增加计数并返回增加后的值
 	Incr(uint64) (uint64, error)
@@ -57,7 +59,7 @@ type Counter interface {
 
 	// Value 返回该计数器的当前值
 	//
-	// 如果不存在，那将返回 [ErrCacheMiss] 错误以及默认值。
+	// 如果出错将返回默认值。
 	Value() (uint64, error)
 }
 
@@ -70,9 +72,8 @@ type CleanableCache interface {
 
 // Driver 所有缓存驱动需要实现的接口
 //
-// 对于数据的序列化相关操作可以调用 [Marshal] 和 [Unmarshal]
-// 进行处理，当然自行处理也可以，如果需要自行处理，
-// 需要对 [Marshaler] 和 [Unmarshaler] 接口的数据进行处理。
+// 对于数据的序列化相关操作可直接调用 [caches.Marshal] 和 [caches.Unmarshal]
+// 进行处理，如果需要自行处理，需要对实现 [Serializer] 接口的数据进行处理。
 type Driver interface {
 	CleanableCache
 

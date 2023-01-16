@@ -37,11 +37,11 @@ func (d *memcacheDriver) Get(key string, val any) error {
 	} else if err != nil {
 		return err
 	}
-	return cache.Unmarshal(item.Value, val)
+	return Unmarshal(item.Value, val)
 }
 
 func (d *memcacheDriver) Set(key string, val any, seconds int) error {
-	bs, err := cache.Marshal(val)
+	bs, err := Marshal(val)
 	if err != nil {
 		return err
 	}

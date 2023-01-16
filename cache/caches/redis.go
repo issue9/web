@@ -40,11 +40,11 @@ func (d *redisDriver) Get(key string, val any) error {
 		return err
 	}
 
-	return cache.Unmarshal(bs, val)
+	return Unmarshal(bs, val)
 }
 
 func (d *redisDriver) Set(key string, val any, seconds int) error {
-	bs, err := cache.Marshal(val)
+	bs, err := Marshal(val)
 	if err != nil {
 		return err
 	}

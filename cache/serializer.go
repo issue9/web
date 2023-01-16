@@ -2,46 +2,17 @@
 
 package cache
 
-import (
-	"bytes"
-	"encoding/gob"
-)
-
-// Marshaler 缓存系统保存数据时采用的序列化方法
+// Serializer 缓存系统存取数据时采用的序列化方法
 //
-// 该接口不是必须的，默认会采用 gob 作为序列化方法。
-type Marshaler interface {
+// 如果你存储的对象实现了该接口，那么在存取数据时，会采用此方法将对象进行编解码。
+// 否则会采用默认的方法进行编辑码。
+//
+// 实现 Serializer 可以拥有更高效的转换效率，以及一些默认行为不可实现的功能，
+// 比如需要对拥有不可导出的字段进行编解码。
+type Serializer interface {
+	// MarshalCache 将对象转换成 []byte
 	MarshalCache() ([]byte, error)
-}
 
-// Marshaler 缓存系统读取数据时采用的序列化方法
-//
-// 该接口不是必须的，默认会采用 gob 作为序列化方法。
-type Unmarshaler interface {
+	// UnmarshalCache 从 []byte 中恢复数据
 	UnmarshalCache([]byte) error
-}
-
-// Marshal 序列化对象
-//
-// 优先查看 v 是否实现了 [Marshaler] 接口，如果未实现，
-// 则采用 gob 格式序列化。
-func Marshal(v any) ([]byte, error) {
-	if m, ok := v.(Marshaler); ok {
-		return m.MarshalCache()
-	}
-
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-
-	if err := enc.Encode(v); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func Unmarshal(bs []byte, v any) error {
-	if u, ok := v.(Unmarshaler); ok {
-		return u.UnmarshalCache(bs)
-	}
-	return gob.NewDecoder(bytes.NewBuffer(bs)).Decode(v)
 }

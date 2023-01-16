@@ -32,7 +32,7 @@ type item struct {
 }
 
 func (i *item) update(val any) error {
-	bs, err := cache.Marshal(val)
+	bs, err := Marshal(val)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func NewMemory(gc time.Duration) cache.Driver {
 
 func (d *memoryDriver) Get(key string, v any) error {
 	if item, found := d.findItem(key); found {
-		return cache.Unmarshal(item.val, v)
+		return Unmarshal(item.val, v)
 	}
 	return cache.ErrCacheMiss()
 }
@@ -88,7 +88,7 @@ func (d *memoryDriver) findItem(key string) (*item, bool) {
 func (d *memoryDriver) Set(key string, val any, seconds int) error {
 	i, found := d.findItem(key)
 	if !found {
-		bs, err := cache.Marshal(val)
+		bs, err := Marshal(val)
 		if err != nil {
 			return err
 		}
