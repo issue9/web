@@ -250,7 +250,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	ctx.SetMimetype("application/xml")
 	a.Equal(ctx.Mimetype(false), "application/xml")
 
-	a.NotError(ctx.Marshal(200, 200, false))
+	ctx.Marshal(200, 200, false) // 输出内容
 	a.PanicString(func() {
 		ctx.SetMimetype("application/json")
 	}, "已有内容输出，不可再更改！")
@@ -274,7 +274,7 @@ func TestContext_SetCharset(t *testing.T) {
 	ctx.SetCharset("gb2312")
 	a.Equal(ctx.Charset(), "gbk")
 
-	a.NotError(ctx.Marshal(200, 200, false))
+	ctx.Marshal(200, 200, false) // 输出内容
 	a.PanicString(func() {
 		ctx.SetCharset("gb18030")
 	}, "已有内容输出，不可再更改！")
@@ -298,7 +298,7 @@ func TestContext_SetEncoding(t *testing.T) {
 	ctx.SetEncoding("gzip")
 	a.Equal(ctx.Encoding(), "gzip")
 
-	a.NotError(ctx.Marshal(200, 200, false))
+	ctx.Write([]byte("200"))
 	a.PanicString(func() {
 		ctx.SetEncoding("br")
 	}, "已有内容输出，不可再更改！")

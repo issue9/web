@@ -86,10 +86,8 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		err := mux.ServeFile(fsys, p, index, ctx, ctx.Request())
 		switch {
 		case errors.Is(err, fs.ErrPermission):
-			srv.Logs().WARN().Error(err)
 			return ctx.Problem(problems.ProblemForbidden)
 		case errors.Is(err, fs.ErrNotExist):
-			srv.Logs().WARN().Error(err)
 			return ctx.NotFound()
 		case err != nil:
 			srv.Logs().ERROR().Error(err)

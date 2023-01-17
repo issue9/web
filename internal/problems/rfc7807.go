@@ -22,7 +22,7 @@ const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 const rfc8707PoolMaxSize = 10
 
 type ctx interface {
-	Marshal(int, any, bool) error
+	Marshal(int, any, bool)
 	Logs() *logs.Logs
 }
 
@@ -247,10 +247,7 @@ func (p *RFC7807[C]) MarshalHTML() (string, any) {
 }
 
 func (p *RFC7807[C]) Apply(ctx C) {
-	if err := ctx.Marshal(p.status, p, true); err != nil {
-		ctx.Logs().ERROR().Error(err)
-	}
-
+	ctx.Marshal(p.status, p, true)
 	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
 		p.pool.pool.Put(p)
 	}

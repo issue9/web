@@ -24,9 +24,7 @@ func obj(status int, body any, kv ...string) Responser {
 		for i := 0; i < len(kv); i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
-		if err := ctx.Marshal(status, body, false); err != nil {
-			ctx.Logs().ERROR().Error(err)
-		}
+		ctx.Marshal(status, body, false)
 	})
 }
 

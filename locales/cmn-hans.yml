@@ -22,7 +22,7 @@ messages:
 
 - key: 'not found serialization function for %s'
   message:
-    msg: '未找到适合 %[1]s 的序列化函数'
+    msg: '未找到适合 %s 的序列化函数'
 
 - key: unsupported serialization
   message:
@@ -67,6 +67,8 @@ messages:
 - key: invalid cache key
   message:
     msg: 缓存的 key 不符合要求
+
+# app
 
 - key: cmd.show_version
   message:

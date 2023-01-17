@@ -11,7 +11,6 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
-	"github.com/issue9/web/serializer"
 )
 
 // Marshal 向客户端输出内容
@@ -19,14 +18,18 @@ import (
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
 // body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
 // problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
-func (ctx *Context) Marshal(status int, body any, problem bool) error {
+func (ctx *Context) Marshal(status int, body any, problem bool) {
+	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
+	// 输出对象时出错，状态码也已经输出，此时向调用方报告错误，
+	// 调用方除了输出错误日志，也没有其它面向客户的补救措施。
+
 	if ctx.status > 0 {
 		panic("不能多次调用 Marshal 输出状态码")
 	}
 
 	if body == nil {
 		ctx.WriteHeader(status)
-		return nil
+		return
 	}
 
 	// 如果 outputMimetype.marshal 为空，说明在 Server.Mimetypes() 的配置中就是 nil。
@@ -43,23 +46,21 @@ func (ctx *Context) Marshal(status int, body any, problem bool) error {
 
 	data, err := ctx.outputMimetype.Marshal(ctx, body)
 	if err != nil {
-		if problem { // 如果在输出 problem 时出错，则状态码不变
+		ctx.Logs().ERROR().Printf("%+v", err)
+
+		if problem {
 			ctx.WriteHeader(status)
 		} else {
-			id := problems.ProblemInternalServerError
-			if serializer.IsUnsupported(err) {
-				id = problems.ProblemNotAcceptable
-			}
-			if e := ctx.Marshal(problems.Status(id), ctx.Problem(id), true); e != nil {
-				ctx.Logs().ERROR().Error(e)
-			}
+			id := problems.ProblemNotAcceptable
+			ctx.Marshal(problems.Status(id), ctx.Problem(id), true)
 		}
-		return err
+		return
 	}
 
 	ctx.WriteHeader(status)
-	_, err = ctx.Write(data)
-	return err
+	if _, err = ctx.Write(data); err != nil {
+		ctx.Logs().ERROR().Printf("%+v", err)
+	}
 }
 
 // Wrote 是否已经有内容输出
