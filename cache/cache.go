@@ -49,6 +49,9 @@ type Cache interface {
 // 由 Counter 设置的值，也无法由 [Cache.Get] 读取到正确的值，
 // 但是可以由 [Cache.Exists]、[Cache.Delete] 和 [Cache.Set] 进行相应的操作。
 //
+// 各个驱动对自增值的类型定义是不同的，
+// 只有在 [0,math.MaxInt32] 范围内的数值是安全的。
+//
 // NOTE: 只能用于正整数和零。
 type Counter interface {
 	// Incr 增加计数并返回增加后的值

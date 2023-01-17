@@ -179,7 +179,11 @@ func (c *memoryCounter) Decr(n uint64) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	v -= n
+	if n > v {
+		v = 0
+	} else {
+		v -= n
+	}
 	c.driver.items.Store(c.key, &item{
 		val:    []byte(strconv.FormatUint(v, 10)),
 		dur:    c.expires,

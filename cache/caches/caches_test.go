@@ -31,6 +31,20 @@ func testCounter(a *assert.Assertion, d cache.Driver) {
 	a.Nil(err).Equal(v1, 52)
 
 	a.True(d.Exists("v1"))
+
+	// 没有值的情况 Decr
+	c = d.Counter("v2", 50, 1)
+	a.NotNil(c)
+	v2, err := c.Decr(3)
+	a.NotError(err).Equal(v2, 47)
+	v2, err = c.Value()
+	a.Nil(err).Equal(v2, 47)
+
+	v2, err = c.Decr(47)
+	a.NotError(err).Equal(v2, 0)
+
+	v2, err = c.Decr(47)
+	a.NotError(err).Equal(v2, 0)
 }
 
 // 测试 Cache 基本功能

@@ -96,7 +96,16 @@ func (c *redisCounter) Decr(n uint64) (uint64, error) {
 	if err := c.init(); err != nil {
 		return 0, err
 	}
-	return redis.Uint64(c.driver.conn.Do("DECRBY", c.key, n))
+	v, err := redis.Int64(c.driver.conn.Do("DECRBY", c.key, n))
+	if err != nil {
+		return 0, err
+	}
+	if v < 0 {
+		_, err = c.driver.conn.Do("INCRBY", c.key, n)
+		return 0, err
+
+	}
+	return uint64(v), nil
 }
 
 func (c *redisCounter) init() error {
