@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/sliceutil"
 )
 
@@ -23,7 +22,6 @@ const rfc8707PoolMaxSize = 10
 
 type ctx interface {
 	Marshal(int, any, bool)
-	Logs() *logs.Logs
 }
 
 // RFC7807 server.Problem 接口的 rfc7807 实现

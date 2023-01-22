@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/logs/v4"
 )
 
 var (
@@ -22,10 +21,6 @@ var (
 type ctxDemo struct{}
 
 func (ctx *ctxDemo) Marshal(status int, body any, problem bool) {}
-
-func (ctx *ctxDemo) Logs() *logs.Logs {
-	return logs.New(logs.NewNopWriter())
-}
 
 func TestNewRFC7807(t *testing.T) {
 	a := assert.New(t, false)
