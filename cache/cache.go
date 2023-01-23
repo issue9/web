@@ -3,7 +3,7 @@
 // Package cache 缓存接口的定义
 package cache
 
-import "github.com/issue9/web/errs"
+import "github.com/issue9/web/internal/errs"
 
 var (
 	errCacheMiss  = errs.NewLocaleError("cache miss")

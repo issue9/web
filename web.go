@@ -10,7 +10,7 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"

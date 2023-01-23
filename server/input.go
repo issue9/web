@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 )

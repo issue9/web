@@ -9,7 +9,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 type (

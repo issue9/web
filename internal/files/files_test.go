@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 type webConfig struct {

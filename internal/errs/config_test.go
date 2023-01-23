@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"

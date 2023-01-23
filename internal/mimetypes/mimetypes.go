@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 )
 

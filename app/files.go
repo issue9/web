@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/files"
 )
 

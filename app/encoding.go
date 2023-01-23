@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/sliceutil"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 

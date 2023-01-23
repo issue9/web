@@ -3,7 +3,7 @@
 // Package serializer 序列化的相关操作
 package serializer
 
-import "github.com/issue9/web/errs"
+import "github.com/issue9/web/internal/errs"
 
 var errUnsupported = errs.NewLocaleError("unsupported serialization")
 

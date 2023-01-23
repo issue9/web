@@ -8,7 +8,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 var cacheFactory = map[string]CacheBuilder{}

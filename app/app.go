@@ -25,7 +25,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"

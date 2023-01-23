@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 type empty struct{}

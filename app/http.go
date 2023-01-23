@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 type (

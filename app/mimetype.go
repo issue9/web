@@ -7,7 +7,7 @@ import (
 
 	"github.com/issue9/sliceutil"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"

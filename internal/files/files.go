@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 )
 
 type MarshalFunc func(any) ([]byte, error)

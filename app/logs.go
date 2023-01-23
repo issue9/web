@@ -12,7 +12,7 @@ import (
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 
-	"github.com/issue9/web/errs"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
 )
 
