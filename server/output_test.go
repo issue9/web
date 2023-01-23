@@ -14,17 +14,17 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
+	"github.com/issue9/web/logs"
 )
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	l := logs.New(logs.NewTextWriter(logs.MicroLayout, buf))
+	l := logs.New(logs.NewTextWriter(logs.MicroLayout, buf), false, false)
 	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: l})
 
 	// 自定义报头

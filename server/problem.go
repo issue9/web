@@ -3,10 +3,10 @@
 package server
 
 import (
-	"github.com/issue9/logs/v4"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/logs"
 )
 
 type (
@@ -115,18 +115,16 @@ func (ctx *Context) Problem(id string) Problem {
 
 // InternalServerError 输出 ERROR 通道并向返回 500 表示的 [Problem] 对象
 func (ctx *Context) InternalServerError(err error) Problem {
-	return ctx.logError(3, "500", logs.LevelError, err)
+	return ctx.logError(4, problems.ProblemInternalServerError, logs.Error, err)
 }
 
 // Error 将 err 输出到日志并以指定 id 的 [Problem] 返回
 func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
-	return ctx.logError(3, id, level, err)
+	return ctx.logError(4, id, level, err)
 }
 
 func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
-	entry := ctx.Logs().NewEntry(level).Location(depth)
-	entry.Message = err.Error() // NOTE: 日志信息不会根据 ctx 作翻译
-	ctx.Logs().Output(entry)
+	ctx.Server().Logs().NewEntry(level).DepthError(3, err)
 	return ctx.Problem(id)
 }
 
@@ -134,3 +132,12 @@ func (ctx *Context) logError(depth int, id string, level logs.Level, err error) 
 func (ctx *Context) NotFound() Problem { return ctx.Problem(problems.ProblemNotFound) }
 
 func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.ProblemNotImplemented) }
+
+// Logs 返回日志对象
+//
+// 所有日志接口都附加了本地化的功能，规则如下：
+//   - Logger.Error 如果参数实现了 localeutil.LocaleStringer 接口，会尝试本地化；
+//   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
+//   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化；
+//   - Logger.Print 原样返回；
+func (srv *Server) Logs() logs.Logs { return srv.logs }

@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 
+	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -317,7 +317,7 @@ func TestServer_FileServer(t *testing.T) {
 func TestContext_NoContent(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf))})
+	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf), false, false)})
 
 	s.Router().Get("/204", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {

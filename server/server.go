@@ -11,7 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/logs/v4"
+	"github.com/issue9/localeutil"
+	l "github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -24,6 +25,7 @@ import (
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
+	"github.com/issue9/web/logs"
 )
 
 // Server web 服务对象
@@ -42,7 +44,7 @@ type Server struct {
 	catalog  *catalog.Builder
 	tag      language.Tag
 	printer  *message.Printer
-	logs     *logs.Logs
+	logs     *l.Logs
 
 	closed chan struct{}
 	closes []func() error
@@ -86,6 +88,7 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 
 	srv.printer = srv.NewPrinter(o.LanguageTag)
+	srv.logs.SetPrinter(logs.NewPrinter(srv.LocalePrinter())) // 注意 srv.LocalePrinter 是否已经初始化。
 	srv.services = service.NewServer(o.Location, o.Logs)
 	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
@@ -111,9 +114,6 @@ func (srv *Server) Vars() *sync.Map { return srv.vars }
 
 // Location 指定服务器的时区信息
 func (srv *Server) Location() *time.Location { return srv.location }
-
-// Logs 返回关联的 [logs.Logs] 实例
-func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
 // Cache 返回缓存的相关接口
 func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
@@ -145,12 +145,12 @@ func (srv *Server) Serve() (err error) {
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes {
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
-				srv.Logs().Error(err1)
+				srv.Logs().ERROR().Error(err1)
 			}
 		}
 
 		if err1 := srv.cache.Close(); err1 != nil { // 出错不退出，继续其它操作。
-			srv.Logs().Error(err1)
+			srv.Logs().ERROR().Error(err1)
 		}
 
 	}()
@@ -213,4 +213,12 @@ func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, 
 // LoadLocales 加载本地化的内容
 func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
+}
+
+// LocaleError 将错误信息转换成与 [Server.LocalePrinter] 相符的本地化字符串
+func (srv *Server) LocaleError(err error) string {
+	if ls, ok := err.(localeutil.LocaleStringer); ok {
+		return ls.LocaleString(srv.LocalePrinter())
+	}
+	return err.Error()
 }

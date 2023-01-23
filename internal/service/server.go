@@ -7,18 +7,19 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/scheduled"
+
+	"github.com/issue9/web/logs"
 )
 
 type Server struct {
 	services  []*Service
 	scheduled *scheduled.Server
 	running   bool
-	logs      *logs.Logs
+	logs      logs.Logs
 }
 
-func NewServer(loc *time.Location, logs *logs.Logs) *Server {
+func NewServer(loc *time.Location, logs logs.Logs) *Server {
 	return &Server{
 		services:  make([]*Service, 0, 10),
 		scheduled: scheduled.NewServer(loc),
@@ -31,7 +32,7 @@ func (srv *Server) Running() bool { return srv.running }
 func (srv *Server) Run() {
 	srv.Add(localeutil.Phrase("scheduled job"), func(ctx context.Context) error {
 		go func() {
-			if err := srv.scheduled.Serve(srv.logs.StdLogger(logs.LevelError), srv.logs.StdLogger(logs.LevelDebug)); err != nil {
+			if err := srv.scheduled.Serve(srv.logs.ERROR().StdLogger(), srv.logs.DEBUG().StdLogger()); err != nil {
 				srv.logs.ERROR().Error(err)
 			}
 		}()

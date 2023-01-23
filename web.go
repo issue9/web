@@ -5,7 +5,6 @@ package web
 
 import (
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/query/v3"
 	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
@@ -14,6 +13,7 @@ import (
 	"github.com/issue9/web/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
+	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
 
@@ -95,8 +95,7 @@ type (
 	Service        = service.Service
 	ConfigError    = errs.ConfigError
 	Cache          = cache.Cache
-
-	Logger = logs.Logger
+	Logger         = logs.Logger
 
 	JobFunc   = scheduled.JobFunc
 	Job       = scheduled.Job

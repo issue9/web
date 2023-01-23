@@ -8,13 +8,14 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/scheduled"
+
+	"github.com/issue9/web/logs"
 )
 
 func newServer(a *assert.Assertion) *Server {
 	a.TB().Helper()
-	srv := NewServer(time.Local, logs.New(logs.NewNopWriter()))
+	srv := NewServer(time.Local, logs.New(logs.NewNopWriter(), false, false))
 	a.NotNil(srv)
 	return srv
 }

@@ -15,12 +15,12 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/logs"
 	"github.com/issue9/web/serializer"
 )
 
@@ -52,7 +52,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), logs.Caller, logs.Created)
+		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), true, true)
 	}
 
 	srv, err := New("app", "0.1.0", o)
@@ -124,9 +124,9 @@ func TestContext_Vars(t *testing.T) {
 func TestServer_newContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
-	srv.Logs().SetOutput(logs.NewTextWriter("2006-01-02", lw))
-	srv.Logs().Enable(logs.LevelDebug)
+	l := logs.New(logs.NewTextWriter("2006-01-02", lw), false, false)
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: l})
+	l.Enable(logs.Debug)
 
 	// 错误的 accept
 	w := httptest.NewRecorder()

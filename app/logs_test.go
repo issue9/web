@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/logs/v4"
 
 	"github.com/issue9/web/errs"
+	"github.com/issue9/web/logs"
 )
 
 func TestLogsConfig_build(t *testing.T) {
@@ -17,16 +17,16 @@ func TestLogsConfig_build(t *testing.T) {
 	conf := &logsConfig{}
 	l, c, err := conf.build()
 	a.NotError(err).NotNil(l).Length(c, 0).
-		True(l.IsEnable(logs.LevelError)).
-		True(l.IsEnable(logs.LevelInfo)).
+		True(l.IsEnable(logs.Error)).
+		True(l.IsEnable(logs.Info)).
 		False(l.HasCreated()).
 		Equal(6, len(conf.Levels))
 
-	conf = &logsConfig{Levels: []logs.Level{logs.LevelWarn, logs.LevelError}, Created: true}
+	conf = &logsConfig{Levels: []logs.Level{logs.Warn, logs.Error}, Created: true}
 	l, c, err = conf.build()
 	a.NotError(err).NotNil(l).Length(c, 0).
-		True(l.IsEnable(logs.LevelError)).
-		False(l.IsEnable(logs.LevelInfo)).
+		True(l.IsEnable(logs.Error)).
+		False(l.IsEnable(logs.Info)).
 		True(l.HasCreated()).
 		False(l.HasCaller()).
 		Equal(2, len(conf.Levels))

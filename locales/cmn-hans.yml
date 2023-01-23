@@ -18,7 +18,7 @@ messages:
 
 - key: scheduled job
   message:
-    msg: '计划任务'
+    msg: 计划任务
 
 - key: 'not found serialization function for %s'
   message:

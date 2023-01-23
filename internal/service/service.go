@@ -63,7 +63,7 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.logs.Error(srv.err)
+			srv.s.logs.ERROR().Error(srv.err)
 			srv.setState(scheduled.Failed)
 		}
 	}()
@@ -73,7 +73,7 @@ func (srv *Service) serve() {
 	srv.err = srv.f(ctx)
 	state := scheduled.Stopped
 	if srv.err != nil && srv.err != context.Canceled {
-		srv.s.logs.Error(srv.err)
+		srv.s.logs.ERROR().Error(srv.err)
 		state = scheduled.Failed
 	}
 

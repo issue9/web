@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
@@ -18,6 +17,7 @@ import (
 	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/logs"
 )
 
 const (
@@ -79,7 +79,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h := r.Header.Get("Accept")
 	mt := srv.mimetypes.MarshalFunc(h)
 	if mt == nil {
-		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found serialization for %s", h))
+		srv.Logs().DEBUG().Printf("not found serialization for %s", h)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -87,7 +87,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get("Accept-Charset")
 	outputCharsetName, outputCharset := header.AcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().Debug(srv.LocalePrinter().Sprintf("not found charset for %s", h))
+		srv.Logs().DEBUG().Printf("not found charset for %s", h)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -108,7 +108,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		var err error
 		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
-			srv.Logs().Debug(err)
+			srv.Logs().DEBUG().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -313,7 +313,7 @@ func (ctx *Context) ClientIP() string {
 	return strings.TrimSpace(ip)
 }
 
-func (ctx *Context) Logs() *logs.Logs { return ctx.Server().Logs() }
+func (ctx *Context) Logs() logs.Logs { return ctx.Server().Logs() }
 
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))

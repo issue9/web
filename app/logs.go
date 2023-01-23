@@ -8,19 +8,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/logs/v4"
+	l "github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web/errs"
+	"github.com/issue9/web/logs"
 )
 
 var logWritersFactory = map[string]LogsWriterBuilder{}
 
-type LogsWriter = logs.Writer
-
 // LogsWriterBuilder 构建 LogsWriter 的方法
-type LogsWriterBuilder func(args []string) (LogsWriter, func() error, error)
+type LogsWriterBuilder func(args []string) (logs.Writer, func() error, error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
@@ -77,21 +76,13 @@ type logWriterConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (conf *logsConfig) build() (*logs.Logs, []func() error, *errs.ConfigError) {
+func (conf *logsConfig) build() (*l.Logs, []func() error, *errs.ConfigError) {
 	if conf == nil {
-		return logs.New(logs.NewNopWriter()), nil, nil
+		return logs.New(logs.NewNopWriter(), false, false), nil, nil
 	}
 
 	if len(conf.Levels) == 0 {
-		conf.Levels = []logs.Level{logs.LevelInfo, logs.LevelWarn, logs.LevelTrace, logs.LevelDebug, logs.LevelError, logs.LevelFatal}
-	}
-
-	o := make([]logs.Option, 0, 2)
-	if conf.Created {
-		o = append(o, logs.Created)
-	}
-	if conf.Caller {
-		o = append(o, logs.Caller)
+		conf.Levels = []logs.Level{logs.Info, logs.Warn, logs.Trace, logs.Debug, logs.Error, logs.Fatal}
 	}
 
 	w, c, err := conf.buildWriter()
@@ -99,19 +90,19 @@ func (conf *logsConfig) build() (*logs.Logs, []func() error, *errs.ConfigError) 
 		return nil, nil, err
 	}
 
-	l := logs.New(w, o...)
+	l := logs.New(w, conf.Caller, conf.Created)
 	l.Enable(conf.Levels...)
 	return l, c, nil
 }
 
-func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *errs.ConfigError) {
+func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *errs.ConfigError) {
 	if len(conf.Writers) == 0 {
 		return logs.NewNopWriter(), nil, nil
 	}
 
 	cleanup := make([]func() error, 0, 10)
 
-	m := make(map[logs.Level][]LogsWriter, 6)
+	m := make(map[logs.Level][]logs.Writer, 6)
 	for i, w := range conf.Writers {
 		field := "Writers[" + strconv.Itoa(i) + "]"
 
@@ -140,7 +131,7 @@ func (conf *logsConfig) buildWriter() (LogsWriter, []func() error, *errs.ConfigE
 		}
 	}
 
-	d := make(map[logs.Level]LogsWriter, len(m))
+	d := make(map[logs.Level]logs.Writer, len(m))
 	for level, ws := range m {
 		d[level] = logs.MergeWriter(ws...)
 	}
@@ -166,7 +157,7 @@ func init() {
 	RegisterLogsWriter(newTermLogsWriter, "term")
 }
 
-func newFileLogsWriter(args []string) (LogsWriter, func() error, error) {
+func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
 	size, err := strconv.ParseInt(args[3], 10, 64)
 	if err != nil {
 		return nil, nil, err
@@ -201,7 +192,7 @@ var colorMap = map[string]colors.Color{
 // 2: 为输出通道，以下值有效：
 //   - stdout
 //   - stderr
-func newTermLogsWriter(args []string) (LogsWriter, func() error, error) {
+func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	if len(args) != 3 {
 		return nil, nil, errs.NewConfigError("Args", errs.NewLocaleError("invalid value %s", args))
 	}

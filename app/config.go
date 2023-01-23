@@ -182,7 +182,7 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	if err = conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
-	conf.http = conf.HTTP.buildHTTPServer(conf.logs.StdLogger(logs.LevelError))
+	conf.http = conf.HTTP.buildHTTPServer(conf.logs.ERROR().StdLogger())
 
 	if err = conf.sanitizeEncodings(); err != nil {
 		return err.AddFieldParent("encodings")

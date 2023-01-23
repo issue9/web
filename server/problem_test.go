@@ -12,8 +12,9 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/logs"
 )
 
 var _ BuildProblemFunc = RFC7807Builder
@@ -24,7 +25,7 @@ func TestContext_Log(t *testing.T) {
 	errLog := new(bytes.Buffer)
 
 	srv := newServer(a, &Options{
-		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), logs.Created, logs.Caller),
+		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), true, true),
 	})
 	errLog.Reset()
 
@@ -34,7 +35,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:36") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:37") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 500)
 	})
@@ -45,8 +46,8 @@ func TestContext_Log(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
-		ctx.Error("41110", logs.LevelError, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:48") // NOTE: 此测试依赖上一行的行号
+		ctx.Error("41110", logs.Error, errors.New("log1 log2")).Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:49") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 411)
 	})
