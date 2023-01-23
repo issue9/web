@@ -10,6 +10,7 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/cache/cachetest"
 )
 
 var _ cache.Cache = &redisDriver{}
@@ -28,9 +29,9 @@ func TestRedis(t *testing.T) {
 	c, err := NewRedis(redisURL, redisOptions...)
 	a.NotError(err).NotNil(c)
 
-	testCache(a, c)
-	testObject(a, c)
-	testCounter(a, c)
+	cachetest.Basic(a, c)
+	cachetest.Object(a, c)
+	cachetest.Counter(a, c)
 
 	a.NotError(c.Close())
 }

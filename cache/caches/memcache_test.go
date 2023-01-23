@@ -8,6 +8,7 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/cache/cachetest"
 )
 
 var _ cache.Cache = &memcacheDriver{}
@@ -18,9 +19,9 @@ func TestMemcache(t *testing.T) {
 	c := NewMemcache("localhost:11211")
 	a.NotNil(c)
 
-	testCache(a, c)
-	testObject(a, c)
-	testCounter(a, c)
+	cachetest.Basic(a, c)
+	cachetest.Object(a, c)
+	cachetest.Counter(a, c)
 
 	a.NotError(c.Close())
 }

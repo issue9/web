@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-package caches
+// Package cachetest 缓存的测试用例
+package cachetest
 
 import (
 	"errors"
@@ -13,7 +14,14 @@ import (
 	"github.com/issue9/web/cache"
 )
 
-func testCounter(a *assert.Assertion, d cache.Driver) {
+func All(a *assert.Assertion, d cache.Driver) {
+	Basic(a, d)
+	Object(a, d)
+	Counter(a, d)
+}
+
+// Counter 测试计数器
+func Counter(a *assert.Assertion, d cache.Driver) {
 	c := d.Counter("v1", 50, 1)
 	a.NotNil(c)
 
@@ -47,8 +55,8 @@ func testCounter(a *assert.Assertion, d cache.Driver) {
 	a.NotError(err).Equal(v2, 0)
 }
 
-// 测试 Cache 基本功能
-func testCache(a *assert.Assertion, c cache.Driver) {
+// Basic 测试基本功能
+func Basic(a *assert.Assertion, c cache.Driver) {
 	var v string
 	err := c.Get("not_exists", &v)
 	a.ErrorIs(err, cache.ErrCacheMiss(), "找到了一个并不存在的值").
@@ -117,7 +125,8 @@ func (o *object) UnmarshalCache(bs []byte) error {
 	return nil
 }
 
-func testObject(a *assert.Assertion, c cache.Driver) {
+// Object 测试对象的缓存
+func Object(a *assert.Assertion, c cache.Driver) {
 	obj := &object{Name: "test", age: 5}
 	obj2 := &object{Name: "test", age: 5}
 
