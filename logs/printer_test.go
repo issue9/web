@@ -8,7 +8,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -23,7 +22,7 @@ func TestPrinter(t *testing.T) {
 	a := assert.New(t, false)
 	textBuf := new(bytes.Buffer)
 	termBuf := new(bytes.Buffer)
-	l := New(NewDispatchWriter(map[logs.Level]Writer{
+	l := New(NewDispatchWriter(map[Level]Writer{
 		Error: NewTextWriter(MicroLayout, textBuf),
 		Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
 		Info:  NewNopWriter(),

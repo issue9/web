@@ -33,7 +33,7 @@ func TestServer_service(t *testing.T) {
 	srv.Add(localeutil.Phrase("srv1"), s1)
 	a.Equal(1, len(srv.Services()))
 	srv1 := srv.services[0]
-	a.Equal(srv1.f, s1) // 并不会改变状态
+	a.Equal(srv1.service, s1) // 并不会改变状态
 	a.Equal(srv1.State(), scheduled.Stopped)
 
 	// 运行中

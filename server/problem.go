@@ -135,7 +135,7 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 
 // Logs 返回日志对象
 //
-// 所有日志接口都附加了本地化的功能，规则如下：
+// 所有日志接口都会根据 [Server.LocalePrinter] 进行本地化，规则如下：
 //   - Logger.Error 如果参数实现了 localeutil.LocaleStringer 接口，会尝试本地化；
 //   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
 //   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化；

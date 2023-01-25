@@ -13,17 +13,24 @@ import (
 	"golang.org/x/text/message"
 )
 
-// ServiceFunc 服务函数的原型
-//
-// 实现者需要正确处理 ctx.Done 事件，调用者可能会主动取消函数执行；
-// 如果是通 ctx.Done 取消的，应该返回 [context.Canceled]。
-type ServiceFunc func(ctx context.Context) error
+type Func func(context.Context) error
+
+// Servicer 长期运行的服务需要实现的接口
+type Servicer interface {
+	// Serve 运行服务
+	//
+	// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
+	// 如果是通过 [context.Context] 的相关操作取消的，应该返回 ctx.Err。
+	Serve(context.Context) error
+}
+
+func (f Func) Serve(ctx context.Context) error { return f(ctx) }
 
 type (
 	Service struct {
 		s          *Server
 		title      localeutil.LocaleStringer
-		f          ServiceFunc
+		service    Servicer
 		cancelFunc context.CancelFunc
 		err        error // 保存上次的出错内容
 
@@ -70,7 +77,7 @@ func (srv *Service) serve() {
 
 	ctx := context.Background()
 	ctx, srv.cancelFunc = context.WithCancel(ctx)
-	srv.err = srv.f(ctx)
+	srv.err = srv.service.Serve(ctx)
 	state := scheduled.Stopped
 	if srv.err != nil && srv.err != context.Canceled {
 		srv.s.logs.ERROR().Error(srv.err)
@@ -97,17 +104,21 @@ func (srv *Service) Stop() {
 // title 是对该服务的简要说明。
 //
 // NOTE: 如果所有服务已经处于运行的状态，则会自动运行新添加的服务。
-func (srv *Server) Add(title localeutil.LocaleStringer, f ServiceFunc) {
+func (srv *Server) Add(title localeutil.LocaleStringer, f Servicer) {
 	s := &Service{
-		s:     srv,
-		title: title,
-		f:     f,
+		s:       srv,
+		title:   title,
+		service: f,
 	}
 	srv.services = append(srv.services, s)
 
 	if srv.running {
 		s.Run()
 	}
+}
+
+func (srv *Server) AddFunc(title localeutil.LocaleStringer, f func(context.Context) error) {
+	srv.Add(title, Func(f))
 }
 
 func (srv *Server) Services() []*Service { return srv.services }

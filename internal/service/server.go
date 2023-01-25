@@ -30,7 +30,7 @@ func NewServer(loc *time.Location, logs logs.Logs) *Server {
 func (srv *Server) Running() bool { return srv.running }
 
 func (srv *Server) Run() {
-	srv.Add(localeutil.Phrase("scheduled job"), func(ctx context.Context) error {
+	f := func(ctx context.Context) error {
 		go func() {
 			if err := srv.scheduled.Serve(srv.logs.ERROR().StdLogger(), srv.logs.DEBUG().StdLogger()); err != nil {
 				srv.logs.ERROR().Error(err)
@@ -40,7 +40,8 @@ func (srv *Server) Run() {
 		<-ctx.Done()
 		srv.scheduled.Stop()
 		return context.Canceled
-	})
+	}
+	srv.AddFunc(localeutil.Phrase("scheduled job"), f)
 
 	for _, s := range srv.services {
 		s.Run()

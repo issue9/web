@@ -17,7 +17,7 @@ import (
 const tickTimer = 500 * time.Microsecond
 const times = 8
 
-func buildService() (f ServiceFunc, start, exit chan struct{}) {
+func buildService() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -44,7 +44,7 @@ func buildService() (f ServiceFunc, start, exit chan struct{}) {
 	}, start, exit
 }
 
-func buildPanicService() (f ServiceFunc, start, exit chan struct{}) {
+func buildPanicService() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
@@ -78,7 +78,7 @@ func buildPanicService() (f ServiceFunc, start, exit chan struct{}) {
 	}, start, exit
 }
 
-func buildErrorService() (f ServiceFunc, start, exit chan struct{}) {
+func buildErrorService() (f Func, start, exit chan struct{}) {
 	exit = make(chan struct{}, 1)
 	start = make(chan struct{}, 1)
 
