@@ -27,23 +27,24 @@ func TestServer_service(t *testing.T) {
 	// 未运行
 
 	a.False(srv.Running())
-	a.Equal(0, len(srv.Services()))
+	a.Equal(1, len(srv.Services()))
 
 	s1, start1, exit1 := buildService()
 	srv.Add(localeutil.Phrase("srv1"), s1)
-	a.Equal(1, len(srv.Services()))
-	srv1 := srv.services[0]
+	a.Equal(2, len(srv.Services()))
+	sched := srv.services[0]
+	srv1 := srv.services[1]
 	a.Equal(srv1.service, s1) // 并不会改变状态
-	a.Equal(srv1.State(), scheduled.Stopped)
+	a.Equal(srv1.State(), scheduled.Stopped).
+		Equal(sched.State(), scheduled.Stopped)
 
 	// 运行中
 
 	srv.Run()
-	a.Equal(2, len(srv.Services())) // 在 runServices 中添加了 Scheduled 服务
+	a.Equal(2, len(srv.Services()))
 	srv.running = true
 	<-start1
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	sched := srv.services[1]
 	a.Equal(scheduled.Running, sched.State()).
 		Equal(scheduled.Running, srv1.State())
 

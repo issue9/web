@@ -28,11 +28,10 @@ func (f Func) Serve(ctx context.Context) error { return f(ctx) }
 
 type (
 	Service struct {
-		s          *Server
-		title      localeutil.LocaleStringer
-		service    Servicer
-		cancelFunc context.CancelFunc
-		err        error // 保存上次的出错内容
+		s       *Server
+		title   localeutil.LocaleStringer
+		service Servicer
+		err     error // 保存上次的出错内容
 
 		state    scheduled.State
 		stateMux sync.Mutex
@@ -60,6 +59,10 @@ func (srv *Service) setState(s scheduled.State) {
 
 // Run 开始执行该服务
 func (srv *Service) Run() {
+	if !srv.s.running {
+		panic("主服务未运行")
+	}
+
 	if srv.state != scheduled.Running {
 		srv.setState(scheduled.Running)
 		go srv.serve()
@@ -70,32 +73,18 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.logs.ERROR().Error(srv.err)
+			srv.s.err.Error(srv.err)
 			srv.setState(scheduled.Failed)
 		}
 	}()
-
-	ctx := context.Background()
-	ctx, srv.cancelFunc = context.WithCancel(ctx)
-	srv.err = srv.service.Serve(ctx)
+	srv.err = srv.service.Serve(srv.s.ctx)
 	state := scheduled.Stopped
 	if srv.err != nil && srv.err != context.Canceled {
-		srv.s.logs.ERROR().Error(srv.err)
+		srv.s.err.Error(srv.err)
 		state = scheduled.Failed
 	}
 
 	srv.setState(state)
-}
-
-func (srv *Service) Stop() {
-	if srv.state != scheduled.Running {
-		return
-	}
-
-	if srv.cancelFunc != nil {
-		srv.cancelFunc()
-		srv.cancelFunc = nil
-	}
 }
 
 // Add 添加新的服务

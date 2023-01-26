@@ -123,20 +123,21 @@ func TestService_service(t *testing.T) {
 	s.running = true
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
-	s1 := s.services[0]
+	s1 := s.services[1]
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), scheduled.Running)
-	s1.Stop()
+	s.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), scheduled.Stopped)
 
+	s.Run()
 	s1.Run()
 	s1.Run() // 在运行状态再次运行，不启作用
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), scheduled.Running)
-	s1.Stop()
+	s.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), scheduled.Stopped)
@@ -151,16 +152,17 @@ func TestService_panic(t *testing.T) {
 	s.Add(localeutil.Phrase("srv2"), srv2)
 	s.Run() // 注册并运行服务
 	s.running = true
-	s2 := s.services[0]
+	s2 := s.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), scheduled.Running)
-	s2.Stop()
+	s.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), scheduled.Stopped)
 
 	// 再次运行，等待 panic
+	s.Run()
 	s2.Run()
 	<-start
 	<-exit
@@ -173,7 +175,7 @@ func TestService_panic(t *testing.T) {
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), scheduled.Running)
-	s2.Stop()
+	s.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), scheduled.Stopped)
@@ -188,7 +190,7 @@ func TestService_error(t *testing.T) {
 	s.Add(localeutil.Phrase("srv3"), srv3)
 	s.Run()
 	s.running = true
-	s3 := s.services[0]
+	s3 := s.services[1]
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), scheduled.Running)
@@ -203,7 +205,7 @@ func TestService_error(t *testing.T) {
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), scheduled.Running)
-	s3.Stop()
+	s.Stop()
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), scheduled.Stopped)

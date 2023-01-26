@@ -13,48 +13,54 @@ import (
 )
 
 type Server struct {
+	ctx        context.Context
+	cancelFunc context.CancelFunc
+
 	services  []*Service
 	scheduled *scheduled.Server
 	running   bool
-	logs      logs.Logs
+	err       logs.Logger
 }
 
 func NewServer(loc *time.Location, logs logs.Logs) *Server {
-	return &Server{
+	s := &Server{
 		services:  make([]*Service, 0, 10),
 		scheduled: scheduled.NewServer(loc),
-		logs:      logs,
+		err:       logs.ERROR(),
 	}
+
+	f := func(ctx context.Context) error {
+		go func() {
+			if err := s.scheduled.Serve(logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()); err != nil {
+				logs.ERROR().Error(err)
+			}
+		}()
+
+		<-ctx.Done()
+		s.scheduled.Stop()
+		return context.Canceled
+	}
+	s.AddFunc(localeutil.Phrase("scheduled job"), f)
+
+	return s
 }
 
 func (srv *Server) Running() bool { return srv.running }
 
 func (srv *Server) Run() {
-	f := func(ctx context.Context) error {
-		go func() {
-			if err := srv.scheduled.Serve(srv.logs.ERROR().StdLogger(), srv.logs.DEBUG().StdLogger()); err != nil {
-				srv.logs.ERROR().Error(err)
-			}
-		}()
 
-		<-ctx.Done()
-		srv.scheduled.Stop()
-		return context.Canceled
-	}
-	srv.AddFunc(localeutil.Phrase("scheduled job"), f)
+	srv.running = true
 
+	// 在子项运行之前，重新生成 ctx
+	srv.ctx, srv.cancelFunc = context.WithCancel(context.Background())
 	for _, s := range srv.services {
 		s.Run()
 	}
-
-	srv.running = true
 }
 
 // Stop 停止所有服务
 func (srv *Server) Stop() {
-	for _, s := range srv.services {
-		s.Stop()
-	}
+	srv.cancelFunc()
 	srv.running = false
 }
 
