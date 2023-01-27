@@ -12,10 +12,12 @@ import (
 	"github.com/issue9/localeutil"
 	l "github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
+	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
+	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
 )
 
@@ -58,6 +60,14 @@ type Options struct {
 	// 如果为空，表示 &http.Server{} 对象。
 	HTTPServer *http.Server
 
+	// 生成唯一字符串的方法
+	//
+	// 每次调用返回一个字符串，要求在关联的 [Server] 生命周期内生成的值具有唯一性。
+	//
+	// 如果为空，将采用 [unique.NewDate] 作为生成方法。
+	UniqueGenerator func() string
+	services        []serviceItem
+
 	// 路由选项
 	//
 	// 将应用 [Server.Routers] 对象之上。
@@ -97,6 +107,15 @@ func sanitizeOptions(o *Options) (*Options, error) {
 		o.ProblemBuilder = RFC7807Builder
 	}
 
+	if o.UniqueGenerator == nil {
+		u := unique.NewDate(1000)
+		o.services = append(o.services, serviceItem{
+			name:    localeutil.Phrase("unique generator"),
+			service: u,
+		})
+		o.UniqueGenerator = u.String
+	}
+
 	if o.LanguageTag == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
@@ -106,4 +125,9 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	return o, nil
+}
+
+type serviceItem struct {
+	name    localeutil.LocaleStringer
+	service service.Servicer
 }

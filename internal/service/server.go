@@ -25,22 +25,11 @@ type Server struct {
 func NewServer(loc *time.Location, logs logs.Logs) *Server {
 	s := &Server{
 		services:  make([]*Service, 0, 10),
-		scheduled: scheduled.NewServer(loc),
+		scheduled: scheduled.NewServer(loc, logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()),
 		err:       logs.ERROR(),
 	}
 
-	f := func(ctx context.Context) error {
-		go func() {
-			if err := s.scheduled.Serve(logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()); err != nil {
-				logs.ERROR().Error(err)
-			}
-		}()
-
-		<-ctx.Done()
-		s.scheduled.Stop()
-		return context.Canceled
-	}
-	s.AddFunc(localeutil.Phrase("scheduled job"), f)
+	s.AddFunc(localeutil.Phrase("scheduled job"), s.scheduled.Serve)
 
 	return s
 }

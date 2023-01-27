@@ -30,15 +30,16 @@ import (
 
 // Server web 服务对象
 type Server struct {
-	name       string
-	version    string
-	fs         fs.FS
-	httpServer *http.Server
-	vars       *sync.Map
-	cache      cache.Driver
-	uptime     time.Time
-	routers    *Routers
-	services   *service.Server
+	name            string
+	version         string
+	fs              fs.FS
+	httpServer      *http.Server
+	vars            *sync.Map
+	cache           cache.Driver
+	uptime          time.Time
+	routers         *Routers
+	services        *service.Server
+	uniqueGenerator func() string
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -66,13 +67,14 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 
 	srv := &Server{
-		name:       name,
-		version:    version,
-		fs:         o.FS,
-		httpServer: o.HTTPServer,
-		vars:       &sync.Map{},
-		cache:      o.Cache,
-		uptime:     time.Now(),
+		name:            name,
+		version:         version,
+		fs:              o.FS,
+		httpServer:      o.HTTPServer,
+		vars:            &sync.Map{},
+		cache:           o.Cache,
+		uptime:          time.Now(),
+		uniqueGenerator: o.UniqueGenerator,
 
 		location: o.Location,
 		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
@@ -98,6 +100,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
 
+	for _, item := range o.services {
+		srv.services.Add(item.name, item.service)
+	}
+
 	return srv, nil
 }
 
@@ -120,6 +126,9 @@ func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
+
+// UniqueID 生成一个惟一性的 ID
+func (srv *Server) UniqueID() string { return srv.uniqueGenerator() }
 
 // Now 返回当前时间
 //

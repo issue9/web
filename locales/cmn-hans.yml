@@ -38,7 +38,7 @@ messages:
 
 - key: 'can not be empty'
   message:
-    msg: '不能为空'
+    msg: 不能为空
 
 - key: '%s not found'
   message:
@@ -67,6 +67,10 @@ messages:
 - key: invalid cache key
   message:
     msg: 缓存的 key 不符合要求
+
+- key: unique generator
+  message:
+    msg: 唯一 ID 生成器
 
 # app
 
