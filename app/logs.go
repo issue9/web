@@ -18,7 +18,7 @@ import (
 
 var logWritersFactory = map[string]LogsWriterBuilder{}
 
-// LogsWriterBuilder 构建 LogsWriter 的方法
+// LogsWriterBuilder 构建 [logs.Writer] 的方法
 type LogsWriterBuilder func(args []string) (logs.Writer, func() error, error)
 
 type logsConfig struct {
