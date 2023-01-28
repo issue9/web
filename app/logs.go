@@ -42,7 +42,7 @@ type logsConfig struct {
 type logWriterConfig struct {
 	// 当前 Writer 支持的通道
 	//
-	// 为空表示 logsConfig.Levels 的值。
+	// 为空表示采用 [logsConfig.Levels] 的值。
 	Levels []logs.Level `xml:"level,omitempty" yaml:"levels,omitempty" json:"levels,omitempty"`
 
 	// Writer 的类型

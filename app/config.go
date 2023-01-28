@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
@@ -80,6 +81,15 @@ type configOf[T any] struct {
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
 	mimetypes []mimetype
 
+	// 唯一 ID 生成器
+	//
+	// 该值由 [RegisterUniqueGenerator] 注册而来，默认情况下，有以下三个选项：
+	//  - date 日期格式，默认值；
+	//  - string 普通的字符串；
+	//  - number 数值格式；
+	UniqueGenerator string `yaml:"uniqueGenerator,omitempty" json:"uniqueGenerator,omitempty" xml:"uniqueGenerator,omitempty"`
+	uniqueGenerator UniqueGenerator
+
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
@@ -112,19 +122,22 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	// NOTE: 以下代码由 loadConfigOf 保证不会出错，所以所有错误一律 panic 处理。
 
 	opt := &server.Options{
-		FS:             fsys,
-		Location:       conf.location,
-		Cache:          conf.cache,
-		HTTPServer:     conf.http,
-		Logs:           conf.logs,
-		ProblemBuilder: pb,
-		LanguageTag:    conf.languageTag,
-		RoutersOptions: conf.HTTP.routersOptions,
+		FS:              fsys,
+		Location:        conf.location,
+		Cache:           conf.cache,
+		HTTPServer:      conf.http,
+		Logs:            conf.logs,
+		ProblemBuilder:  pb,
+		LanguageTag:     conf.languageTag,
+		RoutersOptions:  conf.HTTP.routersOptions,
+		UniqueGenerator: conf.uniqueGenerator.ID,
 	}
+
 	srv, err := server.New(name, version, opt)
 	if err != nil {
 		panic(err)
 	}
+	srv.Services().Add(localeutil.Phrase("unique generator"), conf.uniqueGenerator)
 
 	if len(conf.HTTP.Headers) > 0 {
 		srv.Routers().Use(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
@@ -194,6 +207,13 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 
 	if err = conf.sanitizeFiles(); err != nil {
 		return err.AddFieldParent("files")
+	}
+
+	if conf.UniqueGenerator == "" {
+		conf.UniqueGenerator = "date"
+	}
+	if g, found := uniqueGeneratorFactory[conf.UniqueGenerator]; found {
+		conf.uniqueGenerator = g()
 	}
 
 	if conf.User != nil {

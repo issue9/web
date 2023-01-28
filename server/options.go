@@ -62,16 +62,24 @@ type Options struct {
 
 	// 生成唯一字符串的方法
 	//
-	// 每次调用返回一个字符串，要求在关联的 [Server] 生命周期内生成的值具有唯一性。
+	// 供 [Server.UniqueID] 使用。
 	//
-	// 如果为空，将采用 [unique.NewDate] 作为生成方法。
+	// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]
+	// 是服务类型的，只有在 [Server.Serve] 运行之后，UniqueGenerator 才会有返回值。
 	UniqueGenerator func() string
-	services        []serviceItem
 
 	// 路由选项
 	//
 	// 将应用 [Server.Routers] 对象之上。
 	RoutersOptions []mux.Option
+
+	// 由 Options 生成的需要注入服务的对象
+	services []serviceItem
+}
+
+type serviceItem struct {
+	name    localeutil.LocaleStringer
+	service service.Servicer
 }
 
 func sanitizeOptions(o *Options) (*Options, error) {
@@ -125,9 +133,4 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	return o, nil
-}
-
-type serviceItem struct {
-	name    localeutil.LocaleStringer
-	service service.Servicer
 }

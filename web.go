@@ -115,7 +115,9 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key message.Reference, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
+func Phrase(key message.Reference, v ...any) LocaleStringer {
+	return localeutil.Phrase(key, v...)
+}
 
 // NewRule 新建验证规则
 func NewRule(msg LocaleStringer, v Validator) *Rule { return server.NewRule(msg, v) }
@@ -131,10 +133,13 @@ func NewStackError(err error) error { return errs.NewStackError(err) }
 // NewConfigError 返回表示配置文件错误的对象
 //
 // field 表示错误的字段名；
-// msg 表示错误信息，可以是任意类型，如果 msg 是 ConfigError 类型，那么此操作仅修改此类型的 Field 值；
+// msg 表示错误信息，可以是任意类型，如果 msg 是 [ConfigError] 类型，
+// 那么此操作相当于调用了 [ConfigError.AddFieldParent]；
 func NewConfigError(field string, msg any) *ConfigError {
 	return errs.NewConfigError(field, msg)
 }
 
 // NewLocaleError 本地化的错误信息
-func NewLocaleError(format string, v ...any) error { return errs.NewLocaleError(format, v...) }
+func NewLocaleError(format string, v ...any) error {
+	return errs.NewLocaleError(format, v...)
+}
