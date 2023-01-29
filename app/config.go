@@ -130,6 +130,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		LanguageTag:     conf.languageTag,
 		RoutersOptions:  conf.HTTP.routersOptions,
 		UniqueGenerator: conf.uniqueGenerator,
+		RequestIDKey:    conf.HTTP.RequestID,
 	}
 
 	srv, err := server.New(name, version, opt)

@@ -181,7 +181,7 @@ func TestServer_newContext(t *testing.T) {
 		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx := srv.newContext(w, r, nil)
-	a.NotNil(ctx)
+	a.NotNil(ctx).NotEmpty(ctx.ID())
 	a.Equal(ctx.LanguageTag(), language.MustParse("zh-hans"))
 	a.Empty(lw.String())
 
@@ -193,7 +193,7 @@ func TestServer_newContext(t *testing.T) {
 		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	a.NotNil(ctx)
+	a.NotNil(ctx).NotEmpty(ctx.ID())
 	a.Empty(lw.String())
 	a.True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.Mimetype(false), "application/json").

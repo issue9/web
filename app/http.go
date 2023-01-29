@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/server"
 )
 
 type (
@@ -23,6 +24,11 @@ type (
 		//
 		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
 		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
+
+		// x-request-id 的报头名称
+		//
+		// 如果为空，则采用 [server.RequestIDKey] 作为默认值。
+		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty"`
 
 		// 网站的域名证书
 		//
@@ -136,6 +142,10 @@ func (h *httpConfig) sanitize() *errs.ConfigError {
 
 	if h.MaxHeaderBytes < 0 {
 		return errs.NewConfigError("maxHeaderBytes", errs.NewLocaleError("should great than 0"))
+	}
+
+	if h.RequestID == "" {
+		h.RequestID = server.RequestIDKey
 	}
 
 	h.buildRoutersOptions()

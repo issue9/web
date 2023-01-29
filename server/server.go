@@ -40,6 +40,7 @@ type Server struct {
 	routers         *Routers
 	services        *service.Server
 	uniqueGenerator func() string
+	requestIDKey    string
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -75,6 +76,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		cache:           o.Cache,
 		uptime:          time.Now(),
 		uniqueGenerator: o.UniqueGenerator.String,
+		requestIDKey:    o.RequestIDKey,
 
 		location: o.Location,
 		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),

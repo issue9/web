@@ -17,5 +17,6 @@ func TestSanitizeOptions(t *testing.T) {
 	a.Equal(o.Location, time.Local).
 		NotNil(o.Logs).
 		NotNil(o.ProblemBuilder).
-		NotNil(o.UniqueGenerator)
+		NotNil(o.UniqueGenerator).
+		Equal(o.RequestIDKey, RequestIDKey)
 }

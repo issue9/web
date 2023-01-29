@@ -42,6 +42,7 @@ type Context struct {
 	request           *http.Request
 	outputCharsetName string
 	exits             []func(int)
+	id                string
 
 	// response
 	resp           http.ResponseWriter // 原始的 http.ResponseWriter
@@ -122,6 +123,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.request = r
 	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
+	ctx.id = buildID(ctx.Server(), w, r)
 
 	// response
 	ctx.resp = w
@@ -154,6 +156,21 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 
 // Route 关联的路由信息
 func (ctx *Context) Route() types.Route { return ctx.route }
+
+func buildID(s *Server, w http.ResponseWriter, r *http.Request) string {
+	id := r.Header.Get(s.requestIDKey)
+	if id == "" {
+		id = s.UniqueID()
+	}
+
+	w.Header().Set(s.requestIDKey, id)
+	return id
+}
+
+// ID 当前请求的唯一 ID
+//
+// 一般源自客户端的 X-Request-ID 报头，如果不存在，则由 [Server.UniqueID] 生成。
+func (ctx *Context) ID() string { return ctx.id }
 
 // SetCharset 设置输出的字符集
 //

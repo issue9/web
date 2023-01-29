@@ -21,6 +21,8 @@ import (
 	"github.com/issue9/web/logs"
 )
 
+const RequestIDKey = "X-Request-ID"
+
 // Options [Server] 的初始化参数
 //
 // 这些参数都有默认值，且无法在 [Server] 初始化之后进行更改。
@@ -75,6 +77,11 @@ type Options struct {
 	//
 	// 将应用 [Server.Routers] 对象之上。
 	RoutersOptions []mux.Option
+
+	// 指定获取 x-request-id 内容的报头名
+	//
+	// 如果为空，则采用 [RequestIDKey] 作为默认值
+	RequestIDKey string
 }
 
 // UniqueGenerator 唯一 ID 生成器的接口
@@ -131,6 +138,10 @@ func sanitizeOptions(o *Options) (*Options, error) {
 			o.Logs.ERROR().Error(err) // 输出错误，但是没必要中断程序。
 		}
 		o.LanguageTag = tag
+	}
+
+	if o.RequestIDKey == "" {
+		o.RequestIDKey = RequestIDKey
 	}
 
 	return o, nil
