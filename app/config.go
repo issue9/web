@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
@@ -88,7 +87,7 @@ type configOf[T any] struct {
 	//  - string 普通的字符串；
 	//  - number 数值格式；
 	UniqueGenerator string `yaml:"uniqueGenerator,omitempty" json:"uniqueGenerator,omitempty" xml:"uniqueGenerator,omitempty"`
-	uniqueGenerator UniqueGenerator
+	uniqueGenerator server.UniqueGenerator
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -130,14 +129,13 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		ProblemBuilder:  pb,
 		LanguageTag:     conf.languageTag,
 		RoutersOptions:  conf.HTTP.routersOptions,
-		UniqueGenerator: conf.uniqueGenerator.ID,
+		UniqueGenerator: conf.uniqueGenerator,
 	}
 
 	srv, err := server.New(name, version, opt)
 	if err != nil {
 		panic(err)
 	}
-	srv.Services().Add(localeutil.Phrase("unique generator"), conf.uniqueGenerator)
 
 	if len(conf.HTTP.Headers) > 0 {
 		srv.Routers().Use(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {

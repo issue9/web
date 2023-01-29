@@ -3,22 +3,13 @@
 package app
 
 import (
-	"time"
-
 	"github.com/issue9/unique/v2"
-
-	"github.com/issue9/web/internal/service"
+	"github.com/issue9/web/server"
 )
 
 var uniqueGeneratorFactory = map[string]UniqueGeneratorBuilder{}
 
-// UniqueGenerator 唯一 ID 生成器的接口
-type UniqueGenerator interface {
-	service.Servicer
-	ID() string
-}
-
-type UniqueGeneratorBuilder func() UniqueGenerator
+type UniqueGeneratorBuilder func() server.UniqueGenerator
 
 // RegisterUniqueGenerator 注册唯一 ID 生成器
 //
@@ -28,27 +19,15 @@ func RegisterUniqueGenerator(id string, b UniqueGeneratorBuilder) {
 }
 
 func init() {
-	RegisterUniqueGenerator("date", func() UniqueGenerator {
-		return newGenerator("20060102150405-", 10)
+	RegisterUniqueGenerator("date", func() server.UniqueGenerator {
+		return unique.NewDate(1000)
 	})
 
-	RegisterUniqueGenerator("string", func() UniqueGenerator {
-		return newGenerator("", 36)
+	RegisterUniqueGenerator("string", func() server.UniqueGenerator {
+		return unique.NewString(1000)
 	})
 
-	RegisterUniqueGenerator("number", func() UniqueGenerator {
-		return newGenerator("", 10)
+	RegisterUniqueGenerator("number", func() server.UniqueGenerator {
+		return unique.NewNumber(1000)
 	})
 }
-
-type generator struct {
-	*unique.Unique
-}
-
-func newGenerator(prefixFormat string, base int) UniqueGenerator {
-	return &generator{
-		Unique: unique.New(1000, time.Hour, prefixFormat, base),
-	}
-}
-
-func (u *generator) ID() string { return u.String() }

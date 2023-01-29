@@ -69,20 +69,23 @@ type Options struct {
 	//
 	// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]
 	// 是服务类型的，只有在 [Server.Serve] 运行之后，UniqueGenerator 才会有返回值。
-	UniqueGenerator func() string
+	UniqueGenerator UniqueGenerator
 
 	// 路由选项
 	//
 	// 将应用 [Server.Routers] 对象之上。
 	RoutersOptions []mux.Option
-
-	// 由 Options 生成的需要注入服务的对象
-	services []serviceItem
 }
 
-type serviceItem struct {
-	name    localeutil.LocaleStringer
-	service service.Servicer
+// UniqueGenerator 唯一 ID 生成器的接口
+type UniqueGenerator interface {
+	service.Servicer
+
+	// 返回字符串类型的唯一 ID 值
+	String() string
+
+	// 返回 []byte 类型的唯一 ID 值
+	Bytes() []byte
 }
 
 func sanitizeOptions(o *Options) (*Options, error) {
@@ -119,12 +122,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	if o.UniqueGenerator == nil {
-		u := unique.NewDate(1000)
-		o.services = append(o.services, serviceItem{
-			name:    localeutil.Phrase("unique generator"),
-			service: u,
-		})
-		o.UniqueGenerator = u.String
+		o.UniqueGenerator = unique.NewDate(1000)
 	}
 
 	if o.LanguageTag == language.Und {

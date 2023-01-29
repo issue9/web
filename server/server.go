@@ -74,7 +74,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:            &sync.Map{},
 		cache:           o.Cache,
 		uptime:          time.Now(),
-		uniqueGenerator: o.UniqueGenerator,
+		uniqueGenerator: o.UniqueGenerator.String,
 
 		location: o.Location,
 		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
@@ -100,9 +100,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
 
-	for _, item := range o.services {
-		srv.services.Add(item.name, item.service)
-	}
+	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 
 	return srv, nil
 }
