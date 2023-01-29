@@ -70,6 +70,9 @@ type (
 func (srv *Server) Files() *Files { return srv.files }
 
 // Services 服务管理
+//
+// 在 [Server] 初始之后，所有的服务就处于运行状态，
+// 后续添加的服务也会自动运行。
 func (srv *Server) Services() *Services { return srv.services }
 
 // Mimetypes 编解码控制

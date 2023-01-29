@@ -102,6 +102,8 @@ func New(name, version string, o *Options) (*Server, error) {
 
 	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 
+	srv.services.Run() // 初始化之后即运行服务，后续添加的服务会自动运行。
+
 	return srv, nil
 }
 
@@ -144,8 +146,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // 此函数才会返回，这一点与 [http.ListenAndServe] 稍有不同。
 // 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
-	srv.services.Run()
-
 	// 在 Serve.defer 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
 	defer func() {
 		srv.services.Stop()

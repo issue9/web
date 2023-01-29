@@ -37,7 +37,6 @@ func NewServer(loc *time.Location, logs logs.Logs) *Server {
 func (srv *Server) Running() bool { return srv.running }
 
 func (srv *Server) Run() {
-
 	srv.running = true
 
 	// 在子项运行之前，重新生成 ctx
