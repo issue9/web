@@ -140,8 +140,9 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 
 // Serve 启动服务
 //
-// 会等待 [Server.Close] 执行完之后，此函数才会返回，这一点与 [http.ListenAndServe] 稍有不同。
-// 一旦返回，整个 Server 对象将处于不可用状态。
+// 这是个阻塞方法，会等待 [Server.Close] 执行完之后，
+// 此函数才会返回，这一点与 [http.ListenAndServe] 稍有不同。
+// 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	srv.services.Run()
 
@@ -159,7 +160,6 @@ func (srv *Server) Serve() (err error) {
 		if err1 := srv.cache.Close(); err1 != nil { // 出错不退出，继续其它操作。
 			srv.Logs().ERROR().Error(err1)
 		}
-
 	}()
 
 	cfg := srv.httpServer.TLSConfig
@@ -220,12 +220,4 @@ func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, 
 // LoadLocales 加载本地化的内容
 func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
-}
-
-// LocaleError 将错误信息转换成与 [Server.LocalePrinter] 相符的本地化字符串
-func (srv *Server) LocaleError(err error) string {
-	if ls, ok := err.(localeutil.LocaleStringer); ok {
-		return ls.LocaleString(srv.LocalePrinter())
-	}
-	return err.Error()
 }
