@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"io/fs"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -153,7 +152,7 @@ func (h *httpConfig) sanitize() *errs.ConfigError {
 	return h.buildTLSConfig()
 }
 
-func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
+func (h *httpConfig) buildHTTPServer() *http.Server {
 	return &http.Server{
 		Addr:              h.Port,
 		ReadTimeout:       h.ReadTimeout.Duration(),
@@ -161,7 +160,6 @@ func (h *httpConfig) buildHTTPServer(err *log.Logger) *http.Server {
 		WriteTimeout:      h.WriteTimeout.Duration(),
 		IdleTimeout:       h.IdleTimeout.Duration(),
 		MaxHeaderBytes:    h.MaxHeaderBytes,
-		ErrorLog:          err,
 		TLSConfig:         h.tlsConfig,
 	}
 }

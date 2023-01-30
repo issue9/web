@@ -317,7 +317,11 @@ func TestServer_FileServer(t *testing.T) {
 func TestContext_NoContent(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, Logs: logs.New(logs.NewTextWriter("15:04:05", buf), false, false)})
+	o := &server.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Logs:       &logs.Options{Writer: logs.NewTextWriter("15:04:05", buf)},
+	}
+	s := servertest.NewTester(a, o)
 
 	s.Router().Get("/204", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {

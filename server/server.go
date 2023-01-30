@@ -81,19 +81,18 @@ func New(name, version string, o *Options) (*Server, error) {
 		location: o.Location,
 		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
 		tag:      o.LanguageTag,
-		logs:     o.Logs,
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
 		problems:  problems.New(o.ProblemBuilder),
 		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
-		encodings: encoding.NewEncodings(o.Logs.ERROR()),
 	}
 
 	srv.printer = srv.NewPrinter(o.LanguageTag)
-	srv.logs.SetPrinter(logs.NewPrinter(srv.LocalePrinter())) // 注意 srv.LocalePrinter 是否已经初始化。
-	srv.services = service.NewServer(o.Location, o.Logs)
+	srv.logs = logs.New(o.Logs, srv.LocalePrinter()) // 注意 srv.LocalePrinter 是否已经初始化。
+	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())
+	srv.services = service.NewServer(o.Location, srv.Logs())
 	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -101,6 +100,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		buildNodeHandle(http.StatusOK),
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
+	srv.httpServer.ErrorLog = srv.Logs().ERROR().StdLogger()
 
 	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 

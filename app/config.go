@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/issue9/logs/v4"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
 
@@ -23,7 +23,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，所有日志输出都将被抛弃。
 	Logs    *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
-	logs    *logs.Logs
+	logs    *logs.Options
 	cleanup []func() error
 
 	// 指定默认语言
@@ -194,7 +194,7 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	if err = conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
-	conf.http = conf.HTTP.buildHTTPServer(conf.logs.ERROR().StdLogger())
+	conf.http = conf.HTTP.buildHTTPServer()
 
 	if err = conf.sanitizeEncodings(); err != nil {
 		return err.AddFieldParent("encodings")

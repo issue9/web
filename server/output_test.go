@@ -24,8 +24,8 @@ import (
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	l := logs.New(logs.NewTextWriter(logs.MicroLayout, buf), false, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: l})
+	o := &logs.Options{Writer: logs.NewTextWriter(logs.MicroLayout, buf), Levels: logs.AllLevels()}
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: o})
 
 	// 自定义报头
 	buf.Reset()

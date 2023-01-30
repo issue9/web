@@ -10,8 +10,8 @@ import (
 	"golang.org/x/text/message"
 )
 
-// NewPrinter 声明带有翻译功能的日志转换接口对象
-func NewPrinter(p *message.Printer) logs.Printer { return &localePrinter{p: p} }
+// 声明带有翻译功能的日志转换接口对象
+func newPrinter(p *message.Printer) logs.Printer { return &localePrinter{p: p} }
 
 type localePrinter struct {
 	p *message.Printer

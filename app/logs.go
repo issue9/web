@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	l "github.com/issue9/logs/v4"
-	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web/internal/errs"
@@ -76,13 +74,13 @@ type logWriterConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (conf *logsConfig) build() (*l.Logs, []func() error, *errs.ConfigError) {
+func (conf *logsConfig) build() (*logs.Options, []func() error, *errs.ConfigError) {
 	if conf == nil {
-		return logs.New(logs.NewNopWriter(), false, false), nil, nil
+		return &logs.Options{}, nil, nil
 	}
 
 	if len(conf.Levels) == 0 {
-		conf.Levels = []logs.Level{logs.Info, logs.Warn, logs.Trace, logs.Debug, logs.Error, logs.Fatal}
+		conf.Levels = logs.AllLevels()
 	}
 
 	w, c, err := conf.buildWriter()
@@ -90,9 +88,12 @@ func (conf *logsConfig) build() (*l.Logs, []func() error, *errs.ConfigError) {
 		return nil, nil, err
 	}
 
-	l := logs.New(w, conf.Caller, conf.Created)
-	l.Enable(conf.Levels...)
-	return l, c, nil
+	return &logs.Options{
+		Writer:  w,
+		Created: conf.Created,
+		Caller:  conf.Caller,
+		Levels:  conf.Levels,
+	}, c, nil
 }
 
 func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *errs.ConfigError) {
@@ -163,7 +164,7 @@ func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
 		return nil, nil, err
 	}
 
-	w, err := rotate.New(args[2], args[1], size)
+	w, err := logs.NewRotateFile(args[2], args[1], size)
 	if err != nil {
 		return nil, nil, err
 	}

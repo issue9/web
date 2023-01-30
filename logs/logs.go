@@ -11,6 +11,7 @@ import (
 	"io"
 
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 )
 
@@ -30,6 +31,8 @@ const (
 	Error = logs.LevelError
 	Fatal = logs.LevelFatal
 )
+
+var allLevels = []Level{Info, Warn, Trace, Debug, Error, Fatal}
 
 type (
 	Level  = logs.Level
@@ -54,6 +57,8 @@ type (
 	}
 )
 
+func AllLevels() []Level { return allLevels }
+
 func NewNopWriter() Writer { return logs.NewNopWriter() }
 
 func NewTextWriter(timeLayout string, w ...io.Writer) Writer {
@@ -76,14 +81,9 @@ func NewDispatchWriter(d map[Level]Writer) Writer { return logs.NewDispatchWrite
 // MergeWriter 将多个 [Writer] 合并成一个 [Writer] 接口对象
 func MergeWriter(w ...Writer) Writer { return logs.MergeWriter(w...) }
 
-// New 声明日志实例
-func New(w Writer, caller, created bool) *logs.Logs {
-	o := make([]logs.Option, 0, 2)
-	if caller {
-		o = append(o, logs.Caller)
-	}
-	if created {
-		o = append(o, logs.Created)
-	}
-	return logs.New(w, o...)
+// NewRotateFile 按大小分割的文件日志
+//
+// 参数说明参考 [rotate.New]
+func NewRotateFile(format, dir string, size int64) (*rotate.Rotate, error) {
+	return rotate.New(format, dir, size)
 }

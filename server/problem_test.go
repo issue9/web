@@ -25,7 +25,7 @@ func TestContext_Log(t *testing.T) {
 	errLog := new(bytes.Buffer)
 
 	srv := newServer(a, &Options{
-		Logs: logs.New(logs.NewTextWriter("20060102-15:04:05", errLog), true, true),
+		Logs: &logs.Options{Writer: logs.NewTextWriter("20060102-15:04:05", errLog), Caller: true, Created: true},
 	})
 	errLog.Reset()
 

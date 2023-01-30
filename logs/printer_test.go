@@ -22,11 +22,17 @@ func TestPrinter(t *testing.T) {
 	a := assert.New(t, false)
 	textBuf := new(bytes.Buffer)
 	termBuf := new(bytes.Buffer)
-	l := New(NewDispatchWriter(map[Level]Writer{
-		Error: NewTextWriter(MicroLayout, textBuf),
-		Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
-		Info:  NewNopWriter(),
-	}), true, true)
+	opt := &Options{
+		Writer: NewDispatchWriter(map[Level]Writer{
+			Error: NewTextWriter(MicroLayout, textBuf),
+			Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
+			Info:  NewNopWriter(),
+		}),
+		Caller:  true,
+		Created: true,
+		Levels:  AllLevels(),
+	}
+	l := New(opt, nil)
 	a.NotNil(l)
 
 	l.SetPrinter(nil)
@@ -43,10 +49,21 @@ func TestPrinter(t *testing.T) {
 	b := catalog.NewBuilder()
 	err := localeutil.LoadMessageFromFSGlob(b, locales.Locales, "*.yml", yaml.Unmarshal)
 	a.NotError(err)
-	p := NewPrinter(message.NewPrinter(language.SimplifiedChinese, message.Catalog(b)))
-	a.NotNil(p)
+	p := message.NewPrinter(language.SimplifiedChinese, message.Catalog(b))
 
-	l.SetPrinter(p)
+	opt = &Options{
+		Writer: NewDispatchWriter(map[Level]Writer{
+			Error: NewTextWriter(MicroLayout, textBuf),
+			Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
+			Info:  NewNopWriter(),
+		}),
+		Caller:  true,
+		Created: true,
+		Levels:  AllLevels(),
+	}
+	l = New(opt, p)
+	a.NotNil(l)
+
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
 	l.WARN().Printf("%s not found", "item")
 	l.INFO().Print("info")
