@@ -64,10 +64,7 @@ func (d *memcacheDriver) Exists(key string) bool {
 
 func (d *memcacheDriver) Clean() error { return d.client.DeleteAll() }
 
-func (d *memcacheDriver) Close() error {
-	d.client = nil
-	return nil
-}
+func (d *memcacheDriver) Close() error { return d.client.Close() }
 
 func (d *memcacheDriver) Counter(key string, val uint64, ttl int) cache.Counter {
 	return &memcacheCounter{
