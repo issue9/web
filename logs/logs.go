@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
+	"golang.org/x/text/message"
 )
 
 // 日志的时间格式
@@ -40,20 +41,10 @@ type (
 	Logger = logs.Logger
 	Entry  = logs.Entry
 
-	// Logs 日志对象
-	//
-	// 底层是 [logs.Logs] 类型，如果有必要可以强制转换成 [logs.Logs] 类型进行额外的操作。
-	Logs interface {
-		INFO() Logger
-		DEBUG() Logger
-		WARN() Logger
-		TRACE() Logger
-		ERROR() Logger
-		FATAL() Logger
-		NewEntry(Level) *Entry
-
-		// With 构建带有指定参数的日志对象
-		With(Level, map[string]any) Logger
+	Options struct {
+		Writer          Writer
+		Caller, Created bool
+		Levels          []Level
 	}
 )
 
@@ -86,4 +77,28 @@ func MergeWriter(w ...Writer) Writer { return logs.MergeWriter(w...) }
 // 参数说明参考 [rotate.New]
 func NewRotateFile(format, dir string, size int64) (*rotate.Rotate, error) {
 	return rotate.New(format, dir, size)
+}
+
+// New 声明日志实例
+func New(opt *Options, p *message.Printer) *Logs {
+	if opt == nil {
+		opt = &Options{}
+	}
+
+	o := make([]logs.Option, 0, 3)
+	if opt.Caller {
+		o = append(o, logs.Caller)
+	}
+	if opt.Created {
+		o = append(o, logs.Created)
+	}
+
+	if p != nil {
+		o = append(o, logs.Print(newPrinter(p)))
+	}
+
+	l := logs.New(opt.Writer, o...)
+	l.Enable(opt.Levels...)
+
+	return &Logs{logs: l}
 }

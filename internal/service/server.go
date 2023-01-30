@@ -22,7 +22,7 @@ type Server struct {
 	err       logs.Logger
 }
 
-func NewServer(loc *time.Location, logs logs.Logs) *Server {
+func NewServer(loc *time.Location, logs *logs.Logs) *Server {
 	s := &Server{
 		services:  make([]*Service, 0, 10),
 		scheduled: scheduled.NewServer(loc, logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()),

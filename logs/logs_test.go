@@ -18,8 +18,13 @@ import (
 	"github.com/issue9/web/locales"
 )
 
-func TestPrinter(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t, false)
+
+	l := New(nil, nil)
+	a.NotNil(l)
+	a.False(l.logs.IsEnable(Error))
+
 	textBuf := new(bytes.Buffer)
 	termBuf := new(bytes.Buffer)
 	opt := &Options{
@@ -32,10 +37,9 @@ func TestPrinter(t *testing.T) {
 		Created: true,
 		Levels:  AllLevels(),
 	}
-	l := New(opt, nil)
+	l = New(opt, nil)
 	a.NotNil(l)
 
-	l.SetPrinter(nil)
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
 	l.WARN().Printf("%s not found", "item")
 	l.INFO().Print("info")

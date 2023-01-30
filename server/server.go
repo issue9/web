@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
-	l "github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -46,7 +45,7 @@ type Server struct {
 	catalog  *catalog.Builder
 	tag      language.Tag
 	printer  *message.Printer
-	logs     *l.Logs
+	logs     *logs.Logs
 
 	closed chan struct{}
 	closes []func() error
