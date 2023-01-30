@@ -27,7 +27,7 @@ const (
 
 var contextPool = &sync.Pool{New: func() any {
 	return &Context{
-		exits: make([]func(int), 0, 3), // query, params,validation
+		exits: make([]func(int), 0, 3), // query, params, validation
 	}
 }}
 
@@ -73,6 +73,8 @@ type Context struct {
 	//
 	// 这是比 context.Value 更经济的传递变量方式，但是这并不是协程安全的。
 	Vars map[any]any
+
+	logs *logs.ParamsLogs
 }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
@@ -150,6 +152,11 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 	ctx.read = false
 	ctx.Vars = map[any]any{}
+
+	// 在最后，保证已经存在 ctx.id 变量
+	ctx.logs = srv.Logs().With(map[string]any{
+		srv.requestIDKey: ctx.ID(),
+	})
 
 	return ctx
 }
@@ -284,6 +291,8 @@ func (ctx *Context) destroy() {
 		exit(ctx.status)
 	}
 
+	logs.Destroy(ctx.logs)
+
 	if len(ctx.body) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
@@ -330,7 +339,11 @@ func (ctx *Context) ClientIP() string {
 	return strings.TrimSpace(ip)
 }
 
-func (ctx *Context) Logs() logs.Logs { return ctx.Server().Logs() }
+// Logs 返回日志操作对象
+//
+// 该返回实例与 [Server.Logs] 是不同的，
+// 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
+func (ctx *Context) Logs() *logs.ParamsLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))

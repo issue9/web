@@ -29,7 +29,12 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		o = &server.Options{HTTPServer: &http.Server{Addr: ":8080"}}
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), true, true)
+		o.Logs = &logs.Options{
+			Writer:  logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr),
+			Caller:  true,
+			Created: true,
+			Levels:  logs.AllLevels(),
+		}
 	}
 
 	srv, err := server.New("app", "0.1.0", o)

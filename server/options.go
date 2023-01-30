@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/issue9/localeutil"
-	l "github.com/issue9/logs/v4"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
@@ -44,8 +43,8 @@ type Options struct {
 
 	// 日志的输出通道设置
 	//
-	// 如果此值为空，那么在被初始化 logs.New(nil, false, false) 值，表示不会输出到任何通道。
-	Logs *l.Logs
+	// 如果此值为空，表示不会输出到任何通道。
+	Logs *logs.Options
 
 	// 生成 [Problem] 对象的方法
 	//
@@ -121,7 +120,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	}
 
 	if o.Logs == nil {
-		o.Logs = logs.New(nil, false, false)
+		o.Logs = &logs.Options{}
 	}
 
 	if o.ProblemBuilder == nil {
@@ -135,7 +134,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	if o.LanguageTag == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
-			o.Logs.ERROR().Error(err) // 输出错误，但是没必要中断程序。
+			return nil, err
 		}
 		o.LanguageTag = tag
 	}

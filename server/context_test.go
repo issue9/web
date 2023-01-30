@@ -52,7 +52,12 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = logs.New(logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr), true, true)
+		o.Logs = &logs.Options{
+			Writer:  logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr),
+			Caller:  true,
+			Created: true,
+			Levels:  logs.AllLevels(),
+		}
 	}
 
 	srv, err := New("app", "0.1.0", o)
@@ -124,9 +129,8 @@ func TestContext_Vars(t *testing.T) {
 func TestServer_newContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
-	l := logs.New(logs.NewTextWriter("2006-01-02", lw), false, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: l})
-	l.Enable(logs.Debug)
+	o := &logs.Options{Writer: logs.NewTextWriter("2006-01-02", lw), Levels: logs.AllLevels()}
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: o})
 
 	// 错误的 accept
 	w := httptest.NewRecorder()

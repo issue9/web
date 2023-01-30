@@ -15,21 +15,17 @@ func TestLogsConfig_build(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &logsConfig{}
-	l, c, err := conf.build()
-	a.NotError(err).NotNil(l).Length(c, 0).
-		True(l.IsEnable(logs.Error)).
-		True(l.IsEnable(logs.Info)).
-		False(l.HasCreated()).
-		Equal(6, len(conf.Levels))
+	o, c, err := conf.build()
+	a.NotError(err).NotNil(o).Length(c, 0).
+		Equal(o.Levels, logs.AllLevels()).
+		False(o.Created)
 
 	conf = &logsConfig{Levels: []logs.Level{logs.Warn, logs.Error}, Created: true}
-	l, c, err = conf.build()
-	a.NotError(err).NotNil(l).Length(c, 0).
-		True(l.IsEnable(logs.Error)).
-		False(l.IsEnable(logs.Info)).
-		True(l.HasCreated()).
-		False(l.HasCaller()).
-		Equal(2, len(conf.Levels))
+	o, c, err = conf.build()
+	a.NotError(err).NotNil(o).Length(c, 0).
+		Equal(o.Levels, []logs.Level{logs.Warn, logs.Error}).
+		True(o.Created).
+		False(o.Caller)
 }
 
 func TestLogsConfig_output(t *testing.T) {
@@ -47,9 +43,9 @@ func TestLogsConfig_output(t *testing.T) {
 			},
 		},
 	}
-	l, c, err := conf.build()
-	a.NotError(err).NotNil(l).Length(c, 1) // 文件有 cleanup 返回
-	l.ERROR().Print("test")
+	o, c, err := conf.build()
+	a.NotError(err).NotNil(o).Length(c, 1) // 文件有 cleanup 返回
+	logs.New(o, nil).ERROR().Print("test")
 	a.NotError(c[0]())
 }
 

@@ -15,7 +15,7 @@ import (
 
 func newServer(a *assert.Assertion) *Server {
 	a.TB().Helper()
-	srv := NewServer(time.Local, logs.New(logs.NewNopWriter(), false, false))
+	srv := NewServer(time.Local, logs.New(nil, nil))
 	a.NotNil(srv)
 	return srv
 }
