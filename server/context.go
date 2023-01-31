@@ -343,6 +343,8 @@ func (ctx *Context) ClientIP() string {
 //
 // 该返回实例与 [Server.Logs] 是不同的，
 // 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
+//
+// 输出内容依然遵照 [Server.Logs] 的规则作本地化处理。
 func (ctx *Context) Logs() *logs.ParamsLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {

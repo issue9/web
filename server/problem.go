@@ -140,8 +140,4 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 //   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
 //   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化；
 //   - Logger.Print 原样返回；
-//
-// 底层是 [Logs] 类型，如果有必要可以强制转换成 [Logs] 类型进行额外的操作。
-//
-// [Logs]: https://github.com/issue9/logs
 func (srv *Server) Logs() *logs.Logs { return srv.logs }

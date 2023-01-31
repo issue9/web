@@ -147,6 +147,7 @@ func TestServer_Close(t *testing.T) {
 	// 连接被关闭，返回错误内容
 	a.Equal(0, close)
 	resp, err := http.Get("http://localhost:8080/close")
+	time.Sleep(500 * time.Microsecond) // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
 	a.Error(err).Nil(resp).True(close > 0)
 
 	resp, err = http.Get("http://localhost:8080/test")
