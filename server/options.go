@@ -16,6 +16,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
 )
@@ -94,7 +95,7 @@ type UniqueGenerator interface {
 	Bytes() []byte
 }
 
-func sanitizeOptions(o *Options) (*Options, error) {
+func sanitizeOptions(o *Options) (*Options, *errs.ConfigError) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -102,7 +103,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	if o.FS == nil {
 		dir, err := os.Executable()
 		if err != nil {
-			return nil, err
+			return nil, errs.NewConfigError("FS", err)
 		}
 		o.FS = os.DirFS(filepath.Dir(dir))
 	}
@@ -134,7 +135,7 @@ func sanitizeOptions(o *Options) (*Options, error) {
 	if o.LanguageTag == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
-			return nil, err
+			return nil, errs.NewConfigError("LanguageTag", err)
 		}
 		o.LanguageTag = tag
 	}

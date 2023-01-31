@@ -63,6 +63,7 @@ type Server struct {
 func New(name, version string, o *Options) (*Server, error) {
 	o, err := sanitizeOptions(o)
 	if err != nil {
+		err.Path = "server.Options"
 		return nil, err
 	}
 

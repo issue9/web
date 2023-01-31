@@ -169,7 +169,7 @@ func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
 		return nil, nil, err
 	}
 
-	return logs.NewTextWriter(args[0], w), func() error { return w.Close() }, nil
+	return logs.NewTextWriter(args[0], w), w.Close, nil
 }
 
 var colorMap = map[string]colors.Color{
