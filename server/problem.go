@@ -138,6 +138,6 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 // 所有日志接口都会根据 [Server.LocalePrinter] 进行本地化，规则如下：
 //   - Logger.Error 如果参数实现了 localeutil.LocaleStringer 接口，会尝试本地化；
 //   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
-//   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化；
-//   - Logger.Print 原样返回；
+//   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化，且每个参数也将进行本地化；
+//   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
 func (srv *Server) Logs() *logs.Logs { return srv.logs }

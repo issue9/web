@@ -18,7 +18,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.66.0"
+const Version = "0.66.1"
 
 // 预定义的 Problem id 值
 const (
@@ -105,8 +105,6 @@ type (
 	QueryUnmarshaler = query.Unmarshaler
 
 	// LocaleStringer 本地化字符串需要实在的接口
-	//
-	// 部分 error 返回可能也实现了该接口。
 	LocaleStringer = localeutil.LocaleStringer
 )
 

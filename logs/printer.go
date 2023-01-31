@@ -26,8 +26,26 @@ func (p *localePrinter) Error(err error) string {
 
 func (p *localePrinter) String(s string) string { return p.p.Sprintf(s) }
 
-func (p *localePrinter) Print(v ...any) string { return fmt.Sprint(v...) }
+func (p *localePrinter) Print(v ...any) string {
+	return fmt.Sprint(p.localeValues(v...)...)
+}
 
 func (p *localePrinter) Printf(format string, v ...any) string {
-	return p.p.Sprintf(format, v...)
+	return p.p.Sprintf(format, p.localeValues(v...)...)
+}
+
+func (p *localePrinter) localeValues(v ...any) []any {
+	if len(v) == 0 {
+		return nil
+	}
+
+	vals := make([]any, 0, len(v))
+	for _, val := range v {
+		if ls, ok := val.(localeutil.LocaleStringer); ok {
+			vals = append(vals, ls.LocaleString(p.p))
+		} else {
+			vals = append(vals, val)
+		}
+	}
+	return vals
 }

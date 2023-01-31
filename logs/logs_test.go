@@ -27,11 +27,12 @@ func TestNew(t *testing.T) {
 
 	textBuf := new(bytes.Buffer)
 	termBuf := new(bytes.Buffer)
+	infoBuf := new(bytes.Buffer)
 	opt := &Options{
 		Writer: NewDispatchWriter(map[Level]Writer{
 			Error: NewTextWriter(MicroLayout, textBuf),
 			Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
-			Info:  NewNopWriter(),
+			Info:  NewTextWriter(MicroLayout, infoBuf),
 		}),
 		Caller:  true,
 		Created: true,
@@ -41,15 +42,17 @@ func TestNew(t *testing.T) {
 	a.NotNil(l)
 
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
-	l.WARN().Printf("%s not found", "item")
-	l.INFO().Print("info")
+	l.WARN().Printf("%s not found", localeutil.Phrase("scheduled job"))
+	l.INFO().Print(localeutil.Phrase("scheduled job"))
 	a.Contains(textBuf.String(), "scheduled job").
-		Contains(termBuf.String(), "item not found")
+		Contains(termBuf.String(), "scheduled job not found").
+		Contains(infoBuf.String(), "scheduled job")
 
-	// SetPrinter
+	// with Printer interface
 
 	textBuf.Reset()
 	termBuf.Reset()
+	infoBuf.Reset()
 	b := catalog.NewBuilder()
 	err := localeutil.LoadMessageFromFSGlob(b, locales.Locales, "*.yml", yaml.Unmarshal)
 	a.NotError(err)
@@ -59,7 +62,7 @@ func TestNew(t *testing.T) {
 		Writer: NewDispatchWriter(map[Level]Writer{
 			Error: NewTextWriter(MicroLayout, textBuf),
 			Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
-			Info:  NewNopWriter(),
+			Info:  NewTextWriter(MicroLayout, infoBuf),
 		}),
 		Caller:  true,
 		Created: true,
@@ -69,8 +72,9 @@ func TestNew(t *testing.T) {
 	a.NotNil(l)
 
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
-	l.WARN().Printf("%s not found", "item")
-	l.INFO().Print("info")
+	l.WARN().Printf("%s not found", localeutil.Phrase("scheduled job"))
+	l.INFO().Print(localeutil.Phrase("scheduled job"))
 	a.Contains(textBuf.String(), "计划任务").
-		Contains(termBuf.String(), "item 不存在")
+		Contains(termBuf.String(), "计划任务 不存在").
+		Contains(infoBuf.String(), "计划任务")
 }
