@@ -74,7 +74,7 @@ type logWriterConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (conf *logsConfig) build() (*logs.Options, []func() error, *errs.ConfigError) {
+func (conf *logsConfig) build() (*logs.Options, []func() error, *errs.FieldError) {
 	if conf == nil {
 		return &logs.Options{}, nil, nil
 	}
@@ -96,7 +96,7 @@ func (conf *logsConfig) build() (*logs.Options, []func() error, *errs.ConfigErro
 	}, c, nil
 }
 
-func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *errs.ConfigError) {
+func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *errs.FieldError) {
 	if len(conf.Writers) == 0 {
 		return logs.NewNopWriter(), nil, nil
 	}
@@ -109,15 +109,15 @@ func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *errs.Config
 
 		f, found := logWritersFactory[w.Type]
 		if !found {
-			return nil, nil, errs.NewConfigError(field+".Type", errs.NewLocaleError("%s not found", w.Type))
+			return nil, nil, errs.NewFieldError(field+".Type", errs.NewLocaleError("%s not found", w.Type))
 		}
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			if ce, ok := err.(*errs.ConfigError); ok {
+			if ce, ok := err.(*errs.FieldError); ok {
 				return nil, nil, ce.AddFieldParent(field)
 			}
-			return nil, nil, errs.NewConfigError(field+".Args", err)
+			return nil, nil, errs.NewFieldError(field+".Args", err)
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)
@@ -195,12 +195,12 @@ var colorMap = map[string]colors.Color{
 //   - stderr
 func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	if len(args) != 3 {
-		return nil, nil, errs.NewConfigError("Args", errs.NewLocaleError("invalid value %s", args))
+		return nil, nil, errs.NewFieldError("Args", errs.NewLocaleError("invalid value %s", args))
 	}
 
 	c, found := colorMap[strings.ToLower(args[1])]
 	if !found {
-		return nil, nil, errs.NewConfigError("Args[1]", errs.NewLocaleError("invalid value %s", args[1]))
+		return nil, nil, errs.NewFieldError("Args[1]", errs.NewLocaleError("invalid value %s", args[1]))
 	}
 
 	var w io.Writer
@@ -210,7 +210,7 @@ func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, errs.NewConfigError("Args[2]", errs.NewLocaleError("invalid value %s", args[2]))
+		return nil, nil, errs.NewFieldError("Args[2]", errs.NewLocaleError("invalid value %s", args[2]))
 	}
 
 	return logs.NewTermWriter(args[0], c, w), nil, nil

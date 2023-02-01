@@ -50,12 +50,12 @@ type encodingConfig struct {
 	IDs []string `json:"ids" xml:"id" yaml:"ids"`
 }
 
-func (conf *configOf[T]) sanitizeEncodings() *errs.ConfigError {
+func (conf *configOf[T]) sanitizeEncodings() *errs.FieldError {
 	ids := make([]string, 0, len(encodingFactory))
 	for i, e := range conf.Encodings {
 		if len(e.IDs) == 0 {
 			field := "[" + strconv.Itoa(i) + "].id"
-			return errs.NewConfigError(field, errs.NewLocaleError("can not be empty"))
+			return errs.NewFieldError(field, errs.NewLocaleError("can not be empty"))
 		}
 		ids = append(ids, e.IDs...)
 	}
@@ -65,7 +65,7 @@ func (conf *configOf[T]) sanitizeEncodings() *errs.ConfigError {
 	for _, id := range ids {
 		item, found := encodingFactory[id]
 		if !found {
-			return errs.NewConfigError("ids", errs.NewLocaleError("%s not found", id))
+			return errs.NewFieldError("ids", errs.NewLocaleError("%s not found", id))
 		}
 		conf.encodings[id] = item
 	}

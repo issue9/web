@@ -20,7 +20,9 @@ type stackError struct {
 // 多次调用 NewStackError 包装，则返回第一次包装的返回值。
 //
 // 如果需要输出调用堆栈信息，需要指定 %+v 标记。
-func NewStackError(err error) error {
+func NewStackError(err error) error { return NewDepthStackError(2, err) }
+
+func NewDepthStackError(depth int, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -31,7 +33,7 @@ func NewStackError(err error) error {
 
 	return &stackError{
 		err:   err,
-		frame: xerrors.Caller(1),
+		frame: xerrors.Caller(depth),
 	}
 }
 

@@ -35,7 +35,7 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *errs.ConfigError {
+func (conf *configOf[T]) buildCache() *errs.FieldError {
 	if conf.Cache == nil {
 		conf.cache = caches.NewMemory(time.Hour)
 		return nil
@@ -43,12 +43,12 @@ func (conf *configOf[T]) buildCache() *errs.ConfigError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewConfigError("type", errs.NewLocaleError("invalid value %s", conf.Cache.Type))
+		return errs.NewFieldError("type", errs.NewLocaleError("invalid value %s", conf.Cache.Type))
 	}
 
 	c, err := b(conf.Cache.DSN)
 	if err != nil {
-		return errs.NewConfigError("dsn", err)
+		return errs.NewFieldError("dsn", err)
 	}
 	conf.cache = c
 

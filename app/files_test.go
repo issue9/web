@@ -38,7 +38,7 @@ func TestLoadConfigOf(t *testing.T) {
 
 	conf, err := loadConfigOf[empty](fsys, "invalid-web.xml")
 	a.Error(err).Nil(conf)
-	err2, ok := err.(*errs.ConfigError)
+	err2, ok := err.(*errs.FieldError)
 	a.True(ok).NotNil(err2)
 	a.Equal(err2.Path, "invalid-web.xml").
 		Equal(err2.Field, "http.acme.domains")

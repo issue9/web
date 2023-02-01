@@ -18,17 +18,17 @@ import (
 )
 
 var (
-	_ error                     = &errs.ConfigError{}
-	_ localeutil.LocaleStringer = &errs.ConfigError{}
+	_ error                     = &errs.FieldError{}
+	_ localeutil.LocaleStringer = &errs.FieldError{}
 )
 
 func TestNewConfigError(t *testing.T) {
 	a := assert.New(t, false)
 
-	err1 := errs.NewConfigError("f1", "err1")
+	err1 := errs.NewFieldError("f1", "err1")
 	a.NotNil(err1)
 
-	err2 := errs.NewConfigError("f2", err1)
+	err2 := errs.NewFieldError("f2", err1)
 	a.NotNil(err2).
 		Equal(err2.Field, "f2.f1").
 		Equal(err1.Field, "f2.f1")
@@ -50,7 +50,7 @@ func TestConfigError_LocaleString(t *testing.T) {
 	cnp := s.NewPrinter(hans)
 	twp := s.NewPrinter(hant)
 
-	err := errs.NewConfigError("", localeutil.Phrase("k1"))
+	err := errs.NewFieldError("", localeutil.Phrase("k1"))
 	err.Path = "path"
 	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))
 	a.Equal("位于 path: 发生了 tw1", err.LocaleString(twp))
@@ -60,7 +60,7 @@ func TestConfigError_LocaleString(t *testing.T) {
 func TestConfigError_SetFieldParent(t *testing.T) {
 	a := assert.New(t, false)
 
-	err := errs.NewConfigError("f1", "error")
+	err := errs.NewFieldError("f1", "error")
 	err.AddFieldParent("f2")
 	a.Equal(err.Field, "f2.f1")
 	err.AddFieldParent("f3")
@@ -68,7 +68,7 @@ func TestConfigError_SetFieldParent(t *testing.T) {
 	err.AddFieldParent("")
 	a.Equal(err.Field, "f3.f2.f1")
 
-	err = errs.NewConfigError("", "error")
+	err = errs.NewFieldError("", "error")
 	err.AddFieldParent("f2")
 	a.Equal(err.Field, "f2")
 	err.AddFieldParent("f3")

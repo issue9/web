@@ -93,7 +93,7 @@ type (
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
 	Service        = service.Service
-	ConfigError    = errs.ConfigError
+	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger
 
@@ -126,15 +126,21 @@ func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
 }
 
 // NewStackError 为 err 带上调用信息
-func NewStackError(err error) error { return errs.NewStackError(err) }
+//
+// 位置从调用 NewStackError 开始。
+// 如果 err 为 nil，则返回 nil。
+// 多次调用 NewStackError 包装，则返回第一次包装的返回值。
+//
+// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
+func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
 
-// NewConfigError 返回表示配置文件错误的对象
+// NewFieldError 返回表示配置文件错误的对象
 //
 // field 表示错误的字段名；
-// msg 表示错误信息，可以是任意类型，如果 msg 是 [ConfigError] 类型，
-// 那么此操作相当于调用了 [ConfigError.AddFieldParent]；
-func NewConfigError(field string, msg any) *ConfigError {
-	return errs.NewConfigError(field, msg)
+// msg 表示错误信息，可以是任意类型，如果 msg 是 [FieldError] 类型，
+// 那么此操作相当于调用了 [FieldError.AddFieldParent]；
+func NewFieldError(field string, msg any) *FieldError {
+	return errs.NewFieldError(field, msg)
 }
 
 // NewLocaleError 本地化的错误信息

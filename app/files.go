@@ -20,12 +20,12 @@ type MarshalFileFunc = files.MarshalFunc
 
 type UnmarshalFileFunc = files.UnmarshalFunc
 
-func (conf *configOf[T]) sanitizeFiles() *errs.ConfigError {
+func (conf *configOf[T]) sanitizeFiles() *errs.FieldError {
 	conf.files = make(map[string]files.FileSerializer, len(conf.Files))
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
-			return errs.NewConfigError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
+			return errs.NewFieldError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
 		}
 		conf.files[name] = s // conf.Files 可以保证 conf.files 唯一性
 	}

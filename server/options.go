@@ -95,7 +95,7 @@ type UniqueGenerator interface {
 	Bytes() []byte
 }
 
-func sanitizeOptions(o *Options) (*Options, *errs.ConfigError) {
+func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -103,7 +103,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.ConfigError) {
 	if o.FS == nil {
 		dir, err := os.Executable()
 		if err != nil {
-			return nil, errs.NewConfigError("FS", err)
+			return nil, errs.NewFieldError("FS", err)
 		}
 		o.FS = os.DirFS(filepath.Dir(dir))
 	}
@@ -135,7 +135,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.ConfigError) {
 	if o.LanguageTag == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
-			return nil, errs.NewConfigError("LanguageTag", err)
+			return nil, errs.NewFieldError("LanguageTag", err)
 		}
 		o.LanguageTag = tag
 	}

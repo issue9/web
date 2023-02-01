@@ -28,7 +28,7 @@ type configOf[T any] struct {
 
 	// 指定默认语言
 	//
-	// 当客户端未指定 Accept-Language 时，会采用此值，
+	// 服务端的默认语言以及客户端未指定 accept-language 时的默认值。
 	// 如果为空，则会尝试当前用户的语言。
 	Language    string `yaml:"language,omitempty" json:"language,omitempty" xml:"language,attr,omitempty"`
 	languageTag language.Tag
@@ -49,10 +49,6 @@ type configOf[T any] struct {
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
-	// 用户可以用 [RegisterCache] 注册新的缓存对象。默认可用值为：
-	//  - memcached
-	//  - redis
-	//  - memory
 	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
 	cache cache.Driver
 
@@ -95,7 +91,7 @@ type configOf[T any] struct {
 
 // ConfigSanitizer 对配置文件的数据验证和修正
 type ConfigSanitizer interface {
-	SanitizeConfig() *errs.ConfigError
+	SanitizeConfig() *errs.FieldError
 }
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
@@ -164,7 +160,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	return srv, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize() *errs.ConfigError {
+func (conf *configOf[T]) sanitize() *errs.FieldError {
 	l, cleanup, err := conf.Logs.build()
 	if err != nil {
 		return err.AddFieldParent("logs")
@@ -179,7 +175,7 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return errs.NewConfigError("language.", err)
+			return errs.NewFieldError("language.", err)
 		}
 		conf.languageTag = tag
 	}
@@ -226,14 +222,14 @@ func (conf *configOf[T]) sanitize() *errs.ConfigError {
 	return nil
 }
 
-func (conf *configOf[T]) buildTimezone() *errs.ConfigError {
+func (conf *configOf[T]) buildTimezone() *errs.FieldError {
 	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return errs.NewConfigError("timezone", err)
+		return errs.NewFieldError("timezone", err)
 	}
 	conf.location = loc
 
