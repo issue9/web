@@ -55,7 +55,7 @@ func (p *Params) ID(key string) int64 {
 
 	id, err := p.v.Context().Route().Params().Int(key)
 	if err != nil {
-		p.v.Add(key, localeutil.Phrase(err.Error()))
+		p.v.AddError(key, err)
 		return 0
 	} else if id <= 0 {
 		p.v.Add(key, tGreatThanZero)
@@ -72,7 +72,7 @@ func (p *Params) Int64(key string) int64 {
 
 	ret, err := p.v.Context().Route().Params().Int(key)
 	if err != nil {
-		p.v.Add(key, localeutil.Phrase(err.Error()))
+		p.v.AddError(key, err)
 		return 0
 	}
 	return ret
@@ -86,7 +86,7 @@ func (p *Params) String(key string) string {
 
 	ret, err := p.v.Context().Route().Params().String(key)
 	if err != nil {
-		p.v.Add(key, localeutil.Phrase(err.Error()))
+		p.v.AddError(key, err)
 		return ""
 	}
 	return ret
@@ -102,7 +102,7 @@ func (p *Params) Bool(key string) bool {
 
 	ret, err := p.v.Context().Route().Params().Bool(key)
 	if err != nil {
-		p.v.Add(key, localeutil.Phrase(err.Error()))
+		p.v.AddError(key, err)
 	}
 	return ret
 }
@@ -115,7 +115,7 @@ func (p *Params) Float64(key string) float64 {
 
 	ret, err := p.v.Context().Route().Params().Float(key)
 	if err != nil {
-		p.v.Add(key, localeutil.Phrase(err.Error()))
+		p.v.AddError(key, err)
 	}
 	return ret
 }
@@ -209,8 +209,8 @@ func (q *Queries) Int(key string, def int) int {
 
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
-	if err != nil {
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.Atoi 不可能返回 localeutil.LocaleStringer 接口的数据
+		q.v.Add(key, localeutil.Phrase(err.Error))
 		return def
 	}
 
@@ -231,7 +231,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 	}
 
 	v, err := strconv.ParseInt(str, 10, 64)
-	if err != nil {
+	if err != nil { // strconv.ParseInt 不可能返回 localeutil.LocaleStringer 接口的数据
 		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
@@ -268,7 +268,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 	}
 
 	v, err := strconv.ParseBool(str)
-	if err != nil {
+	if err != nil { // strconv.ParseBool 不可能返回 localeutil.LocaleStringer 接口的数据
 		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
@@ -290,8 +290,8 @@ func (q *Queries) Float64(key string, def float64) float64 {
 	}
 
 	v, err := strconv.ParseFloat(str, 64)
-	if err != nil {
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.ParseFloat 不可能返回 localeutil.LocaleStringer 接口的数据
+		q.v.Add(key, localeutil.Phrase(err))
 		return def
 	}
 
@@ -309,8 +309,15 @@ func (q *Queries) Problem(id string) Responser { return q.v.Problem(id) }
 //
 // 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
 func (q *Queries) Object(v any, id string) {
-	query.ParseWithLog(q.queries, v, func(s string, err error) {
-		q.v.Add(s, localeutil.Phrase(err.Error()))
+	query.ParseWithLog(q.queries, v, func(field string, err error) {
+		var msg localeutil.LocaleStringer
+		if ls, ok := err.(localeutil.LocaleStringer); ok {
+			msg = ls
+		} else {
+			msg = localeutil.Phrase(err.Error())
+		}
+
+		q.v.Add(field, msg)
 	})
 
 	if q.v.continueNext() {

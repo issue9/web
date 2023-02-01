@@ -77,6 +77,14 @@ func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validat
 	return v.add(name, reason)
 }
 
+// AddError 直接添加一条错误信息类型为 err 的信息
+func (v *Validation) AddError(name string, err error) *Validation {
+	if ls, ok := err.(localeutil.LocaleStringer); ok {
+		return v.Add(name, ls)
+	}
+	return v.Add(name, localeutil.Phrase(err.Error()))
+}
+
 func (v *Validation) add(name string, reason localeutil.LocaleStringer) *Validation {
 	v.keys = append(v.keys, name)
 	v.reasons = append(v.reasons, reason.LocaleString(v.Context().LocalePrinter()))
