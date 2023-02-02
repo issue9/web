@@ -188,6 +188,8 @@ func TestServer_newContext(t *testing.T) {
 	a.NotNil(ctx).NotEmpty(ctx.ID())
 	a.Equal(ctx.LanguageTag(), language.MustParse("zh-hans"))
 	a.Empty(lw.String())
+	a.NotZero(ctx.Begin())
+	b1 := ctx.Begin()
 
 	// 正常，指定 Accept-Language，采用默认的 accept
 	lw.Reset()
@@ -219,6 +221,8 @@ func TestServer_newContext(t *testing.T) {
 		True(header.CharsetIsNop(ctx.inputCharset)).
 		Equal(ctx.Mimetype(false), "application/json").
 		Equal(ctx.outputCharsetName, header.UTF8Name)
+	b2 := ctx.Begin()
+	a.True(b1.Before(b2))
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
 	lw.Reset()

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
@@ -43,6 +44,7 @@ type Context struct {
 	outputCharsetName string
 	exits             []func(int)
 	id                string
+	begin             time.Time
 
 	// response
 	resp           http.ResponseWriter // 原始的 http.ResponseWriter
@@ -126,6 +128,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
 	ctx.id = buildID(ctx.Server(), w, r)
+	ctx.begin = time.Now()
 
 	// response
 	ctx.resp = w
@@ -173,6 +176,9 @@ func buildID(s *Server, w http.ResponseWriter, r *http.Request) string {
 	w.Header().Set(s.requestIDKey, id)
 	return id
 }
+
+// Begin 当前对象的初始化时间
+func (ctx *Context) Begin() time.Time { return ctx.begin }
 
 // ID 当前请求的唯一 ID
 //

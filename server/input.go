@@ -210,7 +210,7 @@ func (q *Queries) Int(key string, def int) int {
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil { // strconv.Atoi 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err.Error))
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -291,7 +291,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil { // strconv.ParseFloat 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err))
+		q.v.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
