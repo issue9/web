@@ -129,7 +129,7 @@ func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }
 
-// UniqueID 生成一个惟一性的 ID
+// UniqueID 生成唯一性的 ID
 func (srv *Server) UniqueID() string { return srv.uniqueGenerator() }
 
 // Now 返回当前时间

@@ -47,7 +47,6 @@ func (i *item) isExpired(now time.Time) bool {
 
 // NewMemory 声明一个内存缓存
 //
-// size 表示初始时的记录数量；
 // gc 表示执行回收操作的间隔。
 func NewMemory(gc time.Duration) cache.Driver {
 	mem := &memoryDriver{

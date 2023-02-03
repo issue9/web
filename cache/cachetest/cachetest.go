@@ -14,12 +14,6 @@ import (
 	"github.com/issue9/web/cache"
 )
 
-func All(a *assert.Assertion, d cache.Driver) {
-	Basic(a, d)
-	Object(a, d)
-	Counter(a, d)
-}
-
 // Counter 测试计数器
 func Counter(a *assert.Assertion, d cache.Driver) {
 	c := d.Counter("v1", 50, 1)

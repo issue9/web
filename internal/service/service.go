@@ -20,7 +20,7 @@ type Servicer interface {
 	// Serve 运行服务
 	//
 	// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
-	// 如果是通过 [context.Context] 的相关操作取消的，应该返回 ctx.Err。
+	// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
 	Serve(context.Context) error
 }
 

@@ -55,9 +55,11 @@ import (
 //	-f 指定当前程序可读取的文件系统，这最终会转换成 [server.Server.FS]；
 //	-a 执行的指令，该值会传递给 [AppOf.Init]，由用户根据此值决定初始化方式；
 //
-// 在支持 HUP 信号的系统，会接收 HUP 信号用于重启服务（调用 [AppOf.Restart]）。
+// 在支持 [SIGHUP] 信号的系统，会接收 SIGHUP 信号用于重启服务（调用 [AppOf.Restart]）。
 //
 // T 表示的是配置文件中的用户自定义数据类型。
+//
+// [HUP]: https://en.wikipedia.org/wiki/SIGHUP
 type AppOf[T any] struct {
 	// NOTE: AppOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
 	// 开发者所有的功能都可以通过 Context 和 Server 获得。

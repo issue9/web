@@ -41,10 +41,13 @@ type (
 	Logger = logs.Logger
 	Entry  = logs.Entry
 
+	// Options 初始化日志的选项
 	Options struct {
 		Writer          Writer
 		Caller, Created bool
-		Levels          []Level
+
+		// 允许的日志通道
+		Levels []Level
 	}
 )
 

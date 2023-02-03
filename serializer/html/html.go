@@ -2,17 +2,17 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//		srv := NewServer()
-//		tpl := template.ParseFiles(...)
-//		srv.Mimetypes().Add("text/html", html.Marshal, html.Unmarshal)
+//	srv := NewServer()
+//	tpl := template.ParseFiles(...)
+//	srv.Mimetypes().Add("text/html", html.Marshal, html.Unmarshal)
 //
-//		func handle(ctx *web.Context) Responser {
-//	         obj := &struct{
-//	             HTMLName struct{} `html:"Object"`
-//	             Data string
-//	         }{}
-//		    return Object(200, obj, nil)
-//		}
+//	func handle(ctx *web.Context) Responser {
+//		obj := &struct{
+//			HTMLName struct{} `html:"Object"`
+//			Data string
+//		}{}
+//		return Object(200, obj, nil)
+//	}
 package html
 
 import (

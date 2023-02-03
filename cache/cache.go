@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package cache 缓存接口的定义
+// Package cache 统一的缓存系统接口
 package cache
 
 import "github.com/issue9/web/internal/errs"
@@ -18,7 +18,8 @@ type Cache interface {
 	// key 为缓存项的唯一 ID；
 	// v 为缓存写入的地址，应该始终为指针类型；
 	//
-	// NOTE: 获取正确获取由 [Cache.Counter] 设置的值。
+	// NOTE: 不能正确获取由 [Cache.Counter] 设置的值，[Cache.Counter]
+	// 的实现是基于缓存系统原生的功能，存储方式与当前的实现可能是不同的。
 	Get(key string, v any) error
 
 	// Set 设置或是添加缓存项
@@ -46,7 +47,7 @@ type Cache interface {
 // [Cache] 支持自定义的序列化接口，但是对于自增等纯数值操作，
 // 各个缓存服务都实现自有的快捷操作，无法适用自定义的序列化。
 //
-// 由 Counter 设置的值，也无法由 [Cache.Get] 读取到正确的值，
+// 由 Counter 设置的值，可能无法由 [Cache.Get] 读取到正确的值，
 // 但是可以由 [Cache.Exists]、[Cache.Delete] 和 [Cache.Set] 进行相应的操作。
 //
 // 各个驱动对自增值的类型定义是不同的，

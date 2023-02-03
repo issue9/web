@@ -54,4 +54,6 @@ func OK(v any) Responser { return Object(http.StatusOK, v) }
 func NoContent() Responser { return Status(http.StatusNoContent) }
 
 // Redirect 重定向至新的 URL
-func Redirect(status int, url string) Responser { return Status(status, "Location", url) }
+func Redirect(status int, url string) Responser {
+	return Status(status, "Location", url)
+}

@@ -13,7 +13,7 @@ import (
 // Marshal 序列化对象
 //
 // 这是 [cache.Cache] 存储对象时的转换方法，
-// 除了判断 [cache.Serializer] 之外，还提供了默认的 [gob] 编码方式。
+// 除了判断 [cache.Serializer] 之外，还提供了默认的编码方式。
 //
 // 大部分时候 [cache.Driver] 的实现者直接调用此方法即可，
 // 如果需要自己实现，需要注意 [cache.Serializer] 接口的判断。
