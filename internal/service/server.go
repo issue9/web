@@ -19,14 +19,14 @@ type Server struct {
 	services  []*Service
 	scheduled *scheduled.Server
 	running   bool
-	err       logs.Logger
+	errlog    logs.Logger
 }
 
 func NewServer(loc *time.Location, logs *logs.Logs) *Server {
 	s := &Server{
 		services:  make([]*Service, 0, 10),
 		scheduled: scheduled.NewServer(loc, logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()),
-		err:       logs.ERROR(),
+		errlog:    logs.ERROR(),
 	}
 
 	s.AddFunc(localeutil.Phrase("scheduled job"), s.scheduled.Serve)

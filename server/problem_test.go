@@ -49,6 +49,7 @@ func TestContext_Log(t *testing.T) {
 		ctx.Error("41110", logs.Error, errors.New("log1 log2")).Apply(ctx)
 		a.Contains(errLog.String(), "problem_test.go:49") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
+		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
 	})
 }
