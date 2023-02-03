@@ -312,9 +312,7 @@ func (ctx *Context) destroy() {
 //
 // 其中 status 为最终输出到客户端的状态码，
 // 如果用户是通过 [Context.Unwrap] 返回的对象写入报头的，那么该值可能并不是用户期待的值。
-func (ctx *Context) OnExit(f func(int)) {
-	ctx.exits = append(ctx.exits, f)
-}
+func (ctx *Context) OnExit(f func(int)) { ctx.exits = append(ctx.exits, f) }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
