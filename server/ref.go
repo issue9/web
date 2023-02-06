@@ -53,7 +53,8 @@ type (
 		// Add 添加新的编码方法
 		//
 		// name 为编码名称；
-		// problem 为该编码在返回 [Problem] 对象时的 mimetype 报头值，如果为空，则会被赋予 name 相同的值；
+		// problem 为该编码在返回 [Problem] 对象时的 mimetype 报头值，
+		// 如果为空，则会被赋予 name 相同的值；
 		Add(name string, m MarshalFunc, u UnmarshalFunc, problem string)
 
 		// Set 修改指定名称的相关配置

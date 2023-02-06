@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/issue9/logs/v4"
+	"golang.org/x/text/message"
 )
 
 var paramsLogsPool = &sync.Pool{New: func() any { return &ParamsLogs{} }}
@@ -23,6 +24,30 @@ type (
 		loggers map[Level]Logger
 	}
 )
+
+// New 声明日志实例
+func New(opt *Options, p *message.Printer) *Logs {
+	if opt == nil {
+		opt = &Options{}
+	}
+
+	o := make([]logs.Option, 0, 3)
+	if opt.Caller {
+		o = append(o, logs.Caller)
+	}
+	if opt.Created {
+		o = append(o, logs.Created)
+	}
+
+	if p != nil {
+		o = append(o, logs.Print(newPrinter(p)))
+	}
+
+	l := logs.New(opt.Writer, o...)
+	l.Enable(opt.Levels...)
+
+	return &Logs{logs: l}
+}
 
 func (l *Logs) INFO() Logger { return l.logs.INFO() }
 
@@ -75,4 +100,6 @@ func (l *ParamsLogs) level(lv Level) Logger {
 }
 
 // Destroy 回收由 [ParamsLogs] 对象
+//
+// 这是一个非必须的方法，调用可能会有一定的性能提升。
 func Destroy(l *ParamsLogs) { paramsLogsPool.Put(l) }

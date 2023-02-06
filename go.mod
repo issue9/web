@@ -8,12 +8,12 @@ require (
 	github.com/issue9/conv v1.3.3
 	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/localeutil v0.12.6
-	github.com/issue9/logs/v4 v4.3.0
+	github.com/issue9/logs/v4 v4.3.1
 	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/query/v3 v3.1.1
 	github.com/issue9/scheduled v0.10.0
 	github.com/issue9/sliceutil v0.12.0
-	github.com/issue9/term/v3 v3.0.5
+	github.com/issue9/term/v3 v3.1.0
 	github.com/issue9/unique/v2 v2.0.0
 	github.com/klauspost/compress v1.15.15
 	golang.org/x/crypto v0.5.0

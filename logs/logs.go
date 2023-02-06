@@ -11,9 +11,9 @@ import (
 	"io"
 
 	"github.com/issue9/logs/v4"
+	"github.com/issue9/logs/v4/writers"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
-	"golang.org/x/text/message"
 )
 
 // 日志的时间格式
@@ -59,13 +59,13 @@ func NewTextWriter(timeLayout string, w ...io.Writer) Writer {
 	return logs.NewTextWriter(timeLayout, w...)
 }
 
+func NewJSONWriter(timeLayout string, w ...io.Writer) Writer {
+	return logs.NewJSONWriter(timeLayout, w...)
+}
+
 // NewTermWriter 带颜色的终端输出通道
 //
-// timeLayout 表示输出的时间格式，遵守 time.Format 的参数要求，
-// 如果为空，则不输出时间信息；
-// fore 表示终端信息的字符颜色，背景始终是默认色；
-// w 表示终端的接口，可以是 [os.Stderr] 或是 [os.Stdout]，
-// 如果是其它的实现者则会带控制字符一起输出；
+// 参数说明参考 [logs.NewTermWriter]
 func NewTermWriter(timeLayout string, fore colors.Color, w io.Writer) Writer {
 	return logs.NewTermWriter(timeLayout, fore, w)
 }
@@ -78,30 +78,13 @@ func MergeWriter(w ...Writer) Writer { return logs.MergeWriter(w...) }
 // NewRotateFile 按大小分割的文件日志
 //
 // 参数说明参考 [rotate.New]
-func NewRotateFile(format, dir string, size int64) (*rotate.Rotate, error) {
+func NewRotateFile(format, dir string, size int64) (io.WriteCloser, error) {
 	return rotate.New(format, dir, size)
 }
 
-// New 声明日志实例
-func New(opt *Options, p *message.Printer) *Logs {
-	if opt == nil {
-		opt = &Options{}
-	}
-
-	o := make([]logs.Option, 0, 3)
-	if opt.Caller {
-		o = append(o, logs.Caller)
-	}
-	if opt.Created {
-		o = append(o, logs.Created)
-	}
-
-	if p != nil {
-		o = append(o, logs.Print(newPrinter(p)))
-	}
-
-	l := logs.New(opt.Writer, o...)
-	l.Enable(opt.Levels...)
-
-	return &Logs{logs: l}
+// NewSMTP 将日志内容发送至指定邮箱
+//
+// 参数说明参考 [writers.NewSMTP]
+func NewSMTP(username, password, subject, host string, sendTo []string) io.Writer {
+	return writers.NewSMTP(username, password, subject, host, sendTo)
 }

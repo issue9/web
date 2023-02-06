@@ -38,6 +38,10 @@ type logsConfig struct {
 }
 
 type logWriterConfig struct {
+	// NOTE: 时间格式定义在 Args 之中，而不是作为字段在当前对象之中。
+	// 一般情况下终端里，时间格式只需要显示简短的以秒作为最大单位的即可，
+	// 但是在文件日志里，可能还需要带上日期时间才方便。
+
 	// 当前 Writer 支持的通道
 	//
 	// 为空表示采用 [logsConfig.Levels] 的值。
@@ -47,6 +51,7 @@ type logWriterConfig struct {
 	//
 	// 可通过 [RegisterLogsWriter] 方法注册，默认包含了以下两个：
 	// - file 输出至文件
+	// - smtp 邮件发送的日志
 	// - term 输出至终端
 	Type string `xml:"type,attr" yaml:"type" json:"type"`
 
@@ -58,6 +63,15 @@ type logWriterConfig struct {
 	//  1: 保存目录；
 	//  2: 文件格式，可以包含 Go 的时间格式化字符，以 %i 作为同名文件时的序列号；
 	//  3: 文件的最大尺寸，单位 byte；
+	//  4: 文件的格式，默认为 text，还可选为 json；
+	// - smtp:
+	//  0: 时间格式，Go 的时间格式字符串；
+	//  1: 账号；
+	//  2: 密码；
+	//  3: 主题；
+	//  4: 为 smtp 的主机地址，需要带上端口号；
+	//  5: 接收邮件列表；
+	//  6: 文件的格式，默认为 text，还可选为 json；
 	// - term
 	//  0: 时间格式，Go 的时间格式字符串；
 	//  1: 字符的的颜色值，可以包含以下值：
@@ -156,6 +170,7 @@ func RegisterLogsWriter(b LogsWriterBuilder, name ...string) {
 func init() {
 	RegisterLogsWriter(newFileLogsWriter, "file")
 	RegisterLogsWriter(newTermLogsWriter, "term")
+	RegisterLogsWriter(newSMTPLogsWriter, "smtp")
 }
 
 func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
@@ -169,7 +184,20 @@ func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
 		return nil, nil, err
 	}
 
-	return logs.NewTextWriter(args[0], w), w.Close, nil
+	if len(args) < 5 || args[4] == "text" {
+		return logs.NewTextWriter(args[0], w), w.Close, nil
+	}
+	return logs.NewJSONWriter(args[0], w), w.Close, nil
+}
+
+func newSMTPLogsWriter(args []string) (logs.Writer, func() error, error) {
+	sendTo := strings.Split(args[5], ",")
+	w := logs.NewSMTP(args[1], args[2], args[3], args[4], sendTo)
+
+	if len(args) < 7 || args[7] == "text" {
+		return logs.NewTextWriter(args[0], w), nil, nil
+	}
+	return logs.NewJSONWriter(args[0], w), nil, nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -185,14 +213,9 @@ var colorMap = map[string]colors.Color{
 }
 
 // args 参数格式如下：
-// 0: 时间格式
-// 1: 为颜色名称，以下值有效：
-//   - default
-//   - red
-//
-// 2: 为输出通道，以下值有效：
-//   - stdout
-//   - stderr
+// - 0 时间格式
+// - 1 为颜色名称，可参考 [colorMap] 的键名；
+// - 2 为输出通道，可以为 stdout 和 stderr；
 func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	if len(args) != 3 {
 		return nil, nil, errs.NewFieldError("Args", errs.NewLocaleError("invalid value %s", args))
