@@ -4,7 +4,9 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"sync"
 
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
@@ -12,6 +14,34 @@ import (
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 )
+
+var responsePool = &sync.Pool{New: func() any { return &response{} }}
+
+type response struct {
+	http.ResponseWriter
+	w io.Writer
+}
+
+func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
+
+// SetWriter 将输出内容指向 w
+//
+// 如果已经有内容输出，此操作将会 panic。
+func (ctx *Context) SetWriter(w io.Writer) {
+	if ctx.Wrote() {
+		panic("已有内容输出，不可再更改！")
+	}
+	if w == nil {
+		panic("参数 w 不能为空")
+	}
+
+	resp := responsePool.Get().(*response)
+	resp.ResponseWriter = ctx.resp
+	resp.w = w
+	ctx.resp = resp
+	ctx.respWriter = resp
+	ctx.OnExit(func(i int) { responsePool.Put(resp) })
+}
 
 // Marshal 向客户端输出内容
 //

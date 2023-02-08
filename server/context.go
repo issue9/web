@@ -26,11 +26,11 @@ const (
 	defaultBodyBufferSize        = 256
 )
 
-var contextPool = &sync.Pool{New: func() any {
-	return &Context{
-		exits: make([]func(int), 0, 3), // query, params, validation
-	}
-}}
+var contextPool = &sync.Pool{
+	New: func() any {
+		return &Context{exits: make([]func(int), 0, 3)} // query, params, validation
+	},
+}
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
@@ -189,7 +189,7 @@ func (ctx *Context) ID() string { return ctx.id }
 //
 // NOTE: 不会影响 [Context.Request] 的返回对象。
 func (ctx *Context) SetCharset(charset string) {
-	if ctx.wrote {
+	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
 	if ctx.Charset() == charset {
@@ -211,7 +211,7 @@ func (ctx *Context) Charset() string { return ctx.outputCharsetName }
 //
 // NOTE: 不会影响 [Context.Request] 的返回对象。
 func (ctx *Context) SetMimetype(mimetype string) {
-	if ctx.wrote {
+	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
 	if ctx.Mimetype(false) == mimetype {
@@ -243,7 +243,7 @@ func (ctx *Context) Mimetype(problem bool) string {
 //
 // NOTE: 不会影响 [Context.Request] 的返回对象。
 func (ctx *Context) SetEncoding(enc string) {
-	if ctx.wrote {
+	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
 	if ctx.Encoding() == enc {

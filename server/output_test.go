@@ -21,6 +21,8 @@ import (
 	"github.com/issue9/web/logs"
 )
 
+var _ http.ResponseWriter = &response{}
+
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
@@ -191,6 +193,66 @@ func TestContext_Marshal(t *testing.T) {
 	ctx.Marshal(http.StatusCreated, errors.New("error"), false)
 	a.NotZero(buf.Len()).
 		Equal(w.Code, http.StatusNotAcceptable)
+}
+
+func TestContext_SetWriter(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
+
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").
+		Header("accept-language", "cmn-hant").
+		Header("accept", "application/json").
+		Request()
+	ctx := srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+	ctx.Write([]byte("abc"))
+	a.Equal(w.Body.String(), "abc")
+
+	a.PanicString(func() {
+		buf := &bytes.Buffer{}
+		ctx.SetWriter(buf)
+	}, "已有内容输出，不可再更改！")
+
+	// setWriter
+	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").
+		Header("accept-language", "cmn-hant").
+		Header("accept", "application/json").
+		Request()
+	ctx = srv.newContext(w, r, nil)
+	w.Header().Set("h1", "v1")
+	a.NotNil(ctx)
+	buf := &bytes.Buffer{}
+	ctx.SetWriter(buf)
+	ctx.Header().Set("h2", "v2")
+	ctx.Write([]byte("abc"))
+	a.Equal(buf.String(), "abc").
+		Empty(w.Body.String()).
+		Equal(ctx.Header().Get("h1"), "v1").
+		Equal(ctx.Header().Get("h2"), "v2")
+
+	// 多次调用 setWriter
+	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").
+		Header("accept-language", "cmn-hant").
+		Header("accept", "application/json").
+		Request()
+	ctx = srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+	buf1 := &bytes.Buffer{}
+	buf2 := &bytes.Buffer{}
+	ctx.SetWriter(buf1)
+	ctx.SetWriter(buf2)
+	ctx.Write([]byte("abc"))
+	a.Equal(buf2.String(), "abc").Empty(buf1.String())
+
+	// setWriter(nil)
+	ctx = srv.newContext(w, r, nil)
+	a.NotNil(ctx)
+	a.PanicString(func() {
+		ctx.SetWriter(nil)
+	}, "参数 w 不能为空")
 }
 
 func TestContext_LocalePrinter(t *testing.T) {
