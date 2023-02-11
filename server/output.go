@@ -4,9 +4,7 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"sync"
 
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
@@ -15,32 +13,27 @@ import (
 	"github.com/issue9/web/internal/problems"
 )
 
-var responsePool = &sync.Pool{New: func() any { return &response{} }}
-
-type response struct {
-	http.ResponseWriter
-	w io.Writer
-}
-
-func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
-
-// SetWriter 将输出内容指向 w
+// SetWriter 自定义输出通道
+//
+// f 用于构建一个用于输出的 [http.ResponseWriter] 接口对象，其原型为：
+//
+//	func(w http.ResponseWriter) http.ResponseWriter
+//
+// 其中 w 表示原本与 [Context] 关联的对象，用户可以基于此对象作二次封装，
+// 或是完全舍弃，都是可以的。
 //
 // 如果已经有内容输出，此操作将会 panic。
-func (ctx *Context) SetWriter(w io.Writer) {
+func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
-	if w == nil {
+	if f == nil {
 		panic("参数 w 不能为空")
 	}
 
-	resp := responsePool.Get().(*response)
-	resp.ResponseWriter = ctx.resp
-	resp.w = w
+	resp := f(ctx.resp)
 	ctx.resp = resp
 	ctx.respWriter = resp
-	ctx.OnExit(func(i int) { responsePool.Put(resp) })
 }
 
 // Marshal 向客户端输出内容

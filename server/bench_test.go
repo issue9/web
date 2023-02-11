@@ -199,7 +199,7 @@ func BenchmarkContext_Body(b *testing.B) {
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			body, err := ctx.Body()
+			body, err := ctx.RequestBody()
 			a.NotError(err).Equal(body, []byte(testdata.ObjectJSONString))
 		}
 	})
@@ -213,7 +213,7 @@ func BenchmarkContext_Body(b *testing.B) {
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			body, err := ctx.Body()
+			body, err := ctx.RequestBody()
 			a.NotError(err).Equal(body, []byte(testdata.ObjectJSONString))
 		}
 	})

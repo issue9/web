@@ -315,12 +315,12 @@ func TestContext_Body(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx := srv.newContext(w, r, nil)
 	a.Nil(ctx.body)
-	data, err := ctx.Body()
+	data, err := ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
 		Equal(ctx.body, data)
 
 	// 读取缓存内容
-	data, err = ctx.Body()
+	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
 		Equal(ctx.body, data)
 
@@ -328,7 +328,7 @@ func TestContext_Body(t *testing.T) {
 	r = rest.Post(a, "/path", []byte("123")).Request()
 	ctx = srv.newContext(w, r, nil)
 	ctx.inputCharset = encoding.Nop
-	data, err = ctx.Body()
+	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
 		Equal(ctx.body, data)
 
@@ -339,7 +339,7 @@ func TestContext_Body(t *testing.T) {
 	w = httptest.NewRecorder()
 	ctx = srv.newContext(w, r, nil)
 	a.NotNil(ctx)
-	data, err = ctx.Body()
+	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(string(data), testdata.ObjectJSONString).
 		Equal(ctx.body, data)
 }

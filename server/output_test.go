@@ -21,7 +21,12 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-var _ http.ResponseWriter = &response{}
+type response struct {
+	http.ResponseWriter
+	w io.Writer
+}
+
+func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
 
 func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
@@ -211,7 +216,7 @@ func TestContext_SetWriter(t *testing.T) {
 
 	a.PanicString(func() {
 		buf := &bytes.Buffer{}
-		ctx.SetWriter(buf)
+		ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
 	}, "已有内容输出，不可再更改！")
 
 	// setWriter
@@ -224,7 +229,7 @@ func TestContext_SetWriter(t *testing.T) {
 	w.Header().Set("h1", "v1")
 	a.NotNil(ctx)
 	buf := &bytes.Buffer{}
-	ctx.SetWriter(buf)
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
 	ctx.Header().Set("h2", "v2")
 	ctx.Write([]byte("abc"))
 	a.Equal(buf.String(), "abc").
@@ -242,8 +247,8 @@ func TestContext_SetWriter(t *testing.T) {
 	a.NotNil(ctx)
 	buf1 := &bytes.Buffer{}
 	buf2 := &bytes.Buffer{}
-	ctx.SetWriter(buf1)
-	ctx.SetWriter(buf2)
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
 	ctx.Write([]byte("abc"))
 	a.Equal(buf2.String(), "abc").Empty(buf1.String())
 

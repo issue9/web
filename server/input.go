@@ -338,10 +338,10 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 	return q.Problem(id)
 }
 
-// Body 获取用户提交的内容
+// RequestBody 获取用户提交的内容
 //
-// 相对于 Context.Request().Body，此函数可多次读取。不存在 body 时，返回 nil
-func (ctx *Context) Body() (body []byte, err error) {
+// 相对于 [Context.Request.RequestBody]，此函数可多次读取。不存在 body 时，返回 nil
+func (ctx *Context) RequestBody() (body []byte, err error) {
 	if ctx.read {
 		return ctx.body, nil
 	}
@@ -374,7 +374,7 @@ func (ctx *Context) Body() (body []byte, err error) {
 
 // Unmarshal 将提交的内容转换成 v 对象
 func (ctx *Context) Unmarshal(v any) error {
-	body, err := ctx.Body()
+	body, err := ctx.RequestBody()
 	if err != nil {
 		return err
 	}
