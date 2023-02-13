@@ -40,16 +40,30 @@ func Counter(a *assert.Assertion, d cache.Driver) {
 	// 没有值的情况 Decr
 	c = d.Counter("v2", 50, time.Second)
 	a.NotNil(c)
+	a.NotError(c.Delete())
 	v2, err := c.Decr(3)
 	a.NotError(err).Equal(v2, 47)
 	v2, err = c.Value()
 	a.Nil(err).Equal(v2, 47)
 
-	v2, err = c.Decr(47)
+	v2, err = c.Decr(4888)
+	a.NotError(err).Equal(v2, 0)
+
+	v2, err = c.Value()
 	a.NotError(err).Equal(v2, 0)
 
 	v2, err = c.Decr(47)
 	a.NotError(err).Equal(v2, 0)
+
+	// 多个 Counter 指向同一个 key
+
+	c1 := d.Counter("v3", 50, time.Second)
+	c2 := d.Counter("v3", 50, time.Second)
+
+	v1, err = c1.Decr(5)
+	v2, err = c2.Value()
+	a.NotError(err).Equal(v1, 45)
+	a.NotError(err).Equal(v2, 45)
 }
 
 // Basic 测试基本功能

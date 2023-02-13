@@ -71,6 +71,8 @@ type Counter interface {
 	Value() (uint64, error)
 
 	// Delete 删除当前的计数器
+	//
+	// 当计数器不存在时，不应该返回错误。
 	Delete() error
 }
 

@@ -54,9 +54,7 @@ func (d *memcacheDriver) Set(key string, val any, ttl time.Duration) error {
 	})
 }
 
-func (d *memcacheDriver) Delete(key string) error {
-	return d.client.Delete(key)
-}
+func (d *memcacheDriver) Delete(key string) error { return d.client.Delete(key) }
 
 func (d *memcacheDriver) Exists(key string) bool {
 	_, err := d.client.Get(key)
@@ -128,7 +126,18 @@ func (c *memcacheCounter) Value() (uint64, error) {
 	} else if err != nil {
 		return c.originVal, err
 	}
-	return strconv.ParseUint(string(item.Value), 10, 64)
+
+	v := string(item.Value)
+	if v == "0 " { // 零值?
+		return 0, nil
+	}
+	return strconv.ParseUint(v, 10, 64)
 }
 
-func (c *memcacheCounter) Delete() error { return c.driver.client.Delete(c.key) }
+func (c *memcacheCounter) Delete() error {
+	err := c.driver.client.Delete(c.key)
+	if errors.Is(err, memcache.ErrCacheMiss) {
+		return nil
+	}
+	return err
+}

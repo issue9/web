@@ -25,6 +25,13 @@ type redisCounter struct {
 	ttl       time.Duration
 }
 
+// redis 处理 DECRBY 的事务脚本
+const redisDecrByScript = `local cnt = redis.call('DECRBY', KEYS[1], ARGV[1])
+if cnt < 0 then
+    redis.call('SET', KEYS[1], '0')
+end
+return (cnt < 0 and 0 or cnt)`
+
 // NewRedisFromURL 声明基于 redis 的缓存系统
 //
 // url 为符合 [Redis URI scheme] 的字符串
@@ -103,22 +110,12 @@ func (c *redisCounter) Decr(n uint64) (uint64, error) {
 	}
 
 	in := int64(n)
-	v, err := c.driver.conn.DecrBy(context.Background(), c.key, in).Result()
-	if err != nil {
-		return 0, err
-	}
-
-	if v < 0 { // 小于零，保持为零。
-		_, err = c.driver.conn.IncrBy(context.Background(), c.key, in).Result()
-		return 0, err
-
-	}
-	return uint64(v), nil
+	v, err := c.driver.conn.Eval(context.Background(), redisDecrByScript, []string{c.key}, in).Int64()
+	return uint64(v), err
 }
 
 func (c *redisCounter) init() error {
-	cmd := c.driver.conn.SetNX(context.Background(), c.key, c.val, time.Duration(c.ttl))
-	return cmd.Err()
+	return c.driver.conn.SetNX(context.Background(), c.key, c.val, c.ttl).Err()
 }
 
 func (c *redisCounter) Value() (uint64, error) {
