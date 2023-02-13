@@ -14,7 +14,8 @@ import (
 )
 
 type redisDriver struct {
-	conn *redis.Client
+	conn         *redis.Client
+	decrByScript *redis.Script
 }
 
 type redisCounter struct {
@@ -46,7 +47,12 @@ func NewRedisFromURL(url string) (cache.Driver, error) {
 }
 
 // NewRedis 声明基于 redis 的缓存系统
-func NewRedis(c *redis.Client) cache.Driver { return &redisDriver{conn: c} }
+func NewRedis(c *redis.Client) cache.Driver {
+	return &redisDriver{
+		conn:         c,
+		decrByScript: redis.NewScript(redisDecrByScript),
+	}
+}
 
 func (d *redisDriver) Get(key string, val any) error {
 	bs, err := d.conn.Get(context.Background(), key).Bytes()
@@ -110,7 +116,7 @@ func (c *redisCounter) Decr(n uint64) (uint64, error) {
 	}
 
 	in := int64(n)
-	v, err := c.driver.conn.Eval(context.Background(), redisDecrByScript, []string{c.key}, in).Int64()
+	v, err := c.driver.decrByScript.Run(context.Background(), c.driver.conn, []string{c.key}, in).Int64()
 	return uint64(v), err
 }
 
