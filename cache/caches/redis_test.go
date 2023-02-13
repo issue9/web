@@ -4,9 +4,7 @@ package caches
 
 import (
 	"testing"
-	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/cache"
@@ -15,18 +13,12 @@ import (
 
 var _ cache.Cache = &redisDriver{}
 
-var redisOptions = []redis.DialOption{
-	redis.DialConnectTimeout(time.Second),
-	redis.DialReadTimeout(time.Second),
-	redis.DialWriteTimeout(time.Second),
-}
-
-const redisURL = "redis://localhost:6379"
+const redisURL = "redis://localhost:6379?dial_timeout=1&db=1&read_timeout=1&write_timeout=1"
 
 func TestRedis(t *testing.T) {
 	a := assert.New(t, false)
 
-	c, err := NewRedis(redisURL, redisOptions...)
+	c, err := NewRedis(redisURL)
 	a.NotError(err).NotNil(c)
 
 	cachetest.Basic(a, c)
@@ -39,12 +31,12 @@ func TestRedis(t *testing.T) {
 func TestRedis_Close(t *testing.T) {
 	a := assert.New(t, false)
 
-	c, err := NewRedis(redisURL, redisOptions...)
+	c, err := NewRedis(redisURL)
 	a.NotError(err).NotNil(c)
 	a.NotError(c.Set("key", "val", cache.Forever))
 	a.NotError(c.Close())
 
-	c, err = NewRedis(redisURL, redisOptions...)
+	c, err = NewRedis(redisURL)
 	a.NotError(err).NotNil(c)
 	var val string
 	a.NotError(c.Get("key", &val)).Equal(val, "val")
