@@ -113,7 +113,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	}
 
 	if o.Cache == nil {
-		o.Cache = caches.NewMemory(cache.OneDay)
+		o.Cache = caches.NewMemory(24 * time.Hour)
 	}
 
 	if o.HTTPServer == nil {

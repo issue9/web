@@ -82,6 +82,6 @@ func init() {
 	}, "memcached", "memcache")
 
 	RegisterCache(func(dsn string) (cache.Driver, error) {
-		return caches.NewRedis(dsn)
+		return caches.NewRedisFromURL(dsn)
 	}, "redis")
 }

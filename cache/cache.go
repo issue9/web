@@ -3,12 +3,18 @@
 // Package cache 统一的缓存系统接口
 package cache
 
-import "github.com/issue9/web/internal/errs"
+import (
+	"time"
+
+	"github.com/issue9/web/internal/errs"
+)
 
 var (
 	errCacheMiss  = errs.NewLocaleError("cache miss")
 	errInvalidKey = errs.NewLocaleError("invalid cache key")
 )
+
+const Forever = 0 //  永不过时
 
 // Cache 缓存内容的访问接口
 type Cache interface {
@@ -28,7 +34,7 @@ type Cache interface {
 	// val 表示保存的数据对象，如果是结构体，需要所有的字段都是公开的或是实现了
 	// [Marshaler] 和 [Unmarshaler] 接口，否则在 [Cache.Get] 中将失去这些非公开的字段。
 	// ttl 表示过了该时间，缓存项将被回收。如果该值为 0，该值永远不会回收。
-	Set(key string, val any, ttl int) error
+	Set(key string, val any, ttl time.Duration) error
 
 	// Delete 删除一个缓存项
 	Delete(string) error
@@ -39,7 +45,7 @@ type Cache interface {
 	// Counter 返回计数器操作接口
 	//
 	// val 和 ttl 表示在该计数器不存在时，初始化的值以及回收时间。
-	Counter(key string, val uint64, ttl int) Counter
+	Counter(key string, val uint64, ttl time.Duration) Counter
 }
 
 // Counter 计数器需要实现的接口

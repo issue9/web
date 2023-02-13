@@ -16,7 +16,7 @@ import (
 
 // Counter 测试计数器
 func Counter(a *assert.Assertion, d cache.Driver) {
-	c := d.Counter("v1", 50, 1)
+	c := d.Counter("v1", 50, time.Second)
 	a.NotNil(c)
 
 	v1, err := c.Value()
@@ -35,7 +35,7 @@ func Counter(a *assert.Assertion, d cache.Driver) {
 	a.True(d.Exists("v1"))
 
 	// 没有值的情况 Decr
-	c = d.Counter("v2", 50, 1)
+	c = d.Counter("v2", 50, time.Second)
 	a.NotNil(c)
 	v2, err := c.Decr(3)
 	a.NotError(err).Equal(v2, 47)
@@ -63,7 +63,7 @@ func Basic(a *assert.Assertion, c cache.Driver) {
 		Equal(num, 123, "无法正常获取 k1 的值 v1=%d,v2=%d", v, 123)
 
 	// 重新设置 k1
-	a.NotError(c.Set("k1", uint(789), 60))
+	a.NotError(c.Set("k1", uint(789), time.Minute))
 	var unum uint
 	err = c.Get("k1", &unum)
 	a.NotError(err, "1*time.Hour 的值 k1 返回错误信息 %s", err).
@@ -76,22 +76,22 @@ func Basic(a *assert.Assertion, c cache.Driver) {
 		Zero(v, "被删除之后值并未为空：%+v", v)
 
 	// 超时被回收
-	a.NotError(c.Set("k1", 123, 1))
-	a.NotError(c.Set("k2", 456, 1))
-	a.NotError(c.Set("k3", 789, 1))
+	a.NotError(c.Set("k1", 123, time.Second))
+	a.NotError(c.Set("k2", 456, time.Second))
+	a.NotError(c.Set("k3", 789, time.Second))
 	time.Sleep(2 * time.Second)
 	a.False(c.Exists("k1"), "k1 超时且未被回收")
 	a.False(c.Exists("k2"), "k2 超时且未被回收")
 	a.False(c.Exists("k3"), "k3 超时且未被回收")
 
 	// Clean
-	a.NotError(c.Set("k1", 123, 1))
-	a.NotError(c.Set("k2", 456, 1))
-	a.NotError(c.Set("k3", 789, 1))
+	a.NotError(c.Set("k1", 123, time.Second))
+	a.NotError(c.Set("k2", 456, time.Second))
+	a.NotError(c.Set("k3", 789, time.Second))
 	a.NotError(c.Clean())
-	a.False(c.Exists("k1"), "clear 之后 k1 依然存在").
-		False(c.Exists("k2"), "clear 之后 k2 依然存在").
-		False(c.Exists("k3"), "clear 之后 k3 依然存在")
+	a.False(c.Exists("k1"), "clean 之后 k1 依然存在").
+		False(c.Exists("k2"), "clean 之后 k2 依然存在").
+		False(c.Exists("k3"), "clean 之后 k3 依然存在")
 }
 
 type object struct {

@@ -5,6 +5,7 @@ package caches
 import (
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
 
@@ -23,7 +24,7 @@ type memcacheCounter struct {
 	ttl       int32
 }
 
-// NewFromServers 声明一个新的 Memcache 实例
+// NewMemcache 声明基于 memcached 的缓存系统
 func NewMemcache(addr ...string) cache.Driver {
 	return &memcacheDriver{
 		client: memcache.New(addr...),
@@ -40,7 +41,7 @@ func (d *memcacheDriver) Get(key string, val any) error {
 	return Unmarshal(item.Value, val)
 }
 
-func (d *memcacheDriver) Set(key string, val any, seconds int) error {
+func (d *memcacheDriver) Set(key string, val any, ttl time.Duration) error {
 	bs, err := Marshal(val)
 	if err != nil {
 		return err
@@ -49,7 +50,7 @@ func (d *memcacheDriver) Set(key string, val any, seconds int) error {
 	return d.client.Set(&memcache.Item{
 		Key:        key,
 		Value:      bs,
-		Expiration: int32(seconds),
+		Expiration: int32(ttl.Seconds()),
 	})
 }
 
@@ -66,13 +67,13 @@ func (d *memcacheDriver) Clean() error { return d.client.DeleteAll() }
 
 func (d *memcacheDriver) Close() error { return d.client.Close() }
 
-func (d *memcacheDriver) Counter(key string, val uint64, ttl int) cache.Counter {
+func (d *memcacheDriver) Counter(key string, val uint64, ttl time.Duration) cache.Counter {
 	return &memcacheCounter{
 		driver:    d,
 		key:       key,
 		val:       []byte(strconv.FormatUint(val, 10)),
 		originVal: val,
-		ttl:       int32(ttl),
+		ttl:       int32(ttl.Seconds()),
 	}
 }
 
@@ -83,7 +84,7 @@ func (c *memcacheCounter) Incr(n uint64) (uint64, error) {
 
 	v, err := c.driver.client.Increment(c.key, n)
 	if err == nil {
-		err = c.driver.client.Touch(c.key, int32(c.ttl))
+		err = c.driver.client.Touch(c.key, c.ttl)
 	}
 
 	if err != nil {
@@ -99,7 +100,7 @@ func (c *memcacheCounter) Decr(n uint64) (uint64, error) {
 
 	v, err := c.driver.client.Decrement(c.key, n)
 	if err == nil {
-		err = c.driver.client.Touch(c.key, int32(c.ttl))
+		err = c.driver.client.Touch(c.key, c.ttl)
 	}
 
 	if err != nil {

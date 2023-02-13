@@ -2,6 +2,8 @@
 
 package cache
 
+import "time"
+
 type prefix struct {
 	prefix string
 	cache  Cache
@@ -18,7 +20,7 @@ func (p *prefix) Get(key string, v any) error {
 	return p.cache.Get(p.prefix+key, v)
 }
 
-func (p *prefix) Set(key string, val any, seconds int) error {
+func (p *prefix) Set(key string, val any, seconds time.Duration) error {
 	return p.cache.Set(p.prefix+key, val, seconds)
 }
 
@@ -30,6 +32,6 @@ func (p *prefix) Exists(key string) bool {
 	return p.cache.Exists(p.prefix + key)
 }
 
-func (p *prefix) Counter(key string, val uint64, ttl int) Counter {
+func (p *prefix) Counter(key string, val uint64, ttl time.Duration) Counter {
 	return p.cache.Counter(p.prefix+key, val, ttl)
 }

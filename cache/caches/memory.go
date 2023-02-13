@@ -84,7 +84,7 @@ func (d *memoryDriver) findItem(key string) (*item, bool) {
 	return i.(*item), true
 }
 
-func (d *memoryDriver) Set(key string, val any, seconds int) error {
+func (d *memoryDriver) Set(key string, val any, ttl time.Duration) error {
 	i, found := d.findItem(key)
 	if !found {
 		bs, err := Marshal(val)
@@ -92,11 +92,10 @@ func (d *memoryDriver) Set(key string, val any, seconds int) error {
 			return err
 		}
 
-		dur := time.Second * time.Duration(seconds)
 		d.items.Store(key, &item{
 			val:    bs,
-			dur:    dur,
-			expire: time.Now().Add(dur),
+			dur:    ttl,
+			expire: time.Now().Add(ttl),
 		})
 		return nil
 	}
@@ -142,13 +141,13 @@ func (d *memoryDriver) gc() {
 	})
 }
 
-func (d *memoryDriver) Counter(key string, val uint64, ttl int) cache.Counter {
+func (d *memoryDriver) Counter(key string, val uint64, ttl time.Duration) cache.Counter {
 	return &memoryCounter{
 		driver:    d,
 		key:       key,
 		val:       []byte(strconv.FormatUint(val, 10)),
 		originVal: val,
-		expires:   time.Second * time.Duration(ttl),
+		expires:   ttl,
 	}
 }
 

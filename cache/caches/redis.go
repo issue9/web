@@ -25,14 +25,21 @@ type redisCounter struct {
 	ttl       time.Duration
 }
 
-// NewRedis 返回 redis 的缓存实现
-func NewRedis(url string) (cache.Driver, error) {
-	c, err := redis.ParseURL(url)
+// NewRedisFromURL 声明基于 redis 的缓存系统
+//
+// url 为符合 [Redis URI scheme] 的字符串
+//
+// [Redis URI scheme]: https://www.iana.org/assignments/uri-schemes/prov/redis
+func NewRedisFromURL(url string) (cache.Driver, error) {
+	opt, err := redis.ParseURL(url)
 	if err != nil {
 		return nil, err
 	}
-	return &redisDriver{conn: redis.NewClient(c)}, nil
+	return NewRedis(redis.NewClient(opt)), nil
 }
+
+// NewRedis 声明基于 redis 的缓存系统
+func NewRedis(c *redis.Client) cache.Driver { return &redisDriver{conn: c} }
 
 func (d *redisDriver) Get(key string, val any) error {
 	bs, err := d.conn.Get(context.Background(), key).Bytes()
@@ -45,12 +52,12 @@ func (d *redisDriver) Get(key string, val any) error {
 	return Unmarshal(bs, val)
 }
 
-func (d *redisDriver) Set(key string, val any, seconds int) error {
+func (d *redisDriver) Set(key string, val any, ttl time.Duration) error {
 	bs, err := Marshal(val)
 	if err != nil {
 		return err
 	}
-	return d.conn.Set(context.Background(), key, bs, time.Duration(seconds)*time.Second).Err()
+	return d.conn.Set(context.Background(), key, bs, ttl).Err()
 }
 
 func (d *redisDriver) Delete(key string) error {
@@ -68,13 +75,13 @@ func (d *redisDriver) Clean() error {
 
 func (d *redisDriver) Close() error { return d.conn.Close() }
 
-func (d *redisDriver) Counter(key string, val uint64, ttl int) cache.Counter {
+func (d *redisDriver) Counter(key string, val uint64, ttl time.Duration) cache.Counter {
 	return &redisCounter{
 		driver:    d,
 		key:       key,
 		val:       strconv.FormatUint(val, 10),
 		originVal: val,
-		ttl:       time.Duration(ttl) * time.Second,
+		ttl:       ttl,
 	}
 }
 

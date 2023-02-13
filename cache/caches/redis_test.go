@@ -18,7 +18,7 @@ const redisURL = "redis://localhost:6379?dial_timeout=1&db=1&read_timeout=1&writ
 func TestRedis(t *testing.T) {
 	a := assert.New(t, false)
 
-	c, err := NewRedis(redisURL)
+	c, err := NewRedisFromURL(redisURL)
 	a.NotError(err).NotNil(c)
 
 	cachetest.Basic(a, c)
@@ -31,12 +31,12 @@ func TestRedis(t *testing.T) {
 func TestRedis_Close(t *testing.T) {
 	a := assert.New(t, false)
 
-	c, err := NewRedis(redisURL)
+	c, err := NewRedisFromURL(redisURL)
 	a.NotError(err).NotNil(c)
 	a.NotError(c.Set("key", "val", cache.Forever))
 	a.NotError(c.Close())
 
-	c, err = NewRedis(redisURL)
+	c, err = NewRedisFromURL(redisURL)
 	a.NotError(err).NotNil(c)
 	var val string
 	a.NotError(c.Get("key", &val)).Equal(val, "val")
