@@ -108,7 +108,7 @@ func (c *redisCounter) Decr(n uint64) (uint64, error) {
 		return 0, err
 	}
 
-	if v < 0 {
+	if v < 0 { // 小于零，保持为零。
 		_, err = c.driver.conn.IncrBy(context.Background(), c.key, in).Result()
 		return 0, err
 
@@ -129,4 +129,8 @@ func (c *redisCounter) Value() (uint64, error) {
 		return c.originVal, err
 	}
 	return strconv.ParseUint(s, 10, 64)
+}
+
+func (c *redisCounter) Delete() error {
+	return c.driver.conn.Del(context.Background(), c.key).Err()
 }

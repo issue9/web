@@ -34,6 +34,9 @@ func Counter(a *assert.Assertion, d cache.Driver) {
 
 	a.True(d.Exists("v1"))
 
+	c.Delete()
+	a.False(d.Exists("v1"))
+
 	// 没有值的情况 Decr
 	c = d.Counter("v2", 50, time.Second)
 	a.NotNil(c)

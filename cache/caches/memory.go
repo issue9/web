@@ -212,3 +212,5 @@ func (c *memoryCounter) Value() (uint64, error) {
 	}
 	return c.originVal, cache.ErrCacheMiss()
 }
+
+func (c *memoryCounter) Delete() error { return c.driver.Delete(c.key) }

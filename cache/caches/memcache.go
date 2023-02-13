@@ -115,7 +115,7 @@ func (c *memcacheCounter) init() error {
 		Value:      c.val,
 		Expiration: c.ttl,
 	})
-	if err == nil || errors.Is(err, memcache.ErrNotStored) {
+	if errors.Is(err, memcache.ErrNotStored) {
 		return nil
 	}
 	return err
@@ -130,3 +130,5 @@ func (c *memcacheCounter) Value() (uint64, error) {
 	}
 	return strconv.ParseUint(string(item.Value), 10, 64)
 }
+
+func (c *memcacheCounter) Delete() error { return c.driver.client.Delete(c.key) }
