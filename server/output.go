@@ -31,23 +31,25 @@ func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 		panic("参数 w 不能为空")
 	}
 
-	resp := f(ctx.resp)
-	ctx.resp = resp
-	ctx.respWriter = resp
+	resp := f(ctx.originResponse)
+	ctx.originResponse = resp
+	ctx.writer = resp
 }
 
-// Marshal 向客户端输出内容
+// Marshal 向客户端输出对象
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
 // body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
 // problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
+//
+// 如果已经有内容输出，再次调用 Marshal 将会 panic。
 func (ctx *Context) Marshal(status int, body any, problem bool) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
 	// 输出对象时出错，状态码也已经输出，此时向调用方报告错误，
 	// 调用方除了输出错误日志，也没有其它面向客户的补救措施。
 
 	if ctx.status > 0 {
-		panic("不能多次调用 Marshal 输出状态码")
+		panic("已有状态码，不能再调用 Marshal 方法")
 	}
 
 	if body == nil {
@@ -86,6 +88,11 @@ func (ctx *Context) Marshal(status int, body any, problem bool) {
 	}
 }
 
+// Status 输出的状态码
+//
+// 在没有内容输出之前，此值将返回 0 ！
+func (ctx *Context) Status() int { return ctx.status }
+
 // Wrote 是否已经有内容输出
 func (ctx *Context) Wrote() bool { return ctx.wrote }
 
@@ -99,23 +106,24 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.respWriter)
-			ctx.respWriter = ctx.encodingCloser
+			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.writer)
+			ctx.writer = ctx.encodingCloser
 		}
 
 		if !header.CharsetIsNop(ctx.outputCharset) {
-			ctx.charsetCloser = transform.NewWriter(ctx.respWriter, ctx.outputCharset.NewEncoder())
-			ctx.respWriter = ctx.charsetCloser
+			ctx.charsetCloser = transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
+			ctx.writer = ctx.charsetCloser
 		}
 	}
 
-	return ctx.respWriter.Write(bs)
+	ctx.status = http.StatusOK
+	return ctx.writer.Write(bs)
 }
 
 func (ctx *Context) WriteHeader(status int) {
 	ctx.Header().Del("Content-Length") // https://github.com/golang/go/issues/14975
 	ctx.status = status
-	ctx.resp.WriteHeader(status)
+	ctx.originResponse.WriteHeader(status)
 }
 
-func (ctx *Context) Header() http.Header { return ctx.resp.Header() }
+func (ctx *Context) Header() http.Header { return ctx.originResponse.Header() }

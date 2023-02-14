@@ -343,7 +343,7 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 // 相对于 [Context.Request.RequestBody]，此函数可多次读取。不存在 body 时，返回 nil
 func (ctx *Context) RequestBody() (body []byte, err error) {
 	if ctx.read {
-		return ctx.body, nil
+		return ctx.requestBody, nil
 	}
 
 	var reader io.Reader = ctx.Request().Body
@@ -351,16 +351,16 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
-	if ctx.body == nil {
-		ctx.body = make([]byte, 0, defaultBodyBufferSize)
+	if ctx.requestBody == nil {
+		ctx.requestBody = make([]byte, 0, defaultBodyBufferSize)
 	}
 
 	for {
-		if len(ctx.body) == cap(ctx.body) {
-			ctx.body = append(ctx.body, 0)[:len(ctx.body)]
+		if len(ctx.requestBody) == cap(ctx.requestBody) {
+			ctx.requestBody = append(ctx.requestBody, 0)[:len(ctx.requestBody)]
 		}
-		n, err := reader.Read(ctx.body[len(ctx.body):cap(ctx.body)])
-		ctx.body = ctx.body[:len(ctx.body)+n]
+		n, err := reader.Read(ctx.requestBody[len(ctx.requestBody):cap(ctx.requestBody)])
+		ctx.requestBody = ctx.requestBody[:len(ctx.requestBody)+n]
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -369,7 +369,7 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 	}
 
 	ctx.read = true
-	return ctx.body, err
+	return ctx.requestBody, err
 }
 
 // Unmarshal 将提交的内容转换成 v 对象

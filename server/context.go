@@ -47,8 +47,8 @@ type Context struct {
 	begin             time.Time
 
 	// response
-	resp           http.ResponseWriter // 原始的 http.ResponseWriter
-	respWriter     io.Writer           // http.ResponseWriter.Write 实际写入的对象
+	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
+	writer         io.Writer           // 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
 	outputEncoding *xencoding.Pool
@@ -68,8 +68,8 @@ type Context struct {
 	languageTag   language.Tag
 	localePrinter *message.Printer
 
-	body []byte // 缓存从 http.Request.Body 中获取的内容
-	read bool   // 表示是已经读取 body
+	requestBody []byte // 缓存从 http.Request.Body 中获取的内容
+	read        bool   // 表示是已经读取 body
 
 	// 保存 Context 在存续期间的可复用变量
 	//
@@ -131,8 +131,8 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.begin = time.Now()
 
 	// response
-	ctx.resp = w
-	ctx.respWriter = w
+	ctx.originResponse = w
+	ctx.writer = w
 	ctx.encodingCloser = nil
 	ctx.charsetCloser = nil
 	ctx.outputEncoding = outputEncoding
@@ -150,8 +150,8 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
 	ctx.localePrinter = srv.NewPrinter(tag)
-	if len(ctx.body) > 0 {
-		ctx.body = ctx.body[:0]
+	if len(ctx.requestBody) > 0 {
+		ctx.requestBody = ctx.requestBody[:0]
 	}
 	ctx.read = false
 	ctx.Vars = map[any]any{}
@@ -299,7 +299,7 @@ func (ctx *Context) destroy() {
 
 	logs.Destroy(ctx.logs)
 
-	if len(ctx.body) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
+	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
 	}
 }
@@ -357,4 +357,4 @@ func (ctx *Context) IsXHR() bool {
 }
 
 // https://github.com/golang/go/blob/release-branch.go1.20/src/net/http/responsecontroller.go#L41
-func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.resp }
+func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }

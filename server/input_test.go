@@ -314,15 +314,15 @@ func TestContext_Body(t *testing.T) {
 	r := rest.Post(a, "/path", []byte("123")).Request()
 	w := httptest.NewRecorder()
 	ctx := srv.newContext(w, r, nil)
-	a.Nil(ctx.body)
+	a.Nil(ctx.requestBody)
 	data, err := ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.body, data)
+		Equal(ctx.requestBody, data)
 
 	// 读取缓存内容
 	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.body, data)
+		Equal(ctx.requestBody, data)
 
 	// 采用 Nop 即 utf-8 编码
 	r = rest.Post(a, "/path", []byte("123")).Request()
@@ -330,7 +330,7 @@ func TestContext_Body(t *testing.T) {
 	ctx.inputCharset = encoding.Nop
 	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.body, data)
+		Equal(ctx.requestBody, data)
 
 	// GBK
 	r = rest.Post(a, "/path", testdata.ObjectGBKBytes).
@@ -341,7 +341,7 @@ func TestContext_Body(t *testing.T) {
 	a.NotNil(ctx)
 	data, err = ctx.RequestBody()
 	a.NotError(err).Equal(string(data), testdata.ObjectJSONString).
-		Equal(ctx.body, data)
+		Equal(ctx.requestBody, data)
 }
 
 func TestContext_Unmarshal(t *testing.T) {

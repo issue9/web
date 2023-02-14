@@ -135,38 +135,30 @@ func TestContext_Marshal(t *testing.T) {
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	buf.Reset()
 	w = httptest.NewRecorder()
+	r = rest.Get(a, "/path").Header("Accept", "application/json").Request()
+	ctx = srv.newContext(w, r, nil)
+	_, err = ctx.Write([]byte("123"))
+	a.NotError(err)
+	a.PanicString(func() {
+		ctx.Marshal(http.StatusCreated, "456", false)
+	}, "已有状态码，不能再调用 Marshal 方法")
+	ctx.destroy()
+
+	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
+	buf.Reset()
+	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
 		Header("Accept", "application/json").
 		Header("Accept-Encoding", "gzip;q=0.9,deflate").
 		Request()
 	ctx = srv.newContext(w, r, nil)
-	_, err = ctx.Write([]byte("123"))
+	ctx.Marshal(http.StatusCreated, "123", false)
+	_, err = ctx.Write([]byte("456"))
 	a.NotError(err)
-	ctx.Marshal(http.StatusCreated, "456", false)
 	ctx.destroy()
 	a.Zero(buf.Len()).Equal(w.Code, http.StatusCreated) // 压缩对象缓存了 WriteHeader 的发送
 	data, err = io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(string(data), `123"456"`)
-
-	// accept,accept-language,accept-charset 和 accept-encoding，部分 Response.Write 输出
-	buf.Reset()
-	w = httptest.NewRecorder()
-	r = rest.Get(a, "/path").
-		Header("Accept", "application/json").
-		Header("Accept-Language", "zh-Hans").
-		Header("Accept-Charset", "gbk").
-		Request()
-	ctx = srv.newContext(w, r, nil)
-	_, err = ctx.Write([]byte(testdata.ObjectJSONString))
-	a.NotError(err)
-	ctx.Marshal(http.StatusCreated, testdata.ObjectInst, false)
-	ctx.destroy()
-	a.Zero(buf.Len()).Equal(w.Code, http.StatusOK) // 未指定压缩，WriteHeader 直接发送
-	data, err = io.ReadAll(w.Body)
-	a.NotError(err)
-	bs := make([]byte, 0, 2*len(testdata.ObjectGBKBytes))
-	bs = append(append(bs, testdata.ObjectGBKBytes...), testdata.ObjectGBKBytes...)
-	a.Equal(data, bs)
+	a.NotError(err).Equal(string(data), `"123"456`)
 
 	// outputMimetype == nil
 	buf.Reset()
