@@ -69,8 +69,7 @@ type Options struct {
 	//
 	// 供 [Server.UniqueID] 使用。
 	//
-	// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]
-	// 是服务类型的，只有在 [Server.Serve] 运行之后，UniqueGenerator 才会有返回值。
+	// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]。
 	UniqueGenerator UniqueGenerator
 
 	// 路由选项
@@ -90,9 +89,6 @@ type UniqueGenerator interface {
 
 	// 返回字符串类型的唯一 ID 值
 	String() string
-
-	// 返回 []byte 类型的唯一 ID 值
-	Bytes() []byte
 }
 
 func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {

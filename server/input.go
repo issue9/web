@@ -340,7 +340,7 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 
 // RequestBody 获取用户提交的内容
 //
-// 相对于 [Context.Request.RequestBody]，此函数可多次读取。不存在 body 时，返回 nil
+// 相对于 [Context.Request.Body]，此函数可多次读取。不存在 body 时，返回 nil
 func (ctx *Context) RequestBody() (body []byte, err error) {
 	if ctx.read {
 		return ctx.requestBody, nil

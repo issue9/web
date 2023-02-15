@@ -356,5 +356,7 @@ func (ctx *Context) IsXHR() bool {
 	return h == "xmlhttprequest"
 }
 
-// https://github.com/golang/go/blob/release-branch.go1.20/src/net/http/responsecontroller.go#L41
+// Unwrap 返回底层的 http.ResponseWriter
+//
+// 在 go1.20 之后，可由 [http.ResponseController] 可能要用到此方法。
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
