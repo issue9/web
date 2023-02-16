@@ -308,7 +308,7 @@ func TestContext_Object(t *testing.T) {
 
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	// 未缓存
 	r := rest.Post(a, "/path", []byte("123")).Request()

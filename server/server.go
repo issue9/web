@@ -75,12 +75,15 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:            &sync.Map{},
 		cache:           o.Cache,
 		uptime:          time.Now(),
+		services:        service.NewServer(o.Location, o.logs),
 		uniqueGenerator: o.UniqueGenerator.String,
 		requestIDKey:    o.RequestIDKey,
 
 		location: o.Location,
-		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
-		tag:      o.LanguageTag,
+		catalog:  o.Locale.Catalog,
+		tag:      o.Locale.Language,
+		printer:  o.Locale.printer,
+		logs:     o.logs,
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
@@ -89,13 +92,10 @@ func New(name, version string, o *Options) (*Server, error) {
 		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
 	}
 
-	srv.printer = srv.NewPrinter(o.LanguageTag)
-	srv.logs = logs.New(o.Logs, srv.LocalePrinter()) // 注意 srv.LocalePrinter 是否已经初始化。
 	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())
 	for _, e := range o.Encodings {
 		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
 	}
-	srv.services = service.NewServer(o.Location, srv.Logs())
 	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -206,8 +206,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 func (ctx *Context) Server() *Server { return ctx.server }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
-	tag, _, _ = srv.CatalogBuilder().Matcher().Match(tag)
-	return message.NewPrinter(tag, message.Catalog(srv.CatalogBuilder()))
+	return newPrinter(tag, srv.CatalogBuilder())
 }
 
 func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }

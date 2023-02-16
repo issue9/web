@@ -51,7 +51,11 @@ func TestInstallView(t *testing.T) {
 
 func TestInstallView_dir(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, &server.Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.MustParse("cmn-hans")})
+	opt := &server.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Locale:     &server.Locale{Language: language.MustParse("cmn-hans")},
+	}
+	s := servertest.NewTester(a, opt)
 	s.Server().Mimetypes().Add(Mimetype, Marshal, Unmarshal, "")
 	instalDirView(s.Server(), os.DirFS("./testdata/dir"), "*.tpl")
 

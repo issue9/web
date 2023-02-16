@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
@@ -47,19 +49,12 @@ type Options struct {
 	//
 	// 如果此值为空，表示不会输出到任何通道。
 	Logs *logs.Options
+	logs *logs.Logs
 
 	// 生成 [Problem] 对象的方法
 	//
 	// 如果为空，那么将采用 [RFC7807Builder] 作为默认值。
 	ProblemBuilder BuildProblemFunc
-
-	// 默认的语言标签
-	//
-	// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-	// 同时也用来初始化 [Server.LocalePrinter]。
-	//
-	// 如果为空，则会尝试读取当前系统的本地化信息。
-	LanguageTag language.Tag
 
 	// http.Server 实例的值
 	//
@@ -87,6 +82,11 @@ type Options struct {
 	//
 	// 默认为空。
 	Encodings []*Encoding
+
+	// 本地化的相关设置
+	//
+	// 可以为空，表示根据当前服务器环境检测适当的值。
+	Locale *Locale
 }
 
 type Encoding struct {
@@ -108,6 +108,23 @@ type UniqueGenerator interface {
 
 	// 返回字符串类型的唯一 ID 值
 	String() string
+}
+
+type Locale struct {
+	// 默认的语言标签
+	//
+	// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
+	// 同时也用来初始化 [Server.LocalePrinter]。
+	//
+	// 如果为空，则会尝试读取当前系统的本地化信息。
+	Language language.Tag
+
+	// 本地化的数据
+	//
+	// 如果为空，则会被初始化成一个空对象。
+	Catalog *catalog.Builder
+
+	printer *message.Printer
 }
 
 func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
@@ -135,10 +152,6 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.HTTPServer = &http.Server{}
 	}
 
-	if o.Logs == nil {
-		o.Logs = &logs.Options{}
-	}
-
 	if o.ProblemBuilder == nil {
 		o.ProblemBuilder = RFC7807Builder
 	}
@@ -147,13 +160,17 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.UniqueGenerator = unique.NewDate(1000)
 	}
 
-	if o.LanguageTag == language.Und {
-		tag, err := localeutil.DetectUserLanguageTag()
-		if err != nil {
-			return nil, errs.NewFieldError("LanguageTag", err)
-		}
-		o.LanguageTag = tag
+	if o.Locale == nil {
+		o.Locale = &Locale{}
 	}
+	if err := o.Locale.sanitize(); err != nil {
+		err.AddFieldParent("Locale")
+	}
+
+	if o.Logs == nil {
+		o.Logs = &logs.Options{}
+	}
+	o.logs = logs.New(o.Logs, o.Locale.printer) // 依赖 o.Locale
 
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = RequestIDKey
@@ -174,4 +191,27 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	}
 
 	return o, nil
+}
+
+func (l *Locale) sanitize() *errs.FieldError {
+	if l.Language == language.Und {
+		tag, err := localeutil.DetectUserLanguageTag()
+		if err != nil {
+			return errs.NewFieldError("Language", err)
+		}
+		l.Language = tag
+	}
+
+	if l.Catalog == nil {
+		l.Catalog = catalog.NewBuilder(catalog.Fallback(l.Language))
+	}
+
+	l.printer = newPrinter(l.Language, l.Catalog)
+
+	return nil
+}
+
+func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
+	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
+	return message.NewPrinter(tag, message.Catalog(cat))
 }
