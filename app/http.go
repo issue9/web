@@ -220,7 +220,7 @@ func (l *acme) tlsConfig() *tls.Config {
 
 func (l *acme) sanitize() *errs.FieldError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return errs.NewFieldError("cache", errs.NewLocaleError("invalid value %s", l.Cache))
+		return errs.NewFieldError("cache", errs.NewLocaleError("invalid value"))
 	}
 
 	if len(l.Domains) == 0 {

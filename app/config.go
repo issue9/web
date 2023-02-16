@@ -56,7 +56,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings>encoding,omitempty"`
-	encodings map[string]enc    // 启用的 ID
+	encodings []*server.Encoding
 
 	// 默认的文件序列化列表
 	//
@@ -127,6 +127,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		RoutersOptions:  conf.HTTP.routersOptions,
 		UniqueGenerator: conf.uniqueGenerator,
 		RequestIDKey:    conf.HTTP.RequestID,
+		Encodings:       conf.encodings,
 	}
 
 	srv, err := server.New(name, version, opt)
@@ -152,8 +153,6 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	for _, item := range conf.mimetypes {
 		srv.Mimetypes().Add(item.Name, item.Marshal, item.Unmarshal, item.Problem)
 	}
-
-	conf.buildEncodings(srv.Encodings())
 
 	srv.OnClose(conf.cleanup...)
 

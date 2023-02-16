@@ -92,6 +92,9 @@ func New(name, version string, o *Options) (*Server, error) {
 	srv.printer = srv.NewPrinter(o.LanguageTag)
 	srv.logs = logs.New(o.Logs, srv.LocalePrinter()) // 注意 srv.LocalePrinter 是否已经初始化。
 	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())
+	for _, e := range o.Encodings {
+		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
+	}
 	srv.services = service.NewServer(o.Location, srv.Logs())
 	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,

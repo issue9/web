@@ -26,23 +26,6 @@ type (
 	// UnmarshalFunc 反序列化函数原型
 	UnmarshalFunc func([]byte, any) error
 
-	Encodings interface {
-		// Add 添加压缩算法
-		//
-		// id 表示当前算法的唯一名称，在 Allow 中可以用来查找使用；
-		// name 表示通过 Accept-Encoding 匹配的名称；
-		// f 表示生成压缩对象的方法；
-		Add(id, name string, f NewEncodingFunc)
-
-		// Allow 允许 contentType 采用的压缩方式
-		//
-		// id 是指由 Add 中指定的值；
-		// contentType 表示经由 Accept-Encoding 提交的值，该值不能是 identity 和 *；
-		//
-		// 如果未添加任何算法，则每个请求都相当于是 identity 规则。
-		Allow(contentType string, id ...string)
-	}
-
 	Mimetypes interface {
 		// Exists 是否存在同名的
 		Exists(string) bool
@@ -78,9 +61,6 @@ func (srv *Server) Services() *Services { return srv.services }
 
 // Mimetypes 编解码控制
 func (srv *Server) Mimetypes() Mimetypes { return srv.mimetypes }
-
-// Encodings 返回压缩编码管理
-func (srv *Server) Encodings() Encodings { return srv.encodings }
 
 // EncodingGZip 返回指定配置的 gzip 算法
 func EncodingGZip(level int) NewEncodingFunc { return encoding.GZipWriter(level) }

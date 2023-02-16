@@ -59,6 +59,12 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 			Levels:  logs.AllLevels(),
 		}
 	}
+	if o.Encodings == nil {
+		o.Encodings = []*Encoding{
+			{Name: "gzip", Builder: EncodingGZip(8)},
+			{Name: "deflate", Builder: EncodingDeflate(8)},
+		}
+	}
 
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
@@ -77,12 +83,6 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	// encoding
-	e := srv.Encodings()
-	e.Add("gzip", "gzip", EncodingGZip(8))
-	e.Add("deflate", "deflate", EncodingDeflate(8))
-	e.Allow("*", "gzip", "deflate")
 
 	srv.Problems().Add(&StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("lang"), Detail: localeutil.Phrase("41110")})
 

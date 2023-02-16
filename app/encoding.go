@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/sliceutil"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/errs"
@@ -27,7 +26,7 @@ type encodingConfig struct {
 	// Type content-type 的值
 	//
 	// 可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。
-	Type string `json:"type" xml:"type,attr" yaml:"type"`
+	Types []string `json:"types" xml:"type" yaml:"types"`
 
 	// IDs 压缩方法的 ID 列表
 	//
@@ -47,39 +46,25 @@ type encodingConfig struct {
 	//  - zstd-fastest
 	//  - zstd-better
 	//  - zstd-best
-	IDs []string `json:"ids" xml:"id" yaml:"ids"`
+	ID string `json:"id" xml:"id,attr" yaml:"id"`
 }
 
 func (conf *configOf[T]) sanitizeEncodings() *errs.FieldError {
-	ids := make([]string, 0, len(encodingFactory))
-	for i, e := range conf.Encodings {
-		if len(e.IDs) == 0 {
-			field := "[" + strconv.Itoa(i) + "].id"
-			return errs.NewFieldError(field, errs.NewLocaleError("can not be empty"))
-		}
-		ids = append(ids, e.IDs...)
-	}
-	ids = sliceutil.Unique(ids, func(i, j string) bool { return i == j })
-
-	conf.encodings = make(map[string]enc, len(ids))
-	for _, id := range ids {
-		item, found := encodingFactory[id]
+	conf.encodings = make([]*server.Encoding, 0, len(conf.Encodings))
+	for index, e := range conf.Encodings {
+		enc, found := encodingFactory[e.ID]
 		if !found {
-			return errs.NewFieldError("ids", errs.NewLocaleError("%s not found", id))
+			field := "encodings[" + strconv.Itoa(index) + "].id"
+			return errs.NewFieldError(field, errs.NewLocaleError("%s not found", e.ID))
 		}
-		conf.encodings[id] = item
+
+		conf.encodings = append(conf.encodings, &server.Encoding{
+			Name:         enc.name,
+			Builder:      enc.f,
+			ContentTypes: e.Types,
+		})
 	}
 	return nil
-}
-
-func (conf *configOf[T]) buildEncodings(s server.Encodings) {
-	for id, item := range conf.encodings {
-		s.Add(id, item.name, item.f)
-	}
-
-	for _, enc := range conf.Encodings {
-		s.Allow(enc.Type, enc.IDs...)
-	}
 }
 
 // RegisterEncoding 注册压缩方法

@@ -218,12 +218,12 @@ var colorMap = map[string]colors.Color{
 // - 2 为输出通道，可以为 stdout 和 stderr；
 func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	if len(args) != 3 {
-		return nil, nil, errs.NewFieldError("Args", errs.NewLocaleError("invalid value %s", args))
+		return nil, nil, errs.NewFieldError("Args", errs.NewLocaleError("invalid value"))
 	}
 
 	c, found := colorMap[strings.ToLower(args[1])]
 	if !found {
-		return nil, nil, errs.NewFieldError("Args[1]", errs.NewLocaleError("invalid value %s", args[1]))
+		return nil, nil, errs.NewFieldError("Args[1]", errs.NewLocaleError("invalid value"))
 	}
 
 	var w io.Writer
@@ -233,7 +233,7 @@ func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, errs.NewFieldError("Args[2]", errs.NewLocaleError("invalid value %s", args[2]))
+		return nil, nil, errs.NewFieldError("Args[2]", errs.NewLocaleError("invalid value"))
 	}
 
 	return logs.NewTermWriter(args[0], c, w), nil, nil

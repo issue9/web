@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/issue9/localeutil"
@@ -81,6 +82,24 @@ type Options struct {
 	//
 	// 如果为空，则采用 [RequestIDKey] 作为默认值
 	RequestIDKey string
+
+	// 可用的压缩类型
+	//
+	// 默认为空。
+	Encodings []*Encoding
+}
+
+type Encoding struct {
+	// 压缩算法的名称
+	Name string
+
+	// 压缩算法的构建对象
+	Builder NewEncodingFunc
+
+	// 该压缩算法支持的 content-type
+	//
+	// 如果为空，将被设置为 *
+	ContentTypes []string
 }
 
 // UniqueGenerator 唯一 ID 生成器的接口
@@ -138,6 +157,20 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = RequestIDKey
+	}
+
+	for i, e := range o.Encodings {
+		if e.Name == "" || e.Name == "identity" || e.Name == "*" {
+			return nil, errs.NewFieldError("Encodings["+strconv.Itoa(i)+"].Name", "invalid value")
+		}
+
+		if e.Builder == nil {
+			return nil, errs.NewFieldError("Encodings["+strconv.Itoa(i)+"].Builder", "can not be empty")
+		}
+
+		if len(e.ContentTypes) == 0 {
+			e.ContentTypes = []string{"*"}
+		}
 	}
 
 	return o, nil

@@ -37,6 +37,13 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		}
 	}
 
+	if o.Encodings == nil {
+		o.Encodings = []*server.Encoding{
+			{Name: "gzip", Builder: server.EncodingGZip(8)},
+			{Name: "deflate", Builder: server.EncodingDeflate(8)},
+		}
+	}
+
 	srv, err := server.New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -54,12 +61,6 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	// encoding
-	e := srv.Encodings()
-	e.Add("gzip", "gzip", server.EncodingGZip(8))
-	e.Add("deflate", "deflate", server.EncodingDeflate(8))
-	e.Allow("*", "gzip", "deflate")
 
 	srv.Problems().Add(&server.StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("41110"), Detail: localeutil.Phrase("41110")})
 

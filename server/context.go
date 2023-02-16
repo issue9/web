@@ -51,7 +51,7 @@ type Context struct {
 	writer         io.Writer           // 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *xencoding.Pool
+	outputEncoding *xencoding.Alg
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool

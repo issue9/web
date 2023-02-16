@@ -44,9 +44,9 @@ messages:
   message:
     msg: '%s 不存在'
 
-- key: 'invalid value %s'
+- key: 'invalid value'
   message:
-    msg: '%s 无效的值'
+    msg: '无效的值'
 
 - key: the type is not slice or array
   message:
