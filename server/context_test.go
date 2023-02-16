@@ -65,18 +65,18 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 			{Name: "deflate", Builder: EncodingDeflate(8)},
 		}
 	}
+	if o.Mimetypes == nil {
+		o.Mimetypes = []*Mimetype{
+			{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
+			{Type: "application/xml", Marshal: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
+			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
+			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
+		}
+	}
 
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// mimetype
-	mimetype := srv.Mimetypes()
-	mimetype.Add("application/json", marshalJSON, json.Unmarshal, "application/problem+json")
-	mimetype.Add("application/xml", marshalXML, xml.Unmarshal, "")
-	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
-	mimetype.Add("nil", nil, nil, "")
-	a.Equal(mimetype.Len(), 4)
 
 	// locale
 	b := srv.CatalogBuilder()

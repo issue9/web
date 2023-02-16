@@ -33,7 +33,6 @@ func TestNewServerOf(t *testing.T) {
 
 	s, data, err := NewServerOf[empty](name, ver, nil, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(s).Nil(data)
-	a.Equal(s.Mimetypes().Len(), 3)
 
 	s, data, err = NewServerOf[empty](name, ver, nil, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)

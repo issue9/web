@@ -89,7 +89,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		closes: make([]func() error, 0, 10),
 
 		problems:  problems.New(o.ProblemBuilder),
-		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
+		mimetypes: o.mimetypes,
 	}
 
 	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())

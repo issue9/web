@@ -11,7 +11,7 @@ import (
 
 func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 	a := assert.New(b, false)
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 	a.NotNil(mt)
 
 	mt.Add("font/wottf", xml.Marshal, xml.Unmarshal, "")
@@ -24,7 +24,7 @@ func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 
 func BenchmarkMimetypes_ContentType(b *testing.B) {
 	a := assert.New(b, false)
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 	a.NotNil(mt)
 
 	mt.Add("font/1", xml.Marshal, xml.Unmarshal, "")

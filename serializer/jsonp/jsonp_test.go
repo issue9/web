@@ -3,6 +3,7 @@
 package jsonp
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -14,8 +15,12 @@ import (
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, nil)
-	s.Server().Mimetypes().Add(Mimetype, Marshal, Unmarshal, "")
+	s := servertest.NewTester(a, &server.Options{
+		Mimetypes: []*server.Mimetype{
+			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
+		},
+		HTTPServer: &http.Server{Addr: ":8080"},
+	})
 	Install("callback", s.Server())
 
 	s.Router().Get("/jsonp", func(ctx *server.Context) server.Responser {

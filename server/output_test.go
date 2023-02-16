@@ -5,7 +5,6 @@ package server
 import (
 	"bytes"
 	"compress/flate"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -104,15 +103,14 @@ func TestContext_Marshal(t *testing.T) {
 
 	// problem, 未指定
 	buf.Reset()
-	srv.Mimetypes().Set("application/json", marshalJSON, json.Unmarshal, "")
 	w = httptest.NewRecorder()
-	r = rest.Get(a, "/path").Header("Accept", "application/json").Request()
+	r = rest.Get(a, "/path").Header("Accept", "application/xml").Request()
 	ctx = srv.newContext(w, r, nil)
 	ctx.Marshal(http.StatusCreated, "abc", true)
 	a.Zero(buf.Len()).
 		Equal(w.Code, http.StatusCreated).
-		Equal(w.Body.String(), `"abc"`).
-		Equal(w.Header().Get("content-type"), "application/json; charset=utf-8")
+		Equal(w.Body.String(), `<string>abc</string>`).
+		Equal(w.Header().Get("content-type"), "application/xml; charset=utf-8")
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	buf.Reset()

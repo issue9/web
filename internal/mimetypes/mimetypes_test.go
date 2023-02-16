@@ -19,17 +19,12 @@ type (
 
 const testMimetype = "application/octet-stream"
 
-func TestMimetypes_Add_Set_Delete_Exists(t *testing.T) {
+func TestMimetypes_Add(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 
 	a.False(mt.Exists(testMimetype))
 	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
-	a.True(mt.Exists(testMimetype))
-
-	mt.Delete(testMimetype)
-	a.False(mt.Exists(testMimetype))
-	mt.Set(testMimetype, json.Marshal, json.Unmarshal, "")
 	a.True(mt.Exists(testMimetype))
 
 	a.Panic(func() {
@@ -40,7 +35,7 @@ func TestMimetypes_Add_Set_Delete_Exists(t *testing.T) {
 func TestMimetypes_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
 	a.NotNil(mt)
 
@@ -86,7 +81,7 @@ func TestMimetypes_ContentType(t *testing.T) {
 
 func TestMimetypes_MarshalFunc(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 
 	item := mt.MarshalFunc(testMimetype)
 	a.Nil(item)
@@ -104,22 +99,16 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 		Equal(item.Name, testMimetype).
 		Equal(item.Problem, testMimetype)
 
-	mt.Set(testMimetype, json.Marshal, json.Unmarshal, "")
-	item = mt.MarshalFunc(testMimetype)
-	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(json.Marshal)).
-		Equal(item.Name, testMimetype)
-
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	item = mt.MarshalFunc("*/*")
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(json.Marshal)).
+		Equal(item.Marshal, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
 	// 同 */*
 	item = mt.MarshalFunc("")
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(json.Marshal)).
+		Equal(item.Marshal, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
 	item = mt.MarshalFunc("*/*,text/plain")
@@ -143,7 +132,7 @@ func TestMimetypes_MarshalFunc(t *testing.T) {
 
 func TestMimetypes_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New[marshalFunc, unmarshalFunc]()
+	mt := New[marshalFunc, unmarshalFunc](10)
 
 	mt.Add("text", nil, nil, "")
 	mt.Add("text/plain", nil, nil, "")

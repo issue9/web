@@ -8,7 +8,6 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/serializer/json"
@@ -22,8 +21,6 @@ type serializerItem struct {
 	marshal   server.MarshalFunc
 	unmarshal server.UnmarshalFunc
 }
-
-type mimetype = mimetypes.Mimetype[server.MarshalFunc, server.UnmarshalFunc]
 
 type mimetypeConfig struct {
 	// 编码名称
@@ -60,18 +57,18 @@ func (conf *configOf[T]) sanitizeMimetypes() *errs.FieldError {
 		return err
 	}
 
-	ms := make([]mimetype, 0, len(conf.Mimetypes))
+	ms := make([]*server.Mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
 			return errs.NewFieldError("["+strconv.Itoa(index)+"].target", errs.NewLocaleError("%s not found", item.Target))
 		}
 
-		ms = append(ms, mimetype{
-			Marshal:   m.marshal,
-			Unmarshal: m.unmarshal,
-			Name:      item.Type,
-			Problem:   item.Problem,
+		ms = append(ms, &server.Mimetype{
+			Marshal:     m.marshal,
+			Unmarshal:   m.unmarshal,
+			Type:        item.Type,
+			ProblemType: item.Problem,
 		})
 	}
 	conf.mimetypes = ms

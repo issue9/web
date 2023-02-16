@@ -74,7 +74,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []mimetype
+	mimetypes []*server.Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -130,6 +130,7 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		UniqueGenerator: conf.uniqueGenerator,
 		RequestIDKey:    conf.HTTP.RequestID,
 		Encodings:       conf.encodings,
+		Mimetypes:       conf.mimetypes,
 	}
 
 	srv, err := server.New(name, version, opt)
@@ -150,10 +151,6 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 
 	for name, s := range conf.files {
 		srv.Files().Add(s.Marshal, s.Unmarshal, name)
-	}
-
-	for _, item := range conf.mimetypes {
-		srv.Mimetypes().Add(item.Name, item.Marshal, item.Unmarshal, item.Problem)
 	}
 
 	srv.OnClose(conf.cleanup...)

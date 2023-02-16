@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
+	"github.com/issue9/sliceutil"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -20,6 +21,7 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
 )
@@ -80,13 +82,33 @@ type Options struct {
 
 	// 可用的压缩类型
 	//
-	// 默认为空。
+	// 默认为空。表示不需要该功能。
 	Encodings []*Encoding
 
 	// 本地化的相关设置
 	//
 	// 可以为空，表示根据当前服务器环境检测适当的值。
 	Locale *Locale
+
+	// 指定可用的 mimetype
+	//
+	// 默认为空。
+	Mimetypes []*Mimetype
+	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+}
+
+type Mimetype struct {
+	// Mimetype 的值
+	Type string
+
+	// 对应的 Problem 状态下的 mimetype 值
+	ProblemType string
+
+	// 编码
+	Marshal MarshalFunc
+
+	// 解码
+	Unmarshal UnmarshalFunc
 }
 
 type Encoding struct {
@@ -188,6 +210,15 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		if len(e.ContentTypes) == 0 {
 			e.ContentTypes = []string{"*"}
 		}
+	}
+
+	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *Mimetype) bool { return e1.Type == e2.Type })
+	if len(indexes) > 0 {
+		return nil, errs.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", "duplicate value")
+	}
+	o.mimetypes = mimetypes.New[MarshalFunc, UnmarshalFunc](len(o.Mimetypes))
+	for _, mt := range o.Mimetypes {
+		o.mimetypes.Add(mt.Type, mt.Marshal, mt.Unmarshal, mt.ProblemType)
 	}
 
 	return o, nil
