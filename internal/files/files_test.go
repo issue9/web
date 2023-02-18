@@ -53,10 +53,6 @@ func TestFiles_Load(t *testing.T) {
 	web := &webConfig{}
 	err := errs.NewLocaleError("not found serialization function for %s", "web.xml")
 	a.Equal(f.Load(os.DirFS("./testdata"), "web.xml", web), err)
-
-	f.Set(".xml", xml.Marshal, xml.Unmarshal)
-	a.NotError(f.Load(os.DirFS("./testdata"), "web.xml", web))
-	a.Equal(web, &webConfig{Port: ":8082", Timezone: "Africa/Addis_Ababa"})
 }
 
 func Test_LoadLocales(t *testing.T) {

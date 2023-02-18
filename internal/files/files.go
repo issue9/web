@@ -55,11 +55,6 @@ func (f *Files) Add(m MarshalFunc, u UnmarshalFunc, ext ...string) {
 	}
 }
 
-// Set 修改序列化方法
-func (f *Files) Set(ext string, m MarshalFunc, u UnmarshalFunc) {
-	f.items[ext] = &FileSerializer{Marshal: m, Unmarshal: u}
-}
-
 // Delete 删除序列化方法
 func (f *Files) Delete(ext ...string) {
 	for _, e := range ext {
