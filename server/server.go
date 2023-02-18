@@ -88,7 +88,7 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:  o.Problems.problems,
+		problems:  o.problems,
 		mimetypes: o.mimetypes,
 		encodings: encoding.NewEncodings(o.logs.ERROR()),
 	}

@@ -85,6 +85,12 @@ type configOf[T any] struct {
 	UniqueGenerator string `yaml:"uniqueGenerator,omitempty" json:"uniqueGenerator,omitempty" xml:"uniqueGenerator,omitempty"`
 	uniqueGenerator server.UniqueGenerator
 
+	// 错误代码的配置
+	//
+	// 可以为空，表示采用 [server.Options] 的默认值。
+	Problem  *Problem `yaml:"problem,omitempty" json:"problem,omitempty" xml:"problem,omitempty"`
+	problems *server.Problems
+
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
@@ -103,7 +109,7 @@ type ConfigSanitizer interface {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [ConfigSanitizer] 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		s, err := server.New(name, version, &server.Options{FS: fsys})
 		return s, nil, err
@@ -111,10 +117,8 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 
 	conf, err := loadConfigOf[T](fsys, filename)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errs.NewStackError(err)
 	}
-
-	// NOTE: 以下代码由 loadConfigOf 保证不会出错，所以所有错误一律 panic 处理。
 
 	opt := &server.Options{
 		FS:         fsys,
@@ -130,14 +134,12 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		RequestIDKey:    conf.HTTP.RequestID,
 		Encodings:       conf.encodings,
 		Mimetypes:       conf.mimetypes,
-		Problems: &server.Problems{
-			Builder: pb,
-		},
+		Problems:        conf.problems,
 	}
 
 	srv, err := server.New(name, version, opt)
 	if err != nil {
-		panic(err)
+		return nil, nil, errs.NewStackError(err)
 	}
 
 	if len(conf.HTTP.Headers) > 0 {
@@ -209,6 +211,10 @@ func (conf *configOf[T]) sanitize() *errs.FieldError {
 	}
 	if g, found := uniqueGeneratorFactory[conf.UniqueGenerator]; found {
 		conf.uniqueGenerator = g()
+	}
+
+	if conf.problems, err = conf.Problem.sanitize(); err != nil {
+		return err.AddFieldParent("problem")
 	}
 
 	if conf.User != nil {

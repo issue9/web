@@ -94,6 +94,7 @@ type Options struct {
 
 	// 针对错误代码的配置
 	Problems *Problems
+	problems *problems.Problems[Problem]
 }
 
 type Problems struct {
@@ -105,16 +106,16 @@ type Problems struct {
 	// Problem 为传递给 BuildProblemFunc 的 id 参数指定前缀
 	//
 	// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
-	TypePrefix string
-
-	problems *problems.Problems[Problem]
+	IDPrefix string
 }
 
 type Mimetype struct {
 	// Mimetype 的值
 	Type string
 
-	// 对应的 Problem 状态下的 mimetype 值
+	// 对应的错误状态下的 mimetype 值
+	//
+	// 可以为空，表示与 Type 相同。
 	ProblemType string
 
 	// 编码方法
@@ -195,8 +196,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.Locale = &Locale{}
 	}
 	if err := o.Locale.sanitize(); err != nil {
-		err.AddFieldParent("Locale")
-		return nil, err
+		return nil, err.AddFieldParent("Locale")
 	}
 
 	if o.Logs == nil {
@@ -209,16 +209,8 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	}
 
 	for i, e := range o.Encodings {
-		if e.Name == "" || e.Name == "identity" || e.Name == "*" {
-			return nil, errs.NewFieldError("Encodings["+strconv.Itoa(i)+"].Name", "invalid value")
-		}
-
-		if e.Builder == nil {
-			return nil, errs.NewFieldError("Encodings["+strconv.Itoa(i)+"].Builder", "can not be empty")
-		}
-
-		if len(e.ContentTypes) == 0 {
-			e.ContentTypes = []string{"*"}
+		if err := e.sanitize(); err != nil {
+			return nil, err.AddFieldParent("Encodings[" + strconv.Itoa(i) + "]")
 		}
 	}
 
@@ -232,20 +224,36 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.mimetypes.Add(mt.Type, mt.Marshal, mt.Unmarshal, mt.ProblemType)
 	}
 
-	// problems
-	if o.Problems == nil {
-		o.Problems = &Problems{}
-	}
-	o.Problems.sanitize()
+	o.problems = o.Problems.sanitize()
 
 	return o, nil
 }
 
-func (ps *Problems) sanitize() {
+func (e *Encoding) sanitize() *errs.FieldError {
+	if e.Name == "" || e.Name == "identity" || e.Name == "*" {
+		return errs.NewFieldError("Name", "invalid value")
+	}
+
+	if e.Builder == nil {
+		return errs.NewFieldError("Builder", "can not be empty")
+	}
+
+	if len(e.ContentTypes) == 0 {
+		e.ContentTypes = []string{"*"}
+	}
+
+	return nil
+}
+
+func (ps *Problems) sanitize() *problems.Problems[Problem] {
+	if ps == nil {
+		return problems.New("", RFC7807Builder)
+	}
+
 	if ps.Builder == nil {
 		ps.Builder = RFC7807Builder
 	}
-	ps.problems = problems.New(ps.TypePrefix, ps.Builder)
+	return problems.New(ps.IDPrefix, ps.Builder)
 }
 
 func (l *Locale) sanitize() *errs.FieldError {

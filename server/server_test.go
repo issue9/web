@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
@@ -278,8 +279,8 @@ func TestServer_Routers(t *testing.T) {
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := servertest.NewTester(a, nil)
+	s.Server().CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
 	r := s.Router()
-	//s.Server().Problems().Add("404", 404, localeutil.Phrase("404 title"), localeutil.Phrase("404 detail"))
 	s.GoServe()
 	defer s.Close(0)
 
@@ -294,9 +295,10 @@ func TestServer_FileServer(t *testing.T) {
 
 		s.Get("/v1/not.exists").
 			Header("Accept", "application/json;vv=2").
+			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(404).
-			StringBody(`{"type":"404","title":"Not Found","status":404}`)
+			StringBody(`{"type":"404","title":"NOT FOUND","status":404}`)
 	})
 
 	t.Run("no problems", func(t *testing.T) {
@@ -310,7 +312,7 @@ func TestServer_FileServer(t *testing.T) {
 		s.Get("/v2/not.exists").
 			Do(nil).
 			Status(http.StatusNotFound).
-			StringBody(`{"type":"404","title":"Not Found","status":404}`)
+			StringBody(`{"type":"404","title":"NOT FOUND","status":404}`)
 	})
 }
 

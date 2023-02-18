@@ -18,9 +18,21 @@ func TestSanitizeOptions(t *testing.T) {
 	a.NotError(err).NotNil(o)
 	a.Equal(o.Location, time.Local).
 		NotNil(o.Logs).
-		NotNil(o.Problems.Builder).
+		NotNil(o.problems).
 		NotNil(o.UniqueGenerator).
 		Equal(o.RequestIDKey, RequestIDKey)
+}
+
+func TestProblem_sanitize(t *testing.T) {
+	a := assert.New(t, false)
+
+	var p *Problems
+	ps := p.sanitize()
+	a.NotNil(ps)
+
+	p = &Problems{}
+	ps = p.sanitize()
+	a.NotNil(ps)
 }
 
 func TestNewPrinter(t *testing.T) {

@@ -89,16 +89,11 @@ type AppOf[T any] struct {
 	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
 	ConfigFilename string
 
-	// 生成 [server.Problem] 对象的方法
-	//
-	// 如果为空，则由 [server.Options] 决定其默认值。
-	ProblemBuilder server.BuildProblemFunc
-
 	// 本地化的相关设置
 	//
 	// LocaleFS 本地化文件所在的文件系统，如果为空则指向 [locales.Locales]，
 	// LocaleGlob 从 LocaleFS 中查找本地化文件的匹配模式，如果为空则为 *.yaml。
-	// LocaleGlob 指定的格式必须是已经通过 [RegisterFileSerializer] 注册的。
+	// LocaleGlob 指定的文件格式必须是已经通过 [RegisterFileSerializer] 注册的。
 	// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并决定采用哪种语言。
 	//
 	// NOTE: panic 信息不支持本地化。
@@ -230,7 +225,7 @@ func (cmd *AppOf[T]) Restart() error {
 }
 
 func (cmd *AppOf[T]) initServer() error {
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ProblemBuilder, cmd.fsys, cmd.ConfigFilename)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.fsys, cmd.ConfigFilename)
 	if err != nil {
 		return errs.NewStackError(err)
 	}
