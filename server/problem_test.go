@@ -59,7 +59,7 @@ func TestContext_Problem(t *testing.T) {
 	srv := newServer(a, nil)
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
-	srv.Problems().Add(&StatusProblem{ID: "40000", Status: 400, Title: localeutil.Phrase("lang"), Detail: localeutil.Phrase("lang")}) // lang 有翻译
+	srv.AddProblem("40000", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
 	w := httptest.NewRecorder()
@@ -106,10 +106,8 @@ func TestContext_Problem(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = newServer(a, nil).newContext(w, r, nil)
-	ctx.Server().Problems().Add(
-		&StatusProblem{ID: "40010", Status: http.StatusBadRequest, Title: localeutil.Phrase("40010"), Detail: localeutil.Phrase("40010")},
-		&StatusProblem{ID: "40011", Status: http.StatusBadRequest, Title: localeutil.Phrase("40011"), Detail: localeutil.Phrase("40011")},
-	)
+	ctx.Server().AddProblem("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010")).
+		AddProblem("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
 	resp = ctx.Problem("40010")
 	resp.With("detail", "40010")

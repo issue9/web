@@ -5,7 +5,6 @@ package problems
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
@@ -16,13 +15,13 @@ import (
 //
 // P 表示 Problem 接口类型
 type Problems[P any] struct {
-	builder    func(id, title string, status int) P
-	typePrefix string
-	problems   []*StatusProblem // 不用 map，保证 Problems 顺序相同。
+	builder  func(id string, status int, title, detail string) P
+	prefix   string
+	problems []*statusProblem // 不用 map，保证 Problems 顺序相同。
 }
 
-type StatusProblem struct {
-	t string // 实际的 type 值，id 仅用于查找
+type statusProblem struct {
+	id string // 实际的 type 值
 
 	ID     string
 	Status int
@@ -30,97 +29,61 @@ type StatusProblem struct {
 	Detail localeutil.LocaleStringer
 }
 
-type StatusProblems[P any] struct {
-	p      *Problems[P]
-	status int
-}
-
-func New[P any](f func(id, title string, status int) P) *Problems[P] {
+func New[P any](prefix string, builder func(id string, status int, title, detail string) P) *Problems[P] {
 	p := &Problems[P]{
-		builder:  f,
-		problems: make([]*StatusProblem, 0, 50),
+		builder:  builder,
+		prefix:   prefix,
+		problems: make([]*statusProblem, 0, 50),
 	}
 
 	for id, status := range statuses {
-		msg := localeutil.Phrase(http.StatusText(status))
-		p.Add(&StatusProblem{ID: id, Status: status, Title: msg, Detail: msg})
+		text := "problem." + id
+		title := localeutil.Phrase(text)
+		detail := localeutil.Phrase(text + ".detail")
+		p.Add(id, status, title, detail)
 	}
 
 	return p
 }
 
-func (p *Problems[P]) TypePrefix() string { return p.typePrefix }
-
-func (p *Problems[P]) SetTypePrefix(prefix string) {
-	p.typePrefix = prefix
-	if prefix == ProblemAboutBlank {
-		for _, s := range p.problems {
-			s.t = ProblemAboutBlank
-		}
-		return
+func (p *Problems[P]) Add(id string, status int, title, detail localeutil.LocaleStringer) {
+	if p.exists(id) {
+		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
-
-	for _, s := range p.problems {
-		s.t = prefix + s.ID
-	}
-}
-
-func (p *Problems[P]) Add(s ...*StatusProblem) {
-	for _, sp := range s {
-		p.add(sp)
-	}
-}
-
-func (p *Problems[P]) add(s *StatusProblem) {
-	if p.Exists(s.ID) {
-		panic(fmt.Sprintf("存在相同值的 id 参数 %s", s.ID))
-	}
-	if !isValidStatus(s.Status) {
+	if !IsValidStatus(status) {
 		panic("status 必须是一个有效的状态码")
 	}
 
-	if s.Title == nil {
+	if title == nil {
 		panic("title 不能为空")
 	}
 
-	if p.typePrefix == ProblemAboutBlank {
-		s.t = ProblemAboutBlank
+	s := &statusProblem{ID: id, Status: status, Title: title, Detail: detail}
+	if p.prefix == ProblemAboutBlank {
+		s.id = ProblemAboutBlank
 	} else {
-		s.t = p.typePrefix + s.ID
+		s.id = p.prefix + s.ID
 	}
 	p.problems = append(p.problems, s)
 }
 
-func (p *Problems[P]) Exists(id string) bool {
-	return sliceutil.Exists(p.problems, func(sp *StatusProblem) bool { return sp.ID == id })
+func (p *Problems[P]) exists(id string) bool {
+	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 }
 
-func (p *Problems[P]) Problems() []*StatusProblem { return p.problems }
+func (p *Problems[P]) Visit(visit func(id string, status int, title, detail localeutil.LocaleStringer)) {
+	for _, s := range p.problems {
+		visit(s.ID, s.Status, s.Title, s.Detail)
+	}
+}
 
 func (p *Problems[P]) Problem(printer *message.Printer, id string) P {
-	sp, found := sliceutil.At(p.problems, func(sp *StatusProblem) bool { return sp.ID == id })
+	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 
-	return p.builder(sp.t, sp.Title.LocaleString(printer), sp.Status)
+	return p.builder(sp.id, sp.Status, sp.Title.LocaleString(printer), sp.Detail.LocaleString(printer))
 }
 
-// Status 声明同一个状态下的添加方式
-func (p *Problems[P]) Status(status int) *StatusProblems[P] {
-	if !isValidStatus(status) {
-		panic(fmt.Sprintf("无效的状态码 %d", status))
-	}
-
-	return &StatusProblems[P]{
-		p:      p,
-		status: status,
-	}
-}
-
-func (p *StatusProblems[P]) Add(id string, title, detail localeutil.LocaleStringer) *StatusProblems[P] {
-	p.p.Add(&StatusProblem{ID: id, Status: p.status, Title: title, Detail: detail})
-	return p
-}
-
-func isValidStatus(status int) bool { return status >= 100 && status < 600 }
+func IsValidStatus(status int) bool { return status >= 100 && status < 600 }

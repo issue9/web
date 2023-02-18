@@ -24,7 +24,7 @@ func (ctx *ctxDemo) Marshal(status int, body any, problem bool) {}
 
 func TestNewRFC7807(t *testing.T) {
 	a := assert.New(t, false)
-	p := testPool.New("id", "title", 400)
+	p := testPool.New("id", 400, "title", "detail")
 	a.NotNil(p)
 	p.With("instance", "https://example.com/instance/1")
 
@@ -47,8 +47,8 @@ func TestRFC7807_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	// NOTE: title 因为未调用 apply，所以未翻译，为空。
-	p1 := testPool.New("400", "bad request", 200)
-	p2 := testPool.New("400", "bad request", 400)
+	p1 := testPool.New("400", 200, "bad request", "detail")
+	p2 := testPool.New("400", 400, "bad request", "detail")
 	p2.AddParam("n1", "r1")
 	p2.With("detail", "detail")
 	p2.With("array", []string{"a", "bc"})

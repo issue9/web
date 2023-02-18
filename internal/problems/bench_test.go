@@ -9,7 +9,7 @@ func BenchmarkRFC7807Pool_New(b *testing.B) {
 	ctx := &ctxDemo{}
 
 	for i := 0; i < b.N; i++ {
-		p := pool.New("id", "title", 200)
+		p := pool.New("id", 200, "title", "detail")
 		p.With("custom", "custom")
 		p.AddParam("p1", "v1")
 		p.Apply(ctx)

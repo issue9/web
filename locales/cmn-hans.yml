@@ -89,3 +89,342 @@ messages:
 - key: cmd.action
   message:
     msg: 运行的指令
+
+# problem
+# 部分明细说明源自 MDN：https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status
+
+- key: problem.400
+  message:
+    msg: Bad Request
+
+- key: problem.400.detail
+  message:
+    msg: 表示客户端错误，比如，错误的请求语法、无效的请求消息帧或欺骗性的请求路由等，服务器无法或不会处理该请求。
+
+- key: problem.401
+  message:
+    msg: Unauthorized
+
+- key: problem.401.detail
+  message:
+    msg: |
+      请求内容需要身分验证才可访问，即需要登录之后才能操作。
+
+- key: problem.402
+  message:
+    msg: Payment Required
+
+- key: problem.402.detail
+  message:
+    msg: 请求内容需要付费才能访问。
+
+- key: problem.403
+  message:
+    msg: Forbidden
+
+- key: problem.403.detail
+  message:
+    msg: |
+      客户端没有访问内容的权限；也就是说，它是未经授权的，因此服务器拒绝提供请求的资源。
+      与 401 Unauthorized 不同，服务器知道客户端的身份。
+
+- key: problem.404
+  message:
+    msg: Not Found
+
+- key: problem.404.detail
+  message:
+    msg: |
+      服务器找不到请求的资源。在浏览器中，这意味着无法识别 URL。在 API 中，这也可能意味着端点有效，但资源本身不存在。
+      服务器也可以发送此响应，而不是 403 Forbidden，以向未经授权的客户端隐藏资源的存在。
+      这个响应代码可能是最广为人知的，因为它经常出现在网络上。
+
+- key: problem.405
+  message:
+    msg: Method Not Allowed
+
+- key: problem.405.detail
+  message:
+    msg: 服务器知道请求方法，但目标资源不支持该方法。例如，API 可能不允许调用DELETE来删除资源。
+
+- key: problem.406
+  message:
+    msg: Not Acceptable
+
+- key: problem.406.detail
+  message:
+    msg: 当 web 服务器在执行服务端驱动型内容协商机制后，没有发现任何符合用户代理给定标准的内容时，就会发送此响应。
+
+- key: problem.407
+  message:
+    msg: Proxy Authentication Required
+
+- key: problem.407.detail
+  message:
+    msg: 似于 401 Unauthorized 但是认证需要由代理完成。
+
+- key: problem.408
+  message:
+    msg: Request Timeout
+
+- key: problem.408.detail
+  message:
+    msg: |
+      此响应由一些服务器在空闲连接上发送，即使客户端之前没有任何请求。这意味着服务器想关闭这个未使用的连接。
+      由于一些浏览器，如 Chrome、Firefox 27+ 或 IE9，使用 HTTP 预连接机制来加速冲浪，所以这种响应被使用得更多。
+      还要注意的是，有些服务器只是关闭了连接而没有发送此消息。
+
+- key: problem.409
+  message:
+    msg: Conflict
+
+- key: problem.409.detail
+  message:
+    msg: 当请求与服务器的当前状态冲突时，将发送此响应。
+
+- key: problem.410
+  message:
+    msg: Gone
+
+- key: problem.410.detail
+  message:
+    msg: |
+      当请求的内容已从服务器中永久删除且没有转发地址时，将发送此响应。客户端需要删除缓存和指向资源的链接。
+      HTTP 规范打算将此状态代码用于“有限时间的促销服务”。API 不应被迫指出已使用此状态代码删除的资源。
+
+- key: problem.411
+  message:
+    msg: Length Required
+
+- key: problem.411.detail
+  message:
+    msg: 服务端拒绝该请求因为 Content-Length 头部字段未定义但是服务端需要它。
+
+- key: problem.412
+  message:
+    msg: Precondition Failed
+
+- key: problem.412.detail
+  message:
+    msg: 客户端在其头文件中指出了服务器不满足的先决条件。
+
+- key: problem.413
+  message:
+    msg: Request Entity Too Large
+
+- key: problem.413.detail
+  message:
+    msg: 请求实体大于服务器定义的限制。
+
+- key: problem.414
+  message:
+    msg: Request URI Too Long
+
+- key: problem.414.detail
+  message:
+    msg: 客户端请求的 URI 比服务器愿意接收的长度长。
+
+- key: problem.415
+  message:
+    msg: Unsupported Media Type
+
+- key: problem.415.detail
+  message:
+    msg: 服务器不支持请求数据的媒体格式，因此服务器拒绝请求。
+
+- key: problem.416
+  message:
+    msg: Requested Range Not Satisfiable
+
+- key: problem.416.detail
+  message:
+    msg: 无法满足请求中 Range 标头字段指定的范围。该范围可能超出了目标 URI 数据的大小。
+
+- key: problem.417
+  message:
+    msg: Expectation Failed
+
+- key: problem.417.detail
+  message:
+    msg: 此响应代码表示服务器无法满足 Expect 请求标头字段所指示的期望。
+
+- key: problem.418
+  message:
+    msg: I'm a teapot
+
+- key: problem.418.detail
+  message:
+    msg: 服务端拒绝用茶壶煮咖啡。笑话，典故来源茶壶冲泡咖啡
+
+- key: problem.421
+  message:
+    msg: Misdirected Request
+
+- key: problem.421.detail
+  message:
+    msg: 请求被定向到无法生成响应的服务器。这可以由未配置为针对请求 URI 中包含的方案和权限组合生成响应的服务器发送。
+
+- key: problem.422
+  message:
+    msg: Unprocessable Entity
+
+- key: problem.422.detail
+  message:
+    msg: 请求格式正确，但由于语义错误而无法遵循。
+
+- key: problem.423
+  message:
+    msg: Locked
+
+- key: problem.423.detail
+  message:
+    msg: 正在访问的资源已锁定。
+
+- key: problem.424
+  message:
+    msg: Failed Dependency
+
+- key: problem.424.detail
+  message:
+    msg: 由于前一个请求失败，请求失败。
+
+- key: problem.425
+  message:
+    msg: Too Early
+
+- key: problem.425.detail
+  message:
+    msg: 表示服务器不愿意冒险处理可能被重播的请求。
+
+- key: problem.426
+  message:
+    msg: Upgrade Required
+
+- key: problem.426.detail
+  message:
+    msg: 服务器拒绝使用当前协议执行请求，但在客户端升级到其他协议后可能愿意这样做。 服务端发送带有 Upgrade 字段的 426 响应 来表明它所需的协议（们）。
+
+- key: problem.428
+  message:
+    msg: Precondition Required
+
+- key: problem.428.detail
+  message:
+    msg: |
+      源服务器要求请求是有条件的。此响应旨在防止'丢失更新'问题，即当第三方修改服务器上的状态时，
+      客户端 GET 获取资源的状态，对其进行修改并将其 PUT 放回服务器，从而导致冲突。
+
+- key: problem.429
+  message:
+    msg: Too Many Requests
+
+- key: problem.429.detail
+  message:
+    msg: 用户在给定的时间内发送了太多请求（"限制请求速率"）
+
+- key: problem.431
+  message:
+    msg: Request Header Fields Too Large
+
+- key: problem.431.detail
+  message:
+    msg: 服务器不愿意处理请求，因为其头字段太大。在减小请求头字段的大小后，可以重新提交请求。
+
+- key: problem.451
+  message:
+    msg: Unavailable For Legal Reasons
+
+- key: problem.451.detail
+  message:
+    msg: 用户代理请求了无法合法提供的资源，例如政府审查的网页。
+
+- key: problem.500
+  message:
+    msg: Internal Server Error
+
+- key: problem.500.detail
+  message:
+    msg: 服务器遇到了不知道如何处理的情况。
+
+- key: problem.501
+  message:
+    msg: Not Implemented
+
+- key: problem.501.detail
+  message:
+    msg: 服务器不支持请求方法，因此无法处理。服务器需要支持的唯二方法（因此不能返回此代码）是 GET and HEAD.
+
+- key: problem.502
+  message:
+    msg: Bad Gateway
+
+- key: problem.502.detail
+  message:
+    msg: 此错误响应表明服务器作为网关需要得到一个处理这个请求的响应，但是得到一个错误的响应。
+
+- key: problem.503
+  message:
+    msg: Service Unavailable
+
+- key: problem.503.detail
+  message:
+    msg: |
+      服务器没有准备好处理请求。常见原因是服务器因维护或重载而停机。请注意，与此响应一起，应发送解释问题的用户友好页面。
+      这个响应应该用于临时条件和如果可能的话，HTTP 标头 Retry-After 字段应该包含恢复服务之前的估计时间。
+      网站管理员还必须注意与此响应一起发送的与缓存相关的标头，因为这些临时条件响应通常不应被缓存。
+
+- key: problem.504
+  message:
+    msg: Gateway Timeout
+
+- key: problem.504.detail
+  message:
+    msg: 当服务器充当网关且无法及时获得响应时，会给出此错误响应。
+
+- key: problem.505
+  message:
+    msg: HTTP Version Not Supported
+
+- key: problem.505.detail
+  message:
+    msg: 服务器不支持请求中使用的 HTTP 版本。
+
+- key: problem.506
+  message:
+    msg: Variant Also Negotiates
+
+- key: problem.506.detail
+  message:
+    msg: 服务器存在内部配置错误：所选的变体资源被配置为参与透明内容协商本身，因此不是协商过程中的适当终点。
+
+- key: problem.507
+  message:
+    msg: Insufficient Storage
+
+- key: problem.507.detail
+  message:
+    msg: 无法在资源上执行该方法，因为服务器无法存储成功完成请求所需的表示。
+
+- key: problem.508
+  message:
+    msg: Loop Detected
+
+- key: problem.508.detail
+  message:
+    msg: 服务器在处理请求时检测到无限循环。
+
+- key: problem.510
+  message:
+    msg: Not Extended
+
+- key: problem.510.detail
+  message:
+    msg: 服务器需要对请求进行进一步扩展才能完成请求。
+
+- key: problem.511
+  message:
+    msg: Network Authentication Required
+
+- key: problem.511.detail
+  message:
+    msg: 指示客户端需要进行身份验证才能获得网络访问权限。

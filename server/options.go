@@ -22,6 +22,7 @@ import (
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
 )
@@ -52,11 +53,6 @@ type Options struct {
 	// 如果此值为空，表示不会输出到任何通道。
 	Logs *logs.Options
 	logs *logs.Logs
-
-	// 生成 [Problem] 对象的方法
-	//
-	// 如果为空，那么将采用 [RFC7807Builder] 作为默认值。
-	ProblemBuilder BuildProblemFunc
 
 	// http.Server 实例的值
 	//
@@ -95,6 +91,23 @@ type Options struct {
 	// 默认为空。
 	Mimetypes []*Mimetype
 	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+
+	// 针对错误代码的配置
+	Problems *Problems
+}
+
+type Problems struct {
+	// 生成 [Problem] 对象的方法
+	//
+	// 如果为空，那么将采用 [RFC7807Builder] 作为默认值。
+	Builder BuildProblemFunc
+
+	// Problem 为传递给 BuildProblemFunc 的 id 参数指定前缀
+	//
+	// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
+	TypePrefix string
+
+	problems *problems.Problems[Problem]
 }
 
 type Mimetype struct {
@@ -104,10 +117,10 @@ type Mimetype struct {
 	// 对应的 Problem 状态下的 mimetype 值
 	ProblemType string
 
-	// 编码
+	// 编码方法
 	Marshal MarshalFunc
 
-	// 解码
+	// 解码方法
 	Unmarshal UnmarshalFunc
 }
 
@@ -174,10 +187,6 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.HTTPServer = &http.Server{}
 	}
 
-	if o.ProblemBuilder == nil {
-		o.ProblemBuilder = RFC7807Builder
-	}
-
 	if o.UniqueGenerator == nil {
 		o.UniqueGenerator = unique.NewDate(1000)
 	}
@@ -187,6 +196,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	}
 	if err := o.Locale.sanitize(); err != nil {
 		err.AddFieldParent("Locale")
+		return nil, err
 	}
 
 	if o.Logs == nil {
@@ -212,6 +222,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		}
 	}
 
+	// mimetype
 	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *Mimetype) bool { return e1.Type == e2.Type })
 	if len(indexes) > 0 {
 		return nil, errs.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", "duplicate value")
@@ -221,7 +232,20 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o.mimetypes.Add(mt.Type, mt.Marshal, mt.Unmarshal, mt.ProblemType)
 	}
 
+	// problems
+	if o.Problems == nil {
+		o.Problems = &Problems{}
+	}
+	o.Problems.sanitize()
+
 	return o, nil
+}
+
+func (ps *Problems) sanitize() {
+	if ps.Builder == nil {
+		ps.Builder = RFC7807Builder
+	}
+	ps.problems = problems.New(ps.TypePrefix, ps.Builder)
 }
 
 func (l *Locale) sanitize() *errs.FieldError {

@@ -62,7 +62,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	srv.Problems().Add(&server.StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("41110"), Detail: localeutil.Phrase("41110")})
+	srv.AddProblem("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
 
 	return srv, o
 }

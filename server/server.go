@@ -88,11 +88,11 @@ func New(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:  problems.New(o.ProblemBuilder),
+		problems:  o.Problems.problems,
 		mimetypes: o.mimetypes,
+		encodings: encoding.NewEncodings(o.logs.ERROR()),
 	}
 
-	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())
 	for _, e := range o.Encodings {
 		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
 	}

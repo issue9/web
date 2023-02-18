@@ -117,12 +117,11 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 	// NOTE: 以下代码由 loadConfigOf 保证不会出错，所以所有错误一律 panic 处理。
 
 	opt := &server.Options{
-		FS:             fsys,
-		Location:       conf.location,
-		Cache:          conf.cache,
-		HTTPServer:     conf.http,
-		Logs:           conf.logs,
-		ProblemBuilder: pb,
+		FS:         fsys,
+		Location:   conf.location,
+		Cache:      conf.cache,
+		HTTPServer: conf.http,
+		Logs:       conf.logs,
 		Locale: &server.Locale{
 			Language: conf.languageTag,
 		},
@@ -131,6 +130,9 @@ func NewServerOf[T any](name, version string, pb server.BuildProblemFunc, fsys f
 		RequestIDKey:    conf.HTTP.RequestID,
 		Encodings:       conf.encodings,
 		Mimetypes:       conf.mimetypes,
+		Problems: &server.Problems{
+			Builder: pb,
+		},
 	}
 
 	srv, err := server.New(name, version, opt)
