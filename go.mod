@@ -16,8 +16,8 @@ require (
 	github.com/issue9/unique/v2 v2.0.0
 	github.com/klauspost/compress v1.15.15
 	github.com/redis/go-redis/v9 v9.0.2
-	golang.org/x/crypto v0.5.0
-	golang.org/x/text v0.6.0
+	golang.org/x/crypto v0.6.0
+	golang.org/x/text v0.7.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -28,7 +28,7 @@ require (
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/source v0.3.2 // indirect
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 )
 

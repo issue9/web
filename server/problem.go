@@ -3,7 +3,7 @@
 package server
 
 import (
-	"golang.org/x/text/message"
+	"github.com/issue9/localeutil"
 
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
@@ -40,32 +40,7 @@ type (
 	// id 表示当前错误信息的唯一值，该值有可能为 about:blank，表示不想向用户展示具体的值；
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
-	BuildProblemFunc func(id, title string, status int) Problem
-
-	Problems interface {
-		// TypePrefix [BuildProblemFunc] 参数 id 的前缀
-		TypePrefix() string
-
-		// SetTypePrefix 设置 id 的前缀
-		//
-		// 如果设置成 about:blank 那么将不输出 id
-		SetTypePrefix(string)
-
-		// Add 添加新的错误类型
-		Add(...*StatusProblem)
-
-		Exists(id string) bool
-
-		Problems() []*StatusProblem
-
-		// Problem 根据 id 生成 [Problem] 对象
-		Problem(printer *message.Printer, id string) Problem
-
-		// Status 添加一组固定状态码的错误码
-		Status(int) *problems.StatusProblems[Problem]
-	}
-
-	StatusProblem = problems.StatusProblem
+	BuildProblemFunc func(id string, status int, title, detail string) Problem
 
 	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
 	//
@@ -85,11 +60,29 @@ var rfc7807Pool = problems.NewRFC7807Pool[*Context]()
 // 在此模式下将忽略由 [Problem.With] 添加的复杂类型，只保留基本类型。
 //
 // [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-func RFC7807Builder(id, title string, status int) Problem {
-	return rfc7807Pool.New(id, title, status)
+func RFC7807Builder(id string, status int, title, detail string) Problem {
+	return rfc7807Pool.New(id, status, title, detail)
 }
 
-func (srv *Server) Problems() Problems { return srv.problems }
+// AddProblem 添加新的错误代码
+func (srv *Server) AddProblem(id string, status int, title, detail localeutil.LocaleStringer) *Server {
+	srv.problems.Add(id, status, title, detail)
+	return srv
+}
+
+// VisitProblems 遍历错误代码
+//
+// visit 签名：
+//
+//	func(id string, status int, title, detail localeutil.LocaleStringer)
+//
+// id 为错误代码；
+// status 该错误代码反馈给用户的 HTTP 状态码；
+// title 错误代码的简要描述；
+// detail 错误代码的明细；
+func (srv *Server) VisitProblems(visit func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer)) {
+	srv.problems.Visit(visit)
+}
 
 // Problem 转换成 [Problem] 对象
 //
@@ -110,7 +103,7 @@ func (v *Validation) Problem(id string) Problem {
 //
 // id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
 func (ctx *Context) Problem(id string) Problem {
-	return ctx.Server().Problems().Problem(ctx.LocalePrinter(), id)
+	return ctx.Server().problems.Problem(ctx.LocalePrinter(), id)
 }
 
 // InternalServerError 输出 ERROR 通道并向返回 500 表示的 [Problem] 对象

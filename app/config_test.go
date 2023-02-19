@@ -31,11 +31,10 @@ func TestNewServerOf(t *testing.T) {
 	const name = "app"
 	const ver = "1.0"
 
-	s, data, err := NewServerOf[empty](name, ver, nil, os.DirFS("./testdata"), "web.yaml")
+	s, data, err := NewServerOf[empty](name, ver, os.DirFS("./testdata"), "web.yaml")
 	a.NotError(err).NotNil(s).Nil(data)
-	a.Equal(s.Mimetypes().Len(), 3)
 
-	s, data, err = NewServerOf[empty](name, ver, nil, os.DirFS("./testdata/not-exists"), "web.yaml")
+	s, data, err = NewServerOf[empty](name, ver, os.DirFS("./testdata/not-exists"), "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
 }
 

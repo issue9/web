@@ -44,7 +44,7 @@ func TestGetName(t *testing.T) {
 	name, v = getName(&obj4{})
 	a.Equal(name, "obj4").Empty(v)
 
-	name, v = getName(server.RFC7807Builder("id", "title", 500))
+	name, v = getName(server.RFC7807Builder("id", 500, "title", "detail"))
 	a.Equal(name, "problem").
 		Equal(v, map[string]any{
 			"type":   "id",

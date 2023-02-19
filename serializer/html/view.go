@@ -68,7 +68,7 @@ func instalDirView(s *server.Server, fsys fs.FS, glob string) {
 		panic(err)
 	}
 
-	b := catalog.NewBuilder(catalog.Fallback(s.LanguageTag()))
+	b := catalog.NewBuilder()
 	tpls := make(map[string]*template.Template, len(dirs))
 
 	for _, dir := range dirs {

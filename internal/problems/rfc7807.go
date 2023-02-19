@@ -63,7 +63,7 @@ func NewRFC7807Pool[C ctx]() *RFC7807Pool[C] {
 }
 
 // New 获取 RFC7807 对象
-func (pool *RFC7807Pool[C]) New(id, title string, status int) *RFC7807[C] {
+func (pool *RFC7807Pool[C]) New(id string, status int, title, detail string) *RFC7807[C] {
 	p := pool.pool.Get().(*RFC7807[C])
 	p.pool = pool
 	p.status = status

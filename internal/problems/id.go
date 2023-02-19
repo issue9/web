@@ -101,6 +101,4 @@ var statuses = map[string]int{
 	ProblemNetworkAuthenticationRequired: http.StatusNetworkAuthenticationRequired,
 }
 
-func Status(id string) int {
-	return statuses[id]
-}
+func Status(id string) int { return statuses[id] }

@@ -37,17 +37,24 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 		}
 	}
 
+	if o.Encodings == nil {
+		o.Encodings = []*server.Encoding{
+			{Name: "gzip", Builder: server.EncodingGZip(8)},
+			{Name: "deflate", Builder: server.EncodingDeflate(8)},
+		}
+	}
+	if o.Mimetypes == nil {
+		o.Mimetypes = []*server.Mimetype{
+			{Type: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, ProblemType: json.ProblemMimetype},
+			{Type: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, ProblemType: xml.ProblemMimetype},
+			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
+			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
+		}
+	}
+
 	srv, err := server.New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// mimetype
-	mimetype := srv.Mimetypes()
-	mimetype.Add(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype)
-	mimetype.Add(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype)
-	mimetype.Add("nil", nil, nil, "")
-	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
-	a.Equal(mimetype.Len(), 4)
 
 	// locale
 	b := srv.CatalogBuilder()
@@ -55,13 +62,7 @@ func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	// encoding
-	e := srv.Encodings()
-	e.Add("gzip", "gzip", server.EncodingGZip(8))
-	e.Add("deflate", "deflate", server.EncodingDeflate(8))
-	e.Allow("*", "gzip", "deflate")
-
-	srv.Problems().Add(&server.StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("41110"), Detail: localeutil.Phrase("41110")})
+	srv.AddProblem("41110", 411, localeutil.Phrase("41110"), localeutil.Phrase("41110"))
 
 	return srv, o
 }

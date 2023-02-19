@@ -43,7 +43,7 @@ func (conf *configOf[T]) buildCache() *errs.FieldError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewFieldError("type", errs.NewLocaleError("invalid value %s", conf.Cache.Type))
+		return errs.NewFieldError("type", errs.NewLocaleError("invalid value"))
 	}
 
 	c, err := b(conf.Cache.DSN)

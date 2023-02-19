@@ -4,8 +4,6 @@
 package encoding
 
 import (
-	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/issue9/sliceutil"
@@ -16,92 +14,37 @@ import (
 
 type Encodings struct {
 	errlog logs.Logger
-
-	// 按 id 保存着各种压缩对象的实例，
-	// allowTypes 和 allowTypesPrefix 的 pool 都是对当前字段子元素的引用。
-	pools map[string]*Pool
-
-	// contentType 是具体值的，比如 text/xml
-	allowTypes map[string][]*Pool
-
-	// contentType 是模糊类型的，比如 text/*，
-	// 只有在 allowTypes 找不到时，才在此处查找。
-	allowTypesPrefix []prefix
-}
-
-type prefix struct {
-	prefix string
-	pools  []*Pool
+	algs   []*Alg
 }
 
 func NewEncodings(errlog logs.Logger) *Encodings {
 	return &Encodings{
-		pools:  make(map[string]*Pool, 10),
+		algs:   make([]*Alg, 0, 10),
 		errlog: errlog,
-
-		allowTypes:       make(map[string][]*Pool, 10),
-		allowTypesPrefix: make([]prefix, 0, 10),
 	}
 }
 
-// Allow 实现了 server.Encodings.Allow
-func (c *Encodings) Allow(contentType string, id ...string) {
-	if len(id) == 0 {
-		panic("id 不能为空")
-	}
-
-	pools := make([]*Pool, 0, len(id))
-	for _, i := range id {
-		p, found := c.pools[i]
-		if !found {
-			panic(fmt.Sprintf("未找到 id 为 %s 表示的算法", i))
-		}
-		pools = append(pools, p)
-	}
-	if indexes := sliceutil.Dup(pools, func(i, j *Pool) bool { return i.name == j.name }); len(indexes) > 0 {
-		panic(fmt.Sprintf("id 引用中存在多个名为 %s 的算法", pools[indexes[0]].name))
-	}
-
-	if contentType[len(contentType)-1] == '*' {
-		p := contentType[:len(contentType)-1]
-		if sliceutil.Exists(c.allowTypesPrefix, func(e prefix) bool { return e.prefix == p }) {
-			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
-		}
-
-		c.allowTypesPrefix = append(c.allowTypesPrefix, prefix{pools: pools, prefix: p})
-		// 按 prefix 从长到短排序
-		sort.SliceStable(c.allowTypesPrefix, func(i, j int) bool {
-			return len(c.allowTypesPrefix[i].prefix) > len(c.allowTypesPrefix[j].prefix)
-		})
-	} else {
-		if _, found := c.allowTypes[contentType]; found {
-			panic(fmt.Sprintf("已经存在对 %s 的压缩规则", contentType))
-		}
-		c.allowTypes[contentType] = pools
-	}
-}
-
-// Allow 实现了 server.Encodings.Add
-func (c *Encodings) Add(id, name string, f NewEncodingFunc) {
+// Add 添加一种压缩算法
+//
+// name 算法名称，可以重复；
+func (c *Encodings) Add(name string, f NewEncodingFunc, contentType ...string) {
 	if name == "" || name == "identity" || name == "*" {
 		panic("name 值不能为 identity 和 *")
 	}
 
 	if f == nil {
-		panic("参数 w 不能为空")
+		panic("参数 f 不能为空")
 	}
 
-	if _, found := c.pools[id]; found {
-		panic(fmt.Sprintf("存在相同 ID %s 的函数", id))
-	}
-	c.pools[id] = newPool(name, f)
+	c.algs = append(c.algs, newAlg(name, f, contentType...))
 }
 
 // Search 从报头中查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
-func (c *Encodings) Search(contentType, h string) (w *Pool, notAcceptable bool) {
-	if len(c.pools) == 0 {
+// 当有多个符合时，按添加顺序拿第一个符合条件数据。
+func (c *Encodings) Search(contentType, h string) (w *Alg, notAcceptable bool) {
+	if len(c.algs) == 0 {
 		return
 	}
 
@@ -111,7 +54,7 @@ func (c *Encodings) Search(contentType, h string) (w *Pool, notAcceptable bool) 
 		return
 	}
 
-	pools := c.getPools(contentType)
+	pools := c.getMatchAlgs(contentType)
 	if len(pools) == 0 {
 		return
 	}
@@ -159,19 +102,25 @@ func (c *Encodings) Search(contentType, h string) (w *Pool, notAcceptable bool) 
 	return // 没有匹配，表示不需要进行压缩
 }
 
-// 调用者需要保证 mimetype 的正确性，不能有参数
-func (c *Encodings) getPools(contentType string) []*Pool {
-	for t, pools := range c.allowTypes {
-		if t == contentType {
-			return pools
+func (c *Encodings) getMatchAlgs(contentType string) []*Alg {
+	algs := make([]*Alg, 0, len(c.algs))
+
+LOOP:
+	for _, alg := range c.algs {
+		for _, s := range alg.allowTypes {
+			if s == contentType {
+				algs = append(algs, alg)
+				continue LOOP
+			}
+		}
+
+		for _, p := range alg.allowTypesPrefix {
+			if strings.HasPrefix(contentType, p) {
+				algs = append(algs, alg)
+				continue LOOP
+			}
 		}
 	}
 
-	for _, p := range c.allowTypesPrefix {
-		if strings.HasPrefix(contentType, p.prefix) {
-			return p.pools
-		}
-	}
-
-	return nil
+	return algs
 }

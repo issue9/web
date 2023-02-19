@@ -5,7 +5,6 @@ package server
 import (
 	"bytes"
 	"compress/flate"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -32,7 +31,7 @@ func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
 	o := &logs.Options{Writer: logs.NewTextWriter(logs.MicroLayout, buf), Levels: logs.AllLevels()}
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: o})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}, Logs: o})
 
 	// 自定义报头
 	buf.Reset()
@@ -104,15 +103,14 @@ func TestContext_Marshal(t *testing.T) {
 
 	// problem, 未指定
 	buf.Reset()
-	srv.Mimetypes().Set("application/json", marshalJSON, json.Unmarshal, "")
 	w = httptest.NewRecorder()
-	r = rest.Get(a, "/path").Header("Accept", "application/json").Request()
+	r = rest.Get(a, "/path").Header("Accept", "application/xml").Request()
 	ctx = srv.newContext(w, r, nil)
 	ctx.Marshal(http.StatusCreated, "abc", true)
 	a.Zero(buf.Len()).
 		Equal(w.Code, http.StatusCreated).
-		Equal(w.Body.String(), `"abc"`).
-		Equal(w.Header().Get("content-type"), "application/json; charset=utf-8")
+		Equal(w.Body.String(), `<string>abc</string>`).
+		Equal(w.Header().Get("content-type"), "application/xml; charset=utf-8")
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	buf.Reset()
@@ -194,7 +192,7 @@ func TestContext_Marshal(t *testing.T) {
 
 func TestContext_SetWriter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").
@@ -254,7 +252,7 @@ func TestContext_SetWriter(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))

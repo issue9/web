@@ -56,6 +56,10 @@ type Server struct {
 	files     *Files
 }
 
+type Services = service.Server
+
+type Files = files.Files
+
 // New 新建 web 服务
 //
 // name, version 表示服务的名称和版本号；
@@ -75,24 +79,27 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:            &sync.Map{},
 		cache:           o.Cache,
 		uptime:          time.Now(),
+		services:        service.NewServer(o.Location, o.logs),
 		uniqueGenerator: o.UniqueGenerator.String,
 		requestIDKey:    o.RequestIDKey,
 
 		location: o.Location,
-		catalog:  catalog.NewBuilder(catalog.Fallback(o.LanguageTag)),
-		tag:      o.LanguageTag,
+		catalog:  o.Locale.Catalog,
+		tag:      o.Locale.Language,
+		printer:  o.Locale.printer,
+		logs:     o.logs,
 
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:  problems.New(o.ProblemBuilder),
-		mimetypes: mimetypes.New[MarshalFunc, UnmarshalFunc](),
+		problems:  o.problems,
+		mimetypes: o.mimetypes,
+		encodings: encoding.NewEncodings(o.logs.ERROR()),
 	}
 
-	srv.printer = srv.NewPrinter(o.LanguageTag)
-	srv.logs = logs.New(o.Logs, srv.LocalePrinter()) // 注意 srv.LocalePrinter 是否已经初始化。
-	srv.encodings = encoding.NewEncodings(srv.Logs().ERROR())
-	srv.services = service.NewServer(o.Location, srv.Logs())
+	for _, e := range o.Encodings {
+		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
+	}
 	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -203,8 +210,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 func (ctx *Context) Server() *Server { return ctx.server }
 
 func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
-	tag, _, _ = srv.CatalogBuilder().Matcher().Match(tag)
-	return message.NewPrinter(tag, message.Catalog(srv.CatalogBuilder()))
+	return newPrinter(tag, srv.CatalogBuilder())
 }
 
 func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
@@ -223,3 +229,11 @@ func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, 
 func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
 }
+
+// Files 配置文件的相关操作
+func (srv *Server) Files() *Files { return srv.files }
+
+// Services 服务管理
+//
+// 在 [Server] 初始之后，所有的服务就处于运行状态，后续添加的服务也会自动运行。
+func (srv *Server) Services() *Services { return srv.services }

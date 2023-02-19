@@ -49,7 +49,7 @@ func marshalXML(ctx *Context, obj any) ([]byte, error) {
 
 func newServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, LanguageTag: language.English} // 指定不存在的语言
+		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Locale: &Locale{Language: language.English}} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = &logs.Options{
@@ -59,18 +59,24 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 			Levels:  logs.AllLevels(),
 		}
 	}
+	if o.Encodings == nil {
+		o.Encodings = []*Encoding{
+			{Name: "gzip", Builder: EncodingGZip(8)},
+			{Name: "deflate", Builder: EncodingDeflate(8)},
+		}
+	}
+	if o.Mimetypes == nil {
+		o.Mimetypes = []*Mimetype{
+			{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
+			{Type: "application/xml", Marshal: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
+			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
+			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
+		}
+	}
 
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// mimetype
-	mimetype := srv.Mimetypes()
-	mimetype.Add("application/json", marshalJSON, json.Unmarshal, "application/problem+json")
-	mimetype.Add("application/xml", marshalXML, xml.Unmarshal, "")
-	mimetype.Add("application/test", marshalTest, unmarshalTest, "")
-	mimetype.Add("nil", nil, nil, "")
-	a.Equal(mimetype.Len(), 4)
 
 	// locale
 	b := srv.CatalogBuilder()
@@ -78,13 +84,7 @@ func newServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	// encoding
-	e := srv.Encodings()
-	e.Add("gzip", "gzip", EncodingGZip(8))
-	e.Add("deflate", "deflate", EncodingDeflate(8))
-	e.Allow("*", "gzip", "deflate")
-
-	srv.Problems().Add(&StatusProblem{ID: "41110", Status: 411, Title: localeutil.Phrase("lang"), Detail: localeutil.Phrase("41110")})
+	srv.AddProblem("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
 
 	return srv
 }
@@ -130,7 +130,7 @@ func TestServer_newContext(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
 	o := &logs.Options{Writer: logs.NewTextWriter("2006-01-02", lw), Levels: logs.AllLevels()}
-	srv := newServer(a, &Options{LanguageTag: language.SimplifiedChinese, Logs: o})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}, Logs: o})
 
 	// 错误的 accept
 	w := httptest.NewRecorder()
@@ -195,7 +195,7 @@ func TestServer_newContext(t *testing.T) {
 	lw.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/path").
-		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=0.7").
+		Header("Accept-Language", "cmn-hans;q=0.9,zh-Hant;q=0.7").
 		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
 	ctx = srv.newContext(w, r, nil)
@@ -358,7 +358,7 @@ func TestContext_IsXHR(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newServer(a, &Options{LanguageTag: language.Afrikaans})
+	srv := newServer(a, &Options{Locale: &Locale{Language: language.Afrikaans}})
 	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
