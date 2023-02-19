@@ -56,6 +56,10 @@ type Server struct {
 	files     *Files
 }
 
+type Services = service.Server
+
+type Files = files.Files
+
 // New 新建 web 服务
 //
 // name, version 表示服务的名称和版本号；
@@ -225,3 +229,11 @@ func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, 
 func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
 }
+
+// Files 配置文件的相关操作
+func (srv *Server) Files() *Files { return srv.files }
+
+// Services 服务管理
+//
+// 在 [Server] 初始之后，所有的服务就处于运行状态，后续添加的服务也会自动运行。
+func (srv *Server) Services() *Services { return srv.services }

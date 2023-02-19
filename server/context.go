@@ -79,6 +79,14 @@ type Context struct {
 	logs *logs.ParamsLogs
 }
 
+// MarshalFunc 序列化函数原型
+//
+// NOTE: MarshalFunc 的实现中不能调用 [Context.Marshal] 方法。
+type MarshalFunc func(*Context, any) ([]byte, error)
+
+// UnmarshalFunc 反序列化函数原型
+type UnmarshalFunc func([]byte, any) error
+
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	h := r.Header.Get("Accept")

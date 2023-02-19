@@ -28,12 +28,10 @@ type mimetypeConfig struct {
 	// 比如 application/xml 等
 	Type string `json:"type" yaml:"type" xml:"type,attr"`
 
-	// 对应 [server.Problem] 类型的编码名称
+	// 返回错误代码是的 mimetype
 	//
-	// 如果为空，表示与 Type 相同，根据 [RFC7807] 最好是不相同，
-	// 比如 application/json 对应 application/problem+json。
-	//
-	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+	// 比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。
+	// 如果为空，表示与 Type 相同。
 	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty"`
 
 	// 实际采用的解码方法

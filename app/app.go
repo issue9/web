@@ -17,11 +17,11 @@
 // # 注册函数
 //
 // 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
-// 比如通过 [RegisterEncoding] 将 `gzip-default` 等字符串表示成压缩方法，
-// 方便在配置文件进行指定。
+// 比如通过 [RegisterEncoding] 将 `gzip-default` 等字符串表示成压缩算法，
+// 以便在配置文件进行指定。
 //
 // 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
-// 且都提供了一些默认项，只有在用处需要额外添加自己的内容时才需要调用注册函数。
+// 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 package app
 
 import (
@@ -96,7 +96,7 @@ type AppOf[T any] struct {
 	// LocaleGlob 指定的文件格式必须是已经通过 [RegisterFileSerializer] 注册的。
 	// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并决定采用哪种语言。
 	//
-	// NOTE: panic 信息不支持本地化。
+	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)。
 	LocaleFS   fs.FS
 	LocaleGlob string
 	printer    *message.Printer
