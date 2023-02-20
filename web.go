@@ -6,13 +6,11 @@ package web
 import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
-	"github.com/issue9/scheduled"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/problems"
-	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
@@ -70,13 +68,6 @@ const (
 	ProblemNetworkAuthenticationRequired = problems.ProblemNetworkAuthenticationRequired
 )
 
-// 服务的几种状态
-const (
-	ServiceStopped = scheduled.Stopped // 停止状态，默认状态
-	ServiceRunning = scheduled.Running // 正在运行
-	ServiceFailed  = scheduled.Failed  // 出错，不再执行后续操作
-)
-
 type (
 	Server         = server.Server
 	Context        = server.Context
@@ -92,14 +83,9 @@ type (
 	Validation     = server.Validation
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
-	Service        = service.Service
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger
-
-	JobFunc   = scheduled.JobFunc
-	Job       = scheduled.Job
-	Scheduler = scheduled.Scheduler
 
 	// QueryUnmarshaler 对查询参数的解析接口
 	QueryUnmarshaler = query.Unmarshaler

@@ -27,8 +27,8 @@ import (
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
-	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
+	"github.com/issue9/web/service"
 )
 
 const RequestIDKey = "X-Request-ID"

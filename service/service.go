@@ -13,6 +13,13 @@ import (
 	"golang.org/x/text/message"
 )
 
+// 服务的几种状态
+const (
+	Stopped = scheduled.Stopped // 停止状态，默认状态
+	Running = scheduled.Running // 正在运行
+	Failed  = scheduled.Failed  // 出错，不再执行后续操作
+)
+
 type (
 	Service struct {
 		s       *Server
@@ -34,6 +41,14 @@ type (
 	}
 
 	Func func(context.Context) error
+
+	State = scheduled.State
+
+	Job = scheduled.Job
+
+	JobFunc = scheduled.JobFunc
+
+	Scheduler = scheduled.Scheduler
 )
 
 func (f Func) Serve(ctx context.Context) error { return f(ctx) }
@@ -44,22 +59,22 @@ func (srv *Service) Title(p *message.Printer) string {
 }
 
 // State 服务状态
-func (srv *Service) State() scheduled.State { return srv.state }
+func (srv *Service) State() State { return srv.state }
 
 // Err 上次的错误信息
 //
 // 不会清空该值。
 func (srv *Service) Err() error { return srv.err }
 
-func (srv *Service) setState(s scheduled.State) {
+func (srv *Service) setState(s State) {
 	srv.stateMux.Lock()
 	srv.state = s
 	srv.stateMux.Unlock()
 }
 
 func (srv *Service) run() {
-	if srv.state != scheduled.Running {
-		srv.setState(scheduled.Running)
+	if srv.state != Running {
+		srv.setState(Running)
 		go srv.serve()
 	}
 }
@@ -69,25 +84,19 @@ func (srv *Service) serve() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
 			srv.s.errlog.Print(msg)
-			srv.setState(scheduled.Failed)
+			srv.setState(Failed)
 		}
 	}()
 	srv.err = srv.service.Serve(srv.s.ctx)
-	state := scheduled.Stopped
+	state := Stopped
 	if srv.err != nil && srv.err != context.Canceled {
 		srv.s.errlog.Error(srv.err)
-		state = scheduled.Failed
+		state = Failed
 	}
 
 	srv.setState(state)
 }
 
-// Add 添加新的服务
-//
-// f 表示服务的运行函数；
-// title 是对该服务的简要说明。
-//
-// NOTE: 如果所有服务已经处于运行的状态，则会自动运行新添加的服务。
 func (srv *Server) Add(title localeutil.LocaleStringer, f Servicer) {
 	s := &Service{
 		s:       srv,

@@ -23,8 +23,8 @@ import (
 	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
-	"github.com/issue9/web/internal/service"
 	"github.com/issue9/web/logs"
+	"github.com/issue9/web/service"
 )
 
 // Server web 服务对象
@@ -55,8 +55,6 @@ type Server struct {
 	encodings *encoding.Encodings
 	files     *Files
 }
-
-type Services = service.Server
 
 type Files = files.Files
 
@@ -236,4 +234,4 @@ func (srv *Server) Files() *Files { return srv.files }
 // Services 服务管理
 //
 // 在 [Server] 初始之后，所有的服务就处于运行状态，后续添加的服务也会自动运行。
-func (srv *Server) Services() *Services { return srv.services }
+func (srv *Server) Services() service.Services { return srv.services }

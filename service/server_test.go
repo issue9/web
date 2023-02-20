@@ -13,6 +13,8 @@ import (
 	"github.com/issue9/web/logs"
 )
 
+var _ Services = &Server{}
+
 func newServer(a *assert.Assertion) *Server {
 	a.TB().Helper()
 	srv := NewServer(time.Local, logs.New(nil, nil))
