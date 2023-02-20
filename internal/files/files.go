@@ -19,7 +19,7 @@ type MarshalFunc func(any) ([]byte, error)
 
 type UnmarshalFunc func([]byte, any) error
 
-type FileSerializer struct {
+type Serializer struct {
 	Marshal   MarshalFunc
 	Unmarshal UnmarshalFunc
 }
@@ -27,13 +27,13 @@ type FileSerializer struct {
 // Files 配置文件管理
 type Files struct {
 	fs    fs.FS
-	items map[string]*FileSerializer
+	items map[string]*Serializer
 }
 
 func New(fsys fs.FS) *Files {
 	return &Files{
 		fs:    fsys,
-		items: make(map[string]*FileSerializer, 5),
+		items: make(map[string]*Serializer, 5),
 	}
 }
 
@@ -51,7 +51,7 @@ func (f *Files) Add(m MarshalFunc, u UnmarshalFunc, ext ...string) {
 		if _, found := f.items[e]; found {
 			panic(fmt.Sprintf("已经存在同名的扩展名 %s", e))
 		}
-		f.items[e] = &FileSerializer{Marshal: m, Unmarshal: u}
+		f.items[e] = &Serializer{Marshal: m, Unmarshal: u}
 	}
 }
 
@@ -99,7 +99,7 @@ func (f *Files) Save(path string, v any) error {
 	return err
 }
 
-func (f *Files) searchByFilename(name string) *FileSerializer {
+func (f *Files) searchByFilename(name string) *Serializer {
 	return f.items[filepath.Ext(name)]
 }
 

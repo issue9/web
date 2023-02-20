@@ -14,14 +14,14 @@ import (
 	"github.com/issue9/web/internal/files"
 )
 
-var filesFactory = map[string]files.FileSerializer{}
+var filesFactory = map[string]files.Serializer{}
 
 type MarshalFileFunc = files.MarshalFunc
 
 type UnmarshalFileFunc = files.UnmarshalFunc
 
 func (conf *configOf[T]) sanitizeFiles() *errs.FieldError {
-	conf.files = make(map[string]files.FileSerializer, len(conf.Files))
+	conf.files = make(map[string]files.Serializer, len(conf.Files))
 	for i, name := range conf.Files {
 		s, found := filesFactory[name]
 		if !found {
@@ -37,7 +37,7 @@ func (conf *configOf[T]) sanitizeFiles() *errs.FieldError {
 // ext 为文件的扩展名，如果存在同名，则会覆盖。
 func RegisterFileSerializer(m MarshalFileFunc, u UnmarshalFileFunc, ext ...string) {
 	for _, e := range ext {
-		filesFactory[e] = files.FileSerializer{Marshal: m, Unmarshal: u}
+		filesFactory[e] = files.Serializer{Marshal: m, Unmarshal: u}
 	}
 }
 

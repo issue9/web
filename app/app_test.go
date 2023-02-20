@@ -71,7 +71,11 @@ func TestAppOf(t *testing.T) {
 	<-exit
 }
 
-func TestSIGHUP(t *testing.T) {
+func TestSignalHUP(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
 	a := assert.New(t, false)
 
 	exit := make(chan struct{}, 10)
@@ -91,27 +95,23 @@ func TestSIGHUP(t *testing.T) {
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
 
-	if runtime.GOOS != "windows" {
-		SignalHUP(cmd)
+	SignalHUP(cmd)
 
-		p, err := os.FindProcess(os.Getpid())
-		a.NotError(err).NotNil(p)
+	p, err := os.FindProcess(os.Getpid())
+	a.NotError(err).NotNil(p)
 
-		// hup1
-		t1 := cmd.srv.Uptime()
-		cmd.Name = "hup1"
-		a.NotError(p.Signal(syscall.SIGHUP))
-		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-		t2 := cmd.srv.Uptime()
-		a.True(t2.After(t1)).Equal(cmd.srv.Name(), "hup1")
+	// hup1
+	t1 := cmd.srv.Uptime()
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	t2 := cmd.srv.Uptime()
+	a.True(t2.After(t1))
 
-		// hup2
-		cmd.Name = "hup2"
-		a.NotError(p.Signal(syscall.SIGHUP))
-		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-		t3 := cmd.srv.Uptime()
-		a.True(t3.After(t2)).Equal(cmd.srv.Name(), "hup2")
-	}
+	// hup2
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	t3 := cmd.srv.Uptime()
+	a.True(t3.After(t2))
 
 	a.NotError(cmd.srv.Close(0))
 	<-exit

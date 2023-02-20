@@ -68,7 +68,7 @@ type configOf[T any] struct {
 	//  - .xml
 	//  - .json
 	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files>file,omitempty"`
-	files map[string]files.FileSerializer
+	files map[string]files.Serializer
 
 	// 指定可用的 mimetype
 	//
