@@ -310,6 +310,7 @@ func TestServer_FileServer(t *testing.T) {
 			StringBody("file1")
 
 		s.Get("/v2/not.exists").
+			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(http.StatusNotFound).
 			StringBody(`{"type":"404","title":"NOT FOUND","status":404}`)

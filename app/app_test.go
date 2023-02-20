@@ -67,25 +67,50 @@ func TestAppOf(t *testing.T) {
 	t3 := cmd.srv.Uptime()
 	a.True(t3.After(t2))
 
-	p, err := os.FindProcess(os.Getpid())
-	a.NotError(err).NotNil(p)
+	a.NotError(cmd.srv.Close(0))
+	<-exit
+}
 
-	// SIGHUP
+func TestSIGHUP(t *testing.T) {
+	a := assert.New(t, false)
+
+	exit := make(chan struct{}, 10)
+	cmd := &AppOf[empty]{
+		Name:           "test",
+		Version:        "1.0.0",
+		ConfigFilename: "web.yaml",
+		ServeActions:   []string{"serve"},
+		Init: func(s *server.Server, user *empty, act string) error {
+			return nil
+		},
+	}
+
+	go func() {
+		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-a=serve"}), http.ErrServerClosed)
+		exit <- struct{}{}
+	}()
+	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
 
 	if runtime.GOOS != "windows" {
+		SignalHUP(cmd)
+
+		p, err := os.FindProcess(os.Getpid())
+		a.NotError(err).NotNil(p)
+
 		// hup1
+		t1 := cmd.srv.Uptime()
 		cmd.Name = "hup1"
 		a.NotError(p.Signal(syscall.SIGHUP))
 		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-		t4 := cmd.srv.Uptime()
-		a.True(t4.After(t3)).Equal(cmd.srv.Name(), "hup1")
+		t2 := cmd.srv.Uptime()
+		a.True(t2.After(t1)).Equal(cmd.srv.Name(), "hup1")
 
 		// hup2
 		cmd.Name = "hup2"
 		a.NotError(p.Signal(syscall.SIGHUP))
 		time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
-		t5 := cmd.srv.Uptime()
-		a.True(t5.After(t4)).Equal(cmd.srv.Name(), "hup2")
+		t3 := cmd.srv.Uptime()
+		a.True(t3.After(t2)).Equal(cmd.srv.Name(), "hup2")
 	}
 
 	a.NotError(cmd.srv.Close(0))
