@@ -13,19 +13,6 @@ import (
 	"golang.org/x/text/message"
 )
 
-type Func func(context.Context) error
-
-// Servicer 长期运行的服务需要实现的接口
-type Servicer interface {
-	// Serve 运行服务
-	//
-	// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
-	// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
-	Serve(context.Context) error
-}
-
-func (f Func) Serve(ctx context.Context) error { return f(ctx) }
-
 type (
 	Service struct {
 		s       *Server
@@ -36,7 +23,20 @@ type (
 		state    scheduled.State
 		stateMux sync.Mutex
 	}
+
+	// Servicer 长期运行的服务需要实现的接口
+	Servicer interface {
+		// Serve 运行服务
+		//
+		// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
+		// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
+		Serve(context.Context) error
+	}
+
+	Func func(context.Context) error
 )
+
+func (f Func) Serve(ctx context.Context) error { return f(ctx) }
 
 // Title 服务名称
 func (srv *Service) Title(p *message.Printer) string {
@@ -57,12 +57,7 @@ func (srv *Service) setState(s scheduled.State) {
 	srv.stateMux.Unlock()
 }
 
-// Run 开始执行该服务
-func (srv *Service) Run() {
-	if !srv.s.running {
-		panic("主服务未运行")
-	}
-
+func (srv *Service) run() {
 	if srv.state != scheduled.Running {
 		srv.setState(scheduled.Running)
 		go srv.serve()
@@ -73,7 +68,7 @@ func (srv *Service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.errlog.Error(srv.err)
+			srv.s.errlog.Print(msg)
 			srv.setState(scheduled.Failed)
 		}
 	}()
@@ -102,7 +97,7 @@ func (srv *Server) Add(title localeutil.LocaleStringer, f Servicer) {
 	srv.services = append(srv.services, s)
 
 	if srv.running {
-		s.Run()
+		s.run()
 	}
 }
 

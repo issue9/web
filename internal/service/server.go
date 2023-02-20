@@ -34,15 +34,13 @@ func NewServer(loc *time.Location, logs *logs.Logs) *Server {
 	return s
 }
 
-func (srv *Server) Running() bool { return srv.running }
-
 func (srv *Server) Run() {
 	srv.running = true
 
 	// 在子项运行之前，重新生成 ctx
 	srv.ctx, srv.cancelFunc = context.WithCancel(context.Background())
 	for _, s := range srv.services {
-		s.Run()
+		s.run()
 	}
 }
 

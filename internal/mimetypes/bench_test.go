@@ -17,7 +17,7 @@ func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
 	mt.Add("font/wottf", xml.Marshal, xml.Unmarshal, "")
 
 	for i := 0; i < b.N; i++ {
-		item := mt.MarshalFunc("font/wottf;q=0.9")
+		item := mt.Accept("font/wottf;q=0.9")
 		a.NotNil(item)
 	}
 }

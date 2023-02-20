@@ -23,9 +23,9 @@ func TestMimetypes_Add(t *testing.T) {
 	a := assert.New(t, false)
 	mt := New[marshalFunc, unmarshalFunc](10)
 
-	a.False(mt.Exists(testMimetype))
+	a.False(mt.exists(testMimetype))
 	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
-	a.True(mt.Exists(testMimetype))
+	a.True(mt.exists(testMimetype))
 
 	a.Panic(func() {
 		mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
@@ -79,52 +79,52 @@ func TestMimetypes_ContentType(t *testing.T) {
 	a.NotError(err).NotNil(f).Nil(e)
 }
 
-func TestMimetypes_MarshalFunc(t *testing.T) {
+func TestMimetypes_Accept(t *testing.T) {
 	a := assert.New(t, false)
 	mt := New[marshalFunc, unmarshalFunc](10)
 
-	item := mt.MarshalFunc(testMimetype)
+	item := mt.Accept(testMimetype)
 	a.Nil(item)
 
-	item = mt.MarshalFunc("")
+	item = mt.Accept("")
 	a.Nil(item)
 
 	mt.Add(testMimetype, xml.Marshal, xml.Unmarshal, "")
 	mt.Add("text/plain", json.Marshal, json.Unmarshal, "text/plain+problem")
 	mt.Add("empty", nil, nil, "")
 
-	item = mt.MarshalFunc(testMimetype)
+	item = mt.Accept(testMimetype)
 	a.NotNil(item).
 		Equal(item.Marshal, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype).
 		Equal(item.Problem, testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
-	item = mt.MarshalFunc("*/*")
+	item = mt.Accept("*/*")
 	a.NotNil(item).
 		Equal(item.Marshal, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
 	// 同 */*
-	item = mt.MarshalFunc("")
+	item = mt.Accept("")
 	a.NotNil(item).
 		Equal(item.Marshal, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
-	item = mt.MarshalFunc("*/*,text/plain")
+	item = mt.Accept("*/*,text/plain")
 	a.NotNil(item).
 		Equal(item.Marshal, marshalFunc(json.Marshal)).
 		Equal(item.Name, "text/plain").
 		Equal(item.Problem, "text/plain+problem")
 
-	item = mt.MarshalFunc("font/wottf;q=x.9")
+	item = mt.Accept("font/wottf;q=x.9")
 	a.Nil(item)
 
-	item = mt.MarshalFunc("font/wottf")
+	item = mt.Accept("font/wottf")
 	a.Nil(item)
 
 	// 匹配 empty
-	item = mt.MarshalFunc("empty")
+	item = mt.Accept("empty")
 	a.NotNil(item).
 		Equal(item.Name, "empty").
 		Nil(item.Marshal)

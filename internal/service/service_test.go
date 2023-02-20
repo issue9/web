@@ -132,8 +132,8 @@ func TestService_service(t *testing.T) {
 	a.Equal(s1.State(), scheduled.Stopped)
 
 	s.Run()
-	s1.Run()
-	s1.Run() // 在运行状态再次运行，不启作用
+	s1.run()
+	s1.run() // 在运行状态再次运行，不启作用
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s1.State(), scheduled.Running)
@@ -163,7 +163,7 @@ func TestService_panic(t *testing.T) {
 
 	// 再次运行，等待 panic
 	s.Run()
-	s2.Run()
+	s2.run()
 	<-start
 	<-exit
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
@@ -171,7 +171,7 @@ func TestService_panic(t *testing.T) {
 	a.NotEmpty(s2.Err())
 
 	// 出错后，还能正确运行和结束
-	s2.Run()
+	s2.run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s2.State(), scheduled.Running)
@@ -201,7 +201,7 @@ func TestService_error(t *testing.T) {
 	a.NotNil(s3.Err())
 
 	// 再次运行
-	s3.Run()
+	s3.run()
 	<-start
 	time.Sleep(500 * time.Microsecond) // 等待主服务设置状态值
 	a.Equal(s3.State(), scheduled.Running)

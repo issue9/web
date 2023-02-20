@@ -90,7 +90,7 @@ type UnmarshalFunc func([]byte, any) error
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	h := r.Header.Get("Accept")
-	mt := srv.mimetypes.MarshalFunc(h)
+	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
 		srv.Logs().DEBUG().Printf("not found serialization for %s", h)
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -195,7 +195,7 @@ func (ctx *Context) ID() string { return ctx.id }
 
 // SetCharset 设置输出的字符集
 //
-// NOTE: 不会影响 [Context.Request] 的返回对象。
+// 相当于重新设置了 [Context.Request] 的 Accept-Charset 报头，但是不会实际修改 [Context.Request]。
 func (ctx *Context) SetCharset(charset string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -217,7 +217,7 @@ func (ctx *Context) Charset() string { return ctx.outputCharsetName }
 
 // SetMimetype 设置输出的格式
 //
-// NOTE: 不会影响 [Context.Request] 的返回对象。
+// 相当于重新设置了 [Context.Request] 的 Accept 报头，但是不会实际修改 [Context.Request]。
 func (ctx *Context) SetMimetype(mimetype string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -226,7 +226,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.Server().mimetypes.MarshalFunc(mimetype)
+	item := ctx.Server().mimetypes.Accept(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -249,7 +249,7 @@ func (ctx *Context) Mimetype(problem bool) string {
 
 // SetEncoding 设置压缩编码
 //
-// NOTE: 不会影响 [Context.Request] 的返回对象。
+// 相当于重新设置了 [Context.Request] 的 Accept-Encoding 报头，但是不会实际修改 [Context.Request]。
 func (ctx *Context) SetEncoding(enc string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -275,7 +275,7 @@ func (ctx *Context) Encoding() string {
 
 // SetLanguage 修改输出的语言
 //
-// NOTE: 不会影响 [Context.Request] 的返回对象。
+// 相当于重新设置了 [Context.Request] 的 Accept-Language 报头，但是不会实际修改 [Context.Request]。
 func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {

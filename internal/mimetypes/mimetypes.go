@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mimetype 管理与 Mime type 相关的数据
+// Package mimetype 管理与 Mimetype 相关的数据
 package mimetypes
 
 import (
@@ -38,7 +38,7 @@ func New[M any, U any](cap int) *Mimetypes[M, U] {
 	}
 }
 
-func (ms *Mimetypes[M, U]) Exists(name string) bool {
+func (ms *Mimetypes[M, U]) exists(name string) bool {
 	return sliceutil.Exists(ms.types, func(item *Mimetype[M, U]) bool { return item.Name == name })
 }
 
@@ -47,7 +47,7 @@ func (ms *Mimetypes[M, U]) Exists(name string) bool {
 // name 为编码名称；
 // problem 为该编码在返回 [server.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
 func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
-	if ms.Exists(name) {
+	if ms.exists(name) {
 		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))
 	}
 
@@ -63,7 +63,7 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	})
 }
 
-// ContentType 从 content-type 报头中获取解码和字符集函数
+// ContentType 从请求端提交的 content-type 报头中获取解码和字符集函数
 //
 // h 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
 func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
@@ -88,7 +88,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	return f, e, nil
 }
 
-// MarshalFunc 从 h 解析出当前请求所需要的 mimetype 名称和对应的解码函数
+// Accept 从当前请求的 accept 报头解析出所需要的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
@@ -98,15 +98,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-//
-// 在不完全匹配的情况下，返回值的名称依然是具体名称。
-//
-//	text/*;q=0.9
-//
-// 返回的名称可能是：
-//
-//	text/plain
-func (ms *Mimetypes[M, U]) MarshalFunc(h string) *Mimetype[M, U] {
+func (ms *Mimetypes[M, U]) Accept(h string) *Mimetype[M, U] {
 	if h == "" {
 		if item := ms.findMarshal("*/*"); item != nil {
 			return item
