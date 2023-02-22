@@ -66,8 +66,8 @@ func (s *Server) GoServe() {
 //
 //	s.Server().NewRouter("default", s.hostname, nil)
 //
-// NOTE: 如果需要多个路由，请使用 Server().Routers().New() 并指定正确的 group.Matcher 对象，
-// 或是将 Tester.Router 放在最后。
+// NOTE: 如果需要多个路由，请使用 [Server.Server.Routers.New] 并指定正确的 group.Matcher 对象，
+// 或是将 [Server.Router] 放在最后调用。
 //
 // 第一次调用时创建实例，多次调用返回同一个实例。
 func (s *Server) Router() *server.Router {
@@ -108,7 +108,7 @@ func (s *Server) Delete(path string) *rest.Request {
 //
 // NOTE: 会等待所有请求都退出之后，才会返回。
 func (s *Server) Close(shutdown time.Duration) {
-	// NOTE: Tester 主要用于第三方测试，
+	// NOTE: Server 主要用于第三方测试，
 	// 所以不主动将 Close 注册至 a.TB().Cleanup，由调用方决定何时调用。
 	s.a.NotError(s.Server().Close(shutdown))
 	s.wg.Wait()

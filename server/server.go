@@ -109,6 +109,8 @@ func New(name, version string, o *Options) (*Server, error) {
 
 	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 
+	srv.OnClose(srv.cache.Close)
+
 	srv.services.Run() // 初始化之后即运行服务，后续添加的服务会自动运行。
 
 	return srv, nil
@@ -152,7 +154,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回，
 // 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
-	// 在 Serve.defer 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。
 	defer func() {
 		srv.services.Stop()
 
@@ -161,10 +162,6 @@ func (srv *Server) Serve() (err error) {
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
 				srv.Logs().ERROR().Error(err1)
 			}
-		}
-
-		if err1 := srv.cache.Close(); err1 != nil { // 出错不退出，继续其它操作。
-			srv.Logs().ERROR().Error(err1)
 		}
 	}()
 
@@ -183,13 +180,8 @@ func (srv *Server) Serve() (err error) {
 	return err
 }
 
-// Close 触发关闭操作
-//
-// 需要等待 [Server.Serve] 返回才能证明整个服务被关闭。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
-	defer func() {
-		srv.closed <- struct{}{}
-	}()
+	defer func() { srv.closed <- struct{}{} }() // NOTE: 保证最后执行
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()

@@ -125,8 +125,6 @@ func (d *memoryDriver) Clean() error {
 func (d *memoryDriver) Close() error {
 	d.ticker.Stop()
 	d.Clean()
-	close(d.done)
-
 	return nil
 }
 
