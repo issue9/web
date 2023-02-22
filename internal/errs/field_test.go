@@ -38,7 +38,7 @@ func TestConfigError_LocaleString(t *testing.T) {
 	a := assert.New(t, false)
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
-	tester := servertest.NewTester(a, &server.Options{Locale: &server.Locale{Language: language.MustParse("cmn-hans")}, Location: time.UTC})
+	tester := servertest.NewServer(a, &server.Options{Locale: &server.Locale{Language: language.MustParse("cmn-hans")}, Location: time.UTC})
 	s := tester.Server()
 	f := s.Files()
 	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")

@@ -149,8 +149,7 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 
 // Serve 启动服务
 //
-// 这是个阻塞方法，会等待 [Server.Close] 执行完之后，
-// 此函数才会返回，这一点与 [http.ListenAndServe] 稍有不同。
+// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回，
 // 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	// 在 Serve.defer 中关闭服务，而不是 Close。这样可以保证在所有的请求关闭之后执行。

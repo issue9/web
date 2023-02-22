@@ -16,7 +16,7 @@ import (
 
 func TestInstallView(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, &server.Options{
+	s := servertest.NewServer(a, &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*server.Mimetype{
 			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
@@ -62,7 +62,7 @@ func TestInstallView_dir(t *testing.T) {
 			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
 		},
 	}
-	s := servertest.NewTester(a, opt)
+	s := servertest.NewServer(a, opt)
 	instalDirView(s.Server(), os.DirFS("./testdata/dir"), "*.tpl")
 
 	s.GoServe()

@@ -74,7 +74,7 @@ type Context struct {
 	// 保存 Context 在存续期间的可复用变量
 	//
 	// 这是比 context.Value 更经济的传递变量方式，但是这并不是协程安全的。
-	Vars map[any]any
+	vars map[any]any
 
 	logs *logs.ParamsLogs
 }
@@ -162,7 +162,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		ctx.requestBody = ctx.requestBody[:0]
 	}
 	ctx.read = false
-	ctx.Vars = map[any]any{}
+	ctx.vars = map[any]any{}
 
 	// 在最后，保证已经存在 ctx.id 变量
 	ctx.logs = srv.Logs().With(map[string]any{
@@ -171,6 +171,15 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 
 	return ctx
 }
+
+// GetVar 返回指定名称的变量
+func (ctx *Context) GetVar(key any) (any, bool) {
+	v, found := ctx.vars[key]
+	return v, found
+}
+
+// SetVar 设置变量
+func (ctx *Context) SetVar(key, val any) { ctx.vars[key] = val }
 
 // Route 关联的路由信息
 func (ctx *Context) Route() types.Route { return ctx.route }

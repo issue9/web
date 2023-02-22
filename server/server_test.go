@@ -53,7 +53,7 @@ func TestServer_Vars(t *testing.T) {
 func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewTester(a, nil)
+	srv := servertest.NewServer(a, nil)
 	router := srv.Router()
 	router.Get("/mux/test", servertest.BuildHandler(202))
 	router.Get("/m1/test", servertest.BuildHandler(202))
@@ -89,7 +89,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
 	a.NotError(err).NotNil(cert)
-	srv := servertest.NewTester(a, &server.Options{
+	srv := servertest.NewServer(a, &server.Options{
 		HTTPServer: &http.Server{
 			Addr: ":8088",
 			TLSConfig: &tls.Config{
@@ -121,7 +121,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewTester(a, nil)
+	srv := servertest.NewServer(a, nil)
 	router := srv.Router()
 
 	router.Get("/test", servertest.BuildHandler(202))
@@ -157,7 +157,7 @@ func TestServer_Close(t *testing.T) {
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewTester(a, nil)
+	srv := servertest.NewServer(a, nil)
 	router := srv.Router()
 
 	router.Get("/test", servertest.BuildHandler(202))
@@ -204,7 +204,7 @@ func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewTester(a, nil)
+	srv := servertest.NewServer(a, nil)
 	count := 0
 
 	router := srv.Router()
@@ -244,7 +244,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestServer_Routers(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, nil)
+	s := servertest.NewServer(a, nil)
 	srv := s.Server()
 	rs := srv.Routers()
 
@@ -278,7 +278,7 @@ func TestServer_Routers(t *testing.T) {
 
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, nil)
+	s := servertest.NewServer(a, nil)
 	s.Server().CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
 	r := s.Router()
 	s.GoServe()
@@ -325,7 +325,7 @@ func TestContext_NoContent(t *testing.T) {
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Logs:       &logs.Options{Writer: logs.NewTextWriter("15:04:05", buf)},
 	}
-	s := servertest.NewTester(a, o)
+	s := servertest.NewServer(a, o)
 
 	s.Router().Get("/204", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {

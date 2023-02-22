@@ -15,7 +15,7 @@ import (
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewTester(a, &server.Options{
+	s := servertest.NewServer(a, &server.Options{
 		Mimetypes: []*server.Mimetype{
 			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
 		},

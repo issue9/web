@@ -101,7 +101,7 @@ func TestNew(t *testing.T) {
 	a.Equal(srv.httpServer.Addr, "")
 }
 
-func TestContext_Vars(t *testing.T) {
+func TestContext_vars(t *testing.T) {
 	a := assert.New(t, false)
 	r := rest.Get(a, "/path").Header("Accept", "*/*").Request()
 	w := httptest.NewRecorder()
@@ -109,21 +109,28 @@ func TestContext_Vars(t *testing.T) {
 	a.NotNil(ctx)
 
 	type (
-		t1 int
+		t1 struct{ int }
 		t2 int64
-		t3 = t2
+		t3 t2
 	)
 	var (
-		v1 t1 = 1
-		v2 t2 = 1
-		v3 t3 = 1
+		k1    = t1{1}
+		k2 t2 = 1
+		k3 t3 = 1
 	)
 
-	ctx.Vars[v1] = 1
-	ctx.Vars[v2] = 2
-	ctx.Vars[v3] = 3
+	ctx.SetVar(k1, 1)
+	ctx.SetVar(k2, 2)
+	ctx.SetVar(k3, 3)
 
-	a.Equal(ctx.Vars[v1], 1).Equal(ctx.Vars[v2], 3)
+	v1, found := ctx.GetVar(k1)
+	a.True(found).Equal(v1, 1)
+
+	v2, found := ctx.GetVar(k2)
+	a.True(found).Equal(v2, 2)
+
+	v3, found := ctx.GetVar(k3)
+	a.True(found).Equal(v3, 3)
 }
 
 func TestServer_newContext(t *testing.T) {
