@@ -41,15 +41,6 @@ type (
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
 	BuildProblemFunc func(id string, status int, title, detail string) Problem
-
-	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
-	//
-	// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
-	// 中会在解析数据成功之后会调用该接口。
-	CTXSanitizer interface {
-		// CTXSanitize 验证和修正当前对象的数据
-		CTXSanitize(*Validation)
-	}
 )
 
 var rfc7807Pool = problems.NewRFC7807Pool[*Context]()

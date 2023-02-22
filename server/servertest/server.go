@@ -18,12 +18,6 @@ import (
 	"github.com/issue9/web/server"
 )
 
-// NewServer 返回功能齐全的 [server.Server] 实例
-func NewServer(a *assert.Assertion, o *server.Options) *server.Server {
-	s, _ := newServer(a, o)
-	return s
-}
-
 func newServer(a *assert.Assertion, o *server.Options) (*server.Server, *server.Options) {
 	if o == nil {
 		o = &server.Options{HTTPServer: &http.Server{Addr: ":8080"}}

@@ -77,7 +77,7 @@ func (v *Validation) Add(name string, reason localeutil.LocaleStringer) *Validat
 	return v.add(name, reason)
 }
 
-// AddError 直接添加一条错误信息类型为 err 的信息
+// AddError 直接添加一条类型为 err 的错误信息
 func (v *Validation) AddError(name string, err error) *Validation {
 	if ls, ok := err.(localeutil.LocaleStringer); ok {
 		return v.Add(name, ls)

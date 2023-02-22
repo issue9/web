@@ -35,11 +35,19 @@ type (
 		v       *Validation
 		queries url.Values
 	}
+
+	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
+	//
+	// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
+	// 中会在解析数据成功之后会调用该接口。
+	CTXSanitizer interface {
+		CTXSanitize(*Validation)
+	}
 )
 
 // Params 声明一个用于获取路径参数的对象
 //
-// 返回对象的生命周期在 Context 结束时也随之结束。
+// 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
 	ps.v = ctx.NewValidation(exitAtError)
@@ -202,8 +210,7 @@ func (q *Queries) Int(key string, def int) int {
 
 	str := q.getItem(key)
 
-	// 不存在，返回默认值
-	if len(str) == 0 {
+	if len(str) == 0 { // 不存在，返回默认值
 		return def
 	}
 
