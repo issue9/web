@@ -25,8 +25,8 @@ github.com/issue9/query/v3 v3.1.1 h1:M6nxeFUZRcWSen/3yz2y9s8SdaAjiBjerLbW9xZbiRg
 github.com/issue9/query/v3 v3.1.1/go.mod h1:+Yk/RT+98uYHF/e3EY+bRqdRw2E1Su2oEmWYN53GIJE=
 github.com/issue9/rands/v2 v2.0.0 h1:SdG8iflIzuWpa6CKLmMwn4pTZj+mSxS7s+1TCH6WXUE=
 github.com/issue9/rands/v2 v2.0.0/go.mod h1:wTOXDlW9QUtba7o3I/RayfjH7mLYrER2TFHaIeKe96o=
-github.com/issue9/scheduled v0.10.0 h1:IP9G32Jsw3Vyx0Fl1pUFeRtEV1K9OzIYxRV32+5fCJM=
-github.com/issue9/scheduled v0.10.0/go.mod h1:V9Za91dfNqqNrwBptdIEwJ6aKg8BfmixqTuMpXPa/A4=
+github.com/issue9/scheduled v0.11.0 h1:cgwWERaefvhIKWD15C+2ODVagGFTnpr1v+bwD2z189c=
+github.com/issue9/scheduled v0.11.0/go.mod h1:V9Za91dfNqqNrwBptdIEwJ6aKg8BfmixqTuMpXPa/A4=
 github.com/issue9/sliceutil v0.12.0 h1:5SqNbNqiYrdYd4lfpYAVc5/3MBcB1JXMwDf1iAyViaI=
 github.com/issue9/sliceutil v0.12.0/go.mod h1:KdnaZI342DHMrS6AkN0SSxqpFkJ6/4FyPpKm5m6S6Mk=
 github.com/issue9/source v0.3.2 h1:q/0hP5fonfzp9SdAT0Y7JyHwVcoGB2b8q2UhnF/v6II=

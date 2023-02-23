@@ -197,6 +197,7 @@ func TestServer_newContext(t *testing.T) {
 	a.Empty(lw.String())
 	a.NotZero(ctx.Begin())
 	b1 := ctx.Begin()
+	time.Sleep(500 * time.Microsecond) // 保证后续的 Context.Begin 与此值有时间差。
 
 	// 正常，指定 Accept-Language，采用默认的 accept
 	lw.Reset()

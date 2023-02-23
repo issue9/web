@@ -109,7 +109,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 
-	srv.OnClose(srv.cache.Close)
+	srv.OnClose(srv.cache.Close, func() error { srv.services.Stop(); return nil })
 
 	srv.services.Run() // 初始化之后即运行服务，后续添加的服务会自动运行。
 
@@ -155,8 +155,6 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Serve() (err error) {
 	defer func() {
-		srv.services.Stop()
-
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes {
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
@@ -172,7 +170,7 @@ func (srv *Server) Serve() (err error) {
 		err = srv.httpServer.ListenAndServe()
 	}
 
-	// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成，
+	// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
 	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 	if errors.Is(err, http.ErrServerClosed) {
 		<-srv.closed
