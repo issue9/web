@@ -30,6 +30,10 @@ func (p *localePrinter) Print(v ...any) string {
 	return fmt.Sprint(p.localeValues(v...)...)
 }
 
+func (p *localePrinter) Println(v ...any) string {
+	return fmt.Sprintln(p.localeValues(v...)...)
+}
+
 func (p *localePrinter) Printf(format string, v ...any) string {
 	return p.p.Sprintf(format, p.localeValues(v...)...)
 }

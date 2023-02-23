@@ -25,7 +25,7 @@ type Server struct {
 func NewServer(loc *time.Location, logs *logs.Logs) *Server {
 	s := &Server{
 		services:  make([]*Service, 0, 10),
-		scheduled: scheduled.NewServer(loc, logs.ERROR().StdLogger(), logs.DEBUG().StdLogger()),
+		scheduled: scheduled.NewServer(loc, logs.ERROR(), logs.DEBUG()),
 		errlog:    logs.ERROR(),
 	}
 
