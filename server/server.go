@@ -149,20 +149,10 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, srv.Location())
 }
 
-// Serve 启动服务
+// Serve 开始 HTTP 服务
 //
-// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回，
-// 一旦返回表示 [Server] 的生命周期结束，对象将处于不可用状态。
+// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
 func (srv *Server) Serve() (err error) {
-	defer func() {
-		sliceutil.Reverse(srv.closes)
-		for _, f := range srv.closes {
-			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
-				srv.Logs().ERROR().Error(err1)
-			}
-		}
-	}()
-
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
@@ -178,8 +168,21 @@ func (srv *Server) Serve() (err error) {
 	return err
 }
 
+// Close 关闭服务
+//
+// 无论是否出错，该操作最终都会导致 [Server.Serve] 的退出。
+// 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
-	defer func() { srv.closed <- struct{}{} }() // NOTE: 保证最后执行
+	defer func() {
+		sliceutil.Reverse(srv.closes)
+		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。
+			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
+				srv.Logs().ERROR().Error(err1)
+			}
+		}
+
+		srv.closed <- struct{}{} // NOTE: 保证最后执行
+	}()
 
 	if shutdownTimeout == 0 {
 		return srv.httpServer.Close()
