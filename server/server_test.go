@@ -141,7 +141,7 @@ func TestServer_Close(t *testing.T) {
 	})
 
 	srv.GoServe()
-	defer srv.Close(0)
+	// defer srv.Close(0) // 由 /close 关闭，不需要 srv.Close
 
 	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
