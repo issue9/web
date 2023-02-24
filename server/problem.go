@@ -124,4 +124,5 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 //   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
 //   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化，且每个参数也将进行本地化；
 //   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
+//   - Logger.Println 对每个参数分别进行本地化，然后调用 [fmt.Sprintln] 输出；
 func (srv *Server) Logs() *logs.Logs { return srv.logs }

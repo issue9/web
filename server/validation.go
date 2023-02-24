@@ -57,7 +57,7 @@ func (ctx *Context) NewValidation(exitAtError bool) *Validation {
 	v.keys = v.keys[:0]
 	v.reasons = v.reasons[:0]
 	v.ctx = ctx
-	ctx.OnExit(func(i int) {
+	ctx.OnExit(func(*Context) {
 		if len(v.keys) < validationPoolMaxSize {
 			validationPool.Put(v)
 		}

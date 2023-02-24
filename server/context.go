@@ -28,7 +28,7 @@ const (
 
 var contextPool = &sync.Pool{
 	New: func() any {
-		return &Context{exits: make([]func(int), 0, 3)} // query, params, validation
+		return &Context{exits: make([]func(*Context), 0, 3)} // query, params, validation
 	},
 }
 
@@ -42,7 +42,7 @@ type Context struct {
 	route             types.Route
 	request           *http.Request
 	outputCharsetName string
-	exits             []func(int)
+	exits             []func(*Context)
 	id                string
 	begin             time.Time
 
@@ -311,7 +311,7 @@ func (ctx *Context) destroy() {
 	}
 
 	for _, exit := range ctx.exits {
-		exit(ctx.status)
+		exit(ctx)
 	}
 
 	logs.Destroy(ctx.logs)
@@ -322,14 +322,7 @@ func (ctx *Context) destroy() {
 }
 
 // OnExit 注册退出当前请求时的处理函数
-//
-// f 为退出时的处理方法，其原型为：
-//
-//	func(status int)
-//
-// 其中 status 为最终输出到客户端的状态码，
-// 如果用户是通过 [Context.Unwrap] 返回的对象写入报头的，那么该值可能并不是用户期待的值。
-func (ctx *Context) OnExit(f func(int)) { ctx.exits = append(ctx.exits, f) }
+func (ctx *Context) OnExit(f func(*Context)) { ctx.exits = append(ctx.exits, f) }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {

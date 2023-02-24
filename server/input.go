@@ -51,7 +51,7 @@ type (
 func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
 	ps.v = ctx.NewValidation(exitAtError)
-	ctx.OnExit(func(i int) { paramPool.Put(ps) })
+	ctx.OnExit(func(*Context) { paramPool.Put(ps) })
 	return ps
 }
 
@@ -194,7 +194,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	q := queryPool.Get().(*Queries)
 	q.v = ctx.NewValidation(exitAtError)
 	q.queries = queries
-	ctx.OnExit(func(i int) { queryPool.Put(q) })
+	ctx.OnExit(func(*Context) { queryPool.Put(q) })
 	return q, nil
 }
 

@@ -210,7 +210,7 @@ func TestMiddleware(t *testing.T) {
 	router := srv.Router()
 	router.Use(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 		return func(ctx *server.Context) server.Responser {
-			ctx.OnExit(func(status int) {
+			ctx.OnExit(func(*server.Context) {
 				count++
 			})
 			return next(ctx)
