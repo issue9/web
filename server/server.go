@@ -13,6 +13,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -24,7 +25,6 @@ import (
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/service"
 )
 
 // Server web 服务对象
@@ -37,9 +37,14 @@ type Server struct {
 	cache           cache.Driver
 	uptime          time.Time
 	routers         *Routers
-	services        *service.Server
 	uniqueGenerator func() string
 	requestIDKey    string
+	state           State
+
+	// service
+	services  []*Service
+	ctx       context.Context
+	scheduled *scheduled.Server
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -69,6 +74,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	srv := &Server{
 		name:            name,
 		version:         version,
@@ -77,9 +84,13 @@ func New(name, version string, o *Options) (*Server, error) {
 		vars:            &sync.Map{},
 		cache:           o.Cache,
 		uptime:          time.Now(),
-		services:        service.NewServer(o.Location, o.logs),
 		uniqueGenerator: o.UniqueGenerator.String,
 		requestIDKey:    o.RequestIDKey,
+		state:           Stopped,
+
+		services:  make([]*Service, 0, 5),
+		ctx:       ctx,
+		scheduled: scheduled.NewServer(o.Location, o.logs.ERROR(), o.logs.DEBUG()),
 
 		location: o.Location,
 		catalog:  o.Locale.Catalog,
@@ -109,9 +120,7 @@ func New(name, version string, o *Options) (*Server, error) {
 
 	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
 
-	srv.OnClose(srv.cache.Close, func() error { srv.services.Stop(); return nil })
-
-	srv.services.Run() // 初始化之后即运行服务，后续添加的服务会自动运行。
+	srv.OnClose(srv.cache.Close, func() error { cancel(); return nil })
 
 	return srv, nil
 }
@@ -121,6 +130,13 @@ func (srv *Server) Name() string { return srv.name }
 
 // Version 应用的版本
 func (srv *Server) Version() string { return srv.version }
+
+// State 获取当前的状态
+//
+// - [Running] 表示已经运行 [Server.Serve]；
+// - [Failed] 表示运行之后出错了；
+// - [Stopped] 默认状态，或由 [Server.Close] 正常结束；
+func (srv *Server) State() State { return srv.state }
 
 func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
 
@@ -153,6 +169,8 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 //
 // 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
 func (srv *Server) Serve() (err error) {
+	srv.state = Running
+
 	cfg := srv.httpServer.TLSConfig
 	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
@@ -160,10 +178,12 @@ func (srv *Server) Serve() (err error) {
 		err = srv.httpServer.ListenAndServe()
 	}
 
-	// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
-	// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 	if errors.Is(err, http.ErrServerClosed) {
+		// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
+		// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 		<-srv.closed
+	} else if err != nil {
+		srv.state = Failed
 	}
 	return err
 }
@@ -181,6 +201,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 			}
 		}
 
+		srv.state = Stopped
 		srv.closed <- struct{}{} // NOTE: 保证最后执行
 	}()
 
@@ -222,8 +243,3 @@ func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 
 // Files 配置文件的相关操作
 func (srv *Server) Files() *Files { return srv.files }
-
-// Services 服务管理
-//
-// 在 [Server] 初始之后，所有的服务就处于运行状态，后续添加的服务也会自动运行。
-func (srv *Server) Services() service.Services { return srv.services }

@@ -61,8 +61,8 @@ func Counter(a *assert.Assertion, d cache.Driver) {
 	c2 := d.Counter("v3", 50, time.Second)
 
 	v1, err = c1.Decr(5)
-	v2, err = c2.Value()
 	a.NotError(err).Equal(v1, 45)
+	v2, err = c2.Value()
 	a.NotError(err).Equal(v2, 45)
 }
 
@@ -77,14 +77,14 @@ func Basic(a *assert.Assertion, c cache.Driver) {
 	var num int
 	err = c.Get("k1", &num)
 	a.NotError(err, "Forever 返回未知错误 %s", err).
-		Equal(num, 123, "无法正常获取 k1 的值 v1=%d,v2=%d", v, 123)
+		Equal(num, 123, "无法正常获取 k1 的值 v1=%s,v2=%d", v, 123)
 
 	// 重新设置 k1
 	a.NotError(c.Set("k1", uint(789), time.Minute))
 	var unum uint
 	err = c.Get("k1", &unum)
 	a.NotError(err, "1*time.Hour 的值 k1 返回错误信息 %s", err).
-		Equal(unum, 789, "无法正常获取重新设置之后 k1 的值 v1=%d, v2=%d", v, 789)
+		Equal(unum, 789, "无法正常获取重新设置之后 k1 的值 v1=%s, v2=%d", v, 789)
 
 	// 被 delete 删除
 	a.NotError(c.Delete("k1"))

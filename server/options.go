@@ -28,7 +28,6 @@ import (
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/service"
 )
 
 const RequestIDKey = "X-Request-ID"
@@ -147,7 +146,7 @@ type (
 
 	// UniqueGenerator 唯一 ID 生成器的接口
 	UniqueGenerator interface {
-		service.Servicer
+		Servicer
 
 		// 返回字符串类型的唯一 ID 值
 		String() string

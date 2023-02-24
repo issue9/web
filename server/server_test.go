@@ -54,6 +54,7 @@ func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := servertest.NewServer(a, nil)
+	a.Equal(srv.Server().State(), server.Stopped)
 	router := srv.Router()
 	router.Get("/mux/test", servertest.BuildHandler(202))
 	router.Get("/m1/test", servertest.BuildHandler(202))
@@ -130,7 +131,9 @@ func TestServer_Close(t *testing.T) {
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
 		}
+		a.Equal(srv.Server().State(), server.Running)
 		a.NotError(srv.Server().Close(0))
+		a.Equal(srv.Server().State(), server.Stopped)
 		return nil
 	})
 
