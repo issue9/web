@@ -10,7 +10,7 @@ require (
 	github.com/issue9/logs/v4 v4.4.0
 	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/scheduled v0.12.0
+	github.com/issue9/scheduled v0.13.0
 	github.com/issue9/sliceutil v0.12.0
 	github.com/issue9/term/v3 v3.1.1
 	github.com/issue9/unique/v2 v2.0.0

@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+	"golang.org/x/text/language"
 )
 
 const tickTimer = 500 * time.Microsecond
@@ -53,43 +54,50 @@ func TestServer_service(t *testing.T) {
 	s := newServer(a, nil)
 	srv := s.Services()
 
-	a.Equal(1, len(srv.Services())) // scheduled
+	a.Equal(1, len(srv.services)) // scheduled
 	s1, start1, _, _ := buildService()
 	srv.Add(localeutil.Phrase("srv1"), s1)
-	a.Equal(2, len(srv.Services()))
-	sched := srv.Services()[0]
-	srv1 := srv.Services()[1]
+	a.Equal(2, len(srv.services))
+	sched := srv.services[0]
+	srv1 := srv.services[1]
 	<-start1
 	a.Equal(srv1.service, s1) // 并不会改变状态
-	a.Equal(srv1.State(), Running).
-		Equal(sched.State(), Running)
+	a.Equal(srv1.state, Running).
+		Equal(sched.state, Running)
 
 	// 运行中添加
 	s2, start2, _, _ := buildService()
 	srv.Add(localeutil.Phrase("srv2"), s2)
-	a.Equal(3, len(srv.Services()))
-	srv2 := srv.Services()[2]
+	a.Equal(3, len(srv.services))
+	srv2 := srv.services[2]
 	<-start2
-	a.Equal(Running, srv2.State()) // 运行中添加自动运行服务
+	a.Equal(Running, srv2.state) // 运行中添加自动运行服务
 
 	s.Close(0)
 	time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
-	a.Equal(srv1.State(), Stopped)
-	a.Equal(sched.State(), Stopped)
-	a.Equal(srv2.State(), Stopped)
+	a.Equal(srv1.state, Stopped)
+	a.Equal(sched.state, Stopped)
+	a.Equal(srv2.state, Stopped)
 }
 
 func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, nil)
 	srv := s.Services()
-	a.Equal(0, len(srv.Jobs()))
+	a.Equal(0, len(srv.scheduled.Jobs()))
 
-	srv.AddAt("at", func(t time.Time) error {
+	srv.AddAt(localeutil.Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now(), false)
-	a.Equal(1, len(srv.Jobs()))
+
+	var count int
+	srv.VisitJobs(func(ls localeutil.LocaleStringer, t1, t2 time.Time, s State, b bool, err error) {
+		p := srv.s.NewPrinter(language.Chinese)
+		a.Equal(ls.LocaleString(p), "hans")
+		count++
+	})
+	a.Equal(1, count)
 }
 
 func TestService_state(t *testing.T) {
@@ -101,12 +109,12 @@ func TestService_state(t *testing.T) {
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		s1 := s.services[1]
-		a.Equal(s1.State(), Running)
+		s1 := s.Services().services[1]
+		a.Equal(s1.state, Running)
 
 		s.Close(0)
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.State(), Stopped)
+		a.Equal(s1.state, Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
@@ -117,13 +125,13 @@ func TestService_state(t *testing.T) {
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		s1 := s.services[1]
-		a.Equal(s1.State(), Running)
+		s1 := s.Services().services[1]
+		a.Equal(s1.state, Running)
 
 		p <- struct{}{}
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.State(), Failed).
-			Contains(s1.Err().Error(), "service panic")
+		a.Equal(s1.state, Failed).
+			Contains(s1.err.Error(), "service panic")
 
 		s.Close(0)
 	})
@@ -136,13 +144,13 @@ func TestService_state(t *testing.T) {
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		s1 := s.services[1]
-		a.Equal(s1.State(), Running)
+		s1 := s.Services().services[1]
+		a.Equal(s1.state, Running)
 
 		err <- struct{}{}
 		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.State(), Failed).
-			Contains(s1.Err().Error(), "service error")
+		a.Equal(s1.state, Failed).
+			Contains(s1.err.Error(), "service error")
 
 		s.Close(0)
 	})

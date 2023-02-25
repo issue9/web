@@ -331,7 +331,7 @@ func TestContext_SetLanguage(t *testing.T) {
 	ctx := srv.newContext(w, r, nil)
 	a.NotNil(ctx)
 
-	a.Equal(ctx.LanguageTag(), ctx.Server().LanguageTag())
+	a.Equal(ctx.LanguageTag(), ctx.Server().Language())
 
 	cmnHant := language.MustParse("cmn-hant")
 	ctx.SetLanguage(cmnHant)

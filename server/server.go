@@ -11,9 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/scheduled"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -40,11 +38,7 @@ type Server struct {
 	uniqueGenerator func() string
 	requestIDKey    string
 	state           State
-
-	// service
-	services  []*Service
-	ctx       context.Context
-	scheduled *scheduled.Server
+	services        *Services
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -74,8 +68,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	srv := &Server{
 		name:            name,
 		version:         version,
@@ -87,10 +79,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		uniqueGenerator: o.UniqueGenerator.String,
 		requestIDKey:    o.RequestIDKey,
 		state:           Stopped,
-
-		services:  make([]*Service, 0, 5),
-		ctx:       ctx,
-		scheduled: scheduled.NewServer(o.Location, o.logs.ERROR(), o.logs.DEBUG()),
 
 		location: o.Location,
 		catalog:  o.Locale.Catalog,
@@ -117,10 +105,8 @@ func New(name, version string, o *Options) (*Server, error) {
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
 	srv.httpServer.ErrorLog = srv.Logs().ERROR().StdLogger()
-
-	srv.Services().Add(localeutil.Phrase("unique generator"), o.UniqueGenerator)
-
-	srv.OnClose(srv.cache.Close, func() error { cancel(); return nil })
+	srv.OnClose(srv.cache.Close)
+	srv.initServices(o.UniqueGenerator) // 依赖 logs 和 Location 已经初始化
 
 	return srv, nil
 }
@@ -228,8 +214,8 @@ func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
 
 func (srv *Server) LocalePrinter() *message.Printer { return srv.printer }
 
-// LanguageTag 返回默认的语言标签
-func (srv *Server) LanguageTag() language.Tag { return srv.tag }
+// Language 返回默认的语言标签
+func (srv *Server) Language() language.Tag { return srv.tag }
 
 // OnClose 注册关闭服务时需要执行的函数
 //

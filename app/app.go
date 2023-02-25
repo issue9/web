@@ -92,7 +92,8 @@ type AppOf[T any] struct {
 	// LocaleGlob 指定的文件格式必须是已经通过 [RegisterFileSerializer] 注册的。
 	// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并决定采用哪种语言。
 	//
-	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)。
+	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，
+	// [server.Server] 的本地化由其自身管理。
 	LocaleFS   fs.FS
 	LocaleGlob string
 	printer    *message.Printer

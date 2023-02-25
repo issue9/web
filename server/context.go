@@ -326,7 +326,7 @@ func (ctx *Context) OnExit(f func(*Context)) { ctx.exits = append(ctx.exits, f) 
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
-		return srv.LanguageTag()
+		return srv.Language()
 	}
 	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
 	return tag

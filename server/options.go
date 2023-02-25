@@ -146,7 +146,7 @@ type (
 
 	// UniqueGenerator 唯一 ID 生成器的接口
 	UniqueGenerator interface {
-		Servicer
+		Service
 
 		// 返回字符串类型的唯一 ID 值
 		String() string
