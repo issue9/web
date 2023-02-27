@@ -24,7 +24,7 @@ func TestContext_Log(t *testing.T) {
 	a := assert.New(t, false)
 	errLog := new(bytes.Buffer)
 
-	srv := newServer(a, &Options{
+	srv := newTestServer(a, &Options{
 		Logs: &logs.Options{Writer: logs.NewTextWriter("20060102-15:04:05", errLog), Caller: true, Created: true},
 	})
 	errLog.Reset()
@@ -56,7 +56,7 @@ func TestContext_Log(t *testing.T) {
 
 func TestContext_Problem(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
 	srv.AddProblem("40000", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang")) // lang 有翻译
@@ -105,7 +105,7 @@ func TestContext_Problem(t *testing.T) {
 		Header("Content-Type", "application/json").
 		Request()
 	w = httptest.NewRecorder()
-	ctx = newServer(a, nil).newContext(w, r, nil)
+	ctx = newTestServer(a, nil).newContext(w, r, nil)
 	ctx.Server().AddProblem("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010")).
 		AddProblem("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 

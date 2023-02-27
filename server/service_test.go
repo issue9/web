@@ -51,7 +51,7 @@ func buildService() (f ServiceFunc, start, p, err chan struct{}) {
 
 func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	srv := s.Services()
 
 	a.Equal(1, len(srv.services)) // scheduled
@@ -82,7 +82,7 @@ func TestServer_service(t *testing.T) {
 
 func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	srv := s.Services()
 	a.Equal(0, len(srv.scheduled.Jobs()))
 
@@ -103,7 +103,7 @@ func TestServer_scheduled(t *testing.T) {
 func TestService_state(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newServer(a, nil)
+		s := newTestServer(a, nil)
 
 		srv1, start, _, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
@@ -119,7 +119,7 @@ func TestService_state(t *testing.T) {
 
 	t.Run("panic", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newServer(a, nil)
+		s := newTestServer(a, nil)
 
 		srv1, start, p, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
@@ -138,7 +138,7 @@ func TestService_state(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newServer(a, nil)
+		s := newTestServer(a, nil)
 
 		srv1, start, _, err := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)

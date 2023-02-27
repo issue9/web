@@ -65,7 +65,7 @@ func notIn(element ...int) ValidateFunc {
 
 func TestContext_NewValidation(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
@@ -90,7 +90,7 @@ func TestContext_NewValidation(t *testing.T) {
 
 func TestValidation_AddField(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
@@ -128,7 +128,7 @@ func TestValidation_AddField(t *testing.T) {
 
 func TestValidation_AddSliceField(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
@@ -167,7 +167,7 @@ func TestValidation_AddSliceField(t *testing.T) {
 
 func TestValidation_AddMapField(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
@@ -206,7 +206,7 @@ func TestValidation_AddMapField(t *testing.T) {
 
 func TestValidation_When(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)

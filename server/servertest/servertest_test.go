@@ -1,30 +1,36 @@
 // SPDX-License-Identifier: MIT
 
-package servertest
+package servertest_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/web/server/servertest"
 )
 
-func TestTester_Router(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := NewServer(a, nil)
-	r1 := s.Router()
-	r2 := s.Router()
-	a.Equal(r1, r2)
-	defer s.Close(0)
+type server struct {
+	exit chan struct{}
 }
 
-func TestTester_Close(t *testing.T) {
+func (s *server) Serve() error {
+	<-s.exit
+	return http.ErrServerClosed
+}
+
+func (s *server) Close() error {
+	s.exit <- struct{}{}
+	return nil
+}
+
+func TestRun(t *testing.T) {
 	a := assert.New(t, false)
+	s := &server{exit: make(chan struct{}, 1)}
 
-	s := NewServer(a, nil)
-	s.Close(0)
-
-	s = NewServer(a, nil)
-	s.GoServe()
-	s.Close(0)
+	wait := servertest.Run(a, s)
+	t.Log("before close")
+	s.Close()
+	t.Log("after close")
+	wait()
 }

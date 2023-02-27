@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server_test
+package server
 
 import (
 	"bytes"
@@ -18,15 +18,17 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ fs.FS = &server.Server{}
+var (
+	_ fs.FS             = &Server{}
+	_ servertest.Server = &Server{}
+)
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	srv, err := server.New("app", "1.0.0", nil)
+	srv, err := New("app", "1.0.0", nil)
 	a.NotError(err).NotNil(srv)
 
 	type (
@@ -50,16 +52,24 @@ func TestServer_Vars(t *testing.T) {
 	a.True(found).Equal(v22, 3)
 }
 
+func buildHandler(code int) HandlerFunc {
+	return func(ctx *Context) Responser {
+		return ResponserFunc(func(ctx *Context) {
+			ctx.Marshal(code, code, false)
+		})
+	}
+}
+
 func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := servertest.NewServer(a, nil)
-	a.Equal(srv.Server().State(), server.Stopped)
-	router := srv.Router()
-	router.Get("/mux/test", servertest.BuildHandler(202))
-	router.Get("/m1/test", servertest.BuildHandler(202))
+	srv := newTestServer(a, nil)
+	a.Equal(srv.State(), Stopped)
+	router := srv.Routers().New("default", nil)
+	router.Get("/mux/test", buildHandler(202))
+	router.Get("/m1/test", buildHandler(202))
 
-	router.Get("/m2/test", func(ctx *server.Context) server.Responser {
+	router.Get("/m2/test", func(ctx *Context) Responser {
 		srv := ctx.Server()
 		a.NotNil(srv)
 
@@ -71,18 +81,18 @@ func TestServer_Serve(t *testing.T) {
 		return nil
 	})
 
-	srv.GoServe()
+	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	srv.Get("http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
+	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
 
-	srv.Get("http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
+	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
 
-	srv.Get("http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
+	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 
 	// 静态文件
-	router.Get("/admin/{path}", srv.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	srv.Get("http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
+	router.Get("/admin/{path}", srv.FileServer(os.DirFS("./testdata"), "path", "index.html"))
+	servertest.Get(a, "http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {
@@ -90,7 +100,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
 	a.NotError(err).NotNil(cert)
-	srv := servertest.NewServer(a, &server.Options{
+	srv := newTestServer(a, &Options{
 		HTTPServer: &http.Server{
 			Addr: ":8088",
 			TLSConfig: &tls.Config{
@@ -99,10 +109,10 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 
-	router := srv.Router()
-	router.Get("/mux/test", servertest.BuildHandler(202))
+	router := srv.Routers().New("default", nil)
+	router.Get("/mux/test", buildHandler(202))
 
-	srv.GoServe()
+	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
 	client := &http.Client{Transport: &http.Transport{
@@ -122,31 +132,31 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
-	router := srv.Router()
+	srv := newTestServer(a, nil)
+	router := srv.Routers().New("def", nil)
 
-	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) server.Responser {
+	router.Get("/test", buildHandler(202))
+	router.Get("/close", func(ctx *Context) Responser {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
 		}
-		a.Equal(srv.Server().State(), server.Running)
-		a.NotError(srv.Server().Close(0))
-		a.Equal(srv.Server().State(), server.Stopped)
+		a.Equal(srv.State(), Running)
+		a.NotError(srv.Close(0))
+		a.Equal(srv.State(), Stopped)
 		return nil
 	})
 
 	close := 0
-	srv.Server().OnClose(func() error {
+	srv.OnClose(func() error {
 		close++
 		return nil
 	})
 
-	srv.GoServe()
-	// defer srv.Close(0) // 由 /close 关闭，不需要 srv.Close
+	defer servertest.Run(a, srv)()
+	// defer srv.Close() // 由 /close 关闭，不需要 srv.Close
 
-	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
+	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
 	a.Equal(0, close)
@@ -160,26 +170,26 @@ func TestServer_Close(t *testing.T) {
 
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
-	router := srv.Router()
+	srv := newTestServer(a, nil)
+	router := srv.Routers().New("def", nil)
 
-	router.Get("/test", servertest.BuildHandler(202))
-	router.Get("/close", func(ctx *server.Context) server.Responser {
+	router.Get("/test", buildHandler(202))
+	router.Get("/close", func(ctx *Context) Responser {
 		ctx.WriteHeader(http.StatusCreated)
 		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		a.NotError(srv.Server().Close(300 * time.Millisecond))
+		a.NotError(srv.Close(300 * time.Millisecond))
 
 		return nil
 	})
 
-	srv.GoServe()
+	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	srv.Get("http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
+	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 关闭指令可以正常执行
-	srv.Get("http://localhost:8080/close").Do(nil).Status(http.StatusCreated)
+	servertest.Get(a, "http://localhost:8080/close").Do(nil).Status(http.StatusCreated)
 
 	// 未超时，但是拒绝新的链接
 	resp, err := http.Get("http://localhost:8080/test")
@@ -191,9 +201,9 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
-	return server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) server.Responser {
+func buildMiddleware(a *assert.Assertion, v string) Middleware {
+	return MiddlewareFunc(func(next HandlerFunc) HandlerFunc {
+		return func(ctx *Context) Responser {
 			h := ctx.Header()
 			val := h.Get("h")
 			h.Set("h", v+val)
@@ -207,28 +217,28 @@ func buildMiddleware(a *assert.Assertion, v string) server.Middleware {
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
-	srv := servertest.NewServer(a, nil)
+	srv := newTestServer(a, nil)
 	count := 0
 
-	router := srv.Router()
-	router.Use(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-		return func(ctx *server.Context) server.Responser {
-			ctx.OnExit(func(*server.Context) {
+	router := srv.Routers().New("def", nil)
+	router.Use(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), MiddlewareFunc(func(next HandlerFunc) HandlerFunc {
+		return func(ctx *Context) Responser {
+			ctx.OnExit(func(*Context) {
 				count++
 			})
 			return next(ctx)
 		}
 	}))
 	a.NotNil(router)
-	router.Get("/path", servertest.BuildHandler(201))
+	router.Get("/path", buildHandler(201))
 	prefix := router.Prefix("/p1", buildMiddleware(a, "p1"), buildMiddleware(a, "p2-"))
 	a.NotNil(prefix)
-	prefix.Get("/path", servertest.BuildHandler(201))
+	prefix.Get("/path", buildHandler(201))
 
-	srv.GoServe()
+	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	srv.Get("/p1/path").
+	servertest.Get(a, "http://localhost:8080/p1/path").
 		Header("accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
@@ -236,7 +246,7 @@ func TestMiddleware(t *testing.T) {
 		StringBody("201")
 	a.Equal(count, 1)
 
-	srv.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
@@ -247,12 +257,11 @@ func TestMiddleware(t *testing.T) {
 
 func TestServer_Routers(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
-	srv := s.Server()
+	srv := newTestServer(a, nil)
 	rs := srv.Routers()
 
-	s.GoServe()
-	defer s.Close(0)
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
 
 	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
@@ -262,8 +271,8 @@ func TestServer_Routers(t *testing.T) {
 	uu, err := r1.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
-	r1.Prefix("/p1").Delete("/path", servertest.BuildHandler(http.StatusCreated))
-	s.Delete("/p1/path").Header("Accept", "application/json;v=2").Do(nil).Status(http.StatusCreated)
+	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusCreated))
+	servertest.Delete(a, "http://localhost:8080/p1/path").Header("Accept", "application/json;v=2").Do(nil).Status(http.StatusCreated)
 
 	r2 := rs.Router("ver")
 	a.Equal(r2, r1)
@@ -273,7 +282,7 @@ func TestServer_Routers(t *testing.T) {
 	// 删除整个路由
 	rs.Remove("ver")
 	a.Equal(0, len(rs.Routers()))
-	s.Delete("/p1/path").
+	servertest.Delete(a, "http://localhost:8080/p1/path").
 		Header("Accept", "application/json;v=2").
 		Do(nil).
 		Status(http.StatusNotFound)
@@ -281,22 +290,22 @@ func TestServer_Routers(t *testing.T) {
 
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
-	s.Server().CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
-	r := s.Router()
-	s.GoServe()
+	s := newTestServer(a, nil)
+	s.CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
+	r := s.Routers().New("def", nil)
+	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
 	t.Run("problems", func(t *testing.T) {
-		r.Get("/v1/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+		r.Get("/v1/{path}", s.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
-		s.Get("/v1/file1.txt").
+		servertest.Get(a, "http://localhost:8080/v1/file1.txt").
 			Header("Accept", "application/json;vv=2").
 			Do(nil).
 			Status(http.StatusOK).
 			StringBody("file1")
 
-		s.Get("/v1/not.exists").
+		servertest.Get(a, "http://localhost:8080/v1/not.exists").
 			Header("Accept", "application/json;vv=2").
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
@@ -305,14 +314,14 @@ func TestServer_FileServer(t *testing.T) {
 	})
 
 	t.Run("no problems", func(t *testing.T) {
-		r.Get("/v2/{path}", s.Server().FileServer(os.DirFS("./testdata"), "path", "index.html"))
+		r.Get("/v2/{path}", s.FileServer(os.DirFS("./testdata"), "path", "index.html"))
 
-		s.Get("/v2/file1.txt").
+		servertest.Get(a, "http://localhost:8080/v2/file1.txt").
 			Do(nil).
 			Status(http.StatusOK).
 			StringBody("file1")
 
-		s.Get("/v2/not.exists").
+		servertest.Get(a, "http://localhost:8080/v2/not.exists").
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(http.StatusNotFound).
@@ -324,21 +333,21 @@ func TestServer_FileServer(t *testing.T) {
 func TestContext_NoContent(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	o := &server.Options{
+	o := &Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Logs:       &logs.Options{Writer: logs.NewTextWriter("15:04:05", buf)},
 	}
-	s := servertest.NewServer(a, o)
+	s := newTestServer(a, o)
 
-	s.Router().Get("/204", func(ctx *server.Context) server.Responser {
-		return server.ResponserFunc(func(ctx *server.Context) {
+	s.Routers().New("def", nil).Get("/204", func(ctx *Context) Responser {
+		return ResponserFunc(func(ctx *Context) {
 			ctx.WriteHeader(http.StatusNoContent)
 		})
 	})
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
 
-	s.Get("/204").
+	servertest.Get(a, "http://localhost:8080/204").
 		Header("Accept-Encoding", "gzip"). // 服务端不应该构建压缩对象
 		Header("Accept", "application/json;charset=gbk").
 		Do(nil).

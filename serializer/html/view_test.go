@@ -14,38 +14,56 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-func TestInstallView(t *testing.T) {
-	a := assert.New(t, false)
-	s := servertest.NewServer(a, &server.Options{
+func newServer(a *assert.Assertion, lang string) *server.Server {
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
+		Locale:     &server.Locale{Language: language.MustParse(lang)},
 		Mimetypes: []*server.Mimetype{
-			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
+			{
+				Type:      Mimetype,
+				Marshal:   Marshal,
+				Unmarshal: Unmarshal,
+			},
 		},
 	})
-	InstallView(s.Server(), false, os.DirFS("./testdata/view"), "*.tpl")
+	a.NotError(err).NotNil(s)
 
-	s.GoServe()
+	// locale
+	b := s.CatalogBuilder()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	return s
+}
+
+func TestInstallView(t *testing.T) {
+	a := assert.New(t, false)
+	s := newServer(a, "und")
+	InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
+
+	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
 	type obj struct {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.Router()
+	r := s.Routers().New("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Marshal(200, &obj{}, false)
 		})
 	})
 
-	s.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept-language", "cmn-hans").
 		Header("accept", Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans</div>\n<div>hans</div>\n")
 
-	s.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept-language", "zh-hant").
 		Header("accept", Mimetype).
 		Do(nil).
@@ -55,37 +73,30 @@ func TestInstallView(t *testing.T) {
 
 func TestInstallView_dir(t *testing.T) {
 	a := assert.New(t, false)
-	opt := &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Locale:     &server.Locale{Language: language.MustParse("cmn-hans")},
-		Mimetypes: []*server.Mimetype{
-			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
-		},
-	}
-	s := servertest.NewServer(a, opt)
-	instalDirView(s.Server(), os.DirFS("./testdata/dir"), "*.tpl")
+	s := newServer(a, "cmn-hans")
+	instalDirView(s, os.DirFS("./testdata/dir"), "*.tpl")
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
 	type obj struct {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.Router()
+	r := s.Routers().New("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Marshal(200, &obj{}, false)
 		})
 	})
-	s.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept-language", "cmn-hans").
 		Header("accept", Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans简</div>\n<div>hans</div>\n")
 
-	s.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept-language", "cmn-hant").
 		Header("accept", Mimetype).
 		Do(nil).
@@ -93,7 +104,7 @@ func TestInstallView_dir(t *testing.T) {
 		StringBody("\n<div>hant繁</div>\n<div>hans</div>\n")
 
 	// 默认语言
-	s.Get("/path").
+	servertest.Get(a, "http://localhost:8080/path").
 		Header("accept-language", "en").
 		Header("accept", Mimetype).
 		Do(nil).

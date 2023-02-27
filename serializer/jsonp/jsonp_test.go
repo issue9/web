@@ -15,28 +15,28 @@ import (
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, &server.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		Mimetypes: []*server.Mimetype{
 			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
 		},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
-	Install("callback", s.Server())
+	a.NotError(err).NotNil(s)
+	Install("callback", s)
 
-	s.Router().Get("/jsonp", func(ctx *server.Context) server.Responser {
+	s.Routers().New("def", nil).Get("/jsonp", func(ctx *server.Context) server.Responser {
 		return web.OK("jsonp")
 	})
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
+	defer s.Close(0)
 
-	s.Get("/jsonp").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp").Header("accept", Mimetype).Do(nil).
 		StringBody(`"jsonp"`)
 
-	s.Get("/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
 		StringBody(`cb("jsonp")`)
 
-	s.Get("/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
 		StringBody(`"jsonp"`)
-
-	s.Close(0)
 }

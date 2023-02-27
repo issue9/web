@@ -31,7 +31,7 @@ func TestContext_Marshal(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
 	o := &logs.Options{Writer: logs.NewTextWriter(logs.MicroLayout, buf), Levels: logs.AllLevels()}
-	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}, Logs: o})
+	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}, Logs: o})
 
 	// 自定义报头
 	buf.Reset()
@@ -192,7 +192,7 @@ func TestContext_Marshal(t *testing.T) {
 
 func TestContext_SetWriter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
+	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").
@@ -252,7 +252,7 @@ func TestContext_SetWriter(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
+	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))

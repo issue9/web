@@ -9,13 +9,31 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/internal/testdata"
+	"github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
 
+func newServer(a *assert.Assertion) *Server {
+	s, err := NewServer("test", "1.0.0", &Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Mimetypes: []*server.Mimetype{
+			{
+				Type:      "application/json",
+				Marshal:   json.Marshal,
+				Unmarshal: json.Unmarshal,
+			},
+		},
+	})
+	a.NotError(err).NotNil(s)
+
+	return s
+}
+
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
-	r := s.Router()
+	s := newServer(a)
+	r := s.Routers().New("def", nil)
 
 	// Location == ""
 	r.Get("/created", func(ctx *Context) Responser {
@@ -26,14 +44,14 @@ func TestCreated(t *testing.T) {
 		return Created(testdata.ObjectInst, "/test")
 	})
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
-	s.Get("/created").Header("accept", "application/json").Do(nil).
+	servertest.Get(a, "http://localhost:8080/created").Header("accept", "application/json").Do(nil).
 		Status(http.StatusCreated).
 		StringBody(testdata.ObjectJSONString)
 
-	s.Get("/created/location").Header("accept", "application/json").Do(nil).
+	servertest.Get(a, "http://localhost:8080/created/location").Header("accept", "application/json").Do(nil).
 		Status(http.StatusCreated).
 		StringBody(testdata.ObjectJSONString).
 		Header("Location", "/test")
@@ -41,8 +59,8 @@ func TestCreated(t *testing.T) {
 
 func TestRedirect(t *testing.T) {
 	a := assert.New(t, false)
-	s := servertest.NewServer(a, nil)
-	r := s.Router()
+	s := newServer(a)
+	r := s.Routers().New("def", nil)
 
 	r.Get("/not-implement", func(ctx *Context) Responser {
 		return ctx.NotImplemented()
@@ -51,12 +69,12 @@ func TestRedirect(t *testing.T) {
 		return Redirect(http.StatusMovedPermanently, "https://example.com")
 	})
 
-	s.GoServe()
+	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
-	s.Get("/not-implement").Do(nil).Status(http.StatusNotImplemented)
+	servertest.Get(a, "http://localhost:8080/not-implement").Do(nil).Status(http.StatusNotImplemented)
 
-	s.Get("/redirect").Do(nil).
+	servertest.Get(a, "http://localhost:8080/redirect").Do(nil).
 		Status(http.StatusOK). // http.Client.Do 会自动重定向并请求
 		Header("Location", "")
 }

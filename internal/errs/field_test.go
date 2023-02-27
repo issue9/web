@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
 )
 
 var (
@@ -38,8 +37,8 @@ func TestConfigError_LocaleString(t *testing.T) {
 	a := assert.New(t, false)
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
-	tester := servertest.NewServer(a, &server.Options{Locale: &server.Locale{Language: language.MustParse("cmn-hans")}, Location: time.UTC})
-	s := tester.Server()
+	s, err := server.New("test", "1.0.0", &server.Options{Locale: &server.Locale{Language: language.MustParse("cmn-hans")}, Location: time.UTC})
+	a.NotError(err).NotNil(s)
 	f := s.Files()
 	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 
@@ -51,11 +50,11 @@ func TestConfigError_LocaleString(t *testing.T) {
 	cnp := s.NewPrinter(hans)
 	twp := s.NewPrinter(hant)
 
-	err := errs.NewFieldError("", localeutil.Phrase("k1"))
-	err.Path = "path"
-	a.Equal("位于 path: 发生了 cn1", err.LocaleString(cnp))
-	a.Equal("位于 path: 发生了 tw1", err.LocaleString(twp))
-	a.Equal("k1 at path:", err.Error())
+	ferr := errs.NewFieldError("", localeutil.Phrase("k1"))
+	ferr.Path = "path"
+	a.Equal("位于 path: 发生了 cn1", ferr.LocaleString(cnp))
+	a.Equal("位于 path: 发生了 tw1", ferr.LocaleString(twp))
+	a.Equal("k1 at path:", ferr.Error())
 }
 
 func TestConfigError_SetFieldParent(t *testing.T) {

@@ -20,14 +20,13 @@ import (
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
 	r := rest.Post(a, path, []byte("123")).Header("Accept", "*/*").Request()
 	w = httptest.NewRecorder()
-	ctx = newServer(a, nil).newContext(w, r, nil)
-
+	ctx = newTestServer(a, nil).newContext(w, r, nil)
 	return ctx, w
 }
 
 func TestParams_empty(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -45,7 +44,7 @@ func TestParams_empty(t *testing.T) {
 
 func TestParams_ID(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -72,7 +71,7 @@ func TestParams_ID(t *testing.T) {
 
 func TestParams_Int(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -95,7 +94,7 @@ func TestParams_Int(t *testing.T) {
 
 func TestParams_Bool(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081"))
 	a.NotNil(router)
 
@@ -118,7 +117,7 @@ func TestParams_Bool(t *testing.T) {
 
 func TestParams_String(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -142,7 +141,7 @@ func TestParams_String(t *testing.T) {
 
 func TestParams_Float(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -166,7 +165,7 @@ func TestParams_Float(t *testing.T) {
 
 func TestContext_ParamID(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -186,7 +185,7 @@ func TestContext_ParamID(t *testing.T) {
 
 func TestContext_ParamInt64(t *testing.T) {
 	a := assert.New(t, false)
-	server := newServer(a, nil)
+	server := newTestServer(a, nil)
 	router := server.Routers().New("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
@@ -308,7 +307,7 @@ func TestContext_Object(t *testing.T) {
 
 func TestContext_Body(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
+	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
 
 	// 未缓存
 	r := rest.Post(a, "/path", []byte("123")).Request()
@@ -346,7 +345,7 @@ func TestContext_Body(t *testing.T) {
 
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
 		Header("content-type", "application/json").
@@ -379,7 +378,7 @@ func TestContext_Read(t *testing.T) {
 	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
 		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
-	ctx := newServer(a, nil).newContext(w, r, nil)
+	ctx := newTestServer(a, nil).newContext(w, r, nil)
 	obj := &testdata.Object{}
 	a.Nil(ctx.Read(false, obj, "41110"))
 	a.Equal(obj, testdata.ObjectInst)
@@ -388,7 +387,7 @@ func TestContext_Read(t *testing.T) {
 	r = rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
 		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
 		Request()
-	ctx = newServer(a, nil).newContext(w, r, nil)
+	ctx = newTestServer(a, nil).newContext(w, r, nil)
 	resp := ctx.Read(false, ``, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)

@@ -17,6 +17,7 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
+	"github.com/issue9/web/server/servertest"
 )
 
 func obj(status int, body any, kv ...string) Responser {
@@ -30,7 +31,7 @@ func obj(status int, body any, kv ...string) Responser {
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
+	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
 
 	h := func(c *Context) Responser {
 		_, err := c.Write([]byte(c.Request().URL.Path))
@@ -45,23 +46,22 @@ func BenchmarkRouter(b *testing.B) {
 
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
+	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
 	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
 		return obj(http.StatusOK, "/path", "h1", "h1")
 	})
-	go func() {
-		srv.Serve()
-	}()
-	time.Sleep(500 * time.Millisecond)
+
+	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
+	time.Sleep(500 * time.Millisecond)
 
 	b.Run("charset", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			r := rest.Get(a, "http://localhost:8080/path").
+			r := servertest.Get(a, "http://localhost:8080/path").
 				Header("Content-type", header.BuildContentType("application/json", "gbk")).
 				Header("accept", "application/json").
 				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
@@ -77,7 +77,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	b.Run("charset encoding", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			r := rest.Get(a, "http://localhost:8080/path").
+			r := servertest.Get(a, "http://localhost:8080/path").
 				Header("Content-type", header.BuildContentType("application/json", "gbk")).
 				Header("accept", "application/json").
 				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
@@ -94,7 +94,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
-			r := rest.Get(a, "http://localhost:8080/path").
+			r := servertest.Get(a, "http://localhost:8080/path").
 				Header("Content-type", header.BuildContentType("application/json", header.UTF8Name)).
 				Header("accept", "application/json").
 				Request()
@@ -109,11 +109,11 @@ func BenchmarkServer_Serve(b *testing.B) {
 
 func BenchmarkServer_newContext(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").
+		r := servertest.Get(a, "/path").
 			Header("Content-type", header.BuildContentType("application/json", "gbk")).
 			Header("Accept", "application/json").
 			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
@@ -125,7 +125,7 @@ func BenchmarkServer_newContext(b *testing.B) {
 
 func BenchmarkContext_render(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -188,7 +188,7 @@ func BenchmarkContext_render(b *testing.B) {
 
 func BenchmarkContext_Body(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -221,7 +221,7 @@ func BenchmarkContext_Body(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -257,7 +257,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -280,7 +280,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkPostWithCharset(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newServer(a, nil)
+	srv := newTestServer(a, nil)
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -298,7 +298,7 @@ func BenchmarkPostWithCharset(b *testing.B) {
 
 func BenchmarkContext_Object(b *testing.B) {
 	a := assert.New(b, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	o := &testdata.Object{}
 
 	for i := 0; i < b.N; i++ {
@@ -314,7 +314,7 @@ func BenchmarkContext_Object(b *testing.B) {
 
 func BenchmarkContext_Object_withHeader(b *testing.B) {
 	a := assert.New(b, false)
-	s := newServer(a, nil)
+	s := newTestServer(a, nil)
 	o := &testdata.Object{}
 
 	for i := 0; i < b.N; i++ {
