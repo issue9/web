@@ -3,6 +3,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -352,14 +353,23 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 	if ctx.read {
 		return ctx.requestBody, nil
 	}
+	req := ctx.Request()
+	if req.ContentLength == 0 {
+		ctx.read = true
+		return nil, nil
+	}
 
-	var reader io.Reader = ctx.Request().Body
+	var reader io.Reader = req.Body
 	if !header.CharsetIsNop(ctx.inputCharset) {
 		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
 	if ctx.requestBody == nil {
-		ctx.requestBody = make([]byte, 0, defaultBodyBufferSize)
+		size := req.ContentLength
+		if size == -1 {
+			size = defaultBodyBufferSize
+		}
+		ctx.requestBody = make([]byte, 0, size)
 	}
 
 	for {
@@ -368,7 +378,7 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 		}
 		n, err := reader.Read(ctx.requestBody[len(ctx.requestBody):cap(ctx.requestBody)])
 		ctx.requestBody = ctx.requestBody[:len(ctx.requestBody)+n]
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return nil, err

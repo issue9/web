@@ -3,18 +3,20 @@
 package server
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"testing/iotest"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/mux/v7"
-	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
+	"github.com/issue9/web/server/servertest"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
@@ -305,42 +307,73 @@ func TestContext_Object(t *testing.T) {
 	a.Equal(w.Code, 411)
 }
 
-func TestContext_Body(t *testing.T) {
+func TestContext_RequestBody(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.SimplifiedChinese}})
+	srv := newTestServer(a, &Options{
+		Locale:     &Locale{Language: language.SimplifiedChinese},
+		HTTPServer: &http.Server{Addr: ":8080"},
+	})
+	r := srv.Routers().New("def", nil)
 
-	// 未缓存
-	r := rest.Post(a, "/path", []byte("123")).Request()
-	w := httptest.NewRecorder()
-	ctx := srv.newContext(w, r, nil)
-	a.Nil(ctx.requestBody)
-	data, err := ctx.RequestBody()
-	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.requestBody, data)
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
 
-	// 读取缓存内容
-	data, err = ctx.RequestBody()
-	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.requestBody, data)
+	// 放第一个，否则 Context.requestBody 一直在复用，无法测试到 content-length == -1 的情况。
+	t.Run("content-length=-1", func(t *testing.T) {
+		a := assert.New(t, false)
 
-	// 采用 Nop 即 utf-8 编码
-	r = rest.Post(a, "/path", []byte("123")).Request()
-	ctx = srv.newContext(w, r, nil)
-	ctx.inputCharset = encoding.Nop
-	data, err = ctx.RequestBody()
-	a.NotError(err).Equal(data, []byte("123")).
-		Equal(ctx.requestBody, data)
+		r.Post("/p4", func(ctx *Context) Responser {
+			data, err := ctx.RequestBody()
+			a.NotError(err).Equal(data, `"abcdef"`)
+			return nil
+		})
 
-	// GBK
-	r = rest.Post(a, "/path", testdata.ObjectGBKBytes).
-		Header("Content-type", "application/json;charset=gbk").
-		Request()
-	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
-	a.NotNil(ctx)
-	data, err = ctx.RequestBody()
-	a.NotError(err).Equal(string(data), testdata.ObjectJSONString).
-		Equal(ctx.requestBody, data)
+		reader := iotest.OneByteReader(bytes.NewBufferString(`"abcdef"`))
+		resp, err := http.Post("http://localhost:8080/p4", "application/json", reader)
+		a.NotError(err).NotNil(resp)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		a := assert.New(t, false)
+		r.Post("/p1", func(ctx *Context) Responser {
+			data, err := ctx.RequestBody()
+			a.NotError(err).Empty(data)
+			return nil
+		})
+		servertest.Post(a, "http://localhost:8080/p1", nil).Do(nil).Success()
+	})
+
+	t.Run("charset=utf-8", func(t *testing.T) {
+		a := assert.New(t, false)
+		r.Post("/p2", func(ctx *Context) Responser {
+			data, err := ctx.RequestBody()
+			a.NotError(err).
+				Equal(data, []byte("123")).
+				Nil(ctx.inputCharset)
+
+			// 再次读取
+			data, err = ctx.RequestBody()
+			a.NotError(err).Equal(data, []byte("123"))
+
+			return nil
+		})
+		servertest.Post(a, "http://localhost:8080/p2", []byte("123")).
+			Header("content-type", "application/json").
+			Do(nil).Success()
+	})
+
+	t.Run("charset=gbk", func(t *testing.T) {
+		a := assert.New(t, false)
+
+		r.Post("/p3", func(ctx *Context) Responser {
+			data, err := ctx.RequestBody()
+			a.NotError(err).Equal(string(data), testdata.ObjectJSONString)
+			return nil
+		})
+		servertest.Post(a, "http://localhost:8080/p3", testdata.ObjectGBKBytes).
+			Header("content-type", "application/json;charset=gbk").
+			Do(nil).Success()
+	})
 }
 
 func TestContext_Unmarshal(t *testing.T) {
@@ -358,6 +391,11 @@ func TestContext_Unmarshal(t *testing.T) {
 	a.Equal(obj, testdata.ObjectInst)
 
 	// 无法转换
+	r = rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
+		Header("content-type", "application/json").
+		Request()
+	w = httptest.NewRecorder()
+	ctx = srv.newContext(w, r, nil)
 	a.Error(ctx.Unmarshal(``))
 
 	// 空提交

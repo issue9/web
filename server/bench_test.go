@@ -186,11 +186,25 @@ func BenchmarkContext_render(b *testing.B) {
 	})
 }
 
-func BenchmarkContext_Body(b *testing.B) {
+func BenchmarkContext_RequestBody(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, nil)
 
-	b.Run("none", func(b *testing.B) {
+	b.Run("empty", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			w := httptest.NewRecorder()
+			r := rest.Post(a, "/path", nil).
+				Header("Content-type", header.BuildContentType("application/json", "utf-8")).
+				Header("Accept", "application/json").
+				Request()
+			ctx := srv.newContext(w, r, nil)
+
+			body, err := ctx.RequestBody()
+			a.NotError(err).Empty(body)
+		}
+	})
+
+	b.Run("charset=utf-8", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			w := httptest.NewRecorder()
 			r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
