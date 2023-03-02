@@ -55,7 +55,7 @@ func TestServer_Vars(t *testing.T) {
 func buildHandler(code int) HandlerFunc {
 	return func(ctx *Context) Responser {
 		return ResponserFunc(func(ctx *Context) {
-			ctx.Marshal(code, code, false)
+			ctx.Render(code, code, false)
 		})
 	}
 }

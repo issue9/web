@@ -144,7 +144,7 @@ func TestServer_Context(t *testing.T) {
 	}
 	srv := newTestServer(a, o)
 	router := srv.Routers().New("def", nil)
-	router.Get("/path", func(ctx *Context) Responser { ctx.Marshal(http.StatusOK, nil, false); return nil })
+	router.Get("/path", func(ctx *Context) Responser { ctx.Render(http.StatusOK, nil, false); return nil })
 
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
@@ -275,7 +275,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	ctx.SetMimetype("application/xml")
 	a.Equal(ctx.Mimetype(false), "application/xml")
 
-	ctx.Marshal(200, 200, false) // 输出内容
+	ctx.Render(200, 200, false) // 输出内容
 	a.PanicString(func() {
 		ctx.SetMimetype("application/json")
 	}, "已有内容输出，不可再更改！")
@@ -299,7 +299,7 @@ func TestContext_SetCharset(t *testing.T) {
 	ctx.SetCharset("gb2312")
 	a.Equal(ctx.Charset(), "gbk")
 
-	ctx.Marshal(200, 200, false) // 输出内容
+	ctx.Render(200, 200, false) // 输出内容
 	a.PanicString(func() {
 		ctx.SetCharset("gb18030")
 	}, "已有内容输出，不可再更改！")

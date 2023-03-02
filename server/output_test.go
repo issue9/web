@@ -42,7 +42,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 自定义报头
 	buf.Reset()
 	r.Post("/p1", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, testdata.ObjectInst, false)
+		ctx.Render(http.StatusCreated, testdata.ObjectInst, false)
 		return nil
 	})
 	servertest.Post(a, "http://localhost:8080/p1", nil).
@@ -57,7 +57,7 @@ func TestContext_Marshal(t *testing.T) {
 
 	buf.Reset()
 	r.Get("/p2", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, testdata.ObjectInst, false)
+		ctx.Render(http.StatusCreated, testdata.ObjectInst, false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p2").
@@ -72,7 +72,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 输出 nil，content-type 和 content-language 均为空
 	buf.Reset()
 	r.Get("/p3", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, nil, false)
+		ctx.Render(http.StatusCreated, nil, false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p3").
@@ -88,7 +88,7 @@ func TestContext_Marshal(t *testing.T) {
 	// accept,accept-language,accept-charset
 	buf.Reset()
 	r.Get("/p4", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, testdata.ObjectInst, false)
+		ctx.Render(http.StatusCreated, testdata.ObjectInst, false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p4").
@@ -105,7 +105,7 @@ func TestContext_Marshal(t *testing.T) {
 	// problem
 	buf.Reset()
 	r.Get("/p5", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, "abc", true)
+		ctx.Render(http.StatusCreated, "abc", true)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p5").Header("Accept", "application/json").Do(nil).
@@ -119,7 +119,7 @@ func TestContext_Marshal(t *testing.T) {
 	// problem, 未指定
 	buf.Reset()
 	r.Get("/p6", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, "abc", true)
+		ctx.Render(http.StatusCreated, "abc", true)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p6").Header("Accept", "application/xml").Do(nil).
@@ -131,7 +131,7 @@ func TestContext_Marshal(t *testing.T) {
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	buf.Reset()
 	r.Get("/p7", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, testdata.ObjectInst, false)
+		ctx.Render(http.StatusCreated, testdata.ObjectInst, false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p7").
@@ -154,7 +154,7 @@ func TestContext_Marshal(t *testing.T) {
 		_, err := ctx.Write([]byte("123"))
 		a.NotError(err)
 		a.PanicString(func() {
-			ctx.Marshal(http.StatusCreated, "456", false)
+			ctx.Render(http.StatusCreated, "456", false)
 		}, "已有状态码，不能再调用 Marshal 方法")
 		return nil
 	})
@@ -163,7 +163,7 @@ func TestContext_Marshal(t *testing.T) {
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
 	buf.Reset()
 	r.Get("/p9", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, "123", false)
+		ctx.Render(http.StatusCreated, "123", false)
 		_, err := ctx.Write([]byte("456"))
 		a.NotError(err)
 		return nil
@@ -186,7 +186,7 @@ func TestContext_Marshal(t *testing.T) {
 			Equal(ctx.Mimetype(false), "nil").
 			Equal(ctx.Charset(), header.UTF8Name)
 		a.PanicString(func() {
-			ctx.Marshal(http.StatusCreated, "val", false)
+			ctx.Render(http.StatusCreated, "val", false)
 		}, "未对 nil 作处理")
 		return nil
 	})
@@ -196,7 +196,7 @@ func TestContext_Marshal(t *testing.T) {
 	// outputMimetype 返回 ErrUnsupported
 	buf.Reset()
 	r.Get("/p11", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, "任意值", false)
+		ctx.Render(http.StatusCreated, "任意值", false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p11").Header("Accept", "application/test").
@@ -206,7 +206,7 @@ func TestContext_Marshal(t *testing.T) {
 	// outputMimetype 返回错误
 	buf.Reset()
 	r.Get("/p12", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusCreated, errors.New("error"), false)
+		ctx.Render(http.StatusCreated, errors.New("error"), false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p12").Header("Accept", "application/test").
@@ -300,7 +300,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	defer srv.Close(0)
 
 	r.Get("/p1", func(ctx *Context) Responser {
-		ctx.Marshal(http.StatusOK, ctx.Sprintf("test"), false)
+		ctx.Render(http.StatusOK, ctx.Sprintf("test"), false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p1").

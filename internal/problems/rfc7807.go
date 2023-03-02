@@ -21,7 +21,7 @@ const rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 const rfc8707PoolMaxSize = 10
 
 type ctx interface {
-	Marshal(int, any, bool)
+	Render(int, any, bool)
 }
 
 // RFC7807 server.Problem 接口的 rfc7807 实现
@@ -245,7 +245,7 @@ func (p *RFC7807[C]) MarshalHTML() (string, any) {
 }
 
 func (p *RFC7807[C]) Apply(ctx C) {
-	ctx.Marshal(p.status, p, true)
+	ctx.Render(p.status, p, true)
 	if len(p.keys) < rfc8707PoolMaxSize && len(p.pKeys) < rfc8707PoolMaxSize {
 		p.pool.pool.Put(p)
 	}

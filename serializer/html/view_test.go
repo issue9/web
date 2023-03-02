@@ -52,7 +52,7 @@ func TestInstallView(t *testing.T) {
 	r := s.Routers().New("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
-			ctx.Marshal(200, &obj{}, false)
+			ctx.Render(200, &obj{}, false)
 		})
 	})
 
@@ -86,7 +86,7 @@ func TestInstallView_dir(t *testing.T) {
 	r := s.Routers().New("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
-			ctx.Marshal(200, &obj{}, false)
+			ctx.Render(200, &obj{}, false)
 		})
 	})
 	servertest.Get(a, "http://localhost:8080/path").

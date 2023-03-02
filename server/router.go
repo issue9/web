@@ -21,22 +21,15 @@ type (
 	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
 	Middleware     = types.MiddlewareOf[HandlerFunc]
 
-	// HandlerFunc 路由项处理函数原型
+	// HandlerFunc 路由的处理函数
+	//
+	// 向客户端输出内容的有两种方法，一种是通过 [Context.Write] 方法；
+	// 或是返回 [Responser] 对象。前者在调用 [Context.Write] 时即输出内容，
+	// 后者会在整个请求退出时才将 [Responser] 进行编码输出。
+	//
+	// 返回值可以为空，表示在中间件执行过程中已经向客户端输出同内容。
 	HandlerFunc func(*Context) Responser
-
-	// Responser 表示向客户端输出对象最终需要实现的接口
-	Responser interface {
-		// Apply 通过 [Context] 将当前内容渲染到客户端
-		//
-		// 在调用 Apply 之后，就不再使用 Responser 对象，
-		// 如果你的对象支持 sync.Pool 复用，可以在 Apply 退出之际回收。
-		Apply(*Context)
-	}
-
-	ResponserFunc func(*Context)
 )
-
-func (f ResponserFunc) Apply(c *Context) { f(c) }
 
 func notFound(ctx *Context) Responser { return ctx.NotFound() }
 
