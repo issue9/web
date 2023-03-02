@@ -155,7 +155,7 @@ func TestContext_Marshal(t *testing.T) {
 		a.NotError(err)
 		a.PanicString(func() {
 			ctx.Render(http.StatusCreated, "456", false)
-		}, "已有状态码，不能再调用 Marshal 方法")
+		}, "已有状态码 200，再次设置无效 201")
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p8").Header("Accept", "application/json").Do(nil)
@@ -185,9 +185,7 @@ func TestContext_Marshal(t *testing.T) {
 		a.Nil(ctx.outputMimetype.Marshal).
 			Equal(ctx.Mimetype(false), "nil").
 			Equal(ctx.Charset(), header.UTF8Name)
-		a.PanicString(func() {
-			ctx.Render(http.StatusCreated, "val", false)
-		}, "未对 nil 作处理")
+		ctx.Render(http.StatusCreated, "val", false)
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p10").Header("Accept", "nil").

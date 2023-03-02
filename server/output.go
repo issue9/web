@@ -3,6 +3,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"golang.org/x/text/message"
@@ -128,7 +129,9 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		}
 	}
 
-	ctx.status = http.StatusOK // Write 可以多次调用，所以不采用 ctx.WriteHeader。
+	if ctx.status == 0 {
+		ctx.WriteHeader(http.StatusOK)
+	}
 	return ctx.writer.Write(bs)
 }
 
@@ -137,7 +140,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 // 如非必要，应该返回 [Responser] 进行输出。
 func (ctx *Context) WriteHeader(status int) {
 	if ctx.status != 0 && ctx.status != status {
-		panic("已有状态码，不能再调用 Marshal 方法")
+		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 
 	ctx.Header().Del("Content-Length") // https://github.com/golang/go/issues/14975
