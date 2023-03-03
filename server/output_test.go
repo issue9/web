@@ -205,7 +205,6 @@ func TestContext_Render(t *testing.T) {
 	buf.Reset()
 	r.Get("/p11", func(ctx *Context) Responser {
 		ctx.Render(http.StatusCreated, "任意值", false)
-		a.Equal(http.StatusNotAcceptable, ctx.Status())
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p11").Header("Accept", "application/test").

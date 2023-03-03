@@ -28,7 +28,7 @@ const (
 
 var contextPool = &sync.Pool{
 	New: func() any {
-		return &Context{exits: make([]func(*Context), 0, 3)} // query, params, validation
+		return &Context{exits: make([]func(*Context, int), 0, 3)} // query, params, validation
 	},
 }
 
@@ -42,7 +42,7 @@ type Context struct {
 	route             types.Route
 	request           *http.Request
 	outputCharsetName string
-	exits             []func(*Context)
+	exits             []func(*Context, int)
 	id                string
 	begin             time.Time
 
@@ -311,7 +311,7 @@ func (ctx *Context) destroy() {
 	}
 
 	for _, exit := range ctx.exits {
-		exit(ctx)
+		exit(ctx, ctx.status)
 	}
 
 	logs.Destroy(ctx.logs)
@@ -322,7 +322,7 @@ func (ctx *Context) destroy() {
 }
 
 // OnExit 注册退出当前请求时的处理函数
-func (ctx *Context) OnExit(f func(*Context)) { ctx.exits = append(ctx.exits, f) }
+func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits, f) }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {

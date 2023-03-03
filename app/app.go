@@ -243,10 +243,10 @@ func CheckConfigSyntax[T any](fsys fs.FS, filename string) error {
 //
 // [HUP]: https://en.wikipedia.org/wiki/SIGHUP
 func SignalHUP[T any](cmd *AppOf[T]) {
-	go func() {
-		signalChannel := make(chan os.Signal, 1)
-		signal.Notify(signalChannel, syscall.SIGHUP)
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGHUP)
 
+	go func() {
 		for range signalChannel {
 			if err := cmd.Restart(); err != nil {
 				fmt.Fprintln(cmd.Out, errs.NewStackError(err))

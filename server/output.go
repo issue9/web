@@ -119,11 +119,6 @@ func (ctx *Context) Marshal(v any) ([]byte, error) {
 	return ctx.outputMimetype.Marshal(ctx, v)
 }
 
-// Status 输出的状态码
-//
-// 在没有内容输出之前，此值将返回 0 ！
-func (ctx *Context) Status() int { return ctx.status }
-
 // Wrote 是否已经有内容输出
 func (ctx *Context) Wrote() bool { return ctx.wrote }
 

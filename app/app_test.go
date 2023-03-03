@@ -88,14 +88,13 @@ func TestSignalHUP(t *testing.T) {
 			return nil
 		},
 	}
+	SignalHUP(cmd)
 
 	go func() {
 		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
-
-	SignalHUP(cmd)
 
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
