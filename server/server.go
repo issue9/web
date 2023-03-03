@@ -120,7 +120,6 @@ func (srv *Server) Version() string { return srv.version }
 // State 获取当前的状态
 //
 // - [Running] 表示已经运行 [Server.Serve]；
-// - [Failed] 表示运行之后出错了；
 // - [Stopped] 默认状态，或由 [Server.Close] 正常结束；
 func (srv *Server) State() State { return srv.state }
 
@@ -155,6 +154,10 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 //
 // 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
 func (srv *Server) Serve() (err error) {
+	if srv.State() == Running {
+		panic("当前已经处于运行状态")
+	}
+
 	srv.state = Running
 
 	cfg := srv.httpServer.TLSConfig
@@ -168,8 +171,6 @@ func (srv *Server) Serve() (err error) {
 		// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
 		// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 		<-srv.closed
-	} else if err != nil {
-		srv.state = Failed
 	}
 	return err
 }
@@ -179,6 +180,10 @@ func (srv *Server) Serve() (err error) {
 // 无论是否出错，该操作最终都会导致 [Server.Serve] 的退出。
 // 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Close(shutdownTimeout time.Duration) error {
+	if srv.State() != Running {
+		return nil
+	}
+
 	defer func() {
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。

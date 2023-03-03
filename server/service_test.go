@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/web/server/servertest"
 	"golang.org/x/text/language"
 )
 
@@ -52,6 +53,7 @@ func buildService() (f ServiceFunc, start, p, err chan struct{}) {
 func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, nil)
+	servertest.Run(a, s)
 	srv := s.Services()
 
 	a.Equal(1, len(srv.services)) // scheduled
@@ -104,6 +106,7 @@ func TestService_state(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		a := assert.New(t, false)
 		s := newTestServer(a, nil)
+		servertest.Run(a, s)
 
 		srv1, start, _, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)

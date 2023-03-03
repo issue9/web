@@ -84,6 +84,10 @@ func TestServer_Serve(t *testing.T) {
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
+	a.PanicString(func() { // 多次调用 srv.Serve
+		a.NotError(srv.Serve())
+	}, "当前已经处于运行状态")
+
 	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
 
 	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
@@ -143,6 +147,7 @@ func TestServer_Close(t *testing.T) {
 		}
 		a.Equal(srv.State(), Running)
 		a.NotError(srv.Close(0))
+		a.NotError(srv.Close(0)) // 可多次调用
 		a.Equal(srv.State(), Stopped)
 		return nil
 	})
