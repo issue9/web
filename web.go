@@ -83,6 +83,7 @@ type (
 	Validation     = server.Validation
 	Validator      = server.Validator
 	ValidateFunc   = server.ValidateFunc
+	ETager         = server.ETager
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger

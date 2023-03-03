@@ -23,6 +23,18 @@ type Responser interface {
 	Apply(*Context)
 }
 
+// ETager 表示该对象可以用于表示 ETag 的相关功能
+type ETager interface {
+	// ETag 返回当前内容关联的 ETag 报头内容
+	//
+	// etag 表示对应的 etag 报头，需要包含双绰号，但是不需要 W/ 前缀；
+	// weak 是否为弱验证；
+	ETag() (etag string, weak bool)
+
+	// Body 返回给客户端的报文主体对象
+	Body() any
+}
+
 type ResponserFunc func(*Context)
 
 func (f ResponserFunc) Apply(c *Context) { f(c) }
@@ -53,8 +65,9 @@ func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 // Render 向客户端输出对象
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
-// body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码；
 // problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
+// body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码。
+// 如果 body 实现了 [ETager] 接口，则会尝试用 304 状态码的输出；
 func (ctx *Context) Render(status int, body any, problem bool) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
 	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
@@ -65,9 +78,17 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 		return
 	}
 
-	ctx.Header().Set("Content-Type", header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
+	if etag, ok := body.(ETager); ok && ctx.Request().Method == http.MethodGet {
+		if tag, weak := etag.ETag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
+			ctx.WriteHeader(http.StatusNotModified)
+			return
+		}
+		body = etag.Body()
+	}
+
+	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
-		ctx.Header().Set("Content-Language", id)
+		ctx.Header().Set(header.ContentLang, id)
 	}
 
 	data, err := ctx.Marshal(body)
@@ -143,7 +164,7 @@ func (ctx *Context) WriteHeader(status int) {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 
-	ctx.Header().Del("Content-Length") // https://github.com/golang/go/issues/14975
+	ctx.Header().Del(header.ContentLength) // https://github.com/golang/go/issues/14975
 	ctx.status = status
 	ctx.originResponse.WriteHeader(status)
 }

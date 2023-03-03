@@ -4,6 +4,7 @@ package app
 
 import (
 	"github.com/issue9/unique/v2"
+
 	"github.com/issue9/web/server"
 )
 

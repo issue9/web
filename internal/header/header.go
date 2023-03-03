@@ -4,6 +4,7 @@
 package header
 
 import (
+	"net/http"
 	"strings"
 	"unicode"
 
@@ -13,6 +14,24 @@ import (
 )
 
 const UTF8Name = "utf-8"
+
+// 一些报头的定义
+const (
+	ContentType     = "Content-Type"
+	ContentLang     = "Content-Language"
+	ContentLength   = "Content-Length"
+	ContentEncoding = "Content-Encoding"
+
+	Accept         = "Accept"
+	AcceptLang     = "Accept-Language"
+	AcceptEncoding = "Accept-Encoding"
+	AcceptCharset  = "Accept-Charset"
+
+	Location    = "Location"
+	ETag        = "ETag"
+	IfNoneMatch = "If-None-Match"
+	Vary        = "Vary"
+)
 
 // ParseWithParam 分析带参数的报头
 //
@@ -54,13 +73,13 @@ func ParseWithParam(header, param string) (mt, paramValue string) {
 	return t, ""
 }
 
-// AcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
+// ParseAcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
 //
 // 传递 * 获取返回默认的字符集相关信息，即 utf-8
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func AcceptCharset(header string) (name string, enc encoding.Encoding) {
+func ParseAcceptCharset(header string) (name string, enc encoding.Encoding) {
 	if header == "" || header == "*" {
 		return UTF8Name, nil
 	}
@@ -100,4 +119,36 @@ func BuildContentType(mt, charset string) string {
 	}
 
 	return mt + "; charset=" + charset
+}
+
+func ClientIP(r *http.Request) string {
+	ip := r.Header.Get("X-Forwarded-For")
+	if index := strings.IndexByte(ip, ','); index > 0 {
+		ip = ip[:index]
+	}
+	if ip == "" && r.RemoteAddr != "" {
+		ip = r.RemoteAddr
+	}
+	if ip == "" {
+		ip = r.Header.Get("X-Real-IP")
+	}
+
+	return strings.TrimSpace(ip)
+}
+
+// InitETag 初始化 ETag 报头
+//
+// etag 为服务端生成的新值，包含了双引号，但不包含弱验证的 W/ 前缀；
+func InitETag(w http.ResponseWriter, r *http.Request, etag string, weak bool) bool {
+	client := r.Header.Get(IfNoneMatch)
+
+	eq := client == etag ||
+		(weak && len(client) > 1 && client[2:] == etag) // W/ 开头
+
+	if weak {
+		etag = "W/" + etag
+	}
+	w.Header().Set(ETag, etag)
+
+	return eq
 }

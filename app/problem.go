@@ -13,9 +13,8 @@ type Problem struct {
 	// 指定生成 Problem 对象的方法
 	//
 	// 这些名称由 [RegisterProblemBuilder] 注册。当前可用的值有：
-	//  -rfc7807
-	Builder     string `json:"builder,omitempty" xml:"builder,omitempty" yaml:"builder,omitempty"`
-	builderFunc server.BuildProblemFunc
+	//  - rfc7807
+	Builder string `json:"builder,omitempty" xml:"builder,omitempty" yaml:"builder,omitempty"`
 
 	// 指定代码代码的 ID 前缀
 	IDPrefix string `json:"idPrefix,omitempty" xml:"idPrefix,omitempty" yaml:"idPrefix,omitempty"`

@@ -89,7 +89,7 @@ type UnmarshalFunc func([]byte, any) error
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	h := r.Header.Get("Accept")
+	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
 		srv.Logs().DEBUG().Printf("not found serialization for %s", h)
@@ -97,26 +97,26 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		return nil
 	}
 
-	h = r.Header.Get("Accept-Charset")
-	outputCharsetName, outputCharset := header.AcceptCharset(h)
+	h = r.Header.Get(header.AcceptCharset)
+	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
 		srv.Logs().DEBUG().Printf("not found charset for %s", h)
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	h = r.Header.Get("Accept-Encoding")
+	h = r.Header.Get(header.AcceptEncoding)
 	outputEncoding, notAcceptable := srv.encodings.Search(mt.Name, h)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	tag := srv.acceptLanguage(r.Header.Get("Accept-Language"))
+	tag := srv.acceptLanguage(r.Header.Get(header.AcceptLang))
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
-	h = r.Header.Get("Content-Type")
+	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
 		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
@@ -149,8 +149,8 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.wrote = false
 	if ctx.outputEncoding != nil {
 		h := ctx.Header()
-		h.Set("Content-Encoding", ctx.outputEncoding.Name())
-		h.Add("Vary", "Content-Encoding")
+		h.Set(header.ContentEncoding, ctx.outputEncoding.Name())
+		h.Add(header.Vary, header.ContentEncoding)
 	}
 
 	ctx.outputMimetype = mt
@@ -213,7 +213,7 @@ func (ctx *Context) SetCharset(charset string) {
 		return
 	}
 
-	outputCharsetName, outputCharset := header.AcceptCharset(charset)
+	outputCharsetName, outputCharset := header.ParseAcceptCharset(charset)
 	if outputCharsetName == "" {
 		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
 	}
@@ -338,20 +338,7 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 //   - X-Forwarded-For 的第一个元素
 //   - Remote-Addr 报头
 //   - X-Read-IP 报头
-func (ctx *Context) ClientIP() string {
-	ip := ctx.Request().Header.Get("X-Forwarded-For")
-	if index := strings.IndexByte(ip, ','); index > 0 {
-		ip = ip[:index]
-	}
-	if ip == "" && ctx.Request().RemoteAddr != "" {
-		ip = ctx.Request().RemoteAddr
-	}
-	if ip == "" {
-		ip = ctx.Request().Header.Get("X-Real-IP")
-	}
-
-	return strings.TrimSpace(ip)
-}
+func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 
 // Logs 返回日志操作对象
 //

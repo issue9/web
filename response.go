@@ -2,7 +2,11 @@
 
 package web
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/issue9/web/internal/header"
+)
 
 // Status 仅向客户端输出状态码和报头
 //
@@ -43,7 +47,7 @@ func Object(status int, body any, kv ...string) Responser {
 
 func Created(v any, location string) Responser {
 	if location != "" {
-		return Object(http.StatusCreated, v, "Location", location)
+		return Object(http.StatusCreated, v, header.Location, location)
 	}
 	return Object(http.StatusCreated, v)
 }
@@ -55,5 +59,5 @@ func NoContent() Responser { return Status(http.StatusNoContent) }
 
 // Redirect 重定向至新的 URL
 func Redirect(status int, url string) Responser {
-	return Status(status, "Location", url)
+	return Status(status, header.Location, url)
 }
