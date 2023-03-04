@@ -143,7 +143,7 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 	}
 
 	if len(conf.HTTP.Headers) > 0 {
-		srv.Routers().Use(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
+		srv.UseMiddleware(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
 			return func(ctx *server.Context) server.Responser {
 				for _, hh := range conf.HTTP.Headers {
 					ctx.Header().Add(hh.Key, hh.Value)

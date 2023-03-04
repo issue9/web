@@ -17,7 +17,8 @@ import (
 
 type (
 	Router         = mux.RouterOf[HandlerFunc]
-	Routers        = group.GroupOf[HandlerFunc]
+	RouterMatcher  = group.Matcher
+	RouterOption   = mux.Option
 	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
 	Middleware     = types.MiddlewareOf[HandlerFunc]
 
@@ -56,8 +57,28 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps types.Route, 
 	}
 }
 
-// Routers 路由管理接口
-func (srv *Server) Routers() *Routers { return srv.routers }
+// NewRouter 声明新路由
+//
+// 新路由会继承 [Options.RoutersOptions] 中指定的参数，其中的 o 可以覆盖相同的参数；
+func (srv *Server) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {
+	return srv.routers.New(name, matcher, o...)
+}
+
+// RemoveRouter 删除指定名称的路由
+//
+// name 指由 [Server.NewRouter] 的 name 参数指定的值；
+func (srv *Server) RemoveRouter(name string) { srv.routers.Remove(name) }
+
+// Router 返回指定名称的路由
+//
+// name 指由 [Server.NewRouter] 的 name 参数指定的值；
+func (srv *Server) GetRouter(name string) *Router { return srv.routers.Router(name) }
+
+// UseMiddleware 为所有的路由添加新的中间件
+func (srv *Server) UseMiddleware(m ...Middleware) { srv.routers.Use(m...) }
+
+// Routers 返回路由列表
+func (srv *Server) Routers() []*Router { return srv.routers.Routers() }
 
 // FileServer 构建静态文件服务对象
 //

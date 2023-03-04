@@ -47,7 +47,7 @@ func TestContext_Render(t *testing.T) {
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	r := srv.Routers().New("def", nil)
+	r := srv.NewRouter("def", nil)
 
 	// 自定义报头
 	buf.Reset()
@@ -246,7 +246,7 @@ func TestContext_SetWriter(t *testing.T) {
 		Locale:     &Locale{Language: language.SimplifiedChinese},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
-	r := srv.Routers().New("def", nil)
+	r := srv.NewRouter("def", nil)
 
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
@@ -316,7 +316,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 		Locale:     &Locale{Language: language.SimplifiedChinese},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
-	r := srv.Routers().New("def", nil)
+	r := srv.NewRouter("def", nil)
 
 	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))

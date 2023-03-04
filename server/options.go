@@ -13,7 +13,6 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v7"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/unique/v2"
 	"github.com/klauspost/compress/zstd"
@@ -73,7 +72,7 @@ type (
 		// 路由选项
 		//
 		// 将应用 [Server.Routers] 对象之上。
-		RoutersOptions []mux.Option
+		RoutersOptions []RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
 		//

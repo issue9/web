@@ -49,7 +49,7 @@ func TestInstallView(t *testing.T) {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.Routers().New("def", nil)
+	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Render(200, &obj{}, false)
@@ -83,7 +83,7 @@ func TestInstallView_dir(t *testing.T) {
 		HTMLName struct{} `html:"t"`
 	}
 
-	r := s.Routers().New("def", nil)
+	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *server.Context) server.Responser {
 		return server.ResponserFunc(func(ctx *server.Context) {
 			ctx.Render(200, &obj{}, false)

@@ -34,7 +34,7 @@ type Server struct {
 	vars            *sync.Map
 	cache           cache.Driver
 	uptime          time.Time
-	routers         *Routers
+	routers         *group.GroupOf[HandlerFunc]
 	uniqueGenerator func() string
 	requestIDKey    string
 	state           State

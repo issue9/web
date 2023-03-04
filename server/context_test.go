@@ -143,7 +143,7 @@ func TestServer_Context(t *testing.T) {
 		HTTPServer: &http.Server{Addr: ":8080"},
 	}
 	srv := newTestServer(a, o)
-	router := srv.Routers().New("def", nil)
+	router := srv.NewRouter("def", nil)
 	router.Get("/path", func(ctx *Context) Responser { ctx.Render(http.StatusOK, nil, false); return nil })
 
 	defer servertest.Run(a, srv)()
@@ -351,7 +351,7 @@ func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a, nil)
-	router := srv.Routers().New("router", nil, mux.URLDomain("https://example.com"))
+	router := srv.NewRouter("router", nil, mux.URLDomain("https://example.com"))
 	a.NotNil(router)
 	router.Get("/not-xhr", func(ctx *Context) Responser {
 		a.False(ctx.IsXHR())

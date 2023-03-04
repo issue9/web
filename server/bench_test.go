@@ -47,7 +47,7 @@ func BenchmarkRouter(b *testing.B) {
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
-	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
+	router := srv.NewRouter("srv", nil, mux.URLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {

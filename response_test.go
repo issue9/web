@@ -33,7 +33,7 @@ func newServer(a *assert.Assertion) *Server {
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
-	r := s.Routers().New("def", nil)
+	r := s.NewRouter("def", nil)
 
 	// Location == ""
 	r.Get("/created", func(ctx *Context) Responser {
@@ -60,7 +60,7 @@ func TestCreated(t *testing.T) {
 func TestRedirect(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
-	r := s.Routers().New("def", nil)
+	r := s.NewRouter("def", nil)
 
 	r.Get("/not-implement", func(ctx *Context) Responser {
 		return ctx.NotImplemented()
