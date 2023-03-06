@@ -23,18 +23,6 @@ type Responser interface {
 	Apply(*Context)
 }
 
-// ETager 表示该对象可以用于表示 ETag 的相关功能
-type ETager interface {
-	// ETag 返回当前内容关联的 ETag 报头内容
-	//
-	// etag 表示对应的 etag 报头，需要包含双绰号，但是不需要 W/ 前缀；
-	// weak 是否为弱验证；
-	ETag() (etag string, weak bool)
-
-	// Body 返回给客户端的报文主体对象
-	Body() any
-}
-
 type ResponserFunc func(*Context)
 
 func (f ResponserFunc) Apply(c *Context) { f(c) }
@@ -76,14 +64,6 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 	if body == nil {
 		ctx.WriteHeader(status)
 		return
-	}
-
-	if etag, ok := body.(ETager); ok && ctx.Request().Method == http.MethodGet {
-		if tag, weak := etag.ETag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
-			ctx.WriteHeader(http.StatusNotModified)
-			return
-		}
-		body = etag.Body()
 	}
 
 	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))

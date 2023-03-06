@@ -139,6 +139,7 @@ func ClientIP(r *http.Request) string {
 // InitETag 初始化 ETag 报头
 //
 // etag 为服务端生成的新值，包含了双引号，但不包含弱验证的 W/ 前缀；
+// 返回值表示是否可以反馈 304 给客户。
 func InitETag(w http.ResponseWriter, r *http.Request, etag string, weak bool) bool {
 	client := r.Header.Get(IfNoneMatch)
 

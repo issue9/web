@@ -10,12 +10,13 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/term/v3/colors"
-	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/locales"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
+
+	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/locales"
 )
 
 func TestLogs_With(t *testing.T) {
@@ -32,7 +33,7 @@ func TestLogs_With(t *testing.T) {
 
 	l.NewEntry(Error).DepthString(1, "error")
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:33") // 依赖 DepthString 行号
+		Contains(buf.String(), "loggers_test.go:34") // 依赖 DepthString 行号
 
 	// Logs.With
 
@@ -41,12 +42,12 @@ func TestLogs_With(t *testing.T) {
 	a.NotNil(ps)
 	ps.ERROR().String("string")
 	a.Contains(buf.String(), "string").
-		Contains(buf.String(), "loggers_test.go:42"). // 依赖 ERROR().String 行号
+		Contains(buf.String(), "loggers_test.go:43"). // 依赖 ERROR().String 行号
 		Contains(buf.String(), "k1=v1")
 
 	ps.NewEntry(Error).DepthError(1, errors.New("error"))
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:47") // 依赖 DepthError 行号
+		Contains(buf.String(), "loggers_test.go:48") // 依赖 DepthError 行号
 
 	Destroy(ps)
 }
@@ -56,7 +57,8 @@ func TestNew(t *testing.T) {
 
 	l := New(nil, nil)
 	a.NotNil(l)
-	a.False(l.logs.IsEnable(Error))
+	a.False(l.logs.IsEnable(Debug))
+	l.DEBUG().Println("test")
 
 	textBuf := new(bytes.Buffer)
 	termBuf := new(bytes.Buffer)
@@ -65,7 +67,7 @@ func TestNew(t *testing.T) {
 		Writer: NewDispatchWriter(map[Level]Writer{
 			Error: NewTextWriter(MicroLayout, textBuf),
 			Warn:  NewTermWriter(MicroLayout, colors.Black, termBuf),
-			Info:  NewTextWriter(MicroLayout, infoBuf),
+			Info:  NewJSONWriter(MicroLayout, infoBuf),
 		}),
 		Caller:  true,
 		Created: true,

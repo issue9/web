@@ -43,6 +43,10 @@ func New(opt *Options, p *message.Printer) *Logs {
 		o = append(o, logs.Print(newPrinter(p)))
 	}
 
+	if opt.Writer == nil {
+		opt.Writer = NewNopWriter()
+	}
+
 	l := logs.New(opt.Writer, o...)
 	l.Enable(opt.Levels...)
 

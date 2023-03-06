@@ -36,10 +36,11 @@ const (
 var allLevels = []Level{Info, Warn, Trace, Debug, Error, Fatal}
 
 type (
-	Level  = logs.Level
-	Writer = logs.Writer
-	Logger = logs.Logger
-	Entry  = logs.Entry
+	Level      = logs.Level
+	Writer     = logs.Writer
+	WriteEntry = logs.WriteEntry
+	Logger     = logs.Logger
+	Entry      = logs.Entry
 
 	// Options 初始化日志的选项
 	Options struct {

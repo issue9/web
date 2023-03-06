@@ -19,22 +19,12 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ ETager = &etag{}
-
 type response struct {
 	http.ResponseWriter
 	w io.Writer
 }
 
-type etag struct {
-	body string
-}
-
 func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
-
-func (e *etag) ETag() (string, bool) { return e.body, false }
-
-func (e *etag) Body() any { return e.body }
 
 func TestContext_Render(t *testing.T) {
 	a := assert.New(t, false)
@@ -220,24 +210,6 @@ func TestContext_Render(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/p12").Header("Accept", "application/test").
 		Do(nil).Status(http.StatusNotAcceptable)
 	a.NotZero(buf.Len())
-
-	// 304
-	buf.Reset()
-	r.Get("/p13", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, &etag{body: "123"}, false)
-		return nil
-	})
-	resp := servertest.Get(a, "http://localhost:8080/p13").
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusCreated).
-		Resp()
-	tag := resp.Header.Get(header.ETag)
-	servertest.Get(a, "http://localhost:8080/p13").
-		Header("Accept", "application/json").
-		Header(header.IfNoneMatch, tag).
-		Do(nil).
-		Status(http.StatusNotModified)
 }
 
 func TestContext_SetWriter(t *testing.T) {
