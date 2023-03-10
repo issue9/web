@@ -180,9 +180,9 @@ func (srv *Server) Serve() (err error) {
 //
 // 无论是否出错，该操作最终都会导致 [Server.Serve] 的退出。
 // 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
-func (srv *Server) Close(shutdownTimeout time.Duration) error {
+func (srv *Server) Close(shutdownTimeout time.Duration) {
 	if srv.State() != Running {
-		return nil
+		return
 	}
 
 	defer func() {
@@ -198,15 +198,18 @@ func (srv *Server) Close(shutdownTimeout time.Duration) error {
 	}()
 
 	if shutdownTimeout == 0 {
-		return srv.httpServer.Close()
+		if err := srv.httpServer.Close(); err != nil {
+			srv.Logs().ERROR().Error(err)
+		}
+		return
 	}
 
 	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	if err := srv.httpServer.Shutdown(c); !errors.Is(err, context.DeadlineExceeded) {
-		return err
+		srv.Logs().ERROR().Error(err)
+		return
 	}
-	return nil
 }
 
 // Server 获取关联的 Server 实例

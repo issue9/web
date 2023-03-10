@@ -6,7 +6,6 @@ package web
 import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
@@ -16,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.71.0"
+const Version = "0.72.0"
 
 // 预定义的 Problem id 值
 const (
@@ -99,7 +98,7 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key message.Reference, v ...any) LocaleStringer {
+func Phrase(key localeutil.Key, v ...any) LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 

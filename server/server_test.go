@@ -142,8 +142,8 @@ func TestServer_Close(t *testing.T) {
 			ctx.WriteHeader(http.StatusInternalServerError)
 		}
 		a.Equal(srv.State(), Running)
-		a.NotError(srv.Close(0))
-		a.NotError(srv.Close(0)) // 可多次调用
+		srv.Close(0)
+		srv.Close(0) // 可多次调用
 		a.Equal(srv.State(), Stopped)
 		return nil
 	})
@@ -179,7 +179,7 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 		ctx.WriteHeader(http.StatusCreated)
 		_, err := ctx.Write([]byte("shutdown with ctx"))
 		a.NotError(err)
-		a.NotError(srv.Close(300 * time.Millisecond))
+		srv.Close(300 * time.Millisecond)
 
 		return nil
 	})

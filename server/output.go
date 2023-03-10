@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
@@ -103,7 +103,7 @@ func (ctx *Context) Marshal(v any) ([]byte, error) {
 func (ctx *Context) Wrote() bool { return ctx.wrote }
 
 // Sprintf 将内容翻译成当前请求的语言
-func (ctx *Context) Sprintf(key message.Reference, v ...any) string {
+func (ctx *Context) Sprintf(key localeutil.Key, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
 }
 
