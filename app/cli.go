@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"time"
 
@@ -63,16 +64,10 @@ type CLIOf[T any] struct {
 
 	// 本地化的相关设置
 	//
-	// LocaleFS 本地化文件所在的文件系统，如果为空则指向 [locales.Locales]，
-	// LocaleGlob 从 LocaleFS 中查找本地化文件的匹配模式，如果为空则为 *.yaml。
-	// LocaleGlob 指定的文件格式必须是已经通过 [RegisterFileSerializer] 注册的。
-	// 由 [localeutil.DetectUserLanguageTag] 检测当前系统环境并决定采用哪种语言。
+	// 若为空，则以 NewPrinter(locales.Locales, "*.yaml") 进行初始化。
 	//
-	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，
-	// [server.Server] 的本地化由其自身管理。
-	LocaleFS   fs.FS
-	LocaleGlob string
-	printer    *message.Printer
+	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[server.Server] 的本地化由其自身管理。
+	Printer *localeutil.Printer
 
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
@@ -100,7 +95,7 @@ func (cmd *CLIOf[T]) Exec(args []string) (err error) {
 
 	if err != nil {
 		if le, ok := err.(localeutil.LocaleStringer); ok { // 对错误信息进行本地化转换
-			err = errors.New(le.LocaleString(cmd.printer))
+			err = errors.New(le.LocaleString(cmd.Printer))
 		}
 	}
 	return err
@@ -117,21 +112,9 @@ func (cmd *CLIOf[T]) sanitize() error {
 		return errors.New("字段 Init 不能为空")
 	}
 
-	tag, err := localeutil.DetectUserLanguageTag()
-	if err != nil {
-		fmt.Println(err) // 输出错误，但是不中断执行
+	if cmd.Printer == nil {
+		cmd.Printer = NewPrinter(locales.Locales, "*.yaml")
 	}
-
-	if cmd.LocaleFS == nil {
-		cmd.LocaleFS = locales.Locales
-	}
-	if cmd.LocaleGlob == "" {
-		cmd.LocaleGlob = "*.yaml"
-	}
-
-	b := catalog.NewBuilder(catalog.Fallback(tag))
-	files.LoadLocales(buildFiles(cmd.LocaleFS), b, nil, cmd.LocaleGlob)
-	cmd.printer = message.NewPrinter(tag, message.Catalog(b))
 
 	if cmd.Out == nil {
 		cmd.Out = os.Stdout
@@ -150,24 +133,23 @@ func (cmd *CLIOf[T]) sanitize() error {
 
 // FlagSet 将当前对象转换成 [flag.FlagSet] 对象
 //
-// helpFlag 是否添加帮助选项，如果 FlagSet 是独立使用的，建议设置为 true，
-// 或者直接使用 [CLIOf.Exec]，作为其它对象的子命令使用，可以设置为 false。
+// helpFlag 是否添加帮助选项。
+// 如果 FlagSet 是独立使用的，建议设置为 true，或者直接使用 [CLIOf.Exec]。
+// 作为子命令使用，可以设置为 false。
 //
-// fs 表示已经添加完参数的 FlagSet 对象，需要用户手动调用 [flag.FlagSet.Parse] 方法，
-// 参数第一个元素应该是程序名称，如果是作为子命令使用，那么第一个元素应该是子命令的名称；
+// 返回的 fs 对象需要用户手动调用 [flag.FlagSet.Parse]，
+// Parse 的参数第一个元素应该是程序名称，如果是作为子命令使用，那么第一个元素应该是子命令的名称；
 // do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
 func (cmd *CLIOf[T]) FlagSet(helpFlag bool) (fs *flag.FlagSet, do func(io.Writer) error) {
 	flags := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
-	v := flags.Bool("v", false, cmd.printer.Sprintf("cmd.show_version"))
-	f := flags.String("f", "./", cmd.printer.Sprintf("cmd.set_file_system"))
-	flags.StringVar(&cmd.action, "a", "", cmd.printer.Sprintf("cmd.action"))
+	v := flags.Bool("v", false, cmd.Printer.Sprintf("cmd.show_version"))
+	f := flags.String("f", "./", cmd.Printer.Sprintf("cmd.set_file_system"))
+	flags.StringVar(&cmd.action, "a", "", cmd.Printer.Sprintf("cmd.action"))
 
 	var h bool
 	if helpFlag {
-		flags.BoolVar(&h, "h", false, cmd.printer.Sprintf("cmd.show_help"))
+		flags.BoolVar(&h, "h", false, cmd.Printer.Sprintf("cmd.show_help"))
 	}
-
-	// 以上完成了 flag 的初始化
 
 	return flags, func(w io.Writer) error {
 		cmd.fsys = os.DirFS(*f)
@@ -213,4 +195,19 @@ func (cmd *CLIOf[T]) initServer() (*server.Server, error) {
 func CheckConfigSyntax[T any](fsys fs.FS, filename string) error {
 	_, err := loadConfigOf[T](fsys, filename)
 	return err
+}
+
+// NewPrinter 根据参数构建一个本地化的打印对象
+//
+// 语言由 [localeutil.DetectUserLanguageTag] 决定。
+// 参数指定了本地化的文件内容。
+func NewPrinter(fsys fs.FS, glob string) *localeutil.Printer {
+	tag, err := localeutil.DetectUserLanguageTag()
+	if err != nil {
+		log.Println(err) // 输出错误，但是不中断执行
+	}
+
+	b := catalog.NewBuilder(catalog.Fallback(tag))
+	files.LoadLocales(buildFiles(fsys), b, nil, glob)
+	return message.NewPrinter(tag, message.Catalog(b))
 }
