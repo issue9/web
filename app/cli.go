@@ -33,7 +33,7 @@ import (
 //
 // T 表示的是配置文件中的用户自定义数据类型。
 type CLIOf[T any] struct {
-	// NOTE: AppOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
+	// NOTE: CLIOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
 	// 开发者所有的功能都可以通过 Context 和 Server 获得。
 
 	Name    string // 程序名称
@@ -86,19 +86,24 @@ type CLIOf[T any] struct {
 //
 // args 表示命令行参数，一般为 [os.Args]。
 //
-// 如果是 AppOf 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
-func (cmd *CLIOf[T]) Exec(args []string) error {
-	if err := cmd.sanitize(); err != nil { // AppOf 字段值有问题，直接 panic。
+// 如果是 [CLIOf] 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
+func (cmd *CLIOf[T]) Exec(args []string) (err error) {
+	if err = cmd.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(err)
 	}
 
-	if err := cmd.exec(args); err != nil {
-		if le, ok := err.(localeutil.LocaleStringer); ok { // 对错误信息进行本地化转换
-			return errors.New(le.LocaleString(cmd.printer))
-		}
-		return err
+	f, do := cmd.FlagSet(true)
+	f.SetOutput(cmd.Out)
+	if err = f.Parse(args[1:]); err == nil {
+		err = do(cmd.Out)
 	}
-	return nil
+
+	if err != nil {
+		if le, ok := err.(localeutil.LocaleStringer); ok { // 对错误信息进行本地化转换
+			err = errors.New(le.LocaleString(cmd.printer))
+		}
+	}
+	return err
 }
 
 func (cmd *CLIOf[T]) sanitize() error {
@@ -143,38 +148,47 @@ func (cmd *CLIOf[T]) sanitize() error {
 	return nil
 }
 
-func (cmd *CLIOf[T]) exec(args []string) error {
+// FlagSet 将当前对象转换成 [flag.FlagSet] 对象
+//
+// helpFlag 是否添加帮助选项，如果 FlagSet 是独立使用的，建议设置为 true，
+// 或者直接使用 [CLIOf.Exec]，作为其它对象的子命令使用，可以设置为 false。
+//
+// fs 表示已经添加完参数的 FlagSet 对象，需要用户手动调用 [flag.FlagSet.Parse] 方法，
+// 参数第一个元素应该是程序名称，如果是作为子命令使用，那么第一个元素应该是子命令的名称；
+// do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
+func (cmd *CLIOf[T]) FlagSet(helpFlag bool) (fs *flag.FlagSet, do func(io.Writer) error) {
 	flags := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
-	flags.SetOutput(cmd.Out)
-
 	v := flags.Bool("v", false, cmd.printer.Sprintf("cmd.show_version"))
-	h := flags.Bool("h", false, cmd.printer.Sprintf("cmd.show_help"))
 	f := flags.String("f", "./", cmd.printer.Sprintf("cmd.set_file_system"))
 	flags.StringVar(&cmd.action, "a", "", cmd.printer.Sprintf("cmd.action"))
-	if err := flags.Parse(args[1:]); err != nil {
-		return errs.NewStackError(err)
+
+	var h bool
+	if helpFlag {
+		flags.BoolVar(&h, "h", false, cmd.printer.Sprintf("cmd.show_help"))
 	}
 
 	// 以上完成了 flag 的初始化
 
-	cmd.fsys = os.DirFS(*f)
+	return flags, func(w io.Writer) error {
+		cmd.fsys = os.DirFS(*f)
 
-	if *v {
-		_, err := fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
-		return err
+		if *v {
+			_, err := fmt.Fprintln(w, cmd.Name, cmd.Version)
+			return err
+		}
+
+		if helpFlag && h {
+			flags.PrintDefaults()
+			return nil
+		}
+
+		if !sliceutil.Exists(cmd.ServeActions, func(e string) bool { return e == cmd.action }) { // 非服务
+			_, err := cmd.initServer()
+			return err
+		}
+
+		return cmd.app.Exec()
 	}
-
-	if *h {
-		flags.PrintDefaults()
-		return nil
-	}
-
-	if !sliceutil.Exists(cmd.ServeActions, func(e string) bool { return e == cmd.action }) { // 非服务
-		_, err := cmd.initServer()
-		return err
-	}
-
-	return cmd.app.Exec()
 }
 
 // Restart 触发重启服务

@@ -15,6 +15,11 @@ import (
 	"github.com/issue9/web/server"
 )
 
+var (
+	_ RestartServer = &App{}
+	_ RestartServer = &CLIOf[struct{}]{}
+)
+
 func TestSignalHUP(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -46,13 +51,13 @@ func TestSignalHUP(t *testing.T) {
 	// hup1
 	t1 := cmd.app.srv.Uptime()
 	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	t2 := cmd.app.srv.Uptime()
 	a.True(t2.After(t1))
 
 	// hup2
 	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))
 

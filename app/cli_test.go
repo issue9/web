@@ -52,7 +52,7 @@ func TestCLIOf(t *testing.T) {
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
 	cmd.Restart()
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	s2 := cmd.app.srv
 	t2 := s2.Uptime()
 	a.True(t2.After(t1)).
@@ -61,7 +61,7 @@ func TestCLIOf(t *testing.T) {
 	// restart2
 	cmd.Name = "restart2"
 	cmd.Restart()
-	time.Sleep(500 * time.Millisecond) // 此值要大于 AppOf.ShutdownTimeout
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))
 
