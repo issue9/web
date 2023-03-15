@@ -3,11 +3,11 @@
 package server
 
 import (
-	"reflect"
-	"strconv"
 	"sync"
 
 	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/validation"
 )
 
 const validationPoolMaxSize = 20
@@ -20,11 +20,6 @@ var validationPool = &sync.Pool{New: func() any {
 	}
 }}
 
-var (
-	isNotSlice = localeutil.Phrase("the type is not slice or array")
-	isNotMap   = localeutil.Phrase("the type is not map")
-)
-
 type (
 	// Validation 数据验证工具
 	Validation struct {
@@ -33,22 +28,7 @@ type (
 		keys        []string
 		reasons     []string
 	}
-
-	Rule struct {
-		validator Validator
-		message   localeutil.LocaleStringer
-	}
-
-	// Validator 用于验证指定数据的合法性
-	Validator interface {
-		IsValid(v any) bool
-	}
-
-	// ValidateFunc 用于验证指定数据的合法性
-	ValidateFunc func(any) bool
 )
-
-func (f ValidateFunc) IsValid(v any) bool { return f(v) }
 
 // NewValidation 声明验证对象
 func (ctx *Context) NewValidation(exitAtError bool) *Validation {
@@ -93,87 +73,18 @@ func (v *Validation) add(name string, reason localeutil.LocaleStringer) *Validat
 
 // AddField 验证新的字段
 //
-// val 表示需要被验证的值；
 // name 表示当前字段的名称，当验证出错时，以此值作为名称返回给用户；
-// rules 表示验证的规则，按顺序依次验证。
-func (v *Validation) AddField(val any, name string, rules ...*Rule) *Validation {
+// validate 为验证方法，如果验证出错，则将返回错误信息，否则返回 nil；
+func (v *Validation) AddField(validate validation.Field) *Validation {
 	if v.Len() > 0 && v.exitAtError {
 		return v
 	}
 
-	for _, rule := range rules {
-		if !rule.validator.IsValid(val) {
-			v.add(name, rule.message)
-			break
-		}
+	if name, msg := validate.Validate(); msg != nil {
+		v.add(name, msg)
 	}
 	return v
 }
-
-// AddSliceField 验证数组字段
-//
-// 如果字段类型不是数组或是字符串，将添加一条错误信息，并退出验证。
-func (v *Validation) AddSliceField(val any, name string, rules ...*Rule) *Validation {
-	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 []T
-
-	if v.Len() > 0 && v.exitAtError {
-		return v
-	}
-
-	rv := reflect.ValueOf(val)
-
-	if kind := rv.Kind(); kind != reflect.Array && kind != reflect.Slice && kind != reflect.String {
-		v.add(name, isNotSlice)
-		return v
-	}
-
-	for i := 0; i < rv.Len(); i++ {
-		for _, rule := range rules {
-			if !rule.validator.IsValid(rv.Index(i).Interface()) {
-				v.add(name+"["+strconv.Itoa(i)+"]", rule.message)
-				if v.exitAtError {
-					return v
-				}
-			}
-		}
-	}
-
-	return v
-}
-
-// AddMapField 验证 map 字段
-//
-// 如果字段类型不是 map，将添加一条错误信息，并退出验证。
-func (v *Validation) AddMapField(val any, name string, rules ...*Rule) *Validation {
-	// TODO: 如果 go 支持泛型方法，那么可以将 val 固定在 map[T]T
-
-	if v.Len() > 0 && v.exitAtError {
-		return v
-	}
-
-	rv := reflect.ValueOf(val)
-	if kind := rv.Kind(); kind != reflect.Map {
-		v.add(name, isNotMap)
-		return v
-	}
-
-	keys := rv.MapKeys()
-	for i := 0; i < rv.Len(); i++ {
-		key := keys[i]
-		for _, rule := range rules {
-			if !rule.validator.IsValid(rv.MapIndex(key).Interface()) {
-				v.add(name+"["+key.String()+"]", rule.message)
-				if v.exitAtError {
-					return v
-				}
-			}
-		}
-	}
-
-	return v
-}
-
-func (v *Validation) Context() *Context { return v.ctx }
 
 // When 只有满足 cond 才执行 f 中的验证
 //
@@ -185,52 +96,5 @@ func (v *Validation) When(cond bool, f func(v *Validation)) *Validation {
 	return v
 }
 
-// AndValidator 将多个验证函数以与的形式合并为一个验证函数
-func AndValidator(v ...Validator) Validator {
-	return ValidateFunc(func(a any) bool {
-		for _, validator := range v {
-			if !validator.IsValid(a) {
-				return false
-			}
-		}
-		return true
-	})
-}
-
-// OrValidator 将多个验证函数以或的形式合并为一个验证函数
-func OrValidator(v ...Validator) Validator {
-	return ValidateFunc(func(a any) bool {
-		for _, validator := range v {
-			if validator.IsValid(a) {
-				return true
-			}
-		}
-		return false
-	})
-}
-
-func AndValidateFunc(f ...func(any) bool) Validator { return AndValidator(toValidators(f)...) }
-
-func OrValidateFunc(f ...func(any) bool) Validator { return OrValidator(toValidators(f)...) }
-
-func toValidators(f []func(any) bool) []Validator {
-	v := make([]Validator, 0, len(f))
-	for _, ff := range f {
-		v = append(v, ValidateFunc(ff))
-	}
-	return v
-}
-
-// NewRule 声明一条验证规则
-//
-// message 表示在验证出错时的错误信息；
-func NewRule(message localeutil.LocaleStringer, validator Validator) *Rule {
-	return &Rule{
-		validator: validator,
-		message:   message,
-	}
-}
-
-func NewRuleFunc(message localeutil.LocaleStringer, f func(any) bool) *Rule {
-	return NewRule(message, ValidateFunc(f))
-}
+// Context 与当前验证对象关联的 [Context] 实例
+func (v *Validation) Context() *Context { return v.ctx }

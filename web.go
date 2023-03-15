@@ -78,10 +78,7 @@ type (
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
 	CTXSanitizer   = server.CTXSanitizer
-	Rule           = server.Rule
 	Validation     = server.Validation
-	Validator      = server.Validator
-	ValidateFunc   = server.ValidateFunc
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger
@@ -100,14 +97,6 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 // Phrase 生成本地化的语言片段
 func Phrase(key localeutil.Key, v ...any) LocaleStringer {
 	return localeutil.Phrase(key, v...)
-}
-
-// NewRule 新建验证规则
-func NewRule(msg LocaleStringer, v Validator) *Rule { return server.NewRule(msg, v) }
-
-// NewRuleFunc 新建验证规则
-func NewRuleFunc(msg LocaleStringer, f func(any) bool) *Rule {
-	return server.NewRuleFunc(msg, f)
 }
 
 // NewStackError 为 err 带上调用信息
