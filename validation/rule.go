@@ -28,7 +28,7 @@ func NewRuleOf[T any](v ValidatorOf[T], msg localeutil.LocaleStringer) RulerOf[T
 	return RulerFuncOf[T](func(name string, val T) Field {
 		return FieldFunc(func() (string, localeutil.LocaleStringer) {
 			if v.IsValid(val) {
-				return name, nil
+				return "", nil
 			}
 			return name, msg
 		})
@@ -46,13 +46,13 @@ func NewRulesOf[T any](r ...RulerOf[T]) RulerOf[T] {
 					return n, msg
 				}
 			}
-			return name, nil
+			return "", nil
 		})
 	})
 }
 
-func NewSliceRuleOf[A []T, T any](v ValidatorOf[T], msg localeutil.LocaleStringer) RulerOf[A] {
-	return RulerFuncOf[A](func(name string, val A) Field {
+func NewSliceRuleOf[T any, S ~[]T](v ValidatorOf[T], msg localeutil.LocaleStringer) RulerOf[S] {
+	return RulerFuncOf[S](func(name string, val S) Field {
 		return FieldFunc(func() (string, localeutil.LocaleStringer) {
 			for index, vv := range val {
 				if !v.IsValid(vv) {
@@ -64,7 +64,7 @@ func NewSliceRuleOf[A []T, T any](v ValidatorOf[T], msg localeutil.LocaleStringe
 	})
 }
 
-func NewMapRuleOf[A map[K]V, K comparable, V any](v ValidatorOf[V], msg localeutil.LocaleStringer) RulerOf[A] {
+func NewMapRuleOf[K comparable, V any, A ~map[K]V](v ValidatorOf[V], msg localeutil.LocaleStringer) RulerOf[A] {
 	return RulerFuncOf[A](func(name string, val A) Field {
 		return FieldFunc(func() (string, localeutil.LocaleStringer) {
 			for key, vv := range val {

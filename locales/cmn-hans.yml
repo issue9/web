@@ -48,14 +48,6 @@ messages:
   message:
     msg: '无效的值'
 
-- key: the type is not slice or array
-  message:
-    msg: 非数组类型
-
-- key: the type is not map
-  message:
-    msg: 非 map 类型
-
 - key: the client did not specify content-type header
   message:
     msg: 客户端请求时未指定 content-type 报头

@@ -11,11 +11,7 @@ import (
 
 func zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
 
-func equal[T comparable](v T) ValidatorOf[T] {
-	return ValidatorFuncOf[T](func(vv T) bool { return vv == v })
-}
-
-func between[T ~int | ~uint | float32 | float64](min, max T) ValidatorOf[T] {
+func between[T ~int | ~uint | float32 | float64](min, max T) ValidatorFuncOf[T] {
 	return ValidatorFuncOf[T](func(vv T) bool { return vv >= min && vv <= max })
 }
 
@@ -47,12 +43,12 @@ func TestAnd_Or(t *testing.T) {
 func TestAnd_OrFunc(t *testing.T) {
 	a := assert.New(t, false)
 
-	and := AndFunc(func(i int) bool { return i >= 0 && i < 100 }, func(i int) bool { return i > -1 && i < 50 })
+	and := AndFunc(between(0, 100), between(-1, 50))
 	a.True(and.IsValid(0)).
 		True(and.IsValid(1)).
-		False(and.IsValid(50))
+		False(and.IsValid(51))
 
-	or := OrFunc(func(i int) bool { return i >= 0 && i < 100 }, func(i int) bool { return i > -1 && i < 50 })
+	or := OrFunc(between(0, 100), between(-1, 50))
 	a.True(or.IsValid(0)).
 		True(or.IsValid(1)).
 		False(or.IsValid(500))
