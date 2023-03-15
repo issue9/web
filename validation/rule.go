@@ -35,6 +35,10 @@ func NewRuleOf[T any](v ValidatorOf[T], msg localeutil.LocaleStringer) RulerOf[T
 	})
 }
 
+func NewRuleFuncOf[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerOf[T] {
+	return NewRuleOf[T](ValidatorFuncOf[T](v), msg)
+}
+
 // NewRulesOf 将多个规则合并为一个
 //
 // 按顺序依次验证，直接碰到第一个验证不过的。
@@ -51,6 +55,7 @@ func NewRulesOf[T any](r ...RulerOf[T]) RulerOf[T] {
 	})
 }
 
+// NewSliceRuleOf 声明用于验证切片元素的规则
 func NewSliceRuleOf[T any, S ~[]T](v ValidatorOf[T], msg localeutil.LocaleStringer) RulerOf[S] {
 	return RulerFuncOf[S](func(name string, val S) Field {
 		return FieldFunc(func() (string, localeutil.LocaleStringer) {
@@ -64,12 +69,51 @@ func NewSliceRuleOf[T any, S ~[]T](v ValidatorOf[T], msg localeutil.LocaleString
 	})
 }
 
-func NewMapRuleOf[K comparable, V any, A ~map[K]V](v ValidatorOf[V], msg localeutil.LocaleStringer) RulerOf[A] {
-	return RulerFuncOf[A](func(name string, val A) Field {
+func NewSliceRulesOf[T any, S ~[]T](r ...RulerOf[T]) RulerOf[S] {
+	return RulerFuncOf[S](func(name string, val S) Field {
+		return FieldFunc(func() (string, localeutil.LocaleStringer) {
+			for _, rule := range r {
+				for index, item := range val {
+					if _, msg := rule.Build(name, item).Validate(); msg != nil {
+						return name + "[" + strconv.Itoa(index) + "]", msg
+					}
+				}
+			}
+			return "", nil
+		})
+	})
+}
+
+func NewSliceRuleFuncOf[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer) RulerOf[S] {
+	return NewSliceRuleOf[T, S](ValidatorFuncOf[T](v), msg)
+}
+
+// NewMapRuleOf 声明用于验证 map 元素的规则
+func NewMapRuleOf[K comparable, V any, M ~map[K]V](v ValidatorOf[V], msg localeutil.LocaleStringer) RulerOf[M] {
+	return RulerFuncOf[M](func(name string, val M) Field {
 		return FieldFunc(func() (string, localeutil.LocaleStringer) {
 			for key, vv := range val {
 				if !v.IsValid(vv) {
 					return fmt.Sprintf("%s[%v]", name, key), msg
+				}
+			}
+			return "", nil
+		})
+	})
+}
+
+func NewMapRuleFuncOf[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.LocaleStringer) RulerOf[M] {
+	return NewMapRuleOf[K, V, M](ValidatorFuncOf[V](v), msg)
+}
+
+func NewMapRulesOf[K comparable, V any, M ~map[K]V](r ...RulerOf[V]) RulerOf[M] {
+	return RulerFuncOf[M](func(name string, val M) Field {
+		return FieldFunc(func() (string, localeutil.LocaleStringer) {
+			for _, rule := range r {
+				for key, item := range val {
+					if _, msg := rule.Build(name, item).Validate(); msg != nil {
+						return fmt.Sprintf("%s[%v]", name, key), msg
+					}
 				}
 			}
 			return "", nil

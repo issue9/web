@@ -21,7 +21,7 @@ func TestNot(t *testing.T) {
 	z := ValidatorFuncOf[int](zero[int])
 	a.True(z.IsValid(0)).False(z.IsValid(1))
 
-	nz := Not[int](z)
+	nz := NotFunc(zero[int])
 	a.False(nz.IsValid(0)).True(nz.IsValid(1))
 }
 

@@ -18,6 +18,10 @@ func Not[T any](v ValidatorOf[T]) ValidatorOf[T] {
 	return ValidatorFuncOf[T](func(val T) bool { return !v.IsValid(val) })
 }
 
+func NotFunc[T any](v func(T) bool) ValidatorOf[T] {
+	return Not[T](ValidatorFuncOf[T](v))
+}
+
 // And 以与的形式串联多个验证器
 func And[T any](v ...ValidatorOf[T]) ValidatorOf[T] {
 	return ValidatorFuncOf[T](func(val T) bool {
