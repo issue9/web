@@ -122,6 +122,6 @@ func NewLocaleError(format string, v ...any) error {
 	return errs.NewLocaleError(format, v...)
 }
 
-func NewFilter[T any](sanitize func(*T), rule filter.RulerFuncOf[T]) filter.BuildFilterFuncOf[T] {
-	return filter.New(sanitize, rule)
+func NewFilter[T any](rule filter.RulerFuncOf[T], sanitize ...func(*T)) filter.BuildFilterFuncOf[T] {
+	return filter.New(rule, sanitize...)
 }

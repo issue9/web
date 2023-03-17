@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 		a := assert.New(t, false)
 
 		v := "str "
-		f := New(trimRight, NewRule(Not(zero[string]), localeutil.Phrase("zero")))("name", &v)
+		f := New(NewRule(Not(zero[string]), localeutil.Phrase("zero")), trimRight)("name", &v)
 		name, msg := f()
 		a.Empty(name).
 			Nil(msg).
@@ -40,14 +40,14 @@ func TestNew(t *testing.T) {
 		a := assert.New(t, false)
 
 		v := obj1{Name: "name"}
-		f := New(func(t *obj1) { t.Name = "obj1" }, NewRule(Not(zero[obj1]), localeutil.Phrase("zero")))("name", &v)
+		f := New(NewRule(Not(zero[obj1]), localeutil.Phrase("zero")), func(t *obj1) { t.Name = "obj1" })("name", &v)
 		name, msg := f()
 		a.Empty(name).
 			Nil(msg).
 			Equal(v, obj1{Name: "obj1"})
 
 		v = obj1{}
-		f = New(nil, NewRule(Not(zero[obj1]), localeutil.Phrase("zero")))("name", &v)
+		f = New(NewRule(Not(zero[obj1]), localeutil.Phrase("zero")))("name", &v)
 		name, msg = f()
 		a.Equal(name, "name").
 			Equal(msg, localeutil.Phrase("zero"))
@@ -57,14 +57,14 @@ func TestNew(t *testing.T) {
 		a := assert.New(t, false)
 
 		v := obj2{}
-		f := New(func(t *obj1) { t.Age = 18 }, nil)("name", &v.o2)
+		f := New(nil, func(t *obj1) { t.Age = 18 })("name", &v.o2)
 		name, msg := f()
 		a.Empty(name).
 			Nil(msg).
 			Equal(v, obj2{o2: obj1{Age: 18}})
 
 		v = obj2{}
-		f = New(func(t **obj1) { *t = &obj1{Name: "obj1"} }, nil)("name", &v.o1)
+		f = New(nil, func(t **obj1) { *t = &obj1{Name: "obj1"} })("name", &v.o1)
 		name, msg = f()
 		a.Empty(name).
 			Equal(v, obj2{o1: &obj1{Name: "obj1"}})
