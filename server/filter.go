@@ -55,10 +55,10 @@ func (v *Filter) Len() int { return len(v.keys) }
 
 // Add 直接添加一条错误信息
 func (v *Filter) Add(name string, reason localeutil.LocaleStringer) *Filter {
-	if v.Len() > 0 && v.exitAtError {
-		return v
+	if v.continueNext() {
+		return v.add(name, reason)
 	}
-	return v.add(name, reason)
+	return v
 }
 
 // AddError 直接添加一条类型为 error 的错误信息
@@ -76,7 +76,7 @@ func (v *Filter) add(name string, reason localeutil.LocaleStringer) *Filter {
 }
 
 func (v *Filter) AddFilter(f filter.FilterFunc) *Filter {
-	if v.Len() > 0 && v.exitAtError {
+	if !v.continueNext() {
 		return v
 	}
 
@@ -96,7 +96,7 @@ func (v *Filter) When(cond bool, f func(v *Filter)) *Filter {
 	return v
 }
 
-// Context 与当前验证对象关联的 [Context] 实例
+// Context 返回关联的 [Context] 实例
 func (v *Filter) Context() *Context { return v.ctx }
 
 // Problem 转换成 [Problem] 对象

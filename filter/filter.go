@@ -7,6 +7,8 @@ package filter
 
 import "github.com/issue9/localeutil"
 
+// FilterFunc 过滤器处理函数
+//
 // 如果符合要求返回 "", nil，否则返回错误的字段和信息。
 type FilterFunc func() (string, localeutil.LocaleStringer)
 
