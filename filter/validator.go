@@ -10,16 +10,19 @@ import (
 )
 
 type (
+	// ValidatorFuncOf 验证器的函数原型
 	ValidatorFuncOf[T any] func(T) bool
 
 	// RulerFuncOf 数据验证规则
 	//
-	// 这是 [ValidatorFuncOf] 与错误信息的组合。
-	// 同时也负责将类型相关的泛型验证器转换成与类型无关的 [Field]。
+	// 这是验证器与错误信息的组合。
+	//
+	// 传递参数为字段名与需要验证的值；
+	// 返回字段名和错误信息，如果验证成功，则返回两个空值；
 	RulerFuncOf[T any] func(string, T) (string, localeutil.LocaleStringer)
 )
 
-// Not 这是对验证器的取反操作
+// Not 验证器的取反
 func Not[T any](v func(T) bool) func(T) bool {
 	return func(val T) bool { return !v(val) }
 }
@@ -48,7 +51,7 @@ func Or[T any](v ...func(T) bool) func(T) bool {
 	}
 }
 
-func NewRuleOf[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[T] {
+func NewRule[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[T] {
 	return func(name string, val T) (string, localeutil.LocaleStringer) {
 		if v(val) {
 			return "", nil
@@ -57,10 +60,10 @@ func NewRuleOf[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf
 	}
 }
 
-// NewRulesOf 将多个规则合并为一个
+// NewRules 将多个规则合并为一个
 //
 // 按顺序依次验证，直接碰到第一个验证不过的。
-func NewRulesOf[T any](r ...RulerFuncOf[T]) RulerFuncOf[T] {
+func NewRules[T any](r ...RulerFuncOf[T]) RulerFuncOf[T] {
 	return func(name string, val T) (string, localeutil.LocaleStringer) {
 		for _, rule := range r {
 			if n, msg := rule(name, val); msg != nil {
@@ -71,8 +74,8 @@ func NewRulesOf[T any](r ...RulerFuncOf[T]) RulerFuncOf[T] {
 	}
 }
 
-// NewSliceRuleOf 声明用于验证切片元素的规则
-func NewSliceRuleOf[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[S] {
+// NewSliceRule 声明用于验证切片元素的规则
+func NewSliceRule[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[S] {
 	return func(name string, val S) (string, localeutil.LocaleStringer) {
 		for index, vv := range val {
 			if !v(vv) {
@@ -83,7 +86,7 @@ func NewSliceRuleOf[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer
 	}
 }
 
-func NewSliceRulesOf[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
+func NewSliceRules[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
 	return func(name string, val S) (string, localeutil.LocaleStringer) {
 		for _, rule := range r {
 			for index, item := range val {
@@ -96,8 +99,8 @@ func NewSliceRulesOf[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
 	}
 }
 
-// NewMapRuleOf 声明用于验证 map 元素的规则
-func NewMapRuleOf[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.LocaleStringer) RulerFuncOf[M] {
+// NewMapRule 声明用于验证 map 元素的规则
+func NewMapRule[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.LocaleStringer) RulerFuncOf[M] {
 	return func(name string, val M) (string, localeutil.LocaleStringer) {
 		for key, vv := range val {
 			if !v(vv) {
@@ -108,7 +111,7 @@ func NewMapRuleOf[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeuti
 	}
 }
 
-func NewMapRulesOf[K comparable, V any, M ~map[K]V](r ...RulerFuncOf[V]) RulerFuncOf[M] {
+func NewMapRules[K comparable, V any, M ~map[K]V](r ...RulerFuncOf[V]) RulerFuncOf[M] {
 	return func(name string, val M) (string, localeutil.LocaleStringer) {
 		for _, rule := range r {
 			for key, item := range val {

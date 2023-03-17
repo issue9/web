@@ -77,8 +77,8 @@ type (
 	Router         = server.Router
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
-	CTXSanitizer   = server.CTXSanitizer
-	Validation     = server.Validation
+	CTXFilter      = server.CTXFilter
+	Filter         = server.Filter
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger

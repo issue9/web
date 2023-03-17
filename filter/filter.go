@@ -12,11 +12,16 @@ type FilterFunc func() (string, localeutil.LocaleStringer)
 
 // New 声明 Filter 对象
 //
+// name 字段名，对于切片等类型会返回带下标的字段名；
+// v 必须是指针类型，否则 sanitize 无法对其内容进行修改；
 // sanitize 表示对字断 v 的一些清理，比如去除空白字符等，如果有多个可以使用 [Sanitizers] 进行合并；
 func New[T any](name string, v *T, sanitize func(*T), rule RulerFuncOf[T]) FilterFunc {
 	return func() (string, localeutil.LocaleStringer) {
 		if sanitize != nil {
 			sanitize(v)
+		}
+		if rule == nil {
+			return "", nil
 		}
 		return rule(name, *v)
 	}
