@@ -15,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.72.1"
+const Version = "0.73.0"
 
 // 预定义的 Problem id 值
 const (
@@ -77,8 +77,8 @@ type (
 	Router         = server.Router
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
-	CTXSanitizer   = server.CTXSanitizer
-	Validation     = server.Validation
+	CTXFilter      = server.CTXFilter
+	Filter         = server.Filter
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger

@@ -28,7 +28,7 @@ const (
 
 var contextPool = &sync.Pool{
 	New: func() any {
-		return &Context{exits: make([]func(*Context, int), 0, 3)} // query, params, validation
+		return &Context{exits: make([]func(*Context, int), 0, 3)} // query, params, filter
 	},
 }
 

@@ -27,31 +27,21 @@ var (
 	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 )
 
-type (
-	Params struct {
-		v *Validation
-	}
+type Params struct {
+	v *Filter
+}
 
-	Queries struct {
-		v       *Validation
-		queries url.Values
-	}
-
-	// CTXSanitizer 在 [Context] 关联的上下文环境中对数据进行验证和修正
-	//
-	// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
-	// 中会在解析数据成功之后会调用该接口。
-	CTXSanitizer interface {
-		CTXSanitize(*Validation)
-	}
-)
+type Queries struct {
+	v       *Filter
+	queries url.Values
+}
 
 // Params 声明一个用于获取路径参数的对象
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
-	ps.v = ctx.NewValidation(exitAtError)
+	ps.v = ctx.NewFilter(exitAtError)
 	ctx.OnExit(func(*Context, int) { paramPool.Put(ps) })
 	return ps
 }
@@ -138,7 +128,7 @@ func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Params] 会更方便。
 func (ctx *Context) ParamID(key, id string) (int64, Responser) {
-	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
+	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
@@ -157,7 +147,7 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
-	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
+	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -172,7 +162,7 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
 func (ctx *Context) ParamString(key, id string) (string, Responser) {
-	// 不复用 Params 实例，省略了 Params 和  Validation 两个对象的创建。
+	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -193,7 +183,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.NewValidation(exitAtError)
+	q.v = ctx.NewFilter(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
@@ -315,7 +305,7 @@ func (q *Queries) Problem(id string) Responser { return q.v.Problem(id) }
 //
 // 具体的文档信息可以参考 https://github.com/issue9/query
 //
-// 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
+// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用其接口函数。
 func (q *Queries) Object(v any, id string) {
 	query.ParseWithLog(q.queries, v, func(field string, err error) {
 		var msg localeutil.LocaleStringer
@@ -329,8 +319,8 @@ func (q *Queries) Object(v any, id string) {
 	})
 
 	if q.v.continueNext() {
-		if s, ok := v.(CTXSanitizer); ok {
-			s.CTXSanitize(q.v)
+		if s, ok := v.(CTXFilter); ok {
+			s.CTXFilter(q.v)
 		}
 	}
 }
@@ -407,16 +397,16 @@ func (ctx *Context) Unmarshal(v any) error {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 如果 v 实现了 [CTXSanitizer] 接口，则在读取数据之后，会调用其接口函数。
+// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用其接口函数。
 // 如果验证失败，会输出以 id 作为错误代码的 [Responser] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(problems.ProblemUnprocessableEntity, logs.LevelError, err)
 	}
 
-	if vv, ok := v.(CTXSanitizer); ok {
-		va := ctx.NewValidation(exitAtError)
-		vv.CTXSanitize(va)
+	if vv, ok := v.(CTXFilter); ok {
+		va := ctx.NewFilter(exitAtError)
+		vv.CTXFilter(va)
 		return va.Problem(id)
 	}
 	return nil
