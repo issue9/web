@@ -57,16 +57,16 @@ func TestContext_NewFilter(t *testing.T) {
 	n100 := -100
 	p100 := 100
 	v := ctx.NewFilter(false).
-		AddFilter(filter.New("f1", &n100, nil, filter.NewRules(min_2, min_3))).
-		AddFilter(filter.New("f2", &p100, nil, filter.NewRules(max50, max_4)))
+		AddFilter(filter.New(nil, filter.NewRules(min_2, min_3))("f1", &n100)).
+		AddFilter(filter.New(nil, filter.NewRules(max50, max_4))("f2", &p100))
 	a.Equal(v.keys, []string{"f1", "f2"}).
 		Equal(v.reasons, []string{"-2", "50"})
 
 	n100 = -100
 	p100 = 100
 	v = ctx.NewFilter(true).
-		AddFilter(filter.New("f1", &n100, nil, filter.NewRules(min_2, min_3))).
-		AddFilter(filter.New("f2", &p100, nil, filter.NewRules(max50, max_4)))
+		AddFilter(filter.New(nil, filter.NewRules(min_2, min_3))("f1", &n100)).
+		AddFilter(filter.New(nil, filter.NewRules(max50, max_4))("f2", &p100))
 	a.Equal(v.keys, []string{"f1"}).
 		Equal(v.reasons, []string{"-2"})
 }
@@ -84,18 +84,18 @@ func TestFilter_When(t *testing.T) {
 
 	obj := &object{}
 	v := ctx.NewFilter(false).
-		AddFilter(filter.New("obj/age", &obj.Age, nil, min18)).
+		AddFilter(filter.New(nil, min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *Filter) {
-			v.AddFilter(filter.New("obj/name", &obj.Name, nil, notEmpty))
+			v.AddFilter(filter.New(nil, notEmpty)("obj/name", &obj.Name))
 		})
 	a.Equal(v.keys, []string{"obj/age"}).
 		Equal(v.reasons, []string{"不能小于 18"})
 
 	obj = &object{Age: 15}
 	v = ctx.NewFilter(false).
-		AddFilter(filter.New("obj/age", &obj.Age, nil, min18)).
+		AddFilter(filter.New(nil, min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *Filter) {
-			v.AddFilter(filter.New("obj/name", &obj.Name, nil, notEmpty))
+			v.AddFilter(filter.New(nil, notEmpty)("obj/name", &obj.Name))
 		})
 	a.Equal(v.keys, []string{"obj/age", "obj/name"}).
 		Equal(v.reasons, []string{"不能小于 18", "不能为空"})
