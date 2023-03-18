@@ -7,17 +7,47 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/logs"
 )
 
 var _ BuildProblemFunc = RFC7807Builder
+
+type object struct {
+	Name string
+	Age  int
+}
+
+func required[T any](v T) bool { return !reflect.ValueOf(v).IsZero() }
+
+func min(v int) filter.ValidatorFuncOf[int] {
+	return func(a int) bool { return a >= v }
+}
+
+func max(v int) filter.ValidatorFuncOf[int] {
+	return func(a int) bool { return a < v }
+}
+
+func in(element ...int) filter.ValidatorFuncOf[int] {
+	return func(v int) bool {
+		return sliceutil.Exists(element, func(elem int) bool { return elem == v })
+	}
+}
+
+func notIn(element ...int) filter.ValidatorFuncOf[int] {
+	return func(v int) bool {
+		return !sliceutil.Exists(element, func(elem int) bool { return elem == v })
+	}
+}
 
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
 func TestContext_Log(t *testing.T) {
@@ -35,7 +65,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:37") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:67") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 500)
 	})
@@ -47,7 +77,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error("41110", logs.Error, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:49") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:79") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
@@ -115,4 +145,63 @@ func TestContext_Problem(t *testing.T) {
 
 	resp.Apply(ctx)
 	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"detail":"40010","params":[{"name":"k1","reason":"v1"}]}`)
+}
+
+func TestContext_NewFilterProblem(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a, nil)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := s.newContext(w, r, nil)
+
+	min_2 := filter.NewRule(min(-2), localeutil.Phrase("-2"))
+	min_3 := filter.NewRule(min(-3), localeutil.Phrase("-3"))
+	max50 := filter.NewRule(max(50), localeutil.Phrase("50"))
+	max_4 := filter.NewRule(max(-4), localeutil.Phrase("-4"))
+
+	n100 := -100
+	p100 := 100
+	v := ctx.NewFilterProblem(false).
+		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
+		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
+	a.Equal(v.keys, []string{"f1", "f2"}).
+		Equal(v.reasons, []string{"-2", "50"})
+
+	n100 = -100
+	p100 = 100
+	v = ctx.NewFilterProblem(true).
+		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
+		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
+	a.Equal(v.keys, []string{"f1"}).
+		Equal(v.reasons, []string{"-2"})
+}
+
+func TestFilter_When(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a, nil)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := s.newContext(w, r, nil)
+
+	min18 := filter.NewRule(min(18), localeutil.Phrase("不能小于 18"))
+	req := filter.ValidatorFuncOf[string](required[string])
+	notEmpty := filter.NewRule(req, localeutil.Phrase("不能为空"))
+
+	obj := &object{}
+	v := ctx.NewFilterProblem(false).
+		AddFilter(filter.New(min18)("obj/age", &obj.Age)).
+		When(obj.Age > 0, func(v *FilterProblem) {
+			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))
+		})
+	a.Equal(v.keys, []string{"obj/age"}).
+		Equal(v.reasons, []string{"不能小于 18"})
+
+	obj = &object{Age: 15}
+	v = ctx.NewFilterProblem(false).
+		AddFilter(filter.New(min18)("obj/age", &obj.Age)).
+		When(obj.Age > 0, func(v *FilterProblem) {
+			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))
+		})
+	a.Equal(v.keys, []string{"obj/age", "obj/name"}).
+		Equal(v.reasons, []string{"不能小于 18", "不能为空"})
 }

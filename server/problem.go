@@ -3,10 +3,27 @@
 package server
 
 import (
+	"sync"
+
 	"github.com/issue9/localeutil"
 
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
+)
+
+const filterProblemPoolMaxSize = 20
+
+var (
+	rfc7807Pool = problems.NewRFC7807Pool[*Context]()
+
+	filterProblemPool = &sync.Pool{New: func() any {
+		const size = 5
+		return &FilterProblem{
+			keys:    make([]string, 0, size),
+			reasons: make([]string, 0, size),
+		}
+	}}
 )
 
 type (
@@ -31,7 +48,10 @@ type (
 		// 如果添加的字段名称与现有的字段重名，应当 panic。
 		With(key string, val any)
 
-		// AddParam 添加数据验证错误信息
+		// AddParam 添加具体的错误字段及描述信息
+		//
+		// name 为字段名称；reason 为该字段的错误信息；
+		// 可以多次添加相同 name 的项。
 		AddParam(name string, reason string)
 	}
 
@@ -41,9 +61,15 @@ type (
 	// title 错误信息的简要描述；
 	// status 输出的状态码；
 	BuildProblemFunc func(id string, status int, title, detail string) Problem
-)
 
-var rfc7807Pool = problems.NewRFC7807Pool[*Context]()
+	// FilterProblem 处理由过滤器生成的各错误
+	FilterProblem struct {
+		exitAtError bool
+		ctx         *Context
+		keys        []string
+		reasons     []string
+	}
+)
 
 // RFC7807Builder [BuildProblemFunc] 的 [RFC7807] 标准实现
 //
@@ -111,3 +137,82 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 //   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
 //   - Logger.Println 对每个参数分别进行本地化，然后调用 [fmt.Sprintln] 输出；
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
+
+func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {
+	v := filterProblemPool.Get().(*FilterProblem)
+	v.exitAtError = exitAtError
+	v.keys = v.keys[:0]
+	v.reasons = v.reasons[:0]
+	v.ctx = ctx
+	ctx.OnExit(func(*Context, int) {
+		if len(v.keys) < filterProblemPoolMaxSize {
+			filterProblemPool.Put(v)
+		}
+	})
+	return v
+}
+
+func (v *FilterProblem) continueNext() bool { return !v.exitAtError || v.len() == 0 }
+
+func (v *FilterProblem) len() int { return len(v.keys) }
+
+// Add 直接添加一条错误信息
+func (v *FilterProblem) Add(name string, reason localeutil.LocaleStringer) *FilterProblem {
+	if v.continueNext() {
+		return v.add(name, reason)
+	}
+	return v
+}
+
+// AddError 直接添加一条类型为 error 的错误信息
+func (v *FilterProblem) AddError(name string, err error) *FilterProblem {
+	if ls, ok := err.(localeutil.LocaleStringer); ok {
+		return v.Add(name, ls)
+	}
+	return v.Add(name, localeutil.Phrase(err.Error()))
+}
+
+func (v *FilterProblem) add(name string, reason localeutil.LocaleStringer) *FilterProblem {
+	v.keys = append(v.keys, name)
+	v.reasons = append(v.reasons, reason.LocaleString(v.Context().LocalePrinter()))
+	return v
+}
+
+func (v *FilterProblem) AddFilter(f filter.FilterFunc) *FilterProblem {
+	if !v.continueNext() {
+		return v
+	}
+
+	if name, msg := f(); msg != nil {
+		v.add(name, msg)
+	}
+	return v
+}
+
+// When 只有满足 cond 才执行 f 中的验证
+//
+// f 中的 v 即为当前对象；
+func (v *FilterProblem) When(cond bool, f func(v *FilterProblem)) *FilterProblem {
+	if cond {
+		f(v)
+	}
+	return v
+}
+
+// Context 返回关联的 [Context] 实例
+func (v *FilterProblem) Context() *Context { return v.ctx }
+
+// Problem 转换成 [Problem] 对象
+//
+// 如果当前对象没有收集到错误，那么将返回 nil。
+func (v *FilterProblem) Problem(id string) Problem {
+	if v == nil || v.len() == 0 {
+		return nil
+	}
+
+	p := v.Context().Problem(id)
+	for index, key := range v.keys {
+		p.AddParam(key, v.reasons[index])
+	}
+	return p
+}

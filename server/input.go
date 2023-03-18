@@ -20,20 +20,30 @@ import (
 	"github.com/issue9/web/internal/problems"
 )
 
-var tGreatThanZero = localeutil.Phrase("should great than 0")
+const defaultBodyBufferSize = 256
 
 var (
+	tGreatThanZero = localeutil.Phrase("should great than 0")
+
 	paramPool = &sync.Pool{New: func() any { return &Params{} }}
 	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 )
 
 type Params struct {
-	v *Filter
+	v *FilterProblem
 }
 
 type Queries struct {
-	v       *Filter
+	v       *FilterProblem
 	queries url.Values
+}
+
+// CTXFilter 在 [Context] 关联的上下文环境中对数据进行验证和修正
+//
+// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
+// 中会在解析数据成功之后会调用该接口。
+type CTXFilter interface {
+	CTXFilter(*FilterProblem)
 }
 
 // Params 声明一个用于获取路径参数的对象
@@ -41,7 +51,7 @@ type Queries struct {
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Params(exitAtError bool) *Params {
 	ps := paramPool.Get().(*Params)
-	ps.v = ctx.NewFilter(exitAtError)
+	ps.v = ctx.NewFilterProblem(exitAtError)
 	ctx.OnExit(func(*Context, int) { paramPool.Put(ps) })
 	return ps
 }
@@ -183,7 +193,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.NewFilter(exitAtError)
+	q.v = ctx.NewFilterProblem(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
@@ -405,7 +415,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	}
 
 	if vv, ok := v.(CTXFilter); ok {
-		va := ctx.NewFilter(exitAtError)
+		va := ctx.NewFilterProblem(exitAtError)
 		vv.CTXFilter(va)
 		return va.Problem(id)
 	}
