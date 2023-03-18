@@ -64,7 +64,7 @@ type CLIOf[T any] struct {
 
 	// 本地化的相关设置
 	//
-	// 若为空，则以 NewPrinter(locales.Locales, "*.yaml") 进行初始化。
+	// 若为空，则以 NewPrinter(locales.Locales, "*.yml") 进行初始化。
 	//
 	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[server.Server] 的本地化由其自身管理。
 	Printer *localeutil.Printer
@@ -113,7 +113,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.Printer == nil {
-		cmd.Printer = NewPrinter(locales.Locales, "*.yaml")
+		cmd.Printer = NewPrinter(locales.Locales, "*.yml")
 	}
 
 	if cmd.Out == nil {
