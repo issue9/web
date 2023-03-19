@@ -50,6 +50,7 @@ func TestGetName(t *testing.T) {
 			"type":   "id",
 			"title":  "title",
 			"status": 500,
+			"detail": "detail",
 		})
 
 	a.PanicString(func() {

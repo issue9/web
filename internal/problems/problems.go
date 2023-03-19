@@ -8,7 +8,6 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/message"
 )
 
 // Problems 管理 Problem
@@ -77,7 +76,7 @@ func (p *Problems[P]) Visit(visit func(id string, status int, title, detail loca
 	}
 }
 
-func (p *Problems[P]) Problem(printer *message.Printer, id string) P {
+func (p *Problems[P]) Problem(printer *localeutil.Printer, id string) P {
 	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))

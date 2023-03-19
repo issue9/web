@@ -100,7 +100,7 @@ func TestContext_Problem(t *testing.T) {
 	ctx := srv.newContext(w, r, nil)
 	resp := ctx.Problem("40000")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","status":400}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"hans","status":400,"detail":"hans"}`)
 
 	// 未指定 accept-language，采用默认的 und
 	w = httptest.NewRecorder()
@@ -110,7 +110,7 @@ func TestContext_Problem(t *testing.T) {
 	ctx = srv.newContext(w, r, nil)
 	resp = ctx.Problem("40000")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"detail":"und"}`)
 
 	// 不存在的本地化信息，采用默认的 und
 	w = httptest.NewRecorder()
@@ -122,7 +122,7 @@ func TestContext_Problem(t *testing.T) {
 	resp = ctx.Problem("40000")
 	resp.With("with", "abc")
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"with":"abc"}`)
+	a.Equal(w.Body.String(), `{"type":"40000","title":"und","status":400,"detail":"und","with":"abc"}`)
 
 	// 不存在
 	a.Panic(func() { ctx.Problem("not-exists") })
@@ -140,11 +140,11 @@ func TestContext_Problem(t *testing.T) {
 		AddProblem("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
 
 	resp = ctx.Problem("40010")
-	resp.With("detail", "40010")
+	resp.With("detail1", "40010")
 	resp.AddParam("k1", "v1")
 
 	resp.Apply(ctx)
-	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"detail":"40010","params":[{"name":"k1","reason":"v1"}]}`)
+	a.Equal(w.Body.String(), `{"type":"40010","title":"40010","status":400,"detail":"40010","detail1":"40010","params":[{"name":"k1","reason":"v1"}]}`)
 }
 
 func TestContext_NewFilterProblem(t *testing.T) {
