@@ -20,9 +20,9 @@ type Problems[P any] struct {
 }
 
 type statusProblem struct {
-	id string // 实际的 type 值
+	id string // 带 prefix
+	ID string // 用户指定的原始值
 
-	ID     string
 	Status int
 	Title  localeutil.LocaleStringer
 	Detail localeutil.LocaleStringer
@@ -70,9 +70,9 @@ func (p *Problems[P]) exists(id string) bool {
 	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 }
 
-func (p *Problems[P]) Visit(visit func(id string, status int, title, detail localeutil.LocaleStringer)) {
+func (p *Problems[P]) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
 	for _, s := range p.problems {
-		visit(s.ID, s.Status, s.Title, s.Detail)
+		visit(p.prefix, s.ID, s.Status, s.Title, s.Detail)
 	}
 }
 

@@ -91,13 +91,14 @@ func (srv *Server) AddProblem(id string, status int, title, detail localeutil.Lo
 //
 // visit 签名：
 //
-//	func(id string, status int, title, detail localeutil.LocaleStringer)
+//	func(prefix, id string, status int, title, detail localeutil.LocaleStringer)
 //
-// id 为错误代码；
+// prefix 用户设置的前缀，可能为空值；
+// id 为错误代码，不包含前缀部分；
 // status 该错误代码反馈给用户的 HTTP 状态码；
 // title 错误代码的简要描述；
 // detail 错误代码的明细；
-func (srv *Server) VisitProblems(visit func(string, int, localeutil.LocaleStringer, localeutil.LocaleStringer)) {
+func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
 	srv.problems.Visit(visit)
 }
 
@@ -156,7 +157,7 @@ func (v *FilterProblem) continueNext() bool { return !v.exitAtError || v.len() =
 
 func (v *FilterProblem) len() int { return len(v.keys) }
 
-// Add 直接添加一条错误信息
+// Add 添加一条错误信息
 func (v *FilterProblem) Add(name string, reason localeutil.LocaleStringer) *FilterProblem {
 	if v.continueNext() {
 		return v.add(name, reason)
@@ -164,7 +165,7 @@ func (v *FilterProblem) Add(name string, reason localeutil.LocaleStringer) *Filt
 	return v
 }
 
-// AddError 直接添加一条类型为 error 的错误信息
+// AddError 添加一条类型为 error 的错误信息
 func (v *FilterProblem) AddError(name string, err error) *FilterProblem {
 	if ls, ok := err.(localeutil.LocaleStringer); ok {
 		return v.Add(name, ls)
