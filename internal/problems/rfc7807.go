@@ -55,8 +55,8 @@ func NewRFC7807Pool[C ctx]() *RFC7807Pool[C] {
 	return &RFC7807Pool[C]{
 		pool: &sync.Pool{New: func() any {
 			return &RFC7807[C]{
-				keys: []string{"type", "title", "status"},
-				vals: make([]any, 3),
+				keys: []string{"type", "title", "status", "detail"},
+				vals: make([]any, 4),
 			}
 		}},
 	}
@@ -68,12 +68,13 @@ func (pool *RFC7807Pool[C]) New(id string, status int, title, detail string) *RF
 	p.pool = pool
 	p.status = status
 
-	p.keys = p.keys[:3]
-	p.vals = p.vals[:3]
+	p.keys = p.keys[:4]
+	p.vals = p.vals[:4]
 	// keys 前三个元素为固定值
 	p.vals[0] = id
 	p.vals[1] = title
 	p.vals[2] = status
+	p.vals[3] = detail
 
 	p.pKeys = p.pKeys[:0]
 	p.pReasons = p.pReasons[:0]

@@ -21,10 +21,7 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-const (
-	contextPoolBodyBufferMaxSize = 1 << 16
-	defaultBodyBufferSize        = 256
-)
+const contextPoolBodyBufferMaxSize = 1 << 16
 
 var contextPool = &sync.Pool{
 	New: func() any {

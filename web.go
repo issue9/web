@@ -79,7 +79,7 @@ type (
 	Responser      = server.Responser
 	ResponserFunc  = server.ResponserFunc
 	CTXFilter      = server.CTXFilter
-	Filter         = server.Filter
+	FilterProblem  = server.FilterProblem
 	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger

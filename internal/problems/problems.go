@@ -8,7 +8,6 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/message"
 )
 
 // Problems 管理 Problem
@@ -21,9 +20,9 @@ type Problems[P any] struct {
 }
 
 type statusProblem struct {
-	id string // 实际的 type 值
+	id string // 带 prefix
+	ID string // 用户指定的原始值
 
-	ID     string
 	Status int
 	Title  localeutil.LocaleStringer
 	Detail localeutil.LocaleStringer
@@ -71,13 +70,13 @@ func (p *Problems[P]) exists(id string) bool {
 	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 }
 
-func (p *Problems[P]) Visit(visit func(id string, status int, title, detail localeutil.LocaleStringer)) {
+func (p *Problems[P]) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
 	for _, s := range p.problems {
-		visit(s.ID, s.Status, s.Title, s.Detail)
+		visit(p.prefix, s.ID, s.Status, s.Title, s.Detail)
 	}
 }
 
-func (p *Problems[P]) Problem(printer *message.Printer, id string) P {
+func (p *Problems[P]) Problem(printer *localeutil.Printer, id string) P {
 	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))

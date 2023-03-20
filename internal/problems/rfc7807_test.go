@@ -35,12 +35,13 @@ func TestNewRFC7807(t *testing.T) {
 		p.With("type", "1111")
 	}, "存在同名的参数")
 
-	a.Equal(p.vals[3], "https://example.com/instance/1").
-		Equal(p.keys[3], "instance").
+	a.Equal(p.vals[4], "https://example.com/instance/1").
+		Equal(p.keys[4], "instance").
 		Equal(p.status, 400).
 		Equal(p.vals[0], "id").
 		Equal(p.vals[1], "title").
-		Equal(p.vals[2], 400)
+		Equal(p.vals[2], 400).
+		Equal(p.vals[3], "detail")
 }
 
 func TestRFC7807_Marshal(t *testing.T) {
@@ -50,14 +51,13 @@ func TestRFC7807_Marshal(t *testing.T) {
 	p1 := testPool.New("400", 200, "bad request", "detail")
 	p2 := testPool.New("400", 400, "bad request", "detail")
 	p2.AddParam("n1", "r1")
-	p2.With("detail", "detail")
 	p2.With("array", []string{"a", "bc"})
 	p2.With("object", &struct{ X string }{X: "x"})
 
 	t.Run("JSON", func(t *testing.T) {
 		data, err := json.Marshal(p1)
 		a.NotError(err).
-			Equal(string(data), `{"type":"400","title":"bad request","status":200}`)
+			Equal(string(data), `{"type":"400","title":"bad request","status":200,"detail":"detail"}`)
 
 		data, err = json.Marshal(p2)
 		a.NotError(err).
@@ -67,7 +67,7 @@ func TestRFC7807_Marshal(t *testing.T) {
 	t.Run("XML", func(t *testing.T) {
 		data, err := xml.Marshal(p1)
 		a.NotError(err).
-			Equal(string(data), `<problem xmlns="urn:ietf:rfc:7807"><type>400</type><title>bad request</title><status>200</status></problem>`)
+			Equal(string(data), `<problem xmlns="urn:ietf:rfc:7807"><type>400</type><title>bad request</title><status>200</status><detail>detail</detail></problem>`)
 
 		data, err = xml.Marshal(p2)
 		a.NotError(err).
@@ -77,7 +77,7 @@ func TestRFC7807_Marshal(t *testing.T) {
 	t.Run("Form", func(t *testing.T) {
 		data, err := p1.MarshalForm()
 		a.NotError(err).
-			Equal(string(data), `status=200&title=bad+request&type=400`)
+			Equal(string(data), `detail=detail&status=200&title=bad+request&type=400`)
 
 		data, err = p2.MarshalForm()
 		a.NotError(err).
@@ -91,6 +91,7 @@ func TestRFC7807_Marshal(t *testing.T) {
 				"type":   "400",
 				"title":  "bad request",
 				"status": 200,
+				"detail": "detail",
 			})
 
 		name, v = p2.MarshalHTML()
