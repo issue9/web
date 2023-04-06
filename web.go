@@ -16,9 +16,9 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.74.0"
+const Version = "0.74.1"
 
-// 预定义的 Problem id 值
+// 预定义的 Problem ID 值
 const (
 	// 特殊的值，当不想向用户展示 type 值时，该对象的 type 会被设置为该值。
 	ProblemAboutBlank = problems.ProblemAboutBlank

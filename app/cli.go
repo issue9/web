@@ -87,8 +87,9 @@ func (cmd *CLIOf[T]) Exec(args []string) (err error) {
 		panic(err)
 	}
 
-	f, do := cmd.FlagSet(true)
+	f := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
 	f.SetOutput(cmd.Out)
+	do := cmd.FlagSet(true, f)
 	if err = f.Parse(args[1:]); err == nil {
 		err = do(cmd.Out)
 	}
@@ -131,27 +132,25 @@ func (cmd *CLIOf[T]) sanitize() error {
 	return nil
 }
 
-// FlagSet 将当前对象转换成 [flag.FlagSet] 对象
+// FlagSet 将当前对象与 [flag.FlagSet] 关联
 //
 // helpFlag 是否添加帮助选项。
-// 如果 FlagSet 是独立使用的，建议设置为 true，或者直接使用 [CLIOf.Exec]。
+// 如果是独立使用的，建议设置为 true，或者直接使用 [CLIOf.Exec]。
 // 作为子命令使用，可以设置为 false。
+// fs 用于接收命令行的参数。
 //
-// 返回的 fs 对象需要用户手动调用 [flag.FlagSet.Parse]，
-// Parse 的参数第一个元素应该是程序名称，如果是作为子命令使用，那么第一个元素应该是子命令的名称；
 // do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
-func (cmd *CLIOf[T]) FlagSet(helpFlag bool) (fs *flag.FlagSet, do func(io.Writer) error) {
-	flags := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
-	v := flags.Bool("v", false, cmd.Printer.Sprintf("cmd.show_version"))
-	f := flags.String("f", "./", cmd.Printer.Sprintf("cmd.set_file_system"))
-	flags.StringVar(&cmd.action, "a", "", cmd.Printer.Sprintf("cmd.action"))
+func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer) error) {
+	v := fs.Bool("v", false, cmd.Printer.Sprintf("cmd.show_version"))
+	f := fs.String("f", "./", cmd.Printer.Sprintf("cmd.set_file_system"))
+	fs.StringVar(&cmd.action, "a", "", cmd.Printer.Sprintf("cmd.action"))
 
 	var h bool
 	if helpFlag {
-		flags.BoolVar(&h, "h", false, cmd.Printer.Sprintf("cmd.show_help"))
+		fs.BoolVar(&h, "h", false, cmd.Printer.Sprintf("cmd.show_help"))
 	}
 
-	return flags, func(w io.Writer) error {
+	return func(w io.Writer) error {
 		cmd.fsys = os.DirFS(*f)
 
 		if *v {
@@ -160,7 +159,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool) (fs *flag.FlagSet, do func(io.Writer
 		}
 
 		if helpFlag && h {
-			flags.PrintDefaults()
+			fs.PrintDefaults()
 			return nil
 		}
 

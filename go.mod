@@ -6,7 +6,7 @@ require (
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/localeutil v0.13.2
+	github.com/issue9/localeutil v0.14.0
 	github.com/issue9/logs/v4 v4.5.0
 	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/query/v3 v3.1.2
@@ -15,7 +15,7 @@ require (
 	github.com/issue9/term/v3 v3.1.1
 	github.com/issue9/unique/v2 v2.0.0
 	github.com/klauspost/compress v1.16.3
-	github.com/redis/go-redis/v9 v9.0.2
+	github.com/redis/go-redis/v9 v9.0.3
 	golang.org/x/crypto v0.7.0
 	golang.org/x/text v0.8.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
