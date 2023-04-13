@@ -205,7 +205,16 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		return nil, err.AddFieldParent("Locale")
 	}
 
-	o.logs = logs.New(o.Logs, o.Locale.printer) // 依赖 o.Locale
+	l, err := logs.New(o.Logs, o.Locale.printer) // 依赖 o.Locale
+	if err != nil {
+		if fe, ok := err.(*errs.FieldError); ok {
+			fe.AddFieldParent("Logs")
+			return nil, fe
+		} else {
+			return nil, errs.NewFieldError("Logs", err)
+		}
+	}
+	o.logs = l
 
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = RequestIDKey

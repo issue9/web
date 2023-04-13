@@ -23,13 +23,13 @@ func TestLogs_With(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
 
-	l := New(&Options{
+	l, err := New(&Options{
 		Writer:  NewTextWriter(NanoLayout, buf),
 		Caller:  true,
 		Created: true,
 		Levels:  AllLevels(),
 	}, nil)
-	a.NotNil(l)
+	a.NotError(err).NotNil(l)
 
 	l.NewEntry(Error).DepthString(1, "error")
 	a.Contains(buf.String(), "error").
@@ -55,8 +55,8 @@ func TestLogs_With(t *testing.T) {
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := New(nil, nil)
-	a.NotNil(l)
+	l, err := New(nil, nil)
+	a.NotError(err).NotNil(l)
 	a.False(l.logs.IsEnable(Debug))
 	l.DEBUG().Println("test")
 
@@ -73,8 +73,8 @@ func TestNew(t *testing.T) {
 		Created: true,
 		Levels:  AllLevels(),
 	}
-	l = New(opt, nil)
-	a.NotNil(l)
+	l, err = New(opt, nil)
+	a.NotError(err).NotNil(l)
 
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
 	l.WARN().Printf("%s not found", localeutil.Phrase("scheduled job"))
@@ -89,7 +89,7 @@ func TestNew(t *testing.T) {
 	termBuf.Reset()
 	infoBuf.Reset()
 	b := catalog.NewBuilder()
-	err := localeutil.LoadMessageFromFSGlob(b, locales.Locales, "*.yml", yaml.Unmarshal)
+	err = localeutil.LoadMessageFromFSGlob(b, locales.Locales, "*.yml", yaml.Unmarshal)
 	a.NotError(err)
 	p := message.NewPrinter(language.SimplifiedChinese, message.Catalog(b))
 
@@ -103,8 +103,8 @@ func TestNew(t *testing.T) {
 		Created: true,
 		Levels:  AllLevels(),
 	}
-	l = New(opt, p)
-	a.NotNil(l)
+	l, err = New(opt, p)
+	a.NotError(err).NotNil(l)
 
 	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
 	l.WARN().Printf("%s not found", localeutil.Phrase("scheduled job"))

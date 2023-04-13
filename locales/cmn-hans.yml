@@ -36,7 +36,7 @@ messages:
   message:
     msg: '未找到符合报头 %s 的字符集'
 
-- key: 'can not be empty'
+- key: an not be empty
   message:
     msg: 不能为空
 
@@ -44,9 +44,9 @@ messages:
   message:
     msg: '%s 不存在'
 
-- key: 'invalid value'
+- key: invalid value
   message:
-    msg: '无效的值'
+    msg: 无效的值
 
 - key: the client did not specify content-type header
   message:

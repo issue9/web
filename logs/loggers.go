@@ -3,6 +3,7 @@
 package logs
 
 import (
+	"log"
 	"sync"
 
 	"github.com/issue9/logs/v4"
@@ -23,12 +24,22 @@ type (
 		ps      map[string]any
 		loggers map[Level]Logger
 	}
+
+	loggerWriter struct {
+		l logs.Logger
+	}
 )
 
+func (w *loggerWriter) Write(data []byte) (int, error) {
+	w.l.String(string(data))
+	return len(data), nil
+}
+
 // New 声明日志实例
-func New(opt *Options, p *message.Printer) *Logs {
-	if opt == nil {
-		opt = &Options{}
+func New(opt *Options, p *message.Printer) (*Logs, error) {
+	opt, err := optionsSanitize(opt)
+	if err != nil {
+		return nil, err
 	}
 
 	o := make([]logs.Option, 0, 3)
@@ -50,7 +61,11 @@ func New(opt *Options, p *message.Printer) *Logs {
 	l := logs.New(opt.Writer, o...)
 	l.Enable(opt.Levels...)
 
-	return &Logs{logs: l}
+	if l.IsEnable(opt.StdLevel) {
+		log.SetOutput(&loggerWriter{l: l.Logger(opt.StdLevel)})
+	}
+
+	return &Logs{logs: l}, nil
 }
 
 func (l *Logs) INFO() Logger { return l.logs.INFO() }

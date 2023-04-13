@@ -9,11 +9,15 @@ package logs
 
 import (
 	"io"
+	"strconv"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
+
+	"github.com/issue9/web/internal/errs"
 )
 
 // 日志的时间格式
@@ -44,13 +48,32 @@ type (
 
 	// Options 初始化日志的选项
 	Options struct {
-		Writer          Writer
-		Caller, Created bool
-
-		// 允许的日志通道
-		Levels []Level
+		Writer   Writer
+		Caller   bool    // 是否带调用堆栈信息
+		Created  bool    // 是否带时间
+		Levels   []Level // 允许的日志通道
+		StdLevel Level   // 标准库的错误日志重定义至哪个通道
 	}
 )
+
+func optionsSanitize(o *Options) (*Options, error) {
+	if o == nil {
+		o = &Options{}
+	}
+
+	for index, lv := range o.Levels {
+		if !logs.IsValidLevel(lv) {
+			field := "Levels[" + strconv.Itoa(index) + "]"
+			return nil, errs.NewFieldError(field, localeutil.Phrase("invalid value"))
+		}
+	}
+
+	if o.StdLevel != 0 && !logs.IsValidLevel(o.StdLevel) {
+		return nil, errs.NewFieldError("StdLevel", localeutil.Phrase("invalid value"))
+	}
+
+	return o, nil
+}
 
 func AllLevels() []Level { return allLevels }
 

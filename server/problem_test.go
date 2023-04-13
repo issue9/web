@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/filter"
@@ -35,18 +34,6 @@ func min(v int) filter.ValidatorFuncOf[int] {
 
 func max(v int) filter.ValidatorFuncOf[int] {
 	return func(a int) bool { return a < v }
-}
-
-func in(element ...int) filter.ValidatorFuncOf[int] {
-	return func(v int) bool {
-		return sliceutil.Exists(element, func(elem int) bool { return elem == v })
-	}
-}
-
-func notIn(element ...int) filter.ValidatorFuncOf[int] {
-	return func(v int) bool {
-		return !sliceutil.Exists(element, func(elem int) bool { return elem == v })
-	}
 }
 
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。

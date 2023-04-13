@@ -45,7 +45,9 @@ func TestLogsConfig_output(t *testing.T) {
 	}
 	o, c, err := conf.build()
 	a.NotError(err).NotNil(o).Length(c, 1) // 文件有 cleanup 返回
-	logs.New(o, nil).ERROR().Print("test")
+	l, err1 := logs.New(o, nil)
+	a.NotError(err1).NotNil(l)
+	l.ERROR().Print("test")
 	a.NotError(c[0]())
 }
 
