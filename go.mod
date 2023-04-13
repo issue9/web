@@ -6,7 +6,7 @@ require (
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/localeutil v0.14.1
+	github.com/issue9/localeutil v0.14.3
 	github.com/issue9/logs/v4 v4.5.1
 	github.com/issue9/mux/v7 v7.1.0
 	github.com/issue9/query/v3 v3.1.2

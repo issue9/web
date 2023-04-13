@@ -52,7 +52,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:67") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:54") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Equal(w.Code, 500)
 	})
@@ -64,7 +64,7 @@ func TestContext_Log(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error("41110", logs.Error, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:79") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:66") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
