@@ -21,7 +21,7 @@ var (
 	_ localeutil.LocaleStringer = &errs.FieldError{}
 )
 
-func TestNewConfigError(t *testing.T) {
+func TestNewFieldError(t *testing.T) {
 	a := assert.New(t, false)
 
 	err1 := errs.NewFieldError("f1", "err1")
@@ -33,14 +33,14 @@ func TestNewConfigError(t *testing.T) {
 		Equal(err1.Field, "f2.f1")
 }
 
-func TestConfigError_LocaleString(t *testing.T) {
+func TestFieldError_LocaleString(t *testing.T) {
 	a := assert.New(t, false)
 	hans := language.MustParse("cmn-hans")
 	hant := language.MustParse("cmn-hant")
 	s, err := server.New("test", "1.0.0", &server.Options{Locale: &server.Locale{Language: language.MustParse("cmn-hans")}, Location: time.UTC})
 	a.NotError(err).NotNil(s)
-	f := s.Files()
-	f.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	f := s.Config()
+	f.Serializer().Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 
 	a.NotError(s.LoadLocales(locales.Locales, "*.yml"))
 
@@ -57,7 +57,7 @@ func TestConfigError_LocaleString(t *testing.T) {
 	a.Equal("k1 at path:", ferr.Error())
 }
 
-func TestConfigError_SetFieldParent(t *testing.T) {
+func TestFieldError_SetFieldParent(t *testing.T) {
 	a := assert.New(t, false)
 
 	err := errs.NewFieldError("f1", "error")

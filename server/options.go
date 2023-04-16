@@ -4,14 +4,12 @@ package server
 
 import (
 	"compress/lzw"
-	"io/fs"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/andybalholm/brotli"
+	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/unique/v2"
@@ -31,15 +29,18 @@ import (
 
 const RequestIDKey = "X-Request-ID"
 
+const DefaultConfigDir = "@/.config"
+
 type (
 	// Options [Server] 的初始化参数
 	//
 	// 这些参数都有默认值，且无法在 [Server] 初始化之后进行更改。
 	Options struct {
-		// 项目默认可存取的文件系统
+		// 项目的配置项
 		//
-		// 默认情况下为可执行文件所在的目录。
-		FS fs.FS
+		// 如果涉及到需要读取配置文件的，可以指定此对象，之后可通过此对象统一处理各类配置文件。
+		// 如果为空，则会采用 config.AppDir(DefaultConfigDir) 进行初始化。
+		Config *config.Config
 
 		// 服务器的时区
 		//
@@ -98,6 +99,11 @@ type (
 		// 针对错误代码的配置
 		Problems *Problems
 		problems *problems.Problems[Problem]
+	}
+
+	Config struct {
+		Type string
+		Dir  string
 	}
 
 	Problems struct {
@@ -174,12 +180,12 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 		o = &Options{}
 	}
 
-	if o.FS == nil {
-		dir, err := os.Executable()
+	if o.Config == nil {
+		cfg, err := config.AppDir(nil, DefaultConfigDir)
 		if err != nil {
-			return nil, errs.NewFieldError("FS", err)
+			return nil, errs.NewFieldError("Config", err)
 		}
-		o.FS = os.DirFS(filepath.Dir(dir))
+		o.Config = cfg
 	}
 
 	if o.Location == nil {

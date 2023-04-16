@@ -74,10 +74,6 @@ messages:
   message:
     msg: 显示帮助信息
 
-- key: cmd.set_file_system
-  message:
-    msg: 指定允许访问的文件系统
-
 - key: cmd.action
   message:
     msg: 运行的指令

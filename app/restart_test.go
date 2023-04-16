@@ -31,6 +31,7 @@ func TestSignalHUP(t *testing.T) {
 	cmd := &CLIOf[empty]{
 		Name:           "test",
 		Version:        "1.0.0",
+		ConfigDir:      "./testdata",
 		ConfigFilename: "web.yaml",
 		ServeActions:   []string{"serve"},
 		Init: func(s *server.Server, user *empty, act string) error {
@@ -40,7 +41,7 @@ func TestSignalHUP(t *testing.T) {
 	SignalHUP(cmd)
 
 	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-f=./testdata", "-a=serve"}), http.ErrServerClosed)
+		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成

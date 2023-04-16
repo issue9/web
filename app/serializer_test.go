@@ -4,7 +4,6 @@ package app
 
 import (
 	"io/fs"
-	"os"
 	"testing"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 
 func TestLoadConfigOf(t *testing.T) {
 	a := assert.New(t, false)
-	fsys := os.DirFS("./testdata")
+	configDir := "./testdata"
 
 	valid := func(conf *configOf[empty]) {
 		a.Equal(conf.HTTP.Port, ":8082").
@@ -24,29 +23,29 @@ func TestLoadConfigOf(t *testing.T) {
 			Length(conf.Mimetypes, 3)
 	}
 
-	xmlConf, err := loadConfigOf[empty](fsys, "web.xml")
+	xmlConf, err := loadConfigOf[empty](configDir, "web.xml")
 	a.NotError(err).NotNil(xmlConf)
 	valid(xmlConf)
 
-	yamlConf, err := loadConfigOf[empty](fsys, "web.yaml")
+	yamlConf, err := loadConfigOf[empty](configDir, "web.yaml")
 	a.NotError(err).NotNil(yamlConf)
 	valid(yamlConf)
 
-	jsonConf, err := loadConfigOf[empty](fsys, "web.json")
+	jsonConf, err := loadConfigOf[empty](configDir, "web.json")
 	a.NotError(err).NotNil(jsonConf)
 	valid(jsonConf)
 
-	conf, err := loadConfigOf[empty](fsys, "invalid-web.xml")
+	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
 	err2, ok := err.(*errs.FieldError)
 	a.True(ok).NotNil(err2)
 	a.Equal(err2.Path, "invalid-web.xml").
 		Equal(err2.Field, "http.acme.domains")
 
-	conf, err = loadConfigOf[empty](os.DirFS("./testdata/not-exists"), "web.yaml")
+	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(conf)
 
-	customConf, err := loadConfigOf[userData](fsys, "user.xml")
+	customConf, err := loadConfigOf[userData](configDir, "user.xml")
 	a.NotError(err).NotNil(customConf)
 	a.Equal(customConf.User.ID, 1)
 }

@@ -3,15 +3,14 @@
 package app
 
 import (
-	"io/fs"
 	"net/http"
 	"time"
 
 	"golang.org/x/text/language"
 
+	"github.com/issue9/config"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/internal/files"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
@@ -58,17 +57,18 @@ type configOf[T any] struct {
 	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings>encoding,omitempty"`
 	encodings []*server.Encoding
 
-	// 默认的文件序列化列表
+	// 指定配置文件的序列化
 	//
-	// 如果为空，表示默认不支持，后续可通过 [server.Server.Files] 进行添加。
+	// 如果为空，表示默认不支持，后续可通过 [server.Server.Config] 进行添加。
 	//
 	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
 	//  - .yaml
 	//  - .yml
 	//  - .xml
 	//  - .json
-	Files []string `yaml:"files,omitempty" json:"files,omitempty" xml:"files>file,omitempty"`
-	files map[string]files.Serializer
+	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty"`
+	fileSerializers map[string]serializer
+	config          *config.Config
 
 	// 指定可用的 mimetype
 	//
@@ -102,26 +102,31 @@ type ConfigSanitizer interface {
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
 //
-// fsys 项目依赖的文件系统，被用于 [server.Options.FS]，同时也是配置文件所在的目录；
+// c 项目依赖的文件系统，被用于 [server.Options.Config]，同时也是配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 fsys 文件系统。
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
 // 如果此值为空，将以 &server.Options{FS: fsys} 初始化 [server.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [ConfigSanitizer] 接口，则在加载后进行自检；
-func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, configDir, filename string) (*server.Server, *T, error) {
 	if filename == "" {
-		s, err := server.New(name, version, &server.Options{FS: fsys})
+		c, err := config.AppDir(nil, configDir)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		s, err := server.New(name, version, &server.Options{Config: c})
 		return s, nil, err
 	}
 
-	conf, err := loadConfigOf[T](fsys, filename)
+	conf, err := loadConfigOf[T](configDir, filename)
 	if err != nil {
 		return nil, nil, errs.NewStackError(err)
 	}
 
 	opt := &server.Options{
-		FS:         fsys,
+		Config:     conf.config,
 		Location:   conf.location,
 		Cache:      conf.cache,
 		HTTPServer: conf.http,
@@ -151,10 +156,6 @@ func NewServerOf[T any](name, version string, fsys fs.FS, filename string) (*ser
 				return next(ctx)
 			}
 		}))
-	}
-
-	for name, s := range conf.files {
-		srv.Files().Add(s.Marshal, s.Unmarshal, name)
 	}
 
 	srv.OnClose(conf.cleanup...)
@@ -202,8 +203,8 @@ func (conf *configOf[T]) sanitize() *errs.FieldError {
 		return err.AddFieldParent("mimetypes")
 	}
 
-	if err = conf.sanitizeFiles(); err != nil {
-		return err.AddFieldParent("files")
+	if err = conf.sanitizeFileSerializers(); err != nil {
+		return err.AddFieldParent("fileSerializer")
 	}
 
 	if conf.UniqueGenerator == "" {

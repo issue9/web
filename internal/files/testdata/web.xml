@@ -1,5 +1,0 @@
-<!-- cmfx.xml 的测试文件，需要与其它内容数值相同 -->
-
-<web port=":8082">
-    <timezone>Africa/Addis_Ababa</timezone>
-</web>

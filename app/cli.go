@@ -12,13 +12,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
@@ -29,7 +30,6 @@ import (
 //
 //	-v 显示版本号；
 //	-h 显示帮助信息；
-//	-f 指定当前程序可读取的文件系统，这最终会转换成 [server.Server.FS]；
 //	-a 执行的指令，该值会传递给 [CLIOf.Init]，由用户根据此值决定初始化方式；
 //
 // T 表示的是配置文件中的用户自定义数据类型。
@@ -54,9 +54,24 @@ type CLIOf[T any] struct {
 	// 默认为 [os.Stdout]。
 	Out io.Writer
 
+	// 配置文件所在的目录
+	//
+	// 这也将影响后续 [server.Options.Config] 变量，如果为空，则会采用 [server.DefaultConfigDir]。
+	//
+	// 有以下几种前缀用于指定不同的保存目录：
+	//  - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Window 的 AppData 等；
+	//  - @ 表示当前程序的主目录；
+	//  - ^ 表示绝对路径；
+	//  - # 表示工作路径；
+	//  - 其它则是直接采用 [config.Dir] 初始化。
+	// 如果为空则采用 [server.DefaultConfigDir] 中指定的值。
+	//
+	// NOTE: 具体说明可参考 [config.BuildDir] 的 dir 参数。
+	ConfigDir string
+
 	// 配置文件的文件名
 	//
-	// 仅是文件名，相对的路径由命令行 -f 指定。如果为空，表示不采用配置文件，
+	// 相对于 ConfigDir 的文件名。如果为空，表示不采用配置文件，
 	// 由一个空的 [server.Options] 初始化对象，具体可以查看 [NewServerOf] 的实现。
 	//
 	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
@@ -74,7 +89,6 @@ type CLIOf[T any] struct {
 
 	app    *App
 	action string
-	fsys   fs.FS
 }
 
 // Exec 根据配置运行服务
@@ -113,6 +127,10 @@ func (cmd *CLIOf[T]) sanitize() error {
 		return errors.New("字段 Init 不能为空")
 	}
 
+	if cmd.ConfigDir == "" {
+		cmd.ConfigDir = server.DefaultConfigDir
+	}
+
 	if cmd.Printer == nil {
 		cmd.Printer = NewPrinter(locales.Locales, "*.yml")
 	}
@@ -124,7 +142,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	cmd.app = &App{
 		ShutdownTimeout: cmd.ShutdownTimeout,
 		Before: func() error {
-			return CheckConfigSyntax[T](cmd.fsys, cmd.ConfigFilename)
+			return CheckConfigSyntax[T](cmd.ConfigDir, cmd.ConfigFilename)
 		},
 		NewServer: cmd.initServer,
 	}
@@ -142,7 +160,6 @@ func (cmd *CLIOf[T]) sanitize() error {
 // do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
 func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer) error) {
 	v := fs.Bool("v", false, cmd.Printer.Sprintf("cmd.show_version"))
-	f := fs.String("f", "./", cmd.Printer.Sprintf("cmd.set_file_system"))
 	fs.StringVar(&cmd.action, "a", "", cmd.Printer.Sprintf("cmd.action"))
 
 	var h bool
@@ -151,8 +168,6 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 	}
 
 	return func(w io.Writer) error {
-		cmd.fsys = os.DirFS(*f)
-
 		if *v {
 			_, err := fmt.Fprintln(w, cmd.Name, cmd.Version)
 			return err
@@ -178,7 +193,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 func (cmd *CLIOf[T]) Restart() { cmd.app.Restart() }
 
 func (cmd *CLIOf[T]) initServer() (*server.Server, error) {
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.fsys, cmd.ConfigFilename)
+	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ConfigDir, cmd.ConfigFilename)
 	if err != nil {
 		return nil, errs.NewStackError(err)
 	}
@@ -191,8 +206,8 @@ func (cmd *CLIOf[T]) initServer() (*server.Server, error) {
 }
 
 // CheckConfigSyntax 检测配置项语法是否正确
-func CheckConfigSyntax[T any](fsys fs.FS, filename string) error {
-	_, err := loadConfigOf[T](fsys, filename)
+func CheckConfigSyntax[T any](configDir, filename string) error {
+	_, err := loadConfigOf[T](configDir, filename)
 	return err
 }
 
@@ -206,7 +221,12 @@ func NewPrinter(fsys fs.FS, glob string) *localeutil.Printer {
 		log.Println(err) // 输出错误，但是不中断执行
 	}
 
+	s := make(config.Serializer, len(filesFactory))
+	for k, v := range filesFactory {
+		s.Add(v.Marshal, v.Unmarshal, k)
+	}
+
 	b := catalog.NewBuilder(catalog.Fallback(tag))
-	files.LoadLocales(buildFiles(fsys), b, nil, glob)
+	locale.Load(s, b, fsys, glob)
 	return message.NewPrinter(tag, message.Catalog(b))
 }

@@ -4,7 +4,6 @@ package app
 
 import (
 	"io/fs"
-	"os"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -31,10 +30,10 @@ func TestNewServerOf(t *testing.T) {
 	const name = "app"
 	const ver = "1.0"
 
-	s, data, err := NewServerOf[empty](name, ver, os.DirFS("./testdata"), "web.yaml")
+	s, data, err := NewServerOf[empty](name, ver, "./testdata", "web.yaml")
 	a.NotError(err).NotNil(s).Nil(data)
 
-	s, data, err = NewServerOf[empty](name, ver, os.DirFS("./testdata/not-exists"), "web.yaml")
+	s, data, err = NewServerOf[empty](name, ver, "./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
 }
 

@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/files"
+	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
@@ -29,7 +30,6 @@ import (
 type Server struct {
 	name            string
 	version         string
-	fs              fs.FS
 	httpServer      *http.Server
 	vars            *sync.Map
 	cache           cache.Driver
@@ -52,10 +52,8 @@ type Server struct {
 	problems  *problems.Problems[Problem]
 	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
 	encodings *encoding.Encodings
-	files     *Files
+	config    *config.Config
 }
-
-type Files = files.Files
 
 // New 新建 web 服务
 //
@@ -71,7 +69,6 @@ func New(name, version string, o *Options) (*Server, error) {
 	srv := &Server{
 		name:            name,
 		version:         version,
-		fs:              o.FS,
 		httpServer:      o.HTTPServer,
 		vars:            &sync.Map{},
 		cache:           o.Cache,
@@ -92,12 +89,12 @@ func New(name, version string, o *Options) (*Server, error) {
 		problems:  o.problems,
 		mimetypes: o.mimetypes,
 		encodings: encoding.NewEncodings(o.logs.ERROR()),
+		config:    o.Config,
 	}
 
 	for _, e := range o.Encodings {
 		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
 	}
-	srv.files = files.New(srv)
 	srv.routers = group.NewOf(srv.call,
 		notFound,
 		buildNodeHandle(http.StatusMethodNotAllowed),
@@ -124,7 +121,7 @@ func (srv *Server) Version() string { return srv.version }
 //   - [Stopped] 默认状态，或由 [Server.Close] 正常结束；
 func (srv *Server) State() State { return srv.state }
 
-func (srv *Server) Open(name string) (fs.File, error) { return srv.fs.Open(name) }
+func (srv *Server) Open(name string) (fs.File, error) { return srv.Config().Open(name) }
 
 // Vars 操纵共享变量的接口
 func (srv *Server) Vars() *sync.Map { return srv.vars }
@@ -233,8 +230,8 @@ func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, 
 
 // LoadLocales 加载本地化的内容
 func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
-	return files.LoadLocales(srv.Files(), srv.CatalogBuilder(), fsys, glob)
+	return locale.Load(srv.Config().Serializer(), srv.CatalogBuilder(), fsys, glob)
 }
 
-// Files 配置文件的相关操作
-func (srv *Server) Files() *Files { return srv.files }
+// Config 配置文件的相关操作
+func (srv *Server) Config() *config.Config { return srv.config }
