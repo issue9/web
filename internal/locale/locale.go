@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/web/internal/errs"
 )
 
+// Load 通过 s 加载 fsys 中的语言文件附加在 b 之上
 func Load(s config.Serializer, b *catalog.Builder, fsys fs.FS, glob string) error {
 	matches, err := fs.Glob(fsys, glob)
 	if err != nil {
