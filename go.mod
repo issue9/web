@@ -15,7 +15,7 @@ require (
 	github.com/issue9/sliceutil v0.12.0
 	github.com/issue9/term/v3 v3.1.2
 	github.com/issue9/unique/v2 v2.0.0
-	github.com/klauspost/compress v1.16.4
+	github.com/klauspost/compress v1.16.5
 	github.com/redis/go-redis/v9 v9.0.3
 	golang.org/x/crypto v0.8.0
 	golang.org/x/text v0.9.0
