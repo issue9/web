@@ -8,7 +8,6 @@ import (
 	"github.com/issue9/query/v3"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
@@ -16,7 +15,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.75.0"
+const Version = "0.76.0"
 
 // 预定义的 Problem ID 值
 const (
@@ -120,8 +119,4 @@ func NewFieldError(field string, msg any) *FieldError {
 // NewLocaleError 本地化的错误信息
 func NewLocaleError(format string, v ...any) error {
 	return errs.NewLocaleError(format, v...)
-}
-
-func NewFilter[T any](rule filter.RulerFuncOf[T], sanitize ...func(*T)) filter.BuildFilterFuncOf[T] {
-	return filter.New(rule, sanitize...)
 }
