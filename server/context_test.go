@@ -264,7 +264,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	r := rest.Post(a, "/path", []byte("123")).
 		Header("accept", "application/json").
 		Request()
-	ctx := srv.newContext(w, r, nil)
+	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
 	a.PanicString(func() {

@@ -18,8 +18,8 @@ import (
 type Responser interface {
 	// Apply 通过 [Context] 将当前内容渲染到客户端
 	//
-	// 在调用 Apply 之后，就不再使用 Responser 对象。
-	// 如果你的对象支持 sync.Pool 复用，可以在 Apply 退出之际回收。
+	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
+	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
 	Apply(*Context)
 }
 
@@ -53,9 +53,8 @@ func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 // Render 向客户端输出对象
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
+// body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码；
 // problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
-// body 表示输出的对象，该对象最终调用 ctx.outputMimetype 编码。
-// 如果 body 实现了 [ETager] 接口，则会尝试用 304 状态码的输出；
 func (ctx *Context) Render(status int, body any, problem bool) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
 	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
@@ -92,8 +91,7 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 
 // Marshal 将对象 v 按用户要求编码并返回
 func (ctx *Context) Marshal(v any) ([]byte, error) {
-	// 诸如上传等操作，ctx.outputMimetype.Marshal 是可以为 nil 的。
-	if ctx.outputMimetype.Marshal == nil {
+	if ctx.outputMimetype.Marshal == nil { // 该值是可以为 nil 的，比如上传等操作。
 		return nil, errs.NewLocaleError("not found serialization for %s", ctx.Mimetype(false))
 	}
 	return ctx.outputMimetype.Marshal(ctx, v)

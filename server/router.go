@@ -95,7 +95,7 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	}
 
 	return func(ctx *Context) Responser {
-		p, _ := ctx.route.Params().Get(name) // 空值也是允许的值
+		p, _ := ctx.Route().Params().Get(name) // 空值也是允许的值
 
 		err := mux.ServeFile(fsys, p, index, ctx, ctx.Request())
 		switch {
