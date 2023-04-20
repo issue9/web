@@ -27,7 +27,7 @@ var (
 )
 
 type (
-	// Problem API 错误信息对象需要实现的接口
+	// Problem 表示 API 的错误信息需要实现的接口
 	//
 	// Problem 是对 [Responser] 细化，用于反馈给用户非正常状态下的数据，
 	// 比如用户提交的数据错误，往往会返回 400 的状态码，
@@ -132,13 +132,14 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 // Logs 返回日志对象
 //
 // 所有日志接口都会根据 [Server.LocalePrinter] 进行本地化，规则如下：
-//   - Logger.Error 如果参数实现了 localeutil.LocaleStringer 接口，会尝试本地化；
+//   - Logger.Error 如果参数实现了 [localeutil.LocaleStringer] 接口，会尝试本地化；
 //   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
 //   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化，且每个参数也将进行本地化；
 //   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
 //   - Logger.Println 对每个参数分别进行本地化，然后调用 [fmt.Sprintln] 输出；
 func (srv *Server) Logs() *logs.Logs { return srv.logs }
 
+// NewFilterProblem 声明用于处理过滤器的错误对象
 func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {
 	v := filterProblemPool.Get().(*FilterProblem)
 	v.exitAtError = exitAtError
@@ -179,6 +180,7 @@ func (v *FilterProblem) add(name string, reason localeutil.LocaleStringer) *Filt
 	return v
 }
 
+// AddFilter 添加由过滤器 f 返回的错误信息
 func (v *FilterProblem) AddFilter(f filter.FilterFunc) *FilterProblem {
 	if !v.continueNext() {
 		return v

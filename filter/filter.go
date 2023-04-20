@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package filter 过滤器
-//
-// 提供了对数据的修正和验证功能。
+// Package filter 提供了对数据的修正和验证功能
 package filter
 
 import "github.com/issue9/localeutil"

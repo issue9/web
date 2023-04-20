@@ -70,7 +70,7 @@ func (pool *RFC7807Pool[C]) New(id string, status int, title, detail string) *RF
 
 	p.keys = p.keys[:4]
 	p.vals = p.vals[:4]
-	// keys 前三个元素为固定值
+	// keys 前四个元素为固定值
 	p.vals[0] = id
 	p.vals[1] = title
 	p.vals[2] = status
