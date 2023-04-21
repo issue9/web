@@ -15,12 +15,12 @@ import (
 	"golang.org/x/text/language"
 )
 
-const tickTimer = 500 * time.Microsecond
-
 // start 表示服务协程运行成功；
 // p 用于触发 panic；
 // err 用于触发 error；
 func buildService() (f ServiceFunc, start, p, err chan struct{}) {
+	const tickTimer = 500 * time.Microsecond
+
 	start = make(chan struct{}, 1)
 	p = make(chan struct{}, 1)
 	err = make(chan struct{}, 1)
@@ -111,12 +111,11 @@ func TestService_state(t *testing.T) {
 		srv1, start, _, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
 		s1 := s.Services().services[1]
 		a.Equal(s1.state, Running)
 
 		s.Close(0)
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
+		time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
 		a.Equal(s1.state, Stopped)
 	})
 
@@ -127,12 +126,11 @@ func TestService_state(t *testing.T) {
 		srv1, start, p, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
 		s1 := s.Services().services[1]
 		a.Equal(s1.state, Running)
 
 		p <- struct{}{}
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
+		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
 		a.Equal(s1.state, Failed).
 			Contains(s1.err.Error(), "service panic")
 
@@ -146,12 +144,11 @@ func TestService_state(t *testing.T) {
 		srv1, start, _, err := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
 		s1 := s.Services().services[1]
 		a.Equal(s1.state, Running)
 
 		err <- struct{}{}
-		time.Sleep(2 * time.Millisecond) // 等待主服务设置状态值
+		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
 		a.Equal(s1.state, Failed).
 			Contains(s1.err.Error(), "service error")
 

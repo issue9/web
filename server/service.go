@@ -78,7 +78,7 @@ func (srv *service) setState(s State) {
 	srv.stateMux.Unlock()
 }
 
-func (srv *service) run() {
+func (srv *service) goServe() {
 	if srv.state != Running {
 		srv.setState(Running)
 		go srv.serve()
@@ -116,7 +116,7 @@ func (srv *Services) Add(title localeutil.LocaleStringer, f Service) {
 		service: f,
 	}
 	srv.services = append(srv.services, s)
-	s.run()
+	s.goServe()
 }
 
 func (srv *Services) AddFunc(title localeutil.LocaleStringer, f func(context.Context) error) {
