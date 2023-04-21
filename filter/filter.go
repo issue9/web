@@ -1,19 +1,30 @@
 // SPDX-License-Identifier: MIT
 
-// Package filter 提供了对数据的修正和验证功能
+// Package filter 过滤器
+//
+// 包中的各个功能之间的关系如下：
+//
+//	                              |---[SanitizeFuncOf]
+//	                              |
+//	[FilterFunc]---[FilterFuncOf]-|---[RuleFuncOf]-|---[localeutil.LocaleStringer]
+//	                                               |
+//	                                               |---[ValidatorFuncOf]
+//
+// 调用者可以提前声明 [FilterFuncOf] 实例，在需要时调用 [FilterFuncOf] 实例，
+// 生成一个类型无法的方法 [FilterFunc]，传递给 [server.FilterProblem]。
+// 这样可以绕过 Go 不支持泛型方法的尴尬。
 package filter
 
 import "github.com/issue9/localeutil"
 
 // FilterFunc 过滤器
 //
+// 当前方法由 [FilterFuncOf] 生成，验证的数据也有其提供，
+// 但是只有在调用当前方法时才真正对数据进行验证。
 // 如果符合要求返回 "", nil，否则返回字段名和错误信息。
 type FilterFunc func() (string, localeutil.LocaleStringer)
 
 // FilterFuncOf 生成某类型的过滤器
-//
-// 提前提供需要验证的字段名和值，生成过滤器方法。这样可以绕过 Go 不支持泛型方法的尴尬，
-// 将一个泛型的验证函数转抑制成能用的函数。
 //
 // name 字段名，对于切片等类型会返回带下标的字段名；
 // v 必须是指针类型，否则 [SanitizeFuncOf] 无法对其内容进行修改；
