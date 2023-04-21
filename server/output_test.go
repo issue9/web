@@ -210,6 +210,25 @@ func TestContext_Render(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/p12").Header("Accept", "application/test").
 		Do(nil).Status(http.StatusNotAcceptable)
 	a.NotZero(buf.Len())
+
+	// 103
+	buf.Reset()
+	r.Get("/p13", func(ctx *Context) Responser {
+		ctx.WriteHeader(http.StatusEarlyHints)
+		_, err := ctx.Write([]byte(`123`))
+		if err != nil {
+			return ctx.InternalServerError(err)
+		}
+		return nil
+	})
+	servertest.Get(a, "http://localhost:8080/p13").
+		Header("Accept", "application/json").
+		Do(nil).
+		Status(http.StatusOK).
+		BodyFunc(func(a *assert.Assertion, body []byte) {
+			a.Equal(body, []byte(`123`))
+		})
+	a.Zero(buf.Len())
 }
 
 func TestContext_SetWriter(t *testing.T) {

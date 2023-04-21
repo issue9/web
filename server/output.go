@@ -109,6 +109,10 @@ func (ctx *Context) Sprintf(key localeutil.Key, v ...any) string {
 //
 // 如非必要，应该返回 [Responser] 进行输出。
 func (ctx *Context) Write(bs []byte) (int, error) {
+	if len(bs) == 0 {
+		return 0, nil
+	}
+
 	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
 		ctx.wrote = true
 
@@ -123,7 +127,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		}
 	}
 
-	if ctx.status == 0 {
+	if ctx.status < 199 {
 		ctx.WriteHeader(http.StatusOK)
 	}
 	return ctx.writer.Write(bs)
@@ -133,7 +137,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 //
 // 如非必要，应该返回 [Responser] 进行输出。
 func (ctx *Context) WriteHeader(status int) {
-	if ctx.status != 0 && ctx.status != status {
+	if ctx.status > 199 && ctx.status != status {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 
