@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/config"
 	"golang.org/x/text/language"
-
-	"github.com/issue9/web/internal/errs"
 )
+
+var _ config.Sanitizer = &configOf[empty]{}
 
 type empty struct{}
 
@@ -18,9 +19,9 @@ type userData struct {
 	ID int `json:"id" yaml:"id" xml:"id,attr"`
 }
 
-func (u *userData) SanitizeConfig() *errs.FieldError {
+func (u *userData) SanitizeConfig() *config.FieldError {
 	if u.ID < 0 {
-		return errs.NewFieldError("ID", "必须大于 0")
+		return config.NewFieldError("ID", "必须大于 0")
 	}
 	return nil
 }
@@ -41,13 +42,13 @@ func TestConfig_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{}
-	a.NotError(conf.sanitize()).
+	a.NotError(conf.SanitizeConfig()).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
 	conf = &configOf[empty]{Language: "zh-hans"}
-	a.NotError(conf.sanitize()).
+	a.NotError(conf.SanitizeConfig()).
 		NotEqual(conf.languageTag, language.Und)
 }
 

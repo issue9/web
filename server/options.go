@@ -21,7 +21,6 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/encoding"
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
@@ -29,7 +28,7 @@ import (
 
 const RequestIDKey = "X-Request-ID"
 
-const DefaultConfigDir = "@/.config"
+const DefaultConfigDir = "@.config"
 
 type (
 	// Options [Server] 的初始化参数
@@ -175,15 +174,15 @@ type (
 	}
 )
 
-func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
+func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	if o == nil {
 		o = &Options{}
 	}
 
 	if o.Config == nil {
-		cfg, err := config.AppDir(nil, DefaultConfigDir)
+		cfg, err := config.BuildDir(nil, DefaultConfigDir)
 		if err != nil {
-			return nil, errs.NewFieldError("Config", err)
+			return nil, config.NewFieldError("Config", err)
 		}
 		o.Config = cfg
 	}
@@ -213,12 +212,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 
 	l, err := logs.New(o.Logs, o.Locale.printer) // 依赖 o.Locale
 	if err != nil {
-		if fe, ok := err.(*errs.FieldError); ok {
-			fe.AddFieldParent("Logs")
-			return nil, fe
-		} else {
-			return nil, errs.NewFieldError("Logs", err)
-		}
+		return nil, config.NewFieldError("Logs", err)
 	}
 	o.logs = l
 
@@ -235,7 +229,7 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	// mimetype
 	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *Mimetype) bool { return e1.Type == e2.Type })
 	if len(indexes) > 0 {
-		return nil, errs.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", "duplicate value")
+		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", "duplicate value")
 	}
 	o.mimetypes = mimetypes.New[MarshalFunc, UnmarshalFunc](len(o.Mimetypes))
 	for _, mt := range o.Mimetypes {
@@ -247,13 +241,13 @@ func sanitizeOptions(o *Options) (*Options, *errs.FieldError) {
 	return o, nil
 }
 
-func (e *Encoding) sanitize() *errs.FieldError {
+func (e *Encoding) sanitize() *config.FieldError {
 	if e.Name == "" || e.Name == "identity" || e.Name == "*" {
-		return errs.NewFieldError("Name", "invalid value")
+		return config.NewFieldError("Name", "invalid value")
 	}
 
 	if e.Builder == nil {
-		return errs.NewFieldError("Builder", "can not be empty")
+		return config.NewFieldError("Builder", "can not be empty")
 	}
 
 	if len(e.ContentTypes) == 0 {
@@ -274,11 +268,11 @@ func (ps *Problems) sanitize() *problems.Problems[Problem] {
 	return problems.New(ps.IDPrefix, ps.Builder)
 }
 
-func (l *Locale) sanitize() *errs.FieldError {
+func (l *Locale) sanitize() *config.FieldError {
 	if l.Language == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
-			return errs.NewFieldError("Language", err)
+			return config.NewFieldError("Language", err)
 		}
 		l.Language = tag
 	}

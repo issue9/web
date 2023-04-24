@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/issue9/config"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/config"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
@@ -95,11 +95,6 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 }
 
-// ConfigSanitizer 对配置文件的数据验证和修正
-type ConfigSanitizer interface {
-	SanitizeConfig() *errs.FieldError
-}
-
 // NewServerOf 从配置文件初始化 [server.Server] 对象
 //
 // c 项目依赖的文件系统，被用于 [server.Options.Config]，同时也是配置文件所在的目录；
@@ -163,7 +158,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 	return srv, conf.User, nil
 }
 
-func (conf *configOf[T]) sanitize() *errs.FieldError {
+func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 	l, cleanup, err := conf.Logs.build()
 	if err != nil {
 		return err.AddFieldParent("logs")
@@ -178,7 +173,7 @@ func (conf *configOf[T]) sanitize() *errs.FieldError {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return errs.NewFieldError("language.", err)
+			return config.NewFieldError("language.", err)
 		}
 		conf.languageTag = tag
 	}
@@ -219,7 +214,7 @@ func (conf *configOf[T]) sanitize() *errs.FieldError {
 	}
 
 	if conf.User != nil {
-		if s, ok := (any)(conf.User).(ConfigSanitizer); ok {
+		if s, ok := (any)(conf.User).(config.Sanitizer); ok {
 			if err := s.SanitizeConfig(); err != nil {
 				return err.AddFieldParent("user")
 			}
@@ -229,14 +224,14 @@ func (conf *configOf[T]) sanitize() *errs.FieldError {
 	return nil
 }
 
-func (conf *configOf[T]) buildTimezone() *errs.FieldError {
+func (conf *configOf[T]) buildTimezone() *config.FieldError {
 	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return errs.NewFieldError("timezone", err)
+		return config.NewFieldError("timezone", err)
 	}
 	conf.location = loc
 

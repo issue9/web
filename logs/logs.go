@@ -11,13 +11,12 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v4"
 	"github.com/issue9/logs/v4/writers"
 	"github.com/issue9/logs/v4/writers/rotate"
 	"github.com/issue9/term/v3/colors"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 // 日志的时间格式
@@ -64,12 +63,12 @@ func optionsSanitize(o *Options) (*Options, error) {
 	for index, lv := range o.Levels {
 		if !logs.IsValidLevel(lv) {
 			field := "Levels[" + strconv.Itoa(index) + "]"
-			return nil, errs.NewFieldError(field, localeutil.Phrase("invalid value"))
+			return nil, config.NewFieldError(field, localeutil.Phrase("invalid value"))
 		}
 	}
 
 	if o.StdLevel != 0 && !logs.IsValidLevel(o.StdLevel) {
-		return nil, errs.NewFieldError("StdLevel", localeutil.Phrase("invalid value"))
+		return nil, config.NewFieldError("StdLevel", localeutil.Phrase("invalid value"))
 	}
 
 	return o, nil

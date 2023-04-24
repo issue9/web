@@ -24,12 +24,12 @@ type serializer struct {
 	Unmarshal UnmarshalFileFunc
 }
 
-func (conf *configOf[T]) sanitizeFileSerializers() *errs.FieldError {
+func (conf *configOf[T]) sanitizeFileSerializers() *config.FieldError {
 	conf.fileSerializers = make(map[string]serializer, len(conf.FileSerializers))
 	for i, name := range conf.FileSerializers {
 		s, found := filesFactory[name]
 		if !found {
-			return errs.NewFieldError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
+			return config.NewFieldError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
 		}
 		conf.fileSerializers[name] = s // conf.FileSerializers 可以保证 conf.fileSerializers 唯一性
 	}
@@ -56,11 +56,6 @@ func loadConfigOf[T any](configDir string, name string) (*configOf[T], error) {
 		return nil, err
 	}
 	conf.config = c
-
-	if err := conf.sanitize(); err != nil {
-		err.Path = name
-		return nil, err
-	}
 
 	return conf, nil
 }

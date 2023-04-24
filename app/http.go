@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/issue9/config"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
 
@@ -110,37 +111,37 @@ func exists(p string) bool {
 	return err == nil || errors.Is(err, fs.ErrExist)
 }
 
-func (cert *certificate) sanitize() *errs.FieldError {
+func (cert *certificate) sanitize() *config.FieldError {
 	if !exists(cert.Cert) {
-		return errs.NewFieldError("cert", errs.NewLocaleError("%s not found", cert.Cert))
+		return config.NewFieldError("cert", errs.NewLocaleError("%s not found", cert.Cert))
 	}
 
 	if !exists(cert.Key) {
-		return errs.NewFieldError("key", errs.NewLocaleError("%s not found", cert.Key))
+		return config.NewFieldError("key", errs.NewLocaleError("%s not found", cert.Key))
 	}
 
 	return nil
 }
 
-func (h *httpConfig) sanitize() *errs.FieldError {
+func (h *httpConfig) sanitize() *config.FieldError {
 	if h.ReadTimeout < 0 {
-		return errs.NewFieldError("readTimeout", errs.NewLocaleError("should great than 0"))
+		return config.NewFieldError("readTimeout", "should great than 0")
 	}
 
 	if h.WriteTimeout < 0 {
-		return errs.NewFieldError("writeTimeout", errs.NewLocaleError("should great than 0"))
+		return config.NewFieldError("writeTimeout", "should great than 0")
 	}
 
 	if h.IdleTimeout < 0 {
-		return errs.NewFieldError("idleTimeout", errs.NewLocaleError("should great than 0"))
+		return config.NewFieldError("idleTimeout", "should great than 0")
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return errs.NewFieldError("readHeaderTimeout", errs.NewLocaleError("should great than 0"))
+		return config.NewFieldError("readHeaderTimeout", "should great than 0")
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return errs.NewFieldError("maxHeaderBytes", errs.NewLocaleError("should great than 0"))
+		return config.NewFieldError("maxHeaderBytes", "should great than 0")
 	}
 
 	if h.RequestID == "" {
@@ -173,9 +174,9 @@ func (h *httpConfig) buildRoutersOptions() {
 	h.routersOptions = opt
 }
 
-func (h *httpConfig) buildTLSConfig() *errs.FieldError {
+func (h *httpConfig) buildTLSConfig() *config.FieldError {
 	if len(h.Certificates) > 0 && h.ACME != nil {
-		return errs.NewFieldError("acme", "不能与 certificates 同时存在")
+		return config.NewFieldError("acme", "不能与 certificates 同时存在")
 	}
 
 	if h.ACME != nil {
@@ -195,7 +196,7 @@ func (h *httpConfig) buildTLSConfig() *errs.FieldError {
 
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return errs.NewFieldError("certificates", err)
+			return config.NewFieldError("certificates", err)
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
@@ -218,13 +219,13 @@ func (l *acme) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *acme) sanitize() *errs.FieldError {
+func (l *acme) sanitize() *config.FieldError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return errs.NewFieldError("cache", errs.NewLocaleError("invalid value"))
+		return config.NewFieldError("cache", "invalid value")
 	}
 
 	if len(l.Domains) == 0 {
-		return errs.NewFieldError("domains", errs.NewLocaleError("can not be empty"))
+		return config.NewFieldError("domains", "can not be empty")
 	}
 
 	return nil

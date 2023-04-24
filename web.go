@@ -4,6 +4,7 @@
 package web
 
 import (
+	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
 
@@ -79,9 +80,11 @@ type (
 	ResponserFunc  = server.ResponserFunc
 	CTXFilter      = server.CTXFilter
 	FilterProblem  = server.FilterProblem
-	FieldError     = errs.FieldError
 	Cache          = cache.Cache
 	Logger         = logs.Logger
+
+	// FieldError 表示配置文件中的字段错误
+	FieldError = config.FieldError
 
 	// QueryUnmarshaler 对查询参数的解析接口
 	QueryUnmarshaler = query.Unmarshaler
@@ -113,7 +116,7 @@ func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
 // msg 表示错误信息，可以是任意类型，如果 msg 是 [FieldError] 类型，
 // 那么此操作相当于调用了 [FieldError.AddFieldParent]；
 func NewFieldError(field string, msg any) *FieldError {
-	return errs.NewFieldError(field, msg)
+	return config.NewFieldError(field, msg)
 }
 
 // NewLocaleError 本地化的错误信息

@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/issue9/config"
+
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/internal/errs"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
@@ -35,7 +36,7 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *errs.FieldError {
+func (conf *configOf[T]) buildCache() *config.FieldError {
 	if conf.Cache == nil {
 		conf.cache = caches.NewMemory(time.Hour)
 		return nil
@@ -43,12 +44,12 @@ func (conf *configOf[T]) buildCache() *errs.FieldError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return errs.NewFieldError("type", errs.NewLocaleError("invalid value"))
+		return config.NewFieldError("type", "invalid value")
 	}
 
 	c, err := b(conf.Cache.DSN)
 	if err != nil {
-		return errs.NewFieldError("dsn", err)
+		return config.NewFieldError("dsn", err)
 	}
 	conf.cache = c
 

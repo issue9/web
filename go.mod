@@ -4,7 +4,7 @@ require (
 	github.com/andybalholm/brotli v1.0.5
 	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746
 	github.com/issue9/assert/v3 v3.0.4
-	github.com/issue9/config v0.2.0
+	github.com/issue9/config v0.3.0
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/localeutil v0.14.3

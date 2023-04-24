@@ -3,6 +3,8 @@
 package app
 
 import (
+	"github.com/issue9/config"
+
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
@@ -20,7 +22,7 @@ type Problem struct {
 	IDPrefix string `json:"idPrefix,omitempty" xml:"idPrefix,omitempty" yaml:"idPrefix,omitempty"`
 }
 
-func (p *Problem) sanitize() (*server.Problems, *errs.FieldError) {
+func (p *Problem) sanitize() (*server.Problems, *config.FieldError) {
 	if p == nil {
 		return nil, nil
 	}
@@ -30,7 +32,7 @@ func (p *Problem) sanitize() (*server.Problems, *errs.FieldError) {
 	if p.Builder != "" {
 		f, found := problemFactory[p.Builder]
 		if !found {
-			return nil, errs.NewFieldError("builder", errs.NewLocaleError("%s not found", p.Builder))
+			return nil, config.NewFieldError("builder", errs.NewLocaleError("%s not found", p.Builder))
 		}
 		ps.Builder = f
 	}

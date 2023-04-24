@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/andybalholm/brotli"
+	"github.com/issue9/config"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/errs"
@@ -49,13 +50,13 @@ type encodingConfig struct {
 	ID string `json:"id" xml:"id,attr" yaml:"id"`
 }
 
-func (conf *configOf[T]) sanitizeEncodings() *errs.FieldError {
+func (conf *configOf[T]) sanitizeEncodings() *config.FieldError {
 	conf.encodings = make([]*server.Encoding, 0, len(conf.Encodings))
 	for index, e := range conf.Encodings {
 		enc, found := encodingFactory[e.ID]
 		if !found {
 			field := "encodings[" + strconv.Itoa(index) + "].id"
-			return errs.NewFieldError(field, errs.NewLocaleError("%s not found", e.ID))
+			return config.NewFieldError(field, errs.NewLocaleError("%s not found", e.ID))
 		}
 
 		conf.encodings = append(conf.encodings, &server.Encoding{

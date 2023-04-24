@@ -4,12 +4,12 @@ package app
 
 import (
 	"io/fs"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v3"
-
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/config"
 )
 
 func TestLoadConfigOf(t *testing.T) {
@@ -37,9 +37,9 @@ func TestLoadConfigOf(t *testing.T) {
 
 	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
-	err2, ok := err.(*errs.FieldError)
+	err2, ok := err.(*config.FieldError)
 	a.True(ok).NotNil(err2)
-	a.Equal(err2.Path, "invalid-web.xml").
+	a.Equal(err2.Path, filepath.Join("testdata", "invalid-web.xml")).
 		Equal(err2.Field, "http.acme.domains")
 
 	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")

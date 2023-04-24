@@ -10,8 +10,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/issue9/assert/v3 v3.0.4 h1:WsYZQ6PQmM/pGFrbkn5GIXjWeVZHv+wcl2829UTX1Qc=
 github.com/issue9/assert/v3 v3.0.4/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
-github.com/issue9/config v0.2.0 h1:BzsR4f25id/m7L34PVDBiJJbJ+/sS+od8GF7V5CWWFk=
-github.com/issue9/config v0.2.0/go.mod h1:+EOsPE3qnS+QJ5S2D0vgdVObr35IQF+kIR1EeKs2kqM=
+github.com/issue9/config v0.3.0 h1:KqCgANEoWAX6yaHd+iF/6NURV/FdDJZqsI7rb3giN2I=
+github.com/issue9/config v0.3.0/go.mod h1:42vFLF+7PDV5s7z+X+Pm6Ska7l4gAMx9H5uhSPT2A+c=
 github.com/issue9/conv v1.3.4 h1:v1j/p1lVNW4u1yrbUxxNCb61iTFnF86s+KAwS65MsBs=
 github.com/issue9/conv v1.3.4/go.mod h1:TXM2DyyJhzZMSwp9cxwFW/OhP5JRVZPMg5XE8OMzwUY=
 github.com/issue9/errwrap v0.3.1 h1:8g4lYJaGnoiXyZ1oZyH/7zPDGgw5RNiE9Q6ri9kE6Z8=

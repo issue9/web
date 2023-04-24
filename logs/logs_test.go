@@ -6,9 +6,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/config"
 	"github.com/issue9/logs/v4"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 func TestOptions_Sanitize(t *testing.T) {
@@ -30,12 +29,12 @@ func TestOptions_Sanitize(t *testing.T) {
 		StdLevel: 0,
 	}
 	o, err = optionsSanitize(o)
-	a.Equal(err.(*errs.FieldError).Field, "Levels[1]").Nil(o)
+	a.Equal(err.(*config.FieldError).Field, "Levels[1]").Nil(o)
 
 	o = &Options{
 		Levels:   []Level{logs.LevelDebug, logs.LevelError},
 		StdLevel: 111,
 	}
 	o, err = optionsSanitize(o)
-	a.Equal(err.(*errs.FieldError).Field, "StdLevel").Nil(o)
+	a.Equal(err.(*config.FieldError).Field, "StdLevel").Nil(o)
 }
