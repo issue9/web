@@ -1,35 +1,36 @@
 <messages>
-    <language>cmn-hant</language>
-    <message>
-        <key>k1</key>
+    <language id="cmn-hant">
         <message>
-            <msg>msg1</msg>
+            <key>k1</key>
+            <message>
+                <msg>msg1</msg>
+            </message>
         </message>
-    </message>
 
-    <message>
-        <key>k2</key>
         <message>
-            <select arg="1" format="%d">
-                <case cond="=1">msg-1</case>
-                <case cond="=3">msg-%[1]d</case>
-                <case cond="other">msg-other</case>
-            </select>
+            <key>k2</key>
+            <message>
+                <select arg="1" format="%d">
+                    <case case="=1">msg-1</case>
+                    <case case="=3">msg-%[1]d</case>
+                    <case case="other">msg-other</case>
+                </select>
+            </message>
         </message>
-    </message>
 
-    <message>
-        <key>k3</key>
         <message>
-            <msg>${number}-${string}</msg>
-            <var name="number" arg="2" format="%d">
-                <case cond="=1">1</case>
-                <case cond="other">2</case>
-            </var>
-            <var name="string" arg="1" format="%d">
-                <case cond="=1">一</case>
-                <case cond="other">二</case>
-            </var>
+            <key>k3</key>
+            <message>
+                <msg>${number}-${string}</msg>
+                <var name="number" arg="2" format="%d">
+                    <case case="=1">1</case>
+                    <case case="other">2</case>
+                </var>
+                <var name="string" arg="1" format="%d">
+                    <case case="=1">一</case>
+                    <case case="other">二</case>
+                </var>
+            </message>
         </message>
-    </message>
+    </language>
 </messages>

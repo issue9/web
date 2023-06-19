@@ -100,11 +100,6 @@ type (
 		problems *problems.Problems[Problem]
 	}
 
-	Config struct {
-		Type string
-		Dir  string
-	}
-
 	Problems struct {
 		// 生成 [Problem] 对象的方法
 		//

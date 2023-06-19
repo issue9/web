@@ -16,16 +16,18 @@ import (
 
 func TestCLIOf(t *testing.T) {
 	a := assert.New(t, false)
+	const shutdownTimeout = 0
 
 	bs := new(bytes.Buffer)
 	var action string
 	cmd := &CLIOf[empty]{
-		Name:           "test",
-		Version:        "1.0.0",
-		ConfigDir:      "./testdata",
-		ConfigFilename: "web.yaml",
-		Out:            bs,
-		ServeActions:   []string{"serve"},
+		Name:            "test",
+		Version:         "1.0.0",
+		ConfigDir:       "./testdata",
+		ConfigFilename:  "web.yaml",
+		ShutdownTimeout: shutdownTimeout,
+		Out:             bs,
+		ServeActions:    []string{"serve"},
 		Init: func(s *server.Server, user *empty, act string) error {
 			action = act
 			return nil
@@ -53,16 +55,15 @@ func TestCLIOf(t *testing.T) {
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
 	cmd.Restart()
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
+	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	s2 := cmd.app.srv
 	t2 := s2.Uptime()
-	a.True(t2.After(t1)).
-		NotEqual(s1, s2)
+	a.True(t2.After(t1)).NotEqual(s1, s2)
 
 	// restart2
 	cmd.Name = "restart2"
 	cmd.Restart()
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
+	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))
 

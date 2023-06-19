@@ -103,7 +103,7 @@ func New(name, version string, o *Options) (*Server, error) {
 	srv.httpServer.Handler = srv.routers
 	srv.httpServer.ErrorLog = srv.Logs().ERROR().StdLogger()
 	srv.OnClose(srv.cache.Close)
-	srv.initServices(o.UniqueGenerator) // 依赖 logs 和 Location 已经初始化
+	srv.initServices(o.UniqueGenerator) // 依赖的 logs 已经初始化
 
 	return srv, nil
 }

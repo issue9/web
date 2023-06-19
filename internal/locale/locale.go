@@ -7,7 +7,7 @@ import (
 	"io/fs"
 
 	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
+	"github.com/issue9/localeutil/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/errs"
@@ -26,7 +26,11 @@ func Load(s config.Serializer, b *catalog.Builder, fsys fs.FS, glob string) erro
 			return errs.NewLocaleError("not found serialization function for %s", m)
 		}
 
-		if err := localeutil.LoadMessageFromFS(b, fsys, m, u); err != nil {
+		msg := &message.Messages{}
+		if err := msg.LoadFS(fsys, m, u); err != nil {
+			return err
+		}
+		if err := msg.Catalog(b); err != nil {
 			return err
 		}
 	}

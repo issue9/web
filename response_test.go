@@ -144,8 +144,11 @@ func TestRedirect(t *testing.T) {
 	r.Get("/not-implement", func(ctx *Context) Responser {
 		return ctx.NotImplemented()
 	})
+	r.Get("/ok", func(ctx *Context) Responser {
+		return Created(nil, "")
+	})
 	r.Get("/redirect", func(ctx *Context) Responser {
-		return Redirect(http.StatusMovedPermanently, "https://example.com")
+		return Redirect(http.StatusMovedPermanently, "http://localhost:8080/ok")
 	})
 
 	defer servertest.Run(a, s)()
@@ -154,6 +157,6 @@ func TestRedirect(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/not-implement").Do(nil).Status(http.StatusNotImplemented)
 
 	servertest.Get(a, "http://localhost:8080/redirect").Do(nil).
-		Status(http.StatusOK). // http.Client.Do 会自动重定向并请求
+		Status(http.StatusCreated). // http.Client.Do 会自动重定向并请求
 		Header("Location", "")
 }

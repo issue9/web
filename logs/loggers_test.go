@@ -9,6 +9,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+	xmsg "github.com/issue9/localeutil/message"
 	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -33,7 +34,7 @@ func TestLogs_With(t *testing.T) {
 
 	l.NewEntry(Error).DepthString(1, "error")
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:34") // 依赖 DepthString 行号
+		Contains(buf.String(), "loggers_test.go:35") // 依赖 DepthString 行号
 
 	// Logs.With
 
@@ -42,12 +43,12 @@ func TestLogs_With(t *testing.T) {
 	a.NotNil(ps)
 	ps.ERROR().String("string")
 	a.Contains(buf.String(), "string").
-		Contains(buf.String(), "loggers_test.go:43"). // 依赖 ERROR().String 行号
+		Contains(buf.String(), "loggers_test.go:44"). // 依赖 ERROR().String 行号
 		Contains(buf.String(), "k1=v1")
 
 	ps.NewEntry(Error).DepthError(1, errors.New("error"))
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:48") // 依赖 DepthError 行号
+		Contains(buf.String(), "loggers_test.go:49") // 依赖 DepthError 行号
 
 	Destroy(ps)
 }
@@ -89,9 +90,12 @@ func TestNew(t *testing.T) {
 	termBuf.Reset()
 	infoBuf.Reset()
 	b := catalog.NewBuilder()
-	err = localeutil.LoadMessageFromFSGlob(b, locales.Locales, "*.yml", yaml.Unmarshal)
-	a.NotError(err)
+	msg := &xmsg.Messages{}
+	a.NotError(msg.LoadFSGlob(locales.Locales, "*.yml", yaml.Unmarshal)).
+		NotError(msg.Catalog(b))
 	p := message.NewPrinter(language.SimplifiedChinese, message.Catalog(b))
+
+	println(p.Sprintf("scheduled job"))
 
 	opt = &Options{
 		Writer: NewDispatchWriter(map[Level]Writer{

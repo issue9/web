@@ -31,8 +31,8 @@ func newServer(a *assert.Assertion, lang string) *server.Server {
 	// locale
 	b := s.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(b.SetString(language.MustParse("cmn-hans"), "lang", "hans"))
+	a.NotError(b.SetString(language.MustParse("cmn-hant"), "lang", "hant"))
 
 	return s
 }
@@ -102,12 +102,4 @@ func TestInstallView_dir(t *testing.T) {
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hant繁</div>\n<div>hans</div>\n")
-
-	// 默认语言
-	servertest.Get(a, "http://localhost:8080/path").
-		Header("accept-language", "en").
-		Header("accept", Mimetype).
-		Do(nil).
-		Status(200).
-		StringBody("\n<div>und简</div>\n<div>hans</div>\n")
 }

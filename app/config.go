@@ -103,7 +103,7 @@ type configOf[T any] struct {
 // 如果此值为空，将以 &server.Options{FS: fsys} 初始化 [server.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
-// 如果实现了 [ConfigSanitizer] 接口，则在加载后进行自检；
+// 如果实现了 [config.Sanitizer] 接口，则在加载后进行自检；
 func NewServerOf[T any](name, version string, configDir, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		c, err := config.AppDir(nil, configDir)
