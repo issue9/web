@@ -11,7 +11,7 @@
 //	                                               |---[ValidatorFuncOf]
 //
 // 调用者可以提前声明 [FilterFuncOf] 实例，在需要时调用 [FilterFuncOf] 实例，
-// 生成一个类型无关的方法 [FilterFunc]，用于传递给 [server.FilterProblem]。
+// 生成一个类型无关的方法 [FilterFunc] 传递给 [server.FilterProblem]。
 // 这样可以绕过 Go 不支持泛型方法的尴尬。
 package filter
 
@@ -27,10 +27,10 @@ type FilterFunc func() (string, localeutil.LocaleStringer)
 // FilterFuncOf 生成某类型的过滤器
 //
 // name 字段名，对于切片等类型会返回带下标的字段名；
-// v 必须是指针类型，否则 [SanitizeFuncOf] 无法对其内容进行修改；
+// v 必须是指针类型，否则无法对其内容进行修改；
 type FilterFuncOf[T any] func(name string, v *T) FilterFunc
 
-// NewFromVS 返回生成 FilterFunc 的方法
+// NewFromVS 返回生成 [FilterFunc] 的方法
 //
 // msg 和 v 组成验证规则；
 // s 表示对字段的一些清理，比如去除空白字符等，如果指定了此参数，会在 rule 之前执行；
@@ -38,7 +38,7 @@ func NewFromVS[T any](msg localeutil.LocaleStringer, v ValidatorFuncOf[T], s ...
 	return New(NewRule(v, msg), s...)
 }
 
-// New 返回生成 FilterFunc 的方法
+// New 返回生成 [FilterFunc] 的方法
 //
 // sanitize 表示对字断 v 的一些清理，比如去除空白字符等，如果指定了此参数，会在 rule 之前执行；
 func New[T any](rule RulerFuncOf[T], sanitize ...func(*T)) FilterFuncOf[T] {

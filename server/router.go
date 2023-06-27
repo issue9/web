@@ -17,6 +17,8 @@ import (
 
 type (
 	Router         = mux.RouterOf[HandlerFunc]
+	Prefix         = mux.PrefixOf[HandlerFunc]
+	Resource       = mux.ResourceOf[HandlerFunc]
 	RouterMatcher  = group.Matcher
 	RouterOption   = mux.Option
 	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
