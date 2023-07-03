@@ -25,14 +25,16 @@ const defaultBodyBufferSize = 256
 var (
 	tGreatThanZero = localeutil.Phrase("should great than 0")
 
-	paramPool = &sync.Pool{New: func() any { return &Params{} }}
+	pathPool  = &sync.Pool{New: func() any { return &Paths{} }}
 	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 )
 
-type Params struct {
+// Paths 提供对路径参数的处理
+type Paths struct {
 	v *FilterProblem
 }
 
+// Queries 提供对查询参数的处理
 type Queries struct {
 	v       *FilterProblem
 	queries url.Values
@@ -46,18 +48,18 @@ type CTXFilter interface {
 	CTXFilter(*FilterProblem)
 }
 
-// Params 声明一个用于获取路径参数的对象
+// Paths 声明一个用于获取路径参数的对象
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
-func (ctx *Context) Params(exitAtError bool) *Params {
-	ps := paramPool.Get().(*Params)
+func (ctx *Context) Paths(exitAtError bool) *Paths {
+	ps := pathPool.Get().(*Paths)
 	ps.v = ctx.NewFilterProblem(exitAtError)
-	ctx.OnExit(func(*Context, int) { paramPool.Put(ps) })
+	ctx.OnExit(func(*Context, int) { pathPool.Put(ps) })
 	return ps
 }
 
 // ID 返回 key 所表示的值且必须大于 0
-func (p *Params) ID(key string) int64 {
+func (p *Paths) ID(key string) int64 {
 	if !p.v.continueNext() {
 		return 0
 	}
@@ -74,7 +76,7 @@ func (p *Params) ID(key string) int64 {
 }
 
 // Int64 获取参数 key 所代表的值并转换成 int64 类型
-func (p *Params) Int64(key string) int64 {
+func (p *Paths) Int64(key string) int64 {
 	if !p.v.continueNext() {
 		return 0
 	}
@@ -88,7 +90,7 @@ func (p *Params) Int64(key string) int64 {
 }
 
 // String 获取参数 key 所代表的值并转换成 string
-func (p *Params) String(key string) string {
+func (p *Paths) String(key string) string {
 	if !p.v.continueNext() {
 		return ""
 	}
@@ -104,7 +106,7 @@ func (p *Params) String(key string) string {
 // Bool 获取参数 key 所代表的值并转换成 bool
 //
 // 由 [strconv.ParseBool] 进行转换。
-func (p *Params) Bool(key string) bool {
+func (p *Paths) Bool(key string) bool {
 	if !p.v.continueNext() {
 		return false
 	}
@@ -117,7 +119,7 @@ func (p *Params) Bool(key string) bool {
 }
 
 // Float64 获取参数 key 所代表的值并转换成 float64
-func (p *Params) Float64(key string) float64 {
+func (p *Paths) Float64(key string) float64 {
 	if !p.v.continueNext() {
 		return 0
 	}
@@ -132,12 +134,12 @@ func (p *Params) Float64(key string) float64 {
 // Problem 将当前对象转换成 [Problem] 对象
 //
 // 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
-func (p *Params) Problem(id string) Responser { return p.v.Problem(id) }
+func (p *Paths) Problem(id string) Responser { return p.v.Problem(id) }
 
-// ParamID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
+// PathID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Params] 会更方便。
-func (ctx *Context) ParamID(key, id string) (int64, Responser) {
+func (ctx *Context) PathID(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
@@ -153,10 +155,10 @@ func (ctx *Context) ParamID(key, id string) (int64, Responser) {
 	return ret, nil
 }
 
-// ParamInt64 取地址参数中的 key 表示的值并尝试工转换成 int64 类型
+// PathInt64 取地址参数中的 key 表示的值并尝试工转换成 int64 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
-func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
+func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
@@ -168,10 +170,10 @@ func (ctx *Context) ParamInt64(key, id string) (int64, Responser) {
 	return ret, nil
 }
 
-// ParamString 取地址参数中的 key 表示的值并尝试工转换成 string 类型
+// PathString 取地址参数中的 key 表示的值并尝试工转换成 string 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
-func (ctx *Context) ParamString(key, id string) (string, Responser) {
+func (ctx *Context) PathString(key, id string) (string, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {

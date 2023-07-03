@@ -26,14 +26,14 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 	return ctx, w
 }
 
-func TestParams_empty(t *testing.T) {
+func TestPaths_empty(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/empty", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.Equal(ps.Int64("id1"), 0)
 		a.NotNil(ps.Problem("41110"))
@@ -44,14 +44,14 @@ func TestParams_empty(t *testing.T) {
 	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_ID(t *testing.T) {
+func TestPaths_ID(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.Equal(ps.ID("i1"), 1).
 			Equal(ps.v.len(), 0)
@@ -71,14 +71,14 @@ func TestParams_ID(t *testing.T) {
 	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Int(t *testing.T) {
+func TestPaths_Int(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.Equal(ps.Int64("i1"), 1)
 		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.len(), 0)
@@ -94,14 +94,14 @@ func TestParams_Int(t *testing.T) {
 	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Bool(t *testing.T) {
+func TestPaths_Bool(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081"))
 	a.NotNil(router)
 
 	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.True(ps.Bool("b1"))
 		a.False(ps.Bool("b2")).Equal(ps.v.len(), 0)
@@ -117,14 +117,14 @@ func TestParams_Bool(t *testing.T) {
 	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_String(t *testing.T) {
+func TestPaths_String(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.Equal(ps.String("s1"), "str1")
 		a.Equal(ps.String("s2"), "str2")
@@ -141,14 +141,14 @@ func TestParams_String(t *testing.T) {
 	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
 }
 
-func TestParams_Float(t *testing.T) {
+func TestPaths_Float(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
-		ps := ctx.Params(false)
+		ps := ctx.Paths(false)
 
 		a.Equal(ps.Float64("f1"), 1.1)
 		a.Equal(ps.Float64("f2"), 2.2)
@@ -165,17 +165,17 @@ func TestParams_Float(t *testing.T) {
 	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
 
-func TestContext_ParamID(t *testing.T) {
+func TestContext_PathID(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.ParamID("i1", "41110")
+		i1, resp := ctx.PathID("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 
-		i2, resp := ctx.ParamID("i2", "41110")
+		i2, resp := ctx.PathID("i2", "41110")
 		a.NotNil(resp).Equal(i2, 0)
 
 		return resp
@@ -185,20 +185,20 @@ func TestContext_ParamID(t *testing.T) {
 	srv.Get("/params/paramid/1/-2/str").Do(nil).Status(411)
 }
 
-func TestContext_ParamInt64(t *testing.T) {
+func TestContext_PathInt64(t *testing.T) {
 	a := assert.New(t, false)
 	server := newTestServer(a, nil)
 	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.ParamInt64("i1", "41110")
+		i1, resp := ctx.PathInt64("i1", "41110")
 		a.Nil(resp).Equal(i1, 1)
 
-		i2, resp := ctx.ParamInt64("i2", "41110")
+		i2, resp := ctx.PathInt64("i2", "41110")
 		a.Nil(resp).Equal(i2, -2)
 
-		i3, resp := ctx.ParamInt64("i3", "41110")
+		i3, resp := ctx.PathInt64("i3", "41110")
 		a.NotNil(resp).Equal(i3, 0)
 
 		return resp
