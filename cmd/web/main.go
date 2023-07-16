@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/web"
 
+	"github.com/issue9/web/cmd/web/internal/build"
 	"github.com/issue9/web/cmd/web/internal/restdoc"
 )
 
@@ -43,6 +44,7 @@ func main() {
 	}, buildNotFound(p))
 
 	restdoc.Init(opt, p)
+	build.Init(opt, p)
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
 		panic(err)
