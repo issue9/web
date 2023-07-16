@@ -4,9 +4,10 @@
 package build
 
 import (
-	"flag"
 	"io"
+	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
@@ -19,11 +20,33 @@ var (
 )
 
 func Init(opt *cmdopt.CmdOpt, p *message.Printer) {
-	opt.New("build", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		return func(w io.Writer) error {
-			//
-		}
-	})
+	opt.NewPlain("build", title.LocaleString(p), usage.LocaleString(p), build)
+}
+
+func build(w io.Writer, args []string) error {
+	ver, err := getLatestTag(args[len(args)-1])
+	if err != nil {
+		return err
+	}
+
+	replaceVar(args, ver)
+
+	cmd := exec.Command("go", args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
+// 替换变量
+//
+// 目前支持以下变量：
+//
+//   - {{version}}
+func replaceVar(args []string, ver string) {
+	for index, arg := range args {
+		arg = strings.ReplaceAll(arg, "{{version}}", ver)
+		args[index] = arg
+	}
 }
 
 func getLatestTag(src string) (string, error) {

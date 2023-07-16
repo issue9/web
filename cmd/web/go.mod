@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/issue9/assert/v3 v3.0.4
-	github.com/issue9/cmdopt v0.12.2
+	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/localeutil v0.16.4
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/sliceutil v0.12.0
