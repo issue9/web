@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
-	"github.com/issue9/term/v3/colors"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
@@ -54,7 +53,7 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = &logs.Options{
-			Writer:  logs.NewTermWriter("[15:04:05]", colors.Red, os.Stderr),
+			Handler: logs.NewTermHandler(logs.NanoLayout, os.Stderr, nil),
 			Caller:  true,
 			Created: true,
 			Levels:  logs.AllLevels(),
@@ -139,7 +138,7 @@ func TestServer_Context(t *testing.T) {
 	lw := &bytes.Buffer{}
 	o := &Options{
 		Locale:     &Locale{Language: language.SimplifiedChinese},
-		Logs:       &logs.Options{Writer: logs.NewTextWriter("2006-01-02", lw), Levels: logs.AllLevels()},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler("2006-01-02", lw), Levels: logs.AllLevels()},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	}
 	srv := newTestServer(a, o)

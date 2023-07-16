@@ -205,7 +205,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		return nil, err.AddFieldParent("Locale")
 	}
 
-	l, err := logs.New(o.Logs, o.Locale.printer) // 依赖 o.Locale
+	l, err := logs.New(o.Logs)
 	if err != nil {
 		return nil, config.NewFieldError("Logs", err)
 	}

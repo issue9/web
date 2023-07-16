@@ -7,10 +7,10 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v4"
+	"github.com/issue9/logs/v5"
 )
 
-func TestOptions_Sanitize(t *testing.T) {
+func TestOptionsSanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	var o *Options

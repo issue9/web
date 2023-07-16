@@ -13,16 +13,16 @@ import (
 
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
-	"github.com/issue9/logs/v4/writers"
-	"github.com/issue9/logs/v4/writers/rotate"
+	"github.com/issue9/logs/v5"
+	"github.com/issue9/logs/v5/writers"
+	"github.com/issue9/logs/v5/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 )
 
 // 日志的时间格式
 const (
-	MicroLayout = logs.MicroLayout
 	MilliLayout = logs.MilliLayout
+	MicroLayout = logs.MicroLayout
 	NanoLayout  = logs.NanoLayout
 )
 
@@ -40,18 +40,22 @@ var allLevels = []Level{Info, Warn, Trace, Debug, Error, Fatal}
 
 type (
 	Level      = logs.Level
-	Writer     = logs.Writer
-	WriteEntry = logs.WriteEntry
+	Handler    = logs.Handler
+	HandleFunc = logs.HandleFunc
 	Logger     = logs.Logger
-	Entry      = logs.Entry
+	Record     = logs.Record
 
 	// Options 初始化日志的选项
 	Options struct {
-		Writer   Writer
-		Caller   bool    // 是否带调用堆栈信息
-		Created  bool    // 是否带时间
-		Levels   []Level // 允许的日志通道
-		StdLevel Level   // 标准库的错误日志重定义至哪个通道
+		Handler Handler
+		Caller  bool    // 是否带调用堆栈信息
+		Created bool    // 是否带时间
+		Levels  []Level // 允许的日志通道
+
+		// 标准库的错误日志重定义至哪个通道
+		//
+		// 一些由 log.Println 等全局方法输出的内容，由此指定输出的通道。
+		StdLevel Level
 	}
 )
 
@@ -76,27 +80,26 @@ func optionsSanitize(o *Options) (*Options, error) {
 
 func AllLevels() []Level { return allLevels }
 
-func NewNopWriter() Writer { return logs.NewNopWriter() }
+func NewNopHandler() Handler { return logs.NewNopHandler() }
 
-func NewTextWriter(timeLayout string, w ...io.Writer) Writer {
-	return logs.NewTextWriter(timeLayout, w...)
+func NewTextHandler(timeLayout string, w ...io.Writer) Handler {
+	return logs.NewTextHandler(timeLayout, w...)
 }
 
-func NewJSONWriter(timeLayout string, w ...io.Writer) Writer {
-	return logs.NewJSONWriter(timeLayout, w...)
+func NewJSONHandler(timeLayout string, w ...io.Writer) Handler {
+	return logs.NewJSONHandler(timeLayout, w...)
 }
 
-// NewTermWriter 带颜色的终端输出通道
+// NewTermHandler 带颜色的终端输出通道
 //
-// 参数说明参考 [logs.NewTermWriter]
-func NewTermWriter(timeLayout string, fore colors.Color, w io.Writer) Writer {
-	return logs.NewTermWriter(timeLayout, fore, w)
+// 参数说明参考 [logs.NewTermHandler]
+func NewTermHandler(timeLayout string, w io.Writer, colors map[Level]colors.Color) Handler {
+	return logs.NewTermHandler(timeLayout, w, colors)
 }
 
-func NewDispatchWriter(d map[Level]Writer) Writer { return logs.NewDispatchWriter(d) }
+func NewDispatchHandler(d map[Level]Handler) Handler { return logs.NewDispatchHandler(d) }
 
-// MergeWriter 将多个 [Writer] 合并成一个 [Writer] 接口对象
-func MergeWriter(w ...Writer) Writer { return logs.MergeWriter(w...) }
+func MergeHandler(w ...Handler) Handler { return logs.MergeHandler(w...) }
 
 // NewRotateFile 按大小分割的文件日志
 //

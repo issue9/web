@@ -120,7 +120,7 @@ func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
 }
 
 func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
-	ctx.Logs().NewEntry(level).DepthError(3, err)
+	ctx.Logs().NewRecord(level).DepthError(3, err)
 	return ctx.Problem(id)
 }
 

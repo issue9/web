@@ -319,7 +319,7 @@ func (ctx *Context) destroy() {
 		exit(ctx, ctx.status)
 	}
 
-	logs.Destroy(ctx.logs)
+	logs.DestroyParamsLogs(ctx.logs)
 
 	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)

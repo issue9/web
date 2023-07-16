@@ -9,16 +9,17 @@ import (
 	"strings"
 
 	"github.com/issue9/config"
+	xlogs "github.com/issue9/logs/v5"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
 )
 
-var logWritersFactory = map[string]LogsWriterBuilder{}
+var logHandlersFactory = map[string]LogsHandlerBuilder{}
 
-// LogsWriterBuilder 构建 [logs.Writer] 的方法
-type LogsWriterBuilder func(args []string) (logs.Writer, func() error, error)
+// LogsHandlerBuilder 构建 [logs.Handler] 的方法
+type LogsHandlerBuilder func(args []string) (logs.Handler, func() error, error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
@@ -34,23 +35,23 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 [logs.NewNopWriter] 返回的对象。
-	Writers []*logWriterConfig `xml:"writer" json:"writers" yaml:"writers"`
+	// 为空表示 [logs.NewNopHandler] 返回的对象。
+	Handlers []*logHandlerConfig `xml:"writer" json:"writers" yaml:"writers"`
 }
 
-type logWriterConfig struct {
+type logHandlerConfig struct {
 	// NOTE: 时间格式定义在 Args 之中，而不是作为字段在当前对象之中。
 	// 一般情况下终端里，时间格式只需要显示简短的以秒作为最大单位的即可，
 	// 但是在文件日志里，可能还需要带上日期时间才方便。
 
-	// 当前 Writer 支持的通道
+	// 当前 Handler 支持的通道
 	//
 	// 为空表示采用 [logsConfig.Levels] 的值。
 	Levels []logs.Level `xml:"level,omitempty" yaml:"levels,omitempty" json:"levels,omitempty"`
 
-	// Writer 的类型
+	// Handler 的类型
 	//
-	// 可通过 [RegisterLogsWriter] 方法注册，默认包含了以下两个：
+	// 可通过 [RegisterLogsHandler] 方法注册，默认包含了以下几个：
 	// - file 输出至文件
 	// - smtp 邮件发送的日志
 	// - term 输出至终端
@@ -58,7 +59,7 @@ type logWriterConfig struct {
 
 	// 当前日志的初始化参数
 	//
-	// 根据以一的 type 不同而不同，
+	// 根据以上的 type 不同而不同：
 	// - file:
 	//  0: 时间格式，Go 的时间格式字符串；
 	//  1: 保存目录；
@@ -75,7 +76,8 @@ type logWriterConfig struct {
 	//  6: 文件的格式，默认为 text，还可选为 json；
 	// - term
 	//  0: 时间格式，Go 的时间格式字符串；
-	//  1: 字符的的颜色值，可以包含以下值：
+	//  1: 输出的终端，可以是 stdout 或 stderr；
+	//  2-8: Level 以及对应的字符颜色，格式：erro:blue，可用颜色：
 	//   - default 默认；
 	//   - black 黑；
 	//   - red 红；
@@ -85,7 +87,6 @@ type logWriterConfig struct {
 	//   - magenta 洋红；
 	//   - cyan 青；
 	//   - white 白；
-	//  2: 输出的终端，可以是 stdout 或 stderr；
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
@@ -98,31 +99,31 @@ func (conf *logsConfig) build() (*logs.Options, []func() error, *config.FieldErr
 		conf.Levels = logs.AllLevels()
 	}
 
-	w, c, err := conf.buildWriter()
+	w, c, err := conf.buildHandler()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return &logs.Options{
-		Writer:  w,
+		Handler: w,
 		Created: conf.Created,
 		Caller:  conf.Caller,
 		Levels:  conf.Levels,
 	}, c, nil
 }
 
-func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *config.FieldError) {
-	if len(conf.Writers) == 0 {
-		return logs.NewNopWriter(), nil, nil
+func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *config.FieldError) {
+	if len(conf.Handlers) == 0 {
+		return logs.NewNopHandler(), nil, nil
 	}
 
 	cleanup := make([]func() error, 0, 10)
 
-	m := make(map[logs.Level][]logs.Writer, 6)
-	for i, w := range conf.Writers {
+	m := make(map[logs.Level][]logs.Handler, 6)
+	for i, w := range conf.Handlers {
 		field := "Writers[" + strconv.Itoa(i) + "]"
 
-		f, found := logWritersFactory[w.Type]
+		f, found := logHandlersFactory[w.Type]
 		if !found {
 			return nil, nil, config.NewFieldError(field+".Type", errs.NewLocaleError("%s not found", w.Type))
 		}
@@ -147,34 +148,34 @@ func (conf *logsConfig) buildWriter() (logs.Writer, []func() error, *config.Fiel
 		}
 	}
 
-	d := make(map[logs.Level]logs.Writer, len(m))
+	d := make(map[logs.Level]logs.Handler, len(m))
 	for level, ws := range m {
-		d[level] = logs.MergeWriter(ws...)
+		d[level] = logs.MergeHandler(ws...)
 	}
 
-	return logs.NewDispatchWriter(d), cleanup, nil
+	return logs.NewDispatchHandler(d), cleanup, nil
 }
 
-// RegisterLogsWriter 注册日志的 [LogsWriterBuilder]
+// RegisterLogsHandler 注册日志的 [LogsWriterBuilder]
 //
 // name 为缓存的名称，如果存在同名，则会覆盖。
-func RegisterLogsWriter(b LogsWriterBuilder, name ...string) {
+func RegisterLogsHandler(b LogsHandlerBuilder, name ...string) {
 	if len(name) == 0 {
 		panic("参数 name 不能为空")
 	}
 
 	for _, n := range name {
-		logWritersFactory[n] = b
+		logHandlersFactory[n] = b
 	}
 }
 
 func init() {
-	RegisterLogsWriter(newFileLogsWriter, "file")
-	RegisterLogsWriter(newTermLogsWriter, "term")
-	RegisterLogsWriter(newSMTPLogsWriter, "smtp")
+	RegisterLogsHandler(newFileLogsHandler, "file")
+	RegisterLogsHandler(newTermLogsHandler, "term")
+	RegisterLogsHandler(newSMTPLogsHandler, "smtp")
 }
 
-func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
+func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {
 	size, err := strconv.ParseInt(args[3], 10, 64)
 	if err != nil {
 		return nil, nil, err
@@ -186,19 +187,19 @@ func newFileLogsWriter(args []string) (logs.Writer, func() error, error) {
 	}
 
 	if len(args) < 5 || args[4] == "text" {
-		return logs.NewTextWriter(args[0], w), w.Close, nil
+		return logs.NewTextHandler(args[0], w), w.Close, nil
 	}
-	return logs.NewJSONWriter(args[0], w), w.Close, nil
+	return logs.NewJSONHandler(args[0], w), w.Close, nil
 }
 
-func newSMTPLogsWriter(args []string) (logs.Writer, func() error, error) {
+func newSMTPLogsHandler(args []string) (logs.Handler, func() error, error) {
 	sendTo := strings.Split(args[5], ",")
 	w := logs.NewSMTP(args[1], args[2], args[3], args[4], sendTo)
 
 	if len(args) < 7 || args[7] == "text" {
-		return logs.NewTextWriter(args[0], w), nil, nil
+		return logs.NewTextHandler(args[0], w), nil, nil
 	}
-	return logs.NewJSONWriter(args[0], w), nil, nil
+	return logs.NewJSONHandler(args[0], w), nil, nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -217,25 +218,47 @@ var colorMap = map[string]colors.Color{
 // - 0 时间格式
 // - 1 为颜色名称，可参考 [colorMap] 的键名；
 // - 2 为输出通道，可以为 stdout 和 stderr；
-func newTermLogsWriter(args []string) (logs.Writer, func() error, error) {
-	if len(args) != 3 {
+func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
+	if len(args) < 2 {
 		return nil, nil, config.NewFieldError("Args", "invalid value")
 	}
 
-	c, found := colorMap[strings.ToLower(args[1])]
-	if !found {
-		return nil, nil, config.NewFieldError("Args[1]", "invalid value")
-	}
+	timeLayout := args[0]
 
 	var w io.Writer
-	switch strings.ToLower(args[2]) {
+	switch strings.ToLower(args[1]) {
 	case "stderr":
 		w = os.Stderr
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, config.NewFieldError("Args[2]", "invalid value")
+		return nil, nil, config.NewFieldError("Args[1]", "invalid value")
 	}
 
-	return logs.NewTermWriter(args[0], c, w), nil, nil
+	args = args[2:]
+	if len(args) > 6 {
+		return nil, nil, config.NewFieldError("Args", "invalid value")
+	}
+	cs := make(map[logs.Level]colors.Color, len(args))
+	for index, arg := range args {
+		a := strings.SplitN(arg, ":", 2)
+
+		if len(a) != 2 || a[1] == "" {
+			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", "invalid value")
+		}
+
+		lv, err := xlogs.ParseLevel(a[0])
+		if err != nil {
+			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", err)
+		}
+
+		c, found := colorMap[a[1]]
+		if !found {
+			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", "invalid value")
+		}
+
+		cs[lv] = c
+	}
+
+	return logs.NewTermHandler(timeLayout, w, cs), nil, nil
 }

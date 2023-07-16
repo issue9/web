@@ -6,8 +6,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/issue9/logs/v4"
-	"golang.org/x/text/message"
+	"github.com/issue9/logs/v5"
+	"github.com/issue9/logs/v5/writers"
 )
 
 var paramsLogsPool = &sync.Pool{New: func() any { return &ParamsLogs{} }}
@@ -24,19 +24,10 @@ type (
 		ps      map[string]any
 		loggers map[Level]Logger
 	}
-
-	loggerWriter struct {
-		l logs.Logger
-	}
 )
 
-func (w *loggerWriter) Write(data []byte) (int, error) {
-	w.l.String(string(data))
-	return len(data), nil
-}
-
 // New 声明日志实例
-func New(opt *Options, p *message.Printer) (*Logs, error) {
+func New(opt *Options) (*Logs, error) {
 	opt, err := optionsSanitize(opt)
 	if err != nil {
 		return nil, err
@@ -50,19 +41,19 @@ func New(opt *Options, p *message.Printer) (*Logs, error) {
 		o = append(o, logs.Created)
 	}
 
-	if p != nil {
-		o = append(o, logs.Print(newPrinter(p)))
+	if opt.Handler == nil {
+		opt.Handler = NewNopHandler()
 	}
 
-	if opt.Writer == nil {
-		opt.Writer = NewNopWriter()
-	}
-
-	l := logs.New(opt.Writer, o...)
+	l := logs.New(opt.Handler, o...)
 	l.Enable(opt.Levels...)
 
 	if l.IsEnable(opt.StdLevel) {
-		log.SetOutput(&loggerWriter{l: l.Logger(opt.StdLevel)})
+		sl := l.Logger(opt.StdLevel)
+		log.SetOutput(writers.WriteFunc(func(data []byte) (int, error) {
+			sl.String(string(data))
+			return len(data), nil
+		}))
 	}
 
 	return &Logs{logs: l}, nil
@@ -80,14 +71,14 @@ func (l *Logs) ERROR() Logger { return l.logs.ERROR() }
 
 func (l *Logs) FATAL() Logger { return l.logs.FATAL() }
 
-func (l *Logs) NewEntry(lv Level) *Entry { return l.logs.NewEntry(lv) }
+func (l *Logs) NewRecord(lv Level) *Record { return l.logs.NewRecord(lv) }
 
 // With 构建一个带有指定参数日志对象
 func (l *Logs) With(ps map[string]any) *ParamsLogs {
 	p := paramsLogsPool.Get().(*ParamsLogs)
 	p.logs = l
 	p.ps = ps
-	p.loggers = make(map[logs.Level]logs.Logger, 6)
+	p.loggers = make(map[Level]Logger, 6)
 	return p
 }
 
@@ -103,8 +94,8 @@ func (l *ParamsLogs) ERROR() Logger { return l.level(Error) }
 
 func (l *ParamsLogs) FATAL() Logger { return l.level(Fatal) }
 
-func (l *ParamsLogs) NewEntry(lv Level) *Entry {
-	e := l.logs.NewEntry(lv)
+func (l *ParamsLogs) NewRecord(lv Level) *Record {
+	e := l.logs.NewRecord(lv)
 	for k, v := range l.ps {
 		e.With(k, v)
 	}
@@ -118,7 +109,7 @@ func (l *ParamsLogs) level(lv Level) Logger {
 	return l.loggers[lv]
 }
 
-// Destroy 回收由 [ParamsLogs] 对象
+// DestroyParamsLogs 回收由 [ParamsLogs] 对象
 //
 // 这是一个非必须的方法，调用可能会有一定的性能提升。
-func Destroy(l *ParamsLogs) { paramsLogsPool.Put(l) }
+func DestroyParamsLogs(l *ParamsLogs) { paramsLogsPool.Put(l) }

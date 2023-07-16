@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/logs/v4"
+	"github.com/issue9/logs/v5"
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
