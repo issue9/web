@@ -5,7 +5,6 @@ package parser
 import (
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
@@ -29,17 +28,17 @@ type (
 func (doc *Parser) parseRequest(req *request, t *openapi3.T, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return false
 	}
 
 	s, err := doc.search.New(t, currPath, words[0], false)
 	if err != nil {
 		if serr, ok := err.(*schema.Error); ok {
-			doc.l.Log(serr.Type, serr.Msg, doc.file(serr.Pos), doc.line(serr.Pos))
+			serr.Log(doc.l, doc.fset)
 			return false
 		}
-		doc.l.Log(logger.DocSyntax, err, filename, ln)
+		doc.l.Error(err, filename, ln)
 		return false
 	}
 
@@ -60,17 +59,17 @@ func (doc *Parser) addRequestBody(o *openapi3.Operation, r *request) {
 func (doc *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l < 2 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return false
 	}
 
 	s, err := doc.search.New(t, currPath, words[1], false)
 	if err != nil {
 		if serr, ok := err.(*schema.Error); ok {
-			doc.l.Log(serr.Type, serr.Msg, doc.file(serr.Pos), doc.line(serr.Pos))
+			serr.Log(doc.l, doc.fset)
 			return false
 		}
-		doc.l.Log(logger.DocSyntax, err, filename, ln)
+		doc.l.Error(err, filename, ln)
 		return false
 	}
 
@@ -87,7 +86,7 @@ func (doc *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suff
 func (doc *Parser) parseResponseHeader(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l != 3 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return false
 	}
 
@@ -103,7 +102,7 @@ func (doc *Parser) parseResponseHeader(resps map[string]*response, t *openapi3.T
 func (doc *Parser) parseResponseType(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l != 2 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return false
 	}
 

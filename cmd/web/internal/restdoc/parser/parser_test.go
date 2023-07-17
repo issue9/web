@@ -7,23 +7,22 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/web/logs"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
 )
 
 func TestParser(t *testing.T) {
 	a := assert.New(t, false)
-	l := loggertest.New()
+	l := loggertest.New(a)
 	p := New(l.Logger)
 
 	p.AddDir(context.Background(), "./testdata", true)
 	d := p.OpenAPI(context.Background())
 	a.NotNil(d).
-		Length(l.Entries[logger.GoSyntax], 0).
-		Length(l.Entries[logger.Cancelled], 0).
-		Length(l.Entries[logger.DocSyntax], 0).
-		Length(l.Entries[logger.Unknown], 0)
+		Length(l.Records[logs.Error], 0).
+		Length(l.Records[logs.Warn], 0).
+		Length(l.Records[logs.Info], 2)
 
 	a.NotNil(d.Info).Equal(d.Info.Version, "1.0")
 

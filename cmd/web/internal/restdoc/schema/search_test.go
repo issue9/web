@@ -19,7 +19,7 @@ import (
 func buildSearchFunc(a *assert.Assertion) SearchFunc {
 	ctx := context.Background()
 	fset := token.NewFileSet()
-	l := loggertest.New()
+	l := loggertest.New(a)
 
 	var pkgs []*pkg.Package
 	var pkgsM sync.Mutex

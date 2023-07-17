@@ -14,6 +14,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
@@ -71,59 +72,59 @@ func New(l *logger.Logger) *Parser {
 //
 // 仅在调用 [RESTDoc.Openapi3] 之前添加有效果。
 // root 添加的目录；
-func (doc *Parser) AddDir(ctx context.Context, root string, recursive bool) {
-	if doc.parsed {
+func (p *Parser) AddDir(ctx context.Context, root string, recursive bool) {
+	if p.parsed {
 		panic("已经解析完成，无法再次添加！")
 	}
-	pkg.ScanDir(ctx, doc.fset, root, recursive, doc.append, doc.l)
+	pkg.ScanDir(ctx, p.fset, root, recursive, p.append, p.l)
 }
 
-// line 返回 p 的行号
-func (doc *Parser) line(p token.Pos) int { return doc.fset.Position(p).Line }
+// line 返回 pos 的行号
+func (p *Parser) line(pos token.Pos) int { return p.fset.Position(pos).Line }
 
-func (doc *Parser) file(p token.Pos) string { return doc.fset.File(p).Name() }
+func (p *Parser) file(pos token.Pos) string { return p.fset.File(pos).Name() }
 
-func (doc *Parser) append(p *pkg.Package) {
-	doc.pkgsM.Lock()
-	defer doc.pkgsM.Unlock()
+func (p *Parser) append(pp *pkg.Package) {
+	p.pkgsM.Lock()
+	defer p.pkgsM.Unlock()
 
-	if sliceutil.Exists(doc.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == p.Path }) {
-		doc.l.Log(logger.Unknown, localeutil.Phrase("package %s with the same name.", p.Path), "", 0)
+	if sliceutil.Exists(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == pp.Path }) {
+		p.l.Error(localeutil.Phrase("package %s with the same name.", pp.Path), "", 0)
 		return
 	}
 
-	doc.pkgs = append(doc.pkgs, p)
+	p.pkgs = append(p.pkgs, pp)
 }
 
 // OpenAPI 转换成 openapi3.T 对象
-func (doc *Parser) OpenAPI(ctx context.Context) *openapi3.T {
-	doc.parsed = true // 阻止 doc.AddDir
+func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
+	p.parsed = true // 阻止 doc.AddDir
 
 	t := schema.NewOpenAPI()
 
 	wg := &sync.WaitGroup{}
-	for _, p := range doc.pkgs {
+	for _, pp := range p.pkgs {
 		select {
 		case <-ctx.Done():
-			doc.l.LogWithoutPos(logger.Cancelled, context.Canceled)
+			p.l.Warning(web.Phrase("cancelled"))
 			return nil
 		default:
 			wg.Add(1)
-			go func(p *pkg.Package) {
+			go func(pp *pkg.Package) {
 				defer wg.Done()
-				doc.parsePackage(ctx, t, p)
-			}(p)
+				p.parsePackage(ctx, t, pp)
+			}(pp)
 		}
 	}
 	wg.Wait()
 
-	for _, c := range doc.apiComments {
+	for _, c := range p.apiComments {
 		for index, line := range c.lines {
 			if len(line) <= 2 {
 				continue
 			}
 			if tag, suffix := utils.CutTag(line[2:]); suffix != "" && strings.ToLower(tag) == "api" {
-				doc.parseAPI(t, c.modPath, suffix, c.lines[index+1:], doc.line(c.pos)+index, doc.file(c.pos))
+				p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos))
 			}
 		}
 	}
@@ -131,25 +132,25 @@ func (doc *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 	return t
 }
 
-func (doc *Parser) parsePackage(ctx context.Context, t *openapi3.T, pkg *pkg.Package) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pkg *pkg.Package) {
 	wg := &sync.WaitGroup{}
 	for _, f := range pkg.Files {
 		select {
 		case <-ctx.Done():
-			doc.l.LogWithoutPos(logger.Cancelled, context.Canceled)
+			p.l.Warning(web.Phrase("cancelled"))
 			return
 		default:
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				doc.parseFile(t, pkg.Path, f)
+				p.parseFile(t, pkg.Path, f)
 			}(f)
 		}
 	}
 	wg.Wait()
 }
 
-func (doc *Parser) parseFile(t *openapi3.T, importPath string, f *ast.File) {
+func (p *Parser) parseFile(t *openapi3.T, importPath string, f *ast.File) {
 LOOP:
 	for _, c := range f.Comments {
 		lines := strings.Split(c.Text(), "\n")
@@ -167,16 +168,16 @@ LOOP:
 				switch strings.ToLower(tag) {
 				case "api":
 					if t.Info != nil {
-						doc.parseAPI(t, importPath, suffix, lines[index+1:], doc.line(c.Pos()), doc.file(c.Pos()))
+						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()))
 					} else {
-						doc.apiComments = append(doc.apiComments, &comments{
+						p.apiComments = append(p.apiComments, &comments{
 							lines:   lines, // 保存所有行，而不是从当前页开始，方便后续判断正确的行号。
 							pos:     c.Pos(),
 							modPath: importPath,
 						})
 					}
 				case "restdoc":
-					doc.parseRESTDoc(t, importPath, suffix, lines[index+1:], doc.line(c.Pos())+index, doc.file(c.Pos()))
+					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
 				}
 				continue LOOP
 			}

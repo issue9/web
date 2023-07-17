@@ -7,18 +7,20 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
+	"github.com/issue9/web"
+
+	"github.com/issue9/web/logs"
 )
 
 func TestTester(t *testing.T) {
 	a := assert.New(t, false)
 
-	lt := New()
+	lt := New(a)
 	a.NotNil(lt)
-	lt.Log(logger.Cancelled, "aaa", "", 0)
-	lt.LogError(logger.GoSyntax, errors.New("text string"), "", 0)
+	lt.Warning(web.Phrase("aaa"))
+	lt.Error(errors.New("text string"), "", 0)
 
-	a.Length(lt.Entries[logger.Cancelled], 1).
-		Length(lt.Entries[logger.GoSyntax], 1).
-		Length(lt.Entries[logger.DocSyntax], 0)
+	a.Length(lt.Records[logs.Warn], 1).
+		Length(lt.Records[logs.Error], 1).
+		Length(lt.Records[logs.Info], 0)
 }

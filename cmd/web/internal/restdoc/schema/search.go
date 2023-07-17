@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"path"
@@ -13,8 +12,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
+	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
@@ -127,7 +126,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 	case *ast.Ident: // type x = int 或是 type x int
 		ref, err := f.fromName(t, currPath, ts.Name, tag, false)
 		if err != nil {
-			return nil, newError(logger.DocSyntax, s.Pos(), err)
+			return nil, newError(s.Pos(), err)
 		}
 		ref.Value.Description = desc
 		ref.Value.Enum = enums
@@ -137,7 +136,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 		name := getSelectorExprTypeName(ts, file)
 		ref, err := f.fromName(t, currPath, name, tag, false)
 		if err != nil {
-			return nil, newError(logger.DocSyntax, s.Pos(), err)
+			return nil, newError(s.Pos(), err)
 		}
 		ref.Value.Description = desc
 		ref.Value.Enum = enums
@@ -153,8 +152,8 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 
 		return openapi3.NewSchemaRef(typeName, schema), nil
 	default:
-		msg := fmt.Sprintf("未知的错误 %s.Type 无法转换成 ast.StructType", s.Type)
-		return nil, newError(logger.DocSyntax, s.Pos(), msg)
+		msg := web.Phrase("未知的错误 %s.Type 无法转换成 ast.StructType", s.Type)
+		return nil, newError(s.Pos(), msg)
 	}
 }
 
@@ -236,7 +235,7 @@ func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string
 	case *ast.Ident:
 		ref, err := f.fromName(t, currPath, expr.Name, tag, false)
 		if err != nil {
-			return nil, newError(logger.DocSyntax, e.Pos(), err)
+			return nil, newError(e.Pos(), err)
 		}
 		return ref, nil
 	case *ast.StarExpr: // 指针
@@ -248,13 +247,12 @@ func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string
 			if _, ok := err.(*Error); ok {
 				return nil, err
 			}
-			return nil, newError(logger.DocSyntax, e.Pos(), err)
+			return nil, newError(e.Pos(), err)
 		}
 		return ref, nil
 	//case *ast.InterfaceType: // 无法处理此类型
 	default:
-		msg := fmt.Sprintf("无法处理的类型 %s", expr)
-		return nil, newError(logger.DocSyntax, e.Pos(), msg)
+		return nil, newError(e.Pos(), web.Phrase("无法处理的类型 %s", expr))
 	}
 }
 

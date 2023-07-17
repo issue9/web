@@ -7,7 +7,6 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
@@ -19,7 +18,7 @@ func (doc *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []stri
 	words, l := utils.SplitSpaceN(suffix, 3) // GET /users *desc
 	var method, path string
 	if l < 2 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return
 	}
 	method, path = words[0], words[1]
@@ -60,7 +59,7 @@ func (doc *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []stri
 		case "@resp-ref": // @resp-ref 200 name
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l != 2 {
-				doc.l.Log(logger.DocSyntax, errSyntax, filename, ln+i)
+				doc.l.Error(errSyntax, filename, ln+i)
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: words[1]}
@@ -88,17 +87,17 @@ func (doc *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []stri
 func (doc *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return
 	}
 
 	s, err := doc.search.New(t, currPath, words[0], true)
 	if err != nil {
 		if serr, ok := err.(*schema.Error); ok {
-			doc.l.Log(serr.Type, serr.Msg, doc.file(serr.Pos), doc.line(serr.Pos))
+			serr.Log(doc.l, doc.fset)
 			return
 		}
-		doc.l.Log(logger.DocSyntax, err, filename, ln)
+		doc.l.Error(err, filename, ln)
 		return
 	}
 
@@ -108,13 +107,13 @@ func (doc *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, su
 func (doc *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l < 2 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return
 	}
 
 	s, err := schema.NewPath(words[1])
 	if err != nil {
-		doc.l.Log(logger.DocSyntax, err, filename, ln)
+		doc.l.Error(err, filename, ln)
 		return
 	}
 
@@ -133,7 +132,7 @@ func (doc *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln 
 func (doc *Parser) addCookieHeader(opt *openapi3.Operation, in, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		doc.l.Log(logger.DocSyntax, errSyntax, filename, ln)
+		doc.l.Error(errSyntax, filename, ln)
 		return
 	}
 

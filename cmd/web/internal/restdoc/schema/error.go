@@ -10,13 +10,15 @@ import (
 )
 
 type Error struct {
-	Type logger.Type
-	Msg  any
-	Pos  token.Pos
+	Msg any
+	Pos token.Pos
 }
 
-func newError(t logger.Type, pos token.Pos, msg any) *Error {
-	return &Error{Type: t, Msg: msg, Pos: pos}
+func newError(pos token.Pos, msg any) *Error { return &Error{Msg: msg, Pos: pos} }
+
+func (err *Error) Log(l *logger.Logger, fset *token.FileSet) {
+	p := fset.Position(err.Pos)
+	l.Error(err.Msg, p.Filename, p.Line)
 }
 
 func (err *Error) Error() string { return fmt.Sprint(err.Msg) }

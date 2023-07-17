@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/web/logs"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 )
@@ -15,7 +15,7 @@ import (
 func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := loggertest.New()
+	l := loggertest.New(a)
 	p := New(l.Logger)
 	d := schema.NewOpenAPI()
 	lines := []string{
@@ -66,7 +66,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		Equal(openid.Value.Description, "openid auth")
 
 	// 测试行号是否正确
-	l = loggertest.New()
+	l = loggertest.New(a)
 	p = New(l.Logger)
 	d = schema.NewOpenAPI()
 	lines = []string{
@@ -82,7 +82,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	a.Equal(1, l.Count()).
 		Length(d.Tags, 1).
 		Equal(d.Info.Description, "# markdown desc\nline 2").
-		Equal(l.Entries[logger.DocSyntax][0].Line, 8)
+		Contains(l.Records[logs.Error][0], "example.go:8")
 }
 
 func TestBuildContact(t *testing.T) {

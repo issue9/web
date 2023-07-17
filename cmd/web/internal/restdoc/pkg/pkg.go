@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 )
@@ -33,17 +34,17 @@ type AppendFunc = func(*Package)
 func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bool, af AppendFunc, l *logger.Logger) {
 	root = filepath.Clean(root)
 
-	l.LogWithoutPos(logger.Info, localeutil.Phrase("start parse %s ...\n", root))
+	l.Info(localeutil.Phrase("start parse %s ...\n", root))
 
 	dirs, err := getDirs(root, recursive)
 	if err != nil {
-		l.Log(logger.Unknown, err, root, 0)
+		l.Error(err, "", 0)
 		return
 	}
 
 	modPath, err := getModPath(root)
 	if err != nil {
-		l.Log(logger.Unknown, err, root, 0)
+		l.Error(err, "", 0)
 		return
 	}
 
@@ -51,7 +52,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 	for _, dir := range dirs {
 		select {
 		case <-ctx.Done():
-			l.Log(logger.Cancelled, context.Canceled, dir, 0)
+			l.Warning(web.Phrase("cancelled"))
 			return
 		default:
 			wg.Add(1)
@@ -68,7 +69,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 		}
 	}
 	wg.Wait()
-	l.LogWithoutPos(logger.Info, localeutil.Phrase("parse %s complete\n", root))
+	l.Info(localeutil.Phrase("parse %s complete\n", root))
 }
 
 // 扫描 dir 下的 go 文件
@@ -78,7 +79,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 func scan(ctx context.Context, fset *token.FileSet, l *logger.Logger, dir, modPath string) *Package {
 	entry, err := os.ReadDir(dir)
 	if err != nil {
-		l.Log(logger.Unknown, err, dir, 0)
+		l.Error(err, "", 0)
 		return nil
 	}
 
@@ -94,7 +95,7 @@ func scan(ctx context.Context, fset *token.FileSet, l *logger.Logger, dir, modPa
 	for _, e := range entry {
 		select {
 		case <-ctx.Done():
-			l.Log(logger.Cancelled, context.Canceled, dir, 0)
+			l.Warning(web.Phrase("cancelled"))
 			return nil
 		default:
 			// 路径、非 .go 扩展名 或是 _test.go 结尾的文件都忽略
@@ -112,7 +113,7 @@ func scan(ctx context.Context, fset *token.FileSet, l *logger.Logger, dir, modPa
 					appendFiles(f)
 					return
 				}
-				l.LogError(logger.GoSyntax, err, path, 0)
+				l.Error(err, "", 0)
 			}(filepath.Join(dir, e.Name()))
 		}
 	}

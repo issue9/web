@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/web/logs"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
 )
 
@@ -34,26 +34,26 @@ func TestScanDir(t *testing.T) {
 
 	ap := newAppender()
 	fset := token.NewFileSet()
-	l := loggertest.New()
+	l := loggertest.New(a)
 	ScanDir(context.Background(), fset, "./testdir", true, ap.append, l.Logger)
 	a.Length(ap.pkgs, 2).
-		Length(l.Entries[logger.Info], 2).
+		Length(l.Records[logs.Info], 2).
 		NotNil(ap.pkgs[0].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir").
 		NotNil(ap.pkgs[1].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir/testdir2")
 
 	ap = newAppender()
 	fset = token.NewFileSet()
-	l = loggertest.New()
+	l = loggertest.New(a)
 	ScanDir(context.Background(), fset, "./testdir", false, ap.append, l.Logger)
 	a.Length(ap.pkgs, 1).
-		Length(l.Entries[logger.Info], 2).
+		Length(l.Records[logs.Info], 2).
 		NotNil(ap.pkgs[0].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir/testdir2")
 }
 
 func TestScan(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := loggertest.New()
+	l := loggertest.New(a)
 	ctx := context.Background()
 	fset := token.NewFileSet()
 

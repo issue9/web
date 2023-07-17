@@ -71,6 +71,8 @@ func (l *Logs) ERROR() Logger { return l.logs.ERROR() }
 
 func (l *Logs) FATAL() Logger { return l.logs.FATAL() }
 
+func (l *Logs) Logger(lv Level) Logger { return l.logs.Logger(lv) }
+
 func (l *Logs) NewRecord(lv Level) *Record { return l.logs.NewRecord(lv) }
 
 // With 构建一个带有指定参数日志对象
@@ -82,17 +84,17 @@ func (l *Logs) With(ps map[string]any) *ParamsLogs {
 	return p
 }
 
-func (l *ParamsLogs) INFO() Logger { return l.level(Info) }
+func (l *ParamsLogs) INFO() Logger { return l.Logger(Info) }
 
-func (l *ParamsLogs) TRACE() Logger { return l.level(Trace) }
+func (l *ParamsLogs) TRACE() Logger { return l.Logger(Trace) }
 
-func (l *ParamsLogs) WARN() Logger { return l.level(Warn) }
+func (l *ParamsLogs) WARN() Logger { return l.Logger(Warn) }
 
-func (l *ParamsLogs) DEBUG() Logger { return l.level(Debug) }
+func (l *ParamsLogs) DEBUG() Logger { return l.Logger(Debug) }
 
-func (l *ParamsLogs) ERROR() Logger { return l.level(Error) }
+func (l *ParamsLogs) ERROR() Logger { return l.Logger(Error) }
 
-func (l *ParamsLogs) FATAL() Logger { return l.level(Fatal) }
+func (l *ParamsLogs) FATAL() Logger { return l.Logger(Fatal) }
 
 func (l *ParamsLogs) NewRecord(lv Level) *Record {
 	e := l.logs.NewRecord(lv)
@@ -102,7 +104,7 @@ func (l *ParamsLogs) NewRecord(lv Level) *Record {
 	return e
 }
 
-func (l *ParamsLogs) level(lv Level) Logger {
+func (l *ParamsLogs) Logger(lv Level) Logger {
 	if _, found := l.loggers[lv]; !found {
 		l.loggers[lv] = l.logs.logs.With(lv, l.ps)
 	}
