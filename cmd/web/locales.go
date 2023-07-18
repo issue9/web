@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed locales/*
+//go:embed locales/*.yaml
 var locales embed.FS
 
 func newPrinter() (*localeutil.Printer, error) {
@@ -23,7 +23,7 @@ func newPrinter() (*localeutil.Printer, error) {
 	}
 
 	m := &message.Messages{}
-	if err = m.LoadFSGlob(locales, "*.yaml", yaml.Unmarshal); err != nil {
+	if err = m.LoadFSGlob(locales, "locales/*.yaml", yaml.Unmarshal); err != nil {
 		return nil, err
 	}
 

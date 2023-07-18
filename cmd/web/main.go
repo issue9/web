@@ -39,7 +39,9 @@ var (
 )
 
 func init() {
-	version += "+" + commits
+	if commits != "" {
+		version += "+" + commits
+	}
 }
 
 func main() {
