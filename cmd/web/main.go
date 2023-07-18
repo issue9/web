@@ -33,6 +33,15 @@ visit https://github.com/issue9/web for more info.
 `)
 )
 
+var (
+	version = web.Version
+	commits = ""
+)
+
+func init() {
+	version += "+" + commits
+}
+
 func main() {
 	p, err := newPrinter()
 	if err != nil {
@@ -43,7 +52,7 @@ func main() {
 		v := fs.Bool("v", false, localeutil.Phrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
 			if *v {
-				fmt.Fprintf(w, "web: %s\n", web.Version)
+				fmt.Fprintf(w, "web: %s\n", version)
 				fmt.Fprintf(w, "build with: %s\n", runtime.Version())
 			}
 
