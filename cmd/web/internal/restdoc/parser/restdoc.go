@@ -25,7 +25,7 @@ func (p *Parser) parseRESTDoc(t *openapi3.T, currPath, title string, lines []str
 	}
 
 	if t.Info != nil {
-		p.l.Error(localeutil.Phrase("已经存在一个 # restdoc 节点"), filename, ln)
+		p.l.Error(localeutil.Phrase("dup # restdoc note"), filename, ln)
 		return
 	}
 

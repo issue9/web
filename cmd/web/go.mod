@@ -6,7 +6,7 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.17.1
+	github.com/issue9/localeutil v0.17.3
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/sliceutil v0.12.0
 	github.com/issue9/web v0.77.0

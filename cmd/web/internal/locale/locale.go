@@ -22,8 +22,12 @@ import (
 )
 
 var (
-	title     = localeutil.Phrase("extract locale")
-	usage     = localeutil.Phrase("extract usage")
+	title = localeutil.Phrase("extract locale")
+	usage = localeutil.Phrase(`extract usage
+	
+flags：
+{{flags}}
+`)
 	format    = localeutil.Phrase("file format")
 	out       = localeutil.Phrase("out dir")
 	lang      = localeutil.Phrase("language")
@@ -52,13 +56,15 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			var ext string
 			switch strings.ToLower(*f) {
 			case "json", ".json":
-				u = json.Marshal
+				u = func(v any) ([]byte, error) {
+					return json.MarshalIndent(v, "", "\t")
+				}
 				ext = ".json"
 			case "yaml", "yml", ".yaml", ".yml":
 				u = yaml.Marshal
 				ext = ".yaml"
 			default:
-				return localeutil.Error("无效的参数 f")
+				return localeutil.Error("invalid flag value f")
 			}
 
 			// l
@@ -73,7 +79,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			out := filepath.Join(*o, *l+ext)
 
 			if fs.NArg() == 0 {
-				return localeutil.Error("未指定目录")
+				return localeutil.Error("no src dir")
 			}
 
 			m := &message.Messages{}

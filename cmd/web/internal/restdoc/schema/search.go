@@ -67,7 +67,7 @@ func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isAr
 		typeName = currPath + "." + typeName
 	}
 	if modPath == "" {
-		return nil, localeutil.Error("无法找到 %s", typeName) // 行数未变化，直接返回错误。
+		return nil, localeutil.Error("not found %s", typeName) // 行数未变化，直接返回错误。
 	}
 
 	if ref, found := t.Components.Schemas[typeName]; found { // 查找是否已经存在于 components/schemes
@@ -76,7 +76,7 @@ func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isAr
 
 	pkg := f(modPath)
 	if pkg == nil {
-		return nil, localeutil.Error("未找到 %s 表示的对象", modPath) // 行数未变化，直接返回错误。
+		return nil, localeutil.Error("not found object %s", modPath) // 行数未变化，直接返回错误。
 	}
 
 	var spec *ast.TypeSpec
@@ -99,7 +99,7 @@ LOOP:
 	}
 
 	if spec == nil {
-		return nil, localeutil.Error("无法找到 %s", typeName)
+		return nil, localeutil.Error("not found %s", typeName)
 	}
 
 	ref, err := f.fromTypeSpec(t, file, currPath, typeName, tag, spec)
