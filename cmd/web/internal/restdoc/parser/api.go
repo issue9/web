@@ -75,7 +75,7 @@ func (doc *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []stri
 		case "##": // 可能是 ## callback
 			// TODO
 		default:
-			opt.Description = strings.Join(lines[i:], "") // TODO 改为 markdown
+			opt.Description = strings.Join(lines[i:], " ")
 		}
 	}
 
