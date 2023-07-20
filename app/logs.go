@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	xlogs "github.com/issue9/logs/v5"
 	"github.com/issue9/term/v3/colors"
 
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 )
 
@@ -125,7 +126,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *config.Fi
 
 		f, found := logHandlersFactory[w.Type]
 		if !found {
-			return nil, nil, config.NewFieldError(field+".Type", errs.NewLocaleError("%s not found", w.Type))
+			return nil, nil, config.NewFieldError(field+".Type", localeutil.Error("%s not found", w.Type))
 		}
 
 		ww, c, err := f(w.Args)
@@ -220,7 +221,7 @@ var colorMap = map[string]colors.Color{
 // - 2 为输出通道，可以为 stdout 和 stderr；
 func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	if len(args) < 2 {
-		return nil, nil, config.NewFieldError("Args", "invalid value")
+		return nil, nil, config.NewFieldError("Args", locales.InvalidValue)
 	}
 
 	timeLayout := args[0]
@@ -232,19 +233,19 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, config.NewFieldError("Args[1]", "invalid value")
+		return nil, nil, config.NewFieldError("Args[1]", locales.InvalidValue)
 	}
 
 	args = args[2:]
 	if len(args) > 6 {
-		return nil, nil, config.NewFieldError("Args", "invalid value")
+		return nil, nil, config.NewFieldError("Args", locales.InvalidValue)
 	}
 	cs := make(map[logs.Level]colors.Color, len(args))
 	for index, arg := range args {
 		a := strings.SplitN(arg, ":", 2)
 
 		if len(a) != 2 || a[1] == "" {
-			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", "invalid value")
+			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", locales.InvalidValue)
 		}
 
 		lv, err := xlogs.ParseLevel(a[0])
@@ -254,7 +255,7 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 
 		c, found := colorMap[a[1]]
 		if !found {
-			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", "invalid value")
+			return nil, nil, config.NewFieldError("Args["+strconv.Itoa(2+index)+"]", locales.InvalidValue)
 		}
 
 		cs[lv] = c

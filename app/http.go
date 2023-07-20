@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/crypto/acme/autocert"
 
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
@@ -113,11 +114,11 @@ func exists(p string) bool {
 
 func (cert *certificate) sanitize() *config.FieldError {
 	if !exists(cert.Cert) {
-		return config.NewFieldError("cert", errs.NewLocaleError("%s not found", cert.Cert))
+		return config.NewFieldError("cert", localeutil.Error("%s not found", cert.Cert))
 	}
 
 	if !exists(cert.Key) {
-		return config.NewFieldError("key", errs.NewLocaleError("%s not found", cert.Key))
+		return config.NewFieldError("key", localeutil.Error("%s not found", cert.Key))
 	}
 
 	return nil
@@ -125,23 +126,23 @@ func (cert *certificate) sanitize() *config.FieldError {
 
 func (h *httpConfig) sanitize() *config.FieldError {
 	if h.ReadTimeout < 0 {
-		return config.NewFieldError("readTimeout", "should great than 0")
+		return config.NewFieldError("readTimeout", locales.ShouldGreatThanZero)
 	}
 
 	if h.WriteTimeout < 0 {
-		return config.NewFieldError("writeTimeout", "should great than 0")
+		return config.NewFieldError("writeTimeout", locales.ShouldGreatThanZero)
 	}
 
 	if h.IdleTimeout < 0 {
-		return config.NewFieldError("idleTimeout", "should great than 0")
+		return config.NewFieldError("idleTimeout", locales.ShouldGreatThanZero)
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return config.NewFieldError("readHeaderTimeout", "should great than 0")
+		return config.NewFieldError("readHeaderTimeout", locales.ShouldGreatThanZero)
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return config.NewFieldError("maxHeaderBytes", "should great than 0")
+		return config.NewFieldError("maxHeaderBytes", locales.ShouldGreatThanZero)
 	}
 
 	if h.RequestID == "" {
@@ -221,11 +222,11 @@ func (l *acme) tlsConfig() *tls.Config {
 
 func (l *acme) sanitize() *config.FieldError {
 	if l.Cache == "" || !exists(l.Cache) {
-		return config.NewFieldError("cache", "invalid value")
+		return config.NewFieldError("cache", locales.InvalidValue)
 	}
 
 	if len(l.Domains) == 0 {
-		return config.NewFieldError("domains", "can not be empty")
+		return config.NewFieldError("domains", locales.CanNotBeEmpty)
 	}
 
 	return nil

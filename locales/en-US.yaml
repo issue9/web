@@ -1,0 +1,407 @@
+languages:
+    - id: en-US
+      messages:
+        - key: '%s at %s:%d'
+          message:
+            msg: '%s at %s:%d'
+        - key: '%s not found'
+          message:
+            msg: '%s not found'
+        - key: |
+            Auxiliary tool for github.com/issue9/web
+
+            commands：
+            {{commands}}
+
+            flags：
+            {{flags}}
+
+            visit https://github.com/issue9/web for more info.
+          message:
+            msg: |
+                Auxiliary tool for github.com/issue9/web
+
+                commands：
+                {{commands}}
+
+                flags：
+                {{flags}}
+
+                visit https://github.com/issue9/web for more info.
+        - key: build go source with version from git tag
+          message:
+            msg: build go source with version from git tag
+        - key: build usage
+          message:
+            msg: build usage
+        - key: cache miss
+          message:
+            msg: cache miss
+        - key: can not be empty
+          message:
+            msg: can not be empty
+        - key: cancelled
+          message:
+            msg: cancelled
+        - key: cmd.action
+          message:
+            msg: cmd.action
+        - key: cmd.show_help
+          message:
+            msg: cmd.show_help
+        - key: cmd.show_version
+          message:
+            msg: cmd.show_version
+        - key: command %s not found
+          message:
+            msg: command %s not found
+        - key: 'dup # restdoc note'
+          message:
+            msg: 'dup # restdoc note'
+        - key: duplicate value
+          message:
+            msg: duplicate value
+        - key: extract locale
+          message:
+            msg: extract locale
+        - key: |
+            extract usage
+            	
+            flags：
+            {{flags}}
+          message:
+            msg: |
+                extract usage
+                	
+                flags：
+                {{flags}}
+        - key: file format
+          message:
+            msg: file format
+        - key: gen restdoc
+          message:
+            msg: gen restdoc
+        - key: invalid cache key
+          message:
+            msg: invalid cache key
+        - key: invalid flag value f
+          message:
+            msg: invalid flag value f
+        - key: invalid value
+          message:
+            msg: invalid value
+        - key: language
+          message:
+            msg: language
+        - key: locale func
+          message:
+            msg: locale func
+        - key: no src dir
+          message:
+            msg: no src dir
+        - key: not found %s
+          message:
+            msg: not found %s
+        - key: not found charset for %s
+          message:
+            msg: not found charset for %s
+        - key: not found object %s
+          message:
+            msg: not found object %s
+        - key: not found serialization for %s
+          message:
+            msg: not found serialization for %s
+        - key: not found serialization function for %s
+          message:
+            msg: not found serialization function for %s
+        - key: out dir
+          message:
+            msg: out dir
+        - key: package %s with the same name.
+          message:
+            msg: package %s with the same name.
+        - key: parse %s complete\n
+          message:
+            msg: parse %s complete\n
+        - key: problem.400
+          message:
+            msg: problem.400
+        - key: problem.400.detail
+          message:
+            msg: problem.400.detail
+        - key: problem.401
+          message:
+            msg: problem.401
+        - key: problem.401.detail
+          message:
+            msg: problem.401.detail
+        - key: problem.402
+          message:
+            msg: problem.402
+        - key: problem.402.detail
+          message:
+            msg: problem.402.detail
+        - key: problem.403
+          message:
+            msg: problem.403
+        - key: problem.403.detail
+          message:
+            msg: problem.403.detail
+        - key: problem.404
+          message:
+            msg: problem.404
+        - key: problem.404.detail
+          message:
+            msg: problem.404.detail
+        - key: problem.405
+          message:
+            msg: problem.405
+        - key: problem.405.detail
+          message:
+            msg: problem.405.detail
+        - key: problem.406
+          message:
+            msg: problem.406
+        - key: problem.406.detail
+          message:
+            msg: problem.406.detail
+        - key: problem.407
+          message:
+            msg: problem.407
+        - key: problem.407.detail
+          message:
+            msg: problem.407.detail
+        - key: problem.408
+          message:
+            msg: problem.408
+        - key: problem.408.detail
+          message:
+            msg: problem.408.detail
+        - key: problem.409
+          message:
+            msg: problem.409
+        - key: problem.409.detail
+          message:
+            msg: problem.409.detail
+        - key: problem.410
+          message:
+            msg: problem.410
+        - key: problem.410.detail
+          message:
+            msg: problem.410.detail
+        - key: problem.411
+          message:
+            msg: problem.411
+        - key: problem.411.detail
+          message:
+            msg: problem.411.detail
+        - key: problem.412
+          message:
+            msg: problem.412
+        - key: problem.412.detail
+          message:
+            msg: problem.412.detail
+        - key: problem.413
+          message:
+            msg: problem.413
+        - key: problem.413.detail
+          message:
+            msg: problem.413.detail
+        - key: problem.414
+          message:
+            msg: problem.414
+        - key: problem.414.detail
+          message:
+            msg: problem.414.detail
+        - key: problem.415
+          message:
+            msg: problem.415
+        - key: problem.415.detail
+          message:
+            msg: problem.415.detail
+        - key: problem.416
+          message:
+            msg: problem.416
+        - key: problem.416.detail
+          message:
+            msg: problem.416.detail
+        - key: problem.417
+          message:
+            msg: problem.417
+        - key: problem.417.detail
+          message:
+            msg: problem.417.detail
+        - key: problem.418
+          message:
+            msg: problem.418
+        - key: problem.418.detail
+          message:
+            msg: problem.418.detail
+        - key: problem.421
+          message:
+            msg: problem.421
+        - key: problem.421.detail
+          message:
+            msg: problem.421.detail
+        - key: problem.422
+          message:
+            msg: problem.422
+        - key: problem.422.detail
+          message:
+            msg: problem.422.detail
+        - key: problem.423
+          message:
+            msg: problem.423
+        - key: problem.423.detail
+          message:
+            msg: problem.423.detail
+        - key: problem.424
+          message:
+            msg: problem.424
+        - key: problem.424.detail
+          message:
+            msg: problem.424.detail
+        - key: problem.425
+          message:
+            msg: problem.425
+        - key: problem.425.detail
+          message:
+            msg: problem.425.detail
+        - key: problem.426
+          message:
+            msg: problem.426
+        - key: problem.426.detail
+          message:
+            msg: problem.426.detail
+        - key: problem.428
+          message:
+            msg: problem.428
+        - key: problem.428.detail
+          message:
+            msg: problem.428.detail
+        - key: problem.429
+          message:
+            msg: problem.429
+        - key: problem.429.detail
+          message:
+            msg: problem.429.detail
+        - key: problem.431
+          message:
+            msg: problem.431
+        - key: problem.431.detail
+          message:
+            msg: problem.431.detail
+        - key: problem.451
+          message:
+            msg: problem.451
+        - key: problem.451.detail
+          message:
+            msg: problem.451.detail
+        - key: problem.500
+          message:
+            msg: problem.500
+        - key: problem.500.detail
+          message:
+            msg: problem.500.detail
+        - key: problem.501
+          message:
+            msg: problem.501
+        - key: problem.501.detail
+          message:
+            msg: problem.501.detail
+        - key: problem.502
+          message:
+            msg: problem.502
+        - key: problem.502.detail
+          message:
+            msg: problem.502.detail
+        - key: problem.503
+          message:
+            msg: problem.503
+        - key: problem.503.detail
+          message:
+            msg: problem.503.detail
+        - key: problem.504
+          message:
+            msg: problem.504
+        - key: problem.504.detail
+          message:
+            msg: problem.504.detail
+        - key: problem.505
+          message:
+            msg: problem.505
+        - key: problem.505.detail
+          message:
+            msg: problem.505.detail
+        - key: problem.506
+          message:
+            msg: problem.506
+        - key: problem.506.detail
+          message:
+            msg: problem.506.detail
+        - key: problem.507
+          message:
+            msg: problem.507
+        - key: problem.507.detail
+          message:
+            msg: problem.507.detail
+        - key: problem.508
+          message:
+            msg: problem.508
+        - key: problem.508.detail
+          message:
+            msg: problem.508.detail
+        - key: problem.510
+          message:
+            msg: problem.510
+        - key: problem.510.detail
+          message:
+            msg: problem.510.detail
+        - key: problem.511
+          message:
+            msg: problem.511
+        - key: problem.511.detail
+          message:
+            msg: problem.511.detail
+        - key: recursive dir
+          message:
+            msg: recursive dir
+        - key: restdoc usage
+          message:
+            msg: restdoc usage
+        - key: set output file
+          message:
+            msg: set output file
+        - key: should great than 0
+          message:
+            msg: should great than 0
+        - key: show current help info
+          message:
+            msg: show current help info
+        - key: show help
+          message:
+            msg: show help
+        - key: show version
+          message:
+            msg: show version
+        - key: start parse %s ...\n
+          message:
+            msg: start parse %s ...\n
+        - key: syntax error
+          message:
+            msg: syntax error
+        - key: the client did not specify content-type header
+          message:
+            msg: the client did not specify content-type header
+        - key: unique generator
+          message:
+            msg: unique generator
+        - key: unsupported serialization
+          message:
+            msg: unsupported serialization
+        - key: 无法处理的类型 %s
+          message:
+            msg: 无法处理的类型 %s
+        - key: 未知的错误 %s.Type 无法转换成 ast.StructType
+          message:
+            msg: 未知的错误 %s.Type 无法转换成 ast.StructType

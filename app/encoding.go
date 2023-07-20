@@ -10,9 +10,9 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -56,7 +56,7 @@ func (conf *configOf[T]) sanitizeEncodings() *config.FieldError {
 		enc, found := encodingFactory[e.ID]
 		if !found {
 			field := "encodings[" + strconv.Itoa(index) + "].id"
-			return config.NewFieldError(field, errs.NewLocaleError("%s not found", e.ID))
+			return config.NewFieldError(field, localeutil.Error("%s not found", e.ID))
 		}
 
 		conf.encodings = append(conf.encodings, &server.Encoding{

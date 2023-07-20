@@ -8,9 +8,8 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"gopkg.in/yaml.v3"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 var filesFactory = map[string]serializer{}
@@ -29,7 +28,7 @@ func (conf *configOf[T]) sanitizeFileSerializers() *config.FieldError {
 	for i, name := range conf.FileSerializers {
 		s, found := filesFactory[name]
 		if !found {
-			return config.NewFieldError("["+strconv.Itoa(i)+"]", errs.NewLocaleError("not found serialization function for %s", name))
+			return config.NewFieldError("["+strconv.Itoa(i)+"]", localeutil.Error("not found serialization function for %s", name))
 		}
 		conf.fileSerializers[name] = s // conf.FileSerializers 可以保证 conf.fileSerializers 唯一性
 	}

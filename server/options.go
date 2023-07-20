@@ -23,6 +23,7 @@ import (
 	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 )
 
@@ -224,7 +225,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	// mimetype
 	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *Mimetype) bool { return e1.Type == e2.Type })
 	if len(indexes) > 0 {
-		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", "duplicate value")
+		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
 	}
 	o.mimetypes = mimetypes.New[MarshalFunc, UnmarshalFunc](len(o.Mimetypes))
 	for _, mt := range o.Mimetypes {
@@ -238,11 +239,11 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 
 func (e *Encoding) sanitize() *config.FieldError {
 	if e.Name == "" || e.Name == "identity" || e.Name == "*" {
-		return config.NewFieldError("Name", "invalid value")
+		return config.NewFieldError("Name", locales.InvalidValue)
 	}
 
 	if e.Builder == nil {
-		return config.NewFieldError("Builder", "can not be empty")
+		return config.NewFieldError("Builder", locales.CanNotBeEmpty)
 	}
 
 	if len(e.ContentTypes) == 0 {

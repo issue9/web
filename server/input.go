@@ -15,16 +15,14 @@ import (
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/locales"
 )
 
 const defaultBodyBufferSize = 256
 
 var (
-	tGreatThanZero = localeutil.Phrase("should great than 0")
-
 	pathPool  = &sync.Pool{New: func() any { return &Paths{} }}
 	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 )
@@ -69,7 +67,7 @@ func (p *Paths) ID(key string) int64 {
 		p.v.AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.v.Add(key, tGreatThanZero)
+		p.v.Add(key, locales.ShouldGreatThanZero)
 		return 0
 	}
 	return id
@@ -149,7 +147,7 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 		return 0, pp
 	} else if ret <= 0 {
 		pp := ctx.Problem(id)
-		pp.AddParam(key, tGreatThanZero.LocaleString(p))
+		pp.AddParam(key, locales.ShouldGreatThanZero.LocaleString(p))
 		return 0, pp
 	}
 	return ret, nil
@@ -402,7 +400,7 @@ func (ctx *Context) Unmarshal(v any) error {
 		return nil
 	}
 	if ctx.inputMimetype == nil {
-		return errs.NewLocaleError("the client did not specify content-type header")
+		return localeutil.Error("the client did not specify content-type header")
 	}
 	return ctx.inputMimetype(body, v)
 }

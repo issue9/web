@@ -6,9 +6,10 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/serializer/json"
@@ -51,7 +52,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *config.FieldError {
 	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
 	if len(dup) > 0 {
 		value := conf.Mimetypes[dup[1]].Type
-		err := config.NewFieldError("["+strconv.Itoa(dup[1])+"].target", errs.NewLocaleError("duplicate value"))
+		err := config.NewFieldError("["+strconv.Itoa(dup[1])+"].target", locales.DuplicateValue)
 		err.Value = value
 		return err
 	}
@@ -60,7 +61,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *config.FieldError {
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return config.NewFieldError("["+strconv.Itoa(index)+"].target", errs.NewLocaleError("%s not found", item.Target))
+			return config.NewFieldError("["+strconv.Itoa(index)+"].target", localeutil.Error("%s not found", item.Target))
 		}
 
 		ms = append(ms, &server.Mimetype{

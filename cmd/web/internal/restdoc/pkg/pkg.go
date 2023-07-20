@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/source"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
@@ -42,7 +43,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 		return
 	}
 
-	modPath, err := getModPath(root)
+	modPath, err := source.ModPath(root)
 	if err != nil {
 		l.Error(err, "", 0)
 		return

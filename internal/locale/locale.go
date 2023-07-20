@@ -7,10 +7,9 @@ import (
 	"io/fs"
 
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message"
 	"golang.org/x/text/message/catalog"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 // Load 通过 s 加载 fsys 中的语言文件附加在 b 之上
@@ -23,7 +22,7 @@ func Load(s config.Serializer, b *catalog.Builder, fsys fs.FS, glob string) erro
 	for _, m := range matches {
 		_, u := s.GetByFilename(m)
 		if u == nil {
-			return errs.NewLocaleError("not found serialization function for %s", m)
+			return localeutil.Error("not found serialization function for %s", m)
 		}
 
 		msg := &message.Messages{}

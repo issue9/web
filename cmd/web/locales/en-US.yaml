@@ -1,6 +1,9 @@
 languages:
     - id: en-US
       messages:
+        - key: '%s at %s:%d'
+          message:
+            msg: '%s at %s:%d'
         - key: |
             Auxiliary tool for github.com/issue9/web
 
@@ -28,6 +31,9 @@ languages:
         - key: build usage
           message:
             msg: build usage
+        - key: cancelled
+          message:
+            msg: cancelled
         - key: command %s not found
           message:
             msg: command %s not found
@@ -105,3 +111,9 @@ languages:
         - key: syntax error
           message:
             msg: syntax error
+        - key: 无法处理的类型 %s
+          message:
+            msg: 无法处理的类型 %s
+        - key: 未知的错误 %s.Type 无法转换成 ast.StructType
+          message:
+            msg: 未知的错误 %s.Type 无法转换成 ast.StructType

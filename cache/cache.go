@@ -6,12 +6,12 @@ package cache
 import (
 	"time"
 
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/localeutil"
 )
 
 var (
-	errCacheMiss  = errs.NewLocaleError("cache miss")
-	errInvalidKey = errs.NewLocaleError("invalid cache key")
+	errCacheMiss  = localeutil.Error("cache miss")
+	errInvalidKey = localeutil.Error("invalid cache key")
 )
 
 const Forever = 0 //  永不过时

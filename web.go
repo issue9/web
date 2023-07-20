@@ -91,6 +91,8 @@ type (
 
 	// LocaleStringer 本地化字符串需要实在的接口
 	LocaleStringer = localeutil.LocaleStringer
+
+	StringPhrase = localeutil.StringPhrase
 )
 
 func NewServer(name, version string, o *Options) (*Server, error) {
@@ -98,7 +100,7 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 }
 
 // Phrase 生成本地化的语言片段
-func Phrase(key localeutil.Key, v ...any) LocaleStringer {
+func Phrase(key string, v ...any) LocaleStringer {
 	return localeutil.Phrase(key, v...)
 }
 
@@ -121,5 +123,5 @@ func NewFieldError(field string, msg any) *FieldError {
 
 // NewLocaleError 本地化的错误信息
 func NewLocaleError(format string, v ...any) error {
-	return errs.NewLocaleError(format, v...)
+	return localeutil.Error(format, v...)
 }

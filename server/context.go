@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
@@ -89,7 +90,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
-		srv.Logs().DEBUG().Printf("not found serialization for %s", h)
+		srv.Logs().DEBUG().Printf(localeutil.Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -97,7 +98,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().DEBUG().Printf("not found charset for %s", h)
+		srv.Logs().DEBUG().Printf(localeutil.Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}

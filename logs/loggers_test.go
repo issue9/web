@@ -10,8 +10,6 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/term/v3/colors"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 func TestLogs_With(t *testing.T) {
@@ -28,7 +26,7 @@ func TestLogs_With(t *testing.T) {
 
 	l.NewRecord(Error).DepthString(1, "error")
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:29") // 依赖 DepthString 行号
+		Contains(buf.String(), "loggers_test.go:27") // 依赖 DepthString 行号
 
 	// Logs.With
 
@@ -37,12 +35,12 @@ func TestLogs_With(t *testing.T) {
 	a.NotNil(ps)
 	ps.ERROR().String("string")
 	a.Contains(buf.String(), "string").
-		Contains(buf.String(), "loggers_test.go:38"). // 依赖 ERROR().String 行号
+		Contains(buf.String(), "loggers_test.go:36"). // 依赖 ERROR().String 行号
 		Contains(buf.String(), "k1=v1")
 
 	ps.NewRecord(Error).DepthError(1, errors.New("error"))
 	a.Contains(buf.String(), "error").
-		Contains(buf.String(), "loggers_test.go:43") // 依赖 DepthError 行号
+		Contains(buf.String(), "loggers_test.go:41") // 依赖 DepthError 行号
 
 	DestroyParamsLogs(ps)
 }
@@ -71,7 +69,7 @@ func TestNew(t *testing.T) {
 	l, err = New(opt)
 	a.NotError(err).NotNil(l)
 
-	l.ERROR().Error(errs.NewLocaleError("scheduled job"))
+	l.ERROR().Error(localeutil.Error("scheduled job"))
 	l.WARN().Printf("%s not found", localeutil.Phrase("scheduled job"))
 	l.INFO().Print(localeutil.Phrase("scheduled job"))
 	a.Contains(textBuf.String(), "scheduled job").

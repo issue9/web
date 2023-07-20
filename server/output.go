@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/issue9/localeutil"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/localeutil"
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 )
@@ -92,7 +91,7 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 // Marshal 将对象 v 按用户要求编码并返回
 func (ctx *Context) Marshal(v any) ([]byte, error) {
 	if ctx.outputMimetype.Marshal == nil { // 该值是可以为 nil 的，比如上传等操作。
-		return nil, errs.NewLocaleError("not found serialization for %s", ctx.Mimetype(false))
+		return nil, localeutil.Error("not found serialization for %s", ctx.Mimetype(false))
 	}
 	return ctx.outputMimetype.Marshal(ctx, v)
 }
@@ -101,7 +100,7 @@ func (ctx *Context) Marshal(v any) ([]byte, error) {
 func (ctx *Context) Wrote() bool { return ctx.wrote }
 
 // Sprintf 将内容翻译成当前请求的语言
-func (ctx *Context) Sprintf(key localeutil.Key, v ...any) string {
+func (ctx *Context) Sprintf(key string, v ...any) string {
 	return ctx.LocalePrinter().Sprintf(key, v...)
 }
 

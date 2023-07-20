@@ -4,8 +4,8 @@ package app
 
 import (
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 
@@ -32,7 +32,7 @@ func (p *Problem) sanitize() (*server.Problems, *config.FieldError) {
 	if p.Builder != "" {
 		f, found := problemFactory[p.Builder]
 		if !found {
-			return nil, config.NewFieldError("builder", errs.NewLocaleError("%s not found", p.Builder))
+			return nil, config.NewFieldError("builder", localeutil.Error("%s not found", p.Builder))
 		}
 		ps.Builder = f
 	}

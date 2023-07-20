@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
+	"github.com/issue9/web/locales"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
@@ -44,7 +45,7 @@ func (conf *configOf[T]) buildCache() *config.FieldError {
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return config.NewFieldError("type", "invalid value")
+		return config.NewFieldError("type", locales.InvalidValue)
 	}
 
 	c, err := b(conf.Cache.DSN)

@@ -150,6 +150,12 @@ func (cmd *CLIOf[T]) sanitize() error {
 	return nil
 }
 
+const (
+	cmdShowVersion = localeutil.StringPhrase("cmd.show_version")
+	cmdAction      = localeutil.StringPhrase("cmd.action")
+	cmdShowHelp    = localeutil.StringPhrase("cmd.show_help")
+)
+
 // FlagSet 将当前对象与 [flag.FlagSet] 关联
 //
 // helpFlag 是否添加帮助选项。
@@ -159,12 +165,12 @@ func (cmd *CLIOf[T]) sanitize() error {
 //
 // do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
 func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer) error) {
-	v := fs.Bool("v", false, cmd.Printer.Sprintf("cmd.show_version"))
-	fs.StringVar(&cmd.action, "a", "", cmd.Printer.Sprintf("cmd.action"))
+	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))
+	fs.StringVar(&cmd.action, "a", "", cmdAction.LocaleString(cmd.Printer))
 
 	var h bool
 	if helpFlag {
-		fs.BoolVar(&h, "h", false, cmd.Printer.Sprintf("cmd.show_help"))
+		fs.BoolVar(&h, "h", false, cmdShowHelp.LocaleString(cmd.Printer))
 	}
 
 	return func(w io.Writer) error {

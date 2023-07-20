@@ -6,10 +6,11 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/issue9/assert/v3 v3.0.4
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.17.3
+	github.com/issue9/localeutil v0.19.2
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/sliceutil v0.12.0
-	github.com/issue9/web v0.77.0
+	github.com/issue9/source v0.5.1
+	github.com/issue9/web v0.78.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -29,10 +30,9 @@ require (
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/logs/v5 v5.0.0 // indirect
-	github.com/issue9/mux/v7 v7.2.0 // indirect
+	github.com/issue9/mux/v7 v7.2.1 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/scheduled v0.13.0 // indirect
-	github.com/issue9/source v0.4.0 // indirect
 	github.com/issue9/term/v3 v3.2.0 // indirect
 	github.com/issue9/unique/v2 v2.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
