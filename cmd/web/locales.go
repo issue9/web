@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/localeutil/message"
+	"github.com/issue9/localeutil/message/serialize"
 	xmessage "golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
@@ -22,14 +22,16 @@ func newPrinter() (*localeutil.Printer, error) {
 		fmt.Println(err)
 	}
 
-	m := &message.Messages{}
-	if err = m.LoadFSGlob(locales, "locales/*.yaml", yaml.Unmarshal); err != nil {
+	ls, err := serialize.LoadFSGlob(locales, "locales/*.yaml", yaml.Unmarshal)
+	if err != nil {
 		return nil, err
 	}
 
 	b := catalog.NewBuilder()
-	if err = m.Catalog(b); err != nil {
-		return nil, err
+	for _, l := range ls {
+		if err = l.Catalog(b); err != nil {
+			return nil, err
+		}
 	}
 
 	return xmessage.NewPrinter(tag, xmessage.Catalog(b)), nil

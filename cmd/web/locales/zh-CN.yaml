@@ -1,111 +1,155 @@
-languages:
-    - id: zh-cn
-      messages:
-        - key: |
-            Auxiliary tool for github.com/issue9/web
+id: zh-CN
+messages:
+    - key: |
+        Auxiliary tool for github.com/issue9/web
 
-            commands：
+        commands：
+        {{commands}}
+
+        flags：
+        {{flags}}
+
+        visit https://github.com/issue9/web for more info.
+      message:
+        msg: |
+            框架 github.com/issue9/web 的辅助工具
+
+            子命令：
             {{commands}}
 
-            flags：
+            选项：
             {{flags}}
 
-            visit https://github.com/issue9/web for more info.
-          message:
-            msg: |
-                框架 github.com/issue9/web 的辅助工具
-
-                子命令：
-                {{commands}}
-
-                选项：
-                {{flags}}
-
-                更多信息可访问 https://github.com/issue9/web。
-        - key: build go source with version from git tag
-          message:
-            msg: 编译 Go 代码并打上 git tag 作为其版本号
-        - key: build usage
-          message:
-            msg: |
-              这会将最后的 git tag 为应用版本号，
-              版本号通过命令行中的 {{version}} 传递。比如：
-              web build -ldflags="-X main.version={{version}}" ./
-              这会将 build -ldflags="-X main.version=1.0.0" ./ 传递给 go 进行编译。
-        - key: command %s not found
-          message:
-            msg: 未找到子命令 %s
-        - key: 'dup # restdoc note'
-          message:
-            msg: '重复的节点 # restdoc'
-        - key: extract locale
-          message:
-            msg: 提取本地化内容
-        - key: |
-            extract usage
+            更多信息可访问 https://github.com/issue9/web。
+    - key: build go source with version from git tag
+      message:
+        msg: 编译 Go 代码并打上 git tag 作为其版本号
+    - key: build usage
+      message:
+        msg: |
+            这会将最后的 git tag 为应用版本号，
+            版本号通过命令行中的 {{version}} 传递。比如：
+            web build -ldflags="-X main.version={{version}}" ./
+            这会将 build -ldflags="-X main.version=1.0.0" ./ 传递给 go 进行编译。
+    - key: command %s not found
+      message:
+        msg: 未找到子命令 %s
+    - key: 'dup # restdoc note'
+      message:
+        msg: '重复的节点 # restdoc'
+    - key: extract locale
+      message:
+        msg: 提取本地化内容
+    - key: file format
+      message:
+        msg: 输出文件的格式，目前支持 json 和 yaml
+    - key: gen restdoc
+      message:
+        msg: 生成 openapi 文档
+    - key: language
+      message:
+        msg: 语言
+    - key: locale func
+      message:
+        msg: 源代码中用于输出本地化信息的函数
+    - key: no src dir
+      message:
+        msg: 未指定源码目录
+    - key: not found %s
+      message:
+        msg: 未找到 %s
+    - key: not found object %s
+      message:
+        msg: 未找到对象 %s
+    - key: out dir
+      message:
+        msg: 输出目录
+    - key: package %s with the same name.
+      message:
+        msg: '%s 已经拥有相同的名称'
+    - key: parse %s complete\n
+      message:
+        msg: '%s 分析完成\n'
+    - key: recursive dir
+      message:
+        msg: 递归访问子目录
+    - key: restdoc usage
+      message:
+        msg: |
+          提取注释中的 restdoc 文档生成 openapi。
+    - key: set output file
+      message:
+        msg: 设置输出文件
+    - key: show current help info
+      message:
+        msg: 显示当前帮助信息
+    - key: show help
+      message:
+        msg: 显示帮助信息
+    - key: show version
+      message:
+        msg: 显示版本号
+    - key: start parse %s ...\n
+      message:
+        msg: 开始分析 %s ...\n
+    - key: syntax error
+      message:
+        msg: 语法错误
+    - key: '%s at %s:%d'
+      message:
+        msg: '%s 位于 %s:%d'
+    - key: cancelled
+      message:
+        msg: 被取消
+    - key: dest locale files
+      message:
+        msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
+    - key: |
+        extract usage
+        	
+        flags：
+        {{flags}}
+      message:
+        msg: |
+            提取源代码中的本地化内容
             	
-            flags：
+            可用选项：
             {{flags}}
-          message:
-            msg: |
-                从源代码中提取本地化内容
-                	
-                选项：
-                {{flags}}
-        - key: file format
-          message:
-            msg: 输出文件的格式，目前支持 json 和 yaml
-        - key: gen restdoc
-          message:
-            msg: 生成 restdoc
-        - key: invalid flag value f
-          message:
-            msg: 选项 f 的值无效
-        - key: language
-          message:
-            msg: 语言
-        - key: locale func
-          message:
-            msg: 源代码中用于输出本地化信息的函数
-        - key: no src dir
-          message:
-            msg: 未指定源码目录
-        - key: not found %s
-          message:
-            msg: 未找到 %s
-        - key: not found object %s
-          message:
-            msg: 未找到对象 %s
-        - key: out dir
-          message:
-            msg: 输出目录
-        - key: package %s with the same name.
-          message:
-            msg: '%s 已经拥有相同的名称'
-        - key: parse %s complete\n
-          message:
-            msg: '%s 分析完成\n'
-        - key: recursive dir
-          message:
-            msg: 递归访问子目录
-        - key: restdoc usage
-          message:
-            msg: 用于生成 restdoc 文档
-        - key: set output file
-          message:
-            msg: 设置输出文件
-        - key: show current help info
-          message:
-            msg: 显示当前帮助信息
-        - key: show help
-          message:
-            msg: 显示帮助信息
-        - key: show version
-          message:
-            msg: 显示版本号
-        - key: start parse %s ...\n
-          message:
-            msg: 开始分析 %s ...\n
-        - key: syntax error
-          message:
-            msg: 语法错误
+    - key: skip sub module
+      message:
+        msg: 忽略子模块的内容
+    - key: src locale file
+      message:
+        msg: 指定源文件
+    - key: unsupported marshal for %s
+      message:
+        msg: 不支持 %s 的序列化
+    - key: unsupported unmarshal for %s
+      message:
+        msg: 不支持 %s 的反序列化
+    - key: '%s can not convert to ast.StructType'
+      message:
+        msg: 不能将 %s 转换为 ast.StructType
+    - key: the key %s of %s not found, will be deleted
+      message:
+        msg: 语言 %[2]s 的 %[1]s 未找到, 将被删除
+    - key: unsupported ast expr %s
+      message:
+        msg: 不支持的 ast 表达式 %s
+    - key: update locale file
+      message:
+        msg: 更新本地化的文件
+    - key: |
+        update locale file usage
+
+        flags:
+        {{flags}}
+      message:
+        msg: |
+            依据源文件依次更新指定的本地化文件
+
+            可用选项:
+            {{flags}}
+    - key: the dest file %s is dir
+      message:
+        msg: 指定的翻译文件 %s 是一个目录

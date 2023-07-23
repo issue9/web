@@ -59,7 +59,7 @@ func New(l *logger.Logger) *Parser {
 	}
 
 	doc.search = func(s string) *pkg.Package {
-		if p, found := sliceutil.At(doc.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); found {
+		if p, found := sliceutil.At(doc.pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == s }); found {
 			return p
 		}
 		return nil
@@ -88,7 +88,7 @@ func (p *Parser) append(pp *pkg.Package) {
 	p.pkgsM.Lock()
 	defer p.pkgsM.Unlock()
 
-	if sliceutil.Exists(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == pp.Path }) {
+	if sliceutil.Exists(p.pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == pp.Path }) {
 		p.l.Error(localeutil.Phrase("package %s with the same name.", pp.Path), "", 0)
 		return
 	}

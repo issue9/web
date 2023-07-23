@@ -39,7 +39,7 @@ func New[M any, U any](cap int) *Mimetypes[M, U] {
 }
 
 func (ms *Mimetypes[M, U]) exists(name string) bool {
-	return sliceutil.Exists(ms.types, func(item *Mimetype[M, U]) bool { return item.Name == name })
+	return sliceutil.Exists(ms.types, func(item *Mimetype[M, U], _ int) bool { return item.Name == name })
 }
 
 // Add 添加新的编码方法
@@ -132,6 +132,6 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 }
 
 func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
-	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U]) bool { return match(i.Name) })
+	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) })
 	return item
 }

@@ -253,7 +253,7 @@ func (p *RFC7807[C]) Apply(ctx C) {
 }
 
 func (p *RFC7807[C]) AddParam(name string, reason string) {
-	if _, found := sliceutil.At(p.pKeys, func(pp string) bool { return pp == name }); found {
+	if _, found := sliceutil.At(p.pKeys, func(pp string, _ int) bool { return pp == name }); found {
 		panic("已经存在")
 	}
 	p.pKeys = append(p.pKeys, name)
@@ -261,7 +261,7 @@ func (p *RFC7807[C]) AddParam(name string, reason string) {
 }
 
 func (p *RFC7807[C]) With(key string, val any) {
-	if sliceutil.Exists(p.keys, func(e string) bool { return e == key }) || key == paramsKey {
+	if sliceutil.Exists(p.keys, func(e string, _ int) bool { return e == key }) || key == paramsKey {
 		panic("存在同名的参数")
 	}
 	p.keys = append(p.keys, key)

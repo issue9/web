@@ -184,7 +184,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 			return nil
 		}
 
-		if !sliceutil.Exists(cmd.ServeActions, func(e string) bool { return e == cmd.action }) { // 非服务
+		if !sliceutil.Exists(cmd.ServeActions, func(e string, _ int) bool { return e == cmd.action }) { // 非服务
 			_, err := cmd.initServer()
 			return err
 		}

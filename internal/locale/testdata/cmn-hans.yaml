@@ -1,43 +1,41 @@
-languages: 
-- id: cmn-hans
+id: cmn-hans
+messages:
+- key: k1
+  message:
+    msg: msg1
 
-  messages:
-  - key: k1
-    message:
-      msg: msg1
+- key: k2
+  message:
+    select:
+      arg: 1
+      format: '%d'
+      cases:
+      - case: =1
+        value: msg-1
+      - case: =2
+        value: msg-%[1]d
+      - case: =3
+        value: msg-3
+      - case: other
+        value: msg-other
 
-  - key: k2
-    message:
-      select:
-        arg: 1
-        format: '%d'
-        cases:
-        - case: =1
-          value: msg-1
-        - case: =2
-          value: msg-%[1]d
-        - case: =3
-          value: msg-3
-        - case: other
-          value: msg-other
-
-  - key: k3
-    message:
-      msg: '${number}-${string}'
-      vars:
-      - name: number
-        arg: 2
-        format: '%d'
-        cases:
-        - case: =1
-          value: '1'
-        - case: other
-          value: '2'
-      - name: string
-        arg: 1
-        format: '%d'
-        cases:
-        - case: =1
-          value: 一
-        - case: other
-          value: 二
+- key: k3
+  message:
+    msg: '${number}-${string}'
+    vars:
+    - name: number
+      arg: 2
+      format: '%d'
+      cases:
+      - case: =1
+        value: '1'
+      - case: other
+        value: '2'
+    - name: string
+      arg: 1
+      format: '%d'
+      cases:
+      - case: =1
+        value: 一
+      - case: other
+        value: 二

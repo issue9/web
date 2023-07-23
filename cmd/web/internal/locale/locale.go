@@ -16,32 +16,37 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message"
 	"github.com/issue9/localeutil/message/extract"
+	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web/logs"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	title = localeutil.Phrase("extract locale")
-	usage = localeutil.Phrase(`extract usage
+const (
+	title = localeutil.StringPhrase("extract locale")
+	usage = localeutil.StringPhrase(`extract usage
 	
 flags：
 {{flags}}
 `)
-	format    = localeutil.Phrase("file format")
-	out       = localeutil.Phrase("out dir")
-	lang      = localeutil.Phrase("language")
-	recursive = localeutil.Phrase("recursive dir")
-	funcs     = localeutil.Phrase("locale func")
+	format    = localeutil.StringPhrase("file format")
+	out       = localeutil.StringPhrase("out dir")
+	lang      = localeutil.StringPhrase("language")
+	recursive = localeutil.StringPhrase("recursive dir")
+	funcs     = localeutil.StringPhrase("locale func")
+	skipMod   = localeutil.StringPhrase("skip sub module")
 )
+
+const defaultFuncs = `github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web/server.Context.Sprintf`
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("locale", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		f := fs.String("f", "json", format.LocaleString(p))
+		f := fs.String("f", "yaml", format.LocaleString(p))
 		o := fs.String("o", "./locales", out.LocaleString(p))
 		l := fs.String("l", "und", lang.LocaleString(p))
 		r := fs.Bool("r", true, recursive.LocaleString(p))
-		funcs := fs.String("func", "github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error", funcs.LocaleString(p))
+		funcs := fs.String("func", defaultFuncs, funcs.LocaleString(p))
+		skip := fs.Bool("m", true, skipMod.LocaleString(p))
 
 		log, err := logs.New(&logs.Options{
 			Levels:  logs.AllLevels(),
@@ -52,23 +57,14 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		}
 
 		return func(w io.Writer) error {
-			var u message.MarshalFunc
-			var ext string
-			switch strings.ToLower(*f) {
-			case "json", ".json":
-				u = func(v any) ([]byte, error) {
-					return json.MarshalIndent(v, "", "\t")
-				}
-				ext = ".json"
-			case "yaml", "yml", ".yaml", ".yml":
-				u = yaml.Marshal
-				ext = ".yaml"
-			default:
-				return localeutil.Error("invalid flag value f")
+			u, ext, err := GetMarshalByExt(*f)
+			if err != nil {
+				return err
 			}
 
 			// l
-			if _, err := language.Parse(*l); err != nil {
+			lt, err := language.Parse(*l)
+			if err != nil {
 				return err
 			}
 
@@ -82,17 +78,38 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return localeutil.Error("no src dir")
 			}
 
-			m := &message.Messages{}
+			l := &message.Language{}
 			ctx := context.Background()
 			for _, dir := range fs.Args() {
-				msg, err := extract.Extract(ctx, *l, dir, *r, log.ERROR(), strings.Split(*funcs, ",")...)
+				opt := &extract.Options{
+					Language:      lt,
+					Root:          dir,
+					Recursive:     *r,
+					SkipSubModule: *skip,
+					Log:           log.ERROR(),
+					Funcs:         strings.Split(*funcs, ","),
+				}
+				lang, err := extract.Extract(ctx, opt)
 				if err != nil {
 					return err
 				}
-				m.Merge(msg)
+				l.Join(lang)
 			}
 
-			return m.SaveFile(out, u, os.ModePerm)
+			return serialize.SaveFile(l, out, u, os.ModePerm)
 		}
 	})
+}
+
+func GetMarshalByExt(ext string) (serialize.MarshalFunc, string, error) {
+	switch strings.ToLower(ext) {
+	case "json", ".json":
+		return func(v any) ([]byte, error) {
+			return json.MarshalIndent(v, "", "\t")
+		}, ".json", nil
+	case "yaml", "yml", ".yaml", ".yml":
+		return yaml.Marshal, ".yaml", nil
+	default:
+		return nil, "", localeutil.Error("unsupported marshal for %s", ext)
+	}
 }

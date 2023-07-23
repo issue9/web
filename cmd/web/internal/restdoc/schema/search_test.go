@@ -34,7 +34,7 @@ func buildSearchFunc(a *assert.Assertion) SearchFunc {
 		pkgsM.Lock()
 		defer pkgsM.Unlock()
 
-		r, found := sliceutil.At(pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s })
+		r, found := sliceutil.At(pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == s })
 		if found {
 			return r
 		}

@@ -22,11 +22,11 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/parser"
 )
 
-var (
-	title          = localeutil.Phrase("gen restdoc")
-	usage          = localeutil.Phrase("restdoc usage")
-	outputUsage    = localeutil.Phrase("set output file")
-	recursiveUsage = localeutil.Phrase("recursive dir")
+const (
+	title          = localeutil.StringPhrase("gen restdoc")
+	usage          = localeutil.StringPhrase("restdoc usage")
+	outputUsage    = localeutil.StringPhrase("set output file")
+	recursiveUsage = localeutil.StringPhrase("recursive dir")
 )
 
 const defaultOutput = "./restdoc.json"

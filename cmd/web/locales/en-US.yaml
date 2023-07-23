@@ -1,10 +1,23 @@
-languages:
-    - id: en-US
-      messages:
-        - key: '%s at %s:%d'
-          message:
-            msg: '%s at %s:%d'
-        - key: |
+id: und
+messages:
+    - key: '%s at %s:%d'
+      message:
+        msg: '%s at %s:%d'
+    - key: '%s can not convert to ast.StructType'
+      message:
+        msg: '%s can not convert to ast.StructType'
+    - key: |
+        Auxiliary tool for github.com/issue9/web
+
+        commands：
+        {{commands}}
+
+        flags：
+        {{flags}}
+
+        visit https://github.com/issue9/web for more info.
+      message:
+        msg: |
             Auxiliary tool for github.com/issue9/web
 
             commands：
@@ -14,106 +27,124 @@ languages:
             {{flags}}
 
             visit https://github.com/issue9/web for more info.
-          message:
-            msg: |
-                Auxiliary tool for github.com/issue9/web
-
-                commands：
-                {{commands}}
-
-                flags：
-                {{flags}}
-
-                visit https://github.com/issue9/web for more info.
-        - key: build go source with version from git tag
-          message:
-            msg: build go source with version from git tag
-        - key: build usage
-          message:
-            msg: build usage
-        - key: cancelled
-          message:
-            msg: cancelled
-        - key: command %s not found
-          message:
-            msg: command %s not found
-        - key: 'dup # restdoc note'
-          message:
-            msg: 'dup # restdoc note'
-        - key: extract locale
-          message:
-            msg: extract locale
-        - key: |
+    - key: build go source with version from git tag
+      message:
+        msg: build go source with version from git tag
+    - key: build usage
+      message:
+        msg: build usage
+    - key: cancelled
+      message:
+        msg: cancelled
+    - key: command %s not found
+      message:
+        msg: command %s not found
+    - key: dest locale files
+      message:
+        msg: dest locale files
+    - key: 'dup # restdoc note'
+      message:
+        msg: 'dup # restdoc note'
+    - key: extract locale
+      message:
+        msg: extract locale
+    - key: |
+        extract usage
+        	
+        flags：
+        {{flags}}
+      message:
+        msg: |
             extract usage
             	
             flags：
             {{flags}}
-          message:
-            msg: |
-                extract usage
-                	
-                flags：
-                {{flags}}
-        - key: file format
-          message:
-            msg: file format
-        - key: gen restdoc
-          message:
-            msg: gen restdoc
-        - key: invalid flag value f
-          message:
-            msg: invalid flag value f
-        - key: language
-          message:
-            msg: language
-        - key: locale func
-          message:
-            msg: locale func
-        - key: no src dir
-          message:
-            msg: no src dir
-        - key: not found %s
-          message:
-            msg: not found %s
-        - key: not found object %s
-          message:
-            msg: not found object %s
-        - key: out dir
-          message:
-            msg: out dir
-        - key: package %s with the same name.
-          message:
-            msg: package %s with the same name.
-        - key: parse %s complete\n
-          message:
-            msg: parse %s complete\n
-        - key: recursive dir
-          message:
-            msg: recursive dir
-        - key: restdoc usage
-          message:
-            msg: restdoc usage
-        - key: set output file
-          message:
-            msg: set output file
-        - key: show current help info
-          message:
-            msg: show current help info
-        - key: show help
-          message:
-            msg: show help
-        - key: show version
-          message:
-            msg: show version
-        - key: start parse %s ...\n
-          message:
-            msg: start parse %s ...\n
-        - key: syntax error
-          message:
-            msg: syntax error
-        - key: 无法处理的类型 %s
-          message:
-            msg: 无法处理的类型 %s
-        - key: 未知的错误 %s.Type 无法转换成 ast.StructType
-          message:
-            msg: 未知的错误 %s.Type 无法转换成 ast.StructType
+    - key: file format
+      message:
+        msg: file format
+    - key: gen restdoc
+      message:
+        msg: gen restdoc
+    - key: language
+      message:
+        msg: language
+    - key: locale func
+      message:
+        msg: locale func
+    - key: no src dir
+      message:
+        msg: no src dir
+    - key: not found %s
+      message:
+        msg: not found %s
+    - key: not found object %s
+      message:
+        msg: not found object %s
+    - key: out dir
+      message:
+        msg: out dir
+    - key: package %s with the same name.
+      message:
+        msg: package %s with the same name.
+    - key: parse %s complete\n
+      message:
+        msg: parse %s complete\n
+    - key: recursive dir
+      message:
+        msg: recursive dir
+    - key: restdoc usage
+      message:
+        msg: restdoc usage
+    - key: set output file
+      message:
+        msg: set output file
+    - key: show current help info
+      message:
+        msg: show current help info
+    - key: show help
+      message:
+        msg: show help
+    - key: show version
+      message:
+        msg: show version
+    - key: skip sub module
+      message:
+        msg: skip sub module
+    - key: src locale file
+      message:
+        msg: src locale file
+    - key: start parse %s ...\n
+      message:
+        msg: start parse %s ...\n
+    - key: syntax error
+      message:
+        msg: syntax error
+    - key: the dest file %s is dir
+      message:
+        msg: the dest file %s is dir
+    - key: the key %s of %s not found, will be deleted
+      message:
+        msg: the key %s of %s not found, will be deleted
+    - key: unsupported ast expr %s
+      message:
+        msg: unsupported ast expr %s
+    - key: unsupported marshal for %s
+      message:
+        msg: unsupported marshal for %s
+    - key: unsupported unmarshal for %s
+      message:
+        msg: unsupported unmarshal for %s
+    - key: update locale file
+      message:
+        msg: update locale file
+    - key: |
+        update locale file usage
+
+        flags:
+        {{flags}}
+      message:
+        msg: |
+            update locale file usage
+
+            flags:
+            {{flags}}

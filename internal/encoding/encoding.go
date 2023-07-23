@@ -65,7 +65,7 @@ func (c *Encodings) Search(contentType, h string) (w *Alg, notAcceptable bool) {
 		}
 
 		for _, p := range pools {
-			exists := sliceutil.Exists(accepts, func(e *header.Item) bool {
+			exists := sliceutil.Exists(accepts, func(e *header.Item, _ int) bool {
 				return e.Value == p.name
 			})
 			if !exists {

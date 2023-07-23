@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-//go:embed *.yml
+//go:embed *.yaml
 var Locales embed.FS
 
 // 一些多处用到的翻译项

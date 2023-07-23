@@ -14,9 +14,9 @@ import (
 	"golang.org/x/text/message"
 )
 
-var (
-	title = localeutil.Phrase("build go source with version from git tag")
-	usage = localeutil.Phrase("build usage")
+const (
+	title = localeutil.StringPhrase("build go source with version from git tag")
+	usage = localeutil.StringPhrase("build usage")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *message.Printer) {

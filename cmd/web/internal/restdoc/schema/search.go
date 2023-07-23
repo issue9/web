@@ -152,7 +152,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 
 		return openapi3.NewSchemaRef(typeName, schema), nil
 	default:
-		msg := web.Phrase("未知的错误 %s.Type 无法转换成 ast.StructType", s.Type)
+		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
 		return nil, newError(s.Pos(), msg)
 	}
 }
@@ -252,7 +252,7 @@ func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string
 		return ref, nil
 	//case *ast.InterfaceType: // 无法处理此类型
 	default:
-		return nil, newError(e.Pos(), web.Phrase("无法处理的类型 %s", expr))
+		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %s", expr))
 	}
 }
 

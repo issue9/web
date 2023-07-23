@@ -67,7 +67,7 @@ func (p *Problems[P]) Add(id string, status int, title, detail localeutil.Locale
 }
 
 func (p *Problems[P]) exists(id string) bool {
-	return sliceutil.Exists(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
+	return sliceutil.Exists(p.problems, func(sp *statusProblem, _ int) bool { return sp.ID == id })
 }
 
 func (p *Problems[P]) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
@@ -77,7 +77,7 @@ func (p *Problems[P]) Visit(visit func(prefix, id string, status int, title, det
 }
 
 func (p *Problems[P]) Problem(printer *localeutil.Printer, id string) P {
-	sp, found := sliceutil.At(p.problems, func(sp *statusProblem) bool { return sp.ID == id })
+	sp, found := sliceutil.At(p.problems, func(sp *statusProblem, _ int) bool { return sp.ID == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}

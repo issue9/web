@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/web/cmd/web/internal/build"
 	"github.com/issue9/web/cmd/web/internal/locale"
+	"github.com/issue9/web/cmd/web/internal/locale/update"
 	"github.com/issue9/web/cmd/web/internal/restdoc"
 )
 
@@ -65,6 +66,7 @@ func main() {
 	restdoc.Init(opt, p)
 	build.Init(opt, p)
 	locale.Init(opt, p)
+	update.Init(opt, p)
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
