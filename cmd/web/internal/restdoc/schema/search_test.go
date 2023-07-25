@@ -49,7 +49,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI()
+		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, "[]bool", false)
 		a.NotError(err).NotNil(ref).
@@ -61,7 +61,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	// 枚举数组
 	t.Run("[]Sex", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI()
+		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, "[]Sex", false)
 		a.NotError(err).NotNil(ref).
@@ -78,7 +78,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	// 对象数组
 	t.Run("[]User", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI()
+		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, "[]User", false)
 		a.NotError(err).NotNil(ref).
@@ -107,7 +107,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	// admin.User
 	t.Run("admin.User", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI()
+		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.User", false)
 		a.NotError(err).NotNil(ref).
@@ -117,7 +117,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	// admin.Admin
 	t.Run("admin.Admin", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI()
+		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.Admin", false)
 		a.NotError(err).NotNil(ref).

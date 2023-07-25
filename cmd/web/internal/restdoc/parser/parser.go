@@ -12,7 +12,6 @@ import (
 	"unicode"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
@@ -22,7 +21,7 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-var errSyntax = localeutil.Error("syntax error")
+var errSyntax = web.NewLocaleError("syntax error")
 
 // Parser 文档分析对象
 type Parser struct {
@@ -89,7 +88,7 @@ func (p *Parser) append(pp *pkg.Package) {
 	defer p.pkgsM.Unlock()
 
 	if sliceutil.Exists(p.pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == pp.Path }) {
-		p.l.Error(localeutil.Phrase("package %s with the same name.", pp.Path), "", 0)
+		p.l.Error(web.Phrase("package %s with the same name.", pp.Path), "", 0)
 		return
 	}
 
@@ -100,13 +99,13 @@ func (p *Parser) append(pp *pkg.Package) {
 func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 	p.parsed = true // 阻止 doc.AddDir
 
-	t := schema.NewOpenAPI()
+	t := schema.NewOpenAPI("3.0.0")
 
 	wg := &sync.WaitGroup{}
 	for _, pp := range p.pkgs {
 		select {
 		case <-ctx.Done():
-			p.l.Warning(web.Phrase("cancelled"))
+			p.l.Warning(pkg.Cancelled)
 			return nil
 		default:
 			wg.Add(1)
@@ -132,18 +131,18 @@ func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 	return t
 }
 
-func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pkg *pkg.Package) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Package) {
 	wg := &sync.WaitGroup{}
-	for _, f := range pkg.Files {
+	for _, f := range pack.Files {
 		select {
 		case <-ctx.Done():
-			p.l.Warning(web.Phrase("cancelled"))
+			p.l.Warning(pkg.Cancelled)
 			return
 		default:
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				p.parseFile(t, pkg.Path, f)
+				p.parseFile(t, pack.Path, f)
 			}(f)
 		}
 	}

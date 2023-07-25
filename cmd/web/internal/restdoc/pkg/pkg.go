@@ -16,10 +16,11 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/source"
-	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 )
+
+const Cancelled = localeutil.StringPhrase("cancelled")
 
 type Package struct {
 	Path  string // 当前包的 path
@@ -53,7 +54,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 	for _, dir := range dirs {
 		select {
 		case <-ctx.Done():
-			l.Warning(web.Phrase("cancelled"))
+			l.Warning(Cancelled)
 			return
 		default:
 			wg.Add(1)
@@ -96,7 +97,7 @@ func scan(ctx context.Context, fset *token.FileSet, l *logger.Logger, dir, modPa
 	for _, e := range entry {
 		select {
 		case <-ctx.Done():
-			l.Warning(web.Phrase("cancelled"))
+			l.Warning(Cancelled)
 			return nil
 		default:
 			// 路径、非 .go 扩展名 或是 _test.go 结尾的文件都忽略

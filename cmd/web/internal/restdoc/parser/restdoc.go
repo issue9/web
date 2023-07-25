@@ -3,13 +3,18 @@
 package parser
 
 import (
+	"go/build"
+	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/localeutil"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
+
+const invalidFormat = web.StringPhrase("invalid format")
 
 // 解析 # restdoc 之后的内容
 //
@@ -25,7 +30,7 @@ func (p *Parser) parseRESTDoc(t *openapi3.T, currPath, title string, lines []str
 	}
 
 	if t.Info != nil {
-		p.l.Error(localeutil.Phrase("dup # restdoc note"), filename, ln)
+		p.l.Error(web.StringPhrase("dup # restdoc note"), filename, ln)
 		return
 	}
 
@@ -97,7 +102,6 @@ LOOP:
 			ss.Scheme = words[1]
 			ss.WithBearerFormat(words[2])
 			ss.Description = words[3]
-			println(t.Components.SecuritySchemes == nil)
 			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
 		case "@scy-apikey": // @scy-apikey name param-name in *desc
 			words, l := utils.SplitSpaceN(suffix, 4)
@@ -133,6 +137,8 @@ LOOP:
 			}
 
 			t.ExternalDocs = &openapi3.ExternalDocs{URL: words[0], Description: words[1]}
+		case "@openapi": // 将另一个 openapi 文件引入当前对象，除了 info 之外的内容都将复制。
+			p.parseOpenAPI(t, suffix, filename, ln+i)
 		default: // 不认识的标签，表示元数据部分结束，将剩余部分直接作为 info.Description
 			info.Description = strings.Join(lines[i:], "\n")
 			break LOOP
@@ -147,6 +153,64 @@ LOOP:
 	}
 
 	t.Info = info
+}
+
+func (p *Parser) parseOpenAPI(tt *openapi3.T, suffix, filename string, ln int) {
+	// 引用的另一个 openapi 包，包含以下格式：
+	// 一个远程的 URL 地址，仅支持 http 和 https 和 file；
+	// 或是一个相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
+	words, l := utils.SplitSpaceN(suffix, 2)
+
+	var u string
+	switch l {
+	case 1:
+		u = words[0]
+	case 2:
+		modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
+		u = "file://" + filepath.Join(modCache, words[0], words[1])
+	default:
+		p.l.Error(invalidFormat, filename, ln)
+		return
+	}
+
+	uri, err := url.Parse(u)
+	if err != nil {
+		p.l.Error(invalidFormat, filename, ln)
+		return
+	}
+
+	t, err := openapi3.NewLoader().LoadFromURI(uri)
+	if err != nil {
+		p.l.Error(invalidFormat, filename, ln)
+		return
+	}
+
+	if t.OpenAPI != tt.OpenAPI {
+		p.l.Error(web.Phrase("version incompatible"), filename, ln)
+		return
+	}
+
+	tt.Servers = append(tt.Servers, t.Servers...)
+	tt.Security = append(tt.Security, t.Security...)
+	tt.Tags = append(tt.Tags, t.Tags...)
+	cloneMap(t.Paths, tt.Paths)
+	if t.Components != nil {
+		cloneMap(t.Components.Schemas, tt.Components.Schemas)
+		cloneMap(t.Components.Parameters, tt.Components.Parameters)
+		cloneMap(t.Components.Headers, tt.Components.Headers)
+		cloneMap(t.Components.RequestBodies, tt.Components.RequestBodies)
+		cloneMap(t.Components.Responses, tt.Components.Responses)
+		cloneMap(t.Components.SecuritySchemes, tt.Components.SecuritySchemes)
+		cloneMap(t.Components.Examples, tt.Components.Examples)
+		cloneMap(t.Components.Links, tt.Components.Links)
+		cloneMap(t.Components.Callbacks, tt.Components.Callbacks)
+	}
+}
+
+func cloneMap[K comparable, V any](src, dest map[K]V) {
+	for k, v := range src {
+		dest[k] = v
+	}
 }
 
 func buildContact(words []string) *openapi3.Contact {

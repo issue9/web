@@ -17,7 +17,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 
 	l := loggertest.New(a)
 	p := New(l.Logger)
-	d := schema.NewOpenAPI()
+	d := schema.NewOpenAPI("3")
 	lines := []string{
 		"@version 1.0.0",
 		"@tag user user tag desc ",
@@ -68,7 +68,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	// 测试行号是否正确
 	l = loggertest.New(a)
 	p = New(l.Logger)
-	d = schema.NewOpenAPI()
+	d = schema.NewOpenAPI("3")
 	lines = []string{
 		"@version 1.0.0",
 		"@tag user user tag desc",
@@ -112,4 +112,16 @@ func TestBuildContact(t *testing.T) {
 	a.Equal(c.Email, "x@example.com").
 		Equal(c.URL, "https://example.com").
 		Equal(c.Name, "name")
+}
+
+func TestParseOpenAPI(t *testing.T) {
+	a := assert.New(t, false)
+
+	l := loggertest.New(a)
+	p := New(l.Logger)
+	d := schema.NewOpenAPI("3.1.0")
+
+	p.parseOpenAPI(d, "./testdata/openapi.yaml", "test.go", 5)
+	a.Nil(d.Info).
+		Length(d.Paths, 1)
 }
