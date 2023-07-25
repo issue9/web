@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/issue9/version"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
@@ -23,7 +24,13 @@ const invalidFormat = web.StringPhrase("invalid format")
 // ln 表示 title 所在行的行号，在出错时，用于记录日志；
 // filename 表示所在的文件，在出错时，用于记录日志；
 func (p *Parser) parseRESTDoc(t *openapi3.T, currPath, title string, lines []string, ln int, filename string) {
-	ln++ // for lines 索引从 0 开始，所有行号需要加上 1 。
+	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
+
+	defer func() {
+		if msg := recover(); msg != nil {
+			p.l.Error(msg, filename, ln)
+		}
+	}()
 
 	info := &openapi3.Info{
 		Title: title,
@@ -77,7 +84,7 @@ LOOP:
 			}
 			info.Contact = buildContact(words)
 		case "@media": // @media application/json application/xml
-			p.media = utils.SplitSpace(suffix)
+			p.media = strings.Fields(suffix)
 		case "@resp": // @resp name object.path desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
@@ -185,7 +192,12 @@ func (p *Parser) parseOpenAPI(tt *openapi3.T, suffix, filename string, ln int) {
 		return
 	}
 
-	if t.OpenAPI != tt.OpenAPI {
+	ok, err := version.SemVerCompatible(t.OpenAPI, tt.OpenAPI)
+	if err != nil {
+		p.l.Error(err, filename, ln)
+		return
+	}
+	if !ok {
 		p.l.Error(web.Phrase("version incompatible"), filename, ln)
 		return
 	}

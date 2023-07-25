@@ -87,9 +87,3 @@ func SplitSpaceN(s string, maxSize int) (ret []string, length int) {
 
 	return ret, l
 }
-
-// SplitSpace 以空格分隔字符串
-func SplitSpace(s string) []string {
-	ret, _ := SplitSpaceN(s, -1)
-	return ret
-}

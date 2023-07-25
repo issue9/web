@@ -85,14 +85,3 @@ func TestSplitSpaceN(t *testing.T) {
 	s, l = SplitSpaceN("  aa\t  \t bb4  ", 4)
 	a.Equal(l, 2).Equal(s, []string{"aa", "bb4", "", ""})
 }
-
-func TestSplitSpace(t *testing.T) {
-	a := assert.New(t, false)
-
-	a.Equal(SplitSpace(""), []string{})
-	a.Equal(SplitSpace("    "), []string{})
-	a.Equal(SplitSpace("ab"), []string{"ab"})
-	a.Equal(SplitSpace("  ab  "), []string{"ab"})
-	a.Equal(SplitSpace("  a\tb  "), []string{"a", "b"})
-	a.Equal(SplitSpace("  aa\t  \t bb  "), []string{"aa", "bb"})
-}

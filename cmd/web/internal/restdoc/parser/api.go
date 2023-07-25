@@ -13,6 +13,14 @@ import (
 )
 
 func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
+	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
+
+	defer func() {
+		if msg := recover(); msg != nil {
+			p.l.Error(msg, filename, ln)
+		}
+	}()
+
 	opt := openapi3.NewOperation()
 	opt.Responses = openapi3.NewResponses()
 
@@ -35,14 +43,14 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 		p.l.Error(errSyntax, filename, ln)
 		return
 	}
-	method, path = words[0], words[1]
-	opt.Summary = words[2]
+
+	method, path, opt.Summary = words[0], words[1], words[2]
 
 	var req request
 	resps := map[string]*response{}
 
-	for i := 0; i < len(lines); i++ {
-		line := strings.TrimSpace(lines[i])
+	for index := 0; index < len(lines); index++ {
+		line := strings.TrimSpace(lines[index])
 		if line == "" {
 			continue
 		}
@@ -56,42 +64,42 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 				return
 			}
 		case "@header": // @header key *desc
-			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+i)
+			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+index)
 		case "@cookie": // @cookie name *desc
-			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+i)
+			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
-			p.addPath(opt, suffix, filename, ln+i)
+			p.addPath(opt, suffix, filename, ln+index)
 		case "@query": // @query object.path *desc
-			p.addQuery(t, opt, currPath, suffix, filename, ln+i)
+			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req object.path *desc
-			if !p.parseRequest(&req, t, suffix, filename, currPath, ln+i) {
+			if !p.parseRequest(&req, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "@req-types": // @req-types application/json application/xml
-			req.media = utils.SplitSpace(suffix)
+			req.media = strings.Fields(suffix)
 		case "@resp": // @resp 200 object.path *desc
-			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
+			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "@resp-ref": // @resp-ref 200 name
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l != 2 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.l.Error(errSyntax, filename, ln+index)
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: words[1]}
 		case "@resp-types": // @resp-types status application/json application/xml
-			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+i) {
+			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "resp-header": // @resp-header 200 h1 *desc
-			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+i) {
+			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "##": // 可能是 ## callback
 			// TODO
 		default:
-			opt.Description = strings.Join(lines[i:], " ")
+			opt.Description = strings.Join(lines[index:], " ")
 			break
 		}
 	}

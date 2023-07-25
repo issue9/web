@@ -3,6 +3,8 @@
 package parser
 
 import (
+	"strings"
+
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
@@ -106,7 +108,7 @@ func (p *Parser) parseResponseType(resps map[string]*response, t *openapi3.T, su
 		return false
 	}
 
-	types := utils.SplitSpace(words[1])
+	types := strings.Fields(words[1])
 	if resp, found := resps[words[0]]; found {
 		resp.media = append(resp.media, types...)
 	}

@@ -170,7 +170,7 @@ func parseTypeDoc(s *ast.TypeSpec) (desc string, enums []any) {
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		if tag, suffix := utils.CutTag(line); tag == "@enum" {
-			for _, word := range utils.SplitSpace(suffix) {
+			for _, word := range strings.Fields(suffix) {
 				enums = append(enums, word)
 			}
 		}

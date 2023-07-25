@@ -10,6 +10,7 @@ require (
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/sliceutil v0.14.0
 	github.com/issue9/source v0.5.1
+	github.com/issue9/version v1.0.6
 	github.com/issue9/web v0.78.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.11.0
