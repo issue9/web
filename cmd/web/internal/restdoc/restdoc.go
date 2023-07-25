@@ -13,6 +13,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
@@ -27,6 +28,7 @@ const (
 	usage          = localeutil.StringPhrase("restdoc usage")
 	outputUsage    = localeutil.StringPhrase("set output file")
 	recursiveUsage = localeutil.StringPhrase("recursive dir")
+	tagUsage       = localeutil.StringPhrase("filter by tag")
 )
 
 const defaultOutput = "./restdoc.json"
@@ -35,6 +37,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("doc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		o := fs.String("o", defaultOutput, outputUsage.LocaleString(p))
 		r := fs.Bool("r", true, recursiveUsage.LocaleString(p))
+		t := fs.String("t", "", tagUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
 			ctx := context.Background()
@@ -52,9 +55,12 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				doc.AddDir(ctx, dir, *r)
 			}
 
-			t := doc.OpenAPI(ctx)
+			var tags []string
+			if *t != "" {
+				tags = strings.Split(*t, ",")
+			}
 
-			data, err := json.Marshal(t)
+			data, err := json.Marshal(doc.OpenAPI(ctx, tags...))
 			if err != nil {
 				return err
 			}

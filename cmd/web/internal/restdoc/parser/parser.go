@@ -96,7 +96,9 @@ func (p *Parser) append(pp *pkg.Package) {
 }
 
 // OpenAPI 转换成 openapi3.T 对象
-func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
+//
+// tags 如果非空，则表示仅返回带这些标签的 API。
+func (p *Parser) OpenAPI(ctx context.Context, tags ...string) *openapi3.T {
 	p.parsed = true // 阻止 doc.AddDir
 
 	t := schema.NewOpenAPI("3.0.0")
@@ -111,7 +113,7 @@ func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 			wg.Add(1)
 			go func(pp *pkg.Package) {
 				defer wg.Done()
-				p.parsePackage(ctx, t, pp)
+				p.parsePackage(ctx, t, pp, tags)
 			}(pp)
 		}
 	}
@@ -123,7 +125,7 @@ func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 				continue
 			}
 			if tag, suffix := utils.CutTag(line[2:]); suffix != "" && strings.ToLower(tag) == "api" {
-				p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos))
+				p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos), tags)
 			}
 		}
 	}
@@ -131,7 +133,7 @@ func (p *Parser) OpenAPI(ctx context.Context) *openapi3.T {
 	return t
 }
 
-func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Package) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Package, tags []string) {
 	wg := &sync.WaitGroup{}
 	for _, f := range pack.Files {
 		select {
@@ -142,14 +144,14 @@ func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Pack
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				p.parseFile(t, pack.Path, f)
+				p.parseFile(t, pack.Path, f, tags)
 			}(f)
 		}
 	}
 	wg.Wait()
 }
 
-func (p *Parser) parseFile(t *openapi3.T, importPath string, f *ast.File) {
+func (p *Parser) parseFile(t *openapi3.T, importPath string, f *ast.File, tags []string) {
 LOOP:
 	for _, c := range f.Comments {
 		lines := strings.Split(c.Text(), "\n")
@@ -167,7 +169,7 @@ LOOP:
 				switch strings.ToLower(tag) {
 				case "api":
 					if t.Info != nil {
-						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()))
+						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()), tags)
 					} else {
 						p.apiComments = append(p.apiComments, &comments{
 							lines:   lines, // 保存所有行，而不是从当前页开始，方便后续判断正确的行号。

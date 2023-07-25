@@ -7,13 +7,27 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/issue9/sliceutil"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string, ln int, filename string) {
+func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
 	opt := openapi3.NewOperation()
 	opt.Responses = openapi3.NewResponses()
+
+	ignore := func(tag ...string) bool {
+		if len(tags) == 0 {
+			return false
+		}
+
+		for _, t := range tag {
+			if sliceutil.Exists(tags, func(tt string, _ int) bool { return tt == t }) {
+				return false
+			}
+		}
+		return true
+	}
 
 	words, l := utils.SplitSpaceN(suffix, 3) // GET /users *desc
 	var method, path string
@@ -38,6 +52,9 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			opt.OperationID = suffix
 		case "@tag": // @tag t1 t2
 			opt.Tags = strings.Fields(suffix)
+			if ignore(opt.Tags...) {
+				return
+			}
 		case "@header": // @header key *desc
 			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+i)
 		case "@cookie": // @cookie name *desc
