@@ -17,6 +17,8 @@ import (
 
 const invalidFormat = web.StringPhrase("invalid format")
 
+const responsesRef = "#/components/responses/"
+
 // 解析 # restdoc 之后的内容
 //
 // title 表示 # restdoc 至该行的行尾内容；

@@ -18,6 +18,8 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
+var refReplacer = strings.NewReplacer("/", ".")
+
 type SearchFunc func(string) *pkg.Package
 
 // currPath 当前包的导出路径；
@@ -70,8 +72,12 @@ func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isAr
 		return nil, localeutil.Error("not found %s", typeName) // 行数未变化，直接返回错误。
 	}
 
-	if ref, found := t.Components.Schemas[typeName]; found { // 查找是否已经存在于 components/schemes
-		return array(ref, isArray), nil
+	ref := refReplacer.Replace(typeName)
+
+	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
+		sr := openapi3.NewSchemaRef(ref, schemaRef.Value)
+		addRefPrefix(sr)
+		return array(sr, isArray), nil
 	}
 
 	pkg := f(modPath)
@@ -102,21 +108,22 @@ LOOP:
 		return nil, localeutil.Error("not found %s", typeName)
 	}
 
-	ref, err := f.fromTypeSpec(t, file, currPath, typeName, tag, spec)
+	schemaRef, err := f.fromTypeSpec(t, file, currPath, ref, tag, spec)
 	if err != nil {
 		return nil, err
 	}
 
-	if ref.Ref != "" {
-		t.Components.Schemas[ref.Ref] = ref
+	if schemaRef.Ref != "" {
+		t.Components.Schemas[schemaRef.Ref] = openapi3.NewSchemaRef("", schemaRef.Value)
+		addRefPrefix(schemaRef)
 	}
-	return array(ref, isArray), nil
+	return array(schemaRef, isArray), nil
 }
 
 // 将 ast.TypeSpec 转换成 openapi3.Schema
 //
 // typeName 仅用于生成 SchemaRef.Ref 值，需要完整路径。
-func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeName, tag string, s *ast.TypeSpec) (*openapi3.SchemaRef, error) {
+func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec) (*openapi3.SchemaRef, error) {
 	desc, enums := parseTypeDoc(s)
 	if desc == "" && s.Comment != nil {
 		desc = s.Comment.Text()
@@ -124,23 +131,23 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 
 	switch ts := s.Type.(type) {
 	case *ast.Ident: // type x = int 或是 type x int
-		ref, err := f.fromName(t, currPath, ts.Name, tag, false)
+		schemaRef, err := f.fromName(t, currPath, ts.Name, tag, false)
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
-		ref.Value.Description = desc
-		ref.Value.Enum = enums
-		ref.Ref = typeName
-		return ref, nil
+		schemaRef.Value.Description = desc
+		schemaRef.Value.Enum = enums
+		schemaRef.Ref = ref
+		return schemaRef, nil
 	case *ast.SelectorExpr: // type x = json.Decoder 或是 type x json.Decoder 引用外部对象
 		name := getSelectorExprTypeName(ts, file)
-		ref, err := f.fromName(t, currPath, name, tag, false)
+		schemaRef, err := f.fromName(t, currPath, name, tag, false)
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
-		ref.Value.Description = desc
-		ref.Value.Enum = enums
-		return ref, nil
+		schemaRef.Value.Description = desc
+		schemaRef.Value.Enum = enums
+		return schemaRef, nil
 	case *ast.StructType:
 		schema := openapi3.NewObjectSchema()
 		schema.Description = desc
@@ -150,7 +157,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, typeNa
 			return nil, err
 		}
 
-		return openapi3.NewSchemaRef(typeName, schema), nil
+		return openapi3.NewSchemaRef(ref, schema), nil
 	default:
 		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
 		return nil, newError(s.Pos(), msg)
@@ -345,4 +352,12 @@ func wrap(ref *openapi3.SchemaRef, desc string, xml *openapi3.XML, nullable bool
 		ref = openapi3.NewSchemaRef("", s)
 	}
 	return ref
+}
+
+const refPrefix = "#/components/schemas/"
+
+func addRefPrefix(ref *openapi3.SchemaRef) {
+	if ref.Ref != "" && !strings.HasPrefix(ref.Ref, refPrefix) {
+		ref.Ref = refPrefix + ref.Ref
+	}
 }

@@ -4,6 +4,8 @@
 package loggertest
 
 import (
+	"os"
+
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web/logs"
 	"golang.org/x/text/language"
@@ -28,6 +30,7 @@ func New(a *assert.Assertion) *Tester {
 		Levels: logs.AllLevels(),
 		Handler: logs.HandleFunc(func(r *logs.Record) {
 			t.Records[r.Level] = append(t.Records[r.Level], r.Message)
+			os.Stderr.Write([]byte(r.Message + "\n"))
 		}),
 	})
 	a.NotError(err).NotNil(ll)

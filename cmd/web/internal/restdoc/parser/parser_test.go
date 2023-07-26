@@ -24,11 +24,13 @@ func TestParser(t *testing.T) {
 		Length(l.Records[logs.Warn], 0).
 		Length(l.Records[logs.Info], 2)
 
-	a.NotNil(d.Info).Equal(d.Info.Version, "1.0")
+	a.NotNil(d.Info).Equal(d.Info.Version, "1.0.0")
 
 	login := d.Paths["/login"].Post
 	a.NotNil(login).
 		Length(login.Parameters, 3).
 		NotNil(login.RequestBody).
 		Length(login.Responses, 5) // 包含默认的 default
+
+	a.NotError(p.SaveAs(context.Background(), "./testdata/openapi.out.yaml"))
 }

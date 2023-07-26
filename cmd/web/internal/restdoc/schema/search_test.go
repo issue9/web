@@ -46,6 +46,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	a := assert.New(t, false)
 	f := buildSearchFunc(a)
 	modPath := "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
+	modRef := refReplacer.Replace(modPath)
 
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)
@@ -66,9 +67,9 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		ref, err := f.New(tt, modPath, "[]Sex", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeArray).
-			Equal(ref.Value.Items.Ref, modPath+".Sex")
+			Equal(ref.Value.Items.Ref, refPrefix+modRef+".Sex")
 
-		sex := tt.Components.Schemas[modPath+".Sex"]
+		sex := tt.Components.Schemas[modRef+".Sex"]
 		a.NotNil(sex).
 			Equal(sex.Value.Description, "Sex 表示性别\n@enum female male unknown\n").
 			Equal(sex.Value.Type, openapi3.TypeInteger).
@@ -83,18 +84,18 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		ref, err := f.New(tt, modPath, "[]User", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeArray).
-			Equal(ref.Value.Items.Ref, modPath+".User")
-		u := tt.Components.Schemas[modPath+".User"]
+			Equal(ref.Value.Items.Ref, refPrefix+modRef+".User")
+		u := tt.Components.Schemas[modRef+".User"]
 		a.NotNil(u).
 			Equal(u.Value.Description, "用户信息 doc\n").
 			Equal(u.Value.Type, openapi3.TypeObject)
 
 		name := u.Value.Properties["Name"]
-		a.Equal(name.Value.AllOf[0].Ref, modPath+".String").
+		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
 			Equal(name.Value.Description, "姓名\n")
 
 		sex := u.Value.Properties["sex"]
-		a.Equal(sex.Value.AllOf[0].Ref, modPath+".Sex").
+		a.Equal(sex.Value.AllOf[0].Ref, refPrefix+modRef+".Sex").
 			True(sex.Value.XML.Attribute).
 			Equal(sex.Value.Description, "性别\n")
 
@@ -111,7 +112,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.User", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Ref, modPath+".User")
+			Equal(ref.Ref, refPrefix+modRef+".User") // 从 New 返回的带有前缀
 	})
 
 	// admin.Admin
@@ -123,28 +124,28 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeObject)
 
-		admin := tt.Components.Schemas[modPath+"/admin.Admin"]
+		admin := tt.Components.Schemas[modRef+".admin.Admin"]
 		name := admin.Value.Properties["Name"]
-		a.Equal(name.Value.AllOf[0].Ref, modPath+".String").
+		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
 			Equal(name.Value.Description, "姓名\n")
 
 		u1 := admin.Value.Properties["U1"]
 		a.Empty(u1.Ref).
 			Equal(u1.Value.Description, "u1\n").
 			Equal(u1.Value.AllOf[0].Value.Type, openapi3.TypeArray).
-			Equal(u1.Value.AllOf[0].Value.Items.Ref, modPath+".User")
+			Equal(u1.Value.AllOf[0].Value.Items.Ref, refPrefix+modRef+".User")
 
 		u2 := admin.Value.Properties["u2"]
 		a.Empty(u2.Ref).
 			Equal(u2.Value.Description, "u2\n").
 			True(u2.Value.Nullable).
-			Equal(u2.Value.AllOf[0].Ref, modPath+".User")
+			Equal(u2.Value.AllOf[0].Ref, refPrefix+modRef+".User")
 
 		u3 := admin.Value.Properties["u3"]
 		a.Nil(u3)
 
 		u4 := admin.Value.Properties["U4"]
-		a.Equal(u4.Ref, modPath+".User")
+		a.Equal(u4.Ref, refPrefix+modRef+".User")
 	})
 }
 

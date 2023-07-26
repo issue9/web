@@ -12,7 +12,7 @@
 // @server https://api.example.com/v2 v2 api
 // @license mit https://license.example.com/mit
 // @term https://term.example.com
-// @version 1.0
+// @version 1.0.0
 // @media application/json application/xml
 // @resp 400-resp resp400 400 错误
 // @resp 404-resp resp404 not found

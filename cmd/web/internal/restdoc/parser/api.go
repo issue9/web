@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web"
+
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
@@ -20,9 +21,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			p.l.Error(msg, filename, ln)
 		}
 	}()
-
-	opt := openapi3.NewOperation()
-	opt.Responses = openapi3.NewResponses()
 
 	ignore := func(tag ...string) bool {
 		if len(tags) == 0 {
@@ -38,13 +36,15 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 	}
 
 	words, l := utils.SplitSpaceN(suffix, 3) // GET /users *desc
-	var method, path string
 	if l < 2 {
 		p.l.Error(errSyntax, filename, ln)
 		return
 	}
 
-	method, path, opt.Summary = words[0], words[1], words[2]
+	method, path, summary := words[0], words[1], words[2]
+	opt := openapi3.NewOperation()
+	opt.Responses = openapi3.NewResponses()
+	opt.Summary = summary
 
 	var req request
 	resps := map[string]*response{}
@@ -61,6 +61,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 		case "@tag": // @tag t1 t2
 			opt.Tags = strings.Fields(suffix)
 			if ignore(opt.Tags...) {
+				p.l.Warning(web.Phrase("ignore %s", suffix))
 				return
 			}
 		case "@header": // @header key *desc
@@ -69,7 +70,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
-		case "@query": // @query object.path *desc
+		case "@query": // @query name object.path *desc
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req object.path *desc
 			if !p.parseRequest(&req, t, suffix, filename, currPath, ln+index) {
@@ -87,7 +88,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 				p.l.Error(errSyntax, filename, ln+index)
 				return
 			}
-			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: words[1]}
+			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
 		case "@resp-types": // @resp-types status application/json application/xml
 			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+index) {
 				return
@@ -110,13 +111,13 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 }
 
 func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
-	words, l := utils.SplitSpaceN(suffix, 2)
-	if l < 1 {
+	words, l := utils.SplitSpaceN(suffix, 3)
+	if l < 2 {
 		p.l.Error(errSyntax, filename, ln)
 		return
 	}
 
-	s, err := p.search.New(t, currPath, words[0], true)
+	s, err := p.search.New(t, currPath, words[1], true)
 	if err != nil {
 		if serr, ok := err.(*schema.Error); ok {
 			serr.Log(p.l, p.fset)
@@ -126,7 +127,12 @@ func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suff
 		return
 	}
 
-	opt.AddParameter(&openapi3.Parameter{In: openapi3.ParameterInQuery, Schema: s, Description: words[1]})
+	opt.AddParameter(&openapi3.Parameter{
+		In:          openapi3.ParameterInQuery,
+		Schema:      s,
+		Description: words[2],
+		Name:        words[0],
+	})
 }
 
 func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln int) {

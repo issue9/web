@@ -1,1 +1,6 @@
 web
+web.exe
+
+*.out.yaml
+*.out.yml
+*.out.json

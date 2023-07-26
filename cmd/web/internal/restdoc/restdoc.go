@@ -9,7 +9,6 @@ package restdoc
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"io"
 	"os"
@@ -31,7 +30,7 @@ const (
 	tagUsage       = localeutil.StringPhrase("filter by tag")
 )
 
-const defaultOutput = "./restdoc.json"
+const defaultOutput = "./restdoc.yaml"
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("doc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
@@ -60,11 +59,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				tags = strings.Split(*t, ",")
 			}
 
-			data, err := json.Marshal(doc.OpenAPI(ctx, tags...))
-			if err != nil {
-				return err
-			}
-			return os.WriteFile(*o, data, os.ModePerm)
+			return doc.SaveAs(ctx, *o, tags...)
 		}
 	})
 }
