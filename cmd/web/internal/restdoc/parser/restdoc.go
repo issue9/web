@@ -91,7 +91,7 @@ LOOP:
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
-		case "@resp-types": // @resp-types name application/json application/xml
+		case "@resp-media": // @resp-media name application/json application/xml
 			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}

@@ -76,7 +76,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			if !p.parseRequest(&req, t, suffix, filename, currPath, ln+index) {
 				return
 			}
-		case "@req-types": // @req-types application/json application/xml
+		case "@req-media": // @req-media application/json application/xml
 			req.media = strings.Fields(suffix)
 		case "@resp": // @resp 200 object.path *desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+index) {
@@ -89,7 +89,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
-		case "@resp-types": // @resp-types status application/json application/xml
+		case "@resp-media": // @resp-media status application/json application/xml
 			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}

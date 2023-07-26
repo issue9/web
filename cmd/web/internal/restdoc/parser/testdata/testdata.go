@@ -16,8 +16,8 @@
 // @media application/json application/xml
 // @resp 400-resp resp400 400 错误
 // @resp 404-resp resp404 not found
-// @resp-types 400-resp application/problem+json application/problem+xml
-// @resp-types 404-resp application/problem+json application/problem+xml
+// @resp-media 400-resp application/problem+json application/problem+xml
+// @resp-media 404-resp application/problem+json application/problem+xml
 //
 // # 其它文档说明
 //
