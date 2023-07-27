@@ -11,6 +11,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/sliceutil"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
@@ -47,6 +48,16 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 	f := buildSearchFunc(a)
 	modPath := "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
 	modRef := refReplacer.Replace(modPath)
+
+	// NotFound
+	t.Run("NotFound", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		refPath := modPath + "/admin.notFound"
+		ref, err := f.New(tt, modPath, refPath, false)
+		a.Error(err, web.NewLocaleError("not found %s", refPath)).Nil(ref)
+	})
 
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)

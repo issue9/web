@@ -14,10 +14,8 @@
 // @term https://term.example.com
 // @version 1.0.0
 // @media application/json application/xml
-// @resp 400-resp resp400 400 错误
-// @resp 404-resp resp404 not found
-// @resp-media 400-resp application/problem+json application/problem+xml
-// @resp-media 404-resp application/problem+json application/problem+xml
+// @resp 400-resp application/problem+json,application/problem+xml resp400 400 错误
+// @resp 404-resp application/problem+json,application/problem+xml resp404 not found
 //
 // # 其它文档说明
 //

@@ -82,7 +82,7 @@ func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isAr
 
 	pkg := f(modPath)
 	if pkg == nil {
-		return nil, localeutil.Error("not found object %s", modPath) // 行数未变化，直接返回错误。
+		return nil, localeutil.Error("not found %s", modPath) // 行数未变化，直接返回错误。
 	}
 
 	var spec *ast.TypeSpec
@@ -104,7 +104,7 @@ LOOP:
 		}
 	}
 
-	if spec == nil {
+	if spec == nil || file == nil {
 		return nil, localeutil.Error("not found %s", typeName)
 	}
 

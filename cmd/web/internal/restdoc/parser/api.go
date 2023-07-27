@@ -17,6 +17,8 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 
 	defer func() {
+		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
+		// 应当尽量大此之前查出错误。
 		if msg := recover(); msg != nil {
 			p.l.Error(msg, filename, ln)
 		}
@@ -46,7 +48,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 	opt.Responses = openapi3.NewResponses()
 	opt.Summary = summary
 
-	var req request
 	resps := map[string]*response{}
 
 	for index := 0; index < len(lines); index++ {
@@ -72,13 +73,9 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			p.addPath(opt, suffix, filename, ln+index)
 		case "@query": // @query name object.path *desc
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
-		case "@req": // @req object.path *desc
-			if !p.parseRequest(&req, t, suffix, filename, currPath, ln+index) {
-				return
-			}
-		case "@req-media": // @req-media application/json application/xml
-			req.media = strings.Fields(suffix)
-		case "@resp": // @resp 200 object.path *desc
+		case "@req": // @req text/* object.path *desc
+			p.parseRequest(opt, t, suffix, filename, currPath, ln+index)
+		case "@resp": // @resp 200 text/* object.path *desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
@@ -89,10 +86,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
-		case "@resp-media": // @resp-media status application/json application/xml
-			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+index) {
-				return
-			}
 		case "resp-header": // @resp-header 200 h1 *desc
 			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+index) {
 				return
@@ -105,7 +98,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 		}
 	}
 
-	p.addRequestBody(opt, &req)
 	p.addResponses(opt, resps)
 	t.AddOperation(path, method, opt)
 }

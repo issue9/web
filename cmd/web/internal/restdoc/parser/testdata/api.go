@@ -6,11 +6,11 @@ package testdata
 //
 // # api POST /login 登录
 // @tag users
-// @req req 登录的账号信息
+// @req * req 登录的账号信息
 // @header h1
 // @cookie c1 desc
 // @query name query
-// @resp 201 resp
+// @resp 201 * resp
 // @resp-header 201 h1 h1 desc
 // @resp-header 201 h2 h2 desc
 // @resp-ref 400 400-resp

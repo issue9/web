@@ -87,12 +87,8 @@ LOOP:
 			info.Contact = buildContact(words)
 		case "@media": // @media application/json application/xml
 			p.media = strings.Fields(suffix)
-		case "@resp": // @resp name object.path desc
+		case "@resp": // @resp name text/* object.path desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
-				continue LOOP
-			}
-		case "@resp-media": // @resp-media name application/json application/xml
-			if !p.parseResponseType(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
 		case "resp-header": // @resp-header name h1 *desc
