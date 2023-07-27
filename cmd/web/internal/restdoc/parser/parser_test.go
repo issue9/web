@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web/logs"
 
@@ -28,7 +29,11 @@ func TestParser(t *testing.T) {
 
 	login := d.Paths["/login"].Post
 	a.NotNil(login).
-		Length(login.Parameters, 3).
+		Length(login.Parameters, 4).
+		Equal(login.Parameters[3].Value.Name, "type").
+		Equal(login.Parameters[3].Value.Schema.Value.Type, openapi3.TypeString).
+		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).
+		Equal(login.Parameters[2].Value.Schema.Value.Items.Value.Type, openapi3.TypeInteger).
 		NotNil(login.RequestBody).
 		Length(login.Responses, 5) // 包含默认的 default
 

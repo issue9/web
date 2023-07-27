@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -71,7 +72,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
-		case "@query": // @query name object.path *desc
+		case "@query": // @query object.path *desc
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req text/* object.path *desc
 			p.parseRequest(opt, t, suffix, filename, currPath, ln+index)
@@ -103,13 +104,13 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 }
 
 func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
-	words, l := utils.SplitSpaceN(suffix, 3)
-	if l < 2 {
+	words, l := utils.SplitSpaceN(suffix, 2)
+	if l < 1 {
 		p.l.Error(errSyntax, filename, ln)
 		return
 	}
 
-	s, err := p.search.New(t, currPath, words[1], true)
+	s, err := p.search.New(t, currPath, words[0], true)
 	if err != nil {
 		if serr, ok := err.(*schema.Error); ok {
 			serr.Log(p.l, p.fset)
@@ -119,12 +120,31 @@ func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suff
 		return
 	}
 
-	opt.AddParameter(&openapi3.Parameter{
-		In:          openapi3.ParameterInQuery,
-		Schema:      s,
-		Description: words[2],
-		Name:        words[0],
-	})
+	if s.Value.Type != openapi3.TypeObject {
+		opt.AddParameter(&openapi3.Parameter{
+			In:          openapi3.ParameterInQuery,
+			Schema:      s,
+			Description: words[1],
+			Name:        words[0],
+		})
+		return
+	}
+
+	// 保证输出顺序相同，方便测试
+	keys := make([]string, 0, len(s.Value.Properties))
+	for name := range s.Value.Properties {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		v := s.Value.Properties[name]
+		opt.AddParameter(&openapi3.Parameter{
+			In:          openapi3.ParameterInQuery,
+			Schema:      v,
+			Description: v.Value.Description,
+			Name:        name,
+		})
+	}
 }
 
 func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln int) {

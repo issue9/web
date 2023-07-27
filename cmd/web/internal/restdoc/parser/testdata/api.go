@@ -9,7 +9,7 @@ package testdata
 // @req * req 登录的账号信息
 // @header h1
 // @cookie c1 desc
-// @query name query
+// @query query
 // @resp 201 * resp
 // @resp-header 201 h1 h1 desc
 // @resp-header 201 h2 h2 desc
@@ -33,4 +33,5 @@ type resp struct {
 
 type query struct {
 	Type string `query:"type"`
+	X    []int
 }
