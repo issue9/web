@@ -58,9 +58,6 @@ messages:
     - key: not found %s
       message:
         msg: 未找到 %s
-    - key: not found object %s
-      message:
-        msg: 未找到对象 %s
     - key: out dir
       message:
         msg: 输出目录
@@ -76,7 +73,7 @@ messages:
     - key: restdoc usage
       message:
         msg: |
-          提取注释中的 restdoc 文档生成 openapi。
+            提取注释中的 restdoc 文档生成 openapi。
     - key: set output file
       message:
         msg: 设置输出文件
@@ -153,3 +150,18 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
+    - key: filter by tag
+      message:
+        msg: 按标签过滤
+    - key: ignore %s
+      message:
+        msg: '忽略 %s'
+    - key: invalid format
+      message:
+        msg: 无效的格式
+    - key: only support yaml and json
+      message:
+        msg: 仅支持 yaml 和 json
+    - key: version incompatible
+      message:
+        msg: 版本不兼容

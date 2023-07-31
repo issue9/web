@@ -59,6 +59,16 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.Error(err, web.NewLocaleError("not found %s", refPath)).Nil(ref)
 	})
 
+	// Generics
+	t.Run("泛型", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, "Generic", false)
+		a.ErrorString(err, "schema can not be a generic").
+			Nil(ref)
+	})
+
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := NewOpenAPI("3")

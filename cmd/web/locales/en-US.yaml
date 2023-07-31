@@ -62,9 +62,18 @@ messages:
     - key: file format
       message:
         msg: file format
+    - key: filter by tag
+      message:
+        msg: filter by tag
     - key: gen restdoc
       message:
         msg: gen restdoc
+    - key: ignore %s
+      message:
+        msg: ignore %s
+    - key: invalid format
+      message:
+        msg: invalid format
     - key: language
       message:
         msg: language
@@ -77,9 +86,9 @@ messages:
     - key: not found %s
       message:
         msg: not found %s
-    - key: not found object %s
+    - key: only support yaml and json
       message:
-        msg: not found object %s
+        msg: only support yaml and json
     - key: out dir
       message:
         msg: out dir
@@ -148,3 +157,6 @@ messages:
 
             flags:
             {{flags}}
+    - key: version incompatible
+      message:
+        msg: version incompatible

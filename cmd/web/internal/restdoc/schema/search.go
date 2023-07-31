@@ -129,6 +129,10 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, t
 		desc = s.Comment.Text()
 	}
 
+	if s.TypeParams != nil {
+		return nil, newError(s.Pos(), web.NewLocaleError("schema can not be a generic %s", s.Name.Name))
+	}
+
 	switch ts := s.Type.(type) {
 	case *ast.Ident: // type x = int 或是 type x int
 		schemaRef, err := f.fromName(t, currPath, ts.Name, tag, false)
@@ -228,7 +232,7 @@ LOOP:
 	return nil
 }
 
-// 将 s 中的内容转换到 schema 上
+// 将 ast.Expr 中的内容转换到 schema 上
 func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string, e ast.Expr) (*openapi3.SchemaRef, error) {
 	switch expr := e.(type) {
 	case *ast.ArrayType:

@@ -19,4 +19,10 @@ type (
 		Age int `xml:"age,attr" json:"age"`
 		Sex Sex `json:"sex" xml:"sex,attr"` // 性别
 	}
+
+	Generic[T any] struct {
+		Type T
+	}
+
+	IntGeneric = Generic[int]
 )
