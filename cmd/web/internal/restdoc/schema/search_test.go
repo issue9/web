@@ -59,14 +59,40 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.Error(err, web.NewLocaleError("not found %s", refPath)).Nil(ref)
 	})
 
-	// Generics
-	t.Run("泛型", func(t *testing.T) {
+	// Generic
+	t.Run("Generic", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, "Generic", false)
-		a.ErrorString(err, "schema can not be a generic").
-			Nil(ref)
+		a.ErrorString(err, "not found").Nil(ref)
+	})
+
+	// IndexExpr
+	t.Run("泛型 IndexExpr", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, "IntGeneric", false)
+		a.NotError(err).NotNil(ref)
+		v, found := ref.Value.Properties["Type"]
+		a.True(found).NotNil(v)
+	})
+
+	// IndexListExpr
+	t.Run("泛型 IndexListExpr", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, modPath+"/admin.IntStringGenerics", false)
+		a.NotError(err).NotNil(ref)
+
+		v, found := ref.Value.Properties["F1"]
+		a.True(found).NotNil(v)
+
+		v, found = ref.Value.Properties["F2"]
+		a.True(found).NotNil(v).
+			Equal(v.Ref, refPrefix+modRef+".admin.Admin")
 	})
 
 	t.Run("[]bool", func(t *testing.T) {

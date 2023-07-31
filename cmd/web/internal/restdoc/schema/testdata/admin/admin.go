@@ -14,3 +14,5 @@ type Admin struct {
 	u3            testdata.User
 	U4            User
 }
+
+type IntStringGenerics = testdata.Generics[int, Admin]

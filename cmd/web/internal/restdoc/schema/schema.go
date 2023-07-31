@@ -5,6 +5,12 @@ package schema
 
 import "github.com/getkin/kin-openapi/openapi3"
 
+type Ref = openapi3.SchemaRef
+
+func NewRef(ref string, v *openapi3.Schema) *Ref {
+	return openapi3.NewSchemaRef(ref, v)
+}
+
 // NewOpenAPI 声明基本的 openapi3.T 对象
 func NewOpenAPI(ver string) *openapi3.T {
 	c := openapi3.NewComponents()

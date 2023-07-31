@@ -155,7 +155,7 @@ messages:
         msg: 按标签过滤
     - key: ignore %s
       message:
-        msg: '忽略 %s'
+        msg: 忽略 %s
     - key: invalid format
       message:
         msg: 无效的格式

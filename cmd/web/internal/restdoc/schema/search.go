@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
+	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
@@ -27,7 +29,7 @@ type SearchFunc func(string) *pkg.Package
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
-func (f SearchFunc) New(t *openapi3.T, currPath, typeName string, q bool) (*openapi3.SchemaRef, error) {
+func (f SearchFunc) New(t *openapi3.T, currPath, typeName string, q bool) (*Ref, error) {
 	var isArray bool
 	if strings.HasPrefix(typeName, "[]") {
 		typeName = typeName[2:]
@@ -39,25 +41,26 @@ func (f SearchFunc) New(t *openapi3.T, currPath, typeName string, q bool) (*open
 		tag = query.Tag
 	}
 
-	return f.fromName(t, currPath, typeName, tag, isArray)
+	return f.fromName(t, currPath, typeName, tag, isArray, nil)
 }
 
 // 根据类型名生成 schema 对象
 //
-// 参数参考 [SearchFunc.New]
-func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isArray bool) (*openapi3.SchemaRef, error) {
+// tps 泛型的参数列表；
+// 其它参数参考 [SearchFunc.New]
+func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isArray bool, tps []*Ref) (*Ref, error) {
 	switch typeName { // 基本类型
 	case "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64":
-		return array(openapi3.NewSchemaRef("", openapi3.NewIntegerSchema()), isArray), nil
+		return array(NewRef("", openapi3.NewIntegerSchema()), isArray), nil
 	case "float32", "float64":
-		return array(openapi3.NewSchemaRef("", openapi3.NewFloat64Schema()), isArray), nil
+		return array(NewRef("", openapi3.NewFloat64Schema()), isArray), nil
 	case "bool":
-		return array(openapi3.NewSchemaRef("", openapi3.NewBoolSchema()), isArray), nil
+		return array(NewRef("", openapi3.NewBoolSchema()), isArray), nil
 	case "string":
-		return array(openapi3.NewSchemaRef("", openapi3.NewStringSchema()), isArray), nil
+		return array(NewRef("", openapi3.NewStringSchema()), isArray), nil
 	case "map":
-		return array(openapi3.NewSchemaRef("", openapi3.NewObjectSchema()), isArray), nil
+		return array(NewRef("", openapi3.NewObjectSchema()), isArray), nil
 	}
 
 	modPath := currPath
@@ -75,7 +78,7 @@ func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isAr
 	ref := refReplacer.Replace(typeName)
 
 	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
-		sr := openapi3.NewSchemaRef(ref, schemaRef.Value)
+		sr := NewRef(ref, schemaRef.Value)
 		addRefPrefix(sr)
 		return array(sr, isArray), nil
 	}
@@ -108,34 +111,32 @@ LOOP:
 		return nil, localeutil.Error("not found %s", typeName)
 	}
 
-	schemaRef, err := f.fromTypeSpec(t, file, currPath, ref, tag, spec)
+	schemaRef, err := f.fromTypeSpec(t, file, modPath, ref, tag, spec, tps)
 	if err != nil {
 		return nil, err
 	}
 
-	if schemaRef.Ref != "" && tag != query.Tag { // 查询参数不保存整个对象
-		t.Components.Schemas[schemaRef.Ref] = openapi3.NewSchemaRef("", schemaRef.Value)
+	if schemaRef.Ref != "" &&
+		tag != query.Tag && // 查询参数不保存整个对象
+		spec.TypeParams == nil { // 泛型不保存
+		t.Components.Schemas[schemaRef.Ref] = NewRef("", schemaRef.Value)
 		addRefPrefix(schemaRef)
 	}
 	return array(schemaRef, isArray), nil
 }
 
-// 将 ast.TypeSpec 转换成 openapi3.Schema
+// 将 ast.TypeSpec 转换成 openapi3.SchemaRef
 //
-// typeName 仅用于生成 SchemaRef.Ref 值，需要完整路径。
-func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec) (*openapi3.SchemaRef, error) {
+// ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
+func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tps []*Ref) (*Ref, error) {
 	desc, enums := parseTypeDoc(s)
 	if desc == "" && s.Comment != nil {
 		desc = s.Comment.Text()
 	}
 
-	if s.TypeParams != nil {
-		return nil, newError(s.Pos(), web.NewLocaleError("schema can not be a generic %s", s.Name.Name))
-	}
-
 	switch ts := s.Type.(type) {
 	case *ast.Ident: // type x = int 或是 type x int
-		schemaRef, err := f.fromName(t, currPath, ts.Name, tag, false)
+		schemaRef, err := f.fromName(t, currPath, ts.Name, tag, false, nil)
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
@@ -143,9 +144,13 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, t
 		schemaRef.Value.Enum = enums
 		schemaRef.Ref = ref
 		return schemaRef, nil
+	case *ast.IndexExpr: // type x = G[int]
+		return f.fromIndexExpr(t, file, currPath, tag, ts)
+	case *ast.IndexListExpr: // type x = G[int, float]
+		return f.fromIndexListExpr(t, file, currPath, ref, tag, ts)
 	case *ast.SelectorExpr: // type x = json.Decoder 或是 type x json.Decoder 引用外部对象
-		name := getSelectorExprTypeName(ts, file)
-		schemaRef, err := f.fromName(t, currPath, name, tag, false)
+		mod, name := getSelectorExprTypeName(ts, file)
+		schemaRef, err := f.fromName(t, mod, name, tag, false, nil)
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
@@ -157,11 +162,11 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, t
 		schema.Description = desc
 		schema.Enum = enums
 
-		if err := f.addFields(t, file, schema, currPath, tag, ts.Fields.List); err != nil {
+		if err := f.addFields(t, file, schema, currPath, tag, ts.Fields.List, s.TypeParams, tps); err != nil {
 			return nil, err
 		}
 
-		return openapi3.NewSchemaRef(ref, schema), nil
+		return NewRef(ref, schema), nil
 	default:
 		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
 		return nil, newError(s.Pos(), msg)
@@ -190,14 +195,54 @@ func parseTypeDoc(s *ast.TypeSpec) (desc string, enums []any) {
 	return text, enums
 }
 
+func (f SearchFunc) fromIndexExpr(t *openapi3.T, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
+	mod, idxName := f.indexExprName(file, currPath, idx.Index)
+	idxRef, err := f.fromName(t, mod, idxName, tag, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	mod, name := f.indexExprName(file, currPath, idx.X)
+	return f.fromName(t, mod, name, tag, false, []*Ref{idxRef})
+}
+
+func (f SearchFunc) fromIndexListExpr(t *openapi3.T, file *ast.File, currPath, ref, tag string, idx *ast.IndexListExpr) (*Ref, error) {
+	indexes := make([]*Ref, 0, len(idx.Indices))
+
+	for _, i := range idx.Indices {
+		mod, idxName := f.indexExprName(file, currPath, i)
+		idxRef, err := f.fromName(t, mod, idxName, tag, false, nil)
+		if err != nil {
+			return nil, err
+		}
+		indexes = append(indexes, idxRef)
+	}
+
+	mod, name := f.indexExprName(file, currPath, idx.X)
+	return f.fromName(t, mod, name, tag, false, indexes)
+}
+
+func (f SearchFunc) indexExprName(file *ast.File, currPath string, expr ast.Expr) (mod, name string) {
+	switch t := expr.(type) {
+	case *ast.Ident:
+		return currPath, t.Name
+	case *ast.SelectorExpr:
+		return getSelectorExprTypeName(t, file)
+	case *ast.StarExpr:
+		return f.indexExprName(file, currPath, t.X)
+	default:
+		panic(fmt.Sprintf("未处理的 ast.IndexExpr.Index 类型 %s", t))
+	}
+}
+
 // 将 list 中的所有字段解析到 schema
 //
 // 字段名如果存在 json 时，取 json 名称，否则直接采用字段名，xml 仅采用了 attr 和 parent>child 两种格式。
-func (f SearchFunc) addFields(t *openapi3.T, file *ast.File, s *openapi3.Schema, modPath, tagName string, list []*ast.Field) error {
+func (f SearchFunc) addFields(t *openapi3.T, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tp *ast.FieldList, tps []*Ref) error {
 LOOP:
-	for _, field := range list {
+	for _, field := range fields {
 		if len(field.Names) == 0 { // 嵌套对象
-			ref, err := f.fromExpr(t, file, modPath, tagName, field.Type)
+			ref, err := f.fromExpr(t, file, modPath, tagName, field.Type, nil, nil)
 			if err != nil {
 				return err
 			}
@@ -213,7 +258,7 @@ LOOP:
 			continue LOOP
 		}
 
-		item, err := f.fromExpr(t, file, modPath, tagName, field.Type)
+		item, err := f.fromExpr(t, file, modPath, tagName, field.Type, tp, tps)
 		if err != nil {
 			return err
 		}
@@ -233,27 +278,30 @@ LOOP:
 }
 
 // 将 ast.Expr 中的内容转换到 schema 上
-func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string, e ast.Expr) (*openapi3.SchemaRef, error) {
+func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string, e ast.Expr, tp *ast.FieldList, tps []*Ref) (*Ref, error) {
 	switch expr := e.(type) {
 	case *ast.ArrayType:
-		schema, err := f.fromExpr(t, file, currPath, tag, expr.Elt)
+		schema, err := f.fromExpr(t, file, currPath, tag, expr.Elt, tp, tps)
 		if err != nil {
 			return nil, err
 		}
 		return array(schema, true), nil
 	case *ast.MapType: // NOTE: map 无法指定字段名
-		return openapi3.NewSchemaRef("", openapi3.NewObjectSchema()), nil
+		return NewRef("", openapi3.NewObjectSchema()), nil
 	case *ast.Ident:
-		ref, err := f.fromName(t, currPath, expr.Name, tag, false)
-		if err != nil {
-			return nil, newError(e.Pos(), err)
+		if len(tps) > 0 { // 这是泛型类型
+			if index := sliceutil.Index(tp.List, func(item *ast.Field, _ int) bool { return item.Names[0].Name == expr.Name }); index >= 0 {
+				return tps[index], nil
+			} else {
+				panic(fmt.Sprintf("无法为泛型的类型参数 %s 找到对应的类型", expr.Name))
+			}
 		}
-		return ref, nil
+		return f.fromName(t, currPath, expr.Name, tag, false, nil)
 	case *ast.StarExpr: // 指针
-		return f.fromExpr(t, file, currPath, tag, expr.X)
+		return f.fromExpr(t, file, currPath, tag, expr.X, tp, tps)
 	case *ast.SelectorExpr:
-		name := getSelectorExprTypeName(expr, file)
-		ref, err := f.fromName(t, currPath, name, tag, false)
+		mod, name := getSelectorExprTypeName(expr, file)
+		ref, err := f.fromName(t, mod, name, tag, false, tps)
 		if err != nil {
 			if _, ok := err.(*Error); ok {
 				return nil, err
@@ -267,7 +315,7 @@ func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string
 	}
 }
 
-func getSelectorExprTypeName(expr *ast.SelectorExpr, file *ast.File) string {
+func getSelectorExprTypeName(expr *ast.SelectorExpr, file *ast.File) (mod, name string) {
 	pkgName := expr.X.(*ast.Ident).Name
 	for _, d := range file.Imports {
 		p := strings.Trim(d.Path.Value, "\"")
@@ -284,7 +332,7 @@ func getSelectorExprTypeName(expr *ast.SelectorExpr, file *ast.File) string {
 			break
 		}
 	}
-	return pkgName + "." + expr.Sel.Name
+	return pkgName, expr.Sel.Name
 }
 
 func parseTag(field *ast.Field, tagName string) (name string, nullable bool, xml *openapi3.XML) {
@@ -331,18 +379,22 @@ func parseTag(field *ast.Field, tagName string) (name string, nullable bool, xml
 }
 
 // 根据 isArray 将 ref 包装成相应的对象
-func array(ref *openapi3.SchemaRef, isArray bool) *openapi3.SchemaRef {
+func array(ref *Ref, isArray bool) *Ref {
 	if !isArray {
 		return ref
 	}
 
 	s := openapi3.NewArraySchema()
 	s.Items = ref
-	return openapi3.NewSchemaRef("", s)
+	return NewRef("", s)
 }
 
 // 将从 components/schemas 中获取的对象进行二次包装
-func wrap(ref *openapi3.SchemaRef, desc string, xml *openapi3.XML, nullable bool) *openapi3.SchemaRef {
+func wrap(ref *Ref, desc string, xml *openapi3.XML, nullable bool) *Ref {
+	if ref == nil {
+		return ref
+	}
+
 	if ref.Value.Nullable != nullable ||
 		ref.Value.XML != xml ||
 		(desc != "" && ref.Value.Description != desc) {
@@ -353,14 +405,14 @@ func wrap(ref *openapi3.SchemaRef, desc string, xml *openapi3.XML, nullable bool
 		if desc != "" {
 			s.Description = desc
 		}
-		ref = openapi3.NewSchemaRef("", s)
+		ref = NewRef("", s)
 	}
 	return ref
 }
 
 const refPrefix = "#/components/schemas/"
 
-func addRefPrefix(ref *openapi3.SchemaRef) {
+func addRefPrefix(ref *Ref) {
 	if ref.Ref != "" && !strings.HasPrefix(ref.Ref, refPrefix) {
 		ref.Ref = refPrefix + ref.Ref
 	}
