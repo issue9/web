@@ -91,7 +91,7 @@ LOOP:
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
-		case "resp-header": // @resp-header name h1 *desc
+		case "@resp-header": // @resp-header name h1 *desc
 			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}

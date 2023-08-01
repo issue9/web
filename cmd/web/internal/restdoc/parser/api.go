@@ -87,12 +87,13 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
-		case "resp-header": // @resp-header 200 h1 *desc
+		case "@resp-header": // @resp-header 200 h1 *desc
 			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "##": // 可能是 ## callback
-			// TODO
+			delta := p.parseCallback(t, opt, currPath, suffix, lines[index:], ln+index, filename)
+			index += delta
 		default:
 			opt.Description = strings.Join(lines[index:], " ")
 			break

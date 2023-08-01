@@ -69,11 +69,14 @@ func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix
 	if resp, found := resps[words[0]]; found {
 		resp.desc = words[3]
 		resp.schema = s
-	}
-	resps[words[0]] = &response{
-		desc:   words[3],
-		schema: s,
-		media:  strings.Split(words[1], ","),
+		resp.media = strings.Split(words[1], ",")
+	} else {
+		resps[words[0]] = &response{
+			desc:   words[3],
+			schema: s,
+			media:  strings.Split(words[1], ","),
+			header: make(map[string]string, 3),
+		}
 	}
 
 	return true
@@ -89,8 +92,9 @@ func (p *Parser) parseResponseHeader(resps map[string]*response, t *openapi3.T, 
 
 	if resp, found := resps[words[0]]; found {
 		resp.header[words[1]] = words[2]
+	} else {
+		resps[words[0]] = &response{header: map[string]string{words[1]: words[2]}}
 	}
-	resps[words[0]] = &response{header: map[string]string{words[1]: words[2]}}
 
 	return true
 }

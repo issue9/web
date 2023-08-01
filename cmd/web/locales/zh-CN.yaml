@@ -165,3 +165,6 @@ messages:
     - key: version incompatible
       message:
         msg: 版本不兼容
+    - key: invalid http method %s
+      message:
+        msg: invalid http method %s

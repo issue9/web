@@ -74,6 +74,9 @@ messages:
     - key: invalid format
       message:
         msg: invalid format
+    - key: invalid http method %s
+      message:
+        msg: invalid http method %s
     - key: language
       message:
         msg: language
