@@ -352,14 +352,17 @@ func parseTag(field *ast.Field, tagName string) (name string, nullable bool, xml
 				words := strings.Split(tag, ",")
 				switch len(words) {
 				case 1:
-					if strings.IndexByte(words[0], '>') > 0 {
-						xml = &openapi3.XML{Wrapped: true}
+					if index := strings.IndexByte(words[0], '>'); index > 0 {
+						xml = &openapi3.XML{Wrapped: true, Name: words[0][index+1:]}
 					}
 				case 2:
-					wrap := strings.IndexByte(words[0], '>') > 0
+					wrapIndex := strings.IndexByte(words[0], '>')
 					attr := words[1] == "attr"
-					if wrap || attr {
-						xml = &openapi3.XML{Wrapped: wrap, Attribute: attr}
+					if wrapIndex > 0 || attr {
+						xml = &openapi3.XML{Wrapped: wrapIndex > 0, Attribute: attr}
+						if xml.Wrapped {
+							xml.Name = words[0][wrapIndex+1:]
+						}
 					}
 				}
 			}
