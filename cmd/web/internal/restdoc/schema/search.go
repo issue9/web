@@ -308,8 +308,12 @@ func (f SearchFunc) fromExpr(t *OpenAPI, file *ast.File, currPath, tag string, e
 			return nil, newError(e.Pos(), err)
 		}
 		return ref, nil
-	//case *ast.StructType:
-	// TODO
+	case *ast.StructType:
+		s := openapi3.NewObjectSchema()
+		if err := f.addFields(t, file, s, currPath, tag, expr.Fields.List, tp, tpRefs); err != nil {
+			return nil, err
+		}
+		return NewRef("", s), nil
 	//case *ast.InterfaceType: // 无法处理此类型
 	default:
 		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %s", expr))

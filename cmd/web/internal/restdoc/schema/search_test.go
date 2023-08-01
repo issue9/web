@@ -150,6 +150,11 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.Empty(age.Ref).
 			Equal(age.Value.Description, "年龄\n").
 			Equal(age.Value.AllOf[0].Value.Type, openapi3.TypeInteger)
+
+		st := u.Value.Properties["struct"]
+		a.Empty(st.Ref).
+			Equal(st.Value.Description, "struct desc\n").
+			Equal(st.Value.AllOf[0].Value.Type, openapi3.TypeObject)
 	})
 
 	// XMLName
