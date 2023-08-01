@@ -15,7 +15,7 @@ package testdata
 // @resp-header 201 h2 h2 desc
 // @resp-ref 400 400-resp
 // @resp-ref 404 404-resp
-// @resp 200 resp resp desc
+// @resp 200 * resp desc
 //
 // ## callback onData POST {$request.query.url} 回调1
 // @req * req 登录的账号信息
@@ -25,9 +25,12 @@ package testdata
 // 会被以 md 的格式传递给 api.Description
 func login() {}
 
+// 登录信息
+//
+// 用户登录需要提交的信息。
 type req struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username"` // 账号
+	Password string `json:"password"` // 密码
 }
 
 type resp struct {

@@ -134,27 +134,28 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 			Equal(ref.Value.Items.Ref, refPrefix+modRef+".User")
 		u := tt.Components.Schemas[modRef+".User"]
 		a.NotNil(u).
-			Equal(u.Value.Description, "用户信息 doc\n").
+			Empty(u.Value.Description). // 单行 doc，赋值给了 title
+			Equal(u.Value.Title, "用户信息 doc\n").
 			Equal(u.Value.Type, openapi3.TypeObject)
 
 		name := u.Value.Properties["Name"]
 		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
-			Equal(name.Value.Description, "姓名\n")
+			Equal(name.Value.Title, "姓名\n")
 
 		sex := u.Value.Properties["sex"]
 		a.Equal(sex.Value.AllOf[0].Ref, refPrefix+modRef+".Sex").
 			True(sex.Value.XML.Attribute).
-			Equal(sex.Value.Description, "性别\n")
+			Equal(sex.Value.Title, "性别\n")
 
 		age := u.Value.Properties["age"]
 		a.Empty(age.Ref).
-			Equal(age.Value.Description, "年龄\n").
-			Equal(age.Value.AllOf[0].Value.Type, openapi3.TypeInteger)
+			Equal(age.Value.Title, "年龄\n").
+			Equal(age.Value.Type, openapi3.TypeInteger)
 
 		st := u.Value.Properties["struct"]
 		a.Empty(st.Ref).
-			Equal(st.Value.Description, "struct desc\n").
-			Equal(st.Value.AllOf[0].Value.Type, openapi3.TypeObject)
+			Equal(st.Value.Title, "struct doc\n").
+			Equal(st.Value.Type, openapi3.TypeObject)
 	})
 
 	// XMLName
@@ -189,17 +190,17 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		admin := tt.Components.Schemas[modRef+".admin.Admin"]
 		name := admin.Value.Properties["Name"]
 		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
-			Equal(name.Value.Description, "姓名\n")
+			Equal(name.Value.Title, "姓名\n")
 
 		u1 := admin.Value.Properties["U1"]
 		a.Empty(u1.Ref).
-			Equal(u1.Value.Description, "u1\n").
-			Equal(u1.Value.AllOf[0].Value.Type, openapi3.TypeArray).
-			Equal(u1.Value.AllOf[0].Value.Items.Ref, refPrefix+modRef+".User")
+			Equal(u1.Value.Title, "u1\n").
+			Equal(u1.Value.Type, openapi3.TypeArray).
+			Equal(u1.Value.Items.Ref, refPrefix+modRef+".User")
 
 		u2 := admin.Value.Properties["u2"]
 		a.Empty(u2.Ref).
-			Equal(u2.Value.Description, "u2\n").
+			Equal(u2.Value.Title, "u2\n").
 			True(u2.Value.Nullable).
 			Equal(u2.Value.AllOf[0].Ref, refPrefix+modRef+".User")
 
@@ -215,15 +216,15 @@ func TestWrap(t *testing.T) {
 	a := assert.New(t, false)
 
 	ref := openapi3.NewSchemaRef("ref", openapi3.NewBoolSchema())
-	ref2 := wrap(ref, "", nil, false)
+	ref2 := wrap(ref, "", "", nil, false)
 	a.Equal(ref2, ref)
 
-	ref2 = wrap(ref, "123", nil, false)
+	ref2 = wrap(ref, "", "123", nil, false)
 	a.NotEqual(ref2, ref).
 		Equal(ref2.Value.AllOf[0].Value, ref.Value).
 		Equal(ref2.Value.Description, "123")
 
-	ref2 = wrap(ref, "123", nil, true)
+	ref2 = wrap(ref, "", "123", nil, true)
 	a.NotEqual(ref2, ref).
 		Equal(ref2.Value.AllOf[0].Value, ref.Value).
 		Equal(ref2.Value.Description, "123").

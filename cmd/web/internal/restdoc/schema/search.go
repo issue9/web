@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
-	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
 type SearchFunc func(string) *pkg.Package
@@ -126,7 +125,7 @@ LOOP:
 //
 // ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
 func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
-	desc, enums := parseTypeDoc(s)
+	title, desc, enums := parseTypeDoc(s)
 	if desc == "" && s.Comment != nil {
 		desc = s.Comment.Text()
 	}
@@ -137,6 +136,7 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
+		schemaRef.Value.Title = title
 		schemaRef.Value.Description = desc
 		schemaRef.Value.Enum = enums
 		schemaRef.Ref = ref
@@ -151,11 +151,13 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
+		schemaRef.Value.Title = title
 		schemaRef.Value.Description = desc
 		schemaRef.Value.Enum = enums
 		return schemaRef, nil
 	case *ast.StructType: // type x = struct{...}
 		schema := openapi3.NewObjectSchema()
+		schema.Title = title
 		schema.Description = desc
 		schema.Enum = enums
 
@@ -168,28 +170,6 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
 		return nil, newError(s.Pos(), msg)
 	}
-}
-
-func parseTypeDoc(s *ast.TypeSpec) (desc string, enums []any) {
-	if s.Doc == nil {
-		return "", nil
-	}
-	text := s.Doc.Text()
-	if text == "" {
-		return "", nil
-	}
-
-	// @enum e1 e2 e3
-	lines := strings.Split(text, "\n")
-	for _, line := range lines {
-		if tag, suffix := utils.CutTag(line); tag == "@enum" {
-			for _, word := range strings.Fields(suffix) {
-				enums = append(enums, word)
-			}
-		}
-	}
-
-	return text, enums
 }
 
 func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
@@ -262,15 +242,8 @@ LOOP:
 			return err
 		}
 
-		var desc string
-		if field.Doc != nil {
-			desc = field.Doc.Text()
-		}
-		if desc == "" && field.Comment != nil {
-			desc = field.Comment.Text()
-		}
-
-		s.WithPropertyRef(name, wrap(item, desc, xml, nullable))
+		title, desc := parseComment(field.Comment, field.Doc)
+		s.WithPropertyRef(name, wrap(item, title, desc, xml, nullable))
 	}
 
 	return nil
@@ -404,25 +377,4 @@ func array(ref *Ref, isArray bool) *Ref {
 	s := openapi3.NewArraySchema()
 	s.Items = ref
 	return NewRef("", s)
-}
-
-// 将从 components/schemas 中获取的对象进行二次包装
-func wrap(ref *Ref, desc string, xml *openapi3.XML, nullable bool) *Ref {
-	if ref == nil {
-		return ref
-	}
-
-	if ref.Value.Nullable != nullable ||
-		ref.Value.XML != xml ||
-		(desc != "" && ref.Value.Description != desc) {
-		s := openapi3.NewSchema()
-		s.AllOf = openapi3.SchemaRefs{ref}
-		s.Nullable = nullable
-		s.XML = xml
-		if desc != "" {
-			s.Description = desc
-		}
-		ref = NewRef("", s)
-	}
-	return ref
 }

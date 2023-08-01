@@ -19,11 +19,11 @@ type (
 		Age int `xml:"age,attr" json:"age"`
 		Sex Sex `json:"sex" xml:"sex,attr"` // 性别
 
-		// struct desc
+		// struct doc
 		Struct struct {
-			// x desc
-			X int // x title
-		} `json:"struct"` // struct title
+			// x doc
+			X int // x comment
+		} `json:"struct"` // struct comment
 	}
 
 	Generic[T any] struct {

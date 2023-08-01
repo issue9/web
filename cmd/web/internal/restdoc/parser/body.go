@@ -104,11 +104,14 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response)
 		resp := openapi3.NewResponse()
 		resp.Description = &r.desc
 		resp.Content = p.newContents(r.schema, r.media...)
+
 		resp.Headers = make(openapi3.Headers, len(r.header))
-		for h, desc := range r.header {
+		for h, title := range r.header {
 			schema := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
-			p := openapi3.Parameter{In: openapi3.ParameterInHeader, Schema: schema, Description: desc}
-			resp.Headers[h] = &openapi3.HeaderRef{Value: &openapi3.Header{Parameter: p}}
+			schema.Value.Title = title
+			resp.Headers[h] = &openapi3.HeaderRef{
+				Value: &openapi3.Header{Parameter: openapi3.Parameter{Schema: schema}},
+			}
 		}
 
 		if o.Responses == nil {
