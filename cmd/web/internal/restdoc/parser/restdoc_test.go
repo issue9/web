@@ -32,6 +32,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"@scy-http http-security bearer format http bearer auth",
 		"@scy-apikey apikey-security key header apikey header auth",
 		"@scy-openid openid-security https://example.com/openid openid auth",
+		"@scy-implicit implicit-security https://example.com/auth  https://example.com/refresh w:i,r:i",
 		"",
 		"# markdown desc",
 		"line 2",
@@ -64,6 +65,10 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	a.NotNil(openid).
 		Equal(openid.Value.OpenIdConnectUrl, "https://example.com/openid").
 		Equal(openid.Value.Description, "openid auth")
+
+	implicit := d.Components.SecuritySchemes["implicit-security"]
+	a.NotNil(implicit).
+		Equal(implicit.Value.Flows.Implicit.AuthorizationURL, "https://example.com/auth")
 
 	// 测试行号是否正确
 	l = loggertest.New(a)

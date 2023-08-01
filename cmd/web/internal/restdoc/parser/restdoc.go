@@ -133,7 +133,71 @@ LOOP:
 			ss.OpenIdConnectUrl = words[1]
 			ss.Description = words[2]
 			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
-			// TODO 支持 security-oauth2 的相关功能
+		case "@scy-implicit": // @scy-implicit name authURL refreshURL scope1,scope2,...
+			words, l := utils.SplitSpaceN(suffix, 4)
+			if l < 3 {
+				p.l.Error(errSyntax, filename, ln+i)
+				continue LOOP
+			}
+			ss := openapi3.NewSecurityScheme()
+			ss.Type = "oauth2"
+			ss.Flows = &openapi3.OAuthFlows{
+				Implicit: &openapi3.OAuthFlow{
+					AuthorizationURL: words[1],
+					RefreshURL:       words[2],
+					Scopes:           parseScopes(words[3]),
+				},
+			}
+			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
+		case "@scy-password": // @scy-password name tokenURL refreshURL scope1,scope2,...
+			words, l := utils.SplitSpaceN(suffix, 4)
+			if l < 3 {
+				p.l.Error(errSyntax, filename, ln+i)
+				continue LOOP
+			}
+			ss := openapi3.NewSecurityScheme()
+			ss.Type = "oauth2"
+			ss.Flows = &openapi3.OAuthFlows{
+				Password: &openapi3.OAuthFlow{
+					TokenURL:   words[1],
+					RefreshURL: words[2],
+					Scopes:     parseScopes(words[3]),
+				},
+			}
+			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
+		case "@scy-code": // @scy-code name authURL tokenURL refreshURL scope1,scope2,....
+			words, l := utils.SplitSpaceN(suffix, 5)
+			if l < 4 {
+				p.l.Error(errSyntax, filename, ln+i)
+				continue LOOP
+			}
+			ss := openapi3.NewSecurityScheme()
+			ss.Type = "oauth2"
+			ss.Flows = &openapi3.OAuthFlows{
+				AuthorizationCode: &openapi3.OAuthFlow{
+					AuthorizationURL: words[1],
+					TokenURL:         words[2],
+					RefreshURL:       words[3],
+					Scopes:           parseScopes(words[4]),
+				},
+			}
+			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
+		case "@scy-client": // @scy-client name tokenURL refreshURL scope1,scope2,...
+			words, l := utils.SplitSpaceN(suffix, 4)
+			if l < 3 {
+				p.l.Error(errSyntax, filename, ln+i)
+				continue LOOP
+			}
+			ss := openapi3.NewSecurityScheme()
+			ss.Type = "oauth2"
+			ss.Flows = &openapi3.OAuthFlows{
+				ClientCredentials: &openapi3.OAuthFlow{
+					TokenURL:   words[1],
+					RefreshURL: words[2],
+					Scopes:     parseScopes(words[3]),
+				},
+			}
+			t.Components.SecuritySchemes[words[0]] = &openapi3.SecuritySchemeRef{Value: ss}
 		case "@doc": // @doc url desc
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {
@@ -158,6 +222,15 @@ LOOP:
 	}
 
 	t.Info = info
+}
+
+func parseScopes(scope string) map[string]string {
+	scopes := strings.Split(scope, ",")
+	s := make(map[string]string, len(scopes))
+	for _, ss := range scopes {
+		s[ss] = ss
+	}
+	return s
 }
 
 func (p *Parser) parseOpenAPI(tt *openapi3.T, suffix, filename string, ln int) {

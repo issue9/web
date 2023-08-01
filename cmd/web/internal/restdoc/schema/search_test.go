@@ -68,7 +68,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.ErrorString(err, "not found").Nil(ref)
 	})
 
-	// IndexExpr
+	// Generic IndexExpr
 	t.Run("泛型 IndexExpr", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := NewOpenAPI("3")
@@ -79,12 +79,12 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.True(found).NotNil(v)
 	})
 
-	// IndexListExpr
+	// Generic IndexListExpr
 	t.Run("泛型 IndexListExpr", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := NewOpenAPI("3")
 
-		ref, err := f.New(tt, modPath, modPath+"/admin.IntStringGenerics", false)
+		ref, err := f.New(tt, modPath, modPath+"/admin.IntUserGenerics", false)
 		a.NotError(err).NotNil(ref)
 
 		v, found := ref.Value.Properties["F1"]
@@ -92,7 +92,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 		v, found = ref.Value.Properties["F2"]
 		a.True(found).NotNil(v).
-			Equal(v.Ref, refPrefix+modRef+".admin.Admin")
+			Equal(v.Ref, refPrefix+modRef+".User")
 	})
 
 	t.Run("[]bool", func(t *testing.T) {
@@ -150,6 +150,16 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.Empty(age.Ref).
 			Equal(age.Value.Description, "年龄\n").
 			Equal(age.Value.AllOf[0].Value.Type, openapi3.TypeInteger)
+	})
+
+	// XMLName
+	t.Run("XMLName", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, modPath+"/admin.Admin", false)
+		a.NotError(err).NotNil(ref).
+			Equal(ref.Value.XML.Name, "admin")
 	})
 
 	// admin.User

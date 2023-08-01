@@ -13,14 +13,19 @@ const refPrefix = "#/components/schemas/"
 
 var refReplacer = strings.NewReplacer("/", ".")
 
-type Ref = openapi3.SchemaRef
+type (
+	Ref     = openapi3.SchemaRef
+	OpenAPI = openapi3.T
+)
 
 func NewRef(ref string, v *openapi3.Schema) *Ref {
 	return openapi3.NewSchemaRef(ref, v)
 }
 
-// NewOpenAPI 声明基本的 openapi3.T 对象
-func NewOpenAPI(ver string) *openapi3.T {
+// NewOpenAPI 声明基本的 OpenAPI 对象
+//
+// 主要是对一些基本字段作为初始化。
+func NewOpenAPI(ver string) *OpenAPI {
 	c := openapi3.NewComponents()
 	c.Schemas = make(openapi3.Schemas)
 	c.Responses = make(openapi3.Responses)

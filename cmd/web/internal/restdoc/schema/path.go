@@ -12,7 +12,7 @@ import (
 // 根据 t 生成路径参数的 Schema
 //
 // 如果 t 的类型无法解析，则会尝试将其作为正则进行处理，如果还是不行则返回错误。
-func NewPath(t string) (*openapi3.SchemaRef, error) {
+func NewPath(t string) (*Ref, error) {
 	// NOTE: 都是基本类型，ref 都直接为空。
 
 	switch strings.ToLower(t) {

@@ -27,7 +27,7 @@ type SearchFunc func(string) *pkg.Package
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
-func (f SearchFunc) New(t *openapi3.T, currPath, typeName string, q bool) (*Ref, error) {
+func (f SearchFunc) New(t *OpenAPI, currPath, typeName string, q bool) (*Ref, error) {
 	var isArray bool
 	if strings.HasPrefix(typeName, "[]") {
 		typeName = typeName[2:]
@@ -44,9 +44,9 @@ func (f SearchFunc) New(t *openapi3.T, currPath, typeName string, q bool) (*Ref,
 
 // 根据类型名生成 schema 对象
 //
-// tpRefs 泛型参数对应的 Ref，非泛型则为空；
+// tpRefs 泛型参数对应的 *Ref，非泛型则为空；
 // 其它参数参考 [SearchFunc.New]
-func (f SearchFunc) fromName(t *openapi3.T, currPath, typeName, tag string, isArray bool, tpRefs []*Ref) (*Ref, error) {
+func (f SearchFunc) fromName(t *OpenAPI, currPath, typeName, tag string, isArray bool, tpRefs []*Ref) (*Ref, error) {
 	switch typeName { // 基本类型
 	case "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64":
@@ -125,7 +125,7 @@ LOOP:
 // 将 ast.TypeSpec 转换成 openapi3.SchemaRef
 //
 // ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
-func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
+func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
 	desc, enums := parseTypeDoc(s)
 	if desc == "" && s.Comment != nil {
 		desc = s.Comment.Text()
@@ -154,7 +154,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi3.T, file *ast.File, currPath, ref, t
 		schemaRef.Value.Description = desc
 		schemaRef.Value.Enum = enums
 		return schemaRef, nil
-	case *ast.StructType:
+	case *ast.StructType: // type x = struct{...}
 		schema := openapi3.NewObjectSchema()
 		schema.Description = desc
 		schema.Enum = enums
@@ -192,7 +192,7 @@ func parseTypeDoc(s *ast.TypeSpec) (desc string, enums []any) {
 	return text, enums
 }
 
-func (f SearchFunc) fromIndexExpr(t *openapi3.T, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
+func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
 	mod, idxName := getExprName(file, currPath, idx.Index)
 	idxRef, err := f.fromName(t, mod, idxName, tag, false, nil)
 	if err != nil {
@@ -203,7 +203,7 @@ func (f SearchFunc) fromIndexExpr(t *openapi3.T, file *ast.File, currPath, tag s
 	return f.fromName(t, mod, name, tag, false, []*Ref{idxRef})
 }
 
-func (f SearchFunc) fromIndexListExpr(t *openapi3.T, file *ast.File, currPath, ref, tag string, idx *ast.IndexListExpr) (*Ref, error) {
+func (f SearchFunc) fromIndexListExpr(t *OpenAPI, file *ast.File, currPath, ref, tag string, idx *ast.IndexListExpr) (*Ref, error) {
 	indexes := make([]*Ref, 0, len(idx.Indices))
 
 	for _, i := range idx.Indices {
@@ -222,7 +222,7 @@ func (f SearchFunc) fromIndexListExpr(t *openapi3.T, file *ast.File, currPath, r
 // 将 fields 中的所有字段解析到 schema
 //
 // 字段名如果存在 json 时，取 json 名称，否则直接采用字段名，xml 仅采用了 attr 和 parent>child 两种格式。
-func (f SearchFunc) addFields(t *openapi3.T, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tp *ast.FieldList, tpRefs []*Ref) error {
+func (f SearchFunc) addFields(t *OpenAPI, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tp *ast.FieldList, tpRefs []*Ref) error {
 LOOP:
 	for _, field := range fields {
 		if len(field.Names) == 0 { // 嵌套对象
@@ -233,6 +233,21 @@ LOOP:
 
 			for k, v := range ref.Value.Properties {
 				s.WithPropertyRef(k, v)
+			}
+			continue
+		}
+
+		// XMLName 特殊处理
+		if field.Names[0].Name == "XMLName" && field.Tag != nil {
+			structTag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+			tag := structTag.Get("xml")
+			if tag == "-" || tag == "" { // 忽略此字段
+				continue
+			}
+
+			items := strings.SplitN(tag, ",", 2)
+			if items[0] != "" {
+				s.XML = &openapi3.XML{Name: items[0]}
 			}
 			continue
 		}
@@ -262,7 +277,7 @@ LOOP:
 }
 
 // 将 ast.Expr 中的内容转换到 schema 上
-func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string, e ast.Expr, tp *ast.FieldList, tpRefs []*Ref) (*Ref, error) {
+func (f SearchFunc) fromExpr(t *OpenAPI, file *ast.File, currPath, tag string, e ast.Expr, tp *ast.FieldList, tpRefs []*Ref) (*Ref, error) {
 	switch expr := e.(type) {
 	case *ast.ArrayType:
 		schema, err := f.fromExpr(t, file, currPath, tag, expr.Elt, tp, tpRefs)
@@ -293,6 +308,8 @@ func (f SearchFunc) fromExpr(t *openapi3.T, file *ast.File, currPath, tag string
 			return nil, newError(e.Pos(), err)
 		}
 		return ref, nil
+	//case *ast.StructType:
+	// TODO
 	//case *ast.InterfaceType: // 无法处理此类型
 	default:
 		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %s", expr))
