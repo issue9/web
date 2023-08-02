@@ -193,10 +193,10 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 	}
 }
 
-// Restart 触发重启服务
+// RestartServer 触发重启服务
 //
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
-func (cmd *CLIOf[T]) Restart() { cmd.app.Restart() }
+func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
 func (cmd *CLIOf[T]) initServer() (*server.Server, error) {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ConfigDir, cmd.ConfigFilename)

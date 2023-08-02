@@ -64,6 +64,13 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 - <https://github.com/issue9/middleware> 提供了部分中间件。
 - <https://github.com/issue9/validator> 提供了部分验证方法。
 
+## 工具
+
+<https://github.com/issue9/web/releases> 提供了一个简易的辅助工具。可以帮助用户完成以下工作：
+
+- 提取和更新本地化信息；
+- 生成 openapi 文档。需要在注释中写一定的注解；
+
 ## 版权
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 开源授权许可证，完整的授权说明可在 [LICENSE](LICENSE) 文件中找到。

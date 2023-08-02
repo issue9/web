@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	_ RestartServer = &App{}
-	_ RestartServer = &CLIOf[struct{}]{}
+	_ ServerApp = &App{}
+	_ ServerApp = &CLIOf[struct{}]{}
 )
 
 func TestSignalHUP(t *testing.T) {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 为构建程序提供相对简便的方法
+// Package app 提供了简便的方式初始化 [server.Server]
 //
-// 提供了以下几种方式构建服务：
-//   - [App] 简要的 [server.Server] 管理对象，需要用户指定 [server.Server] 的生成方式；
+// 目前有以下几种方式：
+//   - [App] 简要的 [server.Server] 管理；
 //   - [NewServerOf] 从配置文件构建 [server.Server] 对象；
 //   - [CLIOf] 直接生成一个简单的命令行程序，结合了 [App] 和 [NewServerOf] 两者的功能；
 //
@@ -26,16 +26,31 @@
 package app
 
 import (
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/server"
 )
 
+// ServerApp 实现对 [server.Server] 的管理
+type ServerApp interface {
+	// RestartServer 重启服务
+	//
+	// 中止旧的 [server.Server]，再启动一个新的 [server.Server] 对象。
+	RestartServer()
+}
+
 // App 简要的服务管理功能
+//
+// 这是对 [ServerApp] 的实现。
 type App struct {
 	// 构建新服务的方法
+	//
+	// 每次重启服务时，都将由此方法生成一个新的服务。
 	NewServer func() (*server.Server, error)
 	srv       *server.Server
 
@@ -61,16 +76,16 @@ RESTART:
 
 	app.restart = false
 	err = app.srv.Serve()
-	if app.restart { // 等待 Serve 过程中，如果调用 Restart，会将 cmd.restart 设置为 true。
+	if app.restart { // 等待 Serve 过程中，如果调用 RestartServer，会将 app.restart 设置为 true。
 		goto RESTART
 	}
 	return err
 }
 
-// Restart 触发重启服务
+// RestartServer 触发重启服务
 //
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
-func (app *App) Restart() {
+func (app *App) RestartServer() {
 	app.restartLock.Lock()
 	defer app.restartLock.Unlock()
 
@@ -82,4 +97,18 @@ func (app *App) Restart() {
 	}
 
 	app.srv.Close(app.ShutdownTimeout)
+}
+
+// SignalHUP 让 s 根据 [HUP] 信号重启服务
+//
+// [HUP]: https://en.wikipedia.org/wiki/SIGHUP
+func SignalHUP(s ServerApp) {
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGHUP)
+
+	go func() {
+		for range signalChannel {
+			s.RestartServer()
+		}
+	}()
 }

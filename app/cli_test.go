@@ -40,7 +40,7 @@ func TestCLIOf(t *testing.T) {
 	a.NotError(cmd.Exec([]string{"app", "-a=install"}))
 	a.Equal(action, "install")
 
-	// Restart
+	// RestartServer
 
 	exit := make(chan struct{}, 10)
 	bs.Reset()
@@ -54,7 +54,7 @@ func TestCLIOf(t *testing.T) {
 	s1 := cmd.app.srv
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
-	cmd.Restart()
+	cmd.RestartServer()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	s2 := cmd.app.srv
 	t2 := s2.Uptime()
@@ -62,7 +62,7 @@ func TestCLIOf(t *testing.T) {
 
 	// restart2
 	cmd.Name = "restart2"
-	cmd.Restart()
+	cmd.RestartServer()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))

@@ -97,8 +97,8 @@ type configOf[T any] struct {
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
 //
-// c 项目依赖的文件系统，被用于 [server.Options.Config]，同时也是配置文件所在的目录；
-// filename 用于指定项目的配置文件，相对于 fsys 文件系统。
+// configDir 项目配置文件所在的目录；
+// filename 用于指定项目的配置文件，相对于 configDir 文件系统。
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
 // 如果此值为空，将以 &server.Options{FS: fsys} 初始化 [server.Server]；
 //

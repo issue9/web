@@ -12,7 +12,7 @@ require (
 	github.com/issue9/source v0.5.1
 	github.com/issue9/term/v3 v3.2.0
 	github.com/issue9/version v1.0.6
-	github.com/issue9/web v0.78.1
+	github.com/issue9/web v0.79.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
