@@ -137,7 +137,7 @@ func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.Probl
 //   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化，且每个参数也将进行本地化；
 //   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
 //   - Logger.Println 对每个参数分别进行本地化，然后调用 [fmt.Sprintln] 输出；
-func (srv *Server) Logs() *logs.Logs { return srv.logs }
+func (srv *Server) Logs() logs.Logs { return srv.logs }
 
 // NewFilterProblem 声明用于处理过滤器的错误对象
 func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {

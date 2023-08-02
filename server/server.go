@@ -44,7 +44,7 @@ type Server struct {
 	catalog  *catalog.Builder
 	tag      language.Tag
 	printer  *message.Printer
-	logs     *logs.Logs
+	logs     logs.Logs
 
 	closed chan struct{}
 	closes []func() error

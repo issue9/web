@@ -74,7 +74,7 @@ type Context struct {
 	// 这是比 context.Value 更经济的传递变量方式，但是这并不是协程安全的。
 	vars map[any]any
 
-	logs *logs.ParamsLogs
+	logs logs.Logs
 }
 
 // MarshalFunc 序列化函数原型
@@ -320,7 +320,7 @@ func (ctx *Context) destroy() {
 		exit(ctx, ctx.status)
 	}
 
-	logs.DestroyParamsLogs(ctx.logs)
+	logs.DestroyWithLogs(ctx.logs)
 
 	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
 		contextPool.Put(ctx)
@@ -352,7 +352,7 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 // 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
 //
 // 输出内容依然遵照 [Server.Logs] 的规则作本地化处理。
-func (ctx *Context) Logs() *logs.ParamsLogs { return ctx.logs }
+func (ctx *Context) Logs() logs.Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))

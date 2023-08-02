@@ -82,6 +82,7 @@ type (
 	FilterProblem  = server.FilterProblem
 	Cache          = cache.Cache
 	Logger         = logs.Logger
+	Logs           = logs.Logs
 
 	// FieldError 表示配置文件中的字段错误
 	FieldError = config.FieldError

@@ -11,8 +11,8 @@ import (
 
 var problemFactory = map[string]server.BuildProblemFunc{}
 
-type Problem struct {
-	// 指定生成 Problem 对象的方法
+type problem struct {
+	// 指定生成 problem 对象的方法
 	//
 	// 这些名称由 [RegisterProblemBuilder] 注册。当前可用的值有：
 	//  - rfc7807
@@ -22,7 +22,7 @@ type Problem struct {
 	IDPrefix string `json:"idPrefix,omitempty" xml:"idPrefix,omitempty" yaml:"idPrefix,omitempty"`
 }
 
-func (p *Problem) sanitize() (*server.Problems, *config.FieldError) {
+func (p *problem) sanitize() (*server.Problems, *config.FieldError) {
 	if p == nil {
 		return nil, nil
 	}
@@ -40,7 +40,7 @@ func (p *Problem) sanitize() (*server.Problems, *config.FieldError) {
 	return ps, nil
 }
 
-// RegisterProblemBuilder 注册用于生成 Problem 对象的方法
+// RegisterProblemBuilder 注册用于生成 [server.Problem] 对象的方法
 //
 // 如果存在同名，则会覆盖。
 func RegisterProblemBuilder(name string, b server.BuildProblemFunc) {

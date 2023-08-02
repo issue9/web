@@ -8,23 +8,11 @@
 package logs
 
 import (
-	"io"
-	"strconv"
+	"log"
+	"sync"
 
-	"github.com/issue9/config"
 	"github.com/issue9/logs/v5"
 	"github.com/issue9/logs/v5/writers"
-	"github.com/issue9/logs/v5/writers/rotate"
-	"github.com/issue9/term/v3/colors"
-
-	"github.com/issue9/web/locales"
-)
-
-// 日志的时间格式
-const (
-	MilliLayout = logs.MilliLayout
-	MicroLayout = logs.MicroLayout
-	NanoLayout  = logs.NanoLayout
 )
 
 // 日志的类别
@@ -37,81 +25,143 @@ const (
 	Fatal = logs.LevelFatal
 )
 
-var allLevels = []Level{Info, Warn, Trace, Debug, Error, Fatal}
+var withLogsPool = &sync.Pool{New: func() any { return &withLogs{} }}
 
 type (
 	Level      = logs.Level
 	Handler    = logs.Handler
 	HandleFunc = logs.HandleFunc
-	Logger     = logs.Logger
 	Record     = logs.Record
 
-	// Options 初始化日志的选项
-	Options struct {
-		Handler Handler
-		Caller  bool    // 是否带调用堆栈信息
-		Created bool    // 是否带时间
-		Levels  []Level // 允许的日志通道
+	// Logger 单个日志的接口
+	Logger = logs.Logger
 
-		// 标准库的错误日志重定义至哪个通道
-		//
-		// 一些由 log.Println 等全局方法输出的内容，由此指定输出的通道。
-		StdLevel Level
+	// Logs 所有日志的集合接口
+	Logs interface {
+		INFO() Logger
+
+		WARN() Logger
+
+		TRACE() Logger
+
+		DEBUG() Logger
+
+		ERROR() Logger
+
+		FATAL() Logger
+
+		Logger(lv Level) Logger
+
+		NewRecord(lv Level) *Record
+
+		// With 构建一个带有指定参数日志对象
+		With(ps map[string]any) Logs
+	}
+
+	defaultLogs struct {
+		logs *logs.Logs
+	}
+
+	withLogs struct {
+		logs    *defaultLogs
+		ps      map[string]any
+		loggers map[Level]Logger
 	}
 )
 
-func optionsSanitize(o *Options) (*Options, error) {
-	if o == nil {
-		o = &Options{}
+// New 声明日志实例
+func New(opt *Options) (Logs, error) {
+	opt, err := optionsSanitize(opt)
+	if err != nil {
+		return nil, err
 	}
 
-	for index, lv := range o.Levels {
-		if !logs.IsValidLevel(lv) {
-			field := "Levels[" + strconv.Itoa(index) + "]"
-			return nil, config.NewFieldError(field, locales.InvalidValue)
-		}
+	o := make([]logs.Option, 0, 3)
+	if opt.Caller {
+		o = append(o, logs.Caller)
+	}
+	if opt.Created {
+		o = append(o, logs.Created)
 	}
 
-	if o.StdLevel != 0 && !logs.IsValidLevel(o.StdLevel) {
-		return nil, config.NewFieldError("StdLevel", locales.InvalidValue)
+	if opt.Handler == nil {
+		opt.Handler = NewNopHandler()
 	}
 
-	return o, nil
+	l := logs.New(opt.Handler, o...)
+	l.Enable(opt.Levels...)
+
+	if l.IsEnable(opt.StdLevel) {
+		sl := l.Logger(opt.StdLevel)
+		log.SetOutput(writers.WriteFunc(func(data []byte) (int, error) {
+			sl.String(string(data))
+			return len(data), nil
+		}))
+	}
+
+	return &defaultLogs{logs: l}, nil
 }
 
-func AllLevels() []Level { return allLevels }
+func (l *defaultLogs) INFO() Logger { return l.logs.INFO() }
 
-func NewNopHandler() Handler { return logs.NewNopHandler() }
+func (l *defaultLogs) WARN() Logger { return l.logs.WARN() }
 
-func NewTextHandler(timeLayout string, w ...io.Writer) Handler {
-	return logs.NewTextHandler(timeLayout, w...)
+func (l *defaultLogs) TRACE() Logger { return l.logs.TRACE() }
+
+func (l *defaultLogs) DEBUG() Logger { return l.logs.DEBUG() }
+
+func (l *defaultLogs) ERROR() Logger { return l.logs.ERROR() }
+
+func (l *defaultLogs) FATAL() Logger { return l.logs.FATAL() }
+
+func (l *defaultLogs) Logger(lv Level) Logger { return l.logs.Logger(lv) }
+
+func (l *defaultLogs) NewRecord(lv Level) *Record { return l.logs.NewRecord(lv) }
+
+// With 构建一个带有指定参数日志对象
+func (l *defaultLogs) With(ps map[string]any) Logs {
+	p := withLogsPool.Get().(*withLogs)
+	p.logs = l
+	p.ps = ps
+	p.loggers = make(map[Level]Logger, 6)
+	return p
 }
 
-func NewJSONHandler(timeLayout string, w ...io.Writer) Handler {
-	return logs.NewJSONHandler(timeLayout, w...)
+func (l *withLogs) INFO() Logger { return l.Logger(Info) }
+
+func (l *withLogs) TRACE() Logger { return l.Logger(Trace) }
+
+func (l *withLogs) WARN() Logger { return l.Logger(Warn) }
+
+func (l *withLogs) DEBUG() Logger { return l.Logger(Debug) }
+
+func (l *withLogs) ERROR() Logger { return l.Logger(Error) }
+
+func (l *withLogs) FATAL() Logger { return l.Logger(Fatal) }
+
+func (l *withLogs) NewRecord(lv Level) *Record {
+	e := l.logs.NewRecord(lv)
+	for k, v := range l.ps {
+		e.With(k, v)
+	}
+	return e
 }
 
-// NewTermHandler 带颜色的终端输出通道
+func (l *withLogs) Logger(lv Level) Logger {
+	if _, found := l.loggers[lv]; !found {
+		l.loggers[lv] = l.logs.logs.With(lv, l.ps)
+	}
+	return l.loggers[lv]
+}
+
+func (l *withLogs) With(ps map[string]any) Logs {
+	for k, v := range l.ps {
+		ps[k] = v
+	}
+	return l.logs.With(ps)
+}
+
+// DestroyWithLogs 回收 [Logs.With] 创建的对象
 //
-// 参数说明参考 [logs.NewTermHandler]
-func NewTermHandler(timeLayout string, w io.Writer, colors map[Level]colors.Color) Handler {
-	return logs.NewTermHandler(timeLayout, w, colors)
-}
-
-func NewDispatchHandler(d map[Level]Handler) Handler { return logs.NewDispatchHandler(d) }
-
-func MergeHandler(w ...Handler) Handler { return logs.MergeHandler(w...) }
-
-// NewRotateFile 按大小分割的文件日志
-//
-// 参数说明参考 [rotate.New]
-func NewRotateFile(format, dir string, size int64) (io.WriteCloser, error) {
-	return rotate.New(format, dir, size)
-}
-
-// NewSMTP 将日志内容发送至指定邮箱
-//
-// 参数说明参考 [writers.NewSMTP]
-func NewSMTP(username, password, subject, host string, sendTo []string) io.Writer {
-	return writers.NewSMTP(username, password, subject, host, sendTo)
-}
+// 这是一个非必须的方法，调用可能会有一定的性能提升。需要确保 l 类型的正确性！
+func DestroyWithLogs(l Logs) { withLogsPool.Put(l) }

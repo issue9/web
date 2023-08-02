@@ -11,12 +11,12 @@ import (
 func TestProblem_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	var p *Problem
+	var p *problem
 	ps, err := p.sanitize()
 	a.NotError(err).
 		Nil(ps)
 
-	p = &Problem{
+	p = &problem{
 		Builder:  "rfc7807",
 		IDPrefix: "abc#",
 	}
@@ -26,7 +26,7 @@ func TestProblem_sanitize(t *testing.T) {
 		NotNil(ps.Builder).
 		Equal(ps.IDPrefix, "abc#")
 
-	p = &Problem{
+	p = &problem{
 		Builder:  "not-exists",
 		IDPrefix: "abc#",
 	}

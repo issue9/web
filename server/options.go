@@ -56,7 +56,7 @@ type (
 		//
 		// 如果此值为空，表示不会输出到任何通道。
 		Logs *logs.Options
-		logs *logs.Logs
+		logs logs.Logs
 
 		// http.Server 实例的值
 		//
