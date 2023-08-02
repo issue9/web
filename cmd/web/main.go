@@ -51,15 +51,20 @@ func main() {
 		panic(err)
 	}
 
-	opt := cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
+	var opt *cmdopt.CmdOpt
+
+	opt = cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		v := fs.Bool("v", false, localeutil.Phrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
 			if *v {
 				fmt.Fprintf(w, "web: %s\n", version)
 				fmt.Fprintf(w, "build with: %s\n", runtime.Version())
+				return nil
 			}
 
-			return nil
+			// 没有任何选项指定，输出帮助信息。
+			_, err := io.WriteString(w, opt.Usage())
+			return err
 		}
 	}, buildNotFound(p))
 

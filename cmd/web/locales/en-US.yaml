@@ -6,6 +6,9 @@ messages:
     - key: '%s can not convert to ast.StructType'
       message:
         msg: '%s can not convert to ast.StructType'
+    - key: '%s when exec %s, use the preset value %s'
+      message:
+        msg: '%s when exec %s, use the preset value %s'
     - key: |
         Auxiliary tool for github.com/issue9/web
 

@@ -6,6 +6,9 @@ messages:
     - key: '%s can not convert to ast.StructType'
       message:
         msg: 不能将 %s 转换为 ast.StructType
+    - key: '%s when exec %s, use the preset value %s'
+      message:
+        msg: 当执行 %[2]s 时发生了错误：%[1]s。将采用默认值 %[3]s 代替。
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -53,7 +56,7 @@ messages:
     - key: command %s not found
       message:
         msg: |
-          未找到子命令 %s
+            未找到子命令 %s
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
