@@ -22,7 +22,7 @@ builds:
   - goos: windows
     goarch: arm64
 
-  main: ./cmd/web
+  main: ./
 
   binary: web
 
@@ -33,7 +33,7 @@ builds:
   - -s -w -X main.commits={{.Commit}} -X main.version={{.Version}}
 
 brews:
-- tap:
+- repository:
     owner: caixw
     name: homebrew-brew
   url_template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
