@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 // Package restdoc 生成 RESTful api 文档
-//
-// TODO 文档
-// map 无法指定字段名，转换成空对象， interface{} 则无法转换。
-// 不支持 gopath 模式
 package restdoc
 
 import (

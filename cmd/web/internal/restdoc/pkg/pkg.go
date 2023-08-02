@@ -36,7 +36,7 @@ type AppendFunc = func(*Package)
 func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bool, af AppendFunc, l *logger.Logger) {
 	root = filepath.Clean(root)
 
-	l.Info(localeutil.Phrase("start parse %s ...\n", root))
+	l.Info(localeutil.Phrase("start parse %s ...", root))
 
 	dirs, err := getDirs(root, recursive)
 	if err != nil {
@@ -71,7 +71,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 		}
 	}
 	wg.Wait()
-	l.Info(localeutil.Phrase("parse %s complete\n", root))
+	l.Info(localeutil.Phrase("parse %s complete", root))
 }
 
 // 扫描 dir 下的 go 文件

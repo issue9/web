@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	title = localeutil.StringPhrase("build go source with version from git tag")
+	title = localeutil.StringPhrase("build go source")
 	usage = localeutil.StringPhrase("build usage")
 )
 
@@ -24,12 +24,22 @@ func Init(opt *cmdopt.CmdOpt, p *message.Printer) {
 }
 
 func build(w io.Writer, args []string) error {
-	ver, err := getLatestTag(args[len(args)-1])
+	ver, err := exec.Command("git", "describe", "--tags", "--abbrev=0").Output()
 	if err != nil {
 		return err
 	}
 
-	replaceVar(args, ver)
+	fullCommit, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return err
+	}
+
+	commit, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err != nil {
+		return err
+	}
+
+	replaceVar(args, string(ver), string(fullCommit), string(commit))
 
 	cmd := exec.Command("go", args...)
 	cmd.Stderr = os.Stderr
@@ -38,22 +48,9 @@ func build(w io.Writer, args []string) error {
 }
 
 // 替换变量
-//
-// 目前支持以下变量：
-//
-//   - {{version}}
-func replaceVar(args []string, ver string) {
+func replaceVar(args []string, ver, fullCommit, commit string) {
+	r := strings.NewReplacer("{{version}}", ver, "{{full-commit}}", fullCommit, "{{commit}}", commit)
 	for index, arg := range args {
-		arg = strings.ReplaceAll(arg, "{{version}}", ver)
-		args[index] = arg
+		args[index] = r.Replace(arg)
 	}
-}
-
-func getLatestTag(src string) (string, error) {
-	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
 }

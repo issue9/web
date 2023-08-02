@@ -1,5 +1,11 @@
 id: zh-CN
 messages:
+    - key: '%s at %s:%d'
+      message:
+        msg: '%s 位于 %s:%d'
+    - key: '%s can not convert to ast.StructType'
+      message:
+        msg: 不能将 %s 转换为 ast.StructType
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -21,31 +27,70 @@ messages:
             {{flags}}
 
             更多信息可访问 https://github.com/issue9/web。
-    - key: build go source with version from git tag
+    - key: build go source
       message:
-        msg: 编译 Go 代码并打上 git tag 作为其版本号
+        msg: 编译 Go 代码
     - key: build usage
       message:
         msg: |
-            这会将最后的 git tag 为应用版本号，
-            版本号通过命令行中的 {{version}} 传递。比如：
+            将参数中的占位符替换成相应的值，然后调用 `go build` 进行编译。
+            在没有占位符的情况下，和直接调用 `go build` 是相同的。比如：
+
             web build -ldflags="-X main.version={{version}}" ./
-            这会将 build -ldflags="-X main.version=1.0.0" ./ 传递给 go 进行编译。
+
+            相当于调用
+
+            go build -ldflags="-X main.version=1.0.0" ./
+
+            目前支持以下占位符：
+
+            {{version}} 表示最新的 git tag 值；
+            {{full-commit}} 最新的 commit hash 值；
+            {{commit}} 最新的 commit hash 值；
+    - key: cancelled
+      message:
+        msg: 被取消
     - key: command %s not found
       message:
         msg: 未找到子命令 %s
+    - key: dest locale files
+      message:
+        msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
     - key: 'dup # restdoc note'
       message:
         msg: '重复的节点 # restdoc'
     - key: extract locale
       message:
         msg: 提取本地化内容
+    - key: |
+        extract usage
+
+        flags：
+        {{flags}}
+      message:
+        msg: |
+            提取源代码中的本地化内容
+            	
+            可用选项：
+            {{flags}}
     - key: file format
       message:
-        msg: 输出文件的格式，目前支持 json 和 yaml
+        msg: 输出文件的格式，目前支持 JSON 和 YAML
+    - key: filter by tag
+      message:
+        msg: 按标签过滤
     - key: gen restdoc
       message:
-        msg: 生成 openapi 文档
+        msg: 提取注释中的 restdoc 文档生成 openapi
+    - key: ignore %s
+      message:
+        msg: 忽略 %s
+    - key: invalid format
+      message:
+        msg: 无效的格式
+    - key: invalid http method %s
+      message:
+        msg: 无效的请求方法 %s
     - key: language
       message:
         msg: 语言
@@ -58,22 +103,72 @@ messages:
     - key: not found %s
       message:
         msg: 未找到 %s
+    - key: only support yaml and json
+      message:
+        msg: 仅支持 YAML 和 JSON
     - key: out dir
       message:
         msg: 输出目录
     - key: package %s with the same name.
       message:
         msg: '%s 已经拥有相同的名称'
-    - key: parse %s complete\n
+    - key: parse %s complete
       message:
-        msg: '%s 分析完成\n'
+        msg: 完成对 %s 的解析
     - key: recursive dir
       message:
         msg: 递归访问子目录
     - key: restdoc usage
       message:
         msg: |
-            提取注释中的 restdoc 文档生成 openapi。
+            提取注释中的 restdoc 文档生成 openapi。restdoc 格式如下：
+
+            # restdoc title of doc
+
+            这是项目唯一的，title of doc 表示文档的标题，还可以通过以下标题指定一些全局属性：
+
+              @tag tagID desc 指定了 openapi 的 Tag；
+              @server url desc 指定了 openapi 的 Server 对象，作为了精简，不支持 Server Variable 的形式；
+              @license name url 指定了文档的版权信息；
+              @term url 指定了文档的隐私策略；
+              @version 指定了文档的版本号；
+              @contact name url email 指定了联系方式，url 和 email 位置没有要求，根据格式自动确定，两者也可以不用全指定；
+              @media application/json application/xml 指定了所有 api 默认的内容类型；
+              @resp name media object.path desc 指定了一些可复用的返回对象，后续 API 中可以用 @resp-ref 进行引用；
+              @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
+              @doc url 扩展文档；
+              @openapi path 引入另一个 openapi 文档，path 可以是一个 uri，比如 https://example.com/openapi.yaml，
+                或是具体的 Go 包下的目录，比如 github.com/issue9/test/v2@v2.0.1 openapi.yaml，
+                表示 test/v2 下的 openapi.yaml 文件；
+
+            # api method path summary
+
+            定义每个 API 文档，method 表示请求方法，path 表示路径，summary 为该接口的简要说明。
+            这些内容将大 # restdoc 解析完之后才会解析。可以包含以下标签：
+
+              @id 唯一 ID，相当于 openapi 的 OperationID；
+              @tag tag1 tag2 该接口要关联的标签，多个标签用空格分隔；
+              @header key desc 指定请求报头；
+              @cookie key desc 指定了 cookie；
+              @path key type desc 指定了路径中的参数，key 为参数名，type 为参数类型，只能是基本类型；
+              @query object.path desc 查询参数，object.path 表示指向查询参数的定义，可参考 schema 节的说明；
+              @req media object.path desc 定义请求格式，media 如果采用全局指定的默认值，可以用 *，如果是多个值，用逗号分隔；
+              @resp status media object.path desc 指定返回的数据类型；
+              @resp-header status key desc 指定报头；
+              @resp-ref 引用由 #restdoc/@resp 设置的项；
+
+              ## callback name method url desc
+
+              指定回调方法，只能依附于 # api 之后，标签与 # api 相同。
+
+            schema
+
+            类似 godoc 在注释中引用对象，restdoc 也是通过注释指向一个具体对象，将其解析为 openapi.Schema 对象；
+            格式为：[modpath.]object-name。
+
+            注意事项
+
+              不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
     - key: set output file
       message:
         msg: 设置输出文件
@@ -86,53 +181,33 @@ messages:
     - key: show version
       message:
         msg: 显示版本号
-    - key: start parse %s ...\n
-      message:
-        msg: 开始分析 %s ...\n
-    - key: syntax error
-      message:
-        msg: 语法错误
-    - key: '%s at %s:%d'
-      message:
-        msg: '%s 位于 %s:%d'
-    - key: cancelled
-      message:
-        msg: 被取消
-    - key: dest locale files
-      message:
-        msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
-    - key: |
-        extract usage
-        	
-        flags：
-        {{flags}}
-      message:
-        msg: |
-            提取源代码中的本地化内容
-            	
-            可用选项：
-            {{flags}}
     - key: skip sub module
       message:
         msg: 忽略子模块的内容
     - key: src locale file
       message:
         msg: 指定源文件
-    - key: unsupported marshal for %s
+    - key: start parse %s ...
       message:
-        msg: 不支持 %s 的序列化
-    - key: unsupported unmarshal for %s
+        msg: 开始解析 %s ...
+    - key: syntax error
       message:
-        msg: 不支持 %s 的反序列化
-    - key: '%s can not convert to ast.StructType'
+        msg: 语法错误
+    - key: the dest file %s is dir
       message:
-        msg: 不能将 %s 转换为 ast.StructType
+        msg: 指定的翻译文件 %s 是一个目录
     - key: the key %s of %s not found, will be deleted
       message:
         msg: 语言 %[2]s 的 %[1]s 未找到, 将被删除
     - key: unsupported ast expr %s
       message:
         msg: 不支持的 ast 表达式 %s
+    - key: unsupported marshal for %s
+      message:
+        msg: 不支持 %s 的序列化
+    - key: unsupported unmarshal for %s
+      message:
+        msg: 不支持 %s 的反序列化
     - key: update locale file
       message:
         msg: 更新本地化的文件
@@ -145,26 +220,12 @@ messages:
         msg: |
             依据源文件依次更新指定的本地化文件
 
+            此操作将会把只存在于源文件中的翻译项添加至指定的目标文件中，
+            而只存在于目标文件中的翻译项将被删除，一般在通过 locale
+            提取完翻译项之后，可以调用此命令对所有的翻译内容进行一次更新。
+
             可用选项:
             {{flags}}
-    - key: the dest file %s is dir
-      message:
-        msg: 指定的翻译文件 %s 是一个目录
-    - key: filter by tag
-      message:
-        msg: 按标签过滤
-    - key: ignore %s
-      message:
-        msg: 忽略 %s
-    - key: invalid format
-      message:
-        msg: 无效的格式
-    - key: only support yaml and json
-      message:
-        msg: 仅支持 yaml 和 json
     - key: version incompatible
       message:
         msg: 版本不兼容
-    - key: invalid http method %s
-      message:
-        msg: invalid http method %s

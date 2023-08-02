@@ -25,7 +25,7 @@ import (
 const (
 	title = localeutil.StringPhrase("extract locale")
 	usage = localeutil.StringPhrase(`extract usage
-	
+
 flags：
 {{flags}}
 `)

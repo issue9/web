@@ -27,9 +27,9 @@ messages:
             {{flags}}
 
             visit https://github.com/issue9/web for more info.
-    - key: build go source with version from git tag
+    - key: build go source
       message:
-        msg: build go source with version from git tag
+        msg: build go source
     - key: build usage
       message:
         msg: build usage
@@ -50,13 +50,13 @@ messages:
         msg: extract locale
     - key: |
         extract usage
-        	
+
         flags：
         {{flags}}
       message:
         msg: |
             extract usage
-            	
+
             flags：
             {{flags}}
     - key: file format
@@ -98,9 +98,9 @@ messages:
     - key: package %s with the same name.
       message:
         msg: package %s with the same name.
-    - key: parse %s complete\n
+    - key: parse %s complete
       message:
-        msg: parse %s complete\n
+        msg: parse %s complete
     - key: recursive dir
       message:
         msg: recursive dir
@@ -125,9 +125,9 @@ messages:
     - key: src locale file
       message:
         msg: src locale file
-    - key: start parse %s ...\n
+    - key: start parse %s ...
       message:
-        msg: start parse %s ...\n
+        msg: start parse %s ...
     - key: syntax error
       message:
         msg: syntax error
