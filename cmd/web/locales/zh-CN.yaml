@@ -52,7 +52,8 @@ messages:
         msg: 被取消
     - key: command %s not found
       message:
-        msg: 未找到子命令 %s
+        msg: |
+          未找到子命令 %s
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
