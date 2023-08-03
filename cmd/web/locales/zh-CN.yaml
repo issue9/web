@@ -136,7 +136,8 @@ messages:
             这是项目唯一的，title of doc 表示文档的标题，还可以通过以下标题指定一些全局属性：
 
               @tag tagID desc 指定了 openapi 的 Tag；
-              @server url desc 指定了 openapi 的 Server 对象，作为了精简，不支持 Server Variable 的形式；
+              @server tags url desc 指定了 openapi 的 Server 对象，作了精简，不支持 Server Variable 的形式。
+                tags 为支持的标签，多个标签用逗号分隔，可以采用 * 表示支持所有；
               @license name url 指定了文档的版权信息；
               @term url 指定了文档的隐私策略；
               @version 指定了文档的版本号；

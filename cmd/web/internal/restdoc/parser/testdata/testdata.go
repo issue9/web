@@ -8,8 +8,8 @@
 //
 // @tag admin admin API
 // @tag users users API
-// @server https://api.example.com/v1 v1 api
-// @server https://api.example.com/v2 v2 api
+// @server * https://api.example.com/v1 v1 api
+// @server * https://api.example.com/v2 v2 api
 // @license mit https://license.example.com/mit
 // @term https://term.example.com
 // @version 1.0.0

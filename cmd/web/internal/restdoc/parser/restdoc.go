@@ -25,7 +25,7 @@ const responsesRef = "#/components/responses/"
 // lines 表示第二行开始的所有内容，每一行不应该包含结尾的换行符；
 // ln 表示 title 所在行的行号，在出错时，用于记录日志；
 // filename 表示所在的文件，在出错时，用于记录日志；
-func (p *Parser) parseRESTDoc(t *openapi3.T, currPath, title string, lines []string, ln int, filename string) {
+func (p *Parser) parseRESTDoc(t *openapi3.T, currPath, title string, lines []string, ln int, filename string, tags []string) {
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 
 	defer func() {
@@ -59,14 +59,24 @@ LOOP:
 				p.l.Error(errSyntax, filename, ln+i)
 				continue LOOP
 			}
-			t.Tags = append(t.Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
-		case "@server": // @server https://example.com *desc
-			words, l := utils.SplitSpaceN(suffix, 2)
-			if l < 1 {
+
+			if !isIgnoreTag(tags, words[0]) {
+				t.Tags = append(t.Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
+			}
+		case "@server": // @server tag https://example.com *desc
+			words, l := utils.SplitSpaceN(suffix, 3)
+			if l < 2 {
 				p.l.Error(errSyntax, filename, ln+i)
 				continue LOOP
 			}
-			t.Servers = append(t.Servers, &openapi3.Server{URL: words[0], Description: words[1]})
+			tag := words[0]
+			if tag == "*" {
+				tag = ""
+			}
+			if tag != "" && isIgnoreTag(tags, strings.Split(tag, ",")...) {
+				continue
+			}
+			t.Servers = append(t.Servers, &openapi3.Server{URL: words[1], Description: words[2]})
 		case "@license": // @license MIT *https://example.com/license
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {

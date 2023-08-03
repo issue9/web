@@ -21,9 +21,9 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	lines := []string{
 		"@version 1.0.0",
 		"@tag user user tag desc ",
-		"@server https://example.com/v1 v1 desc",
+		"@server user https://example.com/v1 v1 desc",
 		"@tag admin admin tag desc",
-		"@server https://example.com/v2 v2 desc",
+		"@server admin https://example.com/v2 v2 desc",
 		"@license mit https://example.com/license",
 		"@contact name https://example.com x@example.com",
 		"@term https://example.com/term",
@@ -37,11 +37,11 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"# markdown desc",
 		"line 2",
 	}
-	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go")
+	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", []string{"user"})
 
 	a.Equal(0, l.Count()).
-		Length(d.Tags, 2).Equal(d.Tags[0].Description, "user tag desc").
-		Length(d.Servers, 2).
+		Length(d.Tags, 1).Equal(d.Tags[0].Description, "user tag desc").
+		Length(d.Servers, 1).
 		Equal(d.Info.License.Name, "mit").
 		Equal(d.Info.TermsOfService, "https://example.com/term").
 		Equal(d.Info.Contact.Name, "name").
@@ -82,7 +82,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"# markdown desc",
 		"line 2",
 	}
-	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go")
+	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", nil)
 
 	a.Equal(1, l.Count()).
 		Length(d.Tags, 1).

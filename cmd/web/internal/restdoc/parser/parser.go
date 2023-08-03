@@ -230,10 +230,24 @@ LOOP:
 						})
 					}
 				case "restdoc":
-					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
+					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()), tags)
 				}
 				continue LOOP
 			}
 		}
 	}
+}
+
+// 只要 tag 有一个元素在 enableTags 或是 enableTags 为空都返回 false
+func isIgnoreTag(enableTags []string, tag ...string) bool {
+	if len(enableTags) == 0 {
+		return false
+	}
+
+	for _, t := range tag {
+		if sliceutil.Exists(enableTags, func(tt string, _ int) bool { return tt == t }) {
+			return false
+		}
+	}
+	return true
 }

@@ -41,3 +41,13 @@ func TestParser(t *testing.T) {
 
 	a.NotError(p.SaveAs(context.Background(), "./testdata/openapi.out.yaml"))
 }
+
+func TestIsIgnoreTag(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.False(isIgnoreTag(nil, "t1"))
+	a.True(isIgnoreTag([]string{"t10"}, "t1"))
+	a.False(isIgnoreTag([]string{"t10"}, "t10"))
+	a.False(isIgnoreTag([]string{"t10"}, "t10", "t1"))
+	a.False(isIgnoreTag([]string{"t1", "t10"}, "t10", "t1"))
+}

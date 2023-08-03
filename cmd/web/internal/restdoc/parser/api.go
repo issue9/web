@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
@@ -24,19 +23,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			p.l.Error(msg, filename, ln)
 		}
 	}()
-
-	ignore := func(tag ...string) bool {
-		if len(tags) == 0 {
-			return false
-		}
-
-		for _, t := range tag {
-			if sliceutil.Exists(tags, func(tt string, _ int) bool { return tt == t }) {
-				return false
-			}
-		}
-		return true
-	}
 
 	words, l := utils.SplitSpaceN(suffix, 3) // GET /users *desc
 	if l < 2 {
@@ -62,7 +48,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 			opt.OperationID = suffix
 		case "@tag": // @tag t1 t2
 			opt.Tags = strings.Fields(suffix)
-			if ignore(opt.Tags...) {
+			if isIgnoreTag(tags, opt.Tags...) {
 				p.l.Warning(web.Phrase("ignore %s", suffix))
 				return
 			}
