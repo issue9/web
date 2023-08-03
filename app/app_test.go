@@ -44,7 +44,7 @@ func TestSignalHUP(t *testing.T) {
 		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
-	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
+	time.Sleep(1000 * time.Millisecond) // 等待 go func 启动完成
 	a.NotNil(cmd.app).
 		NotNil(cmd.app.srv)
 

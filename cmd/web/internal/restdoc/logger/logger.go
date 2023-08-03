@@ -14,12 +14,12 @@ import (
 )
 
 type Logger struct {
-	logs  *logs.Logs
+	logs  logs.Logs
 	p     *message.Printer
 	count int
 }
 
-func New(l *logs.Logs, p *message.Printer) *Logger {
+func New(l logs.Logs, p *message.Printer) *Logger {
 	return &Logger{
 		logs: l,
 		p:    p,
