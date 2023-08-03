@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+
+# 这并不是一个完整的 openapi 文档，仅可被作为 restdoc 的 @openapi 引用。
+
+openapi: 3.1.0
+components:
+  schemas:
+    Problem:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+        detail:
+          type: string
+        status:
+          type: integer
+        params:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reason:
+                type: string
+        
