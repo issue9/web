@@ -45,6 +45,8 @@ func TestSignalHUP(t *testing.T) {
 		exit <- struct{}{}
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
+	a.NotNil(cmd.app).
+		NotNil(cmd.app.srv)
 
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
