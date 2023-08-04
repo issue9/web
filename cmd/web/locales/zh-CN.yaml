@@ -153,7 +153,7 @@ messages:
             # api method path summary
 
             定义每个 API 文档，method 表示请求方法，path 表示路径，summary 为该接口的简要说明。
-            这些内容将大 # restdoc 解析完之后才会解析。可以包含以下标签：
+            这些内容将在 # restdoc 解析完之后才会解析。可以包含以下标签：
 
               @id 唯一 ID，相当于 openapi 的 OperationID；
               @tag tag1 tag2 该接口要关联的标签，多个标签用空格分隔；
@@ -168,12 +168,13 @@ messages:
 
               ## callback name method url desc
 
-              指定回调方法，只能依附于 # api 之后，标签与 # api 相同。
+              指定回调方法，只能依附于 # api 之后，标签大部分与 # api 相同，但是少了 @id、@tag、@path。
 
             schema
 
             类似 godoc 在注释中引用对象，restdoc 也是通过注释指向一个具体对象，将其解析为 openapi.Schema 对象；
-            格式为：[modpath.]object-name。
+            格式为：[modpath.]object-name，modpath 为引用对象的导入路径，object-name 为引用的对象名，比如：
+            github.com/issue9/web.Problem。
 
             注意事项
 

@@ -79,6 +79,23 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.True(found).NotNil(v)
 	})
 
+	// Generic Generics[int,Admin]
+	t.Run("泛型 Generics[int,Admin]", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath+"/admin", modPath+".Generics[int, Admin]", false)
+		a.NotError(err).NotNil(ref).
+			Equal(ref.Ref, modRef+".Generics--int---Admin--")
+
+		v, found := ref.Value.Properties["F1"]
+		a.True(found).NotNil(v)
+
+		v, found = ref.Value.Properties["F2"]
+		a.True(found).NotNil(v).
+			Equal(v.Value.AllOf[0].Ref, refPrefix+modRef+".admin.Admin")
+	})
+
 	// Generic IndexListExpr
 	t.Run("泛型 IndexListExpr", func(t *testing.T) {
 		a := assert.New(t, false)

@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
@@ -22,14 +21,15 @@ import (
 type SearchFunc func(string) *pkg.Package
 
 // currPath 当前包的导出路径；
-// typeName 表示需要查找的类型名，非内置类型且不带路径信息，则将 currPath 作为路径信息。
+// typePath 表示需要查找的类型名，非内置类型且不带路径信息，则将 currPath 作为路径信息；
+// typePath 可以包含类型参数，比如 G[int]。
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
-func (f SearchFunc) New(t *OpenAPI, currPath, typeName string, q bool) (*Ref, error) {
+func (f SearchFunc) New(t *OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
 	var isArray bool
-	if strings.HasPrefix(typeName, "[]") {
-		typeName = typeName[2:]
+	if strings.HasPrefix(typePath, "[]") {
+		typePath = typePath[2:]
 		isArray = true
 	}
 
@@ -38,15 +38,30 @@ func (f SearchFunc) New(t *OpenAPI, currPath, typeName string, q bool) (*Ref, er
 		tag = query.Tag
 	}
 
-	return f.fromName(t, currPath, typeName, tag, isArray, nil)
+	var tpRefs []*Ref
+	if index := strings.LastIndexByte(typePath, '['); index > 0 && typePath[len(typePath)-1] == ']' {
+		tps := strings.Split(typePath[index+1:len(typePath)-1], ",")
+
+		tpRefs = make([]*Ref, 0, len(tps))
+		for _, i := range tps {
+			idxRef, err := f.fromName(t, currPath, strings.TrimSpace(i), tag, false, nil)
+			if err != nil {
+				return nil, err
+			}
+			tpRefs = append(tpRefs, idxRef)
+		}
+		//typePath = typePath[:index]
+	}
+
+	return f.fromName(t, currPath, typePath, tag, isArray, tpRefs)
 }
 
 // 根据类型名生成 schema 对象
 //
 // tpRefs 泛型参数对应的 *Ref，非泛型则为空；
 // 其它参数参考 [SearchFunc.New]
-func (f SearchFunc) fromName(t *OpenAPI, currPath, typeName, tag string, isArray bool, tpRefs []*Ref) (*Ref, error) {
-	switch typeName { // 基本类型
+func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray bool, tpRefs []*Ref) (*Ref, error) {
+	switch typePath { // 基本类型
 	case "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64":
 		return array(NewRef("", openapi3.NewIntegerSchema()), isArray), nil
@@ -60,18 +75,22 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typeName, tag string, isArray
 		return array(NewRef("", openapi3.NewObjectSchema()), isArray), nil
 	}
 
-	modName := typeName
-	if index := strings.LastIndexByte(typeName, '.'); index > 0 { // 全局的路径
-		currPath = typeName[:index]
-		modName = typeName[index+1:]
+	structName := typePath
+	if index := strings.LastIndexByte(typePath, '.'); index > 0 { // 全局的路径
+		currPath = typePath[:index]
+		structName = typePath[index+1:]
 	} else {
-		typeName = currPath + "." + typeName
+		typePath = currPath + "." + typePath
 	}
 	if currPath == "" {
-		return nil, localeutil.Error("not found %s", typeName) // 行数未变化，直接返回错误。
+		return nil, web.NewLocaleError("not found %s", typePath) // 行数未变化，直接返回错误。
 	}
 
-	ref := refReplacer.Replace(typeName)
+	ref := refReplacer.Replace(typePath)
+
+	if index := strings.LastIndexByte(structName, '['); index > 0 {
+		structName = structName[:index]
+	}
 
 	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
 		sr := NewRef(ref, schemaRef.Value)
@@ -81,7 +100,7 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typeName, tag string, isArray
 
 	pkg := f(currPath)
 	if pkg == nil {
-		return nil, localeutil.Error("not found %s", currPath) // 行数未变化，直接返回错误。
+		return nil, web.NewLocaleError("not found %s", currPath) // 行数未变化，直接返回错误。
 	}
 
 	var spec *ast.TypeSpec
@@ -95,7 +114,7 @@ LOOP:
 			}
 
 			for _, s := range gen.Specs {
-				if spec, ok = s.(*ast.TypeSpec); ok && spec.Name.Name == modName {
+				if spec, ok = s.(*ast.TypeSpec); ok && spec.Name.Name == structName {
 					file = f
 					break LOOP // 找到了，就退到最外层。
 				}
@@ -104,7 +123,7 @@ LOOP:
 	}
 
 	if spec == nil || file == nil {
-		return nil, localeutil.Error("not found %s", typeName)
+		return nil, web.NewLocaleError("not found %s", typePath)
 	}
 
 	schemaRef, err := f.fromTypeSpec(t, file, currPath, ref, tag, spec, tpRefs)
@@ -185,7 +204,6 @@ func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag stri
 
 func (f SearchFunc) fromIndexListExpr(t *OpenAPI, file *ast.File, currPath, ref, tag string, idx *ast.IndexListExpr) (*Ref, error) {
 	indexes := make([]*Ref, 0, len(idx.Indices))
-
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)
 		idxRef, err := f.fromName(t, mod, idxName, tag, false, nil)
@@ -369,15 +387,4 @@ func parseTag(field *ast.Field, tagName string) (name string, nullable bool, xml
 		}
 	}
 	return
-}
-
-// 根据 isArray 将 ref 包装成相应的对象
-func array(ref *Ref, isArray bool) *Ref {
-	if !isArray {
-		return ref
-	}
-
-	s := openapi3.NewArraySchema()
-	s.Items = ref
-	return NewRef("", s)
 }

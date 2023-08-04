@@ -14,7 +14,14 @@ import (
 
 const refPrefix = "#/components/schemas/"
 
-var refReplacer = strings.NewReplacer("/", ".")
+var refReplacer = strings.NewReplacer(
+	"/", ".",
+	"[", "--",
+	"]", "--",
+	",", "---",
+	" ", "",
+	"\t", "",
+)
 
 type (
 	Ref     = openapi3.SchemaRef
@@ -79,6 +86,17 @@ func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {
 	}
 
 	return "", ""
+}
+
+// 根据 isArray 将 ref 包装成相应的对象
+func array(ref *Ref, isArray bool) *Ref {
+	if !isArray {
+		return ref
+	}
+
+	s := openapi3.NewArraySchema()
+	s.Items = ref
+	return NewRef("", s)
 }
 
 // 将从 components/schemas 中获取的对象进行二次包装
