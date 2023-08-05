@@ -25,6 +25,8 @@
 // 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 package app
 
+//go:generate go run ./make_doc.go
+
 import (
 	"os"
 	"os/signal"

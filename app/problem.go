@@ -11,7 +11,7 @@ import (
 
 var problemFactory = map[string]server.BuildProblemFunc{}
 
-type problem struct {
+type problemConfig struct {
 	// 指定生成 problem 对象的方法
 	//
 	// 这些名称由 [RegisterProblemBuilder] 注册。当前可用的值有：
@@ -22,7 +22,7 @@ type problem struct {
 	IDPrefix string `json:"idPrefix,omitempty" xml:"idPrefix,omitempty" yaml:"idPrefix,omitempty"`
 }
 
-func (p *problem) sanitize() (*server.Problems, *config.FieldError) {
+func (p *problemConfig) sanitize() (*server.Problems, *config.FieldError) {
 	if p == nil {
 		return nil, nil
 	}

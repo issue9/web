@@ -217,8 +217,8 @@ var colorMap = map[string]colors.Color{
 
 // args 参数格式如下：
 // - 0 时间格式
-// - 1 为颜色名称，可参考 [colorMap] 的键名；
-// - 2 为输出通道，可以为 stdout 和 stderr；
+// - 1 为输出通道，可以为 stdout 和 stderr；
+// - 2-8 为 level 与颜色的配置，格式为 Info:green,Warn:yellow；
 func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	if len(args) < 2 {
 		return nil, nil, config.NewFieldError("Args", locales.InvalidValue)

@@ -34,12 +34,12 @@ type (
 		// 网站的域名证书
 		//
 		// NOTE: 不能同时与 ACME 生效
-		Certificates []*certificate `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates>certificate,omitempty"`
+		Certificates []*certificateConfig `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates>certificate,omitempty"`
 
 		// ACME 协议的证书
 		//
 		// NOTE: 不能同时与 Certificates 生效
-		ACME *acme `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty"`
+		ACME *acmeConfig `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty"`
 
 		tlsConfig *tls.Config
 
@@ -53,36 +53,49 @@ type (
 		//
 		// 报头会输出到包括 404 在内的所有请求返回。可以为空。
 		// 报头内容可能会被后续的中间件修改。
-		Headers []header `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
+		Headers []headerConfig `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
 
 		// 自定义[跨域请求]设置项
 		//
+		// 这些设置对所有路径均有效。
+		//
 		// [跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors
-		CORS *cors `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
+		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
 
 		routersOptions []mux.Option
 	}
 
-	header struct {
-		Key   string `yaml:"key" json:"key" xml:"key,attr"`
+	headerConfig struct {
+		// 报头名称
+		Key string `yaml:"key" json:"key" xml:"key,attr"`
+
+		// 报头对应的值
 		Value string `yaml:"val" json:"val" xml:",chardata"`
 	}
 
-	certificate struct {
+	certificateConfig struct {
+		// 公钥文件地址
 		Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
-		Key  string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+
+		// 私钥文件地址
+		Key string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
 	}
 
-	acme struct {
+	acmeConfig struct {
+		// 申请的域名列表
 		Domains []string `yaml:"domains" json:"domains" xml:"domain"`
-		Cache   string   `yaml:"cache" json:"cache" xml:"cache"`
-		Email   string   `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+
+		// acme 缓存目录
+		Cache string `yaml:"cache" json:"cache" xml:"cache"`
+
+		// 申请者邮箱
+		Email string `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 
 		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
 		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
 	}
 
-	cors struct {
+	corsConfig struct {
 		// 指定跨域中的 Access-Control-Allow-Origin 报头内容
 		//
 		// 如果为空，表示禁止跨域请示，如果包含了 *，表示允许所有。
@@ -112,7 +125,7 @@ func exists(p string) bool {
 	return err == nil || errors.Is(err, fs.ErrExist)
 }
 
-func (cert *certificate) sanitize() *config.FieldError {
+func (cert *certificateConfig) sanitize() *config.FieldError {
 	if !exists(cert.Cert) {
 		return config.NewFieldError("cert", localeutil.Error("%s not found", cert.Cert))
 	}
@@ -206,7 +219,7 @@ func (h *httpConfig) buildTLSConfig() *config.FieldError {
 	return nil
 }
 
-func (l *acme) tlsConfig() *tls.Config {
+func (l *acmeConfig) tlsConfig() *tls.Config {
 	const day = 24 * time.Hour
 
 	m := &autocert.Manager{
@@ -220,7 +233,7 @@ func (l *acme) tlsConfig() *tls.Config {
 	return m.TLSConfig()
 }
 
-func (l *acme) sanitize() *config.FieldError {
+func (l *acmeConfig) sanitize() *config.FieldError {
 	if l.Cache == "" || !exists(l.Cache) {
 		return config.NewFieldError("cache", locales.InvalidValue)
 	}

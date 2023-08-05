@@ -88,7 +88,7 @@ type configOf[T any] struct {
 	// 错误代码的配置
 	//
 	// 可以为空，表示采用 [server.Options] 的默认值。
-	Problem  *problem `yaml:"problem,omitempty" json:"problem,omitempty" xml:"problem,omitempty"`
+	Problem  *problemConfig `yaml:"problem,omitempty" json:"problem,omitempty" xml:"problem,omitempty"`
 	problems *server.Problems
 
 	// 用户自定义的配置项

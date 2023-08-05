@@ -16,7 +16,7 @@ import (
 func TestCertificate_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cert := &certificate{}
+	cert := &certificateConfig{}
 	a.Error(cert.sanitize())
 
 	cert.Cert = "./testdata/cert.pem"
@@ -49,7 +49,7 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 	a := assert.New(t, false)
 
 	h := &httpConfig{
-		Certificates: []*certificate{
+		Certificates: []*certificateConfig{
 			{
 				Cert: "./testdata/cert.pem",
 				Key:  "./testdata/key.pem",
@@ -60,24 +60,24 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 	a.Equal(1, len(h.tlsConfig.Certificates))
 
 	h = &httpConfig{
-		ACME: &acme{},
+		ACME: &acmeConfig{},
 	}
 	a.Error(h.buildTLSConfig()).Nil(h.tlsConfig)
 
 	h = &httpConfig{
-		ACME: &acme{Cache: ".", Domains: []string{"example.com"}},
+		ACME: &acmeConfig{Cache: ".", Domains: []string{"example.com"}},
 	}
 	a.NotError(h.buildTLSConfig()).NotNil(h.tlsConfig)
 
 	// 同时有 Certificates 和 LetsEncrypt
 	h = &httpConfig{
-		Certificates: []*certificate{
+		Certificates: []*certificateConfig{
 			{
 				Cert: "./testdata/cert.pem",
 				Key:  "./testdata/key.pem",
 			},
 		},
-		ACME: &acme{},
+		ACME: &acmeConfig{},
 	}
 	a.Error(h.buildTLSConfig())
 }
@@ -85,17 +85,17 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 func TestACME_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := &acme{}
+	l := &acmeConfig{}
 	a.Error(l.sanitize())
 
-	l = &acme{Cache: "./not-exists"}
+	l = &acmeConfig{Cache: "./not-exists"}
 	a.Error(l.sanitize())
 
 	// 未指定域名
-	l = &acme{Cache: "./"}
+	l = &acmeConfig{Cache: "./"}
 	a.Error(l.sanitize())
 
-	l = &acme{Cache: "./", Domains: []string{"example.com"}}
+	l = &acmeConfig{Cache: "./", Domains: []string{"example.com"}}
 	a.NotError(l.sanitize())
 }
 
