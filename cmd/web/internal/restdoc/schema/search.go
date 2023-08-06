@@ -98,6 +98,14 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 		return array(sr, isArray), nil
 	}
 
+	// 对一些内置类型的特殊处理。
+	switch typePath {
+	case "time.Time":
+		return array(NewRef("", openapi3.NewDateTimeSchema()), isArray), nil
+	case "time.Duration":
+		return array(NewRef("", openapi3.NewStringSchema()), isArray), nil
+	}
+
 	pkg := f(currPath)
 	if pkg == nil {
 		return nil, web.NewLocaleError("not found %s", currPath) // 行数未变化，直接返回错误。

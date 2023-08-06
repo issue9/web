@@ -3,6 +3,8 @@
 // Package testdata 测试 schema 的生成
 package testdata
 
+import "time"
+
 type (
 	String string
 
@@ -24,6 +26,8 @@ type (
 			// x doc
 			X int // x comment
 		} `json:"struct"` // struct comment
+
+		Birthday time.Time
 	}
 
 	Generic[T any] struct {

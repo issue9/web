@@ -123,6 +123,28 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 			Equal(ref.Value.Items.Value.Type, openapi3.TypeBoolean)
 	})
 
+	// time.Time
+	t.Run("time.Time", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, "time.Time", false)
+		a.NotError(err).NotNil(ref).
+			Empty(ref.Value.Description).
+			Equal(ref.Value.Format, "date-time")
+	})
+
+	// time.Duration
+	t.Run("time.Duration", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, "time.Duration", false)
+		a.NotError(err).NotNil(ref).
+			Empty(ref.Value.Description).
+			Equal(ref.Value.Type, openapi3.TypeString)
+	})
+
 	// 枚举数组
 	t.Run("[]Sex", func(t *testing.T) {
 		a := assert.New(t, false)

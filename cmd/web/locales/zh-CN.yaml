@@ -176,6 +176,9 @@ messages:
             格式为：[modpath.]object-name，modpath 为引用对象的导入路径，object-name 为引用的对象名，比如：
             github.com/issue9/web.Problem。
 
+            可用选项：
+            {{flags}}
+
             注意事项
 
               不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
