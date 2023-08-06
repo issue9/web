@@ -152,9 +152,18 @@ LOOP:
 //
 // ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
 func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
-	title, desc, enums := parseTypeDoc(s)
+	title, desc, typ, enums := parseTypeDoc(s)
 	if desc == "" && s.Comment != nil {
 		desc = s.Comment.Text()
+	}
+
+	if typ != "" { // 自定义了类型
+		s := openapi3.NewSchema()
+		s.Type = typ
+		s.Title = title
+		s.Description = desc
+		s.Enum = enums
+		return NewRef(ref, s), nil
 	}
 
 	switch ts := s.Type.(type) {

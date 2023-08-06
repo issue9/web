@@ -10,6 +10,7 @@ type (
 
 	// Sex 表示性别
 	// @enum female male unknown
+	// @type string
 	Sex int8
 
 	// 用户信息 doc

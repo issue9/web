@@ -57,20 +57,23 @@ func addRefPrefix(ref *Ref) {
 	}
 }
 
-func parseTypeDoc(s *ast.TypeSpec) (title, desc string, enums []any) {
+func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 	title, desc = parseComment(s.Comment, s.Doc)
 
-	// @enum e1 e2 e3
 	lines := strings.Split(desc, "\n")
 	for _, line := range lines {
-		if tag, suffix := utils.CutTag(line); tag == "@enum" {
+		tag, suffix := utils.CutTag(line)
+		switch tag {
+		case "@enum", "@enums": // @enum e1 e2 e3
 			for _, word := range strings.Fields(suffix) {
 				enums = append(enums, word)
 			}
+		case "@type": // @type string
+			typ = suffix
 		}
 	}
 
-	return title, desc, enums
+	return title, desc, typ, enums
 }
 
 func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {

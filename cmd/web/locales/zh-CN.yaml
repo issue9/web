@@ -176,6 +176,11 @@ messages:
             格式为：[modpath.]object-name，modpath 为引用对象的导入路径，object-name 为引用的对象名，比如：
             github.com/issue9/web.Problem。
 
+            类型文档中可以通过使用以下标签指定特殊属性：
+
+              @type type-name 将类型指定为 type-name，要求 type-name 必须是合法的 openapi3 类型；
+              @enum n1 n2 当前类型包含了枚举值 n1，n2；
+
             可用选项：
             {{flags}}
 

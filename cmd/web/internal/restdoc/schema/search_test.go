@@ -161,8 +161,8 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 		sex := tt.Components.Schemas[modRef+".Sex"]
 		a.NotNil(sex).
-			Equal(sex.Value.Description, "Sex 表示性别\n@enum female male unknown\n").
-			Equal(sex.Value.Type, openapi3.TypeInteger).
+			Equal(sex.Value.Description, "Sex 表示性别\n@enum female male unknown\n@type string\n").
+			Equal(sex.Value.Type, "string").
 			Equal(sex.Value.Enum, []string{"female", "male", "unknown"})
 	})
 
