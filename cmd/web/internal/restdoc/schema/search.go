@@ -290,8 +290,6 @@ func (f SearchFunc) fromExpr(t *OpenAPI, file *ast.File, currPath, tag string, e
 		if len(tpRefs) > 0 { // 这是泛型类型
 			if index := sliceutil.Index(tp.List, func(item *ast.Field, _ int) bool { return item.Names[0].Name == expr.Name }); index >= 0 {
 				return tpRefs[index], nil
-			} else {
-				panic(fmt.Sprintf("无法为泛型的类型参数 %s 找到对应的类型", expr.Name))
 			}
 		}
 		return f.fromName(t, currPath, expr.Name, tag, false, nil)

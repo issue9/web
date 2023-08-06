@@ -94,6 +94,10 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		v, found = ref.Value.Properties["F2"]
 		a.True(found).NotNil(v).
 			Equal(v.Value.AllOf[0].Ref, refPrefix+modRef+".admin.Admin")
+
+		v, found = ref.Value.Properties["P"]
+		a.True(found).NotNil(v).
+			Equal(v.Value.Type, openapi3.TypeInteger)
 	})
 
 	// Generic IndexListExpr
