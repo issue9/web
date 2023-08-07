@@ -4,7 +4,7 @@ package testdata
 
 // api 函数说明
 //
-// # api POST /login 登录
+// # api post /login 登录
 // @tag users
 // @req * req 登录的账号信息
 // @header h1

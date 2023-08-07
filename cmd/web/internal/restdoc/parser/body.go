@@ -126,6 +126,10 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response)
 
 // 当 media 为空时则直接采用 [Parser.media]
 func (p *Parser) newContents(s *openapi3.SchemaRef, media ...string) openapi3.Content {
+	if s == nil {
+		return nil
+	}
+
 	c := openapi3.NewContent()
 
 	if len(media) == 0 || len(media) == 1 && media[0] == "*" {

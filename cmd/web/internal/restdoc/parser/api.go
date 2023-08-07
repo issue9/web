@@ -88,7 +88,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 	}
 
 	p.addResponses(opt, resps)
-	t.AddOperation(path, method, opt)
+	t.AddOperation(path, strings.ToUpper(method), opt)
 }
 
 func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {

@@ -73,6 +73,8 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 		return array(NewRef("", openapi3.NewStringSchema()), isArray), nil
 	case "map":
 		return array(NewRef("", openapi3.NewObjectSchema()), isArray), nil
+	case "{}":
+		return nil, nil
 	}
 
 	structName := typePath
