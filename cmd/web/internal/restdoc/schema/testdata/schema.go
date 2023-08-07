@@ -8,11 +8,6 @@ import "time"
 type (
 	String string
 
-	// Sex 表示性别
-	// @enum female male unknown
-	// @type string
-	Sex int8
-
 	// 用户信息 doc
 	User struct { // 用户信息 comment
 		// 姓名
@@ -43,3 +38,8 @@ type (
 		P  int
 	}
 )
+
+// Sex 表示性别
+// @enum female male unknown
+// @type string
+type Sex int8

@@ -60,7 +60,13 @@ func addRefPrefix(ref *Ref) {
 func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 	title, desc = parseComment(s.Comment, s.Doc)
 
-	lines := strings.Split(desc, "\n")
+	var lines []string
+	if desc != "" {
+		lines = strings.Split(desc, "\n")
+	} else {
+		lines = strings.Split(title, "\n")
+	}
+
 	for _, line := range lines {
 		tag, suffix := utils.CutTag(line)
 		switch tag {
@@ -77,18 +83,24 @@ func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 }
 
 func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {
-	if doc != nil {
-		if len(doc.List) > 1 {
-			return doc.List[0].Text, doc.Text()
-		}
-		return doc.Text(), ""
+	if doc == nil {
+		doc = comments
+	}
+	if doc == nil {
+		return
 	}
 
-	if comments != nil {
-		return comments.Text(), ""
+	if len(doc.List) == 1 {
+		title = doc.Text()
+		return title[:len(title)-1], ""
 	}
 
-	return "", ""
+	desc = doc.Text()
+	if index := strings.IndexByte(desc, '\n'); index >= 0 {
+		title = desc[:index]
+	}
+
+	return
 }
 
 // 根据 isArray 将 ref 包装成相应的对象

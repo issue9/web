@@ -125,6 +125,11 @@ LOOP:
 			for _, s := range gen.Specs {
 				if spec, ok = s.(*ast.TypeSpec); ok && spec.Name.Name == structName {
 					file = f
+
+					if len(gen.Specs) == 1 { // 不在 type() 内声明的类型
+						spec.Doc = gen.Doc
+					}
+
 					break LOOP // 找到了，就退到最外层。
 				}
 			}

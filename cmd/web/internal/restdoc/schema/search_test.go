@@ -178,26 +178,26 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		u := tt.Components.Schemas[modRef+".User"]
 		a.NotNil(u).
 			Empty(u.Value.Description). // 单行 doc，赋值给了 title
-			Equal(u.Value.Title, "用户信息 doc\n").
+			Equal(u.Value.Title, "用户信息 doc").
 			Equal(u.Value.Type, openapi3.TypeObject)
 
 		name := u.Value.Properties["Name"]
 		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
-			Equal(name.Value.Title, "姓名\n")
+			Equal(name.Value.Title, "姓名")
 
 		sex := u.Value.Properties["sex"]
 		a.Equal(sex.Value.AllOf[0].Ref, refPrefix+modRef+".Sex").
 			True(sex.Value.XML.Attribute).
-			Equal(sex.Value.Title, "性别\n")
+			Equal(sex.Value.Title, "性别")
 
 		age := u.Value.Properties["age"]
 		a.Empty(age.Ref).
-			Equal(age.Value.Title, "年龄\n").
+			Equal(age.Value.Title, "年龄").
 			Equal(age.Value.Type, openapi3.TypeInteger)
 
 		st := u.Value.Properties["struct"]
 		a.Empty(st.Ref).
-			Equal(st.Value.Title, "struct doc\n").
+			Equal(st.Value.Title, "struct doc").
 			Equal(st.Value.Type, openapi3.TypeObject)
 	})
 
@@ -233,17 +233,17 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		admin := tt.Components.Schemas[modRef+".admin.Admin"]
 		name := admin.Value.Properties["Name"]
 		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
-			Equal(name.Value.Title, "姓名\n")
+			Equal(name.Value.Title, "姓名")
 
 		u1 := admin.Value.Properties["U1"]
 		a.Empty(u1.Ref).
-			Equal(u1.Value.Title, "u1\n").
+			Equal(u1.Value.Title, "u1").
 			Equal(u1.Value.Type, openapi3.TypeArray).
 			Equal(u1.Value.Items.Ref, refPrefix+modRef+".User")
 
 		u2 := admin.Value.Properties["u2"]
 		a.Empty(u2.Ref).
-			Equal(u2.Value.Title, "u2\n").
+			Equal(u2.Value.Title, "u2").
 			True(u2.Value.Nullable).
 			Equal(u2.Value.AllOf[0].Ref, refPrefix+modRef+".User")
 
