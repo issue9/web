@@ -103,6 +103,32 @@ func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {
 	return
 }
 
+func getPrimitiveType(name string, isArray bool) (*Ref, bool) {
+	switch name { // 基本类型
+	case "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64":
+		return array(NewRef("", openapi3.NewIntegerSchema()), isArray), true
+	case "float32", "float64":
+		return array(NewRef("", openapi3.NewFloat64Schema()), isArray), true
+	case "bool":
+		return array(NewRef("", openapi3.NewBoolSchema()), isArray), true
+	case "string":
+		return array(NewRef("", openapi3.NewStringSchema()), isArray), true
+	case "map":
+		return array(NewRef("", openapi3.NewObjectSchema()), isArray), true
+	case "{}":
+		return nil, true
+
+	// 以下是对一些内置类型的特殊处理
+	case "time.Time":
+		return array(NewRef("", openapi3.NewDateTimeSchema()), isArray), true
+	case "time.Duration":
+		return array(NewRef("", openapi3.NewStringSchema()), isArray), true
+	default:
+		return nil, false
+	}
+}
+
 // 根据 isArray 将 ref 包装成相应的对象
 func array(ref *Ref, isArray bool) *Ref {
 	if !isArray {

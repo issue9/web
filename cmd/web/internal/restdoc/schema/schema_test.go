@@ -9,6 +9,23 @@ import (
 	"github.com/issue9/assert/v3"
 )
 
+func TestGetPrimitiveType(t *testing.T) {
+	a := assert.New(t, false)
+
+	ref, ok := getPrimitiveType("int", false)
+	a.True(ok).Equal(ref.Value.Type, openapi3.TypeInteger)
+
+	ref, ok = getPrimitiveType("float32", true)
+	a.True(ok).Equal(ref.Value.Type, openapi3.TypeArray).
+		Equal(ref.Value.Items.Value.Type, openapi3.TypeNumber)
+
+	ref, ok = getPrimitiveType("map", false)
+	a.True(ok).Equal(ref.Value.Type, openapi3.TypeObject)
+
+	ref, ok = getPrimitiveType("{}", false)
+	a.True(ok).Nil(ref)
+}
+
 func TestWrap(t *testing.T) {
 	a := assert.New(t, false)
 
