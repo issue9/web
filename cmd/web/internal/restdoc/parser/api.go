@@ -154,6 +154,7 @@ func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln in
 		In:          openapi3.ParameterInPath,
 		Description: words[2],
 		Name:        words[0],
+		Required:    true,
 	})
 }
 

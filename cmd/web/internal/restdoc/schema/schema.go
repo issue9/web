@@ -16,9 +16,9 @@ const refPrefix = "#/components/schemas/"
 
 var refReplacer = strings.NewReplacer(
 	"/", ".",
-	"[", "--",
-	"]", "--",
-	",", "---",
+	"[", "-",
+	"]", "-",
+	",", "--",
 	" ", "",
 	"\t", "",
 )

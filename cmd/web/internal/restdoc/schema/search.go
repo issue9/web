@@ -89,10 +89,6 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 
 	ref := refReplacer.Replace(typePath)
 
-	if index := strings.LastIndexByte(structName, '['); index > 0 {
-		structName = structName[:index]
-	}
-
 	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
 		sr := NewRef(ref, schemaRef.Value)
 		addRefPrefix(sr)
@@ -110,6 +106,11 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 	p := f(currPath)
 	if p == nil {
 		return nil, web.NewLocaleError("not found %s", currPath) // 行数未变化，直接返回错误。
+	}
+
+	// 范型，去掉类型参数部分
+	if index := strings.LastIndexByte(structName, '['); index > 0 {
+		structName = structName[:index]
 	}
 
 	var spec *ast.TypeSpec
