@@ -15,7 +15,6 @@ import (
 )
 
 func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
-	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 
 	defer func() {
 		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
@@ -38,6 +37,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 
 	resps := map[string]*response{}
 
+	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 	for index := 0; index < len(lines); index++ {
 		line := strings.TrimSpace(lines[index])
 		if line == "" {

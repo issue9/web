@@ -184,7 +184,7 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 	case *ast.IndexExpr: // type x = G[int]
 		return f.fromIndexExpr(t, file, currPath, tag, ts)
 	case *ast.IndexListExpr: // type x = G[int, float]
-		return f.fromIndexListExpr(t, file, currPath, ref, tag, ts)
+		return f.fromIndexListExpr(t, file, currPath, tag, ts)
 	case *ast.SelectorExpr: // type x = json.Decoder 或是 type x json.Decoder 引用外部对象
 		mod, name := getSelectorExprName(ts, file)
 		schemaRef, err := f.fromName(t, mod, name, tag, false, nil)
@@ -223,7 +223,7 @@ func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag stri
 	return f.fromName(t, mod, name, tag, false, []*Ref{idxRef})
 }
 
-func (f SearchFunc) fromIndexListExpr(t *OpenAPI, file *ast.File, currPath, ref, tag string, idx *ast.IndexListExpr) (*Ref, error) {
+func (f SearchFunc) fromIndexListExpr(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr) (*Ref, error) {
 	indexes := make([]*Ref, 0, len(idx.Indices))
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)
@@ -325,9 +325,13 @@ func (f SearchFunc) fromExpr(t *OpenAPI, file *ast.File, currPath, tag string, e
 			return nil, err
 		}
 		return NewRef("", s), nil
+	case *ast.IndexExpr:
+		return f.fromIndexExpr(t, file, currPath, tag, expr)
+	case *ast.IndexListExpr:
+		return f.fromIndexListExpr(t, file, currPath, tag, expr)
 	//case *ast.InterfaceType: // 无法处理此类型
 	default:
-		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %s", expr))
+		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %+v", expr))
 	}
 }
 
