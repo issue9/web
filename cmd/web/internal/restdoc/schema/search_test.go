@@ -86,7 +86,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 		ref, err := f.New(tt, modPath+"/admin", modPath+".Generics[int, Admin]", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Ref, modRef+".Generics--int---Admin--")
+			Equal(ref.Ref, refPrefix+modRef+".Generics-int--Admin-")
 
 		v, found := ref.Value.Properties["F1"]
 		a.True(found).NotNil(v)

@@ -51,7 +51,6 @@ func (f SearchFunc) New(t *OpenAPI, currPath, typePath string, q bool) (*Ref, er
 			}
 			tpRefs = append(tpRefs, idxRef)
 		}
-		//typePath = typePath[:index]
 	}
 
 	return f.fromName(t, currPath, typePath, tag, isArray, tpRefs)
@@ -147,8 +146,7 @@ LOOP:
 	}
 
 	if schemaRef.Ref != "" &&
-		(tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject) && // 查询参数不保存整个对象
-		spec.TypeParams == nil { // 泛型不保存
+		(tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject) { // 查询参数不保存整个对象
 		t.Components.Schemas[schemaRef.Ref] = NewRef("", schemaRef.Value)
 		addRefPrefix(schemaRef)
 	}
