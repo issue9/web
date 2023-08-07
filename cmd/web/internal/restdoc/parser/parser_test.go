@@ -25,13 +25,16 @@ func TestParser(t *testing.T) {
 		Length(l.Records[logs.Warn], 0).
 		Length(l.Records[logs.Info], 2)
 
-	a.NotNil(d.Info).Equal(d.Info.Version, "1.0.0")
+	a.NotNil(d.Info).
+		Equal(d.Info.Version, "1.0.0")
 
 	login := d.Paths["/login"].Post
 	a.NotNil(login).
-		Length(login.Parameters, 4).
-		Equal(login.Parameters[3].Value.Name, "type").
-		Equal(login.Parameters[3].Value.Schema.Value.Type, openapi3.TypeString).
+		Length(login.Parameters, 5).
+		Equal(login.Parameters[3].Value.Name, "sex").
+		NotEmpty(login.Parameters[3].Value.Schema.Ref).
+		Equal(login.Parameters[4].Value.Name, "type").
+		Equal(login.Parameters[4].Value.Schema.Value.Type, openapi3.TypeString).
 		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).
 		Equal(login.Parameters[2].Value.Schema.Value.Items.Value.Type, openapi3.TypeInteger).
 		NotNil(login.RequestBody).

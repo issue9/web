@@ -4,6 +4,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -95,7 +96,7 @@ func (srv *service) serve() {
 	}()
 	srv.err = srv.service.Serve(srv.s.ctx)
 	state := Stopped
-	if srv.err != nil && srv.err != context.Canceled {
+	if !errors.Is(srv.err, context.Canceled) {
 		srv.s.s.Logs().ERROR().Error(srv.err)
 		state = Failed
 	}
@@ -174,7 +175,7 @@ func (srv *Services) AddJob(title localeutil.LocaleStringer, job JobFunc, schedu
 	srv.scheduled.New(id, job, scheduler, delay)
 }
 
-// Jobs 返回所有的计划任务
+// VisitJobs 返回所有的计划任务
 //
 // visit 原型为：
 //

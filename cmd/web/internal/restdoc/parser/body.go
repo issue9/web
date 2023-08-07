@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -34,7 +35,8 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi3.T, suffix, file
 
 	s, err := p.search.New(t, currPath, words[1], false)
 	if err != nil {
-		if serr, ok := err.(*schema.Error); ok {
+		var serr *schema.Error
+		if errors.As(err, &serr) {
 			serr.Log(p.l, p.fset)
 			return
 		}
@@ -58,7 +60,8 @@ func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix
 
 	s, err := p.search.New(t, currPath, words[2], false)
 	if err != nil {
-		if serr, ok := err.(*schema.Error); ok {
+		var serr *schema.Error
+		if errors.As(err, &serr) {
 			serr.Log(p.l, p.fset)
 			return false
 		}
@@ -107,10 +110,10 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response)
 
 		resp.Headers = make(openapi3.Headers, len(r.header))
 		for h, title := range r.header {
-			schema := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
-			schema.Value.Title = title
+			s := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
+			s.Value.Title = title
 			resp.Headers[h] = &openapi3.HeaderRef{
-				Value: &openapi3.Header{Parameter: openapi3.Parameter{Schema: schema}},
+				Value: &openapi3.Header{Parameter: openapi3.Parameter{Schema: s}},
 			}
 		}
 

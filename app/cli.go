@@ -132,7 +132,11 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.Printer == nil {
-		cmd.Printer = NewPrinter(locales.Locales, "*.yml")
+		p, err := NewPrinter(locales.Locales, "*.yml")
+		if err != nil {
+			return err
+		}
+		cmd.Printer = p
 	}
 
 	if cmd.Out == nil {
@@ -221,7 +225,7 @@ func CheckConfigSyntax[T any](configDir, filename string) error {
 //
 // 语言由 [localeutil.DetectUserLanguageTag] 决定。
 // 参数指定了本地化的文件内容。
-func NewPrinter(fsys fs.FS, glob string) *localeutil.Printer {
+func NewPrinter(fsys fs.FS, glob string) (*localeutil.Printer, error) {
 	tag, err := localeutil.DetectUserLanguageTag()
 	if err != nil {
 		log.Println(err) // 输出错误，但是不中断执行
@@ -233,6 +237,9 @@ func NewPrinter(fsys fs.FS, glob string) *localeutil.Printer {
 	}
 
 	b := catalog.NewBuilder(catalog.Fallback(tag))
-	locale.Load(s, b, fsys, glob)
-	return message.NewPrinter(tag, message.Catalog(b))
+	if err := locale.Load(s, b, fsys, glob); err != nil {
+		return nil, err
+	}
+
+	return message.NewPrinter(tag, message.Catalog(b)), nil
 }

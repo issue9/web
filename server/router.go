@@ -71,7 +71,7 @@ func (srv *Server) NewRouter(name string, matcher RouterMatcher, o ...RouterOpti
 // name 指由 [Server.NewRouter] 的 name 参数指定的值；
 func (srv *Server) RemoveRouter(name string) { srv.routers.Remove(name) }
 
-// Router 返回指定名称的路由
+// GetRouter 返回指定名称的路由
 //
 // name 指由 [Server.NewRouter] 的 name 参数指定的值；
 func (srv *Server) GetRouter(name string) *Router { return srv.routers.Router(name) }

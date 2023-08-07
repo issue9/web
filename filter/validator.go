@@ -10,7 +10,7 @@ func Not[T any](v func(T) bool) func(T) bool {
 	return func(val T) bool { return !v(val) }
 }
 
-// AndFunc 以与的形式串联多个验证器函数
+// And 以与的形式串联多个验证器函数
 func And[T any](v ...func(T) bool) func(T) bool {
 	return func(val T) bool {
 		for _, validator := range v {

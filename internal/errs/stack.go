@@ -3,6 +3,7 @@
 package errs
 
 import (
+	"errors"
 	"fmt"
 
 	"golang.org/x/xerrors"
@@ -27,8 +28,9 @@ func NewDepthStackError(depth int, err error) error {
 		return nil
 	}
 
-	if _, ok := err.(*stackError); ok {
-		return err
+	var se *stackError
+	if errors.As(err, &se) {
+		return se
 	}
 
 	return &stackError{

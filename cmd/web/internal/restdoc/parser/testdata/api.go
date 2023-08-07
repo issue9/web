@@ -39,6 +39,11 @@ type resp struct {
 }
 
 type query struct {
+	Sex  Sex    `query:"sex"`
 	Type string `query:"type"`
 	X    []int
 }
+
+// @type string
+// @enum male female
+type Sex int

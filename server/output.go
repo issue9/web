@@ -132,7 +132,7 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 	return ctx.writer.Write(bs)
 }
 
-// Write 向客户端输出 HTTP 代码
+// WriteHeader 向客户端输出 HTTP 代码
 //
 // 如非必要，应该返回 [Responser] 进行输出。
 func (ctx *Context) WriteHeader(status int) {

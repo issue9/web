@@ -148,7 +148,7 @@ type (
 	UniqueGenerator interface {
 		Service
 
-		// 返回字符串类型的唯一 ID 值
+		// String 返回字符串类型的唯一 ID 值
 		String() string
 	}
 

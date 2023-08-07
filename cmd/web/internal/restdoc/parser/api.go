@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"errors"
 	"sort"
 	"strings"
 
@@ -99,7 +100,8 @@ func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suff
 
 	s, err := p.search.New(t, currPath, words[0], true)
 	if err != nil {
-		if serr, ok := err.(*schema.Error); ok {
+		var serr *schema.Error
+		if errors.As(err, &serr) {
 			serr.Log(p.l, p.fset)
 			return
 		}
@@ -166,6 +168,6 @@ func (p *Parser) addCookieHeader(opt *openapi3.Operation, in, suffix, filename s
 		return
 	}
 
-	schema := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
-	opt.AddParameter(&openapi3.Parameter{In: in, Schema: schema, Name: words[0], Description: words[1]})
+	s := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
+	opt.AddParameter(&openapi3.Parameter{In: in, Schema: s, Name: words[0], Description: words[1]})
 }

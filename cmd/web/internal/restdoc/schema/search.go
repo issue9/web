@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -106,15 +107,15 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 		return array(NewRef("", openapi3.NewStringSchema()), isArray), nil
 	}
 
-	pkg := f(currPath)
-	if pkg == nil {
+	p := f(currPath)
+	if p == nil {
 		return nil, web.NewLocaleError("not found %s", currPath) // 行数未变化，直接返回错误。
 	}
 
 	var spec *ast.TypeSpec
 	var file *ast.File
 LOOP:
-	for _, f := range pkg.Files {
+	for _, f := range p.Files {
 		for _, d := range f.Decls {
 			gen, ok := d.(*ast.GenDecl)
 			if !ok || gen.Tok != token.TYPE {
@@ -153,9 +154,6 @@ LOOP:
 // ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
 func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
 	title, desc, typ, enums := parseTypeDoc(s)
-	if desc == "" && s.Comment != nil {
-		desc = s.Comment.Text()
-	}
 
 	if typ != "" { // 自定义了类型
 		s := openapi3.NewSchema()
@@ -308,8 +306,9 @@ func (f SearchFunc) fromExpr(t *OpenAPI, file *ast.File, currPath, tag string, e
 		mod, name := getSelectorExprName(expr, file)
 		ref, err := f.fromName(t, mod, name, tag, false, tpRefs)
 		if err != nil {
-			if _, ok := err.(*Error); ok {
-				return nil, err
+			var serr *Error
+			if errors.As(err, &serr) {
+				return nil, serr
 			}
 			return nil, newError(e.Pos(), err)
 		}

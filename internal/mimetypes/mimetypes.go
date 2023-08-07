@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package mimetype 管理与 Mimetype 相关的数据
+// Package mimetypes 管理与 Mimetype 相关的数据
 package mimetypes
 
 import (

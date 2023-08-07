@@ -3,6 +3,7 @@
 package app
 
 import (
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -131,7 +132,8 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *config.Fi
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			if ce, ok := err.(*config.FieldError); ok {
+			var ce *config.FieldError
+			if errors.As(err, &ce) {
 				return nil, nil, ce.AddFieldParent(field)
 			}
 			return nil, nil, config.NewFieldError(field+".Args", err)

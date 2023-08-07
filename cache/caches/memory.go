@@ -100,8 +100,7 @@ func (d *memoryDriver) Set(key string, val any, ttl time.Duration) error {
 		return nil
 	}
 
-	i.update(val)
-	return nil
+	return i.update(val)
 }
 
 func (d *memoryDriver) Delete(key string) error {
@@ -124,8 +123,7 @@ func (d *memoryDriver) Clean() error {
 
 func (d *memoryDriver) Close() error {
 	d.ticker.Stop()
-	d.Clean()
-	return nil
+	return d.Clean()
 }
 
 func (d *memoryDriver) gc() {
