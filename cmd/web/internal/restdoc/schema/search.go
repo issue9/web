@@ -140,7 +140,7 @@ LOOP:
 	}
 
 	if schemaRef.Ref != "" &&
-		tag != query.Tag && // 查询参数不保存整个对象
+		(tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject) && // 查询参数不保存整个对象
 		spec.TypeParams == nil { // 泛型不保存
 		t.Components.Schemas[schemaRef.Ref] = NewRef("", schemaRef.Value)
 		addRefPrefix(schemaRef)
