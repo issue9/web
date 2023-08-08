@@ -33,7 +33,7 @@ type (
 	IntGeneric = Generic[int]
 
 	Generics[T1 any, T2 any] struct {
-		F1 T1
+		F1 Generic[T1]
 		F2 *T2
 		P  int
 	}
@@ -43,3 +43,5 @@ type (
 // @enum female male unknown
 // @type string
 type Sex int8
+
+type Sexes []Sex

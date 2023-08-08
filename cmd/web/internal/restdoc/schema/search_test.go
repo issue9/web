@@ -43,7 +43,7 @@ func buildSearchFunc(a *assert.Assertion) SearchFunc {
 	}
 }
 
-func TestSearchFunc_NewSchema(t *testing.T) {
+func TestSearchFunc_New(t *testing.T) {
 	a := assert.New(t, false)
 	f := buildSearchFunc(a)
 	modPath := "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
@@ -65,7 +65,7 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		tt := NewOpenAPI("3")
 
 		ref, err := f.New(tt, modPath, "Generic", false)
-		a.ErrorString(err, "not found").Nil(ref)
+		a.ErrorString(err, "unsupported generics type").Nil(ref)
 	})
 
 	// Generic IndexExpr
@@ -109,11 +109,35 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.NotError(err).NotNil(ref)
 
 		v, found := ref.Value.Properties["F1"]
-		a.True(found).NotNil(v)
+		a.True(found).NotNil(v).
+			Equal(v.Ref, refPrefix+modRef+".Generic-int-")
 
 		v, found = ref.Value.Properties["F2"]
 		a.True(found).NotNil(v).
 			Equal(v.Ref, refPrefix+modRef+".User")
+	})
+
+	t.Run("Sexes", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, "Sexes", false)
+		a.NotError(err).NotNil(ref).
+			Empty(ref.Value.Description).
+			Equal(ref.Value.Type, openapi3.TypeArray).
+			Equal(ref.Value.Items.Ref, refPrefix+modRef+".Sex")
+	})
+
+	t.Run("Int64UserGenerics", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := NewOpenAPI("3")
+
+		ref, err := f.New(tt, modPath, modPath+"/admin.Int64UserGenerics", false)
+		a.NotError(err).NotNil(ref)
+
+		v, found := ref.Value.Properties["G1"]
+		a.True(found).NotNil(v).
+			Equal(v.Ref, refPrefix+modRef+".Generics-int64--User-")
 	})
 
 	t.Run("[]bool", func(t *testing.T) {

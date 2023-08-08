@@ -19,3 +19,9 @@ type Admin struct {
 }
 
 type IntUserGenerics = testdata.Generics[int, User]
+
+type Generics[T1 any, T2 any] struct {
+	G1 testdata.Generics[T1, T2]
+}
+
+type Int64UserGenerics = Generics[int64, User]
