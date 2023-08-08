@@ -51,10 +51,11 @@ func NewOpenAPI(ver string) *OpenAPI {
 	}
 }
 
-func addRefPrefix(ref *Ref) {
+func addRefPrefix(ref *Ref) *Ref {
 	if ref.Ref != "" && !strings.HasPrefix(ref.Ref, refPrefix) {
 		ref.Ref = refPrefix + ref.Ref
 	}
+	return ref
 }
 
 func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {

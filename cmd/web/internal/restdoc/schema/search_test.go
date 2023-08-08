@@ -218,7 +218,11 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.User", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Ref, refPrefix+modRef+".User") // 从 New 返回的带有前缀
+			Equal(ref.Ref, refPrefix+modRef+".admin.User")
+		u, found := tt.Components.Schemas[modRef+".admin.User"]
+		a.True(found).NotNil(u).
+			Equal(u.Value.Title, "User testdata.User").
+			Equal(u.Value.AllOf[0].Ref, refPrefix+modRef+".User")
 	})
 
 	// admin.Admin
@@ -251,6 +255,6 @@ func TestSearchFunc_NewSchema(t *testing.T) {
 		a.Nil(u3)
 
 		u4 := admin.Value.Properties["U4"]
-		a.Equal(u4.Ref, refPrefix+modRef+".User")
+		a.Equal(u4.Ref, refPrefix+modRef+".admin.User")
 	})
 }

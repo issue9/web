@@ -50,9 +50,24 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 		return r, nil
 	}
 
-	var tpRefs []*Ref
-	if index := strings.LastIndexByte(typePath, '['); index > 0 && typePath[len(typePath)-1] == ']' {
-		tps := strings.Split(typePath[index+1:len(typePath)-1], ",")
+	structPath := currPath
+	structName := typePath
+	if index := strings.LastIndexByte(typePath, '.'); index > 0 { // 全局的路径
+		structPath = typePath[:index]
+		structName = typePath[index+1:]
+	} else {
+		typePath = currPath + "." + typePath
+	}
+	ref := refReplacer.Replace(typePath)
+
+	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
+		return array(addRefPrefix(NewRef(ref, schemaRef.Value)), isArray), nil
+	}
+
+	var tpRefs []*Ref // 如果是范型，拿到范型的参数。
+	if index := strings.LastIndexByte(structName, '['); index > 0 && structName[len(structName)-1] == ']' {
+		tps := strings.Split(structName[index+1:len(structName)-1], ",")
+		structName = structName[:index] // 范型，去掉类型参数部分
 
 		tpRefs = make([]*Ref, 0, len(tps))
 		for _, i := range tps {
@@ -64,37 +79,32 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 		}
 	}
 
-	structName := typePath
-	if index := strings.LastIndexByte(typePath, '.'); index > 0 { // 全局的路径
-		currPath = typePath[:index]
-		structName = typePath[index+1:]
-	} else {
-		typePath = currPath + "." + typePath
+	file, spec, err := f.findTypeSpec(structPath, structName)
+	if err != nil {
+		return nil, err
 	}
 
-	ref := refReplacer.Replace(typePath)
-
-	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
-		sr := NewRef(ref, schemaRef.Value)
-		addRefPrefix(sr)
-		return array(sr, isArray), nil
+	schemaRef, err := f.fromTypeSpec(t, structPath, tag, file, spec, tpRefs)
+	if err != nil {
+		return nil, err
 	}
 
-	p := f(currPath)
+	if tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject { // 查询参数不保存整个对象
+		t.Components.Schemas[ref] = NewRef("", schemaRef.Value)
+	}
+
+	schemaRef.Ref = ref
+	return array(addRefPrefix(schemaRef), isArray), nil
+}
+
+func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File, spec *ast.TypeSpec, err error) {
+	p := f(structPath)
 	if p == nil {
-		return nil, web.NewLocaleError("not found %s", currPath) // 行数未变化，直接返回错误。
+		return nil, nil, web.NewLocaleError("not found %s", structPath)
 	}
 
-	// 范型，去掉类型参数部分
-	if index := strings.LastIndexByte(structName, '['); index > 0 {
-		structName = structName[:index]
-	}
-
-	var spec *ast.TypeSpec
-	var file *ast.File
-LOOP:
-	for _, f := range p.Files {
-		for _, d := range f.Decls {
+	for _, file = range p.Files {
+		for _, d := range file.Decls {
 			gen, ok := d.(*ast.GenDecl)
 			if !ok || gen.Tok != token.TYPE {
 				continue
@@ -102,48 +112,28 @@ LOOP:
 
 			for _, s := range gen.Specs {
 				if spec, ok = s.(*ast.TypeSpec); ok && spec.Name.Name == structName {
-					file = f
-
 					if len(gen.Specs) == 1 { // 不在 type() 内声明的类型，而是 type x struct{} 的单个声明。
 						spec.Doc = gen.Doc
 					}
-
-					break LOOP // 找到了，就退到最外层。
+					return
 				}
 			}
 		}
 	}
 
-	if spec == nil || file == nil {
-		return nil, web.NewLocaleError("not found %s", typePath)
-	}
-
-	schemaRef, err := f.fromTypeSpec(t, file, currPath, ref, tag, spec, tpRefs)
-	if err != nil {
-		return nil, err
-	}
-
-	if schemaRef.Ref != "" &&
-		(tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject) { // 查询参数不保存整个对象
-		t.Components.Schemas[schemaRef.Ref] = NewRef("", schemaRef.Value)
-		addRefPrefix(schemaRef)
-	}
-	return array(schemaRef, isArray), nil
+	return nil, nil, web.NewLocaleError("not found %s", structPath+"."+structName)
 }
 
 // 将 ast.TypeSpec 转换成 openapi3.SchemaRef
-//
-// ref 仅用于生成 SchemaRef.Ref 值，需要完整路径。
-func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag string, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
+func (f SearchFunc) fromTypeSpec(t *OpenAPI, currPath, tag string, file *ast.File, s *ast.TypeSpec, tpRefs []*Ref) (*Ref, error) {
 	title, desc, typ, enums := parseTypeDoc(s)
 
 	if typ != "" { // 自定义了类型
-		s := openapi3.NewSchema()
+		s := openapi3.NewSchema().WithEnum(enums...)
 		s.Type = typ
 		s.Title = title
 		s.Description = desc
-		s.Enum = enums
-		return NewRef(ref, s), nil
+		return NewRef("", s), nil
 	}
 
 	switch ts := s.Type.(type) {
@@ -152,24 +142,27 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
-		schemaRef.Value.Title = title
-		schemaRef.Value.Description = desc
-		schemaRef.Value.Enum = enums
-		schemaRef.Ref = ref
+		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
+			s := openapi3.NewSchema().WithEnum(enums)
+			s.AllOf = openapi3.SchemaRefs{schemaRef}
+			s.Title = title
+			s.Description = desc
+			return NewRef("", s), nil
+		}
 		return schemaRef, nil
-	case *ast.IndexExpr: // type x = G[int]
-		return f.fromIndexExpr(t, file, currPath, tag, ts)
-	case *ast.IndexListExpr: // type x = G[int, float]
-		return f.fromIndexListExpr(t, file, currPath, tag, ts)
 	case *ast.SelectorExpr: // type x = json.Decoder 或是 type x json.Decoder 引用外部对象
 		mod, name := getSelectorExprName(ts, file)
 		schemaRef, err := f.fromName(t, currPath, mod+"."+name, tag, false)
 		if err != nil {
 			return nil, newError(s.Pos(), err)
 		}
-		schemaRef.Value.Title = title
-		schemaRef.Value.Description = desc
-		schemaRef.Value.Enum = enums
+		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
+			s := openapi3.NewSchema().WithEnum(enums)
+			s.AllOf = openapi3.SchemaRefs{schemaRef}
+			s.Title = title
+			s.Description = desc
+			return NewRef("", s), nil
+		}
 		return schemaRef, nil
 	case *ast.StructType: // type x = struct{...}
 		schema := openapi3.NewObjectSchema()
@@ -181,7 +174,11 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, file *ast.File, currPath, ref, tag 
 			return nil, err
 		}
 
-		return NewRef(ref, schema), nil
+		return NewRef("", schema), nil
+	case *ast.IndexExpr: // type x = G[int]
+		return f.fromIndexExpr(t, file, currPath, tag, ts)
+	case *ast.IndexListExpr: // type x = G[int, float]
+		return f.fromIndexListExpr(t, file, currPath, tag, ts)
 	default:
 		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
 		return nil, newError(s.Pos(), msg)
