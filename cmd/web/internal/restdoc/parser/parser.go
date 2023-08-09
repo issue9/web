@@ -94,11 +94,9 @@ func (p *Parser) append(pp *pkg.Package) {
 	p.pkgs = append(p.pkgs, pp)
 }
 
-// Parse 转换成 openapi3.T 对象
+// Parse 解析由 [Parser.AddDir] 加载的内容
 //
 // tags 如果非空，则表示仅返回带这些标签的 API。
-//
-// NOTE: 已经执行了 [openapi3.T.Validate]。
 func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
 	p.parsed = true // 阻止 p.AddDir
 

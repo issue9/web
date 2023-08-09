@@ -2,9 +2,7 @@
 
 package openapi
 
-import (
-	"github.com/getkin/kin-openapi/openapi3"
-)
+import "github.com/getkin/kin-openapi/openapi3"
 
 // AddSchema 添加一个 Schema 至 Components 中
 func (doc *OpenAPI) AddSchema(ref string, schema *openapi3.Schema) {

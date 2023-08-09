@@ -93,6 +93,8 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 	if o.Callbacks == nil {
 		o.Callbacks = make(openapi3.Callbacks, 5)
 	}
+	p.addResponses(opt, resps)
+
 	callback := openapi3.Callback{path: pi}
 	o.Callbacks[name] = &openapi3.CallbackRef{
 		Value: &callback,

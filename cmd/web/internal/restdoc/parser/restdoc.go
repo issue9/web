@@ -16,11 +16,6 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-const (
-	invalidFormat       = web.StringPhrase("invalid format")
-	versionIncompatible = web.StringPhrase("version incompatible")
-)
-
 const responsesRef = "#/components/responses/"
 
 // 解析 # restdoc 之后的内容
@@ -36,15 +31,12 @@ func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines 
 		}
 	}()
 
-	info := &openapi3.Info{
-		Title: title,
-	}
-
 	if t.Doc().Info != nil {
 		p.l.Error(web.StringPhrase("dup # restdoc note"), filename, ln)
 		return
 	}
 
+	info := &openapi3.Info{Title: title}
 	resps := make(map[string]*response, 10)
 
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
@@ -260,7 +252,7 @@ func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln i
 		modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
 		u = "file://" + filepath.Join(modCache, words[0], words[1])
 	default:
-		p.l.Error(invalidFormat, filename, ln)
+		p.l.Error(web.StringPhrase("invalid format"), filename, ln)
 		return
 	}
 
@@ -282,7 +274,7 @@ func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln i
 		return
 	}
 	if !ok {
-		p.l.Error(versionIncompatible, filename, ln)
+		p.l.Error(web.StringPhrase("version incompatible"), filename, ln)
 		return
 	}
 

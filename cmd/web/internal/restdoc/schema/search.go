@@ -148,7 +148,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file 
 			return nil, newError(s.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
-			s := openapi3.NewSchema().WithEnum(enums)
+			s := openapi3.NewSchema().WithEnum(enums...)
 			s.AllOf = openapi3.SchemaRefs{schemaRef}
 			s.Title = title
 			s.Description = desc
@@ -162,7 +162,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file 
 			return nil, newError(s.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
-			s := openapi3.NewSchema().WithEnum(enums)
+			s := openapi3.NewSchema().WithEnum(enums...)
 			s.AllOf = openapi3.SchemaRefs{schemaRef}
 			s.Title = title
 			s.Description = desc
@@ -176,7 +176,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file 
 			return nil, newError(s.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
-			s := openapi3.NewSchema().WithEnum(enums)
+			s := openapi3.NewSchema().WithEnum(enums...)
 			s.AllOf = openapi3.SchemaRefs{schemaRef}
 			s.Title = title
 			s.Description = desc
@@ -184,7 +184,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file 
 		}
 		return array(schemaRef, true), nil
 	case *ast.StructType: // type x = struct{...}
-		schema := openapi3.NewObjectSchema().WithEnum(enums)
+		schema := openapi3.NewObjectSchema().WithEnum(enums...)
 		schema.Title = title
 		schema.Description = desc
 
