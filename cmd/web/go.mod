@@ -1,6 +1,6 @@
 module github.com/issue9/web/cmd/web
 
-go 1.20
+go 1.21
 
 require (
 	github.com/getkin/kin-openapi v0.118.0
@@ -8,7 +8,6 @@ require (
 	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/localeutil v0.20.2
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/sliceutil v0.14.0
 	github.com/issue9/source v0.5.1
 	github.com/issue9/term/v3 v3.2.0
 	github.com/issue9/version v1.0.6
@@ -35,6 +34,7 @@ require (
 	github.com/issue9/mux/v7 v7.2.2 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/scheduled v0.13.0 // indirect
+	github.com/issue9/sliceutil v0.14.0 // indirect
 	github.com/issue9/unique/v2 v2.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect

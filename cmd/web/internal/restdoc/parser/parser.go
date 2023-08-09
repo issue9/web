@@ -10,12 +10,12 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"unicode"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 	"gopkg.in/yaml.v3"
 
@@ -62,8 +62,8 @@ func New(l *logger.Logger) *Parser {
 	}
 
 	doc.search = func(s string) *pkg.Package {
-		if p, found := sliceutil.At(doc.pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == s }); found {
-			return p
+		if i := slices.IndexFunc(doc.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
+			return doc.pkgs[i]
 		}
 		return nil
 	}
@@ -91,7 +91,7 @@ func (p *Parser) append(pp *pkg.Package) {
 	p.pkgsM.Lock()
 	defer p.pkgsM.Unlock()
 
-	if sliceutil.Exists(p.pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == pp.Path }) {
+	if slices.IndexFunc(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == pp.Path }) >= 0 {
 		p.l.Error(web.Phrase("package %s with the same name.", pp.Path), "", 0)
 		return
 	}
@@ -245,7 +245,7 @@ func isIgnoreTag(enableTags []string, tag ...string) bool {
 	}
 
 	for _, t := range tag {
-		if sliceutil.Exists(enableTags, func(tt string, _ int) bool { return tt == t }) {
+		if slices.IndexFunc(enableTags, func(tt string) bool { return tt == t }) >= 0 {
 			return false
 		}
 	}

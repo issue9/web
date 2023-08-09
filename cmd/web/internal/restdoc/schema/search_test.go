@@ -5,12 +5,12 @@ package schema
 import (
 	"context"
 	"go/token"
+	"slices"
 	"sync"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
@@ -35,9 +35,8 @@ func buildSearchFunc(a *assert.Assertion) SearchFunc {
 		pkgsM.Lock()
 		defer pkgsM.Unlock()
 
-		r, found := sliceutil.At(pkgs, func(pkg *pkg.Package, _ int) bool { return pkg.Path == s })
-		if found {
-			return r
+		if i := slices.IndexFunc(pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
+			return pkgs[i]
 		}
 		return nil
 	}
