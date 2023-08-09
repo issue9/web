@@ -23,7 +23,7 @@ func TestParser(t *testing.T) {
 	a.NotNil(d).
 		Length(l.Records[logs.Error], 0).
 		Length(l.Records[logs.Warn], 0).
-		Length(l.Records[logs.Info], 2)
+		Length(l.Records[logs.Info], 0)
 
 	a.NotNil(d.Info).
 		Equal(d.Info.Version, "1.0.0")

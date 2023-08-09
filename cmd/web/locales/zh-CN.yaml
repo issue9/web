@@ -120,9 +120,6 @@ messages:
     - key: package %s with the same name.
       message:
         msg: '%s 已经拥有相同的名称'
-    - key: parse %s complete
-      message:
-        msg: 完成对 %s 的解析
     - key: parse module dependencies
       message:
         msg: 同时也对模块的直接依赖进行解析
@@ -208,9 +205,6 @@ messages:
     - key: src locale file
       message:
         msg: 指定源文件
-    - key: start parse %s ...
-      message:
-        msg: 开始解析 %s ...
     - key: syntax error
       message:
         msg: 语法错误

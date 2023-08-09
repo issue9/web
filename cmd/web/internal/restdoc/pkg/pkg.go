@@ -14,13 +14,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/source"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 )
 
-const Cancelled = localeutil.StringPhrase("cancelled")
+const Cancelled = web.StringPhrase("cancelled")
 
 type Package struct {
 	Path  string // 当前包的 path
@@ -35,8 +35,6 @@ type AppendFunc = func(*Package)
 // root 添加的目录；
 func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bool, af AppendFunc, l *logger.Logger) {
 	root = filepath.Clean(root)
-
-	l.Info(localeutil.Phrase("start parse %s ...", root))
 
 	dirs, err := getDirs(root, recursive)
 	if err != nil {
@@ -71,7 +69,6 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 		}
 	}
 	wg.Wait()
-	l.Info(localeutil.Phrase("parse %s complete", root))
 }
 
 // 扫描 dir 下的 go 文件

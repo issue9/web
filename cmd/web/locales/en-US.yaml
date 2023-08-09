@@ -101,9 +101,6 @@ messages:
     - key: package %s with the same name.
       message:
         msg: package %s with the same name.
-    - key: parse %s complete
-      message:
-        msg: parse %s complete
     - key: parse module dependencies
       message:
         msg: parse module dependencies
@@ -131,9 +128,6 @@ messages:
     - key: src locale file
       message:
         msg: src locale file
-    - key: start parse %s ...
-      message:
-        msg: start parse %s ...
     - key: syntax error
       message:
         msg: syntax error
