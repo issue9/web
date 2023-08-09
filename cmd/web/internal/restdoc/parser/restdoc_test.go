@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/web/logs"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
-	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 )
 
 func TestRESTDoc_parseRESTDoc(t *testing.T) {
@@ -17,7 +17,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 
 	l := loggertest.New(a)
 	p := New(l.Logger)
-	d := schema.NewOpenAPI("3")
+	d := openapi.New("3")
 	lines := []string{
 		"@version 1.0.0",
 		"@tag user user tag desc ",
@@ -40,40 +40,40 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", []string{"user"})
 
 	a.Equal(0, l.Count()).
-		Length(d.Tags, 1).Equal(d.Tags[0].Description, "user tag desc").
-		Length(d.Servers, 1).
-		Equal(d.Info.License.Name, "mit").
-		Equal(d.Info.TermsOfService, "https://example.com/term").
-		Equal(d.Info.Contact.Name, "name").
-		Equal(d.Info.Description, "# markdown desc\nline 2").
+		Length(d.Doc().Tags, 1).Equal(d.Doc().Tags[0].Description, "user tag desc").
+		Length(d.Doc().Servers, 1).
+		Equal(d.Doc().Info.License.Name, "mit").
+		Equal(d.Doc().Info.TermsOfService, "https://example.com/term").
+		Equal(d.Doc().Info.Contact.Name, "name").
+		Equal(d.Doc().Info.Description, "# markdown desc\nline 2").
 		Equal(p.media, []string{"application/json", "application/xml"}).
-		Equal(d.ExternalDocs.URL, "https://doc.example.com")
+		Equal(d.Doc().ExternalDocs.URL, "https://doc.example.com")
 
-	http := d.Components.SecuritySchemes["http-security"]
+	http := d.Doc().Components.SecuritySchemes["http-security"]
 	a.NotNil(http).
 		Equal(http.Value.Scheme, "bearer").
 		Equal(http.Value.BearerFormat, "format").
 		Equal(http.Value.Description, "http bearer auth")
 
-	apikey := d.Components.SecuritySchemes["apikey-security"]
+	apikey := d.Doc().Components.SecuritySchemes["apikey-security"]
 	a.NotNil(apikey).
 		Equal(apikey.Value.Name, "key").
 		Equal(apikey.Value.In, "header").
 		Equal(apikey.Value.Description, "apikey header auth")
 
-	openid := d.Components.SecuritySchemes["openid-security"]
+	openid := d.Doc().Components.SecuritySchemes["openid-security"]
 	a.NotNil(openid).
 		Equal(openid.Value.OpenIdConnectUrl, "https://example.com/openid").
 		Equal(openid.Value.Description, "openid auth")
 
-	implicit := d.Components.SecuritySchemes["implicit-security"]
+	implicit := d.Doc().Components.SecuritySchemes["implicit-security"]
 	a.NotNil(implicit).
 		Equal(implicit.Value.Flows.Implicit.AuthorizationURL, "https://example.com/auth")
 
 	// 测试行号是否正确
 	l = loggertest.New(a)
 	p = New(l.Logger)
-	d = schema.NewOpenAPI("3")
+	d = openapi.New("3")
 	lines = []string{
 		"@version 1.0.0",
 		"@tag user user tag desc",
@@ -85,8 +85,8 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", nil)
 
 	a.Equal(1, l.Count()).
-		Length(d.Tags, 1).
-		Equal(d.Info.Description, "# markdown desc\nline 2").
+		Length(d.Doc().Tags, 1).
+		Equal(d.Doc().Info.Description, "# markdown desc\nline 2").
 		Contains(l.Records[logs.Error][0], "example.go:8")
 }
 
@@ -124,9 +124,9 @@ func TestParseOpenAPI(t *testing.T) {
 
 	l := loggertest.New(a)
 	p := New(l.Logger)
-	d := schema.NewOpenAPI("3.1.0")
+	d := openapi.New("3.1.0")
 
 	p.parseOpenAPI(d, "./testdata/openapi.yaml", "test.go", 5)
-	a.Nil(d.Info).
-		Length(d.Paths, 1)
+	a.Nil(d.Doc().Info).
+		Length(d.Doc().Paths, 1)
 }

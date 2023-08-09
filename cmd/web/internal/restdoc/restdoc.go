@@ -77,7 +77,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				tags = strings.Split(*t, ",")
 			}
 
-			return parser.SaveAs(doc.Parse(ctx, tags...), *o)
+			return doc.Parse(ctx, tags...).SaveAs(*o)
 		}
 	})
 }

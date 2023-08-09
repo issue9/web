@@ -9,10 +9,11 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-func (p *Parser) parseCallback(t *openapi3.T, o *openapi3.Operation, currPath, suffix string, lines []string, ln int, filename string) (delta int) {
+func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPath, suffix string, lines []string, ln int, filename string) (delta int) {
 	// callback name post $request.url *desc
 	words, l := utils.SplitSpaceN(suffix, 5)
 	if l < 4 {
@@ -58,7 +59,7 @@ func (p *Parser) parseCallback(t *openapi3.T, o *openapi3.Operation, currPath, s
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
 		case "@resp-header": // @resp-header 200 h1 *desc
-			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+delta) {
+			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+delta) {
 				return delta
 			}
 		}

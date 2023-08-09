@@ -8,6 +8,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
@@ -23,7 +24,7 @@ type (
 
 // @req * object.path *desc
 // * 表示采用 [Parser.media]
-func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi3.T, suffix, filename, currPath string, ln int) {
+func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) {
 	// NOTE: 目前无法为不同的 media type 指定不同的类型，如果要这样做，
 	// 需要处理 components/schemas 不同 media types 具有相同名称的问题。
 
@@ -51,7 +52,7 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi3.T, suffix, file
 }
 
 // @resp 200 text/* object.path *desc
-func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) (ok bool) {
+func (p *Parser) parseResponse(resps map[string]*response, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 4)
 	if l < 3 {
 		p.syntaxError("@resp", 3, filename, ln)
@@ -86,7 +87,7 @@ func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix
 }
 
 // @resp-header 200 header desc
-func (p *Parser) parseResponseHeader(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) bool {
+func (p *Parser) parseResponseHeader(resps map[string]*response, suffix, filename, currPath string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l != 3 {
 		p.syntaxError("@resp-header", 3, filename, ln)

@@ -25,10 +25,10 @@ func TestParser(t *testing.T) {
 		Length(l.Records[logs.Warn], 0).
 		Length(l.Records[logs.Info], 0)
 
-	a.NotNil(d.Info).
-		Equal(d.Info.Version, "1.0.0")
+	a.NotNil(d.Doc().Info).
+		Equal(d.Doc().Info.Version, "1.0.0")
 
-	login := d.Paths["/login"].Post
+	login := d.Doc().Paths["/login"].Post
 	a.NotNil(login).
 		Length(login.Parameters, 5).
 		Equal(login.Parameters[3].Value.Name, "sex").
@@ -43,7 +43,8 @@ func TestParser(t *testing.T) {
 		NotNil((*login.Callbacks["onData"].Value)["{$request.query.url}"].Post)
 
 	doc := p.Parse(context.Background())
-	a.NotError(SaveAs(doc, "./testdata/openapi.out.yaml"))
+	a.NotNil(doc)
+	a.NotError(doc.SaveAs("./testdata/openapi.out.yaml"))
 }
 
 func TestIsIgnoreTag(t *testing.T) {

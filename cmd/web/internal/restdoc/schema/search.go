@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/query/v3"
 	"github.com/issue9/web"
 
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
 )
 
@@ -28,7 +29,7 @@ type SearchFunc func(string) *pkg.Package
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
-func (f SearchFunc) New(t *OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
+func (f SearchFunc) New(t *openapi.OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
 	var isArray bool
 	if strings.HasPrefix(typePath, "[]") {
 		typePath = typePath[2:]
@@ -44,7 +45,7 @@ func (f SearchFunc) New(t *OpenAPI, currPath, typePath string, q bool) (*Ref, er
 }
 
 // 根据类型名生成 schema 对象
-func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray bool) (*Ref, error) {
+func (f SearchFunc) fromName(t *openapi.OpenAPI, currPath, typePath, tag string, isArray bool) (*Ref, error) {
 	if r, found := getPrimitiveType(typePath, isArray); found {
 		return r, nil
 	}
@@ -59,8 +60,8 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 	}
 	ref := refReplacer.Replace(typePath)
 
-	if schemaRef, found := t.Components.Schemas[ref]; found { // 查找是否已经存在于 components/schemes
-		return array(addRefPrefix(NewRef(ref, schemaRef.Value)), isArray), nil
+	if schemaRef, found := t.GetSchema(ref); found { // 查找是否已经存在于 components/schemes
+		return array(NewRef(addRefPrefix(ref), schemaRef.Value), isArray), nil
 	}
 
 	var tpRefs []*typeParam // 如果是范型，拿到范型的参数。
@@ -94,11 +95,11 @@ func (f SearchFunc) fromName(t *OpenAPI, currPath, typePath, tag string, isArray
 	}
 
 	if tag != query.Tag || schemaRef.Value.Type != openapi3.TypeObject { // 查询参数不保存整个对象
-		t.Components.Schemas[ref] = NewRef("", schemaRef.Value)
+		t.AddSchema(ref, schemaRef.Value)
 	}
 
-	schemaRef.Ref = ref
-	return array(addRefPrefix(schemaRef), isArray), nil
+	schemaRef.Ref = addRefPrefix(ref)
+	return array(schemaRef, isArray), nil
 }
 
 func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File, spec *ast.TypeSpec, err error) {
@@ -129,7 +130,7 @@ func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File,
 }
 
 // 将 ast.TypeSpec 转换成 openapi3.SchemaRef
-func (f SearchFunc) fromTypeSpec(t *OpenAPI, currPath, tag string, file *ast.File, s *ast.TypeSpec, tpRefs []*typeParam) (*Ref, error) {
+func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file *ast.File, s *ast.TypeSpec, tpRefs []*typeParam) (*Ref, error) {
 	title, desc, typ, enums := parseTypeDoc(s)
 
 	if typ != "" { // 自定义了类型
@@ -183,10 +184,9 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, currPath, tag string, file *ast.Fil
 		}
 		return array(schemaRef, true), nil
 	case *ast.StructType: // type x = struct{...}
-		schema := openapi3.NewObjectSchema()
+		schema := openapi3.NewObjectSchema().WithEnum(enums)
 		schema.Title = title
 		schema.Description = desc
-		schema.Enum = enums
 
 		tps := buildTypeParams(s.TypeParams, tpRefs)
 		if err := f.addFields(t, file, schema, currPath, tag, ts.Fields.List, tps); err != nil {
@@ -207,7 +207,7 @@ func (f SearchFunc) fromTypeSpec(t *OpenAPI, currPath, tag string, file *ast.Fil
 // 将 fields 中的所有字段解析到 schema
 //
 // 字段名如果存在 json 时，取 json 名称，否则直接采用字段名，xml 仅采用了 attr 和 parent>child 两种格式。
-func (f SearchFunc) addFields(t *OpenAPI, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tpRefs map[string]*typeParam) error {
+func (f SearchFunc) addFields(t *openapi.OpenAPI, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tpRefs map[string]*typeParam) error {
 LOOP:
 	for _, field := range fields {
 		if len(field.Names) == 0 { // 嵌套对象
@@ -255,7 +255,7 @@ LOOP:
 }
 
 // 将 ast.Expr 中的内容转换到 schema 上
-func (f SearchFunc) fromTypeExpr(t *OpenAPI, file *ast.File, currPath, tag string, e ast.Expr, tpRefs map[string]*typeParam) (*Ref, error) {
+func (f SearchFunc) fromTypeExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, e ast.Expr, tpRefs map[string]*typeParam) (*Ref, error) {
 	switch expr := e.(type) {
 	case *ast.ArrayType:
 		schema, err := f.fromTypeExpr(t, file, currPath, tag, expr.Elt, tpRefs)

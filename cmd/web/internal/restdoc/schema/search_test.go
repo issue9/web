@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
 )
 
@@ -51,7 +52,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// NotFound
 	t.Run("NotFound", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		refPath := modPath + "/admin.notFound"
 		ref, err := f.New(tt, modPath, refPath, false)
@@ -61,7 +62,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// Generic
 	t.Run("Generic", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "Generic", false)
 		a.ErrorString(err, "unsupported generics type").Nil(ref)
@@ -70,7 +71,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// Generic IndexExpr
 	t.Run("泛型 IndexExpr", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "IntGeneric", false)
 		a.NotError(err).NotNil(ref)
@@ -81,7 +82,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// Generic Generics[int,Admin]
 	t.Run("泛型 Generics[int,Admin]", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath+"/admin", modPath+".Generics[int, Admin]", false)
 		a.NotError(err).NotNil(ref).
@@ -102,7 +103,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// Generic IndexListExpr
 	t.Run("泛型 IndexListExpr", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.IntUserGenerics", false)
 		a.NotError(err).NotNil(ref)
@@ -118,7 +119,7 @@ func TestSearchFunc_New(t *testing.T) {
 
 	t.Run("Sexes", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "Sexes", false)
 		a.NotError(err).NotNil(ref).
@@ -129,7 +130,7 @@ func TestSearchFunc_New(t *testing.T) {
 
 	t.Run("Int64UserGenerics", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.Int64UserGenerics", false)
 		a.NotError(err).NotNil(ref)
@@ -141,7 +142,7 @@ func TestSearchFunc_New(t *testing.T) {
 
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "[]bool", false)
 		a.NotError(err).NotNil(ref).
@@ -153,7 +154,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// time.Time
 	t.Run("time.Time", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "time.Time", false)
 		a.NotError(err).NotNil(ref).
@@ -164,7 +165,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// time.Duration
 	t.Run("time.Duration", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "time.Duration", false)
 		a.NotError(err).NotNil(ref).
@@ -175,15 +176,15 @@ func TestSearchFunc_New(t *testing.T) {
 	// 枚举数组
 	t.Run("[]Sex", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "[]Sex", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeArray).
 			Equal(ref.Value.Items.Ref, refPrefix+modRef+".Sex")
 
-		sex := tt.Components.Schemas[modRef+".Sex"]
-		a.NotNil(sex).
+		sex, found := tt.GetSchema(modRef + ".Sex")
+		a.True(found).NotNil(sex).
 			Equal(sex.Value.Description, "Sex 表示性别\n@enum female male unknown\n@type string\n").
 			Equal(sex.Value.Type, "string").
 			Equal(sex.Value.Enum, []string{"female", "male", "unknown"})
@@ -192,14 +193,14 @@ func TestSearchFunc_New(t *testing.T) {
 	// 对象数组
 	t.Run("[]User", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, "[]User", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeArray).
 			Equal(ref.Value.Items.Ref, refPrefix+modRef+".User")
-		u := tt.Components.Schemas[modRef+".User"]
-		a.NotNil(u).
+		u, found := tt.GetSchema(modRef + ".User")
+		a.True(found).NotNil(u).
 			Empty(u.Value.Description). // 单行 doc，赋值给了 title
 			Equal(u.Value.Title, "用户信息 doc").
 			Equal(u.Value.Type, openapi3.TypeObject)
@@ -227,7 +228,7 @@ func TestSearchFunc_New(t *testing.T) {
 	// XMLName
 	t.Run("XMLName", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.Admin", false)
 		a.NotError(err).NotNil(ref).
@@ -237,12 +238,12 @@ func TestSearchFunc_New(t *testing.T) {
 	// admin.User
 	t.Run("admin.User", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.User", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Ref, refPrefix+modRef+".admin.User")
-		u, found := tt.Components.Schemas[modRef+".admin.User"]
+		u, found := tt.GetSchema(modRef + ".admin.User")
 		a.True(found).NotNil(u).
 			Equal(u.Value.Title, "User testdata.User").
 			Equal(u.Value.AllOf[0].Ref, refPrefix+modRef+".User")
@@ -251,13 +252,14 @@ func TestSearchFunc_New(t *testing.T) {
 	// admin.Admin
 	t.Run("admin.Admin", func(t *testing.T) {
 		a := assert.New(t, false)
-		tt := NewOpenAPI("3")
+		tt := openapi.New("3")
 
 		ref, err := f.New(tt, modPath, modPath+"/admin.Admin", false)
 		a.NotError(err).NotNil(ref).
 			Equal(ref.Value.Type, openapi3.TypeObject)
 
-		admin := tt.Components.Schemas[modRef+".admin.Admin"]
+		admin, found := tt.GetSchema(modRef + ".admin.Admin")
+		a.True(found).NotNil(admin)
 		name := admin.Value.Properties["Name"]
 		a.Equal(name.Value.AllOf[0].Ref, refPrefix+modRef+".String").
 			Equal(name.Value.Title, "姓名")

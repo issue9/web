@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"go/ast"
 	"strings"
+
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 )
 
 type typeParam struct {
@@ -13,7 +15,7 @@ type typeParam struct {
 	name string // 类型参数的实参名称
 }
 
-func (f SearchFunc) fromIndexExprType(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
+func (f SearchFunc) fromIndexExprType(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
 	mod, idxName := getExprName(file, currPath, idx.Index)
 	if mod != currPath {
 		idxName = mod + "." + idxName
@@ -23,7 +25,7 @@ func (f SearchFunc) fromIndexExprType(t *OpenAPI, file *ast.File, currPath, tag 
 	return f.fromName(t, mod, name+"["+idxName+"]", tag, false)
 }
 
-func (f SearchFunc) fromIndexListExprType(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr) (*Ref, error) {
+func (f SearchFunc) fromIndexListExprType(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr) (*Ref, error) {
 	indexes := make([]string, 0, len(idx.Indices))
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)
@@ -38,7 +40,7 @@ func (f SearchFunc) fromIndexListExprType(t *OpenAPI, file *ast.File, currPath, 
 	return f.fromName(t, mod, name, tag, false)
 }
 
-func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr, refs map[string]*typeParam) (*Ref, error) {
+func (f SearchFunc) fromIndexExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr, refs map[string]*typeParam) (*Ref, error) {
 	mod, idxName := getExprName(file, currPath, idx.Index)
 	if mod != currPath {
 		idxName = mod + "." + idxName
@@ -52,7 +54,7 @@ func (f SearchFunc) fromIndexExpr(t *OpenAPI, file *ast.File, currPath, tag stri
 	return f.fromName(t, mod, name+"["+idxName+"]", tag, false)
 }
 
-func (f SearchFunc) fromIndexListExpr(t *OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr, refs map[string]*typeParam) (*Ref, error) {
+func (f SearchFunc) fromIndexListExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr, refs map[string]*typeParam) (*Ref, error) {
 	indexes := make([]string, 0, len(idx.Indices))
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)

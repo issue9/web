@@ -5,21 +5,17 @@ package parser
 
 import (
 	"context"
-	"encoding/json"
 	"go/ast"
 	"go/token"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 	"unicode"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/web"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
@@ -38,9 +34,6 @@ type Parser struct {
 	// 在 restdoc 未解析的情况下，所有的 api 注释都要缓存。
 	apiComments  []*comments
 	apiCommentsM sync.Mutex
-
-	// 防止多个 parseAPI 同时向 openapi3.T 添加元素
-	apiM sync.Mutex
 
 	parsed bool
 	l      *logger.Logger
@@ -106,10 +99,10 @@ func (p *Parser) append(pp *pkg.Package) {
 // tags 如果非空，则表示仅返回带这些标签的 API。
 //
 // NOTE: 已经执行了 [openapi3.T.Validate]。
-func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi3.T {
+func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
 	p.parsed = true // 阻止 p.AddDir
 
-	t := schema.NewOpenAPI("3.0.0")
+	t := openapi.New("3.0.0")
 	wg := &sync.WaitGroup{}
 
 	for _, pp := range p.pkgs {
@@ -167,7 +160,7 @@ func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi3.T {
 	return t
 }
 
-func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Package, tags []string) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg.Package, tags []string) {
 	wg := &sync.WaitGroup{}
 	for _, f := range pack.Files {
 		select {
@@ -185,7 +178,7 @@ func (p *Parser) parsePackage(ctx context.Context, t *openapi3.T, pack *pkg.Pack
 	wg.Wait()
 }
 
-func (p *Parser) parseFile(t *openapi3.T, importPath string, f *ast.File, tags []string) {
+func (p *Parser) parseFile(t *openapi.OpenAPI, importPath string, f *ast.File, tags []string) {
 LOOP:
 	for _, c := range f.Comments {
 		lines := strings.Split(c.Text(), "\n")
@@ -202,7 +195,7 @@ LOOP:
 			if tag, suffix := utils.CutTag(line[2:]); suffix != "" {
 				switch strings.ToLower(tag) {
 				case "api":
-					if t.Info != nil {
+					if t.Doc().Info != nil {
 						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()), tags)
 					} else {
 						p.apiCommentsM.Lock()
@@ -234,29 +227,6 @@ func isIgnoreTag(enableTags []string, tag ...string) bool {
 		}
 	}
 	return true
-}
-
-// SaveAs 保存为 yaml 或 json 文件
-//
-// 根据后缀名名确定保存的文件类型，目前仅支持 json 和 yaml。
-func SaveAs(doc *openapi3.T, path string) error {
-	var m func(any) ([]byte, error)
-	switch filepath.Ext(path) {
-	case ".yaml", ".yml":
-		m = yaml.Marshal
-	case ".json":
-		m = func(v any) ([]byte, error) {
-			return json.MarshalIndent(v, "", "\t")
-		}
-	default:
-		return web.NewLocaleError("only support yaml and json")
-	}
-
-	data, err := m(doc)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, os.ModePerm)
 }
 
 func (p *Parser) syntaxError(tag string, size int, filename string, ln int) {

@@ -4,18 +4,18 @@ package parser
 
 import (
 	"errors"
-	"slices"
 	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/web"
 
+	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
+func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
 	defer func() {
 		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
 		// 应当尽量大此之前查出错误。
@@ -29,8 +29,6 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 		p.syntaxError("# api", 2, filename, ln)
 		return
 	}
-
-	var hasPathParam bool
 
 	method, path, summary := words[0], words[1], words[2]
 	opt := openapi3.NewOperation()
@@ -62,7 +60,6 @@ LOOP:
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
-			hasPathParam = true
 		case "@query": // @query object.path *desc
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req text/* object.path *desc
@@ -79,7 +76,7 @@ LOOP:
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
 		case "@resp-header": // @resp-header 200 h1 *desc
-			if !p.parseResponseHeader(resps, t, suffix, filename, currPath, ln+index) {
+			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "##": // 可能是 ## callback
@@ -92,29 +89,10 @@ LOOP:
 	}
 
 	p.addResponses(opt, resps)
-
-	p.apiM.Lock()
-	defer p.apiM.Unlock()
-
-	t.AddOperation(path, strings.ToUpper(method), opt)
-
-	// 同一个路径下的多个对象，不必要每个都声明路径参数，只要其中一个有就可以了。
-	if hasPathParam {
-		p := t.Paths[path]
-		inPath := func(r *openapi3.ParameterRef) bool { return r.Value.In == openapi3.ParameterInPath }
-
-		if index := slices.IndexFunc(p.Parameters, inPath); index < 0 {
-			for _, param := range opt.Parameters {
-				if param.Value.In == openapi3.ParameterInPath {
-					p.Parameters = append(p.Parameters, param)
-				}
-			}
-			opt.Parameters = slices.DeleteFunc(opt.Parameters, inPath)
-		}
-	}
+	t.AddAPI(path, strings.ToUpper(method), opt)
 }
 
-func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
+func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
 		p.syntaxError("@query", 1, filename, ln)
