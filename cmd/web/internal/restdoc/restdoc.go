@@ -6,12 +6,15 @@ package restdoc
 import (
 	"context"
 	"flag"
+	"go/build"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/source"
 	"github.com/issue9/web/logs"
 
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
@@ -24,6 +27,7 @@ const (
 	outputUsage    = localeutil.StringPhrase("set output file")
 	recursiveUsage = localeutil.StringPhrase("recursive dir")
 	tagUsage       = localeutil.StringPhrase("filter by tag")
+	depUsage       = localeutil.StringPhrase("parse module dependencies")
 )
 
 const defaultOutput = "./restdoc.yaml"
@@ -33,6 +37,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		o := fs.String("o", defaultOutput, outputUsage.LocaleString(p))
 		r := fs.Bool("r", true, recursiveUsage.LocaleString(p))
 		t := fs.String("t", "", tagUsage.LocaleString(p))
+		d := fs.Bool("d", false, depUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
 			ctx := context.Background()
@@ -48,6 +53,23 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			doc := parser.New(l)
 			for _, dir := range fs.Args() {
 				doc.AddDir(ctx, dir, *r)
+
+				if *d {
+					modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
+
+					mod, err := source.ModFile(dir)
+					if err != nil {
+						return err
+					}
+
+					for _, p := range mod.Require {
+						if p.Indirect {
+							continue
+						}
+						modDir := filepath.Join(modCache, p.Mod.Path+"@"+p.Mod.Version)
+						doc.AddDir(ctx, modDir, *r)
+					}
+				}
 			}
 
 			var tags []string

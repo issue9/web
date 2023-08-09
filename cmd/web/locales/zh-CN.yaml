@@ -123,6 +123,9 @@ messages:
     - key: parse %s complete
       message:
         msg: 完成对 %s 的解析
+    - key: parse module dependencies
+      message:
+        msg: 同时也对模块的直接依赖进行解析
     - key: recursive dir
       message:
         msg: 递归访问子目录
@@ -217,9 +220,12 @@ messages:
     - key: the key %s of %s not found, will be deleted
       message:
         msg: 语言 %[2]s 的 %[1]s 未找到, 将被删除
-    - key: unsupported ast expr %s
+    - key: unsupported ast expr %+v
       message:
-        msg: 不支持的 ast 表达式 %s
+        msg: 不支持的 ast.Expr %+v
+    - key: unsupported generics type %s
+      message:
+        msg: 不支持的范型 %s
     - key: unsupported marshal for %s
       message:
         msg: 不支持 %s 的序列化

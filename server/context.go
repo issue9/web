@@ -361,5 +361,5 @@ func (ctx *Context) IsXHR() bool {
 
 // Unwrap 返回底层的 http.ResponseWriter
 //
-// 在 go1.20 之后，可由 [http.ResponseController] 可能要用到此方法。
+// 在 go1.20 之后，[http.ResponseController] 可能要用到此方法。
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }

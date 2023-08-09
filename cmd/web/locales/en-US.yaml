@@ -104,6 +104,9 @@ messages:
     - key: parse %s complete
       message:
         msg: parse %s complete
+    - key: parse module dependencies
+      message:
+        msg: parse module dependencies
     - key: recursive dir
       message:
         msg: recursive dir
@@ -140,9 +143,12 @@ messages:
     - key: the key %s of %s not found, will be deleted
       message:
         msg: the key %s of %s not found, will be deleted
-    - key: unsupported ast expr %s
+    - key: unsupported ast expr %+v
       message:
-        msg: unsupported ast expr %s
+        msg: unsupported ast expr %+v
+    - key: unsupported generics type %s
+      message:
+        msg: unsupported generics type %s
     - key: unsupported marshal for %s
       message:
         msg: unsupported marshal for %s
