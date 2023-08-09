@@ -8,6 +8,7 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message/serialize"
+	wl "github.com/issue9/web/locales"
 	xmessage "golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,13 @@ func newPrinter() (*localeutil.Printer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	webLocales, err := serialize.LoadFSGlob(wl.Locales, "*.yaml", yaml.Unmarshal)
+	if err != nil {
+		return nil, err
+	}
+
+	ls = append(ls, webLocales...)
 
 	b := catalog.NewBuilder()
 	for _, l := range ls {
