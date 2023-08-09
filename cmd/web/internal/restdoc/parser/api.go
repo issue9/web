@@ -4,6 +4,7 @@ package parser
 
 import (
 	"errors"
+	"slices"
 	"sort"
 	"strings"
 
@@ -28,6 +29,8 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 		p.l.Error(errSyntax, filename, ln)
 		return
 	}
+
+	var hasPathParam bool
 
 	method, path, summary := words[0], words[1], words[2]
 	opt := openapi3.NewOperation()
@@ -59,6 +62,7 @@ LOOP:
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
+			hasPathParam = true
 		case "@query": // @query object.path *desc
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req text/* object.path *desc
@@ -91,7 +95,23 @@ LOOP:
 
 	p.apiM.Lock()
 	defer p.apiM.Unlock()
+
 	t.AddOperation(path, strings.ToUpper(method), opt)
+
+	// 同一个路径下的多个对象，不必要每个都声明路径参数，只要其中一个有就可以了。
+	if hasPathParam {
+		p := t.Paths[path]
+		inPath := func(r *openapi3.ParameterRef) bool { return r.Value.In == openapi3.ParameterInPath }
+
+		if index := slices.IndexFunc(p.Parameters, inPath); index < 0 {
+			for _, param := range opt.Parameters {
+				if param.Value.In == openapi3.ParameterInPath {
+					p.Parameters = append(p.Parameters, param)
+				}
+			}
+			opt.Parameters = slices.DeleteFunc(opt.Parameters, inPath)
+		}
+	}
 }
 
 func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
@@ -113,12 +133,7 @@ func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suff
 	}
 
 	if s.Value.Type != openapi3.TypeObject {
-		opt.AddParameter(&openapi3.Parameter{
-			In:          openapi3.ParameterInQuery,
-			Schema:      s,
-			Description: words[1],
-			Name:        words[0],
-		})
+		p.l.Error(web.StringPhrase("@query must point to an object"), filename, ln)
 		return
 	}
 
