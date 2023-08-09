@@ -29,7 +29,7 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi3.T, suffix, file
 
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l < 2 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@req", 2, filename, ln)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi3.T, suffix, file
 func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 4)
 	if l < 3 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@resp", 3, filename, ln)
 		return false
 	}
 
@@ -89,7 +89,7 @@ func (p *Parser) parseResponse(resps map[string]*response, t *openapi3.T, suffix
 func (p *Parser) parseResponseHeader(resps map[string]*response, t *openapi3.T, suffix, filename, currPath string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l != 3 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@resp-header", 3, filename, ln)
 		return false
 	}
 

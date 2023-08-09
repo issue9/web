@@ -25,8 +25,6 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-var errSyntax = web.NewLocaleError("syntax error")
-
 // Parser 文档分析对象
 type Parser struct {
 	pkgsM  sync.Mutex
@@ -259,4 +257,8 @@ func SaveAs(doc *openapi3.T, path string) error {
 		return err
 	}
 	return os.WriteFile(path, data, os.ModePerm)
+}
+
+func (p *Parser) syntaxError(tag string, size int, filename string, ln int) {
+	p.l.Error(web.NewLocaleError("%s requires at least %d parameters", tag, size), filename, ln)
 }

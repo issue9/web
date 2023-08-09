@@ -16,7 +16,7 @@ func (p *Parser) parseCallback(t *openapi3.T, o *openapi3.Operation, currPath, s
 	// callback name post $request.url *desc
 	words, l := utils.SplitSpaceN(suffix, 5)
 	if l < 4 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("# callback", 4, filename, ln)
 		return 0
 	}
 
@@ -53,7 +53,7 @@ func (p *Parser) parseCallback(t *openapi3.T, o *openapi3.Operation, currPath, s
 		case "@resp-ref": // @resp-ref 200 name
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l != 2 {
-				p.l.Error(errSyntax, filename, ln+delta)
+				p.syntaxError("@resp-ref", 2, filename, ln+delta)
 				return delta
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}

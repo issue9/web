@@ -56,7 +56,7 @@ LOOP:
 		case "@tag": // @tag name *desc
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@tag", 1, filename, ln+i)
 				continue LOOP
 			}
 
@@ -66,7 +66,7 @@ LOOP:
 		case "@server": // @server tag https://example.com *desc
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l < 2 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@server", 2, filename, ln+i)
 				continue LOOP
 			}
 			tag := words[0]
@@ -80,7 +80,7 @@ LOOP:
 		case "@license": // @license MIT *https://example.com/license
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@license", 1, filename, ln+i)
 				continue LOOP
 			}
 			info.License = &openapi3.License{Name: words[0], URL: words[1]}
@@ -91,7 +91,7 @@ LOOP:
 		case "@contact": // @contact name *https://example.com/contact *contact@example.com
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l == 0 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@contact", 1, filename, ln+i)
 				continue LOOP
 			}
 			info.Contact = buildContact(words)
@@ -108,7 +108,7 @@ LOOP:
 		case "@scy-http": // @scy-http name scheme format *desc
 			words, l := utils.SplitSpaceN(suffix, 4)
 			if l < 3 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-http", 3, filename, ln+i)
 				continue LOOP
 			}
 
@@ -121,7 +121,7 @@ LOOP:
 		case "@scy-apikey": // @scy-apikey name param-name in *desc
 			words, l := utils.SplitSpaceN(suffix, 4)
 			if l < 3 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-apikey", 3, filename, ln+i)
 				continue LOOP
 			}
 
@@ -134,7 +134,7 @@ LOOP:
 		case "@scy-openid": // @scy-openid name url *desc
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l < 2 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-openid", 2, filename, ln+i)
 				continue LOOP
 			}
 
@@ -146,7 +146,7 @@ LOOP:
 		case "@scy-implicit": // @scy-implicit name authURL refreshURL scope1,scope2,...
 			words, l := utils.SplitSpaceN(suffix, 4)
 			if l < 3 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-implicit", 3, filename, ln+i)
 				continue LOOP
 			}
 			ss := openapi3.NewSecurityScheme()
@@ -162,7 +162,7 @@ LOOP:
 		case "@scy-password": // @scy-password name tokenURL refreshURL scope1,scope2,...
 			words, l := utils.SplitSpaceN(suffix, 4)
 			if l < 3 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-password", 3, filename, ln+i)
 				continue LOOP
 			}
 			ss := openapi3.NewSecurityScheme()
@@ -178,7 +178,7 @@ LOOP:
 		case "@scy-code": // @scy-code name authURL tokenURL refreshURL scope1,scope2,....
 			words, l := utils.SplitSpaceN(suffix, 5)
 			if l < 4 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-code", 4, filename, ln+i)
 				continue LOOP
 			}
 			ss := openapi3.NewSecurityScheme()
@@ -195,7 +195,7 @@ LOOP:
 		case "@scy-client": // @scy-client name tokenURL refreshURL scope1,scope2,...
 			words, l := utils.SplitSpaceN(suffix, 4)
 			if l < 3 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@scy-client", 3, filename, ln+i)
 				continue LOOP
 			}
 			ss := openapi3.NewSecurityScheme()
@@ -211,7 +211,7 @@ LOOP:
 		case "@doc": // @doc url desc
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {
-				p.l.Error(errSyntax, filename, ln+i)
+				p.syntaxError("@doc", 1, filename, ln+i)
 				continue LOOP
 			}
 

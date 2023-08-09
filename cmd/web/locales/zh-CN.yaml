@@ -6,9 +6,15 @@ messages:
     - key: '%s can not convert to ast.StructType'
       message:
         msg: 不能将 %s 转换为 ast.StructType
+    - key: '%s requires at least %d parameters'
+      message:
+        msg: '%s 至少需要 %d 个参数'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: 当执行 %[2]s 时发生了错误：%[1]s。将采用默认值 %[3]s 代替。
+    - key: '@query must point to an object'
+      message:
+        msg: '@query 必须指定一个对象'
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -205,9 +211,6 @@ messages:
     - key: src locale file
       message:
         msg: 指定源文件
-    - key: syntax error
-      message:
-        msg: 语法错误
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录

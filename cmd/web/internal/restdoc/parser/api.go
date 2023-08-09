@@ -26,7 +26,7 @@ func (p *Parser) parseAPI(t *openapi3.T, currPath, suffix string, lines []string
 
 	words, l := utils.SplitSpaceN(suffix, 3) // GET /users *desc
 	if l < 2 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("# api", 2, filename, ln)
 		return
 	}
 
@@ -74,7 +74,7 @@ LOOP:
 		case "@resp-ref": // @resp-ref 200 name
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l != 2 {
-				p.l.Error(errSyntax, filename, ln+index)
+				p.syntaxError("@resp-ref", 2, filename, ln+index)
 				return
 			}
 			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
@@ -117,7 +117,7 @@ LOOP:
 func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@query", 1, filename, ln)
 		return
 	}
 
@@ -157,7 +157,7 @@ func (p *Parser) addQuery(t *openapi3.T, opt *openapi3.Operation, currPath, suff
 func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l < 2 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@path", 2, filename, ln)
 		return
 	}
 
@@ -183,7 +183,7 @@ func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln in
 func (p *Parser) addCookieHeader(opt *openapi3.Operation, in, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		p.l.Error(errSyntax, filename, ln)
+		p.syntaxError("@cookie", 1, filename, ln)
 		return
 	}
 

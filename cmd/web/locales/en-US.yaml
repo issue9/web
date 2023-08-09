@@ -6,9 +6,15 @@ messages:
     - key: '%s can not convert to ast.StructType'
       message:
         msg: '%s can not convert to ast.StructType'
+    - key: '%s requires at least %d parameters'
+      message:
+        msg: '%s requires at least %d parameters'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: '%s when exec %s, use the preset value %s'
+    - key: '@query must point to an object'
+      message:
+        msg: '@query must point to an object'
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -128,9 +134,6 @@ messages:
     - key: src locale file
       message:
         msg: src locale file
-    - key: syntax error
-      message:
-        msg: syntax error
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
