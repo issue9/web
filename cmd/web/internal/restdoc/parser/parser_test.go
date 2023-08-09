@@ -19,7 +19,7 @@ func TestParser(t *testing.T) {
 	p := New(l.Logger)
 
 	p.AddDir(context.Background(), "./testdata", true)
-	d := p.OpenAPI(context.Background())
+	d := p.Parse(context.Background())
 	a.NotNil(d).
 		Length(l.Records[logs.Error], 0).
 		Length(l.Records[logs.Warn], 0).
@@ -42,7 +42,8 @@ func TestParser(t *testing.T) {
 		Length(login.Callbacks, 1).
 		NotNil((*login.Callbacks["onData"].Value)["{$request.query.url}"].Post)
 
-	a.NotError(p.SaveAs(context.Background(), "./testdata/openapi.out.yaml"))
+	doc := p.Parse(context.Background())
+	a.NotError(SaveAs(doc, "./testdata/openapi.out.yaml"))
 }
 
 func TestIsIgnoreTag(t *testing.T) {

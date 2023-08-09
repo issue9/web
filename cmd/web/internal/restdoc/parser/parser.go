@@ -38,7 +38,11 @@ type Parser struct {
 
 	// api 的部分功能是依赖 restdoc 的，
 	// 在 restdoc 未解析的情况下，所有的 api 注释都要缓存。
-	apiComments []*comments
+	apiComments  []*comments
+	apiCommentsM sync.Mutex
+
+	// 防止多个 parseAPI 同时向 openapi3.T 添加元素
+	apiM sync.Mutex
 
 	parsed bool
 	l      *logger.Logger
@@ -99,36 +103,13 @@ func (p *Parser) append(pp *pkg.Package) {
 	p.pkgs = append(p.pkgs, pp)
 }
 
-// SaveAs 保存为 yaml 或 json 文件
-//
-// 根据后缀名名确定保存的文件类型，目前仅支持 json 和 yaml。
-func (p *Parser) SaveAs(ctx context.Context, path string, tag ...string) error {
-	var m func(any) ([]byte, error)
-	switch filepath.Ext(path) {
-	case ".yaml", ".yml":
-		m = yaml.Marshal
-	case ".json":
-		m = func(v any) ([]byte, error) {
-			return json.MarshalIndent(v, "", "\t")
-		}
-	default:
-		return web.NewLocaleError("only support yaml and json")
-	}
-
-	data, err := m(p.OpenAPI(ctx, tag...))
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, os.ModePerm)
-}
-
-// OpenAPI 转换成 openapi3.T 对象
+// Parse 转换成 openapi3.T 对象
 //
 // tags 如果非空，则表示仅返回带这些标签的 API。
 //
 // NOTE: 已经执行了 [openapi3.T.Validate]。
-func (p *Parser) OpenAPI(ctx context.Context, tags ...string) *openapi3.T {
-	p.parsed = true // 阻止 doc.AddDir
+func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi3.T {
+	p.parsed = true // 阻止 p.AddDir
 
 	t := schema.NewOpenAPI("3.0.0")
 	wg := &sync.WaitGroup{}
@@ -151,6 +132,9 @@ func (p *Parser) OpenAPI(ctx context.Context, tags ...string) *openapi3.T {
 	// 下面的操作依赖上面的完成，所以需要两个 wg 变量
 
 	wg = &sync.WaitGroup{}
+	p.apiCommentsM.Lock()
+	defer p.apiCommentsM.Unlock()
+
 	for _, c := range p.apiComments {
 		select {
 		case <-ctx.Done():
@@ -223,11 +207,13 @@ LOOP:
 					if t.Info != nil {
 						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()), tags)
 					} else {
+						p.apiCommentsM.Lock()
 						p.apiComments = append(p.apiComments, &comments{
 							lines:   lines, // 保存所有行，而不是从当前页开始，方便后续判断正确的行号。
 							pos:     c.Pos(),
 							modPath: importPath,
 						})
+						p.apiCommentsM.Unlock()
 					}
 				case "restdoc":
 					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()), tags)
@@ -250,4 +236,27 @@ func isIgnoreTag(enableTags []string, tag ...string) bool {
 		}
 	}
 	return true
+}
+
+// SaveAs 保存为 yaml 或 json 文件
+//
+// 根据后缀名名确定保存的文件类型，目前仅支持 json 和 yaml。
+func SaveAs(doc *openapi3.T, path string) error {
+	var m func(any) ([]byte, error)
+	switch filepath.Ext(path) {
+	case ".yaml", ".yml":
+		m = yaml.Marshal
+	case ".json":
+		m = func(v any) ([]byte, error) {
+			return json.MarshalIndent(v, "", "\t")
+		}
+	default:
+		return web.NewLocaleError("only support yaml and json")
+	}
+
+	data, err := m(doc)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, os.ModePerm)
 }
