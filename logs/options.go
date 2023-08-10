@@ -31,10 +31,11 @@ type Options struct {
 	Created bool    // 是否带时间
 	Levels  []Level // 允许的日志通道
 
-	// 标准库的错误日志重定义至哪个通道
+	// 是否接管标准日的类型
 	//
-	// 一些由 [log.Println] 等全局方法输出的内容，由此指定输出的通道。
-	StdLevel Level
+	// 如果为 true，则在 go1.21 之前会接管 log.Default() 的输出；
+	// go1.21 以之后的版本则接管 slog.Default() 的输出；
+	Std bool
 }
 
 func optionsSanitize(o *Options) (*Options, error) {
@@ -47,10 +48,6 @@ func optionsSanitize(o *Options) (*Options, error) {
 			field := "Levels[" + strconv.Itoa(index) + "]"
 			return nil, config.NewFieldError(field, locales.InvalidValue)
 		}
-	}
-
-	if o.StdLevel != 0 && !logs.IsValidLevel(o.StdLevel) {
-		return nil, config.NewFieldError("StdLevel", locales.InvalidValue)
 	}
 
 	return o, nil

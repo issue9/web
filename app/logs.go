@@ -35,6 +35,9 @@ type logsConfig struct {
 	// 为空表示所有
 	Levels []logs.Level `xml:"level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty"`
 
+	// 是否接管标准库的日志
+	Stdlog bool `xml:"stdlog,attr,omitempty" json:"stdlog,omitempty" yaml:"stdlog,omitempty"`
+
 	// 日志输出对象的配置
 	//
 	// 为空表示 [logs.NewNopHandler] 返回的对象。
@@ -111,6 +114,7 @@ func (conf *logsConfig) build() (*logs.Options, []func() error, *config.FieldErr
 		Created: conf.Created,
 		Caller:  conf.Caller,
 		Levels:  conf.Levels,
+		Std:     conf.Stdlog,
 	}, c, nil
 }
 

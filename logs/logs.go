@@ -8,11 +8,9 @@
 package logs
 
 import (
-	"log"
 	"sync"
 
 	"github.com/issue9/logs/v5"
-	"github.com/issue9/logs/v5/writers"
 )
 
 // 日志的类别
@@ -91,12 +89,8 @@ func New(opt *Options) (Logs, error) {
 	l := logs.New(opt.Handler, o...)
 	l.Enable(opt.Levels...)
 
-	if l.IsEnable(opt.StdLevel) {
-		sl := l.Logger(opt.StdLevel)
-		log.SetOutput(writers.WriteFunc(func(data []byte) (int, error) {
-			sl.String(string(data))
-			return len(data), nil
-		}))
+	if opt.Std {
+		setStdDefault(l)
 	}
 
 	return &defaultLogs{logs: l}, nil

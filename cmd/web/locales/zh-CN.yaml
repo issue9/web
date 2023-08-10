@@ -84,7 +84,7 @@ messages:
             默认情况下，会提取由 web.Phrase、web.NewLocaleError、web.StringPhrase、web.Context.Sprintf、
             localeutil.Phrase、localeutil.NewLocaleError、localeutil.StringPhrase 的参数作为本地化数据。
             当然用户也可以通过 -func 指定其它函数，只要其第一个参数是 string 类型的都可以。
-            	
+
             可用选项：
             {{flags}}
     - key: file format
