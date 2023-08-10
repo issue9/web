@@ -27,7 +27,6 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 
 	name, method, path, summary := words[1], words[2], words[3], words[4]
 	opt := openapi3.NewOperation()
-	opt.Responses = openapi3.NewResponses()
 	opt.Summary = summary
 
 	resps := map[string]*response{}
@@ -51,13 +50,6 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+delta) {
 				return delta
 			}
-		case "@resp-ref": // @resp-ref 200 name
-			words, l := utils.SplitSpaceN(suffix, 2)
-			if l != 2 {
-				p.syntaxError("@resp-ref", 2, filename, ln+delta)
-				return delta
-			}
-			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
 		case "@resp-header": // @resp-header 200 h1 *desc
 			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+delta) {
 				return delta
@@ -93,7 +85,7 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 	if o.Callbacks == nil {
 		o.Callbacks = make(openapi3.Callbacks, 5)
 	}
-	p.addResponses(opt, resps)
+	p.addResponses(opt, resps, false)
 
 	callback := openapi3.Callback{path: pi}
 	o.Callbacks[name] = &openapi3.CallbackRef{

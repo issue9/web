@@ -149,7 +149,7 @@ messages:
               @version 指定了文档的版本号；
               @contact name url email 指定了联系方式，url 和 email 位置没有要求，根据格式自动确定，两者也可以不用全指定；
               @media application/json application/xml 指定了所有 api 默认的内容类型；
-              @resp name media object.path desc 指定了一些可复用的返回对象，后续 API 中可以用 @resp-ref 进行引用；
+              @resp name media object.path desc 定义了全局返回对象，会被附加在每个 API 上。一般用于指定错误处理对象；
               @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
               @doc url 扩展文档；
               @openapi path 引入另一个 openapi 文档，path 可以是一个 uri，比如 https://example.com/openapi.yaml，
@@ -170,7 +170,6 @@ messages:
               @req media object.path desc 定义请求格式，media 如果采用全局指定的默认值，可以用 *，如果是多个值，用逗号分隔；
               @resp status media object.path desc 指定返回的数据类型；
               @resp-header status key desc 指定报头；
-              @resp-ref 引用由 #restdoc/@resp 设置的项；
 
               ## callback name method url desc
 

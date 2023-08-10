@@ -13,6 +13,8 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
+const responsesRef = "#/components/responses/"
+
 type (
 	response struct {
 		schema *openapi3.SchemaRef
@@ -103,7 +105,8 @@ func (p *Parser) parseResponseHeader(resps map[string]*response, suffix, filenam
 	return true
 }
 
-func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response) {
+// g 是否将定义为全局的对象也写入 o
+func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response, g bool) {
 	for status, r := range resps {
 		resp := openapi3.NewResponse()
 		resp.Description = &r.desc
@@ -122,6 +125,12 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response)
 			o.Responses = openapi3.NewResponses()
 		}
 		o.Responses[status] = &openapi3.ResponseRef{Value: resp}
+	}
+
+	if g {
+		for _, status := range p.resps {
+			o.Responses[status] = &openapi3.ResponseRef{Ref: responsesRef + status}
+		}
 	}
 }
 

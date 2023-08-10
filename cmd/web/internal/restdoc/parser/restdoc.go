@@ -16,8 +16,6 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-const responsesRef = "#/components/responses/"
-
 // 解析 # restdoc 之后的内容
 //
 // title 表示 # restdoc 至该行的行尾内容；
@@ -92,11 +90,11 @@ LOOP:
 			info.Contact = buildContact(words)
 		case "@media": // @media application/json application/xml
 			p.media = strings.Fields(suffix)
-		case "@resp": // @resp name text/* object.path desc
+		case "@resp": // @resp 4XX text/* object.path desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
-		case "@resp-header": // @resp-header name h1 *desc
+		case "@resp-header": // @resp-header 4XX h1 *desc
 			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
@@ -224,6 +222,7 @@ LOOP:
 		resp.Description = &r.desc
 		resp.Content = p.newContents(r.schema, r.media...)
 		t.Doc().Components.Responses[status] = &openapi3.ResponseRef{Value: resp}
+		p.resps = append(p.resps, status)
 	}
 
 	t.Doc().Info = info

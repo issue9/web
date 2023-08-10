@@ -32,7 +32,6 @@ func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []s
 
 	method, path, summary := words[0], words[1], words[2]
 	opt := openapi3.NewOperation()
-	opt.Responses = openapi3.NewResponses()
 	opt.Summary = summary
 
 	resps := map[string]*response{}
@@ -68,13 +67,6 @@ LOOP:
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
-		case "@resp-ref": // @resp-ref 200 name
-			words, l := utils.SplitSpaceN(suffix, 2)
-			if l != 2 {
-				p.syntaxError("@resp-ref", 2, filename, ln+index)
-				return
-			}
-			opt.Responses[words[0]] = &openapi3.ResponseRef{Ref: responsesRef + words[1]}
 		case "@resp-header": // @resp-header 200 h1 *desc
 			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+index) {
 				return
@@ -88,7 +80,7 @@ LOOP:
 		}
 	}
 
-	p.addResponses(opt, resps)
+	p.addResponses(opt, resps, true)
 	t.AddAPI(path, strings.ToUpper(method), opt)
 }
 

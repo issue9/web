@@ -28,7 +28,8 @@ type Parser struct {
 	search schema.SearchFunc
 	fset   *token.FileSet
 
-	media []string
+	media []string // 全局可用 media type
+	resps []string // 全局可用的返回对象引用
 
 	// api 的部分功能是依赖 restdoc 的，
 	// 在 restdoc 未解析的情况下，所有的 api 注释都要缓存。

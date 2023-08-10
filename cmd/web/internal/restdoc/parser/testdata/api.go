@@ -13,8 +13,6 @@ package testdata
 // @resp 201 * resp
 // @resp-header 201 h1 h1 desc
 // @resp-header 201 h2 h2 desc
-// @resp-ref 400 400-resp
-// @resp-ref 404 404-resp
 // @resp 200 * resp desc
 //
 // ## callback onData POST {$request.query.url} 回调1
