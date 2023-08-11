@@ -89,7 +89,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Log:           log.ERROR(),
 					Funcs:         strings.Split(*funcs, ","),
 				}
-				lang, err := extract.Extract(ctx, opt)
+				lang, err := extract.Extract(ctx, p, opt)
 				if err != nil {
 					return err
 				}

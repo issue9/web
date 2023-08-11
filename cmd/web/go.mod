@@ -1,12 +1,12 @@
 module github.com/issue9/web/cmd/web
 
-go 1.21
+go 1.21.0
 
 require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.20.2
+	github.com/issue9/localeutil v0.21.0
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.5.1
 	github.com/issue9/term/v3 v3.2.1
