@@ -146,6 +146,9 @@ messages:
     - key: the key %s of %s not found, will be deleted
       message:
         msg: the key %s of %s not found, will be deleted
+    - key: unknown tag %s
+      message:
+        msg: unknown tag %s
     - key: unsupported ast expr %+v
       message:
         msg: unsupported ast expr %+v

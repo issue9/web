@@ -212,6 +212,9 @@ LOOP:
 		case "@openapi": // 将另一个 openapi 文件引入当前对象，除了 info 之外的内容都将复制。
 			p.parseOpenAPI(t, suffix, filename, ln+i)
 		default: // 不认识的标签，表示元数据部分结束，将剩余部分直接作为 info.Description
+			if len(tag) > 1 && tag[0] == '@' {
+				p.l.Warning(web.Phrase("unknown tag %s", tag))
+			}
 			info.Description = strings.Join(lines[i:], "\n")
 			break LOOP
 		}

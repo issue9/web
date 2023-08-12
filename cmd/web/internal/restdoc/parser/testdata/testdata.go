@@ -14,8 +14,8 @@
 // @term https://term.example.com
 // @version 1.0.0
 // @media application/json application/xml
-// @resp 400-resp application/problem+json,application/problem+xml resp400 400 错误
-// @resp 404-resp application/problem+json,application/problem+xml resp404 not found
+// @resp 400 application/problem+json,application/problem+xml resp400 400 错误
+// @resp 404 application/problem+json,application/problem+xml resp404 not found
 //
 // @scy-code oauth-code https://example.com/auth https://example.com/token https://example.com/refresh read:info,write:info
 //

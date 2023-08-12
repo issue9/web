@@ -226,6 +226,9 @@ messages:
     - key: the key %s of %s not found, will be deleted
       message:
         msg: 语言 %[2]s 的 %[1]s 未找到, 将被删除
+    - key: unknown tag %s
+      message:
+        msg: 未知的标签 %s 将被忽略
     - key: unsupported ast expr %+v
       message:
         msg: 不支持的 ast.Expr %+v

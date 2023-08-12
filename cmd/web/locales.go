@@ -3,19 +3,17 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message/serialize"
 	wl "github.com/issue9/web/locales"
-	xmessage "golang.org/x/text/message"
+	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
-)
 
-//go:embed locales/*.yaml
-var locales embed.FS
+	"github.com/issue9/web/cmd/web/locales"
+)
 
 func newPrinter() (*localeutil.Printer, error) {
 	tag, err := localeutil.DetectUserLanguageTag()
@@ -23,7 +21,7 @@ func newPrinter() (*localeutil.Printer, error) {
 		fmt.Println(err)
 	}
 
-	ls, err := serialize.LoadFSGlob(locales, "locales/*.yaml", yaml.Unmarshal)
+	ls, err := serialize.LoadFSGlob(locales.Locales, "*.yaml", yaml.Unmarshal)
 	if err != nil {
 		return nil, err
 	}
@@ -42,5 +40,5 @@ func newPrinter() (*localeutil.Printer, error) {
 		}
 	}
 
-	return xmessage.NewPrinter(tag, xmessage.Catalog(b)), nil
+	return message.NewPrinter(tag, message.Catalog(b)), nil
 }

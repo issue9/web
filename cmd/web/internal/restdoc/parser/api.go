@@ -75,6 +75,9 @@ LOOP:
 			delta := p.parseCallback(t, opt, currPath, suffix, lines[index:], ln+index, filename)
 			index += delta
 		default:
+			if len(tag) > 1 && tag[0] == '@' {
+				p.l.Warning(web.Phrase("unknown tag %s", tag))
+			}
 			opt.Description = strings.Join(lines[index:], " ")
 			break LOOP
 		}

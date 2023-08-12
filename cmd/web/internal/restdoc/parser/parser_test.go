@@ -38,7 +38,7 @@ func TestParser(t *testing.T) {
 		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).
 		Equal(login.Parameters[2].Value.Schema.Value.Items.Value.Type, openapi3.TypeInteger).
 		NotNil(login.RequestBody).
-		Length(login.Responses, 5). // 包含默认的 default
+		Length(login.Responses, 4). // 包含默认的 default
 		Length(login.Callbacks, 1).
 		NotNil((*login.Callbacks["onData"].Value)["{$request.query.url}"].Post)
 
