@@ -107,6 +107,10 @@ func (p *Parser) parseResponseHeader(resps map[string]*response, suffix, filenam
 
 // g 是否将定义为全局的对象也写入 o
 func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response, g bool) {
+	if l := len(resps) + len(p.resps); o.Responses == nil && l > 0 {
+		o.Responses = make(openapi3.Responses, l)
+	}
+
 	for status, r := range resps {
 		resp := openapi3.NewResponse()
 		resp.Description = &r.desc
@@ -121,9 +125,6 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response,
 			}
 		}
 
-		if o.Responses == nil {
-			o.Responses = openapi3.NewResponses()
-		}
 		o.Responses[status] = &openapi3.ResponseRef{Value: resp}
 	}
 

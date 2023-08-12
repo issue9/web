@@ -114,9 +114,12 @@ messages:
     - key: no src dir
       message:
         msg: 未指定源码目录
-    - key: not found %s
+    - key: not found module %s
       message:
-        msg: 未找到 %s
+        msg: 未找到模块 %s
+    - key: not found struct %s
+      message:
+        msg: 未找到结构体 %s
     - key: only support yaml and json
       message:
         msg: 仅支持 YAML 和 JSON

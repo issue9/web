@@ -52,8 +52,12 @@ func (f SearchFunc) fromName(t *openapi.OpenAPI, currPath, typePath, tag string,
 
 	structPath := currPath
 	structName := typePath
-	if index := strings.LastIndexByte(typePath, '.'); index > 0 { // 全局的路径
-		structPath = typePath[:index]
+	pp := typePath
+	if bIndex := strings.IndexByte(typePath, '['); bIndex > 0 {
+		pp = typePath[:bIndex]
+	}
+	if index := strings.LastIndexByte(pp, '.'); index > 0 { // 全局的路径
+		structPath = pp[:index]
 		structName = typePath[index+1:]
 	} else {
 		typePath = currPath + "." + typePath
@@ -105,7 +109,7 @@ func (f SearchFunc) fromName(t *openapi.OpenAPI, currPath, typePath, tag string,
 func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File, spec *ast.TypeSpec, err error) {
 	p := f(structPath)
 	if p == nil {
-		return nil, nil, web.NewLocaleError("not found %s", structPath)
+		return nil, nil, web.NewLocaleError("not found module %s", structPath)
 	}
 
 	for _, file = range p.Files {
@@ -126,7 +130,7 @@ func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File,
 		}
 	}
 
-	return nil, nil, web.NewLocaleError("not found %s", structPath+"."+structName)
+	return nil, nil, web.NewLocaleError("not found struct %s", structPath+"."+structName)
 }
 
 // 将 ast.TypeSpec 转换成 openapi3.SchemaRef

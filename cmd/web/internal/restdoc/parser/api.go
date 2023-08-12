@@ -18,7 +18,7 @@ import (
 func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
 	defer func() {
 		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
-		// 应当尽量大此之前查出错误。
+		// 应当尽量在此之前查出错误。
 		if msg := recover(); msg != nil {
 			p.l.Error(msg, filename, ln)
 		}
