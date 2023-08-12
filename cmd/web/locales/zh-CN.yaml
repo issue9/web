@@ -192,6 +192,13 @@ messages:
             注意事项
 
               不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
+    - key: set doc version
+      message:
+        msg: |
+            指定文档版本，该设置如果不为空，则直接代替 @version 指定的值。可以有以下几个特殊值：
+
+            git: 表示从 git 中获取最新的 git tag + commit 作为版本号；
+            git-full 同 git，但是 commit 为完整的字符串；
     - key: set output file
       message:
         msg: 设置输出文件

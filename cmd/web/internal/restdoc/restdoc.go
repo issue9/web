@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/source"
 	"github.com/issue9/web/logs"
 
+	"github.com/issue9/web/cmd/web/internal/git"
 	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
 	"github.com/issue9/web/cmd/web/internal/restdoc/parser"
 )
@@ -28,6 +29,7 @@ const (
 	recursiveUsage = localeutil.StringPhrase("recursive dir")
 	tagUsage       = localeutil.StringPhrase("filter by tag")
 	depUsage       = localeutil.StringPhrase("parse module dependencies")
+	versionUsage   = localeutil.StringPhrase("set doc version")
 )
 
 const defaultOutput = "./restdoc.yaml"
@@ -38,6 +40,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		r := fs.Bool("r", true, recursiveUsage.LocaleString(p))
 		t := fs.String("t", "", tagUsage.LocaleString(p))
 		d := fs.Bool("d", false, depUsage.LocaleString(p))
+		v := fs.String("v", "", versionUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
 			ctx := context.Background()
@@ -77,7 +80,18 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				tags = strings.Split(*t, ",")
 			}
 
-			return doc.Parse(ctx, tags...).SaveAs(*o)
+			oa := doc.Parse(ctx, tags...)
+			switch *v {
+			case "git":
+				oa.Doc().Info.Version = git.Version(p) + "+" + git.Commit(p, false)
+			case "git-full":
+				oa.Doc().Info.Version = git.Version(p) + "+" + git.Commit(p, true)
+			case "": // 不处理
+			default:
+				oa.Doc().Info.Version = *v
+			}
+
+			return oa.SaveAs(*o)
 		}
 	})
 }

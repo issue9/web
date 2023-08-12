@@ -116,6 +116,9 @@ messages:
     - key: restdoc usage
       message:
         msg: restdoc usage
+    - key: set doc version
+      message:
+        msg: set doc version
     - key: set output file
       message:
         msg: set output file

@@ -36,6 +36,13 @@ jobs:
           LANG: en
         run: go test $(go list ./... | grep -v cache/caches) -v -coverprofile='coverage.txt' -covermode=atomic
 
+      - name: Test cmd
+        env:
+          LANG: en
+        run: 
+          cd cmd/web
+          go test ./...
+
       - name: Upload Coverage report
         uses: codecov/codecov-action@v3
         with:
