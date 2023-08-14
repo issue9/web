@@ -1,6 +1,6 @@
 module github.com/issue9/web/cmd/web
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/getkin/kin-openapi v0.118.0

@@ -41,7 +41,7 @@ jobs:
           LANG: en
         run: |
           cd cmd/web
-          go test ./...
+          go test -v ./...
 
       - name: Upload Coverage report
         uses: codecov/codecov-action@v3
