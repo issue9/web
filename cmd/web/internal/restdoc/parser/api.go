@@ -59,7 +59,7 @@ LOOP:
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
-		case "@query": // @query object.path *desc
+		case "@query": // @query object.path
 			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req text/* object.path *desc
 			p.parseRequest(opt, t, suffix, filename, currPath, ln+index)
@@ -88,13 +88,12 @@ LOOP:
 }
 
 func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
-	words, l := utils.SplitSpaceN(suffix, 2)
-	if l < 1 {
+	if suffix == "" {
 		p.syntaxError("@query", 1, filename, ln)
 		return
 	}
 
-	s, err := p.search.New(t, currPath, words[0], true)
+	s, err := p.search.New(t, currPath, suffix, true)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {

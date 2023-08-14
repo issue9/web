@@ -42,7 +42,7 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+delta)
 		case "@cookie": // @cookie name *desc
 			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+delta)
-		case "@query": // @query object.path *desc
+		case "@query": // @query object.path
 			p.addQuery(t, opt, currPath, suffix, filename, ln+delta)
 		case "@req": // @req text/* object.path *desc
 			p.parseRequest(opt, t, suffix, filename, currPath, ln+delta)
