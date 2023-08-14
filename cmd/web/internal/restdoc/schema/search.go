@@ -26,10 +26,15 @@ type SearchFunc func(string) *pkg.Package
 // currPath 当前包的导出路径；
 // typePath 表示需要查找的类型名，非内置类型且不带路径信息，则将 currPath 作为路径信息；
 // typePath 可以包含类型参数，比如 G[int]。
+// 如果 typePath 以 #components/schemas 开头，则返回以 typePath 作为引用值的 *Ref 对象。
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
 func (f SearchFunc) New(t *openapi.OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
+	if strings.HasPrefix(typePath, refPrefix) {
+		return NewRef(typePath, nil), nil
+	}
+
 	var isArray bool
 	if strings.HasPrefix(typePath, "[]") {
 		typePath = typePath[2:]

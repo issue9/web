@@ -49,6 +49,16 @@ func TestSearchFunc_New(t *testing.T) {
 	modPath := "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
 	modRef := refReplacer.Replace(modPath)
 
+	// #components/schemas/abc
+	t.Run(refPrefix, func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		refPath := refPrefix + ".admin.notFound"
+		ref, err := f.New(tt, modPath, refPath, false)
+		a.NotError(err).Equal(ref.Ref, refPath).Nil(ref.Value)
+	})
+
 	// NotFound
 	t.Run("NotFound", func(t *testing.T) {
 		a := assert.New(t, false)

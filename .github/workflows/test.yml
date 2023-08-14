@@ -39,7 +39,7 @@ jobs:
       - name: Test cmd
         env:
           LANG: en
-        run: 
+        run: |
           cd cmd/web
           go test ./...
 
