@@ -43,12 +43,11 @@ func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 	if desc != "" {
 		lines = strings.Split(desc, "\n")
 	} else {
-		lines = strings.Split(title, "\n")
+		lines = []string{title}
 	}
 
 	for _, line := range lines {
-		tag, suffix := utils.CutTag(line)
-		switch tag {
+		switch tag, suffix := utils.CutTag(line); tag {
 		case "@enum", "@enums": // @enum e1 e2 e3
 			for _, word := range strings.Fields(suffix) {
 				enums = append(enums, word)

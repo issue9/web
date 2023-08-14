@@ -5,7 +5,7 @@
 openapi: 3.1.0
 components:
   schemas:
-    Problem:
+    github.com.issue9.web.Problem:
       type: object
       properties:
         title:
