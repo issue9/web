@@ -53,6 +53,4 @@ func (err *stackError) FormatError(p xerrors.Printer) error {
 	return nil
 }
 
-func (err *stackError) Is(target error) bool { return err.err == target }
-
 func (err *stackError) Unwrap() error { return err.err }

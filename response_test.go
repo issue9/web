@@ -98,9 +98,9 @@ func TestNotModified(t *testing.T) {
 		Do(nil).
 		Status(http.StatusNotModified)
 
-	// get /errors-500
+		// get /errors-500
 
-	resp = servertest.Get(a, "http://localhost:8080/errors-500").
+	servertest.Get(a, "http://localhost:8080/errors-500").
 		Do(nil).
 		Status(http.StatusInternalServerError).
 		Resp()

@@ -111,16 +111,16 @@ func (ctx *Context) Problem(id string) Problem {
 
 // InternalServerError 输出 ERROR 通道并向返回 500 表示的 [Problem] 对象
 func (ctx *Context) InternalServerError(err error) Problem {
-	return ctx.logError(4, problems.ProblemInternalServerError, logs.Error, err)
+	return ctx.logError(3, problems.ProblemInternalServerError, logs.Error, err)
 }
 
 // Error 将 err 输出到日志并以指定 id 的 [Problem] 返回
 func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
-	return ctx.logError(4, id, level, err)
+	return ctx.logError(3, id, level, err)
 }
 
 func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
-	ctx.Logs().NewRecord(level).DepthError(3, err)
+	ctx.Logs().NewRecord(level).DepthError(depth, err)
 	return ctx.Problem(id)
 }
 
@@ -129,14 +129,6 @@ func (ctx *Context) NotFound() Problem { return ctx.Problem(problems.ProblemNotF
 
 func (ctx *Context) NotImplemented() Problem { return ctx.Problem(problems.ProblemNotImplemented) }
 
-// Logs 返回日志对象
-//
-// 所有日志接口都会根据 [Server.LocalePrinter] 进行本地化，规则如下：
-//   - Logger.Error 如果参数实现了 [localeutil.LocaleStringer] 接口，会尝试本地化；
-//   - Logger.String 会采用 [message.Printer.Sprintf] 进行本地化；
-//   - Logger.Printf 会采用 [message.Printer.Sprintf] 进行本地化，且每个参数也将进行本地化；
-//   - Logger.Print 对每个参数分别进行本地化，然后调用 [fmt.Sprint] 输出；
-//   - Logger.Println 对每个参数分别进行本地化，然后调用 [fmt.Sprintln] 输出；
 func (srv *Server) Logs() logs.Logs { return srv.logs }
 
 // NewFilterProblem 声明用于处理过滤器的错误对象
