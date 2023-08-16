@@ -126,3 +126,10 @@ func NewFieldError(field string, msg any) *FieldError {
 func NewLocaleError(format string, v ...any) error {
 	return localeutil.Error(format, v...)
 }
+
+// NewHTTPError 用 HTTP 状态码包装一个错误信息
+//
+// 此方法返回的错误，在 [Context.Error] 会被识别且按指定的状态码输出。
+func NewHTTPError(status int, err error) error {
+	return errs.NewHTTPError(status, err)
+}

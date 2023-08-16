@@ -3,11 +3,13 @@
 package server
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/issue9/localeutil"
 
 	"github.com/issue9/web/filter"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
 )
@@ -109,18 +111,23 @@ func (ctx *Context) Problem(id string) Problem {
 	return ctx.Server().problems.Problem(ctx.LocalePrinter(), id)
 }
 
-// InternalServerError 输出 ERROR 通道并向返回 500 表示的 [Problem] 对象
-func (ctx *Context) InternalServerError(err error) Problem {
-	return ctx.logError(3, problems.ProblemInternalServerError, logs.Error, err)
-}
+// Error 将 err 输出到 ERROR 通道并尝试以指定 id 的 [Problem] 返回
+//
+// 如果 id 为空，尝试以下顺序获得值：
+//   - err 是否是由 [web.NewHTTPError] 创建，如果是则采用 err.Status 取得 ID 值；
+//   - 采用 [problems.ProblemInternalServerError]；
+func (ctx *Context) Error(err error, id string) Problem {
+	if id == "" {
+		var herr *errs.HTTP
+		if errors.As(err, &herr) {
+			id = problems.ID(herr.Status)
+			err = herr.Message
+		} else {
+			id = problems.ProblemInternalServerError
+		}
+	}
 
-// Error 将 err 输出到日志并以指定 id 的 [Problem] 返回
-func (ctx *Context) Error(id string, level logs.Level, err error) Problem {
-	return ctx.logError(3, id, level, err)
-}
-
-func (ctx *Context) logError(depth int, id string, level logs.Level, err error) Problem {
-	ctx.Logs().NewRecord(level).DepthError(depth, err)
+	ctx.Logs().NewRecord(logs.Error).DepthError(2, err)
 	return ctx.Problem(id)
 }
 

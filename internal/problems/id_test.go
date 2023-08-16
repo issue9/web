@@ -14,3 +14,9 @@ func TestStatus(t *testing.T) {
 	a.Equal(Status(ProblemBadGateway), http.StatusBadGateway)
 	a.Zero(Status("not-exists"))
 }
+
+func TestID(t *testing.T) {
+	a := assert.New(t, false)
+	a.Equal(ID(http.StatusBadGateway), ProblemBadGateway)
+	a.Zero(ID(1000))
+}

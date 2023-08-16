@@ -37,8 +37,8 @@ func TestStackError(t *testing.T) {
 	s = fmt.Sprintf("%+v", err)
 	a.Contains(s, "32") // 依赖调用 NewStackError 的行号
 
-	target := &cerr{}
-	a.True(errors.As(err, &target)).Equal(target.Error(), err1.Error())
+	var target1 *cerr
+	a.True(errors.As(err, &target1)).Equal(target1.Error(), err1.Error())
 
 	// 二次包装
 
@@ -50,6 +50,6 @@ func TestStackError(t *testing.T) {
 	s = fmt.Sprintf("%+v", err)
 	a.Contains(s, "32") // 依赖调用 NewStackError 的行号
 
-	target = &cerr{}
-	a.True(errors.As(err, &target)).Equal(target.Error(), err1.Error())
+	var target2 *cerr
+	a.True(errors.As(err, &target2)).Equal(target2.Error(), err1.Error())
 }

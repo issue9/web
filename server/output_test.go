@@ -14,6 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/internal/testdata"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server/servertest"
@@ -217,7 +218,7 @@ func TestContext_Render(t *testing.T) {
 		ctx.WriteHeader(http.StatusEarlyHints)
 		_, err := ctx.Write([]byte(`123`))
 		if err != nil {
-			return ctx.InternalServerError(err)
+			return ctx.Error(err, problems.ProblemInternalServerError)
 		}
 		return nil
 	})

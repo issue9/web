@@ -14,15 +14,15 @@ type stackError struct {
 	frame xerrors.Frame
 }
 
-// NewStackError 为 err 带上调用信息
+func NewStackError(err error) error { return NewDepthStackError(2, err) }
+
+// NewDepthStackError 为 err 带上调用信息
 //
 // 位置从调用 NewStackError 开始。
 // 如果 err 为 nil，则返回 nil。
 // 多次调用 NewStackError 包装，则返回第一次包装的返回值。
 //
 // 如果需要输出调用堆栈信息，需要指定 %+v 标记。
-func NewStackError(err error) error { return NewDepthStackError(2, err) }
-
 func NewDepthStackError(depth int, err error) error {
 	if err == nil {
 		return nil

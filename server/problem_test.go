@@ -16,6 +16,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/filter"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
 )
 
@@ -37,7 +38,7 @@ func max(v int) filter.ValidatorFuncOf[int] {
 }
 
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
-func TestContext_Log(t *testing.T) {
+func TestContext_Error(t *testing.T) {
 	a := assert.New(t, false)
 	errLog := new(bytes.Buffer)
 
@@ -46,25 +47,51 @@ func TestContext_Log(t *testing.T) {
 	})
 	errLog.Reset()
 
-	t.Run("InternalServerError", func(t *testing.T) {
-		a := assert.New(t, false)
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Request()
-		ctx := srv.newContext(w, r, nil)
-		ctx.InternalServerError(errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:54") // NOTE: 此测试依赖上一行的行号
-		a.Contains(errLog.String(), "log1 log2")
-		a.Equal(w.Code, 500)
-	})
-
-	t.Run("Log", func(t *testing.T) {
+	t.Run("id=empty", func(t *testing.T) {
 		a := assert.New(t, false)
 		errLog.Reset()
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
-		ctx.Error("41110", logs.Error, errors.New("log1 log2")).Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:66") // NOTE: 此测试依赖上一行的行号
+		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:56") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
+		a.Equal(w.Code, http.StatusInternalServerError)
+
+		// errs.HTTP
+
+		errLog.Reset()
+		w = httptest.NewRecorder()
+		r = rest.Get(a, "/path").Request()
+		ctx = srv.newContext(w, r, nil)
+		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:68") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
+		a.Equal(w.Code, http.StatusBadRequest)
+	})
+
+	t.Run("id=41110", func(t *testing.T) {
+		a := assert.New(t, false)
+		errLog.Reset()
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Request()
+		ctx := srv.newContext(w, r, nil)
+		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:81") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "log1 log2")
+		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
+		a.Equal(w.Code, 411)
+
+		// errs.HTTP
+
+		errLog.Reset()
+		w = httptest.NewRecorder()
+		r = rest.Get(a, "/path").Request()
+		ctx = srv.newContext(w, r, nil)
+		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:93") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)

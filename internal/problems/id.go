@@ -101,4 +101,14 @@ var statuses = map[string]int{
 	ProblemNetworkAuthenticationRequired: http.StatusNetworkAuthenticationRequired,
 }
 
+var ids = make(map[int]string, len(statuses))
+
+func init() {
+	for k, v := range statuses {
+		ids[v] = k
+	}
+}
+
 func Status(id string) int { return statuses[id] }
+
+func ID(status int) string { return ids[status] }
