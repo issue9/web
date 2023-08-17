@@ -12,10 +12,15 @@ components:
           type: string
         type:
           type: string
+          format: uri
+          default: 'about:blank'
         detail:
           type: string
         status:
           type: integer
+          format: int32
+          minimum: 100
+          maximum: 600
         params:
           type: array
           items:
