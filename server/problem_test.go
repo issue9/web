@@ -29,11 +29,11 @@ type object struct {
 
 func required[T any](v T) bool { return !reflect.ValueOf(v).IsZero() }
 
-func min(v int) filter.ValidatorFuncOf[int] {
+func min(v int) func(int) bool {
 	return func(a int) bool { return a >= v }
 }
 
-func max(v int) filter.ValidatorFuncOf[int] {
+func max(v int) func(int) bool {
 	return func(a int) bool { return a < v }
 }
 
@@ -198,8 +198,7 @@ func TestFilter_When(t *testing.T) {
 	ctx := s.newContext(w, r, nil)
 
 	min18 := filter.NewRule(min(18), localeutil.Phrase("不能小于 18"))
-	req := filter.ValidatorFuncOf[string](required[string])
-	notEmpty := filter.NewRule(req, localeutil.Phrase("不能为空"))
+	notEmpty := filter.NewRule(required[string], localeutil.Phrase("不能为空"))
 
 	obj := &object{}
 	v := ctx.NewFilterProblem(false).

@@ -65,7 +65,7 @@ func NewSliceRules[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
 	}
 }
 
-// NewMapRule 声明用于验证 map 元素的规则
+// NewMapRule 声明验证 map 元素的规则
 func NewMapRule[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.LocaleStringer) RulerFuncOf[M] {
 	return func(name string, val M) (string, localeutil.LocaleStringer) {
 		for key, vv := range val {
