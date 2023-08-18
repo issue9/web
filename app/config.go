@@ -85,11 +85,8 @@ type configOf[T any] struct {
 	UniqueGenerator string `yaml:"uniqueGenerator,omitempty" json:"uniqueGenerator,omitempty" xml:"uniqueGenerator,omitempty"`
 	uniqueGenerator server.UniqueGenerator
 
-	// 错误代码的配置
-	//
-	// 可以为空，表示采用 [server.Options] 的默认值。
-	Problem  *problemConfig `yaml:"problem,omitempty" json:"problem,omitempty" xml:"problem,omitempty"`
-	problems *server.Problems
+	// Problem 中 type 字段的前缀
+	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -129,12 +126,12 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 		Locale: &server.Locale{
 			Language: conf.languageTag,
 		},
-		RoutersOptions:  conf.HTTP.routersOptions,
-		UniqueGenerator: conf.uniqueGenerator,
-		RequestIDKey:    conf.HTTP.RequestID,
-		Encodings:       conf.encodings,
-		Mimetypes:       conf.mimetypes,
-		Problems:        conf.problems,
+		RoutersOptions:    conf.HTTP.routersOptions,
+		UniqueGenerator:   conf.uniqueGenerator,
+		RequestIDKey:      conf.HTTP.RequestID,
+		Encodings:         conf.encodings,
+		Mimetypes:         conf.mimetypes,
+		ProblemTypePrefix: conf.ProblemTypePrefix,
 	}
 
 	srv, err := server.New(name, version, opt)
@@ -207,10 +204,6 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 	}
 	if g, found := uniqueGeneratorFactory[conf.UniqueGenerator]; found {
 		conf.uniqueGenerator = g()
-	}
-
-	if conf.problems, err = conf.Problem.sanitize(); err != nil {
-		return err.AddFieldParent("problem")
 	}
 
 	if conf.User != nil {

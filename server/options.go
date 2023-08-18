@@ -96,21 +96,11 @@ type (
 		Mimetypes []*Mimetype
 		mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
 
-		// 针对错误代码的配置
-		Problems *Problems
-		problems *problems.Problems[Problem]
-	}
-
-	Problems struct {
-		// 生成 [Problem] 对象的方法
-		//
-		// 如果为空，那么将采用 [RFC7807Builder] 作为默认值。
-		Builder BuildProblemFunc
-
-		// Problem 为传递给 BuildProblemFunc 的 id 参数指定前缀
+		// ProblemTypePrefix 所有 type 字段的前缀
 		//
 		// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
-		IDPrefix string
+		ProblemTypePrefix string
+		problems          *problems.Problems
 	}
 
 	Mimetype struct {
@@ -232,7 +222,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.mimetypes.Add(mt.Type, mt.Marshal, mt.Unmarshal, mt.ProblemType)
 	}
 
-	o.problems = o.Problems.sanitize()
+	o.problems = problems.New(o.ProblemTypePrefix)
 
 	return o, nil
 }
@@ -251,17 +241,6 @@ func (e *Encoding) sanitize() *config.FieldError {
 	}
 
 	return nil
-}
-
-func (ps *Problems) sanitize() *problems.Problems[Problem] {
-	if ps == nil {
-		return problems.New("", RFC7807Builder)
-	}
-
-	if ps.Builder == nil {
-		ps.Builder = RFC7807Builder
-	}
-	return problems.New(ps.IDPrefix, ps.Builder)
 }
 
 func (l *Locale) sanitize() *config.FieldError {

@@ -341,3 +341,12 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 		obj(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
 }
+
+func BenchmarkNewProblem(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		p := newProblem().init("id", "title", "detail", 200)
+		p.WithField("custom", "custom")
+		p.WithParam("p1", "v1")
+		problemPool.Put(p)
+	}
+}

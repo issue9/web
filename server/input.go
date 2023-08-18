@@ -21,19 +21,16 @@ import (
 
 const defaultBodyBufferSize = 256
 
-var (
-	pathPool  = &sync.Pool{New: func() any { return &Paths{} }}
-	queryPool = &sync.Pool{New: func() any { return &Queries{} }}
-)
+var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
 // Paths 提供对路径参数的处理
 type Paths struct {
-	v *FilterProblem
+	filter *FilterProblem
 }
 
 // Queries 提供对查询参数的处理
 type Queries struct {
-	v       *FilterProblem
+	filter  *FilterProblem
 	queries url.Values
 }
 
@@ -49,24 +46,21 @@ type CTXFilter interface {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	ps := pathPool.Get().(*Paths)
-	ps.v = ctx.NewFilterProblem(exitAtError)
-	ctx.OnExit(func(*Context, int) { pathPool.Put(ps) })
-	return ps
+	return &Paths{filter: ctx.NewFilterProblem(exitAtError)}
 }
 
 // ID 返回 key 所表示的值且必须大于 0
 func (p *Paths) ID(key string) int64 {
-	if !p.v.continueNext() {
+	if !p.filter.continueNext() {
 		return 0
 	}
 
-	id, err := p.v.Context().Route().Params().Int(key)
+	id, err := p.filter.Context().Route().Params().Int(key)
 	if err != nil {
-		p.v.AddError(key, err)
+		p.filter.AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.v.Add(key, locales.ShouldGreatThanZero)
+		p.filter.Add(key, locales.ShouldGreatThanZero)
 		return 0
 	}
 	return id
@@ -74,13 +68,13 @@ func (p *Paths) ID(key string) int64 {
 
 // Int64 获取参数 key 所代表的值并转换成 int64 类型
 func (p *Paths) Int64(key string) int64 {
-	if !p.v.continueNext() {
+	if !p.filter.continueNext() {
 		return 0
 	}
 
-	ret, err := p.v.Context().Route().Params().Int(key)
+	ret, err := p.filter.Context().Route().Params().Int(key)
 	if err != nil {
-		p.v.AddError(key, err)
+		p.filter.AddError(key, err)
 		return 0
 	}
 	return ret
@@ -88,13 +82,13 @@ func (p *Paths) Int64(key string) int64 {
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Paths) String(key string) string {
-	if !p.v.continueNext() {
+	if !p.filter.continueNext() {
 		return ""
 	}
 
-	ret, err := p.v.Context().Route().Params().String(key)
+	ret, err := p.filter.Context().Route().Params().String(key)
 	if err != nil {
-		p.v.AddError(key, err)
+		p.filter.AddError(key, err)
 		return ""
 	}
 	return ret
@@ -104,26 +98,26 @@ func (p *Paths) String(key string) string {
 //
 // 由 [strconv.ParseBool] 进行转换。
 func (p *Paths) Bool(key string) bool {
-	if !p.v.continueNext() {
+	if !p.filter.continueNext() {
 		return false
 	}
 
-	ret, err := p.v.Context().Route().Params().Bool(key)
+	ret, err := p.filter.Context().Route().Params().Bool(key)
 	if err != nil {
-		p.v.AddError(key, err)
+		p.filter.AddError(key, err)
 	}
 	return ret
 }
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Paths) Float64(key string) float64 {
-	if !p.v.continueNext() {
+	if !p.filter.continueNext() {
 		return 0
 	}
 
-	ret, err := p.v.Context().Route().Params().Float(key)
+	ret, err := p.filter.Context().Route().Params().Float(key)
 	if err != nil {
-		p.v.AddError(key, err)
+		p.filter.AddError(key, err)
 	}
 	return ret
 }
@@ -131,53 +125,45 @@ func (p *Paths) Float64(key string) float64 {
 // Problem 将当前对象转换成 [Problem] 对象
 //
 // 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
-func (p *Paths) Problem(id string) Responser { return p.v.Problem(id) }
+func (p *Paths) Problem(id string) Responser { return p.filter.Problem(id) }
 
 // PathID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
 //
-// NOTE: 若需要获取多个参数，使用 [Context.Params] 会更方便。
+// NOTE: 若需要获取多个参数，使用 [Context.Paths] 会更方便。
 func (ctx *Context) PathID(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
-		pp := ctx.Problem(id)
-		pp.AddParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
-		return 0, pp
+		return 0, ctx.Problem(id).WithParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
 	} else if ret <= 0 {
-		pp := ctx.Problem(id)
-		pp.AddParam(key, locales.ShouldGreatThanZero.LocaleString(p))
-		return 0, pp
+		return 0, ctx.Problem(id).WithParam(key, locales.ShouldGreatThanZero.LocaleString(p))
 	}
 	return ret, nil
 }
 
 // PathInt64 取地址参数中的 key 表示的值并尝试工转换成 int64 类型
 //
-// NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
+// NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		pp := ctx.Problem(id)
-		pp.AddParam(key, msg)
-		return 0, pp
+		return 0, ctx.Problem(id).WithParam(key, msg)
 	}
 	return ret, nil
 }
 
 // PathString 取地址参数中的 key 表示的值并尝试工转换成 string 类型
 //
-// NOTE: 若需要获取多个参数，可以使用 [Context.Params] 获取会更方便。
+// NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathString(key, id string) (string, Responser) {
 	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
-		pp := ctx.Problem(id)
-		pp.AddParam(key, msg)
-		return "", pp
+		return "", ctx.Problem(id).WithParam(key, msg)
 	}
 	return ret, nil
 }
@@ -192,7 +178,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.v = ctx.NewFilterProblem(exitAtError)
+	q.filter = ctx.NewFilterProblem(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
@@ -204,7 +190,7 @@ func (q *Queries) getItem(key string) (val string) { return q.queries.Get(key) }
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int(key string, def int) int {
-	if !q.v.continueNext() {
+	if !q.filter.continueNext() {
 		return 0
 	}
 
@@ -217,7 +203,7 @@ func (q *Queries) Int(key string, def int) int {
 	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil { // strconv.Atoi 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -228,7 +214,7 @@ func (q *Queries) Int(key string, def int) int {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int64(key string, def int64) int64 {
-	if !q.v.continueNext() {
+	if !q.filter.continueNext() {
 		return 0
 	}
 
@@ -239,7 +225,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 
 	v, err := strconv.ParseInt(str, 10, 64)
 	if err != nil { // strconv.ParseInt 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -250,7 +236,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
-	if !q.v.continueNext() {
+	if !q.filter.continueNext() {
 		return ""
 	}
 
@@ -265,7 +251,7 @@ func (q *Queries) String(key, def string) string {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Bool(key string, def bool) bool {
-	if !q.v.continueNext() {
+	if !q.filter.continueNext() {
 		return false
 	}
 
@@ -276,7 +262,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 	v, err := strconv.ParseBool(str)
 	if err != nil { // strconv.ParseBool 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -287,7 +273,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Float64(key string, def float64) float64 {
-	if !q.v.continueNext() {
+	if !q.filter.continueNext() {
 		return 0
 	}
 
@@ -298,7 +284,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil { // strconv.ParseFloat 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.v.Add(key, localeutil.Phrase(err.Error()))
+		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
 
@@ -308,7 +294,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 // Problem 将当前对象转换成 [Problem] 对象
 //
 // 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
-func (q *Queries) Problem(id string) Responser { return q.v.Problem(id) }
+func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
 
 // Object 将查询参数解析到一个对象中
 //
@@ -324,12 +310,12 @@ func (q *Queries) Object(v any, id string) {
 			msg = localeutil.Phrase(err.Error())
 		}
 
-		q.v.Add(field, msg)
+		q.filter.Add(field, msg)
 	})
 
-	if q.v.continueNext() {
+	if q.filter.continueNext() {
 		if s, ok := v.(CTXFilter); ok {
-			s.CTXFilter(q.v)
+			s.CTXFilter(q.filter)
 		}
 	}
 }

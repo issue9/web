@@ -7,16 +7,12 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
-
-func builder(id string, status int, title, detail string) string { return id }
 
 func TestProblems_Add_Problems(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := New("", builder)
+	ps := New("")
 	a.NotNil(ps)
 	l := len(ps.problems)
 	a.Equal(l, len(statuses))
@@ -44,24 +40,29 @@ func TestProblems_Add_Problems(t *testing.T) {
 
 func TestProblems_Problem(t *testing.T) {
 	a := assert.New(t, false)
-	printer := message.NewPrinter(language.Chinese)
 
-	ps := New("", builder)
+	ps := New("")
 	a.NotNil(ps)
 	ps.Add("40010", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(ps.Problem(printer, "40010"), "40010")
+	p := ps.Problem("40010")
+	a.Equal(p.Type, "40010").
+		Equal(p.id, "40010")
 
-	ps = New("https://example.com/qa#", builder)
+	ps = New("https://example.com/qa#")
 	a.NotNil(ps)
 	ps.Add("40011", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(ps.Problem(printer, "40011"), "https://example.com/qa#40011")
+	p = ps.Problem("40011")
+	a.Equal(p.Type, "https://example.com/qa#40011").
+		Equal(p.id, "40011")
 
-	ps = New(ProblemAboutBlank, builder)
+	ps = New(ProblemAboutBlank)
 	a.NotNil(ps)
 	ps.Add("40012", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
-	a.Equal(ps.Problem(printer, "40012"), ProblemAboutBlank)
+	p = ps.Problem("40012")
+	a.Equal(p.Type, ProblemAboutBlank).
+		Equal(p.id, "40012")
 
 	a.PanicString(func() {
-		ps.Problem(printer, "not-exists")
+		ps.Problem("not-exists")
 	}, "未找到有关 not-exists 的定义")
 }

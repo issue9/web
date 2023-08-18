@@ -54,15 +54,15 @@ func TestPaths_ID(t *testing.T) {
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.ID("i1"), 1).
-			Equal(ps.v.len(), 0)
+			Equal(ps.filter.len(), 0)
 
 		// 负数
 		a.Equal(ps.ID("i2"), 0).
-			Equal(ps.v.len(), 1)
+			Equal(ps.filter.len(), 1)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.ID("i3"), 0)
-		a.Equal(ps.v.len(), 2)
+		a.Equal(ps.filter.len(), 2)
 
 		return nil
 	})
@@ -81,11 +81,11 @@ func TestPaths_Int(t *testing.T) {
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Int64("i1"), 1)
-		a.Equal(ps.Int64("i2"), 2).Equal(ps.v.len(), 0)
+		a.Equal(ps.Int64("i2"), 2).Equal(ps.filter.len(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Int64("i3"), 0)
-		a.Equal(ps.v.len(), 1)
+		a.Equal(ps.filter.len(), 1)
 
 		return nil
 	})
@@ -104,11 +104,11 @@ func TestPaths_Bool(t *testing.T) {
 		ps := ctx.Paths(false)
 
 		a.True(ps.Bool("b1"))
-		a.False(ps.Bool("b2")).Equal(ps.v.len(), 0)
+		a.False(ps.Bool("b2")).Equal(ps.filter.len(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.False(ps.Bool("b3"))
-		a.Equal(ps.v.len(), 1)
+		a.Equal(ps.filter.len(), 1)
 
 		return nil
 	})
@@ -128,11 +128,11 @@ func TestPaths_String(t *testing.T) {
 
 		a.Equal(ps.String("s1"), "str1")
 		a.Equal(ps.String("s2"), "str2")
-		a.Zero(ps.v.len())
+		a.Zero(ps.filter.len())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.String("s3"), "")
-		a.Equal(ps.v.len(), 1)
+		a.Equal(ps.filter.len(), 1)
 
 		return nil
 	})
@@ -152,11 +152,11 @@ func TestPaths_Float(t *testing.T) {
 
 		a.Equal(ps.Float64("f1"), 1.1)
 		a.Equal(ps.Float64("f2"), 2.2)
-		a.Zero(ps.v.len())
+		a.Zero(ps.filter.len())
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Float64("f3"), 0.0)
-		a.Equal(ps.v.len(), 1)
+		a.Equal(ps.filter.len(), 1)
 
 		return nil
 	})

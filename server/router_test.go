@@ -87,7 +87,7 @@ func TestServer_FileServer(t *testing.T) {
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(404).
-			StringBody(`{"type":"404","title":"NOT FOUND","status":404,"detail":"problem.404.detail"}`)
+			StringBody(`{"type":"404","title":"NOT FOUND","detail":"problem.404.detail","status":404}`)
 	})
 
 	t.Run("no problems", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestServer_FileServer(t *testing.T) {
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(http.StatusNotFound).
-			StringBody(`{"type":"404","title":"NOT FOUND","status":404,"detail":"problem.404.detail"}`)
+			StringBody(`{"type":"404","title":"NOT FOUND","detail":"problem.404.detail","status":404}`)
 	})
 }
 
