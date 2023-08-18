@@ -49,7 +49,7 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems  *problems.Problems[Problem]
+	problems  *problems.Problems
 	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
 	encodings *encoding.Encodings
 	config    *config.Config
@@ -235,3 +235,5 @@ func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 
 // Config 配置文件的相关操作
 func (srv *Server) Config() *config.Config { return srv.config }
+
+func (srv *Server) Logs() logs.Logs { return srv.logs }

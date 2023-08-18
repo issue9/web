@@ -80,6 +80,7 @@ type (
 	ResponserFunc  = server.ResponserFunc
 	CTXFilter      = server.CTXFilter
 	FilterProblem  = server.FilterProblem
+	Problem        = server.Problem
 	Cache          = cache.Cache
 	Logger         = logs.Logger
 	Logs           = logs.Logs

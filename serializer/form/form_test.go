@@ -8,7 +8,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/server"
 )
 
@@ -19,7 +18,7 @@ var (
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
 
-	_ Marshaler = &problems.RFC7807[*server.Context]{}
+	_ Marshaler = &server.Problem{}
 )
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"

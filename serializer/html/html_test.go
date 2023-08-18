@@ -7,7 +7,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/server"
 )
 
@@ -15,7 +14,7 @@ var (
 	_ server.MarshalFunc   = Marshal
 	_ server.UnmarshalFunc = Unmarshal
 
-	_ Marshaler = &problems.RFC7807[*server.Context]{}
+	_ Marshaler = &server.Problem{}
 )
 
 func TestGetName(t *testing.T) {
@@ -44,13 +43,12 @@ func TestGetName(t *testing.T) {
 	name, v = getName(&obj4{})
 	a.Equal(name, "obj4").Empty(v)
 
-	name, v = getName(server.RFC7807Builder("id", 500, "title", "detail"))
+	p := &server.Problem{} // 实现了 Marshaler
+	p.Fields = []server.ProblemField{{Key: "title", Value: "title"}}
+	name, v = getName(p)
 	a.Equal(name, "problem").
 		Equal(v, map[string]any{
-			"type":   "id",
-			"title":  "title",
-			"status": 500,
-			"detail": "detail",
+			"title": "title",
 		})
 
 	a.PanicString(func() {

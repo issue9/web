@@ -21,6 +21,8 @@ const (
 )
 
 // problem 的文档说明
+//
+// NOTE: 主要是为了让 web locale 能正常提取
 const (
 	Problem400       = localeutil.StringPhrase("problem.400")
 	Problem400Detail = localeutil.StringPhrase("problem.400.detail")

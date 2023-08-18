@@ -23,18 +23,6 @@ func TestSanitizeOptions(t *testing.T) {
 		Equal(o.RequestIDKey, RequestIDKey)
 }
 
-func TestProblem_sanitize(t *testing.T) {
-	a := assert.New(t, false)
-
-	var p *Problems
-	ps := p.sanitize()
-	a.NotNil(ps)
-
-	p = &Problems{}
-	ps = p.sanitize()
-	a.NotNil(ps)
-}
-
 func TestNewPrinter(t *testing.T) {
 	a := assert.New(t, false)
 
