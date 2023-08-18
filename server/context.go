@@ -26,7 +26,7 @@ const contextPoolBodyBufferMaxSize = 1 << 16
 
 var contextPool = &sync.Pool{
 	New: func() any {
-		return &Context{exits: make([]func(*Context, int), 0, 3)} // query, params, filter
+		return &Context{exits: make([]func(*Context, int), 0, 3)}
 	},
 }
 
@@ -71,7 +71,7 @@ type Context struct {
 
 	// 保存 Context 在存续期间的可复用变量
 	//
-	// 这是比 context.Value 更经济的传递变量方式，但是这并不是协程安全的。
+	// 这是比 [context.Value] 更经济的传递变量方式，但是这并不是协程安全的。
 	vars map[any]any
 
 	logs logs.Logs

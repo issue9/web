@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	problemPoolMaxSize  = 30 // problem.Fields + problem.Params 少于此值才会回收。
+	problemPoolMaxSize  = 30 // len(problem.Fields) + len(problem.Params) 少于此值才会回收。
 	problemParamsKey    = "params"
 	rfc8707XMLNamespace = "urn:ietf:rfc:7807"
 )
@@ -121,7 +121,7 @@ func (p *Problem) Apply(ctx *Context) {
 // WithParam 添加具体的错误字段及描述信息
 //
 // name 为字段名称；reason 为该字段的错误信息；
-func (p *Problem) WithParam(name string, reason string) *Problem {
+func (p *Problem) WithParam(name, reason string) *Problem {
 	if _, found := sliceutil.At(p.Params, func(pp problemParam, _ int) bool { return pp.Name == name }); found {
 		panic("已经存在")
 	}

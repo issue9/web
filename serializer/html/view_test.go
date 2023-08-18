@@ -71,7 +71,7 @@ func TestInstallView(t *testing.T) {
 		StringBody("\n<div>hant</div>\n<div>hans</div>\n")
 }
 
-func TestInstallView_dir(t *testing.T) {
+func TestInstallDirView(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "cmn-hans")
 	instalDirView(s, os.DirFS("./testdata/dir"), "*.tpl")
