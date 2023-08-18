@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+//go:generate go run ./make_id.go
+
 // Package problems 提供对 Problem 相关内容的管理
 package problems
 
@@ -31,8 +33,7 @@ func New(prefix string) *Problems {
 	}
 
 	for id, status := range statuses {
-		text := "problem." + id
-		p.Add(id, status, localeutil.Phrase(text), localeutil.Phrase(text+".detail"))
+		p.Add(id, status, locales[status], detailLocales[status])
 	}
 
 	return p
@@ -77,4 +78,9 @@ func (p *Problems) Problem(id string) *StatusProblem {
 	return sp
 }
 
+// TODO
 func IsValidStatus(status int) bool { return status >= 100 && status < 600 }
+
+func Status(id string) int { return statuses[id] }
+
+func ID(status int) string { return ids[status] }
