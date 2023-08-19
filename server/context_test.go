@@ -61,8 +61,8 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	}
 	if o.Encodings == nil {
 		o.Encodings = []*Encoding{
-			{Name: "gzip", Builder: EncodingGZip(8)},
-			{Name: "deflate", Builder: EncodingDeflate(8)},
+			{Name: "gzip", Builder: GZipWriter(8)},
+			{Name: "deflate", Builder: DeflateWriter(8)},
 		}
 	}
 	if o.Mimetypes == nil {

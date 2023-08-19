@@ -16,7 +16,6 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	xencoding "github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/logs"
@@ -49,7 +48,7 @@ type Context struct {
 	writer         io.Writer           // 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *xencoding.Alg
+	outputEncoding *alg
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
@@ -104,7 +103,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputEncoding, notAcceptable := srv.encodings.Search(mt.Name, h)
+	outputEncoding, notAcceptable := srv.searchAlg(mt.Name, h)
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -273,7 +272,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, notAcceptable := ctx.Server().encodings.Search(ctx.outputMimetype.Name, enc)
+	outputEncoding, notAcceptable := ctx.Server().searchAlg(ctx.outputMimetype.Name, enc)
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

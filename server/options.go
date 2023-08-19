@@ -3,24 +3,20 @@
 package server
 
 import (
-	"compress/lzw"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"github.com/issue9/unique/v2"
-	"github.com/klauspost/compress/zstd"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
@@ -124,15 +120,13 @@ type (
 		Name string
 
 		// 压缩算法的构建对象
-		Builder NewEncodingFunc
+		Builder NewEncoderFunc
 
 		// 该压缩算法支持的 content-type
 		//
 		// 如果为空，将被设置为 *
 		ContentTypes []string
 	}
-
-	NewEncodingFunc = encoding.NewEncodingFunc
 
 	// UniqueGenerator 唯一 ID 生成器的接口
 	UniqueGenerator interface {
@@ -265,20 +259,3 @@ func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
 	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
 	return message.NewPrinter(tag, message.Catalog(cat))
 }
-
-// EncodingGZip 返回指定配置的 gzip 算法
-func EncodingGZip(level int) NewEncodingFunc { return encoding.GZipWriter(level) }
-
-// EncodingDeflate 返回指定配置的 deflate 算法
-func EncodingDeflate(level int) NewEncodingFunc { return encoding.DeflateWriter(level) }
-
-// EncodingBrotli 返回指定配置的 br 算法
-func EncodingBrotli(o brotli.WriterOptions) NewEncodingFunc { return encoding.BrotliWriter(o) }
-
-// EncodingCompress 返回指定配置的 compress 算法
-func EncodingCompress(order lzw.Order, width int) NewEncodingFunc {
-	return encoding.CompressWriter(order, width)
-}
-
-// EncodingZstd 返回指定配置的 zstd 算法
-func EncodingZstd(o ...zstd.EOption) NewEncodingFunc { return encoding.ZstdWriter(o...) }

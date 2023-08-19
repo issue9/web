@@ -20,7 +20,7 @@ var encodingFactory = map[string]enc{}
 
 type enc struct {
 	name string
-	f    server.NewEncodingFunc
+	f    server.NewEncoderFunc
 }
 
 type encodingConfig struct {
@@ -73,7 +73,7 @@ func (conf *configOf[T]) sanitizeEncodings() *config.FieldError {
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
 // name 表示此压缩方法的名称，可以相同；
 // f 生成压缩对象的方法；
-func RegisterEncoding(id, name string, f server.NewEncodingFunc) {
+func RegisterEncoding(id, name string, f server.NewEncoderFunc) {
 	if _, found := encodingFactory[id]; found {
 		panic("已经存在相同的 id:" + id)
 	}
@@ -81,23 +81,23 @@ func RegisterEncoding(id, name string, f server.NewEncodingFunc) {
 }
 
 func init() {
-	RegisterEncoding("deflate-default", "deflate", server.EncodingDeflate(flate.DefaultCompression))
-	RegisterEncoding("deflate-best-compression", "deflate", server.EncodingDeflate(flate.BestCompression))
-	RegisterEncoding("deflate-best-speed", "deflate", server.EncodingDeflate(flate.BestSpeed))
+	RegisterEncoding("deflate-default", "deflate", server.DeflateWriter(flate.DefaultCompression))
+	RegisterEncoding("deflate-best-compression", "deflate", server.DeflateWriter(flate.BestCompression))
+	RegisterEncoding("deflate-best-speed", "deflate", server.DeflateWriter(flate.BestSpeed))
 
-	RegisterEncoding("gzip-default", "gzip", server.EncodingGZip(gzip.DefaultCompression))
-	RegisterEncoding("gzip-best-compression", "gzip", server.EncodingGZip(gzip.BestCompression))
-	RegisterEncoding("gzip-best-speed", "gzip", server.EncodingGZip(gzip.BestSpeed))
+	RegisterEncoding("gzip-default", "gzip", server.GZipWriter(gzip.DefaultCompression))
+	RegisterEncoding("gzip-best-compression", "gzip", server.GZipWriter(gzip.BestCompression))
+	RegisterEncoding("gzip-best-speed", "gzip", server.GZipWriter(gzip.BestSpeed))
 
-	RegisterEncoding("compress-lsb-8", "compress", server.EncodingCompress(lzw.LSB, 8))
-	RegisterEncoding("compress-msb-8", "compress", server.EncodingCompress(lzw.MSB, 8))
+	RegisterEncoding("compress-lsb-8", "compress", server.CompressWriter(lzw.LSB, 8))
+	RegisterEncoding("compress-msb-8", "compress", server.CompressWriter(lzw.MSB, 8))
 
-	RegisterEncoding("br-default", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterEncoding("br-best-compression", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterEncoding("br-best-speed", "br", server.EncodingBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterEncoding("br-default", "br", server.BrotliWriter(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterEncoding("br-best-compression", "br", server.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterEncoding("br-best-speed", "br", server.BrotliWriter(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterEncoding("zstd-default", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedDefault)))
-	RegisterEncoding("zstd-fastest", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedFastest)))
-	RegisterEncoding("zstd-better", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedBetterCompression)))
-	RegisterEncoding("zstd-best", "zstd", server.EncodingZstd(zstd.WithEncoderLevel(zstd.SpeedBestCompression)))
+	RegisterEncoding("zstd-default", "zstd", server.ZstdWriter(zstd.WithEncoderLevel(zstd.SpeedDefault)))
+	RegisterEncoding("zstd-fastest", "zstd", server.ZstdWriter(zstd.WithEncoderLevel(zstd.SpeedFastest)))
+	RegisterEncoding("zstd-better", "zstd", server.ZstdWriter(zstd.WithEncoderLevel(zstd.SpeedBetterCompression)))
+	RegisterEncoding("zstd-best", "zstd", server.ZstdWriter(zstd.WithEncoderLevel(zstd.SpeedBestCompression)))
 }

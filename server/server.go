@@ -19,7 +19,6 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/encoding"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
@@ -51,7 +50,7 @@ type Server struct {
 
 	problems  *problems.Problems
 	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
-	encodings *encoding.Encodings
+	algs      []*alg
 	config    *config.Config
 }
 
@@ -88,12 +87,12 @@ func New(name, version string, o *Options) (*Server, error) {
 
 		problems:  o.problems,
 		mimetypes: o.mimetypes,
-		encodings: encoding.NewEncodings(o.logs.ERROR()),
+		algs:      make([]*alg, 0, 10),
 		config:    o.Config,
 	}
 
 	for _, e := range o.Encodings {
-		srv.encodings.Add(e.Name, e.Builder, e.ContentTypes...)
+		srv.algs = append(srv.algs, newAlg(e.Name, e.Builder, e.ContentTypes...))
 	}
 	srv.routers = group.NewOf(srv.call,
 		notFound,

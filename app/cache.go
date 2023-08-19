@@ -15,7 +15,7 @@ import (
 
 var cacheFactory = map[string]CacheBuilder{}
 
-type CacheBuilder func(dsn string) (cache.Driver, error)
+type CacheBuilder = func(dsn string) (cache.Driver, error)
 
 type cacheConfig struct {
 	// 表示缓存的方式

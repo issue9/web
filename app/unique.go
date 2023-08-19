@@ -10,7 +10,7 @@ import (
 
 var uniqueGeneratorFactory = map[string]UniqueGeneratorBuilder{}
 
-type UniqueGeneratorBuilder func() server.UniqueGenerator
+type UniqueGeneratorBuilder = func() server.UniqueGenerator
 
 // RegisterUniqueGenerator 注册唯一 ID 生成器
 //

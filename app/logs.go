@@ -21,7 +21,7 @@ import (
 var logHandlersFactory = map[string]LogsHandlerBuilder{}
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
-type LogsHandlerBuilder func(args []string) (logs.Handler, func() error, error)
+type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
