@@ -3,18 +3,20 @@
 package mimetypes
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"testing"
 
 	"github.com/issue9/assert/v3"
 )
 
-func BenchmarkMimetypes_MarshalFunc(b *testing.B) {
+func BenchmarkMimetypes_Accept(b *testing.B) {
 	a := assert.New(b, false)
 	mt := New[marshalFunc, unmarshalFunc](10)
 	a.NotNil(mt)
 
 	mt.Add("font/wottf", xml.Marshal, xml.Unmarshal, "")
+	mt.Add("text/plain", json.Marshal, json.Unmarshal, "text/plain+problem")
 
 	for i := 0; i < b.N; i++ {
 		item := mt.Accept("font/wottf;q=0.9")

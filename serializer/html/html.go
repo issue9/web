@@ -69,7 +69,7 @@ func marshal(ctx *server.Context, v any) ([]byte, error) {
 		tag, _, _ := vv.b.Matcher().Match(ctx.LanguageTag())
 		tagName := message.NewPrinter(tag, message.Catalog(vv.b)).Sprintf(tagKey)
 		t, found := vv.dirTpls[tagName]
-		if !found { // 理论上不可能出现此种情况，Match 必定返回一个最相近的语种。
+		if !found { // 理论上不可能出现此种情况，Match 必定会返回一个最相近的语种。
 			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
 		}
 		tpl = t

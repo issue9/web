@@ -78,7 +78,7 @@ type Context struct {
 
 // MarshalFunc 序列化函数原型
 //
-// NOTE: MarshalFunc 的实现中不能调用 [Context.Render] 方法。
+// NOTE: MarshalFunc 的作是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
 type MarshalFunc func(*Context, any) ([]byte, error)
 
 // UnmarshalFunc 反序列化函数原型

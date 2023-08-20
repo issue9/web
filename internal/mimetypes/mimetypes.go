@@ -33,9 +33,7 @@ type (
 )
 
 func New[M any, U any](cap int) *Mimetypes[M, U] {
-	return &Mimetypes[M, U]{
-		types: make([]*Mimetype[M, U], 0, cap),
-	}
+	return &Mimetypes[M, U]{types: make([]*Mimetype[M, U], 0, cap)}
 }
 
 func (ms *Mimetypes[M, U]) exists(name string) bool {
