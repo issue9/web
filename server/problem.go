@@ -254,10 +254,8 @@ func (v *FilterProblem) When(cond bool, f func(v *FilterProblem)) *FilterProblem
 // Context 返回关联的 [Context] 实例
 func (v *FilterProblem) Context() *Context { return v.ctx }
 
-// Problem 转换成 [Problem] 对象
-//
-// 如果当前对象没有收集到错误，那么将返回 nil。
-func (v *FilterProblem) Problem(id string) *Problem {
+// Problem 如果有错误信息转换成 Problem 否则返回 nil
+func (v *FilterProblem) Problem(id string) Responser {
 	if v == nil || v.len() == 0 {
 		return nil
 	}

@@ -122,9 +122,7 @@ func (p *Paths) Float64(key string) float64 {
 	return ret
 }
 
-// Problem 将当前对象转换成 [Problem] 对象
-//
-// 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
+// Problem 如果有错误信息转换成 Problem 否则返回 nil
 func (p *Paths) Problem(id string) Responser { return p.filter.Problem(id) }
 
 // PathID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
@@ -291,9 +289,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 	return v
 }
 
-// Problem 将当前对象转换成 [Problem] 对象
-//
-// 仅在处理参数时有错误的情况下，才会转换成 [Problem] 对象，否则将返回空值。
+// Problem 如果有错误信息转换成 Problem 否则返回 nil
 func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
 
 // Object 将查询参数解析到一个对象中
