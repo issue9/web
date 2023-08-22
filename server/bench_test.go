@@ -24,11 +24,12 @@ import (
 )
 
 func obj(status int, body any, kv ...string) Responser {
-	return ResponserFunc(func(ctx *Context) {
+	return ResponserFunc(func(ctx *Context) *Problem {
 		for i := 0; i < len(kv); i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
-		ctx.Render(status, body, false)
+		ctx.Render(status, body)
+		return nil
 	})
 }
 

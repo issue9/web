@@ -19,12 +19,12 @@ type Responser interface {
 	//
 	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
 	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
-	Apply(*Context)
+	Apply(*Context) *Problem
 }
 
-type ResponserFunc func(*Context)
+type ResponserFunc func(*Context) *Problem
 
-func (f ResponserFunc) Apply(c *Context) { f(c) }
+func (f ResponserFunc) Apply(c *Context) *Problem { return f(c) }
 
 // SetWriter 自定义输出通道
 //
@@ -53,8 +53,7 @@ func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
 // body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码；
-// problem 表示 body 是否为 [Problem] 对象，对于 Problem 对象可能会有特殊的处理；
-func (ctx *Context) Render(status int, body any, problem bool) {
+func (ctx *Context) Render(status int, body any) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
 	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
 	// 调用方除了输出错误日志，也没有其它面向客户的补救措施。
@@ -64,7 +63,7 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLang, id)
 	}
@@ -72,13 +71,7 @@ func (ctx *Context) Render(status int, body any, problem bool) {
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		ctx.Logs().ERROR().Printf("%+v", err)
-
-		if problem {
-			ctx.WriteHeader(status)
-		} else {
-			id := problems.ProblemNotAcceptable
-			ctx.Render(problems.Status(id), ctx.Problem(id), true)
-		}
+		ctx.Problem(problems.ProblemNotAcceptable).Apply(ctx)
 		return
 	}
 

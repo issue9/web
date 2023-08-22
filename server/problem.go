@@ -17,6 +17,7 @@ import (
 
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
 )
@@ -111,11 +112,30 @@ func (p *Problem) init(id, title, detail string, status int) *Problem {
 	return p
 }
 
-func (p *Problem) Apply(ctx *Context) {
-	ctx.Render(p.status, p, true)
+func (p *Problem) Apply(ctx *Context) *Problem {
+	// NOTE: 此方法要始终返回 nil
+
+	ctx.WriteHeader(p.status)
+
+	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
+	if id := ctx.LanguageTag().String(); id != "" {
+		ctx.Header().Set(header.ContentLang, id)
+	}
+
+	data, err := ctx.Marshal(p)
+	if err != nil {
+		ctx.Logs().ERROR().Printf("%+v", err)
+		return nil
+	}
+
+	if _, err = ctx.Write(data); err != nil {
+		ctx.Logs().ERROR().Printf("%+v", err)
+	}
 	if len(p.Fields)+len(p.Params) < problemPoolMaxSize {
 		problemPool.Put(p)
 	}
+
+	return nil
 }
 
 // WithParam 添加具体的错误字段及描述信息

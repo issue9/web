@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
 )
 
 // NotModified 决定何时可返回 304 状态码
@@ -21,19 +20,17 @@ import (
 // 如果返回的是 []byte 类型，会原样输出，
 // 其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
-	return ResponserFunc(func(ctx *Context) {
+	return ResponserFunc(func(ctx *Context) *Problem {
 		if ctx.Request().Method == http.MethodGet {
 			if tag, weak := etag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
 				ctx.WriteHeader(http.StatusNotModified)
-				return
+				return nil
 			}
 		}
 
 		b, err := body()
 		if err != nil {
-			ctx.Logs().ERROR().Error(err)
-			ctx.Render(problems.Status(ProblemInternalServerError), ctx.Problem(ProblemInternalServerError), true)
-			return
+			return ctx.Error(err, ProblemInternalServerError)
 		}
 
 		var data []byte
@@ -42,9 +39,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 		} else {
 			data, err = ctx.Marshal(b)
 			if err != nil {
-				ctx.Logs().ERROR().Error(err)
-				ctx.Render(problems.Status(ProblemNotAcceptable), ctx.Problem(ProblemNotAcceptable), true)
-				return
+				return ctx.Error(err, ProblemNotAcceptable)
 			}
 		}
 
@@ -52,6 +47,8 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 		if _, err := ctx.Write(data); err != nil {
 			ctx.Logs().ERROR().Error(err)
 		}
+
+		return nil
 	})
 }
 
@@ -66,11 +63,13 @@ func Status(code int, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) {
+	return ResponserFunc(func(ctx *Context) *Problem {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
 		ctx.WriteHeader(code)
+
+		return nil
 	})
 }
 
@@ -84,11 +83,13 @@ func Response(status int, body any, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) {
+	return ResponserFunc(func(ctx *Context) *Problem {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
-		ctx.Render(status, body, false)
+		ctx.Render(status, body)
+
+		return nil
 	})
 }
 

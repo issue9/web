@@ -41,8 +41,9 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set("Allow", n.AllowHeader())
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
-				return ResponserFunc(func(ctx *Context) {
+				return ResponserFunc(func(ctx *Context) *Problem {
 					ctx.WriteHeader(http.StatusOK)
+					return nil
 				})
 			}
 			return ctx.Problem(strconv.Itoa(status))
@@ -53,7 +54,9 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps types.Route, f HandlerFunc) {
 	if ctx := srv.newContext(w, r, ps); ctx != nil {
 		if resp := f(ctx); resp != nil {
-			resp.Apply(ctx)
+			if p := resp.Apply(ctx); p != nil {
+				p.Apply(ctx) // Problem.Apply 始终返回 nil
+			}
 		}
 		ctx.destroy()
 	}
