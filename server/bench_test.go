@@ -127,7 +127,7 @@ func BenchmarkServer_newContext(b *testing.B) {
 	}
 }
 
-func BenchmarkContext_render(b *testing.B) {
+func BenchmarkContext_Render(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, nil)
 
@@ -348,10 +348,29 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 
 func BenchmarkNewProblem(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		p := newProblem().init("id", "title", "detail", 200)
+		p := newProblem().init("id", "title", "detail", 400)
 		p.WithField("custom", "custom")
 		p.WithParam("p1", "v1")
 		problemPool.Put(p)
+	}
+}
+
+func BenchmarkProblem_Apply_json(b *testing.B) {
+	a := assert.New(b, false)
+	s := newTestServer(a, nil)
+
+	w := httptest.NewRecorder()
+	r := rest.Post(a, "/path", nil).
+		Header("Accept", "application/json").
+		Header("content-type", "application/json").
+		Request()
+	ctx := s.newContext(w, r, nil)
+
+	p := newProblem().init("id", "title", "detail", 400)
+	p.WithField("custom", "custom")
+	p.WithParam("p1", "v1")
+	for i := 0; i < b.N; i++ {
+		p.Apply(ctx)
 	}
 }
 

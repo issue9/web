@@ -288,7 +288,16 @@ func (p *Problem) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}
 	b.WByte('{')
 
-	for _, field := range p.Fields {
+	// 前 4 个字段类型固定，不用 json.Marshal
+	for i := 0; i <= detailIndex; i++ {
+		field := p.Fields[i]
+		b.WByte('"').WString(field.Key).WString(`":"`).WString(field.Value.(string)).WString(`",`)
+	}
+	field := p.Fields[statusIndex]
+	b.WByte('"').WString(field.Key).WString(`":`).WString(strconv.Itoa(field.Value.(int))).WString(`,`)
+
+	for i := fixedSize; i < len(p.Fields); i++ {
+		field := p.Fields[i]
 		b.WByte('"').WString(field.Key).WString(`":`)
 
 		v, err := json.Marshal(field.Value)

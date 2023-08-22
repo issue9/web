@@ -14,10 +14,10 @@ import (
 
 type Problems struct {
 	prefix   string
-	problems []*StatusProblem // 不用 map，保证 Problems 顺序相同。
+	problems []*Problem // 不用 map，保证 Problems 顺序相同。
 }
 
-type StatusProblem struct {
+type Problem struct {
 	id string // 用户指定的原始值
 
 	Type   string // 带 prefix
@@ -29,7 +29,7 @@ type StatusProblem struct {
 func New(prefix string) *Problems {
 	p := &Problems{
 		prefix:   prefix,
-		problems: make([]*StatusProblem, 0, 100),
+		problems: make([]*Problem, 0, 100),
 	}
 
 	for id, status := range statuses {
@@ -51,7 +51,7 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 		panic("title 不能为空")
 	}
 
-	s := &StatusProblem{id: id, Status: status, Title: title, Detail: detail}
+	s := &Problem{id: id, Status: status, Title: title, Detail: detail}
 	if p.prefix == ProblemAboutBlank {
 		s.Type = ProblemAboutBlank
 	} else {
@@ -61,7 +61,7 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 }
 
 func (p *Problems) exists(id string) bool {
-	return sliceutil.Exists(p.problems, func(sp *StatusProblem, _ int) bool { return sp.id == id })
+	return sliceutil.Exists(p.problems, func(sp *Problem, _ int) bool { return sp.id == id })
 }
 
 func (p *Problems) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
@@ -70,15 +70,14 @@ func (p *Problems) Visit(visit func(prefix, id string, status int, title, detail
 	}
 }
 
-func (p *Problems) Problem(id string) *StatusProblem {
-	sp, found := sliceutil.At(p.problems, func(sp *StatusProblem, _ int) bool { return sp.id == id })
+func (p *Problems) Problem(id string) *Problem {
+	sp, found := sliceutil.At(p.problems, func(sp *Problem, _ int) bool { return sp.id == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 	return sp
 }
 
-// TODO
 func IsValidStatus(status int) bool { return status >= 100 && status < 600 }
 
 func Status(id string) int { return statuses[id] }
