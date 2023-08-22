@@ -35,7 +35,7 @@ func main() {
 	makeID(buf, kvs)
 	makeStatus(buf, kvs)
 	makeIDs(buf, kvs)
-	makeLocales(buf, kvs)
+	makeInitLocalesFunc(buf, kvs)
 
 	if buf.Err != nil {
 		panic(buf.Err)
@@ -77,16 +77,19 @@ func makeIDs(buf *errwrap.Buffer, kvs []make.Pair) {
 	buf.WString("}\n\n")
 }
 
-func makeLocales(buf *errwrap.Buffer, kvs []make.Pair) {
-	buf.WString("var locales=map[int]localeutil.LocaleStringer{\n")
-	for _, item := range kvs {
-		buf.Printf("%s:localeutil.StringPhrase(\"%s\"),\n", "http."+item.Name, "problem."+strconv.Itoa(item.Value))
-	}
-	buf.WString("}\n\n")
+func makeInitLocalesFunc(buf *errwrap.Buffer, kvs []make.Pair) {
+	buf.WString("func(p*Problems)initLocales(){")
 
-	buf.WString("var detailLocales=map[int]localeutil.LocaleStringer{\n")
 	for _, item := range kvs {
-		buf.Printf("%s:localeutil.StringPhrase(\"%s\"),\n", "http."+item.Name, "problem."+strconv.Itoa(item.Value)+".detail")
+		id := make.ID(item)
+		status := "http." + item.Name
+
+		title := "problem." + strconv.Itoa(item.Value)
+		detail := title + ".detail"
+		title = "localeutil.StringPhrase(\"" + title + "\")"
+		detail = "localeutil.StringPhrase(\"" + detail + "\")"
+
+		buf.Printf(`p.Add(%s,%s,%s,%s)`, id, status, title, detail).WByte('\n')
 	}
 	buf.WString("}\n\n")
 }

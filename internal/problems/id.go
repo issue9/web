@@ -139,88 +139,45 @@ var ids = map[int]string{
 	http.StatusNetworkAuthenticationRequired: ProblemNetworkAuthenticationRequired,
 }
 
-var locales = map[int]localeutil.LocaleStringer{
-	http.StatusBadRequest:                    localeutil.StringPhrase("problem.400"),
-	http.StatusUnauthorized:                  localeutil.StringPhrase("problem.401"),
-	http.StatusPaymentRequired:               localeutil.StringPhrase("problem.402"),
-	http.StatusForbidden:                     localeutil.StringPhrase("problem.403"),
-	http.StatusNotFound:                      localeutil.StringPhrase("problem.404"),
-	http.StatusMethodNotAllowed:              localeutil.StringPhrase("problem.405"),
-	http.StatusNotAcceptable:                 localeutil.StringPhrase("problem.406"),
-	http.StatusProxyAuthRequired:             localeutil.StringPhrase("problem.407"),
-	http.StatusRequestTimeout:                localeutil.StringPhrase("problem.408"),
-	http.StatusConflict:                      localeutil.StringPhrase("problem.409"),
-	http.StatusGone:                          localeutil.StringPhrase("problem.410"),
-	http.StatusLengthRequired:                localeutil.StringPhrase("problem.411"),
-	http.StatusPreconditionFailed:            localeutil.StringPhrase("problem.412"),
-	http.StatusRequestEntityTooLarge:         localeutil.StringPhrase("problem.413"),
-	http.StatusRequestURITooLong:             localeutil.StringPhrase("problem.414"),
-	http.StatusUnsupportedMediaType:          localeutil.StringPhrase("problem.415"),
-	http.StatusRequestedRangeNotSatisfiable:  localeutil.StringPhrase("problem.416"),
-	http.StatusExpectationFailed:             localeutil.StringPhrase("problem.417"),
-	http.StatusTeapot:                        localeutil.StringPhrase("problem.418"),
-	http.StatusMisdirectedRequest:            localeutil.StringPhrase("problem.421"),
-	http.StatusUnprocessableEntity:           localeutil.StringPhrase("problem.422"),
-	http.StatusLocked:                        localeutil.StringPhrase("problem.423"),
-	http.StatusFailedDependency:              localeutil.StringPhrase("problem.424"),
-	http.StatusTooEarly:                      localeutil.StringPhrase("problem.425"),
-	http.StatusUpgradeRequired:               localeutil.StringPhrase("problem.426"),
-	http.StatusPreconditionRequired:          localeutil.StringPhrase("problem.428"),
-	http.StatusTooManyRequests:               localeutil.StringPhrase("problem.429"),
-	http.StatusRequestHeaderFieldsTooLarge:   localeutil.StringPhrase("problem.431"),
-	http.StatusUnavailableForLegalReasons:    localeutil.StringPhrase("problem.451"),
-	http.StatusInternalServerError:           localeutil.StringPhrase("problem.500"),
-	http.StatusNotImplemented:                localeutil.StringPhrase("problem.501"),
-	http.StatusBadGateway:                    localeutil.StringPhrase("problem.502"),
-	http.StatusServiceUnavailable:            localeutil.StringPhrase("problem.503"),
-	http.StatusGatewayTimeout:                localeutil.StringPhrase("problem.504"),
-	http.StatusHTTPVersionNotSupported:       localeutil.StringPhrase("problem.505"),
-	http.StatusVariantAlsoNegotiates:         localeutil.StringPhrase("problem.506"),
-	http.StatusInsufficientStorage:           localeutil.StringPhrase("problem.507"),
-	http.StatusLoopDetected:                  localeutil.StringPhrase("problem.508"),
-	http.StatusNotExtended:                   localeutil.StringPhrase("problem.510"),
-	http.StatusNetworkAuthenticationRequired: localeutil.StringPhrase("problem.511"),
-}
-
-var detailLocales = map[int]localeutil.LocaleStringer{
-	http.StatusBadRequest:                    localeutil.StringPhrase("problem.400.detail"),
-	http.StatusUnauthorized:                  localeutil.StringPhrase("problem.401.detail"),
-	http.StatusPaymentRequired:               localeutil.StringPhrase("problem.402.detail"),
-	http.StatusForbidden:                     localeutil.StringPhrase("problem.403.detail"),
-	http.StatusNotFound:                      localeutil.StringPhrase("problem.404.detail"),
-	http.StatusMethodNotAllowed:              localeutil.StringPhrase("problem.405.detail"),
-	http.StatusNotAcceptable:                 localeutil.StringPhrase("problem.406.detail"),
-	http.StatusProxyAuthRequired:             localeutil.StringPhrase("problem.407.detail"),
-	http.StatusRequestTimeout:                localeutil.StringPhrase("problem.408.detail"),
-	http.StatusConflict:                      localeutil.StringPhrase("problem.409.detail"),
-	http.StatusGone:                          localeutil.StringPhrase("problem.410.detail"),
-	http.StatusLengthRequired:                localeutil.StringPhrase("problem.411.detail"),
-	http.StatusPreconditionFailed:            localeutil.StringPhrase("problem.412.detail"),
-	http.StatusRequestEntityTooLarge:         localeutil.StringPhrase("problem.413.detail"),
-	http.StatusRequestURITooLong:             localeutil.StringPhrase("problem.414.detail"),
-	http.StatusUnsupportedMediaType:          localeutil.StringPhrase("problem.415.detail"),
-	http.StatusRequestedRangeNotSatisfiable:  localeutil.StringPhrase("problem.416.detail"),
-	http.StatusExpectationFailed:             localeutil.StringPhrase("problem.417.detail"),
-	http.StatusTeapot:                        localeutil.StringPhrase("problem.418.detail"),
-	http.StatusMisdirectedRequest:            localeutil.StringPhrase("problem.421.detail"),
-	http.StatusUnprocessableEntity:           localeutil.StringPhrase("problem.422.detail"),
-	http.StatusLocked:                        localeutil.StringPhrase("problem.423.detail"),
-	http.StatusFailedDependency:              localeutil.StringPhrase("problem.424.detail"),
-	http.StatusTooEarly:                      localeutil.StringPhrase("problem.425.detail"),
-	http.StatusUpgradeRequired:               localeutil.StringPhrase("problem.426.detail"),
-	http.StatusPreconditionRequired:          localeutil.StringPhrase("problem.428.detail"),
-	http.StatusTooManyRequests:               localeutil.StringPhrase("problem.429.detail"),
-	http.StatusRequestHeaderFieldsTooLarge:   localeutil.StringPhrase("problem.431.detail"),
-	http.StatusUnavailableForLegalReasons:    localeutil.StringPhrase("problem.451.detail"),
-	http.StatusInternalServerError:           localeutil.StringPhrase("problem.500.detail"),
-	http.StatusNotImplemented:                localeutil.StringPhrase("problem.501.detail"),
-	http.StatusBadGateway:                    localeutil.StringPhrase("problem.502.detail"),
-	http.StatusServiceUnavailable:            localeutil.StringPhrase("problem.503.detail"),
-	http.StatusGatewayTimeout:                localeutil.StringPhrase("problem.504.detail"),
-	http.StatusHTTPVersionNotSupported:       localeutil.StringPhrase("problem.505.detail"),
-	http.StatusVariantAlsoNegotiates:         localeutil.StringPhrase("problem.506.detail"),
-	http.StatusInsufficientStorage:           localeutil.StringPhrase("problem.507.detail"),
-	http.StatusLoopDetected:                  localeutil.StringPhrase("problem.508.detail"),
-	http.StatusNotExtended:                   localeutil.StringPhrase("problem.510.detail"),
-	http.StatusNetworkAuthenticationRequired: localeutil.StringPhrase("problem.511.detail"),
+func (p *Problems) initLocales() {
+	p.Add(ProblemBadRequest, http.StatusBadRequest, localeutil.StringPhrase("problem.400"), localeutil.StringPhrase("problem.400.detail"))
+	p.Add(ProblemUnauthorized, http.StatusUnauthorized, localeutil.StringPhrase("problem.401"), localeutil.StringPhrase("problem.401.detail"))
+	p.Add(ProblemPaymentRequired, http.StatusPaymentRequired, localeutil.StringPhrase("problem.402"), localeutil.StringPhrase("problem.402.detail"))
+	p.Add(ProblemForbidden, http.StatusForbidden, localeutil.StringPhrase("problem.403"), localeutil.StringPhrase("problem.403.detail"))
+	p.Add(ProblemNotFound, http.StatusNotFound, localeutil.StringPhrase("problem.404"), localeutil.StringPhrase("problem.404.detail"))
+	p.Add(ProblemMethodNotAllowed, http.StatusMethodNotAllowed, localeutil.StringPhrase("problem.405"), localeutil.StringPhrase("problem.405.detail"))
+	p.Add(ProblemNotAcceptable, http.StatusNotAcceptable, localeutil.StringPhrase("problem.406"), localeutil.StringPhrase("problem.406.detail"))
+	p.Add(ProblemProxyAuthRequired, http.StatusProxyAuthRequired, localeutil.StringPhrase("problem.407"), localeutil.StringPhrase("problem.407.detail"))
+	p.Add(ProblemRequestTimeout, http.StatusRequestTimeout, localeutil.StringPhrase("problem.408"), localeutil.StringPhrase("problem.408.detail"))
+	p.Add(ProblemConflict, http.StatusConflict, localeutil.StringPhrase("problem.409"), localeutil.StringPhrase("problem.409.detail"))
+	p.Add(ProblemGone, http.StatusGone, localeutil.StringPhrase("problem.410"), localeutil.StringPhrase("problem.410.detail"))
+	p.Add(ProblemLengthRequired, http.StatusLengthRequired, localeutil.StringPhrase("problem.411"), localeutil.StringPhrase("problem.411.detail"))
+	p.Add(ProblemPreconditionFailed, http.StatusPreconditionFailed, localeutil.StringPhrase("problem.412"), localeutil.StringPhrase("problem.412.detail"))
+	p.Add(ProblemRequestEntityTooLarge, http.StatusRequestEntityTooLarge, localeutil.StringPhrase("problem.413"), localeutil.StringPhrase("problem.413.detail"))
+	p.Add(ProblemRequestURITooLong, http.StatusRequestURITooLong, localeutil.StringPhrase("problem.414"), localeutil.StringPhrase("problem.414.detail"))
+	p.Add(ProblemUnsupportedMediaType, http.StatusUnsupportedMediaType, localeutil.StringPhrase("problem.415"), localeutil.StringPhrase("problem.415.detail"))
+	p.Add(ProblemRequestedRangeNotSatisfiable, http.StatusRequestedRangeNotSatisfiable, localeutil.StringPhrase("problem.416"), localeutil.StringPhrase("problem.416.detail"))
+	p.Add(ProblemExpectationFailed, http.StatusExpectationFailed, localeutil.StringPhrase("problem.417"), localeutil.StringPhrase("problem.417.detail"))
+	p.Add(ProblemTeapot, http.StatusTeapot, localeutil.StringPhrase("problem.418"), localeutil.StringPhrase("problem.418.detail"))
+	p.Add(ProblemMisdirectedRequest, http.StatusMisdirectedRequest, localeutil.StringPhrase("problem.421"), localeutil.StringPhrase("problem.421.detail"))
+	p.Add(ProblemUnprocessableEntity, http.StatusUnprocessableEntity, localeutil.StringPhrase("problem.422"), localeutil.StringPhrase("problem.422.detail"))
+	p.Add(ProblemLocked, http.StatusLocked, localeutil.StringPhrase("problem.423"), localeutil.StringPhrase("problem.423.detail"))
+	p.Add(ProblemFailedDependency, http.StatusFailedDependency, localeutil.StringPhrase("problem.424"), localeutil.StringPhrase("problem.424.detail"))
+	p.Add(ProblemTooEarly, http.StatusTooEarly, localeutil.StringPhrase("problem.425"), localeutil.StringPhrase("problem.425.detail"))
+	p.Add(ProblemUpgradeRequired, http.StatusUpgradeRequired, localeutil.StringPhrase("problem.426"), localeutil.StringPhrase("problem.426.detail"))
+	p.Add(ProblemPreconditionRequired, http.StatusPreconditionRequired, localeutil.StringPhrase("problem.428"), localeutil.StringPhrase("problem.428.detail"))
+	p.Add(ProblemTooManyRequests, http.StatusTooManyRequests, localeutil.StringPhrase("problem.429"), localeutil.StringPhrase("problem.429.detail"))
+	p.Add(ProblemRequestHeaderFieldsTooLarge, http.StatusRequestHeaderFieldsTooLarge, localeutil.StringPhrase("problem.431"), localeutil.StringPhrase("problem.431.detail"))
+	p.Add(ProblemUnavailableForLegalReasons, http.StatusUnavailableForLegalReasons, localeutil.StringPhrase("problem.451"), localeutil.StringPhrase("problem.451.detail"))
+	p.Add(ProblemInternalServerError, http.StatusInternalServerError, localeutil.StringPhrase("problem.500"), localeutil.StringPhrase("problem.500.detail"))
+	p.Add(ProblemNotImplemented, http.StatusNotImplemented, localeutil.StringPhrase("problem.501"), localeutil.StringPhrase("problem.501.detail"))
+	p.Add(ProblemBadGateway, http.StatusBadGateway, localeutil.StringPhrase("problem.502"), localeutil.StringPhrase("problem.502.detail"))
+	p.Add(ProblemServiceUnavailable, http.StatusServiceUnavailable, localeutil.StringPhrase("problem.503"), localeutil.StringPhrase("problem.503.detail"))
+	p.Add(ProblemGatewayTimeout, http.StatusGatewayTimeout, localeutil.StringPhrase("problem.504"), localeutil.StringPhrase("problem.504.detail"))
+	p.Add(ProblemHTTPVersionNotSupported, http.StatusHTTPVersionNotSupported, localeutil.StringPhrase("problem.505"), localeutil.StringPhrase("problem.505.detail"))
+	p.Add(ProblemVariantAlsoNegotiates, http.StatusVariantAlsoNegotiates, localeutil.StringPhrase("problem.506"), localeutil.StringPhrase("problem.506.detail"))
+	p.Add(ProblemInsufficientStorage, http.StatusInsufficientStorage, localeutil.StringPhrase("problem.507"), localeutil.StringPhrase("problem.507.detail"))
+	p.Add(ProblemLoopDetected, http.StatusLoopDetected, localeutil.StringPhrase("problem.508"), localeutil.StringPhrase("problem.508.detail"))
+	p.Add(ProblemNotExtended, http.StatusNotExtended, localeutil.StringPhrase("problem.510"), localeutil.StringPhrase("problem.510.detail"))
+	p.Add(ProblemNetworkAuthenticationRequired, http.StatusNetworkAuthenticationRequired, localeutil.StringPhrase("problem.511"), localeutil.StringPhrase("problem.511.detail"))
 }

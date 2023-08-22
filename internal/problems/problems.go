@@ -31,11 +31,7 @@ func New(prefix string) *Problems {
 		prefix:   prefix,
 		problems: make([]*Problem, 0, 100),
 	}
-
-	for id, status := range statuses {
-		p.Add(id, status, locales[status], detailLocales[status])
-	}
-
+	p.initLocales()
 	return p
 }
 
