@@ -64,7 +64,7 @@ type (
 		// 供 [Server.UniqueID] 使用。
 		//
 		// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]。
-		UniqueGenerator UniqueGenerator
+		IDGenerator IDGenerator
 
 		// 路由选项
 		//
@@ -97,6 +97,11 @@ type (
 		// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
 		ProblemTypePrefix string
 		problems          *problems.Problems
+
+		// Init 其它的一些初始化操作
+		//
+		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作
+		Init []func(*Server)
 	}
 
 	Mimetype struct {
@@ -128,13 +133,8 @@ type (
 		ContentTypes []string
 	}
 
-	// UniqueGenerator 唯一 ID 生成器的接口
-	UniqueGenerator interface {
-		Service
-
-		// String 返回字符串类型的唯一 ID 值
-		String() string
-	}
+	// IDGenerator 唯一 ID 生成器的接口
+	IDGenerator = func() string
 
 	Locale struct {
 		// 默认的语言标签
@@ -179,8 +179,12 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.HTTPServer = &http.Server{}
 	}
 
-	if o.UniqueGenerator == nil {
-		o.UniqueGenerator = unique.NewDate(1000)
+	if o.IDGenerator == nil {
+		u := unique.NewDate(1000)
+		o.IDGenerator = u.String
+		o.Init = append(o.Init, func(s *Server) {
+			s.Services().Add(locales.UniqueIdentityGenerator, u)
+		})
 	}
 
 	if o.Locale == nil {

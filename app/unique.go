@@ -8,27 +8,35 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var uniqueGeneratorFactory = map[string]UniqueGeneratorBuilder{}
+var idGeneratorFactory = map[string]IDGeneratorBuilder{}
 
-type UniqueGeneratorBuilder = func() server.UniqueGenerator
+// IDGeneratorBuilder 构建生成唯一 ID 的方法
+//
+// f 表示生成唯一 ID 的方法；
+// 表示如果 f 的返回是依赖服务的，那么 srv 即为该服务。
+// 否则 srv 为空。
+type IDGeneratorBuilder = func() (f server.IDGenerator, srv server.Service)
 
-// RegisterUniqueGenerator 注册唯一 ID 生成器
+// RegisterIDGenerator 注册唯一 ID 生成器
 //
 // 如果同名会被覆盖。
-func RegisterUniqueGenerator(id string, b UniqueGeneratorBuilder) {
-	uniqueGeneratorFactory[id] = b
+func RegisterIDGenerator(id string, b IDGeneratorBuilder) {
+	idGeneratorFactory[id] = b
 }
 
 func init() {
-	RegisterUniqueGenerator("date", func() server.UniqueGenerator {
-		return unique.NewDate(1000)
+	RegisterIDGenerator("date", func() (server.IDGenerator, server.Service) {
+		u := unique.NewDate(1000)
+		return u.String, u
 	})
 
-	RegisterUniqueGenerator("string", func() server.UniqueGenerator {
-		return unique.NewString(1000)
+	RegisterIDGenerator("string", func() (server.IDGenerator, server.Service) {
+		u := unique.NewString(1000)
+		return u.String, u
 	})
 
-	RegisterUniqueGenerator("number", func() server.UniqueGenerator {
-		return unique.NewNumber(1000)
+	RegisterIDGenerator("number", func() (server.IDGenerator, server.Service) {
+		u := unique.NewNumber(1000)
+		return u.String, u
 	})
 }

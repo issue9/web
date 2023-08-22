@@ -11,8 +11,9 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/web/server/servertest"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/server/servertest"
 )
 
 // start 表示服务协程运行成功；
@@ -56,12 +57,12 @@ func TestServer_service(t *testing.T) {
 	servertest.Run(a, s)
 	srv := s.Services()
 
-	a.Equal(1, len(srv.services)) // scheduled
+	a.Equal(2, len(srv.services)) // scheduled, unique id generator
 	s1, start1, _, _ := buildService()
 	srv.Add(localeutil.Phrase("srv1"), s1)
-	a.Equal(2, len(srv.services))
+	a.Equal(3, len(srv.services))
 	sched := srv.services[0]
-	srv1 := srv.services[1]
+	srv1 := srv.services[2]
 	<-start1
 	a.Equal(srv1.service, s1) // 并不会改变状态
 	a.Equal(srv1.state, Running).
@@ -70,8 +71,8 @@ func TestServer_service(t *testing.T) {
 	// 运行中添加
 	s2, start2, _, _ := buildService()
 	srv.Add(localeutil.Phrase("srv2"), s2)
-	a.Equal(3, len(srv.services))
-	srv2 := srv.services[2]
+	a.Equal(4, len(srv.services))
+	srv2 := srv.services[3]
 	<-start2
 	a.Equal(Running, srv2.state) // 运行中添加自动运行服务
 
@@ -126,7 +127,7 @@ func TestService_state(t *testing.T) {
 		srv1, start, p, _ := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
-		s1 := s.Services().services[1]
+		s1 := s.Services().services[2]
 		a.Equal(s1.state, Running)
 
 		p <- struct{}{}
@@ -144,7 +145,7 @@ func TestService_state(t *testing.T) {
 		srv1, start, _, err := buildService()
 		s.Services().Add(localeutil.Phrase("srv1"), srv1)
 		<-start
-		s1 := s.Services().services[1]
+		s1 := s.Services().services[2]
 		a.Equal(s1.state, Running)
 
 		err <- struct{}{}

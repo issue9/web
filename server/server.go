@@ -27,17 +27,17 @@ import (
 
 // Server web 服务对象
 type Server struct {
-	name            string
-	version         string
-	httpServer      *http.Server
-	vars            *sync.Map
-	cache           cache.Driver
-	uptime          time.Time
-	routers         *group.GroupOf[HandlerFunc]
-	uniqueGenerator func() string
-	requestIDKey    string
-	state           State
-	services        *Services
+	name         string
+	version      string
+	httpServer   *http.Server
+	vars         *sync.Map
+	cache        cache.Driver
+	uptime       time.Time
+	routers      *group.GroupOf[HandlerFunc]
+	idGenerator  IDGenerator
+	requestIDKey string
+	state        State
+	services     *Services
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -66,15 +66,15 @@ func New(name, version string, o *Options) (*Server, error) {
 	}
 
 	srv := &Server{
-		name:            name,
-		version:         version,
-		httpServer:      o.HTTPServer,
-		vars:            &sync.Map{},
-		cache:           o.Cache,
-		uptime:          time.Now(),
-		uniqueGenerator: o.UniqueGenerator.String,
-		requestIDKey:    o.RequestIDKey,
-		state:           Stopped,
+		name:         name,
+		version:      version,
+		httpServer:   o.HTTPServer,
+		vars:         &sync.Map{},
+		cache:        o.Cache,
+		uptime:       time.Now(),
+		idGenerator:  o.IDGenerator,
+		requestIDKey: o.RequestIDKey,
+		state:        Stopped,
 
 		location: o.Location,
 		catalog:  o.Locale.Catalog,
@@ -102,8 +102,11 @@ func New(name, version string, o *Options) (*Server, error) {
 	srv.httpServer.Handler = srv.routers
 	srv.httpServer.ErrorLog = srv.Logs().ERROR().StdLogger()
 	srv.OnClose(srv.cache.Close)
-	srv.initServices(o.UniqueGenerator) // 依赖的 logs 已经初始化
+	srv.initServices()
 
+	for _, f := range o.Init { // NOTE: 需要保证在最后
+		f(srv)
+	}
 	return srv, nil
 }
 
@@ -135,7 +138,7 @@ func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
 func (srv *Server) Uptime() time.Time { return srv.uptime }
 
 // UniqueID 生成唯一性的 ID
-func (srv *Server) UniqueID() string { return srv.uniqueGenerator() }
+func (srv *Server) UniqueID() string { return srv.idGenerator() }
 
 // Now 返回当前时间
 //

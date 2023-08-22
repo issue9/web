@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
@@ -78,18 +79,21 @@ type configOf[T any] struct {
 
 	// 唯一 ID 生成器
 	//
-	// 该值由 [RegisterUniqueGenerator] 注册而来，默认情况下，有以下三个选项：
+	// 该值由 [RegisterIDGenerator] 注册而来，默认情况下，有以下三个选项：
 	//  - date 日期格式，默认值；
 	//  - string 普通的字符串；
 	//  - number 数值格式；
-	UniqueGenerator string `yaml:"uniqueGenerator,omitempty" json:"uniqueGenerator,omitempty" xml:"uniqueGenerator,omitempty"`
-	uniqueGenerator server.UniqueGenerator
+	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
+	idGenerator server.IDGenerator
 
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
+
+	// 由其它选项生成的初始化方法
+	init []func(*server.Server)
 }
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
@@ -127,11 +131,12 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 			Language: conf.languageTag,
 		},
 		RoutersOptions:    conf.HTTP.routersOptions,
-		UniqueGenerator:   conf.uniqueGenerator,
+		IDGenerator:       conf.idGenerator,
 		RequestIDKey:      conf.HTTP.RequestID,
 		Encodings:         conf.encodings,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
+		Init:              conf.init,
 	}
 
 	srv, err := server.New(name, version, opt)
@@ -199,11 +204,15 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 		return err.AddFieldParent("fileSerializer")
 	}
 
-	if conf.UniqueGenerator == "" {
-		conf.UniqueGenerator = "date"
+	if conf.IDGenerator == "" {
+		conf.IDGenerator = "date"
 	}
-	if g, found := uniqueGeneratorFactory[conf.UniqueGenerator]; found {
-		conf.uniqueGenerator = g()
+	if g, found := idGeneratorFactory[conf.IDGenerator]; found {
+		f, srv := g()
+		conf.idGenerator = f
+		if srv != nil {
+			conf.init = append(conf.init, func(s *server.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
+		}
 	}
 
 	if conf.User != nil {

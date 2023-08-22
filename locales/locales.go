@@ -14,8 +14,9 @@ var Locales embed.FS
 
 // 一些多处用到的翻译项
 const (
-	ShouldGreatThanZero = localeutil.StringPhrase("should great than 0")
-	InvalidValue        = localeutil.StringPhrase("invalid value")
-	CanNotBeEmpty       = localeutil.StringPhrase("can not be empty")
-	DuplicateValue      = localeutil.StringPhrase("duplicate value")
+	ShouldGreatThanZero     = localeutil.StringPhrase("should great than 0")
+	InvalidValue            = localeutil.StringPhrase("invalid value")
+	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
+	DuplicateValue          = localeutil.StringPhrase("duplicate value")
+	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
 )

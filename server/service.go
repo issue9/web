@@ -27,7 +27,7 @@ type (
 		service Service
 		err     error // 保存上次的出错内容，不会清空该值。
 
-		state    scheduled.State
+		state    State
 		stateMux sync.Mutex
 	}
 
@@ -63,7 +63,7 @@ type (
 	Scheduler = scheduled.Scheduler
 )
 
-func (srv *Server) initServices(u UniqueGenerator) {
+func (srv *Server) initServices() {
 	ctx, cancel := context.WithCancel(context.Background())
 	srv.OnClose(func() error { cancel(); return nil })
 
@@ -74,7 +74,7 @@ func (srv *Server) initServices(u UniqueGenerator) {
 		scheduled: scheduled.NewServer(srv.Location(), srv.logs.ERROR(), srv.logs.DEBUG()),
 		jobTitles: make(map[string]localeutil.LocaleStringer, 10),
 	}
-	srv.services.Add(localeutil.Phrase("unique generator"), u)
+	srv.services.Add(localeutil.Phrase("scheduler jobs"), srv.services.scheduled)
 }
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
