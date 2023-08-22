@@ -180,7 +180,7 @@ func TestContext_NewFilterProblem(t *testing.T) {
 	v := ctx.NewFilterProblem(false).
 		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
 		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
-	a.Equal(v.p.Params, []problemParam{
+	a.Equal(v.p.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 		{Name: "f2", Reason: "50"},
 	})
@@ -190,7 +190,7 @@ func TestContext_NewFilterProblem(t *testing.T) {
 	v = ctx.NewFilterProblem(true).
 		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
 		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
-	a.Equal(v.p.Params, []problemParam{
+	a.Equal(v.p.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 	})
 }
@@ -211,7 +211,7 @@ func TestFilter_When(t *testing.T) {
 		When(obj.Age > 0, func(v *FilterProblem) {
 			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))
 		})
-	a.Equal(v.p.Params, []problemParam{
+	a.Equal(v.p.Params, []ProblemParam{
 		{Name: "obj/age", Reason: "不能小于 18"},
 	})
 
@@ -221,7 +221,7 @@ func TestFilter_When(t *testing.T) {
 		When(obj.Age > 0, func(v *FilterProblem) {
 			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))
 		})
-	a.Equal(v.p.Params, []problemParam{
+	a.Equal(v.p.Params, []ProblemParam{
 		{Name: "obj/age", Reason: "不能小于 18"},
 		{Name: "obj/name", Reason: "不能为空"},
 	})

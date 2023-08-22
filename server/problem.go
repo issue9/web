@@ -55,6 +55,8 @@ type (
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
+		// NOTE: 无法缓存内容，因为用户请求的语言每次都可能是不一样的。
+
 		status int
 
 		// 默认的字段
@@ -63,7 +65,7 @@ type (
 		Fields []ProblemField
 
 		// 表示用户提交字段的错误信息
-		Params []problemParam
+		Params []ProblemParam
 	}
 
 	ProblemField struct {
@@ -71,7 +73,7 @@ type (
 		Value any    // 对应的值
 	}
 
-	problemParam struct {
+	ProblemParam struct {
 		Name   string // 出错字段的名称
 		Reason string // 出错信息
 	}
@@ -142,10 +144,10 @@ func (p *Problem) Apply(ctx *Context) *Problem {
 //
 // name 为字段名称；reason 为该字段的错误信息；
 func (p *Problem) WithParam(name, reason string) *Problem {
-	if _, found := sliceutil.At(p.Params, func(pp problemParam, _ int) bool { return pp.Name == name }); found {
+	if _, found := sliceutil.At(p.Params, func(pp ProblemParam, _ int) bool { return pp.Name == name }); found {
 		panic("已经存在")
 	}
-	p.Params = append(p.Params, problemParam{Name: name, Reason: reason})
+	p.Params = append(p.Params, ProblemParam{Name: name, Reason: reason})
 	return p
 }
 
