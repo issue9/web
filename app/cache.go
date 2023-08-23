@@ -7,15 +7,26 @@ import (
 	"time"
 
 	"github.com/issue9/config"
+	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
 
-type CacheBuilder = func(dsn string) (cache.Driver, error)
+// CacheBuilder 构建缓存客户端的方法
+//
+// drv 为缓存客户端对象；
+// 如果是服务端客户端一体的，可通过 job 来指定服务端的定时回收任务；
+type CacheBuilder = func(dsn string) (drv cache.Driver, job *Job, err error)
+
+type Job struct {
+	Ticker time.Duration
+	Job    scheduled.JobFunc
+}
 
 type cacheConfig struct {
 	// 表示缓存的方式
@@ -39,7 +50,6 @@ type cacheConfig struct {
 
 func (conf *configOf[T]) buildCache() *config.FieldError {
 	if conf.Cache == nil {
-		conf.cache = caches.NewMemory(time.Hour)
 		return nil
 	}
 
@@ -48,11 +58,16 @@ func (conf *configOf[T]) buildCache() *config.FieldError {
 		return config.NewFieldError("type", locales.InvalidValue)
 	}
 
-	c, err := b(conf.Cache.DSN)
+	drv, job, err := b(conf.Cache.DSN)
 	if err != nil {
 		return config.NewFieldError("dsn", err)
 	}
-	conf.cache = c
+	conf.cache = drv
+	if job != nil {
+		conf.init = append(conf.init, func(s *server.Server) {
+			s.Services().AddTicker(locales.RecycleLocalCache, job.Job, job.Ticker, false, false)
+		})
+	}
 
 	return nil
 }
@@ -71,19 +86,25 @@ func RegisterCache(b CacheBuilder, name ...string) {
 }
 
 func init() {
-	RegisterCache(func(dsn string) (cache.Driver, error) {
+	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
 		d, err := time.ParseDuration(dsn)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return caches.NewMemory(d), nil
+
+		drv, job := caches.NewMemory()
+		return drv, &Job{Ticker: d, Job: job}, nil
 	}, "", "memory")
 
-	RegisterCache(func(dsn string) (cache.Driver, error) {
-		return caches.NewMemcache(strings.Split(dsn, ";")...), nil
+	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
+		return caches.NewMemcache(strings.Split(dsn, ";")...), nil, nil
 	}, "memcached", "memcache")
 
-	RegisterCache(func(dsn string) (cache.Driver, error) {
-		return caches.NewRedisFromURL(dsn)
+	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
+		drv, err := caches.NewRedisFromURL(dsn)
+		if err != nil {
+			return nil, nil, err
+		}
+		return drv, nil, nil
 	}, "redis")
 }

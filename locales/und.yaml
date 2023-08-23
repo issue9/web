@@ -276,15 +276,21 @@ messages:
     - key: problem.511.detail
       message:
         msg: problem.511.detail
+    - key: recycle local cache
+      message:
+        msg: recycle local cache
+    - key: scheduler jobs
+      message:
+        msg: scheduler jobs
     - key: should great than 0
       message:
         msg: should great than 0
     - key: the client did not specify content-type header
       message:
         msg: the client did not specify content-type header
-    - key: unique generator
+    - key: unique identity generator
       message:
-        msg: unique generator
+        msg: unique identity generator
     - key: unsupported serialization
       message:
         msg: unsupported serialization

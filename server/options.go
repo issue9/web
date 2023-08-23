@@ -100,7 +100,7 @@ type (
 
 		// Init 其它的一些初始化操作
 		//
-		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作
+		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作。
 		Init []func(*Server)
 	}
 
@@ -171,10 +171,6 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.Location = time.Local
 	}
 
-	if o.Cache == nil {
-		o.Cache = caches.NewMemory(24 * time.Hour)
-	}
-
 	if o.HTTPServer == nil {
 		o.HTTPServer = &http.Server{}
 	}
@@ -184,6 +180,14 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.IDGenerator = u.String
 		o.Init = append(o.Init, func(s *Server) {
 			s.Services().Add(locales.UniqueIdentityGenerator, u)
+		})
+	}
+
+	if o.Cache == nil {
+		c, job := caches.NewMemory()
+		o.Cache = c
+		o.Init = append(o.Init, func(s *Server) { // Addticker 依赖 IDGenerator
+			s.Services().AddTicker(locales.RecycleLocalCache, job, time.Minute, false, false)
 		})
 	}
 

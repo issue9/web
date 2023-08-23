@@ -17,12 +17,20 @@ var _ cache.Cache = &memoryDriver{}
 func TestMemory(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := NewMemory(500 * time.Millisecond)
+	c, gc := NewMemory()
 	a.NotNil(c)
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		for now := range ticker.C {
+			a.NotError(gc(now))
+		}
+	}()
 
 	cachetest.Basic(a, c)
 	cachetest.Object(a, c)
 	cachetest.Counter(a, c)
 
 	a.NotError(c.Close())
+	ticker.Stop()
 }

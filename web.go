@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-//go:generate web locale -l=en-US -m -f=yaml ./
-//go:generate web update-locale -src=./locales/en-US.yaml -dest=./locales/zh-Hans.yaml
+//go:generate web locale -l=und -m -f=yaml ./
+//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-Hans.yaml
 //go:generate go run ./make_problems.go
 
 // Package web 通用的 web 开发框架
@@ -34,6 +34,8 @@ type (
 	CTXFilter      = server.CTXFilter
 	FilterProblem  = server.FilterProblem
 	Problem        = server.Problem
+	Scheduler      = server.Scheduler
+	SchedulerFunc  = server.SchedulerFunc
 	Cache          = cache.Cache
 	Logger         = logs.Logger
 	Logs           = logs.Logs

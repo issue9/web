@@ -58,9 +58,9 @@ type (
 	// @enum stopped running failed
 	State = scheduled.State
 
-	JobFunc = scheduled.JobFunc
-
-	Scheduler = scheduled.Scheduler
+	JobFunc       = scheduled.JobFunc
+	Scheduler     = scheduled.Scheduler
+	SchedulerFunc = scheduled.SchedulerFunc
 )
 
 func (srv *Server) initServices() {
@@ -141,6 +141,8 @@ func (srv *Services) Visit(visit func(title localeutil.LocaleStringer, state Sta
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
+//
+// NOTE: 此功能依赖 [Server.UniqueID]。
 func (srv *Services) AddCron(title localeutil.LocaleStringer, f JobFunc, spec string, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
@@ -153,6 +155,8 @@ func (srv *Services) AddCron(title localeutil.LocaleStringer, f JobFunc, spec st
 // dur 时间间隔；
 // imm 是否立即执行一次该任务；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
+//
+// NOTE: 此功能依赖 [Server.UniqueID]。
 func (srv *Services) AddTicker(title localeutil.LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
@@ -164,6 +168,8 @@ func (srv *Services) AddTicker(title localeutil.LocaleStringer, job JobFunc, dur
 // title 是对该服务的简要说明；
 // at 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
+//
+// NOTE: 此功能依赖 [Server.UniqueID]。
 func (srv *Services) AddAt(title localeutil.LocaleStringer, job JobFunc, at time.Time, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
@@ -175,6 +181,8 @@ func (srv *Services) AddAt(title localeutil.LocaleStringer, job JobFunc, at time
 // title 是对该服务的简要说明；
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
+//
+// NOTE: 此功能依赖 [Server.UniqueID]。
 func (srv *Services) AddJob(title localeutil.LocaleStringer, job JobFunc, scheduler Scheduler, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title

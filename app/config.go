@@ -168,10 +168,6 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 	conf.logs = l
 	conf.cleanup = cleanup
 
-	if err = conf.buildCache(); err != nil {
-		return err.AddFieldParent("cache")
-	}
-
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
@@ -213,6 +209,10 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 		if srv != nil {
 			conf.init = append(conf.init, func(s *server.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
 		}
+	}
+
+	if err = conf.buildCache(); err != nil { // buildCache 依赖 IDGenerator
+		return err.AddFieldParent("cache")
 	}
 
 	if conf.User != nil {

@@ -87,7 +87,7 @@ func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, nil)
 	srv := s.Services()
-	a.Equal(0, len(srv.scheduled.Jobs()))
+	a.Equal(1, len(srv.scheduled.Jobs())) // memory cache gc
 
 	srv.AddAt(localeutil.Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
@@ -97,10 +97,12 @@ func TestServer_scheduled(t *testing.T) {
 	var count int
 	srv.VisitJobs(func(ls localeutil.LocaleStringer, t1, t2 time.Time, s State, b bool, err error) {
 		p := srv.s.NewPrinter(language.Chinese)
-		a.Equal(ls.LocaleString(p), "hans")
+		if count == 1 {
+			a.Equal(ls.LocaleString(p), "hans")
+		}
 		count++
 	})
-	a.Equal(1, count)
+	a.Equal(2, count)
 }
 
 func TestService_state(t *testing.T) {

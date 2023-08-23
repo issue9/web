@@ -19,4 +19,5 @@ const (
 	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
 	DuplicateValue          = localeutil.StringPhrase("duplicate value")
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
+	RecycleLocalCache       = localeutil.StringPhrase("recycle local cache")
 )
