@@ -59,12 +59,12 @@ type (
 
 		status int
 
-		// 默认的字段
+		// 反馈给用户的信息
 		//
-		// 其中前四个固定为 type,title,detail,status。通过 with 添加的字段跟随其后。
+		// 其中前四个固定为 type,title,detail,status。通过 WithField 添加的字段跟随其后。
 		Fields []ProblemField
 
-		// 表示用户提交字段的错误信息
+		// 用户提交对象各个字段的错误信息
 		Params []ProblemParam
 	}
 
@@ -141,8 +141,6 @@ func (p *Problem) Apply(ctx *Context) *Problem {
 }
 
 // WithParam 添加具体的错误字段及描述信息
-//
-// name 为字段名称；reason 为该字段的错误信息；
 func (p *Problem) WithParam(name, reason string) *Problem {
 	if _, found := sliceutil.At(p.Params, func(pp ProblemParam, _ int) bool { return pp.Name == name }); found {
 		panic("已经存在")
@@ -181,9 +179,7 @@ func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title
 	srv.problems.Visit(visit)
 }
 
-// Problem 返回批定 id 的错误信息
-//
-// id 通过此值从 [Problems] 中查找相应在的 title 并赋值给返回对象；
+// Problem 返回批定 id 的 [Problem]
 func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
 
 func (ctx *Context) initProblem(p *Problem, id string) *Problem {
@@ -284,7 +280,7 @@ func (v *FilterProblem) Problem(id string) Responser {
 	return v.Context().initProblem(v.p, id)
 }
 
-// Problem 的 Marshal 实现
+// 以下是 Problem 的各类 Marshal 实现
 
 func (p *Problem) MarshalJSON() ([]byte, error) {
 	b := errwrap.Buffer{}

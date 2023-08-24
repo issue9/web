@@ -34,7 +34,7 @@ type Options struct {
 	// 是否接管标准库日志的输出
 	//
 	// 如果为 true，则在 go1.21 之前会接管 log.Default() 的输出；
-	// go1.21 以之后的版本则接管 slog.Default() 的输出；
+	// go1.21 及之后的版本则接管 log/slog.Default() 的输出；
 	Std bool
 }
 

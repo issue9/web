@@ -46,9 +46,7 @@ type ServerApp interface {
 	RestartServer()
 }
 
-// App 简要的服务管理功能
-//
-// 这是对 [ServerApp] 的实现。
+// App 简单的 [server.Server] 管理
 type App struct {
 	// 构建新服务的方法
 	//

@@ -34,10 +34,7 @@ type Queries struct {
 	queries url.Values
 }
 
-// CTXFilter 在 [Context] 关联的上下文环境中对数据进行验证和修正
-//
-// 在 [Context.Read]、[Context.QueryObject] 以及 [Queries.Object]
-// 中会在解析数据成功之后会调用该接口。
+// CTXFilter 在 [Context] 关联的上下文环境中对用户提交的数据进行验证和修正
 type CTXFilter interface {
 	CTXFilter(*FilterProblem)
 }
@@ -125,11 +122,10 @@ func (p *Paths) Float64(key string) float64 {
 // Problem 如果有错误信息转换成 Problem 否则返回 nil
 func (p *Paths) Problem(id string) Responser { return p.filter.Problem(id) }
 
-// PathID 获取地址参数中表示 key 的值并并转换成大于 0 的 int64
+// PathID 获取地址参数中表示 key 的值并转换成大于 0 的 int64
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Paths] 会更方便。
 func (ctx *Context) PathID(key, id string) (int64, Responser) {
-	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
@@ -140,11 +136,10 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 	return ret, nil
 }
 
-// PathInt64 取地址参数中的 key 表示的值并尝试工转换成 int64 类型
+// PathInt64 取地址参数中的 key 表示的值并尝试转换成 int64 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
-	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -153,11 +148,10 @@ func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 	return ret, nil
 }
 
-// PathString 取地址参数中的 key 表示的值并尝试工转换成 string 类型
+// PathString 取地址参数中的 key 表示的值并尝试转换成 string 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathString(key, id string) (string, Responser) {
-	// 不复用 Params 实例，省略了 Params 和 Filter 两个对象的创建。
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
 		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -168,7 +162,7 @@ func (ctx *Context) PathString(key, id string) (string, Responser) {
 
 // Queries 声明一个用于获取查询参数的对象
 //
-// 返回对象的生命周期在 Context 结束时也随之结束。
+// 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
@@ -182,7 +176,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	return q, nil
 }
 
-func (q *Queries) getItem(key string) (val string) { return q.queries.Get(key) }
+func (q *Queries) getItem(key string) string { return q.queries.Get(key) }
 
 // Int 从查询参数中获取指定名称的值
 //
@@ -193,18 +187,15 @@ func (q *Queries) Int(key string, def int) int {
 	}
 
 	str := q.getItem(key)
-
 	if len(str) == 0 { // 不存在，返回默认值
 		return def
 	}
 
-	// 无法转换，保存错误信息，返回默认值
 	v, err := strconv.Atoi(str)
 	if err != nil { // strconv.Atoi 不可能返回 localeutil.LocaleStringer 接口的数据
 		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
-
 	return v
 }
 
@@ -226,7 +217,6 @@ func (q *Queries) Int64(key string, def int64) int64 {
 		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
-
 	return v
 }
 
@@ -238,11 +228,10 @@ func (q *Queries) String(key, def string) string {
 		return ""
 	}
 
-	str := q.getItem(key)
-	if len(str) == 0 {
-		return def
+	if str := q.getItem(key); str != "" {
+		return str
 	}
-	return str
+	return def
 }
 
 // Bool 从查询参数中获取指定名称的值
@@ -263,7 +252,6 @@ func (q *Queries) Bool(key string, def bool) bool {
 		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
-
 	return v
 }
 
@@ -285,7 +273,6 @@ func (q *Queries) Float64(key string, def float64) float64 {
 		q.filter.Add(key, localeutil.Phrase(err.Error()))
 		return def
 	}
-
 	return v
 }
 
@@ -294,9 +281,10 @@ func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
 
 // Object 将查询参数解析到一个对象中
 //
-// 具体的文档信息可以参考 https://github.com/issue9/query
+// 具体的文档信息可以参考 [Query]。
+// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
 //
-// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用其接口函数。
+// [Query]: https://github.com/issue9/query
 func (q *Queries) Object(v any, id string) {
 	query.ParseWithLog(q.queries, v, func(field string, err error) {
 		var msg localeutil.LocaleStringer
@@ -329,7 +317,7 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 
 // RequestBody 获取用户提交的内容
 //
-// 相对于 [Context.Request.Body]，此函数可多次读取。不存在 body 时，返回 nil
+// 此方法可多次调用且返回正确内容，但是不能对返回内容作直接修改。不存在 body 时，返回 nil。
 func (ctx *Context) RequestBody() (body []byte, err error) {
 	if ctx.read {
 		return ctx.requestBody, nil
@@ -388,8 +376,8 @@ func (ctx *Context) Unmarshal(v any) error {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用其接口函数。
-// 如果验证失败，会输出以 id 作为错误代码的 [Responser] 对象。
+// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
+// 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(err, problems.ProblemUnprocessableEntity)

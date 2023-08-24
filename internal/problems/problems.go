@@ -35,11 +35,11 @@ func New(prefix string) *Problems {
 	return p
 }
 
-func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
-	if p.exists(id) {
+func (ps *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
+	if ps.exists(id) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
-	if !IsValidStatus(status) {
+	if !validProblemStatus(status) {
 		panic("status 必须是一个有效的状态码")
 	}
 
@@ -47,34 +47,35 @@ func (p *Problems) Add(id string, status int, title, detail localeutil.LocaleStr
 		panic("title 不能为空")
 	}
 
-	s := &Problem{id: id, Status: status, Title: title, Detail: detail}
-	if p.prefix == ProblemAboutBlank {
-		s.Type = ProblemAboutBlank
+	p := &Problem{id: id, Status: status, Title: title, Detail: detail}
+	if ps.prefix == ProblemAboutBlank {
+		p.Type = ProblemAboutBlank
 	} else {
-		s.Type = p.prefix + s.id
+		p.Type = ps.prefix + p.id
 	}
-	p.problems = append(p.problems, s)
+	ps.problems = append(ps.problems, p)
 }
 
-func (p *Problems) exists(id string) bool {
-	return sliceutil.Exists(p.problems, func(sp *Problem, _ int) bool { return sp.id == id })
+func (ps *Problems) exists(id string) bool {
+	return sliceutil.Exists(ps.problems, func(p *Problem, _ int) bool { return p.id == id })
 }
 
-func (p *Problems) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
-	for _, s := range p.problems {
-		visit(p.prefix, s.id, s.Status, s.Title, s.Detail)
+func (ps *Problems) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
+	for _, s := range ps.problems {
+		visit(ps.prefix, s.id, s.Status, s.Title, s.Detail)
 	}
 }
 
-func (p *Problems) Problem(id string) *Problem {
-	sp, found := sliceutil.At(p.problems, func(sp *Problem, _ int) bool { return sp.id == id })
+func (ps *Problems) Problem(id string) *Problem {
+	sp, found := sliceutil.At(ps.problems, func(p *Problem, _ int) bool { return p.id == id })
 	if !found { // 初始化时没有给定相关的定义，所以直接 panic。
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 	return sp
 }
 
-func IsValidStatus(status int) bool { return status >= 100 && status < 600 }
+// [Problems] 中也没有处理小于 400 的状态码，所以此处验证也不理会小于 400 的值。
+func validProblemStatus(status int) bool { return ids[status] != "" }
 
 func Status(id string) int { return statuses[id] }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-func TestProblems_Add_Problems(t *testing.T) {
+func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
 	ps := New("")
@@ -34,7 +34,7 @@ func TestProblems_Add_Problems(t *testing.T) {
 	}, "status 必须是一个有效的状态码")
 
 	a.PanicString(func() {
-		ps.Add("40012", 200, nil, nil)
+		ps.Add("40012", 400, nil, nil)
 	}, "title 不能为空")
 }
 

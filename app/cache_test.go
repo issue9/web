@@ -13,7 +13,7 @@ func TestConfig_buildCache(t *testing.T) {
 
 	cfg := &configOf[empty]{}
 	a.NotError(cfg.buildCache())
-	a.NotNil(cfg.cache)
+	a.Nil(cfg.cache)
 
 	cfg = &configOf[empty]{Cache: &cacheConfig{DSN: "1h"}}
 	a.NotError(cfg.buildCache())

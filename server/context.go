@@ -25,7 +25,7 @@ const contextPoolBodyBufferMaxSize = 1 << 16
 
 var contextPool = &sync.Pool{
 	New: func() any {
-		return &Context{exits: make([]func(*Context, int), 0, 3)}
+		return &Context{exits: make([]func(*Context, int), 0, 5)}
 	},
 }
 
@@ -247,9 +247,9 @@ func (ctx *Context) SetMimetype(mimetype string) {
 	ctx.outputMimetype = item
 }
 
-// Mimetype 输出编码名称
+// Mimetype 返回输出编码名称
 //
-// problem 表示是否返回 problem 时的 mimetype 值。该值由 [Mimetypes] 设置。
+// problem 表示是否返回 problem 状态时的值。该值由 [Mimetype.ProblemType] 设置。
 func (ctx *Context) Mimetype(problem bool) string {
 	if ctx.outputMimetype == nil {
 		return ""
@@ -261,9 +261,7 @@ func (ctx *Context) Mimetype(problem bool) string {
 	return ctx.outputMimetype.Name
 }
 
-// SetEncoding 设置压缩编码
-//
-// 相当于重新设置了 [Context.Request] 的 Accept-Encoding 报头，但是不会实际修改 [Context.Request]。
+// SetEncoding 设置输出的压缩编码
 func (ctx *Context) SetEncoding(enc string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")

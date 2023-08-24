@@ -48,27 +48,25 @@ type (
 		// 默认值为内存类型。
 		Cache cache.Driver
 
-		// 日志的输出通道设置
+		// 日志的相关设置
 		//
-		// 如果此值为空，表示不会输出到任何通道。
+		// 如果此值为空，表示不会输出任何信息。
 		Logs *logs.Options
 		logs logs.Logs
 
 		// http.Server 实例的值
 		//
-		// 如果为空，表示 &http.Server{} 对象。
+		// 可以为零值。
 		HTTPServer *http.Server
 
 		// 生成唯一字符串的方法
 		//
 		// 供 [Server.UniqueID] 使用。
 		//
-		// 如果为空，将采用 [unique.NewDate] 作为生成方法，[unique.Date]。
+		// 如果为空，将采用 [unique.NewDate] 作为生成方法。
 		IDGenerator IDGenerator
 
 		// 路由选项
-		//
-		// 将应用 [Server.Routers] 对象之上。
 		RoutersOptions []RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
@@ -133,7 +131,7 @@ type (
 		ContentTypes []string
 	}
 
-	// IDGenerator 唯一 ID 生成器的接口
+	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
 
 	Locale struct {

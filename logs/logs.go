@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 // Package logs 日志操作
-//
-// 这是对 [logs] 的二次定义，方便使用者引用。
-//
-// [logs]: https://github.com/issue9/logs
 package logs
 
 import (
@@ -30,9 +26,7 @@ type (
 	Handler    = logs.Handler
 	HandleFunc = logs.HandleFunc
 	Record     = logs.Record
-
-	// Logger 单个日志的接口
-	Logger = logs.Logger
+	Logger     = logs.Logger
 
 	// Logs 所有日志的集合接口
 	Logs interface {
@@ -48,11 +42,11 @@ type (
 
 		FATAL() Logger
 
-		Logger(lv Level) Logger
+		Logger(Level) Logger
 
-		NewRecord(lv Level) *Record
+		NewRecord(Level) *Record
 
-		// With 构建一个带有指定参数日志对象
+		// With 构建一个带有指定参数的日志对象
 		With(ps map[string]any) Logs
 	}
 

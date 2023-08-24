@@ -207,7 +207,6 @@ func (srv *Server) Close(shutdownTimeout time.Duration) {
 	defer cancel()
 	if err := srv.httpServer.Shutdown(c); !errors.Is(err, context.DeadlineExceeded) {
 		srv.Logs().ERROR().Error(err)
-		return
 	}
 }
 
