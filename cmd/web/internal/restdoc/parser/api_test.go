@@ -15,7 +15,7 @@ func TestParser_parseAPI(t *testing.T) {
 	a := assert.New(t, false)
 
 	l := loggertest.New(a)
-	p := New(l.Logger)
+	p := New(l.Logger, "", []string{"user"})
 	doc := openapi.New("3")
 
 	lines := []string{
@@ -23,7 +23,7 @@ func TestParser_parseAPI(t *testing.T) {
 		"@tag user",
 		"@path id id id desc",
 	}
-	p.parseAPI(doc, "github.com/issue9/web", "POST /admins/{id}", lines, 5, "example.go", []string{"user"})
+	p.parseAPI(doc, "github.com/issue9/web", "POST /admins/{id}", lines, 5, "example.go")
 	path := doc.Doc().Paths["/admins/{id}"]
 	a.NotNil(path).
 		NotNil(path.Post).

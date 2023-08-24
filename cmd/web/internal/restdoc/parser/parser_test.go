@@ -16,7 +16,7 @@ import (
 func TestParser(t *testing.T) {
 	a := assert.New(t, false)
 	l := loggertest.New(a)
-	p := New(l.Logger)
+	p := New(l.Logger, "/prefix", nil)
 
 	p.AddDir(context.Background(), "./testdata", true)
 	d := p.Parse(context.Background())
@@ -28,7 +28,7 @@ func TestParser(t *testing.T) {
 	a.NotNil(d.Doc().Info).
 		Equal(d.Doc().Info.Version, "1.0.0")
 
-	login := d.Doc().Paths["/login"].Post
+	login := d.Doc().Paths["/prefix/login"].Post
 	a.NotNil(login).
 		Length(login.Parameters, 5).
 		Equal(login.Parameters[3].Value.Name, "sex").
@@ -50,9 +50,18 @@ func TestParser(t *testing.T) {
 func TestIsIgnoreTag(t *testing.T) {
 	a := assert.New(t, false)
 
-	a.False(isIgnoreTag(nil, "t1"))
-	a.True(isIgnoreTag([]string{"t10"}, "t1"))
-	a.False(isIgnoreTag([]string{"t10"}, "t10"))
-	a.False(isIgnoreTag([]string{"t10"}, "t10", "t1"))
-	a.False(isIgnoreTag([]string{"t1", "t10"}, "t10", "t1"))
+	p := &Parser{}
+	a.False(p.isIgnoreTag("t1"))
+
+	p = &Parser{tags: []string{"t10"}}
+	a.True(p.isIgnoreTag("t1"))
+
+	p = &Parser{tags: []string{"t10"}}
+	a.False(p.isIgnoreTag("t10"))
+
+	p = &Parser{tags: []string{"t10"}}
+	a.False(p.isIgnoreTag("t10", "t1"))
+
+	p = &Parser{tags: []string{"t10", "t1"}}
+	a.False(p.isIgnoreTag("t10", "t1"))
 }

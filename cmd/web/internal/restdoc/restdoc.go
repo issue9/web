@@ -30,6 +30,7 @@ const (
 	tagUsage       = localeutil.StringPhrase("filter by tag")
 	depUsage       = localeutil.StringPhrase("parse module dependencies")
 	versionUsage   = localeutil.StringPhrase("set doc version")
+	prefixUsage    = localeutil.StringPhrase("set api path prefix")
 )
 
 const defaultOutput = "./restdoc.yaml"
@@ -41,6 +42,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		t := fs.String("t", "", tagUsage.LocaleString(p))
 		d := fs.Bool("d", false, depUsage.LocaleString(p))
 		v := fs.String("v", "", versionUsage.LocaleString(p))
+		urlPrefix := fs.String("p", "", prefixUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
 			ctx := context.Background()
@@ -52,8 +54,13 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 
+			var tags []string
+			if *t != "" {
+				tags = strings.Split(*t, ",")
+			}
+
 			l := logger.New(ls, p)
-			doc := parser.New(l)
+			doc := parser.New(l, *urlPrefix, tags)
 			for _, dir := range fs.Args() {
 				doc.AddDir(ctx, dir, *r)
 
@@ -75,12 +82,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				}
 			}
 
-			var tags []string
-			if *t != "" {
-				tags = strings.Split(*t, ",")
-			}
-
-			oa := doc.Parse(ctx, tags...)
+			oa := doc.Parse(ctx)
 			switch *v {
 			case "git":
 				oa.Doc().Info.Version = git.Version(p) + "+" + git.Commit(p, false)

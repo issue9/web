@@ -16,7 +16,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	a := assert.New(t, false)
 
 	l := loggertest.New(a)
-	p := New(l.Logger)
+	p := New(l.Logger, "", []string{"user"})
 	d := openapi.New("3")
 	lines := []string{
 		"@version 1.0.0",
@@ -37,7 +37,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"# markdown desc",
 		"line 2",
 	}
-	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", []string{"user"})
+	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go")
 
 	a.Equal(0, l.Count()).
 		Length(d.Doc().Tags, 1).Equal(d.Doc().Tags[0].Description, "user tag desc").
@@ -72,7 +72,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 
 	// 测试行号是否正确
 	l = loggertest.New(a)
-	p = New(l.Logger)
+	p = New(l.Logger, "", nil)
 	d = openapi.New("3")
 	lines = []string{
 		"@version 1.0.0",
@@ -82,7 +82,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"# markdown desc",
 		"line 2",
 	}
-	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go", nil)
+	p.parseRESTDoc(d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go")
 
 	a.Equal(1, l.Count()).
 		Length(d.Doc().Tags, 1).
@@ -123,7 +123,7 @@ func TestParseOpenAPI(t *testing.T) {
 	a := assert.New(t, false)
 
 	l := loggertest.New(a)
-	p := New(l.Logger)
+	p := New(l.Logger, "", nil)
 	d := openapi.New("3.1.0")
 
 	p.parseOpenAPI(d, "./testdata/openapi.yaml", "test.go", 5)

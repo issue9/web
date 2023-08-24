@@ -195,6 +195,9 @@ messages:
             注意事项
 
               不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
+    - key: set api path prefix
+      message:
+        msg: 为所有的 API 添加统一的前缀
     - key: set doc version
       message:
         msg: |

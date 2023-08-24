@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
 )
 
-func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string, tags []string) {
+func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string) {
 	defer func() {
 		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
 		// 应当尽量在此之前查出错误。
@@ -49,7 +49,7 @@ LOOP:
 			opt.OperationID = suffix
 		case "@tag": // @tag t1 t2
 			opt.Tags = strings.Fields(suffix)
-			if isIgnoreTag(tags, opt.Tags...) {
+			if p.isIgnoreTag(opt.Tags...) {
 				p.l.Warning(web.Phrase("ignore %s", suffix))
 				return
 			}
@@ -84,7 +84,7 @@ LOOP:
 	}
 
 	p.addResponses(opt, resps, true)
-	t.AddAPI(path, strings.ToUpper(method), opt)
+	t.AddAPI(p.prefix+path, method, opt)
 }
 
 func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {

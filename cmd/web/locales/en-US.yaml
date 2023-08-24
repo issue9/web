@@ -119,6 +119,9 @@ messages:
     - key: restdoc usage
       message:
         msg: restdoc usage
+    - key: set api path prefix
+      message:
+        msg: set api path prefix
     - key: set doc version
       message:
         msg: set doc version

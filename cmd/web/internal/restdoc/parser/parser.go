@@ -38,6 +38,9 @@ type Parser struct {
 
 	parsed bool
 	l      *logger.Logger
+
+	prefix string
+	tags   []string
 }
 
 type comments struct {
@@ -47,29 +50,35 @@ type comments struct {
 }
 
 // New 声明 RESTDoc 对象
-func New(l *logger.Logger) *Parser {
-	doc := &Parser{
+//
+// prefix 为所有的 API 地址加上统一的前缀；
+// tags 如果非空，则表示仅返回带这些标签的 API；
+func New(l *logger.Logger, prefix string, tags []string) *Parser {
+	p := &Parser{
 		pkgs: make([]*pkg.Package, 0, 10),
 		fset: token.NewFileSet(),
 
 		apiComments: make([]*comments, 0, 100),
 
 		l: l,
+
+		prefix: prefix,
+		tags:   tags,
 	}
 
-	doc.search = func(s string) *pkg.Package {
-		if i := slices.IndexFunc(doc.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
-			return doc.pkgs[i]
+	p.search = func(s string) *pkg.Package {
+		if i := slices.IndexFunc(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
+			return p.pkgs[i]
 		}
 		return nil
 	}
 
-	return doc
+	return p
 }
 
 // AddDir 添加 root 下的内容
 //
-// 仅在调用 [RESTDoc.Openapi3] 之前添加有效果。
+// 仅在调用 [Parser.Parse] 之前添加有效果。
 // root 添加的目录；
 func (p *Parser) AddDir(ctx context.Context, root string, recursive bool) {
 	if p.parsed {
@@ -96,9 +105,7 @@ func (p *Parser) append(pp *pkg.Package) {
 }
 
 // Parse 解析由 [Parser.AddDir] 加载的内容
-//
-// tags 如果非空，则表示仅返回带这些标签的 API。
-func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
+func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	p.parsed = true // 阻止 p.AddDir
 
 	t := openapi.New("3.0.0")
@@ -113,7 +120,7 @@ func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
 			wg.Add(1)
 			go func(pp *pkg.Package) {
 				defer wg.Done()
-				p.parsePackage(ctx, t, pp, tags)
+				p.parsePackage(ctx, t, pp)
 			}(pp)
 		}
 	}
@@ -140,7 +147,7 @@ func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
 						continue
 					}
 					if tag, suffix := utils.CutTag(line[2:]); suffix != "" && strings.ToLower(tag) == "api" {
-						p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos), tags)
+						p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos))
 					}
 				}
 			}(c)
@@ -159,7 +166,7 @@ func (p *Parser) Parse(ctx context.Context, tags ...string) *openapi.OpenAPI {
 	return t
 }
 
-func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg.Package, tags []string) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg.Package) {
 	wg := &sync.WaitGroup{}
 	for _, f := range pack.Files {
 		select {
@@ -170,14 +177,14 @@ func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				p.parseFile(t, pack.Path, f, tags)
+				p.parseFile(t, pack.Path, f)
 			}(f)
 		}
 	}
 	wg.Wait()
 }
 
-func (p *Parser) parseFile(t *openapi.OpenAPI, importPath string, f *ast.File, tags []string) {
+func (p *Parser) parseFile(t *openapi.OpenAPI, importPath string, f *ast.File) {
 LOOP:
 	for _, c := range f.Comments {
 		lines := strings.Split(c.Text(), "\n")
@@ -195,7 +202,7 @@ LOOP:
 				switch strings.ToLower(tag) {
 				case "api":
 					if t.Doc().Info != nil {
-						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()), tags)
+						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()))
 					} else {
 						p.apiCommentsM.Lock()
 						p.apiComments = append(p.apiComments, &comments{
@@ -206,7 +213,7 @@ LOOP:
 						p.apiCommentsM.Unlock()
 					}
 				case "restdoc":
-					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()), tags)
+					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
 				}
 				continue LOOP
 			}
@@ -214,14 +221,14 @@ LOOP:
 	}
 }
 
-// 只要 tag 有一个元素在 enableTags 或是 enableTags 为空都返回 false
-func isIgnoreTag(enableTags []string, tag ...string) bool {
-	if len(enableTags) == 0 {
+// 只要 tag 有一个元素在 p.tags 或是 p.tags 为空都返回 false
+func (p *Parser) isIgnoreTag(tag ...string) bool {
+	if len(p.tags) == 0 {
 		return false
 	}
 
 	for _, t := range tag {
-		if slices.IndexFunc(enableTags, func(tt string) bool { return tt == t }) >= 0 {
+		if slices.IndexFunc(p.tags, func(tt string) bool { return tt == t }) >= 0 {
 			return false
 		}
 	}

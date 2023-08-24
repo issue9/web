@@ -43,10 +43,12 @@ func getGroups(ctx* web.Context) web.Responser {
 ```go
 import "github.com/issue9/web"
 
-srv := web.NewServer("app", "1.0.0", &web.Options{})
-
-srv.Mimetypes().Add("application/json", json.Marshal, json.Unmarshal)
-srv.Mimetypes().Add("application/xml", xml.Marshal, xml.Unmarshal)
+srv := web.NewServer("app", "1.0.0", &web.Options{
+    Mimetypes: []*server.Mimetype{
+        { Type: "application/json", ProblemType: "application/problem+json", Marshal: json.Marshal, Unmarshal: json.Unmarshal },
+        { Type: "application/xml", ProblemType: "application/problem+xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal },
+    }
+})
 
 srv.Serve()
 ```
@@ -61,8 +63,8 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ## 中间件
 
-- <https://github.com/issue9/middleware> 提供了部分中间件。
-- <https://github.com/issue9/validator> 提供了部分验证方法。
+- <https://github.com/issue9/middleware> 提供了常用的中间件。
+- <https://github.com/issue9/filter> 提供了常用的验证方法。
 
 ## 工具
 

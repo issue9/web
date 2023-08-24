@@ -22,7 +22,7 @@ import (
 // lines 表示第二行开始的所有内容，每一行不应该包含结尾的换行符；
 // ln 表示 title 所在行的行号，在出错时，用于记录日志；
 // filename 表示所在的文件，在出错时，用于记录日志；
-func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines []string, ln int, filename string, tags []string) {
+func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines []string, ln int, filename string) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			p.l.Error(msg, filename, ln)
@@ -53,7 +53,7 @@ LOOP:
 				continue LOOP
 			}
 
-			if !isIgnoreTag(tags, words[0]) {
+			if !p.isIgnoreTag(words[0]) {
 				t.Doc().Tags = append(t.Doc().Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
 			}
 		case "@server": // @server tag https://example.com *desc
@@ -66,7 +66,7 @@ LOOP:
 			if tag == "*" {
 				tag = ""
 			}
-			if tag != "" && isIgnoreTag(tags, strings.Split(tag, ",")...) {
+			if tag != "" && p.isIgnoreTag(strings.Split(tag, ",")...) {
 				continue
 			}
 			t.Doc().Servers = append(t.Doc().Servers, &openapi3.Server{URL: words[1], Description: words[2]})
