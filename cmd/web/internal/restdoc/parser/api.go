@@ -84,7 +84,7 @@ LOOP:
 	}
 
 	p.addResponses(opt, resps, true)
-	t.AddAPI(p.prefix+path, method, opt)
+	t.AddAPI(p.prefix+path, opt, method)
 }
 
 func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {

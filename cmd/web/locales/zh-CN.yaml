@@ -161,8 +161,10 @@ messages:
 
             # api method path summary
 
-            定义每个 API 文档，method 表示请求方法，path 表示路径，summary 为该接口的简要说明。
-            这些内容将在 # restdoc 解析完之后才会解析。可以包含以下标签：
+            定义每个 API 文档
+
+            method 表示请求方法，多个请求方法可以用逗号分隔，或是用 ANY 表示所有请求方法，但是不能包含空格；
+            path 表示路径，summary 为该接口的简要说明。这些内容将在 # restdoc 解析完之后才会解析。可以包含以下标签：
 
               @id 唯一 ID，相当于 openapi 的 OperationID；
               @tag tag1 tag2 该接口要关联的标签，多个标签用空格分隔；
