@@ -71,8 +71,7 @@ type CLIOf[T any] struct {
 
 	// 配置文件的文件名
 	//
-	// 相对于 ConfigDir 的文件名。如果为空，表示不采用配置文件，
-	// 由一个空的 [server.Options] 初始化对象，具体可以查看 [NewServerOf] 的实现。
+	// 相对于 ConfigDir 的文件名，不能为空。
 	//
 	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
 	ConfigFilename string
@@ -129,6 +128,10 @@ func (cmd *CLIOf[T]) sanitize() error {
 
 	if cmd.ConfigDir == "" {
 		cmd.ConfigDir = server.DefaultConfigDir
+	}
+
+	if cmd.ConfigFilename == "" {
+		return errors.New("字段 ConfigFilename 不能为空")
 	}
 
 	if cmd.Printer == nil {

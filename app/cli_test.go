@@ -81,9 +81,10 @@ func TestCLIOf_sanitize(t *testing.T) {
 	a.ErrorString(cmd.sanitize(), "Init")
 
 	cmd = &CLIOf[empty]{
-		Name:    "app",
-		Version: "1.1.1",
-		Init:    func(*server.Server, *empty, string) error { return nil },
+		Name:           "app",
+		Version:        "1.1.1",
+		Init:           func(*server.Server, *empty, string) error { return nil },
+		ConfigFilename: "web.yaml",
 	}
 	a.NotError(cmd.sanitize())
 	a.Equal(cmd.Out, os.Stdout)

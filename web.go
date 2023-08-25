@@ -21,17 +21,6 @@ import (
 // Version 当前框架的版本
 const Version = "0.82.0"
 
-const (
-	ModeProduction  int = iota // 运行于生产环境
-	ModeDevelopment            // 运行于开发环境
-)
-
-// Mode 运行的环境
-//
-// 这是个编译期的常量，默认情况下始终是 [ModeProduction]，
-// 只有在编译时指定了 development 标签才会为 [ModeDevelopment]。
-const Mode = defaultMode
-
 type (
 	Server         = server.Server
 	Context        = server.Context
