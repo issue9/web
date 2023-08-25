@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-//go:build development
+//go:build !development
 
-package server
+package web
 
 const defaultMode = ModeDevelopment

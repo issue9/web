@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-//go:build !development
-
 // Package server 服务管理
 package server
 
@@ -27,16 +25,6 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-const (
-	ModeProduction  Mode = iota // 运行于生产环境
-	ModeDevelopment             // 运行于开发环境
-
-	defaultMode = ModeProduction
-)
-
-// Mode 运行模式
-type Mode int8
-
 // Server web 服务对象
 type Server struct {
 	name         string
@@ -50,7 +38,6 @@ type Server struct {
 	requestIDKey string
 	state        State
 	services     *Services
-	mode         Mode
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -88,7 +75,6 @@ func New(name, version string, o *Options) (*Server, error) {
 		idGenerator:  o.IDGenerator,
 		requestIDKey: o.RequestIDKey,
 		state:        Stopped,
-		mode:         defaultMode,
 
 		location: o.Location,
 		catalog:  o.Locale.Catalog,
@@ -129,11 +115,6 @@ func (srv *Server) Name() string { return srv.name }
 
 // Version 应用的版本
 func (srv *Server) Version() string { return srv.version }
-
-// Mode 运行的模式
-//
-// 该值只有在编译时指定了 development 标签才会返回 [ModeDevelopment]。
-func (srv *Server) Mode() Mode { return srv.mode }
 
 // State 获取当前的状态
 //

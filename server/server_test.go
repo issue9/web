@@ -112,8 +112,7 @@ func TestNew(t *testing.T) {
 		NotNil(srv.Cache()).
 		Equal(srv.Location(), time.Local).
 		Equal(srv.httpServer.Handler, srv.routers).
-		Equal(srv.httpServer.Addr, "").
-		Equal(srv.Mode(), ModeProduction)
+		Equal(srv.httpServer.Addr, "")
 }
 
 func TestServer_Serve(t *testing.T) {
