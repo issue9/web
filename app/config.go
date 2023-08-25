@@ -101,10 +101,10 @@ type configOf[T any] struct {
 // configDir 项目配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 configDir 文件系统。
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
-// 如果此值为空，将以 &server.Options{FS: fsys} 初始化 [server.Server]；
+// 如果此值为空，将以 &server.Options{} 初始化 [server.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
-// 如果实现了 [config.Sanitizer] 接口，则在加载后进行自检；
+// 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
 func NewServerOf[T any](name, version string, configDir, filename string) (*server.Server, *T, error) {
 	if filename == "" {
 		c, err := config.AppDir(nil, configDir)

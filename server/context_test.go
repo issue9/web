@@ -8,7 +8,6 @@ import (
 	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -45,60 +44,6 @@ func marshalJSON(ctx *Context, obj any) ([]byte, error) {
 
 func marshalXML(ctx *Context, obj any) ([]byte, error) {
 	return xml.Marshal(obj)
-}
-
-func newTestServer(a *assert.Assertion, o *Options) *Server {
-	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Locale: &Locale{Language: language.English}} // 指定不存在的语言
-	}
-	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = &logs.Options{
-			Handler: logs.NewTermHandler(logs.NanoLayout, os.Stderr, nil),
-			Caller:  true,
-			Created: true,
-			Levels:  logs.AllLevels(),
-		}
-	}
-	if o.Encodings == nil {
-		o.Encodings = []*Encoding{
-			{Name: "gzip", Builder: GZipWriter(8)},
-			{Name: "deflate", Builder: DeflateWriter(8)},
-		}
-	}
-	if o.Mimetypes == nil {
-		o.Mimetypes = []*Mimetype{
-			{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
-			{Type: "application/xml", Marshal: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
-			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
-			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
-		}
-	}
-
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// locale
-	b := srv.CatalogBuilder()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	srv.AddProblem("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
-
-	return srv
-}
-
-func TestNew(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv, err := New("app", "0.1.0", nil)
-	a.NotError(err).NotNil(srv)
-	a.False(srv.Uptime().IsZero())
-	a.NotNil(srv.Cache())
-	a.Equal(srv.Location(), time.Local)
-	a.Equal(srv.httpServer.Handler, srv.routers)
-	a.Equal(srv.httpServer.Addr, "")
 }
 
 func TestContext_vars(t *testing.T) {

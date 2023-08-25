@@ -5,6 +5,11 @@
 //go:generate go run ./make_problems.go
 
 // Package web 通用的 web 开发框架
+//
+// # build tag
+//
+// 如果在编译时指定 development 标签，那么 [server.Server.Mode] 将返回 [server.ModeDevelopment]。
+// 可以通过此功能编译开发环境和生产环境的不同二进制。
 package web
 
 import (

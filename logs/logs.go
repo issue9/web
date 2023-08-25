@@ -28,7 +28,7 @@ type (
 	Record     = logs.Record
 	Logger     = logs.Logger
 
-	// Logs 所有日志的集合接口
+	// Logs 日志系统接口
 	Logs interface {
 		INFO() Logger
 

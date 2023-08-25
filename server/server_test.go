@@ -5,6 +5,8 @@ package server
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
+	"encoding/xml"
 	"io/fs"
 	"net/http"
 	"os"
@@ -12,6 +14,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/localeutil"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server/servertest"
@@ -55,6 +59,61 @@ func buildHandler(code int) HandlerFunc {
 			return nil
 		})
 	}
+}
+
+func newTestServer(a *assert.Assertion, o *Options) *Server {
+	if o == nil {
+		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Locale: &Locale{Language: language.English}} // 指定不存在的语言
+	}
+	if o.Logs == nil { // 默认重定向到 os.Stderr
+		o.Logs = &logs.Options{
+			Handler: logs.NewTermHandler(logs.NanoLayout, os.Stderr, nil),
+			Caller:  true,
+			Created: true,
+			Levels:  logs.AllLevels(),
+		}
+	}
+	if o.Encodings == nil {
+		o.Encodings = []*Encoding{
+			{Name: "gzip", Builder: GZipWriter(8)},
+			{Name: "deflate", Builder: DeflateWriter(8)},
+		}
+	}
+	if o.Mimetypes == nil {
+		o.Mimetypes = []*Mimetype{
+			{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
+			{Type: "application/xml", Marshal: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
+			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
+			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
+		}
+	}
+
+	srv, err := New("app", "0.1.0", o)
+	a.NotError(err).NotNil(srv)
+	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+
+	// locale
+	b := srv.CatalogBuilder()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	srv.AddProblem("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
+
+	return srv
+}
+
+func TestNew(t *testing.T) {
+	a := assert.New(t, false)
+
+	srv, err := New("app", "0.1.0", nil)
+	a.NotError(err).NotNil(srv).
+		False(srv.Uptime().IsZero()).
+		NotNil(srv.Cache()).
+		Equal(srv.Location(), time.Local).
+		Equal(srv.httpServer.Handler, srv.routers).
+		Equal(srv.httpServer.Addr, "").
+		Equal(srv.Mode(), ModeProduction)
 }
 
 func TestServer_Serve(t *testing.T) {
