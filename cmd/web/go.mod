@@ -11,7 +11,7 @@ require (
 	github.com/issue9/source v0.5.1
 	github.com/issue9/term/v3 v3.2.1
 	github.com/issue9/version v1.0.6
-	github.com/issue9/web v0.80.1
+	github.com/issue9/web v0.81.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -31,7 +31,7 @@ require (
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/logs/v5 v5.1.0 // indirect
-	github.com/issue9/mux/v7 v7.2.2 // indirect
+	github.com/issue9/mux/v7 v7.3.0 // indirect
 	github.com/issue9/rands/v2 v2.0.0 // indirect
 	github.com/issue9/scheduled v0.14.0 // indirect
 	github.com/issue9/sliceutil v0.15.0 // indirect

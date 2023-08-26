@@ -73,6 +73,13 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 - 提取和更新本地化信息；
 - 生成 openapi 文档。需要在注释中写一定的注解；
 
+macOS 和 linux 用户可以直接使用 brew 进行安装：
+
+```shell
+brew tap caixw/brew
+brew install caixw/brew/web
+```
+
 ## 版权
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 开源授权许可证，完整的授权说明可在 [LICENSE](LICENSE) 文件中找到。
