@@ -139,3 +139,10 @@ func (ctx *Context) WriteHeader(status int) {
 }
 
 func (ctx *Context) Header() http.Header { return ctx.originResponse.Header() }
+
+// SetCookies 输出一组 Cookie
+func (ctx *Context) SetCookies(c ...*http.Cookie) {
+	for _, cookie := range c {
+		http.SetCookie(ctx, cookie)
+	}
+}
