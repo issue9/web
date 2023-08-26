@@ -83,6 +83,14 @@ LOOP:
 		}
 	}
 
+	for _, p := range p.headers {
+		h := openapi3.NewHeaderParameter(p.key).WithDescription(p.desc)
+		opt.Parameters = append(opt.Parameters, &openapi3.ParameterRef{Value: h})
+	}
+	for _, p := range p.cookies {
+		h := openapi3.NewCookieParameter(p.key).WithDescription(p.desc)
+		opt.Parameters = append(opt.Parameters, &openapi3.ParameterRef{Value: h})
+	}
 	p.addResponses(opt, resps, true)
 	t.AddAPI(p.prefix+path, opt, method)
 }

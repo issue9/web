@@ -30,7 +30,7 @@ func TestParser(t *testing.T) {
 
 	login := d.Doc().Paths["/prefix/login"].Post
 	a.NotNil(login).
-		Length(login.Parameters, 5).
+		Length(login.Parameters, 6).
 		Equal(login.Parameters[3].Value.Name, "sex").
 		NotEmpty(login.Parameters[3].Value.Schema.Ref).
 		Equal(login.Parameters[4].Value.Name, "type").

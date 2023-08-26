@@ -28,6 +28,8 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		"@contact name https://example.com x@example.com",
 		"@term https://example.com/term",
 		"@media application/json application/xml",
+		"@header h1 h1 desc",
+		"@cookie c1 c1 desc",
 		"@doc https://doc.example.com",
 		"@scy-http http-security bearer format http bearer auth",
 		"@scy-apikey apikey-security key header apikey header auth",
@@ -47,7 +49,9 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		Equal(d.Doc().Info.Contact.Name, "name").
 		Equal(d.Doc().Info.Description, "# markdown desc\nline 2").
 		Equal(p.media, []string{"application/json", "application/xml"}).
-		Equal(d.Doc().ExternalDocs.URL, "https://doc.example.com")
+		Equal(d.Doc().ExternalDocs.URL, "https://doc.example.com").
+		Equal(p.headers, []pair{{key: "h1", desc: "h1 desc"}}).
+		Equal(p.cookies, []pair{{key: "c1", desc: "c1 desc"}})
 
 	http := d.Doc().Components.SecuritySchemes["http-security"]
 	a.NotNil(http).

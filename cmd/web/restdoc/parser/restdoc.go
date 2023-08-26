@@ -90,6 +90,20 @@ LOOP:
 			info.Contact = buildContact(words)
 		case "@media": // @media application/json application/xml
 			p.media = strings.Fields(suffix)
+		case "@header": // @header h1 *desc
+			words, l := utils.SplitSpaceN(suffix, 2)
+			if l == 0 {
+				p.syntaxError("@header", 1, filename, ln+i)
+				continue LOOP
+			}
+			p.headers = append(p.headers, pair{key: words[0], desc: words[1]})
+		case "@cookie": // @cookie c1 *desc
+			words, l := utils.SplitSpaceN(suffix, 2)
+			if l == 0 {
+				p.syntaxError("@cookie", 1, filename, ln+i)
+				continue LOOP
+			}
+			p.cookies = append(p.cookies, pair{key: words[0], desc: words[1]})
 		case "@resp": // @resp 4XX text/* object.path desc
 			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
@@ -240,10 +254,12 @@ func parseScopes(scope string) map[string]string {
 	return s
 }
 
+// 引用的另一个 openapi 包
+//
+// 包含以下几种格式：
+// 一个远程的 URL 地址，仅支持 http 和 https 和 file；
+// 或是一个相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
 func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln int) {
-	// 引用的另一个 openapi 包，包含以下格式：
-	// 一个远程的 URL 地址，仅支持 http 和 https 和 file；
-	// 或是一个相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
 	words, l := utils.SplitSpaceN(suffix, 2)
 
 	var u string

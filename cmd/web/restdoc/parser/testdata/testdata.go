@@ -14,6 +14,7 @@
 // @term https://term.example.com
 // @version 1.0.0
 // @media application/json application/xml
+// @header h1 自定义报头
 // @resp 400 application/problem+json,application/problem+xml resp400 400 错误
 // @resp 404 application/problem+json,application/problem+xml resp404 not found
 //
