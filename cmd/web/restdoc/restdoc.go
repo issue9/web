@@ -17,9 +17,9 @@ import (
 	"github.com/issue9/source"
 	"github.com/issue9/web/logs"
 
-	"github.com/issue9/web/cmd/web/internal/git"
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
-	"github.com/issue9/web/cmd/web/internal/restdoc/parser"
+	"github.com/issue9/web/cmd/web/git"
+	"github.com/issue9/web/cmd/web/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/parser"
 )
 
 const (

@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/source"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/logger"
 )
 
 const Cancelled = web.StringPhrase("cancelled")

@@ -15,8 +15,8 @@ import (
 	"github.com/issue9/query/v3"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
 type SearchFunc func(string) *pkg.Package

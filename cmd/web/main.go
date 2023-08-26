@@ -21,11 +21,11 @@ import (
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/cmd/web/internal/build"
-	"github.com/issue9/web/cmd/web/internal/locale"
-	"github.com/issue9/web/cmd/web/internal/locale/update"
-	"github.com/issue9/web/cmd/web/internal/restdoc"
+	"github.com/issue9/web/cmd/web/build"
+	"github.com/issue9/web/cmd/web/locale"
+	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
+	"github.com/issue9/web/cmd/web/restdoc"
 )
 
 const (

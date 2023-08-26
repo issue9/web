@@ -8,9 +8,9 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
-	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/schema"
+	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 const responsesRef = "#/components/responses/"

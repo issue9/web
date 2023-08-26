@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/logger"
 )
 
 type Tester struct {

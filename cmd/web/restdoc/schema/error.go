@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"go/token"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/logger"
 )
 
 type Error struct {

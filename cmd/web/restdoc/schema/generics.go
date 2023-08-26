@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
 )
 
 type typeParam struct {

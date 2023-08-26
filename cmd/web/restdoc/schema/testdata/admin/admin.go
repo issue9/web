@@ -3,7 +3,7 @@
 // Package admin 测试用例
 package admin
 
-import "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
+import "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
 
 // User testdata.User
 type User testdata.User

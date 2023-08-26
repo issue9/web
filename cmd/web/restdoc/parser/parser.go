@@ -14,11 +14,11 @@ import (
 
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger"
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
-	"github.com/issue9/web/cmd/web/internal/restdoc/schema"
-	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
+	"github.com/issue9/web/cmd/web/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/pkg"
+	"github.com/issue9/web/cmd/web/restdoc/schema"
+	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 // Parser 文档分析对象

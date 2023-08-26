@@ -9,8 +9,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPath, suffix string, lines []string, ln int, filename string) (delta int) {

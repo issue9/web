@@ -12,8 +12,8 @@ import (
 	"github.com/issue9/version"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/utils"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 // 解析 # restdoc 之后的内容

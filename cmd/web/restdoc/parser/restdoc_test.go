@@ -8,8 +8,8 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web/logs"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
 )
 
 func TestRESTDoc_parseRESTDoc(t *testing.T) {

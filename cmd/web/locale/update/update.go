@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"github.com/issue9/web/cmd/web/internal/locale"
+	"github.com/issue9/web/cmd/web/locale"
 )
 
 const (
@@ -78,7 +78,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				}, []*message.Language{dest})
 
 				m, _, err := locale.GetMarshalByExt(ext)
-				if err := serialize.SaveFile(dest, d, m, os.ModePerm); err != nil {
+				if err != nil {
+					return err
+				}
+				if err = serialize.SaveFile(dest, d, m, os.ModePerm); err != nil {
 					return err
 				}
 			}

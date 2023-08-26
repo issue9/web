@@ -10,7 +10,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
+	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
 
 type appender struct {

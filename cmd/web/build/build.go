@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/localeutil"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/cmd/web/internal/git"
+	"github.com/issue9/web/cmd/web/git"
 )
 
 const (

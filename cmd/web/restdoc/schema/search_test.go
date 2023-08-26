@@ -13,9 +13,9 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/internal/restdoc/logger/loggertest"
-	"github.com/issue9/web/cmd/web/internal/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/internal/restdoc/pkg"
+	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
+	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
 func buildSearchFunc(a *assert.Assertion) SearchFunc {
@@ -46,7 +46,7 @@ func buildSearchFunc(a *assert.Assertion) SearchFunc {
 func TestSearchFunc_New(t *testing.T) {
 	a := assert.New(t, false)
 	f := buildSearchFunc(a)
-	modPath := "github.com/issue9/web/cmd/web/internal/restdoc/schema/testdata"
+	modPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
 	modRef := refReplacer.Replace(modPath)
 
 	// #components/schemas/abc
