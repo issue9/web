@@ -35,7 +35,7 @@ import (
 // T 表示的是配置文件中的用户自定义数据类型。
 type CLIOf[T any] struct {
 	// NOTE: CLIOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
-	// 开发者所有的功能都可以通过 Context 和 Server 获得。
+	// 开发者所有的功能都应该是通过 Context 和 Server 获得。
 
 	Name    string // 程序名称
 	Version string // 程序版本

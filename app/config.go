@@ -19,6 +19,15 @@ import (
 type configOf[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
+	// 内存限制
+	//
+	// 如果小于等于 0，表示不设置该值。
+	// 除非对该功能非常了解，否则不建议设置该值。
+	// NOTE: 该功能仅对 go1.19 及之后的版本起作用。
+	//
+	// 具体功能可参考 https://pkg.go.dev/runtime/debug#SetMemoryLimit
+	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty"`
+
 	// 日志系统的配置项
 	//
 	// 如果为空，所有日志输出都将被抛弃。
@@ -119,6 +128,10 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 	conf, err := loadConfigOf[T](configDir, filename)
 	if err != nil {
 		return nil, nil, errs.NewStackError(err)
+	}
+
+	if conf.MemoryLimit > 0 {
+		initMemoryLimit(conf.MemoryLimit)
 	}
 
 	opt := &server.Options{

@@ -2,7 +2,7 @@ module github.com/issue9/web
 
 require (
 	github.com/andybalholm/brotli v1.0.5
-	github.com/bradfitz/gomemcache v0.0.0-20230611145640-acc696258285
+	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/config v0.4.0
 	github.com/issue9/conv v1.3.4
@@ -18,7 +18,7 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/redis/go-redis/v9 v9.1.0
 	golang.org/x/crypto v0.12.0
-	golang.org/x/text v0.12.0
+	golang.org/x/text v0.13.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gopkg.in/yaml.v3 v3.0.1
 )
