@@ -51,9 +51,9 @@ messages:
     - key: dest locale files
       message:
         msg: dest locale files
-    - key: 'dup # restdoc note'
+    - key: 'dup # restdoc node'
       message:
-        msg: 'dup # restdoc note'
+        msg: 'dup # restdoc node'
     - key: extract locale
       message:
         msg: extract locale
@@ -122,9 +122,6 @@ messages:
     - key: set api path prefix
       message:
         msg: set api path prefix
-    - key: set doc version
-      message:
-        msg: set doc version
     - key: set output file
       message:
         msg: set output file

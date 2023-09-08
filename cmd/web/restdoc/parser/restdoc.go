@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/version"
 	"github.com/issue9/web"
 
+	"github.com/issue9/web/cmd/web/git"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
@@ -30,7 +31,7 @@ func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines 
 	}()
 
 	if t.Doc().Info != nil {
-		p.l.Error(web.StringPhrase("dup # restdoc note"), filename, ln)
+		p.l.Error(web.StringPhrase("dup # restdoc node"), filename, ln)
 		return
 	}
 
@@ -80,7 +81,7 @@ LOOP:
 		case "@term": // @term https://example.com/term.html
 			info.TermsOfService = suffix
 		case "@version": // @version 1.0.0
-			info.Version = suffix
+			info.Version = p.parseVersion(suffix)
 		case "@contact": // @contact name *https://example.com/contact *contact@example.com
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l == 0 {
@@ -243,6 +244,30 @@ LOOP:
 	}
 
 	t.Doc().Info = info
+}
+
+func (p *Parser) parseVersion(suffix string) string {
+	var hash string
+	var err error
+
+	switch suffix {
+	case "git":
+		hash, err = git.Commit(false)
+	case "git-full":
+		hash, err = git.Commit(true)
+	default:
+		return suffix
+	}
+
+	if err != nil { // 输出警告信息，但是不退出
+		p.l.Warning(err)
+	}
+
+	ver, err := git.Version()
+	if err != nil {
+		p.l.Warning(err)
+	}
+	return ver + "+" + hash
 }
 
 func parseScopes(scope string) map[string]string {

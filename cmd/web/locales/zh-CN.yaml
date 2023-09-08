@@ -66,7 +66,7 @@ messages:
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
-    - key: 'dup # restdoc note'
+    - key: 'dup # restdoc node'
       message:
         msg: '重复的节点 # restdoc'
     - key: extract locale
@@ -149,7 +149,9 @@ messages:
                 tags 为支持的标签，多个标签用逗号分隔，可以采用 * 表示支持所有；
               @license name url 指定了文档的版权信息；
               @term url 指定了文档的隐私策略；
-              @version 指定了文档的版本号；
+              @version 指定了文档的版本号，可以指定以下几种特殊的符号：
+                - git 表示采用 git tag 和 git commit hash 作为版本号；
+                - git-full 表示采用 git tag 和完整的 git commit hash 作为版本号；
               @contact name url email 指定了联系方式，url 和 email 位置没有要求，根据格式自动确定，两者也可以不用全指定；
               @media application/json application/xml 指定了所有 api 默认的内容类型；
               @header name desc 公共报头；
@@ -202,13 +204,6 @@ messages:
     - key: set api path prefix
       message:
         msg: 为所有的 API 添加统一的前缀
-    - key: set doc version
-      message:
-        msg: |
-            指定文档版本，该设置如果不为空，则直接代替 @version 指定的值。可以有以下几个特殊值：
-
-            git: 表示从 git 中获取最新的 git tag + commit 作为版本号；
-            git-full 同 git，但是 commit 为完整的字符串；
     - key: set output file
       message:
         msg: 设置输出文件

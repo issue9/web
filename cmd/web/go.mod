@@ -3,13 +3,13 @@ module github.com/issue9/web/cmd/web
 go 1.21
 
 require (
-	github.com/getkin/kin-openapi v0.119.0
+	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.21.0
+	github.com/issue9/localeutil v0.21.1
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/source v0.5.1
-	github.com/issue9/term/v3 v3.2.1
+	github.com/issue9/source v0.5.2
+	github.com/issue9/term/v3 v3.2.2
 	github.com/issue9/version v1.0.6
 	github.com/issue9/web v0.81.0
 	golang.org/x/mod v0.12.0
@@ -40,8 +40,8 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/perimeterx/marshmallow v1.1.4 // indirect
+	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/redis/go-redis/v9 v9.1.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 )
