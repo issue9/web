@@ -36,6 +36,9 @@ messages:
             {{flags}}
 
             visit https://github.com/issue9/web for more info.
+    - key: app args
+      message:
+        msg: app args
     - key: build go source
       message:
         msg: build go source
@@ -54,6 +57,9 @@ messages:
     - key: 'dup # restdoc node'
       message:
         msg: 'dup # restdoc node'
+    - key: exclude watch files
+      message:
+        msg: exclude watch files
     - key: extract locale
       message:
         msg: extract locale
@@ -101,6 +107,9 @@ messages:
     - key: not found struct %s
       message:
         msg: not found struct %s
+    - key: not show ignore message
+      message:
+        msg: not show ignore message
     - key: only support yaml and json
       message:
         msg: only support yaml and json
@@ -125,6 +134,9 @@ messages:
     - key: set output file
       message:
         msg: set output file
+    - key: set watch file extension
+      message:
+        msg: set watch file extension
     - key: show current help info
       message:
         msg: show current help info
@@ -178,3 +190,12 @@ messages:
     - key: version incompatible
       message:
         msg: version incompatible
+    - key: watch and reload
+      message:
+        msg: watch and reload
+    - key: watch and reload usage
+      message:
+        msg: watch and reload usage
+    - key: watch frequency
+      message:
+        msg: watch frequency

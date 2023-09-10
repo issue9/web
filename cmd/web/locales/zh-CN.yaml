@@ -36,6 +36,9 @@ messages:
             {{flags}}
 
             更多信息可访问 https://github.com/issue9/web。
+    - key: app args
+      message:
+        msg: 传递给应用的参数
     - key: build go source
       message:
         msg: 编译 Go 代码
@@ -69,6 +72,9 @@ messages:
     - key: 'dup # restdoc node'
       message:
         msg: '重复的节点 # restdoc'
+    - key: exclude watch files
+      message:
+        msg: 不需要监视的文件，遵循 path.Match 规则。
     - key: extract locale
       message:
         msg: 提取本地化内容
@@ -120,6 +126,9 @@ messages:
     - key: not found struct %s
       message:
         msg: 未找到结构体 %s
+    - key: not show ignore message
+      message:
+        msg: 不显示可忽略的消息
     - key: only support yaml and json
       message:
         msg: 仅支持 YAML 和 JSON
@@ -207,6 +216,9 @@ messages:
     - key: set output file
       message:
         msg: 设置输出文件
+    - key: set watch file extension
+      message:
+        msg: 设置监视的文件扩展名
     - key: show current help info
       message:
         msg: 显示当前帮助信息
@@ -264,3 +276,21 @@ messages:
     - key: version incompatible
       message:
         msg: 版本不兼容
+    - key: watch and reload
+      message:
+        msg: 热编译项目
+    - key: watch and reload usage
+      message:
+        msg: |
+            监视项目中的文件并在有修改的情况下重新编译项目
+
+            web watch [options] [dir]
+
+            options 可以为以下参数：
+            {{flags}}
+
+            dir 表示编译的代码，为 main 函数所在的目录或是文件。
+            如果未指定，则采用当前目录。
+    - key: watch frequency
+      message:
+        msg: 最小的文件修改间隔

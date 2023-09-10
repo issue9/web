@@ -20,7 +20,9 @@ jobs:
           git config --global core.eol lf
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v4
