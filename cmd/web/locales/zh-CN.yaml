@@ -294,3 +294,12 @@ messages:
     - key: watch frequency
       message:
         msg: 最小的文件修改间隔
+    - key: watch.app
+      message:
+        msg: 应用
+    - key: watch.compiler
+      message:
+        msg: 编译
+    - key: watch.sys
+      message:
+        msg: 系统

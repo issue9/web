@@ -30,7 +30,7 @@ const Mode = defaultMode
 // 比如 [app.CLIOf.ConfigFilename] 可以使用此文件指定相同的文件名。
 func Filename(f string) string { return filename(f) }
 
-// DebugRouter 在非生产环境下为 r 提供一组测试用的 API
+// DebugRouter 在 [Development] 环境下为 r 提供一组测试用的 API
 //
 // path 测试路径；
 // id 在取地址参数出错时的 problem id；

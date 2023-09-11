@@ -199,3 +199,12 @@ messages:
     - key: watch frequency
       message:
         msg: watch frequency
+    - key: watch.app
+      message:
+        msg: watch.app
+    - key: watch.compiler
+      message:
+        msg: watch.compiler
+    - key: watch.sys
+      message:
+        msg: watch.sys

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/caixw/gobuild"
+	"github.com/caixw/gobuild/watch"
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
 )
@@ -34,6 +34,12 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		appArgs := fs.String("app", "", appArgsUsage.LocaleString(p))
 		freq := fs.String("freq", "1s", freqUsage.LocaleString(p))
 
+		sources := map[string]string{
+			watch.System: localeutil.StringPhrase("watch.sys").LocaleString(p),
+			watch.Go:     localeutil.StringPhrase("watch.compiler").LocaleString(p),
+			watch.App:    localeutil.StringPhrase("watch.app").LocaleString(p),
+		}
+
 		return func(w io.Writer) error {
 			f, err := time.ParseDuration(*freq)
 			if err != nil {
@@ -47,7 +53,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				m = fs.Arg(0)
 			}
 
-			o := &gobuild.WatchOptions{
+			o := &watch.Options{
 				MainFiles:        m,
 				Exts:             strings.Split(*exts, ","),
 				Excludes:         strings.Split(*excludes, ","),
@@ -55,7 +61,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				WatcherFrequency: f,
 			}
 
-			gobuild.Watch(context.Background(), p, gobuild.NewConsoleLogger(*i, os.Stdout, nil, nil), o)
+			watch.Watch(context.Background(), p, watch.NewConsoleLogger(*i, os.Stdout, nil, sources), o)
 			return nil
 		}
 	})

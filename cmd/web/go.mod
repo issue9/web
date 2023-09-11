@@ -3,16 +3,16 @@ module github.com/issue9/web/cmd/web
 go 1.21
 
 require (
-	github.com/caixw/gobuild v1.5.0
+	github.com/caixw/gobuild v1.6.3
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/localeutil v0.21.1
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/source v0.5.2
+	github.com/issue9/source v0.6.1
 	github.com/issue9/term/v3 v3.2.2
 	github.com/issue9/version v1.0.6
-	github.com/issue9/web v0.81.0
+	github.com/issue9/web v0.82.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/text v0.13.0
 	gopkg.in/yaml.v3 v3.0.1
