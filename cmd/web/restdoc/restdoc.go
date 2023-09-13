@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/source"
+	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
@@ -22,13 +23,13 @@ import (
 )
 
 const (
-	title          = localeutil.StringPhrase("gen restdoc")
-	usage          = localeutil.StringPhrase("restdoc usage")
-	outputUsage    = localeutil.StringPhrase("set output file")
-	recursiveUsage = localeutil.StringPhrase("recursive dir")
-	tagUsage       = localeutil.StringPhrase("filter by tag")
-	depUsage       = localeutil.StringPhrase("parse module dependencies")
-	prefixUsage    = localeutil.StringPhrase("set api path prefix")
+	title          = web.StringPhrase("gen restdoc")
+	usage          = web.StringPhrase("restdoc usage")
+	outputUsage    = web.StringPhrase("set output file")
+	recursiveUsage = web.StringPhrase("recursive dir")
+	tagUsage       = web.StringPhrase("filter by tag")
+	depUsage       = web.StringPhrase("parse module dependencies")
+	prefixUsage    = web.StringPhrase("set api path prefix")
 )
 
 const defaultOutput = "./restdoc.yaml"

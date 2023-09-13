@@ -15,30 +15,15 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/server"
 )
 
 // Version 当前框架的版本
-const Version = "0.82.1"
+const Version = "0.83.0"
 
 type (
-	Server         = server.Server
-	Context        = server.Context
-	Options        = server.Options
-	MiddlewareFunc = server.MiddlewareFunc
-	Middleware     = server.Middleware
-	HandlerFunc    = server.HandlerFunc
-	Router         = server.Router
-	Responser      = server.Responser
-	ResponserFunc  = server.ResponserFunc
-	CTXFilter      = server.CTXFilter
-	FilterProblem  = server.FilterProblem
-	Problem        = server.Problem
-	Scheduler      = server.Scheduler
-	SchedulerFunc  = server.SchedulerFunc
-	Cache          = cache.Cache
-	Logger         = logs.Logger
-	Logs           = logs.Logs
+	Cache  = cache.Cache
+	Logger = logs.Logger
+	Logs   = logs.Logs
 
 	// FieldError 表示配置文件中的字段错误
 	FieldError = config.FieldError
@@ -52,14 +37,8 @@ type (
 	StringPhrase = localeutil.StringPhrase
 )
 
-func NewServer(name, version string, o *Options) (*Server, error) {
-	return server.New(name, version, o)
-}
-
 // Phrase 生成本地化的语言片段
-func Phrase(key string, v ...any) LocaleStringer {
-	return localeutil.Phrase(key, v...)
-}
+func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
 
 // NewStackError 为 err 带上调用信息
 //

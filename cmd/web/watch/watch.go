@@ -14,16 +14,17 @@ import (
 	"github.com/caixw/gobuild/watch"
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/web"
 )
 
 const (
-	watchTitle    = localeutil.StringPhrase("watch and reload")
-	watchUsage    = localeutil.StringPhrase("watch and reload usage")
-	ignoreUsage   = localeutil.StringPhrase("not show ignore message")
-	extsUsage     = localeutil.StringPhrase("set watch file extension")
-	excludesUsage = localeutil.StringPhrase("exclude watch files")
-	appArgsUsage  = localeutil.StringPhrase("app args")
-	freqUsage     = localeutil.StringPhrase("watch frequency")
+	watchTitle    = web.StringPhrase("watch and reload")
+	watchUsage    = web.StringPhrase("watch and reload usage")
+	ignoreUsage   = web.StringPhrase("not show ignore message")
+	extsUsage     = web.StringPhrase("set watch file extension")
+	excludesUsage = web.StringPhrase("exclude watch files")
+	appArgsUsage  = web.StringPhrase("app args")
+	freqUsage     = web.StringPhrase("watch frequency")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
@@ -35,9 +36,9 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		freq := fs.String("freq", "1s", freqUsage.LocaleString(p))
 
 		sources := map[string]string{
-			watch.System: localeutil.StringPhrase("watch.sys").LocaleString(p),
-			watch.Go:     localeutil.StringPhrase("watch.compiler").LocaleString(p),
-			watch.App:    localeutil.StringPhrase("watch.app").LocaleString(p),
+			watch.System: web.StringPhrase("watch.sys").LocaleString(p),
+			watch.Go:     web.StringPhrase("watch.compiler").LocaleString(p),
+			watch.App:    web.StringPhrase("watch.app").LocaleString(p),
 		}
 
 		return func(w io.Writer) error {

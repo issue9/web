@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/config"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 )
 
@@ -60,17 +60,17 @@ func TestNewTermHandler(t *testing.T) {
 
 	w, c, err := newTermLogsHandler(nil)
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok := err.(*config.FieldError)
+	ce, ok := err.(*web.FieldError)
 	a.True(ok).Equal(ce.Field, "Args")
 
 	w, c, err = newTermLogsHandler([]string{"2006", "no-output", "no-color"})
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok = err.(*config.FieldError)
+	ce, ok = err.(*web.FieldError)
 	a.True(ok).Equal(ce.Field, "Args[1]")
 
 	w, c, err = newTermLogsHandler([]string{"2006", "stdout", "color-error"})
 	a.Error(err).Nil(w).Nil(c)
-	ce, ok = err.(*config.FieldError)
+	ce, ok = err.(*web.FieldError)
 	a.True(ok).Equal(ce.Field, "Args[2]")
 
 	w, c, err = newTermLogsHandler([]string{"2006", "stdout", "erro:red"})

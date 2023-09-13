@@ -4,10 +4,10 @@
 
 package mode
 
-import "github.com/issue9/web/server"
+import "github.com/issue9/web"
 
 const defaultMode = Production
 
 func filename(f string) string { return f }
 
-func debugRouter(r *server.Router, path, id string) {}
+func debugRouter(r *web.Router, path, id string) {}

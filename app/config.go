@@ -9,11 +9,10 @@ import (
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/server"
 )
 
 type configOf[T any] struct {
@@ -65,7 +64,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Encodings []*encodingConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings>encoding,omitempty"`
-	encodings []*server.Encoding
+	encodings []*web.Encoding
 
 	// 指定配置文件的序列化
 	//
@@ -84,7 +83,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*server.Mimetype
+	mimetypes []*web.Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -93,7 +92,7 @@ type configOf[T any] struct {
 	//  - string 普通的字符串；
 	//  - number 数值格式；
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
-	idGenerator server.IDGenerator
+	idGenerator web.IDGenerator
 
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
@@ -102,7 +101,7 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法
-	init []func(*server.Server)
+	init []func(*web.Server)
 }
 
 // NewServerOf 从配置文件初始化 [server.Server] 对象
@@ -114,33 +113,33 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
-func NewServerOf[T any](name, version string, configDir, filename string) (*server.Server, *T, error) {
+func NewServerOf[T any](name, version string, configDir, filename string) (*web.Server, *T, error) {
 	if filename == "" {
 		c, err := config.AppDir(nil, configDir)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		s, err := server.New(name, version, &server.Options{Config: c})
+		s, err := web.NewServer(name, version, &web.Options{Config: c})
 		return s, nil, err
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)
 	if err != nil {
-		return nil, nil, errs.NewStackError(err)
+		return nil, nil, web.NewStackError(err)
 	}
 
 	if conf.MemoryLimit > 0 {
 		initMemoryLimit(conf.MemoryLimit)
 	}
 
-	opt := &server.Options{
+	opt := &web.Options{
 		Config:     conf.config,
 		Location:   conf.location,
 		Cache:      conf.cache,
 		HTTPServer: conf.http,
 		Logs:       conf.logs,
-		Locale: &server.Locale{
+		Locale: &web.Locale{
 			Language: conf.languageTag,
 		},
 		RoutersOptions:    conf.HTTP.routersOptions,
@@ -152,14 +151,14 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 		Init:              conf.init,
 	}
 
-	srv, err := server.New(name, version, opt)
+	srv, err := web.NewServer(name, version, opt)
 	if err != nil {
-		return nil, nil, errs.NewStackError(err)
+		return nil, nil, web.NewStackError(err)
 	}
 
 	if len(conf.HTTP.Headers) > 0 {
-		srv.UseMiddleware(server.MiddlewareFunc(func(next server.HandlerFunc) server.HandlerFunc {
-			return func(ctx *server.Context) server.Responser {
+		srv.UseMiddleware(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+			return func(ctx *web.Context) web.Responser {
 				for _, hh := range conf.HTTP.Headers {
 					ctx.Header().Add(hh.Key, hh.Value)
 				}
@@ -173,7 +172,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*serv
 	return srv, conf.User, nil
 }
 
-func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
+func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	l, cleanup, err := conf.Logs.build()
 	if err != nil {
 		return err.AddFieldParent("logs")
@@ -184,7 +183,7 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return config.NewFieldError("language.", err)
+			return web.NewFieldError("language.", err)
 		}
 		conf.languageTag = tag
 	}
@@ -220,7 +219,7 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 		f, srv := g()
 		conf.idGenerator = f
 		if srv != nil {
-			conf.init = append(conf.init, func(s *server.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
+			conf.init = append(conf.init, func(s *web.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
 		}
 	}
 
@@ -239,7 +238,7 @@ func (conf *configOf[T]) SanitizeConfig() *config.FieldError {
 	return nil
 }
 
-func (conf *configOf[T]) buildTimezone() *config.FieldError {
+func (conf *configOf[T]) buildTimezone() *web.FieldError {
 	if conf.Timezone == "" {
 		return nil
 	}

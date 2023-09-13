@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"bytes"
@@ -20,18 +20,8 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
-
-func obj(status int, body any, kv ...string) Responser {
-	return ResponserFunc(func(ctx *Context) *Problem {
-		for i := 0; i < len(kv); i += 2 {
-			ctx.Header().Add(kv[i], kv[i+1])
-		}
-		ctx.Render(status, body)
-		return nil
-	})
-}
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
@@ -55,7 +45,7 @@ func BenchmarkServer_Serve(b *testing.B) {
 	a.NotNil(router)
 
 	router.Get("/path", func(c *Context) Responser {
-		return obj(http.StatusOK, "/path", "h1", "h1")
+		return Response(http.StatusOK, "/path", "h1", "h1")
 	})
 
 	defer servertest.Run(a, srv)()
@@ -137,7 +127,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			r := rest.Get(a, "/path").Header("Accept", "application/json").Request()
 			ctx := srv.newContext(w, r, nil)
 
-			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
 	})
@@ -151,7 +141,7 @@ func BenchmarkContext_Render(b *testing.B) {
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
 	})
@@ -165,7 +155,7 @@ func BenchmarkContext_Render(b *testing.B) {
 				Request()
 			ctx := srv.newContext(w, r, nil)
 
-			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
 			a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
 		}
 	})
@@ -180,7 +170,7 @@ func BenchmarkContext_Render(b *testing.B) {
 				Request()
 
 			ctx := srv.newContext(w, r, nil)
-			obj(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
 			ctx.destroy()
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -291,7 +281,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		obj(http.StatusCreated, o).Apply(ctx)
+		Response(http.StatusCreated, o).Apply(ctx)
 		a.Equal(w.Body.String(), `{"name":"response","Age":457}`)
 	}
 }
@@ -326,7 +316,7 @@ func BenchmarkContext_Object(b *testing.B) {
 			Header("content-type", "application/json").
 			Request()
 		ctx := s.newContext(w, r, nil)
-		obj(http.StatusTeapot, o).Apply(ctx)
+		Response(http.StatusTeapot, o).Apply(ctx)
 	}
 }
 
@@ -342,7 +332,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 			Header("content-type", "application/json").
 			Request()
 		ctx := s.newContext(w, r, nil)
-		obj(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
+		Response(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
 	}
 }
 

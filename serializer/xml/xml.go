@@ -6,7 +6,7 @@ package xml
 import (
 	"encoding/xml"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 const (
@@ -14,6 +14,6 @@ const (
 	ProblemMimetype = "application/problem+xml"
 )
 
-func Marshal(_ *server.Context, v any) ([]byte, error) { return xml.Marshal(v) }
+func Marshal(_ *web.Context, v any) ([]byte, error) { return xml.Marshal(v) }
 
 func Unmarshal(data []byte, v any) error { return xml.Unmarshal(data, v) }

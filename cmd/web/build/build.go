@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/issue9/cmdopt"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/term/v3/colors"
 	"github.com/issue9/web"
 	"golang.org/x/text/message"
@@ -19,8 +18,8 @@ import (
 )
 
 const (
-	title = localeutil.StringPhrase("build go source")
-	usage = localeutil.StringPhrase("build usage")
+	title = web.StringPhrase("build go source")
+	usage = web.StringPhrase("build usage")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *message.Printer) {

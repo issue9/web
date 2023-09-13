@@ -10,15 +10,15 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web"
+	"github.com/issue9/web/servertest"
 )
 
-func newServer(a *assert.Assertion, lang string) *server.Server {
-	s, err := server.New("test", "1.0.0", &server.Options{
+func newServer(a *assert.Assertion, lang string) *web.Server {
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Locale:     &server.Locale{Language: language.MustParse(lang)},
-		Mimetypes: []*server.Mimetype{
+		Locale:     &web.Locale{Language: language.MustParse(lang)},
+		Mimetypes: []*web.Mimetype{
 			{
 				Type:      Mimetype,
 				Marshal:   Marshal,
@@ -50,8 +50,8 @@ func TestInstallView(t *testing.T) {
 	}
 
 	r := s.NewRouter("def", nil)
-	r.Get("/path", func(ctx *server.Context) server.Responser {
-		return server.ResponserFunc(func(ctx *server.Context) *server.Problem {
+	r.Get("/path", func(ctx *web.Context) web.Responser {
+		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 			ctx.Render(200, &obj{})
 			return nil
 		})
@@ -85,8 +85,8 @@ func TestInstallDirView(t *testing.T) {
 	}
 
 	r := s.NewRouter("def", nil)
-	r.Get("/path", func(ctx *server.Context) server.Responser {
-		return server.ResponserFunc(func(ctx *server.Context) *server.Problem {
+	r.Get("/path", func(ctx *web.Context) web.Responser {
+		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 			ctx.Render(200, &obj{})
 			return nil
 		})

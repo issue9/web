@@ -34,8 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 // ServerApp 实现对 [server.Server] 的管理
@@ -51,8 +50,8 @@ type App struct {
 	// 构建新服务的方法
 	//
 	// 每次重启服务时，都将由此方法生成一个新的服务。
-	NewServer func() (*server.Server, error)
-	srv       *server.Server
+	NewServer func() (*web.Server, error)
+	srv       *web.Server
 
 	// 重启之前需要做的操作
 	//
@@ -71,7 +70,7 @@ func (app *App) Exec() (err error) {
 RESTART:
 	app.srv, err = app.NewServer()
 	if err != nil {
-		return errs.NewStackError(err)
+		return web.NewStackError(err)
 	}
 
 	app.restart = false

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
@@ -73,7 +72,7 @@ type Context struct {
 	// 这是比 [context.Value] 更经济的传递变量方式，但是这并不是协程安全的。
 	vars map[any]any
 
-	logs logs.Logs
+	logs Logs
 }
 
 // MarshalFunc 序列化函数原型
@@ -89,7 +88,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
-		srv.Logs().DEBUG().Printf(localeutil.Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
+		srv.Logs().DEBUG().Printf(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -97,7 +96,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().DEBUG().Printf(localeutil.Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
+		srv.Logs().DEBUG().Printf(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -349,7 +348,7 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 // 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
 //
 // 输出内容依然遵照 [Server.Logs] 的规则作本地化处理。
-func (ctx *Context) Logs() logs.Logs { return ctx.logs }
+func (ctx *Context) Logs() Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))

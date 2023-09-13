@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 // Package server 服务管理
-package server
+package web
 
 import (
 	"context"
@@ -22,7 +22,6 @@ import (
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
-	"github.com/issue9/web/logs"
 )
 
 // Server web 服务对象
@@ -43,7 +42,7 @@ type Server struct {
 	catalog  *catalog.Builder
 	tag      language.Tag
 	printer  *message.Printer
-	logs     logs.Logs
+	logs     Logs
 
 	closed chan struct{}
 	closes []func() error
@@ -58,7 +57,7 @@ type Server struct {
 //
 // name, version 表示服务的名称和版本号；
 // o 指定了初始化 [Server] 一些带有默认值的参数；
-func New(name, version string, o *Options) (*Server, error) {
+func NewServer(name, version string, o *Options) (*Server, error) {
 	o, err := sanitizeOptions(o)
 	if err != nil {
 		err.Path = "server.Options"
@@ -237,4 +236,4 @@ func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
 // Config 配置文件的相关操作
 func (srv *Server) Config() *config.Config { return srv.config }
 
-func (srv *Server) Logs() logs.Logs { return srv.logs }
+func (srv *Server) Logs() Logs { return srv.logs }

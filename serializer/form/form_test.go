@@ -8,17 +8,17 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 var (
-	_ server.MarshalFunc   = Marshal
-	_ server.UnmarshalFunc = Unmarshal
+	_ web.MarshalFunc   = Marshal
+	_ web.UnmarshalFunc = Unmarshal
 
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
 
-	_ Marshaler = &server.Problem{}
+	_ Marshaler = &web.Problem{}
 )
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"

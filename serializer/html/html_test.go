@@ -7,14 +7,14 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 var (
-	_ server.MarshalFunc   = Marshal
-	_ server.UnmarshalFunc = Unmarshal
+	_ web.MarshalFunc   = Marshal
+	_ web.UnmarshalFunc = Unmarshal
 
-	_ Marshaler = &server.Problem{}
+	_ Marshaler = &web.Problem{}
 )
 
 func TestGetName(t *testing.T) {
@@ -43,8 +43,8 @@ func TestGetName(t *testing.T) {
 	name, v = getName(&obj4{})
 	a.Equal(name, "obj4").Empty(v)
 
-	p := &server.Problem{} // 实现了 Marshaler
-	p.Fields = []server.ProblemField{{Key: "title", Value: "title"}}
+	p := &web.Problem{} // 实现了 Marshaler
+	p.Fields = []web.ProblemField{{Key: "title", Value: "title"}}
 	name, v = getName(p)
 	a.Equal(name, "problem").
 		Equal(v, map[string]any{

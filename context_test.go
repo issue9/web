@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"bytes"
@@ -13,14 +13,13 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/serializer"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 var _ http.ResponseWriter = &Context{}
@@ -97,7 +96,7 @@ func TestServer_Context(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/path").Header("Accept", "not").
 		Do(nil).
 		Status(http.StatusNotAcceptable)
-	a.Contains(lw.String(), localeutil.Phrase("not found serialization for %s", "not").LocaleString(srv.LocalePrinter()))
+	a.Contains(lw.String(), Phrase("not found serialization for %s", "not").LocaleString(srv.LocalePrinter()))
 
 	// 错误的 accept-charset
 	lw.Reset()
@@ -106,7 +105,7 @@ func TestServer_Context(t *testing.T) {
 		Header("Accept-Charset", "unknown").
 		Do(nil).
 		Status(http.StatusNotAcceptable)
-	a.Contains(lw.String(), localeutil.Phrase("not found charset for %s", "unknown").LocaleString(srv.LocalePrinter()))
+	a.Contains(lw.String(), Phrase("not found charset for %s", "unknown").LocaleString(srv.LocalePrinter()))
 
 	// 错误的 content-type,无输入内容
 	lw.Reset()

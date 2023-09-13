@@ -30,9 +30,9 @@ import (
 )
 
 const (
-	helpTitle = localeutil.StringPhrase("show help")
-	helpUsage = localeutil.StringPhrase("show current help info")
-	usageTpl  = localeutil.StringPhrase(`Auxiliary tool for github.com/issue9/web
+	helpTitle = web.StringPhrase("show help")
+	helpUsage = web.StringPhrase("show current help info")
+	usageTpl  = web.StringPhrase(`Auxiliary tool for github.com/issue9/web
 
 commands：
 {{commands}}
@@ -64,7 +64,7 @@ func main() {
 	var opt *cmdopt.CmdOpt
 
 	opt = cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		v := fs.Bool("v", false, localeutil.StringPhrase("show version").LocaleString(p))
+		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
 			if *v {
 				fmt.Fprintf(w, "web: %s\n", version)
@@ -92,7 +92,7 @@ func main() {
 
 func buildNotFound(p *localeutil.Printer) func(string) string {
 	return func(s string) string {
-		return localeutil.Phrase("command %s not found", s).LocaleString(p)
+		return web.Phrase("command %s not found", s).LocaleString(p)
 	}
 }
 

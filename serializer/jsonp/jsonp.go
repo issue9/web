@@ -9,7 +9,6 @@ import (
 	"github.com/issue9/errwrap"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/server"
 )
 
 const Mimetype = "application/javascript"
@@ -25,7 +24,7 @@ func Install(callbackKey string, s *web.Server) {
 	s.Vars().Store(contextKey, callbackKey)
 }
 
-func Marshal(ctx *server.Context, v any) ([]byte, error) {
+func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

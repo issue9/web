@@ -9,7 +9,7 @@ import (
 
 	"github.com/issue9/mux/v7"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 func Filename(f string) string {
@@ -24,7 +24,7 @@ func Filename(f string) string {
 //
 // path 测试路径；
 // id 在取地址参数出错时的 problem id；
-func DebugRouter(r *server.Router, path, id string) {
+func DebugRouter(r *web.Router, path, id string) {
 	if path == "" {
 		panic("path 不能为空")
 	}
@@ -34,7 +34,7 @@ func DebugRouter(r *server.Router, path, id string) {
 	if path[len(path)-1] == '/' {
 		path = path[:len(path)-1]
 	}
-	r.Any(path+"/{path}", func(ctx *server.Context) server.Responser {
+	r.Any(path+"/{path}", func(ctx *web.Context) web.Responser {
 		p, resp := ctx.PathString("path", id)
 		if resp != nil {
 			return resp

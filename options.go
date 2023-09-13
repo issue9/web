@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"net/http"
@@ -52,7 +52,7 @@ type (
 		//
 		// 如果此值为空，表示不会输出任何信息。
 		Logs *logs.Options
-		logs logs.Logs
+		logs Logs
 
 		// http.Server 实例的值
 		//
@@ -152,7 +152,7 @@ type (
 	}
 )
 
-func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
+func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -227,7 +227,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	return o, nil
 }
 
-func (e *Encoding) sanitize() *config.FieldError {
+func (e *Encoding) sanitize() *FieldError {
 	if e.Name == "" || e.Name == "identity" || e.Name == "*" {
 		return config.NewFieldError("Name", locales.InvalidValue)
 	}
@@ -243,7 +243,7 @@ func (e *Encoding) sanitize() *config.FieldError {
 	return nil
 }
 
-func (l *Locale) sanitize() *config.FieldError {
+func (l *Locale) sanitize() *FieldError {
 	if l.Language == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {

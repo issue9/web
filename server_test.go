@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"bytes"
@@ -14,11 +14,10 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 var (
@@ -28,7 +27,7 @@ var (
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
-	srv, err := New("app", "1.0.0", nil)
+	srv, err := NewServer("app", "1.0.0", nil)
 	a.NotError(err).NotNil(srv)
 
 	type (
@@ -88,7 +87,7 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 		}
 	}
 
-	srv, err := New("app", "0.1.0", o)
+	srv, err := NewServer("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
@@ -98,15 +97,15 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	srv.AddProblem("41110", 411, localeutil.Phrase("lang"), localeutil.Phrase("41110"))
+	srv.AddProblem("41110", 411, Phrase("lang"), Phrase("41110"))
 
 	return srv
 }
 
-func TestNew(t *testing.T) {
+func TestNewServer(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv, err := New("app", "0.1.0", nil)
+	srv, err := NewServer("app", "0.1.0", nil)
 	a.NotError(err).NotNil(srv).
 		False(srv.Uptime().IsZero()).
 		NotNil(srv.Cache()).

@@ -14,13 +14,13 @@ import (
 
 type Problems struct {
 	prefix   string
-	problems []*Problem // 不用 map，保证 Problems 顺序相同。
+	problems []*Problem // 不能用 map，需保证元素的顺序相同。
 }
 
 type Problem struct {
 	id string // 用户指定的原始值
 
-	Type   string // 带 prefix
+	Type   string // 带 Problems.pPrefix
 	Status int
 	Title  localeutil.LocaleStringer
 	Detail localeutil.LocaleStringer

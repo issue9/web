@@ -8,8 +8,9 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
 	"gopkg.in/yaml.v3"
+
+	"github.com/issue9/web"
 )
 
 var filesFactory = map[string]serializer{}
@@ -23,12 +24,12 @@ type serializer struct {
 	Unmarshal UnmarshalFileFunc
 }
 
-func (conf *configOf[T]) sanitizeFileSerializers() *config.FieldError {
+func (conf *configOf[T]) sanitizeFileSerializers() *web.FieldError {
 	conf.fileSerializers = make(map[string]serializer, len(conf.FileSerializers))
 	for i, name := range conf.FileSerializers {
 		s, found := filesFactory[name]
 		if !found {
-			return config.NewFieldError("["+strconv.Itoa(i)+"]", localeutil.Error("not found serialization function for %s", name))
+			return web.NewFieldError("["+strconv.Itoa(i)+"]", web.NewLocaleError("not found serialization function for %s", name))
 		}
 		conf.fileSerializers[name] = s // conf.FileSerializers 可以保证 conf.fileSerializers 唯一性
 	}

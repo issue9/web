@@ -10,6 +10,4 @@ import (
 	"github.com/issue9/logs/v5"
 )
 
-func setStdDefault(l *logs.Logs) {
-	slog.SetDefault(l.SLog())
-}
+func setStdDefault(l *logs.Logs) { slog.SetDefault(l.SLog()) }

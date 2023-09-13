@@ -18,10 +18,9 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/server"
 )
 
 // CLIOf 提供一种简单的命令行生成方式
@@ -44,7 +43,7 @@ type CLIOf[T any] struct {
 	//
 	// user 为用户自定义的数据结构；
 	// action 为 -a 命令行指定的参数；
-	Init func(s *server.Server, user *T, action string) error
+	Init func(s *web.Server, user *T, action string) error
 
 	// 以服务运行的指令
 	ServeActions []string
@@ -81,7 +80,7 @@ type CLIOf[T any] struct {
 	// 若为空，则以 NewPrinter(locales.Locales, "*.yml") 进行初始化。
 	//
 	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[server.Server] 的本地化由其自身管理。
-	Printer *localeutil.Printer
+	Printer *message.Printer
 
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
@@ -108,7 +107,7 @@ func (cmd *CLIOf[T]) Exec(args []string) (err error) {
 	}
 
 	if err != nil {
-		if le, ok := err.(localeutil.LocaleStringer); ok { // 对错误信息进行本地化转换
+		if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
 			err = errors.New(le.LocaleString(cmd.Printer))
 		}
 	}
@@ -127,7 +126,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.ConfigDir == "" {
-		cmd.ConfigDir = server.DefaultConfigDir
+		cmd.ConfigDir = web.DefaultConfigDir
 	}
 
 	if cmd.ConfigFilename == "" {
@@ -158,9 +157,9 @@ func (cmd *CLIOf[T]) sanitize() error {
 }
 
 const (
-	cmdShowVersion = localeutil.StringPhrase("cmd.show_version")
-	cmdAction      = localeutil.StringPhrase("cmd.action")
-	cmdShowHelp    = localeutil.StringPhrase("cmd.show_help")
+	cmdShowVersion = web.StringPhrase("cmd.show_version")
+	cmdAction      = web.StringPhrase("cmd.action")
+	cmdShowHelp    = web.StringPhrase("cmd.show_help")
 )
 
 // FlagSet 将当前对象与 [flag.FlagSet] 关联
@@ -205,14 +204,14 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
 func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
-func (cmd *CLIOf[T]) initServer() (*server.Server, error) {
+func (cmd *CLIOf[T]) initServer() (*web.Server, error) {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ConfigDir, cmd.ConfigFilename)
 	if err != nil {
-		return nil, errs.NewStackError(err)
+		return nil, web.NewStackError(err)
 	}
 
 	if err = cmd.Init(srv, user, cmd.action); err != nil {
-		return nil, errs.NewStackError(err)
+		return nil, web.NewStackError(err)
 	}
 
 	return srv, nil
@@ -228,7 +227,7 @@ func CheckConfigSyntax[T any](configDir, filename string) error {
 //
 // 语言由 [localeutil.DetectUserLanguageTag] 决定。
 // 参数指定了本地化的文件内容。
-func NewPrinter(fsys fs.FS, glob string) (*localeutil.Printer, error) {
+func NewPrinter(fsys fs.FS, glob string) (*message.Printer, error) {
 	tag, err := localeutil.DetectUserLanguageTag()
 	if err != nil {
 		log.Println(err) // 输出错误，但是不中断执行

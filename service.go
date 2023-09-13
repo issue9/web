@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/scheduled"
 )
 
@@ -23,7 +22,7 @@ const (
 type (
 	service struct {
 		s       *Services
-		title   localeutil.LocaleStringer
+		title   LocaleStringer
 		service Service
 		err     error // 保存上次的出错内容，不会清空该值。
 
@@ -45,7 +44,7 @@ type (
 		services  []*service
 		ctx       context.Context
 		scheduled *scheduled.Server
-		jobTitles map[string]localeutil.LocaleStringer
+		jobTitles map[string]LocaleStringer
 	}
 
 	ServiceFunc func(context.Context) error
@@ -72,9 +71,9 @@ func (srv *Server) initServices() {
 		services:  make([]*service, 0, 5),
 		ctx:       ctx,
 		scheduled: scheduled.NewServer(srv.Location(), srv.logs.ERROR(), srv.logs.DEBUG()),
-		jobTitles: make(map[string]localeutil.LocaleStringer, 10),
+		jobTitles: make(map[string]LocaleStringer, 10),
 	}
-	srv.services.Add(localeutil.Phrase("scheduler jobs"), srv.services.scheduled)
+	srv.services.Add(StringPhrase("scheduler jobs"), srv.services.scheduled)
 }
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
@@ -116,7 +115,7 @@ func (srv *Server) Services() *Services { return srv.services }
 // Add 添加并运行新的服务
 //
 // title 是对该服务的简要说明；
-func (srv *Services) Add(title localeutil.LocaleStringer, f Service) {
+func (srv *Services) Add(title LocaleStringer, f Service) {
 	s := &service{
 		s:       srv,
 		title:   title,
@@ -126,11 +125,11 @@ func (srv *Services) Add(title localeutil.LocaleStringer, f Service) {
 	s.goServe()
 }
 
-func (srv *Services) AddFunc(title localeutil.LocaleStringer, f func(context.Context) error) {
+func (srv *Services) AddFunc(title LocaleStringer, f func(context.Context) error) {
 	srv.Add(title, ServiceFunc(f))
 }
 
-func (srv *Services) Visit(visit func(title localeutil.LocaleStringer, state State, err error)) {
+func (srv *Services) Visit(visit func(title LocaleStringer, state State, err error)) {
 	for _, s := range srv.services {
 		visit(s.title, s.state, s.err)
 	}
@@ -143,7 +142,7 @@ func (srv *Services) Visit(visit func(title localeutil.LocaleStringer, state Sta
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 //
 // NOTE: 此功能依赖 [Server.UniqueID]。
-func (srv *Services) AddCron(title localeutil.LocaleStringer, f JobFunc, spec string, delay bool) {
+func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
 	srv.scheduled.Cron(id, f, spec, delay)
@@ -157,7 +156,7 @@ func (srv *Services) AddCron(title localeutil.LocaleStringer, f JobFunc, spec st
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 //
 // NOTE: 此功能依赖 [Server.UniqueID]。
-func (srv *Services) AddTicker(title localeutil.LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) {
+func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
 	srv.scheduled.Tick(id, job, dur, imm, delay)
@@ -170,7 +169,7 @@ func (srv *Services) AddTicker(title localeutil.LocaleStringer, job JobFunc, dur
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 //
 // NOTE: 此功能依赖 [Server.UniqueID]。
-func (srv *Services) AddAt(title localeutil.LocaleStringer, job JobFunc, at time.Time, delay bool) {
+func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
 	srv.scheduled.At(id, job, at, delay)
@@ -183,7 +182,7 @@ func (srv *Services) AddAt(title localeutil.LocaleStringer, job JobFunc, at time
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 //
 // NOTE: 此功能依赖 [Server.UniqueID]。
-func (srv *Services) AddJob(title localeutil.LocaleStringer, job JobFunc, scheduler Scheduler, delay bool) {
+func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, delay bool) {
 	id := srv.s.UniqueID()
 	srv.jobTitles[id] = title
 	srv.scheduled.New(id, job, scheduler, delay)
@@ -193,14 +192,14 @@ func (srv *Services) AddJob(title localeutil.LocaleStringer, job JobFunc, schedu
 //
 // visit 原型为：
 //
-//	func(title localeutil.LocaleStringer, prev, next time.Time, state State, delay bool, err error)
+//	func(title LocaleStringer, prev, next time.Time, state State, delay bool, err error)
 //
 // title 为计划任务的说明；
 // prev 和 next 表示任务的上一次执行时间和下一次执行时间；
 // state 表示当前的状态；
 // delay 表示该任务是否是执行完才开始计算下一次任务时间的；
 // err 表示这个任务的出错状态；
-func (srv *Services) VisitJobs(visit func(localeutil.LocaleStringer, time.Time, time.Time, State, bool, error)) {
+func (srv *Services) VisitJobs(visit func(LocaleStringer, time.Time, time.Time, State, bool, error)) {
 	for _, j := range srv.scheduled.Jobs() {
 		visit(srv.jobTitles[j.Name()], j.Prev(), j.Next(), j.State(), j.Delay(), j.Err())
 	}

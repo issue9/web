@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/issue9/config"
 	"github.com/issue9/scheduled"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/server"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
@@ -48,23 +47,23 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *config.FieldError {
+func (conf *configOf[T]) buildCache() *web.FieldError {
 	if conf.Cache == nil {
 		return nil
 	}
 
 	b, found := cacheFactory[conf.Cache.Type]
 	if !found {
-		return config.NewFieldError("type", locales.InvalidValue)
+		return web.NewFieldError("type", locales.InvalidValue)
 	}
 
 	drv, job, err := b(conf.Cache.DSN)
 	if err != nil {
-		return config.NewFieldError("dsn", err)
+		return web.NewFieldError("dsn", err)
 	}
 	conf.cache = drv
 	if job != nil {
-		conf.init = append(conf.init, func(s *server.Server) {
+		conf.init = append(conf.init, func(s *web.Server) {
 			s.Services().AddTicker(locales.RecycleLocalCache, job.Job, job.Ticker, false, false)
 		})
 	}

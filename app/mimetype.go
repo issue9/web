@@ -5,23 +5,21 @@ package app
 import (
 	"strconv"
 
-	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/serializer/form"
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/serializer/json"
 	"github.com/issue9/web/serializer/xml"
-	"github.com/issue9/web/server"
 )
 
 var mimetypesFactory = map[string]serializerItem{}
 
 type serializerItem struct {
-	marshal   server.MarshalFunc
-	unmarshal server.UnmarshalFunc
+	marshal   web.MarshalFunc
+	unmarshal web.UnmarshalFunc
 }
 
 type mimetypeConfig struct {
@@ -48,23 +46,23 @@ type mimetypeConfig struct {
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
-func (conf *configOf[T]) sanitizeMimetypes() *config.FieldError {
+func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
 	if len(dup) > 0 {
 		value := conf.Mimetypes[dup[1]].Type
-		err := config.NewFieldError("["+strconv.Itoa(dup[1])+"].target", locales.DuplicateValue)
+		err := web.NewFieldError("["+strconv.Itoa(dup[1])+"].target", locales.DuplicateValue)
 		err.Value = value
 		return err
 	}
 
-	ms := make([]*server.Mimetype, 0, len(conf.Mimetypes))
+	ms := make([]*web.Mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return config.NewFieldError("["+strconv.Itoa(index)+"].target", localeutil.Error("%s not found", item.Target))
+			return web.NewFieldError("["+strconv.Itoa(index)+"].target", web.NewLocaleError("%s not found", item.Target))
 		}
 
-		ms = append(ms, &server.Mimetype{
+		ms = append(ms, &web.Mimetype{
 			Marshal:     m.marshal,
 			Unmarshal:   m.unmarshal,
 			Type:        item.Type,
@@ -79,7 +77,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *config.FieldError {
 // RegisterMimetype 注册用于序列化用户提交数据的方法
 //
 // name 为名称，如果存在同名，则会覆盖。
-func RegisterMimetype(m server.MarshalFunc, u server.UnmarshalFunc, name string) {
+func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
 	mimetypesFactory[name] = serializerItem{marshal: m, unmarshal: u}
 }
 

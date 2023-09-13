@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"encoding/json"
@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/filter"
@@ -50,6 +49,8 @@ var (
 
 type (
 	// Problem 根据 [RFC7807] 实现向用户反馈非正常状态的信息
+	//
+	// 这也是 [Responser] 的实现者之一。
 	//
 	// [MarshalFunc] 的实现者，可能需要对 Problem 进行处理以便输出更加友好的格式。
 	//
@@ -159,7 +160,7 @@ func (p *Problem) WithField(key string, val any) *Problem {
 }
 
 // AddProblem 添加新的错误代码
-func (srv *Server) AddProblem(id string, status int, title, detail localeutil.LocaleStringer) *Server {
+func (srv *Server) AddProblem(id string, status int, title, detail LocaleStringer) *Server {
 	srv.problems.Add(id, status, title, detail)
 	return srv
 }
@@ -168,14 +169,14 @@ func (srv *Server) AddProblem(id string, status int, title, detail localeutil.Lo
 //
 // visit 签名：
 //
-//	func(prefix, id string, status int, title, detail localeutil.LocaleStringer)
+//	func(prefix, id string, status int, title, detail LocaleStringer)
 //
 // prefix 用户设置的前缀，可能为空值；
 // id 为错误代码，不包含前缀部分；
 // status 该错误代码反馈给用户的 HTTP 状态码；
 // title 错误代码的简要描述；
 // detail 错误代码的明细；
-func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
+func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer)) {
 	srv.problems.Visit(visit)
 }
 
@@ -227,7 +228,7 @@ func (v *FilterProblem) continueNext() bool { return !v.exitAtError || v.len() =
 func (v *FilterProblem) len() int { return len(v.p.Params) }
 
 // Add 添加一条错误信息
-func (v *FilterProblem) Add(name string, reason localeutil.LocaleStringer) *FilterProblem {
+func (v *FilterProblem) Add(name string, reason LocaleStringer) *FilterProblem {
 	if v.continueNext() {
 		return v.add(name, reason)
 	}
@@ -236,13 +237,13 @@ func (v *FilterProblem) Add(name string, reason localeutil.LocaleStringer) *Filt
 
 // AddError 添加一条类型为 error 的错误信息
 func (v *FilterProblem) AddError(name string, err error) *FilterProblem {
-	if ls, ok := err.(localeutil.LocaleStringer); ok {
+	if ls, ok := err.(LocaleStringer); ok {
 		return v.Add(name, ls)
 	}
-	return v.Add(name, localeutil.Phrase(err.Error()))
+	return v.Add(name, Phrase(err.Error()))
 }
 
-func (v *FilterProblem) add(name string, reason localeutil.LocaleStringer) *FilterProblem {
+func (v *FilterProblem) add(name string, reason LocaleStringer) *FilterProblem {
 	v.p.WithParam(name, reason.LocaleString(v.Context().LocalePrinter()))
 	return v
 }

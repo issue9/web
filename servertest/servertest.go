@@ -10,6 +10,9 @@ import (
 	"github.com/issue9/assert/v3/rest"
 )
 
+// Server 表示 web.Server
+//
+// 因相互引用的原因，此处定义了简要的 web.Server 实现接口。
 type Server interface {
 	Serve() error
 }
@@ -34,6 +37,8 @@ func Delete(a *assert.Assertion, path string) *rest.Request {
 }
 
 // Run 运行服务内容并返回等待退出的方法
+//
+// s 应该始终传递 web.Server 对象。
 func Run(a *assert.Assertion, s Server) func() {
 	ok := make(chan struct{}, 1)
 	exit := make(chan struct{}, 1)

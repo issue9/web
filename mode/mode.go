@@ -7,7 +7,7 @@
 //   - 其它情况下，则 [Mode] 的值永远是 [Production]；
 package mode
 
-import "github.com/issue9/web/server"
+import "github.com/issue9/web"
 
 const (
 	Production  int = iota // 运行于生产环境
@@ -34,4 +34,4 @@ func Filename(f string) string { return filename(f) }
 //
 // path 测试路径；
 // id 在取地址参数出错时的 problem id；
-func DebugRouter(r *server.Router, path, id string) { debugRouter(r, path, id) }
+func DebugRouter(r *web.Router, path, id string) { debugRouter(r, path, id) }

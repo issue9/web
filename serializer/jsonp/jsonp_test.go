@@ -9,14 +9,13 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
-		Mimetypes: []*server.Mimetype{
+	s, err := web.NewServer("test", "1.0.0", &web.Options{
+		Mimetypes: []*web.Mimetype{
 			{Type: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, ProblemType: ""},
 		},
 		HTTPServer: &http.Server{Addr: ":8080"},
@@ -24,7 +23,7 @@ func TestJSONP(t *testing.T) {
 	a.NotError(err).NotNil(s)
 	Install("callback", s)
 
-	s.NewRouter("def", nil).Get("/jsonp", func(ctx *server.Context) server.Responser {
+	s.NewRouter("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
 		return web.OK("jsonp")
 	})
 

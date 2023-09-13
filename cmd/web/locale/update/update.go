@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message"
 	"github.com/issue9/localeutil/message/serialize"
+	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
@@ -22,14 +23,14 @@ import (
 )
 
 const (
-	title = localeutil.StringPhrase("update locale file")
-	usage = localeutil.StringPhrase(`update locale file usage
+	title = web.StringPhrase("update locale file")
+	usage = web.StringPhrase(`update locale file usage
 
 flags:
 {{flags}}
 `)
-	srcUsage  = localeutil.StringPhrase("src locale file")
-	destUsage = localeutil.StringPhrase("dest locale files")
+	srcUsage  = web.StringPhrase("src locale file")
+	destUsage = web.StringPhrase("dest locale files")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
@@ -57,7 +58,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					return err
 				}
 				if stat.IsDir() {
-					return localeutil.Error("the dest file %s is dir", d)
+					return web.NewLocaleError("the dest file %s is dir", d)
 				}
 
 				filename := filepath.Base(d)
@@ -74,7 +75,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				}
 
 				srcMsg.MergeTo(func(tag language.Tag, key string) {
-					log.WARN().Printf(localeutil.Phrase("the key %s of %s not found, will be deleted", key, tag).LocaleString(p))
+					log.WARN().Printf(web.Phrase("the key %s of %s not found, will be deleted", key, tag).LocaleString(p))
 				}, []*message.Language{dest})
 
 				m, _, err := locale.GetMarshalByExt(ext)
@@ -107,6 +108,6 @@ func getUnmarshalByExt(ext string) (serialize.UnmarshalFunc, error) {
 	case "yaml", "yml", ".yaml", ".yml":
 		return yaml.Unmarshal, nil
 	default:
-		return nil, localeutil.Error("unsupported unmarshal for %s", ext)
+		return nil, web.NewLocaleError("unsupported unmarshal for %s", ext)
 	}
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"errors"
@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/issue9/localeutil"
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
@@ -119,7 +118,7 @@ func (p *Paths) Float64(key string) float64 {
 	return ret
 }
 
-// Problem 如果有错误信息转换成 Problem 否则返回 nil
+// Problem 如果有错误信息转换成 [Problem] 否则返回 nil
 func (p *Paths) Problem(id string) Responser { return p.filter.Problem(id) }
 
 // PathID 获取地址参数中表示 key 的值并转换成大于 0 的 int64
@@ -129,7 +128,7 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
-		return 0, ctx.Problem(id).WithParam(key, localeutil.Phrase(err.Error()).LocaleString(p))
+		return 0, ctx.Problem(id).WithParam(key, Phrase(err.Error()).LocaleString(p))
 	} else if ret <= 0 {
 		return 0, ctx.Problem(id).WithParam(key, locales.ShouldGreatThanZero.LocaleString(p))
 	}
@@ -142,7 +141,7 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
-		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
+		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		return 0, ctx.Problem(id).WithParam(key, msg)
 	}
 	return ret, nil
@@ -154,7 +153,7 @@ func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 func (ctx *Context) PathString(key, id string) (string, Responser) {
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
-		msg := localeutil.Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
+		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		return "", ctx.Problem(id).WithParam(key, msg)
 	}
 	return ret, nil
@@ -192,8 +191,8 @@ func (q *Queries) Int(key string, def int) int {
 	}
 
 	v, err := strconv.Atoi(str)
-	if err != nil { // strconv.Atoi 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.filter.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.Atoi 不可能返回 LocaleStringer 接口的数据
+		q.filter.Add(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -213,8 +212,8 @@ func (q *Queries) Int64(key string, def int64) int64 {
 	}
 
 	v, err := strconv.ParseInt(str, 10, 64)
-	if err != nil { // strconv.ParseInt 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.filter.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.ParseInt 不可能返回 LocaleStringer 接口的数据
+		q.filter.Add(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -248,8 +247,8 @@ func (q *Queries) Bool(key string, def bool) bool {
 	}
 
 	v, err := strconv.ParseBool(str)
-	if err != nil { // strconv.ParseBool 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.filter.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.ParseBool 不可能返回 LocaleStringer 接口的数据
+		q.filter.Add(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -269,8 +268,8 @@ func (q *Queries) Float64(key string, def float64) float64 {
 	}
 
 	v, err := strconv.ParseFloat(str, 64)
-	if err != nil { // strconv.ParseFloat 不可能返回 localeutil.LocaleStringer 接口的数据
-		q.filter.Add(key, localeutil.Phrase(err.Error()))
+	if err != nil { // strconv.ParseFloat 不可能返回 LocaleStringer 接口的数据
+		q.filter.Add(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -287,11 +286,11 @@ func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
 // [Query]: https://github.com/issue9/query
 func (q *Queries) Object(v any, id string) {
 	query.ParseWithLog(q.queries, v, func(field string, err error) {
-		var msg localeutil.LocaleStringer
-		if ls, ok := err.(localeutil.LocaleStringer); ok {
+		var msg LocaleStringer
+		if ls, ok := err.(LocaleStringer); ok {
 			msg = ls
 		} else {
-			msg = localeutil.Phrase(err.Error())
+			msg = Phrase(err.Error())
 		}
 
 		q.filter.Add(field, msg)
@@ -369,7 +368,7 @@ func (ctx *Context) Unmarshal(v any) error {
 		return nil
 	}
 	if ctx.inputMimetype == nil {
-		return localeutil.Error("the client did not specify content-type header")
+		return NewLocaleError("the client did not specify content-type header")
 	}
 	return ctx.inputMimetype(body, v)
 }

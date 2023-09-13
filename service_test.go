@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"context"
@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 // start 表示服务协程运行成功；
@@ -59,7 +58,7 @@ func TestServer_service(t *testing.T) {
 
 	a.Equal(2, len(srv.services)) // scheduled, unique id generator
 	s1, start1, _, _ := buildService()
-	srv.Add(localeutil.Phrase("srv1"), s1)
+	srv.Add(Phrase("srv1"), s1)
 	a.Equal(3, len(srv.services))
 	sched := srv.services[0]
 	srv1 := srv.services[2]
@@ -70,7 +69,7 @@ func TestServer_service(t *testing.T) {
 
 	// 运行中添加
 	s2, start2, _, _ := buildService()
-	srv.Add(localeutil.Phrase("srv2"), s2)
+	srv.Add(Phrase("srv2"), s2)
 	a.Equal(4, len(srv.services))
 	srv2 := srv.services[3]
 	<-start2
@@ -89,13 +88,13 @@ func TestServer_scheduled(t *testing.T) {
 	srv := s.Services()
 	a.Equal(1, len(srv.scheduled.Jobs())) // memory cache gc
 
-	srv.AddAt(localeutil.Phrase("lang"), func(t time.Time) error {
+	srv.AddAt(Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now(), false)
 
 	var count int
-	srv.VisitJobs(func(ls localeutil.LocaleStringer, t1, t2 time.Time, s State, b bool, err error) {
+	srv.VisitJobs(func(ls LocaleStringer, t1, t2 time.Time, s State, b bool, err error) {
 		p := srv.s.NewPrinter(language.Chinese)
 		if count == 1 {
 			a.Equal(ls.LocaleString(p), "hans")
@@ -112,7 +111,7 @@ func TestService_state(t *testing.T) {
 		servertest.Run(a, s)
 
 		srv1, start, _, _ := buildService()
-		s.Services().Add(localeutil.Phrase("srv1"), srv1)
+		s.Services().Add(Phrase("srv1"), srv1)
 		<-start
 		s1 := s.Services().services[1]
 		a.Equal(s1.state, Running)
@@ -127,7 +126,7 @@ func TestService_state(t *testing.T) {
 		s := newTestServer(a, nil)
 
 		srv1, start, p, _ := buildService()
-		s.Services().Add(localeutil.Phrase("srv1"), srv1)
+		s.Services().Add(Phrase("srv1"), srv1)
 		<-start
 		s1 := s.Services().services[2]
 		a.Equal(s1.state, Running)
@@ -145,7 +144,7 @@ func TestService_state(t *testing.T) {
 		s := newTestServer(a, nil)
 
 		srv1, start, _, err := buildService()
-		s.Services().Add(localeutil.Phrase("srv1"), srv1)
+		s.Services().Add(Phrase("srv1"), srv1)
 		<-start
 		s1 := s.Services().services[2]
 		a.Equal(s1.state, Running)

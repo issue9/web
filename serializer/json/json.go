@@ -6,7 +6,7 @@ package json
 import (
 	"encoding/json"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 const (
@@ -14,6 +14,6 @@ const (
 	ProblemMimetype = "application/problem+json"
 )
 
-func Marshal(_ *server.Context, v any) ([]byte, error) { return json.Marshal(v) }
+func Marshal(_ *web.Context, v any) ([]byte, error) { return json.Marshal(v) }
 
 func Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }

@@ -12,7 +12,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/server"
+	"github.com/issue9/web"
 )
 
 var (
@@ -34,7 +34,7 @@ func TestSignalHUP(t *testing.T) {
 		ConfigDir:      "./testdata",
 		ConfigFilename: "web.yaml",
 		ServeActions:   []string{"serve"},
-		Init: func(s *server.Server, user *empty, act string) error {
+		Init: func(s *web.Server, user *empty, act string) error {
 			return nil
 		},
 	}

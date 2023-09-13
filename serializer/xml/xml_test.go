@@ -2,9 +2,9 @@
 
 package xml
 
-import "github.com/issue9/web/server"
+import "github.com/issue9/web"
 
 var (
-	_ server.MarshalFunc   = Marshal
-	_ server.UnmarshalFunc = Unmarshal
+	_ web.MarshalFunc   = Marshal
+	_ web.UnmarshalFunc = Unmarshal
 )

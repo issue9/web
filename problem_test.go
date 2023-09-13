@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-	"github.com/issue9/localeutil"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/filter"
@@ -56,7 +55,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:58") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:57") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusInternalServerError)
@@ -68,7 +67,7 @@ func TestContext_Error(t *testing.T) {
 		r = rest.Get(a, "/path").Request()
 		ctx = srv.newContext(w, r, nil)
 		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:70") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:69") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusBadRequest)
@@ -81,7 +80,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:83") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:82") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
@@ -93,7 +92,7 @@ func TestContext_Error(t *testing.T) {
 		r = rest.Get(a, "/path").Request()
 		ctx = srv.newContext(w, r, nil)
 		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:95") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:94") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
@@ -105,7 +104,7 @@ func TestContext_Problem(t *testing.T) {
 	srv := newTestServer(a, nil)
 	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
 	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
-	srv.AddProblem("40000", 400, localeutil.Phrase("lang"), localeutil.Phrase("lang")) // lang 有翻译
+	srv.AddProblem("40000", 400, Phrase("lang"), Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息
 	w := httptest.NewRecorder()
@@ -152,8 +151,8 @@ func TestContext_Problem(t *testing.T) {
 		Request()
 	w = httptest.NewRecorder()
 	ctx = newTestServer(a, nil).newContext(w, r, nil)
-	ctx.Server().AddProblem("40010", http.StatusBadRequest, localeutil.Phrase("40010"), localeutil.Phrase("40010")).
-		AddProblem("40011", http.StatusBadRequest, localeutil.Phrase("40011"), localeutil.Phrase("40011"))
+	ctx.Server().AddProblem("40010", http.StatusBadRequest, Phrase("40010"), Phrase("40010")).
+		AddProblem("40011", http.StatusBadRequest, Phrase("40011"), Phrase("40011"))
 
 	resp = ctx.Problem("40010")
 	resp.WithField("detail1", "40010")
@@ -170,10 +169,10 @@ func TestContext_NewFilterProblem(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
 
-	min_2 := filter.NewRule(min(-2), localeutil.Phrase("-2"))
-	min_3 := filter.NewRule(min(-3), localeutil.Phrase("-3"))
-	max50 := filter.NewRule(max(50), localeutil.Phrase("50"))
-	max_4 := filter.NewRule(max(-4), localeutil.Phrase("-4"))
+	min_2 := filter.NewRule(min(-2), Phrase("-2"))
+	min_3 := filter.NewRule(min(-3), Phrase("-3"))
+	max50 := filter.NewRule(max(50), Phrase("50"))
+	max_4 := filter.NewRule(max(-4), Phrase("-4"))
 
 	n100 := -100
 	p100 := 100
@@ -202,8 +201,8 @@ func TestFilter_When(t *testing.T) {
 	r := rest.Get(a, "/path").Request()
 	ctx := s.newContext(w, r, nil)
 
-	min18 := filter.NewRule(min(18), localeutil.Phrase("不能小于 18"))
-	notEmpty := filter.NewRule(required[string], localeutil.Phrase("不能为空"))
+	min18 := filter.NewRule(min(18), Phrase("不能小于 18"))
+	notEmpty := filter.NewRule(required[string], Phrase("不能为空"))
 
 	obj := &object{}
 	v := ctx.NewFilterProblem(false).

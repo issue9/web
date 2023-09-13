@@ -17,24 +17,25 @@ import (
 	"github.com/issue9/localeutil/message"
 	"github.com/issue9/localeutil/message/extract"
 	"github.com/issue9/localeutil/message/serialize"
+	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	title = localeutil.StringPhrase("extract locale")
-	usage = localeutil.StringPhrase(`extract usage
+	title = web.StringPhrase("extract locale")
+	usage = web.StringPhrase(`extract usage
 
 flags：
 {{flags}}
 `)
-	format    = localeutil.StringPhrase("file format")
-	out       = localeutil.StringPhrase("out dir")
-	lang      = localeutil.StringPhrase("language")
-	recursive = localeutil.StringPhrase("recursive dir")
-	funcs     = localeutil.StringPhrase("locale func")
-	skipMod   = localeutil.StringPhrase("skip sub module")
+	format    = web.StringPhrase("file format")
+	out       = web.StringPhrase("out dir")
+	lang      = web.StringPhrase("language")
+	recursive = web.StringPhrase("recursive dir")
+	funcs     = web.StringPhrase("locale func")
+	skipMod   = web.StringPhrase("skip sub module")
 )
 
 const defaultFuncs = `github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web/server.Context.Sprintf`
@@ -75,7 +76,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			out := filepath.Join(*o, *l+ext)
 
 			if fs.NArg() == 0 {
-				return localeutil.Error("no src dir")
+				return web.NewLocaleError("no src dir")
 			}
 
 			l := &message.Language{}
@@ -110,6 +111,6 @@ func GetMarshalByExt(ext string) (serialize.MarshalFunc, string, error) {
 	case "yaml", "yml", ".yaml", ".yml":
 		return yaml.Marshal, ".yaml", nil
 	default:
-		return nil, "", localeutil.Error("unsupported marshal for %s", ext)
+		return nil, "", web.NewLocaleError("unsupported marshal for %s", ext)
 	}
 }

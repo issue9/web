@@ -22,14 +22,14 @@ type cerr struct {
 
 func (err *cerr) Error() string { return err.msg }
 
-func TestStackError(t *testing.T) {
+func TestNewDepthStackError(t *testing.T) {
 	a := assert.New(t, false)
 
-	err := NewStackError(nil)
+	err := NewDepthStackError(1, nil)
 	a.Nil(err)
 
 	err1 := &cerr{"abc"}
-	err = NewStackError(err1)
+	err = NewDepthStackError(1, err1)
 
 	a.ErrorIs(err, err1)
 	s := fmt.Sprintf("%v", err)
@@ -42,7 +42,7 @@ func TestStackError(t *testing.T) {
 
 	// 二次包装
 
-	err = NewStackError(err)
+	err = NewDepthStackError(1, err)
 
 	a.ErrorIs(err, err1)
 	s = fmt.Sprintf("%v", err)

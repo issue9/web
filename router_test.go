@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"log"
@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/mux/v7/group"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 func buildMiddleware(a *assert.Assertion, v string) Middleware {

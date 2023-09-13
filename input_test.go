@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package server
+package web
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/servertest"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
