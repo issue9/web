@@ -3,7 +3,7 @@ module github.com/issue9/web/cmd/web
 go 1.21
 
 require (
-	github.com/caixw/gobuild v1.6.3
+	github.com/caixw/gobuild v1.6.4
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.0.5
 	github.com/issue9/cmdopt v0.13.0
