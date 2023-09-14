@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package servertest 为 server 提供一些简便的测试方
+// Package servertest 为 [web.Server] 提供一些简便的测试方
 package servertest
 
 import (

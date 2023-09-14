@@ -68,7 +68,7 @@ type configOf[T any] struct {
 
 	// 指定配置文件的序列化
 	//
-	// 如果为空，表示默认不支持，后续可通过 [server.Server.Config] 进行添加。
+	// 如果为空，表示默认不支持，后续可通过 [web.Server.Config] 进行添加。
 	//
 	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
 	//  - .yaml
@@ -104,12 +104,12 @@ type configOf[T any] struct {
 	init []func(*web.Server)
 }
 
-// NewServerOf 从配置文件初始化 [server.Server] 对象
+// NewServerOf 从配置文件初始化 [web.Server] 对象
 //
 // configDir 项目配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 configDir 文件系统。
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
-// 如果此值为空，将以 &server.Options{} 初始化 [server.Server]；
+// 如果此值为空，将以 &web.Options{} 初始化 [web.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；

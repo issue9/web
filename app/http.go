@@ -26,7 +26,7 @@ type (
 
 		// x-request-id 的报头名称
 		//
-		// 如果为空，则采用 [server.RequestIDKey] 作为默认值。
+		// 如果为空，则采用 [web.RequestIDKey] 作为默认值。
 		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty"`
 
 		// 网站的域名证书

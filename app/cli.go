@@ -33,13 +33,13 @@ import (
 //
 // T 表示的是配置文件中的用户自定义数据类型。
 type CLIOf[T any] struct {
-	// NOTE: CLIOf 仅用于初始化 server.Server。对于接口的开发应当是透明的，
+	// NOTE: CLIOf 仅用于初始化 web.Server。对于接口的开发应当是透明的，
 	// 开发者所有的功能都应该是通过 Context 和 Server 获得。
 
 	Name    string // 程序名称
 	Version string // 程序版本
 
-	// 在运行服务之前对 [server.Server] 的额外操作
+	// 在运行服务之前对 [web.Server] 的额外操作
 	//
 	// user 为用户自定义的数据结构；
 	// action 为 -a 命令行指定的参数；
@@ -55,15 +55,15 @@ type CLIOf[T any] struct {
 
 	// 配置文件所在的目录
 	//
-	// 这也将影响后续 [server.Options.Config] 变量，如果为空，则会采用 [server.DefaultConfigDir]。
+	// 这也将影响后续 [web.Options.Config] 变量，如果为空，则会采用 [web.DefaultConfigDir]。
 	//
 	// 有以下几种前缀用于指定不同的保存目录：
-	//  - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Window 的 AppData 等；
+	//  - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Windows 的 AppData 等；
 	//  - @ 表示当前程序的主目录；
 	//  - ^ 表示绝对路径；
 	//  - # 表示工作路径；
 	//  - 其它则是直接采用 [config.Dir] 初始化。
-	// 如果为空则采用 [server.DefaultConfigDir] 中指定的值。
+	// 如果为空则采用 [web.DefaultConfigDir] 中指定的值。
 	//
 	// NOTE: 具体说明可参考 [config.BuildDir] 的 dir 参数。
 	ConfigDir string
@@ -79,7 +79,7 @@ type CLIOf[T any] struct {
 	//
 	// 若为空，则以 NewPrinter(locales.Locales, "*.yml") 进行初始化。
 	//
-	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[server.Server] 的本地化由其自身管理。
+	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
 
 	// 每次关闭服务操作的等待时间

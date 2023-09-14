@@ -33,7 +33,7 @@ type view struct {
 // 通过翻译函数 t 输出各种语言的内容，模板中不能存在本地化相关的内容。
 //
 // 提供了以下两个方法：
-//   - t 根据当前的语言（[server.Context.LanguageTag]）对参数进行翻译；
+//   - t 根据当前的语言（[web.Context.LanguageTag]）对参数进行翻译；
 //   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
 //
 // fsys 表示模板目录，如果为空则会采用 s 作为默认值；

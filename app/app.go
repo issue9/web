@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 提供了简便的方式初始化 [server.Server]
+// Package app 提供了简便的方式初始化 [web.Server]
 //
 // 目前有以下几种方式：
-//   - [App] 简要的 [server.Server] 管理；
-//   - [NewServerOf] 从配置文件构建 [server.Server] 对象；
+//   - [App] 简要的 [web.Server] 管理；
+//   - [NewServerOf] 从配置文件构建 [web.Server] 对象；
 //   - [CLIOf] 直接生成一个简单的命令行程序，结合了 [App] 和 [NewServerOf] 两者的功能；
 //
-// NOTE: 这并不一个必需的包，如果觉得不适用，可以直接采用 [server.New] 初始化服务。
+// NOTE: 这并不一个必需的包，如果觉得不适用，可以直接采用 [web.New] 初始化服务。
 //
 // # 配置文件
 //
@@ -37,15 +37,15 @@ import (
 	"github.com/issue9/web"
 )
 
-// ServerApp 实现对 [server.Server] 的管理
+// ServerApp 实现对 [web.Server] 的管理
 type ServerApp interface {
 	// RestartServer 重启服务
 	//
-	// 中止旧的 [server.Server]，再启动一个新的 [server.Server] 对象。
+	// 中止旧的 [web.Server]，再启动一个新的 [web.Server] 对象。
 	RestartServer()
 }
 
-// App 简单的 [server.Server] 管理
+// App 简单的 [web.Server] 管理
 type App struct {
 	// 构建新服务的方法
 	//

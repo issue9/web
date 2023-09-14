@@ -43,7 +43,7 @@ func (ms *Mimetypes[M, U]) exists(name string) bool {
 // Add 添加新的编码方法
 //
 // name 为编码名称；
-// problem 为该编码在返回 [server.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
+// problem 为该编码在返回 [web.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
 func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	if ms.exists(name) {
 		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))

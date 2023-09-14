@@ -36,15 +36,14 @@ func getGroups(ctx* web.Context) web.Responser {
 
 ## 字符集和文档类型
 
+<https://www.iana.org/assignments/character-sets/character-sets.xhtml> 中列出的字符集都能自动转换。
 文档类型由 `Server.Mimetypes` 指定。
-字符类型无需用户指定，<https://www.iana.org/assignments/character-sets/character-sets.xhtml>
-中列出的字符集都能自动转换。
 
 ```go
 import "github.com/issue9/web"
 
 srv := web.NewServer("app", "1.0.0", &web.Options{
-    Mimetypes: []*server.Mimetype{
+    Mimetypes: []*web.Mimetype{
         { Type: "application/json", ProblemType: "application/problem+json", Marshal: json.Marshal, Unmarshal: json.Unmarshal },
         { Type: "application/xml", ProblemType: "application/problem+xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal },
     }
@@ -58,8 +57,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ## 错误处理
 
-框架提供了一种输出错误信息内容的机制，用户只需要实现 Problem 接口，即可自定义输出的错误信息格式。
-可参考内置的 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 实现：`internal/problems.rfc7807`。
+框架根据 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 提供了一种输出错误信息内容的机制。
 
 ## 中间件
 
@@ -72,6 +70,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 - 提取和更新本地化信息；
 - 生成 openapi 文档。需要在注释中写一定的注解；
+- 热编译项目；
 
 macOS 和 linux 用户可以直接使用 brew 进行安装：
 

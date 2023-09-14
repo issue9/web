@@ -28,8 +28,8 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 
 func TestPaths_empty(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/empty", func(ctx *Context) Responser {
@@ -40,14 +40,14 @@ func TestPaths_empty(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
 }
 
 func TestPaths_ID(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
@@ -67,14 +67,14 @@ func TestPaths_ID(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestPaths_Int(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
@@ -90,14 +90,14 @@ func TestPaths_Int(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestPaths_Bool(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081"))
 	a.NotNil(router)
 
 	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
@@ -113,14 +113,14 @@ func TestPaths_Bool(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestPaths_String(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
@@ -137,14 +137,14 @@ func TestPaths_String(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
 }
 
 func TestPaths_Float(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
@@ -161,14 +161,14 @@ func TestPaths_Float(t *testing.T) {
 		return nil
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestContext_PathID(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
@@ -181,14 +181,14 @@ func TestContext_PathID(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/paramid/1/-2/str").Do(nil).Status(411)
 }
 
 func TestContext_PathInt64(t *testing.T) {
 	a := assert.New(t, false)
-	server := newTestServer(a, nil)
-	router := server.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
+	s := newTestServer(a, nil)
+	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
 	a.NotNil(router)
 
 	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
@@ -204,7 +204,7 @@ func TestContext_PathInt64(t *testing.T) {
 		return resp
 	})
 
-	srv := rest.NewServer(a, server.routers, nil)
+	srv := rest.NewServer(a, s.routers, nil)
 	srv.Get("/params/paramint64/1/-2/str").Do(nil).Status(411)
 }
 
