@@ -36,7 +36,7 @@ func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines 
 	}
 
 	info := &openapi3.Info{Title: title}
-	resps := make(map[string]*response, 10)
+	p.resps = make(map[string]*openapi3.Response, 10)
 
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 LOOP:
@@ -106,11 +106,11 @@ LOOP:
 			}
 			p.cookies = append(p.cookies, pair{key: words[0], desc: words[1]})
 		case "@resp": // @resp 4XX text/* object.path desc
-			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+i) {
+			if !p.parseResponse(p.resps, t, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
 		case "@resp-header": // @resp-header 4XX h1 *desc
-			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+i) {
+			if !p.parseResponseHeader(p.resps, suffix, filename, currPath, ln+i) {
 				continue LOOP
 			}
 		case "@scy-http": // @scy-http name scheme format *desc
@@ -235,10 +235,8 @@ LOOP:
 		}
 	}
 
-	for status, r := range resps {
-		resp := openapi3.NewResponse().WithDescription(r.desc).WithContent(p.newContents(r.schema, r.media...))
-		t.Doc().Components.Responses[status] = &openapi3.ResponseRef{Value: resp}
-		p.resps = append(p.resps, status)
+	for status, r := range p.resps {
+		t.Doc().Components.Responses[status] = &openapi3.ResponseRef{Value: r}
 	}
 
 	t.Doc().Info = info

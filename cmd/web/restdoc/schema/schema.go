@@ -32,9 +32,7 @@ func addRefPrefix(ref string) string {
 	return ref
 }
 
-func NewRef(ref string, v *openapi3.Schema) *Ref {
-	return openapi3.NewSchemaRef(ref, v)
-}
+func NewRef(ref string, v *openapi3.Schema) *Ref { return openapi3.NewSchemaRef(ref, v) }
 
 func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 	title, desc = parseComment(s.Comment, s.Doc)

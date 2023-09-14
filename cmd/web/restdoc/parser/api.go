@@ -34,7 +34,7 @@ func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []s
 	opt := openapi3.NewOperation()
 	opt.Summary = summary
 
-	resps := map[string]*response{}
+	resps := map[string]*openapi3.Response{}
 
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 LOOP:

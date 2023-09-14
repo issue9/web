@@ -12,6 +12,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
@@ -28,8 +29,8 @@ type Parser struct {
 	search schema.SearchFunc
 	fset   *token.FileSet
 
-	media   []string // 全局可用 media type
-	resps   []string // 全局可用的返回对象引用
+	media   []string                      // 全局可用 media type
+	resps   map[string]*openapi3.Response // 全局可用 response
 	headers []pair
 	cookies []pair
 
@@ -162,13 +163,10 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	}
 	wg.Wait()
 
-	// BUG(caixw) 验证必须得有 Value，如果只有 Ref 将会返回错误。
-	/*
-		if err := t.Doc().Validate(ctx); err != nil {
-			p.l.Error(err, "", 0)
-			return nil
-		}
-	*/
+	if err := t.Doc().Validate(ctx); err != nil {
+		p.l.Error(err, "", 0)
+		return nil
+	}
 
 	return t
 }

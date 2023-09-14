@@ -29,7 +29,7 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 	opt := openapi3.NewOperation()
 	opt.Summary = summary
 
-	resps := map[string]*response{}
+	resps := map[string]*openapi3.Response{}
 
 	for delta = 0; delta < len(lines); delta++ {
 		line := strings.TrimSpace(lines[delta])

@@ -15,15 +15,6 @@ import (
 
 const responsesRef = "#/components/responses/"
 
-type (
-	response struct {
-		schema *openapi3.SchemaRef
-		desc   string
-		media  []string
-		header map[string]string
-	}
-)
-
 // @req * object.path *desc
 // * 表示采用 [Parser.media]
 func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) {
@@ -47,14 +38,12 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix,
 		return
 	}
 
-	r := openapi3.NewRequestBody()
-	r.Content = p.newContents(s, strings.Split(words[0], ",")...)
-	r.Description = words[2]
+	r := openapi3.NewRequestBody().WithContent(p.newContents(s, strings.Split(words[0], ",")...)).WithDescription(words[2])
 	o.RequestBody = &openapi3.RequestBodyRef{Value: r}
 }
 
 // @resp 200 text/* object.path *desc
-func (p *Parser) parseResponse(resps map[string]*response, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) (ok bool) {
+func (p *Parser) parseResponse(resps map[string]*openapi3.Response, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 4)
 	if l < 3 {
 		p.syntaxError("@resp", 3, filename, ln)
@@ -72,65 +61,56 @@ func (p *Parser) parseResponse(resps map[string]*response, t *openapi.OpenAPI, s
 		return false
 	}
 
+	content := p.newContents(s, strings.Split(words[1], ",")...)
 	if resp, found := resps[words[0]]; found {
-		resp.desc = words[3]
-		resp.schema = s
-		resp.media = strings.Split(words[1], ",")
+		resp.WithDescription(words[3]).WithContent(content)
 	} else {
-		resps[words[0]] = &response{
-			desc:   words[3],
-			schema: s,
-			media:  strings.Split(words[1], ","),
-			header: make(map[string]string, 3),
-		}
+		resp = openapi3.NewResponse().WithDescription(words[3]).WithContent(content)
+		resps[words[0]] = resp
 	}
 
 	return true
 }
 
 // @resp-header 200 header desc
-func (p *Parser) parseResponseHeader(resps map[string]*response, suffix, filename, currPath string, ln int) bool {
+func (p *Parser) parseResponseHeader(resps map[string]*openapi3.Response, suffix, filename, currPath string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l != 3 {
 		p.syntaxError("@resp-header", 3, filename, ln)
 		return false
 	}
 
+	s := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
+	s.Value.Title = words[2]
+	h := &openapi3.HeaderRef{Value: &openapi3.Header{Parameter: openapi3.Parameter{Schema: s}}}
+
 	if resp, found := resps[words[0]]; found {
-		resp.header[words[1]] = words[2]
+		if resp.Headers == nil {
+			resp.Headers = make(openapi3.Headers, 5)
+		}
+		resp.Headers[words[1]] = h
 	} else {
-		resps[words[0]] = &response{header: map[string]string{words[1]: words[2]}}
+		resp := openapi3.NewResponse()
+		resp.Headers = openapi3.Headers{words[1]: h}
+		resps[words[0]] = resp
 	}
 
 	return true
 }
 
 // g 是否将定义为全局的对象也写入 o
-func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*response, g bool) {
+func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*openapi3.Response, g bool) {
 	if l := len(resps) + len(p.resps); o.Responses == nil && l > 0 {
 		o.Responses = make(openapi3.Responses, l)
 	}
 
 	for status, r := range resps {
-		resp := openapi3.NewResponse()
-		resp.Description = &r.desc
-		resp.Content = p.newContents(r.schema, r.media...)
-
-		resp.Headers = make(openapi3.Headers, len(r.header))
-		for h, title := range r.header {
-			s := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
-			s.Value.Title = title
-			resp.Headers[h] = &openapi3.HeaderRef{
-				Value: &openapi3.Header{Parameter: openapi3.Parameter{Schema: s}},
-			}
-		}
-
-		o.Responses[status] = &openapi3.ResponseRef{Value: resp}
+		o.Responses[status] = &openapi3.ResponseRef{Value: r}
 	}
 
 	if g {
-		for _, status := range p.resps {
-			o.Responses[status] = &openapi3.ResponseRef{Ref: responsesRef + status}
+		for key, resp := range p.resps {
+			o.Responses[key] = &openapi3.ResponseRef{Ref: responsesRef + key, Value: resp}
 		}
 	}
 }
