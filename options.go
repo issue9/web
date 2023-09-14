@@ -23,8 +23,10 @@ import (
 	"github.com/issue9/web/logs"
 )
 
+// RequestIDKey 报头中传递 request id 的报头名称
 const RequestIDKey = "X-Request-ID"
 
+// DefaultConfigDir 默认的配置目录地址
 const DefaultConfigDir = "@.config"
 
 type (

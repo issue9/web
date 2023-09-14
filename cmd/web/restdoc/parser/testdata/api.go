@@ -11,8 +11,8 @@ package testdata
 // @cookie c1 desc
 // @query query
 // @resp 201 * resp
-// @resp-header 201 h1 h1 desc
-// @resp-header 201 h2 h2 desc
+// @resp-header 201 h2011 h1 desc
+// @resp-header 201 h2012 h2 desc
 // @resp 200 * resp desc
 //
 // ## callback onData POST {$request.query.url} 回调1

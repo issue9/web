@@ -165,7 +165,7 @@ messages:
               @media application/json application/xml 指定了所有 api 默认的内容类型；
               @header name desc 公共报头；
               @cookie name desc 公共的 cookie；
-              @resp name media object.path desc 定义了全局返回对象，会被附加在每个 API 上。一般用于指定错误处理对象；
+              @resp status media object.path desc 定义了全局返回对象，会被附加在每个 API 上。一般用于指定错误处理对象；
               @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
               @doc url 扩展文档；
               @openapi path 引入另一个 openapi 文档，path 可以是一个 uri，比如 https://example.com/openapi.yaml，

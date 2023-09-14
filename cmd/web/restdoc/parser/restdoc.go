@@ -236,9 +236,7 @@ LOOP:
 	}
 
 	for status, r := range resps {
-		resp := openapi3.NewResponse()
-		resp.Description = &r.desc
-		resp.Content = p.newContents(r.schema, r.media...)
+		resp := openapi3.NewResponse().WithDescription(r.desc).WithContent(p.newContents(r.schema, r.media...))
 		t.Doc().Components.Responses[status] = &openapi3.ResponseRef{Value: resp}
 		p.resps = append(p.resps, status)
 	}

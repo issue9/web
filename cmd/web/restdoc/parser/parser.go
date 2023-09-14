@@ -162,9 +162,9 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	}
 	wg.Wait()
 
-	// BUG(caixw) 无法验证 #/components/responses 下的引用?
+	// BUG(caixw) 验证必须得有 Value，如果只有 Ref 将会返回错误。
 	/*
-		if err := t.Validate(ctx); err != nil {
+		if err := t.Doc().Validate(ctx); err != nil {
 			p.l.Error(err, "", 0)
 			return nil
 		}

@@ -21,9 +21,11 @@ import (
 const Version = "0.83.0"
 
 type (
-	Cache  = cache.Cache
 	Logger = logs.Logger
 	Logs   = logs.Logs
+
+	// Cache 缓存内容的访问接口
+	Cache  = cache.Cache
 
 	// FieldError 表示配置文件中的字段错误
 	FieldError = config.FieldError

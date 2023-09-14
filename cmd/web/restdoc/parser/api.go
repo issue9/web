@@ -54,9 +54,9 @@ LOOP:
 				return
 			}
 		case "@header": // @header key *desc
-			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+index)
+			p.addCookieHeader("@header", opt, openapi3.ParameterInHeader, suffix, filename, ln+index)
 		case "@cookie": // @cookie name *desc
-			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
+			p.addCookieHeader("@cookie", opt, openapi3.ParameterInCookie, suffix, filename, ln+index)
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
 		case "@query": // @query object.path
@@ -84,11 +84,11 @@ LOOP:
 	}
 
 	for _, p := range p.headers {
-		h := openapi3.NewHeaderParameter(p.key).WithDescription(p.desc)
+		h := openapi3.NewHeaderParameter(p.key).WithDescription(p.desc).WithSchema(openapi3.NewStringSchema())
 		opt.Parameters = append(opt.Parameters, &openapi3.ParameterRef{Value: h})
 	}
 	for _, p := range p.cookies {
-		h := openapi3.NewCookieParameter(p.key).WithDescription(p.desc)
+		h := openapi3.NewCookieParameter(p.key).WithDescription(p.desc).WithSchema(openapi3.NewStringSchema())
 		opt.Parameters = append(opt.Parameters, &openapi3.ParameterRef{Value: h})
 	}
 	p.addResponses(opt, resps, true)
@@ -160,10 +160,10 @@ func (p *Parser) addPath(opt *openapi3.Operation, suffix, filename string, ln in
 //
 // 语法如下： @header h1 *desc 或是 @cookie c1 *desc
 // 两者结构完全相同，处理方式也相同。
-func (p *Parser) addCookieHeader(opt *openapi3.Operation, in, suffix, filename string, ln int) {
+func (p *Parser) addCookieHeader(tag string, opt *openapi3.Operation, in, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 	if l < 1 {
-		p.syntaxError("@cookie", 1, filename, ln)
+		p.syntaxError(tag, 1, filename, ln)
 		return
 	}
 

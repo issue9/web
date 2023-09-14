@@ -116,10 +116,6 @@ func (srv *Server) Name() string { return srv.name }
 func (srv *Server) Version() string { return srv.version }
 
 // State 获取当前的状态
-//
-// 返回值可能会是以下值：
-//   - [Running] 表示已经运行 [Server.Serve]；
-//   - [Stopped] 默认状态，或由 [Server.Close] 正常结束；
 func (srv *Server) State() State { return srv.state }
 
 func (srv *Server) Open(name string) (fs.File, error) { return srv.Config().Open(name) }

@@ -39,9 +39,9 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 
 		switch tag, suffix := utils.CutTag(line); strings.ToLower(tag) {
 		case "@header": // @header key *desc
-			p.addCookieHeader(opt, openapi3.ParameterInHeader, suffix, filename, ln+delta)
+			p.addCookieHeader("@header", opt, openapi3.ParameterInHeader, suffix, filename, ln+delta)
 		case "@cookie": // @cookie name *desc
-			p.addCookieHeader(opt, openapi3.ParameterInCookie, suffix, filename, ln+delta)
+			p.addCookieHeader("@cookie", opt, openapi3.ParameterInCookie, suffix, filename, ln+delta)
 		case "@query": // @query object.path
 			p.addQuery(t, opt, currPath, suffix, filename, ln+delta)
 		case "@req": // @req text/* object.path *desc

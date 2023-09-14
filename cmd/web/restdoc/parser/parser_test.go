@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
 
-func TestParser(t *testing.T) {
+func TestParser_Parse(t *testing.T) {
 	a := assert.New(t, false)
 	l := loggertest.New(a)
 	p := New(l.Logger, "/prefix", nil)
@@ -42,9 +42,7 @@ func TestParser(t *testing.T) {
 		Length(login.Callbacks, 1).
 		NotNil((*login.Callbacks["onData"].Value)["{$request.query.url}"].Post)
 
-	doc := p.Parse(context.Background())
-	a.NotNil(doc)
-	a.NotError(doc.SaveAs("./testdata/openapi.out.yaml"))
+	a.NotError(d.SaveAs("./testdata/openapi.out.yaml"))
 }
 
 func TestIsIgnoreTag(t *testing.T) {

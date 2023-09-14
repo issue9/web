@@ -14,7 +14,7 @@
 // @term https://term.example.com
 // @version 1.0.0
 // @media application/json application/xml
-// @header h1 自定义报头
+// @header ch1 自定义报头
 // @resp 400 application/problem+json,application/problem+xml resp400 400 错误
 // @resp 404 application/problem+json,application/problem+xml resp404 not found
 //
@@ -31,5 +31,6 @@ type resp400 struct {
 }
 
 type resp404 struct {
-	Status int `json:"status" xml:"status,attr"`
+	Status  int    `json:"status" xml:"status,attr"`
+	Message string `json:"message" xml:",chardata"`
 }
