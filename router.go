@@ -11,8 +11,6 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
-
-	"github.com/issue9/web/internal/problems"
 )
 
 type (
@@ -105,12 +103,12 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		err := mux.ServeFile(fsys, p, index, ctx, ctx.Request())
 		switch {
 		case errors.Is(err, fs.ErrPermission):
-			return ctx.Problem(problems.ProblemForbidden)
+			return ctx.Problem(ProblemForbidden)
 		case errors.Is(err, fs.ErrNotExist):
 			return ctx.NotFound()
 		case err != nil:
 			srv.Logs().ERROR().Error(err)
-			return ctx.Problem(problems.ProblemInternalServerError)
+			return ctx.Problem(ProblemInternalServerError)
 		default:
 			return nil
 		}

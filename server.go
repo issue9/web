@@ -90,6 +90,8 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 		config:    o.Config,
 	}
 
+	initProblems(srv.problems)
+
 	for _, e := range o.Encodings {
 		srv.algs = append(srv.algs, newAlg(e.Name, e.Builder, e.ContentTypes...))
 	}

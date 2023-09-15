@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/logs"
 )
 
@@ -198,10 +197,10 @@ func (ctx *Context) Error(err error, id string) *Problem {
 	if id == "" {
 		var herr *errs.HTTP
 		if errors.As(err, &herr) {
-			id = problems.ID(herr.Status)
+			id = problemsID[herr.Status]
 			err = herr.Message
 		} else {
-			id = problems.ProblemInternalServerError
+			id = ProblemInternalServerError
 		}
 	}
 
@@ -209,9 +208,9 @@ func (ctx *Context) Error(err error, id string) *Problem {
 	return ctx.Problem(id)
 }
 
-func (ctx *Context) NotFound() *Problem { return ctx.Problem(problems.ProblemNotFound) }
+func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
 
-func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(problems.ProblemNotImplemented) }
+func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(ProblemNotImplemented) }
 
 // NewFilterProblem 声明用于处理过滤器的错误对象
 func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {

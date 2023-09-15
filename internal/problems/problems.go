@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-//go:generate go run ./make_id.go
+//go:generate go run ./make_statuses.go
 
 // Package problems 提供对 Problem 相关内容的管理
 package problems
@@ -12,6 +12,8 @@ import (
 	"github.com/issue9/sliceutil"
 )
 
+const AboutBlank = "about:blank"
+
 type Problems struct {
 	prefix   string
 	problems []*Problem // 不能用 map，需保证元素的顺序相同。
@@ -20,26 +22,25 @@ type Problems struct {
 type Problem struct {
 	id string // 用户指定的原始值
 
-	Type   string // 带 Problems.pPrefix
+	Type   string // 带 Problems.Prefix
 	Status int
 	Title  localeutil.LocaleStringer
 	Detail localeutil.LocaleStringer
 }
 
 func New(prefix string) *Problems {
-	p := &Problems{
+	return &Problems{
 		prefix:   prefix,
 		problems: make([]*Problem, 0, 100),
 	}
-	p.initLocales()
-	return p
 }
 
 func (ps *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
 	if ps.exists(id) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
-	if !validProblemStatus(status) {
+
+	if _, found := problemStatuses[status]; !found { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
 
@@ -48,8 +49,8 @@ func (ps *Problems) Add(id string, status int, title, detail localeutil.LocaleSt
 	}
 
 	p := &Problem{id: id, Status: status, Title: title, Detail: detail}
-	if ps.prefix == ProblemAboutBlank {
-		p.Type = ProblemAboutBlank
+	if ps.prefix == AboutBlank {
+		p.Type = AboutBlank
 	} else {
 		p.Type = ps.prefix + p.id
 	}
@@ -73,10 +74,3 @@ func (ps *Problems) Problem(id string) *Problem {
 	}
 	return sp
 }
-
-// [Problems] 中也没有处理小于 400 的状态码，所以此处验证也不理会小于 400 的值。
-func validProblemStatus(status int) bool { return ids[status] != "" }
-
-func Status(id string) int { return statuses[id] }
-
-func ID(status int) string { return ids[status] }

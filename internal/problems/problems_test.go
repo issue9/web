@@ -15,7 +15,6 @@ func TestProblems_Add(t *testing.T) {
 	ps := New("")
 	a.NotNil(ps)
 	l := len(ps.problems)
-	a.Equal(l, len(statuses))
 
 	a.False(ps.exists("40010")).
 		False(ps.exists("40011"))
@@ -55,11 +54,11 @@ func TestProblems_Problem(t *testing.T) {
 	a.Equal(p.Type, "https://example.com/qa#40011").
 		Equal(p.id, "40011")
 
-	ps = New(ProblemAboutBlank)
+	ps = New(AboutBlank)
 	a.NotNil(ps)
 	ps.Add("40012", 400, localeutil.Phrase("title"), localeutil.Phrase("detail"))
 	p = ps.Problem("40012")
-	a.Equal(p.Type, ProblemAboutBlank).
+	a.Equal(p.Type, AboutBlank).
 		Equal(p.id, "40012")
 
 	a.PanicString(func() {

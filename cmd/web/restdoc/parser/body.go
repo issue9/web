@@ -63,6 +63,7 @@ func (p *Parser) parseResponse(resps map[string]*openapi3.Response, t *openapi.O
 
 	content := p.newContents(s, strings.Split(words[1], ",")...)
 	if resp, found := resps[words[0]]; found {
+		// NOTE: 按规定必须得有 description，但此处不作判断，可以用 "" 代替。
 		resp.WithDescription(words[3]).WithContent(content)
 	} else {
 		resp = openapi3.NewResponse().WithDescription(words[3]).WithContent(content)

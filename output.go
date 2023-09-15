@@ -9,7 +9,6 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
 )
 
 // Responser 向客户端输出对象需要实现的接口
@@ -70,7 +69,7 @@ func (ctx *Context) Render(status int, body any) {
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		ctx.Logs().ERROR().Printf("%+v", err)
-		ctx.Problem(problems.ProblemNotAcceptable).Apply(ctx)
+		ctx.Problem(ProblemNotAcceptable).Apply(ctx)
 		return
 	}
 

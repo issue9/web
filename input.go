@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
 )
 
@@ -379,7 +378,7 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Error(err, problems.ProblemUnprocessableEntity)
+		return ctx.Error(err, ProblemUnprocessableEntity)
 	}
 
 	if vv, ok := v.(CTXFilter); ok {
