@@ -15,5 +15,5 @@ func TestGetStatuses(t *testing.T) {
 	a.NotError(err).NotEmpty(status).
 		True(status[0].Value > 399)
 
-	a.Equal(ID(status[0]), "ProblemBadRequest")
+	a.Equal(status[0].ID(), "ProblemBadRequest")
 }

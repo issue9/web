@@ -25,7 +25,7 @@ type (
 
 	// Mimetypes 提供对 mimetype 的管理
 	//
-	// M 表示解码方法地的类型；
+	// M 表示解码方法的类型；
 	// U 表示编码方法的类型；
 	Mimetypes[M any, U any] struct {
 		types []*Mimetype[M, U]

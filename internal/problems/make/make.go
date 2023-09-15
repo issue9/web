@@ -15,8 +15,6 @@ import (
 
 const FileHeader = "// 此文件由工具产生，请勿手动修改！\n\n"
 
-func ID(p Pair) string { return "Problem" + p.Name[6:] }
-
 // GetStatuses 从 net/http/status.go 获取所有的状态码
 func GetStatuses() ([]Pair, error) {
 	path := filepath.Join(build.Default.GOROOT, "src", "net", "http", "status.go")
@@ -72,3 +70,5 @@ type Pair struct {
 	Name  string
 	Value int
 }
+
+func (p Pair) ID() string { return "Problem" + p.Name[6:] }

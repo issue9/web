@@ -50,7 +50,7 @@ func makeID(buf *errwrap.Buffer, kvs []make.Pair) {
 
 	buf.WString(`ProblemAboutBlank = problems.AboutBlank`).WString("\n\n")
 	for _, item := range kvs {
-		buf.Printf("%s=\"%s\"\n", make.ID(item), strconv.Itoa(item.Value))
+		buf.Printf("%s=\"%s\"\n", item.ID(), strconv.Itoa(item.Value))
 	}
 
 	buf.WString(")\n\n")
@@ -60,7 +60,7 @@ func makeIDs(buf *errwrap.Buffer, kvs []make.Pair) {
 	buf.WString("var problemsID=map[int]string{\n")
 
 	for _, item := range kvs {
-		buf.Printf("%s:%s,\n", "http."+item.Name, make.ID(item))
+		buf.Printf("%s:%s,\n", "http."+item.Name, item.ID())
 	}
 
 	buf.WString("}\n\n")
@@ -70,15 +70,13 @@ func makeInitLocalesFunc(buf *errwrap.Buffer, kvs []make.Pair) {
 	buf.WString("func initProblems(p*problems.Problems){")
 
 	for _, item := range kvs {
-		id := make.ID(item)
 		status := "http." + item.Name
-
 		title := "problem." + strconv.Itoa(item.Value)
 		detail := title + ".detail"
 		title = "StringPhrase(\"" + title + "\")"
 		detail = "StringPhrase(\"" + detail + "\")"
 
-		buf.Printf(`p.Add(%s,%s,%s,%s)`, id, status, title, detail).WByte('\n')
+		buf.Printf(`p.Add(%s,%s,%s,%s)`, item.ID(), status, title, detail).WByte('\n')
 	}
 	buf.WString("}\n\n")
 }

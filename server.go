@@ -24,7 +24,7 @@ import (
 	"github.com/issue9/web/internal/problems"
 )
 
-// Server web 服务对象
+// Server 服务对象
 type Server struct {
 	name         string
 	version      string
@@ -101,7 +101,6 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 		buildNodeHandle(http.StatusOK),
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
-	srv.httpServer.ErrorLog = srv.Logs().ERROR().StdLogger()
 	srv.OnClose(srv.cache.Close)
 	srv.initServices()
 
