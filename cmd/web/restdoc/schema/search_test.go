@@ -56,7 +56,7 @@ func TestSearchFunc_New(t *testing.T) {
 
 		refPath := refPrefix + ".admin.notFound"
 		ref, err := f.New(tt, modPath, refPath, false)
-		a.NotError(err).Equal(ref.Ref, refPath).Nil(ref.Value)
+		a.Equal(err, web.NewLocaleError("not found schema ref %s", refPath)).Nil(ref)
 	})
 
 	// NotFound

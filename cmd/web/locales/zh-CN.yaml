@@ -123,6 +123,9 @@ messages:
     - key: not found module %s
       message:
         msg: 未找到模块 %s
+    - key: not found schema ref %s
+      message:
+        msg: 未找到 %s 指向的类型组件
     - key: not found struct %s
       message:
         msg: 未找到结构体 %s

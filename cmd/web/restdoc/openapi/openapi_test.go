@@ -45,7 +45,7 @@ func TestOpenAPI_Merge(t *testing.T) {
 
 	doc := New("3.0")
 	a.NotNil(doc)
-	doc.Merage(d2)
+	doc.Merge(d2)
 	a.Nil(doc.Doc().Info).
 		Length(doc.Doc().Tags, 1).
 		Length(doc.Doc().Components.Schemas, 1)

@@ -65,7 +65,7 @@ func (doc *OpenAPI) SaveAs(path string) error {
 	return err
 }
 
-func (doc *OpenAPI) Merage(d *openapi3.T) {
+func (doc *OpenAPI) Merge(d *openapi3.T) {
 	doc.Doc().Servers = append(doc.Doc().Servers, d.Servers...)
 	doc.Doc().Security = append(doc.Doc().Security, d.Security...)
 	doc.Doc().Tags = append(doc.Doc().Tags, d.Tags...)

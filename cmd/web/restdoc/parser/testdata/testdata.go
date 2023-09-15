@@ -17,6 +17,8 @@
 // @header ch1 自定义报头
 // @resp 400 application/problem+json,application/problem+xml resp400 400 错误
 // @resp 404 application/problem+json,application/problem+xml resp404 not found
+// @resp 500 application/problem+json,application/problem+xml #/components/schemas/error 引用了 openapi.yaml 的内容
+// @openapi ./testdata/openapi.yaml
 //
 // @scy-code oauth-code https://example.com/auth https://example.com/token https://example.com/refresh read:info,write:info
 //

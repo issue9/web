@@ -37,6 +37,7 @@ func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines 
 
 	info := &openapi3.Info{Title: title}
 	p.resps = make(map[string]*openapi3.Response, 10)
+	wait := make(map[int]string, 10) // @resp 依赖 @openapi 的内容，需要延后执行，行号：行内容。
 
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 LOOP:
@@ -106,9 +107,8 @@ LOOP:
 			}
 			p.cookies = append(p.cookies, pair{key: words[0], desc: words[1]})
 		case "@resp": // @resp 4XX text/* object.path desc
-			if !p.parseResponse(p.resps, t, suffix, filename, currPath, ln+i) {
-				continue LOOP
-			}
+			// parseResponse 可能会引用 @openapi 的内容，需要在整个 LOOP 结束之后再执行。
+			wait[ln+i] = suffix
 		case "@resp-header": // @resp-header 4XX h1 *desc
 			if !p.parseResponseHeader(p.resps, suffix, filename, currPath, ln+i) {
 				continue LOOP
@@ -224,7 +224,7 @@ LOOP:
 			}
 
 			t.Doc().ExternalDocs = &openapi3.ExternalDocs{URL: words[0], Description: words[1]}
-		case "@openapi": // 将另一个 openapi 文件引入当前对象，除了 info 之外的内容都将复制。
+		case "@openapi":
 			p.parseOpenAPI(t, suffix, filename, ln+i)
 		default: // 不认识的标签，表示元数据部分结束，将剩余部分直接作为 info.Description
 			if len(tag) > 1 && tag[0] == '@' {
@@ -232,6 +232,12 @@ LOOP:
 			}
 			info.Description = strings.Join(lines[i:], "\n")
 			break LOOP
+		}
+	}
+
+	for l, s := range wait {
+		if !p.parseResponse(p.resps, t, s, filename, currPath, l) {
+			return
 		}
 	}
 
@@ -275,29 +281,32 @@ func parseScopes(scope string) map[string]string {
 	return s
 }
 
-// 引用的另一个 openapi 包
+// 引用另一个 openapi 文件
 //
+// 除了 info 之外的内容都将复制至 target。
 // 包含以下几种格式：
-// 一个远程的 URL 地址，仅支持 http 和 https 和 file；
-// 或是一个相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
-func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln int) {
+//   - URI，支持 http、https 和 file。如果要指定相对路径的文件，需要省略 file:// 前缀；
+//   - 相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
+func (p *Parser) parseOpenAPI(target *openapi.OpenAPI, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
 
-	var u string
+	var uri *url.URL
 	switch l {
 	case 1:
-		u = words[0]
+		var err error
+		if uri, err = url.Parse(words[0]); err != nil {
+			p.l.Error(err, filename, ln)
+			return
+		}
+
+		if uri.Scheme != "http" && uri.Scheme != "https" { // 除去 http 和 https 之外都默认为 file
+			uri.Scheme = "" // 在 openapi3.Loader 中，scheme == "file" 时，可以省略。
+		}
 	case 2:
 		modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
-		u = "file://" + filepath.Join(modCache, words[0], words[1])
+		uri = &url.URL{Path: filepath.Join(modCache, words[0], words[1])}
 	default:
 		p.l.Error(web.StringPhrase("invalid format"), filename, ln)
-		return
-	}
-
-	uri, err := url.Parse(u)
-	if err != nil {
-		p.l.Error(err, filename, ln)
 		return
 	}
 
@@ -307,7 +316,7 @@ func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln i
 		return
 	}
 
-	ok, err := version.SemVerCompatible(t.OpenAPI, tt.Doc().OpenAPI)
+	ok, err := version.SemVerCompatible(t.OpenAPI, target.Doc().OpenAPI)
 	if err != nil {
 		p.l.Error(err, filename, ln)
 		return
@@ -317,7 +326,7 @@ func (p *Parser) parseOpenAPI(tt *openapi.OpenAPI, suffix, filename string, ln i
 		return
 	}
 
-	tt.Merage(t)
+	target.Merge(t)
 }
 
 func buildContact(words []string) *openapi3.Contact {
