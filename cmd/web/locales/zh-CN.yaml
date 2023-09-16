@@ -69,6 +69,9 @@ messages:
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
+    - key: dev mode
+      message:
+        msg: 是否启用开发模式，具体可参考 mode 下的说明。
     - key: 'dup # restdoc node'
       message:
         msg: '重复的节点 # restdoc'

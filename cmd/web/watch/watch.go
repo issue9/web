@@ -25,6 +25,7 @@ const (
 	excludesUsage = web.StringPhrase("exclude watch files")
 	appArgsUsage  = web.StringPhrase("app args")
 	freqUsage     = web.StringPhrase("watch frequency")
+	devUsage      = web.StringPhrase("dev mode")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
@@ -34,6 +35,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		excludes := fs.String("excludes", "", excludesUsage.LocaleString(p))
 		appArgs := fs.String("app", "", appArgsUsage.LocaleString(p))
 		freq := fs.String("freq", "1s", freqUsage.LocaleString(p))
+		dev := fs.Bool("dev", true, devUsage.LocaleString(p))
 
 		sources := map[string]string{
 			watch.System: web.StringPhrase("watch.sys").LocaleString(p),
@@ -47,15 +49,21 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 
-			var m string
+			var mf string
 			if fs.NArg() == 0 {
-				m = "./"
+				mf = "./"
 			} else {
-				m = fs.Arg(0)
+				mf = fs.Arg(0)
+			}
+
+			var args []string
+			if *dev {
+				args = append(args, "-tags=development")
 			}
 
 			o := &watch.Options{
-				MainFiles:        m,
+				MainFiles:        mf,
+				Args:             args,
 				Exts:             strings.Split(*exts, ","),
 				Excludes:         strings.Split(*excludes, ","),
 				AppArgs:          *appArgs,

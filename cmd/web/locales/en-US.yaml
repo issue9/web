@@ -54,6 +54,9 @@ messages:
     - key: dest locale files
       message:
         msg: dest locale files
+    - key: dev mode
+      message:
+        msg: dev mode
     - key: 'dup # restdoc node'
       message:
         msg: 'dup # restdoc node'

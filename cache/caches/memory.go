@@ -47,7 +47,7 @@ func (i *item) isExpired(now time.Time) bool {
 
 // NewMemory 声明一个内存缓存
 //
-// gc 表示执行回收操作的间隔。
+// JobFunc 表示执行内存的操作。
 func NewMemory() (cache.Driver, scheduled.JobFunc) {
 	mem := &memoryDriver{
 		items: &sync.Map{},
