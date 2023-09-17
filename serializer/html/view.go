@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"sync"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
@@ -18,6 +19,8 @@ const tagKey = "view-locale-key"
 type contextType int
 
 const viewContextKey contextType = 1
+
+var once = &sync.Once{}
 
 type view struct {
 	tpl *template.Template // 单目录模式下的模板
@@ -46,17 +49,19 @@ type view struct {
 //
 // dir 表示是否以目录的形式组织本地化代码；
 func InstallView(s *web.Server, dir bool, fsys fs.FS, glob string) {
-	if dir {
-		instalDirView(s, fsys, glob)
-		return
-	}
+	once.Do(func() {
+		if dir {
+			instalDirView(s, fsys, glob)
+			return
+		}
 
-	fsys, funcs := initTpl(s, fsys)
-	tpl := template.New(s.Name()).Funcs(funcs)
-	template.Must(tpl.ParseFS(fsys, glob))
+		fsys, funcs := initTpl(s, fsys)
+		tpl := template.New(s.Name()).Funcs(funcs)
+		template.Must(tpl.ParseFS(fsys, glob))
 
-	s.Vars().Store(viewContextKey, &view{
-		tpl: tpl,
+		s.Vars().Store(viewContextKey, &view{
+			tpl: tpl,
+		})
 	})
 }
 

@@ -5,6 +5,7 @@ package jsonp
 
 import (
 	"encoding/json"
+	"sync"
 
 	"github.com/issue9/errwrap"
 
@@ -17,11 +18,15 @@ type contextKeyType int
 
 const contextKey contextKeyType = 1
 
+var once = &sync.Once{}
+
 // Install 安装 JSONP 的处理方式
 //
 // callbackKey 用于指定回函数名称的查询参数名称
 func Install(callbackKey string, s *web.Server) {
-	s.Vars().Store(contextKey, callbackKey)
+	once.Do(func() {
+		s.Vars().Store(contextKey, callbackKey)
+	})
 }
 
 func Marshal(ctx *web.Context, v any) ([]byte, error) {
