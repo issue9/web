@@ -24,7 +24,6 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/serializer"
 )
 
 const Mimetype = "text/html"
@@ -45,7 +44,7 @@ type Marshaler interface {
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
-//   - 其它情况下则是返回 [serializer.ErrUnsupported]；
+//   - 其它情况下则是返回 [web.ErrUnsupportedSerialization]；
 func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	switch obj := v.(type) {
 	case []byte:
@@ -60,7 +59,7 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 func marshal(ctx *web.Context, v any) ([]byte, error) {
 	tt, found := ctx.Server().Vars().Load(viewContextKey)
 	if !found {
-		return nil, serializer.ErrUnsupported()
+		return nil, web.ErrUnsupportedSerialization()
 	}
 	vv := tt.(*view)
 
@@ -88,7 +87,7 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal([]byte, any) error { return serializer.ErrUnsupported() }
+func Unmarshal([]byte, any) error { return web.ErrUnsupportedSerialization() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {

@@ -28,6 +28,8 @@ var contextPool = &sync.Pool{
 	},
 }
 
+var errUnsupportedSerialization = NewLocaleError("unsupported serialization")
+
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
 // Context 同时也实现了 [http.ResponseWriter] 接口，
@@ -82,6 +84,9 @@ type MarshalFunc func(*Context, any) ([]byte, error)
 
 // UnmarshalFunc 反序列化函数原型
 type UnmarshalFunc func([]byte, any) error
+
+// ErrUnsupported 返回不支持序列化的错误信息
+func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {

@@ -25,7 +25,7 @@ type (
 	Logs   = logs.Logs
 
 	// Cache 缓存内容的访问接口
-	Cache  = cache.Cache
+	Cache = cache.Cache
 
 	// FieldError 表示配置文件中的字段错误
 	FieldError = config.FieldError

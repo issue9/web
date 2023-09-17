@@ -18,7 +18,6 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/serializer"
 	"github.com/issue9/web/servertest"
 )
 
@@ -29,12 +28,12 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	case error:
 		return nil, vv
 	default:
-		return nil, serializer.ErrUnsupported()
+		return nil, ErrUnsupportedSerialization()
 	}
 }
 
 func unmarshalTest(bs []byte, v any) error {
-	return serializer.ErrUnsupported()
+	return ErrUnsupportedSerialization()
 }
 
 func marshalJSON(ctx *Context, obj any) ([]byte, error) {

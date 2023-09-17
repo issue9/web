@@ -8,7 +8,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/serializer"
+	"github.com/issue9/web"
 )
 
 var (
@@ -99,7 +99,7 @@ func (s Sex) MarshalText() ([]byte, error) {
 	case 1:
 		return []byte("female"), nil
 	default:
-		return nil, serializer.ErrUnsupported()
+		return nil, web.ErrUnsupportedSerialization()
 	}
 }
 
@@ -110,7 +110,7 @@ func (s *Sex) UnmarshalText(v []byte) error {
 	case "female":
 		*s = 1
 	default:
-		return serializer.ErrUnsupported()
+		return web.ErrUnsupportedSerialization()
 	}
 	return nil
 }
