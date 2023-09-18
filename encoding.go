@@ -26,7 +26,7 @@ type (
 		Reset(io.Writer)
 	}
 
-	NewEncoderFunc func() Encoder
+	NewEncoderFunc = func() Encoder
 
 	alg struct {
 		name string     // 算法名称

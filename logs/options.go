@@ -17,12 +17,14 @@ import (
 
 // 日志的时间格式
 const (
+	DateMilliLayout = logs.DateMilliLayout
+	DateMicroLayout = logs.DateMicroLayout
+	DateNanoLayout  = logs.DateNanoLayout
+
 	MilliLayout = logs.MilliLayout
 	MicroLayout = logs.MicroLayout
 	NanoLayout  = logs.NanoLayout
 )
-
-var allLevels = []Level{Info, Warn, Trace, Debug, Error, Fatal}
 
 // Options 初始化日志的选项
 type Options struct {
@@ -53,7 +55,7 @@ func optionsSanitize(o *Options) (*Options, error) {
 	return o, nil
 }
 
-func AllLevels() []Level { return allLevels }
+func AllLevels() []Level { return []Level{Info, Warn, Trace, Debug, Error, Fatal} }
 
 func NewNopHandler() Handler { return logs.NewNopHandler() }
 
@@ -72,8 +74,10 @@ func NewTermHandler(timeLayout string, w io.Writer, colors map[Level]colors.Colo
 	return logs.NewTermHandler(timeLayout, w, colors)
 }
 
+// NewDispatchHandler 按不同的 [Level] 派发到不同的 [Handler] 对象
 func NewDispatchHandler(d map[Level]Handler) Handler { return logs.NewDispatchHandler(d) }
 
+// MergeHandler 合并多个 [Handler] 对象
 func MergeHandler(w ...Handler) Handler { return logs.MergeHandler(w...) }
 
 // NewRotateFile 按大小分割的文件日志

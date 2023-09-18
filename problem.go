@@ -179,7 +179,7 @@ func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title
 	srv.problems.Visit(visit)
 }
 
-// Problem 返回批定 id 的 [Problem]
+// Problem 返回指定 id 的 [Problem]
 func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
 
 func (ctx *Context) initProblem(p *Problem, id string) *Problem {
@@ -192,7 +192,7 @@ func (ctx *Context) initProblem(p *Problem, id string) *Problem {
 //
 // 如果 id 为空，尝试以下顺序获得值：
 //   - err 是否是由 [web.NewHTTPError] 创建，如果是则采用 err.Status 取得 ID 值；
-//   - 采用 [problems.ProblemInternalServerError]；
+//   - 采用 [ProblemInternalServerError]；
 func (ctx *Context) Error(err error, id string) *Problem {
 	if id == "" {
 		var herr *errs.HTTP

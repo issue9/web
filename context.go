@@ -351,8 +351,6 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 //
 // 该返回实例与 [Server.Logs] 是不同的，
 // 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
-//
-// 输出内容依然遵照 [Server.Logs] 的规则作本地化处理。
 func (ctx *Context) Logs() Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
@@ -360,7 +358,7 @@ func (ctx *Context) IsXHR() bool {
 	return h == "xmlhttprequest"
 }
 
-// Unwrap 返回底层的 http.ResponseWriter
+// Unwrap 返回底层的 [http.ResponseWriter]
 //
 // 在 go1.20 之后，[http.ResponseController] 可能要用到此方法。
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }

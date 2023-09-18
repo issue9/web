@@ -46,9 +46,4 @@ jobs:
       - name: Test
         env:
           LANG: en
-        run: go test -v -coverprofile='coverage.txt' -covermode=atomic ./cache/caches/...
-
-      - name: Upload Coverage report
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.txt
+        run: go test -v

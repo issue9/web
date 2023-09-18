@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 
-# 这并不是一个完整的 openapi 文档，仅可被作为 restdoc 的 @openapi 引用。
+# 这并不是一个完整的 openapi 文档，仅定义了部分常用的类型，
+# 可被作为 restdoc 的一部分被 @openapi 引用。
 
 openapi: 3.1.0
 components:

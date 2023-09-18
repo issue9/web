@@ -146,7 +146,7 @@ func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 	return ret, nil
 }
 
-// PathString 取地址参数中的 key 表示的值并尝试转换成 string 类型
+// PathString 取地址参数中的 key 表示的值并转换成 string 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathString(key, id string) (string, Responser) {
@@ -283,7 +283,7 @@ func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
 // 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
 //
 // [Query]: https://github.com/issue9/query
-func (q *Queries) Object(v any, id string) {
+func (q *Queries) Object(v any) {
 	query.ParseWithLog(q.queries, v, func(field string, err error) {
 		var msg LocaleStringer
 		if ls, ok := err.(LocaleStringer); ok {
@@ -308,8 +308,7 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 	if err != nil {
 		return ctx.Error(err, id)
 	}
-	q.Object(v, id)
-
+	q.Object(v)
 	return q.Problem(id)
 }
 
