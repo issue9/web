@@ -186,7 +186,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if o.Cache == nil {
 		c, job := caches.NewMemory()
 		o.Cache = c
-		o.Init = append(o.Init, func(s *Server) { // Addticker 依赖 IDGenerator
+		o.Init = append(o.Init, func(s *Server) { // AddTicker 依赖 IDGenerator
 			s.Services().AddTicker(locales.RecycleLocalCache, job, time.Minute, false, false)
 		})
 	}

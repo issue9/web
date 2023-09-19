@@ -3,7 +3,7 @@ module github.com/issue9/web
 require (
 	github.com/andybalholm/brotli v1.0.5
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
-	github.com/issue9/assert/v3 v3.0.5
+	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/config v0.4.0
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
@@ -15,7 +15,7 @@ require (
 	github.com/issue9/sliceutil v0.15.0
 	github.com/issue9/term/v3 v3.2.2
 	github.com/issue9/unique/v2 v2.0.0
-	github.com/klauspost/compress v1.16.7
+	github.com/klauspost/compress v1.17.0
 	github.com/redis/go-redis/v9 v9.1.0
 	golang.org/x/crypto v0.13.0
 	golang.org/x/text v0.13.0
