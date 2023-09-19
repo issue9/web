@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/issue9/errwrap"
+
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 )
@@ -47,13 +48,6 @@ func (sse *SSE[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
 
 // 和客户端进行连接，如果返回，则表示连接被关闭。
 func (s *Source) connect(ctx *web.Context, status int) {
-	ctx.Header().Set("content-type", header.BuildContentType(Mimetype, header.UTF8Name))
-	ctx.Header().Set("Content-Length", "0")
-	ctx.Header().Set("Cache-Control", "no-cache")
-	ctx.Header().Set("Connection", "keep-alive")
-	ctx.SetCharset("utf-8")
-	ctx.SetEncoding("")
-
 	var rw http.ResponseWriter = ctx
 	f, ok := rw.(http.Flusher)
 	for !ok { // TODO: go1.20 之后，可以采用 http.ResponseController 方法。
@@ -64,14 +58,18 @@ func (s *Source) connect(ctx *web.Context, status int) {
 		}
 		break
 	}
-
 	if f == nil {
-		ctx.WriteHeader(http.StatusInternalServerError)
-		ctx.Logs().ERROR().String("ctx 无法转换成 http.Flusher")
-		return
+		panic("ctx 无法转换成 http.Flusher") // 无法实现当前需要的功能，直接 panic。
 	}
 
+	ctx.Header().Set("content-type", header.BuildContentType(Mimetype, header.UTF8Name))
+	ctx.Header().Set("Content-Length", "0")
+	ctx.Header().Set("Cache-Control", "no-cache")
+	ctx.Header().Set("Connection", "keep-alive")
+	ctx.SetCharset("utf-8")
+	ctx.SetEncoding("")
 	ctx.WriteHeader(status)
+
 	for {
 		select {
 		case <-s.exit:
