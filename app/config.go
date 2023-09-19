@@ -4,6 +4,7 @@ package app
 
 import (
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/issue9/config"
@@ -130,7 +131,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*web.
 	}
 
 	if conf.MemoryLimit > 0 {
-		initMemoryLimit(conf.MemoryLimit)
+		debug.SetMemoryLimit(conf.MemoryLimit)
 	}
 
 	opt := &web.Options{
