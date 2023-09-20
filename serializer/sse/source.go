@@ -19,7 +19,14 @@ type Source struct {
 }
 
 // Get 返回指定 ID 的事件源
-func (sse *SSE[T]) Get(id T) *Source { return sse.sources[id] }
+//
+// 仅在 [SSE.NewSource] 执行之后，此函数才能返回非空值。
+func (sse *SSE[T]) Get(id T) *Source {
+	if v, found := sse.sources.Load(id); found {
+		return v.(*Source)
+	}
+	return nil
+}
 
 // NewSource 声明新的事件源
 //
@@ -27,8 +34,8 @@ func (sse *SSE[T]) Get(id T) *Source { return sse.sources[id] }
 // id 表示是事件源的唯一 ID，如果事件是根据用户进行区分的，那么该值应该是表示用户的 ID 值；
 // wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出。
 func (sse *SSE[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
-	if sse.sources[id] != nil {
-		sse.sources[id].Close()
+	if ss, found := sse.sources.LoadAndDelete(id); found {
+		ss.(*Source).Close()
 	}
 
 	s = &Source{
@@ -36,12 +43,12 @@ func (sse *SSE[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
 		exit: make(chan struct{}, 1),
 		done: make(chan struct{}, 1),
 	}
-	sse.sources[id] = s
+	sse.sources.Store(id, s)
 
 	go func() {
 		s.connect(ctx, sse.status) // 阻塞，出错退出
 		close(s.data)              // 退出之前关闭，防止退出之后，依然有数据源源不断地从 Sent 输入。
-		delete(sse.sources, id)    // 如果 connect 返回，说明断开了连接，删除 sources 中的记录。
+		sse.sources.Delete(id)     // 如果 connect 返回，说明断开了连接，删除 sources 中的记录。
 	}()
 	return s, s.wait
 }

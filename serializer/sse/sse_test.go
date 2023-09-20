@@ -16,7 +16,7 @@ import (
 
 var _ web.Service = &SSE[struct{}]{}
 
-func TestEvents(t *testing.T) {
+func TestSSE(t *testing.T) {
 	a := assert.New(t, false)
 	e := New[int64](201)
 	a.NotNil(e)
