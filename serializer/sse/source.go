@@ -3,15 +3,19 @@
 package sse
 
 import (
+	"bytes"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
-
-	"github.com/issue9/errwrap"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 )
+
+const bufMaxSize = 1024
+
+var bufPool = &sync.Pool{New: func() any { return &bytes.Buffer{} }}
 
 type Source struct {
 	data chan []byte
@@ -102,22 +106,36 @@ func (s *Source) connect(ctx *web.Context, status int) {
 //
 // id、event 和  retry 都可以为空，表示不需要这些值；
 func (s *Source) Sent(data []string, event, id string, retry uint) {
-	w := errwrap.Buffer{}
+	w := bufPool.Get().(*bytes.Buffer)
+	w.Reset()
+
 	for _, line := range data {
-		w.WString("data: ").WString(line).WByte('\n')
+		w.WriteString("data: ")
+		w.WriteString(line)
+		w.WriteByte('\n')
 	}
 	if event != "" {
-		w.WString("event: ").WString(event).WByte('\n')
+		w.WriteString("event: ")
+		w.WriteString(event)
+		w.WriteByte('\n')
 	}
 	if id != "" {
-		w.WString("id: ").WString(id).WByte('\n')
+		w.WriteString("id: ")
+		w.WriteString(id)
+		w.WriteByte('\n')
 	}
 	if retry > 0 {
-		w.WString("retry: ").WString(strconv.Itoa(int(retry))).WByte('\n')
+		w.WriteString("retry: ")
+		w.WriteString(strconv.Itoa(int(retry)))
+		w.WriteByte('\n')
 	}
-	w.WByte('\n')
+	w.WriteByte('\n')
 
 	s.data <- w.Bytes()
+
+	if w.Cap() < bufMaxSize {
+		bufPool.Put(w)
+	}
 }
 
 // 关闭当前事件源
