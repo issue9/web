@@ -63,7 +63,7 @@ type (
 )
 
 func (srv *Server) initServices() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background()) // TODO: go1.20  改为 WithCancelCause
 	srv.OnClose(func() error { cancel(); return nil })
 
 	srv.services = &Services{
