@@ -3,6 +3,9 @@ messages:
     - key: '%s not found'
       message:
         msg: '%s not found'
+    - key: SSE server
+      message:
+        msg: SSE server
     - key: cache miss
       message:
         msg: cache miss

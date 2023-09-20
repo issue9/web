@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package sse [SSE] 的实现
+// Package sse [SSE] 的服务端实现
 //
 // [SSE]: https://html.spec.whatwg.org/multipage/server-sent-events.html
 package sse
@@ -8,6 +8,8 @@ package sse
 import (
 	"context"
 	"sync"
+
+	"github.com/issue9/web"
 )
 
 const Mimetype = "text/event-stream"
@@ -24,11 +26,17 @@ type SSE[T comparable] struct {
 // New 声明 SSE 对象
 //
 // status 表示正常情况下 SSE 返回的状态码。
-func New[T comparable](status int) *SSE[T] {
-	return &SSE[T]{status: status, sources: &sync.Map{}}
+func New[T comparable](s *web.Server, status int) *SSE[T] {
+	sse := &SSE[T]{
+		status:  status,
+		sources: &sync.Map{},
+	}
+	s.Services().Add(web.StringPhrase("SSE server"), web.ServiceFunc(sse.serve))
+
+	return sse
 }
 
-func (sse *SSE[T]) Serve(ctx context.Context) error {
+func (sse *SSE[T]) serve(ctx context.Context) error {
 	<-ctx.Done()
 
 	sse.sources.Range(func(k, v any) bool {

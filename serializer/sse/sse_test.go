@@ -16,19 +16,16 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
-var _ web.Service = &SSE[struct{}]{}
-
 func TestSSE(t *testing.T) {
 	a := assert.New(t, false)
-	e := New[int64](201)
-	a.NotNil(e)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes:  []*web.Mimetype{{Type: Mimetype}},
 		Logs:       &logs.Options{Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil)},
 	})
 	a.NotError(err).NotNil(s)
-	s.Services().Add(web.Phrase("sse"), e)
+	e := New[int64](s, 201)
+	a.NotNil(e)
 
 	s.NewRouter("def", nil).Get("/events/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)

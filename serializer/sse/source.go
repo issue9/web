@@ -98,9 +98,9 @@ func (s *Source) connect(ctx *web.Context, status int) {
 // Sent 发送消息
 //
 // id、event 和  retry 都可以为空，表示不需要这些值；
-func (s *Source) Sent(d []string, event, id string, retry uint) {
+func (s *Source) Sent(data []string, event, id string, retry uint) {
 	w := errwrap.Buffer{}
-	for _, line := range d {
+	for _, line := range data {
 		w.WString("data: ").WString(line).WByte('\n')
 	}
 	if event != "" {

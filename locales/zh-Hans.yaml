@@ -3,6 +3,9 @@ messages:
     - key: '%s not found'
       message:
         msg: '%s 不存在'
+    - key: SSE server
+      message:
+        msg: SSE 服务
     - key: cache miss
       message:
         msg: 未找到缓存项
