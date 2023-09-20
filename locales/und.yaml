@@ -279,6 +279,9 @@ messages:
     - key: problem.511.detail
       message:
         msg: problem.511.detail
+    - key: recycle idle SSE connection
+      message:
+        msg: recycle idle SSE connection
     - key: recycle local cache
       message:
         msg: recycle local cache

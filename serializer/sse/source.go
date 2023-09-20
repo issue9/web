@@ -5,6 +5,7 @@ package sse
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/issue9/errwrap"
 
@@ -16,6 +17,7 @@ type Source struct {
 	data chan []byte
 	exit chan struct{}
 	done chan struct{}
+	last time.Time
 }
 
 // Get 返回指定 ID 的事件源
@@ -91,6 +93,7 @@ func (s *Source) connect(ctx *web.Context, status int) {
 				return
 			}
 			f.Flush()
+			s.last = time.Now()
 		}
 	}
 }

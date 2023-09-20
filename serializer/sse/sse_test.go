@@ -24,7 +24,7 @@ func TestSSE(t *testing.T) {
 		Logs:       &logs.Options{Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil)},
 	})
 	a.NotError(err).NotNil(s)
-	e := New[int64](s, 201)
+	e := New[int64](s, 201, time.Minute, time.Minute)
 	a.NotNil(e)
 
 	s.NewRouter("def", nil).Get("/events/{id}", func(ctx *web.Context) web.Responser {
