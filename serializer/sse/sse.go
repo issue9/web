@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-// Package sse server sent event 的实现
+// Package sse [SSE] 的实现
+//
+// [SSE]: https://html.spec.whatwg.org/multipage/server-sent-events.html
 package sse
 
 import (
@@ -12,7 +14,8 @@ const Mimetype = "text/event-stream"
 
 // SSE sse 事件管理
 //
-// T 表示用于区分不同事件源的 ID，比如按用户区分，那么该类型可能是 int64 类型的用户 ID 值。
+// T 表示用于区分不同事件源的 ID，比如按用户区分，
+// 那么该类型可能是 int64 类型的用户 ID 值。
 type SSE[T comparable] struct {
 	status  int
 	sources *sync.Map

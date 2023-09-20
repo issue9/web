@@ -30,7 +30,7 @@ func (sse *SSE[T]) Get(id T) *Source {
 
 // NewSource 声明新的事件源
 //
-// NOTE: 只有采用此方法声明之后，才有可能通过 [Server.Get] 获取实例。
+// NOTE: 只有采用此方法声明之后，才有可能通过 [SSE.Get] 获取实例。
 // id 表示是事件源的唯一 ID，如果事件是根据用户进行区分的，那么该值应该是表示用户的 ID 值；
 // wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出。
 func (sse *SSE[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
@@ -79,7 +79,9 @@ func (s *Source) connect(ctx *web.Context, status int) {
 
 	for {
 		select {
-		case <-s.exit:
+		case <-ctx.Request().Context().Done():
+			s.done <- struct{}{}
+		case <-s.exit: // 由 Source.Close 触发
 			s.done <- struct{}{}
 			return
 		case data := <-s.data:
