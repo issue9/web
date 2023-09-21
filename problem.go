@@ -204,7 +204,7 @@ func (ctx *Context) Error(err error, id string) *Problem {
 		}
 	}
 
-	ctx.Logs().NewRecord(logs.Error).DepthError(2, err)
+	ctx.Logs().NewRecord(logs.Error).DepthPrintf(2, "%+v\n", err)
 	return ctx.Problem(id)
 }
 

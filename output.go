@@ -15,6 +15,8 @@ import (
 type Responser interface {
 	// Apply 通过 [Context] 将当前内容渲染到客户端
 	//
+	// 如果执行过程出现问题可返回 [Problem] 对象作为错误信息的描述。
+	//
 	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
 	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
 	Apply(*Context) *Problem
@@ -68,8 +70,7 @@ func (ctx *Context) Render(status int, body any) {
 
 	data, err := ctx.Marshal(body)
 	if err != nil {
-		ctx.Logs().ERROR().Printf("%+v", err)
-		ctx.Problem(ProblemNotAcceptable).Apply(ctx)
+		ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
 		return
 	}
 
