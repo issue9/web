@@ -338,10 +338,10 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 
 func BenchmarkNewProblem(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		p := newProblem().init("id", "title", "detail", 400)
-		p.WithField("custom", "custom")
+		p := newRFC7807().init("id", "title", "detail", 400)
+		p.WithExtensions(&object{Name: "n1", Age: 11})
 		p.WithParam("p1", "v1")
-		problemPool.Put(p)
+		rfc7807Pool.Put(p)
 	}
 }
 
@@ -356,8 +356,8 @@ func BenchmarkProblem_Apply_json(b *testing.B) {
 		Request()
 	ctx := s.newContext(w, r, nil)
 
-	p := newProblem().init("id", "title", "detail", 400)
-	p.WithField("custom", "custom")
+	p := newRFC7807().init("id", "title", "detail", 400)
+	p.WithExtensions(&object{Name: "n1", Age: 11})
 	p.WithParam("p1", "v1")
 	for i := 0; i < b.N; i++ {
 		p.Apply(ctx)

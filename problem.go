@@ -3,15 +3,9 @@
 package web
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"errors"
-	"net/url"
-	"reflect"
-	"strconv"
 	"sync"
 
-	"github.com/issue9/errwrap"
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/filter"
@@ -20,104 +14,97 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-const (
-	problemPoolMaxSize  = 30 // len(problem.Fields) + len(problem.Params) 少于此值才会回收。
-	problemParamsKey    = "params"
-	rfc8707XMLNamespace = "urn:ietf:rfc:7807"
-)
-
-const (
-	typeIndex int = iota
-	titleIndex
-	detailIndex
-	statusIndex
-	fixedSize
-)
+const rfc7807PoolMaxParams = 30 // len(RFC7807.Params) 少于此值才会回收。
 
 var (
-	problemPool = &sync.Pool{
-		New: func() any {
-			return &Problem{
-				Fields: []ProblemField{{Key: "type"}, {Key: "title"}, {Key: "detail"}, {Key: "status"}},
-			}
-		},
-	}
-
+	rfc7807Pool       = &sync.Pool{New: func() any { return &RFC7807{} }}
 	filterProblemPool = &sync.Pool{New: func() any { return &FilterProblem{} }}
 )
 
 type (
-	// Problem 根据 [RFC7807] 实现向用户反馈非正常状态的信息
-	//
-	// 这也是 [Responser] 的实现者之一。
-	//
-	// [MarshalFunc] 的实现者，可能需要对 Problem 进行处理以便输出更加友好的格式。
-	//
-	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
-	Problem struct {
-		// NOTE: 无法缓存内容，因为用户请求的语言每次都可能是不一样的。
+	// Problem 向用户反馈非正常信息的对象接口
+	Problem interface {
+		Responser
 
-		status int
-
-		// 反馈给用户的信息
+		// WithParam 添加具体的错误字段及描述信息
 		//
-		// 其中前四个固定为 type,title,detail,status。通过 WithField 添加的字段跟随其后。
-		Fields []ProblemField
+		// 如果已经存在同名，则会 panic。
+		WithParam(name, reason string) Problem
 
-		// 用户提交对象各个字段的错误信息
-		Params []ProblemParam
+		// WithExtensions 指定扩展对象信息
+		//
+		// 多次调用将会覆盖之前的内容。
+		WithExtensions(any) Problem
+
+		// WithInstance 指定发生错误的实例
+		//
+		// 多次调用将会覆盖之前的内容。
+		WithInstance(string) Problem
+
+		// 不允许其它实现
+		private()
 	}
 
-	ProblemField struct {
-		Key   string // 字段名
-		Value any    // 对应的值
+	// RFC7807 [Problem] 的 [RFC7807] 实现
+	//
+	// [MarshalFunc] 的实现者，可能需要对 RFC7807 进行处理以便输出更加友好的格式。
+	//
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/RFC7807
+	RFC7807 struct {
+		// NOTE: 无法缓存内容，因为用户请求的语言每次都可能是不一样的。
+		// NOTE: Problem 应该是 final 状态的，否则像 [Context.PathID] 等的实现需要指定 Problem 对象。
+		// NOTE: 这是 [Problem] 接口的唯一实现，之所以多此一举用，是因为像 [FilterProblem.Problem]
+		// 的返回值如果是 [RFC7807] 而不是 [Problem]，那么在 [HandleFunc] 中作为 [Responser] 返回时需要再次判断是否为 nil。
+
+		Type       string         `json:"type" xml:"type" form:"type"`
+		Title      string         `json:"title" xml:"title" form:"title"`
+		Detail     string         `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty"`
+		Instance   string         `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty"`
+		Status     int            `json:"status" xml:"status" form:"status"`
+		Extensions any            `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty"` // 反馈给用户的信息
+		Params     []RFC7807Param `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty"`           // 用户提交对象各个字段的错误信息
 	}
 
-	ProblemParam struct {
-		Name   string // 出错字段的名称
-		Reason string // 出错信息
-	}
-
-	problemEntry struct {
-		XMLName xml.Name
-		Value   any `xml:",chardata"`
+	RFC7807Param struct {
+		Name   string `json:"name" xml:"name" form:"name"`       // 出错字段的名称
+		Reason string `json:"reason" xml:"reason" form:"reason"` // 出错信息
 	}
 
 	// FilterProblem 处理由过滤器生成的各错误
 	FilterProblem struct {
 		exitAtError bool
 		ctx         *Context
-		p           *Problem
+		p           *RFC7807
 	}
 )
 
-func newProblem() *Problem {
-	p := problemPool.Get().(*Problem)
-
-	if p.Fields != nil {
-		p.Fields = p.Fields[:fixedSize]
-	}
+func newRFC7807() *RFC7807 {
+	p := rfc7807Pool.Get().(*RFC7807)
 
 	if p.Params != nil {
 		p.Params = p.Params[:0]
 	}
 
+	p.Extensions = nil
+	p.Instance = ""
+
+	// 其它字段在 init 会被初始化
+
 	return p
 }
 
-func (p *Problem) init(id, title, detail string, status int) *Problem {
-	p.Fields[typeIndex].Value = id
-	p.Fields[titleIndex].Value = title
-	p.Fields[detailIndex].Value = detail
-	p.Fields[statusIndex].Value = status
-	p.status = status
+func (p *RFC7807) init(id, title, detail string, status int) *RFC7807 {
+	p.Type = id
+	p.Title = title
+	p.Detail = detail
+	p.Status = status
 	return p
 }
 
-func (p *Problem) Apply(ctx *Context) *Problem {
+func (p *RFC7807) Apply(ctx *Context) Problem {
 	// NOTE: 此方法要始终返回 nil
 
-	ctx.WriteHeader(p.status)
+	ctx.WriteHeader(p.Status)
 
 	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
@@ -133,30 +120,32 @@ func (p *Problem) Apply(ctx *Context) *Problem {
 	if _, err = ctx.Write(data); err != nil {
 		ctx.Logs().ERROR().Printf("%+v", err)
 	}
-	if len(p.Fields)+len(p.Params) < problemPoolMaxSize {
-		problemPool.Put(p)
+	if len(p.Params) < rfc7807PoolMaxParams {
+		rfc7807Pool.Put(p)
 	}
 
 	return nil
 }
 
-// WithParam 添加具体的错误字段及描述信息
-func (p *Problem) WithParam(name, reason string) *Problem {
-	if _, found := sliceutil.At(p.Params, func(pp ProblemParam, _ int) bool { return pp.Name == name }); found {
+func (p *RFC7807) WithParam(name, reason string) Problem {
+	if _, found := sliceutil.At(p.Params, func(pp RFC7807Param, _ int) bool { return pp.Name == name }); found {
 		panic("已经存在")
 	}
-	p.Params = append(p.Params, ProblemParam{Name: name, Reason: reason})
+	p.Params = append(p.Params, RFC7807Param{Name: name, Reason: reason})
 	return p
 }
 
-// WithField 添加新的输出字段
-func (p *Problem) WithField(key string, val any) *Problem {
-	if sliceutil.Exists(p.Fields, func(e ProblemField, _ int) bool { return e.Key == key }) || key == problemParamsKey {
-		panic("存在同名的参数")
-	}
-	p.Fields = append(p.Fields, ProblemField{Key: key, Value: val})
+func (p *RFC7807) WithExtensions(ext any) Problem {
+	p.Extensions = ext
 	return p
 }
+
+func (p *RFC7807) WithInstance(instance string) Problem {
+	p.Instance = instance
+	return p
+}
+
+func (p *RFC7807) private() {}
 
 // AddProblem 添加新的错误代码
 func (srv *Server) AddProblem(id string, status int, title, detail LocaleStringer) *Server {
@@ -180,12 +169,12 @@ func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title
 }
 
 // Problem 返回指定 id 的 [Problem]
-func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
+func (ctx *Context) Problem(id string) Problem { return ctx.initProblem(newRFC7807(), id) }
 
-func (ctx *Context) initProblem(p *Problem, id string) *Problem {
+func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
 	sp := ctx.Server().problems.Problem(id)
 	pp := ctx.LocalePrinter()
-	return p.init(sp.Type, sp.Title.LocaleString(pp), sp.Detail.LocaleString(pp), sp.Status)
+	return p.init(sp.Type, sp.Title.LocaleString(pp), sp.Detail.LocaleString(pp), sp.Status).WithInstance(ctx.ID())
 }
 
 // Error 将 err 输出到 ERROR 通道并尝试以指定 id 的 [Problem] 返回
@@ -193,7 +182,7 @@ func (ctx *Context) initProblem(p *Problem, id string) *Problem {
 // 如果 id 为空，尝试以下顺序获得值：
 //   - err 是否是由 [web.NewHTTPError] 创建，如果是则采用 err.Status 取得 ID 值；
 //   - 采用 [ProblemInternalServerError]；
-func (ctx *Context) Error(err error, id string) *Problem {
+func (ctx *Context) Error(err error, id string) Problem {
 	if id == "" {
 		var herr *errs.HTTP
 		if errors.As(err, &herr) {
@@ -208,16 +197,16 @@ func (ctx *Context) Error(err error, id string) *Problem {
 	return ctx.Problem(id)
 }
 
-func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
+func (ctx *Context) NotFound() Problem { return ctx.Problem(ProblemNotFound) }
 
-func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(ProblemNotImplemented) }
+func (ctx *Context) NotImplemented() Problem { return ctx.Problem(ProblemNotImplemented) }
 
 // NewFilterProblem 声明用于处理过滤器的错误对象
 func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {
 	v := filterProblemPool.Get().(*FilterProblem)
 	v.exitAtError = exitAtError
 	v.ctx = ctx
-	v.p = newProblem()
+	v.p = newRFC7807()
 	ctx.OnExit(func(*Context, int) { filterProblemPool.Put(v) })
 	return v
 }
@@ -273,180 +262,9 @@ func (v *FilterProblem) When(cond bool, f func(v *FilterProblem)) *FilterProblem
 func (v *FilterProblem) Context() *Context { return v.ctx }
 
 // Problem 如果有错误信息转换成 Problem 否则返回 nil
-func (v *FilterProblem) Problem(id string) Responser {
+func (v *FilterProblem) Problem(id string) Problem {
 	if v == nil || v.len() == 0 {
 		return nil
 	}
 	return v.Context().initProblem(v.p, id)
-}
-
-// 以下是 Problem 的各类 Marshal 实现
-
-func (p *Problem) MarshalJSON() ([]byte, error) {
-	b := errwrap.Buffer{}
-	b.WByte('{')
-
-	// 前 4 个字段类型固定，不用 json.Marshal
-	for i := 0; i <= detailIndex; i++ {
-		field := p.Fields[i]
-		b.WByte('"').WString(field.Key).WString(`":"`).WString(field.Value.(string)).WString(`",`)
-	}
-	field := p.Fields[statusIndex]
-	b.WByte('"').WString(field.Key).WString(`":`).WString(strconv.Itoa(field.Value.(int))).WString(`,`)
-
-	for i := fixedSize; i < len(p.Fields); i++ {
-		field := p.Fields[i]
-		b.WByte('"').WString(field.Key).WString(`":`)
-
-		v, err := json.Marshal(field.Value)
-		if err != nil {
-			return nil, err
-		}
-		b.WBytes(v).WByte(',')
-	}
-
-	if len(p.Params) > 0 {
-		b.WByte('"').WString(problemParamsKey + `":[`)
-		for _, param := range p.Params {
-			b.WString(`{"name":"`).WString(param.Name).WString(`","reason":"`).WString(param.Reason).WString(`"},`)
-		}
-		b.Truncate(b.Len() - 1)
-		b.WString("],")
-	}
-
-	b.Truncate(b.Len() - 1)
-
-	b.WByte('}')
-
-	return b.Bytes(), b.Err
-}
-
-func (p *Problem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	start.Name.Local = "problem"
-	start.Attr = append(start.Attr, xml.Attr{Name: xml.Name{Local: "xmlns"}, Value: rfc8707XMLNamespace})
-	if err := e.EncodeToken(start); err != nil {
-		return err
-	}
-
-	for _, field := range p.Fields {
-		v := reflect.ValueOf(field.Value)
-		for v.Kind() == reflect.Pointer {
-			v = v.Elem()
-		}
-
-		var err error
-		if k := v.Kind(); k <= reflect.Complex128 || k == reflect.String {
-			err = e.Encode(problemEntry{XMLName: xml.Name{Local: field.Key}, Value: field.Value})
-		} else if k == reflect.Array || k == reflect.Slice {
-			s := xml.StartElement{Name: xml.Name{Local: field.Key}}
-			if err = e.EncodeToken(s); err == nil {
-				for i := 0; i < v.Len(); i++ {
-					if err = e.EncodeElement(v.Index(i).Interface(), xml.StartElement{Name: xml.Name{Local: "i"}}); err != nil {
-						return err
-					}
-				}
-				err = e.EncodeToken(s.End())
-			}
-		} else {
-			err = e.EncodeElement(field.Value, xml.StartElement{Name: xml.Name{Local: field.Key}})
-		}
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(p.Params) > 0 {
-		pStart := xml.StartElement{Name: xml.Name{Local: problemParamsKey}}
-		if err := e.EncodeToken(pStart); err != nil {
-			return err
-		}
-
-		for _, param := range p.Params {
-			iStart := xml.StartElement{Name: xml.Name{Local: "i"}}
-			if err := e.EncodeToken(iStart); err != nil {
-				return err
-			}
-
-			if err := e.EncodeElement(param.Name, xml.StartElement{Name: xml.Name{Local: "name"}}); err != nil {
-				return err
-			}
-			if err := e.EncodeElement(param.Reason, xml.StartElement{Name: xml.Name{Local: "reason"}}); err != nil {
-				return err
-			}
-
-			if err := e.EncodeToken(iStart.End()); err != nil {
-				return err
-			}
-		}
-
-		if err := e.EncodeToken(pStart.End()); err != nil {
-			return err
-		}
-	}
-
-	return e.EncodeToken(start.End())
-}
-
-func (p *Problem) MarshalForm() ([]byte, error) {
-	u := url.Values{}
-
-	for _, f := range p.Fields {
-		var val string
-		switch v := f.Value.(type) {
-		case bool:
-			val = strconv.FormatBool(v)
-		case int:
-			val = strconv.FormatInt(int64(v), 10)
-		case int8:
-			val = strconv.FormatInt(int64(v), 10)
-		case int16:
-			val = strconv.FormatInt(int64(v), 10)
-		case int32:
-			val = strconv.FormatInt(int64(v), 10)
-		case int64:
-			val = strconv.FormatInt(v, 10)
-		case uint:
-			val = strconv.FormatUint(uint64(v), 10)
-		case uint8:
-			val = strconv.FormatUint(uint64(v), 10)
-		case uint16:
-			val = strconv.FormatUint(uint64(v), 10)
-		case uint32:
-			val = strconv.FormatUint(uint64(v), 10)
-		case uint64:
-			val = strconv.FormatUint(v, 10)
-		case float32:
-			val = strconv.FormatFloat(float64(v), 'f', 2, 32)
-		case float64:
-			val = strconv.FormatFloat(v, 'f', 2, 32)
-		case string:
-			val = v
-		default: // 其它类型忽略
-			continue
-		}
-		u.Add(f.Key, val)
-	}
-
-	for _, param := range p.Params {
-		u.Add(problemParamsKey+"."+param.Name, param.Reason)
-	}
-
-	return []byte(u.Encode()), nil
-}
-
-func (p *Problem) MarshalHTML() (string, any) {
-	data := make(map[string]any, len(p.Fields))
-	for _, f := range p.Fields {
-		data[f.Key] = f.Value
-	}
-
-	if len(p.Params) > 0 {
-		ps := make(map[string]string, len(p.Params))
-		for _, param := range p.Params {
-			ps[param.Name] = param.Reason
-		}
-		data[problemParamsKey] = ps
-	}
-
-	return "problem", data
 }
