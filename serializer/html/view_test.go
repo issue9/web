@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
@@ -43,7 +44,7 @@ func TestInstallView(t *testing.T) {
 	InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
 
 	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
 		HTMLName struct{} `html:"t"`
@@ -78,7 +79,7 @@ func TestInstallDirView(t *testing.T) {
 	instalDirView(s, os.DirFS("./testdata/dir"), "*.tpl")
 
 	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
 		HTMLName struct{} `html:"t"`

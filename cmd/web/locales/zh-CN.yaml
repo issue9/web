@@ -141,6 +141,9 @@ messages:
     - key: out dir
       message:
         msg: 输出目录
+    - key: override global response %s
+      message:
+        msg: %s 与定义的全局对象相同，在当前接口中将覆盖全局定义。
     - key: package %s with the same name.
       message:
         msg: '%s 已经拥有相同的名称'

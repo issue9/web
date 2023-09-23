@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/schema"
@@ -105,14 +106,17 @@ func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*openapi3.
 		o.Responses = make(openapi3.Responses, l)
 	}
 
-	for status, r := range resps {
-		o.Responses[status] = &openapi3.ResponseRef{Value: r}
-	}
-
-	if g {
+	if g { // 全局的定义在前，才会被本地定义覆盖。
 		for key, resp := range p.resps {
 			o.Responses[key] = &openapi3.ResponseRef{Ref: responsesRef + key, Value: resp}
 		}
+	}
+
+	for status, r := range resps {
+		if _, found := o.Responses[status]; found {
+			p.l.Warning(web.Phrase("override global response %s", status))
+		}
+		o.Responses[status] = &openapi3.ResponseRef{Value: r}
 	}
 }
 

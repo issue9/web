@@ -122,6 +122,9 @@ messages:
     - key: out dir
       message:
         msg: out dir
+    - key: override global response %s
+      message:
+        msg: override global response %s
     - key: package %s with the same name.
       message:
         msg: package %s with the same name.
