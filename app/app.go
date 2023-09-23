@@ -7,8 +7,6 @@
 //   - [NewServerOf] 从配置文件构建 [web.Server] 对象；
 //   - [CLIOf] 直接生成一个简单的命令行程序，结合了 [App] 和 [NewServerOf] 两者的功能；
 //
-// NOTE: 这并不一个必需的包，如果觉得不适用，可以直接采用 [web.NewServer] 初始化服务。
-//
 // # 配置文件
 //
 // [NewServerOf] 和 [CLIOf] 都是通过加载配置文件对项目进行初始化。

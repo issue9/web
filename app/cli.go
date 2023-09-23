@@ -26,10 +26,9 @@ import (
 // CLIOf 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
-//
-//	-v 显示版本号；
-//	-h 显示帮助信息；
-//	-a 执行的指令，该值会传递给 [CLIOf.Init]，由用户根据此值决定初始化方式；
+//   - -v 显示版本号；
+//   - -h 显示帮助信息；
+//   - -a 执行的指令，该值会传递给 [CLIOf.Init]，由用户根据此值决定初始化方式；
 //
 // T 表示的是配置文件中的用户自定义数据类型。
 type CLIOf[T any] struct {
@@ -162,11 +161,11 @@ const (
 	cmdShowHelp    = web.StringPhrase("cmd.show_help")
 )
 
-// FlagSet 将当前对象与 [flag.FlagSet] 关联
+// FlagSet 将当前对象的所有参数向 [flag.FlagSet] 注册
 //
 // helpFlag 是否添加帮助选项。
-// 如果是独立使用的，建议设置为 true，或者直接使用 [CLIOf.Exec]。
-// 作为子命令使用，可以设置为 false。
+// 如果是独立使用的建议设置为 true。
+// 作为子命令使用的可以设置为 false。
 // fs 用于接收命令行的参数。
 //
 // do 表示实际执行的方法，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。

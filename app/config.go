@@ -23,7 +23,6 @@ type configOf[T any] struct {
 	//
 	// 如果小于等于 0，表示不设置该值。
 	// 除非对该功能非常了解，否则不建议设置该值。
-	// NOTE: 该功能仅对 go1.19 及之后的版本起作用。
 	//
 	// 具体功能可参考 https://pkg.go.dev/runtime/debug#SetMemoryLimit
 	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty"`
@@ -69,7 +68,7 @@ type configOf[T any] struct {
 
 	// 指定配置文件的序列化
 	//
-	// 如果为空，表示默认不支持，后续可通过 [web.Server.Config] 进行添加。
+	// 如果为空，表示不支持。
 	//
 	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
 	//  - .yaml
@@ -92,6 +91,7 @@ type configOf[T any] struct {
 	//  - date 日期格式，默认值；
 	//  - string 普通的字符串；
 	//  - number 数值格式；
+	// NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
 	idGenerator web.IDGenerator
 
