@@ -31,7 +31,7 @@ func TestLogger(t *testing.T) {
 	e1 := &scanner.Error{Pos: token.Position{Filename: "f1.go"}, Msg: "e1"}
 	e2 := &scanner.Error{Pos: token.Position{Filename: "f1.go"}, Msg: "e2"}
 	l.Error(e1, "f1.go", 0)
-	a.Equal(1, l.Count()).True(buf.Len() > 0)
+	a.Equal(1, l.Count()).True(buf.Len() > 0).True(l.HasError())
 
 	list := scanner.ErrorList{e1, e2}
 	l.Error(list, "f1.go", 0)

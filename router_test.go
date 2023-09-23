@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
@@ -36,7 +37,7 @@ func TestServer_Routers(t *testing.T) {
 	srv := newTestServer(a, nil)
 
 	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	defer srv.Close(500 * time.Millisecond)
 
 	ver := group.NewHeaderVersion("ver", "v", log.Default(), "2")
 	a.NotNil(ver)
@@ -46,8 +47,11 @@ func TestServer_Routers(t *testing.T) {
 	uu, err := r1.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
-	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusCreated))
-	servertest.Delete(a, "http://localhost:8080/p1/path").Header("Accept", "application/json;v=2").Do(nil).Status(http.StatusCreated)
+	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusNoContent))
+	servertest.Delete(a, "http://localhost:8080/p1/path").
+		Header("Accept", "application/json;v=2").
+		Do(nil).
+		Status(http.StatusNoContent)
 	servertest.NewRequest(a, http.MethodOptions, "http://localhost:8080/p1/path").
 		Header("Accept", "application/json;v=2").
 		Do(nil).Status(http.StatusOK)
@@ -72,7 +76,7 @@ func TestServer_FileServer(t *testing.T) {
 	s.CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
 	r := s.NewRouter("def", nil)
 	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	defer s.Close(500 * time.Millisecond)
 
 	t.Run("problems", func(t *testing.T) {
 		r.Get("/v1/{path}", s.FileServer(os.DirFS("./testdata"), "path", "index.html"))
@@ -144,7 +148,7 @@ func TestMiddleware(t *testing.T) {
 	prefix.Get("/path", buildHandler(201))
 
 	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	defer srv.Close(500 * time.Millisecond)
 
 	servertest.Get(a, "http://localhost:8080/p1/path").
 		Header("accept", "application/json").

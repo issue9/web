@@ -212,7 +212,7 @@ func (f SearchFunc) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file 
 	case *ast.IndexListExpr: // type x = G[int, float]
 		return f.fromIndexListExprType(t, file, currPath, tag, ts)
 	default:
-		msg := web.Phrase("%s can not convert to ast.StructType", s.Type)
+		msg := web.Phrase("%s can not convert to ast.StructType", s.Name.Name)
 		return nil, newError(s.Pos(), msg)
 	}
 }

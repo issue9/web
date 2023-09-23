@@ -163,6 +163,10 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	}
 	wg.Wait()
 
+	if p.l.HasError() {
+		return nil
+	}
+
 	if err := t.Doc().Validate(ctx); err != nil {
 		p.l.Error(err, "", 0)
 		return nil

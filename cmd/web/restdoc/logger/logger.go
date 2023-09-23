@@ -14,9 +14,10 @@ import (
 )
 
 type Logger struct {
-	logs  logs.Logs
-	p     *message.Printer
-	count int
+	logs   logs.Logs
+	p      *message.Printer
+	count  int
+	hasErr bool
 }
 
 func New(l logs.Logs, p *message.Printer) *Logger {
@@ -34,6 +35,8 @@ func (l *Logger) Info(msg any) { l.log(logs.Info, msg, "", 0) }
 
 // Warning 输出警告信息
 func (l *Logger) Warning(msg any) { l.log(logs.Warn, msg, "", 0) }
+
+func (l *Logger) HasError() bool { return l.hasErr }
 
 // Error 输出错误信息
 //
@@ -74,6 +77,10 @@ func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
 	}
 
 	l.count++ // 只有真正输出时，才需要+1。
+
+	if !l.hasErr && (lv == logs.Error || lv == logs.Fatal) {
+		l.hasErr = true
+	}
 
 	mm := m.LocaleString(l.p)
 	if filename != "" {

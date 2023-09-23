@@ -58,9 +58,9 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			}
 
 			l := logger.New(ls, p)
-			doc := parser.New(l, *urlPrefix, tags)
+			dp := parser.New(l, *urlPrefix, tags)
 			for _, dir := range fs.Args() {
-				doc.AddDir(ctx, dir, *r)
+				dp.AddDir(ctx, dir, *r)
 
 				if *d {
 					modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
@@ -75,12 +75,15 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 							continue
 						}
 						modDir := filepath.Join(modCache, p.Mod.Path+"@"+p.Mod.Version)
-						doc.AddDir(ctx, modDir, *r)
+						dp.AddDir(ctx, modDir, *r)
 					}
 				}
 			}
 
-			return doc.Parse(ctx).SaveAs(*o)
+			if doc := dp.Parse(ctx); doc != nil {
+				return doc.SaveAs(*o)
+			}
+			return nil
 		}
 	})
 }
