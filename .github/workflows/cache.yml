@@ -43,7 +43,14 @@ jobs:
           go-version: ${{ matrix.go }}
         id: go
 
+      - name: Vet
+        run: |
+          cd cache/caches
+          go vet -v ./...
+        
       - name: Test
         env:
           LANG: en
-        run: go test -v
+        run: |
+          cd cache/caches
+          go test -v ./...
