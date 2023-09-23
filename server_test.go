@@ -53,7 +53,7 @@ func TestServer_Vars(t *testing.T) {
 
 func buildHandler(code int) HandlerFunc {
 	return func(ctx *Context) Responser {
-		return ResponserFunc(func(ctx *Context) *Problem {
+		return ResponserFunc(func(ctx *Context) Problem {
 			ctx.Render(code, code)
 			return nil
 		})
@@ -271,7 +271,7 @@ func TestContext_NoContent(t *testing.T) {
 	s := newTestServer(a, o)
 
 	s.NewRouter("def", nil).Get("/204", func(ctx *Context) Responser {
-		return ResponserFunc(func(ctx *Context) *Problem {
+		return ResponserFunc(func(ctx *Context) Problem {
 			ctx.WriteHeader(http.StatusNoContent)
 			return nil
 		})

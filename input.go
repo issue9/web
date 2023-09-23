@@ -118,12 +118,12 @@ func (p *Paths) Float64(key string) float64 {
 }
 
 // Problem 如果有错误信息转换成 [Problem] 否则返回 nil
-func (p *Paths) Problem(id string) Responser { return p.filter.Problem(id) }
+func (p *Paths) Problem(id string) Problem { return p.filter.Problem(id) }
 
 // PathID 获取地址参数中表示 key 的值并转换成大于 0 的 int64
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Paths] 会更方便。
-func (ctx *Context) PathID(key, id string) (int64, Responser) {
+func (ctx *Context) PathID(key, id string) (int64, Problem) {
 	p := ctx.LocalePrinter()
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
@@ -137,7 +137,7 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 // PathInt64 取地址参数中的 key 表示的值并尝试转换成 int64 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
-func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
+func (ctx *Context) PathInt64(key, id string) (int64, Problem) {
 	ret, err := ctx.Route().Params().Int(key)
 	if err != nil {
 		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -149,7 +149,7 @@ func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 // PathString 取地址参数中的 key 表示的值并转换成 string 类型
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
-func (ctx *Context) PathString(key, id string) (string, Responser) {
+func (ctx *Context) PathString(key, id string) (string, Problem) {
 	ret, err := ctx.Route().Params().String(key)
 	if err != nil {
 		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
@@ -275,7 +275,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 }
 
 // Problem 如果有错误信息转换成 Problem 否则返回 nil
-func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
+func (q *Queries) Problem(id string) Problem { return q.filter.Problem(id) }
 
 // Object 将查询参数解析到一个对象中
 //
@@ -303,7 +303,7 @@ func (q *Queries) Object(v any) {
 }
 
 // QueryObject 将查询参数解析到一个对象中
-func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
+func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Problem {
 	q, err := ctx.Queries(exitAtError)
 	if err != nil {
 		return ctx.Error(err, id)
@@ -375,7 +375,7 @@ func (ctx *Context) Unmarshal(v any) error {
 //
 // 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
-func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
+func (ctx *Context) Read(exitAtError bool, v any, id string) Problem {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(err, ProblemUnprocessableEntity)
 	}

@@ -3,6 +3,7 @@
 package web
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -87,7 +88,15 @@ func TestServer_FileServer(t *testing.T) {
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(404).
-			StringBody(`{"type":"404","title":"NOT FOUND","detail":"problem.404.detail","status":404}`)
+			BodyFunc(func(a *assert.Assertion, body []byte) {
+				inst := &RFC7807{}
+				a.NotError(json.Unmarshal(body, inst))
+				a.Equal(inst.Type, "404").
+					Equal(inst.Title, "NOT FOUND").
+					Equal(inst.Detail, "problem.404.detail").
+					Equal(inst.Status, 404).
+					NotEmpty(inst.Instance)
+			})
 	})
 
 	t.Run("no problems", func(t *testing.T) {
@@ -102,7 +111,15 @@ func TestServer_FileServer(t *testing.T) {
 			Header("Accept-Language", "zh-cn").
 			Do(nil).
 			Status(http.StatusNotFound).
-			StringBody(`{"type":"404","title":"NOT FOUND","detail":"problem.404.detail","status":404}`)
+			BodyFunc(func(a *assert.Assertion, body []byte) {
+				inst := &RFC7807{}
+				a.NotError(json.Unmarshal(body, inst))
+				a.Equal(inst.Type, "404").
+					Equal(inst.Title, "NOT FOUND").
+					Equal(inst.Detail, "problem.404.detail").
+					Equal(inst.Status, 404).
+					NotEmpty(inst.Instance)
+			})
 	})
 }
 

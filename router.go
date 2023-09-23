@@ -39,7 +39,7 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set("Allow", n.AllowHeader())
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
-				return ResponserFunc(func(ctx *Context) *Problem {
+				return ResponserFunc(func(ctx *Context) Problem {
 					ctx.WriteHeader(http.StatusOK)
 					return nil
 				})
@@ -107,8 +107,7 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 		case errors.Is(err, fs.ErrNotExist):
 			return ctx.NotFound()
 		case err != nil:
-			srv.Logs().ERROR().Error(err)
-			return ctx.Problem(ProblemInternalServerError)
+			return ctx.Error(err, ProblemInternalServerError)
 		default:
 			return nil
 		}

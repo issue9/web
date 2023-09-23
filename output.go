@@ -15,14 +15,16 @@ import (
 type Responser interface {
 	// Apply 通过 [Context] 将当前内容渲染到客户端
 	//
+	// 如果执行过程出现问题可返回 [Problem] 对象作为错误信息的描述。
+	//
 	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
 	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
-	Apply(*Context) *Problem
+	Apply(*Context) Problem
 }
 
-type ResponserFunc func(*Context) *Problem
+type ResponserFunc func(*Context) Problem
 
-func (f ResponserFunc) Apply(c *Context) *Problem { return f(c) }
+func (f ResponserFunc) Apply(c *Context) Problem { return f(c) }
 
 // SetWriter 自定义输出通道
 //
@@ -68,8 +70,7 @@ func (ctx *Context) Render(status int, body any) {
 
 	data, err := ctx.Marshal(body)
 	if err != nil {
-		ctx.Logs().ERROR().Printf("%+v", err)
-		ctx.Problem(ProblemNotAcceptable).Apply(ctx)
+		ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
 		return
 	}
 
@@ -157,7 +158,7 @@ func (ctx *Context) SetCookies(c ...*http.Cookie) {
 // 如果返回的是 []byte 类型，会原样输出，
 // 其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) Problem {
 		if ctx.Request().Method == http.MethodGet {
 			if tag, weak := etag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
 				ctx.WriteHeader(http.StatusNotModified)
@@ -200,7 +201,7 @@ func Status(code int, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) Problem {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
@@ -220,7 +221,7 @@ func Response(status int, body any, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) Problem {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}

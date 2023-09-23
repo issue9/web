@@ -17,8 +17,6 @@ var (
 
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
-
-	_ Marshaler = &web.Problem{}
 )
 
 var formString = "friend=Jess&friend=Sarah&friend=Zoe&name=Ava"
