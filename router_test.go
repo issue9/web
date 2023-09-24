@@ -73,7 +73,7 @@ func TestServer_Routers(t *testing.T) {
 func TestServer_FileServer(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, nil)
-	s.CatalogBuilder().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
+	s.Catalog().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
 	r := s.NewRouter("def", nil)
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)

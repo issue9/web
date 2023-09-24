@@ -119,8 +119,6 @@ func (srv *Server) Version() string { return srv.version }
 // State 获取当前的状态
 func (srv *Server) State() State { return srv.state }
 
-func (srv *Server) Open(name string) (fs.File, error) { return srv.Config().Open(name) }
-
 // Vars 操纵共享变量的接口
 func (srv *Server) Vars() *sync.Map { return srv.vars }
 
@@ -209,28 +207,35 @@ func (srv *Server) Close(shutdownTimeout time.Duration) {
 // Server 获取关联的 Server 实例
 func (ctx *Context) Server() *Server { return ctx.server }
 
-func (srv *Server) NewPrinter(tag language.Tag) *message.Printer {
-	return newPrinter(tag, srv.CatalogBuilder())
+// OnClose 注册关闭服务时需要执行的函数
+//
+// NOTE: 按注册的相反顺序执行。
+func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
+
+func (srv *Server) Logs() Logs { return srv.logs }
+
+// Config 当前项目配置文件的管理
+func (srv *Server) Config() *config.Config { return srv.config }
+
+func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
+	return newPrinter(tag, srv.Catalog())
 }
 
-func (srv *Server) CatalogBuilder() *catalog.Builder { return srv.catalog }
+func (srv *Server) Catalog() *catalog.Builder { return srv.catalog }
 
 func (srv *Server) LocalePrinter() *message.Printer { return srv.printer }
 
 // Language 返回默认的语言标签
 func (srv *Server) Language() language.Tag { return srv.tag }
 
-// OnClose 注册关闭服务时需要执行的函数
-//
-// NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
-
-// LoadLocales 加载本地化的内容
-func (srv *Server) LoadLocales(fsys fs.FS, glob string) error {
-	return locale.Load(srv.Config().Serializer(), srv.CatalogBuilder(), fsys, glob)
+// LoadLocale 从文件系统中加载本地化内容
+func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
+	if fsys == nil {
+		fsys = srv.Config()
+	}
+	return locale.Load(srv.Config().Serializer(), srv.Catalog(), fsys, glob)
 }
 
-// Config 配置文件的相关操作
-func (srv *Server) Config() *config.Config { return srv.config }
-
-func (srv *Server) Logs() Logs { return srv.logs }
+func (srv *Server) LoadLocaleGlob(glob string) error {
+	return locale.LoadGlob(srv.Config().Serializer(), srv.Catalog(), glob)
+}

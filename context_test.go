@@ -318,7 +318,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a, &Options{Language: language.Afrikaans})
-	b := srv.CatalogBuilder()
+	b := srv.Catalog()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))

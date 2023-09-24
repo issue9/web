@@ -100,8 +100,8 @@ func TestContext_Error(t *testing.T) {
 func TestContext_Problem(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
-	a.NotError(srv.CatalogBuilder().SetString(language.Und, "lang", "und"))
-	a.NotError(srv.CatalogBuilder().SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(srv.Catalog().SetString(language.Und, "lang", "und"))
+	a.NotError(srv.Catalog().SetString(language.SimplifiedChinese, "lang", "hans"))
 	srv.AddProblem("40000", 400, Phrase("lang"), Phrase("lang")) // lang 有翻译
 
 	// 能正常翻译错误信息

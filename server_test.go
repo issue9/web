@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"encoding/xml"
-	"io/fs"
 	"net/http"
 	"os"
 	"testing"
@@ -20,10 +19,7 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
-var (
-	_ fs.FS             = &Server{}
-	_ servertest.Server = &Server{}
-)
+var _ servertest.Server = &Server{}
 
 func TestServer_Vars(t *testing.T) {
 	a := assert.New(t, false)
@@ -92,7 +88,7 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// locale
-	b := srv.CatalogBuilder()
+	b := srv.Catalog()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))

@@ -283,7 +283,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	})
 	r := srv.NewRouter("def", nil)
 
-	b := srv.CatalogBuilder()
+	b := srv.Catalog()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 

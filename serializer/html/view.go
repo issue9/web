@@ -105,7 +105,7 @@ func instalDirView(s *web.Server, fsys fs.FS, glob string) {
 
 func initTpl(s *web.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 	if fsys == nil {
-		fsys = s
+		fsys = s.Config()
 	}
 
 	funcs := template.FuncMap{
@@ -114,7 +114,7 @@ func initTpl(s *web.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 		},
 
 		"tt": func(tag, msg string, v ...any) string {
-			return s.NewPrinter(language.MustParse(tag)).Sprintf(msg, v...)
+			return s.NewLocalePrinter(language.MustParse(tag)).Sprintf(msg, v...)
 		},
 	}
 

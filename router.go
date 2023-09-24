@@ -85,7 +85,7 @@ func (srv *Server) Routers() []*Router { return srv.routers.Routers() }
 
 // FileServer 构建静态文件服务对象
 //
-// fsys 为文件系统，如果为空则采用 [Server] 本身；
+// fsys 为文件系统，如果为空则采用 [Server.Config]；
 // name 表示地址中表示文件名部分的参数名称；
 // index 表示目录下的默认文件名；
 func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
@@ -94,7 +94,7 @@ func (srv *Server) FileServer(fsys fs.FS, name, index string) HandlerFunc {
 	}
 
 	if fsys == nil {
-		fsys = srv
+		fsys = srv.Config()
 	}
 
 	return func(ctx *Context) Responser {

@@ -158,7 +158,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = srv.NewPrinter(tag)
+	ctx.localePrinter = srv.NewLocalePrinter(tag)
 	if len(ctx.requestBody) > 0 {
 		ctx.requestBody = ctx.requestBody[:0]
 	}
@@ -296,7 +296,7 @@ func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {
 		ctx.languageTag = tag
-		ctx.localePrinter = ctx.Server().NewPrinter(tag)
+		ctx.localePrinter = ctx.Server().NewLocalePrinter(tag)
 	}
 }
 
@@ -335,7 +335,7 @@ func (srv *Server) acceptLanguage(header string) language.Tag {
 	if header == "" {
 		return srv.Language()
 	}
-	tag, _ := language.MatchStrings(srv.CatalogBuilder().Matcher(), header)
+	tag, _ := language.MatchStrings(srv.Catalog().Matcher(), header)
 	return tag
 }
 
