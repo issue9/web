@@ -135,14 +135,12 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*web.
 	}
 
 	opt := &web.Options{
-		Config:     conf.config,
-		Location:   conf.location,
-		Cache:      conf.cache,
-		HTTPServer: conf.http,
-		Logs:       conf.logs,
-		Locale: &web.Locale{
-			Language: conf.languageTag,
-		},
+		Config:            conf.config,
+		Location:          conf.location,
+		Cache:             conf.cache,
+		HTTPServer:        conf.http,
+		Logs:              conf.logs,
+		Language:          conf.languageTag,
 		RoutersOptions:    conf.HTTP.routersOptions,
 		IDGenerator:       conf.idGenerator,
 		RequestIDKey:      conf.HTTP.RequestID,

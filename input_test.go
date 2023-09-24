@@ -310,7 +310,7 @@ func TestContext_Object(t *testing.T) {
 func TestContext_RequestBody(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, &Options{
-		Locale:     &Locale{Language: language.SimplifiedChinese},
+		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 	r := srv.NewRouter("def", nil)

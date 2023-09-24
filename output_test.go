@@ -30,7 +30,7 @@ func TestContext_Render(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
 	srv := newTestServer(a, &Options{
-		Locale:     &Locale{Language: language.SimplifiedChinese},
+		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Logs:       &logs.Options{Handler: logs.NewTextHandler(logs.MicroLayout, buf), Levels: logs.AllLevels()},
 	})
@@ -208,7 +208,7 @@ func TestContext_Render(t *testing.T) {
 func TestContext_SetWriter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, &Options{
-		Locale:     &Locale{Language: language.SimplifiedChinese},
+		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 	r := srv.NewRouter("def", nil)
@@ -278,7 +278,7 @@ func TestContext_SetWriter(t *testing.T) {
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, &Options{
-		Locale:     &Locale{Language: language.SimplifiedChinese},
+		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 	r := srv.NewRouter("def", nil)

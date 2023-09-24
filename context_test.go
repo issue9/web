@@ -80,7 +80,7 @@ func TestServer_Context(t *testing.T) {
 	a := assert.New(t, false)
 	lw := &bytes.Buffer{}
 	o := &Options{
-		Locale:     &Locale{Language: language.SimplifiedChinese},
+		Language:   language.SimplifiedChinese,
 		Logs:       &logs.Options{Handler: logs.NewTextHandler("2006-01-02", lw), Levels: logs.AllLevels()},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	}
@@ -317,7 +317,7 @@ func TestContext_IsXHR(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newTestServer(a, &Options{Locale: &Locale{Language: language.Afrikaans}})
+	srv := newTestServer(a, &Options{Language: language.Afrikaans})
 	b := srv.CatalogBuilder()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))

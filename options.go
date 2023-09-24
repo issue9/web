@@ -81,10 +81,20 @@ type (
 		// 默认为空。表示不需要该功能。
 		Encodings []*Encoding
 
-		// 本地化的相关设置
+		// 默认的语言标签
 		//
-		// 可以为空，表示根据当前服务器环境检测适当的值。
-		Locale *Locale
+		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
+		// 同时也用来初始化 [Server.LocalePrinter]。
+		//
+		// 如果为空，则会尝试读取当前系统的本地化信息。
+		Language language.Tag
+
+		// 本地化的数据
+		//
+		// 如果为空，则会被初始化成一个空对象。
+		Catalog *catalog.Builder
+
+		printer *message.Printer
 
 		// 指定可用的 mimetype
 		//
@@ -135,23 +145,6 @@ type (
 
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
-
-	Locale struct {
-		// 默认的语言标签
-		//
-		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-		// 同时也用来初始化 [Server.LocalePrinter]。
-		//
-		// 如果为空，则会尝试读取当前系统的本地化信息。
-		Language language.Tag
-
-		// 本地化的数据
-		//
-		// 如果为空，则会被初始化成一个空对象。
-		Catalog *catalog.Builder
-
-		printer *message.Printer
-	}
 )
 
 func sanitizeOptions(o *Options) (*Options, *FieldError) {
@@ -191,12 +184,19 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 		})
 	}
 
-	if o.Locale == nil {
-		o.Locale = &Locale{}
+	if o.Language == language.Und {
+		tag, err := localeutil.DetectUserLanguageTag()
+		if err != nil {
+			return nil, config.NewFieldError("Language", err)
+		}
+		o.Language = tag
 	}
-	if err := o.Locale.sanitize(); err != nil {
-		return nil, err.AddFieldParent("Locale")
+
+	if o.Catalog == nil {
+		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Language))
 	}
+
+	o.printer = newPrinter(o.Language, o.Catalog)
 
 	l, err := logs.New(o.Logs)
 	if err != nil {
@@ -241,24 +241,6 @@ func (e *Encoding) sanitize() *FieldError {
 	if len(e.ContentTypes) == 0 {
 		e.ContentTypes = []string{"*"}
 	}
-
-	return nil
-}
-
-func (l *Locale) sanitize() *FieldError {
-	if l.Language == language.Und {
-		tag, err := localeutil.DetectUserLanguageTag()
-		if err != nil {
-			return config.NewFieldError("Language", err)
-		}
-		l.Language = tag
-	}
-
-	if l.Catalog == nil {
-		l.Catalog = catalog.NewBuilder(catalog.Fallback(l.Language))
-	}
-
-	l.printer = newPrinter(l.Language, l.Catalog)
 
 	return nil
 }

@@ -62,7 +62,7 @@ func buildHandler(code int) HandlerFunc {
 
 func newTestServer(a *assert.Assertion, o *Options) *Server {
 	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Locale: &Locale{Language: language.English}} // 指定不存在的语言
+		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = &logs.Options{

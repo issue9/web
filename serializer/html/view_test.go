@@ -18,7 +18,7 @@ import (
 func newServer(a *assert.Assertion, lang string) *web.Server {
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Locale:     &web.Locale{Language: language.MustParse(lang)},
+		Language:   language.MustParse(lang),
 		Mimetypes: []*web.Mimetype{
 			{
 				Type:      Mimetype,

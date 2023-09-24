@@ -76,9 +76,9 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 		state:        Stopped,
 
 		location: o.Location,
-		catalog:  o.Locale.Catalog,
-		tag:      o.Locale.Language,
-		printer:  o.Locale.printer,
+		catalog:  o.Catalog,
+		tag:      o.Language,
+		printer:  o.printer,
 		logs:     o.logs,
 
 		closed: make(chan struct{}, 1),
