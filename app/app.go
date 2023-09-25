@@ -40,6 +40,8 @@ type ServerApp interface {
 	// RestartServer 重启服务
 	//
 	// 中止旧的 [web.Server]，再启动一个新的 [web.Server] 对象。
+	//
+	// 如果执行过程中出错，应该尽量阻止旧对象被中止，保证最大限度地可用状态。
 	RestartServer()
 }
 

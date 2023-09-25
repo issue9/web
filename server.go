@@ -147,6 +147,7 @@ func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
 // Serve 开始 HTTP 服务
 //
 // 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
+// 始终返回非空的错误对象，如果是被 [Server.Close] 关闭的，也将返回 [http.ErrServerClosed]。
 func (srv *Server) Serve() (err error) {
 	if srv.State() == Running {
 		panic("当前已经处于运行状态")
@@ -169,9 +170,10 @@ func (srv *Server) Serve() (err error) {
 	return err
 }
 
-// Close 关闭服务
+// Close 触发关闭服务事件
 //
 // 无论是否出错，该操作最终都会导致 [Server.Serve] 的退出。
+// 需要等到 [Server.Serve] 返回才表示服务结束。
 // 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (srv *Server) Close(shutdownTimeout time.Duration) {
 	if srv.State() != Running {
