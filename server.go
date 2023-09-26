@@ -86,15 +86,12 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 
 		problems:  o.problems,
 		mimetypes: o.mimetypes,
-		algs:      make([]*alg, 0, 10),
+		algs:      o.algs,
 		config:    o.Config,
 	}
 
 	initProblems(srv.problems)
 
-	for _, e := range o.Encodings {
-		srv.algs = append(srv.algs, newAlg(e.Name, e.Builder, e.ContentTypes...))
-	}
 	srv.routers = group.NewOf(srv.call,
 		notFound,
 		buildNodeHandle(http.StatusMethodNotAllowed),

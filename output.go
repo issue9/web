@@ -197,7 +197,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 // NOTE: 即使 code 为 400 等错误代码，当前函数也不会返回 [Problem] 对象。
 func Status(code int, kv ...string) Responser {
 	l := len(kv)
-	if l%2 != 0 {
+	if l > 0 && l%2 != 0 {
 		panic("kv 必须偶数位")
 	}
 
@@ -217,7 +217,7 @@ func Status(code int, kv ...string) Responser {
 // kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；
 func Response(status int, body any, kv ...string) Responser {
 	l := len(kv)
-	if l%2 != 0 {
+	if l > 0 && l%2 != 0 {
 		panic("kv 必须偶数位")
 	}
 

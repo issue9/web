@@ -22,9 +22,16 @@ func TestMimetypes_Add(t *testing.T) {
 	a := assert.New(t, false)
 	mt := New[marshalFunc, unmarshalFunc](10)
 
-	a.False(mt.exists(testMimetype))
+	a.False(mt.exists(testMimetype)).
+		Empty(mt.AcceptHeader())
+
 	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
-	a.True(mt.exists(testMimetype))
+	a.True(mt.exists(testMimetype)).
+		Equal(mt.AcceptHeader(), testMimetype)
+
+	mt.Add("application/json", json.Marshal, json.Unmarshal, "")
+	a.True(mt.exists(testMimetype)).
+		Equal(mt.AcceptHeader(), testMimetype+",application/json")
 
 	a.Panic(func() {
 		mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")

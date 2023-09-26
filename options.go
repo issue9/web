@@ -80,6 +80,7 @@ type (
 		//
 		// 默认为空。表示不需要该功能。
 		Encodings []*Encoding
+		algs      []*alg
 
 		// 默认的语言标签
 		//
@@ -208,10 +209,12 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 		o.RequestIDKey = RequestIDKey
 	}
 
+	o.algs = make([]*alg, 0, len(o.Encodings))
 	for i, e := range o.Encodings {
 		if err := e.sanitize(); err != nil {
 			return nil, err.AddFieldParent("Encodings[" + strconv.Itoa(i) + "]")
 		}
+		o.algs = append(o.algs, newAlg(e.Name, e.Builder, e.ContentTypes...))
 	}
 
 	// mimetype

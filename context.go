@@ -163,7 +163,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		ctx.requestBody = ctx.requestBody[:0]
 	}
 	ctx.read = false
-	ctx.vars = map[any]any{}
+	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
 
 	// 在最后，保证已经存在 ctx.id 变量
 	ctx.logs = srv.Logs().With(map[string]any{
