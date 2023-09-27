@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/compress"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/logs"
@@ -49,7 +50,7 @@ type Context struct {
 	writer         io.Writer           // 实际写入的对象
 	encodingCloser io.WriteCloser
 	charsetCloser  io.WriteCloser
-	outputEncoding *alg
+	outputEncoding *compress.NamedCompress
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
@@ -90,6 +91,11 @@ func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	id := buildID(srv, w, r)
+	l := srv.Logs().With(map[string]any{
+		srv.requestIDKey: id,
+	})
+
 	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
@@ -107,7 +113,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputEncoding, notAcceptable := srv.searchAlg(mt.Name, h)
+	outputEncoding, notAcceptable := srv.compresses.AcceptEncoding(mt.Name, h, l.DEBUG())
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -136,7 +142,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.request = r
 	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
-	ctx.id = buildID(ctx.Server(), w, r)
+	ctx.id = id
 	ctx.begin = time.Now()
 
 	// response
@@ -165,10 +171,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.read = false
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
 
-	// 在最后，保证已经存在 ctx.id 变量
-	ctx.logs = srv.Logs().With(map[string]any{
-		srv.requestIDKey: ctx.ID(),
-	})
+	ctx.logs = l
 
 	return ctx
 }
@@ -274,7 +277,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, notAcceptable := ctx.Server().searchAlg(ctx.outputMimetype.Name, enc)
+	outputEncoding, notAcceptable := ctx.Server().compresses.AcceptEncoding(ctx.outputMimetype.Name, enc, ctx.Logs().DEBUG())
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

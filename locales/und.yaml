@@ -33,6 +33,9 @@ messages:
     - key: not found charset for %s
       message:
         msg: not found charset for %s
+    - key: not found compress for %s
+      message:
+        msg: not found compress for %s
     - key: not found serialization for %s
       message:
         msg: not found serialization for %s

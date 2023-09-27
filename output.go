@@ -99,7 +99,7 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 // Write 向客户端输出内容
 //
 // 如非必要，应该返回 [Responser] 进行输出。
-func (ctx *Context) Write(bs []byte) (int, error) {
+func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
 	}
@@ -108,7 +108,10 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.writer)
+			ctx.encodingCloser, err = ctx.outputEncoding.Compress().Encoder(ctx.writer)
+			if err != nil {
+				return 0, err
+			}
 			ctx.writer = ctx.encodingCloser
 		}
 

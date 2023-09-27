@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/compress"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
@@ -68,10 +69,10 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 			Levels:  logs.AllLevels(),
 		}
 	}
-	if o.Encodings == nil {
-		o.Encodings = []*Encoding{
-			{Name: "gzip", Builder: GZipWriter(8)},
-			{Name: "deflate", Builder: DeflateWriter(8)},
+	if o.Compresses == nil {
+		o.Compresses = []*Compress{
+			{Name: "gzip", Compress: compress.NewGzipCompress(8)},
+			{Name: "deflate", Compress: compress.NewDeflateCompress(8, nil)},
 		}
 	}
 	if o.Mimetypes == nil {
