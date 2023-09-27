@@ -63,7 +63,7 @@ type configOf[T any] struct {
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	Encodings  []*compressConfig `yaml:"encodings,omitempty" json:"encodings,omitempty" xml:"encodings>encoding,omitempty"`
+	Compresses []*compressConfig `yaml:"compresses,omitempty" json:"compresses,omitempty" xml:"compresses>compress,omitempty"`
 	compresses []*web.Compress
 
 	// 指定配置文件的序列化
@@ -199,8 +199,8 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	}
 	conf.http = conf.HTTP.buildHTTPServer()
 
-	if err = conf.sanitizeEncodings(); err != nil {
-		return err.AddFieldParent("encodings")
+	if err = conf.sanitizeCompresses(); err != nil {
+		return err.AddFieldParent("compresses")
 	}
 
 	if err = conf.sanitizeMimetypes(); err != nil {

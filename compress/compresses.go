@@ -3,8 +3,10 @@
 package compress
 
 import (
+	"io"
 	"strings"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web/internal/header"
@@ -17,11 +19,21 @@ type Compresses struct {
 }
 
 func NewCompresses(cap int) *Compresses {
-	return &Compresses{compresses: make([]*NamedCompress, 0, cap)}
+	return &Compresses{
+		compresses: make([]*NamedCompress, 0, cap),
+	}
 }
 
-func (e *Compresses) ContentEncoding() {
-	// TODO
+// ContentEncoding 根据 ContentEncoding 报头返回相应的解码对象
+//
+// name 编码名称，即 Content-Encoding 报头内容；
+// r 为未解码的内容；
+func (e *Compresses) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+	c, found := sliceutil.At(e.compresses, func(item *NamedCompress, _ int) bool { return item.Name() == name })
+	if !found {
+		return nil, localeutil.Error("not found compress for %s", name)
+	}
+	return c.Compress().Decoder(r)
 }
 
 // AcceptEncoding 根据客户端的 AcceptEncoding 报头查找最合适的算法
@@ -40,7 +52,7 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 		return
 	}
 
-	pools := e.getMatchAlgs(contentType)
+	pools := e.getMatchCompresses(contentType)
 	if len(pools) == 0 {
 		return
 	}
@@ -86,7 +98,7 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 	return // 没有匹配，表示不需要进行压缩
 }
 
-func (e *Compresses) getMatchAlgs(contentType string) []*NamedCompress {
+func (e *Compresses) getMatchCompresses(contentType string) []*NamedCompress {
 	algs := make([]*NamedCompress, 0, len(e.compresses))
 
 LOOP:

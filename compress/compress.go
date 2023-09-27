@@ -58,7 +58,7 @@ type (
 		writers *sync.Pool
 	}
 
-	// Named 带名称的压缩算法
+	// NamedCompress 带名称的压缩算法
 	NamedCompress struct {
 		name     string
 		compress Compress

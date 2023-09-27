@@ -33,6 +33,9 @@ messages:
     - key: not found charset for %s
       message:
         msg: 未找到符合报头 %s 的字符集
+    - key: not found compress for %s
+      message:
+        msg: 未找到 %s 对应的压缩算法
     - key: not found serialization for %s
       message:
         msg: 未找到符合报头 %s 的序列化函数

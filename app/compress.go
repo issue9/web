@@ -49,9 +49,9 @@ type compressConfig struct {
 	ID string `json:"id" xml:"id,attr" yaml:"id"`
 }
 
-func (conf *configOf[T]) sanitizeEncodings() *web.FieldError {
-	conf.compresses = make([]*web.Compress, 0, len(conf.Encodings))
-	for index, e := range conf.Encodings {
+func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
+	conf.compresses = make([]*web.Compress, 0, len(conf.Compresses))
+	for index, e := range conf.Compresses {
 		enc, found := encodingFactory[e.ID]
 		if !found {
 			field := "compresses[" + strconv.Itoa(index) + "].id"
