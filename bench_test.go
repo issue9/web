@@ -3,16 +3,13 @@
 package web
 
 import (
-	"bytes"
 	"compress/flate"
-	"compress/gzip"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/mux/v7"
@@ -361,32 +358,5 @@ func BenchmarkProblem_Apply_json(b *testing.B) {
 	p.WithParam("p1", "v1")
 	for i := 0; i < b.N; i++ {
 		p.Apply(ctx)
-	}
-}
-
-func BenchmarkAlgPool_Get(b *testing.B) {
-	a := assert.New(b, false)
-
-	srv := newTestServer(a, &Options{
-		Encodings: []*Encoding{
-			{Name: "gzip", Builder: GZipWriter(3), ContentTypes: []string{"application/*"}},
-			{Name: "br", Builder: BrotliWriter(brotli.WriterOptions{Quality: 3, LGWin: 10}), ContentTypes: []string{"application/*"}},
-		},
-	})
-
-	pool, notAccept := srv.searchAlg("application/json", "gzip,br;q=0.9")
-	a.False(notAccept).NotNil(pool).Equal(pool.name, "gzip")
-
-	for i := 0; i < b.N; i++ {
-		w := &bytes.Buffer{}
-		wc := pool.Get(w)
-		_, err := wc.Write([]byte("123456"))
-		a.NotError(err)
-		a.NotError(wc.Close())
-
-		r, err := gzip.NewReader(w)
-		a.NotError(err).NotNil(r)
-		data, err := io.ReadAll(r)
-		a.NotError(err).NotNil(data).Equal(string(data), "123456")
 	}
 }

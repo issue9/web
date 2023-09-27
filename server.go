@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/compress"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
@@ -47,10 +48,10 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems  *problems.Problems
-	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
-	algs      []*alg
-	config    *config.Config
+	problems   *problems.Problems
+	mimetypes  *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+	compresses *compress.Compresses
+	config     *config.Config
 }
 
 // New 新建 web 服务
@@ -84,10 +85,10 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:  o.problems,
-		mimetypes: o.mimetypes,
-		algs:      o.algs,
-		config:    o.Config,
+		problems:   o.problems,
+		mimetypes:  o.mimetypes,
+		compresses: o.compresses,
+		config:     o.Config,
 	}
 
 	initProblems(srv.problems)
