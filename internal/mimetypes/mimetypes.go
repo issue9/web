@@ -139,7 +139,7 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 }
 
 func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
-	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) })
+	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }
 

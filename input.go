@@ -366,7 +366,7 @@ func (ctx *Context) Unmarshal(v any) error {
 		return nil
 	}
 	if ctx.inputMimetype == nil {
-		return NewLocaleError("the client did not specify content-type header")
+		return NewLocaleError("the client miss content-type header")
 	}
 	return ctx.inputMimetype(body, v)
 }

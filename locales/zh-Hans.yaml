@@ -42,6 +42,9 @@ messages:
     - key: not found serialization function for %s
       message:
         msg: 未找到适合 %s 的序列化函数
+    - key: not found unmarshaler for the server content-type %s
+      message:
+        msg: 未找到服务端 content-type 指定的 %s 序列化函数
     - key: problem.400
       message:
         msg: Bad Request
@@ -310,9 +313,12 @@ messages:
     - key: should great than 0
       message:
         msg: 必须大于 0
-    - key: the client did not specify content-type header
+    - key: the client miss content-type header
       message:
-        msg: 客户端请求时未指定 content-type 报头
+        msg: 客户端未指定 Content-Type 报头
+    - key: the server miss content-type header
+      message:
+        msg: 服务端未指定 Content-Type 报头
     - key: unique identity generator
       message:
         msg: 唯一 ID 生成器

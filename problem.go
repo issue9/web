@@ -104,12 +104,12 @@ func (p *RFC7807) init(id, title, detail string, status int) *RFC7807 {
 func (p *RFC7807) Apply(ctx *Context) Problem {
 	// NOTE: 此方法要始终返回 nil
 
-	ctx.WriteHeader(p.Status)
-
 	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLang, id)
 	}
+
+	ctx.WriteHeader(p.Status) // 调用之后，报头不再启作用
 
 	data, err := ctx.Marshal(p)
 	if err != nil {
