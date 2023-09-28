@@ -80,31 +80,49 @@ func (srv *Server) NewClient(url, marshalName string, marshal func(any) ([]byte,
 }
 
 func (c *Client) Get(path string, resp any, problem *RFC7807) error {
-	return c.NewRequest(http.MethodGet, path, nil, resp, problem)
+	return c.Do(http.MethodGet, path, nil, resp, problem)
 }
 
 func (c *Client) Delete(path string, resp any, problem *RFC7807) error {
-	return c.NewRequest(http.MethodDelete, path, nil, resp, problem)
+	return c.Do(http.MethodDelete, path, nil, resp, problem)
 }
 
 func (c *Client) Post(path string, req, resp any, problem *RFC7807) error {
-	return c.NewRequest(http.MethodPost, path, req, resp, problem)
+	return c.Do(http.MethodPost, path, req, resp, problem)
 }
 
 func (c *Client) Put(path string, req, resp any, problem *RFC7807) error {
-	return c.NewRequest(http.MethodPut, path, req, resp, problem)
+	return c.Do(http.MethodPut, path, req, resp, problem)
 }
 
 func (c *Client) Patch(path string, req, resp any, problem *RFC7807) error {
-	return c.NewRequest(http.MethodPatch, path, req, resp, problem)
+	return c.Do(http.MethodPatch, path, req, resp, problem)
 }
 
-func (c *Client) NewRequest(method, path string, req, resp any, problem *RFC7807) (err error) {
-	rsp, err := c.request(method, path, req)
+// Do 开始新的请求
+//
+// req 为提交的对象，最终是由初始化参数的 marshal 进行编码；
+// resp 为返回的数据的写入对象，必须是指针类型；
+// problem 为返回出错时的写入对象；
+// 非 HTTP 状态码错误返回 err；
+func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) (err error) {
+	r, err := c.NewRequest(method, path, req)
+	if err != nil {
+		return err
+	}
+	rsp, err := c.client.Do(r)
 	if err != nil {
 		return err
 	}
 
+	return c.ParseResponse(rsp, resp, problem)
+}
+
+// ParseResponse 从 [http.Response] 解析并获取返回对象
+//
+// 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。
+// 其它情况下返回错误信息。
+func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
 	var size int
 	if h := rsp.Header.Get("Content-Length"); h != "" {
 		if h == "0" {
@@ -157,21 +175,23 @@ func (c *Client) NewRequest(method, path string, req, resp any, problem *RFC7807
 	return inputMimetype(data, resp)
 }
 
-func (c *Client) request(method, path string, req any) (resp *http.Response, err error) {
+// NewRequest 生成 [http.Request]
+//
+// body 为需要提交的对象；
+func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, err error) {
 	var data []byte
-	if req != nil {
-		data, err = c.marshal(req)
+	if body != nil {
+		data, err = c.marshal(body)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	url := c.url + path
 	var r *http.Request
 	if len(data) == 0 {
-		r, err = http.NewRequest(method, url, nil)
+		r, err = http.NewRequest(method, c.URL(path), nil)
 	} else {
-		r, err = http.NewRequest(method, url, bytes.NewBuffer(data))
+		r, err = http.NewRequest(method, c.URL(path), bytes.NewBuffer(data))
 	}
 	if err != nil {
 		return nil, err
@@ -180,5 +200,8 @@ func (c *Client) request(method, path string, req any) (resp *http.Response, err
 	r.Header.Set(header.Accept, c.mts.AcceptHeader())
 	r.Header.Set(header.AcceptEncoding, c.compresses.AcceptEncodingHeader())
 
-	return c.client.Do(r)
+	return r, nil
 }
+
+// URL 生成一条访问地址
+func (c *Client) URL(path string) string { return c.url + path }

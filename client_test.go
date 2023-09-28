@@ -42,5 +42,34 @@ func TestClient(t *testing.T) {
 	p = &RFC7807{}
 	a.NotError(c.Delete("/get", resp, p))
 	a.Zero(resp).Equal(p.Type, ProblemMethodNotAllowed)
+}
 
+func TestServer_NewClient(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := newTestServer(a, nil)
+	defer servertest.Run(a, s)()
+	defer s.Close(500 * time.Millisecond)
+
+	s.NewRouter("default", nil).Post("/post", func(ctx *Context) Responser {
+		obj := &object{}
+		if resp := ctx.Read(true, obj, ProblemBadRequest); resp != nil {
+			return resp
+		}
+		return OK(obj)
+	})
+
+	s2 := newTestServer(a, nil)
+	c := s2.NewClient("http://localhost:8080", "application/json", json.Marshal)
+	a.NotNil(c)
+
+	resp := &object{}
+	p := &RFC7807{}
+	a.NotError(c.Post("/post", &object{Age: 1}, resp, p))
+	a.Zero(p).Equal(resp, &object{Age: 1})
+
+	resp = &object{}
+	p = &RFC7807{}
+	a.NotError(c.Patch("/get", nil, resp, p))
+	a.Zero(resp).Equal(p.Type, ProblemNotFound)
 }
