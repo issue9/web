@@ -24,7 +24,11 @@ type memcacheCounter struct {
 	ttl       int32
 }
 
-// NewMemcache 声明基于 memcached 的缓存系统
+// NewMemcache 声明基于 [memcached] 的缓存系统
+//
+// [cache.Driver.Driver] 的返回类型为 [memcache.Client]。
+//
+// [memcached]: https://memcached.org/
 func NewMemcache(addr ...string) cache.Driver {
 	return &memcacheDriver{
 		client: memcache.New(addr...),
@@ -64,6 +68,8 @@ func (d *memcacheDriver) Exists(key string) bool {
 func (d *memcacheDriver) Clean() error { return d.client.DeleteAll() }
 
 func (d *memcacheDriver) Close() error { return d.client.Close() }
+
+func (d *memcacheDriver) Driver() any { return d.client }
 
 func (d *memcacheDriver) Counter(key string, val uint64, ttl time.Duration) cache.Counter {
 	return &memcacheCounter{

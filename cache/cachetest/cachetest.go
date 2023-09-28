@@ -68,6 +68,9 @@ func Counter(a *assert.Assertion, d cache.Driver) {
 
 // Basic 测试基本功能
 func Basic(a *assert.Assertion, c cache.Driver) {
+	// driver
+	a.NotNil(c.Driver())
+
 	var v string
 	err := c.Get("not_exists", &v)
 	a.ErrorIs(err, cache.ErrCacheMiss(), "找到了一个并不存在的值").

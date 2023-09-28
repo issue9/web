@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/cache"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
@@ -108,6 +109,11 @@ func TestNewServer(t *testing.T) {
 		Equal(srv.Location(), time.Local).
 		Equal(srv.httpServer.Handler, srv.routers).
 		Equal(srv.httpServer.Addr, "")
+
+	d, ok := srv.Cache().(cache.Driver)
+	a.True(ok).
+		NotNil(d).
+		NotNil(d.Driver())
 }
 
 func TestServer_Serve(t *testing.T) {

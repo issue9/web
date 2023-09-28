@@ -48,6 +48,7 @@ func (i *item) isExpired(now time.Time) bool {
 // NewMemory 声明一个内存缓存
 //
 // JobFunc 表示执行内存的操作。
+// [cache.Driver.Driver] 的返回类型为 [sync.Map]。
 func NewMemory() (cache.Driver, scheduled.JobFunc) {
 	mem := &memoryDriver{
 		items: &sync.Map{},
@@ -108,6 +109,8 @@ func (d *memoryDriver) Clean() error {
 }
 
 func (d *memoryDriver) Close() error { return d.Clean() }
+
+func (d *memoryDriver) Driver() any { return d.items }
 
 func (d *memoryDriver) gc(now time.Time) error {
 	d.items.Range(func(key, val any) bool {

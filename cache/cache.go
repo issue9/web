@@ -76,7 +76,8 @@ type Counter interface {
 	Delete() error
 }
 
-type CleanableCache interface {
+// Cleanable 可清除所有缓存内容的接口
+type Cleanable interface {
 	Cache
 
 	// Clean 清除所有的缓存内容
@@ -92,10 +93,13 @@ type CleanableCache interface {
 //
 // [cachetest]: https://pkg.go.dev/github.com/issue9/web/cache/cachetest
 type Driver interface {
-	CleanableCache
+	Cleanable
 
 	// Close 关闭客户端
 	Close() error
+
+	// Driver 关联的底层驱动实例
+	Driver() any
 }
 
 // ErrCacheMiss 当不存在缓存项时返回的错误
@@ -103,6 +107,6 @@ func ErrCacheMiss() error { return errCacheMiss }
 
 // ErrInvalidKey key 的格式无效
 //
-// 部分适配器对 key 可能是有特殊要求的，
+// 部分驱动对 key 可能是有特殊要求的，
 // 比如在文件系统中，可能会不允许在 key 中包含 .. 或是 / 等，碰到此类情况，可返回此错误信息。
 func ErrInvalidKey() error { return errInvalidKey }

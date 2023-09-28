@@ -33,11 +33,13 @@ if cnt < 0 then
 end
 return (cnt < 0 and 0 or cnt)`
 
-// NewRedisFromURL 声明基于 redis 的缓存系统
+// NewRedisFromURL 声明基于 [redis] 的缓存系统
 //
-// url 为符合 [Redis URI scheme] 的字符串
+// url 为符合 [Redis URI scheme] 的字符串。
+// [cache.Driver.Driver] 的返回类型为 [redis.Client]。
 //
 // [Redis URI scheme]: https://www.iana.org/assignments/uri-schemes/prov/redis
+// [redis]: https://redis.io/
 func NewRedisFromURL(url string) (cache.Driver, error) {
 	opt, err := redis.ParseURL(url)
 	if err != nil {
@@ -87,6 +89,8 @@ func (d *redisDriver) Clean() error {
 }
 
 func (d *redisDriver) Close() error { return d.conn.Close() }
+
+func (d *redisDriver) Driver() any { return d.conn }
 
 func (d *redisDriver) Counter(key string, val uint64, ttl time.Duration) cache.Counter {
 	return &redisCounter{

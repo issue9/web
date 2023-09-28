@@ -126,7 +126,10 @@ func (srv *Server) Vars() *sync.Map { return srv.vars }
 func (srv *Server) Location() *time.Location { return srv.location }
 
 // Cache 返回缓存的相关接口
-func (srv *Server) Cache() cache.CleanableCache { return srv.cache }
+//
+// 如果要获得缓存的底层驱动接口，可以将类型转换为 [cache.Driver]，
+// 该类型提供了 [cache.Driver.Driver] 方法可以获得相应的对象。
+func (srv *Server) Cache() cache.Cleanable { return srv.cache }
 
 // Uptime 当前服务的运行时间
 func (srv *Server) Uptime() time.Time { return srv.uptime }

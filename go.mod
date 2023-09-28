@@ -16,7 +16,7 @@ require (
 	github.com/issue9/term/v3 v3.2.2
 	github.com/issue9/unique/v2 v2.0.0
 	github.com/klauspost/compress v1.17.0
-	github.com/redis/go-redis/v9 v9.2.0
+	github.com/redis/go-redis/v9 v9.2.1
 	golang.org/x/crypto v0.13.0
 	golang.org/x/text v0.13.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
