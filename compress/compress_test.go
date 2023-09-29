@@ -4,75 +4,56 @@ package compress
 
 import (
 	"bytes"
-	"compress/gzip"
 	"compress/lzw"
 	"io"
 	"testing"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
-	"github.com/klauspost/compress/zstd"
 )
 
-func TestCompress(t *testing.T) {
+func TestBrotli(t *testing.T) {
 	a := assert.New(t, false)
-	e := NewCompresses(4)
-	e.Add("compress", NewLZWCompress(lzw.LSB, 2), "text/*", "application/*", "application/xml").
-		Add("gzip", NewGzipCompress(3), "text/*", "application/*").
-		Add("br", NewBrotliCompress(brotli.WriterOptions{Quality: 3, LGWin: 10}), "application/*").
-		Add("zstd", NewZstdCompress(nil, nil), "application/xml")
+	testCompress(a, NewBrotliCompress(brotli.WriterOptions{}))
+}
 
-	// br
+func TestGzip(t *testing.T) {
+	a := assert.New(t, false)
+	testCompress(a, NewGzipCompress(3))
+}
 
-	b, notAccept := e.AcceptEncoding("application/json", "gzip;q=0.9,br", nil)
-	a.False(notAccept).NotNil(b).Equal(b.name, "br")
+func TestDeflate(t *testing.T) {
+	a := assert.New(t, false)
+	testCompress(a, NewDeflateCompress(3, nil))
+}
 
-	w := &bytes.Buffer{}
-	wc, err := b.Compress().Encoder(w)
-	a.NotError(err).NotNil(wc)
-	_, err = wc.Write([]byte("123456"))
+func TestLZW(t *testing.T) {
+	a := assert.New(t, false)
+	testCompress(a, NewLZWCompress(lzw.LSB, 8))
+}
+
+func TestZstd(t *testing.T) {
+	a := assert.New(t, false)
+	testCompress(a, NewZstdCompress())
+}
+
+func testCompress(a *assert.Assertion, c Compress) {
+	buf := &bytes.Buffer{}
+	a.NotNil(c)
+
+	w, err := c.Encoder(buf)
+	a.NotError(err).NotNil(w)
+	_, err = w.Write([]byte("123"))
 	a.NotError(err)
-	a.NotError(wc.Close())
-	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
+	if f, ok := w.(interface{ Flush() error }); ok {
+		a.NotError(f.Flush())
+	}
+	a.NotError(w.Close())
+	a.True(buf.Len() > 0)
 
-	brotliR := brotli.NewReader(w)
-	a.NotNil(brotliR)
-	data, err := io.ReadAll(brotliR)
-	a.NotError(err).NotNil(data).Equal(string(data), "123456")
-
-	// gzip
-
-	b, notAccept = e.AcceptEncoding("application/json", "gzip;q=0.9", nil)
-	a.False(notAccept).NotNil(b).Equal(b.name, "gzip")
-
-	w = &bytes.Buffer{}
-	wc, err = b.Compress().Encoder(w)
-	a.NotError(err).NotNil(wc)
-	_, err = wc.Write([]byte("123456"))
-	a.NotError(err)
-	a.NotError(wc.Close())
-	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
-
-	gzipR, err := gzip.NewReader(w)
-	a.NotError(err).NotNil(gzipR)
-	data, err = io.ReadAll(gzipR)
-	a.NotError(err).NotNil(data).Equal(string(data), "123456")
-
-	// zstd
-
-	b, notAccept = e.AcceptEncoding("application/xml", "zstd", nil)
-	a.False(notAccept).NotNil(b).Equal(b.name, "zstd")
-
-	w = &bytes.Buffer{}
-	wc, err = b.Compress().Encoder(w)
-	a.NotError(err).NotNil(wc)
-	_, err = wc.Write([]byte("123456"))
-	a.NotError(err)
-	a.NotError(wc.Close())
-	a.NotEqual(w.String(), "123456").NotEmpty(w.String())
-
-	zstdR, err := zstd.NewReader(w)
-	a.NotError(err).NotNil(zstdR)
-	data, err = io.ReadAll(zstdR)
-	a.NotError(err).NotNil(data).Equal(string(data), "123456")
+	r, err := c.Decoder(buf)
+	a.NotError(err).NotNil(r)
+	data, err := io.ReadAll(r)
+	a.NotError(err).Equal(string(data), "123")
+	a.NotError(r.Close())
 }

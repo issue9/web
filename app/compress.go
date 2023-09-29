@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/andybalholm/brotli"
-	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/compress"
@@ -43,9 +42,6 @@ type compressConfig struct {
 	//  - br-best-compression
 	//  - br-best-speed
 	//  - zstd-default
-	//  - zstd-fastest
-	//  - zstd-better
-	//  - zstd-best
 	ID string `json:"id" xml:"id,attr" yaml:"id"`
 }
 
@@ -95,8 +91,5 @@ func init() {
 	RegisterEncoding("br-best-compression", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestCompression}))
 	RegisterEncoding("br-best-speed", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterEncoding("zstd-default", "zstd", compress.NewZstdCompress(nil, []zstd.EOption{zstd.WithEncoderLevel(zstd.SpeedDefault)}))
-	RegisterEncoding("zstd-fastest", "zstd", compress.NewZstdCompress(nil, []zstd.EOption{zstd.WithEncoderLevel(zstd.SpeedFastest)}))
-	RegisterEncoding("zstd-better", "zstd", compress.NewZstdCompress(nil, []zstd.EOption{zstd.WithEncoderLevel(zstd.SpeedBetterCompression)}))
-	RegisterEncoding("zstd-best", "zstd", compress.NewZstdCompress(nil, []zstd.EOption{zstd.WithEncoderLevel(zstd.SpeedBestCompression)}))
+	RegisterEncoding("zstd-default", "zstd", compress.NewZstdCompress())
 }

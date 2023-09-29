@@ -24,13 +24,14 @@ func TestCompresses_ContentEncoding(t *testing.T) {
 	r := &bytes.Buffer{}
 	gw := gzip.NewWriter(r)
 	_, err := gw.Write([]byte("123"))
-	a.NotError(err)
-	a.NotError(gw.Flush())
+	a.NotError(err).
+		NotError(gw.Flush()).
+		NotError(gw.Close())
 
 	rr, err := e.ContentEncoding("gzip", r)
 	a.NotError(err).NotNil(rr)
 	data, err := io.ReadAll(rr)
-	a.Equal(string(data), "123")
+	a.NotError(err).Equal(string(data), "123")
 }
 
 func TestCompresses_AcceptEncoding(t *testing.T) {

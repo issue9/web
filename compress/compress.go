@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// Package compress 提供压缩算法相关的功能
 package compress
 
 import (
@@ -47,9 +48,8 @@ type (
 	}
 
 	gzipCompress struct {
-		readInitData []byte
-		readers      *sync.Pool
-		writers      *sync.Pool
+		readers *sync.Pool
+		writers *sync.Pool
 	}
 
 	deflateCompress struct {
@@ -84,11 +84,15 @@ type (
 
 // NewZstdCompress 声明基于 [zstd] 的压缩算法
 //
+// NOTE: 如果是针对浏览器的，请注意[浏览器支持情况]
+//
+// [浏览器支持情况]: https://caniuse.com/zstd
 // [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
-func NewZstdCompress(do []zstd.DOption, eo []zstd.EOption) Compress {
+func NewZstdCompress() Compress {
+	// TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 	return &zstdCompress{
 		readers: &sync.Pool{New: func() any {
-			r, err := zstd.NewReader(nil, do...)
+			r, err := zstd.NewReader(bytes.NewReader(zstdInitData))
 			if err != nil {
 				panic(err)
 			}
@@ -96,7 +100,7 @@ func NewZstdCompress(do []zstd.DOption, eo []zstd.EOption) Compress {
 		}},
 
 		writers: &sync.Pool{New: func() any {
-			w, err := zstd.NewWriter(nil, eo...)
+			w, err := zstd.NewWriter(nil)
 			if err != nil {
 				panic(err)
 			}
@@ -125,7 +129,7 @@ func (c *zstdCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 func NewBrotliCompress(o brotli.WriterOptions) Compress {
 	return &brotliCompress{
 		readers: &sync.Pool{New: func() any {
-			return brotli.NewReader(nil)
+			return brotli.NewReader(bytes.NewReader(brotliInitData))
 		}},
 
 		writers: &sync.Pool{New: func() any {
@@ -157,7 +161,7 @@ func NewLZWCompress(order lzw.Order, width int) Compress {
 		width: width,
 
 		readers: &sync.Pool{New: func() any {
-			return lzw.NewReader(nil, order, width)
+			return lzw.NewReader(bytes.NewReader(lzwInitData), order, width)
 		}},
 
 		writers: &sync.Pool{New: func() any {
@@ -180,18 +184,9 @@ func (c *lzwCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 
 // NewGzipCompress 声明基于 gzip 的压缩算法
 func NewGzipCompress(level int) Compress {
-	r := &bytes.Buffer{}
-	gw := gzip.NewWriter(r)
-	gw.Write([]byte(""))
-	gw.Flush()
-	gw.Close()
-	data := r.Bytes()
-
 	return &gzipCompress{
-		readInitData: data,
-
 		readers: &sync.Pool{New: func() any {
-			r, err := gzip.NewReader(bytes.NewReader(data))
+			r, err := gzip.NewReader(bytes.NewReader(gzipInitData))
 			if err != nil {
 				panic(err)
 			}
@@ -227,7 +222,7 @@ func NewDeflateCompress(level int, dict []byte) Compress {
 		dict: dict,
 
 		readers: &sync.Pool{New: func() any {
-			return flate.NewReaderDict(nil, dict)
+			return flate.NewReaderDict(bytes.NewReader(deflateInitData), dict)
 		}},
 
 		writers: &sync.Pool{New: func() any {
@@ -268,11 +263,17 @@ func (c *NamedCompress) Name() string { return c.name }
 func (c *NamedCompress) Compress() Compress { return c.compress }
 
 func wrapEncoder(w io.WriteCloser, f func()) *encoder {
-	return &encoder{WriteCloser: w, destroy: f}
+	e := encoderPool.Get().(*encoder)
+	e.WriteCloser = w
+	e.destroy = f
+	return e
 }
 
 func wrapDecoder(r io.ReadCloser, f func()) *decoder {
-	return &decoder{ReadCloser: r, destroy: f}
+	d := decoderPool.Get().(*decoder)
+	d.ReadCloser = r
+	d.destroy = f
+	return d
 }
 
 func (e *encoder) Close() error {
