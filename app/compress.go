@@ -29,7 +29,7 @@ type compressConfig struct {
 
 	// IDs 压缩方法的 ID 列表
 	//
-	// 这些 ID 值必须是由 [RegisterEncoding] 注册的，否则无效，默认情况下支持以下类型：
+	// 这些 ID 值必须是由 [RegisterCompress] 注册的，否则无效，默认情况下支持以下类型：
 	//  - deflate-default
 	//  - deflate-best-compression
 	//  - deflate-best-speed
@@ -63,12 +63,12 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 	return nil
 }
 
-// RegisterEncoding 注册压缩方法
+// RegisterCompress 注册压缩方法
 //
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
 // name 表示此压缩方法的名称，可以相同；
 // f 生成压缩对象的方法；
-func RegisterEncoding(id, name string, f compress.Compress) {
+func RegisterCompress(id, name string, f compress.Compress) {
 	if _, found := encodingFactory[id]; found {
 		panic("已经存在相同的 id:" + id)
 	}
@@ -76,20 +76,20 @@ func RegisterEncoding(id, name string, f compress.Compress) {
 }
 
 func init() {
-	RegisterEncoding("deflate-default", "deflate", compress.NewDeflateCompress(flate.DefaultCompression, nil))
-	RegisterEncoding("deflate-best-compression", "deflate", compress.NewDeflateCompress(flate.BestCompression, nil))
-	RegisterEncoding("deflate-best-speed", "deflate", compress.NewDeflateCompress(flate.BestSpeed, nil))
+	RegisterCompress("deflate-default", "deflate", compress.NewDeflateCompress(flate.DefaultCompression, nil))
+	RegisterCompress("deflate-best-compression", "deflate", compress.NewDeflateCompress(flate.BestCompression, nil))
+	RegisterCompress("deflate-best-speed", "deflate", compress.NewDeflateCompress(flate.BestSpeed, nil))
 
-	RegisterEncoding("gzip-default", "gzip", compress.NewGzipCompress(gzip.DefaultCompression))
-	RegisterEncoding("gzip-best-compression", "gzip", compress.NewGzipCompress(gzip.BestCompression))
-	RegisterEncoding("gzip-best-speed", "gzip", compress.NewGzipCompress(gzip.BestSpeed))
+	RegisterCompress("gzip-default", "gzip", compress.NewGzipCompress(gzip.DefaultCompression))
+	RegisterCompress("gzip-best-compression", "gzip", compress.NewGzipCompress(gzip.BestCompression))
+	RegisterCompress("gzip-best-speed", "gzip", compress.NewGzipCompress(gzip.BestSpeed))
 
-	RegisterEncoding("compress-lsb-8", "compress", compress.NewLZWCompress(lzw.LSB, 8))
-	RegisterEncoding("compress-msb-8", "compress", compress.NewLZWCompress(lzw.MSB, 8))
+	RegisterCompress("compress-lsb-8", "compress", compress.NewLZWCompress(lzw.LSB, 8))
+	RegisterCompress("compress-msb-8", "compress", compress.NewLZWCompress(lzw.MSB, 8))
 
-	RegisterEncoding("br-default", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterEncoding("br-best-compression", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterEncoding("br-best-speed", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompress("br-default", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompress("br-best-compression", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompress("br-best-speed", "br", compress.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterEncoding("zstd-default", "zstd", compress.NewZstdCompress())
+	RegisterCompress("zstd-default", "zstd", compress.NewZstdCompress())
 }

@@ -18,6 +18,51 @@ import (
 var (
 	decoderPool = &sync.Pool{New: func() any { return &decoder{} }}
 	encoderPool = &sync.Pool{New: func() any { return &encoder{} }}
+
+	// zstd
+
+	zstdReaders = &sync.Pool{New: func() any {
+		r, err := zstd.NewReader(bytes.NewReader(zstdInitData))
+		if err != nil {
+			panic(err)
+		}
+		return r
+	}}
+	zstdWriters = &sync.Pool{New: func() any {
+		w, err := zstd.NewWriter(nil)
+		if err != nil {
+			panic(err)
+		}
+		return w
+	}}
+
+	// brotli
+	brotliReaders = &sync.Pool{New: func() any {
+		return brotli.NewReader(bytes.NewReader(brotliInitData))
+	}}
+
+	// lzw
+	lzwReaders = &sync.Pool{New: func() any {
+		return lzw.NewReader(bytes.NewReader(lzwInitData), lzw.LSB, 8)
+	}}
+	lzwWriters = &sync.Pool{New: func() any {
+		return lzw.NewWriter(nil, lzw.LSB, 8)
+	}}
+
+	// gzip
+	gzipReaders = &sync.Pool{New: func() any {
+		r, err := gzip.NewReader(bytes.NewReader(gzipInitData))
+		if err != nil {
+			panic(err)
+		}
+		return r
+	}}
+	gzipWriters = &sync.Pool{New: func() any { return gzip.NewWriter(nil) }}
+
+	// deflate
+	deflateReaders = &sync.Pool{New: func() any {
+		return flate.NewReader(bytes.NewReader(deflateInitData))
+	}}
 )
 
 type (
@@ -30,31 +75,21 @@ type (
 		Encoder(w io.Writer) (io.WriteCloser, error)
 	}
 
-	zstdCompress struct {
-		readers *sync.Pool
-		writers *sync.Pool
-	}
+	zstdCompress struct{}
 
 	brotliCompress struct {
-		readers *sync.Pool
 		writers *sync.Pool
 	}
 
 	lzwCompress struct {
-		order   lzw.Order
-		width   int
-		readers *sync.Pool
-		writers *sync.Pool
+		order lzw.Order
+		width int
 	}
 
-	gzipCompress struct {
-		readers *sync.Pool
-		writers *sync.Pool
-	}
+	gzipCompress struct{}
 
 	deflateCompress struct {
 		dict    []byte
-		readers *sync.Pool
 		writers *sync.Pool
 	}
 
@@ -89,38 +124,21 @@ type (
 // [浏览器支持情况]: https://caniuse.com/zstd
 // [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
 func NewZstdCompress() Compress {
-	// TODO: 替换为官方的 https://github.com/golang/go/issues/62513
-	return &zstdCompress{
-		readers: &sync.Pool{New: func() any {
-			r, err := zstd.NewReader(bytes.NewReader(zstdInitData))
-			if err != nil {
-				panic(err)
-			}
-			return r
-		}},
-
-		writers: &sync.Pool{New: func() any {
-			w, err := zstd.NewWriter(nil)
-			if err != nil {
-				panic(err)
-			}
-			return w
-		}},
-	}
+	return &zstdCompress{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 }
 
 func (c *zstdCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
-	rr := c.readers.Get().(*zstd.Decoder)
+	rr := zstdReaders.Get().(*zstd.Decoder)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
 	}
-	return wrapDecoder(io.NopCloser(rr), func() { c.readers.Put(rr) }), nil
+	return wrapDecoder(io.NopCloser(rr), func() { zstdReaders.Put(rr) }), nil
 }
 
 func (c *zstdCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
-	ww := c.writers.Get().(*zstd.Encoder)
+	ww := zstdWriters.Get().(*zstd.Encoder)
 	ww.Reset(w)
-	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
+	return wrapEncoder(ww, func() { zstdWriters.Put(ww) }), nil
 }
 
 // NewBrotliCompress 声明基于 [br] 的压缩算法
@@ -128,10 +146,6 @@ func (c *zstdCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 // [br]: https://www.rfc-editor.org/rfc/rfc7932.html
 func NewBrotliCompress(o brotli.WriterOptions) Compress {
 	return &brotliCompress{
-		readers: &sync.Pool{New: func() any {
-			return brotli.NewReader(bytes.NewReader(brotliInitData))
-		}},
-
 		writers: &sync.Pool{New: func() any {
 			return brotli.NewWriterOptions(nil, o)
 		}},
@@ -139,11 +153,11 @@ func NewBrotliCompress(o brotli.WriterOptions) Compress {
 }
 
 func (c *brotliCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
-	rr := c.readers.Get().(*brotli.Reader)
+	rr := brotliReaders.Get().(*brotli.Reader)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
 	}
-	return wrapDecoder(io.NopCloser(rr), func() { c.readers.Put(rr) }), nil
+	return wrapDecoder(io.NopCloser(rr), func() { brotliReaders.Put(rr) }), nil
 }
 
 func (c *brotliCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
@@ -156,74 +170,42 @@ func (c *brotliCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 //
 // NOTE: 在 http 报头中名称为 compress 或是 x-compress
 func NewLZWCompress(order lzw.Order, width int) Compress {
-	return &lzwCompress{
-		order: order,
-		width: width,
-
-		readers: &sync.Pool{New: func() any {
-			return lzw.NewReader(bytes.NewReader(lzwInitData), order, width)
-		}},
-
-		writers: &sync.Pool{New: func() any {
-			return lzw.NewWriter(nil, order, width)
-		}},
-	}
+	return &lzwCompress{order: order, width: width}
 }
 
 func (c *lzwCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
-	rr := c.readers.Get().(*lzw.Reader)
+	rr := lzwReaders.Get().(*lzw.Reader)
 	rr.Reset(r, c.order, c.width)
-	return wrapDecoder(rr, func() { c.readers.Put(rr) }), nil
+	return wrapDecoder(rr, func() { lzwReaders.Put(rr) }), nil
 }
 
 func (c *lzwCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
-	ww := c.writers.Get().(*lzw.Writer)
+	ww := lzwWriters.Get().(*lzw.Writer)
 	ww.Reset(w, c.order, c.width)
-	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
+	return wrapEncoder(ww, func() { lzwWriters.Put(ww) }), nil
 }
 
 // NewGzipCompress 声明基于 gzip 的压缩算法
-func NewGzipCompress(level int) Compress {
-	return &gzipCompress{
-		readers: &sync.Pool{New: func() any {
-			r, err := gzip.NewReader(bytes.NewReader(gzipInitData))
-			if err != nil {
-				panic(err)
-			}
-			return r
-		}},
-		writers: &sync.Pool{New: func() any {
-			w, err := gzip.NewWriterLevel(nil, level)
-			if err != nil {
-				panic(err)
-			}
-			return w
-		}},
-	}
-}
+func NewGzipCompress(level int) Compress { return &gzipCompress{} }
 
 func (c *gzipCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
-	rr := c.readers.Get().(*gzip.Reader)
+	rr := gzipReaders.Get().(*gzip.Reader)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
 	}
-	return wrapDecoder(rr, func() { c.readers.Put(rr) }), nil
+	return wrapDecoder(rr, func() { gzipReaders.Put(rr) }), nil
 }
 
 func (c *gzipCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
-	ww := c.writers.Get().(*gzip.Writer)
+	ww := gzipWriters.Get().(*gzip.Writer)
 	ww.Reset(w)
-	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
+	return wrapEncoder(ww, func() { gzipWriters.Put(ww) }), nil
 }
 
 // NewDeflateCompress 声明基于 deflate 的压缩算法
 func NewDeflateCompress(level int, dict []byte) Compress {
 	return &deflateCompress{
 		dict: dict,
-
-		readers: &sync.Pool{New: func() any {
-			return flate.NewReaderDict(bytes.NewReader(deflateInitData), dict)
-		}},
 
 		writers: &sync.Pool{New: func() any {
 			var w *flate.Writer
@@ -243,11 +225,11 @@ func NewDeflateCompress(level int, dict []byte) Compress {
 }
 
 func (c *deflateCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
-	rr := c.readers.Get().(flate.Resetter)
+	rr := deflateReaders.Get().(flate.Resetter)
 	if err := rr.Reset(r, c.dict); err != nil {
 		return nil, err
 	}
-	return wrapDecoder(rr.(io.ReadCloser), func() { c.readers.Put(rr) }), nil
+	return wrapDecoder(rr.(io.ReadCloser), func() { deflateReaders.Put(rr) }), nil
 }
 
 func (c *deflateCompress) Encoder(w io.Writer) (io.WriteCloser, error) {

@@ -133,10 +133,16 @@ type (
 	}
 
 	Compress struct {
+		// Name 压缩方法的名称
+		//
+		// 可以重名，比如 gzip。
 		Name string
 
+		// Compress 压缩对象
 		Compress compress.Compress
 
+		// Types 该压缩对象允许使用的为 content-type 类型。
+		// 如果是 * 表示适用所有类型。
 		Types []string
 	}
 
