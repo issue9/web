@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/compress"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
 )
@@ -33,26 +33,37 @@ type Client struct {
 // url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
 // marshal 对输入数据的编码方式；
 // mt 所有返回数据可用的解码方式；
-func NewClient(url, marshalName string, marshal func(any) ([]byte, error), mt []*Mimetype, compresses []*Compress) (*Client, error) {
-	if l := len(url); l > 0 && url[l-1] == '/' {
-		url = url[:l-1]
-	}
-
+func NewClient(url, marshalName string, marshal func(any) ([]byte, error), mt []*Mimetype, compresses []*Compress) *Client {
 	mts := mimetypes.New[MarshalFunc, UnmarshalFunc](len(mt))
 	for _, m := range mt {
 		mts.Add(m.Type, m.Marshal, m.Unmarshal, m.ProblemType)
 	}
 
-	c := compress.NewCompresses(len(compresses))
+	c := compress.NewCompresses(len(compresses), false)
 	for i, e := range compresses {
 		if err := e.sanitize(); err != nil {
-			return nil, err.AddFieldParent("compresses[" + strconv.Itoa(i) + "]")
+			panic(err.AddFieldParent("compresses[" + strconv.Itoa(i) + "]"))
 		}
-		c.Add(e.Name, e.Compress, e.Types...)
+		c.Add(e.Name, e.Compressor, e.Types...)
+	}
+
+	return newClient(url, marshalName, marshal, mts, c)
+}
+
+// NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
+//
+// 参数可参考 [NewClient]。
+func (srv *Server) NewClient(url, marshalName string, marshal func(any) ([]byte, error)) *Client {
+	return newClient(url, marshalName, marshal, srv.mimetypes, srv.compresses)
+}
+
+func newClient(url, marshalName string, marshal func(any) ([]byte, error), m *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc], c *compress.Compresses) *Client {
+	if l := len(url); l > 0 && url[l-1] == '/' {
+		url = url[:l-1]
 	}
 
 	return &Client{
-		mts:    mts,
+		mts:    m,
 		url:    url,
 		client: &http.Client{},
 
@@ -60,22 +71,6 @@ func NewClient(url, marshalName string, marshal func(any) ([]byte, error), mt []
 		marshalName: marshalName,
 
 		compresses: c,
-	}, nil
-}
-
-// NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
-//
-// 参数可参考 [NewClient]。
-func (srv *Server) NewClient(url, marshalName string, marshal func(any) ([]byte, error)) *Client {
-	return &Client{
-		mts:    srv.mimetypes,
-		url:    url,
-		client: &http.Client{},
-
-		marshal:     marshal,
-		marshalName: marshalName,
-
-		compresses: srv.compresses,
 	}
 }
 

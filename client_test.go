@@ -9,7 +9,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/compress"
 	"github.com/issue9/web/servertest"
 )
 
@@ -28,10 +27,10 @@ func TestClient(t *testing.T) {
 		{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
 	}
 	cps := []*Compress{
-		{Name: "gzip", Compress: compress.NewGzipCompress(3), Types: []string{"application/*"}},
+		{Name: "gzip", Compressor: NewGzipCompress(3), Types: []string{"application/*"}},
 	}
-	c, err := NewClient("http://localhost:8080", "application/json", json.Marshal, mts, cps)
-	a.NotError(err).NotNil(c)
+	c := NewClient("http://localhost:8080", "application/json", json.Marshal, mts, cps)
+	a.NotNil(c)
 
 	resp := &object{}
 	p := &RFC7807{}
