@@ -13,14 +13,18 @@ import (
 	"github.com/issue9/web/logs"
 )
 
+// Compresses 压缩算法的管理
 type Compresses struct {
 	compresses   []*NamedCompress
 	acceptHeader string
+
+	disable bool // 是否禁用压缩输出
 }
 
-func NewCompresses(cap int) *Compresses {
+func NewCompresses(cap int, disable bool) *Compresses {
 	return &Compresses{
 		compresses: make([]*NamedCompress, 0, cap),
+		disable:    disable,
 	}
 }
 
@@ -42,7 +46,7 @@ func (e *Compresses) ContentEncoding(name string, r io.Reader) (io.ReadCloser, e
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
 // l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
 func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *NamedCompress, notAcceptable bool) {
-	if len(e.compresses) == 0 {
+	if len(e.compresses) == 0 || e.IsDisable() {
 		return
 	}
 
@@ -52,8 +56,8 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 		return
 	}
 
-	pools := e.getMatchCompresses(contentType)
-	if len(pools) == 0 {
+	cs := e.getMatchCompresses(contentType)
+	if len(cs) == 0 {
 		return
 	}
 
@@ -62,7 +66,7 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 			return nil, true
 		}
 
-		for _, p := range pools {
+		for _, p := range cs {
 			exists := sliceutil.Exists(accepts, func(e *header.Item, _ int) bool {
 				return e.Value == p.name
 			})
@@ -84,14 +88,14 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 			identity = accept
 		}
 
-		for _, a := range pools {
+		for _, a := range cs {
 			if a.name == accept.Value {
 				return a, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		a := pools[0]
+		a := cs[0]
 		return a, false
 	}
 
@@ -99,32 +103,33 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 }
 
 func (e *Compresses) getMatchCompresses(contentType string) []*NamedCompress {
-	algs := make([]*NamedCompress, 0, len(e.compresses))
+	cs := make([]*NamedCompress, 0, len(e.compresses))
 
 LOOP:
-	for _, alg := range e.compresses {
-		for _, s := range alg.allowTypes {
+	for _, c := range e.compresses {
+		for _, s := range c.allowTypes {
 			if s == contentType {
-				algs = append(algs, alg)
+				cs = append(cs, c)
 				continue LOOP
 			}
 		}
 
-		for _, p := range alg.allowTypesPrefix {
+		for _, p := range c.allowTypesPrefix {
 			if strings.HasPrefix(contentType, p) {
-				algs = append(algs, alg)
+				cs = append(cs, c)
 				continue LOOP
 			}
 		}
 	}
 
-	return algs
+	return cs
 }
 
 // AcceptEncodingHeader 生成 AcceptEncoding 报头内容
 func (e *Compresses) AcceptEncodingHeader() string { return e.acceptHeader }
 
-func (e *Compresses) Add(name string, c Compress, ct ...string) *Compresses {
+// Add 添加新的压缩算法
+func (e *Compresses) Add(name string, c Compressor, ct ...string) *Compresses {
 	types := make([]string, 0, len(ct))
 	prefix := make([]string, 0, len(ct))
 	for _, c := range ct {
@@ -155,3 +160,7 @@ func (e *Compresses) Add(name string, c Compress, ct ...string) *Compresses {
 
 	return e
 }
+
+func (e *Compresses) SetDisable(disable bool) { e.disable = disable }
+
+func (e *Compresses) IsDisable() bool { return e.disable }

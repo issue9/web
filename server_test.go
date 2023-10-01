@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/compress"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
@@ -71,8 +71,8 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	}
 	if o.Compresses == nil {
 		o.Compresses = []*Compress{
-			{Name: "gzip", Compress: compress.NewGzipCompress(8)},
-			{Name: "deflate", Compress: compress.NewDeflateCompress(8, nil)},
+			{Name: "gzip", Compressor: compress.NewGzipCompress(8)},
+			{Name: "deflate", Compressor: compress.NewDeflateCompress(8, nil)},
 		}
 	}
 	if o.Mimetypes == nil {
@@ -109,6 +109,10 @@ func TestNewServer(t *testing.T) {
 		Equal(srv.Location(), time.Local).
 		Equal(srv.httpServer.Handler, srv.routers).
 		Equal(srv.httpServer.Addr, "")
+
+	a.False(srv.CompressIsDisable())
+	srv.DisableCompress(true)
+	a.True(srv.CompressIsDisable())
 }
 
 func TestServer_Serve(t *testing.T) {

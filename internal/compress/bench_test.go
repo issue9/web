@@ -87,7 +87,7 @@ func BenchmarkGzip_Decoder(b *testing.B) {
 	})
 }
 
-func benchCompressEncoder(b *testing.B, c Compress) {
+func benchCompressEncoder(b *testing.B, c Compressor) {
 	a := assert.New(b, false)
 	w := &bytes.Buffer{}
 	for i := 0; i < b.N; i++ {

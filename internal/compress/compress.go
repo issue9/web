@@ -66,8 +66,8 @@ var (
 )
 
 type (
-	// Compress 压缩算法的接口
-	Compress interface {
+	// Compressor 压缩算法的接口
+	Compressor interface {
 		// Decoder 将 r 包装成为当前压缩算法的解码器
 		Decoder(r io.Reader) (io.ReadCloser, error)
 
@@ -96,7 +96,7 @@ type (
 	// NamedCompress 带名称的压缩算法
 	NamedCompress struct {
 		name     string
-		compress Compress
+		compress Compressor
 
 		// contentType 是具体值的，比如 text/xml
 		allowTypes []string
@@ -118,12 +118,7 @@ type (
 )
 
 // NewZstdCompress 声明基于 [zstd] 的压缩算法
-//
-// NOTE: 如果是针对浏览器的，请注意[浏览器支持情况]
-//
-// [浏览器支持情况]: https://caniuse.com/zstd
-// [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
-func NewZstdCompress() Compress {
+func NewZstdCompress() Compressor {
 	return &zstdCompress{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 }
 
@@ -141,10 +136,8 @@ func (c *zstdCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 	return wrapEncoder(ww, func() { zstdWriters.Put(ww) }), nil
 }
 
-// NewBrotliCompress 声明基于 [br] 的压缩算法
-//
-// [br]: https://www.rfc-editor.org/rfc/rfc7932.html
-func NewBrotliCompress(o brotli.WriterOptions) Compress {
+// NewBrotliCompress 声明基于 br 的压缩算法
+func NewBrotliCompress(o brotli.WriterOptions) Compressor {
 	return &brotliCompress{
 		writers: &sync.Pool{New: func() any {
 			return brotli.NewWriterOptions(nil, o)
@@ -169,7 +162,7 @@ func (c *brotliCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 // NewLZWCompress 声明基于 lzw 的压缩算法
 //
 // NOTE: 在 http 报头中名称为 compress 或是 x-compress
-func NewLZWCompress(order lzw.Order, width int) Compress {
+func NewLZWCompress(order lzw.Order, width int) Compressor {
 	return &lzwCompress{order: order, width: width}
 }
 
@@ -186,7 +179,7 @@ func (c *lzwCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 }
 
 // NewGzipCompress 声明基于 gzip 的压缩算法
-func NewGzipCompress(level int) Compress { return &gzipCompress{} }
+func NewGzipCompress(level int) Compressor { return &gzipCompress{} }
 
 func (c *gzipCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
 	rr := gzipReaders.Get().(*gzip.Reader)
@@ -203,7 +196,7 @@ func (c *gzipCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 }
 
 // NewDeflateCompress 声明基于 deflate 的压缩算法
-func NewDeflateCompress(level int, dict []byte) Compress {
+func NewDeflateCompress(level int, dict []byte) Compressor {
 	return &deflateCompress{
 		dict: dict,
 
@@ -242,7 +235,7 @@ func (c *deflateCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
 func (c *NamedCompress) Name() string { return c.name }
 
 // Compress 关联的压缩算法接口
-func (c *NamedCompress) Compress() Compress { return c.compress }
+func (c *NamedCompress) Compress() Compressor { return c.compress }
 
 func wrapEncoder(w io.WriteCloser, f func()) *encoder {
 	e := encoderPool.Get().(*encoder)

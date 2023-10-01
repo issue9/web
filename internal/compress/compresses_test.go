@@ -14,7 +14,7 @@ import (
 
 func TestCompresses_ContentEncoding(t *testing.T) {
 	a := assert.New(t, false)
-	e := NewCompresses(5)
+	e := NewCompresses(5, false)
 	a.NotNil(e)
 
 	e.Add("compress", NewLZWCompress(lzw.LSB, 2), "text/plain", "application/*").
@@ -37,7 +37,7 @@ func TestCompresses_ContentEncoding(t *testing.T) {
 func TestCompresses_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewCompresses(5)
+	e := NewCompresses(5, false)
 	e.Add("compress", NewLZWCompress(lzw.LSB, 2), "text/plain", "application/*").
 		Add("gzip", NewGzipCompress(3), "text/plain").
 		Add("gzip", NewGzipCompress(9), "application/*")

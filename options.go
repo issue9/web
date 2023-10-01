@@ -3,10 +3,12 @@
 package web
 
 import (
+	"compress/lzw"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
@@ -17,7 +19,7 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/compress"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
@@ -132,19 +134,24 @@ type (
 		Unmarshal UnmarshalFunc
 	}
 
+	// Compress 压缩算法的配置
 	Compress struct {
 		// Name 压缩方法的名称
 		//
-		// 可以重名，比如 gzip。
+		// 可以重名，比如 gzip，可以配置参数不同的对象。
 		Name string
 
-		// Compress 压缩对象
-		Compress compress.Compress
+		// Compressor 压缩对象
+		Compressor Compressor
 
-		// Types 该压缩对象允许使用的为 content-type 类型。
+		// Types 该压缩对象允许使用的为 content-type 类型
+		//
 		// 如果是 * 表示适用所有类型。
 		Types []string
 	}
+
+	// Compressor 压缩算法的接口
+	Compressor = compress.Compressor
 
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
@@ -211,12 +218,12 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 		o.RequestIDKey = RequestIDKey
 	}
 
-	o.compresses = compress.NewCompresses(len(o.Compresses))
+	o.compresses = compress.NewCompresses(len(o.Compresses), false)
 	for i, e := range o.Compresses {
 		if err := e.sanitize(); err != nil {
 			return nil, err.AddFieldParent("Encodings[" + strconv.Itoa(i) + "]")
 		}
-		o.compresses.Add(e.Name, e.Compress, e.Types...)
+		o.compresses.Add(e.Name, e.Compressor, e.Types...)
 	}
 
 	// mimetype
@@ -239,7 +246,7 @@ func (e *Compress) sanitize() *FieldError {
 		return config.NewFieldError("Name", locales.InvalidValue)
 	}
 
-	if e.Compress == nil {
+	if e.Compressor == nil {
 		return config.NewFieldError("Compress", locales.CanNotBeEmpty)
 	}
 
@@ -253,4 +260,32 @@ func (e *Compress) sanitize() *FieldError {
 func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
 	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
 	return message.NewPrinter(tag, message.Catalog(cat))
+}
+
+// NewZstdCompress 声明基于 [zstd] 的压缩算法
+//
+// NOTE: 请注意[浏览器支持情况]
+//
+// [浏览器支持情况]: https://caniuse.com/zstd
+// [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
+func NewZstdCompress() Compressor { return compress.NewZstdCompress() }
+
+// NewBrotliCompress 声明基于 [br] 的压缩算法
+//
+// [br]: https://www.rfc-editor.org/rfc/rfc7932.html
+func NewBrotliCompress(o brotli.WriterOptions) Compressor {
+	return compress.NewBrotliCompress(o)
+}
+
+// NewLZWCompress 声明基于 lzw 的压缩算法
+func NewLZWCompress(order lzw.Order, width int) Compressor {
+	return compress.NewLZWCompress(order, width)
+}
+
+// NewGzipCompress 声明基于 gzip 的压缩算法
+func NewGzipCompress(level int) Compressor { return compress.NewGzipCompress(level) }
+
+// NewDeflateCompress 声明基于 deflate 的压缩算法
+func NewDeflateCompress(level int, dict []byte) Compressor {
+	return compress.NewDeflateCompress(level, dict)
 }

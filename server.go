@@ -19,7 +19,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/compress"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
@@ -239,3 +239,7 @@ func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 func (srv *Server) LoadLocaleGlob(glob string) error {
 	return locale.LoadGlob(srv.Config().Serializer(), srv.Catalog(), glob)
 }
+
+func (srv *Server) DisableCompress(disable bool) { srv.compresses.SetDisable(disable) }
+
+func (srv *Server) CompressIsDisable() bool { return srv.compresses.IsDisable() }
