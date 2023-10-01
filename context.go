@@ -15,7 +15,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/compress"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/logs"
@@ -353,7 +353,7 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 // Logs 返回日志操作对象
 //
 // 该返回实例与 [Server.Logs] 是不同的，
-// 当前返回实例的日志输出时会带上当前请求的 x-request-id 作为额外参数。
+// 当前返回实例的日志输出时会带上当前请求的 [Context.ID] 作为额外参数。
 func (ctx *Context) Logs() Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {

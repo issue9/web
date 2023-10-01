@@ -14,7 +14,7 @@ import (
 
 func TestCompresses_ContentEncoding(t *testing.T) {
 	a := assert.New(t, false)
-	e := NewCompresses(5)
+	e := NewCompresses(5, false)
 	a.NotNil(e)
 
 	e.Add("compress", NewLZWCompress(lzw.LSB, 2), "text/plain", "application/*").
@@ -24,19 +24,20 @@ func TestCompresses_ContentEncoding(t *testing.T) {
 	r := &bytes.Buffer{}
 	gw := gzip.NewWriter(r)
 	_, err := gw.Write([]byte("123"))
-	a.NotError(err)
-	a.NotError(gw.Flush())
+	a.NotError(err).
+		NotError(gw.Flush()).
+		NotError(gw.Close())
 
 	rr, err := e.ContentEncoding("gzip", r)
 	a.NotError(err).NotNil(rr)
 	data, err := io.ReadAll(rr)
-	a.Equal(string(data), "123")
+	a.NotError(err).Equal(string(data), "123")
 }
 
 func TestCompresses_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewCompresses(5)
+	e := NewCompresses(5, false)
 	e.Add("compress", NewLZWCompress(lzw.LSB, 2), "text/plain", "application/*").
 		Add("gzip", NewGzipCompress(3), "text/plain").
 		Add("gzip", NewGzipCompress(9), "application/*")
