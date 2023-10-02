@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -63,8 +64,8 @@ type (
 )
 
 func (srv *Server) initServices() {
-	ctx, cancel := context.WithCancel(context.Background()) // TODO: go1.20  改为 WithCancelCause
-	srv.OnClose(func() error { cancel(); return nil })
+	ctx, cancel := context.WithCancelCause(context.Background())
+	srv.OnClose(func() error { cancel(http.ErrServerClosed); return nil })
 
 	srv.services = &Services{
 		s:         srv,

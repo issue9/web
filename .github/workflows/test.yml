@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        go: ['1.20.x', '1.21.x'] # 103 状态码在 go1.20 开始支持
+        go: ['1.20.x', '1.21.x']
 
     steps:
 

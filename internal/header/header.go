@@ -49,23 +49,10 @@ func ParseWithParam(header, param string) (mt, paramValue string) {
 	}
 
 	for len(ps) > 0 && param != "" {
-		var item string
-		if index := strings.IndexByte(ps, ';'); index > -1 {
-			item = ps[:index]
-			ps = ps[index+1:]
-		} else {
-			item = ps
-			ps = ps[:0]
-		}
+		item, p, _ := strings.Cut(ps, ";")
+		ps = p
 
-		var name, val string
-		if index := strings.IndexByte(item, '='); index >= 0 {
-			name = item[:index]
-			val = item[index+1:]
-		} else { // 只有名称没有值
-			name = item
-		}
-
+		name, val, _ := strings.Cut(item, "=")
 		if strings.ToLower(strings.TrimSpace(name)) == param {
 			return t, strings.ToLower(strings.TrimFunc(val, func(r rune) bool { return unicode.IsSpace(r) || r == '"' }))
 		}

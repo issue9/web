@@ -61,19 +61,7 @@ func (sse *SSE[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
 
 // 和客户端进行连接，如果返回，则表示连接被关闭。
 func (s *Source) connect(ctx *web.Context, status int) {
-	var rw http.ResponseWriter = ctx
-	f, ok := rw.(http.Flusher)
-	for !ok { // TODO: go1.20 之后，可以采用 http.ResponseController 方法。
-		if rr, rok := rw.(interface{ Unwrap() http.ResponseWriter }); rok {
-			rw = rr.Unwrap()
-			f, ok = rw.(http.Flusher)
-			continue
-		}
-		break
-	}
-	if f == nil {
-		panic("ctx 无法转换成 http.Flusher") // 无法实现当前需要的功能，直接 panic。
-	}
+	rc := http.NewResponseController(ctx)
 
 	ctx.Header().Set("content-type", header.BuildContentType(Mimetype, header.UTF8Name))
 	ctx.Header().Set("Content-Length", "0")
@@ -96,7 +84,9 @@ func (s *Source) connect(ctx *web.Context, status int) {
 				s.done <- struct{}{}
 				return
 			}
-			f.Flush()
+			if err := rc.Flush(); err != nil {
+				panic(err) // 无法实现当前需要的功能，直接 panic。
+			}
 			s.last = time.Now()
 		}
 	}
