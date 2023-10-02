@@ -64,9 +64,12 @@ func NewLocaleError(format string, v ...any) error {
 	return localeutil.Error(format, v...)
 }
 
-// NewHTTPError 用 HTTP 状态码包装一个错误信息
+// NewError 用 HTTP 状态码包装一个错误信息
+//
+// status 表示 HTTP 状态码；
+// err 被包装的错误信息，如果所有错误都是空值，将会 panic；
 //
 // 此方法返回的错误，在 [Context.Error] 会被识别且按指定的状态码输出。
-func NewHTTPError(status int, err error) error {
-	return errs.NewHTTPError(status, err)
+func NewError(status int, err ...error) error {
+	return errs.NewError(status, err...)
 }

@@ -36,6 +36,7 @@ func TestNewDepthStackError(t *testing.T) {
 	a.NotContains(s, "32") // 依赖调用 NewStackError 的行号
 	s = fmt.Sprintf("%+v", err)
 	a.Contains(s, "32") // 依赖调用 NewStackError 的行号
+	a.Equal(err.Error(), err1.Error())
 
 	var target1 *cerr
 	a.True(errors.As(err, &target1)).Equal(target1.Error(), err1.Error())

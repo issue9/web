@@ -180,7 +180,7 @@ func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
 // Error 将 err 输出到 ERROR 通道并尝试以指定 id 的 [Problem] 返回
 //
 // 如果 id 为空，尝试以下顺序获得值：
-//   - err 是否是由 [web.NewHTTPError] 创建，如果是则采用 err.Status 取得 ID 值；
+//   - err 是否是由 [web.NewError] 创建，如果是则采用 err.Status 取得 ID 值；
 //   - 采用 [ProblemInternalServerError]；
 func (ctx *Context) Error(err error, id string) Problem {
 	if id == "" {

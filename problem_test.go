@@ -15,7 +15,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/filter"
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
 )
 
@@ -53,7 +52,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:55") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:54") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusInternalServerError)
@@ -64,8 +63,8 @@ func TestContext_Error(t *testing.T) {
 		w = httptest.NewRecorder()
 		r = rest.Get(a, "/path").Request()
 		ctx = srv.newContext(w, r, nil)
-		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:67") // NOTE: 此测试依赖上一行的行号
+		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:66") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusBadRequest)
@@ -78,7 +77,7 @@ func TestContext_Error(t *testing.T) {
 		r := rest.Get(a, "/path").Request()
 		ctx := srv.newContext(w, r, nil)
 		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:80") // NOTE: 此测试依赖上一行的行号
+		a.Contains(errLog.String(), "problem_test.go:79") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
@@ -89,8 +88,8 @@ func TestContext_Error(t *testing.T) {
 		w = httptest.NewRecorder()
 		r = rest.Get(a, "/path").Request()
 		ctx = srv.newContext(w, r, nil)
-		ctx.Error(errs.NewHTTPError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(errLog.String(), "problem_test.go:92") // NOTE: 此测试依赖上一行的行号
+		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
+		a.Contains(errLog.String(), "problem_test.go:91") // NOTE: 此测试依赖上一行的行号
 		a.Contains(errLog.String(), "log1 log2")
 		a.Contains(errLog.String(), srv.requestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)

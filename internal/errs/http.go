@@ -11,7 +11,13 @@ type HTTP struct {
 
 func (err *HTTP) Error() string { return err.Message.Error() }
 
-func NewHTTPError(status int, err error) error {
+func NewError(status int, errs ...error) (err error) {
+	err = errors.Join(errs...)
+
+	if err == nil {
+		panic("err 不能为空")
+	}
+
 	var herr *HTTP
 	if errors.As(err, &herr) {
 		if herr.Status == status {
