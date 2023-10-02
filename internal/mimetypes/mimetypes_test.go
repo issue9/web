@@ -22,9 +22,16 @@ func TestMimetypes_Add(t *testing.T) {
 	a := assert.New(t, false)
 	mt := New[marshalFunc, unmarshalFunc](10)
 
-	a.False(mt.exists(testMimetype))
+	a.False(mt.exists(testMimetype)).
+		Empty(mt.AcceptHeader())
+
 	mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
-	a.True(mt.exists(testMimetype))
+	a.True(mt.exists(testMimetype)).
+		Equal(mt.AcceptHeader(), testMimetype)
+
+	mt.Add("application/json", json.Marshal, json.Unmarshal, "application/problem+json")
+	a.True(mt.exists(testMimetype)).
+		Equal(mt.AcceptHeader(), testMimetype+",application/json")
 
 	a.Panic(func() {
 		mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
@@ -137,7 +144,7 @@ func TestMimetypes_findMarshal(t *testing.T) {
 	mt.Add("text/plain", nil, nil, "")
 	mt.Add("text/text", nil, nil, "")
 	mt.Add("application/aa", nil, nil, "")
-	mt.Add("application/bb", nil, nil, "")
+	mt.Add("application/bb", nil, nil, "application/problem+bb")
 
 	item := mt.findMarshal("text")
 	a.NotNil(item).Equal(item.Name, "text")
@@ -160,6 +167,10 @@ func TestMimetypes_findMarshal(t *testing.T) {
 	mt.Add(testMimetype, nil, nil, "")
 	item = mt.findMarshal("*/*")
 	a.NotNil(item).Equal(item.Name, "text")
+
+	// 通过 problem 查找
+	item = mt.findMarshal("application/problem+bb")
+	a.NotNil(item).Equal(item.Name, "application/bb")
 
 	// 不存在
 	item = mt.findMarshal("xx/*")

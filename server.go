@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
@@ -47,10 +48,10 @@ type Server struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems  *problems.Problems
-	mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
-	algs      []*alg
-	config    *config.Config
+	problems   *problems.Problems
+	mimetypes  *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+	compresses *compress.Compresses
+	config     *config.Config
 }
 
 // New 新建 web 服务
@@ -84,17 +85,14 @@ func NewServer(name, version string, o *Options) (*Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:  o.problems,
-		mimetypes: o.mimetypes,
-		algs:      make([]*alg, 0, 10),
-		config:    o.Config,
+		problems:   o.problems,
+		mimetypes:  o.mimetypes,
+		compresses: o.compresses,
+		config:     o.Config,
 	}
 
 	initProblems(srv.problems)
 
-	for _, e := range o.Encodings {
-		srv.algs = append(srv.algs, newAlg(e.Name, e.Builder, e.ContentTypes...))
-	}
 	srv.routers = group.NewOf(srv.call,
 		notFound,
 		buildNodeHandle(http.StatusMethodNotAllowed),
@@ -244,3 +242,7 @@ func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
 func (srv *Server) LoadLocaleGlob(glob string) error {
 	return locale.LoadGlob(srv.Config().Serializer(), srv.Catalog(), glob)
 }
+
+func (srv *Server) DisableCompress(disable bool) { srv.compresses.SetDisable(disable) }
+
+func (srv *Server) CompressIsDisable() bool { return srv.compresses.IsDisable() }

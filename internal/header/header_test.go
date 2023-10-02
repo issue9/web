@@ -20,6 +20,9 @@ func TestParseWithParam(t *testing.T) {
 	v, p = ParseWithParam("application/xml;charset=utf-8", "charset")
 	a.Equal(v, "application/xml").Equal(p, "utf-8")
 
+	v, p = ParseWithParam("application/xml;charset=utf-8", "")
+	a.Equal(v, "application/xml").Equal(p, "")
+
 	// charset=UTF-8
 	v, p = ParseWithParam("application/xml;\tCHARSet=UTF-8;p1=k1;p2=k2", "charset")
 	a.Equal(v, "application/xml").Equal(p, "utf-8")

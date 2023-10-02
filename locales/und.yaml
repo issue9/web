@@ -33,12 +33,18 @@ messages:
     - key: not found charset for %s
       message:
         msg: not found charset for %s
+    - key: not found compress for %s
+      message:
+        msg: not found compress for %s
     - key: not found serialization for %s
       message:
         msg: not found serialization for %s
     - key: not found serialization function for %s
       message:
         msg: not found serialization function for %s
+    - key: not found unmarshaler for the server content-type %s
+      message:
+        msg: not found unmarshaler for the server content-type %s
     - key: problem.400
       message:
         msg: problem.400
@@ -291,9 +297,12 @@ messages:
     - key: should great than 0
       message:
         msg: should great than 0
-    - key: the client did not specify content-type header
+    - key: the client miss content-type header
       message:
-        msg: the client did not specify content-type header
+        msg: the client miss content-type header
+    - key: the server miss content-type header
+      message:
+        msg: the server miss content-type header
     - key: unique identity generator
       message:
         msg: unique identity generator

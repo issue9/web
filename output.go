@@ -99,7 +99,7 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 // Write 向客户端输出内容
 //
 // 如非必要，应该返回 [Responser] 进行输出。
-func (ctx *Context) Write(bs []byte) (int, error) {
+func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
 	}
@@ -108,7 +108,10 @@ func (ctx *Context) Write(bs []byte) (int, error) {
 		ctx.wrote = true
 
 		if ctx.outputEncoding != nil {
-			ctx.encodingCloser = ctx.outputEncoding.Get(ctx.writer)
+			ctx.encodingCloser, err = ctx.outputEncoding.Compress().Encoder(ctx.writer)
+			if err != nil {
+				return 0, err
+			}
 			ctx.writer = ctx.encodingCloser
 		}
 
@@ -197,7 +200,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 // NOTE: 即使 code 为 400 等错误代码，当前函数也不会返回 [Problem] 对象。
 func Status(code int, kv ...string) Responser {
 	l := len(kv)
-	if l%2 != 0 {
+	if l > 0 && l%2 != 0 {
 		panic("kv 必须偶数位")
 	}
 
@@ -217,7 +220,7 @@ func Status(code int, kv ...string) Responser {
 // kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；
 func Response(status int, body any, kv ...string) Responser {
 	l := len(kv)
-	if l%2 != 0 {
+	if l > 0 && l%2 != 0 {
 		panic("kv 必须偶数位")
 	}
 

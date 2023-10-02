@@ -16,6 +16,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
@@ -69,10 +70,10 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 			Levels:  logs.AllLevels(),
 		}
 	}
-	if o.Encodings == nil {
-		o.Encodings = []*Encoding{
-			{Name: "gzip", Builder: GZipWriter(8)},
-			{Name: "deflate", Builder: DeflateWriter(8)},
+	if o.Compresses == nil {
+		o.Compresses = []*Compress{
+			{Name: "gzip", Compressor: compress.NewGzipCompress(8)},
+			{Name: "deflate", Compressor: compress.NewDeflateCompress(8, nil)},
 		}
 	}
 	if o.Mimetypes == nil {
@@ -114,6 +115,9 @@ func TestNewServer(t *testing.T) {
 	a.True(ok).
 		NotNil(d).
 		NotNil(d.Driver())
+	a.False(srv.CompressIsDisable())
+	srv.DisableCompress(true)
+	a.True(srv.CompressIsDisable())
 }
 
 func TestServer_Serve(t *testing.T) {

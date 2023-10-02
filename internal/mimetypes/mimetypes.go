@@ -29,6 +29,9 @@ type (
 	// U 表示编码方法的类型；
 	Mimetypes[M any, U any] struct {
 		types []*Mimetype[M, U]
+
+		// 根据 types 生成的 Accept 报头
+		acceptHeader string
 	}
 )
 
@@ -59,6 +62,12 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 		Marshal:   m,
 		Unmarshal: u,
 	})
+
+	names := make([]string, 0, len(ms.types))
+	for _, item := range ms.types {
+		names = append(names, item.Name)
+	}
+	ms.acceptHeader = strings.Join(names, ",")
 }
 
 // ContentType 从请求端提交的 content-type 报头中获取解码和字符集函数
@@ -86,7 +95,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	return f, e, nil
 }
 
-// Accept 从当前请求的 accept 报头解析出所需要的解码函数
+// Accept 从请求端提交的 accept 报头解析出所需要的解码函数
 //
 // */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
 // xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
@@ -130,6 +139,9 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 }
 
 func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
-	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) })
+	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }
+
+// AcceptHeader 根据当前的内容生成 Accept 报头
+func (ms *Mimetypes[M, U]) AcceptHeader() string { return ms.acceptHeader }
