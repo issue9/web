@@ -56,7 +56,7 @@ type Context struct {
 	wrote          bool
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
-	// 如果是调用 Context.Write 输出内容，可以为空。
+	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
 	outputMimetype *mimetypes.Mimetype[MarshalFunc, UnmarshalFunc]
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
@@ -99,7 +99,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
-		srv.Logs().DEBUG().Printf(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
+		srv.Logs().DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -107,7 +107,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().DEBUG().Printf(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
+		srv.Logs().DEBUG().String(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -357,11 +357,8 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 func (ctx *Context) Logs() Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
-	h := strings.ToLower(ctx.Request().Header.Get("X-Requested-With"))
-	return h == "xmlhttprequest"
+	return strings.ToLower(ctx.Request().Header.Get("X-Requested-With")) == "xmlhttprequest"
 }
 
-// Unwrap 返回底层的 [http.ResponseWriter]
-//
-// [http.ResponseController] 可能要用到此方法。
+// Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }

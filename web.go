@@ -70,6 +70,4 @@ func NewLocaleError(format string, v ...any) error {
 // err 被包装的错误信息，如果所有错误都是空值，将会 panic；
 //
 // 此方法返回的错误，在 [Context.Error] 会被识别且按指定的状态码输出。
-func NewError(status int, err ...error) error {
-	return errs.NewError(status, err...)
-}
+func NewError(status int, err error) error { return errs.NewError(status, err) }

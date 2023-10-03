@@ -11,9 +11,7 @@ type HTTP struct {
 
 func (err *HTTP) Error() string { return err.Message.Error() }
 
-func NewError(status int, errs ...error) (err error) {
-	err = errors.Join(errs...)
-
+func NewError(status int, err error) error {
 	if err == nil {
 		panic("err 不能为空")
 	}

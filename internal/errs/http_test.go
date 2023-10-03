@@ -19,7 +19,7 @@ func TestHTTP(t *testing.T) {
 
 	err10 := &cerr{"err10"}
 	err11 := &cerr{"err11"}
-	err := NewError(http.StatusBadRequest, err10, err11)
+	err := NewError(http.StatusBadRequest, errors.Join(err10, err11))
 	a.NotNil(err).
 		ErrorIs(err, err10).
 		ErrorIs(err, err11)
