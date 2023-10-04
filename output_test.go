@@ -156,7 +156,7 @@ func TestContext_Render(t *testing.T) {
 	// outputMimetype == nil
 	buf.Reset()
 	r.Get("/p10", func(ctx *Context) Responser {
-		a.Nil(ctx.outputMimetype.Marshal).
+		a.Nil(ctx.outputMimetype.MarshalBuilder).
 			Equal(ctx.Mimetype(false), "nil").
 			Equal(ctx.Charset(), header.UTF8Name)
 		ctx.Render(http.StatusCreated, "val")

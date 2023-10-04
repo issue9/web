@@ -17,10 +17,10 @@ import (
 
 type (
 	Mimetype[M any, U any] struct {
-		Name      string
-		Problem   string
-		Marshal   M
-		Unmarshal U
+		Name           string
+		Problem        string
+		MarshalBuilder M
+		Unmarshal      U
 	}
 
 	// Mimetypes 提供对 mimetype 的管理
@@ -57,10 +57,10 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 	}
 
 	ms.types = append(ms.types, &Mimetype[M, U]{
-		Name:      name,
-		Problem:   problem,
-		Marshal:   m,
-		Unmarshal: u,
+		Name:           name,
+		Problem:        problem,
+		MarshalBuilder: m,
+		Unmarshal:      u,
 	})
 
 	names := make([]string, 0, len(ms.types))
@@ -83,7 +83,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	}
 	f := item.Unmarshal
 
-	if charset == "" || charset == "utf-8" {
+	if charset == "" || charset == header.UTF8Name {
 		return f, nil, nil
 	}
 	e, err := htmlindex.Get(charset)
@@ -136,6 +136,10 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 	default:
 		return ms.searchFunc(func(s string) bool { return s == name })
 	}
+}
+
+func (ms *Mimetypes[M, U]) Search(name string) *Mimetype[M, U] {
+	return ms.searchFunc(func(s string) bool { return s == name })
 }
 
 func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {

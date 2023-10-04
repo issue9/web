@@ -78,10 +78,10 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	}
 	if o.Mimetypes == nil {
 		o.Mimetypes = []*Mimetype{
-			{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
-			{Type: "application/xml", Marshal: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
-			{Type: "application/test", Marshal: marshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
-			{Type: "nil", Marshal: nil, Unmarshal: nil, ProblemType: ""},
+			{Type: "application/json", MarshalBuilder: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
+			{Type: "application/xml", MarshalBuilder: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
+			{Type: "application/test", MarshalBuilder: buildMarshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
+			{Type: "nil", MarshalBuilder: nil, Unmarshal: nil, ProblemType: ""},
 		}
 	}
 

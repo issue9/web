@@ -5,7 +5,6 @@ package web
 import (
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,27 +21,6 @@ import (
 )
 
 var _ http.ResponseWriter = &Context{}
-
-func marshalTest(_ *Context, v any) ([]byte, error) {
-	switch vv := v.(type) {
-	case error:
-		return nil, vv
-	default:
-		return nil, ErrUnsupportedSerialization()
-	}
-}
-
-func unmarshalTest(bs []byte, v any) error {
-	return ErrUnsupportedSerialization()
-}
-
-func marshalJSON(ctx *Context, obj any) ([]byte, error) {
-	return json.Marshal(obj)
-}
-
-func marshalXML(ctx *Context, obj any) ([]byte, error) {
-	return xml.Marshal(obj)
-}
 
 func TestContext_vars(t *testing.T) {
 	a := assert.New(t, false)

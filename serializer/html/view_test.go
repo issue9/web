@@ -21,9 +21,9 @@ func newServer(a *assert.Assertion, lang string) *web.Server {
 		Language:   language.MustParse(lang),
 		Mimetypes: []*web.Mimetype{
 			{
-				Type:      Mimetype,
-				Marshal:   Marshal,
-				Unmarshal: Unmarshal,
+				Type:           Mimetype,
+				MarshalBuilder: BuildMarshal,
+				Unmarshal:      Unmarshal,
 			},
 		},
 	})

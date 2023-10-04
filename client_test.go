@@ -24,12 +24,12 @@ func TestClient(t *testing.T) {
 	})
 
 	mts := []*Mimetype{
-		{Type: "application/json", Marshal: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
+		{Type: "application/json", MarshalBuilder: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
 	}
 	cps := []*Compress{
 		{Name: "gzip", Compressor: NewGzipCompress(3), Types: []string{"application/*"}},
 	}
-	c := NewClient("http://localhost:8080", "application/json", json.Marshal, mts, cps)
+	c := NewClient("http://localhost:8080", "application/json", mts, cps)
 	a.NotNil(c)
 
 	resp := &object{}
@@ -59,7 +59,7 @@ func TestServer_NewClient(t *testing.T) {
 	})
 
 	s2 := newTestServer(a, nil)
-	c := s2.NewClient("http://localhost:8080", "application/json", json.Marshal)
+	c := s2.NewClient("http://localhost:8080", "application/json")
 	a.NotNil(c)
 
 	resp := &object{}

@@ -5,6 +5,6 @@ package json
 import "github.com/issue9/web"
 
 var (
-	_ web.MarshalFunc   = Marshal
-	_ web.UnmarshalFunc = Unmarshal
+	_ web.BuildMarshalFunc = BuildMarshal
+	_ web.UnmarshalFunc    = Unmarshal
 )

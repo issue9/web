@@ -49,7 +49,7 @@ type Server struct {
 	closes []func() error
 
 	problems   *problems.Problems
-	mimetypes  *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+	mimetypes  *mimetypes.Mimetypes[BuildMarshalFunc, UnmarshalFunc] // https://github.com/golang/go/issues/50729
 	compresses *compress.Compresses
 	config     *config.Config
 }

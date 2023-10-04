@@ -18,8 +18,8 @@ import (
 var mimetypesFactory = map[string]serializerItem{}
 
 type serializerItem struct {
-	marshal   web.MarshalFunc
-	unmarshal web.UnmarshalFunc
+	marshalBuilder web.BuildMarshalFunc
+	unmarshal      web.UnmarshalFunc
 }
 
 type mimetypeConfig struct {
@@ -63,10 +63,10 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 		}
 
 		ms = append(ms, &web.Mimetype{
-			Marshal:     m.marshal,
-			Unmarshal:   m.unmarshal,
-			Type:        item.Type,
-			ProblemType: item.Problem,
+			MarshalBuilder: m.marshalBuilder,
+			Unmarshal:      m.unmarshal,
+			Type:           item.Type,
+			ProblemType:    item.Problem,
 		})
 	}
 	conf.mimetypes = ms
@@ -77,14 +77,14 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 // RegisterMimetype 注册用于序列化用户提交数据的方法
 //
 // name 为名称，如果存在同名，则会覆盖。
-func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
-	mimetypesFactory[name] = serializerItem{marshal: m, unmarshal: u}
+func RegisterMimetype(m web.BuildMarshalFunc, u web.UnmarshalFunc, name string) {
+	mimetypesFactory[name] = serializerItem{marshalBuilder: m, unmarshal: u}
 }
 
 func init() {
-	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
-	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
+	RegisterMimetype(json.BuildMarshal, json.Unmarshal, "json")
+	RegisterMimetype(xml.BuildMarshal, xml.Unmarshal, "xml")
 	RegisterMimetype(nil, nil, "nil")
-	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
-	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
+	RegisterMimetype(html.BuildMarshal, html.Unmarshal, "html")
+	RegisterMimetype(form.BuildMarshal, form.Unmarshal, "form")
 }

@@ -82,10 +82,10 @@ func (ctx *Context) Render(status int, body any) {
 
 // Marshal 将对象 v 按用户要求编码并返回
 func (ctx *Context) Marshal(v any) ([]byte, error) {
-	if ctx.outputMimetype.Marshal == nil { // 该值是可以为 nil 的，比如上传等操作。
+	if ctx.outputMimetype.MarshalBuilder == nil { // 该值是可以为 nil 的，比如上传等操作。
 		return nil, NewLocaleError("not found serialization for %s", ctx.Mimetype(false))
 	}
-	return ctx.outputMimetype.Marshal(ctx, v)
+	return ctx.outputMimetype.MarshalBuilder(ctx)(v)
 }
 
 // Wrote 是否已经有内容输出

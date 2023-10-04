@@ -101,25 +101,25 @@ func TestMimetypes_Accept(t *testing.T) {
 
 	item = mt.Accept(testMimetype)
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(xml.Marshal)).
+		Equal(item.MarshalBuilder, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype).
 		Equal(item.Problem, testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	item = mt.Accept("*/*")
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(xml.Marshal)).
+		Equal(item.MarshalBuilder, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
 	// 同 */*
 	item = mt.Accept("")
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(xml.Marshal)).
+		Equal(item.MarshalBuilder, marshalFunc(xml.Marshal)).
 		Equal(item.Name, testMimetype)
 
 	item = mt.Accept("*/*,text/plain")
 	a.NotNil(item).
-		Equal(item.Marshal, marshalFunc(json.Marshal)).
+		Equal(item.MarshalBuilder, marshalFunc(json.Marshal)).
 		Equal(item.Name, "text/plain").
 		Equal(item.Problem, "text/plain+problem")
 
@@ -133,7 +133,7 @@ func TestMimetypes_Accept(t *testing.T) {
 	item = mt.Accept("empty")
 	a.NotNil(item).
 		Equal(item.Name, "empty").
-		Nil(item.Marshal)
+		Nil(item.MarshalBuilder)
 }
 
 func TestMimetypes_findMarshal(t *testing.T) {

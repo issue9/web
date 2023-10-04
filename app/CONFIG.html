@@ -75,7 +75,7 @@
 <article></article>
 <table>
 	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
-	<tbody><tr><td>type</td><td>types</td><td>types</td><td>string</td><td>Type content-type 的值<br /><br />可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。<br /></td></tr><tr><td>id,attr</td><td>id</td><td>id</td><td>string</td><td>IDs 压缩方法的 ID 列表<br /><br />这些 ID 值必须是由 [RegisterEncoding] 注册的，否则无效，默认情况下支持以下类型：<br /> - deflate-default<br /> - deflate-best-compression<br /> - deflate-best-speed<br /> - gzip-default<br /> - gzip-best-compression<br /> - gzip-best-speed<br /> - compress-lsb-8<br /> - compress-msb-8<br /> - br-default<br /> - br-best-compression<br /> - br-best-speed<br /> - zstd-default<br /> - zstd-fastest<br /> - zstd-better<br /> - zstd-best<br /></td></tr></tbody></table><h2 id="mimetypeConfig">mimetypeConfig</h2>
+	<tbody><tr><td>type</td><td>types</td><td>types</td><td>string</td><td>Type content-type 的值<br /><br />可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。<br /></td></tr><tr><td>id,attr</td><td>id</td><td>id</td><td>string</td><td>IDs 压缩方法的 ID 列表<br /><br />这些 ID 值必须是由 [RegisterCompress] 注册的，否则无效，默认情况下支持以下类型：<br /> - deflate-default<br /> - deflate-best-compression<br /> - deflate-best-speed<br /> - gzip-default<br /> - gzip-best-compression<br /> - gzip-best-speed<br /> - compress-lsb-8<br /> - compress-msb-8<br /> - br-default<br /> - br-best-compression<br /> - br-best-speed<br /> - zstd-default<br /></td></tr></tbody></table><h2 id="mimetypeConfig">mimetypeConfig</h2>
 <article></article>
 <table>
 	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>

@@ -104,7 +104,7 @@ type (
 		//
 		// 默认为空。
 		Mimetypes []*Mimetype
-		mimetypes *mimetypes.Mimetypes[MarshalFunc, UnmarshalFunc]
+		mimetypes *mtsType
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
@@ -127,8 +127,8 @@ type (
 		// 可以为空，表示与 Type 相同。
 		ProblemType string
 
-		// 编码方法
-		Marshal MarshalFunc
+		// 生成编码方法
+		MarshalBuilder BuildMarshalFunc
 
 		// 解码方法
 		Unmarshal UnmarshalFunc
@@ -231,9 +231,9 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if len(indexes) > 0 {
 		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
 	}
-	o.mimetypes = mimetypes.New[MarshalFunc, UnmarshalFunc](len(o.Mimetypes))
+	o.mimetypes = mimetypes.New[BuildMarshalFunc, UnmarshalFunc](len(o.Mimetypes))
 	for _, mt := range o.Mimetypes {
-		o.mimetypes.Add(mt.Type, mt.Marshal, mt.Unmarshal, mt.ProblemType)
+		o.mimetypes.Add(mt.Type, mt.MarshalBuilder, mt.Unmarshal, mt.ProblemType)
 	}
 
 	o.problems = problems.New(o.ProblemTypePrefix)

@@ -60,28 +60,30 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// Marshal 针对 www-form-urlencoded 内容的解码实现
+// BuildMarshal 针对 www-form-urlencoded 内容的解码实现
 //
 // 按以下顺序解析内容：
 //   - 如果实现 [Marshaler] 接口，则调用该接口；
 //   - 如果实现 [encoding.TextMarshaler] 接口，则调用该接口；
 //   - 如果是 [url.Values] 对象，则调用其方法 Encode 解析；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func Marshal(_ *web.Context, v any) ([]byte, error) {
-	if m, ok := v.(Marshaler); ok {
-		return m.MarshalForm()
-	}
+func BuildMarshal(_ *web.Context) web.MarshalFunc {
+	return func(v any) ([]byte, error) {
+		if m, ok := v.(Marshaler); ok {
+			return m.MarshalForm()
+		}
 
-	if vals, ok := v.(url.Values); ok {
+		if vals, ok := v.(url.Values); ok {
+			return []byte(vals.Encode()), nil
+		}
+
+		vals, err := marshal(v)
+		if err != nil {
+			return nil, err
+		}
+
 		return []byte(vals.Encode()), nil
 	}
-
-	vals, err := marshal(v)
-	if err != nil {
-		return nil, err
-	}
-
-	return []byte(vals.Encode()), nil
 }
 
 // Unmarshal 针对 www-form-urlencoded 内容的编码实现

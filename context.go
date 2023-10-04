@@ -17,7 +17,6 @@ import (
 
 	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/logs"
 )
 
@@ -28,8 +27,6 @@ var contextPool = &sync.Pool{
 		return &Context{exits: make([]func(*Context, int), 0, 5)}
 	},
 }
-
-var errUnsupportedSerialization = NewLocaleError("unsupported serialization")
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
@@ -57,7 +54,7 @@ type Context struct {
 
 	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype *mimetypes.Mimetype[MarshalFunc, UnmarshalFunc]
+	outputMimetype *mtType
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc     // 可以为空
@@ -77,17 +74,6 @@ type Context struct {
 
 	logs Logs
 }
-
-// MarshalFunc 序列化函数原型
-//
-// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
-type MarshalFunc func(*Context, any) ([]byte, error)
-
-// UnmarshalFunc 反序列化函数原型
-type UnmarshalFunc func([]byte, any) error
-
-// ErrUnsupported 返回不支持序列化的错误信息
-func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
