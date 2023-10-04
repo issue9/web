@@ -52,17 +52,16 @@ func ParseQHeader(header string, any string) (items []*Item) {
 			continue
 		}
 
-		v, p := ParseWithParam(h, "q")
 		q := 1.0
 		var err error
+		v, p := ParseWithParam(h, "q")
 		if p != "" {
 			q, err = strconv.ParseFloat(p, 32)
-			if err != nil {
-				q = 0
-			}
 		}
 
 		count++
+
+		// NOTE: 从 pool 取得的值，需要全部覆盖。
 		item := items[index]
 		item.Value = v
 		item.Q = float32(q)

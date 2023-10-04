@@ -11,6 +11,77 @@ import (
 	"github.com/issue9/assert/v3"
 )
 
+func BenchmarkCompresses_ContentEncoding(b *testing.B) {
+	b.Run("1", func(b *testing.B) {
+		a := assert.New(b, false)
+
+		c := NewCompresses(1, false).Add("gzip", NewGzipCompress(3), "application/*")
+		for i := 0; i < b.N; i++ {
+			r := bytes.NewBuffer(gzipInitData)
+			_, err := c.ContentEncoding("gzip", r)
+			a.NotError(err)
+		}
+	})
+
+	b.Run("5", func(b *testing.B) {
+		a := assert.New(b, false)
+
+		c := NewCompresses(5, false).
+			Add("gzip", NewGzipCompress(3), "application/*").
+			Add("br", NewBrotliCompress(brotli.WriterOptions{}), "text/*").
+			Add("deflate", NewDeflateCompress(3, nil), "image/*").
+			Add("zstd", NewZstdCompress(), "text/html").
+			Add("compress", NewLZWCompress(lzw.LSB, 8), "text/plain")
+
+		for i := 0; i < b.N; i++ {
+			r := bytes.NewBuffer(gzipInitData)
+			_, err := c.ContentEncoding("gzip", r)
+			a.NotError(err)
+		}
+	})
+}
+
+func BenchmarkCompresses_AcceptEncoding(b *testing.B) {
+	b.Run("1", func(b *testing.B) {
+		a := assert.New(b, false)
+
+		c := NewCompresses(1, false).Add("gzip", NewGzipCompress(3), "application/*")
+		for i := 0; i < b.N; i++ {
+			_, na := c.AcceptEncoding("application/json", "gzip", nil)
+			a.False(na)
+		}
+	})
+
+	b.Run("5", func(b *testing.B) {
+		a := assert.New(b, false)
+
+		c := NewCompresses(5, false).
+			Add("gzip", NewGzipCompress(3), "application/*").
+			Add("br", NewBrotliCompress(brotli.WriterOptions{}), "text/*").
+			Add("deflate", NewDeflateCompress(3, nil), "image/*").
+			Add("zstd", NewZstdCompress(), "text/html").
+			Add("compress", NewLZWCompress(lzw.LSB, 8), "text/plain")
+
+		for i := 0; i < b.N; i++ {
+			_, na := c.AcceptEncoding("text/plain", "compress", nil)
+			a.False(na)
+		}
+	})
+}
+
+func BenchmarkCompresses_getMatchCompresses(b *testing.B) {
+	c := NewCompresses(5, false).
+		Add("gzip", NewGzipCompress(3), "application/*").
+		Add("br", NewBrotliCompress(brotli.WriterOptions{}), "text/*").
+		Add("deflate", NewDeflateCompress(3, nil), "image/*").
+		Add("zstd", NewZstdCompress(), "text/html").
+		Add("compress", NewLZWCompress(lzw.LSB, 8), "text/plain")
+
+	for i := 0; i < b.N; i++ {
+		c.getMatchCompresses("text/plan")
+	}
+}
+
 func BenchmarkGzip_Encoder(b *testing.B) {
 	b.Run("gzip", func(b *testing.B) {
 		benchCompressEncoder(b, NewGzipCompress(3))
