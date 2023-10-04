@@ -28,19 +28,18 @@ func NewCompresses(cap int, disable bool) *Compresses {
 	}
 }
 
-// ContentEncoding 根据 ContentEncoding 报头返回相应的解码对象
+// ContentEncoding 根据 Content-Encoding 报头返回相应的解码对象
 //
 // name 编码名称，即 Content-Encoding 报头内容；
 // r 为未解码的内容；
 func (e *Compresses) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
-	c, found := sliceutil.At(e.compresses, func(item *NamedCompress, _ int) bool { return item.Name() == name })
-	if !found {
-		return nil, localeutil.Error("not found compress for %s", name)
+	if c, f := sliceutil.At(e.compresses, func(item *NamedCompress, _ int) bool { return item.Name() == name }); f {
+		return c.Compress().Decoder(r)
 	}
-	return c.Compress().Decoder(r)
+	return nil, localeutil.Error("not found compress for %s", name)
 }
 
-// AcceptEncoding 根据客户端的 AcceptEncoding 报头查找最合适的算法
+// AcceptEncoding 根据客户端的 Accept-Encoding 报头查找最合适的算法
 //
 // 如果返回的 w 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
@@ -56,8 +55,8 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 		return
 	}
 
-	cs := e.getMatchCompresses(contentType)
-	if len(cs) == 0 {
+	indexes := e.getMatchCompresses(contentType)
+	if len(indexes) == 0 {
 		return
 	}
 
@@ -66,12 +65,10 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 			return nil, true
 		}
 
-		for _, p := range cs {
-			exists := sliceutil.Exists(accepts, func(e *header.Item, _ int) bool {
-				return e.Value == p.name
-			})
-			if !exists {
-				return p, false
+		for _, index := range indexes {
+			curr := e.compresses[index]
+			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.name }) {
+				return curr, false
 			}
 		}
 		return
@@ -88,41 +85,40 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 			identity = accept
 		}
 
-		for _, a := range cs {
-			if a.name == accept.Value {
-				return a, false
+		for _, index := range indexes {
+			if curr := e.compresses[index]; curr.name == accept.Value {
+				return curr, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		a := cs[0]
-		return a, false
+		return e.compresses[indexes[0]], false
 	}
 
 	return // 没有匹配，表示不需要进行压缩
 }
 
-func (e *Compresses) getMatchCompresses(contentType string) []*NamedCompress {
-	cs := make([]*NamedCompress, 0, len(e.compresses))
+func (e *Compresses) getMatchCompresses(contentType string) []int {
+	indexes := make([]int, 0, len(e.compresses))
 
 LOOP:
-	for _, c := range e.compresses {
+	for index, c := range e.compresses {
 		for _, s := range c.allowTypes {
 			if s == contentType {
-				cs = append(cs, c)
+				indexes = append(indexes, index)
 				continue LOOP
 			}
 		}
 
 		for _, p := range c.allowTypesPrefix {
 			if strings.HasPrefix(contentType, p) {
-				cs = append(cs, c)
+				indexes = append(indexes, index)
 				continue LOOP
 			}
 		}
 	}
 
-	return cs
+	return indexes
 }
 
 // AcceptEncodingHeader 生成 AcceptEncoding 报头内容

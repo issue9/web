@@ -20,7 +20,6 @@ var (
 	encoderPool = &sync.Pool{New: func() any { return &encoder{} }}
 
 	// zstd
-
 	zstdReaders = &sync.Pool{New: func() any {
 		r, err := zstd.NewReader(bytes.NewReader(zstdInitData))
 		if err != nil {
