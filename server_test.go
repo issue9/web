@@ -16,7 +16,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
@@ -71,10 +70,7 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 		}
 	}
 	if o.Compresses == nil {
-		o.Compresses = []*Compress{
-			{Name: "gzip", Compressor: compress.NewGzipCompress(8)},
-			{Name: "deflate", Compressor: compress.NewDeflateCompress(8, nil)},
-		}
+		o.Compresses = AllCompresses()
 	}
 	if o.Mimetypes == nil {
 		o.Mimetypes = []*Mimetype{

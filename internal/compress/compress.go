@@ -15,6 +15,8 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
+const Identity = "identity"
+
 var (
 	decoderPool = &sync.Pool{New: func() any { return &decoder{} }}
 	encoderPool = &sync.Pool{New: func() any { return &encoder{} }}

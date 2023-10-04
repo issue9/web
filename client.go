@@ -19,14 +19,13 @@ import (
 
 // Client 用于访问远程的客户端
 type Client struct {
-	mts    *mtsType
-	url    string
-	client *http.Client
+	url        string
+	client     *http.Client
+	compresses *compress.Compresses
 
+	mts         *mtsType
 	marshal     func(any) ([]byte, error)
 	marshalName string
-
-	compresses *compress.Compresses
 }
 
 // NewClient 创建 Client 实例
@@ -72,14 +71,13 @@ func newClient(url, marshalName string, m *mtsType, c *compress.Compresses) *Cli
 	}
 
 	return &Client{
-		mts:    m,
-		url:    url,
-		client: &http.Client{},
+		url:        url,
+		client:     &http.Client{},
+		compresses: c,
 
+		mts:         m,
 		marshal:     marshal,
 		marshalName: marshalName,
-
-		compresses: c,
 	}
 }
 

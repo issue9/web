@@ -3,6 +3,8 @@
 package web
 
 import (
+	"compress/flate"
+	"compress/gzip"
 	"compress/lzw"
 	"net/http"
 	"strconv"
@@ -242,7 +244,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 }
 
 func (e *Compress) sanitize() *FieldError {
-	if e.Name == "" || e.Name == "identity" || e.Name == "*" {
+	if e.Name == "" || e.Name == compress.Identity || e.Name == "*" {
 		return config.NewFieldError("Name", locales.InvalidValue)
 	}
 
@@ -288,4 +290,17 @@ func NewGzipCompress(level int) Compressor { return compress.NewGzipCompress(lev
 // NewDeflateCompress 声明基于 deflate 的压缩算法
 func NewDeflateCompress(level int, dict []byte) Compressor {
 	return compress.NewDeflateCompress(level, dict)
+}
+
+// AllCompresses 所有内置的压缩算法
+//
+// 可直接供 [Options.Compresses] 使用。
+func AllCompresses() []*Compress {
+	return []*Compress{
+		{Name: "gzip", Compressor: NewGzipCompress(gzip.DefaultCompression)},
+		{Name: "deflate", Compressor: NewDeflateCompress(flate.DefaultCompression, nil)},
+		{Name: "compress", Compressor: NewLZWCompress(lzw.LSB, 8)},
+		{Name: "br", Compressor: NewBrotliCompress(brotli.WriterOptions{})},
+		{Name: "zstd", Compressor: NewZstdCompress()},
+	}
 }

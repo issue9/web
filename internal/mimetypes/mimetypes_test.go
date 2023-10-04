@@ -33,6 +33,10 @@ func TestMimetypes_Add(t *testing.T) {
 	a.True(mt.exists(testMimetype)).
 		Equal(mt.AcceptHeader(), testMimetype+",application/json")
 
+	mt.Add("application/xml", nil, nil, "application/problem+json")
+	a.True(mt.exists(testMimetype)).
+		Equal(mt.AcceptHeader(), testMimetype+",application/json")
+
 	a.Panic(func() {
 		mt.Add(testMimetype, json.Marshal, json.Unmarshal, "")
 	}, "已经存在同名 application/octet-stream 的编码方法")

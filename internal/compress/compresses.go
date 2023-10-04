@@ -81,7 +81,7 @@ func (e *Compresses) AcceptEncoding(contentType, h string, l logs.Logger) (w *Na
 			continue
 		}
 
-		if accept.Value == "identity" { // 除非 q=0，否则表示总是可以被接受
+		if accept.Value == Identity { // 除非 q=0，否则表示总是可以被接受
 			identity = accept
 		}
 

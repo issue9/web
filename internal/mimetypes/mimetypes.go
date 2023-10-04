@@ -5,6 +5,7 @@ package mimetypes
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/issue9/localeutil"
@@ -65,7 +66,9 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 
 	names := make([]string, 0, len(ms.types))
 	for _, item := range ms.types {
-		names = append(names, item.Name)
+		if !reflect.ValueOf(item.Unmarshal).IsZero() {
+			names = append(names, item.Name)
+		}
 	}
 	ms.acceptHeader = strings.Join(names, ",")
 }
