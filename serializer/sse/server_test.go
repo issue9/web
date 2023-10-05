@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
-func TestSSE(t *testing.T) {
+func TestServer(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
@@ -32,7 +32,7 @@ func TestSSE(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(s)
-	e := New[int64](s, http.StatusCreated, time.Minute, time.Minute)
+	e := NewServer[int64](s, time.Minute, time.Minute)
 	a.NotNil(e)
 	s.NewRouter("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
@@ -42,11 +42,14 @@ func TestSSE(t *testing.T) {
 
 		a.Equal(0, e.Len())
 
-		s, wait := e.NewSource(id, ctx)
-		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1", 50)
+		s, wait := e.NewSource(id, ctx, 50*time.Millisecond)
+		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
-		s.Sent([]string{"msg", strconv.FormatInt(id, 10)}, "event", "2", 0)
-		s.Sent([]string{"msg", strconv.FormatInt(id, 10)}, "event", "2", 0)
+
+		event := s.NewEvent("event", json.BuildMarshal(nil))
+		event.Sent(1)
+		time.Sleep(time.Microsecond * 500)
+		event.Sent(&struct{ ID int }{ID: 5})
 
 		a.Equal(1, e.Len())
 		wait()
@@ -66,21 +69,19 @@ func TestSSE(t *testing.T) {
 		Header("accept", "application/json").
 		Header("accept-encoding", "").
 		Do(nil).
-		Status(http.StatusCreated).
+		Status(http.StatusOK).
 		StringBody(`data: connect
 data: 5
 id: 1
 retry: 50
 
-data: msg
-data: 5
+data: 1
 event: event
-id: 2
+retry: 50
 
-data: msg
-data: 5
+data: {"ID":5}
 event: event
-id: 2
+retry: 50
 
 `)
 }
