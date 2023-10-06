@@ -3,10 +3,8 @@
 package sse
 
 import (
-	"bytes"
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -14,10 +12,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 )
-
-const bufMaxSize = 1024
-
-var bufPool = &sync.Pool{New: func() any { return &bytes.Buffer{} }}
 
 // Server SSE 服务端
 //
@@ -165,39 +159,14 @@ func (s *Source) connect(ctx *web.Context) {
 // id 和 event都可以为空，表示不需要这些值；
 // 如果不想输出 retry 可以输出一个非整数，按照规则客户端会忽略非整数的值；
 func (s *Source) Sent(data []string, event, id string) {
-	w := bufPool.Get().(*bytes.Buffer)
-	w.Reset()
-
-	for _, line := range data {
-		w.WriteString("data: ")
-		w.WriteString(line)
-		w.WriteByte('\n')
-	}
-	if event != "" {
-		w.WriteString("event: ")
-		w.WriteString(event)
-		w.WriteByte('\n')
-	}
-	if id != "" {
-		w.WriteString("id: ")
-		w.WriteString(id)
-		w.WriteByte('\n')
-	}
-
-	if s.retry > 0 {
-		w.WriteString("retry: ")
-		w.WriteString(strconv.FormatInt(s.retry, 10))
-		w.WriteByte('\n')
-	}
-	w.WriteByte('\n')
-
-	s.SentRaw(w.Bytes())
-
-	if w.Cap() < bufMaxSize {
-		bufPool.Put(w)
-	}
+	m := newMessage(data, event, id, s.retry)
+	defer messagePool.Put(m)
+	s.SentRaw(m.bytes())
 }
 
+// SentRaw 发送原始的数据内容
+//
+// NOTE: 如果有发送注释的情况，只能通过此方法。
 func (s *Source) SentRaw(data []byte) { s.data <- data }
 
 // 关闭当前事件源
