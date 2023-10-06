@@ -30,10 +30,11 @@ type Client struct {
 
 // NewClient 创建 Client 实例
 //
+// client 要以为空，表示采用 &http.Client{} 作为默认值；
 // url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
 // marshal 对输入数据的编码方式；
 // mt 所有返回数据可用的解码方式；
-func NewClient(url, marshalName string, mt []*Mimetype, compresses []*Compress) *Client {
+func NewClient(client *http.Client, url, marshalName string, mt []*Mimetype, compresses []*Compress) *Client {
 	mts := mimetypes.New[BuildMarshalFunc, UnmarshalFunc](len(mt))
 	for _, m := range mt {
 		mts.Add(m.Type, m.MarshalBuilder, m.Unmarshal, m.ProblemType)
@@ -47,17 +48,21 @@ func NewClient(url, marshalName string, mt []*Mimetype, compresses []*Compress) 
 		c.Add(e.Name, e.Compressor, e.Types...)
 	}
 
-	return newClient(url, marshalName, mts, c)
+	return newClient(client, url, marshalName, mts, c)
 }
 
 // NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
 //
 // 参数可参考 [NewClient]。
-func (srv *Server) NewClient(url, marshalName string) *Client {
-	return newClient(url, marshalName, srv.mimetypes, srv.compresses)
+func (srv *Server) NewClient(client *http.Client, url, marshalName string) *Client {
+	return newClient(client, url, marshalName, srv.mimetypes, srv.compresses)
 }
 
-func newClient(url, marshalName string, m *mtsType, c *compress.Compresses) *Client {
+func newClient(client *http.Client, url, marshalName string, m *mtsType, c *compress.Compresses) *Client {
+	if client == nil {
+		client = &http.Client{}
+	}
+
 	if l := len(url); l > 0 && url[l-1] == '/' {
 		url = url[:l-1]
 	}
@@ -72,7 +77,7 @@ func newClient(url, marshalName string, m *mtsType, c *compress.Compresses) *Cli
 
 	return &Client{
 		url:        url,
-		client:     &http.Client{},
+		client:     client,
 		compresses: c,
 
 		mts:         m,
@@ -107,12 +112,12 @@ func (c *Client) Patch(path string, req, resp any, problem *RFC7807) error {
 // resp 为返回的数据的写入对象，必须是指针类型；
 // problem 为返回出错时的写入对象；
 // 非 HTTP 状态码错误返回 err；
-func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) (err error) {
+func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error {
 	r, err := c.NewRequest(method, path, req)
 	if err != nil {
 		return err
 	}
-	rsp, err := c.client.Do(r)
+	rsp, err := c.Client().Do(r)
 	if err != nil {
 		return err
 	}
@@ -126,7 +131,7 @@ func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) (err e
 // 其它情况下返回错误信息。
 func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
 	var size int
-	if h := rsp.Header.Get("Content-Length"); h != "" {
+	if h := rsp.Header.Get(header.ContentLength); h != "" {
 		if h == "0" {
 			return nil
 		}
@@ -207,3 +212,5 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 
 // URL 生成一条访问地址
 func (c *Client) URL(path string) string { return c.url + path }
+
+func (c *Client) Client() *http.Client { return c.client }
