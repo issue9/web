@@ -160,7 +160,7 @@ func (s *Source) connect(ctx *web.Context) {
 // 如果不想输出 retry 可以输出一个非整数，按照规则客户端会忽略非整数的值；
 func (s *Source) Sent(data []string, event, id string) {
 	m := newMessage(data, event, id, s.retry)
-	defer messagePool.Put(m)
+	defer m.Destory()
 	s.SentRaw(m.bytes())
 }
 

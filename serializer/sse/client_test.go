@@ -3,6 +3,7 @@
 package sse
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strconv"
@@ -17,12 +18,13 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
-func TestServer(t *testing.T) {
+func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := web.NewServer("test", "1.0.0", &web.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*web.Mimetype{
 			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
+			{Type: Mimetype, MarshalBuilder: nil, Unmarshal: nil},
 		},
 		Logs: &logs.Options{
 			Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil),
@@ -57,31 +59,18 @@ func TestServer(t *testing.T) {
 	})
 
 	defer servertest.Run(a, s)()
-	a.Equal(0, e.Len())
+	defer s.Close(500 * time.Millisecond)
 
-	time.AfterFunc(500*time.Millisecond, func() {
-		a.Nil(e.Get(100))
-		a.NotNil(e.Get(5)) // 需要有人访问 /events/{id} 之后才有值
-		s.Close(500 * time.Millisecond)
-	})
+	// message
 
-	servertest.Get(a, "http://localhost:8080/event/5").
-		Header("accept", "application/json").
-		Header("accept-encoding", "").
-		Do(nil).
-		Status(http.StatusOK).
-		StringBody(`data:connect
-data:5
-id:1
-retry:50
+	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/event/5", nil)
+	a.NotError(err).NotNil(req)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	msg, err := OnMessage(ctx, s.Logs().ERROR(), req, nil)
+	a.NotError(err).NotNil(msg)
 
-data:1
-event:event
-retry:50
-
-data:{"ID":5}
-event:event
-retry:50
-
-`)
+	a.Equal(<-msg, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50})
+	a.Equal(<-msg, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
+	a.Equal(<-msg, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
 }

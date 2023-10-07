@@ -27,6 +27,9 @@ messages:
     - key: invalid cache key
       message:
         msg: invalid cache key
+    - key: invalid sse format %s
+      message:
+        msg: invalid sse format %s
     - key: invalid value
       message:
         msg: invalid value

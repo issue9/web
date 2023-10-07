@@ -27,6 +27,9 @@ messages:
     - key: invalid cache key
       message:
         msg: 缓存的 key 不符合要求
+    - key: invalid sse format %s
+      message:
+        msg: '无效的 SSE 格式: %s'
     - key: invalid value
       message:
         msg: 无效的值
