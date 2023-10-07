@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
-	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/locale"
@@ -74,9 +73,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					return err
 				}
 
-				srcMsg.MergeTo(func(tag language.Tag, key string) {
-					log.WARN().Printf(web.Phrase("the key %s of %s not found, will be deleted", key, tag).LocaleString(p))
-				}, []*message.Language{dest})
+				srcMsg.MergeTo(p, log.WARN().String, []*message.Language{dest})
 
 				m, _, err := locale.GetMarshalByExt(ext)
 				if err != nil {

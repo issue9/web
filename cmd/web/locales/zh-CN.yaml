@@ -246,9 +246,6 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
-    - key: the key %s of %s not found, will be deleted
-      message:
-        msg: 语言 %[2]s 的 %[1]s 未找到, 将被删除
     - key: unknown tag %s
       message:
         msg: 未知的标签 %s 将被忽略

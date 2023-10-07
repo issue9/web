@@ -87,7 +87,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Root:          dir,
 					Recursive:     *r,
 					SkipSubModule: *skip,
-					Log:           log.ERROR(),
+					Log:           log.ERROR().String,
 					Funcs:         strings.Split(*funcs, ","),
 				}
 				lang, err := extract.Extract(ctx, p, opt)

@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
+	ll "github.com/issue9/localeutil/locales"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
 	wl "github.com/issue9/web/locales"
@@ -112,7 +113,13 @@ func newPrinter() (*localeutil.Printer, error) {
 		return nil, err
 	}
 
+	lLocales, err := serialize.LoadFSGlob(ll.Locales, "*.yaml", yaml.Unmarshal)
+	if err != nil {
+		return nil, err
+	}
+
 	ls = append(ls, webLocales...)
+	ls = append(ls, lLocales...)
 
 	b := catalog.NewBuilder()
 	for _, l := range ls {

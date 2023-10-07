@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 //go:generate web locale -l=und -m -f=yaml ./
-//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-Hans.yaml
+//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-CN.yaml
 //go:generate go run ./make_problems.go
 
 // Package web 通用的 web 开发框架

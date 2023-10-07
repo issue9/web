@@ -164,9 +164,6 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
-    - key: the key %s of %s not found, will be deleted
-      message:
-        msg: the key %s of %s not found, will be deleted
     - key: unknown tag %s
       message:
         msg: unknown tag %s
