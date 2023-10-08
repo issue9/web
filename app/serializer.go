@@ -45,8 +45,8 @@ func RegisterFileSerializer(m MarshalFileFunc, u UnmarshalFileFunc, ext ...strin
 	}
 }
 
-func loadConfigOf[T any](configDir string, name string) (*configOf[T], error) {
-	c, err := buildConfig(configDir)
+func loadConfigOf[T any](configDir, name string) (*configOf[T], error) {
+	c, err := config.BuildDir(buildSerializerFromFactory(), configDir)
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +60,12 @@ func loadConfigOf[T any](configDir string, name string) (*configOf[T], error) {
 	return conf, nil
 }
 
-func buildConfig(dir string) (*config.Config, error) {
+func buildSerializerFromFactory() config.Serializer {
 	s := make(config.Serializer, len(filesFactory))
 	for ext, item := range filesFactory {
 		s.Add(item.Marshal, item.Unmarshal, ext)
 	}
-
-	return config.BuildDir(s, dir)
+	return s
 }
 
 func init() {

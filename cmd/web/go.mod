@@ -7,7 +7,7 @@ require (
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.22.0
+	github.com/issue9/localeutil v0.22.1
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.6.2
 	github.com/issue9/term/v3 v3.2.2
@@ -29,7 +29,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
-	github.com/issue9/config v0.4.0 // indirect
+	github.com/issue9/config v0.5.1 // indirect
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/logs/v5 v5.2.0 // indirect

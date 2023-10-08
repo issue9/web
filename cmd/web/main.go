@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-//go:generate web locale -l=en-US -f=yaml ./
-//go:generate web update-locale -src=./locales/en-US.yaml -dest=./locales/zh-CN.yaml
+//go:generate web locale -l=und -f=yaml ./
+//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-CN.yaml
 
 package main
 
@@ -9,12 +9,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"runtime"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
-	ll "github.com/issue9/localeutil/locales"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
 	wl "github.com/issue9/web/locales"
@@ -103,27 +103,15 @@ func newPrinter() (*localeutil.Printer, error) {
 		fmt.Println(err)
 	}
 
-	ls, err := serialize.LoadFSGlob(locales.Locales, "*.yaml", yaml.Unmarshal)
+	fsys := append([]fs.FS{locales.Locales}, wl.All()...)
+	langs, err := serialize.LoadFSGlob(func(string) serialize.UnmarshalFunc { return yaml.Unmarshal }, "*.yaml", fsys...)
 	if err != nil {
 		return nil, err
 	}
-
-	webLocales, err := serialize.LoadFSGlob(wl.Locales, "*.yaml", yaml.Unmarshal)
-	if err != nil {
-		return nil, err
-	}
-
-	lLocales, err := serialize.LoadFSGlob(ll.Locales, "*.yaml", yaml.Unmarshal)
-	if err != nil {
-		return nil, err
-	}
-
-	ls = append(ls, webLocales...)
-	ls = append(ls, lLocales...)
 
 	b := catalog.NewBuilder(catalog.Fallback(tag))
-	for _, l := range ls {
-		if err = l.Catalog(b); err != nil {
+	for _, lang := range langs {
+		if err := lang.Catalog(b); err != nil {
 			return nil, err
 		}
 	}

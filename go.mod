@@ -4,10 +4,10 @@ require (
 	github.com/andybalholm/brotli v1.0.5
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/issue9/assert/v3 v3.1.0
-	github.com/issue9/config v0.4.0
+	github.com/issue9/config v0.5.1
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/localeutil v0.22.0
+	github.com/issue9/localeutil v0.22.1
 	github.com/issue9/logs/v5 v5.2.0
 	github.com/issue9/mux/v7 v7.3.1
 	github.com/issue9/query/v3 v3.1.2

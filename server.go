@@ -50,7 +50,7 @@ type Server struct {
 	closes []func() error
 
 	problems   *problems.Problems
-	mimetypes  *mimetypes.Mimetypes[BuildMarshalFunc, UnmarshalFunc] // https://github.com/golang/go/issues/50729
+	mimetypes  *mimetypes.Mimetypes[BuildMarshalFunc, UnmarshalFunc] // 不能是 *mtsType，https://github.com/golang/go/issues/50729
 	compresses *compress.Compresses
 	config     *config.Config
 }
@@ -233,15 +233,8 @@ func (srv *Server) LocalePrinter() *message.Printer { return srv.printer }
 func (srv *Server) Language() language.Tag { return srv.tag }
 
 // LoadLocale 从文件系统中加载本地化内容
-func (srv *Server) LoadLocale(fsys fs.FS, glob string) error {
-	if fsys == nil {
-		fsys = srv.Config()
-	}
-	return locale.Load(srv.Config().Serializer(), srv.Catalog(), fsys, glob)
-}
-
-func (srv *Server) LoadLocaleGlob(glob string) error {
-	return locale.LoadGlob(srv.Config().Serializer(), srv.Catalog(), glob)
+func (srv *Server) LoadLocale(glob string, fsys ...fs.FS) error {
+	return locale.Load(srv.Config().Serializer(), srv.Catalog(), glob, fsys...)
 }
 
 func (srv *Server) DisableCompress(disable bool) { srv.compresses.SetDisable(disable) }

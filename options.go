@@ -42,7 +42,7 @@ type (
 		// 项目的配置项
 		//
 		// 如果涉及到需要读取配置文件的，可以指定此对象，之后可通过此对象统一处理各类配置文件。
-		// 如果为空，则会采用 config.AppDir(DefaultConfigDir) 进行初始化。
+		// 如果为空，则会采用 config.BuildDir(DefaultConfigDir) 进行初始化。
 		Config *config.Config
 
 		// 服务器的时区

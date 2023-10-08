@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message"
@@ -232,13 +231,8 @@ func NewPrinter(fsys fs.FS, glob string) (*message.Printer, error) {
 		log.Println(err) // 输出错误，但是不中断执行
 	}
 
-	s := make(config.Serializer, len(filesFactory))
-	for k, v := range filesFactory {
-		s.Add(v.Marshal, v.Unmarshal, k)
-	}
-
 	b := catalog.NewBuilder(catalog.Fallback(tag))
-	if err := locale.Load(s, b, fsys, glob); err != nil {
+	if err := locale.Load(buildSerializerFromFactory(), b, glob, fsys); err != nil {
 		return nil, err
 	}
 

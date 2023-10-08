@@ -11,15 +11,15 @@ type (
 	//
 	// 如果传递的参数是空值，应该返回一个默认的 [MarshalFunc] 实现，
 	// 该实现将被用于 [Client] 的相关功能。
-	BuildMarshalFunc func(*Context) MarshalFunc
+	BuildMarshalFunc func(*Context) MarshalFunc // 不能是 alias，// https://github.com/golang/go/issues/50729
 
 	// MarshalFunc 序列化函数原型
 	//
 	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
-	MarshalFunc func(any) ([]byte, error)
+	MarshalFunc = func(any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
-	UnmarshalFunc func([]byte, any) error
+	UnmarshalFunc = func([]byte, any) error
 
 	mtsType = mimetypes.Mimetypes[BuildMarshalFunc, UnmarshalFunc]
 
