@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
@@ -186,7 +185,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) {
 		sliceutil.Reverse(srv.closes)
 		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
-				srv.Logs().ERROR().String(localeutil.ErrorAsLocaleString(err1, srv.LocalePrinter()))
+				srv.Logs().ERROR().Error(err1)
 			}
 		}
 
@@ -196,7 +195,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) {
 
 	if shutdownTimeout == 0 {
 		if err := srv.httpServer.Close(); err != nil {
-			srv.Logs().ERROR().String(localeutil.ErrorAsLocaleString(err, srv.LocalePrinter()))
+			srv.Logs().ERROR().Error(err)
 		}
 		return
 	}
@@ -204,7 +203,7 @@ func (srv *Server) Close(shutdownTimeout time.Duration) {
 	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
-		srv.Logs().ERROR().String(localeutil.ErrorAsLocaleString(err, srv.LocalePrinter()))
+		srv.Logs().ERROR().Error(err)
 	}
 }
 
