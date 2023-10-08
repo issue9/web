@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/internal/problems"
 )
 
 // Client 用于访问远程的客户端
@@ -32,8 +33,8 @@ type Client struct {
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
 // url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
-// marshal 对输入数据的编码方式；
-// mt 所有返回数据可用的解码方式；
+// marshalName 对输入数据的编码方式，从 mt 中查找；
+// mt 所有可用的解码方式；
 func NewClient(client *http.Client, url, marshalName string, mt []*Mimetype, compresses []*Compress) *Client {
 	mts := mimetypes.New[BuildMarshalFunc, UnmarshalFunc](len(mt))
 	for _, m := range mt {
@@ -127,13 +128,12 @@ func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error 
 
 // ParseResponse 从 [http.Response] 解析并获取返回对象
 //
-// 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。
-// 其它情况下返回错误信息。
+// 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。其它情况下返回错误信息。
 func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
 	var size int
 	if h := rsp.Header.Get(header.ContentLength); h != "" {
 		if h == "0" {
-			return nil
+			return NewLocaleError("the response is empty")
 		}
 
 		size, err = strconv.Atoi(h)
@@ -142,7 +142,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 		}
 	}
 	if size == 0 {
-		return nil
+		return NewLocaleError("the response is empty")
 	}
 
 	var reader io.Reader = rsp.Body
@@ -176,7 +176,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 	}
 	defer rsp.Body.Close()
 
-	if rsp.StatusCode >= 400 {
+	if problems.IsProblemStatus(rsp.StatusCode) {
 		return inputMimetype(data, problem)
 	}
 	return inputMimetype(data, resp)

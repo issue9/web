@@ -40,7 +40,7 @@ func (ps *Problems) Add(id string, status int, title, detail localeutil.LocaleSt
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
 
-	if _, found := problemStatuses[status]; !found { // 只需验证大于 400 的状态码。
+	if !IsProblemStatus(status) { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
 
@@ -73,4 +73,9 @@ func (ps *Problems) Problem(id string) *Problem {
 		panic(fmt.Sprintf("未找到有关 %s 的定义", id))
 	}
 	return sp
+}
+
+func IsProblemStatus(status int) bool {
+	_, found := problemStatuses[status]
+	return found
 }

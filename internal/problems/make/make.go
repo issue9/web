@@ -8,6 +8,7 @@ import (
 	"go/build"
 	"go/parser"
 	"go/token"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -55,9 +56,9 @@ LOOP:
 				return nil, err
 			}
 
-			if v < 400 {
+			if v < http.StatusBadRequest { // 400 以下的不需要
 				continue
-			} // 400 以下的不需要
+			}
 
 			pairs = append(pairs, Pair{Name: name, Value: v})
 		}
