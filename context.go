@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
@@ -114,7 +115,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		var err error
 		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
-			srv.Logs().DEBUG().Error(err)
+			srv.Logs().DEBUG().String(localeutil.ErrorAsLocaleString(err, srv.LocalePrinter()))
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}

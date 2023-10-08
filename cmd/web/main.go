@@ -121,7 +121,7 @@ func newPrinter() (*localeutil.Printer, error) {
 	ls = append(ls, webLocales...)
 	ls = append(ls, lLocales...)
 
-	b := catalog.NewBuilder()
+	b := catalog.NewBuilder(catalog.Fallback(tag))
 	for _, l := range ls {
 		if err = l.Catalog(b); err != nil {
 			return nil, err
