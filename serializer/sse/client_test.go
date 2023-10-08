@@ -63,12 +63,13 @@ func TestOnMessage(t *testing.T) {
 
 	// message
 
+	msg := make(chan *Message, 10)
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/event/5", nil)
 	a.NotError(err).NotNil(req)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	msg, err := OnMessage(ctx, s.Logs().ERROR(), req, nil)
-	a.NotError(err).NotNil(msg)
+	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg)
+	a.NotError(err)
 
 	a.Equal(<-msg, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50})
 	a.Equal(<-msg, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
