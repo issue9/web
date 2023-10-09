@@ -6,6 +6,7 @@ import "github.com/issue9/web"
 
 type Gateway struct {
 	*web.Server
+	nodes []*web.Client
 }
 
 type GatewayOptions struct {

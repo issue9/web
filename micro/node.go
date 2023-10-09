@@ -6,6 +6,8 @@ import "github.com/issue9/web"
 
 type Node struct {
 	*web.Server
+
+	nodes []*web.Client // 其它节点
 }
 
 type NodeOptions struct {
