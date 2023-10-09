@@ -22,15 +22,14 @@ func TestClient(t *testing.T) {
 
 	s.NewRouter("default", nil).Get("/get", func(ctx *Context) Responser {
 		return OK(&object{Name: "name"})
+	}).Post("/post", func(ctx *Context) Responser {
+		return ctx.Problem(ProblemBadRequest).WithExtensions(&object{Name: "name"})
 	})
 
 	mts := []*Mimetype{
 		{Type: "application/json", MarshalBuilder: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
 	}
-	cps := []*Compress{
-		{Name: "gzip", Compressor: NewGzipCompress(3), Types: []string{"application/*"}},
-	}
-	c := NewClient(nil, "http://localhost:8080", "application/json", mts, cps)
+	c := NewClient(nil, "http://localhost:8080", "application/json", mts, AllCompresses())
 	a.NotNil(c)
 
 	resp := &object{}
@@ -42,6 +41,13 @@ func TestClient(t *testing.T) {
 	p = &RFC7807{}
 	a.NotError(c.Delete("/get", resp, p))
 	a.Zero(resp).Equal(p.Type, ProblemMethodNotAllowed)
+
+	resp = &object{}
+	p = &RFC7807{Extensions: &object{}}
+	a.NotError(c.Post("/post", nil, resp, p))
+	a.Zero(resp).
+		Equal(p.Type, ProblemBadRequest).
+		Equal(p.Extensions, &object{Name: "name"})
 }
 
 func TestServer_NewClient(t *testing.T) {

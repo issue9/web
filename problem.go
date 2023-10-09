@@ -101,6 +101,8 @@ func (p *RFC7807) init(id, title, detail string, status int) *RFC7807 {
 	return p
 }
 
+func (p *RFC7807) Error() string { return p.Title }
+
 func (p *RFC7807) Apply(ctx *Context) Problem {
 	// NOTE: 此方法要始终返回 nil
 

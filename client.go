@@ -19,13 +19,15 @@ import (
 )
 
 // Client 用于访问远程的客户端
+//
+// NOTE: 远程必须是 [Server] 实现的服务，否则可能无法正确处理返回对象。
 type Client struct {
 	url        string
 	client     *http.Client
 	compresses *compress.Compresses
 
 	mts         *mtsType
-	marshal     func(any) ([]byte, error)
+	marshal     MarshalFunc
 	marshalName string
 }
 
@@ -111,9 +113,12 @@ func (c *Client) Patch(path string, req, resp any, problem *RFC7807) error {
 //
 // req 为提交的对象，最终是由初始化参数的 marshal 进行编码；
 // resp 为返回的数据的写入对象，必须是指针类型；
-// problem 为返回出错时的写入对象；
+// problem 为返回出错时的写入对象，如果包含自定义的 Extensions 字段，需要为其初始化为零值。
+// [RFC7807] 同时也实现了 error 接口，如果不需要特殊处理，可以直接作为错误处理；
 // 非 HTTP 状态码错误返回 err；
 func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error {
+	// NOTE: RFC7807 带有一个不确定类型的 Extensions 字段，所以只能由调用方初始化正确的值。
+
 	r, err := c.NewRequest(method, path, req)
 	if err != nil {
 		return err
