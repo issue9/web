@@ -34,7 +34,7 @@ func TestOnMessage(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(s)
-	e := NewServer[int64](s, time.Minute, time.Minute)
+	e := NewServer[int64](s, 50*time.Millisecond)
 	a.NotNil(e)
 	s.NewRouter("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
@@ -42,9 +42,7 @@ func TestOnMessage(t *testing.T) {
 			return resp
 		}
 
-		a.Equal(0, e.Len())
-
-		s, wait := e.NewSource(id, ctx, 50*time.Millisecond)
+		s, wait := e.NewSource(id, ctx)
 		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 
@@ -53,7 +51,6 @@ func TestOnMessage(t *testing.T) {
 		time.Sleep(time.Microsecond * 500)
 		event.Sent(&struct{ ID int }{ID: 5})
 
-		a.Equal(1, e.Len())
 		wait()
 		return nil
 	})
@@ -61,17 +58,32 @@ func TestOnMessage(t *testing.T) {
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
 
-	// message
+	// get /event/5
 
+	a.Equal(0, e.Len())
 	msg := make(chan *Message, 10)
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/event/5", nil)
 	a.NotError(err).NotNil(req)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg)
-	a.NotError(err)
+	a.NotError(err).Equal(1, e.Len())
 
 	a.Equal(<-msg, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50})
+	a.Equal(<-msg, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
+	a.Equal(<-msg, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
+
+	// get /event/6
+
+	msg = make(chan *Message, 10)
+	req, err = http.NewRequest(http.MethodGet, "http://localhost:8080/event/6", nil)
+	a.NotError(err).NotNil(req)
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
+	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg)
+	a.NotError(err).Equal(2, e.Len())
+
+	a.Equal(<-msg, &Message{Data: []string{"connect", "6"}, ID: "1", Retry: 50})
 	a.Equal(<-msg, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
 	a.Equal(<-msg, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
 }

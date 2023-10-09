@@ -4,6 +4,7 @@ package sse
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -18,7 +19,7 @@ import (
 // T 表示用于区分不同事件源的 ID，比如按用户区分，
 // 那么该类型可能是 int64 类型的用户 ID 值。
 type Server[T comparable] struct {
-	timeout time.Duration
+	retry   int64
 	sources *sync.Map
 }
 
@@ -27,7 +28,6 @@ type Source struct {
 	data  chan []byte
 	exit  chan struct{}
 	done  chan struct{}
-	last  time.Time
 }
 
 type Event struct {
@@ -38,16 +38,14 @@ type Event struct {
 
 // NewServer 声明 [Server] 对象
 //
-// timeout 链接的空闲时间，超过此值将被回收；
-// freq 回收程序执行的频率；
-func NewServer[T comparable](s *web.Server, timeout, freq time.Duration) *Server[T] {
+// retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
+func NewServer[T comparable](s *web.Server, retry time.Duration) *Server[T] {
 	srv := &Server[T]{
-		timeout: timeout,
+		retry:   retry.Milliseconds(),
 		sources: &sync.Map{},
 	}
 
 	s.Services().Add(web.StringPhrase("SSE server"), web.ServiceFunc(srv.serve))
-	s.Services().AddTicker(web.StringPhrase("recycle idle SSE connection"), srv.gc, freq, false, true)
 
 	return srv
 }
@@ -61,18 +59,6 @@ func (srv *Server[T]) serve(ctx context.Context) error {
 		return true
 	})
 	return ctx.Err()
-}
-
-func (srv *Server[T]) gc(now time.Time) error {
-	srv.sources.Range(func(k, v any) bool {
-		s := v.(*Source)
-		if s.last.Add(srv.timeout).Before(now) {
-			s.Close()
-		}
-		srv.sources.Delete(k)
-		return true
-	})
-	return nil
 }
 
 // Len 当前链接的数量
@@ -98,15 +84,14 @@ func (srv *Server[T]) Get(id T) *Source {
 //
 // NOTE: 只有采用此方法声明之后，才有可能通过 [Server.Get] 获取实例。
 // id 表示是事件源的唯一 ID，如果事件是根据用户进行区分的，那么该值应该是表示用户的 ID 值；
-// retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
-// wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出。
-func (srv *Server[T]) NewSource(id T, ctx *web.Context, retry time.Duration) (s *Source, wait func()) {
+// wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出导致的 ctx 被回收。
+func (srv *Server[T]) NewSource(id T, ctx *web.Context) (s *Source, wait func()) {
 	if ss, found := srv.sources.LoadAndDelete(id); found {
 		ss.(*Source).Close()
 	}
 
 	s = &Source{
-		retry: retry.Milliseconds(),
+		retry: srv.retry,
 		data:  make(chan []byte, 1),
 		exit:  make(chan struct{}, 1),
 		done:  make(chan struct{}, 1),
@@ -114,25 +99,24 @@ func (srv *Server[T]) NewSource(id T, ctx *web.Context, retry time.Duration) (s 
 	srv.sources.Store(id, s)
 
 	go func() {
-		s.connect(ctx)         // 阻塞，出错退出
-		close(s.data)          // 退出之前关闭，防止退出之后，依然有数据源源不断地从 Sent 输入。
-		srv.sources.Delete(id) // 如果 connect 返回，说明断开了连接，删除 sources 中的记录。
+		s.connect(ctx)               // 阻塞，出错退出
+		defer close(s.data)          // 退出之前关闭，防止退出之后，依然有数据源源不断地从 Sent 输入。
+		defer srv.sources.Delete(id) // 如果 connect 返回，说明断开了连接，删除 sources 中的记录。
 	}()
 	return s, s.wait
 }
 
 // 和客户端进行连接，如果返回，则表示连接被关闭。
 func (s *Source) connect(ctx *web.Context) {
-	rc := http.NewResponseController(ctx)
-
-	ctx.Header().Set("content-type", header.BuildContentType(Mimetype, header.UTF8Name))
-	ctx.Header().Set("Content-Length", "0")
+	ctx.Header().Set(header.ContentType, header.BuildContentType(Mimetype, header.UTF8Name))
+	ctx.Header().Set(header.ContentLength, "0")
 	ctx.Header().Set("Cache-Control", "no-cache")
 	ctx.Header().Set("Connection", "keep-alive")
-	ctx.SetCharset("utf-8")
+	ctx.SetCharset(header.UTF8Name)
 	ctx.SetEncoding("")
 	ctx.WriteHeader(http.StatusOK) // 根据标准，就是 200。
 
+	rc := http.NewResponseController(ctx)
 	for {
 		select {
 		case <-ctx.Request().Context().Done():
@@ -144,12 +128,15 @@ func (s *Source) connect(ctx *web.Context) {
 			if _, err := ctx.Write(data); err != nil { // 出错即退出，由客户端自行重连。
 				ctx.Logs().ERROR().Error(err)
 				s.done <- struct{}{}
-				return
+				continue
 			}
+
 			if err := rc.Flush(); err != nil {
-				panic(err) // 无法实现当前需要的功能，直接 panic。
+				if errors.Is(err, http.ErrNotSupported) {
+					panic(err) // 不支持功能，直接 panic
+				}
+				ctx.Logs().ERROR().Error(err)
 			}
-			s.last = time.Now()
 		}
 	}
 }

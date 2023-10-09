@@ -32,7 +32,7 @@ func TestServer(t *testing.T) {
 		},
 	})
 	a.NotError(err).NotNil(s)
-	e := NewServer[int64](s, time.Minute, time.Minute)
+	e := NewServer[int64](s, 50*time.Millisecond)
 	a.NotNil(e)
 	s.NewRouter("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
@@ -42,7 +42,7 @@ func TestServer(t *testing.T) {
 
 		a.Equal(0, e.Len())
 
-		s, wait := e.NewSource(id, ctx, 50*time.Millisecond)
+		s, wait := e.NewSource(id, ctx)
 		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/header"
 )
 
 // OnMessage 对消息的处理
@@ -22,7 +23,7 @@ func OnMessage(ctx context.Context, l web.Logger, req *http.Request, c *http.Cli
 
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Accept", Mimetype)
+	req.Header.Set(header.Accept, Mimetype)
 
 	resp, err := c.Do(req)
 	if err != nil {
