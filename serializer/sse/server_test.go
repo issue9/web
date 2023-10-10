@@ -26,13 +26,11 @@ func TestServer(t *testing.T) {
 		},
 		Logs: &logs.Options{
 			Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil),
-			Caller:  true,
-			Created: true,
 			Levels:  logs.AllLevels(),
 		},
 	})
 	a.NotError(err).NotNil(s)
-	e := NewServer[int64](s, 50*time.Millisecond)
+	e := NewServer[int64](s, 50*time.Millisecond, 10)
 	a.NotNil(e)
 	s.NewRouter("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
@@ -84,4 +82,24 @@ event:event
 retry:50
 
 `)
+}
+
+func TestSource_bytes(t *testing.T) {
+	a := assert.New(t, false)
+	s := &Source{}
+
+	a.PanicString(func() {
+		s.bytes(nil, "", "")
+	}, "data 不能为空")
+
+	a.Equal(s.bytes([]string{"111"}, "", "").String(), "data:111\n\n")
+
+	a.Equal(s.bytes([]string{"111", "222"}, "", "").String(), "data:111\ndata:222\n\n")
+
+	a.Equal(s.bytes([]string{"111", "222"}, "event", "").String(), "data:111\ndata:222\nevent:event\n\n")
+
+	a.Equal(s.bytes([]string{"111", "222"}, "event", "1").String(), "data:111\ndata:222\nevent:event\nid:1\n\n")
+
+	s.retry = "30"
+	a.Equal(s.bytes([]string{"111", " 222"}, "event", " 1").String(), "data:111\ndata: 222\nevent:event\nid: 1\nretry:30\n\n")
 }

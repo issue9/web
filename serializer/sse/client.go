@@ -6,10 +6,56 @@ import (
 	"bufio"
 	"context"
 	"net/http"
+	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 )
+
+var messagePool = &sync.Pool{New: func() any { return &Message{} }}
+
+type Message struct {
+	Data  []string
+	Event string
+	ID    string
+	Retry int64
+}
+
+func newEmptyMessage() *Message {
+	m := messagePool.Get().(*Message)
+	m.Data = m.Data[:0]
+	m.Event = ""
+	m.ID = ""
+	m.Retry = 0
+	return m
+}
+
+func (m *Message) append(line string) (err error) {
+	prefix, data, found := strings.Cut(line, ":")
+	if !found {
+		return web.NewLocaleError("invalid sse format %s", line)
+	}
+
+	switch prefix {
+	case "data":
+		m.Data = append(m.Data, data)
+	case "event":
+		m.Event = data
+	case "id":
+		m.ID = data
+	case "retry":
+		m.Retry, err = strconv.ParseInt(strings.TrimSpace(data), 10, 64)
+	}
+	return
+}
+
+// Destory 销毁当前对象
+//
+// NOTE: 这不是一个必须的操作，在确定不再使用当前对象的情况下，
+// 执行该方法，有可能会提升一些性能。
+func (m *Message) Destory() { messagePool.Put(m) }
 
 // OnMessage 对消息的处理
 //

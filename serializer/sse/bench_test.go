@@ -4,16 +4,10 @@ package sse
 
 import "testing"
 
-func BenchmarkNewMessage(b *testing.B) {
+func BenchmarkSource_bytes(b *testing.B) {
+	s := &Source{retry: "50"}
 	for i := 0; i < b.N; i++ {
-		m := newMessage([]string{"123", "456"}, "event", "id", 30)
-		m.Destory()
-	}
-}
-
-func BenchmarkMessage_bytes(b *testing.B) {
-	m := &Message{Data: []string{"111", "222"}, Event: "event", ID: "1", Retry: 30}
-	for i := 0; i < b.N; i++ {
-		m.bytes()
+		b := s.bytes([]string{"111", "222"}, "event", "1")
+		bufPool.Put(b)
 	}
 }
