@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -41,7 +40,6 @@ type Context struct {
 	exits             []func(*Context, int)
 	id                string
 	begin             time.Time
-	keepAlive         bool
 
 	// response
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
@@ -129,7 +127,6 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
 	ctx.begin = time.Now()
-	ctx.keepAlive = false
 
 	// response
 	ctx.originResponse = w
@@ -192,14 +189,6 @@ func buildID(s *Server, w http.ResponseWriter, r *http.Request) string {
 
 // Begin 当前对象的初始化时间
 func (ctx *Context) Begin() time.Time { return ctx.begin }
-
-// KeepAlive 保持 Context 在路由处理函数外依然可用
-//
-// 默认情况下，Context 在当前路由结束时会被放回到对象池中以备下次使用，
-// 此方法可以跳过该操作，但依然会被 Go 的 GC 正常回收。
-//
-// NOTE: 该情况下即使设置 Accept-Encoding 报头也不会对内容进行压缩输出。
-func (ctx *Context) KeepAlive() { ctx.keepAlive = true }
 
 // ID 当前请求的唯一 ID
 //
@@ -265,9 +254,6 @@ func (ctx *Context) SetEncoding(enc string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
-	if ctx.keepAlive {
-		panic("keepAlive 模式不需要设置此值")
-	}
 	if ctx.Encoding() == enc {
 		return
 	}
@@ -309,24 +295,15 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 func (ctx *Context) destroy() {
-	if ctx.keepAlive {
-		runtime.SetFinalizer(ctx, func(ctx *Context) { ctx.close() }) // 不知道什么时候结束，只能依赖 GC 时执行。
-		return
-	}
-
-	ctx.close()
-	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
-		contextPool.Put(ctx)
-	}
-}
-
-func (ctx *Context) close() {
 	sliceutil.Reverse(ctx.exits) // TODO: go1.21 改为标准库
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
-
 	logs.DestroyWithLogs(ctx.logs)
+
+	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
+		contextPool.Put(ctx)
+	}
 }
 
 // OnExit 注册退出当前请求时的处理函数

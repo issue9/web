@@ -3,6 +3,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -107,7 +108,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 和 Charset 的 io.Writer
 		ctx.wrote = true
 
-		if !ctx.keepAlive && ctx.outputCompress != nil { //  keepAlive 的情况下，肯定无法压缩输出。
+		if ctx.outputCompress != nil {
 			w, err := ctx.outputCompress.Compress().Encoder(ctx.writer)
 			if err != nil {
 				return 0, err
@@ -219,7 +220,6 @@ func Status(code int, kv ...string) Responser {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
 		ctx.WriteHeader(code)
-
 		return nil
 	})
 }
@@ -239,7 +239,6 @@ func Response(status int, body any, kv ...string) Responser {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
 		ctx.Render(status, body)
-
 		return nil
 	})
 }
@@ -259,4 +258,12 @@ func NoContent() Responser { return Status(http.StatusNoContent) }
 // Redirect 重定向至新的 URL
 func Redirect(status int, url string) Responser {
 	return Status(status, header.Location, url)
+}
+
+// KeepAlive 保持当前会话不退出
+func KeepAlive(ctx context.Context) Responser {
+	return ResponserFunc(func(*Context) Problem {
+		<-ctx.Done()
+		return nil
+	})
 }

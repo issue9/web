@@ -4,6 +4,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -52,6 +53,42 @@ func TestContext_vars(t *testing.T) {
 
 	v3, found := ctx.GetVar(k3)
 	a.True(found).Equal(v3, 3)
+}
+
+func TestContext_KeepAlive(t *testing.T) {
+	a := assert.New(t, false)
+	lw := &bytes.Buffer{}
+	o := &Options{
+		Language:   language.SimplifiedChinese,
+		Logs:       &logs.Options{Handler: logs.NewTextHandler("2006-01-02", lw), Levels: logs.AllLevels()},
+		HTTPServer: &http.Server{Addr: ":8080"},
+	}
+	srv := newTestServer(a, o)
+	router := srv.NewRouter("def", nil)
+	router.Get("/path", func(ctx *Context) Responser {
+		ctx.Header().Set(header.ContentLength, "0")
+		ctx.Header().Set("Cache-Control", "no-cache")
+		ctx.Header().Set("Connection", "keep-alive")
+		ctx.WriteHeader(http.StatusCreated)
+		go func() {
+			time.Sleep(500 * time.Microsecond) // 等待路由函数返回
+			ctx.Write([]byte("123"))
+		}()
+
+		c, cancel := context.WithCancel(context.Background())
+		time.AfterFunc(500*time.Millisecond, func() { cancel() })
+		return KeepAlive(c)
+	})
+
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
+
+	servertest.Get(a, "http://localhost:8080/path").
+		Header("Accept-Language", "cmn-hans;q=0.9,zh-Hant;q=0.7").
+		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
+		Do(nil).
+		Status(http.StatusCreated).
+		StringBody(`123`)
 }
 
 func TestServer_Context(t *testing.T) {
