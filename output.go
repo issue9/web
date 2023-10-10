@@ -104,24 +104,34 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Encoding 和 Charset 的 io.Writer
+	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 和 Charset 的 io.Writer
 		ctx.wrote = true
 
-		if ctx.outputEncoding != nil {
-			ctx.encodingCloser, err = ctx.outputEncoding.Compress().Encoder(ctx.writer)
+		if !ctx.keepAlive && ctx.outputCompress != nil { //  keepAlive 的情况下，肯定无法压缩输出。
+			w, err := ctx.outputCompress.Compress().Encoder(ctx.writer)
 			if err != nil {
 				return 0, err
 			}
-			ctx.writer = ctx.encodingCloser
+			ctx.writer = w
+			ctx.OnExit(func(*Context, int) {
+				if err := w.Close(); err != nil {
+					ctx.Logs().ERROR().Error(err)
+				}
+			})
 		}
 
 		if !header.CharsetIsNop(ctx.outputCharset) {
-			ctx.charsetCloser = transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
-			ctx.writer = ctx.charsetCloser
+			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
+			ctx.writer = w
+			ctx.OnExit(func(*Context, int) {
+				if err := w.Close(); err != nil {
+					ctx.Logs().ERROR().Error(err)
+				}
+			})
 		}
 	}
 
-	if ctx.status < 199 {
+	if ctx.status == 0 {
 		ctx.WriteHeader(http.StatusOK)
 	}
 	return ctx.writer.Write(bs)

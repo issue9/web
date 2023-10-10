@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -23,9 +25,7 @@ import (
 const contextPoolBodyBufferMaxSize = 1 << 16 // 过大的对象不回收，以免造成内存占用过高。
 
 var contextPool = &sync.Pool{
-	New: func() any {
-		return &Context{exits: make([]func(*Context, int), 0, 5)}
-	},
+	New: func() any { return &Context{exits: make([]func(*Context, int), 0, 5)} },
 }
 
 // Context 根据当次 HTTP 请求生成的上下文内容
@@ -45,10 +45,8 @@ type Context struct {
 
 	// response
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
-	writer         io.Writer           // 实际写入的对象
-	encodingCloser io.WriteCloser
-	charsetCloser  io.WriteCloser
-	outputEncoding *compress.NamedCompress
+	writer         io.Writer
+	outputCompress *compress.NamedCompress
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
@@ -100,7 +98,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputEncoding, notAcceptable := srv.compresses.AcceptEncoding(mt.Name, h, l.DEBUG())
+	outputCompress, notAcceptable := srv.compresses.AcceptEncoding(mt.Name, h, l.DEBUG())
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -136,15 +134,13 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	// response
 	ctx.originResponse = w
 	ctx.writer = w
-	ctx.encodingCloser = nil
-	ctx.charsetCloser = nil
-	ctx.outputEncoding = outputEncoding
+	ctx.outputCompress = outputCompress
 	ctx.outputCharset = outputCharset
 	ctx.status = 0
 	ctx.wrote = false
-	if ctx.outputEncoding != nil {
+	if ctx.outputCompress != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, ctx.outputEncoding.Name())
+		h.Set(header.ContentEncoding, ctx.outputCompress.Name())
 		h.Add(header.Vary, header.ContentEncoding)
 	}
 
@@ -201,6 +197,8 @@ func (ctx *Context) Begin() time.Time { return ctx.begin }
 //
 // 默认情况下，Context 在当前路由结束时会被放回到对象池中以备下次使用，
 // 此方法可以跳过该操作，但依然会被 Go 的 GC 正常回收。
+//
+// NOTE: 该情况下即使设置 Accept-Encoding 报头也不会对内容进行压缩输出。
 func (ctx *Context) KeepAlive() { ctx.keepAlive = true }
 
 // ID 当前请求的唯一 ID
@@ -267,6 +265,9 @@ func (ctx *Context) SetEncoding(enc string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
+	if ctx.keepAlive {
+		panic("keepAlive 模式不需要设置此值")
+	}
 	if ctx.Encoding() == enc {
 		return
 	}
@@ -275,15 +276,21 @@ func (ctx *Context) SetEncoding(enc string) {
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
-	ctx.outputEncoding = outputEncoding
+	ctx.outputCompress = outputEncoding
+
+	if ctx.outputCompress != nil {
+		h := ctx.Header()
+		h.Set(header.ContentEncoding, ctx.outputCompress.Name())
+		h.Add(header.Vary, header.ContentEncoding)
+	}
 }
 
 // Encoding 输出的压缩编码名称
 func (ctx *Context) Encoding() string {
-	if ctx.outputEncoding == nil {
+	if ctx.outputCompress == nil {
 		return ""
 	}
-	return ctx.outputEncoding.Name()
+	return ctx.outputCompress.Name()
 }
 
 // SetLanguage 修改输出的语言
@@ -302,30 +309,29 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 func (ctx *Context) destroy() {
-	if ctx.charsetCloser != nil {
-		if err := ctx.charsetCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Printf("%+v", err) // 出错记录日志但不退出，之后的 Exit 还是要调用
-		}
+	if ctx.keepAlive {
+		runtime.SetFinalizer(ctx, func(ctx *Context) { ctx.close() }) // 不知道什么时候结束，只能依赖 GC 时执行。
+		return
 	}
 
-	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
-		if err := ctx.encodingCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Printf("%+v", err) // 出错记录日志但不退出，之后的 Exit 还是要调用
-		}
+	ctx.close()
+	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
+		contextPool.Put(ctx)
 	}
+}
 
+func (ctx *Context) close() {
+	sliceutil.Reverse(ctx.exits) // TODO: go1.21 改为标准库
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
 
 	logs.DestroyWithLogs(ctx.logs)
-
-	if !ctx.keepAlive && len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
-		contextPool.Put(ctx)
-	}
 }
 
 // OnExit 注册退出当前请求时的处理函数
+//
+// 以注册的相反顺序调用这些方法。
 func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits, f) }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
