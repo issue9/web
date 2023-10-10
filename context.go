@@ -20,7 +20,7 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-const contextPoolBodyBufferMaxSize = 1 << 16
+const contextPoolBodyBufferMaxSize = 1 << 16 // 过大的对象不回收，以免造成内存占用过高。
 
 var contextPool = &sync.Pool{
 	New: func() any {
@@ -41,6 +41,7 @@ type Context struct {
 	exits             []func(*Context, int)
 	id                string
 	begin             time.Time
+	keepAlive         bool
 
 	// response
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
@@ -85,7 +86,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h := r.Header.Get(header.Accept)
 	mt := srv.mimetypes.Accept(h)
 	if mt == nil {
-		srv.Logs().DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
+		l.DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -93,7 +94,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		srv.Logs().DEBUG().String(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
+		l.DEBUG().String(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -114,7 +115,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		var err error
 		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
-			srv.Logs().DEBUG().Error(err)
+			l.DEBUG().Printf("%+v", err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -130,6 +131,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
 	ctx.begin = time.Now()
+	ctx.keepAlive = false
 
 	// response
 	ctx.originResponse = w
@@ -194,6 +196,12 @@ func buildID(s *Server, w http.ResponseWriter, r *http.Request) string {
 
 // Begin 当前对象的初始化时间
 func (ctx *Context) Begin() time.Time { return ctx.begin }
+
+// KeepAlive 保持 Context 在路由处理函数外依然可用
+//
+// 默认情况下，Context 在当前路由结束时会被放回到对象池中以备下次使用，
+// 此方法可以跳过该操作，但依然会被 Go 的 GC 正常回收。
+func (ctx *Context) KeepAlive() { ctx.keepAlive = true }
 
 // ID 当前请求的唯一 ID
 //
@@ -296,13 +304,13 @@ func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 func (ctx *Context) destroy() {
 	if ctx.charsetCloser != nil {
 		if err := ctx.charsetCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Error(err) // 出错记录日志但不退出，之后的 Exit 还是要调用
+			ctx.Logs().ERROR().Printf("%+v", err) // 出错记录日志但不退出，之后的 Exit 还是要调用
 		}
 	}
 
 	if ctx.encodingCloser != nil { // encoding 在最底层，应该最后关闭。
 		if err := ctx.encodingCloser.Close(); err != nil {
-			ctx.Logs().ERROR().Error(err) // 出错记录日志但不退出，之后的 Exit 还是要调用
+			ctx.Logs().ERROR().Printf("%+v", err) // 出错记录日志但不退出，之后的 Exit 还是要调用
 		}
 	}
 
@@ -312,7 +320,7 @@ func (ctx *Context) destroy() {
 
 	logs.DestroyWithLogs(ctx.logs)
 
-	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize { // 过大的对象不回收，以免造成内存占用过高。
+	if !ctx.keepAlive && len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
 		contextPool.Put(ctx)
 	}
 }
