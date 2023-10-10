@@ -139,6 +139,7 @@ func (s *Source) connect(ctx *web.Context) {
 		select {
 		case <-ctx.Request().Context().Done():
 			s.done <- struct{}{}
+			return
 		case <-s.exit: // 由 Source.Close 触发
 			s.done <- struct{}{}
 			return
@@ -158,6 +159,8 @@ func (s *Source) connect(ctx *web.Context) {
 					panic(err) // 不支持功能，直接 panic
 				}
 				ctx.Logs().ERROR().Error(err)
+				s.done <- struct{}{}
+				continue // 出错即退出，由客户端自行重连。
 			}
 
 			if buf.Cap() < bufMaxSize { // buf.Bytes() 返回的并非副本。只有确定无用了才回收。
