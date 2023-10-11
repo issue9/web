@@ -85,8 +85,7 @@ func OnMessage(ctx context.Context, l web.Logger, req *http.Request, c *http.Cli
 				return
 			default:
 				m := newEmptyMessage()
-				for {
-					s.Scan()
+				for s.Scan() {
 					if line := s.Text(); line != "" {
 						if err := m.append(line); err != nil {
 							l.Error(err)
