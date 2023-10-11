@@ -3,6 +3,9 @@ messages:
     - key: '%s not found'
       message:
         msg: '%s 不存在'
+    - key: SSE keep alive cron
+      message:
+        msg: SSE 向已链接用户发送的心跳包
     - key: SSE server
       message:
         msg: SSE 服务
@@ -304,9 +307,6 @@ messages:
     - key: problem.511.detail
       message:
         msg: 指示客户端需要进行身份验证才能获得网络访问权限。
-    - key: recycle idle SSE connection
-      message:
-        msg: 回收空闲的 SSE 链接
     - key: recycle local cache
       message:
         msg: 回收本地缓存

@@ -33,6 +33,8 @@ type (
 	}
 
 	Source struct {
+		last time.Time
+
 		lastID string
 		retry  string
 		buf    chan *bytes.Buffer
@@ -56,8 +58,9 @@ type (
 // NewServer 声明 [Server] 对象
 //
 // retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
+// keepAlive 表示心跳包的发送时间间隔，如果小于等于零，表示不会发送；
 // bufCap 每个 SSE 队列可缓存的数据，超过此数量，调用的 Sent 将被阻塞；
-func NewServer[T comparable](s *web.Server, retry time.Duration, bufCap int) *Server[T] {
+func NewServer[T comparable](s *web.Server, retry, keepAlive time.Duration, bufCap int) *Server[T] {
 	srv := &Server[T]{
 		bufCap:  bufCap,
 		s:       s,
@@ -66,8 +69,23 @@ func NewServer[T comparable](s *web.Server, retry time.Duration, bufCap int) *Se
 	}
 
 	s.Services().Add(web.StringPhrase("SSE server"), web.ServiceFunc(srv.serve))
+	if keepAlive > 0 {
+		s.Services().AddTicker(web.StringPhrase("SSE keep alive cron"), srv.keepAlive, keepAlive, false, false)
+	}
 
 	return srv
+}
+
+func (srv *Server[T]) keepAlive(now time.Time) error {
+	srv.sources.Range(func(_, v any) bool {
+		if s := v.(*Source); s.last.After(now) {
+			b := s.newBuffer()
+			b.WriteString(":\n\n")
+			s.buf <- b
+		}
+		return true
+	})
+	return nil
 }
 
 func (srv *Server[T]) serve(ctx context.Context) error {
@@ -110,6 +128,8 @@ func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()
 	}
 
 	s = &Source{
+		last: ctx.Begin(),
+
 		lastID: ctx.Request().Header.Get("Last-Event-ID"),
 		retry:  srv.retry,
 		buf:    make(chan *bytes.Buffer, srv.bufCap),
@@ -220,9 +240,7 @@ func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 		panic("data 不能为空")
 	}
 
-	w := bufPool.Get().(*bytes.Buffer)
-	w.Reset()
-
+	w := s.newBuffer()
 	for _, line := range data {
 		w.WriteString("data:")
 		w.WriteString(line)
@@ -246,6 +264,12 @@ func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 	}
 	w.WriteByte('\n')
 
+	return w
+}
+
+func (s *Source) newBuffer() *bytes.Buffer {
+	w := bufPool.Get().(*bytes.Buffer)
+	w.Reset()
 	return w
 }
 
