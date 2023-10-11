@@ -15,7 +15,13 @@ import (
 //go:embed *.yaml
 var Locales embed.FS
 
-var all = []fs.FS{
+// All 当前框架依赖的所有本地化内容
+//
+// 文件格式均为 yaml，使用时加载这些文件系统下的 yaml 文件即可：
+//
+//	s := web.NewServer(...)
+//	s.LoadLocale("*.yaml", locales.All()...)
+var All = []fs.FS{
 	Locales,
 	ll.Locales,
 	cl.Locales,
@@ -30,8 +36,3 @@ const (
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
 	RecycleLocalCache       = localeutil.StringPhrase("recycle local cache")
 )
-
-// All 当前框架依赖的所有本地化内容
-//
-// 文件格式均为 yaml，使用时加载它些文件系统下的 yaml 文件即可。
-func All() []fs.FS { return all }
