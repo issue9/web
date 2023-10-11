@@ -3,6 +3,9 @@ messages:
     - key: '%s not found'
       message:
         msg: '%s not found'
+    - key: SSE keep alive cron
+      message:
+        msg: SSE keep alive cron
     - key: SSE server
       message:
         msg: SSE server
@@ -27,6 +30,9 @@ messages:
     - key: invalid cache key
       message:
         msg: invalid cache key
+    - key: invalid sse format %s
+      message:
+        msg: invalid sse format %s
     - key: invalid value
       message:
         msg: invalid value
@@ -285,9 +291,6 @@ messages:
     - key: problem.511.detail
       message:
         msg: problem.511.detail
-    - key: recycle idle SSE connection
-      message:
-        msg: recycle idle SSE connection
     - key: recycle local cache
       message:
         msg: recycle local cache
