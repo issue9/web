@@ -21,7 +21,7 @@ import (
 	"github.com/issue9/web/logs"
 )
 
-const contextPoolBodyBufferMaxSize = 1 << 16 // 过大的对象不回收，以免造成内存占用过高。
+const contextPoolBodyBufferMaxSize = 1 << 11 // 过大的对象不回收，以免造成内存占用过高。
 
 var contextPool = &sync.Pool{
 	New: func() any { return &Context{exits: make([]func(*Context, int), 0, 5)} },
@@ -41,7 +41,6 @@ type Context struct {
 	id                string
 	begin             time.Time
 
-	// response
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
 	writer         io.Writer
 	outputCompress *compress.NamedCompress
@@ -49,7 +48,7 @@ type Context struct {
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
 
-	// 指定将 Response 输出时所使用的媒体类型。从 Accept 报头解析得到。
+	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
 	outputMimetype *mtType
 
@@ -162,7 +161,10 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 // NOTE: 这适合从标准库的请求中创建 [Context] 对象，
 // 但是部分功能会缺失，比如地址中的参数信息，以及 [Context.Route] 等。
 func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return srv.newContext(w, r, types.NewContext())
+	c := types.NewContext()
+	ctx := srv.newContext(w, r, c)
+	ctx.OnExit(func(*Context, int) { c.Destroy() })
+	return ctx
 }
 
 // GetVar 返回指定名称的变量
@@ -308,7 +310,13 @@ func (ctx *Context) destroy() {
 
 // OnExit 注册退出当前请求时的处理函数
 //
-// 以注册的相反顺序调用这些方法。
+// f 为执行的方法，其原型为：
+//
+//	func(ctx *Context, status int)
+//
+// 其中 ctx 即为当前实例，status 则表示实际输出的状态码。
+//
+// NOTE: 以注册的相反顺序调用这些方法。
 func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits, f) }
 
 func (srv *Server) acceptLanguage(header string) language.Tag {
