@@ -49,9 +49,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		funcs := fs.String("func", defaultFuncs, funcs.LocaleString(p))
 		skip := fs.Bool("m", true, skipMod.LocaleString(p))
 
-		log, err := logs.New(&logs.Options{
+		log, err := logs.New(nil, &logs.Options{
 			Levels:  logs.AllLevels(),
-			Handler: logs.NewTermHandler(logs.NanoLayout, os.Stdout, nil),
+			Handler: logs.NewTermHandler(os.Stdout, nil),
+			Created: logs.NanoLayout,
 		})
 		if err != nil {
 			panic(err)

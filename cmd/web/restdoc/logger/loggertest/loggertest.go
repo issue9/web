@@ -26,11 +26,15 @@ func New(a *assert.Assertion) *Tester {
 		Records: make(map[logs.Level][]string, 10),
 	}
 
-	ll, err := logs.New(&logs.Options{
+	ll, err := logs.New(nil, &logs.Options{
 		Levels: logs.AllLevels(),
-		Handler: logs.HandleFunc(func(r *logs.Record) {
-			t.Records[r.Level] = append(t.Records[r.Level], r.Message)
-			os.Stderr.Write([]byte(r.Message + "\n"))
+		Handler: logs.HandlerFunc(func(r *logs.Record) {
+			b := logs.NewBuffer(true)
+			defer b.Free()
+			b.AppendFunc(r.AppendMessage)
+			s := string(b.Bytes())
+			t.Records[r.Level] = append(t.Records[r.Level], s)
+			os.Stderr.Write([]byte(s + "\n"))
 		}),
 	})
 	a.NotError(err).NotNil(ll)

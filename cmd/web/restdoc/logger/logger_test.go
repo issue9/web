@@ -20,9 +20,9 @@ func TestLogger(t *testing.T) {
 	a := assert.New(t, false)
 
 	buf := new(bytes.Buffer)
-	ll, err := logs.New(&logs.Options{
+	ll, err := logs.New(nil, &logs.Options{
 		Levels:  logs.AllLevels(),
-		Handler: logs.NewTextHandler("", buf),
+		Handler: logs.NewTextHandler(buf),
 	})
 	a.NotError(err).NotNil(ll)
 	l := New(ll, message.NewPrinter(language.SimplifiedChinese))

@@ -44,9 +44,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 
 		return func(w io.Writer) error {
 			ctx := context.Background()
-			ls, err := logs.New(&logs.Options{
+			ls, err := logs.New(p, &logs.Options{
 				Levels:  logs.AllLevels(),
-				Handler: logs.NewTermHandler(logs.NanoLayout, os.Stdout, nil),
+				Handler: logs.NewTermHandler(os.Stdout, nil),
+				Created: logs.NanoLayout,
 			})
 			if err != nil {
 				return err

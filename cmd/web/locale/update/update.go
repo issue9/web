@@ -38,9 +38,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		dest := fs.String("dest", "", destUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
-			log, err := logs.New(&logs.Options{
+			log, err := logs.New(nil, &logs.Options{
 				Levels:  logs.AllLevels(),
-				Handler: logs.NewTermHandler(logs.NanoLayout, os.Stdout, nil),
+				Handler: logs.NewTermHandler(os.Stdout, nil),
+				Created: logs.NanoLayout,
 			})
 			if err != nil {
 				panic(err)

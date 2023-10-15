@@ -28,6 +28,7 @@ type (
 	HandlerFunc = logs.HandlerFunc
 	Record      = logs.Record
 	Logger      = logs.Logger
+	Buffer      = logs.Buffer
 
 	// Logs 日志系统接口
 	Logs interface {
@@ -67,6 +68,8 @@ type (
 )
 
 // New 声明日志实例
+//
+// p 关联的本地对象，[Logger.Error] 和 [Logger.Print] 等的输出受此影响，可以为空，具体可参考 [logs.WithLocale]。
 func New(p *localeutil.Printer, opt *Options) (Logs, error) {
 	opt, err := optionsSanitize(opt)
 	if err != nil {
@@ -168,3 +171,5 @@ func (l *withLogs) Free() {
 	l.freed = true
 	withLogsPool.Put(l)
 }
+
+func NewBuffer(detail bool) *Buffer { return logs.NewBuffer(detail) }
