@@ -90,7 +90,10 @@ type (
 		// 默认的语言标签
 		//
 		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-		// 同时也用来初始化 [Server.LocalePrinter]，框架本身的日志输出也受此影响。
+		// 同时也用来初始化 [Server.LocalePrinter]。
+		//
+		// 框架中的日志输出时，如果该信息实现了 [LocaleStringer] 接口，
+		// 将会转换成此设置项的语言。
 		//
 		// 如果为空，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
@@ -210,7 +213,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 
 	o.printer = newPrinter(o.Language, o.Catalog)
 
-	l, err := logs.New(o.Logs)
+	l, err := logs.New(o.printer, o.Logs)
 	if err != nil {
 		return nil, config.NewFieldError("Logs", err)
 	}

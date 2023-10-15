@@ -7,8 +7,8 @@ package logs
 import (
 	"log"
 
-	"github.com/issue9/logs/v5"
-	"github.com/issue9/logs/v5/writers"
+	"github.com/issue9/logs/v6"
+	"github.com/issue9/logs/v6/writers"
 )
 
 func setStdDefault(l *logs.Logs) {

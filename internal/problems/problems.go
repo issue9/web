@@ -24,8 +24,8 @@ type Problem struct {
 
 	Type   string // 带 Problems.Prefix
 	Status int
-	Title  localeutil.LocaleStringer
-	Detail localeutil.LocaleStringer
+	Title  localeutil.Stringer
+	Detail localeutil.Stringer
 }
 
 func New(prefix string) *Problems {
@@ -35,7 +35,7 @@ func New(prefix string) *Problems {
 	}
 }
 
-func (ps *Problems) Add(id string, status int, title, detail localeutil.LocaleStringer) {
+func (ps *Problems) Add(id string, status int, title, detail localeutil.Stringer) {
 	if ps.exists(id) {
 		panic(fmt.Sprintf("存在相同值的 id 参数 %s", id))
 	}
@@ -61,7 +61,7 @@ func (ps *Problems) exists(id string) bool {
 	return sliceutil.Exists(ps.problems, func(p *Problem, _ int) bool { return p.id == id })
 }
 
-func (ps *Problems) Visit(visit func(prefix, id string, status int, title, detail localeutil.LocaleStringer)) {
+func (ps *Problems) Visit(visit func(prefix, id string, status int, title, detail localeutil.Stringer)) {
 	for _, s := range ps.problems {
 		visit(ps.prefix, s.id, s.Status, s.Title, s.Detail)
 	}

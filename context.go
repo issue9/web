@@ -18,7 +18,6 @@ import (
 
 	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 )
 
 const contextPoolBodyBufferMaxSize = 1 << 11 // 过大的对象不回收，以免造成内存占用过高。
@@ -301,7 +300,7 @@ func (ctx *Context) destroy() {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
-	logs.DestroyWithLogs(ctx.logs)
+	ctx.logs.Free()
 
 	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
 		contextPool.Put(ctx)

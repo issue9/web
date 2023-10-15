@@ -15,10 +15,10 @@ import (
 //
 // 传递参数为字段名与需要验证的值；
 // 返回字段名和错误信息，如果验证成功，则返回两个空值；
-type RulerFuncOf[T any] func(string, T) (string, localeutil.LocaleStringer)
+type RulerFuncOf[T any] func(string, T) (string, localeutil.Stringer)
 
-func NewRule[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[T] {
-	return func(name string, val T) (string, localeutil.LocaleStringer) {
+func NewRule[T any](v func(T) bool, msg localeutil.Stringer) RulerFuncOf[T] {
+	return func(name string, val T) (string, localeutil.Stringer) {
 		if v(val) {
 			return "", nil
 		}
@@ -30,7 +30,7 @@ func NewRule[T any](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[T
 //
 // 按顺序依次验证，直接碰到第一个验证不过的。
 func NewRules[T any](r ...RulerFuncOf[T]) RulerFuncOf[T] {
-	return func(name string, val T) (string, localeutil.LocaleStringer) {
+	return func(name string, val T) (string, localeutil.Stringer) {
 		for _, rule := range r {
 			if n, msg := rule(name, val); msg != nil {
 				return n, msg
@@ -41,8 +41,8 @@ func NewRules[T any](r ...RulerFuncOf[T]) RulerFuncOf[T] {
 }
 
 // NewSliceRule 声明用于验证切片元素的规则
-func NewSliceRule[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer) RulerFuncOf[S] {
-	return func(name string, val S) (string, localeutil.LocaleStringer) {
+func NewSliceRule[T any, S ~[]T](v func(T) bool, msg localeutil.Stringer) RulerFuncOf[S] {
+	return func(name string, val S) (string, localeutil.Stringer) {
 		for index, vv := range val {
 			if !v(vv) {
 				return name + "[" + strconv.Itoa(index) + "]", msg
@@ -53,7 +53,7 @@ func NewSliceRule[T any, S ~[]T](v func(T) bool, msg localeutil.LocaleStringer) 
 }
 
 func NewSliceRules[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
-	return func(name string, val S) (string, localeutil.LocaleStringer) {
+	return func(name string, val S) (string, localeutil.Stringer) {
 		for _, rule := range r {
 			for index, item := range val {
 				if _, msg := rule(name, item); msg != nil {
@@ -66,8 +66,8 @@ func NewSliceRules[T any, S ~[]T](r ...RulerFuncOf[T]) RulerFuncOf[S] {
 }
 
 // NewMapRule 声明验证 map 元素的规则
-func NewMapRule[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.LocaleStringer) RulerFuncOf[M] {
-	return func(name string, val M) (string, localeutil.LocaleStringer) {
+func NewMapRule[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.Stringer) RulerFuncOf[M] {
+	return func(name string, val M) (string, localeutil.Stringer) {
 		for key, vv := range val {
 			if !v(vv) {
 				return fmt.Sprintf("%s[%v]", name, key), msg
@@ -78,7 +78,7 @@ func NewMapRule[K comparable, V any, M ~map[K]V](v func(V) bool, msg localeutil.
 }
 
 func NewMapRules[K comparable, V any, M ~map[K]V](r ...RulerFuncOf[V]) RulerFuncOf[M] {
-	return func(name string, val M) (string, localeutil.LocaleStringer) {
+	return func(name string, val M) (string, localeutil.Stringer) {
 		for _, rule := range r {
 			for key, item := range val {
 				if _, msg := rule(name, item); msg != nil {

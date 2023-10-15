@@ -7,7 +7,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v5"
+	"github.com/issue9/logs/v6"
 )
 
 func TestOptionsSanitize(t *testing.T) {

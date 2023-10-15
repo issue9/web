@@ -6,7 +6,8 @@ package logs
 import (
 	"sync"
 
-	"github.com/issue9/logs/v5"
+	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v6"
 )
 
 // 日志的类别
@@ -22,11 +23,11 @@ const (
 var withLogsPool = &sync.Pool{New: func() any { return &withLogs{} }}
 
 type (
-	Level      = logs.Level
-	Handler    = logs.Handler
-	HandleFunc = logs.HandleFunc
-	Record     = logs.Record
-	Logger     = logs.Logger
+	Level       = logs.Level
+	Handler     = logs.Handler
+	HandlerFunc = logs.HandlerFunc
+	Record      = logs.Record
+	Logger      = logs.Logger
 
 	// Logs 日志系统接口
 	Logs interface {
@@ -48,6 +49,9 @@ type (
 
 		// With 构建一个带有指定参数的日志对象
 		With(ps map[string]any) Logs
+
+		// Free 回收当前对象
+		Free()
 	}
 
 	defaultLogs struct {
@@ -55,6 +59,7 @@ type (
 	}
 
 	withLogs struct {
+		freed   bool
 		logs    *defaultLogs
 		ps      map[string]any
 		loggers map[Level]Logger
@@ -62,19 +67,23 @@ type (
 )
 
 // New 声明日志实例
-func New(opt *Options) (Logs, error) {
+func New(p *localeutil.Printer, opt *Options) (Logs, error) {
 	opt, err := optionsSanitize(opt)
 	if err != nil {
 		return nil, err
 	}
 
 	o := make([]logs.Option, 0, 3)
-	if opt.Caller {
-		o = append(o, logs.Caller)
+	if opt.Location {
+		o = append(o, logs.WithLocation(true))
 	}
-	if opt.Created {
-		o = append(o, logs.Created)
+	if opt.Created != "" {
+		o = append(o, logs.WithCreated(opt.Created))
 	}
+	if opt.StackError {
+		o = append(o, logs.WithDetail(true))
+	}
+	o = append(o, logs.WithLocale(p))
 
 	if opt.Handler == nil {
 		opt.Handler = NewNopHandler()
@@ -109,11 +118,14 @@ func (l *defaultLogs) NewRecord(lv Level) *Record { return l.logs.NewRecord(lv) 
 // With 构建一个带有指定参数日志对象
 func (l *defaultLogs) With(ps map[string]any) Logs {
 	p := withLogsPool.Get().(*withLogs)
+	p.freed = false
 	p.logs = l
 	p.ps = ps
 	p.loggers = make(map[Level]Logger, 6)
 	return p
 }
+
+func (l *defaultLogs) Free() {}
 
 func (l *withLogs) INFO() Logger { return l.Logger(Info) }
 
@@ -149,7 +161,10 @@ func (l *withLogs) With(ps map[string]any) Logs {
 	return l.logs.With(ps)
 }
 
-// DestroyWithLogs 回收 [Logs.With] 创建的对象
-//
-// 这是一个非必须的方法，调用可能会有一定的性能提升。需要确保 l 类型的正确性！
-func DestroyWithLogs(l Logs) { withLogsPool.Put(l) }
+func (l *withLogs) Free() {
+	if l.freed {
+		return
+	}
+	l.freed = true
+	withLogsPool.Put(l)
+}

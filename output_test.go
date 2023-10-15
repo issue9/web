@@ -32,7 +32,7 @@ func TestContext_Render(t *testing.T) {
 	srv := newTestServer(a, &Options{
 		Language:   language.SimplifiedChinese,
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(logs.MicroLayout, buf), Levels: logs.AllLevels()},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler(buf), Levels: logs.AllLevels(), Created: logs.MicroLayout},
 	})
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)

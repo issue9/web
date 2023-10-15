@@ -25,7 +25,8 @@ func TestServer(t *testing.T) {
 			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
 		},
 		Logs: &logs.Options{
-			Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil),
+			Created: logs.MicroLayout,
+			Handler: logs.NewTermHandler(os.Stderr, nil),
 			Levels:  logs.AllLevels(),
 		},
 	})

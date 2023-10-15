@@ -58,7 +58,8 @@ func TestOnMessage(t *testing.T) {
 			{Type: Mimetype, MarshalBuilder: nil, Unmarshal: nil},
 		},
 		Logs: &logs.Options{
-			Handler: logs.NewTermHandler(logs.MicroLayout, os.Stderr, nil),
+			Created: logs.MicroLayout,
+			Handler: logs.NewTermHandler(os.Stderr, nil),
 			Levels:  logs.AllLevels(),
 		},
 	})

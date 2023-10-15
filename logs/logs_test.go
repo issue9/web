@@ -16,11 +16,11 @@ func TestLogs_With(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
 
-	l, err := New(&Options{
-		Handler: NewTextHandler(NanoLayout, buf),
-		Caller:  true,
-		Created: true,
-		Levels:  AllLevels(),
+	l, err := New(nil, &Options{
+		Created:  NanoLayout,
+		Handler:  NewTextHandler(buf),
+		Location: true,
+		Levels:   AllLevels(),
 	})
 	a.NotError(err).NotNil(l)
 
@@ -51,14 +51,13 @@ func TestLogs_With(t *testing.T) {
 		Contains(buf.String(), "logs_test.go:49"). // 依赖 DEBUG().String() 行号
 		Contains(buf.String(), "k1=v1").
 		Contains(buf.String(), "k2=v2")
-
-	DestroyWithLogs(ps)
+	ps.Free()
 }
 
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
-	l, err := New(nil)
+	l, err := New(nil, nil)
 	a.NotError(err).NotNil(l)
 	l.DEBUG().Println("test")
 
@@ -67,15 +66,15 @@ func TestNew(t *testing.T) {
 	infoBuf := new(bytes.Buffer)
 	opt := &Options{
 		Handler: NewDispatchHandler(map[Level]Handler{
-			Error: NewTextHandler(MicroLayout, textBuf),
-			Warn:  NewTermHandler(MicroLayout, termBuf, map[Level]colors.Color{Info: colors.Blue}),
-			Info:  NewJSONHandler(MicroLayout, infoBuf),
+			Error: NewTextHandler(textBuf),
+			Warn:  NewTermHandler(termBuf, map[Level]colors.Color{Info: colors.Blue}),
+			Info:  NewJSONHandler(infoBuf),
 		}),
-		Caller:  true,
-		Created: true,
-		Levels:  AllLevels(),
+		Location: true,
+		Created:  MicroLayout,
+		Levels:   AllLevels(),
 	}
-	l, err = New(opt)
+	l, err = New(nil, opt)
 	a.NotError(err).NotNil(l)
 
 	l.ERROR().Error(localeutil.Error("scheduled job"))

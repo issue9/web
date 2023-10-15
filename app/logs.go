@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	xlogs "github.com/issue9/logs/v5"
+	xlogs "github.com/issue9/logs/v6"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web"
@@ -24,10 +24,12 @@ type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
-	Caller bool `xml:"caller,attr,omitempty" json:"caller,omitempty" yaml:"caller,omitempty"`
+	Location bool `xml:"location,attr,omitempty" json:"location,omitempty" yaml:"location,omitempty"`
 
-	// 是否在日志中显示时间
-	Created bool `xml:"created,attr,omitempty" json:"created,omitempty" yaml:"created,omitempty"`
+	// 日志显示的时间格式
+	//
+	// Go 的时间格式字符串，如果为空表示不显示；
+	Created string `xml:"created,omitempty" json:"created,omitempty" yaml:"created,omitempty"`
 
 	// 允许开启的通道
 	//
@@ -65,23 +67,20 @@ type logHandlerConfig struct {
 	//
 	// 根据以上的 type 不同而不同：
 	// - file:
-	//  0: 时间格式，Go 的时间格式字符串；
-	//  1: 保存目录；
-	//  2: 文件格式，可以包含 Go 的时间格式化字符，以 %i 作为同名文件时的序列号；
-	//  3: 文件的最大尺寸，单位 byte；
-	//  4: 文件的格式，默认为 text，还可选为 json；
+	//  0: 保存目录；
+	//  1: 文件格式，可以包含 Go 的时间格式化字符，以 %i 作为同名文件时的序列号；
+	//  2: 文件的最大尺寸，单位 byte；
+	//  3: 文件的格式，默认为 text，还可选为 json；
 	// - smtp:
-	//  0: 时间格式，Go 的时间格式字符串；
-	//  1: 账号；
-	//  2: 密码；
-	//  3: 主题；
-	//  4: 为 smtp 的主机地址，需要带上端口号；
-	//  5: 接收邮件列表；
-	//  6: 文件的格式，默认为 text，还可选为 json；
+	//  0: 账号；
+	//  1: 密码；
+	//  2: 主题；
+	//  3: 为 smtp 的主机地址，需要带上端口号；
+	//  4: 接收邮件列表；
+	//  5: 文件的格式，默认为 text，还可选为 json；
 	// - term
-	//  0: 时间格式，Go 的时间格式字符串；
-	//  1: 输出的终端，可以是 stdout 或 stderr；
-	//  2-8: Level 以及对应的字符颜色，格式：erro:blue，可用颜色：
+	//  0: 输出的终端，可以是 stdout 或 stderr；
+	//  1-7: Level 以及对应的字符颜色，格式：erro:blue，可用颜色：
 	//   - default 默认；
 	//   - black 黑；
 	//   - red 红；
@@ -109,11 +108,11 @@ func (conf *logsConfig) build() (*logs.Options, []func() error, *web.FieldError)
 	}
 
 	return &logs.Options{
-		Handler: w,
-		Created: conf.Created,
-		Caller:  conf.Caller,
-		Levels:  conf.Levels,
-		Std:     conf.Stdlog,
+		Handler:  w,
+		Created:  conf.Created,
+		Location: conf.Location,
+		Levels:   conf.Levels,
+		Std:      conf.Stdlog,
 	}, c, nil
 }
 
@@ -182,30 +181,30 @@ func init() {
 }
 
 func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {
-	size, err := strconv.ParseInt(args[3], 10, 64)
+	size, err := strconv.ParseInt(args[2], 10, 64)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	w, err := logs.NewRotateFile(args[2], args[1], size)
+	w, err := logs.NewRotateFile(args[1], args[0], size)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if len(args) < 5 || args[4] == "text" {
-		return logs.NewTextHandler(args[0], w), w.Close, nil
+	if len(args) < 4 || args[3] == "text" {
+		return logs.NewTextHandler(w), w.Close, nil
 	}
-	return logs.NewJSONHandler(args[0], w), w.Close, nil
+	return logs.NewJSONHandler(w), w.Close, nil
 }
 
 func newSMTPLogsHandler(args []string) (logs.Handler, func() error, error) {
-	sendTo := strings.Split(args[5], ",")
-	w := logs.NewSMTP(args[1], args[2], args[3], args[4], sendTo)
+	sendTo := strings.Split(args[4], ",")
+	w := logs.NewSMTP(args[0], args[1], args[2], args[3], sendTo)
 
-	if len(args) < 7 || args[7] == "text" {
-		return logs.NewTextHandler(args[0], w), nil, nil
+	if len(args) < 6 || args[6] == "text" {
+		return logs.NewTextHandler(w), nil, nil
 	}
-	return logs.NewJSONHandler(args[0], w), nil, nil
+	return logs.NewJSONHandler(w), nil, nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -221,28 +220,25 @@ var colorMap = map[string]colors.Color{
 }
 
 // args 参数格式如下：
-// - 0 时间格式
-// - 1 为输出通道，可以为 stdout 和 stderr；
-// - 2-8 为 level 与颜色的配置，格式为 Info:green,Warn:yellow；
+// - 0 为输出通道，可以为 stdout 和 stderr；
+// - 1-7 为 level 与颜色的配置，格式为 Info:green,Warn:yellow；
 func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return nil, nil, web.NewFieldError("Args", locales.InvalidValue)
 	}
 
-	timeLayout := args[0]
-
 	var w io.Writer
-	switch strings.ToLower(args[1]) {
+	switch strings.ToLower(args[0]) {
 	case "stderr":
 		w = os.Stderr
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, web.NewFieldError("Args[1]", locales.InvalidValue)
+		return nil, nil, web.NewFieldError("Args[0]", locales.InvalidValue)
 	}
 
-	args = args[2:]
-	if len(args) > 6 {
+	args = args[1:]
+	if len(args) > 5 {
 		return nil, nil, web.NewFieldError("Args", locales.InvalidValue)
 	}
 	cs := make(map[logs.Level]colors.Color, len(args))
@@ -250,21 +246,21 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 		a := strings.SplitN(arg, ":", 2)
 
 		if len(a) != 2 || a[1] == "" {
-			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(2+index)+"]", locales.InvalidValue)
+			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
 		}
 
 		lv, err := xlogs.ParseLevel(a[0])
 		if err != nil {
-			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(2+index)+"]", err)
+			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(1+index)+"]", err)
 		}
 
 		c, found := colorMap[a[1]]
 		if !found {
-			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(2+index)+"]", locales.InvalidValue)
+			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
 		}
 
 		cs[lv] = c
 	}
 
-	return logs.NewTermHandler(timeLayout, w, cs), nil, nil
+	return logs.NewTermHandler(w, cs), nil, nil
 }

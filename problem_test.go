@@ -44,7 +44,7 @@ func TestContext_Error(t *testing.T) {
 	errLog := new(bytes.Buffer)
 
 	srv := newTestServer(a, &Options{
-		Logs: &logs.Options{Handler: logs.NewTextHandler("20060102-15:04:05", errLog), Caller: true, Created: true},
+		Logs: &logs.Options{Handler: logs.NewTextHandler(errLog), Location: true, Created: "20060102-15:04:05"},
 	})
 	errLog.Reset()
 

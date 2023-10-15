@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v5"
-	"github.com/issue9/logs/v5/writers"
-	"github.com/issue9/logs/v5/writers/rotate"
+	"github.com/issue9/logs/v6"
+	"github.com/issue9/logs/v6/writers"
+	"github.com/issue9/logs/v6/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web/locales"
@@ -28,10 +28,14 @@ const (
 
 // Options 初始化日志的选项
 type Options struct {
-	Handler Handler
-	Caller  bool    // 是否带调用堆栈信息
-	Created bool    // 是否带时间
-	Levels  []Level // 允许的日志通道
+	Handler  Handler
+	Location bool    // 是否带调用堆栈信息
+	Created  string  // 指定创建日志的时间格式，如果为空表示不需要输出时间。
+	Levels   []Level // 允许的日志通道
+
+	// 对于 [Logger.Error] 输入 [xerrors.Formatter] 类型时，
+	// 是否输出调用堆栈信息。
+	StackError bool
 
 	// 是否接管标准库日志的输出
 	//
@@ -59,19 +63,15 @@ func AllLevels() []Level { return []Level{Info, Warn, Trace, Debug, Error, Fatal
 
 func NewNopHandler() Handler { return logs.NewNopHandler() }
 
-func NewTextHandler(timeLayout string, w ...io.Writer) Handler {
-	return logs.NewTextHandler(timeLayout, w...)
-}
+func NewTextHandler(w ...io.Writer) Handler { return logs.NewTextHandler(w...) }
 
-func NewJSONHandler(timeLayout string, w ...io.Writer) Handler {
-	return logs.NewJSONHandler(timeLayout, w...)
-}
+func NewJSONHandler(w ...io.Writer) Handler { return logs.NewJSONHandler(w...) }
 
 // NewTermHandler 带颜色的终端输出通道
 //
 // 参数说明参考 [logs.NewTermHandler]
-func NewTermHandler(timeLayout string, w io.Writer, colors map[Level]colors.Color) Handler {
-	return logs.NewTermHandler(timeLayout, w, colors)
+func NewTermHandler(w io.Writer, colors map[Level]colors.Color) Handler {
+	return logs.NewTermHandler(w, colors)
 }
 
 // NewDispatchHandler 按不同的 [Level] 派发到不同的 [Handler] 对象

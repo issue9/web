@@ -47,7 +47,7 @@ import "github.com/issue9/localeutil"
 // 当前方法由 [FilterFuncOf] 生成，验证的数据也由其提供，
 // 但是只有在调用当前方法时才真正对数据进行验证。
 // 如果符合要求返回 "", nil，否则返回字段名和错误信息。
-type FilterFunc func() (string, localeutil.LocaleStringer)
+type FilterFunc func() (string, localeutil.Stringer)
 
 // FilterFuncOf 生成某数值的过滤器
 //
@@ -59,7 +59,7 @@ type FilterFuncOf[T any] func(name string, v *T) FilterFunc
 //
 // msg 和 v 组成验证规则；
 // s 表示对字段 v 的一些清理，比如去除空白字符等，如果指定了此参数，会在 rule 之前执行；
-func NewFromVS[T any](msg localeutil.LocaleStringer, v func(T) bool, s ...func(*T)) FilterFuncOf[T] {
+func NewFromVS[T any](msg localeutil.Stringer, v func(T) bool, s ...func(*T)) FilterFuncOf[T] {
 	return New(NewRule(v, msg), s...)
 }
 
@@ -68,7 +68,7 @@ func NewFromVS[T any](msg localeutil.LocaleStringer, v func(T) bool, s ...func(*
 // s 表示对字段 v 的一些清理，比如去除空白字符等，如果指定了此参数，会在 rule 之前执行；
 func New[T any](rule RulerFuncOf[T], s ...func(*T)) FilterFuncOf[T] {
 	return func(name string, v *T) FilterFunc {
-		return func() (string, localeutil.LocaleStringer) {
+		return func() (string, localeutil.Stringer) {
 			for _, sa := range s {
 				sa(v)
 			}
@@ -84,7 +84,7 @@ func New[T any](rule RulerFuncOf[T], s ...func(*T)) FilterFuncOf[T] {
 // NewSlice 生成针对切片元素的 [FilterFuncOf]
 func NewSlice[T any, S ~[]T](rule RulerFuncOf[S], s ...func(*T)) FilterFuncOf[S] {
 	return func(name string, v *S) FilterFunc {
-		return func() (string, localeutil.LocaleStringer) {
+		return func() (string, localeutil.Stringer) {
 			for _, sa := range s {
 				for index, item := range *v {
 					sa(&item)
@@ -103,7 +103,7 @@ func NewSlice[T any, S ~[]T](rule RulerFuncOf[S], s ...func(*T)) FilterFuncOf[S]
 // NewSlice 生成针对 map 元素的 [FilterFuncOf]
 func NewMap[K comparable, V any, M ~map[K]V](rule RulerFuncOf[M], s ...func(*V)) FilterFuncOf[M] {
 	return func(name string, v *M) FilterFunc {
-		return func() (string, localeutil.LocaleStringer) {
+		return func() (string, localeutil.Stringer) {
 			for _, sa := range s {
 				for k, item := range *v {
 					sa(&item)

@@ -60,7 +60,7 @@ func TestContext_KeepAlive(t *testing.T) {
 	lw := &bytes.Buffer{}
 	o := &Options{
 		Language:   language.SimplifiedChinese,
-		Logs:       &logs.Options{Handler: logs.NewTextHandler("2006-01-02", lw), Levels: logs.AllLevels()},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler(lw), Levels: logs.AllLevels(), Created: "2006-01-02"},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	}
 	srv := newTestServer(a, o)
@@ -96,7 +96,7 @@ func TestServer_Context(t *testing.T) {
 	lw := &bytes.Buffer{}
 	o := &Options{
 		Language:   language.SimplifiedChinese,
-		Logs:       &logs.Options{Handler: logs.NewTextHandler("2006-01-02", lw), Levels: logs.AllLevels()},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler(lw), Levels: logs.AllLevels(), Created: "2006-01-02"},
 		HTTPServer: &http.Server{Addr: ":8080"},
 	}
 	srv := newTestServer(a, o)

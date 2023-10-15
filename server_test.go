@@ -63,10 +63,10 @@ func newTestServer(a *assert.Assertion, o *Options) *Server {
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = &logs.Options{
-			Handler: logs.NewTermHandler(logs.NanoLayout, os.Stderr, nil),
-			Caller:  true,
-			Created: true,
-			Levels:  logs.AllLevels(),
+			Handler:  logs.NewTermHandler(os.Stderr, nil),
+			Location: true,
+			Created:  logs.NanoLayout,
+			Levels:   logs.AllLevels(),
 		}
 	}
 	if o.Compresses == nil {
@@ -268,7 +268,7 @@ func TestContext_NoContent(t *testing.T) {
 	buf := new(bytes.Buffer)
 	o := &Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Logs:       &logs.Options{Handler: logs.NewTextHandler("15:04:05", buf)},
+		Logs:       &logs.Options{Handler: logs.NewTextHandler(buf), Created: "15:04:05"},
 	}
 	s := newTestServer(a, o)
 

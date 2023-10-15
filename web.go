@@ -34,7 +34,7 @@ type (
 	QueryUnmarshaler = query.Unmarshaler
 
 	// LocaleStringer 本地化字符串需要实在的接口
-	LocaleStringer = localeutil.LocaleStringer
+	LocaleStringer = localeutil.Stringer
 
 	StringPhrase = localeutil.StringPhrase
 )
