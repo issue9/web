@@ -115,12 +115,12 @@ func (p *RFC7807) Apply(ctx *Context) Problem {
 
 	data, err := ctx.Marshal(p)
 	if err != nil {
-		ctx.Logs().ERROR().Printf("%+v", err)
+		ctx.Logs().ERROR().Error(err)
 		return nil
 	}
 
 	if _, err = ctx.Write(data); err != nil {
-		ctx.Logs().ERROR().Printf("%+v", err)
+		ctx.Logs().ERROR().Error(err)
 	}
 	if len(p.Params) < rfc7807PoolMaxParams {
 		rfc7807Pool.Put(p)
@@ -195,7 +195,7 @@ func (ctx *Context) Error(err error, id string) Problem {
 		}
 	}
 
-	ctx.Logs().NewRecord(logs.Error).DepthPrintf(2, "%+v\n", err)
+	ctx.Logs().NewRecord(logs.Error).DepthError(2, err)
 	return ctx.Problem(id)
 }
 

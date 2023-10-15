@@ -19,8 +19,6 @@ type stackError struct {
 // 如果 err 为 nil，则返回 nil。
 // 多次调用 NewDepthStackError 包装，则返回第一次包装的返回值。
 // depth 为 1 表示调用 NewDepthStackError 的位置。
-//
-// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
 func NewDepthStackError(depth int, err error) error {
 	if err == nil {
 		return nil

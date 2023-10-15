@@ -109,7 +109,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 		var err error
 		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
 		if err != nil {
-			l.DEBUG().Printf("%+v", err)
+			l.DEBUG().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}

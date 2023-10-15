@@ -333,7 +333,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	}
 }
 
-func BenchmarkNewProblem(b *testing.B) {
+func BenchmarkNewRFC7807(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		p := newRFC7807().init("id", "title", "detail", 400)
 		p.WithExtensions(&object{Name: "n1", Age: 11})
@@ -342,7 +342,7 @@ func BenchmarkNewProblem(b *testing.B) {
 	}
 }
 
-func BenchmarkProblem_Apply_json(b *testing.B) {
+func BenchmarkRFC7807_unmarshal_json(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a, nil)
 

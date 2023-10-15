@@ -46,8 +46,6 @@ func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key,
 //
 // 位置从调用 NewStackError 开始。如果 err 为 nil，则返回 nil。
 // 多次调用 NewStackError 包装，则返回第一次包装的返回值。
-//
-// 如果需要输出调用堆栈信息，需要指定 %+v 标记。
 func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
 
 // NewFieldError 返回表示配置文件错误的对象

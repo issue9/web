@@ -77,7 +77,7 @@ func (ctx *Context) Render(status int, body any) {
 
 	ctx.WriteHeader(status)
 	if _, err = ctx.Write(data); err != nil {
-		ctx.Logs().ERROR().Printf("%+v", err)
+		ctx.Logs().ERROR().Error(err)
 	}
 }
 
