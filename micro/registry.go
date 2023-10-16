@@ -7,9 +7,9 @@ type Registry interface {
 	// Register 注册服务
 	Register() error
 
-	// Deregister 取消服务
+	// Deregister 注消服务
 	Deregister() error
 
-	// Node 返回指定名称的服务节点
-	Node(name string) []*Node
+	// Discover 返回指定名称的服务节点
+	Discover(name string) []*Node
 }

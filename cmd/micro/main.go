@@ -2,6 +2,10 @@
 
 package main
 
+import "github.com/issue9/web/micro"
+
 func main() {
-	// TODO
+	s := micro.NewGateway(nil, nil)
+
+	s.Serve()
 }
