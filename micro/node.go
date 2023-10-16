@@ -5,7 +5,7 @@ package micro
 import "github.com/issue9/web"
 
 type Node struct {
-	*web.Server
+	web.Server
 
 	nodes []*web.Client // 其它节点
 }
@@ -16,7 +16,7 @@ type NodeOptions struct {
 }
 
 // NewNode 将 [web.Server] 作为微服务节点
-func NewNode(s *web.Server, o *NodeOptions) *Node {
+func NewNode(s web.Server, o *NodeOptions) *Node {
 	return &Node{
 		Server: s,
 	}

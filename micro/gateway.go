@@ -5,7 +5,7 @@ package micro
 import "github.com/issue9/web"
 
 type Gateway struct {
-	*web.Server
+	web.Server
 	nodes []*web.Client
 }
 
@@ -14,7 +14,7 @@ type GatewayOptions struct {
 }
 
 // NewGateway 声明网关
-func NewGateway(s *web.Server, o *GatewayOptions) *Gateway {
+func NewGateway(s web.Server, o *GatewayOptions) *Gateway {
 	return &Gateway{
 		Server: s,
 	}
