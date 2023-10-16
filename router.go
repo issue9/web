@@ -56,7 +56,7 @@ func (srv *Server) call(w http.ResponseWriter, r *http.Request, ps types.Route, 
 				p.Apply(ctx) // Problem.Apply 始终返回 nil
 			}
 		}
-		ctx.destroy()
+		ctx.free()
 	}
 }
 

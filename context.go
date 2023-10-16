@@ -295,7 +295,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-func (ctx *Context) destroy() {
+func (ctx *Context) free() {
 	sliceutil.Reverse(ctx.exits) // TODO: go1.21 改为标准库
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)

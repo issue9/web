@@ -13,6 +13,4 @@ const defaultMode = Development
 
 func filename(f string) string { dev.Filename(f) }
 
-func debugRouter(r *web.Router, path, id string) {
-	dev.DebugRouter(r, path, id)
-}
+func debugRouter(r *web.Router, path, id string) { dev.DebugRouter(r, path, id) }

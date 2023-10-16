@@ -47,7 +47,7 @@ type (
 
 	// RFC7807 [Problem] 的 [RFC7807] 实现
 	//
-	// [MarshalFunc] 的实现者，可能需要对 RFC7807 进行处理以便输出更加友好的格式。
+	// [MarshalFunc] 的实现者，可能需要对 [RFC7807] 进行处理以便输出更加友好的格式。
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/RFC7807
 	RFC7807 struct {

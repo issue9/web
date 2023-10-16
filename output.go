@@ -142,7 +142,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 //
 // 如非必要，应该通过 [Responser] 进行输出。
 func (ctx *Context) WriteHeader(status int) {
-	if ctx.status > 199 && ctx.status != status {
+	if ctx.status > 99 && ctx.status != status {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 

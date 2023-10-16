@@ -110,7 +110,7 @@ func BenchmarkServer_newContext(b *testing.B) {
 			Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
 			Request()
 		ctx := srv.newContext(w, r, nil)
-		ctx.destroy()
+		ctx.free()
 	}
 }
 
@@ -168,7 +168,7 @@ func BenchmarkContext_Render(b *testing.B) {
 
 			ctx := srv.newContext(w, r, nil)
 			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
-			ctx.destroy()
+			ctx.free()
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
 			a.NotError(err).NotNil(data)

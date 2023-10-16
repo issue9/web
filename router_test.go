@@ -47,11 +47,11 @@ func TestServer_Routers(t *testing.T) {
 	uu, err := r1.URL(false, "/posts/1", nil)
 	a.NotError(err).Equal("https://example.com/posts/1", uu)
 
-	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusNoContent))
+	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusCreated))
 	servertest.Delete(a, "http://localhost:8080/p1/path").
 		Header("Accept", "application/json;v=2").
 		Do(nil).
-		Status(http.StatusNoContent)
+		Status(http.StatusCreated)
 	servertest.NewRequest(a, http.MethodOptions, "http://localhost:8080/p1/path").
 		Header("Accept", "application/json;v=2").
 		Do(nil).Status(http.StatusOK)

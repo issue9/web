@@ -63,7 +63,6 @@ func main() {
 	}
 
 	var opt *cmdopt.CmdOpt
-
 	opt = cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
