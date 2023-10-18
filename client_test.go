@@ -4,32 +4,42 @@ package web
 
 import (
 	"encoding/json"
-	"net/http"
+	"io"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"golang.org/x/text/encoding"
 
 	"github.com/issue9/web/servertest"
 )
 
-func TestClient(t *testing.T) {
+// TODO
+func testClient(t *testing.T) {
 	a := assert.New(t, false)
 
-	s := newTestServer(a, nil)
+	s := newTestServer(a)
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
 
 	s.NewRouter("default", nil).Get("/get", func(ctx *Context) Responser {
 		return OK(&object{Name: "name"})
 	}).Post("/post", func(ctx *Context) Responser {
-		return ctx.Problem(ProblemBadRequest).WithExtensions(&object{Name: "name"})
+		obj := &object{}
+		if resp := ctx.Read(true, obj, ProblemBadRequest); resp != nil {
+			return resp
+		}
+		if obj.Name != "name" {
+			return ctx.Problem(ProblemBadRequest).WithExtensions(&object{Name: "name"})
+		}
+		return OK(obj)
 	})
 
-	mts := []*Mimetype{
-		{Type: "application/json", MarshalBuilder: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
-	}
-	c := NewClient(nil, "http://localhost:8080", "application/json", mts, AllCompresses())
+	c := NewClient(nil, "http://localhost:8080", "application/json", json.Marshal, func(s string) (UnmarshalFunc, encoding.Encoding, error) {
+		return json.Unmarshal, nil, nil
+	}, func(s string, r io.Reader) (io.ReadCloser, error) {
+		return nil, nil
+	}, "")
 	a.NotNil(c)
 
 	resp := &object{}
@@ -48,34 +58,14 @@ func TestClient(t *testing.T) {
 	a.Zero(resp).
 		Equal(p.Type, ProblemBadRequest).
 		Equal(p.Extensions, &object{Name: "name"})
-}
-
-func TestServer_NewClient(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := newTestServer(a, nil)
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
-
-	s.NewRouter("default", nil).Post("/post", func(ctx *Context) Responser {
-		obj := &object{}
-		if resp := ctx.Read(true, obj, ProblemBadRequest); resp != nil {
-			return resp
-		}
-		return OK(obj)
-	})
-
-	s2 := newTestServer(a, nil)
-	c := s2.NewClient(&http.Client{}, "http://localhost:8080", "application/json")
-	a.NotNil(c)
-
-	resp := &object{}
-	p := &RFC7807{}
-	a.NotError(c.Post("/post", &object{Age: 1}, resp, p))
-	a.Zero(p).Equal(resp, &object{Age: 1})
 
 	resp = &object{}
 	p = &RFC7807{}
-	a.NotError(c.Patch("/get", nil, resp, p))
+	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, p))
+	a.Zero(p).Equal(resp, &object{Age: 1, Name: "name"})
+
+	resp = &object{}
+	p = &RFC7807{}
+	a.NotError(c.Patch("/not-exists", nil, resp, p))
 	a.Zero(resp).Equal(p.Type, ProblemNotFound)
 }

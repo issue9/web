@@ -1,26 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
-	"golang.org/x/text/language"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/servertest"
 )
 
-func buildMiddleware(a *assert.Assertion, v string) Middleware {
-	return MiddlewareFunc(func(next HandlerFunc) HandlerFunc {
-		return func(ctx *Context) Responser {
+func buildMiddleware(a *assert.Assertion, v string) web.Middleware {
+	return web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx *web.Context) web.Responser {
 			h := ctx.Header()
 			val := h.Get("h")
 			h.Set("h", v+val)
@@ -70,62 +68,7 @@ func TestServer_Routers(t *testing.T) {
 		Status(http.StatusNotFound)
 }
 
-func TestServer_FileServer(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	s.Catalog().SetString(language.MustParse("zh-CN"), "problem.404", "NOT FOUND")
-	r := s.NewRouter("def", nil)
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
 
-	t.Run("problems", func(t *testing.T) {
-		r.Get("/v1/{path}", s.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-
-		servertest.Get(a, "http://localhost:8080/v1/file1.txt").
-			Header("Accept", "application/json;vv=2").
-			Do(nil).
-			Status(http.StatusOK).
-			StringBody("file1")
-
-		servertest.Get(a, "http://localhost:8080/v1/not.exists").
-			Header("Accept", "application/json;vv=2").
-			Header("Accept-Language", "zh-cn").
-			Do(nil).
-			Status(404).
-			BodyFunc(func(a *assert.Assertion, body []byte) {
-				inst := &RFC7807{}
-				a.NotError(json.Unmarshal(body, inst))
-				a.Equal(inst.Type, "404").
-					Equal(inst.Title, "NOT FOUND").
-					Equal(inst.Detail, "problem.404.detail").
-					Equal(inst.Status, 404).
-					NotEmpty(inst.Instance)
-			})
-	})
-
-	t.Run("no problems", func(t *testing.T) {
-		r.Get("/v2/{path}", s.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-
-		servertest.Get(a, "http://localhost:8080/v2/file1.txt").
-			Do(nil).
-			Status(http.StatusOK).
-			StringBody("file1")
-
-		servertest.Get(a, "http://localhost:8080/v2/not.exists").
-			Header("Accept-Language", "zh-cn").
-			Do(nil).
-			Status(http.StatusNotFound).
-			BodyFunc(func(a *assert.Assertion, body []byte) {
-				inst := &RFC7807{}
-				a.NotError(json.Unmarshal(body, inst))
-				a.Equal(inst.Type, "404").
-					Equal(inst.Title, "NOT FOUND").
-					Equal(inst.Detail, "problem.404.detail").
-					Equal(inst.Status, 404).
-					NotEmpty(inst.Instance)
-			})
-	})
-}
 
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
@@ -133,9 +76,9 @@ func TestMiddleware(t *testing.T) {
 	count := 0
 
 	router := srv.NewRouter("def", nil)
-	router.Use(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), MiddlewareFunc(func(next HandlerFunc) HandlerFunc {
-		return func(ctx *Context) Responser {
-			ctx.OnExit(func(*Context, int) {
+	router.Use(buildMiddleware(a, "b1"), buildMiddleware(a, "b2-"), web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx *web.Context) web.Responser {
+			ctx.OnExit(func(*web.Context, int) {
 				count++
 			})
 			return next(ctx)

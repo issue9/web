@@ -28,7 +28,7 @@ func TestCLIOf(t *testing.T) {
 		ShutdownTimeout: shutdownTimeout,
 		Out:             bs,
 		ServeActions:    []string{"serve"},
-		Init: func(s *web.Server, user *empty, act string) error {
+		Init: func(s web.Server, user *empty, act string) error {
 			action = act
 			return nil
 		},
@@ -83,7 +83,7 @@ func TestCLIOf_sanitize(t *testing.T) {
 	cmd = &CLIOf[empty]{
 		Name:           "app",
 		Version:        "1.1.1",
-		Init:           func(*web.Server, *empty, string) error { return nil },
+		Init:           func(web.Server, *empty, string) error { return nil },
 		ConfigFilename: "web.yaml",
 	}
 	a.NotError(cmd.sanitize())

@@ -48,7 +48,7 @@ type view struct {
 //   - 其它结构体，尝试读取 HTMLName 字段的 html struct tag 值作为模板名称进行查找；
 //
 // dir 表示是否以目录的形式组织本地化代码；
-func InstallView(s *web.Server, dir bool, fsys fs.FS, glob string) {
+func InstallView(s web.Server, dir bool, fsys fs.FS, glob string) {
 	once.Do(func() {
 		if dir {
 			instalDirView(s, fsys, glob)
@@ -65,7 +65,7 @@ func InstallView(s *web.Server, dir bool, fsys fs.FS, glob string) {
 	})
 }
 
-func instalDirView(s *web.Server, fsys fs.FS, glob string) {
+func instalDirView(s web.Server, fsys fs.FS, glob string) {
 	fsys, funcs := initTpl(s, fsys)
 
 	dirs, err := fs.ReadDir(fsys, ".")
@@ -103,7 +103,7 @@ func instalDirView(s *web.Server, fsys fs.FS, glob string) {
 	})
 }
 
-func initTpl(s *web.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
+func initTpl(s web.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 	if fsys == nil {
 		fsys = s.Config()
 	}

@@ -1,241 +1,206 @@
 // SPDX-License-Identifier: MIT
 
-// Package server 服务管理
 package web
 
 import (
 	"context"
-	"errors"
+	"io"
 	"io/fs"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/sliceutil"
+	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/compress"
-	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/internal/mimetypes"
-	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/logs"
 )
 
-// Server 服务对象
-type Server struct {
-	name         string
-	version      string
-	httpServer   *http.Server
-	vars         *sync.Map
-	cache        cache.Driver
-	uptime       time.Time
-	routers      *group.GroupOf[HandlerFunc]
-	idGenerator  IDGenerator
-	requestIDKey string
-	state        State
-	services     *Services
+// Server 服务接口
+type Server interface {
+	// Name 应用的名称
+	Name() string
 
-	location *time.Location
-	catalog  *catalog.Builder
-	tag      language.Tag
-	printer  *message.Printer
-	logs     Logs
+	// Version 应用的版本
+	Version() string
 
-	closed chan struct{}
-	closes []func() error
+	// State 获取当前的状态
+	State() State
 
-	problems   *problems.Problems
-	mimetypes  *mimetypes.Mimetypes[BuildMarshalFunc, UnmarshalFunc] // 不能是 *mtsType，https://github.com/golang/go/issues/50729
-	compresses *compress.Compresses
-	config     *config.Config
+	// Vars 操纵共享变量的接口
+	Vars() *sync.Map
+
+	// Location 服务器的时区信息
+	Location() *time.Location
+
+	// Cache 返回缓存的相关接口
+	//
+	// 如果要获得缓存的底层驱动接口，可以将类型转换为 [cache.Driver]，
+	// 该类型提供了 [cache.Driver.Driver] 方法可以获得相应的对象。
+	Cache() cache.Cleanable
+
+	// Uptime 当前服务的运行时间
+	Uptime() time.Time
+
+	// UniqueID 生成唯一性的 ID
+	UniqueID() string
+
+	// Now 返回当前时间
+	//
+	// 与 [time.Now] 的区别在于 Now() 基于当前时区
+	Now() time.Time
+
+	// ParseTime 分析基于当前时区的时间
+	ParseTime(layout, value string) (time.Time, error)
+
+	// Serve 开始 HTTP 服务
+	//
+	// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
+	// 始终返回非空的错误对象，如果是被 [Server.Close] 关闭的，也将返回 [http.ErrServerClosed]。
+	Serve() (err error)
+
+	// Close 触发关闭服务事件
+	//
+	// 需要等到 [Server.Serve] 返回才表示服务结束。
+	// 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
+	Close(shutdownTimeout time.Duration)
+
+	// OnClose 注册关闭服务时需要执行的函数
+	//
+	// NOTE: 按注册的相反顺序执行。
+	OnClose(f ...func() error)
+
+	// Config 当前项目配置文件的管理
+	Config() *config.Config
+
+	// Language 返回默认的语言标签
+	Language() language.Tag
+
+	// LoadLocale 从 fsys 中加载符合 glob 的本地化文件
+	LoadLocale(glob string, fsys ...fs.FS) error
+
+	// LocalePrinter 符合当前本地化信息的打印接口
+	LocalePrinter() *message.Printer
+
+	// Catalog 用于操纵原生的本地化数据
+	Catalog() *catalog.Builder
+
+	// NewLocalePrinter 声明 tag 类型的本地化打印接口
+	NewLocalePrinter(tag language.Tag) *message.Printer
+
+	// Logs 日志接口
+	Logs() Logs
+
+	GetRouter(name string) *Router
+	NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router
+	RemoveRouter(name string)
+	Routers() []*Router
+	UseMiddleware(m ...Middleware)
+
+	// NewContext 从标准库的参数初始化 Context 对象
+	//
+	// NOTE: 这适合从标准库的请求中创建 [web.Context] 对象，
+	// 但是部分功能会缺失，比如地址中的参数信息，以及 [web.Context.Route] 等。
+	NewContext(w http.ResponseWriter, r *http.Request) *Context
+
+	AddProblem(id string, status int, title, detail LocaleStringer)
+	VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer))
+	InitProblem(pp *RFC7807, id string, p *message.Printer)
+
+	CompressIsDisable() bool
+	DisableCompress(disable bool)
+
+	NewClient(client *http.Client, url, marshalName string) *Client
+
+	ContentType(h string) (UnmarshalFunc, encoding.Encoding, error)
+	Accept(h string) *Mimetype
+	ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
+	AcceptEncoding(contentType, h string, l logs.Logger) (w Compressor, name string, notAcceptable bool)
+
+	// Services 服务管理接口
+	Services() Services
 }
 
-// New 新建 web 服务
-//
-// name, version 表示服务的名称和版本号；
-// o 指定了初始化 [Server] 一些带有默认值的参数；
-func NewServer(name, version string, o *Options) (*Server, error) {
-	o, err := sanitizeOptions(o)
-	if err != nil {
-		err.Path = "Options"
-		return nil, err
-	}
+// Services 服务管理接口
+type Services interface {
+	// Add 添加并运行新的服务
+	//
+	// title 是对该服务的简要说明；
+	Add(title LocaleStringer, f Service)
 
-	srv := &Server{
-		name:         name,
-		version:      version,
-		httpServer:   o.HTTPServer,
-		vars:         &sync.Map{},
-		cache:        o.Cache,
-		uptime:       time.Now(),
-		idGenerator:  o.IDGenerator,
-		requestIDKey: o.RequestIDKey,
-		state:        Stopped,
+	// AddFunc 将函数 f 作为服务添加并运行
+	AddFunc(title LocaleStringer, f func(context.Context) error)
 
-		location: o.Location,
-		catalog:  o.Catalog,
-		tag:      o.Language,
-		printer:  o.printer,
-		logs:     o.logs,
+	// AddCron 添加新的定时任务
+	//
+	// title 是对该服务的简要说明；
+	// spec cron 表达式，支持秒；
+	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+	//
+	// NOTE: 此功能依赖 [Server.UniqueID]。
+	AddCron(title LocaleStringer, f JobFunc, spec string, delay bool)
 
-		closed: make(chan struct{}, 1),
-		closes: make([]func() error, 0, 10),
+	// AddAt 添加在某个时间点执行的任务
+	//
+	// title 是对该服务的简要说明；
+	// at 指定的时间点；
+	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+	//
+	// NOTE: 此功能依赖 [Server.UniqueID]。
+	AddAt(title LocaleStringer, job JobFunc, at time.Time, delay bool)
 
-		problems:   o.problems,
-		mimetypes:  o.mimetypes,
-		compresses: o.compresses,
-		config:     o.Config,
-	}
+	// AddJob 添加新的计划任务
+	//
+	// title 是对该服务的简要说明；
+	// scheduler 计划任务的时间调度算法实现；
+	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+	//
+	// NOTE: 此功能依赖 [Server.UniqueID]。
+	AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, delay bool)
 
-	initProblems(srv.problems)
+	// AddTicker 添加新的定时任务
+	//
+	// title 是对该服务的简要说明；
+	// dur 时间间隔；
+	// imm 是否立即执行一次该任务；
+	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
+	//
+	// NOTE: 此功能依赖 [Server.UniqueID]。
+	AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool)
 
-	srv.routers = group.NewOf(srv.call,
-		notFound,
-		buildNodeHandle(http.StatusMethodNotAllowed),
-		buildNodeHandle(http.StatusOK),
-		o.RoutersOptions...)
-	srv.httpServer.Handler = srv.routers
-	srv.OnClose(srv.cache.Close)
-	srv.initServices()
+	// Visit 访问所有的服务
+	//
+	// visit 的原型为：
+	//  func(title LocaleStringer, state State, err error)
+	//
+	// title 为服务的说明；
+	// state 为服务的当前状态；
+	// err 只在 state 为 [Failed] 时才有的错误说明；
+	Visit(visit func(title LocaleStringer, state State, err error))
 
-	for _, f := range o.Init { // NOTE: 需要保证在最后
-		f(srv)
-	}
-	return srv, nil
+	// VisitJobs 访问所有的计划任务
+	//
+	// visit 原型为：
+	//  func(title LocaleStringer, prev, next time.Time, state State, delay bool, err error)
+	// title 为计划任务的说明；
+	// prev 和 next 表示任务的上一次执行时间和下一次执行时间；
+	// state 表示当前的状态；
+	// delay 表示该任务是否是执行完才开始计算下一次任务时间的；
+	// err 表示这个任务的出错状态；
+	VisitJobs(visit func(LocaleStringer, time.Time, time.Time, State, bool, error))
 }
 
-// Name 应用的名称
-func (srv *Server) Name() string { return srv.name }
+type Compressor = compress.Compressor
 
-// Version 应用的版本
-func (srv *Server) Version() string { return srv.version }
-
-// State 获取当前的状态
-func (srv *Server) State() State { return srv.state }
-
-// Vars 操纵共享变量的接口
-func (srv *Server) Vars() *sync.Map { return srv.vars }
-
-// Location 指定服务器的时区信息
-func (srv *Server) Location() *time.Location { return srv.location }
-
-// Cache 返回缓存的相关接口
-//
-// 如果要获得缓存的底层驱动接口，可以将类型转换为 [cache.Driver]，
-// 该类型提供了 [cache.Driver.Driver] 方法可以获得相应的对象。
-func (srv *Server) Cache() cache.Cleanable { return srv.cache }
-
-// Uptime 当前服务的运行时间
-func (srv *Server) Uptime() time.Time { return srv.uptime }
-
-// UniqueID 生成唯一性的 ID
-func (srv *Server) UniqueID() string { return srv.idGenerator() }
-
-// Now 返回当前时间
-//
-// 与 [time.Now] 的区别在于 Now() 基于当前时区
-func (srv *Server) Now() time.Time { return time.Now().In(srv.Location()) }
-
-// ParseTime 分析基于当前时区的时间
-func (srv *Server) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, srv.Location())
+// TODO 删除
+type Mimetype struct {
+	Name           string
+	Problem        string
+	MarshalBuilder BuildMarshalFunc
+	Unmarshal      UnmarshalFunc
 }
-
-// Serve 开始 HTTP 服务
-//
-// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
-// 始终返回非空的错误对象，如果是被 [Server.Close] 关闭的，也将返回 [http.ErrServerClosed]。
-func (srv *Server) Serve() (err error) {
-	if srv.State() == Running {
-		panic("当前已经处于运行状态")
-	}
-
-	srv.state = Running
-
-	cfg := srv.httpServer.TLSConfig
-	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
-		err = srv.httpServer.ListenAndServeTLS("", "")
-	} else {
-		err = srv.httpServer.ListenAndServe()
-	}
-
-	if errors.Is(err, http.ErrServerClosed) {
-		// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
-		// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
-		<-srv.closed
-	}
-	return err
-}
-
-// Close 触发关闭服务事件
-//
-// 无论是否出错，该操作最终都会导致 [Server.Serve] 的退出。
-// 需要等到 [Server.Serve] 返回才表示服务结束。
-// 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
-func (srv *Server) Close(shutdownTimeout time.Duration) {
-	if srv.State() != Running {
-		return
-	}
-
-	defer func() {
-		sliceutil.Reverse(srv.closes)  // TODO: go1.21 改为标准库
-		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。
-			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
-				srv.Logs().ERROR().Error(err1)
-			}
-		}
-
-		srv.state = Stopped
-		srv.closed <- struct{}{} // NOTE: 保证最后执行
-	}()
-
-	if shutdownTimeout == 0 {
-		if err := srv.httpServer.Close(); err != nil {
-			srv.Logs().ERROR().Error(err)
-		}
-		return
-	}
-
-	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-	defer cancel()
-	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
-		srv.Logs().ERROR().Error(err)
-	}
-}
-
-// Server 获取关联的 Server 实例
-func (ctx *Context) Server() *Server { return ctx.server }
-
-// OnClose 注册关闭服务时需要执行的函数
-//
-// NOTE: 按注册的相反顺序执行。
-func (srv *Server) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
-
-func (srv *Server) Logs() Logs { return srv.logs }
-
-// Config 当前项目配置文件的管理
-func (srv *Server) Config() *config.Config { return srv.config }
-
-func (srv *Server) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return newPrinter(tag, srv.Catalog())
-}
-
-func (srv *Server) Catalog() *catalog.Builder { return srv.catalog }
-
-func (srv *Server) LocalePrinter() *message.Printer { return srv.printer }
-
-// Language 返回默认的语言标签
-func (srv *Server) Language() language.Tag { return srv.tag }
-
-// LoadLocale 从文件系统中加载本地化内容
-func (srv *Server) LoadLocale(glob string, fsys ...fs.FS) error {
-	return locale.Load(srv.Config().Serializer(), srv.Catalog(), glob, fsys...)
-}
-
-func (srv *Server) DisableCompress(disable bool) { srv.compresses.SetDisable(disable) }
-
-func (srv *Server) CompressIsDisable() bool { return srv.compresses.IsDisable() }

@@ -20,6 +20,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 // CLIOf 提供一种简单的命令行生成方式
@@ -41,7 +42,7 @@ type CLIOf[T any] struct {
 	//
 	// user 为用户自定义的数据结构；
 	// action 为 -a 命令行指定的参数；
-	Init func(s *web.Server, user *T, action string) error
+	Init func(s web.Server, user *T, action string) error
 
 	// 以服务运行的指令
 	ServeActions []string
@@ -124,7 +125,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.ConfigDir == "" {
-		cmd.ConfigDir = web.DefaultConfigDir
+		cmd.ConfigDir = server.DefaultConfigDir
 	}
 
 	if cmd.ConfigFilename == "" {
@@ -202,7 +203,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
 func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
-func (cmd *CLIOf[T]) initServer() (*web.Server, error) {
+func (cmd *CLIOf[T]) initServer() (web.Server, error) {
 	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ConfigDir, cmd.ConfigFilename)
 	if err != nil {
 		return nil, web.NewStackError(err)

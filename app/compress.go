@@ -11,6 +11,7 @@ import (
 	"github.com/andybalholm/brotli"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
 var compressorFactory = map[string]enc{}
@@ -45,7 +46,7 @@ type compressConfig struct {
 }
 
 func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
-	conf.compresses = make([]*web.Compress, 0, len(conf.Compresses))
+	conf.compresses = make([]*server.Compress, 0, len(conf.Compresses))
 	for index, e := range conf.Compresses {
 		enc, found := compressorFactory[e.ID]
 		if !found {
@@ -53,7 +54,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 			return web.NewFieldError(field, web.NewLocaleError("%s not found", e.ID))
 		}
 
-		conf.compresses = append(conf.compresses, &web.Compress{
+		conf.compresses = append(conf.compresses, &server.Compress{
 			Name:       enc.name,
 			Compressor: enc.c,
 			Types:      e.Types,
@@ -75,20 +76,20 @@ func RegisterCompress(id, name string, f web.Compressor) {
 }
 
 func init() {
-	RegisterCompress("deflate-default", "deflate", web.NewDeflateCompress(flate.DefaultCompression, nil))
-	RegisterCompress("deflate-best-compression", "deflate", web.NewDeflateCompress(flate.BestCompression, nil))
-	RegisterCompress("deflate-best-speed", "deflate", web.NewDeflateCompress(flate.BestSpeed, nil))
+	RegisterCompress("deflate-default", "deflate", server.NewDeflateCompress(flate.DefaultCompression, nil))
+	RegisterCompress("deflate-best-compression", "deflate", server.NewDeflateCompress(flate.BestCompression, nil))
+	RegisterCompress("deflate-best-speed", "deflate", server.NewDeflateCompress(flate.BestSpeed, nil))
 
-	RegisterCompress("gzip-default", "gzip", web.NewGzipCompress(gzip.DefaultCompression))
-	RegisterCompress("gzip-best-compression", "gzip", web.NewGzipCompress(gzip.BestCompression))
-	RegisterCompress("gzip-best-speed", "gzip", web.NewGzipCompress(gzip.BestSpeed))
+	RegisterCompress("gzip-default", "gzip", server.NewGzipCompress(gzip.DefaultCompression))
+	RegisterCompress("gzip-best-compression", "gzip", server.NewGzipCompress(gzip.BestCompression))
+	RegisterCompress("gzip-best-speed", "gzip", server.NewGzipCompress(gzip.BestSpeed))
 
-	RegisterCompress("compress-lsb-8", "compress", web.NewLZWCompress(lzw.LSB, 8))
-	RegisterCompress("compress-msb-8", "compress", web.NewLZWCompress(lzw.MSB, 8))
+	RegisterCompress("compress-lsb-8", "compress", server.NewLZWCompress(lzw.LSB, 8))
+	RegisterCompress("compress-msb-8", "compress", server.NewLZWCompress(lzw.MSB, 8))
 
-	RegisterCompress("br-default", "br", web.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompress("br-best-compression", "br", web.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompress("br-best-speed", "br", web.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompress("br-default", "br", server.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompress("br-best-compression", "br", server.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompress("br-best-speed", "br", server.NewBrotliCompress(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompress("zstd-default", "zstd", web.NewZstdCompress())
+	RegisterCompress("zstd-default", "zstd", server.NewZstdCompress())
 }

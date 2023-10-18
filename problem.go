@@ -4,6 +4,7 @@ package web
 
 import (
 	"errors"
+	"io/fs"
 	"sync"
 
 	"github.com/issue9/sliceutil"
@@ -93,7 +94,7 @@ func newRFC7807() *RFC7807 {
 	return p
 }
 
-func (p *RFC7807) init(id, title, detail string, status int) *RFC7807 {
+func (p *RFC7807) Init(id, title, detail string, status int) *RFC7807 {
 	p.Type = id
 	p.Title = title
 	p.Detail = detail
@@ -149,48 +150,34 @@ func (p *RFC7807) WithInstance(instance string) Problem {
 
 func (p *RFC7807) private() {}
 
-// AddProblem 添加新的错误代码
-func (srv *Server) AddProblem(id string, status int, title, detail LocaleStringer) *Server {
-	srv.problems.Add(id, status, title, detail)
-	return srv
-}
-
-// VisitProblems 遍历错误代码
-//
-// visit 签名：
-//
-//	func(prefix, id string, status int, title, detail LocaleStringer)
-//
-// prefix 用户设置的前缀，可能为空值；
-// id 为错误代码，不包含前缀部分；
-// status 该错误代码反馈给用户的 HTTP 状态码；
-// title 错误代码的简要描述；
-// detail 错误代码的明细；
-func (srv *Server) VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer)) {
-	srv.problems.Visit(visit)
-}
-
 // Problem 返回指定 id 的 [Problem]
 func (ctx *Context) Problem(id string) Problem { return ctx.initProblem(newRFC7807(), id) }
 
 func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
-	sp := ctx.Server().problems.Problem(id)
 	pp := ctx.LocalePrinter()
-	return p.init(sp.Type, sp.Title.LocaleString(pp), sp.Detail.LocaleString(pp), sp.Status).WithInstance(ctx.ID())
+	ctx.Server().InitProblem(p, id, pp)
+	return p.WithInstance(ctx.ID())
 }
 
 // Error 将 err 输出到 ERROR 通道并尝试以指定 id 的 [Problem] 返回
 //
 // 如果 id 为空，尝试以下顺序获得值：
-//   - err 是否是由 [web.NewError] 创建，如果是则采用 err.Status 取得 ID 值；
+//   - err 是否是由 [NewError] 创建，如果是则采用 err.Status 取得 ID 值；
+//   - err 是否为 [fs.ErrPermission]，如果是采用  ProblemForbidden 作为 ID；
+//   - err 是否为 [fs.ErrNotExist]，如果是采用  ProblemForbidden 作为 ID；
 //   - 采用 [ProblemInternalServerError]；
 func (ctx *Context) Error(err error, id string) Problem {
 	if id == "" {
 		var herr *errs.HTTP
-		if errors.As(err, &herr) {
+		switch {
+		case errors.As(err, &herr):
 			id = problemsID[herr.Status]
 			err = herr.Message
-		} else {
+		case errors.Is(err, fs.ErrPermission):
+			id = ProblemForbidden
+		case errors.Is(err, fs.ErrNotExist):
+			id = ProblemNotFound
+		default:
 			id = ProblemInternalServerError
 		}
 	}

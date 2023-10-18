@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
 
@@ -26,14 +25,10 @@ type response struct {
 
 func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
 
-func TestContext_Render(t *testing.T) {
+func testContext_Render(t *testing.T) {
 	a := assert.New(t, false)
 	buf := new(bytes.Buffer)
-	srv := newTestServer(a, &Options{
-		Language:   language.SimplifiedChinese,
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(buf), Levels: logs.AllLevels(), Created: logs.MicroLayout},
-	})
+	srv := newTestServer(a)
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
@@ -207,10 +202,7 @@ func TestContext_Render(t *testing.T) {
 
 func TestContext_SetWriter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, &Options{
-		Language:   language.SimplifiedChinese,
-		HTTPServer: &http.Server{Addr: ":8080"},
-	})
+	srv := newTestServer(a)
 	r := srv.NewRouter("def", nil)
 
 	defer servertest.Run(a, srv)()
@@ -277,10 +269,7 @@ func TestContext_SetWriter(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, &Options{
-		Language:   language.SimplifiedChinese,
-		HTTPServer: &http.Server{Addr: ":8080"},
-	})
+	srv := newTestServer(a)
 	r := srv.NewRouter("def", nil)
 
 	b := srv.Catalog()
@@ -314,7 +303,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 
 func TestNotModified(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
+	s := newTestServer(a)
 
 	r := s.NewRouter("def", nil)
 	r.Any("/string", func(ctx *Context) Responser {
@@ -391,7 +380,7 @@ func TestNotModified(t *testing.T) {
 
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
+	s := newTestServer(a)
 	r := s.NewRouter("def", nil)
 
 	// Location == ""
@@ -418,7 +407,7 @@ func TestCreated(t *testing.T) {
 
 func TestRedirect(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
+	s := newTestServer(a)
 	r := s.NewRouter("def", nil)
 
 	r.Get("/not-implement", func(ctx *Context) Responser {

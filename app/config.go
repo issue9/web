@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
+	"github.com/issue9/web/server"
 )
 
 type configOf[T any] struct {
@@ -64,7 +65,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Compresses []*compressConfig `yaml:"compresses,omitempty" json:"compresses,omitempty" xml:"compresses>compress,omitempty"`
-	compresses []*web.Compress
+	compresses []*server.Compress
 
 	// 指定配置文件的序列化
 	//
@@ -83,7 +84,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*web.Mimetype
+	mimetypes []*server.Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -93,7 +94,7 @@ type configOf[T any] struct {
 	//  - number 数值格式；
 	// NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
-	idGenerator web.IDGenerator
+	idGenerator server.IDGenerator
 
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
@@ -102,7 +103,7 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法
-	init []func(*web.Server)
+	init []func(web.Server)
 }
 
 // NewServerOf 从配置文件初始化 [web.Server] 对象
@@ -114,14 +115,14 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
-func NewServerOf[T any](name, version string, configDir, filename string) (*web.Server, *T, error) {
+func NewServerOf[T any](name, version string, configDir, filename string) (web.Server, *T, error) {
 	if filename == "" {
 		c, err := config.AppDir(nil, configDir)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		s, err := web.NewServer(name, version, &web.Options{Config: c})
+		s, err := server.New(name, version, &server.Options{Config: c})
 		return s, nil, err
 	}
 
@@ -134,7 +135,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*web.
 		debug.SetMemoryLimit(conf.MemoryLimit)
 	}
 
-	opt := &web.Options{
+	opt := &server.Options{
 		Config:            conf.config,
 		Location:          conf.location,
 		Cache:             conf.cache,
@@ -150,7 +151,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (*web.
 		Init:              conf.init,
 	}
 
-	srv, err := web.NewServer(name, version, opt)
+	srv, err := server.New(name, version, opt)
 	if err != nil {
 		return nil, nil, web.NewStackError(err)
 	}
@@ -218,7 +219,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		f, srv := g()
 		conf.idGenerator = f
 		if srv != nil {
-			conf.init = append(conf.init, func(s *web.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
+			conf.init = append(conf.init, func(s web.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
 		}
 	}
 

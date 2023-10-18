@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
 	"compress/flate"
@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/compress"
@@ -59,7 +60,7 @@ type (
 		//
 		// 如果此值为空，表示不会输出任何信息。
 		Logs *logs.Options
-		logs Logs
+		logs logs.Logs
 
 		// http.Server 实例的值
 		//
@@ -74,7 +75,7 @@ type (
 		IDGenerator IDGenerator
 
 		// 路由选项
-		RoutersOptions []RouterOption
+		RoutersOptions []web.RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
 		//
@@ -109,7 +110,7 @@ type (
 		//
 		// 默认为空。
 		Mimetypes []*Mimetype
-		mimetypes *mtsType
+		mimetypes *mimetypes.Mimetypes
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
@@ -120,7 +121,7 @@ type (
 		// Init 其它的一些初始化操作
 		//
 		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作。
-		Init []func(*Server)
+		Init []func(web.Server)
 	}
 
 	Mimetype struct {
@@ -133,10 +134,10 @@ type (
 		ProblemType string
 
 		// 生成编码方法
-		MarshalBuilder BuildMarshalFunc
+		MarshalBuilder web.BuildMarshalFunc
 
 		// 解码方法
-		Unmarshal UnmarshalFunc
+		Unmarshal web.UnmarshalFunc
 	}
 
 	// Compress 压缩算法的配置
@@ -147,7 +148,7 @@ type (
 		Name string
 
 		// Compressor 压缩对象
-		Compressor Compressor
+		Compressor web.Compressor
 
 		// Types 该压缩对象允许使用的为 content-type 类型
 		//
@@ -155,14 +156,11 @@ type (
 		Types []string
 	}
 
-	// Compressor 压缩算法的接口
-	Compressor = compress.Compressor
-
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
 )
 
-func sanitizeOptions(o *Options) (*Options, *FieldError) {
+func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -186,7 +184,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if o.IDGenerator == nil {
 		u := unique.NewDate(1000)
 		o.IDGenerator = u.String
-		o.Init = append(o.Init, func(s *Server) {
+		o.Init = append(o.Init, func(s web.Server) {
 			s.Services().Add(locales.UniqueIdentityGenerator, u)
 		})
 	}
@@ -194,7 +192,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if o.Cache == nil {
 		c, job := caches.NewMemory()
 		o.Cache = c
-		o.Init = append(o.Init, func(s *Server) { // AddTicker 依赖 IDGenerator
+		o.Init = append(o.Init, func(s web.Server) { // AddTicker 依赖 IDGenerator
 			s.Services().AddTicker(locales.RecycleLocalCache, job, time.Minute, false, false)
 		})
 	}
@@ -236,7 +234,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	if len(indexes) > 0 {
 		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
 	}
-	o.mimetypes = mimetypes.New[BuildMarshalFunc, UnmarshalFunc](len(o.Mimetypes))
+	o.mimetypes = mimetypes.New(len(o.Mimetypes))
 	for _, mt := range o.Mimetypes {
 		o.mimetypes.Add(mt.Type, mt.MarshalBuilder, mt.Unmarshal, mt.ProblemType)
 	}
@@ -246,7 +244,7 @@ func sanitizeOptions(o *Options) (*Options, *FieldError) {
 	return o, nil
 }
 
-func (e *Compress) sanitize() *FieldError {
+func (e *Compress) sanitize() *config.FieldError {
 	if e.Name == "" || e.Name == compress.Identity || e.Name == "*" {
 		return config.NewFieldError("Name", locales.InvalidValue)
 	}
@@ -273,25 +271,25 @@ func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
 //
 // [浏览器支持情况]: https://caniuse.com/zstd
 // [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
-func NewZstdCompress() Compressor { return compress.NewZstdCompress() }
+func NewZstdCompress() web.Compressor { return compress.NewZstdCompress() }
 
 // NewBrotliCompress 声明基于 [br] 的压缩算法
 //
 // [br]: https://www.rfc-editor.org/rfc/rfc7932.html
-func NewBrotliCompress(o brotli.WriterOptions) Compressor {
+func NewBrotliCompress(o brotli.WriterOptions) web.Compressor {
 	return compress.NewBrotliCompress(o)
 }
 
 // NewLZWCompress 声明基于 lzw 的压缩算法
-func NewLZWCompress(order lzw.Order, width int) Compressor {
+func NewLZWCompress(order lzw.Order, width int) web.Compressor {
 	return compress.NewLZWCompress(order, width)
 }
 
 // NewGzipCompress 声明基于 gzip 的压缩算法
-func NewGzipCompress(level int) Compressor { return compress.NewGzipCompress(level) }
+func NewGzipCompress(level int) web.Compressor { return compress.NewGzipCompress(level) }
 
 // NewDeflateCompress 声明基于 deflate 的压缩算法
-func NewDeflateCompress(level int, dict []byte) Compressor {
+func NewDeflateCompress(level int, dict []byte) web.Compressor {
 	return compress.NewDeflateCompress(level, dict)
 }
 

@@ -4,7 +4,6 @@ package web
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,9 +11,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 )
 
@@ -22,13 +19,18 @@ import (
 //
 // NOTE: 远程必须是 [Server] 实现的服务，否则可能无法正确处理返回对象。
 type Client struct {
-	url        string
-	client     *http.Client
-	compresses *compress.Compresses
+	url    string
+	client *http.Client
 
-	mts         *mtsType
 	marshal     MarshalFunc
 	marshalName string
+
+	// 查找解码方法
+	contentType func(string) (UnmarshalFunc, encoding.Encoding, error)
+	accept      string // TODO
+
+	contentEncoding func(string, io.Reader) (io.ReadCloser, error)
+	acceptEncoding  string
 }
 
 // NewClient 创建 Client 实例
@@ -37,31 +39,7 @@ type Client struct {
 // url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
 // marshalName 对输入数据的编码方式，从 mt 中查找；
 // mt 所有可用的解码方式；
-func NewClient(client *http.Client, url, marshalName string, mt []*Mimetype, compresses []*Compress) *Client {
-	mts := mimetypes.New[BuildMarshalFunc, UnmarshalFunc](len(mt))
-	for _, m := range mt {
-		mts.Add(m.Type, m.MarshalBuilder, m.Unmarshal, m.ProblemType)
-	}
-
-	c := compress.NewCompresses(len(compresses), false)
-	for i, e := range compresses {
-		if err := e.sanitize(); err != nil {
-			panic(err.AddFieldParent("compresses[" + strconv.Itoa(i) + "]"))
-		}
-		c.Add(e.Name, e.Compressor, e.Types...)
-	}
-
-	return newClient(client, url, marshalName, mts, c)
-}
-
-// NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
-//
-// 参数可参考 [NewClient]。
-func (srv *Server) NewClient(client *http.Client, url, marshalName string) *Client {
-	return newClient(client, url, marshalName, srv.mimetypes, srv.compresses)
-}
-
-func newClient(client *http.Client, url, marshalName string, m *mtsType, c *compress.Compresses) *Client {
+func NewClient(client *http.Client, url, marshalName string, marshal MarshalFunc, ct func(string) (UnmarshalFunc, encoding.Encoding, error), ce func(string, io.Reader) (io.ReadCloser, error), ae string) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
@@ -70,22 +48,16 @@ func newClient(client *http.Client, url, marshalName string, m *mtsType, c *comp
 		url = url[:l-1]
 	}
 
-	var marshal MarshalFunc
-	if mm := m.Search(marshalName); mm != nil {
-		marshal = mm.MarshalBuilder(nil)
-	}
-	if marshal == nil {
-		panic(fmt.Sprintf("未找到 %s 指定的编码方法", marshalName))
-	}
-
 	return &Client{
-		url:        url,
-		client:     client,
-		compresses: c,
+		url:    url,
+		client: client,
 
-		mts:         m,
-		marshal:     marshal,
 		marshalName: marshalName,
+		marshal:     marshal,
+
+		contentType:     ct,
+		contentEncoding: ce,
+		acceptEncoding:  ae,
 	}
 }
 
@@ -152,7 +124,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	reader, err = c.compresses.ContentEncoding(encName, reader)
+	reader, err = c.contentEncoding(encName, reader)
 	if err != nil {
 		return nil
 	}
@@ -160,7 +132,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if inputMimetype, inputCharset, err = c.mts.ContentType(h); err != nil {
+		if inputMimetype, inputCharset, err = c.contentType(h); err != nil {
 			return err
 		}
 
@@ -209,8 +181,8 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		return nil, err
 	}
 	r.Header.Set(header.ContentType, header.BuildContentType(c.marshalName, header.UTF8Name))
-	r.Header.Set(header.Accept, c.mts.AcceptHeader())
-	r.Header.Set(header.AcceptEncoding, c.compresses.AcceptEncodingHeader())
+	r.Header.Set(header.Accept, c.accept)
+	r.Header.Set(header.AcceptEncoding, c.acceptEncoding)
 
 	return r, nil
 }

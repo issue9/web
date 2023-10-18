@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 type (
@@ -157,7 +158,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 	}
 
 	if h.RequestID == "" {
-		h.RequestID = web.RequestIDKey
+		h.RequestID = server.RequestIDKey
 	}
 
 	h.buildRoutersOptions()

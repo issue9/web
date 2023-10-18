@@ -50,8 +50,8 @@ type App struct {
 	// 构建新服务的方法
 	//
 	// 每次重启服务时，都将由此方法生成一个新的服务。
-	NewServer func() (*web.Server, error)
-	srv       *web.Server
+	NewServer func() (web.Server, error)
+	srv       web.Server
 
 	// 重启之前需要做的操作
 	//

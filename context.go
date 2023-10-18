@@ -16,7 +16,6 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/internal/compress"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -32,7 +31,7 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	server            *Server
+	server            Server
 	route             types.Route
 	request           *http.Request
 	outputCharsetName string
@@ -42,14 +41,14 @@ type Context struct {
 
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
 	writer         io.Writer
-	outputCompress *compress.NamedCompress
+	outputCompress Compressor
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype *mtType
+	outputMimetype *Mimetype
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc     // 可以为空
@@ -71,14 +70,18 @@ type Context struct {
 }
 
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	id := buildID(srv, w, r)
+func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.Route, requestIDKey string) *Context {
+	id := r.Header.Get(requestIDKey)
+	if id == "" {
+		id = srv.UniqueID()
+	}
+	w.Header().Set(requestIDKey, id)
 	l := srv.Logs().With(map[string]any{
-		srv.requestIDKey: id,
+		requestIDKey: id,
 	})
 
 	h := r.Header.Get(header.Accept)
-	mt := srv.mimetypes.Accept(h)
+	mt := srv.Accept(h)
 	if mt == nil {
 		l.DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -94,20 +97,20 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, notAcceptable := srv.compresses.AcceptEncoding(mt.Name, h, l.DEBUG())
+	outputCompress, outputCompressName, notAcceptable := srv.AcceptEncoding(mt.Name, h, l.DEBUG())
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	tag := srv.acceptLanguage(r.Header.Get(header.AcceptLang))
+	tag := acceptLanguage(srv, r.Header.Get(header.AcceptLang))
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = srv.mimetypes.ContentType(h)
+		inputMimetype, inputCharset, err = srv.ContentType(h)
 		if err != nil {
 			l.DEBUG().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -135,7 +138,7 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	ctx.wrote = false
 	if ctx.outputCompress != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, ctx.outputCompress.Name())
+		h.Set(header.ContentEncoding, outputCompressName)
 		h.Add(header.Vary, header.ContentEncoding)
 	}
 
@@ -155,17 +158,6 @@ func (srv *Server) newContext(w http.ResponseWriter, r *http.Request, route type
 	return ctx
 }
 
-// NewContext 从标准库的参数初始化 Context 对象
-//
-// NOTE: 这适合从标准库的请求中创建 [Context] 对象，
-// 但是部分功能会缺失，比如地址中的参数信息，以及 [Context.Route] 等。
-func (srv *Server) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	c := types.NewContext()
-	ctx := srv.newContext(w, r, c)
-	ctx.OnExit(func(*Context, int) { c.Destroy() })
-	return ctx
-}
-
 // GetVar 返回指定名称的变量
 func (ctx *Context) GetVar(key any) (any, bool) {
 	v, found := ctx.vars[key]
@@ -177,16 +169,6 @@ func (ctx *Context) SetVar(key, val any) { ctx.vars[key] = val }
 
 // Route 关联的路由信息
 func (ctx *Context) Route() types.Route { return ctx.route }
-
-func buildID(s *Server, w http.ResponseWriter, r *http.Request) string {
-	id := r.Header.Get(s.requestIDKey)
-	if id == "" {
-		id = s.UniqueID()
-	}
-
-	w.Header().Set(s.requestIDKey, id)
-	return id
-}
 
 // Begin 当前对象的初始化时间
 func (ctx *Context) Begin() time.Time { return ctx.begin }
@@ -229,7 +211,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.Server().mimetypes.Accept(mimetype)
+	item := ctx.Server().Accept(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -259,7 +241,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, notAcceptable := ctx.Server().compresses.AcceptEncoding(ctx.outputMimetype.Name, enc, ctx.Logs().DEBUG())
+	outputEncoding, name, notAcceptable := ctx.Server().AcceptEncoding(ctx.outputMimetype.Name, enc, ctx.Logs().DEBUG())
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
@@ -267,7 +249,7 @@ func (ctx *Context) SetEncoding(enc string) {
 
 	if ctx.outputCompress != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, ctx.outputCompress.Name())
+		h.Set(header.ContentEncoding, name)
 		h.Add(header.Vary, header.ContentEncoding)
 	}
 }
@@ -277,7 +259,7 @@ func (ctx *Context) Encoding() string {
 	if ctx.outputCompress == nil {
 		return ""
 	}
-	return ctx.outputCompress.Name()
+	return ctx.Header().Get(header.ContentEncoding) // 初始化的时候已经设置
 }
 
 // SetLanguage 修改输出的语言
@@ -295,7 +277,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-func (ctx *Context) free() {
+func (ctx *Context) Free() {
 	sliceutil.Reverse(ctx.exits) // TODO: go1.21 改为标准库
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
@@ -318,11 +300,11 @@ func (ctx *Context) free() {
 // NOTE: 以注册的相反顺序调用这些方法。
 func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits, f) }
 
-func (srv *Server) acceptLanguage(header string) language.Tag {
+func acceptLanguage(s Server, header string) language.Tag {
 	if header == "" {
-		return srv.Language()
+		return s.Language()
 	}
-	tag, _ := language.MatchStrings(srv.Catalog().Matcher(), header)
+	tag, _ := language.MatchStrings(s.Catalog().Matcher(), header)
 	return tag
 }
 
@@ -346,3 +328,6 @@ func (ctx *Context) IsXHR() bool {
 
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
+
+// Server 获取关联的 Server 实例
+func (ctx *Context) Server() Server { return ctx.server }

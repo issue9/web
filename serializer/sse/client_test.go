@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/serializer/json"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/servertest"
 )
 
@@ -51,9 +52,9 @@ func TestMessage_append(t *testing.T) {
 
 func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
+	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*web.Mimetype{
+		Mimetypes: []*server.Mimetype{
 			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
 			{Type: Mimetype, MarshalBuilder: nil, Unmarshal: nil},
 		},

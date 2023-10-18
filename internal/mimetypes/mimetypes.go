@@ -13,42 +13,43 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 )
 
 type (
-	Mimetype[M any, U any] struct {
+	Mimetype struct {
 		Name           string
 		Problem        string
-		MarshalBuilder M
-		Unmarshal      U
+		MarshalBuilder web.BuildMarshalFunc
+		Unmarshal      web.UnmarshalFunc
 	}
 
 	// Mimetypes 提供对 mimetype 的管理
 	//
 	// M 表示解码方法的类型；
 	// U 表示编码方法的类型；
-	Mimetypes[M any, U any] struct {
-		types []*Mimetype[M, U]
+	Mimetypes struct {
+		types []*Mimetype
 
 		// 根据 types 生成的 Accept 报头
 		acceptHeader string
 	}
 )
 
-func New[M any, U any](cap int) *Mimetypes[M, U] {
-	return &Mimetypes[M, U]{types: make([]*Mimetype[M, U], 0, cap)}
+func New(cap int) *Mimetypes {
+	return &Mimetypes{types: make([]*Mimetype, 0, cap)}
 }
 
-func (ms *Mimetypes[M, U]) exists(name string) bool {
-	return sliceutil.Exists(ms.types, func(item *Mimetype[M, U], _ int) bool { return item.Name == name })
+func (ms *Mimetypes) exists(name string) bool {
+	return sliceutil.Exists(ms.types, func(item *Mimetype, _ int) bool { return item.Name == name })
 }
 
 // Add 添加新的编码方法
 //
 // name 为编码名称；
 // problem 为该编码在返回 [web.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
-func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
+func (ms *Mimetypes) Add(name string, m web.BuildMarshalFunc, u web.UnmarshalFunc, problem string) {
 	if ms.exists(name) {
 		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))
 	}
@@ -57,7 +58,7 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 		problem = name
 	}
 
-	ms.types = append(ms.types, &Mimetype[M, U]{
+	ms.types = append(ms.types, &Mimetype{
 		Name:           name,
 		Problem:        problem,
 		MarshalBuilder: m,
@@ -76,13 +77,12 @@ func (ms *Mimetypes[M, U]) Add(name string, m M, u U, problem string) {
 // ContentType 从请求端提交的 content-type 报头中获取解码和字符集函数
 //
 // h 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
+func (ms *Mimetypes) ContentType(h string) (web.UnmarshalFunc, encoding.Encoding, error) {
 	mimetype, charset := header.ParseWithParam(h, "charset")
 
 	item := ms.searchFunc(func(s string) bool { return s == mimetype })
 	if item == nil {
-		var z U
-		return z, nil, localeutil.Error("not found serialization function for %s", mimetype)
+		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
 	}
 	f := item.Unmarshal
 
@@ -91,8 +91,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 	}
 	e, err := htmlindex.Get(charset)
 	if err != nil {
-		var z U
-		return z, nil, err
+		return nil, nil, err
 	}
 
 	return f, e, nil
@@ -108,7 +107,7 @@ func (ms *Mimetypes[M, U]) ContentType(h string) (U, encoding.Encoding, error) {
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (ms *Mimetypes[M, U]) Accept(h string) *Mimetype[M, U] {
+func (ms *Mimetypes) Accept(h string) *Mimetype {
 	if h == "" {
 		if item := ms.findMarshal("*/*"); item != nil {
 			return item
@@ -127,7 +126,7 @@ func (ms *Mimetypes[M, U]) Accept(h string) *Mimetype[M, U] {
 	return nil
 }
 
-func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
+func (ms *Mimetypes) findMarshal(name string) *Mimetype {
 	switch {
 	case len(ms.types) == 0:
 		return nil
@@ -141,14 +140,14 @@ func (ms *Mimetypes[M, U]) findMarshal(name string) *Mimetype[M, U] {
 	}
 }
 
-func (ms *Mimetypes[M, U]) Search(name string) *Mimetype[M, U] {
+func (ms *Mimetypes) Search(name string) *Mimetype {
 	return ms.searchFunc(func(s string) bool { return s == name })
 }
 
-func (ms *Mimetypes[M, U]) searchFunc(match func(string) bool) *Mimetype[M, U] {
-	item, _ := sliceutil.At(ms.types, func(i *Mimetype[M, U], _ int) bool { return match(i.Name) || match(i.Problem) })
+func (ms *Mimetypes) searchFunc(match func(string) bool) *Mimetype {
+	item, _ := sliceutil.At(ms.types, func(i *Mimetype, _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }
 
 // AcceptHeader 根据当前的内容生成 Accept 报头
-func (ms *Mimetypes[M, U]) AcceptHeader() string { return ms.acceptHeader }
+func (ms *Mimetypes) AcceptHeader() string { return ms.acceptHeader }

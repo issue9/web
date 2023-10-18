@@ -15,7 +15,7 @@ import (
 
 const (
 	filename = "problems.go"
-	pkgName  = "web"
+	pkgName  = "server"
 )
 
 func main() {
@@ -25,6 +25,7 @@ func main() {
 		WString("import (\n").
 		WString("\"net/http\"\n\n").
 		WString("\"github.com/issue9/web/internal/problems\"\n").
+		WString("\"github.com/issue9/web\"\n").
 		WString(")\n\n")
 
 	kvs, err := make.GetStatuses()
@@ -32,8 +33,7 @@ func main() {
 		panic(err)
 	}
 
-	makeID(buf, kvs)
-	makeIDs(buf, kvs)
+	makeInitLocalesFunc(buf, kvs)
 
 	if buf.Err != nil {
 		panic(buf.Err)
@@ -44,23 +44,17 @@ func main() {
 	}
 }
 
-func makeID(buf *errwrap.Buffer, kvs []make.Pair) {
-	buf.WString("const(\n")
-
-	buf.WString(`ProblemAboutBlank = problems.AboutBlank`).WString("\n\n")
-	for _, item := range kvs {
-		buf.Printf("%s=\"%s\"\n", item.ID(), strconv.Itoa(item.Value))
-	}
-
-	buf.WString(")\n\n")
-}
-
-func makeIDs(buf *errwrap.Buffer, kvs []make.Pair) {
-	buf.WString("var problemsID=map[int]string{\n")
+func makeInitLocalesFunc(buf *errwrap.Buffer, kvs []make.Pair) {
+	buf.WString("func initProblems(p*problems.Problems){")
 
 	for _, item := range kvs {
-		buf.Printf("%s:%s,\n", "http."+item.Name, item.ID())
-	}
+		status := "http." + item.Name
+		title := "problem." + strconv.Itoa(item.Value)
+		detail := title + ".detail"
+		title = "web.StringPhrase(\"" + title + "\")"
+		detail = "web.StringPhrase(\"" + detail + "\")"
 
+		buf.Printf(`p.Add(web.%s,%s,%s,%s)`, item.ID(), status, title, detail).WByte('\n')
+	}
 	buf.WString("}\n\n")
 }

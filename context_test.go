@@ -17,53 +17,26 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/servertest"
 )
 
 var _ http.ResponseWriter = &Context{}
 
-func TestContext_vars(t *testing.T) {
-	a := assert.New(t, false)
-	r := rest.Get(a, "/path").Header("Accept", "*/*").Request()
-	w := httptest.NewRecorder()
-	ctx := newTestServer(a, nil).newContext(w, r, nil)
-	a.NotNil(ctx)
+func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Context {
+	if w == nil {
+		w = httptest.NewRecorder()
+	}
+	if r == nil {
+		r := httptest.NewRequest(http.MethodGet, "/path", bytes.NewBufferString("123"))
+		r.Header.Set(header.Accept, "*/*")
+	}
 
-	type (
-		t1 struct{ int }
-		t2 int64
-		t3 t2
-	)
-	var (
-		k1    = t1{1}
-		k2 t2 = 1
-		k3 t3 = 1
-	)
-
-	ctx.SetVar(k1, 1)
-	ctx.SetVar(k2, 2)
-	ctx.SetVar(k3, 3)
-
-	v1, found := ctx.GetVar(k1)
-	a.True(found).Equal(v1, 1)
-
-	v2, found := ctx.GetVar(k2)
-	a.True(found).Equal(v2, 2)
-
-	v3, found := ctx.GetVar(k3)
-	a.True(found).Equal(v3, 3)
+	return newTestServer(a).NewContext(w, r)
 }
 
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
-	lw := &bytes.Buffer{}
-	o := &Options{
-		Language:   language.SimplifiedChinese,
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(lw), Levels: logs.AllLevels(), Created: "2006-01-02"},
-		HTTPServer: &http.Server{Addr: ":8080"},
-	}
-	srv := newTestServer(a, o)
+	srv := newTestServer(a)
 	router := srv.NewRouter("def", nil)
 	router.Get("/path", func(ctx *Context) Responser {
 		ctx.Header().Set(header.ContentLength, "0")
@@ -84,83 +57,25 @@ func TestContext_KeepAlive(t *testing.T) {
 	defer srv.Close(0)
 
 	servertest.Get(a, "http://localhost:8080/path").
-		Header("Accept-Language", "cmn-hans;q=0.9,zh-Hant;q=0.7").
-		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
+		Header("Accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
 		StringBody(`123`)
 }
 
-func TestServer_Context(t *testing.T) {
+// TODO 部分功能移至 server
+func testServer_NewContext(t *testing.T) {
 	a := assert.New(t, false)
-	lw := &bytes.Buffer{}
-	o := &Options{
-		Language:   language.SimplifiedChinese,
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(lw), Levels: logs.AllLevels(), Created: "2006-01-02"},
-		HTTPServer: &http.Server{Addr: ":8080"},
-	}
-	srv := newTestServer(a, o)
+	srv := newTestServer(a)
 	router := srv.NewRouter("def", nil)
 	router.Get("/path", func(ctx *Context) Responser { ctx.Render(http.StatusOK, nil); return nil })
 
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
-	// 错误的 accept
-	servertest.Get(a, "http://localhost:8080/path").Header("Accept", "not").
-		Do(nil).
-		Status(http.StatusNotAcceptable)
-	a.Contains(lw.String(), Phrase("not found serialization for %s", "not").LocaleString(srv.LocalePrinter()))
-
-	// 错误的 accept-charset
-	lw.Reset()
-	servertest.Get(a, "http://localhost:8080/path").Header("Accept", "not").
-		Header("Accept", "application/json").
-		Header("Accept-Charset", "unknown").
-		Do(nil).
-		Status(http.StatusNotAcceptable)
-	a.Contains(lw.String(), Phrase("not found charset for %s", "unknown").LocaleString(srv.LocalePrinter()))
-
-	// 错误的 content-type,无输入内容
-	lw.Reset()
-	servertest.Get(a, "http://localhost:8080/path").Header("Content-Type", ";charset=utf-8").Do(nil).
-		Status(http.StatusUnsupportedMediaType)
-	a.NotEmpty(lw.String())
-
-	// 错误的 content-type,有输入内容
-	lw.Reset()
-	servertest.Post(a, "http://localhost:8080/path", []byte("[]")).Header("Content-Type", ";charset=utf-8").Do(nil).
-		Status(http.StatusUnsupportedMediaType)
-	a.NotEmpty(lw.String())
-
-	// 错误的 content-type，且有输入内容
-	lw.Reset()
-	servertest.Post(a, "http://localhost:8080/path", []byte("123")).
-		Header("Content-Type", header.BuildContentType("application/json", "utf-")).
-		Do(nil).
-		Status(http.StatusUnsupportedMediaType)
-	a.NotEmpty(lw.String())
-
-	// 部分错误的 Accept-Language
-	var b1 time.Time
-	lw.Reset()
-	router.Get("/p2", func(ctx *Context) Responser {
-		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.Equal(ctx.LanguageTag(), language.MustParse("zh-hans"))
-		a.Empty(lw.String())
-		a.NotZero(ctx.Begin())
-		b1 = ctx.Begin()
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p2").
-		Header("Accept-Language", "zh-hans;q=0.9,zh-Hant;q=xxx").
-		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
-		Do(nil).
-		Success()
-	time.Sleep(500 * time.Microsecond) // 保证后续的 Context.Begin 与此值有时间差。
-
 	// 正常，指定 Accept-Language，采用默认的 accept
-	lw.Reset()
+	var b1 time.Time
+	srv.logBuf.Reset()
 	router.Get("/p3", func(ctx *Context) Responser {
 		a.NotNil(ctx).NotEmpty(ctx.ID())
 		a.True(header.CharsetIsNop(ctx.inputCharset)).
@@ -169,17 +84,18 @@ func TestServer_Context(t *testing.T) {
 			Equal(ctx.inputMimetype, UnmarshalFunc(json.Unmarshal)).
 			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 			NotNil(ctx.LocalePrinter())
+		b1 = ctx.Begin()
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/p3").
-		Header("Accept-Language", "cmn-hans;q=0.9,zh-Hant;q=0.7").
-		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
+		Header(header.AcceptLang, "cmn-hans").
+		Header(header.Accept, "application/json").
 		Do(nil).
 		Success()
-	a.Empty(lw.String())
+	a.Empty(srv.logBuf.String())
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
-	lw.Reset()
+	srv.logBuf.Reset()
 	router.Get("/p4", func(ctx *Context) Responser {
 		a.NotNil(ctx).
 			True(header.CharsetIsNop(ctx.inputCharset)).
@@ -193,10 +109,10 @@ func TestServer_Context(t *testing.T) {
 		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
 		Header("accept", "application/json;q=0.2,text/plain;q=0.9").
 		Do(nil)
-	a.Empty(lw.String())
+	a.Empty(srv.logBuf.String())
 
 	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
-	lw.Reset()
+	srv.logBuf.Reset()
 	router.Post("/p5", func(ctx *Context) Responser {
 		a.NotNil(ctx).
 			True(header.CharsetIsNop(ctx.inputCharset)).
@@ -206,16 +122,15 @@ func TestServer_Context(t *testing.T) {
 		return nil
 	})
 	servertest.Post(a, "http://localhost:8080/p5", []byte("123")).
-		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
-		Header("accept", "application/json;q=0.2,text/*;q=0.9").
+		Header("accept", "application/json").
 		Do(nil).
 		Status(http.StatusCreated)
-	a.Empty(lw.String())
+	a.Empty(srv.logBuf.String())
 }
 
 func TestContext_SetMimetype(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", []byte("123")).
@@ -240,13 +155,13 @@ func TestContext_SetMimetype(t *testing.T) {
 
 func TestContext_SetCharset(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", []byte("123")).
 		Header("accept", "application/json").
 		Request()
-	ctx := srv.newContext(w, r, nil)
+	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
@@ -264,13 +179,13 @@ func TestContext_SetCharset(t *testing.T) {
 
 func TestContext_SetEncoding(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", []byte("123")).
 		Header("accept", "application/json").
 		Request()
-	ctx := srv.newContext(w, r, nil)
+	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
@@ -288,13 +203,13 @@ func TestContext_SetEncoding(t *testing.T) {
 
 func TestContext_SetLanguage(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", []byte("123")).
 		Header("accept", "application/json").
 		Request()
-	ctx := srv.newContext(w, r, nil)
+	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
 	a.Equal(ctx.LanguageTag(), ctx.Server().Language())
@@ -307,7 +222,7 @@ func TestContext_SetLanguage(t *testing.T) {
 func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 	router := srv.NewRouter("router", nil, mux.URLDomain("https://example.com"))
 	a.NotNil(router)
 	router.Get("/not-xhr", func(ctx *Context) Responser {
@@ -332,64 +247,61 @@ func TestContext_IsXHR(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newTestServer(a, &Options{Language: language.Afrikaans})
+	srv := newTestServer(a)
 	b := srv.Catalog()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
 
-	tag := srv.acceptLanguage("")
-	a.Equal(tag, language.Afrikaans, "v1:%s, v2:%s", tag.String(), language.Und.String())
+	tag := acceptLanguage(srv, "")
+	a.Equal(tag, srv.language, "v1:%s, v2:%s", tag.String(), language.Und.String())
 
-	tag = srv.acceptLanguage("zh") // 匹配 zh-hans
+	tag = acceptLanguage(srv, "zh") // 匹配 zh-hans
 	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
 
-	tag = srv.acceptLanguage("zh-Hant")
+	tag = acceptLanguage(srv, "zh-Hant")
 	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
 
-	tag = srv.acceptLanguage("zh-Hans")
+	tag = acceptLanguage(srv, "zh-Hans")
 	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
 
-	tag = srv.acceptLanguage("english") // english 非正确的 tag，但是常用。
+	tag = acceptLanguage(srv, "english") // english 非正确的 tag，但是常用。
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 
-	tag = srv.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	tag = acceptLanguage(srv, "zh-Hans;q=0.1,zh-Hant;q=0.3,en")
 	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 }
 
 func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
-	w := httptest.NewRecorder()
-
 	r := rest.Post(a, "/path", nil).Request()
-	ctx := newTestServer(a, nil).newContext(w, r, nil)
+	ctx := newContext(a, nil, r)
+	a.NotNil(ctx)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)
+}
 
-	r = rest.Post(a, "/path", nil).Header("x-real-ip", "192.168.1.1:8080").Request()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
-	a.Equal(ctx.ClientIP(), "192.168.1.1:8080")
+// 检测 204 是否存在 http: request method or response status code does not allow body
+func TestContext_NoContent(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a)
 
-	r = rest.Post(a, "/path", nil).
-		Header("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111").
-		Request()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
-	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+	s.NewRouter("def", nil).Get("/204", func(ctx *Context) Responser {
+		return ResponserFunc(func(ctx *Context) Problem {
+			ctx.WriteHeader(http.StatusNoContent)
+			return nil
+		})
+	})
 
-	// 测试获取 IP 报头的优先级
-	r = rest.Post(a, "/path", nil).
-		Header("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111").
-		Header("x-real-ip", "192.168.2.2").
-		Request()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
-	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+	defer servertest.Run(a, s)()
 
-	// 测试获取 IP 报头的优先级
-	r = rest.Post(a, "/path", nil).
-		Header("Remote-Addr", "192.168.2.0").
-		Header("x-forwarded-for", "192.168.2.1:8080,192.168.2.2:111").
-		Header("x-real-ip", "192.168.2.2").
-		Request()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
-	a.Equal(ctx.ClientIP(), "192.168.2.1:8080")
+	servertest.Get(a, "http://localhost:8080/204").
+		Header("Accept-Encoding", "gzip"). // 服务端不应该构建压缩对象
+		Header("Accept", "application/json").
+		Do(nil).
+		Status(http.StatusNoContent)
+
+	s.Close(0)
+
+	a.NotContains(s.logBuf.String(), "request method or response status code does not allow body")
 }

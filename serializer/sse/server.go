@@ -27,7 +27,7 @@ type (
 	// 那么该类型可能是 int64 类型的用户 ID 值。
 	Server[T comparable] struct {
 		bufCap  int
-		s       *web.Server
+		s       web.Server
 		retry   string
 		sources *sync.Map
 	}
@@ -60,7 +60,7 @@ type (
 // retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
 // keepAlive 表示心跳包的发送时间间隔，如果小于等于零，表示不会发送；
 // bufCap 每个 SSE 队列可缓存的数据，超过此数量，调用的 Sent 将被阻塞；
-func NewServer[T comparable](s *web.Server, retry, keepAlive time.Duration, bufCap int) *Server[T] {
+func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCap int) *Server[T] {
 	srv := &Server[T]{
 		bufCap:  bufCap,
 		s:       s,

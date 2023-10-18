@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/web/serializer/html"
 	"github.com/issue9/web/serializer/json"
 	"github.com/issue9/web/serializer/xml"
+	"github.com/issue9/web/server"
 )
 
 var mimetypesFactory = map[string]serializerItem{}
@@ -55,14 +56,14 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 		return err
 	}
 
-	ms := make([]*web.Mimetype, 0, len(conf.Mimetypes))
+	ms := make([]*server.Mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
 			return web.NewFieldError("["+strconv.Itoa(index)+"].target", web.NewLocaleError("%s not found", item.Target))
 		}
 
-		ms = append(ms, &web.Mimetype{
+		ms = append(ms, &server.Mimetype{
 			MarshalBuilder: m.marshalBuilder,
 			Unmarshal:      m.unmarshal,
 			Type:           item.Type,

@@ -109,7 +109,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		ctx.wrote = true
 
 		if ctx.outputCompress != nil {
-			w, err := ctx.outputCompress.Compress().Encoder(ctx.writer)
+			w, err := ctx.outputCompress.Encoder(ctx.writer)
 			if err != nil {
 				return 0, err
 			}

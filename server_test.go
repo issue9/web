@@ -4,290 +4,270 @@ package web
 
 import (
 	"bytes"
-	"crypto/tls"
+	"compress/flate"
+	"compress/gzip"
+	"context"
 	"encoding/json"
 	"encoding/xml"
+	"io"
+	"io/fs"
 	"net/http"
 	"os"
-	"testing"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
+	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/unique/v2"
+	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/servertest"
 )
 
-var _ servertest.Server = &Server{}
+const requestIDKey = "x-request-id"
 
-func TestServer_Vars(t *testing.T) {
-	a := assert.New(t, false)
-	srv, err := NewServer("app", "1.0.0", nil)
-	a.NotError(err).NotNil(srv)
-
-	type (
-		t1 int
-		t2 int64
-		t3 = t2
-	)
-	var (
-		v1 t1 = 1
-		v2 t2 = 1
-		v3 t3 = 1
-	)
-
-	srv.Vars().Store(v1, 1)
-	srv.Vars().Store(v2, 2)
-	srv.Vars().Store(v3, 3)
-
-	v11, found := srv.Vars().Load(v1)
-	a.True(found).Equal(v11, 1)
-	v22, found := srv.Vars().Load(v2)
-	a.True(found).Equal(v22, 3)
+type testServer struct {
+	a          *assert.Assertion
+	httpServer *http.Server
+	language   language.Tag
+	logs       logs.Logs
+	logBuf     *bytes.Buffer
+	catalog    *catalog.Builder
+	unique     *unique.Unique
+	cache      cache.Driver
+	routers    *group.GroupOf[HandlerFunc]
+	printer    *localeutil.Printer
 }
 
-func buildHandler(code int) HandlerFunc {
-	return func(ctx *Context) Responser {
-		return ResponserFunc(func(ctx *Context) Problem {
-			ctx.Render(code, code)
-			return nil
-		})
+func notFound(ctx *Context) Responser { return ctx.NotFound() }
+
+func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
+	return func(n types.Node) HandlerFunc {
+		return func(ctx *Context) Responser {
+			ctx.Header().Set("Allow", n.AllowHeader())
+			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
+				return ResponserFunc(func(ctx *Context) Problem {
+					ctx.WriteHeader(http.StatusOK)
+					return nil
+				})
+			}
+			return ctx.Problem(strconv.Itoa(status))
+		}
 	}
 }
 
-func newTestServer(a *assert.Assertion, o *Options) *Server {
-	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
-	}
-	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = &logs.Options{
-			Handler:  logs.NewTermHandler(os.Stderr, nil),
-			Location: true,
-			Created:  logs.NanoLayout,
-			Levels:   logs.AllLevels(),
+func (srv *testServer) call(w http.ResponseWriter, r *http.Request, ps types.Route, f HandlerFunc) {
+	if ctx := NewContext(srv, w, r, ps, requestIDKey); ctx != nil {
+		if resp := f(ctx); resp != nil {
+			if p := resp.Apply(ctx); p != nil {
+				p.Apply(ctx) // Problem.Apply 始终返回 nil
+			}
 		}
+		ctx.Free()
 	}
-	if o.Compresses == nil {
-		o.Compresses = AllCompresses()
-	}
-	if o.Mimetypes == nil {
-		o.Mimetypes = []*Mimetype{
-			{Type: "application/json", MarshalBuilder: marshalJSON, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
-			{Type: "application/xml", MarshalBuilder: marshalXML, Unmarshal: xml.Unmarshal, ProblemType: ""},
-			{Type: "application/test", MarshalBuilder: buildMarshalTest, Unmarshal: unmarshalTest, ProblemType: ""},
-			{Type: "nil", MarshalBuilder: nil, Unmarshal: nil, ProblemType: ""},
-		}
+}
+
+func newTestServer(a *assert.Assertion) *testServer {
+	c := catalog.NewBuilder()
+	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "cn"))
+	a.NotError(c.SetString(language.TraditionalChinese, "lang", "tw"))
+
+	l := language.SimplifiedChinese
+
+	p := message.NewPrinter(l, message.Catalog(c))
+
+	logBuf := new(bytes.Buffer)
+	log, err := logs.New(p, &logs.Options{
+		Handler:  logs.NewTextHandler(logBuf, os.Stderr),
+		Levels:   logs.AllLevels(),
+		Location: true,
+		Created:  logs.NanoLayout,
+	})
+	a.NotError(err).NotNil(log)
+
+	u := unique.NewNumber(100)
+	go u.Serve(context.Background())
+
+	cc, _ := caches.NewMemory()
+
+	srv := &testServer{
+		a:          a,
+		httpServer: &http.Server{Addr: ":8080"},
+		language:   l,
+		logs:       log,
+		logBuf:     logBuf,
+		catalog:    c,
+		unique:     u,
+		cache:      cc,
+		printer:    p,
 	}
 
-	srv, err := NewServer("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
-
-	// locale
-	b := srv.Catalog()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	srv.AddProblem("41110", 411, Phrase("lang"), Phrase("41110"))
+	srv.routers = group.NewOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
+	srv.httpServer.Handler = srv.routers
 
 	return srv
 }
 
-func TestNewServer(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv, err := NewServer("app", "0.1.0", nil)
-	a.NotError(err).NotNil(srv).
-		False(srv.Uptime().IsZero()).
-		NotNil(srv.Cache()).
-		Equal(srv.Location(), time.Local).
-		Equal(srv.httpServer.Handler, srv.routers).
-		Equal(srv.httpServer.Addr, "")
-
-	d, ok := srv.Cache().(cache.Driver)
-	a.True(ok).
-		NotNil(d).
-		NotNil(d.Driver())
-	a.False(srv.CompressIsDisable())
-	srv.DisableCompress(true)
-	a.True(srv.CompressIsDisable())
+func (s *testServer) AddProblem(id string, status int, title, detail LocaleStringer) {
+	panic("未实现")
 }
 
-func TestServer_Serve(t *testing.T) {
-	a := assert.New(t, false)
+func (s *testServer) Cache() cache.Cleanable { return s.cache }
 
-	srv := newTestServer(a, nil)
-	a.Equal(srv.State(), Stopped)
-	router := srv.NewRouter("default", nil)
-	router.Get("/mux/test", buildHandler(202))
-	router.Get("/m1/test", buildHandler(202))
+func (s *testServer) Catalog() *catalog.Builder { return s.catalog }
 
-	router.Get("/m2/test", func(ctx *Context) Responser {
-		srv := ctx.Server()
-		a.NotNil(srv)
+func (s *testServer) Close(shutdownTimeout time.Duration) {
+	s.a.NotError(s.httpServer.Close())
+}
 
-		ctx.WriteHeader(http.StatusAccepted)
-		_, err := ctx.Write([]byte("1234567890"))
-		if err != nil {
-			println(err)
+func (s *testServer) CompressIsDisable() bool { panic("未实现") }
+
+func (s *testServer) Config() *config.Config { panic("未实现") }
+
+func (s *testServer) DisableCompress(disable bool) { panic("未实现") }
+
+func (s *testServer) GetRouter(name string) *Router { return s.routers.Router(name) }
+
+func (s *testServer) Language() language.Tag { return s.language }
+
+func (s *testServer) LoadLocale(glob string, fsys ...fs.FS) error { panic("未实现") }
+
+func (s *testServer) LocalePrinter() *message.Printer { return s.printer }
+
+func (s *testServer) Location() *time.Location { panic("未实现") }
+
+func (s *testServer) Logs() Logs { return s.logs }
+
+func (s *testServer) Name() string { return "test" }
+
+func (s *testServer) NewClient(client *http.Client, url, marshalName string) *Client {
+	panic("未实现")
+}
+
+func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	return NewContext(s, w, r, nil, requestIDKey)
+}
+
+func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {
+	return message.NewPrinter(tag, message.Catalog(s.Catalog()))
+}
+
+func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {
+	return s.routers.New(name, matcher, o...)
+}
+
+func (s *testServer) Now() time.Time { return time.Now().In(s.Location()) }
+
+func (s *testServer) OnClose(f ...func() error) { panic("未实现") }
+
+func (s *testServer) ParseTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, s.Location())
+}
+
+func (s *testServer) RemoveRouter(name string) { panic("未实现") }
+
+func (s *testServer) Routers() []*Router { panic("未实现") }
+
+func (s *testServer) Serve() (err error) {
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *testServer) State() State { panic("未实现") }
+
+func (s *testServer) UniqueID() string { return s.unique.String() }
+
+func (s *testServer) Uptime() time.Time { panic("未实现") }
+
+func (s *testServer) UseMiddleware(m ...Middleware) { panic("未实现") }
+
+func (s *testServer) Vars() *sync.Map { panic("未实现") }
+
+func (s *testServer) Version() string { return "1.0.0" }
+
+func (s *testServer) VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer)) {
+	panic("未实现")
+}
+
+func (s *testServer) ContentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
+	switch h {
+	case "application/json":
+		return json.Unmarshal, nil, nil
+	case "application/xml":
+		return xml.Unmarshal, nil, nil
+	default:
+		if h != "" {
+			return nil, nil, ErrUnsupportedSerialization()
 		}
-		return nil
-	})
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	a.PanicString(func() { // 多次调用 srv.Serve
-		a.NotError(srv.Serve())
-	}, "当前已经处于运行状态")
-
-	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
-
-	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
-
-	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
-
-	// 静态文件
-	router.Get("/admin/{path}", srv.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	servertest.Get(a, "http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
-}
-
-func TestServer_Serve_HTTPS(t *testing.T) {
-	a := assert.New(t, false)
-
-	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
-	a.NotError(err).NotNil(cert)
-	srv := newTestServer(a, &Options{
-		HTTPServer: &http.Server{
-			Addr: ":8088",
-			TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			},
-		},
-	})
-
-	router := srv.NewRouter("default", nil)
-	router.Get("/mux/test", buildHandler(202))
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	client := &http.Client{Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}}
-
-	resp, err := client.Get("https://localhost:8088/mux/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
-
-	// 无效的 http 请求
-	resp, err = client.Get("http://localhost:8088/mux/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
-
-	resp, err = client.Get("http://localhost:8088/mux")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
-}
-
-func TestServer_Close(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
-	router := srv.NewRouter("def", nil)
-
-	router.Get("/test", buildHandler(202))
-	router.Get("/close", func(ctx *Context) Responser {
-		_, err := ctx.Write([]byte("closed"))
-		if err != nil {
-			ctx.WriteHeader(http.StatusInternalServerError)
-		}
-		a.Equal(srv.State(), Running)
-		srv.Close(0)
-		srv.Close(0) // 可多次调用
-		a.Equal(srv.State(), Stopped)
-		return nil
-	})
-
-	close := 0
-	srv.OnClose(func() error {
-		close++
-		return nil
-	})
-
-	defer servertest.Run(a, srv)()
-	// defer srv.Close() // 由 /close 关闭，不需要 srv.Close
-
-	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
-
-	// 连接被关闭，返回错误内容
-	a.Equal(0, close)
-	resp, err := http.Get("http://localhost:8080/close")
-	time.Sleep(500 * time.Microsecond) // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-	a.Error(err).Nil(resp).True(close > 0)
-
-	resp, err = http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
-}
-
-func TestServer_CloseWithTimeout(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
-	router := srv.NewRouter("def", nil)
-
-	router.Get("/test", buildHandler(202))
-	router.Get("/close", func(ctx *Context) Responser {
-		ctx.WriteHeader(http.StatusCreated)
-		_, err := ctx.Write([]byte("shutdown with ctx"))
-		a.NotError(err)
-		srv.Close(300 * time.Millisecond)
-
-		return nil
-	})
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
-
-	// 关闭指令可以正常执行
-	servertest.Get(a, "http://localhost:8080/close").Do(nil).Status(http.StatusCreated)
-
-	// 未超时，但是拒绝新的链接
-	resp, err := http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
-
-	// 已被关闭
-	time.Sleep(30 * time.Microsecond)
-	resp, err = http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
-}
-
-// 检测 204 是否存在 http: request method or response status code does not allow body
-func TestContext_NoContent(t *testing.T) {
-	a := assert.New(t, false)
-	buf := new(bytes.Buffer)
-	o := &Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Logs:       &logs.Options{Handler: logs.NewTextHandler(buf), Created: "15:04:05"},
+		return json.Unmarshal, nil, nil
 	}
-	s := newTestServer(a, o)
-
-	s.NewRouter("def", nil).Get("/204", func(ctx *Context) Responser {
-		return ResponserFunc(func(ctx *Context) Problem {
-			ctx.WriteHeader(http.StatusNoContent)
-			return nil
-		})
-	})
-
-	defer servertest.Run(a, s)()
-
-	servertest.Get(a, "http://localhost:8080/204").
-		Header("Accept-Encoding", "gzip"). // 服务端不应该构建压缩对象
-		Header("Accept", "application/json;charset=gbk").
-		Do(nil).
-		Status(http.StatusNoContent)
-
-	s.Close(0)
-
-	a.NotContains(buf.String(), "request method or response status code does not allow body")
 }
+
+func (s *testServer) Accept(h string) *Mimetype {
+	switch h {
+	case "application/json", "*/*":
+		return &Mimetype{Name: h, Problem: "application/problem+json", MarshalBuilder: func(*Context) MarshalFunc { return json.Marshal }}
+	case "application/xml":
+		return &Mimetype{Name: h, Problem: "application/problem+xml", MarshalBuilder: func(*Context) MarshalFunc { return xml.Marshal }}
+	default:
+		if h != "" {
+			return nil
+		}
+		return &Mimetype{Name: h, Problem: "application/problem+json", MarshalBuilder: func(*Context) MarshalFunc { return json.Marshal }}
+	}
+}
+
+func (s *testServer) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+	switch name {
+	case "gzip":
+		return gzip.NewReader(r)
+	case "deflate":
+		return flate.NewReader(r), nil
+	default:
+		return nil, nil
+	}
+}
+
+type compressor struct {
+	e func(io.Writer) (io.WriteCloser, error)
+}
+
+func (c *compressor) Decoder(r io.Reader) (io.ReadCloser, error)  { return nil, nil }
+func (c *compressor) Encoder(w io.Writer) (io.WriteCloser, error) { return c.e(w) }
+
+func (s *testServer) AcceptEncoding(contentType, h string, l logs.Logger) (w Compressor, name string, notAcceptable bool) {
+	switch h {
+	case "gzip":
+		return &compressor{
+			e: func(w io.Writer) (io.WriteCloser, error) {
+				return gzip.NewWriter(w), nil
+			},
+		}, "gzip", false
+	case "deflate":
+		return &compressor{
+			e: func(w io.Writer) (io.WriteCloser, error) {
+				return flate.NewWriter(w, 3)
+			},
+		}, "gzip", false
+	default:
+		return nil, "", h != ""
+	}
+}
+
+func (s *testServer) InitProblem(pp *RFC7807, id string, p *message.Printer) {
+	status, err := strconv.Atoi(id[:3])
+	if err != nil {
+		panic(err)
+	}
+	pp.Init(id, id+" title", id+" detail", status)
+}
+
+func (s *testServer) Services() Services { panic("未实现") }

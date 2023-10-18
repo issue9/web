@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package web
+package server
 
 import (
 	"context"
@@ -12,13 +12,16 @@ import (
 	"github.com/issue9/assert/v3"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/servertest"
 )
+
+var _ web.Services = &services{}
 
 // start 表示服务协程运行成功；
 // p 用于触发 panic；
 // err 用于触发 error；
-func buildService() (f ServiceFunc, start, p, err chan struct{}) {
+func buildService() (f web.ServiceFunc, start, p, err chan struct{}) {
 	const tickTimer = 500 * time.Microsecond
 
 	start = make(chan struct{}, 1)
@@ -54,47 +57,47 @@ func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, nil)
 	servertest.Run(a, s)
-	srv := s.Services()
+	srv := s.Services().(*services)
 
 	a.Equal(2, len(srv.services)) // scheduled, unique id generator
 	s1, start1, _, _ := buildService()
-	srv.Add(Phrase("srv1"), s1)
+	srv.Add(web.Phrase("srv1"), s1)
 	a.Equal(3, len(srv.services))
 	sched := srv.services[0]
 	srv1 := srv.services[2]
 	<-start1
 	a.Equal(srv1.service, s1) // 并不会改变状态
-	a.Equal(srv1.state, Running).
-		Equal(sched.state, Running)
+	a.Equal(srv1.state, web.Running).
+		Equal(sched.state, web.Running)
 
 	// 运行中添加
 	s2, start2, _, _ := buildService()
-	srv.Add(Phrase("srv2"), s2)
+	srv.Add(web.Phrase("srv2"), s2)
 	a.Equal(4, len(srv.services))
 	srv2 := srv.services[3]
 	<-start2
-	a.Equal(Running, srv2.state) // 运行中添加自动运行服务
+	a.Equal(web.Running, srv2.state) // 运行中添加自动运行服务
 
 	s.Close(0)
 	time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
-	a.Equal(srv1.state, Stopped)
-	a.Equal(sched.state, Stopped)
-	a.Equal(srv2.state, Stopped)
+	a.Equal(srv1.state, web.Stopped)
+	a.Equal(sched.state, web.Stopped)
+	a.Equal(srv2.state, web.Stopped)
 }
 
 func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, nil)
-	srv := s.Services()
+	srv := s.Services().(*services)
 	a.Equal(1, len(srv.scheduled.Jobs())) // memory cache gc
 
-	srv.AddAt(Phrase("lang"), func(t time.Time) error {
+	srv.AddAt(web.Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now(), false)
 
 	var count int
-	srv.VisitJobs(func(ls LocaleStringer, t1, t2 time.Time, s State, b bool, err error) {
+	srv.VisitJobs(func(ls web.LocaleStringer, t1, t2 time.Time, s web.State, b bool, err error) {
 		p := srv.s.NewLocalePrinter(language.Chinese)
 		if count == 1 {
 			a.Equal(ls.LocaleString(p), "hans")
@@ -111,14 +114,14 @@ func TestService_state(t *testing.T) {
 		servertest.Run(a, s)
 
 		srv1, start, _, _ := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		s.Services().Add(web.Phrase("srv1"), srv1)
 		<-start
-		s1 := s.Services().services[1]
-		a.Equal(s1.state, Running)
+		s1 := s.Services().(*services).services[1]
+		a.Equal(s1.state, web.Running)
 
 		s.Close(0)
 		time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Stopped)
+		a.Equal(s1.state, web.Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
@@ -126,14 +129,14 @@ func TestService_state(t *testing.T) {
 		s := newTestServer(a, nil)
 
 		srv1, start, p, _ := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		s.Services().Add(web.Phrase("srv1"), srv1)
 		<-start
-		s1 := s.Services().services[2]
-		a.Equal(s1.state, Running)
+		s1 := s.Services().(*services).services[2]
+		a.Equal(s1.state, web.Running)
 
 		p <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Failed).
+		a.Equal(s1.state, web.Failed).
 			Contains(s1.err.Error(), "service panic")
 
 		s.Close(0)
@@ -144,14 +147,14 @@ func TestService_state(t *testing.T) {
 		s := newTestServer(a, nil)
 
 		srv1, start, _, err := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		s.Services().Add(web.Phrase("srv1"), srv1)
 		<-start
-		s1 := s.Services().services[2]
-		a.Equal(s1.state, Running)
+		s1 := s.Services().(*services).services[2]
+		a.Equal(s1.state, web.Running)
 
 		err <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Failed).
+		a.Equal(s1.state, web.Failed).
 			Contains(s1.err.Error(), "service error")
 
 		s.Close(0)

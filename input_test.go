@@ -11,46 +11,45 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-	"github.com/issue9/mux/v7"
-	"golang.org/x/text/language"
+	"github.com/issue9/mux/v7/types"
+	"golang.org/x/text/encoding/simplifiedchinese"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/servertest"
 )
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {
-	r := rest.Post(a, path, []byte("123")).Header("Accept", "*/*").Request()
+	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
+	r.Header.Set(header.Accept, "*/*")
 	w = httptest.NewRecorder()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
+	ctx = newTestServer(a).NewContext(w, r)
 	return ctx, w
 }
 
-func TestPaths_empty(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
-
-	router.Get("/params/empty", func(ctx *Context) Responser {
-		ps := ctx.Paths(false)
-
-		a.Equal(ps.Int64("id1"), 0)
-		a.NotNil(ps.Problem("41110"))
-		return nil
-	})
-
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/empty").Do(nil).Status(http.StatusOK)
+func newPathContext(kv ...string) *types.Context {
+	c := types.NewContext()
+	for i := 0; i < len(kv); i += 2 {
+		c.Set(kv[i], kv[i+1])
+	}
+	return c
 }
 
-func TestPaths_ID(t *testing.T) {
+func TestPaths(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
+	s := newTestServer(a)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
 
-	router.Get("/params/id/{i1:\\d+}/{i2}/{str}", func(ctx *Context) Responser {
+	t.Run("empty", func(t *testing.T) {
+		a := assert.New(t, false)
+		ctx := NewContext(s, w, r, types.NewContext(), "")
+		ps := ctx.Paths(false)
+		a.Equal(ps.Int64("id1"), 0).
+			NotNil(ps.Problem("41110"))
+	})
+
+	t.Run("ID", func(*testing.T) {
+		ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "i3", "str"), "")
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.ID("i1"), 1).
@@ -63,44 +62,22 @@ func TestPaths_ID(t *testing.T) {
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.ID("i3"), 0)
 		a.Equal(ps.filter.len(), 2)
-
-		return nil
 	})
 
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/id/1/-2/str").Do(nil).Status(http.StatusOK)
-}
-
-func TestPaths_Int(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
-
-	router.Get("/params/int/{i1:\\d+}/{i2:\\d+}/{str}", func(ctx *Context) Responser {
+	t.Run("Int", func(*testing.T) {
+		ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Int64("i1"), 1)
-		a.Equal(ps.Int64("i2"), 2).Equal(ps.filter.len(), 0)
+		a.Equal(ps.Int64("i2"), -2).Equal(ps.filter.len(), 0)
 
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Int64("i3"), 0)
 		a.Equal(ps.filter.len(), 1)
-
-		return nil
 	})
 
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/int/1/2/str").Do(nil).Status(http.StatusOK)
-}
-
-func TestPaths_Bool(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081"))
-	a.NotNil(router)
-
-	router.Get("/params/bool/{b1}/{b2}/{str}", func(ctx *Context) Responser {
+	t.Run("Bool", func(*testing.T) {
+		ctx := NewContext(s, w, r, newPathContext("b1", "true", "b2", "false", "str", "str"), "")
 		ps := ctx.Paths(false)
 
 		a.True(ps.Bool("b1"))
@@ -109,21 +86,10 @@ func TestPaths_Bool(t *testing.T) {
 		// 不存在的参数，添加错误信息
 		a.False(ps.Bool("b3"))
 		a.Equal(ps.filter.len(), 1)
-
-		return nil
 	})
 
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/bool/true/false/str").Do(nil).Status(http.StatusOK)
-}
-
-func TestPaths_String(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
-
-	router.Get("/params/string/{s1}/{s2}", func(ctx *Context) Responser {
+	t.Run("String", func(*testing.T) {
+		ctx := NewContext(s, w, r, newPathContext("s1", "str1", "s2", "str2"), "")
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.String("s1"), "str1")
@@ -133,21 +99,10 @@ func TestPaths_String(t *testing.T) {
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.String("s3"), "")
 		a.Equal(ps.filter.len(), 1)
-
-		return nil
 	})
 
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/string/str1/str2").Do(nil).Status(http.StatusOK)
-}
-
-func TestPaths_Float(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
-
-	router.Get("/params/float/{f1}/{f2}/{str}", func(ctx *Context) Responser {
+	t.Run("Float", func(*testing.T) {
+		ctx := NewContext(s, w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"), "")
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -157,125 +112,111 @@ func TestPaths_Float(t *testing.T) {
 		// 不存在的参数，添加错误信息
 		a.Equal(ps.Float64("f3"), 0.0)
 		a.Equal(ps.filter.len(), 1)
-
-		return nil
 	})
-
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/float/1.1/2.2/str").Do(nil).Status(http.StatusOK)
 }
 
 func TestContext_PathID(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
+	s := newTestServer(a)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
 
-	router.Get("/params/paramid/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.PathID("i1", "41110")
-		a.Nil(resp).Equal(i1, 1)
+	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
 
-		i2, resp := ctx.PathID("i2", "41110")
-		a.NotNil(resp).Equal(i2, 0)
+	i1, resp := ctx.PathID("i1", "41110")
+	a.Nil(resp).Equal(i1, 1)
 
-		return resp
-	})
-
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/paramid/1/-2/str").Do(nil).Status(411)
+	i2, resp := ctx.PathID("i2", "41110")
+	a.NotNil(resp).Equal(i2, 0)
 }
 
 func TestContext_PathInt64(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a, nil)
-	router := s.NewRouter("default", nil, mux.URLDomain("http://localhost:8081/root"))
-	a.NotNil(router)
+	s := newTestServer(a)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
 
-	router.Get("/params/paramint64/{i1}/{i2}/{str}", func(ctx *Context) Responser {
-		i1, resp := ctx.PathInt64("i1", "41110")
-		a.Nil(resp).Equal(i1, 1)
+	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
 
-		i2, resp := ctx.PathInt64("i2", "41110")
-		a.Nil(resp).Equal(i2, -2)
+	i1, resp := ctx.PathInt64("i1", "41110")
+	a.Nil(resp).Equal(i1, 1)
 
-		i3, resp := ctx.PathInt64("i3", "41110")
-		a.NotNil(resp).Equal(i3, 0)
+	i2, resp := ctx.PathInt64("i2", "41110")
+	a.Nil(resp).Equal(i2, -2)
 
-		return resp
+	i3, resp := ctx.PathInt64("i3", "41110")
+	a.NotNil(resp).Equal(i3, 0)
+}
+
+func TestQueries(t *testing.T) {
+	a := assert.New(t, false)
+
+	t.Run("Int", func(*testing.T) {
+		ctx, _ := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
+		a.NotNil(ctx)
+		q, err := ctx.Queries(false)
+		a.NotError(err).NotNil(q)
+
+		a.Equal(q.Int("i1", 9), 1)
+		a.Equal(q.Int("i2", 9), 2)
+		a.Equal(q.Int("i3", 9), 9)
+
+		// 无法转换，会返回默认值，且添加错误信息
+		a.Equal(q.Int("str", 3), 3)
 	})
 
-	srv := rest.NewServer(a, s.routers, nil)
-	srv.Get("/params/paramint64/1/-2/str").Do(nil).Status(411)
-}
+	t.Run("Int64", func(*testing.T) {
+		ctx, _ := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
+		a.NotNil(ctx)
+		q, err := ctx.Queries(false)
+		a.NotError(err).NotNil(q)
 
-func TestQueries_Int(t *testing.T) {
-	a := assert.New(t, false)
-	ctx, _ := newContextWithQuery(a, "/queries/int?i1=1&i2=2&str=str")
-	q, err := ctx.Queries(false)
-	a.NotError(err).NotNil(q)
+		a.Equal(q.Int64("i1", 9), 1)
+		a.Equal(q.Int64("i2", 9), 2)
+		a.Equal(q.Int64("i3", 9), 9)
 
-	a.Equal(q.Int("i1", 9), 1)
-	a.Equal(q.Int("i2", 9), 2)
-	a.Equal(q.Int("i3", 9), 9)
+		// 无法转换，会返回默认值，且添加错误信息
+		a.Equal(q.Int64("str", 3), 3)
+		a.NotNil(q.Problem("41110"))
+	})
 
-	// 无法转换，会返回默认值，且添加错误信息
-	a.Equal(q.Int("str", 3), 3)
-}
+	t.Run("String", func(*testing.T) {
+		ctx, _ := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
+		q, err := ctx.Queries(false)
+		a.NotError(err).NotNil(q)
 
-func TestQueries_Int64(t *testing.T) {
-	a := assert.New(t, false)
-	ctx, _ := newContextWithQuery(a, "/queries/int64?i1=1&i2=2&str=str")
-	q, err := ctx.Queries(false)
-	a.NotError(err).NotNil(q)
+		a.Equal(q.String("s1", "9"), "1")
+		a.Equal(q.String("s2", "9"), "2")
+		a.Equal(q.String("s3", "9"), "9")
+	})
 
-	a.Equal(q.Int64("i1", 9), 1)
-	a.Equal(q.Int64("i2", 9), 2)
-	a.Equal(q.Int64("i3", 9), 9)
+	t.Run("Bool", func(*testing.T) {
+		ctx, _ := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
+		q, err := ctx.Queries(false)
+		a.NotError(err).NotNil(q)
 
-	// 无法转换，会返回默认值，且添加错误信息
-	a.Equal(q.Int64("str", 3), 3)
-	a.NotNil(q.Problem("41110"))
-}
+		a.True(q.Bool("b1", false))
+		a.True(q.Bool("b2", false))
+		a.False(q.Bool("b3", false))
 
-func TestQueries_String(t *testing.T) {
-	a := assert.New(t, false)
-	ctx, _ := newContextWithQuery(a, "/queries/string?s1=1&s2=2")
-	q, err := ctx.Queries(false)
-	a.NotError(err).NotNil(q)
+		// 无法转换，会返回默认值，且添加错误信息
+		a.False(q.Bool("str", false))
+		a.NotNil(q.Problem("41110"))
+	})
 
-	a.Equal(q.String("s1", "9"), "1")
-	a.Equal(q.String("s2", "9"), "2")
-	a.Equal(q.String("s3", "9"), "9")
-}
+	t.Run("Float", func(*testing.T) {
+		ctx, _ := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
+		q, err := ctx.Queries(false)
+		a.NotError(err).NotNil(q)
 
-func TestQueries_Bool(t *testing.T) {
-	a := assert.New(t, false)
-	ctx, _ := newContextWithQuery(a, "/queries/bool?b1=true&b2=true&str=str")
-	q, err := ctx.Queries(false)
-	a.NotError(err).NotNil(q)
+		a.Equal(q.Float64("i1", 9.9), 1.1)
+		a.Equal(q.Float64("i2", 9.9), 2)
+		a.Equal(q.Float64("i3", 9.9), 9.9)
 
-	a.True(q.Bool("b1", false))
-	a.True(q.Bool("b2", false))
-	a.False(q.Bool("b3", false))
-
-	// 无法转换，会返回默认值，且添加错误信息
-	a.False(q.Bool("str", false))
-	a.NotNil(q.Problem("41110"))
-}
-
-func TestQueries_Float64(t *testing.T) {
-	a := assert.New(t, false)
-	ctx, _ := newContextWithQuery(a, "/queries/float64?i1=1.1&i2=2&str=str")
-	q, err := ctx.Queries(false)
-	a.NotError(err).NotNil(q)
-
-	a.Equal(q.Float64("i1", 9.9), 1.1)
-	a.Equal(q.Float64("i2", 9.9), 2)
-	a.Equal(q.Float64("i3", 9.9), 9.9)
-
-	// 无法转换，会返回默认值，且添加错误信息
-	a.Equal(q.Float64("str", 3), 3)
-	a.NotNil(q.Problem("41110"))
+		// 无法转换，会返回默认值，且添加错误信息
+		a.Equal(q.Float64("str", 3), 3)
+		a.NotNil(q.Problem("41110"))
+	})
 }
 
 func TestContext_Object(t *testing.T) {
@@ -309,101 +250,78 @@ func TestContext_Object(t *testing.T) {
 
 func TestContext_RequestBody(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, &Options{
-		Language:   language.SimplifiedChinese,
-		HTTPServer: &http.Server{Addr: ":8080"},
-	})
-	r := srv.NewRouter("def", nil)
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	srv := newTestServer(a)
 
 	// 放第一个，否则 Context.requestBody 一直在复用，无法测试到 content-length == -1 的情况。
-	t.Run("content-length=-1", func(t *testing.T) {
-		a := assert.New(t, false)
-
-		r.Post("/p4", func(ctx *Context) Responser {
-			data, err := ctx.RequestBody()
-			a.NotError(err).Equal(data, `"abcdef"`)
-			return nil
-		})
-
+	t.Run("content-length=-1", func(*testing.T) {
 		reader := iotest.OneByteReader(bytes.NewBufferString(`"abcdef"`))
-		resp, err := http.Post("http://localhost:8080/p4", "application/json", reader)
-		a.NotError(err).NotNil(resp)
+		r := httptest.NewRequest(http.MethodPost, "/p4", reader)
+		ctx := srv.NewContext(httptest.NewRecorder(), r)
+		a.NotNil(ctx)
+
+		data, err := ctx.RequestBody()
+		a.NotError(err).Equal(data, `"abcdef"`)
 	})
 
-	t.Run("empty", func(t *testing.T) {
-		a := assert.New(t, false)
-		r.Post("/p1", func(ctx *Context) Responser {
-			data, err := ctx.RequestBody()
-			a.NotError(err).Empty(data)
-			return nil
-		})
-		servertest.Post(a, "http://localhost:8080/p1", nil).Do(nil).Success()
+	t.Run("empty", func(*testing.T) {
+		r := httptest.NewRequest(http.MethodPost, "/p4", nil)
+		ctx := srv.NewContext(httptest.NewRecorder(), r)
+		a.NotNil(ctx)
+		data, err := ctx.RequestBody()
+		a.NotError(err).Empty(data)
 	})
 
-	t.Run("charset=utf-8", func(t *testing.T) {
-		a := assert.New(t, false)
-		r.Post("/p2", func(ctx *Context) Responser {
-			data, err := ctx.RequestBody()
-			a.NotError(err).
-				Equal(data, []byte("123")).
-				Nil(ctx.inputCharset)
+	t.Run("charset=utf-8", func(*testing.T) {
+		r := httptest.NewRequest(http.MethodPost, "/p4", bytes.NewBufferString("123"))
+		ctx := srv.NewContext(httptest.NewRecorder(), r)
+		a.NotNil(ctx)
 
-			// 再次读取
-			data, err = ctx.RequestBody()
-			a.NotError(err).Equal(data, []byte("123"))
+		data, err := ctx.RequestBody()
+		a.NotError(err).
+			Equal(data, []byte("123")).
+			Nil(ctx.inputCharset)
 
-			return nil
-		})
-		servertest.Post(a, "http://localhost:8080/p2", []byte("123")).
-			Header("content-type", "application/json").
-			Do(nil).Success()
+		// 再次读取
+		data, err = ctx.RequestBody()
+		a.NotError(err).Equal(data, []byte("123"))
 	})
 
-	t.Run("charset=gbk", func(t *testing.T) {
-		a := assert.New(t, false)
+	t.Run("charset=gbk", func(*testing.T) {
+		r := httptest.NewRequest(http.MethodPost, "/p4", bytes.NewBuffer(testdata.ObjectGBKBytes))
+		ctx := srv.NewContext(httptest.NewRecorder(), r)
+		ctx.inputCharset = simplifiedchinese.GB18030
 
-		r.Post("/p3", func(ctx *Context) Responser {
-			data, err := ctx.RequestBody()
-			a.NotError(err).Equal(string(data), testdata.ObjectJSONString)
-			return nil
-		})
-		servertest.Post(a, "http://localhost:8080/p3", testdata.ObjectGBKBytes).
-			Header("content-type", "application/json;charset=gbk").
-			Do(nil).Success()
+		data, err := ctx.RequestBody()
+		a.NotError(err).Equal(string(data), testdata.ObjectJSONString)
 	})
 }
 
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
+	srv := newTestServer(a)
 
-	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
-		Header("content-type", "application/json").
-		Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+	r.Header.Set(header.ContentType, "application/json")
 	w := httptest.NewRecorder()
-	ctx := srv.newContext(w, r, nil)
+	ctx := srv.NewContext(w, r)
+	a.NotNil(ctx)
 
 	obj := &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj, testdata.ObjectInst)
 
 	// 无法转换
-	r = rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
-		Header("content-type", "application/json").
-		Request()
+	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+	r.Header.Set(header.ContentType, "application/json")
 	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
+	ctx = srv.NewContext(w, r)
 	a.Error(ctx.Unmarshal(``))
 
 	// 空提交
-	r = rest.Post(a, "/path", nil).
-		Header("content-type", "application/json").
-		Request()
+	r = httptest.NewRequest(http.MethodPost, "/path", nil)
+	r.Header.Set(header.ContentType, "application/json")
 	w = httptest.NewRecorder()
-	ctx = srv.newContext(w, r, nil)
+	ctx = srv.NewContext(w, r)
 	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
@@ -411,21 +329,22 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Read(t *testing.T) {
 	a := assert.New(t, false)
+	s := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
-		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
-		Request()
-	ctx := newTestServer(a, nil).newContext(w, r, nil)
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+	r.Header.Set(header.ContentType, "application/json")
+	ctx := s.NewContext(w, r)
+	a.NotNil(ctx)
 	obj := &testdata.Object{}
 	a.Nil(ctx.Read(false, obj, "41110"))
 	a.Equal(obj, testdata.ObjectInst)
 
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", []byte(testdata.ObjectJSONString)).
-		Header("Content-Type", header.BuildContentType("application/json", header.UTF8Name)).
-		Request()
-	ctx = newTestServer(a, nil).newContext(w, r, nil)
+	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+	r.Header.Set(header.ContentType, "application/json")
+	ctx = s.NewContext(w, r)
+	a.NotNil(ctx)
 	resp := ctx.Read(false, ``, "41110")
 	a.NotNil(resp)
 	resp.Apply(ctx)

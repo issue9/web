@@ -7,15 +7,16 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web"
 
+	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/servertest"
 )
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := web.NewServer("test", "1.0.0", &web.Options{
-		Mimetypes: []*web.Mimetype{
+	s, err := server.New("test", "1.0.0", &server.Options{
+		Mimetypes: []*server.Mimetype{
 			{Type: Mimetype, MarshalBuilder: BuildMarshal, Unmarshal: Unmarshal, ProblemType: ""},
 		},
 		HTTPServer: &http.Server{Addr: ":8080"},
