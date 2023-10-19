@@ -12,8 +12,8 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/serializer/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/servertest"
 )

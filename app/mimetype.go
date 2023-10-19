@@ -8,11 +8,11 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec/mimetype/form"
+	"github.com/issue9/web/codec/mimetype/html"
+	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/serializer/form"
-	"github.com/issue9/web/serializer/html"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/serializer/xml"
 	"github.com/issue9/web/server"
 )
 

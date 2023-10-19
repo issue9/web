@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package compress 提供压缩算法相关的功能
-package compress
+package codec
 
 import (
 	"bytes"
@@ -14,8 +13,6 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
 )
-
-const Identity = "identity"
 
 var (
 	decoderPool = &sync.Pool{New: func() any { return &decoder{} }}
@@ -69,42 +66,29 @@ var (
 type (
 	// Compressor 压缩算法的接口
 	Compressor interface {
-		// Decoder 将 r 包装成为当前压缩算法的解码器
-		Decoder(r io.Reader) (io.ReadCloser, error)
+		// NewDecoder 将 r 包装成为当前压缩算法的解码器
+		NewDecoder(r io.Reader) (io.ReadCloser, error)
 
-		// Encoder 将 w 包装成当前压缩算法的编码器
-		Encoder(w io.Writer) (io.WriteCloser, error)
+		// NewEncoder 将 w 包装成当前压缩算法的编码器
+		NewEncoder(w io.Writer) (io.WriteCloser, error)
 	}
 
-	zstdCompress struct{}
+	zstdCompressor struct{}
 
-	brotliCompress struct {
+	brotliCompressor struct {
 		writers *sync.Pool
 	}
 
-	lzwCompress struct {
+	lzwCompressor struct {
 		order lzw.Order
 		width int
 	}
 
-	gzipCompress struct{}
+	gzipCompressor struct{}
 
-	deflateCompress struct {
+	deflateCompressor struct {
 		dict    []byte
 		writers *sync.Pool
-	}
-
-	// NamedCompress 带名称的压缩算法
-	NamedCompress struct {
-		name     string
-		compress Compressor
-
-		// contentType 是具体值的，比如 text/xml
-		allowTypes []string
-
-		// contentType 是模糊类型的，比如 text/*，
-		// 只有在 allowTypes 找不到时，才在此处查找。
-		allowTypesPrefix []string
 	}
 
 	decoder struct {
@@ -118,12 +102,17 @@ type (
 	}
 )
 
-// NewZstdCompress 声明基于 [zstd] 的压缩算法
-func NewZstdCompress() Compressor {
-	return &zstdCompress{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
+// NewZstdCompressor 声明基于 [zstd] 的压缩算法
+//
+// NOTE: 请注意[浏览器支持情况]
+//
+// [浏览器支持情况]: https://caniuse.com/zstd
+// [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
+func NewZstdCompressor() Compressor {
+	return &zstdCompressor{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 }
 
-func (c *zstdCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
+func (c *zstdCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := zstdReaders.Get().(*zstd.Decoder)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
@@ -131,22 +120,24 @@ func (c *zstdCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
 	return wrapDecoder(io.NopCloser(rr), func() { zstdReaders.Put(rr) }), nil
 }
 
-func (c *zstdCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
+func (c *zstdCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	ww := zstdWriters.Get().(*zstd.Encoder)
 	ww.Reset(w)
 	return wrapEncoder(ww, func() { zstdWriters.Put(ww) }), nil
 }
 
-// NewBrotliCompress 声明基于 br 的压缩算法
-func NewBrotliCompress(o brotli.WriterOptions) Compressor {
-	return &brotliCompress{
+// NewBrotliCompressor 声明基于 [br] 的压缩算法
+//
+// [br]: https://www.rfc-editor.org/rfc/rfc7932.html
+func NewBrotliCompressor(o brotli.WriterOptions) Compressor {
+	return &brotliCompressor{
 		writers: &sync.Pool{New: func() any {
 			return brotli.NewWriterOptions(nil, o)
 		}},
 	}
 }
 
-func (c *brotliCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
+func (c *brotliCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := brotliReaders.Get().(*brotli.Reader)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
@@ -154,35 +145,35 @@ func (c *brotliCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
 	return wrapDecoder(io.NopCloser(rr), func() { brotliReaders.Put(rr) }), nil
 }
 
-func (c *brotliCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
+func (c *brotliCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	ww := c.writers.Get().(*brotli.Writer)
 	ww.Reset(w)
 	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
 }
 
-// NewLZWCompress 声明基于 lzw 的压缩算法
+// NewLZWCompressor 声明基于 lzw 的压缩算法
 //
 // NOTE: 在 http 报头中名称为 compress 或是 x-compress
-func NewLZWCompress(order lzw.Order, width int) Compressor {
-	return &lzwCompress{order: order, width: width}
+func NewLZWCompressor(order lzw.Order, width int) Compressor {
+	return &lzwCompressor{order: order, width: width}
 }
 
-func (c *lzwCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
+func (c *lzwCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := lzwReaders.Get().(*lzw.Reader)
 	rr.Reset(r, c.order, c.width)
 	return wrapDecoder(rr, func() { lzwReaders.Put(rr) }), nil
 }
 
-func (c *lzwCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
+func (c *lzwCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	ww := lzwWriters.Get().(*lzw.Writer)
 	ww.Reset(w, c.order, c.width)
 	return wrapEncoder(ww, func() { lzwWriters.Put(ww) }), nil
 }
 
-// NewGzipCompress 声明基于 gzip 的压缩算法
-func NewGzipCompress(level int) Compressor { return &gzipCompress{} }
+// NewGzipCompressor 声明基于 gzip 的压缩算法
+func NewGzipCompressor(level int) Compressor { return &gzipCompressor{} }
 
-func (c *gzipCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
+func (c *gzipCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := gzipReaders.Get().(*gzip.Reader)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
@@ -190,15 +181,15 @@ func (c *gzipCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
 	return wrapDecoder(rr, func() { gzipReaders.Put(rr) }), nil
 }
 
-func (c *gzipCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
+func (c *gzipCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	ww := gzipWriters.Get().(*gzip.Writer)
 	ww.Reset(w)
 	return wrapEncoder(ww, func() { gzipWriters.Put(ww) }), nil
 }
 
-// NewDeflateCompress 声明基于 deflate 的压缩算法
-func NewDeflateCompress(level int, dict []byte) Compressor {
-	return &deflateCompress{
+// NewDeflateCompressor 声明基于 deflate 的压缩算法
+func NewDeflateCompressor(level int, dict []byte) Compressor {
+	return &deflateCompressor{
 		dict: dict,
 
 		writers: &sync.Pool{New: func() any {
@@ -218,7 +209,7 @@ func NewDeflateCompress(level int, dict []byte) Compressor {
 	}
 }
 
-func (c *deflateCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
+func (c *deflateCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := deflateReaders.Get().(flate.Resetter)
 	if err := rr.Reset(r, c.dict); err != nil {
 		return nil, err
@@ -226,17 +217,11 @@ func (c *deflateCompress) Decoder(r io.Reader) (io.ReadCloser, error) {
 	return wrapDecoder(rr.(io.ReadCloser), func() { deflateReaders.Put(rr) }), nil
 }
 
-func (c *deflateCompress) Encoder(w io.Writer) (io.WriteCloser, error) {
+func (c *deflateCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	ww := c.writers.Get().(*flate.Writer)
 	ww.Reset(w)
 	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
 }
-
-// Name 算法名称
-func (c *NamedCompress) Name() string { return c.name }
-
-// Compress 关联的压缩算法接口
-func (c *NamedCompress) Compress() Compressor { return c.compress }
 
 func wrapEncoder(w io.WriteCloser, f func()) *encoder {
 	e := encoderPool.Get().(*encoder)

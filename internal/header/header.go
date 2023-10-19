@@ -15,6 +15,8 @@ import (
 
 const UTF8Name = "utf-8"
 
+const Identity = "identity"
+
 // 一些报头的定义
 const (
 	ContentType     = "Content-Type"

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	pkg  = "compress"
+	pkg  = "codec"
 	file = "readers_data.go"
 )
 

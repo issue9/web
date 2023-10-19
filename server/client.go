@@ -12,6 +12,7 @@ import (
 //
 // 参数可参考 [NewClient]。
 func (srv *httpServer) NewClient(client *http.Client, url, marshalName string) *web.Client {
-	m := srv.mimetypes.Search(marshalName)
-	return web.NewClient(client, url, marshalName, m.MarshalBuilder(nil), srv.ContentType, srv.ContentEncoding, srv.compresses.AcceptEncodingHeader())
+	c := srv.Codec()
+	m := c.Accept(marshalName)
+	return web.NewClient(client, url, marshalName, m.MarshalBuilder()(nil), c.ContentType, c.ContentEncoding, c.AcceptEncodingHeader())
 }

@@ -17,8 +17,6 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/compress"
-	"github.com/issue9/web/logs"
 )
 
 // Server 服务接口
@@ -96,10 +94,19 @@ type Server interface {
 	// Logs 日志接口
 	Logs() Logs
 
+	// GetRouter 获取指定名称的路由
 	GetRouter(name string) *Router
+
+	// NewRouter 声明新路由
 	NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router
+
+	// RemoveRouter 删除路由
 	RemoveRouter(name string)
+
+	// Routers 返回所有的路由
 	Routers() []*Router
+
+	// UseMiddleware 对所有的路由使用中间件
 	UseMiddleware(m ...Middleware)
 
 	// NewContext 从标准库的参数初始化 Context 对象
@@ -112,19 +119,59 @@ type Server interface {
 	VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer))
 	InitProblem(pp *RFC7807, id string, p *message.Printer)
 
-	CompressIsDisable() bool
-	DisableCompress(disable bool)
-
 	NewClient(client *http.Client, url, marshalName string) *Client
 
-	ContentType(h string) (UnmarshalFunc, encoding.Encoding, error)
-	Accept(h string) *Mimetype
-	ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
-	AcceptEncoding(contentType, h string, l logs.Logger) (w Compressor, name string, notAcceptable bool)
+	// Codec 编码解码的接口
+	Codec() Codec
 
 	// Services 服务管理接口
 	Services() Services
 }
+
+// Codec 编码解码的接口
+type Codec interface {
+	// ContentType 根据客户端的 Content-Type 报头返回相应的解码方法
+	ContentType(string) (UnmarshalFunc, encoding.Encoding, error)
+
+	// Accept 根据客户端的 Accept 提供相应的编码方法
+	Accept(string) Accepter
+
+	// AcceptHeader 根据现有的编码生成 Accept 报头内容
+	AcceptHeader() string
+
+	// ContentEncoding 根据客户端的 Content-Encoding 报头对 r 进行包装
+	//
+	// name 编码名称，即 Content-Encoding 报头内容；
+	// r 为未解码的内容；
+	ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
+
+	// AcceptEncoding 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
+	//
+	// 如果返回的 w 为空值表示不需要压缩。
+	// 当有多个符合时，按添加顺序拿第一个符合条件数据。
+	// l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
+	AcceptEncoding(contentType, header string, l Logger) (c CompressorWriterFunc, name string, notAcceptable bool)
+
+	// AcceptEncodingHeader 根据现有的压缩方法生成 Accept-Encoding 报头内容
+	AcceptEncodingHeader() string
+
+	DisableCompress()
+
+	EnableCompress()
+
+	CanCompress() bool
+}
+
+// Accepter 根据 Accept 报头生成的编码对象
+type Accepter interface {
+	// Name 该编码的名称
+	Name(problem bool) string
+
+	// MarshalBuilder 生成用于编码的方法
+	MarshalBuilder() BuildMarshalFunc
+}
+
+type CompressorWriterFunc = func(io.Writer) (io.WriteCloser, error)
 
 // Services 服务管理接口
 type Services interface {
@@ -193,14 +240,4 @@ type Services interface {
 	// delay 表示该任务是否是执行完才开始计算下一次任务时间的；
 	// err 表示这个任务的出错状态；
 	VisitJobs(visit func(LocaleStringer, time.Time, time.Time, State, bool, error))
-}
-
-type Compressor = compress.Compressor
-
-// TODO 删除
-type Mimetype struct {
-	Name           string
-	Problem        string
-	MarshalBuilder BuildMarshalFunc
-	Unmarshal      UnmarshalFunc
 }

@@ -11,14 +11,14 @@ import (
 func TestConfigOf_sanitizeCompresses(t *testing.T) {
 	a := assert.New(t, false)
 
-	conf := &configOf[empty]{Compresses: []*compressConfig{
+	conf := &configOf[empty]{Compressors: []*compressConfig{
 		{Types: []string{"text/*", "application/*"}, ID: "compress-msb-8"},
 		{Types: []string{"text/*"}, ID: "br-default"},
 		{Types: []string{"application/*"}, ID: "gzip-default"},
 	}}
 	a.NotError(conf.sanitizeCompresses())
 
-	conf = &configOf[empty]{Compresses: []*compressConfig{
+	conf = &configOf[empty]{Compressors: []*compressConfig{
 		{Types: []string{"text/*"}, ID: "compress-msb-8"},
 		{Types: []string{"text/*"}, ID: "not-exists-id"},
 	}}

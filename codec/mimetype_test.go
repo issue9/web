@@ -1,47 +1,48 @@
 // SPDX-License-Identifier: MIT
 
-package mimetypes
+package codec
 
 import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/serializer/xml"
+
+	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/codec/mimetype/xml"
 )
 
 const testMimetype = "application/octet-stream"
 
-func TestMimetypes_Add(t *testing.T) {
+func TestCodec_Add(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(10)
+	mt := New()
 
 	a.False(mt.exists(testMimetype)).
 		Empty(mt.AcceptHeader())
 
-	mt.Add(testMimetype, json.BuildMarshal, json.Unmarshal, "")
+	mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
 	a.True(mt.exists(testMimetype)).
 		Equal(mt.AcceptHeader(), testMimetype)
 
-	mt.Add("application/json", json.BuildMarshal, json.Unmarshal, "application/problem+json")
+	mt.AddMimetype("application/json", json.BuildMarshal, json.Unmarshal, "application/problem+json")
 	a.True(mt.exists(testMimetype)).
 		Equal(mt.AcceptHeader(), testMimetype+",application/json")
 
-	mt.Add("application/xml", nil, nil, "application/problem+json")
+	mt.AddMimetype("application/xml", nil, nil, "application/problem+json")
 	a.True(mt.exists(testMimetype)).
 		Equal(mt.AcceptHeader(), testMimetype+",application/json")
 
 	a.Panic(func() {
-		mt.Add(testMimetype, json.BuildMarshal, json.Unmarshal, "")
+		mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
 	}, "已经存在同名 application/octet-stream 的编码方法")
 }
 
-func TestMimetypes_ContentType(t *testing.T) {
+func TestCodec_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := New(10)
-	mt.Add(testMimetype, json.BuildMarshal, json.Unmarshal, "")
+	mt := New()
+	mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
 	a.NotNil(mt)
 
 	f, e, err := mt.ContentType(";;;")
@@ -84,9 +85,9 @@ func TestMimetypes_ContentType(t *testing.T) {
 	a.NotError(err).NotNil(f).Nil(e)
 }
 
-func TestMimetypes_Accept(t *testing.T) {
+func TestCodec_Accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(10)
+	mt := New()
 
 	item := mt.Accept(testMimetype)
 	a.Nil(item)
@@ -94,33 +95,33 @@ func TestMimetypes_Accept(t *testing.T) {
 	item = mt.Accept("")
 	a.Nil(item)
 
-	mt.Add(testMimetype, xml.BuildMarshal, xml.Unmarshal, "")
-	mt.Add("text/plain", json.BuildMarshal, json.Unmarshal, "text/plain+problem")
-	mt.Add("empty", nil, nil, "")
+	mt.AddMimetype(testMimetype, xml.BuildMarshal, xml.Unmarshal, "")
+	mt.AddMimetype("text/plain", json.BuildMarshal, json.Unmarshal, "text/plain+problem")
+	mt.AddMimetype("empty", nil, nil, "")
 
 	item = mt.Accept(testMimetype)
 	a.NotNil(item).
 		NotNil(item.MarshalBuilder).
-		Equal(item.Name, testMimetype).
-		Equal(item.Problem, testMimetype)
+		Equal(item.Name(false), testMimetype).
+		Equal(item.Name(true), testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	item = mt.Accept("*/*")
 	a.NotNil(item).
 		NotNil(item.MarshalBuilder).
-		Equal(item.Name, testMimetype)
+		Equal(item.Name(false), testMimetype)
 
 	// 同 */*
 	item = mt.Accept("")
 	a.NotNil(item).
 		NotNil(item.MarshalBuilder).
-		Equal(item.Name, testMimetype)
+		Equal(item.Name(false), testMimetype)
 
 	item = mt.Accept("*/*,text/plain")
 	a.NotNil(item).
 		NotNil(item.MarshalBuilder).
-		Equal(item.Name, "text/plain").
-		Equal(item.Problem, "text/plain+problem")
+		Equal(item.Name(false), "text/plain").
+		Equal(item.Name(true), "text/plain+problem")
 
 	item = mt.Accept("font/wottf;q=x.9")
 	a.Nil(item)
@@ -131,45 +132,45 @@ func TestMimetypes_Accept(t *testing.T) {
 	// 匹配 empty
 	item = mt.Accept("empty")
 	a.NotNil(item).
-		Equal(item.Name, "empty").
-		Nil(item.MarshalBuilder)
+		Equal(item.Name(false), "empty").
+		Nil(item.MarshalBuilder())
 }
 
-func TestMimetypes_findMarshal(t *testing.T) {
+func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(10)
+	mt := New()
 
-	mt.Add("text", nil, nil, "")
-	mt.Add("text/plain", nil, nil, "")
-	mt.Add("text/text", nil, nil, "")
-	mt.Add("application/aa", nil, nil, "")
-	mt.Add("application/bb", nil, nil, "application/problem+bb")
+	mt.AddMimetype("text", nil, nil, "")
+	mt.AddMimetype("text/plain", nil, nil, "")
+	mt.AddMimetype("text/text", nil, nil, "")
+	mt.AddMimetype("application/aa", nil, nil, "")
+	mt.AddMimetype("application/bb", nil, nil, "application/problem+bb")
 
 	item := mt.findMarshal("text")
-	a.NotNil(item).Equal(item.Name, "text")
+	a.NotNil(item).Equal(item.Name(false), "text")
 
 	item = mt.findMarshal("text/*")
-	a.NotNil(item).Equal(item.Name, "text")
+	a.NotNil(item).Equal(item.Name(false), "text")
 
 	item = mt.findMarshal("application/*")
-	a.NotNil(item).Equal(item.Name, "application/aa")
+	a.NotNil(item).Equal(item.Name(false), "application/aa")
 
 	// 第一条数据
 	item = mt.findMarshal("*/*")
-	a.NotNil(item).Equal(item.Name, "text")
+	a.NotNil(item).Equal(item.Name(false), "text")
 
 	// 第一条数据
 	item = mt.findMarshal("")
-	a.NotNil(item).Equal(item.Name, "text")
+	a.NotNil(item).Equal(item.Name(false), "text")
 
 	// DefaultMimetype 不影响 findMarshal
-	mt.Add(testMimetype, nil, nil, "")
+	mt.AddMimetype(testMimetype, nil, nil, "")
 	item = mt.findMarshal("*/*")
-	a.NotNil(item).Equal(item.Name, "text")
+	a.NotNil(item).Equal(item.Name(false), "text")
 
 	// 通过 problem 查找
 	item = mt.findMarshal("application/problem+bb")
-	a.NotNil(item).Equal(item.Name, "application/bb")
+	a.NotNil(item).Equal(item.Name(false), "application/bb")
 
 	// 不存在
 	item = mt.findMarshal("xx/*")

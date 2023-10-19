@@ -64,8 +64,8 @@ type configOf[T any] struct {
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	Compresses []*compressConfig `yaml:"compresses,omitempty" json:"compresses,omitempty" xml:"compresses>compress,omitempty"`
-	compresses []*server.Compress
+	Compressors []*compressConfig `yaml:"compressors,omitempty" json:"compressors,omitempty" xml:"compressors>compressor,omitempty"`
+	compressors []*server.Compressor
 
 	// 指定配置文件的序列化
 	//
@@ -145,7 +145,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 		RoutersOptions:    conf.HTTP.routersOptions,
 		IDGenerator:       conf.idGenerator,
 		RequestIDKey:      conf.HTTP.RequestID,
-		Compresses:        conf.compresses,
+		Compressors:       conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
 		Init:              conf.init,

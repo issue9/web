@@ -22,8 +22,8 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/internal/compress"
-	"github.com/issue9/web/internal/mimetypes"
+	"github.com/issue9/web/codec"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
@@ -85,8 +85,13 @@ type (
 		// 可用的压缩类型
 		//
 		// 默认为空。表示不需要该功能。
-		Compresses []*Compress
-		compresses *compress.Compresses
+		Compressors []*Compressor
+
+		// 指定可用的 mimetype
+		//
+		// 默认为空。
+		Mimetypes []*Mimetype
+		codec     *codec.Codec
 
 		// 默认的语言标签
 		//
@@ -105,12 +110,6 @@ type (
 		Catalog *catalog.Builder
 
 		printer *message.Printer
-
-		// 指定可用的 mimetype
-		//
-		// 默认为空。
-		Mimetypes []*Mimetype
-		mimetypes *mimetypes.Mimetypes
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
@@ -140,15 +139,15 @@ type (
 		Unmarshal web.UnmarshalFunc
 	}
 
-	// Compress 压缩算法的配置
-	Compress struct {
+	// Compressor 压缩算法的配置
+	Compressor struct {
 		// Name 压缩方法的名称
 		//
 		// 可以重名，比如 gzip，可以配置参数不同的对象。
 		Name string
 
 		// Compressor 压缩对象
-		Compressor web.Compressor
+		Compressor codec.Compressor
 
 		// Types 该压缩对象允许使用的为 content-type 类型
 		//
@@ -221,12 +220,12 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.RequestIDKey = RequestIDKey
 	}
 
-	o.compresses = compress.NewCompresses(len(o.Compresses), false)
-	for i, e := range o.Compresses {
+	o.codec = codec.New()
+	for i, e := range o.Compressors {
 		if err := e.sanitize(); err != nil {
 			return nil, err.AddFieldParent("Encodings[" + strconv.Itoa(i) + "]")
 		}
-		o.compresses.Add(e.Name, e.Compressor, e.Types...)
+		o.codec.AddCompressor(e.Name, e.Compressor, e.Types...)
 	}
 
 	// mimetype
@@ -234,9 +233,8 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	if len(indexes) > 0 {
 		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
 	}
-	o.mimetypes = mimetypes.New(len(o.Mimetypes))
 	for _, mt := range o.Mimetypes {
-		o.mimetypes.Add(mt.Type, mt.MarshalBuilder, mt.Unmarshal, mt.ProblemType)
+		o.codec.AddMimetype(mt.Type, mt.MarshalBuilder, mt.Unmarshal, mt.ProblemType)
 	}
 
 	o.problems = problems.New(o.ProblemTypePrefix)
@@ -244,8 +242,8 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	return o, nil
 }
 
-func (e *Compress) sanitize() *config.FieldError {
-	if e.Name == "" || e.Name == compress.Identity || e.Name == "*" {
+func (e *Compressor) sanitize() *config.FieldError {
+	if e.Name == "" || e.Name == header.Identity || e.Name == "*" {
 		return config.NewFieldError("Name", locales.InvalidValue)
 	}
 
@@ -265,43 +263,17 @@ func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
 	return message.NewPrinter(tag, message.Catalog(cat))
 }
 
-// NewZstdCompress 声明基于 [zstd] 的压缩算法
+// AllCompressors 所有内置的压缩算法
 //
-// NOTE: 请注意[浏览器支持情况]
+// 可直接供 [Options.Compressors] 使用。
 //
-// [浏览器支持情况]: https://caniuse.com/zstd
-// [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
-func NewZstdCompress() web.Compressor { return compress.NewZstdCompress() }
-
-// NewBrotliCompress 声明基于 [br] 的压缩算法
-//
-// [br]: https://www.rfc-editor.org/rfc/rfc7932.html
-func NewBrotliCompress(o brotli.WriterOptions) web.Compressor {
-	return compress.NewBrotliCompress(o)
-}
-
-// NewLZWCompress 声明基于 lzw 的压缩算法
-func NewLZWCompress(order lzw.Order, width int) web.Compressor {
-	return compress.NewLZWCompress(order, width)
-}
-
-// NewGzipCompress 声明基于 gzip 的压缩算法
-func NewGzipCompress(level int) web.Compressor { return compress.NewGzipCompress(level) }
-
-// NewDeflateCompress 声明基于 deflate 的压缩算法
-func NewDeflateCompress(level int, dict []byte) web.Compressor {
-	return compress.NewDeflateCompress(level, dict)
-}
-
-// AllCompresses 所有内置的压缩算法
-//
-// 可直接供 [Options.Compresses] 使用。
-func AllCompresses() []*Compress {
-	return []*Compress{
-		{Name: "gzip", Compressor: NewGzipCompress(gzip.DefaultCompression)},
-		{Name: "deflate", Compressor: NewDeflateCompress(flate.DefaultCompression, nil)},
-		{Name: "compress", Compressor: NewLZWCompress(lzw.LSB, 8)},
-		{Name: "br", Compressor: NewBrotliCompress(brotli.WriterOptions{})},
-		{Name: "zstd", Compressor: NewZstdCompress()},
+// contentType 仅应用在指定的 contentType 上，如果为空，表示所有类型。
+func AllCompressors(contentType ...string) []*Compressor {
+	return []*Compressor{
+		{Name: "gzip", Compressor: codec.NewGzipCompressor(gzip.DefaultCompression), Types: contentType},
+		{Name: "deflate", Compressor: codec.NewDeflateCompressor(flate.DefaultCompression, nil), Types: contentType},
+		{Name: "compress", Compressor: codec.NewLZWCompressor(lzw.LSB, 8), Types: contentType},
+		{Name: "br", Compressor: codec.NewBrotliCompressor(brotli.WriterOptions{}), Types: contentType},
+		{Name: "zstd", Compressor: codec.NewZstdCompressor(), Types: contentType},
 	}
 }

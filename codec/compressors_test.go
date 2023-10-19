@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package compress
+package codec
 
 import (
 	"bytes"
@@ -14,28 +14,28 @@ import (
 
 func TestBrotli(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewBrotliCompress(brotli.WriterOptions{Quality: 6}), NewBrotliCompress(brotli.WriterOptions{Quality: 11}))
+	testCompress(a, NewBrotliCompressor(brotli.WriterOptions{Quality: 6}), NewBrotliCompressor(brotli.WriterOptions{Quality: 11}))
 }
 
 func TestGzip(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewGzipCompress(3), NewGzipCompress(5))
+	testCompress(a, NewGzipCompressor(3), NewGzipCompressor(5))
 }
 
 func TestDeflate(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewDeflateCompress(3, nil), NewDeflateCompress(5, nil))
+	testCompress(a, NewDeflateCompressor(3, nil), NewDeflateCompressor(5, nil))
 }
 
 func TestLZW(t *testing.T) {
 	a := assert.New(t, false)
 	// lzw 的 reader 不通用。
-	testCompress(a, NewLZWCompress(lzw.LSB, 8), nil)
+	testCompress(a, NewLZWCompressor(lzw.LSB, 8), nil)
 }
 
 func TestZstd(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewZstdCompress(), NewZstdCompress())
+	testCompress(a, NewZstdCompressor(), NewZstdCompressor())
 }
 
 // c1 与 c2 应该是由不同的参数初始化的，会测试相互能读取。
@@ -46,7 +46,7 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 	// c1 encode
 
 	b1 := &bytes.Buffer{}
-	w, err := c1.Encoder(b1)
+	w, err := c1.NewEncoder(b1)
 	a.NotError(err).NotNil(w)
 	_, err = w.Write([]byte("123"))
 	a.NotError(err)
@@ -62,7 +62,7 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 
 	// c1 read c1.encode
 
-	r, err := c1.Decoder(b1)
+	r, err := c1.NewDecoder(b1)
 	a.NotError(err).NotNil(r)
 	data, err := io.ReadAll(r)
 	a.NotError(err).Equal(string(data), "123")
@@ -74,7 +74,7 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 		return
 	}
 
-	r, err = c2.Decoder(b2)
+	r, err = c2.NewDecoder(b2)
 	a.NotError(err).NotNil(r)
 	data, err = io.ReadAll(r)
 	a.NotError(err).Equal(string(data), "123")

@@ -1,6 +1,6 @@
 // 此文件由工具产生，请勿手动修改！
 
-package compress
+package codec
 
 var (
 	zstdInitData    = []byte{}

@@ -8,7 +8,6 @@ package server
 import (
 	"context"
 	"errors"
-	"io"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -17,16 +16,14 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/internal/compress"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/internal/mimetypes"
 	"github.com/issue9/web/internal/problems"
 )
 
@@ -52,10 +49,9 @@ type httpServer struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems   *problems.Problems
-	mimetypes  *mimetypes.Mimetypes
-	compresses *compress.Compresses
-	config     *config.Config
+	problems *problems.Problems
+	codec    *codec.Codec
+	config   *config.Config
 }
 
 // New 新建 http 服务
@@ -89,10 +85,9 @@ func New(name, version string, o *Options) (web.Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems:   o.problems,
-		mimetypes:  o.mimetypes,
-		compresses: o.compresses,
-		config:     o.Config,
+		problems: o.problems,
+		codec:    o.codec,
+		config:   o.Config,
 	}
 
 	initProblems(srv.problems)
@@ -207,38 +202,4 @@ func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
 	return locale.Load(srv.Config().Serializer(), srv.Catalog(), glob, fsys...)
 }
 
-func (srv *httpServer) DisableCompress(disable bool) { srv.compresses.SetDisable(disable) }
-
-func (srv *httpServer) CompressIsDisable() bool { return srv.compresses.IsDisable() }
-
-func (srv *httpServer) ContentType(h string) (web.UnmarshalFunc, encoding.Encoding, error) {
-	return srv.mimetypes.ContentType(h)
-}
-
-func (srv *httpServer) Accept(h string) *web.Mimetype {
-	m := srv.mimetypes.Accept(h)
-	if m == nil {
-		return nil
-	}
-	return &web.Mimetype{
-		Name:           m.Name,
-		Problem:        m.Problem,
-		MarshalBuilder: m.MarshalBuilder,
-		Unmarshal:      m.Unmarshal,
-	}
-}
-
-func (srv *httpServer) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
-	return srv.compresses.ContentEncoding(name, r)
-}
-
-func (srv *httpServer) AcceptEncoding(contentType, h string, l web.Logger) (w web.Compressor, name string, notAcceptable bool) {
-	n, not := srv.compresses.AcceptEncoding(contentType, h, l)
-	if not {
-		return nil, "", true
-	}
-	if n == nil {
-		return nil, "", false
-	}
-	return n.Compress(), n.Name(), false
-}
+func (srv *httpServer) Codec() web.Codec { return srv.codec }

@@ -41,14 +41,14 @@ type Context struct {
 
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
 	writer         io.Writer
-	outputCompress Compressor
+	outputCompress CompressorWriterFunc
 	outputCharset  encoding.Encoding
 	status         int // http.ResponseWriter.WriteHeader 保存的副本
 	wrote          bool
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype *Mimetype
+	outputMimetype Accepter
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc     // 可以为空
@@ -80,8 +80,10 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 		requestIDKey: id,
 	})
 
+	codec := srv.Codec()
+
 	h := r.Header.Get(header.Accept)
-	mt := srv.Accept(h)
+	mt := codec.Accept(h)
 	if mt == nil {
 		l.DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -97,7 +99,7 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, outputCompressName, notAcceptable := srv.AcceptEncoding(mt.Name, h, l.DEBUG())
+	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, l.DEBUG())
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -110,7 +112,7 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = srv.ContentType(h)
+		inputMimetype, inputCharset, err = codec.ContentType(h)
 		if err != nil {
 			l.DEBUG().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -211,7 +213,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.Server().Accept(mimetype)
+	item := ctx.Server().Codec().Accept(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -225,11 +227,7 @@ func (ctx *Context) Mimetype(problem bool) string {
 	if ctx.outputMimetype == nil {
 		return ""
 	}
-
-	if problem {
-		return ctx.outputMimetype.Problem
-	}
-	return ctx.outputMimetype.Name
+	return ctx.outputMimetype.Name(problem)
 }
 
 // SetEncoding 设置输出的压缩编码
@@ -241,7 +239,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, name, notAcceptable := ctx.Server().AcceptEncoding(ctx.outputMimetype.Name, enc, ctx.Logs().DEBUG())
+	outputEncoding, name, notAcceptable := ctx.Server().Codec().AcceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

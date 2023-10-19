@@ -85,7 +85,7 @@ type (
 	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
 	Middleware     = types.MiddlewareOf[HandlerFunc]
 
-	// HandlerFunc 路由的处理函数
+	// HandlerFunc 路由的处理函数原型
 	//
 	// 向客户端输出内容的有两种方法，一种是通过 [Context.Write] 方法；
 	// 或是返回 [Responser] 对象。前者在调用 [Context.Write] 时即输出内容，
@@ -98,7 +98,7 @@ type (
 	//
 	// 如果传递的参数是空值，应该返回一个默认的 [MarshalFunc] 实现，
 	// 该实现将被用于 [Client] 的相关功能。
-	BuildMarshalFunc func(*Context) MarshalFunc // 不能是 alias，// https://github.com/golang/go/issues/50729
+	BuildMarshalFunc = func(*Context) MarshalFunc
 
 	// MarshalFunc 序列化函数原型
 	//

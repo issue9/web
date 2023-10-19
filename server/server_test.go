@@ -14,9 +14,9 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/serializer/json"
-	"github.com/issue9/web/serializer/xml"
 	"github.com/issue9/web/servertest"
 )
 
@@ -50,9 +50,9 @@ func TestNewServer(t *testing.T) {
 	a.True(ok).
 		NotNil(d).
 		NotNil(d.Driver())
-	a.False(srv.CompressIsDisable())
-	srv.DisableCompress(true)
-	a.True(srv.CompressIsDisable())
+	a.True(srv.Codec().CanCompress())
+	srv.Codec().DisableCompress()
+	a.False(srv.Codec().CanCompress())
 }
 
 func newTestServer(a *assert.Assertion, o *Options) *httpServer {
@@ -67,8 +67,8 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 			Levels:   logs.AllLevels(),
 		}
 	}
-	if o.Compresses == nil {
-		o.Compresses = AllCompresses()
+	if o.Compressors == nil {
+		o.Compressors = AllCompressors()
 	}
 	if o.Mimetypes == nil {
 		o.Mimetypes = []*Mimetype{
