@@ -8,41 +8,21 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
 )
 
 const testMimetype = "application/octet-stream"
 
-func TestCodec_Add(t *testing.T) {
-	a := assert.New(t, false)
-	mt := New()
-
-	a.False(mt.exists(testMimetype)).
-		Empty(mt.AcceptHeader())
-
-	mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
-	a.True(mt.exists(testMimetype)).
-		Equal(mt.AcceptHeader(), testMimetype)
-
-	mt.AddMimetype("application/json", json.BuildMarshal, json.Unmarshal, "application/problem+json")
-	a.True(mt.exists(testMimetype)).
-		Equal(mt.AcceptHeader(), testMimetype+",application/json")
-
-	mt.AddMimetype("application/xml", nil, nil, "application/problem+json")
-	a.True(mt.exists(testMimetype)).
-		Equal(mt.AcceptHeader(), testMimetype+",application/json")
-
-	a.Panic(func() {
-		mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
-	}, "已经存在同名 application/octet-stream 的编码方法")
-}
+var _ web.Accepter = &mimetype{}
 
 func TestCodec_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := New()
-	mt.AddMimetype(testMimetype, json.BuildMarshal, json.Unmarshal, "")
+	mt := New([]*Mimetype{
+		{Name: testMimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: ""},
+	}, DefaultCompressions())
 	a.NotNil(mt)
 
 	f, e, err := mt.ContentType(";;;")
@@ -87,7 +67,8 @@ func TestCodec_ContentType(t *testing.T) {
 
 func TestCodec_Accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New()
+	mt := New(nil, nil)
+	a.NotNil(mt)
 
 	item := mt.Accept(testMimetype)
 	a.Nil(item)
@@ -95,9 +76,12 @@ func TestCodec_Accept(t *testing.T) {
 	item = mt.Accept("")
 	a.Nil(item)
 
-	mt.AddMimetype(testMimetype, xml.BuildMarshal, xml.Unmarshal, "")
-	mt.AddMimetype("text/plain", json.BuildMarshal, json.Unmarshal, "text/plain+problem")
-	mt.AddMimetype("empty", nil, nil, "")
+	mt = New([]*Mimetype{
+		{Name: testMimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: ""},
+		{Name: "text/plain", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: "text/plain+problem"},
+		{Name: "empty", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+	}, BestSpeedCompressions())
+	a.NotNil(mt)
 
 	item = mt.Accept(testMimetype)
 	a.NotNil(item).
@@ -138,13 +122,16 @@ func TestCodec_Accept(t *testing.T) {
 
 func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New()
-
-	mt.AddMimetype("text", nil, nil, "")
-	mt.AddMimetype("text/plain", nil, nil, "")
-	mt.AddMimetype("text/text", nil, nil, "")
-	mt.AddMimetype("application/aa", nil, nil, "")
-	mt.AddMimetype("application/bb", nil, nil, "application/problem+bb")
+	mm := New([]*Mimetype{
+		{Name: "text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: "text/plain", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: "text/text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: "application/aa", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: "application/bb", MarshalBuilder: nil, Unmarshal: nil, Problem: "application/problem+bb"},
+		{Name: testMimetype, MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+	}, BestCompressionCompressions())
+	a.NotNil(mm)
+	mt := mm.(*codec)
 
 	item := mt.findMarshal("text")
 	a.NotNil(item).Equal(item.Name(false), "text")
@@ -164,7 +151,6 @@ func TestCodec_findMarshal(t *testing.T) {
 	a.NotNil(item).Equal(item.Name(false), "text")
 
 	// DefaultMimetype 不影响 findMarshal
-	mt.AddMimetype(testMimetype, nil, nil, "")
 	item = mt.findMarshal("*/*")
 	a.NotNil(item).Equal(item.Name(false), "text")
 

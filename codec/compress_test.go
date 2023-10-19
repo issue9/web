@@ -3,44 +3,22 @@
 package codec
 
 import (
-	"bytes"
-	"compress/gzip"
 	"compress/lzw"
-	"io"
 	"testing"
 
 	"github.com/issue9/assert/v3"
+
+	"github.com/issue9/web/codec/compressor"
 )
-
-func TestCodec_ContentEncoding(t *testing.T) {
-	a := assert.New(t, false)
-	e := New()
-	a.NotNil(e)
-
-	e.AddCompressor("compress", NewLZWCompressor(lzw.LSB, 2), "text/plain", "application/*").
-		AddCompressor("gzip", NewGzipCompressor(3), "text/plain").
-		AddCompressor("gzip", NewGzipCompressor(9), "application/*")
-
-	r := &bytes.Buffer{}
-	gw := gzip.NewWriter(r)
-	_, err := gw.Write([]byte("123"))
-	a.NotError(err).
-		NotError(gw.Flush()).
-		NotError(gw.Close())
-
-	rr, err := e.ContentEncoding("gzip", r)
-	a.NotError(err).NotNil(rr)
-	data, err := io.ReadAll(rr)
-	a.NotError(err).Equal(string(data), "123")
-}
 
 func TestCodec_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := New()
-	e.AddCompressor("compress", NewLZWCompressor(lzw.LSB, 2), "text/plain", "application/*").
-		AddCompressor("gzip", NewGzipCompressor(3), "text/plain").
-		AddCompressor("gzip", NewGzipCompressor(9), "application/*")
+	e := New(APIMimetypes(), []*Compression{
+		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
+		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
+		{Name: "gzip", Compressor: compressor.NewGzipCompressor(9), Types: []string{"application/*"}},
+	})
 
 	a.Equal(e.AcceptEncodingHeader(), "compress,gzip")
 

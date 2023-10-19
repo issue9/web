@@ -12,6 +12,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/servertest"
 )
@@ -20,9 +21,9 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Language:   language.MustParse(lang),
-		Mimetypes: []*server.Mimetype{
+		Mimetypes: []*codec.Mimetype{
 			{
-				Type:           Mimetype,
+				Name:           Mimetype,
 				MarshalBuilder: BuildMarshal,
 				Unmarshal:      Unmarshal,
 			},

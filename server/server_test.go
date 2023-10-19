@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/logs"
@@ -51,7 +52,7 @@ func TestNewServer(t *testing.T) {
 		NotNil(d).
 		NotNil(d.Driver())
 	a.True(srv.Codec().CanCompress())
-	srv.Codec().DisableCompress()
+	srv.Codec().SetCompress(false)
 	a.False(srv.Codec().CanCompress())
 }
 
@@ -67,14 +68,14 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 			Levels:   logs.AllLevels(),
 		}
 	}
-	if o.Compressors == nil {
-		o.Compressors = AllCompressors()
+	if o.Compressions == nil {
+		o.Compressions = codec.DefaultCompressions()
 	}
 	if o.Mimetypes == nil {
-		o.Mimetypes = []*Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, ProblemType: "application/problem+json"},
-			{Type: "application/xml", MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, ProblemType: ""},
-			{Type: "nil", MarshalBuilder: nil, Unmarshal: nil, ProblemType: ""},
+		o.Mimetypes = []*codec.Mimetype{
+			{Name: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
+			{Name: "application/xml", MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: ""},
+			{Name: "nil", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
 		}
 	}
 

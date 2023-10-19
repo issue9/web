@@ -32,28 +32,20 @@ func (m *mimetype) Name(problem bool) string {
 
 func (m *mimetype) MarshalBuilder() web.BuildMarshalFunc { return m.marshalBuilder }
 
-func (e *Codec) exists(name string) bool {
-	return sliceutil.Exists(e.types, func(item *mimetype, _ int) bool { return item.name == name })
-}
-
-// AddMimetype 添加新的编码方法
-//
-// name 为编码名称；
-// problem 为该编码在返回 [web.Problem] 对象时的 mimetype 报头值，如果为空，则会与 name 值相同；
-func (e *Codec) AddMimetype(name string, m web.BuildMarshalFunc, u web.UnmarshalFunc, problem string) {
-	if e.exists(name) {
-		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", name))
+func (e *codec) addMimetype(m *Mimetype) {
+	if sliceutil.Exists(e.types, func(item *mimetype, _ int) bool { return item.name == m.Name }) {
+		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", m.Name))
 	}
 
-	if problem == "" {
-		problem = name
+	if m.Problem == "" {
+		m.Problem = m.Name
 	}
 
 	e.types = append(e.types, &mimetype{
-		name:           name,
-		problem:        problem,
-		marshalBuilder: m,
-		unmarshal:      u,
+		name:           m.Name,
+		problem:        m.Problem,
+		marshalBuilder: m.MarshalBuilder,
+		unmarshal:      m.Unmarshal,
 	})
 
 	names := make([]string, 0, len(e.types))
@@ -68,7 +60,7 @@ func (e *Codec) AddMimetype(name string, m web.BuildMarshalFunc, u web.Unmarshal
 // ContentType 从请求端提交的 content-type 报头中获取解码和字符集函数
 //
 // h 表示 content-type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (e *Codec) ContentType(h string) (web.UnmarshalFunc, encoding.Encoding, error) {
+func (e *codec) ContentType(h string) (web.UnmarshalFunc, encoding.Encoding, error) {
 	mimetype, charset := header.ParseWithParam(h, "charset")
 
 	item := e.searchFunc(func(s string) bool { return s == mimetype })
@@ -98,7 +90,7 @@ func (e *Codec) ContentType(h string) (web.UnmarshalFunc, encoding.Encoding, err
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (e *Codec) Accept(h string) web.Accepter {
+func (e *codec) Accept(h string) web.Accepter {
 	if h == "" {
 		if item := e.findMarshal("*/*"); item != nil {
 			return item
@@ -117,7 +109,7 @@ func (e *Codec) Accept(h string) web.Accepter {
 	return nil
 }
 
-func (e *Codec) findMarshal(name string) *mimetype {
+func (e *codec) findMarshal(name string) *mimetype {
 	switch {
 	case len(e.types) == 0:
 		return nil
@@ -131,10 +123,10 @@ func (e *Codec) findMarshal(name string) *mimetype {
 	}
 }
 
-func (e *Codec) searchFunc(match func(string) bool) *mimetype {
+func (e *codec) searchFunc(match func(string) bool) *mimetype {
 	item, _ := sliceutil.At(e.types, func(i *mimetype, _ int) bool { return match(i.name) || match(i.problem) })
 	return item
 }
 
 // AcceptHeader 根据当前的内容生成 Accept 报头
-func (e *Codec) AcceptHeader() string { return e.acceptHeader }
+func (e *codec) AcceptHeader() string { return e.acceptHeader }

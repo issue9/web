@@ -25,12 +25,7 @@ type Client struct {
 	marshal     MarshalFunc
 	marshalName string
 
-	// 查找解码方法
-	contentType func(string) (UnmarshalFunc, encoding.Encoding, error)
-	accept      string // TODO
-
-	contentEncoding func(string, io.Reader) (io.ReadCloser, error)
-	acceptEncoding  string
+	codec Codec
 }
 
 // NewClient 创建 Client 实例
@@ -38,8 +33,7 @@ type Client struct {
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
 // url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
 // marshalName 对输入数据的编码方式，从 mt 中查找；
-// mt 所有可用的解码方式；
-func NewClient(client *http.Client, url, marshalName string, marshal MarshalFunc, ct func(string) (UnmarshalFunc, encoding.Encoding, error), ce func(string, io.Reader) (io.ReadCloser, error), ae string) *Client {
+func NewClient(client *http.Client, url, marshalName string, codec Codec) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
@@ -48,6 +42,8 @@ func NewClient(client *http.Client, url, marshalName string, marshal MarshalFunc
 		url = url[:l-1]
 	}
 
+	marshal := codec.Accept(marshalName).MarshalBuilder()(nil)
+
 	return &Client{
 		url:    url,
 		client: client,
@@ -55,9 +51,7 @@ func NewClient(client *http.Client, url, marshalName string, marshal MarshalFunc
 		marshalName: marshalName,
 		marshal:     marshal,
 
-		contentType:     ct,
-		contentEncoding: ce,
-		acceptEncoding:  ae,
+		codec: codec,
 	}
 }
 
@@ -124,7 +118,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	reader, err = c.contentEncoding(encName, reader)
+	reader, err = c.codec.ContentEncoding(encName, reader)
 	if err != nil {
 		return nil
 	}
@@ -132,7 +126,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if inputMimetype, inputCharset, err = c.contentType(h); err != nil {
+		if inputMimetype, inputCharset, err = c.codec.ContentType(h); err != nil {
 			return err
 		}
 
@@ -181,8 +175,8 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		return nil, err
 	}
 	r.Header.Set(header.ContentType, header.BuildContentType(c.marshalName, header.UTF8Name))
-	r.Header.Set(header.Accept, c.accept)
-	r.Header.Set(header.AcceptEncoding, c.acceptEncoding)
+	r.Header.Set(header.Accept, c.codec.AcceptHeader())
+	r.Header.Set(header.AcceptEncoding, c.codec.AcceptEncodingHeader())
 
 	return r, nil
 }

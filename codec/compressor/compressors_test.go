@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package codec
+package compressor
 
 import (
 	"bytes"

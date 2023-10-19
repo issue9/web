@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
@@ -54,9 +55,9 @@ func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
-			{Type: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
-			{Type: Mimetype, MarshalBuilder: nil, Unmarshal: nil},
+		Mimetypes: []*codec.Mimetype{
+			{Name: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
+			{Name: Mimetype, MarshalBuilder: nil, Unmarshal: nil},
 		},
 		Logs: &logs.Options{
 			Created: logs.MicroLayout,

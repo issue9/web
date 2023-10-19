@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
@@ -64,8 +65,8 @@ type configOf[T any] struct {
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	Compressors []*compressConfig `yaml:"compressors,omitempty" json:"compressors,omitempty" xml:"compressors>compressor,omitempty"`
-	compressors []*server.Compressor
+	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty"`
+	compressors []*codec.Compression
 
 	// 指定配置文件的序列化
 	//
@@ -84,7 +85,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*server.Mimetype
+	mimetypes []*codec.Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -145,7 +146,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 		RoutersOptions:    conf.HTTP.routersOptions,
 		IDGenerator:       conf.idGenerator,
 		RequestIDKey:      conf.HTTP.RequestID,
-		Compressors:       conf.compressors,
+		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
 		Init:              conf.init,
@@ -201,7 +202,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	conf.http = conf.HTTP.buildHTTPServer()
 
 	if err = conf.sanitizeCompresses(); err != nil {
-		return err.AddFieldParent("compresses")
+		return err.AddFieldParent("compressions")
 	}
 
 	if err = conf.sanitizeMimetypes(); err != nil {

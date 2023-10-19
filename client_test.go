@@ -3,13 +3,10 @@
 package web
 
 import (
-	"encoding/json"
-	"io"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"golang.org/x/text/encoding"
 
 	"github.com/issue9/web/servertest"
 )
@@ -35,11 +32,7 @@ func testClient(t *testing.T) {
 		return OK(obj)
 	})
 
-	c := NewClient(nil, "http://localhost:8080", "application/json", json.Marshal, func(s string) (UnmarshalFunc, encoding.Encoding, error) {
-		return json.Unmarshal, nil, nil
-	}, func(s string, r io.Reader) (io.ReadCloser, error) {
-		return nil, nil
-	}, "")
+	c := NewClient(nil, "http://localhost:8080", "application/json", &testCodec{})
 	a.NotNil(c)
 
 	resp := &object{}

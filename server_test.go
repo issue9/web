@@ -123,9 +123,7 @@ func (s *testCodec) AcceptEncoding(contentType, h string, l logs.Logger) (w Comp
 
 func (s *testCodec) AcceptEncodingHeader() string { return "gzip,deflate" }
 
-func (s *testCodec) DisableCompress() { panic("未实现") }
-
-func (s *testCodec) EnableCompress() { panic("未实现") }
+func (s *testCodec) SetCompress(enable bool) { panic("未实现") }
 
 func (s *testCodec) CanCompress() bool { panic("未实现") }
 

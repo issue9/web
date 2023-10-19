@@ -22,7 +22,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/internal/problems"
 )
@@ -50,7 +49,7 @@ type httpServer struct {
 	closes []func() error
 
 	problems *problems.Problems
-	codec    *codec.Codec
+	codec    web.Codec
 	config   *config.Config
 }
 
@@ -203,3 +202,10 @@ func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
 }
 
 func (srv *httpServer) Codec() web.Codec { return srv.codec }
+
+// NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
+//
+// 参数可参考 [NewClient]。
+func (srv *httpServer) NewClient(client *http.Client, url, marshalName string) *web.Client {
+	return web.NewClient(client, url, marshalName, srv.Codec())
+}

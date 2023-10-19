@@ -155,10 +155,14 @@ type Codec interface {
 	// AcceptEncodingHeader 根据现有的压缩方法生成 Accept-Encoding 报头内容
 	AcceptEncodingHeader() string
 
-	DisableCompress()
+	// SetCompress 设置压缩功能
+	//
+	// 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
+	//
+	// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
+	SetCompress(enable bool)
 
-	EnableCompress()
-
+	// CanCompress 当前是否拥有压缩功能
 	CanCompress() bool
 }
 
@@ -167,7 +171,6 @@ type Accepter interface {
 	// Name 该编码的名称
 	Name(problem bool) string
 
-	// MarshalBuilder 生成用于编码的方法
 	MarshalBuilder() BuildMarshalFunc
 }
 

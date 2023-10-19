@@ -10,13 +10,14 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
 )
 
-type namedCompressor struct {
-	name     string
-	compress Compressor
+type compression struct {
+	name       string
+	compressor compressor.Compressor
 
 	// contentType 是具体值的，比如 text/xml
 	allowTypes []string
@@ -27,10 +28,10 @@ type namedCompressor struct {
 }
 
 // AddCompressor 添加新的压缩算法
-func (e *Codec) AddCompressor(name string, c Compressor, ct ...string) *Codec {
-	types := make([]string, 0, len(ct))
-	prefix := make([]string, 0, len(ct))
-	for _, c := range ct {
+func (e *codec) addCompression(c *Compression) {
+	types := make([]string, 0, len(c.Types))
+	prefix := make([]string, 0, len(c.Types))
+	for _, c := range c.Types {
 		if c == "" {
 			continue
 		}
@@ -42,32 +43,30 @@ func (e *Codec) AddCompressor(name string, c Compressor, ct ...string) *Codec {
 		}
 	}
 
-	e.compresses = append(e.compresses, &namedCompressor{
-		name:             name,
-		compress:         c,
+	e.compressions = append(e.compressions, &compression{
+		name:             c.Name,
+		compressor:       c.Compressor,
 		allowTypes:       types,
 		allowTypesPrefix: prefix,
 	})
 
-	names := make([]string, 0, len(e.compresses))
-	for _, item := range e.compresses {
+	names := make([]string, 0, len(e.compressions))
+	for _, item := range e.compressions {
 		names = append(names, item.name)
 	}
 	names = sliceutil.Unique(names, func(i, j string) bool { return i == j })
 	e.acceptEncodingHeader = strings.Join(names, ",")
-
-	return e
 }
 
-func (e *Codec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
-	if c, f := sliceutil.At(e.compresses, func(item *namedCompressor, _ int) bool { return item.name == name }); f {
-		return c.compress.NewDecoder(r)
+func (e *codec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.name == name }); f {
+		return c.compressor.NewDecoder(r)
 	}
 	return nil, localeutil.Error("not found compress for %s", name)
 }
 
-func (e *Codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.CompressorWriterFunc, name string, notAcceptable bool) {
-	if len(e.compresses) == 0 || !e.CanCompress() {
+func (e *codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.CompressorWriterFunc, name string, notAcceptable bool) {
+	if len(e.compressions) == 0 || !e.CanCompress() {
 		return
 	}
 
@@ -88,9 +87,9 @@ func (e *Codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.Comp
 		}
 
 		for _, index := range indexes {
-			curr := e.compresses[index]
+			curr := e.compressions[index]
 			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.name }) {
-				return curr.compress.NewEncoder, curr.name, false
+				return curr.compressor.NewEncoder, curr.name, false
 			}
 		}
 		return
@@ -108,24 +107,24 @@ func (e *Codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.Comp
 		}
 
 		for _, index := range indexes {
-			if curr := e.compresses[index]; curr.name == accept.Value {
-				return curr.compress.NewEncoder, curr.name, false
+			if curr := e.compressions[index]; curr.name == accept.Value {
+				return curr.compressor.NewEncoder, curr.name, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
-		c := e.compresses[indexes[0]]
-		return c.compress.NewEncoder, c.name, false
+		c := e.compressions[indexes[0]]
+		return c.compressor.NewEncoder, c.name, false
 	}
 
 	return // 没有匹配，表示不需要进行压缩
 }
 
-func (e *Codec) getMatchCompresses(contentType string) []int {
-	indexes := make([]int, 0, len(e.compresses))
+func (e *codec) getMatchCompresses(contentType string) []int {
+	indexes := make([]int, 0, len(e.compressions))
 
 LOOP:
-	for index, c := range e.compresses {
+	for index, c := range e.compressions {
 		for _, s := range c.allowTypes {
 			if s == contentType {
 				indexes = append(indexes, index)
@@ -145,10 +144,8 @@ LOOP:
 }
 
 // AcceptEncodingHeader 生成 AcceptEncoding 报头内容
-func (e *Codec) AcceptEncodingHeader() string { return e.acceptEncodingHeader }
+func (e *codec) AcceptEncodingHeader() string { return e.acceptEncodingHeader }
 
-func (e *Codec) EnableCompress() { e.disableCompress = false }
+func (e *codec) SetCompress(enable bool) { e.disableCompress = !enable }
 
-func (e *Codec) DisableCompress() { e.disableCompress = true }
-
-func (e *Codec) CanCompress() bool { return !e.disableCompress }
+func (e *codec) CanCompress() bool { return !e.disableCompress }

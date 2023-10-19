@@ -3,14 +3,10 @@
 package server
 
 import (
-	"compress/flate"
-	"compress/gzip"
-	"compress/lzw"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
@@ -23,7 +19,6 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/codec"
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
@@ -85,13 +80,13 @@ type (
 		// 可用的压缩类型
 		//
 		// 默认为空。表示不需要该功能。
-		Compressors []*Compressor
+		Compressions []*codec.Compression
 
 		// 指定可用的 mimetype
 		//
 		// 默认为空。
-		Mimetypes []*Mimetype
-		codec     *codec.Codec
+		Mimetypes []*codec.Mimetype
+		codec     web.Codec
 
 		// 默认的语言标签
 		//
@@ -121,38 +116,6 @@ type (
 		//
 		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作。
 		Init []func(web.Server)
-	}
-
-	Mimetype struct {
-		// Mimetype 的值
-		Type string
-
-		// 对应的错误状态下的 mimetype 值
-		//
-		// 可以为空，表示与 Type 相同。
-		ProblemType string
-
-		// 生成编码方法
-		MarshalBuilder web.BuildMarshalFunc
-
-		// 解码方法
-		Unmarshal web.UnmarshalFunc
-	}
-
-	// Compressor 压缩算法的配置
-	Compressor struct {
-		// Name 压缩方法的名称
-		//
-		// 可以重名，比如 gzip，可以配置参数不同的对象。
-		Name string
-
-		// Compressor 压缩对象
-		Compressor codec.Compressor
-
-		// Types 该压缩对象允许使用的为 content-type 类型
-		//
-		// 如果是 * 表示适用所有类型。
-		Types []string
 	}
 
 	// IDGenerator 生成唯一 ID 的函数
@@ -220,60 +183,25 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.RequestIDKey = RequestIDKey
 	}
 
-	o.codec = codec.New()
-	for i, e := range o.Compressors {
-		if err := e.sanitize(); err != nil {
-			return nil, err.AddFieldParent("Encodings[" + strconv.Itoa(i) + "]")
+	for i, e := range o.Compressions {
+		if err := e.SanitizeConfig(); err != nil {
+			return nil, err.AddFieldParent("Compressions[" + strconv.Itoa(i) + "]")
 		}
-		o.codec.AddCompressor(e.Name, e.Compressor, e.Types...)
 	}
 
 	// mimetype
-	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *Mimetype) bool { return e1.Type == e2.Type })
+	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *codec.Mimetype) bool { return e1.Name == e2.Name })
 	if len(indexes) > 0 {
 		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
 	}
-	for _, mt := range o.Mimetypes {
-		o.codec.AddMimetype(mt.Type, mt.MarshalBuilder, mt.Unmarshal, mt.ProblemType)
-	}
+	o.codec = codec.New(o.Mimetypes, o.Compressions)
 
 	o.problems = problems.New(o.ProblemTypePrefix)
 
 	return o, nil
 }
 
-func (e *Compressor) sanitize() *config.FieldError {
-	if e.Name == "" || e.Name == header.Identity || e.Name == "*" {
-		return config.NewFieldError("Name", locales.InvalidValue)
-	}
-
-	if e.Compressor == nil {
-		return config.NewFieldError("Compress", locales.CanNotBeEmpty)
-	}
-
-	if len(e.Types) == 0 {
-		e.Types = []string{"*"}
-	}
-
-	return nil
-}
-
 func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
 	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
 	return message.NewPrinter(tag, message.Catalog(cat))
-}
-
-// AllCompressors 所有内置的压缩算法
-//
-// 可直接供 [Options.Compressors] 使用。
-//
-// contentType 仅应用在指定的 contentType 上，如果为空，表示所有类型。
-func AllCompressors(contentType ...string) []*Compressor {
-	return []*Compressor{
-		{Name: "gzip", Compressor: codec.NewGzipCompressor(gzip.DefaultCompression), Types: contentType},
-		{Name: "deflate", Compressor: codec.NewDeflateCompressor(flate.DefaultCompression, nil), Types: contentType},
-		{Name: "compress", Compressor: codec.NewLZWCompressor(lzw.LSB, 8), Types: contentType},
-		{Name: "br", Compressor: codec.NewBrotliCompressor(brotli.WriterOptions{}), Types: contentType},
-		{Name: "zstd", Compressor: codec.NewZstdCompressor(), Types: contentType},
-	}
 }
