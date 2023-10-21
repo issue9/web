@@ -3,62 +3,78 @@
 package web
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"strconv"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert/v3"
-
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/internal/header"
 )
 
-// TODO
-func testClient(t *testing.T) {
+func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
+	codec := &testCodec{}
 
-	s := newTestServer(a)
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
+	c := NewClient(nil, "https://example.com", "application/json", codec)
+	a.NotNil(c).
+		NotNil(c.marshal).
+		NotNil(c.Client())
 
-	s.NewRouter("default", nil).Get("/get", func(ctx *Context) Responser {
-		return OK(&object{Name: "name"})
-	}).Post("/post", func(ctx *Context) Responser {
-		obj := &object{}
-		if resp := ctx.Read(true, obj, ProblemBadRequest); resp != nil {
-			return resp
-		}
-		if obj.Name != "name" {
-			return ctx.Problem(ProblemBadRequest).WithExtensions(&object{Name: "name"})
-		}
-		return OK(obj)
+	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
+	a.NotError(err).NotNil(req).
+		Equal(req.Header.Get(header.Accept), codec.AcceptHeader()).
+		Equal(req.Header.Get(header.AcceptEncoding), codec.AcceptEncodingHeader()).
+		Equal(req.Header.Get(header.ContentType), header.BuildContentType("application/json", header.UTF8Name))
+}
+
+func TestClient_ParseResponse(t *testing.T) {
+	a := assert.New(t, false)
+	codec := &testCodec{}
+
+	c := NewClient(nil, "https://example.com", "application/json", codec)
+	a.NotNil(c).
+		NotNil(c.marshal)
+
+	t.Run("empty", func(*testing.T) {
+		resp := &http.Response{}
+		p := newRFC7807()
+		a.NotError(c.ParseResponse(resp, nil, p))
 	})
 
-	c := NewClient(nil, "http://localhost:8080", "application/json", &testCodec{})
-	a.NotNil(c)
+	t.Run("content-length=0", func(*testing.T) {
+		resp := &http.Response{
+			Header: http.Header{},
+		}
+		resp.Header.Set(header.ContentLength, "0")
+		p := newRFC7807()
+		a.NotError(c.ParseResponse(resp, nil, p))
+	})
 
-	resp := &object{}
-	p := &RFC7807{}
-	a.NotError(c.Get("/get", resp, p))
-	a.Zero(p).Equal(resp, &object{Name: "name"})
+	t.Run("normal", func(*testing.T) {
+		h := http.Header{}
+		obj := &object{Age: 11}
+		data, err := json.Marshal(obj)
+		a.NotError(err).NotNil(data)
+		body := bytes.NewBuffer(data)
 
-	resp = &object{}
-	p = &RFC7807{}
-	a.NotError(c.Delete("/get", resp, p))
-	a.Zero(resp).Equal(p.Type, ProblemMethodNotAllowed)
+		h.Set(header.ContentLength, strconv.Itoa(body.Len()))
+		h.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
+		h.Set(header.Accept, "application/json")
+		h.Set(header.AcceptCharset, header.UTF8Name)
+		h.Set(header.AcceptEncoding, "gzip")
 
-	resp = &object{}
-	p = &RFC7807{Extensions: &object{}}
-	a.NotError(c.Post("/post", nil, resp, p))
-	a.Zero(resp).
-		Equal(p.Type, ProblemBadRequest).
-		Equal(p.Extensions, &object{Name: "name"})
+		resp := &http.Response{
+			Header:     h,
+			Body:       io.NopCloser(body),
+			StatusCode: http.StatusOK,
+		}
 
-	resp = &object{}
-	p = &RFC7807{}
-	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, p))
-	a.Zero(p).Equal(resp, &object{Age: 1, Name: "name"})
-
-	resp = &object{}
-	p = &RFC7807{}
-	a.NotError(c.Patch("/not-exists", nil, resp, p))
-	a.Zero(resp).Equal(p.Type, ProblemNotFound)
+		rsp := &object{}
+		p := newRFC7807()
+		a.NotError(c.ParseResponse(resp, rsp, p))
+		a.Equal(rsp, obj).Zero(p)
+	})
 }

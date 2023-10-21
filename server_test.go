@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -30,10 +31,9 @@ import (
 
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
 )
-
-const requestIDKey = "x-request-id"
 
 type testServer struct {
 	a          *assert.Assertion
@@ -56,6 +56,21 @@ type testMimetype struct {
 	mb            BuildMarshalFunc
 }
 
+func buildMarshalTest(_ *Context) MarshalFunc {
+	return func(v any) ([]byte, error) {
+		switch vv := v.(type) {
+		case error:
+			return nil, vv
+		default:
+			return nil, ErrUnsupportedSerialization()
+		}
+	}
+}
+
+func unmarshalTest(bs []byte, v any) error {
+	return ErrUnsupportedSerialization()
+}
+
 func (t *testMimetype) Name(p bool) string {
 	if p {
 		return t.problem
@@ -66,11 +81,14 @@ func (t *testMimetype) Name(p bool) string {
 func (t *testMimetype) MarshalBuilder() BuildMarshalFunc { return t.mb }
 
 func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	switch h {
+	mime, _ := header.ParseWithParam(h, "charset")
+	switch mime {
 	case "application/json":
 		return json.Unmarshal, nil, nil
 	case "application/xml":
 		return xml.Unmarshal, nil, nil
+	case "application/test":
+		return unmarshalTest, nil, nil
 	default:
 		if h != "" {
 			return nil, nil, ErrUnsupportedSerialization()
@@ -85,6 +103,10 @@ func (s *testCodec) Accept(h string) Accepter {
 		return &testMimetype{name: h, problem: "application/problem+json", mb: func(*Context) MarshalFunc { return json.Marshal }}
 	case "application/xml":
 		return &testMimetype{name: h, problem: "application/problem+xml", mb: func(*Context) MarshalFunc { return xml.Marshal }}
+	case "application/test":
+		return &testMimetype{name: h, problem: "application/problem+test", mb: buildMarshalTest}
+	case "nil":
+		return &testMimetype{name: h, problem: h, mb: nil}
 	default:
 		if h != "" {
 			return nil
@@ -102,7 +124,10 @@ func (s *testCodec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, er
 	case "deflate":
 		return flate.NewReader(r), nil
 	default:
-		return nil, nil
+		if name != "" {
+			return nil, fmt.Errorf("不支持的压缩方法 %s", name)
+		}
+		return io.NopCloser(r), nil
 	}
 }
 
@@ -114,8 +139,8 @@ func (s *testCodec) AcceptEncoding(contentType, h string, l logs.Logger) (w Comp
 		}, "gzip", false
 	case "deflate":
 		return func(w io.Writer) (io.WriteCloser, error) {
-			return flate.NewWriter(w, 3)
-		}, "gzip", false
+			return flate.NewWriter(w, 8)
+		}, "deflate", false
 	default:
 		return nil, "", h != ""
 	}
@@ -145,7 +170,7 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
 }
 
 func (srv *testServer) call(w http.ResponseWriter, r *http.Request, ps types.Route, f HandlerFunc) {
-	if ctx := NewContext(srv, w, r, ps, requestIDKey); ctx != nil {
+	if ctx := NewContext(srv, w, r, ps, header.RequestIDKey); ctx != nil {
 		if resp := f(ctx); resp != nil {
 			if p := resp.Apply(ctx); p != nil {
 				p.Apply(ctx) // Problem.Apply 始终返回 nil
@@ -233,7 +258,7 @@ func (s *testServer) NewClient(client *http.Client, url, marshalName string) *Cl
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return NewContext(s, w, r, nil, requestIDKey)
+	return NewContext(s, w, r, nil, header.RequestIDKey)
 }
 
 func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {

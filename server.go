@@ -171,6 +171,9 @@ type Accepter interface {
 	// Name 该编码的名称
 	Name(problem bool) string
 
+	// MarshalBuilder 返回对应的 [BuildMarshalFunc]
+	//
+	// 可以返回空值
 	MarshalBuilder() BuildMarshalFunc
 }
 

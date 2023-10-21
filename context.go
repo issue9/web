@@ -69,8 +69,14 @@ type Context struct {
 	logs Logs
 }
 
+// NewContext 将 w 和 r 包装为 [Context] 对象
+//
 // 如果出错，则会向 w 输出状态码并返回 nil。
+// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.Route, requestIDKey string) *Context {
+	if requestIDKey == "" {
+		requestIDKey = header.RequestIDKey
+	}
 	id := r.Header.Get(requestIDKey)
 	if id == "" {
 		id = srv.UniqueID()

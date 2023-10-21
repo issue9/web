@@ -3,13 +3,35 @@
 package codec
 
 import (
+	"bytes"
 	"compress/lzw"
+	"io"
 	"testing"
 
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/codec/compressor"
 )
+
+func TestCodec_ContentEncoding(t *testing.T) {
+	a := assert.New(t, false)
+
+	e := New(JSONMimetypes(), []*Compression{
+		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
+		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
+		{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
+	})
+
+	r := &bytes.Buffer{}
+	rc, err := e.ContentEncoding("zstd", r)
+	a.NotError(err).NotNil(rc)
+
+	r = bytes.NewBufferString("123")
+	rc, err = e.ContentEncoding("", r)
+	a.NotError(err).NotNil(rc)
+	data, err := io.ReadAll(rc)
+	a.NotError(err).Equal(string(data), "123")
+}
 
 func TestCodec_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)

@@ -42,7 +42,7 @@ func TestPaths(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		a := assert.New(t, false)
-		ctx := NewContext(s, w, r, types.NewContext(), "")
+		ctx := NewContext(s, w, r, types.NewContext(), header.RequestIDKey)
 		ps := ctx.Paths(false)
 		a.Equal(ps.Int64("id1"), 0).
 			NotNil(ps.Problem("41110"))
@@ -77,7 +77,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("Bool", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("b1", "true", "b2", "false", "str", "str"), "")
+		ctx := NewContext(s, w, r, newPathContext("b1", "true", "b2", "false", "str", "str"), header.RequestIDKey)
 		ps := ctx.Paths(false)
 
 		a.True(ps.Bool("b1"))
@@ -89,7 +89,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("String", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("s1", "str1", "s2", "str2"), "")
+		ctx := NewContext(s, w, r, newPathContext("s1", "str1", "s2", "str2"), header.RequestIDKey)
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.String("s1"), "str1")
@@ -102,7 +102,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("Float", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"), "")
+		ctx := NewContext(s, w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"), header.RequestIDKey)
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -121,7 +121,7 @@ func TestContext_PathID(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 
-	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
+	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
 
 	i1, resp := ctx.PathID("i1", "41110")
 	a.Nil(resp).Equal(i1, 1)
@@ -136,7 +136,7 @@ func TestContext_PathInt64(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := rest.Get(a, "/path").Request()
 
-	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
+	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
 
 	i1, resp := ctx.PathInt64("i1", "41110")
 	a.Nil(resp).Equal(i1, 1)

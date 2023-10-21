@@ -33,6 +33,8 @@ const (
 	ETag        = "ETag"
 	IfNoneMatch = "If-None-Match"
 	Vary        = "Vary"
+
+	RequestIDKey = "X-Request-ID"
 )
 
 // ParseWithParam 分析带参数的报头

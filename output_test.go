@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -25,179 +26,146 @@ type response struct {
 
 func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
 
-func testContext_Render(t *testing.T) {
+func TestContext_Render(t *testing.T) {
 	a := assert.New(t, false)
-	buf := new(bytes.Buffer)
 	srv := newTestServer(a)
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
 
-	r := srv.NewRouter("def", nil)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.Accept, "application/json")
+	ctx := NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Header().Get(header.ContentType), header.BuildContentType("application/json", "utf-8")).
+		Equal(w.Header().Get(header.ContentLang), "zh-Hans")
 
-	// 自定义报头
-	buf.Reset()
-	r.Post("/p1", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, testdata.ObjectInst)
-		return nil
-	})
-	servertest.Post(a, "http://localhost:8080/p1", nil).
-		Header("Content-Type", "application/json").
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusCreated).
-		StringBody(testdata.ObjectJSONString).
-		Header("content-type", header.BuildContentType("application/json", "utf-8")).
-		Header("content-language", "zh-Hans")
-	a.Zero(buf.Len())
-
-	buf.Reset()
-	r.Get("/p2", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, testdata.ObjectInst)
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p2").
-		Header("accept", "application/json").
-		Header("accept-language", "").
-		Do(nil).
-		Status(http.StatusCreated).
-		StringBody(testdata.ObjectJSONString).
-		Header("content-language", language.SimplifiedChinese.String()) // 未指定，采用默认值
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Header().Get(header.ContentLang), language.SimplifiedChinese.String()).
+		Equal(w.Body.String(), testdata.ObjectJSONString)
 
 	// 输出 nil，content-type 和 content-language 均为空
-	buf.Reset()
-	r.Get("/p3", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, nil)
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p3").
-		Header("Accept", "application/json").
-		Header("Accept-language", "zh-hans").
-		Do(nil).
-		Status(http.StatusCreated).
-		StringBody("").
-		Header("content-language", ""). // 指定了输出语言，也返回空。
-		Header("content-Type", "")
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "zh-hans")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.Render(http.StatusCreated, nil)
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Header().Get(header.ContentLang), ""). // 指定了输出语言，也返回空。
+		Equal(w.Header().Get(header.ContentType), "")
 
 	// accept,accept-language,accept-charset
-	buf.Reset()
-	r.Get("/p4", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, testdata.ObjectInst)
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p4").
-		Header("Accept", "application/json").
-		Header("Accept-Language", "zh-Hans").
-		Header("Accept-Charset", "gbk").
-		Do(nil).
-		Status(http.StatusCreated).
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			a.Equal(body, testdata.ObjectGBKBytes)
-		})
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "zh-hans")
+	r.Header.Set(header.AcceptCharset, "gbk")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
-	buf.Reset()
-	r.Get("/p7", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, testdata.ObjectInst)
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p7").
-		Header("Accept", "application/json").
-		Header("Accept-Language", "zh-Hans").
-		Header("Accept-Charset", "gbk").
-		Header("Accept-Encoding", "gzip;q=0.9,deflate").
-		Do(nil).
-		Status(http.StatusCreated).
-		Header("content-encoding", "deflate").
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			data, err := io.ReadAll(flate.NewReader(bytes.NewBuffer(body)))
-			a.NotError(err).Equal(data, testdata.ObjectGBKBytes)
-		})
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "zh-hans")
+	r.Header.Set(header.AcceptCharset, "gbk")
+	r.Header.Set(header.AcceptEncoding, "deflate")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	ctx.Free()
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Header().Get(header.ContentEncoding), "deflate")
+	data, err := io.ReadAll(flate.NewReader(w.Body))
+	a.NotError(err).Equal(data, testdata.ObjectGBKBytes)
 
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
-	buf.Reset()
-	r.Get("/p8", func(ctx *Context) Responser {
-		_, err := ctx.Write([]byte("123"))
-		a.NotError(err)
-		a.PanicString(func() {
-			ctx.Render(http.StatusCreated, "456")
-		}, "已有状态码 200，再次设置无效 201")
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p8").Header("Accept", "application/json").Do(nil)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	n, err := ctx.Write([]byte("123"))
+	a.NotError(err).True(n > 0)
+	a.PanicString(func() {
+		ctx.Render(http.StatusCreated, "456")
+	}, "已有状态码 200，再次设置无效 201")
+	ctx.Free()
+	a.Equal(w.Result().StatusCode, http.StatusOK)
 
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
-	buf.Reset()
-	r.Get("/p9", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, "123")
-		_, err := ctx.Write([]byte("456"))
-		a.NotError(err)
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p9").
-		Header("Accept", "application/json").
-		Header("Accept-Encoding", "gzip;q=0.9,deflate").
-		Do(nil).
-		Status(http.StatusCreated). // 压缩对象缓存了 WriteHeader 的发送
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			data, err := io.ReadAll(flate.NewReader(bytes.NewBuffer(body)))
-			a.NotError(err).Equal(string(data), `"123"456`)
-		})
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	ctx.Render(http.StatusCreated, "123")
+	n, err = ctx.Write([]byte("123"))
+	a.NotError(err)
+	ctx.Free()
+	a.True(n > 0).
+		Equal(w.Body.String(), `"123"123`)
 
-	// outputMimetype == nil
-	buf.Reset()
-	r.Get("/p10", func(ctx *Context) Responser {
-		a.Nil(ctx.outputMimetype.MarshalBuilder).
-			Equal(ctx.Mimetype(false), "nil").
-			Equal(ctx.Charset(), header.UTF8Name)
-		ctx.Render(http.StatusCreated, "val")
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p10").Header("Accept", "nil").
-		Do(nil).Status(http.StatusNotAcceptable)
+	// outputMimetype.MarshalBuilder() == nil
+	srv.logBuf.Reset()
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "nil")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx, srv.logBuf.String()).
+		Equal(ctx.Mimetype(false), "nil").
+		Equal(ctx.Charset(), header.UTF8Name)
+	ctx.Render(http.StatusCreated, "val")
+	ctx.Free()
+	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
-	// outputMimetype 返回 ErrUnsupported
-	buf.Reset()
-	r.Get("/p11", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, "任意值")
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p11").Header("Accept", "application/test").
-		Do(nil).Status(http.StatusNotAcceptable)
-	a.NotZero(buf.Len())
+	// outputMimetype.MarshalBuiler()() 返回 ErrUnsupported
+	srv.logBuf.Reset()
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/test")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx, srv.logBuf.String()).
+		Equal(ctx.Mimetype(false), "application/test").
+		Equal(ctx.Charset(), header.UTF8Name)
+	ctx.Render(http.StatusCreated, "任意值")
+	ctx.Free()
+	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
 	// outputMimetype 返回错误
-	buf.Reset()
-	r.Get("/p12", func(ctx *Context) Responser {
-		ctx.Render(http.StatusCreated, errors.New("error"))
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p12").Header("Accept", "application/test").
-		Do(nil).Status(http.StatusNotAcceptable)
-	a.NotZero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/test")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx).
+		Equal(ctx.Mimetype(false), "application/test").
+		Equal(ctx.Charset(), header.UTF8Name)
+	ctx.Render(http.StatusCreated, errors.New("error"))
+	ctx.Free()
+	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
 	// 103
-	buf.Reset()
-	r.Get("/p13", func(ctx *Context) Responser {
-		ctx.WriteHeader(http.StatusEarlyHints)
-		_, err := ctx.Write([]byte(`123`))
-		if err != nil {
-			return ctx.Error(err, ProblemInternalServerError)
-		}
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p13").
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusOK).
-		BodyFunc(func(a *assert.Assertion, body []byte) {
-			a.Equal(body, []byte(`123`))
-		})
-	a.Zero(buf.Len())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	a.NotNil(ctx)
+	ctx.WriteHeader(http.StatusEarlyHints) // 之后可再输出
+	_, err = ctx.Write([]byte(`123`))
+	a.NotError(err)
+	ctx.Free()
+	a.Equal(w.Body.String(), "123")
 }
 
 func TestContext_SetWriter(t *testing.T) {
@@ -306,21 +274,21 @@ func TestNotModified(t *testing.T) {
 	s := newTestServer(a)
 
 	r := s.NewRouter("def", nil)
-	r.Any("/string", func(ctx *Context) Responser {
+	r.Any("/string", func(*Context) Responser {
 		const body = "string"
 		return NotModified(
 			func() (string, bool) { return body, true },
 			func() (any, error) { return body, nil },
 		)
 	})
-	r.Get("/bytes", func(ctx *Context) Responser {
+	r.Get("/bytes", func(*Context) Responser {
 		const body = "bytes"
 		return NotModified(
 			func() (string, bool) { return body, false },
 			func() (any, error) { return []byte(body), nil },
 		)
 	})
-	r.Get("/errors-500", func(ctx *Context) Responser {
+	r.Get("/errors-500", func(*Context) Responser {
 		const body = "500"
 		return NotModified(
 			func() (string, bool) { return body, false },

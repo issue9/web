@@ -19,13 +19,14 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/codec"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 )
 
 // RequestIDKey 报头中传递 request id 的报头名称
-const RequestIDKey = "X-Request-ID"
+const RequestIDKey = header.RequestIDKey
 
 // DefaultConfigDir 默认的配置目录地址
 const DefaultConfigDir = "@.config"

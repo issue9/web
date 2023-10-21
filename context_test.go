@@ -5,7 +5,6 @@ package web
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,69 +62,62 @@ func TestContext_KeepAlive(t *testing.T) {
 		StringBody(`123`)
 }
 
-// TODO 部分功能移至 server
-func testServer_NewContext(t *testing.T) {
+func TestNewContext(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
-	router := srv.NewRouter("def", nil)
-	router.Get("/path", func(ctx *Context) Responser { ctx.Render(http.StatusOK, nil); return nil })
+	s := newTestServer(a)
 
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	t.Run("unset request id key", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
-	// 正常，指定 Accept-Language，采用默认的 accept
-	var b1 time.Time
-	srv.logBuf.Reset()
-	router.Get("/p3", func(ctx *Context) Responser {
-		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.True(header.CharsetIsNop(ctx.inputCharset)).
-			Equal(ctx.Mimetype(false), "application/json").
-			Equal(ctx.outputCharsetName, "utf-8").
-			Equal(ctx.inputMimetype, UnmarshalFunc(json.Unmarshal)).
-			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
-			NotNil(ctx.LocalePrinter())
-		b1 = ctx.Begin()
-		return nil
+		NewContext(s, w, r, nil, "")
+		a.NotEmpty(w.Header().Get(header.RequestIDKey))
 	})
-	servertest.Get(a, "http://localhost:8080/p3").
-		Header(header.AcceptLang, "cmn-hans").
-		Header(header.Accept, "application/json").
-		Do(nil).
-		Success()
-	a.Empty(srv.logBuf.String())
 
-	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头
-	srv.logBuf.Reset()
-	router.Get("/p4", func(ctx *Context) Responser {
-		a.NotNil(ctx).
-			True(header.CharsetIsNop(ctx.inputCharset)).
-			Equal(ctx.Mimetype(false), "application/json").
-			Equal(ctx.outputCharsetName, header.UTF8Name)
-		b2 := ctx.Begin()
-		a.True(b1.Before(b2))
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p4").
-		Header("content-type", header.BuildContentType("application/json", header.UTF8Name)).
-		Header("accept", "application/json;q=0.2,text/plain;q=0.9").
-		Do(nil)
-	a.Empty(srv.logBuf.String())
+	t.Run("set request id key", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.RequestIDKey, "111")
 
-	// 正常，未指定 Accept-Language 和 Accept-Charset 等不是必须的报头，且有输入内容
-	srv.logBuf.Reset()
-	router.Post("/p5", func(ctx *Context) Responser {
-		a.NotNil(ctx).
-			True(header.CharsetIsNop(ctx.inputCharset)).
-			Equal(ctx.Mimetype(false), "application/json").
-			Equal(ctx.outputCharsetName, header.UTF8Name)
-		ctx.WriteHeader(http.StatusCreated)
-		return nil
+		NewContext(s, w, r, nil, header.RequestIDKey)
+		a.Equal(w.Header().Get(header.RequestIDKey), "111")
 	})
-	servertest.Post(a, "http://localhost:8080/p5", []byte("123")).
-		Header("accept", "application/json").
-		Do(nil).
-		Status(http.StatusCreated)
-	a.Empty(srv.logBuf.String())
+
+	t.Run("accept", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.Accept, "111")
+
+		NewContext(s, w, r, nil, header.RequestIDKey)
+		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+	})
+
+	t.Run("accept-charset", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.AcceptCharset, "111")
+
+		NewContext(s, w, r, nil, header.RequestIDKey)
+		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+	})
+
+	t.Run("accept-encoding", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.AcceptEncoding, "111")
+
+		NewContext(s, w, r, nil, header.RequestIDKey)
+		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+	})
+
+	t.Run("content-type", func(*testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.ContentType, "111")
+
+		NewContext(s, w, r, nil, header.RequestIDKey)
+		a.Equal(w.Result().StatusCode, http.StatusUnsupportedMediaType)
+	})
 }
 
 func TestContext_SetMimetype(t *testing.T) {

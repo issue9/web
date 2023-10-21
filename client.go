@@ -103,24 +103,23 @@ func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error 
 func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
 	var size int
 	if h := rsp.Header.Get(header.ContentLength); h != "" {
-		if h == "0" {
-			return NewLocaleError("the response is empty")
+		if h == "0" { // 比如 204
+			return nil
 		}
 
-		size, err = strconv.Atoi(h)
-		if err != nil {
+		if size, err = strconv.Atoi(h); err != nil {
 			return err
 		}
 	}
-	if size == 0 {
-		return NewLocaleError("the response is empty")
+	if size == 0 { // 204 可能为空
+		return nil
 	}
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
 	reader, err = c.codec.ContentEncoding(encName, reader)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var inputMimetype UnmarshalFunc
@@ -143,7 +142,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer rsp.Body.Close()
 
@@ -155,7 +154,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 
 // NewRequest 生成 [http.Request]
 //
-// body 为需要提交的对象；
+// body 为需要提交的对象，采用 [Client.marshal] 进行序列化；
 func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, err error) {
 	var data []byte
 	if body != nil {

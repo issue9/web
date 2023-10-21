@@ -11,8 +11,10 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/servertest"
 )
 
@@ -68,8 +70,6 @@ func TestServer_Routers(t *testing.T) {
 		Status(http.StatusNotFound)
 }
 
-
-
 func TestMiddleware(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
@@ -108,4 +108,28 @@ func TestMiddleware(t *testing.T) {
 		Header("h", "b1b2-").
 		StringBody("201")
 	a.Equal(count, 2)
+}
+
+func TestServer_NewContext(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newTestServer(a, nil)
+	router := srv.NewRouter("def", nil)
+
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
+
+	// 正常，指定 Accept-Language，采用默认的 accept
+	router.Get("/path", func(ctx *web.Context) web.Responser {
+		a.NotNil(ctx).NotEmpty(ctx.ID())
+		a.Equal(ctx.Mimetype(false), "application/json").
+			Equal(ctx.Charset(), "utf-8").
+			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
+			NotNil(ctx.LocalePrinter())
+		return nil
+	})
+	servertest.Get(a, "http://localhost:8080/path").
+		Header(header.AcceptLang, "cmn-hans").
+		Header(header.Accept, "application/json").
+		Do(nil).
+		Success()
 }

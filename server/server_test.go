@@ -239,3 +239,59 @@ func TestServer_CloseWithTimeout(t *testing.T) {
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 }
+
+type object struct {
+	Name string
+	Age  int
+}
+
+func TestServer_NewClient(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := newTestServer(a, nil)
+	defer servertest.Run(a, s)()
+	defer s.Close(500 * time.Millisecond)
+
+	s.NewRouter("default", nil).Get("/get", func(ctx *web.Context) web.Responser {
+		return web.OK(&object{Name: "name"})
+	}).Post("/post", func(ctx *web.Context) web.Responser {
+		obj := &object{}
+		if resp := ctx.Read(true, obj, web.ProblemBadRequest); resp != nil {
+			return resp
+		}
+		if obj.Name != "name" {
+			return ctx.Problem(web.ProblemBadRequest).WithExtensions(&object{Name: "name"})
+		}
+		return web.OK(obj)
+	})
+
+	c := s.NewClient(nil, "http://localhost:8080", "application/json")
+	a.NotNil(c)
+
+	resp := &object{}
+	p := &web.RFC7807{}
+	a.NotError(c.Get("/get", resp, p))
+	a.Zero(p).Equal(resp, &object{Name: "name"})
+
+	resp = &object{}
+	p = &web.RFC7807{}
+	a.NotError(c.Delete("/get", resp, p))
+	a.Zero(resp).Equal(p.Type, web.ProblemMethodNotAllowed)
+
+	resp = &object{}
+	p = &web.RFC7807{Extensions: &object{}}
+	a.NotError(c.Post("/post", nil, resp, p))
+	a.Zero(resp).
+		Equal(p.Type, web.ProblemBadRequest).
+		Equal(p.Extensions, &object{Name: "name"})
+
+	resp = &object{}
+	p = &web.RFC7807{}
+	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, p))
+	a.Zero(p).Equal(resp, &object{Age: 1, Name: "name"})
+
+	resp = &object{}
+	p = &web.RFC7807{}
+	a.NotError(c.Patch("/not-exists", nil, resp, p))
+	a.Zero(resp).Equal(p.Type, web.ProblemNotFound)
+}

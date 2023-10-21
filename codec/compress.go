@@ -59,6 +59,10 @@ func (e *codec) addCompression(c *Compression) {
 }
 
 func (e *codec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+	if name == "" {
+		return io.NopCloser(r), nil
+	}
+
 	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.name == name }); f {
 		return c.compressor.NewDecoder(r)
 	}
