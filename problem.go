@@ -9,7 +9,6 @@ import (
 
 	"github.com/issue9/sliceutil"
 
-	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
@@ -244,7 +243,7 @@ func (v *FilterProblem) add(name string, reason LocaleStringer) *FilterProblem {
 }
 
 // AddFilter 添加由过滤器 f 返回的错误信息
-func (v *FilterProblem) AddFilter(f filter.FilterFunc) *FilterProblem {
+func (v *FilterProblem) AddFilter(f FilterFunc) *FilterProblem {
 	if !v.continueNext() {
 		return v
 	}
