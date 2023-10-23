@@ -70,7 +70,7 @@ func TestProblems_Init(t *testing.T) {
 	pp = &web.RFC7807{}
 	ps.Init(pp, "40011", p)
 	a.Equal(pp.Type, "https://example.com/qa#40011").
-		Equal(ps.Prefix, "https://example.com/qa#")
+		Equal(ps.Prefix(), "https://example.com/qa#")
 
 	ps = newProblems(web.ProblemAboutBlank)
 	a.NotNil(ps)

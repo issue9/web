@@ -73,6 +73,7 @@ type (
 
 	// FilterProblem 处理由过滤器生成的各错误
 	FilterProblem struct {
+		name        string
 		exitAtError bool
 		ctx         *Context
 		p           *RFC7807
@@ -154,8 +155,7 @@ func (p *RFC7807) private() {}
 func (ctx *Context) Problem(id string) Problem { return ctx.initProblem(newRFC7807(), id) }
 
 func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
-	pp := ctx.LocalePrinter()
-	ctx.Server().Problems().Init(p, id, pp)
+	ctx.Server().Problems().Init(p, id, ctx.LocalePrinter())
 	return p.WithInstance(ctx.ID())
 }
 
@@ -190,12 +190,27 @@ func (ctx *Context) NotFound() Problem { return ctx.Problem(ProblemNotFound) }
 
 func (ctx *Context) NotImplemented() Problem { return ctx.Problem(ProblemNotImplemented) }
 
-// NewFilterProblem 声明用于处理过滤器的错误对象
-func (ctx *Context) NewFilterProblem(exitAtError bool) *FilterProblem {
+func (ctx *Context) newFilterProblem(exitAtError bool) *FilterProblem {
+	return newFilterProblem(exitAtError, "", ctx, newRFC7807())
+}
+
+// New 声明验证的子对象
+//
+// name 为 f 中验证对象的整体名称；
+// f 为验证方法，其原型为 func(fp *FilterProblem)
+// 往 fp 写入的信息，其字段名均会以 name 作为前缀写入到当前对象 v 中。
+// fp 的各种属性均继承自 v。
+func (v *FilterProblem) New(name string, f func(f *FilterProblem)) *FilterProblem {
+	f(newFilterProblem(v.exitAtError, v.name+name, v.Context(), v.p))
+	return v
+}
+
+func newFilterProblem(exitAtError bool, name string, ctx *Context, p *RFC7807) *FilterProblem {
 	v := filterProblemPool.Get().(*FilterProblem)
+	v.name = name
 	v.exitAtError = exitAtError
 	v.ctx = ctx
-	v.p = newRFC7807()
+	v.p = p
 	ctx.OnExit(func(*Context, int) { filterProblemPool.Put(v) })
 	return v
 }
@@ -204,7 +219,7 @@ func (v *FilterProblem) continueNext() bool { return !v.exitAtError || v.len() =
 
 func (v *FilterProblem) len() int { return len(v.p.Params) }
 
-// Add 添加一条错误信息
+// Add 直接添加一条错误信息
 func (v *FilterProblem) Add(name string, reason LocaleStringer) *FilterProblem {
 	if v.continueNext() {
 		return v.add(name, reason)
@@ -212,7 +227,7 @@ func (v *FilterProblem) Add(name string, reason LocaleStringer) *FilterProblem {
 	return v
 }
 
-// AddError 添加一条类型为 error 的错误信息
+// AddError 直接添加一条类型为 error 的错误信息
 func (v *FilterProblem) AddError(name string, err error) *FilterProblem {
 	if ls, ok := err.(LocaleStringer); ok {
 		return v.Add(name, ls)
@@ -221,6 +236,9 @@ func (v *FilterProblem) AddError(name string, err error) *FilterProblem {
 }
 
 func (v *FilterProblem) add(name string, reason LocaleStringer) *FilterProblem {
+	if v.name != "" {
+		name = v.name + name
+	}
 	v.p.WithParam(name, reason.LocaleString(v.Context().LocalePrinter()))
 	return v
 }
@@ -237,6 +255,11 @@ func (v *FilterProblem) AddFilter(f filter.FilterFunc) *FilterProblem {
 	return v
 }
 
+// AddCTXFilter 验证实现了 [CTXFilter] 接口的对象
+func (v *FilterProblem) AddCTXFilter(name string, f CTXFilter) *FilterProblem {
+	return v.New(name, func(fp *FilterProblem) { f.CTXFilter(fp) })
+}
+
 // When 只有满足 cond 才执行 f 中的验证
 //
 // f 中的 v 即为当前对象；
@@ -250,7 +273,7 @@ func (v *FilterProblem) When(cond bool, f func(v *FilterProblem)) *FilterProblem
 // Context 返回关联的 [Context] 实例
 func (v *FilterProblem) Context() *Context { return v.ctx }
 
-// Problem 如果有错误信息转换成 Problem 否则返回 nil
+// Problem 如果有错误信息转换成 [Problem] 否则返回 nil
 func (v *FilterProblem) Problem(id string) Problem {
 	if v == nil || v.len() == 0 {
 		return nil

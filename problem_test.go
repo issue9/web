@@ -112,7 +112,7 @@ func TestContext_Error(t *testing.T) {
 	})
 }
 
-func TestContext_NewFilterProblem(t *testing.T) {
+func TestFilterProblem(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
@@ -126,7 +126,7 @@ func TestContext_NewFilterProblem(t *testing.T) {
 
 	n100 := -100
 	p100 := 100
-	v := ctx.NewFilterProblem(false).
+	v := ctx.newFilterProblem(false).
 		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
 		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
 	a.Equal(v.p.Params, []RFC7807Param{
@@ -136,11 +136,34 @@ func TestContext_NewFilterProblem(t *testing.T) {
 
 	n100 = -100
 	p100 = 100
-	v = ctx.NewFilterProblem(true).
+	v = ctx.newFilterProblem(true).
 		AddFilter(filter.New(filter.NewRules(min_2, min_3))("f1", &n100)).
 		AddFilter(filter.New(filter.NewRules(max50, max_4))("f2", &p100))
 	a.Equal(v.p.Params, []RFC7807Param{
 		{Name: "f1", Reason: "-2"},
+	})
+}
+
+func TestFilterProblem_New(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a)
+	w := httptest.NewRecorder()
+	r := rest.Get(a, "/path").Request()
+	ctx := s.NewContext(w, r)
+
+	v := ctx.newFilterProblem(false)
+	v1 := v.New("v1.", func(f *FilterProblem) {
+		f.Add("f1", StringPhrase("s1"))
+		v2 := f.New("v2.", func(f *FilterProblem) {
+			f.AddError("f2", errors.New("s2"))
+		})
+		a.Equal(v2, f)
+	})
+	a.Equal(v1, v)
+
+	a.Equal(v.p.Params, []RFC7807Param{
+		{Name: "v1.f1", Reason: "s1"},
+		{Name: "v1.v2.f2", Reason: "s2"},
 	})
 }
 
@@ -155,7 +178,7 @@ func TestFilter_When(t *testing.T) {
 	notEmpty := filter.NewRule(required[string], Phrase("不能为空"))
 
 	obj := &object{}
-	v := ctx.NewFilterProblem(false).
+	v := ctx.newFilterProblem(false).
 		AddFilter(filter.New(min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *FilterProblem) {
 			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))
@@ -165,7 +188,7 @@ func TestFilter_When(t *testing.T) {
 	})
 
 	obj = &object{Age: 15}
-	v = ctx.NewFilterProblem(false).
+	v = ctx.newFilterProblem(false).
 		AddFilter(filter.New(min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *FilterProblem) {
 			v.AddFilter(filter.New(notEmpty)("obj/name", &obj.Name))

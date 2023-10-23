@@ -22,9 +22,7 @@ const defaultBodyBufferSize = 256
 var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
 // Paths 提供对路径参数的处理
-type Paths struct {
-	filter *FilterProblem
-}
+type Paths FilterProblem
 
 // Queries 提供对查询参数的处理
 type Queries struct {
@@ -41,21 +39,23 @@ type CTXFilter interface {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	return &Paths{filter: ctx.NewFilterProblem(exitAtError)}
+	return (*Paths)(ctx.newFilterProblem(exitAtError))
 }
+
+func (p *Paths) filter() *FilterProblem { return (*FilterProblem)(p) }
 
 // ID 返回 key 所表示的值且必须大于 0
 func (p *Paths) ID(key string) int64 {
-	if !p.filter.continueNext() {
+	if !p.filter().continueNext() {
 		return 0
 	}
 
-	id, err := p.filter.Context().Route().Params().Int(key)
+	id, err := p.filter().Context().Route().Params().Int(key)
 	if err != nil {
-		p.filter.AddError(key, err)
+		p.filter().AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.filter.Add(key, locales.ShouldGreatThanZero)
+		p.filter().Add(key, locales.ShouldGreatThanZero)
 		return 0
 	}
 	return id
@@ -63,13 +63,13 @@ func (p *Paths) ID(key string) int64 {
 
 // Int64 获取参数 key 所代表的值并转换成 int64 类型
 func (p *Paths) Int64(key string) int64 {
-	if !p.filter.continueNext() {
+	if !p.filter().continueNext() {
 		return 0
 	}
 
-	ret, err := p.filter.Context().Route().Params().Int(key)
+	ret, err := p.filter().Context().Route().Params().Int(key)
 	if err != nil {
-		p.filter.AddError(key, err)
+		p.filter().AddError(key, err)
 		return 0
 	}
 	return ret
@@ -77,13 +77,13 @@ func (p *Paths) Int64(key string) int64 {
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Paths) String(key string) string {
-	if !p.filter.continueNext() {
+	if !p.filter().continueNext() {
 		return ""
 	}
 
-	ret, err := p.filter.Context().Route().Params().String(key)
+	ret, err := p.filter().Context().Route().Params().String(key)
 	if err != nil {
-		p.filter.AddError(key, err)
+		p.filter().AddError(key, err)
 		return ""
 	}
 	return ret
@@ -93,32 +93,32 @@ func (p *Paths) String(key string) string {
 //
 // 由 [strconv.ParseBool] 进行转换。
 func (p *Paths) Bool(key string) bool {
-	if !p.filter.continueNext() {
+	if !p.filter().continueNext() {
 		return false
 	}
 
-	ret, err := p.filter.Context().Route().Params().Bool(key)
+	ret, err := p.filter().Context().Route().Params().Bool(key)
 	if err != nil {
-		p.filter.AddError(key, err)
+		p.filter().AddError(key, err)
 	}
 	return ret
 }
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Paths) Float64(key string) float64 {
-	if !p.filter.continueNext() {
+	if !p.filter().continueNext() {
 		return 0
 	}
 
-	ret, err := p.filter.Context().Route().Params().Float(key)
+	ret, err := p.filter().Context().Route().Params().Float(key)
 	if err != nil {
-		p.filter.AddError(key, err)
+		p.filter().AddError(key, err)
 	}
 	return ret
 }
 
 // Problem 如果有错误信息转换成 [Problem] 否则返回 nil
-func (p *Paths) Problem(id string) Problem { return p.filter.Problem(id) }
+func (p *Paths) Problem(id string) Problem { return p.filter().Problem(id) }
 
 // PathID 获取地址参数中表示 key 的值并转换成大于 0 的 int64
 //
@@ -168,7 +168,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.filter = ctx.NewFilterProblem(exitAtError)
+	q.filter = ctx.newFilterProblem(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
@@ -381,7 +381,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Problem {
 	}
 
 	if vv, ok := v.(CTXFilter); ok {
-		va := ctx.NewFilterProblem(exitAtError)
+		va := ctx.newFilterProblem(exitAtError)
 		vv.CTXFilter(va)
 		return va.Problem(id)
 	}
