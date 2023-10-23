@@ -12,7 +12,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
+	"github.com/issue9/web/internal/status"
 )
 
 // Client 用于访问远程的客户端
@@ -146,7 +146,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 	}
 	defer rsp.Body.Close()
 
-	if problems.IsProblemStatus(rsp.StatusCode) {
+	if status.IsProblemStatus(rsp.StatusCode) {
 		return inputMimetype(data, problem)
 	}
 	return inputMimetype(data, resp)

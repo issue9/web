@@ -89,7 +89,7 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 
-	srv.AddProblem("41110", 411, web.Phrase("lang"), web.Phrase("41110"))
+	srv.Problems().Add(411, web.LocaleProblem{ID: "41110", Title: web.Phrase("lang"), Detail: web.Phrase("41110")})
 
 	return srv.(*httpServer)
 }

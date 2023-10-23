@@ -2,7 +2,7 @@
 
 // Package codec 编码解码工具
 //
-// 包含了压缩方法和媒体类型的处理。
+// 包含了压缩方法和媒体类型的处理，实现了 [web.Codec] 接口及相关内容。
 package codec
 
 import (
@@ -151,7 +151,7 @@ func BestCompressionCompressions(contentType ...string) []*Compression {
 
 // New 声明 [web.Codec] 对象
 //
-// 用户需要自行调用 ms 和 cs 的 [config.Sanitizer] 接口对数据合规性作检测。
+// NOTE: 用户需要自行调用 ms 和 cs 的 [config.Sanitizer] 接口对数据合规性作检测。
 func New(ms []*Mimetype, cs []*Compression) web.Codec {
 	c := &codec{
 		compressions: make([]*compression, 0, len(cs)),

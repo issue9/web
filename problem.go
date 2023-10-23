@@ -155,7 +155,7 @@ func (ctx *Context) Problem(id string) Problem { return ctx.initProblem(newRFC78
 
 func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
 	pp := ctx.LocalePrinter()
-	ctx.Server().InitProblem(p, id, pp)
+	ctx.Server().Problems().Init(p, id, pp)
 	return p.WithInstance(ctx.ID())
 }
 

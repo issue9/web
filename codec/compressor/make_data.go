@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/source"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web/internal/problems/make"
+	"github.com/issue9/web/internal/status"
 )
 
 const (
@@ -29,7 +29,7 @@ func main() {
 
 	b := &errwrap.Buffer{}
 
-	b.WString(make.FileHeader).
+	b.WString(status.FileHeader).
 		WString("package ").WString(pkg).WString("\n\n")
 
 	b.WString("var (\n")

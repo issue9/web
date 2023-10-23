@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/errwrap"
 	"github.com/issue9/source"
 
-	"github.com/issue9/web/internal/problems/make"
+	"github.com/issue9/web/internal/status"
 )
 
 const (
@@ -20,14 +20,11 @@ const (
 
 func main() {
 	buf := &errwrap.Buffer{}
-	buf.WString(make.FileHeader).
+	buf.WString(status.FileHeader).
 		WString("package ").WString(pkgName).WString("\n\n").
-		WString("import (\n").
-		WString("\"net/http\"\n\n").
-		WString("\"github.com/issue9/web/internal/problems\"\n").
-		WString(")\n\n")
+		WString("import \"net/http\"\n\n")
 
-	kvs, err := make.GetStatuses()
+	kvs, err := status.Get()
 	if err != nil {
 		panic(err)
 	}
@@ -44,10 +41,10 @@ func main() {
 	}
 }
 
-func makeID(buf *errwrap.Buffer, kvs []make.Pair) {
+func makeID(buf *errwrap.Buffer, kvs []status.Pair) {
 	buf.WString("const(\n")
 
-	buf.WString(`ProblemAboutBlank = problems.AboutBlank`).WString("\n\n")
+	buf.WString(`ProblemAboutBlank = "about:blank"`).WString("\n\n")
 	for _, item := range kvs {
 		buf.Printf("%s=\"%s\"\n", item.ID(), strconv.Itoa(item.Value))
 	}
@@ -55,7 +52,7 @@ func makeID(buf *errwrap.Buffer, kvs []make.Pair) {
 	buf.WString(")\n\n")
 }
 
-func makeIDs(buf *errwrap.Buffer, kvs []make.Pair) {
+func makeIDs(buf *errwrap.Buffer, kvs []status.Pair) {
 	buf.WString("var problemsID=map[int]string{\n")
 
 	for _, item := range kvs {

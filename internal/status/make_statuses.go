@@ -8,21 +8,21 @@ import (
 	"github.com/issue9/errwrap"
 	"github.com/issue9/source"
 
-	"github.com/issue9/web/internal/problems/make"
+	"github.com/issue9/web/internal/status"
 )
 
 const (
 	filename = "statuses.go"
-	pkgName  = "problems"
+	pkgName  = "status"
 )
 
 func main() {
 	buf := &errwrap.Buffer{}
-	buf.WString(make.FileHeader).
+	buf.WString(status.FileHeader).
 		WString("package ").WString(pkgName).WString("\n\n").
 		WString("import \"net/http\"\n\n")
 
-	kvs, err := make.GetStatuses()
+	kvs, err := status.Get()
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func main() {
 	}
 }
 
-func makeStatuses(buf *errwrap.Buffer, kvs []make.Pair) {
+func makeStatuses(buf *errwrap.Buffer, kvs []status.Pair) {
 	buf.WString("var problemStatuses=map[int]struct{}{\n")
 
 	for _, item := range kvs {

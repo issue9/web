@@ -23,7 +23,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/internal/problems"
 )
 
 type httpServer struct {
@@ -48,7 +47,7 @@ type httpServer struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems *problems.Problems
+	problems *problems
 	codec    web.Codec
 	config   *config.Config
 }
@@ -88,8 +87,6 @@ func New(name, version string, o *Options) (web.Server, error) {
 		codec:    o.codec,
 		config:   o.Config,
 	}
-
-	initProblems(srv.problems)
 
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -132,7 +129,6 @@ func (srv *httpServer) Serve() (err error) {
 	if srv.State() == web.Running {
 		panic("当前已经处于运行状态")
 	}
-
 	srv.state = web.Running
 
 	cfg := srv.httpServer.TLSConfig
@@ -143,7 +139,7 @@ func (srv *httpServer) Serve() (err error) {
 	}
 
 	if errors.Is(err, http.ErrServerClosed) {
-		// 由 Server.Close() 主动触发的关闭事件，才需要等待其执行完成。
+		// 由 [Server.Close] 主动触发的关闭事件，才需要等待其执行完成。
 		// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
 		<-srv.closed
 	}

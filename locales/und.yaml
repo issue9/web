@@ -303,9 +303,6 @@ messages:
     - key: the client miss content-type header
       message:
         msg: the client miss content-type header
-    - key: the response is empty
-      message:
-        msg: the response is empty
     - key: the server miss content-type header
       message:
         msg: the server miss content-type header

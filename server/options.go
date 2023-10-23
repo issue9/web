@@ -20,7 +20,6 @@ import (
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/codec"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/problems"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 )
@@ -111,7 +110,7 @@ type (
 		//
 		// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
 		ProblemTypePrefix string
-		problems          *problems.Problems
+		problems          *problems
 
 		// Init 其它的一些初始化操作
 		//
@@ -197,7 +196,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 	o.codec = codec.New(o.Mimetypes, o.Compressions)
 
-	o.problems = problems.New(o.ProblemTypePrefix)
+	o.problems = newProblems(o.ProblemTypePrefix)
 
 	return o, nil
 }

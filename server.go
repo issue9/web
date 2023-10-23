@@ -115,17 +115,49 @@ type Server interface {
 	// 但是部分功能会缺失，比如地址中的参数信息，以及 [web.Context.Route] 等。
 	NewContext(w http.ResponseWriter, r *http.Request) *Context
 
-	AddProblem(id string, status int, title, detail LocaleStringer)
-	VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer))
-	InitProblem(pp *RFC7807, id string, p *message.Printer)
-
+	// NewClient 基于当前对象的 [Server.Codec] 初始化 [Client]
 	NewClient(client *http.Client, url, marshalName string) *Client
+
+	// Problems Problem 管理
+	Problems() Problems
 
 	// Codec 编码解码的接口
 	Codec() Codec
 
 	// Services 服务管理接口
 	Services() Services
+}
+
+// Problems Problem 管理接口
+type Problems interface {
+	// Add 添加新项
+	//
+	// NOTE: 已添加的内容无法修改，如果确实有需求，
+	// 只能通过修改翻译项的方式间接进行修改。
+	Add(status int, p ...LocaleProblem) Problems
+
+	// Init 将指定 ID 的项流入 [RFC7807] 对象
+	Init(problem *RFC7807, id string, p *message.Printer)
+
+	// Visit 遍历错误代码
+	//
+	// visit 签名：
+	//
+	//	func(id string, status int, title, detail LocaleStringer)
+	//
+	// id 为错误代码，不包含前缀部分；
+	// status 该错误代码反馈给用户的 HTTP 状态码；
+	// title 错误代码的简要描述；
+	// detail 错误代码的明细；
+	Visit(visit func(id string, status int, title, detail LocaleStringer))
+
+	// Prefix 所有 ID 的统一前缀
+	Prefix() string
+}
+
+type LocaleProblem struct {
+	ID            string
+	Title, Detail LocaleStringer
 }
 
 // Codec 编码解码的接口

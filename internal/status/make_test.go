@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package make
+package status
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 func TestGetStatuses(t *testing.T) {
 	a := assert.New(t, false)
 
-	status, err := GetStatuses()
+	status, err := Get()
 	a.NotError(err).NotEmpty(status).
 		True(status[0].Value > 399)
 

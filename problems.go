@@ -2,14 +2,10 @@
 
 package web
 
-import (
-	"net/http"
-
-	"github.com/issue9/web/internal/problems"
-)
+import "net/http"
 
 const (
-	ProblemAboutBlank = problems.AboutBlank
+	ProblemAboutBlank = "about:blank"
 
 	ProblemBadRequest                    = "400"
 	ProblemUnauthorized                  = "401"

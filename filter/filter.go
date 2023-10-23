@@ -100,7 +100,7 @@ func NewSlice[T any, S ~[]T](rule RulerFuncOf[S], s ...func(*T)) FilterFuncOf[S]
 	}
 }
 
-// NewSlice 生成针对 map 元素的 [FilterFuncOf]
+// NewMap 生成针对 map 元素的 [FilterFuncOf]
 func NewMap[K comparable, V any, M ~map[K]V](rule RulerFuncOf[M], s ...func(*V)) FilterFuncOf[M] {
 	return func(name string, v *M) FilterFunc {
 		return func() (string, localeutil.Stringer) {

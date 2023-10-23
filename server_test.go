@@ -56,6 +56,8 @@ type testMimetype struct {
 	mb            BuildMarshalFunc
 }
 
+type testProblems struct{}
+
 func buildMarshalTest(_ *Context) MarshalFunc {
 	return func(v any) ([]byte, error) {
 		switch vv := v.(type) {
@@ -221,10 +223,6 @@ func newTestServer(a *assert.Assertion) *testServer {
 	return srv
 }
 
-func (s *testServer) AddProblem(id string, status int, title, detail LocaleStringer) {
-	panic("未实现")
-}
-
 func (s *testServer) Cache() cache.Cleanable { return s.cache }
 
 func (s *testServer) Catalog() *catalog.Builder { return s.catalog }
@@ -297,13 +295,12 @@ func (s *testServer) Vars() *sync.Map { panic("未实现") }
 
 func (s *testServer) Version() string { return "1.0.0" }
 
-func (s *testServer) VisitProblems(visit func(prefix, id string, status int, title, detail LocaleStringer)) {
-	panic("未实现")
+// TODO
+func (s *testServer) Problems() Problems {
+	return &testProblems{}
 }
 
-func (s *testServer) Codec() Codec { return s.codec }
-
-func (s *testServer) InitProblem(pp *RFC7807, id string, p *message.Printer) {
+func (s *testProblems) Init(pp *RFC7807, id string, p *message.Printer) {
 	status, err := strconv.Atoi(id[:3])
 	if err != nil {
 		panic(err)
@@ -311,4 +308,12 @@ func (s *testServer) InitProblem(pp *RFC7807, id string, p *message.Printer) {
 	pp.Init(id, id+" title", id+" detail", status)
 }
 
+func (s *testProblems) Add(int, ...LocaleProblem) Problems { panic("未实现") }
+
+func (s *testProblems) Visit(func(string, int, LocaleStringer, LocaleStringer)) { panic("未实现") }
+
+func (s *testProblems) Prefix() string { return "" }
+
 func (s *testServer) Services() Services { panic("未实现") }
+
+func (s *testServer) Codec() Codec { return s.codec }

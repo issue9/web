@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package make 提供一些通用的生成工具
-package make
+package status
 
 import (
 	"go/ast"
@@ -16,8 +15,8 @@ import (
 
 const FileHeader = "// 此文件由工具产生，请勿手动修改！\n\n"
 
-// GetStatuses 从 net/http/status.go 获取所有的状态码
-func GetStatuses() ([]Pair, error) {
+// Get 从 net/http/status.go 获取所有的状态码
+func Get() ([]Pair, error) {
 	path := filepath.Join(build.Default.GOROOT, "src", "net", "http", "status.go")
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, parser.AllErrors)
