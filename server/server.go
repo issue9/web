@@ -199,6 +199,6 @@ func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
 
 func (srv *httpServer) Codec() web.Codec { return srv.codec }
 
-func (srv *httpServer) NewClient(client *http.Client, url, marshalName string) *web.Client {
-	return web.NewClient(client, url, marshalName, srv.Codec())
+func (srv *httpServer) NewClient(client *http.Client, marshalName string, selector web.Selector) *web.Client {
+	return web.NewClient(client, srv.Codec(), marshalName, selector)
 }

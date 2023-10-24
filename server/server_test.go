@@ -262,7 +262,7 @@ func TestServer_NewClient(t *testing.T) {
 		return web.OK(obj)
 	})
 
-	c := s.NewClient(nil, "http://localhost:8080", "application/json")
+	c := s.NewClient(nil, "application/json", web.URLSelector("http://localhost:8080"))
 	a.NotNil(c)
 
 	resp := &object{}

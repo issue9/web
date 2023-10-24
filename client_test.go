@@ -19,7 +19,7 @@ func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
 	codec := &testCodec{}
 
-	c := NewClient(nil, "https://example.com", "application/json", codec)
+	c := NewClient(nil, codec, "application/json", URLSelector("https://example.com"))
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -35,7 +35,7 @@ func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	codec := &testCodec{}
 
-	c := NewClient(nil, "https://example.com", "application/json", codec)
+	c := NewClient(nil, codec, "application/json", URLSelector("https://example.com"))
 	a.NotNil(c).
 		NotNil(c.marshal)
 

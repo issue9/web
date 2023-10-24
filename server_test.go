@@ -215,7 +215,7 @@ func (s *testServer) Logs() Logs { return s.logs }
 
 func (s *testServer) Name() string { return "test" }
 
-func (s *testServer) NewClient(client *http.Client, url, marshalName string) *Client {
+func (s *testServer) NewClient(client *http.Client, marshalName string, selector Selector) *Client {
 	panic("未实现")
 }
 

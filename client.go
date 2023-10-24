@@ -15,43 +15,55 @@ import (
 	"github.com/issue9/web/internal/status"
 )
 
+// Selector [Client] 中对远程服务节点的选择接口
+type Selector interface {
+	// Next 返回下一个可用的服务节点地址
+	//
+	// 返回值不能以 / 结尾。比如 https://example.com:8080/s1；
+	Next() string
+}
+
 // Client 用于访问远程的客户端
 //
 // NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
 type Client struct {
-	url    string
-	client *http.Client
+	client   *http.Client
+	codec    Codec
+	selector Selector
 
 	marshal     MarshalFunc
 	marshalName string
+}
 
-	codec Codec
+type urlSelector string
+
+func (s urlSelector) Next() string { return string(s) }
+
+func URLSelector(url string) Selector {
+	if l := len(url); l > 0 && url[l-1] == '/' {
+		url = url[:l-1]
+	}
+	return urlSelector(url)
 }
 
 // NewClient 创建 Client 实例
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
-// url 远程服务的地址基地址，url 不能以 / 结尾。比如 https://example.com:8080/s1；
 // marshalName 对输入数据的编码方式，从 mt 中查找；
-func NewClient(client *http.Client, url, marshalName string, codec Codec) *Client {
+func NewClient(client *http.Client, codec Codec, marshalName string, selector Selector) *Client {
 	if client == nil {
 		client = &http.Client{}
-	}
-
-	if l := len(url); l > 0 && url[l-1] == '/' {
-		url = url[:l-1]
 	}
 
 	marshal := codec.Accept(marshalName).MarshalBuilder()(nil)
 
 	return &Client{
-		url:    url,
-		client: client,
+		client:   client,
+		codec:    codec,
+		selector: selector,
 
 		marshalName: marshalName,
 		marshal:     marshal,
-
-		codec: codec,
 	}
 }
 
@@ -181,6 +193,6 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 }
 
 // URL 生成一条访问地址
-func (c *Client) URL(path string) string { return c.url + path }
+func (c *Client) URL(path string) string { return c.selector.Next() + path }
 
 func (c *Client) Client() *http.Client { return c.client }

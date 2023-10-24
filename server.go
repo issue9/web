@@ -116,7 +116,7 @@ type Server interface {
 	NewContext(w http.ResponseWriter, r *http.Request) *Context
 
 	// NewClient 基于当前对象的 [Server.Codec] 初始化 [Client]
-	NewClient(client *http.Client, url, marshalName string) *Client
+	NewClient(client *http.Client, marshalName string, selector Selector) *Client
 
 	// Problems Problem 管理
 	Problems() Problems
