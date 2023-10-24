@@ -15,10 +15,11 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 package main
 
 import "github.com/issue9/web"
+import "github.com/issue9/web/server"
 
 // main.go
 func main() {
-    srv := web.NewServer("web", "1.0.0", &web.Options{})
+    srv := server.New("web", "1.0.0", &web.Options{})
     router := srv.Routers().NewRouter()
     router.Get("/admins", getAdmins).
         Get("/groups", getGroups)
@@ -42,9 +43,10 @@ func getGroups(ctx* web.Context) web.Responser {
 
 ```go
 import "github.com/issue9/web"
+import "github.com/issue9/web/server"
 
-srv := web.NewServer("app", "1.0.0", &web.Options{
-    Mimetypes: []*web.Mimetype{
+srv := server.New("app", "1.0.0", &server.Options{
+    Mimetypes: []*server.Mimetype{
         { Type: "application/json", ProblemType: "application/problem+json", Marshal: json.Marshal, Unmarshal: json.Unmarshal },
         { Type: "application/xml", ProblemType: "application/problem+xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal },
     }

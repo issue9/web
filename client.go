@@ -17,7 +17,7 @@ import (
 
 // Client 用于访问远程的客户端
 //
-// NOTE: 远程必须是 [Server] 实现的服务，否则可能无法正确处理返回对象。
+// NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
 type Client struct {
 	url    string
 	client *http.Client

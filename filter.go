@@ -17,7 +17,7 @@ import (
 //
 //	                              |---[Sanitize]
 //	                              |
-//	[FilterFunc]---[FilterFuncOf]-|---[RuleFuncOf]-|---[localeutil.LocaleStringer]
+//	[FilterFunc]---[FilterFuncOf]-|---[RuleFuncOf]-|---[LocaleStringer]
 //	                                               |
 //	                                               |---[Validator]
 //
@@ -25,27 +25,13 @@ import (
 // 生成一个类型无关的方法 [FilterFunc] 传递给 [web.FilterProblem]。
 // 这样可以绕过 Go 不支持泛型方法的尴尬。
 //
-// # Sanitize
+// Sanitize 表示对数据的修正，其函数原型为：func(*T)
+// 指针传入数据，实现方可以对指向的数据进行修改。[sanitizer] 提供了一些通用的实现；
 //
-// 数据修正发生成数据验证之前，其函数原型为：
+// Validator 负责验证数据，其原型为：func(T)bool
+// 返回值表示是否符合当前函数的需求。[validator] 提供了一些通用的实现；
 //
-//	func(*T)
-//
-// 指针传入数据，实现方可以对指向的数据进行修改。
-// [sanitizer] 提供了一些通用的实现；
-//
-// # Validator
-//
-// 验证器只负责验证数据，其原型为：
-//
-//	func(T)bool
-//
-// 返回值表示是否符合当前函数的需求。
-// [validator] 提供了一些通用的实现；
-//
-// # Rule
-//
-// 这是验证器与提示信息的结合，当不符合当前规则所包含的验证器需求时，返回对应的错误信息。
+// RuleFuncOf 这是验证器与提示信息的结合，当不符合当前规则所包含的验证器需求时，返回对应的错误信息。
 //
 // [sanitizer]: https://pkg.go.dev/github.com/issue9/filter/sanitizer
 // [validator]: https://pkg.go.dev/github.com/issue9/filter/validator

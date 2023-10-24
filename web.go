@@ -92,7 +92,7 @@ type (
 	// 后者会在整个请求退出时才将 [Responser] 进行编码输出。
 	//
 	// 返回值可以为空，表示在中间件执行过程中已经向客户端输出同内容。
-	HandlerFunc func(*Context) Responser
+	HandlerFunc = func(*Context) Responser
 
 	// BuildMarshalFunc 生成特定于 [Context] 的 [MarshalFunc]
 	//

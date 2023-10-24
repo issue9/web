@@ -135,7 +135,7 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
-	ctx.begin = time.Now()
+	ctx.begin = srv.Now()
 
 	// response
 	ctx.originResponse = w
@@ -228,7 +228,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 
 // Mimetype 返回输出编码名称
 //
-// problem 表示是否返回 problem 状态时的值。该值由 [Mimetype.ProblemType] 设置。
+// problem 表示是否返回 problem 状态时的值。
 func (ctx *Context) Mimetype(problem bool) string {
 	if ctx.outputMimetype == nil {
 		return ""

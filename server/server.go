@@ -55,7 +55,7 @@ type httpServer struct {
 // New 新建 http 服务
 //
 // name, version 表示服务的名称和版本号；
-// o 指定了初始化 [web.Server] 一些带有默认值的参数；
+// o 指定了一些带有默认值的参数；
 func New(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o)
 	if err != nil {
@@ -199,9 +199,6 @@ func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
 
 func (srv *httpServer) Codec() web.Codec { return srv.codec }
 
-// NewClient 采用 [Server] 的编码和压缩方式创建 Client 对象
-//
-// 参数可参考 [NewClient]。
 func (srv *httpServer) NewClient(client *http.Client, url, marshalName string) *web.Client {
 	return web.NewClient(client, url, marshalName, srv.Codec())
 }
