@@ -22,7 +22,6 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
@@ -36,17 +35,16 @@ import (
 )
 
 type testServer struct {
-	a          *assert.Assertion
-	httpServer *http.Server
-	language   language.Tag
-	logs       logs.Logs
-	logBuf     *bytes.Buffer
-	catalog    *catalog.Builder
-	unique     *unique.Unique
-	cache      cache.Driver
-	routers    *group.GroupOf[HandlerFunc]
-	printer    *localeutil.Printer
-	codec      *testCodec
+	a        *assert.Assertion
+	language language.Tag
+	logs     logs.Logs
+	logBuf   *bytes.Buffer
+	catalog  *catalog.Builder
+	unique   *unique.Unique
+	cache    cache.Driver
+	routers  *group.GroupOf[HandlerFunc]
+	printer  *localeutil.Printer
+	codec    *testCodec
 }
 
 type testCodec struct{}
@@ -154,34 +152,6 @@ func (s *testCodec) SetCompress(enable bool) { panic("未实现") }
 
 func (s *testCodec) CanCompress() bool { panic("未实现") }
 
-func notFound(ctx *Context) Responser { return ctx.NotFound() }
-
-func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
-	return func(n types.Node) HandlerFunc {
-		return func(ctx *Context) Responser {
-			ctx.Header().Set("Allow", n.AllowHeader())
-			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
-				return ResponserFunc(func(ctx *Context) Problem {
-					ctx.WriteHeader(http.StatusOK)
-					return nil
-				})
-			}
-			return ctx.Problem(strconv.Itoa(status))
-		}
-	}
-}
-
-func (srv *testServer) call(w http.ResponseWriter, r *http.Request, ps types.Route, f HandlerFunc) {
-	if ctx := NewContext(srv, w, r, ps, header.RequestIDKey); ctx != nil {
-		if resp := f(ctx); resp != nil {
-			if p := resp.Apply(ctx); p != nil {
-				p.Apply(ctx) // Problem.Apply 始终返回 nil
-			}
-		}
-		ctx.Free()
-	}
-}
-
 func newTestServer(a *assert.Assertion) *testServer {
 	c := catalog.NewBuilder()
 	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "cn"))
@@ -206,19 +176,15 @@ func newTestServer(a *assert.Assertion) *testServer {
 	cc, _ := caches.NewMemory()
 
 	srv := &testServer{
-		a:          a,
-		httpServer: &http.Server{Addr: ":8080"},
-		language:   l,
-		logs:       log,
-		logBuf:     logBuf,
-		catalog:    c,
-		unique:     u,
-		cache:      cc,
-		printer:    p,
+		a:        a,
+		language: l,
+		logs:     log,
+		logBuf:   logBuf,
+		catalog:  c,
+		unique:   u,
+		cache:    cc,
+		printer:  p,
 	}
-
-	srv.routers = group.NewOf(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK))
-	srv.httpServer.Handler = srv.routers
 
 	return srv
 }
@@ -227,9 +193,7 @@ func (s *testServer) Cache() cache.Cleanable { return s.cache }
 
 func (s *testServer) Catalog() *catalog.Builder { return s.catalog }
 
-func (s *testServer) Close(shutdownTimeout time.Duration) {
-	s.a.NotError(s.httpServer.Close())
-}
+func (s *testServer) Close(shutdownTimeout time.Duration) { panic("未实现") }
 
 func (s *testServer) CompressIsDisable() bool { panic("未实现") }
 
@@ -245,7 +209,7 @@ func (s *testServer) LoadLocale(glob string, fsys ...fs.FS) error { panic("未�
 
 func (s *testServer) LocalePrinter() *message.Printer { return s.printer }
 
-func (s *testServer) Location() *time.Location { panic("未实现") }
+func (s *testServer) Location() *time.Location { return time.Local }
 
 func (s *testServer) Logs() Logs { return s.logs }
 
@@ -264,7 +228,7 @@ func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {
 }
 
 func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {
-	return s.routers.New(name, matcher, o...)
+	panic("未实现")
 }
 
 func (s *testServer) Now() time.Time { return time.Now().In(s.Location()) }
@@ -279,9 +243,7 @@ func (s *testServer) RemoveRouter(name string) { panic("未实现") }
 
 func (s *testServer) Routers() []*Router { panic("未实现") }
 
-func (s *testServer) Serve() (err error) {
-	return s.httpServer.ListenAndServe()
-}
+func (s *testServer) Serve() (err error) { panic("未实现") }
 
 func (s *testServer) State() State { panic("未实现") }
 
@@ -295,10 +257,7 @@ func (s *testServer) Vars() *sync.Map { panic("未实现") }
 
 func (s *testServer) Version() string { return "1.0.0" }
 
-// TODO
-func (s *testServer) Problems() Problems {
-	return &testProblems{}
-}
+func (s *testServer) Problems() Problems { return &testProblems{} }
 
 func (s *testProblems) Init(pp *RFC7807, id string, p *message.Printer) {
 	status, err := strconv.Atoi(id[:3])

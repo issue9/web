@@ -21,10 +21,7 @@ import (
 	"github.com/issue9/web/servertest"
 )
 
-var (
-	_ servertest.Server = &httpServer{}
-	_ web.Server        = &httpServer{}
-)
+var _ web.Server = &httpServer{}
 
 func buildHandler(code int) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {

@@ -8,14 +8,9 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-)
 
-// Server 表示 web.Server
-//
-// 因相互引用的原因，此处定义了简要的 web.Server 实现接口。
-type Server interface {
-	Serve() error
-}
+	"github.com/issue9/web"
+)
 
 // NewRequest 发起测试请求
 //
@@ -37,9 +32,7 @@ func Delete(a *assert.Assertion, path string) *rest.Request {
 }
 
 // Run 运行服务内容并返回等待退出的方法
-//
-// s 应该始终传递 web.Server 对象。
-func Run(a *assert.Assertion, s Server) func() {
+func Run(a *assert.Assertion, s web.Server) func() {
 	ok := make(chan struct{}, 1)
 	exit := make(chan struct{}, 1)
 
@@ -48,9 +41,8 @@ func Run(a *assert.Assertion, s Server) func() {
 
 		defer func() { exit <- struct{}{} }()
 
-		ok <- struct{}{} // 最起码等待协程启动，在 s.Serve 之前运行。
-		err := s.Serve()
-		a.ErrorIs(err, http.ErrServerClosed, "错误信息为:%v", err)
+		ok <- struct{}{} // 最起码等待协程启动。
+		a.ErrorIs(s.Serve(), http.ErrServerClosed)
 	}()
 
 	<-ok

@@ -112,7 +112,7 @@ type Server interface {
 	// NewContext 从标准库的参数初始化 Context 对象
 	//
 	// NOTE: 这适合从标准库的请求中创建 [web.Context] 对象，
-	// 但是部分功能会缺失，比如地址中的参数信息，以及 [web.Context.Route] 等。
+	// 但是部分功能会缺失，比如地址中的参数信息，以及 [Context.Route] 等。
 	NewContext(w http.ResponseWriter, r *http.Request) *Context
 
 	// NewClient 基于当前对象的 [Server.Codec] 初始化 [Client]

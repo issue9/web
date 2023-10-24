@@ -14,21 +14,19 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/servertest"
 )
 
 func BenchmarkNewContext(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newTestServer(a)
+	s := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := servertest.Get(a, "/path").
-		Header("Content-type", header.BuildContentType("application/json", "gbk")).
-		Header("Accept", "application/json").
-		Header("Accept-Charset", "gbk;q=1,gb18080;q=0.1").
-		Request()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gbk"))
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptCharset, "gbk")
 	for i := 0; i < b.N; i++ {
-		ctx := srv.NewContext(w, r)
+		ctx := NewContext(s, w, r, nil, header.RequestIDKey)
 		ctx.Free()
 	}
 }
@@ -44,7 +42,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := srv.NewContext(w, r)
-			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
 			ctx.Free()
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
@@ -58,7 +56,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.AcceptCharset, header.UTF8Name)
 			w := httptest.NewRecorder()
 			ctx := srv.NewContext(w, r)
-			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
 			ctx.Free()
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
@@ -73,7 +71,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := srv.NewContext(w, r)
-			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
 			ctx.Free()
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
@@ -89,7 +87,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := srv.NewContext(w, r)
-			Response(http.StatusCreated, testdata.ObjectInst).Apply(ctx)
+			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
 			ctx.Free()
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -152,7 +150,7 @@ func BenchmarkPost(b *testing.B) {
 
 		o.Age++
 		o.Name = "response"
-		Response(http.StatusCreated, o).Apply(ctx)
+		ctx.apply(Response(http.StatusCreated, o))
 		a.Equal(w.Body.String(), `{"name":"response","Age":457}`)
 	}
 }
@@ -168,7 +166,7 @@ func BenchmarkContext_Object(b *testing.B) {
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 		r.Header.Set(header.Accept, "application/json")
 		ctx := s.NewContext(w, r)
-		Response(http.StatusTeapot, o).Apply(ctx)
+		ctx.apply(Response(http.StatusTeapot, o))
 	}
 }
 
@@ -183,15 +181,15 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 		r.Header.Set(header.Accept, "application/json")
 		ctx := s.NewContext(w, r)
-		Response(http.StatusTeapot, o, "Location", "https://example.com").Apply(ctx)
+		ctx.apply(Response(http.StatusTeapot, o, "Location", "https://example.com"))
 	}
 }
 
 func BenchmarkNewRFC7807(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		p := newRFC7807().Init("id", "title", "detail", 400)
-		p.WithExtensions(&object{Name: "n1", Age: 11})
-		p.WithParam("p1", "v1")
+		p := newRFC7807()
+		p.Init("id", "title", "detail", 400)
+		p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
 		rfc7807Pool.Put(p)
 	}
 }
@@ -206,9 +204,9 @@ func BenchmarkRFC7807_unmarshal_json(b *testing.B) {
 	r.Header.Set(header.Accept, "application/json")
 	ctx := s.NewContext(w, r)
 
-	p := newRFC7807().Init("id", "title", "detail", 400)
-	p.WithExtensions(&object{Name: "n1", Age: 11})
-	p.WithParam("p1", "v1")
+	p := newRFC7807()
+	p.Init("id", "title", "detail", 400)
+	p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
 	for i := 0; i < b.N; i++ {
 		p.Apply(ctx)
 	}

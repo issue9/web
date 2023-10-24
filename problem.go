@@ -94,12 +94,11 @@ func newRFC7807() *RFC7807 {
 	return p
 }
 
-func (p *RFC7807) Init(id, title, detail string, status int) *RFC7807 {
+func (p *RFC7807) Init(id, title, detail string, status int) {
 	p.Type = id
 	p.Title = title
 	p.Detail = detail
 	p.Status = status
-	return p
 }
 
 func (p *RFC7807) Error() string { return p.Title }

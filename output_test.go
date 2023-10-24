@@ -16,7 +16,6 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
-	"github.com/issue9/web/servertest"
 )
 
 type response struct {
@@ -170,230 +169,218 @@ func TestContext_Render(t *testing.T) {
 
 func TestContext_SetWriter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
-	r := srv.NewRouter("def", nil)
+	s := newTestServer(a)
 
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	// 输出内容之后，不能调用 SetWriter
 
-	r.Get("/p1", func(ctx *Context) Responser {
-		ctx.Write([]byte("abc"))
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "cmn-hant")
+	ctx := NewContext(s, w, r, nil, header.RequestIDKey)
+	ctx.Write([]byte("abc"))
 
-		a.PanicString(func() {
-			buf := &bytes.Buffer{}
-			ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
-		}, "已有内容输出，不可再更改！")
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p1").
-		Header("accept-language", "cmn-hant").
-		Header("accept", "application/json").
-		Do(nil).
-		StringBody("abc")
-
-	// setWriter
-	r.Get("/p2", func(ctx *Context) Responser {
-		ctx.Header().Set("h1", "v1")
+	a.PanicString(func() {
 		buf := &bytes.Buffer{}
 		ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
-		ctx.Header().Set("h2", "v2")
-		ctx.Write([]byte("abc"))
-		a.Equal(buf.String(), "abc")
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p2").
-		Header("accept-language", "cmn-hant").
-		Header("accept", "application/json").
-		Header("accept-encoding", "").
-		Do(nil).
-		Status(http.StatusOK).
-		BodyEmpty().
-		Header("h1", "v1").
-		Header("h2", "v2")
+	}, "已有内容输出，不可再更改！")
+
+	a.Equal(w.Body.String(), "abc")
+
+	// 调用 SetWriter 之后修改了报头内容
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.AcceptEncoding, "")
+	ctx = NewContext(s, w, r, nil, header.RequestIDKey)
+
+	ctx.Header().Set("h1", "v1")
+	buf := &bytes.Buffer{}
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
+	ctx.Header().Set("h2", "v2")
+	ctx.Write([]byte("abc"))
+	a.Equal(buf.String(), "abc").
+		Equal(w.Header().Get("h1"), "v1").
+		Equal(w.Header().Get("h2"), "v2").
+		Empty(w.Body.String())
 
 	// 多次调用 setWriter
-	r.Get("/p3", func(ctx *Context) Responser {
-		a.PanicString(func() { // setWriter(nil)
-			ctx.SetWriter(nil)
-		}, "参数 w 不能为空")
 
-		buf1 := &bytes.Buffer{}
-		buf2 := &bytes.Buffer{}
-		ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
-		ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
-		ctx.Write([]byte("abc"))
-		a.Equal(buf2.String(), "abc").Empty(buf1.String())
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.AcceptEncoding, "")
+	ctx = NewContext(s, w, r, nil, header.RequestIDKey)
 
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p3").
-		Header("accept-language", "cmn-hant").
-		Header("accept", "application/json").
-		Header("accept-encoding", "").
-		Do(nil).
-		BodyEmpty().
-		Success()
+	a.PanicString(func() { // setWriter(nil)
+		ctx.SetWriter(nil)
+	}, "参数 w 不能为空")
+
+	buf1 := &bytes.Buffer{}
+	buf2 := &bytes.Buffer{}
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
+	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
+	ctx.Write([]byte("abc"))
+	a.Equal(buf2.String(), "abc").Empty(buf1.String()).
+		True(w.Result().StatusCode > 199).
+		Empty(w.Body.String())
 }
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a)
-	r := srv.NewRouter("def", nil)
 
 	b := srv.Catalog()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "cmn-hant")
+	ctx := NewContext(srv, w, r, nil, header.RequestIDKey)
+	ctx.Render(http.StatusOK, ctx.Sprintf("test"))
+	a.Equal(w.Body.String(), `"測試"`)
 
-	r.Get("/p1", func(ctx *Context) Responser {
-		ctx.Render(http.StatusOK, ctx.Sprintf("test"))
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p1").
-		Header("accept-language", "cmn-hant").
-		Header("accept", "application/json").
-		Do(nil).
-		StringBody(`"測試"`)
-
-	r.Get("/p2", func(ctx *Context) Responser {
-		n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
-		a.NotError(err).Equal(n, len("测试"))
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/p2").
-		Header("accept-language", "cmn-hans").
-		Header("accept", "application/json").
-		Do(nil).
-		StringBody("测试")
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.AcceptLang, "cmn-hans")
+	ctx = NewContext(srv, w, r, nil, header.RequestIDKey)
+	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
+	a.NotError(err).Equal(n, len("测试"))
+	a.Equal(w.Body.String(), "测试")
 }
 
 func TestNotModified(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 
-	r := s.NewRouter("def", nil)
-	r.Any("/string", func(*Context) Responser {
-		const body = "string"
-		return NotModified(
-			func() (string, bool) { return body, true },
-			func() (any, error) { return body, nil },
-		)
-	})
-	r.Get("/bytes", func(*Context) Responser {
-		const body = "bytes"
-		return NotModified(
-			func() (string, bool) { return body, false },
-			func() (any, error) { return []byte(body), nil },
-		)
-	})
-	r.Get("/errors-500", func(*Context) Responser {
-		const body = "500"
-		return NotModified(
-			func() (string, bool) { return body, false },
-			func() (any, error) { return nil, errors.New("500") },
-		)
-	})
+	// weak
 
-	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	const body = "string"
+	nm := NotModified(
+		func() (string, bool) { return body, true },
+		func() (any, error) { return body, nil },
+	)
 
-	// get /string
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	tag := w.Header().Get(header.ETag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).
+		NotEmpty(tag)
 
-	resp := servertest.Get(a, "http://localhost:8080/string").
-		Do(nil).
-		Status(http.StatusOK).
-		Resp()
-	tag := resp.Header.Get(header.ETag)
-	servertest.Get(a, "http://localhost:8080/string").
-		Header(header.IfNoneMatch, tag).
-		Do(nil).
-		Status(http.StatusNotModified)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.IfNoneMatch, tag)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	a.Equal(w.Result().StatusCode, http.StatusNotModified)
 
-	// post /string
+	// Post 不启用
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodPost, "/p", nil)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	tag = w.Header().Get(header.ETag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).Empty(tag)
 
-	resp = servertest.Post(a, "http://localhost:8080/string", nil).
-		Do(nil).
-		Status(http.StatusOK).
-		Resp()
-	tag = resp.Header.Get(header.ETag)
-	servertest.Post(a, "http://localhost:8080/string", nil).
-		Header(header.IfNoneMatch, tag).
-		Do(nil).
-		Status(http.StatusOK)
+	// weak=false
 
-	// get /bytes
+	nm = NotModified(
+		func() (string, bool) { return body, false },
+		func() (any, error) { return []byte(body), nil },
+	)
 
-	resp = servertest.Get(a, "http://localhost:8080/bytes").
-		Do(nil).
-		Status(http.StatusOK).
-		Resp()
-	tag = resp.Header.Get(header.ETag)
-	servertest.Get(a, "http://localhost:8080/bytes").
-		Header(header.IfNoneMatch, tag).
-		Do(nil).
-		Status(http.StatusNotModified)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	tag = w.Header().Get(header.ETag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).
+		NotEmpty(tag)
 
-		// get /errors-500
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.IfNoneMatch, tag)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	a.Equal(w.Result().StatusCode, http.StatusNotModified)
 
-	servertest.Get(a, "http://localhost:8080/errors-500").
-		Do(nil).
-		Status(http.StatusInternalServerError).
-		Resp()
-	servertest.Get(a, "http://localhost:8080/errors-500").
-		Do(nil).
-		Status(http.StatusInternalServerError)
+	// error
+
+	nm = NotModified(
+		func() (string, bool) { return body, false },
+		func() (any, error) { return nil, errors.New("500") },
+	)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(nm)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 }
 
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
-	r := s.NewRouter("def", nil)
 
-	// Location == ""
-	r.Get("/created", func(ctx *Context) Responser {
-		return Created(testdata.ObjectInst, "")
-	})
-	// Location == "/test"
-	r.Get("/created/location", func(ctx *Context) Responser {
-		return Created(testdata.ObjectInst, "/test")
-	})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.Accept, "application/json")
+	NewContext(s, w, r, nil, header.RequestIDKey).
+		apply(Created(nil, ""))
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Empty(w.Body.String())
 
-	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.Accept, "application/json")
+	NewContext(s, w, r, nil, header.RequestIDKey).
+		apply(Created(testdata.ObjectInst, ""))
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Body.String(), testdata.ObjectJSONString).
+		Empty(w.Header().Get(header.Location))
 
-	servertest.Get(a, "http://localhost:8080/created").Header("accept", "application/json").Do(nil).
-		Status(http.StatusCreated).
-		StringBody(testdata.ObjectJSONString)
-
-	servertest.Get(a, "http://localhost:8080/created/location").Header("accept", "application/json").Do(nil).
-		Status(http.StatusCreated).
-		StringBody(testdata.ObjectJSONString).
-		Header("Location", "/test")
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.Accept, "application/json")
+	NewContext(s, w, r, nil, header.RequestIDKey).
+		apply(Created(testdata.ObjectInst, "/p2"))
+	a.Equal(w.Result().StatusCode, http.StatusCreated).
+		Equal(w.Body.String(), testdata.ObjectJSONString).
+		Equal(w.Header().Get(header.Location), "/p2")
 }
 
 func TestRedirect(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
-	r := s.NewRouter("def", nil)
 
-	r.Get("/not-implement", func(ctx *Context) Responser {
-		return ctx.NotImplemented()
-	})
-	r.Get("/ok", func(ctx *Context) Responser {
-		return Created(nil, "")
-	})
-	r.Get("/redirect", func(ctx *Context) Responser {
-		return Redirect(http.StatusMovedPermanently, "http://localhost:8080/ok")
-	})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	ctx := NewContext(s, w, r, nil, header.RequestIDKey)
+	ctx.apply(ctx.NotImplemented())
+	a.Equal(w.Result().StatusCode, http.StatusNotImplemented)
 
-	defer servertest.Run(a, s)()
-	defer s.Close(0)
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	Redirect(http.StatusMovedPermanently, "http://example.com")
+	NewContext(s, w, r, nil, header.RequestIDKey).
+		apply(Redirect(http.StatusMovedPermanently, "http://example.com"))
+	a.Equal(w.Result().StatusCode, http.StatusMovedPermanently).
+		Equal(w.Header().Get(header.Location), "http://example.com")
+}
 
-	servertest.Get(a, "http://localhost:8080/not-implement").Do(nil).Status(http.StatusNotImplemented)
+func TestNoContent(t *testing.T) {
+	// 检测 204 是否存在 http: request method or response status code does not allow body
 
-	servertest.Get(a, "http://localhost:8080/redirect").Do(nil).
-		Status(http.StatusCreated). // http.Client.Do 会自动重定向并请求
-		Header("Location", "")
+	a := assert.New(t, false)
+	s := newTestServer(a)
+	s.logBuf.Reset()
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set(header.AcceptEncoding, "gzip") // 服务端不应该构建压缩对象
+	r.Header.Set(header.Accept, "application/json")
+	NewContext(s, w, r, nil, header.RequestIDKey).apply(NoContent())
+	a.NotContains(s.logBuf.String(), "request method or response status code does not allow body")
 }

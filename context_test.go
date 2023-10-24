@@ -12,14 +12,18 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/assert/v3/rest"
-	"github.com/issue9/mux/v7"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/servertest"
 )
 
 var _ http.ResponseWriter = &Context{}
+
+func (ctx *Context) apply(r Responser) {
+	if p := r.Apply(ctx); p != nil {
+		p.Apply(ctx) // Problem.Apply 始终返回 nil
+	}
+}
 
 func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Context {
 	if w == nil {
@@ -35,31 +39,15 @@ func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Co
 
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
-	router := srv.NewRouter("def", nil)
-	router.Get("/path", func(ctx *Context) Responser {
-		ctx.Header().Set(header.ContentLength, "0")
-		ctx.Header().Set("Cache-Control", "no-cache")
-		ctx.Header().Set("Connection", "keep-alive")
-		ctx.WriteHeader(http.StatusCreated)
-		go func() {
-			time.Sleep(500 * time.Microsecond) // 等待路由函数返回
-			ctx.Write([]byte("123"))
-		}()
+	s := newTestServer(a)
+	ctx := NewContext(s, httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), nil, header.RequestIDKey)
+	dur := 500 * time.Millisecond
+	begin := time.Now()
 
-		c, cancel := context.WithCancel(context.Background())
-		time.AfterFunc(500*time.Millisecond, func() { cancel() })
-		return KeepAlive(c)
-	})
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	servertest.Get(a, "http://localhost:8080/path").
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusCreated).
-		StringBody(`123`)
+	c, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(dur, func() { cancel() })
+	KeepAlive(c).Apply(ctx)
+	a.True(time.Since(begin) >= 500*time.Millisecond)
 }
 
 func TestNewContext(t *testing.T) {
@@ -213,27 +201,18 @@ func TestContext_SetLanguage(t *testing.T) {
 
 func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
+	s := newTestServer(a)
 
-	srv := newTestServer(a)
-	router := srv.NewRouter("router", nil, mux.URLDomain("https://example.com"))
-	a.NotNil(router)
-	router.Get("/not-xhr", func(ctx *Context) Responser {
-		a.False(ctx.IsXHR())
-		return nil
-	})
-	router.Get("/xhr", func(ctx *Context) Responser {
-		a.True(ctx.IsXHR())
-		return nil
-	})
-
-	r := rest.Get(a, "/not-xhr").Request()
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, r)
+	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	ctx := NewContext(s, w, r, nil, header.RequestIDKey)
+	a.False(ctx.IsXHR())
 
-	r = rest.Get(a, "/xhr").Request()
-	r.Header.Set("X-Requested-With", "XMLHttpRequest")
 	w = httptest.NewRecorder()
-	router.ServeHTTP(w, r)
+	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r.Header.Set("X-Requested-With", "XMLHttpRequest")
+	ctx = NewContext(s, w, r, nil, header.RequestIDKey)
+	a.True(ctx.IsXHR())
 }
 
 func TestServer_acceptLanguage(t *testing.T) {
@@ -271,29 +250,4 @@ func TestContext_ClientIP(t *testing.T) {
 	ctx := newContext(a, nil, r)
 	a.NotNil(ctx)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)
-}
-
-// 检测 204 是否存在 http: request method or response status code does not allow body
-func TestContext_NoContent(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a)
-
-	s.NewRouter("def", nil).Get("/204", func(ctx *Context) Responser {
-		return ResponserFunc(func(ctx *Context) Problem {
-			ctx.WriteHeader(http.StatusNoContent)
-			return nil
-		})
-	})
-
-	defer servertest.Run(a, s)()
-
-	servertest.Get(a, "http://localhost:8080/204").
-		Header("Accept-Encoding", "gzip"). // 服务端不应该构建压缩对象
-		Header("Accept", "application/json").
-		Do(nil).
-		Status(http.StatusNoContent)
-
-	s.Close(0)
-
-	a.NotContains(s.logBuf.String(), "request method or response status code does not allow body")
 }
