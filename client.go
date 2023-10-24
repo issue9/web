@@ -4,11 +4,13 @@ package web
 
 import (
 	"bytes"
+	"container/ring"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
@@ -44,12 +46,36 @@ type Client struct {
 
 func (s SelectorFunc) Next() string { return s() }
 
-func URLSelector(url string) Selector {
-	return SelectorFunc(func() string {
-		if l := len(url); l > 0 && url[l-1] == '/' {
-			url = url[:l-1]
+// URLSelector 单个 URL 组成的 [Selector] 接口
+func URLSelector(u string) Selector {
+	u = strings.TrimRight(u, "/")
+	if _, err := url.Parse(u); err != nil {
+		panic(err)
+	}
+
+	return SelectorFunc(func() string { return u })
+}
+
+// RingSelector 一组 url 循环调用的 [Selector] 对象
+func RingSelector(u ...string) Selector {
+	if len(u) == 0 {
+		panic("参数不能为空")
+	}
+
+	r := ring.New(len(u))
+	for _, uu := range u {
+		if _, err := url.Parse(uu); err != nil {
+			panic(err)
 		}
-		return url
+
+		r.Value = strings.TrimRight(uu, "/")
+		r = r.Next()
+	}
+
+	return SelectorFunc(func() string {
+		v := r.Value.(string)
+		r = r.Next()
+		return v
 	})
 }
 

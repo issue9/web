@@ -15,6 +15,29 @@ import (
 	"github.com/issue9/web/internal/header"
 )
 
+func TestURLSelector(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := URLSelector("https://example.com").Next()
+	a.Equal(s, "https://example.com")
+
+	s = URLSelector("https://example.com/").Next()
+	a.Equal(s, "https://example.com")
+}
+
+func TestRingSelector(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := RingSelector("https://example.com", "/path/")
+	a.Equal(s.Next(), "https://example.com").
+		Equal(s.Next(), "/path").
+		Equal(s.Next(), "https://example.com")
+
+	a.PanicString(func() {
+		RingSelector()
+	}, "参数不能为空")
+}
+
 func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
 	codec := &testCodec{}
