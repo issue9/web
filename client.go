@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strconv"
 
 	"golang.org/x/text/encoding"
@@ -15,13 +17,18 @@ import (
 	"github.com/issue9/web/internal/status"
 )
 
-// Selector [Client] 中对远程服务节点的选择接口
+// Selector 对远程服务节点的选择接口
 type Selector interface {
 	// Next 返回下一个可用的服务节点地址
 	//
-	// 返回值不能以 / 结尾。比如 https://example.com:8080/s1；
+	// 返回值应该是一个有效的 URL，且要满足以下条件：
+	//  - 不能以 / 结尾；
+	//  - 不包含查询参数及 fragment；
+	// 比如 https://example.com:8080/s1、/path。
 	Next() string
 }
+
+type SelectorFunc func() string
 
 // Client 用于访问远程的客户端
 //
@@ -35,15 +42,29 @@ type Client struct {
 	marshalName string
 }
 
-type urlSelector string
-
-func (s urlSelector) Next() string { return string(s) }
+func (s SelectorFunc) Next() string { return s() }
 
 func URLSelector(url string) Selector {
-	if l := len(url); l > 0 && url[l-1] == '/' {
-		url = url[:l-1]
+	return SelectorFunc(func() string {
+		if l := len(url); l > 0 && url[l-1] == '/' {
+			url = url[:l-1]
+		}
+		return url
+	})
+}
+
+// SelectorRewrite 将 [Selector] 转换成适用于 [httputil.ReverseProxy.Rewrite] 的方法
+//
+//	p := &httputil.ReverseProxy{Rewrite: SelectorRewrite(s)}
+func SelectorRewrite(s Selector, l Logger) func(*httputil.ProxyRequest) {
+	return func(r *httputil.ProxyRequest) {
+		u, err := url.Parse(s.Next())
+		if err != nil {
+			panic(err) // Selector 实现得不标准
+		}
+		r.SetURL(u)
+		// r.Out.Host = r.In.Host
 	}
-	return urlSelector(url)
 }
 
 // NewClient 创建 Client 实例
@@ -55,15 +76,13 @@ func NewClient(client *http.Client, codec Codec, marshalName string, selector Se
 		client = &http.Client{}
 	}
 
-	marshal := codec.Accept(marshalName).MarshalBuilder()(nil)
-
 	return &Client{
 		client:   client,
 		codec:    codec,
 		selector: selector,
 
 		marshalName: marshalName,
-		marshal:     marshal,
+		marshal:     codec.Accept(marshalName).MarshalBuilder()(nil),
 	}
 }
 
