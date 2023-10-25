@@ -9,13 +9,14 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
+
 	"github.com/issue9/web/codec/compressor"
 )
 
 func BenchmarkCodec_Accept(b *testing.B) {
 	a := assert.New(b, false)
-	mt := New(APIMimetypes(), nil)
-	a.NotNil(mt)
+	mt, err := New("ms", "cs", APIMimetypes(), nil)
+	a.NotError(err).NotNil(mt)
 
 	for i := 0; i < b.N; i++ {
 		item := mt.Accept("application/json;q=0.9")
@@ -25,8 +26,8 @@ func BenchmarkCodec_Accept(b *testing.B) {
 
 func BenchmarkCodec_ContentType(b *testing.B) {
 	a := assert.New(b, false)
-	mt := New(APIMimetypes(), nil)
-	a.NotNil(mt)
+	mt, err := New("ms", "cs", APIMimetypes(), nil)
+	a.NotError(err).NotNil(mt)
 
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
@@ -51,9 +52,11 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c := New(nil, []*Compression{
+		c, err := New("ms", "cs", nil, []*Compression{
 			{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 		})
+		a.NotError(err).NotNil(c)
+
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.ContentEncoding("zstd", r)
@@ -64,13 +67,15 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c := New(nil, []*Compression{
+		c, err := New("ms", "cs", nil, []*Compression{
 			{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
 			{Name: "br", Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
 			{Name: "deflate", Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
 			{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 			{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
 		})
+		a.NotError(err).NotNil(c)
+
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.ContentEncoding("zstd", r)
@@ -83,9 +88,11 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c := New(nil, []*Compression{
+		c, err := New("ms", "cs", nil, []*Compression{
 			{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 		})
+		a.NotError(err).NotNil(c)
+
 		for i := 0; i < b.N; i++ {
 			_, _, na := c.AcceptEncoding("application/json", "zstd", nil)
 			a.False(na)
@@ -95,13 +102,14 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c := New(nil, []*Compression{
+		c, err := New("ms", "cs", nil, []*Compression{
 			{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
 			{Name: "br", Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
 			{Name: "deflate", Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
 			{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 			{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
 		})
+		a.NotError(err).NotNil(c)
 
 		for i := 0; i < b.N; i++ {
 			_, _, na := c.AcceptEncoding("text/plain", "compress", nil)
@@ -111,13 +119,16 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 }
 
 func BenchmarkCodec_getMatchCompresses(b *testing.B) {
-	cc := New(nil, []*Compression{
+	a := assert.New(b, false)
+
+	cc, err := New("ms", "cs", nil, []*Compression{
 		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
 		{Name: "br", Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
 		{Name: "deflate", Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
 		{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
 	})
+	a.NotError(err).NotNil(cc)
 	c := cc.(*codec)
 
 	for i := 0; i < b.N; i++ {

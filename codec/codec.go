@@ -9,8 +9,11 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
+	"strconv"
 
 	"github.com/andybalholm/brotli"
+	"github.com/issue9/config"
+	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec/compressor"
@@ -64,7 +67,7 @@ type Compression struct {
 	Types []string
 }
 
-func (m *Mimetype) SanitizeConfig() *web.FieldError {
+func (m *Mimetype) sanitize() *web.FieldError {
 	if m.Name == "" {
 		return web.NewFieldError("Name", locales.CanNotBeEmpty)
 	}
@@ -76,7 +79,7 @@ func (m *Mimetype) SanitizeConfig() *web.FieldError {
 	return nil
 }
 
-func (m *Compression) SanitizeConfig() *web.FieldError {
+func (m *Compression) sanitize() *web.FieldError {
 	if m.Name == "" {
 		return web.NewFieldError("Name", locales.CanNotBeEmpty)
 	}
@@ -88,6 +91,7 @@ func (m *Compression) SanitizeConfig() *web.FieldError {
 	return nil
 }
 
+// APIMimetypes 返回以 XML 和 JSON 作为数据交换格式的配置项
 func APIMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: json.Mimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
@@ -96,6 +100,7 @@ func APIMimetypes() []*Mimetype {
 	}
 }
 
+// XMLMimetypes 返回以 XML 作为数据交换格式的配置项
 func XMLMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: xml.Mimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
@@ -103,6 +108,7 @@ func XMLMimetypes() []*Mimetype {
 	}
 }
 
+// JSONMimetypes 返回以 JSON 作为数据交换格式的配置项
 func JSONMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: json.Mimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
@@ -151,11 +157,29 @@ func BestCompressionCompressions(contentType ...string) []*Compression {
 
 // New 声明 [web.Codec] 对象
 //
-// NOTE: 用户需要自行调用 ms 和 cs 的 [config.Sanitizer] 接口对数据合规性作检测。
-func New(ms []*Mimetype, cs []*Compression) web.Codec {
+// csName 和 msName 分别表示 cs 和 ms 在出错时在返回对象中的字段名称。
+func New(msName, csName string, ms []*Mimetype, cs []*Compression) (web.Codec, *web.FieldError) {
 	c := &codec{
 		compressions: make([]*compression, 0, len(cs)),
 		types:        make([]*mimetype, 0, len(ms)),
+	}
+
+	for i, s := range ms {
+		if err := s.sanitize(); err != nil {
+			err.AddFieldParent(msName + "[" + strconv.Itoa(i) + "]")
+			return nil, err
+		}
+	}
+	indexes := sliceutil.Dup(ms, func(e1, e2 *Mimetype) bool { return e1.Name == e2.Name })
+	if len(indexes) > 0 {
+		return nil, config.NewFieldError(msName+"["+strconv.Itoa(indexes[0])+"].Name", locales.DuplicateValue)
+	}
+
+	for i, s := range cs {
+		if err := s.sanitize(); err != nil {
+			err.AddFieldParent(csName + "[" + strconv.Itoa(i) + "]")
+			return nil, err
+		}
 	}
 
 	for _, m := range ms {
@@ -166,5 +190,5 @@ func New(ms []*Mimetype, cs []*Compression) web.Codec {
 		c.addCompression(cc)
 	}
 
-	return c
+	return c, nil
 }

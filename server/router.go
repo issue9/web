@@ -9,6 +9,7 @@ import (
 	"github.com/issue9/mux/v7/types"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/header"
 )
 
 func notFound(ctx *web.Context) web.Responser { return ctx.NotFound() }
@@ -16,7 +17,7 @@ func notFound(ctx *web.Context) web.Responser { return ctx.NotFound() }
 func buildNodeHandle(status int) types.BuildNodeHandleOf[web.HandlerFunc] {
 	return func(n types.Node) web.HandlerFunc {
 		return func(ctx *web.Context) web.Responser {
-			ctx.Header().Set("Allow", n.AllowHeader())
+			ctx.Header().Set(header.Allow, n.AllowHeader())
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
 				return web.ResponserFunc(func(ctx *web.Context) web.Problem {
 					ctx.WriteHeader(http.StatusOK)

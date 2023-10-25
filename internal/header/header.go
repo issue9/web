@@ -33,6 +33,7 @@ const (
 	ETag        = "ETag"
 	IfNoneMatch = "If-None-Match"
 	Vary        = "Vary"
+	Allow       = "Allow"
 
 	RequestIDKey = "X-Request-ID"
 )

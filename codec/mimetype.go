@@ -3,7 +3,6 @@
 package codec
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -33,14 +32,6 @@ func (m *mimetype) Name(problem bool) string {
 func (m *mimetype) MarshalBuilder() web.BuildMarshalFunc { return m.marshalBuilder }
 
 func (e *codec) addMimetype(m *Mimetype) {
-	if sliceutil.Exists(e.types, func(item *mimetype, _ int) bool { return item.name == m.Name }) {
-		panic(fmt.Sprintf("已经存在同名 %s 的编码方法", m.Name))
-	}
-
-	if m.Problem == "" {
-		m.Problem = m.Name
-	}
-
 	e.types = append(e.types, &mimetype{
 		name:           m.Name,
 		problem:        m.Problem,

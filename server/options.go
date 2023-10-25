@@ -4,12 +4,10 @@ package server
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -183,18 +181,11 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.RequestIDKey = RequestIDKey
 	}
 
-	for i, e := range o.Compressions {
-		if err := e.SanitizeConfig(); err != nil {
-			return nil, err.AddFieldParent("Compressions[" + strconv.Itoa(i) + "]")
-		}
+	c, fe := codec.New("Mimetypes", "Compressions", o.Mimetypes, o.Compressions)
+	if err != nil {
+		return nil, fe
 	}
-
-	// mimetype
-	indexes := sliceutil.Dup(o.Mimetypes, func(e1, e2 *codec.Mimetype) bool { return e1.Name == e2.Name })
-	if len(indexes) > 0 {
-		return nil, config.NewFieldError("Mimetypes["+strconv.Itoa(indexes[0])+"].Type", locales.DuplicateValue)
-	}
-	o.codec = codec.New(o.Mimetypes, o.Compressions)
+	o.codec = c
 
 	o.problems = newProblems(o.ProblemTypePrefix)
 

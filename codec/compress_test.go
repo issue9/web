@@ -16,11 +16,12 @@ import (
 func TestCodec_ContentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := New(JSONMimetypes(), []*Compression{
+	e, fe := New("ms", "cs", JSONMimetypes(), []*Compression{
 		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
 		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
 		{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 	})
+	a.NotError(fe).NotNil(e)
 
 	r := &bytes.Buffer{}
 	rc, err := e.ContentEncoding("zstd", r)
@@ -36,11 +37,12 @@ func TestCodec_ContentEncoding(t *testing.T) {
 func TestCodec_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := New(APIMimetypes(), []*Compression{
+	e, err := New("ms", "cs", APIMimetypes(), []*Compression{
 		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
 		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
 		{Name: "gzip", Compressor: compressor.NewGzipCompressor(9), Types: []string{"application/*"}},
 	})
+	a.NotError(err).NotNil(e)
 
 	a.Equal(e.AcceptEncodingHeader(), "compress,gzip")
 

@@ -6,66 +6,70 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/config"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 )
 
-var (
-	_ web.Codec = &codec{}
-
-	_ config.Sanitizer = &Mimetype{}
-	_ config.Sanitizer = &Compression{}
-)
+var _ web.Codec = &codec{}
 
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := New(nil, nil)
-	a.NotNil(c)
+	c, err := New("", "", nil, nil)
+	a.NotError(err).NotNil(c)
 
-	c = New([]*Mimetype{
+	c, err = New("ms", "cs", []*Mimetype{
+		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
+	}, BestSpeedCompressions())
+	a.NotError(err).NotNil(c)
+
+	c, err = New("ms", "cs", []*Mimetype{
+		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
 		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
 	}, nil)
+	a.Equal(err.Message, locales.DuplicateValue).Nil(c).
+		Equal(err.Field, "ms[0].Name")
 
-	a.PanicString(func() {
-		c = New([]*Mimetype{
-			{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
-			{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
-		}, nil)
-	}, "已经存在同名 application/json 的编码方法")
+	c, err = New("ms", "cs", []*Mimetype{
+		{Name: "", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
+	}, nil)
+	a.Equal(err.Field, "ms[0].Name").Nil(c)
+
+	c, err = New("ms", "cs", nil, []*Compression{{}})
+	a.Equal(err.Field, "cs[0].Name").Nil(c)
 }
 
-func TestMimetype_SanitizeConfig(t *testing.T) {
+func TestMimetype_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	m := &Mimetype{}
-	err := m.SanitizeConfig()
+	err := m.sanitize()
 	a.Error(err).Equal(err.Field, "Name")
 
 	m = &Mimetype{Name: "test"}
-	err = m.SanitizeConfig()
+	err = m.sanitize()
 	a.NotError(err).Equal(m.Problem, m.Name)
 
 	m = &Mimetype{Name: "test", Problem: "p"}
-	err = m.SanitizeConfig()
+	err = m.sanitize()
 	a.NotError(err).
 		Equal(m.Problem, "p").
 		Equal(m.Name, "test")
 }
 
-func TestCompression_SanitizeConfig(t *testing.T) {
+func TestCompression_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	c := &Compression{}
-	err := c.SanitizeConfig()
+	err := c.sanitize()
 	a.Error(err).Equal(err.Field, "Name")
 
 	c = &Compression{Name: "test"}
-	err = c.SanitizeConfig()
+	err = c.sanitize()
 	a.NotError(err).Equal(c.Types, []string{"*"})
 
 	c = &Compression{Name: "test", Types: []string{"text"}}
-	err = c.SanitizeConfig()
+	err = c.sanitize()
 	a.NotError(err).Equal(c.Types, []string{"text"})
 }

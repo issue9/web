@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/assert/v3/rest"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
@@ -113,9 +112,8 @@ func TestContext_SetMimetype(t *testing.T) {
 	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("accept", "application/json").
-		Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r.Header.Set(header.Accept, "application/json")
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
@@ -138,9 +136,8 @@ func TestContext_SetCharset(t *testing.T) {
 	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("accept", "application/json").
-		Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r.Header.Set(header.Accept, "application/json")
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
@@ -162,9 +159,8 @@ func TestContext_SetEncoding(t *testing.T) {
 	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("accept", "application/json").
-		Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r.Header.Set(header.Accept, "application/json")
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
@@ -186,9 +182,8 @@ func TestContext_SetLanguage(t *testing.T) {
 	srv := newTestServer(a)
 
 	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).
-		Header("accept", "application/json").
-		Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r.Header.Set(header.Accept, "application/json")
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
@@ -246,7 +241,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 
 func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
-	r := rest.Post(a, "/path", nil).Request()
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	ctx := newContext(a, nil, r)
 	a.NotNil(ctx)
 	a.Equal(ctx.ClientIP(), r.RemoteAddr)

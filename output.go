@@ -27,22 +27,20 @@ type ResponserFunc func(*Context) Problem
 
 func (f ResponserFunc) Apply(c *Context) Problem { return f(c) }
 
-// SetWriter 自定义输出通道
+// Wrap 替换底层的 [http.ResponseWriter] 对象
 //
-// f 用于构建一个用于输出的 [http.ResponseWriter] 接口对象，其原型为：
+// f 用于构建新的 [http.ResponseWriter] 对象，其原型为：
 //
 //	func(w http.ResponseWriter) http.ResponseWriter
 //
-// 其中 w 表示原本与 [Context] 关联的对象，用户可以基于此对象作二次封装，
-// 或是完全舍弃，都是可以的。
-//
+// 其中 w 表示原本与 [Context] 关联的对象，返回一个新的替换对象。
 // 如果已经有内容输出，此操作将会 panic。
-func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
+func (ctx *Context) Wrap(f func(http.ResponseWriter) http.ResponseWriter) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
 	if f == nil {
-		panic("参数 w 不能为空")
+		panic("参数 f 不能为空")
 	}
 
 	resp := f(ctx.originResponse)
@@ -57,7 +55,7 @@ func (ctx *Context) SetWriter(f func(http.ResponseWriter) http.ResponseWriter) {
 func (ctx *Context) Render(status int, body any) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
 	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
-	// 调用方除了输出错误日志，也没有其它面向客户的补救措施。
+	// 除了输出错误日志，也没有其它面向客户的补救措施。
 
 	if body == nil {
 		ctx.WriteHeader(status)
@@ -83,7 +81,7 @@ func (ctx *Context) Render(status int, body any) {
 
 // Marshal 将对象 v 按用户要求编码并返回
 func (ctx *Context) Marshal(v any) ([]byte, error) {
-	if f := ctx.outputMimetype.MarshalBuilder(); f != nil { // 该值是可以为 nil 的，比如上传等操作。
+	if f := ctx.outputMimetype.MarshalBuilder(); f != nil { // f 可以为 nil，比如上传等操作。
 		return f(ctx)(v)
 	}
 	return nil, NewLocaleError("not found serialization for %s", ctx.Mimetype(false))
@@ -99,7 +97,7 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 
 // Write 向客户端输出内容
 //
-// 如非必要，应该返回 [Responser] 进行输出。
+// 如非必要，应该采用 [Context.Render] 输出。
 func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
@@ -138,9 +136,9 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 	return ctx.writer.Write(bs)
 }
 
-// WriteHeader 向客户端输出 HTTP 代码
+// WriteHeader 向客户端输出 HTTP 状态码
 //
-// 如非必要，应该通过 [Responser] 进行输出。
+// 如非必要，应该通过 [Context.Render] 输出。
 func (ctx *Context) WriteHeader(status int) {
 	if ctx.status > 99 && ctx.status != status {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))

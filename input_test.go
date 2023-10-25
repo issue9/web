@@ -10,7 +10,6 @@ import (
 	"testing/iotest"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/assert/v3/rest"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding/simplifiedchinese"
 
@@ -38,7 +37,7 @@ func TestPaths(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
 	t.Run("empty", func(t *testing.T) {
 		a := assert.New(t, false)
@@ -119,7 +118,7 @@ func TestContext_PathID(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
 	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
 
@@ -134,7 +133,7 @@ func TestContext_PathInt64(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
-	r := rest.Get(a, "/path").Request()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
 	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
 

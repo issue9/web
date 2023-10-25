@@ -20,10 +20,10 @@ var _ web.Accepter = &mimetype{}
 func TestCodec_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := New([]*Mimetype{
+	mt, fe := New("ms", "cs", []*Mimetype{
 		{Name: testMimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: ""},
 	}, DefaultCompressions())
-	a.NotNil(mt)
+	a.NotError(fe).NotNil(mt)
 
 	f, e, err := mt.ContentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -67,8 +67,8 @@ func TestCodec_ContentType(t *testing.T) {
 
 func TestCodec_Accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt := New(nil, nil)
-	a.NotNil(mt)
+	mt, fe := New("ms", "cs", nil, nil)
+	a.NotError(fe).NotNil(mt)
 
 	item := mt.Accept(testMimetype)
 	a.Nil(item)
@@ -76,12 +76,12 @@ func TestCodec_Accept(t *testing.T) {
 	item = mt.Accept("")
 	a.Nil(item)
 
-	mt = New([]*Mimetype{
+	mt, fe = New("ms", "cs", []*Mimetype{
 		{Name: testMimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: ""},
 		{Name: "text/plain", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: "text/plain+problem"},
 		{Name: "empty", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
 	}, BestSpeedCompressions())
-	a.NotNil(mt)
+	a.NotError(fe).NotNil(mt)
 
 	item = mt.Accept(testMimetype)
 	a.NotNil(item).
@@ -122,7 +122,7 @@ func TestCodec_Accept(t *testing.T) {
 
 func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mm := New([]*Mimetype{
+	mm, fe := New("ms", "cs", []*Mimetype{
 		{Name: "text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
 		{Name: "text/plain", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
 		{Name: "text/text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
@@ -130,7 +130,7 @@ func TestCodec_findMarshal(t *testing.T) {
 		{Name: "application/bb", MarshalBuilder: nil, Unmarshal: nil, Problem: "application/problem+bb"},
 		{Name: testMimetype, MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
 	}, BestCompressionCompressions())
-	a.NotNil(mm)
+	a.NotError(fe).NotNil(mm)
 	mt := mm.(*codec)
 
 	item := mt.findMarshal("text")

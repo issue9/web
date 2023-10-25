@@ -167,11 +167,11 @@ func TestContext_Render(t *testing.T) {
 	a.Equal(w.Body.String(), "123")
 }
 
-func TestContext_SetWriter(t *testing.T) {
+func TestContext_Wrap(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 
-	// 输出内容之后，不能调用 SetWriter
+	// 输出内容之后，不能调用 Wrap
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -182,12 +182,12 @@ func TestContext_SetWriter(t *testing.T) {
 
 	a.PanicString(func() {
 		buf := &bytes.Buffer{}
-		ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
+		ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
 	}, "已有内容输出，不可再更改！")
 
 	a.Equal(w.Body.String(), "abc")
 
-	// 调用 SetWriter 之后修改了报头内容
+	// 调用 Wrap 之后修改了报头内容
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -198,7 +198,7 @@ func TestContext_SetWriter(t *testing.T) {
 
 	ctx.Header().Set("h1", "v1")
 	buf := &bytes.Buffer{}
-	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
+	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
 	ctx.Header().Set("h2", "v2")
 	ctx.Write([]byte("abc"))
 	a.Equal(buf.String(), "abc").
@@ -206,7 +206,7 @@ func TestContext_SetWriter(t *testing.T) {
 		Equal(w.Header().Get("h2"), "v2").
 		Empty(w.Body.String())
 
-	// 多次调用 setWriter
+	// 多次调用 Wrap
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -215,14 +215,14 @@ func TestContext_SetWriter(t *testing.T) {
 	r.Header.Set(header.AcceptEncoding, "")
 	ctx = NewContext(s, w, r, nil, header.RequestIDKey)
 
-	a.PanicString(func() { // setWriter(nil)
-		ctx.SetWriter(nil)
-	}, "参数 w 不能为空")
+	a.PanicString(func() { // Wrap(nil)
+		ctx.Wrap(nil)
+	}, "参数 f 不能为空")
 
 	buf1 := &bytes.Buffer{}
 	buf2 := &bytes.Buffer{}
-	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
-	ctx.SetWriter(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
+	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
+	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
 	ctx.Write([]byte("abc"))
 	a.Equal(buf2.String(), "abc").Empty(buf1.String()).
 		True(w.Result().StatusCode > 199).
