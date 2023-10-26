@@ -67,7 +67,7 @@ func buildMarshalTest(_ *Context) MarshalFunc {
 	}
 }
 
-func unmarshalTest(bs []byte, v any) error {
+func unmarshalTest(r io.Reader, v any) error {
 	return ErrUnsupportedSerialization()
 }
 
@@ -84,16 +84,34 @@ func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, err
 	mime, _ := header.ParseWithParam(h, "charset")
 	switch mime {
 	case "application/json":
-		return json.Unmarshal, nil, nil
+		return func(r io.Reader, v any) error {
+			if r == nil {
+				return nil
+			}
+			d := json.NewDecoder(r)
+			return d.Decode(v)
+		}, nil, nil
 	case "application/xml":
-		return xml.Unmarshal, nil, nil
+		return func(r io.Reader, v any) error {
+			if r == nil {
+				return nil
+			}
+			d := xml.NewDecoder(r)
+			return d.Decode(v)
+		}, nil, nil
 	case "application/test":
 		return unmarshalTest, nil, nil
 	default:
 		if h != "" {
 			return nil, nil, ErrUnsupportedSerialization()
 		}
-		return json.Unmarshal, nil, nil
+		return func(r io.Reader, v any) error {
+			if r == nil {
+				return nil
+			}
+			d := json.NewDecoder(r)
+			return d.Decode(v)
+		}, nil, nil
 	}
 }
 

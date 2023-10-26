@@ -280,9 +280,9 @@ func TestContext_RequestBody(t *testing.T) {
 			Equal(data, []byte("123")).
 			Nil(ctx.inputCharset)
 
-		// 再次读取
+			// 再次读取
 		data, err = ctx.RequestBody()
-		a.NotError(err).Equal(data, []byte("123"))
+		a.NotError(err).Empty(data)
 	})
 
 	t.Run("charset=gbk", func(*testing.T) {
@@ -324,6 +324,15 @@ func TestContext_Unmarshal(t *testing.T) {
 	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
+
+	// gbk
+	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(testdata.ObjectGBKBytes))
+	r.Header.Set(header.ContentType, "application/json")
+	w = httptest.NewRecorder()
+	ctx = srv.NewContext(w, r)
+	ctx.inputCharset = simplifiedchinese.GB18030
+	obj = &testdata.Object{}
+	a.NotError(ctx.Unmarshal(obj)).Equal(obj, testdata.ObjectInst)
 }
 
 func TestContext_Read(t *testing.T) {

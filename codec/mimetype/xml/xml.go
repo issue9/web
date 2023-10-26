@@ -5,6 +5,7 @@ package xml
 
 import (
 	"encoding/xml"
+	"io"
 
 	"github.com/issue9/web"
 )
@@ -16,4 +17,4 @@ const (
 
 func BuildMarshal(*web.Context) web.MarshalFunc { return xml.Marshal }
 
-func Unmarshal(data []byte, v any) error { return xml.Unmarshal(data, v) }
+func Unmarshal(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) }

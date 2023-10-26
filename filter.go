@@ -5,7 +5,23 @@ package web
 import (
 	"fmt"
 	"strconv"
+	"sync"
 )
+
+var filterContextPool = &sync.Pool{New: func() any { return &FilterContext{} }}
+
+// Filter 用户提交数据的验证修正接口
+type Filter interface {
+	Filter(*FilterContext)
+}
+
+// FilterContext 处理由过滤器生成的各错误
+type FilterContext struct {
+	name        string
+	exitAtError bool
+	ctx         *Context
+	problem     *RFC7807
+}
 
 // FilterFunc 过滤器
 //
@@ -22,7 +38,7 @@ import (
 //	                                               |---[Validator]
 //
 // 调用者可以提前声明 [FilterFuncOf] 实例，在需要时调用 [FilterFuncOf] 实例，
-// 生成一个类型无关的方法 [FilterFunc] 传递给 [web.FilterProblem]。
+// 生成一个类型无关的方法 [FilterFunc] 传递给 [web.FilterContext]。
 // 这样可以绕过 Go 不支持泛型方法的尴尬。
 //
 // Sanitize 表示对数据的修正，其函数原型为：func(*T)
@@ -35,7 +51,7 @@ import (
 //
 // [sanitizer]: https://pkg.go.dev/github.com/issue9/filter/sanitizer
 // [validator]: https://pkg.go.dev/github.com/issue9/filter/validator
-type FilterFunc func() (string, LocaleStringer)
+type FilterFunc = func() (string, LocaleStringer)
 
 // FilterFuncOf 生成某数值的过滤器
 //
@@ -194,3 +210,86 @@ func NewMapRules[K comparable, V any, M ~map[K]V](r ...RuleFuncOf[V]) RuleFuncOf
 		return "", nil
 	}
 }
+
+func (ctx *Context) newFilterContext(exitAtError bool) *FilterContext {
+	return newFilterContext(exitAtError, "", ctx, newRFC7807())
+}
+
+// New 声明验证的子对象
+//
+// name 为 f 中验证对象的整体名称；
+// f 为验证方法，其原型为 func(fp *FilterContext)
+// 往 fp 写入的信息，其字段名均会以 name 作为前缀写入到当前对象 v 中。
+// fp 的各种属性均继承自 v。
+func (v *FilterContext) New(name string, f func(f *FilterContext)) *FilterContext {
+	f(newFilterContext(v.exitAtError, v.name+name, v.Context(), v.problem))
+	return v
+}
+
+func newFilterContext(exitAtError bool, name string, ctx *Context, p *RFC7807) *FilterContext {
+	v := filterContextPool.Get().(*FilterContext)
+	v.name = name
+	v.exitAtError = exitAtError
+	v.ctx = ctx
+	v.problem = p
+	ctx.OnExit(func(*Context, int) { filterContextPool.Put(v) })
+	return v
+}
+
+func (v *FilterContext) continueNext() bool { return !v.exitAtError || v.len() == 0 }
+
+func (v *FilterContext) len() int { return len(v.problem.Params) }
+
+// AddReason 直接添加一条错误信息
+func (v *FilterContext) AddReason(name string, reason LocaleStringer) *FilterContext {
+	if v.continueNext() {
+		return v.addReason(name, reason)
+	}
+	return v
+}
+
+// AddError 直接添加一条类型为 error 的错误信息
+func (v *FilterContext) AddError(name string, err error) *FilterContext {
+	if ls, ok := err.(LocaleStringer); ok {
+		return v.AddReason(name, ls)
+	}
+	return v.AddReason(name, Phrase(err.Error()))
+}
+
+func (v *FilterContext) addReason(name string, reason LocaleStringer) *FilterContext {
+	if v.name != "" {
+		name = v.name + name
+	}
+	v.problem.WithParam(name, reason.LocaleString(v.Context().LocalePrinter()))
+	return v
+}
+
+// Add 添加由过滤器 f 返回的错误信息
+func (v *FilterContext) Add(f FilterFunc) *FilterContext {
+	if !v.continueNext() {
+		return v
+	}
+
+	if name, msg := f(); msg != nil {
+		v.addReason(name, msg)
+	}
+	return v
+}
+
+// AddFilter 验证实现了 [Filter] 接口的对象
+func (v *FilterContext) AddFilter(name string, f Filter) *FilterContext {
+	return v.New(name, func(fp *FilterContext) { f.Filter(fp) })
+}
+
+// When 只有满足 cond 才执行 f 中的验证
+//
+// f 中的 v 即为当前对象；
+func (v *FilterContext) When(cond bool, f func(v *FilterContext)) *FilterContext {
+	if cond {
+		f(v)
+	}
+	return v
+}
+
+// Context 返回关联的 [Context] 实例
+func (v *FilterContext) Context() *Context { return v.ctx }

@@ -4,6 +4,7 @@ package form
 
 import (
 	"encoding"
+	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -127,7 +128,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(Unmarshal([]byte(tagObjectString), obj))
+	a.NotError(Unmarshal(strings.NewReader(tagObjectString), obj))
 	a.Equal(obj, tagObjectData)
 
 	// anonymous marshal
@@ -137,7 +138,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 
 	// anonymous unmarshal
 	anoobj := &anonymousObject{}
-	a.NotError(Unmarshal([]byte(anonymousString), anoobj))
+	a.NotError(Unmarshal(strings.NewReader(anonymousString), anoobj))
 	a.Equal(anoobj, anonymousData)
 
 	// nest marshal
@@ -147,6 +148,6 @@ func TestMarshalWithFormTag(t *testing.T) {
 
 	// nest unmarshal
 	nestObj := &nestObject{}
-	a.NotError(Unmarshal([]byte(nestString), nestObj))
+	a.NotError(Unmarshal(strings.NewReader(nestString), nestObj))
 	a.Equal(nestObj, nestData)
 }

@@ -51,11 +51,11 @@ func (m *Message) append(line string) (err error) {
 	return
 }
 
-// Destory 销毁当前对象
+// Free 销毁当前对象
 //
 // NOTE: 这不是一个必须的操作，在确定不再使用当前对象的情况下，
 // 执行该方法，有可能会提升一些性能。
-func (m *Message) Destory() { messagePool.Put(m) }
+func (m *Message) Free() { messagePool.Put(m) }
 
 // OnMessage 对消息的处理
 //

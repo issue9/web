@@ -197,16 +197,10 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 		reader = transform.NewReader(reader, inputCharset.NewDecoder())
 	}
 
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-	defer rsp.Body.Close()
-
 	if status.IsProblemStatus(rsp.StatusCode) {
-		return inputMimetype(data, problem)
+		return inputMimetype(reader, problem)
 	}
-	return inputMimetype(data, resp)
+	return inputMimetype(reader, resp)
 }
 
 // NewRequest 生成 [http.Request]

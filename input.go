@@ -22,27 +22,22 @@ const defaultBodyBufferSize = 256
 var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
 // Paths 提供对路径参数的处理
-type Paths FilterProblem
+type Paths FilterContext
 
 // Queries 提供对查询参数的处理
 type Queries struct {
-	filter  *FilterProblem
+	filter  *FilterContext
 	queries url.Values
-}
-
-// CTXFilter 在 [Context] 关联的上下文环境中对用户提交的数据进行验证和修正
-type CTXFilter interface {
-	CTXFilter(*FilterProblem)
 }
 
 // Paths 声明一个用于获取路径参数的对象
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	return (*Paths)(ctx.newFilterProblem(exitAtError))
+	return (*Paths)(ctx.newFilterContext(exitAtError))
 }
 
-func (p *Paths) filter() *FilterProblem { return (*FilterProblem)(p) }
+func (p *Paths) filter() *FilterContext { return (*FilterContext)(p) }
 
 // ID 返回 key 所表示的值且必须大于 0
 func (p *Paths) ID(key string) int64 {
@@ -55,7 +50,7 @@ func (p *Paths) ID(key string) int64 {
 		p.filter().AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.filter().Add(key, locales.ShouldGreatThanZero)
+		p.filter().AddReason(key, locales.ShouldGreatThanZero)
 		return 0
 	}
 	return id
@@ -168,7 +163,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.filter = ctx.newFilterProblem(exitAtError)
+	q.filter = ctx.newFilterContext(exitAtError)
 	q.queries = queries
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
@@ -191,7 +186,7 @@ func (q *Queries) Int(key string, def int) int {
 
 	v, err := strconv.Atoi(str)
 	if err != nil { // strconv.Atoi 不可能返回 LocaleStringer 接口的数据
-		q.filter.Add(key, Phrase(err.Error()))
+		q.filter.AddReason(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -212,7 +207,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 
 	v, err := strconv.ParseInt(str, 10, 64)
 	if err != nil { // strconv.ParseInt 不可能返回 LocaleStringer 接口的数据
-		q.filter.Add(key, Phrase(err.Error()))
+		q.filter.AddReason(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -247,7 +242,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 
 	v, err := strconv.ParseBool(str)
 	if err != nil { // strconv.ParseBool 不可能返回 LocaleStringer 接口的数据
-		q.filter.Add(key, Phrase(err.Error()))
+		q.filter.AddReason(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -268,7 +263,7 @@ func (q *Queries) Float64(key string, def float64) float64 {
 
 	v, err := strconv.ParseFloat(str, 64)
 	if err != nil { // strconv.ParseFloat 不可能返回 LocaleStringer 接口的数据
-		q.filter.Add(key, Phrase(err.Error()))
+		q.filter.AddReason(key, Phrase(err.Error()))
 		return def
 	}
 	return v
@@ -280,7 +275,7 @@ func (q *Queries) Problem(id string) Problem { return q.filter.Problem(id) }
 // Object 将查询参数解析到一个对象中
 //
 // 具体的文档信息可以参考 [Query]。
-// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
+// 如果 v 实现了 [Filter] 接口，则在读取数据之后，会调用该接口方法。
 //
 // [Query]: https://github.com/issue9/query
 func (q *Queries) Object(v any) {
@@ -292,12 +287,12 @@ func (q *Queries) Object(v any) {
 			msg = Phrase(err.Error())
 		}
 
-		q.filter.Add(field, msg)
+		q.filter.AddReason(field, msg)
 	})
 
 	if q.filter.continueNext() {
-		if s, ok := v.(CTXFilter); ok {
-			s.CTXFilter(q.filter)
+		if s, ok := v.(Filter); ok {
+			s.Filter(q.filter)
 		}
 	}
 }
@@ -313,15 +308,9 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Problem {
 }
 
 // RequestBody 获取用户提交的内容
-//
-// 此方法可多次调用且返回正确内容，但是不能对返回内容作直接修改。不存在 body 时，返回 nil。
 func (ctx *Context) RequestBody() (body []byte, err error) {
-	if ctx.read {
-		return ctx.requestBody, nil
-	}
 	req := ctx.Request()
 	if req.ContentLength == 0 {
-		ctx.read = true
 		return nil, nil
 	}
 
@@ -330,20 +319,18 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
 	}
 
-	if ctx.requestBody == nil {
-		size := req.ContentLength
-		if size == -1 {
-			size = defaultBodyBufferSize
-		}
-		ctx.requestBody = make([]byte, 0, size)
+	size := req.ContentLength
+	if size == -1 {
+		size = defaultBodyBufferSize
 	}
+	requestBody := make([]byte, 0, size)
 
 	for {
-		if len(ctx.requestBody) == cap(ctx.requestBody) {
-			ctx.requestBody = append(ctx.requestBody, 0)[:len(ctx.requestBody)]
+		if len(requestBody) == cap(requestBody) {
+			requestBody = append(requestBody, 0)[:len(requestBody)]
 		}
-		n, err := reader.Read(ctx.requestBody[len(ctx.requestBody):cap(ctx.requestBody)])
-		ctx.requestBody = ctx.requestBody[:len(ctx.requestBody)+n]
+		n, err := reader.Read(requestBody[len(requestBody):cap(requestBody)])
+		requestBody = requestBody[:len(requestBody)+n]
 		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
@@ -351,39 +338,39 @@ func (ctx *Context) RequestBody() (body []byte, err error) {
 		}
 	}
 
-	ctx.read = true
-	return ctx.requestBody, err
+	return requestBody, err
 }
 
 // Unmarshal 将提交的内容转换成 v 对象
 func (ctx *Context) Unmarshal(v any) error {
-	body, err := ctx.RequestBody()
-	if err != nil {
-		return err
-	}
-
-	if len(body) == 0 {
-		return nil
-	}
 	if ctx.inputMimetype == nil {
 		return NewLocaleError("the client miss content-type header")
 	}
-	return ctx.inputMimetype(body, v)
+
+	if ctx.Request().ContentLength == 0 || ctx.Request().Body == nil {
+		return nil
+	}
+
+	var reader io.Reader = ctx.Request().Body
+	if !header.CharsetIsNop(ctx.inputCharset) {
+		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
+	}
+	return ctx.inputMimetype(reader, v)
 }
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 如果 v 实现了 [CTXFilter] 接口，则在读取数据之后，会调用该接口方法。
+// 如果 v 实现了 [Filter] 接口，则在读取数据之后，会调用该接口方法。
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Problem {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Error(err, ProblemUnprocessableEntity)
 	}
 
-	if vv, ok := v.(CTXFilter); ok {
-		va := ctx.newFilterProblem(exitAtError)
-		vv.CTXFilter(va)
-		return va.Problem(id)
+	if vv, ok := v.(Filter); ok {
+		f := ctx.newFilterContext(exitAtError)
+		vv.Filter(f)
+		return f.Problem(id)
 	}
 	return nil
 }

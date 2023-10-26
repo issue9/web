@@ -5,6 +5,7 @@ package jsonp
 
 import (
 	"encoding/json"
+	"io"
 	"sync"
 
 	"github.com/issue9/errwrap"
@@ -61,4 +62,4 @@ func BuildMarshal(ctx *web.Context) web.MarshalFunc {
 	}
 }
 
-func Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }
+func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }

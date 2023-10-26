@@ -4,6 +4,7 @@ package form
 
 import (
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -85,20 +86,16 @@ func TestUnmarshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	v := url.Values{}
-	a.NotError(Unmarshal(nil, v))
+	a.NotError(Unmarshal(strings.NewReader(""), v))
 	a.Equal(len(v), 0)
 
 	v = url.Values{}
-	a.NotError(Unmarshal([]byte{}, v))
-	a.Equal(len(v), 0)
+	a.Error(Unmarshal(strings.NewReader("%"), v))
+
+	a.NotError(Unmarshal(strings.NewReader(formString), &struct{}{}))
 
 	v = url.Values{}
-	a.Error(Unmarshal([]byte("%"), v))
-
-	a.NotError(Unmarshal([]byte(formString), &struct{}{}))
-
-	v = url.Values{}
-	a.NotError(Unmarshal([]byte(formString), v))
+	a.NotError(Unmarshal(strings.NewReader(formString), v))
 	a.Equal(len(v), 2)
 	a.Equal(v.Get("name"), "Ava")
 	a.Equal(v.Get("friend"), "Jess")
@@ -106,6 +103,6 @@ func TestUnmarshal(t *testing.T) {
 
 	// Unmarshaler 类型
 	obj := &object{}
-	a.NotError(Unmarshal([]byte(formString), obj))
+	a.NotError(Unmarshal(strings.NewReader(formString), obj))
 	a.Equal(obj, objectData)
 }

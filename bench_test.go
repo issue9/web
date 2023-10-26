@@ -212,7 +212,7 @@ func BenchmarkRFC7807_unmarshal_json(b *testing.B) {
 	}
 }
 
-func BenchmarkNewFilterProblem(b *testing.B) {
+func BenchmarkNewFilterContext(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a)
 
@@ -224,7 +224,7 @@ func BenchmarkNewFilterProblem(b *testing.B) {
 	defer ctx.Free()
 
 	for i := 0; i < b.N; i++ {
-		p := ctx.newFilterProblem(false)
-		filterProblemPool.Put(p)
+		p := ctx.newFilterContext(false)
+		filterContextPool.Put(p)
 	}
 }

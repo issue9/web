@@ -5,6 +5,7 @@ package json
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/issue9/web"
 )
@@ -16,4 +17,4 @@ const (
 
 func BuildMarshal(*web.Context) web.MarshalFunc { return json.Marshal }
 
-func Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }
+func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }

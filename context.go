@@ -19,8 +19,6 @@ import (
 	"github.com/issue9/web/internal/header"
 )
 
-const contextPoolBodyBufferMaxSize = 1 << 11 // 过大的对象不回收，以免造成内存占用过高。
-
 var contextPool = &sync.Pool{
 	New: func() any { return &Context{exits: make([]func(*Context, int), 0, 5)} },
 }
@@ -57,9 +55,6 @@ type Context struct {
 	// 区域和本地相关信息
 	languageTag   language.Tag
 	localePrinter *message.Printer
-
-	requestBody []byte // 缓存从 http.Request.Body 中获取的内容
-	read        bool   // 表示是已经读取 body
 
 	// 保存 Context 在存续期间的可复用变量
 	//
@@ -155,10 +150,6 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
 	ctx.localePrinter = srv.NewLocalePrinter(tag)
-	if len(ctx.requestBody) > 0 {
-		ctx.requestBody = ctx.requestBody[:0]
-	}
-	ctx.read = false
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
 
 	ctx.logs = l
@@ -288,9 +279,7 @@ func (ctx *Context) Free() {
 	}
 	ctx.logs.Free()
 
-	if len(ctx.requestBody) < contextPoolBodyBufferMaxSize {
-		contextPool.Put(ctx)
-	}
+	contextPool.Put(ctx)
 }
 
 // OnExit 注册退出当前请求时的处理函数

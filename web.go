@@ -9,6 +9,7 @@ package web
 
 import (
 	"context"
+	"io"
 	"io/fs"
 
 	"github.com/issue9/config"
@@ -106,7 +107,9 @@ type (
 	MarshalFunc = func(any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
-	UnmarshalFunc = func([]byte, any) error
+	//
+	// 参数 [io.Reader] 必定不会为空。
+	UnmarshalFunc = func(io.Reader, any) error
 )
 
 // ErrUnsupportedSerialization 返回不支持序列化的错误信息

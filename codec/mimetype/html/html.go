@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"reflect"
 
 	"golang.org/x/text/message"
@@ -99,7 +100,7 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal([]byte, any) error { return web.ErrUnsupportedSerialization() }
+func Unmarshal(io.Reader, any) error { return web.ErrUnsupportedSerialization() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {
