@@ -9,6 +9,9 @@ import "io"
 
 // Compressor 压缩算法的接口
 type Compressor interface {
+	// Name 算法的名称
+	Name() string
+
 	// NewDecoder 将 r 包装成为当前压缩算法的解码器
 	NewDecoder(r io.Reader) (io.ReadCloser, error)
 

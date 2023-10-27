@@ -7,11 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"testing/iotest"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7/types"
-	"golang.org/x/text/encoding/simplifiedchinese"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
@@ -247,54 +245,6 @@ func TestContext_Object(t *testing.T) {
 	a.Equal(w.Code, 411)
 }
 
-func TestContext_RequestBody(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a)
-
-	// 放第一个，否则 Context.requestBody 一直在复用，无法测试到 content-length == -1 的情况。
-	t.Run("content-length=-1", func(*testing.T) {
-		reader := iotest.OneByteReader(bytes.NewBufferString(`"abcdef"`))
-		r := httptest.NewRequest(http.MethodPost, "/p4", reader)
-		ctx := srv.NewContext(httptest.NewRecorder(), r)
-		a.NotNil(ctx)
-
-		data, err := ctx.RequestBody()
-		a.NotError(err).Equal(data, `"abcdef"`)
-	})
-
-	t.Run("empty", func(*testing.T) {
-		r := httptest.NewRequest(http.MethodPost, "/p4", nil)
-		ctx := srv.NewContext(httptest.NewRecorder(), r)
-		a.NotNil(ctx)
-		data, err := ctx.RequestBody()
-		a.NotError(err).Empty(data)
-	})
-
-	t.Run("charset=utf-8", func(*testing.T) {
-		r := httptest.NewRequest(http.MethodPost, "/p4", bytes.NewBufferString("123"))
-		ctx := srv.NewContext(httptest.NewRecorder(), r)
-		a.NotNil(ctx)
-
-		data, err := ctx.RequestBody()
-		a.NotError(err).
-			Equal(data, []byte("123")).
-			Nil(ctx.inputCharset)
-
-			// 再次读取
-		data, err = ctx.RequestBody()
-		a.NotError(err).Empty(data)
-	})
-
-	t.Run("charset=gbk", func(*testing.T) {
-		r := httptest.NewRequest(http.MethodPost, "/p4", bytes.NewBuffer(testdata.ObjectGBKBytes))
-		ctx := srv.NewContext(httptest.NewRecorder(), r)
-		ctx.inputCharset = simplifiedchinese.GB18030
-
-		data, err := ctx.RequestBody()
-		a.NotError(err).Equal(string(data), testdata.ObjectJSONString)
-	})
-}
-
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a)
@@ -327,10 +277,9 @@ func TestContext_Unmarshal(t *testing.T) {
 
 	// gbk
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(testdata.ObjectGBKBytes))
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gb18030"))
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r)
-	ctx.inputCharset = simplifiedchinese.GB18030
 	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj)).Equal(obj, testdata.ObjectInst)
 }

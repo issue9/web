@@ -103,6 +103,8 @@ func NewZstdCompressor() Compressor {
 	return &zstdCompressor{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 }
 
+func (c *zstdCompressor) Name() string { return "zstd" }
+
 func (c *zstdCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := zstdReaders.Get().(*zstd.Decoder)
 	if err := rr.Reset(r); err != nil {
@@ -128,6 +130,8 @@ func NewBrotliCompressor(o brotli.WriterOptions) Compressor {
 	}
 }
 
+func (c *brotliCompressor) Name() string { return "br" }
+
 func (c *brotliCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := brotliReaders.Get().(*brotli.Reader)
 	if err := rr.Reset(r); err != nil {
@@ -149,6 +153,8 @@ func NewLZWCompressor(order lzw.Order, width int) Compressor {
 	return &lzwCompressor{order: order, width: width}
 }
 
+func (c *lzwCompressor) Name() string { return "compress" }
+
 func (c *lzwCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := lzwReaders.Get().(*lzw.Reader)
 	rr.Reset(r, c.order, c.width)
@@ -163,6 +169,8 @@ func (c *lzwCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 
 // NewGzipCompressor 声明基于 gzip 的压缩算法
 func NewGzipCompressor(level int) Compressor { return &gzipCompressor{} }
+
+func (c *gzipCompressor) Name() string { return "gzip" }
 
 func (c *gzipCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := gzipReaders.Get().(*gzip.Reader)
@@ -199,6 +207,8 @@ func NewDeflateCompressor(level int, dict []byte) Compressor {
 		}},
 	}
 }
+
+func (c *deflateCompressor) Name() string { return "deflate" }
 
 func (c *deflateCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := deflateReaders.Get().(flate.Resetter)

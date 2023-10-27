@@ -17,9 +17,9 @@ func TestCodec_ContentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
 	e, fe := New("ms", "cs", JSONMimetypes(), []*Compression{
-		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
-		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
-		{Name: "zstd", Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
+		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
+		{Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
+		{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
 	})
 	a.NotError(fe).NotNil(e)
 
@@ -38,9 +38,9 @@ func TestCodec_AcceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
 	e, err := New("ms", "cs", APIMimetypes(), []*Compression{
-		{Name: "compress", Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
-		{Name: "gzip", Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
-		{Name: "gzip", Compressor: compressor.NewGzipCompressor(9), Types: []string{"application/*"}},
+		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
+		{Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
+		{Compressor: compressor.NewGzipCompressor(9), Types: []string{"application/*"}},
 	})
 	a.NotError(err).NotNil(e)
 

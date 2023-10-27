@@ -10,49 +10,17 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
 )
 
-type compression struct {
-	name       string
-	compressor compressor.Compressor
-
-	// contentType 是具体值的，比如 text/xml
-	allowTypes []string
-
-	// contentType 是模糊类型的，比如 text/*，
-	// 只有在 allowTypes 找不到时，才在此处查找。
-	allowTypesPrefix []string
-}
-
-// AddCompressor 添加新的压缩算法
 func (e *codec) addCompression(c *Compression) {
-	types := make([]string, 0, len(c.Types))
-	prefix := make([]string, 0, len(c.Types))
-	for _, c := range c.Types {
-		if c == "" {
-			continue
-		}
-
-		if c[len(c)-1] == '*' {
-			prefix = append(prefix, c[:len(c)-1])
-		} else {
-			types = append(types, c)
-		}
-	}
-
-	e.compressions = append(e.compressions, &compression{
-		name:             c.Name,
-		compressor:       c.Compressor,
-		allowTypes:       types,
-		allowTypesPrefix: prefix,
-	})
+	cc := *c // 复制，防止通过配置项修改内容。
+	e.compressions = append(e.compressions, &cc)
 
 	names := make([]string, 0, len(e.compressions))
 	for _, item := range e.compressions {
-		names = append(names, item.name)
+		names = append(names, item.Compressor.Name())
 	}
 	names = sliceutil.Unique(names, func(i, j string) bool { return i == j })
 	e.acceptEncodingHeader = strings.Join(names, ",")
@@ -63,8 +31,8 @@ func (e *codec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 		return io.NopCloser(r), nil
 	}
 
-	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.name == name }); f {
-		return c.compressor.NewDecoder(r)
+	if c, f := sliceutil.At(e.compressions, func(item *Compression, _ int) bool { return item.Compressor.Name() == name }); f {
+		return c.Compressor.NewDecoder(r)
 	}
 	return nil, localeutil.Error("not found compress for %s", name)
 }
@@ -92,8 +60,8 @@ func (e *codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.Comp
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
-			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.name }) {
-				return curr.compressor.NewEncoder, curr.name, false
+			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.Compressor.Name() }) {
+				return curr.Compressor.NewEncoder, curr.Compressor.Name(), false
 			}
 		}
 		return
@@ -111,14 +79,14 @@ func (e *codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.Comp
 		}
 
 		for _, index := range indexes {
-			if curr := e.compressions[index]; curr.name == accept.Value {
-				return curr.compressor.NewEncoder, curr.name, false
+			if curr := e.compressions[index]; curr.Compressor.Name() == accept.Value {
+				return curr.Compressor.NewEncoder, curr.Compressor.Name(), false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
 		c := e.compressions[indexes[0]]
-		return c.compressor.NewEncoder, c.name, false
+		return c.Compressor.NewEncoder, c.Compressor.Name(), false
 	}
 
 	return // 没有匹配，表示不需要进行压缩
@@ -129,14 +97,19 @@ func (e *codec) getMatchCompresses(contentType string) []int {
 
 LOOP:
 	for index, c := range e.compressions {
-		for _, s := range c.allowTypes {
+		if c.wildcard {
+			indexes = append(indexes, index)
+			continue
+		}
+
+		for _, s := range c.Types {
 			if s == contentType {
 				indexes = append(indexes, index)
 				continue LOOP
 			}
 		}
 
-		for _, p := range c.allowTypesPrefix {
+		for _, p := range c.wildcardSuffix {
 			if strings.HasPrefix(contentType, p) {
 				indexes = append(indexes, index)
 				continue LOOP

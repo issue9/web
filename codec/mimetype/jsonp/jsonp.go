@@ -58,7 +58,7 @@ func BuildMarshal(ctx *web.Context) web.MarshalFunc {
 
 		b := errwrap.StringBuilder{}
 		b.WString(callback).WByte('(').WBytes(data).WByte(')')
-		return []byte(b.String()), nil
+		return []byte(b.String()), b.Err
 	}
 }
 

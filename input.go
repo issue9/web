@@ -3,7 +3,6 @@
 package web
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -16,8 +15,6 @@ import (
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/locales"
 )
-
-const defaultBodyBufferSize = 256
 
 var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
@@ -157,14 +154,19 @@ func (ctx *Context) PathString(key, id string) (string, Problem) {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
-	queries, err := url.ParseQuery(ctx.Request().URL.RawQuery)
+	if ctx.queries != nil {
+		return ctx.queries, nil
+	}
+
+	values, err := url.ParseQuery(ctx.Request().URL.RawQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	q := queryPool.Get().(*Queries)
 	q.filter = ctx.newFilterContext(exitAtError)
-	q.queries = queries
+	q.queries = values
+	ctx.queries = q
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
 }
@@ -307,55 +309,26 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Problem {
 	return q.Problem(id)
 }
 
-// RequestBody 获取用户提交的内容
-func (ctx *Context) RequestBody() (body []byte, err error) {
-	req := ctx.Request()
-	if req.ContentLength == 0 {
-		return nil, nil
-	}
+// RequestBody 用户提交的内容
+func (ctx *Context) RequestBody() io.Reader {
+	r := ctx.Request().Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close
 
-	var reader io.Reader = req.Body
 	if !header.CharsetIsNop(ctx.inputCharset) {
-		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
+		return transform.NewReader(r, ctx.inputCharset.NewDecoder())
 	}
-
-	size := req.ContentLength
-	if size == -1 {
-		size = defaultBodyBufferSize
-	}
-	requestBody := make([]byte, 0, size)
-
-	for {
-		if len(requestBody) == cap(requestBody) {
-			requestBody = append(requestBody, 0)[:len(requestBody)]
-		}
-		n, err := reader.Read(requestBody[len(requestBody):cap(requestBody)])
-		requestBody = requestBody[:len(requestBody)+n]
-		if errors.Is(err, io.EOF) {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-	}
-
-	return requestBody, err
+	return r
 }
 
 // Unmarshal 将提交的内容转换成 v 对象
 func (ctx *Context) Unmarshal(v any) error {
-	if ctx.inputMimetype == nil {
-		return NewLocaleError("the client miss content-type header")
-	}
-
-	if ctx.Request().ContentLength == 0 || ctx.Request().Body == nil {
+	if ctx.Request().ContentLength == 0 {
 		return nil
 	}
 
-	var reader io.Reader = ctx.Request().Body
-	if !header.CharsetIsNop(ctx.inputCharset) {
-		reader = transform.NewReader(reader, ctx.inputCharset.NewDecoder())
+	if ctx.inputMimetype == nil {
+		return NewLocaleError("the client miss content-type header")
 	}
-	return ctx.inputMimetype(reader, v)
+	return ctx.inputMimetype(ctx.RequestBody(), v)
 }
 
 // Read 从客户端读取数据并转换成 v 对象

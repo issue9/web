@@ -24,6 +24,7 @@ import (
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -81,7 +82,15 @@ func (t *testMimetype) Name(p bool) string {
 func (t *testMimetype) MarshalBuilder() BuildMarshalFunc { return t.mb }
 
 func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mime, _ := header.ParseWithParam(h, "charset")
+	mime, c := header.ParseWithParam(h, "charset")
+	var cc encoding.Encoding
+	var err error
+	if c == "" {
+		cc = encoding.Nop
+	} else {
+		cc, err = htmlindex.Get(c)
+	}
+
 	switch mime {
 	case "application/json":
 		return func(r io.Reader, v any) error {
@@ -90,7 +99,7 @@ func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, err
 			}
 			d := json.NewDecoder(r)
 			return d.Decode(v)
-		}, nil, nil
+		}, cc, err
 	case "application/xml":
 		return func(r io.Reader, v any) error {
 			if r == nil {
@@ -98,7 +107,7 @@ func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, err
 			}
 			d := xml.NewDecoder(r)
 			return d.Decode(v)
-		}, nil, nil
+		}, cc, err
 	case "application/test":
 		return unmarshalTest, nil, nil
 	default:
@@ -111,7 +120,7 @@ func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, err
 			}
 			d := json.NewDecoder(r)
 			return d.Decode(v)
-		}, nil, nil
+		}, cc, err
 	}
 }
 
@@ -233,7 +242,7 @@ func (s *testServer) Logs() Logs { return s.logs }
 
 func (s *testServer) Name() string { return "test" }
 
-func (s *testServer) NewClient(client *http.Client, marshalName string, selector Selector) *Client {
+func (s *testServer) NewClient(client *http.Client, selector Selector, marshalName string, m func(any) ([]byte, error)) *Client {
 	panic("未实现")
 }
 

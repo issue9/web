@@ -36,6 +36,7 @@ type Context struct {
 	exits             []func(*Context, int)
 	id                string
 	begin             time.Time
+	queries           *Queries
 
 	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
 	writer         io.Writer
@@ -49,8 +50,8 @@ type Context struct {
 	outputMimetype Accepter
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputMimetype UnmarshalFunc     // 可以为空
-	inputCharset  encoding.Encoding // 若值为 encoding.Nop 或是 nil，表示为 utf-8
+	inputMimetype UnmarshalFunc // 可以为空
+	inputCharset  encoding.Encoding
 
 	// 区域和本地相关信息
 	languageTag   language.Tag
@@ -131,6 +132,7 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
 	ctx.begin = srv.Now()
+	ctx.queries = nil
 
 	// response
 	ctx.originResponse = w

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"golang.org/x/text/encoding"
@@ -40,7 +39,7 @@ type Client struct {
 	codec    Codec
 	selector Selector
 
-	marshal     MarshalFunc
+	marshal     func(any) ([]byte, error)
 	marshalName string
 }
 
@@ -96,8 +95,8 @@ func SelectorRewrite(s Selector, l Logger) func(*httputil.ProxyRequest) {
 // NewClient 创建 Client 实例
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
-// marshalName 对输入数据的编码方式，从 mt 中查找；
-func NewClient(client *http.Client, codec Codec, marshalName string, selector Selector) *Client {
+// marshalName 和 marshal 表示编码的名称和方法；
+func NewClient(client *http.Client, codec Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
@@ -108,7 +107,7 @@ func NewClient(client *http.Client, codec Codec, marshalName string, selector Se
 		selector: selector,
 
 		marshalName: marshalName,
-		marshal:     codec.Accept(marshalName).MarshalBuilder()(nil),
+		marshal:     marshal,
 	}
 }
 
@@ -158,17 +157,7 @@ func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error 
 //
 // 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。其它情况下返回错误信息。
 func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
-	var size int
-	if h := rsp.Header.Get(header.ContentLength); h != "" {
-		if h == "0" { // 比如 204
-			return nil
-		}
-
-		if size, err = strconv.Atoi(h); err != nil {
-			return err
-		}
-	}
-	if size == 0 { // 204 可能为空
+	if rsp.ContentLength == 0 { // 204 可能为空
 		return nil
 	}
 

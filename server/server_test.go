@@ -4,6 +4,7 @@ package server
 
 import (
 	"crypto/tls"
+	sj "encoding/json"
 	"net/http"
 	"os"
 	"testing"
@@ -262,7 +263,7 @@ func TestServer_NewClient(t *testing.T) {
 		return web.OK(obj)
 	})
 
-	c := s.NewClient(nil, "application/json", web.URLSelector("http://localhost:8080"))
+	c := s.NewClient(nil, web.URLSelector("http://localhost:8080"), "application/json", sj.Marshal)
 	a.NotNil(c)
 
 	resp := &object{}

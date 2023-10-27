@@ -42,7 +42,7 @@ func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
 	codec := &testCodec{}
 
-	c := NewClient(nil, codec, "application/json", URLSelector("https://example.com"))
+	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal)
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -58,7 +58,7 @@ func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	codec := &testCodec{}
 
-	c := NewClient(nil, codec, "application/json", URLSelector("https://example.com"))
+	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal)
 	a.NotNil(c).
 		NotNil(c.marshal)
 
@@ -91,9 +91,10 @@ func TestClient_ParseResponse(t *testing.T) {
 		h.Set(header.AcceptEncoding, "gzip")
 
 		resp := &http.Response{
-			Header:     h,
-			Body:       io.NopCloser(body),
-			StatusCode: http.StatusOK,
+			Header:        h,
+			Body:          io.NopCloser(body),
+			StatusCode:    http.StatusOK,
+			ContentLength: int64(body.Len()),
 		}
 
 		rsp := &object{}

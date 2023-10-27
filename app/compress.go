@@ -56,7 +56,6 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 		}
 
 		conf.compressors = append(conf.compressors, &codec.Compression{
-			Name:       enc.name,
 			Compressor: enc.c,
 			Types:      e.Types,
 		})

@@ -8,6 +8,7 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/locales"
 )
 
@@ -37,7 +38,7 @@ func TestNew(t *testing.T) {
 	a.Equal(err.Field, "ms[0].Name").Nil(c)
 
 	c, err = New("ms", "cs", nil, []*Compression{{}})
-	a.Equal(err.Field, "cs[0].Name").Nil(c)
+	a.Equal(err.Field, "cs[0].Compressor").Nil(c)
 }
 
 func TestMimetype_sanitize(t *testing.T) {
@@ -63,13 +64,16 @@ func TestCompression_sanitize(t *testing.T) {
 
 	c := &Compression{}
 	err := c.sanitize()
-	a.Error(err).Equal(err.Field, "Name")
+	a.Error(err).Equal(err.Field, "Compressor")
 
-	c = &Compression{Name: "test"}
+	c = &Compression{Compressor: compressor.NewZstdCompressor()}
 	err = c.sanitize()
-	a.NotError(err).Equal(c.Types, []string{"*"})
+	a.NotError(err).
+		True(c.wildcard).
+		Length(c.Types, 0).
+		Length(c.wildcardSuffix, 0)
 
-	c = &Compression{Name: "test", Types: []string{"text"}}
+	c = &Compression{Compressor: compressor.NewZstdCompressor(), Types: []string{"text"}}
 	err = c.sanitize()
 	a.NotError(err).Equal(c.Types, []string{"text"})
 }

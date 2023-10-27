@@ -97,23 +97,6 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 }
 
-func BenchmarkContext_RequestBody(b *testing.B) {
-	a := assert.New(b, false)
-	srv := newTestServer(a)
-
-	for i := 0; i < b.N; i++ {
-		r := httptest.NewRequest(http.MethodPost, "/path", nil)
-		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-		r.Header.Set(header.Accept, "application/json")
-		w := httptest.NewRecorder()
-
-		ctx := srv.NewContext(w, r)
-		body, err := ctx.RequestBody()
-		a.NotError(err).Empty(body)
-		ctx.Free()
-	}
-}
-
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
