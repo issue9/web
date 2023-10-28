@@ -6,7 +6,7 @@
 //		Mimetypes: []Mimetype{
 //			Type: "text/html",
 //			ProblemType: "",
-//			MarshalBuilder: html.BuildMarshal,
+//			Marshal: html.Marshal,
 //			Unmarshal: html.Unmarshal,
 //		},
 //	})
@@ -46,26 +46,24 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// BuildMarshal 针对 HTML 内容的解码实现
+// Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [web.ErrUnsupportedSerialization]；
-func BuildMarshal(ctx *web.Context) web.MarshalFunc {
+func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
 		panic("不支持该操作")
 	}
 
-	return func(v any) ([]byte, error) {
-		switch obj := v.(type) {
-		case []byte:
-			return obj, nil
-		case string:
-			return []byte(obj), nil
-		default:
-			return marshal(ctx, v)
-		}
+	switch obj := v.(type) {
+	case []byte:
+		return obj, nil
+	case string:
+		return []byte(obj), nil
+	default:
+		return marshal(ctx, v)
 	}
 }
 

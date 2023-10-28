@@ -45,7 +45,7 @@ type Mimetype struct {
 	Problem string
 
 	// 生成编码方法
-	MarshalBuilder web.BuildMarshalFunc
+	Marshal web.MarshalFunc
 
 	// 解码方法
 	Unmarshal web.UnmarshalFunc
@@ -122,25 +122,25 @@ func (m *Compression) sanitize() *web.FieldError {
 // APIMimetypes 返回以 XML 和 JSON 作为数据交换格式的配置项
 func APIMimetypes() []*Mimetype {
 	return []*Mimetype{
-		{Name: json.Mimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
-		{Name: xml.Mimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
-		{Name: "nil", MarshalBuilder: nil, Unmarshal: nil},
+		{Name: json.Mimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
+		{Name: xml.Mimetype, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
+		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }
 
 // XMLMimetypes 返回以 XML 作为数据交换格式的配置项
 func XMLMimetypes() []*Mimetype {
 	return []*Mimetype{
-		{Name: xml.Mimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
-		{Name: "nil", MarshalBuilder: nil, Unmarshal: nil},
+		{Name: xml.Mimetype, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
+		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }
 
 // JSONMimetypes 返回以 JSON 作为数据交换格式的配置项
 func JSONMimetypes() []*Mimetype {
 	return []*Mimetype{
-		{Name: json.Mimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
-		{Name: "nil", MarshalBuilder: nil, Unmarshal: nil},
+		{Name: json.Mimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
+		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }
 

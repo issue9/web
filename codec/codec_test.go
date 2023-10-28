@@ -21,19 +21,19 @@ func TestNew(t *testing.T) {
 	a.NotError(err).NotNil(c)
 
 	c, err = New("ms", "cs", []*Mimetype{
-		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
+		{Name: "application/json", Marshal: func(*web.Context, any) ([]byte, error) { return nil, nil }},
 	}, BestSpeedCompressions())
 	a.NotError(err).NotNil(c)
 
 	c, err = New("ms", "cs", []*Mimetype{
-		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
-		{Name: "application/json", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
+		{Name: "application/json", Marshal: func(*web.Context, any) ([]byte, error) { return nil, nil }},
+		{Name: "application/json", Marshal: func(*web.Context, any) ([]byte, error) { return nil, nil }},
 	}, nil)
 	a.Equal(err.Message, locales.DuplicateValue).Nil(c).
 		Equal(err.Field, "ms[0].Name")
 
 	c, err = New("ms", "cs", []*Mimetype{
-		{Name: "", MarshalBuilder: func(*web.Context) web.MarshalFunc { return nil }},
+		{Name: "", Marshal: func(*web.Context, any) ([]byte, error) { return nil, nil }},
 	}, nil)
 	a.Equal(err.Field, "ms[0].Name").Nil(c)
 

@@ -30,36 +30,34 @@ func Install(callbackKey string, s web.Server) {
 	})
 }
 
-func BuildMarshal(ctx *web.Context) web.MarshalFunc {
+func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
-		return json.Marshal
+		return json.Marshal(v)
 	}
 
-	return func(v any) ([]byte, error) {
-		data, err := json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-
-		key, found := ctx.Server().Vars().Load(contextKey)
-		if !found {
-			return data, nil
-		}
-
-		q, err := ctx.Queries(true)
-		if err != nil {
-			return data, err
-		}
-
-		callback := q.String(key.(string), "")
-		if callback == "" {
-			return data, nil
-		}
-
-		b := errwrap.StringBuilder{}
-		b.WString(callback).WByte('(').WBytes(data).WByte(')')
-		return []byte(b.String()), b.Err
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
 	}
+
+	key, found := ctx.Server().Vars().Load(contextKey)
+	if !found {
+		return data, nil
+	}
+
+	q, err := ctx.Queries(true)
+	if err != nil {
+		return data, err
+	}
+
+	callback := q.String(key.(string), "")
+	if callback == "" {
+		return data, nil
+	}
+
+	b := errwrap.StringBuilder{}
+	b.WString(callback).WByte('(').WBytes(data).WByte(')')
+	return []byte(b.String()), b.Err
 }
 
 func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }

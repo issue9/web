@@ -120,7 +120,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Marshal
-	data, err := BuildMarshal(nil)(tagObjectData)
+	data, err := Marshal(nil, tagObjectData)
 	a.NotError(err).Equal(string(data), tagObjectString)
 
 	// Unmarshal
@@ -132,7 +132,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a.Equal(obj, tagObjectData)
 
 	// anonymous marshal
-	data, err = BuildMarshal(nil)(anonymousData)
+	data, err = Marshal(nil, anonymousData)
 	a.NotError(err).
 		Equal(string(data), anonymousString)
 
@@ -142,7 +142,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a.Equal(anoobj, anonymousData)
 
 	// nest marshal
-	data, err = BuildMarshal(nil)(nestData)
+	data, err = Marshal(nil, nestData)
 	a.NotError(err).
 		Equal(string(data), nestString)
 

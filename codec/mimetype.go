@@ -16,10 +16,10 @@ import (
 )
 
 type mimetype struct {
-	name           string
-	problem        string
-	marshalBuilder web.BuildMarshalFunc
-	unmarshal      web.UnmarshalFunc
+	name      string
+	problem   string
+	marshal   web.MarshalFunc
+	unmarshal web.UnmarshalFunc
 }
 
 func (m *mimetype) Name(problem bool) string {
@@ -29,14 +29,14 @@ func (m *mimetype) Name(problem bool) string {
 	return m.name
 }
 
-func (m *mimetype) MarshalBuilder() web.BuildMarshalFunc { return m.marshalBuilder }
+func (m *mimetype) MarshalFunc() web.MarshalFunc { return m.marshal }
 
 func (e *codec) addMimetype(m *Mimetype) {
 	e.types = append(e.types, &mimetype{
-		name:           m.Name,
-		problem:        m.Problem,
-		marshalBuilder: m.MarshalBuilder,
-		unmarshal:      m.Unmarshal,
+		name:      m.Name,
+		problem:   m.Problem,
+		marshal:   m.Marshal,
+		unmarshal: m.Unmarshal,
 	})
 
 	names := make([]string, 0, len(e.types))

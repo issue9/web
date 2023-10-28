@@ -45,14 +45,16 @@ type (
 	SourceEvent struct {
 		source  *Source
 		name    string
-		marshal web.MarshalFunc
+		marshal MarshalFunc
 	}
 
 	ServerEvent[T comparable] struct {
 		server  *Server[T]
 		name    string
-		marshal web.MarshalFunc
+		marshal MarshalFunc
 	}
+
+	MarshalFunc = func(any) ([]byte, error)
 )
 
 // NewServer 声明 [Server] 对象
@@ -202,7 +204,7 @@ func (srv *Server[T]) Range(f func(sid T, s *Source)) {
 //
 // name 表示事件名称，最终输出为 event 字段；
 // marshal 表示 data 字段的编码方式；
-func (srv *Server[T]) NewEvent(name string, marshal web.MarshalFunc) *ServerEvent[T] {
+func (srv *Server[T]) NewEvent(name string, marshal MarshalFunc) *ServerEvent[T] {
 	return &ServerEvent[T]{
 		server:  srv,
 		name:    name,
@@ -284,7 +286,7 @@ func (s *Source) wait() { <-s.done }
 //
 // name 表示事件名称，最终输出为 event 字段；
 // marshal 表示 data 字段的编码方式；
-func (s *Source) NewEvent(name string, marshal web.MarshalFunc) *SourceEvent {
+func (s *Source) NewEvent(name string, marshal MarshalFunc) *SourceEvent {
 	return &SourceEvent{name: name, marshal: marshal, source: s}
 }
 

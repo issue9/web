@@ -21,7 +21,7 @@ func TestCodec_ContentType(t *testing.T) {
 	a := assert.New(t, false)
 
 	mt, fe := New("ms", "cs", []*Mimetype{
-		{Name: testMimetype, MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: ""},
+		{Name: testMimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: ""},
 	}, DefaultCompressions())
 	a.NotError(fe).NotNil(mt)
 
@@ -77,33 +77,33 @@ func TestCodec_Accept(t *testing.T) {
 	a.Nil(item)
 
 	mt, fe = New("ms", "cs", []*Mimetype{
-		{Name: testMimetype, MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: ""},
-		{Name: "text/plain", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: "text/plain+problem"},
-		{Name: "empty", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: testMimetype, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
+		{Name: "text/plain", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "text/plain+problem"},
+		{Name: "empty", Marshal: nil, Unmarshal: nil, Problem: ""},
 	}, BestSpeedCompressions())
 	a.NotError(fe).NotNil(mt)
 
 	item = mt.Accept(testMimetype)
 	a.NotNil(item).
-		NotNil(item.MarshalBuilder).
+		NotNil(item.MarshalFunc).
 		Equal(item.Name(false), testMimetype).
 		Equal(item.Name(true), testMimetype)
 
 	// */* 如果指定了 DefaultMimetype，则必定是该值
 	item = mt.Accept("*/*")
 	a.NotNil(item).
-		NotNil(item.MarshalBuilder).
+		NotNil(item.MarshalFunc).
 		Equal(item.Name(false), testMimetype)
 
 	// 同 */*
 	item = mt.Accept("")
 	a.NotNil(item).
-		NotNil(item.MarshalBuilder).
+		NotNil(item.MarshalFunc).
 		Equal(item.Name(false), testMimetype)
 
 	item = mt.Accept("*/*,text/plain")
 	a.NotNil(item).
-		NotNil(item.MarshalBuilder).
+		NotNil(item.MarshalFunc).
 		Equal(item.Name(false), "text/plain").
 		Equal(item.Name(true), "text/plain+problem")
 
@@ -117,18 +117,18 @@ func TestCodec_Accept(t *testing.T) {
 	item = mt.Accept("empty")
 	a.NotNil(item).
 		Equal(item.Name(false), "empty").
-		Nil(item.MarshalBuilder())
+		Nil(item.MarshalFunc())
 }
 
 func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
 	mm, fe := New("ms", "cs", []*Mimetype{
-		{Name: "text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
-		{Name: "text/plain", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
-		{Name: "text/text", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
-		{Name: "application/aa", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
-		{Name: "application/bb", MarshalBuilder: nil, Unmarshal: nil, Problem: "application/problem+bb"},
-		{Name: testMimetype, MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+		{Name: "text", Marshal: nil, Unmarshal: nil, Problem: ""},
+		{Name: "text/plain", Marshal: nil, Unmarshal: nil, Problem: ""},
+		{Name: "text/text", Marshal: nil, Unmarshal: nil, Problem: ""},
+		{Name: "application/aa", Marshal: nil, Unmarshal: nil, Problem: ""},
+		{Name: "application/bb", Marshal: nil, Unmarshal: nil, Problem: "application/problem+bb"},
+		{Name: testMimetype, Marshal: nil, Unmarshal: nil, Problem: ""},
 	}, BestCompressionCompressions())
 	a.NotError(fe).NotNil(mm)
 	mt := mm.(*codec)

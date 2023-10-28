@@ -3,6 +3,7 @@
 package sse
 
 import (
+	sj "encoding/json"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,7 +25,7 @@ func TestServer(t *testing.T) {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*codec.Mimetype{
-			{Name: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal},
+			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 		Logs: &logs.Options{
 			Created: logs.MicroLayout,
@@ -47,7 +48,7 @@ func TestServer(t *testing.T) {
 		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 
-		event := s.NewEvent("event", json.BuildMarshal(nil))
+		event := s.NewEvent("event", sj.Marshal)
 		event.Sent(1)
 		time.Sleep(time.Microsecond * 500)
 		event.Sent(&struct{ ID int }{ID: 5})

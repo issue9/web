@@ -71,9 +71,9 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 	}
 	if o.Mimetypes == nil {
 		o.Mimetypes = []*codec.Mimetype{
-			{Name: "application/json", MarshalBuilder: json.BuildMarshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
-			{Name: "application/xml", MarshalBuilder: xml.BuildMarshal, Unmarshal: xml.Unmarshal, Problem: ""},
-			{Name: "nil", MarshalBuilder: nil, Unmarshal: nil, Problem: ""},
+			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
+			{Name: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
+			{Name: "nil", Marshal: nil, Unmarshal: nil, Problem: ""},
 		}
 	}
 

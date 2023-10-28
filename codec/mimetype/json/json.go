@@ -15,6 +15,6 @@ const (
 	ProblemMimetype = "application/problem+json"
 )
 
-func BuildMarshal(*web.Context) web.MarshalFunc { return json.Marshal }
+func Marshal(_ *web.Context, v any) ([]byte, error) { return json.Marshal(v) }
 
 func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }

@@ -95,16 +95,13 @@ type (
 	// 返回值可以为空，表示在中间件执行过程中已经向客户端输出同内容。
 	HandlerFunc = func(*Context) Responser
 
-	// BuildMarshalFunc 生成特定于 [Context] 的 [MarshalFunc]
-	//
-	// 如果传递的参数是空值，应该返回一个默认的 [MarshalFunc] 实现，
-	// 该实现将被用于 [Client] 的相关功能。
-	BuildMarshalFunc = func(*Context) MarshalFunc
-
 	// MarshalFunc 序列化函数原型
 	//
 	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
-	MarshalFunc = func(any) ([]byte, error)
+	//
+	// NOTE: 不采用流的方式处理数据原原因是因为，编码过程中可能会出错，
+	// 此时需要修改状态码，流式的因为有内容输出，状态码也已经固定，无法修改。
+	MarshalFunc = func(*Context, any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
 	//

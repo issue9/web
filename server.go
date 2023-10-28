@@ -203,10 +203,10 @@ type Accepter interface {
 	// Name 该编码的名称
 	Name(problem bool) string
 
-	// MarshalBuilder 返回对应的 [BuildMarshalFunc]
+	// MarshalFunc 返回对应的 [MarshalFunc]
 	//
 	// 可以返回空值
-	MarshalBuilder() BuildMarshalFunc
+	MarshalFunc() MarshalFunc
 }
 
 type CompressorWriterFunc = func(io.Writer) (io.WriteCloser, error)

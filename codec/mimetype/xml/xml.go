@@ -15,6 +15,6 @@ const (
 	ProblemMimetype = "application/problem+xml"
 )
 
-func BuildMarshal(*web.Context) web.MarshalFunc { return xml.Marshal }
+func Marshal(_ *web.Context, v any) ([]byte, error) { return xml.Marshal(v) }
 
 func Unmarshal(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) }

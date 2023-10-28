@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	_ web.BuildMarshalFunc = BuildMarshal
-	_ web.UnmarshalFunc    = Unmarshal
+	_ web.MarshalFunc   = Marshal
+	_ web.UnmarshalFunc = Unmarshal
 )
 
 func TestGetName(t *testing.T) {

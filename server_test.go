@@ -52,19 +52,17 @@ type testCodec struct{}
 
 type testMimetype struct {
 	name, problem string
-	mb            BuildMarshalFunc
+	mb            MarshalFunc
 }
 
 type testProblems struct{}
 
-func buildMarshalTest(_ *Context) MarshalFunc {
-	return func(v any) ([]byte, error) {
-		switch vv := v.(type) {
-		case error:
-			return nil, vv
-		default:
-			return nil, ErrUnsupportedSerialization()
-		}
+func marshalTest(_ *Context, v any) ([]byte, error) {
+	switch vv := v.(type) {
+	case error:
+		return nil, vv
+	default:
+		return nil, ErrUnsupportedSerialization()
 	}
 }
 
@@ -79,7 +77,7 @@ func (t *testMimetype) Name(p bool) string {
 	return t.name
 }
 
-func (t *testMimetype) MarshalBuilder() BuildMarshalFunc { return t.mb }
+func (t *testMimetype) MarshalFunc() MarshalFunc { return t.mb }
 
 func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
 	mime, c := header.ParseWithParam(h, "charset")
@@ -127,18 +125,18 @@ func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, err
 func (s *testCodec) Accept(h string) Accepter {
 	switch h {
 	case "application/json", "*/*":
-		return &testMimetype{name: h, problem: "application/problem+json", mb: func(*Context) MarshalFunc { return json.Marshal }}
+		return &testMimetype{name: h, problem: "application/problem+json", mb: func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }}
 	case "application/xml":
-		return &testMimetype{name: h, problem: "application/problem+xml", mb: func(*Context) MarshalFunc { return xml.Marshal }}
+		return &testMimetype{name: h, problem: "application/problem+xml", mb: func(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }}
 	case "application/test":
-		return &testMimetype{name: h, problem: "application/problem+test", mb: buildMarshalTest}
+		return &testMimetype{name: h, problem: "application/problem+test", mb: marshalTest}
 	case "nil":
 		return &testMimetype{name: h, problem: h, mb: nil}
 	default:
 		if h != "" {
 			return nil
 		}
-		return &testMimetype{name: h, problem: "application/problem+json", mb: func(*Context) MarshalFunc { return json.Marshal }}
+		return &testMimetype{name: h, problem: "application/problem+json", mb: func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }}
 	}
 }
 
