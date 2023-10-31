@@ -65,29 +65,54 @@ type Context struct {
 	logs Logs
 }
 
+// ContextBuilder 用于创建 [Context]
+type ContextBuilder struct {
+	s  Server
+	l  func(*Context) map[string]any
+	id string
+}
+
+// NewContextBuilder 声明 [ContextBuilder]
+//
+// requestIDKey 表示 http 报头中表示请求唯一 ID 的报头名称，一般为 x-request-id；
+// f 用于生成与当前 [Context] 关联日志的固定字段，如果为空，则返回一个带 x-request-id 的 map；
+func NewContextBuilder(s Server, requestIDKey string, f func(*Context) map[string]any) *ContextBuilder {
+	if s == nil {
+		panic("s 不能为空")
+	}
+
+	if requestIDKey == "" {
+		requestIDKey = header.RequestIDKey
+	}
+
+	if f == nil {
+		f = func(ctx *Context) map[string]any {
+			return map[string]any{
+				requestIDKey: ctx.ID(),
+			}
+		}
+	}
+
+	return &ContextBuilder{
+		s:  s,
+		l:  f,
+		id: requestIDKey,
+	}
+}
+
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
-func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.Route, requestIDKey string) *Context {
-	if requestIDKey == "" {
-		requestIDKey = header.RequestIDKey
-	}
-	id := r.Header.Get(requestIDKey)
-	if id == "" {
-		id = srv.UniqueID()
-	}
-	w.Header().Set(requestIDKey, id)
-	l := srv.Logs().With(map[string]any{
-		requestIDKey: id,
-	})
-
-	codec := srv.Codec()
+func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	id := r.Header.Get(b.id)
+	codec := b.s.Codec()
 
 	h := r.Header.Get(header.Accept)
 	mt := codec.Accept(h)
 	if mt == nil {
-		l.DEBUG().String(Phrase("not found serialization for %s", h).LocaleString(srv.LocalePrinter()))
+		b.s.Logs().DEBUG().With(b.id, id).
+			String(Phrase("not found serialization for %s", h).LocaleString(b.s.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -95,19 +120,20 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		l.DEBUG().String(Phrase("not found charset for %s", h).LocaleString(srv.LocalePrinter()))
+		b.s.Logs().DEBUG().With(b.id, id).
+			String(Phrase("not found charset for %s", h).LocaleString(b.s.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, l.DEBUG())
+	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.s.Logs().DEBUG().With(b.id, id))
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	tag := acceptLanguage(srv, r.Header.Get(header.AcceptLang))
+	tag := acceptLanguage(b.s, r.Header.Get(header.AcceptLang))
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
@@ -116,22 +142,30 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 		var err error
 		inputMimetype, inputCharset, err = codec.ContentType(h)
 		if err != nil {
-			l.DEBUG().Error(err)
+			b.s.Logs().DEBUG().With(b.id, id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
 	}
 
+	// 以上是获取构建 Context 的必要参数，
+	// 并未真正构建 Context，对于 id 为空也并未作任何处理，
+	// 此处开始才会构建 Context 对象，须确保 id 值不为空。
+	if id == "" {
+		id = b.s.UniqueID()
+	}
+	w.Header().Set(b.id, id)
+
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
-	ctx.server = srv
+	ctx.server = b.s
 	ctx.route = route
 	ctx.request = r
 	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
-	ctx.begin = srv.Now()
+	ctx.begin = b.s.Now()
 	ctx.queries = nil
 
 	// response
@@ -151,10 +185,11 @@ func NewContext(srv Server, w http.ResponseWriter, r *http.Request, route types.
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = srv.NewLocalePrinter(tag)
+	ctx.localePrinter = b.s.NewLocalePrinter(tag)
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
 
-	ctx.logs = l
+	// ctx.logs 最后一个初始化。
+	ctx.logs = b.s.Logs().With(b.l(ctx))
 
 	return ctx
 }

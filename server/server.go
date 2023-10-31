@@ -26,17 +26,17 @@ import (
 )
 
 type httpServer struct {
-	name         string
-	version      string
-	httpServer   *http.Server
-	vars         *sync.Map
-	cache        cache.Driver
-	uptime       time.Time
-	routers      *group.GroupOf[web.HandlerFunc]
-	idGenerator  IDGenerator
-	requestIDKey string
-	state        web.State
-	services     *services
+	name        string
+	version     string
+	httpServer  *http.Server
+	vars        *sync.Map
+	cache       cache.Driver
+	uptime      time.Time
+	routers     *group.GroupOf[web.HandlerFunc]
+	idGenerator IDGenerator
+	state       web.State
+	services    *services
+	ctxBuilder  *web.ContextBuilder
 
 	location *time.Location
 	catalog  *catalog.Builder
@@ -64,15 +64,14 @@ func New(name, version string, o *Options) (web.Server, error) {
 	}
 
 	srv := &httpServer{
-		name:         name,
-		version:      version,
-		httpServer:   o.HTTPServer,
-		vars:         &sync.Map{},
-		cache:        o.Cache,
-		uptime:       time.Now(),
-		idGenerator:  o.IDGenerator,
-		requestIDKey: o.RequestIDKey,
-		state:        web.Stopped,
+		name:        name,
+		version:     version,
+		httpServer:  o.HTTPServer,
+		vars:        &sync.Map{},
+		cache:       o.Cache,
+		uptime:      time.Now(),
+		idGenerator: o.IDGenerator,
+		state:       web.Stopped,
 
 		location: o.Location,
 		catalog:  o.Catalog,
@@ -87,6 +86,8 @@ func New(name, version string, o *Options) (web.Server, error) {
 		codec:    o.codec,
 		config:   o.Config,
 	}
+
+	srv.ctxBuilder = web.NewContextBuilder(srv, o.Context.RequestIDKey, o.Context.Logs)
 
 	srv.routers = group.NewOf(srv.call,
 		notFound,

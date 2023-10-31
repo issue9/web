@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server/servertest"
 )
 
 func TestMessage_append(t *testing.T) {

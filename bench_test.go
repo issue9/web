@@ -26,7 +26,7 @@ func BenchmarkNewContext(b *testing.B) {
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptCharset, "gbk")
 	for i := 0; i < b.N; i++ {
-		ctx := NewContext(s, w, r, nil, header.RequestIDKey)
+		ctx := s.NewContext(w, r)
 		ctx.Free()
 	}
 }

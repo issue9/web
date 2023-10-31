@@ -15,7 +15,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server/servertest"
 )
 
 func buildMiddleware(a *assert.Assertion, v string) web.Middleware {

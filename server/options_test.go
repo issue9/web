@@ -19,8 +19,10 @@ func TestSanitizeOptions(t *testing.T) {
 	a.Equal(o.Location, time.Local).
 		NotNil(o.logs).
 		NotNil(o.problems).
-		NotNil(o.IDGenerator).
-		Equal(o.RequestIDKey, RequestIDKey)
+		NotNil(o.IDGenerator)
+
+	ctx := o.Context
+	a.Equal(ctx.RequestIDKey, RequestIDKey).NotNil(ctx.Logs)
 }
 
 func TestNewPrinter(t *testing.T) {

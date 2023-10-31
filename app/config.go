@@ -137,15 +137,18 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 	}
 
 	opt := &server.Options{
-		Config:            conf.config,
-		Location:          conf.location,
-		Cache:             conf.cache,
-		HTTPServer:        conf.http,
-		Logs:              conf.logs,
-		Language:          conf.languageTag,
-		RoutersOptions:    conf.HTTP.routersOptions,
-		IDGenerator:       conf.idGenerator,
-		RequestIDKey:      conf.HTTP.RequestID,
+		Config:         conf.config,
+		Location:       conf.location,
+		Cache:          conf.cache,
+		HTTPServer:     conf.http,
+		Logs:           conf.logs,
+		Language:       conf.languageTag,
+		RoutersOptions: conf.HTTP.routersOptions,
+		IDGenerator:    conf.idGenerator,
+		Context: &server.Context{
+			RequestIDKey: conf.HTTP.RequestID,
+			Logs:         conf.Logs.ctxLogs,
+		},
 		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
@@ -174,12 +177,15 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 }
 
 func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
-	l, cleanup, err := conf.Logs.build()
+	if conf.Logs == nil {
+		conf.Logs = &logsConfig{}
+	}
+	err := conf.Logs.build()
 	if err != nil {
 		return err.AddFieldParent("logs")
 	}
-	conf.logs = l
-	conf.cleanup = cleanup
+	conf.logs = conf.Logs.logs
+	conf.cleanup = conf.Logs.cleanup
 
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)

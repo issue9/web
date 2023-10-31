@@ -245,7 +245,7 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return NewContext(s, w, r, nil, header.RequestIDKey)
+	return NewContextBuilder(s, header.RequestIDKey, nil).NewContext(w, r, nil)
 }
 
 func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {

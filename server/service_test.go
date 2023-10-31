@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server/servertest"
 )
 
 var _ web.Services = &services{}

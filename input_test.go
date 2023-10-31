@@ -36,17 +36,18 @@ func TestPaths(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	b := NewContextBuilder(s, header.RequestIDKey, nil)
 
 	t.Run("empty", func(t *testing.T) {
 		a := assert.New(t, false)
-		ctx := NewContext(s, w, r, types.NewContext(), header.RequestIDKey)
+		ctx := b.NewContext(w, r, types.NewContext())
 		ps := ctx.Paths(false)
 		a.Equal(ps.Int64("id1"), 0).
 			NotNil(ps.Problem("41110"))
 	})
 
 	t.Run("ID", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "i3", "str"), "")
+		ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "i3", "str"))
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.ID("i1"), 1).
@@ -62,7 +63,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("Int", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), "")
+		ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Int64("i1"), 1)
@@ -74,7 +75,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("Bool", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("b1", "true", "b2", "false", "str", "str"), header.RequestIDKey)
+		ctx := b.NewContext(w, r, newPathContext("b1", "true", "b2", "false", "str", "str"))
 		ps := ctx.Paths(false)
 
 		a.True(ps.Bool("b1"))
@@ -86,7 +87,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("String", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("s1", "str1", "s2", "str2"), header.RequestIDKey)
+		ctx := b.NewContext(w, r, newPathContext("s1", "str1", "s2", "str2"))
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.String("s1"), "str1")
@@ -99,7 +100,7 @@ func TestPaths(t *testing.T) {
 	})
 
 	t.Run("Float", func(*testing.T) {
-		ctx := NewContext(s, w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"), header.RequestIDKey)
+		ctx := b.NewContext(w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"))
 		ps := ctx.Paths(false)
 
 		a.Equal(ps.Float64("f1"), 1.1)
@@ -117,8 +118,9 @@ func TestContext_PathID(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	b := NewContextBuilder(s, header.RequestIDKey, nil)
 
-	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
+	ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 
 	i1, resp := ctx.PathID("i1", "41110")
 	a.Nil(resp).Equal(i1, 1)
@@ -132,8 +134,9 @@ func TestContext_PathInt64(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	b := NewContextBuilder(s, header.RequestIDKey, nil)
 
-	ctx := NewContext(s, w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"), header.RequestIDKey)
+	ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 
 	i1, resp := ctx.PathInt64("i1", "41110")
 	a.Nil(resp).Equal(i1, 1)

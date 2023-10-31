@@ -19,7 +19,7 @@ import (
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/logs"
-	"github.com/issue9/web/servertest"
+	"github.com/issue9/web/server/servertest"
 )
 
 var _ web.Server = &httpServer{}

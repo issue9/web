@@ -70,10 +70,8 @@ type (
 		// 路由选项
 		RoutersOptions []web.RouterOption
 
-		// 指定获取 x-request-id 内容的报头名
-		//
-		// 如果为空，则采用 [RequestIDKey] 作为默认值
-		RequestIDKey string
+		// 构建 [web.Context] 对象时的一此设置
+		Context *Context
 
 		// 可用的压缩类型
 		//
@@ -84,7 +82,8 @@ type (
 		//
 		// 默认为空。
 		Mimetypes []*codec.Mimetype
-		codec     web.Codec
+
+		codec web.Codec // 由 Compressions 和 Mimetypes 形成
 
 		// 默认的语言标签
 		//
@@ -102,7 +101,7 @@ type (
 		// 如果为空，则会被初始化成一个空对象。
 		Catalog *catalog.Builder
 
-		printer *message.Printer
+		printer *message.Printer // 由 Language 和 Catalog 形成
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
@@ -118,6 +117,18 @@ type (
 
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
+
+	Context struct {
+		// 指定获取 x-request-id 内容的报头名
+		//
+		// 如果为空，则采用 [RequestIDKey] 作为默认值
+		RequestIDKey string
+
+		// 生成与 [web.Context.Logs] 的固定字段
+		//
+		// 具体可参考 [web.NewContextBuilder] 的参数说明；
+		Logs func(*web.Context) map[string]any
+	}
 )
 
 func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
@@ -177,9 +188,10 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 	o.logs = l
 
-	if o.RequestIDKey == "" {
-		o.RequestIDKey = RequestIDKey
+	if o.Context == nil {
+		o.Context = &Context{}
 	}
+	o.Context.sanitize()
 
 	c, fe := codec.New("Mimetypes", "Compressions", o.Mimetypes, o.Compressions)
 	if err != nil {
@@ -190,6 +202,20 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	o.problems = newProblems(o.ProblemTypePrefix)
 
 	return o, nil
+}
+
+func (c *Context) sanitize() {
+	if c.RequestIDKey == "" {
+		c.RequestIDKey = RequestIDKey
+	}
+
+	if c.Logs == nil {
+		c.Logs = func(ctx *web.Context) map[string]any {
+			return map[string]any{
+				c.RequestIDKey: ctx.ID(),
+			}
+		}
+	}
 }
 
 func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {

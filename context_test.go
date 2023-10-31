@@ -39,7 +39,7 @@ func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Co
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
-	ctx := NewContext(s, httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), nil, header.RequestIDKey)
+	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil))
 	dur := 500 * time.Millisecond
 	begin := time.Now()
 
@@ -57,7 +57,7 @@ func TestNewContext(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
-		NewContext(s, w, r, nil, "")
+		s.NewContext(w, r)
 		a.NotEmpty(w.Header().Get(header.RequestIDKey))
 	})
 
@@ -66,7 +66,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.RequestIDKey, "111")
 
-		NewContext(s, w, r, nil, header.RequestIDKey)
+		s.NewContext(w, r)
 		a.Equal(w.Header().Get(header.RequestIDKey), "111")
 	})
 
@@ -75,7 +75,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.Accept, "111")
 
-		NewContext(s, w, r, nil, header.RequestIDKey)
+		s.NewContext(w, r)
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -84,7 +84,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.AcceptCharset, "111")
 
-		NewContext(s, w, r, nil, header.RequestIDKey)
+		s.NewContext(w, r)
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -93,7 +93,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.AcceptEncoding, "111")
 
-		NewContext(s, w, r, nil, header.RequestIDKey)
+		s.NewContext(w, r)
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -102,7 +102,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.ContentType, "111")
 
-		NewContext(s, w, r, nil, header.RequestIDKey)
+		s.NewContext(w, r)
 		a.Equal(w.Result().StatusCode, http.StatusUnsupportedMediaType)
 	})
 }
@@ -200,13 +200,13 @@ func TestContext_IsXHR(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	ctx := NewContext(s, w, r, nil, header.RequestIDKey)
+	ctx := s.NewContext(w, r)
 	a.False(ctx.IsXHR())
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set("X-Requested-With", "XMLHttpRequest")
-	ctx = NewContext(s, w, r, nil, header.RequestIDKey)
+	ctx = s.NewContext(w, r)
 	a.True(ctx.IsXHR())
 }
 

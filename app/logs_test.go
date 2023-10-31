@@ -15,17 +15,17 @@ func TestLogsConfig_build(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &logsConfig{}
-	o, c, err := conf.build()
-	a.NotError(err).NotNil(o).Length(c, 0).
-		Equal(o.Levels, logs.AllLevels()).
-		Empty(o.Created)
+	err := conf.build()
+	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
+		Equal(conf.logs.Levels, logs.AllLevels()).
+		Empty(conf.logs.Created)
 
 	conf = &logsConfig{Levels: []logs.Level{logs.Warn, logs.Error}, Created: logs.NanoLayout}
-	o, c, err = conf.build()
-	a.NotError(err).NotNil(o).Length(c, 0).
-		Equal(o.Levels, []logs.Level{logs.Warn, logs.Error}).
-		Equal(o.Created, logs.NanoLayout).
-		False(o.Location)
+	err = conf.build()
+	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
+		Equal(conf.logs.Levels, []logs.Level{logs.Warn, logs.Error}).
+		Equal(conf.logs.Created, logs.NanoLayout).
+		False(conf.logs.Location)
 }
 
 func TestLogsConfig_output(t *testing.T) {
@@ -48,12 +48,12 @@ func TestLogsConfig_output(t *testing.T) {
 			},
 		},
 	}
-	o, c, err := conf.build()
-	a.NotError(err).NotNil(o).Length(c, 1) // 文件有 cleanup 返回
-	l, err1 := logs.New(nil, o)
+	err := conf.build()
+	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 1) // 文件有 cleanup 返回
+	l, err1 := logs.New(nil, conf.logs)
 	a.NotError(err1).NotNil(l)
 	l.ERROR().Print("test")
-	a.NotError(c[0]())
+	a.NotError(conf.cleanup[0]())
 }
 
 func TestNewTermHandler(t *testing.T) {
