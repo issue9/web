@@ -131,7 +131,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		}
 	}
 
-	if ctx.status == 0 {
+	if ctx.status < http.StatusOK { // 1xx 可能还会改变状态码，比如 103
 		ctx.WriteHeader(http.StatusOK)
 	}
 	return ctx.writer.Write(bs)
@@ -141,7 +141,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 //
 // 如非必要，应该通过 [Context.Render] 输出。
 func (ctx *Context) WriteHeader(status int) {
-	if ctx.status > 99 && ctx.status != status {
+	if ctx.status >= http.StatusOK && ctx.status != status {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 

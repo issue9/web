@@ -113,6 +113,12 @@ func TestServer_Serve(t *testing.T) {
 		return nil
 	})
 
+	router.Get("/m2/103", func(ctx *web.Context) web.Responser {
+		ctx.Header().Set("h1", "v1")
+		ctx.WriteHeader(http.StatusEarlyHints)
+		return web.OK("123")
+	})
+
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
 
@@ -123,6 +129,8 @@ func TestServer_Serve(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
 
 	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
+
+	servertest.Get(a, "http://localhost:8080/m2/103").Do(nil).Status(http.StatusOK)
 
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 

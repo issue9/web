@@ -102,7 +102,7 @@ func TestContext_Render(t *testing.T) {
 		ctx.Render(http.StatusCreated, "456")
 	}, "已有状态码 200，再次设置无效 201")
 	ctx.Free()
-	a.Equal(w.Result().StatusCode, http.StatusOK)
+	a.Equal(w.Result().StatusCode, http.StatusOK).Equal(w.Body.String(), `123`)
 
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
 	w = httptest.NewRecorder()
@@ -153,18 +153,6 @@ func TestContext_Render(t *testing.T) {
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	ctx.Free()
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
-
-	// 103
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	ctx = srv.NewContext(w, r)
-	a.NotNil(ctx)
-	ctx.WriteHeader(http.StatusEarlyHints) // 之后可再输出
-	_, err = ctx.Write([]byte(`123`))
-	a.NotError(err)
-	ctx.Free()
-	a.Equal(w.Body.String(), "123")
 }
 
 func TestContext_Wrap(t *testing.T) {
