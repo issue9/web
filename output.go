@@ -120,6 +120,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		}
 
 		if !header.CharsetIsNop(ctx.outputCharset) {
+			ctx.Header().Add(header.Vary, header.ContentEncoding) // 只有在确定需要输出内容时才输出 Vary 报头
 			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
 			ctx.writer = w
 			ctx.OnExit(func(*Context, int) {

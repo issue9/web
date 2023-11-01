@@ -29,7 +29,7 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	server            Server
+	b                 *ContextBuilder
 	route             types.Route
 	request           *http.Request
 	outputCharsetName string
@@ -42,7 +42,7 @@ type Context struct {
 	writer         io.Writer
 	outputCompress CompressorWriterFunc
 	outputCharset  encoding.Encoding
-	status         int // http.ResponseWriter.WriteHeader 保存的副本
+	status         int // WriteHeader 保存的副本
 	wrote          bool
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
@@ -159,7 +159,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
-	ctx.server = b.s
+	ctx.b = b
 	ctx.route = route
 	ctx.request = r
 	ctx.outputCharsetName = outputCharsetName
@@ -178,7 +178,6 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if ctx.outputCompress != nil {
 		h := ctx.Header()
 		h.Set(header.ContentEncoding, outputCompressName)
-		h.Add(header.Vary, header.ContentEncoding)
 	}
 
 	ctx.outputMimetype = mt
@@ -282,7 +281,6 @@ func (ctx *Context) SetEncoding(enc string) {
 	if ctx.outputCompress != nil {
 		h := ctx.Header()
 		h.Set(header.ContentEncoding, name)
-		h.Add(header.Vary, header.ContentEncoding)
 	}
 }
 
@@ -360,4 +358,4 @@ func (ctx *Context) IsXHR() bool {
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 Server 实例
-func (ctx *Context) Server() Server { return ctx.server }
+func (ctx *Context) Server() Server { return ctx.b.s }

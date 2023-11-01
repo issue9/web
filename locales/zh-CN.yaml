@@ -36,6 +36,9 @@ messages:
     - key: invalid value
       message:
         msg: 无效的值
+    - key: not found
+      message:
+        msg: 未找到
     - key: not found charset for %s
       message:
         msg: 未找到符合报头 %s 的字符集
