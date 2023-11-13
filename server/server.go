@@ -87,7 +87,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 		config:   o.Config,
 	}
 
-	srv.ctxBuilder = web.NewContextBuilder(srv, o.Context.RequestIDKey, o.Context.Logs)
+	srv.ctxBuilder = web.NewContextBuilder(srv, o.Context.RequestIDKey)
 
 	srv.routers = group.NewOf(srv.call,
 		notFound,

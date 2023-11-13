@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v6"
-	"github.com/issue9/logs/v6/writers"
-	"github.com/issue9/logs/v6/writers/rotate"
+	"github.com/issue9/logs/v7"
+	"github.com/issue9/logs/v7/writers"
+	"github.com/issue9/logs/v7/writers/rotate"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web/locales"
@@ -28,10 +28,16 @@ const (
 
 // Options 初始化日志的选项
 type Options struct {
-	Handler  Handler
-	Location bool    // 是否带调用堆栈信息
-	Created  string  // 指定创建日志的时间格式，如果为空表示不需要输出时间。
-	Levels   []Level // 允许的日志通道
+	Handler Handler
+
+	// 是否带调用堆栈信息
+	Location bool
+
+	// 指定创建日志的时间格式，如果为空表示不需要输出时间。
+	Created string
+
+	// 允许的日志级别
+	Levels []Level
 
 	// 对于 [Logger.Error] 输入 [xerrors.Formatter] 类型时，
 	// 是否输出调用堆栈信息。
@@ -41,12 +47,17 @@ type Options struct {
 	//
 	// 如果为 true，则在 go1.21 之前会接管 log.Default() 的输出；
 	// go1.21 及之后的版本则接管 log/slog.Default() 的输出；
+	// 具体参考 [logs.WithStd]。
 	Std bool
 }
 
 func optionsSanitize(o *Options) (*Options, error) {
 	if o == nil {
 		o = &Options{}
+	}
+
+	if o.Handler == nil {
+		o.Handler = NewNopHandler()
 	}
 
 	for index, lv := range o.Levels {
@@ -59,9 +70,7 @@ func optionsSanitize(o *Options) (*Options, error) {
 	return o, nil
 }
 
-func AllLevels() []Level { return []Level{Info, Warn, Trace, Debug, Error, Fatal} }
-
-func NewNopHandler() Handler { return logs.NewNopHandler() }
+func AllLevels() []Level { return logs.AllLevels() }
 
 func NewTextHandler(w ...io.Writer) Handler { return logs.NewTextHandler(w...) }
 
@@ -73,6 +82,8 @@ func NewJSONHandler(w ...io.Writer) Handler { return logs.NewJSONHandler(w...) }
 func NewTermHandler(w io.Writer, colors map[Level]colors.Color) Handler {
 	return logs.NewTermHandler(w, colors)
 }
+
+func NewNopHandler() Handler { return logs.NewNopHandler() }
 
 // NewDispatchHandler 按不同的 [Level] 派发到不同的 [Handler] 对象
 func NewDispatchHandler(d map[Level]Handler) Handler { return logs.NewDispatchHandler(d) }

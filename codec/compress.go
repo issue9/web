@@ -37,7 +37,7 @@ func (e *codec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 	return nil, localeutil.Error("not found compress for %s", name)
 }
 
-func (e *codec) AcceptEncoding(contentType, h string, l logs.Logger) (c web.CompressorWriterFunc, name string, notAcceptable bool) {
+func (e *codec) AcceptEncoding(contentType, h string, l *logs.Logger) (c web.CompressorWriterFunc, name string, notAcceptable bool) {
 	if len(e.compressions) == 0 || !e.CanCompress() {
 		return
 	}

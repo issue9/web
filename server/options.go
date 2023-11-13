@@ -118,16 +118,12 @@ type (
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
 
+	// TODO 取消
 	Context struct {
 		// 指定获取 x-request-id 内容的报头名
 		//
 		// 如果为空，则采用 [RequestIDKey] 作为默认值
 		RequestIDKey string
-
-		// 生成与 [web.Context.Logs] 的固定字段
-		//
-		// 具体可参考 [web.NewContextBuilder] 的参数说明；
-		Logs func(*web.Context) map[string]any
 	}
 )
 
@@ -207,14 +203,6 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 func (c *Context) sanitize() {
 	if c.RequestIDKey == "" {
 		c.RequestIDKey = RequestIDKey
-	}
-
-	if c.Logs == nil {
-		c.Logs = func(ctx *web.Context) map[string]any {
-			return map[string]any{
-				c.RequestIDKey: ctx.ID(),
-			}
-		}
 	}
 }
 

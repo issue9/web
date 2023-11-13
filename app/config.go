@@ -147,7 +147,6 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 		IDGenerator:    conf.idGenerator,
 		Context: &server.Context{
 			RequestIDKey: conf.HTTP.RequestID,
-			Logs:         conf.Logs.ctxLogs,
 		},
 		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,

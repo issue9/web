@@ -61,8 +61,8 @@ func (m *Message) Free() { messagePool.Put(m) }
 //
 // l 用于记录运行过程的错误信息；
 // msg 用于接收从服务端返回的数据对象。
-// 从 msg 中取出的 [Message] 对象，在不再需要时可以调用 [Message.Destory] 回收；
-func OnMessage(ctx context.Context, l web.Logger, req *http.Request, c *http.Client, msg chan *Message) error {
+// 从 msg 中取出的 [Message] 对象，在不再需要时可以调用 [Message.Free] 回收；
+func OnMessage(ctx context.Context, l *web.Logger, req *http.Request, c *http.Client, msg chan *Message) error {
 	if c == nil {
 		c = &http.Client{}
 	}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 )
 
 const rfc7807PoolMaxParams = 30 // len(RFC7807.Params) 少于此值才会回收。
@@ -168,7 +167,7 @@ func (ctx *Context) Error(err error, id string) Problem {
 		}
 	}
 
-	ctx.Logs().NewRecord(logs.Error).DepthError(2, err)
+	ctx.Logs().ERROR().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
 	return ctx.Problem(id)
 }
 

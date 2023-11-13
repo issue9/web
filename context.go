@@ -68,15 +68,13 @@ type Context struct {
 // ContextBuilder 用于创建 [Context]
 type ContextBuilder struct {
 	s  Server
-	l  func(*Context) map[string]any
 	id string
 }
 
 // NewContextBuilder 声明 [ContextBuilder]
 //
 // requestIDKey 表示 http 报头中表示请求唯一 ID 的报头名称，一般为 x-request-id；
-// f 用于生成与当前 [Context] 关联日志的固定字段，如果为空，则返回一个带 x-request-id 的 map；
-func NewContextBuilder(s Server, requestIDKey string, f func(*Context) map[string]any) *ContextBuilder {
+func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
 	if s == nil {
 		panic("s 不能为空")
 	}
@@ -85,17 +83,8 @@ func NewContextBuilder(s Server, requestIDKey string, f func(*Context) map[strin
 		requestIDKey = header.RequestIDKey
 	}
 
-	if f == nil {
-		f = func(ctx *Context) map[string]any {
-			return map[string]any{
-				requestIDKey: ctx.ID(),
-			}
-		}
-	}
-
 	return &ContextBuilder{
 		s:  s,
-		l:  f,
 		id: requestIDKey,
 	}
 }
@@ -127,7 +116,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.s.Logs().DEBUG().With(b.id, id))
+	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.s.Logs().DEBUG().New(map[string]any{b.id: id}))
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
@@ -148,13 +137,14 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 	}
 
-	// 以上是获取构建 Context 的必要参数，
-	// 并未真正构建 Context，对于 id 为空也并未作任何处理，
-	// 此处开始才会构建 Context 对象，须确保 id 值不为空。
+	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
+	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
+	// 此处开始才会构建 Context 对象，才须确保 ID 不为空。
 	if id == "" {
 		id = b.s.UniqueID()
 	}
 	w.Header().Set(b.id, id)
+	r.Header.Set(b.id, id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
@@ -186,9 +176,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.languageTag = tag
 	ctx.localePrinter = b.s.NewLocalePrinter(tag)
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
-
-	// ctx.logs 最后一个初始化。
-	ctx.logs = b.s.Logs().With(b.l(ctx))
+	ctx.logs = b.s.Logs().New(map[string]any{b.id: id})
 
 	return ctx
 }

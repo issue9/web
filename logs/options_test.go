@@ -7,7 +7,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/config"
-	"github.com/issue9/logs/v6"
+	"github.com/issue9/logs/v7"
 )
 
 func TestOptionsSanitize(t *testing.T) {
@@ -15,7 +15,9 @@ func TestOptionsSanitize(t *testing.T) {
 
 	var o *Options
 	o, err := optionsSanitize(o)
-	a.NotError(err).NotNil(o)
+	a.NotError(err).
+		NotNil(o).
+		NotNil(o.Handler)
 
 	o = &Options{
 		Levels: []Level{logs.LevelDebug, logs.LevelError},

@@ -156,7 +156,7 @@ func (s *testCodec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, er
 	}
 }
 
-func (s *testCodec) AcceptEncoding(contentType, h string, l logs.Logger) (w CompressorWriterFunc, name string, notAcceptable bool) {
+func (s *testCodec) AcceptEncoding(contentType, h string, l *Logger) (w CompressorWriterFunc, name string, notAcceptable bool) {
 	switch h {
 	case "gzip":
 		return func(w io.Writer) (io.WriteCloser, error) {
@@ -245,7 +245,7 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return NewContextBuilder(s, header.RequestIDKey, nil).NewContext(w, r, nil)
+	return NewContextBuilder(s, header.RequestIDKey).NewContext(w, r, nil)
 }
 
 func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {

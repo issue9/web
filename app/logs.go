@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	xlogs "github.com/issue9/logs/v6"
+	xlogs "github.com/issue9/logs/v7"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web"
@@ -18,10 +18,6 @@ import (
 )
 
 var logHandlersFactory = map[string]LogsHandlerBuilder{}
-
-var contextLogsFactory = map[string]contextBuilder{}
-
-type contextBuilder = func(*web.Context) map[string]any
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
 type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error)
@@ -45,20 +41,11 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 [logs.NewNopHandler] 返回的对象。
+	// 为空表示 [xlogs.NewNopHandler] 返回的对象。
 	Handlers []*logHandlerConfig `xml:"writer" json:"writers" yaml:"writers"`
-
-	// 指定生成 [web.Context] 关联日志的方法
-	//
-	// 该值由 [RegisterContextLogs] 注册而来，
-	// 默认情况下支持以下值：
-	//  - default 默认值，和为空是相同的；
-	// 可以为空。
-	ContextLogs string `xml:"contextLogs,omitempty" json:"contextLogs,omitempty" yaml:"contextLogs,omitempty"`
 
 	logs    *logs.Options
 	cleanup []func() error
-	ctxLogs func(*web.Context) map[string]any
 }
 
 type logHandlerConfig struct {
@@ -114,14 +101,6 @@ func (conf *logsConfig) build() *web.FieldError {
 		conf.logs = &logs.Options{}
 	}
 
-	if cl, found := contextLogsFactory[conf.ContextLogs]; found {
-		conf.ctxLogs = cl
-	} else {
-		err := web.NewFieldError("ContextLogs", web.StringPhrase("not found"))
-		err.Value = conf.ContextLogs
-		return err
-	}
-
 	if len(conf.Levels) == 0 {
 		conf.Levels = logs.AllLevels()
 	}
@@ -145,7 +124,7 @@ func (conf *logsConfig) build() *web.FieldError {
 
 func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.FieldError) {
 	if len(conf.Handlers) == 0 {
-		return logs.NewNopHandler(), nil, nil
+		return xlogs.NewNopHandler(), nil, nil
 	}
 
 	cleanup := make([]func() error, 0, 10)
@@ -201,26 +180,10 @@ func RegisterLogsHandler(b LogsHandlerBuilder, name ...string) {
 	}
 }
 
-// RegisterContextLogs 注册生成 [web.Context.Logs] 的方法
-//
-// name 为缓存的名称，如果存在同名，则会覆盖。
-func RegisterContextLogs(f func(*web.Context) map[string]any, name ...string) {
-	if len(name) == 0 {
-		panic("参数 name 不能为空")
-	}
-
-	for _, n := range name {
-		contextLogsFactory[n] = f
-	}
-}
-
 func init() {
 	RegisterLogsHandler(newFileLogsHandler, "file")
 	RegisterLogsHandler(newTermLogsHandler, "term")
 	RegisterLogsHandler(newSMTPLogsHandler, "smtp")
-
-	RegisterContextLogs(nil, "default")
-	RegisterContextLogs(nil, "")
 }
 
 func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {

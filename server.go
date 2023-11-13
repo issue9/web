@@ -182,7 +182,7 @@ type Codec interface {
 	// 如果返回的 w 为空值表示不需要压缩。
 	// 当有多个符合时，按添加顺序拿第一个符合条件数据。
 	// l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
-	AcceptEncoding(contentType, header string, l Logger) (c CompressorWriterFunc, name string, notAcceptable bool)
+	AcceptEncoding(contentType, header string, l *Logger) (c CompressorWriterFunc, name string, notAcceptable bool)
 
 	// AcceptEncodingHeader 根据现有的压缩方法生成 Accept-Encoding 报头内容
 	AcceptEncodingHeader() string

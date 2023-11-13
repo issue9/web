@@ -21,8 +21,7 @@ func TestSanitizeOptions(t *testing.T) {
 		NotNil(o.problems).
 		NotNil(o.IDGenerator)
 
-	ctx := o.Context
-	a.Equal(ctx.RequestIDKey, RequestIDKey).NotNil(ctx.Logs)
+	a.Equal(o.Context.RequestIDKey, RequestIDKey)
 }
 
 func TestNewPrinter(t *testing.T) {
