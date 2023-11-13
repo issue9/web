@@ -13,9 +13,13 @@ import (
 	xunicode "golang.org/x/text/encoding/unicode"
 )
 
-const UTF8Name = "utf-8"
+const (
+	UTF8Name = "utf-8"
 
-const Identity = "identity"
+	Identity = "identity"
+
+	XHR = "xmlhttprequest"
+)
 
 // 一些报头的定义
 const (
@@ -35,7 +39,8 @@ const (
 	Vary        = "Vary"
 	Allow       = "Allow"
 
-	RequestIDKey = "X-Request-ID"
+	RequestIDKey   = "X-Request-ID"
+	RequestWithKey = "X-Requested-With"
 )
 
 // ParseWithParam 分析带参数的报头

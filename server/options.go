@@ -46,7 +46,8 @@ type (
 
 		// 缓存系统
 		//
-		// 默认值为内存类型。
+		// 内置的几种驱动实现位于 [github.com/issue9/web/cache/caches] 之下。
+		// 如果为空，采用 [caches.NewMemory] 作为默认值。
 		Cache cache.Driver
 
 		// 日志的相关设置

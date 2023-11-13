@@ -29,21 +29,21 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	b                 *ContextBuilder
-	route             types.Route
-	request           *http.Request
-	outputCharsetName string
-	exits             []func(*Context, int)
-	id                string
-	begin             time.Time
-	queries           *Queries
+	b       *ContextBuilder
+	route   types.Route
+	request *http.Request
+	exits   []func(*Context, int)
+	id      string
+	begin   time.Time
+	queries *Queries
 
-	originResponse http.ResponseWriter // 原始的 http.ResponseWriter
-	writer         io.Writer
-	outputCompress CompressorWriterFunc
-	outputCharset  encoding.Encoding
-	status         int // WriteHeader 保存的副本
-	wrote          bool
+	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
+	writer            io.Writer
+	outputCompress    CompressorWriterFunc
+	outputCharset     encoding.Encoding
+	outputCharsetName string
+	status            int // WriteHeader 保存的副本
+	wrote             bool
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
@@ -67,8 +67,8 @@ type Context struct {
 
 // ContextBuilder 用于创建 [Context]
 type ContextBuilder struct {
-	s  Server
-	id string
+	server       Server
+	requestIDKey string
 }
 
 // NewContextBuilder 声明 [ContextBuilder]
@@ -84,8 +84,8 @@ func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
 	}
 
 	return &ContextBuilder{
-		s:  s,
-		id: requestIDKey,
+		server:       s,
+		requestIDKey: requestIDKey,
 	}
 }
 
@@ -94,14 +94,14 @@ func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
 // 如果出错，则会向 w 输出状态码并返回 nil。
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	id := r.Header.Get(b.id)
-	codec := b.s.Codec()
+	id := r.Header.Get(b.requestIDKey)
+	codec := b.server.Codec()
 
 	h := r.Header.Get(header.Accept)
 	mt := codec.Accept(h)
 	if mt == nil {
-		b.s.Logs().DEBUG().With(b.id, id).
-			String(Phrase("not found serialization for %s", h).LocaleString(b.s.LocalePrinter()))
+		b.server.Logs().DEBUG().With(b.requestIDKey, id).
+			String(Phrase("not found serialization for %s", h).LocaleString(b.server.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -109,20 +109,20 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		b.s.Logs().DEBUG().With(b.id, id).
-			String(Phrase("not found charset for %s", h).LocaleString(b.s.LocalePrinter()))
+		b.server.Logs().DEBUG().With(b.requestIDKey, id).
+			String(Phrase("not found charset for %s", h).LocaleString(b.server.LocalePrinter()))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.s.Logs().DEBUG().New(map[string]any{b.id: id}))
+	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
 	if notAcceptable {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	tag := acceptLanguage(b.s, r.Header.Get(header.AcceptLang))
+	tag := acceptLanguage(b.server, r.Header.Get(header.AcceptLang))
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
@@ -131,7 +131,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		var err error
 		inputMimetype, inputCharset, err = codec.ContentType(h)
 		if err != nil {
-			b.s.Logs().DEBUG().With(b.id, id).Error(err)
+			b.server.Logs().DEBUG().With(b.requestIDKey, id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -141,10 +141,10 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
 	// 此处开始才会构建 Context 对象，才须确保 ID 不为空。
 	if id == "" {
-		id = b.s.UniqueID()
+		id = b.server.UniqueID()
 	}
-	w.Header().Set(b.id, id)
-	r.Header.Set(b.id, id)
+	w.Header().Set(b.requestIDKey, id)
+	r.Header.Set(b.requestIDKey, id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
@@ -152,10 +152,9 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.b = b
 	ctx.route = route
 	ctx.request = r
-	ctx.outputCharsetName = outputCharsetName
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
-	ctx.begin = b.s.Now()
+	ctx.begin = b.server.Now()
 	ctx.queries = nil
 
 	// response
@@ -163,6 +162,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.writer = w
 	ctx.outputCompress = outputCompress
 	ctx.outputCharset = outputCharset
+	ctx.outputCharsetName = outputCharsetName
 	ctx.status = 0
 	ctx.wrote = false
 	if ctx.outputCompress != nil {
@@ -174,9 +174,9 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = b.s.NewLocalePrinter(tag)
+	ctx.localePrinter = b.server.NewLocalePrinter(tag)
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
-	ctx.logs = b.s.Logs().New(map[string]any{b.id: id})
+	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
 
 	return ctx
 }
@@ -339,11 +339,11 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 func (ctx *Context) Logs() Logs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
-	return strings.ToLower(ctx.Request().Header.Get("X-Requested-With")) == "xmlhttprequest"
+	return strings.ToLower(ctx.Request().Header.Get(header.RequestWithKey)) == header.XHR
 }
 
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 Server 实例
-func (ctx *Context) Server() Server { return ctx.b.s }
+func (ctx *Context) Server() Server { return ctx.b.server }

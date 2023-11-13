@@ -41,7 +41,7 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 [xlogs.NewNopHandler] 返回的对象。
+	// 为空表示 [logs.NewNopHandler] 返回的对象。
 	Handlers []*logHandlerConfig `xml:"writer" json:"writers" yaml:"writers"`
 
 	logs    *logs.Options
@@ -124,7 +124,7 @@ func (conf *logsConfig) build() *web.FieldError {
 
 func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.FieldError) {
 	if len(conf.Handlers) == 0 {
-		return xlogs.NewNopHandler(), nil, nil
+		return logs.NewNopHandler(), nil, nil
 	}
 
 	cleanup := make([]func() error, 0, 10)
