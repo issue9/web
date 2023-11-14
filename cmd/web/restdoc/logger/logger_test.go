@@ -12,8 +12,6 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web/logs"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 func TestLogger(t *testing.T) {
@@ -25,7 +23,7 @@ func TestLogger(t *testing.T) {
 		Handler: logs.NewTextHandler(buf),
 	})
 	a.NotError(err).NotNil(ll)
-	l := New(ll, message.NewPrinter(language.SimplifiedChinese))
+	l := New(ll)
 	a.NotNil(l).Zero(l.Count())
 
 	e1 := &scanner.Error{Pos: token.Position{Filename: "f1.go"}, Msg: "e1"}

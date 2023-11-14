@@ -58,7 +58,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			panic(err)
 		}
 
-		return func(w io.Writer) error {
+		return func(io.Writer) error {
 			u, ext, err := GetMarshalByExt(*f)
 			if err != nil {
 				return err
@@ -88,10 +88,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Root:          dir,
 					Recursive:     *r,
 					SkipSubModule: *skip,
-					Log:           log.ERROR().String,
+					Log:           log.ERROR().LocaleString,
 					Funcs:         strings.Split(*funcs, ","),
 				}
-				lang, err := extract.Extract(ctx, p, opt)
+				lang, err := extract.Extract(ctx, opt)
 				if err != nil {
 					return err
 				}

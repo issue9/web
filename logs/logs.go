@@ -29,6 +29,7 @@ type (
 	Recorder = logs.Recorder
 	Logger   = logs.Logger
 	Buffer   = logs.Buffer
+	Attr     = logs.Attr
 
 	// Logs 日志系统接口
 	Logs interface {

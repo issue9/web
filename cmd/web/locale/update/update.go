@@ -37,7 +37,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		src := fs.String("src", "", srcUsage.LocaleString(p))
 		dest := fs.String("dest", "", destUsage.LocaleString(p))
 
-		return func(w io.Writer) error {
+		return func(io.Writer) error {
 			log, err := logs.New(nil, &logs.Options{
 				Levels:  logs.AllLevels(),
 				Handler: logs.NewTermHandler(os.Stdout, nil),
@@ -74,7 +74,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					return err
 				}
 
-				srcMsg.MergeTo(p, log.WARN().String, []*message.Language{dest})
+				srcMsg.MergeTo(log.WARN().LocaleString, []*message.Language{dest})
 
 				m, _, err := locale.GetMarshalByExt(ext)
 				if err != nil {

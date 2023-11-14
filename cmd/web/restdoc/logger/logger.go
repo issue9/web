@@ -10,22 +10,15 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/text/message"
 )
 
 type Logger struct {
 	logs   logs.Logs
-	p      *message.Printer
 	count  int
 	hasErr bool
 }
 
-func New(l logs.Logs, p *message.Printer) *Logger {
-	return &Logger{
-		logs: l,
-		p:    p,
-	}
-}
+func New(l logs.Logs) *Logger { return &Logger{logs: l} }
 
 // Count 接收到的日志数量
 func (l *Logger) Count() int { return l.count }
@@ -82,10 +75,9 @@ func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
 		l.hasErr = true
 	}
 
-	mm := m.LocaleString(l.p)
 	if filename != "" {
-		mm = web.Phrase("%s at %s:%d", mm, filename, line).LocaleString(l.p)
+		m = web.Phrase("%s at %s:%d", m, filename, line)
 	}
 
-	l.logs.Logger(lv).String(mm)
+	l.logs.Logger(lv).LocaleString(m)
 }

@@ -8,8 +8,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web/logs"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 )
@@ -19,6 +17,28 @@ type Tester struct {
 	Records map[logs.Level][]string
 }
 
+type handler struct {
+	l logs.Level
+	t *Tester
+}
+
+func (h *handler) Handle(r *logs.Record) {
+	b := logs.NewBuffer(true)
+	defer b.Free()
+	b.AppendFunc(r.AppendMessage)
+	s := string(b.Bytes())
+	h.t.Records[h.l] = append(h.t.Records[h.l], s)
+	os.Stderr.Write([]byte(s + "\n"))
+}
+
+func (h *handler) New(d bool, l logs.Level, attrs []logs.Attr) logs.Handler {
+	return &handler{
+		t: h.t,
+		l: l,
+	}
+}
+
+// New 声明用于测试的日志对象
 func New(a *assert.Assertion) *Tester {
 	a.TB().Helper()
 
@@ -27,19 +47,12 @@ func New(a *assert.Assertion) *Tester {
 	}
 
 	ll, err := logs.New(nil, &logs.Options{
-		Levels: logs.AllLevels(),
-		Handler: logs.HandlerFunc(func(r *logs.Record) {
-			b := logs.NewBuffer(true)
-			defer b.Free()
-			b.AppendFunc(r.AppendMessage)
-			s := string(b.Bytes())
-			t.Records[r.Level] = append(t.Records[r.Level], s)
-			os.Stderr.Write([]byte(s + "\n"))
-		}),
+		Levels:  logs.AllLevels(),
+		Handler: &handler{t: t},
 	})
 	a.NotError(err).NotNil(ll)
 
-	t.Logger = logger.New(ll, message.NewPrinter(language.SimplifiedChinese))
+	t.Logger = logger.New(ll)
 
 	return t
 }

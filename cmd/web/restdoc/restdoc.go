@@ -58,7 +58,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				tags = strings.Split(*t, ",")
 			}
 
-			l := logger.New(ls, p)
+			l := logger.New(ls)
 			dp := parser.New(l, *urlPrefix, tags)
 			for _, dir := range fs.Args() {
 				dp.AddDir(ctx, dir, *r)
