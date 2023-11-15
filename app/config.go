@@ -12,7 +12,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
@@ -66,7 +65,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty"`
-	compressors []*codec.Compression
+	compressors []*web.Compression
 
 	// 指定配置文件的序列化
 	//
@@ -85,7 +84,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*codec.Mimetype
+	mimetypes []*web.Mimetype
 
 	// 唯一 ID 生成器
 	//

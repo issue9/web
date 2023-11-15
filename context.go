@@ -39,7 +39,7 @@ type Context struct {
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
-	outputCompress    CompressorWriterFunc
+	outputCompress    compressorWriterFunc
 	outputCharset     encoding.Encoding
 	outputCharsetName string
 	status            int // WriteHeader 保存的副本
@@ -47,7 +47,7 @@ type Context struct {
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype Accepter
+	outputMimetype *Mimetype
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc // 可以为空
@@ -69,12 +69,13 @@ type Context struct {
 type ContextBuilder struct {
 	server       Server
 	requestIDKey string
+	codec        *Codec
 }
 
 // NewContextBuilder 声明 [ContextBuilder]
 //
 // requestIDKey 表示 http 报头中表示请求唯一 ID 的报头名称，一般为 x-request-id；
-func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
+func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *ContextBuilder {
 	if s == nil {
 		panic("s 不能为空")
 	}
@@ -86,6 +87,7 @@ func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
 	return &ContextBuilder{
 		server:       s,
 		requestIDKey: requestIDKey,
+		codec:        codec,
 	}
 }
 
@@ -95,13 +97,11 @@ func NewContextBuilder(s Server, requestIDKey string) *ContextBuilder {
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	id := r.Header.Get(b.requestIDKey)
-	codec := b.server.Codec()
 
 	h := r.Header.Get(header.Accept)
-	mt := codec.Accept(h)
+	mt := b.codec.accept(h)
 	if mt == nil {
-		b.server.Logs().DEBUG().With(b.requestIDKey, id).
-			String(Phrase("not found serialization for %s", h).LocaleString(b.server.LocalePrinter()))
+		b.server.Logs().DEBUG().With(b.requestIDKey, id).LocaleString(Phrase("not found serialization for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -109,17 +109,21 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		b.server.Logs().DEBUG().With(b.requestIDKey, id).
-			String(Phrase("not found charset for %s", h).LocaleString(b.server.LocalePrinter()))
+		b.server.Logs().DEBUG().With(b.requestIDKey, id).LocaleString(Phrase("not found charset for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
-	h = r.Header.Get(header.AcceptEncoding)
-	outputCompress, outputCompressName, notAcceptable := codec.AcceptEncoding(mt.Name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
-	if notAcceptable {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return nil
+	var outputCompress compressorWriterFunc
+	var outputCompressName string
+	if b.server.CanCompress() {
+		h = r.Header.Get(header.AcceptEncoding)
+		var notAcceptable bool
+		outputCompress, outputCompressName, notAcceptable = b.codec.acceptEncoding(mt.name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
+		if notAcceptable {
+			w.WriteHeader(http.StatusNotAcceptable)
+			return nil
+		}
 	}
 
 	tag := acceptLanguage(b.server, r.Header.Get(header.AcceptLang))
@@ -129,7 +133,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = codec.ContentType(h)
+		inputMimetype, inputCharset, err = b.codec.contentType(h)
 		if err != nil {
 			b.server.Logs().DEBUG().With(b.requestIDKey, id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -234,7 +238,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.Server().Codec().Accept(mimetype)
+	item := ctx.b.codec.accept(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -248,7 +252,7 @@ func (ctx *Context) Mimetype(problem bool) string {
 	if ctx.outputMimetype == nil {
 		return ""
 	}
-	return ctx.outputMimetype.Name(problem)
+	return ctx.outputMimetype.name(problem)
 }
 
 // SetEncoding 设置输出的压缩编码
@@ -260,7 +264,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, name, notAcceptable := ctx.Server().Codec().AcceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
+	outputEncoding, name, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

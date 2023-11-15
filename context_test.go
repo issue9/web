@@ -91,7 +91,7 @@ func TestNewContext(t *testing.T) {
 	t.Run("accept-encoding", func(*testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.AcceptEncoding, "111")
+		r.Header.Set(header.AcceptEncoding, "*;q=0") // *;q=0
 
 		s.NewContext(w, r)
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)

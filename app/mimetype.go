@@ -8,7 +8,6 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/mimetype/form"
 	"github.com/issue9/web/codec/mimetype/html"
 	"github.com/issue9/web/codec/mimetype/json"
@@ -56,14 +55,14 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 		return err
 	}
 
-	ms := make([]*codec.Mimetype, 0, len(conf.Mimetypes))
+	ms := make([]*web.Mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
 			return web.NewFieldError("["+strconv.Itoa(index)+"].target", web.NewLocaleError("%s not found", item.Target))
 		}
 
-		ms = append(ms, &codec.Mimetype{
+		ms = append(ms, &web.Mimetype{
 			Marshal:   m.marshal,
 			Unmarshal: m.unmarshal,
 			Name:      item.Type,

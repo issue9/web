@@ -47,9 +47,10 @@ type httpServer struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems *problems
-	codec    web.Codec
-	config   *config.Config
+	problems        *problems
+	codec           *web.Codec
+	config          *config.Config
+	disableCompress bool
 }
 
 // New 新建 http 服务
@@ -87,7 +88,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 		config:   o.Config,
 	}
 
-	srv.ctxBuilder = web.NewContextBuilder(srv, o.Context.RequestIDKey)
+	srv.ctxBuilder = web.NewContextBuilder(srv, o.codec, o.Context.RequestIDKey)
 
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -198,8 +199,10 @@ func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
 	return locale.Load(srv.Config().Serializer(), srv.Catalog(), glob, fsys...)
 }
 
-func (srv *httpServer) Codec() web.Codec { return srv.codec }
-
 func (srv *httpServer) NewClient(client *http.Client, selector web.Selector, marshalName string, marshal func(any) ([]byte, error)) *web.Client {
-	return web.NewClient(client, srv.Codec(), selector, marshalName, marshal)
+	return web.NewClient(client, srv.codec, selector, marshalName, marshal)
 }
+
+func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
+
+func (srv *httpServer) SetCompress(enable bool) { srv.disableCompress = !enable }

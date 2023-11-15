@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
@@ -77,14 +76,14 @@ type (
 		// 可用的压缩类型
 		//
 		// 默认为空。表示不需要该功能。
-		Compressions []*codec.Compression
+		Compressions []*web.Compression
 
 		// 指定可用的 mimetype
 		//
 		// 默认为空。
-		Mimetypes []*codec.Mimetype
+		Mimetypes []*web.Mimetype
 
-		codec web.Codec // 由 Compressions 和 Mimetypes 形成
+		codec *web.Codec // 由 Compressions 和 Mimetypes 形成
 
 		// 默认的语言标签
 		//
@@ -190,7 +189,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 	o.Context.sanitize()
 
-	c, fe := codec.New("Mimetypes", "Compressions", o.Mimetypes, o.Compressions)
+	c, fe := web.NewCodec("Mimetypes", "Compressions", o.Mimetypes, o.Compressions)
 	if err != nil {
 		return nil, fe
 	}

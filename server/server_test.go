@@ -49,9 +49,9 @@ func TestNewServer(t *testing.T) {
 	a.True(ok).
 		NotNil(d).
 		NotNil(d.Driver())
-	a.True(srv.Codec().CanCompress())
-	srv.Codec().SetCompress(false)
-	a.False(srv.Codec().CanCompress())
+	a.True(srv.CanCompress())
+	srv.SetCompress(false)
+	a.False(srv.CanCompress())
 }
 
 func newTestServer(a *assert.Assertion, o *Options) *httpServer {
@@ -70,7 +70,7 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 		o.Compressions = codec.DefaultCompressions()
 	}
 	if o.Mimetypes == nil {
-		o.Mimetypes = []*codec.Mimetype{
+		o.Mimetypes = []*web.Mimetype{
 			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
 			{Name: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
 			{Name: "nil", Marshal: nil, Unmarshal: nil, Problem: ""},

@@ -36,7 +36,7 @@ type SelectorFunc func() string
 // NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
 type Client struct {
 	client   *http.Client
-	codec    Codec
+	codec    *Codec
 	selector Selector
 
 	marshal     func(any) ([]byte, error)
@@ -96,7 +96,7 @@ func SelectorRewrite(s Selector, l Logger) func(*httputil.ProxyRequest) {
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
 // marshalName 和 marshal 表示编码的名称和方法；
-func NewClient(client *http.Client, codec Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client {
+func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
@@ -163,7 +163,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	reader, err = c.codec.ContentEncoding(encName, reader)
+	reader, err = c.codec.contentEncoding(encName, reader)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if inputMimetype, inputCharset, err = c.codec.ContentType(h); err != nil {
+		if inputMimetype, inputCharset, err = c.codec.contentType(h); err != nil {
 			return err
 		}
 
@@ -214,8 +214,8 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		return nil, err
 	}
 	r.Header.Set(header.ContentType, header.BuildContentType(c.marshalName, header.UTF8Name))
-	r.Header.Set(header.Accept, c.codec.AcceptHeader())
-	r.Header.Set(header.AcceptEncoding, c.codec.AcceptEncodingHeader())
+	r.Header.Set(header.Accept, c.codec.acceptHeader)
+	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
 
 	return r, nil
 }

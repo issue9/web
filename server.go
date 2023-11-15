@@ -4,14 +4,12 @@ package web
 
 import (
 	"context"
-	"io"
 	"io/fs"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/issue9/config"
-	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -118,11 +116,18 @@ type Server interface {
 	// NewClient 基于当前对象的 [Server.Codec] 初始化 [Client]
 	NewClient(client *http.Client, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client
 
+	// SetCompress 设置压缩功能
+	//
+	// 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
+	//
+	// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
+	SetCompress(enable bool)
+
+	// CanCompress 当前是否拥有压缩功能
+	CanCompress() bool
+
 	// Problems Problem 管理
 	Problems() Problems
-
-	// Codec 编码解码的接口
-	Codec() Codec
 
 	// Services 服务管理接口
 	Services() Services
@@ -159,57 +164,6 @@ type LocaleProblem struct {
 	ID            string
 	Title, Detail LocaleStringer
 }
-
-// Codec 编码解码的接口
-type Codec interface {
-	// ContentType 根据客户端的 Content-Type 报头返回相应的解码方法
-	ContentType(string) (UnmarshalFunc, encoding.Encoding, error)
-
-	// Accept 根据客户端的 Accept 提供相应的编码方法
-	Accept(string) Accepter
-
-	// AcceptHeader 根据现有的编码生成 Accept 报头内容
-	AcceptHeader() string
-
-	// ContentEncoding 根据客户端的 Content-Encoding 报头对 r 进行包装
-	//
-	// name 编码名称，即 Content-Encoding 报头内容；
-	// r 为未解码的内容；
-	ContentEncoding(name string, r io.Reader) (io.ReadCloser, error)
-
-	// AcceptEncoding 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
-	//
-	// 如果返回的 w 为空值表示不需要压缩。
-	// 当有多个符合时，按添加顺序拿第一个符合条件数据。
-	// l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
-	AcceptEncoding(contentType, header string, l *Logger) (c CompressorWriterFunc, name string, notAcceptable bool)
-
-	// AcceptEncodingHeader 根据现有的压缩方法生成 Accept-Encoding 报头内容
-	AcceptEncodingHeader() string
-
-	// SetCompress 设置压缩功能
-	//
-	// 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
-	//
-	// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
-	SetCompress(enable bool)
-
-	// CanCompress 当前是否拥有压缩功能
-	CanCompress() bool
-}
-
-// Accepter 根据 Accept 报头生成的编码对象
-type Accepter interface {
-	// Name 该编码的名称
-	Name(problem bool) string
-
-	// MarshalFunc 返回对应的 [MarshalFunc]
-	//
-	// 可以返回空值
-	MarshalFunc() MarshalFunc
-}
-
-type CompressorWriterFunc = func(io.Writer) (io.WriteCloser, error)
 
 // Services 服务管理接口
 type Services interface {

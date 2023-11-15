@@ -11,7 +11,6 @@ import (
 	"github.com/andybalholm/brotli"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/compressor"
 )
 
@@ -47,7 +46,7 @@ type compressConfig struct {
 }
 
 func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
-	conf.compressors = make([]*codec.Compression, 0, len(conf.Compressors))
+	conf.compressors = make([]*web.Compression, 0, len(conf.Compressors))
 	for index, e := range conf.Compressors {
 		enc, found := compressorFactory[e.ID]
 		if !found {
@@ -55,7 +54,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 			return web.NewFieldError(field, web.NewLocaleError("%s not found", e.ID))
 		}
 
-		conf.compressors = append(conf.compressors, &codec.Compression{
+		conf.compressors = append(conf.compressors, &web.Compression{
 			Compressor: enc.c,
 			Types:      e.Types,
 		})

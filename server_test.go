@@ -4,13 +4,7 @@ package web
 
 import (
 	"bytes"
-	"compress/flate"
-	"compress/gzip"
 	"context"
-	"encoding/json"
-	"encoding/xml"
-	"fmt"
-	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -23,8 +17,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/unique/v2"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -36,146 +28,20 @@ import (
 )
 
 type testServer struct {
-	a        *assert.Assertion
-	language language.Tag
-	logs     logs.Logs
-	logBuf   *bytes.Buffer
-	catalog  *catalog.Builder
-	unique   *unique.Unique
-	cache    cache.Driver
-	routers  *group.GroupOf[HandlerFunc]
-	printer  *localeutil.Printer
-	codec    *testCodec
-}
-
-type testCodec struct{}
-
-type testMimetype struct {
-	name, problem string
-	mb            MarshalFunc
+	a               *assert.Assertion
+	language        language.Tag
+	logs            logs.Logs
+	logBuf          *bytes.Buffer
+	catalog         *catalog.Builder
+	unique          *unique.Unique
+	cache           cache.Driver
+	routers         *group.GroupOf[HandlerFunc]
+	printer         *localeutil.Printer
+	codec           *Codec
+	disableCompress bool
 }
 
 type testProblems struct{}
-
-func marshalTest(_ *Context, v any) ([]byte, error) {
-	switch vv := v.(type) {
-	case error:
-		return nil, vv
-	default:
-		return nil, ErrUnsupportedSerialization()
-	}
-}
-
-func unmarshalTest(r io.Reader, v any) error {
-	return ErrUnsupportedSerialization()
-}
-
-func (t *testMimetype) Name(p bool) string {
-	if p {
-		return t.problem
-	}
-	return t.name
-}
-
-func (t *testMimetype) MarshalFunc() MarshalFunc { return t.mb }
-
-func (s *testCodec) ContentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mime, c := header.ParseWithParam(h, "charset")
-	var cc encoding.Encoding
-	var err error
-	if c == "" {
-		cc = encoding.Nop
-	} else {
-		cc, err = htmlindex.Get(c)
-	}
-
-	switch mime {
-	case "application/json":
-		return func(r io.Reader, v any) error {
-			if r == nil {
-				return nil
-			}
-			d := json.NewDecoder(r)
-			return d.Decode(v)
-		}, cc, err
-	case "application/xml":
-		return func(r io.Reader, v any) error {
-			if r == nil {
-				return nil
-			}
-			d := xml.NewDecoder(r)
-			return d.Decode(v)
-		}, cc, err
-	case "application/test":
-		return unmarshalTest, nil, nil
-	default:
-		if h != "" {
-			return nil, nil, ErrUnsupportedSerialization()
-		}
-		return func(r io.Reader, v any) error {
-			if r == nil {
-				return nil
-			}
-			d := json.NewDecoder(r)
-			return d.Decode(v)
-		}, cc, err
-	}
-}
-
-func (s *testCodec) Accept(h string) Accepter {
-	switch h {
-	case "application/json", "*/*":
-		return &testMimetype{name: h, problem: "application/problem+json", mb: func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }}
-	case "application/xml":
-		return &testMimetype{name: h, problem: "application/problem+xml", mb: func(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }}
-	case "application/test":
-		return &testMimetype{name: h, problem: "application/problem+test", mb: marshalTest}
-	case "nil":
-		return &testMimetype{name: h, problem: h, mb: nil}
-	default:
-		if h != "" {
-			return nil
-		}
-		return &testMimetype{name: h, problem: "application/problem+json", mb: func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }}
-	}
-}
-
-func (s *testCodec) AcceptHeader() string { return "application/json,application/xml" }
-
-func (s *testCodec) ContentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
-	switch name {
-	case "gzip":
-		return gzip.NewReader(r)
-	case "deflate":
-		return flate.NewReader(r), nil
-	default:
-		if name != "" {
-			return nil, fmt.Errorf("不支持的压缩方法 %s", name)
-		}
-		return io.NopCloser(r), nil
-	}
-}
-
-func (s *testCodec) AcceptEncoding(contentType, h string, l *Logger) (w CompressorWriterFunc, name string, notAcceptable bool) {
-	switch h {
-	case "gzip":
-		return func(w io.Writer) (io.WriteCloser, error) {
-			return gzip.NewWriter(w), nil
-		}, "gzip", false
-	case "deflate":
-		return func(w io.Writer) (io.WriteCloser, error) {
-			return flate.NewWriter(w, 8)
-		}, "deflate", false
-	default:
-		return nil, "", h != ""
-	}
-}
-
-func (s *testCodec) AcceptEncodingHeader() string { return "gzip,deflate" }
-
-func (s *testCodec) SetCompress(enable bool) { panic("未实现") }
-
-func (s *testCodec) CanCompress() bool { panic("未实现") }
 
 func newTestServer(a *assert.Assertion) *testServer {
 	c := catalog.NewBuilder()
@@ -209,6 +75,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 		unique:   u,
 		cache:    cc,
 		printer:  p,
+		codec:    newCodec(a),
 	}
 
 	return srv
@@ -245,7 +112,7 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return NewContextBuilder(s, header.RequestIDKey).NewContext(w, r, nil)
+	return NewContextBuilder(s, s.codec, header.RequestIDKey).NewContext(w, r, nil)
 }
 
 func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {
@@ -282,6 +149,10 @@ func (s *testServer) Vars() *sync.Map { panic("未实现") }
 
 func (s *testServer) Version() string { return "1.0.0" }
 
+func (s *testServer) CanCompress() bool { return !s.disableCompress }
+
+func (s *testServer) SetCompress(e bool) { s.disableCompress = !e }
+
 func (s *testServer) Problems() Problems { return &testProblems{} }
 
 func (s *testProblems) Init(pp *RFC7807, id string, p *message.Printer) {
@@ -299,5 +170,3 @@ func (s *testProblems) Visit(func(string, int, LocaleStringer, LocaleStringer)) 
 func (s *testProblems) Prefix() string { return "" }
 
 func (s *testServer) Services() Services { panic("未实现") }
-
-func (s *testServer) Codec() Codec { return s.codec }
