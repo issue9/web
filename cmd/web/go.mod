@@ -30,7 +30,7 @@ require (
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/logs/v7 v7.1.0 // indirect
 	github.com/issue9/mux/v7 v7.3.2 // indirect
-	github.com/issue9/scheduled v0.15.0 // indirect
+	github.com/issue9/scheduled v0.15.1 // indirect
 	github.com/issue9/sliceutil v0.15.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

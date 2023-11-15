@@ -38,7 +38,7 @@ type FilterContext struct {
 //	                                               |---[Validator]
 //
 // 调用者可以提前声明 [FilterFuncOf] 实例，在需要时调用 [FilterFuncOf] 实例，
-// 生成一个类型无关的方法 [FilterFunc] 传递给 [web.FilterContext]。
+// 生成一个类型无关的方法 [FilterFunc] 传递给 [FilterContext]。
 // 这样可以绕过 Go 不支持泛型方法的尴尬。
 //
 // Sanitize 表示对数据的修正，其函数原型为：func(*T)

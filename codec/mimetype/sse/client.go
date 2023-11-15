@@ -67,8 +67,8 @@ func OnMessage(ctx context.Context, l *web.Logger, req *http.Request, c *http.Cl
 		c = &http.Client{}
 	}
 
-	req.Header.Set("Cache-Control", "no-cache")
-	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set(header.CacheControl, header.NoCache)
+	req.Header.Set(header.Connection, header.KeepAlive)
 	req.Header.Set(header.Accept, Mimetype)
 
 	resp, err := c.Do(req)

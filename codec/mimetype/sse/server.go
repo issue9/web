@@ -70,7 +70,7 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 		sources: &sync.Map{},
 	}
 
-	s.Services().Add(web.StringPhrase("SSE server"), web.ServiceFunc(srv.serve))
+	s.Services().AddFunc(web.StringPhrase("SSE server"), srv.serve)
 	if keepAlive > 0 {
 		s.Services().AddTicker(web.StringPhrase("SSE keep alive cron"), srv.keepAlive, keepAlive, false, false)
 	}
@@ -152,8 +152,8 @@ func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()
 func (s *Source) connect(ctx *web.Context) {
 	ctx.Header().Set(header.ContentType, header.BuildContentType(Mimetype, header.UTF8Name))
 	ctx.Header().Set(header.ContentLength, "0")
-	ctx.Header().Set("Cache-Control", "no-cache")
-	ctx.Header().Set("Connection", "keep-alive")
+	ctx.Header().Set(header.CacheControl, header.NoCache)
+	ctx.Header().Set(header.Connection, header.KeepAlive)
 	ctx.WriteHeader(http.StatusOK) // 根据标准，就是 200。
 
 	rc := http.NewResponseController(ctx)

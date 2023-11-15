@@ -117,7 +117,7 @@ func (p *RFC7807) Apply(ctx *Context) Problem {
 }
 
 func (p *RFC7807) WithParam(name, reason string) Problem {
-	if _, found := sliceutil.At(p.Params, func(pp RFC7807Param, _ int) bool { return pp.Name == name }); found {
+	if sliceutil.Exists(p.Params, func(pp RFC7807Param, _ int) bool { return pp.Name == name }) {
 		panic("已经存在")
 	}
 	p.Params = append(p.Params, RFC7807Param{Name: name, Reason: reason})

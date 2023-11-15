@@ -13,15 +13,16 @@ import (
 	xunicode "golang.org/x/text/encoding/unicode"
 )
 
+// 一些常用的报头值
 const (
-	UTF8Name = "utf-8"
-
-	Identity = "identity"
-
-	XHR = "xmlhttprequest"
+	UTF8Name  = "utf-8"
+	Identity  = "identity"
+	XHR       = "xmlhttprequest"
+	KeepAlive = "keep-alive"
+	NoCache   = "no-cache"
 )
 
-// 一些报头的定义
+// 一些报头名的定义
 const (
 	ContentType     = "Content-Type"
 	ContentLang     = "Content-Language"
@@ -32,6 +33,9 @@ const (
 	AcceptLang     = "Accept-Language"
 	AcceptEncoding = "Accept-Encoding"
 	AcceptCharset  = "Accept-Charset"
+
+	Connection   = "Connection"
+	CacheControl = "Cache-Control"
 
 	Location    = "Location"
 	ETag        = "ETag"
