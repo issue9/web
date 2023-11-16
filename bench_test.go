@@ -5,16 +5,13 @@ package web
 import (
 	"bytes"
 	"compress/flate"
-	"compress/lzw"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/testdata"
 )
@@ -255,7 +252,7 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 		a := assert.New(b, false)
 
 		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
 		})
 		a.NotError(err).NotNil(c)
 
@@ -270,11 +267,11 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 		a := assert.New(b, false)
 
 		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
-			{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
-			{Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
-			{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
-			{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
+			{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
+			{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
+			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
 		})
 		a.NotError(err).NotNil(c)
 
@@ -291,12 +288,12 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 		a := assert.New(b, false)
 
 		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
 		})
 		a.NotError(err).NotNil(c)
 
 		for i := 0; i < b.N; i++ {
-			_, _, na := c.acceptEncoding("application/json", "zstd", nil)
+			_, na := c.acceptEncoding("application/json", "zstd", nil)
 			a.False(na)
 		}
 	})
@@ -305,16 +302,16 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 		a := assert.New(b, false)
 
 		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
-			{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
-			{Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
-			{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
-			{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
+			{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
+			{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
+			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
+			{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
 		})
 		a.NotError(err).NotNil(c)
 
 		for i := 0; i < b.N; i++ {
-			_, _, na := c.acceptEncoding("text/plain", "compress", nil)
+			_, na := c.acceptEncoding("text/plain", "compress", nil)
 			a.False(na)
 		}
 	})
@@ -324,11 +321,11 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 	a := assert.New(b, false)
 
 	cc, err := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: compressor.NewGzipCompressor(3), Types: []string{"application/*"}},
-		{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: []string{"text/*"}},
-		{Compressor: compressor.NewDeflateCompressor(3, nil), Types: []string{"image/*"}},
-		{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: []string{"text/plain"}},
+		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
+		{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
+		{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
+		{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
+		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
 	})
 	a.NotError(err).NotNil(cc)
 

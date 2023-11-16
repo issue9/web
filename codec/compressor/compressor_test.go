@@ -10,6 +10,8 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
+
+	"github.com/issue9/web"
 )
 
 func TestBrotli(t *testing.T) {
@@ -40,7 +42,7 @@ func TestZstd(t *testing.T) {
 
 // c1 与 c2 应该是由不同的参数初始化的，会测试相互能读取。
 // 如果 c2 为 nil，表示不测试 reader 的通用性。
-func testCompress(a *assert.Assertion, c1, c2 Compressor) {
+func testCompress(a *assert.Assertion, c1, c2 web.Compressor) {
 	a.NotNil(c1)
 
 	// c1 encode

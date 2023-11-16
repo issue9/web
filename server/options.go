@@ -28,9 +28,9 @@ const RequestIDKey = header.RequestIDKey
 const DefaultConfigDir = "@.config"
 
 type (
-	// Options [Server] 的初始化参数
+	// Options [web.Server] 的初始化参数
 	//
-	// 这些参数都有默认值，且无法在 [Server] 初始化之后进行更改。
+	// 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
 	Options struct {
 		// 项目的配置项
 		//

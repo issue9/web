@@ -14,7 +14,6 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
-	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
@@ -31,7 +30,17 @@ type Codec struct {
 	acceptHeader string // 生成 Accept 报头内容
 }
 
-type compressorWriterFunc = func(io.Writer) (io.WriteCloser, error)
+// Compressor 压缩算法的接口
+type Compressor interface {
+	// Name 算法的名称
+	Name() string
+
+	// NewDecoder 将 r 包装成为当前压缩算法的解码器
+	NewDecoder(r io.Reader) (io.ReadCloser, error)
+
+	// NewEncoder 将 w 包装成当前压缩算法的编码器
+	NewEncoder(w io.Writer) (io.WriteCloser, error)
+}
 
 // Mimetype 有关 mimetype 的设置项
 type Mimetype struct {
@@ -56,7 +65,7 @@ type Mimetype struct {
 // Compression 有关压缩的设置项
 type Compression struct {
 	// Compressor 压缩算法
-	Compressor compressor.Compressor
+	Compressor Compressor
 
 	// Types 该压缩对象允许使用的为 content-type 类型
 	//
@@ -188,10 +197,10 @@ func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 
 // 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
 //
-// 如果返回的 w 为空值表示不需要压缩。
+// 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
 // l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
-func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c compressorWriterFunc, name string, notAcceptable bool) {
+func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c Compressor, notAcceptable bool) {
 	if len(e.compressions) == 0 {
 		return
 	}
@@ -209,13 +218,13 @@ func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c compres
 
 	if last := accepts[len(accepts)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
 		if last.Q == 0.0 {
-			return nil, "", true
+			return nil, true
 		}
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
 			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.Compressor.Name() }) {
-				return curr.Compressor.NewEncoder, curr.Compressor.Name(), false
+				return curr.Compressor, false
 			}
 		}
 		return
@@ -234,13 +243,13 @@ func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c compres
 
 		for _, index := range indexes {
 			if curr := e.compressions[index]; curr.Compressor.Name() == accept.Value {
-				return curr.Compressor.NewEncoder, curr.Compressor.Name(), false
+				return curr.Compressor, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
 		c := e.compressions[indexes[0]]
-		return c.Compressor.NewEncoder, c.Compressor.Name(), false
+		return c.Compressor, false
 	}
 
 	return // 没有匹配，表示不需要进行压缩

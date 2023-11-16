@@ -39,7 +39,7 @@ type Context struct {
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
-	outputCompress    compressorWriterFunc
+	outputCompressor  Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
 	status            int // WriteHeader 保存的副本
@@ -114,12 +114,11 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		return nil
 	}
 
-	var outputCompress compressorWriterFunc
-	var outputCompressName string
+	var outputCompressor Compressor
 	if b.server.CanCompress() {
 		h = r.Header.Get(header.AcceptEncoding)
 		var notAcceptable bool
-		outputCompress, outputCompressName, notAcceptable = b.codec.acceptEncoding(mt.name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
+		outputCompressor, notAcceptable = b.codec.acceptEncoding(mt.name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
 		if notAcceptable {
 			w.WriteHeader(http.StatusNotAcceptable)
 			return nil
@@ -164,14 +163,14 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	// response
 	ctx.originResponse = w
 	ctx.writer = w
-	ctx.outputCompress = outputCompress
+	ctx.outputCompressor = outputCompressor
 	ctx.outputCharset = outputCharset
 	ctx.outputCharsetName = outputCharsetName
 	ctx.status = 0
 	ctx.wrote = false
-	if ctx.outputCompress != nil {
+	if ctx.outputCompressor != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, outputCompressName)
+		h.Set(header.ContentEncoding, outputCompressor.Name())
 	}
 
 	ctx.outputMimetype = mt
@@ -264,24 +263,24 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	outputEncoding, name, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
+	compressor, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
-	ctx.outputCompress = outputEncoding
+	ctx.outputCompressor = compressor
 
-	if ctx.outputCompress != nil {
+	if ctx.outputCompressor != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, name)
+		h.Set(header.ContentEncoding, compressor.Name())
 	}
 }
 
 // Encoding 输出的压缩编码名称
 func (ctx *Context) Encoding() string {
-	if ctx.outputCompress == nil {
+	if ctx.outputCompressor == nil {
 		return ""
 	}
-	return ctx.Header().Get(header.ContentEncoding) // 初始化的时候已经设置
+	return ctx.outputCompressor.Name()
 }
 
 // SetLanguage 修改输出的语言

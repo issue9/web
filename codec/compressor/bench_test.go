@@ -9,6 +9,8 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
+
+	"github.com/issue9/web"
 )
 
 func BenchmarkCodec_NewEncoder(b *testing.B) {
@@ -87,7 +89,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 }
 
-func benchCompressor_NewEncoder(b *testing.B, c Compressor) {
+func benchCompressor_NewEncoder(b *testing.B, c web.Compressor) {
 	a := assert.New(b, false)
 	w := &bytes.Buffer{}
 	for i := 0; i < b.N; i++ {

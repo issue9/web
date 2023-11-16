@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-	"compress/lzw"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -15,8 +14,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
+	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/locales"
 )
 
@@ -56,6 +55,8 @@ func (c *compressorTest) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 		return gzip.NewWriter(w), nil
 	case "deflate":
 		return flate.NewWriter(w, 8)
+	case "zstd":
+		return zstd.NewWriter(w)
 	default:
 		return nil, nil
 	}
@@ -67,6 +68,9 @@ func (c *compressorTest) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 		return gzip.NewReader(r)
 	case "deflate":
 		return flate.NewReader(r), nil
+	case "zstd":
+		rr, err := zstd.NewReader(r)
+		return io.NopCloser(rr), err
 	default:
 		if c.name != "" {
 			return nil, fmt.Errorf("不支持的压缩方法 %s", c.name)
@@ -174,25 +178,25 @@ func TestCompression_sanitize(t *testing.T) {
 	err := c.sanitize()
 	a.Error(err).Equal(err.Field, "Compressor")
 
-	c = &Compression{Compressor: compressor.NewZstdCompressor()}
+	c = &Compression{Compressor: &compressorTest{name: "gzip"}}
 	err = c.sanitize()
 	a.NotError(err).
 		True(c.wildcard).
 		Length(c.Types, 0).
 		Length(c.wildcardSuffix, 0)
 
-	c = &Compression{Compressor: compressor.NewZstdCompressor(), Types: []string{"text"}}
+	c = &Compression{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text"}}
 	err = c.sanitize()
 	a.NotError(err).Equal(c.Types, []string{"text"})
 }
 
-func TestCodec_ContentEncoding(t *testing.T) {
+func TestCodec_contentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
 	e, fe := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
-		{Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
-		{Compressor: compressor.NewZstdCompressor(), Types: []string{"application/*"}},
+		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain", "application/*"}},
+		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text/plain"}},
+		{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
 	})
 	a.NotError(fe).NotNil(e)
 
@@ -207,13 +211,13 @@ func TestCodec_ContentEncoding(t *testing.T) {
 	a.NotError(err).Equal(string(data), "123")
 }
 
-func TestCodec_AcceptEncoding(t *testing.T) {
+func TestCodec_acceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
 	e, err := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 2), Types: []string{"text/plain", "application/*"}},
-		{Compressor: compressor.NewGzipCompressor(3), Types: []string{"text/plain"}},
-		{Compressor: compressor.NewGzipCompressor(9), Types: []string{"application/*"}},
+		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain", "application/*"}},
+		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text/plain"}},
+		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
 	})
 	a.NotError(err).NotNil(e)
 
@@ -221,48 +225,48 @@ func TestCodec_AcceptEncoding(t *testing.T) {
 
 	t.Run("一般", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, name, notAccept := e.acceptEncoding("application/json", "gzip;q=0.9,br", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "gzip")
+		b, notAccept := e.acceptEncoding("application/json", "gzip;q=0.9,br", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, name, notAccept = e.acceptEncoding("application/json", "br,gzip", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "gzip")
+		b, notAccept = e.acceptEncoding("application/json", "br,gzip", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, name, notAccept = e.acceptEncoding("text/plain", "gzip,br", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "gzip")
+		b, notAccept = e.acceptEncoding("text/plain", "gzip,br", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, _, notAccept = e.acceptEncoding("text/plain", "br", nil)
+		b, notAccept = e.acceptEncoding("text/plain", "br", nil)
 		a.False(notAccept).Nil(b)
 
-		b, _, notAccept = e.acceptEncoding("text/plain", "", nil)
+		b, notAccept = e.acceptEncoding("text/plain", "", nil)
 		a.False(notAccept).Nil(b)
 	})
 
 	t.Run("header=*", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, _, notAccept := e.acceptEncoding("application/xml", "*;q=0", nil)
+		b, notAccept := e.acceptEncoding("application/xml", "*;q=0", nil)
 		a.True(notAccept).Nil(b)
 
-		b, name, notAccept := e.acceptEncoding("application/xml", "*,br", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "compress")
+		b, notAccept = e.acceptEncoding("application/xml", "*,br", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
 
-		b, name, notAccept = e.acceptEncoding("application/xml", "*,gzip", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "compress")
+		b, notAccept = e.acceptEncoding("application/xml", "*,gzip", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
 
-		b, _, notAccept = e.acceptEncoding("application/xml", "*,gzip,compress", nil) // gzip,compress 都排除了
+		b, notAccept = e.acceptEncoding("application/xml", "*,gzip,compress", nil) // gzip,compress 都排除了
 		a.False(notAccept).Nil(b)
 	})
 
 	t.Run("header=identity", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, name, notAccept := e.acceptEncoding("application/xml", "identity,gzip,br", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "gzip")
+		b, notAccept := e.acceptEncoding("application/xml", "identity,gzip,br", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 正常匹配
-		b, name, notAccept = e.acceptEncoding("application/xml", "identity;q=0,gzip,br", nil)
-		a.False(notAccept).NotNil(b).Equal(name, "gzip")
+		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,gzip,br", nil)
+		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 没有可匹配，选取第一个
-		b, _, notAccept = e.acceptEncoding("application/xml", "identity;q=0,abc,def", nil)
+		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,abc,def", nil)
 		a.False(notAccept).Nil(b)
 	})
 }
