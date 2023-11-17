@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/routertest"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
@@ -32,7 +33,26 @@ func BenchmarkRouter(b *testing.B) {
 	routertest.NewTester(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
 }
 
-func BenchmarkServer_Serve(b *testing.B) {
+func BenchmarkHTTPServer_NewLocalePrinter(b *testing.B) {
+	a := assert.New(b, false)
+	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.SimplifiedChinese})
+
+	b.Run("与 Server 相同", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			srv.NewLocalePrinter(language.SimplifiedChinese)
+		}
+	})
+
+	b.Run("与 Server 不同", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			srv.NewLocalePrinter(language.TraditionalChinese)
+		}
+	})
+}
+
+func BenchmarkHTTPServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
 	router := srv.NewRouter("srv", nil, mux.URLDomain("http://localhost:8080/"))

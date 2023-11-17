@@ -186,6 +186,9 @@ func (srv *httpServer) Logs() web.Logs { return srv.logs }
 func (srv *httpServer) Config() *config.Config { return srv.config }
 
 func (srv *httpServer) NewLocalePrinter(tag language.Tag) *message.Printer {
+	if tag == srv.Language() {
+		return srv.LocalePrinter()
+	}
 	return newPrinter(tag, srv.Catalog())
 }
 

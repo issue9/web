@@ -78,6 +78,8 @@ type Server interface {
 	Language() language.Tag
 
 	// LoadLocale 从 fsys 中加载符合 glob 的本地化文件
+	//
+	// 根据 [Server.Config] 处理文件格式，如果不被 [Server.Config] 支持，将无法加载。
 	LoadLocale(glob string, fsys ...fs.FS) error
 
 	// LocalePrinter 符合当前本地化信息的打印接口
