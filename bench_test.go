@@ -212,10 +212,9 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	}
 }
 
-func BenchmarkCodec_Accept(b *testing.B) {
+func BenchmarkCodec_accept(b *testing.B) {
 	a := assert.New(b, false)
-	mt, err := NewCodec("ms", "cs", testMimetypes, nil)
-	a.NotError(err).NotNil(mt)
+	mt := newCodec(a)
 
 	for i := 0; i < b.N; i++ {
 		item := mt.accept("application/json;q=0.9")
@@ -223,10 +222,9 @@ func BenchmarkCodec_Accept(b *testing.B) {
 	}
 }
 
-func BenchmarkCodec_ContentType(b *testing.B) {
+func BenchmarkCodec_contentType(b *testing.B) {
 	a := assert.New(b, false)
-	mt, err := NewCodec("ms", "cs", testMimetypes, nil)
-	a.NotError(err).NotNil(mt)
+	mt := newCodec(a)
 
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
@@ -247,14 +245,13 @@ func BenchmarkCodec_ContentType(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_ContentEncoding(b *testing.B) {
+func BenchmarkCodec_contentEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-		})
-		a.NotError(err).NotNil(c)
+		c := NewCodec()
+		a.NotNil(c)
+		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
 
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewBuffer([]byte{})
@@ -266,14 +263,13 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
-			{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
-			{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
-			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-			{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
-		})
-		a.NotError(err).NotNil(c)
+		c := NewCodec()
+		a.NotNil(c)
+		c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
+			AddCompressor(&compressorTest{name: "br"}, "text/*").
+			AddCompressor(&compressorTest{name: "deflate"}, "image/*").
+			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
+			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
 		for i := 0; i < b.N; i++ {
 			r := bytes.NewBuffer([]byte{})
@@ -283,17 +279,16 @@ func BenchmarkCodec_ContentEncoding(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_AcceptEncoding(b *testing.B) {
+func BenchmarkCodec_acceptEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-		})
-		a.NotError(err).NotNil(c)
+		c := NewCodec()
+		a.NotNil(c)
+		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
 
 		for i := 0; i < b.N; i++ {
-			_, na := c.acceptEncoding("application/json", "zstd", nil)
+			_, na := c.acceptEncoding("application/json", "zstd")
 			a.False(na)
 		}
 	})
@@ -301,17 +296,16 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c, err := NewCodec("ms", "cs", nil, []*Compression{
-			{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
-			{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
-			{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
-			{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-			{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
-		})
-		a.NotError(err).NotNil(c)
+		c := NewCodec()
+		a.NotNil(c)
+		c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
+			AddCompressor(&compressorTest{name: "br"}, "text/*").
+			AddCompressor(&compressorTest{name: "deflate"}, "image/*").
+			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
+			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
 		for i := 0; i < b.N; i++ {
-			_, na := c.acceptEncoding("text/plain", "compress", nil)
+			_, na := c.acceptEncoding("text/plain", "compress")
 			a.False(na)
 		}
 	})
@@ -320,16 +314,15 @@ func BenchmarkCodec_AcceptEncoding(b *testing.B) {
 func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 	a := assert.New(b, false)
 
-	cc, err := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
-		{Compressor: &compressorTest{name: "br"}, Types: []string{"text/*"}},
-		{Compressor: &compressorTest{name: "deflate"}, Types: []string{"image/*"}},
-		{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain"}},
-	})
-	a.NotError(err).NotNil(cc)
+	c := NewCodec()
+	a.NotNil(c)
+	c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
+		AddCompressor(&compressorTest{name: "br"}, "text/*").
+		AddCompressor(&compressorTest{name: "deflate"}, "image/*").
+		AddCompressor(&compressorTest{name: "zstd"}, "application/*").
+		AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
 	for i := 0; i < b.N; i++ {
-		cc.getMatchCompresses("text/plan")
+		c.getMatchCompresses("text/plan")
 	}
 }

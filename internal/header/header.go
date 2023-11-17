@@ -56,6 +56,7 @@ const (
 // 所以理论上性能也会更好一些，且也不局限于 RFC1521 规定的 content-type 报头，
 // 对于 Accept 等，也可以分段解析。
 // param 可以为空，表示不需要解析任何参数。
+// paramValue 的返回值一律被转换为小写。
 func ParseWithParam(header, param string) (mt, paramValue string) {
 	t, ps, found := strings.Cut(header, ";")
 	if !found {

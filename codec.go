@@ -3,30 +3,26 @@
 package web
 
 import (
+	"fmt"
 	"io"
-	"reflect"
-	"strconv"
 	"strings"
 
-	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/locales"
-	"github.com/issue9/web/logs"
 )
 
 // Codec 编码解码工具
 //
 // 包含了压缩方法和媒体类型的处理
 type Codec struct {
-	compressions         []*Compression
+	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	types        []*Mimetype
+	types        []*mimetype
 	acceptHeader string // 生成 Accept 报头内容
 }
 
@@ -42,8 +38,7 @@ type Compressor interface {
 	NewEncoder(w io.Writer) (io.WriteCloser, error)
 }
 
-// Mimetype 有关 mimetype 的设置项
-type Mimetype struct {
+type mimetype struct {
 	// Mimetype 的名称
 	//
 	// 比如：application/json
@@ -62,122 +57,107 @@ type Mimetype struct {
 	Unmarshal UnmarshalFunc
 }
 
-// Compression 有关压缩的设置项
-type Compression struct {
-	// Compressor 压缩算法
-	Compressor Compressor
+type compression struct {
+	compressor Compressor
 
-	// Types 该压缩对象允许使用的为 content-type 类型
-	//
-	// 如果是 * 或是空值表示适用所有类型。
-	Types []string
+	types []string
 
 	// 如果是通配符，则其它配置都将不启作用。
 	wildcard bool
 
-	// Types 是具体值的，比如 text/xml
-	// wildcardSuffix 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
-
+	// 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
 	wildcardSuffix []string
 }
 
-func (m *Mimetype) sanitize() *FieldError {
-	if m.Name == "" {
-		return NewFieldError("Name", locales.CanNotBeEmpty)
-	}
+func buildCompression(c Compressor, types []string) *compression {
+	m := &compression{compressor: c}
 
-	if m.Problem == "" {
-		m.Problem = m.Name
-	}
-
-	return nil
-}
-
-func (m *Compression) sanitize() *FieldError {
-	if m.Compressor == nil {
-		return NewFieldError("Compressor", locales.CanNotBeEmpty)
-	}
-
-	if len(m.Types) == 0 {
+	if len(types) == 0 {
 		m.wildcard = true
-		return nil
+		return m
 	}
 
-	types := make([]string, 0, len(m.Types))
-	suffix := make([]string, 0, len(m.Types))
-	for _, c := range m.Types {
+	m.types = make([]string, 0, len(types))
+	m.wildcardSuffix = make([]string, 0, len(types))
+	for _, c := range types {
 		if c == "" {
 			continue
 		}
 
 		if c == "*" {
-			m.Types = nil
+			m.types = nil
 			m.wildcardSuffix = nil
 			m.wildcard = true
-			return nil
+			return m
 		}
 
 		if c[len(c)-1] == '*' {
-			suffix = append(suffix, c[:len(c)-1])
+			m.wildcardSuffix = append(m.wildcardSuffix, c[:len(c)-1])
 		} else {
-			types = append(types, c)
+			m.types = append(m.types, c)
 		}
 	}
 
-	m.Types = types
-	m.wildcardSuffix = suffix
-
-	return nil
+	return m
 }
 
 // NewCodec 声明 [Codec] 对象
-//
-// csName 和 msName 分别表示 cs 和 ms 在出错时在返回对象中的字段名称。
-func NewCodec(msName, csName string, ms []*Mimetype, cs []*Compression) (*Codec, *FieldError) {
-	c := &Codec{
-		compressions: make([]*Compression, 0, len(cs)),
-		types:        make([]*Mimetype, 0, len(ms)),
+func NewCodec() *Codec {
+	return &Codec{
+		compressions: make([]*compression, 0, 10),
+		types:        make([]*mimetype, 0, 10),
 	}
-
-	for i, s := range ms {
-		if err := s.sanitize(); err != nil {
-			err.AddFieldParent(msName + "[" + strconv.Itoa(i) + "]")
-			return nil, err
-		}
-	}
-	indexes := sliceutil.Dup(ms, func(e1, e2 *Mimetype) bool { return e1.Name == e2.Name })
-	if len(indexes) > 0 {
-		return nil, config.NewFieldError(msName+"["+strconv.Itoa(indexes[0])+"].Name", locales.DuplicateValue)
-	}
-
-	for i, s := range cs {
-		if err := s.sanitize(); err != nil {
-			err.AddFieldParent(csName + "[" + strconv.Itoa(i) + "]")
-			return nil, err
-		}
-	}
-
-	for _, m := range ms {
-		c.addMimetype(m)
-	}
-
-	for _, cc := range cs {
-		c.addCompression(cc)
-	}
-
-	return c, nil
 }
 
-func (e *Codec) addCompression(c *Compression) {
-	cc := *c // 复制，防止通过配置项修改内容。
-	e.compressions = append(e.compressions, &cc)
+// AddCompressor 添加新的压缩算法
+//
+// t 表示适用的 content-type 类型，可以包含通配符，比如：
+//
+//		application/json
+//		text/*
+//	 *
+//
+// 如果为空，则和 * 是相同的，表示匹配所有。
+func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
+	e.compressions = append(e.compressions, buildCompression(c, t))
 
 	names := make([]string, 0, len(e.compressions))
 	for _, item := range e.compressions {
-		names = append(names, item.Compressor.Name())
+		names = append(names, item.compressor.Name())
 	}
 	names = sliceutil.Unique(names, func(i, j string) bool { return i == j })
 	e.acceptEncodingHeader = strings.Join(names, ",")
+
+	return e
+}
+
+// AddMimetype 添加对媒体类型的编解码函数
+func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string) *Codec {
+	if problem == "" {
+		problem = name
+	}
+
+	// 检测复复值
+	if sliceutil.Exists(e.types, func(v *mimetype, _ int) bool { return v.Name == name }) {
+		panic(fmt.Sprintf("存在重复的项 %s", name))
+	}
+
+	e.types = append(e.types, &mimetype{
+		Name:      name,
+		Marshal:   m,
+		Unmarshal: u,
+		Problem:   problem,
+	})
+
+	names := make([]string, 0, len(e.types))
+	for _, item := range e.types {
+		if item.Unmarshal != nil {
+			names = append(names, item.Name)
+		}
+	}
+	e.acceptHeader = strings.Join(names, ",")
+
+	return e
 }
 
 // 根据客户端的 Content-Encoding 报头对 r 进行包装
@@ -189,8 +169,8 @@ func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 		return io.NopCloser(r), nil
 	}
 
-	if c, f := sliceutil.At(e.compressions, func(item *Compression, _ int) bool { return item.Compressor.Name() == name }); f {
-		return c.Compressor.NewDecoder(r)
+	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
+		return c.compressor.NewDecoder(r)
 	}
 	return nil, localeutil.Error("not found compress for %s", name)
 }
@@ -199,8 +179,7 @@ func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 //
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
-// l 表示解析报头过程中的错误信息，可以为空，表示不输出信息；
-func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c Compressor, notAcceptable bool) {
+func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptable bool) {
 	if len(e.compressions) == 0 {
 		return
 	}
@@ -223,8 +202,8 @@ func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c Compres
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
-			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.Compressor.Name() }) {
-				return curr.Compressor, false
+			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.compressor.Name() }) {
+				return curr.compressor, false
 			}
 		}
 		return
@@ -232,8 +211,8 @@ func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c Compres
 
 	var identity *header.Item
 	for _, accept := range accepts {
-		if accept.Err != nil && l != nil {
-			l.Error(accept.Err)
+		if accept.Err != nil {
+			// NOTE: 对于客户端的错误，不记录于日志中。
 			continue
 		}
 
@@ -242,14 +221,14 @@ func (e *Codec) acceptEncoding(contentType, h string, l *logs.Logger) (c Compres
 		}
 
 		for _, index := range indexes {
-			if curr := e.compressions[index]; curr.Compressor.Name() == accept.Value {
-				return curr.Compressor, false
+			if curr := e.compressions[index]; curr.compressor.Name() == accept.Value {
+				return curr.compressor, false
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
 		c := e.compressions[indexes[0]]
-		return c.Compressor, false
+		return c.compressor, false
 	}
 
 	return // 没有匹配，表示不需要进行压缩
@@ -265,7 +244,7 @@ LOOP:
 			continue
 		}
 
-		for _, s := range c.Types {
+		for _, s := range c.types {
 			if s == contentType {
 				indexes = append(indexes, index)
 				continue LOOP
@@ -283,24 +262,11 @@ LOOP:
 	return indexes
 }
 
-func (m *Mimetype) name(problem bool) string {
+func (m *mimetype) name(problem bool) string {
 	if problem {
 		return m.Problem
 	}
 	return m.Name
-}
-
-func (e *Codec) addMimetype(m *Mimetype) {
-	t := *m // 防止通过配置项修改内容
-	e.types = append(e.types, &t)
-
-	names := make([]string, 0, len(e.types))
-	for _, item := range e.types {
-		if !reflect.ValueOf(item.Unmarshal).IsZero() {
-			names = append(names, item.Name)
-		}
-	}
-	e.acceptHeader = strings.Join(names, ",")
 }
 
 // 从请求端提交的 Content-Type 报头中获取解码和字符集函数
@@ -313,17 +279,16 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 	if item == nil {
 		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
 	}
-	f := item.Unmarshal
 
 	if charset == "" || charset == header.UTF8Name {
-		return f, nil, nil
+		return item.Unmarshal, nil, nil
 	}
 	c, err := htmlindex.Get(charset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return f, c, nil
+	return item.Unmarshal, c, nil
 }
 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
@@ -336,7 +301,7 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (e *Codec) accept(h string) *Mimetype {
+func (e *Codec) accept(h string) *mimetype {
 	if h == "" {
 		if item := e.findMarshal("*/*"); item != nil {
 			return item
@@ -355,7 +320,7 @@ func (e *Codec) accept(h string) *Mimetype {
 	return nil
 }
 
-func (e *Codec) findMarshal(name string) *Mimetype {
+func (e *Codec) findMarshal(name string) *mimetype {
 	switch {
 	case len(e.types) == 0:
 		return nil
@@ -369,7 +334,7 @@ func (e *Codec) findMarshal(name string) *Mimetype {
 	}
 }
 
-func (e *Codec) searchFunc(match func(string) bool) *Mimetype {
-	item, _ := sliceutil.At(e.types, func(i *Mimetype, _ int) bool { return match(i.Name) || match(i.Problem) })
+func (e *Codec) searchFunc(match func(string) bool) *mimetype {
+	item, _ := sliceutil.At(e.types, func(i *mimetype, _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }

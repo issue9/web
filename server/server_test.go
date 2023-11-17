@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/logs"
@@ -67,10 +66,10 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 		}
 	}
 	if o.Compressions == nil {
-		o.Compressions = codec.DefaultCompressions()
+		o.Compressions = DefaultCompressions()
 	}
 	if o.Mimetypes == nil {
-		o.Mimetypes = []*web.Mimetype{
+		o.Mimetypes = []*Mimetype{
 			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
 			{Name: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
 			{Name: "nil", Marshal: nil, Unmarshal: nil, Problem: ""},

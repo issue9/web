@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: MIT
+
+package server
+
+import (
+	"compress/lzw"
+	"testing"
+
+	"github.com/issue9/assert/v3"
+
+	"github.com/issue9/web/codec/compressor"
+)
+
+func TestBuildCodec(t *testing.T) {
+	a := assert.New(t, false)
+
+	c, err := buildCodec(nil, nil)
+	a.NotError(err).NotNil(c)
+
+	c, err = buildCodec(APIMimetypes(), DefaultCompressions())
+	a.NotError(err).NotNil(c)
+
+	c, err = buildCodec([]*Mimetype{
+		{Name: "application", Marshal: nil, Unmarshal: nil},
+		{Name: "nil", Marshal: nil, Unmarshal: nil},
+		{Name: "nil", Marshal: nil, Unmarshal: nil},
+	}, BestCompressionCompressions())
+	a.Equal(err.Field, "Mimetypes[1].Name").Nil(c)
+
+	c, err = buildCodec([]*Mimetype{
+		{Name: "", Marshal: nil, Unmarshal: nil},
+	}, BestSpeedCompressions())
+	a.Equal(err.Field, "Mimetypes[0].Name").Nil(c)
+
+	c, err = buildCodec(JSONMimetypes(), []*Compression{
+		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8)},
+		{Compressor: nil},
+	})
+	a.Equal(err.Field, "Compressions[1].Compressor").Nil(c)
+}

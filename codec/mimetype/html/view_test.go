@@ -20,7 +20,7 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Language:   language.MustParse(lang),
-		Mimetypes: []*web.Mimetype{
+		Mimetypes: []*server.Mimetype{
 			{
 				Name:      Mimetype,
 				Marshal:   Marshal,

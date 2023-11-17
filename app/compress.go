@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec/compressor"
+	"github.com/issue9/web/server"
 )
 
 var compressorFactory = map[string]web.Compressor{}
@@ -41,7 +42,7 @@ type compressConfig struct {
 }
 
 func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
-	conf.compressors = make([]*web.Compression, 0, len(conf.Compressors))
+	conf.compressors = make([]*server.Compression, 0, len(conf.Compressors))
 	for index, e := range conf.Compressors {
 		enc, found := compressorFactory[e.ID]
 		if !found {
@@ -49,7 +50,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 			return web.NewFieldError(field, web.NewLocaleError("%s not found", e.ID))
 		}
 
-		conf.compressors = append(conf.compressors, &web.Compression{
+		conf.compressors = append(conf.compressors, &server.Compression{
 			Compressor: enc,
 			Types:      e.Types,
 		})

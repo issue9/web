@@ -116,7 +116,7 @@ func TestContext_Render(t *testing.T) {
 	a.True(n > 0).
 		Equal(w.Body.String(), `"123"123`)
 
-	// outputMimetype.MarshalFunc() == nil
+	// outputMimetype.Marshal == nil
 	srv.logBuf.Reset()
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -129,7 +129,7 @@ func TestContext_Render(t *testing.T) {
 	ctx.Free()
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
-	// outputMimetype.MarshalFunc() 返回 ErrUnsupported
+	// outputMimetype.Marshal 返回 ErrUnsupported
 	srv.logBuf.Reset()
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -142,7 +142,7 @@ func TestContext_Render(t *testing.T) {
 	ctx.Free()
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
-	// outputMimetype.MarshalFunc() 返回错误
+	// outputMimetype.Marshal 返回错误
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/test")

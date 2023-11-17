@@ -15,33 +15,7 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 	"github.com/klauspost/compress/zstd"
-
-	"github.com/issue9/web/locales"
 )
-
-const testMimetype = "application/octet-stream"
-
-var testMimetypes = []*Mimetype{
-	{
-		Name:      "application/json",
-		Problem:   "application/problem+json",
-		Marshal:   func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) },
-		Unmarshal: func(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) },
-	},
-	{
-		Name:      "application/xml",
-		Problem:   "application/problem+xml",
-		Marshal:   func(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) },
-		Unmarshal: func(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) },
-	},
-	{
-		Name:      "application/test",
-		Problem:   "application/problem+test",
-		Marshal:   marshalTest,
-		Unmarshal: unmarshalTest,
-	},
-	{Name: "nil", Problem: "nil"},
-}
 
 type compressorTest struct {
 	name string
@@ -88,117 +62,51 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	}
 }
 
-func unmarshalTest(r io.Reader, v any) error {
-	return ErrUnsupportedSerialization()
-}
+func unmarshalTest(r io.Reader, v any) error { return ErrUnsupportedSerialization() }
+
+func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
+
+func unmarshalJSON(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }
+
+func marshalXML(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }
+
+func unmarshalXML(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) }
 
 func newCodec(a *assert.Assertion) *Codec {
-	ms := []*Mimetype{
-		{
-			Name:      "application/json",
-			Problem:   "application/problem+json",
-			Marshal:   func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) },
-			Unmarshal: func(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) },
-		},
-		{
-			Name:      "application/xml",
-			Problem:   "application/problem+xml",
-			Marshal:   func(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) },
-			Unmarshal: func(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) },
-		},
-		{
-			Name:      "application/test",
-			Problem:   "application/problem+test",
-			Marshal:   marshalTest,
-			Unmarshal: unmarshalTest,
-		},
-		{Name: "nil", Problem: "nil"},
-	}
+	c := NewCodec()
+	a.NotNil(c)
 
-	cs := []*Compression{
-		{Compressor: &compressorTest{name: "gzip"}},
-		{Compressor: &compressorTest{name: "deflate"}},
-		{Compressor: &compressorTest{name: ""}},
-	}
+	c.AddCompressor(&compressorTest{name: "gzip"}).
+		AddCompressor(&compressorTest{name: "deflate"}).
+		AddCompressor(&compressorTest{name: ""}).
+		AddMimetype("application/json", marshalJSON, unmarshalJSON, "application/problem+json").
+		AddMimetype("application/xml", marshalXML, unmarshalXML, "application/problem+xml").
+		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test").
+		AddMimetype("nil", nil, nil, "nil")
 
-	c, err := NewCodec("ms", "cs", ms, cs)
-	a.NotError(err).NotNil(c)
 	return c
 }
 
-func TestNewCodec(t *testing.T) {
+func TestBuildCompression(t *testing.T) {
 	a := assert.New(t, false)
 
-	c, err := NewCodec("", "", nil, nil)
-	a.NotError(err).NotNil(c)
-
-	c, err = NewCodec("ms", "cs", []*Mimetype{
-		{Name: "application/json", Marshal: func(*Context, any) ([]byte, error) { return nil, nil }},
-	}, nil)
-	a.NotError(err).NotNil(c)
-
-	c, err = NewCodec("ms", "cs", []*Mimetype{
-		{Name: "application/json", Marshal: func(*Context, any) ([]byte, error) { return nil, nil }},
-		{Name: "application/json", Marshal: func(*Context, any) ([]byte, error) { return nil, nil }},
-	}, nil)
-	a.Equal(err.Message, locales.DuplicateValue).Nil(c).
-		Equal(err.Field, "ms[0].Name")
-
-	c, err = NewCodec("ms", "cs", []*Mimetype{
-		{Name: "", Marshal: func(*Context, any) ([]byte, error) { return nil, nil }},
-	}, nil)
-	a.Equal(err.Field, "ms[0].Name").Nil(c)
-
-	c, err = NewCodec("ms", "cs", nil, []*Compression{{}})
-	a.Equal(err.Field, "cs[0].Compressor").Nil(c)
-}
-
-func TestMimetype_sanitize(t *testing.T) {
-	a := assert.New(t, false)
-
-	m := &Mimetype{}
-	err := m.sanitize()
-	a.Error(err).Equal(err.Field, "Name")
-
-	m = &Mimetype{Name: "test"}
-	err = m.sanitize()
-	a.NotError(err).Equal(m.Problem, m.Name)
-
-	m = &Mimetype{Name: "test", Problem: "p"}
-	err = m.sanitize()
-	a.NotError(err).
-		Equal(m.Problem, "p").
-		Equal(m.Name, "test")
-}
-
-func TestCompression_sanitize(t *testing.T) {
-	a := assert.New(t, false)
-
-	c := &Compression{}
-	err := c.sanitize()
-	a.Error(err).Equal(err.Field, "Compressor")
-
-	c = &Compression{Compressor: &compressorTest{name: "gzip"}}
-	err = c.sanitize()
-	a.NotError(err).
-		True(c.wildcard).
-		Length(c.Types, 0).
+	c := buildCompression(&compressorTest{name: "gzip"}, nil)
+	a.True(c.wildcard).
+		Length(c.types, 0).
 		Length(c.wildcardSuffix, 0)
 
-	c = &Compression{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text"}}
-	err = c.sanitize()
-	a.NotError(err).Equal(c.Types, []string{"text"})
+	c = buildCompression(&compressorTest{name: "gzip"}, []string{"text"})
+	a.Equal(c.types, []string{"text"})
 }
 
 func TestCodec_contentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e, fe := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain", "application/*"}},
-		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text/plain"}},
-		{Compressor: &compressorTest{name: "zstd"}, Types: []string{"application/*"}},
-	})
-	a.NotError(fe).NotNil(e)
+	e := NewCodec()
+	a.NotNil(e)
+	e.AddCompressor(&compressorTest{name: "compress"}, "text/plain", "application/*").
+		AddCompressor(&compressorTest{name: "gzip"}, "text/plain").
+		AddCompressor(&compressorTest{name: "zstd"}, "application/*")
 
 	r := &bytes.Buffer{}
 	rc, err := e.contentEncoding("zstd", r)
@@ -214,75 +122,68 @@ func TestCodec_contentEncoding(t *testing.T) {
 func TestCodec_acceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e, err := NewCodec("ms", "cs", nil, []*Compression{
-		{Compressor: &compressorTest{name: "compress"}, Types: []string{"text/plain", "application/*"}},
-		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"text/plain"}},
-		{Compressor: &compressorTest{name: "gzip"}, Types: []string{"application/*"}},
-	})
-	a.NotError(err).NotNil(e)
+	e := NewCodec()
+	a.NotNil(e)
+	e.AddCompressor(&compressorTest{name: "compress"}, "text/plain", "application/*").
+		AddCompressor(&compressorTest{name: "gzip"}, "text/plain").
+		AddCompressor(&compressorTest{name: "gzip"}, "application/*")
 
 	a.Equal(e.acceptEncodingHeader, "compress,gzip")
 
 	t.Run("一般", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding("application/json", "gzip;q=0.9,br", nil)
+		b, notAccept := e.acceptEncoding("application/json", "gzip;q=0.9,br")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding("application/json", "br,gzip", nil)
+		b, notAccept = e.acceptEncoding("application/json", "br,gzip")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding("text/plain", "gzip,br", nil)
+		b, notAccept = e.acceptEncoding("text/plain", "gzip,br")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding("text/plain", "br", nil)
+		b, notAccept = e.acceptEncoding("text/plain", "br")
 		a.False(notAccept).Nil(b)
 
-		b, notAccept = e.acceptEncoding("text/plain", "", nil)
+		b, notAccept = e.acceptEncoding("text/plain", "")
 		a.False(notAccept).Nil(b)
 	})
 
 	t.Run("header=*", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding("application/xml", "*;q=0", nil)
+		b, notAccept := e.acceptEncoding("application/xml", "*;q=0")
 		a.True(notAccept).Nil(b)
 
-		b, notAccept = e.acceptEncoding("application/xml", "*,br", nil)
+		b, notAccept = e.acceptEncoding("application/xml", "*,br")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
 
-		b, notAccept = e.acceptEncoding("application/xml", "*,gzip", nil)
+		b, notAccept = e.acceptEncoding("application/xml", "*,gzip")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
 
-		b, notAccept = e.acceptEncoding("application/xml", "*,gzip,compress", nil) // gzip,compress 都排除了
+		b, notAccept = e.acceptEncoding("application/xml", "*,gzip,compress") // gzip,compress 都排除了
 		a.False(notAccept).Nil(b)
 	})
 
 	t.Run("header=identity", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding("application/xml", "identity,gzip,br", nil)
+		b, notAccept := e.acceptEncoding("application/xml", "identity,gzip,br")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 正常匹配
-		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,gzip,br", nil)
+		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,gzip,br")
 		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 没有可匹配，选取第一个
-		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,abc,def", nil)
+		b, notAccept = e.acceptEncoding("application/xml", "identity;q=0,abc,def")
 		a.False(notAccept).Nil(b)
 	})
 }
 
-func TestCodec_ContentType(t *testing.T) {
+func TestCodec_contentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt, fe := NewCodec("ms", "cs", []*Mimetype{
-		{
-			Name:      testMimetype,
-			Problem:   "",
-			Marshal:   func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) },
-			Unmarshal: func(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) },
-		},
-	}, nil)
-	a.NotError(fe).NotNil(mt)
+	mt := NewCodec()
+	a.NotNil(mt)
+	mt.AddMimetype("application/octet-stream", marshalJSON, unmarshalJSON, "")
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -324,56 +225,40 @@ func TestCodec_ContentType(t *testing.T) {
 	a.NotError(err).NotNil(f).Nil(e)
 }
 
-func TestCodec_Accept(t *testing.T) {
+func TestCodec_accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt, fe := NewCodec("ms", "cs", nil, nil)
-	a.NotError(fe).NotNil(mt)
+	mt := NewCodec()
+	a.NotNil(mt)
 
-	item := mt.accept(testMimetype)
+	item := mt.accept("application/json")
 	a.Nil(item)
 
 	item = mt.accept("")
 	a.Nil(item)
 
-	mt, fe = NewCodec("ms", "cs", []*Mimetype{
-		{
-			Name:      testMimetype,
-			Problem:   "",
-			Marshal:   func(_ *Context, v any) ([]byte, error) { return json.Marshal(v) },
-			Unmarshal: func(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) },
-		},
-		{
-			Name:      "text/plain",
-			Problem:   "text/plain+problem",
-			Marshal:   func(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) },
-			Unmarshal: func(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) },
-		},
-		{
-			Name:      "empty",
-			Marshal:   nil,
-			Unmarshal: nil,
-			Problem:   "",
-		},
-	}, nil)
-	a.NotError(fe).NotNil(mt)
+	mt = NewCodec()
+	a.NotNil(mt)
+	mt.AddMimetype("application/json", marshalJSON, unmarshalJSON, "").
+		AddMimetype("text/plain", marshalXML, unmarshalXML, "text/plain+problem").
+		AddMimetype("empty", nil, nil, "")
 
-	item = mt.accept(testMimetype)
+	item = mt.accept("application/json")
 	a.NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), testMimetype).
-		Equal(item.name(true), testMimetype)
+		Equal(item.name(false), "application/json").
+		Equal(item.name(true), "application/json")
 
-	// */* 如果指定了 DefaultMimetype，则必定是该值
+	// */*
 	item = mt.accept("*/*")
 	a.NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), testMimetype)
+		Equal(item.name(false), "application/json")
 
-	// 同 */*
+	// 空参数，结果同 */*
 	item = mt.accept("")
 	a.NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), testMimetype)
+		Equal(item.name(false), "application/json")
 
 	item = mt.accept("*/*,text/plain")
 	a.NotNil(item).
@@ -396,15 +281,14 @@ func TestCodec_Accept(t *testing.T) {
 
 func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
-	mm, fe := NewCodec("ms", "cs", []*Mimetype{
-		{Name: "text", Marshal: nil, Unmarshal: nil, Problem: ""},
-		{Name: "text/plain", Marshal: nil, Unmarshal: nil, Problem: ""},
-		{Name: "text/text", Marshal: nil, Unmarshal: nil, Problem: ""},
-		{Name: "application/aa", Marshal: nil, Unmarshal: nil, Problem: ""},
-		{Name: "application/bb", Marshal: nil, Unmarshal: nil, Problem: "application/problem+bb"},
-		{Name: testMimetype, Marshal: nil, Unmarshal: nil, Problem: ""},
-	}, nil)
-	a.NotError(fe).NotNil(mm)
+	mm := NewCodec()
+	a.NotNil(mm)
+	mm.AddMimetype("text", nil, nil, "").
+		AddMimetype("text/plain", nil, nil, "").
+		AddMimetype("text/text", nil, nil, "").
+		AddMimetype("application/aa", nil, nil, "").
+		AddMimetype("application/bb", nil, nil, "application/problem+bb").
+		AddMimetype("application/json", nil, nil, "")
 
 	item := mm.findMarshal("text")
 	a.NotNil(item).Equal(item.name(false), "text")

@@ -17,6 +17,7 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/logs"
 )
 
 var contextPool = &sync.Pool{
@@ -47,7 +48,7 @@ type Context struct {
 
 	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
 	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype *Mimetype
+	outputMimetype *mimetype
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc // 可以为空
@@ -74,7 +75,7 @@ type ContextBuilder struct {
 
 // NewContextBuilder 声明 [ContextBuilder]
 //
-// requestIDKey 表示 http 报头中表示请求唯一 ID 的报头名称，一般为 x-request-id；
+// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *ContextBuilder {
 	if s == nil {
 		panic("s 不能为空")
@@ -94,22 +95,31 @@ func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *ContextBuil
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	id := r.Header.Get(b.requestIDKey)
 
 	h := r.Header.Get(header.Accept)
 	mt := b.codec.accept(h)
 	if mt == nil {
-		b.server.Logs().DEBUG().With(b.requestIDKey, id).LocaleString(Phrase("not found serialization for %s", h))
-		w.WriteHeader(http.StatusNotAcceptable)
+		var l logs.Recorder = b.server.Logs().DEBUG()
+		if id != "" {
+			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+		}
+		l.LocaleString(Phrase("not found serialization for %s", h))
+
+		w.WriteHeader(http.StatusNotAcceptable) // 此时 [Context] 未初始化，无法处理 [Problem]，只是简单地输出状态码。
 		return nil
 	}
 
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		b.server.Logs().DEBUG().With(b.requestIDKey, id).LocaleString(Phrase("not found charset for %s", h))
+		var l logs.Recorder = b.server.Logs().DEBUG()
+		if id != "" {
+			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+		}
+		l.LocaleString(Phrase("not found charset for %s", h))
+
 		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
@@ -118,7 +128,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if b.server.CanCompress() {
 		h = r.Header.Get(header.AcceptEncoding)
 		var notAcceptable bool
-		outputCompressor, notAcceptable = b.codec.acceptEncoding(mt.name(false), h, b.server.Logs().DEBUG().New(map[string]any{b.requestIDKey: id}))
+		outputCompressor, notAcceptable = b.codec.acceptEncoding(mt.name(false), h)
 		if notAcceptable {
 			w.WriteHeader(http.StatusNotAcceptable)
 			return nil
@@ -263,7 +273,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	compressor, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc, ctx.Logs().DEBUG())
+	compressor, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc)
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}

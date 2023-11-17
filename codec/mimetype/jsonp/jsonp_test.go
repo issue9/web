@@ -16,7 +16,7 @@ import (
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.New("test", "1.0.0", &server.Options{
-		Mimetypes: []*web.Mimetype{
+		Mimetypes: []*server.Mimetype{
 			{Name: Mimetype, Marshal: Marshal, Unmarshal: Unmarshal, Problem: ""},
 		},
 		HTTPServer: &http.Server{Addr: ":8080"},

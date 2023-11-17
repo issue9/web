@@ -65,7 +65,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty"`
-	compressors []*web.Compression
+	compressors []*server.Compression
 
 	// 指定配置文件的序列化
 	//
@@ -84,7 +84,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*web.Mimetype
+	mimetypes []*server.Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -136,17 +136,15 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 	}
 
 	opt := &server.Options{
-		Config:         conf.config,
-		Location:       conf.location,
-		Cache:          conf.cache,
-		HTTPServer:     conf.http,
-		Logs:           conf.logs,
-		Language:       conf.languageTag,
-		RoutersOptions: conf.HTTP.routersOptions,
-		IDGenerator:    conf.idGenerator,
-		Context: &server.Context{
-			RequestIDKey: conf.HTTP.RequestID,
-		},
+		Config:            conf.config,
+		Location:          conf.location,
+		Cache:             conf.cache,
+		HTTPServer:        conf.http,
+		Logs:              conf.logs,
+		Language:          conf.languageTag,
+		RoutersOptions:    conf.HTTP.routersOptions,
+		IDGenerator:       conf.idGenerator,
+		RequestIDKey:      conf.HTTP.RequestID,
 		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
