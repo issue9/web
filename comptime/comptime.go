@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-// Package mode 提供了编译期相关的处理方式
+// Package comptime 提供了编译期相关的处理方式
 //
 // go 以 //go:build 的方式区别编译内容，目前支持以下标签：
 //   - development 表示开发环境，[Mode] 会被赋为 [Development]；
 //   - 其它情况下，则 [Mode] 的值永远是 [Production]；
-package mode
+package comptime
 
 import "github.com/issue9/web"
 

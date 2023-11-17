@@ -2,7 +2,7 @@
 
 //go:build !development
 
-package mode
+package comptime
 
 import "github.com/issue9/web"
 
