@@ -98,7 +98,7 @@ func TestServer_scheduled(t *testing.T) {
 
 	var count int
 	srv.VisitJobs(func(ls web.LocaleStringer, t1, t2 time.Time, s web.State, b bool, err error) {
-		p := srv.s.NewLocalePrinter(language.Chinese)
+		p := srv.s.Locale().NewPrinter(language.Chinese)
 		if count == 1 {
 			a.Equal(ls.LocaleString(p), "hans")
 		}

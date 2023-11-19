@@ -8,7 +8,6 @@ package server
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"net/http"
 	"sync"
 	"time"
@@ -16,9 +15,6 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
@@ -37,12 +33,8 @@ type httpServer struct {
 	state       web.State
 	services    *services
 	ctxBuilder  *web.ContextBuilder
-
-	location *time.Location
-	catalog  *catalog.Builder
-	tag      language.Tag
-	printer  *message.Printer
-	logs     web.Logs
+	location    *time.Location
+	logs        web.Logs
 
 	closed chan struct{}
 	closes []func() error
@@ -50,6 +42,7 @@ type httpServer struct {
 	problems        *problems
 	codec           *web.Codec
 	config          *config.Config
+	locale          *locale.Locale
 	disableCompress bool
 }
 
@@ -75,9 +68,6 @@ func New(name, version string, o *Options) (web.Server, error) {
 		state:       web.Stopped,
 
 		location: o.Location,
-		catalog:  o.Catalog,
-		tag:      o.Language,
-		printer:  o.printer,
 		logs:     o.logs,
 
 		closed: make(chan struct{}, 1),
@@ -85,6 +75,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 
 		problems: o.problems,
 		codec:    o.codec,
+		locale:   o.locale,
 		config:   o.Config,
 	}
 
@@ -185,22 +176,7 @@ func (srv *httpServer) Logs() web.Logs { return srv.logs }
 
 func (srv *httpServer) Config() *config.Config { return srv.config }
 
-func (srv *httpServer) NewLocalePrinter(tag language.Tag) *message.Printer {
-	if tag == srv.Language() {
-		return srv.LocalePrinter()
-	}
-	return newPrinter(tag, srv.Catalog())
-}
-
-func (srv *httpServer) Catalog() *catalog.Builder { return srv.catalog }
-
-func (srv *httpServer) LocalePrinter() *message.Printer { return srv.printer }
-
-func (srv *httpServer) Language() language.Tag { return srv.tag }
-
-func (srv *httpServer) LoadLocale(glob string, fsys ...fs.FS) error {
-	return locale.Load(srv.Config().Serializer(), srv.Catalog(), glob, fsys...)
-}
+func (srv *httpServer) Locale() web.Locale { return srv.locale }
 
 func (srv *httpServer) NewClient(client *http.Client, selector web.Selector, marshalName string, marshal func(any) ([]byte, error)) *web.Client {
 	return web.NewClient(client, srv.codec, selector, marshalName, marshal)

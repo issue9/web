@@ -187,7 +187,7 @@ func TestContext_SetLanguage(t *testing.T) {
 	ctx := srv.NewContext(w, r)
 	a.NotNil(ctx)
 
-	a.Equal(ctx.LanguageTag(), ctx.Server().Language())
+	a.Equal(ctx.LanguageTag(), ctx.Server().Locale().ID())
 
 	cmnHant := language.MustParse("cmn-hant")
 	ctx.SetLanguage(cmnHant)
@@ -214,14 +214,14 @@ func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a)
-	b := srv.Catalog()
+	b := srv.Locale()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
 	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
 
 	tag := acceptLanguage(srv, "")
-	a.Equal(tag, srv.language, "v1:%s, v2:%s", tag.String(), language.Und.String())
+	a.Equal(tag, srv.Locale().ID(), "v1:%s, v2:%s", tag.String(), language.Und.String())
 
 	tag = acceptLanguage(srv, "zh") // 匹配 zh-hans
 	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())

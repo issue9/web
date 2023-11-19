@@ -187,7 +187,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = b.server.NewLocalePrinter(tag)
+	ctx.localePrinter = b.server.Locale().NewPrinter(tag)
 	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
 	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
 
@@ -300,7 +300,7 @@ func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {
 		ctx.languageTag = tag
-		ctx.localePrinter = ctx.Server().NewLocalePrinter(tag)
+		ctx.localePrinter = ctx.Server().Locale().NewPrinter(tag)
 	}
 }
 
@@ -331,9 +331,9 @@ func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits
 
 func acceptLanguage(s Server, header string) language.Tag {
 	if header == "" {
-		return s.Language()
+		return s.Locale().ID()
 	}
-	tag, _ := language.MatchStrings(s.Catalog().Matcher(), header)
+	tag, _ := language.MatchStrings(s.Locale().Matcher(), header)
 	return tag
 }
 

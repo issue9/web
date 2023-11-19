@@ -5,7 +5,6 @@ package web
 import (
 	"bytes"
 	"context"
-	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
@@ -24,21 +22,22 @@ import (
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/logs"
 )
 
+var _ Locale = &locale.Locale{}
+
 type testServer struct {
 	a               *assert.Assertion
-	language        language.Tag
 	logs            logs.Logs
 	logBuf          *bytes.Buffer
-	catalog         *catalog.Builder
 	unique          *unique.Unique
 	cache           cache.Driver
 	routers         *group.GroupOf[HandlerFunc]
-	printer         *localeutil.Printer
 	codec           *Codec
 	disableCompress bool
+	locale          *locale.Locale
 }
 
 type testProblems struct{}
@@ -67,23 +66,19 @@ func newTestServer(a *assert.Assertion) *testServer {
 	cc, _ := caches.NewMemory()
 
 	srv := &testServer{
-		a:        a,
-		language: l,
-		logs:     log,
-		logBuf:   logBuf,
-		catalog:  c,
-		unique:   u,
-		cache:    cc,
-		printer:  p,
-		codec:    newCodec(a),
+		a:      a,
+		logs:   log,
+		logBuf: logBuf,
+		unique: u,
+		cache:  cc,
+		codec:  newCodec(a),
+		locale: locale.New(l, nil, nil),
 	}
 
 	return srv
 }
 
 func (s *testServer) Cache() cache.Cleanable { return s.cache }
-
-func (s *testServer) Catalog() *catalog.Builder { return s.catalog }
 
 func (s *testServer) Close(shutdownTimeout time.Duration) { panic("未实现") }
 
@@ -94,12 +89,6 @@ func (s *testServer) Config() *config.Config { panic("未实现") }
 func (s *testServer) DisableCompress(disable bool) { panic("未实现") }
 
 func (s *testServer) GetRouter(name string) *Router { return s.routers.Router(name) }
-
-func (s *testServer) Language() language.Tag { return s.language }
-
-func (s *testServer) LoadLocale(glob string, fsys ...fs.FS) error { panic("未实现") }
-
-func (s *testServer) LocalePrinter() *message.Printer { return s.printer }
 
 func (s *testServer) Location() *time.Location { return time.Local }
 
@@ -113,10 +102,6 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	return NewContextBuilder(s, s.codec, header.RequestIDKey).NewContext(w, r, nil)
-}
-
-func (s *testServer) NewLocalePrinter(tag language.Tag) *message.Printer {
-	return message.NewPrinter(tag, message.Catalog(s.Catalog()))
 }
 
 func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {
@@ -154,6 +139,8 @@ func (s *testServer) CanCompress() bool { return !s.disableCompress }
 func (s *testServer) SetCompress(e bool) { s.disableCompress = !e }
 
 func (s *testServer) Problems() Problems { return &testProblems{} }
+
+func (s *testServer) Locale() Locale { return s.locale }
 
 func (s *testProblems) Init(pp *RFC7807, id string, p *message.Printer) {
 	status, err := strconv.Atoi(id[:3])

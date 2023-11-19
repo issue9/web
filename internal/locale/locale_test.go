@@ -15,6 +15,62 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func TestLocale_Printer(t *testing.T) {
+	a := assert.New(t, false)
+
+	b := catalog.NewBuilder()
+	b.SetString(language.SimplifiedChinese, "lang", "hans")
+	l := New(language.SimplifiedChinese, nil, b)
+	a.NotNil(l)
+	p1 := l.Printer()
+	l.SetString(language.SimplifiedChinese, "lang", "hans-2")
+	p2 := l.Printer()
+	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+
+	// ID 不存在于 catalog
+
+	b = catalog.NewBuilder()
+	b.SetString(language.SimplifiedChinese, "lang", "hans")
+	l = New(language.Afrikaans, nil, b)
+	a.NotNil(l)
+	p1 = l.Printer()
+	l.SetString(language.Afrikaans, "lang", "afrik")
+	p2 = l.Printer()
+	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+}
+
+func TestLocale_NewPrinter(t *testing.T) {
+	a := assert.New(t, false)
+	l := New(language.SimplifiedChinese, nil, nil)
+	a.NotNil(l).Equal(l.ID(), language.SimplifiedChinese)
+
+	// language.SimplifiedChinese 是默认的 ID，初始化 l 时即已存在。
+
+	p1 := l.NewPrinter(language.SimplifiedChinese)
+	l.SetString(language.SimplifiedChinese, "lang", "hans")
+	p2 := l.NewPrinter(language.SimplifiedChinese)
+	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+
+	// language.TraditionalChinese 在调用 SetString 之前不存在，
+	// 所以 p1 会匹配成其它相似的值，p2 则会准确匹配到 TraditionalChinese。
+
+	p1 = l.NewPrinter(language.TraditionalChinese)
+	l.SetString(language.TraditionalChinese, "lang", "hant")
+	p2 = l.NewPrinter(language.TraditionalChinese)
+	a.NotEqual(p1.Sprintf("lang"), p2.Sprintf("lang"))
+}
+
+func TestNewPrinter(t *testing.T) {
+	a := assert.New(t, false)
+
+	c := catalog.NewBuilder()
+	c.SetString(language.MustParse("zh-CN"), "k1", "zh-cn")
+	c.SetString(language.MustParse("zh-TW"), "k1", "zh-tw")
+
+	p := NewPrinter(language.MustParse("cmn-hans"), c)
+	a.Equal(p.Sprintf("k1"), "zh-cn")
+}
+
 func Test_Load(t *testing.T) {
 	a := assert.New(t, false)
 

@@ -74,23 +74,6 @@ type Server interface {
 	// Config 当前项目配置文件的管理
 	Config() *config.Config
 
-	// Language 返回默认的语言标签
-	Language() language.Tag
-
-	// LoadLocale 从 fsys 中加载符合 glob 的本地化文件
-	//
-	// 根据 [Server.Config] 处理文件格式，如果不被 [Server.Config] 支持，将无法加载。
-	LoadLocale(glob string, fsys ...fs.FS) error
-
-	// LocalePrinter 符合当前本地化信息的打印接口
-	LocalePrinter() *message.Printer
-
-	// Catalog 用于操纵原生的本地化数据
-	Catalog() *catalog.Builder
-
-	// NewLocalePrinter 声明 tag 类型的本地化打印接口
-	NewLocalePrinter(tag language.Tag) *message.Printer
-
 	// Logs 日志接口
 	Logs() Logs
 
@@ -133,6 +116,39 @@ type Server interface {
 
 	// Services 服务管理接口
 	Services() Services
+
+	// Locale 提供本地化相关功能
+	Locale() Locale
+}
+
+// Locale 提供与本地化相关的功能
+type Locale interface {
+	catalog.Catalog
+
+	// ID 返回默认的语言标签
+	ID() language.Tag
+
+	// LoadMessages 从 fsys 中加载符合 glob 的本地化文件
+	//
+	// 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
+	LoadMessages(glob string, fsys ...fs.FS) error
+
+	// Printer 最符合 [Locale.ID] 的 [message.Printer] 对象
+	Printer() *message.Printer
+
+	// NewPrinter 声明最符合 tag 的 [message.Printer] 对象
+	//
+	// NOTE: 随着 [Locale.SetString] 的不断调用，相同参数返回的对象可能会变化。
+	NewPrinter(tag language.Tag) *message.Printer
+
+	// SetString 添加新的翻译项
+	SetString(tag language.Tag, key, msg string) error
+
+	// SetMacro 添加新的翻译项
+	SetMacro(tag language.Tag, name string, msg ...catalog.Message) error
+
+	// Set 添加新的翻译项
+	Set(tag language.Tag, key string, msg ...catalog.Message) error
 }
 
 // Problems Problem 管理接口
@@ -143,7 +159,7 @@ type Problems interface {
 	// 只能通过修改翻译项的方式间接进行修改。
 	Add(status int, p ...LocaleProblem) Problems
 
-	// Init 将指定 ID 的项流入 [RFC7807] 对象
+	// Init 将指定 ID 的项注入 [RFC7807] 对象
 	Init(problem *RFC7807, id string, p *message.Printer)
 
 	// Visit 遍历错误代码

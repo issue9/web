@@ -10,13 +10,13 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
 	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 )
@@ -90,7 +90,7 @@ type (
 		// 默认的语言标签
 		//
 		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-		// 同时也用来初始化 [Server.LocalePrinter]。
+		// 同时也用来初始化 [Server.Locale.Printer]。
 		//
 		// 框架中的日志输出时，如果该信息实现了 [LocaleStringer] 接口，
 		// 将会转换成此设置项的语言。
@@ -101,9 +101,11 @@ type (
 		// 本地化的数据
 		//
 		// 如果为空，则会被初始化成一个空对象。
+		// Catalog 中会强行插入一条 tag 与 [Options.Language] 相同的翻译项，
+		// 以保证能正确构建 [web.Server.Printer] 对象。
 		Catalog *catalog.Builder
 
-		printer *message.Printer // 由 Language 和 Catalog 形成
+		locale *locale.Locale
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
@@ -170,9 +172,9 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Language))
 	}
 
-	o.printer = newPrinter(o.Language, o.Catalog)
+	o.locale = locale.New(o.Language, o.Config, o.Catalog)
 
-	l, err := logs.New(o.printer, o.Logs)
+	l, err := logs.New(o.locale.Printer(), o.Logs)
 	if err != nil {
 		return nil, config.NewFieldError("Logs", err)
 	}
@@ -191,9 +193,4 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	o.problems = newProblems(o.ProblemTypePrefix)
 
 	return o, nil
-}
-
-func newPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
-	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
-	return message.NewPrinter(tag, message.Catalog(cat))
 }

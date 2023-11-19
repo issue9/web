@@ -2,8 +2,8 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//	 srv := NewServer("", "", &Options{
-//		Mimetypes: []Mimetype{
+//	 srv := server.New("", "", &server.Options{
+//		Mimetypes: []server.Mimetype{
 //			Type: "text/html",
 //			ProblemType: "",
 //			Marshal: html.Marshal,

@@ -81,7 +81,7 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	// locale
-	b := srv.Catalog()
+	b := srv.Locale()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
@@ -89,6 +89,18 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 	srv.Problems().Add(411, web.LocaleProblem{ID: "41110", Title: web.Phrase("lang"), Detail: web.Phrase("41110")})
 
 	return srv.(*httpServer)
+}
+
+func TestServer_LocalePrinter_Sprintf(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newTestServer(a, &Options{Language: language.TraditionalChinese})
+
+	p := srv.Locale().Printer()
+	a.Equal(p.Sprintf("lang"), "hant")
+
+	p = srv.Locale().NewPrinter(language.SimplifiedChinese)
+	srv.Locale().SetString(language.SimplifiedChinese, "lang1", "sc")
+	a.Equal(p.Sprintf("lang1"), "sc")
 }
 
 func TestServer_Serve(t *testing.T) {

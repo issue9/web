@@ -108,15 +108,13 @@ func initTpl(s web.Server, fsys fs.FS) (fs.FS, template.FuncMap) {
 		fsys = s.Config()
 	}
 
-	funcs := template.FuncMap{
+	return fsys, template.FuncMap{
 		"t": func(msg string, v ...any) string {
-			return s.LocalePrinter().Sprintf(msg, v...)
+			return s.Locale().Printer().Sprintf(msg, v...)
 		},
 
 		"tt": func(tag, msg string, v ...any) string {
-			return s.NewLocalePrinter(language.MustParse(tag)).Sprintf(msg, v...)
+			return s.Locale().NewPrinter(language.MustParse(tag)).Sprintf(msg, v...)
 		},
 	}
-
-	return fsys, funcs
 }
