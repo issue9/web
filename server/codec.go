@@ -50,6 +50,10 @@ type Mimetype struct {
 }
 
 func buildCodec(ms []*Mimetype, cs []*Compression) (*web.Codec, *web.FieldError) {
+	if len(ms) == 0 {
+		return nil, web.NewFieldError("Mimetypes", locales.CanNotBeEmpty)
+	}
+
 	// 检测是否存在同名的项
 	indexes := sliceutil.Dup(ms, func(e1, e2 *Mimetype) bool { return e1.Name == e2.Name })
 	if len(indexes) > 0 {

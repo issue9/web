@@ -16,6 +16,9 @@ func TestBuildCodec(t *testing.T) {
 	a := assert.New(t, false)
 
 	c, err := buildCodec(nil, nil)
+	a.Equal(err.Field, "Mimetypes").Nil(c)
+
+	c, err = buildCodec(XMLMimetypes(), nil)
 	a.NotError(err).NotNil(c)
 
 	c, err = buildCodec(APIMimetypes(), DefaultCompressions())
