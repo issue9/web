@@ -81,10 +81,34 @@ func newCodec(a *assert.Assertion) *Codec {
 		AddCompressor(&compressorTest{name: ""}).
 		AddMimetype("application/json", marshalJSON, unmarshalJSON, "application/problem+json").
 		AddMimetype("application/xml", marshalXML, unmarshalXML, "application/problem+xml").
-		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test").
-		AddMimetype("nil", nil, nil, "nil")
+		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test")
 
 	return c
+}
+
+func TestCodec_AddMimetype(t *testing.T) {
+	a := assert.New(t, false)
+	c := NewCodec()
+
+	a.PanicString(func() {
+		c.AddMimetype("", nil, nil, "")
+	}, "参数 name 不能为空")
+
+	a.PanicString(func() {
+		c.AddMimetype("application/json", nil, nil, "")
+	}, "参数 m 不能为空")
+
+	a.PanicString(func() {
+		c.AddMimetype("application/json", marshalJSON, nil, "")
+	}, "参数 u 不能为空")
+
+	a.NotPanic(func() {
+		c.AddMimetype("application/json", marshalJSON, unmarshalJSON, "")
+	})
+
+	a.PanicString(func() {
+		c.AddMimetype("application/json", marshalJSON, unmarshalJSON, "")
+	}, "存在重复的项 application/json")
 }
 
 func TestBuildCompression(t *testing.T) {
@@ -97,6 +121,11 @@ func TestBuildCompression(t *testing.T) {
 
 	c = buildCompression(&compressorTest{name: "gzip"}, []string{"text"})
 	a.Equal(c.types, []string{"text"})
+
+	c = buildCompression(&compressorTest{name: "gzip"}, []string{"text", "*"})
+	a.Nil(c.types).
+		True(c.wildcard).
+		Nil(c.wildcardSuffix)
 }
 
 func TestCodec_contentEncoding(t *testing.T) {
@@ -239,8 +268,7 @@ func TestCodec_accept(t *testing.T) {
 	mt = NewCodec()
 	a.NotNil(mt)
 	mt.AddMimetype("application/json", marshalJSON, unmarshalJSON, "").
-		AddMimetype("text/plain", marshalXML, unmarshalXML, "text/plain+problem").
-		AddMimetype("empty", nil, nil, "")
+		AddMimetype("text/plain", marshalXML, unmarshalXML, "text/plain+problem")
 
 	item = mt.accept("application/json")
 	a.NotNil(item).
@@ -271,24 +299,18 @@ func TestCodec_accept(t *testing.T) {
 
 	item = mt.accept("font/wottf")
 	a.Nil(item)
-
-	// 匹配 empty
-	item = mt.accept("empty")
-	a.NotNil(item).
-		Equal(item.name(false), "empty").
-		Nil(item.Marshal)
 }
 
 func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
 	mm := NewCodec()
 	a.NotNil(mm)
-	mm.AddMimetype("text", nil, nil, "").
-		AddMimetype("text/plain", nil, nil, "").
-		AddMimetype("text/text", nil, nil, "").
-		AddMimetype("application/aa", nil, nil, "").
-		AddMimetype("application/bb", nil, nil, "application/problem+bb").
-		AddMimetype("application/json", nil, nil, "")
+	mm.AddMimetype("text", marshalTest, unmarshalTest, "").
+		AddMimetype("text/plain", marshalTest, unmarshalTest, "").
+		AddMimetype("text/text", marshalTest, unmarshalTest, "").
+		AddMimetype("application/aa", marshalTest, unmarshalTest, "").
+		AddMimetype("application/bb", marshalTest, unmarshalTest, "application/problem+bb").
+		AddMimetype("application/json", marshalTest, unmarshalTest, "")
 
 	item := mm.findMarshal("text")
 	a.NotNil(item).Equal(item.name(false), "text")

@@ -62,7 +62,14 @@ func buildCodec(ms []*Mimetype, cs []*Compression) (*web.Codec, *web.FieldError)
 		if s.Name == "" {
 			return nil, web.NewFieldError("Mimetypes["+strconv.Itoa(i)+"].Name", locales.CanNotBeEmpty)
 		}
-		// Marshal 和 Unmarshal 可以为空
+
+		if s.Marshal == nil {
+			return nil, web.NewFieldError("Mimetypes["+strconv.Itoa(i)+"].Marshal", locales.CanNotBeEmpty)
+		}
+
+		if s.Unmarshal == nil {
+			return nil, web.NewFieldError("Mimetypes["+strconv.Itoa(i)+"].Unmarshal", locales.CanNotBeEmpty)
+		}
 
 		c.AddMimetype(s.Name, s.Marshal, s.Unmarshal, s.Problem)
 	}
@@ -121,7 +128,6 @@ func APIMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: json.Mimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
 		{Name: xml.Mimetype, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
-		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }
 
@@ -129,7 +135,6 @@ func APIMimetypes() []*Mimetype {
 func XMLMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: xml.Mimetype, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: xml.ProblemMimetype},
-		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }
 
@@ -137,6 +142,5 @@ func XMLMimetypes() []*Mimetype {
 func JSONMimetypes() []*Mimetype {
 	return []*Mimetype{
 		{Name: json.Mimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: json.ProblemMimetype},
-		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}
 }

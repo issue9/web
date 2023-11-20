@@ -137,6 +137,18 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 		problem = name
 	}
 
+	if name == "" {
+		panic("参数 name 不能为空")
+	}
+
+	if m == nil {
+		panic("参数 m 不能为空")
+	}
+
+	if u == nil {
+		panic("参数 u 不能为空")
+	}
+
 	// 检测复复值
 	if sliceutil.Exists(e.types, func(v *mimetype, _ int) bool { return v.Name == name }) {
 		panic(fmt.Sprintf("存在重复的项 %s", name))

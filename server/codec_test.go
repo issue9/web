@@ -9,6 +9,7 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/codec/compressor"
+	"github.com/issue9/web/codec/mimetype/json"
 )
 
 func TestBuildCodec(t *testing.T) {
@@ -31,6 +32,16 @@ func TestBuildCodec(t *testing.T) {
 		{Name: "", Marshal: nil, Unmarshal: nil},
 	}, BestSpeedCompressions())
 	a.Equal(err.Field, "Mimetypes[0].Name").Nil(c)
+
+	c, err = buildCodec([]*Mimetype{
+		{Name: "text", Marshal: nil, Unmarshal: nil},
+	}, BestSpeedCompressions())
+	a.Equal(err.Field, "Mimetypes[0].Marshal").Nil(c)
+
+	c, err = buildCodec([]*Mimetype{
+		{Name: "text", Marshal: json.Marshal, Unmarshal: nil},
+	}, BestSpeedCompressions())
+	a.Equal(err.Field, "Mimetypes[0].Unmarshal").Nil(c)
 
 	c, err = buildCodec(JSONMimetypes(), []*Compression{
 		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8)},

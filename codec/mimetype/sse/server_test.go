@@ -14,6 +14,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
@@ -67,8 +68,8 @@ func TestServer(t *testing.T) {
 	})
 
 	servertest.Get(a, "http://localhost:8080/event/5").
-		Header("accept", "application/json").
-		Header("accept-encoding", "").
+		Header(header.Accept, "application/json").
+		Header(header.AcceptEncoding, "").
 		Do(nil).
 		Status(http.StatusOK).
 		StringBody(`data:connect

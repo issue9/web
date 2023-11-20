@@ -36,9 +36,6 @@ messages:
     - key: invalid value
       message:
         msg: invalid value
-    - key: not found
-      message:
-        msg: not found
     - key: not found charset for %s
       message:
         msg: not found charset for %s

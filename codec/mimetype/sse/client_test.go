@@ -56,8 +56,7 @@ func TestOnMessage(t *testing.T) {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Mimetypes: []*server.Mimetype{
-			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
-			{Name: Mimetype, Marshal: nil, Unmarshal: nil},
+			{Name: Mimetype, Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
 		Logs: &logs.Options{
 			Created: logs.MicroLayout,

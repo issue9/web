@@ -116,19 +116,6 @@ func TestContext_Render(t *testing.T) {
 	a.True(n > 0).
 		Equal(w.Body.String(), `"123"123`)
 
-	// outputMimetype.Marshal == nil
-	srv.logBuf.Reset()
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "nil")
-	ctx = srv.NewContext(w, r)
-	a.NotNil(ctx, srv.logBuf.String()).
-		Equal(ctx.Mimetype(false), "nil").
-		Equal(ctx.Charset(), header.UTF8Name)
-	ctx.Render(http.StatusCreated, "val")
-	ctx.Free()
-	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
-
 	// outputMimetype.Marshal 返回 ErrUnsupported
 	srv.logBuf.Reset()
 	w = httptest.NewRecorder()

@@ -72,7 +72,6 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 		o.Mimetypes = []*Mimetype{
 			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
 			{Name: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
-			{Name: "nil", Marshal: nil, Unmarshal: nil, Problem: ""},
 		}
 	}
 

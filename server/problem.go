@@ -22,8 +22,8 @@ type problem struct {
 
 	Type   string // 带 prefix
 	Status int
-	Title  localeutil.Stringer
-	Detail localeutil.Stringer
+	Title  web.LocaleStringer
+	Detail web.LocaleStringer
 }
 
 func newProblems(prefix string) *problems {
@@ -74,7 +74,7 @@ func (ps *problems) exists(id string) bool {
 	return sliceutil.Exists(ps.problems, func(p *problem, _ int) bool { return p.id == id })
 }
 
-func (ps *problems) Visit(visit func(id string, status int, title, detail localeutil.Stringer)) {
+func (ps *problems) Visit(visit func(id string, status int, title, detail web.LocaleStringer)) {
 	for _, s := range ps.problems {
 		visit(s.id, s.Status, s.Title, s.Detail)
 	}

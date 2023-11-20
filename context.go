@@ -43,15 +43,12 @@ type Context struct {
 	outputCompressor  Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
+	outputMimetype    *mimetype
 	status            int // WriteHeader 保存的副本
 	wrote             bool
 
-	// 输出时所使用的编码类型。一般从 Accept 报头解析得到。
-	// 如果是调用 Context.Write 输出内容，outputMimetype.Marshal 可以为空。
-	outputMimetype *mimetype
-
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputMimetype UnmarshalFunc // 可以为空
+	inputMimetype UnmarshalFunc
 	inputCharset  encoding.Encoding
 
 	// 区域和本地相关信息
@@ -99,7 +96,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	id := r.Header.Get(b.requestIDKey)
 
 	h := r.Header.Get(header.Accept)
-	mt := b.codec.accept(h)
+	mt := b.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if mt == nil {
 		var l logs.Recorder = b.server.Logs().DEBUG()
 		if id != "" {
@@ -107,7 +104,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 		l.LocaleString(Phrase("not found serialization for %s", h))
 
-		w.WriteHeader(http.StatusNotAcceptable) // 此时 [Context] 未初始化，无法处理 [Problem]，只是简单地输出状态码。
+		w.WriteHeader(http.StatusNotAcceptable) // 此时还不知道将 problem 序列化成什么类型，只简单地返回状态码。
 		return nil
 	}
 
@@ -120,7 +117,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 		l.LocaleString(Phrase("not found charset for %s", h))
 
-		w.WriteHeader(http.StatusNotAcceptable)
+		w.WriteHeader(http.StatusNotAcceptable) // 无法找到对方要求的字符集，依然只是简单地返回状态码。
 		return nil
 	}
 
@@ -170,12 +167,12 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.begin = b.server.Now()
 	ctx.queries = nil
 
-	// response
 	ctx.originResponse = w
 	ctx.writer = w
 	ctx.outputCompressor = outputCompressor
 	ctx.outputCharset = outputCharset
 	ctx.outputCharsetName = outputCharsetName
+	ctx.outputMimetype = mt
 	ctx.status = 0
 	ctx.wrote = false
 	if ctx.outputCompressor != nil {
@@ -183,7 +180,6 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		h.Set(header.ContentEncoding, outputCompressor.Name())
 	}
 
-	ctx.outputMimetype = mt
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
@@ -257,12 +253,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 // Mimetype 返回输出编码名称
 //
 // problem 表示是否返回 problem 状态时的值。
-func (ctx *Context) Mimetype(problem bool) string {
-	if ctx.outputMimetype == nil {
-		return ""
-	}
-	return ctx.outputMimetype.name(problem)
-}
+func (ctx *Context) Mimetype(problem bool) string { return ctx.outputMimetype.name(problem) }
 
 // SetEncoding 设置输出的压缩编码
 func (ctx *Context) SetEncoding(enc string) {

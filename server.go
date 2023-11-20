@@ -138,16 +138,23 @@ type Locale interface {
 
 	// NewPrinter 声明最符合 tag 的 [message.Printer] 对象
 	//
-	// NOTE: 随着 [Locale.SetString] 的不断调用，相同参数返回的对象可能会变化。
+	// NOTE: 每当给 [Locale.SetString]、[Locale.SetMacro] 和 [Locale.Set] 传递新的 [language.Tag]
+	// 值时，可能造成 NewPrinter 相同的入参而返回不同的返回对象的情况。
 	NewPrinter(tag language.Tag) *message.Printer
 
 	// SetString 添加新的翻译项
+	//
+	// 功能同 [catalog.Builder.SetString]
 	SetString(tag language.Tag, key, msg string) error
 
 	// SetMacro 添加新的翻译项
+	//
+	// 功能同 [catalog.Builder.SetMacro]
 	SetMacro(tag language.Tag, name string, msg ...catalog.Message) error
 
 	// Set 添加新的翻译项
+	//
+	// 功能同 [catalog.Builder.Set]
 	Set(tag language.Tag, key string, msg ...catalog.Message) error
 }
 
