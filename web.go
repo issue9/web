@@ -10,7 +10,6 @@ package web
 import (
 	"context"
 	"io"
-	"io/fs"
 
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
@@ -144,22 +143,3 @@ func NewLocaleError(format string, v ...any) error {
 //
 // 此方法返回的错误，在 [Context.Error] 会被识别且按指定的状态码输出。
 func NewError(status int, err error) error { return errs.NewError(status, err) }
-
-// FileServer 构建静态文件服务对象
-//
-// fsys 为文件系统；
-// name 表示地址中表示文件名部分的参数名称；
-// index 表示目录下的默认文件名；
-func FileServer(fsys fs.FS, name, index string) HandlerFunc {
-	if name == "" {
-		panic("参数 name 不能为空")
-	}
-
-	return func(ctx *Context) Responser {
-		p, _ := ctx.Route().Params().Get(name) // 空值也是允许的值
-		if err := mux.ServeFile(fsys, p, index, ctx, ctx.Request()); err != nil {
-			return ctx.Error(err, "")
-		}
-		return nil
-	}
-}

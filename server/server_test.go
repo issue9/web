@@ -143,10 +143,6 @@ func TestServer_Serve(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/m2/103").Do(nil).Status(http.StatusOK)
 
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
-
-	// 静态文件
-	router.Get("/admin/{path}", web.FileServer(os.DirFS("./testdata"), "path", "index.html"))
-	servertest.Get(a, "http://localhost:8080/admin/file1.txt").Do(nil).Status(http.StatusOK)
 }
 
 func TestServer_Serve_HTTPS(t *testing.T) {

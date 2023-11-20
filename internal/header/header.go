@@ -24,10 +24,11 @@ const (
 
 // 一些报头名的定义
 const (
-	ContentType     = "Content-Type"
-	ContentLang     = "Content-Language"
-	ContentLength   = "Content-Length"
-	ContentEncoding = "Content-Encoding"
+	ContentType        = "Content-Type"
+	ContentLang        = "Content-Language"
+	ContentLength      = "Content-Length"
+	ContentEncoding    = "Content-Encoding"
+	ContentDisposition = "Content-Disposition"
 
 	Accept         = "Accept"
 	AcceptLang     = "Accept-Language"
