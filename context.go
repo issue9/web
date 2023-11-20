@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/issue9/mux/v7/types"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -184,7 +184,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
 	ctx.localePrinter = b.server.Locale().NewPrinter(tag)
-	ctx.vars = map[any]any{} // TODO: go1.21 可以改为 clear(ctx.vars)
+	clear(ctx.vars)
 	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
 
 	return ctx
@@ -300,7 +300,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 func (ctx *Context) Free() {
-	sliceutil.Reverse(ctx.exits) // TODO: go1.21 改为标准库
+	slices.Reverse(ctx.exits)
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}

@@ -9,12 +9,12 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
@@ -145,7 +145,7 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 	}
 
 	defer func() {
-		sliceutil.Reverse(srv.closes)  // TODO: go1.21 改为标准库
+		slices.Reverse(srv.closes)
 		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。
 			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
 				srv.Logs().ERROR().Error(err1)
