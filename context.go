@@ -21,7 +21,12 @@ import (
 )
 
 var contextPool = &sync.Pool{
-	New: func() any { return &Context{exits: make([]func(*Context, int), 0, 5)} },
+	New: func() any {
+		return &Context{
+			exits: make([]func(*Context, int), 0, 5),
+			vars:  map[any]any{},
+		}
+	},
 }
 
 // Context 根据当次 HTTP 请求生成的上下文内容
