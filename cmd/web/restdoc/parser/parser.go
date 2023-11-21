@@ -244,6 +244,9 @@ func (p *Parser) isIgnoreTag(tag ...string) bool {
 	return true
 }
 
+// tag 标签名称，比如 @version；
+// size 标签最少需要的参数；
+// filename 和 ln 表示出错的位置，分别为文件名和行号；
 func (p *Parser) syntaxError(tag string, size int, filename string, ln int) {
 	p.l.Error(web.NewLocaleError("%s requires at least %d parameters", tag, size), filename, ln)
 }

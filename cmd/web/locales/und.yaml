@@ -95,6 +95,9 @@ messages:
     - key: invalid http method %s
       message:
         msg: invalid http method %s
+    - key: invalid type of %s
+      message:
+        msg: invalid type of %s
     - key: language
       message:
         msg: language
@@ -104,6 +107,9 @@ messages:
     - key: no src dir
       message:
         msg: no src dir
+    - key: not found const %s
+      message:
+        msg: not found const %s
     - key: not found module %s
       message:
         msg: not found module %s

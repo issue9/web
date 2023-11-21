@@ -19,6 +19,7 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
+// SearchFunc 查找指定名称的包
 type SearchFunc func(string) *pkg.Package
 
 // New 根据类型名称 typePath 生成 SchemaRef 对象
@@ -308,7 +309,7 @@ func (f SearchFunc) fromTypeExpr(t *openapi.OpenAPI, file *ast.File, currPath, t
 		return f.fromIndexExpr(t, file, currPath, tag, expr, tpRefs)
 	case *ast.IndexListExpr: // Type[T, int]
 		return f.fromIndexListExpr(t, file, currPath, tag, expr, tpRefs)
-	//case *ast.InterfaceType: // 无法处理此类型
+	// case *ast.InterfaceType: // 无法处理此类型
 	default:
 		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %+v", expr))
 	}

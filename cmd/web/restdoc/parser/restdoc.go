@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"go/ast"
 	"go/build"
 	"net/url"
 	"path/filepath"
@@ -82,7 +83,12 @@ LOOP:
 		case "@term": // @term https://example.com/term.html
 			info.TermsOfService = suffix
 		case "@version": // @version 1.0.0
-			info.Version = p.parseVersion(suffix)
+			v, err := p.parseVersion(suffix, currPath)
+			if err != nil {
+				p.syntaxError("@version", 1, filename, ln+i)
+				continue LOOP
+			}
+			info.Version = v
 		case "@contact": // @contact name *https://example.com/contact *contact@example.com
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l == 0 {
@@ -248,17 +254,23 @@ LOOP:
 	t.Doc().Info = info
 }
 
-func (p *Parser) parseVersion(suffix string) string {
+// @version 1.0.0 // 直接指定版本号
+// @version git // 采用 git 的版本号
+// @version path/pkg.version // 采用指向的常量作为版本号
+func (p *Parser) parseVersion(suffix, currPath string) (string, error) {
 	var hash string
 	var err error
 
-	switch suffix {
-	case "git":
+	last := len(suffix) - 1
+	switch {
+	case suffix == "git":
 		hash, err = git.Commit(false)
-	case "git-full":
+	case suffix == "git-full":
 		hash, err = git.Commit(true)
-	default:
-		return suffix
+	case suffix[0] == '[' && suffix[last] == ']': // 指向常量
+		return p.parseConstVersion(suffix[1:last], currPath)
+	default: // 直接指定版本号
+		return suffix, nil
 	}
 
 	if err != nil { // 输出警告信息，但是不退出
@@ -269,7 +281,44 @@ func (p *Parser) parseVersion(suffix string) string {
 	if err != nil {
 		p.l.Warning(err)
 	}
-	return ver + "+" + hash
+	return ver + "+" + hash, nil
+}
+
+func (p *Parser) parseConstVersion(path, pkgPath string) (string, error) {
+	if index := strings.LastIndexByte(path, '/'); index >= 0 {
+		pkgPath = path[:index]
+		path = path[index+1:]
+	}
+
+	pkg := p.search(pkgPath)
+	for _, f := range pkg.Files {
+		for _, d := range f.Decls {
+			g, ok := d.(*ast.GenDecl)
+			if !ok {
+				continue
+			}
+
+			for _, spec := range g.Specs {
+				val, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+
+				for i, n := range val.Names {
+					if n.Name == path {
+						v := val.Values[i]
+						lit, ok := v.(*ast.BasicLit)
+						if !ok {
+							return "", web.NewLocaleError("invalid type of %s", path)
+						}
+						return lit.Value[1 : len(lit.Value)-1], nil
+					}
+				}
+			}
+		}
+	}
+
+	return "", web.NewLocaleError("not found const %s", path)
 }
 
 func parseScopes(scope string) map[string]string {

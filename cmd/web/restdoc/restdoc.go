@@ -42,7 +42,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		d := fs.Bool("d", false, depUsage.LocaleString(p))
 		urlPrefix := fs.String("p", "", prefixUsage.LocaleString(p))
 
-		return func(w io.Writer) error {
+		return func(io.Writer) error {
 			ctx := context.Background()
 			ls, err := logs.New(p, &logs.Options{
 				Levels:  logs.AllLevels(),
