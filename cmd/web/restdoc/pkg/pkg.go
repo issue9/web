@@ -31,7 +31,7 @@ type AppendFunc = func(*Package)
 
 // ScanDir 添加 root 下的内容
 //
-// 仅在调用 [RESTDoc.Openapi3] 之前添加有效果。
+// 仅在调用 [Parser.Parse] 之前添加有效果。
 // root 添加的目录；
 func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bool, af AppendFunc, l *logger.Logger) {
 	root = filepath.Clean(root)

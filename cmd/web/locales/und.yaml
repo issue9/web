@@ -137,6 +137,9 @@ messages:
     - key: parse module dependencies
       message:
         msg: parse module dependencies
+    - key: parse replace direct, only valid when d is true
+      message:
+        msg: parse replace direct, only valid when d is true
     - key: recursive dir
       message:
         msg: recursive dir

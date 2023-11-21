@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/issue9/cmdopt"
@@ -17,6 +18,7 @@ import (
 	"github.com/issue9/source"
 	"github.com/issue9/web"
 	"github.com/issue9/web/logs"
+	"golang.org/x/mod/modfile"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/parser"
@@ -30,6 +32,7 @@ const (
 	tagUsage       = web.StringPhrase("filter by tag")
 	depUsage       = web.StringPhrase("parse module dependencies")
 	prefixUsage    = web.StringPhrase("set api path prefix")
+	replaceUsage   = web.StringPhrase("parse replace direct, only valid when d is true")
 )
 
 const defaultOutput = "./restdoc.yaml"
@@ -41,6 +44,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		t := fs.String("t", "", tagUsage.LocaleString(p))
 		d := fs.Bool("d", false, depUsage.LocaleString(p))
 		urlPrefix := fs.String("p", "", prefixUsage.LocaleString(p))
+		replace := fs.Bool("replace", true, replaceUsage.LocaleString(p))
 
 		return func(io.Writer) error {
 			ctx := context.Background()
@@ -58,15 +62,12 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				tags = strings.Split(*t, ",")
 			}
 
-			l := logger.New(ls)
-			dp := parser.New(l, *urlPrefix, tags)
+			dp := parser.New(logger.New(ls), *urlPrefix, tags)
 			for _, dir := range fs.Args() {
 				dp.AddDir(ctx, dir, *r)
 
 				if *d {
-					modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
-
-					mod, err := source.ModFile(dir)
+					path, mod, err := source.ModFile(dir)
 					if err != nil {
 						return err
 					}
@@ -75,7 +76,11 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 						if p.Indirect {
 							continue
 						}
-						modDir := filepath.Join(modCache, p.Mod.Path+"@"+p.Mod.Version)
+
+						modDir, err := getRealPath(*replace, mod, p, filepath.Dir(path))
+						if err != nil {
+							return err
+						}
 						dp.AddDir(ctx, modDir, *r)
 					}
 				}
@@ -87,4 +92,17 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			return nil
 		}
 	})
+}
+
+var modCache = filepath.Join(build.Default.GOPATH, "pkg", "mod")
+
+func getRealPath(replace bool, mod *modfile.File, pkg *modfile.Require, dir string) (string, error) {
+	if replace && len(mod.Replace) > 0 {
+		index := slices.IndexFunc(mod.Replace, func(r *modfile.Replace) bool { return r.Old.Path == pkg.Mod.Path })
+		if index >= 0 {
+			p := filepath.Join(dir, mod.Replace[index].New.Path)
+			return filepath.Abs(p)
+		}
+	}
+	return filepath.Join(modCache, pkg.Mod.Path+"@"+pkg.Mod.Version), nil
 }
