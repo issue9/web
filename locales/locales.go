@@ -19,8 +19,8 @@ var Locales embed.FS
 //
 // 文件格式均为 yaml，使用时加载这些文件系统下的 yaml 文件即可：
 //
-//	s := web.NewServer(...)
-//	s.LoadLocale("*.yaml", locales.All()...)
+//	s := server.New(...)
+//	s.Locale().LoadMessages("*.yaml", locales.All()...)
 var All = []fs.FS{
 	Locales,
 	ll.Locales,

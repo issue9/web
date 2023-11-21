@@ -136,6 +136,9 @@ type Locale interface {
 	// Printer 最符合 [Locale.ID] 的 [message.Printer] 对象
 	Printer() *message.Printer
 
+	// Sprintf 等同于 Locale.Printer.Sprintf
+	Sprintf(string, ...any) string
+
 	// NewPrinter 声明最符合 tag 的 [message.Printer] 对象
 	//
 	// NOTE: 每当给 [Locale.SetString]、[Locale.SetMacro] 和 [Locale.Set] 传递新的 [language.Tag]

@@ -51,7 +51,7 @@ type Mimetype struct {
 
 func buildCodec(ms []*Mimetype, cs []*Compression) (*web.Codec, *web.FieldError) {
 	if len(ms) == 0 {
-		return nil, web.NewFieldError("Mimetypes", locales.CanNotBeEmpty)
+		ms = JSONMimetypes()
 	}
 
 	// 检测是否存在同名的项

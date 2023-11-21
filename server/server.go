@@ -76,7 +76,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 		problems: o.problems,
 		codec:    o.codec,
 		locale:   o.locale,
-		config:   o.Config,
+		config:   o.config,
 	}
 
 	srv.ctxBuilder = web.NewContextBuilder(srv, o.codec, o.RequestIDKey)

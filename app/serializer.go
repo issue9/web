@@ -5,44 +5,47 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/issue9/config"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
-var filesFactory = map[string]serializer{}
+var filesFactory = map[string]*server.FileSerializer{}
 
 type MarshalFileFunc = config.MarshalFunc
 
 type UnmarshalFileFunc = config.UnmarshalFunc
 
-type serializer struct {
-	Marshal   MarshalFileFunc
-	Unmarshal UnmarshalFileFunc
-}
-
 func (conf *configOf[T]) sanitizeFileSerializers() *web.FieldError {
-	conf.fileSerializers = make(map[string]serializer, len(conf.FileSerializers))
 	for i, name := range conf.FileSerializers {
 		s, found := filesFactory[name]
 		if !found {
 			return web.NewFieldError("["+strconv.Itoa(i)+"]", web.NewLocaleError("not found serialization function for %s", name))
 		}
-		conf.fileSerializers[name] = s // conf.FileSerializers 可以保证 conf.fileSerializers 唯一性
+		conf.config.Serializers = append(conf.config.Serializers, s)
 	}
 	return nil
 }
 
 // RegisterFileSerializer 注册用于文件序列化的方法
 //
-// ext 为文件的扩展名，如果存在同名，则会覆盖。
-func RegisterFileSerializer(m MarshalFileFunc, u UnmarshalFileFunc, ext ...string) {
+// ext 为文件的扩展名；
+// name 为当前数据的名称，如果存在同名，则会覆盖；
+func RegisterFileSerializer(name string, m MarshalFileFunc, u UnmarshalFileFunc, ext ...string) {
 	for _, e := range ext {
-		filesFactory[e] = serializer{Marshal: m, Unmarshal: u}
+		for k, s := range filesFactory {
+			if slices.Index(s.Exts, e) >= 0 {
+				panic(fmt.Sprintf("扩展名 %s 已经注册到 %s", e, k))
+			}
+		}
 	}
+	filesFactory[name] = &server.FileSerializer{Marshal: m, Unmarshal: u, Exts: ext}
 }
 
 func loadConfigOf[T any](configDir, name string) (*configOf[T], error) {
@@ -51,12 +54,10 @@ func loadConfigOf[T any](configDir, name string) (*configOf[T], error) {
 		return nil, err
 	}
 
-	conf := &configOf[T]{}
+	conf := &configOf[T]{config: &server.Config{Dir: configDir}}
 	if err := c.Load(name, conf); err != nil {
 		return nil, err
 	}
-	conf.config = c
-
 	return conf, nil
 }
 
@@ -69,7 +70,7 @@ func buildSerializerFromFactory() config.Serializer {
 }
 
 func init() {
-	RegisterFileSerializer(json.Marshal, json.Unmarshal, ".json")
-	RegisterFileSerializer(xml.Marshal, xml.Unmarshal, ".xml")
-	RegisterFileSerializer(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	RegisterFileSerializer("json", json.Marshal, json.Unmarshal, ".json")
+	RegisterFileSerializer("xml", xml.Marshal, xml.Unmarshal, ".xml")
+	RegisterFileSerializer("yaml", yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 }

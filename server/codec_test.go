@@ -16,9 +16,6 @@ func TestBuildCodec(t *testing.T) {
 	a := assert.New(t, false)
 
 	c, err := buildCodec(nil, nil)
-	a.Equal(err.Field, "Mimetypes").Nil(c)
-
-	c, err = buildCodec(XMLMimetypes(), nil)
 	a.NotError(err).NotNil(c)
 
 	c, err = buildCodec(APIMimetypes(), DefaultCompressions())
@@ -46,7 +43,7 @@ func TestBuildCodec(t *testing.T) {
 	}, BestSpeedCompressions())
 	a.Equal(err.Field, "Mimetypes[0].Unmarshal").Nil(c)
 
-	c, err = buildCodec(JSONMimetypes(), []*Compression{
+	c, err = buildCodec(XMLMimetypes(), []*Compression{
 		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8)},
 		{Compressor: nil},
 	})

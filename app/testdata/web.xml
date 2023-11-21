@@ -11,6 +11,6 @@
     <mimetypes>
         <mimetype type="application/json" target="json" />
         <mimetype type="text/xml" target="xml" />
-        <mimetype type="multipart/form-data" target="nil" />
+        <mimetype type="multipart/form-data" target="nop" />
     </mimetypes>
 </web>

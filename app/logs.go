@@ -37,7 +37,7 @@ type logsConfig struct {
 	Levels []logs.Level `xml:"level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty"`
 
 	// 是否接管标准库的日志
-	Stdlog bool `xml:"stdlog,attr,omitempty" json:"stdlog,omitempty" yaml:"stdlog,omitempty"`
+	Std bool `xml:"std,attr,omitempty" json:"std,omitempty" yaml:"std,omitempty"`
 
 	// 日志输出对象的配置
 	//
@@ -115,7 +115,7 @@ func (conf *logsConfig) build() *web.FieldError {
 		Created:  conf.Created,
 		Location: conf.Location,
 		Levels:   conf.Levels,
-		Std:      conf.Stdlog,
+		Std:      conf.Std,
 	}
 	conf.cleanup = c
 

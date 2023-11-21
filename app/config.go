@@ -69,16 +69,14 @@ type configOf[T any] struct {
 
 	// 指定配置文件的序列化
 	//
-	// 如果为空，表示不支持。
-	//
 	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
-	//  - .yaml
-	//  - .yml
-	//  - .xml
-	//  - .json
+	//  - yaml 支持 .yaml 和 .yml 两种后缀名的文件
+	//  - xml 支持 .xml 后缀名的文件
+	//  - json 支持 .json 后缀名的文件
+	//
+	// 如果为空，表示支持以上所有格式。
 	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty"`
-	fileSerializers map[string]serializer
-	config          *config.Config
+	config          *server.Config
 
 	// 指定可用的 mimetype
 	//
@@ -117,12 +115,7 @@ type configOf[T any] struct {
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
 func NewServerOf[T any](name, version string, configDir, filename string) (web.Server, *T, error) {
 	if filename == "" {
-		c, err := config.AppDir(nil, configDir)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		s, err := server.New(name, version, &server.Options{Config: c})
+		s, err := server.New(name, version, &server.Options{Config: &server.Config{Dir: configDir}})
 		return s, nil, err
 	}
 

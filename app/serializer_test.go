@@ -3,6 +3,7 @@
 package app
 
 import (
+	"encoding/json"
 	"io/fs"
 	"path/filepath"
 	"testing"
@@ -48,4 +49,15 @@ func TestLoadConfigOf(t *testing.T) {
 	customConf, err := loadConfigOf[userData](configDir, "user.xml")
 	a.NotError(err).NotNil(customConf)
 	a.Equal(customConf.User.ID, 1)
+}
+
+func RegisterRegisterFileSerializer(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.PanicString(func() {
+		RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".json")
+	}, "扩展名 .json 已经注册到 json")
+
+	RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".js")
+	a.Equal(filesFactory["new"].Exts, []string{".js"})
 }

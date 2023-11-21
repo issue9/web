@@ -3,6 +3,8 @@
 package server
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
+	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/cache"
@@ -33,10 +36,8 @@ type (
 	// 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
 	Options struct {
 		// 项目的配置项
-		//
-		// 如果涉及到需要读取配置文件的，可以指定此对象，之后可通过此对象统一处理各类配置文件。
-		// 如果为空，则会采用 config.BuildDir(DefaultConfigDir) 进行初始化。
-		Config *config.Config
+		Config *Config
+		config *config.Config
 
 		// 服务器的时区
 		//
@@ -82,7 +83,7 @@ type (
 
 		// 指定可用的 mimetype
 		//
-		// 默认为空。
+		// 默认采用 [JSONMimetypes]。
 		Mimetypes []*Mimetype
 
 		codec *web.Codec // 由 Compressions 和 Mimetypes 形成
@@ -119,6 +120,32 @@ type (
 		Init []func(web.Server)
 	}
 
+	// Config 项目配置文件的配置
+	Config struct {
+		// Dir 项目配置目录
+		//
+		// 如果涉及到需要读取配置文件的，可以指定此对象，之后可通过此对象统一处理各类配置文件。
+		// 如果为空，则会采用 [DefaultConfigDir]。
+		Dir string
+
+		// Serializers 支持的序列化方法列表
+		//
+		// 如果为空，则会默认支持 yaml、json 两种方式；
+		Serializers []*FileSerializer
+	}
+
+	// FileSerializer 对于文件序列化的配置
+	FileSerializer struct {
+		// Exts 支持的扩展名
+		Exts []string
+
+		// Marshal 序列化方法
+		Marshal config.MarshalFunc
+
+		// Unmarshal 反序列化方法
+		Unmarshal config.UnmarshalFunc
+	}
+
 	// IDGenerator 生成唯一 ID 的函数
 	IDGenerator = func() string
 )
@@ -129,12 +156,20 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 
 	if o.Config == nil {
-		cfg, err := config.BuildDir(nil, DefaultConfigDir)
-		if err != nil {
-			return nil, config.NewFieldError("Config", err)
+		o.Config = &Config{
+			Dir: DefaultConfigDir,
+			Serializers: []*FileSerializer{
+				{Exts: []string{".yaml", ".yml"}, Marshal: yaml.Marshal, Unmarshal: yaml.Unmarshal},
+				{Exts: []string{".json"}, Marshal: json.Marshal, Unmarshal: json.Unmarshal},
+				{Exts: []string{".xml"}, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal},
+			},
 		}
-		o.Config = cfg
 	}
+	cfg, err := config.BuildDir(nil, DefaultConfigDir)
+	if err != nil {
+		return nil, config.NewFieldError("Config", err)
+	}
+	o.config = cfg
 
 	if o.Location == nil {
 		o.Location = time.Local
@@ -172,7 +207,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Language))
 	}
 
-	o.locale = locale.New(o.Language, o.Config, o.Catalog)
+	o.locale = locale.New(o.Language, o.config, o.Catalog)
 
 	l, err := logs.New(o.locale.Printer(), o.Logs)
 	if err != nil {

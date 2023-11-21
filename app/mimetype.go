@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/web/codec/mimetype/form"
 	"github.com/issue9/web/codec/mimetype/html"
 	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/codec/mimetype/nop"
 	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
@@ -43,7 +44,7 @@ type mimetypeConfig struct {
 	//  - json
 	//  - form
 	//  - html
-	//  - nil  未实际指定序列化方法，最终需要用户自行处理，比如返回文件上传等。
+	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
 
@@ -85,7 +86,7 @@ func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
 func init() {
 	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
-	RegisterMimetype(nil, nil, "nil")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
+	RegisterMimetype(nop.Marshal, nop.Unmarshal, "nop")
 }

@@ -46,6 +46,8 @@ func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
 
 func (l *Locale) Printer() *message.Printer { return l.printer }
 
+func (l *Locale) Sprintf(key string, v ...any) string { return l.Printer().Sprintf(key, v...) }
+
 func (l *Locale) NewPrinter(id language.Tag) *message.Printer {
 	if id == l.ID() {
 		return l.Printer()

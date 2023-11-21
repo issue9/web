@@ -15,4 +15,4 @@ mimetypes:
     - type: text/xml
       target: xml
     - type: multipart/form-data
-      target: nil
+      target: nop

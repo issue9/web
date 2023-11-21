@@ -21,22 +21,18 @@ func TestLocale_Printer(t *testing.T) {
 	b := catalog.NewBuilder()
 	b.SetString(language.SimplifiedChinese, "lang", "hans")
 	l := New(language.SimplifiedChinese, nil, b)
-	a.NotNil(l)
-	p1 := l.Printer()
+	a.NotNil(l).Equal(l.Sprintf("lang"), "hans")
 	l.SetString(language.SimplifiedChinese, "lang", "hans-2")
-	p2 := l.Printer()
-	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+	a.Equal(l.Sprintf("lang"), "hans-2")
 
 	// ID 不存在于 catalog
 
 	b = catalog.NewBuilder()
 	b.SetString(language.SimplifiedChinese, "lang", "hans")
 	l = New(language.Afrikaans, nil, b)
-	a.NotNil(l)
-	p1 = l.Printer()
+	a.NotNil(l).Equal(l.Sprintf("lang"), "lang") // 找不到对应的翻译项，返回原值
 	l.SetString(language.Afrikaans, "lang", "afrik")
-	p2 = l.Printer()
-	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+	a.Equal(l.Sprintf("lang"), "afrik")
 }
 
 func TestLocale_NewPrinter(t *testing.T) {
