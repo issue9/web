@@ -24,7 +24,7 @@ func TestGetRealPath(t *testing.T) {
 
 	p1, err := getRealPath(false, mod, &modfile.Require{Mod: module.Version{Path: "github.com/issue9/web", Version: web.Version}}, dir)
 	a.NotError(err).
-		True(strings.HasSuffix(p1, "github.com/issue9/web@"+web.Version))
+		True(strings.HasSuffix(p1, "web@"+web.Version))
 
 	p2, err := getRealPath(true, mod, &modfile.Require{Mod: module.Version{Path: "github.com/issue9/web", Version: web.Version}}, dir)
 	a.NotError(err).
