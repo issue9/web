@@ -39,6 +39,20 @@ messages:
     - key: app args
       message:
         msg: app args
+    - key: build enum file
+      message:
+        msg: build enum file
+    - key: |-
+        build enum file
+
+        flags:
+        {{flags}}
+      message:
+        msg: |-
+            build enum file
+
+            flags:
+            {{flags}}
     - key: build go source
       message:
         msg: build go source
@@ -104,9 +118,18 @@ messages:
     - key: locale func
       message:
         msg: locale func
+    - key: no input file
+      message:
+        msg: no input file
+    - key: no output file
+      message:
+        msg: no output file
     - key: no src dir
       message:
         msg: no src dir
+    - key: not allowed enum type
+      message:
+        msg: not allowed enum type
     - key: not found const %s
       message:
         msg: not found const %s
@@ -119,6 +142,9 @@ messages:
     - key: not found struct %s
       message:
         msg: not found struct %s
+    - key: not found type %s
+      message:
+        msg: not found type %s
     - key: not show ignore message
       message:
         msg: not show ignore message
@@ -149,9 +175,18 @@ messages:
     - key: set api path prefix
       message:
         msg: set api path prefix
+    - key: set file header
+      message:
+        msg: set file header
+    - key: set input file
+      message:
+        msg: set input file
     - key: set output file
       message:
         msg: set output file
+    - key: set the enum type
+      message:
+        msg: set the enum type
     - key: set watch file extension
       message:
         msg: set watch file extension
@@ -173,6 +208,9 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
+    - key: type not set
+      message:
+        msg: type not set
     - key: unknown tag %s
       message:
         msg: unknown tag %s

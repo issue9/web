@@ -7,6 +7,7 @@ require (
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
+	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/localeutil v0.24.0
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.7.0
@@ -27,7 +28,6 @@ require (
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/issue9/config v0.6.1 // indirect
 	github.com/issue9/conv v1.3.4 // indirect
-	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/logs/v7 v7.1.0 // indirect
 	github.com/issue9/mux/v7 v7.3.3 // indirect
 	github.com/issue9/scheduled v0.15.1 // indirect

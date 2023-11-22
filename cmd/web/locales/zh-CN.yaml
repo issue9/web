@@ -39,6 +39,20 @@ messages:
     - key: app args
       message:
         msg: 传递给应用的参数
+    - key: build enum file
+      message:
+        msg: 为类型生成枚举内容
+    - key: |-
+        build enum file
+
+        flags:
+        {{flags}}
+      message:
+        msg: |-
+            为类型生成枚举内容，诸如 Marshal、Unmarshat 和 String 等方法。
+
+            选项：
+            {{flags}}
     - key: build go source
       message:
         msg: 编译 Go 代码
@@ -71,7 +85,7 @@ messages:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
     - key: dev mode
       message:
-        msg: 是否启用开发模式，具体可参考 mode 下的说明。
+        msg: 是否启用开发模式，具体可参考 comptime 下的说明。
     - key: 'dup # restdoc node'
       message:
         msg: '重复的节点 # restdoc'
@@ -123,9 +137,18 @@ messages:
     - key: locale func
       message:
         msg: 源代码中用于输出本地化信息的函数
+    - key: no input file
+      message:
+        msg: 未指定输入文件
+    - key: no output file
+      message:
+        msg: 未指定输出文件
     - key: no src dir
       message:
         msg: 未指定源码目录
+    - key: not allowed enum type
+      message:
+        msg: 不支持为该类型生成内容
     - key: not found const %s
       message:
         msg: 未找到常量 %s
@@ -138,6 +161,9 @@ messages:
     - key: not found struct %s
       message:
         msg: 未找到结构体 %s
+    - key: not found type %s
+      message:
+        msg: 未找到名为 %s 的类型
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
@@ -233,9 +259,18 @@ messages:
     - key: set api path prefix
       message:
         msg: 为所有的 API 添加统一的前缀
-    - key: set output file
+    - key: set file header
+      message:
+        msg: 指定文件头内容
+    - key: set input file
+      message:
+        msg: set input file
+    - key: 指定输入文件
       message:
         msg: 设置输出文件
+    - key: set the enum type
+      message:
+        msg: 指定用于生成枚举内容的类型
     - key: set watch file extension
       message:
         msg: 设置监视的文件扩展名
@@ -257,6 +292,9 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
+    - key: type not set
+      message:
+        msg: 未指定类型
     - key: unknown tag %s
       message:
         msg: 未知的标签 %s 将被忽略

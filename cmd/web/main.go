@@ -23,6 +23,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/build"
+	"github.com/issue9/web/cmd/web/enum"
 	"github.com/issue9/web/cmd/web/locale"
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
@@ -83,6 +84,7 @@ func main() {
 	locale.Init(opt, p)
 	update.Init(opt, p)
 	watch.Init(opt, p)
+	enum.Init(opt, p)
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
