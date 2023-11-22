@@ -18,9 +18,10 @@ import (
 	"github.com/issue9/localeutil/message/extract"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
+
+	"github.com/issue9/web/cmd/web/termlog"
 )
 
 const (
@@ -49,14 +50,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		funcs := fs.String("func", defaultFuncs, funcs.LocaleString(p))
 		skip := fs.Bool("m", true, skipMod.LocaleString(p))
 
-		log, err := logs.New(nil, &logs.Options{
-			Levels:  logs.AllLevels(),
-			Handler: logs.NewTermHandler(os.Stdout, nil),
-			Created: logs.NanoLayout,
-		})
-		if err != nil {
-			panic(err)
-		}
+		log := termlog.New(p, os.Stdout)
 
 		return func(io.Writer) error {
 			u, ext, err := GetMarshalByExt(*f)

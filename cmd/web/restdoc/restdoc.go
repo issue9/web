@@ -17,11 +17,11 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/source"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
 	"golang.org/x/mod/modfile"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/parser"
+	"github.com/issue9/web/cmd/web/termlog"
 )
 
 const (
@@ -48,14 +48,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 
 		return func(io.Writer) error {
 			ctx := context.Background()
-			ls, err := logs.New(p, &logs.Options{
-				Levels:  logs.AllLevels(),
-				Handler: logs.NewTermHandler(os.Stdout, nil),
-				Created: logs.NanoLayout,
-			})
-			if err != nil {
-				return err
-			}
+			ls := termlog.New(p, os.Stdout)
 
 			var tags []string
 			if *t != "" {

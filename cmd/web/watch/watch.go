@@ -43,7 +43,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			watch.App:    web.StringPhrase("watch.app").LocaleString(p),
 		}
 
-		return func(w io.Writer) error {
+		return func(io.Writer) error {
 			f, err := time.ParseDuration(*freq)
 			if err != nil {
 				return err

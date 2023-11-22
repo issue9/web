@@ -15,10 +15,10 @@ import (
 	"github.com/issue9/localeutil/message"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/locale"
+	"github.com/issue9/web/cmd/web/termlog"
 )
 
 const (
@@ -38,14 +38,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		dest := fs.String("dest", "", destUsage.LocaleString(p))
 
 		return func(io.Writer) error {
-			log, err := logs.New(nil, &logs.Options{
-				Levels:  logs.AllLevels(),
-				Handler: logs.NewTermHandler(os.Stdout, nil),
-				Created: logs.NanoLayout,
-			})
-			if err != nil {
-				panic(err)
-			}
+			log := termlog.New(p, os.Stdout)
 
 			srcMsg, err := getSrc(*src)
 			if err != nil {

@@ -49,11 +49,11 @@ func TestServer_Routers(t *testing.T) {
 
 	r1.Prefix("/p1").Delete("/path", buildHandler(http.StatusCreated))
 	servertest.Delete(a, "http://localhost:8080/p1/path").
-		Header("Accept", "application/json;v=2").
+		Header(header.Accept, "application/json;v=2").
 		Do(nil).
 		Status(http.StatusCreated)
 	servertest.NewRequest(a, http.MethodOptions, "http://localhost:8080/p1/path").
-		Header("Accept", "application/json;v=2").
+		Header(header.Accept, "application/json;v=2").
 		Do(nil).Status(http.StatusOK)
 
 	r2 := srv.GetRouter("ver")
@@ -65,7 +65,7 @@ func TestServer_Routers(t *testing.T) {
 	srv.RemoveRouter("ver")
 	a.Equal(0, len(srv.Routers()))
 	servertest.Delete(a, "http://localhost:8080/p1/path").
-		Header("Accept", "application/json;v=2").
+		Header(header.Accept, "application/json;v=2").
 		Do(nil).
 		Status(http.StatusNotFound)
 }
@@ -94,7 +94,7 @@ func TestMiddleware(t *testing.T) {
 	defer srv.Close(500 * time.Millisecond)
 
 	servertest.Get(a, "http://localhost:8080/p1/path").
-		Header("accept", "application/json").
+		Header(header.Accept, "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("h", "p1p2-b1b2-").
@@ -102,7 +102,7 @@ func TestMiddleware(t *testing.T) {
 	a.Equal(count, 1)
 
 	servertest.Get(a, "http://localhost:8080/path").
-		Header("accept", "application/json").
+		Header(header.Accept, "application/json").
 		Do(nil).
 		Status(http.StatusCreated).
 		Header("h", "b1b2-").

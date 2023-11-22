@@ -25,7 +25,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.86.0"
+const Version = "0.86.2"
 
 // 服务的几种状态
 const (

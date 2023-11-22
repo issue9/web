@@ -50,9 +50,9 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType("application/json", "gbk")).
-				Header("accept", "application/json").
-				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
+				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
+				Header(header.Accept, "application/json").
+				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
@@ -66,10 +66,10 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType("application/json", "gbk")).
-				Header("accept", "application/json").
-				Header("accept-charset", "gbk;q=1,gb18080;q=0.1").
-				Header("accept-encoding", "gzip").
+				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
+				Header(header.Accept, "application/json").
+				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
+				Header(header.AcceptEncoding, "gzip").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
@@ -83,8 +83,8 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for i := 0; i < b.N; i++ {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header("Content-type", header.BuildContentType("application/json", header.UTF8Name)).
-				Header("accept", "application/json").
+				Header(header.ContentType, header.BuildContentType("application/json", header.UTF8Name)).
+				Header(header.Accept, "application/json").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp)
