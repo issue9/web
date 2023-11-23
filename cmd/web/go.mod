@@ -8,7 +8,7 @@ require (
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/localeutil v0.24.1
+	github.com/issue9/localeutil v0.25.0
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.7.0
 	github.com/issue9/term/v3 v3.2.4
