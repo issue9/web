@@ -138,23 +138,23 @@ func (cert *certificateConfig) sanitize() *web.FieldError {
 
 func (h *httpConfig) sanitize() *web.FieldError {
 	if h.ReadTimeout < 0 {
-		return web.NewFieldError("readTimeout", locales.ShouldGreatThanZero)
+		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
 	}
 
 	if h.WriteTimeout < 0 {
-		return web.NewFieldError("writeTimeout", locales.ShouldGreatThanZero)
+		return web.NewFieldError("writeTimeout", locales.ShouldGreatThan(0))
 	}
 
 	if h.IdleTimeout < 0 {
-		return web.NewFieldError("idleTimeout", locales.ShouldGreatThanZero)
+		return web.NewFieldError("idleTimeout", locales.ShouldGreatThan(0))
 	}
 
 	if h.ReadHeaderTimeout < 0 {
-		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThanZero)
+		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
 	}
 
 	if h.MaxHeaderBytes < 0 {
-		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThanZero)
+		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
 	}
 
 	if h.RequestID == "" {

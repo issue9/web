@@ -47,7 +47,7 @@ func (p *Paths) ID(key string) int64 {
 		p.filter().AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.filter().AddReason(key, locales.ShouldGreatThanZero)
+		p.filter().AddReason(key, locales.ShouldGreatThan(0))
 		return 0
 	}
 	return id
@@ -121,7 +121,7 @@ func (ctx *Context) PathID(key, id string) (int64, Problem) {
 	if err != nil {
 		return 0, ctx.Problem(id).WithParam(key, Phrase(err.Error()).LocaleString(p))
 	} else if ret <= 0 {
-		return 0, ctx.Problem(id).WithParam(key, locales.ShouldGreatThanZero.LocaleString(p))
+		return 0, ctx.Problem(id).WithParam(key, locales.ShouldGreatThan(0).LocaleString(p))
 	}
 	return ret, nil
 }

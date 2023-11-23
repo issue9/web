@@ -84,7 +84,7 @@ func (t *Type) dump(buf *errwrap.Buffer) {
 		Printf("if v,found := %s[%s];found{\n", t.type2StringMapName, t.receiver).
 		WString("return []byte(v),nil\n").
 		WString("}\n").
-		Printf(`return []byte(fmt.Sprintf("%s(%%d)", %s)),web.NewLocaleError("invalid value")`, t.name, t.receiver).WRune('\n').
+		Printf(`return []byte(fmt.Sprintf("%s(%%d)", %s)),locales.ErrInvalidValue()`, t.name, t.receiver).WRune('\n').
 		WString("}\n\n")
 
 	// Parse
@@ -93,7 +93,7 @@ func (t *Type) dump(buf *errwrap.Buffer) {
 		Printf("if t,found := %s[v];found{\n", t.string2TypeMapName).
 		WString("return t,nil\n").
 		WString("}\n").
-		WString(`return 0,web.NewLocaleError("invalid value")`).WRune('\n').
+		WString(`return 0,locales.ErrInvalidValue()`).WRune('\n').
 		WString("}\n\n")
 
 	// TextUnmarshaler

@@ -3,6 +3,7 @@
 package web
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -14,6 +15,10 @@ import (
 
 	"github.com/issue9/web/internal/header"
 )
+
+var errUnsupportedSerialization = errorUnsupportedSerialization{}
+
+type errorUnsupportedSerialization struct{}
 
 // Codec 编码解码工具
 //
@@ -68,6 +73,22 @@ type compression struct {
 	// 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
 	wildcardSuffix []string
 }
+
+func (err errorUnsupportedSerialization) Error() string {
+	return err.LocaleString(nil)
+}
+
+func (err errorUnsupportedSerialization) LocaleString(p *localeutil.Printer) string {
+	return StringPhrase("unsupported serialization").LocaleString(p)
+}
+
+func (err errorUnsupportedSerialization) Unwrap() error { return errors.ErrUnsupported }
+
+// ErrUnsupportedSerialization 返回不支持序列化的错误信息
+//
+// 此方法的返回对象同时也包含了 [errors.ErrUnsupported]，
+// errors.Is(ErrUnsupportedSerialization(), errors.ErrUnsupported) == true。
+func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 func buildCompression(c Compressor, types []string) *compression {
 	m := &compression{compressor: c}

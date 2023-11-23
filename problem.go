@@ -34,7 +34,7 @@ type (
 
 		// WithInstance 指定发生错误的实例
 		//
-		// 多次调用将会覆盖之前的内容。
+		// 多次调用将会覆盖之前的内容。默认为 [Context.ID]。
 		WithInstance(string) Problem
 
 		// 不允许其它实现

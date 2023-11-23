@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -340,4 +341,11 @@ func TestCodec_findMarshal(t *testing.T) {
 	// 不存在
 	item = mm.findMarshal("xx/*")
 	a.Nil(item)
+}
+
+func TestUnsupportedSerialization(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.ErrorIs(ErrUnsupportedSerialization(), errors.ErrUnsupported)
+	a.Equal(ErrUnsupportedSerialization().Error(), "unsupported serialization")
 }

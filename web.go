@@ -34,8 +34,6 @@ const (
 	Failed  = scheduled.Failed  // 出错，不再执行后续操作
 )
 
-var errUnsupportedSerialization = NewLocaleError("unsupported serialization")
-
 type (
 	Logger = logs.Logger
 	Logs   = logs.Logs
@@ -110,9 +108,6 @@ type (
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }
-
-// ErrUnsupportedSerialization 返回不支持序列化的错误信息
-func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 

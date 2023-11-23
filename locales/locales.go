@@ -31,10 +31,23 @@ var All = []fs.FS{
 
 // 一些多处用到的翻译项
 const (
-	ShouldGreatThanZero     = localeutil.StringPhrase("should great than 0")
 	InvalidValue            = localeutil.StringPhrase("invalid value")
 	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
 	DuplicateValue          = localeutil.StringPhrase("duplicate value")
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
 	RecycleLocalCache       = localeutil.StringPhrase("recycle local cache")
 )
+
+// ShouldGreatThan 返回必须大于 n 的翻译项
+func ShouldGreatThan(n int) localeutil.Stringer {
+	return localeutil.Phrase("should great than %d", n)
+}
+
+var (
+	errInvalidValue  = localeutil.Error("invalid value")
+	errCanNotBeEmpty = localeutil.Error("can not be empty")
+)
+
+func ErrInvalidValue() error { return errInvalidValue }
+
+func ErrCanNotBeEmpty() error { return errCanNotBeEmpty }
