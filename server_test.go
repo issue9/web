@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/cache"
+	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/unique/v2"
@@ -19,8 +21,6 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/cache"
-	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/logs"
@@ -63,7 +63,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 	u := unique.NewNumber(100)
 	go u.Serve(context.Background())
 
-	cc, _ := caches.NewMemory()
+	cc, _ := memory.New()
 
 	srv := &testServer{
 		a:      a,

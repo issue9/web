@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/cache"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/logs"

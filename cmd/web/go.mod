@@ -3,12 +3,12 @@ module github.com/issue9/web/cmd/web
 go 1.21
 
 require (
-	github.com/caixw/gobuild v1.7.2
+	github.com/caixw/gobuild v1.7.3
 	github.com/getkin/kin-openapi v0.120.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/errwrap v0.3.1
-	github.com/issue9/localeutil v0.24.0
+	github.com/issue9/localeutil v0.24.1
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.7.0
 	github.com/issue9/term/v3 v3.2.4
@@ -26,6 +26,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
+	github.com/issue9/cache v0.8.0 // indirect
 	github.com/issue9/config v0.6.1 // indirect
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/logs/v7 v7.1.0 // indirect

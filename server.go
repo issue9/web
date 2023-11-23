@@ -9,12 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
-
-	"github.com/issue9/web/cache"
 )
 
 // Server 服务接口

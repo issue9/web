@@ -47,6 +47,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 
 			for _, d := range strings.Split(*dest, ",") {
 				stat, err := os.Stat(d)
+				// TODO 当文件不存在时，创建一个新的？
 				if err != nil {
 					return err
 				}

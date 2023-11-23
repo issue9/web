@@ -7,9 +7,10 @@ import (
 	"embed"
 	"io/fs"
 
-	cl "github.com/issue9/config/locales"
+	cache "github.com/issue9/cache/locales"
+	config "github.com/issue9/config/locales"
 	"github.com/issue9/localeutil"
-	ll "github.com/issue9/localeutil/locales"
+	localeutilL "github.com/issue9/localeutil/locales"
 )
 
 //go:embed *.yaml
@@ -23,8 +24,9 @@ var Locales embed.FS
 //	s.Locale().LoadMessages("*.yaml", locales.All()...)
 var All = []fs.FS{
 	Locales,
-	ll.Locales,
-	cl.Locales,
+	localeutilL.Locales,
+	config.Locales,
+	cache.Locales,
 }
 
 // 一些多处用到的翻译项

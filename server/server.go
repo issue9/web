@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/locale"
 )
 

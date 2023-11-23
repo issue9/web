@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
-	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 var cacheFactory = map[string]CacheBuilder{}
@@ -91,16 +91,16 @@ func init() {
 			return nil, nil, err
 		}
 
-		drv, job := caches.NewMemory()
+		drv, job := server.NewMemory()
 		return drv, &Job{Ticker: d, Job: job}, nil
 	}, "", "memory")
 
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		return caches.NewMemcache(strings.Split(dsn, ";")...), nil, nil
+		return server.NewMemcache(strings.Split(dsn, ";")...), nil, nil
 	}, "memcached", "memcache")
 
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		drv, err := caches.NewRedisFromURL(dsn)
+		drv, err := server.NewRedisFromURL(dsn)
 		if err != nil {
 			return nil, nil, err
 		}

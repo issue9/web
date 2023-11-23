@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v7"
@@ -19,13 +20,12 @@ import (
 	"github.com/issue9/query/v3"
 	"github.com/issue9/scheduled"
 
-	"github.com/issue9/web/cache"
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/logs"
 )
 
 // Version 当前框架的版本
-const Version = "0.86.2"
+const Version = "0.87.0"
 
 // 服务的几种状态
 const (
@@ -107,6 +107,9 @@ type (
 	// 参数 [io.Reader] 必定不会为空。
 	UnmarshalFunc = func(io.Reader, any) error
 )
+
+// NewCache 声明带有统一前缀的缓存接口
+func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }
 
 // ErrUnsupportedSerialization 返回不支持序列化的错误信息
 func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }

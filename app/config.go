@@ -7,11 +7,11 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"

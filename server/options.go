@@ -8,6 +8,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/issue9/cache"
+	"github.com/issue9/cache/caches/memcache"
+	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/cache/caches/redis"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/unique/v2"
@@ -16,8 +20,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/cache"
-	"github.com/issue9/web/cache/caches"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
@@ -46,8 +48,11 @@ type (
 
 		// 缓存系统
 		//
-		// 内置的几种驱动实现位于 [github.com/issue9/web/cache/caches] 之下。
-		// 如果为空，采用 [caches.NewMemory] 作为默认值。
+		// 内置了以下几种驱动：
+		//  - NewMemory
+		//  - NewMemcache
+		//  - NewReidsFromURL
+		// 如果为空，采用 [NewMemory] 作为默认值。
 		Cache cache.Driver
 
 		// 日志的相关设置
@@ -188,7 +193,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 
 	if o.Cache == nil {
-		c, job := caches.NewMemory()
+		c, job := NewMemory()
 		o.Cache = c
 		o.Init = append(o.Init, func(s web.Server) { // AddTicker 依赖 IDGenerator
 			s.Services().AddTicker(locales.RecycleLocalCache, job, time.Minute, false, false)
@@ -229,3 +234,22 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 
 	return o, nil
 }
+
+// NewMemory 声明基于内在的缓存对象
+func NewMemory() (cache.Driver, web.JobFunc) {
+	d, job := memory.New()
+	return d, func(now time.Time) error {
+		job(now)
+		return nil
+	}
+}
+
+// NewRedisFromURL 声明基于 redis 的缓存对象
+//
+// 参数说明可参考 [redis.NewFromURL]。
+func NewRedisFromURL(url string) (cache.Driver, error) { return redis.NewFromURL(url) }
+
+// NewMemcache 声明基于 memcache 的缓存对象
+//
+// 参数说明可参考 [memcache.New]。
+func NewMemcache(addr ...string) cache.Driver { return memcache.New(addr...) }

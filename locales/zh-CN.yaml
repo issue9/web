@@ -9,9 +9,6 @@ messages:
     - key: SSE server
       message:
         msg: SSE 服务
-    - key: cache miss
-      message:
-        msg: 未找到缓存项
     - key: can not be empty
       message:
         msg: 不能为空
@@ -27,9 +24,6 @@ messages:
     - key: duplicate value
       message:
         msg: 重复的值
-    - key: invalid cache key
-      message:
-        msg: 缓存的 key 不符合要求
     - key: invalid sse format %s
       message:
         msg: '无效的 SSE 格式: %s'

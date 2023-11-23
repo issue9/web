@@ -9,9 +9,6 @@ messages:
     - key: SSE server
       message:
         msg: SSE server
-    - key: cache miss
-      message:
-        msg: cache miss
     - key: can not be empty
       message:
         msg: can not be empty
@@ -27,9 +24,6 @@ messages:
     - key: duplicate value
       message:
         msg: duplicate value
-    - key: invalid cache key
-      message:
-        msg: invalid cache key
     - key: invalid sse format %s
       message:
         msg: invalid sse format %s
