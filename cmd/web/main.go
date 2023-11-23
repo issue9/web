@@ -104,7 +104,7 @@ func newPrinter() (*localeutil.Printer, error) {
 		fmt.Println(err)
 	}
 
-	fsys := append([]fs.FS{locales.Locales}, wl.All...)
+	fsys := append([]fs.FS{locales.Locales}, wl.Locales...)
 	langs, err := serialize.LoadFSGlob(func(string) serialize.UnmarshalFunc { return yaml.Unmarshal }, "*.yaml", fsys...)
 	if err != nil {
 		return nil, err

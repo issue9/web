@@ -14,7 +14,6 @@ import (
 
 	"github.com/issue9/localeutil"
 	"github.com/issue9/sliceutil"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
@@ -33,7 +32,7 @@ import (
 // T 表示的是配置文件中的用户自定义数据类型。
 type CLIOf[T any] struct {
 	// NOTE: CLIOf 仅用于初始化 web.Server。对于接口的开发应当是透明的，
-	// 开发者所有的功能都应该是通过 Context 和 Server 获得。
+	// 开发者所有的功能都应该是通过 [web.Context] 和 [web.Server] 获得。
 
 	Name    string // 程序名称
 	Version string // 程序版本
@@ -76,10 +75,10 @@ type CLIOf[T any] struct {
 
 	// 本地化的相关设置
 	//
-	// 若为空，则以 NewPrinter(locales.Locales, "*.yml") 进行初始化。
+	// 若为空，则以 NewPrinter(locales.Locales, "*.yaml") 进行初始化。
 	//
 	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[web.Server] 的本地化由其自身管理。
-	Printer *message.Printer
+	Printer *localeutil.Printer
 
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
@@ -133,7 +132,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.Printer == nil {
-		p, err := NewPrinter(locales.Locales, "*.yml")
+		p, err := NewPrinter("*.yaml", locales.Locales...)
 		if err != nil {
 			return err
 		}
@@ -226,16 +225,18 @@ func CheckConfigSyntax[T any](configDir, filename string) error {
 //
 // 语言由 [localeutil.DetectUserLanguageTag] 决定。
 // 参数指定了本地化的文件内容。
-func NewPrinter(fsys fs.FS, glob string) (*message.Printer, error) {
+func NewPrinter(glob string, fsys ...fs.FS) (*localeutil.Printer, error) {
+	// NOTE: 该函数为公开函数，可用于初始化 CLIOf.Printer
+
 	tag, err := localeutil.DetectUserLanguageTag()
 	if err != nil {
 		log.Println(err) // 输出错误，但是不中断执行
 	}
 
 	b := catalog.NewBuilder(catalog.Fallback(tag))
-	if err := locale.Load(buildSerializerFromFactory(), b, glob, fsys); err != nil {
+	if err := locale.Load(buildSerializerFromFactory(), b, glob, fsys...); err != nil {
 		return nil, err
 	}
 
-	return message.NewPrinter(tag, message.Catalog(b)), nil
+	return locale.NewPrinter(tag, b), nil
 }

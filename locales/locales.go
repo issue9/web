@@ -14,16 +14,16 @@ import (
 )
 
 //go:embed *.yaml
-var Locales embed.FS
+var locales embed.FS
 
-// All 当前框架依赖的所有本地化内容
+// Locales 当前框架依赖的所有本地化内容
 //
 // 文件格式均为 yaml，使用时加载这些文件系统下的 yaml 文件即可：
 //
 //	s := server.New(...)
-//	s.Locale().LoadMessages("*.yaml", locales.All()...)
-var All = []fs.FS{
-	Locales,
+//	s.Locale().LoadMessages("*.yaml", locales.Locales()...)
+var Locales = []fs.FS{
+	locales,
 	localeutilL.Locales,
 	config.Locales,
 	cache.Locales,
