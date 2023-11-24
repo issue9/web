@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/web/server"
 )
 
 func TestLogsConfig_build(t *testing.T) {
@@ -17,43 +18,15 @@ func TestLogsConfig_build(t *testing.T) {
 	conf := &logsConfig{}
 	err := conf.build()
 	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
-		Equal(conf.logs.Levels, logs.AllLevels()).
+		Equal(conf.logs.Levels, server.AllLevels()).
 		Empty(conf.logs.Created)
 
-	conf = &logsConfig{Levels: []logs.Level{logs.Warn, logs.Error}, Created: logs.NanoLayout}
+	conf = &logsConfig{Levels: []logs.Level{logs.LevelWarn, logs.LevelError}, Created: logs.NanoLayout}
 	err = conf.build()
 	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
-		Equal(conf.logs.Levels, []logs.Level{logs.Warn, logs.Error}).
+		Equal(conf.logs.Levels, []logs.Level{logs.LevelWarn, logs.LevelError}).
 		Equal(conf.logs.Created, logs.NanoLayout).
 		False(conf.logs.Location)
-}
-
-func TestLogsConfig_output(t *testing.T) {
-	a := assert.New(t, false)
-
-	conf := &logsConfig{
-		Created: "2006",
-		Handlers: []*logHandlerConfig{
-			{
-				Type: "file",
-				Args: []string{"./testdata", "1504-%i.log", "1024"},
-			},
-			{
-				Type: "term",
-				Args: []string{"stdout"},
-			},
-			{
-				Type: "term",
-				Args: []string{"stdout", "erro:red", "warn:yellow"},
-			},
-		},
-	}
-	err := conf.build()
-	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 1) // 文件有 cleanup 返回
-	l, err1 := logs.New(nil, conf.logs)
-	a.NotError(err1).NotNil(l)
-	l.ERROR().Print("test")
-	a.NotError(conf.cleanup[0]())
 }
 
 func TestNewTermHandler(t *testing.T) {

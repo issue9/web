@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/cache/caches/redis"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
@@ -23,7 +24,6 @@ import (
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/logs"
 )
 
 // RequestIDKey 报头中传递 request id 的报头名称
@@ -49,17 +49,17 @@ type (
 		// 缓存系统
 		//
 		// 内置了以下几种驱动：
-		//  - NewMemory
-		//  - NewMemcache
-		//  - NewReidsFromURL
+		//  - [NewMemory]
+		//  - [NewMemcache]
+		//  - [NewRedisFromURL]
 		// 如果为空，采用 [NewMemory] 作为默认值。
 		Cache cache.Driver
 
 		// 日志的相关设置
 		//
 		// 如果此值为空，表示不会输出任何信息。
-		Logs *logs.Options
-		logs logs.Logs
+		Logs *Logs
+		logs *logs.Logs
 
 		// http.Server 实例的值
 		//
@@ -214,11 +214,9 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 
 	o.locale = locale.New(o.Language, o.config, o.Catalog)
 
-	l, err := logs.New(o.locale.Printer(), o.Logs)
-	if err != nil {
-		return nil, config.NewFieldError("Logs", err)
+	if err := o.buildLogs(o.locale.Printer()); err != nil {
+		return nil, err
 	}
-	o.logs = l
 
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = RequestIDKey

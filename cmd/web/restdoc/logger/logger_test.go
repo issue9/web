@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/logs/v7"
 	"golang.org/x/mod/modfile"
 )
 
@@ -18,11 +18,8 @@ func TestLogger(t *testing.T) {
 	a := assert.New(t, false)
 
 	buf := new(bytes.Buffer)
-	ll, err := logs.New(nil, &logs.Options{
-		Levels:  logs.AllLevels(),
-		Handler: logs.NewTextHandler(buf),
-	})
-	a.NotError(err).NotNil(ll)
+	ll := logs.New(logs.NewTextHandler(buf), logs.WithLevels(logs.AllLevels()...))
+	a.NotNil(ll)
 	l := New(ll)
 	a.NotNil(l).Zero(l.Count())
 

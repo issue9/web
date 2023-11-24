@@ -15,7 +15,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -27,10 +26,10 @@ func TestServer(t *testing.T) {
 		Mimetypes: []*server.Mimetype{
 			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal},
 		},
-		Logs: &logs.Options{
-			Created: logs.MicroLayout,
-			Handler: logs.NewTermHandler(os.Stderr, nil),
-			Levels:  logs.AllLevels(),
+		Logs: &server.Logs{
+			Created: server.MicroLayout,
+			Handler: server.NewTermHandler(os.Stderr, nil),
+			Levels:  server.AllLevels(),
 		},
 	})
 	a.NotError(err).NotNil(s)

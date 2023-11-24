@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
@@ -21,7 +22,6 @@ import (
 	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/logs"
 )
 
 // Version 当前框架的版本
@@ -35,8 +35,9 @@ const (
 )
 
 type (
-	Logger = logs.Logger
-	Logs   = logs.Logs
+	Logger   = logs.Logger
+	Logs     = logs.Logs
+	AttrLogs = logs.AttrLogs
 
 	// Cache 缓存内容的访问接口
 	Cache = cache.Cache

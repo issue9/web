@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 )
 
 var contextPool = &sync.Pool{
@@ -65,7 +65,7 @@ type Context struct {
 	// 这是比 [context.Value] 更经济的传递变量方式，但是这并不是协程安全的。
 	vars map[any]any
 
-	logs Logs
+	logs *AttrLogs
 }
 
 // ContextBuilder 用于创建 [Context]
@@ -309,7 +309,7 @@ func (ctx *Context) Free() {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
-	ctx.logs.Free()
+	logs.FreeAttrLogs(ctx.logs)
 
 	contextPool.Put(ctx)
 }
@@ -343,9 +343,8 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 
 // Logs 返回日志操作对象
 //
-// 该返回实例与 [Server.Logs] 是不同的，
 // 当前返回实例的日志输出时会带上当前请求的 [Context.ID] 作为额外参数。
-func (ctx *Context) Logs() Logs { return ctx.logs }
+func (ctx *Context) Logs() *AttrLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	return strings.ToLower(ctx.Request().Header.Get(header.RequestWithKey)) == header.XHR

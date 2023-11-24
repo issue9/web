@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 )
@@ -46,11 +46,8 @@ func New(a *assert.Assertion) *Tester {
 		Records: make(map[logs.Level][]string, 10),
 	}
 
-	ll, err := logs.New(nil, &logs.Options{
-		Levels:  logs.AllLevels(),
-		Handler: &handler{t: t},
-	})
-	a.NotError(err).NotNil(ll)
+	ll := logs.New(&handler{t: t}, logs.WithLevels(logs.AllLevels()...))
+	a.NotNil(ll)
 
 	t.Logger = logger.New(ll)
 

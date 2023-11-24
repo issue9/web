@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/codec/mimetype/xml"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -58,11 +57,11 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = &logs.Options{
-			Handler:  logs.NewTermHandler(os.Stderr, nil),
+		o.Logs = &Logs{
+			Handler:  NewTermHandler(os.Stderr, nil),
 			Location: true,
-			Created:  logs.NanoLayout,
-			Levels:   logs.AllLevels(),
+			Created:  NanoLayout,
+			Levels:   AllLevels(),
 		}
 	}
 	if o.Compressions == nil {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
@@ -21,9 +21,9 @@ func TestParser_Parse(t *testing.T) {
 	p.AddDir(context.Background(), "./testdata", true)
 	d := p.Parse(context.Background())
 	a.NotNil(d).
-		Length(l.Records[logs.Error], 0).
-		Length(l.Records[logs.Warn], 0).
-		Length(l.Records[logs.Info], 0)
+		Length(l.Records[logs.LevelError], 0).
+		Length(l.Records[logs.LevelWarn], 0).
+		Length(l.Records[logs.LevelInfo], 0)
 
 	a.NotNil(d.Doc().Info).
 		Equal(d.Doc().Info.Version, "1.0.0")

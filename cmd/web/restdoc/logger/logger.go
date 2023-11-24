@@ -7,27 +7,27 @@ import (
 	"fmt"
 	"go/scanner"
 
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/web"
-	"github.com/issue9/web/logs"
 	"golang.org/x/mod/modfile"
 )
 
 type Logger struct {
-	logs   logs.Logs
+	logs   *logs.Logs
 	count  int
 	hasErr bool
 }
 
-func New(l logs.Logs) *Logger { return &Logger{logs: l} }
+func New(l *logs.Logs) *Logger { return &Logger{logs: l} }
 
 // Count 接收到的日志数量
 func (l *Logger) Count() int { return l.count }
 
 // Info 输出提示信息
-func (l *Logger) Info(msg any) { l.log(logs.Info, msg, "", 0) }
+func (l *Logger) Info(msg any) { l.log(logs.LevelInfo, msg, "", 0) }
 
 // Warning 输出警告信息
-func (l *Logger) Warning(msg any) { l.log(logs.Warn, msg, "", 0) }
+func (l *Logger) Warning(msg any) { l.log(logs.LevelWarn, msg, "", 0) }
 
 func (l *Logger) HasError() bool { return l.hasErr }
 
@@ -35,7 +35,7 @@ func (l *Logger) HasError() bool { return l.hasErr }
 //
 // 如果 msg 包含了定位信息，则 filename 和 line 将被忽略
 func (l *Logger) Error(msg any, filename string, line int) {
-	l.log(logs.Error, msg, filename, line)
+	l.log(logs.LevelError, msg, filename, line)
 }
 
 func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
@@ -71,7 +71,7 @@ func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
 
 	l.count++ // 只有真正输出时，才需要+1。
 
-	if !l.hasErr && (lv == logs.Error || lv == logs.Fatal) {
+	if !l.hasErr && (lv == logs.LevelError || lv == logs.LevelFatal) {
 		l.hasErr = true
 	}
 

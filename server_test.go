@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/config"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
@@ -23,14 +24,13 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/logs"
 )
 
 var _ Locale = &locale.Locale{}
 
 type testServer struct {
 	a               *assert.Assertion
-	logs            logs.Logs
+	logs            *logs.Logs
 	logBuf          *bytes.Buffer
 	unique          *unique.Unique
 	cache           cache.Driver
@@ -52,13 +52,14 @@ func newTestServer(a *assert.Assertion) *testServer {
 	p := message.NewPrinter(l, message.Catalog(c))
 
 	logBuf := new(bytes.Buffer)
-	log, err := logs.New(p, &logs.Options{
-		Handler:  logs.NewTextHandler(logBuf, os.Stderr),
-		Levels:   logs.AllLevels(),
-		Location: true,
-		Created:  logs.NanoLayout,
-	})
-	a.NotError(err).NotNil(log)
+	log := logs.New(
+		logs.NewTextHandler(logBuf, os.Stderr),
+		logs.WithCreated(logs.NanoLayout),
+		logs.WithLocation(true),
+		logs.WithLevels(logs.AllLevels()...),
+		logs.WithLocale(p),
+	)
+	a.NotNil(log)
 
 	u := unique.NewNumber(100)
 	go u.Serve(context.Background())
@@ -92,7 +93,7 @@ func (s *testServer) GetRouter(name string) *Router { return s.routers.Router(na
 
 func (s *testServer) Location() *time.Location { return time.Local }
 
-func (s *testServer) Logs() Logs { return s.logs }
+func (s *testServer) Logs() *Logs { return s.logs }
 
 func (s *testServer) Name() string { return "test" }
 

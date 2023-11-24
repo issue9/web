@@ -74,7 +74,7 @@ type Server interface {
 	Config() *config.Config
 
 	// Logs 日志接口
-	Logs() Logs
+	Logs() *Logs
 
 	// GetRouter 获取指定名称的路由
 	GetRouter(name string) *Router

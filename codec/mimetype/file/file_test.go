@@ -15,7 +15,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -32,11 +31,11 @@ func newServer(a *assert.Assertion) web.Server {
 				Problem:   "application/problem+json",
 			},
 		},
-		Logs: &logs.Options{
-			Handler:  logs.NewTermHandler(os.Stderr, nil),
+		Logs: &server.Logs{
+			Handler:  server.NewTermHandler(os.Stderr, nil),
 			Location: true,
-			Created:  logs.NanoLayout,
-			Levels:   logs.AllLevels(),
+			Created:  server.NanoLayout,
+			Levels:   server.AllLevels(),
 		},
 	}
 	srv, err := server.New("test", "1.0.0", o)

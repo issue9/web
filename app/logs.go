@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	xlogs "github.com/issue9/logs/v7"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/web/server"
 )
 
 var logHandlersFactory = map[string]LogsHandlerBuilder{}
@@ -41,10 +41,10 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 [logs.NewNopHandler] 返回的对象。
+	// 为空表示 [server.NewNopHandler] 返回的对象。
 	Handlers []*logHandlerConfig `xml:"writer" json:"writers" yaml:"writers"`
 
-	logs    *logs.Options
+	logs    *server.Logs
 	cleanup []func() error
 }
 
@@ -98,7 +98,7 @@ type logHandlerConfig struct {
 
 func (conf *logsConfig) build() *web.FieldError {
 	if conf.logs == nil {
-		conf.logs = &logs.Options{}
+		conf.logs = &server.Logs{}
 	}
 
 	if len(conf.Levels) == 0 {
@@ -110,7 +110,7 @@ func (conf *logsConfig) build() *web.FieldError {
 		return err
 	}
 
-	conf.logs = &logs.Options{
+	conf.logs = &server.Logs{
 		Handler:  w,
 		Created:  conf.Created,
 		Location: conf.Location,
@@ -192,25 +192,25 @@ func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {
 		return nil, nil, err
 	}
 
-	w, err := logs.NewRotateFile(args[1], args[0], size)
+	w, err := server.NewRotateFile(args[1], args[0], size)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if len(args) < 4 || args[3] == "text" {
-		return logs.NewTextHandler(w), w.Close, nil
+		return server.NewTextHandler(w), w.Close, nil
 	}
-	return logs.NewJSONHandler(w), w.Close, nil
+	return server.NewJSONHandler(w), w.Close, nil
 }
 
 func newSMTPLogsHandler(args []string) (logs.Handler, func() error, error) {
 	sendTo := strings.Split(args[4], ",")
-	w := logs.NewSMTP(args[0], args[1], args[2], args[3], sendTo)
+	w := server.NewSMTP(args[0], args[1], args[2], args[3], sendTo)
 
 	if len(args) < 6 || args[6] == "text" {
-		return logs.NewTextHandler(w), nil, nil
+		return server.NewTextHandler(w), nil, nil
 	}
-	return logs.NewJSONHandler(w), nil, nil
+	return server.NewJSONHandler(w), nil, nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -255,7 +255,7 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
 		}
 
-		lv, err := xlogs.ParseLevel(a[0])
+		lv, err := logs.ParseLevel(a[0])
 		if err != nil {
 			return nil, nil, web.NewFieldError("Args["+strconv.Itoa(1+index)+"]", err)
 		}
@@ -268,5 +268,5 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 		cs[lv] = c
 	}
 
-	return logs.NewTermHandler(w, cs), nil, nil
+	return server.NewTermHandler(w, cs), nil, nil
 }

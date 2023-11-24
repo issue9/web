@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -91,7 +91,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	a.Equal(1, l.Count()).
 		Length(d.Doc().Tags, 1).
 		Equal(d.Doc().Info.Description, "# markdown desc\nline 2").
-		Contains(l.Records[logs.Error][0], "example.go:8")
+		Contains(l.Records[logs.LevelError][0], "example.go:8")
 }
 
 func TestBuildContact(t *testing.T) {

@@ -13,7 +13,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/logs"
 	"github.com/issue9/web/server"
 )
 
@@ -32,7 +31,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，所有日志输出都将被抛弃。
 	Logs    *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
-	logs    *logs.Options
+	logs    *server.Logs
 	cleanup []func() error
 
 	// 指定默认语言

@@ -7,21 +7,16 @@ import (
 	"io"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/web/logs"
+	"github.com/issue9/logs/v7"
 )
 
 // New 声明用于终端输出的日志
 //
 // 如果初始化时出错，则会直接 Panic。
-func New(p *localeutil.Printer, out io.Writer) logs.Logs {
-	log, err := logs.New(p, &logs.Options{
-		Levels:  logs.AllLevels(),
-		Handler: logs.NewTermHandler(out, nil),
-		Created: logs.NanoLayout,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	return log
+func New(p *localeutil.Printer, out io.Writer) *logs.Logs {
+	return logs.New(
+		logs.NewTermHandler(out, nil),
+		logs.WithLevels(logs.AllLevels()...),
+		logs.WithCreated(logs.NanoLayout),
+	)
 }

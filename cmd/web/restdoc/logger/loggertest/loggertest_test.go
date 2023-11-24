@@ -7,9 +7,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/web"
-
-	"github.com/issue9/web/logs"
 )
 
 func TestTester(t *testing.T) {
@@ -20,7 +19,7 @@ func TestTester(t *testing.T) {
 	lt.Warning(web.Phrase("aaa"))
 	lt.Error(errors.New("text string"), "", 0)
 
-	a.Length(lt.Records[logs.Warn], 1).
-		Length(lt.Records[logs.Error], 1).
-		Length(lt.Records[logs.Info], 0)
+	a.Length(lt.Records[logs.LevelWarn], 1).
+		Length(lt.Records[logs.LevelError], 1).
+		Length(lt.Records[logs.LevelInfo], 0)
 }

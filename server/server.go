@@ -34,7 +34,7 @@ type httpServer struct {
 	services    *services
 	ctxBuilder  *web.ContextBuilder
 	location    *time.Location
-	logs        web.Logs
+	logs        *web.Logs
 
 	closed chan struct{}
 	closes []func() error
@@ -172,7 +172,7 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 
 func (srv *httpServer) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
 
-func (srv *httpServer) Logs() web.Logs { return srv.logs }
+func (srv *httpServer) Logs() *web.Logs { return srv.logs }
 
 func (srv *httpServer) Config() *config.Config { return srv.config }
 
