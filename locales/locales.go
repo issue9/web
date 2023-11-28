@@ -11,6 +11,7 @@ import (
 	config "github.com/issue9/config/locales"
 	"github.com/issue9/localeutil"
 	localeutilL "github.com/issue9/localeutil/locales"
+	scheduled "github.com/issue9/scheduled/locales"
 )
 
 //go:embed *.yaml
@@ -27,6 +28,7 @@ var Locales = []fs.FS{
 	localeutilL.Locales,
 	config.Locales,
 	cache.Locales,
+	scheduled.Locales,
 }
 
 // 一些多处用到的翻译项

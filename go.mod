@@ -8,10 +8,10 @@ require (
 	github.com/issue9/conv v1.3.4
 	github.com/issue9/errwrap v0.3.1
 	github.com/issue9/localeutil v0.25.0
-	github.com/issue9/logs/v7 v7.3.0
+	github.com/issue9/logs/v7 v7.4.0
 	github.com/issue9/mux/v7 v7.3.3
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/scheduled v0.16.0
+	github.com/issue9/scheduled v0.17.0
 	github.com/issue9/sliceutil v0.15.0
 	github.com/issue9/term/v3 v3.2.4
 	github.com/issue9/unique/v2 v2.0.0
