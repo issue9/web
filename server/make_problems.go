@@ -5,10 +5,11 @@
 package main
 
 import (
+	"io/fs"
 	"strconv"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/source"
+	"github.com/issue9/source/codegen"
 
 	"github.com/issue9/web/internal/status"
 )
@@ -38,7 +39,7 @@ func main() {
 		panic(buf.Err)
 	}
 
-	if err = source.DumpGoSource(filename, buf.Bytes()); err != nil {
+	if err = codegen.Dump(filename, buf.Bytes(),fs.ModePerm); err != nil {
 		panic(err)
 	}
 }

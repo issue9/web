@@ -9,13 +9,14 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"io/fs"
 	"slices"
 	"strings"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/errwrap"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/source"
+	"github.com/issue9/source/codegen"
 	"github.com/issue9/web"
 )
 
@@ -198,13 +199,15 @@ func dump(header, input, output string, types []string) error {
 		WString(`"github.com/issue9/web/locales"`).WByte('\n').
 		WString(`)`).WByte('\n').WByte('\n')
 
-	for k, v := range vals {
-		t := NewType(k, v...)
-		t.dump(buf)
+	data := &Data{
+		FileHeader: fileHeader,
+		Package:    f.Name.Name,
+		Types:      make([]*Type, 0, len(vals)),
 	}
 
-	if buf.Err != nil {
-		return buf.Err
+	for k, v := range vals {
+		data.Types = append(data.Types, NewType(k, v...))
 	}
-	return source.DumpGoSource(output, buf.Bytes())
+
+	return codegen.DumpFromTemplate(output, tpl, data, fs.ModePerm)
 }

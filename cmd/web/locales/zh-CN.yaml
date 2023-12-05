@@ -280,6 +280,9 @@ messages:
     - key: show help
       message:
         msg: 显示帮助信息
+    - key: show info log
+      message:
+        msg: 显示提示信息
     - key: show version
       message:
         msg: 显示版本号

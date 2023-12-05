@@ -9,11 +9,12 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
+	"io/fs"
 	"strconv"
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/errwrap"
-	"github.com/issue9/source"
+	"github.com/issue9/source/codegen"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/status"
@@ -108,7 +109,7 @@ func main() {
 	b.WString(")\n\n")
 
 	checkErr(b.Err)
-	checkErr(source.DumpGoSource(file, b.Bytes()))
+	checkErr(codegen.Dump(file, b.Bytes(), fs.ModePerm))
 }
 
 func checkErr(err error) {

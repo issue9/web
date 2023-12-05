@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/issue9/web"
+
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )

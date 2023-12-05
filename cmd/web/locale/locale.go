@@ -37,6 +37,7 @@ flags：
 	recursive = web.StringPhrase("recursive dir")
 	funcs     = web.StringPhrase("locale func")
 	skipMod   = web.StringPhrase("skip sub module")
+	info      = web.StringPhrase("show info log")
 )
 
 const defaultFuncs = `github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf`
@@ -47,6 +48,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		o := fs.String("o", "./locales", out.LocaleString(p))
 		l := fs.String("l", "und", lang.LocaleString(p))
 		r := fs.Bool("r", true, recursive.LocaleString(p))
+		i := fs.Bool("i", false, info.LocaleString(p))
 		funcs := fs.String("func", defaultFuncs, funcs.LocaleString(p))
 		skip := fs.Bool("m", true, skipMod.LocaleString(p))
 
@@ -82,9 +84,13 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Root:          dir,
 					Recursive:     *r,
 					SkipSubModule: *skip,
-					Log:           log.ERROR().LocaleString,
+					WarnLog:       log.ERROR().LocaleString,
 					Funcs:         strings.Split(*funcs, ","),
 				}
+				if *i {
+					opt.InfoLog = log.INFO().LocaleString
+				}
+
 				lang, err := extract.Extract(ctx, opt)
 				if err != nil {
 					return err

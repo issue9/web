@@ -196,6 +196,9 @@ messages:
     - key: show help
       message:
         msg: show help
+    - key: show info log
+      message:
+        msg: show info log
     - key: show version
       message:
         msg: show version

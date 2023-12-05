@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"runtime"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
-	wl "github.com/issue9/web/locales"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
@@ -104,8 +102,7 @@ func newPrinter() (*localeutil.Printer, error) {
 		fmt.Println(err)
 	}
 
-	fsys := append([]fs.FS{locales.Locales}, wl.Locales...)
-	langs, err := serialize.LoadFSGlob(func(string) serialize.UnmarshalFunc { return yaml.Unmarshal }, "*.yaml", fsys...)
+	langs, err := serialize.LoadFSGlob(func(string) serialize.UnmarshalFunc { return yaml.Unmarshal }, "*.yaml", locales.Locales...)
 	if err != nil {
 		return nil, err
 	}

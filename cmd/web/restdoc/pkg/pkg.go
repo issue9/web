@@ -42,7 +42,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 		return
 	}
 
-	modPath, err := source.ModPath(root)
+	pkgPath, err := source.PackagePath(root)
 	if err != nil {
 		l.Error(err, "", 0)
 		return
@@ -61,7 +61,7 @@ func ScanDir(ctx context.Context, fset *token.FileSet, root string, recursive bo
 
 				suffix := strings.TrimPrefix(filepath.Clean(dir), root)
 				suffix = strings.TrimFunc(suffix, func(r rune) bool { return r == filepath.Separator })
-				p := scan(ctx, fset, l, dir, path.Join(modPath, suffix))
+				p := scan(ctx, fset, l, dir, path.Join(pkgPath, suffix))
 				if p != nil {
 					af(p)
 				}
