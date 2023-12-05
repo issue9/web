@@ -5,16 +5,15 @@ package enum
 
 import (
 	"flag"
-	"go/ast"
-	"go/parser"
+	"go/importer"
 	"go/token"
+	"go/types"
 	"io"
 	"io/fs"
 	"slices"
 	"strings"
 
 	"github.com/issue9/cmdopt"
-	"github.com/issue9/errwrap"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/source/codegen"
 	"github.com/issue9/web"
@@ -22,7 +21,7 @@ import (
 
 // 允许使用枚举的类型
 //
-// NOTE: 目前仅支持数值类型，如果是非数据类型，
+// NOTE: 目前仅支持数值类型，如果是非数值类型，
 // 那么在生成的 Parse 等方法中无法确定零值的表达方式。
 var allowTypes = []string{
 	"int", "int8", "int16", "int32", "int64",
@@ -74,10 +73,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	})
 }
 
-func getValues(f *ast.File, types []string) (map[string][]string, error) {
+func getValues(pkg *types.Package, types []string) (map[string][]string, error) {
 	vals := make(map[string][]string, len(types))
 	for _, t := range types {
-		v, err := getValue(f, t)
+		v, err := getValue(pkg, t)
 		if err != nil {
 			return nil, err
 		}
@@ -87,127 +86,71 @@ func getValues(f *ast.File, types []string) (map[string][]string, error) {
 	return vals, nil
 }
 
-func getValue(f *ast.File, t string) ([]string, error) {
-	if err := checkType(f, t); err != nil {
+func getValue(pkg *types.Package, t string) ([]string, error) {
+	typ, err := checkType(pkg, t)
+	if err != nil {
 		return nil, err
 	}
 
-	vals := make([]string, 0, len(f.Decls))
-	for _, d := range f.Decls {
-		g, ok := d.(*ast.GenDecl)
+	s := pkg.Scope()
+	names := s.Names()
+	vals := make([]string, 0, 10)
+	for _, v := range names {
+		obj := s.Lookup(v)
+		c, ok := obj.(*types.Const)
 		if !ok {
 			continue
 		}
-
-		var isIota bool
-		for _, s := range g.Specs {
-			v, ok := s.(*ast.ValueSpec)
-			if !ok {
-				continue
-			}
-
-			if isIota {
-				if v.Type == nil && len(v.Values) == 0 { // 未指定类型和值，则继承自上一条的类型
-					vals = appendNames(vals, v.Names)
-					continue
-				}
-				isIota = false
-
-				// TODO(1): 如果需要支持其它类型，此处也需要作相应修改。
-				if tt, ok := v.Type.(*ast.Ident); !ok || tt.Name != t {
-					continue
-				}
-
-				vals = appendNames(vals, v.Names)
-			} else {
-				if v.Type == nil {
-					continue
-				}
-
-				// 判断类型是否符合
-				if tt, ok := v.Type.(*ast.Ident); !ok || tt.Name != t {
-					continue
-				}
-
-				vals = appendNames(vals, v.Names)
-
-				if vt, ok := v.Values[0].(*ast.Ident); ok {
-					isIota = vt.Name == "iota"
-				}
-			}
+		if c.Type() == typ {
+			vals = append(vals, c.Name())
 		}
 	}
 
 	return vals, nil
 }
 
-func appendNames(val []string, v []*ast.Ident) []string {
-	for _, n := range v {
-		val = append(val, n.Name)
-	}
-	return val
-}
-
 // 检测类型是否存在于 f 且类型是允许使用的类型
-func checkType(f *ast.File, t string) error {
-	for _, d := range f.Decls {
-		g, ok := d.(*ast.GenDecl)
-		if !ok {
-			continue
-		}
-
-		for _, s := range g.Specs {
-			ts, ok := s.(*ast.TypeSpec)
-			if !ok {
-				continue
-			}
-
-			if ts.Name.Name == t {
-				tt, ok := ts.Type.(*ast.Ident)
-
-				// TODO(1): 只要底层类型在 allowTypes 的都应该放行
-				if !ok || slices.Index(allowTypes, tt.Name) < 0 {
-					return errNotAllowedType
-				}
-				return nil
-			}
-		}
+func checkType(pkg *types.Package, t string) (types.Type, error) {
+	obj := pkg.Scope().Lookup(t)
+	if obj == nil {
+		return nil, web.NewLocaleError("not found enum type %s", t)
 	}
 
-	return web.NewLocaleError("not found type %s", t)
+	tn, ok := obj.(*types.TypeName)
+	if !ok {
+		return nil, web.NewLocaleError("not found enum type %s", t)
+	}
+
+	if slices.Index(allowTypes, tn.Type().Underlying().String()) >= 0 {
+		return tn.Type(), nil
+	}
+
+	return nil, errNotAllowedType
 }
 
-func dump(header, input, output string, types []string) error {
+func dump(header, input, output string, ts []string) error {
+	input = strings.TrimLeft(input, "./\\")
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, input, nil, parser.AllErrors)
+	imp := importer.ForCompiler(fset, "source", nil)
+	pkg, err := imp.(types.ImporterFrom).ImportFrom(input, ".", 0)
 	if err != nil {
 		return err
 	}
 
-	vals, err := getValues(f, types)
+	vals, err := getValues(pkg, ts)
 	if err != nil {
 		return err
 	}
 
-	buf := &errwrap.Buffer{}
-
-	buf.Printf("// %s \n\n", header).
-		Printf("package %s \n\n", f.Name.Name).
-		WString(`import (`).WByte('\n').
-		WString(`"fmt"`).WByte('\n').
-		WString(`"github.com/issue9/web"`).WString("\n").
-		WString(`"github.com/issue9/web/locales"`).WByte('\n').
-		WString(`)`).WByte('\n').WByte('\n')
-
-	data := &Data{
-		FileHeader: fileHeader,
-		Package:    f.Name.Name,
-		Types:      make([]*Type, 0, len(vals)),
+	d := &data{
+		FileHeader: header,
+		Package:    pkg.Name(),
+		Enums:      make([]*enum, 0, len(vals)),
 	}
 
 	for k, v := range vals {
-		data.Types = append(data.Types, NewType(k, v...))
+		d.Enums = append(d.Enums, newEnum(k, v...))
 	}
 
-	return codegen.DumpFromTemplate(output, tpl, data, fs.ModePerm)
+	return codegen.DumpFromTemplate(output, tpl, d, fs.ModePerm)
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package testdata
+package testdir
 
 type t1 int
 
@@ -28,3 +28,8 @@ const t3V1 t3 = 1
 const t1V5 t1 = 5
 
 const V2t3 t3 = 2
+
+const (
+	T2v1 t2 = iota
+	T2v2
+)

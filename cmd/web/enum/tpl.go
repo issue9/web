@@ -13,7 +13,7 @@ import(
 	"github.com/issue9/web/locales"
 )
 
-{{range .Types}}
+{{range .Enums}}
 //---------------------{{.Name}}------------------------
 
 var {{.Type2StringMap}} = map[{{.Name}}] string {

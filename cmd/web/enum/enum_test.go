@@ -3,60 +3,71 @@
 package enum
 
 import (
-	"go/ast"
-	"go/parser"
+	"go/importer"
 	"go/token"
+	"go/types"
 	"testing"
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
 )
 
-func parseFile(a *assert.Assertion, path string) *ast.File {
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, path, nil, parser.AllErrors)
-	a.NotError(err).NotNil(f)
+func parseFile(a *assert.Assertion, path string) *types.Package {
+	a.TB().Helper()
 
-	return f
+	fset := token.NewFileSet()
+	imp := importer.ForCompiler(fset, "source", nil)
+	pkg, err := imp.Import(path)
+	a.NotError(err).NotNil(pkg)
+
+	return pkg
 }
 
 func TestGetValues(t *testing.T) {
 	a := assert.New(t, false)
-	f := parseFile(a, "./testdata/testdata.go")
+	f := parseFile(a, "testdir/testdir.go")
 
 	vals, err := getValues(f, []string{"t1", "t3"})
 	a.NotError(err).Equal(vals, map[string][]string{
 		"t1": {"t1V1", "t1V2", "t1V3", "t1V4", "t1V5"},
-		"t3": {"t3V1", "V2t3"},
+		"t3": {"V2t3", "t3V1"},
 	})
 }
 
 func TestGetValue(t *testing.T) {
 	a := assert.New(t, false)
-	f := parseFile(a, "./testdata/testdata.go")
+	f := parseFile(a, "testdir/testdir.go")
 
 	val, err := getValue(f, "t1")
 	a.NotError(err).Equal(val, []string{"t1V1", "t1V2", "t1V3", "t1V4", "t1V5"})
 
 	val, err = getValue(f, "t3")
-	a.NotError(err).Equal(val, []string{"t3V1", "V2t3"})
+	a.NotError(err).Equal(val, []string{"V2t3", "t3V1"})
 }
 
 func TestCheckType(t *testing.T) {
 	a := assert.New(t, false)
-	f := parseFile(a, "./testdata/testdata.go")
+	f := parseFile(a, "testdir/testdir.go")
 
-	a.NotError(checkType(f, "t1"))
-	a.NotError(checkType(f, "t3"))
-	a.Equal(checkType(f, "t2"), errNotAllowedType)
-	a.Equal(checkType(f, "t4"), errNotAllowedType)
-	a.Equal(checkType(f, "t5"), errNotAllowedType)
-	a.Equal(checkType(f, "not_exists"), web.NewLocaleError("not found type %s", "not_exists"))
+	tt, err := checkType(f, "t1")
+	a.NotError(err).NotNil(tt)
+
+	tt, err = checkType(f, "t3")
+	a.NotError(err).NotNil(tt)
+
+	tt, err = checkType(f, "t2")
+	a.NotError(err).NotNil(tt)
+
+	tt, err = checkType(f, "t5")
+	a.Equal(err, errNotAllowedType).Nil(tt)
+
+	tt, err = checkType(f, "not_exists")
+	a.Equal(err, web.NewLocaleError("not found enum type %s", "not_exists")).Nil(tt)
 }
 
 func TestDump(t *testing.T) {
 	a := assert.New(t, false)
 
-	err := dump("header", "./testdata/testdata.go", "./testdata/testdata.out", []string{"t1", "t3"})
+	err := dump("header", "./testdir/testdir.go", "./testdir/testdata.out", []string{"t1", "t3"})
 	a.NotError(err)
 }

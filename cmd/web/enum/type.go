@@ -4,14 +4,14 @@ package enum
 
 import "strings"
 
-type Data struct {
+type data struct {
 	FileHeader string
 	Package    string
-	Types      []*Type
+	Enums      []*enum
 }
 
-// Type 枚举类型的数据
-type Type struct {
+// enum 枚举类型的数据
+type enum struct {
 	Name     string  // 类型名称
 	Values   []value // 类型的所有可能值
 	Receiver string
@@ -25,7 +25,7 @@ type value struct {
 	String string // 值对应的字符串值
 }
 
-func NewType(t string, vals ...string) *Type {
+func newEnum(t string, vals ...string) *enum {
 	has := true
 	for _, v := range vals {
 		if has = has && strings.HasPrefix(v, t); !has {
@@ -44,7 +44,7 @@ func NewType(t string, vals ...string) *Type {
 		}
 	}
 
-	return &Type{
+	return &enum{
 		Name:     t,
 		Values:   values,
 		Receiver: string(t[0]),
