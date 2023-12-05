@@ -35,7 +35,7 @@ const (
 	replaceUsage   = web.StringPhrase("parse replace direct, only valid when d is true")
 )
 
-const defaultOutput = "./restdoc.yaml"
+const defaultOutput = "./restdoc.json"
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("doc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {

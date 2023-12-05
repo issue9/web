@@ -28,7 +28,7 @@ func TestParser_Parse(t *testing.T) {
 	a.NotNil(d.Doc().Info).
 		Equal(d.Doc().Info.Version, "1.0.0")
 
-	login := d.Doc().Paths["/prefix/login"].Post
+	login := d.Doc().Paths.Find("/prefix/login").Post
 	a.NotNil(login).
 		Length(login.Parameters, 6).
 		Equal(login.Parameters[3].Value.Name, "sex").
@@ -38,11 +38,11 @@ func TestParser_Parse(t *testing.T) {
 		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).
 		Equal(login.Parameters[2].Value.Schema.Value.Items.Value.Type, openapi3.TypeInteger).
 		NotNil(login.RequestBody).
-		Length(login.Responses, 5). // 包含默认的 default
+		Equal(login.Responses.Len(), 5). // 包含默认的 default
 		Length(login.Callbacks, 1).
-		NotNil((*login.Callbacks["onData"].Value)["{$request.query.url}"].Post)
+		NotNil((login.Callbacks["onData"].Value).Value("{$request.query.url}").Post)
 
-	a.NotError(d.SaveAs("./testdata/openapi.out.yaml"))
+	a.NotError(d.SaveAs("./testdata/openapi.out.json"))
 }
 
 func TestIsIgnoreTag(t *testing.T) {

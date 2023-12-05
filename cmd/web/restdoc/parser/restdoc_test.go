@@ -123,7 +123,7 @@ func TestBuildContact(t *testing.T) {
 		Equal(c.Name, "name")
 }
 
-func TestParseOpenAPI(t *testing.T) {
+func TestParser_parseOpenAPI(t *testing.T) {
 	a := assert.New(t, false)
 
 	l := loggertest.New(a)
@@ -132,5 +132,5 @@ func TestParseOpenAPI(t *testing.T) {
 
 	p.parseOpenAPI(d, "./testdata/openapi.yaml", "test.go", 5)
 	a.Nil(d.Doc().Info).
-		Length(d.Doc().Paths, 1)
+		Equal(d.Doc().Paths.Len(), 1)
 }

@@ -5,6 +5,7 @@ package openapi
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"sync"
@@ -25,19 +26,17 @@ type OpenAPI struct {
 func New(ver string) *OpenAPI {
 	c := openapi3.NewComponents()
 	c.Schemas = make(openapi3.Schemas)
-	c.Responses = make(openapi3.Responses)
+	c.Responses = make(openapi3.ResponseBodies)
 	c.SecuritySchemes = make(openapi3.SecuritySchemes)
 
-	t := &openapi3.T{
+	return &OpenAPI{doc: &openapi3.T{
 		OpenAPI:    ver,
 		Components: &c,
 		Servers:    make(openapi3.Servers, 0, 5),
-		Paths:      make(openapi3.Paths, 100),
+		Paths:      openapi3.NewPathsWithCapacity(100),
 		Security:   make(openapi3.SecurityRequirements, 0, 5),
 		Tags:       make(openapi3.Tags, 0, 10),
-	}
-
-	return &OpenAPI{doc: t}
+	}}
 }
 
 func (doc *OpenAPI) Doc() *openapi3.T { return doc.doc }
@@ -48,12 +47,10 @@ func (doc *OpenAPI) Doc() *openapi3.T { return doc.doc }
 func (doc *OpenAPI) SaveAs(path string) error {
 	var m func(any) ([]byte, error)
 	switch filepath.Ext(path) {
-	case ".yaml", ".yml":
+	case ".yaml", ".yml": // BUG: 依赖的 openapi3.Paths 不支持输出 yaml?
 		m = yaml.Marshal
 	case ".json":
-		m = func(v any) ([]byte, error) {
-			return json.MarshalIndent(v, "", "\t")
-		}
+		m = func(v any) ([]byte, error) { return json.MarshalIndent(v, "", "\t") }
 	default:
 		return web.NewLocaleError("only support yaml and json")
 	}
@@ -69,22 +66,20 @@ func (doc *OpenAPI) Merge(d *openapi3.T) {
 	doc.Doc().Servers = append(doc.Doc().Servers, d.Servers...)
 	doc.Doc().Security = append(doc.Doc().Security, d.Security...)
 	doc.Doc().Tags = append(doc.Doc().Tags, d.Tags...)
-	cloneMap(d.Paths, doc.Doc().Paths)
-	if d.Components != nil {
-		cloneMap(d.Components.Schemas, doc.Doc().Components.Schemas)
-		cloneMap(d.Components.Parameters, doc.Doc().Components.Parameters)
-		cloneMap(d.Components.Headers, doc.Doc().Components.Headers)
-		cloneMap(d.Components.RequestBodies, doc.Doc().Components.RequestBodies)
-		cloneMap(d.Components.Responses, doc.Doc().Components.Responses)
-		cloneMap(d.Components.SecuritySchemes, doc.Doc().Components.SecuritySchemes)
-		cloneMap(d.Components.Examples, doc.Doc().Components.Examples)
-		cloneMap(d.Components.Links, doc.Doc().Components.Links)
-		cloneMap(d.Components.Callbacks, doc.Doc().Components.Callbacks)
+	if d.Paths != nil && d.Paths.Len() > 0 {
+		for k, v := range d.Paths.Map() {
+			doc.Doc().Paths.Set(k, v)
+		}
 	}
-}
-
-func cloneMap[K comparable, V any](src, dest map[K]V) {
-	for k, v := range src {
-		dest[k] = v
+	if d.Components != nil {
+		maps.Copy(doc.Doc().Components.Schemas, d.Components.Schemas)
+		maps.Copy(doc.Doc().Components.Parameters, d.Components.Parameters)
+		maps.Copy(doc.Doc().Components.Headers, d.Components.Headers)
+		maps.Copy(doc.Doc().Components.RequestBodies, d.Components.RequestBodies)
+		maps.Copy(doc.Doc().Components.Responses, d.Components.Responses)
+		maps.Copy(doc.Doc().Components.SecuritySchemes, d.Components.SecuritySchemes)
+		maps.Copy(doc.Doc().Components.Examples, d.Components.Examples)
+		maps.Copy(doc.Doc().Components.Links, d.Components.Links)
+		maps.Copy(doc.Doc().Components.Callbacks, d.Components.Callbacks)
 	}
 }

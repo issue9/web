@@ -45,7 +45,7 @@ func (doc *OpenAPI) addAPI(path, method string, o *openapi3.Operation) {
 		return
 	}
 
-	p := doc.doc.Paths[path]
+	p := doc.doc.Paths.Find(path)
 	if index := slices.IndexFunc(p.Parameters, isPathParams); index >= 0 {
 		return
 	}

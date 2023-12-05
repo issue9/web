@@ -24,7 +24,7 @@ func TestParser_parseAPI(t *testing.T) {
 		"@path id id id desc",
 	}
 	p.parseAPI(doc, "github.com/issue9/web", "POST /admins/{id}", lines, 5, "example.go")
-	path := doc.Doc().Paths["/admins/{id}"]
+	path := doc.Doc().Paths.Find("/admins/{id}")
 	a.NotNil(path).
 		NotNil(path.Post).
 		Nil(path.Delete).

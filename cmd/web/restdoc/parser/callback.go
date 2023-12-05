@@ -87,9 +87,8 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 	}
 	p.addResponses(opt, resps, false)
 
-	callback := openapi3.Callback{path: pi}
 	o.Callbacks[name] = &openapi3.CallbackRef{
-		Value: &callback,
+		Value: openapi3.NewCallback(openapi3.WithCallback(path, pi)),
 	}
 
 	return delta

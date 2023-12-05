@@ -103,20 +103,20 @@ func (p *Parser) parseResponseHeader(resps map[string]*openapi3.Response, suffix
 // g 是否将定义为全局的对象也写入 o
 func (p *Parser) addResponses(o *openapi3.Operation, resps map[string]*openapi3.Response, g bool) {
 	if l := len(resps) + len(p.resps); o.Responses == nil && l > 0 {
-		o.Responses = make(openapi3.Responses, l)
+		o.Responses = openapi3.NewResponsesWithCapacity(l)
 	}
 
 	if g { // 全局的定义在前，才会被本地定义覆盖。
 		for key, resp := range p.resps {
-			o.Responses[key] = &openapi3.ResponseRef{Ref: responsesRef + key, Value: resp}
+			o.Responses.Set(key, &openapi3.ResponseRef{Ref: responsesRef + key, Value: resp})
 		}
 	}
 
 	for status, r := range resps {
-		if _, found := o.Responses[status]; found {
+		if o.Responses.Value(status) != nil {
 			p.l.Warning(web.Phrase("override global response %s", status))
 		}
-		o.Responses[status] = &openapi3.ResponseRef{Value: r}
+		o.Responses.Set(status, &openapi3.ResponseRef{Value: r})
 	}
 }
 
