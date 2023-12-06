@@ -42,6 +42,7 @@ func TestParser_Parse(t *testing.T) {
 		Length(login.Callbacks, 1).
 		NotNil((login.Callbacks["onData"].Value).Value("{$request.query.url}").Post)
 
+	a.NotError(d.SaveAs("./testdata/openapi.out.yaml"))
 	a.NotError(d.SaveAs("./testdata/openapi.out.json"))
 }
 

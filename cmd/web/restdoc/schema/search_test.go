@@ -12,6 +12,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/web"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -23,20 +24,20 @@ func buildSearchFunc(a *assert.Assertion) SearchFunc {
 	fset := token.NewFileSet()
 	l := loggertest.New(a)
 
-	var pkgs []*pkg.Package
+	var pkgs []*packages.Package
 	var pkgsM sync.Mutex
-	af := func(p *pkg.Package) {
+	af := func(p ...*packages.Package) {
 		pkgsM.Lock()
 		defer pkgsM.Unlock()
-		pkgs = append(pkgs, p)
+		pkgs = append(pkgs, p...)
 	}
 	pkg.ScanDir(ctx, fset, "./testdata", true, af, l.Logger)
 
-	return func(s string) *pkg.Package {
+	return func(s string) *packages.Package {
 		pkgsM.Lock()
 		defer pkgsM.Unlock()
 
-		if i := slices.IndexFunc(pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
+		if i := slices.IndexFunc(pkgs, func(pkg *packages.Package) bool { return pkg.PkgPath == s }); i >= 0 {
 			return pkgs[i]
 		}
 		return nil

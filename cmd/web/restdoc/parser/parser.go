@@ -14,6 +14,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/web"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -25,7 +26,7 @@ import (
 // Parser 文档分析对象
 type Parser struct {
 	pkgsM  sync.Mutex
-	pkgs   []*pkg.Package
+	pkgs   []*packages.Package
 	search schema.SearchFunc
 	fset   *token.FileSet
 
@@ -63,7 +64,7 @@ type comments struct {
 // tags 如果非空，则表示仅返回带这些标签的 API；
 func New(l *logger.Logger, prefix string, tags []string) *Parser {
 	p := &Parser{
-		pkgs: make([]*pkg.Package, 0, 10),
+		pkgs: make([]*packages.Package, 0, 10),
 		fset: token.NewFileSet(),
 
 		apiComments: make([]*comments, 0, 100),
@@ -74,8 +75,8 @@ func New(l *logger.Logger, prefix string, tags []string) *Parser {
 		tags:   tags,
 	}
 
-	p.search = func(s string) *pkg.Package {
-		if i := slices.IndexFunc(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == s }); i >= 0 {
+	p.search = func(s string) *packages.Package {
+		if i := slices.IndexFunc(p.pkgs, func(pkg *packages.Package) bool { return pkg.PkgPath == s }); i >= 0 {
 			return p.pkgs[i]
 		}
 		return nil
@@ -100,16 +101,18 @@ func (p *Parser) line(pos token.Pos) int { return p.fset.Position(pos).Line }
 
 func (p *Parser) file(pos token.Pos) string { return p.fset.File(pos).Name() }
 
-func (p *Parser) append(pp *pkg.Package) {
+func (p *Parser) append(pp ...*packages.Package) {
 	p.pkgsM.Lock()
 	defer p.pkgsM.Unlock()
 
-	if slices.IndexFunc(p.pkgs, func(pkg *pkg.Package) bool { return pkg.Path == pp.Path }) >= 0 {
-		p.l.Error(web.Phrase("package %s with the same name.", pp.Path), "", 0)
-		return
+	for _, ppp := range pp {
+		if slices.IndexFunc(p.pkgs, func(pkg *packages.Package) bool { return pkg.PkgPath == ppp.PkgPath }) >= 0 {
+			p.l.Error(web.Phrase("package %s with the same name.", ppp.PkgPath), "", 0)
+			return
+		}
 	}
 
-	p.pkgs = append(p.pkgs, pp)
+	p.pkgs = append(p.pkgs, pp...)
 }
 
 // Parse 解析由 [Parser.AddDir] 加载的内容
@@ -126,7 +129,7 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 			return nil
 		default:
 			wg.Add(1)
-			go func(pp *pkg.Package) {
+			go func(pp *packages.Package) {
 				defer wg.Done()
 				p.parsePackage(ctx, t, pp)
 			}(pp)
@@ -175,9 +178,9 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	return t
 }
 
-func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg.Package) {
+func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *packages.Package) {
 	wg := &sync.WaitGroup{}
-	for _, f := range pack.Files {
+	for _, f := range pack.Syntax {
 		select {
 		case <-ctx.Done():
 			p.l.Warning(pkg.Cancelled)
@@ -186,7 +189,7 @@ func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pkg
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				p.parseFile(t, pack.Path, f)
+				p.parseFile(t, pack.PkgPath, f)
 			}(f)
 		}
 	}

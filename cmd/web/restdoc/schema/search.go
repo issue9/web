@@ -14,13 +14,13 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/query/v3"
 	"github.com/issue9/web"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
 // SearchFunc 查找指定名称的包
-type SearchFunc func(string) *pkg.Package
+type SearchFunc func(string) *packages.Package
 
 // New 根据类型名称 typePath 生成 SchemaRef 对象
 //
@@ -122,7 +122,7 @@ func (f SearchFunc) findTypeSpec(structPath, structName string) (file *ast.File,
 		return nil, nil, web.NewLocaleError("not found module %s", structPath)
 	}
 
-	for _, file = range p.Files {
+	for _, file = range p.Syntax {
 		for _, d := range file.Decls {
 			gen, ok := d.(*ast.GenDecl)
 			if !ok || gen.Tok != token.TYPE {

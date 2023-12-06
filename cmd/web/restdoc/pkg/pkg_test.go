@@ -9,23 +9,24 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
 
 type appender struct {
-	pkgs []*Package
+	pkgs []*packages.Package
 	mux  sync.Mutex
 }
 
-func (a *appender) append(p *Package) {
+func (a *appender) append(p ...*packages.Package) {
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	a.pkgs = append(a.pkgs, p)
+	a.pkgs = append(a.pkgs, p...)
 }
 
 func newAppender() *appender {
-	return &appender{pkgs: make([]*Package, 0, 10)}
+	return &appender{pkgs: make([]*packages.Package, 0, 10)}
 }
 
 func TestScanDir(t *testing.T) {
@@ -35,16 +36,14 @@ func TestScanDir(t *testing.T) {
 	fset := token.NewFileSet()
 	l := loggertest.New(a)
 	ScanDir(context.Background(), fset, "./testdir", true, ap.append, l.Logger)
-	a.Length(ap.pkgs, 2).
-		NotNil(ap.pkgs[0].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir").
-		NotNil(ap.pkgs[1].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir/testdir2")
+	a.Length(ap.pkgs, 2)
 
 	ap = newAppender()
 	fset = token.NewFileSet()
 	l = loggertest.New(a)
 	ScanDir(context.Background(), fset, "./testdir", false, ap.append, l.Logger)
 	a.Length(ap.pkgs, 1).
-		NotNil(ap.pkgs[0].Path, "github.com/issue9/web/cmd/web/internal/restdoc/pkg/testdir/testdir2")
+		Equal(ap.pkgs[0].PkgPath, "github.com/issue9/web/restdoc/pkg")
 }
 
 func TestScan(t *testing.T) {
@@ -54,9 +53,13 @@ func TestScan(t *testing.T) {
 	ctx := context.Background()
 	fset := token.NewFileSet()
 
-	pkg := scan(ctx, fset, l.Logger, "./testdir", "github.com/test/testdata")
-	a.NotNil(pkg).
-		Length(pkg.Files, 1).
-		Equal(pkg.Path, "github.com/test/testdata").
+	pkg := scan(ctx, fset, l.Logger, "./testdir")
+	a.Length(pkg, 1).
+		Equal(pkg[0].PkgPath, "github.com/issue9/web/restdoc/pkg").
+		Zero(l.Count())
+
+	pkg = scan(ctx, fset, l.Logger, "./testdir/testdir2")
+	a.Length(pkg, 1).
+		Equal(pkg[0].PkgPath, "github.com/issue9/web/restdoc/pkg/testdir2").
 		Zero(l.Count())
 }

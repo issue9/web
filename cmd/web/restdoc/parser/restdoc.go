@@ -291,7 +291,7 @@ func (p *Parser) parseConstVersion(path, pkgPath string) (string, error) {
 	}
 
 	pkg := p.search(pkgPath)
-	for _, f := range pkg.Files {
+	for _, f := range pkg.Syntax {
 		for _, d := range f.Decls {
 			g, ok := d.(*ast.GenDecl)
 			if !ok {

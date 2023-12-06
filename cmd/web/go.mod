@@ -16,6 +16,7 @@ require (
 	github.com/issue9/web v0.86.2
 	golang.org/x/mod v0.14.0
 	golang.org/x/text v0.14.0
+	golang.org/x/tools v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -38,6 +39,5 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/tools v0.16.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 )
