@@ -19,16 +19,12 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/pkg"
-	"github.com/issue9/web/cmd/web/restdoc/schema"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 // Parser 文档分析对象
 type Parser struct {
-	pkgsM  sync.Mutex
-	pkgs   []*packages.Package
-	search schema.SearchFunc
-	fset   *token.FileSet
+	pkgs *pkg.Packages
 
 	media   []string                      // 全局可用 media type
 	resps   map[string]*openapi3.Response // 全局可用 response
@@ -63,9 +59,8 @@ type comments struct {
 // prefix 为所有的 API 地址加上统一的前缀；
 // tags 如果非空，则表示仅返回带这些标签的 API；
 func New(l *logger.Logger, prefix string, tags []string) *Parser {
-	p := &Parser{
-		pkgs: make([]*packages.Package, 0, 10),
-		fset: token.NewFileSet(),
+	return &Parser{
+		pkgs: pkg.New(l),
 
 		apiComments: make([]*comments, 0, 100),
 
@@ -74,15 +69,6 @@ func New(l *logger.Logger, prefix string, tags []string) *Parser {
 		prefix: prefix,
 		tags:   tags,
 	}
-
-	p.search = func(s string) *packages.Package {
-		if i := slices.IndexFunc(p.pkgs, func(pkg *packages.Package) bool { return pkg.PkgPath == s }); i >= 0 {
-			return p.pkgs[i]
-		}
-		return nil
-	}
-
-	return p
 }
 
 // AddDir 添加 root 下的内容
@@ -93,27 +79,13 @@ func (p *Parser) AddDir(ctx context.Context, root string, recursive bool) {
 	if p.parsed {
 		panic("已经解析完成，无法再次添加！")
 	}
-	pkg.ScanDir(ctx, p.fset, root, recursive, p.append, p.l)
+	p.pkgs.ScanDir(ctx, root, recursive)
 }
 
 // line 返回 pos 的行号
-func (p *Parser) line(pos token.Pos) int { return p.fset.Position(pos).Line }
+func (p *Parser) line(pos token.Pos) int { return p.pkgs.Position(pos).Line }
 
-func (p *Parser) file(pos token.Pos) string { return p.fset.File(pos).Name() }
-
-func (p *Parser) append(pp ...*packages.Package) {
-	p.pkgsM.Lock()
-	defer p.pkgsM.Unlock()
-
-	for _, ppp := range pp {
-		if slices.IndexFunc(p.pkgs, func(pkg *packages.Package) bool { return pkg.PkgPath == ppp.PkgPath }) >= 0 {
-			p.l.Error(web.Phrase("package %s with the same name.", ppp.PkgPath), "", 0)
-			return
-		}
-	}
-
-	p.pkgs = append(p.pkgs, pp...)
-}
+func (p *Parser) file(pos token.Pos) string { return p.pkgs.Position(pos).Filename }
 
 // Parse 解析由 [Parser.AddDir] 加载的内容
 func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
@@ -122,11 +94,11 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	t := openapi.New("3.0.0")
 	wg := &sync.WaitGroup{}
 
-	for _, pp := range p.pkgs {
+	p.pkgs.Range(func(pp *packages.Package) bool {
 		select {
 		case <-ctx.Done():
 			p.l.Warning(pkg.Cancelled)
-			return nil
+			return false
 		default:
 			wg.Add(1)
 			go func(pp *packages.Package) {
@@ -134,7 +106,9 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 				p.parsePackage(ctx, t, pp)
 			}(pp)
 		}
-	}
+		return true
+	})
+
 	wg.Wait()
 
 	// 下面的操作依赖上面的完成，所以需要两个 wg 变量

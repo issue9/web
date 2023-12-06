@@ -28,11 +28,11 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix,
 		return
 	}
 
-	s, err := p.search.New(t, currPath, words[1], false)
+	s, err := schema.New(p.pkgs, t, currPath, words[1], false)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {
-			serr.Log(p.l, p.fset)
+			serr.Log(p.l, p.pkgs.Fset)
 			return
 		}
 		p.l.Error(err, filename, ln)
@@ -51,11 +51,11 @@ func (p *Parser) parseResponse(resps map[string]*openapi3.Response, t *openapi.O
 		return false
 	}
 
-	s, err := p.search.New(t, currPath, words[2], false)
+	s, err := schema.New(p.pkgs, t, currPath, words[2], false)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {
-			serr.Log(p.l, p.fset)
+			serr.Log(p.l, p.pkgs.Fset)
 			return false
 		}
 		p.l.Error(err, filename, ln)

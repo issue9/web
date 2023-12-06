@@ -290,7 +290,7 @@ func (p *Parser) parseConstVersion(path, pkgPath string) (string, error) {
 		path = path[index+1:]
 	}
 
-	pkg := p.search(pkgPath)
+	pkg := p.pkgs.Package(pkgPath)
 	for _, f := range pkg.Syntax {
 		for _, d := range f.Decls {
 			g, ok := d.(*ast.GenDecl)
