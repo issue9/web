@@ -4,6 +4,7 @@ package update
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"io"
 	"os"
@@ -46,26 +47,29 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			}
 
 			for _, d := range strings.Split(*dest, ",") {
+				var dest *message.Language
+
 				stat, err := os.Stat(d)
-				// TODO 当文件不存在时，创建一个新的？
-				if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					dest = &message.Language{}
+				} else if err != nil {
 					return err
 				}
+
 				if stat.IsDir() {
 					return web.NewLocaleError("the dest file %s is dir", d)
 				}
 
 				filename := filepath.Base(d)
 				ext := filepath.Ext(filename)
-
 				u, err := getUnmarshalByExt(ext)
 				if err != nil {
 					return err
 				}
-
-				dest, err := serialize.LoadFile(d, u)
-				if err != nil {
-					return err
+				if dest == nil { // dest != nil，说明因为不存在文件，已经被初始经默认值。
+					if dest, err = serialize.LoadFile(d, u); err != nil {
+						return err
+					}
 				}
 
 				srcMsg.MergeTo(log.WARN().LocaleString, []*message.Language{dest})

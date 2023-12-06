@@ -152,6 +152,9 @@ messages:
     - key: not found const %s
       message:
         msg: 未找到常量 %s
+    - key: not found enum type %s
+      message:
+        msg: 未找到枚举类型 %s
     - key: not found module %s
       message:
         msg: 未找到模块 %s
@@ -161,9 +164,6 @@ messages:
     - key: not found struct %s
       message:
         msg: 未找到结构体 %s
-    - key: not found type %s
-      message:
-        msg: 未找到名为 %s 的类型
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息

@@ -133,6 +133,9 @@ messages:
     - key: not found const %s
       message:
         msg: not found const %s
+    - key: not found enum type %s
+      message:
+        msg: not found enum type %s
     - key: not found module %s
       message:
         msg: not found module %s
@@ -142,9 +145,6 @@ messages:
     - key: not found struct %s
       message:
         msg: not found struct %s
-    - key: not found type %s
-      message:
-        msg: not found type %s
     - key: not show ignore message
       message:
         msg: not show ignore message
