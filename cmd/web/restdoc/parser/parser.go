@@ -19,12 +19,13 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/pkg"
+	"github.com/issue9/web/cmd/web/restdoc/schema"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
 // Parser 文档分析对象
 type Parser struct {
-	pkgs *pkg.Packages
+	schema *schema.Schema
 
 	media   []string                      // 全局可用 media type
 	resps   map[string]*openapi3.Response // 全局可用 response
@@ -60,7 +61,7 @@ type comments struct {
 // tags 如果非空，则表示仅返回带这些标签的 API；
 func New(l *logger.Logger, prefix string, tags []string) *Parser {
 	return &Parser{
-		pkgs: pkg.New(l),
+		schema: schema.New(l),
 
 		apiComments: make([]*comments, 0, 100),
 
@@ -79,13 +80,15 @@ func (p *Parser) AddDir(ctx context.Context, root string, recursive bool) {
 	if p.parsed {
 		panic("已经解析完成，无法再次添加！")
 	}
-	p.pkgs.ScanDir(ctx, root, recursive)
+	p.schema.Packages().ScanDir(ctx, root, recursive)
 }
 
 // line 返回 pos 的行号
-func (p *Parser) line(pos token.Pos) int { return p.pkgs.Position(pos).Line }
+func (p *Parser) line(pos token.Pos) int { return p.schema.Packages().FileSet().Position(pos).Line }
 
-func (p *Parser) file(pos token.Pos) string { return p.pkgs.Position(pos).Filename }
+func (p *Parser) file(pos token.Pos) string {
+	return p.schema.Packages().FileSet().Position(pos).Filename
+}
 
 // Parse 解析由 [Parser.AddDir] 加载的内容
 func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
@@ -94,7 +97,7 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	t := openapi.New("3.0.0")
 	wg := &sync.WaitGroup{}
 
-	p.pkgs.Range(func(pp *packages.Package) bool {
+	p.schema.Packages().Range(func(pp *packages.Package) bool {
 		select {
 		case <-ctx.Done():
 			p.l.Warning(pkg.Cancelled)

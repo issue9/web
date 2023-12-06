@@ -6,6 +6,7 @@ package pkg
 import (
 	"context"
 	"go/token"
+	"go/types"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -25,14 +26,14 @@ const Cancelled = web.StringPhrase("cancelled")
 type Packages struct {
 	pkgsM sync.Mutex
 	pkgs  []*packages.Package
-	Fset  *token.FileSet
+	fset  *token.FileSet
 	l     *logger.Logger
 }
 
 func New(l *logger.Logger) *Packages {
 	return &Packages{
 		pkgs: make([]*packages.Package, 0, 10),
-		Fset: token.NewFileSet(),
+		fset: token.NewFileSet(),
 		l:    l,
 	}
 }
@@ -65,7 +66,7 @@ func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) 
 					Mode:    mode,
 					Context: ctx,
 					Dir:     dir,
-					Fset:    pkgs.Fset,
+					Fset:    pkgs.fset,
 				})
 				if err != nil {
 					pkgs.l.Error(err, "", 0)
@@ -89,13 +90,20 @@ func (pkgs *Packages) append(ps ...*packages.Package) {
 	}
 }
 
+func (pkgs *Packages) FileSet() *token.FileSet { return pkgs.fset }
+
 func (pkgs *Packages) Package(path string) *packages.Package {
 	pkg, _ := sliceutil.At(pkgs.pkgs, func(p *packages.Package, _ int) bool { return p.PkgPath == path })
 	return pkg
 }
 
-func (pkgs *Packages) Position(p token.Pos) token.Position {
-	return pkgs.Fset.Position(p)
+func (pkgs *Packages) Lookup(name string) types.Object {
+	for _, p := range pkgs.pkgs {
+		if obj := p.Types.Scope().Lookup(name); obj != nil {
+			return obj
+		}
+	}
+	return nil
 }
 
 // f 如果返回了 false，将退出循环

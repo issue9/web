@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
 type typeParam struct {
@@ -16,17 +15,17 @@ type typeParam struct {
 	name string // 类型参数的实参名称
 }
 
-func fromIndexExprType(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
+func (s *Schema) fromIndexExprType(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr) (*Ref, error) {
 	mod, idxName := getExprName(file, currPath, idx.Index)
 	if mod != currPath {
 		idxName = mod + "." + idxName
 	}
 
 	mod, name := getExprName(file, currPath, idx.X)
-	return fromName(pkg, t, mod, name+"["+idxName+"]", tag, false)
+	return s.fromName(t, mod, name+"["+idxName+"]", tag, false)
 }
 
-func fromIndexListExprType(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr) (*Ref, error) {
+func (s *Schema) fromIndexListExprType(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr) (*Ref, error) {
 	indexes := make([]string, 0, len(idx.Indices))
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)
@@ -38,10 +37,10 @@ func fromIndexListExprType(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File
 
 	mod, name := getExprName(file, currPath, idx.X)
 	name += "[" + strings.Join(indexes, ",") + "]"
-	return fromName(pkg, t, mod, name, tag, false)
+	return s.fromName(t, mod, name, tag, false)
 }
 
-func fromIndexExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr, refs map[string]*typeParam) (*Ref, error) {
+func (s *Schema) fromIndexExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexExpr, refs map[string]*typeParam) (*Ref, error) {
 	mod, idxName := getExprName(file, currPath, idx.Index)
 	if mod != currPath {
 		idxName = mod + "." + idxName
@@ -52,10 +51,10 @@ func fromIndexExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPa
 	}
 
 	mod, name := getExprName(file, currPath, idx.X)
-	return fromName(pkg, t, mod, name+"["+idxName+"]", tag, false)
+	return s.fromName(t, mod, name+"["+idxName+"]", tag, false)
 }
 
-func fromIndexListExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr, refs map[string]*typeParam) (*Ref, error) {
+func (s *Schema) fromIndexListExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, idx *ast.IndexListExpr, refs map[string]*typeParam) (*Ref, error) {
 	indexes := make([]string, 0, len(idx.Indices))
 	for _, i := range idx.Indices {
 		mod, idxName := getExprName(file, currPath, i)
@@ -71,7 +70,7 @@ func fromIndexListExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, cu
 
 	mod, name := getExprName(file, currPath, idx.X)
 	name += "[" + strings.Join(indexes, ",") + "]"
-	return fromName(pkg, t, mod, name, tag, false)
+	return s.fromName(t, mod, name, tag, false)
 }
 
 func getExprName(file *ast.File, currPath string, expr ast.Expr) (mod, name string) {

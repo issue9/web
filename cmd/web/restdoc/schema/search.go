@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
-	"github.com/issue9/web/cmd/web/restdoc/pkg"
 )
 
 // New 根据类型名称 typePath 生成 SchemaRef 对象
@@ -28,7 +27,7 @@ import (
 // q 是否用于查询参数
 //
 // 可能返回的错误值为 *Error
-func New(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
+func (s *Schema) New(t *openapi.OpenAPI, currPath, typePath string, q bool) (*Ref, error) {
 	if strings.HasPrefix(typePath, refPrefix) {
 		if ref, found := t.GetSchema(strings.TrimPrefix(typePath, refPrefix)); found {
 			return ref, nil
@@ -48,11 +47,11 @@ func New(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath string, q boo
 		tag = query.Tag
 	}
 
-	return fromName(pkg, t, currPath, typePath, tag, isArray)
+	return s.fromName(t, currPath, typePath, tag, isArray)
 }
 
 // 根据类型名生成 schema 对象
-func fromName(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath, tag string, isArray bool) (*Ref, error) {
+func (s *Schema) fromName(t *openapi.OpenAPI, currPath, typePath, tag string, isArray bool) (*Ref, error) {
 	if r, found := getPrimitiveType(typePath, isArray); found {
 		return r, nil
 	}
@@ -83,7 +82,7 @@ func fromName(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath, tag str
 		tpRefs = make([]*typeParam, 0, len(tps))
 		for _, i := range tps {
 			name := strings.TrimSpace(i)
-			idxRef, err := fromName(pkg, t, currPath, name, tag, false)
+			idxRef, err := s.fromName(t, currPath, name, tag, false)
 			if err != nil {
 				return nil, err
 			}
@@ -91,7 +90,7 @@ func fromName(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath, tag str
 		}
 	}
 
-	file, spec, err := findTypeSpec(pkg, structPath, structName)
+	file, spec, err := s.findTypeSpec(structPath, structName)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func fromName(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath, tag str
 		return nil, web.NewLocaleError("unsupported generics type %s", typePath)
 	}
 
-	schemaRef, err := fromTypeSpec(pkg, t, structPath, tag, file, spec, tpRefs)
+	schemaRef, err := s.fromTypeSpec(t, structPath, tag, file, spec, tpRefs)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +112,8 @@ func fromName(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, typePath, tag str
 	return array(schemaRef, isArray), nil
 }
 
-func findTypeSpec(pkg *pkg.Packages, structPath, structName string) (file *ast.File, spec *ast.TypeSpec, err error) {
-	p := pkg.Package(structPath)
+func (s *Schema) findTypeSpec(structPath, structName string) (file *ast.File, spec *ast.TypeSpec, err error) {
+	p := s.pkg.Package(structPath)
 	if p == nil {
 		return nil, nil, web.NewLocaleError("not found module %s", structPath)
 	}
@@ -141,8 +140,8 @@ func findTypeSpec(pkg *pkg.Packages, structPath, structName string) (file *ast.F
 }
 
 // 将 ast.TypeSpec 转换成 openapi3.SchemaRef
-func fromTypeSpec(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, tag string, file *ast.File, s *ast.TypeSpec, tpRefs []*typeParam) (*Ref, error) {
-	title, desc, typ, enums := parseTypeDoc(s)
+func (s *Schema) fromTypeSpec(t *openapi.OpenAPI, currPath, tag string, file *ast.File, spec *ast.TypeSpec, tpRefs []*typeParam) (*Ref, error) {
+	title, desc, typ, enums := parseTypeDoc(spec)
 
 	if typ != "" { // 自定义了类型
 		s := openapi3.NewSchema().WithEnum(enums...)
@@ -152,11 +151,11 @@ func fromTypeSpec(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, tag string, f
 		return NewRef("", s), nil
 	}
 
-	switch ts := s.Type.(type) {
+	switch ts := spec.Type.(type) {
 	case *ast.Ident: // type x = int 或是 type x int
-		schemaRef, err := fromName(pkg, t, currPath, ts.Name, tag, false)
+		schemaRef, err := s.fromName(t, currPath, ts.Name, tag, false)
 		if err != nil {
-			return nil, newError(s.Pos(), err)
+			return nil, newError(spec.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
 			s := openapi3.NewSchema().WithEnum(enums...)
@@ -168,9 +167,9 @@ func fromTypeSpec(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, tag string, f
 		return schemaRef, nil
 	case *ast.SelectorExpr: // type x = json.Decoder 或是 type x json.Decoder 引用外部对象
 		mod, name := getSelectorExprName(ts, file)
-		schemaRef, err := fromName(pkg, t, currPath, mod+"."+name, tag, false)
+		schemaRef, err := s.fromName(t, currPath, mod+"."+name, tag, false)
 		if err != nil {
-			return nil, newError(s.Pos(), err)
+			return nil, newError(spec.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
 			s := openapi3.NewSchema().WithEnum(enums...)
@@ -181,10 +180,10 @@ func fromTypeSpec(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, tag string, f
 		}
 		return schemaRef, nil
 	case *ast.ArrayType: // type x = []int , type x[T any] = []T
-		tps := buildTypeParams(s.TypeParams, tpRefs)
-		schemaRef, err := fromTypeExpr(pkg, t, file, currPath, tag, ts.Elt, tps)
+		tps := buildTypeParams(spec.TypeParams, tpRefs)
+		schemaRef, err := s.fromTypeExpr(t, file, currPath, tag, ts.Elt, tps)
 		if err != nil {
-			return nil, newError(s.Pos(), err)
+			return nil, newError(spec.Pos(), err)
 		}
 		if title != "" || desc != "" || len(enums) > 0 && schemaRef.Ref != "" {
 			s := openapi3.NewSchema().WithEnum(enums...)
@@ -199,36 +198,36 @@ func fromTypeSpec(pkg *pkg.Packages, t *openapi.OpenAPI, currPath, tag string, f
 		schema.Title = title
 		schema.Description = desc
 
-		tps := buildTypeParams(s.TypeParams, tpRefs)
-		if err := addFields(pkg, t, file, schema, currPath, tag, ts.Fields.List, tps); err != nil {
+		tps := buildTypeParams(spec.TypeParams, tpRefs)
+		if err := s.addFields(t, file, schema, currPath, tag, ts.Fields.List, tps); err != nil {
 			return nil, err
 		}
 
 		return NewRef("", schema), nil
 	case *ast.IndexExpr: // type x = G[int]
-		return fromIndexExprType(pkg, t, file, currPath, tag, ts)
+		return s.fromIndexExprType(t, file, currPath, tag, ts)
 	case *ast.IndexListExpr: // type x = G[int, float]
-		return fromIndexListExprType(pkg, t, file, currPath, tag, ts)
+		return s.fromIndexListExprType(t, file, currPath, tag, ts)
 	default:
-		msg := web.Phrase("%s can not convert to ast.StructType", s.Name.Name)
-		return nil, newError(s.Pos(), msg)
+		msg := web.Phrase("%s can not convert to ast.StructType", spec.Name.Name)
+		return nil, newError(spec.Pos(), msg)
 	}
 }
 
 // 将 fields 中的所有字段解析到 schema
 //
 // 字段名如果存在 json 时，取 json 名称，否则直接采用字段名，xml 仅采用了 attr 和 parent>child 两种格式。
-func addFields(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, s *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tpRefs map[string]*typeParam) error {
+func (s *Schema) addFields(t *openapi.OpenAPI, file *ast.File, schema *openapi3.Schema, modPath, tagName string, fields []*ast.Field, tpRefs map[string]*typeParam) error {
 LOOP:
 	for _, field := range fields {
 		if len(field.Names) == 0 { // 嵌套对象
-			ref, err := fromTypeExpr(pkg, t, file, modPath, tagName, field.Type, nil)
+			ref, err := s.fromTypeExpr(t, file, modPath, tagName, field.Type, nil)
 			if err != nil {
 				return err
 			}
 
 			for k, v := range ref.Value.Properties {
-				s.WithPropertyRef(k, v)
+				schema.WithPropertyRef(k, v)
 			}
 			continue
 		}
@@ -243,7 +242,7 @@ LOOP:
 
 			items := strings.SplitN(tag, ",", 2)
 			if items[0] != "" {
-				s.XML = &openapi3.XML{Name: items[0]}
+				schema.XML = &openapi3.XML{Name: items[0]}
 			}
 			continue
 		}
@@ -253,23 +252,23 @@ LOOP:
 			continue LOOP
 		}
 
-		item, err := fromTypeExpr(pkg, t, file, modPath, tagName, field.Type, tpRefs)
+		item, err := s.fromTypeExpr(t, file, modPath, tagName, field.Type, tpRefs)
 		if err != nil {
 			return err
 		}
 
 		title, desc := parseComment(field.Comment, field.Doc)
-		s.WithPropertyRef(name, wrap(item, title, desc, xml, nullable))
+		schema.WithPropertyRef(name, wrap(item, title, desc, xml, nullable))
 	}
 
 	return nil
 }
 
 // 将 ast.Expr 中的内容转换到 schema 上
-func fromTypeExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPath, tag string, e ast.Expr, tpRefs map[string]*typeParam) (*Ref, error) {
+func (s *Schema) fromTypeExpr(t *openapi.OpenAPI, file *ast.File, currPath, tag string, e ast.Expr, tpRefs map[string]*typeParam) (*Ref, error) {
 	switch expr := e.(type) {
 	case *ast.ArrayType:
-		schema, err := fromTypeExpr(pkg, t, file, currPath, tag, expr.Elt, tpRefs)
+		schema, err := s.fromTypeExpr(t, file, currPath, tag, expr.Elt, tpRefs)
 		if err != nil {
 			return nil, err
 		}
@@ -282,12 +281,12 @@ func fromTypeExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPat
 				return elem.ref, nil
 			}
 		}
-		return fromName(pkg, t, currPath, expr.Name, tag, false)
+		return s.fromName(t, currPath, expr.Name, tag, false)
 	case *ast.StarExpr: // 指针 *Type
-		return fromTypeExpr(pkg, t, file, currPath, tag, expr.X, tpRefs)
+		return s.fromTypeExpr(t, file, currPath, tag, expr.X, tpRefs)
 	case *ast.SelectorExpr: // json.Decoder
 		mod, name := getSelectorExprName(expr, file)
-		ref, err := fromName(pkg, t, currPath, mod+"."+name, tag, false) // , tpRefs
+		ref, err := s.fromName(t, currPath, mod+"."+name, tag, false) // , tpRefs
 		if err != nil {
 			var serr *Error
 			if errors.As(err, &serr) {
@@ -297,15 +296,15 @@ func fromTypeExpr(pkg *pkg.Packages, t *openapi.OpenAPI, file *ast.File, currPat
 		}
 		return ref, nil
 	case *ast.StructType: // struct{...}
-		s := openapi3.NewObjectSchema()
-		if err := addFields(pkg, t, file, s, currPath, tag, expr.Fields.List, tpRefs); err != nil {
+		schema := openapi3.NewObjectSchema()
+		if err := s.addFields(t, file, schema, currPath, tag, expr.Fields.List, tpRefs); err != nil {
 			return nil, err
 		}
-		return NewRef("", s), nil
+		return NewRef("", schema), nil
 	case *ast.IndexExpr: // Type[int] 或是 Type[T]
-		return fromIndexExpr(pkg, t, file, currPath, tag, expr, tpRefs)
+		return s.fromIndexExpr(t, file, currPath, tag, expr, tpRefs)
 	case *ast.IndexListExpr: // Type[T, int]
-		return fromIndexListExpr(pkg, t, file, currPath, tag, expr, tpRefs)
+		return s.fromIndexListExpr(t, file, currPath, tag, expr, tpRefs)
 	// case *ast.InterfaceType: // 无法处理此类型
 	default:
 		return nil, newError(e.Pos(), web.Phrase("unsupported ast expr %+v", expr))

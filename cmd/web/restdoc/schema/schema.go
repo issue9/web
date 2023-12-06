@@ -9,6 +9,8 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/issue9/web/cmd/web/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/pkg"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
@@ -24,6 +26,16 @@ var refReplacer = strings.NewReplacer(
 )
 
 type Ref = openapi3.SchemaRef
+
+// Schema 管理 Schema 的查询
+type Schema struct {
+	pkg *pkg.Packages
+}
+
+func New(l *logger.Logger) *Schema { return &Schema{pkg: pkg.New(l)} }
+
+// Packages 返回关联的 [pkg.Packages]
+func (s *Schema) Packages() *pkg.Packages { return s.pkg }
 
 func addRefPrefix(ref string) string {
 	if !strings.HasPrefix(ref, refPrefix) {

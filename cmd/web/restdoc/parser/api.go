@@ -101,11 +101,11 @@ func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath,
 		return
 	}
 
-	s, err := schema.New(p.pkgs, t, currPath, suffix, true)
+	s, err := p.schema.New(t, currPath, suffix, true)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {
-			serr.Log(p.l, p.pkgs.Fset)
+			serr.Log(p.l, p.schema.Packages().FileSet())
 			return
 		}
 		p.l.Error(err, filename, ln)
