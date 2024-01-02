@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"context"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -23,7 +24,7 @@ func TestParser_parseAPI(t *testing.T) {
 		"@tag user",
 		"@path id id id desc",
 	}
-	p.parseAPI(doc, "github.com/issue9/web", "POST /admins/{id}", lines, 5, "example.go")
+	p.parseAPI(context.Background(), doc, "github.com/issue9/web", "POST /admins/{id}", lines, 5, "example.go")
 	path := doc.Doc().Paths.Find("/admins/{id}")
 	a.NotNil(path).
 		NotNil(path.Post).

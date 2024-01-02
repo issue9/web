@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"context"
 	"go/ast"
 	"go/build"
 	"net/url"
@@ -24,7 +25,7 @@ import (
 // lines 表示第二行开始的所有内容，每一行不应该包含结尾的换行符；
 // ln 表示 title 所在行的行号，在出错时，用于记录日志；
 // filename 表示所在的文件，在出错时，用于记录日志；
-func (p *Parser) parseRESTDoc(t *openapi.OpenAPI, currPath, title string, lines []string, ln int, filename string) {
+func (p *Parser) parseRESTDoc(ctx context.Context, t *openapi.OpenAPI, currPath, title string, lines []string, ln int, filename string) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			p.l.Error(msg, filename, ln)
@@ -116,7 +117,7 @@ LOOP:
 			// parseResponse 可能会引用 @openapi 的内容，需要在整个 LOOP 结束之后再执行。
 			wait[ln+i] = suffix
 		case "@resp-header": // @resp-header 4XX h1 *desc
-			if !p.parseResponseHeader(p.resps, suffix, filename, currPath, ln+i) {
+			if !p.parseResponseHeader(p.resps, suffix, filename, ln+i) {
 				continue LOOP
 			}
 		case "@scy-http": // @scy-http name scheme format *desc
@@ -242,7 +243,7 @@ LOOP:
 	}
 
 	for l, s := range wait {
-		if !p.parseResponse(p.resps, t, s, filename, currPath, l) {
+		if !p.parseResponse(ctx, p.resps, t, s, filename, currPath, l) {
 			return
 		}
 	}

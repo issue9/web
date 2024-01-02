@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
-func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPath, suffix string, lines []string, ln int, filename string) (delta int) {
+func (p *Parser) parseCallback(ctx context.Context, t *openapi.OpenAPI, o *openapi3.Operation, currPath, suffix string, lines []string, ln int, filename string) (delta int) {
 	// callback name post $request.url *desc
 	words, l := utils.SplitSpaceN(suffix, 5)
 	if l < 4 {
@@ -43,15 +44,15 @@ func (p *Parser) parseCallback(t *openapi.OpenAPI, o *openapi3.Operation, currPa
 		case "@cookie": // @cookie name *desc
 			p.addCookieHeader("@cookie", opt, openapi3.ParameterInCookie, suffix, filename, ln+delta)
 		case "@query": // @query object.path
-			p.addQuery(t, opt, currPath, suffix, filename, ln+delta)
+			p.addQuery(ctx, t, opt, currPath, suffix, filename, ln+delta)
 		case "@req": // @req text/* object.path *desc
-			p.parseRequest(opt, t, suffix, filename, currPath, ln+delta)
+			p.parseRequest(ctx, opt, t, suffix, filename, currPath, ln+delta)
 		case "@resp": // @resp 200 text/* object.path *desc
-			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+delta) {
+			if !p.parseResponse(ctx, resps, t, suffix, filename, currPath, ln+delta) {
 				return delta
 			}
 		case "@resp-header": // @resp-header 200 h1 *desc
-			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+delta) {
+			if !p.parseResponseHeader(resps, suffix, filename, ln+delta) {
 				return delta
 			}
 		}

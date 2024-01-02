@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"strings"
@@ -15,7 +16,7 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
 
-func (p *Parser) parseAPI(t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string) {
+func (p *Parser) parseAPI(ctx context.Context, t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string) {
 	defer func() {
 		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
 		// 应当尽量在此之前查出错误。
@@ -60,19 +61,19 @@ LOOP:
 		case "@path": // @path name type *desc
 			p.addPath(opt, suffix, filename, ln+index)
 		case "@query": // @query object.path
-			p.addQuery(t, opt, currPath, suffix, filename, ln+index)
+			p.addQuery(ctx, t, opt, currPath, suffix, filename, ln+index)
 		case "@req": // @req text/* object.path *desc
-			p.parseRequest(opt, t, suffix, filename, currPath, ln+index)
+			p.parseRequest(ctx, opt, t, suffix, filename, currPath, ln+index)
 		case "@resp": // @resp 200 text/* object.path *desc
-			if !p.parseResponse(resps, t, suffix, filename, currPath, ln+index) {
+			if !p.parseResponse(ctx, resps, t, suffix, filename, currPath, ln+index) {
 				return
 			}
 		case "@resp-header": // @resp-header 200 h1 *desc
-			if !p.parseResponseHeader(resps, suffix, filename, currPath, ln+index) {
+			if !p.parseResponseHeader(resps, suffix, filename, ln+index) {
 				return
 			}
 		case "##": // 可能是 ## callback
-			delta := p.parseCallback(t, opt, currPath, suffix, lines[index:], ln+index, filename)
+			delta := p.parseCallback(ctx, t, opt, currPath, suffix, lines[index:], ln+index, filename)
 			index += delta
 		default:
 			if len(tag) > 1 && tag[0] == '@' {
@@ -95,13 +96,13 @@ LOOP:
 	t.AddAPI(p.prefix+path, opt, method)
 }
 
-func (p *Parser) addQuery(t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
+func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {
 	if suffix == "" {
 		p.syntaxError("@query", 1, filename, ln)
 		return
 	}
 
-	s, err := p.schema.New(t, currPath, suffix, true)
+	s, err := p.schema.New(ctx, t, buildPath(currPath, suffix), true)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {

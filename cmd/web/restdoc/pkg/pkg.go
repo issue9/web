@@ -6,7 +6,6 @@ package pkg
 import (
 	"context"
 	"go/token"
-	"go/types"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -19,10 +18,11 @@ import (
 )
 
 const mode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
-	packages.NeedImports | packages.NeedModule | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo
+	packages.NeedModule | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo
 
 const Cancelled = web.StringPhrase("cancelled")
 
+// Packages 管理加载的包
 type Packages struct {
 	pkgsM sync.Mutex
 	pkgs  []*packages.Package
@@ -40,7 +40,6 @@ func New(l *logger.Logger) *Packages {
 
 // ScanDir 添加 root 下的内容
 //
-// 仅在调用 [Parser.Parse] 之前添加有效果。
 // root 添加的目录；
 func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) {
 	root = filepath.Clean(root)
@@ -62,50 +61,48 @@ func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) 
 			go func(dir string) {
 				defer wg.Done()
 
-				ps, err := packages.Load(&packages.Config{
-					Mode:    mode,
-					Context: ctx,
-					Dir:     dir,
-					Fset:    pkgs.fset,
-				})
-				if err != nil {
+				if _, err := pkgs.load(ctx, dir); err != nil {
 					pkgs.l.Error(err, "", 0)
 					return
 				}
-				pkgs.append(ps...)
 			}(dir)
 		}
 	}
 	wg.Wait()
 }
 
-func (pkgs *Packages) append(ps ...*packages.Package) {
+func (pkgs *Packages) load(ctx context.Context, dir string) ([]*packages.Package, error) {
+	ps, err := packages.Load(&packages.Config{
+		Mode:    mode,
+		Context: ctx,
+		Dir:     dir,
+		Fset:    pkgs.fset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	pkgs.pkgsM.Lock()
 	defer pkgs.pkgsM.Unlock()
-
 	for _, p := range ps {
 		if slices.IndexFunc(pkgs.pkgs, func(e *packages.Package) bool { return p.PkgPath == e.PkgPath }) < 0 {
 			pkgs.pkgs = append(pkgs.pkgs, p)
 		}
 	}
+
+	return ps, nil
 }
 
 func (pkgs *Packages) FileSet() *token.FileSet { return pkgs.fset }
 
+// Package 返回指定路径的包对象
 func (pkgs *Packages) Package(path string) *packages.Package {
 	pkg, _ := sliceutil.At(pkgs.pkgs, func(p *packages.Package, _ int) bool { return p.PkgPath == path })
 	return pkg
 }
 
-func (pkgs *Packages) Lookup(name string) types.Object {
-	for _, p := range pkgs.pkgs {
-		if obj := p.Types.Scope().Lookup(name); obj != nil {
-			return obj
-		}
-	}
-	return nil
-}
-
+// Range 依次访问已经加载的包
+//
 // f 如果返回了 false，将退出循环
 func (pkgs *Packages) Range(f func(*packages.Package) bool) {
 	for _, p := range pkgs.pkgs {

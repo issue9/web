@@ -14,8 +14,6 @@ type Error struct {
 	Pos token.Pos
 }
 
-func newError(pos token.Pos, msg any) *Error { return &Error{Msg: msg, Pos: pos} }
-
 func (err *Error) Log(l *logger.Logger, fset *token.FileSet) {
 	p := fset.Position(err.Pos)
 	l.Error(err.Msg, p.Filename, p.Line)

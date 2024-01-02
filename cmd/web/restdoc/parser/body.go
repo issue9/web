@@ -3,6 +3,7 @@
 package parser
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -18,7 +19,7 @@ const responsesRef = "#/components/responses/"
 
 // @req * object.path *desc
 // * 表示采用 [Parser.media]
-func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) {
+func (p *Parser) parseRequest(ctx context.Context, o *openapi3.Operation, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) {
 	// NOTE: 目前无法为不同的 media type 指定不同的类型，如果要这样做，
 	// 需要处理 components/schemas 不同 media types 具有相同名称的问题。
 
@@ -28,7 +29,7 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix,
 		return
 	}
 
-	s, err := p.schema.New(t, currPath, words[1], false)
+	s, err := p.schema.New(ctx, t, buildPath(currPath, words[1]), false)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {
@@ -44,14 +45,14 @@ func (p *Parser) parseRequest(o *openapi3.Operation, t *openapi.OpenAPI, suffix,
 }
 
 // @resp 200 text/* object.path *desc
-func (p *Parser) parseResponse(resps map[string]*openapi3.Response, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) (ok bool) {
+func (p *Parser) parseResponse(ctx context.Context, resps map[string]*openapi3.Response, t *openapi.OpenAPI, suffix, filename, currPath string, ln int) (ok bool) {
 	words, l := utils.SplitSpaceN(suffix, 4)
 	if l < 3 {
 		p.syntaxError("@resp", 3, filename, ln)
 		return false
 	}
 
-	s, err := p.schema.New(t, currPath, words[2], false)
+	s, err := p.schema.New(ctx, t, buildPath(currPath, words[2]), false)
 	if err != nil {
 		var serr *schema.Error
 		if errors.As(err, &serr) {
@@ -75,7 +76,7 @@ func (p *Parser) parseResponse(resps map[string]*openapi3.Response, t *openapi.O
 }
 
 // @resp-header 200 header desc
-func (p *Parser) parseResponseHeader(resps map[string]*openapi3.Response, suffix, filename, currPath string, ln int) bool {
+func (p *Parser) parseResponseHeader(resps map[string]*openapi3.Response, suffix, filename string, ln int) bool {
 	words, l := utils.SplitSpaceN(suffix, 3)
 	if l != 3 {
 		p.syntaxError("@resp-header", 3, filename, ln)

@@ -5,16 +5,17 @@ package schema
 
 import (
 	"go/ast"
+	"reflect"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/issue9/query/v3"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/pkg"
 	"github.com/issue9/web/cmd/web/restdoc/utils"
 )
-
-const refPrefix = "#/components/schemas/"
 
 var refReplacer = strings.NewReplacer(
 	"/", ".",
@@ -24,8 +25,6 @@ var refReplacer = strings.NewReplacer(
 	" ", "",
 	"\t", "",
 )
-
-type Ref = openapi3.SchemaRef
 
 // Schema 管理 Schema 的查询
 type Schema struct {
@@ -37,18 +36,9 @@ func New(l *logger.Logger) *Schema { return &Schema{pkg: pkg.New(l)} }
 // Packages 返回关联的 [pkg.Packages]
 func (s *Schema) Packages() *pkg.Packages { return s.pkg }
 
-func addRefPrefix(ref string) string {
-	if !strings.HasPrefix(ref, refPrefix) {
-		ref = refPrefix + ref
-	}
-	return ref
-}
-
-func NewRef(ref string, v *openapi3.Schema) *Ref { return openapi3.NewSchemaRef(ref, v) }
-
-func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
-	title, desc = parseComment(s.Comment, s.Doc)
-
+// 从 title 和 desc 中获取类型名称和枚举信息
+func parseTypeDoc(title, desc string) (typ string, enums []any) {
+	// TODO enums 如果为空，则从代码中获取？
 	var lines []string
 	if desc != "" {
 		lines = strings.Split(desc, "\n")
@@ -67,13 +57,10 @@ func parseTypeDoc(s *ast.TypeSpec) (title, desc, typ string, enums []any) {
 		}
 	}
 
-	return title, desc, typ, enums
+	return typ, enums
 }
 
-func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {
-	if doc == nil {
-		doc = comments
-	}
+func parseComment(doc *ast.CommentGroup) (title, desc string) {
 	if doc == nil {
 		return
 	}
@@ -91,83 +78,70 @@ func parseComment(comments, doc *ast.CommentGroup) (title, desc string) {
 	return
 }
 
-func getPrimitiveType(name string, isArray bool) (*Ref, bool) {
-	switch name { // 基本类型
+func buildBasicType(name string) (*openapi3.SchemaRef, bool) {
+	switch name {
 	case "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64":
-		return array(NewRef("", openapi3.NewIntegerSchema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewIntegerSchema()), true
 	case "float32", "float64":
-		return array(NewRef("", openapi3.NewFloat64Schema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewFloat64Schema()), true
 	case "bool":
-		return array(NewRef("", openapi3.NewBoolSchema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewBoolSchema()), true
 	case "string":
-		return array(NewRef("", openapi3.NewStringSchema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewStringSchema()), true
 	case "map":
-		return array(NewRef("", openapi3.NewObjectSchema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewObjectSchema()), true
 	case "{}":
 		return nil, true
-
-	// 以下是对一些内置类型的特殊处理
-	case "time.Time":
-		return array(NewRef("", openapi3.NewDateTimeSchema()), isArray), true
 	case "time.Duration":
-		return array(NewRef("", openapi3.NewStringSchema()), isArray), true
+		return openapi.NewSchemaRef("", openapi3.NewStringSchema()), true
+	case "time.Time":
+		return openapi.NewSchemaRef("", openapi3.NewDateTimeSchema()), true
 	default:
 		return nil, false
 	}
 }
 
-// 根据 isArray 将 ref 包装成相应的对象
-func array(ref *Ref, isArray bool) *Ref {
-	if !isArray {
-		return ref
+func parseTag(fieldName, tagValue, tagName string) (name string, nullable bool, xml *openapi3.XML) {
+	if tagValue == "" {
+		return fieldName, false, nil
 	}
 
-	s := openapi3.NewArraySchema()
-	s.Items = ref
-	return NewRef("", s)
-}
-
-// 将从 components/schemas 中获取的对象进行二次包装
-func wrap(ref *Ref, title, desc string, xml *openapi3.XML, nullable bool) *Ref {
-	if ref == nil {
-		return ref
+	structTag := reflect.StructTag(strings.Trim(tagValue, "`"))
+	tag := structTag.Get(tagName)
+	if tag == "-" { // 忽略此字段
+		return "-", false, nil
 	}
 
-	if ref.Ref == "" { // 非引用模式，表示该值仅调用方使用，直接修改值。
-		if desc != "" {
-			ref.Value.Description = desc
+	if tag != "" {
+		words := strings.Split(tag, ",")
+		name = words[0]
+		if len(words) > 1 && words[1] == "omitempty" {
+			nullable = true
 		}
-		if title != "" {
-			ref.Value.Title = title
-		}
-
-		if ref.Value.XML != xml {
-			ref.Value.XML = xml
-		}
-
-		if ref.Value.Nullable != nullable {
-			ref.Value.Nullable = nullable
-		}
-
-		return ref
 	}
 
-	if ref.Value.Nullable != nullable ||
-		ref.Value.XML != xml ||
-		(desc != "" && ref.Value.Description != desc) ||
-		(title != "" && ref.Value.Title != title) {
-		s := openapi3.NewSchema()
-		s.AllOf = openapi3.SchemaRefs{ref}
-		s.Nullable = nullable
-		s.XML = xml
-		if desc != "" {
-			s.Description = desc
+	if tagName != query.Tag { // 非查询参数对象，需要处理 XML 的特殊情况
+		tag := structTag.Get("xml")
+		if tag != "" && tag != "-" {
+			words := strings.Split(tag, ",")
+			switch len(words) {
+			case 1:
+				if index := strings.IndexByte(words[0], '>'); index > 0 {
+					xml = &openapi3.XML{Wrapped: true, Name: words[0][index+1:]}
+				}
+			case 2:
+				wrapIndex := strings.IndexByte(words[0], '>')
+				attr := words[1] == "attr"
+				if wrapIndex > 0 || attr {
+					xml = &openapi3.XML{Wrapped: wrapIndex > 0, Attribute: attr}
+					if xml.Wrapped {
+						xml.Name = words[0][wrapIndex+1:]
+					}
+				}
+			}
 		}
-		if title != "" {
-			s.Title = title
-		}
-		ref = NewRef("", s)
 	}
-	return ref
+
+	return
 }

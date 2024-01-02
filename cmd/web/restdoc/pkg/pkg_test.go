@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
 
-func TestScanDir(t *testing.T) {
+func TestPackages_ScanDir(t *testing.T) {
 	a := assert.New(t, false)
 	l := loggertest.New(a)
 	p := New(l.Logger)

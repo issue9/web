@@ -55,7 +55,7 @@ type comments struct {
 	modPath string
 }
 
-// New 声明 RESTDoc 对象
+// New 声明 [Parser] 对象
 //
 // prefix 为所有的 API 地址加上统一的前缀；
 // tags 如果非空，则表示仅返回带这些标签的 API；
@@ -135,7 +135,7 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 						continue
 					}
 					if tag, suffix := utils.CutTag(line[2:]); suffix != "" && strings.ToLower(tag) == "api" {
-						p.parseAPI(t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos))
+						p.parseAPI(ctx, t, c.modPath, suffix, c.lines[index+1:], p.line(c.pos)+index, p.file(c.pos))
 					}
 				}
 			}(c)
@@ -166,14 +166,14 @@ func (p *Parser) parsePackage(ctx context.Context, t *openapi.OpenAPI, pack *pac
 			wg.Add(1)
 			go func(f *ast.File) {
 				defer wg.Done()
-				p.parseFile(t, pack.PkgPath, f)
+				p.parseFile(ctx, t, pack.PkgPath, f)
 			}(f)
 		}
 	}
 	wg.Wait()
 }
 
-func (p *Parser) parseFile(t *openapi.OpenAPI, importPath string, f *ast.File) {
+func (p *Parser) parseFile(ctx context.Context, t *openapi.OpenAPI, importPath string, f *ast.File) {
 LOOP:
 	for _, c := range f.Comments {
 		lines := strings.Split(c.Text(), "\n")
@@ -191,7 +191,7 @@ LOOP:
 				switch strings.ToLower(tag) {
 				case "api":
 					if t.Doc().Info != nil {
-						p.parseAPI(t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()))
+						p.parseAPI(ctx, t, importPath, suffix, lines[index+1:], p.line(c.Pos()), p.file(c.Pos()))
 					} else {
 						p.apiCommentsM.Lock()
 						p.apiComments = append(p.apiComments, &comments{
@@ -202,7 +202,7 @@ LOOP:
 						p.apiCommentsM.Unlock()
 					}
 				case "restdoc":
-					p.parseRESTDoc(t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
+					p.parseRESTDoc(ctx, t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
 				}
 				continue LOOP
 			}
@@ -229,4 +229,11 @@ func (p *Parser) isIgnoreTag(tag ...string) bool {
 // filename 和 ln 表示出错的位置，分别为文件名和行号；
 func (p *Parser) syntaxError(tag string, size int, filename string, ln int) {
 	p.l.Error(web.NewLocaleError("%s requires at least %d parameters", tag, size), filename, ln)
+}
+
+func buildPath(p, name string) string {
+	if strings.IndexByte(name, '.') > 0 || strings.HasPrefix(name, openapi.ComponentSchemaPrefix) {
+		return name
+	}
+	return p + "." + name
 }
