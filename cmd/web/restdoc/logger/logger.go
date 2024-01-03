@@ -38,6 +38,11 @@ func (l *Logger) Error(msg any, filename string, line int) {
 	l.log(logs.LevelError, msg, filename, line)
 }
 
+// Fatal 输出致命错误
+func (l *Logger) Fatal(msg any) {
+	l.log(logs.LevelFatal, msg, "", 0)
+}
+
 func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
 	var m web.LocaleStringer
 	switch e := msg.(type) {

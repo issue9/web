@@ -48,14 +48,21 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 
 		return func(io.Writer) error {
 			ctx := context.Background()
-			ls := termlog.New(p, os.Stdout)
+			tl := termlog.New(p, os.Stdout)
+			l := logger.New(tl)
 
 			var tags []string
 			if *t != "" {
 				tags = strings.Split(*t, ",")
 			}
 
-			dp := parser.New(logger.New(ls), *urlPrefix, tags)
+			go func() {
+				if msg := recover(); msg != nil {
+					l.Fatal(msg)
+				}
+			}()
+
+			dp := parser.New(l, *urlPrefix, tags)
 			for _, dir := range fs.Args() {
 				dp.AddDir(ctx, dir, *r)
 

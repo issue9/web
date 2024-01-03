@@ -183,8 +183,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 		if d, ok := b.([]byte); ok {
 			data = d
 		} else {
-			data, err = ctx.Marshal(b)
-			if err != nil {
+			if data, err = ctx.Marshal(b); err != nil {
 				return ctx.Error(err, ProblemNotAcceptable)
 			}
 		}
