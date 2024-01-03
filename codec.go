@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
+	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -29,18 +30,6 @@ type Codec struct {
 
 	types        []*mimetype
 	acceptHeader string // 生成 Accept 报头内容
-}
-
-// Compressor 压缩算法的接口
-type Compressor interface {
-	// Name 算法的名称
-	Name() string
-
-	// NewDecoder 将 r 包装成为当前压缩算法的解码器
-	NewDecoder(r io.Reader) (io.ReadCloser, error)
-
-	// NewEncoder 将 w 包装成当前压缩算法的编码器
-	NewEncoder(w io.Writer) (io.WriteCloser, error)
 }
 
 type mimetype struct {
@@ -63,7 +52,7 @@ type mimetype struct {
 }
 
 type compression struct {
-	compressor Compressor
+	compressor compressor.Compressor
 
 	types []string
 
@@ -90,7 +79,7 @@ func (err errorUnsupportedSerialization) Unwrap() error { return errors.ErrUnsup
 // errors.Is(ErrUnsupportedSerialization(), errors.ErrUnsupported) == true。
 func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
-func buildCompression(c Compressor, types []string) *compression {
+func buildCompression(c compressor.Compressor, types []string) *compression {
 	m := &compression{compressor: c}
 
 	if len(types) == 0 {
@@ -139,7 +128,7 @@ func NewCodec() *Codec {
 //	 *
 //
 // 如果为空，则和 * 是相同的，表示匹配所有。
-func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
+func (e *Codec) AddCompressor(c compressor.Compressor, t ...string) *Codec {
 	e.compressions = append(e.compressions, buildCompression(c, t))
 
 	names := make([]string, 0, len(e.compressions))
@@ -212,7 +201,7 @@ func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 //
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
-func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptable bool) {
+func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, notAcceptable bool) {
 	if len(e.compressions) == 0 {
 		return
 	}

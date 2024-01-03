@@ -21,7 +21,7 @@ import (
 // Compression 有关压缩的设置项
 type Compression struct {
 	// Compressor 压缩算法
-	Compressor web.Compressor
+	Compressor compressor.Compressor
 
 	// Types 该压缩对象允许使用的为 content-type 类型
 	//
@@ -93,11 +93,11 @@ func buildCodec(ms []*Mimetype, cs []*Compression) (*web.Codec, *web.FieldError)
 // contentType 指定所有算法应用的媒体类型，为空则表示对所有的内容都进行压缩。
 func DefaultCompressions(contentType ...string) []*Compression {
 	return []*Compression{
-		{Compressor: compressor.NewGzipCompressor(gzip.DefaultCompression), Types: contentType},
-		{Compressor: compressor.NewDeflateCompressor(flate.DefaultCompression, nil), Types: contentType},
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: contentType},
-		{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{}), Types: contentType},
-		{Compressor: compressor.NewZstdCompressor(), Types: contentType},
+		{Compressor: compressor.NewGzip(gzip.DefaultCompression), Types: contentType},
+		{Compressor: compressor.NewDeflate(flate.DefaultCompression, nil), Types: contentType},
+		{Compressor: compressor.NewLZW(lzw.LSB, 8), Types: contentType},
+		{Compressor: compressor.NewBrotli(brotli.WriterOptions{}), Types: contentType},
+		{Compressor: compressor.NewZstd(), Types: contentType},
 	}
 }
 
@@ -106,11 +106,11 @@ func DefaultCompressions(contentType ...string) []*Compression {
 // 如果有性能参数，则选择最快速度作为初始化条件。
 func BestSpeedCompressions(contentType ...string) []*Compression {
 	return []*Compression{
-		{Compressor: compressor.NewGzipCompressor(gzip.BestSpeed), Types: contentType},
-		{Compressor: compressor.NewDeflateCompressor(flate.BestSpeed, nil), Types: contentType},
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: contentType},
-		{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{Quality: brotli.BestSpeed}), Types: contentType},
-		{Compressor: compressor.NewZstdCompressor(), Types: contentType},
+		{Compressor: compressor.NewGzip(gzip.BestSpeed), Types: contentType},
+		{Compressor: compressor.NewDeflate(flate.BestSpeed, nil), Types: contentType},
+		{Compressor: compressor.NewLZW(lzw.LSB, 8), Types: contentType},
+		{Compressor: compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}), Types: contentType},
+		{Compressor: compressor.NewZstd(), Types: contentType},
 	}
 }
 
@@ -119,11 +119,11 @@ func BestSpeedCompressions(contentType ...string) []*Compression {
 // 如果有性能参数，则选择最快压缩比作为初始化条件。
 func BestCompressionCompressions(contentType ...string) []*Compression {
 	return []*Compression{
-		{Compressor: compressor.NewGzipCompressor(gzip.BestCompression), Types: contentType},
-		{Compressor: compressor.NewDeflateCompressor(flate.BestCompression, nil), Types: contentType},
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8), Types: contentType},
-		{Compressor: compressor.NewBrotliCompressor(brotli.WriterOptions{Quality: brotli.BestCompression}), Types: contentType},
-		{Compressor: compressor.NewZstdCompressor(), Types: contentType},
+		{Compressor: compressor.NewGzip(gzip.BestCompression), Types: contentType},
+		{Compressor: compressor.NewDeflate(flate.BestCompression, nil), Types: contentType},
+		{Compressor: compressor.NewLZW(lzw.LSB, 8), Types: contentType},
+		{Compressor: compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}), Types: contentType},
+		{Compressor: compressor.NewZstd(), Types: contentType},
 	}
 }
 

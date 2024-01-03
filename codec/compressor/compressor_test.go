@@ -10,39 +10,37 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
-
-	"github.com/issue9/web"
 )
 
 func TestBrotli(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewBrotliCompressor(brotli.WriterOptions{Quality: 6}), NewBrotliCompressor(brotli.WriterOptions{Quality: 11}))
+	testCompress(a, NewBrotli(brotli.WriterOptions{Quality: 6}), NewBrotli(brotli.WriterOptions{Quality: 11}))
 }
 
 func TestGzip(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewGzipCompressor(3), NewGzipCompressor(5))
+	testCompress(a, NewGzip(3), NewGzip(5))
 }
 
 func TestDeflate(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewDeflateCompressor(3, nil), NewDeflateCompressor(5, nil))
+	testCompress(a, NewDeflate(3, nil), NewDeflate(5, nil))
 }
 
 func TestLZW(t *testing.T) {
 	a := assert.New(t, false)
 	// lzw 的 reader 不通用。
-	testCompress(a, NewLZWCompressor(lzw.LSB, 8), nil)
+	testCompress(a, NewLZW(lzw.LSB, 8), nil)
 }
 
 func TestZstd(t *testing.T) {
 	a := assert.New(t, false)
-	testCompress(a, NewZstdCompressor(), NewZstdCompressor())
+	testCompress(a, NewZstd(), NewZstd())
 }
 
 // c1 与 c2 应该是由不同的参数初始化的，会测试相互能读取。
 // 如果 c2 为 nil，表示不测试 reader 的通用性。
-func testCompress(a *assert.Assertion, c1, c2 web.Compressor) {
+func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 	a.NotNil(c1)
 
 	// c1 encode

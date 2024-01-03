@@ -44,7 +44,7 @@ func TestBuildCodec(t *testing.T) {
 	a.Equal(err.Field, "Mimetypes[0].Unmarshal").Nil(c)
 
 	c, err = buildCodec(XMLMimetypes(), []*Compression{
-		{Compressor: compressor.NewLZWCompressor(lzw.LSB, 8)},
+		{Compressor: compressor.NewLZW(lzw.LSB, 8)},
 		{Compressor: nil},
 	})
 	a.Equal(err.Field, "Compressions[1].Compressor").Nil(c)

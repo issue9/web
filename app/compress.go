@@ -15,7 +15,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var compressorFactory = map[string]web.Compressor{}
+var compressorFactory = map[string]compressor.Compressor{}
 
 type compressConfig struct {
 	// Type content-type 的值
@@ -62,7 +62,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 //
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
 // c 压缩算法；
-func RegisterCompression(id string, c web.Compressor) {
+func RegisterCompression(id string, c compressor.Compressor) {
 	if _, found := compressorFactory[id]; found {
 		panic("已经存在相同的 id:" + id)
 	}
@@ -70,20 +70,20 @@ func RegisterCompression(id string, c web.Compressor) {
 }
 
 func init() {
-	RegisterCompression("deflate-default", compressor.NewDeflateCompressor(flate.DefaultCompression, nil))
-	RegisterCompression("deflate-best-compression", compressor.NewDeflateCompressor(flate.BestCompression, nil))
-	RegisterCompression("deflate-best-speed", compressor.NewDeflateCompressor(flate.BestSpeed, nil))
+	RegisterCompression("deflate-default", compressor.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompression("deflate-best-compression", compressor.NewDeflate(flate.BestCompression, nil))
+	RegisterCompression("deflate-best-speed", compressor.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompression("gzip-default", compressor.NewGzipCompressor(gzip.DefaultCompression))
-	RegisterCompression("gzip-best-compression", compressor.NewGzipCompressor(gzip.BestCompression))
-	RegisterCompression("gzip-best-speed", compressor.NewGzipCompressor(gzip.BestSpeed))
+	RegisterCompression("gzip-default", compressor.NewGzip(gzip.DefaultCompression))
+	RegisterCompression("gzip-best-compression", compressor.NewGzip(gzip.BestCompression))
+	RegisterCompression("gzip-best-speed", compressor.NewGzip(gzip.BestSpeed))
 
-	RegisterCompression("compress-lsb-8", compressor.NewLZWCompressor(lzw.LSB, 8))
-	RegisterCompression("compress-msb-8", compressor.NewLZWCompressor(lzw.MSB, 8))
+	RegisterCompression("compress-lsb-8", compressor.NewLZW(lzw.LSB, 8))
+	RegisterCompression("compress-msb-8", compressor.NewLZW(lzw.MSB, 8))
 
-	RegisterCompression("br-default", compressor.NewBrotliCompressor(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompression("br-best-compression", compressor.NewBrotliCompressor(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompression("br-best-speed", compressor.NewBrotliCompressor(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompression("br-default", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompression("br-best-compression", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompression("br-best-speed", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompression("zstd-default", compressor.NewZstdCompressor())
+	RegisterCompression("zstd-default", compressor.NewZstd())
 }

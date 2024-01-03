@@ -2,7 +2,7 @@
 
 //go:generate go run ./make_data.go
 
-// Package compressor 提供了 [web.Compressor] 的实现
+// Package compressor 提供了压缩算法的实现
 package compressor
 
 import (
@@ -15,8 +15,6 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
-
-	"github.com/issue9/web"
 )
 
 var (
@@ -69,6 +67,18 @@ var (
 )
 
 type (
+	// Compressor 压缩算法的接口
+	Compressor interface {
+		// Name 算法的名称
+		Name() string
+
+		// NewDecoder 将 r 包装成为当前压缩算法的解码器
+		NewDecoder(r io.Reader) (io.ReadCloser, error)
+
+		// NewEncoder 将 w 包装成当前压缩算法的编码器
+		NewEncoder(w io.Writer) (io.WriteCloser, error)
+	}
+
 	zstdCompressor struct{}
 
 	brotliCompressor struct {
@@ -98,13 +108,13 @@ type (
 	}
 )
 
-// NewZstdCompressor 声明基于 [zstd] 的压缩算法
+// NewZstd 声明基于 [zstd] 的压缩算法
 //
 // NOTE: 请注意[浏览器支持情况]
 //
 // [浏览器支持情况]: https://caniuse.com/zstd
 // [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
-func NewZstdCompressor() web.Compressor {
+func NewZstd() Compressor {
 	return &zstdCompressor{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
 }
 
@@ -124,10 +134,10 @@ func (c *zstdCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return wrapEncoder(ww, func() { zstdWriters.Put(ww) }), nil
 }
 
-// NewBrotliCompressor 声明基于 [br] 的压缩算法
+// NewBrotli 声明基于 [br] 的压缩算法
 //
 // [br]: https://www.rfc-editor.org/rfc/rfc7932.html
-func NewBrotliCompressor(o brotli.WriterOptions) web.Compressor {
+func NewBrotli(o brotli.WriterOptions) Compressor {
 	return &brotliCompressor{
 		writers: &sync.Pool{New: func() any {
 			return brotli.NewWriterOptions(nil, o)
@@ -151,10 +161,10 @@ func (c *brotliCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
 }
 
-// NewLZWCompressor 声明基于 lzw 的压缩算法
+// NewLZW 声明基于 lzw 的压缩算法
 //
 // NOTE: 在 http 报头中名称为 compress 或是 x-compress
-func NewLZWCompressor(order lzw.Order, width int) web.Compressor {
+func NewLZW(order lzw.Order, width int) Compressor {
 	return &lzwCompressor{order: order, width: width}
 }
 
@@ -172,8 +182,8 @@ func (c *lzwCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return wrapEncoder(ww, func() { lzwWriters.Put(ww) }), nil
 }
 
-// NewGzipCompressor 声明基于 gzip 的压缩算法
-func NewGzipCompressor(level int) web.Compressor { return &gzipCompressor{} }
+// NewGzip 声明基于 gzip 的压缩算法
+func NewGzip(level int) Compressor { return &gzipCompressor{} }
 
 func (c *gzipCompressor) Name() string { return "gzip" }
 
@@ -191,8 +201,8 @@ func (c *gzipCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return wrapEncoder(ww, func() { gzipWriters.Put(ww) }), nil
 }
 
-// NewDeflateCompressor 声明基于 deflate 的压缩算法
-func NewDeflateCompressor(level int, dict []byte) web.Compressor {
+// NewDeflate 声明基于 deflate 的压缩算法
+func NewDeflate(level int, dict []byte) Compressor {
 	return &deflateCompressor{
 		dict: dict,
 

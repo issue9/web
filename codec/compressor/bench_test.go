@@ -9,29 +9,27 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v3"
-
-	"github.com/issue9/web"
 )
 
 func BenchmarkCodec_NewEncoder(b *testing.B) {
 	b.Run("gzip", func(b *testing.B) {
-		benchCompressor_NewEncoder(b, NewGzipCompressor(3))
+		benchCompressor_NewEncoder(b, NewGzip(3))
 	})
 
 	b.Run("zstd", func(b *testing.B) {
-		benchCompressor_NewEncoder(b, NewZstdCompressor())
+		benchCompressor_NewEncoder(b, NewZstd())
 	})
 
 	b.Run("deflate", func(b *testing.B) {
-		benchCompressor_NewEncoder(b, NewDeflateCompressor(3, nil))
+		benchCompressor_NewEncoder(b, NewDeflate(3, nil))
 	})
 
 	b.Run("lzw", func(b *testing.B) {
-		benchCompressor_NewEncoder(b, NewLZWCompressor(lzw.LSB, 5))
+		benchCompressor_NewEncoder(b, NewLZW(lzw.LSB, 5))
 	})
 
 	b.Run("br", func(b *testing.B) {
-		benchCompressor_NewEncoder(b, NewBrotliCompressor(brotli.WriterOptions{}))
+		benchCompressor_NewEncoder(b, NewBrotli(brotli.WriterOptions{}))
 	})
 }
 
@@ -39,7 +37,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	a := assert.New(b, false)
 
 	b.Run("gzip", func(b *testing.B) {
-		c := NewGzipCompressor(3)
+		c := NewGzip(3)
 		for i := 0; i < b.N; i++ {
 			wc, err := c.NewDecoder(bytes.NewBuffer(gzipInitData))
 			a.NotError(err).
@@ -49,7 +47,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 
 	b.Run("zstd", func(b *testing.B) {
-		c := NewZstdCompressor()
+		c := NewZstd()
 		for i := 0; i < b.N; i++ {
 			wc, err := c.NewDecoder(bytes.NewBuffer(zstdInitData))
 			a.NotError(err).
@@ -59,7 +57,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 
 	b.Run("deflate", func(b *testing.B) {
-		c := NewDeflateCompressor(3, nil)
+		c := NewDeflate(3, nil)
 		for i := 0; i < b.N; i++ {
 			wc, err := c.NewDecoder(bytes.NewBuffer(deflateInitData))
 			a.NotError(err).
@@ -69,7 +67,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 
 	b.Run("lzw", func(b *testing.B) {
-		c := NewLZWCompressor(lzw.LSB, 5)
+		c := NewLZW(lzw.LSB, 5)
 		for i := 0; i < b.N; i++ {
 			wc, err := c.NewDecoder(bytes.NewBuffer(lzwInitData))
 			a.NotError(err).
@@ -79,7 +77,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 
 	b.Run("br", func(b *testing.B) {
-		c := NewBrotliCompressor(brotli.WriterOptions{})
+		c := NewBrotli(brotli.WriterOptions{})
 		for i := 0; i < b.N; i++ {
 			wc, err := c.NewDecoder(bytes.NewBuffer(brotliInitData))
 			a.NotError(err).
@@ -89,7 +87,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 	})
 }
 
-func benchCompressor_NewEncoder(b *testing.B, c web.Compressor) {
+func benchCompressor_NewEncoder(b *testing.B, c Compressor) {
 	a := assert.New(b, false)
 	w := &bytes.Buffer{}
 	for i := 0; i < b.N; i++ {

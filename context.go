@@ -17,6 +17,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/web/codec/compressor"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -45,7 +46,7 @@ type Context struct {
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
-	outputCompressor  Compressor
+	outputCompressor  compressor.Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
 	outputMimetype    *mimetype
@@ -126,7 +127,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		return nil
 	}
 
-	var outputCompressor Compressor
+	var outputCompressor compressor.Compressor
 	if b.server.CanCompress() {
 		h = r.Header.Get(header.AcceptEncoding)
 		var notAcceptable bool
@@ -304,6 +305,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
+// Free 释放当前对象
 func (ctx *Context) Free() {
 	slices.Reverse(ctx.exits)
 	for _, exit := range ctx.exits {
