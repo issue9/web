@@ -32,11 +32,13 @@ func TestJSONP(t *testing.T) {
 	defer s.Close(0)
 
 	servertest.Get(a, "http://localhost:8080/jsonp").Header("accept", Mimetype).Do(nil).
-		StringBody(`"jsonp"`)
+		Status(http.StatusNotAcceptable). // 由 [web.Context.Render] 决定此值
+		BodyEmpty()
 
 	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
 		StringBody(`cb("jsonp")`)
 
 	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
-		StringBody(`"jsonp"`)
+		Status(http.StatusNotAcceptable).
+		BodyEmpty()
 }

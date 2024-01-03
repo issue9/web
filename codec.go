@@ -3,7 +3,6 @@
 package web
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -13,13 +12,9 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
-	"github.com/issue9/web/codec/compressor"
+	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/header"
 )
-
-var errUnsupportedSerialization = errorUnsupportedSerialization{}
-
-type errorUnsupportedSerialization struct{}
 
 // Codec 编码解码工具
 //
@@ -28,11 +23,11 @@ type Codec struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	types        []*mimetype
+	types        []*mediaType
 	acceptHeader string // 生成 Accept 报头内容
 }
 
-type mimetype struct {
+type mediaType struct {
 	// Mimetype 的名称
 	//
 	// 比如：application/json
@@ -62,22 +57,6 @@ type compression struct {
 	// 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
 	wildcardSuffix []string
 }
-
-func (err errorUnsupportedSerialization) Error() string {
-	return err.LocaleString(nil)
-}
-
-func (err errorUnsupportedSerialization) LocaleString(p *localeutil.Printer) string {
-	return StringPhrase("unsupported serialization").LocaleString(p)
-}
-
-func (err errorUnsupportedSerialization) Unwrap() error { return errors.ErrUnsupported }
-
-// ErrUnsupportedSerialization 返回不支持序列化的错误信息
-//
-// 此方法的返回对象同时也包含了 [errors.ErrUnsupported]，
-// errors.Is(ErrUnsupportedSerialization(), errors.ErrUnsupported) == true。
-func ErrUnsupportedSerialization() error { return errUnsupportedSerialization }
 
 func buildCompression(c compressor.Compressor, types []string) *compression {
 	m := &compression{compressor: c}
@@ -115,7 +94,7 @@ func buildCompression(c compressor.Compressor, types []string) *compression {
 func NewCodec() *Codec {
 	return &Codec{
 		compressions: make([]*compression, 0, 10),
-		types:        make([]*mimetype, 0, 10),
+		types:        make([]*mediaType, 0, 10),
 	}
 }
 
@@ -123,9 +102,9 @@ func NewCodec() *Codec {
 //
 // t 表示适用的 content-type 类型，可以包含通配符，比如：
 //
-//		application/json
-//		text/*
-//	 *
+//	application/json
+//	text/*
+//	*
 //
 // 如果为空，则和 * 是相同的，表示匹配所有。
 func (e *Codec) AddCompressor(c compressor.Compressor, t ...string) *Codec {
@@ -160,11 +139,11 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	// 检测复复值
-	if sliceutil.Exists(e.types, func(v *mimetype, _ int) bool { return v.Name == name }) {
+	if sliceutil.Exists(e.types, func(v *mediaType, _ int) bool { return v.Name == name }) {
 		panic(fmt.Sprintf("存在重复的项 %s", name))
 	}
 
-	e.types = append(e.types, &mimetype{
+	e.types = append(e.types, &mediaType{
 		Name:      name,
 		Marshal:   m,
 		Unmarshal: u,
@@ -284,7 +263,7 @@ LOOP:
 	return indexes
 }
 
-func (m *mimetype) name(problem bool) string {
+func (m *mediaType) name(problem bool) string {
 	if problem {
 		return m.Problem
 	}
@@ -323,7 +302,7 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (e *Codec) accept(h string) *mimetype {
+func (e *Codec) accept(h string) *mediaType {
 	if h == "" {
 		if item := e.findMarshal("*/*"); item != nil {
 			return item
@@ -342,7 +321,7 @@ func (e *Codec) accept(h string) *mimetype {
 	return nil
 }
 
-func (e *Codec) findMarshal(name string) *mimetype {
+func (e *Codec) findMarshal(name string) *mediaType {
 	switch {
 	case len(e.types) == 0:
 		return nil
@@ -356,7 +335,7 @@ func (e *Codec) findMarshal(name string) *mimetype {
 	}
 }
 
-func (e *Codec) searchFunc(match func(string) bool) *mimetype {
-	item, _ := sliceutil.At(e.types, func(i *mimetype, _ int) bool { return match(i.Name) || match(i.Problem) })
+func (e *Codec) searchFunc(match func(string) bool) *mediaType {
+	item, _ := sliceutil.At(e.types, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }

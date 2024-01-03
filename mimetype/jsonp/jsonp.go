@@ -25,6 +25,10 @@ var once = &sync.Once{}
 //
 // callbackKey 用于指定回函数名称的查询参数名称
 func Install(callbackKey string, s web.Server) {
+	if callbackKey == "" {
+		panic("callbackKey 不能为空")
+	}
+
 	once.Do(func() {
 		s.Vars().Store(contextKey, callbackKey)
 	})
@@ -52,7 +56,7 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 
 	callback := q.String(key.(string), "")
 	if callback == "" {
-		return data, nil
+		return nil, web.NewLocaleError("unset callback name")
 	}
 
 	b := errwrap.StringBuilder{}

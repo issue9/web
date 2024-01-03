@@ -8,12 +8,12 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/mimetype/form"
-	"github.com/issue9/web/codec/mimetype/html"
-	"github.com/issue9/web/codec/mimetype/json"
-	"github.com/issue9/web/codec/mimetype/nop"
-	"github.com/issue9/web/codec/mimetype/xml"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/mimetype/form"
+	"github.com/issue9/web/mimetype/html"
+	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/mimetype/nop"
+	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/server"
 )
 

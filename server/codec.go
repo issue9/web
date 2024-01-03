@@ -12,10 +12,10 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/compressor"
-	"github.com/issue9/web/codec/mimetype/json"
-	"github.com/issue9/web/codec/mimetype/xml"
+	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/mimetype/xml"
 )
 
 // Compression 有关压缩的设置项

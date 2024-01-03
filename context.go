@@ -17,7 +17,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"github.com/issue9/web/codec/compressor"
+	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -49,7 +49,7 @@ type Context struct {
 	outputCompressor  compressor.Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
-	outputMimetype    *mimetype
+	outputMimetype    *mediaType
 	status            int // WriteHeader 保存的副本
 	wrote             bool
 

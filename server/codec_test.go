@@ -8,8 +8,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web/codec/compressor"
-	"github.com/issue9/web/codec/mimetype/json"
+	"github.com/issue9/web/compressor"
+	"github.com/issue9/web/mimetype/json"
 )
 
 func TestBuildCodec(t *testing.T) {

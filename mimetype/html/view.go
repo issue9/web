@@ -49,6 +49,10 @@ type view struct {
 //
 // dir 表示是否以目录的形式组织本地化代码；
 func InstallView(s web.Server, dir bool, fsys fs.FS, glob string) {
+	if fsys == nil {
+		panic("参数 fsys 不能为空")
+	}
+
 	once.Do(func() {
 		if dir {
 			instalDirView(s, fsys, glob)

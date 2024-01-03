@@ -13,8 +13,8 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/mimetype/json"
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )

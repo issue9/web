@@ -11,7 +11,7 @@ import (
 	"github.com/andybalholm/brotli"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/compressor"
+	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/server"
 )
 

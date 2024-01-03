@@ -8,7 +8,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -16,6 +15,8 @@ import (
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/localeutil"
 	"github.com/klauspost/compress/zstd"
+
+	"github.com/issue9/web/mimetype"
 )
 
 type compressorTest struct {
@@ -59,11 +60,11 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	case error:
 		return nil, vv
 	default:
-		return nil, ErrUnsupportedSerialization()
+		return nil, mimetype.ErrUnsupported()
 	}
 }
 
-func unmarshalTest(r io.Reader, v any) error { return ErrUnsupportedSerialization() }
+func unmarshalTest(r io.Reader, v any) error { return mimetype.ErrUnsupported() }
 
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
 
@@ -341,11 +342,4 @@ func TestCodec_findMarshal(t *testing.T) {
 	// 不存在
 	item = mm.findMarshal("xx/*")
 	a.Nil(item)
-}
-
-func TestUnsupportedSerialization(t *testing.T) {
-	a := assert.New(t, false)
-
-	a.ErrorIs(ErrUnsupportedSerialization(), errors.ErrUnsupported)
-	a.Equal(ErrUnsupportedSerialization().Error(), "unsupported serialization")
 }

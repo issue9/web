@@ -9,7 +9,7 @@ import (
 
 	"github.com/issue9/assert/v3"
 
-	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype"
 )
 
 var (
@@ -100,7 +100,7 @@ func (s Sex) MarshalText() ([]byte, error) {
 	case 1:
 		return []byte("female"), nil
 	default:
-		return nil, web.ErrUnsupportedSerialization()
+		return nil, mimetype.ErrUnsupported()
 	}
 }
 
@@ -111,7 +111,7 @@ func (s *Sex) UnmarshalText(v []byte) error {
 	case "female":
 		*s = 1
 	default:
-		return web.ErrUnsupportedSerialization()
+		return mimetype.ErrUnsupported()
 	}
 	return nil
 }

@@ -148,8 +148,8 @@ func (ctx *Context) initProblem(p *RFC7807, id string) Problem {
 //
 // 如果 id 为空，尝试以下顺序获得值：
 //   - err 是否是由 [NewError] 创建，如果是则采用 err.Status 取得 ID 值；
-//   - err 是否为 [fs.ErrPermission]，如果是采用  [ProblemForbidden] 作为 ID；
-//   - err 是否为 [fs.ErrNotExist]，如果是采用  [ProblemForbidden] 作为 ID；
+//   - err 是否为 [fs.ErrPermission]，如果是采用 [ProblemForbidden] 作为 ID；
+//   - err 是否为 [fs.ErrNotExist]，如果是采用 [ProblemNotFound] 作为 ID；
 //   - 采用 [ProblemInternalServerError]；
 func (ctx *Context) Error(err error, id string) Problem {
 	if id == "" {

@@ -15,8 +15,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec/mimetype/json"
-	"github.com/issue9/web/codec/mimetype/xml"
+	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/server/servertest"
 )
 
