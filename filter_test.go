@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/mux/v7/types"
 )
 
 type obj2 struct {
@@ -211,7 +212,7 @@ func TestFilterContext(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 
 	min_2 := NewRule(min(-2), Phrase("-2"))
 	min_3 := NewRule(min(-3), Phrase("-3"))
@@ -243,7 +244,7 @@ func TestFilterContext_New(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 
 	v := ctx.newFilterContext(false)
 	v1 := v.New("v1.", func(f *FilterContext) {
@@ -266,7 +267,7 @@ func TestFilterContext_When(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 
 	min18 := NewRule(min(18), Phrase("不能小于 18"))
 	notEmpty := NewRule(required[string], Phrase("不能为空"))

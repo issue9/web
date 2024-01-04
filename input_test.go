@@ -19,7 +19,7 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, "*/*")
 	w = httptest.NewRecorder()
-	ctx = newTestServer(a).NewContext(w, r)
+	ctx = newTestServer(a).NewContext(w, r, types.NewContext())
 	return ctx, w
 }
 
@@ -255,7 +255,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
 	r.Header.Set(header.ContentType, "application/json")
 	w := httptest.NewRecorder()
-	ctx := srv.NewContext(w, r)
+	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 
 	obj := &testdata.Object{}
@@ -266,14 +266,14 @@ func TestContext_Unmarshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
 	r.Header.Set(header.ContentType, "application/json")
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.Error(ctx.Unmarshal(``))
 
 	// 空提交
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set(header.ContentType, "application/json")
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
@@ -282,7 +282,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(testdata.ObjectGBKBytes))
 	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gb18030"))
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	obj = &testdata.Object{}
 	a.NotError(ctx.Unmarshal(obj)).Equal(obj, testdata.ObjectInst)
 }
@@ -294,7 +294,7 @@ func TestContext_Read(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
 	r.Header.Set(header.ContentType, "application/json")
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	obj := &testdata.Object{}
 	a.Nil(ctx.Read(false, obj, "41110"))
@@ -303,7 +303,7 @@ func TestContext_Read(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
 	r.Header.Set(header.ContentType, "application/json")
-	ctx = s.NewContext(w, r)
+	ctx = s.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	resp := ctx.Read(false, ``, "41110")
 	a.NotNil(resp)

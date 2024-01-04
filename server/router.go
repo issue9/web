@@ -30,7 +30,7 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[web.HandlerFunc] {
 }
 
 func (srv *httpServer) call(w http.ResponseWriter, r *http.Request, route types.Route, f web.HandlerFunc) {
-	if ctx := srv.ctxBuilder.NewContext(w, r, route); ctx != nil {
+	if ctx := srv.NewContext(w, r, route); ctx != nil {
 		if resp := f(ctx); resp != nil {
 			if p := resp.Apply(ctx); p != nil {
 				p.Apply(ctx) // Problem.Apply 始终返回 nil
@@ -40,11 +40,8 @@ func (srv *httpServer) call(w http.ResponseWriter, r *http.Request, route types.
 	}
 }
 
-func (srv *httpServer) NewContext(w http.ResponseWriter, r *http.Request) *web.Context {
-	c := types.NewContext()
-	ctx := srv.ctxBuilder.NewContext(w, r, c)
-	ctx.OnExit(func(*web.Context, int) { c.Destroy() })
-	return ctx
+func (srv *httpServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *web.Context {
+	return srv.ctxBuilder.NewContext(w, r, route)
 }
 
 // NewRouter 声明新路由

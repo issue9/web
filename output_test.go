@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
+	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
@@ -33,7 +34,7 @@ func TestContext_Render(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.ContentType, "application/json")
 	r.Header.Set(header.Accept, "application/json")
-	ctx := srv.NewContext(w, r)
+	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, testdata.ObjectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -44,7 +45,7 @@ func TestContext_Render(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, testdata.ObjectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -56,7 +57,7 @@ func TestContext_Render(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "zh-hans")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, nil)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -69,7 +70,7 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "zh-hans")
 	r.Header.Set(header.AcceptCharset, "gbk")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, testdata.ObjectInst)
 	a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
@@ -81,7 +82,7 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.AcceptLang, "zh-hans")
 	r.Header.Set(header.AcceptCharset, "gbk")
 	r.Header.Set(header.AcceptEncoding, "deflate")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, testdata.ObjectInst)
 	srv.b.FreeContext(ctx)
@@ -94,7 +95,7 @@ func TestContext_Render(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/json")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	n, err := ctx.Write([]byte("123"))
 	a.NotError(err).True(n > 0)
@@ -108,7 +109,7 @@ func TestContext_Render(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/json")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	ctx.Render(http.StatusCreated, "123")
 	n, err = ctx.Write([]byte("123"))
 	a.NotError(err)
@@ -121,7 +122,7 @@ func TestContext_Render(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/test")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx, srv.logBuf.String()).
 		Equal(ctx.Mimetype(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8Name)
@@ -133,7 +134,7 @@ func TestContext_Render(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/test")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx).
 		Equal(ctx.Mimetype(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8Name)
@@ -152,7 +153,7 @@ func TestContext_Wrap(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hant")
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 	ctx.Write([]byte("abc"))
 
 	a.PanicString(func() {
@@ -169,7 +170,7 @@ func TestContext_Wrap(t *testing.T) {
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hant")
 	r.Header.Set(header.AcceptEncoding, "")
-	ctx = s.NewContext(w, r)
+	ctx = s.NewContext(w, r, types.NewContext())
 
 	ctx.Header().Set("h1", "v1")
 	buf := &bytes.Buffer{}
@@ -188,7 +189,7 @@ func TestContext_Wrap(t *testing.T) {
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hant")
 	r.Header.Set(header.AcceptEncoding, "")
-	ctx = s.NewContext(w, r)
+	ctx = s.NewContext(w, r, types.NewContext())
 
 	a.PanicString(func() { // Wrap(nil)
 		ctx.Wrap(nil)
@@ -216,7 +217,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hant")
-	ctx := srv.NewContext(w, r)
+	ctx := srv.NewContext(w, r, types.NewContext())
 	ctx.Render(http.StatusOK, ctx.Sprintf("test"))
 	a.Equal(w.Body.String(), `"測試"`)
 
@@ -224,7 +225,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hans")
-	ctx = srv.NewContext(w, r)
+	ctx = srv.NewContext(w, r, types.NewContext())
 	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试"))
 	a.Equal(w.Body.String(), "测试")
@@ -244,7 +245,7 @@ func TestNotModified(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag := w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).
 		NotEmpty(tag)
@@ -252,13 +253,13 @@ func TestNotModified(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.IfNoneMatch, tag)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusNotModified)
 
 	// Post 不启用
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPost, "/p", nil)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag = w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).Empty(tag)
 
@@ -271,7 +272,7 @@ func TestNotModified(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag = w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).
 		NotEmpty(tag)
@@ -279,7 +280,7 @@ func TestNotModified(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.IfNoneMatch, tag)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusNotModified)
 
 	// error
@@ -291,7 +292,7 @@ func TestNotModified(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	s.NewContext(w, r).apply(nm)
+	s.NewContext(w, r, types.NewContext()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 }
 
@@ -302,7 +303,7 @@ func TestCreated(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
-	s.NewContext(w, r).
+	s.NewContext(w, r, types.NewContext()).
 		apply(Created(nil, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Empty(w.Body.String())
@@ -310,7 +311,7 @@ func TestCreated(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
-	s.NewContext(w, r).
+	s.NewContext(w, r, types.NewContext()).
 		apply(Created(testdata.ObjectInst, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Body.String(), testdata.ObjectJSONString).
@@ -319,7 +320,7 @@ func TestCreated(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
-	s.NewContext(w, r).
+	s.NewContext(w, r, types.NewContext()).
 		apply(Created(testdata.ObjectInst, "/p2"))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Body.String(), testdata.ObjectJSONString).
@@ -332,14 +333,14 @@ func TestRedirect(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	ctx := s.NewContext(w, r)
+	ctx := s.NewContext(w, r, types.NewContext())
 	ctx.apply(ctx.NotImplemented())
 	a.Equal(w.Result().StatusCode, http.StatusNotImplemented)
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	Redirect(http.StatusMovedPermanently, "http://example.com")
-	s.NewContext(w, r).
+	s.NewContext(w, r, types.NewContext()).
 		apply(Redirect(http.StatusMovedPermanently, "http://example.com"))
 	a.Equal(w.Result().StatusCode, http.StatusMovedPermanently).
 		Equal(w.Header().Get(header.Location), "http://example.com")
@@ -356,6 +357,6 @@ func TestNoContent(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.AcceptEncoding, "gzip") // 服务端不应该构建压缩对象
 	r.Header.Set(header.Accept, "application/json")
-	s.NewContext(w, r).apply(NoContent())
+	s.NewContext(w, r, types.NewContext()).apply(NoContent())
 	a.NotContains(s.logBuf.String(), "request method or response status code does not allow body")
 }

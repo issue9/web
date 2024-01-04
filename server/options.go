@@ -115,13 +115,13 @@ type (
 
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
-		// 如果该值为 [ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
+		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
 		ProblemTypePrefix string
 		problems          *problems
 
 		// Init 其它的一些初始化操作
 		//
-		// 在此可以在用户能实际操作 [Server] 之前对 Server 进行一些操作。
+		// 在此可以让用户能实际操作 [Server] 之前对 Server 进行一些操作。
 		Init []func(web.Server)
 	}
 

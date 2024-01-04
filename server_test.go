@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -101,8 +102,8 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 	panic("未实现")
 }
 
-func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return s.b.NewContext(w, r, nil)
+func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	return s.b.NewContext(w, r, route)
 }
 
 func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {
