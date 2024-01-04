@@ -32,7 +32,7 @@ type httpServer struct {
 	idGenerator IDGenerator
 	state       web.State
 	services    *services
-	ctxBuilder  *web.ContextBuilder
+	ctxBuilder  *web.InternalContextBuilder
 	location    *time.Location
 	logs        *web.Logs
 
@@ -40,7 +40,6 @@ type httpServer struct {
 	closes []func() error
 
 	problems        *problems
-	codec           *web.Codec
 	config          *config.Config
 	locale          *locale.Locale
 	disableCompress bool
@@ -74,7 +73,6 @@ func New(name, version string, o *Options) (web.Server, error) {
 		closes: make([]func() error, 0, 10),
 
 		problems: o.problems,
-		codec:    o.codec,
 		locale:   o.locale,
 		config:   o.config,
 	}
@@ -179,7 +177,7 @@ func (srv *httpServer) Config() *config.Config { return srv.config }
 func (srv *httpServer) Locale() web.Locale { return srv.locale }
 
 func (srv *httpServer) NewClient(client *http.Client, selector web.Selector, marshalName string, marshal func(any) ([]byte, error)) *web.Client {
-	return web.NewClient(client, srv.codec, selector, marshalName, marshal)
+	return web.NewClient(client, srv.ctxBuilder.Codec(), selector, marshalName, marshal, srv.ctxBuilder.RequestIDKey(), srv.UniqueID)
 }
 
 func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }

@@ -41,6 +41,9 @@ type Client struct {
 
 	marshal     func(any) ([]byte, error)
 	marshalName string
+
+	requestIDKey string
+	requestIDGen func() string
 }
 
 func (s SelectorFunc) Next() string { return s() }
@@ -96,9 +99,15 @@ func SelectorRewrite(s Selector, l Logger) func(*httputil.ProxyRequest) {
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
 // marshalName 和 marshal 表示编码的名称和方法；
-func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client {
+// requestIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
+// requestIDGen 表示生成 x-request-id 值的方法；
+func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error), requestIDKey string, requestIDGen func() string) *Client {
 	if client == nil {
 		client = &http.Client{}
+	}
+
+	if requestIDKey != "" && requestIDGen == nil {
+		panic("当前 requestIDKey 不为空时 requestIDGen 也不能为空")
 	}
 
 	return &Client{
@@ -108,6 +117,9 @@ func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName
 
 		marshalName: marshalName,
 		marshal:     marshal,
+
+		requestIDKey: requestIDKey,
+		requestIDGen: requestIDGen,
 	}
 }
 
@@ -216,6 +228,9 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 	r.Header.Set(header.ContentType, header.BuildContentType(c.marshalName, header.UTF8Name))
 	r.Header.Set(header.Accept, c.codec.acceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
+	if c.requestIDKey != "" {
+		r.Header.Set(c.requestIDKey, c.requestIDGen())
+	}
 
 	return r, nil
 }

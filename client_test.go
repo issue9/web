@@ -42,7 +42,7 @@ func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
 	codec := newCodec(a)
 
-	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal)
+	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal, header.RequestIDKey, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -50,6 +50,7 @@ func TestClient_NewRequest(t *testing.T) {
 	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
 	a.NotError(err).NotNil(req).
 		Equal(req.Header.Get(header.Accept), codec.acceptHeader).
+		Equal(req.Header.Get(header.RequestIDKey), "123").
 		Equal(req.Header.Get(header.AcceptEncoding), codec.acceptEncodingHeader).
 		Equal(req.Header.Get(header.ContentType), header.BuildContentType("application/json", header.UTF8Name))
 }
@@ -58,7 +59,7 @@ func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	codec := newCodec(a)
 
-	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal)
+	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

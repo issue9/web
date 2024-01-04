@@ -5,6 +5,8 @@
 //go:generate go run ./make_problems.go
 
 // Package web 通用的 web 开发框架
+//
+// NOTE: 所有以 Internal 开头的函数和对象都是模块内部使用的。
 package web
 
 import (

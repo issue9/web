@@ -36,7 +36,7 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	b       *ContextBuilder
+	b       *InternalContextBuilder
 	route   types.Route
 	request *http.Request
 	exits   []func(*Context, int)
@@ -69,8 +69,8 @@ type Context struct {
 	logs *AttrLogs
 }
 
-// ContextBuilder 用于创建 [Context]
-type ContextBuilder struct {
+// InternalContextBuilder 提供了创建 [Context] 的相关方法
+type InternalContextBuilder struct {
 	server       Server
 	requestIDKey string
 	codec        *Codec
@@ -79,7 +79,7 @@ type ContextBuilder struct {
 // NewContextBuilder 声明 [ContextBuilder]
 //
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
-func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *ContextBuilder {
+func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *InternalContextBuilder {
 	if s == nil {
 		panic("s 不能为空")
 	}
@@ -88,25 +88,29 @@ func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *ContextBuil
 		requestIDKey = header.RequestIDKey
 	}
 
-	return &ContextBuilder{
+	return &InternalContextBuilder{
 		server:       s,
 		requestIDKey: requestIDKey,
 		codec:        codec,
 	}
 }
 
+func (b *InternalContextBuilder) Codec() *Codec { return b.codec }
+
+func (b *InternalContextBuilder) RequestIDKey() string { return b.requestIDKey }
+
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	id := r.Header.Get(b.requestIDKey)
+func (b *InternalContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	id := r.Header.Get(b.RequestIDKey())
 
 	h := r.Header.Get(header.Accept)
 	mt := b.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if mt == nil {
 		var l logs.Recorder = b.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+			l = b.server.Logs().DEBUG().With(b.RequestIDKey(), id)
 		}
 		l.LocaleString(Phrase("not found serialization for %s", h))
 
@@ -119,7 +123,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if outputCharsetName == "" {
 		var l logs.Recorder = b.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+			l = b.server.Logs().DEBUG().With(b.RequestIDKey(), id)
 		}
 		l.LocaleString(Phrase("not found charset for %s", h))
 
@@ -147,7 +151,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 		var err error
 		inputMimetype, inputCharset, err = b.codec.contentType(h)
 		if err != nil {
-			b.server.Logs().DEBUG().With(b.requestIDKey, id).Error(err)
+			b.server.Logs().DEBUG().With(b.RequestIDKey(), id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -159,8 +163,8 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if id == "" {
 		id = b.server.UniqueID()
 	}
-	w.Header().Set(b.requestIDKey, id)
-	r.Header.Set(b.requestIDKey, id)
+	w.Header().Set(b.RequestIDKey(), id)
+	r.Header.Set(b.RequestIDKey(), id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
@@ -191,7 +195,7 @@ func (b *ContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.languageTag = tag
 	ctx.localePrinter = b.server.Locale().NewPrinter(tag)
 	clear(ctx.vars)
-	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
+	ctx.logs = b.server.Logs().New(map[string]any{b.RequestIDKey(): id})
 
 	return ctx
 }
