@@ -76,10 +76,10 @@ type InternalContextBuilder struct {
 	codec        *Codec
 }
 
-// NewContextBuilder 声明 [ContextBuilder]
+// InternalNewContextBuilder 声明 [InternalContextBuilder]
 //
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
-func NewContextBuilder(s Server, codec *Codec, requestIDKey string) *InternalContextBuilder {
+func InternalNewContextBuilder(s Server, codec *Codec, requestIDKey string) *InternalContextBuilder {
 	if s == nil {
 		panic("s 不能为空")
 	}
@@ -149,8 +149,7 @@ func (b *InternalContextBuilder) NewContext(w http.ResponseWriter, r *http.Reque
 	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
-		inputMimetype, inputCharset, err = b.codec.contentType(h)
-		if err != nil {
+		if inputMimetype, inputCharset, err = b.codec.contentType(h); err != nil {
 			b.server.Logs().DEBUG().With(b.RequestIDKey(), id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
@@ -186,8 +185,7 @@ func (b *InternalContextBuilder) NewContext(w http.ResponseWriter, r *http.Reque
 	ctx.status = 0
 	ctx.wrote = false
 	if ctx.outputCompressor != nil {
-		h := ctx.Header()
-		h.Set(header.ContentEncoding, outputCompressor.Name())
+		ctx.Header().Set(header.ContentEncoding, outputCompressor.Name())
 	}
 
 	ctx.inputMimetype = inputMimetype
@@ -309,8 +307,8 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-// Free 释放当前对象
-func (ctx *Context) Free() {
+// FreeContext 释放 ctx
+func (b *InternalContextBuilder) FreeContext(ctx *Context) {
 	slices.Reverse(ctx.exits)
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)

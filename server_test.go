@@ -35,7 +35,7 @@ type testServer struct {
 	unique          *unique.Unique
 	cache           cache.Driver
 	routers         *group.GroupOf[HandlerFunc]
-	codec           *Codec
+	b               *InternalContextBuilder
 	disableCompress bool
 	locale          *locale.Locale
 }
@@ -72,9 +72,9 @@ func newTestServer(a *assert.Assertion) *testServer {
 		logBuf: logBuf,
 		unique: u,
 		cache:  cc,
-		codec:  newCodec(a),
 		locale: locale.New(l, nil, nil),
 	}
+	srv.b = InternalNewContextBuilder(srv, newCodec(a), header.RequestIDKey)
 
 	return srv
 }
@@ -102,7 +102,7 @@ func (s *testServer) NewClient(client *http.Client, selector Selector, marshalNa
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return NewContextBuilder(s, s.codec, header.RequestIDKey).NewContext(w, r, nil)
+	return s.b.NewContext(w, r, nil)
 }
 
 func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router {

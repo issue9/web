@@ -27,13 +27,13 @@ func BenchmarkNewContext(b *testing.B) {
 	r.Header.Set(header.AcceptCharset, "gbk")
 	for i := 0; i < b.N; i++ {
 		ctx := s.NewContext(w, r)
-		ctx.Free()
+		s.b.FreeContext(ctx)
 	}
 }
 
 func BenchmarkContext_Render(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newTestServer(a)
+	s := newTestServer(a)
 
 	b.Run("none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -41,9 +41,9 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.Accept, "application/json")
 			w := httptest.NewRecorder()
 
-			ctx := srv.NewContext(w, r)
+			ctx := s.NewContext(w, r)
 			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
-			ctx.Free()
+			s.b.FreeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
@@ -55,9 +55,9 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.Accept, "application/json")
 			r.Header.Set(header.AcceptCharset, header.UTF8Name)
 			w := httptest.NewRecorder()
-			ctx := srv.NewContext(w, r)
+			ctx := s.NewContext(w, r)
 			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
-			ctx.Free()
+			s.b.FreeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
 		}
@@ -70,9 +70,9 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.AcceptCharset, "gbk")
 			w := httptest.NewRecorder()
 
-			ctx := srv.NewContext(w, r)
+			ctx := s.NewContext(w, r)
 			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
-			ctx.Free()
+			s.b.FreeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
 		}
@@ -86,9 +86,9 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.AcceptEncoding, "deflate")
 			w := httptest.NewRecorder()
 
-			ctx := srv.NewContext(w, r)
+			ctx := s.NewContext(w, r)
 			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
-			ctx.Free()
+			s.b.FreeContext(ctx)
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
 			a.NotError(err).NotNil(data)
@@ -111,7 +111,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 		obj := &testdata.Object{}
 		a.NotError(ctx.Unmarshal(obj)).
 			Equal(obj, testdata.ObjectInst)
-		ctx.Free()
+		srv.b.FreeContext(ctx)
 	}
 }
 
@@ -204,7 +204,7 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 	r.Header.Set(header.Accept, "application/json")
 	ctx := s.NewContext(w, r)
-	defer ctx.Free()
+	defer s.b.FreeContext(ctx)
 
 	for i := 0; i < b.N; i++ {
 		p := ctx.newFilterContext(false)

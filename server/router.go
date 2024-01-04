@@ -36,7 +36,7 @@ func (srv *httpServer) call(w http.ResponseWriter, r *http.Request, route types.
 				p.Apply(ctx) // Problem.Apply 始终返回 nil
 			}
 		}
-		ctx.Free()
+		srv.ctxBuilder.FreeContext(ctx)
 	}
 }
 
