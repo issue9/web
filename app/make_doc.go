@@ -11,10 +11,10 @@ import (
 	"go/token"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/sliceutil"
 )
 
 const (
@@ -192,7 +192,7 @@ func parseObject(w *errwrap.Writer, obj *ast.TypeSpec) []string {
 			panic(fmt.Sprintf("字段 %s 无法转换成 *ast.Ident", f.Names[0].Name))
 		}
 
-		if !sliceutil.Exists(primitiveTypes, func(i string, _ int) bool { return i == fieldTypeName }) {
+		if slices.Index(primitiveTypes, fieldTypeName) < 0 {
 			waitList = append(waitList, fieldTypeName)
 			fieldTypeName = `<a href="#` + fieldTypeName + `">` + fieldTypeName + "</a>"
 		}

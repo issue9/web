@@ -19,7 +19,7 @@ func buildNodeHandle(status int) types.BuildNodeHandleOf[web.HandlerFunc] {
 		return func(ctx *web.Context) web.Responser {
 			ctx.Header().Set(header.Allow, n.AllowHeader())
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
-				return web.ResponserFunc(func(ctx *web.Context) web.Problem {
+				return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 					ctx.WriteHeader(http.StatusOK)
 					return nil
 				})

@@ -16,55 +16,23 @@ import (
 	"github.com/issue9/web/internal/status"
 )
 
-const rfc7807PoolMaxParams = 30 // len(RFC7807.Params) 少于此值才会回收。
-
-var rfc7807Pool = &sync.Pool{New: func() any { return &RFC7807{} }}
+var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 
 type (
-	// Problem 向用户反馈非正常信息的对象接口
-	Problem interface {
-		Responser
-
-		// WithParam 添加具体的错误字段及描述信息
-		//
-		// 如果已经存在同名，则会 panic。
-		WithParam(name, reason string) Problem
-
-		// WithExtensions 指定扩展对象信息
-		//
-		// 多次调用将会覆盖之前的内容。
-		WithExtensions(any) Problem
-
-		// WithInstance 指定发生错误的实例
-		//
-		// 多次调用将会覆盖之前的内容。默认为 [Context.ID]。
-		WithInstance(string) Problem
-
-		// 不允许其它实现
-		private()
-	}
-
-	// RFC7807 [Problem] 的 [RFC7807] 实现
+	// Problem 基于 [RFC7807] 用于描述错误信息的对象
 	//
-	// [MarshalFunc] 的实现者，可能需要对 [RFC7807] 进行处理以便输出更加友好的格式。
-	//
-	// [RFC7807]: https://datatracker.ietf.org/doc/html/RFC7807
-	RFC7807 struct {
-		// NOTE: 无法缓存内容，因为用户请求的语言每次都可能是不一样的。
-		// NOTE: Problem 应该是 final 状态的，否则像 [Context.PathID] 等的实现需要指定 Problem 对象。
-		// NOTE: 这是 [Problem] 接口的唯一实现，之所以多此一举用，是因为像 [FilterContext.Problem]
-		// 的返回值如果是 [RFC7807] 而不是 [Problem]，那么在 [HandleFunc] 中作为 [Responser] 返回时需要再次判断是否为 nil。
-
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/Problem
+	Problem struct {
 		Type       string         `json:"type" xml:"type" form:"type"`
 		Title      string         `json:"title" xml:"title" form:"title"`
 		Detail     string         `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty"`
 		Instance   string         `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty"`
 		Status     int            `json:"status" xml:"status" form:"status"`
 		Extensions any            `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty"` // 反馈给用户的信息
-		Params     []RFC7807Param `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty"`           // 用户提交对象各个字段的错误信息
+		Params     []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty"`           // 用户提交对象各个字段的错误信息
 	}
 
-	RFC7807Param struct {
+	ProblemParam struct {
 		Name   string `json:"name" xml:"name" form:"name"`       // 出错字段的名称
 		Reason string `json:"reason" xml:"reason" form:"reason"` // 出错信息
 	}
@@ -83,8 +51,8 @@ type (
 	}
 )
 
-func newRFC7807() *RFC7807 {
-	p := rfc7807Pool.Get().(*RFC7807)
+func newProblem() *Problem {
+	p := problemPool.Get().(*Problem)
 	if p.Params != nil {
 		p.Params = p.Params[:0]
 	}
@@ -94,9 +62,9 @@ func newRFC7807() *RFC7807 {
 	// 其它的基本字段在 [Problems.initProblem] 中初始化
 }
 
-func (p *RFC7807) Error() string { return p.Title }
+func (p *Problem) Error() string { return p.Title }
 
-func (p *RFC7807) Apply(ctx *Context) Problem {
+func (p *Problem) Apply(ctx *Context) *Problem {
 	// NOTE: 此方法要始终返回 nil
 
 	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
@@ -104,48 +72,54 @@ func (p *RFC7807) Apply(ctx *Context) Problem {
 		ctx.Header().Set(header.ContentLang, id)
 	}
 
-	ctx.WriteHeader(p.Status) // 调用之后，报头不再启作用
+	ctx.WriteHeader(p.Status) // Problem 先输出状态码
 
 	data, err := ctx.Marshal(p)
 	if err != nil {
 		ctx.Logs().ERROR().Error(err)
 		return nil
 	}
-
 	if _, err = ctx.Write(data); err != nil {
 		ctx.Logs().ERROR().Error(err)
 	}
-	if len(p.Params) < rfc7807PoolMaxParams {
-		rfc7807Pool.Put(p)
-	}
 
+	if len(p.Params) < 30 {
+		problemPool.Put(p)
+	}
 	return nil
 }
 
-func (p *RFC7807) WithParam(name, reason string) Problem {
-	if slices.IndexFunc(p.Params, func(pp RFC7807Param) bool { return pp.Name == name }) > -1 {
+// WithParam 添加具体的错误字段及描述信息
+//
+// 如果已经存在同名，则会 panic。
+func (p *Problem) WithParam(name, reason string) *Problem {
+	if slices.IndexFunc(p.Params, func(pp ProblemParam) bool { return pp.Name == name }) > -1 {
 		panic("已经存在")
 	}
-	p.Params = append(p.Params, RFC7807Param{Name: name, Reason: reason})
+	p.Params = append(p.Params, ProblemParam{Name: name, Reason: reason})
 	return p
 }
 
-func (p *RFC7807) WithExtensions(ext any) Problem {
+// WithExtensions 指定扩展对象信息
+//
+// 多次调用将会覆盖之前的内容。
+func (p *Problem) WithExtensions(ext any) *Problem {
 	p.Extensions = ext
 	return p
 }
 
-func (p *RFC7807) WithInstance(instance string) Problem {
+// WithInstance 指定发生错误的实例
+//
+// 多次调用将会覆盖之前的内容。默认为 [Context.ID]。
+func (p *Problem) WithInstance(instance string) *Problem {
 	p.Instance = instance
 	return p
 }
 
-func (p *RFC7807) private() {}
-
 // Problem 返回指定 id 的 [Problem]
-func (ctx *Context) Problem(id string) Problem { return ctx.initProblem(newRFC7807(), id) }
+func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
 
-func (ctx *Context) initProblem(pp *RFC7807, id string) Problem {
+func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
 	ctx.Server().Problems().initProblem(pp, id, ctx.LocalePrinter())
 	return pp.WithInstance(ctx.ID())
 }
@@ -157,7 +131,7 @@ func (ctx *Context) initProblem(pp *RFC7807, id string) Problem {
 //   - err 是否为 [fs.ErrPermission]，如果是采用 [ProblemForbidden] 作为 ID；
 //   - err 是否为 [fs.ErrNotExist]，如果是采用 [ProblemNotFound] 作为 ID；
 //   - 采用 [ProblemInternalServerError]；
-func (ctx *Context) Error(err error, problemID string) Problem {
+func (ctx *Context) Error(err error, problemID string) *Problem {
 	if problemID == "" {
 		var herr *errs.HTTP
 		switch {
@@ -177,12 +151,12 @@ func (ctx *Context) Error(err error, problemID string) Problem {
 	return ctx.Problem(problemID)
 }
 
-func (ctx *Context) NotFound() Problem { return ctx.Problem(ProblemNotFound) }
+func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
 
-func (ctx *Context) NotImplemented() Problem { return ctx.Problem(ProblemNotImplemented) }
+func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(ProblemNotImplemented) }
 
 // Problem 如果有错误信息转换成 [Problem] 否则返回 nil
-func (v *FilterContext) Problem(id string) Problem {
+func (v *FilterContext) Problem(id string) Responser {
 	if v == nil || v.len() == 0 {
 		return nil
 	}
@@ -254,7 +228,7 @@ func (ps *Problems) Visit(visit func(status int, p *LocaleProblem)) {
 	}
 }
 
-func (ps *Problems) initProblem(pp *RFC7807, id string, p *localeutil.Printer) {
+func (ps *Problems) initProblem(pp *Problem, id string, p *localeutil.Printer) {
 	if i := slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }); i > -1 {
 		sp := ps.problems[i]
 		pp.Type = sp.typ

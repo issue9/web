@@ -10,10 +10,10 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/sliceutil"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
@@ -188,7 +188,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 			return nil
 		}
 
-		if !sliceutil.Exists(cmd.ServeActions, func(e string, _ int) bool { return e == cmd.action }) { // 非服务
+		if slices.Index(cmd.ServeActions, cmd.action) < 0 { // 非服务
 			_, err := cmd.initServer()
 			return err
 		}

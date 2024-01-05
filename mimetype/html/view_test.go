@@ -54,7 +54,7 @@ func TestInstallView(t *testing.T) {
 
 	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) web.Problem {
+		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 			ctx.Render(200, &obj{})
 			return nil
 		})
@@ -89,7 +89,7 @@ func TestInstallDirView(t *testing.T) {
 
 	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) web.Problem {
+		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 			ctx.Render(200, &obj{})
 			return nil
 		})

@@ -154,7 +154,7 @@ func TestRulerOf(t *testing.T) {
 	name, msg = r2("r2", 5)
 	a.Empty(name).Nil(msg)
 
-	t.Run("NewRules", func(t *testing.T) {
+	t.Run("NewRules", func(*testing.T) {
 		rs := NewRules(r1, r2)
 		name, msg = rs("rs", 5)
 		a.Equal(name, "rs").Equal(msg, StringPhrase("r1"))
@@ -166,7 +166,7 @@ func TestRulerOf(t *testing.T) {
 		a.Equal(name, "rs").Equal(msg, StringPhrase("r1"))
 	})
 
-	t.Run("NewSliceRule", func(t *testing.T) {
+	t.Run("NewSliceRule", func(*testing.T) {
 		rs := NewSliceRule[int, []int](between(1, 5), StringPhrase("rs"))
 
 		name, msg = rs("rs", []int{1, 2, 3})
@@ -176,7 +176,7 @@ func TestRulerOf(t *testing.T) {
 		a.Equal(name, "rs[3]").Equal(msg, StringPhrase("rs"))
 	})
 
-	t.Run("NewSliceRules", func(t *testing.T) {
+	t.Run("NewSliceRules", func(*testing.T) {
 		rs := NewSliceRules[int, []int](r1, r2)
 
 		name, msg = rs("rs", []int{0})
@@ -186,7 +186,7 @@ func TestRulerOf(t *testing.T) {
 		a.Equal(name, "rs[0]").Equal(msg, StringPhrase("r1"))
 	})
 
-	t.Run("NewMapRule", func(t *testing.T) {
+	t.Run("NewMapRule", func(*testing.T) {
 		rm := NewMapRule[string, int, map[string]int](between(1, 5), StringPhrase("rm"))
 
 		name, msg = rm("rm", map[string]int{"1": 1, "2": 2})
@@ -196,7 +196,7 @@ func TestRulerOf(t *testing.T) {
 		a.Equal(name, "rm[err]").Equal(msg, StringPhrase("rm"))
 	})
 
-	t.Run("NewMapRules", func(t *testing.T) {
+	t.Run("NewMapRules", func(*testing.T) {
 		rm := NewMapRules[string, int, map[string]int](r1, r2)
 
 		name, msg = rm("rm", map[string]int{"0": 0})
@@ -224,7 +224,7 @@ func TestFilterContext(t *testing.T) {
 	v := ctx.newFilterContext(false).
 		Add(NewFilter(NewRules(min_2, min_3))("f1", &n100)).
 		Add(NewFilter(NewRules(max50, max_4))("f2", &p100))
-	a.Equal(v.problem.Params, []RFC7807Param{
+	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 		{Name: "f2", Reason: "50"},
 	})
@@ -234,7 +234,7 @@ func TestFilterContext(t *testing.T) {
 	v = ctx.newFilterContext(true).
 		Add(NewFilter(NewRules(min_2, min_3))("f1", &n100)).
 		Add(NewFilter(NewRules(max50, max_4))("f2", &p100))
-	a.Equal(v.problem.Params, []RFC7807Param{
+	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 	})
 }
@@ -256,7 +256,7 @@ func TestFilterContext_New(t *testing.T) {
 	})
 	a.Equal(v1, v)
 
-	a.Equal(v.problem.Params, []RFC7807Param{
+	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "v1.f1", Reason: "s1"},
 		{Name: "v1.v2.f2", Reason: "s2"},
 	})
@@ -278,7 +278,7 @@ func TestFilterContext_When(t *testing.T) {
 		When(obj.Age > 0, func(v *FilterContext) {
 			v.Add(NewFilter(notEmpty)("obj/name", &obj.Name))
 		})
-	a.Equal(v.problem.Params, []RFC7807Param{
+	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "obj/age", Reason: "不能小于 18"},
 	})
 
@@ -288,7 +288,7 @@ func TestFilterContext_When(t *testing.T) {
 		When(obj.Age > 0, func(v *FilterContext) {
 			v.Add(NewFilter(notEmpty)("obj/name", &obj.Name))
 		})
-	a.Equal(v.problem.Params, []RFC7807Param{
+	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "obj/age", Reason: "不能小于 18"},
 		{Name: "obj/name", Reason: "不能为空"},
 	})

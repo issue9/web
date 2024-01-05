@@ -20,7 +20,7 @@ type FilterContext struct {
 	name        string
 	exitAtError bool
 	ctx         *Context
-	problem     *RFC7807
+	problem     *Problem
 }
 
 // FilterFunc 过滤器
@@ -212,7 +212,7 @@ func NewMapRules[K comparable, V any, M ~map[K]V](r ...RuleFuncOf[V]) RuleFuncOf
 }
 
 func (ctx *Context) newFilterContext(exitAtError bool) *FilterContext {
-	return newFilterContext(exitAtError, "", ctx, newRFC7807())
+	return newFilterContext(exitAtError, "", ctx, newProblem())
 }
 
 // New 声明验证的子对象
@@ -226,7 +226,7 @@ func (v *FilterContext) New(name string, f func(f *FilterContext)) *FilterContex
 	return v
 }
 
-func newFilterContext(exitAtError bool, name string, ctx *Context, p *RFC7807) *FilterContext {
+func newFilterContext(exitAtError bool, name string, ctx *Context, p *Problem) *FilterContext {
 	v := filterContextPool.Get().(*FilterContext)
 	v.name = name
 	v.exitAtError = exitAtError

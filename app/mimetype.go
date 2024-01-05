@@ -49,10 +49,10 @@ type mimetypeConfig struct {
 }
 
 func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
-	dup := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
-	if len(dup) > 0 {
-		value := conf.Mimetypes[dup[1]].Type
-		err := web.NewFieldError("["+strconv.Itoa(dup[1])+"].target", locales.DuplicateValue)
+	indexes := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
+	if len(indexes) > 0 {
+		value := conf.Mimetypes[indexes[1]].Type
+		err := web.NewFieldError("["+strconv.Itoa(indexes[1])+"].target", locales.DuplicateValue)
 		err.Value = value
 		return err
 	}

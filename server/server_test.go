@@ -24,7 +24,7 @@ var _ web.Server = &httpServer{}
 
 func buildHandler(code int) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) web.Problem {
+		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
 			ctx.Render(code, code)
 			return nil
 		})
@@ -280,29 +280,29 @@ func TestServer_NewClient(t *testing.T) {
 	a.NotNil(c)
 
 	resp := &object{}
-	p := &web.RFC7807{}
+	p := &web.Problem{}
 	a.NotError(c.Get("/get", resp, p))
 	a.Zero(p).Equal(resp, &object{Name: "name"})
 
 	resp = &object{}
-	p = &web.RFC7807{}
+	p = &web.Problem{}
 	a.NotError(c.Delete("/get", resp, p))
 	a.Zero(resp).Equal(p.Type, web.ProblemMethodNotAllowed)
 
 	resp = &object{}
-	p = &web.RFC7807{Extensions: &object{}}
+	p = &web.Problem{Extensions: &object{}}
 	a.NotError(c.Post("/post", nil, resp, p))
 	a.Zero(resp).
 		Equal(p.Type, web.ProblemBadRequest).
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp = &object{}
-	p = &web.RFC7807{}
+	p = &web.Problem{}
 	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, p))
 	a.Zero(p).Equal(resp, &object{Age: 1, Name: "name"})
 
 	resp = &object{}
-	p = &web.RFC7807{}
+	p = &web.Problem{}
 	a.NotError(c.Patch("/not-exists", nil, resp, p))
 	a.Zero(resp).Equal(p.Type, web.ProblemNotFound)
 }

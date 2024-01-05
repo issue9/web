@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	_ Problem = &RFC7807{}
-	_ error   = &RFC7807{}
+	_ Responser = &Problem{}
+	_ error     = &Problem{}
 )
 
 type object struct {
@@ -147,14 +147,14 @@ func TestProblems_initProblem(t *testing.T) {
 	ps := InternalNewProblems("")
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
-	pp := &RFC7807{}
+	pp := &Problem{}
 	ps.initProblem(pp, "40010", p)
 	a.Equal(pp.Type, "40010")
 
 	ps = InternalNewProblems("https://example.com/qa#")
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")})
-	pp = &RFC7807{}
+	pp = &Problem{}
 	ps.initProblem(pp, "40011", p)
 	a.Equal(pp.Type, "https://example.com/qa#40011").
 		Equal(ps.Prefix(), "https://example.com/qa#")
@@ -162,7 +162,7 @@ func TestProblems_initProblem(t *testing.T) {
 	ps = InternalNewProblems(ProblemAboutBlank)
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40012", Title: Phrase("title"), Detail: Phrase("detail")})
-	pp = &RFC7807{}
+	pp = &Problem{}
 	ps.initProblem(pp, "40012", p)
 	a.Equal(pp.Type, ProblemAboutBlank)
 

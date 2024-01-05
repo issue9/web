@@ -123,23 +123,23 @@ func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName
 	}
 }
 
-func (c *Client) Get(path string, resp any, problem *RFC7807) error {
+func (c *Client) Get(path string, resp any, problem *Problem) error {
 	return c.Do(http.MethodGet, path, nil, resp, problem)
 }
 
-func (c *Client) Delete(path string, resp any, problem *RFC7807) error {
+func (c *Client) Delete(path string, resp any, problem *Problem) error {
 	return c.Do(http.MethodDelete, path, nil, resp, problem)
 }
 
-func (c *Client) Post(path string, req, resp any, problem *RFC7807) error {
+func (c *Client) Post(path string, req, resp any, problem *Problem) error {
 	return c.Do(http.MethodPost, path, req, resp, problem)
 }
 
-func (c *Client) Put(path string, req, resp any, problem *RFC7807) error {
+func (c *Client) Put(path string, req, resp any, problem *Problem) error {
 	return c.Do(http.MethodPut, path, req, resp, problem)
 }
 
-func (c *Client) Patch(path string, req, resp any, problem *RFC7807) error {
+func (c *Client) Patch(path string, req, resp any, problem *Problem) error {
 	return c.Do(http.MethodPatch, path, req, resp, problem)
 }
 
@@ -148,10 +148,10 @@ func (c *Client) Patch(path string, req, resp any, problem *RFC7807) error {
 // req 为提交的对象，最终是由初始化参数的 marshal 进行编码；
 // resp 为返回的数据的写入对象，必须是指针类型；
 // problem 为返回出错时的写入对象，如果包含自定义的 Extensions 字段，需要为其初始化为零值。
-// [RFC7807] 同时也实现了 error 接口，如果不需要特殊处理，可以直接作为错误处理；
+// [Problem] 同时也实现了 error 接口，如果不需要特殊处理，可以直接作为错误处理；
 // 非 HTTP 状态码错误返回 err；
-func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error {
-	// NOTE: RFC7807 带有一个不确定类型的 Extensions 字段，所以只能由调用方初始化正确的值。
+func (c *Client) Do(method, path string, req, resp any, problem *Problem) error {
+	// NOTE: Problem 带有一个不确定类型的 Extensions 字段，所以只能由调用方初始化正确的值。
 
 	r, err := c.NewRequest(method, path, req)
 	if err != nil {
@@ -168,7 +168,7 @@ func (c *Client) Do(method, path string, req, resp any, problem *RFC7807) error 
 // ParseResponse 从 [http.Response] 解析并获取返回对象
 //
 // 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。其它情况下返回错误信息。
-func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *RFC7807) (err error) {
+func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *Problem) (err error) {
 	if rsp.ContentLength == 0 { // 204 可能为空
 		return nil
 	}
