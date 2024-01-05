@@ -42,7 +42,7 @@ func New(l *logger.Logger) *Schema { return &Schema{pkg: pkg.New(l)} }
 func (s *Schema) Packages() *pkg.Packages { return s.pkg }
 
 // 从 title 和 desc 中获取类型名称和枚举信息
-func parseTypeDoc(obj *types.TypeName, title, desc string) (typ string, enums []any, err error) {
+func parseTypeDoc(obj *types.TypeName, title, desc string) (typ string, enums []string, err error) {
 	var lines []string
 	if desc != "" {
 		lines = strings.Split(desc, "\n")
@@ -53,16 +53,12 @@ func parseTypeDoc(obj *types.TypeName, title, desc string) (typ string, enums []
 	for _, line := range lines {
 		switch tag, suffix := utils.CutTag(line); tag {
 		case "@enum", "@enums": // @enum e1 e2 e3
-			es := strings.Fields(suffix)
-			if len(es) == 0 { // 如果为空，则从代码中提取
-				es, err = getEnums(obj.Pkg(), obj.Name())
+			enums = strings.Fields(suffix)
+			if len(enums) == 0 { // 如果为空，则从代码中提取
+				enums, err = getEnums(obj.Pkg(), obj.Name())
 				if err != nil {
 					return "", nil, err
 				}
-			}
-
-			for _, word := range es {
-				enums = append(enums, word)
 			}
 		case "@type": // @type string
 			typ = suffix

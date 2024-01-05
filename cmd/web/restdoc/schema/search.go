@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/types"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -97,7 +98,10 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 			return nil, false, err
 		}
 		if docTypeName != "" { // 用户通过 @type 自定义了类型
-			schema := buildSchema(openapi3.NewSchema(), docTypeName, docEnums...)
+			schema, err := buildSchema(openapi3.NewSchema(), docTypeName, docEnums...)
+			if err != nil {
+				return nil, false, err
+			}
 			schema.Title = title
 			schema.Description = desc
 			ref = openapi3.NewSchemaRef(refID, schema)
@@ -166,14 +170,30 @@ func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, 
 	return openapi.NewSchemaRef("", schema), nil
 }
 
-func buildSchema(s *openapi3.Schema, docTypeName string, docEnums ...any) *openapi3.Schema {
+func buildSchema(s *openapi3.Schema, docTypeName string, docEnums ...string) (*openapi3.Schema, error) {
 	if docTypeName != "" {
 		s.Type = docTypeName
 	}
 
-	if len(docEnums) > 0 {
-		s.WithEnum(docEnums...)
+	if len(docEnums) == 0 {
+		return s, nil
 	}
 
-	return s
+	var enums []any
+	if docTypeName == openapi3.TypeNumber || docTypeName == openapi3.TypeInteger {
+		for _, val := range docEnums {
+			v, err := strconv.Atoi(val)
+			if err != nil {
+				return nil, err
+			}
+			enums = append(enums, v)
+		}
+	} else {
+		for _, val := range docEnums {
+			enums = append(enums, val)
+		}
+	}
+
+	s.WithEnum(enums...)
+	return s, nil
 }

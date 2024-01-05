@@ -48,6 +48,43 @@ func TestSchema_New_not_found(t *testing.T) {
 	})
 }
 
+func TestSchema_New_enum(t *testing.T) {
+	a := assert.New(t, false)
+	f := buildPackages(a)
+	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
+	// pkgRef := refReplacer.Replace(pkgPath)
+
+	t.Run("Enum", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+".Enum", false)
+		a.NotError(err).NotNil(ref).
+			NotEmpty(ref.Value.Description).
+			Equal(ref.Value.Type, openapi3.TypeString).
+			Equal(ref.Value.Enum, []any{"v1", "v2", "v3"})
+	})
+
+	t.Run("NotBasicTypeEnum", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+".NotBasicTypeEnum", false)
+		a.Equal(err, web.NewLocaleError("@enum can not be empty")).Nil(ref)
+	})
+
+	t.Run("Number", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+".Number", false)
+		a.NotError(err).NotNil(ref).
+			NotEmpty(ref.Value.Description).
+			Equal(ref.Value.Type, openapi3.TypeNumber).
+			Equal(ref.Value.Enum, []any{1, 2})
+	})
+}
+
 func TestSchema_New_types(t *testing.T) {
 	a := assert.New(t, false)
 	f := buildPackages(a)
@@ -85,25 +122,6 @@ func TestSchema_New_types(t *testing.T) {
 			NotEmpty(ref.Value.Description).
 			Equal(ref.Value.Type, openapi3.TypeString).
 			Equal(ref.Value.Enum, []any{"female", "male", "unknown"})
-	})
-
-	t.Run("Enum", func(t *testing.T) {
-		a := assert.New(t, false)
-		tt := openapi.New("3")
-
-		ref, err := f.New(context.Background(), tt, pkgPath+".Enum", false)
-		a.NotError(err).NotNil(ref).
-			NotEmpty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeString).
-			Equal(ref.Value.Enum, []any{"v1", "v2", "v3"})
-	})
-
-	t.Run("EmptyEnum", func(t *testing.T) {
-		a := assert.New(t, false)
-		tt := openapi.New("3")
-
-		ref, err := f.New(context.Background(), tt, pkgPath+".NotBasicTypeEnum", false)
-		a.Equal(err, web.NewLocaleError("@enum can not be empty")).Nil(ref)
 	})
 
 	t.Run("[]String", func(t *testing.T) {

@@ -64,3 +64,12 @@ type NotBasicTypeEnum struct{}
 const (
 	E1 NotBasicTypeEnum = struct{}
 )
+
+// @type number
+// @enum 1 2
+type Number int
+
+const (
+	V1 Number = iota
+	V2
+)
