@@ -303,9 +303,6 @@ messages:
     - key: unique identity generator
       message:
         msg: unique identity generator
-    - key: unset callback name
-      message:
-        msg: unset callback name
     - key: unsupported serialization
       message:
         msg: unsupported serialization

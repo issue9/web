@@ -3,15 +3,18 @@ messages:
     - key: '%s at %s:%d'
       message:
         msg: '%s 位于 %s:%d'
-    - key: '%s can not convert to ast.StructType'
+    - key: '%s is not a valid basic type'
       message:
-        msg: 不能将 %s 转换为 ast.StructType
+        msg: '%s is not a valid basic type'
     - key: '%s requires at least %d parameters'
       message:
         msg: '%s 至少需要 %d 个参数'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: 当执行 %[2]s 时发生了错误：%[1]s。将采用默认值 %[3]s 代替。
+    - key: '@enum can not be empty'
+      message:
+        msg: '@enum 不能为空'
     - key: '@query must point to an object'
       message:
         msg: '@query 必须指定一个对象'
@@ -155,15 +158,12 @@ messages:
     - key: not found enum type %s
       message:
         msg: 未找到枚举类型 %s
-    - key: not found module %s
+    - key: not found openapi schema ref %s
       message:
-        msg: 未找到模块 %s
-    - key: not found schema ref %s
+        msg: 未找到 openapi 定义 %s
+    - key: not found type %s
       message:
-        msg: 未找到 %s 指向的类型组件
-    - key: not found struct %s
-      message:
-        msg: 未找到结构体 %s
+        msg: 未找到类型 %s
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
@@ -176,9 +176,6 @@ messages:
     - key: override global response %s
       message:
         msg: '%s 与定义的全局对象相同，在当前接口中将覆盖全局定义。'
-    - key: package %s with the same name.
-      message:
-        msg: '%s 已经拥有相同的名称'
     - key: parse module dependencies
       message:
         msg: 同时也对模块的直接依赖进行解析
@@ -248,7 +245,7 @@ messages:
             类型文档中可以通过使用以下标签指定特殊属性：
 
               @type type-name 将类型指定为 type-name，要求 type-name 必须是合法的 openapi3 类型；
-              @enum n1 n2 当前类型包含了枚举值 n1，n2；
+              @enum n1 n2 当前类型包含了枚举值 n1，n2，如果未指定枚举值，则会尝试从代码中查找相关定义并转换成字符串；
 
             可用选项：
             {{flags}}
@@ -295,18 +292,18 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
+    - key: the type %s unset type params
+      message:
+        msg: '%s 未指定类型参数'
     - key: type not set
       message:
         msg: 未指定类型
+    - key: uninstance type %s
+      message:
+        msg: 泛型 %s 未实例化
     - key: unknown tag %s
       message:
         msg: 未知的标签 %s 将被忽略
-    - key: unsupported ast expr %+v
-      message:
-        msg: 不支持的 ast.Expr %+v
-    - key: unsupported generics type %s
-      message:
-        msg: 不支持的范型 %s
     - key: unsupported marshal for %s
       message:
         msg: 不支持 %s 的序列化

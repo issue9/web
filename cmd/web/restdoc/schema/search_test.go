@@ -87,6 +87,25 @@ func TestSchema_New_types(t *testing.T) {
 			Equal(ref.Value.Enum, []any{"female", "male", "unknown"})
 	})
 
+	t.Run("Enum", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+".Enum", false)
+		a.NotError(err).NotNil(ref).
+			NotEmpty(ref.Value.Description).
+			Equal(ref.Value.Type, openapi3.TypeString).
+			Equal(ref.Value.Enum, []any{"v1", "v2", "v3"})
+	})
+
+	t.Run("EmptyEnum", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+".NotBasicTypeEnum", false)
+		a.Equal(err, web.NewLocaleError("@enum can not be empty")).Nil(ref)
+	})
+
 	t.Run("[]String", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := openapi.New("3")

@@ -29,7 +29,7 @@ var allowTypes = []string{
 	"float32", "float64",
 }
 
-var errNotAllowedType = web.NewLocaleError("not allowed enum type")
+var ErrNotAllowedType = web.NewLocaleError("not allowed enum type")
 
 const fileHeader = "当前文件由 web 生成，请勿手动编辑！"
 
@@ -76,7 +76,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 func getValues(pkg *types.Package, types []string) (map[string][]string, error) {
 	vals := make(map[string][]string, len(types))
 	for _, t := range types {
-		v, err := getValue(pkg, t)
+		v, err := GetValue(pkg, t)
 		if err != nil {
 			return nil, err
 		}
@@ -86,16 +86,16 @@ func getValues(pkg *types.Package, types []string) (map[string][]string, error) 
 	return vals, nil
 }
 
-func getValue(pkg *types.Package, t string) ([]string, error) {
+// GetValue 在 pkg 中查找类型名称为 t 的所有枚举值
+func GetValue(pkg *types.Package, t string) ([]string, error) {
 	typ, err := checkType(pkg, t)
 	if err != nil {
 		return nil, err
 	}
 
 	s := pkg.Scope()
-	names := s.Names()
 	vals := make([]string, 0, 10)
-	for _, v := range names {
+	for _, v := range s.Names() {
 		obj := s.Lookup(v)
 		c, ok := obj.(*types.Const)
 		if !ok {
@@ -125,7 +125,7 @@ func checkType(pkg *types.Package, t string) (types.Type, error) {
 		return tn.Type(), nil
 	}
 
-	return nil, errNotAllowedType
+	return nil, ErrNotAllowedType
 }
 
 func dump(header, input, output string, ts []string) error {

@@ -50,7 +50,7 @@ func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q
 
 // 从类型 typ 中构建 [Ref] 类型
 //
-// xmlName typ 为 [pkg.Struct] 时，为其指定的最外层 xml 名称；
+// name typ 的结构体名称；
 // tps 为与 typ 对应的范型参数列表；
 func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, tag string) (ref *openapi3.SchemaRef, basic bool, err error) {
 	if ref, ok := buildBasicType(typ.String()); ok {
@@ -92,7 +92,10 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 		}
 
 		title, desc := parseComment(tt.Doc())
-		docTypeName, docEnums := parseTypeDoc(title, desc)
+		docTypeName, docEnums, err := parseTypeDoc(tt.Obj(), title, desc)
+		if err != nil {
+			return nil, false, err
+		}
 		if docTypeName != "" { // 用户通过 @type 自定义了类型
 			schema := buildSchema(openapi3.NewSchema(), docTypeName, docEnums...)
 			schema.Title = title
@@ -121,7 +124,7 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 	}
 }
 
-// xmlName 表示结构体作为 xml 对象时的根元素名称，如果结构体中包含了 XMLName 字段，会改写 xmlName 的值；
+// xmlName 结构体名称，同时也会被当作 XML 根元素名称（会被 XMLName 字段改写）；
 // 将 *pkg.Struct 解析为 schema 对象
 func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, tag string) (*openapi3.SchemaRef, error) {
 	schema := openapi3.NewObjectSchema()
@@ -164,12 +167,12 @@ func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, 
 }
 
 func buildSchema(s *openapi3.Schema, docTypeName string, docEnums ...any) *openapi3.Schema {
-	if len(docEnums) > 0 {
-		s.WithEnum(docEnums...)
-	}
-
 	if docTypeName != "" {
 		s.Type = docTypeName
+	}
+
+	if len(docEnums) > 0 {
+		s.WithEnum(docEnums...)
 	}
 
 	return s

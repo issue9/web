@@ -45,3 +45,22 @@ type (
 type Sex int8
 
 type Sexes []Sex
+
+// 测试自动获取枚举类型
+// @type string
+// @enums
+type Enum int
+
+const (
+	EnumV1 Enum = iota + 1
+	EnumV2
+
+	EnumV3
+)
+
+// @enum
+type NotBasicTypeEnum struct{}
+
+const (
+	E1 NotBasicTypeEnum = struct{}
+)

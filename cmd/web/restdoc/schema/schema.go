@@ -4,13 +4,18 @@
 package schema
 
 import (
+	"errors"
 	"go/ast"
+	"go/types"
 	"reflect"
 	"strings"
+	"unicode"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/query/v3"
+	"github.com/issue9/web"
 
+	"github.com/issue9/web/cmd/web/enum"
 	"github.com/issue9/web/cmd/web/restdoc/logger"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
 	"github.com/issue9/web/cmd/web/restdoc/pkg"
@@ -37,8 +42,7 @@ func New(l *logger.Logger) *Schema { return &Schema{pkg: pkg.New(l)} }
 func (s *Schema) Packages() *pkg.Packages { return s.pkg }
 
 // 从 title 和 desc 中获取类型名称和枚举信息
-func parseTypeDoc(title, desc string) (typ string, enums []any) {
-	// TODO enums 如果为空，则从代码中获取？
+func parseTypeDoc(obj *types.TypeName, title, desc string) (typ string, enums []any, err error) {
 	var lines []string
 	if desc != "" {
 		lines = strings.Split(desc, "\n")
@@ -49,7 +53,15 @@ func parseTypeDoc(title, desc string) (typ string, enums []any) {
 	for _, line := range lines {
 		switch tag, suffix := utils.CutTag(line); tag {
 		case "@enum", "@enums": // @enum e1 e2 e3
-			for _, word := range strings.Fields(suffix) {
+			es := strings.Fields(suffix)
+			if len(es) == 0 { // 如果为空，则从代码中提取
+				es, err = getEnums(obj.Pkg(), obj.Name())
+				if err != nil {
+					return "", nil, err
+				}
+			}
+
+			for _, word := range es {
 				enums = append(enums, word)
 			}
 		case "@type": // @type string
@@ -57,7 +69,34 @@ func parseTypeDoc(title, desc string) (typ string, enums []any) {
 		}
 	}
 
-	return typ, enums
+	return typ, enums, nil
+}
+
+func getEnums(pkg *types.Package, t string) ([]string, error) {
+	vals, err := enum.GetValue(pkg, t)
+	if errors.Is(err, enum.ErrNotAllowedType) {
+		return nil, web.NewLocaleError("@enum can not be empty")
+	} else if err != nil {
+		return nil, err
+	}
+
+	hasPrefix := true
+	for _, v := range vals {
+		if hasPrefix = hasPrefix && strings.HasPrefix(v, t); !hasPrefix {
+			break
+		}
+	}
+
+	for i, v := range vals {
+		if hasPrefix {
+			v = strings.TrimPrefix(v, t)
+		}
+		rs := []rune(v)
+		rs[0] = unicode.ToLower(rs[0])
+		vals[i] = string(rs)
+	}
+
+	return vals, nil
 }
 
 func parseComment(doc *ast.CommentGroup) (title, desc string) {

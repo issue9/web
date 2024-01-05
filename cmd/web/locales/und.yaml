@@ -3,15 +3,18 @@ messages:
     - key: '%s at %s:%d'
       message:
         msg: '%s at %s:%d'
-    - key: '%s can not convert to ast.StructType'
+    - key: '%s is not a valid basic type'
       message:
-        msg: '%s can not convert to ast.StructType'
+        msg: '%s is not a valid basic type'
     - key: '%s requires at least %d parameters'
       message:
         msg: '%s requires at least %d parameters'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: '%s when exec %s, use the preset value %s'
+    - key: '@enum can not be empty'
+      message:
+        msg: '@enum can not be empty'
     - key: '@query must point to an object'
       message:
         msg: '@query must point to an object'
@@ -136,15 +139,12 @@ messages:
     - key: not found enum type %s
       message:
         msg: not found enum type %s
-    - key: not found module %s
+    - key: not found openapi schema ref %s
       message:
-        msg: not found module %s
-    - key: not found schema ref %s
+        msg: not found openapi schema ref %s
+    - key: not found type %s
       message:
-        msg: not found schema ref %s
-    - key: not found struct %s
-      message:
-        msg: not found struct %s
+        msg: not found type %s
     - key: not show ignore message
       message:
         msg: not show ignore message
@@ -157,9 +157,6 @@ messages:
     - key: override global response %s
       message:
         msg: override global response %s
-    - key: package %s with the same name.
-      message:
-        msg: package %s with the same name.
     - key: parse module dependencies
       message:
         msg: parse module dependencies
@@ -211,18 +208,18 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
+    - key: the type %s unset type params
+      message:
+        msg: the type %s unset type params
     - key: type not set
       message:
         msg: type not set
+    - key: uninstance type %s
+      message:
+        msg: uninstance type %s
     - key: unknown tag %s
       message:
         msg: unknown tag %s
-    - key: unsupported ast expr %+v
-      message:
-        msg: unsupported ast expr %+v
-    - key: unsupported generics type %s
-      message:
-        msg: unsupported generics type %s
     - key: unsupported marshal for %s
       message:
         msg: unsupported marshal for %s

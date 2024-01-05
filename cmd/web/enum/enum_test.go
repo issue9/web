@@ -38,10 +38,10 @@ func TestGetValue(t *testing.T) {
 	a := assert.New(t, false)
 	f := parseFile(a, "testdir/testdir.go")
 
-	val, err := getValue(f, "t1")
+	val, err := GetValue(f, "t1")
 	a.NotError(err).Equal(val, []string{"t1V1", "t1V2", "t1V3", "t1V4", "t1V5"})
 
-	val, err = getValue(f, "t3")
+	val, err = GetValue(f, "t3")
 	a.NotError(err).Equal(val, []string{"V2t3", "t3V1"})
 }
 
@@ -59,7 +59,7 @@ func TestCheckType(t *testing.T) {
 	a.NotError(err).NotNil(tt)
 
 	tt, err = checkType(f, "t5")
-	a.Equal(err, errNotAllowedType).Nil(tt)
+	a.Equal(err, ErrNotAllowedType).Nil(tt)
 
 	tt, err = checkType(f, "not_exists")
 	a.Equal(err, web.NewLocaleError("not found enum type %s", "not_exists")).Nil(tt)
