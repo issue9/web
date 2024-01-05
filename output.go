@@ -69,6 +69,7 @@ func (ctx *Context) Render(status int, body any) {
 
 	data, err := ctx.Marshal(body)
 	if err != nil {
+		// [RFC7807.Apply] 并未调用 [Context.Render]，应该不会死循环。
 		ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
 		return
 	}

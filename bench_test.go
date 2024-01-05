@@ -172,7 +172,10 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 func BenchmarkNewRFC7807(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		p := newRFC7807()
-		p.Init("id", "title", "detail", 400)
+		p.Type = "id"
+		p.Title = "title"
+		p.Detail = "detail"
+		p.Status = 400
 		p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
 		rfc7807Pool.Put(p)
 	}
@@ -189,7 +192,10 @@ func BenchmarkRFC7807_unmarshal_json(b *testing.B) {
 	ctx := s.NewContext(w, r, types.NewContext())
 
 	p := newRFC7807()
-	p.Init("id", "title", "detail", 400)
+	p.Type = "id"
+	p.Title = "title"
+	p.Detail = "detail"
+	p.Status = 400
 	p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
 	for i := 0; i < b.N; i++ {
 		p.Apply(ctx)

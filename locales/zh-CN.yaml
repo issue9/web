@@ -319,6 +319,9 @@ messages:
     - key: unique identity generator
       message:
         msg: 唯一 ID 生成器
+    - key: unset callback name
+      message:
+        msg: 未设置回调方法的名称
     - key: unsupported serialization
       message:
         msg: 不支持序列化或是反序列化

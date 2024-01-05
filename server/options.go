@@ -117,7 +117,7 @@ type (
 		//
 		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
 		ProblemTypePrefix string
-		problems          *problems
+		problems          *web.Problems
 
 		// Init 其它的一些初始化操作
 		//
@@ -228,7 +228,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 	o.codec = c
 
-	o.problems = newProblems(o.ProblemTypePrefix)
+	o.problems = web.InternalNewProblems(o.ProblemTypePrefix)
 
 	return o, nil
 }

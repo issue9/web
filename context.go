@@ -220,7 +220,8 @@ func (ctx *Context) ID() string { return ctx.id }
 
 // SetCharset 设置输出的字符集
 //
-// 相当于重新设置了 [Context.Request] 的 Accept-Charset 报头，但是不会实际修改 [Context.Request]。
+// 不会修改 [Context.Request] 中的 Accept-Charset 报头，如果需要同时修改此报头
+// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
 func (ctx *Context) SetCharset(charset string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -242,7 +243,8 @@ func (ctx *Context) Charset() string { return ctx.outputCharsetName }
 
 // SetMimetype 设置输出的格式
 //
-// 相当于重新设置了 [Context.Request] 的 Accept 报头，但是不会实际修改 [Context.Request]。
+// 不会修改 [Context.Request] 中的 Accept 报头，如果需要同时修改此报头
+// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
 func (ctx *Context) SetMimetype(mimetype string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -264,6 +266,9 @@ func (ctx *Context) SetMimetype(mimetype string) {
 func (ctx *Context) Mimetype(problem bool) string { return ctx.outputMimetype.name(problem) }
 
 // SetEncoding 设置输出的压缩编码
+//
+// 不会修改 [Context.Request] 中的 Accept-Encoding 报头，如果需要同时修改此报头
+// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
 func (ctx *Context) SetEncoding(enc string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
@@ -294,7 +299,8 @@ func (ctx *Context) Encoding() string {
 
 // SetLanguage 修改输出的语言
 //
-// 相当于重新设置了 [Context.Request] 的 Accept-Language 报头，但是不会实际修改 [Context.Request]。
+// 不会修改 [Context.Request] 中的 Accept-Language 报头，如果需要同时修改此报头
+// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
 func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {

@@ -32,6 +32,7 @@ func main() {
 
 	makeID(buf, kvs)
 	makeIDs(buf, kvs)
+	makeInitProblems(buf, kvs)
 
 	if buf.Err != nil {
 		panic(buf.Err)
@@ -60,5 +61,20 @@ func makeIDs(buf *errwrap.Buffer, kvs []status.Pair) {
 		buf.Printf("%s:%s,\n", "http."+item.Name, item.ID())
 	}
 
+	buf.WString("}\n\n")
+}
+
+func makeInitProblems(buf *errwrap.Buffer, kvs []status.Pair) {
+	buf.WString("func initProblems(p*Problems){")
+
+	for _, item := range kvs {
+		status := "http." + item.Name
+		title := "problem." + strconv.Itoa(item.Value)
+		detail := title + ".detail"
+		title = "StringPhrase(\"" + title + "\")"
+		detail = "StringPhrase(\"" + detail + "\")"
+
+		buf.Printf(`p.Add(%s,&LocaleProblem{ID:%s,Title:%s,Detail:%s})`, status, item.ID(), title, detail).WByte('\n')
+	}
 	buf.WString("}\n\n")
 }

@@ -39,7 +39,7 @@ type httpServer struct {
 	closed chan struct{}
 	closes []func() error
 
-	problems        *problems
+	problems        *web.Problems
 	config          *config.Config
 	locale          *locale.Locale
 	disableCompress bool
@@ -183,3 +183,5 @@ func (srv *httpServer) NewClient(client *http.Client, selector web.Selector, mar
 func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
 
 func (srv *httpServer) SetCompress(enable bool) { srv.disableCompress = !enable }
+
+func (srv *httpServer) Problems() *web.Problems { return srv.problems }

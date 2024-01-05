@@ -7,7 +7,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -39,9 +38,8 @@ type testServer struct {
 	b               *InternalContextBuilder
 	disableCompress bool
 	locale          *locale.Locale
+	ps              *Problems
 }
-
-type testProblems struct{}
 
 func newTestServer(a *assert.Assertion) *testServer {
 	c := catalog.NewBuilder()
@@ -74,8 +72,11 @@ func newTestServer(a *assert.Assertion) *testServer {
 		unique: u,
 		cache:  cc,
 		locale: locale.New(l, nil, nil),
+		ps:     InternalNewProblems(""),
 	}
 	srv.b = InternalNewContextBuilder(srv, newCodec(a), header.RequestIDKey)
+
+	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
 	return srv
 }
@@ -140,22 +141,8 @@ func (s *testServer) CanCompress() bool { return !s.disableCompress }
 
 func (s *testServer) SetCompress(e bool) { s.disableCompress = !e }
 
-func (s *testServer) Problems() Problems { return &testProblems{} }
+func (s *testServer) Problems() *Problems { return s.ps }
 
 func (s *testServer) Locale() Locale { return s.locale }
-
-func (s *testProblems) Init(pp *RFC7807, id string, p *message.Printer) {
-	status, err := strconv.Atoi(id[:3])
-	if err != nil {
-		panic(err)
-	}
-	pp.Init(id, id+" title", id+" detail", status)
-}
-
-func (s *testProblems) Add(int, ...LocaleProblem) Problems { panic("未实现") }
-
-func (s *testProblems) Visit(func(string, int, LocaleStringer, LocaleStringer)) { panic("未实现") }
-
-func (s *testProblems) Prefix() string { return "" }
 
 func (s *testServer) Services() Services { panic("未实现") }
