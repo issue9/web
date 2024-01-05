@@ -59,9 +59,7 @@ type FilterFunc = func() (string, LocaleStringer)
 // v 必须是指针类型，否则无法对其内容进行修改；
 type FilterFuncOf[T any] func(name string, v *T) FilterFunc
 
-// RuleFuncOf 数据验证规则
-//
-// 这是验证器与错误信息的组合。
+// RuleFuncOf 验证器与错误信息的组合
 //
 // 传递参数为字段名与需要验证的值；
 // 返回字段名和错误信息，如果验证成功，则返回两个空值；
@@ -219,9 +217,9 @@ func (ctx *Context) newFilterContext(exitAtError bool) *FilterContext {
 //
 // name 为 f 中验证对象的整体名称；
 // f 为验证方法，其原型为 func(fp *FilterContext)
-// 往 fp 写入的信息，其字段名均会以 name 作为前缀写入到当前对象 v 中。
-// fp 的各种属性均继承自 v。
-func (v *FilterContext) New(name string, f func(f *FilterContext)) *FilterContext {
+// 往 c 参数写入的信息，其字段名均会以 name 作为前缀写入到当前对象 v 中。
+// c 的各种属性均继承自 v。
+func (v *FilterContext) New(name string, f func(c *FilterContext)) *FilterContext {
 	f(newFilterContext(v.exitAtError, v.name+name, v.Context(), v.problem))
 	return v
 }

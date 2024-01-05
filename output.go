@@ -70,7 +70,11 @@ func (ctx *Context) Render(status int, body any) {
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		// [Problem.Apply] 并未调用 [Context.Render]，应该不会死循环。
-		ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
+		if p, ok := err.(*Problem); ok {
+			p.Apply(ctx)
+		} else {
+			ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
+		}
 		return
 	}
 

@@ -22,7 +22,7 @@ func TestJSONP(t *testing.T) {
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 	a.NotError(err).NotNil(s)
-	Install("callback", s)
+	Install(s, "callback", web.ProblemBadRequest)
 
 	s.NewRouter("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
 		return web.OK("jsonp")
@@ -32,13 +32,13 @@ func TestJSONP(t *testing.T) {
 	defer s.Close(0)
 
 	servertest.Get(a, "http://localhost:8080/jsonp").Header("accept", Mimetype).Do(nil).
-		Status(http.StatusNotAcceptable). // 由 [web.Context.Render] 决定此值
+		Status(http.StatusBadRequest).
 		BodyEmpty()
 
 	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
 		StringBody(`cb("jsonp")`)
 
 	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
-		Status(http.StatusNotAcceptable).
+		Status(http.StatusBadRequest).
 		BodyEmpty()
 }
