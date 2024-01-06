@@ -16,7 +16,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/testdata"
 )
 
 type response struct {
@@ -36,7 +35,7 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.Accept, "application/json")
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
-	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	ctx.Render(http.StatusCreated, objectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Header().Get(header.ContentType), header.BuildContentType("application/json", "utf-8")).
 		Equal(w.Header().Get(header.ContentLang), "zh-Hans")
@@ -47,10 +46,10 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.AcceptLang, "")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
-	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	ctx.Render(http.StatusCreated, objectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Header().Get(header.ContentLang), language.SimplifiedChinese.String()).
-		Equal(w.Body.String(), testdata.ObjectJSONString)
+		Equal(w.Body.String(), objectJSONString)
 
 	// 输出 nil，content-type 和 content-language 均为空
 	w = httptest.NewRecorder()
@@ -72,8 +71,8 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.AcceptCharset, "gbk")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
-	ctx.Render(http.StatusCreated, testdata.ObjectInst)
-	a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
+	ctx.Render(http.StatusCreated, objectInst)
+	a.Equal(w.Body.Bytes(), objectGBKBytes)
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	w = httptest.NewRecorder()
@@ -84,12 +83,12 @@ func TestContext_Render(t *testing.T) {
 	r.Header.Set(header.AcceptEncoding, "deflate")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
-	ctx.Render(http.StatusCreated, testdata.ObjectInst)
+	ctx.Render(http.StatusCreated, objectInst)
 	srv.b.FreeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Header().Get(header.ContentEncoding), "deflate")
 	data, err := io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(data, testdata.ObjectGBKBytes)
+	a.NotError(err).Equal(data, objectGBKBytes)
 
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()
@@ -312,18 +311,18 @@ func TestCreated(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
 	s.NewContext(w, r, types.NewContext()).
-		apply(Created(testdata.ObjectInst, ""))
+		apply(Created(objectInst, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
-		Equal(w.Body.String(), testdata.ObjectJSONString).
+		Equal(w.Body.String(), objectJSONString).
 		Empty(w.Header().Get(header.Location))
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.Accept, "application/json")
 	s.NewContext(w, r, types.NewContext()).
-		apply(Created(testdata.ObjectInst, "/p2"))
+		apply(Created(objectInst, "/p2"))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
-		Equal(w.Body.String(), testdata.ObjectJSONString).
+		Equal(w.Body.String(), objectJSONString).
 		Equal(w.Header().Get(header.Location), "/p2")
 }
 

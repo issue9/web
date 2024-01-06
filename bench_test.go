@@ -14,7 +14,6 @@ import (
 	"github.com/issue9/mux/v7/types"
 
 	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/internal/testdata"
 )
 
 func BenchmarkNewContext(b *testing.B) {
@@ -43,10 +42,10 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := s.NewContext(w, r, types.NewContext())
-			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
+			ctx.apply(Response(http.StatusCreated, objectInst))
 			s.b.FreeContext(ctx)
 
-			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
+			a.Equal(w.Body.Bytes(), objectJSONString)
 		}
 	})
 
@@ -57,10 +56,10 @@ func BenchmarkContext_Render(b *testing.B) {
 			r.Header.Set(header.AcceptCharset, header.UTF8Name)
 			w := httptest.NewRecorder()
 			ctx := s.NewContext(w, r, types.NewContext())
-			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
+			ctx.apply(Response(http.StatusCreated, objectInst))
 			s.b.FreeContext(ctx)
 
-			a.Equal(w.Body.Bytes(), testdata.ObjectJSONString)
+			a.Equal(w.Body.Bytes(), objectJSONString)
 		}
 	})
 
@@ -72,10 +71,10 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := s.NewContext(w, r, types.NewContext())
-			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
+			ctx.apply(Response(http.StatusCreated, objectInst))
 			s.b.FreeContext(ctx)
 
-			a.Equal(w.Body.Bytes(), testdata.ObjectGBKBytes)
+			a.Equal(w.Body.Bytes(), objectGBKBytes)
 		}
 	})
 
@@ -88,12 +87,12 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 
 			ctx := s.NewContext(w, r, types.NewContext())
-			ctx.apply(Response(http.StatusCreated, testdata.ObjectInst))
+			ctx.apply(Response(http.StatusCreated, objectInst))
 			s.b.FreeContext(ctx)
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
 			a.NotError(err).NotNil(data)
-			a.Equal(data, testdata.ObjectGBKBytes)
+			a.Equal(data, objectGBKBytes)
 		}
 	})
 }
@@ -104,14 +103,14 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 		r.Header.Set(header.Accept, "application/json")
 		ctx := srv.NewContext(w, r, types.NewContext())
 
-		obj := &testdata.Object{}
+		obj := &object{}
 		a.NotError(ctx.Unmarshal(obj)).
-			Equal(obj, testdata.ObjectInst)
+			Equal(obj, objectInst)
 		srv.b.FreeContext(ctx)
 	}
 }
@@ -123,14 +122,14 @@ func BenchmarkPost(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(testdata.ObjectJSONString))
+		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 		r.Header.Set(header.Accept, "application/json")
 		ctx := srv.NewContext(w, r, types.NewContext())
 
-		o := &testdata.Object{}
+		o := &object{}
 		a.NotError(ctx.Unmarshal(o)).
-			Equal(o, testdata.ObjectInst)
+			Equal(o, objectInst)
 
 		o.Age++
 		o.Name = "response"
@@ -142,7 +141,7 @@ func BenchmarkPost(b *testing.B) {
 func BenchmarkContext_Object(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a)
-	o := &testdata.Object{}
+	o := &object{}
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
@@ -157,7 +156,7 @@ func BenchmarkContext_Object(b *testing.B) {
 func BenchmarkContext_Object_withHeader(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a)
-	o := &testdata.Object{}
+	o := &object{}
 
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()

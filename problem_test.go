@@ -22,11 +22,6 @@ var (
 	_ error     = &Problem{}
 )
 
-type object struct {
-	Name string
-	Age  int
-}
-
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
 func TestContext_Error(t *testing.T) {
 	a := assert.New(t, false)
@@ -40,7 +35,7 @@ func TestContext_Error(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewContext())
 		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:42") // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:37") // NOTE: 此测试依赖上一行的行号
 		a.Contains(srv.logBuf.String(), "log1 log2")
 		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusInternalServerError)
@@ -52,7 +47,7 @@ func TestContext_Error(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewContext())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:54") // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:49") // NOTE: 此测试依赖上一行的行号
 		a.Contains(srv.logBuf.String(), "log1 log2")
 		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, http.StatusBadRequest)
@@ -83,7 +78,7 @@ func TestContext_Error(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewContext())
 		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:85") // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:80") // NOTE: 此测试依赖上一行的行号
 		a.Contains(srv.logBuf.String(), "log1 log2")
 		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
@@ -95,7 +90,7 @@ func TestContext_Error(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewContext())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:97") // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:92") // NOTE: 此测试依赖上一行的行号
 		a.Contains(srv.logBuf.String(), "log1 log2")
 		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
 		a.Equal(w.Code, 411)
