@@ -7,7 +7,6 @@ import (
 	"container/ring"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 
@@ -22,14 +21,14 @@ import (
 type Selector interface {
 	// Next 返回下一个可用的服务节点地址
 	//
-	// 返回值应该是一个有效的 URL，且要满足以下条件：
+	// 返回值应该是一个有效的地址，且要满足以下条件：
 	//  - 不能以 / 结尾；
 	//  - 不包含查询参数及 fragment；
 	// 比如 https://example.com:8080/s1、/path。
-	Next() string
+	Next() (string, error)
 }
 
-type SelectorFunc func() string
+type SelectorFunc func() (string, error)
 
 // Client 用于访问远程的客户端
 //
@@ -46,52 +45,40 @@ type Client struct {
 	requestIDGen func() string
 }
 
-func (s SelectorFunc) Next() string { return s() }
+func (s SelectorFunc) Next() (string, error) { return s() }
 
-// URLSelector 单个 URL 组成的 [Selector] 接口
-func URLSelector(u string) Selector {
-	u = strings.TrimRight(u, "/")
-	if _, err := url.Parse(u); err != nil {
-		panic(err)
-	}
-
-	return SelectorFunc(func() string { return u })
-}
-
-// RingSelector 一组 url 循环调用的 [Selector] 对象
-func RingSelector(u ...string) Selector {
-	if len(u) == 0 {
-		panic("参数不能为空")
-	}
-
-	r := ring.New(len(u))
-	for _, uu := range u {
-		if _, err := url.Parse(uu); err != nil {
+// URLSelector 一组由 URL 组成的 [Selector] 实现
+//
+// 如果参数有多个，则依次轮番返回字符串。
+//
+// 如果参数格式错误将直接 panic。
+func URLSelector(u ...string) Selector {
+	switch len(u) {
+	case 0:
+		panic("参数 u 不能为空")
+	case 1:
+		s := strings.TrimRight(u[0], "/")
+		if _, err := url.Parse(s); err != nil {
 			panic(err)
 		}
 
-		r.Value = strings.TrimRight(uu, "/")
-		r = r.Next()
-	}
+		return SelectorFunc(func() (string, error) { return s, nil })
+	default:
+		r := ring.New(len(u))
+		for _, uu := range u {
+			if _, err := url.Parse(uu); err != nil {
+				panic(err)
+			}
 
-	return SelectorFunc(func() string {
-		v := r.Value.(string)
-		r = r.Next()
-		return v
-	})
-}
-
-// SelectorRewrite 将 [Selector] 转换成适用于 [httputil.ReverseProxy.Rewrite] 的方法
-//
-//	p := &httputil.ReverseProxy{Rewrite: SelectorRewrite(s)}
-func SelectorRewrite(s Selector, l Logger) func(*httputil.ProxyRequest) {
-	return func(r *httputil.ProxyRequest) {
-		u, err := url.Parse(s.Next())
-		if err != nil {
-			panic(err) // Selector 实现得不标准
+			r.Value = strings.TrimRight(uu, "/")
+			r = r.Next()
 		}
-		r.SetURL(u)
-		// r.Out.Host = r.In.Host
+
+		return SelectorFunc(func() (string, error) {
+			v := r.Value.(string)
+			r = r.Next()
+			return v, nil
+		})
 	}
 }
 
@@ -148,11 +135,8 @@ func (c *Client) Patch(path string, req, resp any, problem *Problem) error {
 // req 为提交的对象，最终是由初始化参数的 marshal 进行编码；
 // resp 为返回的数据的写入对象，必须是指针类型；
 // problem 为返回出错时的写入对象，如果包含自定义的 Extensions 字段，需要为其初始化为零值。
-// [Problem] 同时也实现了 error 接口，如果不需要特殊处理，可以直接作为错误处理；
-// 非 HTTP 状态码错误返回 err；
+// 非 HTTP 状态码错误返回 err，其它错误由 problem 参数反馈；
 func (c *Client) Do(method, path string, req, resp any, problem *Problem) error {
-	// NOTE: Problem 带有一个不确定类型的 Extensions 字段，所以只能由调用方初始化正确的值。
-
 	r, err := c.NewRequest(method, path, req)
 	if err != nil {
 		return err
@@ -171,6 +155,10 @@ func (c *Client) Do(method, path string, req, resp any, problem *Problem) error 
 func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *Problem) (err error) {
 	if rsp.ContentLength == 0 { // 204 可能为空
 		return nil
+	}
+
+	if problem == nil {
+		problem = &Problem{}
 	}
 
 	var reader io.Reader = rsp.Body
@@ -206,7 +194,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *Problem) (
 
 // NewRequest 生成 [http.Request]
 //
-// body 为需要提交的对象，采用 [Client.marshal] 进行序列化；
+// body 为需要提交的对象；
 func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, err error) {
 	var data []byte
 	if body != nil {
@@ -216,11 +204,15 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		}
 	}
 
+	if path, err = c.URL(path); err != nil {
+		return nil, err
+	}
+
 	var r *http.Request
 	if len(data) == 0 {
-		r, err = http.NewRequest(method, c.URL(path), nil)
+		r, err = http.NewRequest(method, path, nil)
 	} else {
-		r, err = http.NewRequest(method, c.URL(path), bytes.NewBuffer(data))
+		r, err = http.NewRequest(method, path, bytes.NewBuffer(data))
 	}
 	if err != nil {
 		return nil, err
@@ -236,6 +228,12 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 }
 
 // URL 生成一条访问地址
-func (c *Client) URL(path string) string { return c.selector.Next() + path }
+func (c *Client) URL(path string) (string, error) {
+	u, err := c.selector.Next()
+	if err != nil {
+		return "", err
+	}
+	return u + path, nil
+}
 
 func (c *Client) Client() *http.Client { return c.client }

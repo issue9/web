@@ -18,24 +18,31 @@ import (
 func TestURLSelector(t *testing.T) {
 	a := assert.New(t, false)
 
-	s := URLSelector("https://example.com").Next()
-	a.Equal(s, "https://example.com")
+	t.Run("0", func(*testing.T) {
+		a.PanicString(func() {
+			URLSelector()
+		}, "参数 u 不能为空")
+	})
 
-	s = URLSelector("https://example.com/").Next()
-	a.Equal(s, "https://example.com")
-}
+	t.Run("1", func(*testing.T) {
+		s, err := URLSelector("https://example.com").Next()
+		a.NotError(err).Equal(s, "https://example.com")
 
-func TestRingSelector(t *testing.T) {
-	a := assert.New(t, false)
+		s, err = URLSelector("https://example.com/").Next()
+		a.NotError(err).Equal(s, "https://example.com")
+	})
 
-	s := RingSelector("https://example.com", "/path/")
-	a.Equal(s.Next(), "https://example.com").
-		Equal(s.Next(), "/path").
-		Equal(s.Next(), "https://example.com")
+	t.Run(">1", func(*testing.T) {
+		s := URLSelector("https://example.com", "/path/")
+		a.NotNil(s)
 
-	a.PanicString(func() {
-		RingSelector()
-	}, "参数不能为空")
+		v, err := s.Next()
+		a.NotError(err).Equal(v, "https://example.com")
+		v, err = s.Next()
+		a.NotError(err).Equal(v, "/path")
+		v, err = s.Next()
+		a.NotError(err).Equal(v, "https://example.com")
+	})
 }
 
 func TestClient_NewRequest(t *testing.T) {
