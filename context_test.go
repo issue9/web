@@ -19,11 +19,7 @@ import (
 
 var _ http.ResponseWriter = &Context{}
 
-func (ctx *Context) apply(r Responser) {
-	if p := r.Apply(ctx); p != nil {
-		p.Apply(ctx) // Problem.Apply 始终返回 nil
-	}
-}
+func (ctx *Context) apply(r Responser) { r.Apply(ctx) }
 
 func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Context {
 	if w == nil {

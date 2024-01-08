@@ -54,10 +54,7 @@ func TestInstallView(t *testing.T) {
 
 	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
-			ctx.Render(200, &obj{})
-			return nil
-		})
+		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(200, &obj{}) })
 	})
 
 	servertest.Get(a, "http://localhost:8080/path").
@@ -89,10 +86,7 @@ func TestInstallDirView(t *testing.T) {
 
 	r := s.NewRouter("def", nil)
 	r.Get("/path", func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
-			ctx.Render(200, &obj{})
-			return nil
-		})
+		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(200, &obj{}) })
 	})
 	servertest.Get(a, "http://localhost:8080/path").
 		Header(header.AcceptLang, "cmn-hans").

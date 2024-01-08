@@ -24,10 +24,7 @@ var _ web.Server = &httpServer{}
 
 func buildHandler(code int) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
-		return web.ResponserFunc(func(ctx *web.Context) *web.Problem {
-			ctx.Render(code, code)
-			return nil
-		})
+		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(code, code) })
 	}
 }
 

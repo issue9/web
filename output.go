@@ -16,16 +16,14 @@ import (
 type Responser interface {
 	// Apply 通过 [Context] 将当前内容渲染到客户端
 	//
-	// 如果执行过程出现问题可返回 [Problem] 对象作为错误信息的描述。
-	//
 	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
 	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
-	Apply(*Context) *Problem
+	Apply(*Context)
 }
 
-type ResponserFunc func(*Context) *Problem
+type ResponserFunc func(*Context)
 
-func (f ResponserFunc) Apply(c *Context) *Problem { return f(c) }
+func (f ResponserFunc) Apply(c *Context) { f(c) }
 
 // Wrap 替换底层的 [http.ResponseWriter] 对象
 //
@@ -171,17 +169,18 @@ func (ctx *Context) SetCookies(c ...*http.Cookie) {
 // 如果返回的是 []byte 类型，会原样输出，
 // 其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) {
 		if ctx.Request().Method == http.MethodGet {
 			if tag, weak := etag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
 				ctx.WriteHeader(http.StatusNotModified)
-				return nil
+				return
 			}
 		}
 
 		b, err := body()
 		if err != nil {
-			return ctx.Error(err, ProblemInternalServerError)
+			ctx.Error(err, ProblemInternalServerError).Apply(ctx)
+			return
 		}
 
 		var data []byte
@@ -189,7 +188,8 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 			data = d
 		} else {
 			if data, err = ctx.Marshal(b); err != nil {
-				return ctx.Error(err, ProblemNotAcceptable)
+				ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
+				return
 			}
 		}
 
@@ -197,8 +197,6 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 		if _, err := ctx.Write(data); err != nil {
 			ctx.Logs().ERROR().Error(err)
 		}
-
-		return nil
 	})
 }
 
@@ -213,12 +211,11 @@ func Status(code int, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
 		ctx.WriteHeader(code)
-		return nil
 	})
 }
 
@@ -232,12 +229,11 @@ func Response(status int, body any, kv ...string) Responser {
 		panic("kv 必须偶数位")
 	}
 
-	return ResponserFunc(func(ctx *Context) *Problem {
+	return ResponserFunc(func(ctx *Context) {
 		for i := 0; i < l; i += 2 {
 			ctx.Header().Add(kv[i], kv[i+1])
 		}
 		ctx.Render(status, body)
-		return nil
 	})
 }
 
@@ -260,8 +256,7 @@ func Redirect(status int, url string) Responser {
 
 // KeepAlive 保持当前会话不退出
 func KeepAlive(ctx context.Context) Responser {
-	return ResponserFunc(func(*Context) *Problem {
+	return ResponserFunc(func(*Context) {
 		<-ctx.Done()
-		return nil
 	})
 }

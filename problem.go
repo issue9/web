@@ -28,8 +28,8 @@ type (
 		Detail     string         `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty"`
 		Instance   string         `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty"`
 		Status     int            `json:"status" xml:"status" form:"status"`
-		Extensions any            `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty"` // 反馈给用户的信息
 		Params     []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty"`           // 用户提交对象各个字段的错误信息
+		Extensions any            `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty"` // 反馈给用户的信息
 	}
 
 	ProblemParam struct {
@@ -64,9 +64,7 @@ func newProblem() *Problem {
 
 func (p *Problem) Error() string { return p.Title }
 
-func (p *Problem) Apply(ctx *Context) *Problem {
-	// NOTE: 此方法要始终返回 nil
-
+func (p *Problem) Apply(ctx *Context) {
 	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLang, id)
@@ -77,7 +75,7 @@ func (p *Problem) Apply(ctx *Context) *Problem {
 	data, err := ctx.Marshal(p)
 	if err != nil {
 		ctx.Logs().ERROR().Error(err)
-		return nil
+		return
 	}
 	if _, err = ctx.Write(data); err != nil {
 		ctx.Logs().ERROR().Error(err)
@@ -86,7 +84,6 @@ func (p *Problem) Apply(ctx *Context) *Problem {
 	if len(p.Params) < 30 {
 		problemPool.Put(p)
 	}
-	return nil
 }
 
 // WithParam 添加具体的错误字段及描述信息
