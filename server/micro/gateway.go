@@ -2,37 +2,34 @@
 
 package micro
 
-import "github.com/issue9/web"
+import (
+	"github.com/issue9/web"
+	"github.com/issue9/web/server/micro/registry"
+)
 
 type Gateway struct {
 	web.Server
-	registry Registry
-	services []Options
+	registry registry.Registry
+	mapper   registry.Mapper
 }
 
 // NewGateway 声明网关
-func NewGateway(s web.Server, r Registry) *Gateway {
+func NewGateway(s web.Server, r registry.Registry, mapper registry.Mapper) web.Server {
 	return &Gateway{
 		Server:   s,
 		registry: r,
+		mapper:   mapper,
 	}
 }
 
 func (g *Gateway) Serve() error {
-	opts, err := g.registry.Services()
-	if err != nil {
-		return err
-	}
+	proxy := g.registry.ReverseProxy(g.mapper)
 
-	// TODO
-
-	for _, opt := range opts {
-		r := g.NewRouter(opt.Name, opt.Matcher)
-		r.Any("{path}", func(ctx *web.Context) web.Responser {
-			// TODO
-			return ctx.NotImplemented()
-		})
-	}
+	r := g.NewRouter("proxy", nil)
+	r.Any("{path}", func(ctx *web.Context) web.Responser {
+		proxy.ServeHTTP(ctx, ctx.Request())
+		return nil
+	})
 
 	return g.Server.Serve()
 }
