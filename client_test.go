@@ -13,43 +13,16 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/selector"
 )
-
-func TestURLSelector(t *testing.T) {
-	a := assert.New(t, false)
-
-	t.Run("0", func(*testing.T) {
-		a.PanicString(func() {
-			URLSelector()
-		}, "参数 u 不能为空")
-	})
-
-	t.Run("1", func(*testing.T) {
-		s, err := URLSelector("https://example.com").Next()
-		a.NotError(err).Equal(s, "https://example.com")
-
-		s, err = URLSelector("https://example.com/").Next()
-		a.NotError(err).Equal(s, "https://example.com")
-	})
-
-	t.Run(">1", func(*testing.T) {
-		s := URLSelector("https://example.com", "/path/")
-		a.NotNil(s)
-
-		v, err := s.Next()
-		a.NotError(err).Equal(v, "https://example.com")
-		v, err = s.Next()
-		a.NotError(err).Equal(v, "/path")
-		v, err = s.Next()
-		a.NotError(err).Equal(v, "https://example.com")
-	})
-}
 
 func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
 	codec := newCodec(a)
 
-	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal, header.RequestIDKey, func() string { return "123" })
+	sel := selector.NewRoundRobin(false, 1)
+	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	c := NewClient(nil, codec, sel, "application/json", json.Marshal, header.RequestIDKey, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -66,7 +39,9 @@ func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	codec := newCodec(a)
 
-	c := NewClient(nil, codec, URLSelector("https://example.com"), "application/json", json.Marshal, "", nil)
+	sel := selector.NewRoundRobin(false, 1)
+	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	c := NewClient(nil, codec, sel, "application/json", json.Marshal, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

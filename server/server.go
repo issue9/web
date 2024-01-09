@@ -19,6 +19,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/selector"
 )
 
 type httpServer struct {
@@ -176,8 +177,8 @@ func (srv *httpServer) Config() *config.Config { return srv.config }
 
 func (srv *httpServer) Locale() web.Locale { return srv.locale }
 
-func (srv *httpServer) NewClient(client *http.Client, selector web.Selector, marshalName string, marshal func(any) ([]byte, error)) *web.Client {
-	return web.NewClient(client, srv.ctxBuilder.Codec(), selector, marshalName, marshal, srv.ctxBuilder.RequestIDKey(), srv.UniqueID)
+func (srv *httpServer) NewClient(c *http.Client, s selector.Selector, m string, marshal func(any) ([]byte, error)) *web.Client {
+	return web.NewClient(c, srv.ctxBuilder.Codec(), s, m, marshal, srv.ctxBuilder.RequestIDKey(), srv.UniqueID)
 }
 
 func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
