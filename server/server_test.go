@@ -275,7 +275,7 @@ func TestServer_NewClient(t *testing.T) {
 	})
 
 	sel := selector.NewRoundRobin(false, 1)
-	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	a.NotError(sel.Add(selector.NewPeer("http://localhost:8080")))
 	c := s.NewClient(nil, sel, "application/json", sj.Marshal)
 	a.NotNil(c)
 
