@@ -4,31 +4,16 @@ package web
 
 import (
 	"bytes"
-	"container/ring"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/status"
+	"github.com/issue9/web/selector"
 )
-
-// Selector 对远程服务节点的选择接口
-type Selector interface {
-	// Next 返回下一个可用的服务节点地址
-	//
-	// 返回值应该是一个有效的地址，且要满足以下条件：
-	//  - 不能以 / 结尾；
-	//  - 不包含查询参数及 fragment；
-	// 比如 https://example.com:8080/s1、/path。
-	Next() (string, error)
-}
-
-type SelectorFunc func() (string, error)
 
 // Client 用于访问远程的客户端
 //
@@ -36,7 +21,7 @@ type SelectorFunc func() (string, error)
 type Client struct {
 	client   *http.Client
 	codec    *Codec
-	selector Selector
+	selector selector.Selector
 
 	marshal     func(any) ([]byte, error)
 	marshalName string
@@ -45,50 +30,13 @@ type Client struct {
 	requestIDGen func() string
 }
 
-func (s SelectorFunc) Next() (string, error) { return s() }
-
-// URLSelector 一组由 URL 组成的 [Selector] 实现
-//
-// 如果参数有多个，则依次轮番返回字符串。
-//
-// 如果参数格式错误将直接 panic。
-func URLSelector(u ...string) Selector {
-	switch len(u) {
-	case 0:
-		panic("参数 u 不能为空")
-	case 1:
-		s := strings.TrimRight(u[0], "/")
-		if _, err := url.Parse(s); err != nil {
-			panic(err)
-		}
-
-		return SelectorFunc(func() (string, error) { return s, nil })
-	default:
-		r := ring.New(len(u))
-		for _, uu := range u {
-			if _, err := url.Parse(uu); err != nil {
-				panic(err)
-			}
-
-			r.Value = strings.TrimRight(uu, "/")
-			r = r.Next()
-		}
-
-		return SelectorFunc(func() (string, error) {
-			v := r.Value.(string)
-			r = r.Next()
-			return v, nil
-		})
-	}
-}
-
 // NewClient 创建 Client 实例
 //
 // client 要以为空，表示采用 &http.Client{} 作为默认值；
 // marshalName 和 marshal 表示编码的名称和方法；
 // requestIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
 // requestIDGen 表示生成 x-request-id 值的方法；
-func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName string, marshal func(any) ([]byte, error), requestIDKey string, requestIDGen func() string) *Client {
+func NewClient(client *http.Client, codec *Codec, s selector.Selector, marshalName string, marshal func(any) ([]byte, error), requestIDKey string, requestIDGen func() string) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
@@ -100,7 +48,7 @@ func NewClient(client *http.Client, codec *Codec, selector Selector, marshalName
 	return &Client{
 		client:   client,
 		codec:    codec,
-		selector: selector,
+		selector: s,
 
 		marshalName: marshalName,
 		marshal:     marshal,

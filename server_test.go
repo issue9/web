@@ -24,6 +24,7 @@ import (
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/selector"
 )
 
 var _ Locale = &locale.Locale{}
@@ -99,8 +100,8 @@ func (s *testServer) Logs() *Logs { return s.logs }
 
 func (s *testServer) Name() string { return "test" }
 
-func (s *testServer) NewClient(client *http.Client, selector Selector, marshalName string, m func(any) ([]byte, error)) *Client {
-	panic("未实现")
+func (s *testServer) NewClient(c *http.Client, sel selector.Selector, mn string, m func(any) ([]byte, error)) *Client {
+	return NewClient(c, s.b.codec, sel, mn, m, s.b.requestIDKey, s.unique.String)
 }
 
 func (s *testServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {

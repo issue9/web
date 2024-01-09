@@ -10,6 +10,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/mimetype/form"
+	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/nop"
@@ -44,6 +45,7 @@ type mimetypeConfig struct {
 	//  - json
 	//  - form
 	//  - html
+	//  - gob
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
 	Target string `json:"target" yaml:"target" xml:"target,attr"`
 }
@@ -88,5 +90,6 @@ func init() {
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
+	RegisterMimetype(gob.Marshal, gob.Unmarshal, "gob")
 	RegisterMimetype(nop.Marshal, nop.Unmarshal, "nop")
 }

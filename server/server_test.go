@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/xml"
+	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -273,7 +274,9 @@ func TestServer_NewClient(t *testing.T) {
 		return web.OK(obj)
 	})
 
-	c := s.NewClient(nil, web.URLSelector("http://localhost:8080"), "application/json", sj.Marshal)
+	sel := selector.NewRoundRobin(false, 1)
+	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	c := s.NewClient(nil, sel, "application/json", sj.Marshal)
 	a.NotNil(c)
 
 	resp := &object{}

@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/web/selector"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -103,7 +104,7 @@ type Server interface {
 	// NewClient 基于当前对象的相关字段创建 [Client] 对象
 	//
 	// 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
-	NewClient(client *http.Client, selector Selector, marshalName string, marshal func(any) ([]byte, error)) *Client
+	NewClient(client *http.Client, s selector.Selector, marshalName string, marshal func(any) ([]byte, error)) *Client
 
 	// SetCompress 设置压缩功能
 	//
