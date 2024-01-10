@@ -4,4 +4,4 @@ package micro
 
 import "github.com/issue9/web"
 
-var _ web.Server = &Service{}
+var _ web.Server = &service{}

@@ -10,8 +10,8 @@ import (
 	"github.com/issue9/web/server/micro/registry"
 )
 
-// Service 微服务
-type Service struct {
+// service 微服务
+type service struct {
 	web.Server
 	registry registry.Registry
 	dreg     registry.DeregisterFunc
@@ -21,14 +21,14 @@ type Service struct {
 
 // NewService 将 [web.Server] 作为微服务节点
 func NewService(s web.Server, r registry.Registry, peer selector.Peer) web.Server {
-	return &Service{
+	return &service{
 		Server:   s,
 		registry: r,
 		peer:     peer,
 	}
 }
 
-func (s *Service) Serve() error {
+func (s *service) Serve() error {
 	dreg, err := s.registry.Register(s.Name(), s.peer)
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (s *Service) Serve() error {
 	return s.Server.Serve()
 }
 
-func (s *Service) Close(shutdown time.Duration) {
+func (s *service) Close(shutdown time.Duration) {
 	if err := s.dreg(); err != nil {
 		s.Logs().ERROR().Error(err)
 	}

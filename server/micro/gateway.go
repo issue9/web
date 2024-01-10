@@ -7,7 +7,7 @@ import (
 	"github.com/issue9/web/server/micro/registry"
 )
 
-type Gateway struct {
+type gateway struct {
 	web.Server
 	registry registry.Registry
 	mapper   registry.Mapper
@@ -15,14 +15,14 @@ type Gateway struct {
 
 // NewGateway 声明网关
 func NewGateway(s web.Server, r registry.Registry, mapper registry.Mapper) web.Server {
-	return &Gateway{
+	return &gateway{
 		Server:   s,
 		registry: r,
 		mapper:   mapper,
 	}
 }
 
-func (g *Gateway) Serve() error {
+func (g *gateway) Serve() error {
 	proxy := g.registry.ReverseProxy(g.mapper)
 
 	r := g.NewRouter("proxy", nil)

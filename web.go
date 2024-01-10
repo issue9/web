@@ -10,7 +10,6 @@
 package web
 
 import (
-	"context"
 	"io"
 
 	"github.com/issue9/cache"
@@ -21,20 +20,12 @@ import (
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/query/v3"
-	"github.com/issue9/scheduled"
 
 	"github.com/issue9/web/internal/errs"
 )
 
 // Version 当前框架的版本
 const Version = "0.87.0"
-
-// 服务的几种状态
-const (
-	Stopped = scheduled.Stopped // 停止状态，默认状态
-	Running = scheduled.Running // 正在运行
-	Failed  = scheduled.Failed  // 出错，不再执行后续操作
-)
 
 type (
 	Logger   = logs.Logger
@@ -54,29 +45,6 @@ type (
 	LocaleStringer = localeutil.Stringer
 
 	StringPhrase = localeutil.StringPhrase
-
-	// Service 长期运行的服务需要实现的接口
-	Service interface {
-		// Serve 运行服务
-		//
-		// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
-		// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
-		Serve(context.Context) error
-	}
-
-	ServiceFunc func(context.Context) error
-
-	// State 服务状态
-	//
-	// 以下设置用于 restdoc
-	//
-	// @type string
-	// @enum stopped running failed
-	State = scheduled.State
-
-	JobFunc       = scheduled.JobFunc
-	Scheduler     = scheduled.Scheduler
-	SchedulerFunc = scheduled.SchedulerFunc
 
 	Router         = mux.RouterOf[HandlerFunc]
 	Prefix         = mux.PrefixOf[HandlerFunc]
@@ -111,8 +79,6 @@ type (
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }
-
-func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 
 // Phrase 生成本地化的语言片段
 func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }

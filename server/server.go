@@ -32,7 +32,7 @@ type httpServer struct {
 	routers     *group.GroupOf[web.HandlerFunc]
 	idGenerator IDGenerator
 	state       web.State
-	services    *services
+	services    *web.Services
 	ctxBuilder  *web.InternalContextBuilder
 	location    *time.Location
 	logs        *web.Logs
@@ -87,7 +87,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
 	srv.OnClose(srv.cache.Close)
-	srv.initServices()
+	srv.services = web.InternalNewServices(srv)
 
 	for _, f := range o.Init { // NOTE: 需要保证在最后
 		f(srv)
@@ -186,3 +186,5 @@ func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
 func (srv *httpServer) SetCompress(enable bool) { srv.disableCompress = !enable }
 
 func (srv *httpServer) Problems() *web.Problems { return srv.problems }
+
+func (srv *httpServer) Services() *web.Services { return srv.services }

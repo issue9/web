@@ -4,9 +4,10 @@ package web
 
 import (
 	"bytes"
-	"context"
+	"fmt"
 	"net/http"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -40,6 +41,8 @@ type testServer struct {
 	disableCompress bool
 	locale          *locale.Locale
 	ps              *Problems
+	services        *Services
+	closes          []func() error
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
@@ -48,7 +51,6 @@ func newTestServer(a *assert.Assertion) *testServer {
 	a.NotError(c.SetString(language.TraditionalChinese, "lang", "tw"))
 
 	l := language.SimplifiedChinese
-
 	p := message.NewPrinter(l, message.Catalog(c))
 
 	logBuf := new(bytes.Buffer)
@@ -61,21 +63,21 @@ func newTestServer(a *assert.Assertion) *testServer {
 	)
 	a.NotNil(log)
 
-	u := unique.NewNumber(100)
-	go u.Serve(context.Background())
-
-	cc, _ := memory.New()
-
+	cc, gc := memory.New()
 	srv := &testServer{
 		a:      a,
 		logs:   log,
 		logBuf: logBuf,
-		unique: u,
+		unique: unique.NewNumber(100),
 		cache:  cc,
-		locale: locale.New(l, nil, nil),
+		locale: locale.New(l, nil, c),
 		ps:     InternalNewProblems(""),
+		closes: make([]func() error, 0, 10),
 	}
 	srv.b = InternalNewContextBuilder(srv, newCodec(a), header.RequestIDKey)
+	srv.services = InternalNewServices(srv)
+	srv.Services().Add(Phrase("unique"), srv.unique)
+	srv.Services().AddTicker(Phrase("gc memory"), func(t time.Time) error { gc(t); return nil }, time.Minute, false, false)
 
 	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
@@ -84,7 +86,14 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 func (s *testServer) Cache() cache.Cleanable { return s.cache }
 
-func (s *testServer) Close(shutdownTimeout time.Duration) { panic("未实现") }
+func (s *testServer) Close(shutdownTimeout time.Duration) {
+	slices.Reverse(s.closes)
+	for _, c := range s.closes {
+		if err := c(); err != nil {
+			fmt.Println(err)
+		}
+	}
+}
 
 func (s *testServer) CompressIsDisable() bool { panic("未实现") }
 
@@ -114,7 +123,7 @@ func (s *testServer) NewRouter(name string, matcher RouterMatcher, o ...RouterOp
 
 func (s *testServer) Now() time.Time { return time.Now().In(s.Location()) }
 
-func (s *testServer) OnClose(f ...func() error) { panic("未实现") }
+func (s *testServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
 
 func (s *testServer) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, s.Location())
@@ -146,4 +155,4 @@ func (s *testServer) Problems() *Problems { return s.ps }
 
 func (s *testServer) Locale() Locale { return s.locale }
 
-func (s *testServer) Services() Services { panic("未实现") }
+func (s *testServer) Services() *Services { return s.services }

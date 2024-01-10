@@ -3,7 +3,6 @@
 package web
 
 import (
-	"context"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -120,7 +119,7 @@ type Server interface {
 	Problems() *Problems
 
 	// Services 服务管理接口
-	Services() Services
+	Services() *Services
 
 	// Locale 提供本地化相关功能
 	Locale() Locale
@@ -164,73 +163,4 @@ type Locale interface {
 	//
 	// 功能同 [catalog.Builder.Set]
 	Set(tag language.Tag, key string, msg ...catalog.Message) error
-}
-
-// Services 服务管理接口
-type Services interface {
-	// Add 添加并运行新的服务
-	//
-	// title 是对该服务的简要说明；
-	Add(title LocaleStringer, f Service)
-
-	// AddFunc 将函数 f 作为服务添加并运行
-	AddFunc(title LocaleStringer, f func(context.Context) error)
-
-	// AddCron 添加新的定时任务
-	//
-	// title 是对该服务的简要说明；
-	// spec cron 表达式，支持秒；
-	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-	//
-	// NOTE: 此功能依赖 [Server.UniqueID]。
-	AddCron(title LocaleStringer, f JobFunc, spec string, delay bool)
-
-	// AddAt 添加在某个时间点执行的任务
-	//
-	// title 是对该服务的简要说明；
-	// at 指定的时间点；
-	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-	//
-	// NOTE: 此功能依赖 [Server.UniqueID]。
-	AddAt(title LocaleStringer, job JobFunc, at time.Time, delay bool)
-
-	// AddJob 添加新的计划任务
-	//
-	// title 是对该服务的简要说明；
-	// scheduler 计划任务的时间调度算法实现；
-	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-	//
-	// NOTE: 此功能依赖 [Server.UniqueID]。
-	AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, delay bool)
-
-	// AddTicker 添加新的定时任务
-	//
-	// title 是对该服务的简要说明；
-	// dur 时间间隔；
-	// imm 是否立即执行一次该任务；
-	// delay 是否在任务执行完之后，才计算下一次的执行时间点。
-	//
-	// NOTE: 此功能依赖 [Server.UniqueID]。
-	AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool)
-
-	// Visit 访问所有的服务
-	//
-	// visit 的原型为：
-	//  func(title LocaleStringer, state State, err error)
-	//
-	// title 为服务的说明；
-	// state 为服务的当前状态；
-	// err 只在 state 为 [Failed] 时才有的错误说明；
-	Visit(visit func(title LocaleStringer, state State, err error))
-
-	// VisitJobs 访问所有的计划任务
-	//
-	// visit 原型为：
-	//  func(title LocaleStringer, prev, next time.Time, state State, delay bool, err error)
-	// title 为计划任务的说明；
-	// prev 和 next 表示任务的上一次执行时间和下一次执行时间；
-	// state 表示当前的状态；
-	// delay 表示该任务是否是执行完才开始计算下一次任务时间的；
-	// err 表示这个任务的出错状态；
-	VisitJobs(visit func(LocaleStringer, time.Time, time.Time, State, bool, error))
 }
