@@ -36,7 +36,7 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	b       *InternalContextBuilder
+	b       *InternalServer
 	route   types.Route
 	request *http.Request
 	exits   []func(*Context, int)
@@ -69,40 +69,10 @@ type Context struct {
 	logs *AttrLogs
 }
 
-// InternalContextBuilder 提供了创建 [Context] 的相关方法
-type InternalContextBuilder struct {
-	server       Server
-	requestIDKey string
-	codec        *Codec
-}
-
-// InternalNewContextBuilder 声明 [InternalContextBuilder]
-//
-// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
-func InternalNewContextBuilder(s Server, codec *Codec, requestIDKey string) *InternalContextBuilder {
-	if s == nil {
-		panic("s 不能为空")
-	}
-
-	if requestIDKey == "" {
-		requestIDKey = header.RequestIDKey
-	}
-
-	return &InternalContextBuilder{
-		server:       s,
-		requestIDKey: requestIDKey,
-		codec:        codec,
-	}
-}
-
-func (b *InternalContextBuilder) Codec() *Codec { return b.codec }
-
-func (b *InternalContextBuilder) RequestIDKey() string { return b.requestIDKey }
-
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (b *InternalContextBuilder) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	id := r.Header.Get(b.RequestIDKey())
 
 	h := r.Header.Get(header.Accept)
@@ -314,7 +284,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // FreeContext 释放 ctx
-func (b *InternalContextBuilder) FreeContext(ctx *Context) {
+func (b *InternalServer) FreeContext(ctx *Context) {
 	slices.Reverse(ctx.exits)
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)

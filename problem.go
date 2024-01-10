@@ -160,15 +160,16 @@ func (v *FilterContext) Problem(id string) Responser {
 	return v.Context().initProblem(v.problem, id)
 }
 
-func InternalNewProblems(prefix string) *Problems {
+func newProblems(prefix string) *Problems {
 	ps := &Problems{
 		prefix:   prefix,
 		problems: make([]*LocaleProblem, 0, 100),
 	}
 	initProblems(ps)
-
 	return ps
 }
+
+func (s *InternalServer) Problems() *Problems { return s.problems }
 
 // Prefix 所有 ID 的统一前缀
 func (ps *Problems) Prefix() string { return ps.prefix }

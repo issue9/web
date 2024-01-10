@@ -32,15 +32,13 @@ type httpServer struct {
 	routers     *group.GroupOf[web.HandlerFunc]
 	idGenerator IDGenerator
 	state       web.State
-	services    *web.Services
-	ctxBuilder  *web.InternalContextBuilder
+	s           *web.InternalServer
 	location    *time.Location
 	logs        *web.Logs
 
 	closed chan struct{}
 	closes []func() error
 
-	problems        *web.Problems
 	config          *config.Config
 	locale          *locale.Locale
 	disableCompress bool
@@ -73,12 +71,11 @@ func New(name, version string, o *Options) (web.Server, error) {
 		closed: make(chan struct{}, 1),
 		closes: make([]func() error, 0, 10),
 
-		problems: o.problems,
-		locale:   o.locale,
-		config:   o.config,
+		locale: o.locale,
+		config: o.config,
 	}
 
-	srv.ctxBuilder = web.InternalNewContextBuilder(srv, o.codec, o.RequestIDKey)
+	srv.s = web.InternalNewServer(srv, o.codec, o.RequestIDKey, o.ProblemTypePrefix)
 
 	srv.routers = group.NewOf(srv.call,
 		notFound,
@@ -87,7 +84,6 @@ func New(name, version string, o *Options) (web.Server, error) {
 		o.RoutersOptions...)
 	srv.httpServer.Handler = srv.routers
 	srv.OnClose(srv.cache.Close)
-	srv.services = web.InternalNewServices(srv)
 
 	for _, f := range o.Init { // NOTE: 需要保证在最后
 		f(srv)
@@ -178,13 +174,13 @@ func (srv *httpServer) Config() *config.Config { return srv.config }
 func (srv *httpServer) Locale() web.Locale { return srv.locale }
 
 func (srv *httpServer) NewClient(c *http.Client, s selector.Selector, m string, marshal func(any) ([]byte, error)) *web.Client {
-	return web.NewClient(c, srv.ctxBuilder.Codec(), s, m, marshal, srv.ctxBuilder.RequestIDKey(), srv.UniqueID)
+	return web.NewClient(c, srv.s.Codec(), s, m, marshal, srv.s.RequestIDKey(), srv.UniqueID)
 }
 
 func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
 
 func (srv *httpServer) SetCompress(enable bool) { srv.disableCompress = !enable }
 
-func (srv *httpServer) Problems() *web.Problems { return srv.problems }
+func (srv *httpServer) Problems() *web.Problems { return srv.s.Problems() }
 
-func (srv *httpServer) Services() *web.Services { return srv.services }
+func (srv *httpServer) Services() *web.Services { return srv.s.Services() }

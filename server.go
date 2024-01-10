@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/selector"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -164,3 +165,42 @@ type Locale interface {
 	// 功能同 [catalog.Builder.Set]
 	Set(tag language.Tag, key string, msg ...catalog.Message) error
 }
+
+// InternalServer 这是一个内部使用的类型，提供了部分 [Server] 接口的实现
+type InternalServer struct {
+	server       Server
+	requestIDKey string
+	codec        *Codec
+	services     *Services
+	problems     *Problems
+}
+
+// InternalNewServer 声明 [InternalServer]
+//
+// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
+// problemPrefix 如果为空会采用 [ProblemAboutBlank] 作为默认值；
+func InternalNewServer(s Server, codec *Codec, requestIDKey, problemPrefix string) *InternalServer {
+	if s == nil {
+		panic("s 不能为空")
+	}
+
+	if requestIDKey == "" {
+		requestIDKey = header.RequestIDKey
+	}
+
+	if problemPrefix == "" {
+		problemPrefix = ProblemAboutBlank
+	}
+
+	return &InternalServer{
+		server:       s,
+		requestIDKey: requestIDKey,
+		codec:        codec,
+		services:     initServices(s),
+		problems:     newProblems(problemPrefix),
+	}
+}
+
+func (s *InternalServer) Codec() *Codec { return s.codec }
+
+func (s *InternalServer) RequestIDKey() string { return s.requestIDKey }

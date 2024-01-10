@@ -65,19 +65,22 @@ type (
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 
-func InternalNewServices(srv Server) *Services {
-	ctx, cancel := context.WithCancelCause(context.Background())
-	srv.OnClose(func() error { cancel(http.ErrServerClosed); return nil })
+func (s *InternalServer) Services() *Services { return s.services }
 
-	s := &Services{
-		s:         srv,
+func initServices(s Server) *Services {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	s.OnClose(func() error { cancel(http.ErrServerClosed); return nil })
+
+	ss := &Services{
+		s:         s,
 		services:  make([]*service, 0, 5),
 		ctx:       ctx,
-		scheduled: scheduled.NewServer(srv.Location(), srv.Logs().ERROR(), srv.Logs().DEBUG()),
+		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
 		jobTitles: make(map[string]LocaleStringer, 10),
 	}
-	s.Add(StringPhrase("scheduler jobs"), s.scheduled)
-	return s
+	ss.Add(StringPhrase("scheduler jobs"), ss.scheduled)
+
+	return ss
 }
 
 func (srv *service) setState(s State) {

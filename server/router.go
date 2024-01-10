@@ -3,12 +3,16 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/issue9/logs/v7"
+	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/types"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
 )
 
@@ -33,12 +37,12 @@ func (srv *httpServer) call(w http.ResponseWriter, r *http.Request, route types.
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
 		}
-		srv.ctxBuilder.FreeContext(ctx)
+		srv.s.FreeContext(ctx)
 	}
 }
 
 func (srv *httpServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *web.Context {
-	return srv.ctxBuilder.NewContext(w, r, route)
+	return srv.s.NewContext(w, r, route)
 }
 
 // NewRouter 声明新路由
@@ -63,3 +67,25 @@ func (srv *httpServer) UseMiddleware(m ...web.Middleware) { srv.routers.Use(m...
 
 // Routers 返回路由列表
 func (srv *httpServer) Routers() []*web.Router { return srv.routers.Routers() }
+
+// Recovery 在路由奔溃之后的处理方式
+//
+// 相对于 [mux.Recovery] 的相关功能，提供了对 [web.NewError] 错误的处理。
+func Recovery(l *logs.Logger) mux.Option {
+	return mux.Recovery(func(w http.ResponseWriter, msg any) {
+		err, ok := msg.(error)
+		if !ok {
+			l.Print(msg)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		he := &errs.HTTP{}
+		if !errors.As(err, &he) {
+			he.Status = http.StatusInternalServerError
+			he.Message = err
+		}
+		l.Error(he.Message)
+		w.WriteHeader(he.Status)
+	})
+}

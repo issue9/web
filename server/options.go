@@ -74,6 +74,8 @@ type (
 		IDGenerator IDGenerator
 
 		// 路由选项
+		//
+		// 如果为空，会添加 [Recovery] 作为默认值。
 		RoutersOptions []web.RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
@@ -116,8 +118,8 @@ type (
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
 		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
+		// 默认值为 [web.ProblemAboutBlank]。
 		ProblemTypePrefix string
-		problems          *web.Problems
 
 		// Init 其它的一些初始化操作
 		//
@@ -218,6 +220,10 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		return nil, err
 	}
 
+	if len(o.RoutersOptions) == 0 {
+		o.RoutersOptions = []web.RouterOption{Recovery(o.logs.ERROR())}
+	}
+
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = RequestIDKey
 	}
@@ -227,8 +233,6 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 		return nil, fe
 	}
 	o.codec = c
-
-	o.problems = web.InternalNewProblems(o.ProblemTypePrefix)
 
 	return o, nil
 }

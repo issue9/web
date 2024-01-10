@@ -37,11 +37,9 @@ type testServer struct {
 	unique          *unique.Unique
 	cache           cache.Driver
 	routers         *group.GroupOf[HandlerFunc]
-	b               *InternalContextBuilder
+	b               *InternalServer
 	disableCompress bool
 	locale          *locale.Locale
-	ps              *Problems
-	services        *Services
 	closes          []func() error
 }
 
@@ -71,11 +69,9 @@ func newTestServer(a *assert.Assertion) *testServer {
 		unique: unique.NewNumber(100),
 		cache:  cc,
 		locale: locale.New(l, nil, c),
-		ps:     InternalNewProblems(""),
 		closes: make([]func() error, 0, 10),
 	}
-	srv.b = InternalNewContextBuilder(srv, newCodec(a), header.RequestIDKey)
-	srv.services = InternalNewServices(srv)
+	srv.b = InternalNewServer(srv, newCodec(a), header.RequestIDKey, "")
 	srv.Services().Add(Phrase("unique"), srv.unique)
 	srv.Services().AddTicker(Phrase("gc memory"), func(t time.Time) error { gc(t); return nil }, time.Minute, false, false)
 
@@ -151,8 +147,8 @@ func (s *testServer) CanCompress() bool { return !s.disableCompress }
 
 func (s *testServer) SetCompress(e bool) { s.disableCompress = !e }
 
-func (s *testServer) Problems() *Problems { return s.ps }
+func (s *testServer) Problems() *Problems { return s.b.problems }
 
 func (s *testServer) Locale() Locale { return s.locale }
 
-func (s *testServer) Services() *Services { return s.services }
+func (s *testServer) Services() *Services { return s.b.Services() }
