@@ -16,9 +16,6 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v7"
-	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/query/v3"
 
 	"github.com/issue9/web/internal/errs"
@@ -45,23 +42,6 @@ type (
 	LocaleStringer = localeutil.Stringer
 
 	StringPhrase = localeutil.StringPhrase
-
-	Router         = mux.RouterOf[HandlerFunc]
-	Prefix         = mux.PrefixOf[HandlerFunc]
-	Resource       = mux.ResourceOf[HandlerFunc]
-	RouterMatcher  = group.Matcher
-	RouterOption   = mux.Option
-	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
-	Middleware     = types.MiddlewareOf[HandlerFunc]
-
-	// HandlerFunc 路由的处理函数原型
-	//
-	// 向客户端输出内容的有两种方法，一种是通过 [Context.Write] 方法；
-	// 或是返回 [Responser] 对象。前者在调用 [Context.Write] 时即输出内容，
-	// 后者会在整个请求退出时才将 [Responser] 进行编码输出。
-	//
-	// 返回值可以为空，表示在中间件执行过程中已经向客户端输出同内容。
-	HandlerFunc = func(*Context) Responser
 
 	// MarshalFunc 序列化函数原型
 	//

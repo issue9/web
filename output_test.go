@@ -84,7 +84,7 @@ func TestContext_Render(t *testing.T) {
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
-	srv.b.FreeContext(ctx)
+	srv.FreeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Header().Get(header.ContentEncoding), "deflate")
 	data, err := io.ReadAll(flate.NewReader(w.Body))
@@ -101,7 +101,7 @@ func TestContext_Render(t *testing.T) {
 	a.PanicString(func() {
 		ctx.Render(http.StatusCreated, "456")
 	}, "已有状态码 200，再次设置无效 201")
-	srv.b.FreeContext(ctx)
+	srv.FreeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusOK).Equal(w.Body.String(), `123`)
 
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
@@ -112,7 +112,7 @@ func TestContext_Render(t *testing.T) {
 	ctx.Render(http.StatusCreated, "123")
 	n, err = ctx.Write([]byte("123"))
 	a.NotError(err)
-	srv.b.FreeContext(ctx)
+	srv.FreeContext(ctx)
 	a.True(n > 0).
 		Equal(w.Body.String(), `"123"123`)
 
@@ -126,7 +126,7 @@ func TestContext_Render(t *testing.T) {
 		Equal(ctx.Mimetype(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8Name)
 	ctx.Render(http.StatusCreated, "任意值")
-	srv.b.FreeContext(ctx)
+	srv.FreeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 
 	// outputMimetype.Marshal 返回错误
@@ -138,7 +138,7 @@ func TestContext_Render(t *testing.T) {
 		Equal(ctx.Mimetype(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8Name)
 	ctx.Render(http.StatusCreated, errors.New("error"))
-	srv.b.FreeContext(ctx)
+	srv.FreeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 }
 

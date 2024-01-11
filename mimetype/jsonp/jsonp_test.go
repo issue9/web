@@ -24,7 +24,7 @@ func TestJSONP(t *testing.T) {
 	a.NotError(err).NotNil(s)
 	Install(s, "callback", web.ProblemBadRequest)
 
-	s.NewRouter("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
+	s.Routers().New("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
 		return web.OK("jsonp")
 	})
 

@@ -41,10 +41,12 @@ func New(id language.Tag, conf *config.Config, b *catalog.Builder) *Locale {
 func (l *Locale) ID() language.Tag { return l.id }
 
 func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
-	return Load(l.config.Serializer(), l.Builder, glob, fsys...)
+	return Load(l.Config().Serializer(), l.Builder, glob, fsys...)
 }
 
 func (l *Locale) Printer() *message.Printer { return l.printer }
+
+func (l *Locale) Config() *config.Config { return l.config }
 
 func (l *Locale) Sprintf(key string, v ...any) string { return l.Printer().Sprintf(key, v...) }
 

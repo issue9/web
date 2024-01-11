@@ -9,39 +9,16 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"slices"
-	"sync"
 	"time"
 
-	"github.com/issue9/cache"
-	"github.com/issue9/config"
-	"github.com/issue9/mux/v7/group"
-
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/locale"
-	"github.com/issue9/web/selector"
 )
 
 type httpServer struct {
-	name        string
-	version     string
-	httpServer  *http.Server
-	vars        *sync.Map
-	cache       cache.Driver
-	uptime      time.Time
-	routers     *group.GroupOf[web.HandlerFunc]
-	idGenerator IDGenerator
-	state       web.State
-	s           *web.InternalServer
-	location    *time.Location
-	logs        *web.Logs
-
-	closed chan struct{}
-	closes []func() error
-
-	config          *config.Config
-	locale          *locale.Locale
-	disableCompress bool
+	*web.InternalServer
+	httpServer *http.Server
+	state      web.State
+	closed     chan struct{}
 }
 
 // New 新建 http 服务
@@ -56,34 +33,12 @@ func New(name, version string, o *Options) (web.Server, error) {
 	}
 
 	srv := &httpServer{
-		name:        name,
-		version:     version,
-		httpServer:  o.HTTPServer,
-		vars:        &sync.Map{},
-		cache:       o.Cache,
-		uptime:      time.Now(),
-		idGenerator: o.IDGenerator,
-		state:       web.Stopped,
-
-		location: o.Location,
-		logs:     o.logs,
-
-		closed: make(chan struct{}, 1),
-		closes: make([]func() error, 0, 10),
-
-		locale: o.locale,
-		config: o.config,
+		httpServer: o.HTTPServer,
+		state:      web.Stopped,
+		closed:     make(chan struct{}, 1),
 	}
-
-	srv.s = web.InternalNewServer(srv, o.codec, o.RequestIDKey, o.ProblemTypePrefix)
-
-	srv.routers = group.NewOf(srv.call,
-		notFound,
-		buildNodeHandle(http.StatusMethodNotAllowed),
-		buildNodeHandle(http.StatusOK),
-		o.RoutersOptions...)
-	srv.httpServer.Handler = srv.routers
-	srv.OnClose(srv.cache.Close)
+	srv.InternalServer = web.InternalNewServer(srv, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
+	srv.httpServer.Handler = srv
 
 	for _, f := range o.Init { // NOTE: 需要保证在最后
 		f(srv)
@@ -91,27 +46,7 @@ func New(name, version string, o *Options) (web.Server, error) {
 	return srv, nil
 }
 
-func (srv *httpServer) Name() string { return srv.name }
-
-func (srv *httpServer) Version() string { return srv.version }
-
 func (srv *httpServer) State() web.State { return srv.state }
-
-func (srv *httpServer) Vars() *sync.Map { return srv.vars }
-
-func (srv *httpServer) Location() *time.Location { return srv.location }
-
-func (srv *httpServer) Cache() cache.Cleanable { return srv.cache }
-
-func (srv *httpServer) Uptime() time.Time { return srv.uptime }
-
-func (srv *httpServer) UniqueID() string { return srv.idGenerator() }
-
-func (srv *httpServer) Now() time.Time { return time.Now().In(srv.Location()) }
-
-func (srv *httpServer) ParseTime(layout, value string) (time.Time, error) {
-	return time.ParseInLocation(layout, value, srv.Location())
-}
 
 func (srv *httpServer) Serve() (err error) {
 	if srv.State() == web.Running {
@@ -140,13 +75,7 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 	}
 
 	defer func() {
-		slices.Reverse(srv.closes)
-		for _, f := range srv.closes { // 仅在用户主动要关闭时，才关闭服务。
-			if err1 := f(); err1 != nil { // 出错不退出，继续其它操作。
-				srv.Logs().ERROR().Error(err1)
-			}
-		}
-
+		srv.InternalServer.Close()
 		srv.state = web.Stopped
 		srv.closed <- struct{}{} // NOTE: 保证最后执行
 	}()
@@ -164,23 +93,3 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 		srv.Logs().ERROR().Error(err)
 	}
 }
-
-func (srv *httpServer) OnClose(f ...func() error) { srv.closes = append(srv.closes, f...) }
-
-func (srv *httpServer) Logs() *web.Logs { return srv.logs }
-
-func (srv *httpServer) Config() *config.Config { return srv.config }
-
-func (srv *httpServer) Locale() web.Locale { return srv.locale }
-
-func (srv *httpServer) NewClient(c *http.Client, s selector.Selector, m string, marshal func(any) ([]byte, error)) *web.Client {
-	return web.NewClient(c, srv.s.Codec(), s, m, marshal, srv.s.RequestIDKey(), srv.UniqueID)
-}
-
-func (srv *httpServer) CanCompress() bool { return !srv.disableCompress }
-
-func (srv *httpServer) SetCompress(enable bool) { srv.disableCompress = !enable }
-
-func (srv *httpServer) Problems() *web.Problems { return srv.s.Problems() }
-
-func (srv *httpServer) Services() *web.Services { return srv.s.Services() }

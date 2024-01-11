@@ -35,7 +35,7 @@ func TestServer(t *testing.T) {
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10)
 	a.NotNil(e)
-	s.NewRouter("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
+	s.Routers().New("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
 		if resp != nil {
 			return resp

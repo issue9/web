@@ -25,7 +25,7 @@ func NewGateway(s web.Server, r registry.Registry, mapper registry.Mapper) web.S
 func (g *gateway) Serve() error {
 	proxy := g.registry.ReverseProxy(g.mapper)
 
-	r := g.NewRouter("proxy", nil)
+	r := g.Routers().New("proxy", nil)
 	r.Any("{path}", func(ctx *web.Context) web.Responser {
 		proxy.ServeHTTP(ctx, ctx.Request())
 		return nil

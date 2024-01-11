@@ -10,32 +10,16 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/mux/v7"
-	"github.com/issue9/mux/v7/routertest"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/server/servertest"
 )
 
-func BenchmarkRouter(b *testing.B) {
-	a := assert.New(b, false)
-	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
-
-	h := func(c *web.Context) web.Responser {
-		_, err := c.Write([]byte(c.Request().URL.Path))
-		if err != nil {
-			b.Error(err)
-		}
-		return nil
-	}
-
-	routertest.NewTester(srv.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
-}
-
 func BenchmarkHTTPServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
-	router := srv.NewRouter("srv", nil, mux.URLDomain("http://localhost:8080/"))
+	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 
 	router.Get("/path", func(c *web.Context) web.Responser {

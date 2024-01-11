@@ -5,17 +5,20 @@ package web
 import (
 	"io/fs"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
+	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
-	"github.com/issue9/web/internal/header"
-	"github.com/issue9/web/selector"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/internal/locale"
+	"github.com/issue9/web/selector"
 )
 
 // Server 服务接口
@@ -78,21 +81,6 @@ type Server interface {
 	// Logs 提供日志接口
 	Logs() *Logs
 
-	// GetRouter 获取指定名称的路由
-	GetRouter(name string) *Router
-
-	// NewRouter 声明新路由
-	NewRouter(name string, matcher RouterMatcher, o ...RouterOption) *Router
-
-	// RemoveRouter 删除路由
-	RemoveRouter(name string)
-
-	// Routers 返回所有的路由
-	Routers() []*Router
-
-	// UseMiddleware 对所有的路由使用中间件
-	UseMiddleware(...Middleware)
-
 	// NewContext 从标准库的参数初始化 Context 对象
 	//
 	// 这适合从标准库的请求中创建 [web.Context] 对象。
@@ -105,6 +93,9 @@ type Server interface {
 	//
 	// 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
 	NewClient(client *http.Client, s selector.Selector, marshalName string, marshal func(any) ([]byte, error)) *Client
+
+	// Routers 路由管理
+	Routers() *Routers
 
 	// SetCompress 设置压缩功能
 	//
@@ -166,41 +157,111 @@ type Locale interface {
 	Set(tag language.Tag, key string, msg ...catalog.Message) error
 }
 
-// InternalServer 这是一个内部使用的类型，提供了部分 [Server] 接口的实现
+// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 接口的实现
 type InternalServer struct {
-	server       Server
-	requestIDKey string
-	codec        *Codec
-	services     *Services
-	problems     *Problems
+	server Server
+
+	name    string
+	version string
+
+	locale   *locale.Locale
+	location *time.Location
+	uptime   time.Time
+
+	requestIDKey    string
+	codec           *Codec
+	services        *Services
+	problems        *Problems
+	routers         *Routers
+	vars            *sync.Map
+	disableCompress bool
+	idgen           func() string
+	logs            *Logs
+	closes          []func() error
+	cache           cache.Driver
 }
 
 // InternalNewServer 声明 [InternalServer]
 //
+// s 为实际的 [Server] 接口对象，在 [InternalNewServer.NewContext] 需要用到此实例；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
-// problemPrefix 如果为空会采用 [ProblemAboutBlank] 作为默认值；
-func InternalNewServer(s Server, codec *Codec, requestIDKey, problemPrefix string) *InternalServer {
-	if s == nil {
-		panic("s 不能为空")
-	}
+// problemPrefix 可以为空；
+//
+// NOTE: 调用者需要保证参数的正确性。
+func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Logs, idgen func() string, l *locale.Locale, c cache.Driver, codec *Codec, requestIDKey, problemPrefix string, o ...RouterOption) *InternalServer {
+	is := &InternalServer{
+		server: s,
 
-	if requestIDKey == "" {
-		requestIDKey = header.RequestIDKey
-	}
+		name:    name,
+		version: ver,
 
-	if problemPrefix == "" {
-		problemPrefix = ProblemAboutBlank
-	}
+		locale:   l,
+		location: loc,
+		uptime:   time.Now().In(loc),
 
-	return &InternalServer{
-		server:       s,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		services:     initServices(s),
 		problems:     newProblems(problemPrefix),
+		vars:         &sync.Map{},
+		idgen:        idgen,
+		logs:         logs,
+		closes:       make([]func() error, 0, 10),
+		cache:        c,
 	}
+	is.initServices()
+	is.routers = &Routers{
+		g: group.NewOf(is.call,
+			notFound,
+			buildNodeHandle(http.StatusMethodNotAllowed),
+			buildNodeHandle(http.StatusOK),
+			o...),
+	}
+	is.OnClose(c.Close)
+
+	return is
 }
 
-func (s *InternalServer) Codec() *Codec { return s.codec }
+func (s *InternalServer) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
+	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.server.UniqueID)
+}
 
-func (s *InternalServer) RequestIDKey() string { return s.requestIDKey }
+func (s *InternalServer) Config() *config.Config { return s.locale.Config() }
+
+func (s *InternalServer) Locale() Locale { return s.locale }
+
+func (s *InternalServer) Name() string { return s.name }
+
+func (s *InternalServer) Version() string { return s.version }
+
+func (s *InternalServer) Vars() *sync.Map { return s.vars }
+
+func (s *InternalServer) CanCompress() bool { return !s.disableCompress }
+
+func (s *InternalServer) SetCompress(enable bool) { s.disableCompress = !enable }
+
+func (s *InternalServer) Location() *time.Location { return s.location }
+
+func (s *InternalServer) Now() time.Time { return time.Now().In(s.Location()) }
+
+func (s *InternalServer) Uptime() time.Time { return s.uptime }
+
+func (s *InternalServer) Cache() cache.Cleanable { return s.cache }
+
+func (s *InternalServer) ParseTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, s.Location())
+}
+
+func (s *InternalServer) UniqueID() string { return s.idgen() }
+
+func (s *InternalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
+
+func (s *InternalServer) Logs() *Logs { return s.logs }
+
+func (s *InternalServer) Close() {
+	slices.Reverse(s.closes)
+	for _, f := range s.closes { // 仅在用户主动要关闭时，才关闭服务。
+		if err := f(); err != nil { // 出错不退出，继续其它操作。
+			s.Logs().ERROR().Error(err)
+		}
+	}
+}

@@ -75,7 +75,7 @@ type (
 
 		// 路由选项
 		//
-		// 如果为空，会添加 [Recovery] 作为默认值。
+		// 如果为空，会添加 [web.Recovery] 作为默认值。
 		RoutersOptions []web.RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
@@ -118,7 +118,7 @@ type (
 		// ProblemTypePrefix 所有 type 字段的前缀
 		//
 		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
-		// 默认值为 [web.ProblemAboutBlank]。
+		// 空值是合法的值，表示不需要添加前缀。
 		ProblemTypePrefix string
 
 		// Init 其它的一些初始化操作
@@ -221,7 +221,7 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 
 	if len(o.RoutersOptions) == 0 {
-		o.RoutersOptions = []web.RouterOption{Recovery(o.logs.ERROR())}
+		o.RoutersOptions = []web.RouterOption{web.Recovery(o.logs.ERROR())}
 	}
 
 	if o.RequestIDKey == "" {

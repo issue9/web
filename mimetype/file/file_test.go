@@ -47,7 +47,7 @@ func newServer(a *assert.Assertion) web.Server {
 func TestServeFileHandler(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a)
-	router := srv.NewRouter("def", nil)
+	router := srv.Routers().New("def", nil)
 
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)
@@ -76,7 +76,7 @@ func TestServeFileHandler(t *testing.T) {
 func TestAttachmentHandler(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newServer(a)
-	router := srv.NewRouter("def", nil)
+	router := srv.Routers().New("def", nil)
 
 	defer servertest.Run(a, srv)()
 	defer srv.Close(0)

@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
@@ -29,7 +30,7 @@ func buildHandler(code int) web.HandlerFunc {
 	}
 }
 
-func TestNewServer(t *testing.T) {
+func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv, err := New("app", "0.1.0", nil)
@@ -38,7 +39,7 @@ func TestNewServer(t *testing.T) {
 		False(srv.Uptime().IsZero()).
 		NotNil(srv.Cache()).
 		Equal(srv.Location(), time.Local).
-		Equal(s.httpServer.Handler, s.routers).
+		Equal(s.httpServer.Handler, s).
 		Equal(s.httpServer.Addr, "")
 
 	d, ok := srv.Cache().(cache.Driver)
@@ -104,7 +105,7 @@ func TestServer_Serve(t *testing.T) {
 
 	srv := newTestServer(a, nil)
 	a.Equal(srv.State(), web.Stopped)
-	router := srv.NewRouter("default", nil)
+	router := srv.Routers().New("default", nil)
 	router.Get("/mux/test", buildHandler(202))
 	router.Get("/m1/test", buildHandler(202))
 
@@ -156,7 +157,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 		},
 	})
 
-	router := srv.NewRouter("default", nil)
+	router := srv.Routers().New("default", nil)
 	router.Get("/mux/test", buildHandler(202))
 
 	defer servertest.Run(a, srv)()
@@ -180,7 +181,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
-	router := srv.NewRouter("def", nil)
+	router := srv.Routers().New("def", nil)
 
 	router.Get("/test", buildHandler(202))
 	router.Get("/close", func(ctx *web.Context) web.Responser {
@@ -219,7 +220,7 @@ func TestServer_Close(t *testing.T) {
 func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
-	router := srv.NewRouter("def", nil)
+	router := srv.Routers().New("def", nil)
 
 	router.Get("/test", buildHandler(202))
 	router.Get("/close", func(ctx *web.Context) web.Responser {
@@ -261,7 +262,7 @@ func TestServer_NewClient(t *testing.T) {
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
 
-	s.NewRouter("default", nil).Get("/get", func(ctx *web.Context) web.Responser {
+	s.Routers().New("default", nil).Get("/get", func(ctx *web.Context) web.Responser {
 		return web.OK(&object{Name: "name"})
 	}).Post("/post", func(ctx *web.Context) web.Responser {
 		obj := &object{}
@@ -287,7 +288,9 @@ func TestServer_NewClient(t *testing.T) {
 	resp = &object{}
 	p = &web.Problem{}
 	a.NotError(c.Delete("/get", resp, p))
-	a.Zero(resp).Equal(p.Type, web.ProblemMethodNotAllowed)
+	a.Zero(resp).
+		Equal(p.Type, web.ProblemMethodNotAllowed).
+		Equal(p.Status, http.StatusMethodNotAllowed)
 
 	resp = &object{}
 	p = &web.Problem{Extensions: &object{}}
@@ -305,4 +308,28 @@ func TestServer_NewClient(t *testing.T) {
 	p = &web.Problem{}
 	a.NotError(c.Patch("/not-exists", nil, resp, p))
 	a.Zero(resp).Equal(p.Type, web.ProblemNotFound)
+}
+
+func TestServer_NewContext(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newTestServer(a, nil)
+	router := srv.Routers().New("def", nil)
+
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
+
+	// 正常，指定 Accept-Language，采用默认的 accept
+	router.Get("/path", func(ctx *web.Context) web.Responser {
+		a.NotNil(ctx).NotEmpty(ctx.ID())
+		a.Equal(ctx.Mimetype(false), "application/json").
+			Equal(ctx.Charset(), "utf-8").
+			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
+			NotNil(ctx.LocalePrinter())
+		return nil
+	})
+	servertest.Get(a, "http://localhost:8080/path").
+		Header(header.AcceptLang, "cmn-hans").
+		Header(header.Accept, "application/json").
+		Do(nil).
+		Success()
 }

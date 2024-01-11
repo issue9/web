@@ -36,7 +36,7 @@ var contextPool = &sync.Pool{
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	b       *InternalServer
+	s       *InternalServer
 	route   types.Route
 	request *http.Request
 	exits   []func(*Context, int)
@@ -73,14 +73,14 @@ type Context struct {
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	id := r.Header.Get(b.RequestIDKey())
+	id := r.Header.Get(b.requestIDKey)
 
 	h := r.Header.Get(header.Accept)
 	mt := b.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if mt == nil {
 		var l logs.Recorder = b.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.RequestIDKey(), id)
+			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
 		}
 		l.LocaleString(Phrase("not found serialization for %s", h))
 
@@ -93,7 +93,7 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if outputCharsetName == "" {
 		var l logs.Recorder = b.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.RequestIDKey(), id)
+			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
 		}
 		l.LocaleString(Phrase("not found charset for %s", h))
 
@@ -120,7 +120,7 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if h != "" {
 		var err error
 		if inputMimetype, inputCharset, err = b.codec.contentType(h); err != nil {
-			b.server.Logs().DEBUG().With(b.RequestIDKey(), id).Error(err)
+			b.server.Logs().DEBUG().With(b.requestIDKey, id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -132,13 +132,13 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	if id == "" {
 		id = b.server.UniqueID()
 	}
-	w.Header().Set(b.RequestIDKey(), id)
-	r.Header.Set(b.RequestIDKey(), id)
+	w.Header().Set(b.requestIDKey, id)
+	r.Header.Set(b.requestIDKey, id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
-	ctx.b = b
+	ctx.s = b
 	ctx.route = route
 	ctx.request = r
 	ctx.exits = ctx.exits[:0]
@@ -163,7 +163,7 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.languageTag = tag
 	ctx.localePrinter = b.server.Locale().NewPrinter(tag)
 	clear(ctx.vars)
-	ctx.logs = b.server.Logs().New(map[string]any{b.RequestIDKey(): id})
+	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
 
 	return ctx
 }
@@ -223,7 +223,7 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.b.codec.accept(mimetype)
+	item := ctx.s.codec.accept(mimetype)
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -247,7 +247,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	compressor, notAcceptable := ctx.b.codec.acceptEncoding(ctx.Mimetype(false), enc)
+	compressor, notAcceptable := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
@@ -334,4 +334,4 @@ func (ctx *Context) IsXHR() bool {
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 Server 实例
-func (ctx *Context) Server() Server { return ctx.b.server }
+func (ctx *Context) Server() Server { return ctx.s.server }

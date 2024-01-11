@@ -22,7 +22,7 @@ const (
 
 type (
 	Services struct {
-		s         Server
+		s         *InternalServer
 		services  []*service
 		ctx       context.Context
 		scheduled *scheduled.Server
@@ -67,20 +67,18 @@ func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 
 func (s *InternalServer) Services() *Services { return s.services }
 
-func initServices(s Server) *Services {
+func (s *InternalServer) initServices() {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	s.OnClose(func() error { cancel(http.ErrServerClosed); return nil })
 
-	ss := &Services{
+	s.services = &Services{
 		s:         s,
 		services:  make([]*service, 0, 5),
 		ctx:       ctx,
 		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
 		jobTitles: make(map[string]LocaleStringer, 10),
 	}
-	ss.Add(StringPhrase("scheduler jobs"), ss.scheduled)
-
-	return ss
+	s.services.Add(StringPhrase("scheduler jobs"), s.services.scheduled)
 }
 
 func (srv *service) setState(s State) {
@@ -100,7 +98,7 @@ func (srv *service) serve() {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.s.Logs().ERROR().Error(srv.err)
+			srv.s.s.server.Logs().ERROR().Error(srv.err)
 			srv.setState(Failed)
 		}
 	}()
