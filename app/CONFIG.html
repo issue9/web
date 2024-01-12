@@ -79,7 +79,7 @@
 <article></article>
 <table>
 	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
-	<tbody><tr><td>type,attr</td><td>type</td><td>type</td><td>string</td><td>编码名称<br /><br />比如 application/xml 等<br /></td></tr><tr><td>problem,attr,omitempty</td><td>problem,omitempty</td><td>problem,omitempty</td><td>string</td><td>返回错误代码是的 mimetype<br /><br />比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。<br />如果为空，表示与 Type 相同。<br /></td></tr><tr><td>target,attr</td><td>target</td><td>target</td><td>string</td><td>实际采用的解码方法<br /><br />由 [RegisterMimetype] 注册而来。默认可用为：<br /><br /> - xml<br /> - json<br /> - form<br /> - html<br /> - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /></td></tr></tbody></table>
+	<tbody><tr><td>type,attr</td><td>type</td><td>type</td><td>string</td><td>编码名称<br /><br />比如 application/xml 等<br /></td></tr><tr><td>problem,attr,omitempty</td><td>problem,omitempty</td><td>problem,omitempty</td><td>string</td><td>返回错误代码是的 mimetype<br /><br />比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。<br />如果为空，表示与 Type 相同。<br /></td></tr><tr><td>target,attr</td><td>target</td><td>target</td><td>string</td><td>实际采用的解码方法<br /><br />由 [RegisterMimetype] 注册而来。默认可用为：<br /><br /> - xml<br /> - json<br /> - form<br /> - html<br /> - gob<br /> - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /></td></tr></tbody></table>
 	<p><a href="https://github.com/caixw">作者</a></p>
 	<p><a href="https://github.com/issue9/web">代码仓库</a></p>
 	</body>

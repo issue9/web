@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-//go:generate go run ./make_problems.go
-
 // Package server 服务端实现
 package server
 
@@ -21,29 +19,37 @@ type httpServer struct {
 	closed     chan struct{}
 }
 
-// New 新建 http 服务
-//
-// name, version 表示服务的名称和版本号；
-// o 指定了一些带有默认值的参数；
-func New(name, version string, o *Options) (web.Server, error) {
-	o, err := sanitizeOptions(o)
-	if err != nil {
-		err.Path = "Options"
-		return nil, err
-	}
-
+func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	srv := &httpServer{
 		httpServer: o.HTTPServer,
 		state:      web.Stopped,
 		closed:     make(chan struct{}, 1),
 	}
-	srv.InternalServer = web.InternalNewServer(srv, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
+	if s == nil {
+		s = srv
+	}
+
+	srv.InternalServer = o.internalServer(name, version, s)
 	srv.httpServer.Handler = srv
 
 	for _, f := range o.Init { // NOTE: 需要保证在最后
 		f(srv)
 	}
-	return srv, nil
+	return srv
+}
+
+// New 新建 HTTP 服务
+//
+// name, version 表示服务的名称和版本号；
+// o 指定了一些带有默认值的参数；
+func New(name, version string, o *Options) (web.Server, error) {
+	o, err := sanitizeOptions(o, typeHTTP)
+	if err != nil {
+		err.Path = "Options"
+		return nil, err
+	}
+
+	return newHTTPServer(name, version, o, nil), nil
 }
 
 func (srv *httpServer) State() web.State { return srv.state }
@@ -54,8 +60,7 @@ func (srv *httpServer) Serve() (err error) {
 	}
 	srv.state = web.Running
 
-	cfg := srv.httpServer.TLSConfig
-	if cfg != nil && (len(cfg.Certificates) > 0 || cfg.GetCertificate != nil) {
+	if c := srv.httpServer.TLSConfig; c != nil && (len(c.Certificates) > 0 || c.GetCertificate != nil) {
 		err = srv.httpServer.ListenAndServeTLS("", "")
 	} else {
 		err = srv.httpServer.ListenAndServe()

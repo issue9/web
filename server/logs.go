@@ -12,8 +12,8 @@ import (
 	"github.com/issue9/logs/v7/writers"
 	"github.com/issue9/logs/v7/writers/rotate"
 	"github.com/issue9/term/v3/colors"
-	"github.com/issue9/web"
 
+	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 )
 
@@ -53,10 +53,6 @@ type Logs struct {
 	StackError bool
 
 	// 是否接管标准库日志的输出
-	//
-	// 如果为 true，则在 go1.21 之前会接管 log.Default() 的输出；
-	// go1.21 及之后的版本则接管 log/slog.Default() 的输出；
-	// 具体参考 [logs.WithStd]。
 	Std bool
 }
 

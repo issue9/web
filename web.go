@@ -74,14 +74,10 @@ func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
 // field 表示错误的字段名；
 // msg 表示错误信息，可以是任意类型，如果 msg 是 [FieldError] 类型，
 // 那么此操作相当于调用了 [FieldError.AddFieldParent]；
-func NewFieldError(field string, msg any) *FieldError {
-	return config.NewFieldError(field, msg)
-}
+func NewFieldError(field string, msg any) *FieldError { return config.NewFieldError(field, msg) }
 
 // NewLocaleError 本地化的错误信息
-func NewLocaleError(format string, v ...any) error {
-	return localeutil.Error(format, v...)
-}
+func NewLocaleError(format string, v ...any) error { return localeutil.Error(format, v...) }
 
 // NewError 用 HTTP 状态码包装一个错误信息
 //

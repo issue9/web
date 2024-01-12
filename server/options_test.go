@@ -12,7 +12,7 @@ import (
 func TestSanitizeOptions(t *testing.T) {
 	a := assert.New(t, false)
 
-	o, err := sanitizeOptions(nil)
+	o, err := sanitizeOptions(nil, typeHTTP)
 	a.NotError(err).NotNil(o)
 	a.Equal(o.Location, time.Local).
 		NotNil(o.logs).

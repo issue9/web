@@ -24,18 +24,27 @@ messages:
     - key: duplicate value
       message:
         msg: duplicate value
+    - key: has dup peer %s
+      message:
+        msg: has dup peer %s
     - key: invalid sse format %s
       message:
         msg: invalid sse format %s
     - key: invalid value
       message:
         msg: invalid value
+    - key: no available peer
+      message:
+        msg: no available peer
     - key: not found charset for %s
       message:
         msg: not found charset for %s
     - key: not found compress for %s
       message:
         msg: not found compress for %s
+    - key: not found micro service %s
+      message:
+        msg: not found micro service %s
     - key: not found serialization for %s
       message:
         msg: not found serialization for %s

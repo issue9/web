@@ -1,31 +1,36 @@
 // SPDX-License-Identifier: MIT
 
-package micro
+package server
 
 import (
 	"time"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
-	"github.com/issue9/web/server/micro/registry"
+	"github.com/issue9/web/server/registry"
 )
 
-// service 微服务
 type service struct {
-	web.Server
+	*httpServer
 	registry registry.Registry
 	dreg     registry.DeregisterFunc
-
-	peer selector.Peer
+	peer     selector.Peer
 }
 
 // NewService 将 [web.Server] 作为微服务节点
-func NewService(s web.Server, r registry.Registry, peer selector.Peer) web.Server {
-	return &service{
-		Server:   s,
-		registry: r,
-		peer:     peer,
+func NewService(name, version string, o *Options) (web.Server, error) {
+	o, err := sanitizeOptions(o, typeService)
+	if err != nil {
+		err.Path = "Options"
+		return nil, err
 	}
+
+	s := &service{
+		registry: o.Registry,
+		peer:     o.Peer,
+	}
+	s.httpServer = newHTTPServer(name, version, o, s)
+	return s, nil
 }
 
 func (s *service) Serve() error {
@@ -35,13 +40,12 @@ func (s *service) Serve() error {
 	}
 	s.dreg = dreg
 
-	return s.Server.Serve()
+	return s.httpServer.Serve()
 }
 
 func (s *service) Close(shutdown time.Duration) {
 	if err := s.dreg(); err != nil {
 		s.Logs().ERROR().Error(err)
 	}
-
-	s.Server.Close(shutdown)
+	s.httpServer.Close(shutdown)
 }

@@ -24,6 +24,8 @@ import (
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/selector"
+	"github.com/issue9/web/server/registry"
 )
 
 // RequestIDKey 报头中传递 request id 的报头名称
@@ -31,6 +33,12 @@ const RequestIDKey = header.RequestIDKey
 
 // DefaultConfigDir 默认的配置目录地址
 const DefaultConfigDir = "@.config"
+
+const (
+	typeHTTP int = iota
+	typeGateway
+	typeService
+)
 
 type (
 	// Options [web.Server] 的初始化参数
@@ -125,6 +133,21 @@ type (
 		//
 		// 在此可以让用户能实际操作 [Server] 之前对 Server 进行一些操作。
 		Init []func(web.Server)
+
+		// 以下微服务相关的设置
+
+		// Registry 作为微服务时的注册中心实例
+		Registry registry.Registry
+
+		// Peer 作为微服务终端时的地址
+		//
+		// NOTE: 仅在 [NewService] 中才会有效果。
+		Peer selector.Peer
+
+		// Mapper 作为微服务网关时的 URL 映射关系
+		//
+		// NOTE: 仅在 [NewGateway] 中才会有效果。
+		Mapper registry.Mapper
 	}
 
 	// Config 项目配置文件的配置
@@ -157,7 +180,7 @@ type (
 	IDGenerator = func() string
 )
 
-func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
+func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -234,6 +257,26 @@ func sanitizeOptions(o *Options) (*Options, *config.FieldError) {
 	}
 	o.codec = c
 
+	switch t {
+	case typeHTTP: // 不需要处理任何数据
+	case typeGateway:
+		if o.Mapper == nil {
+			return nil, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
+		}
+		if o.Registry == nil {
+			return nil, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+		}
+	case typeService:
+		if o.Peer == nil {
+			return nil, web.NewFieldError("Peer", locales.CanNotBeEmpty)
+		}
+		if o.Registry == nil {
+			return nil, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+		}
+	default:
+		panic("参数 t 取值错误")
+	}
+
 	return o, nil
 }
 
@@ -255,3 +298,7 @@ func NewRedisFromURL(url string) (cache.Driver, error) { return redis.NewFromURL
 //
 // 参数说明可参考 [memcache.New]。
 func NewMemcache(addr ...string) cache.Driver { return memcache.New(addr...) }
+
+func (o *Options) internalServer(name, version string, s web.Server) *web.InternalServer {
+	return web.InternalNewServer(s, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
+}

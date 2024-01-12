@@ -24,18 +24,27 @@ messages:
     - key: duplicate value
       message:
         msg: 重复的值
+    - key: has dup peer %s
+      message:
+        msg: 重复的节点 %s
     - key: invalid sse format %s
       message:
         msg: '无效的 SSE 格式: %s'
     - key: invalid value
       message:
         msg: 无效的值
+    - key: no available peer
+      message:
+        msg: 没有有效的节点
     - key: not found charset for %s
       message:
         msg: 未找到符合报头 %s 的字符集
     - key: not found compress for %s
       message:
         msg: 未找到 %s 对应的压缩算法
+    - key: not found micro service %s
+      message:
+        msg: 未找到微服务 %s
     - key: not found serialization for %s
       message:
         msg: 未找到符合报头 %s 的序列化函数

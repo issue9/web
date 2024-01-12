@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-package micro
+package server
 
 import "github.com/issue9/web"
 
-var _ web.Server = &gateway{}
+var _ web.Server = &service{}

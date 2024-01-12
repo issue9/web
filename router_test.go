@@ -3,6 +3,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,10 +33,19 @@ func TestRouters_Handle(t *testing.T) {
 	rs := s.Routers()
 	a.NotNil(rs)
 
-	router := rs.New("def", nil)
+	router := rs.New("def", nil, Recovery(s.Logs().ERROR()))
 	a.NotNil(router)
 	router.Get("/get1", func(ctx *Context) Responser {
 		return OK("ok")
+	})
+	router.Get("/panic-http-error", func(ctx *Context) Responser {
+		panic(NewError(http.StatusConflict, errors.New("panic")))
+	})
+	router.Get("/panic-error", func(ctx *Context) Responser {
+		panic(errors.New("panic"))
+	})
+	router.Get("/panic-string", func(ctx *Context) Responser {
+		panic("panic")
 	})
 
 	w := httptest.NewRecorder()
@@ -52,4 +62,19 @@ func TestRouters_Handle(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPatch, "/get1", nil)
 	router.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusMethodNotAllowed)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/panic-http-error", nil)
+	router.ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusConflict)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/panic-error", nil)
+	router.ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/panic-string", nil)
+	router.ServeHTTP(w, r)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 }
