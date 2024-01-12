@@ -12,8 +12,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/issue9/assert/v3 v3.1.0 h1:oxLFXS7QnBKI4lB31pRoYO96yErkWAJtR7iv+LNjAPg=
 github.com/issue9/assert/v3 v3.1.0/go.mod h1:yft/uaskRpwQTyBT3n1zRl91SR1wNlO4fLZHzOa4bdM=
-github.com/issue9/cache v0.8.1 h1:d0ak3hvGK/Jh4DKvIqwqmkrarBmdgfbEq5i85gXOT8M=
-github.com/issue9/cache v0.8.1/go.mod h1:xEvqo+N/3EqqFYqNPdAinE5CFJIZjyJ2IoIGhMRlZdY=
+github.com/issue9/cache v0.9.0 h1:mmNGkamLyebWHg+zDjyF0Nn7Exl/bMjCNkZpCE/Rl+8=
+github.com/issue9/cache v0.9.0/go.mod h1:7jrt0HS5qkzz9Esbf47sK+g0Ba3gcZy8+jJYCw/svFw=
 github.com/issue9/config v0.6.1 h1:9V6X09fDT6Wzd/89SxX1yNoydyxXev4JC2ClhCxQLac=
 github.com/issue9/config v0.6.1/go.mod h1:9z8F2n/9zp9VfRAv6Pku5qpAg89lC79P18K0eZTSvlc=
 github.com/issue9/conv v1.3.4 h1:v1j/p1lVNW4u1yrbUxxNCb61iTFnF86s+KAwS65MsBs=
@@ -42,8 +42,8 @@ github.com/issue9/unique/v2 v2.0.0 h1:pLfaHYWPoLrpH8T7LMikwNePlKplA7qtK8roUF4uCC
 github.com/issue9/unique/v2 v2.0.0/go.mod h1:s0109PBDKIm7457yUaYSX/4WzHmeoGiZMhEuOB5tREI=
 github.com/klauspost/compress v1.17.4 h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW4fZ4=
 github.com/klauspost/compress v1.17.4/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6KH9zAO4BDxPM=
-github.com/redis/go-redis/v9 v9.3.1 h1:KqdY8U+3X6z+iACvumCNxnoluToB+9Me+TvyFa21Mds=
-github.com/redis/go-redis/v9 v9.3.1/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
+github.com/redis/go-redis/v9 v9.4.0 h1:Yzoz33UZw9I/mFhx4MNrB6Fk+XHO1VukNcCa1+lwyKk=
+github.com/redis/go-redis/v9 v9.4.0/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
 golang.org/x/crypto v0.18.0 h1:PGVlW0xEltQnzFZ55hkuX5+KLyrMYhHld1YHO4AKcdc=
 golang.org/x/crypto v0.18.0/go.mod h1:R0j02AL6hcrfOiy9T4ZYp/rcWeMxM3L6QYxlOuEG1mg=
 golang.org/x/mod v0.14.0 h1:dGoOF9QVLYng8IHTm7BAyWqCqSheQ5pYWGhzW00YJr0=

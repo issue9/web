@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/sliceutil"
 )
 
 type random struct {
@@ -48,7 +47,7 @@ func (s *random) Next() (string, error) {
 func (s *random) Del(p string) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.peers = sliceutil.Delete(s.peers, func(i string, _ int) bool { return i == p })
+	s.peers = slices.DeleteFunc(s.peers, func(i string) bool { return i == p })
 	return nil
 }
 

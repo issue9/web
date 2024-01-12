@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/sliceutil"
 )
 
 type roundRobin struct {
@@ -51,8 +50,7 @@ func (s *roundRobin) Next() (string, error) {
 func (s *roundRobin) Del(addr string) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-
-	s.peers = sliceutil.Delete(s.peers, func(i string, _ int) bool { return i == addr })
+	s.peers = slices.DeleteFunc(s.peers, func(i string) bool { return i == addr })
 
 	if s.curr >= len(s.peers) { // 判断 curr 是否超了
 		s.curr = 0
