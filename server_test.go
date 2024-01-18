@@ -23,7 +23,6 @@ var _ Locale = &locale.Locale{}
 
 type testServer struct {
 	*InternalServer
-	a      *assert.Assertion
 	logBuf *bytes.Buffer
 }
 
@@ -45,10 +44,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 	)
 	a.NotNil(log)
 
-	srv := &testServer{
-		a:      a,
-		logBuf: logBuf,
-	}
+	srv := &testServer{logBuf: logBuf}
 
 	cc, gc := memory.New()
 	u := unique.NewNumber(100)

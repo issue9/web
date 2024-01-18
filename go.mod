@@ -1,7 +1,7 @@
 module github.com/issue9/web
 
 require (
-	github.com/andybalholm/brotli v1.0.6
+	github.com/andybalholm/brotli v1.1.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cache v0.9.0
 	github.com/issue9/config v0.6.1
@@ -11,7 +11,7 @@ require (
 	github.com/issue9/logs/v7 v7.4.1
 	github.com/issue9/mux/v7 v7.3.4
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/scheduled v0.17.0
+	github.com/issue9/scheduled v0.19.0
 	github.com/issue9/sliceutil v0.15.0
 	github.com/issue9/term/v3 v3.2.5
 	github.com/issue9/unique/v2 v2.0.0
@@ -21,6 +21,8 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace github.com/issue9/scheduled => /Users/caixw/dev.localized/issue9/scheduled
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect

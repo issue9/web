@@ -52,8 +52,8 @@ func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	srv := s.Services()
-
 	a.Equal(2, len(srv.services)) // scheduled, unique id generate
+
 	s1, start1, _, _ := buildService()
 	srv.Add(Phrase("srv1"), s1)
 	a.Equal(3, len(srv.services))
@@ -64,13 +64,23 @@ func TestServer_service(t *testing.T) {
 	a.Equal(srv1.state, Running).
 		Equal(sched.state, Running)
 
-	// 运行中添加
 	s2, start2, _, _ := buildService()
 	srv.Add(Phrase("srv2"), s2)
 	a.Equal(4, len(srv.services))
 	srv2 := srv.services[3]
 	<-start2
 	a.Equal(Running, srv2.state) // 运行中添加自动运行服务
+
+	s3, start3, _, _ := buildService()
+	del := srv.Add(Phrase("srv3"), s3)
+	a.Equal(5, len(srv.services))
+	srv3 := srv.services[4]
+	<-start3
+	a.Equal(Running, srv3.state)
+	del()                          // 删除 s3
+	a.Equal(4, len(srv.services)). // 确定删除
+					Equal(Running, srv2.state). // 确定不会改变其它服务的状态
+					Equal(srv3.state, Stopped)
 
 	s.Close(0)
 	time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
@@ -91,10 +101,10 @@ func TestServer_scheduled(t *testing.T) {
 	}, time.Now(), false)
 
 	var count int
-	srv.VisitJobs(func(ls LocaleStringer, _, _ time.Time, _ State, _ bool, _ error) {
+	srv.VisitJobs(func(j *Job) {
 		if count == 1 { // 0 为 gc
 			p := s.Locale().NewPrinter(language.SimplifiedChinese)
-			a.Equal(ls.LocaleString(p), "cn")
+			a.Equal(j.Title().LocaleString(p), "cn")
 		}
 		count++
 	})
