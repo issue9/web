@@ -8,15 +8,11 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
-
-	"github.com/issue9/errwrap"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/bufpool"
 	"github.com/issue9/web/selector"
 )
-
-var bufferPool = &sync.Pool{New: func() any { return &errwrap.Buffer{} }}
 
 // Registry 服务注册与发现需要实现的接口
 type Registry interface {
@@ -84,20 +80,19 @@ func (ms Mapper) RewriteFunc(f func(string) selector.Selector) func(r *httputil.
 func marshalPeers(peers []selector.Peer) ([]byte, error) {
 	// TODO 改用 JSON 序列化，性能会差一些，但是不用手动用分号进行分隔，减少出错的可能性。
 
-	buf := bufferPool.Get().(*errwrap.Buffer)
-	buf.Reset()
-	defer bufferPool.Put(buf)
+	buf := bufpool.New()
+	defer bufpool.Put(buf)
 
 	for _, p := range peers {
 		data, err := p.MarshalText()
 		if err != nil {
 			return nil, err
 		}
-		buf.WBytes(data)
-		buf.WByte(';')
+		buf.Write(data)
+		buf.WriteByte(';')
 	}
 
-	return buf.Bytes(), buf.Err
+	return buf.Bytes(), nil
 }
 
 func unmarshalPeers(n func() selector.Peer, data []byte) ([]selector.Peer, error) {

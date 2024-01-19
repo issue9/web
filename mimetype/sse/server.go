@@ -13,12 +13,9 @@ import (
 	"time"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/bufpool"
 	"github.com/issue9/web/internal/header"
 )
-
-const bufMaxSize = 1024
-
-var bufPool = &sync.Pool{New: func() any { return &bytes.Buffer{} }}
 
 type (
 	// Server SSE 服务端
@@ -81,7 +78,7 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 func (srv *Server[T]) keepAlive(now time.Time) error {
 	srv.sources.Range(func(_, v any) bool {
 		if s := v.(*Source); s.last.After(now) {
-			b := s.newBuffer()
+			b := bufpool.New()
 			b.WriteString(":\n\n")
 			s.buf <- b
 		}
@@ -185,9 +182,7 @@ func (s *Source) connect(ctx *web.Context) {
 				continue // 出错即退出，由客户端自行重连。
 			}
 
-			if buf.Cap() < bufMaxSize { // buf.Bytes() 返回的并非副本。只有确定无用了才回收。
-				bufPool.Put(buf)
-			}
+			bufpool.Put(buf)
 		}
 	}
 }
@@ -242,7 +237,7 @@ func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 		panic("data 不能为空")
 	}
 
-	w := s.newBuffer()
+	w := bufpool.New()
 	for _, line := range data {
 		w.WriteString("data:")
 		w.WriteString(line)
@@ -266,12 +261,6 @@ func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 	}
 	w.WriteByte('\n')
 
-	return w
-}
-
-func (s *Source) newBuffer() *bytes.Buffer {
-	w := bufPool.Get().(*bytes.Buffer)
-	w.Reset()
 	return w
 }
 
