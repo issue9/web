@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 )
 
 func TestWeightRoundRobin(t *testing.T) {
@@ -17,13 +16,13 @@ func TestWeightRoundRobin(t *testing.T) {
 	a.Equal(err, ErrNoPeer()).Empty(addr)
 
 	a.PanicString(func() {
-		sel.Add(NewPeer("https://example.com"))
+		sel.Update(NewPeer("https://example.com"))
 	}, "p 必须实现 WeightedPeer 接口")
 
 	// 单个节点
 
-	p1 := NewPeer("https://example.com", 1)
-	a.NotError(sel.Add(p1))
+	p1 := NewWeightedPeer("https://example.com", 1)
+	sel.Update(p1)
 
 	addr, err = sel.Next()
 	a.NotError(err).Equal(addr, "https://example.com")
@@ -32,9 +31,8 @@ func TestWeightRoundRobin(t *testing.T) {
 
 	// 多个节点
 
-	p2 := NewPeer("https://example.io/", 3)
-	a.NotError(sel.Add(p2))
-	a.Equal(sel.Add(p2), localeutil.Error("has dup peer %s", p2.Addr())) // 添加已存在的节点
+	p2 := NewWeightedPeer("https://example.io/", 3)
+	sel.Update(p1, p2)
 
 	addr, err = sel.Next()
 	a.NotError(err).Equal(addr, "https://example.io")
@@ -50,18 +48,9 @@ func TestWeightRoundRobin(t *testing.T) {
 
 	// 删除节点
 
-	a.NotError(sel.Del(p1.Addr()))
-
+	sel.Update()
 	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-
-	a.NotError(sel.Del(p1.Addr())) // 删除不存在的节点
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-
-	a.NotError(sel.Del(p2.Addr())) // 节点已全部删除
+	a.Equal(err, ErrNoPeer()).Empty(addr)
 	addr, err = sel.Next()
 	a.Equal(err, ErrNoPeer()).Empty(addr)
 }

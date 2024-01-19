@@ -3,7 +3,13 @@
 // Package selector 提供负载均衡的相关功能
 package selector
 
-import "github.com/issue9/localeutil"
+import (
+	"bytes"
+	"encoding"
+	"strconv"
+
+	"github.com/issue9/localeutil"
+)
 
 var errNoPeer = localeutil.Error("no available peer")
 
@@ -12,18 +18,25 @@ type (
 	Selector interface {
 		// Next 返回下一个可用的节点地址
 		Next() (string, error)
+	}
 
-		// Add 添加新的节点
+	// Updateable 可动态更新节点信息的负载均衡接口
+	Updateable interface {
+		Selector
+
+		// Update 更新节点信息
 		//
-		// 不允许添加 [Peer.Addr] 返回值相同的项，否则会返回错误。
-		Add(Peer) error
-
-		// Del 根据节点地址删除节点
-		Del(string) error
+		// 如果传递空数组，则清空节点。
+		Update(...Peer)
 	}
 
 	// Peer 后端节点对象
+	//
+	// NOTE: 节点的序列化内容中不能包含半角分号（;）。
 	Peer interface {
+		encoding.TextMarshaler
+		encoding.TextUnmarshaler
+
 		// Addr 返回节点地址
 		//
 		// 返回值应该是一个有效的地址，且要满足以下条件：
@@ -40,7 +53,9 @@ type (
 		Weight() int
 	}
 
-	stringPeer string
+	stringPeer struct {
+		string
+	}
 
 	weightedPeer struct {
 		addr   string
@@ -48,30 +63,53 @@ type (
 	}
 )
 
-func (p stringPeer) Addr() string { return string(p) }
+func (p *stringPeer) Addr() string { return p.string }
+
+func (p *stringPeer) MarshalText() ([]byte, error) { return []byte(p.string), nil }
+
+func (p *stringPeer) UnmarshalText(data []byte) error {
+	p.string = string(data)
+	return nil
+}
 
 func (p weightedPeer) Addr() string { return p.addr }
 
 func (p weightedPeer) Weight() int { return p.weight }
 
-// NewPeer 声明 [Peer] 对象
-//
-// addr 为节点的地址；
-// weight 为该节点的权重，如果未指定该值，则返回普通的 [Peer] 对象，
-// 若是指定该值则会返回 [WeightedPeer] 接口。
-func NewPeer(addr string, weight ...int) Peer {
+func (p weightedPeer) MarshalText() ([]byte, error) {
+	return []byte(p.addr + "," + strconv.Itoa(p.weight)), nil
+}
+
+func (p *weightedPeer) UnmarshalText(data []byte) (err error) {
+	index := bytes.LastIndexByte(data, ',')
+	if index <= 0 {
+		return localeutil.Error("invalid data %s", strconv.Quote(string(data)))
+	}
+	p.addr = string(data[:index])
+	p.weight, err = strconv.Atoi(string(data[index+1:]))
+	return err
+}
+
+func NewPeer(addr string) Peer {
+	if addr == "" {
+		return &stringPeer{}
+	}
+
 	if last := len(addr) - 1; addr[last] == '/' {
 		addr = addr[:last]
 	}
+	return &stringPeer{addr}
+}
 
-	switch len(weight) {
-	case 0:
-		return stringPeer(addr)
-	case 1:
-		return &weightedPeer{addr: addr, weight: weight[0]}
-	default:
-		panic("参数 weight 过多")
+func NewWeightedPeer(addr string, weight int) WeightedPeer {
+	if addr == "" {
+		return &weightedPeer{}
 	}
+
+	if last := len(addr) - 1; addr[last] == '/' {
+		addr = addr[:last]
+	}
+	return &weightedPeer{addr: addr, weight: weight}
 }
 
 // ErrNoPeer 表示没有有效的节点

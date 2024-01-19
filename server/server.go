@@ -10,14 +10,30 @@ import (
 	"time"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/selector"
+	"github.com/issue9/web/server/registry"
 )
 
-type httpServer struct {
-	*web.InternalServer
-	httpServer *http.Server
-	state      web.State
-	closed     chan struct{}
-}
+type (
+	httpServer struct {
+		*web.InternalServer
+		httpServer *http.Server
+		state      web.State
+		closed     chan struct{}
+	}
+
+	service struct {
+		*httpServer
+		registry registry.Registry
+		peer     selector.Peer
+	}
+
+	gateway struct {
+		*httpServer
+		registry registry.Registry
+		mapper   registry.Mapper
+	}
+)
 
 func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	srv := &httpServer{
@@ -97,4 +113,61 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		srv.Logs().ERROR().Error(err)
 	}
+}
+
+// NewService 将 [web.Server] 作为微服务节点
+func NewService(name, version string, o *Options) (web.Server, error) {
+	o, err := sanitizeOptions(o, typeService)
+	if err != nil {
+		err.Path = "Options"
+		return nil, err
+	}
+
+	s := &service{
+		registry: o.Registry,
+		peer:     o.Peer,
+	}
+	s.httpServer = newHTTPServer(name, version, o, s)
+	return s, nil
+}
+
+func (s *service) Serve() error {
+	dreg, err := s.registry.Register(s.Name(), s.peer)
+	if err != nil {
+		return err
+	}
+
+	s.OnClose(func() error {
+		return dreg()
+	})
+
+	return s.httpServer.Serve()
+}
+
+// NewGateway 声明微服务的网关
+func NewGateway(name, version string, o *Options) (web.Server, error) {
+	o, err := sanitizeOptions(o, typeGateway)
+	if err != nil {
+		err.Path = "Options"
+		return nil, err
+	}
+
+	g := &gateway{
+		registry: o.Registry,
+		mapper:   o.Mapper,
+	}
+	g.httpServer = newHTTPServer(name, version, o, g)
+	return g, nil
+}
+
+func (g *gateway) Serve() error {
+	proxy := g.registry.ReverseProxy(g.mapper, g)
+
+	r := g.Routers().New("proxy", nil)
+	r.Any("{path}", func(ctx *web.Context) web.Responser {
+		proxy.ServeHTTP(ctx, ctx.Request())
+		return nil
+	})
+
+	return g.httpServer.Serve()
 }

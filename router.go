@@ -17,13 +17,14 @@ import (
 )
 
 type (
-	Router         = mux.RouterOf[HandlerFunc]
-	Prefix         = mux.PrefixOf[HandlerFunc]
-	Resource       = mux.ResourceOf[HandlerFunc]
-	RouterMatcher  = group.Matcher
-	RouterOption   = mux.Option
-	MiddlewareFunc = types.MiddlewareFuncOf[HandlerFunc]
-	Middleware     = types.MiddlewareOf[HandlerFunc]
+	Router            = mux.RouterOf[HandlerFunc]
+	Prefix            = mux.PrefixOf[HandlerFunc]
+	Resource          = mux.ResourceOf[HandlerFunc]
+	RouterMatcher     = group.Matcher
+	RouterMatcherFunc = group.MatcherFunc
+	RouterOption      = mux.Option
+	MiddlewareFunc    = types.MiddlewareFuncOf[HandlerFunc]
+	Middleware        = types.MiddlewareOf[HandlerFunc]
 
 	// HandlerFunc 路由的处理函数原型
 	//

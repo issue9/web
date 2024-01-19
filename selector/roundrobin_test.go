@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/localeutil"
 )
 
 var _ Selector = &roundRobin{}
@@ -21,7 +20,7 @@ func TestRoundRobin(t *testing.T) {
 	// 单个节点
 
 	p1 := NewPeer("https://example.com")
-	a.NotError(sel.Add(p1))
+	sel.Update(p1)
 
 	addr, err = sel.Next()
 	a.NotError(err).Equal(addr, "https://example.com")
@@ -31,8 +30,7 @@ func TestRoundRobin(t *testing.T) {
 	// 多个节点
 
 	p2 := NewPeer("https://example.io/")
-	a.NotError(sel.Add(p2))
-	a.Equal(sel.Add(p2), localeutil.Error("has dup peer %s", p2.Addr())) // 添加已存在的节点
+	sel.Update(p1, p2)
 
 	addr, err = sel.Next()
 	a.NotError(err).Equal(addr, "https://example.io")
@@ -45,18 +43,9 @@ func TestRoundRobin(t *testing.T) {
 
 	// 删除节点
 
-	a.NotError(sel.Del(p1.Addr()))
-
+	sel.Update()
 	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-
-	a.NotError(sel.Del(p1.Addr())) // 删除不存在的节点
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "https://example.io")
-
-	a.NotError(sel.Del(p2.Addr())) // 节点已全部删除
+	a.Equal(err, ErrNoPeer()).Empty(addr)
 	addr, err = sel.Next()
 	a.Equal(err, ErrNoPeer()).Empty(addr)
 }

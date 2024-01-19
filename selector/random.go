@@ -4,14 +4,11 @@ package selector
 
 import (
 	"math/rand"
-	"slices"
 	"sync"
-
-	"github.com/issue9/localeutil"
 )
 
 type random struct {
-	peers []string
+	peers []Peer
 	mux   sync.RWMutex
 }
 
@@ -19,13 +16,13 @@ type random struct {
 //
 // weight 是否采用加权算法，如果此值为 true，
 // 在调用 [Selector.Add] 时参数必须实现 [WeightedPeer]。
-func NewRandom(weight bool, cap int) Selector {
+func NewRandom(weight bool, cap int) Updateable {
 	if weight {
 		return newWeightedRandom(cap)
 	}
 
 	return &random{
-		peers: make([]string, 0, cap),
+		peers: make([]Peer, 0, cap),
 	}
 }
 
@@ -38,26 +35,14 @@ func (s *random) Next() (string, error) {
 	case 0:
 		return "", ErrNoPeer()
 	case 1:
-		return s.peers[0], nil
+		return s.peers[0].Addr(), nil
 	default:
-		return s.peers[rand.Intn(len(s.peers))], nil // TODO(go1.22): 可以采用 rand/v2
+		return s.peers[rand.Intn(len(s.peers))].Addr(), nil // TODO(go1.22): 可以采用 rand/v2
 	}
 }
 
-func (s *random) Del(p string) error {
+func (s *random) Update(peers ...Peer) {
 	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.peers = slices.DeleteFunc(s.peers, func(i string) bool { return i == p })
-	return nil
-}
-
-func (s *random) Add(p Peer) error {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	if index := slices.Index(s.peers, p.Addr()); index >= 0 { // 有重复项
-		return localeutil.Error("has dup peer %s", p.Addr())
-	}
-	s.peers = append(s.peers, p.Addr())
-	return nil
+	s.peers = append(s.peers[:0], peers...)
+	s.mux.Unlock()
 }

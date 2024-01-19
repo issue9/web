@@ -2,26 +2,21 @@
 
 package selector
 
-import (
-	"slices"
-	"sync"
-
-	"github.com/issue9/localeutil"
-)
+import "sync"
 
 // https://github.com/nginx/nginx/commit/52327e0627f49dbda1e8db695e63a4b0af4448b1#diff-3f2250b728a3f5fe1e2d31cbf63c2268R527
 type weightedRoundRobin struct {
 	currWeight      []int
 	effectiveWeight []int
-	peers           []string
+	peers           []WeightedPeer
 	mux             sync.RWMutex
 }
 
-func newWeightedRoundRobin(cap int) Selector {
+func newWeightedRoundRobin(cap int) Updateable {
 	return &weightedRoundRobin{
 		currWeight:      make([]int, 0, cap),
 		effectiveWeight: make([]int, 0, cap),
-		peers:           make([]string, 0, cap),
+		peers:           make([]WeightedPeer, 0, cap),
 	}
 }
 
@@ -36,7 +31,7 @@ func (s *weightedRoundRobin) Next() (string, error) {
 	case 0:
 		return "", ErrNoPeer()
 	case 1:
-		return s.peers[0], nil
+		return s.peers[0].Addr(), nil
 	default:
 		for i := range s.peers {
 			s.currWeight[i] += s.effectiveWeight[i]
@@ -52,43 +47,25 @@ func (s *weightedRoundRobin) Next() (string, error) {
 		}
 
 		s.currWeight[best] -= total
-		return s.peers[best], nil
+		return s.peers[best].Addr(), nil
 	}
 }
 
-func (s *weightedRoundRobin) Add(p Peer) error {
-	wp, ok := p.(WeightedPeer)
-	if !ok {
-		panic("p 必须实现 WeightedPeer 接口")
-	}
-
+func (s *weightedRoundRobin) Update(peers ...Peer) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if index := slices.Index(s.peers, p.Addr()); index >= 0 { // 有重复项
-		return localeutil.Error("has dup peer %s", p.Addr())
+	s.peers = s.peers[:0]
+	s.effectiveWeight = s.effectiveWeight[:0]
+	s.currWeight = s.currWeight[:0]
+	for _, p := range peers {
+		wp, ok := p.(WeightedPeer)
+		if !ok {
+			panic("p 必须实现 WeightedPeer 接口")
+		}
+
+		s.peers = append(s.peers, wp)
+		s.effectiveWeight = append(s.effectiveWeight, wp.Weight())
+		s.currWeight = append(s.currWeight, 0)
 	}
-
-	s.peers = append(s.peers, wp.Addr())
-	s.effectiveWeight = append(s.effectiveWeight, wp.Weight())
-	s.currWeight = append(s.currWeight, 0)
-
-	return nil
-}
-
-func (s *weightedRoundRobin) Del(addr string) error {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	i := slices.Index(s.peers, addr)
-	if i < 0 {
-		return nil
-	}
-
-	j := i + 1
-	s.peers = slices.Delete(s.peers, i, j)
-	s.currWeight = slices.Delete(s.currWeight, i, j)
-	s.effectiveWeight = slices.Delete(s.effectiveWeight, i, j)
-
-	return nil
 }

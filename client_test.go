@@ -21,7 +21,7 @@ func TestClient_NewRequest(t *testing.T) {
 	codec := newCodec(a)
 
 	sel := selector.NewRoundRobin(false, 1)
-	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	sel.Update(selector.NewPeer("https://example.com"))
 	c := NewClient(nil, codec, sel, "application/json", json.Marshal, header.RequestIDKey, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
@@ -40,7 +40,7 @@ func TestClient_ParseResponse(t *testing.T) {
 	codec := newCodec(a)
 
 	sel := selector.NewRoundRobin(false, 1)
-	a.NotError(sel.Add(selector.NewPeer("https://example.com")))
+	sel.Update(selector.NewPeer("https://example.com"))
 	c := NewClient(nil, codec, sel, "application/json", json.Marshal, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)

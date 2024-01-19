@@ -34,7 +34,7 @@ require (
 	github.com/issue9/conv v1.3.4 // indirect
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/mux/v7 v7.3.4 // indirect
-	github.com/issue9/scheduled v0.17.0 // indirect
+	github.com/issue9/scheduled v0.19.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

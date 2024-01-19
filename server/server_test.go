@@ -22,7 +22,11 @@ import (
 	"github.com/issue9/web/server/servertest"
 )
 
-var _ web.Server = &httpServer{}
+var (
+	_ web.Server = &httpServer{}
+	_ web.Server = &gateway{}
+	_ web.Server = &service{}
+)
 
 func buildHandler(code int) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
@@ -88,19 +92,7 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 	return srv.(*httpServer)
 }
 
-func TestServer_LocalePrinter_Sprintf(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, &Options{Language: language.TraditionalChinese})
-
-	p := srv.Locale().Printer()
-	a.Equal(p.Sprintf("lang"), "hant")
-
-	p = srv.Locale().NewPrinter(language.SimplifiedChinese)
-	srv.Locale().SetString(language.SimplifiedChinese, "lang1", "sc")
-	a.Equal(p.Sprintf("lang1"), "sc")
-}
-
-func TestServer_Serve(t *testing.T) {
+func TestHTTPServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a, nil)
@@ -143,7 +135,7 @@ func TestServer_Serve(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 }
 
-func TestServer_Serve_HTTPS(t *testing.T) {
+func TestHTTPServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 
 	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
@@ -178,7 +170,7 @@ func TestServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
 }
 
-func TestServer_Close(t *testing.T) {
+func TestHTTPServer_Close(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
 	router := srv.Routers().New("def", nil)
@@ -217,7 +209,7 @@ func TestServer_Close(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func TestServer_CloseWithTimeout(t *testing.T) {
+func TestHTTPServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
 	router := srv.Routers().New("def", nil)
@@ -255,7 +247,7 @@ type object struct {
 	Age  int
 }
 
-func TestServer_NewClient(t *testing.T) {
+func TestHTTPServer_NewClient(t *testing.T) {
 	a := assert.New(t, false)
 
 	s := newTestServer(a, nil)
@@ -276,7 +268,7 @@ func TestServer_NewClient(t *testing.T) {
 	})
 
 	sel := selector.NewRoundRobin(false, 1)
-	a.NotError(sel.Add(selector.NewPeer("http://localhost:8080")))
+	sel.Update(selector.NewPeer("http://localhost:8080"))
 	c := s.NewClient(nil, sel, "application/json", sj.Marshal)
 	a.NotNil(c)
 
@@ -310,7 +302,7 @@ func TestServer_NewClient(t *testing.T) {
 	a.Zero(resp).Equal(p.Type, web.ProblemNotFound)
 }
 
-func TestServer_NewContext(t *testing.T) {
+func TestHTTPServer_NewContext(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, nil)
 	router := srv.Routers().New("def", nil)
