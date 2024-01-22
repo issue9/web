@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/compressor"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
@@ -47,7 +48,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 		enc, found := compressorFactory[e.ID]
 		if !found {
 			field := "compresses[" + strconv.Itoa(index) + "].id"
-			return web.NewFieldError(field, web.NewLocaleError("%s not found", e.ID))
+			return web.NewFieldError(field, locales.ErrNotFound(e.ID))
 		}
 
 		conf.compressors = append(conf.compressors, &server.Compression{

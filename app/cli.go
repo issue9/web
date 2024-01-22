@@ -43,6 +43,11 @@ type CLIOf[T any] struct {
 	// action 为 -a 命令行指定的参数；
 	Init func(s web.Server, user *T, action string) error
 
+	// 初始化一个正常的 [web.Server] 对象
+	//
+	// 如果为空，则会以 [server.New] 作为初始化对象。
+	NewServer func(name, version string, o *server.Options) (web.Server, error)
+
 	// 以服务运行的指令
 	ServeActions []string
 
@@ -121,6 +126,11 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 	if cmd.Init == nil {
 		return errors.New("字段 Init 不能为空")
+	}
+	if cmd.NewServer == nil {
+		cmd.NewServer = func(name, ver string, o *server.Options) (web.Server, error) {
+			return server.New(name, ver, o)
+		}
 	}
 
 	if cmd.ConfigDir == "" {
@@ -203,7 +213,12 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
 func (cmd *CLIOf[T]) initServer() (web.Server, error) {
-	srv, user, err := NewServerOf[T](cmd.Name, cmd.Version, cmd.ConfigDir, cmd.ConfigFilename)
+	opt, user, err := NewOptionsOf[T](cmd.ConfigDir, cmd.ConfigFilename)
+	if err != nil {
+		return nil, web.NewStackError(err)
+	}
+
+	srv, err := cmd.NewServer(cmd.Name, cmd.Version, opt)
 	if err != nil {
 		return nil, web.NewStackError(err)
 	}

@@ -26,15 +26,13 @@ func (u *userData) SanitizeConfig() *config.FieldError {
 	return nil
 }
 
-func TestNewServerOf(t *testing.T) {
+func TestNewOptionsOf(t *testing.T) {
 	a := assert.New(t, false)
-	const name = "app"
-	const ver = "1.0"
 
-	s, data, err := NewServerOf[empty](name, ver, "./testdata", "web.yaml")
+	s, data, err := NewOptionsOf[empty]("./testdata", "web.yaml")
 	a.NotError(err).NotNil(s).Nil(data)
 
-	s, data, err = NewServerOf[empty](name, ver, "./testdata/not-exists", "web.yaml")
+	s, data, err = NewOptionsOf[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
 }
 

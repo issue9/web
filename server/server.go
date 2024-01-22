@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 // Package server 服务端实现
+//
+// 目前实现了三种类型的服务端：
+//   - [New] 构建普通的 HTTP 服务；
+//   - [NewGateway] 构建微服务的网关服务；
+//   - [NewService] 构建微服务；
 package server
 
 import (
@@ -137,9 +142,7 @@ func (s *service) Serve() error {
 		return err
 	}
 
-	s.OnClose(func() error {
-		return dreg()
-	})
+	s.OnClose(func() error { return dreg() })
 
 	return s.httpServer.Serve()
 }

@@ -36,8 +36,12 @@ type Registry interface {
 	ReverseProxy(m Mapper, s web.Server) *httputil.ReverseProxy
 }
 
+// DeregisterFunc 注销微服务的函数签名
 type DeregisterFunc = func() error
 
+// Mapper 微服务名称与路由的匹配关系
+//
+// 在网关中由此列表确定相应的路由由哪个微服务进行代码。
 type Mapper map[string]web.RouterMatcher
 
 // RewriteFunc 转换为 [httputil.ProxyRequest.Rewrite] 字段类型的函数

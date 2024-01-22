@@ -135,7 +135,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		f, found := logHandlersFactory[w.Type]
 		if !found {
-			return nil, nil, web.NewFieldError(field+".Type", web.NewLocaleError("%s not found", w.Type))
+			return nil, nil, web.NewFieldError(field+".Type", locales.ErrNotFound(w.Type))
 		}
 
 		ww, c, err := f(w.Args)

@@ -137,6 +137,8 @@ type (
 		// 以下微服务相关的设置
 
 		// Registry 作为微服务时的注册中心实例
+		//
+		// NOTE: 仅在 [NewService] 和 [NewGateway] 中才会有效果。
 		Registry registry.Registry
 
 		// Peer 作为微服务终端时的地址

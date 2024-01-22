@@ -62,6 +62,8 @@ type (
 		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
 
 		routersOptions []mux.Option
+		init           func(web.Server)
+		httpServer     *http.Server
 	}
 
 	headerConfig struct {
@@ -126,11 +128,11 @@ func exists(p string) bool {
 
 func (cert *certificateConfig) sanitize() *web.FieldError {
 	if !exists(cert.Cert) {
-		return web.NewFieldError("cert", web.NewLocaleError("%s not found", cert.Cert))
+		return web.NewFieldError("cert", locales.ErrNotFound(cert.Cert))
 	}
 
 	if !exists(cert.Key) {
-		return web.NewFieldError("key", web.NewLocaleError("%s not found", cert.Key))
+		return web.NewFieldError("key", locales.ErrNotFound(cert.Key))
 	}
 
 	return nil
@@ -161,13 +163,30 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		h.RequestID = server.RequestIDKey
 	}
 
-	h.buildRoutersOptions()
+	if len(h.Headers) > 0 {
+		h.init = func(s web.Server) {
+			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+				return func(ctx *web.Context) web.Responser {
+					for _, hh := range h.Headers {
+						ctx.Header().Add(hh.Key, hh.Value)
+					}
+					return next(ctx)
+				}
+			}))
+		}
+	}
 
-	return h.buildTLSConfig()
+	if err := h.buildTLSConfig(); err != nil {
+		return err
+	}
+
+	h.buildRoutersOptions()
+	h.buildHTTPServer()
+	return nil
 }
 
-func (h *httpConfig) buildHTTPServer() *http.Server {
-	return &http.Server{
+func (h *httpConfig) buildHTTPServer() {
+	h.httpServer = &http.Server{
 		Addr:              h.Port,
 		ReadTimeout:       h.ReadTimeout.Duration(),
 		ReadHeaderTimeout: h.ReadHeaderTimeout.Duration(),
@@ -189,7 +208,7 @@ func (h *httpConfig) buildRoutersOptions() {
 
 func (h *httpConfig) buildTLSConfig() *web.FieldError {
 	if len(h.Certificates) > 0 && h.ACME != nil {
-		return web.NewFieldError("acme", "不能与 certificates 同时存在")
+		return web.NewFieldError("acme", web.Phrase("conflict with certificates"))
 	}
 
 	if h.ACME != nil {

@@ -99,16 +99,17 @@ func TestServer_scheduled(t *testing.T) {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now(), false)
+	a.Equal(2, len(srv.scheduled.Jobs()))
 
-	var count int
+	// 查找翻译项是否正确
+	var found bool
 	srv.VisitJobs(func(j *Job) {
-		if count == 1 { // 0 为 gc
-			p := s.Locale().NewPrinter(language.SimplifiedChinese)
-			a.Equal(j.Title().LocaleString(p), "cn")
+		p := s.Locale().NewPrinter(language.SimplifiedChinese)
+		if !found {
+			found = j.Title().LocaleString(p) == "cn"
 		}
-		count++
 	})
-	a.Equal(2, count)
+	a.True(found)
 }
 
 func TestService_state(t *testing.T) {

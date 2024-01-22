@@ -3,7 +3,6 @@
 package app
 
 import (
-	"net/http"
 	"runtime/debug"
 	"time"
 
@@ -30,9 +29,7 @@ type configOf[T any] struct {
 	// 日志系统的配置项
 	//
 	// 如果为空，所有日志输出都将被抛弃。
-	Logs    *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
-	logs    *server.Logs
-	cleanup []func() error
+	Logs *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
 
 	// 指定默认语言
 	//
@@ -43,7 +40,6 @@ type configOf[T any] struct {
 
 	// 与 HTTP 请求相关的设置项
 	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
-	http *http.Server
 
 	// 时区名称
 	//
@@ -103,19 +99,18 @@ type configOf[T any] struct {
 	init []func(web.Server)
 }
 
-// NewServerOf 从配置文件初始化 [web.Server] 对象
+// NewOptionsOf 从配置文件初始化 [server.Options] 对象
 //
 // configDir 项目配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 configDir 文件系统。
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
-// 如果此值为空，将以 &web.Options{} 初始化 [web.Server]；
+// 如果此值为空，将以 &server.Options{} 初始化 [web.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
-func NewServerOf[T any](name, version string, configDir, filename string) (web.Server, *T, error) {
+func NewOptionsOf[T any](configDir, filename string) (*server.Options, *T, error) {
 	if filename == "" {
-		s, err := server.New(name, version, &server.Options{Config: &server.Config{Dir: configDir}})
-		return s, nil, err
+		return &server.Options{Config: &server.Config{Dir: configDir}}, nil, nil
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)
@@ -127,12 +122,12 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 		debug.SetMemoryLimit(conf.MemoryLimit)
 	}
 
-	opt := &server.Options{
+	return &server.Options{
 		Config:            conf.config,
 		Location:          conf.location,
 		Cache:             conf.cache,
-		HTTPServer:        conf.http,
-		Logs:              conf.logs,
+		HTTPServer:        conf.HTTP.httpServer,
+		Logs:              conf.Logs.logs,
 		Language:          conf.languageTag,
 		RoutersOptions:    conf.HTTP.routersOptions,
 		IDGenerator:       conf.idGenerator,
@@ -141,27 +136,7 @@ func NewServerOf[T any](name, version string, configDir, filename string) (web.S
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
 		Init:              conf.init,
-	}
-
-	srv, err := server.New(name, version, opt)
-	if err != nil {
-		return nil, nil, web.NewStackError(err)
-	}
-
-	if len(conf.HTTP.Headers) > 0 {
-		srv.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-			return func(ctx *web.Context) web.Responser {
-				for _, hh := range conf.HTTP.Headers {
-					ctx.Header().Add(hh.Key, hh.Value)
-				}
-				return next(ctx)
-			}
-		}))
-	}
-
-	srv.OnClose(conf.cleanup...)
-
-	return srv, conf.User, nil
+	}, conf.User, nil
 }
 
 func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
@@ -172,8 +147,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if err != nil {
 		return err.AddFieldParent("logs")
 	}
-	conf.logs = conf.Logs.logs
-	conf.cleanup = conf.Logs.cleanup
+	conf.init = append(conf.init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
 
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
@@ -193,7 +167,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if err = conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
-	conf.http = conf.HTTP.buildHTTPServer()
+	conf.init = append(conf.init, conf.HTTP.init)
 
 	if err = conf.sanitizeCompresses(); err != nil {
 		return err.AddFieldParent("compressions")

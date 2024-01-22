@@ -63,7 +63,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory[item.Target]
 		if !found {
-			return web.NewFieldError("["+strconv.Itoa(index)+"].target", web.NewLocaleError("%s not found", item.Target))
+			return web.NewFieldError("["+strconv.Itoa(index)+"].target", locales.ErrNotFound(item.Target))
 		}
 
 		ms = append(ms, &server.Mimetype{

@@ -53,3 +53,5 @@ var (
 func ErrInvalidValue() error { return errInvalidValue }
 
 func ErrCanNotBeEmpty() error { return errCanNotBeEmpty }
+
+func ErrNotFound(s string) error { return localeutil.Error("%s not found", s) }
