@@ -99,7 +99,7 @@ type configOf[T any] struct {
 	init []func(web.Server)
 }
 
-// NewOptionsOf 从配置文件初始化 [server.Options] 对象
+// LoadOptions 从配置文件初始化 [server.Options] 对象
 //
 // configDir 项目配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 configDir 文件系统。
@@ -108,7 +108,7 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
-func NewOptionsOf[T any](configDir, filename string) (*server.Options, *T, error) {
+func LoadOptions[T any](configDir, filename string) (*server.Options, *T, error) {
 	if filename == "" {
 		return &server.Options{Config: &server.Config{Dir: configDir}}, nil, nil
 	}
@@ -116,10 +116,6 @@ func NewOptionsOf[T any](configDir, filename string) (*server.Options, *T, error
 	conf, err := loadConfigOf[T](configDir, filename)
 	if err != nil {
 		return nil, nil, web.NewStackError(err)
-	}
-
-	if conf.MemoryLimit > 0 {
-		debug.SetMemoryLimit(conf.MemoryLimit)
 	}
 
 	return &server.Options{
@@ -140,6 +136,10 @@ func NewOptionsOf[T any](configDir, filename string) (*server.Options, *T, error
 }
 
 func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
+	if conf.MemoryLimit > 0 {
+		conf.init = append(conf.init, func(web.Server) { debug.SetMemoryLimit(conf.MemoryLimit) })
+	}
+
 	if conf.Logs == nil {
 		conf.Logs = &logsConfig{}
 	}

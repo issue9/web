@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package server 服务端实现
+// Package server 提供与服务端实现相关的功能
 //
 // 目前实现了三种类型的服务端：
 //   - [New] 构建普通的 HTTP 服务；

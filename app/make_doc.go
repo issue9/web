@@ -104,7 +104,7 @@ func main() {
 	<body>`)
 
 	w.WString(`<h1>config</h1>`).WString(`<article>
-	这是 NewServerOf 和 CLIOf 用到的配置项。
+	这是 LoadOptions 和 CLIOf 用到的配置项。
 	</article>`)
 
 	parse(w, objName, p)

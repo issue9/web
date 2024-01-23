@@ -18,10 +18,6 @@ import (
 
 var filesFactory = map[string]*server.FileSerializer{}
 
-type MarshalFileFunc = config.MarshalFunc
-
-type UnmarshalFileFunc = config.UnmarshalFunc
-
 func (conf *configOf[T]) sanitizeFileSerializers() *web.FieldError {
 	for i, name := range conf.FileSerializers {
 		s, found := filesFactory[name]
@@ -37,7 +33,7 @@ func (conf *configOf[T]) sanitizeFileSerializers() *web.FieldError {
 //
 // ext 为文件的扩展名；
 // name 为当前数据的名称，如果存在同名，则会覆盖；
-func RegisterFileSerializer(name string, m MarshalFileFunc, u UnmarshalFileFunc, ext ...string) {
+func RegisterFileSerializer(name string, m config.MarshalFunc, u config.UnmarshalFunc, ext ...string) {
 	for _, e := range ext {
 		for k, s := range filesFactory {
 			if slices.Index(s.Exts, e) >= 0 {

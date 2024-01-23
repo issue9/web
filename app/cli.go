@@ -213,7 +213,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
 func (cmd *CLIOf[T]) initServer() (web.Server, error) {
-	opt, user, err := NewOptionsOf[T](cmd.ConfigDir, cmd.ConfigFilename)
+	opt, user, err := LoadOptions[T](cmd.ConfigDir, cmd.ConfigFilename)
 	if err != nil {
 		return nil, web.NewStackError(err)
 	}
