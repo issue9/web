@@ -54,7 +54,7 @@ func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, 
 		return nil, err
 	}
 
-	peers, err := unmarshalPeers(c.s.newPeer, []byte(s))
+	peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) Deregi
 			return err
 		}
 
-		peers, err := unmarshalPeers(c.s.newPeer, []byte(s))
+		peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) Deregi
 }
 
 func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
-	ss := c.s.newSelector()
+	ss := c.s.NewSelector()
 
 	job := func(time.Time) error {
 		var s string
@@ -117,7 +117,7 @@ func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
 			return err
 		}
 
-		peers, err := unmarshalPeers(c.s.newPeer, []byte(s))
+		peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
 		if err == nil {
 			ss.Update(peers...)
 		}
@@ -149,11 +149,11 @@ func (c *cacheRegistry) ReverseProxy(ms Mapper, s web.Server) *httputil.ReverseP
 
 			sel, found := ss[name]
 			if !found {
-				ss[name] = c.s.newSelector()
+				ss[name] = c.s.NewSelector()
 				sel = ss[name]
 			}
 
-			peers, err := unmarshalPeers(c.s.newPeer, []byte(s))
+			peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
 			if err != nil {
 				return err
 			}

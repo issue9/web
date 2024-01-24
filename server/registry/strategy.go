@@ -6,15 +6,15 @@ import "github.com/issue9/web/selector"
 
 // Strategy 为初始化 [Registry] 对象提供与 [selector.Selector] 相关的方案
 type Strategy struct {
-	// 构建 [selector.Updateable]
-	newSelector func() selector.Updateable
+	// NewSelector 构建 [selector.Updateable]
+	NewSelector func() selector.Updateable
 
-	// 构建与 NewSelector 相匹配的 [selector.Peer] 零值对象
-	newPeer func() selector.Peer
+	// NewPeer 构建与 [StrategyNewSelector] 相匹配的 [selector.Peer] 零值对象
+	NewPeer func() selector.Peer
 }
 
 func NewStrategy(sel func() selector.Updateable, p func() selector.Peer) *Strategy {
-	return &Strategy{newSelector: sel, newPeer: p}
+	return &Strategy{NewSelector: sel, NewPeer: p}
 }
 
 func NewRandomStrategy() *Strategy {

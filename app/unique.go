@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var idGeneratorFactory = map[string]IDGeneratorBuilder{}
+var idGeneratorFactory = newRegister[IDGeneratorBuilder]()
 
 // IDGeneratorBuilder 构建生成唯一 ID 的方法
 //
@@ -21,9 +21,7 @@ type IDGeneratorBuilder = func() (f server.IDGenerator, srv web.Service)
 // RegisterIDGenerator 注册唯一 ID 生成器
 //
 // 如果同名会被覆盖。
-func RegisterIDGenerator(id string, b IDGeneratorBuilder) {
-	idGeneratorFactory[id] = b
-}
+func RegisterIDGenerator(id string, b IDGeneratorBuilder) { idGeneratorFactory.register(b, id) }
 
 func init() {
 	RegisterIDGenerator("date", func() (server.IDGenerator, web.Service) {

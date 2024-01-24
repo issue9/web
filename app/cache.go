@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var cacheFactory = map[string]CacheBuilder{}
+var cacheFactory = newRegister[CacheBuilder]()
 
 // CacheBuilder 构建缓存客户端的方法
 //
@@ -52,7 +52,7 @@ func (conf *configOf[T]) buildCache() *web.FieldError {
 		return nil
 	}
 
-	b, found := cacheFactory[conf.Cache.Type]
+	b, found := cacheFactory.get(conf.Cache.Type)
 	if !found {
 		return web.NewFieldError("type", locales.InvalidValue)
 	}
@@ -74,15 +74,7 @@ func (conf *configOf[T]) buildCache() *web.FieldError {
 // RegisterCache 注册新的缓存方式
 //
 // name 为缓存的名称，如果存在同名，则会覆盖。
-func RegisterCache(b CacheBuilder, name ...string) {
-	if len(name) == 0 {
-		panic("参数 name 不能为空")
-	}
-
-	for _, n := range name {
-		cacheFactory[n] = b
-	}
-}
+func RegisterCache(b CacheBuilder, name ...string) { cacheFactory.register(b, name...) }
 
 func init() {
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
@@ -93,7 +85,7 @@ func init() {
 
 		drv, job := server.NewMemory()
 		return drv, &Job{Ticker: d, Job: job}, nil
-	}, "", "memory")
+	}, "memory")
 
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
 		return server.NewMemcache(strings.Split(dsn, ";")...), nil, nil

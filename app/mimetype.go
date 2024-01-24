@@ -18,7 +18,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var mimetypesFactory = map[string]serializerItem{}
+var mimetypesFactory = newRegister[serializerItem]()
 
 type serializerItem struct {
 	marshal   web.MarshalFunc
@@ -61,7 +61,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 
 	ms := make([]*server.Mimetype, 0, len(conf.Mimetypes))
 	for index, item := range conf.Mimetypes {
-		m, found := mimetypesFactory[item.Target]
+		m, found := mimetypesFactory.get(item.Target)
 		if !found {
 			return web.NewFieldError("["+strconv.Itoa(index)+"].target", locales.ErrNotFound(item.Target))
 		}
@@ -82,7 +82,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 //
 // name 为名称，如果存在同名，则会覆盖。
 func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
-	mimetypesFactory[name] = serializerItem{marshal: m, unmarshal: u}
+	mimetypesFactory.register(serializerItem{marshal: m, unmarshal: u}, name)
 }
 
 func init() {

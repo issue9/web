@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-var logHandlersFactory = map[string]LogsHandlerBuilder{}
+var logHandlersFactory = newRegister[LogsHandlerBuilder]()
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
 type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error)
@@ -133,7 +133,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 	for i, w := range conf.Handlers {
 		field := "Handlers[" + strconv.Itoa(i) + "]"
 
-		f, found := logHandlersFactory[w.Type]
+		f, found := logHandlersFactory.get(w.Type)
 		if !found {
 			return nil, nil, web.NewFieldError(field+".Type", locales.ErrNotFound(w.Type))
 		}
@@ -171,13 +171,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 //
 // name 为缓存的名称，如果存在同名，则会覆盖。
 func RegisterLogsHandler(b LogsHandlerBuilder, name ...string) {
-	if len(name) == 0 {
-		panic("参数 name 不能为空")
-	}
-
-	for _, n := range name {
-		logHandlersFactory[n] = b
-	}
+	logHandlersFactory.register(b, name...)
 }
 
 func init() {

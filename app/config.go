@@ -12,7 +12,9 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/registry"
 )
 
 type configOf[T any] struct {
@@ -92,6 +94,23 @@ type configOf[T any] struct {
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
 
+	// 指定服务发现和注册中心
+	//
+	// NOTE: 作为微服务和网关时才会有效果
+	Registry *registryConfig `yaml:"registry,omitempty" json:"registry,omitempty" xml:"registry,omitempty"`
+
+	// 作为微服务时的节点地址
+	//
+	// NOTE: 作为微服务时才会有效果
+	Peer string `yaml:"peer,omitempty" json:"peer,omitempty" xml:"peer,omitempty"`
+	peer selector.Peer
+
+	// 作为微服务网关时的外部请求映射方式
+	//
+	// NOTE: 作为微服务时才会有效果
+	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty"`
+	mapper  registry.Mapper
+
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 
@@ -140,11 +159,15 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		conf.init = append(conf.init, func(web.Server) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
 
+	if err := conf.buildCache(); err != nil { // buildCache 依赖 IDGenerator
+		return err.AddFieldParent("cache")
+	}
+
 	if conf.Logs == nil {
 		conf.Logs = &logsConfig{}
 	}
-	err := conf.Logs.build()
-	if err != nil {
+
+	if err := conf.Logs.build(); err != nil {
 		return err.AddFieldParent("logs")
 	}
 	conf.init = append(conf.init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
@@ -157,34 +180,34 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		conf.languageTag = tag
 	}
 
-	if err = conf.buildTimezone(); err != nil {
+	if err := conf.buildTimezone(); err != nil {
 		return err
 	}
 
 	if conf.HTTP == nil {
 		conf.HTTP = &httpConfig{}
 	}
-	if err = conf.HTTP.sanitize(); err != nil {
+	if err := conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
 	conf.init = append(conf.init, conf.HTTP.init)
 
-	if err = conf.sanitizeCompresses(); err != nil {
+	if err := conf.sanitizeCompresses(); err != nil {
 		return err.AddFieldParent("compressions")
 	}
 
-	if err = conf.sanitizeMimetypes(); err != nil {
+	if err := conf.sanitizeMimetypes(); err != nil {
 		return err.AddFieldParent("mimetypes")
 	}
 
-	if err = conf.sanitizeFileSerializers(); err != nil {
+	if err := conf.sanitizeFileSerializers(); err != nil {
 		return err.AddFieldParent("fileSerializer")
 	}
 
 	if conf.IDGenerator == "" {
 		conf.IDGenerator = "date"
 	}
-	if g, found := idGeneratorFactory[conf.IDGenerator]; found {
+	if g, found := idGeneratorFactory.get(conf.IDGenerator); found {
 		f, srv := g()
 		conf.idGenerator = f
 		if srv != nil {
@@ -192,8 +215,8 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		}
 	}
 
-	if err = conf.buildCache(); err != nil { // buildCache 依赖 IDGenerator
-		return err.AddFieldParent("cache")
+	if err := conf.buildMicro(conf.cache); err != nil {
+		return err
 	}
 
 	if conf.User != nil {

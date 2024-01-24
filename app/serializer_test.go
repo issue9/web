@@ -59,5 +59,6 @@ func RegisterRegisterFileSerializer(t *testing.T) {
 	}, "扩展名 .json 已经注册到 json")
 
 	RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".js")
-	a.Equal(filesFactory["new"].Exts, []string{".js"})
+	v, f := filesFactory.get("new")
+	a.True(f).NotNil(v).Equal(v.Exts, []string{".js"})
 }
