@@ -28,11 +28,13 @@ import (
 	"github.com/issue9/web/server/registry"
 )
 
-// RequestIDKey 报头中传递 request id 的报头名称
-const RequestIDKey = header.RequestIDKey
+const (
+	// RequestIDKey 报头中传递 request id 的报头名称
+	RequestIDKey = header.RequestIDKey
 
-// DefaultConfigDir 默认的配置目录地址
-const DefaultConfigDir = "@.config"
+	// DefaultConfigDir 默认的配置目录地址
+	DefaultConfigDir = "@.config"
+)
 
 const (
 	typeHTTP int = iota

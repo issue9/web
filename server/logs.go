@@ -99,10 +99,13 @@ func (o *Options) buildLogs(p *localeutil.Printer) *web.FieldError {
 	return nil
 }
 
+// AllLevels 返回所有的日志类型
 func AllLevels() []logs.Level { return logs.AllLevels() }
 
+// NewTextHandler 声明文本类型的日志输出通道
 func NewTextHandler(w ...io.Writer) logs.Handler { return logs.NewTextHandler(w...) }
 
+// NewJSONHandler 声明 JSON 类型的日志输出通道
 func NewJSONHandler(w ...io.Writer) logs.Handler { return logs.NewJSONHandler(w...) }
 
 // NewTermHandler 带颜色的终端输出通道

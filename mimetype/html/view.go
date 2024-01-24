@@ -20,7 +20,10 @@ type contextType int
 
 const viewContextKey contextType = 1
 
-var once = &sync.Once{}
+var (
+	viewOnce = &sync.Once{}
+	dirOnce  = &sync.Once{}
+)
 
 type view struct {
 	tpl *template.Template // 单目录模式下的模板
@@ -53,20 +56,18 @@ func InstallView(s web.Server, dir bool, fsys fs.FS, glob string) {
 		panic("参数 fsys 不能为空")
 	}
 
-	once.Do(func() {
-		if dir {
+	if dir {
+		dirOnce.Do(func() {
 			instalDirView(s, fsys, glob)
-			return
-		}
-
-		fsys, funcs := initTpl(s, fsys)
-		tpl := template.New(s.Name()).Funcs(funcs)
-		template.Must(tpl.ParseFS(fsys, glob))
-
-		s.Vars().Store(viewContextKey, &view{
-			tpl: tpl,
 		})
-	})
+	} else {
+		viewOnce.Do(func() {
+			fsys, funcs := initTpl(s, fsys)
+			tpl := template.New(s.Name()).Funcs(funcs)
+			template.Must(tpl.ParseFS(fsys, glob))
+			s.Vars().Store(viewContextKey, &view{tpl: tpl})
+		})
+	}
 }
 
 func instalDirView(s web.Server, fsys fs.FS, glob string) {
