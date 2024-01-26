@@ -1,28 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-// Package app 提供了简便的方式初始化 [web.Server]
-//
-// 目前有以下几种方式：
-//   - [App] 简要的 [web.Server] 管理；
-//   - [CLIOf] 直接生成一个简单的命令行程序，结合了 [App] 和 [NewOptionsOf] 两者的功能；
-//
-// # 配置文件
-//
-// [CLIOf] 都是通过加载配置文件对项目进行初始化。
-// 对于配置文件各个字段的定义，可参考当前目录下的 CONFIG.html。
-// 配置文件中除了固定的字段之外，还提供了泛型变量 User 用于指定用户自定义的额外字段。
-//
-// # 注册函数
-//
-// 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
-// 比如通过 [RegisterEncoding] 将 `gzip-default` 等字符串表示成压缩算法，
-// 以便在配置文件进行指定。
-//
-// 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
-// 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
+// Package app 提供了简便的方式管理 [web.Server]
 package app
-
-//go:generate go run ./make_doc.go
 
 import (
 	"os"

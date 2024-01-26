@@ -6,7 +6,23 @@
 //   - [New] 构建普通的 HTTP 服务；
 //   - [NewGateway] 构建微服务的网关服务；
 //   - [NewService] 构建微服务；
+//
+// # 配置文件
+//
+// 对于配置文件各个字段的定义，可参考当前目录下的 CONFIG.html。
+// 配置文件中除了固定的字段之外，还提供了泛型变量 User 用于指定用户自定义的额外字段。
+//
+// # 注册函数
+//
+// 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
+// 比如通过 [RegisterCompression] 将 `gzip-default` 等字符串表示成压缩算法，
+// 以便在配置文件进行指定。
+//
+// 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
+// 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 package server
+
+//go:generate go run ./make_doc.go
 
 import (
 	"context"
@@ -36,7 +52,6 @@ type (
 	gateway struct {
 		*httpServer
 		registry registry.Registry
-		mapper   registry.Mapper
 	}
 )
 
@@ -141,7 +156,6 @@ func (s *service) Serve() error {
 	if err != nil {
 		return err
 	}
-
 	s.OnClose(func() error { return dreg() })
 
 	return s.httpServer.Serve()
@@ -155,22 +169,16 @@ func NewGateway(name, version string, o *Options) (web.Server, error) {
 		return nil, err
 	}
 
-	g := &gateway{
-		registry: o.Registry,
-		mapper:   o.Mapper,
-	}
+	g := &gateway{registry: o.Registry}
 	g.httpServer = newHTTPServer(name, version, o, g)
+
+	for name, match := range o.Mapper {
+		proxy := g.registry.ReverseProxy(name, g)
+		g.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
+			proxy.ServeHTTP(ctx, ctx.Request())
+			return nil
+		})
+	}
+
 	return g, nil
-}
-
-func (g *gateway) Serve() error {
-	proxy := g.registry.ReverseProxy(g.mapper, g)
-
-	r := g.Routers().New("proxy", nil)
-	r.Any("{path}", func(ctx *web.Context) web.Responser {
-		proxy.ServeHTTP(ctx, ctx.Request())
-		return nil
-	})
-
-	return g.httpServer.Serve()
 }

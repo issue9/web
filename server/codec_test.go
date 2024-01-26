@@ -49,3 +49,36 @@ func TestBuildCodec(t *testing.T) {
 	})
 	a.Equal(err.Field, "Compressions[1].Compressor").Nil(c)
 }
+
+func TestConfigOf_sanitizeCompresses(t *testing.T) {
+	a := assert.New(t, false)
+
+	conf := &configOf[empty]{Compressors: []*compressConfig{
+		{Types: []string{"text/*", "application/*"}, ID: "compress-msb-8"},
+		{Types: []string{"text/*"}, ID: "br-default"},
+		{Types: []string{"application/*"}, ID: "gzip-default"},
+	}}
+	a.NotError(conf.sanitizeCompresses())
+
+	conf = &configOf[empty]{Compressors: []*compressConfig{
+		{Types: []string{"text/*"}, ID: "compress-msb-8"},
+		{Types: []string{"text/*"}, ID: "not-exists-id"},
+	}}
+	err := conf.sanitizeCompresses()
+	a.Error(err).Equal(err.Field, "compresses[1].id")
+}
+
+func TestRegisterMimetype(t *testing.T) {
+	a := assert.New(t, false)
+
+	v, f := mimetypesFactory.get("json")
+	a.True(f).
+		NotNil(v).
+		NotNil(v.marshal)
+
+	RegisterMimetype(nil, nil, "json")
+	v, f = mimetypesFactory.get("json")
+	a.True(f).
+		NotNil(v).
+		Nil(v.marshal)
+}

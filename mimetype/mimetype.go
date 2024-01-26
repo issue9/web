@@ -13,9 +13,7 @@ var errUnsupported = errorUnsupported{}
 
 type errorUnsupported struct{}
 
-func (err errorUnsupported) Error() string {
-	return err.LocaleString(nil)
-}
+func (err errorUnsupported) Error() string { return err.LocaleString(nil) }
 
 func (err errorUnsupported) LocaleString(p *localeutil.Printer) string {
 	return localeutil.StringPhrase("unsupported serialization").LocaleString(p)

@@ -23,7 +23,7 @@ func TestCLIOf(t *testing.T) {
 	cmd := &CLIOf[empty]{
 		Name:            "test",
 		Version:         "1.0.0",
-		ConfigDir:       "./testdata",
+		ConfigDir:       ".",
 		ConfigFilename:  "web.yaml",
 		ShutdownTimeout: shutdownTimeout,
 		Out:             bs,

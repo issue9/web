@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/caixw/gobuild v1.7.4
-	github.com/getkin/kin-openapi v0.122.0
+	github.com/getkin/kin-openapi v0.123.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
 	github.com/issue9/localeutil v0.26.1
@@ -26,8 +26,8 @@ replace github.com/issue9/web => ../../
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-openapi/jsonpointer v0.19.6 // indirect
-	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-openapi/jsonpointer v0.20.2 // indirect
+	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/issue9/cache v0.9.0 // indirect
 	github.com/issue9/config v0.6.1 // indirect

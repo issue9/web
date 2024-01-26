@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
-	"strings"
 	"time"
 
 	"github.com/issue9/cache"
@@ -11,10 +10,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/server"
 )
-
-var cacheFactory = newRegister[CacheBuilder]()
 
 // CacheBuilder 构建缓存客户端的方法
 //
@@ -69,33 +65,4 @@ func (conf *configOf[T]) buildCache() *web.FieldError {
 	}
 
 	return nil
-}
-
-// RegisterCache 注册新的缓存方式
-//
-// name 为缓存的名称，如果存在同名，则会覆盖。
-func RegisterCache(b CacheBuilder, name ...string) { cacheFactory.register(b, name...) }
-
-func init() {
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		d, err := time.ParseDuration(dsn)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		drv, job := server.NewMemory()
-		return drv, &Job{Ticker: d, Job: job}, nil
-	}, "memory")
-
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		return server.NewMemcache(strings.Split(dsn, ";")...), nil, nil
-	}, "memcached", "memcache")
-
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		drv, err := server.NewRedisFromURL(dsn)
-		if err != nil {
-			return nil, nil, err
-		}
-		return drv, nil, nil
-	}, "redis")
 }

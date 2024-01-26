@@ -20,10 +20,7 @@ type cacheRegistry struct {
 	freq time.Duration
 }
 
-const (
-	cacheServicesKey    = ":services"
-	cachePeersKeySuffix = ":peers"
-)
+const cachePeersKeySuffix = ":peers"
 
 // NewCache 基于 [web.Cache] 的 [Registry] 实现
 //
@@ -37,18 +34,6 @@ func NewCache(c web.Cache, s *Strategy, freq time.Duration) Registry {
 }
 
 func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, error) {
-	services := []string{}
-	if err := c.c.Get(cacheServicesKey, &services); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
-		return nil, err
-	}
-
-	if slices.Index(services, name) < 0 { // 需要更新 services
-		services = append(services, name)
-		if err := c.c.Set(cacheServicesKey, services, cache.Forever); err != nil {
-			return nil, err
-		}
-	}
-
 	var s string
 	if err := c.c.Get(name+cachePeersKeySuffix, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 		return nil, err
@@ -128,44 +113,25 @@ func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
 	return ss
 }
 
-func (c *cacheRegistry) ReverseProxy(ms Mapper, s web.Server) *httputil.ReverseProxy {
-	ss := map[string]selector.Updateable{}
+func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.ReverseProxy {
+	sel := c.s.NewSelector()
 
 	job := func(time.Time) error {
-		services := []string{}
-		if err := c.c.Get(cacheServicesKey, &services); err != nil {
+		var s string
+		if err := c.c.Get(name+cachePeersKeySuffix, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 			return err
 		}
 
-	LOOP:
-		for _, name := range services {
-			var s string
-			switch err := c.c.Get(name+cachePeersKeySuffix, &s); {
-			case errors.Is(err, cache.ErrCacheMiss()):
-				continue LOOP
-			case err != nil:
-				return err
-			}
-
-			sel, found := ss[name]
-			if !found {
-				ss[name] = c.s.NewSelector()
-				sel = ss[name]
-			}
-
-			peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
-			if err != nil {
-				return err
-			}
+		peers, err := unmarshalPeers(c.s.NewPeer, []byte(s))
+		if err == nil {
 			sel.Update(peers...)
 		}
-		return nil
+		return err
 	}
 
 	s.Services().AddTicker(web.Phrase("refresh micro services for gateway %s", s.Name()), job, c.freq, true, true)
 
-	find := func(name string) selector.Selector { return ss[name] }
 	return &httputil.ReverseProxy{
-		Rewrite: ms.RewriteFunc(func(name string) selector.Selector { return find(name) }),
+		Director: Selector2Director(sel),
 	}
 }

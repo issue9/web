@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package html
+package html_test
 
 import (
 	"net/http"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
 )
@@ -23,10 +24,13 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 		Language:   language.MustParse(lang),
 		Mimetypes: []*server.Mimetype{
 			{
-				Name:      Mimetype,
-				Marshal:   Marshal,
-				Unmarshal: Unmarshal,
+				Name:      html.Mimetype,
+				Marshal:   html.Marshal,
+				Unmarshal: html.Unmarshal,
 			},
+		},
+		Logs: &server.Logs{
+			Handler: server.NewTermHandler(os.Stderr, nil),
 		},
 	})
 	a.NotError(err).NotNil(s)
@@ -43,7 +47,7 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 func TestInstallView(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "und")
-	InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
+	html.InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
@@ -59,14 +63,14 @@ func TestInstallView(t *testing.T) {
 
 	servertest.Get(a, "http://localhost:8080/path").
 		Header(header.AcceptLang, "cmn-hans").
-		Header(header.Accept, Mimetype).
+		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans</div>\n<div>hans</div>\n")
 
 	servertest.Get(a, "http://localhost:8080/path").
 		Header(header.AcceptLang, "zh-hant").
-		Header(header.Accept, Mimetype).
+		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hant</div>\n<div>hans</div>\n")
@@ -75,7 +79,7 @@ func TestInstallView(t *testing.T) {
 func TestInstallDirView(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "cmn-hans")
-	instalDirView(s, os.DirFS("./testdata/dir"), "*.tpl")
+	html.InstallView(s, true, os.DirFS("./testdata/dir"), "*.tpl")
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
@@ -90,14 +94,14 @@ func TestInstallDirView(t *testing.T) {
 	})
 	servertest.Get(a, "http://localhost:8080/path").
 		Header(header.AcceptLang, "cmn-hans").
-		Header(header.Accept, Mimetype).
+		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans简</div>\n<div>hans</div>\n")
 
 	servertest.Get(a, "http://localhost:8080/path").
 		Header(header.AcceptLang, "cmn-hant").
-		Header(header.Accept, Mimetype).
+		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hant繁</div>\n<div>hans</div>\n")

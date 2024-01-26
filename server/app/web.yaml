@@ -1,0 +1,17 @@
+
+http:
+    port: :8084
+    readTimeout: 3s
+    headers:
+        - key: H1
+          val: v1
+        - key: h2
+          val: v2
+timezone: Africa/Addis_Ababa
+mimetypes:
+    - type: application/json
+      target: json
+    - type: text/xml
+      target: xml
+    - type: multipart/form-data
+      target: nop

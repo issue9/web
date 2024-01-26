@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v3"
-	"github.com/issue9/mux/v7/types"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
@@ -65,7 +64,7 @@ func TestCache_ReverseProxy(t *testing.T) {
 
 	// 空的
 
-	proxy := c.ReverseProxy(Mapper{}, s)
+	proxy := c.ReverseProxy("", s)
 	a.NotNil(proxy)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
@@ -73,7 +72,7 @@ func TestCache_ReverseProxy(t *testing.T) {
 
 	// 空服务
 
-	proxy = c.ReverseProxy(Mapper{"s1": web.RouterMatcherFunc(func(*http.Request, *types.Context) bool { return true })}, s)
+	proxy = c.ReverseProxy("s1", s)
 	a.NotNil(proxy)
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)

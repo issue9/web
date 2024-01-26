@@ -20,6 +20,8 @@ var (
 	_ ServerApp = &CLIOf[struct{}]{}
 )
 
+type empty struct{}
+
 func TestSignalHUP(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
@@ -31,7 +33,7 @@ func TestSignalHUP(t *testing.T) {
 	cmd := &CLIOf[empty]{
 		Name:           "test",
 		Version:        "1.0.0",
-		ConfigDir:      "./testdata",
+		ConfigDir:      ".",
 		ConfigFilename: "web.yaml",
 		ServeActions:   []string{"serve"},
 		Init: func(s web.Server, user *empty, act string) error {

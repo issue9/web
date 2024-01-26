@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<title>config</title>
+		<meta charset="utf-8" />
+		<style>
+		:root {
+			--color: black;
+			--bg: white;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--color: white;
+				--bg: black;
+			}
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			border: 1px solid var(--color);
+			text-align: left;
+		}
+		th {
+			text-align: left;
+		}
+		tr {
+			border-bottom: 1px solid var(--color);
+		}
+
+		body {
+			color: var(--color);
+			background: var(--bg);
+		}
+		</style>
+	</head>
+	<body><h1>config</h1><article>
+	这是 LoadOptions 和 CLIOf 用到的配置项。
+	</article><h2 id="configOf">configOf</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>memoryLimit,attr,omitempty</td><td>memoryLimit,omitempty</td><td>memoryLimit,omitempty</td><td>int64</td><td>内存限制<br /><br />如果小于等于 0，表示不设置该值。<br />除非对该功能非常了解，否则不建议设置该值。<br /><br />具体功能可参考 https://pkg.go.dev/runtime/debug#SetMemoryLimit<br /></td></tr><tr><td>logs,omitempty</td><td>logs,omitempty</td><td>logs,omitempty</td><td><a href="#logsConfig">logsConfig</a></td><td>日志系统的配置项<br /><br />如果为空，所有日志输出都将被抛弃。<br /></td></tr><tr><td>language,attr,omitempty</td><td>language,omitempty</td><td>language,omitempty</td><td>string</td><td>指定默认语言<br /><br />服务端的默认语言以及客户端未指定 accept-language 时的默认值。<br />如果为空，则会尝试当前用户的语言。<br /></td></tr><tr><td>http,omitempty</td><td>http,omitempty</td><td>http,omitempty</td><td><a href="#httpConfig">httpConfig</a></td><td>与 HTTP 请求相关的设置项<br /></td></tr><tr><td>timezone,omitempty</td><td>timezone,omitempty</td><td>timezone,omitempty</td><td>string</td><td>时区名称<br /><br />可以是 Asia/Shanghai 等，具体可参考：<br />https://en.wikipedia.org/wiki/List_of_tz_database_time_zones<br /><br />为空和 Local(注意大小写) 值都会被初始化本地时间。<br /></td></tr><tr><td>cache,omitempty</td><td>cache,omitempty</td><td>cache,omitempty</td><td><a href="#cacheConfig">cacheConfig</a></td><td>指定缓存对象<br /><br />如果为空，则会采用内存作为缓存对象。<br /></td></tr><tr><td>compressions>compression,omitempty</td><td>compressions,omitempty</td><td>compressions,omitempty</td><td><a href="#compressConfig">compressConfig</a></td><td>压缩的相关配置<br /><br />如果为空，那么不支持压缩功能。<br /></td></tr><tr><td>fileSerializers>fileSerializer,omitempty</td><td>fileSerializers,omitempty</td><td>fileSerializers,omitempty</td><td>string</td><td>指定配置文件的序列化<br /><br />可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：<br /> - yaml 支持 .yaml 和 .yml 两种后缀名的文件<br /> - xml 支持 .xml 后缀名的文件<br /> - json 支持 .json 后缀名的文件<br /><br />如果为空，表示支持以上所有格式。<br /></td></tr><tr><td>mimetypes>mimetype,omitempty</td><td>mimetypes,omitempty</td><td>mimetypes,omitempty</td><td><a href="#mimetypeConfig">mimetypeConfig</a></td><td>指定可用的 mimetype<br /><br />如果为空，那么将不支持任何格式的内容输出。<br /></td></tr><tr><td>idGenerator,omitempty</td><td>idGenerator,omitempty</td><td>idGenerator,omitempty</td><td>string</td><td>唯一 ID 生成器<br /><br />该值由 [RegisterIDGenerator] 注册而来，默认情况下，有以下三个选项：<br /> - date 日期格式，默认值；<br /> - string 普通的字符串；<br /> - number 数值格式；<br />NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。<br /></td></tr><tr><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>string</td><td>Problem 中 type 字段的前缀<br /></td></tr><tr><td>registry,omitempty</td><td>registry,omitempty</td><td>registry,omitempty</td><td><a href="#registryConfig">registryConfig</a></td><td>指定服务发现和注册中心<br /><br />NOTE: 作为微服务和网关时才会有效果<br /></td></tr><tr><td>peer,omitempty</td><td>peer,omitempty</td><td>peer,omitempty</td><td>string</td><td>作为微服务时的节点地址<br /><br />NOTE: 作为微服务时才会有效果<br /></td></tr><tr><td>mappers>mapper,omitempty</td><td>mappers,omitempty</td><td>mappers,omitempty</td><td><a href="#mapperConfig">mapperConfig</a></td><td>作为微服务网关时的外部请求映射方式<br /><br />NOTE: 作为微服务时才会有效果<br /></td></tr><tr><td>user,omitempty</td><td>user,omitempty</td><td>user,omitempty</td><td><a href="#T">T</a></td><td>用户自定义的配置项<br /></td></tr></tbody></table><h2 id="logsConfig">logsConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>location,attr,omitempty</td><td>location,omitempty</td><td>location,omitempty</td><td>bool</td><td>是否在日志中显示调用位置<br /></td></tr><tr><td>created,omitempty</td><td>created,omitempty</td><td>created,omitempty</td><td>string</td><td>日志显示的时间格式<br /><br />Go 的时间格式字符串，如果为空表示不显示；<br /></td></tr><tr><td>level,omitempty</td><td>levels,omitempty</td><td>levels,omitempty</td><td>logs.Level</td><td>允许开启的通道<br /><br />为空表示所有<br /></td></tr><tr><td>std,attr,omitempty</td><td>std,omitempty</td><td>std,omitempty</td><td>bool</td><td>是否接管标准库的日志<br /></td></tr><tr><td>writer</td><td>writers</td><td>writers</td><td><a href="#logHandlerConfig">logHandlerConfig</a></td><td>日志输出对象的配置<br /><br />为空表示 [NewNopHandler] 返回的对象。<br /></td></tr></tbody></table><h2 id="logHandlerConfig">logHandlerConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>level,omitempty</td><td>levels,omitempty</td><td>levels,omitempty</td><td>logs.Level</td><td>当前 Handler 支持的通道<br /><br />为空表示采用 [logsConfig.Levels] 的值。<br /></td></tr><tr><td>type,attr</td><td>type</td><td>type</td><td>string</td><td>Handler 的类型<br /><br />可通过 [RegisterLogsHandler] 方法注册，默认包含了以下几个：<br />- file 输出至文件<br />- smtp 邮件发送的日志<br />- term 输出至终端<br /></td></tr><tr><td>arg,omitempty</td><td>args,omitempty</td><td>args,omitempty</td><td>string</td><td>当前日志的初始化参数<br /><br />根据以上的 type 不同而不同：<br />- file:<br /> 0: 保存目录；<br /> 1: 文件格式，可以包含 Go 的时间格式化字符，以 %i 作为同名文件时的序列号；<br /> 2: 文件的最大尺寸，单位 byte；<br /> 3: 文件的格式，默认为 text，还可选为 json；<br />- smtp:<br /> 0: 账号；<br /> 1: 密码；<br /> 2: 主题；<br /> 3: 为 smtp 的主机地址，需要带上端口号；<br /> 4: 接收邮件列表；<br /> 5: 文件的格式，默认为 text，还可选为 json；<br />- term<br /> 0: 输出的终端，可以是 stdout 或 stderr；<br /> 1-7: Level 以及对应的字符颜色，格式：erro:blue，可用颜色：<br />  - default 默认；<br />  - black 黑；<br />  - red 红；<br />  - green 绿；<br />  - yellow 黄；<br />  - blue 蓝；<br />  - magenta 洋红；<br />  - cyan 青；<br />  - white 白；<br /></td></tr></tbody></table><h2 id="httpConfig">httpConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>port,attr,omitempty</td><td>port,omitempty</td><td>port,omitempty</td><td>string</td><td>端口<br /><br />格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。<br /></td></tr><tr><td>requestID,omitempty</td><td>requestID,omitempty</td><td>requestID,omitempty</td><td>string</td><td>x-request-id 的报头名称<br /><br />如果为空，则采用 [RequestIDKey] 作为默认值。<br /></td></tr><tr><td>certificates>certificate,omitempty</td><td>certificates,omitempty</td><td>certificates,omitempty</td><td><a href="#certificateConfig">certificateConfig</a></td><td>网站的域名证书<br /><br />NOTE: 不能同时与 ACME 生效<br /></td></tr><tr><td>acme,omitempty</td><td>acme,omitempty</td><td>acme,omitempty</td><td><a href="#acmeConfig">acmeConfig</a></td><td>ACME 协议的证书<br /><br />NOTE: 不能同时与 Certificates 生效<br /></td></tr><tr><td>readTimeout,attr,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>duration</td><td></td></tr><tr><td>writeTimeout,attr,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>duration</td><td></td></tr><tr><td>idleTimeout,attr,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>duration</td><td></td></tr><tr><td>readHeaderTimeout,attr,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>duration</td><td></td></tr><tr><td>maxHeaderBytes,attr,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>int</td><td></td></tr><tr><td>headers>header,omitempty</td><td>headers,omitempty</td><td>headers,omitempty</td><td><a href="#headerConfig">headerConfig</a></td><td>自定义报头功能<br /><br />报头会输出到包括 404 在内的所有请求返回。可以为空。<br />报头内容可能会被后续的中间件修改。<br /></td></tr><tr><td>cors,omitempty</td><td>cors,omitempty</td><td>cors,omitempty</td><td><a href="#corsConfig">corsConfig</a></td><td>自定义[跨域请求]设置项<br /><br />这些设置对所有路径均有效。<br /><br />[跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors<br /></td></tr></tbody></table><h2 id="certificateConfig">certificateConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>cert,omitempty</td><td>cert,omitempty</td><td>cert,omitempty</td><td>string</td><td>公钥文件地址<br /></td></tr><tr><td>key,omitempty</td><td>key,omitempty</td><td>key,omitempty</td><td>string</td><td>私钥文件地址<br /></td></tr></tbody></table><h2 id="acmeConfig">acmeConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>domain</td><td>domains</td><td>domains</td><td>string</td><td>申请的域名列表<br /></td></tr><tr><td>cache</td><td>cache</td><td>cache</td><td>string</td><td>acme 缓存目录<br /></td></tr><tr><td>email,omitempty</td><td>email,omitempty</td><td>email,omitempty</td><td>string</td><td>申请者邮箱<br /></td></tr><tr><td>renewBefore,attr,omitempty</td><td>renewBefore,omitempty</td><td>renewBefore,omitempty</td><td>uint</td><td>定义提早几天开始续订，如果为 0 表示提早 30 天。<br /></td></tr></tbody></table><h2 id="headerConfig">headerConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>key,attr</td><td>key</td><td>key</td><td>string</td><td>报头名称<br /></td></tr><tr><td>,chardata</td><td>val</td><td>val</td><td>string</td><td>报头对应的值<br /></td></tr></tbody></table><h2 id="corsConfig">corsConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>origins>origin,omitempty</td><td>origins,omitempty</td><td>origins,omitempty</td><td>string</td><td>指定跨域中的 Access-Control-Allow-Origin 报头内容<br /><br />如果为空，表示禁止跨域请示，如果包含了 *，表示允许所有。<br /></td></tr><tr><td>allowHeaders>header,omitempty</td><td>allowHeaders,omitempty</td><td>allowHeaders,omitempty</td><td>string</td><td>表示 Access-Control-Allow-Headers 报头内容<br /></td></tr><tr><td>exposedHeaders>header,omitempty</td><td>exposedHeaders,omitempty</td><td>exposedHeaders,omitempty</td><td>string</td><td>表示 Access-Control-Expose-Headers 报头内容<br /></td></tr><tr><td>maxAge,attr,omitempty</td><td>maxAge,omitempty</td><td>maxAge,omitempty</td><td>int</td><td>表示 Access-Control-Max-Age 报头内容<br /><br />有以下几种取值：<br />  - 0 不输出该报头，默认值；<br />  - -1 表示禁用；<br />  - 其它 >= -1 的值正常输出数值；<br /></td></tr><tr><td>allowCredentials,attr,omitempty</td><td>allowCredentials,omitempty</td><td>allowCredentials,omitempty</td><td>bool</td><td>表示 Access-Control-Allow-Credentials 报头内容<br /></td></tr></tbody></table><h2 id="cacheConfig">cacheConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>type,attr</td><td>type</td><td>type</td><td>string</td><td>表示缓存的方式<br /><br />该值可通过 [RegisterCache] 注册， 默认支持以下几种：<br /> - memory 以内存作为缓存；<br /> - memcached 以 memcached 作为缓存；<br /> - redis 以 redis 作为缓存；<br /></td></tr><tr><td>dsn</td><td>dsn</td><td>dsn</td><td>string</td><td>表示连接缓存服务器的参数<br /><br />不同类型其参数是不同的，以下是对应的格式说明：<br /> - memory，此值为 [time.Duration] 格式的参数，用于表示执行回收的间隔；<br /> - memcached，则为服务器列表，多个服务器，以分号作为分隔；<br /> - redis，符合 [Redis URI scheme] 的字符串；<br /><br />[Redis URI scheme]: https://www.iana.org/assignments/uri-schemes/prov/redis<br /></td></tr></tbody></table><h2 id="compressConfig">compressConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>type</td><td>types</td><td>types</td><td>string</td><td>Type content-type 的值<br /><br />可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。<br /></td></tr><tr><td>id,attr</td><td>id</td><td>id</td><td>string</td><td>IDs 压缩方法的 ID 列表<br /><br />这些 ID 值必须是由 [RegisterCompress] 注册的，否则无效，默认情况下支持以下类型：<br /> - deflate-default<br /> - deflate-best-compression<br /> - deflate-best-speed<br /> - gzip-default<br /> - gzip-best-compression<br /> - gzip-best-speed<br /> - compress-lsb-8<br /> - compress-msb-8<br /> - br-default<br /> - br-best-compression<br /> - br-best-speed<br /> - zstd-default<br /></td></tr></tbody></table><h2 id="mimetypeConfig">mimetypeConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>type,attr</td><td>type</td><td>type</td><td>string</td><td>编码名称<br /><br />比如 application/xml 等<br /></td></tr><tr><td>problem,attr,omitempty</td><td>problem,omitempty</td><td>problem,omitempty</td><td>string</td><td>返回错误代码是的 mimetype<br /><br />比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。<br />如果为空，表示与 Type 相同。<br /></td></tr><tr><td>target,attr</td><td>target</td><td>target</td><td>string</td><td>实际采用的解码方法<br /><br />由 [RegisterMimetype] 注册而来。默认可用为：<br /><br /> - xml<br /> - json<br /> - form<br /> - html<br /> - gob<br /> - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /></td></tr></tbody></table><h2 id="registryConfig">registryConfig</h2>
+<article>registryConfig 注册服务中心的配置项
+</article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>type</td><td>type</td><td>type</td><td>string</td><td>配置的保存类型<br /><br />该类型可通过 [RegisterRegistryType] 进行注册，默认情况下支持以下类型：<br /> - cache 以缓存系统作为储存类型；<br /></td></tr><tr><td>strategy</td><td>strategy</td><td>strategy</td><td>string</td><td>负载均衡的方案<br /><br />可通过 [RegisterStrategy] 进行注册，默认情况下支持以下类型：<br /> - random 随机；<br /> - weighted-random 带权重的随机；<br /> - round-robin 轮循；<br /> - weighted-round-robin 带权重的轮循；<br /></td></tr><tr><td>args>arg,omitempty</td><td>args,omitempty</td><td>args,omitempty</td><td>string</td><td>传递 Type 的额外参数<br /><br />会根据 args 的不同而不同：<br /> - cache 仅支持一个参数，为 [time.ParseDuration] 可解析的字符串；<br /></td></tr></tbody></table><h2 id="mapperConfig">mapperConfig</h2>
+<article></article>
+<table>
+	<thead><tr><th>XML</th><th>JSON</th><th>YAML</th><th>类型</th><th>说明</th></tr></thead>
+	<tbody><tr><td>name</td><td>name</td><td>name</td><td>string</td><td>微服务名称<br /></td></tr><tr><td>matcher</td><td>matcher</td><td>matcher</td><td>string</td><td>判断某个请求是否进入当前微服务的方法<br /><br />该值可通过 [RegisterRouterMatcher] 注册，默认情况下支持以下类型：<br /> - hosts 只限定域名；<br /> - prefix 包含特定前缀的访问地址；<br /> - version 在 accept 中指定的特定的版本号才行；<br /> - any 任意；<br /></td></tr></tbody></table>
+	<p><a href="https://github.com/caixw">作者</a></p>
+	<p><a href="https://github.com/issue9/web">代码仓库</a></p>
+	</body>
+</html>

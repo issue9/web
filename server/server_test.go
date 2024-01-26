@@ -12,6 +12,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/cache"
+	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/mux/v7/group"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -19,6 +21,7 @@ import (
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
+	"github.com/issue9/web/server/registry"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -55,7 +58,7 @@ func TestNew(t *testing.T) {
 	a.False(srv.CanCompress())
 }
 
-func newTestServer(a *assert.Assertion, o *Options) *httpServer {
+func newOptions(a *assert.Assertion, o *Options) *Options {
 	if o == nil {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
 	}
@@ -77,6 +80,11 @@ func newTestServer(a *assert.Assertion, o *Options) *httpServer {
 		}
 	}
 
+	return o
+}
+
+func newTestServer(a *assert.Assertion, o *Options) *httpServer {
+	o = newOptions(a, o)
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -324,4 +332,77 @@ func TestHTTPServer_NewContext(t *testing.T) {
 		Header(header.Accept, "application/json").
 		Do(nil).
 		Success()
+}
+
+func TestNewService(t *testing.T) {
+	a := assert.New(t, false)
+
+	// Registry 和 Peer 是空的
+	srv, err := NewService("app", "0.1.0", newOptions(a, nil))
+	a.Error(err).Nil(srv)
+
+	c, _ := memory.New()
+	srv = newService(a, "app", ":8080", c)
+	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+
+	srv.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
+
+	defer servertest.Run(a, srv)()
+	defer srv.Close(0)
+
+	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(202)
+}
+
+func newService(a *assert.Assertion, name, addr string, c cache.Driver) web.Server {
+	srv, err := NewService(name, "0.1.0", newOptions(a, &Options{
+		Cache:      c,
+		HTTPServer: &http.Server{Addr: addr},
+		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),
+		Peer:       selector.NewPeer("http://localhost" + addr),
+	}))
+	a.NotError(err).NotNil(srv)
+
+	return srv
+}
+
+func TestNewGateway(t *testing.T) {
+	a := assert.New(t, false)
+	c, _ := memory.New() // 默认的缓存系统用的是内存类型的，保证引用同一个。
+
+	// s1
+	s1 := newService(a, "s1", ":8081", c)
+	defer servertest.Run(a, s1)()
+	defer s1.Close(0)
+	s1.Routers().New("default", nil).Get("/mux/test", buildHandler(201))
+
+	// s2
+	s2 := newService(a, "s2", ":8082", c)
+	defer servertest.Run(a, s2)()
+	defer s2.Close(0)
+	s2.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
+
+	// Registry 和 Mapper 是空的
+	g, err := NewGateway("app", "0.1.0", newOptions(a, nil))
+	a.Error(err).Nil(g)
+
+	g, err = NewGateway("app", "0.1.0", newOptions(a, &Options{
+		Cache:      c,
+		HTTPServer: &http.Server{Addr: ":8080"},
+		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),
+		Mapper: Mapper{
+			"s1": group.NewPathVersion("", "/s1"),
+			"s2": group.NewPathVersion("", "/s2"),
+		},
+	}))
+	a.NotError(err).NotNil(g)
+	a.Equal(g.Name(), "app").Equal(g.Version(), "0.1.0")
+	g.Routers().New("default", nil).Get("/mux/test", buildHandler(203))
+
+	defer servertest.Run(a, g)()
+	defer g.Close(0)
+
+	servertest.Get(a, "http://localhost:8080/s1/mux/test").Do(nil).Status(201)
+	servertest.Get(a, "http://localhost:8080/s2/mux/test").Do(nil).Status(202)
+	servertest.Get(a, "http://localhost:8080/s3/mux/test").Do(nil).Status(http.StatusNotFound)
+	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(203)
 }

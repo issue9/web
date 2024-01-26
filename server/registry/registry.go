@@ -30,54 +30,49 @@ type Registry interface {
 	// s 为调用者关联的 [web.Server] 对象；
 	Discover(name string, s web.Server) selector.Selector
 
-	// ReverseProxy 返回反向代理对象
-	//
-	// s 为调用者关联的 [web.Server] 对象；
-	ReverseProxy(m Mapper, s web.Server) *httputil.ReverseProxy
+	// 返回 name 对应的 selector.Selector
+	ReverseProxy(string, web.Server) *httputil.ReverseProxy
 }
 
 // DeregisterFunc 注销微服务的函数签名
 type DeregisterFunc = func() error
 
-// Mapper 微服务名称与路由的匹配关系
-//
-// 在网关中由此列表确定相应的路由由哪个微服务进行代码。
-type Mapper map[string]web.RouterMatcher
-
-// RewriteFunc 转换为 [httputil.ProxyRequest.Rewrite] 字段类型的函数
-//
-// f 为查找指定名称的 [selector.Selector] 对象。当 [Mapper] 中找到匹配的项时，
-// 需要通过 f 找对应的 [selector.Selector] 对象。
-func (ms Mapper) RewriteFunc(f func(string) selector.Selector) func(r *httputil.ProxyRequest) {
+// Selector2Rewrite 将 [selector.Selector] 转换为 [httputil.ProxyRequest.Rewrite] 字段类型的函数
+func Selector2Rewrite(s selector.Selector) func(r *httputil.ProxyRequest) {
 	return func(r *httputil.ProxyRequest) {
-		if len(ms) == 0 {
-			panic(web.NewError(http.StatusNotFound, web.NewLocaleError("empty mapper")))
+		route, err := s.Next()
+		if err != nil {
+			panic(err)
 		}
 
-		for name, match := range ms {
-			if !match.Match(r.In, nil) {
-				continue
-			}
-
-			s := f(name)
-			if s == nil {
-				panic(web.NewError(http.StatusNotFound, web.NewLocaleError("not found micro service %s", name)))
-			}
-
-			route, err := s.Next()
-			if err != nil {
-				panic(err)
-			}
-
-			u, err := url.Parse(route)
-			if err != nil {
-				panic(err) // Selector 实现得不标准
-			}
-
-			r.SetURL(u)
-			// r.Out.Host = r.In.Host
-			return
+		u, err := url.Parse(route)
+		if err != nil {
+			panic(err) // Selector 实现得不标准
 		}
+
+		r.SetURL(u)
+		// r.Out.Host = r.In.Host
+	}
+}
+
+// Selector2Rewrite 将 [selector.Selector] 转换为 [httputil.ProxyRequest.Director] 字段类型的函数
+func Selector2Director(s selector.Selector) func(r *http.Request) {
+	return func(r *http.Request) {
+		route, err := s.Next()
+		if err != nil {
+			panic(err)
+		}
+
+		u, err := url.Parse(route)
+		if err != nil {
+			panic(err) // Selector 实现得不标准
+		}
+
+		// NOTE: selector.Selector.Next 返回值中应该只包含 schema 域名和端口信息。
+
+		r.URL.Scheme = u.Scheme
+		r.URL.Host = u.Host
+		r.Host = u.Host
 	}
 }
 

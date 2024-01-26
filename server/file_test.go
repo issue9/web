@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
-	"encoding/json"
 	"io/fs"
 	"path/filepath"
 	"testing"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/issue9/assert/v3"
 	"github.com/issue9/config"
+
+	"github.com/issue9/web/locales"
 )
 
 func TestLoadConfigOf(t *testing.T) {
@@ -51,14 +52,8 @@ func TestLoadConfigOf(t *testing.T) {
 	a.Equal(customConf.User.ID, 1)
 }
 
-func RegisterRegisterFileSerializer(t *testing.T) {
+func TestNewPrinter(t *testing.T) {
 	a := assert.New(t, false)
-
-	a.PanicString(func() {
-		RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".json")
-	}, "扩展名 .json 已经注册到 json")
-
-	RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".js")
-	v, f := filesFactory.get("new")
-	a.True(f).NotNil(v).Equal(v.Exts, []string{".js"})
+	p, err := NewPrinter("*yaml", locales.Locales...)
+	a.NotError(err).NotNil(p)
 }

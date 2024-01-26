@@ -1,23 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/issue9/mux/v7/group"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server/registry"
-)
-
-var (
-	strategyFactory      = newRegister[StrategyBuilder]()
-	typeFactory          = newRegister[RegistryTypeBuilder]()
-	routerMatcherFactory = newRegister[RouterMatcherBuilder]()
 )
 
 type (
@@ -30,6 +21,11 @@ type (
 	RegistryTypeBuilder = func(web.Cache, *registry.Strategy, ...string) registry.Registry
 
 	RouterMatcherBuilder = func(...string) web.RouterMatcher
+
+	// Mapper 微服务名称与路由的匹配关系
+	//
+	// 在网关中由此列表确定相应的路由由哪个微服务进行代码。
+	Mapper map[string]web.RouterMatcher
 
 	// registryConfig 注册服务中心的配置项
 	registryConfig struct {
@@ -70,20 +66,22 @@ type (
 		//  - version 在 accept 中指定的特定的版本号才行；
 		//  - any 任意；
 		Matcher string `json:"matcher" yaml:"matcher" xml:"matcher"`
+
+		// 传递 Matcher 的额外参数
+		//
+		// 会根据 Matcher 的不同而不同：
+		//  - hosts 域名列表；
+		//  - prefix URL 前缀列表；
+		//  - version 允许放行的版本号列表，这些版本号出现在 accept 报头；
+		//  - any 不需要参数；
+		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty"`
 	}
 )
 
-func RegisterStrategy(f StrategyBuilder, name string) { strategyFactory.register(f, name) }
-
-func RegisterRegistryType(f RegistryTypeBuilder, name string) { typeFactory.register(f, name) }
-
-func RegisterRouterMatcher(f RouterMatcherBuilder, name string) {
-	routerMatcherFactory.register(f, name)
-}
-
 func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	if conf.Registry != nil {
-		if err := conf.Registry.build(conf.cache); err != nil {
+		if err := conf.Registry.build(c); err != nil {
+			err.AddFieldParent("registry")
 			return err
 		}
 	}
@@ -96,13 +94,13 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	}
 
 	if len(conf.Mappers) > 0 {
-		conf.mapper = registry.Mapper{}
+		conf.mapper = Mapper{}
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {
 				return web.NewFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound(m.Matcher))
 			}
-			conf.mapper[m.Name] = mm()
+			conf.mapper[m.Name] = mm(strings.Split(m.Args, ",")...)
 		}
 	}
 
@@ -124,32 +122,4 @@ func (r *registryConfig) build(c web.Cache) *web.FieldError {
 	r.registry = t(c, s(), strings.Split(r.Args, ",")...)
 
 	return nil
-}
-
-func init() {
-	RegisterStrategy(registry.NewRandomStrategy, "random")
-	RegisterStrategy(registry.NewRoundRobinStrategy, "round-robin")
-	RegisterStrategy(registry.NewWeightedRandomStrategy, "weighted-random")
-	RegisterStrategy(registry.NewWeightedRoundRobinStrategy, "weighted-round-robin")
-
-	RegisterRegistryType(func(c web.Cache, s *registry.Strategy, arg ...string) registry.Registry {
-		if c == nil {
-			panic("参数 o.Cache 不能为空")
-		}
-
-		if len(arg) != 1 {
-			panic("参数 arg 数量必须为 1")
-		}
-		freq, err := time.ParseDuration(arg[0])
-		if err != nil {
-			panic(err)
-		}
-
-		return registry.NewCache(c, s, freq)
-	}, "cache")
-
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewHosts(false, arg...) }, "hosts")
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewPathVersion(arg[0], arg[1:]...) }, "prefix")
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewHeaderVersion(arg[0], arg[0], nil, arg[2:]...) }, "version")
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return nil }, "any")
 }

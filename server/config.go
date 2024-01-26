@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"runtime/debug"
@@ -13,8 +13,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/selector"
-	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/registry"
 )
 
 type configOf[T any] struct {
@@ -23,9 +21,9 @@ type configOf[T any] struct {
 	// 内存限制
 	//
 	// 如果小于等于 0，表示不设置该值。
-	// 除非对该功能非常了解，否则不建议设置该值。
 	//
 	// 具体功能可参考 https://pkg.go.dev/runtime/debug#SetMemoryLimit
+	// 除非对该功能非常了解，否则不建议设置该值。
 	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty"`
 
 	// 日志系统的配置项
@@ -62,7 +60,7 @@ type configOf[T any] struct {
 	//
 	// 如果为空，那么不支持压缩功能。
 	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty"`
-	compressors []*server.Compression
+	compressors []*Compression
 
 	// 指定配置文件的序列化
 	//
@@ -73,13 +71,13 @@ type configOf[T any] struct {
 	//
 	// 如果为空，表示支持以上所有格式。
 	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty"`
-	config          *server.Config
+	config          *Config
 
 	// 指定可用的 mimetype
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
 	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
-	mimetypes []*server.Mimetype
+	mimetypes []*Mimetype
 
 	// 唯一 ID 生成器
 	//
@@ -89,7 +87,7 @@ type configOf[T any] struct {
 	//  - number 数值格式；
 	// NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
-	idGenerator server.IDGenerator
+	idGenerator IDGenerator
 
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
@@ -109,7 +107,7 @@ type configOf[T any] struct {
 	//
 	// NOTE: 作为微服务时才会有效果
 	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty"`
-	mapper  registry.Mapper
+	mapper  Mapper
 
 	// 用户自定义的配置项
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
@@ -118,18 +116,19 @@ type configOf[T any] struct {
 	init []func(web.Server)
 }
 
-// LoadOptions 从配置文件初始化 [server.Options] 对象
+// LoadOptions 从配置文件初始化 [Options] 对象
 //
 // configDir 项目配置文件所在的目录；
 // filename 用于指定项目的配置文件，相对于 configDir 文件系统。
+// 如果此值为空，将返回 &Options{Config: &Config{Dir: configDir}}；
+//
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
-// 如果此值为空，将以 &server.Options{} 初始化 [web.Server]；
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
-func LoadOptions[T any](configDir, filename string) (*server.Options, *T, error) {
+func LoadOptions[T any](configDir, filename string) (*Options, *T, error) {
 	if filename == "" {
-		return &server.Options{Config: &server.Config{Dir: configDir}}, nil, nil
+		return &Options{Config: &Config{Dir: configDir}}, nil, nil
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)
@@ -137,7 +136,7 @@ func LoadOptions[T any](configDir, filename string) (*server.Options, *T, error)
 		return nil, nil, web.NewStackError(err)
 	}
 
-	return &server.Options{
+	return &Options{
 		Config:            conf.config,
 		Location:          conf.location,
 		Cache:             conf.cache,
@@ -159,7 +158,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		conf.init = append(conf.init, func(web.Server) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
 
-	if err := conf.buildCache(); err != nil { // buildCache 依赖 IDGenerator
+	if err := conf.buildCache(); err != nil {
 		return err.AddFieldParent("cache")
 	}
 
@@ -242,4 +241,10 @@ func (conf *configOf[T]) buildTimezone() *web.FieldError {
 	conf.location = loc
 
 	return nil
+}
+
+// CheckConfigSyntax 检测配置项语法是否正确
+func CheckConfigSyntax[T any](configDir, filename string) error {
+	_, err := loadConfigOf[T](configDir, filename)
+	return err
 }

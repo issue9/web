@@ -7,17 +7,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/fs"
-	"log"
 	"os"
 	"slices"
 	"time"
 
 	"github.com/issue9/localeutil"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
@@ -142,7 +138,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	}
 
 	if cmd.Printer == nil {
-		p, err := NewPrinter("*.yaml", locales.Locales...)
+		p, err := server.NewPrinter("*.yaml", locales.Locales...)
 		if err != nil {
 			return err
 		}
@@ -156,7 +152,7 @@ func (cmd *CLIOf[T]) sanitize() error {
 	cmd.app = &App{
 		ShutdownTimeout: cmd.ShutdownTimeout,
 		Before: func() error {
-			return CheckConfigSyntax[T](cmd.ConfigDir, cmd.ConfigFilename)
+			return server.CheckConfigSyntax[T](cmd.ConfigDir, cmd.ConfigFilename)
 		},
 		NewServer: cmd.initServer,
 	}
@@ -213,7 +209,7 @@ func (cmd *CLIOf[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) (do func(io.Writer
 func (cmd *CLIOf[T]) RestartServer() { cmd.app.RestartServer() }
 
 func (cmd *CLIOf[T]) initServer() (web.Server, error) {
-	opt, user, err := LoadOptions[T](cmd.ConfigDir, cmd.ConfigFilename)
+	opt, user, err := server.LoadOptions[T](cmd.ConfigDir, cmd.ConfigFilename)
 	if err != nil {
 		return nil, web.NewStackError(err)
 	}
@@ -228,30 +224,4 @@ func (cmd *CLIOf[T]) initServer() (web.Server, error) {
 	}
 
 	return srv, nil
-}
-
-// CheckConfigSyntax 检测配置项语法是否正确
-func CheckConfigSyntax[T any](configDir, filename string) error {
-	_, err := loadConfigOf[T](configDir, filename)
-	return err
-}
-
-// NewPrinter 根据参数构建一个本地化的打印对象
-//
-// 语言由 [localeutil.DetectUserLanguageTag] 决定。
-// 参数指定了本地化的文件内容。
-func NewPrinter(glob string, fsys ...fs.FS) (*localeutil.Printer, error) {
-	// NOTE: 该函数为公开函数，可用于初始化 CLIOf.Printer
-
-	tag, err := localeutil.DetectUserLanguageTag()
-	if err != nil {
-		log.Println(err) // 输出错误，但是不中断执行
-	}
-
-	b := catalog.NewBuilder(catalog.Fallback(tag))
-	if err := locale.Load(buildSerializerFromFactory(), b, glob, fsys...); err != nil {
-		return nil, err
-	}
-
-	return locale.NewPrinter(tag, b), nil
 }

@@ -29,11 +29,8 @@ import (
 )
 
 const (
-	// RequestIDKey 报头中传递 request id 的报头名称
-	RequestIDKey = header.RequestIDKey
-
-	// DefaultConfigDir 默认的配置目录地址
-	DefaultConfigDir = "@.config"
+	RequestIDKey     = header.RequestIDKey // 报头中传递 request id 的报头名称
+	DefaultConfigDir = "@.config"          // 默认的配置目录地址
 )
 
 const (
@@ -46,6 +43,9 @@ type (
 	// Options [web.Server] 的初始化参数
 	//
 	// 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
+	//
+	// 对于 Options 的初始化方式，可以直接采用 &Options{...} 的方式，
+	// 也可以采用 [LoadOptions] 从配置文件中加载相应在的数据进行初始化。
 	Options struct {
 		// 项目的配置项
 		Config *Config
@@ -151,7 +151,7 @@ type (
 		// Mapper 作为微服务网关时的 URL 映射关系
 		//
 		// NOTE: 仅在 [NewGateway] 中才会有效果。
-		Mapper registry.Mapper
+		Mapper Mapper
 	}
 
 	// Config 项目配置文件的配置
@@ -224,7 +224,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	if o.Cache == nil {
 		c, job := NewMemory()
 		o.Cache = c
-		o.Init = append(o.Init, func(s web.Server) { // AddTicker 依赖 IDGenerator
+		o.Init = append(o.Init, func(s web.Server) {
 			s.Services().AddTicker(locales.RecycleLocalCache, job, time.Minute, false, false)
 		})
 	}

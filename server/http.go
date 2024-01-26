@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package app
+package server
 
 import (
 	"crypto/tls"
@@ -15,7 +15,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/server"
 )
 
 type (
@@ -27,7 +26,7 @@ type (
 
 		// x-request-id 的报头名称
 		//
-		// 如果为空，则采用 [server.RequestIDKey] 作为默认值。
+		// 如果为空，则采用 [RequestIDKey] 作为默认值。
 		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty"`
 
 		// 网站的域名证书
@@ -160,7 +159,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 	}
 
 	if h.RequestID == "" {
-		h.RequestID = server.RequestIDKey
+		h.RequestID = RequestIDKey
 	}
 
 	if len(h.Headers) > 0 {

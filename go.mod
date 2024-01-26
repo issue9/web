@@ -22,8 +22,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/issue9/scheduled => /Users/caixw/dev.localized/issue9/scheduled
-
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
