@@ -267,6 +267,11 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 		if o.Mapper == nil {
 			return nil, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
 		}
+		for k, v := range o.Mapper {
+			if v == nil {
+				return nil, web.NewFieldError("Mapper["+k+"]", locales.CanNotBeEmpty)
+			}
+		}
 		if o.Registry == nil {
 			return nil, web.NewFieldError("Registry", locales.CanNotBeEmpty)
 		}

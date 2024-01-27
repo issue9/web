@@ -105,7 +105,7 @@ type configOf[T any] struct {
 
 	// 作为微服务网关时的外部请求映射方式
 	//
-	// NOTE: 作为微服务时才会有效果
+	// NOTE: 作为微服务的网关时才会有效果
 	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty"`
 	mapper  Mapper
 

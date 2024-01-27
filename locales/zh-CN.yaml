@@ -21,12 +21,15 @@ messages:
     - key: cmd.show_version
       message:
         msg: 显示版本号
+    - key: conflict with certificates
+      message:
+        msg: conflict with certificates
     - key: duplicate value
       message:
         msg: 重复的值
-    - key: has dup peer %s
+    - key: invalid data %s
       message:
-        msg: 重复的节点 %s
+        msg: invalid data %s
     - key: invalid sse format %s
       message:
         msg: '无效的 SSE 格式: %s'
@@ -42,9 +45,6 @@ messages:
     - key: not found compress for %s
       message:
         msg: 未找到 %s 对应的压缩算法
-    - key: not found micro service %s
-      message:
-        msg: 未找到微服务 %s
     - key: not found serialization for %s
       message:
         msg: 未找到符合报头 %s 的序列化函数
@@ -313,6 +313,12 @@ messages:
     - key: recycle local cache
       message:
         msg: 回收本地缓存
+    - key: refresh micro service %s for %s
+      message:
+        msg: refresh micro service %s for %s
+    - key: refresh micro services for gateway %s
+      message:
+        msg: refresh micro services for gateway %s
     - key: scheduler jobs
       message:
         msg: 计划任务

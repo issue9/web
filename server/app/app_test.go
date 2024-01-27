@@ -3,69 +3,26 @@
 package app
 
 import (
-	"net/http"
-	"os"
-	"runtime"
-	"syscall"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
-)
-
-var (
-	_ ServerApp = &App{}
-	_ ServerApp = &CLIOf[struct{}]{}
+	"github.com/issue9/web/server"
 )
 
 type empty struct{}
 
-func TestSignalHUP(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		return
-	}
-
+func TestApp_init(t *testing.T) {
 	a := assert.New(t, false)
 
-	exit := make(chan struct{}, 10)
-	cmd := &CLIOf[empty]{
-		Name:           "test",
-		Version:        "1.0.0",
-		ConfigDir:      ".",
-		ConfigFilename: "web.yaml",
-		ServeActions:   []string{"serve"},
-		Init: func(s web.Server, user *empty, act string) error {
-			return nil
-		},
-	}
-	SignalHUP(cmd)
+	a.PanicString(func() {
+		app := &App{}
+		app.init()
+	}, "app.NewServer 不能为空")
 
-	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
-		exit <- struct{}{}
-	}()
-	time.Sleep(2000 * time.Millisecond) // 等待 go func 启动完成
-	a.NotNil(cmd.app).
-		NotNil(cmd.app.srv)
-
-	p, err := os.FindProcess(os.Getpid())
-	a.NotError(err).NotNil(p)
-
-	// hup1
-	t1 := cmd.app.srv.Uptime()
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
-	t2 := cmd.app.srv.Uptime()
-	a.True(t2.After(t1))
-
-	// hup2
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
-	t3 := cmd.app.srv.Uptime()
-	a.True(t3.After(t2))
-
-	cmd.app.srv.Close(0)
-	<-exit
+	app := &App{NewServer: func() (web.Server, error) {
+		return server.New("test", "1.0.0", nil)
+	}}
+	app.init()
 }

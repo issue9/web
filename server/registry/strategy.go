@@ -4,12 +4,12 @@ package registry
 
 import "github.com/issue9/web/selector"
 
-// Strategy 为初始化 [Registry] 对象提供与 [selector.Selector] 相关的方案
+// Strategy 为初始化 [Registry] 对象提供的方案
 type Strategy struct {
 	// NewSelector 构建 [selector.Updateable]
 	NewSelector func() selector.Updateable
 
-	// NewPeer 构建与 [StrategyNewSelector] 相匹配的 [selector.Peer] 零值对象
+	// NewPeer 构建与 [Strategy.NewSelector] 相匹配的 [selector.Peer] 零值对象
 	NewPeer func() selector.Peer
 }
 

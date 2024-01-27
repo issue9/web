@@ -70,9 +70,9 @@ type (
 		// 传递 Matcher 的额外参数
 		//
 		// 会根据 Matcher 的不同而不同：
-		//  - hosts 域名列表；
-		//  - prefix URL 前缀列表；
-		//  - version 允许放行的版本号列表，这些版本号出现在 accept 报头；
+		//  - hosts 以逗号分隔的域名列表；
+		//  - prefix 以逗号分隔的 URL 前缀列表；
+		//  - version 允许放行的版本号列表(以逗号分隔)，这些版本号出现在 accept 报头；
 		//  - any 不需要参数；
 		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty"`
 	}

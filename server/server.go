@@ -7,6 +7,10 @@
 //   - [NewGateway] 构建微服务的网关服务；
 //   - [NewService] 构建微服务；
 //
+// 服务的初始化主要依赖 [Options] 对象，用户可以通过以下几种方式初始化 [Options] 对象：
+//   - &Options{} 最简单的方式，所有的 [Options] 均支持默认值；
+//   - [LoadOptions] 从配置文件中初始化 [Options] 对象；
+//
 // # 配置文件
 //
 // 对于配置文件各个字段的定义，可参考当前目录下的 CONFIG.html。

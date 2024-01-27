@@ -9,7 +9,7 @@ import (
 	"github.com/issue9/assert/v3"
 )
 
-func RegisterRegisterFileSerializer(t *testing.T) {
+func TestRegisterFileSerializer(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {

@@ -54,6 +54,6 @@ func TestLoadConfigOf(t *testing.T) {
 
 func TestNewPrinter(t *testing.T) {
 	a := assert.New(t, false)
-	p, err := NewPrinter("*yaml", locales.Locales...)
+	p, err := NewPrinter("*.yaml", locales.Locales...)
 	a.NotError(err).NotNil(p)
 }

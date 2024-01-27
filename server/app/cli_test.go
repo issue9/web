@@ -12,15 +12,16 @@ import (
 	"github.com/issue9/assert/v3"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/server"
 )
 
-func TestCLIOf(t *testing.T) {
+func TestCLI(t *testing.T) {
 	a := assert.New(t, false)
 	const shutdownTimeout = 0
 
 	bs := new(bytes.Buffer)
 	var action string
-	cmd := &CLIOf[empty]{
+	cmd := &CLI[empty]{
 		Name:            "test",
 		Version:         "1.0.0",
 		ConfigDir:       ".",
@@ -28,9 +29,9 @@ func TestCLIOf(t *testing.T) {
 		ShutdownTimeout: shutdownTimeout,
 		Out:             bs,
 		ServeActions:    []string{"serve"},
-		Init: func(s web.Server, user *empty, act string) error {
+		NewServer: func(name, ver string, opt *server.Options, _ *empty, act string) (web.Server, error) {
 			action = act
-			return nil
+			return server.New(name, ver, opt)
 		},
 	}
 	a.NotError(cmd.Exec([]string{"app", "-v"}))
@@ -55,7 +56,7 @@ func TestCLIOf(t *testing.T) {
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
 	cmd.RestartServer()
-	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
+	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	s2 := cmd.app.srv
 	t2 := s2.Uptime()
 	a.True(t2.After(t1)).NotEqual(s1, s2)
@@ -63,7 +64,7 @@ func TestCLIOf(t *testing.T) {
 	// restart2
 	cmd.Name = "restart2"
 	cmd.RestartServer()
-	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLIOf.ShutdownTimeout
+	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))
 
@@ -71,25 +72,27 @@ func TestCLIOf(t *testing.T) {
 	<-exit
 }
 
-func TestCLIOf_sanitize(t *testing.T) {
+func TestCLI_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
-	cmd := &CLIOf[empty]{}
+	cmd := &CLI[empty]{}
 	a.ErrorString(cmd.sanitize(), "Name")
 
-	cmd = &CLIOf[empty]{Name: "app", Version: "1.1.1"}
-	a.ErrorString(cmd.sanitize(), "Init")
+	cmd = &CLI[empty]{Name: "app", Version: "1.1.1"}
+	a.ErrorString(cmd.sanitize(), "NewServer")
 
-	cmd = &CLIOf[empty]{
-		Name:           "app",
-		Version:        "1.1.1",
-		Init:           func(web.Server, *empty, string) error { return nil },
+	cmd = &CLI[empty]{
+		Name:    "app",
+		Version: "1.1.1",
+		NewServer: func(name, ver string, opt *server.Options, _ *empty, _ string) (web.Server, error) {
+			return server.New(name, ver, opt)
+		},
 		ConfigFilename: "web.yaml",
 	}
 	a.NotError(cmd.sanitize())
 	a.Equal(cmd.Out, os.Stdout)
 
-	cmd = &CLIOf[empty]{Name: "abc"}
+	cmd = &CLI[empty]{Name: "abc"}
 	a.PanicString(func() {
 		cmd.Exec(nil)
 	}, "字段 Version 不能为空")

@@ -53,8 +53,6 @@ func buildSerializerFromFactory() config.Serializer {
 // fsys 指定了加载本地化文件的文件系统，glob 则指定了加载的文件匹配规则；
 // 对于文件的序列化方式则是根据后缀名从由 [RegisterFileSerializer] 注册的项中查找。
 func NewPrinter(glob string, fsys ...fs.FS) (*localeutil.Printer, error) {
-	// NOTE: 该函数为公开函数，可用于初始化 CLIOf.Printer
-
 	tag, err := localeutil.DetectUserLanguageTag()
 	if err != nil {
 		log.Println(err) // 输出错误，但是不中断执行

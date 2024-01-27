@@ -21,12 +21,15 @@ messages:
     - key: cmd.show_version
       message:
         msg: cmd.show_version
+    - key: conflict with certificates
+      message:
+        msg: conflict with certificates
     - key: duplicate value
       message:
         msg: duplicate value
-    - key: has dup peer %s
+    - key: invalid data %s
       message:
-        msg: has dup peer %s
+        msg: invalid data %s
     - key: invalid sse format %s
       message:
         msg: invalid sse format %s
@@ -42,9 +45,6 @@ messages:
     - key: not found compress for %s
       message:
         msg: not found compress for %s
-    - key: not found micro service %s
-      message:
-        msg: not found micro service %s
     - key: not found serialization for %s
       message:
         msg: not found serialization for %s
@@ -297,6 +297,12 @@ messages:
     - key: recycle local cache
       message:
         msg: recycle local cache
+    - key: refresh micro service %s for %s
+      message:
+        msg: refresh micro service %s for %s
+    - key: refresh micro services for gateway %s
+      message:
+        msg: refresh micro services for gateway %s
     - key: scheduler jobs
       message:
         msg: scheduler jobs
