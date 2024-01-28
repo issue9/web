@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-// ServerApp 实现对 [web.Server] 的管理
+// ServerApp 提供了管理 [web.Server] 的接口
 type ServerApp interface {
 	// RestartServer 重启服务
 	//
@@ -20,13 +20,27 @@ type ServerApp interface {
 
 // SignalHUP 让 s 根据 [HUP] 信号重启服务
 //
+//	app := &App{...}
+//	SignalHUP(app)
+//
 // [HUP]: https://en.wikipedia.org/wiki/SIGHUP
 func SignalHUP(s ServerApp) {
-	signalChannel := make(chan os.Signal, 1)
-	signal.Notify(signalChannel, syscall.SIGHUP)
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGHUP)
+	Restart(sc, s)
+}
 
+// Restart 根据信号 c 重启 s
+//
+// 可以结合其它方法一起使用，比如和 fsnotify 一起使用：
+//
+//	watcher := fsnotify.NewWatcher(...)
+//	Restart(watcher.Event, s)
+//
+// 也可参考 [SignalHUP]。
+func Restart[T any](c chan T, s ServerApp) {
 	go func() {
-		for range signalChannel {
+		for range c {
 			s.RestartServer()
 		}
 	}()

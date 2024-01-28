@@ -124,10 +124,6 @@ func (cmd *CLI[T]) sanitize() error {
 		cmd.ConfigDir = server.DefaultConfigDir
 	}
 
-	if cmd.ConfigFilename == "" {
-		return errors.New("字段 ConfigFilename 不能为空")
-	}
-
 	if cmd.Printer == nil {
 		p, err := server.NewPrinter("*.yaml", locales.Locales...)
 		if err != nil {
