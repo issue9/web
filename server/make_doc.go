@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"go/ast"
+	"go/doc/comment"
 	"go/parser"
 	"go/token"
 	"os"
@@ -228,13 +229,14 @@ func newTable(w *errwrap.Writer, name, desc string) *table {
 	}
 }
 
-var brReplacer = strings.NewReplacer("\n", "<br />")
+var (
+	cPrinter comment.Printer
+	cParser  comment.Parser
+)
 
 func (t *table) write(xml, json, yaml, typ, desc string) {
-	desc = brReplacer.Replace(desc)
+	desc = string(cPrinter.HTML(cParser.Parse(desc))) // 转为 HTML
 	t.w.Printf(`<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`, xml, json, yaml, typ, desc)
 }
 
-func (t *table) end() {
-	t.w.WString("</tbody></table>")
-}
+func (t *table) end() { t.w.WString("</tbody></table>") }

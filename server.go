@@ -259,7 +259,7 @@ func (s *InternalServer) Logs() *Logs { return s.logs }
 
 func (s *InternalServer) Close() {
 	slices.Reverse(s.closes)
-	for _, f := range s.closes { // 仅在用户主动要关闭时，才关闭服务。
+	for _, f := range s.closes {
 		if err := f(); err != nil { // 出错不退出，继续其它操作。
 			s.Logs().ERROR().Error(err)
 		}
