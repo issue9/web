@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package registry
+package registry_test
 
 import (
 	"net/http"
@@ -12,16 +12,15 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
+	"github.com/issue9/web/server/registry"
 	"github.com/issue9/web/server/servertest"
 )
-
-var _ Registry = &cacheRegistry{}
 
 func TestCache_Discover(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 
-	c := NewCache(web.NewCache("registry", s.Cache()), NewRandomStrategy(), time.Second)
+	c := registry.NewCache(web.NewCache("registry", s.Cache()), registry.NewRandomStrategy(), time.Second)
 	a.NotNil(c)
 
 	// 空的
@@ -59,7 +58,7 @@ func TestCache_ReverseProxy(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 
-	c := NewCache(web.NewCache("registry", s.Cache()), NewRoundRobinStrategy(), time.Second)
+	c := registry.NewCache(web.NewCache("registry", s.Cache()), registry.NewRoundRobinStrategy(), time.Second)
 	a.NotNil(c)
 
 	// 空的
