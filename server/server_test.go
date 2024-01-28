@@ -281,33 +281,36 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotNil(c)
 
 	resp := &object{}
-	p := &web.Problem{}
-	a.NotError(c.Get("/get", resp, p))
-	a.Zero(p).Equal(resp, &object{Name: "name"})
+	a.NotError(c.Get("/get", resp, nil))
+	a.Equal(resp, &object{Name: "name"})
 
 	resp = &object{}
-	p = &web.Problem{}
-	a.NotError(c.Delete("/get", resp, p))
-	a.Zero(resp).
+	err := c.Delete("/get", resp, nil)
+	a.Error(err).Zero(resp)
+	p, ok := err.(*web.Problem)
+	a.True(ok).NotNil(p).
 		Equal(p.Type, web.ProblemMethodNotAllowed).
 		Equal(p.Status, http.StatusMethodNotAllowed)
 
 	resp = &object{}
-	p = &web.Problem{Extensions: &object{}}
-	a.NotError(c.Post("/post", nil, resp, p))
-	a.Zero(resp).
+	pb := func() *web.Problem { return &web.Problem{Extensions: &object{}} }
+	err = c.Post("/post", nil, resp, pb)
+	a.Error(err).Zero(resp)
+	p, ok = err.(*web.Problem)
+	a.True(ok).NotNil(p).
 		Equal(p.Type, web.ProblemBadRequest).
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp = &object{}
-	p = &web.Problem{}
-	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, p))
-	a.Zero(p).Equal(resp, &object{Age: 1, Name: "name"})
+	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, nil))
+	a.Equal(resp, &object{Age: 1, Name: "name"})
 
 	resp = &object{}
-	p = &web.Problem{}
-	a.NotError(c.Patch("/not-exists", nil, resp, p))
-	a.Zero(resp).Equal(p.Type, web.ProblemNotFound)
+	err = c.Patch("/not-exists", nil, resp, nil)
+	a.Error(err).Zero(resp)
+	p, ok = err.(*web.Problem)
+	a.True(ok).NotNil(p).
+		Equal(p.Type, web.ProblemNotFound)
 }
 
 func TestHTTPServer_NewContext(t *testing.T) {

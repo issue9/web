@@ -15,6 +15,8 @@ import (
 	"github.com/issue9/web/selector"
 )
 
+type ProblemBuilder = func() *Problem
+
 // Client 用于访问远程的客户端
 //
 // NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
@@ -58,33 +60,32 @@ func NewClient(client *http.Client, codec *Codec, s selector.Selector, marshalNa
 	}
 }
 
-func (c *Client) Get(path string, resp any, problem *Problem) error {
-	return c.Do(http.MethodGet, path, nil, resp, problem)
+func (c *Client) Get(path string, resp any, pb ProblemBuilder) error {
+	return c.Do(http.MethodGet, path, nil, resp, pb)
 }
 
-func (c *Client) Delete(path string, resp any, problem *Problem) error {
-	return c.Do(http.MethodDelete, path, nil, resp, problem)
+func (c *Client) Delete(path string, resp any, pb ProblemBuilder) error {
+	return c.Do(http.MethodDelete, path, nil, resp, pb)
 }
 
-func (c *Client) Post(path string, req, resp any, problem *Problem) error {
-	return c.Do(http.MethodPost, path, req, resp, problem)
+func (c *Client) Post(path string, req, resp any, pb ProblemBuilder) error {
+	return c.Do(http.MethodPost, path, req, resp, pb)
 }
 
-func (c *Client) Put(path string, req, resp any, problem *Problem) error {
-	return c.Do(http.MethodPut, path, req, resp, problem)
+func (c *Client) Put(path string, req, resp any, pb ProblemBuilder) error {
+	return c.Do(http.MethodPut, path, req, resp, pb)
 }
 
-func (c *Client) Patch(path string, req, resp any, problem *Problem) error {
-	return c.Do(http.MethodPatch, path, req, resp, problem)
+func (c *Client) Patch(path string, req, resp any, pb ProblemBuilder) error {
+	return c.Do(http.MethodPatch, path, req, resp, pb)
 }
 
 // Do 开始新的请求
 //
 // req 为提交的对象，最终是由初始化参数的 marshal 进行编码；
 // resp 为返回的数据的写入对象，必须是指针类型；
-// problem 为返回出错时的写入对象，如果包含自定义的 Extensions 字段，需要为其初始化为零值。
-// 非 HTTP 状态码错误返回 err，其它错误由 problem 参数反馈；
-func (c *Client) Do(method, path string, req, resp any, problem *Problem) error {
+// 有关 pb 的说明可参考 [Client.ParseResponse]。
+func (c *Client) Do(method, path string, req, resp any, pb ProblemBuilder) error {
 	r, err := c.NewRequest(method, path, req)
 	if err != nil {
 		return err
@@ -94,19 +95,18 @@ func (c *Client) Do(method, path string, req, resp any, problem *Problem) error 
 		return err
 	}
 
-	return c.ParseResponse(rsp, resp, problem)
+	return c.ParseResponse(rsp, resp, pb)
 }
 
 // ParseResponse 从 [http.Response] 解析并获取返回对象
 //
-// 如果正常状态，将内容解码至 resp，如果出错了，则解码至 problem。其它情况下返回错误信息。
-func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *Problem) (err error) {
+// 如果不能正确获得返回的内容将返回普通的 error；
+// 如果内容获取正常，将内容解码至 resp，或是在非正常状态码下解码至由 pb 构建的 [Problem] 对象中，
+// 并作为 error 对象返回。如果 pb 参数为 nil，将被赋予 &Problem{} 的返回值。
+// 之所以由用户指定 pb 参数，是因为 [Problem.Extensions] 的类型不确定。
+func (c *Client) ParseResponse(rsp *http.Response, resp any, pb ProblemBuilder) (err error) {
 	if rsp.ContentLength == 0 { // 204 可能为空
 		return nil
-	}
-
-	if problem == nil {
-		problem = &Problem{}
 	}
 
 	var reader io.Reader = rsp.Body
@@ -135,7 +135,15 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, problem *Problem) (
 	}
 
 	if status.IsProblemStatus(rsp.StatusCode) {
-		return inputMimetype(reader, problem)
+		if pb == nil {
+			pb = newProblem
+		}
+
+		p := pb()
+		if err := inputMimetype(reader, p); err != nil {
+			return err
+		}
+		return p
 	}
 	return inputMimetype(reader, resp)
 }
