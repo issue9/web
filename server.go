@@ -115,6 +115,9 @@ type Server interface {
 
 	// Locale 提供本地化相关功能
 	Locale() Locale
+
+	// Use 添加插件
+	Use(...Plugin)
 }
 
 // Locale 提供与本地化相关的功能
@@ -156,6 +159,13 @@ type Locale interface {
 	// 功能同 [catalog.Builder.Set]
 	Set(tag language.Tag, key string, msg ...catalog.Message) error
 }
+
+// Plugin 附加于 [Server] 的插件
+type Plugin interface {
+	Plugin(Server)
+}
+
+type PluginFunc func(Server)
 
 // InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 接口的实现
 type InternalServer struct {
@@ -263,5 +273,14 @@ func (s *InternalServer) Close() {
 		if err := f(); err != nil { // 出错不退出，继续其它操作。
 			s.Logs().ERROR().Error(err)
 		}
+	}
+}
+
+func (f PluginFunc) Plugin(s Server) { f(s) }
+
+// UsePlugin 添加插件
+func (s *InternalServer) Use(p ...Plugin) {
+	for _, pp := range p {
+		pp.Plugin(s.server)
 	}
 }
