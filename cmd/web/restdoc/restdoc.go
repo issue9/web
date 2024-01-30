@@ -100,7 +100,10 @@ func getRealPath(replace bool, mod *modfile.File, pkg *modfile.Require, dir stri
 	if replace && len(mod.Replace) > 0 {
 		index := slices.IndexFunc(mod.Replace, func(r *modfile.Replace) bool { return r.Old.Path == pkg.Mod.Path })
 		if index >= 0 {
-			p := filepath.Join(dir, mod.Replace[index].New.Path)
+			p := mod.Replace[index].New.Path
+			if !filepath.IsAbs(p) {
+				p = filepath.Join(dir, p)
+			}
 			return filepath.Abs(p)
 		}
 	}
