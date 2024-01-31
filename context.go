@@ -72,15 +72,15 @@ type Context struct {
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
-	id := r.Header.Get(b.requestIDKey)
+func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	id := r.Header.Get(s.requestIDKey)
 
 	h := r.Header.Get(header.Accept)
-	mt := b.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	mt := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if mt == nil {
-		var l logs.Recorder = b.server.Logs().DEBUG()
+		var l logs.Recorder = s.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+			l = s.server.Logs().DEBUG().With(s.requestIDKey, id)
 		}
 		l.LocaleString(Phrase("not found serialization for %s", h))
 
@@ -91,9 +91,9 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		var l logs.Recorder = b.server.Logs().DEBUG()
+		var l logs.Recorder = s.server.Logs().DEBUG()
 		if id != "" {
-			l = b.server.Logs().DEBUG().With(b.requestIDKey, id)
+			l = s.server.Logs().DEBUG().With(s.requestIDKey, id)
 		}
 		l.LocaleString(Phrase("not found charset for %s", h))
 
@@ -102,25 +102,25 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	}
 
 	var outputCompressor compressor.Compressor
-	if b.server.CanCompress() {
+	if s.server.CanCompress() {
 		h = r.Header.Get(header.AcceptEncoding)
 		var notAcceptable bool
-		outputCompressor, notAcceptable = b.codec.acceptEncoding(mt.name(false), h)
+		outputCompressor, notAcceptable = s.codec.acceptEncoding(mt.name(false), h)
 		if notAcceptable {
 			w.WriteHeader(http.StatusNotAcceptable)
 			return nil
 		}
 	}
 
-	tag := acceptLanguage(b.server, r.Header.Get(header.AcceptLang))
+	tag := acceptLanguage(s.server, r.Header.Get(header.AcceptLang))
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	h = r.Header.Get(header.ContentType)
 	if h != "" {
 		var err error
-		if inputMimetype, inputCharset, err = b.codec.contentType(h); err != nil {
-			b.server.Logs().DEBUG().With(b.requestIDKey, id).Error(err)
+		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
+			s.server.Logs().DEBUG().With(s.requestIDKey, id).Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -130,20 +130,20 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
 	// 此处开始才会构建 Context 对象，才须确保 ID 不为空。
 	if id == "" {
-		id = b.server.UniqueID()
+		id = s.server.UniqueID()
 	}
-	w.Header().Set(b.requestIDKey, id)
-	r.Header.Set(b.requestIDKey, id)
+	w.Header().Set(s.requestIDKey, id)
+	r.Header.Set(s.requestIDKey, id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
-	ctx.s = b
+	ctx.s = s
 	ctx.route = route
 	ctx.request = r
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
-	ctx.begin = b.server.Now()
+	ctx.begin = s.server.Now()
 	ctx.queries = nil
 
 	ctx.originResponse = w
@@ -161,9 +161,9 @@ func (b *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.inputMimetype = inputMimetype
 	ctx.inputCharset = inputCharset
 	ctx.languageTag = tag
-	ctx.localePrinter = b.server.Locale().NewPrinter(tag)
+	ctx.localePrinter = s.server.Locale().NewPrinter(tag)
 	clear(ctx.vars)
-	ctx.logs = b.server.Logs().New(map[string]any{b.requestIDKey: id})
+	ctx.logs = s.server.Logs().New(map[string]any{s.requestIDKey: id})
 
 	return ctx
 }
@@ -247,15 +247,15 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	compressor, notAcceptable := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
+	c, notAcceptable := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
 	if notAcceptable {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
-	ctx.outputCompressor = compressor
+	ctx.outputCompressor = c
 
 	if ctx.outputCompressor != nil {
 		h := ctx.Header()
-		h.Set(header.ContentEncoding, compressor.Name())
+		h.Set(header.ContentEncoding, c.Name())
 	}
 }
 
@@ -284,7 +284,7 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
 // FreeContext 释放 ctx
-func (b *InternalServer) FreeContext(ctx *Context) {
+func (s *InternalServer) FreeContext(ctx *Context) {
 	slices.Reverse(ctx.exits)
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)

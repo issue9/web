@@ -231,13 +231,39 @@ func (p *Parser) syntaxError(tag string, size int, filename string, ln int) {
 	p.l.Error(web.NewLocaleError("%s requires at least %d parameters", tag, size), filename, ln)
 }
 
+// 将 p 和 name 合并为一个类型名称
+//
+// p 表示包地址，name 为类型名称，如果 name 为泛型，则泛型中的名称也会加 p 作为包地址。
 func buildPath(p, name string) string {
-	if strings.IndexByte(name, '.') > 0 || strings.HasPrefix(name, openapi.ComponentSchemaPrefix) {
+	if strings.HasPrefix(name, openapi.ComponentSchemaPrefix) {
 		return name
 	}
 
-	var index int
-	var flag bool
+	var g bool // 是否包含泛型参数
+	last := strings.LastIndexByte(name, '[')
+	if last > 0 && name[len(name)-1] == ']' {
+		g = true
+		list := strings.Split(name[last+1:len(name)-1], ",")
+		for i, t := range list {
+			if ii := strings.IndexByte(t, '.'); ii < 0 {
+				t = p + "." + t
+			}
+			list[i] = t
+		}
+
+		strs := strings.Join(list, ",")
+		name = name[:last] + "[" + strs + "]"
+	}
+
+	if !g {
+		last = len(name)
+	}
+	if strings.IndexByte(name[:last], '.') > 0 {
+		return name
+	}
+
+	var index int // []* 等修饰符与类型之间的位置
+	var flag bool // 是否在 [] 之间
 LOOP:
 	for i := 0; i < len(name); i++ {
 		index = i
@@ -272,5 +298,8 @@ LOOP:
 		}
 	}
 
-	return name[:index] + p + "." + name[index:]
+	pun := strings.TrimSpace(name[:index]) // 类型前的符号部分
+	name = strings.TrimSpace(name[index:])
+
+	return pun + p + "." + name
 }

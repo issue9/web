@@ -44,6 +44,8 @@ func New(l *logger.Logger) *Packages {
 func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) {
 	root = filepath.Clean(root)
 
+	pkgs.l.Info(web.Phrase("scan source dir %s", root))
+
 	dirs, err := getDirs(root, recursive)
 	if err != nil {
 		pkgs.l.Error(err, "", 0)

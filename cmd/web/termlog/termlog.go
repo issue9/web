@@ -18,5 +18,6 @@ func New(p *localeutil.Printer, out io.Writer) *logs.Logs {
 		logs.NewTermHandler(out, nil),
 		logs.WithLevels(logs.AllLevels()...),
 		logs.WithCreated(logs.NanoLayout),
+		logs.WithLocale(p),
 	)
 }

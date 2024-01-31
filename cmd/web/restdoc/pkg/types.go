@@ -87,7 +87,7 @@ func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 // type param 表示泛型的实参，比如 [int, float] 等；
 // path 拥有以下两个特殊值：
 //   - {} 表示空值，将返回 nil, true
-//   - map 将返回 [types.InterfaceType]
+//   - map 或是 any 将返回 [types.InterfaceType]
 func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, error) {
 	path, tl, err := pkgs.splitTypeParams(ctx, path)
 	if err != nil {
@@ -477,7 +477,7 @@ func getBasicType(name string) (types.Type, bool) {
 	}
 
 	switch name {
-	case "map":
+	case "map", "any", "interface{}":
 		return types.NewInterfaceType(nil, nil), true
 	case "{}":
 		return nil, true

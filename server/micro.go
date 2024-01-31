@@ -81,8 +81,7 @@ type (
 func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	if conf.Registry != nil {
 		if err := conf.Registry.build(c); err != nil {
-			err.AddFieldParent("registry")
-			return err
+			return err.AddFieldParent("registry")
 		}
 	}
 

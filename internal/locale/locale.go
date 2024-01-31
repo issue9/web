@@ -28,7 +28,9 @@ func New(id language.Tag, conf *config.Config, b *catalog.Builder) *Locale {
 
 	// 保证 b 中包含一条 id 语言的翻译项，
 	// 这样可以始终让 Locale.Printer 的对象始终是有值的。
-	b.SetString(id, "_____", "_____")
+	if err := b.SetString(id, "_____", "_____"); err != nil {
+		panic(err)
+	}
 
 	return &Locale{
 		Builder: b,

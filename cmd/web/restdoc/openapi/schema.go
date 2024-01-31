@@ -4,6 +4,7 @@ package openapi
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -27,10 +28,10 @@ func (doc *OpenAPI) AddSchema(schema *openapi3.SchemaRef) {
 	doc.schemaLocker.Lock()
 	defer doc.schemaLocker.Unlock()
 	if s, found := doc.doc.Components.Schemas[ref]; found {
-		if schema.Value == s.Value {
+		if reflect.DeepEqual(schema.Value, s.Value) {
 			return
 		}
-		panic(fmt.Sprintf("添加同名的对象 %s", ref))
+		panic(fmt.Sprintf("添加同名的对象 %s，但是值不相同:\n%+v\n%+v", ref, schema.Value, s.Value))
 	}
 	doc.doc.Components.Schemas[ref] = schema
 }
@@ -94,23 +95,6 @@ func NewNullableSchemaRef(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
 	s := openapi3.NewSchema().WithNullable()
 	s.AllOf = openapi3.SchemaRefs{ref}
 	return NewSchemaRef("", s)
-}
-
-// NewXMLSchemaRef 包装 ref 为其指定 XML 属性
-func NewXMLSchemaRef(ref *openapi3.SchemaRef, xml *openapi3.XML) *openapi3.SchemaRef {
-	if ref.Ref == "" { // 非引用模式，表示该值仅调用方使用，直接修改值。
-		ref.Value.XML = xml
-		return ref
-	}
-
-	if xml != nil {
-		s := openapi3.NewSchema()
-		s.AllOf = openapi3.SchemaRefs{ref}
-		s.XML = xml
-		return NewSchemaRef("", s)
-	}
-
-	return ref
 }
 
 func NewAttrSchemaRef(ref *openapi3.SchemaRef, title, desc string, xml *openapi3.XML, nullable bool) *openapi3.SchemaRef {

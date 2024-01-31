@@ -264,7 +264,7 @@ func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 	return w
 }
 
-// 关闭当前事件源
+// Close 关闭当前事件源
 //
 // 这将导致关联的 [Server.NewSource] 的 wait 直接返回。
 func (s *Source) Close() { s.exit <- struct{}{} }

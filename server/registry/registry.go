@@ -30,7 +30,7 @@ type Registry interface {
 	// s 为调用者关联的 [web.Server] 对象；
 	Discover(name string, s web.Server) selector.Selector
 
-	// 返回 name 对应的 selector.Selector
+	// ReverseProxy 返回 name 对应的 selector.Selector
 	ReverseProxy(string, web.Server) *httputil.ReverseProxy
 }
 
@@ -55,7 +55,7 @@ func Selector2Rewrite(s selector.Selector) func(r *httputil.ProxyRequest) {
 	}
 }
 
-// Selector2Rewrite 将 [selector.Selector] 转换为 [httputil.ProxyRequest.Director] 字段类型的函数
+// Selector2Director 将 [selector.Selector] 转换为 [httputil.ProxyRequest.Director] 字段类型的函数
 func Selector2Director(s selector.Selector) func(r *http.Request) {
 	return func(r *http.Request) {
 		route, err := s.Next()

@@ -4,6 +4,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -68,7 +69,8 @@ func (ctx *Context) Render(status int, body any) {
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		// [Problem.Apply] 并未调用 [Context.Render]，应该不会死循环。
-		if p, ok := err.(*Problem); ok {
+		var p *Problem
+		if errors.As(err, &p) {
 			p.Apply(ctx)
 		} else {
 			ctx.Error(err, ProblemNotAcceptable).Apply(ctx)

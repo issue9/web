@@ -23,7 +23,11 @@ func TestBuildPath(t *testing.T) {
 	a.Equal(buildPath(path, openapi.ComponentSchemaPrefix+"/abc"), openapi.ComponentSchemaPrefix+"/abc")
 	a.Equal(buildPath(path, "[]abc"), "[]"+path+".abc")
 	a.Equal(buildPath(path, "[]*abc"), "[]*"+path+".abc")
+	a.Equal(buildPath(path, "[]"+path+".abc"), "[]"+path+".abc")
 	a.Equal(buildPath(path, "[5]*abc"), "[5]*"+path+".abc")
+	a.Equal(buildPath(path, "[]abc[int]"), "[]"+path+".abc["+path+".int]")
+	a.Equal(buildPath(path, "[]abc[int,S]"), "[]"+path+".abc["+path+".int,"+path+".S]")
+
 	a.Equal(buildPath(path, "[5x]*abc"), path+".[5x]*abc")
 	a.Equal(buildPath(path, "[*]abc"), path+".[*]abc")
 	a.Equal(buildPath(path, "[[]abc"), path+".[[]abc")
@@ -41,7 +45,7 @@ func TestParser_Parse(t *testing.T) {
 	a.NotNil(d).
 		Length(l.Records[logs.LevelError], 0).
 		Length(l.Records[logs.LevelWarn], 0).
-		Length(l.Records[logs.LevelInfo], 0)
+		Length(l.Records[logs.LevelInfo], 1) // scan dir 的提示
 
 	a.NotNil(d.Doc().Info).
 		Equal(d.Doc().Info.Version, "1.0.0")

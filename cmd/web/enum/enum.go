@@ -64,11 +64,11 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return web.NewLocaleError("type not set")
 			}
 
-			types := strings.Split(*t, ",")
-			for i, name := range types {
-				types[i] = strings.TrimSpace(name)
+			ts := strings.Split(*t, ",")
+			for i, name := range ts {
+				ts[i] = strings.TrimSpace(name)
 			}
-			return dump(*h, *i, *o, types)
+			return dump(*h, *i, *o, ts)
 		}
 	})
 }
