@@ -113,8 +113,15 @@ func parseComment(doc *ast.CommentGroup) (title, desc string) {
 	return
 }
 
-func buildBasicType(name string) (*openapi3.SchemaRef, bool) {
-	switch name {
+func buildBasicType(t types.Type) (*openapi3.SchemaRef, bool) {
+	if t == nil {
+		return nil, true
+	}
+	if _, ok := t.(*types.Interface); ok {
+		return openapi.NewSchemaRef("", openapi3.NewObjectSchema()), true
+	}
+
+	switch t.String() {
 	case "int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64":
 		return openapi.NewSchemaRef("", openapi3.NewIntegerSchema()), true
@@ -124,10 +131,6 @@ func buildBasicType(name string) (*openapi3.SchemaRef, bool) {
 		return openapi.NewSchemaRef("", openapi3.NewBoolSchema()), true
 	case "string":
 		return openapi.NewSchemaRef("", openapi3.NewStringSchema()), true
-	case "map":
-		return openapi.NewSchemaRef("", openapi3.NewObjectSchema()), true
-	case "{}":
-		return nil, true
 	case "time.Duration":
 		return openapi.NewSchemaRef("", openapi3.NewStringSchema()), true
 	case "time.Time":

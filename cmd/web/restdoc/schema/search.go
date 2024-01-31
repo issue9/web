@@ -54,7 +54,7 @@ func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q
 // name typ 的结构体名称；
 // tps 为与 typ 对应的范型参数列表；
 func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, tag string) (ref *openapi3.SchemaRef, basic bool, err error) {
-	if ref, ok := buildBasicType(typ.String()); ok {
+	if ref, ok := buildBasicType(typ); ok {
 		return ref, true, nil
 	}
 
@@ -78,7 +78,7 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 		}
 		return openapi.NewArraySchemaRef(ref), basic, nil
 	case *types.Basic:
-		schemaRef, ok := buildBasicType(tt.Name())
+		schemaRef, ok := buildBasicType(tt)
 		if !ok {
 			return nil, false, web.NewLocaleError("%s is not a valid basic type", tt.Name())
 		}

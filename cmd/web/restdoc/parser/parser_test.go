@@ -11,7 +11,25 @@ import (
 	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
+	"github.com/issue9/web/cmd/web/restdoc/openapi"
 )
+
+func TestBuildPath(t *testing.T) {
+	a := assert.New(t, false)
+
+	path := "github.com/issue9/web"
+	a.Equal(buildPath(path, "github.com/issue9/web.Type"), "github.com/issue9/web.Type")
+	a.Equal(buildPath(path, "abc"), path+".abc")
+	a.Equal(buildPath(path, openapi.ComponentSchemaPrefix+"/abc"), openapi.ComponentSchemaPrefix+"/abc")
+	a.Equal(buildPath(path, "[]abc"), "[]"+path+".abc")
+	a.Equal(buildPath(path, "[]*abc"), "[]*"+path+".abc")
+	a.Equal(buildPath(path, "[5]*abc"), "[5]*"+path+".abc")
+	a.Equal(buildPath(path, "[5x]*abc"), path+".[5x]*abc")
+	a.Equal(buildPath(path, "[*]abc"), path+".[*]abc")
+	a.Equal(buildPath(path, "[[]abc"), path+".[[]abc")
+	a.Equal(buildPath(path, "[]]abc"), path+".[]]abc")
+	a.Equal(buildPath(path, "5abc"), path+".5abc")
+}
 
 func TestParser_Parse(t *testing.T) {
 	a := assert.New(t, false)

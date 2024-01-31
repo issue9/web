@@ -62,7 +62,7 @@ LOOP:
 
 // 拆分 path 中的范型参数
 func (pkgs *Packages) splitTypeParams(ctx context.Context, path string) (p string, tl typeList, err error) {
-	if path == "" {
+	if path = strings.TrimSpace(path); path == "" {
 		return
 	}
 

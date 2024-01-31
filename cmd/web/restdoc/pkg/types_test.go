@@ -50,6 +50,19 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 	typ, err = p.TypeOf(context.Background(), "invalid")
 	a.Equal(err, web.NewLocaleError("%s is not a valid basic type", "invalid")).
 		Nil(typ)
+
+	typ, err = p.TypeOf(context.Background(), "{}")
+	a.NotError(err).Nil(typ)
+
+	typ, err = p.TypeOf(context.Background(), "github.com/issue9/web/restdoc.{}")
+	a.NotError(err).Nil(typ)
+
+	pkgPath = "github.com/issue9/web/restdoc{}"
+	typ, err = p.TypeOf(context.Background(), pkgPath)
+	a.Equal(err, web.NewLocaleError("not found type %s", pkgPath)).Nil(typ)
+
+	typ, err = p.TypeOf(context.Background(), "map")
+	a.NotError(err).Equal(typ, types.NewInterfaceType(nil, nil))
 }
 
 func TestPackages_TypeOf(t *testing.T) {

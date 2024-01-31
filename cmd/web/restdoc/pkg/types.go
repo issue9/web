@@ -85,6 +85,9 @@ func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 //
 // path 表示类型的包路径，如果是非内置类型，该值是必须的；
 // type param 表示泛型的实参，比如 [int, float] 等；
+// path 拥有以下两个特殊值：
+//   - {} 表示空值，将返回 nil, true
+//   - map 将返回 [types.InterfaceType]
 func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, error) {
 	path, tl, err := pkgs.splitTypeParams(ctx, path)
 	if err != nil {
@@ -93,7 +96,6 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 	return pkgs.typeOf(ctx, path, tl)
 }
 
-// NOTE: path 中不能再包含类型参数信息
 func (pkgs *Packages) typeOf(ctx context.Context, path string, tl typeList) (types.Type, error) {
 	f, path := splitTypes(path)
 
@@ -106,6 +108,13 @@ func (pkgs *Packages) typeOf(ctx context.Context, path string, tl typeList) (typ
 
 	obj, spec, file, found := pkgs.lookup(ctx, path)
 	if !found {
+		// NOTE: 包内可能重定义了内置类型，比如 type int struct {...}
+		// 在找不到该类型的情况下，还需尝试将其作为内置类型进行查找。
+		if last := strings.LastIndexByte(path, '.'); last > 0 {
+			if t, found := getBasicType(path[last+1:]); found {
+				return f(t), nil
+			}
+		}
 		return nil, web.NewLocaleError("not found type %s", path)
 	}
 
@@ -356,6 +365,8 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, obj types.Object, expr ast
 		}
 
 		return pkgs.typeOfExpr(ctx, xnamed.Obj(), e.X, file, doc, newTypeList(tps...))
+	case *ast.InterfaceType:
+		return nil, web.NewLocaleError("ast.InterfaceType can not covert to openapi schema", expr)
 	default:
 		panic(fmt.Sprintf("未处理的 ast.Expr 类型： %T", expr))
 	}
@@ -464,6 +475,14 @@ func getBasicType(name string) (types.Type, bool) {
 			return b, true
 		}
 	}
+
+	switch name {
+	case "map":
+		return types.NewInterfaceType(nil, nil), true
+	case "{}":
+		return nil, true
+	}
+
 	return nil, false
 }
 

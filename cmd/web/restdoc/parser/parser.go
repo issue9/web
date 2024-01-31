@@ -235,5 +235,42 @@ func buildPath(p, name string) string {
 	if strings.IndexByte(name, '.') > 0 || strings.HasPrefix(name, openapi.ComponentSchemaPrefix) {
 		return name
 	}
-	return p + "." + name
+
+	var index int
+	var flag bool
+LOOP:
+	for i := 0; i < len(name); i++ {
+		index = i
+		switch c := name[i]; {
+		case c == '[':
+			if flag { // 不支持 [[
+				index = 0
+				break LOOP
+			}
+			flag = true
+		case c == ']':
+			if !flag { // 不支持 ]]
+				index = 0
+				break LOOP
+			}
+			flag = false
+		case c == '*':
+			if flag { // 不支持 [*
+				index = 0
+				break LOOP
+			}
+		case c > '0' && c < '9':
+			if !flag {
+				index = 0
+				break LOOP
+			}
+		default:
+			if flag {
+				index = 0
+			}
+			break LOOP
+		}
+	}
+
+	return name[:index] + p + "." + name[index:]
 }

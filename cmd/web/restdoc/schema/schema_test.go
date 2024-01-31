@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"go/types"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -12,12 +13,6 @@ import (
 func TestBuildBasicType(t *testing.T) {
 	a := assert.New(t, false)
 
-	ref, ok := buildBasicType("int")
+	ref, ok := buildBasicType(types.Typ[types.Int])
 	a.True(ok).Equal(ref.Value.Type, openapi3.TypeInteger)
-
-	ref, ok = buildBasicType("map")
-	a.True(ok).Equal(ref.Value.Type, openapi3.TypeObject)
-
-	ref, ok = buildBasicType("{}")
-	a.True(ok).Nil(ref)
 }

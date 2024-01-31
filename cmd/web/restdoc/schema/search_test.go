@@ -102,6 +102,23 @@ func TestSchema_New_types(t *testing.T) {
 			Equal(ref.Value.Items.Value.Type, openapi3.TypeBoolean)
 	})
 
+	t.Run("{}", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, "{}", false)
+		a.NotError(err).Nil(ref)
+	})
+
+	t.Run("map", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, "map", false)
+		a.NotError(err).NotNil(ref).
+			Equal(ref.Value.Type, openapi3.TypeObject)
+	})
+
 	t.Run("String", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := openapi.New("3")
