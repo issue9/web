@@ -87,7 +87,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			}
 
 			if doc := dp.Parse(ctx); doc != nil {
-				return doc.SaveAs(*o)
+				if err := doc.SaveAs(*o); err != nil {
+					return err
+				}
+				l.Info(web.NewLocaleError("save restdoc to %s", *o))
 			}
 			return nil
 		}

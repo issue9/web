@@ -25,7 +25,7 @@ import (
 // 如果 typePath 以 #components/schemas 开头，则从 t.Components.Schemas 下查找。
 // q 是否用于查询参数，如果是查询参数，那么字段名的获取将采用 json。
 //
-// 可能返回的错误值为 *Error
+// 可能返回的错误值为 [Error]
 func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q bool) (*openapi3.SchemaRef, error) {
 	tag := "json"
 	if q { // 查询参数采用 query.Tag 获取为字段名
@@ -45,11 +45,15 @@ func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q
 		return nil, err
 	}
 
+	if typ == nil { // typ == nil 也是正确的值，表示空值。
+		return nil, nil
+	}
+
 	ref, _, err := s.fromType(t, "", typ, tag)
 	return ref, err
 }
 
-// 从类型 typ 中构建 [Ref] 类型
+// 从类型 typ 中构建 [openapi3.SchemaRef] 类型
 //
 // name typ 的结构体名称；
 // tps 为与 typ 对应的范型参数列表；
