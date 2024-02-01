@@ -48,9 +48,9 @@ func TestServer(t *testing.T) {
 		time.Sleep(time.Microsecond * 500)
 
 		event := s.NewEvent("event", sj.Marshal)
-		event.Sent(1)
+		a.NotError(event.Sent(1))
 		time.Sleep(time.Microsecond * 500)
-		event.Sent(&struct{ ID int }{ID: 5})
+		a.NotError(event.Sent(&struct{ ID int }{ID: 5}))
 
 		a.Equal(1, e.Len())
 		wait()

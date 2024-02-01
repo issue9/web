@@ -168,7 +168,8 @@ func TestContext_SetEncoding(t *testing.T) {
 	ctx.SetEncoding("gzip")
 	a.Equal(ctx.Encoding(), "gzip")
 
-	ctx.Write([]byte("200"))
+	_, err := ctx.Write([]byte("200"))
+	a.NotError(err)
 	a.PanicString(func() {
 		ctx.SetEncoding("br")
 	}, "已有内容输出，不可再更改！")

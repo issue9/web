@@ -29,9 +29,9 @@ func between[T ~int | ~uint | float32 | float64](min, max T) func(T) bool {
 	return func(vv T) bool { return vv >= min && vv <= max }
 }
 
-func min(v int) func(int) bool { return func(a int) bool { return a >= v } }
+func buildMinValidator(v int) func(int) bool { return func(a int) bool { return a >= v } }
 
-func max(v int) func(int) bool { return func(a int) bool { return a < v } }
+func buildMaxValidator(v int) func(int) bool { return func(a int) bool { return a < v } }
 
 func TestNewFilterFromVS(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
@@ -214,16 +214,16 @@ func TestFilterContext(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := s.NewContext(w, r, types.NewContext())
 
-	min_2 := NewRule(min(-2), Phrase("-2"))
-	min_3 := NewRule(min(-3), Phrase("-3"))
-	max50 := NewRule(max(50), Phrase("50"))
-	max_4 := NewRule(max(-4), Phrase("-4"))
+	min2 := NewRule(buildMinValidator(-2), Phrase("-2"))
+	min3 := NewRule(buildMinValidator(-3), Phrase("-3"))
+	max50 := NewRule(buildMaxValidator(50), Phrase("50"))
+	max4 := NewRule(buildMaxValidator(-4), Phrase("-4"))
 
 	n100 := -100
 	p100 := 100
 	v := ctx.newFilterContext(false).
-		Add(NewFilter(NewRules(min_2, min_3))("f1", &n100)).
-		Add(NewFilter(NewRules(max50, max_4))("f2", &p100))
+		Add(NewFilter(NewRules(min2, min3))("f1", &n100)).
+		Add(NewFilter(NewRules(max50, max4))("f2", &p100))
 	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 		{Name: "f2", Reason: "50"},
@@ -232,8 +232,8 @@ func TestFilterContext(t *testing.T) {
 	n100 = -100
 	p100 = 100
 	v = ctx.newFilterContext(true).
-		Add(NewFilter(NewRules(min_2, min_3))("f1", &n100)).
-		Add(NewFilter(NewRules(max50, max_4))("f2", &p100))
+		Add(NewFilter(NewRules(min2, min3))("f1", &n100)).
+		Add(NewFilter(NewRules(max50, max4))("f2", &p100))
 	a.Equal(v.problem.Params, []ProblemParam{
 		{Name: "f1", Reason: "-2"},
 	})
@@ -269,7 +269,7 @@ func TestFilterContext_When(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := s.NewContext(w, r, types.NewContext())
 
-	min18 := NewRule(min(18), Phrase("不能小于 18"))
+	min18 := NewRule(buildMinValidator(18), Phrase("不能小于 18"))
 	notEmpty := NewRule(required[string], Phrase("不能为空"))
 
 	obj := &object{}

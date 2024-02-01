@@ -58,7 +58,7 @@ func TestNew(t *testing.T) {
 	a.False(srv.CanCompress())
 }
 
-func newOptions(a *assert.Assertion, o *Options) *Options {
+func newOptions(o *Options) *Options {
 	if o == nil {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
 	}
@@ -84,7 +84,7 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 }
 
 func newTestServer(a *assert.Assertion, o *Options) *httpServer {
-	o = newOptions(a, o)
+	o = newOptions(o)
 	srv, err := New("app", "0.1.0", o)
 	a.NotError(err).NotNil(srv)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
@@ -184,7 +184,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	router := srv.Routers().New("def", nil)
 
 	router.Get("/test", buildHandler(202))
-	router.Get("/close", func(ctx *web.Context) web.Responser {
+	router.Get("/c", func(ctx *web.Context) web.Responser {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
@@ -196,22 +196,22 @@ func TestHTTPServer_Close(t *testing.T) {
 		return nil
 	})
 
-	close := 0
+	c := 0
 	srv.OnClose(func() error {
-		close++
+		c++
 		return nil
 	})
 
 	defer servertest.Run(a, srv)()
-	// defer srv.Close() // 由 /close 关闭，不需要 srv.Close
+	// defer srv.Close() // 由 /c 关闭，不需要 srv.Close
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
 	// 连接被关闭，返回错误内容
-	a.Equal(0, close)
+	a.Equal(0, c)
 	resp, err := http.Get("http://localhost:8080/close")
 	time.Sleep(500 * time.Microsecond) // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-	a.Error(err).Nil(resp).True(close > 0)
+	a.Error(err).Nil(resp).True(c > 0)
 
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
@@ -341,7 +341,7 @@ func TestNewService(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Registry 和 Peer 是空的
-	srv, err := NewService("app", "0.1.0", newOptions(a, nil))
+	srv, err := NewService("app", "0.1.0", newOptions(nil))
 	a.Error(err).Nil(srv)
 
 	c, _ := memory.New()
@@ -357,7 +357,7 @@ func TestNewService(t *testing.T) {
 }
 
 func newService(a *assert.Assertion, name, addr string, c cache.Driver) web.Server {
-	srv, err := NewService(name, "0.1.0", newOptions(a, &Options{
+	srv, err := NewService(name, "0.1.0", newOptions(&Options{
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: addr},
 		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),
@@ -385,10 +385,10 @@ func TestNewGateway(t *testing.T) {
 	s2.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
 	// Registry 和 Mapper 是空的
-	g, err := NewGateway("app", "0.1.0", newOptions(a, nil))
+	g, err := NewGateway("app", "0.1.0", newOptions(nil))
 	a.Error(err).Nil(g)
 
-	g, err = NewGateway("app", "0.1.0", newOptions(a, &Options{
+	g, err = NewGateway("app", "0.1.0", newOptions(&Options{
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),

@@ -153,7 +153,8 @@ func TestContext_Wrap(t *testing.T) {
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptLang, "cmn-hant")
 	ctx := s.NewContext(w, r, types.NewContext())
-	ctx.Write([]byte("abc"))
+	_, err := ctx.Write([]byte("abc"))
+	a.NotError(err)
 
 	a.PanicString(func() {
 		buf := &bytes.Buffer{}
@@ -175,8 +176,8 @@ func TestContext_Wrap(t *testing.T) {
 	buf := &bytes.Buffer{}
 	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf, ResponseWriter: w} })
 	ctx.Header().Set("h2", "v2")
-	ctx.Write([]byte("abc"))
-	a.Equal(buf.String(), "abc").
+	_, err = ctx.Write([]byte("abc"))
+	a.NotError(err).Equal(buf.String(), "abc").
 		Equal(w.Header().Get("h1"), "v1").
 		Equal(w.Header().Get("h2"), "v2").
 		Empty(w.Body.String())
@@ -198,8 +199,8 @@ func TestContext_Wrap(t *testing.T) {
 	buf2 := &bytes.Buffer{}
 	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf1, ResponseWriter: w} })
 	ctx.Wrap(func(w http.ResponseWriter) http.ResponseWriter { return &response{w: buf2, ResponseWriter: w} })
-	ctx.Write([]byte("abc"))
-	a.Equal(buf2.String(), "abc").Empty(buf1.String()).
+	_, err = ctx.Write([]byte("abc"))
+	a.NotError(err).Equal(buf2.String(), "abc").Empty(buf1.String()).
 		True(w.Result().StatusCode > 199).
 		Empty(w.Body.String())
 }

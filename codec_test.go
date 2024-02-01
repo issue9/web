@@ -64,7 +64,7 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	}
 }
 
-func unmarshalTest(r io.Reader, v any) error { return mimetype.ErrUnsupported() }
+func unmarshalTest(io.Reader, any) error { return mimetype.ErrUnsupported() }
 
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
 

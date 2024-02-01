@@ -24,5 +24,5 @@ func TestApp_init(t *testing.T) {
 	app := &App{NewServer: func() (web.Server, error) {
 		return server.New("test", "1.0.0", nil)
 	}}
-	app.init()
+	a.NotError(app.init())
 }

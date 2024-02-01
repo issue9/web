@@ -57,7 +57,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 	return srv
 }
 
-func (s *testServer) Close(shutdownTimeout time.Duration) { s.InternalServer.Close() }
+func (s *testServer) Close(time.Duration) { s.InternalServer.Close() }
 
 func (s *testServer) Serve() error { panic("未实现") }
 
