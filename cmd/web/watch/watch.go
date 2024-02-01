@@ -70,8 +70,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				WatcherFrequency: f,
 			}
 
-			watch.Watch(context.Background(), p, watch.NewConsoleLogger(*i, os.Stdout, nil, sources), o)
-			return nil
+			return watch.Watch(context.Background(), p, watch.NewConsoleLogger(*i, os.Stdout, nil, sources), o)
 		}
 	})
 }

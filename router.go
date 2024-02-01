@@ -77,8 +77,6 @@ func (s *InternalServer) Routers() *Routers { return s.routers }
 func (r *Routers) Get(name string) *Router { return r.g.Router(name) }
 
 // New 声明新路由
-//
-// 新路由会继承 [NewInternalServer] 中指定参数 o。但当前方法中的 o 可以覆盖相同的参数；
 func (r *Routers) New(name string, matcher RouterMatcher, o ...RouterOption) *Router {
 	return r.g.New(name, matcher, o...)
 }

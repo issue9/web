@@ -123,6 +123,8 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 			t.AddSchema(ref)
 		}
 		return ref, ref.Ref == "", nil
+	case pkg.NotFound:
+		return nil, false, web.NewLocaleError("not found type %s", tt.String())
 	default:
 		panic(fmt.Sprintf("未处理的类型 %T:%+v", typ, typ))
 	}

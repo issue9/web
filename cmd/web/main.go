@@ -6,6 +6,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -66,9 +67,9 @@ func main() {
 		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
 			if *v {
-				fmt.Fprintf(w, "web: %s\n", version)
-				fmt.Fprintf(w, "build with: %s\n", runtime.Version())
-				return nil
+				_, err1 := fmt.Fprintf(w, "web: %s\n", version)
+				_, err2 := fmt.Fprintf(w, "build with: %s\n", runtime.Version())
+				return errors.Join(err1, err2)
 			}
 
 			// 没有任何选项指定，输出帮助信息。

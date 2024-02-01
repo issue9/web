@@ -186,7 +186,7 @@ func TestSchema_New_types(t *testing.T) {
 
 		sex, found := tt.GetSchema(pkgRef + ".Sex")
 		a.True(found).NotNil(sex).
-			Equal(sex.Value.Description, "Sex 表示性别\n@enum female male unknown\n@type string\n").
+			Equal(sex.Value.Description, "Sex 表示性别\n\n@enum female male unknown\n@type string\n").
 			Equal(sex.Value.Type, "string").
 			Equal(sex.Value.Enum, []string{"female", "male", "unknown"})
 	})
@@ -268,6 +268,25 @@ func TestSchema_New_types(t *testing.T) {
 		a.Empty(age.Ref).
 			Equal(age.Value.Title, "年龄").
 			Equal(age.Value.Type, openapi3.TypeInteger)
+	})
+
+	// admin.Sex
+	t.Run("admin.Sex", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Sex", false)
+		a.NotError(err).NotNil(ref).
+			Equal(ref.Ref, openapi.ComponentSchemaPrefix+pkgRef+".Sex")
+	})
+
+	// admin.State
+	t.Run("admin.State", func(t *testing.T) {
+		a := assert.New(t, false)
+		tt := openapi.New("3")
+
+		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.State", false)
+		a.Equal(err, web.NewLocaleError("not found type %s", "github.com/issue9/web.State")).Nil(ref)
 	})
 
 	// admin.Alias

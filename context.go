@@ -61,8 +61,7 @@ type Context struct {
 	languageTag   language.Tag
 	localePrinter *message.Printer
 
-	// 保存 Context 在存续期间的可复用变量
-	//
+	// 保存 Context 在存续期间的可复用变量。
 	// 这是比 [context.Value] 更经济的传递变量方式，但是这并不是协程安全的。
 	vars map[any]any
 
@@ -333,5 +332,5 @@ func (ctx *Context) IsXHR() bool {
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
-// Server 获取关联的 Server 实例
+// Server 获取关联的 [Server] 实例
 func (ctx *Context) Server() Server { return ctx.s.server }

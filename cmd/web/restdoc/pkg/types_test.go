@@ -44,8 +44,7 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 
 	pkgPath := "github.com/issue9/web/restdoc.NotExists"
 	typ, err = p.TypeOf(context.Background(), pkgPath)
-	a.Equal(err, web.NewLocaleError("not found type %s", pkgPath)).
-		Nil(typ)
+	a.NotError(err).Equal(typ, NotFound(pkgPath))
 
 	typ, err = p.TypeOf(context.Background(), "invalid")
 	a.Equal(err, web.NewLocaleError("%s is not a valid basic type", "invalid")).
@@ -59,7 +58,7 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 
 	pkgPath = "github.com/issue9/web/restdoc{}"
 	typ, err = p.TypeOf(context.Background(), pkgPath)
-	a.Equal(err, web.NewLocaleError("not found type %s", pkgPath)).Nil(typ)
+	a.NotError(err).Equal(typ, pkgPath)
 
 	typ, err = p.TypeOf(context.Background(), "map")
 	a.NotError(err).Equal(typ, types.NewInterfaceType(nil, nil))
@@ -78,12 +77,12 @@ func TestPackages_TypeOf(t *testing.T) {
 
 		for _, doc := range docs {
 			named, ok := typ.(*Named)
-			a.True(ok).Equal(named.Doc().Text(), doc)
+			a.True(ok, "not Named:%T:%+v", typ, typ).Equal(named.Doc().Text(), doc)
 			typ = named.Next()
 		}
 
 		st, ok := typ.(*Struct)
-		a.True(ok, "%+T", typ).
+		a.True(ok, "%+T:%+v", typ, typ).
 			Equal(st.FieldDoc(1).Text(), "INT\n").
 			Equal(st.Field(1).Name(), "F1").
 			Equal(st.FieldDoc(3).Text(), "F2 Doc\n").

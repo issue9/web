@@ -47,7 +47,7 @@ type (
 	//
 	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
 	//
-	// NOTE: 不采用流的方式处理数据原原因是因为：编码过程中可能会出错，
+	// NOTE: 不采用流的方式处理数据的原因是因为：编码过程中可能会出错，
 	// 此时需要修改状态码，流式的因为有内容输出，状态码也已经固定，无法修改。
 	MarshalFunc = func(*Context, any) ([]byte, error)
 

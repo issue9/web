@@ -40,6 +40,12 @@ type (
 		Len() int
 	}
 
+	// NotFound 表示该类型不存在时返回此类型
+	//
+	// 一般情况下是引用了未导入的类型，比如：type T = web.State
+	// 如果 web 包未被导入，那么 web.State 将会变成 NotFound 类型。
+	NotFound string
+
 	defaultTypeList []types.Type
 )
 
@@ -64,6 +70,10 @@ func (n *Named) Next() types.Type { return n.next }
 
 // ID 当前对象的唯一名称
 func (n *Named) ID() string { return n.id }
+
+func (t NotFound) Underlying() types.Type { return t }
+
+func (t NotFound) String() string { return string(t) }
 
 func (tl defaultTypeList) At(i int) types.Type { return tl[i] }
 
@@ -115,7 +125,7 @@ func (pkgs *Packages) typeOf(ctx context.Context, path string, tl typeList) (typ
 				return f(t), nil
 			}
 		}
-		return nil, web.NewLocaleError("not found type %s", path)
+		return NotFound(path), nil
 	}
 
 	typ, err := pkgs.typeOfExpr(ctx, obj, spec.Type, file, getDoc(spec.Doc, spec.Comment), tl)
@@ -401,7 +411,7 @@ func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, tl
 			}
 			return nil, web.NewLocaleError("%s is not a valid basic type", basicType)
 		}
-		return nil, web.NewLocaleError("not found type %s", path)
+		return NotFound(path), nil
 	}
 
 	if spec == nil { // 只有内置类型此值才可能为 nil，理论上不可能出此错误！

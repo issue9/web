@@ -278,7 +278,7 @@ func (s *InternalServer) Close() {
 
 func (f PluginFunc) Plugin(s Server) { f(s) }
 
-// UsePlugin 添加插件
+// Use 添加插件
 func (s *InternalServer) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s.server)

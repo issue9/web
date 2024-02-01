@@ -3,12 +3,20 @@
 // Package admin 测试用例
 package admin
 
-import "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
+import (
+	"github.com/issue9/web"
+
+	"github.com/issue9/web/cmd/web/restdoc/schema/testdata"
+)
 
 // User testdata.User
 type User testdata.User
 
 type Alias = testdata.User
+
+type State = web.State
+
+type Sex = testdata.Sex
 
 type Admin struct {
 	XMLName struct{} `xml:"admin"`

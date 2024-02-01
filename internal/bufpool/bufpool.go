@@ -8,10 +8,9 @@ import (
 	"sync"
 )
 
-const bufMaxSize = 1024
-
 var bufPool = &sync.Pool{New: func() any { return &bytes.Buffer{} }}
 
+// New 声明缓存的 bytes.Buffer 对象
 func New() *bytes.Buffer {
 	b := bufPool.Get().(*bytes.Buffer)
 	b.Reset()
@@ -19,6 +18,7 @@ func New() *bytes.Buffer {
 }
 
 func Put(p *bytes.Buffer) {
+	const bufMaxSize = 1024
 	if p.Cap() < bufMaxSize {
 		bufPool.Put(p)
 	}

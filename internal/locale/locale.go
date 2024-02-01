@@ -57,8 +57,7 @@ func (l *Locale) NewPrinter(id language.Tag) *message.Printer {
 		return l.Printer()
 	}
 
-	// TODO 以使用频次或是 TTL 的方式缓存常用的 Printer，
-	// 可以在一定程序上提升 NewPrinter 的性能。
+	// TODO 以使用频次或是 TTL 的方式缓存常用的 Printer，可以在一定程序上提升 NewPrinter 的性能。
 	return NewPrinter(id, l)
 }
 

@@ -23,8 +23,8 @@ const Mode = defaultMode
 // Filename 根据当前的环境生成不同的文件名
 //
 // 按以下规则返回文件名：
-//   - Production 原样返回；
-//   - Development 在扩展名前加上 _development，比如 file.yaml => file_development.yaml；
+//   - [Production] 原样返回；
+//   - [Development] 在扩展名前加上 _development，比如 file.yaml => file_development.yaml；
 //
 // 一般像根据环境加载不同的配置文件之类的功能可以使用此方法。
 // 比如 [app.CLI.ConfigFilename] 可以使用此文件指定相同的文件名。
