@@ -38,7 +38,7 @@ const (
 const defaultOutput = "./restdoc.json"
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
-	opt.New("doc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
+	opt.New("restdoc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		o := fs.String("o", defaultOutput, outputUsage.LocaleString(p))
 		r := fs.Bool("r", true, recursiveUsage.LocaleString(p))
 		t := fs.String("t", "", tagUsage.LocaleString(p))

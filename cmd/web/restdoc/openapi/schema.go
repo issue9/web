@@ -33,6 +33,8 @@ func (doc *OpenAPI) AddSchema(schema *openapi3.SchemaRef) {
 		}
 		panic(fmt.Sprintf("添加同名的对象 %s，但是值不相同:\n%+v\n%+v", ref, schema.Value, s.Value))
 	}
+
+	schema.Ref = ""
 	doc.doc.Components.Schemas[ref] = schema
 }
 

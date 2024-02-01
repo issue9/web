@@ -13,9 +13,8 @@ import (
 )
 
 type Logger struct {
-	logs   *logs.Logs
-	count  int
-	hasErr bool
+	logs  *logs.Logs
+	count int
 }
 
 func New(l *logs.Logs) *Logger { return &Logger{logs: l} }
@@ -28,8 +27,6 @@ func (l *Logger) Info(msg any) { l.log(logs.LevelInfo, msg, "", 0) }
 
 // Warning 输出警告信息
 func (l *Logger) Warning(msg any) { l.log(logs.LevelWarn, msg, "", 0) }
-
-func (l *Logger) HasError() bool { return l.hasErr }
 
 // Error 输出错误信息
 //
@@ -75,10 +72,6 @@ func (l *Logger) log(lv logs.Level, msg any, filename string, line int) {
 	}
 
 	l.count++ // 只有真正输出时，才需要+1。
-
-	if !l.hasErr && (lv == logs.LevelError || lv == logs.LevelFatal) {
-		l.hasErr = true
-	}
 
 	if filename != "" {
 		m = web.Phrase("%s at %s:%d", m, filename, line)

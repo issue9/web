@@ -18,10 +18,9 @@ import (
 
 func (p *Parser) parseAPI(ctx context.Context, t *openapi.OpenAPI, currPath, suffix string, lines []string, ln int, filename string) {
 	defer func() {
-		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。
-		// 应当尽量在此之前查出错误。
+		// NOTE: recover 用于处理 openapi3 的 panic，但是不带行号信息。应当尽量在此之前查出错误。
 		if msg := recover(); msg != nil {
-			p.l.Error(msg, filename, ln)
+			p.l.Fatal(msg)
 		}
 	}()
 
@@ -94,6 +93,7 @@ LOOP:
 	}
 	p.addResponses(opt, resps, true)
 	t.AddAPI(p.prefix+path, opt, method)
+	p.l.Info(web.NewLocaleError("add API %s %s", method, p.prefix+path))
 }
 
 func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3.Operation, currPath, suffix, filename string, ln int) {

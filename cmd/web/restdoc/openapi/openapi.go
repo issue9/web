@@ -17,8 +17,7 @@ import (
 
 // OpenAPI 协程安全的 OpenAPI 对象
 type OpenAPI struct {
-	doc *openapi3.T
-
+	doc          *openapi3.T
 	pathLocker   sync.Mutex
 	schemaLocker sync.RWMutex
 }
