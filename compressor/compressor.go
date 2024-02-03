@@ -58,7 +58,6 @@ var (
 		}
 		return r
 	}}
-	gzipWriters = &sync.Pool{New: func() any { return gzip.NewWriter(nil) }}
 
 	// deflate
 	deflateReaders = &sync.Pool{New: func() any {
@@ -90,7 +89,9 @@ type (
 		width int
 	}
 
-	gzipCompressor struct{}
+	gzipCompressor struct {
+		writers *sync.Pool
+	}
 
 	deflateCompressor struct {
 		dict    []byte
@@ -183,11 +184,21 @@ func (c *lzwCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 }
 
 // NewGzip 声明基于 gzip 的压缩算法
-func NewGzip(level int) Compressor { return &gzipCompressor{} }
+func NewGzip(level int) Compressor {
+	return &gzipCompressor{
+		writers: &sync.Pool{New: func() any {
+			w, err := gzip.NewWriterLevel(nil, level)
+			if err != nil {
+				panic(err)
+			}
+			return w
+		}},
+	}
+}
 
-func (c *gzipCompressor) Name() string { return "gzip" }
+func (c gzipCompressor) Name() string { return "gzip" }
 
-func (c *gzipCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+func (c gzipCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := gzipReaders.Get().(*gzip.Reader)
 	if err := rr.Reset(r); err != nil {
 		return nil, err
@@ -195,10 +206,10 @@ func (c *gzipCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	return wrapDecoder(rr, func() { gzipReaders.Put(rr) }), nil
 }
 
-func (c *gzipCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
-	ww := gzipWriters.Get().(*gzip.Writer)
+func (c gzipCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	ww := c.writers.Get().(*gzip.Writer)
 	ww.Reset(w)
-	return wrapEncoder(ww, func() { gzipWriters.Put(ww) }), nil
+	return wrapEncoder(ww, func() { c.writers.Put(ww) }), nil
 }
 
 // NewDeflate 声明基于 deflate 的压缩算法
