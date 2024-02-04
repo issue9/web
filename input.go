@@ -31,7 +31,7 @@ type Queries struct {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	return (*Paths)(ctx.newFilterContext(exitAtError))
+	return (*Paths)(ctx.NewFilterContext(exitAtError))
 }
 
 func (p *Paths) filter() *FilterContext { return (*FilterContext)(p) }
@@ -163,7 +163,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 	}
 
 	q := queryPool.Get().(*Queries)
-	q.filter = ctx.newFilterContext(exitAtError)
+	q.filter = ctx.NewFilterContext(exitAtError)
 	q.queries = values
 	ctx.queries = q
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
@@ -340,7 +340,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	}
 
 	if vv, ok := v.(Filter); ok {
-		f := ctx.newFilterContext(exitAtError)
+		f := ctx.NewFilterContext(exitAtError)
 		vv.Filter(f)
 		return f.Problem(id)
 	}

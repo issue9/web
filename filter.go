@@ -209,7 +209,8 @@ func NewMapRules[K comparable, V any, M ~map[K]V](r ...RuleFuncOf[V]) RuleFuncOf
 	}
 }
 
-func (ctx *Context) newFilterContext(exitAtError bool) *FilterContext {
+// NewFilterContext 声明 [FilterContext] 对象
+func (ctx *Context) NewFilterContext(exitAtError bool) *FilterContext {
 	return newFilterContext(exitAtError, "", ctx, newProblem())
 }
 

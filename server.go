@@ -167,7 +167,7 @@ type Plugin interface {
 
 type PluginFunc func(Server)
 
-// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 接口的实现
+// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 接口的实现。
 type InternalServer struct {
 	server Server
 

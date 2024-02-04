@@ -229,7 +229,7 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	defer s.FreeContext(ctx)
 
 	for i := 0; i < b.N; i++ {
-		p := ctx.newFilterContext(false)
+		p := ctx.NewFilterContext(false)
 		filterContextPool.Put(p)
 	}
 }

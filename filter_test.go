@@ -221,7 +221,7 @@ func TestFilterContext(t *testing.T) {
 
 	n100 := -100
 	p100 := 100
-	v := ctx.newFilterContext(false).
+	v := ctx.NewFilterContext(false).
 		Add(NewFilter(NewRules(min2, min3))("f1", &n100)).
 		Add(NewFilter(NewRules(max50, max4))("f2", &p100))
 	a.Equal(v.problem.Params, []ProblemParam{
@@ -231,7 +231,7 @@ func TestFilterContext(t *testing.T) {
 
 	n100 = -100
 	p100 = 100
-	v = ctx.newFilterContext(true).
+	v = ctx.NewFilterContext(true).
 		Add(NewFilter(NewRules(min2, min3))("f1", &n100)).
 		Add(NewFilter(NewRules(max50, max4))("f2", &p100))
 	a.Equal(v.problem.Params, []ProblemParam{
@@ -246,7 +246,7 @@ func TestFilterContext_New(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := s.NewContext(w, r, types.NewContext())
 
-	v := ctx.newFilterContext(false)
+	v := ctx.NewFilterContext(false)
 	v1 := v.New("v1.", func(f *FilterContext) {
 		f.AddReason("f1", StringPhrase("s1"))
 		v2 := f.New("v2.", func(f *FilterContext) {
@@ -273,7 +273,7 @@ func TestFilterContext_When(t *testing.T) {
 	notEmpty := NewRule(required[string], Phrase("不能为空"))
 
 	obj := &object{}
-	v := ctx.newFilterContext(false).
+	v := ctx.NewFilterContext(false).
 		Add(NewFilter(min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *FilterContext) {
 			v.Add(NewFilter(notEmpty)("obj/name", &obj.Name))
@@ -283,7 +283,7 @@ func TestFilterContext_When(t *testing.T) {
 	})
 
 	obj = &object{Age: 15}
-	v = ctx.newFilterContext(false).
+	v = ctx.NewFilterContext(false).
 		Add(NewFilter(min18)("obj/age", &obj.Age)).
 		When(obj.Age > 0, func(v *FilterContext) {
 			v.Add(NewFilter(notEmpty)("obj/name", &obj.Name))
