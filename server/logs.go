@@ -82,7 +82,7 @@ type logsConfig struct {
 	// 日志输出对象的配置
 	//
 	// 为空表示 [NewNopHandler] 返回的对象。
-	Handlers []*logHandlerConfig `xml:"writer" json:"writers" yaml:"writers"`
+	Handlers []*logHandlerConfig `xml:"handlers>handler" json:"handlers" yaml:"handlers"`
 
 	logs    *Logs
 	cleanup []func() error

@@ -184,6 +184,15 @@ type (
 	IDGenerator = func() string
 )
 
+func (c *Config) asConfig() (*config.Config, error) {
+	s := make(config.Serializer, len(c.Serializers))
+	for _, ser := range c.Serializers {
+		s.Add(ser.Marshal, ser.Unmarshal, ser.Exts...)
+	}
+
+	return config.BuildDir(s, c.Dir)
+}
+
 func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	if o == nil {
 		o = &Options{}
@@ -199,7 +208,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 			},
 		}
 	}
-	cfg, err := config.BuildDir(nil, DefaultConfigDir)
+	cfg, err := o.Config.asConfig()
 	if err != nil {
 		return nil, config.NewFieldError("Config", err)
 	}

@@ -39,9 +39,15 @@ messages:
             {{flags}}
 
             visit https://github.com/issue9/web for more info.
+    - key: add API %s %s
+      message:
+        msg: add API %s %s
     - key: app args
       message:
         msg: app args
+    - key: ast.InterfaceType can not covert to openapi schema
+      message:
+        msg: ast.InterfaceType can not covert to openapi schema
     - key: build enum file
       message:
         msg: build enum file
@@ -169,6 +175,12 @@ messages:
     - key: restdoc usage
       message:
         msg: restdoc usage
+    - key: save restdoc to %s
+      message:
+        msg: save restdoc to %s
+    - key: scan source dir %s
+      message:
+        msg: scan source dir %s
     - key: set api path prefix
       message:
         msg: set api path prefix

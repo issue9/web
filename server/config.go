@@ -189,14 +189,16 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if err := conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
-	conf.init = append(conf.init, conf.HTTP.init)
+	if conf.HTTP.init != nil {
+		conf.init = append(conf.init, conf.HTTP.init)
+	}
 
 	if err := conf.sanitizeCompresses(); err != nil {
 		return err.AddFieldParent("compressions")
 	}
 
 	if err := conf.sanitizeMimetypes(); err != nil {
-		return err.AddFieldParent("mimetypes")
+		return err
 	}
 
 	if err := conf.sanitizeFileSerializers(); err != nil {

@@ -39,9 +39,15 @@ messages:
             {{flags}}
 
             更多信息可访问 https://github.com/issue9/web。
+    - key: add API %s %s
+      message:
+        msg: 获得新的 API %s %s
     - key: app args
       message:
         msg: 传递给应用的参数
+    - key: ast.InterfaceType can not covert to openapi schema
+      message:
+        msg: ast.InterfaceType can 无法转换为 openapi 的 schema
     - key: build enum file
       message:
         msg: 为类型生成枚举内容
@@ -253,6 +259,12 @@ messages:
             注意事项
 
               不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
+    - key: save restdoc to %s
+      message:
+        msg: 保存 openapi 文档至 %s
+    - key: scan source dir %s
+      message:
+        msg: 扫描源码目录 %s
     - key: set api path prefix
       message:
         msg: 为所有的 API 添加统一的前缀

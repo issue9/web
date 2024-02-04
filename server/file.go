@@ -41,8 +41,8 @@ func loadConfigOf[T any](configDir, name string) (*configOf[T], error) {
 
 func buildSerializerFromFactory() config.Serializer {
 	s := make(config.Serializer, len(filesFactory.items))
-	for ext, item := range filesFactory.items {
-		s.Add(item.Marshal, item.Unmarshal, ext)
+	for _, item := range filesFactory.items {
+		s.Add(item.Marshal, item.Unmarshal, item.Exts...)
 	}
 	return s
 }

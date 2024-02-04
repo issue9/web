@@ -219,7 +219,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 	indexes := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type })
 	if len(indexes) > 0 {
 		value := conf.Mimetypes[indexes[1]].Type
-		err := web.NewFieldError("["+strconv.Itoa(indexes[1])+"].target", locales.DuplicateValue)
+		err := web.NewFieldError("mimetypes["+strconv.Itoa(indexes[1])+"].target", locales.DuplicateValue)
 		err.Value = value
 		return err
 	}
@@ -228,7 +228,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory.get(item.Target)
 		if !found {
-			return web.NewFieldError("["+strconv.Itoa(index)+"].target", locales.ErrNotFound(item.Target))
+			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound(item.Target))
 		}
 
 		ms = append(ms, &Mimetype{
