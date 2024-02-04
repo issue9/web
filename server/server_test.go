@@ -184,7 +184,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	router := srv.Routers().New("def", nil)
 
 	router.Get("/test", buildHandler(202))
-	router.Get("/c", func(ctx *web.Context) web.Responser {
+	router.Get("/close", func(ctx *web.Context) web.Responser {
 		_, err := ctx.Write([]byte("closed"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusInternalServerError)
@@ -203,7 +203,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	})
 
 	defer servertest.Run(a, srv)()
-	// defer srv.Close() // 由 /c 关闭，不需要 srv.Close
+	// defer srv.Close() // 由 /close 关闭，不需要 srv.Close
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 

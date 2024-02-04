@@ -193,7 +193,7 @@ type InternalServer struct {
 
 // InternalNewServer 声明 [InternalServer]
 //
-// s 为实际的 [Server] 接口对象，在 [InternalNewServer.NewContext] 需要用到此实例；
+// s 为实际的 [Server] 接口对象，在 [InternalServer.NewContext] 需要用到此实例；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
 // problemPrefix 可以为空；
 //
@@ -226,7 +226,6 @@ func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Log
 			buildNodeHandle(http.StatusOK),
 			o...),
 	}
-	is.OnClose(c.Close)
 
 	return is
 }
