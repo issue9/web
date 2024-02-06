@@ -7,9 +7,9 @@
 //   - [NewGateway] 构建微服务的网关服务；
 //   - [NewService] 构建微服务；
 //
-// 服务的初始化主要依赖 [Options] 对象，用户可以通过以下几种方式初始化 [Options] 对象：
+// [web.Server] 的初始化主要依赖 [Options] 对象，用户可以通过以下几种方式初始化 [Options] 对象：
 //   - &Options{} 最简单的方式，所有的 [Options] 均支持默认值；
-//   - [LoadOptions] 从配置文件中初始化 [Options] 对象；
+//   - [LoadOptions] 从配置文件中加载 [Options] 对象；
 //
 // # 配置文件
 //
@@ -26,7 +26,7 @@
 // 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 package server
 
-//go:generate go run ./make_doc.go
+//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.html -object=configOf
 
 import (
 	"context"

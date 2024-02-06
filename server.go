@@ -107,7 +107,7 @@ type Server interface {
 	// CanCompress 当前是否拥有压缩功能
 	CanCompress() bool
 
-	// Problems Problem 管理
+	// Problems 提供 [Problem] 管理
 	Problems() *Problems
 
 	// Services 服务管理接口
@@ -135,7 +135,7 @@ type Locale interface {
 	// Printer 最符合 [Locale.ID] 的 [message.Printer] 对象
 	Printer() *message.Printer
 
-	// Sprintf 等同于 Locale.Printer.Sprintf
+	// Sprintf 等同于 [Locale.Printer.Sprintf]
 	Sprintf(string, ...any) string
 
 	// NewPrinter 声明最符合 tag 的 [message.Printer] 对象
@@ -277,7 +277,6 @@ func (s *InternalServer) Close() {
 
 func (f PluginFunc) Plugin(s Server) { f(s) }
 
-// Use 添加插件
 func (s *InternalServer) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s.server)

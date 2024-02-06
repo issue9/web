@@ -74,6 +74,9 @@ messages:
     - key: command %s not found
       message:
         msg: command %s not found
+    - key: description
+      message:
+        msg: description
     - key: dest locale files
       message:
         msg: dest locale files
@@ -86,6 +89,9 @@ messages:
     - key: exclude watch files
       message:
         msg: exclude watch files
+    - key: export object name
+      message:
+        msg: export object name
     - key: extract locale
       message:
         msg: extract locale
@@ -106,9 +112,15 @@ messages:
     - key: filter by tag
       message:
         msg: filter by tag
+    - key: gen htmldoc
+      message:
+        msg: gen htmldoc
     - key: gen restdoc
       message:
         msg: gen restdoc
+    - key: htmldoc usage
+      message:
+        msg: htmldoc usage
     - key: ignore %s
       message:
         msg: ignore %s
@@ -148,9 +160,15 @@ messages:
     - key: not found openapi schema ref %s
       message:
         msg: not found openapi schema ref %s
+    - key: not found source in %s
+      message:
+        msg: not found source in %s
     - key: not found type %s
       message:
         msg: not found type %s
+    - key: not found type doc
+      message:
+        msg: not found type doc
     - key: not show ignore message
       message:
         msg: not show ignore message
@@ -187,12 +205,27 @@ messages:
     - key: set file header
       message:
         msg: set file header
+    - key: set html doc path
+      message:
+        msg: set html doc path
+    - key: set html page description
+      message:
+        msg: set html page description
+    - key: set html page language
+      message:
+        msg: set html page language
+    - key: set html page title
+      message:
+        msg: set html page title
     - key: set input file
       message:
         msg: set input file
     - key: set output file
       message:
         msg: set output file
+    - key: set source dir
+      message:
+        msg: set source dir
     - key: set the enum type
       message:
         msg: set the enum type
@@ -220,9 +253,9 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
-    - key: the type %s unset type params
+    - key: type
       message:
-        msg: the type %s unset type params
+        msg: type
     - key: type not set
       message:
         msg: type not set

@@ -262,8 +262,8 @@ func (l *acmeConfig) sanitize() *web.FieldError {
 	return nil
 }
 
-// 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
-type duration time.Duration
+// 表示时间段，等同于 [time.Duration]
+type duration time.Duration // 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
 
 func (d duration) Duration() time.Duration { return time.Duration(d) }
 

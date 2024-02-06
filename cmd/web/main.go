@@ -15,14 +15,11 @@ import (
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/build"
 	"github.com/issue9/web/cmd/web/enum"
+	"github.com/issue9/web/cmd/web/htmldoc"
 	"github.com/issue9/web/cmd/web/locale"
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
@@ -57,7 +54,7 @@ func init() {
 }
 
 func main() {
-	p, err := newPrinter()
+	p, err := locales.NewPrinter(localeutil.DetectUserLanguage())
 	if err != nil {
 		panic(err)
 	}
@@ -78,6 +75,7 @@ func main() {
 		}
 	}, buildNotFound(p))
 
+	htmldoc.Init(opt, p)
 	restdoc.Init(opt, p)
 	build.Init(opt, p)
 	locale.Init(opt, p)
@@ -95,25 +93,4 @@ func buildNotFound(p *localeutil.Printer) func(string) string {
 	return func(s string) string {
 		return web.Phrase("command %s not found", s).LocaleString(p)
 	}
-}
-
-func newPrinter() (*localeutil.Printer, error) {
-	tag, err := localeutil.DetectUserLanguageTag()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	langs, err := serialize.LoadFSGlob(func(string) serialize.UnmarshalFunc { return yaml.Unmarshal }, "*.yaml", locales.Locales...)
-	if err != nil {
-		return nil, err
-	}
-
-	b := catalog.NewBuilder(catalog.Fallback(tag))
-	for _, lang := range langs {
-		if err := lang.Catalog(b); err != nil {
-			return nil, err
-		}
-	}
-
-	return message.NewPrinter(tag, message.Catalog(b)), nil
 }

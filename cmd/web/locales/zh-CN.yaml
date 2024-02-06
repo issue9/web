@@ -89,6 +89,9 @@ messages:
       message:
         msg: |
             未找到子命令 %s
+    - key: description
+      message:
+        msg: 描述
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
@@ -101,6 +104,9 @@ messages:
     - key: exclude watch files
       message:
         msg: 不需要监视的文件，遵循 path.Match 规则。
+    - key: export object name
+      message:
+        msg: 被导出的对象名
     - key: extract locale
       message:
         msg: 提取本地化内容
@@ -125,9 +131,19 @@ messages:
     - key: filter by tag
       message:
         msg: 按标签过滤
+    - key: gen htmldoc
+      message:
+        msg: 根据结构体中的字段生成 html 文档
     - key: gen restdoc
       message:
         msg: 提取注释中的 restdoc 文档生成 openapi
+    - key: htmldoc usage
+      message:
+        msg: |
+            这将提取结构体中的每个字段的注释生成一个 HTML 文档
+
+            可用选项：
+            {{flags}}
     - key: ignore %s
       message:
         msg: 忽略 %s
@@ -167,9 +183,15 @@ messages:
     - key: not found openapi schema ref %s
       message:
         msg: 未找到 openapi 定义 %s
+    - key: not found source in %s
+      message:
+        msg: 在 %s 中未找到符合要求的源码
     - key: not found type %s
       message:
         msg: 未找到类型 %s
+    - key: not found type doc
+      message:
+        msg: 未找到类型的相关文档
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
@@ -271,12 +293,27 @@ messages:
     - key: set file header
       message:
         msg: 指定文件头内容
+    - key: set html doc path
+      message:
+        msg: 设置输出的 HTML 文档路径
+    - key: set html page description
+      message:
+        msg: 生成的 HTML 文档中的描述信息
+    - key: set html page language
+      message:
+        msg: 设置 HTML 页面的语言
+    - key: set html page title
+      message:
+        msg: 设置 HTML 页面的标题
     - key: set input file
       message:
         msg: 指定输入文件
     - key: set output file
       message:
         msg: 指定输出文件
+    - key: set source dir
+      message:
+        msg: 设置源码的路径
     - key: set the enum type
       message:
         msg: 指定用于生成枚举内容的类型
@@ -304,9 +341,9 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
-    - key: the type %s unset type params
+    - key: type
       message:
-        msg: '%s 未指定类型参数'
+        msg: 类型
     - key: type not set
       message:
         msg: 未指定类型

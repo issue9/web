@@ -73,7 +73,7 @@ type logsConfig struct {
 
 	// 允许开启的通道
 	//
-	// 为空表示所有
+	// 为空表示采用 [AllLevels]
 	Levels []logs.Level `xml:"level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty"`
 
 	// 是否接管标准库的日志
@@ -101,27 +101,33 @@ type logHandlerConfig struct {
 	// Handler 的类型
 	//
 	// 可通过 [RegisterLogsHandler] 方法注册，默认包含了以下几个：
-	// - file 输出至文件
-	// - smtp 邮件发送的日志
-	// - term 输出至终端
+	//  - file 输出至文件
+	//  - smtp 邮件发送的日志
+	//  - term 输出至终端
 	Type string `xml:"type,attr" yaml:"type" json:"type"`
 
 	// 当前日志的初始化参数
 	//
 	// 根据以上的 type 不同而不同：
-	// - file:
+	//
+	// # file:
+	//
 	//  0: 保存目录；
 	//  1: 文件格式，可以包含 Go 的时间格式化字符，以 %i 作为同名文件时的序列号；
 	//  2: 文件的最大尺寸，单位 byte；
 	//  3: 文件的格式，默认为 text，还可选为 json；
-	// - smtp:
+	//
+	// # smtp:
+	//
 	//  0: 账号；
 	//  1: 密码；
 	//  2: 主题；
 	//  3: 为 smtp 的主机地址，需要带上端口号；
 	//  4: 接收邮件列表；
 	//  5: 文件的格式，默认为 text，还可选为 json；
-	// - term
+	//
+	// # term
+	//
 	//  0: 输出的终端，可以是 stdout 或 stderr；
 	//  1-7: Level 以及对应的字符颜色，格式：erro:blue，可用颜色：
 	//   - default 默认；

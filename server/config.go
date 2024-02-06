@@ -21,9 +21,9 @@ type configOf[T any] struct {
 	// 内存限制
 	//
 	// 如果小于等于 0，表示不设置该值。
+	// 具体功能可参考[文档]。除非对该功能非常了解，否则不建议设置该值。
 	//
-	// 具体功能可参考 https://pkg.go.dev/runtime/debug#SetMemoryLimit
-	// 除非对该功能非常了解，否则不建议设置该值。
+	// [文档]: https://pkg.go.dev/runtime/debug#SetMemoryLimit
 	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty"`
 
 	// 日志系统的配置项
@@ -43,10 +43,11 @@ type configOf[T any] struct {
 
 	// 时区名称
 	//
-	// 可以是 Asia/Shanghai 等，具体可参考：
-	// https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+	// 可以是 Asia/Shanghai 等，具体可参考[文档]。
 	//
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
+	//
+	// [文档]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	location *time.Location
 

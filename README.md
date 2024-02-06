@@ -41,6 +41,8 @@ func getGroups(ctx* web.Context) web.Responser {
 文档类型由 `Server.Mimetypes` 指定。
 
 ```go
+package main
+
 import "github.com/issue9/web"
 import "github.com/issue9/web/server"
 
