@@ -349,7 +349,7 @@ func TestSchema_New_types(t *testing.T) {
 	})
 }
 
-func TestSchema_New_type_params(t *testing.T) {
+func TestSchema_New_generics(t *testing.T) {
 	a := assert.New(t, false)
 	f := buildPackages(a)
 	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"

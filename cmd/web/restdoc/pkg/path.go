@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/token"
 	"go/types"
 	"path"
 	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // 拆分 path 中的类型信息
@@ -144,6 +147,43 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 		}
 
 		return findInPkgs(ps, pkgPath, typeName)
+	}
+
+	return nil, nil, nil, false
+}
+
+func findInPkgs(ps []*packages.Package, pkgPath, typeName string) (types.Object, *ast.TypeSpec, *ast.File, bool) {
+	for _, p := range ps {
+		if p.PkgPath != pkgPath {
+			continue
+		}
+
+		obj := p.Types.Scope().Lookup(typeName)
+		if obj == nil {
+			break // 不可能存在多个 path 相同但内容不同的 Package 对象
+		}
+
+		for _, f := range p.Syntax {
+			for _, decl := range f.Decls {
+				gen, ok := decl.(*ast.GenDecl)
+				if !ok || gen.Tok != token.TYPE {
+					continue
+				}
+
+				for _, spec := range gen.Specs {
+					ts, ok := spec.(*ast.TypeSpec)
+					if !ok || ts.Name.Name != typeName {
+						continue
+					}
+
+					// 整个 type() 范围只有一个类型，直接采用 type 的注释
+					if ts.Doc == nil && len(gen.Specs) == 1 {
+						ts.Doc = gen.Doc
+					}
+					return obj, ts, f, true
+				}
+			}
+		}
 	}
 
 	return nil, nil, nil, false

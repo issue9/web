@@ -64,23 +64,23 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 
 	switch tt := typ.(type) {
 	case *types.Pointer: // 指针
-		ref, basic, err = s.fromType(t, "", tt.Elem(), tag)
+		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
 		if err != nil {
 			return nil, false, err
 		}
-		return openapi.NewNullableSchemaRef(ref), basic, nil
+		return openapi.NewNullableSchemaRef(ref), false, nil
 	case *types.Array:
-		ref, basic, err = s.fromType(t, "", tt.Elem(), tag)
+		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
 		if err != nil {
 			return nil, false, err
 		}
-		return openapi.NewArraySchemaRef(ref), basic, nil
+		return openapi.NewArraySchemaRef(ref), false, nil
 	case *types.Slice:
-		ref, basic, err = s.fromType(t, "", tt.Elem(), tag)
+		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
 		if err != nil {
 			return nil, false, err
 		}
-		return openapi.NewArraySchemaRef(ref), basic, nil
+		return openapi.NewArraySchemaRef(ref), false, nil
 	case *types.Basic:
 		schemaRef, ok := buildBasicType(tt)
 		if !ok {
@@ -88,8 +88,11 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 		}
 		return schemaRef, true, nil
 	case *pkg.Struct:
-		ref, err := s.fromStruct(t, xmlName, tt, tag)
-		return ref, false, err
+		schema := openapi3.NewObjectSchema()
+		if err := s.fromStruct(schema, t, xmlName, tt, tag); err != nil {
+			return nil, false, err
+		}
+		return openapi.NewSchemaRef("", schema), false, nil
 	case *pkg.Named:
 		refID := refReplacer.Replace(tt.ID())
 		if schemaRef, found := t.GetSchema(refID); found { // 查找是否已经存在于 components/schemes
@@ -108,7 +111,7 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 			}
 			schema.Title = title
 			schema.Description = desc
-			ref = openapi3.NewSchemaRef(refID, schema)
+			ref = openapi.NewSchemaRef(refID, schema)
 		} else { // 指向其它类型，比如 type x = y 或是 type x struct {...} 等，指向了 y 的定义
 			if xmlName == "" {
 				xmlName = tt.Obj().Name()
@@ -136,14 +139,32 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 
 // xmlName 结构体名称，同时也会被当作 XML 根元素名称（会被 XMLName 字段改写）；
 // 将 *pkg.Struct 解析为 schema 对象
-func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, tag string) (*openapi3.SchemaRef, error) {
-	schema := openapi3.NewObjectSchema()
-
+func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName string, st *pkg.Struct, tag string) error {
 	// BUG 结构体与嵌入字段重名的处理
 
-	for i := 0; i < st.NumFields(); i++ {
+	for i := range st.NumFields() {
 		field := st.Field(i)
-		// 匿名和非导出字段由 pkg.TypeOf 过滤
+		ft := field.Type()
+
+		if field.Embedded() {
+			named, ok := ft.(*pkg.Named)
+			for ok {
+				ft = named.Next()
+				// BUG ft 可能是 NotFound 之前就可用了
+				named, ok = ft.(*pkg.Named)
+			}
+
+			if ps, ok := ft.(*pkg.Struct); ok {
+				if err := s.fromStruct(schema, t, xmlName, ps, tag); err != nil {
+					return err
+				}
+				continue
+			} // 非 struct 类型的嵌入字段，当作普通字段处理
+		}
+
+		if !field.Exported() { // 嵌入对象名小写是可以的，所以要在 filed.Embedded 判断之后。
+			continue
+		}
 
 		tagValue := st.Tag(i)
 
@@ -163,9 +184,9 @@ func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, 
 			continue
 		}
 
-		fieldRef, _, err := s.fromType(t, "", field.Type(), tag)
+		fieldRef, _, err := s.fromType(t, "", ft, tag)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		title, desc := parseComment(st.FieldDoc(i))
@@ -173,7 +194,7 @@ func (s *Schema) fromStruct(t *openapi.OpenAPI, xmlName string, st *pkg.Struct, 
 		schema.WithPropertyRef(name, openapi.NewAttrSchemaRef(fieldRef, title, desc, xml, nullable))
 	}
 
-	return openapi.NewSchemaRef("", schema), nil
+	return nil
 }
 
 func buildSchema(s *openapi3.Schema, docTypeName string, docEnums ...string) (*openapi3.Schema, error) {

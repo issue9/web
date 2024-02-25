@@ -29,7 +29,7 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 	typ, err = p.TypeOf(context.Background(), "github.com/issue9/web/restdoc/pkg.Int")
 	a.NotError(err)
 	named, ok := typ.(*Named)
-	a.True(ok).Equal(named.Doc().Text(), "INT\n").
+	a.True(ok, "%T", typ).Equal(named.Doc().Text(), "INT\n").
 		Equal(named.Next(), types.Typ[types.Int])
 
 	typ, err = p.TypeOf(context.Background(), "github.com/issue9/web/restdoc/pkg.X")
@@ -47,8 +47,7 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 	a.NotError(err).Equal(typ, NotFound(pkgPath))
 
 	typ, err = p.TypeOf(context.Background(), "invalid")
-	a.Equal(err, web.NewLocaleError("%s is not a valid basic type", "invalid")).
-		Nil(typ)
+	a.NotError(err).Equal(typ, NotFound("invalid"))
 
 	typ, err = p.TypeOf(context.Background(), "{}")
 	a.NotError(err).Nil(typ)
@@ -83,6 +82,10 @@ func TestPackages_TypeOf(t *testing.T) {
 
 		st, ok := typ.(*Struct)
 		a.True(ok, "%+T:%+v", typ, typ).
+			Equal(st.FieldDoc(0).Text(), "").
+			Equal(st.Field(0).Name(), "").
+			True(st.Field(0).Embedded()).
+			NotNil(st.Field(0).Type()).
 			Equal(st.FieldDoc(1).Text(), "INT\n").
 			Equal(st.Field(1).Name(), "F1").
 			Equal(st.FieldDoc(3).Text(), "F2 Doc\n").
@@ -241,7 +244,7 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 	p := New(l.Logger)
 	p.ScanDir(context.Background(), "./testdir", true)
 
-	eq := func(a *assert.Assertion, path string, docs ...string) *Struct {
+	eqG := func(a *assert.Assertion, path string, docs ...string) {
 		a.TB().Helper()
 		typ, err := p.TypeOf(context.Background(), path)
 		a.NotError(err).NotNil(typ)
@@ -258,34 +261,100 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 			Equal(st.Field(0).Name(), "F1").
 			Equal(st.FieldDoc(1).Text(), "F2 Doc\n").
 			Equal(st.Field(1).Name(), "F2")
-
-		return st
 	}
 
 	// 未指定泛型，应该返回错误
 	t.Run("pkg.G", func(_ *testing.T) {
 		path := "github.com/issue9/web/restdoc/pkg.G"
 		_, err := p.TypeOf(context.Background(), path)
-		a.Equal(err, web.NewLocaleError("uninstance type %s", path+"[T any]"))
+		a.Equal(err, web.NewLocaleError("not found type param %s", "T"))
 	})
 
 	t.Run("pkg.G[int]", func(_ *testing.T) {
-		eq(a, "github.com/issue9/web/restdoc/pkg.G[int]", "G Doc\n")
+		eqG(a, "github.com/issue9/web/restdoc/pkg.G[int]", "G Doc\n")
 	})
 
 	t.Run("pkg.GInt", func(_ *testing.T) {
-		eq(a, "github.com/issue9/web/restdoc/pkg.GInt", "", "G Doc\n")
+		eqG(a, "github.com/issue9/web/restdoc/pkg.GInt", "", "G Doc\n")
 	})
 
+	eqGS := func(a *assert.Assertion, path string, docs ...string) {
+		a.TB().Helper()
+		typ, err := p.TypeOf(context.Background(), path)
+		a.NotError(err).NotNil(typ)
+
+		for _, doc := range docs {
+			named, ok := typ.(*Named)
+			a.True(ok).Equal(named.Doc().Text(), doc).NotEmpty(named.ID())
+			typ = named.Next()
+		}
+
+		st, ok := typ.(*Struct)
+		a.True(ok, "struct error: %+T", typ).
+			Equal(st.FieldDoc(1).Text(), "").
+			Equal(st.Field(1).Name(), "F3").
+			Equal(st.Field(1).Type(), types.Typ[types.Int]).
+			Equal(st.FieldDoc(2).Text(), "").
+			Equal(st.Field(2).Name(), "F4").
+			Equal(st.FieldDoc(3).Text(), "引用类型的字段\n").
+			Equal(st.Field(3).Name(), "F5")
+	}
+
 	t.Run("pkg.GSNumber", func(_ *testing.T) {
-		st := eq(a, "github.com/issue9/web/restdoc/pkg.GSNumber", "GSNumber Doc\n", "GS Doc\n")
-		a.Equal(st.Field(2).Name(), "F3").
-			Equal(st.Field(3).Name(), "F4")
+		eqGS(a, "github.com/issue9/web/restdoc/pkg.GSNumber", "GSNumber Doc\n", "GS Doc\n")
 	})
 
 	t.Run("pkg/testdir2.GSNumber", func(_ *testing.T) {
-		st := eq(a, "github.com/issue9/web/restdoc/pkg/testdir2.GSNumber", "", "GS Doc\n")
-		a.Equal(st.Field(2).Name(), "F3").
-			Equal(st.Field(3).Name(), "F4")
+		eqGS(a, "github.com/issue9/web/restdoc/pkg/testdir2.GSNumber", "", "GS Doc\n")
 	})
+}
+
+func TestNamed_ID(t *testing.T) {
+	a := assert.New(t, false)
+	l := loggertest.New(a)
+	p := New(l.Logger)
+	p.ScanDir(context.Background(), "./testdir", true)
+
+	path := "github.com/issue9/web/restdoc/pkg.G[int]"
+	typ, err := p.TypeOf(context.Background(), path)
+	a.NotError(err).NotNil(typ)
+	named, ok := typ.(*Named)
+	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.G[int]")
+
+	path = "github.com/issue9/web/restdoc/pkg.GInt"
+	typ, err = p.TypeOf(context.Background(), path)
+	a.NotError(err).NotNil(typ)
+	named, ok = typ.(*Named)
+	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GInt")
+
+	path = "github.com/issue9/web/restdoc/pkg.GSNumber"
+	typ, err = p.TypeOf(context.Background(), path)
+	a.NotError(err).NotNil(typ)
+	named, ok = typ.(*Named)
+	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GSNumber")
+
+	// pkg.GS[...]
+
+	path = "github.com/issue9/web/restdoc/pkg.GS[int,Int,github.com/issue9/web/restdoc/pkg.Int]"
+	typ, err = p.TypeOf(context.Background(), path)
+	a.NotError(err).NotNil(typ)
+	named, ok = typ.(*Named)
+	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GS[int,Int,github.com/issue9/web/restdoc/pkg.Int]")
+
+	s, ok := named.Next().(*Struct)
+	a.True(ok).NotNil(s)
+
+	// 字段类型的 ID 是否正确
+	f1, ok := s.Field(2).Type().(*Named)
+	a.True(ok, "%T", s.Field(2).Type()).NotNil(f1).Equal(f1.ID(), "github.com/issue9/web/restdoc/pkg.Int")
+
+	// 嵌套泛型的 ID 是否正确
+	f0, ok := s.Field(0).Type().(*Named)
+	a.True(ok, "%T", s.Field(0).Type()).NotNil(f0).Equal(f0.ID(), "github.com/issue9/web/restdoc/pkg.G[github.com/issue9/web/restdoc/pkg.Int]")
+
+	// 嵌套泛型的的嵌套泛型
+	s, ok = f0.Next().(*Struct)
+	a.True(ok).NotNil(s)
+	f00, ok := s.Field(0).Type().(*Named)
+	a.True(ok, "%T", s.Field(0).Type()).NotNil(f00).Equal(f00.ID(), "github.com/issue9/web/restdoc/pkg.Int")
 }

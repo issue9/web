@@ -261,7 +261,7 @@ func buildPath(p, name string) string {
 	var index int // []* 等修饰符与类型之间的位置
 	var flag bool // 是否在 [] 之间
 LOOP:
-	for i := 0; i < len(name); i++ {
+	for i := range len(name) {
 		index = i
 		switch c := name[i]; {
 		case c == '[':

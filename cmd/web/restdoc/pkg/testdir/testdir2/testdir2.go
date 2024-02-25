@@ -33,6 +33,7 @@ type GS[T0 any, T1 any, T2 any] struct {
 	pkg.G[T0] // pkg.GS
 	F3        T0
 	F4        T2
+	F5        S2 // 引用类型的字段
 }
 
 type GSNumber = GS[int, int, pkg.S]

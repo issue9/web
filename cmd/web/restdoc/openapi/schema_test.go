@@ -9,6 +9,37 @@ import (
 	"github.com/issue9/assert/v3"
 )
 
+func TestNewSchemaRef(t *testing.T) {
+	a := assert.New(t, false)
+	s := openapi3.NewSchema()
+
+	ref := NewSchemaRef("", s)
+	a.Equal(ref.Ref, "")
+
+	ref = NewSchemaRef("ref_id", s)
+	a.Equal(ref.Ref, ComponentSchemaPrefix+"ref_id")
+
+	ref = NewSchemaRef(ComponentSchemaPrefix+"ref_id", s)
+	a.Equal(ref.Ref, ComponentSchemaPrefix+"ref_id")
+}
+
+func TestNewArraySchemaRef(t *testing.T) {
+	a := assert.New(t, false)
+	s := openapi3.NewSchema()
+
+	ref := NewSchemaRef("", s)
+	arr := NewArraySchemaRef(ref)
+	a.Equal(arr.Ref, "")
+
+	ref = NewSchemaRef("id", s)
+	arr = NewArraySchemaRef(ref)
+	a.Equal(arr.Ref, "")
+
+	ref = NewSchemaRef(ComponentSchemaPrefix+"id", s)
+	arr = NewArraySchemaRef(ref)
+	a.Equal(arr.Ref, "")
+}
+
 func TestOpenapi_Schema(t *testing.T) {
 	a := assert.New(t, false)
 	o := New("3.0.0")
@@ -19,7 +50,8 @@ func TestOpenapi_Schema(t *testing.T) {
 
 	ref = NewSchemaRef("abc", nil)
 	o.AddSchema(ref)
-	a.Length(o.doc.Components.Schemas, 1)
+	a.Length(o.doc.Components.Schemas, 1).
+		Equal(ref.Ref, ComponentSchemaPrefix+"abc")
 
 	v1, found := o.GetSchema("abc")
 	a.True(found).NotNil(v1)

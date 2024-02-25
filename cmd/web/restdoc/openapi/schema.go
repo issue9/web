@@ -14,16 +14,13 @@ const ComponentSchemaPrefix = "#/components/schemas/"
 
 // AddSchema 尝试添加一个 Schema 至 Components 中
 //
-// NOTE:  仅在 schema.Ref 不为空时才会保存。
+// NOTE:  仅在 schema.Ref 不为空时才会保存，且会对不规则的 schema.Ref 进行修正。
 func (doc *OpenAPI) AddSchema(schema *openapi3.SchemaRef) {
-	// NOTE: Components.Schemas 的键名不包含 #/components/schemas/ 前缀，
-	// 但是 SchemaRef.Ref 是包含此前缀的。
-
 	ref := strings.TrimPrefix(schema.Ref, ComponentSchemaPrefix)
 	if ref == "" {
 		return
 	}
-	schema.Ref = ComponentSchemaPrefix + ref
+	schema.Ref = ComponentSchemaPrefix + ref // 同时也统一 schema.Ref
 
 	doc.schemaLocker.Lock()
 	defer doc.schemaLocker.Unlock()
@@ -34,32 +31,36 @@ func (doc *OpenAPI) AddSchema(schema *openapi3.SchemaRef) {
 		panic(fmt.Sprintf("添加同名的对象 %s，但是值不相同:\n%+v\n%+v", ref, schema.Value, s.Value))
 	}
 
-	schema.Ref = ""
-	doc.doc.Components.Schemas[ref] = schema
+	doc.doc.Components.Schemas[ref] = NewSchemaRef("", schema.Value) // 防止保存时只写入 Ref
 }
 
 // GetSchema 从 Components 中查找 ref 引用的 Schema 定义
 func (doc *OpenAPI) GetSchema(ref string) (*openapi3.SchemaRef, bool) {
-	ref = strings.TrimPrefix(ref, ComponentSchemaPrefix)
+	id := strings.TrimPrefix(ref, ComponentSchemaPrefix)
 
 	doc.schemaLocker.RLock()
 	defer doc.schemaLocker.RUnlock()
-	r, found := doc.doc.Components.Schemas[ref]
-	return r, found
+	if rr, found := doc.doc.Components.Schemas[id]; found {
+		return NewSchemaRef(id, rr.Value), true
+	}
+	return nil, false
 }
 
-func NewSchemaRef(refID string, s *openapi3.Schema) *openapi3.SchemaRef {
-	if refID != "" && !strings.HasPrefix(refID, ComponentSchemaPrefix) {
-		refID = ComponentSchemaPrefix + refID
+// NewSchemaRef 声明 [openapi3.SchemaRef]
+//
+// 在 ref 不为空且没有 [ComponentSchemaPrefix] 作为前缀时会自动添加前缀，其它情况下则不改变 ref 的值。
+func NewSchemaRef(ref string, s *openapi3.Schema) *openapi3.SchemaRef {
+	if ref != "" && !strings.HasPrefix(ref, ComponentSchemaPrefix) {
+		ref = ComponentSchemaPrefix + ref
 	}
-	return openapi3.NewSchemaRef(refID, s)
+	return openapi3.NewSchemaRef(ref, s)
 }
 
 // NewArraySchemaRef 将 ref 包装成数组
 func NewArraySchemaRef(ref *openapi3.SchemaRef) *openapi3.SchemaRef {
 	s := openapi3.NewArraySchema()
 	s.Items = ref
-	return openapi3.NewSchemaRef("", s)
+	return NewSchemaRef("", s)
 }
 
 // NewDocSchemaRef 将 ref 附带上文档信息

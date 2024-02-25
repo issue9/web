@@ -6,21 +6,17 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
 	"strconv"
 	"strings"
 
 	"github.com/issue9/web"
-	"golang.org/x/tools/go/packages"
 )
 
 type (
 	// Struct 这是对 [types.Struct] 的包装
 	Struct struct {
-		s  *types.Struct
-		st *ast.StructType
-
+		st     *ast.StructType
 		fields []*types.Var
 		docs   []*ast.CommentGroup
 		tags   []string
@@ -32,9 +28,10 @@ type (
 		next types.Type
 		doc  *ast.CommentGroup
 		id   string
+		tl   typeList
 	}
 
-	// 与 [types.TypeList] 拥有相同的接口，大部分时候也是代替该对象的实例使用。
+	// [types.TypeList] 并未提供构造方法，用于代替该对象的实例使用。
 	typeList interface {
 		At(int) types.Type
 		Len() int
@@ -49,9 +46,9 @@ type (
 	defaultTypeList []types.Type
 )
 
-func (s *Struct) String() string { return s.s.String() }
+func (s *Struct) String() string { return "struct with " + strconv.Itoa(s.NumFields()) + " fields" }
 
-func (s *Struct) Underlying() types.Type { return s.s.Underlying() }
+func (s *Struct) Underlying() types.Type { return s }
 
 func (s *Struct) Tag(i int) string { return s.tags[i] }
 
@@ -68,6 +65,8 @@ func (n *Named) Doc() *ast.CommentGroup { return n.doc }
 // Next 指向的类型
 func (n *Named) Next() types.Type { return n.next }
 
+func (n *Named) TypeArgs() typeList { return n.tl }
+
 // ID 当前对象的唯一名称
 func (n *Named) ID() string { return n.id }
 
@@ -81,6 +80,81 @@ func (tl defaultTypeList) Len() int { return len(tl) }
 
 // newTypeList 声明 [TypeList] 接口对象
 func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
+
+func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList) (*Struct, error) {
+	size := st.Fields.NumFields()
+	s := &Struct{
+		st:     st,
+		fields: make([]*types.Var, 0, size),
+		docs:   make([]*ast.CommentGroup, 0, size),
+		tags:   make([]string, 0, size),
+	}
+
+	// BUG 结构体中的字段如果引用自身，会造成死循环
+
+	if err := pkgs.addField(ctx, pkg, s, st, file, tl, tps); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// 将 ts 的所有有字段加入 s 之中
+func (pkgs *Packages) addField(ctx context.Context, pkg *types.Package, s *Struct, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList) error {
+	for _, f := range st.Fields.List {
+		doc := getDoc(f.Doc, f.Comment)
+
+		t, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, nil, tl, tps)
+		if err != nil {
+			return err
+		}
+
+		var tag string
+		if f.Tag != nil {
+			tag = f.Tag.Value
+		}
+
+		switch len(f.Names) {
+		case 0:
+			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, "", t, true))
+			s.docs = append(s.docs, doc)
+			s.tags = append(s.tags, tag)
+		case 1:
+			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, f.Names[0].Name, t, false))
+			s.docs = append(s.docs, doc)
+			s.tags = append(s.tags, tag)
+		default:
+			for _, n := range f.Names {
+				s.fields = append(s.fields, types.NewField(f.Pos(), pkg, n.Name, t, false))
+				s.docs = append(s.docs, doc)
+				s.tags = append(s.tags, tag)
+			}
+		}
+	}
+
+	return nil
+}
+
+// tl 表示范型参数列表，可以为空
+func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typeList) *Named {
+	o := named.Obj()
+	id := o.Pkg().Path() + "." + o.Name()
+
+	if named.TypeParams().Len() > 0 && tl != nil && tl.Len() > 0 {
+		names := make([]string, 0, tl.Len())
+		for i := range tl.Len() {
+			names = append(names, tl.At(i).String())
+		}
+		id += "[" + strings.Join(names, ",") + "]"
+	}
+
+	return &Named{
+		Named: named,
+		next:  next,
+		doc:   doc,
+		id:    id,
+		tl:    tl,
+	}
+}
 
 // TypeOf 查找名为 path 的相关类型信息
 //
@@ -103,298 +177,106 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 	if err != nil {
 		return nil, err
 	}
-	return pkgs.typeOf(ctx, path, tl)
-}
 
-func (pkgs *Packages) typeOf(ctx context.Context, path string, tl typeList) (types.Type, error) {
-	f, path := splitTypes(path)
+	wrap, path := splitTypes(path)
 
 	if strings.IndexByte(path, '.') < 0 { // 内置类型
 		if t, found := getBasicType(path); found {
-			return f(t), nil
-		}
-		return nil, web.NewLocaleError("%s is not a valid basic type", path)
-	}
-
-	obj, spec, file, found := pkgs.lookup(ctx, path)
-	if !found {
-		// NOTE: 包内可能重定义了内置类型，比如 type int struct {...}
-		// 在找不到该类型的情况下，还需尝试将其作为内置类型进行查找。
-		if last := strings.LastIndexByte(path, '.'); last > 0 {
-			if t, found := getBasicType(path[last+1:]); found {
-				return f(t), nil
-			}
+			return wrap(t), nil
 		}
 		return NotFound(path), nil
 	}
 
-	typ, err := pkgs.typeOfExpr(ctx, obj, spec.Type, file, getDoc(spec.Doc, spec.Comment), tl)
+	// NOTE: 包内可能重定义了内置类型，比如 type int struct {...}
+	// 在找不到该类型的情况下，还需尝试将其作为内置类型进行查找。
+	var basicType string
+	if last := strings.LastIndexByte(path, '.'); last > 0 {
+		basicType = path[last+1:]
+	}
+
+	typ, err := pkgs.typeOfPath(ctx, path, basicType, nil, tl, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	return f(typ), nil
+	return wrap(typ), nil
 }
 
-func (pkgs *Packages) newStruct(ctx context.Context, ts *types.Struct, st *ast.StructType, tl typeList, tps *types.TypeParamList) (*Struct, error) {
-	s := &Struct{
-		s:      ts,
-		st:     st,
-		fields: make([]*types.Var, 0, ts.NumFields()),
-		docs:   make([]*ast.CommentGroup, 0, ts.NumFields()),
-		tags:   make([]string, 0, ts.NumFields()),
-	}
-
-	// BUG 结构体中的字段如果引用自身，会造成死循环
-
-	if err := pkgs.addField(ctx, s, ts, st, tl, tps); err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-// tl 表示范型参数列表可以为空
-func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typeList) *Named {
-	o := named.Obj()
-	id := o.Pkg().Path() + "." + o.Name()
-	if named.TypeParams().Len() > 0 {
-		names := make([]string, 0, tl.Len())
-		for i := 0; i < tl.Len(); i++ {
-			names = append(names, tl.At(i).String()) // BUG 如果 tl.At(i) 是个嵌套的范型
-		}
-		id = id + "[" + strings.Join(names, ",") + "]"
-	}
-
-	return &Named{
-		Named: named,
-		next:  next,
-		doc:   doc,
-		id:    id,
-	}
-}
-
-// 将 ts 的所有有字段加入 s 之中
-func (pkgs *Packages) addField(ctx context.Context, s *Struct, ts *types.Struct, st *ast.StructType, tl typeList, tps *types.TypeParamList) error {
-	for i := 0; i < ts.NumFields(); i++ {
-		v := ts.Field(i)
-
-		if v.Anonymous() {
-			tt, err := pkgs.typeOfFieldType(ctx, v.Type(), tl, tps)
-			if err != nil {
-				return err
-			}
-
-			named, ok := tt.(*Named)
-			if ok {
-				tt = named.Next()
-			}
-
-			switch t := tt.(type) {
-			case *Struct:
-				if err := pkgs.addField(ctx, s, t.s, t.st, tl, tps); err != nil {
-					return err
-				}
-			default:
-				s.fields = append(s.fields, types.NewVar(v.Pos(), v.Pkg(), v.Name(), tt))
-				s.docs = append(s.docs, nil)
-				s.tags = append(s.tags, "")
-			}
-
-			continue
-		}
-
-		if !v.Exported() {
-			continue
-		}
-
-		switch t := v.Type().(type) {
-		case *types.Struct: // 结构体中的结构体
-			ps, err := pkgs.newStruct(ctx, t, st.Fields.List[i].Type.(*ast.StructType), tl, tps)
-			if err != nil {
-				return err
-			}
-			v = types.NewVar(v.Pos(), v.Pkg(), v.Name(), ps)
-		default:
-			tt, err := pkgs.typeOfFieldType(ctx, t, tl, tps)
-			if err != nil {
-				return err
-			}
-			v = types.NewVar(v.Pos(), v.Pkg(), v.Name(), tt)
-		}
-
-		s.fields = append(s.fields, v)
-		s.docs = append(s.docs, getDoc(st.Fields.List[i].Doc, st.Fields.List[i].Comment))
-		var tag string
-		if st.Fields.List[i].Tag != nil {
-			tag = st.Fields.List[i].Tag.Value
-		}
-		s.tags = append(s.tags, tag)
-	}
-
-	return nil
-}
-
-// 获取结构体字段的类型
-func (pkgs *Packages) typeOfFieldType(ctx context.Context, typ types.Type, tl typeList, tps *types.TypeParamList) (t types.Type, err error) {
-	switch tt := typ.(type) {
-	case *types.Pointer:
-		t, err = pkgs.typeOfFieldType(ctx, tt.Elem(), tl, tps)
-		if err == nil {
-			t = types.NewPointer(t)
-		}
-	case *types.Array:
-		t, err = pkgs.typeOfFieldType(ctx, tt.Elem(), tl, tps)
-		if err == nil {
-			t = types.NewArray(t, tt.Len())
-		}
-	case *types.Slice:
-		t, err = pkgs.typeOfFieldType(ctx, tt.Elem(), tl, tps)
-		if err == nil {
-			t = types.NewSlice(t)
-		}
-	case *types.TypeParam:
-		if tl != nil && tl.Len() > 0 {
-			t, err = pkgs.typeOfFieldType(ctx, tl.At(tt.Index()), tl, tps)
-		} else {
-			return nil, web.NewLocaleError("the type %s unset type params", tt.Obj().Name())
-		}
-	case *types.Named:
-		ts := make([]types.Type, 0, tt.TypeParams().Len())
-		for i := 0; i < tt.TypeArgs().Len(); i++ {
-			t := getFieldTypeParam(tps, tl, tt.TypeArgs().At(i).String())
-			if t != nil {
-				ts = append(ts, t)
-			}
-		}
-		path := tt.String()
-		if index := strings.IndexByte(path, '['); index > 0 {
-			path = path[:index]
-		}
-		t, err = pkgs.typeOf(ctx, path, newTypeList(ts...))
-	default: // 其它类型原样返回
-		t, err = pkgs.typeOf(ctx, tt.String(), tl)
-	}
-	return
-}
-
-func (pkgs *Packages) typeOfExpr(ctx context.Context, obj types.Object, expr ast.Expr, file *ast.File, doc *ast.CommentGroup, tl typeList) (typ types.Type, err error) {
-	tn, ok := obj.(*types.TypeName)
-	if !ok {
-		return obj.Type(), nil
-	}
-	pkgPath := tn.Pkg().Path()
-
-	var xnamed *types.Named
-	if named, ok := obj.Type().(*types.Named); ok {
-		xnamed = named
-	} else {
-		xnamed = types.NewNamed(tn, obj.Type(), nil)
-	}
-
+// doc 可以为空，参考 typeOfPath
+func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast.File, expr ast.Expr, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList) (types.Type, error) {
 	switch e := expr.(type) {
 	case *ast.SelectorExpr: // type x path.struct
-		typ, err = pkgs.typeOfSelectorExpr(ctx, e, file, tl)
-	case *ast.Ident: // type x y
-		typ, err = pkgs.typeOfIdent(ctx, pkgPath, e, tl)
-	case *ast.ArrayType: // type x []y
-		switch elt := e.Elt.(type) {
-		case *ast.SelectorExpr:
-			typ, err = pkgs.typeOfSelectorExpr(ctx, elt, file, tl)
-		case *ast.Ident:
-			typ, err = pkgs.typeOfIdent(ctx, pkgPath, elt, tl)
-		default:
-			panic(fmt.Sprintf("未处理的 ast.ArrayType.Elt 类型： %T", expr))
+		return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(e, f), "", doc, tl, tps)
+	case *ast.Ident: // type x y，或是 struct{ f1 T } 中的 T
+		basic := e.Name
+		name := pkg.Path() + "." + basic
+
+		if tps != nil && tps.Len() > 0 { // 可能是类型参数名称
+			if tl == nil || tl.Len() == 0 {
+				return nil, web.NewLocaleError("not found type param %s", e.Name)
+			}
+
+			for i := range tps.Len() {
+				if tps.At(i).Obj().Name() == e.Name {
+					basic = tl.At(i).String()
+
+					if strings.IndexByte(basic, '.') > 0 { // 实参指向 ast.SelectorExpr
+						name = basic
+						basic = ""
+					} else {
+						name = pkg.Path() + "." + basic
+					}
+					break
+				}
+			}
 		}
+
+		return pkgs.typeOfPath(ctx, name, basic, doc, tl, tps)
+	case *ast.StructType:
+		return pkgs.newStruct(ctx, pkg, e, f, tl, tps)
+	case *ast.ArrayType: // type x []y
+		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.Elt, doc, tl, tps)
 		if err != nil {
 			return nil, err
 		}
+
 		if e.Len == nil {
-			typ = types.NewSlice(typ)
+			return types.NewSlice(typ), nil
 		} else {
 			l, err := strconv.ParseInt(e.Len.(*ast.BasicLit).Value, 10, 64)
 			if err != nil {
 				return nil, err
 			}
-			typ = types.NewArray(typ, l)
+			return types.NewArray(typ, l), nil
 		}
 	case *ast.StarExpr: // type x *y
-		switch x := e.X.(type) {
-		case *ast.SelectorExpr:
-			typ, err = pkgs.typeOfSelectorExpr(ctx, x, file, tl)
-		case *ast.Ident:
-			typ, err = pkgs.typeOfIdent(ctx, pkgPath, x, tl)
-		default:
-			panic(fmt.Sprintf("未处理的 ast.StartExpr.X 类型： %T", expr))
-		}
-
+		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, tl, tps)
 		if err != nil {
 			return nil, err
 		}
-		typ = types.NewPointer(typ)
-	case *ast.StructType:
-		switch {
-		// 如果是范型且指定了类型参数，那么就用其指定的类型参数, 比如 type x = y[int] 等
-		case xnamed.TypeArgs().Len() == xnamed.TypeParams().Len():
-			tl = xnamed.TypeArgs()
-		// 由外界指定类型参数，比如 pkgs.typeOf("github.com/issue9/pkg.G", NewTypeList(int))
-		case tl != nil && xnamed.TypeParams().Len() == tl.Len():
-		default:
-			return nil, web.NewLocaleError("uninstance type %s", obj.Type().String())
-		}
-
-		typ, err = pkgs.newStruct(ctx, obj.Type().Underlying().(*types.Struct), e, tl, xnamed.TypeParams())
+		return types.NewPointer(typ), nil
 	case *ast.IndexExpr: // type x y[int] 等实例化的范型
-		var idxType types.Type
-		switch idx := e.Index.(type) {
-		case *ast.Ident:
-			idxType, err = pkgs.typeOfIdent(ctx, pkgPath, idx, nil)
-		case *ast.SelectorExpr:
-			idxType, err = pkgs.typeOfSelectorExpr(ctx, idx, file, nil)
-		}
-
+		idxType, err := pkgs.typeOfExpr(ctx, pkg, f, e.Index, nil, tl, tps)
 		if err != nil {
 			return nil, err
 		}
 
-		return pkgs.typeOfExpr(ctx, xnamed.Obj(), e.X, file, doc, newTypeList(idxType))
+		return pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, newTypeList(idxType), tps)
 	case *ast.IndexListExpr:
-		tps := make([]types.Type, 0, len(e.Indices))
+		idxTypes := make([]types.Type, 0, len(e.Indices))
 		for _, idx := range e.Indices {
-			var idxType types.Type
-			switch expr := idx.(type) {
-			case *ast.Ident:
-				idxType, err = pkgs.typeOfIdent(ctx, pkgPath, expr, nil)
-			case *ast.SelectorExpr:
-				idxType, err = pkgs.typeOfSelectorExpr(ctx, expr, file, nil)
-			}
-
+			idxType, err := pkgs.typeOfExpr(ctx, pkg, f, idx, nil, tl, tps)
 			if err != nil {
 				return nil, err
 			}
-			tps = append(tps, idxType)
+			idxTypes = append(idxTypes, idxType)
 		}
 
-		return pkgs.typeOfExpr(ctx, xnamed.Obj(), e.X, file, doc, newTypeList(tps...))
+		return pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, newTypeList(idxTypes...), tps)
 	case *ast.InterfaceType:
 		return nil, web.NewLocaleError("ast.InterfaceType can not covert to openapi schema", expr)
 	default:
 		panic(fmt.Sprintf("未处理的 ast.Expr 类型： %T", expr))
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return newNamed(xnamed, typ, doc, tl), nil
-}
-
-func (pkgs *Packages) typeOfSelectorExpr(ctx context.Context, expr *ast.SelectorExpr, f *ast.File, tl typeList) (types.Type, error) {
-	// BUG expr 可能包含范型
-	return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(expr, f), "", tl)
-}
-
-func (pkgs *Packages) typeOfIdent(ctx context.Context, currPkg string, ident *ast.Ident, tl typeList) (types.Type, error) {
-	return pkgs.typeOfPath(ctx, currPkg+"."+ident.Name, ident.Name, tl)
 }
 
 // 获取 path 指向对象的类型
@@ -402,14 +284,14 @@ func (pkgs *Packages) typeOfIdent(ctx context.Context, currPkg string, ident *as
 // 如果其类型为 [types.Struct]，会被包装为 [Struct]。
 // 如果存在类型为 [types.Named]，会被包装为 [Named]。
 // 可能存在 type uint string 之类的定义，basicType 表示 path 找不到时是否需要按 basicType 查找基本的内置类型。
-func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, tl typeList) (typ types.Type, err error) {
+// doc 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是类型字段可以自己指定此值；
+func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList) (typ types.Type, err error) {
 	obj, spec, f, found := pkgs.lookup(ctx, path)
 	if !found {
 		if basicType != "" {
 			if t, found := getBasicType(basicType); found {
 				return t, nil
 			}
-			return nil, web.NewLocaleError("%s is not a valid basic type", basicType)
 		}
 		return NotFound(path), nil
 	}
@@ -418,65 +300,28 @@ func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, tl
 		panic("spec 为空")
 	}
 
-	switch t := spec.Type.(type) {
-	case *ast.SelectorExpr:
-		typ, err = pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(t, f), "", tl)
-	case *ast.Ident: // NOTE: t.Name 可能是基础类型
-		typ, err = pkgs.typeOfPath(ctx, obj.Pkg().Path()+"."+t.Name, t.Name, tl)
-	case *ast.StructType:
-		typ, err = pkgs.newStruct(ctx, obj.Type().Underlying().(*types.Struct), t, tl, obj.Type().(*types.Named).TypeParams())
-	default:
-		panic(fmt.Sprintf("未处理的 ast.TypeSpec.Type 类型： %T", spec.Type))
+	tn, ok := obj.(*types.TypeName)
+	if !ok {
+		return obj.Type(), nil
 	}
 
+	if st, ok := spec.Type.(*ast.StructType); ok {
+		typ, err = pkgs.newStruct(ctx, tn.Pkg(), st, f, tl, obj.Type().(*types.Named).TypeParams())
+	} else {
+		if doc == nil {
+			doc = getDoc(spec.Doc, spec.Comment)
+		}
+		typ, err = pkgs.typeOfExpr(ctx, tn.Pkg(), f, spec.Type, doc, tl, tps)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	var xnamed *types.Named
-	if basic, ok := typ.(*types.Basic); ok { // 基础类型，则表示没有更深层的内容。
-		xnamed = types.NewNamed(obj.(*types.TypeName), basic, nil)
-	} else {
-		xnamed = obj.Type().(*types.Named)
+	named, ok := obj.Type().(*types.Named)
+	if !ok {
+		named = types.NewNamed(obj.(*types.TypeName), obj.Type(), nil)
 	}
-	return newNamed(xnamed, typ, getDoc(spec.Doc, spec.Comment), tl), nil
-}
-
-func findInPkgs(ps []*packages.Package, pkgPath, typeName string) (types.Object, *ast.TypeSpec, *ast.File, bool) {
-	for _, p := range ps {
-		if p.PkgPath != pkgPath {
-			continue
-		}
-
-		obj := p.Types.Scope().Lookup(typeName)
-		if obj == nil {
-			break // 不可能存在多个 path 相同但内容不同的 Package 对象
-		}
-
-		for _, f := range p.Syntax {
-			for _, decl := range f.Decls {
-				gen, ok := decl.(*ast.GenDecl)
-				if !ok || gen.Tok != token.TYPE {
-					continue
-				}
-
-				for _, spec := range gen.Specs {
-					ts, ok := spec.(*ast.TypeSpec)
-					if !ok || ts.Name.Name != typeName {
-						continue
-					}
-
-					// 整个 type() 范围只有一个类型，直接采用 type 的注释
-					if ts.Doc == nil && len(gen.Specs) == 1 {
-						ts.Doc = gen.Doc
-					}
-					return obj, ts, f, true
-				}
-			}
-		}
-	}
-
-	return nil, nil, nil, false
+	return newNamed(named, typ, getDoc(spec.Doc, spec.Comment), tl), nil
 }
 
 func getBasicType(name string) (types.Type, bool) {
@@ -501,14 +346,4 @@ func getDoc(doc, comment *ast.CommentGroup) *ast.CommentGroup {
 		doc = comment
 	}
 	return doc
-}
-
-func getFieldTypeParam(tps *types.TypeParamList, tl typeList, name string) types.Type {
-	for i := 0; i < tps.Len(); i++ {
-		tp := tps.At(i)
-		if tp.Obj().Name() == name {
-			return tl.At(tp.Index())
-		}
-	}
-	return nil
 }

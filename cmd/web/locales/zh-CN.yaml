@@ -47,7 +47,7 @@ messages:
         msg: 传递给应用的参数
     - key: ast.InterfaceType can not covert to openapi schema
       message:
-        msg: ast.InterfaceType can 无法转换为 openapi 的 schema
+        msg: ast.InterfaceType 无法转换为 openapi 的 schema
     - key: build enum file
       message:
         msg: 为类型生成枚举内容
@@ -192,6 +192,9 @@ messages:
     - key: not found type doc
       message:
         msg: 未找到类型的相关文档
+    - key: not found type param %s
+      message:
+        msg: 未找到类型参数 %s
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
@@ -347,9 +350,6 @@ messages:
     - key: type not set
       message:
         msg: 未指定类型
-    - key: uninstance type %s
-      message:
-        msg: 泛型 %s 未实例化
     - key: unknown tag %s
       message:
         msg: 未知的标签 %s 将被忽略

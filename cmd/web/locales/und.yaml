@@ -169,6 +169,9 @@ messages:
     - key: not found type doc
       message:
         msg: not found type doc
+    - key: not found type param %s
+      message:
+        msg: not found type param %s
     - key: not show ignore message
       message:
         msg: not show ignore message
@@ -259,9 +262,6 @@ messages:
     - key: type not set
       message:
         msg: type not set
-    - key: uninstance type %s
-      message:
-        msg: uninstance type %s
     - key: unknown tag %s
       message:
         msg: unknown tag %s

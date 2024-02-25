@@ -42,6 +42,7 @@ type GS[T0 any, T1 any, T2 any] struct {
 	G[T1] // 应该被忽略的注释
 	F3    T0
 	F4    T2
+	F5    S2 // 引用类型的字段
 }
 
 // GSNumber Doc
