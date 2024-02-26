@@ -140,26 +140,24 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 // xmlName 结构体名称，同时也会被当作 XML 根元素名称（会被 XMLName 字段改写）；
 // 将 *pkg.Struct 解析为 schema 对象
 func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName string, st *pkg.Struct, tag string) error {
-	// BUG 结构体与嵌入字段重名的处理
-
 	for i := range st.NumFields() {
 		field := st.Field(i)
 		ft := field.Type()
 
 		if field.Embedded() {
-			named, ok := ft.(*pkg.Named)
-			for ok {
-				ft = named.Next()
-				// BUG ft 可能是 NotFound 之前就可用了
-				named, ok = ft.(*pkg.Named)
+			fieldRef, _, err := s.fromType(t, "", ft, tag)
+			if err != nil {
+				return err
 			}
 
-			if ps, ok := ft.(*pkg.Struct); ok {
-				if err := s.fromStruct(schema, t, xmlName, ps, tag); err != nil {
-					return err
+			if fieldRef.Value.Type == openapi3.TypeObject {
+				for k, v := range fieldRef.Value.Properties {
+					if _, found := schema.Properties[k]; found { // 防止与现有的重名
+						continue
+					}
+					schema.WithPropertyRef(k, v)
 				}
-				continue
-			} // 非 struct 类型的嵌入字段，当作普通字段处理
+			}
 		}
 
 		if !field.Exported() { // 嵌入对象名小写是可以的，所以要在 filed.Embedded 判断之后。

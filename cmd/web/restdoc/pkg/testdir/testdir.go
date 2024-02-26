@@ -23,7 +23,7 @@ type S struct { // 此行不会作为 S 的 comment
 		T  time.Time
 	}
 	F2 []Int // F2 Doc
-	// F3 *S
+	F3 []*S  // 引用自身
 }
 
 // S2 Alias
@@ -33,6 +33,7 @@ type S2 = S
 type G[T any] struct {
 	F1 T   // F1 Doc
 	F2 int // F2 Doc
+	F3 *G[T]
 }
 
 type GInt G[int]
