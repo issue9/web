@@ -17,7 +17,7 @@ type Filter interface {
 
 // FilterContext 处理由过滤器生成的各错误
 type FilterContext struct {
-	name        string
+	name        string // 当前检测对象的名称，如果是顶级对象应该是个空值。
 	exitAtError bool
 	ctx         *Context
 	problem     *Problem
