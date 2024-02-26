@@ -78,7 +78,7 @@ func (tl defaultTypeList) At(i int) types.Type { return tl[i] }
 
 func (tl defaultTypeList) Len() int { return len(tl) }
 
-// newTypeList 声明 [TypeList] 接口对象
+// newTypeList 声明 [typeList] 接口对象
 func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 
 func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList) (*Struct, error) {
