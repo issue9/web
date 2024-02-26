@@ -10,7 +10,6 @@ require (
 	github.com/issue9/localeutil v0.26.2
 	github.com/issue9/logs/v7 v7.4.1
 	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/sliceutil v0.15.0
 	github.com/issue9/source v0.8.0
 	github.com/issue9/term/v3 v3.2.5
 	github.com/issue9/version v1.0.7
@@ -35,6 +34,7 @@ require (
 	github.com/issue9/errwrap v0.3.1 // indirect
 	github.com/issue9/mux/v7 v7.3.4 // indirect
 	github.com/issue9/scheduled v0.19.0 // indirect
+	github.com/issue9/sliceutil v0.15.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

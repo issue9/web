@@ -91,11 +91,15 @@ func (pkgs *Packages) load(ctx context.Context, dir string) (*packages.Package, 
 		return nil, err
 	}
 
-	if len(ps) > 1 {
+	switch len(ps) {
+	case 0:
+		return nil, nil
+	case 1:
+		pkgs.pkgs[dir] = ps[0]
+		return ps[0], nil
+	default:
 		panic(fmt.Sprintf("目录 %s 中包的数量大于 1：%d", dir, len(ps)))
 	}
-	pkgs.pkgs[dir] = ps[0]
-	return ps[0], nil
 }
 
 func (pkgs *Packages) FileSet() *token.FileSet { return pkgs.fset }

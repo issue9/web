@@ -147,7 +147,9 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 			return nil, nil, nil, false
 		}
 
-		return findInPkgs(map[string]*packages.Package{dir: p}, pkgPath, typeName)
+		if p != nil {
+			return findInPkgs(map[string]*packages.Package{dir: p}, pkgPath, typeName)
+		}
 	}
 
 	return nil, nil, nil, false
