@@ -53,3 +53,16 @@ func TestSplitTypes(t *testing.T) {
 	a.NotNil(f).Equal(path, "bool")
 	a.Equal(f(typ), types.NewSlice(types.NewArray(types.NewPointer(typ), 5)))
 }
+
+func TestFilterVersionSuffix(t *testing.T) {
+	a := assert.New(t, false)
+
+	p, ok := filterVersionSuffix("github.com/issue9/logs/v6", '/')
+	a.True(ok).Equal(p, "github.com/issue9/logs")
+
+	p, ok = filterVersionSuffix("github.com/issue9/logs.v6", '.')
+	a.True(ok).Equal(p, "github.com/issue9/logs")
+
+	p, ok = filterVersionSuffix("github.com/issue9/logs", '/')
+	a.False(ok).Equal(p, "github.com/issue9/logs")
+}

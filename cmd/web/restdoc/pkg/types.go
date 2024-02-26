@@ -4,7 +4,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"go/ast"
 	"go/types"
 	"strconv"
@@ -43,6 +42,11 @@ type (
 	// 如果 web 包未被导入，那么 web.State 将会变成 NotFound 类型。
 	NotFound string
 
+	// NotImplement 一些未实现的类型
+	//
+	// 比如 interface{} 作为字段类型时，将返回该对象。
+	NotImplement string
+
 	defaultTypeList []types.Type
 )
 
@@ -73,6 +77,10 @@ func (n *Named) ID() string { return n.id }
 func (t NotFound) Underlying() types.Type { return t }
 
 func (t NotFound) String() string { return string(t) }
+
+func (t NotImplement) Underlying() types.Type { return t }
+
+func (t NotImplement) String() string { return string(t) }
 
 func (tl defaultTypeList) At(i int) types.Type { return tl[i] }
 
@@ -268,10 +276,8 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 		}
 
 		return pkgs.typeOfExpr(ctx, pkg, f, e.X, self, doc, newTypeList(idxTypes...), tps)
-	case *ast.InterfaceType:
-		return nil, web.NewLocaleError("ast.InterfaceType can not covert to openapi schema", expr)
 	default:
-		panic(fmt.Sprintf("未处理的 ast.Expr 类型： %T", expr))
+		return NotImplement(""), nil
 	}
 }
 

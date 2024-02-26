@@ -103,6 +103,11 @@ func (pkgs *Packages) getPathFromSelectorExpr(expr *ast.SelectorExpr, f *ast.Fil
 
 	for _, i := range f.Imports {
 		p := strings.Trim(i.Path.Value, `"`)
+		var ok bool
+		if p, ok = filterVersionSuffix(p, '/'); !ok {
+			p, _ = filterVersionSuffix(p, '.')
+		}
+
 		var name string
 		if i.Name == nil {
 			name = path.Base(p)
@@ -117,6 +122,26 @@ func (pkgs *Packages) getPathFromSelectorExpr(expr *ast.SelectorExpr, f *ast.Fil
 
 	pos := pkgs.fset.Position(f.Pos())
 	panic(fmt.Sprintf("语法错误：在 %s 中找不到 %s 对应的导入项", pos.Filename, x.Name))
+}
+
+// github.com/issue9/logs/v7 过滤掉 /v7
+func filterVersionSuffix(p string, separator byte) (string, bool) {
+	if index := strings.LastIndexByte(p, separator); index > 0 {
+		if v := p[index+1:]; len(v) > 0 && v[0] == 'v' {
+			isNumber := true
+			for _, c := range v[1:] {
+				if isNumber = isNumber && (c > '0' && c < '9'); !isNumber {
+					break
+				}
+			}
+
+			if isNumber {
+				return p[:index], true
+			}
+		}
+	}
+
+	return p, false
 }
 
 // 如果是内置类型，那么返回参数中的 TypeSpec 为 nil；
