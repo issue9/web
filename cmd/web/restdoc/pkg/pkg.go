@@ -5,12 +5,11 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"go/token"
 	"path/filepath"
-	"slices"
 	"sync"
 
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 	"golang.org/x/tools/go/packages"
 
@@ -25,14 +24,14 @@ const Cancelled = web.StringPhrase("cancelled")
 // Packages 管理加载的包
 type Packages struct {
 	pkgsM sync.Mutex
-	pkgs  []*packages.Package
+	pkgs  map[string]*packages.Package // 键名为对应的目录名
 	fset  *token.FileSet
 	l     *logger.Logger
 }
 
 func New(l *logger.Logger) *Packages {
 	return &Packages{
-		pkgs: make([]*packages.Package, 0, 10),
+		pkgs: make(map[string]*packages.Package, 30),
 		fset: token.NewFileSet(),
 		l:    l,
 	}
@@ -73,7 +72,15 @@ func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) 
 	wg.Wait()
 }
 
-func (pkgs *Packages) load(ctx context.Context, dir string) ([]*packages.Package, error) {
+func (pkgs *Packages) load(ctx context.Context, dir string) (*packages.Package, error) {
+	dir = filepath.Clean(dir)
+
+	pkgs.pkgsM.Lock()
+	defer pkgs.pkgsM.Unlock()
+	if p, found := pkgs.pkgs[dir]; found {
+		return p, nil
+	}
+
 	ps, err := packages.Load(&packages.Config{
 		Mode:    mode,
 		Context: ctx,
@@ -84,23 +91,23 @@ func (pkgs *Packages) load(ctx context.Context, dir string) ([]*packages.Package
 		return nil, err
 	}
 
-	pkgs.pkgsM.Lock()
-	defer pkgs.pkgsM.Unlock()
-	for _, p := range ps {
-		if slices.IndexFunc(pkgs.pkgs, func(e *packages.Package) bool { return p.PkgPath == e.PkgPath }) < 0 {
-			pkgs.pkgs = append(pkgs.pkgs, p)
-		}
+	if len(ps) > 1 {
+		panic(fmt.Sprintf("目录 %s 中包的数量大于 1：%d", dir, len(ps)))
 	}
-
-	return ps, nil
+	pkgs.pkgs[dir] = ps[0]
+	return ps[0], nil
 }
 
 func (pkgs *Packages) FileSet() *token.FileSet { return pkgs.fset }
 
 // Package 返回指定路径的包对象
 func (pkgs *Packages) Package(path string) *packages.Package {
-	pkg, _ := sliceutil.At(pkgs.pkgs, func(p *packages.Package, _ int) bool { return p.PkgPath == path })
-	return pkg
+	for _, p := range pkgs.pkgs {
+		if p.PkgPath == path {
+			return p
+		}
+	}
+	return nil
 }
 
 // Range 依次访问已经加载的包

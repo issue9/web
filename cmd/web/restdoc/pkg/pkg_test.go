@@ -4,6 +4,7 @@ package pkg
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/issue9/assert/v3"
@@ -23,5 +24,5 @@ func TestPackages_ScanDir(t *testing.T) {
 	p = New(l.Logger)
 	p.ScanDir(context.Background(), "./testdir", false)
 	a.Length(p.pkgs, 1).
-		Equal(p.pkgs[0].PkgPath, "github.com/issue9/web/restdoc/pkg")
+		Equal(p.pkgs[filepath.Clean("./testdir")].PkgPath, "github.com/issue9/web/restdoc/pkg")
 }

@@ -140,19 +140,20 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 	// 出于性能考虑并未加载依赖项，但是可能会依赖部分标准库的类型，
 	// 此处对标准库作了特殊处理：未找到标准库中的对象时会加载相应的包。
 	if pkgPath != "" && strings.IndexByte(pkgPath, '.') < 0 {
-		ps, err := pkgs.load(ctx, path.Join(build.Default.GOROOT, "src", pkgPath))
+		dir := path.Join(build.Default.GOROOT, "src", pkgPath)
+		p, err := pkgs.load(ctx, dir)
 		if err != nil {
 			pkgs.l.Error(err, "", 0)
 			return nil, nil, nil, false
 		}
 
-		return findInPkgs(ps, pkgPath, typeName)
+		return findInPkgs(map[string]*packages.Package{dir: p}, pkgPath, typeName)
 	}
 
 	return nil, nil, nil, false
 }
 
-func findInPkgs(ps []*packages.Package, pkgPath, typeName string) (types.Object, *ast.TypeSpec, *ast.File, bool) {
+func findInPkgs(ps map[string]*packages.Package, pkgPath, typeName string) (types.Object, *ast.TypeSpec, *ast.File, bool) {
 	for _, p := range ps {
 		if p.PkgPath != pkgPath {
 			continue
