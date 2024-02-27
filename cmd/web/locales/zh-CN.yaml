@@ -280,7 +280,7 @@ messages:
 
             注意事项
 
-              不支持 GOPATH 模式，map 将会被转换成空的 Object 对象，interface{} 无法被转换。
+              不支持 GOPATH 模式，map 将会被转换成空的 Object 对象。
     - key: save restdoc to %s
       message:
         msg: 保存 openapi 文档至 %s
@@ -299,9 +299,18 @@ messages:
     - key: set html page description
       message:
         msg: 生成的 HTML 文档中的描述信息
+    - key: set html page footer
+      message:
+        msg: 设置页脚
+    - key: set html page header
+      message:
+        msg: 设置页眉，如果不为空，那么将不再在页面中输出 title 和 desc 的设置项。
     - key: set html page language
       message:
         msg: 设置 HTML 页面的语言
+    - key: set html page stylesheet in html>head>style
+      message:
+        msg: 设置 html>head>style 中的样式内容，如果该值为 default，那么将采用默认值，如果为空则不输出该标签的内容。
     - key: set html page title
       message:
         msg: 设置 HTML 页面的标题

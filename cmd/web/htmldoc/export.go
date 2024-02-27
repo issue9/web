@@ -21,11 +21,15 @@ import (
 )
 
 type data struct {
-	Title      string
-	Desc       template.HTML
-	Lang       string
-	TypeLocale string
-	DescLocale string
+	Title  string // 标题，页面标题和文档的 h1
+	Desc   template.HTML
+	Style  template.CSS // stylesheet 样式表
+	Lang   string       // 页面语言
+	Header template.HTML
+	Footer template.HTML
+
+	TypeLocale string // 表格中 type 的翻译项
+	DescLocale string // 表格中 desc 的翻译项
 	Objects    []*object
 }
 
@@ -41,7 +45,7 @@ type item struct {
 	Desc            template.HTML
 }
 
-var primitiveTypes = []string{
+var basicTypes = []string{
 	"int", "int8", "int16", "int32", "int64",
 	"uint", "uint8", "uint16", "uint32", "uint64",
 	"string", "bool",
@@ -55,7 +59,8 @@ var primitiveTypes = []string{
 // lang 输出的文档语言，被应用在 html 的 lang 属性上；
 // title 文档的标题；
 // desc 文档的描述，可以是 HTML 格式；
-func export(dir, objName, output, lang, title, desc string) error {
+// style 样式表；
+func export(dir, objName, output, lang, title, desc, header, footer, style string) error {
 	p, err := locales.NewPrinter(lang)
 	if err != nil {
 		return err
@@ -67,30 +72,35 @@ func export(dir, objName, output, lang, title, desc string) error {
 		return err
 	}
 
-	var pkg *ast.Package
-	for name, pp := range pkgs {
-		// 过滤测试包和 make_* 的包
-		if name == "main" || strings.HasSuffix(name, "_test") {
-			continue
+	var files map[string]*ast.File
+	for name, pkg := range pkgs {
+		if name != "main" && !strings.HasSuffix(name, "_test") { // 过滤测试包和 make_* 的包
+			files = pkg.Files
+			break
 		}
-
-		pkg = pp
-		break
 	}
 
-	if pkg == nil {
+	if files == nil {
 		return web.NewLocaleError("not found source in %s", dir)
 	}
 
+	if style == defaultStyleValue {
+		style = defaultStyle
+	}
+
 	d := &data{
-		Title:      title,
-		Desc:       template.HTML(desc),
-		Lang:       lang,
+		Title:  title,
+		Desc:   template.HTML(desc),
+		Style:  template.CSS(style),
+		Lang:   lang,
+		Header: template.HTML(header),
+		Footer: template.HTML(footer),
+
 		TypeLocale: web.StringPhrase("type").LocaleString(p),
 		DescLocale: web.StringPhrase("description").LocaleString(p),
 		Objects:    make([]*object, 0, 100),
 	}
-	d.parse(p, objName, pkg)
+	d.parse(p, objName, files)
 
 	t, err := template.New("htmldoc").Parse(tpl)
 	if err != nil {
@@ -106,11 +116,11 @@ func export(dir, objName, output, lang, title, desc string) error {
 	return t.Execute(f, d)
 }
 
-func (d *data) parse(p *localeutil.Printer, outputObj string, pkg *ast.Package) {
+func (d *data) parse(p *localeutil.Printer, outputObj string, files map[string]*ast.File) {
 	waitList := make([]string, 0, 10)
 
 	var found bool
-	for _, f := range pkg.Files {
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			gen, ok := decl.(*ast.GenDecl)
 			if !ok {
@@ -139,7 +149,7 @@ func (d *data) parse(p *localeutil.Printer, outputObj string, pkg *ast.Package) 
 	}
 
 	for _, obj := range waitList {
-		d.parse(p, obj, pkg)
+		d.parse(p, obj, files)
 	}
 }
 
@@ -205,7 +215,7 @@ func (d *data) parseObject(obj *ast.TypeSpec) []string {
 			panic(fmt.Sprintf("字段 %s 无法转换成 *ast.Ident", f.Names[0].Name))
 		}
 
-		if slices.Index(primitiveTypes, fieldTypeName) < 0 {
+		if slices.Index(basicTypes, fieldTypeName) < 0 {
 			waitList = append(waitList, fieldTypeName)
 			fieldTypeName = `<a href="#` + fieldTypeName + `">` + fieldTypeName + "</a>"
 		}
