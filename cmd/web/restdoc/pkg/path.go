@@ -102,9 +102,9 @@ func (pkgs *Packages) getPathFromSelectorExpr(expr *ast.SelectorExpr, f *ast.Fil
 	}
 
 	for _, i := range f.Imports {
-		p := strings.Trim(i.Path.Value, `"`)
-		var ok bool
-		if p, ok = filterVersionSuffix(p, '/'); !ok {
+		raw := strings.Trim(i.Path.Value, `"`)
+		p, ok := filterVersionSuffix(raw, '/')
+		if !ok {
 			p, _ = filterVersionSuffix(p, '.')
 		}
 
@@ -116,7 +116,7 @@ func (pkgs *Packages) getPathFromSelectorExpr(expr *ast.SelectorExpr, f *ast.Fil
 		}
 
 		if name == x.Name {
-			return p + "." + expr.Sel.Name
+			return raw + "." + expr.Sel.Name
 		}
 	}
 

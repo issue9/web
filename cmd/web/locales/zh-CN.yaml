@@ -45,9 +45,6 @@ messages:
     - key: app args
       message:
         msg: 传递给应用的参数
-    - key: ast.InterfaceType can not covert to openapi schema
-      message:
-        msg: ast.InterfaceType 无法转换为 openapi 的 schema
     - key: build enum file
       message:
         msg: 为类型生成枚举内容

@@ -45,9 +45,6 @@ messages:
     - key: app args
       message:
         msg: app args
-    - key: ast.InterfaceType can not covert to openapi schema
-      message:
-        msg: ast.InterfaceType can not covert to openapi schema
     - key: build enum file
       message:
         msg: build enum file

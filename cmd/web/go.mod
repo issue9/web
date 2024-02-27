@@ -7,7 +7,7 @@ require (
 	github.com/getkin/kin-openapi v0.123.0
 	github.com/issue9/assert/v3 v3.1.0
 	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.26.2
+	github.com/issue9/localeutil v0.26.3
 	github.com/issue9/logs/v7 v7.4.1
 	github.com/issue9/query/v3 v3.1.2
 	github.com/issue9/source v0.8.0
