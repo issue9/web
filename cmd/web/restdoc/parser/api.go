@@ -7,7 +7,7 @@ package parser
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -125,7 +125,7 @@ func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3
 	for name := range s.Value.Properties {
 		keys = append(keys, name)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	for _, name := range keys {
 		v := s.Value.Properties[name]
 		opt.AddParameter(&openapi3.Parameter{

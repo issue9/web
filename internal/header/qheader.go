@@ -5,7 +5,8 @@
 package header
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -75,32 +76,29 @@ func ParseQHeader(header string, any string) (items []*Item) {
 }
 
 func sortItems(items []*Item, any string) {
-	sort.SliceStable(items, func(i, j int) bool {
-		ii := items[i]
-		jj := items[j]
-
-		if ii.Err != nil {
-			return false
+	slices.SortStableFunc(items, func(i, j *Item) int {
+		if i.Err != nil {
+			return 1
 		}
-		if jj.Err != nil {
-			return true
+		if j.Err != nil {
+			return -1
 		}
 
-		if ii.Q != jj.Q {
-			return ii.Q > jj.Q
+		if i.Q != j.Q {
+			return cmp.Compare(j.Q, i.Q)
 		}
 
 		switch {
-		case ii.Value == any:
-			return false
-		case jj.Value == any:
-			return true
-		case ii.hasWildcard(): // 如果 any == * 则此判断不启作用
-			return false
-		case jj.hasWildcard():
-			return true
+		case i.Value == any:
+			return 1
+		case j.Value == any:
+			return -1
+		case i.hasWildcard(): // 如果 any == * 则此判断不启作用
+			return 1
+		case j.hasWildcard():
+			return -1
 		default:
-			return false
+			return 1
 		}
 	})
 }
