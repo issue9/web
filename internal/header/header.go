@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package header 与报头相关的处理方法

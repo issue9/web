@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package pkg
@@ -6,7 +8,7 @@ import (
 	"go/types"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 )
 
 func TestSplitTypes(t *testing.T) {
@@ -14,44 +16,44 @@ func TestSplitTypes(t *testing.T) {
 	typ := types.Typ[types.Bool]
 
 	f, path := splitTypes("bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), typ)
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), typ)
 
 	f, path = splitTypes("[]bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewSlice(typ))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewSlice(typ))
 
 	f, path = splitTypes("[]*bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewSlice(types.NewPointer(typ)))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewSlice(types.NewPointer(typ)))
 
 	f, path = splitTypes("[5]bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewArray(typ, 5))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewArray(typ, 5))
 
 	f, path = splitTypes("[\t]bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewSlice(typ))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewSlice(typ))
 
 	f, path = splitTypes("[\t11]bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewArray(typ, 11))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewArray(typ, 11))
 
 	f, path = splitTypes("[\t-11]bool")
-	a.NotNil(f).Equal(path, "[\t-11]bool")
-	a.Equal(f(typ), typ)
+	a.NotNil(f).Equal(path, "[\t-11]bool").
+		Equal(f(typ), typ)
 
 	f, path = splitTypes("[abc]bool")
-	a.NotNil(f).Equal(path, "[abc]bool")
-	a.Equal(f(typ), typ)
+	a.NotNil(f).Equal(path, "[abc]bool").
+		Equal(f(typ), typ)
 
 	f, path = splitTypes("[][]bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewSlice(types.NewSlice(typ)))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewSlice(types.NewSlice(typ)))
 
 	f, path = splitTypes("[][5]*bool")
-	a.NotNil(f).Equal(path, "bool")
-	a.Equal(f(typ), types.NewSlice(types.NewArray(types.NewPointer(typ), 5)))
+	a.NotNil(f).Equal(path, "bool").
+		Equal(f(typ), types.NewSlice(types.NewArray(types.NewPointer(typ), 5)))
 }
 
 func TestFilterVersionSuffix(t *testing.T) {

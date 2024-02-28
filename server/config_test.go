@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package server
@@ -6,7 +8,7 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 )

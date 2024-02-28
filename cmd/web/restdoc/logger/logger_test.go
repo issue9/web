@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package logger
@@ -9,7 +11,7 @@ import (
 	"go/token"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/logs/v7"
 	"golang.org/x/mod/modfile"
 )

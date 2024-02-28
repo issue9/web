@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package registry 服务注册与发现

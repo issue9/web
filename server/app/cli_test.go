@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package app
@@ -9,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -34,12 +36,10 @@ func TestCLI(t *testing.T) {
 			return server.New(name, ver, opt)
 		},
 	}
-	a.NotError(cmd.Exec([]string{"app", "-v"}))
-	a.Contains(bs.String(), cmd.Version)
+	a.NotError(cmd.Exec([]string{"app", "-v"})).Contains(bs.String(), cmd.Version)
 
 	bs.Reset()
-	a.NotError(cmd.Exec([]string{"app", "-a=install"}))
-	a.Equal(action, "install")
+	a.NotError(cmd.Exec([]string{"app", "-a=install"})).Equal(action, "install")
 
 	// RestartServer
 
@@ -89,8 +89,7 @@ func TestCLI_sanitize(t *testing.T) {
 		},
 		ConfigFilename: "web.yaml",
 	}
-	a.NotError(cmd.sanitize())
-	a.Equal(cmd.Out, os.Stdout)
+	a.NotError(cmd.sanitize()).Equal(cmd.Out, os.Stdout)
 
 	cmd = &CLI[empty]{Name: "abc"}
 	a.PanicString(func() {

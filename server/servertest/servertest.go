@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package servertest 为 [web.Server] 提供一些简便的测试方
@@ -6,8 +8,8 @@ package servertest
 import (
 	"net/http"
 
-	"github.com/issue9/assert/v3"
-	"github.com/issue9/assert/v3/rest"
+	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v4/rest"
 
 	"github.com/issue9/web"
 )

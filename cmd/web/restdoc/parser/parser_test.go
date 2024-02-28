@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package parser
@@ -7,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
@@ -18,21 +20,21 @@ func TestBuildPath(t *testing.T) {
 	a := assert.New(t, false)
 
 	path := "github.com/issue9/web"
-	a.Equal(buildPath(path, "github.com/issue9/web.Type"), "github.com/issue9/web.Type")
-	a.Equal(buildPath(path, "abc"), path+".abc")
-	a.Equal(buildPath(path, openapi.ComponentSchemaPrefix+"/abc"), openapi.ComponentSchemaPrefix+"/abc")
-	a.Equal(buildPath(path, "[]abc"), "[]"+path+".abc")
-	a.Equal(buildPath(path, "[]*abc"), "[]*"+path+".abc")
-	a.Equal(buildPath(path, "[]"+path+".abc"), "[]"+path+".abc")
-	a.Equal(buildPath(path, "[5]*abc"), "[5]*"+path+".abc")
-	a.Equal(buildPath(path, "[]abc[int]"), "[]"+path+".abc["+path+".int]")
-	a.Equal(buildPath(path, "[]abc[int,S]"), "[]"+path+".abc["+path+".int,"+path+".S]")
+	a.Equal(buildPath(path, "github.com/issue9/web.Type"), "github.com/issue9/web.Type").
+		Equal(buildPath(path, "abc"), path+".abc").
+		Equal(buildPath(path, openapi.ComponentSchemaPrefix+"/abc"), openapi.ComponentSchemaPrefix+"/abc").
+		Equal(buildPath(path, "[]abc"), "[]"+path+".abc").
+		Equal(buildPath(path, "[]*abc"), "[]*"+path+".abc").
+		Equal(buildPath(path, "[]"+path+".abc"), "[]"+path+".abc").
+		Equal(buildPath(path, "[5]*abc"), "[5]*"+path+".abc").
+		Equal(buildPath(path, "[]abc[int]"), "[]"+path+".abc["+path+".int]").
+		Equal(buildPath(path, "[]abc[int,S]"), "[]"+path+".abc["+path+".int,"+path+".S]")
 
-	a.Equal(buildPath(path, "[5x]*abc"), path+".[5x]*abc")
-	a.Equal(buildPath(path, "[*]abc"), path+".[*]abc")
-	a.Equal(buildPath(path, "[[]abc"), path+".[[]abc")
-	a.Equal(buildPath(path, "[]]abc"), path+".[]]abc")
-	a.Equal(buildPath(path, "5abc"), path+".5abc")
+	a.Equal(buildPath(path, "[5x]*abc"), path+".[5x]*abc").
+		Equal(buildPath(path, "[*]abc"), path+".[*]abc").
+		Equal(buildPath(path, "[[]abc"), path+".[[]abc").
+		Equal(buildPath(path, "[]]abc"), path+".[]]abc").
+		Equal(buildPath(path, "5abc"), path+".5abc")
 }
 
 func TestParser_Parse(t *testing.T) {

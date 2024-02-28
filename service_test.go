@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -9,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"golang.org/x/text/language"
 )
 
@@ -60,9 +62,9 @@ func TestServer_service(t *testing.T) {
 	sched := srv.services[0]
 	srv1 := srv.services[2]
 	<-start1
-	a.Equal(srv1.service, s1) // 并不会改变状态
-	a.Equal(srv1.state, Running).
-		Equal(sched.state, Running)
+	a.Equal(srv1.service, s1). // 并不会改变状态
+					Equal(srv1.state, Running).
+					Equal(sched.state, Running)
 
 	s2, start2, _, _ := buildService()
 	srv.Add(Phrase("srv2"), s2)
@@ -84,9 +86,9 @@ func TestServer_service(t *testing.T) {
 
 	s.Close(0)
 	time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
-	a.Equal(srv1.state, Stopped)
-	a.Equal(sched.state, Stopped)
-	a.Equal(srv2.state, Stopped)
+	a.Equal(srv1.state, Stopped).
+		Equal(sched.state, Stopped).
+		Equal(srv2.state, Stopped)
 }
 
 func TestServer_scheduled(t *testing.T) {
@@ -124,8 +126,8 @@ func TestService_state(t *testing.T) {
 		a.Equal(s1.state, Running)
 
 		s.Close(0)
-		time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Stopped)
+		a.Wait(500*time.Millisecond). // 等待主服务设置状态值
+						Equal(s1.state, Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
@@ -139,9 +141,9 @@ func TestService_state(t *testing.T) {
 		a.Equal(s1.state, Running)
 
 		p <- struct{}{}
-		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Failed).
-			Contains(s1.err.Error(), "service panic")
+		a.Wait(200*time.Millisecond). // 等待主服务设置状态值
+						Equal(s1.state, Failed).
+						Contains(s1.err.Error(), "service panic")
 
 		s.Close(0)
 	})
@@ -157,9 +159,9 @@ func TestService_state(t *testing.T) {
 		a.Equal(s1.state, Running)
 
 		err <- struct{}{}
-		time.Sleep(200 * time.Millisecond) // 等待主服务设置状态值
-		a.Equal(s1.state, Failed).
-			Contains(s1.err.Error(), "service error")
+		a.Wait(200*time.Millisecond). // 等待主服务设置状态值
+						Equal(s1.state, Failed).
+						Contains(s1.err.Error(), "service error")
 
 		s.Close(0)
 	})

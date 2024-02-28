@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // 此文件由工具产生，请勿手动修改！
 
 package web

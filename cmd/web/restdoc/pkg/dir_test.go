@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package pkg
@@ -5,7 +7,7 @@ package pkg
 import (
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 )
 
 func TestGetDirs(t *testing.T) {

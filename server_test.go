@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -7,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/unique/v2"

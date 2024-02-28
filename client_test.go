@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -10,7 +12,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/selector"
@@ -81,7 +83,6 @@ func TestClient_ParseResponse(t *testing.T) {
 
 		rsp := &object{}
 		p := newProblem
-		a.NotError(c.ParseResponse(resp, rsp, p))
-		a.Equal(rsp, obj)
+		a.NotError(c.ParseResponse(resp, rsp, p)).Equal(rsp, obj)
 	})
 }

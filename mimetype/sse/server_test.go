@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package sse
@@ -10,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/header"
@@ -95,13 +97,10 @@ func TestSource_bytes(t *testing.T) {
 		s.bytes(nil, "", "")
 	}, "data 不能为空")
 
-	a.Equal(s.bytes([]string{"111"}, "", "").String(), "data:111\n\n")
-
-	a.Equal(s.bytes([]string{"111", "222"}, "", "").String(), "data:111\ndata:222\n\n")
-
-	a.Equal(s.bytes([]string{"111", "222"}, "event", "").String(), "data:111\ndata:222\nevent:event\n\n")
-
-	a.Equal(s.bytes([]string{"111", "222"}, "event", "1").String(), "data:111\ndata:222\nevent:event\nid:1\n\n")
+	a.Equal(s.bytes([]string{"111"}, "", "").String(), "data:111\n\n").
+		Equal(s.bytes([]string{"111", "222"}, "", "").String(), "data:111\ndata:222\n\n").
+		Equal(s.bytes([]string{"111", "222"}, "event", "").String(), "data:111\ndata:222\nevent:event\n\n").
+		Equal(s.bytes([]string{"111", "222"}, "event", "1").String(), "data:111\ndata:222\nevent:event\nid:1\n\n")
 
 	s.retry = "30"
 	a.Equal(s.bytes([]string{"111", " 222"}, "event", " 1").String(), "data:111\ndata: 222\nevent:event\nid: 1\nretry:30\n\n")

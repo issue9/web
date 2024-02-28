@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -10,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/language"
 
@@ -116,8 +118,8 @@ func TestContext_SetMimetype(t *testing.T) {
 
 	a.PanicString(func() {
 		ctx.SetMimetype("not-exists")
-	}, "指定的编码 not-exists 不存在")
-	a.Equal(ctx.Mimetype(false), "application/json") // 不改变原有的值
+	}, "指定的编码 not-exists 不存在").
+		Equal(ctx.Mimetype(false), "application/json") // 不改变原有的值
 
 	ctx.SetMimetype("application/xml")
 	a.Equal(ctx.Mimetype(false), "application/xml")
@@ -169,10 +171,10 @@ func TestContext_SetEncoding(t *testing.T) {
 	a.Equal(ctx.Encoding(), "gzip")
 
 	_, err := ctx.Write([]byte("200"))
-	a.NotError(err)
-	a.PanicString(func() {
-		ctx.SetEncoding("br")
-	}, "已有内容输出，不可再更改！")
+	a.NotError(err).
+		PanicString(func() {
+			ctx.SetEncoding("br")
+		}, "已有内容输出，不可再更改！")
 }
 
 func TestContext_SetLanguage(t *testing.T) {
@@ -241,6 +243,5 @@ func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	ctx := newContext(a, nil, r)
-	a.NotNil(ctx)
-	a.Equal(ctx.ClientIP(), r.RemoteAddr)
+	a.NotNil(ctx).Equal(ctx.ClientIP(), r.RemoteAddr)
 }

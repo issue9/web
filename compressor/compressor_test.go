@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package compressor
@@ -9,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 )
 
 func TestBrotli(t *testing.T) {
@@ -53,8 +55,8 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 	if f, ok := w.(interface{ Flush() error }); ok {
 		a.NotError(f.Flush())
 	}
-	a.NotError(w.Close())
-	a.True(b1.Len() > 0)
+	a.NotError(w.Close()).
+		True(b1.Len() > 0)
 
 	b2 := &bytes.Buffer{}
 	_, err = b2.Write(b1.Bytes())
@@ -65,8 +67,8 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 	r, err := c1.NewDecoder(b1)
 	a.NotError(err).NotNil(r)
 	data, err := io.ReadAll(r)
-	a.NotError(err).Equal(string(data), "123")
-	a.NotError(r.Close())
+	a.NotError(err).Equal(string(data), "123").
+		NotError(r.Close())
 
 	// c2 read c1.encode
 
@@ -77,6 +79,6 @@ func testCompress(a *assert.Assertion, c1, c2 Compressor) {
 	r, err = c2.NewDecoder(b2)
 	a.NotError(err).NotNil(r)
 	data, err = io.ReadAll(r)
-	a.NotError(err).Equal(string(data), "123")
-	a.NotError(r.Close())
+	a.NotError(err).Equal(string(data), "123").
+		NotError(r.Close())
 }

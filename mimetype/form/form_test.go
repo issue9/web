@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package form
@@ -7,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 )
@@ -95,14 +97,13 @@ func TestUnmarshal(t *testing.T) {
 	a.NotError(Unmarshal(strings.NewReader(formString), &struct{}{}))
 
 	v = url.Values{}
-	a.NotError(Unmarshal(strings.NewReader(formString), v))
-	a.Equal(len(v), 2)
-	a.Equal(v.Get("name"), "Ava")
-	a.Equal(v.Get("friend"), "Jess")
-	a.Equal(v["friend"], []string{"Jess", "Sarah", "Zoe"})
+	a.NotError(Unmarshal(strings.NewReader(formString), v)).
+		Equal(len(v), 2).
+		Equal(v.Get("name"), "Ava").
+		Equal(v.Get("friend"), "Jess").
+		Equal(v["friend"], []string{"Jess", "Sarah", "Zoe"})
 
 	// Unmarshaler 类型
 	obj := &object{}
-	a.NotError(Unmarshal(strings.NewReader(formString), obj))
-	a.Equal(obj, objectData)
+	a.NotError(Unmarshal(strings.NewReader(formString), obj)).Equal(obj, objectData)
 }

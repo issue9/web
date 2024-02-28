@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package enum
@@ -14,6 +16,7 @@ import(
 )
 
 {{range .Enums}}
+
 //---------------------{{.Name}}------------------------
 
 var {{.Type2StringMap}} = map[{{.Name}}] string {
@@ -76,6 +79,8 @@ var(
 
 	{{.Name}}SliceFilter = web.NewFilter({{.Name}}SliceRule)
 )
+
+//---------------------end {{.Name}}--------------------
 
 {{end}}
 `

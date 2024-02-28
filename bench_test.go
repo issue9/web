@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -10,7 +12,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7/routertest"
 	"github.com/issue9/mux/v7/types"
 
@@ -107,8 +109,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			s.FreeContext(ctx)
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
-			a.NotError(err).NotNil(data)
-			a.Equal(data, objectGBKBytes)
+			a.NotError(err).NotNil(data).Equal(data, objectGBKBytes)
 		}
 	})
 }

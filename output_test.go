@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -11,7 +13,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/language"
 
@@ -227,8 +229,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	r.Header.Set(header.AcceptLang, "cmn-hans")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
-	a.NotError(err).Equal(n, len("测试"))
-	a.Equal(w.Body.String(), "测试")
+	a.NotError(err).Equal(n, len("测试")).Equal(w.Body.String(), "测试")
 }
 
 func TestNotModified(t *testing.T) {
@@ -247,8 +248,7 @@ func TestNotModified(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag := w.Header().Get(header.ETag)
-	a.Equal(w.Result().StatusCode, http.StatusOK).
-		NotEmpty(tag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag)
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
@@ -274,8 +274,7 @@ func TestNotModified(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag = w.Header().Get(header.ETag)
-	a.Equal(w.Result().StatusCode, http.StatusOK).
-		NotEmpty(tag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag)
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)

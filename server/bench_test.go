@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package server
@@ -8,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7"
 
 	"github.com/issue9/web"
@@ -39,8 +41,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
-			a.NotError(err).NotNil(resp)
-			a.Equal(resp.Header.Get("h1"), "h1")
+			a.NotError(err).NotNil(resp).Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
 			a.NotError(err).Equal(string(body), `"/path"`)
 		}
@@ -56,8 +57,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 				Header(header.AcceptEncoding, "gzip").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
-			a.NotError(err).NotNil(resp)
-			a.Equal(resp.Header.Get("h1"), "h1")
+			a.NotError(err).NotNil(resp).Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
 			a.NotError(err).NotEqual(body, `"/path"`)
 		}
@@ -71,8 +71,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 				Header(header.Accept, "application/json").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
-			a.NotError(err).NotNil(resp)
-			a.Equal(resp.Header.Get("h1"), "h1")
+			a.NotError(err).NotNil(resp).Equal(resp.Header.Get("h1"), "h1")
 			body, err := io.ReadAll(resp.Body)
 			a.NotError(err).Equal(string(body), `"/path"`)
 		}

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package registry_test
@@ -8,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
@@ -84,8 +86,7 @@ func TestCache_ReverseProxy(t *testing.T) {
 	defer s1.Close(0)
 
 	p1Dreg, err := c.Register("s1", selector.NewPeer("http://localhost:8080"))
-	a.NotError(err).NotNil(p1Dreg)
-	time.Sleep(2 * time.Second) // 等待 proxy
+	a.NotError(err).NotNil(p1Dreg).Wait(2 * time.Second) // 等待 proxy
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/path", nil)
 	proxy.ServeHTTP(w, r)

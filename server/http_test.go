@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package server
@@ -9,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"gopkg.in/yaml.v3"
 )
 
@@ -143,14 +145,13 @@ func TestDuration_XML(t *testing.T) {
 	}
 
 	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<testDuration>
+	a.NotError(err).NotNil(bs).
+		Equal(string(bs), `<testDuration>
   <dur>5ns</dur>
 </testDuration>`)
 
 	rm := &testDuration{}
-	a.NotError(xml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
+	a.NotError(xml.Unmarshal(bs, rm)).Equal(rm, m)
 }
 
 func TestDuration_XMLAttr(t *testing.T) {
@@ -164,12 +165,10 @@ func TestDuration_XMLAttr(t *testing.T) {
 	}
 
 	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `<obj d="5ns"></obj>`)
+	a.NotError(err).NotNil(bs).Equal(string(bs), `<obj d="5ns"></obj>`)
 
 	rm := &obj{}
-	a.NotError(xml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
+	a.NotError(xml.Unmarshal(bs, rm)).Equal(rm, m)
 }
 
 func TestDuration_JSON(t *testing.T) {
@@ -180,10 +179,8 @@ func TestDuration_JSON(t *testing.T) {
 	}
 
 	bs, err := json.Marshal(m)
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `{"dur":"5ns"}`)
+	a.NotError(err).NotNil(bs).Equal(string(bs), `{"dur":"5ns"}`)
 
 	rm := &testDuration{}
-	a.NotError(json.Unmarshal(bs, rm))
-	a.Equal(rm, m)
+	a.NotError(json.Unmarshal(bs, rm)).Equal(rm, m)
 }

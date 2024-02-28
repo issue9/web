@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package errs
@@ -7,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"golang.org/x/xerrors"
 )
 
@@ -32,11 +34,9 @@ func TestNewDepthStackError(t *testing.T) {
 	err = NewDepthStackError(1, err1)
 
 	a.ErrorIs(err, err1)
-	s := fmt.Sprintf("%v", err)
-	a.NotContains(s, "32") // 依赖调用 NewStackError 的行号
-	s = fmt.Sprintf("%+v", err)
-	a.Contains(s, "32") // 依赖调用 NewStackError 的行号
-	a.Equal(err.Error(), err1.Error())
+	a.NotContains(fmt.Sprintf("%v", err), "34"). // 依赖调用 NewStackError 的行号
+				Contains(fmt.Sprintf("%+v", err), "34"). // 依赖调用 NewStackError 的行号
+				Equal(err.Error(), err1.Error())
 
 	var target1 *cerr
 	a.True(errors.As(err, &target1)).Equal(target1.Error(), err1.Error())
@@ -46,10 +46,8 @@ func TestNewDepthStackError(t *testing.T) {
 	err = NewDepthStackError(1, err)
 
 	a.ErrorIs(err, err1)
-	s = fmt.Sprintf("%v", err)
-	a.NotContains(s, "32") // 依赖调用 NewStackError 的行号
-	s = fmt.Sprintf("%+v", err)
-	a.Contains(s, "32") // 依赖调用 NewStackError 的行号
+	a.NotContains(fmt.Sprintf("%v", err), "34"). // 依赖调用 NewStackError 的行号
+				Contains(fmt.Sprintf("%+v", err), "34") // 依赖调用 NewStackError 的行号
 
 	var target2 *cerr
 	a.True(errors.As(err, &target2)).Equal(target2.Error(), err1.Error())

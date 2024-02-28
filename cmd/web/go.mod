@@ -3,17 +3,17 @@ module github.com/issue9/web/cmd/web
 go 1.22
 
 require (
-	github.com/caixw/gobuild v1.7.4
+	github.com/caixw/gobuild v1.7.5
 	github.com/getkin/kin-openapi v0.123.0
-	github.com/issue9/assert/v3 v3.1.0
-	github.com/issue9/cmdopt v0.13.0
-	github.com/issue9/localeutil v0.26.3
-	github.com/issue9/logs/v7 v7.4.1
-	github.com/issue9/query/v3 v3.1.2
-	github.com/issue9/source v0.8.0
-	github.com/issue9/term/v3 v3.2.5
-	github.com/issue9/version v1.0.7
-	github.com/issue9/web v0.86.2
+	github.com/issue9/assert/v4 v4.1.1
+	github.com/issue9/cmdopt v0.13.1
+	github.com/issue9/localeutil v0.26.4
+	github.com/issue9/logs/v7 v7.4.2
+	github.com/issue9/query/v3 v3.1.3
+	github.com/issue9/source v0.8.1
+	github.com/issue9/term/v3 v3.2.6
+	github.com/issue9/version v1.0.8
+	github.com/issue9/web v0.87.0
 	golang.org/x/mod v0.15.0
 	golang.org/x/text v0.14.0
 	golang.org/x/tools v0.18.0
@@ -28,13 +28,13 @@ require (
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
-	github.com/issue9/cache v0.9.1 // indirect
-	github.com/issue9/config v0.6.1 // indirect
-	github.com/issue9/conv v1.3.4 // indirect
-	github.com/issue9/errwrap v0.3.1 // indirect
-	github.com/issue9/mux/v7 v7.3.4 // indirect
-	github.com/issue9/scheduled v0.19.0 // indirect
-	github.com/issue9/sliceutil v0.15.0 // indirect
+	github.com/issue9/cache v0.9.2 // indirect
+	github.com/issue9/config v0.6.2 // indirect
+	github.com/issue9/conv v1.3.5 // indirect
+	github.com/issue9/errwrap v0.3.2 // indirect
+	github.com/issue9/mux/v7 v7.3.5 // indirect
+	github.com/issue9/scheduled v0.19.2 // indirect
+	github.com/issue9/sliceutil v0.15.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

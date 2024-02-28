@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package sse
@@ -11,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/nop"
@@ -99,9 +101,9 @@ func TestOnMessage(t *testing.T) {
 	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg5)
 	a.NotError(err).Equal(1, e.Len())
 
-	a.Equal(<-msg5, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50})
-	a.Equal(<-msg5, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
-	a.Equal(<-msg5, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
+	a.Equal(<-msg5, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50}).
+		Equal(<-msg5, &Message{Data: []string{"1"}, Event: "event", Retry: 50}).
+		Equal(<-msg5, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
 
 	// get /event/6
 
@@ -113,9 +115,9 @@ func TestOnMessage(t *testing.T) {
 	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg6)
 	a.NotError(err).Equal(2, e.Len())
 
-	a.Equal(<-msg6, &Message{Data: []string{"connect", "6"}, ID: "1", Retry: 50})
-	a.Equal(<-msg6, &Message{Data: []string{"1"}, Event: "event", Retry: 50})
-	a.Equal(<-msg6, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
+	a.Equal(<-msg6, &Message{Data: []string{"connect", "6"}, ID: "1", Retry: 50}).
+		Equal(<-msg6, &Message{Data: []string{"1"}, Event: "event", Retry: 50}).
+		Equal(<-msg6, &Message{Data: []string{"{\"ID\":5}"}, Event: "event", Retry: 50})
 
 	// server event
 
@@ -127,6 +129,6 @@ func TestOnMessage(t *testing.T) {
 		}{ID: sid, LastID: lastID}
 	})
 
-	a.Equal(<-msg5, &Message{Data: []string{"{\"ID\":5,\"LastID\":\"\"}"}, Event: "se", Retry: 50})
-	a.Equal(<-msg6, &Message{Data: []string{"{\"ID\":6,\"LastID\":\"\"}"}, Event: "se", Retry: 50})
+	a.Equal(<-msg5, &Message{Data: []string{"{\"ID\":5,\"LastID\":\"\"}"}, Event: "se", Retry: 50}).
+		Equal(<-msg6, &Message{Data: []string{"{\"ID\":6,\"LastID\":\"\"}"}, Event: "se", Retry: 50})
 }

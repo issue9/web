@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package app
@@ -10,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -54,14 +56,12 @@ func TestSignalHUP(t *testing.T) {
 
 	// hup1
 	t1 := cmd.app.srv.Uptime()
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
+	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t2 := cmd.app.srv.Uptime()
 	a.True(t2.After(t1))
 
 	// hup2
-	a.NotError(p.Signal(syscall.SIGHUP))
-	time.Sleep(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
+	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t3 := cmd.app.srv.Uptime()
 	a.True(t3.After(t2))
 

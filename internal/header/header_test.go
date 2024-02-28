@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package header
@@ -6,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v3"
-	"github.com/issue9/assert/v3/rest"
+	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v4/rest"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 

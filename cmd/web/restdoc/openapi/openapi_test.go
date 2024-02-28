@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package openapi
@@ -7,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 )
 
 func TestNew(t *testing.T) {
@@ -28,9 +30,9 @@ func TestOpenAPI_SaveAs(t *testing.T) {
 	o.Responses = openapi3.NewResponses()
 	doc.AddAPI("/pet", o, http.MethodGet)
 
-	a.NotError(doc.SaveAs("./openapi.out.yaml"))
-	a.NotError(doc.SaveAs("./openapi.out.json"))
-	a.ErrorString(doc.SaveAs("./openapi.out.xml"), "only support yaml and json")
+	a.NotError(doc.SaveAs("./openapi.out.yaml")).
+		NotError(doc.SaveAs("./openapi.out.json")).
+		ErrorString(doc.SaveAs("./openapi.out.xml"), "only support yaml and json")
 }
 
 func TestOpenAPI_Merge(t *testing.T) {

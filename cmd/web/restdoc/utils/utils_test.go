@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package utils
@@ -5,22 +7,22 @@ package utils
 import (
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 )
 
 func TestIsEmail(t *testing.T) {
-	a := assert.New(t, false)
-	a.True(IsEmail("abc@example.com"))
-	a.False(IsEmail("@example.com"))
-	a.False(IsEmail("https://example.com"))
-	a.False(IsEmail("example.com"))
+	assert.New(t, false).
+		True(IsEmail("abc@example.com")).
+		False(IsEmail("@example.com")).
+		False(IsEmail("https://example.com")).
+		False(IsEmail("example.com"))
 }
 
 func TestIsURL(t *testing.T) {
-	a := assert.New(t, false)
-	a.True(IsURL("https://example.com"))
-	a.True(IsURL("http://example.com"))
-	a.False(IsURL("ftp://example.com"))
+	assert.New(t, false).
+		True(IsURL("https://example.com")).
+		True(IsURL("http://example.com")).
+		False(IsURL("ftp://example.com"))
 }
 
 func TestCutTag(t *testing.T) {

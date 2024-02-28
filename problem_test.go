@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -9,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -35,10 +37,10 @@ func TestContext_Error(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewContext())
 		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:37") // NOTE: 此测试依赖上一行的行号
-		a.Contains(srv.logBuf.String(), "log1 log2")
-		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
-		a.Equal(w.Code, http.StatusInternalServerError)
+		a.Contains(srv.logBuf.String(), "problem_test.go:39"). // NOTE: 此测试依赖上一行的行号
+									Contains(srv.logBuf.String(), "log1 log2").
+									Contains(srv.logBuf.String(), header.RequestIDKey). // 包含 x-request-id 值
+									Equal(w.Code, http.StatusInternalServerError)
 
 		// errs.HTTP
 
@@ -47,10 +49,10 @@ func TestContext_Error(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewContext())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:49") // NOTE: 此测试依赖上一行的行号
-		a.Contains(srv.logBuf.String(), "log1 log2")
-		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
-		a.Equal(w.Code, http.StatusBadRequest)
+		a.Contains(srv.logBuf.String(), "problem_test.go:51"). // NOTE: 此测试依赖上一行的行号
+									Contains(srv.logBuf.String(), "log1 log2").
+									Contains(srv.logBuf.String(), header.RequestIDKey). // 包含 x-request-id 值
+									Equal(w.Code, http.StatusBadRequest)
 
 		// fs.ErrPermission
 
@@ -78,10 +80,10 @@ func TestContext_Error(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewContext())
 		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:80") // NOTE: 此测试依赖上一行的行号
-		a.Contains(srv.logBuf.String(), "log1 log2")
-		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
-		a.Equal(w.Code, 411)
+		a.Contains(srv.logBuf.String(), "problem_test.go:82"). // NOTE: 此测试依赖上一行的行号
+									Contains(srv.logBuf.String(), "log1 log2").
+									Contains(srv.logBuf.String(), header.RequestIDKey). // 包含 x-request-id 值
+									Equal(w.Code, 411)
 
 		// errs.HTTP
 
@@ -90,10 +92,10 @@ func TestContext_Error(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewContext())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:92") // NOTE: 此测试依赖上一行的行号
-		a.Contains(srv.logBuf.String(), "log1 log2")
-		a.Contains(srv.logBuf.String(), header.RequestIDKey) // 包含 x-request-id 值
-		a.Equal(w.Code, 411)
+		a.Contains(srv.logBuf.String(), "problem_test.go:94"). // NOTE: 此测试依赖上一行的行号
+									Contains(srv.logBuf.String(), "log1 log2").
+									Contains(srv.logBuf.String(), header.RequestIDKey). // 包含 x-request-id 值
+									Equal(w.Code, 411)
 	})
 }
 

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package form
@@ -7,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web/mimetype"
 )
@@ -128,26 +130,21 @@ func TestMarshalWithFormTag(t *testing.T) {
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(Unmarshal(strings.NewReader(tagObjectString), obj))
-	a.Equal(obj, tagObjectData)
+	a.NotError(Unmarshal(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
 
 	// anonymous marshal
 	data, err = Marshal(nil, anonymousData)
-	a.NotError(err).
-		Equal(string(data), anonymousString)
+	a.NotError(err).Equal(string(data), anonymousString)
 
 	// anonymous unmarshal
 	anoobj := &anonymousObject{}
-	a.NotError(Unmarshal(strings.NewReader(anonymousString), anoobj))
-	a.Equal(anoobj, anonymousData)
+	a.NotError(Unmarshal(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
 
 	// nest marshal
 	data, err = Marshal(nil, nestData)
-	a.NotError(err).
-		Equal(string(data), nestString)
+	a.NotError(err).Equal(string(data), nestString)
 
 	// nest unmarshal
 	nestObj := &nestObject{}
-	a.NotError(Unmarshal(strings.NewReader(nestString), nestObj))
-	a.Equal(nestObj, nestData)
+	a.NotError(Unmarshal(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
 }

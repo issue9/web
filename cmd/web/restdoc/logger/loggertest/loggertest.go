@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 // Package loggertest 提供 logger 的测试用例
@@ -6,7 +8,7 @@ package loggertest
 import (
 	"os"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web/cmd/web/restdoc/logger"

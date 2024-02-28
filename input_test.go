@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018-2024 caixw
+//
 // SPDX-License-Identifier: MIT
 
 package web
@@ -8,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v3"
+	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v7/types"
 
 	"github.com/issue9/web/internal/header"
@@ -74,58 +76,57 @@ func TestPaths(t *testing.T) {
 			Equal(ps.filter().len(), 1)
 
 		// 不存在的参数，添加错误信息
-		a.Equal(ps.ID("i3"), 0)
-		a.Equal(ps.filter().len(), 2)
+		a.Equal(ps.ID("i3"), 0).
+			Equal(ps.filter().len(), 2)
 	})
 
 	t.Run("Int", func(*testing.T) {
 		ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 		ps := ctx.Paths(false)
 
-		a.Equal(ps.Int64("i1"), 1)
-		a.Equal(ps.Int64("i2"), -2).Equal(ps.filter().len(), 0)
+		a.Equal(ps.Int64("i1"), 1).
+			Equal(ps.Int64("i2"), -2).Equal(ps.filter().len(), 0)
 
 		// 不存在的参数，添加错误信息
-		a.Equal(ps.Int64("i3"), 0)
-		a.Equal(ps.filter().len(), 1)
+		a.Equal(ps.Int64("i3"), 0).
+			Equal(ps.filter().len(), 1)
 	})
 
 	t.Run("Bool", func(*testing.T) {
 		ctx := b.NewContext(w, r, newPathContext("b1", "true", "b2", "false", "str", "str"))
 		ps := ctx.Paths(false)
 
-		a.True(ps.Bool("b1"))
-		a.False(ps.Bool("b2")).Equal(ps.filter().len(), 0)
+		a.True(ps.Bool("b1")).False(ps.Bool("b2")).Equal(ps.filter().len(), 0)
 
 		// 不存在的参数，添加错误信息
-		a.False(ps.Bool("b3"))
-		a.Equal(ps.filter().len(), 1)
+		a.False(ps.Bool("b3")).
+			Equal(ps.filter().len(), 1)
 	})
 
 	t.Run("String", func(*testing.T) {
 		ctx := b.NewContext(w, r, newPathContext("s1", "str1", "s2", "str2"))
 		ps := ctx.Paths(false)
 
-		a.Equal(ps.String("s1"), "str1")
-		a.Equal(ps.String("s2"), "str2")
-		a.Zero(ps.filter().len())
+		a.Equal(ps.String("s1"), "str1").
+			Equal(ps.String("s2"), "str2").
+			Zero(ps.filter().len())
 
 		// 不存在的参数，添加错误信息
-		a.Equal(ps.String("s3"), "")
-		a.Equal(ps.filter().len(), 1)
+		a.Equal(ps.String("s3"), "").
+			Equal(ps.filter().len(), 1)
 	})
 
 	t.Run("Float", func(*testing.T) {
 		ctx := b.NewContext(w, r, newPathContext("f1", "1.1", "f2", "2.2", "str", "str"))
 		ps := ctx.Paths(false)
 
-		a.Equal(ps.Float64("f1"), 1.1)
-		a.Equal(ps.Float64("f2"), 2.2)
-		a.Zero(ps.filter().len())
+		a.Equal(ps.Float64("f1"), 1.1).
+			Equal(ps.Float64("f2"), 2.2).
+			Zero(ps.filter().len())
 
 		// 不存在的参数，添加错误信息
-		a.Equal(ps.Float64("f3"), 0.0)
-		a.Equal(ps.filter().len(), 1)
+		a.Equal(ps.Float64("f3"), 0.0).
+			Equal(ps.filter().len(), 1)
 	})
 }
 
@@ -173,9 +174,9 @@ func TestQueries(t *testing.T) {
 		q, err := ctx.Queries(false)
 		a.NotError(err).NotNil(q)
 
-		a.Equal(q.Int("i1", 9), 1)
-		a.Equal(q.Int("i2", 9), 2)
-		a.Equal(q.Int("i3", 9), 9)
+		a.Equal(q.Int("i1", 9), 1).
+			Equal(q.Int("i2", 9), 2).
+			Equal(q.Int("i3", 9), 9)
 
 		// 无法转换，会返回默认值，且添加错误信息
 		a.Equal(q.Int("str", 3), 3)
@@ -187,13 +188,13 @@ func TestQueries(t *testing.T) {
 		q, err := ctx.Queries(false)
 		a.NotError(err).NotNil(q)
 
-		a.Equal(q.Int64("i1", 9), 1)
-		a.Equal(q.Int64("i2", 9), 2)
-		a.Equal(q.Int64("i3", 9), 9)
+		a.Equal(q.Int64("i1", 9), 1).
+			Equal(q.Int64("i2", 9), 2).
+			Equal(q.Int64("i3", 9), 9)
 
 		// 无法转换，会返回默认值，且添加错误信息
-		a.Equal(q.Int64("str", 3), 3)
-		a.NotNil(q.Problem("41110"))
+		a.Equal(q.Int64("str", 3), 3).
+			NotNil(q.Problem("41110"))
 	})
 
 	t.Run("String", func(*testing.T) {
@@ -201,9 +202,9 @@ func TestQueries(t *testing.T) {
 		q, err := ctx.Queries(false)
 		a.NotError(err).NotNil(q)
 
-		a.Equal(q.String("s1", "9"), "1")
-		a.Equal(q.String("s2", "9"), "2")
-		a.Equal(q.String("s3", "9"), "9")
+		a.Equal(q.String("s1", "9"), "1").
+			Equal(q.String("s2", "9"), "2").
+			Equal(q.String("s3", "9"), "9")
 	})
 
 	t.Run("Bool", func(*testing.T) {
@@ -211,13 +212,12 @@ func TestQueries(t *testing.T) {
 		q, err := ctx.Queries(false)
 		a.NotError(err).NotNil(q)
 
-		a.True(q.Bool("b1", false))
-		a.True(q.Bool("b2", false))
-		a.False(q.Bool("b3", false))
+		a.True(q.Bool("b1", false)).
+			True(q.Bool("b2", false)).
+			False(q.Bool("b3", false))
 
 		// 无法转换，会返回默认值，且添加错误信息
-		a.False(q.Bool("str", false))
-		a.NotNil(q.Problem("41110"))
+		a.False(q.Bool("str", false)).NotNil(q.Problem("41110"))
 	})
 
 	t.Run("Float", func(*testing.T) {
@@ -225,13 +225,12 @@ func TestQueries(t *testing.T) {
 		q, err := ctx.Queries(false)
 		a.NotError(err).NotNil(q)
 
-		a.Equal(q.Float64("i1", 9.9), 1.1)
-		a.Equal(q.Float64("i2", 9.9), 2)
-		a.Equal(q.Float64("i3", 9.9), 9.9)
+		a.Equal(q.Float64("i1", 9.9), 1.1).
+			Equal(q.Float64("i2", 9.9), 2).
+			Equal(q.Float64("i3", 9.9), 9.9)
 
 		// 无法转换，会返回默认值，且添加错误信息
-		a.Equal(q.Float64("str", 3), 3)
-		a.NotNil(q.Problem("41110"))
+		a.Equal(q.Float64("str", 3), 3).NotNil(q.Problem("41110"))
 	})
 }
 
@@ -275,8 +274,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	a.NotNil(ctx)
 
 	obj := &object{}
-	a.NotError(ctx.Unmarshal(obj))
-	a.Equal(obj, objectInst)
+	a.NotError(ctx.Unmarshal(obj)).Equal(obj, objectInst)
 
 	// 无法转换
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
