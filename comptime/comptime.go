@@ -29,7 +29,7 @@ const Mode = defaultMode
 //   - [Development] 在扩展名前加上 _development，比如 file.yaml => file_development.yaml；
 //
 // 一般像根据环境加载不同的配置文件之类的功能可以使用此方法。
-// 比如 [app.CLI.ConfigFilename] 可以使用此文件指定相同的文件名。
+// 比如 [server/app.CLI.ConfigFilename] 可以使用此文件指定相同的文件名。
 func Filename(f string) string { return filename(f) }
 
 // DebugRouter 在 [Development] 环境下为 r 提供一组测试用的 API

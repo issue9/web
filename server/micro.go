@@ -19,7 +19,7 @@ type (
 
 	// RegistryTypeBuilder 生成 [registry.Registry] 的方法
 	//
-	// 第一个参数为 [web.Cache] 类型，在非 cache 时，该类型应该是无用的。
+	// 第一个参数为 [web.Cache] 类型，如果返回的 [registry.Registry] 为非 cache 时则第一个参数可以为 nil。
 	RegistryTypeBuilder = func(web.Cache, *registry.Strategy, ...string) registry.Registry
 
 	RouterMatcherBuilder = func(...string) web.RouterMatcher

@@ -43,12 +43,13 @@ func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv, err := New("app", "0.1.0", nil)
-	s := srv.(*httpServer)
 	a.NotError(err).NotNil(srv).
 		False(srv.Uptime().IsZero()).
 		NotNil(srv.Cache()).
-		Equal(srv.Location(), time.Local).
-		Equal(s.httpServer.Handler, s).
+		Equal(srv.Location(), time.Local)
+
+	s, ok := srv.(*httpServer)
+	a.True(ok).Equal(s.httpServer.Handler, s).
 		Equal(s.httpServer.Addr, "")
 
 	d, ok := srv.Cache().(cache.Driver)
@@ -85,21 +86,19 @@ func newOptions(o *Options) *Options {
 	return o
 }
 
-func newTestServer(a *assert.Assertion, o *Options) *httpServer {
-	o = newOptions(o)
-	srv, err := New("app", "0.1.0", o)
-	a.NotError(err).NotNil(srv)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+func newTestServer(a *assert.Assertion, o *Options) web.Server {
+	srv, err := New("app", "0.1.0", newOptions(o))
+	a.NotError(err).NotNil(srv).
+		Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
-	// locale
-	b := srv.Locale()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+	l := srv.Locale()
+	a.NotError(l.SetString(language.Und, "lang", "und")).
+		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
+		NotError(l.SetString(language.TraditionalChinese, "lang", "hant"))
 
 	srv.Problems().Add(411, &web.LocaleProblem{ID: "41110", Title: web.Phrase("lang"), Detail: web.Phrase("41110")})
 
-	return srv.(*httpServer)
+	return srv
 }
 
 func TestHTTPServer_Serve(t *testing.T) {
@@ -137,11 +136,8 @@ func TestHTTPServer_Serve(t *testing.T) {
 	}, "当前已经处于运行状态")
 
 	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
-
 	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
-
 	servertest.Get(a, "http://localhost:8080/m2/103").Do(nil).Status(http.StatusOK)
-
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
 }
 
@@ -244,10 +240,9 @@ func TestHTTPServer_CloseWithTimeout(t *testing.T) {
 
 	// 未超时，但是拒绝新的链接
 	resp, err := http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
+	a.Error(err).Nil(resp).Wait(30 * time.Microsecond)
 
 	// 已被关闭
-	time.Sleep(30 * time.Microsecond)
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 }
@@ -283,8 +278,7 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotNil(c)
 
 	resp := &object{}
-	a.NotError(c.Get("/get", resp, nil))
-	a.Equal(resp, &object{Name: "name"})
+	a.NotError(c.Get("/get", resp, nil)).Equal(resp, &object{Name: "name"})
 
 	resp = &object{}
 	err := c.Delete("/get", resp, nil)
@@ -304,8 +298,8 @@ func TestHTTPServer_NewClient(t *testing.T) {
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp = &object{}
-	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, nil))
-	a.Equal(resp, &object{Age: 1, Name: "name"})
+	a.NotError(c.Post("/post", &object{Age: 1, Name: "name"}, resp, nil)).
+		Equal(resp, &object{Age: 1, Name: "name"})
 
 	resp = &object{}
 	err = c.Patch("/not-exists", nil, resp, nil)

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package servertest 为 [web.Server] 提供一些简便的测试方
+// Package servertest 为测试 [web.Server] 提供一些简便的功能
 package servertest
 
 import (
@@ -29,6 +29,10 @@ func Post(a *assert.Assertion, path string, body []byte) *rest.Request {
 	return NewRequest(a, http.MethodPost, path).Body(body)
 }
 
+func Patch(a *assert.Assertion, path string, body []byte) *rest.Request {
+	return NewRequest(a, http.MethodPatch, path).Body(body)
+}
+
 func Delete(a *assert.Assertion, path string) *rest.Request {
 	return NewRequest(a, http.MethodDelete, path)
 }
@@ -38,14 +42,12 @@ func Run(a *assert.Assertion, s web.Server) func() {
 	ok := make(chan struct{}, 1)
 	exit := make(chan struct{}, 1)
 
-	go func() {
-		a.TB().Helper()
-
+	a.Go(func(a *assert.Assertion) {
 		defer func() { exit <- struct{}{} }()
 
-		ok <- struct{}{} // 最起码等待协程启动。
+		ok <- struct{}{} // 最起码等待协程启动
 		a.ErrorIs(s.Serve(), http.ErrServerClosed)
-	}()
+	})
 
 	<-ok
 	return func() { <-exit }

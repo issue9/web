@@ -19,7 +19,7 @@ const (
 	usage = web.StringPhrase("htmldoc usage")
 
 	objectUsage = web.StringPhrase("export object name")
-	dirUsae     = web.StringPhrase("set source dir")
+	dirUsage    = web.StringPhrase("set source dir")
 	outputUsage = web.StringPhrase("set html doc path")
 	langUsage   = web.StringPhrase("set html page language")
 	titleUsage  = web.StringPhrase("set html page title")
@@ -34,7 +34,7 @@ const defaultStyleValue = "default"
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("htmldoc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		obj := fs.String("object", "", objectUsage.LocaleString(p))
-		dir := fs.String("dir", "", dirUsae.LocaleString(p))
+		dir := fs.String("dir", "", dirUsage.LocaleString(p))
 		output := fs.String("o", "", outputUsage.LocaleString(p))
 		lang := fs.String("lang", "cmn-Hans", langUsage.LocaleString(p))
 		title := fs.String("title", "config", titleUsage.LocaleString(p))

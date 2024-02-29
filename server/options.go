@@ -46,7 +46,7 @@ type (
 	//
 	// 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
 	//
-	// 对于 Options 的初始化方式，可以直接采用 &Options{...} 的方式，
+	// 初始化方式，可以直接采用 &Options{...} 的方式，表示所有项都采用默认值。
 	// 也可以采用 [LoadOptions] 从配置文件中加载相应在的数据进行初始化。
 	Options struct {
 		// 项目的配置项
@@ -112,7 +112,7 @@ type (
 		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
 		// 同时也用来初始化 [Server.Locale.Printer]。
 		//
-		// 框架中的日志输出时，如果该信息实现了 [LocaleStringer] 接口，
+		// 框架中的日志输出时，如果该信息实现了 [web.LocaleStringer] 接口，
 		// 将会转换成此设置项的语言。
 		//
 		// 如果为空，则会尝试读取当前系统的本地化信息。
@@ -267,7 +267,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	}
 
 	c, fe := buildCodec(o.Mimetypes, o.Compressions)
-	if err != nil {
+	if fe != nil {
 		return nil, fe
 	}
 	o.codec = c

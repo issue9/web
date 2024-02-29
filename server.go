@@ -169,7 +169,7 @@ type Plugin interface {
 
 type PluginFunc func(Server)
 
-// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 接口的实现。
+// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 的实现。
 type InternalServer struct {
 	server Server
 
@@ -196,10 +196,10 @@ type InternalServer struct {
 // InternalNewServer 声明 [InternalServer]
 //
 // s 为实际的 [Server] 接口对象，在 [InternalServer.NewContext] 需要用到此实例；
-// requestIDKey 表示客户端提交的 X-Request-ID 报头名，如果为空则采用 "X-Request-ID"；
+// requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 // problemPrefix 可以为空；
 //
-// NOTE: 调用者需要保证参数的正确性。
+// NOTE: 此为内部使用接函数，由调用者保证参数的正确性。
 func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Logs, idgen func() string, l *locale.Locale, c cache.Driver, codec *Codec, requestIDKey, problemPrefix string, o ...RouterOption) *InternalServer {
 	is := &InternalServer{
 		server: s,

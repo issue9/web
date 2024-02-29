@@ -37,6 +37,7 @@ type (
 	// 返回值可以为空，表示在中间件执行过程中已经向客户端输出同内容。
 	HandlerFunc = func(*Context) Responser
 
+	// Routers 提供管理路由的接口
 	Routers struct {
 		g *group.GroupOf[HandlerFunc]
 	}

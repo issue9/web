@@ -30,8 +30,8 @@ type testServer struct {
 
 func newTestServer(a *assert.Assertion) *testServer {
 	c := catalog.NewBuilder()
-	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "cn"))
-	a.NotError(c.SetString(language.TraditionalChinese, "lang", "tw"))
+	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "cn")).
+		NotError(c.SetString(language.TraditionalChinese, "lang", "tw"))
 
 	l := language.SimplifiedChinese
 	p := message.NewPrinter(l, message.Catalog(c))

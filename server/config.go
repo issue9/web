@@ -129,6 +129,20 @@ type configOf[T any] struct {
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
+//
+// # 配置文件
+//
+// 对于配置文件各个字段的定义，可参考当前目录下的 CONFIG.html。
+// 配置文件中除了固定的字段之外，还提供了泛型变量 User 用于指定用户自定义的额外字段。
+//
+// # 注册函数
+//
+// 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
+// 比如通过 [RegisterCompression] 将 `gzip-default` 等字符串表示成压缩算法，
+// 以便在配置文件进行指定。
+//
+// 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
+// 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 func LoadOptions[T any](configDir, filename string) (*Options, *T, error) {
 	if filename == "" {
 		return &Options{Config: &Config{Dir: configDir}}, nil, nil

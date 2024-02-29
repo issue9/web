@@ -2,33 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
+//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.html -object=configOf
+
 // Package server 提供与服务端实现相关的功能
 //
 // 目前实现了三种类型的服务端：
 //   - [New] 构建普通的 HTTP 服务；
 //   - [NewGateway] 构建微服务的网关服务；
 //   - [NewService] 构建微服务；
-//
-// [web.Server] 的初始化主要依赖 [Options] 对象，用户可以通过以下几种方式初始化 [Options] 对象：
-//   - &Options{} 最简单的方式，所有的 [Options] 均支持默认值；
-//   - [LoadOptions] 从配置文件中加载 [Options] 对象；
-//
-// # 配置文件
-//
-// 对于配置文件各个字段的定义，可参考当前目录下的 CONFIG.html。
-// 配置文件中除了固定的字段之外，还提供了泛型变量 User 用于指定用户自定义的额外字段。
-//
-// # 注册函数
-//
-// 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
-// 比如通过 [RegisterCompression] 将 `gzip-default` 等字符串表示成压缩算法，
-// 以便在配置文件进行指定。
-//
-// 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
-// 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
 package server
-
-//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.html -object=configOf
 
 import (
 	"context"
@@ -87,8 +69,7 @@ func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 func New(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {
-		err.Path = "Options"
-		return nil, err
+		return nil, err.AddFieldParent("o")
 	}
 
 	return newHTTPServer(name, version, o, nil), nil
@@ -145,8 +126,7 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 func NewService(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
-		err.Path = "Options"
-		return nil, err
+		return nil, err.AddFieldParent("o")
 	}
 
 	s := &service{
@@ -171,8 +151,7 @@ func (s *service) Serve() error {
 func NewGateway(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeGateway)
 	if err != nil {
-		err.Path = "Options"
-		return nil, err
+		return nil, err.AddFieldParent("o")
 	}
 
 	g := &gateway{registry: o.Registry}
