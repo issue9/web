@@ -76,15 +76,17 @@ type Context struct {
 func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	id := r.Header.Get(s.requestIDKey)
 
+	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
+		if id != "" {
+			return s.server.Logs().DEBUG().With(s.requestIDKey, id)
+		}
+		return s.server.Logs().DEBUG()
+	}
+
 	h := r.Header.Get(header.Accept)
 	mt := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if mt == nil {
-		var l logs.Recorder = s.server.Logs().DEBUG()
-		if id != "" {
-			l = s.server.Logs().DEBUG().With(s.requestIDKey, id)
-		}
-		l.LocaleString(Phrase("not found serialization for %s", h))
-
+		debug().LocaleString(Phrase("not found serialization for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable) // 此时还不知道将 problem 序列化成什么类型，只简单地返回状态码。
 		return nil
 	}
@@ -92,44 +94,36 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	h = r.Header.Get(header.AcceptCharset)
 	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
-		var l logs.Recorder = s.server.Logs().DEBUG()
-		if id != "" {
-			l = s.server.Logs().DEBUG().With(s.requestIDKey, id)
-		}
-		l.LocaleString(Phrase("not found charset for %s", h))
-
+		debug().LocaleString(Phrase("not found charset for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable) // 无法找到对方要求的字符集，依然只是简单地返回状态码。
 		return nil
 	}
 
 	var outputCompressor compressor.Compressor
 	if s.server.CanCompress() {
-		h = r.Header.Get(header.AcceptEncoding)
-		var notAcceptable bool
-		outputCompressor, notAcceptable = s.codec.acceptEncoding(mt.name(false), h)
-		if notAcceptable {
+		var na bool
+		if outputCompressor, na = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); na {
 			w.WriteHeader(http.StatusNotAcceptable)
+			return nil
+		}
+	}
+
+	var inputMimetype UnmarshalFunc
+	var inputCharset encoding.Encoding
+	if h = r.Header.Get(header.ContentType); h != "" {
+		var err error
+		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
+			debug().Error(err)
+			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
 	}
 
 	tag := acceptLanguage(s.server, r.Header.Get(header.AcceptLang))
 
-	var inputMimetype UnmarshalFunc
-	var inputCharset encoding.Encoding
-	h = r.Header.Get(header.ContentType)
-	if h != "" {
-		var err error
-		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
-			s.server.Logs().DEBUG().With(s.requestIDKey, id).Error(err)
-			w.WriteHeader(http.StatusUnsupportedMediaType)
-			return nil
-		}
-	}
-
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
-	// 此处开始才会构建 Context 对象，才须确保 ID 不为空。
+	// 此处开始才会构建 Context 对象，须确保 ID 不为空。
 	if id == "" {
 		id = s.server.UniqueID()
 	}

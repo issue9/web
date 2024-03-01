@@ -68,9 +68,7 @@ func ServeFileHandler(fsys fs.FS, name, index string) web.HandlerFunc {
 // name 表示需要读取的文件名，相对于 fsys；
 // index 表示 name 为目录时，默认读取的文件，为空表示 index.html；
 func ServeFile(ctx *web.Context, fsys fs.FS, name, index string) web.Responser {
-	if err := mux.ServeFile(fsys, name, index, ctx, ctx.Request()); err != nil {
-		return ctx.Error(err, "")
-	}
+	mux.ServeFile(fsys, name, index, ctx, ctx.Request())
 	return nil
 }
 

@@ -54,7 +54,7 @@ type Server interface {
 
 	// Now 返回当前时间
 	//
-	// 与 [time.Now] 的区别在于 Now() 基于当前时区
+	// 与 [time.Now] 的区别在于 Now 的时间基于 [Server.Location]
 	Now() time.Time
 
 	// ParseTime 分析基于当前时区的时间

@@ -32,7 +32,7 @@ require (
 	github.com/issue9/config v0.6.2 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
-	github.com/issue9/mux/v7 v7.3.5 // indirect
+	github.com/issue9/mux/v7 v7.4.0 // indirect
 	github.com/issue9/scheduled v0.19.3 // indirect
 	github.com/issue9/sliceutil v0.15.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

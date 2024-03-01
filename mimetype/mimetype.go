@@ -25,6 +25,7 @@ func (err errorUnsupported) Unwrap() error { return errors.ErrUnsupported }
 
 // ErrUnsupported 返回不支持序列化的错误信息
 //
-// 此方法的返回对象同时也包含了 [errors.ErrUnsupported]，
-// errors.Is(ErrUnsupported(), errors.ErrUnsupported) == true。
+// 此方法的返回对象同时也包含了 [errors.ErrUnsupported]
+//
+//	errors.Is(ErrUnsupported(), errors.ErrUnsupported) == true。
 func ErrUnsupported() error { return errUnsupported }
