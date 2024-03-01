@@ -126,9 +126,9 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	// 此处开始才会构建 Context 对象，须确保 ID 不为空。
 	if id == "" {
 		id = s.server.UniqueID()
+		r.Header.Set(s.requestIDKey, id) // id 本身从 r.Header 获取，所以在 id 不为空的情况下，无须再设置。
 	}
 	w.Header().Set(s.requestIDKey, id)
-	r.Header.Set(s.requestIDKey, id)
 
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 

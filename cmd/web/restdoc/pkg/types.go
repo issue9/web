@@ -92,7 +92,7 @@ func (tl defaultTypeList) Len() int { return len(tl) }
 func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 
 // name 为结构体名称，可以为空；
-func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name string, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList) (*Struct, error) {
+func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name string, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList, fts map[string]types.Type) (*Struct, error) {
 	size := st.Fields.NumFields()
 	s := &Struct{
 		name:   name,
@@ -120,12 +120,21 @@ func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name st
 			s.docs = append(s.docs, doc)
 			s.tags = append(s.tags, tag)
 		case 1:
-			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, f.Names[0].Name, typ, false))
+			name := f.Names[0].Name
+			if t, found := fts[name]; found {
+				typ = t
+			}
+			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, name, typ, false))
 			s.docs = append(s.docs, doc)
 			s.tags = append(s.tags, tag)
 		default:
 			for _, n := range f.Names {
-				s.fields = append(s.fields, types.NewField(f.Pos(), pkg, n.Name, typ, false))
+				name := n.Name
+				if t, found := fts[name]; found {
+					typ = t
+				}
+
+				s.fields = append(s.fields, types.NewField(f.Pos(), pkg, name, typ, false))
 				s.docs = append(s.docs, doc)
 				s.tags = append(s.tags, tag)
 			}
@@ -161,7 +170,7 @@ func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typ
 //
 // path 为完整的类型名，需要包含路径部分。完整格式如下：
 //
-//	[prefix][path.]type[[type param]]
+//	[prefix][path.]type[[type param]][<fields>]
 //
 // 其中 prefix 表示类型修改的前缀，可以有以下三种格式：
 //   - [] 表示数组；
@@ -170,10 +179,16 @@ func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typ
 //
 // path 表示类型的包路径，如果是非内置类型，该值是必须的；
 // type param 表示泛型的实参，比如 [int, float] 等；
+// fields 用于指定替换 type 中的字段，格式为：<field=typePath>；
 // path 拥有以下两个特殊值：
 //   - {} 表示空值，将返回 nil, true
 //   - map 或是 any 将返回 [types.InterfaceType]
 func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, error) {
+	path, fts, err := pkgs.splitFieldTypes(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
 	path, tl, err := pkgs.splitTypeParams(ctx, path)
 	if err != nil {
 		return nil, err
@@ -195,7 +210,7 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 		basicType = path[last+1:]
 	}
 
-	typ, err := pkgs.typeOfPath(ctx, path, basicType, nil, tl, nil)
+	typ, err := pkgs.typeOfPath(ctx, path, basicType, nil, tl, nil, fts)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +222,7 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast.File, expr ast.Expr, self *Struct, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList) (types.Type, error) {
 	switch e := expr.(type) {
 	case *ast.SelectorExpr: // type x path.struct
-		return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(e, f), "", doc, tl, tps)
+		return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(e, f), "", doc, tl, tps, nil)
 	case *ast.Ident: // type x y，或是 struct{ f1 T } 中的 T
 		if self != nil && e.Name == self.String() {
 			return self, nil
@@ -236,9 +251,9 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 			}
 		}
 
-		return pkgs.typeOfPath(ctx, name, basic, doc, tl, tps)
+		return pkgs.typeOfPath(ctx, name, basic, doc, tl, tps, nil)
 	case *ast.StructType:
-		return pkgs.newStruct(ctx, pkg, "", e, f, tl, tps)
+		return pkgs.newStruct(ctx, pkg, "", e, f, tl, tps, nil)
 	case *ast.ArrayType: // type x []y
 		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.Elt, self, doc, tl, tps)
 		if err != nil {
@@ -289,7 +304,8 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 // 如果存在类型为 [types.Named]，会被包装为 [Named]。
 // 可能存在 type uint string 之类的定义，basicType 表示 path 找不到时是否需要按 basicType 查找基本的内置类型。
 // doc 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是字段类型可以自己指定此值；
-func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList) (typ types.Type, err error) {
+// fts 可以为空；
+func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList, fts map[string]types.Type) (typ types.Type, err error) {
 	obj, spec, f, found := pkgs.lookup(ctx, path)
 	if !found {
 		if basicType != "" {
@@ -310,7 +326,7 @@ func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, do
 	}
 
 	if st, ok := spec.Type.(*ast.StructType); ok {
-		typ, err = pkgs.newStruct(ctx, tn.Pkg(), spec.Name.Name, st, f, tl, obj.Type().(*types.Named).TypeParams())
+		typ, err = pkgs.newStruct(ctx, tn.Pkg(), spec.Name.Name, st, f, tl, obj.Type().(*types.Named).TypeParams(), fts)
 	} else {
 		if doc == nil {
 			doc = getDoc(spec.Doc, spec.Comment)

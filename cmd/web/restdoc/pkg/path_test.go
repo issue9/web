@@ -5,11 +5,43 @@
 package pkg
 
 import (
+	"context"
 	"go/types"
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
+
+func TestSplitFieldTypes(t *testing.T) {
+	a := assert.New(t, false)
+	l := loggertest.New(a)
+	p := New(l.Logger)
+	a.NotNil(p)
+	p.ScanDir(context.Background(), "./testdir", true)
+
+	path, ts, err := p.splitFieldTypes(context.Background(), "<f1=int>")
+	a.NotError(err).
+		Empty(path).
+		Equal(ts, map[string]types.Type{"f1": types.Typ[types.Int]})
+
+	path, ts, err = p.splitFieldTypes(context.Background(), "t1<f1=int>")
+	a.NotError(err).
+		Equal(path, "t1").
+		Equal(ts, map[string]types.Type{"f1": types.Typ[types.Int]})
+
+	path, ts, err = p.splitFieldTypes(context.Background(), "t1<f1=int,f2=uint8>")
+	a.NotError(err).
+		Equal(path, "t1").
+		Equal(ts, map[string]types.Type{"f1": types.Typ[types.Int], "f2": types.Typ[types.Uint8]})
+
+	path, ts, err = p.splitFieldTypes(context.Background(), "t1<f1=int,f2=github.com/issue9/web/restdoc/pkg.S<S=int>>")
+	a.NotError(err).Equal(path, "t1")
+	named, ok := ts["f2"].(*Named)
+	a.True(ok, "%+T", ts["f2"])
+	st, ok := named.Next().(*Struct)
+	a.True(ok).NotNil(st).Equal(st.Field(2).Type(), types.Typ[types.Int])
+}
 
 func TestSplitTypes(t *testing.T) {
 	a := assert.New(t, false)

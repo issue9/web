@@ -267,8 +267,11 @@ messages:
             schema
 
             类似 godoc 在注释中引用对象，restdoc 也是通过注释指向一个具体对象，将其解析为 openapi.Schema 对象；
-            格式为：[modpath.]object-name，modpath 为引用对象的导入路径，object-name 为引用的对象名，比如：
-            github.com/issue9/web.Problem。如果是数组可以加上 [] 作为前缀。{} 表示空对象。
+            格式为：[prefix][modpath.]object[[type-list]][<field-list>]。
+            prefix 为类型的附加信息，比如指针可用以 *，数组可以用 []；
+            modpath 为引用对象的导入路径，object 为引用的对象名，比如：github.com/issue9/web.Problem；
+            如果 object 为泛型时，type-list 指定泛型的实参列表；而 field-list 用于替换指定 object 中的字段类型，
+            格式为 <field1=type,field2=type2>。
 
             类型文档中可以通过使用以下标签指定特殊属性：
 
@@ -280,7 +283,7 @@ messages:
 
             注意事项
 
-              不支持 GOPATH 模式，map 将会被转换成空的 Object 对象。
+              不支持 GOPATH 模式。
     - key: save restdoc to %s
       message:
         msg: 保存 openapi 文档至 %s

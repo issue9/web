@@ -19,7 +19,67 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// 拆分 path 中的类型信息
+// 拆分指定的字段类型
+//
+// type<field=type1,field2=type2<field1=type3>>
+func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p string, fts map[string]types.Type, err error) {
+	index := strings.IndexByte(path, '<')
+	if index < 0 {
+		return path, nil, nil
+	}
+
+	if path[len(path)-1] != '>' {
+		panic(fmt.Sprintf("%s 的最后一个字符必须得是 >", path))
+	}
+
+	p = path[:index]
+	fts = make(map[string]types.Type, 3)
+
+	appendTS := func(path string) error {
+		ps := strings.SplitN(path, "=", 2)
+		if len(ps) != 2 {
+			panic(fmt.Sprintf("无效的语法 %s",path))
+		}
+
+		t, err := pkgs.TypeOf(ctx, ps[1])
+		if err != nil {
+			return err
+		}
+
+		fts[ps[0]] = t
+		return nil
+	}
+
+	var depth int
+	start := index + 1
+LOOP:
+	for i := start; i < len(path); i++ {
+		switch path[i] {
+		case '<':
+			depth++
+		case '>':
+			depth--
+		case ',':
+			if depth > 0 {
+				continue LOOP
+			}
+			if err := appendTS(path[start:i]); err != nil {
+				return "", nil, err
+			}
+
+			i++ // 忽略当前字符
+			start = i
+		}
+	}
+
+	if err := appendTS(path[start : len(path)-1]); err != nil {
+		return "", nil, err
+	}
+
+	return p, fts, nil
+}
+
+// 拆分 path 中表示类似的前缀，比如 [] 表示数组
 func splitTypes(path string) (wrap func(types.Type) types.Type, p string) {
 	funcs := []func(types.Type) types.Type{}
 

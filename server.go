@@ -88,7 +88,7 @@ type Server interface {
 	// 这适合从标准库的请求中创建 [web.Context] 对象。
 	// [types.Route] 类型的参数需要用户通过 [types.NewContext] 自行创建。
 	//
-	// NOTE: 由此方法创建的对象在整个会话结束后会被回收.
+	// NOTE: 由此方法创建的对象在整个会话结束后会被回收。
 	NewContext(http.ResponseWriter, *http.Request, types.Route) *Context
 
 	// NewClient 基于当前对象的相关字段创建 [Client] 对象

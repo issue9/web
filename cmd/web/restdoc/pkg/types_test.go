@@ -21,6 +21,7 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 	a := assert.New(t, false)
 	l := loggertest.New(a)
 	p := New(l.Logger)
+	a.NotNil(p)
 
 	p.ScanDir(context.Background(), "./testdir", true)
 
