@@ -156,10 +156,9 @@ func (d *data) parse(p *localeutil.Printer, outputObj string, files map[string]*
 }
 
 func (d *data) append(o *object) {
-	if slices.IndexFunc(d.Objects, func(obj *object) bool { return obj.Title == o.Title }) >= 0 {
-		return
+	if slices.IndexFunc(d.Objects, func(obj *object) bool { return obj.Title == o.Title }) < 0 {
+		d.Objects = append(d.Objects, o)
 	}
-	d.Objects = append(d.Objects, o)
 }
 
 func (d *data) parseObject(obj *ast.TypeSpec) []string {

@@ -240,8 +240,9 @@ messages:
               @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
               @doc url 扩展文档；
               @openapi path 引入另一个 openapi 文档，path 可以是一个 uri，比如 https://example.com/openapi.yaml，
+                uri 支持 https、http 和 file 协议，如果是相对路径，表示相对于当前文件，且不能带 file:// 协议；
                 或是具体的 Go 包下的目录，比如 github.com/issue9/test/v2@v2.0.1 openapi.yaml，
-                表示 test/v2 下的 openapi.yaml 文件；
+                表示 test/v2 下的 openapi.yaml 文件。
 
             # api method path summary
 

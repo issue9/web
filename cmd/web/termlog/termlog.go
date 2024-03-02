@@ -14,7 +14,7 @@ import (
 
 // New 声明用于终端输出的日志
 //
-// 如果初始化时出错，则会直接 Panic。
+// 如果初始化时出错，则会直接 panic。
 func New(p *localeutil.Printer, out io.Writer) *logs.Logs {
 	return logs.New(
 		logs.NewTermHandler(out, nil),

@@ -6,16 +6,33 @@
 package restdoc
 
 import (
+	"flag"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/cmdopt"
 	"github.com/issue9/source"
 	"github.com/issue9/web"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
+
+	"github.com/issue9/web/cmd/web/locales"
 )
+
+func TestInit(t *testing.T) {
+	a := assert.New(t, false)
+	opt := cmdopt.New(os.Stdout, flag.ContinueOnError, "", nil, nil)
+	p, err := locales.NewPrinter("zh-CN")
+	a.NotError(err).NotNil(p)
+	Init(opt, p)
+
+	path := "./parser/testdata/restdoc.out.yaml"
+	err = opt.Exec([]string{"restdoc", "-o=" + path, "./parser/testdata"})
+	a.NotError(err).FileExists(path)
+}
 
 func TestGetRealPath(t *testing.T) {
 	a := assert.New(t, false)
@@ -29,6 +46,5 @@ func TestGetRealPath(t *testing.T) {
 		True(strings.HasSuffix(p1, "web@"+web.Version))
 
 	p2, err := getRealPath(true, mod, &modfile.Require{Mod: module.Version{Path: "github.com/issue9/web", Version: web.Version}}, dir)
-	a.NotError(err).
-		NotEqual(p1, p2)
+	a.NotError(err).NotEqual(p1, p2)
 }

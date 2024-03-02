@@ -41,22 +41,16 @@ const defaultOutput = "./restdoc.json"
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("restdoc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		o := fs.String("o", defaultOutput, outputUsage.LocaleString(p))
-		r := fs.Bool("r", true, recursiveUsage.LocaleString(p))
+		output := fs.String("o", defaultOutput, outputUsage.LocaleString(p))
+		recursive := fs.Bool("r", true, recursiveUsage.LocaleString(p))
 		t := fs.String("t", "", tagUsage.LocaleString(p))
-		d := fs.Bool("d", false, depUsage.LocaleString(p))
+		dep := fs.Bool("d", false, depUsage.LocaleString(p))
 		urlPrefix := fs.String("p", "", prefixUsage.LocaleString(p))
 		replace := fs.Bool("replace", true, replaceUsage.LocaleString(p))
 
 		return func(io.Writer) error {
 			ctx := context.Background()
-			tl := termlog.New(p, os.Stdout)
-			l := logger.New(tl)
-
-			var tags []string
-			if *t != "" {
-				tags = strings.Split(*t, ",")
-			}
+			l := logger.New(termlog.New(p, os.Stdout))
 
 			go func() {
 				if msg := recover(); msg != nil {
@@ -64,11 +58,16 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				}
 			}()
 
+			var tags []string
+			if *t != "" {
+				tags = strings.Split(*t, ",")
+			}
 			dp := parser.New(l, *urlPrefix, tags)
-			for _, dir := range fs.Args() {
-				dp.AddDir(ctx, dir, *r)
 
-				if *d {
+			for _, dir := range fs.Args() {
+				dp.AddDir(ctx, dir, *recursive)
+
+				if *dep {
 					path, mod, err := source.ModFile(dir)
 					if err != nil {
 						return err
@@ -83,16 +82,16 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 						if err != nil {
 							return err
 						}
-						dp.AddDir(ctx, modDir, *r)
+						dp.AddDir(ctx, modDir, *recursive)
 					}
 				}
 			}
 
 			if doc := dp.Parse(ctx); doc != nil {
-				if err := doc.SaveAs(*o); err != nil {
+				if err := doc.SaveAs(*output); err != nil {
 					return err
 				}
-				l.Info(web.NewLocaleError("save restdoc to %s", *o))
+				l.Info(web.NewLocaleError("save restdoc to %s", *output))
 			}
 			return nil
 		}

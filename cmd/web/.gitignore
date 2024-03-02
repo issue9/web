@@ -4,3 +4,4 @@ web.exe
 *.out.yaml
 *.out.yml
 *.out.json
+*.out.html

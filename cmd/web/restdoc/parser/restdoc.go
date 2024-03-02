@@ -27,7 +27,7 @@ import (
 // lines 表示第二行开始的所有内容，每一行不应该包含结尾的换行符；
 // ln 表示 title 所在行的行号，在出错时，用于记录日志；
 // filename 表示所在的文件，在出错时，用于记录日志；
-func (p *Parser) parseRESTDoc(ctx context.Context, t *openapi.OpenAPI, currPath, title string, lines []string, ln int, filename string) {
+func (p *Parser) parseRESTDoc(ctx context.Context, t *openapi.OpenAPI, currPkgPath, title string, lines []string, ln int, filename string) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			p.l.Error(msg, filename, ln)
@@ -86,7 +86,7 @@ LOOP:
 		case "@term": // @term https://example.com/term.html
 			info.TermsOfService = suffix
 		case "@version": // @version 1.0.0
-			v, err := p.parseVersion(suffix, currPath)
+			v, err := p.parseVersion(suffix, currPkgPath)
 			if err != nil {
 				p.syntaxError("@version", 1, filename, ln+i)
 				continue LOOP
@@ -245,7 +245,7 @@ LOOP:
 	}
 
 	for l, s := range wait {
-		if !p.parseResponse(ctx, p.resps, t, s, filename, currPath, l) {
+		if !p.parseResponse(ctx, p.resps, t, s, filename, currPkgPath, l) {
 			return
 		}
 	}
@@ -337,7 +337,7 @@ func parseScopes(scope string) map[string]string {
 //
 // 除了 info 之外的内容都将复制至 target。
 // 包含以下几种格式：
-//   - URI，支持 http、https 和 file。如果要指定相对路径的文件，需要省略 file:// 前缀；
+//   - URI，支持 http、https 和 file。如果相对路径，需要省略 file:// 前缀，表示相对于 filename；
 //   - 相对于 Go 模块的文件地址，比如 github.com/issue9/cmfx@v0.1.1 restdoc.yaml
 func (p *Parser) parseOpenAPI(target *openapi.OpenAPI, suffix, filename string, ln int) {
 	words, l := utils.SplitSpaceN(suffix, 2)
@@ -353,6 +353,9 @@ func (p *Parser) parseOpenAPI(target *openapi.OpenAPI, suffix, filename string, 
 
 		if uri.Scheme != "http" && uri.Scheme != "https" { // 除去 http 和 https 之外都默认为 file
 			uri.Scheme = "" // 在 openapi3.Loader 中，scheme == "file" 时，可以省略。
+			if !filepath.IsAbs(uri.Path) {
+				uri.Path = filepath.Join(filepath.Dir(filename), uri.Path) // 相对于指定的文件的目录
+			}
 		}
 	case 2:
 		modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
