@@ -34,7 +34,7 @@ jobs:
       - name: Test
         env:
           LANG: en
-        run: go test $(go list ./... | grep -v cache/caches) -v -coverprofile='coverage.txt' -covermode=atomic
+        run: go test $(go list ./... | grep -v cache/caches) -v -coverprofile='coverage.txt' -covermode=atomic -p=1 -parallel=1
 
       - name: Upload Coverage report
         uses: codecov/codecov-action@v4
