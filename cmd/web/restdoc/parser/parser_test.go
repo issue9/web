@@ -56,7 +56,7 @@ func TestParser_Parse(t *testing.T) {
 	a.NotNil(login).
 		Length(login.Parameters, 6).
 		Equal(login.Parameters[3].Value.Name, "sex").
-		NotEmpty(login.Parameters[3].Value.Schema.Ref).
+		Empty(login.Parameters[3].Value.Schema.Ref). // 查询参数不保存在 schema，也就没有 Ref 的必要
 		Equal(login.Parameters[4].Value.Name, "type").
 		Equal(login.Parameters[4].Value.Schema.Value.Type, openapi3.TypeString).
 		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).

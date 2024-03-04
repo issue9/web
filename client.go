@@ -34,9 +34,9 @@ type Client struct {
 	requestIDGen func() string
 }
 
-// NewClient 创建 Client 实例
+// NewClient 创建 [Client] 实例
 //
-// client 要以为空，表示采用 &http.Client{} 作为默认值；
+// client 如果为空，表示采用 &http.Client{} 作为默认值；
 // marshalName 和 marshal 表示编码的名称和方法；
 // requestIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
 // requestIDGen 表示生成 x-request-id 值的方法；

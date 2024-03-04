@@ -35,7 +35,6 @@ func (p *Parser) parseAPI(ctx context.Context, t *openapi.OpenAPI, currPath, suf
 	method, path, summary := words[0], words[1], words[2]
 	opt := openapi3.NewOperation()
 	opt.Summary = summary
-	opt.Security = openapi3.NewSecurityRequirements()
 
 	resps := map[string]*openapi3.Response{}
 
@@ -132,10 +131,9 @@ func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3
 	for _, name := range keys {
 		v := s.Value.Properties[name]
 		opt.AddParameter(&openapi3.Parameter{
-			In:          openapi3.ParameterInQuery,
-			Schema:      v,
-			Description: v.Value.Description,
-			Name:        name,
+			In:     openapi3.ParameterInQuery,
+			Schema: v,
+			Name:   name,
 		})
 	}
 }
@@ -179,18 +177,20 @@ func (p *Parser) addCookieHeader(tag string, opt *openapi3.Operation, in, suffix
 
 // @security name args
 func (p *Parser) parseSecurity(opt *openapi3.Operation, suffix string) {
-	words, l := utils.SplitSpaceN(suffix, 2)
-	var keys []string
-	switch l {
+	var req openapi3.SecurityRequirement
+	switch words, l := utils.SplitSpaceN(suffix, 2); l {
 	case 0: // 相当于取消全局定义的数据
-		opt.Security.With(openapi3.NewSecurityRequirement())
-		return
+		req = openapi3.NewSecurityRequirement()
 	case 1: // 只有名称，没有参数
+		req = openapi3.NewSecurityRequirement()
+		req[words[0]] = nil
 	case 2:
-		keys = strings.Fields(words[1])
+		req = openapi3.NewSecurityRequirement()
+		req[words[0]] = strings.Fields(words[1])
 	}
 
-	req := openapi3.NewSecurityRequirement()
-	req[words[0]] = keys
+	if opt.Security == nil {
+		opt.Security = openapi3.NewSecurityRequirements()
+	}
 	opt.Security.With(req)
 }
