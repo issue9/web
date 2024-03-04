@@ -49,8 +49,8 @@ func TestNew(t *testing.T) {
 		Equal(srv.Location(), time.Local)
 
 	s, ok := srv.(*httpServer)
-	a.True(ok).Equal(s.httpServer.Handler, s).
-		Equal(s.httpServer.Addr, "")
+	a.True(ok).Equal(s.hs.Handler, s).
+		Equal(s.hs.Addr, "")
 
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
@@ -205,12 +205,17 @@ func TestHTTPServer_Close(t *testing.T) {
 
 	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
 
-	// 连接被关闭，返回错误内容
+	// 尝试关闭连接
 	a.Equal(0, c)
 	resp, err := http.Get("http://localhost:8080/close")
-	time.Sleep(500 * time.Microsecond) // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-	a.Error(err).Nil(resp).True(c > 0)
+	a.Wait(500 * time.Microsecond). // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
+					NotError(err).NotNil(resp).True(c > 0)
 
+	// 连接被关闭，返回错误内容
+	resp, err = http.Get("http://localhost:8080/close")
+	a.Error(err).Nil(resp)
+
+	// 连接被关闭，返回错误内容
 	resp, err = http.Get("http://localhost:8080/test")
 	a.Error(err).Nil(resp)
 }

@@ -29,6 +29,19 @@ type App struct {
 	restartLock sync.Mutex
 }
 
+func (app *App) getServer() web.Server {
+	app.srvLock.RLock()
+	s := app.srv
+	app.srvLock.RUnlock()
+	return s
+}
+
+func (app *App) setServer(s web.Server) {
+	app.srvLock.Lock()
+	app.srv = s
+	app.srvLock.Unlock()
+}
+
 func (app *App) init() (err error) {
 	if app.NewServer == nil {
 		panic("app.NewServer 不能为空")
@@ -46,7 +59,7 @@ func (app *App) Exec() error {
 
 RESTART:
 	app.restart = false
-	err := app.srv.Serve()
+	err := app.getServer().Serve()
 	if app.restart { // 等待 Serve 过程中，如果调用 RestartServer，会将 app.restart 设置为 true。
 		goto RESTART
 	}
@@ -62,19 +75,14 @@ func (app *App) RestartServer() {
 
 	app.restart = true
 
-	// 先拿到旧服务，以便在新服务初始化失败时能正确输出日志。
-	app.srvLock.RLock()
-	old := app.srv
-	app.srvLock.RUnlock()
+	old := app.getServer() // 先拿到旧服务，以便在新服务初始化失败时能正确输出日志。
 
 	srv, err := app.NewServer()
 	if err != nil {
 		old.Logs().ERROR().Error(err)
 		return
 	}
-	app.srvLock.Lock()
-	app.srv = srv
-	app.srvLock.Unlock()
+	app.setServer(srv)
 
 	old.Close(app.ShutdownTimeout) // 新服务声明成功，尝试关闭旧服务。
 }

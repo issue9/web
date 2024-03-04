@@ -49,22 +49,22 @@ func TestSignalHUP(t *testing.T) {
 	}()
 	time.Sleep(2000 * time.Millisecond) // 等待 go func 启动完成
 	a.NotNil(cmd.app).
-		NotNil(cmd.app.srv)
+		NotNil(cmd.app.getServer())
 
 	p, err := os.FindProcess(os.Getpid())
 	a.NotError(err).NotNil(p)
 
 	// hup1
-	t1 := cmd.app.srv.Uptime()
+	t1 := cmd.app.getServer().Uptime()
 	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
-	t2 := cmd.app.srv.Uptime()
+	t2 := cmd.app.getServer().Uptime()
 	a.True(t2.After(t1))
 
 	// hup2
 	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
-	t3 := cmd.app.srv.Uptime()
+	t3 := cmd.app.getServer().Uptime()
 	a.True(t3.After(t2))
 
-	cmd.app.srv.Close(0)
+	cmd.app.getServer().Close(0)
 	<-exit
 }

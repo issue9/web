@@ -52,12 +52,12 @@ func TestCLI(t *testing.T) {
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
 
 	// restart1
-	s1 := cmd.app.srv
+	s1 := cmd.app.getServer()
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
 	cmd.RestartServer()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
-	s2 := cmd.app.srv
+	s2 := cmd.app.getServer()
 	t2 := s2.Uptime()
 	a.True(t2.After(t1)).NotEqual(s1, s2)
 
@@ -65,10 +65,10 @@ func TestCLI(t *testing.T) {
 	cmd.Name = "restart2"
 	cmd.RestartServer()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
-	t3 := cmd.app.srv.Uptime()
+	t3 := cmd.app.getServer().Uptime()
 	a.True(t3.After(t2))
 
-	cmd.app.srv.Close(0)
+	cmd.app.getServer().Close(0)
 	<-exit
 }
 

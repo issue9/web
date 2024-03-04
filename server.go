@@ -63,12 +63,12 @@ type Server interface {
 	// Serve 开始 HTTP 服务
 	//
 	// 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
-	// 始终返回非空的错误对象，如果是被 [Server.Close] 关闭的，也将返回 [http.ErrServerClosed]。
+	// 始终返回非空的错误对象，如果是由 [Server.Close] 关闭的，将返回 [http.ErrServerClosed]。
 	Serve() error
 
 	// Close 触发关闭服务事件
 	//
-	// 需要等到 [Server.Serve] 返回才表示服务结束。
+	// 只是触发事件，需要等到 [Server.Serve] 返回才表示服务真正结束。
 	// 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 	Close(shutdownTimeout time.Duration)
 

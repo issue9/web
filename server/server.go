@@ -26,9 +26,9 @@ import (
 type (
 	httpServer struct {
 		*web.InternalServer
-		httpServer *http.Server
-		state      web.State
-		closed     chan struct{}
+		hs     *http.Server
+		state  web.State
+		closed chan struct{}
 	}
 
 	service struct {
@@ -45,16 +45,16 @@ type (
 
 func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	srv := &httpServer{
-		httpServer: o.HTTPServer,
-		state:      web.Stopped,
-		closed:     make(chan struct{}, 1),
+		hs:     o.HTTPServer,
+		state:  web.Stopped,
+		closed: make(chan struct{}, 1),
 	}
 	if s == nil {
 		s = srv
 	}
 
 	srv.InternalServer = o.internalServer(name, version, s)
-	srv.httpServer.Handler = srv
+	srv.hs.Handler = srv
 
 	for _, f := range o.Init { // NOTE: 需要保证在最后
 		f(srv)
@@ -83,10 +83,10 @@ func (srv *httpServer) Serve() (err error) {
 	}
 	srv.state = web.Running
 
-	if c := srv.httpServer.TLSConfig; c != nil && (len(c.Certificates) > 0 || c.GetCertificate != nil) {
-		err = srv.httpServer.ListenAndServeTLS("", "")
+	if c := srv.hs.TLSConfig; c != nil && (len(c.Certificates) > 0 || c.GetCertificate != nil) {
+		err = srv.hs.ListenAndServeTLS("", "")
 	} else {
-		err = srv.httpServer.ListenAndServe()
+		err = srv.hs.ListenAndServe()
 	}
 
 	if errors.Is(err, http.ErrServerClosed) {
@@ -101,28 +101,25 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 	if srv.State() != web.Running {
 		return
 	}
+	srv.state = web.Stopped // 调用 Close 即设置状态
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 
 	defer func() {
 		srv.InternalServer.Close()
-		srv.state = web.Stopped
-		srv.closed <- struct{}{} // NOTE: 保证最后执行
+		cancel()
+
+		// [http.Server.Shutdown] 会让 [http.Server.ListenAndServe] 等方法直接返回，
+		// 所以由 srv.close 保证在当前函数返回之后再通知 [Server.Serve] 退出。
+		srv.closed <- struct{}{}
 	}()
 
-	if shutdownTimeout == 0 {
-		if err := srv.httpServer.Close(); err != nil {
-			srv.Logs().ERROR().Error(err)
-		}
-		return
-	}
-
-	c, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-	defer cancel()
-	if err := srv.httpServer.Shutdown(c); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+	if err := srv.hs.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
 		srv.Logs().ERROR().Error(err)
 	}
 }
 
-// NewService 将 [web.Server] 作为微服务节点
+// NewService 声明微服务节点
 func NewService(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
