@@ -16,6 +16,7 @@ package testdata
 // @resp-header 201 h2011 h1 desc
 // @resp-header 201 h2012 h2 desc
 // @resp 200 * resp desc
+// @security oauth-code
 //
 // ## callback onData POST {$request.query.url} 回调1
 // @req * req 登录的账号信息

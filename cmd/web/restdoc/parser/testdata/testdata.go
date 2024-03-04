@@ -23,6 +23,7 @@
 // @openapi ./openapi.yaml
 //
 // @scy-code oauth-code https://example.com/auth https://example.com/token https://example.com/refresh read:info,write:info
+// @security users,admin ouath-code
 //
 // # 其它文档说明
 //

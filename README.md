@@ -2,7 +2,7 @@
 
 [![Test](https://github.com/issue9/web/actions/workflows/test.yml/badge.svg)](https://github.com/issue9/web/actions/workflows/test.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/issue9/web)](https://goreportcard.com/report/github.com/issue9/web)
-[![codecov](https://codecov.io/gh/issue9/web/branch/master/graph/badge.svg)](https://codecov.io/gh/issue9/web)
+[![codecov](https://codecov.io/gh/issue9/web/graph/badge.svg?token=D5y3FOJk8A)](https://codecov.io/gh/issue9/web)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/issue9/web)](https://pkg.go.dev/github.com/issue9/web)
 ![Go version](https://img.shields.io/github/go-mod/go-version/issue9/web)
 ![License](https://img.shields.io/github/license/issue9/web)

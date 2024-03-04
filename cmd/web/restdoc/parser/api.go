@@ -35,6 +35,7 @@ func (p *Parser) parseAPI(ctx context.Context, t *openapi.OpenAPI, currPath, suf
 	method, path, summary := words[0], words[1], words[2]
 	opt := openapi3.NewOperation()
 	opt.Summary = summary
+	opt.Security = openapi3.NewSecurityRequirements()
 
 	resps := map[string]*openapi3.Response{}
 
@@ -73,6 +74,8 @@ LOOP:
 			if !p.parseResponseHeader(resps, suffix, filename, ln+index) {
 				return
 			}
+		case "@security": // @security name args
+			p.parseSecurity(opt, suffix)
 		case "##": // 可能是 ## callback
 			delta := p.parseCallback(ctx, t, opt, currPath, suffix, lines[index:], ln+index, filename)
 			index += delta
@@ -172,4 +175,22 @@ func (p *Parser) addCookieHeader(tag string, opt *openapi3.Operation, in, suffix
 
 	s := openapi3.NewSchemaRef("", openapi3.NewStringSchema())
 	opt.AddParameter(&openapi3.Parameter{In: in, Schema: s, Name: words[0], Description: words[1]})
+}
+
+// @security name args
+func (p *Parser) parseSecurity(opt *openapi3.Operation, suffix string) {
+	words, l := utils.SplitSpaceN(suffix, 2)
+	var keys []string
+	switch l {
+	case 0: // 相当于取消全局定义的数据
+		opt.Security.With(openapi3.NewSecurityRequirement())
+		return
+	case 1: // 只有名称，没有参数
+	case 2:
+		keys = strings.Fields(words[1])
+	}
+
+	req := openapi3.NewSecurityRequirement()
+	req[words[0]] = keys
+	opt.Security.With(req)
 }

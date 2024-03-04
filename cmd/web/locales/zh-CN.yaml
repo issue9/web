@@ -236,6 +236,10 @@ messages:
               @media application/json application/xml 指定了所有 api 默认的内容类型；
               @header name desc 公共报头；
               @cookie name desc 公共的 cookie；
+              @security tags name args 指定所有 API 的验证接口。
+                tags 为支持的标签，多个标签用逗号分隔，可以采用 * 表示支持所有。
+                name 为 @scy-* 系列定义的验证接口，args 是以空格分隔的参数列表。
+                args 为传递给由 name 指定的接口参数，可以为空；
               @resp status media object.path desc 定义了全局返回对象，会被附加在每个 API 上。一般用于指定错误处理对象；
               @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
               @doc url 扩展文档；
@@ -260,6 +264,10 @@ messages:
               @req media object.path desc 定义请求格式，media 如果采用全局指定的默认值，可以用 *，如果是多个值，用逗号分隔；
               @resp status media object.path desc 指定返回的数据类型；
               @resp-header status key desc 指定报头；
+              @security name args 指定所有 API 的验证接口。
+                name 为 @scy-* 系列定义的验证接口，args 是以空格分隔的参数列表。
+                args 为传递给由 name 指定的接口参数，可以为空。
+                如果 @security 之后为空，则表示当前接口不需要验证；
 
               ## callback name method url desc
 

@@ -47,7 +47,7 @@ func TestParser_Parse(t *testing.T) {
 	a.NotNil(d).
 		Length(l.Records[logs.LevelError], 0).
 		Length(l.Records[logs.LevelWarn], 0).
-		Length(l.Records[logs.LevelInfo], 2) // scan dir/ add api 的提示
+		Length(l.Records[logs.LevelInfo], 2) // scan dir / add api 的提示
 
 	a.NotNil(d.Doc().Info).
 		Equal(d.Doc().Info.Version, "1.0.0")

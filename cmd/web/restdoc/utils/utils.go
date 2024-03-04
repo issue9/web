@@ -31,7 +31,7 @@ func CutTag(line string) (tag, suffix string) {
 // SplitSpaceN 以空格分隔字符串
 //
 // maxSize 表示最多分隔的数量，如果无法达到 maxSize 的数量，则采用空字符串代替剩余的元素，
-// 返回值 length 表示实际的元素数量。-1 表示按实际的数量拆分，length 始终等于 len(ret)。
+// 返回值 length 表示返回数组中非空元素的数量。-1 表示按实际的数量拆分，此时 length 始终等于 len(ret)。
 func SplitSpaceN(s string, maxSize int) (ret []string, length int) {
 	if maxSize == 0 {
 		panic("参数 maxSize 不能为 0")

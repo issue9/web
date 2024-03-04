@@ -62,20 +62,16 @@ LOOP:
 			if !p.isIgnoreTag(words[0]) {
 				t.Doc().Tags = append(t.Doc().Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
 			}
-		case "@server": // @server tag https://example.com *desc
+		case "@server": // @server tags https://example.com *desc
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l < 2 {
 				p.syntaxError("@server", 2, filename, ln+i)
 				continue LOOP
 			}
-			tag := words[0]
-			if tag == "*" {
-				tag = ""
+
+			if tag := words[0]; tag == "" || tag == "*" || !p.isIgnoreTag(strings.Split(tag, ",")...) {
+				t.Doc().Servers = append(t.Doc().Servers, &openapi3.Server{URL: words[1], Description: words[2]})
 			}
-			if tag != "" && p.isIgnoreTag(strings.Split(tag, ",")...) {
-				continue
-			}
-			t.Doc().Servers = append(t.Doc().Servers, &openapi3.Server{URL: words[1], Description: words[2]})
 		case "@license": // @license MIT *https://example.com/license
 			words, l := utils.SplitSpaceN(suffix, 2)
 			if l < 1 {
@@ -121,6 +117,10 @@ LOOP:
 		case "@resp-header": // @resp-header 4XX h1 *desc
 			if !p.parseResponseHeader(p.resps, suffix, filename, ln+i) {
 				continue LOOP
+			}
+		case "@security": // @security tags securityName args1 args2
+			if !p.parseCommonSecurity(t, suffix, filename, ln+i) {
+				continue
 			}
 		case "@scy-http": // @scy-http name scheme format *desc
 			words, l := utils.SplitSpaceN(suffix, 4)
@@ -255,6 +255,29 @@ LOOP:
 	}
 
 	t.Doc().Info = info
+}
+
+// @security tags name args
+func (p *Parser) parseCommonSecurity(doc *openapi.OpenAPI, suffix, filename string, ln int) bool {
+	words, l := utils.SplitSpaceN(suffix, 3)
+	if l < 2 {
+		p.syntaxError("@security", 2, filename, ln)
+		return false
+	}
+
+	if tag := words[0]; tag != "" && tag != "*" && p.isIgnoreTag(strings.Split(tag, ",")...) {
+		return true
+	}
+
+	var keys []string
+	if l == 3 {
+		keys = strings.Fields(words[2])
+	}
+
+	req := openapi3.NewSecurityRequirement()
+	req[words[1]] = keys
+	doc.Doc().Security.With(req)
+	return true
 }
 
 // @version 1.0.0 // 直接指定版本号
