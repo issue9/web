@@ -32,7 +32,7 @@ type Registry interface {
 	// s 为调用者关联的 [web.Server] 对象；
 	Discover(name string, s web.Server) selector.Selector
 
-	// ReverseProxy 返回 name 对应的 selector.Selector
+	// ReverseProxy 返回 name 对应的 [httputil.ReverseProxy]
 	ReverseProxy(string, web.Server) *httputil.ReverseProxy
 }
 

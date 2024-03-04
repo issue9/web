@@ -1,6 +1,6 @@
 
 http:
-    port: :8084
+    port: :8080
     readTimeout: 3s
     headers:
         - key: H1
