@@ -6,7 +6,7 @@ jobs:
   test:
     name: cmd
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
         id: go
@@ -34,7 +34,7 @@ jobs:
         run: |
           cd cmd/web
           go vet -v ./...
-        
+
       - name: Test
         env:
           LANG: en
