@@ -195,11 +195,16 @@ type InternalServer struct {
 
 // InternalNewServer 声明 [InternalServer]
 //
-// s 为实际的 [Server] 接口对象，在 [InternalServer.NewContext] 需要用到此实例；
+// s 为实际的 [Server] 接口对象；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 // problemPrefix 可以为空；
 //
 // NOTE: 此为内部使用接函数，由调用者保证参数的正确性。
+//
+// NOTE: [Server] 的实现者，不应该重新实现 [InternalServer] 已经实现的接口，
+// 否则可能出现 [InternalServer] 中的调用与 [Server] 的实现调用不同的问题。
+// 比如重新实现了 [Server.Location]，那么将出现 [InternalServer] 内部的 Location
+// 与 新实现的 Location 返回不同值的情况。
 func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Logs, idgen func() string, l *locale.Locale, c cache.Driver, codec *Codec, requestIDKey, problemPrefix string, o ...RouterOption) *InternalServer {
 	is := &InternalServer{
 		server: s,

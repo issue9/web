@@ -23,7 +23,7 @@ var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 type (
 	// Problem 基于 [RFC7807] 用于描述错误信息的对象
 	//
-	// [RFC7807]: https://datatracker.ietf.org/doc/html/Problem
+	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
 		Type       string         `json:"type" xml:"type" form:"type"`
 		Title      string         `json:"title" xml:"title" form:"title"`
