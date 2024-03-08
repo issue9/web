@@ -6,7 +6,10 @@ package web
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/issue9/assert/v4"
@@ -26,6 +29,12 @@ var _ Locale = &locale.Locale{}
 type testServer struct {
 	*InternalServer
 	logBuf *bytes.Buffer
+}
+
+// 所有输出报头都是 201
+func onContext(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+	w.WriteHeader(http.StatusAccepted)
+	return w, r
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
@@ -64,3 +73,16 @@ func (s *testServer) Close(time.Duration) { s.InternalServer.Close() }
 func (s *testServer) Serve() error { panic("未实现") }
 
 func (s *testServer) State() State { panic("未实现") }
+
+func TestOnContextFunc(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a)
+	s.OnContext(onContext)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/path", nil)
+	ctx := s.NewContext(w, r, nil)
+	ctx.WriteHeader(http.StatusForbidden)
+	a.Equal(ctx.status, http.StatusForbidden).
+		Equal(w.Result().StatusCode, http.StatusAccepted)
+}

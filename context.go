@@ -74,6 +74,10 @@ type Context struct {
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+	for _, f := range s.contexts {
+		w, r = f(w, r)
+	}
+
 	id := r.Header.Get(s.requestIDKey)
 
 	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象

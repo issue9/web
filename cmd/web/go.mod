@@ -8,7 +8,7 @@ require (
 	github.com/issue9/assert/v4 v4.1.1
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.26.4
-	github.com/issue9/logs/v7 v7.4.3
+	github.com/issue9/logs/v7 v7.5.0
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/source v0.8.2
 	github.com/issue9/term/v3 v3.2.7
