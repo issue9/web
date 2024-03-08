@@ -35,6 +35,7 @@ var Locales = []fs.FS{
 
 // 一些多处用到的翻译项
 const (
+	InvalidFormat           = localeutil.StringPhrase("invalid format")
 	InvalidValue            = localeutil.StringPhrase("invalid value")
 	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
 	DuplicateValue          = localeutil.StringPhrase("duplicate value")
@@ -43,17 +44,21 @@ const (
 )
 
 // ShouldGreatThan 返回必须大于 n 的翻译项
-func ShouldGreatThan(n int) localeutil.Stringer {
-	return localeutil.Phrase("should great than %d", n)
-}
+func ShouldGreatThan(n int) localeutil.Stringer { return localeutil.Phrase("should great than %d", n) }
+
+//---------------------------- 以下为本地化的错误实例 -----------------------------
 
 var (
+	errInvalidFormat = localeutil.Error("invalid format")
 	errInvalidValue  = localeutil.Error("invalid value")
 	errCanNotBeEmpty = localeutil.Error("can not be empty")
+	errNotFound      = localeutil.Error("not found")
 )
+
+func ErrInvalidFormat() error { return errInvalidFormat }
 
 func ErrInvalidValue() error { return errInvalidValue }
 
 func ErrCanNotBeEmpty() error { return errCanNotBeEmpty }
 
-func ErrNotFound(s string) error { return localeutil.Error("%s not found", s) }
+func ErrNotFound() error { return errNotFound }

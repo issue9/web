@@ -206,7 +206,7 @@ func (conf *configOf[T]) sanitizeCompresses() *web.FieldError {
 		enc, found := compressorFactory.get(e.ID)
 		if !found {
 			field := "compresses[" + strconv.Itoa(index) + "].id"
-			return web.NewFieldError(field, locales.ErrNotFound(e.ID))
+			return web.NewFieldError(field, locales.ErrNotFound())
 		}
 
 		conf.compressors = append(conf.compressors, &Compression{
@@ -230,7 +230,7 @@ func (conf *configOf[T]) sanitizeMimetypes() *web.FieldError {
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory.get(item.Target)
 		if !found {
-			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound(item.Target))
+			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound())
 		}
 
 		ms = append(ms, &Mimetype{

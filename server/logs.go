@@ -262,7 +262,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		f, found := logHandlersFactory.get(item.Type)
 		if !found {
-			return nil, nil, web.NewFieldError("handlers[0].type", locales.ErrNotFound(item.Type))
+			return nil, nil, web.NewFieldError("handlers[0].type", locales.ErrNotFound())
 		}
 
 		ww, c, err := f(item.Args)
@@ -284,7 +284,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		f, found := logHandlersFactory.get(w.Type)
 		if !found {
-			return nil, nil, web.NewFieldError(field+".type", locales.ErrNotFound(w.Type))
+			return nil, nil, web.NewFieldError(field+".type", locales.ErrNotFound())
 		}
 
 		ww, c, err := f(w.Args)

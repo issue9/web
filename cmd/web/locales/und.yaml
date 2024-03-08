@@ -121,9 +121,6 @@ messages:
     - key: ignore %s
       message:
         msg: ignore %s
-    - key: invalid format
-      message:
-        msg: invalid format
     - key: invalid http method %s
       message:
         msg: invalid http method %s

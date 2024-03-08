@@ -15,6 +15,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/issue9/version"
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 
 	"github.com/issue9/web/cmd/web/git"
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -384,7 +385,7 @@ func (p *Parser) parseOpenAPI(target *openapi.OpenAPI, suffix, filename string, 
 		modCache := filepath.Join(build.Default.GOPATH, "pkg", "mod")
 		uri = &url.URL{Path: filepath.Join(modCache, words[0], words[1])}
 	default:
-		p.l.Error(web.StringPhrase("invalid format"), filename, ln)
+		p.l.Error(locales.InvalidFormat, filename, ln)
 		return
 	}
 

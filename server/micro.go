@@ -99,7 +99,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {
-				return web.NewFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound(m.Matcher))
+				return web.NewFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound())
 			}
 			conf.mapper[m.Name] = mm(strings.Split(m.Args, ",")...)
 		}
@@ -111,12 +111,12 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 func (r *registryConfig) build(c web.Cache) *web.FieldError {
 	t, found := typeFactory.get(r.Type)
 	if !found {
-		return web.NewFieldError("type", locales.ErrNotFound(r.Type))
+		return web.NewFieldError("type", locales.ErrNotFound())
 	}
 
 	s, found := strategyFactory.get(r.Strategy)
 	if !found {
-		return web.NewFieldError("strategy", locales.ErrNotFound(r.Strategy))
+		return web.NewFieldError("strategy", locales.ErrNotFound())
 	}
 	r.s = s
 

@@ -144,9 +144,6 @@ messages:
     - key: ignore %s
       message:
         msg: 忽略 %s
-    - key: invalid format
-      message:
-        msg: 无效的格式
     - key: invalid http method %s
       message:
         msg: 无效的请求方法 %s

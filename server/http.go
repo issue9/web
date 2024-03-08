@@ -129,11 +129,11 @@ func exists(p string) bool {
 
 func (cert *certificateConfig) sanitize() *web.FieldError {
 	if !exists(cert.Cert) {
-		return web.NewFieldError("cert", locales.ErrNotFound(cert.Cert))
+		return web.NewFieldError("cert", locales.ErrNotFound())
 	}
 
 	if !exists(cert.Key) {
-		return web.NewFieldError("key", locales.ErrNotFound(cert.Key))
+		return web.NewFieldError("key", locales.ErrNotFound())
 	}
 
 	return nil

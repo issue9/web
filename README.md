@@ -63,10 +63,10 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 框架根据 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 提供了一种输出错误信息内容的机制。
 
-## 中间件
+## 插件
 
-- <https://github.com/issue9/middleware> 提供了常用的中间件。
-- <https://github.com/issue9/filter> 提供了常用的验证方法。
+- <https://github.com/issue9/webuse> 提供了常用的中间件和插件。
+- <https://github.com/issue9/webfilter> 提供了常用的验证和修正数据的方法。
 
 ## 工具
 
