@@ -45,7 +45,7 @@ func BenchmarkNewContext(b *testing.B) {
 	r.Header.Set(header.AcceptCharset, "gbk")
 	for i := 0; i < b.N; i++ {
 		ctx := s.NewContext(w, r, types.NewContext())
-		s.FreeContext(ctx)
+		s.freeContext(ctx)
 	}
 }
 
@@ -61,7 +61,7 @@ func BenchmarkContext_Render(b *testing.B) {
 
 			ctx := s.NewContext(w, r, types.NewContext())
 			ctx.apply(Response(http.StatusCreated, objectInst))
-			s.FreeContext(ctx)
+			s.freeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), objectJSONString)
 		}
@@ -75,7 +75,7 @@ func BenchmarkContext_Render(b *testing.B) {
 			w := httptest.NewRecorder()
 			ctx := s.NewContext(w, r, types.NewContext())
 			ctx.apply(Response(http.StatusCreated, objectInst))
-			s.FreeContext(ctx)
+			s.freeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), objectJSONString)
 		}
@@ -90,7 +90,7 @@ func BenchmarkContext_Render(b *testing.B) {
 
 			ctx := s.NewContext(w, r, types.NewContext())
 			ctx.apply(Response(http.StatusCreated, objectInst))
-			s.FreeContext(ctx)
+			s.freeContext(ctx)
 
 			a.Equal(w.Body.Bytes(), objectGBKBytes)
 		}
@@ -106,7 +106,7 @@ func BenchmarkContext_Render(b *testing.B) {
 
 			ctx := s.NewContext(w, r, types.NewContext())
 			ctx.apply(Response(http.StatusCreated, objectInst))
-			s.FreeContext(ctx)
+			s.freeContext(ctx)
 
 			data, err := io.ReadAll(flate.NewReader(w.Body))
 			a.NotError(err).NotNil(data).Equal(data, objectGBKBytes)
@@ -128,7 +128,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 		obj := &object{}
 		a.NotError(ctx.Unmarshal(obj)).
 			Equal(obj, objectInst)
-		srv.FreeContext(ctx)
+		srv.freeContext(ctx)
 	}
 }
 
@@ -227,7 +227,7 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
 	r.Header.Set(header.Accept, "application/json")
 	ctx := s.NewContext(w, r, types.NewContext())
-	defer s.FreeContext(ctx)
+	defer s.freeContext(ctx)
 
 	for i := 0; i < b.N; i++ {
 		p := ctx.NewFilterContext(false)

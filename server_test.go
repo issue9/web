@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/logs/v7"
+	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -32,9 +34,13 @@ type testServer struct {
 }
 
 // 所有输出报头都是 201
-func onContext(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+func onContext(w http.ResponseWriter, r *http.Request, _ types.Route) (http.ResponseWriter, *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	return w, r
+}
+
+func onExitContext(ctx *Context, status int) {
+	ctx.Header().Set("exit-status", strconv.Itoa(status))
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
@@ -85,4 +91,17 @@ func TestOnContextFunc(t *testing.T) {
 	ctx.WriteHeader(http.StatusForbidden)
 	a.Equal(ctx.status, http.StatusForbidden).
 		Equal(w.Result().StatusCode, http.StatusAccepted)
+}
+
+func TestOnExitContextFunc(t *testing.T) {
+	a := assert.New(t, false)
+	s := newTestServer(a)
+	s.OnExitContext(onExitContext)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/path", nil)
+	ctx := s.NewContext(w, r, nil)
+	ctx.WriteHeader(http.StatusAccepted)
+	s.freeContext(ctx)
+	a.Equal(ctx.Header().Get("exit-status"), "202")
 }

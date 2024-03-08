@@ -64,7 +64,7 @@ func (s *InternalServer) call(w http.ResponseWriter, r *http.Request, route type
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
 		}
-		s.FreeContext(ctx)
+		s.freeContext(ctx)
 	}
 }
 

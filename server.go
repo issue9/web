@@ -81,6 +81,9 @@ type (
 		// OnContext 注册在请求进来之后 [Context] 创建之前可执行的函数
 		OnContext(...OnContextFunc)
 
+		// OnExitContext 注册在即将退出 [Context] 时需要执行的函数
+		OnExitContext(...OnExitContextFunc)
+
 		// Config 当前项目配置文件的管理
 		Config() *config.Config
 
@@ -89,7 +92,7 @@ type (
 
 		// NewContext 从标准库的参数初始化 [Context] 对象
 		//
-		// 这适合从标准库的请求中创建 [web.Context] 对象。
+		// 这适合从标准库的请求中创建 [Context] 对象。
 		// [types.Route] 类型的参数需要用户通过 [types.NewContext] 自行创建。
 		//
 		// NOTE: 由此方法创建的对象在整个会话结束后会被回收。
@@ -126,7 +129,16 @@ type (
 		Use(...Plugin)
 	}
 
-	OnContextFunc = func(http.ResponseWriter, *http.Request) (http.ResponseWriter, *http.Request)
+	// OnContextFunc 表示在创建 [Context] 时执行的函数类型
+	//
+	// 此时已经获得 [http.ResponseWriter] 和 [http.Request]，但是还没有创建 [Context]，
+	// 用户可以根据自己的需求调整 [http.ResponseWriter] 和 [http.Request]。
+	OnContextFunc = func(http.ResponseWriter, *http.Request, types.Route) (http.ResponseWriter, *http.Request)
+
+	// OnExitContextFunc 表示在即将退出 [Context] 时执行的函数类型
+	//
+	// 其中 ctx 即为当前实例，status 则表示实际输出的状态码。
+	OnExitContextFunc = func(ctx *Context, status int)
 
 	// Locale 提供与本地化相关的功能
 	Locale interface {
@@ -198,6 +210,7 @@ type (
 		closes          []func() error
 		cache           cache.Driver
 		contexts        []OnContextFunc
+		exitContexts    []OnExitContextFunc
 	}
 )
 
@@ -233,6 +246,7 @@ func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Log
 		closes:       make([]func() error, 0, 10),
 		cache:        c,
 		contexts:     make([]OnContextFunc, 0, 10),
+		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	is.initServices()
 	is.routers = &Routers{
@@ -281,6 +295,10 @@ func (s *InternalServer) UniqueID() string { return s.idgen() }
 func (s *InternalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
 
 func (s *InternalServer) OnContext(f ...OnContextFunc) { s.contexts = append(s.contexts, f...) }
+
+func (s *InternalServer) OnExitContext(f ...OnExitContextFunc) {
+	s.exitContexts = append(s.exitContexts, f...)
+}
 
 func (s *InternalServer) Logs() *Logs { return s.logs }
 

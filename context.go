@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +25,7 @@ import (
 var contextPool = &sync.Pool{
 	New: func() any {
 		return &Context{
-			exits: make([]func(*Context, int), 0, 5),
+			exits: make([]OnExitContextFunc, 0, 5),
 			vars:  map[any]any{},
 		}
 	},
@@ -41,7 +40,7 @@ type Context struct {
 	s       *InternalServer
 	route   types.Route
 	request *http.Request
-	exits   []func(*Context, int)
+	exits   []OnExitContextFunc
 	id      string
 	begin   time.Time
 	queries *Queries
@@ -75,7 +74,7 @@ type Context struct {
 // 如果出错，则会向 w 输出状态码并返回 nil。
 func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
 	for _, f := range s.contexts {
-		w, r = f(w, r)
+		w, r = f(w, r, route)
 	}
 
 	id := r.Header.Get(s.requestIDKey)
@@ -282,27 +281,26 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-// FreeContext 释放 ctx
-func (s *InternalServer) FreeContext(ctx *Context) {
-	slices.Reverse(ctx.exits)
+// freeContext 释放 ctx
+func (s *InternalServer) freeContext(ctx *Context) {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
-	logs.FreeAttrLogs(ctx.logs)
 
+	for _, f := range s.exitContexts {
+		f(ctx, ctx.status)
+	}
+
+	// 以下开始回收内在
+
+	logs.FreeAttrLogs(ctx.logs)
 	contextPool.Put(ctx)
 }
 
 // OnExit 注册退出当前请求时的处理函数
 //
-// f 为执行的方法，其原型为：
-//
-//	func(ctx *Context, status int)
-//
-// 其中 ctx 即为当前实例，status 则表示实际输出的状态码。
-//
-// NOTE: 以注册的相反顺序调用这些方法。
-func (ctx *Context) OnExit(f func(*Context, int)) { ctx.exits = append(ctx.exits, f) }
+// 此方法添加的函数会先于 [Server.OnExitContext] 添加的函数执行。
+func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, f) }
 
 func acceptLanguage(s Server, header string) language.Tag {
 	if header == "" {
