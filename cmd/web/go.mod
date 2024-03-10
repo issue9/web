@@ -28,7 +28,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
-	github.com/issue9/cache v0.9.2 // indirect
+	github.com/issue9/cache v0.10.0 // indirect
 	github.com/issue9/config v0.6.2 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
