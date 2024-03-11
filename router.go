@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/mux/v7"
 	"github.com/issue9/mux/v7/group"
 	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/source"
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/header"
@@ -102,8 +103,8 @@ func Recovery(l *logs.Logger) RouterOption {
 	return mux.Recovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)
 		if !ok {
-			l.Print(msg)
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			l.String(source.Stack(4, err))
 			return
 		}
 
@@ -112,8 +113,8 @@ func Recovery(l *logs.Logger) RouterOption {
 			he.Status = http.StatusInternalServerError
 			he.Message = err
 		}
-		l.Error(he.Message)
-		w.WriteHeader(he.Status)
+		http.Error(w, http.StatusText(he.Status), he.Status)
+		l.String(source.Stack(4, he.Message))
 	})
 }
 

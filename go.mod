@@ -13,6 +13,7 @@ require (
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/scheduled v0.19.3
 	github.com/issue9/sliceutil v0.15.1
+	github.com/issue9/source v0.8.2
 	github.com/issue9/term/v3 v3.2.7
 	github.com/issue9/unique/v2 v2.0.1
 	github.com/klauspost/compress v1.17.7
@@ -27,7 +28,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/issue9/rands/v2 v2.0.1 // indirect
-	github.com/issue9/source v0.8.2 // indirect
 	github.com/redis/go-redis/v9 v9.5.1 // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
