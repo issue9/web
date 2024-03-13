@@ -1,5 +1,7 @@
 module github.com/issue9/web
 
+go 1.21
+
 require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/issue9/assert/v4 v4.1.1
@@ -16,6 +18,7 @@ require (
 	github.com/issue9/source v0.8.2
 	github.com/issue9/term/v3 v3.2.7
 	github.com/issue9/unique/v2 v2.0.1
+	github.com/jellydator/ttlcache/v3 v3.2.0
 	github.com/klauspost/compress v1.17.7
 	golang.org/x/crypto v0.21.0
 	golang.org/x/text v0.14.0
@@ -31,7 +34,6 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1 // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 )
-
-go 1.21

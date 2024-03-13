@@ -21,20 +21,20 @@ func TestLocale_Printer(t *testing.T) {
 	a := assert.New(t, false)
 
 	b := catalog.NewBuilder()
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	l := New(language.SimplifiedChinese, nil, b)
-	a.NotNil(l).Equal(l.Sprintf("lang"), "hans")
-	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2"))
-	a.Equal(l.Sprintf("lang"), "hans-2")
+	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
+		NotNil(l).Equal(l.Sprintf("lang"), "hans").
+		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2")).
+		Equal(l.Sprintf("lang"), "hans-2")
 
 	// ID 不存在于 catalog
 
 	b = catalog.NewBuilder()
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
 	l = New(language.Afrikaans, nil, b)
-	a.NotNil(l).Equal(l.Sprintf("lang"), "lang") // 找不到对应的翻译项，返回原值
-	a.NotError(l.SetString(language.Afrikaans, "lang", "afrik"))
-	a.Equal(l.Sprintf("lang"), "afrik")
+	a.NotNil(l).Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
+							NotError(l.SetString(language.Afrikaans, "lang", "afrik")).
+							Equal(l.Sprintf("lang"), "afrik")
 }
 
 func TestLocale_NewPrinter(t *testing.T) {
@@ -61,12 +61,12 @@ func TestLocale_NewPrinter(t *testing.T) {
 func TestNewPrinter(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := catalog.NewBuilder()
-	a.NotError(c.SetString(language.MustParse("zh-CN"), "k1", "zh-cn"))
-	a.NotError(c.SetString(language.MustParse("zh-TW"), "k1", "zh-tw"))
+	c := catalog.NewBuilder(catalog.Fallback(language.MustParse("zh-TW")))
+	a.NotError(c.SetString(language.MustParse("zh-CN"), "k1", "zh-cn")).
+		NotError(c.SetString(language.MustParse("zh-TW"), "k1", "zh-tw"))
 
-	p := NewPrinter(language.MustParse("cmn-hans"), c)
-	a.Equal(p.Sprintf("k1"), "zh-cn")
+	p, ok := NewPrinter(language.MustParse("und"), c)
+	a.Equal(p.Sprintf("k1"), "zh-tw").False(ok)
 }
 
 func Test_Load(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil/message/serialize"
+	"github.com/jellydator/ttlcache/v3"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -21,6 +22,7 @@ type Locale struct {
 	id      language.Tag
 	config  *config.Config
 	printer *message.Printer
+	ttl     *ttlcache.Cache[language.Tag, *message.Printer]
 }
 
 func New(id language.Tag, conf *config.Config, b *catalog.Builder) *Locale {
@@ -34,11 +36,13 @@ func New(id language.Tag, conf *config.Config, b *catalog.Builder) *Locale {
 		panic(err)
 	}
 
+	p, _ := NewPrinter(id, b)
 	return &Locale{
 		Builder: b,
 		id:      id,
 		config:  conf,
-		printer: NewPrinter(id, b),
+		printer: p,
+		ttl:     ttlcache.New(ttlcache.WithCapacity[language.Tag, *message.Printer](10)),
 	}
 }
 
@@ -59,14 +63,20 @@ func (l *Locale) NewPrinter(id language.Tag) *message.Printer {
 		return l.Printer()
 	}
 
-	// TODO 以使用频次或是 TTL 的方式缓存常用的 Printer，可以在一定程序上提升 NewPrinter 的性能。
-	return NewPrinter(id, l)
+	if item := l.ttl.Get(id); item != nil {
+		return item.Value()
+	}
+	p, exact := NewPrinter(id, l)
+	if exact {
+		l.ttl.Set(id, p, ttlcache.DefaultTTL)
+	}
+	return p
 }
 
 // NewPrinter 从 cat 是查找最符合 tag 的语言 ID 并返回对应的 [message.Printer] 对象
-func NewPrinter(tag language.Tag, cat catalog.Catalog) *message.Printer {
-	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
-	return message.NewPrinter(tag, message.Catalog(cat))
+func NewPrinter(tag language.Tag, cat catalog.Catalog) (*message.Printer, bool) {
+	tag, _, confidence := cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
+	return message.NewPrinter(tag, message.Catalog(cat)), confidence == language.Exact
 }
 
 func Load(s config.Serializer, b *catalog.Builder, glob string, fsys ...fs.FS) error {

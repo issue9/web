@@ -65,5 +65,6 @@ func NewPrinter(glob string, fsys ...fs.FS) (*localeutil.Printer, error) {
 		return nil, err
 	}
 
-	return locale.NewPrinter(tag, b), nil
+	p, _ := locale.NewPrinter(tag, b)
+	return p, nil
 }
