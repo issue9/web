@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package bufpool 提供 bytes.Buffer 的对象池
+// Package bufpool 提供 [bytes.Buffer] 的对象池
 package bufpool
 
 import (
@@ -12,7 +12,7 @@ import (
 
 var bufPool = &sync.Pool{New: func() any { return &bytes.Buffer{} }}
 
-// New 声明缓存的 bytes.Buffer 对象
+// New 声明缓存的 [bytes.Buffer] 对象
 func New() *bytes.Buffer {
 	b := bufPool.Get().(*bytes.Buffer)
 	b.Reset()
