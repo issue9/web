@@ -43,7 +43,7 @@ func BenchmarkNewContext(b *testing.B) {
 	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gbk"))
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptCharset, "gbk")
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ctx := s.NewContext(w, r, types.NewContext())
 		s.freeContext(ctx)
 	}
@@ -54,7 +54,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	s := newTestServer(a)
 
 	b.Run("none", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, "application/json")
 			w := httptest.NewRecorder()
@@ -68,7 +68,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("utf8", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, "application/json")
 			r.Header.Set(header.AcceptCharset, header.UTF8Name)
@@ -82,7 +82,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("gbk", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, "application/json")
 			r.Header.Set(header.AcceptCharset, "gbk")
@@ -97,7 +97,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("charset; encoding", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, "application/json")
 			r.Header.Set(header.AcceptCharset, "gbk")
@@ -118,7 +118,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
@@ -137,7 +137,7 @@ func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
@@ -160,7 +160,7 @@ func BenchmarkContext_Object(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
@@ -175,7 +175,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
 		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
@@ -186,7 +186,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 }
 
 func BenchmarkNewProblem(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		p := newProblem()
 		p.Type = "id"
 		p.Title = "title"
@@ -213,7 +213,7 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 	p.Detail = "detail"
 	p.Status = 400
 	p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		p.Apply(ctx)
 	}
 }
@@ -229,7 +229,7 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	ctx := s.NewContext(w, r, types.NewContext())
 	defer s.freeContext(ctx)
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		p := ctx.NewFilterContext(false)
 		filterContextPool.Put(p)
 	}
@@ -239,7 +239,7 @@ func BenchmarkCodec_accept(b *testing.B) {
 	a := assert.New(b, false)
 	mt := newCodec(a)
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		item := mt.accept("application/json;q=0.9")
 		a.NotNil(item)
 	}
@@ -252,7 +252,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			marshal, encoding, err := mt.contentType("application/xml;charset=utf-8")
 			a.NotError(err).NotNil(marshal).Nil(encoding)
 		}
@@ -261,7 +261,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=gbk", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			marshal, encoding, err := mt.contentType("application/xml;charset=gbk")
 			a.NotError(err).NotNil(marshal).NotNil(encoding)
 		}
@@ -276,7 +276,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 		a.NotNil(c)
 		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
 
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.contentEncoding("zstd", r)
 			a.NotError(err)
@@ -294,7 +294,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
 			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.contentEncoding("zstd", r)
 			a.NotError(err)
@@ -310,7 +310,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 		a.NotNil(c)
 		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
 
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, na := c.acceptEncoding("application/json", "zstd")
 			a.False(na)
 		}
@@ -327,7 +327,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
 			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, na := c.acceptEncoding("text/plain", "compress")
 			a.False(na)
 		}
@@ -345,7 +345,7 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 		AddCompressor(&compressorTest{name: "zstd"}, "application/*").
 		AddCompressor(&compressorTest{name: "compress"}, "text/plain")
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		c.getMatchCompresses("text/plan")
 	}
 }

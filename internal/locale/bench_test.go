@@ -15,14 +15,14 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 
 	b.Run("equal Locale.id", func(b *testing.B) {
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			l.NewPrinter(language.SimplifiedChinese)
 		}
 	})
 
 	b.Run("not equal Locale.id", func(b *testing.B) {
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			l.NewPrinter(language.TraditionalChinese)
 		}
 	})
@@ -37,7 +37,7 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 	b.Run("rand id", func(b *testing.B) {
 		b.ResetTimer()
 		size := len(langs)
-		for i := 0; i < b.N; i++ {
+		for i := range b.N {
 			l.NewPrinter(langs[i%size])
 		}
 	})

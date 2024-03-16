@@ -159,8 +159,7 @@ func (srv *Services) AddFunc(title LocaleStringer, f func(context.Context) error
 // err 只在 state 为 [Failed] 时才有的错误说明；
 func (srv *Services) Visit(visit func(title LocaleStringer, state State, err error)) {
 	for _, s := range srv.services {
-		ss := s // TODO(go1.22): 可省略
-		visit(ss.title, ss.getState(), ss.err)
+		visit(s.title, s.getState(), s.err)
 	}
 }
 
@@ -204,7 +203,6 @@ func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Schedul
 // VisitJobs 访问所有的计划任务
 func (srv *Services) VisitJobs(visit func(*Job)) {
 	for _, j := range srv.scheduled.Jobs() {
-		jj := j // TODO(go1.22): 可省略
-		visit(jj)
+		visit(j)
 	}
 }

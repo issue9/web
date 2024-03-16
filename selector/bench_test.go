@@ -67,7 +67,7 @@ func BenchmarkWeightedRoundRobin(b *testing.B) {
 
 func benchSelector_Next(b *testing.B, s Updateable, peers []Peer) {
 	s.Update(peers...)
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if _, err := s.Next(); err != nil {
 			b.Fatal(err)
 		}

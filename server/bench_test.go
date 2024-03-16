@@ -34,7 +34,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("charset", func(b *testing.B) {
 		a := assert.New(b, false)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
 				Header(header.Accept, "application/json").
@@ -49,7 +49,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("charset encoding", func(b *testing.B) {
 		a := assert.New(b, false)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
 				Header(header.Accept, "application/json").
@@ -65,7 +65,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("none", func(b *testing.B) {
 		a := assert.New(b, false)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, header.BuildContentType("application/json", header.UTF8Name)).
 				Header(header.Accept, "application/json").

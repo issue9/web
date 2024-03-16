@@ -12,7 +12,7 @@ import (
 
 func BenchmarkSource_bytes(b *testing.B) {
 	s := &Source{retry: "50"}
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		b := s.bytes([]string{"111", "222"}, "event", "1")
 		bufpool.Put(b)
 	}

@@ -5,7 +5,7 @@
 package selector
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"sync"
 )
 
@@ -34,7 +34,7 @@ func (s *weightedRandom) Next() (string, error) {
 	case 1:
 		return s.peers[0].Addr(), nil
 	default:
-		weight := rand.Intn(s.sumOfWeight) + 1 // 排除 0，TODO(go1.22): 可以采用 rand/v2
+		weight := rand.IntN(s.sumOfWeight) + 1 // 排除 0
 		for i, p := range s.peers {
 			weight -= s.weights[i]
 			if weight <= 0 {

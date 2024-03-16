@@ -5,7 +5,7 @@
 package selector
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"sync"
 )
 
@@ -39,7 +39,7 @@ func (s *random) Next() (string, error) {
 	case 1:
 		return s.peers[0].Addr(), nil
 	default:
-		return s.peers[rand.Intn(len(s.peers))].Addr(), nil // TODO(go1.22): 可以采用 rand/v2
+		return s.peers[rand.IntN(len(s.peers))].Addr(), nil
 	}
 }
 
