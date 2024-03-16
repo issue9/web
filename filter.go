@@ -51,8 +51,8 @@ type FilterContext struct {
 //
 // RuleFuncOf 这是验证器与提示信息的结合，当不符合当前规则所包含的验证器需求时，返回对应的错误信息。
 //
-// [sanitizer]: https://pkg.go.dev/github.com/issue9/filter/sanitizer
-// [validator]: https://pkg.go.dev/github.com/issue9/filter/validator
+// [sanitizer]: https://pkg.go.dev/github.com/issue9/webfilter/sanitizer
+// [validator]: https://pkg.go.dev/github.com/issue9/webfilter/validator
 type FilterFunc = func() (string, LocaleStringer)
 
 // FilterFuncOf 生成某数值的过滤器
@@ -97,7 +97,7 @@ func NewFilter[T any](rule RuleFuncOf[T], s ...func(*T)) FilterFuncOf[T] {
 //
 // rule 和 s 将会应用到每个元素 T 上。
 func NewSliceFilter[T any, S ~[]T](rule RuleFuncOf[T], s ...func(*T)) FilterFuncOf[S] {
-	r := NewSliceRules[T, []T](rule)
+	r := NewSliceRules[T, S](rule)
 
 	return func(name string, v *S) FilterFunc {
 		return func() (string, LocaleStringer) {
