@@ -17,9 +17,10 @@
 .DS_Store
 
 # ide
-.idea
-.vscode
-.vs
+.idea/
+.vscode/
+.vs/
+.zed/
 *.swp
 **/testdata/logs/*
 
