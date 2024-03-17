@@ -27,7 +27,7 @@ package filter
 
 import "github.com/issue9/localeutil"
 
-// Filter 执行过滤器的方法
+// Filter 过滤器函数类型
 //
 // 当前方法由 [Builder] 生成，验证的数据也由其提供，
 // 但是只有在调用当前方法时才真正对数据进行验证。
