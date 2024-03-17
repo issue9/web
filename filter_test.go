@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v4"
@@ -17,20 +16,9 @@ import (
 	"github.com/issue9/web/filter"
 )
 
-type obj2 struct {
-	o1 *object
-	o2 object
-}
-
-func trimRight(v *string) { *v = strings.TrimRight(*v, " ") }
-
 func zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
 
 func required[T any](v T) bool { return !zero(v) }
-
-func between[T ~int | ~uint | float32 | float64](min, max T) func(T) bool {
-	return func(vv T) bool { return vv >= min && vv <= max }
-}
 
 func buildMinValidator(v int) func(int) bool { return func(a int) bool { return a >= v } }
 
