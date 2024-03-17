@@ -21,10 +21,10 @@ func zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
 
 func required[T any](v T) bool { return !zero(v) }
 
-func TestNew(t *testing.T) {
+func TestNewBuilder(t *testing.T) {
 	a := assert.New(t, false)
 
-	f := New[string](S(trimRight), V(zero[string], localeutil.Phrase("required")))
+	f := NewBuilder[string](S(trimRight), V(zero[string], localeutil.Phrase("required")))
 	id := " "
 	name, msg := f("id", &id)()
 	a.Nil(msg).Empty(name)
