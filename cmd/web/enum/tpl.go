@@ -10,6 +10,7 @@ package {{.Package}}
 
 import(
 	"fmt"
+	"database/sql/driver"
 
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
@@ -68,12 +69,44 @@ func({{.Receiver}} {{.Name}})IsValid()bool{
 	return found
 }
 
+func({{.Receiver}} *{{.Name}})Scan(src any)error {
+	if src == nil {
+		return locales.ErrInvalidValue()
+	}
+
+	var val string
+	switch v := src.(type) {
+	case string:
+		val = v
+	case []byte:
+		val = string(v)
+	case []rune:
+		val = string(v)
+	default:
+		return locales.ErrInvalidValue()
+	}
+
+	v,err :=Parse{{.Name}}(val)
+	if err!=nil{
+		return err
+	}
+
+	*{{.Receiver}} = v
+	return nil
+}
+
+func({{.Receiver}} {{.Name}})Value()(driver.Value,error) {
+	v,err := {{.Receiver}}.MarshalText()
+	if err!=nil{return nil,err}
+	return string(v),nil
+}
+
 func {{.Name}}Validator(v {{.Name}}) bool {return v.IsValid()}
 
 var(
 	{{.Name}}Rule = filter.V({{.Name}}Validator, locales.InvalidValue)
 
-	{{.Name}}SliceRule = filter.SV[[]{{.Name}},{{.Name}}]({{.Name}}Validator, locales.InvalidValue)
+	{{.Name}}SliceRule = filter.SV[[]{{.Name}}]({{.Name}}Validator, locales.InvalidValue)
 
 	{{.Name}}Filter = filter.NewBuilder({{.Name}}Rule)
 
