@@ -11,7 +11,7 @@ package {{.Package}}
 import(
 	"fmt"
 
-	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 )
 
@@ -71,13 +71,13 @@ func({{.Receiver}} {{.Name}})IsValid()bool{
 func {{.Name}}Validator(v {{.Name}}) bool {return v.IsValid()}
 
 var(
-	{{.Name}}Rule = web.NewRule({{.Name}}Validator, locales.InvalidValue)
+	{{.Name}}Rule = filter.V({{.Name}}Validator, locales.InvalidValue)
 
-	{{.Name}}SliceRule = web.NewSliceRules[{{.Name}},[]{{.Name}}]({{.Name}}Rule)
+	{{.Name}}SliceRule = filter.SV[[]{{.Name}},{{.Name}}]({{.Name}}Validator, locales.InvalidValue)
 
-	{{.Name}}Filter = web.NewFilter({{.Name}}Rule)
+	{{.Name}}Filter = filter.NewBuilder({{.Name}}Rule)
 
-	{{.Name}}SliceFilter = web.NewFilter({{.Name}}SliceRule)
+	{{.Name}}SliceFilter = filter.NewBuilder({{.Name}}SliceRule)
 )
 
 //---------------------end {{.Name}}--------------------

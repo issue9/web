@@ -55,7 +55,7 @@ func MS[M ~map[K]V, K comparable, V any](v func(*V)) Rule[M] {
 	}
 }
 
-// SV 将验器封装为 [Rule] 用以验证切片元素
+// SV 将验证器封装为 [Rule] 用以验证切片元素
 func SV[S ~[]T, T any](v func(T) bool, msg localeutil.Stringer) Rule[S] {
 	return func(name string, val *S) (string, localeutil.Stringer) {
 		for index, vv := range *val {
@@ -67,7 +67,7 @@ func SV[S ~[]T, T any](v func(T) bool, msg localeutil.Stringer) Rule[S] {
 	}
 }
 
-// MV 将验器封装为 [Rule] 用以验证 map
+// MV 将验证器封装为 [Rule] 用以验证 map
 //
 // v 用于验证键名和键值，两者可以有一个是空值，表示不需要验证，但不能都为空；
 // msg 表示验证出错时的错误提示；
