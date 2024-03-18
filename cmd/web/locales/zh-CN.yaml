@@ -5,7 +5,7 @@ messages:
         msg: '%s 位于 %s:%d'
     - key: '%s is not a valid basic type'
       message:
-        msg: '%s is not a valid basic type'
+        msg: '%s 不是有效的基础类型'
     - key: '%s requires at least %d parameters'
       message:
         msg: '%s 至少需要 %d 个参数'
@@ -128,12 +128,18 @@ messages:
     - key: filter by tag
       message:
         msg: 按标签过滤
+    - key: gen filter method
+      message:
+        msg: 生成适配 github.com/issue9/web/filter 的相关方法
     - key: gen htmldoc
       message:
         msg: 根据结构体中的字段生成 html 文档
     - key: gen restdoc
       message:
         msg: 提取注释中的 restdoc 文档生成 openapi
+    - key: gen sql method
+      message:
+        msg: 生成适配 database/sql 的相关方法
     - key: htmldoc usage
       message:
         msg: |

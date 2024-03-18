@@ -42,10 +42,12 @@ const (
 flags:
 {{flags}}`)
 
-	outUsage   = web.StringPhrase("set output file")
-	fhUsage    = web.StringPhrase("set file header")
-	typeUsage  = web.StringPhrase("set the enum type")
-	inputUsage = web.StringPhrase("set input file")
+	outUsage    = web.StringPhrase("set output file")
+	fhUsage     = web.StringPhrase("set file header")
+	typeUsage   = web.StringPhrase("set the enum type")
+	inputUsage  = web.StringPhrase("set input file")
+	filterUsage = web.StringPhrase("gen filter method")
+	sqlUsage    = web.StringPhrase("gen sql method")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
@@ -54,6 +56,8 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		h := fs.String("h", fileHeader, fhUsage.LocaleString(p))
 		t := fs.String("t", "", typeUsage.LocaleString(p))
 		i := fs.String("i", "", inputUsage.LocaleString(p))
+		filterM := fs.Bool("filter", true, filterUsage.LocaleString(p))
+		sqlM := fs.Bool("sql", true, sqlUsage.LocaleString(p))
 
 		return func(io.Writer) error {
 			if *i == "" {
@@ -70,7 +74,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			for i, name := range ts {
 				ts[i] = strings.TrimSpace(name)
 			}
-			return dump(*h, *i, *o, ts)
+			return dump(*h, *i, *o, ts, *filterM, *sqlM)
 		}
 	})
 }
@@ -130,7 +134,7 @@ func checkType(pkg *types.Package, t string) (types.Type, error) {
 	return nil, ErrNotAllowedType
 }
 
-func dump(header, input, output string, ts []string) error {
+func dump(header, input, output string, ts []string, filter, sql bool) error {
 	input = strings.TrimLeft(input, "./\\")
 	fset := token.NewFileSet()
 	imp := importer.ForCompiler(fset, "source", nil)
@@ -148,6 +152,8 @@ func dump(header, input, output string, ts []string) error {
 		FileHeader: header,
 		Package:    pkg.Name(),
 		Enums:      make([]*enum, 0, len(vals)),
+		Filter:     filter,
+		SQL:        sql,
 	}
 
 	for k, v := range vals {

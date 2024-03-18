@@ -109,12 +109,18 @@ messages:
     - key: filter by tag
       message:
         msg: filter by tag
+    - key: gen filter method
+      message:
+        msg: gen filter method
     - key: gen htmldoc
       message:
         msg: gen htmldoc
     - key: gen restdoc
       message:
         msg: gen restdoc
+    - key: gen sql method
+      message:
+        msg: gen sql method
     - key: htmldoc usage
       message:
         msg: htmldoc usage

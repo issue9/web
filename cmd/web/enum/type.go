@@ -10,6 +10,9 @@ type data struct {
 	FileHeader string
 	Package    string
 	Enums      []*enum
+
+	// 过滤方法
+	Filter, SQL bool
 }
 
 // enum 枚举类型的数据

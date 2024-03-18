@@ -10,9 +10,9 @@ package {{.Package}}
 
 import(
 	"fmt"
-	"database/sql/driver"
+	{{if .SQL}}"database/sql/driver"{{end}}
 
-	"github.com/issue9/web/filter"
+	{{if .Filter}}"github.com/issue9/web/filter"{{end}}
 	"github.com/issue9/web/locales"
 )
 
@@ -69,6 +69,8 @@ func({{.Receiver}} {{.Name}})IsValid()bool{
 	return found
 }
 
+{{if $.SQL}}
+// Scan sql.Scanner
 func({{.Receiver}} *{{.Name}})Scan(src any)error {
 	if src == nil {
 		return locales.ErrInvalidValue()
@@ -95,12 +97,15 @@ func({{.Receiver}} *{{.Name}})Scan(src any)error {
 	return nil
 }
 
+// Value driver.Valuer
 func({{.Receiver}} {{.Name}})Value()(driver.Value,error) {
 	v,err := {{.Receiver}}.MarshalText()
 	if err!=nil{return nil,err}
 	return string(v),nil
 }
+{{end}}
 
+{{if $.Filter}}
 func {{.Name}}Validator(v {{.Name}}) bool {return v.IsValid()}
 
 var(
@@ -112,6 +117,7 @@ var(
 
 	{{.Name}}SliceFilter = filter.NewBuilder({{.Name}}SliceRule)
 )
+{{end}}
 
 //---------------------end {{.Name}}--------------------
 
