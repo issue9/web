@@ -27,7 +27,7 @@ import (
 //   - -h 显示帮助信息；
 //   - -a 执行的指令，该值会传递给 [CLI.NewServer]，由用户根据此值决定初始化方式；
 //
-// T 表示的是配置文件中的用户自定义数据类型。
+// T 表示的是配置文件中的用户自定义数据类型，可参考 [server.LoadOptions] 中有关 User 的说明。
 type CLI[T any] struct {
 	// NOTE: CLI 仅用于初始化 [web.Server]。对于接口的开发应当是透明的，
 	// 开发者所有的功能都应该是通过 [web.Context] 和 [web.Server] 获得。

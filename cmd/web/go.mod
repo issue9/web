@@ -1,6 +1,6 @@
 module github.com/issue9/web/cmd/web
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/caixw/gobuild v1.7.5

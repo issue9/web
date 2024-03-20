@@ -128,7 +128,7 @@ type configOf[T any] struct {
 // 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
-// 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口中；
+// 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口；
 //
 // # 配置文件
 //

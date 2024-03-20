@@ -7,6 +7,7 @@ package web
 import (
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/issue9/localeutil"
@@ -141,7 +142,7 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	// 检测复复值
-	if sliceutil.Exists(e.types, func(v *mediaType, _ int) bool { return v.Name == name }) {
+	if slices.IndexFunc(e.types, func(v *mediaType) bool { return v.Name == name }) >= 0 {
 		panic(fmt.Sprintf("存在重复的项 %s", name))
 	}
 
@@ -205,7 +206,7 @@ func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, 
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
-			if !sliceutil.Exists(accepts, func(i *header.Item, _ int) bool { return i.Value == curr.compressor.Name() }) {
+			if slices.IndexFunc(accepts, func(i *header.Item) bool { return i.Value == curr.compressor.Name() }) < 0 {
 				return curr.compressor, false
 			}
 		}
