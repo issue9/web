@@ -63,7 +63,7 @@ type Context struct {
 	localePrinter *message.Printer
 
 	// 保存 Context 在存续期间的可复用变量。
-	// 这是比 [context.Value] 更经济的传递变量方式，但是这并不是协程安全的。
+	// 这是比 [context.Value] 更经济的变量传递方式，但是这并不是协程安全的。
 	vars map[any]any
 
 	logs *AttrLogs
@@ -166,7 +166,7 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	return ctx
 }
 
-// GetVar 返回指定名称的变量
+// GetVar 获取变量
 func (ctx *Context) GetVar(key any) (any, bool) {
 	v, found := ctx.vars[key]
 	return v, found
@@ -174,6 +174,9 @@ func (ctx *Context) GetVar(key any) (any, bool) {
 
 // SetVar 设置变量
 func (ctx *Context) SetVar(key, val any) { ctx.vars[key] = val }
+
+// DelVar 删除变量
+func (ctx *Context) DelVar(key any) { delete(ctx.vars, key) }
 
 // Route 关联的路由信息
 func (ctx *Context) Route() types.Route { return ctx.route }
@@ -281,7 +284,6 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-// freeContext 释放 ctx
 func (s *InternalServer) freeContext(ctx *Context) {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
