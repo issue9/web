@@ -53,6 +53,9 @@ type (
 	}
 )
 
+// Type 相当于 RFC7807 的 type 属性
+func (p *LocaleProblem) Type() string { return p.typ }
+
 func newProblem() *Problem {
 	p := problemPool.Get().(*Problem)
 	if p.Params != nil {
@@ -222,7 +225,7 @@ func (ps *Problems) exists(id string) bool {
 //	func(status int, p *LocaleProblem)
 //
 // status 该错误代码反馈给用户的 HTTP 状态码；
-func (ps *Problems) Visit(visit func(status int, p *LocaleProblem)) {
+func (ps *Problems) Visit(visit func(int, *LocaleProblem)) {
 	for _, s := range ps.problems {
 		visit(s.status, s)
 	}
@@ -231,7 +234,7 @@ func (ps *Problems) Visit(visit func(status int, p *LocaleProblem)) {
 func (ps *Problems) initProblem(pp *Problem, id string, p *localeutil.Printer) {
 	if i := slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }); i > -1 {
 		sp := ps.problems[i]
-		pp.Type = sp.typ
+		pp.Type = sp.Type()
 		pp.Title = sp.Title.LocaleString(p)
 		pp.Detail = sp.Detail.LocaleString(p)
 		pp.Status = sp.status
