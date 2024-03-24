@@ -19,7 +19,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/unique/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
@@ -187,20 +186,9 @@ func init() {
 
 	// RegisterIDGenerator
 
-	RegisterIDGenerator("date", func() (IDGenerator, web.Service) {
-		u := unique.NewDate(1000)
-		return u.String, u
-	})
-
-	RegisterIDGenerator("string", func() (IDGenerator, web.Service) {
-		u := unique.NewString(1000)
-		return u.String, u
-	})
-
-	RegisterIDGenerator("number", func() (IDGenerator, web.Service) {
-		u := unique.NewNumber(1000)
-		return u.String, u
-	})
+	RegisterIDGenerator("date", func() (IDGenerator, web.Service) { return DateID(100) })
+	RegisterIDGenerator("string", func() (IDGenerator, web.Service) { return StringID(100) })
+	RegisterIDGenerator("number", func() (IDGenerator, web.Service) { return NumberID(100) })
 
 	// RegisterMimetype
 

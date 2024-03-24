@@ -82,7 +82,7 @@ type (
 		//
 		// 供 [Server.UniqueID] 使用。
 		//
-		// 如果为空，将采用 [unique.NewDate] 作为生成方法。
+		// 如果为空，将采用 [unique.NewString] 作为生成方法。
 		IDGenerator IDGenerator
 
 		// 路由选项
@@ -225,7 +225,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	}
 
 	if o.IDGenerator == nil {
-		u := unique.NewDate(1000)
+		u := unique.NewString(1000)
 		o.IDGenerator = u.String
 		o.Init = append(o.Init, func(s web.Server) {
 			s.Services().Add(locales.UniqueIdentityGenerator, u)
@@ -321,4 +321,19 @@ func NewMemcache(addr ...string) cache.Driver { return memcache.New(addr...) }
 
 func (o *Options) internalServer(name, version string, s web.Server) *web.InternalServer {
 	return web.InternalNewServer(s, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
+}
+
+func NumberID(buffSize int) (IDGenerator, web.Service) {
+	u := unique.NewNumber(buffSize)
+	return u.String, u
+}
+
+func StringID(buffSize int) (IDGenerator, web.Service) {
+	u := unique.NewString(buffSize)
+	return u.String, u
+}
+
+func DateID(buffSize int) (IDGenerator, web.Service) {
+	u := unique.NewDate(buffSize)
+	return u.String, u
 }

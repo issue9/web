@@ -13,6 +13,7 @@ package web
 
 import (
 	"io"
+	"time"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
@@ -24,7 +25,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.88.2"
+const Version = "0.88.3"
 
 type (
 	Logger   = logs.Logger
@@ -61,6 +62,11 @@ type (
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }
+
+// GetCacheItemOrInit 获取缓存 c 的项如果不存在则尝试用 init 的返回值进行初始化
+func GetCacheItemOrInit[T any](c Cache, key string, v *T, ttl time.Duration, init func() (T, error)) error {
+	return cache.GetOrInit(c, key, v, ttl, init)
+}
 
 // Phrase 生成本地化的语言片段
 func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }
