@@ -323,16 +323,25 @@ func (o *Options) internalServer(name, version string, s web.Server) *web.Intern
 	return web.InternalNewServer(s, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
 }
 
+// NumberID 构建数字形式的唯一 ID
+//
+// NOTE: 基于时间戳，不能保证多实例模式下也具有唯一性。
 func NumberID(buffSize int) (IDGenerator, web.Service) {
 	u := unique.NewNumber(buffSize)
 	return u.String, u
 }
 
+// StringID 构建包含任意字符的唯一 ID
+//
+// NOTE: 基于时间戳，不能保证多实例模式下也具有唯一性。
 func StringID(buffSize int) (IDGenerator, web.Service) {
 	u := unique.NewString(buffSize)
 	return u.String, u
 }
 
+// DateID 构建日期格式的唯一 ID
+//
+// NOTE: 基于时间戳，不能保证多实例模式下也具有唯一性。
 func DateID(buffSize int) (IDGenerator, web.Service) {
 	u := unique.NewDate(buffSize)
 	return u.String, u
