@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/issue9/assert/v4 v4.1.1
-	github.com/issue9/cache v0.11.0
+	github.com/issue9/cache v0.12.0
 	github.com/issue9/config v0.6.2
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
