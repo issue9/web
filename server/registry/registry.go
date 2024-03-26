@@ -28,11 +28,11 @@ type Registry interface {
 
 	// Discover 返回指定名称的服务节点
 	//
-	// name 为服务的名称；
+	// name 为微服务的名称；
 	// s 为调用者关联的 [web.Server] 对象；
 	Discover(name string, s web.Server) selector.Selector
 
-	// ReverseProxy 返回 name 对应的 [httputil.ReverseProxy]
+	// ReverseProxy 返回微服务 name 对应的反向代理对象
 	ReverseProxy(string, web.Server) *httputil.ReverseProxy
 }
 

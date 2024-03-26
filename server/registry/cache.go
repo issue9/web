@@ -22,8 +22,6 @@ type cacheRegistry struct {
 	freq time.Duration
 }
 
-const cachePeersKeySuffix = ":peers"
-
 // NewCache 基于 [web.Cache] 的 [Registry] 实现
 //
 // freq 表示从缓存系统中获取数据的频率；
@@ -37,7 +35,7 @@ func NewCache(c web.Cache, s *Strategy, freq time.Duration) Registry {
 
 func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, error) {
 	var s string
-	if err := c.c.Get(name+cachePeersKeySuffix, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+	if err := c.c.Get(name, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 		return nil, err
 	}
 
@@ -55,7 +53,7 @@ func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, 
 		return nil, err
 	}
 
-	if err := c.c.Set(name+cachePeersKeySuffix, string(data), cache.Forever); err != nil {
+	if err := c.c.Set(name, string(data), cache.Forever); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +63,7 @@ func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, 
 func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) DeregisterFunc {
 	return func() error {
 		var s string
-		switch err := c.c.Get(name+cachePeersKeySuffix, &s); {
+		switch err := c.c.Get(name, &s); {
 		case errors.Is(err, cache.ErrCacheMiss()): // 线上为空
 			return nil
 		case err != nil:
@@ -87,7 +85,7 @@ func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) Deregi
 			return err
 		}
 
-		return c.c.Set(name+cachePeersKeySuffix, string(data), cache.Forever)
+		return c.c.Set(name, string(data), cache.Forever)
 	}
 }
 
@@ -96,7 +94,7 @@ func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
 
 	job := func(time.Time) error {
 		var s string
-		switch err := c.c.Get(name+cachePeersKeySuffix, &s); {
+		switch err := c.c.Get(name, &s); {
 		case errors.Is(err, cache.ErrCacheMiss()):
 			ss.Update()
 			return nil
@@ -120,7 +118,7 @@ func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.Revers
 
 	job := func(time.Time) error {
 		var s string
-		if err := c.c.Get(name+cachePeersKeySuffix, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+		if err := c.c.Get(name, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
 			return err
 		}
 
@@ -131,7 +129,13 @@ func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.Revers
 		return err
 	}
 
-	s.Services().AddTicker(web.Phrase("refresh micro services for gateway %s", s.Name()), job, c.freq, true, true)
+	s.Services().AddTicker(web.Phrase("refresh micro services for gateway %s", s.Name()), job, c.freq, false, true)
+
+	// [web.Services.AddTicker] 的 imm 并不是马上执行，而是使任务进入可执行的状态。
+	// 所以这里需要手动调用一次 job 刷新微服务列表。
+	if err := job(s.Now()); err != nil {
+		s.Logs().ERROR().Error(err)
+	}
 
 	return &httputil.ReverseProxy{
 		Director: Selector2Director(sel),

@@ -176,7 +176,7 @@ func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string, delay
 //
 // title 是对该服务的简要说明；
 // dur 时间间隔；
-// imm 是否立即执行一次该任务；
+// imm 是否先执行一次该任务，如果为 true 将会排在任务执行任务队列的前列，而不是立即执行；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) func() {
 	return srv.scheduled.Tick(title, job, dur, imm, delay)

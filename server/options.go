@@ -259,7 +259,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	}
 
 	if len(o.RoutersOptions) == 0 {
-		o.RoutersOptions = []web.RouterOption{web.Recovery(o.logs.ERROR())}
+		o.RoutersOptions = []web.RouterOption{web.Recovery(http.StatusInternalServerError,o.logs.ERROR())}
 	}
 
 	if o.RequestIDKey == "" {

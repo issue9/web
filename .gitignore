@@ -18,6 +18,7 @@
 
 # ide
 .idea/
+.fleet/
 .vscode/
 .vs/
 .zed/

@@ -99,7 +99,7 @@ func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 // Recovery 在路由奔溃之后的处理方式
 //
 // 相对于 [mux.Recovery] 的相关功能，提供了对 [web.NewError] 错误的处理。
-func Recovery(l *logs.Logger) RouterOption {
+func Recovery(status int, l *logs.Logger) RouterOption {
 	return mux.Recovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)
 		if !ok {
@@ -110,7 +110,7 @@ func Recovery(l *logs.Logger) RouterOption {
 
 		he := &errs.HTTP{}
 		if !errors.As(err, &he) {
-			he.Status = http.StatusInternalServerError
+			he.Status = status
 			he.Message = err
 		}
 		http.Error(w, http.StatusText(he.Status), he.Status)

@@ -209,7 +209,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	a.Equal(0, c)
 	resp, err := http.Get("http://localhost:8080/close")
 	a.Wait(500 * time.Microsecond). // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-					NotError(err).NotNil(resp).True(c > 0)
+		NotError(err).NotNil(resp).True(c > 0)
 
 	// 连接被关闭，返回错误内容
 	resp, err = http.Get("http://localhost:8080/close")
@@ -346,7 +346,9 @@ func TestNewService(t *testing.T) {
 	a.Error(err).Nil(srv)
 
 	c, _ := memory.New()
-	srv = newService(a, "app", ":8080", c)
+	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
+
+	srv = newService(a, "app", ":8080", reg, c)
 	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 
 	srv.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
@@ -357,11 +359,11 @@ func TestNewService(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(202)
 }
 
-func newService(a *assert.Assertion, name, addr string, c cache.Driver) web.Server {
+func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c cache.Driver) web.Server {
 	srv, err := NewService(name, "0.1.0", newOptions(&Options{
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: addr},
-		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),
+		Registry:   reg,
 		Peer:       selector.NewPeer("http://localhost" + addr),
 	}))
 	a.NotError(err).NotNil(srv)
@@ -373,26 +375,28 @@ func TestNewGateway(t *testing.T) {
 	a := assert.New(t, false)
 	c, _ := memory.New() // 默认的缓存系统用的是内存类型的，保证引用同一个。
 
+	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
+
 	// s1
-	s1 := newService(a, "s1", ":8081", c)
+	s1 := newService(a, "s1", ":8081", reg, c)
 	defer servertest.Run(a, s1)()
 	defer s1.Close(0)
 	s1.Routers().New("default", nil).Get("/mux/test", buildHandler(201))
 
 	// s2
-	s2 := newService(a, "s2", ":8082", c)
+	s2 := newService(a, "s2", ":8082", reg, c)
 	defer servertest.Run(a, s2)()
 	defer s2.Close(0)
 	s2.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
 	// Registry 和 Mapper 是空的
 	g, err := NewGateway("app", "0.1.0", newOptions(nil))
-	a.Error(err).Nil(g)
+	a.Equal(err.(*web.FieldError).Field, "o.Mapper").Nil(g)
 
 	g, err = NewGateway("app", "0.1.0", newOptions(&Options{
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Registry:   registry.NewCache(c, registry.NewRandomStrategy(), time.Second),
+		Registry:   reg,
 		Mapper: Mapper{
 			"s1": group.NewPathVersion("", "/s1"),
 			"s2": group.NewPathVersion("", "/s2"),
