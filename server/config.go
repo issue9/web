@@ -95,6 +95,10 @@ type configOf[T any] struct {
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
 
+	// OnRender 修改渲染结构
+	OnRender string `yaml:"onRender,omitempty" json:"onRender,omitempty" xml:"onRender,omitempty"`
+	onRender func(int, any) (int, any)
+
 	// 指定服务发现和注册中心
 	//
 	// NOTE: 作为微服务和网关时才会有效果
@@ -166,6 +170,7 @@ func LoadOptions[T any](configDir, filename string) (*Options, *T, error) {
 		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
+		OnRender:          conf.onRender,
 		Init:              conf.init,
 	}, conf.User, nil
 }
@@ -230,6 +235,14 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		conf.idGenerator = f
 		if srv != nil {
 			conf.init = append(conf.init, func(s web.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
+		}
+	}
+
+	if conf.OnRender != "" {
+		if or, found := onRenderFactory.get(conf.OnRender); found {
+			conf.onRender = or
+		} else {
+			return web.NewFieldError("OnRender", locales.ErrNotFound())
 		}
 	}
 

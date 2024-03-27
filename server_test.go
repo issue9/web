@@ -65,7 +65,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc, gc := memory.New()
 	u := unique.NewNumber(100)
-	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, locale.New(l, nil, c), cc, newCodec(a), header.RequestIDKey, "")
+	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, locale.New(l, nil, c), cc, newCodec(a), header.RequestIDKey, "", nil)
 	srv.Services().Add(Phrase("unique"), u)
 	srv.Services().AddTicker(Phrase("gc memory"), func(t time.Time) error { gc(t); return nil }, time.Minute, false, false)
 

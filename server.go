@@ -200,6 +200,7 @@ type (
 		logs            *Logs
 		closes          []func() error
 		cache           cache.Driver
+		onRender        func(int, any) (int, any)
 		exitContexts    []OnExitContextFunc
 	}
 )
@@ -209,6 +210,7 @@ type (
 // s 为实际的 [Server] 接口对象；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 // problemPrefix 可以为空；
+// onRender 在每个对象的渲染之前可以对内容进行的修改；
 //
 // NOTE: 此为内部使用函数，由调用者保证参数的正确性。
 //
@@ -216,7 +218,19 @@ type (
 // 否则可能出现 [InternalServer] 中的调用与 [Server] 的实现调用不同的问题。
 // 比如重新实现了 [Server.Location]，那么将出现 [InternalServer] 内部的 Location
 // 与 新实现的 Location 返回不同值的情况。
-func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Logs, idgen func() string, l *locale.Locale, c cache.Driver, codec *Codec, requestIDKey, problemPrefix string, o ...RouterOption) *InternalServer {
+func InternalNewServer(
+	s Server,
+	name, ver string,
+	loc *time.Location,
+	logs *Logs,
+	idgen func() string,
+	l *locale.Locale,
+	c cache.Driver,
+	codec *Codec,
+	requestIDKey string,
+	problemPrefix string,
+	onRender func(int, any) (int, any),
+	o ...RouterOption) *InternalServer {
 	is := &InternalServer{
 		server: s,
 
@@ -235,6 +249,7 @@ func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Log
 		logs:         logs,
 		closes:       make([]func() error, 0, 10),
 		cache:        c,
+		onRender:     onRender,
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	is.initServices()

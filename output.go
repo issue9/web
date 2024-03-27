@@ -58,6 +58,10 @@ func (ctx *Context) Render(status int, body any) {
 	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
 	// 除了输出错误日志，也没有其它面向客户的补救措施。
 
+	if ctx.s.onRender != nil {
+		status, body = ctx.s.onRender(status, body)
+	}
+
 	if body == nil {
 		ctx.WriteHeader(status)
 		return

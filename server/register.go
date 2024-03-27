@@ -60,16 +60,17 @@ func (r *register[T]) get(name string) (T, bool) {
 // 以下为所有 register 的实例化类型及关联的操作
 
 var (
-	logHandlersFactory = newRegister[LogsHandlerBuilder]()
-	cacheFactory       = newRegister[CacheBuilder]()
-	compressorFactory  = newRegister[compressor.Compressor]()
-	idGeneratorFactory = newRegister[IDGeneratorBuilder]()
-	mimetypesFactory   = newRegister[mimetypeItem]()
-	filesFactory       = newRegister[*FileSerializer]()
-
-	strategyFactory      = newRegister[StrategyBuilder]()
-	typeFactory          = newRegister[RegistryTypeBuilder]()
+	logHandlersFactory   = newRegister[LogsHandlerBuilder]()
+	cacheFactory         = newRegister[CacheBuilder]()
+	compressorFactory    = newRegister[compressor.Compressor]()
+	idGeneratorFactory   = newRegister[IDGeneratorBuilder]()
+	mimetypesFactory     = newRegister[mimetypeItem]()
+	filesFactory         = newRegister[*FileSerializer]()
 	routerMatcherFactory = newRegister[RouterMatcherBuilder]()
+	onRenderFactory      = newRegister[func(int, any) (int, any)]()
+
+	strategyFactory = newRegister[StrategyBuilder]()
+	typeFactory     = newRegister[RegistryTypeBuilder]()
 )
 
 type mimetypeItem struct {
@@ -133,6 +134,8 @@ func RegisterRegistryType(f RegistryTypeBuilder, name string) { typeFactory.regi
 func RegisterRouterMatcher(f RouterMatcherBuilder, name string) {
 	routerMatcherFactory.register(f, name)
 }
+
+func RegisterOnRender(f func(int, any) (int, any), name string) { onRenderFactory.register(f, name) }
 
 func init() {
 	// RegisterLogsHandler
@@ -232,4 +235,8 @@ func init() {
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewPathVersion(arg[0], arg[1:]...) }, "prefix")
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewHeaderVersion(arg[0], arg[0], nil, arg[2:]...) }, "version")
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return nil }, "any")
+
+	// OnRender
+
+	RegisterOnRender(Render200, "render200")
 }

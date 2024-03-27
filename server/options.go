@@ -83,6 +83,8 @@ type (
 		// 供 [Server.UniqueID] 使用。
 		//
 		// 如果为空，将采用 [unique.NewString] 作为生成方法。
+		//
+		// NOTE: 该值的修改，可能造成项目中的唯一 ID 不再唯一。
 		IDGenerator IDGenerator
 
 		// 路由选项
@@ -133,9 +135,14 @@ type (
 		// 空值是合法的值，表示不需要添加前缀。
 		ProblemTypePrefix string
 
+		// OnRender 可实现对渲染结果的调整
+		//
+		// NOTE: 该值的修改，可能造成所有接口返回数据结构的变化。
+		OnRender func(status int, body any) (int, any)
+
 		// Init 其它的一些初始化操作
 		//
-		// 在此可以让用户能实际操作 [Server] 之前对 Server 进行一些操作。
+		// 在此可以让用户能实际操作 [Server] 之前对其进行一些修改。
 		Init []func(web.Server)
 
 		// 以下微服务相关的设置
@@ -259,7 +266,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	}
 
 	if len(o.RoutersOptions) == 0 {
-		o.RoutersOptions = []web.RouterOption{web.Recovery(http.StatusInternalServerError,o.logs.ERROR())}
+		o.RoutersOptions = []web.RouterOption{web.Recovery(http.StatusInternalServerError, o.logs.ERROR())}
 	}
 
 	if o.RequestIDKey == "" {
@@ -320,7 +327,7 @@ func NewRedisFromURL(url string) (cache.Driver, error) { return redis.NewFromURL
 func NewMemcache(addr ...string) cache.Driver { return memcache.New(addr...) }
 
 func (o *Options) internalServer(name, version string, s web.Server) *web.InternalServer {
-	return web.InternalNewServer(s, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.RoutersOptions...)
+	return web.InternalNewServer(s, name, version, o.Location, o.logs, o.IDGenerator, o.locale, o.Cache, o.codec, o.RequestIDKey, o.ProblemTypePrefix, o.OnRender, o.RoutersOptions...)
 }
 
 // NumberID 构建数字形式的唯一 ID
@@ -345,4 +352,19 @@ func StringID(buffSize int) (IDGenerator, web.Service) {
 func DateID(buffSize int) (IDGenerator, web.Service) {
 	u := unique.NewDate(buffSize)
 	return u.String, u
+}
+
+// Render200 统一 API 的返回格式
+//
+// 状态码统一为 200；返回对象统一为 [Render200Response]；
+func Render200(status int, body any) (int, any) {
+	return http.StatusOK, &Render200Response{OK: !web.IsProblem(status), Status: status, Body: body}
+}
+
+// Render200Response API 统一的返回格式
+type Render200Response struct {
+	XMLName struct{} `json:"-" yaml:"-" xml:"body"`
+	OK      bool     `json:"ok" yaml:"ok" xml:"ok,attr"`
+	Status  int      `json:"status" yaml:"status" xml:"status,attr"`
+	Body    any      `json:"body" yaml:"body" xml:"body"`
 }
