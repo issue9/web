@@ -24,7 +24,7 @@ func required[T any](v T) bool { return !zero(v) }
 func TestNewBuilder(t *testing.T) {
 	a := assert.New(t, false)
 
-	f := NewBuilder[string](S(trimRight), V(zero[string], localeutil.Phrase("required")))
+	f := NewBuilder(S(trimRight), V(zero[string], localeutil.Phrase("required")))
 	id := " "
 	name, msg := f("id", &id)()
 	a.Nil(msg).Empty(name)
@@ -33,5 +33,10 @@ func TestNewBuilder(t *testing.T) {
 	name, msg = f("id", &id)()
 	a.Equal(localeutil.Phrase("required"), msg).Equal(name, "id")
 
-	// TODO 执行顺序是否正确？
+	// 执行顺序是否正常
+
+	f  = NewBuilder(S(func(v*string){*v=*v+"1"}),S(func(v*string){*v=*v+"2"}))
+	id = " "
+	name, msg = f("id", &id)()
+	a.Nil(msg).Empty(name).Equal(id," 12")
 }

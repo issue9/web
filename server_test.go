@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v7/types"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -31,12 +30,6 @@ var _ Locale = &locale.Locale{}
 type testServer struct {
 	*InternalServer
 	logBuf *bytes.Buffer
-}
-
-// 所有输出报头都是 201
-func onContext(w http.ResponseWriter, r *http.Request, _ types.Route) (http.ResponseWriter, *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-	return w, r
 }
 
 func onExitContext(ctx *Context, status int) {
