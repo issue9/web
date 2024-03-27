@@ -242,3 +242,9 @@ func (ps *Problems) initProblem(pp *Problem, id string, p *localeutil.Printer) {
 	}
 	panic(fmt.Sprintf("未找到有关 %s 的定义", id)) // 初始化时没有给定相关的定义，所以直接 panic。
 }
+
+// IsProblem 这是表示错误的状态码
+func IsProblem(status int) bool {
+	_, f := problemsID[status]
+	return f
+}
