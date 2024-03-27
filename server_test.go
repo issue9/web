@@ -80,19 +80,6 @@ func (s *testServer) Serve() error { panic("未实现") }
 
 func (s *testServer) State() State { panic("未实现") }
 
-func TestOnContextFunc(t *testing.T) {
-	a := assert.New(t, false)
-	s := newTestServer(a)
-	s.OnContext(onContext)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/path", nil)
-	ctx := s.NewContext(w, r, nil)
-	ctx.WriteHeader(http.StatusForbidden)
-	a.Equal(ctx.status, http.StatusForbidden).
-		Equal(w.Result().StatusCode, http.StatusAccepted)
-}
-
 func TestOnExitContextFunc(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)

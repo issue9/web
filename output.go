@@ -99,7 +99,7 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 
 // Write 向客户端输出内容
 //
-// 如非必要，应该采用 [Context.Render] 输出。
+// NOTE: 如非必要，应该采用 [Context.Render] 输出。
 func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
@@ -141,7 +141,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 
 // WriteHeader 向客户端输出 HTTP 状态码
 //
-// 如非必要，应该通过 [Context.Render] 输出。
+// NOTE: 如非必要，应该通过 [Context.Render] 输出。
 func (ctx *Context) WriteHeader(status int) {
 	if ctx.status >= http.StatusOK && ctx.status != status {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))

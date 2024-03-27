@@ -313,14 +313,13 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 // RequestBody 用户提交的内容
 func (ctx *Context) RequestBody() io.Reader {
 	r := ctx.Request().Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close
-
 	if !header.CharsetIsNop(ctx.inputCharset) {
 		return transform.NewReader(r, ctx.inputCharset.NewDecoder())
 	}
 	return r
 }
 
-// Unmarshal 将提交的内容转换成 v 对象
+// Unmarshal 将提交的内容解码到 v
 func (ctx *Context) Unmarshal(v any) error {
 	if ctx.Request().ContentLength == 0 {
 		return nil

@@ -78,9 +78,6 @@ type (
 		// NOTE: 按注册的相反顺序执行。
 		OnClose(...func() error)
 
-		// OnContext 注册在请求进来之后 [Context] 创建之前可执行的函数
-		OnContext(...OnContextFunc)
-
 		// OnExitContext 注册在即将退出 [Context] 时需要执行的函数
 		OnExitContext(...OnExitContextFunc)
 
@@ -128,12 +125,6 @@ type (
 		// Use 添加插件
 		Use(...Plugin)
 	}
-
-	// OnContextFunc 表示在创建 [Context] 时执行的函数类型
-	//
-	// 此时已经获得 [http.ResponseWriter] 和 [http.Request]，但是还没有创建 [Context]，
-	// 用户可以根据自己的需求调整 [http.ResponseWriter] 和 [http.Request]。
-	OnContextFunc = func(http.ResponseWriter, *http.Request, types.Route) (http.ResponseWriter, *http.Request)
 
 	// OnExitContextFunc 表示在即将退出 [Context] 时执行的函数类型
 	//
@@ -209,7 +200,6 @@ type (
 		logs            *Logs
 		closes          []func() error
 		cache           cache.Driver
-		contexts        []OnContextFunc
 		exitContexts    []OnExitContextFunc
 	}
 )
@@ -245,7 +235,6 @@ func InternalNewServer(s Server, name, ver string, loc *time.Location, logs *Log
 		logs:         logs,
 		closes:       make([]func() error, 0, 10),
 		cache:        c,
-		contexts:     make([]OnContextFunc, 0, 10),
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	is.initServices()
@@ -293,8 +282,6 @@ func (s *InternalServer) ParseTime(layout, value string) (time.Time, error) {
 func (s *InternalServer) UniqueID() string { return s.idgen() }
 
 func (s *InternalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
-
-func (s *InternalServer) OnContext(f ...OnContextFunc) { s.contexts = append(s.contexts, f...) }
 
 func (s *InternalServer) OnExitContext(f ...OnExitContextFunc) {
 	s.exitContexts = append(s.exitContexts, f...)
