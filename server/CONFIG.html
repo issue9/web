@@ -164,7 +164,8 @@ body {
 <p>NOTE: 不能同时与 Certificates 生效
 </td></tr><tr><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,attr,omitempty</td><td>int</td><td></td></tr><tr><td>headers,omitempty</td><td>headers,omitempty</td><td>headers&gt;header,omitempty</td><td><a href="#headerConfig">headerConfig</a></td><td><p>自定义报头功能
 <p>报头会输出到包括 404 在内的所有请求返回。可以为空。
-报头内容可能会被后续的中间件修改。
+<p>NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。
+<p>NOTE: 报头内容可能会被后续的中间件修改。
 </td></tr><tr><td>cors,omitempty</td><td>cors,omitempty</td><td>cors,omitempty</td><td><a href="#corsConfig">corsConfig</a></td><td><p>自定义<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors">跨域请求</a>设置项
 <p>这些设置对所有路径均有效。
 </td></tr>

@@ -9,11 +9,13 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
 )
 
 const (
-	Mimetype        = "application/json"
+	Mimetype        = header.JSON
 	ProblemMimetype = "application/problem+json"
 )
 

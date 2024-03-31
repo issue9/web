@@ -12,9 +12,10 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/internal/status"
 )
 
@@ -70,9 +71,9 @@ func newProblem() *Problem {
 func (p *Problem) Error() string { return p.Title }
 
 func (p *Problem) Apply(ctx *Context) {
-	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
-		ctx.Header().Set(header.ContentLang, id)
+		ctx.Header().Set(header.ContentLanguage, id)
 	}
 
 	ctx.WriteHeader(p.Status) // Problem 先输出状态码

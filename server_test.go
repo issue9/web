@@ -16,12 +16,12 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/logs/v7"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 )
 
@@ -58,7 +58,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc, gc := memory.New()
 	u := unique.NewNumber(100)
-	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, locale.New(l, nil, c), cc, newCodec(a), header.RequestIDKey, "", nil)
+	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, locale.New(l, nil, c), cc, newCodec(a), header.XRequestID, "", nil)
 	srv.Services().Add(Phrase("unique"), u)
 	srv.Services().AddTicker(Phrase("gc memory"), func(t time.Time) error { gc(t); return nil }, time.Minute, false, false)
 

@@ -12,10 +12,12 @@ import (
 	"encoding/gob"
 	"io"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
 )
 
-const Mimetype = "application/octet-stream"
+const Mimetype = header.OctetStream
 
 func Marshal(_ *web.Context, v any) ([]byte, error) {
 	w := new(bytes.Buffer)

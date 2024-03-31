@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
@@ -69,7 +69,7 @@ func TestServer(t *testing.T) {
 	})
 
 	servertest.Get(a, "http://localhost:8080/event/5").
-		Header(header.Accept, "application/json").
+		Header(header.Accept, header.JSON).
 		Header(header.AcceptEncoding, "").
 		Do(nil).
 		Status(http.StatusOK).

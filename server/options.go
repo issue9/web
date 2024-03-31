@@ -17,23 +17,21 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 )
 
-const (
-	RequestIDKey     = header.RequestIDKey // 报头中传递 request id 的报头名称
-	DefaultConfigDir = "@.config"          // 默认的配置目录地址
-)
+const DefaultConfigDir = "@.config"          // 默认的配置目录地址
+
 
 const (
 	typeHTTP int = iota
@@ -94,7 +92,7 @@ type (
 
 		// 指定获取 x-request-id 内容的报头名
 		//
-		// 如果为空，则采用 [RequestIDKey] 作为默认值
+		// 如果为空，则采用 [header.XRequestID] 作为默认值
 		RequestIDKey string
 
 		// 可用的压缩类型
@@ -270,7 +268,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 	}
 
 	if o.RequestIDKey == "" {
-		o.RequestIDKey = RequestIDKey
+		o.RequestIDKey = header.XRequestID
 	}
 
 	c, fe := buildCodec(o.Mimetypes, o.Compressions)

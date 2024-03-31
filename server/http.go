@@ -12,7 +12,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/issue9/mux/v7"
+	"github.com/issue9/mux/v8"
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
@@ -52,7 +53,10 @@ type (
 		// 自定义报头功能
 		//
 		// 报头会输出到包括 404 在内的所有请求返回。可以为空。
-		// 报头内容可能会被后续的中间件修改。
+		//
+		// NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。
+		//
+		// NOTE: 报头内容可能会被后续的中间件修改。
 		Headers []headerConfig `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
 
 		// 自定义[跨域请求]设置项
@@ -161,20 +165,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 	}
 
 	if h.RequestID == "" {
-		h.RequestID = RequestIDKey
-	}
-
-	if len(h.Headers) > 0 {
-		h.init = func(s web.Server) {
-			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-				return func(ctx *web.Context) web.Responser {
-					for _, hh := range h.Headers {
-						ctx.Header().Add(hh.Key, hh.Value)
-					}
-					return next(ctx)
-				}
-			}))
-		}
+		h.RequestID = header.XRequestID
 	}
 
 	if err := h.buildTLSConfig(); err != nil {
@@ -199,11 +190,26 @@ func (h *httpConfig) buildHTTPServer() {
 }
 
 func (h *httpConfig) buildRoutersOptions() {
-	opt := make([]mux.Option, 0, 1)
+	opt := make([]web.RouterOption, 0, 1)
+
+	if len(h.Headers) > 0 {
+		h.init = func(s web.Server) {
+			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+				return func(ctx *web.Context) web.Responser {
+					for _, hh := range h.Headers {
+						ctx.Header().Add(hh.Key, hh.Value)
+					}
+					return next(ctx)
+				}
+			}))
+		}
+	}
+
 	if h.CORS != nil {
 		c := h.CORS
 		opt = append(opt, mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials))
 	}
+
 	h.routersOptions = opt
 }
 

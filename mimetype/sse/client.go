@@ -12,8 +12,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 var messagePool = &sync.Pool{New: func() any { return &Message{} }}
@@ -72,7 +74,7 @@ func OnMessage(ctx context.Context, l *web.Logger, req *http.Request, c *http.Cl
 	}
 
 	req.Header.Set(header.CacheControl, header.NoCache)
-	req.Header.Set(header.Connection, header.KeepAlive)
+	req.Header.Set(header.Connection, qheader.KeepAlive)
 	req.Header.Set(header.Accept, Mimetype)
 
 	resp, err := c.Do(req)

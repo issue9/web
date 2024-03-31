@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 )
 
 func TestSanitizeOptions(t *testing.T) {
@@ -21,5 +22,5 @@ func TestSanitizeOptions(t *testing.T) {
 		NotNil(o.IDGenerator).
 		NotNil(o.config).
 		Equal(o.Config.Dir, DefaultConfigDir).
-		Equal(o.RequestIDKey, RequestIDKey)
+		Equal(o.RequestIDKey, header.XRequestID)
 }

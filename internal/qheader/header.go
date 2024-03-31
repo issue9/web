@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package header 与报头相关的处理方法
-package header
+package qheader
 
 import (
 	"net/http"
 	"strings"
 	"unicode"
 
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"
@@ -17,36 +17,8 @@ import (
 
 // 一些常用的报头值
 const (
-	UTF8Name  = "utf-8"
 	Identity  = "identity"
-	XHR       = "xmlhttprequest"
 	KeepAlive = "keep-alive"
-	NoCache   = "no-cache"
-)
-
-// 一些报头名的定义
-const (
-	ContentType     = "Content-Type"
-	ContentLang     = "Content-Language"
-	ContentLength   = "Content-Length"
-	ContentEncoding = "Content-Encoding"
-
-	Accept         = "Accept"
-	AcceptLang     = "Accept-Language"
-	AcceptEncoding = "Accept-Encoding"
-	AcceptCharset  = "Accept-Charset"
-
-	Connection   = "Connection"
-	CacheControl = "Cache-Control"
-
-	Location    = "Location"
-	ETag        = "ETag"
-	IfNoneMatch = "If-None-Match"
-	Vary        = "Vary"
-	Allow       = "Allow"
-
-	RequestIDKey   = "X-Request-ID"
-	RequestWithKey = "X-Requested-With"
 )
 
 // ParseWithParam 分析带参数的报头
@@ -84,12 +56,12 @@ func ParseWithParam(header, param string) (mt, paramValue string) {
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func ParseAcceptCharset(header string) (name string, enc encoding.Encoding) {
-	if header == "" || header == "*" {
-		return UTF8Name, nil
+func ParseAcceptCharset(h string) (name string, enc encoding.Encoding) {
+	if h == "" || h == "*" {
+		return header.UTF8, nil
 	}
 
-	items := ParseQHeader(header, "*")
+	items := ParseQHeader(h, "*")
 	for _, item := range items {
 		if item.Err != nil {
 			continue
@@ -120,14 +92,14 @@ func BuildContentType(mt, charset string) string {
 		panic("mt 不能为空")
 	}
 	if charset == "" {
-		charset = UTF8Name
+		charset = header.UTF8
 	}
 
 	return mt + "; charset=" + charset
 }
 
 func ClientIP(r *http.Request) string {
-	ip := r.Header.Get("X-Forwarded-For")
+	ip := r.Header.Get(header.XForwardedFor)
 	if index := strings.IndexByte(ip, ','); index > 0 {
 		ip = ip[:index]
 	}
@@ -146,7 +118,7 @@ func ClientIP(r *http.Request) string {
 // etag 为服务端生成的新值，包含了双引号，但不包含弱验证的 W/ 前缀；
 // 返回值表示是否可以反馈 304 给客户。
 func InitETag(w http.ResponseWriter, r *http.Request, etag string, weak bool) bool {
-	client := r.Header.Get(IfNoneMatch)
+	client := r.Header.Get(header.IfNoneMatch)
 
 	eq := client == etag ||
 		(weak && len(client) > 1 && client[2:] == etag) // W/ 开头
@@ -154,7 +126,7 @@ func InitETag(w http.ResponseWriter, r *http.Request, etag string, weak bool) bo
 	if weak {
 		etag = "W/" + etag
 	}
-	w.Header().Set(ETag, etag)
+	w.Header().Set(header.ETag, etag)
 
 	return eq
 }

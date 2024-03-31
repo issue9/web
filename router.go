@@ -10,13 +10,13 @@ import (
 	"strconv"
 
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v7"
-	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8"
+	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v8/types"
 	"github.com/issue9/source"
 
 	"github.com/issue9/web/internal/errs"
-	"github.com/issue9/web/internal/header"
 )
 
 type (

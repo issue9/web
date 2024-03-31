@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 // Responser 向客户端输出对象需要实现的接口
@@ -67,9 +68,9 @@ func (ctx *Context) Render(status int, body any) {
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, header.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
-		ctx.Header().Set(header.ContentLang, id)
+		ctx.Header().Set(header.ContentLanguage, id)
 	}
 
 	data, err := ctx.Marshal(body)
@@ -125,7 +126,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 			})
 		}
 
-		if !header.CharsetIsNop(ctx.outputCharset) {
+		if !qheader.CharsetIsNop(ctx.outputCharset) {
 			ctx.Header().Add(header.Vary, header.ContentEncoding) // 只有在确定需要输出内容时才输出 Vary 报头
 			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
 			ctx.writer = w
@@ -179,7 +180,7 @@ func (ctx *Context) SetCookies(c ...*http.Cookie) {
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
 	return ResponserFunc(func(ctx *Context) {
 		if ctx.Request().Method == http.MethodGet {
-			if tag, weak := etag(); header.InitETag(ctx, ctx.Request(), tag, weak) {
+			if tag, weak := etag(); qheader.InitETag(ctx, ctx.Request(), tag, weak) {
 				ctx.WriteHeader(http.StatusNotModified)
 				return
 			}

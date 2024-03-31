@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package header
+package qheader
 
 import (
 	"net/http/httptest"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/assert/v4/rest"
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
@@ -57,17 +58,17 @@ func TestParseWithParam(t *testing.T) {
 func TestAcceptCharset(t *testing.T) {
 	a := assert.New(t, false)
 
-	name, enc := ParseAcceptCharset(UTF8Name)
-	a.Equal(name, UTF8Name).
+	name, enc := ParseAcceptCharset(header.UTF8)
+	a.Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	name, enc = ParseAcceptCharset("")
-	a.Equal(name, UTF8Name).
+	a.Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	// * 表示采用默认的编码
 	name, enc = ParseAcceptCharset("*")
-	a.Equal(name, UTF8Name).
+	a.Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	name, enc = ParseAcceptCharset("gbk")
@@ -94,8 +95,8 @@ func TestBuildContentType(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.Equal("application/xml; charset=utf16", BuildContentType("application/xml", "utf16"))
-	a.Equal("application/xml; charset="+UTF8Name, BuildContentType("application/xml", ""))
-	a.Equal("application/xml; charset="+UTF8Name, BuildContentType("application/xml", ""))
+	a.Equal("application/xml; charset="+header.UTF8, BuildContentType("application/xml", ""))
+	a.Equal("application/xml; charset="+header.UTF8, BuildContentType("application/xml", ""))
 	a.PanicString(func() {
 		BuildContentType("", "")
 	}, "mt 不能为空")
@@ -138,35 +139,35 @@ func TestInitETag(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := rest.Post(a, "/path", nil).Request()
 	a.False(InitETag(w, r, `"abc"`, false)).
-		Equal(w.Header().Get(ETag), `"abc"`)
+		Equal(w.Header().Get(header.ETag), `"abc"`)
 
 	// client=abc, etag=abc, weak=false
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", nil).Header(IfNoneMatch, `"abc"`).Request()
+	r = rest.Post(a, "/path", nil).Header(header.IfNoneMatch, `"abc"`).Request()
 	a.True(InitETag(w, r, `"abc"`, false)).
-		Equal(w.Header().Get(ETag), `"abc"`)
+		Equal(w.Header().Get(header.ETag), `"abc"`)
 
 	// client=abc, etag=abc, weak=true
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", nil).Header(IfNoneMatch, `"abc"`).Request()
+	r = rest.Post(a, "/path", nil).Header(header.IfNoneMatch, `"abc"`).Request()
 	a.True(InitETag(w, r, `"abc"`, true)).
-		Equal(w.Header().Get(ETag), `W/"abc"`)
+		Equal(w.Header().Get(header.ETag), `W/"abc"`)
 
 	// client=W/abc, etag=abc, weak=true
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", nil).Header(IfNoneMatch, `W/"abc"`).Request()
+	r = rest.Post(a, "/path", nil).Header(header.IfNoneMatch, `W/"abc"`).Request()
 	a.True(InitETag(w, r, `"abc"`, true)).
-		Equal(w.Header().Get(ETag), `W/"abc"`)
+		Equal(w.Header().Get(header.ETag), `W/"abc"`)
 
 	// client=abcdef, etag=abc, weak=true
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", nil).Header(IfNoneMatch, `"abcdef"`).Request()
+	r = rest.Post(a, "/path", nil).Header(header.IfNoneMatch, `"abcdef"`).Request()
 	a.False(InitETag(w, r, `"abc"`, true)).
-		Equal(w.Header().Get(ETag), `W/"abc"`)
+		Equal(w.Header().Get(header.ETag), `W/"abc"`)
 
 	// client=abcdef, etag=abc, weak=false
 	w = httptest.NewRecorder()
-	r = rest.Post(a, "/path", nil).Header(IfNoneMatch, `"abcdef"`).Request()
+	r = rest.Post(a, "/path", nil).Header(header.IfNoneMatch, `"abcdef"`).Request()
 	a.False(InitETag(w, r, `"abc"`, false)).
-		Equal(w.Header().Get(ETag), `"abc"`)
+		Equal(w.Header().Get(header.ETag), `"abc"`)
 }

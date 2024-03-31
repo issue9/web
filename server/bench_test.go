@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v7"
+	"github.com/issue9/mux/v8"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/server/servertest"
 )
 
@@ -36,8 +37,8 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
-				Header(header.Accept, "application/json").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
+				Header(header.Accept, header.JSON).
 				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
 				Request()
 			resp, err := http.DefaultClient.Do(r)
@@ -51,8 +52,8 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header(header.ContentType, header.BuildContentType("application/json", "gbk")).
-				Header(header.Accept, "application/json").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
+				Header(header.Accept, header.JSON).
 				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
 				Header(header.AcceptEncoding, "gzip").
 				Request()
@@ -67,8 +68,8 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 		a := assert.New(b, false)
 		for range b.N {
 			r := servertest.Get(a, "http://localhost:8080/path").
-				Header(header.ContentType, header.BuildContentType("application/json", header.UTF8Name)).
-				Header(header.Accept, "application/json").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8)).
+				Header(header.Accept, header.JSON).
 				Request()
 			resp, err := http.DefaultClient.Do(r)
 			a.NotError(err).NotNil(resp).Equal(resp.Header.Get("h1"), "h1")

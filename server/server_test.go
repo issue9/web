@@ -15,11 +15,11 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
-	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
@@ -209,7 +209,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	a.Equal(0, c)
 	resp, err := http.Get("http://localhost:8080/close")
 	a.Wait(500 * time.Microsecond). // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-		NotError(err).NotNil(resp).True(c > 0)
+					NotError(err).NotNil(resp).True(c > 0)
 
 	// 连接被关闭，返回错误内容
 	resp, err = http.Get("http://localhost:8080/close")
@@ -332,8 +332,8 @@ func TestHTTPServer_NewContext(t *testing.T) {
 		return nil
 	})
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLang, "cmn-hans").
-		Header(header.Accept, "application/json").
+		Header(header.AcceptLanguage, "cmn-hans").
+		Header(header.Accept, header.JSON).
 		Do(nil).
 		Success()
 }

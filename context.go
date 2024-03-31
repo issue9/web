@@ -13,13 +13,14 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v8/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web/compressor"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 var contextPool = &sync.Pool{
@@ -91,7 +92,7 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	}
 
 	h = r.Header.Get(header.AcceptCharset)
-	outputCharsetName, outputCharset := header.ParseAcceptCharset(h)
+	outputCharsetName, outputCharset := qheader.ParseAcceptCharset(h)
 	if outputCharsetName == "" {
 		debug().LocaleString(Phrase("not found charset for %s", h))
 		w.WriteHeader(http.StatusNotAcceptable) // 无法找到对方要求的字符集，依然只是简单地返回状态码。
@@ -118,7 +119,7 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 	}
 
-	tag := acceptLanguage(s.server, r.Header.Get(header.AcceptLang))
+	tag := acceptLanguage(s.server, r.Header.Get(header.AcceptLanguage))
 
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
@@ -197,7 +198,7 @@ func (ctx *Context) SetCharset(charset string) {
 		return
 	}
 
-	outputCharsetName, outputCharset := header.ParseAcceptCharset(charset)
+	outputCharsetName, outputCharset := qheader.ParseAcceptCharset(charset)
 	if outputCharsetName == "" {
 		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
 	}
@@ -300,11 +301,11 @@ func (s *InternalServer) freeContext(ctx *Context) {
 // 此方法添加的函数会先于 [Server.OnExitContext] 添加的函数执行。
 func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, f) }
 
-func acceptLanguage(s Server, header string) language.Tag {
-	if header == "" {
+func acceptLanguage(s Server, h string) language.Tag {
+	if h == "" {
 		return s.Locale().ID()
 	}
-	tag, _ := language.MatchStrings(s.Locale().Matcher(), header)
+	tag, _ := language.MatchStrings(s.Locale().Matcher(), h)
 	return tag
 }
 
@@ -314,7 +315,7 @@ func acceptLanguage(s Server, header string) language.Tag {
 //   - X-Forwarded-For 的第一个元素
 //   - Remote-Addr 报头
 //   - X-Read-IP 报头
-func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
+func (ctx *Context) ClientIP() string { return qheader.ClientIP(ctx.Request()) }
 
 // Logs 返回日志操作对象
 //
@@ -322,7 +323,7 @@ func (ctx *Context) ClientIP() string { return header.ClientIP(ctx.Request()) }
 func (ctx *Context) Logs() *AttrLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
-	return strings.ToLower(ctx.Request().Header.Get(header.RequestWithKey)) == header.XHR
+	return strings.ToLower(ctx.Request().Header.Get(header.XRequestedWith)) == "xmlhttprequest"
 }
 
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]

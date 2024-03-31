@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-package header
+package qheader
 
 import (
 	"mime"
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 )
 
 func BenchmarkParseWithParam(b *testing.B) {
@@ -76,6 +77,6 @@ func BenchmarkBuildContentType(b *testing.B) {
 	a := assert.New(b, false)
 
 	for range b.N {
-		a.Equal(BuildContentType("application/json", UTF8Name), "application/json; charset=utf-8")
+		a.Equal(BuildContentType("application/json", header.UTF8), "application/json; charset=utf-8")
 	}
 }

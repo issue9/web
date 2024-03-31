@@ -18,7 +18,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v7/group"
+	"github.com/issue9/mux/v8/group"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"

@@ -14,9 +14,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/bufpool"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 type (
@@ -131,7 +133,7 @@ func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()
 	s = &Source{
 		last: ctx.Begin(),
 
-		lastID: ctx.Request().Header.Get("Last-Event-ID"),
+		lastID: ctx.Request().Header.Get(header.LastEventID),
 		retry:  srv.retry,
 		buf:    make(chan *bytes.Buffer, srv.bufCap),
 		exit:   make(chan struct{}, 1),
@@ -149,10 +151,10 @@ func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()
 
 // 和客户端进行连接，如果返回，则表示连接被关闭。
 func (s *Source) connect(ctx *web.Context) {
-	ctx.Header().Set(header.ContentType, header.BuildContentType(Mimetype, header.UTF8Name))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(Mimetype, header.UTF8))
 	ctx.Header().Set(header.ContentLength, "0")
 	ctx.Header().Set(header.CacheControl, header.NoCache)
-	ctx.Header().Set(header.Connection, header.KeepAlive)
+	ctx.Header().Set(header.Connection, qheader.KeepAlive)
 	ctx.WriteHeader(http.StatusOK) // 根据标准，就是 200。
 
 	rc := http.NewResponseController(ctx)

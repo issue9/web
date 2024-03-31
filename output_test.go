@@ -14,10 +14,11 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v8/types"
 	"golang.org/x/text/language"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 type response struct {
@@ -33,43 +34,43 @@ func TestContext_Render(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.ContentType, "application/json")
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
-		Equal(w.Header().Get(header.ContentType), header.BuildContentType("application/json", "utf-8")).
-		Equal(w.Header().Get(header.ContentLang), "zh-Hans")
+		Equal(w.Header().Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8)).
+		Equal(w.Header().Get(header.ContentLanguage), "zh-Hans")
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
-		Equal(w.Header().Get(header.ContentLang), language.SimplifiedChinese.String()).
+		Equal(w.Header().Get(header.ContentLanguage), language.SimplifiedChinese.String()).
 		Equal(w.Body.String(), objectJSONString)
 
 	// 输出 nil，content-type 和 content-language 均为空
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "zh-hans")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "zh-hans")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, nil)
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
-		Equal(w.Header().Get(header.ContentLang), ""). // 指定了输出语言，也返回空。
+		Equal(w.Header().Get(header.ContentLanguage), ""). // 指定了输出语言，也返回空。
 		Equal(w.Header().Get(header.ContentType), "")
 
 	// accept,accept-language,accept-charset
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "zh-hans")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "zh-hans")
 	r.Header.Set(header.AcceptCharset, "gbk")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
@@ -79,8 +80,8 @@ func TestContext_Render(t *testing.T) {
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "zh-hans")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "zh-hans")
 	r.Header.Set(header.AcceptCharset, "gbk")
 	r.Header.Set(header.AcceptEncoding, "deflate")
 	ctx = srv.NewContext(w, r, types.NewContext())
@@ -95,7 +96,7 @@ func TestContext_Render(t *testing.T) {
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	n, err := ctx.Write([]byte("123"))
@@ -109,7 +110,7 @@ func TestContext_Render(t *testing.T) {
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx = srv.NewContext(w, r, types.NewContext())
 	ctx.Render(http.StatusCreated, "123")
 	n, err = ctx.Write([]byte("123"))
@@ -126,7 +127,7 @@ func TestContext_Render(t *testing.T) {
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx, srv.logBuf.String()).
 		Equal(ctx.Mimetype(false), "application/test").
-		Equal(ctx.Charset(), header.UTF8Name)
+		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, "任意值")
 	srv.freeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
@@ -138,7 +139,7 @@ func TestContext_Render(t *testing.T) {
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx).
 		Equal(ctx.Mimetype(false), "application/test").
-		Equal(ctx.Charset(), header.UTF8Name)
+		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	srv.freeContext(ctx)
 	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
@@ -152,8 +153,8 @@ func TestContext_Wrap(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "cmn-hant")
 	ctx := s.NewContext(w, r, types.NewContext())
 	_, err := ctx.Write([]byte("abc"))
 	a.NotError(err)
@@ -169,8 +170,8 @@ func TestContext_Wrap(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "cmn-hant")
 	r.Header.Set(header.AcceptEncoding, "")
 	ctx = s.NewContext(w, r, types.NewContext())
 
@@ -188,8 +189,8 @@ func TestContext_Wrap(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "cmn-hant")
 	r.Header.Set(header.AcceptEncoding, "")
 	ctx = s.NewContext(w, r, types.NewContext())
 
@@ -217,16 +218,16 @@ func TestContext_LocalePrinter(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "cmn-hant")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "cmn-hant")
 	ctx := srv.NewContext(w, r, types.NewContext())
 	ctx.Render(http.StatusOK, ctx.Sprintf("test"))
 	a.Equal(w.Body.String(), `"測試"`)
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, "application/json")
-	r.Header.Set(header.AcceptLang, "cmn-hans")
+	r.Header.Set(header.Accept, header.JSON)
+	r.Header.Set(header.AcceptLanguage, "cmn-hans")
 	ctx = srv.NewContext(w, r, types.NewContext())
 	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试")).Equal(w.Body.String(), "测试")
@@ -301,7 +302,7 @@ func TestCreated(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	s.NewContext(w, r, types.NewContext()).
 		apply(Created(nil, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -309,7 +310,7 @@ func TestCreated(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	s.NewContext(w, r, types.NewContext()).
 		apply(Created(objectInst, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -318,7 +319,7 @@ func TestCreated(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	s.NewContext(w, r, types.NewContext()).
 		apply(Created(objectInst, "/p2"))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -355,7 +356,7 @@ func TestNoContent(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.AcceptEncoding, "gzip") // 服务端不应该构建压缩对象
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	s.NewContext(w, r, types.NewContext()).apply(NoContent())
 	a.NotContains(s.logBuf.String(), "request method or response status code does not allow body")
 }

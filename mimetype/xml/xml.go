@@ -9,11 +9,13 @@ import (
 	"encoding/xml"
 	"io"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
 )
 
 const (
-	Mimetype        = "application/xml"
+	Mimetype        = header.XML
 	ProblemMimetype = "application/problem+xml"
 )
 

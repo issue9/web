@@ -9,8 +9,6 @@
 //   - 其它情况下，则 [Mode] 的值永远是 [Production]；
 package comptime
 
-import "github.com/issue9/web"
-
 const (
 	Production  int = iota // 运行于生产环境
 	Development            // 运行于开发环境
@@ -31,9 +29,3 @@ const Mode = defaultMode
 // 一般像根据环境加载不同的配置文件之类的功能可以使用此方法。
 // 比如 [server/app.CLI.ConfigFilename] 可以使用此文件指定相同的文件名。
 func Filename(f string) string { return filename(f) }
-
-// DebugRouter 在 [Development] 环境下为 r 提供一组测试用的 API
-//
-// path 测试路径；
-// id 在取地址参数出错时的 problem id；
-func DebugRouter(r *web.Router, path, id string) { debugRouter(r, path, id) }

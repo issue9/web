@@ -11,8 +11,9 @@ import (
 
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
+	"github.com/issue9/mux/v8/header"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/internal/status"
 	"github.com/issue9/web/selector"
 )
@@ -132,7 +133,7 @@ func (c *Client) ParseResponse(rsp *http.Response, resp any, pb ProblemBuilder) 
 		return NewLocaleError("the server miss content-type header")
 	}
 
-	if !header.CharsetIsNop(inputCharset) {
+	if !qheader.CharsetIsNop(inputCharset) {
 		reader = transform.NewReader(reader, inputCharset.NewDecoder())
 	}
 
@@ -175,7 +176,7 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	r.Header.Set(header.ContentType, header.BuildContentType(c.marshalName, header.UTF8Name))
+	r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
 	r.Header.Set(header.Accept, c.codec.acceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
 	if c.requestIDKey != "" {

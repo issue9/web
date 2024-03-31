@@ -13,10 +13,9 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v8/types"
 	"golang.org/x/text/language"
-
-	"github.com/issue9/web/internal/header"
 )
 
 var _ http.ResponseWriter = &Context{}
@@ -57,16 +56,16 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
 		s.NewContext(w, r, types.NewContext())
-		a.NotEmpty(w.Header().Get(header.RequestIDKey))
+		a.NotEmpty(w.Header().Get(header.XRequestID))
 	})
 
 	t.Run("set request id key", func(*testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.RequestIDKey, "111")
+		r.Header.Set(header.XRequestID, "111")
 
 		s.NewContext(w, r, types.NewContext())
-		a.Equal(w.Header().Get(header.RequestIDKey), "111")
+		a.Equal(w.Header().Get(header.XRequestID), "111")
 	})
 
 	t.Run("accept", func(*testing.T) {
@@ -112,7 +111,7 @@ func TestContext_SetMimetype(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 
@@ -136,7 +135,7 @@ func TestContext_SetCharset(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 
@@ -159,7 +158,7 @@ func TestContext_SetEncoding(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 
@@ -183,7 +182,7 @@ func TestContext_SetLanguage(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 
@@ -205,7 +204,7 @@ func TestContext_IsXHR(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set("X-Requested-With", "XMLHttpRequest")
+	r.Header.Set(header.XRequestedWith, "XMLHttpRequest")
 	ctx = s.NewContext(w, r, types.NewContext())
 	a.True(ctx.IsXHR())
 }

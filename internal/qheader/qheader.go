@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-package header
+// Package qheader 与报头相关的处理方法
+package qheader
 
 import (
 	"cmp"

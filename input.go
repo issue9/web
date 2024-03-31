@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/query/v3"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/locales"
 )
 
@@ -313,7 +313,7 @@ func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 // RequestBody 用户提交的内容
 func (ctx *Context) RequestBody() io.Reader {
 	r := ctx.Request().Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close
-	if !header.CharsetIsNop(ctx.inputCharset) {
+	if !qheader.CharsetIsNop(ctx.inputCharset) {
 		return transform.NewReader(r, ctx.inputCharset.NewDecoder())
 	}
 	return r

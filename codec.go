@@ -14,9 +14,10 @@ import (
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web/compressor"
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 // Codec 编码解码工具
@@ -188,8 +189,8 @@ func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, 
 		return
 	}
 
-	accepts := header.ParseQHeader(h, "*")
-	defer header.PutQHeader(&accepts)
+	accepts := qheader.ParseQHeader(h, "*")
+	defer qheader.PutQHeader(&accepts)
 	if len(accepts) == 0 {
 		return
 	}
@@ -206,21 +207,21 @@ func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, 
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
-			if slices.IndexFunc(accepts, func(i *header.Item) bool { return i.Value == curr.compressor.Name() }) < 0 {
+			if slices.IndexFunc(accepts, func(i *qheader.Item) bool { return i.Value == curr.compressor.Name() }) < 0 {
 				return curr.compressor, false
 			}
 		}
 		return
 	}
 
-	var identity *header.Item
+	var identity *qheader.Item
 	for _, accept := range accepts {
 		if accept.Err != nil {
 			// NOTE: 对于客户端的错误，不记录于日志中。
 			continue
 		}
 
-		if accept.Value == header.Identity { // 除非 q=0，否则表示总是可以被接受
+		if accept.Value == qheader.Identity { // 除非 q=0，否则表示总是可以被接受
 			identity = accept
 		}
 
@@ -277,14 +278,14 @@ func (m *mediaType) name(problem bool) string {
 //
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
 func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mimetype, charset := header.ParseWithParam(h, "charset")
+	mimetype, charset := qheader.ParseWithParam(h, "charset")
 
 	item := e.searchFunc(func(s string) bool { return s == mimetype })
 	if item == nil {
 		return nil, nil, localeutil.Error("not found serialization function for %s", mimetype)
 	}
 
-	if charset == "" || charset == header.UTF8Name {
+	if charset == "" || charset == header.UTF8 {
 		return item.Unmarshal, nil, nil
 	}
 	c, err := htmlindex.Get(charset)
@@ -313,8 +314,8 @@ func (e *Codec) accept(h string) *mediaType {
 		return nil
 	}
 
-	items := header.ParseQHeader(h, "*/*")
-	defer header.PutQHeader(&items)
+	items := qheader.ParseQHeader(h, "*/*")
+	defer qheader.PutQHeader(&items)
 	for _, item := range items {
 		if i := e.findMarshal(item.Value); i != nil {
 			return i

@@ -13,10 +13,11 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v7/routertest"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v8/routertest"
+	"github.com/issue9/mux/v8/types"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 func BenchmarkRouter(b *testing.B) {
@@ -40,7 +41,7 @@ func BenchmarkNewContext(b *testing.B) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gbk"))
+	r.Header.Set(header.ContentType, qheader.BuildContentType("application/json", "gbk"))
 	r.Header.Set(header.Accept, "application/json")
 	r.Header.Set(header.AcceptCharset, "gbk")
 	for range b.N {
@@ -56,7 +57,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	b.Run("none", func(b *testing.B) {
 		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
-			r.Header.Set(header.Accept, "application/json")
+			r.Header.Set(header.Accept, header.JSON)
 			w := httptest.NewRecorder()
 
 			ctx := s.NewContext(w, r, types.NewContext())
@@ -70,8 +71,8 @@ func BenchmarkContext_Render(b *testing.B) {
 	b.Run("utf8", func(b *testing.B) {
 		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
-			r.Header.Set(header.Accept, "application/json")
-			r.Header.Set(header.AcceptCharset, header.UTF8Name)
+			r.Header.Set(header.Accept, header.JSON)
+			r.Header.Set(header.AcceptCharset, header.UTF8)
 			w := httptest.NewRecorder()
 			ctx := s.NewContext(w, r, types.NewContext())
 			ctx.apply(Response(http.StatusCreated, objectInst))
@@ -84,7 +85,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	b.Run("gbk", func(b *testing.B) {
 		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
-			r.Header.Set(header.Accept, "application/json")
+			r.Header.Set(header.Accept, header.JSON)
 			r.Header.Set(header.AcceptCharset, "gbk")
 			w := httptest.NewRecorder()
 
@@ -99,7 +100,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	b.Run("charset; encoding", func(b *testing.B) {
 		for range b.N {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
-			r.Header.Set(header.Accept, "application/json")
+			r.Header.Set(header.Accept, header.JSON)
 			r.Header.Set(header.AcceptCharset, "gbk")
 			r.Header.Set(header.AcceptEncoding, "deflate")
 			w := httptest.NewRecorder()
@@ -121,8 +122,8 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-		r.Header.Set(header.Accept, "application/json")
+		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+		r.Header.Set(header.Accept, header.JSON)
 		ctx := srv.NewContext(w, r, types.NewContext())
 
 		obj := &object{}
@@ -140,8 +141,8 @@ func BenchmarkPost(b *testing.B) {
 	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-		r.Header.Set(header.Accept, "application/json")
+		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+		r.Header.Set(header.Accept, header.JSON)
 		ctx := srv.NewContext(w, r, types.NewContext())
 
 		o := &object{}
@@ -163,8 +164,8 @@ func BenchmarkContext_Object(b *testing.B) {
 	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
-		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-		r.Header.Set(header.Accept, "application/json")
+		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+		r.Header.Set(header.Accept, header.JSON)
 		ctx := s.NewContext(w, r, types.NewContext())
 		ctx.apply(Response(http.StatusTeapot, o))
 	}
@@ -178,10 +179,10 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	for range b.N {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
-		r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-		r.Header.Set(header.Accept, "application/json")
+		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+		r.Header.Set(header.Accept, header.JSON)
 		ctx := s.NewContext(w, r, types.NewContext())
-		ctx.apply(Response(http.StatusTeapot, o, "Location", "https://example.com"))
+		ctx.apply(Response(http.StatusTeapot, o, header.Location, "https://example.com"))
 	}
 }
 
@@ -203,8 +204,8 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := s.NewContext(w, r, types.NewContext())
 
 	p := newProblem()
@@ -224,8 +225,8 @@ func BenchmarkNewFilterContext(b *testing.B) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set(header.ContentType, header.BuildContentType("application/json", header.UTF8Name))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
+	r.Header.Set(header.Accept, header.JSON)
 	ctx := s.NewContext(w, r, types.NewContext())
 	defer s.freeContext(ctx)
 

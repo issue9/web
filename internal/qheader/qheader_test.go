@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package header
+package qheader
 
 import (
 	"errors"

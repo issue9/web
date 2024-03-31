@@ -11,9 +11,10 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/types"
+	"github.com/issue9/mux/v8/header"
 
-	"github.com/issue9/web/internal/header"
+	"github.com/issue9/web/internal/qheader"
 )
 
 var (
@@ -268,7 +269,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	srv := newTestServer(a)
 
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
 	w := httptest.NewRecorder()
 	ctx := srv.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
@@ -278,14 +279,14 @@ func TestContext_Unmarshal(t *testing.T) {
 
 	// 无法转换
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r, types.NewContext())
 	a.Error(ctx.Unmarshal(``))
 
 	// 空提交
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r, types.NewContext())
 	obj = &object{}
@@ -294,7 +295,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 	// gbk
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(objectGBKBytes))
-	r.Header.Set(header.ContentType, header.BuildContentType("application/json", "gb18030"))
+	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, "gb18030"))
 	w = httptest.NewRecorder()
 	ctx = srv.NewContext(w, r, types.NewContext())
 	obj = &object{}
@@ -307,7 +308,7 @@ func TestContext_Read(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
 	ctx := s.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	obj := &object{}
@@ -316,7 +317,7 @@ func TestContext_Read(t *testing.T) {
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
-	r.Header.Set(header.ContentType, "application/json")
+	r.Header.Set(header.ContentType, header.JSON)
 	ctx = s.NewContext(w, r, types.NewContext())
 	a.NotNil(ctx)
 	resp := ctx.Read(false, ``, "41110")

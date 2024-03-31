@@ -13,8 +13,8 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v7/group"
-	"github.com/issue9/mux/v7/types"
+	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v8/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"

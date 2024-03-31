@@ -48,10 +48,12 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/issue9/mux/v8/header"
+
 	"github.com/issue9/web"
 )
 
-const Mimetype = "application/x-www-form-urlencoded"
+const Mimetype = header.FormData
 
 // Marshaler 将一个普通对象转换成 form 类型
 type Marshaler interface {

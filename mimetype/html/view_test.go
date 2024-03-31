@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/header"
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
@@ -64,14 +64,14 @@ func TestInstallView(t *testing.T) {
 	})
 
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLang, "cmn-hans").
+		Header(header.AcceptLanguage, "cmn-hans").
 		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans</div>\n<div>hans</div>\n")
 
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLang, "zh-hant").
+		Header(header.AcceptLanguage, "zh-hant").
 		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
@@ -95,14 +95,14 @@ func TestInstallDirView(t *testing.T) {
 		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(200, &obj{}) })
 	})
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLang, "cmn-hans").
+		Header(header.AcceptLanguage, "cmn-hans").
 		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).
 		StringBody("\n<div>hans简</div>\n<div>hans</div>\n")
 
 	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLang, "cmn-hant").
+		Header(header.AcceptLanguage, "cmn-hant").
 		Header(header.Accept, html.Mimetype).
 		Do(nil).
 		Status(200).

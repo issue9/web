@@ -30,13 +30,14 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype"
 )
 
-const Mimetype = "text/html"
+const Mimetype = header.HTML
 
 // Marshaler 自定义 HTML 输出需要实现的接口
 //
