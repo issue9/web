@@ -66,6 +66,11 @@ type (
 		// [跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors
 		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
 
+		// Trace 是否启用 TRACE 请求
+		//
+		// 默认为 false。
+		Trace bool `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
+
 		routersOptions []mux.Option
 		init           func(web.Server)
 		httpServer     *http.Server
@@ -172,6 +177,19 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		return err
 	}
 
+	if len(h.Headers) > 0 {
+		h.init = func(s web.Server) {
+			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+				return func(ctx *web.Context) web.Responser {
+					for _, hh := range h.Headers {
+						ctx.Header().Add(hh.Key, hh.Value)
+					}
+					return next(ctx)
+				}
+			}))
+		}
+	}
+
 	h.buildRoutersOptions()
 	h.buildHTTPServer()
 	return nil
@@ -190,25 +208,14 @@ func (h *httpConfig) buildHTTPServer() {
 }
 
 func (h *httpConfig) buildRoutersOptions() {
-	opt := make([]web.RouterOption, 0, 1)
-
-	if len(h.Headers) > 0 {
-		h.init = func(s web.Server) {
-			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-				return func(ctx *web.Context) web.Responser {
-					for _, hh := range h.Headers {
-						ctx.Header().Add(hh.Key, hh.Value)
-					}
-					return next(ctx)
-				}
-			}))
-		}
-	}
+	opt := make([]web.RouterOption, 0, 2)
 
 	if h.CORS != nil {
 		c := h.CORS
 		opt = append(opt, mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials))
 	}
+
+	opt = append(opt, mux.Trace(h.Trace))
 
 	h.routersOptions = opt
 }

@@ -30,8 +30,7 @@ import (
 	"github.com/issue9/web/server/registry"
 )
 
-const DefaultConfigDir = "@.config"          // 默认的配置目录地址
-
+const DefaultConfigDir = "@.config" // 默认的配置目录地址
 
 const (
 	typeHTTP int = iota
