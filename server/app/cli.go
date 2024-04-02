@@ -91,24 +91,45 @@ type CLI[T any] struct {
 // args 表示命令行参数，一般为 [os.Args]。
 //
 // 如果是 [CLI] 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
-func (cmd *CLI[T]) Exec(args []string) (err error) {
+func (cmd *CLI[T]) Exec(errHandling flag.ErrorHandling, args []string) (err error) {
 	if err = cmd.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(err)
 	}
-
-	f := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
-	f.SetOutput(cmd.Out)
-	do := cmd.FlagSet(true, f)
-	if err = f.Parse(args[1:]); err == nil {
-		err = do(cmd.Out)
-	}
-
-	if err != nil {
-		if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
-			err = errors.New(le.LocaleString(cmd.Printer))
+	wrap := func(err error) error {
+		if err != nil {
+			if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+				return errors.New(le.LocaleString(cmd.Printer))
+			}
 		}
+		return err
 	}
-	return err
+
+	fs := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
+	fs.SetOutput(cmd.Out)
+
+	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))
+	h := fs.Bool("h", false, cmdShowHelp.LocaleString(cmd.Printer))
+	fs.StringVar(&cmd.action, "a", "", cmdAction.LocaleString(cmd.Printer))
+	if err = fs.Parse(args[1:]); err != nil {
+		return wrap(err)
+	}
+
+	if *v {
+		_, err = fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
+		return wrap(err)
+	}
+
+	if *h {
+		fs.PrintDefaults()
+		return nil
+	}
+
+	if slices.Index(cmd.ServeActions, cmd.action) < 0 { // 非服务
+		_, err = cmd.initServer()
+		return wrap(err)
+	}
+
+	return wrap(cmd.app.Exec())
 }
 
 func (cmd *CLI[T]) sanitize() error {
@@ -151,43 +172,6 @@ const (
 	cmdAction      = web.StringPhrase("cmd.action")
 	cmdShowHelp    = web.StringPhrase("cmd.show_help")
 )
-
-// FlagSet 将当前对象的所有参数向 [flag.FlagSet] 注册
-//
-// helpFlag 是否添加帮助选项。
-// 如果是独立使用的建议设置为 true。
-// 作为子命令使用的可以设置为 false。
-// fs 用于接收命令行的参数。
-//
-// 返回实际执行的函数，其签名为 `func(w io.Writer) error`，w 表示处理过程中的输出通道。
-func (cmd *CLI[T]) FlagSet(helpFlag bool, fs *flag.FlagSet) func(io.Writer) error {
-	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))
-	fs.StringVar(&cmd.action, "a", "", cmdAction.LocaleString(cmd.Printer))
-
-	var h bool
-	if helpFlag {
-		fs.BoolVar(&h, "h", false, cmdShowHelp.LocaleString(cmd.Printer))
-	}
-
-	return func(w io.Writer) error {
-		if *v {
-			_, err := fmt.Fprintln(w, cmd.Name, cmd.Version)
-			return err
-		}
-
-		if helpFlag && h {
-			fs.PrintDefaults()
-			return nil
-		}
-
-		if slices.Index(cmd.ServeActions, cmd.action) < 0 { // 非服务
-			_, err := cmd.initServer()
-			return err
-		}
-
-		return cmd.app.Exec()
-	}
-}
 
 // RestartServer 触发重启服务
 //

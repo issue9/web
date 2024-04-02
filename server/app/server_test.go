@@ -5,6 +5,7 @@
 package app
 
 import (
+	"flag"
 	"net/http"
 	"os"
 	"runtime"
@@ -44,7 +45,7 @@ func TestSignalHUP(t *testing.T) {
 	SignalHUP(cmd)
 
 	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
+		a.ErrorIs(cmd.Exec(flag.ExitOnError, []string{"app", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(2000 * time.Millisecond) // 等待 go func 启动完成
