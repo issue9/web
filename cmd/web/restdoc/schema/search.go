@@ -128,7 +128,7 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 			}
 		}
 
-		if tag == query.Tag { // 查询参数不保存整个对象
+		if tag == query.Tag { // 查询参数不保存至 #components/schemas
 			ref.Ref = "" // 也没有必要有 ref.Ref
 		}else{
 			t.AddSchema(ref)

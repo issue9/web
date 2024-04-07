@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -40,7 +41,7 @@ func (p *Parser) parseAPI(ctx context.Context, t *openapi.OpenAPI, currPath, suf
 
 	ln++ // lines 索引从 0 开始，所有行号需要加上 1 。
 LOOP:
-	for index := 0; index < len(lines); index++ {
+	for index := range len(lines) {
 		line := strings.TrimSpace(lines[index])
 		if line == "" {
 			continue
@@ -123,16 +124,12 @@ func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3
 	}
 
 	// 保证输出顺序相同，方便测试
-	keys := make([]string, 0, len(s.Value.Properties))
-	for name := range s.Value.Properties {
-		keys = append(keys, name)
-	}
+	keys := sliceutil.MapKeys(s.Value.Properties)
 	slices.Sort(keys)
 	for _, name := range keys {
-		v := s.Value.Properties[name]
 		opt.AddParameter(&openapi3.Parameter{
 			In:     openapi3.ParameterInQuery,
-			Schema: v,
+			Schema: s.Value.Properties[name],
 			Name:   name,
 		})
 	}

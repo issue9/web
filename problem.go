@@ -26,18 +26,22 @@ type (
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
-		Type       string         `json:"type" xml:"type" form:"type"`
-		Title      string         `json:"title" xml:"title" form:"title"`
-		Detail     string         `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty"`
-		Instance   string         `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty"`
-		Status     int            `json:"status" xml:"status" form:"status"`
-		Params     []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty"`           // 用户提交对象各个字段的错误信息
-		Extensions any            `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty"` // 反馈给用户的信息
+		Type     string `json:"type" xml:"type" form:"type" cbor:"type"`
+		Title    string `json:"title" xml:"title" form:"title" cbor:"title"`
+		Detail   string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty"`
+		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty"`
+		Status   int    `json:"status" xml:"status" form:"status" cbor:"status,omitempty"`
+
+		// 用户提交对象各个字段的错误信息
+		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty"`
+
+		// 反馈给用户的信息
+		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty"`
 	}
 
 	ProblemParam struct {
-		Name   string `json:"name" xml:"name" form:"name"`       // 出错字段的名称
-		Reason string `json:"reason" xml:"reason" form:"reason"` // 出错信息
+		Name   string `json:"name" xml:"name" form:"name" cbor:"name"`         // 出错字段的名称
+		Reason string `json:"reason" xml:"reason" form:"reason" cbor:"reason"` // 出错信息
 	}
 
 	Problems struct {
