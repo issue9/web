@@ -42,10 +42,10 @@ github.com/issue9/scheduled v0.19.5 h1:SKNzZm7mkm9ChtKun3mgcDBBF4hB/+uhEmY6JLtvJ
 github.com/issue9/scheduled v0.19.5/go.mod h1:agacfy7vohhXTu+2z+wjOTlP2X64hlM8xu3zWDE/euw=
 github.com/issue9/sliceutil v0.16.1 h1:NVZ2feN014oUmMpZvZUrKkKMGhAfzT8WNzJF81krebM=
 github.com/issue9/sliceutil v0.16.1/go.mod h1:ldun6sT4/bOJxuMtOXhtc6P7GCwE7L+avV86HNks7qk=
-github.com/issue9/source v0.9.0 h1:bGaoCXRGiZKZnjfZGGKqZKFm1wScPdpRQtyIuBwBfNs=
-github.com/issue9/source v0.9.0/go.mod h1:C458HN4j4rA3wWLcO6XiB3PM3yFStdCDnX7OxMr9+yU=
-github.com/issue9/term/v3 v3.2.7 h1:esfhoinbQ65P3oFscXhticrDFOgZJQqUwL/IC70HiWc=
-github.com/issue9/term/v3 v3.2.7/go.mod h1:DvA/fPiKzX11P/ZoVWJG5QMVpI0ia+uqiU31iZV2jHE=
+github.com/issue9/source v0.9.1 h1:duANl/q03NzDtZN5sOPia+s4vBu8c1CqtHGoluY0Tto=
+github.com/issue9/source v0.9.1/go.mod h1:8L8ef8XhMftlE2ZQ8j60h5hTGlQmPjm/8zvoXr5fnTY=
+github.com/issue9/term/v3 v3.2.8 h1:vAtsr9FLwrDQRyU7S8AOUI3f+QrYsXVHT/kee9MuMkk=
+github.com/issue9/term/v3 v3.2.8/go.mod h1:S/xLgjEXJNr7C6UhcGTEOV5k94mzHRcYMmtvhLJoX6A=
 github.com/issue9/unique/v2 v2.1.0 h1:lE9hstenrbBgDM/Iulv7d75qAYpgoDV8rSRoLmEBHOk=
 github.com/issue9/unique/v2 v2.1.0/go.mod h1:qZoDKnfu+7Q0yxhifVseRKD2Wea9Tc9zdXwALnFc54A=
 github.com/issue9/version v1.0.8 h1:IsNdDYdV8UGDGwwgp8H4RszJE0Ko26HjWg9pZzyOivs=

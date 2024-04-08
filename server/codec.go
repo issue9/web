@@ -92,6 +92,7 @@ type mimetypeConfig struct {
 	// 由 [RegisterMimetype] 注册而来。默认可用为：
 	//
 	//  - xml
+	//  - cbor
 	//  - json
 	//  - form
 	//  - html

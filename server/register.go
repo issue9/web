@@ -23,6 +23,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/compressor"
+	"github.com/issue9/web/mimetype/cbor"
 	"github.com/issue9/web/mimetype/form"
 	"github.com/issue9/web/mimetype/gob"
 	"github.com/issue9/web/mimetype/html"
@@ -196,6 +197,7 @@ func init() {
 	// RegisterMimetype
 
 	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
+	RegisterMimetype(cbor.Marshal, cbor.Unmarshal, "cbor")
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
