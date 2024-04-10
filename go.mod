@@ -12,7 +12,7 @@ require (
 	github.com/issue9/errwrap v0.3.2
 	github.com/issue9/localeutil v0.26.5
 	github.com/issue9/logs/v7 v7.5.1
-	github.com/issue9/mux/v8 v8.0.0-beta.0
+	github.com/issue9/mux/v8 v8.1.0
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/scheduled v0.19.5
 	github.com/issue9/sliceutil v0.16.1
@@ -20,7 +20,7 @@ require (
 	github.com/issue9/term/v3 v3.2.8
 	github.com/issue9/unique/v2 v2.1.0
 	github.com/jellydator/ttlcache/v3 v3.2.0
-	github.com/klauspost/compress v1.17.7
+	github.com/klauspost/compress v1.17.8
 	golang.org/x/crypto v0.22.0
 	golang.org/x/text v0.14.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028

@@ -11,11 +11,12 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
 )
 
-const Mimetype = "application/javascript"
+const Mimetype = header.Javascript
 
 type contextKeyType int
 

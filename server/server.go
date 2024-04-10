@@ -120,6 +120,8 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 }
 
 // NewService 声明微服务节点
+//
+// [Options.Registry] 和 [Options.Peer] 不能为空。
 func NewService(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
@@ -145,6 +147,8 @@ func (s *service) Serve() error {
 }
 
 // NewGateway 声明微服务的网关
+//
+// [Options.Mapper] 和 [Options.Peer] 不能为空。
 func NewGateway(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeGateway)
 	if err != nil {
