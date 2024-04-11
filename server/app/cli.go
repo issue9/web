@@ -26,18 +26,7 @@ const (
 	cmdShowHelp    = web.StringPhrase("cmd.show_help")
 )
 
-// CLI 提供一种简单的命令行生成方式
-//
-// 生成的命令行带以下几个参数：
-//   - -v 显示版本号；
-//   - -h 显示帮助信息；
-//   - -a 执行的指令，该值会传递给 [CLI.NewServer]，由用户根据此值决定初始化方式；
-//
-// T 表示的是配置文件中的用户自定义数据类型，可参考 [server.LoadOptions] 中有关 User 的说明。
-type CLI[T any] struct {
-	// NOTE: CLI 仅用于初始化 [web.Server]。对于接口的开发应当是透明的，
-	// 开发者所有的功能都应该是通过 [web.Context] 和 [web.Server] 获得。
-
+type CLIOptions[T any] struct {
 	Name    string // 程序名称
 	Version string // 程序版本
 
@@ -97,59 +86,85 @@ type CLI[T any] struct {
 	//
 	// 默认值为 [flag.ContinueOnError]
 	ErrorHandling flag.ErrorHandling
-
-	app    App
-	action string
 }
 
-// Exec 执行命令
-//
-// 如果是 [CLI] 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
-func (cmd *CLI[T]) Exec() (err error) { return cmd.exec(os.Args) }
+type cli[T any] struct {
+	App
+	exec func(args []string) error
+}
 
-func (cmd *CLI[T]) exec(args []string) (err error) {
-	if err = cmd.sanitize(); err != nil { // 字段值有问题，直接 panic。
+// NewCLI 提供一种简单的命令行生成方式
+//
+// 生成的命令行带以下几个参数：
+//   - -v 显示版本号；
+//   - -h 显示帮助信息；
+//   - -a 执行的指令，该值会传递给 [CLIOptions.NewServer]，由用户根据此值决定初始化方式；
+//
+// T 表示的是配置文件中的用户自定义数据类型，可参考 [server.LoadOptions] 中有关 User 的说明。
+//
+// 如果是 [CLIOptions] 本身字段设置有问题会直接 panic。
+func NewCLI[T any](o *CLIOptions[T]) App {
+	if err := o.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(err)
 	}
 
-	wrap := func(err error) error {
+	var action string // -a 参数
+
+	initServer := func() (web.Server, error) {
+		opt, user, err := server.LoadOptions[T](o.ConfigDir, o.ConfigFilename)
 		if err != nil {
-			if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
-				return errors.New(le.LocaleString(cmd.Printer))
-			}
+			return nil, web.NewStackError(err)
 		}
-		return err
+		return o.NewServer(o.Name, o.Version, opt, user, action)
 	}
 
-	fs := flag.NewFlagSet(cmd.Name, cmd.ErrorHandling)
-	fs.SetOutput(cmd.Out)
+	app := New(o.ShutdownTimeout, initServer)
 
-	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))
-	h := fs.Bool("h", false, cmdShowHelp.LocaleString(cmd.Printer))
-	fs.StringVar(&cmd.action, "a", "", cmdAction.LocaleString(cmd.Printer))
-	if err = fs.Parse(args[1:]); err != nil {
-		return wrap(err)
+	return &cli[T]{
+		App: app,
+		exec: func(args []string) (err error) {
+			wrap := func(err error) error {
+				if err != nil {
+					if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+						return errors.New(le.LocaleString(o.Printer))
+					}
+				}
+				return err
+			}
+
+			fs := flag.NewFlagSet(o.Name, o.ErrorHandling)
+			fs.SetOutput(o.Out)
+
+			v := fs.Bool("v", false, cmdShowVersion.LocaleString(o.Printer))
+			h := fs.Bool("h", false, cmdShowHelp.LocaleString(o.Printer))
+			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
+			if err = fs.Parse(args[1:]); err != nil {
+				return wrap(err)
+			}
+
+			if *v {
+				_, err = fmt.Fprintln(o.Out, o.Name, o.Version)
+				return wrap(err)
+			}
+
+			if *h {
+				fs.PrintDefaults()
+				return nil
+			}
+
+			if slices.Index(o.ServeActions, action) < 0 { // 非服务
+				_, err = initServer()
+				return wrap(err)
+			}
+
+			return wrap(app.Exec())
+		},
 	}
-
-	if *v {
-		_, err = fmt.Fprintln(cmd.Out, cmd.Name, cmd.Version)
-		return wrap(err)
-	}
-
-	if *h {
-		fs.PrintDefaults()
-		return nil
-	}
-
-	if slices.Index(cmd.ServeActions, cmd.action) < 0 { // 非服务
-		_, err = cmd.initServer()
-		return wrap(err)
-	}
-
-	return wrap(cmd.app.Exec())
 }
 
-func (cmd *CLI[T]) sanitize() error {
+func (cmd *cli[T]) Exec() error { return cmd.exec(os.Args) }
+
+func (cmd *CLIOptions[T]) sanitize() error {
 	if cmd.Name == "" {
 		return errors.New("字段 Name 不能为空")
 	}
@@ -180,21 +195,5 @@ func (cmd *CLI[T]) sanitize() error {
 		cmd.ErrorHandling = flag.ContinueOnError
 	}
 
-	cmd.app = New(cmd.ShutdownTimeout, cmd.initServer)
-
 	return nil
-}
-
-// Restart 触发重启服务
-//
-// 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
-func (cmd *CLI[T]) Restart() { cmd.app.Restart() }
-
-func (cmd *CLI[T]) initServer() (web.Server, error) {
-	opt, user, err := server.LoadOptions[T](cmd.ConfigDir, cmd.ConfigFilename)
-	if err != nil {
-		return nil, web.NewStackError(err)
-	}
-
-	return cmd.NewServer(cmd.Name, cmd.Version, opt, user, cmd.action)
 }

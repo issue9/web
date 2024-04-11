@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package app 提供了简便的方式管理 [web.Server]
+// Package app 提供了简便的方式管理 [web.Server] 的运行
 package app
 
 import (
@@ -14,7 +14,7 @@ import (
 
 // App [web.Server] 的管理接口
 type App interface {
-	// Exec 运行当前服务
+	// Exec 运行当前程序
 	Exec() error
 
 	// Restart 重启
