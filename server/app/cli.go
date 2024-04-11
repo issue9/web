@@ -20,6 +20,12 @@ import (
 	"github.com/issue9/web/server"
 )
 
+const (
+	cmdShowVersion = web.StringPhrase("cmd.show_version")
+	cmdAction      = web.StringPhrase("cmd.action")
+	cmdShowHelp    = web.StringPhrase("cmd.show_help")
+)
+
 // CLI 提供一种简单的命令行生成方式
 //
 // 生成的命令行带以下几个参数：
@@ -72,9 +78,14 @@ type CLI[T any] struct {
 	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
 	ConfigFilename string
 
-	// 本地化的相关设置
+	// 本地化的打印对象
 	//
 	// 若为空，则以 server.NewPrinter(locales.Locales, "*.yaml") 进行初始化。
+	//
+	// 若是自定义，至少需要保证以下几个字符串的翻译项，才有效果：
+	//  - cmd.show_version
+	//  - cmd.action
+	//  - cmd.show_help
 	//
 	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
@@ -82,19 +93,25 @@ type CLI[T any] struct {
 	// 每次关闭服务操作的等待时间
 	ShutdownTimeout time.Duration
 
+	// 在命令行解析出错时的处理方式
+	//
+	// 默认值为 [flag.ContinueOnError]
+	ErrorHandling flag.ErrorHandling
+
 	app    *App
 	action string
 }
 
-// Exec 根据配置运行服务
+// Exec 执行命令
 //
 // args 表示命令行参数，一般为 [os.Args]。
 //
 // 如果是 [CLI] 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
-func (cmd *CLI[T]) Exec(errHandling flag.ErrorHandling, args []string) (err error) {
+func (cmd *CLI[T]) Exec(args []string) (err error) {
 	if err = cmd.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(err)
 	}
+
 	wrap := func(err error) error {
 		if err != nil {
 			if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
@@ -104,7 +121,7 @@ func (cmd *CLI[T]) Exec(errHandling flag.ErrorHandling, args []string) (err erro
 		return err
 	}
 
-	fs := flag.NewFlagSet(cmd.Name, errHandling)
+	fs := flag.NewFlagSet(cmd.Name, cmd.ErrorHandling)
 	fs.SetOutput(cmd.Out)
 
 	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))
@@ -159,6 +176,10 @@ func (cmd *CLI[T]) sanitize() error {
 		cmd.Out = os.Stdout
 	}
 
+	if cmd.ErrorHandling == 0 {
+		cmd.ErrorHandling = flag.ContinueOnError
+	}
+
 	cmd.app = &App{
 		ShutdownTimeout: cmd.ShutdownTimeout,
 		NewServer:       cmd.initServer,
@@ -166,12 +187,6 @@ func (cmd *CLI[T]) sanitize() error {
 
 	return nil
 }
-
-const (
-	cmdShowVersion = web.StringPhrase("cmd.show_version")
-	cmdAction      = web.StringPhrase("cmd.action")
-	cmdShowHelp    = web.StringPhrase("cmd.show_help")
-)
 
 // RestartServer 触发重启服务
 //
