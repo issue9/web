@@ -67,9 +67,10 @@ type (
 		// 始终返回非空的错误对象，如果是由 [Server.Close] 关闭的，将返回 [http.ErrServerClosed]。
 		Serve() error
 
-		// Close 触发关闭服务事件
+		// Close 关闭服务
 		//
-		// 只是触发事件，需要等到 [Server.Serve] 返回才表示服务真正结束。
+		// 在执行完之后会通知 Serve 返回。
+		//
 		// 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 		Close(shutdownTimeout time.Duration)
 

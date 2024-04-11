@@ -10,13 +10,15 @@ import (
 	"syscall"
 )
 
-// ServerApp 提供了管理 [web.Server] 的接口
+// ServerApp 定义了服务类型的 APP 的接口
+//
+// [App] 和 [CLI] 均实现了此接口。
 type ServerApp interface {
-	// RestartServer 重启服务
+	// RestartServer 重启 APP
 	//
 	// 中止旧的 [web.Server]，再启动一个新的 [web.Server] 对象。
 	//
-	// 如果执行过程中出错，应该尽量阻止旧对象被中止，保证最大限度地可用状态。
+	// NOTE: 如果执行过程中出错，应该尽量阻止旧对象被中止，保证最大限度地可用状态。
 	RestartServer()
 }
 
