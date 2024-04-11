@@ -33,7 +33,7 @@ type value struct {
 func newEnum(t string, vals ...string) *enum {
 	has := true
 	for _, v := range vals {
-		if has = has && strings.HasPrefix(v, t); !has {
+		if has = strings.HasPrefix(v, t); !has {
 			break
 		}
 	}

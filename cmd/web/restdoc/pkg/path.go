@@ -38,7 +38,7 @@ func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p strin
 	appendTS := func(path string) error {
 		ps := strings.SplitN(path, "=", 2)
 		if len(ps) != 2 {
-			panic(fmt.Sprintf("无效的语法 %s",path))
+			panic(fmt.Sprintf("无效的语法 %s", path))
 		}
 
 		t, err := pkgs.TypeOf(ctx, ps[1])
@@ -81,7 +81,7 @@ LOOP:
 
 // 拆分 path 中表示类似的前缀，比如 [] 表示数组
 func splitTypes(path string) (wrap func(types.Type) types.Type, p string) {
-	funcs := []func(types.Type) types.Type{}
+	funcs := make([]func(types.Type) types.Type, 0, 5)
 
 LOOP:
 	for path != "" {
@@ -192,7 +192,7 @@ func filterVersionSuffix(p string, separator byte) (string, bool) {
 		if v := p[index+1:]; len(v) > 0 && v[0] == 'v' {
 			isNumber := true
 			for _, c := range v[1:] {
-				if isNumber = isNumber && (c > '0' && c < '9'); !isNumber {
+				if isNumber = c > '0' && c < '9'; !isNumber {
 					break
 				}
 			}

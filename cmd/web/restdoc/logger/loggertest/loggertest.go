@@ -33,7 +33,7 @@ func (h *handler) Handle(r *logs.Record) {
 	os.Stderr.Write([]byte(s + "\n"))
 }
 
-func (h *handler) New(d bool, l logs.Level, attrs []logs.Attr) logs.Handler {
+func (h *handler) New(_ bool, l logs.Level, _ []logs.Attr) logs.Handler {
 	return &handler{
 		t: h.t,
 		l: l,

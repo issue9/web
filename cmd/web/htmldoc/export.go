@@ -5,6 +5,7 @@
 package htmldoc
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/doc/comment"
@@ -113,9 +114,8 @@ func export(dir, objName, output, lang, title, desc, header, footer, style strin
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	return t.Execute(f, d)
+	return errors.Join(t.Execute(f, d), f.Close())
 }
 
 func (d *data) parse(p *localeutil.Printer, outputObj string, files map[string]*ast.File) {
@@ -257,5 +257,5 @@ func comment2HTML(doc, c *ast.CommentGroup) template.HTML {
 	if doc == nil {
 		doc = c
 	}
-	return template.HTML(string(cPrinter.HTML(cParser.Parse(doc.Text()))))
+	return template.HTML(cPrinter.HTML(cParser.Parse(doc.Text())))
 }

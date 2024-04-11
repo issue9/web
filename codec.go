@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	"github.com/issue9/localeutil"
+	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
-	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"

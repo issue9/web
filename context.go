@@ -150,7 +150,7 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.status = 0
 	ctx.wrote = false
 	if ctx.outputCompressor != nil {
-		ctx.Header().Set(header.ContentEncoding, outputCompressor.Name())
+		ctx.Header().Set(header.ContentEncoding, ctx.outputCompressor.Name())
 	}
 
 	ctx.inputMimetype = inputMimetype

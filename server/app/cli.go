@@ -104,7 +104,7 @@ func (cmd *CLI[T]) Exec(errHandling flag.ErrorHandling, args []string) (err erro
 		return err
 	}
 
-	fs := flag.NewFlagSet(cmd.Name, flag.ExitOnError)
+	fs := flag.NewFlagSet(cmd.Name, errHandling)
 	fs.SetOutput(cmd.Out)
 
 	v := fs.Bool("v", false, cmdShowVersion.LocaleString(cmd.Printer))

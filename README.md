@@ -27,11 +27,11 @@ func main() {
 }
 
 func getAdmins(ctx* web.Context) web.Responser {
-    return ctx.NotImplemented();
+    return ctx.NotImplemented()
 }
 
 func getGroups(ctx* web.Context) web.Responser {
-    return ctx.NotImplemented();
+    return ctx.NotImplemented()
 }
 ```
 

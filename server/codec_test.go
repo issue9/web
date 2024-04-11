@@ -28,22 +28,22 @@ func TestBuildCodec(t *testing.T) {
 		{Name: "nil", Marshal: nil, Unmarshal: nil},
 		{Name: "nil", Marshal: nil, Unmarshal: nil},
 	}, BestCompressionCompressions())
-	a.Equal(err.Field, "Mimetypes[1].Name").Nil(c)
+	a.NotNil(err).Equal(err.Field, "Mimetypes[1].Name").Nil(c)
 
 	c, err = buildCodec([]*Mimetype{
 		{Name: "", Marshal: nil, Unmarshal: nil},
 	}, BestSpeedCompressions())
-	a.Equal(err.Field, "Mimetypes[0].Name").Nil(c)
+	a.NotNil(err).Equal(err.Field, "Mimetypes[0].Name").Nil(c)
 
 	c, err = buildCodec([]*Mimetype{
 		{Name: "text", Marshal: nil, Unmarshal: nil},
 	}, BestSpeedCompressions())
-	a.Equal(err.Field, "Mimetypes[0].Marshal").Nil(c)
+	a.NotNil(err).Equal(err.Field, "Mimetypes[0].Marshal").Nil(c)
 
 	c, err = buildCodec([]*Mimetype{
 		{Name: "text", Marshal: json.Marshal, Unmarshal: nil},
 	}, BestSpeedCompressions())
-	a.Equal(err.Field, "Mimetypes[0].Unmarshal").Nil(c)
+	a.NotNil(err).Equal(err.Field, "Mimetypes[0].Unmarshal").Nil(c)
 
 	c, err = buildCodec(XMLMimetypes(), []*Compression{
 		{Compressor: compressor.NewLZW(lzw.LSB, 8)},

@@ -44,7 +44,7 @@ func SS[S ~[]T, T any](f ...func(*T)) Rule[S] {
 	}
 }
 
-// SS 将一组修正函数封装为 [Rule] 用以验证 map 的元素
+// MS 将一组修正函数封装为 [Rule] 用以验证 map 的元素
 func MS[M ~map[K]V, K comparable, V any](v func(*V)) Rule[M] {
 	return func(name string, m *M) (string, localeutil.Stringer) {
 		for key, val := range *m {

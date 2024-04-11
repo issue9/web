@@ -80,7 +80,7 @@ func getEnums(pkg *types.Package, t string) ([]string, error) {
 
 	hasPrefix := true
 	for _, v := range vals {
-		if hasPrefix = hasPrefix && strings.HasPrefix(v, t); !hasPrefix {
+		if hasPrefix = strings.HasPrefix(v, t); !hasPrefix {
 			break
 		}
 	}
