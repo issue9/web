@@ -98,16 +98,16 @@ type CLI[T any] struct {
 	// 默认值为 [flag.ContinueOnError]
 	ErrorHandling flag.ErrorHandling
 
-	app    *App
+	app    App
 	action string
 }
 
 // Exec 执行命令
 //
-// args 表示命令行参数，一般为 [os.Args]。
-//
 // 如果是 [CLI] 本身字段设置有问题会直接 panic，其它错误则返回该错误信息。
-func (cmd *CLI[T]) Exec(args []string) (err error) {
+func (cmd *CLI[T]) Exec() (err error) { return cmd.exec(os.Args) }
+
+func (cmd *CLI[T]) exec(args []string) (err error) {
 	if err = cmd.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(err)
 	}
@@ -180,18 +180,15 @@ func (cmd *CLI[T]) sanitize() error {
 		cmd.ErrorHandling = flag.ContinueOnError
 	}
 
-	cmd.app = &App{
-		ShutdownTimeout: cmd.ShutdownTimeout,
-		NewServer:       cmd.initServer,
-	}
+	cmd.app = New(cmd.ShutdownTimeout, cmd.initServer)
 
 	return nil
 }
 
-// RestartServer 触发重启服务
+// Restart 触发重启服务
 //
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
-func (cmd *CLI[T]) RestartServer() { cmd.app.RestartServer() }
+func (cmd *CLI[T]) Restart() { cmd.app.Restart() }
 
 func (cmd *CLI[T]) initServer() (web.Server, error) {
 	opt, user, err := server.LoadOptions[T](cmd.ConfigDir, cmd.ConfigFilename)

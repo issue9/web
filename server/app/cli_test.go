@@ -36,17 +36,17 @@ func TestCLI(t *testing.T) {
 			return server.New(name, ver, opt)
 		},
 	}
-	a.NotError(cmd.Exec([]string{"app", "-v"})).Contains(bs.String(), cmd.Version)
+	a.NotError(cmd.exec([]string{"app", "-v"})).Contains(bs.String(), cmd.Version)
 
 	bs.Reset()
-	a.NotError(cmd.Exec([]string{"app", "-a=install"})).Equal(action, "install")
+	a.NotError(cmd.exec([]string{"app", "-a=install"})).Equal(action, "install")
 
 	// RestartServer
 
 	exit := make(chan struct{}, 10)
 	bs.Reset()
 	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
+		a.ErrorIs(cmd.exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(500 * time.Millisecond) // 等待 go func 启动完成
@@ -55,7 +55,7 @@ func TestCLI(t *testing.T) {
 	s1 := cmd.app.getServer()
 	t1 := s1.Uptime()
 	cmd.Name = "restart1"
-	cmd.RestartServer()
+	cmd.Restart()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	s2 := cmd.app.getServer()
 	t2 := s2.Uptime()
@@ -63,7 +63,7 @@ func TestCLI(t *testing.T) {
 
 	// restart2
 	cmd.Name = "restart2"
-	cmd.RestartServer()
+	cmd.Restart()
 	time.Sleep(shutdownTimeout + 500*time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t3 := cmd.app.getServer().Uptime()
 	a.True(t3.After(t2))
@@ -93,6 +93,6 @@ func TestCLI_sanitize(t *testing.T) {
 
 	cmd = &CLI[empty]{Name: "abc"}
 	a.PanicString(func() {
-		_ = cmd.Exec(nil)
+		_ = cmd.exec(nil)
 	}, "字段 Version 不能为空")
 }

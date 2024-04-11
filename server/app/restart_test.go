@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	_ ServerApp = &App{}
-	_ ServerApp = &CLI[empty]{}
+	_ App = &app{}
+	_ App = &CLI[empty]{}
 )
 
 func TestSignalHUP(t *testing.T) {
@@ -44,7 +44,7 @@ func TestSignalHUP(t *testing.T) {
 	SignalHUP(cmd)
 
 	go func() {
-		a.ErrorIs(cmd.Exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
+		a.ErrorIs(cmd.exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(2000 * time.Millisecond) // 等待 go func 启动完成
