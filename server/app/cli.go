@@ -106,7 +106,7 @@ type cli[T any] struct {
 // 如果是 [CLIOptions] 本身字段设置有问题会直接 panic。
 func NewCLI[T any](o *CLIOptions[T]) App {
 	if err := o.sanitize(); err != nil { // 字段值有问题，直接 panic。
-		panic(err)
+		panic(localeError(err, o.Printer))
 	}
 
 	var action string // -a 参数
@@ -124,15 +124,6 @@ func NewCLI[T any](o *CLIOptions[T]) App {
 	return &cli[T]{
 		App: app,
 		exec: func(args []string) (err error) {
-			wrap := func(err error) error {
-				if err != nil {
-					if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
-						return errors.New(le.LocaleString(o.Printer))
-					}
-				}
-				return err
-			}
-
 			fs := flag.NewFlagSet(o.Name, o.ErrorHandling)
 			fs.SetOutput(o.Out)
 
@@ -140,12 +131,12 @@ func NewCLI[T any](o *CLIOptions[T]) App {
 			h := fs.Bool("h", false, cmdShowHelp.LocaleString(o.Printer))
 			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
 			if err = fs.Parse(args[1:]); err != nil {
-				return wrap(err)
+				return web.NewStackError(localeError(err, o.Printer))
 			}
 
 			if *v {
 				_, err = fmt.Fprintln(o.Out, o.Name, o.Version)
-				return wrap(err)
+				return web.NewStackError(localeError(err, o.Printer))
 			}
 
 			if *h {
@@ -155,12 +146,21 @@ func NewCLI[T any](o *CLIOptions[T]) App {
 
 			if slices.Index(o.ServeActions, action) < 0 { // 非服务
 				_, err = initServer()
-				return wrap(err)
+				return localeError(err, o.Printer)
 			}
 
-			return wrap(app.Exec())
+			return localeError(app.Exec(), o.Printer)
 		},
 	}
+}
+
+func localeError(err error, p *message.Printer) error {
+	if err != nil {
+		if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+			return errors.New(le.LocaleString(p))
+		}
+	}
+	return err
 }
 
 func (cmd *cli[T]) Exec() error { return cmd.exec(os.Args) }
