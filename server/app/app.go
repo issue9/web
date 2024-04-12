@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package app 提供了简便的方式管理 [web.Server]
+// Package app 提供了简便的方式管理 [web.Server] 的运行
 package app
 
 import (
@@ -12,16 +12,27 @@ import (
 	"github.com/issue9/web"
 )
 
-// App [ServerApp] 的简单实现
-type App struct {
+// App [web.Server] 的管理接口
+type App interface {
+	// Exec 运行当前程序
+	Exec() error
+
+	// Restart 重启
+	//
+	// 中止旧的 [web.Server]，再启动一个新的 [web.Server] 对象。
+	//
+	// NOTE: 如果执行过程中出错，应该尽量阻止旧对象被中止，保证最大限度地可用状态。
+	Restart()
+}
+
+type app struct {
 	// 构建新服务的方法
 	//
 	// 每次重启服务时，都将由此方法生成一个新的服务。
 	// 只有在返回成功的新实例时，才会替换旧实例，否则旧实例将一直运行。
-	NewServer func() (web.Server, error)
+	newServer func() (web.Server, error)
 
-	// 每次关闭服务操作的等待时间
-	ShutdownTimeout time.Duration
+	shutdownTimeout time.Duration
 
 	srv     web.Server
 	srvLock sync.RWMutex
@@ -31,29 +42,40 @@ type App struct {
 	restartServerLock sync.Mutex
 }
 
-func (app *App) getServer() web.Server {
+// New 声明一个简要的 [App] 实现
+//
+// shutdown 每次关闭服务操作的等待时间；
+// newServer 构建新服务的方法。
+func New(shutdown time.Duration, newServer func() (web.Server, error)) App {
+	if newServer == nil {
+		panic("App.NewServer 不能为空")
+	}
+
+	return &app{
+		shutdownTimeout: shutdown,
+		newServer:       newServer,
+		exit:            make(chan struct{}, 1),
+	}
+}
+
+func (app *app) getServer() web.Server {
 	app.srvLock.RLock()
 	s := app.srv
 	app.srvLock.RUnlock()
 	return s
 }
 
-func (app *App) setServer(s web.Server) {
+func (app *app) setServer(s web.Server) {
 	app.srvLock.Lock()
 	app.srv = s
 	app.srvLock.Unlock()
 }
 
 // Exec 运行服务
-func (app *App) Exec() (err error) {
-	if app.NewServer == nil {
-		panic("App.NewServer 不能为空")
+func (app *app) Exec() (err error) {
+	if app.srv, err = app.newServer(); err != nil {
+		return err
 	}
-
-	if app.srv, err = app.NewServer(); err != nil {
-		return
-	}
-	app.exit = make(chan struct{}, 1)
 
 RESTART:
 	app.restart = false
@@ -65,10 +87,10 @@ RESTART:
 	return err
 }
 
-// RestartServer 触发重启服务
+// Restart 触发重启服务
 //
 // 该方法将关闭现有的服务，并发送运行新服务的指令，不会等待新服务启动完成。
-func (app *App) RestartServer() {
+func (app *app) Restart() {
 	app.restartServerLock.Lock()
 	defer app.restartServerLock.Unlock()
 
@@ -76,13 +98,13 @@ func (app *App) RestartServer() {
 
 	old := app.getServer()
 
-	srv, err := app.NewServer()
+	srv, err := app.newServer()
 	if err != nil {
 		old.Logs().ERROR().Error(err)
 		return
 	}
 	app.setServer(srv)
 
-	old.Close(app.ShutdownTimeout) // 新服务声明成功，尝试关闭旧服务。
+	old.Close(app.shutdownTimeout) // 新服务声明成功，尝试关闭旧服务。
 	<-app.exit                     // 等待 server.Serve 退出
 }
