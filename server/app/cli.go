@@ -75,8 +75,9 @@ type CLIOptions[T any] struct {
 	//  - cmd.show_version
 	//  - cmd.action
 	//  - cmd.show_help
+	//  - can not be empty
 	//
-	// NOTE: 此设置仅影响命令行的本地化(panic 信息不支持本地化)，[web.Server] 的本地化由其自身管理。
+	// NOTE: 此设置仅影响命令行的本地化，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
 
 	// 每次关闭服务操作的等待时间
@@ -164,35 +165,35 @@ func NewCLI[T any](o *CLIOptions[T]) App {
 
 func (cmd *cli[T]) Exec() error { return cmd.exec(os.Args) }
 
-func (cmd *CLIOptions[T]) sanitize() error {
-	if cmd.Name == "" {
-		return errors.New("字段 Name 不能为空")
-	}
-	if cmd.Version == "" {
-		return errors.New("字段 Version 不能为空")
-	}
-	if cmd.NewServer == nil {
-		return errors.New("字段 NewServer 不能为空")
-	}
-
-	if cmd.ConfigDir == "" {
-		cmd.ConfigDir = server.DefaultConfigDir
-	}
-
-	if cmd.Printer == nil {
+func (o *CLIOptions[T]) sanitize() error {
+	if o.Printer == nil {
 		p, err := server.NewPrinter("*.yaml", locales.Locales...)
 		if err != nil {
 			return err
 		}
-		cmd.Printer = p
+		o.Printer = p
 	}
 
-	if cmd.Out == nil {
-		cmd.Out = os.Stdout
+	if o.Name == "" {
+		return web.NewFieldError("Name", locales.ErrCanNotBeEmpty())
+	}
+	if o.Version == "" {
+		return web.NewFieldError("Version", locales.ErrCanNotBeEmpty())
+	}
+	if o.NewServer == nil {
+		return web.NewFieldError("NewServer", locales.ErrCanNotBeEmpty())
 	}
 
-	if cmd.ErrorHandling == 0 {
-		cmd.ErrorHandling = flag.ContinueOnError
+	if o.ConfigDir == "" {
+		o.ConfigDir = server.DefaultConfigDir
+	}
+
+	if o.Out == nil {
+		o.Out = os.Stdout
+	}
+
+	if o.ErrorHandling == 0 {
+		o.ErrorHandling = flag.ContinueOnError
 	}
 
 	return nil

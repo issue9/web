@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
@@ -61,7 +62,7 @@ func TestCLI_sanitize(t *testing.T) {
 	}
 	a.NotError(cmd.sanitize()).Equal(cmd.Out, os.Stdout)
 
-	a.PanicString(func() {
+	a.PanicValue(func() {
 		NewCLI(&CLIOptions[empty]{Name: "abc"})
-	}, "字段 Version 不能为空")
+	}, web.NewFieldError("Version", locales.ErrCanNotBeEmpty()))
 }
