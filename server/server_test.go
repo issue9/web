@@ -78,8 +78,8 @@ func newOptions(o *Options) *Options {
 	}
 	if o.Mimetypes == nil {
 		o.Mimetypes = []*Mimetype{
-			{Name: "application/json", Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
-			{Name: "application/xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
+			{Name: header.JSON, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
+			{Name: header.XML, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
 		}
 	}
 
@@ -279,7 +279,7 @@ func TestHTTPServer_NewClient(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("http://localhost:8080"))
-	c := s.NewClient(nil, sel, "application/json", sj.Marshal)
+	c := s.NewClient(nil, sel, header.JSON, sj.Marshal)
 	a.NotNil(c)
 
 	resp := &object{}
@@ -325,8 +325,8 @@ func TestHTTPServer_NewContext(t *testing.T) {
 	// 正常，指定 Accept-Language，采用默认的 accept
 	router.Get("/path", func(ctx *web.Context) web.Responser {
 		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.Equal(ctx.Mimetype(false), "application/json").
-			Equal(ctx.Charset(), "utf-8").
+		a.Equal(ctx.Mimetype(false), header.JSON).
+			Equal(ctx.Charset(), header.UTF8).
 			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 			NotNil(ctx.LocalePrinter())
 		return nil

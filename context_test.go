@@ -118,14 +118,14 @@ func TestContext_SetMimetype(t *testing.T) {
 	a.PanicString(func() {
 		ctx.SetMimetype("not-exists")
 	}, "指定的编码 not-exists 不存在").
-		Equal(ctx.Mimetype(false), "application/json") // 不改变原有的值
+		Equal(ctx.Mimetype(false), header.JSON) // 不改变原有的值
 
-	ctx.SetMimetype("application/xml")
-	a.Equal(ctx.Mimetype(false), "application/xml")
+	ctx.SetMimetype(header.XML)
+	a.Equal(ctx.Mimetype(false), header.XML)
 
 	ctx.Render(200, 200) // 输出内容
 	a.PanicString(func() {
-		ctx.SetMimetype("application/json")
+		ctx.SetMimetype(header.JSON)
 	}, "已有内容输出，不可再更改！")
 }
 

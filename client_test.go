@@ -25,7 +25,7 @@ func TestClient_NewRequest(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, "application/json", json.Marshal, header.XRequestID, func() string { return "123" })
+	c := NewClient(nil, codec, sel, header.JSON, json.Marshal, header.XRequestID, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -35,7 +35,7 @@ func TestClient_NewRequest(t *testing.T) {
 		Equal(req.Header.Get(header.Accept), codec.acceptHeader).
 		Equal(req.Header.Get(header.XRequestID), "123").
 		Equal(req.Header.Get(header.AcceptEncoding), codec.acceptEncodingHeader).
-		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType("application/json", header.UTF8))
+		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))
 }
 
 func TestClient_ParseResponse(t *testing.T) {
@@ -44,7 +44,7 @@ func TestClient_ParseResponse(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, "application/json", json.Marshal, "", nil)
+	c := NewClient(nil, codec, sel, header.JSON, json.Marshal, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

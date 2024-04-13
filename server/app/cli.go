@@ -32,7 +32,7 @@ type CLIOptions[T any] struct {
 
 	// 初始化 [web.Server]
 	//
-	// name, version 即为 [CLI.Name] 和 [CLI.Version]；
+	// name, version 即为 [CLIOptions.Name] 和 [CLIOptions.Version]；
 	// o 和 user 为从配置文件加载的数据信息；
 	// action 为 -a 命令行指定的参数；
 	NewServer func(name, version string, o *server.Options, user *T, action string) (web.Server, error)

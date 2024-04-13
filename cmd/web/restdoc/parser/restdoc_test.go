@@ -51,7 +51,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 		Equal(d.Doc().Info.TermsOfService, "https://example.com/term").
 		Equal(d.Doc().Info.Contact.Name, "name").
 		Equal(d.Doc().Info.Description, "# markdown desc\nline 2").
-		Equal(p.media, []string{"application/json", "application/xml"}).
+		Equal(p.media, []string{header.JSON, header.XML}).
 		Equal(d.Doc().ExternalDocs.URL, "https://doc.example.com").
 		Equal(p.headers, []pair{{key: "h1", desc: "h1 desc"}}).
 		Equal(p.cookies, []pair{{key: "c1", desc: "c1 desc"}})

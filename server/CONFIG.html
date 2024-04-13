@@ -168,6 +168,8 @@ body {
 <p>NOTE: 报头内容可能会被后续的中间件修改。
 </td></tr><tr><td>cors,omitempty</td><td>cors,omitempty</td><td>cors,omitempty</td><td><a href="#corsConfig">corsConfig</a></td><td><p>自定义<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors">跨域请求</a>设置项
 <p>这些设置对所有路径均有效。
+</td></tr><tr><td>trace,omitempty</td><td>trace,omitempty</td><td>trace,omitempty</td><td>bool</td><td><p>Trace 是否启用 TRACE 请求
+<p>默认为 false。
 </td></tr>
 					</tbody>
 				</table>
@@ -279,6 +281,7 @@ body {
 <p>由 [RegisterMimetype] 注册而来。默认可用为：
 <ul>
 <li>xml
+<li>cbor
 <li>json
 <li>form
 <li>html

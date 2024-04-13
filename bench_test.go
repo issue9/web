@@ -7,16 +7,20 @@ package web
 import (
 	"bytes"
 	"compress/flate"
+	"compress/gzip"
+	"compress/lzw"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/mux/v8/routertest"
 	"github.com/issue9/mux/v8/types"
 
+	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"
 )
 
@@ -41,8 +45,8 @@ func BenchmarkNewContext(b *testing.B) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	r.Header.Set(header.ContentType, qheader.BuildContentType("application/json", "gbk"))
-	r.Header.Set(header.Accept, "application/json")
+	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, "gbk"))
+	r.Header.Set(header.Accept, header.JSON)
 	r.Header.Set(header.AcceptCharset, "gbk")
 	for range b.N {
 		ctx := s.NewContext(w, r, types.NewContext())
@@ -254,7 +258,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
 		for range b.N {
-			marshal, encoding, err := mt.contentType("application/xml;charset=utf-8")
+			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8))
 			a.NotError(err).NotNil(marshal).Nil(encoding)
 		}
 	})
@@ -263,7 +267,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
 		for range b.N {
-			marshal, encoding, err := mt.contentType("application/xml;charset=gbk")
+			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, "gbk"))
 			a.NotError(err).NotNil(marshal).NotNil(encoding)
 		}
 	})
@@ -275,7 +279,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 
 		c := NewCodec()
 		a.NotNil(c)
-		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
+		c.AddCompressor(compressor.NewZstd(), "application/*")
 
 		for range b.N {
 			r := bytes.NewBuffer([]byte{})
@@ -289,11 +293,11 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 
 		c := NewCodec()
 		a.NotNil(c)
-		c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
-			AddCompressor(&compressorTest{name: "br"}, "text/*").
-			AddCompressor(&compressorTest{name: "deflate"}, "image/*").
-			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
-			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
+		c.AddCompressor(compressor.NewGzip(gzip.DefaultCompression), "application/*").
+			AddCompressor(compressor.NewBrotli(brotli.WriterOptions{}), "text/*").
+			AddCompressor(compressor.NewDeflate(flate.BestCompression, nil), "image/*").
+			AddCompressor(compressor.NewZstd(), "application/*").
+			AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
 		for range b.N {
 			r := bytes.NewBuffer([]byte{})
@@ -309,10 +313,10 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 
 		c := NewCodec()
 		a.NotNil(c)
-		c.AddCompressor(&compressorTest{name: "zstd"}, "application/*")
+		c.AddCompressor(compressor.NewZstd(), "application/*")
 
 		for range b.N {
-			_, na := c.acceptEncoding("application/json", "zstd")
+			_, na := c.acceptEncoding(header.JSON, "zstd")
 			a.False(na)
 		}
 	})
@@ -322,14 +326,14 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 
 		c := NewCodec()
 		a.NotNil(c)
-		c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
-			AddCompressor(&compressorTest{name: "br"}, "text/*").
-			AddCompressor(&compressorTest{name: "deflate"}, "image/*").
-			AddCompressor(&compressorTest{name: "zstd"}, "application/*").
-			AddCompressor(&compressorTest{name: "compress"}, "text/plain")
+		c.AddCompressor(compressor.NewGzip(gzip.DefaultCompression), "application/*").
+			AddCompressor(compressor.NewBrotli(brotli.WriterOptions{}), "text/*").
+			AddCompressor(compressor.NewDeflate(flate.BestCompression, nil), "image/*").
+			AddCompressor(compressor.NewZstd(), "application/*").
+			AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
 		for range b.N {
-			_, na := c.acceptEncoding("text/plain", "compress")
+			_, na := c.acceptEncoding(header.Plain, "compress")
 			a.False(na)
 		}
 	})
@@ -340,13 +344,13 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 
 	c := NewCodec()
 	a.NotNil(c)
-	c.AddCompressor(&compressorTest{name: "gzip"}, "application/*").
-		AddCompressor(&compressorTest{name: "br"}, "text/*").
-		AddCompressor(&compressorTest{name: "deflate"}, "image/*").
-		AddCompressor(&compressorTest{name: "zstd"}, "application/*").
-		AddCompressor(&compressorTest{name: "compress"}, "text/plain")
+	c.AddCompressor(compressor.NewGzip(gzip.DefaultCompression), "application/*").
+		AddCompressor(compressor.NewBrotli(brotli.WriterOptions{}), "text/*").
+		AddCompressor(compressor.NewDeflate(flate.BestCompression, nil), "image/*").
+		AddCompressor(compressor.NewZstd(), "application/*").
+		AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
 	for range b.N {
-		c.getMatchCompresses("text/plan")
+		c.getMatchCompresses(header.Plain)
 	}
 }
