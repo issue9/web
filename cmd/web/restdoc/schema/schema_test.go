@@ -16,5 +16,5 @@ func TestBuildBasicType(t *testing.T) {
 	a := assert.New(t, false)
 
 	ref, ok := buildBasicType(types.Typ[types.Int])
-	a.True(ok).Equal(ref.Value.Type, openapi3.TypeInteger)
+	a.True(ok).True(ref.Value.Type.Is(openapi3.TypeInteger))
 }

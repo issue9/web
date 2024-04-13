@@ -43,7 +43,7 @@ func TestOpenAPI_Merge(t *testing.T) {
 	d2.Paths = openapi3.NewPaths(openapi3.WithPath("/p1", &openapi3.PathItem{}))
 	d2.Components = &openapi3.Components{
 		Schemas: openapi3.Schemas{
-			"Object": &openapi3.SchemaRef{Value: &openapi3.Schema{Type: "object"}},
+			"Object": &openapi3.SchemaRef{Value: &openapi3.Schema{Type: &openapi3.Types{openapi3.TypeObject}}},
 		},
 	}
 	d2.Info = &openapi3.Info{Version: "1.0"}

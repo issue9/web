@@ -63,7 +63,7 @@ func TestSchema_New_enum(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, pkgPath+".Enum", false)
 		a.NotError(err).NotNil(ref).
 			NotEmpty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeString).
+			True(ref.Value.Type.Is(openapi3.TypeString)).
 			Equal(ref.Value.Enum, []any{"v1", "v2", "v3"})
 	})
 
@@ -82,7 +82,7 @@ func TestSchema_New_enum(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, pkgPath+".Number", false)
 		a.NotError(err).NotNil(ref).
 			NotEmpty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeNumber).
+			True(ref.Value.Type.Is(openapi3.TypeNumber)).
 			Equal(ref.Value.Enum, []any{1, 2})
 	})
 }
@@ -100,8 +100,8 @@ func TestSchema_New_types(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, "[]bool", false)
 		a.NotError(err).NotNil(ref).
 			Empty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeArray).
-			Equal(ref.Value.Items.Value.Type, openapi3.TypeBoolean)
+			True(ref.Value.Type.Is(openapi3.TypeArray)).
+			True(ref.Value.Items.Value.Type.Is(openapi3.TypeBoolean))
 	})
 
 	t.Run("{}", func(t *testing.T) {
@@ -118,7 +118,7 @@ func TestSchema_New_types(t *testing.T) {
 
 		ref, err := f.New(context.Background(), tt, "map", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Value.Type, openapi3.TypeObject)
+			True(ref.Value.Type.Is(openapi3.TypeObject))
 	})
 
 	t.Run("String", func(t *testing.T) {
@@ -129,7 +129,7 @@ func TestSchema_New_types(t *testing.T) {
 		a.NotError(err).NotNil(ref).
 			Empty(ref.Ref). // 基本类型，不需要 Ref
 			Empty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeString)
+			True(ref.Value.Type.Is(openapi3.TypeString))
 	})
 
 	t.Run("Sex", func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestSchema_New_types(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, pkgPath+".Sex", false)
 		a.NotError(err).NotNil(ref).
 			NotEmpty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeString).
+			True(ref.Value.Type.Is(openapi3.TypeString)).
 			Equal(ref.Value.Enum, []any{"female", "male", "unknown"})
 	})
 
@@ -150,8 +150,8 @@ func TestSchema_New_types(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".String", false)
 		a.NotError(err).NotNil(ref).
 			Empty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeArray).
-			Equal(ref.Value.Items.Value.Type, openapi3.TypeString)
+			True(ref.Value.Type.Is(openapi3.TypeArray)).
+			True(ref.Value.Items.Value.Type.Is(openapi3.TypeString))
 	})
 
 	// time.Time
@@ -173,7 +173,7 @@ func TestSchema_New_types(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, "time.Duration", false)
 		a.NotError(err).NotNil(ref).
 			Empty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeString)
+			True(ref.Value.Type.Is(openapi3.TypeString))
 	})
 
 	// 枚举数组
@@ -183,13 +183,13 @@ func TestSchema_New_types(t *testing.T) {
 
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".Sex", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Value.Type, openapi3.TypeArray).
+			True(ref.Value.Type.Is(openapi3.TypeArray)).
 			Equal(ref.Value.Items.Ref, openapi.ComponentSchemaPrefix+pkgRef+".Sex")
 
 		sex, found := tt.GetSchema(pkgRef + ".Sex")
 		a.True(found).NotNil(sex).
 			Equal(sex.Value.Description, "Sex 表示性别\n\n@enum female male unknown\n@type string\n").
-			Equal(sex.Value.Type, "string").
+			True(sex.Value.Type.Is(openapi3.TypeString)).
 			Equal(sex.Value.Enum, []string{"female", "male", "unknown"})
 	})
 
@@ -200,7 +200,7 @@ func TestSchema_New_types(t *testing.T) {
 		ref, err := f.New(context.Background(), tt, pkgPath+".Sexes", false)
 		a.NotError(err).NotNil(ref).
 			Empty(ref.Value.Description).
-			Equal(ref.Value.Type, openapi3.TypeArray).
+			True(ref.Value.Type.Is(openapi3.TypeArray)).
 			Equal(ref.Value.Items.Ref, openapi.ComponentSchemaPrefix+pkgRef+".Sex") // Sex 已经被 @type 重定义
 	})
 
@@ -211,16 +211,16 @@ func TestSchema_New_types(t *testing.T) {
 
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".User", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Value.Type, openapi3.TypeArray).
+			True(ref.Value.Type.Is(openapi3.TypeArray)).
 			Equal(ref.Value.Items.Ref, openapi.ComponentSchemaPrefix+pkgRef+".User")
 		u, found := tt.GetSchema(pkgRef + ".User")
 		a.True(found).NotNil(u).
 			Empty(u.Value.Description). // 单行 doc，赋值给了 title
 			Equal(u.Value.Title, "用户信息 doc").
-			Equal(u.Value.Type, openapi3.TypeObject)
+			True(u.Value.Type.Is(openapi3.TypeObject))
 
 		name := u.Value.Properties["Name"]
-		a.Equal(name.Value.Type, openapi3.TypeString).
+		a.True(name.Value.Type.Is(openapi3.TypeString)).
 			Equal(name.Value.Title, "姓名")
 
 		sex := u.Value.Properties["sex"]
@@ -231,12 +231,12 @@ func TestSchema_New_types(t *testing.T) {
 		age := u.Value.Properties["age"]
 		a.Empty(age.Ref).
 			Equal(age.Value.Title, "年龄").
-			Equal(age.Value.Type, openapi3.TypeInteger)
+			True(age.Value.Type.Is(openapi3.TypeInteger))
 
 		st := u.Value.Properties["struct"]
 		a.Empty(st.Ref).
 			Equal(st.Value.Title, "struct doc").
-			Equal(st.Value.Type, openapi3.TypeObject)
+			True(st.Value.Type.Is(openapi3.TypeObject))
 	})
 
 	// XMLName
@@ -263,13 +263,13 @@ func TestSchema_New_types(t *testing.T) {
 			Equal(u.Value.AllOf[0].Ref, openapi.ComponentSchemaPrefix+pkgRef+".User")
 
 		name := u.Value.AllOf[0].Value.Properties["Name"]
-		a.Equal(name.Value.Type, openapi3.TypeString).
+		a.True(name.Value.Type.Is(openapi3.TypeString)).
 			Equal(name.Value.Title, "姓名", "%+v", name.Value)
 
 		age := u.Value.AllOf[0].Value.Properties["age"]
 		a.Empty(age.Ref).
 			Equal(age.Value.Title, "年龄").
-			Equal(age.Value.Type, openapi3.TypeInteger)
+			True(age.Value.Type.Is(openapi3.TypeInteger))
 	})
 
 	// admin.Sex
@@ -304,13 +304,13 @@ func TestSchema_New_types(t *testing.T) {
 			Equal(u.Value.Title, "用户信息 doc")
 
 		name := u.Value.Properties["Name"]
-		a.Equal(name.Value.Type, openapi3.TypeString).
+		a.True(name.Value.Type.Is(openapi3.TypeString)).
 			Equal(name.Value.Title, "姓名")
 
 		age := u.Value.Properties["age"]
 		a.Empty(age.Ref).
 			Equal(age.Value.Title, "年龄").
-			Equal(age.Value.Type, openapi3.TypeInteger)
+			True(age.Value.Type.Is(openapi3.TypeInteger))
 	})
 
 	// admin.Admin
@@ -320,20 +320,20 @@ func TestSchema_New_types(t *testing.T) {
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Admin", false)
 		a.NotError(err).NotNil(ref).
-			Equal(ref.Value.Type, openapi3.TypeObject)
+			True(ref.Value.Type.Is(openapi3.TypeObject))
 
 		admin, found := tt.GetSchema(pkgRef + ".admin.Admin")
 		a.True(found).NotNil(admin)
 		name, found := admin.Value.Properties["Name"]
 		a.True(found, "%+v", admin.Value.Properties).
-			Equal(name.Value.Type, openapi3.TypeString).
+			True(name.Value.Type.Is(openapi3.TypeString)).
 			Equal(name.Value.Title, "姓名")
 
 		u1, found := admin.Value.Properties["U1"]
 		a.True(found, "%+v", admin.Value.Properties).
 			Empty(u1.Ref).
 			Equal(u1.Value.Title, "u1").
-			Equal(u1.Value.Type, openapi3.TypeArray).
+			True(u1.Value.Type.Is(openapi3.TypeArray)).
 			True(u1.Value.Items.Value.Nullable).
 			Equal(u1.Value.Items.Value.AllOf[0].Ref, openapi.ComponentSchemaPrefix+pkgRef+".User")
 
@@ -404,7 +404,7 @@ func TestSchema_New_generics(t *testing.T) {
 
 		v, found = ref.Value.Properties["P"]
 		a.True(found).NotNil(v).
-			Equal(v.Value.Type, openapi3.TypeInteger)
+			True(v.Value.Type.Is(openapi3.TypeInteger))
 	})
 
 	t.Run("admin.IntUserGenerics", func(t *testing.T) {

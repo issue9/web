@@ -118,7 +118,7 @@ func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3
 		return
 	}
 
-	if s.Value.Type != openapi3.TypeObject {
+	if !s.Value.Type.Is(openapi3.TypeObject) {
 		p.l.Error(web.StringPhrase("@query must point to an object"), filename, ln)
 		return
 	}

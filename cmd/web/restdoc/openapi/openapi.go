@@ -48,7 +48,7 @@ func (doc *OpenAPI) Doc() *openapi3.T { return doc.doc }
 func (doc *OpenAPI) SaveAs(path string) error {
 	var m func(any) ([]byte, error)
 	switch filepath.Ext(path) {
-	case ".yaml", ".yml": // BUG: 依赖的 openapi3.Paths 不支持输出 yaml?
+	case ".yaml", ".yml":
 		m = yaml.Marshal
 	case ".json":
 		m = func(v any) ([]byte, error) { return json.MarshalIndent(v, "", "\t") }

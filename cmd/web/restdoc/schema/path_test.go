@@ -14,20 +14,20 @@ import (
 func TestNewPathSchema(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := NewPath("int")
-	a.NotError(err).NotNil(s).Empty(s.Ref).Equal(s.Value.Type, openapi3.TypeInteger)
+	a.NotError(err).NotNil(s).Empty(s.Ref).True(s.Value.Type.Is(openapi3.TypeInteger))
 
 	s, err = NewPath("boolean")
-	a.NotError(err).NotNil(s).Empty(s.Ref).Equal(s.Value.Type, openapi3.TypeBoolean)
+	a.NotError(err).NotNil(s).Empty(s.Ref).True(s.Value.Type.Is(openapi3.TypeBoolean))
 
 	s, err = NewPath("str")
-	a.NotError(err).NotNil(s).Empty(s.Ref).Equal(s.Value.Type, openapi3.TypeString)
+	a.NotError(err).NotNil(s).Empty(s.Ref).True(s.Value.Type.Is(openapi3.TypeString))
 
 	s, err = NewPath("float32")
-	a.NotError(err).NotNil(s).Empty(s.Ref).Equal(s.Value.Type, openapi3.TypeNumber)
+	a.NotError(err).NotNil(s).Empty(s.Ref).True(s.Value.Type.Is(openapi3.TypeNumber))
 
 	s, err = NewPath("id")
 	a.NotError(err).NotNil(s).Empty(s.Ref).
-		Equal(s.Value.Type, openapi3.TypeInteger).
+		True(s.Value.Type.Is(openapi3.TypeInteger)).
 		Equal(*s.Value.Min, 1)
 
 	s, err = NewPath("\\s+")

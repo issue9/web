@@ -193,7 +193,7 @@ func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName
 			return err
 		}
 
-		if fieldRef.Value.Type == openapi3.TypeObject {
+		if fieldRef.Value.Type.Is(openapi3.TypeObject)  {
 			for k, v := range fieldRef.Value.Properties {
 				if _, found := schema.Properties[k]; found { // 防止与现有的重名
 					continue
@@ -208,7 +208,7 @@ func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName
 
 func buildSchema(s *openapi3.Schema, docTypeName string, docEnums ...string) (*openapi3.Schema, error) {
 	if docTypeName != "" {
-		s.Type = docTypeName
+		s.Type = &openapi3.Types{docTypeName}
 	}
 
 	if len(docEnums) == 0 {

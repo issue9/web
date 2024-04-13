@@ -58,9 +58,9 @@ func TestParser_Parse(t *testing.T) {
 		Equal(login.Parameters[3].Value.Name, "sex").
 		Empty(login.Parameters[3].Value.Schema.Ref). // 查询参数不保存在 schema，也就没有 Ref 的必要
 		Equal(login.Parameters[4].Value.Name, "type").
-		Equal(login.Parameters[4].Value.Schema.Value.Type, openapi3.TypeString).
-		Equal(login.Parameters[2].Value.Schema.Value.Type, openapi3.TypeArray).
-		Equal(login.Parameters[2].Value.Schema.Value.Items.Value.Type, openapi3.TypeInteger).
+		True(login.Parameters[4].Value.Schema.Value.Type.Is(openapi3.TypeString)).
+		True(login.Parameters[2].Value.Schema.Value.Type.Is(openapi3.TypeArray)).
+		True(login.Parameters[2].Value.Schema.Value.Items.Value.Type.Is(openapi3.TypeInteger)).
 		NotNil(login.RequestBody).
 		Equal(login.Responses.Len(), 5). // 包含默认的 default
 		Length(login.Callbacks, 1).
