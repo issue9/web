@@ -86,7 +86,7 @@ type (
 
 		// 路由选项
 		//
-		// 如果为空，会添加 [web.Recovery] 作为默认值。
+		// 可以为空。
 		RoutersOptions []web.RouterOption
 
 		// 指定获取 x-request-id 内容的报头名
@@ -139,8 +139,8 @@ type (
 
 		// Init 其它的一些初始化操作
 		//
-		// 在此可以让用户能实际操作 [Server] 之前对其进行一些修改。
-		Init []func(web.Server)
+		// 在此可以让用户能实际操作 [web.Server] 之前对其进行一些修改。
+		Init []web.PluginFunc
 
 		// 以下微服务相关的设置
 
@@ -260,10 +260,6 @@ func sanitizeOptions(o *Options, t int) (*Options, *config.FieldError) {
 
 	if err := o.buildLogs(o.locale.Printer()); err != nil {
 		return nil, err
-	}
-
-	if len(o.RoutersOptions) == 0 {
-		o.RoutersOptions = []web.RouterOption{web.Recovery(http.StatusInternalServerError, o.logs.ERROR())}
 	}
 
 	if o.RequestIDKey == "" {

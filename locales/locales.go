@@ -33,7 +33,8 @@ var Locales = []fs.FS{
 	scheduled.Locales,
 }
 
-// 一些多处用到的翻译项
+//---------------------------- 以下为本地化的文本内容 -----------------------------
+
 const (
 	InvalidFormat           = localeutil.StringPhrase("invalid format")
 	InvalidValue            = localeutil.StringPhrase("invalid value")

@@ -17,6 +17,9 @@ import (
 	"github.com/issue9/web/selector"
 )
 
+// 在项目正式运行之后，对于配置项的修改应该慎之又慎，
+// 不当的修改可能导致项目运行过程中出错，比如改变了唯一 ID
+// 的生成规则，可能会导致新生成的唯一 ID 与之前的 ID 重复。
 type configOf[T any] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
@@ -88,7 +91,7 @@ type configOf[T any] struct {
 	//  - date 日期格式，默认值；
 	//  - string 普通的字符串；
 	//  - number 数值格式；
-	// NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。
+	// NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
 	idGenerator IDGenerator
 
@@ -120,7 +123,7 @@ type configOf[T any] struct {
 	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法
-	init []func(web.Server)
+	init []func(*Options)
 }
 
 // LoadOptions 从配置文件初始化 [Options] 对象
@@ -157,27 +160,33 @@ func LoadOptions[T any](configDir, filename string) (*Options, *T, error) {
 		return nil, nil, web.NewStackError(err)
 	}
 
-	return &Options{
+	o := &Options{
 		Config:            conf.config,
 		Location:          conf.location,
 		Cache:             conf.cache,
 		HTTPServer:        conf.HTTP.httpServer,
 		Logs:              conf.Logs.logs,
 		Language:          conf.languageTag,
-		RoutersOptions:    conf.HTTP.routersOptions,
+		RoutersOptions:    make([]web.RouterOption, 0, 5),
 		IDGenerator:       conf.idGenerator,
 		RequestIDKey:      conf.HTTP.RequestID,
 		Compressions:      conf.compressors,
 		Mimetypes:         conf.mimetypes,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
 		OnRender:          conf.onRender,
-		Init:              conf.init,
-	}, conf.User, nil
+		Init:              make([]web.PluginFunc, 0, 5),
+	}
+
+	for _, i := range conf.init {
+		i(o)
+	}
+
+	return o, conf.User, nil
 }
 
 func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if conf.MemoryLimit > 0 {
-		conf.init = append(conf.init, func(web.Server) { debug.SetMemoryLimit(conf.MemoryLimit) })
+		conf.init = append(conf.init, func(*Options) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
 
 	if err := conf.buildCache(); err != nil {
@@ -191,7 +200,9 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if err := conf.Logs.build(); err != nil {
 		return err.AddFieldParent("logs")
 	}
-	conf.init = append(conf.init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
+	conf.init = append(conf.init, func(o *Options) {
+		o.Init = append(o.Init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
+	})
 
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
@@ -234,7 +245,11 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		f, srv := g()
 		conf.idGenerator = f
 		if srv != nil {
-			conf.init = append(conf.init, func(s web.Server) { s.Services().Add(locales.UniqueIdentityGenerator, srv) })
+			conf.init = append(conf.init, func(o *Options) {
+				o.Init = append(o.Init, func(s web.Server) {
+					s.Services().Add(locales.UniqueIdentityGenerator, srv)
+				})
+			})
 		}
 	}
 

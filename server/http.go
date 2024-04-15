@@ -29,7 +29,7 @@ type (
 
 		// x-request-id 的报头名称
 		//
-		// 如果为空，则采用 [RequestIDKey] 作为默认值。
+		// 如果为空，则采用 [header.XRequestID] 作为默认值。
 		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty"`
 
 		// 网站的域名证书
@@ -50,6 +50,11 @@ type (
 		ReadHeaderTimeout duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
 		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
 
+		// Recovery 拦截 panic 时反馈给客户端的状态码
+		//
+		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
+		Recovery int `yaml:"recovery,omitempty" json:"recovery,omitempty" xml:"recovery,attr,omitempty"`
+
 		// 自定义报头功能
 		//
 		// 报头会输出到包括 404 在内的所有请求返回。可以为空。
@@ -61,7 +66,7 @@ type (
 
 		// 自定义[跨域请求]设置项
 		//
-		// 这些设置对所有路径均有效。
+		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 		//
 		// [跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors
 		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
@@ -69,11 +74,12 @@ type (
 		// Trace 是否启用 TRACE 请求
 		//
 		// 默认为 false。
+		//
+		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 		Trace bool `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
 
-		routersOptions []mux.Option
-		init           func(web.Server)
-		httpServer     *http.Server
+		init       func(*Options)
+		httpServer *http.Server
 	}
 
 	headerConfig struct {
@@ -177,20 +183,23 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		return err
 	}
 
-	if len(h.Headers) > 0 {
-		h.init = func(s web.Server) {
-			s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-				return func(ctx *web.Context) web.Responser {
-					for _, hh := range h.Headers {
-						ctx.Header().Add(hh.Key, hh.Value)
+	h.init = func(o *Options) {
+		if len(h.Headers) > 0 {
+			o.Init = append(o.Init, func(s web.Server) {
+				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+					return func(ctx *web.Context) web.Responser {
+						for _, hh := range h.Headers {
+							ctx.Header().Add(hh.Key, hh.Value)
+						}
+						return next(ctx)
 					}
-					return next(ctx)
-				}
-			}))
+				}))
+			})
 		}
+
+		h.buildRoutersOptions(o)
 	}
 
-	h.buildRoutersOptions()
 	h.buildHTTPServer()
 	return nil
 }
@@ -207,8 +216,12 @@ func (h *httpConfig) buildHTTPServer() {
 	}
 }
 
-func (h *httpConfig) buildRoutersOptions() {
-	opt := make([]web.RouterOption, 0, 2)
+func (h *httpConfig) buildRoutersOptions(o *Options) {
+	opt := make([]web.RouterOption, 0, 3)
+
+	if h.Recovery > 0 {
+		opt = append(opt, web.Recovery(h.Recovery, o.logs.ERROR()))
+	}
 
 	if h.CORS != nil {
 		c := h.CORS
@@ -217,7 +230,7 @@ func (h *httpConfig) buildRoutersOptions() {
 
 	opt = append(opt, mux.Trace(h.Trace))
 
-	h.routersOptions = opt
+	o.RoutersOptions = append(o.RoutersOptions, opt...)
 }
 
 func (h *httpConfig) buildTLSConfig() *web.FieldError {

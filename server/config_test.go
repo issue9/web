@@ -32,7 +32,8 @@ func TestLoadOptions(t *testing.T) {
 	a := assert.New(t, false)
 
 	s, data, err := LoadOptions[empty]("./testdata", "web.yaml")
-	a.NotError(err).NotNil(s).Nil(data)
+	a.NotError(err).NotNil(s).Nil(data).
+		Length(s.Init, 3) // cache, idgen, logs
 
 	s, data, err = LoadOptions[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Nil(data)
