@@ -28,7 +28,7 @@ func (conf *configOf[T]) sanitizeFileSerializers() *web.FieldError {
 	return nil
 }
 
-func loadConfigOf[T any](configDir, name string) (*configOf[T], error) {
+func loadConfigOf[T comparable](configDir, name string) (*configOf[T], error) {
 	c, err := config.BuildDir(buildSerializerFromFactory(), configDir)
 	if err != nil {
 		return nil, err

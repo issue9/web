@@ -35,7 +35,7 @@ type CLIOptions[T any] struct {
 	// name, version 即为 [CLIOptions.Name] 和 [CLIOptions.Version]；
 	// o 和 user 为从配置文件加载的数据信息；
 	// action 为 -a 命令行指定的参数；
-	NewServer func(name, version string, o *server.Options, user *T, action string) (web.Server, error)
+	NewServer func(name, version string, o *server.Options, user T, action string) (web.Server, error)
 
 	// 以服务运行的指令
 	ServeActions []string
@@ -104,7 +104,7 @@ type cli[T any] struct {
 // T 表示的是配置文件中的用户自定义数据类型，可参考 [server.LoadOptions] 中有关 User 的说明。
 //
 // 如果是 [CLIOptions] 本身字段设置有问题会直接 panic。
-func NewCLI[T any](o *CLIOptions[T]) App {
+func NewCLI[T comparable](o *CLIOptions[T]) App {
 	if err := o.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(localeError(err, o.Printer))
 	}

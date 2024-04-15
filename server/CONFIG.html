@@ -40,7 +40,10 @@ body {
 		</style>
 	</head>
 	<body>
-			<h1>config</h1><h2 id="configOf">configOf</h2>
+			<h1>config</h1><h2 id="configOf">configOf</h2><article><p>在项目正式运行之后，对于配置项的修改应该慎之又慎，
+不当的修改可能导致项目运行过程中出错，比如改变了唯一 ID
+的生成规则，可能会导致新生成的唯一 ID 与之前的 ID 重复。
+</article>
 				<table>
 					<thead><tr><th>JSON</th><th>YAML</th><th>XML</th><th>类型</th><th>描述</th><tr></thead>
 					<tbody>
@@ -77,7 +80,7 @@ body {
 <li>string 普通的字符串；
 <li>number 数值格式；
 </ul>
-<p>NOTE: 一旦运行在生产环境，就不应该修改此属性，新的生成器无法保证生成的 ID 不会与之前的重复。
+<p>NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。
 </td></tr><tr><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>string</td><td><p>Problem 中 type 字段的前缀
 </td></tr><tr><td>onRender,omitempty</td><td>onRender,omitempty</td><td>onRender,omitempty</td><td>string</td><td><p>OnRender 修改渲染结构
 </td></tr><tr><td>registry,omitempty</td><td>registry,omitempty</td><td>registry,omitempty</td><td><a href="#registryConfig">registryConfig</a></td><td><p>指定服务发现和注册中心
@@ -157,19 +160,22 @@ body {
 					<tr><td>port,omitempty</td><td>port,omitempty</td><td>port,attr,omitempty</td><td>string</td><td><p>端口
 <p>格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
 </td></tr><tr><td>requestID,omitempty</td><td>requestID,omitempty</td><td>requestID,omitempty</td><td>string</td><td><p>x-request-id 的报头名称
-<p>如果为空，则采用 [RequestIDKey] 作为默认值。
+<p>如果为空，则采用 [header.XRequestID] 作为默认值。
 </td></tr><tr><td>certificates,omitempty</td><td>certificates,omitempty</td><td>certificates&gt;certificate,omitempty</td><td><a href="#certificateConfig">certificateConfig</a></td><td><p>网站的域名证书
 <p>NOTE: 不能同时与 ACME 生效
 </td></tr><tr><td>acme,omitempty</td><td>acme,omitempty</td><td>acme,omitempty</td><td><a href="#acmeConfig">acmeConfig</a></td><td><p>ACME 协议的证书
 <p>NOTE: 不能同时与 Certificates 生效
-</td></tr><tr><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,attr,omitempty</td><td>int</td><td></td></tr><tr><td>headers,omitempty</td><td>headers,omitempty</td><td>headers&gt;header,omitempty</td><td><a href="#headerConfig">headerConfig</a></td><td><p>自定义报头功能
+</td></tr><tr><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,attr,omitempty</td><td>int</td><td></td></tr><tr><td>recovery,omitempty</td><td>recovery,omitempty</td><td>recovery,attr,omitempty</td><td>int</td><td><p>Recovery 拦截 panic 时反馈给客户端的状态码
+<p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
+</td></tr><tr><td>headers,omitempty</td><td>headers,omitempty</td><td>headers&gt;header,omitempty</td><td><a href="#headerConfig">headerConfig</a></td><td><p>自定义报头功能
 <p>报头会输出到包括 404 在内的所有请求返回。可以为空。
 <p>NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。
 <p>NOTE: 报头内容可能会被后续的中间件修改。
 </td></tr><tr><td>cors,omitempty</td><td>cors,omitempty</td><td>cors,omitempty</td><td><a href="#corsConfig">corsConfig</a></td><td><p>自定义<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors">跨域请求</a>设置项
-<p>这些设置对所有路径均有效。
+<p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 </td></tr><tr><td>trace,omitempty</td><td>trace,omitempty</td><td>trace,omitempty</td><td>bool</td><td><p>Trace 是否启用 TRACE 请求
 <p>默认为 false。
+<p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 </td></tr>
 					</tbody>
 				</table>

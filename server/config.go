@@ -20,7 +20,7 @@ import (
 // 在项目正式运行之后，对于配置项的修改应该慎之又慎，
 // 不当的修改可能导致项目运行过程中出错，比如改变了唯一 ID
 // 的生成规则，可能会导致新生成的唯一 ID 与之前的 ID 重复。
-type configOf[T any] struct {
+type configOf[T comparable] struct {
 	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
 
 	// 内存限制
@@ -120,7 +120,7 @@ type configOf[T any] struct {
 	mapper  Mapper
 
 	// 用户自定义的配置项
-	User *T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
+	User T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法
 	init []func(*Options)
@@ -150,14 +150,15 @@ type configOf[T any] struct {
 //
 // 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
 // 且默认情况下都提供了一些可选项，只有在用户需要额外添加自己的内容时才需要调用注册函数。
-func LoadOptions[T any](configDir, filename string) (*Options, *T, error) {
+func LoadOptions[T comparable](configDir, filename string) (*Options, T, error) {
+	var zero T
 	if filename == "" {
-		return &Options{Config: &Config{Dir: configDir}}, nil, nil
+		return &Options{Config: &Config{Dir: configDir}}, zero, nil
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)
 	if err != nil {
-		return nil, nil, web.NewStackError(err)
+		return nil, zero, web.NewStackError(err)
 	}
 
 	o := &Options{
@@ -265,7 +266,8 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 		return err
 	}
 
-	if conf.User != nil {
+	var zero T
+	if conf.User != zero {
 		if s, ok := (any)(conf.User).(config.Sanitizer); ok {
 			if err := s.SanitizeConfig(); err != nil {
 				return err.AddFieldParent("user")
@@ -291,7 +293,7 @@ func (conf *configOf[T]) buildTimezone() *web.FieldError {
 }
 
 // CheckConfigSyntax 检测配置项语法是否正确
-func CheckConfigSyntax[T any](configDir, filename string) error {
+func CheckConfigSyntax[T comparable](configDir, filename string) error {
 	_, err := loadConfigOf[T](configDir, filename)
 	return err
 }

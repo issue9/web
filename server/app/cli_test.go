@@ -29,7 +29,7 @@ func TestCLI(t *testing.T) {
 		ShutdownTimeout: shutdownTimeout,
 		Out:             bs,
 		ServeActions:    []string{"serve"},
-		NewServer: func(name, ver string, opt *server.Options, _ *empty, act string) (web.Server, error) {
+		NewServer: func(name, ver string, opt *server.Options, _ empty, act string) (web.Server, error) {
 			action = act
 			return server.New(name, ver, opt)
 		},
@@ -54,7 +54,7 @@ func TestCLI_sanitize(t *testing.T) {
 	cmd = &CLIOptions[empty]{
 		Name:    "app",
 		Version: "1.1.1",
-		NewServer: func(name, ver string, opt *server.Options, _ *empty, _ string) (web.Server, error) {
+		NewServer: func(name, ver string, opt *server.Options, _ empty, _ string) (web.Server, error) {
 			return server.New(name, ver, opt)
 		},
 		ConfigFilename: "web.yaml",
