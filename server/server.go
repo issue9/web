@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.html -object=configOf
-
 // Package server 提供与服务端实现相关的功能
 //
 // 目前实现了三种类型的服务端：

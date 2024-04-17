@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/language"
 
@@ -24,16 +25,8 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Language:   language.MustParse(lang),
-		Mimetypes: []*server.Mimetype{
-			{
-				Name:      html.Mimetype,
-				Marshal:   html.Marshal,
-				Unmarshal: html.Unmarshal,
-			},
-		},
-		Logs: &server.Logs{
-			Handler: server.NewTermHandler(os.Stderr, nil),
-		},
+		Codec:      web.NewCodec().AddMimetype(html.Mimetype, html.Marshal, html.Unmarshal, ""),
+		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
 

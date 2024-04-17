@@ -18,9 +18,11 @@ func TestSanitizeOptions(t *testing.T) {
 	o, err := sanitizeOptions(nil, typeHTTP)
 	a.NotError(err).NotNil(o).
 		Equal(o.Location, time.Local).
-		NotNil(o.logs).
+		NotNil(o.Logs).
 		NotNil(o.IDGenerator).
-		NotNil(o.config).
-		Equal(o.Config.Dir, DefaultConfigDir).
-		Equal(o.RequestIDKey, header.XRequestID)
+		NotNil(o.Config).
+		Equal(o.RequestIDKey, header.XRequestID).
+		NotNil(o.locale).
+		NotNil(o.Codec).
+		NotZero(len(o.Init))
 }

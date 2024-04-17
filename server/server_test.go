@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v8/group"
 	"github.com/issue9/mux/v8/header"
 	"golang.org/x/text/language"
@@ -55,8 +56,8 @@ func TestNew(t *testing.T) {
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
 		NotNil(d).
-		NotNil(d.Driver())
-	a.True(srv.CanCompress())
+		NotNil(d.Driver()).
+		True(srv.CanCompress())
 	srv.SetCompress(false)
 	a.False(srv.CanCompress())
 }
@@ -66,21 +67,12 @@ func newOptions(o *Options) *Options {
 		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = &Logs{
-			Handler:  NewTermHandler(os.Stderr, nil),
-			Location: true,
-			Created:  NanoLayout,
-			Levels:   AllLevels(),
-		}
+		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout), logs.WithLevels(logs.AllLevels()...))
 	}
-	if o.Compressions == nil {
-		o.Compressions = DefaultCompressions()
-	}
-	if o.Mimetypes == nil {
-		o.Mimetypes = []*Mimetype{
-			{Name: header.JSON, Marshal: json.Marshal, Unmarshal: json.Unmarshal, Problem: "application/problem+json"},
-			{Name: header.XML, Marshal: xml.Marshal, Unmarshal: xml.Unmarshal, Problem: ""},
-		}
+	if o.Codec == nil {
+		o.Codec = web.NewCodec().
+			AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype).
+			AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, "")
 	}
 
 	return o
@@ -144,7 +136,7 @@ func TestHTTPServer_Serve(t *testing.T) {
 func TestHTTPServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 
-	cert, err := tls.LoadX509KeyPair("./testdata/cert.pem", "./testdata/key.pem")
+	cert, err := tls.LoadX509KeyPair("./config/testdata/cert.pem", "./config/testdata/key.pem")
 	a.NotError(err).NotNil(cert)
 	srv := newTestServer(a, &Options{
 		HTTPServer: &http.Server{
@@ -397,7 +389,7 @@ func TestNewGateway(t *testing.T) {
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Registry:   reg,
-		Mapper: Mapper{
+		Mapper: map[string]group.Matcher{
 			"s1": group.NewPathVersion("", "/s1"),
 			"s2": group.NewPathVersion("", "/s2"),
 		},

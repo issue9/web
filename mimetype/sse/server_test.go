@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
@@ -25,14 +26,8 @@ func TestServer(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.New("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Mimetypes: []*server.Mimetype{
-			{Name: header.JSON, Marshal: json.Marshal, Unmarshal: json.Unmarshal},
-		},
-		Logs: &server.Logs{
-			Created: server.MicroLayout,
-			Handler: server.NewTermHandler(os.Stderr, nil),
-			Levels:  server.AllLevels(),
-		},
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, ""),
+		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
 	})
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10)

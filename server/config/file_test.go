@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"io/fs"
@@ -12,8 +12,6 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/config"
-
-	"github.com/issue9/web/locales"
 )
 
 func TestLoadConfigOf(t *testing.T) {
@@ -52,10 +50,4 @@ func TestLoadConfigOf(t *testing.T) {
 	customConf, err := loadConfigOf[userData](configDir, "user.xml")
 	a.NotError(err).NotNil(customConf)
 	a.Equal(customConf.User.ID, 1)
-}
-
-func TestNewPrinter(t *testing.T) {
-	a := assert.New(t, false)
-	p, err := NewPrinter("*.yaml", locales.Locales...)
-	a.NotError(err).NotNil(p)
 }

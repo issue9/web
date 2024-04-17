@@ -61,8 +61,6 @@ body {
 <p>为空和 Local(注意大小写) 值都会被初始化本地时间。
 </td></tr><tr><td>cache,omitempty</td><td>cache,omitempty</td><td>cache,omitempty</td><td><a href="#cacheConfig">cacheConfig</a></td><td><p>指定缓存对象
 <p>如果为空，则会采用内存作为缓存对象。
-</td></tr><tr><td>compressions,omitempty</td><td>compressions,omitempty</td><td>compressions&gt;compression,omitempty</td><td><a href="#compressConfig">compressConfig</a></td><td><p>压缩的相关配置
-<p>如果为空，那么不支持压缩功能。
 </td></tr><tr><td>fileSerializers,omitempty</td><td>fileSerializers,omitempty</td><td>fileSerializers&gt;fileSerializer,omitempty</td><td>string</td><td><p>指定配置文件的序列化
 <p>可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
 <ul>
@@ -71,6 +69,8 @@ body {
 <li>json 支持 .json 后缀名的文件
 </ul>
 <p>如果为空，表示支持以上所有格式。
+</td></tr><tr><td>compressions,omitempty</td><td>compressions,omitempty</td><td>compressions&gt;compression,omitempty</td><td><a href="#compressConfig">compressConfig</a></td><td><p>压缩的相关配置
+<p>如果为空，那么不支持压缩功能。
 </td></tr><tr><td>mimetypes,omitempty</td><td>mimetypes,omitempty</td><td>mimetypes&gt;mimetype,omitempty</td><td><a href="#mimetypeConfig">mimetypeConfig</a></td><td><p>指定可用的 mimetype
 <p>如果为空，那么将不支持任何格式的内容输出。
 </td></tr><tr><td>idGenerator,omitempty</td><td>idGenerator,omitempty</td><td>idGenerator,omitempty</td><td>string</td><td><p>唯一 ID 生成器
@@ -103,6 +103,7 @@ body {
 </td></tr><tr><td>levels,omitempty</td><td>levels,omitempty</td><td>level,omitempty</td><td><a href="#logs.Level">logs.Level</a></td><td><p>允许开启的通道
 <p>为空表示采用 [AllLevels]
 </td></tr><tr><td>std,omitempty</td><td>std,omitempty</td><td>std,attr,omitempty</td><td>bool</td><td><p>是否接管标准库的日志
+</td></tr><tr><td>stackError,omitempty</td><td>stackError,omitempty</td><td>stackError,attr,omitempty</td><td>bool</td><td><p>是否显示错误日志的调用堆栈
 </td></tr><tr><td>handlers</td><td>handlers</td><td>handlers&gt;handler</td><td><a href="#logHandlerConfig">logHandlerConfig</a></td><td><p>日志输出对象的配置
 <p>为空表示 [NewNopHandler] 返回的对象。
 </td></tr>

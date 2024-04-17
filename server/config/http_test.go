@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"encoding"
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,20 +31,21 @@ func TestCertificate_sanitize(t *testing.T) {
 
 func TestHTTP_sanitize(t *testing.T) {
 	a := assert.New(t, false)
+	l := logs.New(logs.NewNopHandler())
 
 	http := &httpConfig{}
 	http.ReadTimeout = -1
-	ferr := http.sanitize()
+	ferr := http.sanitize(l)
 	a.Equal(ferr.Field, "readTimeout")
 
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
-	ferr = http.sanitize()
+	ferr = http.sanitize(l)
 	a.Equal(ferr.Field, "idleTimeout")
 
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
-	ferr = http.sanitize()
+	ferr = http.sanitize(l)
 	a.Equal(ferr.Field, "readHeaderTimeout")
 }
 

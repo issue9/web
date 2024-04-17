@@ -102,7 +102,7 @@ func Recovery(status int, l *Logger) RouterOption {
 	return mux.Recovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)
 		if !ok {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(status), status)
 			l.String(source.Stack(4, err))
 			return
 		}

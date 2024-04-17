@@ -5,13 +5,13 @@ go 1.22.0
 require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/fxamacker/cbor/v2 v2.6.0
-	github.com/issue9/assert/v4 v4.1.1
+	github.com/issue9/assert/v4 v4.2.0
 	github.com/issue9/cache v0.12.0
 	github.com/issue9/config v0.6.2
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
 	github.com/issue9/localeutil v0.26.5
-	github.com/issue9/logs/v7 v7.5.1
+	github.com/issue9/logs/v7 v7.6.0
 	github.com/issue9/mux/v8 v8.1.0
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/scheduled v0.19.5

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"time"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 // CacheBuilder 构建缓存客户端的方法
@@ -61,7 +62,7 @@ func (conf *configOf[T]) buildCache() *web.FieldError {
 	}
 	conf.cache = drv
 	if job != nil {
-		conf.init = append(conf.init, func(o *Options) {
+		conf.init = append(conf.init, func(o *server.Options) {
 			o.Init = append(o.Init, func(s web.Server) {
 				s.Services().AddTicker(locales.RecycleLocalCache, job.Job, job.Ticker, false, false)
 			})

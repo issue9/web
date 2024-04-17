@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"crypto/tls"
@@ -12,12 +12,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v8"
 	"github.com/issue9/mux/v8/header"
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
 
 type (
@@ -78,7 +80,7 @@ type (
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 		Trace bool `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
 
-		init       func(*Options)
+		init       func(*server.Options)
 		httpServer *http.Server
 	}
 
@@ -137,6 +139,20 @@ type (
 	}
 )
 
+func (conf *configOf[T]) buildHTTP() *web.FieldError {
+	if conf.HTTP == nil {
+		conf.HTTP = &httpConfig{}
+	}
+	if err := conf.HTTP.sanitize(conf.Logs.logs); err != nil {
+		return err.AddFieldParent("http")
+	}
+	if conf.HTTP.init != nil {
+		conf.init = append(conf.init, conf.HTTP.init)
+	}
+
+	return nil
+}
+
 func exists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil || errors.Is(err, fs.ErrExist)
@@ -154,7 +170,7 @@ func (cert *certificateConfig) sanitize() *web.FieldError {
 	return nil
 }
 
-func (h *httpConfig) sanitize() *web.FieldError {
+func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
 	if h.ReadTimeout < 0 {
 		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
 	}
@@ -183,7 +199,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		return err
 	}
 
-	h.init = func(o *Options) {
+	h.init = func(o *server.Options) {
 		if len(h.Headers) > 0 {
 			o.Init = append(o.Init, func(s web.Server) {
 				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
@@ -197,7 +213,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 			})
 		}
 
-		h.buildRoutersOptions(o)
+		h.buildRoutersOptions(o, l)
 	}
 
 	h.buildHTTPServer()
@@ -216,11 +232,11 @@ func (h *httpConfig) buildHTTPServer() {
 	}
 }
 
-func (h *httpConfig) buildRoutersOptions(o *Options) {
+func (h *httpConfig) buildRoutersOptions(o *server.Options, l *logs.Logs) {
 	opt := make([]web.RouterOption, 0, 3)
 
 	if h.Recovery > 0 {
-		opt = append(opt, web.Recovery(h.Recovery, o.logs.ERROR()))
+		opt = append(opt, web.Recovery(h.Recovery, l.ERROR()))
 	}
 
 	if h.CORS != nil {

@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"strconv"
 	"strings"
+
+	"github.com/issue9/mux/v8/group"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
@@ -23,11 +25,6 @@ type (
 	RegistryTypeBuilder = func(web.Cache, *registry.Strategy, ...string) registry.Registry
 
 	RouterMatcherBuilder = func(...string) web.RouterMatcher
-
-	// Mapper 微服务名称与路由的匹配关系
-	//
-	// 在网关中由此列表确定相应的路由由哪个微服务进行代码。
-	Mapper map[string]web.RouterMatcher
 
 	// registryConfig 注册服务中心的配置项
 	registryConfig struct {
@@ -95,7 +92,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	}
 
 	if len(conf.Mappers) > 0 {
-		conf.mapper = Mapper{}
+		conf.mapper = make(map[string]group.Matcher, len(conf.Mappers))
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {
@@ -109,7 +106,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 }
 
 func (r *registryConfig) build(c web.Cache) *web.FieldError {
-	t, found := typeFactory.get(r.Type)
+	t, found := registryTypeFactory.get(r.Type)
 	if !found {
 		return web.NewFieldError("type", locales.ErrNotFound())
 	}

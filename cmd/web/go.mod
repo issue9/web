@@ -5,10 +5,10 @@ go 1.22.0
 require (
 	github.com/caixw/gobuild v1.7.5
 	github.com/getkin/kin-openapi v0.124.0
-	github.com/issue9/assert/v4 v4.1.1
+	github.com/issue9/assert/v4 v4.2.0
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.26.5
-	github.com/issue9/logs/v7 v7.5.1
+	github.com/issue9/logs/v7 v7.6.0
 	github.com/issue9/mux/v8 v8.1.0
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/sliceutil v0.16.1

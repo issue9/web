@@ -18,6 +18,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
+	"github.com/issue9/web/server/config"
 )
 
 const (
@@ -64,7 +65,7 @@ type CLIOptions[T any] struct {
 	//
 	// 相对于 ConfigDir 的文件名，不能为空。
 	//
-	// 需要保证序列化方法已经由 [RegisterFileSerializer] 注册；
+	// 需要保证序列化方法已经由 [config.RegisterFileSerializer] 注册；
 	ConfigFilename string
 
 	// 本地化的打印对象
@@ -101,7 +102,7 @@ type cli[T any] struct {
 //   - -h 显示帮助信息；
 //   - -a 执行的指令，该值会传递给 [CLIOptions.NewServer]，由用户根据此值决定初始化方式；
 //
-// T 表示的是配置文件中的用户自定义数据类型，可参考 [server.LoadOptions] 中有关 User 的说明。
+// T 表示的是配置文件中的用户自定义数据类型，可参考 [config.Load] 中有关 User 的说明。
 //
 // 如果是 [CLIOptions] 本身字段设置有问题会直接 panic。
 func NewCLI[T comparable](o *CLIOptions[T]) App {
@@ -112,7 +113,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 	var action string // -a 参数
 
 	initServer := func() (web.Server, error) {
-		opt, user, err := server.LoadOptions[T](o.ConfigDir, o.ConfigFilename)
+		opt, user, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
 		if err != nil {
 			return nil, web.NewStackError(err)
 		}
@@ -167,7 +168,7 @@ func (cmd *cli[T]) Exec() error { return cmd.exec(os.Args) }
 
 func (o *CLIOptions[T]) sanitize() error {
 	if o.Printer == nil {
-		p, err := server.NewPrinter("*.yaml", locales.Locales...)
+		p, err := config.NewPrinter("*.yaml", locales.Locales...)
 		if err != nil {
 			return err
 		}

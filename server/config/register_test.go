@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"encoding/json"
@@ -19,6 +19,6 @@ func TestRegisterFileSerializer(t *testing.T) {
 	}, "扩展名 .json 已经注册到 json")
 
 	RegisterFileSerializer("new", json.Marshal, json.Unmarshal, ".js")
-	v, f := filesFactory.get("new")
-	a.True(f).NotNil(v).Equal(v.Exts, []string{".js"})
+	v, f := fileSerializerFactory.get("new")
+	a.True(f).NotNil(v).Equal(v.exts, []string{".js"})
 }

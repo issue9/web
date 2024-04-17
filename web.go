@@ -48,7 +48,7 @@ type (
 
 	// MarshalFunc 序列化函数原型
 	//
-	// NOTE: 自定义的 MarshalFunc 需要自行决定是否要自定义输出 [Problem] 和 [server.Render200Response]。
+	// NOTE: 自定义的 MarshalFunc 需要自行决定是否要自定义输出 [Problem] 和 [server.RenderResponse]。
 	//
 	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
 	//

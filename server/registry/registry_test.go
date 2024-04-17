@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -16,12 +17,7 @@ import (
 
 func newTestServer(a *assert.Assertion) web.Server {
 	srv, err := server.New("test", "1.0.0", &server.Options{
-		Logs: &server.Logs{
-			Handler:  server.NewTermHandler(os.Stderr, nil),
-			Created:  server.NanoLayout,
-			Location: true,
-			Levels:   server.AllLevels(),
-		},
+		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLevels(logs.AllLevels()...), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout)),
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 

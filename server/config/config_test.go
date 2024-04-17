@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"io/fs"
@@ -11,6 +11,8 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
+
+	"github.com/issue9/web/locales"
 )
 
 var _ config.Sanitizer = &configOf[empty]{}
@@ -28,14 +30,14 @@ func (u *userData) SanitizeConfig() *config.FieldError {
 	return nil
 }
 
-func TestLoadOptions(t *testing.T) {
+func TestLoad(t *testing.T) {
 	a := assert.New(t, false)
 
-	s, data, err := LoadOptions[empty]("./testdata", "web.yaml")
+	s, data, err := Load[empty]("./testdata", "web.yaml")
 	a.NotError(err).NotNil(s).Equal(data, empty{}).
 		Length(s.Init, 3) // cache, idgen, logs
 
-	s, data, err = LoadOptions[empty]("./testdata/not-exists", "web.yaml")
+	s, data, err = Load[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Equal(data, empty{})
 }
 
@@ -65,4 +67,10 @@ func TestConfig_buildTimezone(t *testing.T) {
 	conf = &configOf[empty]{Timezone: "undefined"}
 	err := conf.buildTimezone()
 	a.NotNil(err).Equal(err.Field, "timezone")
+}
+
+func TestNewPrinter(t *testing.T) {
+	a := assert.New(t, false)
+	p, err := NewPrinter("*.yaml", locales.Locales...)
+	a.NotError(err).NotNil(p)
 }

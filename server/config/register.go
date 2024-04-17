@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"compress/flate"
@@ -17,8 +17,12 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/cache"
+	"github.com/issue9/cache/caches/memcache"
+	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/cache/caches/redis"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/unique/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
@@ -30,6 +34,7 @@ import (
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/nop"
 	"github.com/issue9/web/mimetype/xml"
+	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
 
@@ -61,28 +66,23 @@ func (r *register[T]) get(name string) (T, bool) {
 // 以下为所有 register 的实例化类型及关联的操作
 
 var (
-	logHandlersFactory   = newRegister[LogsHandlerBuilder]()
-	cacheFactory         = newRegister[CacheBuilder]()
-	compressorFactory    = newRegister[compressor.Compressor]()
-	idGeneratorFactory   = newRegister[IDGeneratorBuilder]()
-	mimetypesFactory     = newRegister[mimetypeItem]()
-	filesFactory         = newRegister[*FileSerializer]()
-	routerMatcherFactory = newRegister[RouterMatcherBuilder]()
-	onRenderFactory      = newRegister[func(int, any) (int, any)]()
+	logHandlersFactory    = newRegister[LogsHandlerBuilder]()
+	cacheFactory          = newRegister[CacheBuilder]()
+	compressorFactory     = newRegister[compressor.Compressor]()
+	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
+	mimetypesFactory      = newRegister[mimetype]()
+	fileSerializerFactory = newRegister[fileSerializer]()
+	routerMatcherFactory  = newRegister[RouterMatcherBuilder]()
+	onRenderFactory       = newRegister[func(int, any) (int, any)]()
 
-	strategyFactory = newRegister[StrategyBuilder]()
-	typeFactory     = newRegister[RegistryTypeBuilder]()
+	strategyFactory     = newRegister[StrategyBuilder]()
+	registryTypeFactory = newRegister[RegistryTypeBuilder]()
 )
-
-type mimetypeItem struct {
-	marshal   web.MarshalFunc
-	unmarshal web.UnmarshalFunc
-}
 
 // IDGeneratorBuilder 构建生成唯一 ID 的方法
 //
 // f 表示生成唯一 ID 的方法；s 为 f 依赖的服务，可以为空；
-type IDGeneratorBuilder = func() (f IDGenerator, s web.Service)
+type IDGeneratorBuilder = func() (f func() string, s web.Service)
 
 // RegisterLogsHandler 注册日志的 [LogsWriterBuilder]
 //
@@ -110,7 +110,7 @@ func RegisterIDGenerator(id string, b IDGeneratorBuilder) { idGeneratorFactory.r
 //
 // name 为名称，这将在配置文件中被引用，如果存在同名，则会覆盖。
 func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
-	mimetypesFactory.register(mimetypeItem{marshal: m, unmarshal: u}, name)
+	mimetypesFactory.register(mimetype{marshal: m, unmarshal: u}, name)
 }
 
 // RegisterFileSerializer 注册用于文件序列化的方法
@@ -119,18 +119,18 @@ func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
 // ext 为文件的扩展名；
 func RegisterFileSerializer(name string, m config.MarshalFunc, u config.UnmarshalFunc, ext ...string) {
 	for _, e := range ext {
-		for k, s := range filesFactory.items {
-			if slices.Index(s.Exts, e) >= 0 {
+		for k, s := range fileSerializerFactory.items {
+			if slices.Index(s.exts, e) >= 0 {
 				panic(fmt.Sprintf("扩展名 %s 已经注册到 %s", e, k))
 			}
 		}
 	}
-	filesFactory.register(&FileSerializer{Marshal: m, Unmarshal: u, Exts: ext}, name)
+	fileSerializerFactory.register(fileSerializer{marshal: m, unmarshal: u, exts: ext}, name)
 }
 
 func RegisterStrategy(f StrategyBuilder, name string) { strategyFactory.register(f, name) }
 
-func RegisterRegistryType(f RegistryTypeBuilder, name string) { typeFactory.register(f, name) }
+func RegisterRegistryType(f RegistryTypeBuilder, name string) { registryTypeFactory.register(f, name) }
 
 func RegisterRouterMatcher(f RouterMatcherBuilder, name string) {
 	routerMatcherFactory.register(f, name)
@@ -153,16 +153,20 @@ func init() {
 			return nil, nil, err
 		}
 
-		drv, job := NewMemory()
-		return drv, &Job{Ticker: d, Job: job}, nil
+		drv, job := memory.New()
+		j := func(now time.Time) error {
+			job(now)
+			return nil
+		}
+		return drv, &Job{Ticker: d, Job: j}, nil
 	}, "memory")
 
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		return NewMemcache(strings.Split(dsn, ";")...), nil, nil
+		return memcache.New(strings.Split(dsn, ";")...), nil, nil
 	}, "memcached", "memcache")
 
 	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		drv, err := NewRedisFromURL(dsn)
+		drv, err := redis.NewFromURL(dsn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -190,9 +194,18 @@ func init() {
 
 	// RegisterIDGenerator
 
-	RegisterIDGenerator("date", func() (IDGenerator, web.Service) { return DateID(100) })
-	RegisterIDGenerator("string", func() (IDGenerator, web.Service) { return StringID(100) })
-	RegisterIDGenerator("number", func() (IDGenerator, web.Service) { return NumberID(100) })
+	RegisterIDGenerator("date", func() (func() string, web.Service) {
+		u := unique.NewNumber(100)
+		return u.String, u
+	})
+	RegisterIDGenerator("string", func() (func() string, web.Service) {
+		u := unique.NewString(100)
+		return u.String, u
+	})
+	RegisterIDGenerator("number", func() (func() string, web.Service) {
+		u := unique.NewDate(100)
+		return u.String, u
+	})
 
 	// RegisterMimetype
 
@@ -240,5 +253,5 @@ func init() {
 
 	// OnRender
 
-	RegisterOnRender(Render200, "render200")
+	RegisterOnRender(server.Render200, "render200")
 }

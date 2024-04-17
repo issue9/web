@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"testing"
@@ -19,15 +19,15 @@ func TestLogsConfig_build(t *testing.T) {
 	conf := &logsConfig{}
 	err := conf.build()
 	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
-		Equal(conf.logs.Levels, AllLevels()).
-		Empty(conf.logs.Created)
+		Equal(conf.Levels, logs.AllLevels()).
+		Empty(conf.Created)
 
 	conf = &logsConfig{Levels: []logs.Level{logs.LevelWarn, logs.LevelError}, Created: logs.NanoLayout}
 	err = conf.build()
 	a.NotError(err).NotNil(conf.logs).Length(conf.cleanup, 0).
-		Equal(conf.logs.Levels, []logs.Level{logs.LevelWarn, logs.LevelError}).
-		Equal(conf.logs.Created, logs.NanoLayout).
-		False(conf.logs.Location)
+		Equal(conf.Levels, []logs.Level{logs.LevelWarn, logs.LevelError}).
+		Equal(conf.Created, logs.NanoLayout).
+		False(conf.Location)
 }
 
 func TestLogsConfig_buildHandler(t *testing.T) {
@@ -36,7 +36,7 @@ func TestLogsConfig_buildHandler(t *testing.T) {
 	// len(Handlers) == 0
 	conf := &logsConfig{}
 	h, c, err := conf.buildHandler()
-	a.NotError(err).Equal(h, NewNopHandler()).Nil(c)
+	a.NotError(err).Equal(h, logs.NewNopHandler()).Nil(c)
 
 	// len(Handlers) == 1
 	conf = &logsConfig{
@@ -46,7 +46,7 @@ func TestLogsConfig_buildHandler(t *testing.T) {
 		},
 	}
 	h, c, err = conf.buildHandler()
-	a.NotError(err).NotNil(h).NotEqual(h, NewNopHandler()).NotNil(c)
+	a.NotError(err).NotNil(h).NotEqual(h, logs.NewNopHandler()).NotNil(c)
 
 	// len(Handlers) > 1
 	conf = &logsConfig{
@@ -57,7 +57,7 @@ func TestLogsConfig_buildHandler(t *testing.T) {
 		},
 	}
 	h, c, err = conf.buildHandler()
-	a.NotError(err).NotNil(h).NotEqual(h, NewNopHandler()).NotNil(c)
+	a.NotError(err).NotNil(h).NotEqual(h, logs.NewNopHandler()).NotNil(c)
 }
 
 func TestNewTermHandler(t *testing.T) {

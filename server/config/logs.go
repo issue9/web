@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package server
+package config
 
 import (
 	"errors"
@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/config"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/logs/v7/writers"
 	"github.com/issue9/logs/v7/writers/rotate"
@@ -20,46 +18,8 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/server"
 )
-
-// 日志的时间格式
-const (
-	DateMilliLayout = logs.DateMilliLayout
-	DateMicroLayout = logs.DateMicroLayout
-	DateNanoLayout  = logs.DateNanoLayout
-
-	MilliLayout = logs.MilliLayout
-	MicroLayout = logs.MicroLayout
-	NanoLayout  = logs.NanoLayout
-)
-
-// Logs 初始化日志的选项
-type Logs struct {
-	// Handler 后端处理接口
-	//
-	// 内置了以下几种方式：
-	//  - [NewNopHandler]
-	//  - [NewTermHandler]
-	//  - [NewTextHandler]
-	//  - [NewJSONHandler]
-	Handler logs.Handler
-
-	// 是否带调用堆栈信息
-	Location bool
-
-	// 指定创建日志的时间格式，如果为空表示不需要输出时间。
-	Created string
-
-	// 允许的日志级别
-	Levels []logs.Level
-
-	// 对于 [Logger.Error] 输入 [xerrors.Formatter] 类型时，
-	// 是否输出调用堆栈信息。
-	StackError bool
-
-	// 是否接管标准库日志的输出
-	Std bool
-}
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
 type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error)
@@ -81,12 +41,15 @@ type logsConfig struct {
 	// 是否接管标准库的日志
 	Std bool `xml:"std,attr,omitempty" json:"std,omitempty" yaml:"std,omitempty"`
 
+	// 是否显示错误日志的调用堆栈
+	StackError bool `xml:"stackError,attr,omitempty" json:"stackError,omitempty" yaml:"stackError,omitempty"`
+
 	// 日志输出对象的配置
 	//
 	// 为空表示 [NewNopHandler] 返回的对象。
 	Handlers []*logHandlerConfig `xml:"handlers>handler" json:"handlers" yaml:"handlers"`
 
-	logs    *Logs
+	logs    *logs.Logs
 	cleanup []func() error
 }
 
@@ -144,110 +107,53 @@ type logHandlerConfig struct {
 	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
 }
 
-func (o *Options) buildLogs(p *localeutil.Printer) *web.FieldError {
-	if o.Logs == nil {
-		o.Logs = &Logs{}
+func (conf *configOf[T]) buildLogs() *web.FieldError {
+	if conf.Logs == nil {
+		conf.Logs = &logsConfig{}
 	}
-
-	if o.Logs.Handler == nil {
-		o.Logs.Handler = NewNopHandler()
+	if err := conf.Logs.build(); err != nil {
+		return err.AddFieldParent("logs")
 	}
-
-	for index, lv := range o.Logs.Levels {
-		if !logs.IsValidLevel(lv) {
-			field := "Logs.Levels[" + strconv.Itoa(index) + "]"
-			return config.NewFieldError(field, locales.InvalidValue)
-		}
-	}
-
-	oo := make([]logs.Option, 0, 5)
-
-	oo = append(oo, logs.WithLocale(p))
-
-	if o.Logs.Location {
-		oo = append(oo, logs.WithLocation(true))
-	}
-	if o.Logs.Created != "" {
-		oo = append(oo, logs.WithCreated(o.Logs.Created))
-	}
-	if o.Logs.StackError {
-		oo = append(oo, logs.WithDetail(true))
-	}
-
-	if o.Logs.Std {
-		oo = append(oo, logs.WithStd())
-	}
-
-	if len(o.Logs.Levels) > 0 {
-		oo = append(oo, logs.WithLevels(o.Logs.Levels...))
-	}
-
-	o.logs = logs.New(o.Logs.Handler, oo...)
+	conf.init = append(conf.init, func(o *server.Options) {
+		o.Init = append(o.Init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
+	})
 
 	return nil
 }
 
-// AllLevels 返回所有的日志类型
-func AllLevels() []logs.Level { return logs.AllLevels() }
-
-// NewTextHandler 声明文本类型的日志输出通道
-func NewTextHandler(w ...io.Writer) logs.Handler { return logs.NewTextHandler(w...) }
-
-// NewJSONHandler 声明 JSON 类型的日志输出通道
-func NewJSONHandler(w ...io.Writer) logs.Handler { return logs.NewJSONHandler(w...) }
-
-// NewTermHandler 带颜色的终端输出通道
-//
-// 参数说明参考 [logs.NewTermHandler]
-func NewTermHandler(w io.Writer, colors map[logs.Level]colors.Color) logs.Handler {
-	return logs.NewTermHandler(w, colors)
-}
-
-func NewNopHandler() logs.Handler { return logs.NewNopHandler() }
-
-// NewDispatchHandler 按不同的 [Level] 派发到不同的 [Handler] 对象
-func NewDispatchHandler(d map[logs.Level]logs.Handler) logs.Handler {
-	return logs.NewDispatchHandler(d)
-}
-
-// MergeHandler 合并多个 [Handler] 对象
-func MergeHandler(w ...logs.Handler) logs.Handler { return logs.MergeHandler(w...) }
-
-// NewRotateFile 按大小分割的文件日志
-//
-// 参数说明参考 [rotate.New]
-func NewRotateFile(format, dir string, size int64) (io.WriteCloser, error) {
-	return rotate.New(format, dir, size)
-}
-
-// NewSMTP 将日志内容发送至指定邮箱
-//
-// 参数说明参考 [writers.NewSMTP]
-func NewSMTP(username, password, subject, host string, sendTo []string) io.Writer {
-	return writers.NewSMTP(username, password, subject, host, sendTo)
-}
-
 func (conf *logsConfig) build() *web.FieldError {
-	if conf.logs == nil {
-		conf.logs = &Logs{}
-	}
+	defer func() {
+		if conf.logs == nil {
+			conf.logs = logs.New(logs.NewNopHandler())
+		}
+	}()
 
 	if len(conf.Levels) == 0 { // 确保 buildHandler() 从 conf.Levels 继承的数据不是空的
-		conf.Levels = AllLevels()
+		conf.Levels = logs.AllLevels()
 	}
 
-	w, c, err := conf.buildHandler()
+	o := make([]logs.Option, 0, 5)
+	if conf.Location {
+		o = append(o, logs.WithLocation(true))
+	}
+	if conf.Created != "" {
+		o = append(o, logs.WithCreated(conf.Created))
+	}
+	if conf.StackError {
+		o = append(o, logs.WithDetail(true))
+	}
+	if conf.Std {
+		o = append(o, logs.WithStd())
+	}
+	if len(conf.Levels) > 0 {
+		o = append(o, logs.WithLevels(conf.Levels...))
+	}
+
+	h, c, err := conf.buildHandler()
 	if err != nil {
 		return err
 	}
-
-	conf.logs = &Logs{
-		Handler:  w,
-		Created:  conf.Created,
-		Location: conf.Location,
-		Levels:   conf.Levels,
-		Std:      conf.Std,
-	}
+	conf.logs = logs.New(h, o...)
 	conf.cleanup = c
 
 	return nil
@@ -309,10 +215,10 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 	}
 
 	d := make(map[logs.Level]logs.Handler, len(m))
-	for _, l := range AllLevels() {
+	for _, l := range logs.AllLevels() {
 		switch ws := m[l]; {
 		case ws == nil:
-			d[l] = NewNopHandler()
+			d[l] = logs.NewNopHandler()
 		case len(ws) == 1:
 			d[l] = ws[0]
 		default:
@@ -329,25 +235,25 @@ func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {
 		return nil, nil, err
 	}
 
-	w, err := NewRotateFile(args[1], args[0], size)
+	w, err := rotate.New(args[1], args[0], size)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if len(args) < 4 || args[3] == "text" {
-		return NewTextHandler(w), w.Close, nil
+		return logs.NewTextHandler(w), w.Close, nil
 	}
-	return NewJSONHandler(w), w.Close, nil
+	return logs.NewJSONHandler(w), w.Close, nil
 }
 
 func newSMTPLogsHandler(args []string) (logs.Handler, func() error, error) {
 	sendTo := strings.Split(args[4], ",")
-	w := NewSMTP(args[0], args[1], args[2], args[3], sendTo)
+	w := writers.NewSMTP(args[0], args[1], args[2], args[3], sendTo)
 
 	if len(args) < 6 || args[6] == "text" {
-		return NewTextHandler(w), nil, nil
+		return logs.NewTextHandler(w), nil, nil
 	}
-	return NewJSONHandler(w), nil, nil
+	return logs.NewJSONHandler(w), nil, nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -405,5 +311,5 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 		cs[lv] = c
 	}
 
-	return NewTermHandler(w, cs), nil, nil
+	return logs.NewTermHandler(w, cs), nil, nil
 }
