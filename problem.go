@@ -26,11 +26,12 @@ type (
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
-		Type     string `json:"type" xml:"type" form:"type" cbor:"type"`
-		Title    string `json:"title" xml:"title" form:"title" cbor:"title"`
-		Detail   string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty"`
-		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty"`
-		Status   int    `json:"status" xml:"status" form:"status" cbor:"status,omitempty"`
+		XMLName  struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-"`
+		Type     string   `json:"type" xml:"type" form:"type" cbor:"type"`
+		Title    string   `json:"title" xml:"title" form:"title" cbor:"title"`
+		Detail   string   `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty"`
+		Instance string   `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty"`
+		Status   int      `json:"status" xml:"status" form:"status" cbor:"status,omitempty"`
 
 		// 用户提交对象各个字段的错误信息
 		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty"`
@@ -71,6 +72,9 @@ func newProblem() *Problem {
 	return p
 	// 其它的基本字段在 [Problems.initProblem] 中初始化
 }
+
+// MarshalHTML 实现 [mimetype/html.Marshaler] 接口
+func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem) Error() string { return p.Title }
 

@@ -39,12 +39,12 @@ func NewDepthStackError(depth int, err error) error {
 
 func (err *stackError) Error() string { return err.err.Error() }
 
-// fmt.Formatter
+// Format implement fmt.Formatter
 func (err *stackError) Format(f fmt.State, c rune) {
 	xerrors.FormatError(err, f, c)
 }
 
-// xerrors.Formatter
+// FormatError implement xerrors.Formatter
 func (err *stackError) FormatError(p xerrors.Printer) error {
 	if p.Detail() {
 		err.frame.Format(p)

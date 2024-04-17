@@ -43,13 +43,17 @@ func getGroups(ctx* web.Context) web.Responser {
 ```go
 package main
 
-import "github.com/issue9/web"
-import "github.com/issue9/web/server"
+import (
+    "github.com/issue9/web"
+    "github.com/issue9/web/server"
+    "github.com/issue9/web/mimetype/json"
+    "github.com/issue9/web/mimetype/xml"
+)
 
 srv := server.New("app", "1.0.0", &server.Options{
-    Mimetypes: []*server.Mimetype{
-        { Type: "application/json", ProblemType: "application/problem+json", Marshal: json.Marshal, Unmarshal: json.Unmarshal },
-        { Type: "application/xml", ProblemType: "application/problem+xml", Marshal: xml.Marshal, Unmarshal: xml.Unmarshal },
+    Codec: web.NewCodec().
+        AddMimetype(xml.Mimetype, json.Marshal, json.Unmarshal, xml.ProblemMimetype).
+        AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype)
     }
 })
 

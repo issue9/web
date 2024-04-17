@@ -55,7 +55,7 @@ type (
 
 		// 缓存系统
 		//
-		// 如果为空，采用 [memory.New] 作为默认值。
+		// 如果为空，采用 [github.com/issue9/cache/caches/memory/New] 作为默认值。
 		Cache cache.Driver
 
 		// 日志系统
@@ -258,7 +258,7 @@ func (o *Options) internalServer(name, version string, s web.Server) *web.Intern
 //
 // 适用 [Options.OnRender]。
 //
-// 返回值中，状态码统一为 200。返回对象统一为 [RenderResponse]。
+// 返回值中，状态码统一为 [http.StatusOK]。返回对象统一为 [RenderResponse]。
 func Render200(status int, body any) (int, any) {
 	return http.StatusOK, &RenderResponse{OK: !web.IsProblem(status), Status: status, Body: body}
 }

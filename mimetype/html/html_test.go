@@ -15,6 +15,7 @@ import (
 var (
 	_ web.MarshalFunc   = Marshal
 	_ web.UnmarshalFunc = Unmarshal
+	_ Marshaler         = &web.Problem{}
 )
 
 func TestGetName(t *testing.T) {

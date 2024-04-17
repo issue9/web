@@ -54,6 +54,7 @@ type Marshaler interface {
 //
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
+//   - 实现了 [Marshaler] 接口，则按 [Marshaler.MarshalHTML] 返回的查找模板名称；
 //   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [mimetype.ErrUnsupported]；
 func Marshal(ctx *web.Context, v any) ([]byte, error) {
