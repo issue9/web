@@ -25,10 +25,8 @@ type Locale struct {
 	ttl     *ttlcache.Cache[language.Tag, *message.Printer]
 }
 
-func New(id language.Tag, conf *config.Config, b *catalog.Builder) *Locale {
-	if b == nil {
-		b = catalog.NewBuilder(catalog.Fallback(id))
-	}
+func New(id language.Tag, conf *config.Config) *Locale {
+	b := catalog.NewBuilder(catalog.Fallback(id))
 
 	// 保证 b 中包含一条 id 语言的翻译项，
 	// 这样可以始终让 Locale.Printer 的对象始终是有值的。

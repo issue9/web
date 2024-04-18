@@ -296,7 +296,7 @@ func CheckConfigSyntax[T comparable](configDir, filename string) error {
 	return err
 }
 
-// NewPrinter 根据参数构建一个本地化的打印对象
+// NewPrinter 根据参数指定的配置文件构建一个本地化的打印对象
 //
 // 语言由 [localeutil.DetectUserLanguageTag] 决定。
 // fsys 指定了加载本地化文件的文件系统，glob 则指定了加载的文件匹配规则；

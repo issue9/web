@@ -55,7 +55,7 @@ func TestMessage_append(t *testing.T) {
 
 func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Codec:      web.NewCodec().AddMimetype(Mimetype, nop.Marshal, nop.Unmarshal, ""),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),

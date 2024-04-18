@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Package update 更新本地化文档
 package update
 
 import (

@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
@@ -38,9 +37,9 @@ const (
 )
 
 type (
-	// Options [web.Server] 的初始化参数
+	// Options 初始化 [web.Server] 的参数
 	//
-	// 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
+	// NOTE: 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
 	Options struct {
 		// 项目的配置文件管理
 		//
@@ -100,13 +99,6 @@ type (
 		//
 		// 如果为空，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
-
-		// 本地化的数据
-		//
-		// 如果为空，则会被初始化成一个空对象。
-		// Catalog 中会强行插入一条 tag 与 [Options.Language] 相同的翻译项，
-		// 以保证能正确构建 [web.Server.Printer] 对象。
-		Catalog *catalog.Builder
 
 		locale *locale.Locale
 
@@ -199,12 +191,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		}
 		o.Language = tag
 	}
-
-	if o.Catalog == nil {
-		o.Catalog = catalog.NewBuilder(catalog.Fallback(o.Language))
-	}
-
-	o.locale = locale.New(o.Language, o.Config, o.Catalog)
+	o.locale = locale.New(o.Language, o.Config)
 
 	if o.Logs == nil {
 		o.Logs = logs.New(logs.NewNopHandler())

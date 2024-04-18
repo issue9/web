@@ -43,7 +43,7 @@ func buildHandler(code int) web.HandlerFunc {
 func TestNew(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv, err := New("app", "0.1.0", nil)
+	srv, err := NewHTTP("app", "0.1.0", nil)
 	a.NotError(err).NotNil(srv).
 		False(srv.Uptime().IsZero()).
 		NotNil(srv.Cache()).
@@ -79,7 +79,7 @@ func newOptions(o *Options) *Options {
 }
 
 func newTestServer(a *assert.Assertion, o *Options) web.Server {
-	srv, err := New("app", "0.1.0", newOptions(o))
+	srv, err := NewHTTP("app", "0.1.0", newOptions(o))
 	a.NotError(err).NotNil(srv).
 		Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
 

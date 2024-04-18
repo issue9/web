@@ -19,8 +19,6 @@ import (
 	"github.com/issue9/mux/v8/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web/internal/locale"
 )
@@ -37,12 +35,9 @@ func onExitContext(ctx *Context, status int) {
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
-	c := catalog.NewBuilder()
-	a.NotError(c.SetString(language.SimplifiedChinese, "lang", "cn")).
-		NotError(c.SetString(language.TraditionalChinese, "lang", "tw"))
-
-	l := language.SimplifiedChinese
-	p := message.NewPrinter(l, message.Catalog(c))
+	l := locale.New(language.SimplifiedChinese, nil)
+	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "cn")).
+		NotError(l.SetString(language.TraditionalChinese, "lang", "tw"))
 
 	logBuf := new(bytes.Buffer)
 	log := logs.New(
@@ -50,7 +45,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 		logs.WithCreated(logs.NanoLayout),
 		logs.WithLocation(true),
 		logs.WithLevels(logs.AllLevels()...),
-		logs.WithLocale(p),
+		logs.WithLocale(l.Printer()),
 	)
 	a.NotNil(log)
 
@@ -58,7 +53,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc, gc := memory.New()
 	u := unique.NewNumber(100)
-	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, locale.New(l, nil, c), cc, newCodec(a), header.XRequestID, "", nil)
+	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, "", nil)
 	srv.Services().Add(Phrase("unique"), u)
 	srv.Services().AddTicker(Phrase("gc memory"), func(t time.Time) error { gc(t); return nil }, time.Minute, false, false)
 

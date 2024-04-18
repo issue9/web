@@ -17,7 +17,7 @@ import (
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Codec:      web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, ""),
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})

@@ -22,7 +22,7 @@ import (
 )
 
 func newServer(a *assert.Assertion, lang string) web.Server {
-	s, err := server.New("test", "1.0.0", &server.Options{
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Language:   language.MustParse(lang),
 		Codec:      web.NewCodec().AddMimetype(html.Mimetype, html.Marshal, html.Unmarshal, ""),

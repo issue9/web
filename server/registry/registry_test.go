@@ -16,7 +16,7 @@ import (
 )
 
 func newTestServer(a *assert.Assertion) web.Server {
-	srv, err := server.New("test", "1.0.0", &server.Options{
+	srv, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLevels(logs.AllLevels()...), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout)),
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})

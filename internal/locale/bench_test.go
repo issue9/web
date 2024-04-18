@@ -11,7 +11,7 @@ import (
 )
 
 func BenchmarkLocale_NewPrinter(b *testing.B) {
-	l := New(language.SimplifiedChinese, nil, nil)
+	l := New(language.SimplifiedChinese, nil)
 
 	b.Run("equal Locale.id", func(b *testing.B) {
 		b.ResetTimer()

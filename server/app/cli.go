@@ -48,8 +48,6 @@ type CLIOptions[T any] struct {
 
 	// 配置文件所在的目录
 	//
-	// 这也将影响后续 [server.Options.Config] 变量，如果为空，则会采用 [server.DefaultConfigDir]。
-	//
 	// 有以下几种前缀用于指定不同的保存目录：
 	//  - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Windows 的 AppData 等；
 	//  - @ 表示当前程序的主目录；
@@ -70,7 +68,7 @@ type CLIOptions[T any] struct {
 
 	// 本地化的打印对象
 	//
-	// 若为空，则以 server.NewPrinter(locales.Locales, "*.yaml") 进行初始化。
+	// 若为空，则以 config.NewPrinter("*.yaml", locales.Locales) 进行初始化。
 	//
 	// 若是自定义，至少需要保证以下几个字符串的翻译项，才有效果：
 	//  - cmd.show_version

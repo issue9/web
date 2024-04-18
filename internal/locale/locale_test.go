@@ -20,8 +20,7 @@ import (
 func TestLocale_Printer(t *testing.T) {
 	a := assert.New(t, false)
 
-	b := catalog.NewBuilder()
-	l := New(language.SimplifiedChinese, nil, b)
+	l := New(language.SimplifiedChinese, nil)
 	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
 		NotNil(l).Equal(l.Sprintf("lang"), "hans").
 		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2")).
@@ -29,17 +28,17 @@ func TestLocale_Printer(t *testing.T) {
 
 	// ID 不存在于 catalog
 
-	b = catalog.NewBuilder()
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	l = New(language.Afrikaans, nil, b)
-	a.NotNil(l).Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
-							NotError(l.SetString(language.Afrikaans, "lang", "afrik")).
-							Equal(l.Sprintf("lang"), "afrik")
+	l = New(language.Afrikaans, nil)
+	a.NotNil(l).
+		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
+		Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
+		NotError(l.SetString(language.Afrikaans, "lang", "afrik")).
+		Equal(l.Sprintf("lang"), "afrik")
 }
 
 func TestLocale_NewPrinter(t *testing.T) {
 	a := assert.New(t, false)
-	l := New(language.SimplifiedChinese, nil, nil)
+	l := New(language.SimplifiedChinese, nil)
 	a.NotNil(l).Equal(l.ID(), language.SimplifiedChinese)
 
 	// language.SimplifiedChinese 是默认的 ID，初始化 l 时即已存在。

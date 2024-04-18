@@ -5,7 +5,7 @@
 // Package server 提供与服务端实现相关的功能
 //
 // 目前实现了三种类型的服务端：
-//   - [New] 构建普通的 HTTP 服务；
+//   - [NewHTTP] 构建普通的 HTTP 服务；
 //   - [NewGateway] 构建微服务的网关服务；
 //   - [NewService] 构建微服务；
 package server
@@ -60,11 +60,11 @@ func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	return srv
 }
 
-// New 新建 HTTP 服务
+// NewHTTP 新建 HTTP 服务
 //
 // name, version 表示服务的名称和版本号；
 // o 指定了一些带有默认值的参数；
-func New(name, version string, o *Options) (web.Server, error) {
+func NewHTTP(name, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
