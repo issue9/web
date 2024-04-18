@@ -35,7 +35,7 @@ func TestLoad(t *testing.T) {
 
 	s, data, err := Load[empty]("./testdata", "web.yaml")
 	a.NotError(err).NotNil(s).Equal(data, empty{}).
-		Length(s.Init, 3) // cache, idgen, logs
+		Length(s.Plugins, 3) // cache, idgen, logs
 
 	s, data, err = Load[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Equal(data, empty{})

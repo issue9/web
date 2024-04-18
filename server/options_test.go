@@ -24,5 +24,5 @@ func TestSanitizeOptions(t *testing.T) {
 		Equal(o.RequestIDKey, header.XRequestID).
 		NotNil(o.locale).
 		NotNil(o.Codec).
-		NotZero(len(o.Init))
+		NotZero(len(o.Plugins))
 }

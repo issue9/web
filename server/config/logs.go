@@ -115,7 +115,7 @@ func (conf *configOf[T]) buildLogs() *web.FieldError {
 		return err.AddFieldParent("logs")
 	}
 	conf.init = append(conf.init, func(o *server.Options) {
-		o.Init = append(o.Init, func(s web.Server) { s.OnClose(conf.Logs.cleanup...) })
+		o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) { s.OnClose(conf.Logs.cleanup...) }))
 	})
 
 	return nil

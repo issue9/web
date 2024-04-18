@@ -110,7 +110,7 @@ type (
 
 		locale *locale.Locale
 
-		// ProblemTypePrefix 所有 type 字段的前缀
+		// 所有 [web.Problem.Type] 字段的前缀
 		//
 		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
 		// 空值是合法的值，表示不需要添加前缀。
@@ -123,24 +123,24 @@ type (
 		// NOTE: 该值的修改，可能造成所有接口返回数据结构的变化。
 		OnRender func(status int, body any) (int, any)
 
-		// Init 其它的一些初始化操作
+		// 指定对 [web.Server] 进行初始化的插件
 		//
-		// 在此可以让用户能实际操作 [web.Server] 之前对其进行一些修改。
-		Init []web.PluginFunc
+		// 这些插件会在 [web.Server.Serve] 运行之前被调用。
+		Plugins []web.Plugin
 
 		// 以下微服务相关的设置
 
-		// Registry 作为微服务时的注册中心实例
+		// 作为微服务时的注册中心实例
 		//
 		// NOTE: 仅在 [NewService] 和 [NewGateway] 中才会有效果。
 		Registry registry.Registry
 
-		// Peer 作为微服务终端时的地址
+		// 作为微服务终端时的地址
 		//
 		// NOTE: 仅在 [NewService] 中才会有效果。
 		Peer selector.Peer
 
-		// Mapper 作为微服务网关时的 URL 映射关系
+		// 作为微服务网关时的 URL 映射关系
 		//
 		// NOTE: 仅在 [NewGateway] 中才会有效果。
 		Mapper map[string]web.RouterMatcher
@@ -176,20 +176,20 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	if o.IDGenerator == nil {
 		u := unique.NewString(1000)
 		o.IDGenerator = u.String
-		o.Init = append(o.Init, func(s web.Server) {
+		o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
 			s.Services().Add(locales.UniqueIdentityGenerator, u)
-		})
+		}))
 	}
 
 	if o.Cache == nil {
 		c, job := memory.New()
 		o.Cache = c
-		o.Init = append(o.Init, func(s web.Server) {
+		o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
 			s.Services().AddTicker(locales.RecycleLocalCache, func(now time.Time) error {
 				job(now)
 				return nil
 			}, time.Minute, false, false)
-		})
+		}))
 	}
 
 	if o.Language == language.Und {

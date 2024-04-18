@@ -186,7 +186,7 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 		Codec:             conf.codec,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
 		OnRender:          conf.onRender,
-		Init:              make([]web.PluginFunc, 0, 5),
+		Plugins:           make([]web.Plugin, 0, 5),
 	}
 
 	for _, i := range conf.init {
@@ -268,9 +268,9 @@ func (conf *configOf[T]) buildIDGen() {
 		conf.idGenerator = f
 		if srv != nil {
 			conf.init = append(conf.init, func(o *server.Options) {
-				o.Init = append(o.Init, func(s web.Server) {
+				o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
 					s.Services().Add(locales.UniqueIdentityGenerator, srv)
-				})
+				}))
 			})
 		}
 	}

@@ -54,8 +54,8 @@ func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	srv.InternalServer = o.internalServer(name, version, s)
 	srv.hs.Handler = srv
 
-	for _, f := range o.Init { // NOTE: 需要保证在最后
-		f(srv)
+	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
+		plugin.Plugin(srv)
 	}
 	return srv
 }

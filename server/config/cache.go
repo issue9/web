@@ -63,9 +63,9 @@ func (conf *configOf[T]) buildCache() *web.FieldError {
 	conf.cache = drv
 	if job != nil {
 		conf.init = append(conf.init, func(o *server.Options) {
-			o.Init = append(o.Init, func(s web.Server) {
+			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
 				s.Services().AddTicker(locales.RecycleLocalCache, job.Job, job.Ticker, false, false)
-			})
+			}))
 		})
 	}
 
