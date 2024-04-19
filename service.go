@@ -168,7 +168,7 @@ func (srv *Services) Visit(visit func(title LocaleStringer, state State, err err
 // title 是对该服务的简要说明；
 // spec cron 表达式，支持秒；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string, delay bool) func() {
+func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string, delay bool) context.CancelFunc {
 	return srv.scheduled.Cron(title, f, spec, delay)
 }
 
@@ -178,7 +178,7 @@ func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string, delay
 // dur 时间间隔；
 // imm 是否先执行一次该任务，如果为 true 将会排在任务执行任务队列的前列，而不是立即执行；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) func() {
+func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm, delay bool) context.CancelFunc {
 	return srv.scheduled.Tick(title, job, dur, imm, delay)
 }
 
@@ -187,7 +187,7 @@ func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Durat
 // title 是对该服务的简要说明；
 // at 指定的时间点；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time, delay bool) func() {
+func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time, delay bool) context.CancelFunc {
 	return srv.scheduled.At(title, job, at, delay)
 }
 
@@ -196,7 +196,7 @@ func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time, dela
 // title 是对该服务的简要说明；
 // scheduler 计划任务的时间调度算法实现；
 // delay 是否在任务执行完之后，才计算下一次的执行时间点。
-func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, delay bool) func() {
+func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, delay bool) context.CancelFunc {
 	return srv.scheduled.New(title, job, scheduler, delay)
 }
 
