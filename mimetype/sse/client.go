@@ -68,15 +68,18 @@ func (m *Message) Free() { messagePool.Put(m) }
 // 从 msg 中取出的 [Message] 对象，在不再需要时可以调用 [Message.Free] 回收；
 //
 // NOTE: 提交的请求中会将 Accept 报头设置为 [Mimetype]，服务端需要能正确处理该值才行。
-func OnMessage(ctx context.Context, l *web.Logger, req *http.Request, c *http.Client, msg chan *Message) error {
-	if c == nil {
-		c = &http.Client{}
+func OnMessage(ctx context.Context, l *web.Logger, url string, c *http.Client, msg chan *Message) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
 	}
-
 	req.Header.Set(header.CacheControl, header.NoCache)
 	req.Header.Set(header.Connection, qheader.KeepAlive)
 	req.Header.Set(header.Accept, Mimetype)
 
+	if c == nil {
+		c = &http.Client{}
+	}
 	resp, err := c.Do(req)
 	if err != nil {
 		return err
@@ -86,22 +89,17 @@ func OnMessage(ctx context.Context, l *web.Logger, req *http.Request, c *http.Cl
 	s.Split(bufio.ScanLines)
 	go func() {
 		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				m := newEmptyMessage()
-				for s.Scan() {
-					if line := s.Text(); line != "" {
-						if err := m.append(line); err != nil {
-							l.Error(err)
-						}
-						continue
+			m := newEmptyMessage()
+			for s.Scan() {
+				if line := s.Text(); line != "" {
+					if err := m.append(line); err != nil {
+						l.Error(err)
 					}
-					break // 有空行，表示已经结束一个会话。
+					continue
 				}
-				msg <- m
+				break // 有空行，表示已经结束一个会话。
 			}
+			msg <- m
 		}
 	}()
 

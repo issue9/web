@@ -89,11 +89,9 @@ func TestOnMessage(t *testing.T) {
 
 	a.Equal(0, e.Len())
 	msg5 := make(chan *Message, 10)
-	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/event/5", nil)
-	a.NotError(err).NotNil(req)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg5)
+	err = OnMessage(ctx, s.Logs().ERROR(), "http://localhost:8080/event/5", nil, msg5)
 	a.NotError(err).Equal(1, e.Len())
 
 	a.Equal(<-msg5, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50}).
@@ -103,11 +101,9 @@ func TestOnMessage(t *testing.T) {
 	// get /event/6
 
 	msg6 := make(chan *Message, 10)
-	req, err = http.NewRequest(http.MethodGet, "http://localhost:8080/event/6", nil)
-	a.NotError(err).NotNil(req)
 	ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
-	err = OnMessage(ctx, s.Logs().ERROR(), req, nil, msg6)
+	err = OnMessage(ctx, s.Logs().ERROR(), "http://localhost:8080/event/6", nil, msg6)
 	a.NotError(err).Equal(2, e.Len())
 
 	a.Equal(<-msg6, &Message{Data: []string{"connect", "6"}, ID: "1", Retry: 50}).
