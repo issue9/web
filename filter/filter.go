@@ -25,7 +25,10 @@
 // [webfilter]: https://pkg.go.dev/github.com/issue9/webfilter
 package filter
 
-import "github.com/issue9/localeutil"
+import (
+	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
+)
 
 // Filter 过滤器函数类型
 //
@@ -70,4 +73,16 @@ func NewBuilder[T any](rule ...Rule[T]) Builder[T] {
 // rule 为声明 [Builder] 的参数；
 func New[T any](name string, value *T, rule ...Rule[T]) Filter {
 	return NewBuilder(rule...)(name, value)
+}
+
+// ToFieldError 将 [Filter] 返回的错误转换为 [config.FieldError]
+//
+// 若所有过滤器都没有返回错误信息，则此方法返回 nil。
+func ToFieldError(f ...Filter) *config.FieldError {
+	for _, ff := range f {
+		if name, msg := ff(); msg != nil {
+			return config.NewFieldError(name, msg)
+		}
+	}
+	return nil
 }

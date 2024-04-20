@@ -325,9 +325,9 @@ messages:
     - key: scheduler jobs
       message:
         msg: 计划任务
-    - key: should great than %d
+    - key: should great than %v
       message:
-        msg: 必须大于 %d
+        msg: 必须大于 %v
     - key: the client miss content-type header
       message:
         msg: 客户端未指定 Content-Type 报头

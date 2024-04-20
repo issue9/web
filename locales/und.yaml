@@ -309,9 +309,9 @@ messages:
     - key: scheduler jobs
       message:
         msg: scheduler jobs
-    - key: should great than %d
+    - key: should great than %v
       message:
-        msg: should great than %d
+        msg: should great than %v
     - key: the client miss content-type header
       message:
         msg: the client miss content-type header

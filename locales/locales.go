@@ -36,6 +36,7 @@ var Locales = []fs.FS{
 //---------------------------- 以下为本地化的文本内容 -----------------------------
 
 const (
+	NotFound                = localeutil.StringPhrase("not found")
 	InvalidFormat           = localeutil.StringPhrase("invalid format")
 	InvalidValue            = localeutil.StringPhrase("invalid value")
 	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
@@ -45,7 +46,9 @@ const (
 )
 
 // ShouldGreatThan 返回必须大于 n 的翻译项
-func ShouldGreatThan(n int) localeutil.Stringer { return localeutil.Phrase("should great than %d", n) }
+func ShouldGreatThan[T any](n T) localeutil.Stringer {
+	return localeutil.Phrase("should great than %v", n) // n 可以是时间等类型
+}
 
 //---------------------------- 以下为本地化的错误实例 -----------------------------
 

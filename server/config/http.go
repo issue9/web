@@ -18,6 +18,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
@@ -153,69 +154,44 @@ func (conf *configOf[T]) buildHTTP() *web.FieldError {
 	return nil
 }
 
-func exists(p string) bool {
-	_, err := os.Stat(p)
-	return err == nil || errors.Is(err, fs.ErrExist)
-}
+var (
+	fileExistsRule = filter.V(func(p string) bool {
+		_, err := os.Stat(p)
+		return err == nil || errors.Is(err, fs.ErrExist)
+	}, locales.NotFound)
+
+	durShouldGreatThan0 = filter.V(func(v duration) bool { return v >= 0 }, locales.ShouldGreatThan(0))
+)
 
 func (cert *certificateConfig) sanitize() *web.FieldError {
-	if !exists(cert.Cert) {
-		return web.NewFieldError("cert", locales.ErrNotFound())
-	}
-
-	if !exists(cert.Key) {
-		return web.NewFieldError("key", locales.ErrNotFound())
-	}
-
-	return nil
+	return filter.ToFieldError(
+		filter.New("cert", &cert.Cert, fileExistsRule),
+		filter.New("key", &cert.Key, fileExistsRule),
+	)
 }
 
 func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
-	if h.ReadTimeout < 0 {
-		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
-	}
-
-	if h.WriteTimeout < 0 {
-		return web.NewFieldError("writeTimeout", locales.ShouldGreatThan(0))
-	}
-
-	if h.IdleTimeout < 0 {
-		return web.NewFieldError("idleTimeout", locales.ShouldGreatThan(0))
-	}
-
-	if h.ReadHeaderTimeout < 0 {
-		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
-	}
-
-	if h.MaxHeaderBytes < 0 {
-		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
-	}
-
-	if h.RequestID == "" {
-		h.RequestID = header.XRequestID
+	err := filter.ToFieldError(
+		filter.New("readTimeout", &h.ReadTimeout, durShouldGreatThan0),
+		filter.New("writeTimeout", &h.WriteTimeout, durShouldGreatThan0),
+		filter.New("idleTimeout", &h.IdleTimeout, durShouldGreatThan0),
+		filter.New("readHeaderTimeout", &h.ReadHeaderTimeout, durShouldGreatThan0),
+		filter.New("maxHeaderBytes", &h.MaxHeaderBytes, filter.V(func(v int) bool { return v >= 0 }, locales.ShouldGreatThan(0))),
+		filter.New("requestID", &h.RequestID, filter.S(func(v *string) {
+			if *v == "" {
+				*v = header.XRequestID
+			}
+		})),
+	)
+	if err != nil {
+		return err
 	}
 
 	if err := h.buildTLSConfig(); err != nil {
 		return err
 	}
 
-	h.init = func(o *server.Options) {
-		if len(h.Headers) > 0 {
-			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
-				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
-					return func(ctx *web.Context) web.Responser {
-						for _, hh := range h.Headers {
-							ctx.Header().Add(hh.Key, hh.Value)
-						}
-						return next(ctx)
-					}
-				}))
-			}))
-		}
-
-		h.buildRoutersOptions(o, l)
-	}
-
+	h.buildInit(l)
 	h.buildHTTPServer()
 	return nil
 }
@@ -232,21 +208,33 @@ func (h *httpConfig) buildHTTPServer() {
 	}
 }
 
-func (h *httpConfig) buildRoutersOptions(o *server.Options, l *logs.Logs) {
-	opt := make([]web.RouterOption, 0, 3)
+func (h *httpConfig) buildInit(l *logs.Logs) {
+	h.init = func(o *server.Options) {
+		if len(h.Headers) > 0 {
+			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
+				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+					return func(ctx *web.Context) web.Responser {
+						for _, hh := range h.Headers {
+							ctx.Header().Add(hh.Key, hh.Value)
+						}
+						return next(ctx)
+					}
+				}))
+			}))
+		}
 
-	if h.Recovery > 0 {
-		opt = append(opt, web.Recovery(h.Recovery, l.ERROR()))
+		if h.Recovery > 0 {
+			o.RoutersOptions = append(o.RoutersOptions, web.Recovery(h.Recovery, l.ERROR()))
+		}
+
+		if h.CORS != nil {
+			c := h.CORS
+			cors := mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials)
+			o.RoutersOptions = append(o.RoutersOptions, cors)
+		}
+
+		o.RoutersOptions = append(o.RoutersOptions, mux.Trace(h.Trace))
 	}
-
-	if h.CORS != nil {
-		c := h.CORS
-		opt = append(opt, mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials))
-	}
-
-	opt = append(opt, mux.Trace(h.Trace))
-
-	o.RoutersOptions = append(o.RoutersOptions, opt...)
 }
 
 func (h *httpConfig) buildTLSConfig() *web.FieldError {
@@ -281,29 +269,20 @@ func (h *httpConfig) buildTLSConfig() *web.FieldError {
 }
 
 func (l *acmeConfig) tlsConfig() *tls.Config {
-	const day = 24 * time.Hour
-
-	m := &autocert.Manager{
+	return (&autocert.Manager{
 		Cache:       autocert.DirCache(l.Cache),
 		Prompt:      autocert.AcceptTOS,
 		HostPolicy:  autocert.HostWhitelist(l.Domains...),
-		RenewBefore: time.Duration(l.RenewBefore) * day,
+		RenewBefore: time.Duration(l.RenewBefore) * 24 * time.Hour,
 		Email:       l.Email,
-	}
-
-	return m.TLSConfig()
+	}).TLSConfig()
 }
 
 func (l *acmeConfig) sanitize() *web.FieldError {
-	if l.Cache == "" || !exists(l.Cache) {
-		return web.NewFieldError("cache", locales.InvalidValue)
-	}
-
-	if len(l.Domains) == 0 {
-		return web.NewFieldError("domains", locales.CanNotBeEmpty)
-	}
-
-	return nil
+	return filter.ToFieldError(
+		filter.New("cache", &l.Cache, fileExistsRule),
+		filter.New("domains", &l.Domains, filter.V(func(v []string) bool { return len(v) > 0 }, locales.CanNotBeEmpty)),
+	)
 }
 
 // 表示时间段，等同于 [time.Duration]
@@ -311,9 +290,7 @@ type duration time.Duration // 封装 time.Duration 以实现对 JSON、XML 和 
 
 func (d duration) Duration() time.Duration { return time.Duration(d) }
 
-func (d duration) MarshalText() ([]byte, error) {
-	return []byte(time.Duration(d).String()), nil
-}
+func (d duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d).String()), nil }
 
 func (d *duration) UnmarshalText(b []byte) error {
 	v, err := time.ParseDuration(string(b))
