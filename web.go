@@ -25,7 +25,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.92.1"
+const Version = "0.93.0"
 
 type (
 	Logger   = logs.Logger
@@ -96,3 +96,11 @@ func NewLocaleError(format string, v ...any) error { return localeutil.Error(for
 //
 // 此方法返回的错误，在 [Context.Error] 和 [Recovery] 中会被识别且按指定的状态码输出。
 func NewError(status int, err error) error { return errs.NewError(status, err) }
+
+// SprintError 将 err 转换为字符串
+//
+// p 如果 err 实现了 [LocaleStringer]，将采用 p 进行转换；
+// detail 是否输出调用堆栈；
+func SprintError(p *localeutil.Printer, detail bool, err error) string {
+	return errs.Sprint(p, err, detail)
+}
