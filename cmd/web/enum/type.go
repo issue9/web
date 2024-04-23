@@ -52,7 +52,7 @@ func newEnum(t string, vals ...string) *enum {
 	return &enum{
 		Name:     t,
 		Values:   values,
-		Receiver: string(t[0]),
+		Receiver: strings.ToLower(string(t[0])),
 
 		Type2StringMap: "_" + t + "ToString",
 		String2TypeMap: "_" + t + "FromString",
