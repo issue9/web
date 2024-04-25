@@ -18,8 +18,8 @@ import "github.com/issue9/web/server"
 
 // main.go
 func main() {
-    srv, err := server.New("web", "1.0.0", &web.Options{})
-    router := srv.Routers().NewRouter()
+    srv, err := server.New("web", "1.0.0", &server.Options{})
+    router := srv.Routers().New()
     router.Get("/admins", getAdmins).
         Get("/groups", getGroups)
 
