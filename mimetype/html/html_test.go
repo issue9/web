@@ -22,10 +22,10 @@ func TestGetName(t *testing.T) {
 	a := assert.New(t, false)
 
 	type obj struct {
-		HTMLName struct{} `html:"t"`
+		XMLName struct{} `html:"t"`
 	}
 	type obj2 struct {
-		HTMLName struct{}
+		XMLName struct{}
 	}
 
 	type obj3 struct{}

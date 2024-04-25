@@ -11,7 +11,7 @@
 //
 //	func handle(ctx *web.Context) Responser {
 //		obj := &struct{
-//			HTMLName struct{} `html:"Object"`
+//			XMLName struct{} `html:"Object"`
 //			Data string
 //		}{}
 //		return Object(200, obj, nil)
@@ -19,8 +19,8 @@
 //
 // 预定义的模板
 //
-// 框架本身提供了一些类型的定义，比如 [web.Problem]，当作为 html 输出时，其模板名称和数据为由
-// [web.Problem.MarshalHTML] 方法返回，所以用户需要提供对应的模板定义。
+// 框架本身提供了一些数据类型的定义，比如 [web.Problem]，
+// 用户需要提供由 [web.Problem.MarshalHTML] 返回的模板定义。
 // 如果用户还使用了 [server.RenderResponse]，那么也需要提供对应的模板定义。
 package html
 
@@ -56,11 +56,11 @@ type Marshaler interface {
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 实现了 [Marshaler] 接口，则按 [Marshaler.MarshalHTML] 返回的查找模板名称；
-//   - 其它普通对象，将获取对象的 HTMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
+//   - 其它普通对象，将获取对象的 XMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [mimetype.ErrUnsupported]；
 func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
-		panic("不支持该操作")
+		panic("参数 ctx 不能为空")
 	}
 
 	switch obj := v.(type) {
@@ -121,10 +121,10 @@ func getName(v any) (string, any) {
 		if name := rt.Name(); name != "" {
 			return name, v
 		}
-		panic(fmt.Sprintf("text/html 不支持输出当前类型 %s", rt.Kind()))
+		panic(fmt.Sprintf("%s 不支持输出当前类型 %s", Mimetype, rt.Kind()))
 	}
 
-	field, found := rt.FieldByName("HTMLName")
+	field, found := rt.FieldByName("XMLName")
 	if !found {
 		return rt.Name(), v
 	}

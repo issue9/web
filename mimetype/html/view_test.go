@@ -48,7 +48,7 @@ func TestInstallView(t *testing.T) {
 	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
-		HTMLName struct{} `html:"t"`
+		XMLName struct{} `html:"t"`
 	}
 
 	r := s.Routers().New("def", nil)
@@ -80,7 +80,7 @@ func TestInstallDirView(t *testing.T) {
 	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
-		HTMLName struct{} `html:"t"`
+		XMLName struct{} `html:"t"`
 	}
 
 	r := s.Routers().New("def", nil)

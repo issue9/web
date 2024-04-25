@@ -50,7 +50,7 @@ type view struct {
 //   - string 直接输出字符串；
 //   - []byte 直接输出内容；
 //   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
-//   - 其它结构体，尝试读取 HTMLName 字段的 html struct tag 值作为模板名称进行查找；
+//   - 其它结构体，尝试读取 XMLName 字段的 html struct tag 值作为模板名称进行查找；
 //
 // dir 表示是否以目录的形式组织本地化代码；
 func InstallView(s web.Server, dir bool, fsys fs.FS, glob string) {
