@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -31,14 +32,14 @@ func TestJSONP(t *testing.T) {
 	defer servertest.Run(a, s)()
 	defer s.Close(0)
 
-	servertest.Get(a, "http://localhost:8080/jsonp").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp").Header(header.Accept, Mimetype).Do(nil).
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 
-	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header(header.Accept, Mimetype).Do(nil).
 		StringBody(`cb("jsonp")`)
 
-	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header("accept", Mimetype).Do(nil).
+	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header(header.Accept, Mimetype).Do(nil).
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 }

@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web/compressor"
@@ -182,14 +181,14 @@ func TestCodec_contentType(t *testing.T) {
 
 	mt := NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype("application/octet-stream", marshalJSON, unmarshalJSON, "")
+	mt.AddMimetype(header.OctetStream, marshalJSON, unmarshalJSON, "")
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
 
 	// 不存在的 mimetype
 	f, e, err = mt.contentType("not-exists; charset=utf-8")
-	a.Equal(err, localeutil.Error("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+	a.Equal(err, NewLocaleError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
 	// charset=utf-8
 	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, header.UTF8))

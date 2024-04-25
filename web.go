@@ -13,7 +13,6 @@ package web
 
 import (
 	"io"
-	"time"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
@@ -58,17 +57,12 @@ type (
 
 	// UnmarshalFunc 反序列化函数原型
 	//
-	// 参数 [io.Reader] 必定不会为空。
+	// NOTE: 参数 [io.Reader] 必定不会为空。
 	UnmarshalFunc = func(io.Reader, any) error
 )
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }
-
-// GetCacheItemOrInit 获取缓存 c 的项如果不存在则尝试用 init 的返回值进行初始化
-func GetCacheItemOrInit[T any](c Cache, key string, v *T, ttl time.Duration, init func() (T, error)) error {
-	return cache.GetOrInit(c, key, v, ttl, init)
-}
 
 // Phrase 生成本地化的语言片段
 func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key, v...) }

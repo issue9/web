@@ -77,6 +77,6 @@ func BenchmarkBuildContentType(b *testing.B) {
 	a := assert.New(b, false)
 
 	for range b.N {
-		a.Equal(BuildContentType("application/json", header.UTF8), "application/json; charset=utf-8")
+		a.Equal(BuildContentType(header.JSON, header.UTF8), "application/json; charset=utf-8")
 	}
 }

@@ -107,7 +107,7 @@ func ClientIP(r *http.Request) string {
 		ip = r.RemoteAddr
 	}
 	if ip == "" {
-		ip = r.Header.Get("X-Real-IP")
+		ip = r.Header.Get(header.XRealIP)
 	}
 
 	return strings.TrimSpace(ip)

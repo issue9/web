@@ -105,16 +105,16 @@ func TestProblems_Add(t *testing.T) {
 	a.NotNil(ps)
 	l := len(ps.problems)
 
-	a.False(ps.exists("40010")).
-		False(ps.exists("40011")).
-		True(ps.exists(ProblemNotFound))
+	a.False(ps.Exists("40010")).
+		False(ps.Exists("40011")).
+		True(ps.Exists(ProblemNotFound))
 
 	ps.Add(400, []*LocaleProblem{
 		{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
 		{ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")},
 	}...)
-	a.True(ps.exists("40010")).
-		True(ps.exists("40011")).
+	a.True(ps.Exists("40010")).
+		True(ps.Exists("40011")).
 		Equal(l+2, len(ps.problems))
 
 	a.PanicString(func() {

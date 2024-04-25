@@ -197,7 +197,7 @@ func (ps *Problems) Add(s int, p ...*LocaleProblem) *Problems {
 	}
 
 	for _, pp := range p {
-		if ps.exists(pp.ID) {
+		if ps.Exists(pp.ID) {
 			panic(fmt.Sprintf("存在相同值的 id 参数 %s", pp.ID))
 		}
 
@@ -223,7 +223,8 @@ func (ps *Problems) Add(s int, p ...*LocaleProblem) *Problems {
 	return ps
 }
 
-func (ps *Problems) exists(id string) bool {
+// Exists 查看指定 id 是否已经存在
+func (ps *Problems) Exists(id string) bool {
 	return slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }) > -1
 }
 
