@@ -250,3 +250,5 @@ type RenderResponse struct {
 	Status  int      `json:"status" yaml:"status" xml:"status,attr" cbor:"status"` // 原始的状态码
 	Body    any      `json:"body" yaml:"body" xml:"body" cbor:"body"`
 }
+
+func (r *RenderResponse) MarshalHTML() (string, any) { return "render-response", r }

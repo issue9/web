@@ -4,13 +4,8 @@
 
 // Package html 提供输出 HTML 内容的解码函数
 //
-//	 srv := server.New("", "", &server.Options{
-//		Mimetypes: []server.Mimetype{
-//			Type: "text/html",
-//			ProblemType: "",
-//			Marshal: html.Marshal,
-//			Unmarshal: html.Unmarshal,
-//		},
+//	srv := server.New("", "", &server.Options{
+//		Codec: web.New().AddMimetype("text/html", html.Marshal, html.Unmarshal, "")
 //	})
 //	tpl := template.ParseFiles(...)
 //
@@ -21,6 +16,12 @@
 //		}{}
 //		return Object(200, obj, nil)
 //	}
+//
+// 预定义的模板
+//
+// 框架本身提供了一些类型的定义，比如 [web.Problem]，当作为 html 输出时，其模板名称和数据为由
+// [web.Problem.MarshalHTML] 方法返回，所以用户需要提供对应的模板定义。
+// 如果用户还使用了 [server.RenderResponse]，那么也需要提供对应的模板定义。
 package html
 
 import (
