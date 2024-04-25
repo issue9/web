@@ -35,8 +35,8 @@ func TestNewDepthStackError(t *testing.T) {
 
 	a.ErrorIs(err, err1)
 	a.NotContains(fmt.Sprintf("%v", err), "34"). // 依赖调用 NewStackError 的行号
-				Contains(fmt.Sprintf("%+v", err), "34"). // 依赖调用 NewStackError 的行号
-				Equal(err.Error(), err1.Error())
+							Contains(fmt.Sprintf("%+v", err), "34"). // 依赖调用 NewStackError 的行号
+							Equal(err.Error(), err1.Error())
 
 	var target1 *cerr
 	a.True(errors.As(err, &target1)).Equal(target1.Error(), err1.Error())
@@ -47,7 +47,7 @@ func TestNewDepthStackError(t *testing.T) {
 
 	a.ErrorIs(err, err1)
 	a.NotContains(fmt.Sprintf("%v", err), "34"). // 依赖调用 NewStackError 的行号
-				Contains(fmt.Sprintf("%+v", err), "34") // 依赖调用 NewStackError 的行号
+							Contains(fmt.Sprintf("%+v", err), "34") // 依赖调用 NewStackError 的行号
 
 	var target2 *cerr
 	a.True(errors.As(err, &target2)).Equal(target2.Error(), err1.Error())
