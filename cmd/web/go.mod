@@ -15,7 +15,7 @@ require (
 	github.com/issue9/source v0.9.1
 	github.com/issue9/term/v3 v3.2.8
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.93.0
+	github.com/issue9/web v0.93.1
 	golang.org/x/mod v0.17.0
 	golang.org/x/text v0.14.0
 	golang.org/x/tools v0.20.0
@@ -30,7 +30,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
-	github.com/issue9/cache v0.13.0 // indirect
+	github.com/issue9/cache v0.14.0 // indirect
 	github.com/issue9/config v0.6.2 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
