@@ -118,7 +118,10 @@ func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.Revers
 
 	job := func(time.Time) error {
 		var s string
-		if err := c.c.Get(name, &s); err != nil && !errors.Is(err, cache.ErrCacheMiss()) {
+		if err := c.c.Get(name, &s); err != nil {
+			if errors.Is(err, cache.ErrCacheMiss()) { // 如果不是因为 cache miss 导致的 s 为空，则应该被正常处理。
+				return nil
+			}
 			return err
 		}
 
