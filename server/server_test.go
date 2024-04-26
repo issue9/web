@@ -337,7 +337,7 @@ func TestNewService(t *testing.T) {
 	srv, err := NewService("app", "0.1.0", newOptions(nil))
 	a.Error(err).Nil(srv)
 
-	c, _ := memory.New()
+	c := memory.New()
 	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
 
 	srv = newService(a, "app", ":8080", reg, c)
@@ -365,7 +365,7 @@ func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c
 
 func TestNewGateway(t *testing.T) {
 	a := assert.New(t, false)
-	c, _ := memory.New() // 默认的缓存系统用的是内存类型的，保证引用同一个。
+	c := memory.New() // 默认的缓存系统用的是内存类型的，保证引用同一个。
 
 	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
 

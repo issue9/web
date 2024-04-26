@@ -95,13 +95,13 @@ func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 	srv := s.Services()
-	a.Equal(1, len(srv.scheduled.Jobs())) // memory cache gc
+	a.Equal(0, len(srv.scheduled.Jobs()))
 
 	srv.AddAt(Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now(), false)
-	a.Equal(2, len(srv.scheduled.Jobs()))
+	a.Equal(1, len(srv.scheduled.Jobs()))
 
 	// 查找翻译项是否正确
 	var found bool

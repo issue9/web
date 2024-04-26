@@ -147,30 +147,16 @@ func init() {
 
 	// RegisterCache
 
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		d, err := time.ParseDuration(dsn)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		drv, job := memory.New()
-		j := func(now time.Time) error {
-			job(now)
-			return nil
-		}
-		return drv, &Job{Ticker: d, Job: j}, nil
+	RegisterCache(func(dsn string) (cache.Driver, error) {
+		return memory.New(), nil
 	}, "memory")
 
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		return memcache.New(strings.Split(dsn, ";")...), nil, nil
+	RegisterCache(func(dsn string) (cache.Driver, error) {
+		return memcache.New(strings.Split(dsn, ";")...), nil
 	}, "memcached", "memcache")
 
-	RegisterCache(func(dsn string) (cache.Driver, *Job, error) {
-		drv, err := redis.NewFromURL(dsn)
-		if err != nil {
-			return nil, nil, err
-		}
-		return drv, nil, nil
+	RegisterCache(func(dsn string) (cache.Driver, error) {
+		return redis.NewFromURL(dsn)
 	}, "redis")
 
 	// RegisterCompression

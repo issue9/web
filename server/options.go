@@ -176,14 +176,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	}
 
 	if o.Cache == nil {
-		c, job := memory.New()
-		o.Cache = c
-		o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
-			s.Services().AddTicker(locales.RecycleLocalCache, func(now time.Time) error {
-				job(now)
-				return nil
-			}, time.Minute, false, false)
-		}))
+		o.Cache = memory.New()
 	}
 
 	if o.Language == language.Und {

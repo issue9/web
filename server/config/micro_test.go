@@ -15,7 +15,7 @@ import (
 
 func TestConfigOf_buildMicro(t *testing.T) {
 	a := assert.New(t, false)
-	c, _ := memory.New()
+	c := memory.New()
 
 	conf := &configOf[empty]{}
 	a.NotError(conf.buildMicro(c))
@@ -67,7 +67,7 @@ func TestConfigOf_buildMicro(t *testing.T) {
 
 func TestRegistryConfig_build(t *testing.T) {
 	a := assert.New(t, false)
-	c, _ := memory.New()
+	c := memory.New()
 
 	conf := &registryConfig{
 		Type:     "cache",
