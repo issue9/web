@@ -16,8 +16,8 @@ github.com/fxamacker/cbor/v2 v2.6.0 h1:sU6J2usfADwWlYDAFhZBQ6TnLFBHxgesMrQfQgk1t
 github.com/fxamacker/cbor/v2 v2.6.0/go.mod h1:pxXPTn3joSm21Gbwsv0w9OSA2y1HFR9qXEeXQVeNoDQ=
 github.com/issue9/assert/v4 v4.3.0 h1:W3XDKmttsfzihYGxJ9rJoL2ViJgWERB9IxfHcxjv65U=
 github.com/issue9/assert/v4 v4.3.0/go.mod h1:v7qDRXi7AsaZZNh8eAK2rkLJg5/clztqQGA1DRv9Lv4=
-github.com/issue9/cache v0.15.0 h1:WoBvmkNO7YMTzSGL1DnPGSu5XVNiUKTOoJC2KvALQIQ=
-github.com/issue9/cache v0.15.0/go.mod h1:bLkT/324kSULoA/3/vAO0H6KILwDLwqGlOA/OvNwdlI=
+github.com/issue9/cache v0.16.1 h1:c941BS7oItSddjHezqx88Ugf0f7PSAGuI7FBW+84Vow=
+github.com/issue9/cache v0.16.1/go.mod h1:bLkT/324kSULoA/3/vAO0H6KILwDLwqGlOA/OvNwdlI=
 github.com/issue9/config v0.6.2 h1:znXvsk6gh0wm+fTEn0zUjjramKuOLY8Jt0ZTxp4GIkc=
 github.com/issue9/config v0.6.2/go.mod h1:S97FVtZim4rPB+M49EoOuBajaqY4ULQbqltZmZ99+Dc=
 github.com/issue9/conv v1.3.5 h1:UWeA+Zqp5vjNDLrmhLhaXPjS1hL8gh4quX6Shk5njKQ=

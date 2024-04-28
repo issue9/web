@@ -41,7 +41,15 @@ type Client struct {
 // marshalName 和 marshal 表示编码的名称和方法；
 // requestIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
 // requestIDGen 表示生成 x-request-id 值的方法；
-func NewClient(client *http.Client, codec *Codec, s selector.Selector, marshalName string, marshal func(any) ([]byte, error), requestIDKey string, requestIDGen func() string) *Client {
+func NewClient(
+	client *http.Client,
+	codec *Codec,
+	s selector.Selector,
+	marshalName string,
+	marshal func(any) ([]byte, error),
+	requestIDKey string,
+	requestIDGen func() string,
+) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}

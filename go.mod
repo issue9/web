@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/fxamacker/cbor/v2 v2.6.0
 	github.com/issue9/assert/v4 v4.3.0
-	github.com/issue9/cache v0.15.0
+	github.com/issue9/cache v0.16.1
 	github.com/issue9/config v0.6.2
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2

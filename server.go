@@ -231,7 +231,8 @@ func InternalNewServer(
 	requestIDKey string,
 	problemPrefix string,
 	onRender func(int, any) (int, any),
-	o ...RouterOption) *InternalServer {
+	o ...RouterOption,
+) *InternalServer {
 	is := &InternalServer{
 		server: s,
 
