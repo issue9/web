@@ -142,9 +142,6 @@ messages:
     - key: no input file
       message:
         msg: no input file
-    - key: no output file
-      message:
-        msg: no output file
     - key: no src dir
       message:
         msg: no src dir

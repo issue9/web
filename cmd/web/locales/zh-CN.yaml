@@ -165,9 +165,6 @@ messages:
     - key: no input file
       message:
         msg: 未指定输入文件
-    - key: no output file
-      message:
-        msg: 未指定输出文件
     - key: no src dir
       message:
         msg: 未指定源码目录
@@ -334,7 +331,7 @@ messages:
         msg: 指定输入文件
     - key: set output file
       message:
-        msg: 指定输出文件
+        msg: 指定输出文件，如果为空，则会根据输入文件名加上 _enums 作为后缀，比如 input.go 会以 input_enums.go 作为输出文件。
     - key: set source dir
       message:
         msg: 设置源码的路径

@@ -73,3 +73,11 @@ func TestDump(t *testing.T) {
 	err := dump("header", "./testdir/testdir.go", "./testdir/testdata.out", []string{"t1", "t3"}, true, true)
 	a.NotError(err)
 }
+
+func TestBuildOutputFilename(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.Equal(buildOutputFilename("abc.go"), "abc_enums.go")
+	a.Equal(buildOutputFilename("abc_test.g"), "abc_test_enums.g")
+	a.Equal(buildOutputFilename("abc"), "abc_enums")
+}

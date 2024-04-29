@@ -12,6 +12,7 @@ import (
 	"go/types"
 	"io"
 	"io/fs"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -64,7 +65,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return web.NewLocaleError("no input file")
 			}
 			if *o == "" {
-				return web.NewLocaleError("no output file")
+				*o = buildOutputFilename(*i)
 			}
 			if *t == "" {
 				return web.NewLocaleError("type not set")
@@ -77,6 +78,12 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			return dump(*h, *i, *o, ts, *filterM, *sqlM)
 		}
 	})
+}
+
+func buildOutputFilename(input string) string {
+	o := filepath.Base(input)
+	ext := filepath.Ext(o)
+	return strings.TrimSuffix(o, ext) + "_enums" + ext
 }
 
 func getValues(pkg *types.Package, types []string) (map[string][]string, error) {
