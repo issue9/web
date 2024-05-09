@@ -7,6 +7,7 @@ package pkg
 import (
 	"context"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"strconv"
 	"strings"
@@ -109,32 +110,31 @@ func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name st
 			tag = f.Tag.Value
 		}
 
-		typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, s, nil, tl, tps)
-		if err != nil {
-			return nil, err
-		}
-
 		switch len(f.Names) {
-		case 0:
-			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, "", typ, true))
-			s.docs = append(s.docs, doc)
-			s.tags = append(s.tags, tag)
-		case 1:
-			name := f.Names[0].Name
-			if t, found := fts[name]; found {
-				typ = t
+		case 0: // 匿名
+			typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, s, nil, tl, tps)
+			if err != nil {
+				return nil, err
 			}
-			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, name, typ, false))
+
+			s.fields = append(s.fields, types.NewField(f.Pos(), pkg, "", typ, true))
 			s.docs = append(s.docs, doc)
 			s.tags = append(s.tags, tag)
 		default:
 			for _, n := range f.Names {
-				name := n.Name
-				if t, found := fts[name]; found {
+				var typ types.Type
+				if !token.IsExported(n.Name) {
+					typ = NotFound(n.Name)
+				} else if t, found := fts[n.Name]; found {
 					typ = t
+				} else {
+					var err error
+					if typ, err = pkgs.typeOfExpr(ctx, pkg, file, f.Type, s, nil, tl, tps); err != nil {
+						return nil, err
+					}
 				}
 
-				s.fields = append(s.fields, types.NewField(f.Pos(), pkg, name, typ, false))
+				s.fields = append(s.fields, types.NewField(f.Pos(), pkg, n.Name, typ, false))
 				s.docs = append(s.docs, doc)
 				s.tags = append(s.tags, tag)
 			}

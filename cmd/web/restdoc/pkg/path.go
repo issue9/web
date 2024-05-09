@@ -215,7 +215,8 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 
 	var pkgPath string
 	typeName := typePath
-	if index := strings.LastIndexByte(typePath, '.'); index > 0 && !strings.ContainsRune(typePath[index:], '/') { // 防止出现 github.com/abc 等不规则内容
+	// 防止出现 github.com/pkg/pkg.type/name 等不规则内容，type/name 并不是一个合法法的类型名
+	if index := strings.LastIndexByte(typePath, '.'); index > 0 && !strings.ContainsRune(typePath[index:], '/') {
 		pkgPath = typePath[:index]
 		typeName = typePath[index+1:]
 	}
