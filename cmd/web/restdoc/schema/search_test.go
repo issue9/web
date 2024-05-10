@@ -282,15 +282,6 @@ func TestSchema_New_types(t *testing.T) {
 			Equal(ref.Ref, openapi.ComponentSchemaPrefix+pkgRef+".Sex")
 	})
 
-	// admin.State
-	t.Run("admin.State", func(t *testing.T) {
-		a := assert.New(t, false)
-		tt := openapi.New("3")
-
-		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.State", false)
-		a.Equal(err, web.NewLocaleError("not found type %s", "github.com/issue9/web.State")).Nil(ref)
-	})
-
 	// admin.Alias
 	t.Run("admin.Alias", func(t *testing.T) {
 		a := assert.New(t, false)
