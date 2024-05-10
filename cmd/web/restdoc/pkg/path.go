@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
-	"go/build"
 	"go/token"
 	"go/types"
 	"path"
@@ -16,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/issue9/source"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -208,6 +208,7 @@ func filterVersionSuffix(p string, separator byte) (string, bool) {
 
 // 如果是内置类型，那么返回参数中的 TypeSpec 为 nil；
 // 返回的 bool 表示是否找到了 path 对应的类型；
+// typePath 的路径部分应该是真实的路径而不是 Import 中的别名；
 func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object, *ast.TypeSpec, *ast.File, bool) {
 	if typePath == "" {
 		panic("参数 path 不能为空")
@@ -215,7 +216,7 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 
 	var pkgPath string
 	typeName := typePath
-	// 防止出现 github.com/pkg/pkg.type/name 等不规则内容，type/name 并不是一个合法法的类型名
+	// 防止出现 github.com/pkg/pkg.type/name 等不规则内容，type/name 并不是一个合法的类型名
 	if index := strings.LastIndexByte(typePath, '.'); index > 0 && !strings.ContainsRune(typePath[index:], '/') {
 		pkgPath = typePath[:index]
 		typeName = typePath[index+1:]
@@ -225,10 +226,14 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 		return o, ts, f, true
 	}
 
-	// 出于性能考虑并未加载依赖项，但是可能会依赖部分标准库的类型，
-	// 此处对标准库作了特殊处理：未找到标准库中的对象时会加载相应的包。
-	if pkgPath != "" && strings.IndexByte(pkgPath, '.') < 0 {
-		dir := path.Join(build.Default.GOROOT, "src", pkgPath)
+	// 碰到未找到的类型，尝试加载依赖包。
+
+	for pkgDir := range pkgs.pkgs {
+		dir, err := source.PkgSourceDir(pkgPath, pkgDir, true)
+		if err != nil {
+			return nil, nil, nil, false
+		}
+
 		p, err := pkgs.load(ctx, dir)
 		if err != nil {
 			pkgs.l.Error(err, "", 0)

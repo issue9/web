@@ -74,6 +74,7 @@ func (pkgs *Packages) ScanDir(ctx context.Context, root string, recursive bool) 
 	wg.Wait()
 }
 
+// 加载 dir 目录下的包，如果已经加载，则直接从缓存中读取。
 func (pkgs *Packages) load(ctx context.Context, dir string) (*packages.Package, error) {
 	dir = filepath.Clean(dir)
 

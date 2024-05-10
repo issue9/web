@@ -204,12 +204,6 @@ messages:
     - key: override global response %s
       message:
         msg: '%s 与定义的全局对象相同，在当前接口中将覆盖全局定义。'
-    - key: parse module dependencies
-      message:
-        msg: 同时也对模块的直接依赖进行解析
-    - key: parse replace direct, only valid when d is true
-      message:
-        msg: 是否解析 go.mod 中的 replace 指令，仅在 -d 参数为 true 时有效。
     - key: recursive dir
       message:
         msg: 递归访问子目录

@@ -103,7 +103,7 @@ func Recovery(status int, l *Logger) RouterOption {
 		err, ok := msg.(error)
 		if !ok {
 			http.Error(w, http.StatusText(status), status)
-			l.String(source.Stack(4, err))
+			l.String(source.Stack(4, true, err))
 			return
 		}
 
@@ -113,7 +113,7 @@ func Recovery(status int, l *Logger) RouterOption {
 			he.Message = err
 		}
 		http.Error(w, http.StatusText(he.Status), he.Status)
-		l.String(source.Stack(4, he.Message))
+		l.String(source.Stack(4, true, he.Message))
 	})
 }
 

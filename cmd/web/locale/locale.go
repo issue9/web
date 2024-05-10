@@ -87,6 +87,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Recursive:     *r,
 					SkipSubModule: *skip,
 					WarnLog:       log.ERROR().LocaleString,
+					InfoLog:       func(localeutil.Stringer) {}, // 默认不输出提示信息
 					Funcs:         strings.Split(*funcs, ","),
 				}
 				if *i {

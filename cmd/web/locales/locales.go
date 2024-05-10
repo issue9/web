@@ -23,14 +23,10 @@ import (
 //go:embed *.yaml
 var locales embed.FS
 
-var Locales = []fs.FS{
+var Locales = append([]fs.FS{
 	locales,
 	gobuild.Locales,
-}
-
-func init() {
-	Locales = append(Locales, web.Locales...)
-}
+}, web.Locales...)
 
 func NewPrinter(lang string) (*localeutil.Printer, error) {
 	tag, err := language.Parse(lang)
