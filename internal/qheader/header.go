@@ -15,12 +15,6 @@ import (
 	xunicode "golang.org/x/text/encoding/unicode"
 )
 
-// 一些常用的报头值
-const (
-	Identity  = "identity"
-	KeepAlive = "keep-alive"
-)
-
 // ParseWithParam 分析带参数的报头
 //
 // 比如 content-type 可能带字符集的参数：content-type: application/json; charset=utf-8。

@@ -154,7 +154,7 @@ func (s *Source) connect(ctx *web.Context) {
 	ctx.Header().Set(header.ContentType, qheader.BuildContentType(Mimetype, header.UTF8))
 	ctx.Header().Set(header.ContentLength, "0")
 	ctx.Header().Set(header.CacheControl, header.NoCache)
-	ctx.Header().Set(header.Connection, qheader.KeepAlive)
+	ctx.Header().Set(header.Connection, header.KeepAlive)
 	ctx.WriteHeader(http.StatusOK) // 根据标准，就是 200。
 
 	rc := http.NewResponseController(ctx)

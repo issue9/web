@@ -212,7 +212,7 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 	h.init = func(o *server.Options) {
 		if len(h.Headers) > 0 {
 			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
-				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc) web.HandlerFunc {
+				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc, _, _ string) web.HandlerFunc {
 					return func(ctx *web.Context) web.Responser {
 						for _, hh := range h.Headers {
 							ctx.Header().Add(hh.Key, hh.Value)

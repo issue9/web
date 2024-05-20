@@ -15,7 +15,6 @@ import (
 	"github.com/issue9/mux/v8/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/qheader"
 )
 
 var messagePool = &sync.Pool{New: func() any { return &Message{} }}
@@ -74,7 +73,7 @@ func OnMessage(ctx context.Context, l *web.Logger, url string, c *http.Client, m
 		return err
 	}
 	req.Header.Set(header.CacheControl, header.NoCache)
-	req.Header.Set(header.Connection, qheader.KeepAlive)
+	req.Header.Set(header.Connection, header.KeepAlive)
 	req.Header.Set(header.Accept, Mimetype)
 
 	if c == nil {

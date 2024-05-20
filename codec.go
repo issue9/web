@@ -220,7 +220,7 @@ func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, 
 			continue
 		}
 
-		if accept.Value == qheader.Identity { // 除非 q=0，否则表示总是可以被接受
+		if accept.Value == header.Identity { // 除非 q=0，否则表示总是可以被接受
 			identity = accept
 		}
 
