@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v8/group"
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9"
+	"github.com/issue9/mux/v9/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -389,9 +389,9 @@ func TestNewGateway(t *testing.T) {
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: ":8080"},
 		Registry:   reg,
-		Mapper: map[string]group.Matcher{
-			"s1": group.NewPathVersion("", "/s1"),
-			"s2": group.NewPathVersion("", "/s2"),
+		Mapper: map[string]mux.Matcher{
+			"s1": mux.NewPathVersion("", "/s1"),
+			"s2": mux.NewPathVersion("", "/s2"),
 		},
 	}))
 	a.NotError(err).NotNil(g)

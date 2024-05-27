@@ -24,7 +24,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.95.0"
+const Version = "0.96.0"
 
 type (
 	Logger   = logs.Logger
@@ -88,7 +88,7 @@ func NewLocaleError(format string, v ...any) error { return localeutil.Error(for
 // status 表示 HTTP 状态码；
 // err 被包装的错误信息，如果是空值，将会 panic；
 //
-// 此方法返回的错误，在 [Context.Error] 和 [Recovery] 中会被识别且按指定的状态码输出。
+// 此方法返回的错误，在 [Context.Error] 和 [WithRecovery] 中会被识别且按指定的状态码输出。
 func NewError(status int, err error) error { return errs.NewError(status, err) }
 
 // SprintError 将 err 转换为字符串

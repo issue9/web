@@ -9,13 +9,13 @@ require (
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.26.9
 	github.com/issue9/logs/v7 v7.6.1
-	github.com/issue9/mux/v8 v8.2.0
+	github.com/issue9/mux/v9 v9.0.0-beta.1
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/sliceutil v0.16.1
 	github.com/issue9/source v0.11.3
 	github.com/issue9/term/v3 v3.2.9
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.94.1
+	github.com/issue9/web v0.95.0
 	golang.org/x/mod v0.17.0
 	golang.org/x/text v0.15.0
 	golang.org/x/tools v0.21.0

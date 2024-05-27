@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"
@@ -20,7 +20,7 @@ import (
 // 比如 content-type 可能带字符集的参数：content-type: application/json; charset=utf-8。
 // 只返回主值以及指定名称的参数，其它忽略。
 //
-// 与 mime.ParseMediaType 最大的不同在于不会返回除 param 指定外的其它参数，
+// 与 [mime.ParseMediaType] 最大的不同在于不会返回除 param 指定外的其它参数，
 // 所以理论上性能也会更好一些，且也不局限于 RFC1521 规定的 content-type 报头，
 // 对于 Accept 等，也可以分段解析。
 // param 可以为空，表示不需要解析任何参数。

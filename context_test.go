@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v8/header"
-	"github.com/issue9/mux/v8/types"
+	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v9/types"
 	"golang.org/x/text/language"
 )
 

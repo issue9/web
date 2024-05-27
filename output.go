@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"

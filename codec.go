@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"

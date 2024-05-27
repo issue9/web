@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v9"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
@@ -92,7 +92,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	}
 
 	if len(conf.Mappers) > 0 {
-		conf.mapper = make(map[string]group.Matcher, len(conf.Mappers))
+		conf.mapper = make(map[string]mux.Matcher, len(conf.Mappers))
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {

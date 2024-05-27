@@ -9,24 +9,23 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/issue9/mux/v8"
-	"github.com/issue9/mux/v8/group"
-	"github.com/issue9/mux/v8/header"
-	"github.com/issue9/mux/v8/types"
+	"github.com/issue9/mux/v9"
+	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v9/types"
 	"github.com/issue9/source"
 
 	"github.com/issue9/web/internal/errs"
 )
 
 type (
-	Router            = mux.RouterOf[HandlerFunc]
-	Prefix            = mux.PrefixOf[HandlerFunc]
-	Resource          = mux.ResourceOf[HandlerFunc]
-	RouterMatcher     = group.Matcher
-	RouterMatcherFunc = group.MatcherFunc
+	Router            = mux.Router[HandlerFunc]
+	Prefix            = mux.Prefix[HandlerFunc]
+	Resource          = mux.Resource[HandlerFunc]
+	RouterMatcher     = mux.Matcher
+	RouterMatcherFunc = mux.MatcherFunc
 	RouterOption      = mux.Option
-	MiddlewareFunc    = types.MiddlewareFuncOf[HandlerFunc]
-	Middleware        = types.MiddlewareOf[HandlerFunc]
+	MiddlewareFunc    = types.MiddlewareFunc[HandlerFunc]
+	Middleware        = types.Middleware[HandlerFunc]
 
 	// HandlerFunc 路由的处理函数原型
 	//
@@ -39,13 +38,13 @@ type (
 
 	// Routers 提供管理路由的接口
 	Routers struct {
-		g *group.GroupOf[HandlerFunc]
+		g *mux.Group[HandlerFunc]
 	}
 )
 
 func notFound(ctx *Context) Responser { return ctx.NotFound() }
 
-func buildNodeHandle(status int) types.BuildNodeHandleOf[HandlerFunc] {
+func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set(header.Allow, n.AllowHeader())
@@ -95,11 +94,11 @@ func (r *Routers) Routers() []*Router { return r.g.Routers() }
 // Use 对所有的路由使用中间件
 func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 
-// Recovery 在路由奔溃之后的处理方式
+// WithRecovery 在路由奔溃之后的处理方式
 //
-// 相对于 [mux.Recovery]，提供了对 [web.NewError] 错误的处理。
-func Recovery(status int, l *Logger) RouterOption {
-	return mux.Recovery(func(w http.ResponseWriter, msg any) {
+// 相对于 [mux.WithRecovery]，提供了对 [NewError] 错误的处理。
+func WithRecovery(status int, l *Logger) RouterOption {
+	return mux.WithRecovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)
 		if !ok {
 			http.Error(w, http.StatusText(status), status)
@@ -117,18 +116,38 @@ func Recovery(status int, l *Logger) RouterOption {
 	})
 }
 
-// CORS 自定义跨域请求设置项
+// WithCORS 自定义跨域请求设置项
 //
-// 具体参数可参考 [mux.CORS]。
-func CORS(origin, allowHeaders, exposedHeaders []string, maxAge int, allowCredentials bool) RouterOption {
-	return mux.CORS(origin, allowHeaders, exposedHeaders, maxAge, allowCredentials)
+// 具体参数可参考 [mux.WithCORS]。
+func WithCORS(origin, allowHeaders, exposedHeaders []string, maxAge int, allowCredentials bool) RouterOption {
+	return mux.WithCORS(origin, allowHeaders, exposedHeaders, maxAge, allowCredentials)
 }
 
-// DenyCORS 禁用跨域请求
-func DenyCORS() RouterOption { return mux.DenyCORS() }
+// WithDenyCORS 禁用跨域请求
+func WithDenyCORS() RouterOption { return mux.WithDenyCORS() }
 
-// AllowedCORS 允许跨域请求
-func AllowedCORS(maxAge int) RouterOption { return mux.AllowedCORS(maxAge) }
+// WithAllowedCORS 允许跨域请求
+func WithAllowedCORS(maxAge int) RouterOption { return mux.WithAllowedCORS(maxAge) }
 
-// URLDomain 为 [RouterOf.URL] 生成的地址带上域名
-func URLDomain(prefix string) RouterOption { return mux.URLDomain(prefix) }
+// WithURLDomain 为 [Router.URL] 生成的地址带上域名
+func WithURLDomain(prefix string) RouterOption { return mux.WithURLDomain(prefix) }
+
+// WithTrace 控制 TRACE 请求是否有效
+//
+// body 表示是否显示 body 内容；
+func WithTrace(body bool) RouterOption {
+	return mux.WithTrace(func(ctx *Context) Responser {
+		mux.Trace(ctx, ctx.Request(), body)
+		return nil
+	})
+}
+
+func WithAnyInterceptor(rule string) RouterOption { return WithAnyInterceptor(rule) }
+
+func WithDigitInterceptor(rule string) RouterOption { return mux.WithDigitInterceptor(rule) }
+
+func WithWordInterceptor(rule string) RouterOption { return mux.WithWordInterceptor(rule) }
+
+func WithInterceptor(f mux.InterceptorFunc, rule ...string) RouterOption {
+	return mux.WithInterceptor(f, rule...)
+}

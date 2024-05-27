@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 
 	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/qheader"

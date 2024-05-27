@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
-	"github.com/issue9/mux/v8"
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/qheader"
@@ -22,7 +21,7 @@ import (
 func BenchmarkHTTPServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
-	router := srv.Routers().New("srv", nil, mux.URLDomain("http://localhost:8080/"))
+	router := srv.Routers().New("srv", nil, web.WithURLDomain("http://localhost:8080/"))
 	a.NotNil(router)
 
 	router.Get("/path", func(c *web.Context) web.Responser {

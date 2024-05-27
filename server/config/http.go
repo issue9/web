@@ -13,14 +13,19 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v8"
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
+)
+
+const (
+	traceDisable traceStyle = iota // 禁用 TRACE 请求
+	traceBody                      // TRACE 请求中可以包含请求的内容
+	traceNobody                    // 仅返回 TRACE 的报头部分内容
 )
 
 type (
@@ -79,18 +84,25 @@ type (
 		// 默认为 false。
 		//
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-		Trace bool `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
+		Trace traceStyle       `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
+		trace web.RouterOption // 由 Trace 字段转换而来
 
 		init       func(*server.Options)
 		httpServer *http.Server
 	}
+
+	// TRACE 请求的类型
+	traceStyle int8
+
+	// 表示时间段，等同于 [time.Duration]
+	duration time.Duration // 封装 [time.Duration] 以实现对 JSON、XML 和 YAML 的解析
 
 	headerConfig struct {
 		// 报头名称
 		Key string `yaml:"key" json:"key" xml:"key,attr"`
 
 		// 报头对应的值
-		Value string `yaml:"val" json:"val" xml:",chardata"`
+		Value string `yaml:"value" json:"value" xml:",chardata"`
 	}
 
 	certificateConfig struct {
@@ -182,6 +194,7 @@ func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
 				*v = header.XRequestID
 			}
 		})),
+		filter.New("trace", &h.Trace, filter.S(func(t *traceStyle) { h.trace = t.toRouterOption() })),
 	)
 	if err != nil {
 		return err
@@ -212,7 +225,7 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 	h.init = func(o *server.Options) {
 		if len(h.Headers) > 0 {
 			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
-				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc, _, _ string) web.HandlerFunc {
+				s.Routers().Use(web.MiddlewareFunc(func(next web.HandlerFunc, _, _, _ string) web.HandlerFunc {
 					return func(ctx *web.Context) web.Responser {
 						for _, hh := range h.Headers {
 							ctx.Header().Add(hh.Key, hh.Value)
@@ -224,16 +237,18 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 		}
 
 		if h.Recovery > 0 {
-			o.RoutersOptions = append(o.RoutersOptions, web.Recovery(h.Recovery, l.ERROR()))
+			o.RoutersOptions = append(o.RoutersOptions, web.WithRecovery(h.Recovery, l.ERROR()))
 		}
 
 		if h.CORS != nil {
 			c := h.CORS
-			cors := mux.CORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials)
+			cors := web.WithCORS(c.Origins, c.AllowHeaders, c.ExposedHeaders, c.MaxAge, c.AllowCredentials)
 			o.RoutersOptions = append(o.RoutersOptions, cors)
 		}
 
-		o.RoutersOptions = append(o.RoutersOptions, mux.Trace(h.Trace))
+		if h.trace != nil {
+			o.RoutersOptions = append(o.RoutersOptions, h.trace)
+		}
 	}
 }
 
@@ -285,9 +300,6 @@ func (l *acmeConfig) sanitize() *web.FieldError {
 	)
 }
 
-// 表示时间段，等同于 [time.Duration]
-type duration time.Duration // 封装 time.Duration 以实现对 JSON、XML 和 YAML 的解析
-
 func (d duration) Duration() time.Duration { return time.Duration(d) }
 
 func (d duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d).String()), nil }
@@ -298,4 +310,42 @@ func (d *duration) UnmarshalText(b []byte) error {
 		*d = duration(v)
 	}
 	return err
+}
+
+func (s traceStyle) toRouterOption() web.RouterOption {
+	switch s {
+	case traceBody:
+		return web.WithTrace(true)
+	case traceNobody:
+		return web.WithTrace(false)
+	default:
+		return nil
+	}
+}
+
+func (s traceStyle) MarshalText() ([]byte, error) {
+	switch s {
+	case traceDisable:
+		return []byte("disable"), nil
+	case traceBody:
+		return []byte("body"), nil
+	case traceNobody:
+		return []byte("nobody"), nil
+	default:
+		panic("无效的值")
+	}
+}
+
+func (s *traceStyle) UnmarshalText(b []byte) error {
+	switch str := string(b); str {
+	case "disable":
+		*s = traceDisable
+	case "body":
+		*s = traceBody
+	case "nobody":
+		*s = traceNobody
+	default:
+		panic("无效的值")
+	}
+	return nil
 }

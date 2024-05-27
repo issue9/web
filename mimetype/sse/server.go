@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/bufpool"

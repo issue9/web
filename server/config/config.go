@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v9"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
@@ -129,7 +129,7 @@ type configOf[T comparable] struct {
 	//
 	// NOTE: 作为微服务的网关时才会有效果
 	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty"`
-	mapper  map[string]group.Matcher
+	mapper  map[string]mux.Matcher
 
 	// 用户自定义的配置项
 	User T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`

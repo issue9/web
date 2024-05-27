@@ -13,8 +13,8 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v8/group"
-	"github.com/issue9/mux/v8/types"
+	"github.com/issue9/mux/v9"
+	"github.com/issue9/mux/v9/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -256,7 +256,7 @@ func InternalNewServer(
 	}
 	is.initServices()
 	is.routers = &Routers{
-		g: group.NewOf(is.call,
+		g: mux.NewGroup(is.call,
 			notFound,
 			buildNodeHandle(http.StatusMethodNotAllowed),
 			buildNodeHandle(http.StatusOK),

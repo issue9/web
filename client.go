@@ -9,7 +9,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/issue9/mux/v8/header"
+	"github.com/issue9/mux/v9/header"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 

@@ -21,7 +21,7 @@ import (
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/cache/caches/redis"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v8/group"
+	"github.com/issue9/mux/v9"
 	"github.com/issue9/unique/v2"
 	"gopkg.in/yaml.v3"
 
@@ -232,9 +232,9 @@ func init() {
 		return registry.NewCache(c, s, freq)
 	}, "cache")
 
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewHosts(false, arg...) }, "hosts")
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewPathVersion(arg[0], arg[1:]...) }, "prefix")
-	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return group.NewHeaderVersion(arg[0], arg[0], nil, arg[2:]...) }, "version")
+	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return mux.NewHosts(false, arg...) }, "hosts")
+	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return mux.NewPathVersion(arg[0], arg[1:]...) }, "prefix")
+	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return mux.NewHeaderVersion(arg[0], arg[0], nil, arg[2:]...) }, "version")
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return nil }, "any")
 
 	// OnRender
