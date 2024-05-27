@@ -174,8 +174,14 @@ body {
 <p>NOTE: 报头内容可能会被后续的中间件修改。
 </td></tr><tr><td>cors,omitempty</td><td>cors,omitempty</td><td>cors,omitempty</td><td><a href="#corsConfig">corsConfig</a></td><td><p>自定义<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors">跨域请求</a>设置项
 <p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-</td></tr><tr><td>trace,omitempty</td><td>trace,omitempty</td><td>trace,omitempty</td><td>bool</td><td><p>Trace 是否启用 TRACE 请求
-<p>默认为 false。
+</td></tr><tr><td>trace,omitempty</td><td>trace,omitempty</td><td>trace,omitempty</td><td>string</td><td><p>Trace 是否启用 TRACE 请求
+<p>可以有以下几种值：
+<ul>
+<li>disable 禁用 TRACE 请求；
+<li>body 启用 TRACE，且在返回内容中包含了请求端的 body 内容；
+<li>nobody 启用 TRACE，但是在返回内容中不包含请求端的 body 内容；
+</ul>
+<p>默认为 disable。
 <p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 </td></tr>
 					</tbody>
@@ -206,7 +212,7 @@ body {
 					<thead><tr><th>JSON</th><th>YAML</th><th>XML</th><th>类型</th><th>描述</th><tr></thead>
 					<tbody>
 					<tr><td>key</td><td>key</td><td>key,attr</td><td>string</td><td><p>报头名称
-</td></tr><tr><td>val</td><td>val</td><td>,chardata</td><td>string</td><td><p>报头对应的值
+</td></tr><tr><td>value</td><td>value</td><td>,chardata</td><td>string</td><td><p>报头对应的值
 </td></tr>
 					</tbody>
 				</table>

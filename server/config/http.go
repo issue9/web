@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/issue9/logs/v7"
@@ -20,12 +21,6 @@ import (
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
-)
-
-const (
-	traceDisable traceStyle = iota // 禁用 TRACE 请求
-	traceBody                      // TRACE 请求中可以包含请求的内容
-	traceNobody                    // 仅返回 TRACE 的报头部分内容
 )
 
 type (
@@ -81,18 +76,19 @@ type (
 
 		// Trace 是否启用 TRACE 请求
 		//
-		// 默认为 false。
+		// 可以有以下几种值：
+		//  - disable 禁用 TRACE 请求；
+		//  - body 启用 TRACE，且在返回内容中包含了请求端的 body 内容；
+		//  - nobody 启用 TRACE，但是在返回内容中不包含请求端的 body 内容；
+		// 默认为 disable。
 		//
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-		Trace traceStyle       `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
+		Trace string           `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
 		trace web.RouterOption // 由 Trace 字段转换而来
 
 		init       func(*server.Options)
 		httpServer *http.Server
 	}
-
-	// TRACE 请求的类型
-	traceStyle int8
 
 	// 表示时间段，等同于 [time.Duration]
 	duration time.Duration // 封装 [time.Duration] 以实现对 JSON、XML 和 YAML 的解析
@@ -194,7 +190,18 @@ func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
 				*v = header.XRequestID
 			}
 		})),
-		filter.New("trace", &h.Trace, filter.S(func(t *traceStyle) { h.trace = t.toRouterOption() })),
+		filter.New("trace", &h.Trace, filter.V(func(t string) bool {
+			switch strings.ToLower(t) {
+			case "body":
+				h.trace = web.WithTrace(true)
+			case "nobody":
+				h.trace = web.WithTrace(false)
+			case "disable":
+			default:
+				return false
+			}
+			return true
+		}, locales.InvalidValue)),
 	)
 	if err != nil {
 		return err
@@ -310,42 +317,4 @@ func (d *duration) UnmarshalText(b []byte) error {
 		*d = duration(v)
 	}
 	return err
-}
-
-func (s traceStyle) toRouterOption() web.RouterOption {
-	switch s {
-	case traceBody:
-		return web.WithTrace(true)
-	case traceNobody:
-		return web.WithTrace(false)
-	default:
-		return nil
-	}
-}
-
-func (s traceStyle) MarshalText() ([]byte, error) {
-	switch s {
-	case traceDisable:
-		return []byte("disable"), nil
-	case traceBody:
-		return []byte("body"), nil
-	case traceNobody:
-		return []byte("nobody"), nil
-	default:
-		panic("无效的值")
-	}
-}
-
-func (s *traceStyle) UnmarshalText(b []byte) error {
-	switch str := string(b); str {
-	case "disable":
-		*s = traceDisable
-	case "body":
-		*s = traceBody
-	case "nobody":
-		*s = traceNobody
-	default:
-		panic("无效的值")
-	}
-	return nil
 }
