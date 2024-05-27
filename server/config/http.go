@@ -190,7 +190,11 @@ func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
 				*v = header.XRequestID
 			}
 		})),
-		filter.New("trace", &h.Trace, filter.V(func(t string) bool {
+		filter.New("trace", &h.Trace, filter.S(func(t *string) {
+			if *t == "" {
+				*t = "disable"
+			}
+		}), filter.V(func(t string) bool {
 			switch strings.ToLower(t) {
 			case "body":
 				h.trace = web.WithTrace(true)
