@@ -127,7 +127,7 @@ messages:
         msg: 输出文件的格式，目前支持 JSON 和 YAML
     - key: filter by tag
       message:
-        msg: 按标签过滤
+        msg: 按标签过滤，多个标签使用半角逗号分隔。
     - key: gen filter method
       message:
         msg: 生成适配 github.com/issue9/web/filter 的相关方法

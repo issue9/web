@@ -60,9 +60,8 @@ LOOP:
 				continue LOOP
 			}
 
-			if !p.isIgnoreTag(words[0]) {
-				t.Doc().Tags = append(t.Doc().Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
-			}
+			// 输出所有的标签定义，部分标签可能未出现在过滤名单中，但是与过滤名单中的标签关联。
+			t.Doc().Tags = append(t.Doc().Tags, &openapi3.Tag{Name: words[0], Description: words[1]})
 		case "@server": // @server tags https://example.com *desc
 			words, l := utils.SplitSpaceN(suffix, 3)
 			if l < 2 {

@@ -142,7 +142,7 @@ func WithTrace(body bool) RouterOption {
 	})
 }
 
-func WithAnyInterceptor(rule string) RouterOption { return WithAnyInterceptor(rule) }
+func WithAnyInterceptor(rule string) RouterOption { return mux.WithAnyInterceptor(rule) }
 
 func WithDigitInterceptor(rule string) RouterOption { return mux.WithDigitInterceptor(rule) }
 
