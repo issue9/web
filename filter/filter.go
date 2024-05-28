@@ -45,7 +45,7 @@ type Filter = func() (string, localeutil.Stringer)
 // 当前函数的主要作用是将一个泛型函数转换为非泛型函数 [Filter]。
 type Builder[T any] func(name string, value *T) Filter
 
-// Rule 对类型 T 的验证规则
+// Rule 类型 T 的验证规则
 //
 // 传递参数为字段名与需要验证的值；
 // 返回字段名和错误信息，如果验证成功，则返回两个空值；

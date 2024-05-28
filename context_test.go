@@ -244,3 +244,14 @@ func TestContext_ClientIP(t *testing.T) {
 	ctx := newContext(a, nil, r)
 	a.NotNil(ctx).Equal(ctx.ClientIP(), r.RemoteAddr)
 }
+
+func TestContext_time(t *testing.T) {
+	a := assert.New(t, false)
+
+	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	ctx := newContext(a, nil, r)
+
+	a.Equal(ctx.Location(), ctx.Server().Location()).
+		Equal(ctx.Now().Location(), ctx.Location()).
+		Equal(ctx.Begin().Location(), ctx.Location())
+}

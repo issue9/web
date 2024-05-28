@@ -181,6 +181,23 @@ func (ctx *Context) Route() types.Route { return ctx.route }
 // Begin 当前对象的初始化时间
 func (ctx *Context) Begin() time.Time { return ctx.begin }
 
+// Location 当前用户的时区
+//
+// 默认情况下，该值与 [Server.Location] 相同。
+func (ctx *Context) Location() *time.Location { return ctx.Begin().Location() }
+
+// Now 相当于指定了时区的 [time.Now]
+func (ctx *Context) Now() time.Time { return time.Now().In(ctx.Location()) }
+
+// SetLocation 改变当前用户的时区
+//
+// 该操作也将同时改变 [Context.Begin] 的时区。
+func (ctx *Context) SetLocation(l *time.Location) { ctx.begin = ctx.Begin().In(l) }
+
+func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
+	return time.ParseInLocation(layout, value, ctx.Location())
+}
+
 // ID 当前请求的唯一 ID
 //
 // 一般源自客户端的 X-Request-ID 报头，如果不存在，则由 [Server.UniqueID] 生成。
