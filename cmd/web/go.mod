@@ -15,7 +15,7 @@ require (
 	github.com/issue9/source v0.11.3
 	github.com/issue9/term/v3 v3.2.9
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.95.0
+	github.com/issue9/web v0.96.1
 	golang.org/x/mod v0.17.0
 	golang.org/x/text v0.15.0
 	golang.org/x/tools v0.21.0

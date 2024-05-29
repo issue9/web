@@ -18,7 +18,7 @@ import (
 type (
 	// Struct 这是对 [types.Struct] 的包装
 	Struct struct {
-		name   string
+		id     string
 		fields []*types.Var
 		docs   []*ast.CommentGroup
 		tags   []string
@@ -53,7 +53,7 @@ type (
 	defaultTypeList []types.Type
 )
 
-func (s *Struct) String() string { return s.name }
+func (s *Struct) String() string { return s.id }
 
 func (s *Struct) Underlying() types.Type { return s }
 
@@ -95,19 +95,15 @@ func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 func (pkgs *Packages) newStruct(
 	ctx context.Context,
 	pkg *types.Package,
-	name string, // name 为结构体名称，可以为空；
 	st *ast.StructType,
 	file *ast.File,
 	tl typeList,
 	tps *types.TypeParamList,
-	fts map[string]types.Type,
+	fieldTypes map[string]types.Type,
 ) (*Struct, error) {
-	size := st.Fields.NumFields()
-	s := &Struct{
-		name:   name,
-		fields: make([]*types.Var, 0, size),
-		docs:   make([]*ast.CommentGroup, 0, size),
-		tags:   make([]string, 0, size),
+	s, isNew := pkgs.getStruct(st, tps, tl)
+	if !isNew {
+		return s, nil
 	}
 
 	for _, f := range st.Fields.List {
@@ -120,7 +116,7 @@ func (pkgs *Packages) newStruct(
 
 		switch len(f.Names) {
 		case 0: // 匿名
-			typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, nil, nil, tl, tps) // 匿名必然不存在与父元素的引用
+			typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, nil, tl, tps) // 匿名必然不存在与父元素的引用
 			if err != nil {
 				return nil, err
 			}
@@ -133,11 +129,11 @@ func (pkgs *Packages) newStruct(
 				var typ types.Type
 				if !token.IsExported(n.Name) {
 					typ = NotFound(n.Name)
-				} else if t, found := fts[n.Name]; found {
+				} else if t, found := fieldTypes[n.Name]; found {
 					typ = t
 				} else {
 					var err error
-					if typ, err = pkgs.typeOfExpr(ctx, pkg, file, f.Type, s, nil, tl, tps); err != nil {
+					if typ, err = pkgs.typeOfExpr(ctx, pkg, file, f.Type, nil, tl, tps); err != nil {
 						return nil, err
 					}
 				}
@@ -155,14 +151,10 @@ func (pkgs *Packages) newStruct(
 // tl 表示范型参数列表，可以为空
 func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typeList) *Named {
 	o := named.Obj()
-	id := o.Pkg().Path() + "." + o.Name()
 
-	if named.TypeParams().Len() > 0 && tl != nil && tl.Len() > 0 {
-		names := make([]string, 0, tl.Len())
-		for i := range tl.Len() {
-			names = append(names, tl.At(i).String())
-		}
-		id += "[" + strings.Join(names, ",") + "]"
+	id := o.Pkg().Path() + "." + o.Name()
+	if tps := getTypeParamsList(named.TypeParams(), tl); tps != "" {
+		id += "[" + tps + "]"
 	}
 
 	return &Named{
@@ -172,6 +164,22 @@ func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typ
 		id:    id,
 		tl:    tl,
 	}
+}
+
+// 获得泛型实参的参数列表
+func getTypeParamsList(tpl *types.TypeParamList, tl typeList) string {
+	if tpl != nil && tl != nil && tl.Len() > 0 {
+		if tl.Len() != tpl.Len() {
+			panic("形参与实参的数量不相同")
+		}
+
+		names := make([]string, 0, tl.Len())
+		for i := range tl.Len() {
+			names = append(names, tl.At(i).String())
+		}
+		return strings.Join(names, ",")
+	}
+	return ""
 }
 
 // TypeOf 查找名为 path 的相关类型信息
@@ -192,7 +200,7 @@ func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typ
 //   - {} 表示空值，将返回 nil, true
 //   - map 或是 any 将返回 [types.InterfaceType]
 func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, error) {
-	path, fts, err := pkgs.splitFieldTypes(ctx, path)
+	path, fieldTypes, err := pkgs.splitFieldTypes(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +226,7 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 		basicType = path[last+1:]
 	}
 
-	typ, err := pkgs.typeOfPath(ctx, path, basicType, nil, tl, nil, fts)
+	typ, err := pkgs.typeOfPath(ctx, path, basicType, nil, tl, nil, fieldTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +238,6 @@ func (pkgs *Packages) typeOfExpr(
 	pkg *types.Package,
 	f *ast.File,
 	expr ast.Expr,
-	self *Struct, // 防止对象引用自身引起的死循环，该值用于判断 expr 是否为与 parent 相同。可以为空；
 	doc *ast.CommentGroup, // 可以为空，参考 typeOfPath；
 	tl typeList,
 	tps *types.TypeParamList,
@@ -239,10 +246,6 @@ func (pkgs *Packages) typeOfExpr(
 	case *ast.SelectorExpr: // type x path.struct
 		return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(e, f), "", doc, tl, tps, nil)
 	case *ast.Ident: // type x y，或是 struct{ f1 T } 中的 T
-		if self != nil && e.Name == self.String() {
-			return self, nil
-		}
-
 		basic := e.Name
 		name := pkg.Path() + "." + basic
 
@@ -268,9 +271,9 @@ func (pkgs *Packages) typeOfExpr(
 
 		return pkgs.typeOfPath(ctx, name, basic, doc, tl, tps, nil)
 	case *ast.StructType:
-		return pkgs.newStruct(ctx, pkg, "", e, f, tl, tps, nil)
+		return pkgs.newStruct(ctx, pkg, e, f, tl, tps, nil)
 	case *ast.ArrayType: // type x []y
-		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.Elt, self, doc, tl, tps)
+		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.Elt, doc, tl, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -285,29 +288,29 @@ func (pkgs *Packages) typeOfExpr(
 			return types.NewArray(typ, l), nil
 		}
 	case *ast.StarExpr: // type x *y
-		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.X, self, doc, tl, tps)
+		typ, err := pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, tl, tps)
 		if err != nil {
 			return nil, err
 		}
 		return types.NewPointer(typ), nil
 	case *ast.IndexExpr: // type x y[int] 等实例化的范型
-		idxType, err := pkgs.typeOfExpr(ctx, pkg, f, e.Index, self, nil, tl, tps)
+		idxType, err := pkgs.typeOfExpr(ctx, pkg, f, e.Index, nil, tl, tps)
 		if err != nil {
 			return nil, err
 		}
 
-		return pkgs.typeOfExpr(ctx, pkg, f, e.X, self, doc, newTypeList(idxType), tps)
+		return pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, newTypeList(idxType), tps)
 	case *ast.IndexListExpr:
 		idxTypes := make([]types.Type, 0, len(e.Indices))
 		for _, idx := range e.Indices {
-			idxType, err := pkgs.typeOfExpr(ctx, pkg, f, idx, self, nil, tl, tps)
+			idxType, err := pkgs.typeOfExpr(ctx, pkg, f, idx, nil, tl, tps)
 			if err != nil {
 				return nil, err
 			}
 			idxTypes = append(idxTypes, idxType)
 		}
 
-		return pkgs.typeOfExpr(ctx, pkg, f, e.X, self, doc, newTypeList(idxTypes...), tps)
+		return pkgs.typeOfExpr(ctx, pkg, f, e.X, doc, newTypeList(idxTypes...), tps)
 	default:
 		return NotImplement(""), nil
 	}
@@ -321,10 +324,10 @@ func (pkgs *Packages) typeOfExpr(
 func (pkgs *Packages) typeOfPath(
 	ctx context.Context,
 	path, basicType string,
-	doc *ast.CommentGroup, // doc 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是字段类型可以自己指定此值；
+	doc *ast.CommentGroup, // 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是字段类型可以自己指定此值；
 	tl typeList,
 	tps *types.TypeParamList,
-	fts map[string]types.Type, // fts 如果类型为结构体，fts 用于指定需要替换的字段。可以为空；
+	fieldTypes map[string]types.Type, // 如果 path 为结构体，fieldTypes 用于指定需要替换的字段。可以为空；
 ) (typ types.Type, err error) {
 	obj, spec, f, found := pkgs.lookup(ctx, path)
 	if !found {
@@ -346,12 +349,12 @@ func (pkgs *Packages) typeOfPath(
 	}
 
 	if st, ok := spec.Type.(*ast.StructType); ok {
-		typ, err = pkgs.newStruct(ctx, tn.Pkg(), spec.Name.Name, st, f, tl, obj.Type().(*types.Named).TypeParams(), fts)
+		typ, err = pkgs.newStruct(ctx, tn.Pkg(), st, f, tl, obj.Type().(*types.Named).TypeParams(), fieldTypes)
 	} else {
 		if doc == nil {
 			doc = getDoc(spec.Doc, spec.Comment)
 		}
-		typ, err = pkgs.typeOfExpr(ctx, tn.Pkg(), f, spec.Type, nil, doc, tl, tps)
+		typ, err = pkgs.typeOfExpr(ctx, tn.Pkg(), f, spec.Type, doc, tl, tps)
 	}
 	if err != nil {
 		return nil, err

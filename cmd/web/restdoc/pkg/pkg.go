@@ -8,8 +8,11 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"go/ast"
 	"go/token"
+	"go/types"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"github.com/issue9/web"
@@ -29,6 +32,40 @@ type Packages struct {
 	pkgs  map[string]*packages.Package // 键名为对应的目录名
 	fset  *token.FileSet
 	l     *logger.Logger
+
+	// 结构体可能存在相互引用的情况，保存每个结构体的数据，键名为 [Struct.String]。
+	structs  map[string]*Struct
+	structsM sync.RWMutex
+}
+
+// 根据 st 生成一个空的 [Struct] 或是在已经存在的情况下返回该实例
+func (pkgs *Packages) getStruct(st *ast.StructType, tps *types.TypeParamList, tl typeList) (s *Struct, isNew bool) {
+	// 根据 st.Pos 与泛型参数形成一个结构的唯一 ID
+	id := strconv.Itoa(int(st.Pos()))
+	if ss := getTypeParamsList(tps, tl); ss != "" {
+		id = id + "[" + ss + "]"
+	}
+
+	pkgs.structsM.RLock()
+	s = pkgs.structs[id]
+	pkgs.structsM.RUnlock()
+	if s != nil {
+		return s, false
+	}
+
+	size := st.Fields.NumFields()
+	s = &Struct{
+		id:     id,
+		fields: make([]*types.Var, 0, size),
+		docs:   make([]*ast.CommentGroup, 0, size),
+		tags:   make([]string, 0, size),
+	}
+
+	pkgs.structsM.Lock()
+	pkgs.structs[id] = s
+	pkgs.structsM.Unlock()
+
+	return s, true
 }
 
 func New(l *logger.Logger) *Packages {
@@ -36,6 +73,8 @@ func New(l *logger.Logger) *Packages {
 		pkgs: make(map[string]*packages.Package, 30),
 		fset: token.NewFileSet(),
 		l:    l,
+
+		structs: make(map[string]*Struct, 10),
 	}
 }
 

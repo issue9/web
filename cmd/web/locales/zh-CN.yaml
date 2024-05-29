@@ -267,7 +267,7 @@ messages:
 
               指定回调方法，只能依附于 # api 之后，标签大部分与 # api 相同，但是少了 @id、@tag、@path。
 
-            schema
+            type
 
             类似 godoc 在注释中引用对象，restdoc 也是通过注释指向一个具体对象，将其解析为 openapi.Schema 对象；
             格式为：[prefix][modpath.]object[[type-list]][<field-list>]。

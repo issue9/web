@@ -36,6 +36,8 @@ type G[T any] struct {
 	F1 T   // F1 Doc
 	F2 int // F2 Doc
 	F3 *G[T]
+
+	F4 *GS[int, int, int] // 与 GS 循环引用
 }
 
 type GInt G[int]
@@ -47,6 +49,8 @@ type GS[T0 any, T1 any, T2 any] struct {
 	F4    T2
 	F5    S2          // 引用类型的字段
 	f6    interface{} // 不可导出的接口，应该作为 NotFound 被忽略
+
+	F7 *G[int]
 }
 
 // GSNumber Doc

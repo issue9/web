@@ -6,10 +6,12 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
+	"io/fs"
 	"path"
 	"slices"
 	"strconv"
@@ -22,7 +24,9 @@ import (
 // 拆分指定的字段类型
 //
 // type<field=type1,field2=type2<field1=type3>>
-func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p string, fts map[string]types.Type, err error) {
+//
+// 返回指向的类型以及需要被替换的字段列表。
+func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p string, fieldTypes map[string]types.Type, err error) {
 	index := strings.IndexByte(path, '<')
 	if index < 0 {
 		return path, nil, nil
@@ -33,7 +37,7 @@ func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p strin
 	}
 
 	p = path[:index]
-	fts = make(map[string]types.Type, 3)
+	fieldTypes = make(map[string]types.Type, 3)
 
 	appendTS := func(path string) error {
 		ps := strings.SplitN(path, "=", 2)
@@ -46,7 +50,7 @@ func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p strin
 			return err
 		}
 
-		fts[ps[0]] = t
+		fieldTypes[ps[0]] = t
 		return nil
 	}
 
@@ -76,7 +80,7 @@ LOOP:
 		return "", nil, err
 	}
 
-	return p, fts, nil
+	return p, fieldTypes, nil
 }
 
 // 拆分 path 中表示类似的前缀，比如 [] 表示数组
@@ -230,7 +234,9 @@ func (pkgs *Packages) lookup(ctx context.Context, typePath string) (types.Object
 
 	for pkgDir := range pkgs.pkgs {
 		dir, err := source.PkgSourceDir(pkgPath, pkgDir, true)
-		if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		} else if err != nil {
 			return nil, nil, nil, false
 		}
 
