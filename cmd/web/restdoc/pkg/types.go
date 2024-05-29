@@ -92,8 +92,16 @@ func (tl defaultTypeList) Len() int { return len(tl) }
 // newTypeList 声明 [typeList] 接口对象
 func newTypeList(t ...types.Type) typeList { return defaultTypeList(t) }
 
-// name 为结构体名称，可以为空；
-func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name string, st *ast.StructType, file *ast.File, tl typeList, tps *types.TypeParamList, fts map[string]types.Type) (*Struct, error) {
+func (pkgs *Packages) newStruct(
+	ctx context.Context,
+	pkg *types.Package,
+	name string, // name 为结构体名称，可以为空；
+	st *ast.StructType,
+	file *ast.File,
+	tl typeList,
+	tps *types.TypeParamList,
+	fts map[string]types.Type,
+) (*Struct, error) {
 	size := st.Fields.NumFields()
 	s := &Struct{
 		name:   name,
@@ -112,7 +120,7 @@ func (pkgs *Packages) newStruct(ctx context.Context, pkg *types.Package, name st
 
 		switch len(f.Names) {
 		case 0: // 匿名
-			typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, s, nil, tl, tps)
+			typ, err := pkgs.typeOfExpr(ctx, pkg, file, f.Type, nil, nil, tl, tps) // 匿名必然不存在与父元素的引用
 			if err != nil {
 				return nil, err
 			}
@@ -217,9 +225,16 @@ func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, erro
 	return wrap(typ), nil
 }
 
-// doc 可以为空，参考 typeOfPath；
-// self 防止对象引用自身引起的死循环，该值用于判断 expr 是否为与 parent 相同。可以为空；
-func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast.File, expr ast.Expr, self *Struct, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList) (types.Type, error) {
+func (pkgs *Packages) typeOfExpr(
+	ctx context.Context,
+	pkg *types.Package,
+	f *ast.File,
+	expr ast.Expr,
+	self *Struct, // 防止对象引用自身引起的死循环，该值用于判断 expr 是否为与 parent 相同。可以为空；
+	doc *ast.CommentGroup, // 可以为空，参考 typeOfPath；
+	tl typeList,
+	tps *types.TypeParamList,
+) (types.Type, error) {
 	switch e := expr.(type) {
 	case *ast.SelectorExpr: // type x path.struct
 		return pkgs.typeOfPath(ctx, pkgs.getPathFromSelectorExpr(e, f), "", doc, tl, tps, nil)
@@ -276,7 +291,7 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 		}
 		return types.NewPointer(typ), nil
 	case *ast.IndexExpr: // type x y[int] 等实例化的范型
-		idxType, err := pkgs.typeOfExpr(ctx, pkg, f, e.Index, nil, nil, tl, tps)
+		idxType, err := pkgs.typeOfExpr(ctx, pkg, f, e.Index, self, nil, tl, tps)
 		if err != nil {
 			return nil, err
 		}
@@ -285,7 +300,7 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 	case *ast.IndexListExpr:
 		idxTypes := make([]types.Type, 0, len(e.Indices))
 		for _, idx := range e.Indices {
-			idxType, err := pkgs.typeOfExpr(ctx, pkg, f, idx, nil, nil, tl, tps)
+			idxType, err := pkgs.typeOfExpr(ctx, pkg, f, idx, self, nil, tl, tps)
 			if err != nil {
 				return nil, err
 			}
@@ -303,9 +318,14 @@ func (pkgs *Packages) typeOfExpr(ctx context.Context, pkg *types.Package, f *ast
 // 如果其类型为 [types.Struct]，会被包装为 [Struct]。
 // 如果存在类型为 [types.Named]，会被包装为 [Named]。
 // 可能存在 type uint string 之类的定义，basicType 表示 path 找不到时是否需要按 basicType 查找基本的内置类型。
-// doc 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是字段类型可以自己指定此值；
-// fts 如果类型为结构体，fts 用于指定需要替换的字段。可以为空；
-func (pkgs *Packages) typeOfPath(ctx context.Context, path, basicType string, doc *ast.CommentGroup, tl typeList, tps *types.TypeParamList, fts map[string]types.Type) (typ types.Type, err error) {
+func (pkgs *Packages) typeOfPath(
+	ctx context.Context,
+	path, basicType string,
+	doc *ast.CommentGroup, // doc 自定义的文档信息，可以为空，表示根据指定的类型信息确定文档。如果是字段类型可以自己指定此值；
+	tl typeList,
+	tps *types.TypeParamList,
+	fts map[string]types.Type, // fts 如果类型为结构体，fts 用于指定需要替换的字段。可以为空；
+) (typ types.Type, err error) {
 	obj, spec, f, found := pkgs.lookup(ctx, path)
 	if !found {
 		if basicType != "" {

@@ -46,7 +46,7 @@ func TestRESTDoc_parseRESTDoc(t *testing.T) {
 	p.parseRESTDoc(context.Background(), d, "restdoc example", "github.com/issue9/web", lines, 5, "example.go")
 
 	a.Equal(0, l.Count()).
-		Length(d.Doc().Tags, 1).Equal(d.Doc().Tags[0].Description, "user tag desc").
+		Length(d.Doc().Tags, 2).Equal(d.Doc().Tags[0].Description, "user tag desc").
 		Length(d.Doc().Servers, 1).
 		Equal(d.Doc().Info.License.Name, "mit").
 		Equal(d.Doc().Info.TermsOfService, "https://example.com/term").
