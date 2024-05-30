@@ -14,12 +14,17 @@ import (
 
 const ComponentSchemaPrefix = "#/components/schemas/"
 
+// RefEqual 判断两个 SchemaRef.Ref 是否相等
+func RefEqual(r1, r2 string) bool {
+	return strings.TrimPrefix(r1, ComponentSchemaPrefix) == strings.TrimPrefix(r2, ComponentSchemaPrefix)
+}
+
 // AddSchema 尝试添加一个 Schema 至 Components 中
 //
-// NOTE:  仅在 schema.Ref 不为空时才会保存，且会对不规则的 schema.Ref 进行修正。
+// NOTE:  仅在 schema.Ref 不为空 或是 schema.Value 不为空时才会保存，且会对不规则的 schema.Ref 进行修正。
 func (doc *OpenAPI) AddSchema(schema *openapi3.SchemaRef) {
 	ref := strings.TrimPrefix(schema.Ref, ComponentSchemaPrefix)
-	if ref == "" {
+	if ref == "" || schema.Value == nil {
 		return
 	}
 	schema.Ref = ComponentSchemaPrefix + ref // 同时也统一 schema.Ref

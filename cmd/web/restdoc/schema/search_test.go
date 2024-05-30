@@ -25,13 +25,12 @@ func buildPackages(a *assert.Assertion) *Schema {
 }
 
 func TestSchema_New_not_found(t *testing.T) {
-	a := assert.New(t, false)
-	f := buildPackages(a)
 	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
 
 	// #components/schemas/abc
 	t.Run(openapi.ComponentSchemaPrefix, func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		refPath := openapi.ComponentSchemaPrefix + ".admin.notFound"
@@ -43,6 +42,7 @@ func TestSchema_New_not_found(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		a := assert.New(t, false)
 		tt := openapi.New("3")
+		f := buildPackages(a)
 
 		refPath := pkgPath + "/admin.notFound"
 		ref, err := f.New(context.Background(), tt, refPath, false)
@@ -51,13 +51,11 @@ func TestSchema_New_not_found(t *testing.T) {
 }
 
 func TestSchema_New_enum(t *testing.T) {
-	a := assert.New(t, false)
-	f := buildPackages(a)
 	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
-	// pkgRef := refReplacer.Replace(pkgPath)
 
 	t.Run("Enum", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Enum", false)
@@ -69,6 +67,7 @@ func TestSchema_New_enum(t *testing.T) {
 
 	t.Run("NotBasicTypeEnum", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".NotBasicTypeEnum", false)
@@ -77,6 +76,7 @@ func TestSchema_New_enum(t *testing.T) {
 
 	t.Run("Number", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Number", false)
@@ -88,13 +88,12 @@ func TestSchema_New_enum(t *testing.T) {
 }
 
 func TestSchema_New_types(t *testing.T) {
-	a := assert.New(t, false)
-	f := buildPackages(a)
 	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
 	pkgRef := refReplacer.Replace(pkgPath)
 
 	t.Run("[]bool", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "[]bool", false)
@@ -106,6 +105,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("{}", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "{}", false)
@@ -114,6 +114,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("map", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "map", false)
@@ -123,6 +124,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".String", false)
@@ -134,6 +136,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("Sex", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Sex", false)
@@ -145,6 +148,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("[]String", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".String", false)
@@ -157,6 +161,7 @@ func TestSchema_New_types(t *testing.T) {
 	// time.Time
 	t.Run("time.Time", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "time.Time", false)
@@ -168,6 +173,7 @@ func TestSchema_New_types(t *testing.T) {
 	// time.Duration
 	t.Run("time.Duration", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "time.Duration", false)
@@ -179,6 +185,7 @@ func TestSchema_New_types(t *testing.T) {
 	// 枚举数组
 	t.Run("[]Sex", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".Sex", false)
@@ -195,6 +202,7 @@ func TestSchema_New_types(t *testing.T) {
 
 	t.Run("Sexes", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Sexes", false)
@@ -207,6 +215,7 @@ func TestSchema_New_types(t *testing.T) {
 	// 对象数组
 	t.Run("[]User", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, "[]"+pkgPath+".User", false)
@@ -242,6 +251,7 @@ func TestSchema_New_types(t *testing.T) {
 	// XMLName
 	t.Run("XMLName", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Admin", false)
@@ -252,6 +262,7 @@ func TestSchema_New_types(t *testing.T) {
 	// admin.User
 	t.Run("admin.User", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.User", false)
@@ -275,6 +286,7 @@ func TestSchema_New_types(t *testing.T) {
 	// admin.Sex
 	t.Run("admin.Sex", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Sex", false)
@@ -285,6 +297,7 @@ func TestSchema_New_types(t *testing.T) {
 	// admin.Alias
 	t.Run("admin.Alias", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Alias", false)
@@ -307,6 +320,7 @@ func TestSchema_New_types(t *testing.T) {
 	// admin.Admin
 	t.Run("admin.Admin", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Admin", false)
@@ -343,14 +357,13 @@ func TestSchema_New_types(t *testing.T) {
 }
 
 func TestSchema_New_generics(t *testing.T) {
-	a := assert.New(t, false)
-	f := buildPackages(a)
 	pkgPath := "github.com/issue9/web/cmd/web/restdoc/schema/testdata"
 	pkgRef := refReplacer.Replace(pkgPath)
 
 	// Generic
 	t.Run("Generic", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".NumberGenerics[int]", false)
@@ -361,6 +374,7 @@ func TestSchema_New_generics(t *testing.T) {
 	// Generic[int]
 	t.Run("Generic[int]", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Generic[int]", false)
@@ -369,6 +383,7 @@ func TestSchema_New_generics(t *testing.T) {
 
 	t.Run("IntGeneric", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".IntGeneric", false)
@@ -379,6 +394,7 @@ func TestSchema_New_generics(t *testing.T) {
 
 	t.Run("Generics[int,Admin]", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+".Generics[int, "+pkgPath+"/admin.Admin]", false)
@@ -400,6 +416,7 @@ func TestSchema_New_generics(t *testing.T) {
 
 	t.Run("admin.IntUserGenerics", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.IntUserGenerics", false)
@@ -418,6 +435,7 @@ func TestSchema_New_generics(t *testing.T) {
 
 	t.Run("admin.Int64UserGenerics", func(t *testing.T) {
 		a := assert.New(t, false)
+		f := buildPackages(a)
 		tt := openapi.New("3")
 
 		ref, err := f.New(context.Background(), tt, pkgPath+"/admin.Int64UserGenerics", false)

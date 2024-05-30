@@ -51,34 +51,33 @@ func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q
 		return nil, nil
 	}
 
-	ref, _, err := s.fromType(t, "", typ, tag)
+	ref, _, err := s.fromType(t, "", typ, "", tag)
 	return ref, err
 }
 
 // 从类型 typ 中构建 [openapi3.SchemaRef] 类型
 //
-// name typ 的结构体名称；
-// tps 为与 typ 对应的范型参数列表；
-func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, tag string) (ref *openapi3.SchemaRef, basic bool, err error) {
+// structRef 如果 typ 是 [pkg.Struct] 类型，此值用于指定该对象最终在 openapi 中的 ref 值。
+func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, structRef string, tag string) (ref *openapi3.SchemaRef, basic bool, err error) {
 	if ref, ok := buildBasicType(typ); ok {
 		return ref, true, nil
 	}
 
 	switch tt := typ.(type) {
-	case *types.Pointer: // 指针
-		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
+	case *types.Pointer:
+		ref, _, err = s.fromType(t, "", tt.Elem(), structRef, tag)
 		if err != nil {
 			return nil, false, err
 		}
 		return openapi.NewNullableSchemaRef(ref), false, nil
 	case *types.Array:
-		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
+		ref, _, err = s.fromType(t, "", tt.Elem(), structRef, tag)
 		if err != nil {
 			return nil, false, err
 		}
 		return openapi.NewArraySchemaRef(ref), false, nil
 	case *types.Slice:
-		ref, _, err = s.fromType(t, "", tt.Elem(), tag)
+		ref, _, err = s.fromType(t, "", tt.Elem(), structRef, tag)
 		if err != nil {
 			return nil, false, err
 		}
@@ -90,6 +89,10 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 		}
 		return schemaRef, true, nil
 	case *pkg.Struct:
+		if sref := s.getStruct(structRef, tt); sref != nil {
+			return sref, false, nil
+		}
+
 		schema := openapi3.NewObjectSchema()
 		if err := s.fromStruct(schema, t, xmlName, tt, tag); err != nil {
 			return nil, false, err
@@ -114,23 +117,26 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 			schema.Title = title
 			schema.Description = desc
 			ref = openapi.NewSchemaRef(refID, schema)
-		} else { // 指向其它类型，比如 type x = y 或是 type x struct {...} 等，指向了 y 的定义
+		} else { // 指向其它类型，比如 type x = y 或是 type x struct {...} 等
 			if xmlName == "" {
 				xmlName = tt.Obj().Name()
 			}
-			ref, basic, err = s.fromType(t, xmlName, tt.Next(), tag)
+			ref, basic, err = s.fromType(t, xmlName, tt.Next(), refID, tag)
 			if err != nil {
 				return nil, false, err
 			}
-			ref = openapi.NewDocSchemaRef(ref, title, desc)
-			if !basic {
-				ref.Ref = refID
+			if openapi.RefEqual(ref.Ref, refID) && ref.Value == nil { // 从 *pkg.Struct 返回
+			} else {
+				ref = openapi.NewDocSchemaRef(ref, title, desc)
+				if !basic {
+					ref.Ref = refID
+				}
 			}
 		}
 
 		if tag == query.Tag { // 查询参数不保存至 #components/schemas
 			ref.Ref = "" // 也没有必要有 ref.Ref
-		}else{
+		} else {
 			t.AddSchema(ref)
 		}
 		return ref, ref.Ref == "", nil
@@ -142,7 +148,6 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, ta
 }
 
 // xmlName 结构体名称，同时也会被当作 XML 根元素名称（会被 XMLName 字段改写）；
-// 将 *pkg.Struct 解析为 schema 对象
 func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName string, st *pkg.Struct, tag string) error {
 	embeds := make([]*types.Var, 0, 3)
 
@@ -176,7 +181,8 @@ func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName
 			continue
 		}
 
-		fieldRef, _, err := s.fromType(t, "", field.Type(), tag)
+		// TODO structRef 不能为空
+		fieldRef, _, err := s.fromType(t, "", field.Type(), "", tag)
 		if err != nil {
 			return err
 		}
@@ -188,12 +194,12 @@ func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName
 
 	// 嵌入对象在最后执行，防止重名字段的冲突。
 	for _, field := range embeds {
-		fieldRef, _, err := s.fromType(t, "", field.Type(), tag)
+		fieldRef, _, err := s.fromType(t, "", field.Type(), "", tag)
 		if err != nil {
 			return err
 		}
 
-		if fieldRef.Value.Type.Is(openapi3.TypeObject)  {
+		if fieldRef.Value != nil && fieldRef.Value.Type.Is(openapi3.TypeObject) {
 			for k, v := range fieldRef.Value.Properties {
 				if _, found := schema.Properties[k]; found { // 防止与现有的重名
 					continue

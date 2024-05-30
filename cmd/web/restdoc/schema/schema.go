@@ -11,6 +11,7 @@ import (
 	"go/types"
 	"reflect"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -36,9 +37,33 @@ var refReplacer = strings.NewReplacer(
 // Schema 管理 Schema 的查询
 type Schema struct {
 	pkg *pkg.Packages
+
+	structs  map[string]string
+	structsM sync.Mutex
 }
 
-func New(l *logger.Logger) *Schema { return &Schema{pkg: pkg.New(l)} }
+func New(l *logger.Logger) *Schema {
+	return &Schema{
+		pkg:     pkg.New(l),
+		structs: make(map[string]string, 10),
+	}
+}
+
+// 判断 t 是否已经被申明，如果已经申明则返回其关联的 [openapi3.SchemaRef] 对象，否则返回空对象并标记该对象已声明。
+func (s *Schema) getStruct(ref string, t types.Type) *openapi3.SchemaRef {
+	s.structsM.Lock()
+	defer s.structsM.Unlock()
+
+	if id, found := s.structs[t.String()]; found {
+		return openapi.NewSchemaRef(id, nil)
+	}
+
+	if ref != "" {
+		s.structs[t.String()] = ref
+	}
+
+	return nil
+}
 
 // Packages 返回关联的 [pkg.Packages]
 func (s *Schema) Packages() *pkg.Packages { return s.pkg }

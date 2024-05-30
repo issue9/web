@@ -26,10 +26,14 @@ type (
 		} `json:"struct"` // struct comment
 
 		Birthday time.Time
+
+		G Generic[int]
 	}
 
 	Generic[T any] struct {
 		Type T
+
+		U *User
 	}
 
 	IntGeneric = Generic[int]
