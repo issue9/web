@@ -178,7 +178,6 @@ func (s *Schema) fromStruct(schema *openapi3.Schema, t *openapi.OpenAPI, xmlName
 			continue
 		}
 
-		// TODO structRef 不能为空
 		fieldRef, _, err := s.fromType(t, "", field.Type(), "", tag)
 		if err != nil {
 			return err

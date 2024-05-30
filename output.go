@@ -174,9 +174,11 @@ func (ctx *Context) SetCookies(c ...*http.Cookie) {
 //
 // etag 表示对应的 etag 报头，需要包含双绰号，但是不需要 W/ 前缀，weak 是否为弱验证。
 //
-// body 获取返回给客户端的报文主体对象，
-// 如果返回的是 []byte 类型，会原样输出，
-// 其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
+// body 获取返回给客户端的报文主体对象，其原型如下：
+//
+//	func()(body any, err error)
+//
+// 如果返回 body 的是 []byte 类型，会原样输出，其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
 	return ResponserFunc(func(ctx *Context) {
 		if ctx.Request().Method == http.MethodGet {
@@ -265,7 +267,5 @@ func Redirect(status int, url string) Responser {
 
 // KeepAlive 保持当前会话不退出
 func KeepAlive(ctx context.Context) Responser {
-	return ResponserFunc(func(*Context) {
-		<-ctx.Done()
-	})
+	return ResponserFunc(func(*Context) { <-ctx.Done() })
 }
