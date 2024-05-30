@@ -50,7 +50,7 @@ func TestOpenapi_Schema(t *testing.T) {
 	o.AddSchema(ref)
 	a.Length(o.doc.Components.Schemas, 0) // 空的 refID，添加不成功
 
-	ref = NewSchemaRef("abc", nil)
+	ref = NewSchemaRef("abc", openapi3.NewSchema())
 	o.AddSchema(ref)
 	a.Length(o.doc.Components.Schemas, 1).
 		Equal(ref.Ref, ComponentSchemaPrefix+"abc")
@@ -63,15 +63,13 @@ func TestOpenapi_Schema(t *testing.T) {
 		Equal(v1, v2). // v1,v2 指向同一个对象
 		Equal(v1.Ref, ComponentSchemaPrefix+"abc")
 
-	// 同名，但都是 nil
+	// 同名
 	a.NotPanic(func() {
-		ref = NewSchemaRef(ComponentSchemaPrefix+"abc", nil)
-		o.AddSchema(ref)
+		o.AddSchema(NewSchemaRef(ComponentSchemaPrefix+"abc", openapi3.NewSchema()))
 	})
 
 	a.PanicString(func() {
-		ref = NewSchemaRef(ComponentSchemaPrefix+"abc", &openapi3.Schema{})
-		o.AddSchema(ref)
+		o.AddSchema(NewSchemaRef(ComponentSchemaPrefix+"abc", openapi3.NewBoolSchema()))
 	}, "添加同名的对象 abc")
 }
 

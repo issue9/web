@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/web"
 	"gopkg.in/yaml.v3"
 )
 
@@ -53,7 +52,7 @@ func (doc *OpenAPI) SaveAs(path string) error {
 	case ".json":
 		m = func(v any) ([]byte, error) { return json.MarshalIndent(v, "", "\t") }
 	default:
-		return web.NewLocaleError("only support yaml and json")
+		panic("仅支持 YAML 或 JSON 格式") // 这应该是代码级别的错误了，直接 panic。
 	}
 
 	data, err := m(doc.Doc())

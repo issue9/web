@@ -195,9 +195,6 @@ messages:
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
-    - key: only support yaml and json
-      message:
-        msg: 仅支持 YAML 和 JSON
     - key: out dir
       message:
         msg: 输出目录

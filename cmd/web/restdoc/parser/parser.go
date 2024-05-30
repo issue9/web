@@ -145,9 +145,9 @@ func (p *Parser) Parse(ctx context.Context) *openapi.OpenAPI {
 	}
 	wg.Wait()
 
+	// 验证数据，只提示错误信息，并不会返回空对象。
 	if err := t.Doc().Validate(ctx); err != nil {
 		p.l.Error(err, "", 0)
-		return nil
 	}
 
 	return t

@@ -172,9 +172,6 @@ messages:
     - key: not show ignore message
       message:
         msg: not show ignore message
-    - key: only support yaml and json
-      message:
-        msg: only support yaml and json
     - key: out dir
       message:
         msg: out dir

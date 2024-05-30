@@ -24,8 +24,8 @@ import (
 //
 // typePath 表示需要查找的类型名，一般格式为 [path.]name，path 为包的路径，name 为类型名。
 // 如果是内置类型可省略 path 部分。
-// 如果 typePath 以 #components/schemas 开头，则从 t.Components.Schemas 下查找。
-// q 是否用于查询参数，如果是查询参数，那么字段名的获取将采用 json。
+// 如果 typePath 以 #components/schemas 开头，则从 [openapi3.T.Components.Schemas] 下查找。
+// q 是否用于查询参数，如果是查询参数，那么字段名的获取将采用 json 且不会保存整个对象至 [openapi3.T.Components.Schemas] 之下。
 //
 // 可能返回的错误值为 [Error]
 func (s *Schema) New(ctx context.Context, t *openapi.OpenAPI, typePath string, q bool) (*openapi3.SchemaRef, error) {
@@ -125,12 +125,9 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, st
 			if err != nil {
 				return nil, false, err
 			}
-			if openapi.RefEqual(ref.Ref, refID) && ref.Value == nil { // 从 *pkg.Struct 返回
-			} else {
+			if !basic && (!openapi.RefEqual(ref.Ref, refID) || ref.Value != nil) { // 不是从 *pkg.Struct 获得的数据
 				ref = openapi.NewDocSchemaRef(ref, title, desc)
-				if !basic {
-					ref.Ref = refID
-				}
+				ref.Ref = refID
 			}
 		}
 

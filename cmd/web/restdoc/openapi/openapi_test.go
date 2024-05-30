@@ -32,7 +32,7 @@ func TestOpenAPI_SaveAs(t *testing.T) {
 
 	a.NotError(doc.SaveAs("./openapi.out.yaml")).
 		NotError(doc.SaveAs("./openapi.out.json")).
-		ErrorString(doc.SaveAs("./openapi.out.xml"), "only support yaml and json")
+		PanicString(func() { doc.SaveAs("./openapi.out.xml") }, "仅支持 YAML 或 JSON 格式")
 }
 
 func TestOpenAPI_Merge(t *testing.T) {
