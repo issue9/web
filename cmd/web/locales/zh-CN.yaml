@@ -250,7 +250,7 @@ messages:
               @tag tag1 tag2 该接口要关联的标签，多个标签用空格分隔；
               @header key desc 指定请求报头；
               @cookie key desc 指定了 cookie；
-              @path key type desc 指定了路径中的参数，key 为参数名，type 为参数类型，只能是基本类型；
+              @path key type desc 指定了路径中的参数，key 为参数名，type 为参数类型，只能是基本类型，相同路径下的不同请求方法可以只定义一次；
               @query object.path desc 查询参数，object.path 表示指向查询参数的定义，可参考 schema 节的说明；
               @req media object.path desc 定义请求格式，media 如果采用全局指定的默认值，可以用 *，如果是多个值，用逗号分隔；
               @resp status media object.path desc 指定返回的数据类型；

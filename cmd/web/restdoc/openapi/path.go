@@ -36,18 +36,18 @@ func (doc *OpenAPI) addAPI(path, method string, o *openapi3.Operation) {
 
 	doc.doc.AddOperation(path, method, o)
 
-	if index := slices.IndexFunc(o.Parameters, isPathParams); index < 0 {
+	if index := slices.IndexFunc(o.Parameters, isPathParams); index < 0 { // 没有参数
 		return
 	}
 
-	p := doc.doc.Paths.Find(path)
-	if index := slices.IndexFunc(p.Parameters, isPathParams); index >= 0 {
+	pathItem := doc.doc.Paths.Find(path)
+	if index := slices.IndexFunc(pathItem.Parameters, isPathParams); index >= 0 { // 已由其它 Operation 添加了参数
 		return
 	}
 
 	for _, param := range o.Parameters {
 		if param.Value.In == openapi3.ParameterInPath {
-			p.Parameters = append(p.Parameters, param)
+			pathItem.Parameters = append(pathItem.Parameters, param)
 		}
 	}
 	o.Parameters = slices.DeleteFunc(o.Parameters, isPathParams)
