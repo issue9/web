@@ -5,19 +5,12 @@
 package openapi
 
 import (
-	"net/http"
 	"slices"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/issue9/mux/v9"
 )
-
-const anyKey = "ANY"
-
-var anyMethods = []string{
-	http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPost, http.MethodPatch,
-	http.MethodTrace, http.MethodDelete, http.MethodConnect, http.MethodOptions,
-}
 
 // AddAPI 添加一个 API
 //
@@ -26,8 +19,8 @@ func (doc *OpenAPI) AddAPI(path string, o *openapi3.Operation, method string) {
 	method = strings.ToUpper(method)
 
 	var methods []string
-	if method == anyKey {
-		methods = anyMethods
+	if method == "ANY" {
+		methods = mux.AnyMethods()
 	} else {
 		methods = strings.Split(method, ",")
 	}

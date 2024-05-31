@@ -46,5 +46,5 @@ func TestOpenAPI_AddAPI(t *testing.T) {
 	a.NotNil(p.Put).
 		NotNil(p.Patch).
 		NotNil(p.Delete).
-		NotNil(p.Options)
+		Nil(p.Options) // ANY 不支持此方法
 }

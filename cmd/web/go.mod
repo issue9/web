@@ -9,7 +9,7 @@ require (
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.26.9
 	github.com/issue9/logs/v7 v7.6.1
-	github.com/issue9/mux/v9 v9.0.0-beta.1
+	github.com/issue9/mux/v9 v9.0.0-beta.2
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/sliceutil v0.16.1
 	github.com/issue9/source v0.11.3
