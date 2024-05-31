@@ -47,10 +47,10 @@ type (
 
 		tlsConfig *tls.Config
 
-		ReadTimeout       duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
-		WriteTimeout      duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
-		IdleTimeout       duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
-		ReadHeaderTimeout duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
+		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
+		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
+		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
+		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
 		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
 
 		// Recovery 拦截 panic 时反馈给客户端的状态码
@@ -90,8 +90,10 @@ type (
 		httpServer *http.Server
 	}
 
-	// 表示时间段，等同于 [time.Duration]
-	duration time.Duration // 封装 [time.Duration] 以实现对 JSON、XML 和 YAML 的解析
+	// Duration 表示时间段
+	//
+	// 封装 [time.Duration] 以实现对 JSON、XML 和 YAML 的解析
+	Duration time.Duration
 
 	headerConfig struct {
 		// 报头名称
@@ -168,7 +170,7 @@ var (
 		return err == nil || errors.Is(err, fs.ErrExist)
 	}, locales.NotFound)
 
-	durShouldGreatThan0 = filter.V(func(v duration) bool { return v >= 0 }, locales.ShouldGreatThan(0))
+	durShouldGreatThan0 = filter.V(func(v Duration) bool { return v >= 0 }, locales.ShouldGreatThan(0))
 )
 
 func (cert *certificateConfig) sanitize() *web.FieldError {
@@ -311,14 +313,15 @@ func (l *acmeConfig) sanitize() *web.FieldError {
 	)
 }
 
-func (d duration) Duration() time.Duration { return time.Duration(d) }
+// Duration 转换为标准库的 [time.Duration]
+func (d Duration) Duration() time.Duration { return time.Duration(d) }
 
-func (d duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d).String()), nil }
+func (d Duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d).String()), nil }
 
-func (d *duration) UnmarshalText(b []byte) error {
+func (d *Duration) UnmarshalText(b []byte) error {
 	v, err := time.ParseDuration(string(b))
 	if err == nil {
-		*d = duration(v)
+		*d = Duration(v)
 	}
 	return err
 }
