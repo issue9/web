@@ -72,7 +72,7 @@ func TestPackages_TypeOf(t *testing.T) {
 	p := New(l.Logger)
 	p.ScanDir(context.Background(), "./testdir", true)
 
-	eq := func(a *assert.Assertion, path string, docs ...string) {
+	eq := func(a *assert.Assertion, path string, docs ...string) *Struct {
 		a.TB().Helper()
 		typ, err := p.TypeOf(context.Background(), path)
 		a.NotError(err).NotNil(typ)
@@ -93,10 +93,13 @@ func TestPackages_TypeOf(t *testing.T) {
 			Equal(st.Field(1).Name(), "F1").
 			Equal(st.FieldDoc(3).Text(), "F2 Doc\n").
 			Equal(st.Field(3).Name(), "F2")
+
+		return st
 	}
 
 	t.Run("pkg.S", func(_ *testing.T) {
-		eq(a, "github.com/issue9/web/restdoc/pkg.S", "S Doc\n")
+		s := eq(a, "github.com/issue9/web/restdoc/pkg.S", "S Doc\n")
+		a.Equal(s.NumFields(), 5)
 	})
 
 	t.Run("pkg.S2", func(_ *testing.T) {
@@ -281,7 +284,11 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 		eqG(a, "github.com/issue9/web/restdoc/pkg.GInt", "", "G Doc\n")
 	})
 
-	eqGS := func(a *assert.Assertion, path string, docs ...string) {
+	l = loggertest.New(a)
+	p = New(l.Logger)
+	p.ScanDir(context.Background(), "./testdir", true)
+
+	eqGS := func(a *assert.Assertion, path string, docs ...string) *Struct {
 		a.TB().Helper()
 		typ, err := p.TypeOf(context.Background(), path)
 		a.NotError(err).NotNil(typ)
@@ -301,14 +308,18 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 			Equal(st.Field(2).Name(), "F4").
 			Equal(st.FieldDoc(3).Text(), "引用类型的字段\n").
 			Equal(st.Field(3).Name(), "F5")
+
+		return st
 	}
 
 	t.Run("pkg.GSNumber", func(_ *testing.T) {
-		eqGS(a, "github.com/issue9/web/restdoc/pkg.GSNumber", "GSNumber Doc\n", "GS Doc\n")
+		s := eqGS(a, "github.com/issue9/web/restdoc/pkg.GSNumber", "GSNumber Doc\n", "GS Doc\n")
+		a.Equal(s.NumFields(), 6)
 	})
 
 	t.Run("pkg/testdir2.GSNumber", func(_ *testing.T) {
-		eqGS(a, "github.com/issue9/web/restdoc/pkg/testdir2.GSNumber", "", "GS Doc\n")
+		s := eqGS(a, "github.com/issue9/web/restdoc/pkg/testdir2.GSNumber", "", "GS Doc\n")
+		a.Equal(s.NumFields(), 5)
 	})
 }
 

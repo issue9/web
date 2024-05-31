@@ -35,7 +35,11 @@ type Packages struct {
 
 	// 结构体可能存在相互引用的情况，保存每个结构体的数据，键名为 [Struct.String]。
 	structs  map[string]*Struct
-	structsM sync.RWMutex
+	structsM sync.Mutex
+
+	// Packages.TypeOf 会中途加载包文件，比较耗时，
+	// 防止 Packages.TypeOf 在执行到一半时又调用此方法加载相同的类型。
+	typeOfM sync.Mutex
 }
 
 // 根据 st 生成一个空的 [Struct] 或是在已经存在的情况下返回该实例
@@ -46,10 +50,10 @@ func (pkgs *Packages) getStruct(st *ast.StructType, tps *types.TypeParamList, tl
 		id = id + "[" + ss + "]"
 	}
 
-	pkgs.structsM.RLock()
-	s = pkgs.structs[id]
-	pkgs.structsM.RUnlock()
-	if s != nil {
+	pkgs.structsM.Lock()
+	defer pkgs.structsM.Unlock()
+
+	if s, f := pkgs.structs[id]; f {
 		return s, false
 	}
 
@@ -60,10 +64,7 @@ func (pkgs *Packages) getStruct(st *ast.StructType, tps *types.TypeParamList, tl
 		docs:   make([]*ast.CommentGroup, 0, size),
 		tags:   make([]string, 0, size),
 	}
-
-	pkgs.structsM.Lock()
 	pkgs.structs[id] = s
-	pkgs.structsM.Unlock()
 
 	return s, true
 }

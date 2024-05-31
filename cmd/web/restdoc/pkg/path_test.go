@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+
 	"github.com/issue9/web/cmd/web/restdoc/logger/loggertest"
 )
 

@@ -45,7 +45,7 @@ func (pkgs *Packages) splitFieldTypes(ctx context.Context, path string) (p strin
 			panic(fmt.Sprintf("无效的语法 %s", path))
 		}
 
-		t, err := pkgs.TypeOf(ctx, ps[1])
+		t, err := pkgs.typeOf(ctx, ps[1])
 		if err != nil {
 			return err
 		}
@@ -148,7 +148,7 @@ func (pkgs *Packages) splitTypeParams(ctx context.Context, path string) (p strin
 	if len(tps) > 0 {
 		ts := make([]types.Type, 0, len(tps))
 		for _, p := range tps {
-			t, err := pkgs.TypeOf(ctx, p)
+			t, err := pkgs.typeOf(ctx, p)
 			if err != nil {
 				return "", nil, err
 			}

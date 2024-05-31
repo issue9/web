@@ -38,14 +38,14 @@ var refReplacer = strings.NewReplacer(
 type Schema struct {
 	pkg *pkg.Packages
 
-	structs  map[string]string
+	structs  map[string]*openapi3.SchemaRef
 	structsM sync.Mutex
 }
 
 func New(l *logger.Logger) *Schema {
 	return &Schema{
 		pkg:     pkg.New(l),
-		structs: make(map[string]string, 10),
+		structs: make(map[string]*openapi3.SchemaRef, 10),
 	}
 }
 
@@ -54,12 +54,12 @@ func (s *Schema) getStruct(ref string, t types.Type) *openapi3.SchemaRef {
 	s.structsM.Lock()
 	defer s.structsM.Unlock()
 
-	if id, found := s.structs[t.String()]; found {
-		return openapi.NewSchemaRef(id, nil)
+	if r, found := s.structs[t.String()]; found {
+		return r
 	}
 
 	if ref != "" {
-		s.structs[t.String()] = ref
+		s.structs[t.String()] = openapi.NewSchemaRef(ref, nil)
 	}
 
 	return nil

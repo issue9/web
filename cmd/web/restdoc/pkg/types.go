@@ -200,6 +200,12 @@ func getTypeParamsList(tpl *types.TypeParamList, tl typeList) string {
 //   - {} 表示空值，将返回 nil, true
 //   - map 或是 any 将返回 [types.InterfaceType]
 func (pkgs *Packages) TypeOf(ctx context.Context, path string) (types.Type, error) {
+	pkgs.typeOfM.Lock()
+	defer pkgs.typeOfM.Unlock()
+	return pkgs.typeOf(ctx, path)
+}
+
+func (pkgs *Packages) typeOf(ctx context.Context, path string) (types.Type, error) {
 	path, fieldTypes, err := pkgs.splitFieldTypes(ctx, path)
 	if err != nil {
 		return nil, err
