@@ -57,9 +57,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					dest = &message.Language{}
 				} else if err != nil {
 					return err
-				}
-
-				if stat.IsDir() {
+				} else if stat.IsDir() {
 					return web.NewLocaleError("the dest file %s is dir", d)
 				}
 
