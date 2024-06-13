@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 //go:generate web locale -l=und -m -f=yaml ./
-//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh-CN.yaml
+//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/cmn-Hans.yaml
 //go:generate go run ./make_problems.go
 
 // Package web 通用的 web 开发框架
@@ -24,7 +24,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.96.3"
+const Version = "0.97.0"
 
 type (
 	Logger   = logs.Logger

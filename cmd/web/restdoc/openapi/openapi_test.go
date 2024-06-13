@@ -29,6 +29,7 @@ func TestOpenAPI_SaveAs(t *testing.T) {
 	o := openapi3.NewOperation()
 	o.Responses = openapi3.NewResponses()
 	doc.AddAPI("/pet", o, http.MethodGet)
+	doc.Doc().Info = &openapi3.Info{}
 
 	a.NotError(doc.SaveAs("./openapi.out.yaml")).
 		NotError(doc.SaveAs("./openapi.out.json")).

@@ -15,7 +15,6 @@ import (
 	"github.com/issue9/localeutil/message/serialize"
 	web "github.com/issue9/web/locales"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 )
@@ -46,5 +45,6 @@ func NewPrinter(lang string) (*localeutil.Printer, error) {
 		}
 	}
 
-	return message.NewPrinter(tag, message.Catalog(b)), nil
+	return localeutil.NewPrinter(b, tag), nil
+	//return message.NewPrinter(tag, message.Catalog(b)), nil
 }
