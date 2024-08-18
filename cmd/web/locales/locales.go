@@ -46,5 +46,4 @@ func NewPrinter(lang string) (*localeutil.Printer, error) {
 	}
 
 	return localeutil.NewPrinter(b, tag), nil
-	//return message.NewPrinter(tag, message.Catalog(b)), nil
 }
