@@ -15,7 +15,7 @@ require (
 	github.com/issue9/source v0.11.4
 	github.com/issue9/term/v3 v3.3.0
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.96.3
+	github.com/issue9/web v0.96.4
 	golang.org/x/mod v0.20.0
 	golang.org/x/text v0.17.0
 	golang.org/x/tools v0.24.0
@@ -35,7 +35,7 @@ require (
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
 	github.com/issue9/scheduled v0.21.1 // indirect
-	github.com/jellydator/ttlcache/v3 v3.2.0 // indirect
+	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

@@ -19,7 +19,7 @@ require (
 	github.com/issue9/source v0.11.4
 	github.com/issue9/term/v3 v3.3.0
 	github.com/issue9/unique/v2 v2.1.0
-	github.com/jellydator/ttlcache/v3 v3.2.0
+	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/klauspost/compress v1.17.9
 	golang.org/x/crypto v0.26.0
 	golang.org/x/text v0.17.0
