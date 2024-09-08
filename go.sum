@@ -14,8 +14,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/fxamacker/cbor/v2 v2.7.0 h1:iM5WgngdRBanHcxugY4JySA0nk1wZorNOpTgCMedv5E=
 github.com/fxamacker/cbor/v2 v2.7.0/go.mod h1:pxXPTn3joSm21Gbwsv0w9OSA2y1HFR9qXEeXQVeNoDQ=
-github.com/issue9/assert/v4 v4.3.0 h1:W3XDKmttsfzihYGxJ9rJoL2ViJgWERB9IxfHcxjv65U=
-github.com/issue9/assert/v4 v4.3.0/go.mod h1:v7qDRXi7AsaZZNh8eAK2rkLJg5/clztqQGA1DRv9Lv4=
+github.com/issue9/assert/v4 v4.3.1 h1:dHYODk1yV7j/1baIB6K6UggI4r1Hfuljqic7PaDbwLg=
+github.com/issue9/assert/v4 v4.3.1/go.mod h1:v7qDRXi7AsaZZNh8eAK2rkLJg5/clztqQGA1DRv9Lv4=
 github.com/issue9/cache v0.17.2 h1:LXauNzKKPlHgjRAMerNRmhbY0RA0YMf3GjExwAS7rdM=
 github.com/issue9/cache v0.17.2/go.mod h1:1mmzvaHSL+gSqLVieLy1/o0QQmx8rdNQGBHANUup7KQ=
 github.com/issue9/config v0.7.2 h1:lqYAkO+RyzCvGPZd3y3V/X6XlT6yhXtbmPWv0o2duBE=
@@ -34,8 +34,8 @@ github.com/issue9/query/v3 v3.1.3 h1:Y6ETEYXxaKqhpM4lXPKCffhJ72VuKQbrAwgwHlacu0Y
 github.com/issue9/query/v3 v3.1.3/go.mod h1:a/W/+7iel9K+5rRT4AFAKR8+OJeV5axeF6tK9My4lNA=
 github.com/issue9/rands/v3 v3.0.1 h1:EnX9WNushGgHCzoL/R5eBPaLfvjLO/c7CGHNgLK0JhY=
 github.com/issue9/rands/v3 v3.0.1/go.mod h1:n4mM2ts7NCpuxHwS9zorPITJBWEUGksXg6cTOH6yqS0=
-github.com/issue9/scheduled v0.21.1 h1:3nwy95nubBorKoXmJHb7ySsQy2MYQ627hiYqy+q1vTw=
-github.com/issue9/scheduled v0.21.1/go.mod h1:5NDYPb9bCWdeMWq71D8GtuWy9Ty8oe0r674BWIZBoe8=
+github.com/issue9/scheduled v0.21.2 h1:7/VpKJbhyz9etFgQ0YRHWGbW6XtkNww6kCWe1XddxYg=
+github.com/issue9/scheduled v0.21.2/go.mod h1:xH6fk3KutZQBIaOc1FWCLac/n3xSuSQQF+PzTKgE+lg=
 github.com/issue9/sliceutil v0.16.1 h1:NVZ2feN014oUmMpZvZUrKkKMGhAfzT8WNzJF81krebM=
 github.com/issue9/sliceutil v0.16.1/go.mod h1:ldun6sT4/bOJxuMtOXhtc6P7GCwE7L+avV86HNks7qk=
 github.com/issue9/source v0.11.5 h1:eJm9PnJoitJWlbxHI6WqpScBq81X+V9KYZUvBonkl8U=

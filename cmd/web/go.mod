@@ -3,9 +3,9 @@ module github.com/issue9/web/cmd/web
 go 1.22.0
 
 require (
-	github.com/caixw/gobuild v1.8.1
+	github.com/caixw/gobuild v1.8.3
 	github.com/getkin/kin-openapi v0.127.0
-	github.com/issue9/assert/v4 v4.3.0
+	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.27.2
 	github.com/issue9/logs/v7 v7.6.3
@@ -34,7 +34,7 @@ require (
 	github.com/issue9/config v0.7.2 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
-	github.com/issue9/scheduled v0.21.1 // indirect
+	github.com/issue9/scheduled v0.21.2 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
