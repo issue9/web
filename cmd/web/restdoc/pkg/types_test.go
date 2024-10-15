@@ -31,19 +31,19 @@ func TestPackages_TypeOf_basic_type(t *testing.T) {
 
 	typ, err = p.TypeOf(context.Background(), "github.com/issue9/web/restdoc/pkg.Int")
 	a.NotError(err)
-	named, ok := typ.(*Named)
-	a.True(ok, "%T", typ).Equal(named.Doc().Text(), "INT\n").
-		Equal(named.Next(), types.Typ[types.Int])
+	alias, ok := typ.(*Alias)
+	a.True(ok, "%T", typ).Equal(alias.Doc().Text(), "INT\n").
+		Equal(alias.Rhs(), types.Typ[types.Int])
 
 	typ, err = p.TypeOf(context.Background(), "github.com/issue9/web/restdoc/pkg.X")
 	a.NotError(err)
-	named, ok = typ.(*Named) // x = unit32
-	a.True(ok).Equal(named.Doc().Text(), "X\n")
-	typ = named.Next()
+	alias, ok = typ.(*Alias) // x = unit32
+	a.True(ok).Equal(alias.Doc().Text(), "X\n")
+	typ = alias.Rhs()
 	a.NotNil(typ)
-	named, ok = typ.(*Named) // uint32 = int8
-	a.True(ok, "%T", typ).Equal(named.Doc().Text(), "").
-		Equal(named.Next(), types.Typ[types.Uint8])
+	alias, ok = typ.(*Alias) // uint32 = int8
+	a.True(ok, "%T", typ).Equal(alias.Doc().Text(), "").
+		Equal(alias.Rhs(), types.Typ[types.Uint8])
 
 	pkgPath := "github.com/issue9/web/restdoc.NotExists"
 	typ, err = p.TypeOf(context.Background(), pkgPath)
@@ -78,9 +78,9 @@ func TestPackages_TypeOf(t *testing.T) {
 		a.NotError(err).NotNil(typ)
 
 		for _, doc := range docs {
-			named, ok := typ.(*Named)
-			a.True(ok, "not Named:%T:%+v", typ, typ).Equal(named.Doc().Text(), doc)
-			typ = named.Next()
+			alias, ok := typ.(*Alias)
+			a.True(ok, "not Alias:%T:%+v", typ, typ).Equal(alias.Doc().Text(), doc)
+			typ = alias.Rhs()
 		}
 
 		st, ok := typ.(*Struct)
@@ -141,31 +141,31 @@ func TestPackages_TypeOf_slice(t *testing.T) {
 		a.TB().Helper()
 		typ, err := p.TypeOf(context.Background(), path)
 		a.NotError(err).NotNil(typ)
-		named, ok := typ.(*Named)
-		a.True(ok, "named error:%T", typ).NotNil(named).Equal(named.Doc().Text(), docs[0])
+		alias, ok := typ.(*Alias)
+		a.True(ok, "alias error:%T", typ).NotNil(alias).Equal(alias.Doc().Text(), docs[0])
 
 		if arr {
-			typ = named.Next()
+			typ = alias.Rhs()
 			array, ok := typ.(*types.Array)
 			a.True(ok, "array error:%T", typ).NotNil(array)
 
-			named, ok = array.Elem().(*Named)
-			a.True(ok, "array elem error:%T", array.Elem).Equal(named.Doc().Text(), docs[1])
-			typ = named.Next()
+			alias, ok = array.Elem().(*Alias)
+			a.True(ok, "array elem error:%T", array.Elem).Equal(alias.Doc().Text(), docs[1])
+			typ = alias.Rhs()
 		} else {
-			typ = named.Next()
+			typ = alias.Rhs()
 			slice, ok := typ.(*types.Slice)
 			a.True(ok, "slice error:%T", typ).NotNil(slice)
 
-			named, ok = slice.Elem().(*Named)
-			a.True(ok, "slice elem error:%T", slice.Elem).Equal(named.Doc().Text(), docs[1])
-			typ = named.Next()
+			alias, ok = slice.Elem().(*Alias)
+			a.True(ok, "slice elem error:%T", slice.Elem).Equal(alias.Doc().Text(), docs[1])
+			typ = alias.Rhs()
 		}
 
 		for index, doc := range docs[2:] {
-			named, ok := typ.(*Named)
-			a.True(ok, "named error at %d: %T", index, typ).Equal(named.Doc().Text(), doc)
-			typ = named.Next()
+			alias, ok := typ.(*Alias)
+			a.True(ok, "alias error at %d: %T", index, typ).Equal(alias.Doc().Text(), doc)
+			typ = alias.Rhs()
 		}
 
 		st, ok := typ.(*Struct)
@@ -205,21 +205,21 @@ func TestPackages_TypeOf_pointer(t *testing.T) {
 		typ, err := p.TypeOf(context.Background(), path)
 		a.NotError(err).NotNil(typ)
 
-		named, ok := typ.(*Named)
-		a.True(ok, "named error:%T", typ).NotNil(named).Equal(named.Doc().Text(), docs[0])
+		alias, ok := typ.(*Alias)
+		a.True(ok, "alias error:%T", typ).NotNil(alias).Equal(alias.Doc().Text(), docs[0])
 
-		typ = named.Next()
+		typ = alias.Rhs()
 		pointer, ok := typ.(*types.Pointer)
 		a.True(ok, "pointer error:%T", typ).NotNil(pointer)
 
-		named, ok = pointer.Elem().(*Named)
-		a.True(ok, "elem named error:%T", pointer.Elem).Equal(named.Doc().Text(), docs[1])
-		typ = named.Next()
+		alias, ok = pointer.Elem().(*Alias)
+		a.True(ok, "elem alias error:%T", pointer.Elem).Equal(alias.Doc().Text(), docs[1])
+		typ = alias.Rhs()
 
 		for index, doc := range docs[2:] {
-			named, ok := typ.(*Named)
-			a.True(ok, "named error at %d: %T", index, typ).Equal(named.Doc().Text(), doc)
-			typ = named.Next()
+			alias, ok := typ.(*Alias)
+			a.True(ok, "alias error at %d: %T", index, typ).Equal(alias.Doc().Text(), doc)
+			typ = alias.Rhs()
 		}
 
 		st, ok := typ.(*Struct)
@@ -256,9 +256,9 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 		a.NotError(err).NotNil(typ)
 
 		for _, doc := range docs {
-			named, ok := typ.(*Named)
-			a.True(ok).Equal(named.Doc().Text(), doc).NotEmpty(named.ID())
-			typ = named.Next()
+			alias, ok := typ.(*Alias)
+			a.True(ok).Equal(alias.Doc().Text(), doc).NotEmpty(alias.ID())
+			typ = alias.Rhs()
 		}
 
 		st, ok := typ.(*Struct)
@@ -294,9 +294,9 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 		a.NotError(err).NotNil(typ)
 
 		for _, doc := range docs {
-			named, ok := typ.(*Named)
-			a.True(ok).Equal(named.Doc().Text(), doc).NotEmpty(named.ID())
-			typ = named.Next()
+			alias, ok := typ.(*Alias)
+			a.True(ok).Equal(alias.Doc().Text(), doc).NotEmpty(alias.ID())
+			typ = alias.Rhs()
 		}
 
 		st, ok := typ.(*Struct)
@@ -323,7 +323,7 @@ func TestPackages_TypeOf_generic(t *testing.T) {
 	})
 }
 
-func TestNamed_ID(t *testing.T) {
+func TestAlias_ID(t *testing.T) {
 	a := assert.New(t, false)
 	l := loggertest.New(a)
 	p := New(l.Logger)
@@ -332,43 +332,43 @@ func TestNamed_ID(t *testing.T) {
 	path := "github.com/issue9/web/restdoc/pkg.G[int]"
 	typ, err := p.TypeOf(context.Background(), path)
 	a.NotError(err).NotNil(typ)
-	named, ok := typ.(*Named)
-	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.G[int]")
+	alias, ok := typ.(*Alias)
+	a.True(ok).NotNil(alias).Equal(alias.ID(), "github.com/issue9/web/restdoc/pkg.G[int]")
 
 	path = "github.com/issue9/web/restdoc/pkg.GInt"
 	typ, err = p.TypeOf(context.Background(), path)
 	a.NotError(err).NotNil(typ)
-	named, ok = typ.(*Named)
-	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GInt")
+	alias, ok = typ.(*Alias)
+	a.True(ok).NotNil(alias).Equal(alias.ID(), "github.com/issue9/web/restdoc/pkg.GInt")
 
 	path = "github.com/issue9/web/restdoc/pkg.GSNumber"
 	typ, err = p.TypeOf(context.Background(), path)
 	a.NotError(err).NotNil(typ)
-	named, ok = typ.(*Named)
-	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GSNumber")
+	alias, ok = typ.(*Alias)
+	a.True(ok).NotNil(alias).Equal(alias.ID(), "github.com/issue9/web/restdoc/pkg.GSNumber")
 
 	// pkg.GS[...]
 
 	path = "github.com/issue9/web/restdoc/pkg.GS[int,Int,github.com/issue9/web/restdoc/pkg.Int]"
 	typ, err = p.TypeOf(context.Background(), path)
 	a.NotError(err).NotNil(typ)
-	named, ok = typ.(*Named)
-	a.True(ok).NotNil(named).Equal(named.ID(), "github.com/issue9/web/restdoc/pkg.GS[int,Int,github.com/issue9/web/restdoc/pkg.Int]")
+	alias, ok = typ.(*Alias)
+	a.True(ok).NotNil(alias).Equal(alias.ID(), "github.com/issue9/web/restdoc/pkg.GS[int,Int,github.com/issue9/web/restdoc/pkg.Int]")
 
-	s, ok := named.Next().(*Struct)
+	s, ok := alias.Rhs().(*Struct)
 	a.True(ok).NotNil(s)
 
 	// 字段类型的 ID 是否正确
-	f1, ok := s.Field(2).Type().(*Named)
+	f1, ok := s.Field(2).Type().(*Alias)
 	a.True(ok, "%T", s.Field(2).Type()).NotNil(f1).Equal(f1.ID(), "github.com/issue9/web/restdoc/pkg.Int")
 
 	// 嵌套泛型的 ID 是否正确
-	f0, ok := s.Field(0).Type().(*Named)
+	f0, ok := s.Field(0).Type().(*Alias)
 	a.True(ok, "%T", s.Field(0).Type()).NotNil(f0).Equal(f0.ID(), "github.com/issue9/web/restdoc/pkg.G[github.com/issue9/web/restdoc/pkg.Int]")
 
 	// 嵌套泛型的的嵌套泛型
-	s, ok = f0.Next().(*Struct)
+	s, ok = f0.Rhs().(*Struct)
 	a.True(ok).NotNil(s)
-	f00, ok := s.Field(0).Type().(*Named)
+	f00, ok := s.Field(0).Type().(*Alias)
 	a.True(ok, "%T", s.Field(0).Type()).NotNil(f00).Equal(f00.ID(), "github.com/issue9/web/restdoc/pkg.Int")
 }

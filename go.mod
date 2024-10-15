@@ -1,9 +1,9 @@
 module github.com/issue9/web
 
-go 1.22.0
+go 1.23.0
 
 require (
-	github.com/andybalholm/brotli v1.1.0
+	github.com/andybalholm/brotli v1.1.1
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.17.2
@@ -20,9 +20,9 @@ require (
 	github.com/issue9/term/v3 v3.3.1
 	github.com/issue9/unique/v2 v2.1.0
 	github.com/jellydator/ttlcache/v3 v3.3.0
-	github.com/klauspost/compress v1.17.9
-	golang.org/x/crypto v0.27.0
-	golang.org/x/text v0.18.0
+	github.com/klauspost/compress v1.17.11
+	golang.org/x/crypto v0.28.0
+	golang.org/x/text v0.19.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	gopkg.in/yaml.v3 v3.0.1
 )

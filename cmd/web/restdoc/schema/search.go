@@ -98,7 +98,7 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, st
 			return nil, false, err
 		}
 		return openapi.NewSchemaRef("", schema), false, nil
-	case *pkg.Named:
+	case *pkg.Alias:
 		refID := refReplacer.Replace(tt.ID())
 		if schemaRef, found := t.GetSchema(refID); found { // 查找是否已经存在于 components/schemes
 			return schemaRef, false, nil // basic 不会存在于 components/schemas
@@ -121,13 +121,15 @@ func (s *Schema) fromType(t *openapi.OpenAPI, xmlName string, typ types.Type, st
 			if xmlName == "" {
 				xmlName = tt.Obj().Name()
 			}
-			ref, basic, err = s.fromType(t, xmlName, tt.Next(), refID, tag)
+			ref, basic, err = s.fromType(t, xmlName, tt.Rhs(), refID, tag)
 			if err != nil {
 				return nil, false, err
 			}
-			if !basic && (!openapi.RefEqual(ref.Ref, refID) || ref.Value != nil) { // 不是从 *pkg.Struct 获得的数据
+			if !basic && ref.Value != nil { // 不是从 *pkg.Struct 获得的数据
 				ref = openapi.NewDocSchemaRef(ref, title, desc)
-				ref.Ref = refID
+				if ref.Ref == "" {
+					ref.Ref = refID
+				}
 			}
 		}
 

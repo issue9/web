@@ -24,13 +24,12 @@ type (
 		tags   []string
 	}
 
-	// Named 这是对 [types.Named] 的二次包装
-	Named struct {
-		*types.Named
-		next types.Type
-		doc  *ast.CommentGroup
-		id   string
-		tl   typeList
+	// Alias 这是对 [types.Alias] 和 [types.Named] 的二次包装
+	Alias struct {
+		*types.Alias
+		doc *ast.CommentGroup
+		id  string
+		tl  typeList
 	}
 
 	// [types.TypeList] 并未提供构造方法，用于代替该对象的实例使用。
@@ -41,13 +40,13 @@ type (
 
 	// NotFound 表示该类型不存在时返回此类型
 	//
-	// 一般情况下是引用了未导入的类型，比如：type T = web.State
+	// 一般情况下是引用了未导入的类型，比如：`type T = web.State`
 	// 如果 web 包未被导入，那么 web.State 将会变成 NotFound 类型。
 	NotFound string
 
 	// NotImplement 一些未实现的类型
 	//
-	// 比如 interface{} 作为字段类型时，将返回该对象。
+	// 比如 any 作为字段类型时，将返回该对象。
 	NotImplement string
 
 	defaultTypeList []types.Type
@@ -67,15 +66,12 @@ func (s *Struct) Field(i int) *types.Var { return s.fields[i] }
 func (s *Struct) FieldDoc(i int) *ast.CommentGroup { return s.docs[i] }
 
 // Doc 关联的文档内容
-func (n *Named) Doc() *ast.CommentGroup { return n.doc }
+func (n *Alias) Doc() *ast.CommentGroup { return n.doc }
 
-// Next 指向的类型
-func (n *Named) Next() types.Type { return n.next }
-
-func (n *Named) TypeArgs() typeList { return n.tl }
+func (n *Alias) TypeArgs() typeList { return n.tl }
 
 // ID 当前对象的唯一名称
-func (n *Named) ID() string { return n.id }
+func (n *Alias) ID() string { return n.id }
 
 func (t NotFound) Underlying() types.Type { return t }
 
@@ -149,17 +145,15 @@ func (pkgs *Packages) newStruct(
 }
 
 // tl 表示范型参数列表，可以为空
-func newNamed(named *types.Named, next types.Type, doc *ast.CommentGroup, tl typeList) *Named {
-	o := named.Obj()
-
+func newAlias(alias *types.Alias, doc *ast.CommentGroup, tl typeList) *Alias {
+	o := alias.Obj()
 	id := o.Pkg().Path() + "." + o.Name()
-	if tps := getTypeParamsList(named.TypeParams(), tl); tps != "" {
+	if tps := getTypeParamsList(alias.TypeParams(), tl); tps != "" {
 		id += "[" + tps + "]"
 	}
 
-	return &Named{
-		Named: named,
-		next:  next,
+	return &Alias{
+		Alias: alias,
 		doc:   doc,
 		id:    id,
 		tl:    tl,
@@ -325,7 +319,7 @@ func (pkgs *Packages) typeOfExpr(
 // 获取 path 指向对象的类型
 //
 // 如果其类型为 [types.Struct]，会被包装为 [Struct]。
-// 如果存在类型为 [types.Named]，会被包装为 [Named]。
+// 如果存在类型为 [types.Alias]，会被包装为 [Alias]。
 // 可能存在 type uint string 之类的定义，basicType 表示 path 找不到时是否需要按 basicType 查找基本的内置类型。
 func (pkgs *Packages) typeOfPath(
 	ctx context.Context,
@@ -349,28 +343,36 @@ func (pkgs *Packages) typeOfPath(
 		panic("spec 为空")
 	}
 
-	tn, ok := obj.(*types.TypeName)
+	typeName, ok := obj.(*types.TypeName)
 	if !ok {
 		return obj.Type(), nil
 	}
 
 	if st, ok := spec.Type.(*ast.StructType); ok {
-		typ, err = pkgs.newStruct(ctx, tn.Pkg(), st, f, tl, obj.Type().(*types.Named).TypeParams(), fieldTypes)
+		typ, err = pkgs.newStruct(ctx, typeName.Pkg(), st, f, tl, obj.Type().(*types.Named).TypeParams(), fieldTypes)
 	} else {
 		if doc == nil {
 			doc = getDoc(spec.Doc, spec.Comment)
 		}
-		typ, err = pkgs.typeOfExpr(ctx, tn.Pkg(), f, spec.Type, doc, tl, tps)
+		typ, err = pkgs.typeOfExpr(ctx, typeName.Pkg(), f, spec.Type, doc, tl, tps)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	named, ok := obj.Type().(*types.Named)
-	if !ok {
-		named = types.NewNamed(obj.(*types.TypeName), obj.Type(), nil)
+	if alias, ok := typ.(*types.Alias); ok {
+		return newAlias(alias, getDoc(spec.Doc, spec.Comment), tl), nil
 	}
-	return newNamed(named, typ, getDoc(spec.Doc, spec.Comment), tl), nil
+	alias := types.NewAlias(typeName, typ)
+	if named, ok := obj.Type().(*types.Named); ok {
+		tps := make([]*types.TypeParam, 0, named.TypeParams().Len())
+		for i := 0; i < named.TypeParams().Len(); i++ {
+			item := named.TypeParams().At(i)
+			tps = append(tps, types.NewTypeParam(item.Obj(), item.Constraint()))
+		}
+		alias.SetTypeParams(tps)
+	}
+	return newAlias(alias, getDoc(spec.Doc, spec.Comment), tl), nil
 }
 
 func getBasicType(name string) (types.Type, bool) {

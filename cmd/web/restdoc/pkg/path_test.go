@@ -38,10 +38,10 @@ func TestSplitFieldTypes(t *testing.T) {
 
 	path, ts, err = p.splitFieldTypes(context.Background(), "t1<f1=int,f2=github.com/issue9/web/restdoc/pkg.S<S=int>>")
 	a.NotError(err).Equal(path, "t1")
-	named, ok := ts["f2"].(*Named)
+	alias, ok := ts["f2"].(*Alias)
 	a.True(ok, "%+T", ts["f2"])
-	st, ok := named.Next().(*Struct)
-	a.True(ok).NotNil(st).Equal(st.Field(2).Type(), types.Typ[types.Int])
+	st, ok := alias.Rhs().(*Struct)
+	a.True(ok).NotNil(st, "%+T", alias.Rhs()).Equal(st.Field(2).Type(), types.Typ[types.Int])
 }
 
 func TestSplitTypes(t *testing.T) {

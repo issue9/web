@@ -7,11 +7,11 @@ package parser
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/issue9/sliceutil"
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/restdoc/openapi"
@@ -124,7 +124,7 @@ func (p *Parser) addQuery(ctx context.Context, t *openapi.OpenAPI, opt *openapi3
 	}
 
 	// 保证输出顺序相同，方便测试
-	keys := sliceutil.MapKeys(s.Value.Properties)
+	keys := slices.Collect(maps.Keys(s.Value.Properties))
 	slices.Sort(keys)
 	for _, name := range keys {
 		opt.AddParameter(&openapi3.Parameter{
