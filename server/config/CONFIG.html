@@ -166,7 +166,7 @@ body {
 <p>NOTE: 不能同时与 ACME 生效
 </td></tr><tr><td>acme,omitempty</td><td>acme,omitempty</td><td>acme,omitempty</td><td><a href="#acmeConfig">acmeConfig</a></td><td><p>ACME 协议的证书
 <p>NOTE: 不能同时与 Certificates 生效
-</td></tr><tr><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,attr,omitempty</td><td><a href="#duration">duration</a></td><td></td></tr><tr><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,attr,omitempty</td><td>int</td><td></td></tr><tr><td>recovery,omitempty</td><td>recovery,omitempty</td><td>recovery,attr,omitempty</td><td>int</td><td><p>Recovery 拦截 panic 时反馈给客户端的状态码
+</td></tr><tr><td>readTimeout,omitempty</td><td>readTimeout,omitempty</td><td>readTimeout,attr,omitempty</td><td><a href="#Duration">Duration</a></td><td></td></tr><tr><td>writeTimeout,omitempty</td><td>writeTimeout,omitempty</td><td>writeTimeout,attr,omitempty</td><td><a href="#Duration">Duration</a></td><td></td></tr><tr><td>idleTimeout,omitempty</td><td>idleTimeout,omitempty</td><td>idleTimeout,attr,omitempty</td><td><a href="#Duration">Duration</a></td><td></td></tr><tr><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,omitempty</td><td>readHeaderTimeout,attr,omitempty</td><td><a href="#Duration">Duration</a></td><td></td></tr><tr><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,omitempty</td><td>maxHeaderBytes,attr,omitempty</td><td>int</td><td></td></tr><tr><td>recovery,omitempty</td><td>recovery,omitempty</td><td>recovery,attr,omitempty</td><td>int</td><td><p>Recovery 拦截 panic 时反馈给客户端的状态码
 <p>NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 </td></tr><tr><td>headers,omitempty</td><td>headers,omitempty</td><td>headers&gt;header,omitempty</td><td><a href="#headerConfig">headerConfig</a></td><td><p>自定义报头功能
 <p>报头会输出到包括 404 在内的所有请求返回。可以为空。
@@ -206,7 +206,8 @@ body {
 </td></tr>
 					</tbody>
 				</table>
-			<h2 id="duration">duration</h2><article><p>表示时间段，等同于 <a href="/time#Duration">time.Duration</a>
+			<h2 id="Duration">Duration</h2><article><p>Duration 表示时间段
+<p>封装 <a href="/time#Duration">time.Duration</a> 以实现对 JSON、XML 和 YAML 的解析
 </article><h2 id="headerConfig">headerConfig</h2>
 				<table>
 					<thead><tr><th>JSON</th><th>YAML</th><th>XML</th><th>类型</th><th>描述</th><tr></thead>

@@ -1,8 +1,9 @@
-id: cmn-hans
+languages:
+  - cmn-Hans
 messages:
 - key: k1
   message:
-    msg: msg1
+    msg: zh
 
 - key: k2
   message:

@@ -12,7 +12,6 @@ import (
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"gopkg.in/yaml.v3"
 )
@@ -75,13 +74,29 @@ func Test_Load(t *testing.T) {
 	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
 	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 	b := catalog.NewBuilder()
-	a.NotError(Load(s, b, "cmn-*.*", os.DirFS("./testdata")))
+	a.NotError(Load(s, b, "*.*", os.DirFS("./testdata")))
 
-	// cmn-hant.xml
+	// zh-hant.xml
 
-	p := message.NewPrinter(language.MustParse("cmn-hant"), message.Catalog(b))
+	p, exact := NewPrinter(language.MustParse("zh-hant"), b)
+	a.True(exact).NotNil(p)
 
-	a.Equal(p.Sprintf("k1"), "msg1")
+	a.Equal(p.Sprintf("k1"), "zh-hant")
+
+	a.Equal(p.Sprintf("k2", 1), "msg-1")
+	a.Equal(p.Sprintf("k2", 3), "msg-3")
+	a.Equal(p.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
+
+	// zh.yaml
+
+	p, exact = NewPrinter(language.MustParse("zh-Hans"), b)
+	a.True(exact).NotNil(p)
+
+	a.Equal(p.Sprintf("k1"), "zh")
 
 	a.Equal(p.Sprintf("k2", 1), "msg-1")
 	a.Equal(p.Sprintf("k2", 3), "msg-3")
@@ -91,17 +106,23 @@ func Test_Load(t *testing.T) {
 	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
 	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
 
-	// cmn-hans.yaml
+	p, exact = NewPrinter(language.MustParse("cmn-Hans"), b)
+	a.True(exact).NotNil(p)
+	a.Equal(p.Sprintf("k1"), "zh")
 
-	p = message.NewPrinter(language.MustParse("cmn-hans"), message.Catalog(b))
+	p, exact = NewPrinter(language.MustParse("zh-cmn-Hans"), b)
+	a.True(exact).NotNil(p)
+	a.Equal(p.Sprintf("k1"), "zh")
 
-	a.Equal(p.Sprintf("k1"), "msg1")
+	p, exact = NewPrinter(language.MustParse("zh"), b)
+	a.True(exact).NotNil(p)
+	a.Equal(p.Sprintf("k1"), "zh")
 
-	a.Equal(p.Sprintf("k2", 1), "msg-1")
-	a.Equal(p.Sprintf("k2", 3), "msg-3")
-	a.Equal(p.Sprintf("k2", 5), "msg-other")
+	p, exact = NewPrinter(language.MustParse("zh-CN"), b)
+	a.True(exact).NotNil(p)
+	a.Equal(p.Sprintf("k1"), "zh")
 
-	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
+	p, exact = NewPrinter(language.MustParse("cmn"), b)
+	a.True(exact).NotNil(p)
+	a.Equal(p.Sprintf("k1"), "zh")
 }

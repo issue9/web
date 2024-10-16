@@ -49,37 +49,37 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 
-			for _, d := range strings.Split(*dest, ",") {
-				var dest *message.Language
+			for _, path := range strings.Split(*dest, ",") {
+				var dest *message.File
 
-				stat, err := os.Stat(d)
+				stat, err := os.Stat(path)
 				if errors.Is(err, os.ErrNotExist) {
-					dest = &message.Language{}
+					dest = &message.File{}
 				} else if err != nil {
 					return err
 				} else if stat.IsDir() {
-					return web.NewLocaleError("the dest file %s is dir", d)
+					return web.NewLocaleError("the dest file %s is dir", path)
 				}
 
-				filename := filepath.Base(d)
+				filename := filepath.Base(path)
 				ext := filepath.Ext(filename)
 				u, err := getUnmarshalByExt(ext)
 				if err != nil {
 					return err
 				}
 				if dest == nil { // dest != nil，说明因为不存在文件，已经被初始经默认值。
-					if dest, err = serialize.LoadFile(d, u); err != nil {
+					if dest, err = serialize.LoadFile(path, u); err != nil {
 						return err
 					}
 				}
 
-				srcMsg.MergeTo(log.WARN().LocaleString, []*message.Language{dest})
+				srcMsg.MergeTo(log.WARN().LocaleString, dest, path)
 
 				m, _, err := locale.GetMarshalByExt(ext)
 				if err != nil {
 					return err
 				}
-				if err = serialize.SaveFile(dest, d, m, os.ModePerm); err != nil {
+				if err = serialize.SaveFile(dest, path, m, os.ModePerm); err != nil {
 					return err
 				}
 			}
@@ -89,7 +89,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	})
 }
 
-func getSrc(src string) (*message.Language, error) {
+func getSrc(src string) (*message.File, error) {
 	u, err := getUnmarshalByExt(filepath.Ext(src))
 	if err != nil {
 		return nil, err

@@ -1,4 +1,6 @@
-id: cmn-Hans
+languages:
+    - zh-Hans
+    - cmn-Hans
 messages:
     - key: SSE keep alive cron
       message:
@@ -20,7 +22,7 @@ messages:
         msg: 显示版本号
     - key: conflict with certificates
       message:
-        msg: conflict with certificates
+        msg: 与 certificates 字段存在冲突
     - key: duplicate value
       message:
         msg: 重复的值

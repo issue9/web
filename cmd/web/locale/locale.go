@@ -78,7 +78,9 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return web.NewLocaleError("no src dir")
 			}
 
-			l := &message.Language{}
+			file := &message.File{
+				Languages: []language.Tag{lt},
+			}
 			ctx := context.Background()
 			for _, dir := range fs.Args() {
 				opt := &extract.Options{
@@ -86,7 +88,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 					Root:          dir,
 					Recursive:     *r,
 					SkipSubModule: *skip,
-					WarnLog:       log.ERROR().LocaleString,
+					WarnLog:       log.WARN().LocaleString,
 					InfoLog:       func(localeutil.Stringer) {}, // 默认不输出提示信息
 					Funcs:         strings.Split(*funcs, ","),
 				}
@@ -98,10 +100,10 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				if err != nil {
 					return err
 				}
-				l.Join(lang)
+				file.Join(lang)
 			}
 
-			return serialize.SaveFile(l, out, u, os.ModePerm)
+			return serialize.SaveFile(file, out, u, os.ModePerm)
 		}
 	})
 }

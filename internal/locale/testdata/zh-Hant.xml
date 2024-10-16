@@ -1,8 +1,11 @@
-<language id="cmn-hant">
+<language>
+    <languages>
+        <language>zh-Hant</language>
+    </languages>
     <message>
         <key>k1</key>
         <message>
-            <msg>msg1</msg>
+            <msg>zh-hant</msg>
         </message>
     </message>
 
