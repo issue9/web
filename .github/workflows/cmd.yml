@@ -37,7 +37,7 @@ jobs:
 
       - name: Test
         env:
-          LANG: en
+          LANGUAGE: en
         run: |
           cd cmd/web
           go test -v ./...

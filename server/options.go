@@ -99,7 +99,7 @@ type (
 		// 框架中的日志输出时，如果该信息实现了 [web.LocaleStringer] 接口，
 		// 将会转换成此设置项的语言。
 		//
-		// 如果为空，则会尝试读取当前系统的本地化信息。
+		// 如果为空，即 [language.Und]，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
 
 		locale *locale.Locale

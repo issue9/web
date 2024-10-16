@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/mux/v9/header"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/mimetype/html"
 )
@@ -29,4 +30,9 @@ func TestSanitizeOptions(t *testing.T) {
 		NotNil(o.locale).
 		NotNil(o.Codec).
 		NotZero(len(o.Plugins))
+
+	o, err = sanitizeOptions(&Options{
+		Language: language.MustParse("zh-Hant"),
+	}, typeHTTP)
+	a.NotError(err).NotNil(o).Equal(o.Language, language.MustParse("zh-Hant"))
 }

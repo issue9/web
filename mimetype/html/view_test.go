@@ -41,7 +41,7 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 
 func TestInstallView(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, "und")
+	s := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
 	html.InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
 
 	defer servertest.Run(a, s)()
