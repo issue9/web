@@ -44,7 +44,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 			{Type: "xml", Target: "xml"},
 		},
 	}
-	a.NotError(conf.buildCodec())
+	a.NotError(conf.buildCodec()).NotNil(conf.codec)
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{

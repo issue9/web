@@ -105,5 +105,6 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
 		c.AddMimetype(item.Type, m.marshal, m.unmarshal, item.Problem)
 	}
 
+	conf.codec = c
 	return nil
 }
