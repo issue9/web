@@ -27,7 +27,6 @@ type (
 	Services struct {
 		s         *InternalServer
 		services  []*service
-		ctx       context.Context
 		scheduled *scheduled.Server
 	}
 
@@ -71,13 +70,9 @@ func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 func (s *InternalServer) Services() *Services { return s.services }
 
 func (s *InternalServer) initServices() {
-	ctx, cancel := context.WithCancelCause(context.Background())
-	s.OnClose(func() error { cancel(http.ErrServerClosed); return nil })
-
 	s.services = &Services{
 		s:         s,
 		services:  make([]*service, 0, 5),
-		ctx:       ctx,
 		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
 	}
 	s.Services().Add(StringPhrase("scheduler jobs"), s.services.scheduled)
@@ -113,7 +108,7 @@ func (srv *service) serve(ctx context.Context) {
 	}()
 	srv.err = srv.service.Serve(ctx)
 	state := Stopped
-	if !errors.Is(srv.err, context.Canceled) {
+	if !errors.Is(srv.err, context.Canceled) && !errors.Is(srv.err, http.ErrServerClosed) {
 		srv.s.s.Logs().ERROR().Error(srv.err)
 		state = Failed
 	}
@@ -133,12 +128,12 @@ func (srv *Services) Add(title LocaleStringer, f Service) context.CancelFunc {
 	}
 	srv.services = append(srv.services, s)
 
-	ctx, c := context.WithCancel(srv.ctx)
+	ctx, cancel := context.WithCancel(srv.s)
 	s.goServe(ctx)
 
 	return func() {
 		s.setState(Stopped)
-		c()
+		cancel()
 		srv.services = slices.DeleteFunc(srv.services, func(e *service) bool { return e == s })
 	}
 }

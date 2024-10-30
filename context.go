@@ -23,6 +23,8 @@ import (
 	"github.com/issue9/web/internal/qheader"
 )
 
+var errExitContext = NewLocaleError("exit context")
+
 var contextPool = &sync.Pool{
 	New: func() any {
 		return &Context{
@@ -31,6 +33,9 @@ var contextPool = &sync.Pool{
 		}
 	},
 }
+
+// ErrExitContext 当已经退出 [Context] 对象时还对其进行操作将返回此错误
+func ErrExitContext() error { return errExitContext }
 
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
@@ -45,6 +50,9 @@ type Context struct {
 	id      string
 	begin   time.Time
 	queries *Queries
+
+	done    chan struct{}
+	doneErr error
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
@@ -140,6 +148,9 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.id = id
 	ctx.begin = s.server.Now()
 	ctx.queries = nil
+
+	ctx.done = make(chan struct{})
+	ctx.doneErr = nil
 
 	ctx.originResponse = w
 	ctx.writer = w
@@ -309,6 +320,9 @@ func (s *InternalServer) freeContext(ctx *Context) {
 
 	// 以下开始回收内在
 
+	close(ctx.done)
+	ctx.doneErr = ErrExitContext()
+
 	logs.FreeAttrLogs(ctx.logs)
 	contextPool.Put(ctx)
 }
@@ -348,3 +362,22 @@ func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 [Server] 实例
 func (ctx *Context) Server() Server { return ctx.s.server }
+
+// Deadline 接口 [context.Context] 的方法。
+//
+// 未提供实际的功能
+func (ctx *Context) Deadline() (time.Time, bool) { return time.Time{}, false }
+
+// Value 接口 [context.Context] 的方法
+//
+// 功能与 [Context.GetVar] 是相同的。
+func (ctx *Context) Value(key any) any {
+	val, _ := ctx.GetVar(key)
+	return val
+}
+
+// Done 接口 [context.Context] 的方法
+func (ctx *Context) Done() <-chan struct{} { return ctx.done }
+
+// Err 接口 [context.Context] 的方法
+func (ctx *Context) Err() error { return ctx.doneErr }

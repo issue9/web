@@ -5,6 +5,7 @@
 package web
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"slices"
@@ -26,6 +27,8 @@ import (
 type (
 	// Server 服务接口
 	Server interface {
+		context.Context
+
 		// Name 应用的名称
 		Name() string
 
@@ -190,6 +193,9 @@ type (
 		location *time.Location
 		uptime   time.Time
 
+		done    chan struct{}
+		doneErr error
+
 		requestIDKey    string
 		codec           *Codec
 		services        *Services
@@ -242,6 +248,7 @@ func InternalNewServer(
 		locale:   l,
 		location: loc,
 		uptime:   time.Now().In(loc),
+		done:     make(chan struct{}),
 
 		requestIDKey: requestIDKey,
 		codec:        codec,
@@ -313,7 +320,23 @@ func (s *InternalServer) Close() {
 			s.Logs().ERROR().Error(err)
 		}
 	}
+
+	close(s.done)
+	s.doneErr = http.ErrServerClosed
 }
+
+func (s *InternalServer) Deadline() (time.Time, bool) { return time.Time{}, false }
+
+func (s *InternalServer) Value(key any) any {
+	if val, found := s.Vars().Load(key); found {
+		return val
+	}
+	return nil
+}
+
+func (s *InternalServer) Done() <-chan struct{} { return s.done }
+
+func (s *InternalServer) Err() error { return s.doneErr }
 
 func (f PluginFunc) Plugin(s Server) { f(s) }
 

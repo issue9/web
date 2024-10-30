@@ -26,6 +26,9 @@ messages:
     - key: duplicate value
       message:
         msg: 重复的值
+    - key: exit context
+      message:
+        msg: 已经退出当前的会话环境
     - key: invalid data %s
       message:
         msg: invalid data %s
@@ -195,7 +198,7 @@ messages:
         msg: Unprocessable Entity
     - key: problem.422.detail
       message:
-        msg: 请求格式正确，但由于语义错误而无法遵循。
+        msg: 提交内容的格式是正确，但由于语义错误而无法遵循。
     - key: problem.423
       message:
         msg: Locked

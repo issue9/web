@@ -25,6 +25,9 @@ messages:
     - key: duplicate value
       message:
         msg: duplicate value
+    - key: exit context
+      message:
+        msg: exit context
     - key: invalid data %s
       message:
         msg: invalid data %s

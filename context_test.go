@@ -18,7 +18,10 @@ import (
 	"golang.org/x/text/language"
 )
 
-var _ http.ResponseWriter = &Context{}
+var (
+	_ http.ResponseWriter = &Context{}
+	_ context.Context     = &Context{}
+)
 
 func (ctx *Context) apply(r Responser) { r.Apply(ctx) }
 

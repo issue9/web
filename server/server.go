@@ -24,9 +24,8 @@ import (
 type (
 	httpServer struct {
 		*web.InternalServer
-		hs     *http.Server
-		state  web.State
-		closed chan struct{}
+		hs    *http.Server
+		state web.State
 	}
 
 	service struct {
@@ -43,9 +42,8 @@ type (
 
 func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 	srv := &httpServer{
-		hs:     o.HTTPServer,
-		state:  web.Stopped,
-		closed: make(chan struct{}, 1),
+		hs:    o.HTTPServer,
+		state: web.Stopped,
 	}
 	if s == nil {
 		s = srv
@@ -87,11 +85,7 @@ func (srv *httpServer) Serve() (err error) {
 		err = srv.hs.ListenAndServe()
 	}
 
-	if errors.Is(err, http.ErrServerClosed) {
-		// 由 [Server.Close] 主动触发的关闭事件，才需要等待其执行完成。
-		// 其它错误直接返回，否则一些内部错误会永远卡在此处无法返回。
-		<-srv.closed
-	}
+	<-srv.Done()
 	return err
 }
 
@@ -106,10 +100,6 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 	defer func() {
 		srv.InternalServer.Close()
 		cancel()
-
-		// [http.Server.Shutdown] 会让 [http.Server.ListenAndServe] 等方法直接返回，
-		// 所以由 srv.close 保证在当前函数返回之后再通知 [Server.Serve] 退出。
-		srv.closed <- struct{}{}
 	}()
 
 	if err := srv.hs.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
