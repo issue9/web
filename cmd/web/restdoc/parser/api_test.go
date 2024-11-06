@@ -33,7 +33,7 @@ func TestParser_parseAPI(t *testing.T) {
 		NotNil(path.Post).
 		Nil(path.Delete).
 		Length(path.Parameters, 1).
-		Length(path.Post.Parameters, 0)
+		Length(path.Post.Parameters, 1)
 }
 
 func TestParser_parseSecurity(t *testing.T) {

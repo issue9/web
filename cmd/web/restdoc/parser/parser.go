@@ -29,8 +29,9 @@ import (
 type Parser struct {
 	schema *schema.Schema
 
-	media   []string                      // 全局可用 media type
-	resps   map[string]*openapi3.Response // 全局可用 response
+	// 一些全局的设定
+	media   []string
+	resps   map[string]*openapi3.Response
 	headers []pair
 	cookies []pair
 
@@ -199,6 +200,8 @@ LOOP:
 						})
 						p.apiCommentsM.Unlock()
 					}
+				case "ref":
+					// TODO
 				case "restdoc":
 					p.parseRESTDoc(ctx, t, importPath, suffix, lines[index+1:], p.line(c.Pos())+index, p.file(c.Pos()))
 				}

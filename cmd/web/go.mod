@@ -3,7 +3,7 @@ module github.com/issue9/web/cmd/web
 go 1.23.0
 
 require (
-	github.com/caixw/gobuild v1.8.3
+	github.com/caixw/gobuild v1.8.4
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cmdopt v0.13.1
@@ -14,7 +14,7 @@ require (
 	github.com/issue9/source v0.11.6
 	github.com/issue9/term/v3 v3.3.2
 	github.com/issue9/version v1.0.8
-	github.com/issue9/web v0.96.7
+	github.com/issue9/web v0.98.0
 	golang.org/x/mod v0.21.0
 	golang.org/x/text v0.19.0
 	golang.org/x/tools v0.26.0
@@ -25,7 +25,7 @@ replace github.com/issue9/web => ../../
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/invopop/yaml v0.3.1 // indirect
