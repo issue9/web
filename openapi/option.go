@@ -14,6 +14,19 @@ import (
 
 type Option func(*Document)
 
+// WithHTML 定义 HTML 模板
+//
+// tpl 表示 HTML 模板名称；
+// path 为输出给模板的数据地址；
+//
+// NOTE: 反馈给模板的数据格式为 `struct{ URL string }`
+func WithHTML(tpl, path string) Option {
+	return func(d *Document) {
+		d.templateName = tpl
+		d.dataURL = path
+	}
+}
+
 // WithResponse 指定所有接口都可能返回的对象类型
 //
 // 一般用于指定非正常状态的返回对象，比如 400 状态码的对象。

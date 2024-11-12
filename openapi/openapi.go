@@ -33,6 +33,11 @@ type Document struct {
 	responses  map[int]string // key 为状态码，值为 components 中的键名
 	headers    []string       // components 中的键名
 	cookies    []string       // components 中的键名
+
+	// 与 HTML 模板相关的定义
+
+	templateName string
+	dataURL      string
 }
 
 type openAPIRenderer struct {
@@ -45,6 +50,11 @@ type openAPIRenderer struct {
 	Security     []*orderedmap.OrderedMap[string, []string]                  `json:"security,omitempty" yaml:"security,omitempty"`
 	Tags         []*tagRenderer                                              `json:"tags,omitempty" yaml:"tags,omitempty"`
 	ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+
+	// 与 HTML 模板相关的定义
+
+	templateName string
+	dataURL      string
 }
 
 // New 声明 [Document] 对象
@@ -102,11 +112,7 @@ func (o *Document) build(p *message.Printer) *openAPIRenderer {
 }
 
 func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
-	return "openapi", struct {
-		URL string
-	}{
-		URL: "TODO",
-	}
+	return o.templateName, struct{ URL string }{URL: o.dataURL}
 }
 
 type components struct {

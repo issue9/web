@@ -15,6 +15,14 @@ import (
 	"github.com/issue9/web"
 )
 
+func TestWithHTML(t *testing.T) {
+	a := assert.New(t, false)
+
+	d := New("0.1", web.Phrase("desc"), WithHTML("tpl", "./openapi.yaml"))
+	a.Equal(d.dataURL, "./openapi.yaml").
+		Equal(d.templateName, "tpl")
+}
+
 func TestWithResponse(t *testing.T) {
 	a := assert.New(t, false)
 
