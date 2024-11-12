@@ -1,0 +1,321 @@
+// SPDX-FileCopyrightText: 2024 caixw
+//
+// SPDX-License-Identifier: MIT
+
+// Package openapi 生成 [openapi] 文档
+//
+// [openapi]: https://spec.openapis.org/oas/v3.1.1.html
+package openapi
+
+import (
+	"strings"
+
+	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"golang.org/x/text/message"
+
+	"github.com/issue9/web"
+)
+
+// Document openapi 文档
+type Document struct {
+	info         *info
+	servers      []*Server
+	paths        map[string]*PathItem
+	webHooks     map[string]*PathItem
+	components   *components
+	security     []*SecurityRequirement
+	tags         []*tag
+	externalDocs *ExternalDocs
+
+	// 以下是一些预定义的项，不存在于 openAPIRenderer。
+
+	mediaTypes []string       // 所有接口都支持的类型
+	responses  map[int]string // key 为状态码，值为 components 中的键名
+	headers    []string       // components 中的键名
+	cookies    []string       // components 中的键名
+}
+
+type openAPIRenderer struct {
+	OpenAPI      string                                                      `json:"openapi" yaml:"openapi"`
+	Info         *infoRenderer                                               `json:"info" yaml:"info"`
+	Servers      []*serverRenderer                                           `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Paths        *orderedmap.OrderedMap[string, *renderer[pathItemRenderer]] `json:"paths,omitempty" yaml:"paths,omitempty"`
+	WebHooks     *orderedmap.OrderedMap[string, *renderer[pathItemRenderer]] `json:"webhooks,omitempty" yaml:"webhooks,omitempty"`
+	Components   *componentsRenderer                                         `json:"components,omitempty" yaml:"components,omitempty"`
+	Security     []*orderedmap.OrderedMap[string, []string]                  `json:"security,omitempty" yaml:"security,omitempty"`
+	Tags         []*tagRenderer                                              `json:"tags,omitempty" yaml:"tags,omitempty"`
+	ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+}
+
+// New 声明 [Document] 对象
+//
+// version 文档版本；
+// title 文档的标题；
+func New(version string, title web.LocaleStringer, o ...Option) *Document {
+	doc := &Document{
+		info: &info{
+			title:   title,
+			version: version,
+		},
+		components: newComponents(),
+	}
+
+	for _, opt := range o {
+		opt(doc)
+	}
+
+	return doc
+}
+
+func (d *Document) Handler(ctx *web.Context) web.Responser {
+	return web.OK(d.build(ctx.LocalePrinter()))
+}
+
+func (o *Document) build(p *message.Printer) *openAPIRenderer {
+	servers := make([]*serverRenderer, 0, len(o.servers))
+	for _, s := range o.servers {
+		servers = append(servers, s.build(p))
+	}
+
+	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(o.security))
+	for _, sec := range o.security {
+		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Values}
+		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
+	}
+
+	tags := make([]*tagRenderer, 0, len(o.tags))
+	for _, t := range o.tags {
+		tags = append(tags, t.build(p))
+	}
+
+	return &openAPIRenderer{
+		OpenAPI:      Version,
+		Info:         o.info.build(p),
+		Servers:      servers,
+		Paths:        writeMap2OrderedMap(o.paths, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, o) }),
+		WebHooks:     writeMap2OrderedMap(o.webHooks, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, o) }),
+		Components:   o.components.build(p, o),
+		Security:     security,
+		Tags:         tags,
+		ExternalDocs: o.externalDocs.build(p),
+	}
+}
+
+func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
+	return "openapi", struct {
+		URL string
+	}{
+		URL: "TODO",
+	}
+}
+
+type components struct {
+	schemas         map[string]*Schema
+	responses       map[string]*Response
+	requests        map[string]*Request
+	securitySchemes map[string]*SecurityScheme
+	callbacks       map[string]*Callback
+	pathItems       map[string]*PathItem
+
+	paths   map[string]*Parameter // 路径中的参数
+	queries map[string]*Parameter // 查询参数
+	headers map[string]*Parameter // 该值写入 components/headers 之下，而不是 components/parameters
+	cookies map[string]*Parameter
+}
+
+type componentsRenderer struct {
+	Schemas         *orderedmap.OrderedMap[string, *schemaRenderer]         `json:"schemas,omitempty" yaml:"schemas,omitempty"`
+	Responses       *orderedmap.OrderedMap[string, *responseRenderer]       `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Parameters      *orderedmap.OrderedMap[string, *parameterRenderer]      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Requests        *orderedmap.OrderedMap[string, *requestRenderer]        `json:"requestBodies,omitempty" yaml:"requestBodies,omitempty"`
+	Headers         *orderedmap.OrderedMap[string, *headerRenderer]         `json:"headers,omitempty" yaml:"headers,omitempty"`
+	SecuritySchemes *orderedmap.OrderedMap[string, *securitySchemeRenderer] `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
+	Callbacks       *orderedmap.OrderedMap[string, *callbackRenderer]       `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+	PathItems       *orderedmap.OrderedMap[string, *pathItemRenderer]       `json:"pathItems,omitempty" yaml:"pathItems,omitempty"`
+}
+
+func newComponents() *components {
+	return &components{
+		schemas:         make(map[string]*Schema, 100),
+		responses:       make(map[string]*Response),
+		requests:        make(map[string]*Request),
+		securitySchemes: make(map[string]*SecurityScheme),
+		callbacks:       make(map[string]*Callback),
+		pathItems:       make(map[string]*PathItem),
+
+		paths:   make(map[string]*Parameter),
+		queries: make(map[string]*Parameter),
+		headers: make(map[string]*Parameter),
+		cookies: make(map[string]*Parameter),
+	}
+}
+
+func (m *components) build(p *message.Printer, d *Document) *componentsRenderer {
+	l := len(m.paths) + len(m.cookies) + len(m.queries)
+	parameters := orderedmap.New[string, *parameterRenderer](orderedmap.WithCapacity[string, *parameterRenderer](l))
+	writeMap2OrderedMap(m.paths, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InPath).obj })
+	writeMap2OrderedMap(m.cookies, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InCookie).obj })
+	writeMap2OrderedMap(m.queries, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InQuery).obj })
+
+	return &componentsRenderer{
+		Schemas:         writeMap2OrderedMap(m.schemas, nil, func(in *Schema) *schemaRenderer { return in.build(p).obj }),
+		Responses:       writeMap2OrderedMap(m.responses, nil, func(in *Response) *responseRenderer { return in.build(p, d).obj }),
+		Requests:        writeMap2OrderedMap(m.requests, nil, func(in *Request) *requestRenderer { return in.build(p, d).obj }),
+		SecuritySchemes: writeMap2OrderedMap(m.securitySchemes, nil, func(in *SecurityScheme) *securitySchemeRenderer { return in.build(p) }),
+		Callbacks:       writeMap2OrderedMap(m.callbacks, nil, func(in *Callback) *callbackRenderer { return in.build(p, d).obj }),
+		PathItems:       writeMap2OrderedMap(m.pathItems, nil, func(in *PathItem) *pathItemRenderer { return in.build(p, d).obj }),
+
+		Headers:    writeMap2OrderedMap(m.headers, nil, func(in *Parameter) *headerRenderer { return in.buildHeader(p).obj }),
+		Parameters: parameters,
+	}
+}
+
+type info struct {
+	title          web.LocaleStringer
+	summary        web.LocaleStringer
+	description    web.LocaleStringer
+	termsOfService string
+	contact        *contactRender
+	license        *licenseRenderer
+	version        string
+}
+
+type infoRenderer struct {
+	Title          string           `json:"title" yaml:"title"`
+	Summary        string           `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description    string           `json:"description,omitempty" yaml:"description,omitempty"`
+	TermsOfService string           `json:"termsOfService,omitempty" yaml:"termsOfService,omitempty"`
+	Contact        *contactRender   `json:"contact,omitempty" yaml:"contact,omitempty"`
+	License        *licenseRenderer `json:"license,omitempty" yaml:"license,omitempty"`
+	Version        string           `json:"version" yaml:"version"`
+}
+
+func (i *info) build(p *message.Printer) *infoRenderer {
+	if i == nil {
+		return nil
+	}
+
+	return &infoRenderer{
+		Title:          sprint(p, i.title),
+		Summary:        sprint(p, i.summary),
+		Description:    sprint(p, i.description),
+		TermsOfService: i.termsOfService,
+		Contact:        i.contact.clone(),
+		License:        i.license.clone(),
+		Version:        i.version,
+	}
+}
+
+type tag struct {
+	name         string
+	description  web.LocaleStringer
+	externalDocs *ExternalDocs
+}
+
+type tagRenderer struct {
+	Name         string                `json:"name" yaml:"name"`
+	Description  string                `json:"description,omitempty" yaml:"description,omitempty"`
+	ExternalDocs *externalDocsRenderer `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+}
+
+func (t *tag) build(p *message.Printer) *tagRenderer {
+	if t == nil {
+		return nil
+	}
+
+	return &tagRenderer{
+		Name:         t.name,
+		Description:  sprint(p, t.description),
+		ExternalDocs: t.externalDocs.build(p),
+	}
+}
+
+type ExternalDocs struct {
+	Description web.LocaleStringer
+	URL         string
+}
+
+type externalDocsRenderer struct {
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	URL         string `json:"url" yaml:"url"`
+}
+
+func (e *ExternalDocs) build(p *message.Printer) *externalDocsRenderer {
+	if e == nil {
+		return nil
+	}
+
+	return &externalDocsRenderer{
+		Description: sprint(p, e.Description),
+		URL:         e.URL,
+	}
+}
+
+type XML struct {
+	Name      string `json:"name,omitempty" yaml:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Prefix    string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
+	Wrapped   bool   `json:"wrapped,omitempty" yaml:"wrapped,omitempty"`
+	Attribute bool   `json:"attribute,omitempty" yaml:"attribute,omitempty"`
+}
+
+func (xml *XML) clone() *XML {
+	if xml == nil {
+		return nil
+	}
+
+	return &XML{
+		Name:      xml.Name,
+		Namespace: xml.Namespace,
+		Prefix:    xml.Prefix,
+		Wrapped:   xml.Wrapped,
+		Attribute: xml.Attribute,
+	}
+}
+
+type licenseRenderer struct {
+	Name       string `json:"name" yaml:"name"`
+	Identifier string `json:"identifier,omitempty" yaml:"identifier,omitempty"`
+	URL        string `json:"url,omitempty" yaml:"url,omitempty"`
+}
+
+func newLicense(name string, id string) *licenseRenderer {
+	switch {
+	case id == "":
+		return &licenseRenderer{Name: name}
+	case strings.HasPrefix(id, "http://") || strings.HasPrefix(id, "https://"):
+		return &licenseRenderer{Name: name, URL: id}
+	default:
+		return &licenseRenderer{Name: name, Identifier: id}
+	}
+}
+
+func (l *licenseRenderer) clone() *licenseRenderer {
+	if l == nil {
+		return nil
+	}
+
+	return &licenseRenderer{
+		Name:       l.Name,
+		Identifier: l.Identifier,
+		URL:        l.URL,
+	}
+}
+
+type contactRender struct {
+	Name  string `json:"name" yaml:"name"`
+	URL   string `json:"url" yaml:"url"`
+	Email string `json:"email" yaml:"email"`
+}
+
+func (c *contactRender) clone() *contactRender {
+	if c == nil {
+		return nil
+	}
+
+	return &contactRender{
+		Name:  c.Name,
+		Email: c.Email,
+		URL:   c.URL,
+	}
+}
