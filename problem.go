@@ -26,34 +26,34 @@ type (
 	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
-		XMLName struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-"`
+		XMLName struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
 
 		// 错误 ID
-		Type string `json:"type" xml:"type" form:"type" cbor:"type"`
+		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type"`
 
 		// 对错误的简要描述
-		Title string `json:"title" xml:"title" form:"title" cbor:"title"`
+		Title string `json:"title" xml:"title" form:"title" cbor:"title" yaml:"title"`
 
 		// 对错误的详细说明
-		Detail string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty"`
+		Detail string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty" yaml:"detail,omitempty"`
 
 		// 指向错误发生的实例
-		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty"`
+		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty" yaml:"instance,omitempty"`
 
 		// 原始的错误状态码
-		Status int `json:"status" xml:"status" form:"status" cbor:"status,omitempty"`
+		Status int `json:"status" xml:"status" form:"status" cbor:"status,omitempty" yaml:"status,omitempty"`
 
 		// 用户提交对象各个字段的错误信息
-		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty"`
+		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty"`
 
 		// 反馈给用户的信息
-		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty"`
+		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty"`
 	}
 
 	// ProblemParam 单个错误字段的描述
 	ProblemParam struct {
-		Name   string `json:"name" xml:"name" form:"name" cbor:"name"`         // 出错字段的名称
-		Reason string `json:"reason" xml:"reason" form:"reason" cbor:"reason"` // 出错信息
+		Name   string `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`           // 出错字段的名称
+		Reason string `json:"reason" xml:"reason" form:"reason" cbor:"reason" yaml:"reason"` // 出错信息
 	}
 
 	Problems struct {
