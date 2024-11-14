@@ -41,7 +41,7 @@ func TestDocument_build(t *testing.T) {
 		Equal(r.Info.Title, "简体")
 
 	d.addOperation("GET", "/users/{id}", "", &Operation{
-		Paths: []*Parameter{{Name: "id", Desc: web.Phrase("desc")}},
+		Paths: []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 	})
 	r = d.build(p)
 	a.Equal(r.Info.Version, "0.1.0").
@@ -50,7 +50,7 @@ func TestDocument_build(t *testing.T) {
 		Equal(r.Paths.Len(), 1)
 
 	d.addOperation("POST", "/users/{id}", "", &Operation{
-		Paths: []*Parameter{{Name: "id", Desc: web.Phrase("desc")}},
+		Paths: []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 	})
 	r = d.build(p)
 	obj := r.Paths.GetPair("/users/{id}").Value.obj

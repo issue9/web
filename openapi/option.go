@@ -14,6 +14,16 @@ import (
 
 type Option func(*Document)
 
+// WithHead 是否生成 HEAD 接口请求
+func WithHead(enable bool) Option {
+	return func(d *Document) { d.enableHead = enable }
+}
+
+// WithOptions 是否生成 OPTIONS 请求
+func WithOptions(enable bool) Option {
+	return func(d *Document) { d.enableOptions = enable }
+}
+
 // WithHTML 定义 HTML 模板
 //
 // tpl 表示 HTML 模板名称；
@@ -38,7 +48,7 @@ func WithHTML(tpl, path string) Option {
 func WithResponse(status int, resp *Response) Option {
 	return func(d *Document) {
 		if resp.Ref == nil || resp.Ref.Ref == "" {
-			panic("必须存在 ref")
+			panic("resp 必须存在 ref")
 		}
 		resp.addComponents(d.components)
 

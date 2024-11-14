@@ -19,7 +19,7 @@ const (
 	TypeBoolean = "boolean"
 	TypeArray   = "array"
 	TypeNumber  = "number"
-	TypeInteger = "Integer"
+	TypeInteger = "integer"
 
 	FormatInt32    = "int32"
 	FormatInt64    = "int64"

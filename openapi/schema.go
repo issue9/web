@@ -5,6 +5,9 @@
 package openapi
 
 import (
+	"reflect"
+
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -13,14 +16,13 @@ import (
 type Parameter struct {
 	Ref *Ref
 
-	Name       string
-	Deprecated bool
-	Required   bool
-	Desc       web.LocaleStringer // 当前参数的描述信息
+	Name        string
+	Deprecated  bool
+	Required    bool
+	Description web.LocaleStringer // 当前参数的描述信息
 
-	// 以下字段是针对关联的 [Schema] 对象的。
-	Type  string
-	Title web.LocaleStringer
+	// InHeader 模式下此值无效
+	Schema *Schema
 }
 
 type parameterRenderer struct {
@@ -66,58 +68,163 @@ func (t *Parameter) buildParameter(p *message.Printer, in string) *renderer[para
 	if t.Ref != nil {
 		return newRenderer[parameterRenderer](t.Ref.build(p, "parameters"), nil)
 	}
+	return newRenderer(nil, t.buildParameterRenderer(p, in))
+}
 
-	return newRenderer(nil, &parameterRenderer{
+func (t *Parameter) buildParameterRenderer(p *message.Printer, in string) *parameterRenderer {
+	if t == nil {
+		return nil
+	}
+
+	return &parameterRenderer{
 		Name:        t.Name,
 		In:          in,
 		Required:    t.Required,
 		Deprecated:  t.Deprecated,
-		Description: sprint(p, t.Desc),
-		Schema: newRenderer(nil, &schemaRenderer{
-			Type:  t.Type,
-			Title: sprint(p, t.Title),
-		}),
-	})
+		Description: sprint(p, t.Description),
+		Schema:      t.Schema.build(p),
+	}
 }
 
 func (t *Parameter) buildHeader(p *message.Printer) *renderer[headerRenderer] {
 	if t.Ref != nil {
 		return newRenderer[headerRenderer](t.Ref.build(p, "headers"), nil)
 	}
+	return newRenderer(nil, t.buildHeaderRenderer())
+}
 
-	return newRenderer(nil, &headerRenderer{
-		Required:   t.Required,
-		Deprecated: t.Deprecated,
-	})
+func (t *Parameter) buildHeaderRenderer() *headerRenderer {
+	if t == nil {
+		return nil
+	}
+	return &headerRenderer{Required: t.Required, Deprecated: t.Deprecated}
 }
 
 type Schema struct {
 	Ref *Ref
 
-	XML          *XML
-	ExternalDocs *ExternalDocs
-	Title        web.LocaleStringer
-	Type         string
-	AllOf        []*Schema
-	OneOf        []*Schema
-	AnyOf        []*Schema
-	Format       string
-	Items        *Schema
-	Properties   []*Schema
+	XML                  *XML
+	ExternalDocs         *ExternalDocs
+	Title                web.LocaleStringer
+	Type                 string
+	AllOf                []*Schema
+	OneOf                []*Schema
+	AnyOf                []*Schema
+	Format               string
+	Items                *Schema
+	Properties           map[string]*Schema
+	AdditionalProperties *Schema
+	Required             bool
+	Minimum              int
+	Maximum              int
 }
 
 type schemaRenderer struct {
-	Type         string                      `json:"type" yaml:"type"`
-	XML          *XML                        `json:"xml,omitempty" yaml:"xml,omitempty"`
-	ExternalDocs *externalDocsRenderer       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-	Title        string                      `json:"title,omitempty" yaml:"title,omitempty"`
-	Description  string                      `json:"description,omitempty" yaml:"description,omitempty"`
-	AllOf        []*renderer[schemaRenderer] `json:"allOf,omitempty" yaml:"allOf,omitempty"`
-	OneOf        []*renderer[schemaRenderer] `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
-	AnyOf        []*renderer[schemaRenderer] `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
-	Format       string                      `json:"format,omitempty" yaml:"format,omitempty"`
-	Items        *renderer[schemaRenderer]   `json:"items,omitempty" yaml:"items,omitempty"`
-	Properties   []*renderer[schemaRenderer] `json:"properties,omitempty" yaml:"properties,omitempty"`
+	Type                 string                                                    `json:"type" yaml:"type"`
+	XML                  *XML                                                      `json:"xml,omitempty" yaml:"xml,omitempty"`
+	ExternalDocs         *externalDocsRenderer                                     `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Title                string                                                    `json:"title,omitempty" yaml:"title,omitempty"`
+	Description          string                                                    `json:"description,omitempty" yaml:"description,omitempty"`
+	AllOf                []*renderer[schemaRenderer]                               `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+	OneOf                []*renderer[schemaRenderer]                               `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
+	AnyOf                []*renderer[schemaRenderer]                               `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
+	Format               string                                                    `json:"format,omitempty" yaml:"format,omitempty"`
+	Items                *renderer[schemaRenderer]                                 `json:"items,omitempty" yaml:"items,omitempty"`
+	Properties           *orderedmap.OrderedMap[string, *renderer[schemaRenderer]] `json:"properties,omitempty" yaml:"properties,omitempty"`
+	AdditionalProperties *renderer[schemaRenderer]                                 `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
+	Required             bool                                                      `json:"required,omitempty" yaml:"required,omitempty"`
+	Minimum              int                                                       `json:"minimum,omitempty" yaml:"minimum,omitempty"`
+	Maximum              int                                                       `json:"maximum,omitempty" yaml:"maximum,omitempty"`
+}
+
+func (d *Document) newSchema(t reflect.Type) *Schema {
+	return schemaFromType(d, t, true, "")
+}
+
+// NewSchema 根据 [reflect.Type] 生成 [Schema] 对象
+func NewSchema(t reflect.Type) *Schema {
+	return schemaFromType(nil, t, true, "")
+}
+
+// d 仅用于查找其关联的 components/schema 中是否存在相同名称的对象，如果存在则直接生成引用对象。
+func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string) *Schema {
+	nullable := t.Kind() == reflect.Pointer
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	switch t.Kind() {
+	case reflect.String:
+		return &Schema{Type: TypeString, Required: !nullable}
+	case reflect.Bool:
+		return &Schema{Type: TypeBoolean, Required: !nullable}
+	case reflect.Float32, reflect.Float64:
+		return &Schema{Type: TypeNumber, Required: !nullable}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return &Schema{Type: TypeInteger, Required: !nullable}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return &Schema{Type: TypeInteger, Required: !nullable, Minimum: 0}
+	case reflect.Array, reflect.Slice:
+		return &Schema{Type: TypeArray, Required: !nullable, Items: schemaFromType(d, t.Elem(), false, rootName)}
+	case reflect.Map:
+		return &Schema{Type: TypeObject, Required: !nullable, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName)}
+	case reflect.Struct:
+		return schemaFromObject(d, t, isRoot, nullable, rootName)
+	}
+	return nil
+}
+
+func schemaFromObject(d *Document, t reflect.Type, isRoot, nullable bool, rootName string) *Schema {
+	typeName := getTypeName(t)
+
+	if d != nil {
+		if s, found := d.components.schemas[typeName]; found { // 已经存在于 components
+			return s
+		}
+	}
+
+	ref := &Ref{Ref: typeName}
+	if isRoot {
+		rootName = typeName // isRoot == true 时，rootName 必然为空
+	} else if typeName == rootName { // 在字段中引用了根对象
+		return &Schema{Ref: ref}
+	}
+
+	ps := make(map[string]*Schema, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		k := f.Type.Kind()
+		if f.IsExported() && k != reflect.Chan && k != reflect.Func && k != reflect.Complex64 && k != reflect.Complex128 {
+			name := f.Name
+			var xml *XML
+			if f.Tag != "" {
+				if tag := getTagName(f.Tag, "json"); tag != "" {
+					name = tag
+				}
+
+				if xmlName := getTagName(f.Tag, "xml"); xmlName != "" && xmlName != name {
+					xml = &XML{Name: xmlName}
+				}
+			}
+
+			s := schemaFromType(d, t.Field(i).Type, false, rootName)
+			if s == nil {
+				continue
+			}
+
+			if xml != nil {
+				s.XML = xml
+			}
+			ps[name] = s
+		}
+	}
+
+	return &Schema{
+		Type:       TypeObject,
+		Required:   !nullable,
+		Properties: ps,
+		Ref:        ref,
+	}
 }
 
 func (s *Schema) addComponents(c *components) {
@@ -158,22 +265,30 @@ func (s *Schema) build(p *message.Printer) *renderer[schemaRenderer] {
 	if s.Ref != nil {
 		return newRenderer[schemaRenderer](s.Ref.build(p, "schemas"), nil)
 	}
+	return newRenderer(nil, s.buildRenderer(p))
+}
 
-	if s.Type == "" {
-		panic("Type 不能为空")
+func (s *Schema) buildRenderer(p *message.Printer) *schemaRenderer {
+	if s == nil {
+		return nil
 	}
-	return newRenderer(nil, &schemaRenderer{
-		XML:          s.XML.clone(),
-		ExternalDocs: s.ExternalDocs.build(p),
-		Title:        sprint(p, s.Title),
-		Type:         s.Type,
-		AllOf:        cloneSchemas2SchemasRenderer(s.AllOf, p),
-		OneOf:        cloneSchemas2SchemasRenderer(s.OneOf, p),
-		AnyOf:        cloneSchemas2SchemasRenderer(s.AnyOf, p),
-		Format:       s.Format,
-		Items:        s.Items.build(p),
-		Properties:   cloneSchemas2SchemasRenderer(s.Properties, p),
-	})
+
+	return &schemaRenderer{
+		XML:                  s.XML.clone(),
+		ExternalDocs:         s.ExternalDocs.build(p),
+		Title:                sprint(p, s.Title),
+		Type:                 s.Type,
+		AllOf:                cloneSchemas2SchemasRenderer(s.AllOf, p),
+		OneOf:                cloneSchemas2SchemasRenderer(s.OneOf, p),
+		AnyOf:                cloneSchemas2SchemasRenderer(s.AnyOf, p),
+		Format:               s.Format,
+		Items:                s.Items.build(p),
+		Properties:           writeMap2OrderedMap(s.Properties, nil, func(in *Schema) *renderer[schemaRenderer] { return in.build(p) }),
+		AdditionalProperties: s.AdditionalProperties.build(p),
+		Required:             s.Required,
+		Minimum:              s.Minimum,
+		Maximum:              s.Maximum,
+	}
 }
 
 func cloneSchemas2SchemasRenderer(s []*Schema, p *message.Printer) []*renderer[schemaRenderer] {

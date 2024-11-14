@@ -137,8 +137,11 @@ func (c *Callback) build(p *message.Printer, d *Document) *renderer[callbackRend
 	if c.Ref != nil {
 		return newRenderer[callbackRenderer](c.Ref.build(p, "callbacks"), nil)
 	}
+	return newRenderer(nil, c.buildRenderer(p, d))
+}
 
-	return newRenderer(nil, writeMap2OrderedMap(c.Callback, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) }))
+func (c *Callback) buildRenderer(p *message.Printer, d *Document) *callbackRenderer {
+	return writeMap2OrderedMap(c.Callback, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) })
 }
 
 func (resp *Callback) addComponents(c *components) {
@@ -166,8 +169,8 @@ type Response struct {
 }
 
 type responseRenderer struct {
-	Headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]]
-	Content *orderedmap.OrderedMap[string, *mediaTypeRenderer]
+	Headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Content *orderedmap.OrderedMap[string, *mediaTypeRenderer]        `json:"content,omitempty" yaml:"content,omitempty"`
 }
 
 func (resp *Response) addComponents(c *components) {
@@ -200,6 +203,13 @@ func (resp *Response) build(p *message.Printer, d *Document) *renderer[responseR
 	if resp.Ref != nil {
 		return newRenderer[responseRenderer](resp.Ref.build(p, "responses"), nil)
 	}
+	return newRenderer(nil, resp.buildRenderer(p, d))
+}
+
+func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRenderer {
+	if resp == nil {
+		return nil
+	}
 
 	var headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]]
 	if resp.Headers != nil {
@@ -225,10 +235,10 @@ func (resp *Response) build(p *message.Printer, d *Document) *renderer[responseR
 		}
 	}
 
-	return newRenderer(nil, &responseRenderer{
+	return &responseRenderer{
 		Headers: headers,
 		Content: content,
-	})
+	}
 }
 
 type Request struct {
@@ -272,6 +282,13 @@ func (req *Request) build(p *message.Printer, d *Document) *renderer[requestRend
 	if req.Ref != nil {
 		return newRenderer[requestRenderer](req.Ref.build(p, "requestBodies"), nil)
 	}
+	return newRenderer(nil, req.buildRenderer(p, d))
+}
+
+func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRenderer {
+	if req == nil {
+		return nil
+	}
 
 	content := orderedmap.New[string, *mediaTypeRenderer](orderedmap.WithCapacity[string, *mediaTypeRenderer](len(d.mediaTypes)))
 	if req.Content != nil {
@@ -289,10 +306,10 @@ func (req *Request) build(p *message.Printer, d *Document) *renderer[requestRend
 		}
 	}
 
-	return newRenderer(nil, &requestRenderer{
+	return &requestRenderer{
 		Content:  content,
 		Required: !req.Ignorable,
-	})
+	}
 }
 
 type Server struct {
@@ -403,6 +420,13 @@ func (item *PathItem) build(p *message.Printer, d *Document) *renderer[pathItemR
 	if item.Ref != nil {
 		return newRenderer[pathItemRenderer](item.Ref.build(p, "pathItems"), nil)
 	}
+	return newRenderer(nil, item.buildRenderer(p, d))
+}
+
+func (item *PathItem) buildRenderer(p *message.Printer, d *Document) *pathItemRenderer {
+	if item == nil {
+		return nil
+	}
 
 	parameters := make([]*renderer[parameterRenderer], 0, len(item.Paths)+len(item.Cookies)+len(item.Headers)+len(item.Queries))
 	for _, param := range item.Paths {
@@ -449,5 +473,5 @@ func (item *PathItem) build(p *message.Printer, d *Document) *renderer[pathItemR
 		}
 	}
 
-	return newRenderer(nil, path)
+	return path
 }

@@ -14,7 +14,11 @@ import (
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/html"
+	"github.com/issue9/web/mimetype/json"
 )
+
+// TODO enum
 
 // Document openapi 文档
 type Document struct {
@@ -29,15 +33,20 @@ type Document struct {
 
 	// 以下是一些预定义的项，不存在于 openAPIRenderer。
 
-	mediaTypes []string       // 所有接口都支持的类型
-	responses  map[int]string // key 为状态码，值为 components 中的键名
-	headers    []string       // components 中的键名
-	cookies    []string       // components 中的键名
+	mediaTypes    []string       // 所有接口都支持的类型
+	responses     map[int]string // key 为状态码，值为 components 中的键名
+	headers       []string       // components 中的键名
+	cookies       []string       // components 中的键名
+	enableOptions bool
+	enableHead    bool
 
 	// 与 HTML 模板相关的定义
 
 	templateName string
 	dataURL      string
+
+	// 是否禁用
+	disable bool
 }
 
 type openAPIRenderer struct {
@@ -77,11 +86,29 @@ func New(version string, title web.LocaleStringer, o ...Option) *Document {
 	return doc
 }
 
+// Handler 实现 [web.HandlerFunc] 接口
+//
+// 目前支持以下几种格式：
+//   - json
+//   - yaml
+//   - html 可参考 [github.com/issue9/web/mimetype/html]
 func (d *Document) Handler(ctx *web.Context) web.Responser {
+	if d.disable {
+		return ctx.NotImplemented()
+	}
+
+	if m := ctx.Mimetype(false); m != json.Mimetype && m != html.Mimetype {
+		return ctx.Problem(web.ProblemUnsupportedMediaType)
+	}
+
 	return web.OK(d.build(ctx.LocalePrinter()))
 }
 
 func (o *Document) build(p *message.Printer) *openAPIRenderer {
+	if o.disable {
+		return nil
+	}
+
 	servers := make([]*serverRenderer, 0, len(o.servers))
 	for _, s := range o.servers {
 		servers = append(servers, s.build(p))
@@ -159,19 +186,19 @@ func newComponents() *components {
 func (m *components) build(p *message.Printer, d *Document) *componentsRenderer {
 	l := len(m.paths) + len(m.cookies) + len(m.queries)
 	parameters := orderedmap.New[string, *parameterRenderer](orderedmap.WithCapacity[string, *parameterRenderer](l))
-	writeMap2OrderedMap(m.paths, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InPath).obj })
-	writeMap2OrderedMap(m.cookies, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InCookie).obj })
-	writeMap2OrderedMap(m.queries, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameter(p, InQuery).obj })
+	writeMap2OrderedMap(m.paths, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InPath) })
+	writeMap2OrderedMap(m.cookies, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InCookie) })
+	writeMap2OrderedMap(m.queries, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InQuery) })
 
 	return &componentsRenderer{
-		Schemas:         writeMap2OrderedMap(m.schemas, nil, func(in *Schema) *schemaRenderer { return in.build(p).obj }),
-		Responses:       writeMap2OrderedMap(m.responses, nil, func(in *Response) *responseRenderer { return in.build(p, d).obj }),
-		Requests:        writeMap2OrderedMap(m.requests, nil, func(in *Request) *requestRenderer { return in.build(p, d).obj }),
+		Schemas:         writeMap2OrderedMap(m.schemas, nil, func(in *Schema) *schemaRenderer { return in.buildRenderer(p) }),
+		Responses:       writeMap2OrderedMap(m.responses, nil, func(in *Response) *responseRenderer { return in.buildRenderer(p, d) }),
+		Requests:        writeMap2OrderedMap(m.requests, nil, func(in *Request) *requestRenderer { return in.buildRenderer(p, d) }),
 		SecuritySchemes: writeMap2OrderedMap(m.securitySchemes, nil, func(in *SecurityScheme) *securitySchemeRenderer { return in.build(p) }),
-		Callbacks:       writeMap2OrderedMap(m.callbacks, nil, func(in *Callback) *callbackRenderer { return in.build(p, d).obj }),
-		PathItems:       writeMap2OrderedMap(m.pathItems, nil, func(in *PathItem) *pathItemRenderer { return in.build(p, d).obj }),
+		Callbacks:       writeMap2OrderedMap(m.callbacks, nil, func(in *Callback) *callbackRenderer { return in.buildRenderer(p, d) }),
+		PathItems:       writeMap2OrderedMap(m.pathItems, nil, func(in *PathItem) *pathItemRenderer { return in.buildRenderer(p, d) }),
 
-		Headers:    writeMap2OrderedMap(m.headers, nil, func(in *Parameter) *headerRenderer { return in.buildHeader(p).obj }),
+		Headers:    writeMap2OrderedMap(m.headers, nil, func(in *Parameter) *headerRenderer { return in.buildHeaderRenderer() }),
 		Parameters: parameters,
 	}
 }

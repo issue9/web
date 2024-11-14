@@ -37,8 +37,10 @@ func TestRef_build(t *testing.T) {
 	a.Equal(ref.build(p, "schemas"), &refRenderer{Ref: "#/components/schemas/ref", Summary: "简体", Description: "desc"})
 }
 
-type object struct {
-	ID int
+type object struct { // 被用于多种用途，所以同时带了 XML 和 yaml。
+	ID    int       `json:"id" xml:"Id" yaml:"id,omitempty"`
+	Items []*object // 循环引用
+	Name  string    `json:"name,omitempty" xml:"name,omitempty" yaml:"name,omitempty"`
 }
 
 func TestRenderer(t *testing.T) {
@@ -71,9 +73,9 @@ func TestRenderer(t *testing.T) {
 
 	// JSON
 	bs, err = json.Marshal(r)
-	a.NotError(err).Equal(string(bs), `{"ID":2}`)
+	a.NotError(err).Equal(string(bs), `{"id":2,"Items":null}`)
 
 	// YAML
 	bs, err = yaml.Marshal(r)
-	a.NotError(err).Equal(string(bs), "id: 2\n")
+	a.NotError(err).Equal(string(bs), "id: 2\nitems: []\n")
 }

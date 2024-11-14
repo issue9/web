@@ -6,13 +6,37 @@ package openapi
 
 import (
 	"maps"
+	"reflect"
 	"slices"
+	"strings"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
 )
+
+var nameReplacer = strings.NewReplacer(
+	"[", "__",
+	"]", "__",
+	"/", ".",
+)
+
+func getTypeName(t reflect.Type) string {
+	return nameReplacer.Replace(t.PkgPath() + "/" + t.Name())
+}
+
+func getTagName(tag reflect.StructTag, name string) string {
+	val := tag.Get(name)
+	if val == "-" {
+		return ""
+	}
+
+	if index := strings.IndexByte(val, ','); index >= 0 {
+		return val[:index]
+	}
+	return val
+}
 
 func sprint(p *message.Printer, s web.LocaleStringer) string {
 	if s == nil {
