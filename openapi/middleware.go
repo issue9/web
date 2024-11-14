@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"slices"
 
 	"github.com/issue9/query/v3"
 
@@ -217,6 +218,12 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 	for status, ref := range d.responses {
 		if _, found := opt.Responses[status]; !found {
 			opt.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
+		}
+	}
+
+	for _, t := range opt.Tags {
+		if slices.IndexFunc(d.tags, func(elem *tag) bool { return elem.name == t }) < 0 {
+			d.tags = append(d.tags, &tag{name: t})
 		}
 	}
 

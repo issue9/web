@@ -43,7 +43,7 @@ func TestDocument_build(t *testing.T) {
 	p := newPrinter(a, language.SimplifiedChinese)
 
 	d := New("0.1.0", web.Phrase("lang"))
-	r := d.build(p)
+	r := d.build(p, nil)
 	a.Equal(r.Info.Version, "0.1.0").
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体")
@@ -51,18 +51,27 @@ func TestDocument_build(t *testing.T) {
 	d.addOperation("GET", "/users/{id}", "", &Operation{
 		Paths: []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 	})
-	r = d.build(p)
+	r = d.build(p, nil)
 	a.Equal(r.Info.Version, "0.1.0").
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体").
 		Equal(r.Paths.Len(), 1)
 
 	d.addOperation("POST", "/users/{id}", "", &Operation{
+		Tags:  []string{"admin"},
 		Paths: []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 	})
-	r = d.build(p)
+	r = d.build(p, nil)
 	obj := r.Paths.GetPair("/users/{id}").Value.obj
 	a.NotNil(obj.Get).
+		NotNil(obj.Post).
+		Nil(obj.Delete)
+
+	// 带过滤
+
+	r = d.build(p, []string{"admin"})
+	obj = r.Paths.GetPair("/users/{id}").Value.obj
+	a.Nil(obj.Get).
 		NotNil(obj.Post).
 		Nil(obj.Delete)
 }
@@ -87,6 +96,7 @@ func TestDocument_Handler(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/openapi").Header("accept", yaml.Mimetype).
 		Do(nil).
 		Status(http.StatusNotAcceptable) // server 中未未配置 yaml
+
 	s.Close(500 * time.Millisecond)
 	cancel()
 }

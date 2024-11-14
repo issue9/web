@@ -8,6 +8,7 @@
 package openapi
 
 import (
+	"slices"
 	"strings"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -87,6 +88,10 @@ func New(version string, title web.LocaleStringer, o ...Option) *Document {
 	return doc
 }
 
+type documentQuery struct {
+	Tags []string `query:"tag"`
+}
+
 // Handler 实现 [web.HandlerFunc] 接口
 //
 // 目前支持以下几种格式：
@@ -97,22 +102,30 @@ func New(version string, title web.LocaleStringer, o ...Option) *Document {
 //
 // NOTE: Handler 支持的输出格式限定在以上几种，但是最终是否能正常输出以上几种格式，
 // 还需要由 [web.Server] 是否配置相应的解码方式。
+//
+// 该路由接受 tag 查询参数，在未指定参数的情况下，表示返回所有接口，
+// 如果指定了参数，则只返回带指定标签的接口，多个标签以逗号分隔。
 func (d *Document) Handler(ctx *web.Context) web.Responser {
 	if d.disable {
 		return ctx.NotImplemented()
+	}
+
+	q := &documentQuery{}
+	if resp := ctx.QueryObject(true, q, web.ProblemBadRequest); resp != nil {
+		return resp
 	}
 
 	if m := ctx.Mimetype(false); m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype {
 		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
-	return web.OK(d.build(ctx.LocalePrinter()))
+	return web.OK(d.build(ctx.LocalePrinter(), q.Tags))
 }
 
 // Disable 是否禁用 [Document.Handler] 接口输出内容
 func (d *Document) Disable(disable bool) { d.disable = disable }
 
-func (d *Document) build(p *message.Printer) *openAPIRenderer {
+func (d *Document) build(p *message.Printer, filterTags []string) *openAPIRenderer {
 	servers := make([]*serverRenderer, 0, len(d.servers))
 	for _, s := range d.servers {
 		servers = append(servers, s.build(p))
@@ -126,15 +139,19 @@ func (d *Document) build(p *message.Printer) *openAPIRenderer {
 
 	tags := make([]*tagRenderer, 0, len(d.tags))
 	for _, t := range d.tags {
-		tags = append(tags, t.build(p))
+		if len(filterTags) > 0 && slices.Index(filterTags, t.name) >= 0 {
+			tags = append(tags, t.build(p))
+		} else {
+			tags = append(tags, t.build(p))
+		}
 	}
 
 	return &openAPIRenderer{
 		OpenAPI:      Version,
 		Info:         d.info.build(p),
 		Servers:      servers,
-		Paths:        writeMap2OrderedMap(d.paths, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) }),
-		WebHooks:     writeMap2OrderedMap(d.webHooks, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) }),
+		Paths:        writeMap2OrderedMap(d.paths, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d, filterTags) }),
+		WebHooks:     writeMap2OrderedMap(d.webHooks, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d, filterTags) }),
 		Components:   d.components.build(p, d),
 		Security:     security,
 		Tags:         tags,
@@ -200,7 +217,7 @@ func (m *components) build(p *message.Printer, d *Document) *componentsRenderer 
 		Requests:        writeMap2OrderedMap(m.requests, nil, func(in *Request) *requestRenderer { return in.buildRenderer(p, d) }),
 		SecuritySchemes: writeMap2OrderedMap(m.securitySchemes, nil, func(in *SecurityScheme) *securitySchemeRenderer { return in.build(p) }),
 		Callbacks:       writeMap2OrderedMap(m.callbacks, nil, func(in *Callback) *callbackRenderer { return in.buildRenderer(p, d) }),
-		PathItems:       writeMap2OrderedMap(m.pathItems, nil, func(in *PathItem) *pathItemRenderer { return in.buildRenderer(p, d) }),
+		PathItems:       writeMap2OrderedMap(m.pathItems, nil, func(in *PathItem) *pathItemRenderer { return in.buildRenderer(p, d, nil) }),
 
 		Headers:    writeMap2OrderedMap(m.headers, nil, func(in *Parameter) *headerRenderer { return in.buildHeaderRenderer() }),
 		Parameters: parameters,

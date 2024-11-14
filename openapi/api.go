@@ -141,7 +141,7 @@ func (c *Callback) build(p *message.Printer, d *Document) *renderer[callbackRend
 }
 
 func (c *Callback) buildRenderer(p *message.Printer, d *Document) *callbackRenderer {
-	return writeMap2OrderedMap(c.Callback, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) })
+	return writeMap2OrderedMap(c.Callback, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d, nil) })
 }
 
 func (resp *Callback) addComponents(c *components) {
@@ -399,7 +399,7 @@ func (item *PathItem) addComponents(c *components) {
 	}
 }
 
-func (item *PathItem) build(p *message.Printer, d *Document) *renderer[pathItemRenderer] {
+func (item *PathItem) build(p *message.Printer, d *Document, tags []string) *renderer[pathItemRenderer] {
 	if item == nil {
 		return nil
 	}
@@ -408,10 +408,10 @@ func (item *PathItem) build(p *message.Printer, d *Document) *renderer[pathItemR
 		return newRenderer[pathItemRenderer](item.Ref.build(p, "pathItems"), nil)
 	}
 
-	return newRenderer(nil, item.buildRenderer(p, d))
+	return newRenderer(nil, item.buildRenderer(p, d, tags))
 }
 
-func (item *PathItem) buildRenderer(p *message.Printer, d *Document) *pathItemRenderer {
+func (item *PathItem) buildRenderer(p *message.Printer, d *Document, tags []string) *pathItemRenderer {
 	parameters := make([]*renderer[parameterRenderer], 0, len(item.Paths)+len(item.Cookies)+len(item.Headers)+len(item.Queries))
 	for _, param := range item.Paths {
 		parameters = append(parameters, param.buildParameter(p, InPath))
@@ -437,6 +437,10 @@ func (item *PathItem) buildRenderer(p *message.Printer, d *Document) *pathItemRe
 	}
 
 	for method, o := range item.Operations {
+		if len(tags) > 0 && slices.IndexFunc(o.Tags, func(t string) bool { return slices.Index(tags, t) >= 0 }) < 0 {
+			continue
+		}
+
 		switch strings.ToUpper(method) {
 		case "GET":
 			path.Get = o.build(p, d)
