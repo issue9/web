@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v4"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
+
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/yaml"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/servertest"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 )
 
 var _ web.HandlerFunc = (&Document{}).Handler
@@ -74,7 +75,7 @@ func TestDocument_Handler(t *testing.T) {
 	d := New("1.0.0", web.Phrase("test"))
 	r := s.Routers().New("def", nil)
 	a.NotNil(r)
-	r.Delete("/users", func(ctx *web.Context) web.Responser { return nil }, d.API().Response(1, web.Phrase("get users"))).
+	r.Delete("/users", func(ctx *web.Context) web.Responser { return nil }, d.API().Response(200, 1, web.Phrase("get users"))).
 		Get("/users", func(*web.Context) web.Responser { return nil }). // 未指定文档
 		Get("/openapi", d.Handler)
 	cancel := servertest.Run(a, s)

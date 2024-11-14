@@ -35,6 +35,6 @@ func TestWriteMap2OrderedMap(t *testing.T) {
 		Equal(om.GetPair("t1").Value, "简体").
 		Equal(om.GetPair("t2").Value, "t2")
 
-	om = writeMap2OrderedMap(nil, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
+	om = writeMap2OrderedMap[string, web.LocaleStringer, string](nil, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
 	a.Nil(om)
 }

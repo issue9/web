@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strconv"
 
 	"github.com/issue9/query/v3"
+
 	"github.com/issue9/web"
 )
 
@@ -72,7 +72,7 @@ func (m *APIMiddleware) QueryObject(o any) *APIMiddleware {
 	}
 
 	if t.Kind() != reflect.Struct {
-		panic(fmt.Sprintf("o 必须得是 struct 类型"))
+		panic("o 必须得是 struct 类型")
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -152,16 +152,16 @@ func (m *APIMiddleware) BodyRef(ref string) *APIMiddleware {
 }
 
 // Response 从 resp 参数中获取返回对象的类型
-func (m *APIMiddleware) Response(resp any, desc web.LocaleStringer) *APIMiddleware {
-	m.o.Responses["default"] = &Response{
+func (m *APIMiddleware) Response(status int, resp any, desc web.LocaleStringer) *APIMiddleware {
+	m.o.Responses[status] = &Response{
 		Description: desc,
 		Body:        m.d.newSchema(reflect.TypeOf(resp)),
 	}
 	return m
 }
 
-func (m *APIMiddleware) ResponseRef(ref string) *APIMiddleware {
-	m.o.Responses["default"] = &Response{Ref: &Ref{Ref: ref}}
+func (m *APIMiddleware) ResponseRef(status int, ref string) *APIMiddleware {
+	m.o.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
 	return m
 }
 
@@ -174,12 +174,12 @@ func (m *APIMiddleware) Middleware(next web.HandlerFunc, method, pattern, router
 
 // API 提供用于声明 openapi 文档的中间件
 //
-// NOTE: 与 [Dcoument.Operation] 功能是相同的，但是 API 作了大部分简化，
+// NOTE: 与 [Document.Operation] 功能是相同的，但是 API 作了大部分简化，
 // 且可以通过对象实例直接获取各个字段名称，不需要像 [Operation] 那样需要手动填定对象的字段。
 func (d *Document) API(tag ...string) *APIMiddleware {
 	return &APIMiddleware{o: &Operation{
 		Tags:      tag,
-		Responses: make(map[string]*Response, 1), // 必然存在的字段，直接初始化了。
+		Responses: make(map[int]*Response, 1), // 必然存在的字段，直接初始化了。
 	}, d: d}
 }
 
@@ -215,9 +215,8 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 		})
 	}
 	for status, ref := range d.responses {
-		code := strconv.Itoa(status)
-		if _, found := opt.Responses[code]; !found {
-			opt.Responses[code] = &Response{Ref: &Ref{Ref: ref}}
+		if _, found := opt.Responses[status]; !found {
+			opt.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
 		}
 	}
 

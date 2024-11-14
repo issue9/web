@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+
+	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/cbor"
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
-
-	"github.com/issue9/web"
 )
 
 func TestWithHTML(t *testing.T) {
