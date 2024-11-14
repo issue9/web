@@ -80,7 +80,7 @@ func (m *APIMiddleware) QueryObject(o any) *APIMiddleware {
 		if !f.IsExported() {
 			continue
 		}
-		name := getTagName(f.Tag, query.Tag)
+		name, _ := getTagName(f, query.Tag)
 		if name == "" {
 			name = f.Name
 		}
@@ -152,11 +152,11 @@ func (m *APIMiddleware) BodyRef(ref string) *APIMiddleware {
 }
 
 // Response 从 resp 参数中获取返回对象的类型
-func (m *APIMiddleware) Response(resp any) *APIMiddleware {
+func (m *APIMiddleware) Response(resp any, desc web.LocaleStringer) *APIMiddleware {
 	m.o.Responses["default"] = &Response{
-		Body: m.d.newSchema(reflect.TypeOf(resp)),
+		Description: desc,
+		Body:        m.d.newSchema(reflect.TypeOf(resp)),
 	}
-
 	return m
 }
 

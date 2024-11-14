@@ -5,7 +5,7 @@
 package openapi
 
 // Version 支持的 openapi 版本
-const Version = "3.1"
+const Version = "3.1.0"
 
 const (
 	InPath   = "path"

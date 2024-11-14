@@ -49,7 +49,7 @@ type operationRenderer struct {
 	ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
-// 所有子元素中如果定义了 ref，都会与 components 中的相应对象作比较，以确定是否需要引用此对象。
+// 所有带 $ref 的字段如果还未存在于 c，则会写入。
 func (o *Operation) addComponents(c *components) {
 	for _, p := range o.Paths {
 		p.addComponents(c, InPath)
@@ -145,12 +145,10 @@ func (c *Callback) buildRenderer(p *message.Printer, d *Document) *callbackRende
 }
 
 func (resp *Callback) addComponents(c *components) {
-	if resp.Ref == nil {
-		return
-	}
-
-	if _, found := c.callbacks[resp.Ref.Ref]; !found {
-		c.callbacks[resp.Ref.Ref] = resp
+	if resp.Ref != nil {
+		if _, found := c.callbacks[resp.Ref.Ref]; !found {
+			c.callbacks[resp.Ref.Ref] = resp
+		}
 	}
 
 	for _, item := range resp.Callback {
@@ -159,8 +157,9 @@ func (resp *Callback) addComponents(c *components) {
 }
 
 type Response struct {
-	Ref     *Ref
-	Headers []*Parameter
+	Ref         *Ref
+	Headers     []*Parameter
+	Description web.LocaleStringer
 
 	// Body 和 Content 共同组成了正文内容
 	// 所有不在 Content 中出现的类型均采用 [openAPI.MediaTypesRenderer] 与 Body 相结构。
@@ -169,17 +168,16 @@ type Response struct {
 }
 
 type responseRenderer struct {
-	Headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Content *orderedmap.OrderedMap[string, *mediaTypeRenderer]        `json:"content,omitempty" yaml:"content,omitempty"`
+	Description string                                                    `json:"description" yaml:"description"`
+	Headers     *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Content     *orderedmap.OrderedMap[string, *mediaTypeRenderer]        `json:"content,omitempty" yaml:"content,omitempty"`
 }
 
 func (resp *Response) addComponents(c *components) {
-	if resp.Ref == nil {
-		return
-	}
-
-	if _, found := c.responses[resp.Ref.Ref]; !found {
-		c.responses[resp.Ref.Ref] = resp
+	if resp.Ref != nil {
+		if _, found := c.responses[resp.Ref.Ref]; !found {
+			c.responses[resp.Ref.Ref] = resp
+		}
 	}
 
 	for _, h := range resp.Headers {
@@ -207,10 +205,6 @@ func (resp *Response) build(p *message.Printer, d *Document) *renderer[responseR
 }
 
 func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRenderer {
-	if resp == nil {
-		return nil
-	}
-
 	var headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]]
 	if resp.Headers != nil {
 		headers = orderedmap.New[string, *renderer[headerRenderer]](orderedmap.WithCapacity[string, *headerRenderer](len(resp.Headers)))
@@ -236,8 +230,9 @@ func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRe
 	}
 
 	return &responseRenderer{
-		Headers: headers,
-		Content: content,
+		Description: sprint(p, resp.Description),
+		Headers:     headers,
+		Content:     content,
 	}
 }
 
@@ -257,12 +252,10 @@ type requestRenderer struct {
 }
 
 func (req *Request) addComponents(c *components) {
-	if req.Ref == nil {
-		return
-	}
-
-	if _, found := c.requests[req.Ref.Ref]; !found {
-		c.requests[req.Ref.Ref] = req
+	if req.Ref != nil {
+		if _, found := c.requests[req.Ref.Ref]; !found {
+			c.requests[req.Ref.Ref] = req
+		}
 	}
 
 	if req.Body != nil {
@@ -286,10 +279,6 @@ func (req *Request) build(p *message.Printer, d *Document) *renderer[requestRend
 }
 
 func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRenderer {
-	if req == nil {
-		return nil
-	}
-
 	content := orderedmap.New[string, *mediaTypeRenderer](orderedmap.WithCapacity[string, *mediaTypeRenderer](len(d.mediaTypes)))
 	if req.Content != nil {
 		writeMap2OrderedMap(req.Content, content, func(in *Schema) *mediaTypeRenderer {
@@ -390,12 +379,10 @@ type pathItemRenderer struct {
 }
 
 func (item *PathItem) addComponents(c *components) {
-	if item.Ref == nil {
-		return
-	}
-
-	if _, found := c.pathItems[item.Ref.Ref]; !found {
-		c.pathItems[item.Ref.Ref] = item
+	if item.Ref != nil {
+		if _, found := c.pathItems[item.Ref.Ref]; !found {
+			c.pathItems[item.Ref.Ref] = item
+		}
 	}
 
 	for _, item := range item.Paths {
@@ -420,14 +407,11 @@ func (item *PathItem) build(p *message.Printer, d *Document) *renderer[pathItemR
 	if item.Ref != nil {
 		return newRenderer[pathItemRenderer](item.Ref.build(p, "pathItems"), nil)
 	}
+
 	return newRenderer(nil, item.buildRenderer(p, d))
 }
 
 func (item *PathItem) buildRenderer(p *message.Printer, d *Document) *pathItemRenderer {
-	if item == nil {
-		return nil
-	}
-
 	parameters := make([]*renderer[parameterRenderer], 0, len(item.Paths)+len(item.Cookies)+len(item.Headers)+len(item.Queries))
 	for _, param := range item.Paths {
 		parameters = append(parameters, param.buildParameter(p, InPath))

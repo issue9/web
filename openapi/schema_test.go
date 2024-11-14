@@ -70,11 +70,6 @@ func TestSchema_build(t *testing.T) {
 	var s *Schema
 	a.Nil(s.build(p))
 
-	a.PanicString(func() {
-		s = &Schema{}
-		s.build(p)
-	}, "Type 不能为空")
-
 	s = &Schema{Ref: &Ref{Ref: "ref"}, Type: TypeArray}
 	sr := s.build(p)
 	a.Equal(sr.ref.Ref, "#/components/schemas/ref").Nil(sr.obj)
@@ -103,6 +98,7 @@ func TestDocument_NewSchema(t *testing.T) {
 	s = d.newSchema(reflect.ValueOf(&object{}).Type())
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
+		Length(s.Properties, 3).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["id"].XML.Name, "Id").
 		Nil(s.Properties["Items"].XML).

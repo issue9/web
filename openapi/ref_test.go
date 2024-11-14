@@ -38,9 +38,10 @@ func TestRef_build(t *testing.T) {
 }
 
 type object struct { // 被用于多种用途，所以同时带了 XML 和 yaml。
-	ID    int       `json:"id" xml:"Id" yaml:"id,omitempty"`
-	Items []*object // 循环引用
-	Name  string    `json:"name,omitempty" xml:"name,omitempty" yaml:"name,omitempty"`
+	XMLName struct{}  `json:"-" yaml:"-" xml:"object"`
+	ID      int       `json:"id" xml:"Id" yaml:"id,omitempty"`
+	Items   []*object // 循环引用
+	Name    string    `json:"name,omitempty" xml:"name,omitempty" yaml:"name,omitempty"`
 }
 
 func TestRenderer(t *testing.T) {

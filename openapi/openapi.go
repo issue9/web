@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/mimetype/yaml"
 )
 
 // TODO enum
@@ -89,52 +90,55 @@ func New(version string, title web.LocaleStringer, o ...Option) *Document {
 // Handler 实现 [web.HandlerFunc] 接口
 //
 // 目前支持以下几种格式：
-//   - json
-//   - yaml
-//   - html 可参考 [github.com/issue9/web/mimetype/html]
+//   - json 通过将 accept 报头设置为 [json.Mimetype] 返回 JSON 格式的数据；
+//   - yaml 通过将 accept 报头设置为 [yaml.Mimetype] 返回 YAML 格式的数据；
+//   - html 通过将 accept 报头设置为 [html.Mimetype] 返回 HTML 格式的数据。
+//     需要通过 [WithHTML] 进行配置，可参考 [github.com/issue9/web/mimetype/html]；
+//
+// NOTE: Handler 支持的输出格式限定在以上几种，但是最终是否能正常输出以上几种格式，
+// 还需要由 [web.Server] 是否配置相应的解码方式。
 func (d *Document) Handler(ctx *web.Context) web.Responser {
 	if d.disable {
 		return ctx.NotImplemented()
 	}
 
-	if m := ctx.Mimetype(false); m != json.Mimetype && m != html.Mimetype {
-		return ctx.Problem(web.ProblemUnsupportedMediaType)
+	if m := ctx.Mimetype(false); m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype {
+		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
 	return web.OK(d.build(ctx.LocalePrinter()))
 }
 
-func (o *Document) build(p *message.Printer) *openAPIRenderer {
-	if o.disable {
-		return nil
-	}
+// Disable 是否禁用 [Document.Handler] 接口输出内容
+func (d *Document) Disable(disable bool) { d.disable = disable }
 
-	servers := make([]*serverRenderer, 0, len(o.servers))
-	for _, s := range o.servers {
+func (d *Document) build(p *message.Printer) *openAPIRenderer {
+	servers := make([]*serverRenderer, 0, len(d.servers))
+	for _, s := range d.servers {
 		servers = append(servers, s.build(p))
 	}
 
-	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(o.security))
-	for _, sec := range o.security {
+	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(d.security))
+	for _, sec := range d.security {
 		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Values}
 		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
 	}
 
-	tags := make([]*tagRenderer, 0, len(o.tags))
-	for _, t := range o.tags {
+	tags := make([]*tagRenderer, 0, len(d.tags))
+	for _, t := range d.tags {
 		tags = append(tags, t.build(p))
 	}
 
 	return &openAPIRenderer{
 		OpenAPI:      Version,
-		Info:         o.info.build(p),
+		Info:         d.info.build(p),
 		Servers:      servers,
-		Paths:        writeMap2OrderedMap(o.paths, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, o) }),
-		WebHooks:     writeMap2OrderedMap(o.webHooks, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, o) }),
-		Components:   o.components.build(p, o),
+		Paths:        writeMap2OrderedMap(d.paths, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) }),
+		WebHooks:     writeMap2OrderedMap(d.webHooks, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d) }),
+		Components:   d.components.build(p, d),
 		Security:     security,
 		Tags:         tags,
-		ExternalDocs: o.externalDocs.build(p),
+		ExternalDocs: d.externalDocs.build(p),
 	}
 }
 

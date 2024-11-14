@@ -62,6 +62,10 @@ func (t *Parameter) addComponents(c *components, in string) {
 			c.paths[t.Ref.Ref] = t
 		}
 	}
+
+	if t.Schema != nil {
+		t.Schema.addComponents(c)
+	}
 }
 
 func (t *Parameter) buildParameter(p *message.Printer, in string) *renderer[parameterRenderer] {
@@ -72,10 +76,6 @@ func (t *Parameter) buildParameter(p *message.Printer, in string) *renderer[para
 }
 
 func (t *Parameter) buildParameterRenderer(p *message.Printer, in string) *parameterRenderer {
-	if t == nil {
-		return nil
-	}
-
 	return &parameterRenderer{
 		Name:        t.Name,
 		In:          in,
@@ -94,9 +94,6 @@ func (t *Parameter) buildHeader(p *message.Printer) *renderer[headerRenderer] {
 }
 
 func (t *Parameter) buildHeaderRenderer() *headerRenderer {
-	if t == nil {
-		return nil
-	}
 	return &headerRenderer{Required: t.Required, Deprecated: t.Deprecated}
 }
 
@@ -114,7 +111,7 @@ type Schema struct {
 	Items                *Schema
 	Properties           map[string]*Schema
 	AdditionalProperties *Schema
-	Required             bool
+	Required             []string
 	Minimum              int
 	Maximum              int
 }
@@ -132,7 +129,7 @@ type schemaRenderer struct {
 	Items                *renderer[schemaRenderer]                                 `json:"items,omitempty" yaml:"items,omitempty"`
 	Properties           *orderedmap.OrderedMap[string, *renderer[schemaRenderer]] `json:"properties,omitempty" yaml:"properties,omitempty"`
 	AdditionalProperties *renderer[schemaRenderer]                                 `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
-	Required             bool                                                      `json:"required,omitempty" yaml:"required,omitempty"`
+	Required             []string                                                  `json:"required,omitempty" yaml:"required,omitempty"`
 	Minimum              int                                                       `json:"minimum,omitempty" yaml:"minimum,omitempty"`
 	Maximum              int                                                       `json:"maximum,omitempty" yaml:"maximum,omitempty"`
 }
@@ -148,33 +145,32 @@ func NewSchema(t reflect.Type) *Schema {
 
 // d 仅用于查找其关联的 components/schema 中是否存在相同名称的对象，如果存在则直接生成引用对象。
 func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string) *Schema {
-	nullable := t.Kind() == reflect.Pointer
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
 	switch t.Kind() {
 	case reflect.String:
-		return &Schema{Type: TypeString, Required: !nullable}
+		return &Schema{Type: TypeString}
 	case reflect.Bool:
-		return &Schema{Type: TypeBoolean, Required: !nullable}
+		return &Schema{Type: TypeBoolean}
 	case reflect.Float32, reflect.Float64:
-		return &Schema{Type: TypeNumber, Required: !nullable}
+		return &Schema{Type: TypeNumber}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &Schema{Type: TypeInteger, Required: !nullable}
+		return &Schema{Type: TypeInteger}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Schema{Type: TypeInteger, Required: !nullable, Minimum: 0}
+		return &Schema{Type: TypeInteger, Minimum: 0}
 	case reflect.Array, reflect.Slice:
-		return &Schema{Type: TypeArray, Required: !nullable, Items: schemaFromType(d, t.Elem(), false, rootName)}
+		return &Schema{Type: TypeArray, Items: schemaFromType(d, t.Elem(), false, rootName)}
 	case reflect.Map:
-		return &Schema{Type: TypeObject, Required: !nullable, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName)}
+		return &Schema{Type: TypeObject, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName)}
 	case reflect.Struct:
-		return schemaFromObject(d, t, isRoot, nullable, rootName)
+		return schemaFromObject(d, t, isRoot, rootName)
 	}
 	return nil
 }
 
-func schemaFromObject(d *Document, t reflect.Type, isRoot, nullable bool, rootName string) *Schema {
+func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string) *Schema {
 	typeName := getTypeName(t)
 
 	if d != nil {
@@ -191,6 +187,7 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot, nullable bool, rootNa
 	}
 
 	ps := make(map[string]*Schema, t.NumField())
+	req := make([]string, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		k := f.Type.Kind()
@@ -198,11 +195,18 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot, nullable bool, rootNa
 			name := f.Name
 			var xml *XML
 			if f.Tag != "" {
-				if tag := getTagName(f.Tag, "json"); tag != "" {
+				tag, omitempty := getTagName(f, "json")
+				if tag == "-" {
+					continue
+				} else if tag != "" {
 					name = tag
 				}
 
-				if xmlName := getTagName(f.Tag, "xml"); xmlName != "" && xmlName != name {
+				if !omitempty {
+					req = append(req, name)
+				}
+
+				if xmlName, _ := getTagName(f, "xml"); xmlName != "" && xmlName != name {
 					xml = &XML{Name: xmlName}
 				}
 			}
@@ -221,19 +225,17 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot, nullable bool, rootNa
 
 	return &Schema{
 		Type:       TypeObject,
-		Required:   !nullable,
 		Properties: ps,
 		Ref:        ref,
+		Required:   req,
 	}
 }
 
 func (s *Schema) addComponents(c *components) {
-	if s.Ref == nil {
-		return
-	}
-
-	if _, found := c.schemas[s.Ref.Ref]; !found {
-		c.schemas[s.Ref.Ref] = s
+	if s.Ref != nil {
+		if _, found := c.schemas[s.Ref.Ref]; !found {
+			c.schemas[s.Ref.Ref] = s
+		}
 	}
 
 	for _, item := range s.AllOf {
@@ -269,10 +271,6 @@ func (s *Schema) build(p *message.Printer) *renderer[schemaRenderer] {
 }
 
 func (s *Schema) buildRenderer(p *message.Printer) *schemaRenderer {
-	if s == nil {
-		return nil
-	}
-
 	return &schemaRenderer{
 		XML:                  s.XML.clone(),
 		ExternalDocs:         s.ExternalDocs.build(p),

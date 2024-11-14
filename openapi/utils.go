@@ -26,16 +26,22 @@ func getTypeName(t reflect.Type) string {
 	return nameReplacer.Replace(t.PkgPath() + "/" + t.Name())
 }
 
-func getTagName(tag reflect.StructTag, name string) string {
-	val := tag.Get(name)
+// 可能返回 -，表示该字段不需要处理
+func getTagName(field reflect.StructField, name string) (n string, omitempty bool) {
+	val := field.Tag.Get(name)
 	if val == "-" {
-		return ""
+		return "-", false
 	}
 
-	if index := strings.IndexByte(val, ','); index >= 0 {
-		return val[:index]
+	if val == "" {
+		return field.Name, false
 	}
-	return val
+
+	tags := strings.Split(val, ",")
+	if len(tags) == 1 {
+		return tags[0], false
+	}
+	return tags[0], slices.Index(tags[1:], "omitempty") >= 0
 }
 
 func sprint(p *message.Printer, s web.LocaleStringer) string {
