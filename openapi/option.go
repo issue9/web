@@ -6,6 +6,8 @@ package openapi
 
 import (
 	"fmt"
+	"net/http"
+	"reflect"
 
 	"github.com/issue9/sliceutil"
 
@@ -57,6 +59,15 @@ func WithResponse(status int, resp *Response) Option {
 		}
 		d.responses[status] = resp.Ref.Ref
 	}
+}
+
+// PresetOptions 提供 [web.Problem] 的 [Response] 对象
+func WithProblemResponse() Option {
+	return WithResponse(http.StatusBadRequest, &Response{
+		Ref:         &Ref{Ref: "problem"},
+		Body:        NewSchema(reflect.TypeOf(web.Problem{})),
+		Description: web.Phrase("problem.400.detail"),
+	})
 }
 
 // WithMediaType 指定所有接口可用的媒体类型

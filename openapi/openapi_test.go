@@ -7,6 +7,7 @@ package openapi
 import (
 	stdjson "encoding/json"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -86,19 +87,45 @@ func TestDocument_Handler(t *testing.T) {
 	d := New("1.0.0", web.Phrase("test"))
 	r := s.Routers().New("def", nil)
 	a.NotNil(r)
+
 	r.Prefix("/p").Delete("/users", func(ctx *web.Context) web.Responser { return nil }, d.API().Response(200, 1, web.Phrase("get users"))).
 		Get("/users", func(*web.Context) web.Responser { return nil }). // 未指定文档
 		Get("/openapi", d.Handler)
+
 	cancel := servertest.Run(a, s)
+
 	servertest.Get(a, "http://localhost:8080/p/openapi").Header("accept", json.Mimetype).
 		Do(nil).
 		BodyFunc(func(a *assert.Assertion, body []byte) {
 			a.NotZero(len(body)).True(stdjson.Valid(body))
 		})
+
 	servertest.Get(a, "http://localhost:8080/p/openapi").Header("accept", yaml.Mimetype).
 		Do(nil).
 		Status(http.StatusNotAcceptable) // server 中未未配置 yaml
 
+	d.Disable(true)
+	servertest.Get(a, "http://localhost:8080/p/openapi").Header("accept", json.Mimetype).
+		Do(nil).
+		Status(http.StatusNotImplemented)
+
 	s.Close(500 * time.Millisecond)
 	cancel()
+}
+
+func TestComponents_build(t *testing.T) {
+	a := assert.New(t, false)
+	c := newComponents()
+	p := newPrinter(a, language.SimplifiedChinese)
+	d := New("0.1.0", web.Phrase("lang"))
+
+	c.queries["q1"] = &Parameter{Name: "q1", Schema: &Schema{Type: TypeString}}
+	c.cookies["c1"] = &Parameter{Name: "c1", Schema: &Schema{Type: TypeNumber}}
+	c.headers["h1"] = &Parameter{Name: "h1", Schema: &Schema{Type: TypeBoolean}}
+	c.schemas["s1"] = NewSchema(reflect.TypeFor[int]())
+
+	r := c.build(p, d)
+	a.Equal(r.Parameters.Len(), 2).
+		Equal(r.Headers.Len(), 1).
+		Equal(r.Schemas.Len(), 1)
 }
