@@ -8,6 +8,8 @@
 package openapi
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"slices"
 	"strings"
 
@@ -119,7 +121,14 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
-	return web.OK(d.build(ctx.LocalePrinter(), q.Tags))
+	return web.NotModified(func() (string, bool) {
+		slices.Sort(q.Tags)
+		tags := strings.Join(q.Tags, ",") + "/" + ctx.Mimetype(false) + "/" + ctx.LanguageTag().String() // 只与查询参数、mimetype 和 字符集相关
+		val := md5.New().Sum([]byte(tags))
+		return hex.EncodeToString(val), true
+	}, func() (any, error) {
+		return d.build(ctx.LocalePrinter(), q.Tags), nil
+	})
 }
 
 // Disable 是否禁用 [Document.Handler] 接口输出内容
