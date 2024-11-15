@@ -133,7 +133,7 @@ func (d *Document) build(p *message.Printer, filterTags []string) *openAPIRender
 
 	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(d.security))
 	for _, sec := range d.security {
-		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Values}
+		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Scopes}
 		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
 	}
 

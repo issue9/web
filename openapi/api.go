@@ -101,7 +101,7 @@ func (o *Operation) build(p *message.Printer, d *Document) *operationRenderer {
 
 	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(o.Security))
 	for _, sec := range o.Security {
-		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Values}
+		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Scopes}
 		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
 	}
 

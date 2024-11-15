@@ -114,3 +114,20 @@ func TestWithTag(t *testing.T) {
 		Equal(d.tags[0].name, "t1").
 		Equal(d.tags[1].externalDocs.URL, "https://example.com")
 }
+
+func TestWithSecurityScheme(t *testing.T) {
+	a := assert.New(t, false)
+	d := New("0.1", web.Phrase("title"),
+		WithSecurityScheme(&SecurityScheme{
+			ID:     "http1",
+			Type:   "http",
+			Scheme: "basic",
+		}, []string{}, []string{"abc"}),
+	)
+
+	a.Length(d.components.securitySchemes, 1).
+		NotNil(d.components.securitySchemes["http1"]).
+		Length(d.security, 2).
+		Equal(d.security[0], &SecurityRequirement{Name: "http1", Scopes: []string{}}).
+		Equal(d.security[1], &SecurityRequirement{Name: "http1", Scopes: []string{"abc"}})
+}

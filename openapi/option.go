@@ -208,26 +208,33 @@ func WithTag(name string, desc web.LocaleStringer, extDocURL string, extDocDesc 
 	}
 }
 
-// WithSecurity 指定 openapi.security 属性
+// WithSecurityScheme 指定验证方案
+//
+// s 需要添加的验证方案；
+// scope 如果指定了该值，那么会以 s.ID 为名称，scope 为值添加至 openapi.securiy，
+// scope 如果是多个参数，每个参数应该都是不同的；
 //
 // NOTE: 多次调用会依次添加
-func WithSecurity(name string, key ...string) Option {
+func WithSecurityScheme(s *SecurityScheme, scope ...[]string) Option {
 	return func(d *Document) {
-		if d.security == nil {
-			d.security = []*SecurityRequirement{}
+		if _, found := d.components.securitySchemes[s.ID]; found {
+			panic(fmt.Sprintf("已经存在名称为 %s 的项", s.ID))
 		}
-		d.security = append(d.security, &SecurityRequirement{Name: name, Values: key})
-	}
-}
 
-// WithSecurityScheme 指定 openapi.components.securityScheme 属性
-//
-// NOTE: 多次调用会依次添加
-func WithSecurityScheme(id string, s *SecurityScheme) Option {
-	return func(d *Document) {
-		if _, found := d.components.securitySchemes[id]; found {
-			panic(fmt.Sprintf("已经存在名称为 %s 的项", id))
+		if err := s.valid(); err != nil {
+			panic(err)
 		}
-		d.components.securitySchemes[id] = s
+
+		d.components.securitySchemes[s.ID] = s
+
+		if len(scope) > 0 {
+			if d.security == nil {
+				d.security = []*SecurityRequirement{}
+			}
+
+			for _, ss := range scope {
+				d.security = append(d.security, &SecurityRequirement{Name: s.ID, Scopes: ss})
+			}
+		}
 	}
 }

@@ -26,4 +26,10 @@ const (
 	FormatFloat    = "float"
 	FormatDouble   = "double"
 	FormatPassword = "password"
+
+	SecuritySchemeTypeHTTP          = "http"
+	SecuritySchemeTypeAPIKey        = "apiKey"
+	SecuritySchemeTypeMutualTLS     = "mutualTLS"
+	SecuritySchemeTypeOAuth2        = "oauth2"
+	SecuritySchemeTypeOpenIDConnect = "openIdConnect"
 )
