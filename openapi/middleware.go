@@ -22,6 +22,8 @@ type APIMiddleware struct {
 
 // Path 指定路径参数
 func (m *APIMiddleware) Path(name, typ string, desc web.LocaleStringer) *APIMiddleware {
+	// TODO 如果支持泛型方法，typ 可以由泛型类型获得
+
 	if m.o.Paths == nil {
 		m.o.Paths = []*Parameter{}
 	}
@@ -86,7 +88,7 @@ func (m *APIMiddleware) QueryObject(o any) *APIMiddleware {
 			name = f.Name
 		}
 
-		switch t.Kind() {
+		switch f.Type.Kind() {
 		case reflect.String:
 			m.Query(name, TypeString, nil)
 		case reflect.Bool:
@@ -98,9 +100,9 @@ func (m *APIMiddleware) QueryObject(o any) *APIMiddleware {
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			m.query(name, &Schema{Type: TypeInteger, Minimum: 0}, nil)
 		case reflect.Array, reflect.Slice:
-			m.query(name, &Schema{Type: TypeArray, Items: schemaFromType(m.d, reflect.TypeOf(t.Elem()), false, "")}, nil)
+			m.query(name, &Schema{Type: TypeArray, Items: schemaFromType(m.d, reflect.TypeOf(f.Type.Elem()), false, "")}, nil)
 		default:
-			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v", t.Kind()))
+			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v", f.Type.Kind()))
 		}
 	}
 
@@ -195,8 +197,15 @@ func (d *Document) Operation(o *Operation) web.Middleware {
 }
 
 func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
-	if (!d.enableHead && method == http.MethodHead) || (!d.enableOptions && method == http.MethodOptions) {
+	if (!d.enableHead && method == http.MethodHead) || (!d.enableOptions && method == http.MethodOptions) || pattern == "" {
 		return
+	}
+
+	pathParams := getPathParams(pattern)
+	for _, p := range opt.Paths {
+		if slices.Index(pathParams, p.Name) < 0 {
+			panic(fmt.Sprintf("路径参数 %s 不存在于路径", p.Name))
+		}
 	}
 
 	if d.paths == nil {

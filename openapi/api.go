@@ -5,6 +5,7 @@
 package openapi
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -326,6 +327,21 @@ type serverVariableRenderer struct {
 	Description string   `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
+func (s *Server) valid() *web.FieldError {
+	params := getPathParams(s.URL)
+	if len(params) != len(s.Variables) {
+		return web.NewFieldError("Variables", "参数与路径中的指定不同")
+	}
+
+	for _, v := range s.Variables {
+		if slices.Index(params, v.Name) < 0 {
+			return web.NewFieldError("Variables", fmt.Sprintf("参数 %s 不存在于路径中", v.Name))
+		}
+	}
+
+	return nil
+}
+
 func (s *Server) build(p *message.Printer) *serverRenderer {
 	if s == nil {
 		return nil
@@ -385,17 +401,17 @@ func (item *PathItem) addComponents(c *components) {
 		}
 	}
 
-	for _, item := range item.Paths {
-		item.addComponents(c, InPath)
+	for _, p := range item.Paths {
+		p.addComponents(c, InPath)
 	}
-	for _, item := range item.Queries {
-		item.addComponents(c, InQuery)
+	for _, p := range item.Queries {
+		p.addComponents(c, InQuery)
 	}
-	for _, item := range item.Headers {
-		item.addComponents(c, InHeader)
+	for _, p := range item.Headers {
+		p.addComponents(c, InHeader)
 	}
-	for _, item := range item.Cookies {
-		item.addComponents(c, InCookie)
+	for _, p := range item.Cookies {
+		p.addComponents(c, InCookie)
 	}
 }
 

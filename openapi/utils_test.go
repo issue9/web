@@ -38,3 +38,10 @@ func TestWriteMap2OrderedMap(t *testing.T) {
 	om = writeMap2OrderedMap[string, web.LocaleStringer, string](nil, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
 	a.Nil(om)
 }
+
+func TestGetPathParams(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.Equal(getPathParams("/path/{id}/{id2}"), []string{"id", "id2"})
+	a.Equal(getPathParams("/path/{id:number}/{id2}"), []string{"id:number", "id2"})
+}

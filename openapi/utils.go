@@ -18,8 +18,8 @@ import (
 )
 
 var nameReplacer = strings.NewReplacer(
-	"[", "__",
-	"]", "__",
+	"[", "_.",
+	"]", "._",
 	"/", ".",
 )
 
@@ -73,4 +73,21 @@ func writeMap2OrderedMap[KEY cmp.Ordered, IN any, OUT any](in map[KEY]IN, m *ord
 	}
 
 	return m
+}
+
+func getPathParams(path string) []string {
+	ret := make([]string, 0, 3)
+
+	for {
+		if start := strings.IndexByte(path, '{'); start >= 0 {
+			if end := strings.IndexByte(path[start:], '}'); end > 0 {
+				ret = append(ret, path[start+1:start+end])
+				path = path[start+end:]
+				continue
+			}
+		}
+		break
+	}
+
+	return ret
 }
