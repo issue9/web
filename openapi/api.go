@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 
@@ -425,7 +426,6 @@ func (item *PathItem) build(p *message.Printer, d *Document, tags []string) *ren
 	if item.Ref != nil {
 		return newRenderer[pathItemRenderer](item.Ref.build(p, "pathItems"), nil)
 	}
-
 	return newRenderer(nil, item.buildRenderer(p, d, tags))
 }
 
@@ -460,21 +460,21 @@ func (item *PathItem) buildRenderer(p *message.Printer, d *Document, tags []stri
 		}
 
 		switch strings.ToUpper(method) {
-		case "GET":
+		case http.MethodGet:
 			path.Get = o.build(p, d)
-		case "PUT":
+		case http.MethodPut:
 			path.Put = o.build(p, d)
-		case "POST":
+		case http.MethodPost:
 			path.Post = o.build(p, d)
-		case "DELETE":
+		case http.MethodDelete:
 			path.Delete = o.build(p, d)
-		case "OPTIONS":
+		case http.MethodOptions:
 			path.Options = o.build(p, d)
-		case "HEAD":
+		case http.MethodHead:
 			path.Head = o.build(p, d)
-		case "PATCH":
+		case http.MethodPatch:
 			path.Patch = o.build(p, d)
-		case "TRACE":
+		case http.MethodTrace:
 			path.Trace = o.build(p, d)
 		}
 	}

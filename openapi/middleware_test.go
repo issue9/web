@@ -19,7 +19,7 @@ type q struct {
 	Q3 int
 }
 
-func TestDocumentAPI(t *testing.T) {
+func TestDocument_API(t *testing.T) {
 	a := assert.New(t, false)
 	d := New("1.0.0", web.Phrase("desc"))
 
@@ -35,9 +35,10 @@ func TestDocumentAPI(t *testing.T) {
 
 		o := d.paths["/path/{p1}/abc"].Operations["GET"]
 		a.NotNil(o).
-			Length(o.Paths, 1).
+			Length(o.Paths, 0).
 			Length(o.Queries, 3).
-			NotNil(o.RequestBody.Body.Type, TypeObject)
+			NotNil(o.RequestBody.Body.Type, TypeObject).
+			Length(d.paths["/path/{p1}/abc"].Paths, 1)
 	})
 
 	m = d.API(func(o *Operation) {

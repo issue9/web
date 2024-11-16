@@ -27,6 +27,9 @@ func (o *Operation) Tag(tag ...string) *Operation {
 // typ 表示该参数在 json schema 中的类型；
 // desc 对该参数的表述；
 // f 如果 typ 无法描述该参数的全部特征，那么可以使用 f 对该类型进行修正，否则为空；
+//
+// NOTE: 当同一个路径包含不同的请求方法时，只需要定义其一个请求方法中的路径参数即可，
+// 会自动应用到所有的请求方法。
 func (o *Operation) Path(name, typ string, desc web.LocaleStringer, f func(*Schema)) *Operation {
 	// TODO 如果支持泛型方法，typ 可以由泛型类型获得
 
@@ -217,7 +220,9 @@ func (o *Operation) ResponseRef(status int, ref string) *Operation {
 // API 提供用于声明 openapi 文档的中间件
 func (d *Document) API(f func(o *Operation)) web.Middleware {
 	return web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
-		if !d.disable {
+		if !d.disable && pattern != "" &&
+			(d.enableHead || method != http.MethodHead) &&
+			(d.enableOptions || method != http.MethodOptions) {
 			o := &Operation{
 				d:         d,
 				Responses: make(map[int]*Response, 1), // 必然存在的字段，直接初始化了。
@@ -231,10 +236,6 @@ func (d *Document) API(f func(o *Operation)) web.Middleware {
 }
 
 func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
-	if (!d.enableHead && method == http.MethodHead) || (!d.enableOptions && method == http.MethodOptions) || pattern == "" {
-		return
-	}
-
 	pathParams := getPathParams(pattern)
 	for _, p := range opt.Paths {
 		if slices.Index(pathParams, p.Name) < 0 {
@@ -248,12 +249,12 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 
 	opt.addComponents(d.components)
 
-	for _, ref := range d.headers {
+	for _, ref := range d.headers { // 添加公共报头的定义
 		opt.Headers = append(opt.Headers, &Parameter{
 			Ref: &Ref{Ref: ref},
 		})
 	}
-	for _, ref := range d.cookies {
+	for _, ref := range d.cookies { // 添加公共 Cookie 的定义
 		opt.Cookies = append(opt.Cookies, &Parameter{
 			Ref: &Ref{Ref: ref},
 		})
@@ -271,12 +272,21 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 	}
 
 	if item, found := d.paths[pattern]; !found {
-		item = &PathItem{Operations: make(map[string]*Operation, 3)}
+		item = &PathItem{
+			Operations: make(map[string]*Operation, 3),
+			Paths:      opt.Paths,
+		}
+		opt.Paths = nil
+
 		item.Operations[method] = opt
 		d.paths[pattern] = item
 	} else {
 		if _, found = item.Operations[method]; found {
 			panic(fmt.Sprintf("已经存在 %s:%s 的定义", method, pattern))
+		}
+		if len(item.Paths) == 0 && len(opt.Paths) > 0 {
+			item.Paths = opt.Paths
+			opt.Paths = nil
 		}
 		item.Operations[method] = opt
 	}
