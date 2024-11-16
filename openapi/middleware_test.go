@@ -13,23 +13,23 @@ import (
 	"github.com/issue9/web"
 )
 
-var _ web.Middleware = &APIMiddleware{}
-
 type q struct {
 	Q1 string `query:"q1"`
 	Q2 int    `query:"q2"`
 	Q3 int
 }
 
-func TestAPIMiddleware(t *testing.T) {
+func TestDocumentAPI(t *testing.T) {
 	a := assert.New(t, false)
 	d := New("1.0.0", web.Phrase("desc"))
 
-	m := d.API("tag1").
-		Header("h1", TypeString, nil).
-		QueryObject(&q{}).
-		Path("p1", TypeInteger, web.Phrase("lang")).
-		Body(&object{})
+	m := d.API(func(o *Operation) {
+		o.Header("h1", TypeString, nil, nil).
+			Tag("tag1").
+			QueryObject(&q{}, nil).
+			Path("p1", TypeInteger, web.Phrase("lang"), nil).
+			Body(&object{}, nil)
+	})
 	a.NotPanic(func() {
 		m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
 
@@ -40,7 +40,12 @@ func TestAPIMiddleware(t *testing.T) {
 			NotNil(o.RequestBody.Body.Type, TypeObject)
 	})
 
-	m = d.API("tag1").Header("h1", TypeString, nil).Path("p1", TypeInteger, web.Phrase("lang")).Body(&object{})
+	m = d.API(func(o *Operation) {
+		o.Tag("tag1").
+			Header("h1", TypeString, nil, nil).
+			Path("p1", TypeInteger, web.Phrase("lang"), nil).
+			Body(&object{}, nil)
+	})
 	a.PanicString(func() {
 		m.Middleware(nil, http.MethodGet, "/path/{p}/abc", "")
 	}, "路径参数 p1 不存在于路径")

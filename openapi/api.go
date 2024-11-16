@@ -17,6 +17,8 @@ import (
 
 // Operation 定义了每一个 API 的属性
 type Operation struct {
+	d *Document
+
 	Summary     web.LocaleStringer
 	Description web.LocaleStringer
 	ID          string

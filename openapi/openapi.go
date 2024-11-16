@@ -22,8 +22,6 @@ import (
 	"github.com/issue9/web/mimetype/yaml"
 )
 
-// TODO enum
-
 // Document openapi 文档
 type Document struct {
 	info         *info
@@ -124,7 +122,9 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 	return web.NotModified(func() (string, bool) {
 		slices.Sort(q.Tags)
 		tags := strings.Join(q.Tags, ",") + "/" + ctx.Mimetype(false) + "/" + ctx.LanguageTag().String() // 只与查询参数、mimetype 和 字符集相关
-		val := md5.New().Sum([]byte(tags))
+		h := md5.New()
+		h.Write([]byte(tags))
+		val := h.Sum(nil)
 		return hex.EncodeToString(val), true
 	}, func() (any, error) {
 		return d.build(ctx.LocalePrinter(), q.Tags), nil

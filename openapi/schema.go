@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"reflect"
+	"slices"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
@@ -114,6 +115,7 @@ type Schema struct {
 	Required             []string
 	Minimum              int
 	Maximum              int
+	Enum                 []any
 }
 
 type schemaRenderer struct {
@@ -132,6 +134,7 @@ type schemaRenderer struct {
 	Required             []string                                                  `json:"required,omitempty" yaml:"required,omitempty"`
 	Minimum              int                                                       `json:"minimum,omitempty" yaml:"minimum,omitempty"`
 	Maximum              int                                                       `json:"maximum,omitempty" yaml:"maximum,omitempty"`
+	Enum                 []any                                                     `json:"enum,omitempty" yaml:"enum,omitempty"`
 }
 
 func (d *Document) newSchema(t reflect.Type) *Schema {
@@ -286,6 +289,7 @@ func (s *Schema) buildRenderer(p *message.Printer) *schemaRenderer {
 		Required:             s.Required,
 		Minimum:              s.Minimum,
 		Maximum:              s.Maximum,
+		Enum:                 slices.Clone(s.Enum),
 	}
 }
 
