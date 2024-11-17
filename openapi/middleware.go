@@ -21,6 +21,38 @@ func (o *Operation) Tag(tag ...string) *Operation {
 	return o
 }
 
+func (o *Operation) Server(url string, desc web.LocaleStringer, vars ...*ServerVariable) *Operation {
+	s := &Server{
+		URL:         url,
+		Description: desc,
+		Variables:   vars,
+	}
+	if err := s.valid(); err != nil {
+		panic(err)
+	}
+
+	o.Servers = append(o.Servers, s)
+	return o
+}
+
+func (o *Operation) buildParameter(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Parameter {
+	p := &Parameter{
+		Name:        name,
+		Description: desc,
+		Required:    true,
+		Schema:      &Schema{Type: typ},
+	}
+	if f != nil {
+		f(p)
+	}
+
+	if err := p.valid(true); err != nil {
+		panic(err)
+	}
+
+	return p
+}
+
 // Path 指定路径参数
 //
 // name 参数名称，如果参数带了类型限定，比如 /path/{id:digit} 等，需要带上类型限定符；
@@ -30,20 +62,12 @@ func (o *Operation) Tag(tag ...string) *Operation {
 //
 // NOTE: 当同一个路径包含不同的请求方法时，只需要定义其一个请求方法中的路径参数即可，
 // 会自动应用到所有的请求方法。
-func (o *Operation) Path(name, typ string, desc web.LocaleStringer, f func(*Schema)) *Operation {
+func (o *Operation) Path(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Operation {
 	// TODO 如果支持泛型方法，typ 可以由泛型类型获得
 
-	s := &Schema{Type: typ}
-	if f != nil {
-		f(s)
-	}
-
-	o.Paths = append(o.Paths, &Parameter{
-		Name:        name,
-		Description: desc,
-		Required:    true,
-		Schema:      s,
-	})
+	p := o.buildParameter(name, typ, desc, f)
+	p.Required = true
+	o.Paths = append(o.Paths, p)
 	return o
 }
 
@@ -53,17 +77,8 @@ func (o *Operation) PathRef(ref string) *Operation {
 }
 
 // Query 指定一个查询参数
-func (o *Operation) Query(name, typ string, desc web.LocaleStringer, f func(*Schema)) *Operation {
-	s := &Schema{Type: typ}
-	if f != nil {
-		f(s)
-	}
-
-	return o.query(name, s, desc)
-}
-
-func (o *Operation) query(name string, s *Schema, desc web.LocaleStringer) *Operation {
-	o.Queries = append(o.Queries, &Parameter{Name: name, Description: desc, Schema: s})
+func (o *Operation) Query(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Operation {
+	o.Queries = append(o.Queries, o.buildParameter(name, typ, desc, f))
 	return o
 }
 
@@ -105,6 +120,9 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 			if f != nil {
 				f(p)
 			}
+			if err := p.valid(true); err != nil {
+				panic(err)
+			}
 			m.Queries = append(m.Queries, p)
 		}
 		switch field.Type.Kind() {
@@ -140,13 +158,8 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 // typ 表示该参数在 json schema 中的类型；
 // desc 对该参数的表述；
 // f 如果 typ 无法描述该参数的全部特征，那么可以使用 f 对该类型进行修正，否则为空；
-func (o *Operation) Header(name, typ string, desc web.LocaleStringer, f func(*Schema)) *Operation {
-	s := &Schema{Type: typ}
-	if f != nil {
-		f(s)
-	}
-
-	o.Headers = append(o.Headers, &Parameter{Name: name, Description: desc, Schema: s})
+func (o *Operation) Header(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Operation {
+	o.Headers = append(o.Headers, o.buildParameter(name, typ, desc, f))
 	return o
 }
 
@@ -161,13 +174,8 @@ func (o *Operation) HeaderRef(ref string) *Operation {
 // typ 表示该参数在 json schema 中的类型；
 // desc 对该参数的表述；
 // f 如果 typ 无法描述该参数的全部特征，那么可以使用 f 对该类型进行修正，否则为空；
-func (o *Operation) Cookie(name, typ string, desc web.LocaleStringer, f func(*Schema)) *Operation {
-	s := &Schema{Type: typ}
-	if f != nil {
-		f(s)
-	}
-
-	o.Cookies = append(o.Cookies, &Parameter{Name: name, Description: desc, Schema: s})
+func (o *Operation) Cookie(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Operation {
+	o.Cookies = append(o.Cookies, o.buildParameter(name, typ, desc, f))
 	return o
 }
 
@@ -185,6 +193,10 @@ func (o *Operation) Body(body any, f func(*Request)) *Operation {
 	}
 	if f != nil {
 		f(req)
+	}
+
+	if err := req.valid(true); err != nil {
+		panic(err)
 	}
 
 	o.RequestBody = req
@@ -208,6 +220,10 @@ func (o *Operation) Response(status int, resp any, desc web.LocaleStringer, f fu
 		f(r)
 	}
 
+	if err := r.valid(true); err != nil {
+		panic(err)
+	}
+
 	o.Responses[status] = r
 	return o
 }
@@ -217,7 +233,50 @@ func (o *Operation) ResponseRef(status int, ref string) *Operation {
 	return o
 }
 
+// CallbackRef 引用 components 中定义的回调对象
+func (o *Operation) CallbackRef(name, ref string) *Operation {
+	if o.Callbacks == nil {
+		o.Callbacks = make(map[string]*Callback, 1)
+	}
+	o.Callbacks[name] = &Callback{Ref: &Ref{Ref: ref}}
+
+	return o
+}
+
+// Callback 定义回调对象
+func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Operation {
+	if o.Callbacks == nil {
+		o.Callbacks = make(map[string]*Callback, 1)
+	}
+
+	c, found := o.Callbacks[name]
+	if !found {
+		c = &Callback{
+			Callback: make(map[string]*PathItem, 1),
+		}
+		o.Callbacks[name] = c
+	}
+
+	item, found := c.Callback[path]
+	if !found {
+		item = &PathItem{}
+		c.Callback[path] = item
+	}
+
+	opt, found := item.Operations[method]
+	if !found {
+		opt = &Operation{d: o.d}
+	}
+	f(opt)
+
+	return o
+}
+
 // API 提供用于声明 openapi 文档的中间件
+//
+// 用户可通过 f 方法提供的参数 o 对接口数据进行更改。
+// 对于 [Operation] 的更改，可以直接操作字段，也可以通过其提供的方法进行更改。
+// 两者稍有区别，前者不会对数据进行验证。
 func (d *Document) API(f func(o *Operation)) web.Middleware {
 	return web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
 		if !d.disable && pattern != "" &&

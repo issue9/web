@@ -95,8 +95,29 @@ func WithHeader(p ...*Parameter) Option {
 			if pp.Ref == nil || pp.Ref.Ref == "" {
 				panic("必须存在 ref")
 			}
+
+			if err := pp.valid(false); err != nil {
+				panic(err)
+			}
+
 			pp.addComponents(d.components, InHeader)
 			d.headers = append(d.headers, pp.Ref.Ref)
+		}
+	}
+}
+
+// WithCallback 预定义回调对象
+func WithCallback(c ...*Callback) Option {
+	return func(d *Document) {
+		for _, cc := range c {
+			if cc.Ref == nil || cc.Ref.Ref == "" {
+				panic("必须存在 ref")
+			}
+			if len(cc.Callback) == 0 {
+				panic("Callback 不能为空")
+			}
+
+			cc.addComponents(d.components)
 		}
 	}
 }
@@ -177,15 +198,17 @@ func WithExternalDocs(url string, desc web.LocaleStringer) Option {
 // WithServer 添加 openapi.servers 变量
 func WithServer(url string, desc web.LocaleStringer, vars ...*ServerVariable) Option {
 	return func(d *Document) {
-		if d.servers == nil {
-			d.servers = []*Server{}
-		}
-
-		d.servers = append(d.servers, &Server{
+		s := &Server{
 			URL:         url,
 			Description: desc,
 			Variables:   vars,
-		})
+		}
+
+		if err := s.valid(); err != nil {
+			panic(err)
+		}
+
+		d.servers = append(d.servers, s)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -31,8 +32,8 @@ type Operation struct {
 	Headers      []*Parameter
 	Cookies      []*Parameter
 	RequestBody  *Request
-	Responses    map[int]*Response // key = 状态码
-	Callbacks    map[string]Callback
+	Responses    map[int]*Response    // key = 状态码
+	Callbacks    map[string]*Callback // key = 名称
 	Security     []*SecurityRequirement
 	Servers      []*Server
 	ExternalDocs *ExternalDocs
@@ -123,40 +124,10 @@ func (o *Operation) build(p *message.Printer, d *Document) *operationRenderer {
 		Parameters:   parameters,
 		RequestBody:  o.RequestBody.build(p, d),
 		Responses:    writeMap2OrderedMap(o.Responses, nil, func(in *Response) *renderer[responseRenderer] { return in.build(p, d) }),
-		Callbacks:    writeMap2OrderedMap(o.Callbacks, nil, func(in Callback) *renderer[callbackRenderer] { return in.build(p, d) }),
+		Callbacks:    writeMap2OrderedMap(o.Callbacks, nil, func(in *Callback) *renderer[callbackRenderer] { return in.build(p, d) }),
 		Security:     security,
 		Servers:      servers,
 		ExternalDocs: o.ExternalDocs.build(p),
-	}
-}
-
-type Callback struct {
-	Ref      *Ref
-	Callback map[string]*PathItem
-}
-
-type callbackRenderer = orderedmap.OrderedMap[string, *renderer[pathItemRenderer]]
-
-func (c *Callback) build(p *message.Printer, d *Document) *renderer[callbackRenderer] {
-	if c.Ref != nil {
-		return newRenderer[callbackRenderer](c.Ref.build(p, "callbacks"), nil)
-	}
-	return newRenderer(nil, c.buildRenderer(p, d))
-}
-
-func (c *Callback) buildRenderer(p *message.Printer, d *Document) *callbackRenderer {
-	return writeMap2OrderedMap(c.Callback, nil, func(in *PathItem) *renderer[pathItemRenderer] { return in.build(p, d, nil) })
-}
-
-func (resp *Callback) addComponents(c *components) {
-	if resp.Ref != nil {
-		if _, found := c.callbacks[resp.Ref.Ref]; !found {
-			c.callbacks[resp.Ref.Ref] = resp
-		}
-	}
-
-	for _, item := range resp.Callback {
-		item.addComponents(c)
 	}
 }
 
@@ -175,6 +146,36 @@ type responseRenderer struct {
 	Description string                                                    `json:"description" yaml:"description"`
 	Headers     *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
 	Content     *orderedmap.OrderedMap[string, *mediaTypeRenderer]        `json:"content,omitempty" yaml:"content,omitempty"`
+}
+
+// skipRefNotNil 当存在 ref 时忽略内容的检测
+func (resp *Response) valid(skipRefNotNil bool) *web.FieldError {
+	if skipRefNotNil && resp.Ref != nil {
+		return nil
+	}
+
+	for i, p := range resp.Headers {
+		if err := p.valid(skipRefNotNil); err != nil {
+			err.AddFieldParent("Headers[" + strconv.Itoa(i) + "]")
+			return err
+		}
+	}
+
+	if resp.Body != nil {
+		if err := resp.Body.valid(skipRefNotNil); err != nil {
+			err.AddFieldParent("Body")
+			return err
+		}
+	}
+
+	for k, v := range resp.Content {
+		if err := v.valid(skipRefNotNil); err != nil {
+			err.AddFieldParent("Content[" + k + "]")
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (resp *Response) addComponents(c *components) {
@@ -253,6 +254,29 @@ type Request struct {
 type requestRenderer struct {
 	Content  *orderedmap.OrderedMap[string, *mediaTypeRenderer] `json:"content" yaml:"content"`
 	Required bool                                               `json:"required,omitempty" yaml:"required,omitempty"`
+}
+
+// skipRefNotNil 当存在 ref 时忽略内容的检测
+func (req *Request) valid(skipRefNotNil bool) *web.FieldError {
+	if skipRefNotNil && req.Ref != nil {
+		return nil
+	}
+
+	if req.Body != nil {
+		if err := req.Body.valid(skipRefNotNil); err != nil {
+			err.AddFieldParent("Body")
+			return err
+		}
+	}
+
+	for k, v := range req.Content {
+		if err := v.valid(skipRefNotNil); err != nil {
+			err.AddFieldParent("Content[" + k + "]")
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (req *Request) addComponents(c *components) {

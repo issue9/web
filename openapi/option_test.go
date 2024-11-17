@@ -51,16 +51,35 @@ func TestWithMediaType(t *testing.T) {
 		Length(d.mediaTypes, 3)
 }
 
+func TestWithCallback(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.PanicString(func() {
+		New("0.1", web.Phrase("desc"), WithCallback(&Callback{}))
+	}, "必须存在 ref")
+
+	a.PanicString(func() {
+		New("0.1", web.Phrase("desc"), WithCallback(&Callback{Ref: &Ref{Ref: "1"}}))
+	}, "Callback 不能为空")
+
+	d := New("0.1", web.Phrase("desc"),
+		WithCallback(&Callback{Ref: &Ref{Ref: "1"}, Callback: map[string]*PathItem{"path": {}}}),
+		WithCallback(&Callback{Ref: &Ref{Ref: "2"}, Callback: map[string]*PathItem{"path": {}}}),
+	)
+	a.NotNil(d).
+		Length(d.components.callbacks, 2)
+}
+
 func TestWithHeader(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithHeader(&Parameter{}))
+		New("0.1", web.Phrase("desc"), WithHeader(&Parameter{Name: "h1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
 	d := New("0.1", web.Phrase("desc"),
-		WithHeader(&Parameter{Ref: &Ref{Ref: "1"}}),
-		WithHeader(&Parameter{Ref: &Ref{Ref: "2"}}),
+		WithHeader(&Parameter{Ref: &Ref{Ref: "1"}, Name: "h1", Schema: &Schema{Type: TypeString}}),
+		WithHeader(&Parameter{Ref: &Ref{Ref: "2"}, Name: "h2", Schema: &Schema{Type: TypeString}}),
 	)
 	a.NotNil(d).
 		Length(d.components.headers, 2).
@@ -71,7 +90,7 @@ func TestWithCookie(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithCookie(&Parameter{}))
+		New("0.1", web.Phrase("desc"), WithCookie(&Parameter{Name: "c1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
 	d := New("0.1", web.Phrase("desc"),

@@ -14,6 +14,29 @@ import (
 	"github.com/issue9/web"
 )
 
+func TestParameter_valid(t *testing.T) {
+	a := assert.New(t, false)
+
+	p := &Parameter{}
+	err := p.valid(false)
+	a.Equal(err.Field, "Name")
+
+	p = &Parameter{Name: "p1"}
+	err = p.valid(false)
+	a.Equal(err.Field, "Schema")
+
+	p = &Parameter{Name: "p1", Schema: &Schema{}}
+	err = p.valid(false)
+	a.Equal(err.Field, "Schema.Type")
+
+	p = &Parameter{Name: "p1", Schema: &Schema{Type: TypeString}}
+	a.NotError(p.valid(false))
+
+	p = &Parameter{Name: "p1", Schema: &Schema{Type: TypeObject}}
+	err = p.valid(false)
+	a.Equal(err.Field, "Schema")
+}
+
 func TestParameter_addComponents(t *testing.T) {
 	a := assert.New(t, false)
 	d := New("1.0", web.Phrase("desc"))
@@ -61,6 +84,45 @@ func TestSchema_addComponents(t *testing.T) {
 	a.Length(d.components.schemas, 4).
 		Equal(d.components.schemas["t3"], s3).
 		Equal(d.components.schemas["t4"].Type, TypeNumber)
+}
+
+func TestSchema_valid(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := &Schema{}
+	err := s.valid(false)
+	a.Equal(err.Field, "Type")
+
+	s = &Schema{Type: TypeString}
+	a.NotError(s.valid(false))
+
+	s = &Schema{Type: TypeString, Properties: map[string]*Schema{"f1": {Type: TypeString}}}
+	err = s.valid(false)
+	a.Equal(err.Field, "Type")
+	s = &Schema{Type: TypeObject, Properties: map[string]*Schema{"f1": {}}}
+	err = s.valid(false)
+	a.Equal(err.Field, "Properties[f1].Type")
+	s = &Schema{Type: TypeObject, Properties: map[string]*Schema{}} // 空对象是合法的
+	a.Nil(s.valid(false))
+
+	s = &Schema{Type: TypeString, Items: &Schema{Type: TypeString}}
+	err = s.valid(false)
+	a.Equal(err.Field, "Type")
+	s = &Schema{Type: TypeArray}
+	err = s.valid(false)
+	a.Equal(err.Field, "Type")
+
+	s = &Schema{Type: TypeString, AllOf: []*Schema{{}}}
+	err = s.valid(false)
+	a.Equal(err.Field, "AllOf[0].Type")
+
+	s = &Schema{Type: TypeString, OneOf: []*Schema{{}}}
+	err = s.valid(false)
+	a.Equal(err.Field, "OneOf[0].Type")
+
+	s = &Schema{Type: TypeString, AnyOf: []*Schema{{Type: TypeString}, {}}}
+	err = s.valid(false)
+	a.Equal(err.Field, "AnyOf[1].Type")
 }
 
 func TestSchema_build(t *testing.T) {
