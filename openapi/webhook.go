@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"fmt"
+	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
@@ -59,4 +60,6 @@ func (d *Document) AddWebhook(name, method string, o *Operation) {
 		panic(fmt.Sprintf("已经存在 %s:%s 的 webhook", name, method))
 	}
 	hook.Operations[method] = o
+
+	d.last = time.Now()
 }

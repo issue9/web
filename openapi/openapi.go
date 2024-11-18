@@ -11,7 +11,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
@@ -47,8 +49,10 @@ type Document struct {
 	templateName string
 	dataURL      string
 
-	// 是否禁用
-	disable bool
+	// 其它一些状态的设置
+
+	disable bool      // 是否禁用
+	last    time.Time // 最后向当前对象添加内容的时间，用于计算 ETag 值。
 }
 
 type openAPIRenderer struct {
@@ -79,6 +83,8 @@ func New(version string, title web.LocaleStringer, o ...Option) *Document {
 			version: version,
 		},
 		components: newComponents(),
+
+		last: time.Now(),
 	}
 
 	for _, opt := range o {
@@ -121,9 +127,14 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 
 	return web.NotModified(func() (string, bool) {
 		slices.Sort(q.Tags)
-		tags := strings.Join(q.Tags, ",") + "/" + ctx.Mimetype(false) + "/" + ctx.LanguageTag().String() // 只与查询参数、mimetype 和 字符集相关
+
+		// 引起 ETag 变化的几个要素
+		etag := strconv.Itoa(int(d.last.Unix())) + "/" +
+			strings.Join(q.Tags, ",") + "/" +
+			ctx.Mimetype(false) + "/" +
+			ctx.LanguageTag().String()
 		h := md5.New()
-		h.Write([]byte(tags))
+		h.Write([]byte(etag))
 		val := h.Sum(nil)
 		return hex.EncodeToString(val), true
 	}, func() (any, error) {

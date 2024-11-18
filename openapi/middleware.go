@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
+	"time"
 
 	"github.com/issue9/query/v3"
 
@@ -289,6 +290,7 @@ func (d *Document) API(f func(o *Operation)) web.Middleware {
 			f(o)
 
 			d.addOperation(method, pattern, router, o)
+			d.last = time.Now()
 		}
 		return next
 	})
