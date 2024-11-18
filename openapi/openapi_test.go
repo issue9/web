@@ -55,7 +55,7 @@ func TestDocument_build(t *testing.T) {
 
 	d.addOperation("GET", "/users/{id}", "", &Operation{
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
-		Responses: map[int]*Response{200: {Body: &Schema{Type: TypeNumber}}},
+		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
 	r = d.build(p, nil)
 	a.Equal(r.Info.Version, s.Version()).
@@ -66,7 +66,7 @@ func TestDocument_build(t *testing.T) {
 	d.addOperation("POST", "/users/{id}", "", &Operation{
 		Tags:      []string{"admin"},
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
-		Responses: map[int]*Response{200: {Body: &Schema{Type: TypeNumber}}},
+		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
 	r = d.build(p, nil)
 	obj := r.Paths.GetPair("/users/{id}").Value.obj
@@ -96,7 +96,7 @@ func TestDocument_Handler(t *testing.T) {
 
 	r.Prefix("/p").
 		Delete("/users", func(ctx *web.Context) web.Responser { return nil }, d.API(func(o *Operation) {
-			o.Response(200, 1, web.Phrase("get users"), nil)
+			o.Response("200", 1, web.Phrase("get users"), nil)
 		})).
 		Get("/users", func(*web.Context) web.Responser { return nil }). // 未指定文档
 		Get("/openapi", d.Handler)

@@ -188,9 +188,10 @@ func (o *Operation) CookieRef(ref string) *Operation {
 // Body 从 body 参数中获取请求内容的类型
 //
 // f 如果不为空，则要以对根据 body 生成的对象做二次修改。
-func (o *Operation) Body(body any, f func(*Request)) *Operation {
+func (o *Operation) Body(body any, ignorable bool, f func(*Request)) *Operation {
 	req := &Request{
-		Body: o.d.newSchema(reflect.TypeOf(body)),
+		Ignorable: ignorable,
+		Body:      o.d.newSchema(reflect.TypeOf(body)),
 	}
 	if f != nil {
 		f(req)
@@ -212,7 +213,7 @@ func (o *Operation) BodyRef(ref string) *Operation {
 // Response 从 resp 参数中获取返回对象的类型
 //
 // f 如果不为空，则要以对根据 resp 生成的对象做二次修改。
-func (o *Operation) Response(status int, resp any, desc web.LocaleStringer, f func(*Response)) *Operation {
+func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f func(*Response)) *Operation {
 	r := &Response{
 		Description: desc,
 		Body:        o.d.newSchema(reflect.TypeOf(resp)),
@@ -229,7 +230,7 @@ func (o *Operation) Response(status int, resp any, desc web.LocaleStringer, f fu
 	return o
 }
 
-func (o *Operation) ResponseRef(status int, ref string) *Operation {
+func (o *Operation) ResponseRef(status string, ref string) *Operation {
 	o.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
 	return o
 }
@@ -285,7 +286,7 @@ func (d *Document) API(f func(o *Operation)) web.Middleware {
 			(d.enableOptions || method != http.MethodOptions) {
 			o := &Operation{
 				d:         d,
-				Responses: make(map[int]*Response, 1), // 必然存在的字段，直接初始化了。
+				Responses: make(map[string]*Response, 1), // 必然存在的字段，直接初始化了。
 			}
 			f(o)
 

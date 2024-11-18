@@ -32,7 +32,7 @@ type Operation struct {
 	Headers      []*Parameter
 	Cookies      []*Parameter
 	RequestBody  *Request
-	Responses    map[int]*Response    // key = 状态码
+	Responses    map[string]*Response // key = 状态码，比如 2XX
 	Callbacks    map[string]*Callback // key = 名称
 	Security     []*SecurityRequirement
 	Servers      []*Server
@@ -47,7 +47,7 @@ type operationRenderer struct {
 	Deprecated   bool                                                        `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
 	Parameters   []*renderer[parameterRenderer]                              `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 	RequestBody  *renderer[requestRenderer]                                  `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-	Responses    *orderedmap.OrderedMap[int, *renderer[responseRenderer]]    `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Responses    *orderedmap.OrderedMap[string, *renderer[responseRenderer]] `json:"responses,omitempty" yaml:"responses,omitempty"`
 	Callbacks    *orderedmap.OrderedMap[string, *renderer[callbackRenderer]] `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
 	Security     []*securityRequirementRenderer                              `json:"security,omitempty" yaml:"security,omitempty"`
 	Servers      []*serverRenderer                                           `json:"servers,omitempty" yaml:"servers,omitempty"`
@@ -137,7 +137,7 @@ type Response struct {
 	Description web.LocaleStringer
 
 	// Body 和 Content 共同组成了正文内容
-	// 所有不在 Content 中出现的类型均采用 [openAPI.MediaTypesRenderer] 与 Body 相结构。
+	// 所有不在 Content 中出现的类型均采用 [openAPI.MediaTypesRenderer] 与 Body 相结合。
 	Body    *Schema
 	Content map[string]*Schema // key = mimetype
 }
@@ -246,7 +246,7 @@ type Request struct {
 	Ignorable bool // 对应 requestBody.required
 
 	// Body 和 Content 共同组成了正文内容
-	// 所有不在 Content 中出现的类型均采用 [Document.MediaTypes] 与 Body 相结构。
+	// 所有不在 Content 中出现的类型均采用 [Document.MediaTypes] 与 Body 相结合。
 	Body    *Schema
 	Content map[string]*Schema // key = mimetype
 }

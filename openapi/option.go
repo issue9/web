@@ -6,7 +6,6 @@ package openapi
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
 
 	"github.com/issue9/sliceutil"
@@ -48,36 +47,30 @@ func WithHTML(tpl, path string) Option {
 //
 // 一般用于指定非正常状态的返回对象，比如 400 状态码的对象。
 //
-// global 是否将该对象默认应用在所有的接口上；
-// status: 状态码；
 // resp 返回对象，需要指定 resp.Ref.Ref，其它接口可以通过 Ref 引用该对象；
+// status: 状态码，可以是 4XX 的形式，如果该值不为空，那么将当前对象以此状态码应用到所有的接口；
 //
 // NOTE: 多次调用会依次添加
-func WithResponse(global bool, status int, resp *Response) Option {
+func WithResponse(resp *Response, status ...string) Option {
 	return func(d *Document) {
 		if resp.Ref == nil || resp.Ref.Ref == "" {
 			panic("resp 必须存在 ref")
 		}
 		resp.addComponents(d.components)
 
-		if global {
-			if d.responses == nil {
-				d.responses = make(map[int]string)
-			}
-			d.responses[status] = resp.Ref.Ref
+		for _, s := range status {
+			d.responses[s] = resp.Ref.Ref
 		}
 	}
 }
 
-// PresetOptions 提供 [web.Problem] 的 [Response] 对象
-//
-// global 是否将该对象默认应用在所有的接口上；
-func WithProblemResponse(global bool) Option {
-	return WithResponse(global, http.StatusBadRequest, &Response{
+// PresetOptions 提供 [web.Problem] 的 [Response] 对象并应用所有接口的 4XX 和 5XX 状态码
+func WithProblemResponse() Option {
+	return WithResponse(&Response{
 		Ref:         &Ref{Ref: "problem"},
 		Body:        NewSchema(reflect.TypeOf(web.Problem{})),
 		Description: web.Phrase("problem.400.detail"),
-	})
+	}, "4XX", "5XX")
 }
 
 // WithMediaType 指定所有接口可用的媒体类型

@@ -29,25 +29,24 @@ func TestDocument_API(t *testing.T) {
 			Tag("tag1").
 			QueryObject(&q{}, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
-			Body(&object{}, nil).
-			Response(200, 5, web.Phrase("desc"), nil)
+			Body(&object{}, true, nil).
+			Response("200", 5, web.Phrase("desc"), nil)
 	})
-	a.NotPanic(func() {
-		m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
+	m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
 
-		o := d.paths["/path/{p1}/abc"].Operations["GET"]
-		a.NotNil(o).
-			Length(o.Paths, 0).
-			Length(o.Queries, 3).
-			NotNil(o.RequestBody.Body.Type, TypeObject).
-			Length(d.paths["/path/{p1}/abc"].Paths, 1)
-	})
+	o := d.paths["/path/{p1}/abc"].Operations["GET"]
+	a.NotNil(o).
+		True(o.RequestBody.Ignorable).
+		Length(o.Paths, 0).
+		Length(o.Queries, 3).
+		NotNil(o.RequestBody.Body.Type, TypeObject).
+		Length(d.paths["/path/{p1}/abc"].Paths, 1)
 
 	m = d.API(func(o *Operation) {
 		o.Tag("tag1").
 			Header("h1", TypeString, nil, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
-			Body(&object{}, nil)
+			Body(&object{}, false, nil)
 	})
 	a.PanicString(func() {
 		m.Middleware(nil, http.MethodGet, "/path/{p}/abc", "")

@@ -37,10 +37,10 @@ type Document struct {
 
 	// 以下是一些预定义的项，不存在于 openAPIRenderer。
 
-	mediaTypes    []string       // 所有接口都支持的类型
-	responses     map[int]string // key 为状态码，值为 components 中的键名
-	headers       []string       // components 中的键名
-	cookies       []string       // components 中的键名
+	mediaTypes    []string          // 所有接口都支持的类型
+	responses     map[string]string // key 为状态码，比如 4XX，值为 components 中的键名
+	headers       []string          // components 中的键名
+	cookies       []string          // components 中的键名
 	enableOptions bool
 	enableHead    bool
 
@@ -79,6 +79,8 @@ func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
 			version: s.Version(),
 		},
 		components: newComponents(),
+
+		responses: make(map[string]string, 5),
 
 		last: time.Now(),
 

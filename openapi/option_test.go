@@ -29,17 +29,17 @@ func TestWithResponse(t *testing.T) {
 	ss := newServer(a)
 
 	a.PanicString(func() {
-		New(ss, web.Phrase("desc"), WithResponse(true, 400, &Response{}))
+		New(ss, web.Phrase("desc"), WithResponse(&Response{}, "400"))
 	}, "必须存在 ref")
 
 	d := New(ss, web.Phrase("desc"),
-		WithResponse(true, 400, &Response{Ref: &Ref{Ref: "400"}}),
-		WithResponse(true, 500, &Response{Ref: &Ref{Ref: "500"}}),
+		WithResponse(&Response{Ref: &Ref{Ref: "400"}}, "400"),
+		WithResponse(&Response{Ref: &Ref{Ref: "500"}}, "500"),
 	)
 	a.NotNil(d).
 		Length(d.components.responses, 2).
-		Equal(d.responses[400], "400").
-		Equal(d.responses[500], "500")
+		Equal(d.responses["400"], "400").
+		Equal(d.responses["500"], "500")
 }
 
 func TestWithMediaType(t *testing.T) {
