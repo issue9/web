@@ -2,24 +2,9 @@ languages:
     - zh-Hans
     - cmn-Hans
 messages:
-    - key: '%s at %s:%d'
-      message:
-        msg: '%s 位于 %s:%d'
-    - key: '%s is not a valid basic type'
-      message:
-        msg: '%s 不是有效的基础类型'
-    - key: '%s requires at least %d parameters'
-      message:
-        msg: '%s 至少需要 %d 个参数'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: 当执行 %[2]s 时发生了错误：%[1]s。将采用默认值 %[3]s 代替。
-    - key: '@enum can not be empty'
-      message:
-        msg: '@enum 不能为空'
-    - key: '@query must point to an object'
-      message:
-        msg: '@query 必须指定一个对象'
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -41,9 +26,6 @@ messages:
             {{flags}}
 
             更多信息可访问 https://github.com/issue9/web。
-    - key: add API %s %s
-      message:
-        msg: 获得新的 API %s %s
     - key: app args
       message:
         msg: 传递给应用的参数
@@ -81,9 +63,6 @@ messages:
             {{version}} 表示最新的 git tag 值；
             {{full-commit}} 最新的 commit hash 值；
             {{commit}} 最新的 commit hash 值；
-    - key: cancelled
-      message:
-        msg: 被取消
     - key: command %s not found
       message:
         msg: |
@@ -97,9 +76,6 @@ messages:
     - key: dev mode
       message:
         msg: 是否启用开发模式，具体可参考 comptime 下的说明。
-    - key: 'dup # restdoc node'
-      message:
-        msg: '重复的节点 # restdoc'
     - key: exclude watch files
       message:
         msg: 不需要监视的文件，遵循 path.Match 规则。
@@ -127,18 +103,12 @@ messages:
     - key: file format
       message:
         msg: 输出文件的格式，目前支持 JSON 和 YAML
-    - key: filter by tag
-      message:
-        msg: 按标签过滤，多个标签使用半角逗号分隔。
     - key: gen filter method
       message:
         msg: 生成适配 github.com/issue9/web/filter 的相关方法
     - key: gen htmldoc
       message:
         msg: 根据结构体中的字段生成 html 文档
-    - key: gen restdoc
-      message:
-        msg: 提取注释中的 restdoc 文档生成 openapi
     - key: gen sql method
       message:
         msg: 生成适配 database/sql 的相关方法
@@ -149,15 +119,6 @@ messages:
 
             可用选项：
             {{flags}}
-    - key: ignore %s
-      message:
-        msg: 忽略 %s
-    - key: invalid http method %s
-      message:
-        msg: 无效的请求方法 %s
-    - key: invalid type of %s
-      message:
-        msg: '%s 的类型无效'
     - key: language
       message:
         msg: 语言
@@ -173,128 +134,24 @@ messages:
     - key: not allowed enum type
       message:
         msg: 不支持为该类型生成内容
-    - key: not found const %s
-      message:
-        msg: 未找到常量 %s
     - key: not found enum type %s
       message:
         msg: 未找到枚举类型 %s
-    - key: not found openapi schema ref %s
-      message:
-        msg: 未找到 openapi 定义 %s
     - key: not found source in %s
       message:
         msg: 在 %s 中未找到符合要求的源码
-    - key: not found type %s
-      message:
-        msg: 未找到类型 %s
     - key: not found type doc
       message:
         msg: 未找到类型的相关文档
-    - key: not found type param %s
-      message:
-        msg: 未找到类型参数 %s
     - key: not show ignore message
       message:
         msg: 不显示可忽略的消息
     - key: out dir
       message:
         msg: 输出目录
-    - key: override global response %s
-      message:
-        msg: '%s 与定义的全局对象相同，在当前接口中将覆盖全局定义。'
     - key: recursive dir
       message:
         msg: 递归访问子目录
-    - key: restdoc usage
-      message:
-        msg: |
-            提取注释中的 restdoc 文档生成 openapi。restdoc 格式如下：
-
-            # restdoc title of doc
-
-            这是项目唯一的，title of doc 表示文档的标题，还可以通过以下标题指定一些全局属性：
-
-              @tag tagID desc 指定了 openapi 的 Tag；
-              @server tags url desc 指定了 openapi 的 Server 对象，作了精简，不支持 Server Variable 的形式。
-                tags 为支持的标签，多个标签用逗号分隔，可以采用 * 表示支持所有；
-              @license name url 指定了文档的版权信息；
-              @term url 指定了文档的隐私策略；
-              @version 指定了文档的版本号，可以指定以下几种特殊的符号：
-                - git 表示采用 git tag 和 git commit hash 作为版本号；
-                - git-full 表示采用 git tag 和完整的 git commit hash 作为版本号；
-                - [path] path 指向一个常量，表示采用该常量作为版本号，如果不是当前目录，需要指定包名；
-                - 其它字符号串，原样返回作为版本号；
-              @contact name url email 指定了联系方式，url 和 email 位置没有要求，根据格式自动确定，两者也可以不用全指定；
-              @media application/json application/xml 指定了所有 api 默认的内容类型；
-              @header name desc 公共报头；
-              @cookie name desc 公共的 cookie；
-              @security tags name args 指定所有 API 的验证接口。
-                tags 为支持的标签，多个标签用逗号分隔，可以采用 * 表示支持所有。
-                name 为 @scy-* 系列定义的验证接口，args 是以空格分隔的参数列表。
-                args 为传递给由 name 指定的接口参数，可以为空；
-              @resp status media object.path desc 定义了全局返回对象，会被附加在每个 API 上。一般用于指定错误处理对象；
-              @resp-header name header desc 指定了 @resp 中设定的返回对象的报头；
-              @doc url 扩展文档；
-              @openapi path 引入另一个 openapi 文档，path 可以是一个 uri，比如 https://example.com/openapi.yaml，
-                uri 支持 https、http 和 file 协议，如果是相对路径，表示相对于当前文件，且不能带 file:// 协议；
-                或是具体的 Go 包下的目录，比如 github.com/issue9/test/v2@v2.0.1 openapi.yaml，
-                表示 test/v2 下的 openapi.yaml 文件。
-
-            # api method path summary
-
-            定义每个 API 文档
-
-            method 表示请求方法，多个请求方法可以用逗号分隔，或是用 ANY 表示所有请求方法，但是不能包含空格；
-            path 表示路径，summary 为该接口的简要说明。这些内容将在 # restdoc 解析完之后才会解析。可以包含以下标签：
-
-              @id 唯一 ID，相当于 openapi 的 OperationID；
-              @tag tag1 tag2 该接口要关联的标签，多个标签用空格分隔；
-              @header key desc 指定请求报头；
-              @cookie key desc 指定了 cookie；
-              @path key type desc 指定了路径中的参数，key 为参数名，type 为参数类型，只能是基本类型，相同路径下的不同请求方法可以只定义一次；
-              @query object.path desc 查询参数，object.path 表示指向查询参数的定义，可参考 schema 节的说明；
-              @req media object.path desc 定义请求格式，media 如果采用全局指定的默认值，可以用 *，如果是多个值，用逗号分隔；
-              @resp status media object.path desc 指定返回的数据类型；
-              @resp-header status key desc 指定报头；
-              @security name args 指定所有 API 的验证接口。
-                name 为 @scy-* 系列定义的验证接口，args 是以空格分隔的参数列表。
-                args 为传递给由 name 指定的接口参数，可以为空。
-                如果 @security 之后为空，则表示当前接口不需要验证；
-
-              ## callback name method url desc
-
-              指定回调方法，只能依附于 # api 之后，标签大部分与 # api 相同，但是少了 @id、@tag、@path。
-
-            type
-
-            类似 godoc 在注释中引用对象，restdoc 也是通过注释指向一个具体对象，将其解析为 openapi.Schema 对象；
-            格式为：[prefix][modpath.]object[[type-list]][<field-list>]。
-            prefix 为类型的附加信息，比如指针可用以 *，数组可以用 []；
-            modpath 为引用对象的导入路径，object 为引用的对象名，比如：github.com/issue9/web.Problem；
-            如果 object 为泛型时，type-list 指定泛型的实参列表；而 field-list 用于替换指定 object 中的字段类型，
-            格式为 <field1=type,field2=type2>。
-
-            类型文档中可以通过使用以下标签指定特殊属性：
-
-              @type type-name 将类型指定为 type-name，要求 type-name 必须是合法的 openapi3 类型；
-              @enum n1 n2 当前类型包含了枚举值 n1，n2，如果未指定枚举值，则会尝试从代码中查找相关定义并转换成字符串；
-
-            可用选项：
-            {{flags}}
-
-            注意事项
-
-              不支持 GOPATH 模式。
-    - key: save restdoc to %s
-      message:
-        msg: 保存 openapi 文档至 %s
-    - key: scan source dir %s
-      message:
-        msg: 扫描源码目录 %s
-    - key: set api path prefix
-      message:
-        msg: 为所有的 API 添加统一的前缀
     - key: set file header
       message:
         msg: 指定文件头内容
@@ -361,9 +218,6 @@ messages:
     - key: type not set
       message:
         msg: 未指定类型
-    - key: unknown tag %s
-      message:
-        msg: 未知的标签 %s 将被忽略
     - key: unsupported marshal for %s
       message:
         msg: 不支持 %s 的序列化
@@ -388,9 +242,6 @@ messages:
 
             可用选项:
             {{flags}}
-    - key: version incompatible
-      message:
-        msg: 版本不兼容
     - key: watch and reload
       message:
         msg: 热编译项目

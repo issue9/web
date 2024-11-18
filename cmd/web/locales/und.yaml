@@ -1,24 +1,9 @@
 languages:
     - und
 messages:
-    - key: '%s at %s:%d'
-      message:
-        msg: '%s at %s:%d'
-    - key: '%s is not a valid basic type'
-      message:
-        msg: '%s is not a valid basic type'
-    - key: '%s requires at least %d parameters'
-      message:
-        msg: '%s requires at least %d parameters'
     - key: '%s when exec %s, use the preset value %s'
       message:
         msg: '%s when exec %s, use the preset value %s'
-    - key: '@enum can not be empty'
-      message:
-        msg: '@enum can not be empty'
-    - key: '@query must point to an object'
-      message:
-        msg: '@query must point to an object'
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -40,9 +25,6 @@ messages:
             {{flags}}
 
             visit https://github.com/issue9/web for more info.
-    - key: add API %s %s
-      message:
-        msg: add API %s %s
     - key: app args
       message:
         msg: app args
@@ -66,9 +48,6 @@ messages:
     - key: build usage
       message:
         msg: build usage
-    - key: cancelled
-      message:
-        msg: cancelled
     - key: command %s not found
       message:
         msg: command %s not found
@@ -81,9 +60,6 @@ messages:
     - key: dev mode
       message:
         msg: dev mode
-    - key: 'dup # restdoc node'
-      message:
-        msg: 'dup # restdoc node'
     - key: exclude watch files
       message:
         msg: exclude watch files
@@ -107,33 +83,18 @@ messages:
     - key: file format
       message:
         msg: file format
-    - key: filter by tag
-      message:
-        msg: filter by tag
     - key: gen filter method
       message:
         msg: gen filter method
     - key: gen htmldoc
       message:
         msg: gen htmldoc
-    - key: gen restdoc
-      message:
-        msg: gen restdoc
     - key: gen sql method
       message:
         msg: gen sql method
     - key: htmldoc usage
       message:
         msg: htmldoc usage
-    - key: ignore %s
-      message:
-        msg: ignore %s
-    - key: invalid http method %s
-      message:
-        msg: invalid http method %s
-    - key: invalid type of %s
-      message:
-        msg: invalid type of %s
     - key: language
       message:
         msg: language
@@ -149,51 +110,24 @@ messages:
     - key: not allowed enum type
       message:
         msg: not allowed enum type
-    - key: not found const %s
-      message:
-        msg: not found const %s
     - key: not found enum type %s
       message:
         msg: not found enum type %s
-    - key: not found openapi schema ref %s
-      message:
-        msg: not found openapi schema ref %s
     - key: not found source in %s
       message:
         msg: not found source in %s
-    - key: not found type %s
-      message:
-        msg: not found type %s
     - key: not found type doc
       message:
         msg: not found type doc
-    - key: not found type param %s
-      message:
-        msg: not found type param %s
     - key: not show ignore message
       message:
         msg: not show ignore message
     - key: out dir
       message:
         msg: out dir
-    - key: override global response %s
-      message:
-        msg: override global response %s
     - key: recursive dir
       message:
         msg: recursive dir
-    - key: restdoc usage
-      message:
-        msg: restdoc usage
-    - key: save restdoc to %s
-      message:
-        msg: save restdoc to %s
-    - key: scan source dir %s
-      message:
-        msg: scan source dir %s
-    - key: set api path prefix
-      message:
-        msg: set api path prefix
     - key: set file header
       message:
         msg: set file header
@@ -260,9 +194,6 @@ messages:
     - key: type not set
       message:
         msg: type not set
-    - key: unknown tag %s
-      message:
-        msg: unknown tag %s
     - key: unsupported marshal for %s
       message:
         msg: unsupported marshal for %s
@@ -283,9 +214,6 @@ messages:
 
             flags:
             {{flags}}
-    - key: version incompatible
-      message:
-        msg: version incompatible
     - key: watch and reload
       message:
         msg: watch and reload

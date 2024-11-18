@@ -25,7 +25,6 @@ import (
 	"github.com/issue9/web/cmd/web/locale"
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
-	"github.com/issue9/web/cmd/web/restdoc"
 	"github.com/issue9/web/cmd/web/watch"
 )
 
@@ -78,7 +77,6 @@ func main() {
 	}, buildNotFound(p))
 
 	htmldoc.Init(opt, p)
-	restdoc.Init(opt, p)
 	build.Init(opt, p)
 	locale.Init(opt, p)
 	update.Init(opt, p)
