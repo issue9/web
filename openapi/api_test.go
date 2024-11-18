@@ -41,7 +41,8 @@ func TestServer_valid(t *testing.T) {
 
 func TestServer_build(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
 	s := &Server{
 		URL:         "https://example.com",
@@ -67,7 +68,8 @@ func TestServer_build(t *testing.T) {
 
 func TestPathItem_addComponents(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0", web.Phrase("title"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"))
 
 	item := &PathItem{
 		Paths:   []*Parameter{{Name: "p1", Ref: &Ref{Ref: "p1"}}, {Name: "p2"}},

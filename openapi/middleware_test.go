@@ -21,7 +21,8 @@ type q struct {
 
 func TestDocument_API(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0.0", web.Phrase("desc"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"))
 
 	m := d.API(func(o *Operation) {
 		o.Header("h1", TypeString, nil, nil).

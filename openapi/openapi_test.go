@@ -13,8 +13,6 @@ import (
 
 	"github.com/issue9/assert/v4"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
@@ -25,11 +23,16 @@ import (
 
 var _ web.HandlerFunc = (&Document{}).Handler
 
-func newPrinter(a *assert.Assertion, t language.Tag) *message.Printer {
-	b := catalog.NewBuilder()
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "简体"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "繁体"))
-	return message.NewPrinter(t, message.Catalog(b))
+func newServer(a *assert.Assertion) web.Server {
+	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
+		HTTPServer: &http.Server{Addr: ":8080"},
+	})
+	a.NotError(err).NotNil(s)
+
+	a.NotError(s.Locale().SetString(language.SimplifiedChinese, "lang", "简体"))
+	a.NotError(s.Locale().SetString(language.TraditionalChinese, "lang", "繁体"))
+
+	return s
 }
 
 func TestNewLicense(t *testing.T) {
@@ -41,11 +44,12 @@ func TestNewLicense(t *testing.T) {
 
 func TestDocument_build(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	s := newServer(a)
+	p := s.Locale().NewPrinter(language.SimplifiedChinese)
 
-	d := New("0.1.0", web.Phrase("lang"))
+	d := New(s, web.Phrase("lang"))
 	r := d.build(p, nil)
-	a.Equal(r.Info.Version, "0.1.0").
+	a.Equal(r.Info.Version, s.Version()).
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体")
 
@@ -54,7 +58,7 @@ func TestDocument_build(t *testing.T) {
 		Responses: map[int]*Response{200: {Body: &Schema{Type: TypeNumber}}},
 	})
 	r = d.build(p, nil)
-	a.Equal(r.Info.Version, "0.1.0").
+	a.Equal(r.Info.Version, s.Version()).
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体").
 		Equal(r.Paths.Len(), 1)
@@ -86,7 +90,7 @@ func TestDocument_Handler(t *testing.T) {
 	})
 	a.NotError(err).NotNil(s)
 
-	d := New("1.0.0", web.Phrase("test"))
+	d := New(s, web.Phrase("test"))
 	r := s.Routers().New("def", nil)
 	a.NotNil(r)
 
@@ -120,9 +124,10 @@ func TestDocument_Handler(t *testing.T) {
 
 func TestComponents_build(t *testing.T) {
 	a := assert.New(t, false)
-	c := newComponents()
-	p := newPrinter(a, language.SimplifiedChinese)
-	d := New("0.1.0", web.Phrase("lang"))
+	s := newServer(a)
+	p := s.Locale().NewPrinter(language.SimplifiedChinese)
+	d := New(s, web.Phrase("lang"))
+	c := d.components
 
 	c.queries["q1"] = &Parameter{Name: "q1", Schema: &Schema{Type: TypeString}}
 	c.cookies["c1"] = &Parameter{Name: "c1", Schema: &Schema{Type: TypeNumber}}

@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v4"
+
 	"github.com/issue9/web"
 )
 
 func TestDocument_AddWebHook(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0", web.Phrase("desc"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("desc"))
 
 	d.AddWebhook("hook1", http.MethodGet, &Operation{})
 	a.Length(d.webHooks, 1)

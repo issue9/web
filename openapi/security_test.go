@@ -36,7 +36,8 @@ func TestSecurityScheme_valid(t *testing.T) {
 
 func TestSecurityScheme_build(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
 	s := &SecurityScheme{
 		Description: web.Phrase("lang"),

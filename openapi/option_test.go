@@ -18,19 +18,21 @@ import (
 func TestWithHTML(t *testing.T) {
 	a := assert.New(t, false)
 
-	d := New("0.1", web.Phrase("desc"), WithHTML("tpl", "./openapi.yaml"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("desc"), WithHTML("tpl", "./openapi.yaml"))
 	a.Equal(d.dataURL, "./openapi.yaml").
 		Equal(d.templateName, "tpl")
 }
 
 func TestWithResponse(t *testing.T) {
 	a := assert.New(t, false)
+	ss := newServer(a)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithResponse(true, 400, &Response{}))
+		New(ss, web.Phrase("desc"), WithResponse(true, 400, &Response{}))
 	}, "必须存在 ref")
 
-	d := New("0.1", web.Phrase("desc"),
+	d := New(ss, web.Phrase("desc"),
 		WithResponse(true, 400, &Response{Ref: &Ref{Ref: "400"}}),
 		WithResponse(true, 500, &Response{Ref: &Ref{Ref: "500"}}),
 	)
@@ -42,8 +44,9 @@ func TestWithResponse(t *testing.T) {
 
 func TestWithMediaType(t *testing.T) {
 	a := assert.New(t, false)
+	ss := newServer(a)
 
-	d := New("0.1", web.Phrase("desc"),
+	d := New(ss, web.Phrase("desc"),
 		WithMediaType(json.Mimetype, cbor.Mimetype),
 		WithMediaType(html.Mimetype, cbor.Mimetype),
 	)
@@ -53,16 +56,17 @@ func TestWithMediaType(t *testing.T) {
 
 func TestWithCallback(t *testing.T) {
 	a := assert.New(t, false)
+	ss := newServer(a)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithCallback(&Callback{}))
+		New(ss, web.Phrase("desc"), WithCallback(&Callback{}))
 	}, "必须存在 ref")
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithCallback(&Callback{Ref: &Ref{Ref: "1"}}))
+		New(ss, web.Phrase("desc"), WithCallback(&Callback{Ref: &Ref{Ref: "1"}}))
 	}, "Callback 不能为空")
 
-	d := New("0.1", web.Phrase("desc"),
+	d := New(ss, web.Phrase("desc"),
 		WithCallback(&Callback{Ref: &Ref{Ref: "1"}, Callback: map[string]*PathItem{"path": {}}}),
 		WithCallback(&Callback{Ref: &Ref{Ref: "2"}, Callback: map[string]*PathItem{"path": {}}}),
 	)
@@ -72,12 +76,13 @@ func TestWithCallback(t *testing.T) {
 
 func TestWithHeader(t *testing.T) {
 	a := assert.New(t, false)
+	ss := newServer(a)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithHeader(true, &Parameter{Name: "h1", Schema: &Schema{Type: TypeString}}))
+		New(ss, web.Phrase("desc"), WithHeader(true, &Parameter{Name: "h1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
-	d := New("0.1", web.Phrase("desc"),
+	d := New(ss, web.Phrase("desc"),
 		WithHeader(true, &Parameter{Ref: &Ref{Ref: "1"}, Name: "h1", Schema: &Schema{Type: TypeString}}),
 		WithHeader(true, &Parameter{Ref: &Ref{Ref: "2"}, Name: "h2", Schema: &Schema{Type: TypeString}}),
 	)
@@ -88,12 +93,13 @@ func TestWithHeader(t *testing.T) {
 
 func TestWithCookie(t *testing.T) {
 	a := assert.New(t, false)
+	ss := newServer(a)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithCookie(true, &Parameter{Name: "c1", Schema: &Schema{Type: TypeString}}))
+		New(ss, web.Phrase("desc"), WithCookie(true, &Parameter{Name: "c1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
-	d := New("0.1", web.Phrase("desc"),
+	d := New(ss, web.Phrase("desc"),
 		WithCookie(true, &Parameter{Ref: &Ref{Ref: "1"}}),
 		WithCookie(true, &Parameter{Ref: &Ref{Ref: "2"}}),
 	)
@@ -104,7 +110,8 @@ func TestWithCookie(t *testing.T) {
 
 func TestWithDescription(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("0.1", web.Phrase("title"), WithDescription(web.Phrase("lang"), web.Phrase("desc")))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"), WithDescription(web.Phrase("lang"), web.Phrase("desc")))
 
 	a.Equal(d.info.summary, "lang").
 		Equal(d.info.description, "desc")
@@ -112,7 +119,8 @@ func TestWithDescription(t *testing.T) {
 
 func TestWithServer(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("0.1", web.Phrase("title"),
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"),
 		WithServer("https://example.com/s1", web.Phrase("s1")),
 		WithServer("https://example.com/s2/{v1}", web.Phrase("s2"), &ServerVariable{Name: "v1", Default: "1"}),
 	)
@@ -124,7 +132,8 @@ func TestWithServer(t *testing.T) {
 
 func TestWithTag(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("0.1", web.Phrase("title"),
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"),
 		WithTag("t1", web.Phrase("t1"), "", nil),
 		WithTag("t2", web.Phrase("t2"), "https://example.com", web.Phrase("desc")),
 	)
@@ -136,7 +145,8 @@ func TestWithTag(t *testing.T) {
 
 func TestWithSecurityScheme(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("0.1", web.Phrase("title"),
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"),
 		WithSecurityScheme(&SecurityScheme{
 			ID:     "http1",
 			Type:   "http",

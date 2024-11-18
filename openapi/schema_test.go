@@ -39,7 +39,8 @@ func TestParameter_valid(t *testing.T) {
 
 func TestParameter_addComponents(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0", web.Phrase("desc"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("desc"))
 
 	p := &Parameter{}
 	p.addComponents(d.components, InPath)
@@ -56,7 +57,8 @@ func TestParameter_addComponents(t *testing.T) {
 
 func TestSchema_addComponents(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0", web.Phrase("desc"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("desc"))
 
 	s := &Schema{}
 	s.addComponents(d.components)
@@ -127,7 +129,8 @@ func TestSchema_valid(t *testing.T) {
 
 func TestSchema_build(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
 	var s *Schema
 	a.Nil(s.build(p))
@@ -145,7 +148,8 @@ func TestSchema_build(t *testing.T) {
 
 func TestDocument_NewSchema(t *testing.T) {
 	a := assert.New(t, false)
-	d := New("1.0", web.Phrase("desc"))
+	ss := newServer(a)
+	d := New(ss, web.Phrase("desc"))
 
 	s := d.newSchema(reflect.TypeFor[int]())
 	a.Equal(s.Type, TypeInteger).

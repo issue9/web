@@ -15,7 +15,8 @@ import (
 
 func TestSprint(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
 	a.Equal("", sprint(p, nil)).
 		Equal("简体", sprint(p, web.Phrase("lang")))
@@ -23,7 +24,8 @@ func TestSprint(t *testing.T) {
 
 func TestWriteMap2OrderedMap(t *testing.T) {
 	a := assert.New(t, false)
-	p := newPrinter(a, language.SimplifiedChinese)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
 	ms := map[string]web.LocaleStringer{
 		"t1": web.Phrase("lang"),
