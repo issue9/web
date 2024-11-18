@@ -31,7 +31,12 @@ func WithOptions(enable bool) Option {
 // tpl 表示 HTML 模板名称；
 // path 为输出给模板的数据地址；
 //
-// NOTE: 反馈给模板的数据格式为 `struct{ URL string }`
+// NOTE: 反馈给模板的数据格式为
+//
+//	struct{
+//	    URL string // openapi 文档的地址
+//	    Lang string // 用户的界面语言
+//	}
 func WithHTML(tpl, path string) Option {
 	return func(d *Document) {
 		d.templateName = tpl
@@ -39,31 +44,36 @@ func WithHTML(tpl, path string) Option {
 	}
 }
 
-// WithResponse 指定所有接口都可能返回的对象类型
+// WithResponse 向 components/rsponses 添加对象
 //
 // 一般用于指定非正常状态的返回对象，比如 400 状态码的对象。
 //
+// global 是否将该对象默认应用在所有的接口上；
 // status: 状态码；
-// resp 返回对象，需要指定 resp.Ref.Ref；
+// resp 返回对象，需要指定 resp.Ref.Ref，其它接口可以通过 Ref 引用该对象；
 //
 // NOTE: 多次调用会依次添加
-func WithResponse(status int, resp *Response) Option {
+func WithResponse(global bool, status int, resp *Response) Option {
 	return func(d *Document) {
 		if resp.Ref == nil || resp.Ref.Ref == "" {
 			panic("resp 必须存在 ref")
 		}
 		resp.addComponents(d.components)
 
-		if d.responses == nil {
-			d.responses = make(map[int]string)
+		if global {
+			if d.responses == nil {
+				d.responses = make(map[int]string)
+			}
+			d.responses[status] = resp.Ref.Ref
 		}
-		d.responses[status] = resp.Ref.Ref
 	}
 }
 
 // PresetOptions 提供 [web.Problem] 的 [Response] 对象
-func WithProblemResponse() Option {
-	return WithResponse(http.StatusBadRequest, &Response{
+//
+// global 是否将该对象默认应用在所有的接口上；
+func WithProblemResponse(global bool) Option {
+	return WithResponse(global, http.StatusBadRequest, &Response{
 		Ref:         &Ref{Ref: "problem"},
 		Body:        NewSchema(reflect.TypeOf(web.Problem{})),
 		Description: web.Phrase("problem.400.detail"),
@@ -84,12 +94,13 @@ func WithMediaType(t ...string) Option {
 	}
 }
 
-// WithHeader 指定所有请求都需要的报头
+// WithHeader 向 components/headers 添加对象
 //
-// 要求必须指定 p.Ref.Ref。
+// p 要求必须指定 Ref.Ref，其它接口可以通过 Ref 引用该对象。
+// global 是否将该对象默认应用在所有的接口上；
 //
 // NOTE: 多次调用会依次添加
-func WithHeader(p ...*Parameter) Option {
+func WithHeader(global bool, p ...*Parameter) Option {
 	return func(d *Document) {
 		for _, pp := range p {
 			if pp.Ref == nil || pp.Ref.Ref == "" {
@@ -101,7 +112,63 @@ func WithHeader(p ...*Parameter) Option {
 			}
 
 			pp.addComponents(d.components, InHeader)
-			d.headers = append(d.headers, pp.Ref.Ref)
+
+			if global {
+				d.headers = append(d.headers, pp.Ref.Ref)
+			}
+		}
+	}
+}
+
+// WithCookie 向 components/parameters 添加对象
+//
+// p 要求必须指定 Ref.Ref。其它接口可以通过 problem 引用此对象。
+//
+// global 是否将该对象默认应用在所有的接口上；
+//
+// NOTE: 多次调用会依次添加
+func WithCookie(global bool, p ...*Parameter) Option {
+	return func(d *Document) {
+		for _, pp := range p {
+			if pp.Ref == nil || pp.Ref.Ref == "" {
+				panic("必须存在 ref")
+			}
+			pp.addComponents(d.components, InCookie)
+			if global {
+				d.cookies = append(d.cookies, pp.Ref.Ref)
+			}
+		}
+	}
+}
+
+// WithQuery 向 components/paramters 添加 InQuery 的对象
+//
+// p 要求必须指定 Ref.Ref。其它接口可以通过 ref 引用此对象。
+//
+// NOTE: 多次调用会依次添加
+func WithQuery(p ...*Parameter) Option {
+	return func(d *Document) {
+		for _, pp := range p {
+			if pp.Ref == nil || pp.Ref.Ref == "" {
+				panic("必须存在 ref")
+			}
+			pp.addComponents(d.components, InQuery)
+		}
+	}
+}
+
+// WithPath 向 components/paramters 添加 InPath 的对象
+//
+// p 要求必须指定 Ref.Ref。其它接口可以通过 ref 引用此对象。
+//
+// NOTE: 多次调用会依次添加
+func WithPath(global bool, p ...*Parameter) Option {
+	return func(d *Document) {
+		for _, pp := range p {
+			if pp.Ref == nil || pp.Ref.Ref == "" {
+				panic("必须存在 ref")
+			}
+			pp.addComponents(d.components, InPath)
 		}
 	}
 }
@@ -118,23 +185,6 @@ func WithCallback(c ...*Callback) Option {
 			}
 
 			cc.addComponents(d.components)
-		}
-	}
-}
-
-// WithHeader 指定所有请求都需要的 Cookie
-//
-// 要求必须指定 p.Ref.Ref。
-//
-// NOTE: 多次调用会依次添加
-func WithCookie(p ...*Parameter) Option {
-	return func(d *Document) {
-		for _, pp := range p {
-			if pp.Ref == nil || pp.Ref.Ref == "" {
-				panic("必须存在 ref")
-			}
-			pp.addComponents(d.components, InCookie)
-			d.cookies = append(d.cookies, pp.Ref.Ref)
 		}
 	}
 }

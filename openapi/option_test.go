@@ -27,12 +27,12 @@ func TestWithResponse(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithResponse(400, &Response{}))
+		New("0.1", web.Phrase("desc"), WithResponse(true, 400, &Response{}))
 	}, "必须存在 ref")
 
 	d := New("0.1", web.Phrase("desc"),
-		WithResponse(400, &Response{Ref: &Ref{Ref: "400"}}),
-		WithResponse(500, &Response{Ref: &Ref{Ref: "500"}}),
+		WithResponse(true, 400, &Response{Ref: &Ref{Ref: "400"}}),
+		WithResponse(true, 500, &Response{Ref: &Ref{Ref: "500"}}),
 	)
 	a.NotNil(d).
 		Length(d.components.responses, 2).
@@ -74,12 +74,12 @@ func TestWithHeader(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithHeader(&Parameter{Name: "h1", Schema: &Schema{Type: TypeString}}))
+		New("0.1", web.Phrase("desc"), WithHeader(true, &Parameter{Name: "h1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
 	d := New("0.1", web.Phrase("desc"),
-		WithHeader(&Parameter{Ref: &Ref{Ref: "1"}, Name: "h1", Schema: &Schema{Type: TypeString}}),
-		WithHeader(&Parameter{Ref: &Ref{Ref: "2"}, Name: "h2", Schema: &Schema{Type: TypeString}}),
+		WithHeader(true, &Parameter{Ref: &Ref{Ref: "1"}, Name: "h1", Schema: &Schema{Type: TypeString}}),
+		WithHeader(true, &Parameter{Ref: &Ref{Ref: "2"}, Name: "h2", Schema: &Schema{Type: TypeString}}),
 	)
 	a.NotNil(d).
 		Length(d.components.headers, 2).
@@ -90,12 +90,12 @@ func TestWithCookie(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		New("0.1", web.Phrase("desc"), WithCookie(&Parameter{Name: "c1", Schema: &Schema{Type: TypeString}}))
+		New("0.1", web.Phrase("desc"), WithCookie(true, &Parameter{Name: "c1", Schema: &Schema{Type: TypeString}}))
 	}, "必须存在 ref")
 
 	d := New("0.1", web.Phrase("desc"),
-		WithCookie(&Parameter{Ref: &Ref{Ref: "1"}}),
-		WithCookie(&Parameter{Ref: &Ref{Ref: "2"}}),
+		WithCookie(true, &Parameter{Ref: &Ref{Ref: "1"}}),
+		WithCookie(true, &Parameter{Ref: &Ref{Ref: "2"}}),
 	)
 	a.NotNil(d).
 		Length(d.components.cookies, 2).

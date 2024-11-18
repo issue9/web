@@ -65,11 +65,6 @@ type openAPIRenderer struct {
 	Security     []*orderedmap.OrderedMap[string, []string]                  `json:"security,omitempty" yaml:"security,omitempty"`
 	Tags         []*tagRenderer                                              `json:"tags,omitempty" yaml:"tags,omitempty"`
 	ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-
-	// 与 HTML 模板相关的定义
-
-	templateName string
-	dataURL      string
 }
 
 // New 声明 [Document] 对象
@@ -125,6 +120,11 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
+	dataURL := d.dataURL
+	if len(q.Tags) > 0 {
+		dataURL += "?tag=" + strings.Join(q.Tags, ",")
+	}
+
 	return web.NotModified(func() (string, bool) {
 		slices.Sort(q.Tags)
 
@@ -138,8 +138,25 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		val := h.Sum(nil)
 		return hex.EncodeToString(val), true
 	}, func() (any, error) {
+		if ctx.Mimetype(false) == html.Mimetype {
+			return &htmlRenderer{
+				templateName: d.templateName,
+				URL:          dataURL,
+				Lang:         ctx.LanguageTag().String(),
+			}, nil
+		}
 		return d.build(ctx.LocalePrinter(), q.Tags), nil
 	})
+}
+
+type htmlRenderer struct {
+	templateName string
+	URL          string
+	Lang         string
+}
+
+func (o *htmlRenderer) MarshalHTML() (name string, data any) {
+	return o.templateName, o
 }
 
 // Disable 是否禁用 [Document.Handler] 接口输出内容
@@ -177,10 +194,6 @@ func (d *Document) build(p *message.Printer, filterTags []string) *openAPIRender
 		Tags:         tags,
 		ExternalDocs: d.externalDocs.build(p),
 	}
-}
-
-func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
-	return o.templateName, struct{ URL string }{URL: o.dataURL}
 }
 
 type components struct {
