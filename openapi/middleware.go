@@ -280,7 +280,7 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 // 两者稍有区别，前者不会对数据进行验证。
 func (d *Document) API(f func(o *Operation)) web.Middleware {
 	return web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
-		if !d.disable && pattern != "" &&
+		if !d.disable && pattern != "" && method != "" &&
 			(d.enableHead || method != http.MethodHead) &&
 			(d.enableOptions || method != http.MethodOptions) {
 			o := &Operation{
@@ -324,6 +324,9 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 		if _, found := opt.Responses[status]; !found {
 			opt.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
 		}
+	}
+	if len(opt.Responses) == 0 {
+		panic("至少需要指定一个返回对象")
 	}
 
 	for _, t := range opt.Tags {

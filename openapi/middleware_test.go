@@ -28,7 +28,8 @@ func TestDocument_API(t *testing.T) {
 			Tag("tag1").
 			QueryObject(&q{}, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
-			Body(&object{}, nil)
+			Body(&object{}, nil).
+			Response(200, 5, web.Phrase("desc"), nil)
 	})
 	a.NotPanic(func() {
 		m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
