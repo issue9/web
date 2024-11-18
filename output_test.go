@@ -249,7 +249,8 @@ func TestNotModified(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	s.NewContext(w, r, types.NewContext()).apply(nm)
 	tag := w.Header().Get(header.ETag)
-	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag)
+	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag).
+		Equal(w.Result().Header.Get("Content-Type"), "application/json; charset=utf-8")
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)

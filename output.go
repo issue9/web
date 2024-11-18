@@ -179,6 +179,8 @@ func (ctx *Context) SetCookies(c ...*http.Cookie) {
 //	func()(body any, err error)
 //
 // 如果返回 body 的是 []byte 类型，会原样输出，其它类型则按照 [Context.Marshal] 进行转换成 []byte 之后输出。
+// body 可能参与了 etag 的计算，为了防止重复生成 body，所以此函数允许 body 直接为 []byte 类型，
+// 在不需要 body 参与计算 etag 的情况下，应该返回非 []byte 类型的 body。
 func NotModified(etag func() (string, bool), body func() (any, error)) Responser {
 	return ResponserFunc(func(ctx *Context) {
 		if ctx.Request().Method == http.MethodGet {
@@ -194,19 +196,18 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 			return
 		}
 
-		var data []byte
-		if d, ok := b.([]byte); ok {
-			data = d
-		} else {
-			if data, err = ctx.Marshal(b); err != nil {
-				ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
-				return
+		if data, ok := b.([]byte); ok {
+			ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
+			if id := ctx.LanguageTag().String(); id != "" {
+				ctx.Header().Set(header.ContentLanguage, id)
 			}
-		}
 
-		ctx.WriteHeader(http.StatusOK)
-		if _, err := ctx.Write(data); err != nil {
-			ctx.Logs().ERROR().Error(err)
+			ctx.WriteHeader(http.StatusOK)
+			if _, err := ctx.Write(data); err != nil {
+				ctx.Logs().ERROR().Error(err)
+			}
+		} else {
+			ctx.Render(http.StatusOK, b)
 		}
 	})
 }
