@@ -34,6 +34,7 @@ import (
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/nop"
 	"github.com/issue9/web/mimetype/xml"
+	mtYAML "github.com/issue9/web/mimetype/yaml"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
@@ -196,6 +197,7 @@ func init() {
 	// RegisterMimetype
 
 	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
+	RegisterMimetype(mtYAML.Marshal, mtYAML.Unmarshal, "yaml")
 	RegisterMimetype(cbor.Marshal, cbor.Unmarshal, "cbor")
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
