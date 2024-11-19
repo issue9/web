@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"slices"
 	"strconv"
@@ -136,6 +137,13 @@ type Response struct {
 	Headers     []*Parameter
 	Description web.LocaleStringer
 
+	// 是否是用于表示错误类型的
+	//
+	// 该值如果为 true，会尝试在查找对应的媒体类型，
+	// 比如在 [web.Server] 将 application/json 对应为 application/problem+json，
+	// 那么在当前对象输出时，也会将媒体类型转换为 application/problem+json。
+	Problem bool
+
 	// Body 和 Content 共同组成了正文内容
 	// 所有不在 Content 中出现的类型均采用 [openAPI.MediaTypesRenderer] 与 Body 相结合。
 	Body    *Schema
@@ -220,14 +228,26 @@ func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRe
 
 	content := orderedmap.New[string, *mediaTypeRenderer](orderedmap.WithCapacity[string, *mediaTypeRenderer](len(d.mediaTypes)))
 	if resp.Content != nil {
-		writeMap2OrderedMap(resp.Content, content, func(in *Schema) *mediaTypeRenderer {
-			return &mediaTypeRenderer{Schema: in.build(p)}
-		})
+		keys := slices.Collect(maps.Keys(resp.Content))
+		slices.Sort(keys)
+		for _, k := range keys {
+			val := resp.Content[k] // 下面会修改 k，所以先获取值。
+
+			if resp.Problem {
+				if mt, found := d.mediaTypes[k]; found { // 找到 problem 专有的 mimetype
+					k = mt
+				}
+			}
+			content.Set(k, &mediaTypeRenderer{Schema: val.build(p)})
+		}
 	}
 	if resp.Body != nil {
-		for _, mt := range d.mediaTypes {
-			if content.GetPair(mt) == nil {
-				content.Set(mt, &mediaTypeRenderer{
+		for k, v := range d.mediaTypes {
+			if resp.Problem {
+				k = v
+			}
+			if content.GetPair(k) == nil {
+				content.Set(k, &mediaTypeRenderer{
 					Schema: resp.Body.build(p),
 				})
 			}
@@ -314,7 +334,7 @@ func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRende
 		})
 	}
 	if req.Body != nil {
-		for _, mt := range d.mediaTypes {
+		for mt := range d.mediaTypes {
 			if content.GetPair(mt) == nil {
 				content.Set(mt, &mediaTypeRenderer{
 					Schema: req.Body.build(p),

@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/issue9/sliceutil"
-
 	"github.com/issue9/web"
 )
 
@@ -69,20 +67,31 @@ func WithProblemResponse() Option {
 	return WithResponse(&Response{
 		Ref:         &Ref{Ref: "problem"},
 		Body:        NewSchema(reflect.TypeOf(web.Problem{})),
+		Problem:     true,
 		Description: web.Phrase("problem.400.detail"),
 	}, "4XX", "5XX")
 }
 
 // WithMediaType 指定所有接口可用的媒体类型
 //
+// t 用于指定支持的媒体类型，必须是 [web.Server] 实例支持的类型。
+//
 // NOTE: 多次调用会依次添加，相同值会合并。
 func WithMediaType(t ...string) Option {
 	return func(d *Document) {
-		if d.mediaTypes == nil {
-			d.mediaTypes = t
-		} else {
-			d.mediaTypes = append(d.mediaTypes, t...)
-			d.mediaTypes = sliceutil.Unique(d.mediaTypes, func(i, j string) bool { return i == j })
+		for _, tt := range t {
+			found := false
+
+			for k, v := range d.s.Mimetypes() {
+				if k == tt {
+					found = true
+					d.mediaTypes[tt] = v
+				}
+			}
+
+			if !found {
+				panic(fmt.Sprintf("不支持 %s 媒体类型", tt))
+			}
 		}
 	}
 }

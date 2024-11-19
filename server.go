@@ -7,6 +7,7 @@ package web
 import (
 	"context"
 	"io/fs"
+	"iter"
 	"net/http"
 	"slices"
 	"sync"
@@ -128,6 +129,11 @@ type (
 
 		// Use 添加插件
 		Use(...Plugin)
+
+		// Mimetypes 返回支持的所有媒体类型
+		//
+		// 键名为 mimetype，键值为 problem 状态下的 mimetype。
+		Mimetypes() iter.Seq2[string, string]
 	}
 
 	// OnExitContextFunc 表示在即将退出 [Context] 时执行的函数类型
@@ -343,5 +349,15 @@ func (f PluginFunc) Plugin(s Server) { f(s) }
 func (s *InternalServer) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s.server)
+	}
+}
+
+func (s *InternalServer) Mimetypes() iter.Seq2[string, string] {
+	return func(yield func(string, string) bool) {
+		for _, v := range s.codec.types {
+			if !yield(v.Name, v.Problem) {
+				break
+			}
+		}
 	}
 }

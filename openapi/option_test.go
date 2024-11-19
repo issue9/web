@@ -11,7 +11,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/cbor"
-	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
 )
 
@@ -47,11 +46,16 @@ func TestWithMediaType(t *testing.T) {
 	ss := newServer(a)
 
 	d := New(ss, web.Phrase("desc"),
-		WithMediaType(json.Mimetype, cbor.Mimetype),
-		WithMediaType(html.Mimetype, cbor.Mimetype),
+		WithMediaType(json.Mimetype),
 	)
 	a.NotNil(d).
-		Length(d.mediaTypes, 3)
+		Length(d.mediaTypes, 1)
+
+	a.PanicString(func() {
+		New(ss, web.Phrase("desc"),
+			WithMediaType(json.Mimetype, cbor.Mimetype),
+		)
+	}, "不支持 application/cbor 媒体类型")
 }
 
 func TestWithCallback(t *testing.T) {
