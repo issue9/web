@@ -262,8 +262,9 @@ func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRe
 }
 
 type Request struct {
-	Ref       *Ref
-	Ignorable bool // 对应 requestBody.required
+	Ref         *Ref
+	Ignorable   bool // 对应 requestBody.required
+	Description web.LocaleStringer
 
 	// Body 和 Content 共同组成了正文内容
 	// 所有不在 Content 中出现的类型均采用 [Document.MediaTypes] 与 Body 相结合。
@@ -272,8 +273,9 @@ type Request struct {
 }
 
 type requestRenderer struct {
-	Content  *orderedmap.OrderedMap[string, *mediaTypeRenderer] `json:"content" yaml:"content"`
-	Required bool                                               `json:"required,omitempty" yaml:"required,omitempty"`
+	Content     *orderedmap.OrderedMap[string, *mediaTypeRenderer] `json:"content" yaml:"content"`
+	Required    bool                                               `json:"required,omitempty" yaml:"required,omitempty"`
+	Description string                                             `json:"description" yaml:"description"`
 }
 
 // skipRefNotNil 当存在 ref 时忽略内容的检测
@@ -344,8 +346,9 @@ func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRende
 	}
 
 	return &requestRenderer{
-		Content:  content,
-		Required: !req.Ignorable,
+		Content:     content,
+		Required:    !req.Ignorable,
+		Description: req.Description.LocaleString(p),
 	}
 }
 

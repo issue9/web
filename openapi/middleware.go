@@ -116,7 +116,14 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 			name = field.Name
 		}
 
-		p := &Parameter{Name: name}
+		var desc web.LocaleStringer
+		if field.Tag != "" {
+			if c := field.Tag.Get(CommentTag); c != "" {
+				desc = web.Phrase(c)
+			}
+		}
+
+		p := &Parameter{Name: name, Description: desc} // comment 提取的内容作用在 Parameter 上，而不是关联的 Schema 上
 		q := func(p *Parameter) {
 			if f != nil {
 				f(p)
@@ -143,7 +150,7 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 			p.Schema = &Schema{Type: TypeInteger, Minimum: 0}
 			q(p)
 		case reflect.Array, reflect.Slice:
-			p.Schema = &Schema{Type: TypeArray, Items: schemaFromType(m.d, reflect.TypeOf(field.Type.Elem()), false, "")}
+			p.Schema = &Schema{Type: TypeArray, Items: schemaFromType(m.d, reflect.TypeOf(field.Type.Elem()), false, "", nil)}
 			q(p)
 		default:
 			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v", field.Type.Kind()))
@@ -188,10 +195,11 @@ func (o *Operation) CookieRef(ref string) *Operation {
 // Body 从 body 参数中获取请求内容的类型
 //
 // f 如果不为空，则要以对根据 body 生成的对象做二次修改。
-func (o *Operation) Body(body any, ignorable bool, f func(*Request)) *Operation {
+func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f func(*Request)) *Operation {
 	req := &Request{
-		Ignorable: ignorable,
-		Body:      o.d.newSchema(reflect.TypeOf(body)),
+		Ignorable:   ignorable,
+		Body:        o.d.newSchema(reflect.TypeOf(body)),
+		Description: desc,
 	}
 	if f != nil {
 		f(req)

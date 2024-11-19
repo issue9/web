@@ -29,7 +29,7 @@ func TestDocument_API(t *testing.T) {
 			Tag("tag1").
 			QueryObject(&q{}, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
-			Body(&object{}, true, nil).
+			Body(&object{}, true, web.Phrase("lang"), nil).
 			Response("200", 5, web.Phrase("desc"), nil)
 	})
 	m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
@@ -37,6 +37,7 @@ func TestDocument_API(t *testing.T) {
 	o := d.paths["/path/{p1}/abc"].Operations["GET"]
 	a.NotNil(o).
 		True(o.RequestBody.Ignorable).
+		Equal(o.Description, web.Phrase("lang")).
 		Length(o.Paths, 0).
 		Length(o.Queries, 3).
 		NotNil(o.RequestBody.Body.Type, TypeObject).
@@ -46,7 +47,7 @@ func TestDocument_API(t *testing.T) {
 		o.Tag("tag1").
 			Header("h1", TypeString, nil, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
-			Body(&object{}, false, nil)
+			Body(&object{}, false, nil, nil)
 	})
 	a.PanicString(func() {
 		m.Middleware(nil, http.MethodGet, "/path/{p}/abc", "")

@@ -132,6 +132,7 @@ type Schema struct {
 	XML                  *XML
 	ExternalDocs         *ExternalDocs
 	Title                web.LocaleStringer
+	Description          web.LocaleStringer
 	Type                 string
 	AllOf                []*Schema
 	OneOf                []*Schema
@@ -166,42 +167,47 @@ type schemaRenderer struct {
 }
 
 func (d *Document) newSchema(t reflect.Type) *Schema {
-	return schemaFromType(d, t, true, "")
+	return schemaFromType(d, t, true, "", nil)
 }
 
 // NewSchema 根据 [reflect.Type] 生成 [Schema] 对象
-func NewSchema(t reflect.Type) *Schema {
-	return schemaFromType(nil, t, true, "")
+func NewSchema(t reflect.Type, title, desc web.LocaleStringer) *Schema {
+	s := schemaFromType(nil, t, true, "", desc)
+	s.Title = title
+	return s
 }
 
 // d 仅用于查找其关联的 components/schema 中是否存在相同名称的对象，如果存在则直接生成引用对象。
-func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string) *Schema {
+//
+// desc 表示类型 t 的 Description 属性
+// rootName 根结构体的名称，主要是为了解决子元素又引用了根元素的类型引起的循环引用。
+func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, desc web.LocaleStringer) *Schema {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
 	switch t.Kind() {
 	case reflect.String:
-		return &Schema{Type: TypeString}
+		return &Schema{Type: TypeString, Description: desc}
 	case reflect.Bool:
-		return &Schema{Type: TypeBoolean}
+		return &Schema{Type: TypeBoolean, Description: desc}
 	case reflect.Float32, reflect.Float64:
-		return &Schema{Type: TypeNumber}
+		return &Schema{Type: TypeNumber, Description: desc}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &Schema{Type: TypeInteger}
+		return &Schema{Type: TypeInteger, Description: desc}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Schema{Type: TypeInteger, Minimum: 0}
+		return &Schema{Type: TypeInteger, Minimum: 0, Description: desc}
 	case reflect.Array, reflect.Slice:
-		return &Schema{Type: TypeArray, Items: schemaFromType(d, t.Elem(), false, rootName)}
+		return &Schema{Type: TypeArray, Items: schemaFromType(d, t.Elem(), false, rootName, nil), Description: desc}
 	case reflect.Map:
-		return &Schema{Type: TypeObject, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName)}
+		return &Schema{Type: TypeObject, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName, nil), Description: desc}
 	case reflect.Struct:
-		return schemaFromObject(d, t, isRoot, rootName)
+		return schemaFromObject(d, t, isRoot, rootName, desc)
 	}
 	return nil
 }
 
-func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string) *Schema {
+func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string, desc web.LocaleStringer) *Schema {
 	typeName := getTypeName(t)
 
 	if d != nil {
@@ -222,6 +228,8 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string)
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		k := f.Type.Kind()
+		var itemTitle web.LocaleStringer
+
 		if f.IsExported() && k != reflect.Chan && k != reflect.Func && k != reflect.Complex64 && k != reflect.Complex128 {
 			name := f.Name
 			var xml *XML
@@ -240,9 +248,14 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string)
 				if xmlName, _ := getTagName(f, "xml"); xmlName != "" && xmlName != name {
 					xml = &XML{Name: xmlName}
 				}
+
+				comment := f.Tag.Get(CommentTag)
+				if comment != "" {
+					itemTitle = web.Phrase(comment)
+				}
 			}
 
-			s := schemaFromType(d, t.Field(i).Type, false, rootName)
+			s := schemaFromType(d, t.Field(i).Type, false, rootName, itemTitle)
 			if s == nil {
 				continue
 			}
@@ -255,10 +268,11 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string)
 	}
 
 	return &Schema{
-		Type:       TypeObject,
-		Properties: ps,
-		Ref:        ref,
-		Required:   req,
+		Type:        TypeObject,
+		Properties:  ps,
+		Ref:         ref,
+		Required:    req,
+		Description: desc,
 	}
 }
 
@@ -370,6 +384,7 @@ func (s *Schema) buildRenderer(p *message.Printer) *schemaRenderer {
 		XML:                  s.XML.clone(),
 		ExternalDocs:         s.ExternalDocs.build(p),
 		Title:                sprint(p, s.Title),
+		Description:          sprint(p, s.Description),
 		Type:                 s.Type,
 		AllOf:                cloneSchemas2SchemasRenderer(s.AllOf, p),
 		OneOf:                cloneSchemas2SchemasRenderer(s.OneOf, p),

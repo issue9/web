@@ -61,6 +61,36 @@ messages:
     - key: not found unmarshaler for the server content-type %s
       message:
         msg: not found unmarshaler for the server content-type %s
+    - key: problem detail
+      message:
+        msg: problem detail
+    - key: problem extensions
+      message:
+        msg: problem extensions
+    - key: problem instance
+      message:
+        msg: problem instance
+    - key: problem params
+      message:
+        msg: problem params
+    - key: problem response
+      message:
+        msg: problem response
+    - key: problem response schema
+      message:
+        msg: problem response schema
+    - key: problem response schema desc
+      message:
+        msg: problem response schema desc
+    - key: problem status
+      message:
+        msg: problem status
+    - key: problem title
+      message:
+        msg: problem title
+    - key: problem type
+      message:
+        msg: problem type
     - key: problem.400
       message:
         msg: problem.400

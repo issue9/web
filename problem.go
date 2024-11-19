@@ -29,25 +29,25 @@ type (
 		XMLName struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
 
 		// 错误 ID
-		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type"`
+		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type" comment:"problem type"`
 
 		// 对错误的简要描述
-		Title string `json:"title" xml:"title" form:"title" cbor:"title" yaml:"title"`
+		Title string `json:"title" xml:"title" form:"title" cbor:"title" yaml:"title" comment:"problem title"`
 
 		// 对错误的详细说明
-		Detail string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty" yaml:"detail,omitempty"`
+		Detail string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty" yaml:"detail,omitempty" comment:"problem detail"`
 
 		// 指向错误发生的实例
-		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty" yaml:"instance,omitempty"`
+		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty" yaml:"instance,omitempty" comment:"problem instance"`
 
 		// 原始的错误状态码
-		Status int `json:"status" xml:"status" form:"status" cbor:"status,omitempty" yaml:"status,omitempty"`
+		Status int `json:"status" xml:"status" form:"status" cbor:"status,omitempty" yaml:"status,omitempty" comment:"problem status"`
 
 		// 用户提交对象各个字段的错误信息
-		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty"`
+		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty" comment:"problem params"`
 
 		// 反馈给用户的信息
-		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty"`
+		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty" comment:"problem extensions"`
 	}
 
 	// ProblemParam 单个错误字段的描述

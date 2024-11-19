@@ -20,6 +20,7 @@ import (
 	"github.com/issue9/localeutil/message/extract"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
@@ -45,7 +46,7 @@ flags：
 
 const presetFuncs = `github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf`
 
-const presetTag = "comment"
+const presetTag = openapi.CommentTag
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("locale", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {

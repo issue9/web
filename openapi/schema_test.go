@@ -139,7 +139,7 @@ func TestSchema_build(t *testing.T) {
 	sr := s.build(p)
 	a.Equal(sr.ref.Ref, "#/components/schemas/ref").Nil(sr.obj)
 
-	s = &Schema{Type: TypeArray, Title: web.Phrase("lang")}
+	s = &Schema{Type: TypeArray, Description: web.Phrase("lang")}
 	sr = s.build(p)
 	a.Nil(sr.ref).NotNil(sr.obj).
 		Equal(sr.obj.Type, TypeArray).

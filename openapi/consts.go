@@ -32,4 +32,7 @@ const (
 	SecuritySchemeTypeMutualTLS     = "mutualTLS"
 	SecuritySchemeTypeOAuth2        = "oauth2"
 	SecuritySchemeTypeOpenIDConnect = "openIdConnect"
+
+	// CommentTag 可提取翻译内容的结构体标签名称
+	CommentTag = "comment"
 )

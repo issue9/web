@@ -62,6 +62,36 @@ messages:
     - key: not found unmarshaler for the server content-type %s
       message:
         msg: 未找到服务端 content-type 指定的 %s 序列化函数
+    - key: problem detail
+      message:
+        msg: 对于该错误的详细描述
+    - key: problem extensions
+      message:
+        msg: 导致该错误的一些服务端参数
+    - key: problem instance
+      message:
+        msg: 触发该错误的请求 ID
+    - key: problem params
+      message:
+        msg: 导致该错误的提交参数以及对应的错误描述
+    - key: problem response
+      message:
+        msg: 错误状态下的返回内容
+    - key: problem response schema
+      message:
+        msg: 错误状态下返回的类型
+    - key: problem response schema desc
+      message:
+        msg: 所有非正常状态（4XX 和 5XX），都由此类型表述。
+    - key: problem status
+      message:
+        msg: 该错误的原始状态码
+    - key: problem title
+      message:
+        msg: 该错误的简要描述
+    - key: problem type
+      message:
+        msg: 错误的唯一 ID
     - key: problem.400
       message:
         msg: Bad Request
