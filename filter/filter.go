@@ -19,10 +19,6 @@
 //
 // Validator 负责验证数据，其原型为：func(T)bool
 // 返回值表示是否符合当前函数的需求，可由 [V]、[SV] 或 [MV] 转换为 [Rule]；
-//
-// [webfilter] 实现了一些常用的过滤器方法。
-//
-// [webfilter]: https://pkg.go.dev/github.com/issue9/webfilter
 package filter
 
 import (

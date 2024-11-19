@@ -125,6 +125,9 @@ messages:
     - key: locale func
       message:
         msg: 源代码中用于输出本地化信息的函数
+    - key: locale struct tag
+      message:
+        msg: 指定用于本地化的结构体标签名称
     - key: no input file
       message:
         msg: 未指定输入文件

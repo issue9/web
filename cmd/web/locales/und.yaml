@@ -101,6 +101,9 @@ messages:
     - key: locale func
       message:
         msg: locale func
+    - key: locale struct tag
+      message:
+        msg: locale struct tag
     - key: no input file
       message:
         msg: no input file
