@@ -234,7 +234,7 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string,
 			name := f.Name
 			var xml *XML
 			if f.Tag != "" {
-				tag, omitempty := getTagName(f, "json")
+				tag, omitempty, _ := getTagName(f, "json")
 				if tag == "-" {
 					continue
 				} else if tag != "" {
@@ -245,8 +245,8 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string,
 					req = append(req, name)
 				}
 
-				if xmlName, _ := getTagName(f, "xml"); xmlName != "" && xmlName != name {
-					xml = &XML{Name: xmlName}
+				if xmlName, _, attr := getTagName(f, "xml"); xmlName != "" && xmlName != name {
+					xml = &XML{Name: xmlName, Attribute: attr}
 				}
 
 				comment := f.Tag.Get(CommentTag)

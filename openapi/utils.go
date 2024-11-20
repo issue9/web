@@ -28,21 +28,22 @@ func getTypeName(t reflect.Type) string {
 }
 
 // 可能返回 -，表示该字段不需要处理
-func getTagName(field reflect.StructField, name string) (n string, omitempty bool) {
+// attr 表示是否 xml 的属性，仅针对 xml，其它类型无效。
+func getTagName(field reflect.StructField, name string) (n string, omitempty, attr bool) {
 	val := field.Tag.Get(name)
 	if val == "-" {
-		return "-", false
+		return "-", false, false
 	}
 
 	if val == "" {
-		return field.Name, false
+		return field.Name, false, false
 	}
 
 	tags := strings.Split(val, ",")
 	if len(tags) == 1 {
-		return tags[0], false
+		return tags[0], false, false
 	}
-	return tags[0], slices.Index(tags[1:], "omitempty") >= 0
+	return tags[0], slices.Index(tags[1:], "omitempty") >= 0, slices.Index(tags[1:], "attr") >= 0
 }
 
 func sprint(p *message.Printer, s web.LocaleStringer) string {

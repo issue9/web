@@ -23,13 +23,13 @@ func WithOptions(enable bool) Option {
 	return func(d *Document) { d.enableOptions = enable }
 }
 
-// WithHTML 定义 HTML 模板
+// WithHTML 指定 HTML 模板
 //
 // 这将开启 [Document.Handler] 对 [html.Mimetype] 类型的支持。
 // 此选项仅是定义了 [Document.Handler] 输出的一些内容，
 // 还需要向 [github.com/issue9/web/mimetype/html] 添加模板。
 //
-// tpl 表示 HTML 模板名称；
+// tpl 表示 HTML 模板名称，该模板由 [html.Install] 注册；
 // assets 资源基地址，apidoc 的浏览工具一般都是在一个 html 文件中引入一些依赖文件，
 // assets 就是这些依赖文件的基地址，可是指向一个 CDN 的地址，比如 swagger 的
 // https://unpkg.com/swagger-ui-dist@5.18.2；
@@ -42,7 +42,7 @@ func WithHTML(tpl, assets, favicon string) Option {
 	}
 }
 
-// WithResponse 向 components/rsponses 添加对象
+// WithResponse 向 components/responses 添加对象
 //
 // 一般用于指定非正常状态的返回对象，比如 400 状态码的对象。
 //

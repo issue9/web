@@ -111,7 +111,7 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 		if !field.IsExported() {
 			continue
 		}
-		name, _ := getTagName(field, query.Tag)
+		name, _, _ := getTagName(field, query.Tag)
 		if name == "" {
 			name = field.Name
 		}
