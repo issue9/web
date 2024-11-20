@@ -5,44 +5,47 @@
 package html
 
 import (
-	"fmt"
 	"html/template"
 	"io/fs"
 	"maps"
+	"slices"
 
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
 )
-
-const tagKey = "view-locale-key"
 
 type contextType int
 
 const viewContextKey contextType = 1
 
 type view struct {
-	tpl *template.Template // 单目录模式下的模板
-
-	dir     bool
-	dirTpls map[string]*template.Template
-	b       *catalog.Builder
+	localized map[language.Tag]string
+	tpls      map[language.Tag]*template.Template
+	matcher   language.Matcher
 }
 
 // Init 初始化 html 模板系统
 //
-// dir 将 fsys 下的子目录作为本地化的 ID 对模板进行分类；
-func Init(s web.Server, dir bool) {
+// localized 模板的本地化目录列表。键值为目录名称，键名为该目录对应的本地化 ID。
+// 将目录映射到 [language.Und]，表示该目录作为默认模板使用。
+// 如果 localized 为空，则表示不按目录进行区分，将加载所有内容至一个模板实例中。
+func Init(s web.Server, localized map[language.Tag]string) {
 	if _, ok := s.Vars().Load(viewContextKey); ok {
 		panic("已经初始化")
 	}
 
-	v := &view{dir: dir}
-	if dir {
-		v.b = catalog.NewBuilder()
+	v := &view{localized: localized}
+
+	if len(localized) > 0 {
+		tags := slices.Collect(maps.Keys(localized))
+		if slices.Index(tags, language.Und) < 0 {
+			panic("必须指定 language.Und")
+		}
+
+		v.matcher = language.NewMatcher(tags)
 	}
+
 	s.Vars().Store(viewContextKey, v)
 }
 
@@ -52,9 +55,10 @@ func Init(s web.Server, dir bool) {
 //   - t 根据当前的语言（[web.Context.LanguageTag]）对参数进行翻译；
 //   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
 //
-// fsys 表示模板目录；
+// fsys 表示模板目录。该目录下应该包含 Init 中 localized 参数指定的所有目录，
+// 否则会 panic。
 //
-// 通过此方法安装之后，可以正常处理用户提交的对象：
+// 通过此函数安装之后，可以正常输出以下内容：
 //   - string 直接输出字符串；
 //   - []byte 直接输出内容；
 //   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
@@ -74,47 +78,31 @@ func Install(s web.Server, funcs template.FuncMap, glob string, fsys ...fs.FS) {
 }
 
 func install(s web.Server, v *view, funcs template.FuncMap, glob string, fsys fs.FS) {
-	if v.dir {
-		instalDirView(s, v, funcs, glob, fsys)
+	if len(v.localized) > 0 {
+		instalLocalizedView(s, v, funcs, glob, fsys)
 	} else {
-		if v.tpl == nil {
+		if len(v.tpls) == 0 { // 第一次调用
 			f := getTranslateFuncMap(s)
 			maps.Copy(f, funcs) // 用户定义的可覆盖系统自带的
 			funcs = f
 		}
 		tpl := template.New(s.Name()).Funcs(funcs)
 		template.Must(tpl.ParseFS(fsys, glob))
-		s.Vars().Store(viewContextKey, &view{tpl: tpl})
+		s.Vars().Store(viewContextKey, &view{tpls: map[language.Tag]*template.Template{language.Und: tpl}})
 	}
 }
 
-func instalDirView(s web.Server, v *view, funcs template.FuncMap, glob string, fsys fs.FS) {
+func instalLocalizedView(s web.Server, v *view, funcs template.FuncMap, glob string, fsys fs.FS) {
+	tpls := make(map[language.Tag]*template.Template, len(v.localized))
 
-	dirs, err := fs.ReadDir(fsys, ".")
-	if err != nil {
-		panic(err)
-	}
-
-	tpls := make(map[string]*template.Template, len(dirs))
-
-	for _, dir := range dirs {
-		name := dir.Name()
-
-		tag, err := language.Parse(name)
-		if err != nil {
-			panic(fmt.Sprintf("无法将目录 %s 解析为本地化语言", name))
-		}
-		if err = v.b.SetString(tag, tagKey, name); err != nil {
-			panic(err)
-		}
-
+	for t, name := range v.localized {
 		sub, err := fs.Sub(fsys, name)
 		if err != nil {
 			panic(err)
 		}
 
-		tpl, found := tpls[name]
-		if found {
+		tpl, found := v.tpls[t]
+		if found { // 首次添加
 			tpl = template.Must(tpl.Funcs(funcs).ParseFS(sub, glob))
 		} else {
 			f := getTranslateFuncMap(s)
@@ -122,14 +110,11 @@ func instalDirView(s web.Server, v *view, funcs template.FuncMap, glob string, f
 			tpl = template.Must(template.New(name).Funcs(f).ParseFS(sub, glob))
 		}
 
-		tpls[name] = tpl
+		tpls[t] = tpl
 	}
 
-	s.Vars().Store(viewContextKey, &view{
-		dir:     true,
-		dirTpls: tpls,
-		b:       v.b,
-	})
+	v.tpls = tpls
+	s.Vars().Store(viewContextKey, v)
 }
 
 func getTranslateFuncMap(s web.Server) template.FuncMap {
@@ -146,15 +131,16 @@ func getTranslateFuncMap(s web.Server) template.FuncMap {
 
 // 生成适用当前会话的模板，这会添加一个当前语言的翻译方法 t
 func (v *view) buildCurrentTpl(ctx *web.Context) *template.Template {
-	tpl := v.tpl
-	if v.dir {
-		tag, _, _ := v.b.Matcher().Match(ctx.LanguageTag())
-		tagName := message.NewPrinter(tag, message.Catalog(v.b)).Sprintf(tagKey)
-		t, found := v.dirTpls[tagName]
-		if !found { // 理论上不可能出现此种情况。
-			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
-		}
-		tpl = t
+	if len(v.tpls) == 0 {
+		return nil
+	}
+
+	var tpl *template.Template
+	if len(v.localized) == 0 {
+		tpl = v.tpls[language.Und]
+	} else {
+		tag, _, _ := v.matcher.Match(ctx.LanguageTag())
+		tpl = v.tpls[tag]
 	}
 
 	return tpl.Funcs(template.FuncMap{

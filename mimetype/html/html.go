@@ -7,7 +7,9 @@
 //	srv := server.New("", "", &server.Options{
 //		Codec: web.New().AddMimetype("text/html", html.Marshal, html.Unmarshal, "")
 //	})
-//	tpl := template.ParseFiles(...)
+//
+//	html.Init(...)
+//	html.Install(...)
 //
 //	func handle(ctx *web.Context) Responser {
 //		obj := &struct{
@@ -79,6 +81,10 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	vv := tt.(*view)
 
 	tpl := vv.buildCurrentTpl(ctx)
+	if tpl == nil {
+		return nil, mimetype.ErrUnsupported()
+	}
+
 	name, v := getName(v)
 
 	w := new(bytes.Buffer)
