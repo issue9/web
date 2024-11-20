@@ -34,15 +34,6 @@ func WithOptions(enable bool) Option {
 // assets 就是这些依赖文件的基地址，可是指向一个 CDN 的地址，比如 swagger 的
 // https://unpkg.com/swagger-ui-dist@5.18.2；
 // favicon 图标，请使用 icon 或是 png 这种大部分浏览器都支持的图标格式，可以为空；
-//
-// 反馈给模板的数据格式为
-//
-//	struct{
-//	    URL string // openapi 文档的地址，由请求端的 accept 和 accept-language 分别决定类型和语言。
-//	    Lang string // 用户的界面语言
-//	    AssetsURL string // 资源基地址
-//	    Favicon string // png 格式的图标
-//	}
 func WithHTML(tpl, assets, favicon string) Option {
 	return func(d *Document) {
 		d.templateName = tpl

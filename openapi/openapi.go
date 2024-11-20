@@ -16,6 +16,7 @@ import (
 	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -68,6 +69,14 @@ type openAPIRenderer struct {
 	Security     []*orderedmap.OrderedMap[string, []string]                  `json:"security,omitempty" yaml:"security,omitempty"`
 	Tags         []*tagRenderer                                              `json:"tags,omitempty" yaml:"tags,omitempty"`
 	ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+
+	// 扩展内容
+
+	XFavicon     string `json:"x-favicon,omitempty" yaml:"x-favicon,omitempty"`
+	XAssets      string `json:"x-assets,omitempty" yaml:"x-assets,omitempty"`
+	XLanguage    string `json:"x-language,omitempty" yaml:"x-language,omitempty"`
+	XModified    string `json:"x-modified,omitempty" yaml:"x-modified,omitempty"`
+	templateName string
 }
 
 // New 声明 [Document] 对象
@@ -146,39 +155,18 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		val := h.Sum(nil)
 		return hex.EncodeToString(val), true
 	}, func() (any, error) {
-		if ctx.Mimetype(false) == html.Mimetype {
-			return &htmlRenderer{
-				templateName: d.templateName,
-
-				Title:     d.info.title.LocaleString(ctx.LocalePrinter()),
-				Favicon:   d.favicon,
-				AssetsURL: d.assetsURL,
-				URL:       dataURL,
-				Lang:      ctx.LanguageTag().String(),
-			}, nil
-		}
-		return d.build(ctx.LocalePrinter(), q.Tags), nil
+		return d.build(ctx.LocalePrinter(), ctx.LanguageTag(), q.Tags), nil
 	})
 }
 
-type htmlRenderer struct {
-	templateName string
-
-	Title     string
-	Favicon   string
-	AssetsURL string
-	URL       string
-	Lang      string
-}
-
-func (o *htmlRenderer) MarshalHTML() (name string, data any) {
+func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
 	return o.templateName, o
 }
 
 // Disable 是否禁用 [Document.Handler] 接口输出内容
 func (d *Document) Disable(disable bool) { d.disable = disable }
 
-func (d *Document) build(p *message.Printer, filterTags []string) *openAPIRenderer {
+func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []string) *openAPIRenderer {
 	servers := make([]*serverRenderer, 0, len(d.servers))
 	for _, s := range d.servers {
 		servers = append(servers, s.build(p))
@@ -209,6 +197,12 @@ func (d *Document) build(p *message.Printer, filterTags []string) *openAPIRender
 		Security:     security,
 		Tags:         tags,
 		ExternalDocs: d.externalDocs.build(p),
+
+		XFavicon:     d.favicon,
+		XAssets:      d.assetsURL,
+		XLanguage:    lang.String(),
+		XModified:    d.last.Format(time.RFC3339),
+		templateName: d.templateName,
 	}
 }
 

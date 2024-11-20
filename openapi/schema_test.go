@@ -143,7 +143,7 @@ func TestSchema_build(t *testing.T) {
 	sr = s.build(p)
 	a.Nil(sr.ref).NotNil(sr.obj).
 		Equal(sr.obj.Type, TypeArray).
-		Equal(sr.obj.Title, "简体")
+		Equal(sr.obj.Description, "简体")
 }
 
 func TestDocument_NewSchema(t *testing.T) {

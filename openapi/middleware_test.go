@@ -30,7 +30,8 @@ func TestDocument_API(t *testing.T) {
 			QueryObject(&q{}, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
 			Body(&object{}, true, web.Phrase("lang"), nil).
-			Response("200", 5, web.Phrase("desc"), nil)
+			Response("200", 5, web.Phrase("desc"), nil).
+			Description = web.Phrase("lang")
 	})
 	m.Middleware(nil, http.MethodGet, "/path/{p1}/abc", "")
 

@@ -48,7 +48,7 @@ func TestDocument_build(t *testing.T) {
 	p := s.Locale().NewPrinter(language.SimplifiedChinese)
 
 	d := New(s, web.Phrase("lang"))
-	r := d.build(p, nil)
+	r := d.build(p, language.SimplifiedChinese, nil)
 	a.Equal(r.Info.Version, s.Version()).
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体")
@@ -57,7 +57,7 @@ func TestDocument_build(t *testing.T) {
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
-	r = d.build(p, nil)
+	r = d.build(p, language.SimplifiedChinese, nil)
 	a.Equal(r.Info.Version, s.Version()).
 		Equal(r.OpenAPI, Version).
 		Equal(r.Info.Title, "简体").
@@ -68,7 +68,7 @@ func TestDocument_build(t *testing.T) {
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
-	r = d.build(p, nil)
+	r = d.build(p, language.SimplifiedChinese, nil)
 	obj := r.Paths.GetPair("/users/{id}").Value.obj
 	a.NotNil(obj.Get).
 		NotNil(obj.Post).
@@ -76,7 +76,7 @@ func TestDocument_build(t *testing.T) {
 
 	// 带过滤
 
-	r = d.build(p, []string{"admin"})
+	r = d.build(p, language.SimplifiedChinese, []string{"admin"})
 	obj = r.Paths.GetPair("/users/{id}").Value.obj
 	a.Nil(obj.Get).
 		NotNil(obj.Post).
