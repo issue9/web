@@ -27,12 +27,10 @@ package html
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"io"
 	"reflect"
 
 	"github.com/issue9/mux/v9/header"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype"
@@ -80,21 +78,7 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	}
 	vv := tt.(*view)
 
-	tpl := vv.tpl
-	if vv.dir {
-		tag, _, _ := vv.b.Matcher().Match(ctx.LanguageTag())
-		tagName := message.NewPrinter(tag, message.Catalog(vv.b)).Sprintf(tagKey)
-		t, found := vv.dirTpls[tagName]
-		if !found { // 理论上不可能出现此种情况，Match 必定会返回一个最相近的语种。
-			panic(fmt.Sprintf("未找到指定的模板 %s", tagName))
-		}
-		tpl = t
-	}
-
-	tpl = tpl.Funcs(template.FuncMap{
-		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
-	})
-
+	tpl := vv.buildCurrentTpl(ctx)
 	name, v := getName(v)
 
 	w := new(bytes.Buffer)
