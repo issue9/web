@@ -47,7 +47,8 @@ type Document struct {
 	// 与 HTML 模板相关的定义
 
 	templateName string
-	dataURL      string
+	assetsURL    string
+	favicon      string
 
 	// 其它一些状态的设置
 
@@ -122,11 +123,12 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		return resp
 	}
 
-	if m := ctx.Mimetype(false); m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype {
+	if m := ctx.Mimetype(false); (m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype) ||
+		(m == html.Mimetype && d.templateName == "") {
 		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
-	dataURL := d.dataURL
+	dataURL := ctx.Request().URL.Path
 	if len(q.Tags) > 0 {
 		dataURL += "?tag=" + strings.Join(q.Tags, ",")
 	}
@@ -147,8 +149,12 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		if ctx.Mimetype(false) == html.Mimetype {
 			return &htmlRenderer{
 				templateName: d.templateName,
-				URL:          dataURL,
-				Lang:         ctx.LanguageTag().String(),
+
+				Title:     d.info.title.LocaleString(ctx.LocalePrinter()),
+				Favicon:   d.favicon,
+				AssetsURL: d.assetsURL,
+				URL:       dataURL,
+				Lang:      ctx.LanguageTag().String(),
 			}, nil
 		}
 		return d.build(ctx.LocalePrinter(), q.Tags), nil
@@ -157,8 +163,12 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 
 type htmlRenderer struct {
 	templateName string
-	URL          string
-	Lang         string
+
+	Title     string
+	Favicon   string
+	AssetsURL string
+	URL       string
+	Lang      string
 }
 
 func (o *htmlRenderer) MarshalHTML() (name string, data any) {

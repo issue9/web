@@ -18,9 +18,10 @@ func TestWithHTML(t *testing.T) {
 	a := assert.New(t, false)
 
 	ss := newServer(a)
-	d := New(ss, web.Phrase("desc"), WithHTML("tpl", "./openapi.yaml"))
-	a.Equal(d.dataURL, "./openapi.yaml").
-		Equal(d.templateName, "tpl")
+	d := New(ss, web.Phrase("desc"), WithHTML("tpl", "./dist", "./dist/favicon.png"))
+	a.Equal(d.assetsURL, "./dist").
+		Equal(d.templateName, "tpl").
+		Equal(d.favicon, "./dist/favicon.png")
 }
 
 func TestWithResponse(t *testing.T) {
