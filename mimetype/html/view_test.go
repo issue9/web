@@ -39,10 +39,11 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 	return s
 }
 
-func TestInstallView(t *testing.T) {
+func TestInstall(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
-	html.InstallView(s, false, os.DirFS("./testdata/view"), "*.tpl")
+	html.Init(s, nil)
+	html.Install(s, nil, "*.tpl", os.DirFS("./testdata/view"))
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
@@ -71,10 +72,11 @@ func TestInstallView(t *testing.T) {
 		StringBody("\n<div>hant</div>\n<div>hans</div>\n")
 }
 
-func TestInstallDirView(t *testing.T) {
+func TestInstall_withLocalized(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "cmn-hans")
-	html.InstallView(s, true, os.DirFS("./testdata/dir"), "*.tpl")
+	html.Init(s, map[language.Tag]string{language.SimplifiedChinese: "cmn-hans", language.TraditionalChinese: "cmn-hant", language.Und: "cmn-hans"})
+	html.Install(s, nil, "*.tpl", os.DirFS("./testdata/dir"))
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
