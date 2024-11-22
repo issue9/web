@@ -24,6 +24,24 @@ func TestWithHTML(t *testing.T) {
 		Equal(d.favicon, "./dist/favicon.png")
 }
 
+func TestNewLicense(t *testing.T) {
+	a := assert.New(t, false)
+	ss := newServer(a)
+
+	d := New(ss, web.Phrase("abc"), WithLicense("name", "id"))
+	a.Equal(d.info.license, &licenseRenderer{Name: "name", Identifier: "id"})
+
+	d = New(ss, web.Phrase("abc"), WithLicense("name", "https://example.com"))
+	a.Equal(d.info.license, &licenseRenderer{Name: "name", URL: "https://example.com"})
+
+	d = New(ss, web.Phrase("abc"), WithLicense("name", ""))
+	a.Equal(d.info.license, &licenseRenderer{Name: "name"})
+
+	a.PanicString(func() {
+		WithLicense("", "id")
+	}, "参数 name 不能为空")
+}
+
 func TestWithResponse(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)

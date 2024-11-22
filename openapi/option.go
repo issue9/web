@@ -7,6 +7,7 @@ package openapi
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/issue9/web"
 )
@@ -212,8 +213,19 @@ func WithDescription(summary, desc web.LocaleStringer) Option {
 //
 // NOTE: 多次调用会相互覆盖
 func WithLicense(name, id string) Option {
+	if name == "" {
+		panic("参数 name 不能为空")
+	}
+
 	return func(d *Document) {
-		d.info.license = newLicense(name, id)
+		switch {
+		case id == "":
+			d.info.license = &licenseRenderer{Name: name}
+		case strings.HasPrefix(id, "http://") || strings.HasPrefix(id, "https://"):
+			d.info.license = &licenseRenderer{Name: name, URL: id}
+		default:
+			d.info.license = &licenseRenderer{Name: name, Identifier: id}
+		}
 	}
 }
 
