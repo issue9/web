@@ -117,7 +117,7 @@ type documentQuery struct {
 //   - html 通过将 accept 报头设置为 [html.Mimetype] 返回 HTML 格式的数据。
 //     需要通过 [WithHTML] 进行配置，可参考 [github.com/issue9/web/mimetype/html]；
 //
-// NOTE: Handler 支持的输出格式限定在以上几种，但是最终是否能正常输出以上几种格式，
+// NOTE: 支持的输出格式限定在以上几种，但是最终是否能正常输出以上几种格式，
 // 还需要由 [web.Server] 是否配置相应的解码方式。
 //
 // 该路由接受 tag 查询参数，在未指定参数的情况下，表示返回所有接口，

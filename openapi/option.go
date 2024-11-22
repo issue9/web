@@ -33,7 +33,10 @@ func WithOptions(enable bool) Option {
 // assets 资源基地址，apidoc 的浏览工具一般都是在一个 html 文件中引入一些依赖文件，
 // assets 就是这些依赖文件的基地址，可是指向一个 CDN 的地址，比如 swagger 的
 // https://unpkg.com/swagger-ui-dist@5.18.2；
-// favicon 图标，请使用 icon 或是 png 这种大部分浏览器都支持的图标格式，可以为空；
+// favicon 图标，请使用 icon 或是 png 这种大部分浏览器都支持的图标格式，
+// 可以为空。尽量提供比较大的图标，可能会被用在除 favicon 之外的地方；
+//
+// NOTE: [github.com/issue9/webuse/openapi] 下实现了部分简单的模板。
 func WithHTML(tpl, assets, favicon string) Option {
 	return func(d *Document) {
 		d.templateName = tpl

@@ -22,6 +22,12 @@ func (o *Operation) Tag(tag ...string) *Operation {
 	return o
 }
 
+func (o *Operation) Desc(summary, description web.LocaleStringer) *Operation {
+	o.Summary = summary
+	o.Description = description
+	return o
+}
+
 func (o *Operation) Server(url string, desc web.LocaleStringer, vars ...*ServerVariable) *Operation {
 	s := &Server{
 		URL:         url,
@@ -72,6 +78,13 @@ func (o *Operation) Path(name, typ string, desc web.LocaleStringer, f func(*Para
 	return o
 }
 
+// PathID 指定类型为大于 0 的路径参数
+func (o *Operation) PathID(name string, desc web.LocaleStringer) *Operation {
+	return o.Path(name, TypeInteger, desc, func(p *Parameter) {
+		p.Schema.Minimum = 1
+	})
+}
+
 func (o *Operation) PathRef(ref string) *Operation {
 	o.Paths = append(o.Paths, &Parameter{Ref: &Ref{Ref: ref}, Required: true})
 	return o
@@ -88,16 +101,21 @@ func (o *Operation) QueryRef(ref string) *Operation {
 	return o
 }
 
+var timeType = reflect.TypeFor[time.Time]()
+
 // QueryObject 从参数 o 中获取相应的查询参数
 //
-// 对于 o 的要求与 [web.Context.QueryObject] 是相同的。
+// 对于 obj 的要求与 [web.Context.QueryObject] 是相同的。
 // f 是对每个字段的修改，可以为空，其原型为
 //
 //	func(p *Parameter)
 //
 // 可通过 p.Name 确定的参数名称
-func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
-	t := reflect.TypeOf(o)
+func (o *Operation) QueryObject(obj any, f func(*Parameter)) *Operation {
+	return o.queryObject(reflect.TypeOf(obj), f)
+}
+
+func (o *Operation) queryObject(t reflect.Type, f func(*Parameter)) *Operation {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
@@ -108,6 +126,12 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+
+		if field.Anonymous {
+			o.QueryObject(field.Type, f)
+			continue
+		}
+
 		if !field.IsExported() {
 			continue
 		}
@@ -131,7 +155,7 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 			if err := p.valid(true); err != nil {
 				panic(err)
 			}
-			m.Queries = append(m.Queries, p)
+			o.Queries = append(o.Queries, p)
 		}
 		switch field.Type.Kind() {
 		case reflect.String:
@@ -150,14 +174,21 @@ func (m *Operation) QueryObject(o any, f func(*Parameter)) *Operation {
 			p.Schema = &Schema{Type: TypeInteger, Minimum: 0}
 			q(p)
 		case reflect.Array, reflect.Slice:
-			p.Schema = &Schema{Type: TypeArray, Items: schemaFromType(m.d, reflect.TypeOf(field.Type.Elem()), false, "", nil)}
+			p.Schema = &Schema{Type: TypeArray, Items: schemaFromType(o.d, reflect.TypeOf(field.Type.Elem()), false, "", nil)}
 			q(p)
+		case reflect.Struct:
+			if field.Type == timeType {
+				p.Schema = &Schema{Type: TypeString, Format: FormatDateTime}
+				q(p)
+			} else {
+				panic(fmt.Sprintf("查询参数不支持复杂的类型 %v:%v", field.Type.Kind(), field.Name))
+			}
 		default:
-			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v", field.Type.Kind()))
+			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v:%v", field.Type.Kind(), field.Name))
 		}
 	}
 
-	return m
+	return o
 }
 
 // Header 添加报头

@@ -26,6 +26,9 @@ const (
 	FormatFloat    = "float"
 	FormatDouble   = "double"
 	FormatPassword = "password"
+	FormatDate     = "date"
+	FormatTime     = "time"
+	FormatDateTime = "date-time"
 
 	SecuritySchemeTypeHTTP          = "http"
 	SecuritySchemeTypeAPIKey        = "apiKey"

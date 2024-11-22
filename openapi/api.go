@@ -312,8 +312,10 @@ func (req *Request) addComponents(c *components) {
 		req.Body.addComponents(c)
 	}
 
-	for _, s := range req.Content {
-		s.addComponents(c)
+	if len(req.Content) > 0 {
+		for _, s := range req.Content {
+			s.addComponents(c)
+		}
 	}
 }
 
@@ -348,7 +350,7 @@ func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRende
 	return &requestRenderer{
 		Content:     content,
 		Required:    !req.Ignorable,
-		Description: req.Description.LocaleString(p),
+		Description: sprint(p, req.Description),
 	}
 }
 
