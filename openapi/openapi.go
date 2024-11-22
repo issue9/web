@@ -4,6 +4,11 @@
 
 // Package openapi 采用 [web.Middleware] 中间件的形式生成 [openapi] 文档
 //
+// 结构体标签
+//
+// - comment 用于可翻译的注释，该内容会被翻译后保存在字段的 Schema.Description 中；
+// - openapi 对 openapi 类型的自定义，格式为 type,format，可以自定义字段的类型和格式；
+//
 // [openapi]: https://spec.openapis.org/oas/v3.1.1.html
 package openapi
 

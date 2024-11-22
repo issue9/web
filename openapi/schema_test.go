@@ -18,6 +18,9 @@ type schemaObject1 struct {
 	object
 	Root string
 	T    time.Time
+	X    string  `openapi:"-"`
+	Y    string  `openapi:"integer"`
+	Z    *object `openapi:"string,date"`
 }
 
 type schemaObject2 struct {
@@ -56,16 +59,19 @@ func TestDocument_newSchema(t *testing.T) {
 	s = d.newSchema(reflect.ValueOf(schemaObject1{}).Type())
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
-		Length(s.Properties, 5).
+		Length(s.Properties, 7).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).
-		Equal(s.Properties["T"].Format, FormatDateTime)
+		Equal(s.Properties["T"].Format, FormatDateTime).
+		Equal(s.Properties["Y"].Type, TypeInteger).
+		Equal(s.Properties["Z"].Type, TypeString).
+		Equal(s.Properties["Z"].Format, FormatDate)
 
 	s = d.newSchema(reflect.ValueOf(schemaObject2{}).Type())
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
-		Length(s.Properties, 5).
+		Length(s.Properties, 7).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).

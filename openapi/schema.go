@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"reflect"
+	"strings"
 	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -189,17 +190,37 @@ func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName str
 				if comment != "" {
 					itemDesc = web.Phrase(comment)
 				}
+
+				if tt := f.Tag.Get("openapi"); tt != "" {
+					if tt != "-" {
+						tags := strings.Split(tt, ",")
+
+						format := ""
+						if len(tags) > 1 {
+							format = tags[1]
+						}
+
+						s.Properties[name] = &Schema{
+							Description: itemDesc,
+							Type:        tags[0],
+							Format:      format,
+							XML:         xml,
+						}
+					}
+					continue
+				}
+
 			}
 
-			item := &Schema{Description: itemDesc}
+			item := &Schema{
+				Description: itemDesc,
+				XML:         xml,
+			}
 			schemaFromType(d, t.Field(i).Type, false, rootName, item)
 			if item.Type == "" {
 				continue
 			}
 
-			if xml != nil {
-				item.XML = xml
-			}
 			s.Properties[name] = item
 		}
 	}
