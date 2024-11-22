@@ -99,7 +99,7 @@ func (t *Parameter) valid(skipRefNotNil bool) *web.FieldError {
 		return err
 	}
 
-	if t.Schema.Type == TypeObject {
+	if !t.Schema.isBasicType() {
 		return web.NewFieldError("Schema", "不支持复杂类型")
 	}
 

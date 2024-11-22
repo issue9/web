@@ -85,8 +85,15 @@ func (o *Operation) PathID(name string, desc web.LocaleStringer) *Operation {
 	})
 }
 
-func (o *Operation) PathRef(ref string) *Operation {
-	o.Paths = append(o.Paths, &Parameter{Ref: &Ref{Ref: ref}, Required: true})
+func (o *Operation) PathRef(ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.paths[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.Paths = append(o.Paths, &Parameter{
+		Ref:      &Ref{Ref: ref, Summary: summary, Description: description},
+		Required: true,
+	})
 	return o
 }
 
@@ -96,12 +103,18 @@ func (o *Operation) Query(name, typ string, desc web.LocaleStringer, f func(*Par
 	return o
 }
 
-func (o *Operation) QueryRef(ref string) *Operation {
-	o.Queries = append(o.Queries, &Parameter{Ref: &Ref{Ref: ref}})
+func (o *Operation) QueryRef(ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.queries[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.Queries = append(o.Queries, &Parameter{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}})
 	return o
 }
-
-var timeType = reflect.TypeFor[time.Time]()
 
 // QueryObject 从参数 o 中获取相应的查询参数
 //
@@ -121,14 +134,14 @@ func (o *Operation) queryObject(t reflect.Type, f func(*Parameter)) *Operation {
 	}
 
 	if t.Kind() != reflect.Struct {
-		panic("o 必须得是 struct 类型")
+		panic("t 必须得是 struct 类型")
 	}
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
 		if field.Anonymous {
-			o.QueryObject(field.Type, f)
+			o.queryObject(field.Type, f)
 			continue
 		}
 
@@ -157,35 +170,13 @@ func (o *Operation) queryObject(t reflect.Type, f func(*Parameter)) *Operation {
 			}
 			o.Queries = append(o.Queries, p)
 		}
-		switch field.Type.Kind() {
-		case reflect.String:
-			p.Schema = &Schema{Type: TypeString}
-			q(p)
-		case reflect.Bool:
-			p.Schema = &Schema{Type: TypeBoolean}
-			q(p)
-		case reflect.Float32, reflect.Float64:
-			p.Schema = &Schema{Type: TypeNumber}
-			q(p)
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			p.Schema = &Schema{Type: TypeInteger}
-			q(p)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			p.Schema = &Schema{Type: TypeInteger, Minimum: 0}
-			q(p)
-		case reflect.Array, reflect.Slice:
-			p.Schema = &Schema{Type: TypeArray, Items: schemaFromType(o.d, reflect.TypeOf(field.Type.Elem()), false, "", nil)}
-			q(p)
-		case reflect.Struct:
-			if field.Type == timeType {
-				p.Schema = &Schema{Type: TypeString, Format: FormatDateTime}
-				q(p)
-			} else {
-				panic(fmt.Sprintf("查询参数不支持复杂的类型 %v:%v", field.Type.Kind(), field.Name))
-			}
-		default:
-			panic(fmt.Sprintf("查询参数不支持复杂的类型 %v:%v", field.Type.Kind(), field.Name))
+
+		p.Schema = &Schema{}
+		schemaFromType(nil, field.Type, true, "", p.Schema)
+		if !p.Schema.isBasicType() {
+			panic("不支持复杂类型")
 		}
+		q(p)
 	}
 
 	return o
@@ -202,8 +193,16 @@ func (o *Operation) Header(name, typ string, desc web.LocaleStringer, f func(*Pa
 	return o
 }
 
-func (o *Operation) HeaderRef(ref string) *Operation {
-	o.Headers = append(o.Headers, &Parameter{Ref: &Ref{Ref: ref}})
+func (o *Operation) HeaderRef(ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.headers[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.Headers = append(o.Headers, &Parameter{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}})
 	return o
 }
 
@@ -218,8 +217,16 @@ func (o *Operation) Cookie(name, typ string, desc web.LocaleStringer, f func(*Pa
 	return o
 }
 
-func (o *Operation) CookieRef(ref string) *Operation {
-	o.Cookies = append(o.Cookies, &Parameter{Ref: &Ref{Ref: ref}})
+func (o *Operation) CookieRef(ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.cookies[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.Cookies = append(o.Cookies, &Parameter{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}})
 	return o
 }
 
@@ -244,8 +251,16 @@ func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f fu
 	return o
 }
 
-func (o *Operation) BodyRef(ref string) *Operation {
-	o.RequestBody = &Request{Ref: &Ref{Ref: ref}}
+func (o *Operation) BodyRef(ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.requests[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.RequestBody = &Request{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}}
 	return o
 }
 
@@ -269,17 +284,33 @@ func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f
 	return o
 }
 
-func (o *Operation) ResponseRef(status string, ref string) *Operation {
-	o.Responses[status] = &Response{Ref: &Ref{Ref: ref}}
+func (o *Operation) ResponseRef(status, ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.responses[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
+	o.Responses[status] = &Response{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}}
 	return o
 }
 
 // CallbackRef 引用 components 中定义的回调对象
-func (o *Operation) CallbackRef(name, ref string) *Operation {
+func (o *Operation) CallbackRef(name, ref string, summary, description web.LocaleStringer) *Operation {
+	if _, found := o.d.components.callbacks[ref]; !found {
+		panic(fmt.Sprintf("未找到引用 %s", ref))
+	}
+
 	if o.Callbacks == nil {
 		o.Callbacks = make(map[string]*Callback, 1)
 	}
-	o.Callbacks[name] = &Callback{Ref: &Ref{Ref: ref}}
+	o.Callbacks[name] = &Callback{Ref: &Ref{
+		Ref:         ref,
+		Summary:     summary,
+		Description: description,
+	}}
 
 	return o
 }
@@ -308,7 +339,10 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 	if !found {
 		opt = &Operation{d: o.d}
 	}
-	f(opt)
+
+	if f != nil {
+		f(opt)
+	}
 
 	return o
 }
@@ -325,7 +359,7 @@ func (d *Document) API(f func(o *Operation)) web.Middleware {
 			(d.enableOptions || method != http.MethodOptions) {
 			o := &Operation{
 				d:         d,
-				Responses: make(map[string]*Response, 1), // 必然存在的字段，直接初始化了。
+				Responses: make(map[string]*Response, len(d.responses)+1), // 必然存在的字段，直接初始化了。
 			}
 			f(o)
 
@@ -348,7 +382,7 @@ func (d *Document) addOperation(method, pattern, _ string, opt *Operation) {
 		d.paths = make(map[string]*PathItem, 50)
 	}
 
-	opt.addComponents(d.components)
+	opt.addToComponents(d.components)
 
 	for _, ref := range d.headers { // 添加公共报头的定义
 		opt.Headers = append(opt.Headers, &Parameter{

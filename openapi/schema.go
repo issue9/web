@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"reflect"
+	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
@@ -79,68 +80,91 @@ type schemaRenderer struct {
 }
 
 func (d *Document) newSchema(t reflect.Type) *Schema {
-	return schemaFromType(d, t, true, "", nil)
+	s := &Schema{}
+	schemaFromType(d, t, true, "", s)
+	return s
 }
 
 // NewSchema 根据 [reflect.Type] 生成 [Schema] 对象
 func NewSchema(t reflect.Type, title, desc web.LocaleStringer) *Schema {
-	s := schemaFromType(nil, t, true, "", desc)
-	s.Title = title
+	s := &Schema{
+		Title:       title,
+		Description: desc,
+	}
+	schemaFromType(nil, t, true, "", s)
 	return s
 }
+
+var timeType = reflect.TypeFor[time.Time]()
 
 // d 仅用于查找其关联的 components/schema 中是否存在相同名称的对象，如果存在则直接生成引用对象。
 //
 // desc 表示类型 t 的 Description 属性
 // rootName 根结构体的名称，主要是为了解决子元素又引用了根元素的类型引起的循环引用。
-func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, desc web.LocaleStringer) *Schema {
+func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
 	switch t.Kind() {
 	case reflect.String:
-		return &Schema{Type: TypeString, Description: desc}
+		s.Type = TypeString
 	case reflect.Bool:
-		return &Schema{Type: TypeBoolean, Description: desc}
+		s.Type = TypeBoolean
 	case reflect.Float32, reflect.Float64:
-		return &Schema{Type: TypeNumber, Description: desc}
+		s.Type = TypeNumber
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &Schema{Type: TypeInteger, Description: desc}
+		s.Type = TypeInteger
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Schema{Type: TypeInteger, Minimum: 0, Description: desc}
+		s.Type = TypeInteger
+		s.Minimum = 0
 	case reflect.Array, reflect.Slice:
-		return &Schema{Type: TypeArray, Items: schemaFromType(d, t.Elem(), false, rootName, nil), Description: desc}
+		s.Type = TypeArray
+		s.Items = &Schema{}
+		schemaFromType(d, t.Elem(), false, rootName, s.Items)
 	case reflect.Map:
-		return &Schema{Type: TypeObject, AdditionalProperties: schemaFromType(d, t.Elem(), false, rootName, nil), Description: desc}
+		s.Type = TypeObject
+		s.AdditionalProperties = &Schema{}
+		schemaFromType(d, t.Elem(), false, rootName, s.AdditionalProperties)
 	case reflect.Struct:
-		return schemaFromObject(d, t, isRoot, rootName, desc)
+		if t == timeType { // 对时间作特殊处理
+			s.Type = TypeString
+			s.Format = FormatDateTime
+			return
+		}
+		schemaFromObjectType(d, t, isRoot, rootName, s)
 	}
-	return nil
 }
 
-func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string, desc web.LocaleStringer) *Schema {
+func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
 	typeName := getTypeName(t)
 
 	if d != nil {
-		if s, found := d.components.schemas[typeName]; found { // 已经存在于 components
-			return s
+		if _, found := d.components.schemas[typeName]; found { // 已经存在于 components
+			s.Ref = &Ref{Ref: typeName}
+			return
 		}
 	}
 
-	ref := &Ref{Ref: typeName}
+	s.Ref = &Ref{Ref: typeName}
 	if isRoot {
 		rootName = typeName // isRoot == true 时，rootName 必然为空
 	} else if typeName == rootName { // 在字段中引用了根对象
-		return &Schema{Ref: ref}
+		return
 	}
 
-	ps := make(map[string]*Schema, t.NumField())
-	req := make([]string, 0, t.NumField())
+	s.Type = TypeObject
+	s.Properties = make(map[string]*Schema, t.NumField())
+
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		k := f.Type.Kind()
-		var itemTitle web.LocaleStringer
+		var itemDesc web.LocaleStringer
+
+		if f.Anonymous {
+			schemaFromType(d, f.Type, isRoot, rootName, s)
+			continue
+		}
 
 		if f.IsExported() && k != reflect.Chan && k != reflect.Func && k != reflect.Complex64 && k != reflect.Complex128 {
 			name := f.Name
@@ -154,7 +178,7 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string,
 				}
 
 				if !omitempty {
-					req = append(req, name)
+					s.Required = append(s.Required, name)
 				}
 
 				if xmlName, _, attr := getTagName(f, "xml"); xmlName != "" && xmlName != name {
@@ -163,27 +187,31 @@ func schemaFromObject(d *Document, t reflect.Type, isRoot bool, rootName string,
 
 				comment := f.Tag.Get(CommentTag)
 				if comment != "" {
-					itemTitle = web.Phrase(comment)
+					itemDesc = web.Phrase(comment)
 				}
 			}
 
-			s := schemaFromType(d, t.Field(i).Type, false, rootName, itemTitle)
-			if s == nil {
+			item := &Schema{Description: itemDesc}
+			schemaFromType(d, t.Field(i).Type, false, rootName, item)
+			if item.Type == "" {
 				continue
 			}
 
 			if xml != nil {
-				s.XML = xml
+				item.XML = xml
 			}
-			ps[name] = s
+			s.Properties[name] = item
 		}
 	}
+}
 
-	return &Schema{
-		Type:        TypeObject,
-		Properties:  ps,
-		Ref:         ref,
-		Required:    req,
-		Description: desc,
+func (s *Schema) isBasicType() bool {
+	switch s.Type {
+	case TypeObject:
+		return false
+	case TypeArray:
+		return s.Items.isBasicType()
+	default:
+		return true
 	}
 }

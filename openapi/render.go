@@ -48,6 +48,10 @@ func (r *renderer[T]) MarshalYAML() (any, error) {
 	return r.obj, nil
 }
 
+func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
+	return o.templateName, o
+}
+
 type documentQuery struct {
 	Tags []string `query:"tag"`
 }
@@ -80,11 +84,6 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 		return ctx.Problem(web.ProblemNotAcceptable)
 	}
 
-	dataURL := ctx.Request().URL.Path
-	if len(q.Tags) > 0 {
-		dataURL += "?tag=" + strings.Join(q.Tags, ",")
-	}
-
 	return web.NotModified(func() (string, bool) {
 		slices.Sort(q.Tags)
 
@@ -100,8 +99,4 @@ func (d *Document) Handler(ctx *web.Context) web.Responser {
 	}, func() (any, error) {
 		return d.build(ctx.LocalePrinter(), ctx.LanguageTag(), q.Tags), nil
 	})
-}
-
-func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
-	return o.templateName, o
 }

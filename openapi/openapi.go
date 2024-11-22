@@ -31,12 +31,12 @@ const (
 
 const (
 	TypeString  = "string"
-	TypeObject  = "object"
 	TypeNull    = "null"
 	TypeBoolean = "boolean"
 	TypeArray   = "array"
 	TypeNumber  = "number"
 	TypeInteger = "integer"
+	TypeObject  = "object"
 )
 
 const (

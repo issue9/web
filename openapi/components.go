@@ -47,7 +47,7 @@ func newComponents() *components {
 	}
 }
 
-func (t *Parameter) addComponents(c *components, in string) {
+func (t *Parameter) addToComponents(c *components, in string) {
 	if t.Ref == nil {
 		return
 	}
@@ -72,11 +72,11 @@ func (t *Parameter) addComponents(c *components, in string) {
 	}
 
 	if t.Schema != nil {
-		t.Schema.addComponents(c)
+		t.Schema.addToComponents(c)
 	}
 }
 
-func (s *Schema) addComponents(c *components) {
+func (s *Schema) addToComponents(c *components) {
 	if s.Ref != nil {
 		if _, found := c.schemas[s.Ref.Ref]; !found {
 			c.schemas[s.Ref.Ref] = s
@@ -84,27 +84,27 @@ func (s *Schema) addComponents(c *components) {
 	}
 
 	for _, item := range s.AllOf {
-		item.addComponents(c)
+		item.addToComponents(c)
 	}
 
 	for _, item := range s.OneOf {
-		item.addComponents(c)
+		item.addToComponents(c)
 	}
 
 	for _, item := range s.AnyOf {
-		item.addComponents(c)
+		item.addToComponents(c)
 	}
 
 	if s.Items != nil {
-		s.Items.addComponents(c)
+		s.Items.addToComponents(c)
 	}
 
 	for _, item := range s.Properties {
-		item.addComponents(c)
+		item.addToComponents(c)
 	}
 }
 
-func (resp *Callback) addComponents(c *components) {
+func (resp *Callback) addToComponents(c *components) {
 	if resp.Ref != nil {
 		if _, found := c.callbacks[resp.Ref.Ref]; !found {
 			c.callbacks[resp.Ref.Ref] = resp
@@ -112,42 +112,42 @@ func (resp *Callback) addComponents(c *components) {
 	}
 
 	for _, item := range resp.Callback {
-		item.addComponents(c)
+		item.addToComponents(c)
 	}
 }
 
 // 所有带 $ref 的字段如果还未存在于 c，则会写入。
-func (o *Operation) addComponents(c *components) {
+func (o *Operation) addToComponents(c *components) {
 	for _, p := range o.Paths {
-		p.addComponents(c, InPath)
+		p.addToComponents(c, InPath)
 	}
 
 	for _, p := range o.Queries {
-		p.addComponents(c, InQuery)
+		p.addToComponents(c, InQuery)
 	}
 
 	for _, p := range o.Cookies {
-		p.addComponents(c, InCookie)
+		p.addToComponents(c, InCookie)
 	}
 
 	for _, p := range o.Headers {
-		p.addComponents(c, InHeader)
+		p.addToComponents(c, InHeader)
 	}
 
 	if o.RequestBody != nil {
-		o.RequestBody.addComponents(c)
+		o.RequestBody.addToComponents(c)
 	}
 
 	for _, r := range o.Responses {
-		r.addComponents(c)
+		r.addToComponents(c)
 	}
 
 	for _, r := range o.Callbacks {
-		r.addComponents(c)
+		r.addToComponents(c)
 	}
 }
 
-func (resp *Response) addComponents(c *components) {
+func (resp *Response) addToComponents(c *components) {
 	if resp.Ref != nil {
 		if _, found := c.responses[resp.Ref.Ref]; !found {
 			c.responses[resp.Ref.Ref] = resp
@@ -155,19 +155,19 @@ func (resp *Response) addComponents(c *components) {
 	}
 
 	for _, h := range resp.Headers {
-		h.addComponents(c, InHeader)
+		h.addToComponents(c, InHeader)
 	}
 
 	if resp.Body != nil {
-		resp.Body.addComponents(c)
+		resp.Body.addToComponents(c)
 	}
 
 	for _, s := range resp.Content {
-		s.addComponents(c)
+		s.addToComponents(c)
 	}
 }
 
-func (req *Request) addComponents(c *components) {
+func (req *Request) addToComponents(c *components) {
 	if req.Ref != nil {
 		if _, found := c.requests[req.Ref.Ref]; !found {
 			c.requests[req.Ref.Ref] = req
@@ -175,17 +175,17 @@ func (req *Request) addComponents(c *components) {
 	}
 
 	if req.Body != nil {
-		req.Body.addComponents(c)
+		req.Body.addToComponents(c)
 	}
 
 	if len(req.Content) > 0 {
 		for _, s := range req.Content {
-			s.addComponents(c)
+			s.addToComponents(c)
 		}
 	}
 }
 
-func (item *PathItem) addComponents(c *components) {
+func (item *PathItem) addToComponents(c *components) {
 	if item.Ref != nil {
 		if _, found := c.pathItems[item.Ref.Ref]; !found {
 			c.pathItems[item.Ref.Ref] = item
@@ -193,15 +193,15 @@ func (item *PathItem) addComponents(c *components) {
 	}
 
 	for _, p := range item.Paths {
-		p.addComponents(c, InPath)
+		p.addToComponents(c, InPath)
 	}
 	for _, p := range item.Queries {
-		p.addComponents(c, InQuery)
+		p.addToComponents(c, InQuery)
 	}
 	for _, p := range item.Headers {
-		p.addComponents(c, InHeader)
+		p.addToComponents(c, InHeader)
 	}
 	for _, p := range item.Cookies {
-		p.addComponents(c, InCookie)
+		p.addToComponents(c, InCookie)
 	}
 }

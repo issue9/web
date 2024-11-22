@@ -7,13 +7,24 @@ package openapi
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
 )
 
-func TestDocument_NewSchema(t *testing.T) {
+type schemaObject1 struct {
+	object
+	Root string
+	T    time.Time
+}
+
+type schemaObject2 struct {
+	schemaObject1
+}
+
+func TestDocument_newSchema(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
 	d := New(ss, web.Phrase("desc"))
@@ -21,6 +32,10 @@ func TestDocument_NewSchema(t *testing.T) {
 	s := d.newSchema(reflect.TypeFor[int]())
 	a.Equal(s.Type, TypeInteger).
 		Nil(s.Ref)
+
+	s = d.newSchema(reflect.TypeFor[[]int]())
+	a.Equal(s.Type, TypeArray).
+		Equal(s.Items.Type, TypeInteger)
 
 	s = d.newSchema(reflect.TypeFor[map[string]float32]())
 	a.Equal(s.Type, TypeObject).
@@ -37,4 +52,35 @@ func TestDocument_NewSchema(t *testing.T) {
 		Nil(s.Properties["Items"].XML).
 		Equal(s.Properties["Items"].Type, TypeArray).
 		NotZero(s.Properties["Items"].Items.Ref.Ref) // 引用了 object
+
+	s = d.newSchema(reflect.ValueOf(schemaObject1{}).Type())
+	a.Equal(s.Type, TypeObject).
+		NotZero(s.Ref.Ref).
+		Length(s.Properties, 5).
+		Equal(s.Properties["id"].Type, TypeInteger).
+		Equal(s.Properties["Root"].Type, TypeString).
+		Equal(s.Properties["T"].Type, TypeString).
+		Equal(s.Properties["T"].Format, FormatDateTime)
+
+	s = d.newSchema(reflect.ValueOf(schemaObject2{}).Type())
+	a.Equal(s.Type, TypeObject).
+		NotZero(s.Ref.Ref).
+		Length(s.Properties, 5).
+		Equal(s.Properties["id"].Type, TypeInteger).
+		Equal(s.Properties["Root"].Type, TypeString).
+		Equal(s.Properties["T"].Type, TypeString).
+		Equal(s.Properties["T"].Format, FormatDateTime)
+}
+
+func TestSchema_isBasicType(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := NewSchema(reflect.TypeFor[int](), nil, nil)
+	a.True(s.isBasicType())
+
+	s = NewSchema(reflect.TypeFor[object](), nil, nil)
+	a.False(s.isBasicType())
+
+	s = NewSchema(reflect.TypeFor[[]string](), nil, nil)
+	a.True(s.isBasicType())
 }

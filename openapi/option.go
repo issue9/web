@@ -59,7 +59,7 @@ func WithResponse(resp *Response, status ...string) Option {
 		if resp.Ref == nil || resp.Ref.Ref == "" {
 			panic("resp 必须存在 ref")
 		}
-		resp.addComponents(d.components)
+		resp.addToComponents(d.components)
 
 		for _, s := range status {
 			d.responses[s] = resp.Ref.Ref
@@ -118,7 +118,7 @@ func WithHeader(global bool, p ...*Parameter) Option {
 				panic(err)
 			}
 
-			pp.addComponents(d.components, InHeader)
+			pp.addToComponents(d.components, InHeader)
 
 			if global {
 				d.headers = append(d.headers, pp.Ref.Ref)
@@ -140,7 +140,7 @@ func WithCookie(global bool, p ...*Parameter) Option {
 			if pp.Ref == nil || pp.Ref.Ref == "" {
 				panic("必须存在 ref")
 			}
-			pp.addComponents(d.components, InCookie)
+			pp.addToComponents(d.components, InCookie)
 			if global {
 				d.cookies = append(d.cookies, pp.Ref.Ref)
 			}
@@ -159,7 +159,7 @@ func WithQuery(p ...*Parameter) Option {
 			if pp.Ref == nil || pp.Ref.Ref == "" {
 				panic("必须存在 ref")
 			}
-			pp.addComponents(d.components, InQuery)
+			pp.addToComponents(d.components, InQuery)
 		}
 	}
 }
@@ -175,7 +175,7 @@ func WithPath(global bool, p ...*Parameter) Option {
 			if pp.Ref == nil || pp.Ref.Ref == "" {
 				panic("必须存在 ref")
 			}
-			pp.addComponents(d.components, InPath)
+			pp.addToComponents(d.components, InPath)
 		}
 	}
 }
@@ -191,7 +191,7 @@ func WithCallback(c ...*Callback) Option {
 				panic("Callback 不能为空")
 			}
 
-			cc.addComponents(d.components)
+			cc.addToComponents(d.components)
 		}
 	}
 }
