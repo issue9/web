@@ -21,7 +21,7 @@ func TestWithHTML(t *testing.T) {
 	d := New(ss, web.Phrase("desc"), WithHTML("tpl", "./dist", "./dist/favicon.png"))
 	a.Equal(d.assetsURL, "./dist").
 		Equal(d.templateName, "tpl").
-		Equal(d.favicon, "./dist/favicon.png")
+		Equal(d.logo, "./dist/favicon.png")
 }
 
 func TestNewLicense(t *testing.T) {
@@ -58,6 +58,18 @@ func TestWithResponse(t *testing.T) {
 		Length(d.components.responses, 2).
 		Equal(d.responses["400"], "400").
 		Equal(d.responses["500"], "500")
+}
+
+func TestWithProblemResponse(t *testing.T) {
+	a := assert.New(t, false)
+	ss := newServer(a)
+
+	d := New(ss, web.Phrase("desc"), WithProblemResponse())
+	a.NotNil(d).
+		Length(d.responses, 2).
+		Length(d.components.responses, 1).
+		Equal(d.responses["4XX"], "problem").
+		Equal(d.responses["5XX"], "problem")
 }
 
 func TestWithMediaType(t *testing.T) {

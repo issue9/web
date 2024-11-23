@@ -88,7 +88,7 @@ type (
 
 		templateName string
 		assetsURL    string
-		favicon      string
+		logo         string
 
 		// 其它一些状态的设置
 
@@ -98,20 +98,22 @@ type (
 		s web.Server
 	}
 
+	paths = orderedmap.OrderedMap[string, *renderer[pathItemRenderer]]
+
 	openAPIRenderer struct {
-		OpenAPI      string                                                      `json:"openapi" yaml:"openapi"`
-		Info         *infoRenderer                                               `json:"info" yaml:"info"`
-		Servers      []*serverRenderer                                           `json:"servers,omitempty" yaml:"servers,omitempty"`
-		Paths        *orderedmap.OrderedMap[string, *renderer[pathItemRenderer]] `json:"paths,omitempty" yaml:"paths,omitempty"`
-		WebHooks     *orderedmap.OrderedMap[string, *renderer[pathItemRenderer]] `json:"webhooks,omitempty" yaml:"webhooks,omitempty"`
-		Components   *componentsRenderer                                         `json:"components,omitempty" yaml:"components,omitempty"`
-		Security     []*orderedmap.OrderedMap[string, []string]                  `json:"security,omitempty" yaml:"security,omitempty"`
-		Tags         []*tagRenderer                                              `json:"tags,omitempty" yaml:"tags,omitempty"`
-		ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+		OpenAPI      string                                     `json:"openapi" yaml:"openapi"`
+		Info         *infoRenderer                              `json:"info" yaml:"info"`
+		Servers      []*serverRenderer                          `json:"servers,omitempty" yaml:"servers,omitempty"`
+		Paths        *paths                                     `json:"paths,omitempty" yaml:"paths,omitempty"`
+		WebHooks     *paths                                     `json:"webhooks,omitempty" yaml:"webhooks,omitempty"`
+		Components   *componentsRenderer                        `json:"components,omitempty" yaml:"components,omitempty"`
+		Security     []*orderedmap.OrderedMap[string, []string] `json:"security,omitempty" yaml:"security,omitempty"`
+		Tags         []*tagRenderer                             `json:"tags,omitempty" yaml:"tags,omitempty"`
+		ExternalDocs *externalDocsRenderer                      `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 
 		// 扩展内容
 
-		XFavicon     string `json:"x-favicon,omitempty" yaml:"x-favicon,omitempty"`
+		XLogo        string `json:"x-logo,omitempty" yaml:"x-logo,omitempty"`
 		XAssets      string `json:"x-assets,omitempty" yaml:"x-assets,omitempty"`
 		XLanguage    string `json:"x-language,omitempty" yaml:"x-language,omitempty"`
 		XModified    string `json:"x-modified,omitempty" yaml:"x-modified,omitempty"`
@@ -315,10 +317,12 @@ type (
 		Content map[string]*Schema // key = mimetype
 	}
 
+	content = orderedmap.OrderedMap[string, *mediaTypeRenderer]
+
 	responseRenderer struct {
 		Description string                                                    `json:"description" yaml:"description"`
 		Headers     *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
-		Content     *orderedmap.OrderedMap[string, *mediaTypeRenderer]        `json:"content,omitempty" yaml:"content,omitempty"`
+		Content     *content                                                  `json:"content,omitempty" yaml:"content,omitempty"`
 	}
 
 	Request struct {
@@ -333,9 +337,9 @@ type (
 	}
 
 	requestRenderer struct {
-		Content     *orderedmap.OrderedMap[string, *mediaTypeRenderer] `json:"content" yaml:"content"`
-		Required    bool                                               `json:"required,omitempty" yaml:"required,omitempty"`
-		Description string                                             `json:"description" yaml:"description"`
+		Content     *content `json:"content" yaml:"content"`
+		Required    bool     `json:"required,omitempty" yaml:"required,omitempty"`
+		Description string   `json:"description" yaml:"description"`
 	}
 
 	Server struct {
@@ -344,10 +348,12 @@ type (
 		Variables   []*ServerVariable
 	}
 
+	serverVars = orderedmap.OrderedMap[string, *serverVariableRenderer]
+
 	serverRenderer struct {
-		URL         string                                                  `json:"url" yaml:"url"`
-		Description string                                                  `json:"description,omitempty" yaml:"description,omitempty"`
-		Variables   *orderedmap.OrderedMap[string, *serverVariableRenderer] `json:"variables,omitempty" yaml:"variables,omitempty"`
+		URL         string      `json:"url" yaml:"url"`
+		Description string      `json:"description,omitempty" yaml:"description,omitempty"`
+		Variables   *serverVars `json:"variables,omitempty" yaml:"variables,omitempty"`
 	}
 
 	ServerVariable struct {

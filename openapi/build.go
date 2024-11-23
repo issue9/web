@@ -50,7 +50,7 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 		Tags:         tags,
 		ExternalDocs: d.externalDocs.build(p),
 
-		XFavicon:     d.favicon,
+		XLogo:        d.logo,
 		XAssets:      d.assetsURL,
 		XLanguage:    lang.String(),
 		XModified:    d.last.Format(time.RFC3339),

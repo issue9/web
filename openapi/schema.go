@@ -61,23 +61,25 @@ type Schema struct {
 	Enum                 []any
 }
 
+type properties = orderedmap.OrderedMap[string, *renderer[schemaRenderer]]
+
 type schemaRenderer struct {
-	Type                 string                                                    `json:"type" yaml:"type"`
-	XML                  *XML                                                      `json:"xml,omitempty" yaml:"xml,omitempty"`
-	ExternalDocs         *externalDocsRenderer                                     `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-	Title                string                                                    `json:"title,omitempty" yaml:"title,omitempty"`
-	Description          string                                                    `json:"description,omitempty" yaml:"description,omitempty"`
-	AllOf                []*renderer[schemaRenderer]                               `json:"allOf,omitempty" yaml:"allOf,omitempty"`
-	OneOf                []*renderer[schemaRenderer]                               `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
-	AnyOf                []*renderer[schemaRenderer]                               `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
-	Format               string                                                    `json:"format,omitempty" yaml:"format,omitempty"`
-	Items                *renderer[schemaRenderer]                                 `json:"items,omitempty" yaml:"items,omitempty"`
-	Properties           *orderedmap.OrderedMap[string, *renderer[schemaRenderer]] `json:"properties,omitempty" yaml:"properties,omitempty"`
-	AdditionalProperties *renderer[schemaRenderer]                                 `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
-	Required             []string                                                  `json:"required,omitempty" yaml:"required,omitempty"`
-	Minimum              int                                                       `json:"minimum,omitempty" yaml:"minimum,omitempty"`
-	Maximum              int                                                       `json:"maximum,omitempty" yaml:"maximum,omitempty"`
-	Enum                 []any                                                     `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Type                 string                      `json:"type" yaml:"type"`
+	XML                  *XML                        `json:"xml,omitempty" yaml:"xml,omitempty"`
+	ExternalDocs         *externalDocsRenderer       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Title                string                      `json:"title,omitempty" yaml:"title,omitempty"`
+	Description          string                      `json:"description,omitempty" yaml:"description,omitempty"`
+	AllOf                []*renderer[schemaRenderer] `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+	OneOf                []*renderer[schemaRenderer] `json:"oneOf,omitempty" yaml:"oneOf,omitempty"`
+	AnyOf                []*renderer[schemaRenderer] `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
+	Format               string                      `json:"format,omitempty" yaml:"format,omitempty"`
+	Items                *renderer[schemaRenderer]   `json:"items,omitempty" yaml:"items,omitempty"`
+	Properties           *properties                 `json:"properties,omitempty" yaml:"properties,omitempty"`
+	AdditionalProperties *renderer[schemaRenderer]   `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
+	Required             []string                    `json:"required,omitempty" yaml:"required,omitempty"`
+	Minimum              int                         `json:"minimum,omitempty" yaml:"minimum,omitempty"`
+	Maximum              int                         `json:"maximum,omitempty" yaml:"maximum,omitempty"`
+	Enum                 []any                       `json:"enum,omitempty" yaml:"enum,omitempty"`
 }
 
 func (d *Document) newSchema(t reflect.Type) *Schema {
@@ -98,7 +100,7 @@ func NewSchema(t reflect.Type, title, desc web.LocaleStringer) *Schema {
 
 var timeType = reflect.TypeFor[time.Time]()
 
-// d 仅用于查找其关联的 components/schema 中是否存在相同名称的对象，如果存在则直接生成引用对象。
+// d 仅用于查找其关联的 components/schemas 中是否存在相同名称的对象，如果存在则直接生成引用对象。
 //
 // desc 表示类型 t 的 Description 属性
 // rootName 根结构体的名称，主要是为了解决子元素又引用了根元素的类型引起的循环引用。
