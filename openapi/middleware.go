@@ -268,10 +268,12 @@ func (o *Operation) BodyRef(ref string, summary, description web.LocaleStringer)
 //
 // f 如果不为空，则要以对根据 resp 生成的对象做二次修改。
 func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f func(*Response)) *Operation {
-	r := &Response{
-		Description: desc,
-		Body:        o.d.newSchema(reflect.TypeOf(resp)),
+	r := &Response{Description: desc}
+
+	if resp != nil {
+		r.Body = o.d.newSchema(reflect.TypeOf(resp))
 	}
+
 	if f != nil {
 		f(r)
 	}

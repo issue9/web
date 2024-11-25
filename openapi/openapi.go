@@ -45,6 +45,8 @@ const (
 )
 
 const (
+	FormatBinary   = "binary"
+	FormatByte     = "byte"
 	FormatInt32    = "int32"
 	FormatInt64    = "int64"
 	FormatFloat    = "float"
