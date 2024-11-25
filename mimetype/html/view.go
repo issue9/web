@@ -10,6 +10,7 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -20,91 +21,57 @@ type contextType int
 const viewContextKey contextType = 1
 
 type view struct {
-	localized map[language.Tag]string
-	tpls      map[language.Tag]*template.Template
-	matcher   language.Matcher
-}
-
-// Init 初始化 html 模板系统
-//
-// localized 模板的本地化目录列表。键值为目录名称，键名为该目录对应的本地化 ID。
-// 将目录映射到 [language.Und]，表示该目录作为默认模板使用。
-// 如果 localized 为空，则表示不按目录进行区分，将加载所有内容至一个模板实例中。
-func Init(s web.Server, localized map[language.Tag]string) {
-	if _, ok := s.Vars().Load(viewContextKey); ok {
-		panic("已经初始化")
-	}
-
-	v := &view{localized: localized}
-
-	if len(localized) > 0 {
-		tags := slices.Collect(maps.Keys(localized))
-		if slices.Index(tags, language.Und) < 0 {
-			panic("必须指定 language.Und")
-		}
-
-		v.matcher = language.NewMatcher(tags)
-	}
-
-	s.Vars().Store(viewContextKey, v)
+	tpls    map[language.Tag]*template.Template
+	matcher language.Matcher
 }
 
 // Install 安装模板
 //
-// 提供了以下两个方法：
+// funcs 添加到当前模板系统的函数，除此之个，默认提供了以下两个函数：
 //   - t 根据当前的语言（[web.Context.LanguageTag]）对参数进行翻译；
 //   - tt 将内容翻译成指定语言，语言 ID 由第一个参数指定；
 //
-// fsys 表示模板目录。该目录下应该包含 Init 中 localized 参数指定的所有目录，
-// 否则会 panic。
+// localized 本地化 ID 与目录的映射关系，表示这些目录只解析至对应的 ID，
+// 如果为空则相当于 {language.Und: "."}；
 //
-// 通过此函数安装之后，可以正常输出以下内容：
-//   - string 直接输出字符串；
-//   - []byte 直接输出内容；
-//   - Marshaler 将 [Marshaler.MarshalHTML] 返回内容作为输出内容；
-//   - 其它结构体，尝试读取 XMLName 字段的 html struct tag 值作为模板名称进行查找；
+// fsys 表示模板目录。如果 localized 不为空，则只解析该参数中指定的目录，否则解析整个目录；
 //
 // NOTE: 可以多次调用，相同名称的模板会覆盖。
-func Install(s web.Server, funcs template.FuncMap, glob string, fsys ...fs.FS) {
-	v, ok := s.Vars().Load(viewContextKey)
-	if !ok {
-		panic("未初始化")
-	}
-
-	vv := v.(*view)
-	for _, f := range fsys {
-		install(s, vv, funcs, glob, f)
-	}
-}
-
-func install(s web.Server, v *view, funcs template.FuncMap, glob string, fsys fs.FS) {
-	if len(v.localized) > 0 {
-		instalLocalizedView(s, v, funcs, glob, fsys)
+func Install(s web.Server, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys ...fs.FS) {
+	var v *view
+	if vv, ok := s.Vars().Load(viewContextKey); !ok {
+		v = &view{}
+		s.Vars().Store(viewContextKey, v)
 	} else {
-		if len(v.tpls) == 0 { // 第一次调用
-			f := getTranslateFuncMap(s)
-			maps.Copy(f, funcs) // 用户定义的可覆盖系统自带的
-			funcs = f
-		}
-		tpl := template.New(s.Name()).Funcs(funcs)
-		template.Must(tpl.ParseFS(fsys, glob))
-		s.Vars().Store(viewContextKey, &view{tpls: map[language.Tag]*template.Template{language.Und: tpl}})
+		v = vv.(*view)
+	}
+
+	if localized == nil {
+		localized = map[language.Tag]string{language.Und: "."}
+	}
+
+	keys := slices.AppendSeq(slices.Collect(maps.Keys(v.tpls)), maps.Keys(localized))
+	keys = sliceutil.Unique(keys, func(i, j language.Tag) bool { return i == j })
+	v.matcher = language.NewMatcher(keys)
+
+	for _, f := range fsys {
+		install(s, v, funcs, localized, glob, f)
 	}
 }
 
-func instalLocalizedView(s web.Server, v *view, funcs template.FuncMap, glob string, fsys fs.FS) {
-	tpls := make(map[language.Tag]*template.Template, len(v.localized))
+func install(s web.Server, v *view, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys fs.FS) {
+	tpls := make(map[language.Tag]*template.Template, len(localized))
 
-	for t, name := range v.localized {
+	for t, name := range localized {
 		sub, err := fs.Sub(fsys, name)
 		if err != nil {
 			panic(err)
 		}
 
 		tpl, found := v.tpls[t]
-		if found { // 首次添加
+		if found {
 			tpl = template.Must(tpl.Funcs(funcs).ParseFS(sub, glob))
-		} else {
+		} else { // 首次添加
 			f := getTranslateFuncMap(s)
 			maps.Copy(f, funcs) // 用户定义的可覆盖系统自带的
 			tpl = template.Must(template.New(name).Funcs(f).ParseFS(sub, glob))
@@ -135,12 +102,10 @@ func (v *view) buildCurrentTpl(ctx *web.Context) *template.Template {
 		return nil
 	}
 
-	var tpl *template.Template
-	if len(v.localized) == 0 {
+	tag, _, _ := v.matcher.Match(ctx.LanguageTag())
+	tpl, found := v.tpls[tag]
+	if !found && tag != language.Und {
 		tpl = v.tpls[language.Und]
-	} else {
-		tag, _, _ := v.matcher.Match(ctx.LanguageTag())
-		tpl = v.tpls[tag]
 	}
 
 	return tpl.Funcs(template.FuncMap{

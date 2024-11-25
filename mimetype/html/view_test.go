@@ -42,8 +42,7 @@ func newServer(a *assert.Assertion, lang string) web.Server {
 func TestInstall(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
-	html.Init(s, nil)
-	html.Install(s, nil, "*.tpl", os.DirFS("./testdata/view"))
+	html.Install(s, nil, nil, "*.tpl", os.DirFS("./testdata/view"))
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
@@ -73,10 +72,10 @@ func TestInstall(t *testing.T) {
 }
 
 func TestInstall_withLocalized(t *testing.T) {
+	localized := map[language.Tag]string{language.SimplifiedChinese: "cmn-hans", language.TraditionalChinese: "cmn-hant", language.Und: "cmn-hans"}
 	a := assert.New(t, false)
 	s := newServer(a, "cmn-hans")
-	html.Init(s, map[language.Tag]string{language.SimplifiedChinese: "cmn-hans", language.TraditionalChinese: "cmn-hant", language.Und: "cmn-hans"})
-	html.Install(s, nil, "*.tpl", os.DirFS("./testdata/dir"))
+	html.Install(s, nil, localized, "*.tpl", os.DirFS("./testdata/dir"))
 
 	defer servertest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
