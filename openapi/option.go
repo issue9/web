@@ -6,7 +6,6 @@ package openapi
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/issue9/web"
@@ -70,7 +69,7 @@ func WithResponse(resp *Response, status ...string) Option {
 func WithProblemResponse() Option {
 	return WithResponse(&Response{
 		Ref:         &Ref{Ref: "problem"},
-		Body:        NewSchema(reflect.TypeOf(web.Problem{}), web.Phrase("problem response schema"), web.Phrase("problem response schema desc")),
+		Body:        NewSchema(web.Problem{}, web.Phrase("problem response schema"), web.Phrase("problem response schema desc")),
 		Problem:     true,
 		Description: web.Phrase("problem response"),
 	}, "4XX", "5XX")

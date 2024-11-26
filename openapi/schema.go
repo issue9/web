@@ -59,6 +59,7 @@ type Schema struct {
 	Minimum              int
 	Maximum              int
 	Enum                 []any
+	Default              any
 }
 
 type properties = orderedmap.OrderedMap[string, *renderer[schemaRenderer]]
@@ -80,21 +81,30 @@ type schemaRenderer struct {
 	Minimum              int                         `json:"minimum,omitempty" yaml:"minimum,omitempty"`
 	Maximum              int                         `json:"maximum,omitempty" yaml:"maximum,omitempty"`
 	Enum                 []any                       `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Default              any                         `json:"default,omitempty" yaml:"default,omitempty"`
 }
 
-func (d *Document) newSchema(t reflect.Type) *Schema {
-	s := &Schema{}
-	schemaFromType(d, t, true, "", s)
-	return s
+func (d *Document) newSchema(v any) *Schema { return newSchema(d, v, nil, nil) }
+
+// NewSchema 根据 v 生成 [Schema] 对象
+//
+// 如果 v 不是空值，那么 v 也将同时作为默认值出现在 [Schema] 中。
+func NewSchema(v any, title, desc web.LocaleStringer) *Schema {
+	return newSchema(nil, v, title, desc)
 }
 
-// NewSchema 根据 [reflect.Type] 生成 [Schema] 对象
-func NewSchema(t reflect.Type, title, desc web.LocaleStringer) *Schema {
+func newSchema(d *Document, v any, title, desc web.LocaleStringer) *Schema {
 	s := &Schema{
 		Title:       title,
 		Description: desc,
 	}
-	schemaFromType(nil, t, true, "", s)
+
+	rv := reflect.ValueOf(v)
+	if !rv.IsZero() {
+		s.Default = v
+	}
+
+	schemaFromType(d, rv.Type(), true, "", s)
 	return s
 }
 

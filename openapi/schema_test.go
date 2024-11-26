@@ -5,7 +5,6 @@
 package openapi
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -32,21 +31,23 @@ func TestDocument_newSchema(t *testing.T) {
 	ss := newServer(a)
 	d := New(ss, web.Phrase("desc"))
 
-	s := d.newSchema(reflect.TypeFor[int]())
+	s := d.newSchema(5)
 	a.Equal(s.Type, TypeInteger).
-		Nil(s.Ref)
+		Nil(s.Ref).
+		Equal(s.Default, 5)
 
-	s = d.newSchema(reflect.TypeFor[[]int]())
+	s = d.newSchema([]int{5, 6})
 	a.Equal(s.Type, TypeArray).
-		Equal(s.Items.Type, TypeInteger)
+		Equal(s.Items.Type, TypeInteger).
+		Equal(s.Default, []int{5, 6})
 
-	s = d.newSchema(reflect.TypeFor[map[string]float32]())
+	s = d.newSchema(map[string]float32{"1": 3.2})
 	a.Equal(s.Type, TypeObject).
 		Nil(s.Ref).
 		NotNil(s.AdditionalProperties).
 		Equal(s.AdditionalProperties.Type, TypeNumber)
 
-	s = d.newSchema(reflect.ValueOf(&object{}).Type())
+	s = d.newSchema(&object{})
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
 		Length(s.Properties, 3).
@@ -56,9 +57,10 @@ func TestDocument_newSchema(t *testing.T) {
 		Equal(s.Properties["Items"].Type, TypeArray).
 		NotZero(s.Properties["Items"].Items.Ref.Ref) // 引用了 object
 
-	s = d.newSchema(reflect.ValueOf(schemaObject1{}).Type())
+	s = d.newSchema(schemaObject1{})
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
+		Nil(s.Default).
 		Length(s.Properties, 7).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
@@ -68,7 +70,7 @@ func TestDocument_newSchema(t *testing.T) {
 		Equal(s.Properties["Z"].Type, TypeString).
 		Equal(s.Properties["Z"].Format, FormatDate)
 
-	s = d.newSchema(reflect.ValueOf(schemaObject2{}).Type())
+	s = d.newSchema(schemaObject2{})
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
 		Length(s.Properties, 7).
@@ -81,12 +83,12 @@ func TestDocument_newSchema(t *testing.T) {
 func TestSchema_isBasicType(t *testing.T) {
 	a := assert.New(t, false)
 
-	s := NewSchema(reflect.TypeFor[int](), nil, nil)
+	s := NewSchema(5, nil, nil)
 	a.True(s.isBasicType())
 
-	s = NewSchema(reflect.TypeFor[object](), nil, nil)
+	s = NewSchema(object{}, nil, nil)
 	a.False(s.isBasicType())
 
-	s = NewSchema(reflect.TypeFor[[]string](), nil, nil)
+	s = NewSchema([]string{}, nil, nil)
 	a.True(s.isBasicType())
 }

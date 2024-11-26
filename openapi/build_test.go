@@ -5,7 +5,6 @@
 package openapi
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/issue9/assert/v4"
@@ -65,7 +64,7 @@ func TestComponents_build(t *testing.T) {
 	c.queries["q1"] = &Parameter{Name: "q1", Schema: &Schema{Type: TypeString}}
 	c.cookies["c1"] = &Parameter{Name: "c1", Schema: &Schema{Type: TypeNumber}}
 	c.headers["h1"] = &Parameter{Name: "h1", Schema: &Schema{Type: TypeBoolean}}
-	c.schemas["s1"] = NewSchema(reflect.TypeFor[int](), nil, nil)
+	c.schemas["s1"] = NewSchema(5, nil, nil)
 
 	r := c.build(p, d)
 	a.Equal(r.Parameters.Len(), 2).

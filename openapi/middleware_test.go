@@ -148,7 +148,7 @@ func TestDocument_API(t *testing.T) {
 	m := d.API(func(o *Operation) {
 		o.Header("h1", TypeString, nil, nil).
 			Tag("tag1").
-			QueryObject(&q{}, nil).
+			QueryObject(&q{Q3: 5}, nil).
 			Path("p1", TypeInteger, web.Phrase("lang"), nil).
 			Body(&object{}, true, web.Phrase("lang"), nil).
 			Response("200", 5, web.Phrase("desc"), nil).
@@ -162,6 +162,7 @@ func TestDocument_API(t *testing.T) {
 		Equal(o.Description, web.Phrase("lang")).
 		Length(o.Paths, 0).
 		Length(o.Queries, 3).
+		Equal(o.Queries[2].Schema.Default, 5).
 		NotNil(o.RequestBody.Body.Type, TypeObject).
 		Length(d.paths["/path/{p1}/abc"].Paths, 1)
 

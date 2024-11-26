@@ -119,43 +119,46 @@ func (o *Operation) QueryRef(ref string, summary, description web.LocaleStringer
 // QueryObject 从参数 o 中获取相应的查询参数
 //
 // 对于 obj 的要求与 [web.Context.QueryObject] 是相同的。
+// 如果参数 obj 非空的，那么该非空字段同时也作为该查询参数的默认值。
 // f 是对每个字段的修改，可以为空，其原型为
 //
 //	func(p *Parameter)
 //
 // 可通过 p.Name 确定的参数名称
 func (o *Operation) QueryObject(obj any, f func(*Parameter)) *Operation {
-	return o.queryObject(reflect.TypeOf(obj), f)
+	return o.queryObject(reflect.ValueOf(obj), f)
 }
 
-func (o *Operation) queryObject(t reflect.Type, f func(*Parameter)) *Operation {
-	for t.Kind() == reflect.Pointer {
-		t = t.Elem()
+func (o *Operation) queryObject(v reflect.Value, f func(*Parameter)) *Operation {
+	for v.Kind() == reflect.Pointer {
+		v = v.Elem()
 	}
 
-	if t.Kind() != reflect.Struct {
+	if v.Kind() != reflect.Struct {
 		panic("t 必须得是 struct 类型")
 	}
 
+	t := v.Type()
 	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+		ft := t.Field(i)
+		vt := v.Field(i)
 
-		if field.Anonymous {
-			o.queryObject(field.Type, f)
+		if ft.Anonymous {
+			o.queryObject(vt, f)
 			continue
 		}
 
-		if !field.IsExported() {
+		if !ft.IsExported() {
 			continue
 		}
-		name, _, _ := getTagName(field, query.Tag)
+		name, _, _ := getTagName(ft, query.Tag)
 		if name == "" {
-			name = field.Name
+			name = ft.Name
 		}
 
 		var desc web.LocaleStringer
-		if field.Tag != "" {
-			if c := field.Tag.Get(CommentTag); c != "" {
+		if ft.Tag != "" {
+			if c := ft.Tag.Get(CommentTag); c != "" {
 				desc = web.Phrase(c)
 			}
 		}
@@ -172,7 +175,10 @@ func (o *Operation) queryObject(t reflect.Type, f func(*Parameter)) *Operation {
 		}
 
 		p.Schema = &Schema{}
-		schemaFromType(nil, field.Type, true, "", p.Schema)
+		if !vt.IsZero() {
+			p.Schema.Default = vt.Interface()
+		}
+		schemaFromType(nil, ft.Type, true, "", p.Schema)
 		if !p.Schema.isBasicType() {
 			panic("不支持复杂类型")
 		}
@@ -236,7 +242,7 @@ func (o *Operation) CookieRef(ref string, summary, description web.LocaleStringe
 func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f func(*Request)) *Operation {
 	req := &Request{
 		Ignorable:   ignorable,
-		Body:        o.d.newSchema(reflect.TypeOf(body)),
+		Body:        o.d.newSchema(body),
 		Description: desc,
 	}
 	if f != nil {
@@ -271,7 +277,7 @@ func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f
 	r := &Response{Description: desc}
 
 	if resp != nil {
-		r.Body = o.d.newSchema(reflect.TypeOf(resp))
+		r.Body = o.d.newSchema(resp)
 	}
 
 	if f != nil {
