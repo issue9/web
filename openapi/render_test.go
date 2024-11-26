@@ -87,7 +87,7 @@ func TestDocument_Handler(t *testing.T) {
 			o.Response("200", 1, web.Phrase("get users"), nil)
 		})).
 		Get("/users", func(*web.Context) web.Responser { return nil }). // 未指定文档
-		Get("/openapi", d.Handler)
+		Get("/openapi", d.Handler())
 
 	cancel := servertest.Run(a, s)
 

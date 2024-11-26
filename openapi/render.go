@@ -8,9 +8,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	sj "encoding/json"
-	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/html"
@@ -52,11 +50,7 @@ func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
 	return o.templateName, o
 }
 
-type documentQuery struct {
-	Tags []string `query:"tag"`
-}
-
-// Handler 实现 [web.HandlerFunc] 接口
+// Handler 创建只包含给定标签的文档接口
 //
 // 目前支持以下几种格式：
 //   - json 通过将 accept 报头设置为 [json.Mimetype] 返回 JSON 格式的数据；
@@ -67,36 +61,30 @@ type documentQuery struct {
 // NOTE: 支持的输出格式限定在以上几种，但是最终是否能正常输出以上几种格式，
 // 还需要由 [web.Server] 是否配置相应的解码方式。
 //
-// 该路由接受 tag 查询参数，在未指定参数的情况下，表示返回所有接口，
-// 如果指定了参数，则只返回带指定标签的接口，多个标签以逗号分隔。
-func (d *Document) Handler(ctx *web.Context) web.Responser {
-	if d.disable {
-		return ctx.NotImplemented()
+// 如果 tag 不为空，则表示该接口只显示与这些标签关联的文档。
+func (d *Document) Handler(tag ...string) web.HandlerFunc {
+	return func(ctx *web.Context) web.Responser {
+		if d.disable {
+			return ctx.NotImplemented()
+		}
+
+		if m := ctx.Mimetype(false); (m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype) ||
+			(m == html.Mimetype && d.templateName == "") {
+			return ctx.Problem(web.ProblemNotAcceptable)
+		}
+
+		return web.NotModified(func() (string, bool) {
+
+			// 引起 ETag 变化的几个要素
+			etag := strconv.Itoa(int(d.last.Unix())) + "/" +
+				ctx.Mimetype(false) + "/" +
+				ctx.LanguageTag().String()
+			h := md5.New()
+			h.Write([]byte(etag))
+			val := h.Sum(nil)
+			return hex.EncodeToString(val), true
+		}, func() (any, error) {
+			return d.build(ctx.LocalePrinter(), ctx.LanguageTag(), tag), nil
+		})
 	}
-
-	q := &documentQuery{}
-	if resp := ctx.QueryObject(true, q, web.ProblemBadRequest); resp != nil {
-		return resp
-	}
-
-	if m := ctx.Mimetype(false); (m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype) ||
-		(m == html.Mimetype && d.templateName == "") {
-		return ctx.Problem(web.ProblemNotAcceptable)
-	}
-
-	return web.NotModified(func() (string, bool) {
-		slices.Sort(q.Tags)
-
-		// 引起 ETag 变化的几个要素
-		etag := strconv.Itoa(int(d.last.Unix())) + "/" +
-			strings.Join(q.Tags, ",") + "/" +
-			ctx.Mimetype(false) + "/" +
-			ctx.LanguageTag().String()
-		h := md5.New()
-		h.Write([]byte(etag))
-		val := h.Sum(nil)
-		return hex.EncodeToString(val), true
-	}, func() (any, error) {
-		return d.build(ctx.LocalePrinter(), ctx.LanguageTag(), q.Tags), nil
-	})
 }
