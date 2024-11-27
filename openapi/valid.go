@@ -112,7 +112,7 @@ func (s *Schema) valid(skipRefNotNil bool) *web.FieldError {
 		return nil
 	}
 
-	if s.Type == "" {
+	if s.Type == "" && len(s.AnyOf) == 0 && len(s.AllOf) == 0 && len(s.OneOf) == 0 {
 		return web.NewFieldError("Type", "不能为空")
 	}
 

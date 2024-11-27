@@ -26,6 +26,35 @@ type schemaObject2 struct {
 	schemaObject1
 }
 
+func TestOfSchema(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.PanicString(func() {
+		AllOfSchema(nil, nil)
+	}, "参数 v 必不可少")
+
+	s := AnyOfSchema(web.Phrase("lang"), nil, "1", 0)
+	a.Length(s.AnyOf, 2).
+		Empty(s.Type).
+		Equal(s.AnyOf[0].Type, TypeString).
+		Equal(s.AnyOf[0].Default, "1").
+		Equal(s.AnyOf[1].Type, TypeInteger).
+		Nil(s.AnyOf[1].Default)
+
+	s = OneOfSchema(web.Phrase("lang"), nil, true, uint(2))
+	a.Length(s.OneOf, 2).
+		Empty(s.Type).
+		Equal(s.OneOf[0].Type, TypeBoolean).
+		Equal(s.OneOf[0].Default, true).
+		Equal(s.OneOf[1].Type, TypeInteger)
+
+	s = AllOfSchema(web.Phrase("lang"), nil, "1", 2)
+	a.Length(s.AllOf, 2).
+		Empty(s.Type).
+		Equal(s.AllOf[0].Type, TypeString).
+		Equal(s.AllOf[1].Type, TypeInteger)
+}
+
 func TestDocument_newSchema(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)

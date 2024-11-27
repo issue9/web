@@ -65,7 +65,7 @@ type Schema struct {
 type properties = orderedmap.OrderedMap[string, *renderer[schemaRenderer]]
 
 type schemaRenderer struct {
-	Type                 string                      `json:"type" yaml:"type"`
+	Type                 string                      `json:"type,omitempty" yaml:"type,omitempty"` // AnyOf 等不为空，此值可为空
 	XML                  *XML                        `json:"xml,omitempty" yaml:"xml,omitempty"`
 	ExternalDocs         *externalDocsRenderer       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 	Title                string                      `json:"title,omitempty" yaml:"title,omitempty"`
@@ -91,6 +91,50 @@ func (d *Document) newSchema(v any) *Schema { return newSchema(d, v, nil, nil) }
 // 如果 v 不是空值，那么 v 也将同时作为默认值出现在 [Schema] 中。
 func NewSchema(v any, title, desc web.LocaleStringer) *Schema {
 	return newSchema(nil, v, title, desc)
+}
+
+func AnyOfSchema(title, desc web.LocaleStringer, v ...any) *Schema {
+	return xOfSchema(0, title, desc, v...)
+}
+
+func OneOfSchema(title, desc web.LocaleStringer, v ...any) *Schema {
+	return xOfSchema(1, title, desc, v...)
+}
+
+func AllOfSchema(title, desc web.LocaleStringer, v ...any) *Schema {
+	return xOfSchema(2, title, desc, v...)
+}
+
+// - 0 anyof
+// - 1 oneof
+// - 2 allof
+func xOfSchema(typ int, title, desc web.LocaleStringer, v ...any) *Schema {
+	if len(v) == 0 {
+		panic("参数 v 必不可少")
+	}
+
+	of := make([]*Schema, 0, len(v))
+	for _, vv := range v {
+		of = append(of, NewSchema(vv, nil, nil))
+	}
+
+	s := &Schema{
+		Title:       title,
+		Description: desc,
+	}
+
+	switch typ {
+	case 0:
+		s.AnyOf = of
+	case 1:
+		s.OneOf = of
+	case 2:
+		s.AllOf = of
+	default:
+		panic("无效的参数 typ")
+	}
+
+	return s
 }
 
 func newSchema(d *Document, v any, title, desc web.LocaleStringer) *Schema {
