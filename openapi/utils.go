@@ -96,11 +96,31 @@ func getPathParams(path string) []string {
 
 // MarkdownProblems 将 problems 的内容生成为 markdown
 //
-// titleLevlel 标题的级别，1-6；
-func MarkdownProblems(s web.Server, titleLevlel int) web.LocaleStringer {
-	buf := &errwrap.Buffer{}
+// titleLevel 标题的级别，0-6：
+// 如果取值为 0，表示以列表的形式输出，并忽略 detail 字段的内容。
+// 1-6 表示输出 detail 内容，并且将 type 和 title 作为标题；
+func MarkdownProblems(s web.Server, titleLevel int, detail bool) web.LocaleStringer {
+	if detail {
+		return markdownProblemsWithDetail(s, titleLevel)
+	} else {
+		return markdownProblemsWithoutDetail(s)
+	}
+}
 
-	ss := strings.Repeat("#", titleLevlel)
+func markdownProblemsWithoutDetail(s web.Server) web.LocaleStringer {
+	buf := &errwrap.Buffer{}
+	args := make([]any, 0, 30)
+	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
+		buf.Printf("- %s", lp.Type()).WString(": %s\n\n")
+		args = append(args, lp.Title)
+	})
+	return web.Phrase(buf.String(), args...)
+}
+
+func markdownProblemsWithDetail(s web.Server, titleLevel int) web.LocaleStringer {
+	buf := &errwrap.Buffer{}
+	ss := strings.Repeat("#", titleLevel)
+
 	args := make([]any, 0, 30)
 	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
 		buf.Printf("%s %s ", ss, lp.Type()).
