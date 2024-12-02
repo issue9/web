@@ -95,15 +95,18 @@ func getPathParams(path string) []string {
 }
 
 // MarkdownProblems 将 problems 的内容生成为 markdown
-func MarkdownProblems(s web.Server) web.LocaleStringer {
+//
+// titleLevlel 标题的级别，1-6；
+func MarkdownProblems(s web.Server, titleLevlel int) web.LocaleStringer {
 	buf := &errwrap.Buffer{}
 
+	ss := strings.Repeat("#", titleLevlel)
 	args := make([]any, 0, 30)
 	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
-		buf.WString("## %s \n\n").
+		buf.Printf("%s %s ", ss, lp.Type()).
 			WString("%s\n\n").
 			WString("%s\n\n")
-		args = append(args, lp.Type(), lp.Title, lp.Detail)
+		args = append(args, lp.Title, lp.Detail)
 	})
 
 	return web.Phrase(buf.String(), args...)

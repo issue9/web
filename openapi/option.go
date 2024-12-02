@@ -13,13 +13,22 @@ import (
 
 type Option func(*Document)
 
-// WithHead 是否生成 HEAD 接口请求
-func WithHead(enable bool) Option {
+// WithOptions 合并多个 [Option] 为一个
+func WithOptions(o ...Option) Option {
+	return func(d *Document) {
+		for _, opt := range o {
+			opt(d)
+		}
+	}
+}
+
+// WithHeadMethod 是否生成 HEAD 接口请求
+func WithHeadMethod(enable bool) Option {
 	return func(d *Document) { d.enableHead = enable }
 }
 
-// WithOptions 是否生成 OPTIONS 请求
-func WithOptions(enable bool) Option {
+// WithOptionsMethod 是否生成 OPTIONS 请求
+func WithOptionsMethod(enable bool) Option {
 	return func(d *Document) { d.enableOptions = enable }
 }
 
@@ -74,6 +83,17 @@ func WithProblemResponse() Option {
 		Problem:     true,
 		Description: web.Phrase("problem response"),
 	}, "4XX", "5XX")
+}
+
+// WithClassicResponse 提供框架一些常用的 [Response] 对象
+//
+// 包含了 4XX 和 5XX 的错误对象；
+// 包含了一个 ref 为 empty 的空对象；
+func WithClassicResponse() Option {
+	return WithOptions(
+		WithProblemResponse(),
+		WithResponse(&Response{Ref: &Ref{Ref: "empty"}}),
+	)
 }
 
 // WithMediaType 指定所有接口可用的媒体类型

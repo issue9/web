@@ -12,6 +12,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
@@ -21,6 +22,7 @@ func newServer(a *assert.Assertion) web.Server {
 	})
 	a.NotError(err).NotNil(s)
 
+	s.Locale().LoadMessages("*.yaml", locales.Locales...)
 	a.NotError(s.Locale().SetString(language.SimplifiedChinese, "lang", "简体"))
 	a.NotError(s.Locale().SetString(language.TraditionalChinese, "lang", "繁体"))
 

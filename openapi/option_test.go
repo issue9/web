@@ -14,6 +14,15 @@ import (
 	"github.com/issue9/web/mimetype/json"
 )
 
+func TestWithOptions(t *testing.T) {
+	a := assert.New(t, false)
+
+	ss := newServer(a)
+	d := New(ss, web.Phrase("title"), WithOptions(WithHeadMethod(true), WithOptionsMethod(true)))
+	a.True(d.enableHead).
+		True(d.enableOptions)
+}
+
 func TestWithHTML(t *testing.T) {
 	a := assert.New(t, false)
 
