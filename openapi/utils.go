@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/issue9/errwrap"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
 
@@ -91,4 +92,19 @@ func getPathParams(path string) []string {
 	}
 
 	return ret
+}
+
+// MarkdownProblems 将 problems 的内容生成为 markdown
+func MarkdownProblems(s web.Server) web.LocaleStringer {
+	buf := &errwrap.Buffer{}
+
+	args := make([]any, 0, 30)
+	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
+		buf.WString("## %s \n\n").
+			WString("%s\n\n").
+			WString("%s\n\n")
+		args = append(args, lp.Type(), lp.Title, lp.Detail)
+	})
+
+	return web.Phrase(buf.String(), args...)
 }

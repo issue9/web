@@ -105,9 +105,9 @@ func AllOfSchema(title, desc web.LocaleStringer, v ...any) *Schema {
 	return xOfSchema(2, title, desc, v...)
 }
 
-// - 0 anyof
-// - 1 oneof
-// - 2 allof
+// - 0 AnyOf
+// - 1 OneOf
+// - 2 AllOf
 func xOfSchema(typ int, title, desc web.LocaleStringer, v ...any) *Schema {
 	if len(v) == 0 {
 		panic("参数 v 必不可少")
@@ -138,6 +138,10 @@ func xOfSchema(typ int, title, desc web.LocaleStringer, v ...any) *Schema {
 }
 
 func newSchema(d *Document, v any, title, desc web.LocaleStringer) *Schema {
+	if v == nil {
+		return nil
+	}
+
 	s := &Schema{
 		Title:       title,
 		Description: desc,
@@ -147,8 +151,8 @@ func newSchema(d *Document, v any, title, desc web.LocaleStringer) *Schema {
 	if !rv.IsZero() {
 		s.Default = v
 	}
-
 	schemaFromType(d, rv.Type(), true, "", s)
+
 	return s
 }
 

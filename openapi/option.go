@@ -49,7 +49,8 @@ func WithHTML(tpl, assets, logo string) Option {
 // 一般用于指定非正常状态的返回对象，比如 400 状态码的对象。
 //
 // resp 返回对象，需要指定 resp.Ref.Ref，其它接口可以通过 Ref 引用该对象；
-// status: 状态码，可以是 4XX 的形式，如果该值不为空，那么将当前对象以此状态码应用到所有的接口；
+// status: 状态码，可以是 4XX 的形式，如果该值不为空，那么将当前对象以此状态码应用到所有的接口，
+// 否则仅仅是写入 components/responses，后续需要用户手动引用；
 //
 // NOTE: 多次调用会依次添加
 func WithResponse(resp *Response, status ...string) Option {
@@ -311,7 +312,7 @@ func WithTag(name string, desc web.LocaleStringer, extDocURL string, extDocDesc 
 // WithSecurityScheme 指定验证方案
 //
 // s 需要添加的验证方案；
-// scope 如果指定了该值，那么会以 s.ID 为名称，scope 为值添加至 openapi.securiy，
+// scope 如果指定了该值，那么会以 s.ID 为名称，scope 为值添加至 openapi.security，
 // scope 如果是多个参数，每个参数应该都是不同的；
 //
 // NOTE: 多次调用会依次添加

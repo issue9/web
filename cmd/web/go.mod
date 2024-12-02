@@ -10,7 +10,7 @@ require (
 	github.com/issue9/logs/v7 v7.6.4
 	github.com/issue9/source v0.11.6
 	github.com/issue9/term/v3 v3.3.2
-	github.com/issue9/web v0.98.0
+	github.com/issue9/web v0.99.3
 	golang.org/x/text v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 )
