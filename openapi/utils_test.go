@@ -54,13 +54,13 @@ func TestMarkdownProblems(t *testing.T) {
 	ss := newServer(a)
 	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
 
-	txt := MarkdownProblems(ss, 2, true)
+	txt := MarkdownProblems(ss, 2)
 	lines := strings.Split(txt.LocaleString(p), "\n\n")
 	a.Equal(lines[0], "## 400 Bad Request").
 		Equal(lines[1], "表示客户端错误，比如，错误的请求语法、无效的请求消息帧或欺骗性的请求路由等，服务器无法或不会处理该请求。").
 		Equal(lines[2], "## 401 Unauthorized")
 
-	txt = MarkdownProblems(ss, 3, false)
+	txt = MarkdownProblems(ss, 0)
 	lines = strings.Split(txt.LocaleString(p), "\n\n")
 	a.Equal(lines[0], "- 400: Bad Request").
 		Equal(lines[1], "- 401: Unauthorized")

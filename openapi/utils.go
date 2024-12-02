@@ -99,8 +99,8 @@ func getPathParams(path string) []string {
 // titleLevel 标题的级别，0-6：
 // 如果取值为 0，表示以列表的形式输出，并忽略 detail 字段的内容。
 // 1-6 表示输出 detail 内容，并且将 type 和 title 作为标题；
-func MarkdownProblems(s web.Server, titleLevel int, detail bool) web.LocaleStringer {
-	if detail {
+func MarkdownProblems(s web.Server, titleLevel int) web.LocaleStringer {
+	if titleLevel != 0 {
 		return markdownProblemsWithDetail(s, titleLevel)
 	} else {
 		return markdownProblemsWithoutDetail(s)
