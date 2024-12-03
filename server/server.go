@@ -60,15 +60,15 @@ func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 
 // NewHTTP 新建 HTTP 服务
 //
-// name, version 表示服务的名称和版本号；
+// id, version 表示服务的 ID 和版本号；
 // o 指定了一些带有默认值的参数；
-func NewHTTP(name, version string, o *Options) (web.Server, error) {
+func NewHTTP(id, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return newHTTPServer(name, version, o, nil), nil
+	return newHTTPServer(id, version, o, nil), nil
 }
 
 func (srv *httpServer) State() web.State { return srv.state }
@@ -110,7 +110,7 @@ func (srv *httpServer) Close(shutdownTimeout time.Duration) {
 // NewService 声明微服务节点
 //
 // [Options.Registry] 和 [Options.Peer] 不能为空。
-func NewService(name, version string, o *Options) (web.Server, error) {
+func NewService(id, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
@@ -120,12 +120,12 @@ func NewService(name, version string, o *Options) (web.Server, error) {
 		registry: o.Registry,
 		peer:     o.Peer,
 	}
-	s.httpServer = newHTTPServer(name, version, o, s)
+	s.httpServer = newHTTPServer(id, version, o, s)
 	return s, nil
 }
 
 func (s *service) Serve() error {
-	dreg, err := s.registry.Register(s.Name(), s.peer)
+	dreg, err := s.registry.Register(s.ID(), s.peer)
 	if err != nil {
 		return err
 	}
@@ -137,14 +137,14 @@ func (s *service) Serve() error {
 // NewGateway 声明微服务的网关
 //
 // [Options.Mapper] 和 [Options.Peer] 不能为空。
-func NewGateway(name, version string, o *Options) (web.Server, error) {
+func NewGateway(id, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeGateway)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
 	}
 
 	g := &gateway{registry: o.Registry}
-	g.httpServer = newHTTPServer(name, version, o, g)
+	g.httpServer = newHTTPServer(id, version, o, g)
 
 	for name, match := range o.Mapper {
 		proxy := g.registry.ReverseProxy(name, g)

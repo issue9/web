@@ -30,8 +30,8 @@ type (
 	Server interface {
 		context.Context
 
-		// Name 应用的名称
-		Name() string
+		// ID 应用的 ID 标记
+		ID() string
 
 		// Version 应用的版本
 		Version() string
@@ -287,7 +287,7 @@ func (s *InternalServer) Config() *config.Config { return s.locale.Config() }
 
 func (s *InternalServer) Locale() Locale { return s.locale }
 
-func (s *InternalServer) Name() string { return s.name }
+func (s *InternalServer) ID() string { return s.name }
 
 func (s *InternalServer) Version() string { return s.version }
 

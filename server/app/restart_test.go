@@ -32,7 +32,7 @@ func TestSignalHUP(t *testing.T) {
 
 	exit := make(chan struct{}, 10)
 	cmd := &CLIOptions[empty]{
-		Name:           "test",
+		ID:             "test",
 		Version:        "1.0.0",
 		ConfigDir:      ".",
 		ConfigFilename: "web.yaml",

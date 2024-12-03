@@ -81,7 +81,7 @@ func newOptions(o *Options) *Options {
 func newTestServer(a *assert.Assertion, o *Options) web.Server {
 	srv, err := NewHTTP("app", "0.1.0", newOptions(o))
 	a.NotError(err).NotNil(srv).
-		Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+		Equal(srv.ID(), "app").Equal(srv.Version(), "0.1.0")
 
 	l := srv.Locale()
 	a.NotError(l.SetString(language.Und, "lang", "und")).
@@ -341,7 +341,7 @@ func TestNewService(t *testing.T) {
 	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
 
 	srv = newService(a, "app", ":8080", reg, c)
-	a.Equal(srv.Name(), "app").Equal(srv.Version(), "0.1.0")
+	a.Equal(srv.ID(), "app").Equal(srv.Version(), "0.1.0")
 
 	srv.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
@@ -395,7 +395,7 @@ func TestNewGateway(t *testing.T) {
 		},
 	}))
 	a.NotError(err).NotNil(g)
-	a.Equal(g.Name(), "app").Equal(g.Version(), "0.1.0")
+	a.Equal(g.ID(), "app").Equal(g.Version(), "0.1.0")
 	g.Routers().New("default", nil).Get("/mux/test", buildHandler(203))
 
 	defer servertest.Run(a, g)()

@@ -108,7 +108,7 @@ func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
 		}
 		return err
 	}
-	s.Services().AddTicker(web.Phrase("refresh micro service %s for %s", name, s.Name()), job, c.freq, true, true)
+	s.Services().AddTicker(web.Phrase("refresh micro service %s for %s", name, s.ID()), job, c.freq, true, true)
 
 	return ss
 }
@@ -132,7 +132,7 @@ func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.Revers
 		return err
 	}
 
-	s.Services().AddTicker(web.Phrase("refresh micro services for gateway %s", s.Name()), job, c.freq, false, true)
+	s.Services().AddTicker(web.Phrase("refresh micro services for gateway %s", s.ID()), job, c.freq, false, true)
 
 	// [web.Services.AddTicker] 的 imm 并不是马上执行，而是使任务进入可执行的状态。
 	// 所以这里需要手动调用一次 job 刷新微服务列表。

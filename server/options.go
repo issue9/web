@@ -56,7 +56,7 @@ type (
 
 		// 缓存系统
 		//
-		// 如果为空，采用 [github.com/issue9/cache/caches/memory/New] 作为默认值。
+		// 如果为空，采用 [github.com/issue9/cache/caches/memory.New] 作为默认值。
 		Cache cache.Driver
 
 		// 日志系统

@@ -48,7 +48,7 @@ type app struct {
 // newServer 构建新服务的方法。
 func New(shutdown time.Duration, newServer func() (web.Server, error)) App {
 	if newServer == nil {
-		panic("App.NewServer 不能为空")
+		panic("newServer 不能为空")
 	}
 
 	return &app{

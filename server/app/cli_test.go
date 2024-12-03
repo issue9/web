@@ -19,15 +19,15 @@ func TestCLI(t *testing.T) {
 	a := assert.New(t, false)
 	const shutdownTimeout = 0
 
-	bs := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 	var action string
 	o := &CLIOptions[empty]{
-		Name:            "test",
+		ID:              "test",
 		Version:         "1.0.0",
 		ConfigDir:       ".",
 		ConfigFilename:  "web.yaml",
 		ShutdownTimeout: shutdownTimeout,
-		Out:             bs,
+		Out:             buf,
 		ServeActions:    []string{"serve"},
 		NewServer: func(name, ver string, opt *server.Options, _ empty, act string) (web.Server, error) {
 			action = act
@@ -36,9 +36,9 @@ func TestCLI(t *testing.T) {
 	}
 	cmd := NewCLI(o)
 	ocli := cmd.(*cli[empty])
-	a.NotError(ocli.exec([]string{"app", "-v"})).Contains(bs.String(), o.Version)
+	a.NotError(ocli.exec([]string{"app", "-v"})).Contains(buf.String(), o.Version)
 
-	bs.Reset()
+	buf.Reset()
 	a.NotError(ocli.exec([]string{"app", "-a=install"})).Equal(action, "install")
 }
 
@@ -46,13 +46,13 @@ func TestCLI_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
 	cmd := &CLIOptions[empty]{}
-	a.ErrorString(cmd.sanitize(), "Name")
+	a.ErrorString(cmd.sanitize(), "ID")
 
-	cmd = &CLIOptions[empty]{Name: "app", Version: "1.1.1"}
+	cmd = &CLIOptions[empty]{ID: "app", Version: "1.1.1"}
 	a.ErrorString(cmd.sanitize(), "NewServer")
 
 	cmd = &CLIOptions[empty]{
-		Name:    "app",
+		ID:      "app",
 		Version: "1.1.1",
 		NewServer: func(name, ver string, opt *server.Options, _ empty, _ string) (web.Server, error) {
 			return server.NewHTTP(name, ver, opt)
@@ -62,6 +62,6 @@ func TestCLI_sanitize(t *testing.T) {
 	a.NotError(cmd.sanitize()).Equal(cmd.Out, os.Stdout)
 
 	a.PanicString(func() {
-		NewCLI(&CLIOptions[empty]{Name: "abc"})
+		NewCLI(&CLIOptions[empty]{ID: "abc"})
 	}, "Version")
 }

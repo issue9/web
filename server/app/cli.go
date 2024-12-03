@@ -28,15 +28,15 @@ const (
 )
 
 type CLIOptions[T any] struct {
-	Name    string // 程序名称
+	ID      string // 程序 ID
 	Version string // 程序版本
 
 	// 初始化 [web.Server]
 	//
-	// name, version 即为 [CLIOptions.Name] 和 [CLIOptions.Version]；
+	// id, version 即为 [CLIOptions.ID] 和 [CLIOptions.Version]；
 	// o 和 user 为从配置文件加载的数据信息；
 	// action 为 -a 命令行指定的参数；
-	NewServer func(name, version string, o *server.Options, user T, action string) (web.Server, error)
+	NewServer func(id, version string, o *server.Options, user T, action string) (web.Server, error)
 
 	// 以服务运行的指令
 	ServeActions []string
@@ -115,7 +115,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 		if err != nil {
 			return nil, web.NewStackError(err)
 		}
-		return o.NewServer(o.Name, o.Version, opt, user, action)
+		return o.NewServer(o.ID, o.Version, opt, user, action)
 	}
 
 	app := New(o.ShutdownTimeout, initServer)
@@ -123,7 +123,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 	return &cli[T]{
 		App: app,
 		exec: func(args []string) (err error) {
-			fs := flag.NewFlagSet(o.Name, o.ErrorHandling)
+			fs := flag.NewFlagSet(o.ID, o.ErrorHandling)
 			fs.SetOutput(o.Out)
 
 			v := fs.Bool("v", false, cmdShowVersion.LocaleString(o.Printer))
@@ -134,7 +134,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 			}
 
 			if *v {
-				_, err = fmt.Fprintln(o.Out, o.Name, o.Version)
+				_, err = fmt.Fprintln(o.Out, o.ID, o.Version)
 				return web.NewStackError(localeError(err, o.Printer))
 			}
 
@@ -173,8 +173,8 @@ func (o *CLIOptions[T]) sanitize() error {
 		o.Printer = p
 	}
 
-	if o.Name == "" {
-		return web.NewFieldError("Name", locales.ErrCanNotBeEmpty())
+	if o.ID == "" {
+		return web.NewFieldError("ID", locales.ErrCanNotBeEmpty())
 	}
 	if o.Version == "" {
 		return web.NewFieldError("Version", locales.ErrCanNotBeEmpty())
