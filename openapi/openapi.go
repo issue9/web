@@ -5,7 +5,7 @@
 // Package openapi 采用 [web.Middleware] 中间件的形式生成 [openapi] 文档
 //
 // 结构体标签
-//   - [CommentTag] 用于可翻译的注释，该内容会被翻译后保存在字段的 Schema.Description 中；
+//   - [CommentTag] 用于可翻译的注释，该内容会被翻译后保存在 [Schema.Description] 中；
 //   - openapi 对 openapi 类型的自定义，格式为 type,format，可以自定义字段的类型和格式；
 //
 // # Schema
@@ -30,7 +30,7 @@
 //		s.Enum = []string {"stopped", "running" }
 //	}
 //
-// 以上代码，会在解析 State 始终采用 OpenAPISchema 修改。
+// 以上代码，会在解析 State 始终采用 [OpenAPISchema] 修改。
 //
 // 结构体标签的优先级要高于 [OpenAPISchema] 接口。
 //
