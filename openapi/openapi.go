@@ -5,9 +5,34 @@
 // Package openapi 采用 [web.Middleware] 中间件的形式生成 [openapi] 文档
 //
 // 结构体标签
+//   - [CommentTag] 用于可翻译的注释，该内容会被翻译后保存在字段的 Schema.Description 中；
+//   - openapi 对 openapi 类型的自定义，格式为 type,format，可以自定义字段的类型和格式；
 //
-// - comment 用于可翻译的注释，该内容会被翻译后保存在字段的 Schema.Description 中；
-// - openapi 对 openapi 类型的自定义，格式为 type,format，可以自定义字段的类型和格式；
+// # Schema
+//
+// 大部分情况下，通过 [NewSchema] 可以将一个类型直接转换为 [Schema] 对象，
+// 如果对类型中的字段有特殊要求，可以通过结构体标签 openapi 进行简单的自定义：
+//
+//	type State int8
+//
+//	type x struct {
+//		State State `openapi:"string"`
+//	}
+//
+// 以上代码会将 State 解析为字符串类型，而不是默认的数值。
+//
+// 当然对于复杂的需求，还可以通过实现 [OpenAPISchema] 接口实现自定义：
+//
+//	type State int8
+//
+//	func(s State) OpenAPISchema(s *Schema) {
+//		s.Type = TypeString
+//		s.Enum = []string {"stopped", "running" }
+//	}
+//
+// 以上代码，会在解析 State 始终采用 OpenAPISchema 修改。
+//
+// 结构体标签的优先级要高于 [OpenAPISchema] 接口。
 //
 // [openapi]: https://spec.openapis.org/oas/v3.1.1.html
 package openapi
@@ -414,6 +439,8 @@ func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
 }
 
 // Disable 是否禁用 [Document.Handler] 接口输出内容
+//
+// 不影响内容的添加，但是会在调用 [Document.Handler] 时输出 404。
 func (d *Document) Disable(disable bool) { d.disable = disable }
 
 // AddWebhook 添加 Webhook 的定义

@@ -104,7 +104,7 @@ func TestDocument_Handler(t *testing.T) {
 	d.Disable(true)
 	servertest.Get(a, "http://localhost:8080/p/openapi").Header("accept", json.Mimetype).
 		Do(nil).
-		Status(http.StatusNotImplemented)
+		Status(http.StatusNotFound)
 
 	s.Close(500 * time.Millisecond)
 	cancel()

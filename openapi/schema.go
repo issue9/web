@@ -14,6 +14,14 @@ import (
 	"github.com/issue9/web"
 )
 
+// OpenAPISchema 自定义某个类型在 openapi 文档中的类型
+type OpenAPISchema interface {
+	// OpenAPISchema 修改当前类型的 [Schema] 表示形式
+	OpenAPISchema(s *Schema)
+}
+
+var openAPISchemaType = reflect.TypeFor[OpenAPISchema]()
+
 type Parameter struct {
 	Ref *Ref
 
@@ -163,6 +171,14 @@ var timeType = reflect.TypeFor[time.Time]()
 // desc 表示类型 t 的 Description 属性
 // rootName 根结构体的名称，主要是为了解决子元素又引用了根元素的类型引起的循环引用。
 func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
+	if t.Implements(openAPISchemaType) {
+		if t.Kind() == reflect.Pointer { // 值类型的指针符合 t.Implements，但是无法使用 reflect.New(t).Elem 获得一个有效的值。
+			t = t.Elem()
+		}
+		reflect.New(t).Interface().(OpenAPISchema).OpenAPISchema(s)
+		return
+	}
+
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
@@ -219,70 +235,70 @@ func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName str
 
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		k := f.Type.Kind()
-		var itemDesc web.LocaleStringer
 
 		if f.Anonymous {
 			schemaFromType(d, f.Type, isRoot, rootName, s)
 			continue
 		}
 
-		if f.IsExported() && k != reflect.Chan && k != reflect.Func && k != reflect.Complex64 && k != reflect.Complex128 {
-			name := f.Name
-			var xml *XML
-			if f.Tag != "" {
-				tag, omitempty, _ := getTagName(f, "json")
-				if tag == "-" {
-					continue
-				} else if tag != "" {
-					name = tag
-				}
+		if k := f.Type.Kind(); !f.IsExported() || k == reflect.Chan || k == reflect.Func || k == reflect.Complex64 || k == reflect.Complex128 {
+			continue
+		}
 
-				if !omitempty {
-					s.Required = append(s.Required, name)
-				}
+		var itemDesc web.LocaleStringer
+		name := f.Name
+		var xml *XML
+		if f.Tag != "" {
+			tag, omitempty, _ := getTagName(f, "json")
+			if tag == "-" {
+				continue
+			} else if tag != "" {
+				name = tag
+			}
 
-				if xmlName, _, attr := getTagName(f, "xml"); xmlName != "" && xmlName != name {
-					xml = &XML{Name: xmlName, Attribute: attr}
-				}
+			if !omitempty {
+				s.Required = append(s.Required, name)
+			}
 
-				comment := f.Tag.Get(CommentTag)
-				if comment != "" {
-					itemDesc = web.Phrase(comment)
-				}
+			if xmlName, _, attr := getTagName(f, "xml"); xmlName != "" && xmlName != name {
+				xml = &XML{Name: xmlName, Attribute: attr}
+			}
 
-				if tt := f.Tag.Get("openapi"); tt != "" {
-					if tt != "-" {
-						tags := strings.Split(tt, ",")
+			comment := f.Tag.Get(CommentTag)
+			if comment != "" {
+				itemDesc = web.Phrase(comment)
+			}
 
-						format := ""
-						if len(tags) > 1 {
-							format = tags[1]
-						}
+			if tt := f.Tag.Get("openapi"); tt != "" {
+				if tt != "-" {
+					tags := strings.Split(tt, ",")
 
-						s.Properties[name] = &Schema{
-							Description: itemDesc,
-							Type:        tags[0],
-							Format:      format,
-							XML:         xml,
-						}
+					format := ""
+					if len(tags) > 1 {
+						format = tags[1]
 					}
-					continue
+
+					s.Properties[name] = &Schema{
+						Description: itemDesc,
+						Type:        tags[0],
+						Format:      format,
+						XML:         xml,
+					}
 				}
-
-			}
-
-			item := &Schema{
-				Description: itemDesc,
-				XML:         xml,
-			}
-			schemaFromType(d, t.Field(i).Type, false, rootName, item)
-			if item.Type == "" {
 				continue
 			}
+		} // end f.Tag
 
-			s.Properties[name] = item
+		item := &Schema{
+			Description: itemDesc,
+			XML:         xml,
 		}
+		schemaFromType(d, t.Field(i).Type, false, rootName, item)
+		if item.Type == "" {
+			continue
+		}
+
+		s.Properties[name] = item
 	}
 }
 

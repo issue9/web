@@ -327,8 +327,8 @@ func (s *InternalServer) Close() {
 		}
 	}
 
+	s.doneErr = http.ErrServerClosed // 在 close 之前调用，以保证在 close 之后，doneErr 始终是正确的。
 	close(s.done)
-	s.doneErr = http.ErrServerClosed
 }
 
 func (s *InternalServer) Deadline() (time.Time, bool) { return time.Time{}, false }

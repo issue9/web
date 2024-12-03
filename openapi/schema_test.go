@@ -13,6 +13,13 @@ import (
 	"github.com/issue9/web"
 )
 
+type State int8
+
+func (ss State) OpenAPISchema(s *Schema) {
+	s.Type = TypeString
+	s.Enum = []any{"1", "2"}
+}
+
 type schemaObject1 struct {
 	object
 	Root string
@@ -20,10 +27,24 @@ type schemaObject1 struct {
 	X    string  `openapi:"-"`
 	Y    string  `openapi:"integer"`
 	Z    *object `openapi:"string,date"`
+
+	S1 State  `openapi:"integer" json:"s1"`
+	S2 *State `comment:"s2" json:"s2" xml:"S2"`
+	S3 State
+
+	unExported bool
 }
 
 type schemaObject2 struct {
 	schemaObject1
+}
+
+type schemaObject3 struct {
+	X int
+}
+
+func (*schemaObject3) OpenAPISchema(s *Schema) {
+	s.Type = TypeString
 }
 
 func TestOfSchema(t *testing.T) {
@@ -70,11 +91,32 @@ func TestDocument_newSchema(t *testing.T) {
 		Equal(s.Items.Type, TypeInteger).
 		Equal(s.Default, []int{5, 6})
 
+	a.Nil(d.newSchema(nil))
+
 	s = d.newSchema(map[string]float32{"1": 3.2})
 	a.Equal(s.Type, TypeObject).
 		Nil(s.Ref).
 		NotNil(s.AdditionalProperties).
 		Equal(s.AdditionalProperties.Type, TypeNumber)
+
+	// 指针实现 OpenAPISchema
+	s = d.newSchema(schemaObject3{})
+	a.Equal(s.Type, TypeObject)
+	s = d.newSchema(&schemaObject3{})
+	a.Equal(s.Type, TypeString)
+	so := &schemaObject3{}
+	s = d.newSchema(&so) // ** schemaObject{}
+	a.Equal(s.Type, TypeObject)
+
+	// 值类型实现 OpenAPISchema
+	s = d.newSchema(State(5))
+	a.Equal(s.Type, TypeString)
+	sss := State(5)
+	s = d.newSchema(&sss)
+	a.Equal(s.Type, TypeString)
+	ssss := &sss
+	s = d.newSchema(&ssss) // ** State
+	a.Equal(s.Type, TypeInteger)
 
 	s = d.newSchema(&object{})
 	a.Equal(s.Type, TypeObject).
@@ -90,19 +132,27 @@ func TestDocument_newSchema(t *testing.T) {
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
 		Nil(s.Default).
-		Length(s.Properties, 7).
+		Length(s.Properties, 10).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).
 		Equal(s.Properties["T"].Format, FormatDateTime).
 		Equal(s.Properties["Y"].Type, TypeInteger).
 		Equal(s.Properties["Z"].Type, TypeString).
-		Equal(s.Properties["Z"].Format, FormatDate)
+		Equal(s.Properties["Z"].Format, FormatDate).
+		Equal(s.Properties["s1"].Type, TypeInteger). // openapi 标签优先于 OpenAPISchema
+		Equal(s.Properties["s2"].Type, TypeString).  // OpenAPISchema 接口
+		Equal(s.Properties["s2"].XML.Name, "S2").
+		Equal(s.Properties["s2"].Enum, []any{"1", "2"}).
+		Equal(s.Properties["s2"].Description, web.Phrase("s2")). // 注释可正确获取
+		Equal(s.Properties["S3"].Type, TypeString).
+		Nil(s.Properties["S3"].XML).
+		Equal(s.Properties["S3"].Enum, []any{"1", "2"})
 
 	s = d.newSchema(schemaObject2{})
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
-		Length(s.Properties, 7).
+		Length(s.Properties, 10).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).

@@ -65,7 +65,7 @@ func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
 func (d *Document) Handler(tag ...string) web.HandlerFunc {
 	return func(ctx *web.Context) web.Responser {
 		if d.disable {
-			return ctx.NotImplemented()
+			return ctx.NotFound()
 		}
 
 		if m := ctx.Mimetype(false); (m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype) ||

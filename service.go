@@ -52,11 +52,6 @@ type (
 	ServiceFunc func(context.Context) error
 
 	// State 服务状态
-	//
-	// 以下设置用于 restdoc
-	//
-	// @type string
-	// @enum stopped running failed
 	State = scheduled.State
 
 	Job           = scheduled.Job
