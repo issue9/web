@@ -30,6 +30,13 @@ type (
 		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
 		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
 
+		// [web.Router.URL] 的默认前缀
+		//
+		// 如果是非标准端口，应该带上端口号。
+		//
+		// NOTE: 每个路由可使用 [web.WithURLDomain] 重新定义该值。
+		URL string `yaml:"url,omitempty" json:"url,omitempty" xml:"url,omitempty"`
+
 		// x-request-id 的报头名称
 		//
 		// 如果为空，则采用 [header.XRequestID] 作为默认值。
@@ -261,6 +268,10 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 
 		if h.trace != nil {
 			o.RoutersOptions = append(o.RoutersOptions, h.trace)
+		}
+
+		if h.URL != "" {
+			o.RoutersOptions = append(o.RoutersOptions, web.WithURLDomain(h.URL))
 		}
 	}
 }
