@@ -362,7 +362,7 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 // 两者稍有区别，前者不会对数据进行验证。
 func (d *Document) API(f func(o *Operation)) web.Middleware {
 	return web.MiddlewareFunc(func(next web.HandlerFunc, method, pattern, router string) web.HandlerFunc {
-		if !d.disable && pattern != "" && method != "" &&
+		if pattern != "" && method != "" &&
 			(d.enableHead || method != http.MethodHead) &&
 			(d.enableOptions || method != http.MethodOptions) {
 			o := &Operation{
