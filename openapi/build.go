@@ -32,11 +32,8 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 
 	tags := make([]*tagRenderer, 0, len(d.tags))
 	for _, t := range d.tags {
-		if len(filterTags) > 0 && slices.Index(filterTags, t.name) >= 0 {
-			tags = append(tags, t.build(p))
-		} else {
-			tags = append(tags, t.build(p))
-		}
+		// NOTE: 标签不过滤，接口可能引用多个标签。
+		tags = append(tags, t.build(p))
 	}
 
 	return &openAPIRenderer{
