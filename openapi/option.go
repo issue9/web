@@ -46,11 +46,13 @@ func WithOptionsMethod(enable bool) Option {
 //
 // NOTE: [github.com/issue9/webuse/openapi] 下实现了部分简单的模板。
 func WithHTML(tpl, assets, logo string) Option {
-	return func(d *Document) {
-		d.templateName = tpl
-		d.assetsURL = assets
-		d.logo = logo
-	}
+	return func(d *Document) { d.WithHTML(tpl, assets, logo) }
+}
+
+func (d *Document) WithHTML(tpl, assets, logo string) {
+	d.templateName = tpl
+	d.assetsURL = assets
+	d.logo = logo
 }
 
 // WithResponse 向 components/responses 添加对象
@@ -222,10 +224,12 @@ func WithCallback(c ...*Callback) Option {
 //
 // NOTE: 多次调用会相互覆盖
 func WithDescription(summary, desc web.LocaleStringer) Option {
-	return func(d *Document) {
-		d.info.summary = summary
-		d.info.description = desc
-	}
+	return func(d *Document) { d.WithDescription(summary, desc) }
+}
+
+func (d *Document) WithDescription(summary, desc web.LocaleStringer) {
+	d.info.summary = summary
+	d.info.description = desc
 }
 
 // WithLicense 添加版权信息
@@ -284,19 +288,21 @@ func WithExternalDocs(url string, desc web.LocaleStringer) Option {
 
 // WithServer 添加 openapi.servers 变量
 func WithServer(url string, desc web.LocaleStringer, vars ...*ServerVariable) Option {
-	return func(d *Document) {
-		s := &Server{
-			URL:         url,
-			Description: desc,
-			Variables:   vars,
-		}
+	return func(d *Document) { d.WithServer(url, desc, vars...) }
+}
 
-		if err := s.valid(); err != nil {
-			panic(err)
-		}
-
-		d.servers = append(d.servers, s)
+func (d *Document) WithServer(url string, desc web.LocaleStringer, vars ...*ServerVariable) {
+	s := &Server{
+		URL:         url,
+		Description: desc,
+		Variables:   vars,
 	}
+
+	if err := s.valid(); err != nil {
+		panic(err)
+	}
+
+	d.servers = append(d.servers, s)
 }
 
 // WithTag 添加标签
@@ -308,25 +314,28 @@ func WithServer(url string, desc web.LocaleStringer, vars ...*ServerVariable) Op
 //
 // NOTE: 多次调用会依次添加
 func WithTag(name string, desc web.LocaleStringer, extDocURL string, extDocDesc web.LocaleStringer) Option {
-	return func(d *Document) {
-		if d.tags == nil {
-			d.tags = []*tag{}
-		}
+	return func(d *Document) { d.WithTag(name, desc, extDocURL, extDocDesc) }
+}
 
-		t := &tag{
-			name:        name,
-			description: desc,
-		}
-
-		if extDocURL != "" {
-			t.externalDocs = &ExternalDocs{
-				Description: extDocDesc,
-				URL:         extDocURL,
-			}
-		}
-
-		d.tags = append(d.tags, t)
+// WithTag 添加标签
+func (d *Document) WithTag(name string, desc web.LocaleStringer, extDocURL string, extDocDesc web.LocaleStringer) {
+	if d.tags == nil {
+		d.tags = []*tag{}
 	}
+
+	t := &tag{
+		name:        name,
+		description: desc,
+	}
+
+	if extDocURL != "" {
+		t.externalDocs = &ExternalDocs{
+			Description: extDocDesc,
+			URL:         extDocURL,
+		}
+	}
+
+	d.tags = append(d.tags, t)
 }
 
 // WithSecurityScheme 指定验证方案
@@ -337,25 +346,27 @@ func WithTag(name string, desc web.LocaleStringer, extDocURL string, extDocDesc 
 //
 // NOTE: 多次调用会依次添加
 func WithSecurityScheme(s *SecurityScheme, scope ...[]string) Option {
-	return func(d *Document) {
-		if _, found := d.components.securitySchemes[s.ID]; found {
-			panic(fmt.Sprintf("已经存在名称为 %s 的项", s.ID))
+	return func(d *Document) { d.WithSecurityScheme(s, scope...) }
+}
+
+func (d *Document) WithSecurityScheme(s *SecurityScheme, scope ...[]string) {
+	if _, found := d.components.securitySchemes[s.ID]; found {
+		panic(fmt.Sprintf("已经存在名称为 %s 的项", s.ID))
+	}
+
+	if err := s.valid(); err != nil {
+		panic(err)
+	}
+
+	d.components.securitySchemes[s.ID] = s
+
+	if len(scope) > 0 {
+		if d.security == nil {
+			d.security = []*SecurityRequirement{}
 		}
 
-		if err := s.valid(); err != nil {
-			panic(err)
-		}
-
-		d.components.securitySchemes[s.ID] = s
-
-		if len(scope) > 0 {
-			if d.security == nil {
-				d.security = []*SecurityRequirement{}
-			}
-
-			for _, ss := range scope {
-				d.security = append(d.security, &SecurityRequirement{Name: s.ID, Scopes: ss})
-			}
+		for _, ss := range scope {
+			d.security = append(d.security, &SecurityRequirement{Name: s.ID, Scopes: ss})
 		}
 	}
 }
