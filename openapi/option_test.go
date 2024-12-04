@@ -64,7 +64,8 @@ func TestWithResponse(t *testing.T) {
 		WithResponse(&Response{Ref: &Ref{Ref: "500"}}, "500"),
 	)
 	a.NotNil(d).
-		Length(d.components.responses, 2).
+		Length(d.components.responses, 3).
+		Length(d.responses, 2).
 		Equal(d.responses["400"], "400").
 		Equal(d.responses["500"], "500")
 }
@@ -76,7 +77,7 @@ func TestWithProblemResponse(t *testing.T) {
 	d := New(ss, web.Phrase("desc"), WithProblemResponse())
 	a.NotNil(d).
 		Length(d.responses, 2).
-		Length(d.components.responses, 1).
+		Length(d.components.responses, 2).
 		Equal(d.responses["4XX"], "problem").
 		Equal(d.responses["5XX"], "problem")
 }

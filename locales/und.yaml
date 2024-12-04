@@ -43,6 +43,9 @@ messages:
     - key: no available peer
       message:
         msg: no available peer
+    - key: no response
+      message:
+        msg: no response
     - key: not found
       message:
         msg: not found

@@ -87,17 +87,6 @@ func WithProblemResponse() Option {
 	}, "4XX", "5XX")
 }
 
-// WithClassicResponse 提供框架一些常用的 [Response] 对象
-//
-// 包含了 4XX 和 5XX 的错误对象；
-// 包含了一个 ref 为 empty 的空对象；
-func WithClassicResponse() Option {
-	return WithOptions(
-		WithProblemResponse(),
-		WithResponse(&Response{Ref: &Ref{Ref: "empty"}}),
-	)
-}
-
 // WithMediaType 指定所有接口可用的媒体类型
 //
 // t 用于指定支持的媒体类型，必须是 [web.Server] 实例支持的类型。

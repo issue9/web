@@ -90,6 +90,9 @@ const (
 	SecuritySchemeTypeOpenIDConnect = "openIdConnect"
 )
 
+// 文档中表示没有返回对象在 components/responses 中的引用值
+const EmptyResponseRef = "empty-response-ref"
+
 type (
 	// Document openapi 文档
 	Document struct {
@@ -431,6 +434,10 @@ func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
 		s: s,
 	}
 
+	o = append(o, WithResponse(&Response{
+		Ref:         &Ref{Ref: EmptyResponseRef},
+		Description: web.Phrase("no response"),
+	}))
 	for _, opt := range o {
 		opt(doc)
 	}

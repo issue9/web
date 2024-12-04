@@ -160,6 +160,9 @@ body {
 					<tbody>
 					<tr><td>port,omitempty</td><td>port,omitempty</td><td>port,attr,omitempty</td><td>string</td><td><p>端口
 <p>格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
+</td></tr><tr><td>url,omitempty</td><td>url,omitempty</td><td>url,omitempty</td><td>string</td><td><p>[web.Router.URL] 的默认前缀
+<p>如果是非标准端口，应该带上端口号。
+<p>NOTE: 每个路由可使用 [web.WithURLDomain] 重新定义该值。
 </td></tr><tr><td>requestID,omitempty</td><td>requestID,omitempty</td><td>requestID,omitempty</td><td>string</td><td><p>x-request-id 的报头名称
 <p>如果为空，则采用 [header.XRequestID] 作为默认值。
 </td></tr><tr><td>certificates,omitempty</td><td>certificates,omitempty</td><td>certificates&gt;certificate,omitempty</td><td><a href="#certificateConfig">certificateConfig</a></td><td><p>网站的域名证书

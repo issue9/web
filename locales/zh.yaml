@@ -45,6 +45,9 @@ messages:
     - key: no available peer
       message:
         msg: 没有有效的节点
+    - key: no response
+      message:
+        msg: 无返回内容
     - key: not found
       message:
         msg: 未找到

@@ -305,6 +305,16 @@ func (o *Operation) ResponseRef(status, ref string, summary, description web.Loc
 	return o
 }
 
+// Response200 相当于 o.Response("200", resp, nil, nil)
+func (o *Operation) Response200(resp any) *Operation {
+	return o.Response("200", resp, nil, nil)
+}
+
+// ResponseEmpty 相当于 o.ResponseRef(status, EmptyResponseRef, nil, nil)
+func (o *Operation) ResponseEmpty(status string) *Operation {
+	return o.ResponseRef(status, EmptyResponseRef, nil, nil)
+}
+
 // CallbackRef 引用 components 中定义的回调对象
 func (o *Operation) CallbackRef(name, ref string, summary, description web.LocaleStringer) *Operation {
 	if _, found := o.d.components.callbacks[ref]; !found {
