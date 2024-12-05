@@ -53,12 +53,12 @@ type (
 	//
 	// NOTE: 不采用流的方式处理数据的原因是因为：编码过程中可能会出错，
 	// 此时需要修改状态码，流式的因为有内容输出，状态码也已经固定，无法修改。
-	MarshalFunc = func(*Context, any) ([]byte, error)
+	MarshalFunc func(*Context, any) ([]byte, error)
 
 	// UnmarshalFunc 反序列化函数原型
 	//
 	// NOTE: 参数 [io.Reader] 必定不会为空。
-	UnmarshalFunc = func(io.Reader, any) error
+	UnmarshalFunc func(io.Reader, any) error
 )
 
 // NewCache 声明带有统一前缀的缓存接口
