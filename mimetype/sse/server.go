@@ -8,13 +8,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"iter"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/issue9/mux/v9/header"
+	"github.com/puzpuzpuz/xsync/v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/bufpool"
@@ -30,7 +31,7 @@ type (
 		bufCap  int
 		s       web.Server
 		retry   string
-		sources *sync.Map
+		sources *xsync.MapOf[T, *Source]
 	}
 
 	Source struct {
@@ -58,7 +59,7 @@ type (
 	MarshalFunc = func(any) ([]byte, error)
 )
 
-// NewServer 将 [Server] 向 [web.Server.Services] 注册为服务
+// NewServer 将 [Server] 注册为 [web.Server.Services] 服务并返回
 //
 // retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
 // keepAlive 表示心跳包的发送时间间隔，如果小于等于零，表示不会发送；
@@ -69,7 +70,7 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 		bufCap:  bufCap,
 		s:       s,
 		retry:   strconv.FormatInt(retry.Milliseconds(), 10),
-		sources: &sync.Map{},
+		sources: xsync.NewMapOf[T, *Source](),
 	}
 
 	s.Services().AddFunc(desc, srv.serve)
@@ -81,11 +82,11 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 }
 
 func (srv *Server[T]) keepAlive(now time.Time) error {
-	srv.sources.Range(func(_, v any) bool {
-		if s := v.(*Source); s.last.After(now) {
+	srv.sources.Range(func(_ T, v *Source) bool {
+		if v.last.After(now) {
 			b := bufpool.New()
 			b.WriteString(":\n\n")
-			s.buf <- b
+			v.buf <- b
 		}
 		return true
 	})
@@ -95,28 +96,22 @@ func (srv *Server[T]) keepAlive(now time.Time) error {
 func (srv *Server[T]) serve(ctx context.Context) error {
 	<-ctx.Done()
 
-	srv.sources.Range(func(_, v any) bool {
-		v.(*Source).Close() // 此操作最终会从 srv.sources 中删除
+	srv.sources.Range(func(_ T, v *Source) bool {
+		v.Close() // 此操作最终会从 srv.sources 中删除
 		return true
 	})
 	return ctx.Err()
 }
 
 // Len 当前链接的数量
-func (srv *Server[T]) Len() (size int) {
-	srv.sources.Range(func(_, _ any) bool {
-		size++
-		return true
-	})
-	return size
-}
+func (srv *Server[T]) Len() (size int) { return srv.sources.Size() }
 
 // Get 返回指定 sid 的事件源
 //
 // 仅在 [Server.NewSource] 执行之后，此函数才能返回非空值。
 func (srv *Server[T]) Get(sid T) *Source {
 	if v, found := srv.sources.Load(sid); found {
-		return v.(*Source)
+		return v
 	}
 	return nil
 }
@@ -128,7 +123,7 @@ func (srv *Server[T]) Get(sid T) *Source {
 // wait 当前 s 退出时，wait 才会返回，可以在 [web.Handler] 中阻止路由退出导致的 ctx 被回收。
 func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()) {
 	if ss, found := srv.sources.LoadAndDelete(sid); found {
-		ss.(*Source).Close()
+		ss.Close()
 	}
 
 	s = &Source{
@@ -192,12 +187,12 @@ func (s *Source) connect(ctx *web.Context) {
 	}
 }
 
-// Range 依次访问注册的 [Source] 对象
-func (srv *Server[T]) Range(f func(sid T, s *Source)) {
-	srv.sources.Range(func(k, v any) bool {
-		f(k.(T), v.(*Source))
-		return true
-	})
+func (srv *Server[T]) Sources() iter.Seq2[T, *Source] {
+	return func(yield func(T, *Source) bool) {
+		srv.sources.Range(func(key T, value *Source) bool {
+			return yield(key, value)
+		})
+	}
 }
 
 // NewEvent 声明具有统一编码方式的事件派发对象
@@ -214,7 +209,7 @@ func (srv *Server[T]) NewEvent(name string, marshal MarshalFunc) *ServerEvent[T]
 
 // Sent 向所有注册的 [Source] 发送由 f 生成的对象
 func (e *ServerEvent[T]) Sent(f func(sid T, lastEventID string) any) {
-	e.server.Range(func(sid T, s *Source) {
+	for sid, s := range e.server.Sources() {
 		data, err := e.marshal(f(sid, s.LastEventID()))
 		if err != nil {
 			e.server.s.Logs().ERROR().Error(err)
@@ -222,7 +217,7 @@ func (e *ServerEvent[T]) Sent(f func(sid T, lastEventID string) any) {
 		}
 
 		s.Sent(strings.Split(string(data), "\n"), e.name, "")
-	})
+	}
 }
 
 // LastEventID 客户端提交的报头 Last-Event-ID 值

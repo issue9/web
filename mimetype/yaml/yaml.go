@@ -10,11 +10,13 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/issue9/mux/v9/header"
+
 	"github.com/issue9/web"
 )
 
 const (
-	Mimetype        = "application/yaml"
+	Mimetype        = header.YAML
 	ProblemMimetype = "application/problem+yaml"
 )
 
