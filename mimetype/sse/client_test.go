@@ -61,7 +61,7 @@ func TestOnMessage(t *testing.T) {
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)
-	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10)
+	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))
 	a.NotNil(e)
 	s.Routers().New("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
 		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)

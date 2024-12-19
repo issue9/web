@@ -24,7 +24,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.100.2"
+const Version = "0.100.5"
 
 type (
 	Logger   = logs.Logger

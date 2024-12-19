@@ -3,12 +3,6 @@ languages:
     - cmn-Hans
     - zh-CN
 messages:
-    - key: SSE keep alive cron
-      message:
-        msg: SSE 向已链接用户发送的心跳包
-    - key: SSE server
-      message:
-        msg: SSE 服务
     - key: can not be empty
       message:
         msg: 不能为空
@@ -42,6 +36,9 @@ messages:
     - key: invalid value
       message:
         msg: 无效的值
+    - key: keep alive for %s
+      message:
+        msg:  向 %s 的用户发送心跳包
     - key: no available peer
       message:
         msg: 没有有效的节点

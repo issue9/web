@@ -1,12 +1,6 @@
 languages:
     - und
 messages:
-    - key: SSE keep alive cron
-      message:
-        msg: SSE keep alive cron
-    - key: SSE server
-      message:
-        msg: SSE server
     - key: can not be empty
       message:
         msg: can not be empty
@@ -40,6 +34,9 @@ messages:
     - key: invalid value
       message:
         msg: invalid value
+    - key: keep alive for %s
+      message:
+        msg: keep alive for %s
     - key: no available peer
       message:
         msg: no available peer

@@ -58,12 +58,13 @@ type (
 	MarshalFunc = func(any) ([]byte, error)
 )
 
-// NewServer 声明 [Server] 对象
+// NewServer 将 [Server] 向 [web.Server.Services] 注册为服务
 //
 // retry 表示反馈给用户的 retry 字段，可以为零值，表示不需要输出该字段；
 // keepAlive 表示心跳包的发送时间间隔，如果小于等于零，表示不会发送；
 // bufCap 每个 SSE 队列可缓存的数据，超过此数量，调用的 Sent 将被阻塞；
-func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCap int) *Server[T] {
+// desc 对该 SSE 服务的描述；
+func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCap int, desc web.LocaleStringer) *Server[T] {
 	srv := &Server[T]{
 		bufCap:  bufCap,
 		s:       s,
@@ -71,9 +72,9 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 		sources: &sync.Map{},
 	}
 
-	s.Services().AddFunc(web.StringPhrase("SSE server"), srv.serve)
+	s.Services().AddFunc(desc, srv.serve)
 	if keepAlive > 0 {
-		s.Services().AddTicker(web.StringPhrase("SSE keep alive cron"), srv.keepAlive, keepAlive, false, false)
+		s.Services().AddTicker(web.Phrase("keep alive for %s", desc), srv.keepAlive, keepAlive, false, false)
 	}
 
 	return srv
