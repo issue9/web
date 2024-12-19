@@ -40,11 +40,11 @@ func TestServer(t *testing.T) {
 
 		a.Equal(0, e.Len())
 
-		s, wait := e.NewSource(id, ctx)
-		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
+		src, wait := e.NewSource(id, ctx)
+		src.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 
-		event := s.NewEvent("event", sj.Marshal)
+		event := src.NewEvent("event", sj.Marshal)
 		a.NotError(event.Sent(1))
 		time.Sleep(time.Microsecond * 500)
 		a.NotError(event.Sent(&struct{ ID int }{ID: 5}))

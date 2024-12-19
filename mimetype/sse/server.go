@@ -82,14 +82,13 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 }
 
 func (srv *Server[T]) keepAlive(now time.Time) error {
-	srv.sources.Range(func(_ T, v *Source) bool {
+	for _, v := range srv.Sources() {
 		if v.last.After(now) {
 			b := bufpool.New()
 			b.WriteString(":\n\n")
 			v.buf <- b
 		}
-		return true
-	})
+	}
 	return nil
 }
 
@@ -219,6 +218,9 @@ func (e *ServerEvent[T]) Sent(f func(sid T, lastEventID string) any) {
 		s.Sent(strings.Split(string(data), "\n"), e.name, "")
 	}
 }
+
+// Server 关联的 [Server] 对象
+func (e *ServerEvent[T]) Server() *Server[T] { return e.server }
 
 // LastEventID 客户端提交的报头 Last-Event-ID 值
 //
