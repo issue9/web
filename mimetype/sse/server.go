@@ -137,8 +137,11 @@ func (srv *Server[T]) NewSource(sid T, ctx *web.Context) (s *Source, wait func()
 	srv.sources.Store(sid, s)
 
 	go func() {
-		s.connect(ctx)                // 阻塞，出错退出
-		defer close(s.buf)            // 退出之前关闭，防止退出之后，依然有数据源源不断地从 Sent 输入。
+		s.connect(ctx) // 阻塞，出错退出
+		defer func() {
+			close(s.buf) // 退出之前关闭，防止退出之后，依然有数据源源不断地从 Sent 输入。
+			s.buf = nil
+		}()
 		defer srv.sources.Delete(sid) // 如果 connect 返回，说明断开了连接，删除 sources 中的记录。
 	}()
 	return s, s.wait
@@ -231,8 +234,11 @@ func (s *Source) LastEventID() string { return s.lastID }
 // Sent 发送消息
 //
 // id 和 event 都可以为空，表示不需要这些值；
-// 如果不想输出 retry 可以输出一个非整数，按照规则客户端会忽略非整数的值；
-func (s *Source) Sent(data []string, event, id string) { s.buf <- s.bytes(data, event, id) }
+func (s *Source) Sent(data []string, event, id string) {
+	if s.buf != nil {
+		s.buf <- s.bytes(data, event, id)
+	}
+}
 
 func (s *Source) bytes(data []string, event, id string) *bytes.Buffer {
 	if len(data) == 0 {
