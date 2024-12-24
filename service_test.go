@@ -85,7 +85,7 @@ func TestServer_service(t *testing.T) {
 					Equal(srv3.state, Stopped)
 
 	s.Close(0)
-	time.Sleep(500 * time.Millisecond) // 等待主服务设置状态值
+	time.Sleep(1000 * time.Millisecond) // 等待主服务设置状态值
 	a.Equal(srv1.state, Stopped).
 		Equal(sched.state, Stopped).
 		Equal(srv2.state, Stopped)

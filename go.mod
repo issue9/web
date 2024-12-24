@@ -14,7 +14,7 @@ require (
 	github.com/issue9/logs/v7 v7.6.4
 	github.com/issue9/mux/v9 v9.1.2
 	github.com/issue9/query/v3 v3.1.3
-	github.com/issue9/scheduled v0.21.3
+	github.com/issue9/scheduled v0.22.0
 	github.com/issue9/sliceutil v0.17.0
 	github.com/issue9/source v0.11.7
 	github.com/issue9/term/v3 v3.3.2
