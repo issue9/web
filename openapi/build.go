@@ -411,6 +411,7 @@ func (s *Schema) buildRenderer(p *message.Printer) *schemaRenderer {
 		Minimum:              s.Minimum,
 		Maximum:              s.Maximum,
 		Enum:                 slices.Clone(s.Enum),
+		Default:              s.Default,
 	}
 }
 
