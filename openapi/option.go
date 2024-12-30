@@ -331,6 +331,7 @@ func (d *Document) WithTag(name string, desc web.LocaleStringer, extDocURL strin
 //
 // s 需要添加的验证方案；
 // scope 如果指定了该值，那么会以 s.ID 为名称，scope 为值添加至 openapi.security，
+// 如果仅需要添加至 components 中，则需要将 scope 指定为 Nil。
 // scope 如果是多个参数，每个参数应该都是不同的；
 //
 // NOTE: 多次调用会依次添加

@@ -365,6 +365,26 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 	return o
 }
 
+// SecuritySecheme 根据此 s 生成适用于当前接口的认证方式
+//
+// 如果 s.ID 不存在于 [Document.Components.securitySchemes] 将自动添加；
+func (o *Operation) SecuritySecheme(s *SecurityScheme, scope ...string) *Operation {
+	if _, found := o.d.components.securitySchemes[s.ID]; !found {
+		if err := s.valid(); err != nil {
+			panic(err)
+		}
+
+		o.d.components.securitySchemes[s.ID] = s
+	}
+
+	if o.Security == nil {
+		o.Security = []*SecurityRequirement{}
+	}
+	o.Security = append(o.Security, &SecurityRequirement{Name: s.ID, Scopes: scope})
+
+	return o
+}
+
 // API 提供用于声明 openapi 文档的中间件
 //
 // 用户可通过 f 方法提供的参数 o 对接口数据进行更改。
