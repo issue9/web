@@ -110,6 +110,9 @@ messages:
     - key: gen htmldoc
       message:
         msg: 根据结构体中的字段生成 html 文档
+    - key: gen openapi method
+      message:
+        msg: 生成适配 github.com/issue9/web/openapi 的相关方法
     - key: gen sql method
       message:
         msg: 生成适配 database/sql 的相关方法

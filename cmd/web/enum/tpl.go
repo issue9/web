@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ import(
 	{{if .SQL}}"database/sql/driver"{{end}}
 
 	{{if .Filter}}"github.com/issue9/web/filter"{{end}}
+	{{if .OpenAPI}}"github.com/issue9/web/openapi"{{end}}
 	"github.com/issue9/web/locales"
 )
 
@@ -117,6 +118,17 @@ var(
 
 	{{.Name}}SliceFilter = filter.NewBuilder({{.Name}}SliceRule)
 )
+{{end}}
+
+{{if $.OpenAPI}}
+func ({{.Name}}) OpenAPISchema(s *openapi.Schema) {
+	s.Type = openapi.TypeString
+	s.Enum = []any{
+		{{- range .Values -}}
+		{{.Name}}.String(),
+		{{- end -}}
+	}
+}
 {{end}}
 
 //--------------------- end {{.Name}} --------------------

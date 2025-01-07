@@ -192,7 +192,7 @@ type (
 	InternalServer struct {
 		server Server
 
-		name    string
+		id    string
 		version string
 
 		locale   *locale.Locale
@@ -233,7 +233,7 @@ type (
 // 与 新实现的 Location 返回不同值的情况。
 func InternalNewServer(
 	s Server,
-	name, ver string,
+	id, ver string,
 	loc *time.Location,
 	logs *Logs,
 	idgen func() string,
@@ -248,7 +248,7 @@ func InternalNewServer(
 	is := &InternalServer{
 		server: s,
 
-		name:    name,
+		id:    id,
 		version: ver,
 
 		locale:   l,
@@ -287,7 +287,7 @@ func (s *InternalServer) Config() *config.Config { return s.locale.Config() }
 
 func (s *InternalServer) Locale() Locale { return s.locale }
 
-func (s *InternalServer) ID() string { return s.name }
+func (s *InternalServer) ID() string { return s.id }
 
 func (s *InternalServer) Version() string { return s.version }
 

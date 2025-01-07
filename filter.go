@@ -33,7 +33,7 @@ func (ctx *Context) NewFilterContext(exitAtError bool) *FilterContext {
 // New 声明验证的子对象
 //
 // name 为 f 中验证对象的整体名称；
-// f 为验证方法，其原型为 func(fp *FilterContext)
+// f 为验证方法，其原型为 func(c *FilterContext)
 // 往 c 参数写入的信息，其字段名均会以 name 作为前缀写入到当前对象 v 中。
 // c 的各种属性均继承自 v。
 func (v *FilterContext) New(name string, f func(c *FilterContext)) *FilterContext {

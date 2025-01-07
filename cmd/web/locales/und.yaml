@@ -89,6 +89,9 @@ messages:
     - key: gen htmldoc
       message:
         msg: gen htmldoc
+    - key: gen openapi method
+      message:
+        msg: gen openapi method
     - key: gen sql method
       message:
         msg: gen sql method

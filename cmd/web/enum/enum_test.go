@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -70,7 +70,7 @@ func TestCheckType(t *testing.T) {
 func TestDump(t *testing.T) {
 	a := assert.New(t, false)
 
-	err := dump("header", "./testdir/testdir.go", "./testdir/testdata.out", []string{"t1", "t3"}, true, true)
+	err := dump("header", "./testdir/testdir.go", "./testdir/testdata.out", []string{"t1", "t3"}, true, true, true)
 	a.NotError(err)
 }
 

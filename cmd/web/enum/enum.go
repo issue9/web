@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,12 +43,13 @@ const (
 flags:
 {{flags}}`)
 
-	outUsage    = web.StringPhrase("set output file")
-	fhUsage     = web.StringPhrase("set file header")
-	typeUsage   = web.StringPhrase("set the enum type")
-	inputUsage  = web.StringPhrase("set input file")
-	filterUsage = web.StringPhrase("gen filter method")
-	sqlUsage    = web.StringPhrase("gen sql method")
+	outUsage     = web.StringPhrase("set output file")
+	fhUsage      = web.StringPhrase("set file header")
+	typeUsage    = web.StringPhrase("set the enum type")
+	inputUsage   = web.StringPhrase("set input file")
+	filterUsage  = web.StringPhrase("gen filter method")
+	sqlUsage     = web.StringPhrase("gen sql method")
+	openapiUsage = web.StringPhrase("gen openapi method")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
@@ -59,6 +60,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		i := fs.String("i", "", inputUsage.LocaleString(p))
 		filterM := fs.Bool("filter", true, filterUsage.LocaleString(p))
 		sqlM := fs.Bool("sql", true, sqlUsage.LocaleString(p))
+		openapiM := fs.Bool("openapi", true, openapiUsage.LocaleString(p))
 
 		return func(io.Writer) error {
 			if *i == "" {
@@ -75,7 +77,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			for i, name := range ts {
 				ts[i] = strings.TrimSpace(name)
 			}
-			return dump(*h, *i, *o, ts, *filterM, *sqlM)
+			return dump(*h, *i, *o, ts, *filterM, *sqlM, *openapiM)
 		}
 	})
 }
@@ -141,7 +143,7 @@ func checkType(pkg *types.Package, t string) (types.Type, error) {
 	return nil, ErrNotAllowedType
 }
 
-func dump(header, input, output string, ts []string, filter, sql bool) error {
+func dump(header, input, output string, ts []string, filter, sql, openapi bool) error {
 	input = strings.TrimLeft(input, "./\\")
 	fset := token.NewFileSet()
 	imp := importer.ForCompiler(fset, "source", nil)
@@ -161,6 +163,7 @@ func dump(header, input, output string, ts []string, filter, sql bool) error {
 		Enums:      make([]*enum, 0, len(vals)),
 		Filter:     filter,
 		SQL:        sql,
+		OpenAPI:    openapi,
 	}
 
 	for k, v := range vals {

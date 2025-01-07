@@ -28,7 +28,7 @@ require (
 	github.com/issue9/errwrap v0.3.2 // indirect
 	github.com/issue9/mux/v9 v9.1.2 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
-	github.com/issue9/scheduled v0.21.3 // indirect
+	github.com/issue9/scheduled v0.22.0 // indirect
 	github.com/issue9/sliceutil v0.17.0 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
@@ -36,7 +36,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )

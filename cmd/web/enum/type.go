@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ type data struct {
 	Enums      []*enum
 
 	// 过滤方法
-	Filter, SQL bool
+	Filter, SQL, OpenAPI bool
 }
 
 // enum 枚举类型的数据
