@@ -9,6 +9,9 @@ messages:
     - key: cmd.action
       message:
         msg: 运行的指令
+    - key: cmd.daemon
+      message:
+        msg: 将当前程序作为守护进程进行的相关操作
     - key: cmd.show_help
       message:
         msg: 显示帮助信息

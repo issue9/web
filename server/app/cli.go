@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/kardianos/service"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -24,10 +25,11 @@ import (
 const (
 	cmdShowVersion = web.StringPhrase("cmd.show_version")
 	cmdAction      = web.StringPhrase("cmd.action")
+	cmdDaemon      = web.StringPhrase("cmd.daemon")
 	cmdShowHelp    = web.StringPhrase("cmd.show_help")
 )
 
-type CLIOptions[T any] struct {
+type CLIOptions[T comparable] struct {
 	ID      string // 程序 ID
 	Version string // 程序版本
 
@@ -75,6 +77,7 @@ type CLIOptions[T any] struct {
 	//  - cmd.action
 	//  - cmd.show_help
 	//  - can not be empty
+	//  - status %v
 	//
 	// NOTE: 此设置仅影响命令行的本地化，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
@@ -86,9 +89,21 @@ type CLIOptions[T any] struct {
 	//
 	// 默认值为 [flag.ContinueOnError]
 	ErrorHandling flag.ErrorHandling
+
+	// 守护进程的设置项
+	//
+	// 如果该值不为 nil，将会注册 -d 选项，
+	// 通过 -d 可以对服务进行以下操作：
+	//  - install 安装服务
+	//  - uninstall 卸载服务
+	//  - start 启动服务
+	//  - stop 停止服务
+	//  - restart 重启服务
+	//  - status 查看服务状态
+	Daemon *service.Config
 }
 
-type cli[T any] struct {
+type cli[T comparable] struct {
 	App
 	exec func(args []string) error
 }
@@ -99,6 +114,7 @@ type cli[T any] struct {
 //   - -v 显示版本号；
 //   - -h 显示帮助信息；
 //   - -a 执行的指令，该值会传递给 [CLIOptions.NewServer]，由用户根据此值决定初始化方式；
+//   - -d 将当前程序作为守护进程的相关操作；
 //
 // T 表示的是配置文件中的用户自定义数据类型，可参考 [config.Load] 中有关 User 的说明。
 //
@@ -107,7 +123,10 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 	if err := o.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(localeError(err, o.Printer))
 	}
+	return newCLI(o)
+}
 
+func newCLI[T comparable](o *CLIOptions[T]) App {
 	var action string // -a 参数
 
 	initServer := func() (web.Server, error) {
@@ -118,7 +137,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 		return o.NewServer(o.ID, o.Version, opt, user, action)
 	}
 
-	app := New(o.ShutdownTimeout, initServer)
+	app := newApp(o.ShutdownTimeout, initServer)
 
 	return &cli[T]{
 		App: app,
@@ -129,8 +148,24 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 			v := fs.Bool("v", false, cmdShowVersion.LocaleString(o.Printer))
 			h := fs.Bool("h", false, cmdShowHelp.LocaleString(o.Printer))
 			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
+
+			var daemon string
+			if o.Daemon != nil {
+				fs.StringVar(&daemon, "d", "", cmdDaemon.LocaleString(o.Printer))
+			}
+
 			if err = fs.Parse(args[1:]); err != nil {
 				return web.NewStackError(localeError(err, o.Printer))
+			}
+
+			if o.Daemon != nil && daemon != "" { // 在其它选项之前
+				status, err := app.runDaemon(daemon, o.Daemon)
+				if err != nil {
+					return err
+				}
+
+				_, err = fmt.Fprintln(o.Out, o.Printer.Sprintf("status %v", status))
+				return err
 			}
 
 			if *v {
@@ -151,15 +186,6 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 			return localeError(app.Exec(), o.Printer)
 		},
 	}
-}
-
-func localeError(err error, p *message.Printer) error {
-	if err != nil {
-		if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
-			return errors.New(le.LocaleString(p))
-		}
-	}
-	return err
 }
 
 func (cmd *cli[T]) Exec() error { return cmd.exec(os.Args) }
@@ -195,5 +221,20 @@ func (o *CLIOptions[T]) sanitize() error {
 		o.ErrorHandling = flag.ContinueOnError
 	}
 
+	if o.Daemon != nil {
+		if o.Daemon.Name == "" {
+			o.Daemon.Name = o.ID
+		}
+	}
+
 	return nil
+}
+
+func localeError(err error, p *message.Printer) error {
+	if err != nil {
+		if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+			return errors.New(le.LocaleString(p))
+		}
+	}
+	return err
 }

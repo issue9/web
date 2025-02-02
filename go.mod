@@ -20,8 +20,9 @@ require (
 	github.com/issue9/term/v3 v3.3.2
 	github.com/issue9/unique/v2 v2.1.0
 	github.com/jellydator/ttlcache/v3 v3.3.0
+	github.com/kardianos/service v1.2.2
 	github.com/klauspost/compress v1.17.11
-	github.com/puzpuzpuz/xsync/v3 v3.4.0
+	github.com/puzpuzpuz/xsync/v3 v3.5.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	golang.org/x/crypto v0.32.0
 	golang.org/x/text v0.21.0

@@ -30,7 +30,7 @@ type (
 	Server interface {
 		context.Context
 
-		// ID 应用的 ID 标记
+		// ID 应用的 ID
 		ID() string
 
 		// Version 应用的版本
@@ -192,7 +192,7 @@ type (
 	InternalServer struct {
 		server Server
 
-		id    string
+		id      string
 		version string
 
 		locale   *locale.Locale
@@ -248,7 +248,7 @@ func InternalNewServer(
 	is := &InternalServer{
 		server: s,
 
-		id:    id,
+		id:      id,
 		version: ver,
 
 		locale:   l,

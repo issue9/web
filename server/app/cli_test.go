@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 )
+
+var _ App = &cli[int]{}
 
 func TestCLI(t *testing.T) {
 	a := assert.New(t, false)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/issue9/web"
+	"github.com/kardianos/service"
 )
 
 // App [web.Server] 的管理接口
@@ -25,6 +26,7 @@ type App interface {
 	Restart()
 }
 
+// 同时实现了 [App] 和 [service.Interface] 两个接口
 type app struct {
 	// 构建新服务的方法
 	//
@@ -47,6 +49,10 @@ type app struct {
 // shutdown 每次关闭服务操作的等待时间；
 // newServer 构建新服务的方法。
 func New(shutdown time.Duration, newServer func() (web.Server, error)) App {
+	return newApp(shutdown, newServer)
+}
+
+func newApp(shutdown time.Duration, newServer func() (web.Server, error)) *app {
 	if newServer == nil {
 		panic("newServer 不能为空")
 	}
@@ -108,3 +114,24 @@ func (app *app) Restart() {
 	old.Close(app.shutdownTimeout) // 新服务声明成功，尝试关闭旧服务。
 	<-app.exit                     // 等待 server.Serve 退出
 }
+
+// 执行守护进程功能
+//
+// action 可以是 [service.ControlAction] 和 'status' 中的任意元素；
+func (app *app) runDaemon(action string, conf *service.Config) (service.Status, error) {
+	d, err := service.New(app, conf)
+	if err != nil {
+		return service.StatusUnknown, err
+	}
+
+	if action != "status" {
+		if err := service.Control(d, action); err != nil {
+			return service.StatusUnknown, err
+		}
+	}
+	return d.Status()
+}
+
+// 只使用了 [service.Control] 的功能，不需要实现 [service.Interface] 的具体功能。
+func (app *app) Start(s service.Service) error { return nil }
+func (app *app) Stop(s service.Service) error  { return nil }

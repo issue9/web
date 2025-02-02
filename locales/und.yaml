@@ -7,6 +7,9 @@ messages:
     - key: cmd.action
       message:
         msg: cmd.action
+    - key: cmd.daemon
+      message:
+        msg: cmd.daemon
     - key: cmd.show_help
       message:
         msg: cmd.show_help
