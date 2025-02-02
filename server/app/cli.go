@@ -27,6 +27,7 @@ const (
 	cmdAction      = web.StringPhrase("cmd.action")
 	cmdDaemon      = web.StringPhrase("cmd.daemon")
 	cmdShowHelp    = web.StringPhrase("cmd.show_help")
+	cmdTestSyntax  = web.StringPhrase("cmd.test_syntax")
 )
 
 type CLIOptions[T comparable] struct {
@@ -77,7 +78,9 @@ type CLIOptions[T comparable] struct {
 	//  - cmd.action
 	//  - cmd.show_help
 	//  - can not be empty
+	//  - cmd.test_syntax
 	//  - status %v
+	//  - syntax OK
 	//
 	// NOTE: 此设置仅影响命令行的本地化，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
@@ -115,6 +118,7 @@ type cli[T comparable] struct {
 //   - -h 显示帮助信息；
 //   - -a 执行的指令，该值会传递给 [CLIOptions.NewServer]，由用户根据此值决定初始化方式；
 //   - -d 将当前程序作为守护进程的相关操作；
+//   - -t 测试配置文件的语法是否正确；
 //
 // T 表示的是配置文件中的用户自定义数据类型，可参考 [config.Load] 中有关 User 的说明。
 //
@@ -123,10 +127,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 	if err := o.sanitize(); err != nil { // 字段值有问题，直接 panic。
 		panic(localeError(err, o.Printer))
 	}
-	return newCLI(o)
-}
 
-func newCLI[T comparable](o *CLIOptions[T]) App {
 	var action string // -a 参数
 
 	initServer := func() (web.Server, error) {
@@ -147,9 +148,10 @@ func newCLI[T comparable](o *CLIOptions[T]) App {
 
 			v := fs.Bool("v", false, cmdShowVersion.LocaleString(o.Printer))
 			h := fs.Bool("h", false, cmdShowHelp.LocaleString(o.Printer))
+			t := fs.Bool("t", false, cmdTestSyntax.LocaleString(o.Printer))
 			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
 
-			var daemon string
+			var daemon string // -d 选项
 			if o.Daemon != nil {
 				fs.StringVar(&daemon, "d", "", cmdDaemon.LocaleString(o.Printer))
 			}
@@ -175,6 +177,23 @@ func newCLI[T comparable](o *CLIOptions[T]) App {
 
 			if *h {
 				fs.PrintDefaults()
+				return nil
+			}
+
+			if *t {
+				_, _, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
+				if err != nil {
+					var msg string
+					if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+						msg = le.LocaleString(o.Printer)
+					} else {
+						msg = err.Error()
+					}
+
+					fmt.Fprintln(o.Out, msg)
+				} else {
+					fmt.Fprintln(o.Out, web.Phrase("syntax OK").LocaleString(o.Printer))
+				}
 				return nil
 			}
 

@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/issue9/web"
 	"github.com/kardianos/service"
+
+	"github.com/issue9/web"
 )
 
 // App [web.Server] 的管理接口
@@ -26,7 +27,6 @@ type App interface {
 	Restart()
 }
 
-// 同时实现了 [App] 和 [service.Interface] 两个接口
 type app struct {
 	// 构建新服务的方法
 	//
@@ -115,7 +115,7 @@ func (app *app) Restart() {
 	<-app.exit                     // 等待 server.Serve 退出
 }
 
-// 执行守护进程功能
+// 执行守护进程功能并返回当前的状态
 //
 // action 可以是 [service.ControlAction] 和 'status' 中的任意元素；
 func (app *app) runDaemon(action string, conf *service.Config) (service.Status, error) {

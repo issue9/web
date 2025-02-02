@@ -42,6 +42,10 @@ func TestCLI(t *testing.T) {
 
 	buf.Reset()
 	a.NotError(ocli.exec([]string{"app", "-a=install"})).Equal(action, "install")
+
+	buf.Reset()
+	msg := web.Phrase("syntax OK").LocaleString(o.Printer) + "\n"
+	a.NotError(ocli.exec([]string{"app", "-t"})).Equal(buf.String(), msg)
 }
 
 func TestCLI_sanitize(t *testing.T) {

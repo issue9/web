@@ -16,6 +16,9 @@ messages:
     - key: cmd.show_version
       message:
         msg: cmd.show_version
+    - key: cmd.test_syntax
+      message:
+        msg: cmd.test_syntax
     - key: conflict with certificates
       message:
         msg: conflict with certificates
@@ -349,6 +352,9 @@ messages:
     - key: should great than %v
       message:
         msg: should great than %v
+    - key: syntax OK
+      message:
+        msg: syntax OK
     - key: the client miss content-type header
       message:
         msg: the client miss content-type header
