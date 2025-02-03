@@ -9,12 +9,25 @@ messages:
     - key: cmd.action
       message:
         msg: 运行的指令
+    - key: cmd.daemon
+      message:
+        msg: >
+          将当前程序作为守护进程进行的相关操作，包含以下几种取值：
+           - install 安装为守护进程；
+           - uninstall 卸载；
+           - start 启动服务；
+           - stop 停止服务；
+           - restart 重启服务；
+           - status 查看守护进程的当前状态；
     - key: cmd.show_help
       message:
         msg: 显示帮助信息
     - key: cmd.show_version
       message:
         msg: 显示版本号
+    - key: cmd.test_syntax
+      message:
+        msg: 测试配置文件的语法是否正确
     - key: conflict with certificates
       message:
         msg: 与 certificates 字段存在冲突
@@ -364,6 +377,9 @@ messages:
     - key: should great than %v
       message:
         msg: 必须大于 %v
+    - key: syntax OK
+      message:
+        msg: 语法正确
     - key: the client miss content-type header
       message:
         msg: 客户端未指定 Content-Type 报头

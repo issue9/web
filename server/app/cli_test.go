@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,8 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 )
+
+var _ App = &cli[int]{}
 
 func TestCLI(t *testing.T) {
 	a := assert.New(t, false)
@@ -40,6 +42,10 @@ func TestCLI(t *testing.T) {
 
 	buf.Reset()
 	a.NotError(ocli.exec([]string{"app", "-a=install"})).Equal(action, "install")
+
+	buf.Reset()
+	msg := web.Phrase("syntax OK").LocaleString(o.Printer) + "\n"
+	a.NotError(ocli.exec([]string{"app", "-t"})).Equal(buf.String(), msg)
 }
 
 func TestCLI_sanitize(t *testing.T) {
