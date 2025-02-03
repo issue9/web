@@ -129,6 +129,9 @@ func (app *app) runDaemon(action string, conf *service.Config) (service.Status, 
 			return service.StatusUnknown, err
 		}
 	}
+	if action == "uninstall" { // 已卸载，无法获取状态。
+		return service.StatusUnknown, nil
+	}
 	return d.Status()
 }
 
