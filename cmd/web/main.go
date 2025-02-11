@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/build"
 	"github.com/issue9/web/cmd/web/enum"
 	"github.com/issue9/web/cmd/web/htmldoc"
 	"github.com/issue9/web/cmd/web/locale"
@@ -43,17 +42,6 @@ visit https://github.com/issue9/web for more info.
 `)
 )
 
-var (
-	version = web.Version
-	commits = ""
-)
-
-func init() {
-	if commits != "" {
-		version += "+" + commits
-	}
-}
-
 func main() {
 	p, err := locales.NewPrinter(localeutil.DetectUserLanguage())
 	if err != nil {
@@ -65,7 +53,7 @@ func main() {
 		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
 		return func(w io.Writer) error {
 			if *v {
-				_, err1 := fmt.Fprintf(w, "web: %s\n", version)
+				_, err1 := fmt.Fprintf(w, "web: %s\n", web.GetAppVersion(web.Version))
 				_, err2 := fmt.Fprintf(w, "build with: %s\n", runtime.Version())
 				return errors.Join(err1, err2)
 			}
@@ -77,7 +65,6 @@ func main() {
 	}, buildNotFound(p))
 
 	htmldoc.Init(opt, p)
-	build.Init(opt, p)
 	locale.Init(opt, p)
 	update.Init(opt, p)
 	watch.Init(opt, p)

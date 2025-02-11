@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ package web
 
 import (
 	"io"
+	"runtime/debug"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
@@ -24,7 +25,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.101.0"
+const Version = "0.102.0"
 
 type (
 	Logger   = logs.Logger
@@ -60,6 +61,18 @@ type (
 	// NOTE: 参数 [io.Reader] 必定不会为空。
 	UnmarshalFunc func(io.Reader, any) error
 )
+
+// GetAppVersion 获得应用的版本号
+//
+// 如果当前应用没有指定版本号，则采用 v 作为返回值。
+//
+// NOTE: 只有 go1.24 及之后且 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
+func GetAppVersion(v string) string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Version
+	}
+	return v
+}
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }

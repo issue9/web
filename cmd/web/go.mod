@@ -9,7 +9,6 @@ require (
 	github.com/issue9/localeutil v0.29.1
 	github.com/issue9/logs/v7 v7.6.4
 	github.com/issue9/source v0.11.7
-	github.com/issue9/term/v3 v3.3.2
 	github.com/issue9/web v0.99.3
 	golang.org/x/text v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -30,6 +29,7 @@ require (
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/scheduled v0.22.0 // indirect
 	github.com/issue9/sliceutil v0.17.0 // indirect
+	github.com/issue9/term/v3 v3.3.2 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
