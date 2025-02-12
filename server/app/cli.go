@@ -31,8 +31,12 @@ const (
 )
 
 type CLIOptions[T comparable] struct {
-	ID      string // 程序 ID
-	Version string // 程序版本
+	ID string // 程序 ID
+
+	// 程序版本
+	//
+	// 如果为空，则会尝试调用 [web.GetAppVersion] 获得相关的值。
+	Version string
 
 	// 初始化 [web.Server]
 	//
@@ -222,7 +226,10 @@ func (o *CLIOptions[T]) sanitize() error {
 		return web.NewFieldError("ID", locales.ErrCanNotBeEmpty())
 	}
 	if o.Version == "" {
-		return web.NewFieldError("Version", locales.ErrCanNotBeEmpty())
+		o.Version = web.GetAppVersion("")
+		if o.Version == "" {
+			return web.NewFieldError("Version", locales.ErrCanNotBeEmpty())
+		}
 	}
 	if o.NewServer == nil {
 		return web.NewFieldError("NewServer", locales.ErrCanNotBeEmpty())

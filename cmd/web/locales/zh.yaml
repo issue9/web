@@ -3,9 +3,6 @@ languages:
     - cmn-Hans
     - zh-CN
 messages:
-    - key: '%s when exec %s, use the preset value %s'
-      message:
-        msg: 当执行 %[2]s 时发生了错误：%[1]s。将采用默认值 %[3]s 代替。
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -44,26 +41,6 @@ messages:
 
             选项：
             {{flags}}
-    - key: build go source
-      message:
-        msg: 编译 Go 代码
-    - key: build usage
-      message:
-        msg: |
-            将参数中的占位符替换成相应的值，然后调用 `go build` 进行编译。
-            在没有占位符的情况下，和直接调用 `go build` 是相同的。比如：
-
-            web build -ldflags="-X main.version={{version}}" ./
-
-            相当于调用
-
-            go build -ldflags="-X main.version=1.0.0" ./
-
-            目前支持以下占位符：
-
-            {{version}} 表示最新的 git tag 值；
-            {{full-commit}} 最新的 commit hash 值；
-            {{commit}} 最新的 commit hash 值；
     - key: command %s not found
       message:
         msg: |

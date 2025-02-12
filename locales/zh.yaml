@@ -11,14 +11,14 @@ messages:
         msg: 运行的指令
     - key: cmd.daemon
       message:
-        msg: >
-          将当前程序作为守护进程进行的相关操作，包含以下几种取值：
-           - install 安装为守护进程；
-           - uninstall 卸载；
-           - start 启动服务；
-           - stop 停止服务；
-           - restart 重启服务；
-           - status 查看守护进程的当前状态；
+        msg: |
+            将当前程序作为守护进程进行的相关操作，包含以下几种取值：
+             - install 安装为守护进程；
+             - uninstall 卸载；
+             - start 启动服务；
+             - stop 停止服务；
+             - restart 重启服务；
+             - status 查看守护进程的当前状态；
     - key: cmd.show_help
       message:
         msg: 显示帮助信息

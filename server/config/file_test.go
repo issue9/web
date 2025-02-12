@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,6 @@ package config
 
 import (
 	"io/fs"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -41,7 +40,7 @@ func TestLoadConfigOf(t *testing.T) {
 	a.Error(err).Nil(conf)
 	err2, ok := err.(*config.FieldError)
 	a.True(ok).NotNil(err2)
-	a.Equal(err2.Path, filepath.Join("testdata", "invalid-web.xml")).
+	a.Equal(err2.Path, "invalid-web.xml").
 		Equal(err2.Field, "http.acme.domains")
 
 	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")

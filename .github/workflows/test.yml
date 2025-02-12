@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        go: ["1.23.x", "1.24.x"]
+        go: ["1.24.x"]
 
     steps:
       - name: Set git to use LF
@@ -35,7 +35,7 @@ jobs:
         run: go test $(go list ./... | grep -v cache/caches) -v -coverprofile='coverage.txt' -covermode=atomic -p=1 -parallel=1
 
       - name: Upload Coverage report
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.txt
+          files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}

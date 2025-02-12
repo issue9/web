@@ -68,6 +68,6 @@ func TestCLI_sanitize(t *testing.T) {
 	a.NotError(cmd.sanitize()).Equal(cmd.Out, os.Stdout)
 
 	a.PanicString(func() {
-		NewCLI(&CLIOptions[empty]{ID: "abc"})
-	}, "Version")
+		NewCLI(&CLIOptions[empty]{})
+	}, "ID")
 }

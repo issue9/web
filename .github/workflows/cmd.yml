@@ -2,7 +2,6 @@ name: Cmd
 on: [push, pull_request]
 
 jobs:
-
   test:
     name: cmd
     runs-on: ${{ matrix.os }}
@@ -10,10 +9,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        go: ['1.23.x', '1.24.x']
+        go: ["1.24.x"]
 
     steps:
-
       - name: Set git to use LF
         run: |
           git config --global core.autocrlf false

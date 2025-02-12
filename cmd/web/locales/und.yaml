@@ -1,9 +1,6 @@
 languages:
     - und
 messages:
-    - key: '%s when exec %s, use the preset value %s'
-      message:
-        msg: '%s when exec %s, use the preset value %s'
     - key: |
         Auxiliary tool for github.com/issue9/web
 
@@ -42,12 +39,6 @@ messages:
 
             flags:
             {{flags}}
-    - key: build go source
-      message:
-        msg: build go source
-    - key: build usage
-      message:
-        msg: build usage
     - key: command %s not found
       message:
         msg: command %s not found
