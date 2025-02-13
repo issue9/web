@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,12 +16,16 @@ import (
 	"github.com/issue9/web"
 )
 
+// Document 关联的文档对象
+func (o *Operation) Document() *Document { return o.d }
+
 // Tag 关联指定的标签
 func (o *Operation) Tag(tag ...string) *Operation {
 	o.Tags = append(o.Tags, tag...)
 	return o
 }
 
+// Desc 指定 API 的概要和详细信息
 func (o *Operation) Desc(summary, description web.LocaleStringer) *Operation {
 	o.Summary = summary
 	o.Description = description
@@ -86,7 +90,7 @@ func (o *Operation) PathID(name string, desc web.LocaleStringer) *Operation {
 }
 
 func (o *Operation) PathRef(ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.paths[ref]; !found {
+	if _, found := o.Document().components.paths[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -104,7 +108,7 @@ func (o *Operation) Query(name, typ string, desc web.LocaleStringer, f func(*Par
 }
 
 func (o *Operation) QueryRef(ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.queries[ref]; !found {
+	if _, found := o.Document().components.queries[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -200,7 +204,7 @@ func (o *Operation) Header(name, typ string, desc web.LocaleStringer, f func(*Pa
 }
 
 func (o *Operation) HeaderRef(ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.headers[ref]; !found {
+	if _, found := o.Document().components.headers[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -224,7 +228,7 @@ func (o *Operation) Cookie(name, typ string, desc web.LocaleStringer, f func(*Pa
 }
 
 func (o *Operation) CookieRef(ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.cookies[ref]; !found {
+	if _, found := o.Document().components.cookies[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -242,7 +246,7 @@ func (o *Operation) CookieRef(ref string, summary, description web.LocaleStringe
 func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f func(*Request)) *Operation {
 	req := &Request{
 		Ignorable:   ignorable,
-		Body:        o.d.newSchema(body),
+		Body:        o.Document().newSchema(body),
 		Description: desc,
 	}
 	if f != nil {
@@ -258,7 +262,7 @@ func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f fu
 }
 
 func (o *Operation) BodyRef(ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.requests[ref]; !found {
+	if _, found := o.Document().components.requests[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -277,7 +281,7 @@ func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f
 	r := &Response{Description: desc}
 
 	if resp != nil {
-		r.Body = o.d.newSchema(resp)
+		r.Body = o.Document().newSchema(resp)
 	}
 
 	if f != nil {
@@ -293,7 +297,7 @@ func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f
 }
 
 func (o *Operation) ResponseRef(status, ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.responses[ref]; !found {
+	if _, found := o.Document().components.responses[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -317,7 +321,7 @@ func (o *Operation) ResponseEmpty(status string) *Operation {
 
 // CallbackRef 引用 components 中定义的回调对象
 func (o *Operation) CallbackRef(name, ref string, summary, description web.LocaleStringer) *Operation {
-	if _, found := o.d.components.callbacks[ref]; !found {
+	if _, found := o.Document().components.callbacks[ref]; !found {
 		panic(fmt.Sprintf("未找到引用 %s", ref))
 	}
 
@@ -355,7 +359,7 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 
 	opt, found := item.Operations[method]
 	if !found {
-		opt = &Operation{d: o.d}
+		opt = &Operation{d: o.Document()}
 	}
 
 	if f != nil {
@@ -369,12 +373,12 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 //
 // 如果 s.ID 不存在于 [Document.Components.securitySchemes] 将自动添加；
 func (o *Operation) SecuritySecheme(s *SecurityScheme, scope ...string) *Operation {
-	if _, found := o.d.components.securitySchemes[s.ID]; !found {
+	if _, found := o.Document().components.securitySchemes[s.ID]; !found {
 		if err := s.valid(); err != nil {
 			panic(err)
 		}
 
-		o.d.components.securitySchemes[s.ID] = s
+		o.Document().components.securitySchemes[s.ID] = s
 	}
 
 	if o.Security == nil {

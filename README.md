@@ -77,7 +77,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 <https://github.com/issue9/web/releases> 提供了一个简易的辅助工具。可以帮助用户完成以下工作：
 
 - 提取和更新本地化信息；
-- 生成 openapi 文档。需要在注释中写一定的注解；
+- 生成 openapi 文档；
 - 热编译项目；
 
 macOS 和 linux 用户可以直接使用 brew 进行安装：

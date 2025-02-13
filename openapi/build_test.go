@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,6 +25,7 @@ func TestDocument_build(t *testing.T) {
 		Equal(r.Info.Title, "简体")
 
 	d.addOperation("GET", "/users/{id}", "", &Operation{
+		d:         d,
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
@@ -35,6 +36,7 @@ func TestDocument_build(t *testing.T) {
 		Equal(r.Paths.Len(), 1)
 
 	d.addOperation("POST", "/users/{id}", "", &Operation{
+		d:         d,
 		Tags:      []string{"admin"},
 		Paths:     []*Parameter{{Name: "id", Description: web.Phrase("desc")}},
 		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},

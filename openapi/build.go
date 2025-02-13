@@ -5,6 +5,7 @@
 package openapi
 
 import (
+	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -132,6 +133,16 @@ func (e *ExternalDocs) build(p *message.Printer) *externalDocsRenderer {
 func (o *Operation) build(p *message.Printer, d *Document) *operationRenderer {
 	if o == nil {
 		return nil
+	}
+
+	if items := o.Document().parameterizedDesc[o.ID]; items != nil {
+		if o.Description == nil {
+			panic(fmt.Sprintf("接口 %s 未指定 Description 内容", o.ID))
+		}
+		if md, ok := o.Description.(*parameterizedDescription); ok {
+			md.params = items
+		}
+		delete(o.Document().parameterizedDesc, o.ID)
 	}
 
 	parameters := make([]*renderer[parameterRenderer], 0, len(o.Paths)+len(o.Cookies)+len(o.Headers)+len(o.Queries))
