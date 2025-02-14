@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/web"
 )
 
-func TestParameterizedDescription(t *testing.T) {
+func TestParameterizedDoc(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
 	p := s.Locale().NewPrinter(language.SimplifiedChinese)
@@ -33,7 +33,7 @@ func TestParameterizedDescription(t *testing.T) {
 			Length(d.parameterizedDesc, 1)
 	})
 
-	t.Run("not parameterizedDescription", func(*testing.T) {
+	t.Run("not parameterizedDoc", func(*testing.T) {
 		d := New(s, web.Phrase("title"))
 
 		d.addOperation("GET", "/users/2", "", &Operation{
@@ -49,7 +49,7 @@ func TestParameterizedDescription(t *testing.T) {
 		}, "向 [id2] 注册的参数并未使用")
 	})
 
-	t.Run("parameterizedDescription", func(*testing.T) {
+	t.Run("parameterizedDoc", func(*testing.T) {
 		d := New(s, web.Phrase("title"))
 
 		d.addOperation("GET", "/users/3", "", &Operation{

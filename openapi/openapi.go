@@ -4,7 +4,9 @@
 
 // Package openapi 采用 [web.Middleware] 中间件的形式生成 [openapi] 文档
 //
-// 结构体标签
+// # struct tag
+//
+// 定义了以下几种标签：
 //   - [CommentTag] 用于可翻译的注释，该内容会被翻译后保存在 [Schema.Description] 中；
 //   - openapi 对 openapi 类型的自定义，格式为 type,format，可以自定义字段的类型和格式；
 //
