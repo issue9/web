@@ -31,6 +31,7 @@ type schemaObject1 struct {
 	S1 State  `openapi:"integer" json:"s1"`
 	S2 *State `comment:"s2" json:"s2" xml:"S2"`
 	S3 State
+	S4 []State `json:"s4" xml:"s44>s4"`
 
 	unExported bool
 }
@@ -132,7 +133,7 @@ func TestDocument_newSchema(t *testing.T) {
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
 		Nil(s.Default).
-		Length(s.Properties, 10).
+		Length(s.Properties, 11).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).
@@ -147,12 +148,16 @@ func TestDocument_newSchema(t *testing.T) {
 		Equal(s.Properties["s2"].Description, web.Phrase("s2")). // 注释可正确获取
 		Equal(s.Properties["S3"].Type, TypeString).
 		Nil(s.Properties["S3"].XML).
-		Equal(s.Properties["S3"].Enum, []any{"1", "2"})
+		Equal(s.Properties["S3"].Enum, []any{"1", "2"}).
+		Equal(s.Properties["s4"].Type, TypeArray).
+		Equal(s.Properties["s4"].XML.Name, "s44").
+		True(s.Properties["s4"].XML.Wrapped).
+		Equal(s.Properties["s4"].Items.XML.Name, "s4")
 
 	s = d.newSchema(schemaObject2{})
 	a.Equal(s.Type, TypeObject).
 		NotZero(s.Ref.Ref).
-		Length(s.Properties, 10).
+		Length(s.Properties, 11).
 		Equal(s.Properties["id"].Type, TypeInteger).
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).

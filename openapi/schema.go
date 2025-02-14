@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -198,6 +198,14 @@ func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, s
 	case reflect.Array, reflect.Slice:
 		s.Type = TypeArray
 		s.Items = &Schema{}
+
+		if s.XML != nil {
+			if index := strings.IndexByte(s.XML.Name, '>'); index > 0 {
+				s.Items.XML = &XML{Name: s.XML.Name[index+1:]}
+				s.XML.Name = s.XML.Name[:index]
+				s.XML.Wrapped = true
+			}
+		}
 		schemaFromType(d, t.Elem(), false, rootName, s.Items)
 	case reflect.Map:
 		s.Type = TypeObject
