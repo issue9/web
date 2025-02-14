@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"iter"
 	"slices"
 	"sync"
 
@@ -239,16 +240,14 @@ func (ps *Problems) Exists(id string) bool {
 	return slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }) > -1
 }
 
-// Visit 遍历错误代码
-//
-// visit 签名：
-//
-//	func(status int, p *LocaleProblem)
-//
-// status 该错误代码反馈给用户的 HTTP 状态码；
-func (ps *Problems) Visit(visit func(int, *LocaleProblem)) {
-	for _, s := range ps.problems {
-		visit(s.status, s)
+// Problems 所有已注册的错误代码
+func (ps *Problems) Problems() iter.Seq2[int, *LocaleProblem] {
+	return func(yield func(int, *LocaleProblem) bool) {
+		for _, s := range ps.problems {
+			if !yield(s.status, s) {
+				break
+			}
+		}
 	}
 }
 

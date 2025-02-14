@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/issue9/errwrap"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
 
@@ -92,42 +91,4 @@ func getPathParams(path string) []string {
 	}
 
 	return ret
-}
-
-// MarkdownProblems 将 problems 的内容生成为 markdown
-//
-// titleLevel 标题的级别，0-6：
-// 如果取值为 0，表示以列表的形式输出，并忽略 detail 字段的内容。
-// 1-6 表示输出 detail 内容，并且将 type 和 title 作为标题；
-func MarkdownProblems(s web.Server, titleLevel int) web.LocaleStringer {
-	if titleLevel != 0 {
-		return markdownProblemsWithDetail(s, titleLevel)
-	} else {
-		return markdownProblemsWithoutDetail(s)
-	}
-}
-
-func markdownProblemsWithoutDetail(s web.Server) web.LocaleStringer {
-	buf := &errwrap.Buffer{}
-	args := make([]any, 0, 30)
-	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
-		buf.Printf("- %s", lp.Type()).WString(": %s\n\n")
-		args = append(args, lp.Title)
-	})
-	return web.Phrase(buf.String(), args...)
-}
-
-func markdownProblemsWithDetail(s web.Server, titleLevel int) web.LocaleStringer {
-	buf := &errwrap.Buffer{}
-	ss := strings.Repeat("#", titleLevel)
-
-	args := make([]any, 0, 30)
-	s.Problems().Visit(func(status int, lp *web.LocaleProblem) {
-		buf.Printf("%s %s ", ss, lp.Type()).
-			WString("%s\n\n").
-			WString("%s\n\n")
-		args = append(args, lp.Title, lp.Detail)
-	})
-
-	return web.Phrase(buf.String(), args...)
 }

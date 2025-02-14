@@ -39,11 +39,9 @@ package openapi
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
-	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
 )
@@ -115,7 +113,7 @@ type (
 		cookies           []string          // components 中的键名
 		enableOptions     bool
 		enableHead        bool
-		parameterizedDesc map[string][]string
+		parameterizedDesc map[string][]web.LocaleStringer // 键名对应 Operation.ID，键值对应 Operation.Description 的 params。
 
 		// 与 HTML 模板相关的定义
 
@@ -416,12 +414,6 @@ type (
 		Headers []*Parameter
 		Cookies []*Parameter
 	}
-
-	parameterizedDescription struct {
-		format string
-		f      func([]string) string
-		params []string
-	}
 )
 
 // New 声明 [Document] 对象
@@ -437,7 +429,7 @@ func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
 
 		mediaTypes:        make(map[string]string, 5),
 		responses:         make(map[string]string, 5),
-		parameterizedDesc: make(map[string][]string, 5),
+		parameterizedDesc: make(map[string][]web.LocaleStringer, 5),
 
 		last: time.Now(),
 
@@ -518,31 +510,4 @@ func (c *contactRender) clone() *contactRender {
 		Email: c.Email,
 		URL:   c.URL,
 	}
-}
-
-// ParameterizedDescription 声明带有参数的描述信息
-//
-// fromat 描述信息的内容格式，应该带有一个 %s 占位符，用于插入 params 参数；
-// f 用于将 params 转换为字符串，然后替换 format 中的 %s 占位符，如果为空，会自动将每个元素转换单独的一行；
-//
-// NOTE: 该对象只作用于 [Operation.Description] 字段，
-// 之后可通 [Document.AppendDescriptionParameter] 添加参数，以达到向其它 API 添加内容的目的。
-func ParameterizedDescription(format string, f func([]string) string, params ...string) web.LocaleStringer {
-	if f == nil {
-		f = func(s []string) string { return strings.Join(s, "\n") }
-	}
-
-	return &parameterizedDescription{
-		format: format,
-		f:      f,
-		params: params,
-	}
-}
-
-func (d *parameterizedDescription) LocaleString(p *message.Printer) string {
-	return p.Sprintf(d.format, d.f(d.params))
-}
-
-func (d *Document) AppendDescriptionParameter(operationID string, item ...string) {
-	d.parameterizedDesc[operationID] = append(d.parameterizedDesc[operationID], item...)
 }
