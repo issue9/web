@@ -6,9 +6,11 @@ package openapi
 
 import (
 	"bytes"
+	"reflect"
 	"strings"
 
 	"github.com/issue9/errwrap"
+	"github.com/issue9/source/codegen"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -26,7 +28,7 @@ type parameterizedDoc struct {
 // 如果已经存在相同的值，则是到该对象并插入 params，否则是声明新的对象。
 func (d *Document) ParameterizedDoc(format string, params ...web.LocaleStringer) web.LocaleStringer {
 	if !strings.Contains(format, "%s") {
-		panic("参数 format 必须包含 %s")
+		panic("参数 format 必须包含 '%s'")
 	}
 
 	if p, found := d.parameterizedDocs[format]; found {
@@ -86,4 +88,11 @@ func markdownProblemsWithDetail(s web.Server, titleLevel int) web.LocaleStringer
 	}
 
 	return web.Phrase(buf.String(), args...)
+}
+
+// MarkdownGoObject 将 Go 对象转换为 markdown 表示方式
+//
+// m 在此表中的类型会直接转换为键值表示的类型，而不是真实的类型。
+func MarkdownGoObject(v any, m map[reflect.Type]string) string {
+	return "```go\n" + codegen.GoDefine(reflect.TypeOf(v), m, false) + "\n```\n"
 }

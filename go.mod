@@ -16,7 +16,7 @@ require (
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/scheduled v0.22.0
 	github.com/issue9/sliceutil v0.17.0
-	github.com/issue9/source v0.11.7
+	github.com/issue9/source v0.12.3
 	github.com/issue9/term/v3 v3.4.0
 	github.com/issue9/unique/v2 v2.1.1
 	github.com/jellydator/ttlcache/v3 v3.3.0
