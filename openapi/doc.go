@@ -22,40 +22,32 @@ type parameterizedDoc struct {
 
 // ParameterizedDoc 声明带有参数的文档
 //
-// format 描述信息的内容格式，应该带有一个 %s 占位符，用于插入 params 参数；
-// f 用于将 params 转换为字符串，然后替换 format 中的 %s 占位符，如果为空，会自动将每个元素转换单独的一行；
-//
-// NOTE: 该对象只有作用于 [Operation.Description] 时，
-// 才可通过 [Document.AppendDescriptionParameter] 向其追加内容的目的。
-func ParameterizedDoc(format string, f func(string) string, params ...web.LocaleStringer) web.LocaleStringer {
+// format 文档的内容，应该带有一个 %s 占位符，用于插入 params 参数。
+// 如果已经存在相同的值，则是到该对象并插入 params，否则是声明新的对象。
+func (d *Document) ParameterizedDoc(format string, params ...web.LocaleStringer) web.LocaleStringer {
 	if !strings.Contains(format, "%s") {
 		panic("参数 format 必须包含 %s")
 	}
 
-	if f == nil {
-		f = func(s string) string { return s + "\n" }
-	}
-
-	return &parameterizedDoc{
-		format: format,
-		f:      f,
-		params: params,
+	if p, found := d.parameterizedDocs[format]; found {
+		p.params = append(p.params, params...)
+		return p
+	} else {
+		p := &parameterizedDoc{
+			format: format,
+			params: params,
+		}
+		d.parameterizedDocs[format] = p
+		return p
 	}
 }
 
 func (d *parameterizedDoc) LocaleString(p *message.Printer) string {
 	buf := &bytes.Buffer{}
 	for _, param := range d.params {
-		buf.WriteString(d.f(param.LocaleString(p)))
+		buf.WriteString(param.LocaleString(p))
 	}
 	return p.Sprintf(d.format, buf)
-}
-
-// AppendDescriptionParameter 向指定的 API 文档的描述信息中添加信息
-//
-// 具体说明可参考 [ParameterizedDoc]
-func (d *Document) AppendDescriptionParameter(operationID string, item ...web.LocaleStringer) {
-	d.parameterizedDesc[operationID] = append(d.parameterizedDesc[operationID], item...)
 }
 
 // MarkdownProblems 将 problems 的内容生成为 markdown

@@ -109,13 +109,15 @@ type (
 
 		// 以下是一些预定义的项，不存在于 openAPIRenderer。
 
-		mediaTypes        map[string]string // 所有接口都支持的类型，mimetype=>problem mimetype
-		responses         map[string]string // key 为状态码，比如 4XX，值为 components 中的键名
-		headers           []string          // components 中的键名
-		cookies           []string          // components 中的键名
-		enableOptions     bool
-		enableHead        bool
-		parameterizedDesc map[string][]web.LocaleStringer // 键名对应 Operation.ID，键值对应 Operation.Description 的 params。
+		mediaTypes    map[string]string // 所有接口都支持的类型，mimetype=>problem mimetype
+		responses     map[string]string // key 为状态码，比如 4XX，值为 components 中的键名
+		headers       []string          // components 中的键名
+		cookies       []string          // components 中的键名
+		enableOptions bool
+		enableHead    bool
+
+		// 文档的动态参数
+		parameterizedDocs map[string]*parameterizedDoc
 
 		// 与 HTML 模板相关的定义
 
@@ -431,7 +433,7 @@ func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
 
 		mediaTypes:        make(map[string]string, 5),
 		responses:         make(map[string]string, 5),
-		parameterizedDesc: make(map[string][]web.LocaleStringer, 5),
+		parameterizedDocs: make(map[string]*parameterizedDoc, 5),
 
 		last: time.Now(),
 

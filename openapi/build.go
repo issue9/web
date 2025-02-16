@@ -5,7 +5,6 @@
 package openapi
 
 import (
-	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -52,7 +51,7 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 		tags = append(tags, t.build(p))
 	}
 
-	render := &openAPIRenderer{
+	return &openAPIRenderer{
 		OpenAPI:      Version,
 		Info:         d.info.build(p),
 		Servers:      servers,
@@ -69,12 +68,6 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 		XModified:    d.last.Format(time.RFC3339),
 		templateName: d.templateName,
 	}
-
-	if len(d.parameterizedDesc) > 0 { // 需要在所有 build 运行之后再进行检查
-		panic(fmt.Sprintf("向 %v 注册的参数并未使用", slices.Collect(maps.Keys(d.parameterizedDesc))))
-	}
-
-	return render
 }
 
 func (m *components) build(p *message.Printer, d *Document) *componentsRenderer {
@@ -139,16 +132,6 @@ func (e *ExternalDocs) build(p *message.Printer) *externalDocsRenderer {
 func (o *Operation) build(p *message.Printer, d *Document) *operationRenderer {
 	if o == nil {
 		return nil
-	}
-
-	if items := o.Document().parameterizedDesc[o.ID]; items != nil {
-		if o.Description == nil {
-			panic(fmt.Sprintf("接口 %s 未指定 Description 内容", o.ID))
-		}
-		if md, ok := o.Description.(*parameterizedDoc); ok {
-			md.params = items
-			delete(o.Document().parameterizedDesc, o.ID)
-		}
 	}
 
 	parameters := make([]*renderer[parameterRenderer], 0, len(o.Paths)+len(o.Cookies)+len(o.Headers)+len(o.Queries))

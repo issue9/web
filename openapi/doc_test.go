@@ -17,56 +17,17 @@ func TestParameterizedDoc(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
 	p := s.Locale().NewPrinter(language.SimplifiedChinese)
+	d := New(s, web.Phrase("title"))
 
-	t.Run("panic", func(*testing.T) {
-		d := New(s, web.Phrase("title"))
+	a.PanicString(func() {
+		d.ParameterizedDoc("format", nil)
+	}, "参数 format 必须包含 %s")
 
-		d.addOperation("GET", "/users/1", "", &Operation{
-			d:         d,
-			Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
-			ID:        "id1",
-		})
-		d.AppendDescriptionParameter("id1", web.Phrase("item1"), web.Phrase("item2"))
-		a.PanicString(func() {
-			d.build(p, language.SimplifiedChinese, nil)
-		}, "接口 id1 未指定 Description 内容").
-			Length(d.parameterizedDesc, 1)
-	})
+	ls := d.ParameterizedDoc("format %s", web.Phrase("p1\n"))
+	a.Length(ls.(*parameterizedDoc).params, 1).
+		Length(d.parameterizedDocs, 1)
 
-	t.Run("not parameterizedDoc", func(*testing.T) {
-		d := New(s, web.Phrase("title"))
-
-		d.addOperation("GET", "/users/2", "", &Operation{
-			d:           d,
-			Responses:   map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
-			ID:          "id2",
-			Description: web.Phrase("desc"),
-		})
-
-		d.AppendDescriptionParameter("id2", web.Phrase("item1"), web.Phrase("item2"))
-		a.PanicString(func() {
-			d.build(p, language.SimplifiedChinese, nil)
-		}, "向 [id2] 注册的参数并未使用")
-	})
-
-	t.Run("parameterizedDoc", func(*testing.T) {
-		d := New(s, web.Phrase("title"))
-
-		d.addOperation("GET", "/users/3", "", &Operation{
-			d:           d,
-			Responses:   map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
-			ID:          "id3",
-			Description: ParameterizedDoc("desc %s", nil),
-		})
-
-		d.AppendDescriptionParameter("id3", web.Phrase("item1"), web.Phrase("item2"))
-		r := d.build(p, language.SimplifiedChinese, nil)
-		a.Equal(r.Paths.GetPair("/users/3").Value.obj.Get.Description, "desc item1\nitem2\n")
-	})
-
-	t.Run("invalid format", func(*testing.T) {
-		a.PanicString(func() {
-			ParameterizedDoc("desc", nil)
-		}, "参数 format 必须包含 %s")
-	})
+	ls = d.ParameterizedDoc("format %s", web.Phrase("p2\n"))
+	a.Length(ls.(*parameterizedDoc).params, 2).
+		Equal(ls.LocaleString(p), web.Phrase("format %s", "p1\np2\n").LocaleString(p))
 }
