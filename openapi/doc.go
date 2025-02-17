@@ -7,10 +7,10 @@ package openapi
 import (
 	"bytes"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/source/codegen"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -91,7 +91,99 @@ func markdownProblemsWithDetail(s web.Server, titleLevel int) web.LocaleStringer
 
 // MarkdownGoObject 将 Go 对象转换为 markdown 表示方式
 //
+// 对于结构类型会自动展开。
+//
+// t 需要转换的类型；
 // m 在此表中的类型会直接转换为键值表示的类型，而不是真实的类型。
-func MarkdownGoObject(v any, m map[reflect.Type]string) string {
-	return "```go\n" + codegen.GoDefine(reflect.TypeOf(v), m, false) + "\n```\n"
+func MarkdownGoObject(v any, m map[reflect.Type]string) web.LocaleStringer {
+	t := reflect.TypeOf(v)
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	buf := &errwrap.Buffer{}
+	params := goDefine(buf, make([]any, 0, 10), 0, t, m, false)
+
+	s := buf.String()
+	if strings.HasPrefix(s, "struct {") { // 结构可能由于 m 的关系返回一个非结构体的类型定义，所以只能由开头是否为 struct { 判断是否为结构体。
+		s = "type " + t.Name() + " " + s
+	}
+
+	return web.Phrase("```go\n"+s+"\n```\n", params...)
+}
+
+func goDefine(buf *errwrap.Buffer, params []any, indent int, t reflect.Type, m map[reflect.Type]string, anonymous bool) []any {
+	if len(m) > 0 {
+		if s, found := m[t]; found {
+			buf.WString(s)
+			return params
+		}
+	}
+
+	switch t.Kind() {
+	case reflect.Func, reflect.Chan: // 忽略
+	case reflect.Pointer:
+		buf.WByte('*')
+		return goDefine(buf, params, indent, t.Elem(), m, anonymous)
+	case reflect.Slice:
+		buf.WString("[]")
+		return goDefine(buf, params, indent, t.Elem(), m, anonymous)
+	case reflect.Array:
+		buf.WByte('[').WString(strconv.Itoa(t.Len())).WByte(']')
+		return goDefine(buf, params, indent, t.Elem(), m, anonymous)
+	case reflect.Struct:
+		if !anonymous {
+			if t.NumField() == 0 {
+				buf.WString("struct {}")
+				return params
+			}
+
+			buf.WString("struct {\n")
+			indent++
+		}
+
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+
+			if f.Anonymous {
+				tt := f.Type
+				for tt.Kind() == reflect.Pointer { // 匿名字段需要去掉指针类型
+					tt = tt.Elem()
+				}
+				params = goDefine(buf, params, indent, tt, m, true)
+				continue
+			}
+
+			if !f.IsExported() {
+				continue
+			}
+
+			if f.Type.Kind() == reflect.Func || f.Type.Kind() == reflect.Chan {
+				continue
+			}
+
+			buf.WString(strings.Repeat("\t", indent)).WString(f.Name).WByte('\t')
+			params = goDefine(buf, params, indent, f.Type, m, false)
+
+			if f.Tag != "" {
+				buf.WByte('\t').WByte('`').WString(string(f.Tag)).WByte('`')
+
+				if c := f.Tag.Get(CommentTag); c != "" {
+					buf.WString("\t// %s")
+					params = append(params, web.Phrase(c))
+				}
+			}
+
+			buf.WByte('\n')
+		}
+
+		if !anonymous {
+			indent--
+			buf.WString(strings.Repeat("\t", indent)).WByte('}')
+		}
+	default:
+		buf.WString(t.Name())
+	}
+
+	return params
 }

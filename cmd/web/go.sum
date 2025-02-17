@@ -40,8 +40,8 @@ github.com/issue9/scheduled v0.22.0 h1:qGk4+IbaxozIEaYX9mWEM1C//Zg/iI8DVT6tYIS/i
 github.com/issue9/scheduled v0.22.0/go.mod h1:wVGvPy6kxstLwkfQIYEfpORl+gNKTW68ydFA4d78fMQ=
 github.com/issue9/sliceutil v0.17.0 h1:EtmVlldkAyGxS0O2TnxcAu3pgLJw74I5eh9DHT7TOZs=
 github.com/issue9/sliceutil v0.17.0/go.mod h1:CVpH4f228pICY7JImlztUPe/zf2w0EicEleU9YfFe00=
-github.com/issue9/source v0.12.3 h1:QD4al4Nj/4Y1jdIkv0DqQq0U8YbzsDvoeL/CoQ93WJ0=
-github.com/issue9/source v0.12.3/go.mod h1:JjbY/TKCqx8PG5e23rcla0LZx257Y4rqfAuH4BSvzYk=
+github.com/issue9/source v0.12.4 h1:LH/zU8sOyk8QoFlUNLSofOubtG9x9zpcLo3h/tjCa2s=
+github.com/issue9/source v0.12.4/go.mod h1:JjbY/TKCqx8PG5e23rcla0LZx257Y4rqfAuH4BSvzYk=
 github.com/issue9/term/v3 v3.4.0 h1:1K0JJQ+O3hClYmqYWeI5ibstqDXRSYxNHd2j+ljC5qA=
 github.com/issue9/term/v3 v3.4.0/go.mod h1:y3cDAllJNW+z0GovrsLk03Q9c8jGD6cfZsqLORiX/vk=
 github.com/issue9/unique/v2 v2.1.1 h1:M0gOxKnv/d7W02cNqBH8/TNvwOj9MzW0vTpckhi7Q+g=
