@@ -10,7 +10,7 @@ require (
 	github.com/issue9/config v0.9.0
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
-	github.com/issue9/localeutil v0.29.2
+	github.com/issue9/localeutil v0.29.3
 	github.com/issue9/logs/v7 v7.6.5
 	github.com/issue9/mux/v9 v9.1.2
 	github.com/issue9/query/v3 v3.1.3

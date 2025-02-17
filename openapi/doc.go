@@ -18,7 +18,6 @@ import (
 
 type parameterizedDoc struct {
 	format string
-	f      func(string) string
 	params []web.LocaleStringer
 }
 
