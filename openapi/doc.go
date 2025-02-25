@@ -93,6 +93,8 @@ func markdownProblemsWithDetail(s web.Server, titleLevel int) web.LocaleStringer
 //
 // 对于结构类型会自动展开。
 //
+// 如果 v 的字段包含 [CommentTag] 的标签内容，会尝试装将其本地化并作为注释放在字段之后。
+//
 // t 需要转换的类型；
 // m 在此表中的类型会直接转换为键值表示的类型，而不是真实的类型。
 func MarkdownGoObject(v any, m map[reflect.Type]string) web.LocaleStringer {

@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/issue9/assert/v4 v4.3.1
-	github.com/issue9/cache v0.18.1
+	github.com/issue9/cache v0.19.0
 	github.com/issue9/config v0.9.0
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
@@ -21,10 +21,10 @@ require (
 	github.com/issue9/unique/v2 v2.1.1
 	github.com/jellydator/ttlcache/v3 v3.3.0
 	github.com/kardianos/service v1.2.2
-	github.com/klauspost/compress v1.17.11
-	github.com/puzpuzpuz/xsync/v3 v3.5.0
+	github.com/klauspost/compress v1.18.0
+	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/text v0.22.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	gopkg.in/yaml.v3 v3.0.1
@@ -39,7 +39,7 @@ require (
 	github.com/issue9/rands/v3 v3.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/redis/go-redis/v9 v9.7.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.23.0 // indirect
