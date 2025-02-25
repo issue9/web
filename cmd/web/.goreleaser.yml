@@ -5,64 +5,63 @@ release:
   github:
     owner: issue9
     name: web
-  name_template: '{{.Tag}}'
+  name_template: "{{.Tag}}"
 
 builds:
-- id: web
+  - id: web
 
-  goos:
-  - darwin
-  - linux
-  - windows
+    goos:
+      - darwin
+      - linux
+      - windows
 
-  goarch:
-  - amd64
-  - arm64
+    goarch:
+      - amd64
+      - arm64
 
-  ignore:
-  - goos: windows
-    goarch: arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 
-  main: ./
+    main: ./
 
-  binary: web
+    binary: web
 
-  flags:
-  - -trimpath
+    flags:
+      - -trimpath
 
-  ldflags:
-  - -s -w -X main.commits={{.Commit}} -X main.version={{.Version}}
+    ldflags:
+      - -s -w -X main.commits={{.Commit}} -X main.version={{.Version}}
 
 brews:
-- repository:
-    owner: caixw
-    name: homebrew-brew
-  url_template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  - repository:
+      owner: caixw
+      name: homebrew-brew
+    url_template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
-  commit_author:
-    name: goreleaserbot
-    email: goreleaser@carlosbecker.com
-  directory: Formula
-  homepage: "https://github.com/issue9/web"
-  description: 框架 web 的辅助工具
-  license: MIT
-
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    directory: Formula
+    homepage: "https://github.com/issue9/web"
+    description: 框架 web 的辅助工具
+    license: MIT
 
 archives:
-- builds:
-  - web
-  format_overrides:
-  - goos: windows
-    format: zip
-  files:
-  - licence*
-  - LICENCE*
-  - license*
-  - LICENSE*
-  - readme*
-  - README*
-  - changelog*
-  - CHANGELOG*
+  - builds:
+      - web
+    format_overrides:
+      - goos: windows
+        format: ["zip"]
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
 
 checksum:
   name_template: checksums.txt
