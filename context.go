@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -318,7 +319,7 @@ func (s *InternalServer) freeContext(ctx *Context) {
 		f(ctx, ctx.status)
 	}
 
-	// 以下开始回收内在
+	// 以下开始回收内存
 
 	close(ctx.done)
 	ctx.doneErr = ErrExitContext()
@@ -355,6 +356,15 @@ func (ctx *Context) Logs() *AttrLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	return strings.ToLower(ctx.Request().Header.Get(header.XRequestedWith)) == "xmlhttprequest"
+}
+
+var idempotentMethods = []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete, http.MethodOptions, http.MethodTrace}
+
+// Idempotent 请求方法是否为[幂等]
+//
+// [幂等]: https://developer.mozilla.org/zh-CN/docs/Glossary/Idempotent
+func (ctx *Context) Idempotent() bool {
+	return slices.Index(idempotentMethods, ctx.Request().Method) >= 0
 }
 
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]

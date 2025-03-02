@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"slices"
 
 	"github.com/issue9/mux/v9/header"
 	"golang.org/x/text/transform"
@@ -112,6 +114,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 
 	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 和 Charset 的 io.Writer
 		ctx.wrote = true
+		closes := make([]io.Closer, 0, 2)
 
 		if ctx.outputCompressor != nil {
 			w, err := ctx.outputCompressor.NewEncoder(ctx.writer)
@@ -119,20 +122,26 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 				return 0, err
 			}
 			ctx.writer = w
-			ctx.OnExit(func(*Context, int) {
-				if err := w.Close(); err != nil {
-					ctx.Logs().ERROR().Error(err)
-				}
-			})
+			closes = append(closes, w)
 		}
 
 		if !qheader.CharsetIsNop(ctx.outputCharset) {
 			ctx.Header().Add(header.Vary, header.ContentEncoding) // 只有在确定需要输出内容时才输出 Vary 报头
 			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
 			ctx.writer = w
+			closes = append(closes, w)
+		}
+
+		if l := len(closes); l > 0 {
+			if l > 1 {
+				slices.Reverse(closes)
+			}
+
 			ctx.OnExit(func(*Context, int) {
-				if err := w.Close(); err != nil {
-					ctx.Logs().ERROR().Error(err)
+				for _, c := range closes {
+					if err := c.Close(); err != nil {
+						ctx.Logs().ERROR().Error(err)
+					}
 				}
 			})
 		}

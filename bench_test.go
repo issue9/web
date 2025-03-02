@@ -266,7 +266,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=gbk", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
-		for range b.N {
+		for b.Loop() {
 			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, "gbk"))
 			a.NotError(err).NotNil(marshal).NotNil(encoding)
 		}
