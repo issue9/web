@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,14 +15,14 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 
 	b.Run("equal Locale.id", func(b *testing.B) {
 		b.ResetTimer()
-		for range b.N {
+		for b.Loop() {
 			l.NewPrinter(language.SimplifiedChinese)
 		}
 	})
 
 	b.Run("not equal Locale.id", func(b *testing.B) {
 		b.ResetTimer()
-		for range b.N {
+		for b.Loop() {
 			l.NewPrinter(language.TraditionalChinese)
 		}
 	})

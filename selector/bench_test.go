@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -67,7 +67,7 @@ func BenchmarkWeightedRoundRobin(b *testing.B) {
 
 func benchSelector_Next(b *testing.B, s Updateable, peers []Peer) {
 	s.Update(peers...)
-	for range b.N {
+	for b.Loop() {
 		if _, err := s.Next(); err != nil {
 			b.Fatal(err)
 		}

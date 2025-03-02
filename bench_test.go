@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -48,7 +48,7 @@ func BenchmarkNewContext(b *testing.B) {
 	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, "gbk"))
 	r.Header.Set(header.Accept, header.JSON)
 	r.Header.Set(header.AcceptCharset, "gbk")
-	for range b.N {
+	for b.Loop() {
 		ctx := s.NewContext(w, r, types.NewContext())
 		s.freeContext(ctx)
 	}
@@ -59,7 +59,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	s := newTestServer(a)
 
 	b.Run("none", func(b *testing.B) {
-		for range b.N {
+		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
 			w := httptest.NewRecorder()
@@ -73,7 +73,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("utf8", func(b *testing.B) {
-		for range b.N {
+		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
 			r.Header.Set(header.AcceptCharset, header.UTF8)
@@ -87,7 +87,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("gbk", func(b *testing.B) {
-		for range b.N {
+		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
 			r.Header.Set(header.AcceptCharset, "gbk")
@@ -102,7 +102,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("charset; encoding", func(b *testing.B) {
-		for range b.N {
+		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
 			r.Header.Set(header.AcceptCharset, "gbk")
@@ -123,7 +123,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
-	for range b.N {
+	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
@@ -142,7 +142,7 @@ func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
-	for range b.N {
+	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
@@ -165,7 +165,7 @@ func BenchmarkContext_Object(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
-	for range b.N {
+	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
 		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
@@ -180,7 +180,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
-	for range b.N {
+	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
 		r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
@@ -191,7 +191,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 }
 
 func BenchmarkNewProblem(b *testing.B) {
-	for range b.N {
+	for b.Loop() {
 		p := newProblem()
 		p.Type = "id"
 		p.Title = "title"
@@ -218,7 +218,7 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 	p.Detail = "detail"
 	p.Status = 400
 	p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
-	for range b.N {
+	for b.Loop() {
 		p.Apply(ctx)
 	}
 }
@@ -234,7 +234,7 @@ func BenchmarkNewFilterContext(b *testing.B) {
 	ctx := s.NewContext(w, r, types.NewContext())
 	defer s.freeContext(ctx)
 
-	for range b.N {
+	for b.Loop() {
 		p := ctx.NewFilterContext(false)
 		filterContextPool.Put(p)
 	}
@@ -244,7 +244,7 @@ func BenchmarkCodec_accept(b *testing.B) {
 	a := assert.New(b, false)
 	mt := newCodec(a)
 
-	for range b.N {
+	for b.Loop() {
 		item := mt.accept("application/json;q=0.9")
 		a.NotNil(item)
 	}
@@ -257,7 +257,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
-		for range b.N {
+		for b.Loop() {
 			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8))
 			a.NotError(err).NotNil(marshal).Nil(encoding)
 		}
@@ -281,7 +281,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 		a.NotNil(c)
 		c.AddCompressor(compressor.NewZstd(), "application/*")
 
-		for range b.N {
+		for b.Loop() {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.contentEncoding("zstd", r)
 			a.NotError(err)
@@ -299,7 +299,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 			AddCompressor(compressor.NewZstd(), "application/*").
 			AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
-		for range b.N {
+		for b.Loop() {
 			r := bytes.NewBuffer([]byte{})
 			_, err := c.contentEncoding("zstd", r)
 			a.NotError(err)
@@ -315,7 +315,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 		a.NotNil(c)
 		c.AddCompressor(compressor.NewZstd(), "application/*")
 
-		for range b.N {
+		for b.Loop() {
 			_, na := c.acceptEncoding(header.JSON, "zstd")
 			a.False(na)
 		}
@@ -332,7 +332,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 			AddCompressor(compressor.NewZstd(), "application/*").
 			AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
-		for range b.N {
+		for b.Loop() {
 			_, na := c.acceptEncoding(header.Plain, "compress")
 			a.False(na)
 		}
@@ -350,7 +350,7 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 		AddCompressor(compressor.NewZstd(), "application/*").
 		AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain)
 
-	for range b.N {
+	for b.Loop() {
 		c.getMatchCompresses(header.Plain)
 	}
 }

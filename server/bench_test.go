@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,7 +34,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("charset", func(b *testing.B) {
 		a := assert.New(b, false)
-		for range b.N {
+		for b.Loop() {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
 				Header(header.Accept, header.JSON).
@@ -49,7 +49,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("charset encoding", func(b *testing.B) {
 		a := assert.New(b, false)
-		for range b.N {
+		for b.Loop() {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
 				Header(header.Accept, header.JSON).
@@ -65,7 +65,7 @@ func BenchmarkHTTPServer_Serve(b *testing.B) {
 
 	b.Run("none", func(b *testing.B) {
 		a := assert.New(b, false)
-		for range b.N {
+		for b.Loop() {
 			r := servertest.Get(a, "http://localhost:8080/path").
 				Header(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8)).
 				Header(header.Accept, header.JSON).

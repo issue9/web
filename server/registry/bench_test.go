@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ func BenchmarkMarshalPeers(b *testing.B) {
 	}
 
 	b.Run("marshalPeers", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			if _, err := marshalPeers(peers); err != nil {
 				b.Fatal(err)
 			}
@@ -36,7 +36,7 @@ func BenchmarkMarshalPeers(b *testing.B) {
 	nb := func() selector.Peer { return selector.NewPeer("") }
 
 	b.Run("unmarshalPeers", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			if _, err := unmarshalPeers(nb, data); err != nil {
 				b.Fatal(err)
 			}

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import (
 
 func BenchmarkSource_bytes(b *testing.B) {
 	s := &Source{retry: "50"}
-	for range b.N {
+	for b.Loop() {
 		b := s.bytes([]string{"111", "222"}, "event", "1")
 		bufpool.Put(b)
 	}

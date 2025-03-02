@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +40,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("gzip", func(b *testing.B) {
 		c := NewGzip(3)
-		for range b.N {
+		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(gzipInitData))
 			a.NotError(err).
 				NotNil(wc).
@@ -50,7 +50,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("zstd", func(b *testing.B) {
 		c := NewZstd()
-		for range b.N {
+		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(zstdInitData))
 			a.NotError(err).
 				NotNil(wc).
@@ -60,7 +60,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("deflate", func(b *testing.B) {
 		c := NewDeflate(3, nil)
-		for range b.N {
+		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(deflateInitData))
 			a.NotError(err).
 				NotNil(wc).
@@ -70,7 +70,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("lzw", func(b *testing.B) {
 		c := NewLZW(lzw.LSB, 5)
-		for range b.N {
+		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(lzwInitData))
 			a.NotError(err).
 				NotNil(wc).
@@ -80,7 +80,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("br", func(b *testing.B) {
 		c := NewBrotli(brotli.WriterOptions{})
-		for range b.N {
+		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(brotliInitData))
 			a.NotError(err).
 				NotNil(wc).
@@ -92,7 +92,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 func benchCompressor_NewEncoder(b *testing.B, c Compressor) {
 	a := assert.New(b, false)
 	w := &bytes.Buffer{}
-	for range b.N {
+	for b.Loop() {
 		w.Reset()
 
 		wc, err := c.NewEncoder(w)
