@@ -8,9 +8,9 @@ require (
 	github.com/issue9/cmdopt v0.13.1
 	github.com/issue9/localeutil v0.29.3
 	github.com/issue9/logs/v7 v7.6.5
-	github.com/issue9/source v0.12.4
+	github.com/issue9/source v0.12.5
 	github.com/issue9/web v0.99.3
-	golang.org/x/text v0.22.0
+	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -34,9 +34,9 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
-	golang.org/x/mod v0.23.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/mod v0.24.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )
