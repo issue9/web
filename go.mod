@@ -16,7 +16,7 @@ require (
 	github.com/issue9/query/v3 v3.1.3
 	github.com/issue9/scheduled v0.22.0
 	github.com/issue9/sliceutil v0.17.0
-	github.com/issue9/source v0.12.4
+	github.com/issue9/source v0.12.5
 	github.com/issue9/term/v3 v3.4.0
 	github.com/issue9/unique/v2 v2.1.1
 	github.com/jellydator/ttlcache/v3 v3.3.0
@@ -24,8 +24,8 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
-	golang.org/x/crypto v0.35.0
-	golang.org/x/text v0.22.0
+	golang.org/x/crypto v0.36.0
+	golang.org/x/text v0.23.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -42,9 +42,9 @@ require (
 	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/mod v0.23.0 // indirect
+	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
