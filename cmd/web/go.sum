@@ -30,8 +30,8 @@ github.com/issue9/localeutil v0.29.3 h1:0vjaaK0oYlZBUIx3d/MLpi+TcIJZhrPaE937mKID
 github.com/issue9/localeutil v0.29.3/go.mod h1:SkQPvuU3Hu/DdxqU+DOlEjpFOhP5J1POajWkGTtPcIc=
 github.com/issue9/logs/v7 v7.6.5 h1:v8AXFLrB5rGzgnbd0yUV9KtHw3r4LVD4l1OAdqT1Q0E=
 github.com/issue9/logs/v7 v7.6.5/go.mod h1:KMcsw7nWMYxs77lU5hWYFPTlZY8PBBIQC523WBfgP38=
-github.com/issue9/mux/v9 v9.1.2 h1:Ng5uv8bwsduZV6w14gv0HR78ahBs8Fm0JWlc7Xjtbd4=
-github.com/issue9/mux/v9 v9.1.2/go.mod h1:CLtV5ZfIrAmfaC/qxn07wXc3GALI45GYCsdE3c/h9CQ=
+github.com/issue9/mux/v9 v9.1.4 h1:Ebs3HtDrw34HQrhnKHUVnJljOjateBndTfUcCoXylSA=
+github.com/issue9/mux/v9 v9.1.4/go.mod h1:Sebf5WBLyJzALSFuGETc2ZD0EeEXenmAsscJN420mLw=
 github.com/issue9/query/v3 v3.1.3 h1:Y6ETEYXxaKqhpM4lXPKCffhJ72VuKQbrAwgwHlacu0Y=
 github.com/issue9/query/v3 v3.1.3/go.mod h1:a/W/+7iel9K+5rRT4AFAKR8+OJeV5axeF6tK9My4lNA=
 github.com/issue9/rands/v3 v3.1.0 h1:GC0884SAtAAWIA5J4pQ2BpaISD0xK2njnqVpeVXQoYQ=

@@ -44,17 +44,17 @@ func getGroups(ctx* web.Context) web.Responser {
 package main
 
 import (
-    "github.com/issue9/web"
-    "github.com/issue9/web/server"
-    "github.com/issue9/web/mimetype/json"
-    "github.com/issue9/web/mimetype/xml"
+	"github.com/issue9/web"
+	"github.com/issue9/web/server"
+	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/mimetype/xml"
 )
 
 srv := server.New("app", "1.0.0", &server.Options{
-    Codec: web.NewCodec().
-        AddMimetype(xml.Mimetype, json.Marshal, json.Unmarshal, xml.ProblemMimetype).
-        AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype)
-    }
+	Codec: web.NewCodec().
+		AddMimetype(xml.Mimetype, json.Marshal, json.Unmarshal, xml.ProblemMimetype).
+		AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype)
+	}
 })
 
 srv.Serve()
@@ -67,17 +67,41 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 框架根据 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 提供了一种输出错误信息内容的机制。
 
+在处理出错时，调用 Context.Problem 即可：
+
+```go
+func getAdmins(ctx* web.Context) web.Responser {
+	return ctx.Problem(web.ProblemBadRequest).WithParam("param", "invalid format")
+}
+```
+
+## openapi
+
+可直接在添加 API 的中间件上指定文档内容：
+
+```go
+srv := server.New("app", "1.0.0", ...)
+router := s.Routers().New(...)
+doc := openapi.New(srv, web.Phrase("title")) // 声明文档对象
+
+router.Get("/users", doc.API(func(o* openapi.Operation){
+	o.Desc(web.Phrase("desc of api")). // 接口的描述
+		Body(). // 请求内容
+		Response() // 指定返回内容
+}))
+
+router.Get("/openapi", doc.Handler()) // 将文档以接口的形式输出
+```
+
 ## 插件
 
-- <https://github.com/issue9/webuse> 提供了常用的中间件和插件。
-- <https://github.com/issue9/webfilter> 提供了常用的验证和修正数据的方法。
+- <https://github.com/issue9/webuse> 提供了中间件、插件、过滤器等常用的功能。
 
 ## 工具
 
 <https://github.com/issue9/web/releases> 提供了一个简易的辅助工具。可以帮助用户完成以下工作：
 
 - 提取和更新本地化信息；
-- 生成 openapi 文档；
 - 热编译项目；
 
 macOS 和 linux 用户可以直接使用 brew 进行安装：

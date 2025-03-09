@@ -25,7 +25,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.102.7"
+const Version = "0.102.8"
 
 type (
 	Logger   = logs.Logger
@@ -41,7 +41,7 @@ type (
 	// QueryUnmarshaler 对查询参数的解析接口
 	QueryUnmarshaler = query.Unmarshaler
 
-	// LocaleStringer 本地化字符串需要实在的接口
+	// LocaleStringer 本地化字符串需要实现的接口
 	LocaleStringer = localeutil.Stringer
 
 	StringPhrase = localeutil.StringPhrase
@@ -64,7 +64,7 @@ type (
 
 // GetAppVersion 获得应用的版本号
 //
-// 如果当前应用没有指定版本号，则采用 v 作为返回值。
+// 如果当前应用没有指定版本号，则采用参数 v 作为返回值。
 //
 // NOTE: 只有 go1.24 及之后且 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
 func GetAppVersion(v string) string {
