@@ -8,7 +8,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -51,11 +50,11 @@ func main() {
 	var opt *cmdopt.CmdOpt
 	opt = cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
+
 		return func(w io.Writer) error {
 			if *v {
-				_, err1 := fmt.Fprintf(w, "web: %s\n", web.GetAppVersion(web.Version))
-				_, err2 := fmt.Fprintf(w, "build with: %s\n", runtime.Version())
-				return errors.Join(err1, err2)
+				_, err := fmt.Fprintf(w, "web: %s\nbuild with: %s\n", web.GetAppVersion(web.Version), runtime.Version())
+				return err
 			}
 
 			// 没有任何选项指定，输出帮助信息。
@@ -72,7 +71,7 @@ func main() {
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
-		panic(err)
+		panic(web.SprintError(p, false, err))
 	}
 }
 
