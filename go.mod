@@ -3,6 +3,7 @@ module github.com/issue9/web
 go 1.24.0
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/issue9/assert/v4 v4.3.1

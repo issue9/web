@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memcache"
@@ -210,6 +211,7 @@ func init() {
 	RegisterFileSerializer("json", sj.Marshal, sj.Unmarshal, ".json")
 	RegisterFileSerializer("xml", sx.Marshal, sx.Unmarshal, ".xml")
 	RegisterFileSerializer("yaml", yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	RegisterFileSerializer("toml", toml.Marshal, toml.Unmarshal, ".toml")
 
 	// micro
 

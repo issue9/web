@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/config"
@@ -46,7 +47,7 @@ type (
 		// 项目的配置文件管理
 		//
 		// 如果为空，则采用 [DefaultConfigDir] 作为配置文件的目录，
-		// 同时加载 YAML、XML 和 JSON 三种文件类型的序列化方法。
+		// 同时加载 YAML、XML、TOML 和 JSON 三种文件类型的序列化方法。
 		Config *config.Config
 
 		// 服务器的时区
@@ -150,7 +151,8 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		s := make(config.Serializer, 4)
 		s.Add(json.Marshal, json.Unmarshal, ".json").
 			Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
-			Add(xml.Marshal, xml.Unmarshal, ".xml")
+			Add(xml.Marshal, xml.Unmarshal, ".xml").
+			Add(toml.Marshal, toml.Unmarshal, ".toml")
 
 		c, err := config.BuildDir(s, DefaultConfigDir)
 		if err != nil {
