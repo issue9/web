@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/assert/v4"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/mimetypetest"
 )
 
 var (
@@ -43,4 +44,6 @@ func TestGOB(t *testing.T) {
 
 	data, err = Marshal(nil, nil)
 	a.Error(err).Nil(data)
+
+	mimetypetest.Test(a, Marshal, Unmarshal)
 }

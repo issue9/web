@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
-package cbor
+package toml
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ var (
 	_ web.UnmarshalFunc = Unmarshal
 )
 
-func TestCBOR(t *testing.T) {
+func TestTOML(t *testing.T) {
 	a := assert.New(t, false)
 	mimetypetest.Test(a, Marshal, Unmarshal)
 }
