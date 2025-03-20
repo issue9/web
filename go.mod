@@ -40,7 +40,7 @@ require (
 	github.com/issue9/rands/v3 v3.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.24.0 // indirect
