@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
+	st "github.com/BurntSushi/toml"
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memcache"
@@ -24,7 +24,7 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v9"
 	"github.com/issue9/unique/v2"
-	"gopkg.in/yaml.v3"
+	sy "gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/compressor"
@@ -34,8 +34,9 @@ import (
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/nop"
+	"github.com/issue9/web/mimetype/toml"
 	"github.com/issue9/web/mimetype/xml"
-	mtYAML "github.com/issue9/web/mimetype/yaml"
+	"github.com/issue9/web/mimetype/yaml"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
@@ -198,9 +199,10 @@ func init() {
 	// RegisterMimetype
 
 	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
-	RegisterMimetype(mtYAML.Marshal, mtYAML.Unmarshal, "yaml")
+	RegisterMimetype(yaml.Marshal, yaml.Unmarshal, "yaml")
 	RegisterMimetype(cbor.Marshal, cbor.Unmarshal, "cbor")
 	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
+	RegisterMimetype(toml.Marshal, toml.Unmarshal, "toml")
 	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
 	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
 	RegisterMimetype(gob.Marshal, gob.Unmarshal, "gob")
@@ -210,8 +212,8 @@ func init() {
 
 	RegisterFileSerializer("json", sj.Marshal, sj.Unmarshal, ".json")
 	RegisterFileSerializer("xml", sx.Marshal, sx.Unmarshal, ".xml")
-	RegisterFileSerializer("yaml", yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-	RegisterFileSerializer("toml", toml.Marshal, toml.Unmarshal, ".toml")
+	RegisterFileSerializer("yaml", sy.Marshal, sy.Unmarshal, ".yaml", ".yml")
+	RegisterFileSerializer("toml", st.Marshal, st.Unmarshal, ".toml")
 
 	// micro
 

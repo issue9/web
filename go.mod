@@ -3,11 +3,11 @@ module github.com/issue9/web
 go 1.24.0
 
 require (
-	github.com/BurntSushi/toml v1.4.0
+	github.com/BurntSushi/toml v1.5.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/issue9/assert/v4 v4.3.1
-	github.com/issue9/cache v0.19.0
+	github.com/issue9/cache v0.19.1
 	github.com/issue9/config v0.9.0
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
@@ -40,7 +40,7 @@ require (
 	github.com/issue9/rands/v3 v3.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.24.0 // indirect
