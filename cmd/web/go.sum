@@ -1,3 +1,5 @@
+github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
+github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/andybalholm/brotli v1.1.1 h1:PR2pgnyFznKEugtsUo0xLdDop5SKXd5Qf5ysW+7XdTA=
 github.com/andybalholm/brotli v1.1.1/go.mod h1:05ib4cKhjx3OQYUY22hTVd34Bc8upXjOLL2rKwwZBoA=
 github.com/bahlo/generic-list-go v0.2.0 h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=
@@ -16,8 +18,8 @@ github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/issue9/assert/v4 v4.3.1 h1:dHYODk1yV7j/1baIB6K6UggI4r1Hfuljqic7PaDbwLg=
 github.com/issue9/assert/v4 v4.3.1/go.mod h1:v7qDRXi7AsaZZNh8eAK2rkLJg5/clztqQGA1DRv9Lv4=
-github.com/issue9/cache v0.19.0 h1:tBj7GdlEFf4u1YDm2fMaBDUC6nYVWpXqF6WjFlJuNkQ=
-github.com/issue9/cache v0.19.0/go.mod h1:rw4oyxL5riQFL11S9zkenb0H5OuKIN3nwx1n7gitHAo=
+github.com/issue9/cache v0.19.1 h1:7fV0bmOBtnsilZ/cWC8NMW9MJVThGDCzDcJwWiBlo/E=
+github.com/issue9/cache v0.19.1/go.mod h1:kQFJYfeblZ43oNU/6VAo7K1c/CmGEaKANlmqG7UPWvE=
 github.com/issue9/cmdopt v0.13.1 h1:VA/Hgd92NBbZyHjZx1xcRCMhoc+XjI1LWhiuZkOZ0VU=
 github.com/issue9/cmdopt v0.13.1/go.mod h1:7lnF45Ush0boi4/nDjeSDYV5lZfoOzp3jm+biJr0f4g=
 github.com/issue9/config v0.9.0 h1:2HGtEUvK8ujvNXIHtgfjdxogzCBLLsVtjX+DnCb647g=

@@ -21,7 +21,7 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
-	github.com/issue9/cache v0.19.0 // indirect
+	github.com/issue9/cache v0.19.1 // indirect
 	github.com/issue9/config v0.9.0 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
 	github.com/issue9/errwrap v0.3.2 // indirect
