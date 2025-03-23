@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,9 +8,8 @@ package yaml
 import (
 	"io"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/issue9/mux/v9/header"
+	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 )
