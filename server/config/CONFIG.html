@@ -62,11 +62,12 @@ body {
 </td></tr><tr><td>cache,omitempty</td><td>cache,omitempty</td><td>cache,omitempty</td><td><a href="#cacheConfig">cacheConfig</a></td><td><p>指定缓存对象
 <p>如果为空，则会采用内存作为缓存对象。
 </td></tr><tr><td>fileSerializers,omitempty</td><td>fileSerializers,omitempty</td><td>fileSerializers&gt;fileSerializer,omitempty</td><td>string</td><td><p>指定配置文件的序列化
-<p>可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
+<p>可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
 <ul>
 <li>yaml 支持 .yaml 和 .yml 两种后缀名的文件
 <li>xml 支持 .xml 后缀名的文件
 <li>json 支持 .json 后缀名的文件
+<li>toml 支持 .toml 后缀名的文件
 </ul>
 <p>如果为空，表示支持以上所有格式。
 </td></tr><tr><td>compressions,omitempty</td><td>compressions,omitempty</td><td>compressions&gt;compression,omitempty</td><td><a href="#compressConfig">compressConfig</a></td><td><p>压缩的相关配置
@@ -83,6 +84,10 @@ body {
 <p>NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。
 </td></tr><tr><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>problemTypePrefix,omitempty</td><td>string</td><td><p>Problem 中 type 字段的前缀
 </td></tr><tr><td>onRender,omitempty</td><td>onRender,omitempty</td><td>onRender,omitempty</td><td>string</td><td><p>OnRender 修改渲染结构
+<p>可通过 [RegisterOnRender] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
+<ul>
+<li>render200 所有输出都是以 [server.RenderResponse] 作为返回对象；
+</ul>
 </td></tr><tr><td>registry,omitempty</td><td>registry,omitempty</td><td>registry,omitempty</td><td><a href="#registryConfig">registryConfig</a></td><td><p>指定服务发现和注册中心
 <p>NOTE: 作为微服务和网关时才会有效果
 </td></tr><tr><td>peer,omitempty</td><td>peer,omitempty</td><td>peer,omitempty</td><td>string</td><td><p>作为微服务时的节点地址

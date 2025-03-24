@@ -144,7 +144,7 @@ func goDefine(buf *errwrap.Buffer, params []any, indent int, t reflect.Type, m m
 			indent++
 		}
 
-		for i := 0; i < t.NumField(); i++ {
+		for i := range t.NumField() {
 			f := t.Field(i)
 
 			if f.Anonymous {

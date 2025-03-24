@@ -240,10 +240,10 @@ func Render200(status int, body any) (int, any) {
 
 // RenderResponse API 统一的返回格式
 type RenderResponse struct {
-	XMLName struct{} `json:"-" yaml:"-" xml:"body" cbor:"-"`
-	OK      bool     `json:"ok" yaml:"ok" xml:"ok,attr" cbor:"ok"`                 // 是否是错误代码
-	Status  int      `json:"status" yaml:"status" xml:"status,attr" cbor:"status"` // 原始的状态码
-	Body    any      `json:"body" yaml:"body" xml:"body" cbor:"body"`
+	XMLName struct{} `json:"-" yaml:"-" xml:"body" cbor:"-" form:"-"`
+	OK      bool     `json:"ok" yaml:"ok" xml:"ok,attr" cbor:"ok" form:"-"`                      // 是否是错误代码
+	Status  int      `json:"status" yaml:"status" xml:"status,attr" cbor:"status" form:"status"` // 原始的状态码
+	Body    any      `json:"body" yaml:"body" xml:"body" cbor:"body" form:"body"`
 }
 
 func (r *RenderResponse) MarshalHTML() (string, any) { return "render-response", r }

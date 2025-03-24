@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,10 +76,11 @@ type configOf[T comparable] struct {
 
 	// 指定配置文件的序列化
 	//
-	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认可用为：
+	// 可通过 [RegisterFileSerializer] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
 	//  - yaml 支持 .yaml 和 .yml 两种后缀名的文件
 	//  - xml 支持 .xml 后缀名的文件
 	//  - json 支持 .json 后缀名的文件
+	//  - toml 支持 .toml 后缀名的文件
 	//
 	// 如果为空，表示支持以上所有格式。
 	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty"`
@@ -111,6 +112,9 @@ type configOf[T comparable] struct {
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
 
 	// OnRender 修改渲染结构
+	//
+	// 可通过 [RegisterOnRender] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
+	//  - render200 所有输出都是以 [server.RenderResponse] 作为返回对象；
 	OnRender string `yaml:"onRender,omitempty" json:"onRender,omitempty" xml:"onRender,omitempty"`
 	onRender func(int, any) (int, any)
 

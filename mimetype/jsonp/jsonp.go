@@ -54,7 +54,7 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 
 	data, err := json.Marshal(v)
 	if err != nil {
-		return nil, ctx.Error(err, web.ProblemNotAcceptable)
+		return nil, err
 	}
 
 	v, found := ctx.Server().Vars().Load(contextKey)
