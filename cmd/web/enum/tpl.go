@@ -15,6 +15,7 @@ import(
 	{{if .Filter}}"github.com/issue9/web/filter"{{end}}
 	{{if .OpenAPI}}"github.com/issue9/web/openapi"{{end}}
 	"github.com/issue9/web/locales"
+	"github.com/fxamacker/cbor/v2"
 )
 
 {{range .Enums}}
@@ -48,7 +49,6 @@ func Parse{{.Name}}(v string)({{.Name}},error){
 	return 0, locales.ErrInvalidValue()
 }
 
-// MarshalText encoding.TextMarshaler
 func({{.Receiver}} {{.Name}}) MarshalText()([]byte,error){
 	if v, found := {{.Type2StringMap}}[{{.Receiver}}]; found {
 		return []byte(v),nil
@@ -56,13 +56,32 @@ func({{.Receiver}} {{.Name}}) MarshalText()([]byte,error){
 	return nil, locales.ErrInvalidValue()
 }
 
-// UnmarshalText encoding.TextUnmarshaler
-func({{.Receiver}} *{{.Name}}) UnmarshalText(p []byte)(error){
+func({{.Receiver}} *{{.Name}}) UnmarshalText(p []byte)error{
 	tmp,err :=Parse{{.Name}}(string(p))
 	if err==nil{
 		*{{.Receiver}}=tmp
 	}
 	return err
+}
+
+func({{.Receiver}} {{.Name}}) MarshalCBOR()([]byte,error){
+	if v, found := {{.Type2StringMap}}[{{.Receiver}}]; found {
+		return cbor.Marshal(v)
+	}
+	return nil, locales.ErrInvalidValue()
+}
+
+func({{.Receiver}} *{{.Name}}) UnmarshalCBOR(p []byte)error{
+	var tmp string
+	if err := cbor.Unmarshal(p, &tmp); err != nil {
+		return err
+	}
+
+	if ss, found := {{.String2TypeMap}}[tmp]; found {
+		*{{.Receiver}}=ss
+		return nil
+	}
+	return locales.ErrInvalidValue()
 }
 
 func({{.Receiver}} {{.Name}})IsValid()bool{

@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 // Package yaml 支持 YAML 编码的序列化操作
+//
+// NOTE: 大部分时候，可以直接复用 json 标签，但是在对待嵌入对象时处理方式是不同的。
+// json 自动展开，而 yaml 则需要指定 `yaml:",inline"` 才会展开。
 package yaml
 
 import (
