@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +40,7 @@ type (
 	}
 )
 
-func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
+func newHTTPServer(id, version string, o *Options, s web.Server) *httpServer {
 	srv := &httpServer{
 		hs:    o.HTTPServer,
 		state: web.Stopped,
@@ -49,7 +49,7 @@ func newHTTPServer(name, version string, o *Options, s web.Server) *httpServer {
 		s = srv
 	}
 
-	srv.InternalServer = o.internalServer(name, version, s)
+	srv.InternalServer = o.internalServer(id, version, s)
 	srv.hs.Handler = srv
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
