@@ -9,7 +9,9 @@ require (
 	github.com/issue9/localeutil v0.29.3
 	github.com/issue9/logs/v7 v7.6.5
 	github.com/issue9/source v0.12.5
-	github.com/issue9/web v0.99.3
+	github.com/issue9/web v0.102.11
+	github.com/otiai10/copy v1.14.1
+	golang.org/x/mod v0.24.0
 	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -33,8 +35,8 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
-	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
