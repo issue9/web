@@ -9,7 +9,7 @@ require (
 	github.com/issue9/localeutil v0.29.3
 	github.com/issue9/logs/v7 v7.6.5
 	github.com/issue9/source v0.12.5
-	github.com/issue9/web v0.99.3
+	github.com/issue9/web v0.102.11
 	golang.org/x/text v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
