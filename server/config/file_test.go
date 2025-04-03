@@ -36,6 +36,10 @@ func TestLoadConfigOf(t *testing.T) {
 	a.NotError(err).NotNil(jsonConf)
 	valid(jsonConf)
 
+	tomlConf, err := loadConfigOf[empty](configDir, "web.toml")
+	a.NotError(err).NotNil(tomlConf)
+	valid(tomlConf)
+
 	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
 	err2, ok := err.(*config.FieldError)

@@ -62,10 +62,10 @@ const tpl = `<!DOCTYPE html>
 			{{- if .Desc}}<article>{{.Desc}}</article>{{end -}}
 			{{if .Items}}
 				<table>
-					<thead><tr><th>JSON</th><th>YAML</th><th>XML</th><th>{{$.TypeLocale}}</th><th>{{$.DescLocale}}</th><tr></thead>
+					<thead><tr><th>JSON</th><th>YAML</th><th>XML</th><th>TOML</th><th>{{$.TypeLocale}}</th><th>{{$.DescLocale}}</th><tr></thead>
 					<tbody>
 					{{range .Items -}}
-						<tr><td>{{.JSON}}</td><td>{{.YAML}}</td><td>{{.XML}}</td><td>{{.Type}}</td><td>{{.Desc}}</td></tr>
+						<tr><td>{{.JSON}}</td><td>{{.YAML}}</td><td>{{.XML}}</td><td>{{.TOML}}</td><td>{{.Type}}</td><td>{{.Desc}}</td></tr>
 					{{- end}}
 					</tbody>
 				</table>

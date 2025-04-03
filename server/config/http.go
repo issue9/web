@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,42 +28,51 @@ type (
 		// 端口
 		//
 		// 格式与 [http.Server.Addr] 相同。可以为空，表示由 [http.Server] 确定其默认值。
-		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty"`
+		Port string `yaml:"port,omitempty" json:"port,omitempty" xml:"port,attr,omitempty" toml:"port,omitempty"`
 
 		// [web.Router.URL] 的默认前缀
 		//
 		// 如果是非标准端口，应该带上端口号。
 		//
 		// NOTE: 每个路由可使用 [web.WithURLDomain] 重新定义该值。
-		URL string `yaml:"url,omitempty" json:"url,omitempty" xml:"url,omitempty"`
+		URL string `yaml:"url,omitempty" json:"url,omitempty" xml:"url,omitempty" toml:"url,omitempty"`
 
 		// x-request-id 的报头名称
 		//
 		// 如果为空，则采用 [header.XRequestID] 作为默认值。
-		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty"`
+		RequestID string `yaml:"requestID,omitempty" json:"requestID,omitempty" xml:"requestID,omitempty" toml:"requestID,omitempty"`
 
 		// 网站的域名证书
 		//
 		// NOTE: 不能同时与 ACME 生效
-		Certificates []*certificateConfig `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates>certificate,omitempty"`
+		Certificates []*certificateConfig `yaml:"certificates,omitempty" json:"certificates,omitempty" xml:"certificates>certificate,omitempty" toml:"certificates,omitempty"`
 
 		// ACME 协议的证书
 		//
 		// NOTE: 不能同时与 Certificates 生效
-		ACME *acmeConfig `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty"`
+		ACME *acmeConfig `yaml:"acme,omitempty" json:"acme,omitempty" xml:"acme,omitempty" toml:"acme,omitempty"`
 
 		tlsConfig *tls.Config
 
-		ReadTimeout       Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty"`
-		WriteTimeout      Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty"`
-		IdleTimeout       Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty"`
-		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty"`
-		MaxHeaderBytes    int      `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty"`
+		// ReadTimeout 对 [http.Server.ReadTimeout] 字段
+		ReadTimeout Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty" toml:"readTimeout,omitempty"`
+
+		// WriteTimeout 对 [http.Server.WriteTimeout] 字段
+		WriteTimeout Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty" toml:"writeTimeout,omitempty"`
+
+		// IdleTimeout 对 [http.Server.IdleTimeout] 字段
+		IdleTimeout Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty" toml:"idleTimeout,omitempty"`
+
+		// ReadHeaderTimeout 对 [http.Server.ReadHeaderTimeout] 字段
+		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty" toml:"readHeaderTimeout,omitempty"`
+
+		// MaxHeaderBytes 对 [http.Server.MaxHeaderBytes] 字段
+		MaxHeaderBytes int `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty" toml:"maxHeaderBytes,omitempty"`
 
 		// Recovery 拦截 panic 时反馈给客户端的状态码
 		//
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-		Recovery int `yaml:"recovery,omitempty" json:"recovery,omitempty" xml:"recovery,attr,omitempty"`
+		Recovery int `yaml:"recovery,omitempty" json:"recovery,omitempty" xml:"recovery,attr,omitempty" toml:"recovery,omitempty"`
 
 		// 自定义报头功能
 		//
@@ -72,14 +81,14 @@ type (
 		// NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。
 		//
 		// NOTE: 报头内容可能会被后续的中间件修改。
-		Headers []headerConfig `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty"`
+		Headers []headerConfig `yaml:"headers,omitempty" json:"headers,omitempty" xml:"headers>header,omitempty" toml:"headers,omitempty"`
 
 		// 自定义[跨域请求]设置项
 		//
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
 		//
 		// [跨域请求]: https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors
-		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty"`
+		CORS *corsConfig `yaml:"cors,omitempty" json:"cors,omitempty" xml:"cors,omitempty" toml:"cors,omitempty"`
 
 		// Trace 是否启用 TRACE 请求
 		//
@@ -90,7 +99,7 @@ type (
 		// 默认为 disable。
 		//
 		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-		Trace string           `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty"`
+		Trace string           `yaml:"trace,omitempty" json:"trace,omitempty" xml:"trace,omitempty" toml:"trace,omitempty"`
 		trace web.RouterOption // 由 Trace 字段转换而来
 
 		init       func(*server.Options)
@@ -104,45 +113,45 @@ type (
 
 	headerConfig struct {
 		// 报头名称
-		Key string `yaml:"key" json:"key" xml:"key,attr"`
+		Key string `yaml:"key" json:"key" xml:"key,attr" toml:"key"`
 
 		// 报头对应的值
-		Value string `yaml:"value" json:"value" xml:",chardata"`
+		Value string `yaml:"value" json:"value" xml:",chardata" toml:"value"`
 	}
 
 	certificateConfig struct {
 		// 公钥文件地址
-		Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty"`
+		Cert string `yaml:"cert,omitempty" json:"cert,omitempty" xml:"cert,omitempty" toml:"cert,omitempty"`
 
 		// 私钥文件地址
-		Key string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty"`
+		Key string `yaml:"key,omitempty" json:"key,omitempty" xml:"key,omitempty" toml:"key,omitempty"`
 	}
 
 	acmeConfig struct {
 		// 申请的域名列表
-		Domains []string `yaml:"domains" json:"domains" xml:"domain"`
+		Domains []string `yaml:"domains" json:"domains" xml:"domain" toml:"domain"`
 
 		// acme 缓存目录
-		Cache string `yaml:"cache" json:"cache" xml:"cache"`
+		Cache string `yaml:"cache" json:"cache" xml:"cache" toml:"cache"`
 
 		// 申请者邮箱
-		Email string `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+		Email string `yaml:"email,omitempty" json:"email,omitempty" xml:"email,omitempty" toml:"email,omitempty"`
 
 		// 定义提早几天开始续订，如果为 0 表示提早 30 天。
-		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty"`
+		RenewBefore uint `yaml:"renewBefore,omitempty" json:"renewBefore,omitempty" xml:"renewBefore,attr,omitempty" toml:"renewBefore,omitempty"`
 	}
 
 	corsConfig struct {
 		// 指定跨域中的 Access-Control-Allow-Origin 报头内容
 		//
 		// 如果为空，表示禁止跨域请示，如果包含了 *，表示允许所有。
-		Origins []string `yaml:"origins,omitempty" json:"origins,omitempty" xml:"origins>origin,omitempty"`
+		Origins []string `yaml:"origins,omitempty" json:"origins,omitempty" xml:"origins>origin,omitempty" toml:"origins,omitempty"`
 
 		// 表示 Access-Control-Allow-Headers 报头内容
-		AllowHeaders []string `yaml:"allowHeaders,omitempty" json:"allowHeaders,omitempty" xml:"allowHeaders>header,omitempty"`
+		AllowHeaders []string `yaml:"allowHeaders,omitempty" json:"allowHeaders,omitempty" xml:"allowHeaders>header,omitempty" toml:"allowHeaders,omitempty"`
 
 		// 表示 Access-Control-Expose-Headers 报头内容
-		ExposedHeaders []string `yaml:"exposedHeaders,omitempty" json:"exposedHeaders,omitempty" xml:"exposedHeaders>header,omitempty"`
+		ExposedHeaders []string `yaml:"exposedHeaders,omitempty" json:"exposedHeaders,omitempty" xml:"exposedHeaders>header,omitempty" toml:"exposedHeaders,omitempty"`
 
 		// 表示 Access-Control-Max-Age 报头内容
 		//
@@ -150,10 +159,10 @@ type (
 		//   - 0 不输出该报头，默认值；
 		//   - -1 表示禁用；
 		//   - 其它 >= -1 的值正常输出数值；
-		MaxAge int `yaml:"maxAge,omitempty" json:"maxAge,omitempty" xml:"maxAge,attr,omitempty"`
+		MaxAge int `yaml:"maxAge,omitempty" json:"maxAge,omitempty" xml:"maxAge,attr,omitempty" toml:"maxAge,omitempty"`
 
 		// 表示 Access-Control-Allow-Credentials 报头内容
-		AllowCredentials bool `yaml:"allowCredentials,omitempty" json:"allowCredentials,omitempty" xml:"allowCredentials,attr,omitempty"`
+		AllowCredentials bool `yaml:"allowCredentials,omitempty" json:"allowCredentials,omitempty" xml:"allowCredentials,attr,omitempty" toml:"allowCredentials,omitempty"`
 	}
 )
 

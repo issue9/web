@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,28 +26,28 @@ type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
-	Location bool `xml:"location,attr,omitempty" json:"location,omitempty" yaml:"location,omitempty"`
+	Location bool `xml:"location,attr,omitempty" json:"location,omitempty" yaml:"location,omitempty" toml:"location,omitempty"`
 
 	// 日志显示的时间格式
 	//
 	// Go 的时间格式字符串，如果为空表示不显示；
-	Created string `xml:"created,omitempty" json:"created,omitempty" yaml:"created,omitempty"`
+	Created string `xml:"created,omitempty" json:"created,omitempty" yaml:"created,omitempty" toml:"created,omitempty"`
 
 	// 允许开启的通道
 	//
 	// 为空表示采用 [AllLevels]
-	Levels []logs.Level `xml:"level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty"`
+	Levels []logs.Level `xml:"levels>level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty" toml:"levels,omitempty"`
 
 	// 是否接管标准库的日志
-	Std bool `xml:"std,attr,omitempty" json:"std,omitempty" yaml:"std,omitempty"`
+	Std bool `xml:"std,attr,omitempty" json:"std,omitempty" yaml:"std,omitempty" toml:"std,omitempty"`
 
 	// 是否显示错误日志的调用堆栈
-	StackError bool `xml:"stackError,attr,omitempty" json:"stackError,omitempty" yaml:"stackError,omitempty"`
+	StackError bool `xml:"stackError,attr,omitempty" json:"stackError,omitempty" yaml:"stackError,omitempty" toml:"stackError,omitempty"`
 
 	// 日志输出对象的配置
 	//
 	// 为空表示 [NewNopHandler] 返回的对象。
-	Handlers []*logHandlerConfig `xml:"handlers>handler" json:"handlers" yaml:"handlers"`
+	Handlers []*logHandlerConfig `xml:"handlers>handler" json:"handlers" yaml:"handlers" toml:"handlers"`
 
 	logs    *logs.Logs
 	cleanup []func() error
@@ -61,7 +61,7 @@ type logHandlerConfig struct {
 	// 当前 Handler 支持的通道
 	//
 	// 为空表示采用 [logsConfig.Levels] 的值。
-	Levels []logs.Level `xml:"level,omitempty" yaml:"levels,omitempty" json:"levels,omitempty"`
+	Levels []logs.Level `xml:"level,omitempty" yaml:"levels,omitempty" json:"levels,omitempty" toml:"levels,omitempty"`
 
 	// Handler 的类型
 	//
@@ -69,7 +69,7 @@ type logHandlerConfig struct {
 	//  - file 输出至文件
 	//  - smtp 邮件发送的日志
 	//  - term 输出至终端
-	Type string `xml:"type,attr" yaml:"type" json:"type"`
+	Type string `xml:"type,attr" yaml:"type" json:"type" toml:"type"`
 
 	// 当前日志的初始化参数
 	//
@@ -104,7 +104,7 @@ type logHandlerConfig struct {
 	//   - magenta 洋红；
 	//   - cyan 青；
 	//   - white 白；
-	Args []string `xml:"arg,omitempty" yaml:"args,omitempty" json:"args,omitempty"`
+	Args []string `xml:"args>arg,omitempty" yaml:"args,omitempty" json:"args,omitempty" toml:"args,omitempty"`
 }
 
 func (conf *configOf[T]) buildLogs() *web.FieldError {

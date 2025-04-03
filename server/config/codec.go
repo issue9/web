@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ type compressConfig struct {
 	// Type content-type 的值
 	//
 	// 可以带通配符，比如 text/* 表示所有 text/ 开头的 content-type 都采用此压缩方法。
-	Types []string `json:"types" xml:"type" yaml:"types"`
+	Types []string `json:"types" xml:"type" yaml:"types" toml:"types"`
 
 	// IDs 压缩方法的 ID 列表
 	//
@@ -34,20 +34,20 @@ type compressConfig struct {
 	//  - br-best-compression
 	//  - br-best-speed
 	//  - zstd-default
-	ID string `json:"id" xml:"id,attr" yaml:"id"`
+	ID string `json:"id" xml:"id,attr" yaml:"id" toml:"id"`
 }
 
 type mimetypeConfig struct {
 	// 编码名称
 	//
 	// 比如 application/xml 等
-	Type string `json:"type" yaml:"type" xml:"type,attr"`
+	Type string `json:"type" yaml:"type" xml:"type,attr" toml:"type"`
 
 	// 返回错误代码是的 mimetype
 	//
 	// 比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。
 	// 如果为空，表示与 Type 相同。
-	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty"`
+	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty" toml:"problem,omitempty"`
 
 	// 实际采用的解码方法
 	//
@@ -61,7 +61,7 @@ type mimetypeConfig struct {
 	//  - gob
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
-	Target string `json:"target" yaml:"target" xml:"target,attr"`
+	Target string `json:"target" yaml:"target" xml:"target,attr" toml:"target"`
 }
 
 type mimetype struct {

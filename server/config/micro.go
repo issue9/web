@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@ type (
 		//
 		// 该类型可通过 [RegisterRegistryType] 进行注册，默认情况下支持以下类型：
 		//  - cache 以缓存系统作为储存类型；
-		Type string `json:"type" yaml:"type" xml:"type"`
+		Type string `json:"type" yaml:"type" xml:"type" toml:"type"`
 
 		// 负载均衡的方案
 		//
@@ -41,21 +41,21 @@ type (
 		//  - weighted-random 带权重的随机；
 		//  - round-robin 轮循；
 		//  - weighted-round-robin 带权重的轮循；
-		Strategy string `json:"strategy" yaml:"strategy" xml:"strategy"`
+		Strategy string `json:"strategy" yaml:"strategy" xml:"strategy" toml:"strategy"`
 		s        StrategyBuilder
 
 		// 传递 Type 的额外参数
 		//
 		// 会根据 args 的不同而不同：
 		//  - cache 仅支持一个参数，为 [time.ParseDuration] 可解析的字符串；
-		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty"`
+		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty" toml:"args,omitempty"`
 
 		registry registry.Registry
 	}
 
 	mapperConfig struct {
 		// 微服务名称
-		Name string `json:"name" yaml:"name" xml:"name"`
+		Name string `json:"name" yaml:"name" xml:"name" toml:"name"`
 
 		// 判断某个请求是否进入当前微服务的方法
 		//
@@ -64,7 +64,7 @@ type (
 		//  - prefix 包含特定前缀的访问地址；
 		//  - version 在 accept 中指定的特定的版本号才行；
 		//  - any 任意；
-		Matcher string `json:"matcher" yaml:"matcher" xml:"matcher"`
+		Matcher string `json:"matcher" yaml:"matcher" xml:"matcher" toml:"matcher"`
 
 		// 传递 Matcher 的额外参数
 		//
@@ -73,7 +73,7 @@ type (
 		//  - prefix 以逗号分隔的 URL 前缀列表；
 		//  - version 允许放行的版本号列表(以逗号分隔)，这些版本号出现在 accept 报头；
 		//  - any 不需要参数；
-		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty"`
+		Args string `json:"args,omitempty" yaml:"args,omitempty" xml:"args>arg,omitempty" toml:"args,omitempty"`
 	}
 )
 

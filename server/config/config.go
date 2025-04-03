@@ -31,7 +31,7 @@ import (
 // 不当的修改可能导致项目运行过程中出错，比如改变了唯一 ID
 // 的生成规则，可能会导致新生成的唯一 ID 与之前的 ID 重复。
 type configOf[T comparable] struct {
-	XMLName struct{} `yaml:"-" json:"-" xml:"web"`
+	XMLName struct{} `yaml:"-" json:"-" toml:"-" xml:"web"`
 
 	dir string
 
@@ -41,22 +41,22 @@ type configOf[T comparable] struct {
 	// 具体功能可参考[文档]。除非对该功能非常了解，否则不建议设置该值。
 	//
 	// [文档]: https://pkg.go.dev/runtime/debug#SetMemoryLimit
-	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty"`
+	MemoryLimit int64 `yaml:"memoryLimit,omitempty" json:"memoryLimit,omitempty" xml:"memoryLimit,attr,omitempty" toml:"memoryLimit,omitempty"`
 
 	// 日志系统的配置项
 	//
 	// 如果为空，所有日志输出都将被抛弃。
-	Logs *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty"`
+	Logs *logsConfig `yaml:"logs,omitempty" xml:"logs,omitempty" json:"logs,omitempty" toml:"logs,omitempty"`
 
 	// 指定默认语言
 	//
 	// 服务端的默认语言以及客户端未指定 accept-language 时的默认值。
 	// 如果为空，则会尝试当前用户的语言。
-	Language    string `yaml:"language,omitempty" json:"language,omitempty" xml:"language,attr,omitempty"`
+	Language    string `yaml:"language,omitempty" json:"language,omitempty" xml:"language,attr,omitempty" toml:"language,omitempty"`
 	languageTag language.Tag
 
 	// 与 HTTP 请求相关的设置项
-	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty"`
+	HTTP *httpConfig `yaml:"http,omitempty" json:"http,omitempty" xml:"http,omitempty" toml:"http,omitempty"`
 
 	// 时区名称
 	//
@@ -65,13 +65,13 @@ type configOf[T comparable] struct {
 	// 为空和 Local(注意大小写) 值都会被初始化本地时间。
 	//
 	// [文档]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	Timezone string `yaml:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty" toml:"timezone,omitempty"`
 	location *time.Location
 
 	// 指定缓存对象
 	//
 	// 如果为空，则会采用内存作为缓存对象。
-	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty"`
+	Cache *cacheConfig `yaml:"cache,omitempty" json:"cache,omitempty" xml:"cache,omitempty" toml:"cache,omitempty"`
 	cache cache.Driver
 
 	// 指定配置文件的序列化
@@ -83,18 +83,18 @@ type configOf[T comparable] struct {
 	//  - toml 支持 .toml 后缀名的文件
 	//
 	// 如果为空，表示支持以上所有格式。
-	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty"`
+	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty" toml:"fileSerializers,omitempty"`
 	config          *config.Config
 
 	// 压缩的相关配置
 	//
 	// 如果为空，那么不支持压缩功能。
-	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty"`
+	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty" toml:"compressions,omitempty"`
 
 	// 指定可用的 mimetype
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
-	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty"`
+	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty" toml:"mimetypes,omitempty"`
 
 	codec *web.Codec
 
@@ -105,38 +105,38 @@ type configOf[T comparable] struct {
 	//  - string 普通的字符串；
 	//  - number 数值格式；
 	// NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。
-	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty"`
+	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty" toml:"idGenerator,omitempty"`
 	idGenerator func() string
 
 	// Problem 中 type 字段的前缀
-	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty"`
+	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty" toml:"problemTypePrefix,omitempty"`
 
 	// OnRender 修改渲染结构
 	//
 	// 可通过 [RegisterOnRender] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
 	//  - render200 所有输出都是以 [server.RenderResponse] 作为返回对象；
-	OnRender string `yaml:"onRender,omitempty" json:"onRender,omitempty" xml:"onRender,omitempty"`
+	OnRender string `yaml:"onRender,omitempty" json:"onRender,omitempty" xml:"onRender,omitempty" toml:"onRender,omitempty"`
 	onRender func(int, any) (int, any)
 
 	// 指定服务发现和注册中心
 	//
 	// NOTE: 作为微服务和网关时才会有效果
-	Registry *registryConfig `yaml:"registry,omitempty" json:"registry,omitempty" xml:"registry,omitempty"`
+	Registry *registryConfig `yaml:"registry,omitempty" json:"registry,omitempty" xml:"registry,omitempty" toml:"registry,omitempty"`
 
 	// 作为微服务时的节点地址
 	//
 	// NOTE: 作为微服务时才会有效果
-	Peer string `yaml:"peer,omitempty" json:"peer,omitempty" xml:"peer,omitempty"`
+	Peer string `yaml:"peer,omitempty" json:"peer,omitempty" xml:"peer,omitempty" toml:"peer,omitempty"`
 	peer selector.Peer
 
 	// 作为微服务网关时的外部请求映射方式
 	//
 	// NOTE: 作为微服务的网关时才会有效果
-	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty"`
+	Mappers []*mapperConfig `yaml:"mappers,omitempty" json:"mappers,omitempty" xml:"mappers>mapper,omitempty" toml:"mappers,omitempty"`
 	mapper  map[string]mux.Matcher
 
 	// 用户自定义的配置项
-	User T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty"`
+	User T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty" toml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法
 	init []func(*server.Options)

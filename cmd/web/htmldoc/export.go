@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,9 +43,9 @@ type object struct {
 }
 
 type item struct {
-	XML, JSON, YAML string
-	Type            template.HTML
-	Desc            template.HTML
+	XML, JSON, YAML, TOML string
+	Type                  template.HTML
+	Desc                  template.HTML
 }
 
 var basicTypes = []string{
@@ -185,12 +185,13 @@ func (d *data) parseObject(obj *ast.TypeSpec) []string {
 			continue
 		}
 
-		var xml, json, yaml string
+		var xml, json, yaml, toml string
 		if f.Tag != nil {
 			st := reflect.StructTag(strings.Trim(f.Tag.Value, "`"))
 			xml = getName(name, st.Get("xml"))
 			json = getName(name, st.Get("json"))
 			yaml = getName(name, st.Get("yaml"))
+			toml = getName(name, st.Get("toml"))
 		}
 
 		var fieldTypeName string
@@ -225,6 +226,7 @@ func (d *data) parseObject(obj *ast.TypeSpec) []string {
 			XML:  xml,
 			JSON: json,
 			YAML: yaml,
+			TOML: toml,
 			Type: template.HTML(fieldTypeName),
 			Desc: comment2HTML(f.Doc, f.Comment),
 		})

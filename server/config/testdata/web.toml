@@ -1,0 +1,11 @@
+# web.toml 的测试文件，需要与其它内容数值相同
+
+http.port = ":8082"
+http.readTimeout = "3s"
+http.headers = [{ key = "H1", val = "v1" }, { key = "H2", val = "v2" }]
+timezone = "Africa/Addis_Ababa"
+mimetypes = [
+    { type = "application/json", target = "json" },
+    { type = "text/xml", target = "xml" },
+    { type = "multipart/form-data", target = "nop" },
+]

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,7 +21,7 @@ type cacheConfig struct {
 	//  - memory 以内存作为缓存；
 	//  - memcached 以 memcached 作为缓存；
 	//  - redis 以 redis 作为缓存；
-	Type string `yaml:"type" json:"type" xml:"type,attr"`
+	Type string `yaml:"type" json:"type" xml:"type,attr" toml:"type"`
 
 	// 表示连接缓存服务器的参数
 	//
@@ -31,7 +31,7 @@ type cacheConfig struct {
 	//  - redis: 符合 [Redis URI scheme] 的字符串；
 	//
 	// [Redis URI scheme]: https://www.iana.org/assignments/uri-schemes/prov/redis
-	DSN string `yaml:"dsn" json:"dsn" xml:"dsn"`
+	DSN string `yaml:"dsn" json:"dsn" xml:"dsn" toml:"dsn"`
 }
 
 func (conf *configOf[T]) buildCache() *web.FieldError {
