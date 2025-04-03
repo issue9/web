@@ -108,7 +108,7 @@ type (
 
 	// Duration 表示时间段
 	//
-	// 封装 [time.Duration] 以实现对 JSON、XML 和 YAML 的解析
+	// 封装 [time.Duration] 以实现对 JSON、XML、TOML 和 YAML 的解析
 	Duration time.Duration
 
 	headerConfig struct {

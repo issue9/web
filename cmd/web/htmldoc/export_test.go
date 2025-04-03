@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ func TestExport(t *testing.T) {
 	a := assert.New(t, false)
 
 	output := "./testdata/output.out.html"
-	a.NotError(export("./testdata", "object", output, "zh-CN", "title", "desc", "", "", defaultStyle)).
+	a.NotError(export("./testdata", "object", output, "zh-CN", "title", "desc", "", "")).
 		FileExists(output)
 }
 

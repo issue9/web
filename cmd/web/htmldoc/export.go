@@ -24,12 +24,8 @@ import (
 )
 
 type data struct {
-	Title  string // 标题，页面标题和文档的 h1
-	Desc   template.HTML
-	Style  template.CSS // stylesheet 样式表
-	Lang   string       // 页面语言
-	Header template.HTML
-	Footer template.HTML
+	Title string // 标题
+	Desc  template.HTML
 
 	TypeLocale string // 表格中 type 的翻译项
 	DescLocale string // 表格中 desc 的翻译项
@@ -44,7 +40,7 @@ type object struct {
 
 type item struct {
 	XML, JSON, YAML, TOML string
-	Type                  template.HTML
+	Type                  string
 	Desc                  template.HTML
 }
 
@@ -61,9 +57,9 @@ var basicTypes = []string{
 // output 输出的 html 文档路径；
 // lang 输出的文档语言，被应用在 html 的 lang 属性上；
 // title 文档的标题；
-// desc 文档的描述，可以是 HTML 格式；
+// desc 文档的描述，可以是 markdown 格式；
 // style 样式表；
-func export(dir, objName, output, lang, title, desc, header, footer, style string) error {
+func export(dir, objName, output, lang, title, desc string) error {
 	p, err := locales.NewPrinter(lang)
 	if err != nil {
 		return err
@@ -87,17 +83,9 @@ func export(dir, objName, output, lang, title, desc, header, footer, style strin
 		return web.NewLocaleError("not found source in %s", dir)
 	}
 
-	if style == defaultStyleValue {
-		style = defaultStyle
-	}
-
 	d := &data{
-		Title:  title,
-		Desc:   template.HTML(desc),
-		Style:  template.CSS(style),
-		Lang:   lang,
-		Header: template.HTML(header),
-		Footer: template.HTML(footer),
+		Title: title,
+		Desc:  template.HTML(desc),
 
 		TypeLocale: web.StringPhrase("type").LocaleString(p),
 		DescLocale: web.StringPhrase("description").LocaleString(p),
@@ -161,6 +149,10 @@ func (d *data) append(o *object) {
 	}
 }
 
+var linkReplacer = strings.NewReplacer(
+	".", "",
+)
+
 func (d *data) parseObject(obj *ast.TypeSpec) []string {
 	s, ok := obj.Type.(*ast.StructType)
 	if !ok {
@@ -219,7 +211,8 @@ func (d *data) parseObject(obj *ast.TypeSpec) []string {
 
 		if slices.Index(basicTypes, fieldTypeName) < 0 {
 			waitList = append(waitList, fieldTypeName)
-			fieldTypeName = `<a href="#` + fieldTypeName + `">` + fieldTypeName + "</a>"
+			// https://stackoverflow.com/questions/51221730/markdown-link-to-header
+			fieldTypeName = "[" + fieldTypeName + "](#" + strings.ToLower(linkReplacer.Replace(fieldTypeName)) + ")"
 		}
 
 		o.Items = append(o.Items, &item{
@@ -227,7 +220,7 @@ func (d *data) parseObject(obj *ast.TypeSpec) []string {
 			JSON: json,
 			YAML: yaml,
 			TOML: toml,
-			Type: template.HTML(fieldTypeName),
+			Type: fieldTypeName,
 			Desc: comment2HTML(f.Doc, f.Comment),
 		})
 	}
@@ -251,13 +244,18 @@ func getName(name, tag string) string {
 }
 
 var (
-	cPrinter comment.Printer
-	cParser  comment.Parser
+	cPrinter   comment.Printer
+	cParser    comment.Parser
+	brReplacer = strings.NewReplacer(
+		"\n\n", "<br />",
+		"\n", "<br />",
+	)
 )
 
 func comment2HTML(doc, c *ast.CommentGroup) template.HTML {
 	if doc == nil {
 		doc = c
 	}
-	return template.HTML(cPrinter.HTML(cParser.Parse(doc.Text())))
+	s := string(cPrinter.Markdown(cParser.Parse(doc.Text())))
+	return template.HTML(brReplacer.Replace(s))
 }

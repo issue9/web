@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.html -object=configOf
+//go:generate web htmldoc -lang=zh-CN -dir=./ -o=./CONFIG.md -object=configOf
 
 // Package config 从配置文件加载 [server.Options]
 package config

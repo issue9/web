@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,9 +24,6 @@ const (
 	langUsage   = web.StringPhrase("set html page language")
 	titleUsage  = web.StringPhrase("set html page title")
 	descUsage   = web.StringPhrase("set html page description")
-	styleUsage  = web.StringPhrase("set html page stylesheet in html>head>style")
-	headerUsage = web.StringPhrase("set html page header")
-	footerUsage = web.StringPhrase("set html page footer")
 )
 
 const defaultStyleValue = "default"
@@ -39,12 +36,9 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 		lang := fs.String("lang", "cmn-Hans", langUsage.LocaleString(p))
 		title := fs.String("title", "config", titleUsage.LocaleString(p))
 		desc := fs.String("desc", "", descUsage.LocaleString(p))
-		style := fs.String("style", defaultStyleValue, styleUsage.LocaleString(p))
-		header := fs.String("header", "", headerUsage.LocaleString(p))
-		footer := fs.String("footer", "", footerUsage.LocaleString(p))
 
 		return func(io.Writer) error {
-			return export(*dir, *obj, *output, *lang, *title, *desc, *header, *footer, *style)
+			return export(*dir, *obj, *output, *lang, *title, *desc)
 		}
 	})
 }
