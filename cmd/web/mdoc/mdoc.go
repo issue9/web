@@ -26,8 +26,6 @@ const (
 	descUsage   = web.StringPhrase("set markdown page description")
 )
 
-const defaultStyleValue = "default"
-
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("mdoc", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
 		obj := fs.String("object", "", objectUsage.LocaleString(p))

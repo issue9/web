@@ -58,7 +58,6 @@ var basicTypes = []string{
 // lang 输出的文档语言，被应用在 html 的 lang 属性上；
 // title 文档的标题；
 // desc 文档的描述，可以是 markdown 格式；
-// style 样式表；
 func export(dir, objName, output, lang, title, desc string) error {
 	p, err := locales.NewPrinter(lang)
 	if err != nil {
@@ -93,7 +92,7 @@ func export(dir, objName, output, lang, title, desc string) error {
 	}
 	d.parse(p, objName, files)
 
-	t, err := template.New("htmldoc").Parse(tpl)
+	t, err := template.New("mdoc").Parse(tpl)
 	if err != nil {
 		return err
 	}
