@@ -19,10 +19,10 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/enum"
-	"github.com/issue9/web/cmd/web/htmldoc"
 	"github.com/issue9/web/cmd/web/locale"
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
+	"github.com/issue9/web/cmd/web/mdoc"
 	"github.com/issue9/web/cmd/web/watch"
 )
 
@@ -63,7 +63,7 @@ func main() {
 		}
 	}, buildNotFound(p))
 
-	htmldoc.Init(opt, p)
+	mdoc.Init(opt, p)
 	locale.Init(opt, p)
 	update.Init(opt, p)
 	watch.Init(opt, p)

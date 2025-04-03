@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package htmldoc
+package mdoc
 
 const tpl = `# {{.Title}}
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package htmldoc
+package mdoc
 
 import (
 	"go/parser"
@@ -17,8 +17,8 @@ import (
 func TestExport(t *testing.T) {
 	a := assert.New(t, false)
 
-	output := "./testdata/output.out.html"
-	a.NotError(export("./testdata", "object", output, "zh-CN", "title", "desc", "", "")).
+	output := "./testdata/output.out.md"
+	a.NotError(export("./testdata", "object", output, "zh-CN", "title", "desc")).
 		FileExists(output)
 }
 

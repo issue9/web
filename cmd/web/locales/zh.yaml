@@ -1,255 +1,242 @@
 languages:
-    - zh-Hans
-    - cmn-Hans
-    - zh-CN
+  - zh-Hans
+  - cmn-Hans
+  - zh-CN
 messages:
-    - key: |
-        Auxiliary tool for github.com/issue9/web
+  - key: |
+      Auxiliary tool for github.com/issue9/web
 
-        commands：
+      commands：
+      {{commands}}
+
+      flags：
+      {{flags}}
+
+      visit https://github.com/issue9/web for more info.
+    message:
+      msg: |
+        框架 github.com/issue9/web 的辅助工具
+
+        子命令：
         {{commands}}
 
-        flags：
+        选项：
         {{flags}}
 
-        visit https://github.com/issue9/web for more info.
-      message:
-        msg: |
-            框架 github.com/issue9/web 的辅助工具
+        更多信息可访问 https://github.com/issue9/web。
+  - key: app args
+    message:
+      msg: 传递给应用的参数
+  - key: build enum file
+    message:
+      msg: 为类型生成枚举内容
+  - key: |-
+      build enum file
 
-            子命令：
-            {{commands}}
+      flags:
+      {{flags}}
+    message:
+      msg: |-
+        为类型生成枚举内容，诸如 Marshal、Unmarshat 和 String 等方法。
 
-            选项：
-            {{flags}}
-
-            更多信息可访问 https://github.com/issue9/web。
-    - key: app args
-      message:
-        msg: 传递给应用的参数
-    - key: build enum file
-      message:
-        msg: 为类型生成枚举内容
-    - key: |-
-        build enum file
-
-        flags:
+        选项：
         {{flags}}
-      message:
-        msg: |-
-            为类型生成枚举内容，诸如 Marshal、Unmarshat 和 String 等方法。
+  - key: command %s not found
+    message:
+      msg: |
+        未找到子命令 %s
+  - key: description
+    message:
+      msg: 描述
+  - key: dest locale files
+    message:
+      msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
+  - key: dev mode
+    message:
+      msg: 是否启用开发模式，具体可参考 comptime 下的说明。
+  - key: exclude watch files
+    message:
+      msg: 不需要监视的文件，遵循 path.Match 规则。
+  - key: export object name
+    message:
+      msg: 被导出的对象名
+  - key: extract locale
+    message:
+      msg: 提取本地化内容
+  - key: |
+      extract usage
 
-            选项：
-            {{flags}}
-    - key: command %s not found
-      message:
-        msg: |
-            未找到子命令 %s
-    - key: description
-      message:
-        msg: 描述
-    - key: dest locale files
-      message:
-        msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
-    - key: dev mode
-      message:
-        msg: 是否启用开发模式，具体可参考 comptime 下的说明。
-    - key: exclude watch files
-      message:
-        msg: 不需要监视的文件，遵循 path.Match 规则。
-    - key: export object name
-      message:
-        msg: 被导出的对象名
-    - key: extract locale
-      message:
-        msg: 提取本地化内容
-    - key: |
-        extract usage
+      flags：
+      {{flags}}
+    message:
+      msg: |
+        提取源代码中的本地化内容
 
-        flags：
+        默认情况下，会提取由 web.Phrase、web.NewLocaleError、web.StringPhrase、web.Context.Sprintf、
+        localeutil.Phrase、localeutil.NewLocaleError、localeutil.StringPhrase 的参数作为本地化数据。
+        当然用户也可以通过 -func 指定其它函数，只要其第一个参数是 string 类型的都可以。
+
+        可用选项：
         {{flags}}
-      message:
-        msg: |
-            提取源代码中的本地化内容
+  - key: file format
+    message:
+      msg: 输出文件的格式，目前支持 JSON 和 YAML
+  - key: gen filter method
+    message:
+      msg: 生成适配 github.com/issue9/web/filter 的相关方法
+  - key: gen markdown
+    message:
+      msg: 生成 markdown 文档
+  - key: gen openapi method
+    message:
+      msg: 生成适配 github.com/issue9/web/openapi 的相关方法
+  - key: gen sql method
+    message:
+      msg: 生成适配 database/sql 的相关方法
+  - key: language
+    message:
+      msg: 语言
+  - key: locale func
+    message:
+      msg: 源代码中用于输出本地化信息的函数
+  - key: locale struct tag
+    message:
+      msg: 指定用于本地化的结构体标签名称
+  - key: markdown usage
+    message:
+      msg: 为一个配置对象生成 markdown 文档
+  - key: no input file
+    message:
+      msg: 未指定输入文件
+  - key: no src dir
+    message:
+      msg: 未指定源码目录
+  - key: not allowed enum type
+    message:
+      msg: 不支持为该类型生成内容
+  - key: not found enum type %s
+    message:
+      msg: 未找到枚举类型 %s
+  - key: not found source in %s
+    message:
+      msg: 在 %s 中未找到符合要求的源码
+  - key: not found type doc
+    message:
+      msg: 未找到类型的相关文档
+  - key: not show ignore message
+    message:
+      msg: 不显示可忽略的消息
+  - key: out dir
+    message:
+      msg: 输出目录
+  - key: recursive dir
+    message:
+      msg: 递归访问子目录
+  - key: set file header
+    message:
+      msg: 指定文件头内容
+  - key: set input file
+    message:
+      msg: 指定输入文件
+  - key: set markdown doc path
+    message:
+      msg: 指定输出文件
+  - key: set markdown page description
+    message:
+      msg: 指定文档的描述，可以是 Markdown 格式
+  - key: set markdown page language
+    message:
+      msg: 指定文档的语言
+  - key: set markdown page title
+    message:
+      msg: 指定文档的标题
+  - key: set output file
+    message:
+      msg: 指定输出文件，如果为空，则会根据输入文件名加上 _enums 作为后缀，比如 input.go 会以 input_enums.go 作为输出文件。
+  - key: set source dir
+    message:
+      msg: 设置源码的路径
+  - key: set the enum type
+    message:
+      msg: 指定用于生成枚举内容的类型
+  - key: set watch file extension
+    message:
+      msg: 设置监视的文件扩展名
+  - key: show current help info
+    message:
+      msg: 显示当前帮助信息
+  - key: show help
+    message:
+      msg: 显示帮助信息
+  - key: show info log
+    message:
+      msg: 显示提示信息
+  - key: show version
+    message:
+      msg: 显示版本号
+  - key: skip sub module
+    message:
+      msg: 忽略子模块的内容
+  - key: src locale file
+    message:
+      msg: 指定源文件
+  - key: the dest file %s is dir
+    message:
+      msg: 指定的翻译文件 %s 是一个目录
+  - key: type
+    message:
+      msg: 类型
+  - key: type not set
+    message:
+      msg: 未指定类型
+  - key: unsupported marshal for %s
+    message:
+      msg: 不支持 %s 的序列化
+  - key: unsupported unmarshal for %s
+    message:
+      msg: 不支持 %s 的反序列化
+  - key: update locale file
+    message:
+      msg: 更新本地化的文件
+  - key: |
+      update locale file usage
 
-            默认情况下，会提取由 web.Phrase、web.NewLocaleError、web.StringPhrase、web.Context.Sprintf、
-            localeutil.Phrase、localeutil.NewLocaleError、localeutil.StringPhrase 的参数作为本地化数据。
-            当然用户也可以通过 -func 指定其它函数，只要其第一个参数是 string 类型的都可以。
+      flags:
+      {{flags}}
+    message:
+      msg: |
+        依据源文件依次更新指定的本地化文件
 
-            可用选项：
-            {{flags}}
-    - key: file format
-      message:
-        msg: 输出文件的格式，目前支持 JSON 和 YAML
-    - key: gen filter method
-      message:
-        msg: 生成适配 github.com/issue9/web/filter 的相关方法
-    - key: gen htmldoc
-      message:
-        msg: 根据结构体中的字段生成 html 文档
-    - key: gen openapi method
-      message:
-        msg: 生成适配 github.com/issue9/web/openapi 的相关方法
-    - key: gen sql method
-      message:
-        msg: 生成适配 database/sql 的相关方法
-    - key: htmldoc usage
-      message:
-        msg: |
-            这将提取结构体中的每个字段的注释生成一个 HTML 文档
+        此操作将会把只存在于源文件中的翻译项添加至指定的目标文件中，
+        而只存在于目标文件中的翻译项将被删除，一般在通过 locale
+        提取完翻译项之后，可以调用此命令对所有的翻译内容进行一次更新。
 
-            可用选项：
-            {{flags}}
-    - key: language
-      message:
-        msg: 语言
-    - key: locale func
-      message:
-        msg: 源代码中用于输出本地化信息的函数
-    - key: locale struct tag
-      message:
-        msg: 指定用于本地化的结构体标签名称
-    - key: no input file
-      message:
-        msg: 未指定输入文件
-    - key: no src dir
-      message:
-        msg: 未指定源码目录
-    - key: not allowed enum type
-      message:
-        msg: 不支持为该类型生成内容
-    - key: not found enum type %s
-      message:
-        msg: 未找到枚举类型 %s
-    - key: not found source in %s
-      message:
-        msg: 在 %s 中未找到符合要求的源码
-    - key: not found type doc
-      message:
-        msg: 未找到类型的相关文档
-    - key: not show ignore message
-      message:
-        msg: 不显示可忽略的消息
-    - key: out dir
-      message:
-        msg: 输出目录
-    - key: recursive dir
-      message:
-        msg: 递归访问子目录
-    - key: set file header
-      message:
-        msg: 指定文件头内容
-    - key: set html doc path
-      message:
-        msg: 设置输出的 HTML 文档路径
-    - key: set html page description
-      message:
-        msg: 生成的 HTML 文档中的描述信息
-    - key: set html page footer
-      message:
-        msg: 设置页脚
-    - key: set html page header
-      message:
-        msg: 设置页眉，如果不为空，那么将不再在页面中输出 title 和 desc 的设置项。
-    - key: set html page language
-      message:
-        msg: 设置 HTML 页面的语言
-    - key: set html page stylesheet in html>head>style
-      message:
-        msg: 设置 html>head>style 中的样式内容，如果该值为 default，那么将采用默认值，如果为空则不输出该标签的内容。
-    - key: set html page title
-      message:
-        msg: 设置 HTML 页面的标题
-    - key: set input file
-      message:
-        msg: 指定输入文件
-    - key: set output file
-      message:
-        msg: 指定输出文件，如果为空，则会根据输入文件名加上 _enums 作为后缀，比如 input.go 会以 input_enums.go 作为输出文件。
-    - key: set source dir
-      message:
-        msg: 设置源码的路径
-    - key: set the enum type
-      message:
-        msg: 指定用于生成枚举内容的类型
-    - key: set watch file extension
-      message:
-        msg: 设置监视的文件扩展名
-    - key: show current help info
-      message:
-        msg: 显示当前帮助信息
-    - key: show help
-      message:
-        msg: 显示帮助信息
-    - key: show info log
-      message:
-        msg: 显示提示信息
-    - key: show version
-      message:
-        msg: 显示版本号
-    - key: skip sub module
-      message:
-        msg: 忽略子模块的内容
-    - key: src locale file
-      message:
-        msg: 指定源文件
-    - key: the dest file %s is dir
-      message:
-        msg: 指定的翻译文件 %s 是一个目录
-    - key: type
-      message:
-        msg: 类型
-    - key: type not set
-      message:
-        msg: 未指定类型
-    - key: unsupported marshal for %s
-      message:
-        msg: 不支持 %s 的序列化
-    - key: unsupported unmarshal for %s
-      message:
-        msg: 不支持 %s 的反序列化
-    - key: update locale file
-      message:
-        msg: 更新本地化的文件
-    - key: |
-        update locale file usage
-
-        flags:
+        可用选项:
         {{flags}}
-      message:
-        msg: |
-            依据源文件依次更新指定的本地化文件
+  - key: watch and reload
+    message:
+      msg: 热编译项目
+  - key: watch and reload usage
+    message:
+      msg: |
+        监视项目中的文件并在有修改的情况下重新编译项目
 
-            此操作将会把只存在于源文件中的翻译项添加至指定的目标文件中，
-            而只存在于目标文件中的翻译项将被删除，一般在通过 locale
-            提取完翻译项之后，可以调用此命令对所有的翻译内容进行一次更新。
+        web watch [options] [dir]
 
-            可用选项:
-            {{flags}}
-    - key: watch and reload
-      message:
-        msg: 热编译项目
-    - key: watch and reload usage
-      message:
-        msg: |
-            监视项目中的文件并在有修改的情况下重新编译项目
+        options 可以为以下参数：
+        {{flags}}
 
-            web watch [options] [dir]
-
-            options 可以为以下参数：
-            {{flags}}
-
-            dir 表示编译的代码，为 main 函数所在的目录或是文件。
-            如果未指定，则采用当前目录。
-    - key: watch frequency
-      message:
-        msg: 最小的文件修改间隔
-    - key: watch.app
-      message:
-        msg: 应用
-    - key: watch.compiler
-      message:
-        msg: 编译
-    - key: watch.sys
-      message:
-        msg: 系统
+        dir 表示编译的代码，为 main 函数所在的目录或是文件。
+        如果未指定，则采用当前目录。
+  - key: watch frequency
+    message:
+      msg: 最小的文件修改间隔
+  - key: watch.app
+    message:
+      msg: 应用
+  - key: watch.compiler
+    message:
+      msg: 编译
+  - key: watch.sys
+    message:
+      msg: 系统

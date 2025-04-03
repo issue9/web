@@ -5,3 +5,4 @@ web.exe
 *.out.yml
 *.out.json
 *.out.html
+*.out.md

@@ -77,18 +77,15 @@ messages:
     - key: gen filter method
       message:
         msg: gen filter method
-    - key: gen htmldoc
+    - key: gen markdown
       message:
-        msg: gen htmldoc
+        msg: gen markdown
     - key: gen openapi method
       message:
         msg: gen openapi method
     - key: gen sql method
       message:
         msg: gen sql method
-    - key: htmldoc usage
-      message:
-        msg: htmldoc usage
     - key: language
       message:
         msg: language
@@ -98,6 +95,9 @@ messages:
     - key: locale struct tag
       message:
         msg: locale struct tag
+    - key: markdown usage
+      message:
+        msg: markdown usage
     - key: no input file
       message:
         msg: no input file
@@ -128,30 +128,21 @@ messages:
     - key: set file header
       message:
         msg: set file header
-    - key: set html doc path
-      message:
-        msg: set html doc path
-    - key: set html page description
-      message:
-        msg: set html page description
-    - key: set html page footer
-      message:
-        msg: set html page footer
-    - key: set html page header
-      message:
-        msg: set html page header
-    - key: set html page language
-      message:
-        msg: set html page language
-    - key: set html page stylesheet in html>head>style
-      message:
-        msg: set html page stylesheet in html>head>style
-    - key: set html page title
-      message:
-        msg: set html page title
     - key: set input file
       message:
         msg: set input file
+    - key: set markdown doc path
+      message:
+        msg: set markdown doc path
+    - key: set markdown page description
+      message:
+        msg: set markdown page description
+    - key: set markdown page language
+      message:
+        msg: set markdown page language
+    - key: set markdown page title
+      message:
+        msg: set markdown page title
     - key: set output file
       message:
         msg: set output file
