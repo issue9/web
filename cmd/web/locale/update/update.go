@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,12 +14,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message"
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web/cmd/web/locale"
 	"github.com/issue9/web/cmd/web/termlog"

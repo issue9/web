@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	stdyaml "github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v4"
 	"golang.org/x/text/language"
-	stdyaml "gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
@@ -22,8 +22,8 @@ import (
 )
 
 var (
-	_ stdjson.Marshaler = &renderer[int]{}
-	_ stdyaml.Marshaler = &renderer[int]{}
+	_ stdjson.Marshaler      = &renderer[int]{}
+	_ stdyaml.BytesMarshaler = &renderer[int]{}
 )
 
 type object struct { // 被用于多种用途，所以同时带了 XML 和 yaml。
@@ -44,7 +44,7 @@ func TestRenderer(t *testing.T) {
 
 	ref := &Ref{Ref: "ref"}
 
-	r := newRenderer[object](ref.build(p, "schemas"), &object{ID: 2})
+	r := newRenderer(ref.build(p, "schemas"), &object{ID: 2})
 	a.Equal(r.ref.Ref, "#/components/schemas/ref").
 		Empty(r.ref.Summary).
 		NotNil(r.obj)
@@ -55,7 +55,7 @@ func TestRenderer(t *testing.T) {
 
 	// YAML
 	bs, err = stdyaml.Marshal(r)
-	a.NotError(err).Equal(string(bs), "$ref: '#/components/schemas/ref'\n")
+	a.NotError(err).Equal(string(bs), "$ref: \"#/components/schemas/ref\"\n")
 
 	// ref = nil
 

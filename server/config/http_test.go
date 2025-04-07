@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/logs/v7"
-	"gopkg.in/yaml.v3"
 )
 
 func TestCertificate_sanitize(t *testing.T) {

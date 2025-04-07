@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,11 +9,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v4"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v3"
 )
 
 func TestLocale_Printer(t *testing.T) {

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,12 +11,12 @@ import (
 	"io/fs"
 
 	gobuild "github.com/caixw/gobuild/locales"
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/localeutil/message/serialize"
 	web "github.com/issue9/web/locales"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
-	"gopkg.in/yaml.v3"
 )
 
 //go:embed *.yaml

@@ -6,8 +6,12 @@
 package orderedmap
 
 import (
+	"encoding/json"
 	"iter"
 	"slices"
+
+	"github.com/goccy/go-yaml"
+	"github.com/issue9/errwrap"
 )
 
 // OrderedMap 键名类型为 string 的有序 map
@@ -52,7 +56,7 @@ func (m *OrderedMap[V]) Delete(key string) {
 	}
 }
 
-func (m *OrderedMap[V]) Range() iter.Seq2[string, V] {
+func (m *OrderedMap[V]) Iter() iter.Seq2[string, V] {
 	return func(yield func(string, V) bool) {
 		for _, key := range m.ordered {
 			if !yield(key, m.items[key]) {
@@ -63,3 +67,45 @@ func (m *OrderedMap[V]) Range() iter.Seq2[string, V] {
 }
 
 func (m *OrderedMap[V]) Len() int { return len(m.items) }
+
+func (m *OrderedMap[V]) MarshalJSON() ([]byte, error) {
+	if m == nil || m.items == nil {
+		return []byte("null"), nil
+	}
+
+	w := &errwrap.Buffer{}
+	w.WByte('{')
+	for index, key := range m.ordered {
+		if index > 0 {
+			w.WByte(',')
+		}
+
+		w.WByte('"').WString(key).WByte('"').WByte(':')
+		bs, err := json.Marshal(m.items[key])
+		if err != nil {
+			return nil, err
+		}
+		w.WBytes(bs)
+	}
+	w.WByte('}')
+
+	return w.Bytes(), nil
+}
+
+func (m *OrderedMap[V]) MarshalYAML() ([]byte, error) {
+	if m == nil || m.items == nil {
+		return []byte("null"), nil
+	}
+
+	w := &errwrap.Buffer{}
+	for _, key := range m.ordered {
+		w.WString(key).WByte(':')
+		bs, err := yaml.Marshal(m.items[key])
+		if err != nil {
+			return nil, err
+		}
+		w.WBytes(bs)
+	}
+
+	return w.Bytes(), nil
+}

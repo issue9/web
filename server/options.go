@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/config"
@@ -20,7 +21,6 @@ import (
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"

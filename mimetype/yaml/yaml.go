@@ -11,8 +11,8 @@ package yaml
 import (
 	"io"
 
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/mux/v9/header"
-	"gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 )

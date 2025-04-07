@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/fxamacker/cbor/v2 v2.8.0
+	github.com/goccy/go-yaml v1.17.1
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.19.2
 	github.com/issue9/config v0.9.1
@@ -27,7 +28,6 @@ require (
 	golang.org/x/crypto v0.37.0
 	golang.org/x/text v0.24.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -35,13 +35,10 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/issue9/rands/v3 v3.1.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

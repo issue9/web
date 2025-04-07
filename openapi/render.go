@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,8 @@ import (
 	"encoding/hex"
 	sj "encoding/json"
 	"strconv"
+
+	sy "github.com/goccy/go-yaml"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/html"
@@ -39,11 +41,11 @@ func (r *renderer[T]) MarshalJSON() ([]byte, error) {
 	return sj.Marshal(r.obj)
 }
 
-func (r *renderer[T]) MarshalYAML() (any, error) {
+func (r *renderer[T]) MarshalYAML() ([]byte, error) {
 	if r.ref != nil {
-		return r.ref, nil
+		return sy.Marshal(r.ref)
 	}
-	return r.obj, nil
+	return sy.Marshal(r.obj)
 }
 
 func (o *openAPIRenderer) MarshalHTML() (name string, data any) {
@@ -74,7 +76,6 @@ func (d *Document) Handler(tag ...string) web.HandlerFunc {
 		}
 
 		return web.NotModified(func() (string, bool) {
-
 			// 引起 ETag 变化的几个要素
 			etag := strconv.Itoa(int(d.last.Unix())) + "/" +
 				ctx.Mimetype(false) + "/" +

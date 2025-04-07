@@ -17,6 +17,7 @@ import (
 
 	st "github.com/BurntSushi/toml"
 	"github.com/andybalholm/brotli"
+	sy "github.com/goccy/go-yaml"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memcache"
 	"github.com/issue9/cache/caches/memory"
@@ -24,7 +25,6 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v9"
 	"github.com/issue9/unique/v2"
-	sy "gopkg.in/yaml.v3"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/compressor"
