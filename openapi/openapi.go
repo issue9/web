@@ -43,9 +43,8 @@ import (
 	"fmt"
 	"time"
 
-	orderedmap "github.com/wk8/go-ordered-map/v2"
-
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/orderedmap"
 )
 
 // Version 支持的 openapi 版本
@@ -133,18 +132,18 @@ type (
 		s web.Server
 	}
 
-	paths = orderedmap.OrderedMap[string, *renderer[pathItemRenderer]]
+	paths = orderedmap.OrderedMap[*renderer[pathItemRenderer]]
 
 	openAPIRenderer struct {
-		OpenAPI      string                                     `json:"openapi" yaml:"openapi"`
-		Info         *infoRenderer                              `json:"info" yaml:"info"`
-		Servers      []*serverRenderer                          `json:"servers,omitempty" yaml:"servers,omitempty"`
-		Paths        *paths                                     `json:"paths,omitempty" yaml:"paths,omitempty"`
-		WebHooks     *paths                                     `json:"webhooks,omitempty" yaml:"webhooks,omitempty"`
-		Components   *componentsRenderer                        `json:"components,omitempty" yaml:"components,omitempty"`
-		Security     []*orderedmap.OrderedMap[string, []string] `json:"security,omitempty" yaml:"security,omitempty"`
-		Tags         []*tagRenderer                             `json:"tags,omitempty" yaml:"tags,omitempty"`
-		ExternalDocs *externalDocsRenderer                      `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+		OpenAPI      string                             `json:"openapi" yaml:"openapi"`
+		Info         *infoRenderer                      `json:"info" yaml:"info"`
+		Servers      []*serverRenderer                  `json:"servers,omitempty" yaml:"servers,omitempty"`
+		Paths        *paths                             `json:"paths,omitempty" yaml:"paths,omitempty"`
+		WebHooks     *paths                             `json:"webhooks,omitempty" yaml:"webhooks,omitempty"`
+		Components   *componentsRenderer                `json:"components,omitempty" yaml:"components,omitempty"`
+		Security     []*orderedmap.OrderedMap[[]string] `json:"security,omitempty" yaml:"security,omitempty"`
+		Tags         []*tagRenderer                     `json:"tags,omitempty" yaml:"tags,omitempty"`
+		ExternalDocs *externalDocsRenderer              `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 
 		// 扩展内容
 
@@ -235,7 +234,7 @@ type (
 		Callback map[string]*PathItem
 	}
 
-	callbackRenderer = orderedmap.OrderedMap[string, *renderer[pathItemRenderer]]
+	callbackRenderer = orderedmap.OrderedMap[*renderer[pathItemRenderer]]
 
 	SecurityScheme struct {
 		ID string // 在 components 中的键名，要求唯一性。
@@ -283,10 +282,10 @@ type (
 	}
 
 	oauthFlowRenderer struct {
-		AuthorizationURL string                                 `json:"authorizationUrl,omitempty" yaml:"authorizationUrl,omitempty"`
-		TokenUrl         string                                 `json:"tokenUrl,omitempty" yaml:"tokenUrl,omitempty"`
-		RefreshUrl       string                                 `json:"refreshUrl,omitempty" yaml:"refreshUrl,omitempty"`
-		Scopes           *orderedmap.OrderedMap[string, string] `json:"scopes,omitempty" yaml:"scopes,omitempty"`
+		AuthorizationURL string                         `json:"authorizationUrl,omitempty" yaml:"authorizationUrl,omitempty"`
+		TokenUrl         string                         `json:"tokenUrl,omitempty" yaml:"tokenUrl,omitempty"`
+		RefreshUrl       string                         `json:"refreshUrl,omitempty" yaml:"refreshUrl,omitempty"`
+		Scopes           *orderedmap.OrderedMap[string] `json:"scopes,omitempty" yaml:"scopes,omitempty"`
 	}
 
 	SecurityRequirement struct {
@@ -294,7 +293,7 @@ type (
 		Scopes []string
 	}
 
-	securityRequirementRenderer = orderedmap.OrderedMap[string, []string]
+	securityRequirementRenderer = orderedmap.OrderedMap[[]string]
 
 	// Operation 定义了每一个 API 的属性
 	Operation struct {
@@ -319,19 +318,19 @@ type (
 	}
 
 	operationRenderer struct {
-		Tags        []string                                                    `json:"tags,omitempty" yaml:"tags,omitempty"`
-		Summary     string                                                      `json:"summary,omitempty" yaml:"summary,omitempty"`
-		Description string                                                      `json:"description,omitempty" yaml:"description,omitempty"`
-		ID          string                                                      `json:"operationId,omitempty" yaml:"operationId,omitempty"`
-		Deprecated  bool                                                        `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-		Parameters  []*renderer[parameterRenderer]                              `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-		RequestBody *renderer[requestRenderer]                                  `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-		Responses   *orderedmap.OrderedMap[string, *renderer[responseRenderer]] `json:"responses,omitempty" yaml:"responses,omitempty"`
+		Tags        []string                                            `json:"tags,omitempty" yaml:"tags,omitempty"`
+		Summary     string                                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+		Description string                                              `json:"description,omitempty" yaml:"description,omitempty"`
+		ID          string                                              `json:"operationId,omitempty" yaml:"operationId,omitempty"`
+		Deprecated  bool                                                `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+		Parameters  []*renderer[parameterRenderer]                      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+		RequestBody *renderer[requestRenderer]                          `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+		Responses   *orderedmap.OrderedMap[*renderer[responseRenderer]] `json:"responses,omitempty" yaml:"responses,omitempty"`
 
-		Callbacks    *orderedmap.OrderedMap[string, *renderer[callbackRenderer]] `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
-		Security     []*securityRequirementRenderer                              `json:"security,omitempty" yaml:"security,omitempty"`
-		Servers      []*serverRenderer                                           `json:"servers,omitempty" yaml:"servers,omitempty"`
-		ExternalDocs *externalDocsRenderer                                       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+		Callbacks    *orderedmap.OrderedMap[*renderer[callbackRenderer]] `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+		Security     []*securityRequirementRenderer                      `json:"security,omitempty" yaml:"security,omitempty"`
+		Servers      []*serverRenderer                                   `json:"servers,omitempty" yaml:"servers,omitempty"`
+		ExternalDocs *externalDocsRenderer                               `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 	}
 
 	Response struct {
@@ -352,12 +351,12 @@ type (
 		Content map[string]*Schema // key = mimetype
 	}
 
-	content = orderedmap.OrderedMap[string, *mediaTypeRenderer]
+	content = orderedmap.OrderedMap[*mediaTypeRenderer]
 
 	responseRenderer struct {
-		Description string                                                    `json:"description" yaml:"description"`
-		Headers     *orderedmap.OrderedMap[string, *renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
-		Content     *content                                                  `json:"content,omitempty" yaml:"content,omitempty"`
+		Description string                                            `json:"description" yaml:"description"`
+		Headers     *orderedmap.OrderedMap[*renderer[headerRenderer]] `json:"headers,omitempty" yaml:"headers,omitempty"`
+		Content     *content                                          `json:"content,omitempty" yaml:"content,omitempty"`
 	}
 
 	Request struct {
@@ -383,7 +382,7 @@ type (
 		Variables   []*ServerVariable
 	}
 
-	serverVars = orderedmap.OrderedMap[string, *serverVariableRenderer]
+	serverVars = orderedmap.OrderedMap[*serverVariableRenderer]
 
 	serverRenderer struct {
 		URL         string      `json:"url" yaml:"url"`

@@ -9,9 +9,8 @@ import (
 	"strings"
 	"time"
 
-	orderedmap "github.com/wk8/go-ordered-map/v2"
-
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/orderedmap"
 )
 
 // OpenAPISchema 自定义某个类型在 openapi 文档中的类型
@@ -70,7 +69,7 @@ type Schema struct {
 	Default              any
 }
 
-type properties = orderedmap.OrderedMap[string, *renderer[schemaRenderer]]
+type properties = orderedmap.OrderedMap[*renderer[schemaRenderer]]
 
 type schemaRenderer struct {
 	Type                 string                      `json:"type,omitempty" yaml:"type,omitempty"` // AnyOf 等不为空，此值可为空

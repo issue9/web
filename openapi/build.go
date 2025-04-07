@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/orderedmap"
 )
 
 // 此对象不能和 operationRenderer 放在同一文件，且需要在其之前编译，
@@ -39,10 +39,11 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 		servers = append(servers, s.build(p))
 	}
 
-	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(d.security))
+	security := make([]*orderedmap.OrderedMap[[]string], 0, len(d.security))
 	for _, sec := range d.security {
-		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Scopes}
-		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
+		s := orderedmap.New[[]string](1)
+		s.Add(sec.Name, sec.Scopes)
+		security = append(security, s)
 	}
 
 	tags := make([]*tagRenderer, 0, len(d.tags))
@@ -71,8 +72,7 @@ func (d *Document) build(p *message.Printer, lang language.Tag, filterTags []str
 }
 
 func (m *components) build(p *message.Printer, d *Document) *componentsRenderer {
-	l := len(m.paths) + len(m.cookies) + len(m.queries)
-	parameters := orderedmap.New[string, *parameterRenderer](orderedmap.WithCapacity[string, *parameterRenderer](l))
+	parameters := orderedmap.New[*parameterRenderer](len(m.paths) + len(m.cookies) + len(m.queries))
 	writeMap2OrderedMap(m.paths, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InPath) })
 	writeMap2OrderedMap(m.cookies, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InCookie) })
 	writeMap2OrderedMap(m.queries, parameters, func(in *Parameter) *parameterRenderer { return in.buildParameterRenderer(p, InQuery) })
@@ -148,10 +148,11 @@ func (o *Operation) build(p *message.Printer, d *Document) *operationRenderer {
 		parameters = append(parameters, param.buildParameter(p, InQuery))
 	}
 
-	security := make([]*orderedmap.OrderedMap[string, []string], 0, len(o.Security))
+	security := make([]*orderedmap.OrderedMap[[]string], 0, len(o.Security))
 	for _, sec := range o.Security {
-		pair := orderedmap.Pair[string, []string]{Key: sec.Name, Value: sec.Scopes}
-		security = append(security, orderedmap.New[string, []string](orderedmap.WithInitialData(pair)))
+		s := orderedmap.New[[]string](1)
+		s.Add(sec.Name, sec.Scopes)
+		security = append(security, s)
 	}
 
 	servers := make([]*serverRenderer, 0, len(o.Servers))
@@ -187,15 +188,15 @@ func (resp *Response) build(p *message.Printer, d *Document) *renderer[responseR
 }
 
 func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRenderer {
-	var headers *orderedmap.OrderedMap[string, *renderer[headerRenderer]]
+	var headers *orderedmap.OrderedMap[*renderer[headerRenderer]]
 	if resp.Headers != nil {
-		headers = orderedmap.New[string, *renderer[headerRenderer]](orderedmap.WithCapacity[string, *headerRenderer](len(resp.Headers)))
+		headers = orderedmap.New[*renderer[headerRenderer]](len(resp.Headers))
 		for _, h := range resp.Headers {
 			headers.Set(h.Name, h.buildHeader(p))
 		}
 	}
 
-	content := orderedmap.New[string, *mediaTypeRenderer](orderedmap.WithCapacity[string, *mediaTypeRenderer](len(d.mediaTypes)))
+	content := orderedmap.New[*mediaTypeRenderer](len(d.mediaTypes))
 	if resp.Content != nil {
 		keys := slices.Collect(maps.Keys(resp.Content))
 		slices.Sort(keys)
@@ -215,7 +216,7 @@ func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRe
 			if resp.Problem {
 				k = v
 			}
-			if content.GetPair(k) == nil {
+			if _, found := content.Get(k); !found {
 				content.Set(k, &mediaTypeRenderer{
 					Schema: resp.Body.build(p),
 				})
@@ -242,7 +243,7 @@ func (req *Request) build(p *message.Printer, d *Document) *renderer[requestRend
 }
 
 func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRenderer {
-	content := orderedmap.New[string, *mediaTypeRenderer](orderedmap.WithCapacity[string, *mediaTypeRenderer](len(d.mediaTypes)))
+	content := orderedmap.New[*mediaTypeRenderer](len(d.mediaTypes))
 	if req.Content != nil {
 		writeMap2OrderedMap(req.Content, content, func(in *Schema) *mediaTypeRenderer {
 			return &mediaTypeRenderer{Schema: in.build(p)}
@@ -250,7 +251,7 @@ func (req *Request) buildRenderer(p *message.Printer, d *Document) *requestRende
 	}
 	if req.Body != nil {
 		for mt := range d.mediaTypes {
-			if content.GetPair(mt) == nil {
+			if _, found := content.Get(mt); !found {
 				content.Set(mt, &mediaTypeRenderer{
 					Schema: req.Body.build(p),
 				})
@@ -276,7 +277,7 @@ func (s *Server) build(p *message.Printer) *serverRenderer {
 	}
 
 	if s.Variables != nil {
-		rs.Variables = orderedmap.New[string, *serverVariableRenderer](orderedmap.WithCapacity[string, *serverVariableRenderer](len(s.Variables)))
+		rs.Variables = orderedmap.New[*serverVariableRenderer](len(s.Variables))
 		for _, v := range s.Variables {
 			rs.Variables.Set(v.Name, &serverVariableRenderer{
 				Enum:        v.Enums,

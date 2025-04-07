@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,11 +34,13 @@ func TestWriteMap2OrderedMap(t *testing.T) {
 	}
 
 	om := writeMap2OrderedMap(ms, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
+	v1, found := om.Get("t1")
+	v2, found := om.Get("t2")
 	a.Equal(om.Len(), 2).
-		Equal(om.GetPair("t1").Value, "简体").
-		Equal(om.GetPair("t2").Value, "t2")
+		True(found).Equal(v1, "简体").
+		True(found).Equal(v2, "t2")
 
-	om = writeMap2OrderedMap[string, web.LocaleStringer, string](nil, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
+	om = writeMap2OrderedMap[web.LocaleStringer, string](nil, nil, func(in web.LocaleStringer) string { return sprint(p, in) })
 	a.Nil(om)
 }
 

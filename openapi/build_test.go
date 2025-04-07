@@ -42,18 +42,18 @@ func TestDocument_build(t *testing.T) {
 		Responses: map[string]*Response{"200": {Body: &Schema{Type: TypeNumber}}},
 	})
 	r = d.build(p, language.SimplifiedChinese, nil)
-	obj := r.Paths.GetPair("/users/{id}").Value.obj
-	a.NotNil(obj.Get).
-		NotNil(obj.Post).
-		Nil(obj.Delete)
+	v, found := r.Paths.Get("/users/{id}")
+	a.True(found).NotNil(v.obj.Get).
+		NotNil(v.obj.Post).
+		Nil(v.obj.Delete)
 
 	// 带过滤
 
 	r = d.build(p, language.SimplifiedChinese, []string{"admin"})
-	obj = r.Paths.GetPair("/users/{id}").Value.obj
-	a.Nil(obj.Get).
-		NotNil(obj.Post).
-		Nil(obj.Delete)
+	v, found = r.Paths.Get("/users/{id}")
+	a.Nil(v.obj.Get).
+		NotNil(v.obj.Post).
+		Nil(v.obj.Delete)
 }
 
 func TestComponents_build(t *testing.T) {
@@ -95,10 +95,12 @@ func TestServer_build(t *testing.T) {
 		},
 	}
 	ret = s.build(p)
+	v1, found1 := ret.Variables.Get("id1")
+	v2, found2 := ret.Variables.Get("id2")
 	a.Equal(ret.Description, "简体").Equal(ret.URL, s.URL).
 		Equal(ret.Variables.Len(), 2).
-		Equal(ret.Variables.GetPair("id1").Value.Description, "简体").
-		Equal(ret.Variables.GetPair("id2").Value.Description, "id2")
+		True(found1).Equal(v1.Description, "简体").
+		True(found2).Equal(v2.Description, "id2")
 }
 
 func TestRef_build(t *testing.T) {

@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
 package openapi
 
-import orderedmap "github.com/wk8/go-ordered-map/v2"
+import "github.com/issue9/web/internal/orderedmap"
 
 type components struct {
 	schemas         map[string]*Schema
@@ -21,14 +21,14 @@ type components struct {
 }
 
 type componentsRenderer struct {
-	Schemas         *orderedmap.OrderedMap[string, *schemaRenderer]         `json:"schemas,omitempty" yaml:"schemas,omitempty"`
-	Responses       *orderedmap.OrderedMap[string, *responseRenderer]       `json:"responses,omitempty" yaml:"responses,omitempty"`
-	Parameters      *orderedmap.OrderedMap[string, *parameterRenderer]      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	Requests        *orderedmap.OrderedMap[string, *requestRenderer]        `json:"requestBodies,omitempty" yaml:"requestBodies,omitempty"`
-	Headers         *orderedmap.OrderedMap[string, *headerRenderer]         `json:"headers,omitempty" yaml:"headers,omitempty"`
-	SecuritySchemes *orderedmap.OrderedMap[string, *securitySchemeRenderer] `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
-	Callbacks       *orderedmap.OrderedMap[string, *callbackRenderer]       `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
-	PathItems       *orderedmap.OrderedMap[string, *pathItemRenderer]       `json:"pathItems,omitempty" yaml:"pathItems,omitempty"`
+	Schemas         *orderedmap.OrderedMap[*schemaRenderer]         `json:"schemas,omitempty" yaml:"schemas,omitempty"`
+	Responses       *orderedmap.OrderedMap[*responseRenderer]       `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Parameters      *orderedmap.OrderedMap[*parameterRenderer]      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Requests        *orderedmap.OrderedMap[*requestRenderer]        `json:"requestBodies,omitempty" yaml:"requestBodies,omitempty"`
+	Headers         *orderedmap.OrderedMap[*headerRenderer]         `json:"headers,omitempty" yaml:"headers,omitempty"`
+	SecuritySchemes *orderedmap.OrderedMap[*securitySchemeRenderer] `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
+	Callbacks       *orderedmap.OrderedMap[*callbackRenderer]       `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+	PathItems       *orderedmap.OrderedMap[*pathItemRenderer]       `json:"pathItems,omitempty" yaml:"pathItems,omitempty"`
 }
 
 func newComponents() *components {

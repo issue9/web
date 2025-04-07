@@ -5,16 +5,15 @@
 package openapi
 
 import (
-	"cmp"
 	"maps"
 	"reflect"
 	"slices"
 	"strings"
 
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/orderedmap"
 )
 
 var nameReplacer = strings.NewReplacer(
@@ -58,13 +57,13 @@ func sprint(p *message.Printer, s web.LocaleStringer) string {
 // 如果 m 为 nil，会初始化一个空对象。
 //
 // NOTE: 会对 in 的数据进行排序之后再输出。
-func writeMap2OrderedMap[KEY cmp.Ordered, IN any, OUT any](in map[KEY]IN, m *orderedmap.OrderedMap[KEY, OUT], conv func(in IN) OUT) *orderedmap.OrderedMap[KEY, OUT] {
+func writeMap2OrderedMap[IN any, OUT any](in map[string]IN, m *orderedmap.OrderedMap[OUT], conv func(in IN) OUT) *orderedmap.OrderedMap[OUT] {
 	if len(in) == 0 {
 		return m
 	}
 
 	if m == nil {
-		m = orderedmap.New[KEY, OUT](orderedmap.WithCapacity[KEY, OUT](len(in)))
+		m = orderedmap.New[OUT](len(in))
 	}
 
 	keys := slices.Collect(maps.Keys(in))
