@@ -23,6 +23,7 @@ import (
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
 	"github.com/issue9/web/cmd/web/mdoc"
+	"github.com/issue9/web/cmd/web/tpl"
 	"github.com/issue9/web/cmd/web/watch"
 )
 
@@ -68,6 +69,7 @@ func main() {
 	update.Init(opt, p)
 	watch.Init(opt, p)
 	enum.Init(opt, p)
+	tpl.Init(opt, p)
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 
 	if err := opt.Exec(os.Args[1:]); err != nil {

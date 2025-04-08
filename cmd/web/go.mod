@@ -7,10 +7,13 @@ require (
 	github.com/goccy/go-yaml v1.17.1
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cmdopt v0.13.1
+	github.com/issue9/errwrap v0.3.2
 	github.com/issue9/localeutil v0.29.4
 	github.com/issue9/logs/v7 v7.6.6
 	github.com/issue9/source v0.12.5
 	github.com/issue9/web v0.102.11
+	github.com/otiai10/copy v1.14.1
+	golang.org/x/mod v0.24.0
 	golang.org/x/text v0.24.0
 )
 
@@ -22,7 +25,6 @@ require (
 	github.com/issue9/cache v0.19.2 // indirect
 	github.com/issue9/config v0.9.1 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
-	github.com/issue9/errwrap v0.3.2 // indirect
 	github.com/issue9/mux/v9 v9.1.4 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/scheduled v0.22.1 // indirect
@@ -30,7 +32,7 @@ require (
 	github.com/issue9/term/v3 v3.4.1 // indirect
 	github.com/jellydator/ttlcache/v3 v3.3.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	golang.org/x/mod v0.24.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect

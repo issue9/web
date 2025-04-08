@@ -6,3 +6,5 @@ web.exe
 *.out.json
 *.out.html
 *.out.md
+
+tpl/testdata/out
