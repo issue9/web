@@ -45,9 +45,37 @@ messages:
       message:
         msg: |
             未找到子命令 %s
+    - key: create new web project
+      message:
+        msg: 根据模板创建新项目
+    - key: |-
+        create new web project
+
+        usage:
+
+        web new [flags] tpl-path [module-path]
+
+        flags:
+        {{flags}}
+      message:
+        msg: |-
+          根据模板创建新项目
+          
+          用法:
+          
+          web new [参数] tpl-path [module-path]
+          
+          tpl-path 模板的地址，必须是一个合法的 go module 地址，且需要指定版本号，如果没有会自动添加 @latest；
+          module-path 为生成的项目路径；
+          
+          参数:
+          {{flags}}
     - key: description
       message:
         msg: 描述
+    - key: dest is not empty
+      message:
+        msg: 项目目录已存在
     - key: dest locale files
       message:
         msg: 需要更新的文件列表。如果多个文件则以逗号分隔。
@@ -136,6 +164,9 @@ messages:
     - key: recursive dir
       message:
         msg: 递归访问子目录
+    - key: select exts
+      message:
+        msg: 选择需要插入文件头的文件扩展名
     - key: set file header
       message:
         msg: 指定文件头内容
@@ -196,12 +227,18 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: 指定的翻译文件 %s 是一个目录
+    - key: tpl-path or module-path not set
+      message:
+        msg: 模板或是项目的路径未指定
     - key: type
       message:
         msg: 类型
     - key: type not set
       message:
         msg: 未指定类型
+    - key: unsupported file extension '%s'
+      message:
+        msg: 不支持的文件扩展名 '%s'
     - key: unsupported marshal for %s
       message:
         msg: 不支持 %s 的序列化

@@ -38,8 +38,8 @@ func replace(data []byte, replaces []replacer) []byte {
 	return buf.Bytes()
 }
 
-func replaceGoSourcePackageName(fset *token.FileSet, filename string, data []byte, oldName, newName string) ([]byte, error) {
-	f, err := parser.ParseFile(fset, filename, data, parser.ImportsOnly)
+func replaceGoSourcePackageName(fset *token.FileSet, filename string, data []byte, newName string) ([]byte, error) {
+	f, err := parser.ParseFile(fset, filename, data, parser.DeclarationErrors)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func replaceGoSourceImport(fset *token.FileSet, filename string, data []byte, ol
 }
 
 func replaceGo(dir, oldPath, newPath string) error {
-	if err := replaceGoPackageName(dir, filepath.Base(oldPath), filepath.Base(newPath)); err != nil {
+	if err := replaceGoPackageName(dir, filepath.Base(newPath)); err != nil {
 		return err
 	}
 
@@ -135,7 +135,7 @@ func replaceGoMod(file string, newPath string) error {
 }
 
 // 将 dir 目录下的所有 Go 源码文件中的包名从 oldName 替换为 newName
-func replaceGoPackageName(dir, oldName, newName string) error {
+func replaceGoPackageName(dir, newName string) error {
 	items, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -152,7 +152,12 @@ func replaceGoPackageName(dir, oldName, newName string) error {
 		}
 
 		p := filepath.Join(dir, item.Name())
-		data, err := replaceGoSourcePackageName(fset, p, nil, oldName, newName)
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+
+		data, err = replaceGoSourcePackageName(fset, p, data, newName)
 		if err != nil {
 			return err
 		}

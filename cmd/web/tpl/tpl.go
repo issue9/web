@@ -10,13 +10,10 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
@@ -37,18 +34,14 @@ web new [flags] tpl-path [module-path]
 flags:
 {{flags}}`)
 
-	licenseUsage = web.StringPhrase("select license")
-	authorUsage  = web.StringPhrase("set author in file header")
-	extUsage     = web.StringPhrase("select exts")
-	yearUsage    = web.StringPhrase("set year in file header")
+	extUsage        = web.StringPhrase("select exts")
+	fileHeaderUsage = web.StringPhrase("set file header")
 )
 
 func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 	opt.New("new", title.LocaleString(p), usage.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		license := fs.String("l", "MIT", licenseUsage.LocaleString(p))
-		author := fs.String("a", "", authorUsage.LocaleString(p))
 		extsStr := fs.String("e", "", extUsage.LocaleString(p))
-		year := fs.String("y", time.Now().Format("2006"), yearUsage.LocaleString(p))
+		header := fs.String("h", "", fileHeaderUsage.LocaleString(p))
 
 		return func(w io.Writer) error {
 			if fs.NArg() != 2 {
@@ -81,44 +74,12 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 
-			exts := strings.Split(*extsStr, ",")
-			for index, ext := range exts {
-				if ext[0] != '.' {
-					exts[index] = "." + ext
-				}
-			}
-			if err := replaceFileHeaders(dest, *author, *license, *year, exts); err != nil {
+			if err := insertFileHeaders(dest, *header, *extsStr); err != nil {
 				return err
 			}
 
 			return nil
 		}
-	})
-}
-
-func replaceFileHeaders(dir string, author, license, year string, exts []string) error {
-	r := strings.NewReplacer(
-		"{{author}}", author,
-		"{{license}}", license,
-		"{{year}}", year,
-	)
-
-	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() || slices.Index(exts, filepath.Ext(d.Name())) >= 0 {
-			return nil
-		}
-
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		data = []byte(r.Replace(string(data)))
-		return os.WriteFile(path, data, os.ModePerm)
 	})
 }
 

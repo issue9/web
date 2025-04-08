@@ -42,9 +42,34 @@ messages:
     - key: command %s not found
       message:
         msg: command %s not found
+    - key: create new web project
+      message:
+        msg: create new web project
+    - key: |-
+        create new web project
+
+        usage:
+
+        web new [flags] tpl-path [module-path]
+
+        flags:
+        {{flags}}
+      message:
+        msg: |-
+            create new web project
+
+            usage:
+
+            web new [flags] tpl-path [module-path]
+
+            flags:
+            {{flags}}
     - key: description
       message:
         msg: description
+    - key: dest is not empty
+      message:
+        msg: dest is not empty
     - key: dest locale files
       message:
         msg: dest locale files
@@ -125,6 +150,9 @@ messages:
     - key: recursive dir
       message:
         msg: recursive dir
+    - key: select exts
+      message:
+        msg: select exts
     - key: set file header
       message:
         msg: set file header
@@ -185,12 +213,18 @@ messages:
     - key: the dest file %s is dir
       message:
         msg: the dest file %s is dir
+    - key: tpl-path or module-path not set
+      message:
+        msg: tpl-path or module-path not set
     - key: type
       message:
         msg: type
     - key: type not set
       message:
         msg: type not set
+    - key: unsupported file extension '%s'
+      message:
+        msg: unsupported file extension '%s'
     - key: unsupported marshal for %s
       message:
         msg: unsupported marshal for %s

@@ -6,9 +6,12 @@ package tpl
 
 import (
 	"go/token"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/issue9/assert/v4"
+	xcopy "github.com/otiai10/copy"
 )
 
 type testData struct {
@@ -21,7 +24,6 @@ type testData struct {
 func TestReplaceGoSourcePackageName(t *testing.T) {
 	a := assert.New(t, false)
 	fset := token.NewFileSet()
-	oldName := "o"
 	newName := "n"
 
 	data := []*testData{
@@ -43,7 +45,7 @@ func TestReplaceGoSourcePackageName(t *testing.T) {
 	}
 
 	for _, item := range data {
-		out, err := replaceGoSourcePackageName(fset, item.file, []byte(item.in), oldName, newName)
+		out, err := replaceGoSourcePackageName(fset, item.file, []byte(item.in), newName)
 		if item.err != nil {
 			a.ErrorIs(err, item.err, "not error at %s", item.file)
 		} else {
@@ -116,4 +118,29 @@ import (
 			a.Equal(string(out), item.out, "not equal at %s", item.file)
 		}
 	}
+}
+
+func TestReplaceGo(t *testing.T) {
+	a := assert.New(t, false)
+	oldPath := "github.com/issue9/web/cmd/web/tpl/testdata/template"
+	newPath := "github.com/issue9/web/cmd/web/tpl/testdata/out/goimport"
+	dir := "./testdata/out/goimport"
+
+	a.NotError(xcopy.Copy("./testdata/template", dir))
+	a.NotError(replaceGo(dir, oldPath, newPath))
+
+	// go.mod
+
+	c := getFileContent(a, filepath.Join(dir, "go.mod"))
+	a.True(strings.HasPrefix(c, "module "+newPath))
+
+	// import 语句
+
+	c = getFileContent(a, filepath.Join(dir, "sub/sub.go"))
+	a.True(strings.Contains(c, `import template "github.com/issue9/web/cmd/web/tpl/testdata/out/goimport"`))
+
+	// package name
+
+	c = getFileContent(a, filepath.Join(dir, "template.go"))
+	a.True(strings.HasPrefix(c, "package goimport"))
 }

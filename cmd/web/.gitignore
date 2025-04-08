@@ -5,3 +5,5 @@ web.exe
 *.out.yml
 *.out.json
 *.out.html
+
+tpl/testdata/out
