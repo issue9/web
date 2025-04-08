@@ -33,7 +33,22 @@ var headerBuilders = map[string]fileHeaderBuildFunc{
 	".hxx": singleCStyle,
 	".m":   singleCStyle,
 
+	".java": singleCStyle,
+	".kt": singleCStyle,
+	".kts": singleCStyle,
+
+	".swift": singleCStyle,
+
 	".py": singlePythonStyle,
+
+	".sh": singlePythonStyle,
+	".rb": singlePythonStyle,
+	".ps1": singlePythonStyle,
+	".psm1": singlePythonStyle,
+
+	".yaml": singlePythonStyle,
+	".yml": singlePythonStyle,
+	".toml": singlePythonStyle,
 }
 
 // 为指定的扩展名的文件插入文件头
@@ -77,7 +92,7 @@ func insertFileHeaders(dir, header, extsStr string) error {
 			return err
 		}
 
-		f, err := os.OpenFile(path, os.O_WRONLY, os.ModePerm)
+		f, err := os.OpenFile(path, os.O_WRONLY, modePerm)
 		if err != nil {
 			return err
 		}

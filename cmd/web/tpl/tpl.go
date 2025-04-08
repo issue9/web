@@ -8,6 +8,7 @@ package tpl
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io"
 	"os"
@@ -22,6 +23,8 @@ import (
 
 	"github.com/issue9/web"
 )
+
+const modePerm = os.ModePerm
 
 const (
 	title = web.StringPhrase("create new web project")
@@ -58,7 +61,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 			// 检测保存目录的状态
 			dest := filepath.Join(".", name)
 			de, err := os.ReadDir(dest)
-			if err != nil {
+			if err != nil && !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
 			if len(de) > 0 {
@@ -74,11 +77,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 
-			if err := insertFileHeaders(dest, *header, *extsStr); err != nil {
-				return err
-			}
-
-			return nil
+			return insertFileHeaders(dest, *header, *extsStr)
 		}
 	})
 }
@@ -107,5 +106,5 @@ func download(tplPath, dest string) error {
 		return err
 	}
 
-	return xcopy.Copy(out.Dir, dest)
+	return xcopy.Copy(out.Dir, dest, xcopy.Options{PermissionControl: xcopy.AddPermission(modePerm)})
 }

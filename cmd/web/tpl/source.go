@@ -131,7 +131,7 @@ func replaceGoMod(file string, newPath string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(file, data, os.ModePerm)
+	return os.WriteFile(file, data, modePerm)
 }
 
 // 将 dir 目录下的所有 Go 源码文件中的包名从 oldName 替换为 newName
@@ -162,7 +162,7 @@ func replaceGoPackageName(dir, newName string) error {
 			return err
 		}
 
-		if err := os.WriteFile(p, data, os.ModePerm); err != nil {
+		if err := os.WriteFile(p, data, modePerm); err != nil {
 			return err
 		}
 	}
@@ -193,6 +193,6 @@ func replaceGoImport(dir, oldPath, newPath string) error {
 			return err
 		}
 
-		return os.WriteFile(p, data, os.ModePerm)
+		return os.WriteFile(p, data, modePerm)
 	})
 }
