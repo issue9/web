@@ -1,256 +1,270 @@
 languages:
-    - und
+- und
 messages:
-    - key: |
-        Auxiliary tool for github.com/issue9/web
-
-        commands：
-        {{commands}}
-
-        flags：
+- key: |
+    Auxiliary tool for github.com/issue9/web
+    
+    commands：
+    {{commands}}
+    
+    flags：
+    {{flags}}
+    
+    visit https://github.com/issue9/web for more info.
+  message:
+    msg: |
+      Auxiliary tool for github.com/issue9/web
+      
+      commands：
+      {{commands}}
+      
+      flags：
+      {{flags}}
+      
+      visit https://github.com/issue9/web for more info.
+- key: app args
+  message:
+    msg: app args
+- key: build enum file
+  message:
+    msg: build enum file
+- key: |-
+    build enum file
+    
+    flags:
+    {{flags}}
+  message:
+    msg: |-
+      build enum file
+      
+      flags:
+      {{flags}}
+- key: command %s not found
+  message:
+    msg: command %s not found
+- key: create new web project
+  message:
+    msg: create new web project
+- key: |-
+    create new web project
+    
+    usage:
+    
+    web new [flags] tpl-path module-path
+    
+    flags:
+    {{flags}}
+  message:
+    msg: |-
+      create new web project
+      
+      usage:
+      
+      web new [flags] tpl-path module-path
+      
+      flags:
+      {{flags}}
+- key: description
+  message:
+    msg: description
+- key: dest is not empty
+  message:
+    msg: dest is not empty
+- key: dest locale files
+  message:
+    msg: dest locale files
+- key: dev mode
+  message:
+    msg: dev mode
+- key: exclude watch files
+  message:
+    msg: exclude watch files
+- key: export object name
+  message:
+    msg: export object name
+- key: extract locale
+  message:
+    msg: extract locale
+- key: |
+    extract usage
+    
+    flags：
+    {{flags}}
+  message:
+    msg: |
+      extract usage
+      
+      flags：
+      {{flags}}
+- key: file format
+  message:
+    msg: file format
+- key: gen filter method
+  message:
+    msg: gen filter method
+- key: gen markdown
+  message:
+    msg: gen markdown
+- key: gen openapi method
+  message:
+    msg: gen openapi method
+- key: gen sql method
+  message:
+    msg: gen sql method
+- key: language
+  message:
+    msg: language
+- key: locale func
+  message:
+    msg: locale func
+- key: locale struct tag
+  message:
+    msg: locale struct tag
+- key: |
+    markdown usage
+    
+    usage:
+      web mdoc [options]
+    
+      options:
+      {{flags}}
+  message:
+    msg: |
+      markdown usage
+      
+      usage:
+        web mdoc [options]
+      
+        options:
         {{flags}}
-
-        visit https://github.com/issue9/web for more info.
-      message:
-        msg: |
-            Auxiliary tool for github.com/issue9/web
-
-            commands：
-            {{commands}}
-
-            flags：
-            {{flags}}
-
-            visit https://github.com/issue9/web for more info.
-    - key: app args
-      message:
-        msg: app args
-    - key: build enum file
-      message:
-        msg: build enum file
-    - key: |-
-        build enum file
-
-        flags:
-        {{flags}}
-      message:
-        msg: |-
-            build enum file
-
-            flags:
-            {{flags}}
-    - key: command %s not found
-      message:
-        msg: command %s not found
-    - key: create new web project
-      message:
-        msg: create new web project
-    - key: |-
-        create new web project
-
-        usage:
-
-        web new [flags] tpl-path [module-path]
-
-        flags:
-        {{flags}}
-      message:
-        msg: |-
-            create new web project
-
-            usage:
-
-            web new [flags] tpl-path [module-path]
-
-            flags:
-            {{flags}}
-    - key: description
-      message:
-        msg: description
-    - key: dest is not empty
-      message:
-        msg: dest is not empty
-    - key: dest locale files
-      message:
-        msg: dest locale files
-    - key: dev mode
-      message:
-        msg: dev mode
-    - key: exclude watch files
-      message:
-        msg: exclude watch files
-    - key: export object name
-      message:
-        msg: export object name
-    - key: extract locale
-      message:
-        msg: extract locale
-    - key: |
-        extract usage
-
-        flags：
-        {{flags}}
-      message:
-        msg: |
-            extract usage
-
-            flags：
-            {{flags}}
-    - key: file format
-      message:
-        msg: file format
-    - key: gen filter method
-      message:
-        msg: gen filter method
-    - key: gen markdown
-      message:
-        msg: gen markdown
-    - key: gen openapi method
-      message:
-        msg: gen openapi method
-    - key: gen sql method
-      message:
-        msg: gen sql method
-    - key: language
-      message:
-        msg: language
-    - key: locale func
-      message:
-        msg: locale func
-    - key: locale struct tag
-      message:
-        msg: locale struct tag
-    - key: markdown usage
-      message:
-        msg: markdown usage
-    - key: no input file
-      message:
-        msg: no input file
-    - key: no src dir
-      message:
-        msg: no src dir
-    - key: not allowed enum type
-      message:
-        msg: not allowed enum type
-    - key: not found enum type %s
-      message:
-        msg: not found enum type %s
-    - key: not found source in %s
-      message:
-        msg: not found source in %s
-    - key: not found type doc
-      message:
-        msg: not found type doc
-    - key: not show ignore message
-      message:
-        msg: not show ignore message
-    - key: out dir
-      message:
-        msg: out dir
-    - key: recursive dir
-      message:
-        msg: recursive dir
-    - key: select exts
-      message:
-        msg: select exts
-    - key: set file header
-      message:
-        msg: set file header
-    - key: set input file
-      message:
-        msg: set input file
-    - key: set markdown doc path
-      message:
-        msg: set markdown doc path
-    - key: set markdown page description
-      message:
-        msg: set markdown page description
-    - key: set markdown page language
-      message:
-        msg: set markdown page language
-    - key: set markdown page title
-      message:
-        msg: set markdown page title
-    - key: set output file
-      message:
-        msg: set output file
-    - key: set source dir
-      message:
-        msg: set source dir
-    - key: set the enum type
-      message:
-        msg: set the enum type
-    - key: set watch file extension
-      message:
-        msg: set watch file extension
-    - key: show current help info
-      message:
-        msg: show current help info
-    - key: show help
-      message:
-        msg: show help
-    - key: show info log
-      message:
-        msg: show info log
-    - key: show version
-      message:
-        msg: show version
-    - key: skip sub module
-      message:
-        msg: skip sub module
-    - key: src locale file
-      message:
-        msg: src locale file
-    - key: the dest file %s is dir
-      message:
-        msg: the dest file %s is dir
-    - key: tpl-path or module-path not set
-      message:
-        msg: tpl-path or module-path not set
-    - key: type
-      message:
-        msg: type
-    - key: type not set
-      message:
-        msg: type not set
-    - key: unsupported file extension '%s'
-      message:
-        msg: unsupported file extension '%s'
-    - key: unsupported marshal for %s
-      message:
-        msg: unsupported marshal for %s
-    - key: unsupported unmarshal for %s
-      message:
-        msg: unsupported unmarshal for %s
-    - key: update locale file
-      message:
-        msg: update locale file
-    - key: |
-        update locale file usage
-
-        flags:
-        {{flags}}
-      message:
-        msg: |
-            update locale file usage
-
-            flags:
-            {{flags}}
-    - key: watch and reload
-      message:
-        msg: watch and reload
-    - key: watch and reload usage
-      message:
-        msg: watch and reload usage
-    - key: watch frequency
-      message:
-        msg: watch frequency
-    - key: watch.app
-      message:
-        msg: watch.app
-    - key: watch.compiler
-      message:
-        msg: watch.compiler
-    - key: watch.sys
-      message:
-        msg: watch.sys
+- key: no input file
+  message:
+    msg: no input file
+- key: no src dir
+  message:
+    msg: no src dir
+- key: not allowed enum type
+  message:
+    msg: not allowed enum type
+- key: not found enum type %s
+  message:
+    msg: not found enum type %s
+- key: not found source in %s
+  message:
+    msg: not found source in %s
+- key: not found type doc
+  message:
+    msg: not found type doc
+- key: not show ignore message
+  message:
+    msg: not show ignore message
+- key: out dir
+  message:
+    msg: out dir
+- key: recursive dir
+  message:
+    msg: recursive dir
+- key: select exts
+  message:
+    msg: select exts
+- key: set file header
+  message:
+    msg: set file header
+- key: set input file
+  message:
+    msg: set input file
+- key: set markdown doc path
+  message:
+    msg: set markdown doc path
+- key: set markdown page description
+  message:
+    msg: set markdown page description
+- key: set markdown page language
+  message:
+    msg: set markdown page language
+- key: set markdown page title
+  message:
+    msg: set markdown page title
+- key: set output file
+  message:
+    msg: set output file
+- key: set source dir
+  message:
+    msg: set source dir
+- key: set the enum type
+  message:
+    msg: set the enum type
+- key: set watch file extension
+  message:
+    msg: set watch file extension
+- key: show current help info
+  message:
+    msg: show current help info
+- key: show help
+  message:
+    msg: show help
+- key: show info log
+  message:
+    msg: show info log
+- key: show version
+  message:
+    msg: show version
+- key: skip sub module
+  message:
+    msg: skip sub module
+- key: src locale file
+  message:
+    msg: src locale file
+- key: the dest file %s is dir
+  message:
+    msg: the dest file %s is dir
+- key: tpl-path or module-path not set
+  message:
+    msg: tpl-path or module-path not set
+- key: type
+  message:
+    msg: type
+- key: type not set
+  message:
+    msg: type not set
+- key: unsupported file extension '%s'
+  message:
+    msg: unsupported file extension '%s'
+- key: unsupported marshal for %s
+  message:
+    msg: unsupported marshal for %s
+- key: unsupported unmarshal for %s
+  message:
+    msg: unsupported unmarshal for %s
+- key: update locale file
+  message:
+    msg: update locale file
+- key: |
+    update locale file usage
+    
+    flags:
+    {{flags}}
+  message:
+    msg: |
+      update locale file usage
+      
+      flags:
+      {{flags}}
+- key: watch and reload
+  message:
+    msg: watch and reload
+- key: watch and reload usage
+  message:
+    msg: watch and reload usage
+- key: watch frequency
+  message:
+    msg: watch frequency
+- key: watch.app
+  message:
+    msg: watch.app
+- key: watch.compiler
+  message:
+    msg: watch.compiler
+- key: watch.sys
+  message:
+    msg: watch.sys

@@ -32,7 +32,7 @@ const (
 
 usage:
 
-web new [flags] tpl-path [module-path]
+web new [flags] tpl-path module-path
 
 flags:
 {{flags}}`)

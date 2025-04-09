@@ -16,7 +16,14 @@ import (
 
 const (
 	title = web.StringPhrase("gen markdown")
-	usage = web.StringPhrase("markdown usage")
+	usage = web.StringPhrase(`markdown usage
+
+usage:
+  web mdoc [options]
+
+  options:
+  {{flags}}
+`)
 
 	objectUsage = web.StringPhrase("export object name")
 	dirUsage    = web.StringPhrase("set source dir")

@@ -73,7 +73,7 @@ func main() {
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 
 	if err := opt.Exec(os.Args[1:]); err != nil {
-		panic(web.SprintError(p, false, err))
+		panic(web.SprintError(p, true, err))
 	}
 }
 
