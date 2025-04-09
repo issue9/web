@@ -98,7 +98,12 @@ func download(tplPath, dest string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return err
+		out := &struct{ Error string }{}
+		if err1 := json.Unmarshal(stdout.Bytes(), out); err1 != nil {
+			return errors.Join(err, err1, errors.New(stdout.String()))
+		} else {
+			return errors.Join(err, errors.New(out.Error))
+		}
 	}
 
 	out := &struct{ Dir string }{}
