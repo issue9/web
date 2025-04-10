@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
@@ -104,6 +105,8 @@ func getUnmarshalByExt(ext string) (serialize.UnmarshalFunc, error) {
 		return json.Unmarshal, nil
 	case "yaml", "yml", ".yaml", ".yml":
 		return yaml.Unmarshal, nil
+	case "toml", ".toml":
+		return toml.Unmarshal, nil
 	default:
 		return nil, web.NewLocaleError("unsupported unmarshal for %s", ext)
 	}

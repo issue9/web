@@ -3,6 +3,7 @@ module github.com/issue9/web/cmd/web
 go 1.24.0
 
 require (
+	github.com/BurntSushi/toml v1.5.0
 	github.com/caixw/gobuild v1.8.5
 	github.com/goccy/go-yaml v1.17.1
 	github.com/issue9/assert/v4 v4.3.1
@@ -11,7 +12,7 @@ require (
 	github.com/issue9/localeutil v0.29.4
 	github.com/issue9/logs/v7 v7.6.6
 	github.com/issue9/source v0.12.5
-	github.com/issue9/web v0.103.0
+	github.com/issue9/web v0.103.1
 	github.com/otiai10/copy v1.14.1
 	golang.org/x/mod v0.24.0
 	golang.org/x/text v0.24.0

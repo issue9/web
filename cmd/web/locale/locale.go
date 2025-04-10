@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/cmdopt"
 	"github.com/issue9/localeutil"
@@ -121,7 +122,11 @@ func GetMarshalByExt(ext string) (serialize.MarshalFunc, string, error) {
 			return json.MarshalIndent(v, "", "\t")
 		}, ".json", nil
 	case "yaml", "yml", ".yaml", ".yml":
-		return yaml.Marshal, ".yaml", nil
+		return func(v any) ([]byte, error) {
+			return yaml.MarshalWithOptions(v, yaml.UseLiteralStyleIfMultiline(true))
+		}, ".yaml", nil
+	case "toml", ".toml":
+		return toml.Marshal, ".yaml", nil
 	default:
 		return nil, "", web.NewLocaleError("unsupported marshal for %s", ext)
 	}
