@@ -83,7 +83,7 @@ type CLIOptions[T comparable] struct {
 	//  - cmd.show_help
 	//  - can not be empty
 	//  - cmd.test_syntax
-	//  - status %v
+	//  - daemon status %s
 	//  - syntax OK
 	//
 	// NOTE: 此设置仅影响命令行的本地化，[web.Server] 的本地化由其自身管理。
@@ -160,17 +160,17 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 				fs.StringVar(&daemon, "d", "", cmdDaemon.LocaleString(o.Printer))
 			}
 
+			// 所有命令行解析在此之前完成
+
 			if err = fs.Parse(args[1:]); err != nil {
 				return web.NewStackError(localeError(err, o.Printer))
 			}
 
 			if o.Daemon != nil && daemon != "" { // 在其它选项之前
 				status, err := app.runDaemon(daemon, o.Daemon)
-				if err != nil {
-					return err
+				if err == nil {
+					_, err = fmt.Fprintln(o.Out, web.Phrase("daemon status %s", statusString(status)).LocaleString(o.Printer))
 				}
-
-				_, err = fmt.Fprintln(o.Out, o.Printer.Sprintf("status %v", status))
 				return err
 			}
 

@@ -138,3 +138,14 @@ func (app *app) runDaemon(action string, conf *service.Config) (service.Status, 
 // 只使用了 [service.Control] 的功能，不需要实现 [service.Interface] 的具体功能。
 func (app *app) Start(s service.Service) error { return nil }
 func (app *app) Stop(s service.Service) error  { return nil }
+
+func statusString(s service.Status) string {
+	switch s {
+	case service.StatusRunning:
+		return "running"
+	case service.StatusStopped:
+		return "stopped"
+	default:
+		return "unknown"
+	}
+}

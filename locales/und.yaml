@@ -1,369 +1,372 @@
 languages:
-    - und
+- und
 messages:
-    - key: can not be empty
-      message:
-        msg: can not be empty
-    - key: cmd.action
-      message:
-        msg: cmd.action
-    - key: cmd.daemon
-      message:
-        msg: cmd.daemon
-    - key: cmd.show_help
-      message:
-        msg: cmd.show_help
-    - key: cmd.show_version
-      message:
-        msg: cmd.show_version
-    - key: cmd.test_syntax
-      message:
-        msg: cmd.test_syntax
-    - key: conflict with certificates
-      message:
-        msg: conflict with certificates
-    - key: duplicate value
-      message:
-        msg: duplicate value
-    - key: exit context
-      message:
-        msg: exit context
-    - key: invalid data %s
-      message:
-        msg: invalid data %s
-    - key: invalid format
-      message:
-        msg: invalid format
-    - key: invalid sse format %s
-      message:
-        msg: invalid sse format %s
-    - key: invalid value
-      message:
-        msg: invalid value
-    - key: keep alive for %s
-      message:
-        msg: keep alive for %s
-    - key: no available peer
-      message:
-        msg: no available peer
-    - key: no response
-      message:
-        msg: no response
-    - key: not found
-      message:
-        msg: not found
-    - key: not found charset for %s
-      message:
-        msg: not found charset for %s
-    - key: not found compress for %s
-      message:
-        msg: not found compress for %s
-    - key: not found serialization for %s
-      message:
-        msg: not found serialization for %s
-    - key: not found serialization function for %s
-      message:
-        msg: not found serialization function for %s
-    - key: not found unmarshaler for the server content-type %s
-      message:
-        msg: not found unmarshaler for the server content-type %s
-    - key: problem detail
-      message:
-        msg: problem detail
-    - key: problem extensions
-      message:
-        msg: problem extensions
-    - key: problem instance
-      message:
-        msg: problem instance
-    - key: problem params
-      message:
-        msg: problem params
-    - key: problem response
-      message:
-        msg: problem response
-    - key: problem response schema
-      message:
-        msg: problem response schema
-    - key: problem response schema desc
-      message:
-        msg: problem response schema desc
-    - key: problem status
-      message:
-        msg: problem status
-    - key: problem title
-      message:
-        msg: problem title
-    - key: problem type
-      message:
-        msg: problem type
-    - key: problem.400
-      message:
-        msg: problem.400
-    - key: problem.400.detail
-      message:
-        msg: problem.400.detail
-    - key: problem.401
-      message:
-        msg: problem.401
-    - key: problem.401.detail
-      message:
-        msg: problem.401.detail
-    - key: problem.402
-      message:
-        msg: problem.402
-    - key: problem.402.detail
-      message:
-        msg: problem.402.detail
-    - key: problem.403
-      message:
-        msg: problem.403
-    - key: problem.403.detail
-      message:
-        msg: problem.403.detail
-    - key: problem.404
-      message:
-        msg: problem.404
-    - key: problem.404.detail
-      message:
-        msg: problem.404.detail
-    - key: problem.405
-      message:
-        msg: problem.405
-    - key: problem.405.detail
-      message:
-        msg: problem.405.detail
-    - key: problem.406
-      message:
-        msg: problem.406
-    - key: problem.406.detail
-      message:
-        msg: problem.406.detail
-    - key: problem.407
-      message:
-        msg: problem.407
-    - key: problem.407.detail
-      message:
-        msg: problem.407.detail
-    - key: problem.408
-      message:
-        msg: problem.408
-    - key: problem.408.detail
-      message:
-        msg: problem.408.detail
-    - key: problem.409
-      message:
-        msg: problem.409
-    - key: problem.409.detail
-      message:
-        msg: problem.409.detail
-    - key: problem.410
-      message:
-        msg: problem.410
-    - key: problem.410.detail
-      message:
-        msg: problem.410.detail
-    - key: problem.411
-      message:
-        msg: problem.411
-    - key: problem.411.detail
-      message:
-        msg: problem.411.detail
-    - key: problem.412
-      message:
-        msg: problem.412
-    - key: problem.412.detail
-      message:
-        msg: problem.412.detail
-    - key: problem.413
-      message:
-        msg: problem.413
-    - key: problem.413.detail
-      message:
-        msg: problem.413.detail
-    - key: problem.414
-      message:
-        msg: problem.414
-    - key: problem.414.detail
-      message:
-        msg: problem.414.detail
-    - key: problem.415
-      message:
-        msg: problem.415
-    - key: problem.415.detail
-      message:
-        msg: problem.415.detail
-    - key: problem.416
-      message:
-        msg: problem.416
-    - key: problem.416.detail
-      message:
-        msg: problem.416.detail
-    - key: problem.417
-      message:
-        msg: problem.417
-    - key: problem.417.detail
-      message:
-        msg: problem.417.detail
-    - key: problem.418
-      message:
-        msg: problem.418
-    - key: problem.418.detail
-      message:
-        msg: problem.418.detail
-    - key: problem.421
-      message:
-        msg: problem.421
-    - key: problem.421.detail
-      message:
-        msg: problem.421.detail
-    - key: problem.422
-      message:
-        msg: problem.422
-    - key: problem.422.detail
-      message:
-        msg: problem.422.detail
-    - key: problem.423
-      message:
-        msg: problem.423
-    - key: problem.423.detail
-      message:
-        msg: problem.423.detail
-    - key: problem.424
-      message:
-        msg: problem.424
-    - key: problem.424.detail
-      message:
-        msg: problem.424.detail
-    - key: problem.425
-      message:
-        msg: problem.425
-    - key: problem.425.detail
-      message:
-        msg: problem.425.detail
-    - key: problem.426
-      message:
-        msg: problem.426
-    - key: problem.426.detail
-      message:
-        msg: problem.426.detail
-    - key: problem.428
-      message:
-        msg: problem.428
-    - key: problem.428.detail
-      message:
-        msg: problem.428.detail
-    - key: problem.429
-      message:
-        msg: problem.429
-    - key: problem.429.detail
-      message:
-        msg: problem.429.detail
-    - key: problem.431
-      message:
-        msg: problem.431
-    - key: problem.431.detail
-      message:
-        msg: problem.431.detail
-    - key: problem.451
-      message:
-        msg: problem.451
-    - key: problem.451.detail
-      message:
-        msg: problem.451.detail
-    - key: problem.500
-      message:
-        msg: problem.500
-    - key: problem.500.detail
-      message:
-        msg: problem.500.detail
-    - key: problem.501
-      message:
-        msg: problem.501
-    - key: problem.501.detail
-      message:
-        msg: problem.501.detail
-    - key: problem.502
-      message:
-        msg: problem.502
-    - key: problem.502.detail
-      message:
-        msg: problem.502.detail
-    - key: problem.503
-      message:
-        msg: problem.503
-    - key: problem.503.detail
-      message:
-        msg: problem.503.detail
-    - key: problem.504
-      message:
-        msg: problem.504
-    - key: problem.504.detail
-      message:
-        msg: problem.504.detail
-    - key: problem.505
-      message:
-        msg: problem.505
-    - key: problem.505.detail
-      message:
-        msg: problem.505.detail
-    - key: problem.506
-      message:
-        msg: problem.506
-    - key: problem.506.detail
-      message:
-        msg: problem.506.detail
-    - key: problem.507
-      message:
-        msg: problem.507
-    - key: problem.507.detail
-      message:
-        msg: problem.507.detail
-    - key: problem.508
-      message:
-        msg: problem.508
-    - key: problem.508.detail
-      message:
-        msg: problem.508.detail
-    - key: problem.510
-      message:
-        msg: problem.510
-    - key: problem.510.detail
-      message:
-        msg: problem.510.detail
-    - key: problem.511
-      message:
-        msg: problem.511
-    - key: problem.511.detail
-      message:
-        msg: problem.511.detail
-    - key: recycle local cache
-      message:
-        msg: recycle local cache
-    - key: refresh micro service %s for %s
-      message:
-        msg: refresh micro service %s for %s
-    - key: refresh micro services for gateway %s
-      message:
-        msg: refresh micro services for gateway %s
-    - key: scheduler jobs
-      message:
-        msg: scheduler jobs
-    - key: should great than %v
-      message:
-        msg: should great than %v
-    - key: syntax OK
-      message:
-        msg: syntax OK
-    - key: the client miss content-type header
-      message:
-        msg: the client miss content-type header
-    - key: the server miss content-type header
-      message:
-        msg: the server miss content-type header
-    - key: unique identity generator
-      message:
-        msg: unique identity generator
-    - key: unsupported serialization
-      message:
-        msg: unsupported serialization
+- key: can not be empty
+  message:
+    msg: can not be empty
+- key: cmd.action
+  message:
+    msg: cmd.action
+- key: cmd.daemon
+  message:
+    msg: cmd.daemon
+- key: cmd.show_help
+  message:
+    msg: cmd.show_help
+- key: cmd.show_version
+  message:
+    msg: cmd.show_version
+- key: cmd.test_syntax
+  message:
+    msg: cmd.test_syntax
+- key: conflict with certificates
+  message:
+    msg: conflict with certificates
+- key: daemon status %s
+  message:
+    msg: daemon status %s
+- key: duplicate value
+  message:
+    msg: duplicate value
+- key: exit context
+  message:
+    msg: exit context
+- key: invalid data %s
+  message:
+    msg: invalid data %s
+- key: invalid format
+  message:
+    msg: invalid format
+- key: invalid sse format %s
+  message:
+    msg: invalid sse format %s
+- key: invalid value
+  message:
+    msg: invalid value
+- key: keep alive for %s
+  message:
+    msg: keep alive for %s
+- key: no available peer
+  message:
+    msg: no available peer
+- key: no response
+  message:
+    msg: no response
+- key: not found
+  message:
+    msg: not found
+- key: not found charset for %s
+  message:
+    msg: not found charset for %s
+- key: not found compress for %s
+  message:
+    msg: not found compress for %s
+- key: not found serialization for %s
+  message:
+    msg: not found serialization for %s
+- key: not found serialization function for %s
+  message:
+    msg: not found serialization function for %s
+- key: not found unmarshaler for the server content-type %s
+  message:
+    msg: not found unmarshaler for the server content-type %s
+- key: problem detail
+  message:
+    msg: problem detail
+- key: problem extensions
+  message:
+    msg: problem extensions
+- key: problem instance
+  message:
+    msg: problem instance
+- key: problem params
+  message:
+    msg: problem params
+- key: problem response
+  message:
+    msg: problem response
+- key: problem response schema
+  message:
+    msg: problem response schema
+- key: problem response schema desc
+  message:
+    msg: problem response schema desc
+- key: problem status
+  message:
+    msg: problem status
+- key: problem title
+  message:
+    msg: problem title
+- key: problem type
+  message:
+    msg: problem type
+- key: problem.400
+  message:
+    msg: problem.400
+- key: problem.400.detail
+  message:
+    msg: problem.400.detail
+- key: problem.401
+  message:
+    msg: problem.401
+- key: problem.401.detail
+  message:
+    msg: problem.401.detail
+- key: problem.402
+  message:
+    msg: problem.402
+- key: problem.402.detail
+  message:
+    msg: problem.402.detail
+- key: problem.403
+  message:
+    msg: problem.403
+- key: problem.403.detail
+  message:
+    msg: problem.403.detail
+- key: problem.404
+  message:
+    msg: problem.404
+- key: problem.404.detail
+  message:
+    msg: problem.404.detail
+- key: problem.405
+  message:
+    msg: problem.405
+- key: problem.405.detail
+  message:
+    msg: problem.405.detail
+- key: problem.406
+  message:
+    msg: problem.406
+- key: problem.406.detail
+  message:
+    msg: problem.406.detail
+- key: problem.407
+  message:
+    msg: problem.407
+- key: problem.407.detail
+  message:
+    msg: problem.407.detail
+- key: problem.408
+  message:
+    msg: problem.408
+- key: problem.408.detail
+  message:
+    msg: problem.408.detail
+- key: problem.409
+  message:
+    msg: problem.409
+- key: problem.409.detail
+  message:
+    msg: problem.409.detail
+- key: problem.410
+  message:
+    msg: problem.410
+- key: problem.410.detail
+  message:
+    msg: problem.410.detail
+- key: problem.411
+  message:
+    msg: problem.411
+- key: problem.411.detail
+  message:
+    msg: problem.411.detail
+- key: problem.412
+  message:
+    msg: problem.412
+- key: problem.412.detail
+  message:
+    msg: problem.412.detail
+- key: problem.413
+  message:
+    msg: problem.413
+- key: problem.413.detail
+  message:
+    msg: problem.413.detail
+- key: problem.414
+  message:
+    msg: problem.414
+- key: problem.414.detail
+  message:
+    msg: problem.414.detail
+- key: problem.415
+  message:
+    msg: problem.415
+- key: problem.415.detail
+  message:
+    msg: problem.415.detail
+- key: problem.416
+  message:
+    msg: problem.416
+- key: problem.416.detail
+  message:
+    msg: problem.416.detail
+- key: problem.417
+  message:
+    msg: problem.417
+- key: problem.417.detail
+  message:
+    msg: problem.417.detail
+- key: problem.418
+  message:
+    msg: problem.418
+- key: problem.418.detail
+  message:
+    msg: problem.418.detail
+- key: problem.421
+  message:
+    msg: problem.421
+- key: problem.421.detail
+  message:
+    msg: problem.421.detail
+- key: problem.422
+  message:
+    msg: problem.422
+- key: problem.422.detail
+  message:
+    msg: problem.422.detail
+- key: problem.423
+  message:
+    msg: problem.423
+- key: problem.423.detail
+  message:
+    msg: problem.423.detail
+- key: problem.424
+  message:
+    msg: problem.424
+- key: problem.424.detail
+  message:
+    msg: problem.424.detail
+- key: problem.425
+  message:
+    msg: problem.425
+- key: problem.425.detail
+  message:
+    msg: problem.425.detail
+- key: problem.426
+  message:
+    msg: problem.426
+- key: problem.426.detail
+  message:
+    msg: problem.426.detail
+- key: problem.428
+  message:
+    msg: problem.428
+- key: problem.428.detail
+  message:
+    msg: problem.428.detail
+- key: problem.429
+  message:
+    msg: problem.429
+- key: problem.429.detail
+  message:
+    msg: problem.429.detail
+- key: problem.431
+  message:
+    msg: problem.431
+- key: problem.431.detail
+  message:
+    msg: problem.431.detail
+- key: problem.451
+  message:
+    msg: problem.451
+- key: problem.451.detail
+  message:
+    msg: problem.451.detail
+- key: problem.500
+  message:
+    msg: problem.500
+- key: problem.500.detail
+  message:
+    msg: problem.500.detail
+- key: problem.501
+  message:
+    msg: problem.501
+- key: problem.501.detail
+  message:
+    msg: problem.501.detail
+- key: problem.502
+  message:
+    msg: problem.502
+- key: problem.502.detail
+  message:
+    msg: problem.502.detail
+- key: problem.503
+  message:
+    msg: problem.503
+- key: problem.503.detail
+  message:
+    msg: problem.503.detail
+- key: problem.504
+  message:
+    msg: problem.504
+- key: problem.504.detail
+  message:
+    msg: problem.504.detail
+- key: problem.505
+  message:
+    msg: problem.505
+- key: problem.505.detail
+  message:
+    msg: problem.505.detail
+- key: problem.506
+  message:
+    msg: problem.506
+- key: problem.506.detail
+  message:
+    msg: problem.506.detail
+- key: problem.507
+  message:
+    msg: problem.507
+- key: problem.507.detail
+  message:
+    msg: problem.507.detail
+- key: problem.508
+  message:
+    msg: problem.508
+- key: problem.508.detail
+  message:
+    msg: problem.508.detail
+- key: problem.510
+  message:
+    msg: problem.510
+- key: problem.510.detail
+  message:
+    msg: problem.510.detail
+- key: problem.511
+  message:
+    msg: problem.511
+- key: problem.511.detail
+  message:
+    msg: problem.511.detail
+- key: recycle local cache
+  message:
+    msg: recycle local cache
+- key: refresh micro service %s for %s
+  message:
+    msg: refresh micro service %s for %s
+- key: refresh micro services for gateway %s
+  message:
+    msg: refresh micro services for gateway %s
+- key: scheduler jobs
+  message:
+    msg: scheduler jobs
+- key: should great than %v
+  message:
+    msg: should great than %v
+- key: syntax OK
+  message:
+    msg: syntax OK
+- key: the client miss content-type header
+  message:
+    msg: the client miss content-type header
+- key: the server miss content-type header
+  message:
+    msg: the server miss content-type header
+- key: unique identity generator
+  message:
+    msg: unique identity generator
+- key: unsupported serialization
+  message:
+    msg: unsupported serialization
