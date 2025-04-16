@@ -38,7 +38,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 )
