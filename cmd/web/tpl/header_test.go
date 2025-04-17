@@ -19,6 +19,7 @@ import (
 func TestSingleCStyle(t *testing.T) {
 	a := assert.New(t, false)
 
+	a.Equal(singleCStyle([]string{}), "\n")
 	a.Equal(singleCStyle([]string{""}), "// \n\n")
 
 	a.Equal(singleCStyle([]string{
@@ -26,6 +27,23 @@ func TestSingleCStyle(t *testing.T) {
 		"SPDX-License-Identifier: MIT",
 	}), `// SPDX-FileCopyrightText: 2025 caixw
 // SPDX-License-Identifier: MIT
+
+`)
+}
+
+func TestMultipCStyle(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.Equal(multiCStyle([]string{}), "/*\n */\n\n")
+	a.Equal(multiCStyle([]string{""}), "/*\n * \n */\n\n")
+
+	a.Equal(multiCStyle([]string{
+		"SPDX-FileCopyrightText: 2025 caixw",
+		"SPDX-License-Identifier: MIT",
+	}), `/*
+ * SPDX-FileCopyrightText: 2025 caixw
+ * SPDX-License-Identifier: MIT
+ */
 
 `)
 }

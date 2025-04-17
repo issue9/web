@@ -12,7 +12,7 @@ require (
 	github.com/issue9/config v0.9.1
 	github.com/issue9/conv v1.3.5
 	github.com/issue9/errwrap v0.3.2
-	github.com/issue9/localeutil v0.29.4
+	github.com/issue9/localeutil v0.30.0
 	github.com/issue9/logs/v7 v7.6.6
 	github.com/issue9/mux/v9 v9.1.4
 	github.com/issue9/query/v3 v3.1.3
@@ -38,7 +38,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 )

@@ -24,6 +24,9 @@ var headerBuilders = map[string]fileHeaderBuildFunc{
 
 	".rs": singleCStyle,
 
+	".cs": singleCStyle,
+	".css": multiCStyle,
+
 	".c":   singleCStyle,
 	".cxx": singleCStyle,
 	".cc":  singleCStyle,
@@ -34,20 +37,22 @@ var headerBuilders = map[string]fileHeaderBuildFunc{
 	".m":   singleCStyle,
 
 	".java": singleCStyle,
-	".kt": singleCStyle,
-	".kts": singleCStyle,
+	".kt":   singleCStyle,
+	".kts":  singleCStyle,
 
 	".swift": singleCStyle,
 
 	".py": singlePythonStyle,
 
-	".sh": singlePythonStyle,
-	".rb": singlePythonStyle,
-	".ps1": singlePythonStyle,
+	".clj": func(s []string) string { return singleStyle([]byte("; "), s) },
+
+	".sh":   singlePythonStyle,
+	".rb":   singlePythonStyle,
+	".ps1":  singlePythonStyle,
 	".psm1": singlePythonStyle,
 
 	".yaml": singlePythonStyle,
-	".yml": singlePythonStyle,
+	".yml":  singlePythonStyle,
 	".toml": singlePythonStyle,
 }
 
@@ -109,18 +114,43 @@ func singleCStyle(s []string) string { return singleStyle([]byte("// "), s) }
 
 func singlePythonStyle(s []string) string { return singleStyle([]byte("# "), s) }
 
+func multiCStyle(s []string) string {
+	return multiStyle([]byte("/*"), []byte(" */"), []byte(" * "), s)
+}
+
 func singleStyle(prefix []byte, s []string) string {
-	var l = 0
+	l := 5 * len(s)
 	for _, v := range s {
 		l += len(v)
 	}
 
-	b := make([]byte, 0, l+5*len(s))
+	b := make([]byte, 0, l)
 	for _, v := range s {
 		b = append(b, prefix...)
 		b = append(b, v...)
 		b = append(b, '\n')
 	}
+	b = append(b, '\n') // 空行
+
+	return string(b)
+}
+
+func multiStyle(start, end, prefix []byte, s []string) string {
+	l := +5*len(s) + len(start) + len(end)
+	for _, v := range s {
+		l += len(v)
+	}
+
+	b := make([]byte, 0, l)
+	b = append(b, start...)
+	b = append(b, '\n')
+	for _, v := range s {
+		b = append(b, prefix...)
+		b = append(b, v...)
+		b = append(b, '\n')
+	}
+	b = append(b, end...)
+	b = append(b, '\n') // 换行
 	b = append(b, '\n') // 空行
 
 	return string(b)
