@@ -28,6 +28,7 @@ type Codec struct {
 
 	types              []*mediaType
 	clientAcceptHeader string // 生成客户端的 Accept 报头内容
+	serverAcceptHeader string // 生成服务端的 Accept 报头内容
 }
 
 type mediaType struct {
@@ -47,6 +48,8 @@ type mediaType struct {
 
 	// 解码方法
 	Unmarshal UnmarshalFunc
+
+	requestAccept, responseAccept bool
 }
 
 type compression struct {
@@ -124,7 +127,12 @@ func (e *Codec) AddCompressor(c compressor.Compressor, t ...string) *Codec {
 }
 
 // AddMimetype 添加对媒体类型的编解码函数
-func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string) *Codec {
+//
+// name 媒体类型的名称，比如 application/json；
+// problem 媒体类型非正常状态下的子类型，比如 application/problem+json；
+// requestAccept 是否出现在客户端请求的 accept 报头中；
+// responseAccept 是否出现在服务端返回的 accept 报头中；
+func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string, requestAccept, responseAccept bool) *Codec {
 	if problem == "" {
 		problem = name
 	}
@@ -147,17 +155,29 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	e.types = append(e.types, &mediaType{
-		Name:      name,
-		Marshal:   m,
-		Unmarshal: u,
-		Problem:   problem,
+		Name:           name,
+		Marshal:        m,
+		Unmarshal:      u,
+		Problem:        problem,
+		requestAccept:  requestAccept,
+		responseAccept: responseAccept,
 	})
 
-	names := make([]string, 0, len(e.types))
 	for _, item := range e.types {
-		names = append(names, item.Name)
+		if item.requestAccept {
+			if e.clientAcceptHeader != "" {
+				e.clientAcceptHeader += ", "
+			}
+			e.clientAcceptHeader += item.Name
+		}
+
+		if item.responseAccept {
+			if e.serverAcceptHeader != "" {
+				e.serverAcceptHeader += ", "
+			}
+			e.serverAcceptHeader += item.Name
+		}
 	}
-	e.clientAcceptHeader = strings.Join(names, ",")
 
 	return e
 }

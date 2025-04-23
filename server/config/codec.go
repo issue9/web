@@ -5,7 +5,9 @@
 package config
 
 import (
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/issue9/sliceutil"
 
@@ -62,6 +64,11 @@ type mimetypeConfig struct {
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
 	Target string `json:"target" yaml:"target" xml:"target,attr" toml:"target"`
+
+	// 指定 Accept 报头可出现的位置，可以有以下两个值，也可以通过逗号进行组合。
+	//  - request 出现在作为客户端请求时的 Accept 报头中；
+	//  - response 出现在作为服务端响应时的 Accept 报头中，一般只有 OPTIONS 会有 Accept 报头；
+	Accept string `json:"accept,omitempty" yaml:"accept,omitempty" xml:"accept,attr,omitempty" toml:"accept,omitempty"`
 }
 
 type mimetype struct {
@@ -103,7 +110,28 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
 			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound())
 		}
 
-		c.AddMimetype(item.Type, m.marshal, m.unmarshal, item.Problem)
+		var request, response bool
+		if item.Accept != "" {
+
+			switch s := strings.Split(strings.ToLower(item.Accept), ","); {
+			case len(s) > 2:
+				return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+			case len(s) == 2:
+				request = slices.Contains(s, "request")
+				response = slices.Contains(s, "response")
+				if !request || !response {
+					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+				}
+			case len(s) == 1:
+				request = slices.Contains(s, "request")
+				response = slices.Contains(s, "response")
+				if !request && !response {
+					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+				}
+			}
+		}
+
+		c.AddMimetype(item.Type, m.marshal, m.unmarshal, item.Problem, request, response)
 	}
 
 	conf.codec = c

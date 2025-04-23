@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -71,8 +71,8 @@ func newOptions(o *Options) *Options {
 	}
 	if o.Codec == nil {
 		o.Codec = web.NewCodec().
-			AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype).
-			AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, "")
+			AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype, true, true).
+			AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, "", true, true)
 	}
 
 	return o

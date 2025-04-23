@@ -41,7 +41,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	conf := &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
 			{Type: "json", Target: "json"},
-			{Type: "xml", Target: "xml"},
+			{Type: "xml", Target: "xml", Accept: "request,response"},
 		},
 	}
 	a.NotError(conf.buildCodec()).NotNil(conf.codec)
@@ -65,6 +65,38 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	a.Error(err).
 		Equal(err.Field, "mimetypes[1].target").
 		Equal(err.Message, locales.ErrNotFound())
+
+	// Accept
+
+	conf = &configOf[empty]{
+		Mimetypes: []*mimetypeConfig{
+			{Type: "json", Target: "json", Accept: "req"},
+		},
+	}
+	err = conf.buildCodec()
+	a.Error(err).
+		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Message, locales.ErrInvalidValue())
+
+	conf = &configOf[empty]{
+		Mimetypes: []*mimetypeConfig{
+			{Type: "json", Target: "json", Accept: "request,resp"},
+		},
+	}
+	err = conf.buildCodec()
+	a.Error(err).
+		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Message, locales.ErrInvalidValue())
+
+	conf = &configOf[empty]{
+		Mimetypes: []*mimetypeConfig{
+			{Type: "json", Target: "json", Accept: "request,response,request"},
+		},
+	}
+	err = conf.buildCodec()
+	a.Error(err).
+		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Message, locales.ErrInvalidValue())
 }
 
 func TestRegisterMimetype(t *testing.T) {

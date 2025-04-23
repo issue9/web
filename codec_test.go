@@ -48,9 +48,9 @@ func newCodec(a *assert.Assertion) *Codec {
 	c.AddCompressor(compressor.NewGzip(gzip.BestSpeed)).
 		AddCompressor(compressor.NewDeflate(flate.DefaultCompression, nil)).
 		//AddCompressor(nil).
-		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json").
-		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml").
-		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test")
+		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json", true, true).
+		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml", true, true).
+		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test", true, true)
 
 	return c
 }
@@ -60,23 +60,23 @@ func TestCodec_AddMimetype(t *testing.T) {
 	c := NewCodec()
 
 	a.PanicString(func() {
-		c.AddMimetype("", nil, nil, "")
+		c.AddMimetype("", nil, nil, "", true, true)
 	}, "参数 name 不能为空")
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, nil, nil, "")
+		c.AddMimetype(header.JSON, nil, nil, "", true, true)
 	}, "参数 m 不能为空")
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, nil, "")
+		c.AddMimetype(header.JSON, marshalJSON, nil, "", true, true)
 	}, "参数 u 不能为空")
 
 	a.NotPanic(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "")
+		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
 	})
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "")
+		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
 	}, "存在重复的项 "+header.JSON)
 }
 
@@ -181,7 +181,7 @@ func TestCodec_contentType(t *testing.T) {
 
 	mt := NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.OctetStream, marshalJSON, unmarshalJSON, "")
+	mt.AddMimetype(header.OctetStream, marshalJSON, unmarshalJSON, "", true, true)
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -236,8 +236,8 @@ func TestCodec_accept(t *testing.T) {
 
 	mt = NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "").
-		AddMimetype(header.Plain, marshalXML, unmarshalXML, "text/plain+problem")
+	mt.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true).
+		AddMimetype(header.Plain, marshalXML, unmarshalXML, "text/plain+problem", true, true)
 
 	item = mt.accept(header.JSON)
 	a.NotNil(item).
@@ -274,12 +274,12 @@ func TestCodec_findMarshal(t *testing.T) {
 	a := assert.New(t, false)
 	mm := NewCodec()
 	a.NotNil(mm)
-	mm.AddMimetype("text", marshalTest, unmarshalTest, "").
-		AddMimetype("text/plain", marshalTest, unmarshalTest, "").
-		AddMimetype("text/text", marshalTest, unmarshalTest, "").
-		AddMimetype("application/aa", marshalTest, unmarshalTest, "").
-		AddMimetype("application/bb", marshalTest, unmarshalTest, "application/problem+bb").
-		AddMimetype(header.JSON, marshalTest, unmarshalTest, "")
+	mm.AddMimetype("text", marshalTest, unmarshalTest, "", true, true).
+		AddMimetype("text/plain", marshalTest, unmarshalTest, "", true, true).
+		AddMimetype("text/text", marshalTest, unmarshalTest, "", true, true).
+		AddMimetype("application/aa", marshalTest, unmarshalTest, "", true, true).
+		AddMimetype("application/bb", marshalTest, unmarshalTest, "application/problem+bb", true, true).
+		AddMimetype(header.JSON, marshalTest, unmarshalTest, "", true, true)
 
 	item := mm.findMarshal("text")
 	a.NotNil(item).Equal(item.name(false), "text")

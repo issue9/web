@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -57,7 +57,7 @@ func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(Mimetype, nop.Marshal, nop.Unmarshal, ""),
+		Codec:      web.NewCodec().AddMimetype(Mimetype, nop.Marshal, nop.Unmarshal, "", true, true),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)

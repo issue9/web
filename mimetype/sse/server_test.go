@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +26,7 @@ func TestServer(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, ""),
+		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, "", true, true),
 		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
 	})
 	a.NotError(err).NotNil(s)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ import (
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:      web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, ""),
+		Codec:      web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, "", true, true),
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})
 	a.NotError(err).NotNil(s)

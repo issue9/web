@@ -177,6 +177,7 @@ Duration 表示时间段<br />封装 [time.Duration](/time#Duration) 以实现�
 | type | type | type,attr | type | string | 编码名称<br />比如 application/xml 等<br /> |
 | problem,omitempty | problem,omitempty | problem,attr,omitempty | problem,omitempty | string | 返回错误代码是的 mimetype<br />比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。 如果为空，表示与 Type 相同。<br /> |
 | target | target | target,attr | target | string | 实际采用的解码方法<br />由 \[RegisterMimetype] 注册而来。默认可用为：<br />  - xml<br />  - cbor<br />  - json<br />  - form<br />  - html<br />  - gob<br />  - yaml<br />  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /> |
+| accept,omitempty | accept,omitempty | accept,attr,omitempty | accept,omitempty | string | 指定 Accept 报头可出现的位置，可以有以下两个值，也可以通过逗号进行组合。<br />  - request 出现在作为客户端请求时的 Accept 报头中；<br />  - response 出现在作为服务端响应时的 Accept 报头中，一般只有 OPTIONS 会有 Accept 报头；<br /> |
 
 
 
