@@ -26,7 +26,7 @@ require (
 	github.com/issue9/cache v0.19.2 // indirect
 	github.com/issue9/config v0.9.1 // indirect
 	github.com/issue9/conv v1.3.5 // indirect
-	github.com/issue9/mux/v9 v9.1.4 // indirect
+	github.com/issue9/mux/v9 v9.2.0 // indirect
 	github.com/issue9/query/v3 v3.1.3 // indirect
 	github.com/issue9/scheduled v0.22.1 // indirect
 	github.com/issue9/sliceutil v0.17.0 // indirect
