@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@ func TestClient_NewRequest(t *testing.T) {
 
 	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
 	a.NotError(err).NotNil(req).
-		Equal(req.Header.Get(header.Accept), codec.acceptHeader).
+		Equal(req.Header.Get(header.Accept), codec.clientAcceptHeader).
 		Equal(req.Header.Get(header.XRequestID), "123").
 		Equal(req.Header.Get(header.AcceptEncoding), codec.acceptEncodingHeader).
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))

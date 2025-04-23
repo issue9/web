@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -185,7 +185,7 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		return nil, err
 	}
 	r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
-	r.Header.Set(header.Accept, c.codec.acceptHeader)
+	r.Header.Set(header.Accept, c.codec.clientAcceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
 	if c.requestIDKey != "" {
 		r.Header.Set(c.requestIDKey, c.requestIDGen())

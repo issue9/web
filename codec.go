@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,8 +26,8 @@ type Codec struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	types        []*mediaType
-	acceptHeader string // 生成 Accept 报头内容
+	types              []*mediaType
+	clientAcceptHeader string // 生成客户端的 Accept 报头内容
 }
 
 type mediaType struct {
@@ -155,11 +155,9 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 
 	names := make([]string, 0, len(e.types))
 	for _, item := range e.types {
-		if item.Unmarshal != nil {
-			names = append(names, item.Name)
-		}
+		names = append(names, item.Name)
 	}
-	e.acceptHeader = strings.Join(names, ",")
+	e.clientAcceptHeader = strings.Join(names, ",")
 
 	return e
 }
