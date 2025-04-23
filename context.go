@@ -19,6 +19,7 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"
@@ -66,7 +67,7 @@ type Context struct {
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputMimetype UnmarshalFunc
-	inputCharset  encoding.Encoding
+	requestBody   io.Reader
 
 	// 区域和本地相关信息
 	languageTag   language.Tag
@@ -117,14 +118,18 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 	}
 
+	var inputReader io.Reader = r.Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close，所以类型为 io.Reader 就可以了。
 	var inputMimetype UnmarshalFunc
-	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
 		var err error
+		var inputCharset encoding.Encoding
 		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
 			debug().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
+		}
+		if !qheader.CharsetIsNop(inputCharset) {
+			inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
 		}
 	}
 
@@ -166,7 +171,7 @@ func (s *InternalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	}
 
 	ctx.inputMimetype = inputMimetype
-	ctx.inputCharset = inputCharset
+	ctx.requestBody = inputReader
 	ctx.languageTag = tag
 	ctx.localePrinter = s.server.Locale().NewPrinter(tag)
 	clear(ctx.vars)
