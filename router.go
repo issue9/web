@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -48,8 +48,11 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
 		return func(ctx *Context) Responser {
 			ctx.Header().Set(header.Allow, n.AllowHeader())
+
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
 				return ResponserFunc(func(ctx *Context) {
+					ctx.Header().Set(header.AcceptEncoding, ctx.s.codec.acceptEncodingHeader)
+					ctx.Header().Set(header.AcceptLanguage, ctx.s.locale.AcceptLanguage())
 					ctx.WriteHeader(http.StatusOK)
 				})
 			}

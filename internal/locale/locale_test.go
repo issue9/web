@@ -35,6 +35,24 @@ func TestLocale_Printer(t *testing.T) {
 		Equal(l.Sprintf("lang"), "afrik")
 }
 
+func TestLocale_AcceptLanguage(t *testing.T) {
+	a := assert.New(t, false)
+	s := make(config.Serializer, 2)
+	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
+	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	conf, err := config.New(s, "./testdata", nil)
+	a.NotError(err).NotNil(conf)
+
+	l := New(language.SimplifiedChinese, conf)
+	a.Equal(l.AcceptLanguage(), "zh-Hans")
+
+	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./testdata"))).
+		Equal(l.AcceptLanguage(), "zh-Hans, cmn-Hans")
+
+	a.NotError(l.LoadMessages("*.xml", os.DirFS("./testdata"))).
+		Equal(l.AcceptLanguage(), "zh-Hans, cmn-Hans, zh-Hant")
+}
+
 func TestLocale_NewPrinter(t *testing.T) {
 	a := assert.New(t, false)
 	l := New(language.SimplifiedChinese, nil)

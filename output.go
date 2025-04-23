@@ -57,9 +57,8 @@ func (ctx *Context) Wrap(f func(http.ResponseWriter) http.ResponseWriter) {
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
 // body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码；
 func (ctx *Context) Render(status int, body any) {
-	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。
-	// 输出对象时若出错，状态码也已经输出，此时向调用方报告错误，
-	// 除了输出错误日志，也没有其它面向客户的补救措施。
+	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。输出对象时若出错，
+	// 状态码也已经输出，此时向调用方报告错误，除了输出错误日志，也没有其它面向客户的补救措施。
 
 	if ctx.s.onRender != nil {
 		status, body = ctx.s.onRender(status, body)

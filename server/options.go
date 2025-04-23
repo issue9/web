@@ -116,6 +116,7 @@ type (
 		// 默认为空。
 		//
 		// NOTE: 该值的修改，可能造成所有接口返回数据结构的变化。
+		// NOTE: 该值仅对通过 [web.Context.Render] 渲染的对象作修改。
 		OnRender func(status int, body any) (int, any)
 
 		// 指定对 [web.Server] 进行初始化的插件

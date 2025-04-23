@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,8 @@ type Locale struct {
 	config  *config.Config
 	printer *message.Printer
 	ttl     *ttlcache.Cache[language.Tag, *message.Printer]
+
+	acceptLanguage string // 根据内容生成 Accept-Language 报头
 }
 
 func New(id language.Tag, conf *config.Config) *Locale {
@@ -36,18 +38,40 @@ func New(id language.Tag, conf *config.Config) *Locale {
 
 	p, _ := NewPrinter(id, b)
 	return &Locale{
-		Builder: b,
-		id:      id,
-		config:  conf,
-		printer: p,
-		ttl:     ttlcache.New(ttlcache.WithCapacity[language.Tag, *message.Printer](10)),
+		Builder:        b,
+		id:             id,
+		config:         conf,
+		printer:        p,
+		ttl:            ttlcache.New(ttlcache.WithCapacity[language.Tag, *message.Printer](10)),
+		acceptLanguage: buildAcceptLanguage(b),
 	}
+}
+
+func buildAcceptLanguage(ls catalog.Catalog) string {
+	var s string
+	for index, v := range ls.Languages() {
+		if index == 0 {
+			s += v.String()
+		} else {
+			s += ", " + v.String()
+		}
+	}
+	return s
 }
 
 func (l *Locale) ID() language.Tag { return l.id }
 
+// AcceptLanguage 返回当前 Locale 形成的 Accept-Language 报头
+func (l *Locale) AcceptLanguage() string { return l.acceptLanguage }
+
 func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
-	return Load(l.Config().Serializer(), l.Builder, glob, fsys...)
+	if err := Load(l.Config().Serializer(), l.Builder, glob, fsys...); err != nil {
+		return err
+	}
+
+	l.acceptLanguage = buildAcceptLanguage(l.Builder)
+
+	return nil
 }
 
 func (l *Locale) Printer() *message.Printer { return l.printer }
