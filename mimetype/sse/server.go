@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2025 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/issue9/mux/v9/header"
-	"github.com/puzpuzpuz/xsync/v3"
+	"github.com/puzpuzpuz/xsync/v4"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/internal/bufpool"
@@ -31,7 +31,7 @@ type (
 		bufCap  int
 		s       web.Server
 		retry   string
-		sources *xsync.MapOf[T, *Source]
+		sources *xsync.Map[T, *Source]
 	}
 
 	Source struct {
@@ -70,7 +70,7 @@ func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCa
 		bufCap:  bufCap,
 		s:       s,
 		retry:   strconv.FormatInt(retry.Milliseconds(), 10),
-		sources: xsync.NewMapOf[T, *Source](),
+		sources: xsync.NewMap[T, *Source](),
 	}
 
 	s.Services().AddFunc(desc, srv.serve)
