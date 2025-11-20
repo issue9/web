@@ -25,8 +25,8 @@ require (
 	github.com/kardianos/service v1.2.4
 	github.com/klauspost/compress v1.18.0
 	github.com/puzpuzpuz/xsync/v4 v4.1.0
-	golang.org/x/crypto v0.42.0
-	golang.org/x/text v0.29.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/text v0.31.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
 
@@ -37,8 +37,8 @@ require (
 	github.com/issue9/rands/v3 v3.1.0 // indirect
 	github.com/redis/go-redis/v9 v9.13.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 )
