@@ -163,20 +163,18 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 		responseAccept: responseAccept,
 	})
 
-	for _, item := range e.types {
-		if item.requestAccept {
-			if e.clientAcceptHeader != "" {
-				e.clientAcceptHeader += ", "
-			}
-			e.clientAcceptHeader += item.Name
+	if requestAccept {
+		if e.clientAcceptHeader != "" {
+			e.clientAcceptHeader += ", "
 		}
+		e.clientAcceptHeader += name
+	}
 
-		if item.responseAccept {
-			if e.serverAcceptHeader != "" {
-				e.serverAcceptHeader += ", "
-			}
-			e.serverAcceptHeader += item.Name
+	if responseAccept {
+		if e.serverAcceptHeader != "" {
+			e.serverAcceptHeader += ", "
 		}
+		e.serverAcceptHeader += name
 	}
 
 	return e
