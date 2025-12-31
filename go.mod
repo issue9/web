@@ -3,10 +3,10 @@ module github.com/issue9/web
 go 1.24.0
 
 require (
-	github.com/BurntSushi/toml v1.5.0
+	github.com/BurntSushi/toml v1.6.0
 	github.com/andybalholm/brotli v1.2.0
 	github.com/fxamacker/cbor/v2 v2.9.0
-	github.com/goccy/go-yaml v1.19.0
+	github.com/goccy/go-yaml v1.19.1
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.19.5
 	github.com/issue9/config v0.9.4

@@ -72,6 +72,7 @@ func (ctx *Context) Render(status int, body any) {
 	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)
+		ctx.Header().Add(header.Vary, header.AcceptLanguage)
 	}
 
 	data, err := ctx.Marshal(body)
@@ -93,7 +94,10 @@ func (ctx *Context) Render(status int, body any) {
 }
 
 // Marshal 将对象 v 按用户要求编码并返回
-func (ctx *Context) Marshal(v any) ([]byte, error) { return ctx.outputMimetype.Marshal(ctx, v) }
+func (ctx *Context) Marshal(v any) ([]byte, error) {
+	ctx.Header().Add(header.Vary, header.Accept)
+	return ctx.outputMimetype.Marshal(ctx, v)
+}
 
 // Wrote 是否已经有内容输出
 func (ctx *Context) Wrote() bool { return ctx.wrote }
@@ -116,6 +120,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		closes := make([]io.Closer, 0, 2)
 
 		if ctx.outputCompressor != nil {
+			ctx.Header().Add(header.Vary, header.AcceptEncoding)
 			w, err := ctx.outputCompressor.NewEncoder(ctx.writer)
 			if err != nil {
 				return 0, err
@@ -125,7 +130,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		}
 
 		if !qheader.CharsetIsNop(ctx.outputCharset) {
-			ctx.Header().Add(header.Vary, header.ContentEncoding) // 只有在确定需要输出内容时才输出 Vary 报头
+			ctx.Header().Add(header.Vary, header.AcceptCharset)
 			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
 			ctx.writer = w
 			closes = append(closes, w)
