@@ -6,11 +6,11 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/andybalholm/brotli v1.2.0
 	github.com/fxamacker/cbor/v2 v2.9.0
-	github.com/goccy/go-yaml v1.19.1
+	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v4 v4.3.1
 	github.com/issue9/cache v0.19.5
 	github.com/issue9/config v0.9.4
-	github.com/issue9/conv v1.3.6
+	github.com/issue9/conv v1.3.7
 	github.com/issue9/errwrap v0.3.3
 	github.com/issue9/localeutil v0.32.0
 	github.com/issue9/logs/v7 v7.6.9
@@ -23,8 +23,8 @@ require (
 	github.com/issue9/unique/v2 v2.1.1
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/kardianos/service v1.2.4
-	github.com/klauspost/compress v1.18.2
-	github.com/puzpuzpuz/xsync/v4 v4.2.0
+	github.com/klauspost/compress v1.18.3
+	github.com/puzpuzpuz/xsync/v4 v4.4.0
 	golang.org/x/crypto v0.45.0
 	golang.org/x/text v0.31.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
