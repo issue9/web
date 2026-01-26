@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -162,6 +162,14 @@ func TestDocument_newSchema(t *testing.T) {
 		Equal(s.Properties["Root"].Type, TypeString).
 		Equal(s.Properties["T"].Type, TypeString).
 		Equal(s.Properties["T"].Format, FormatDateTime)
+
+	// 数组中包含对数组本身元素的引用
+	s = d.newSchema([]*object{})
+	a.Equal(s.Type, TypeArray)
+
+	// Map 中包含对 map 元素的引用
+	s = d.newSchema(map[string]*object{"a": &object{}})
+	a.Equal(s.Type, TypeObject)
 }
 
 func TestSchema_isBasicType(t *testing.T) {

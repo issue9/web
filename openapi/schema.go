@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -112,9 +112,10 @@ func AllOfSchema(title, desc web.LocaleStringer, v ...any) *Schema {
 	return xOfSchema(2, title, desc, v...)
 }
 
-// - 0 AnyOf
-// - 1 OneOf
-// - 2 AllOf
+// typ 的取值如下：
+//   - 0 AnyOf
+//   - 1 OneOf
+//   - 2 AllOf
 func xOfSchema(typ int, title, desc web.LocaleStringer, v ...any) *Schema {
 	if len(v) == 0 {
 		panic("参数 v 必不可少")
@@ -166,8 +167,7 @@ func newSchema(d *Document, v any, title, desc web.LocaleStringer) *Schema {
 var timeType = reflect.TypeFor[time.Time]()
 
 // d 仅用于查找其关联的 components/schemas 中是否存在相同名称的对象，如果存在则直接生成引用对象。
-//
-// desc 表示类型 t 的 Description 属性
+// isRoot 表示是否从根元素而来，此为 true 时，rootName 必须为空。
 // rootName 根结构体的名称，主要是为了解决子元素又引用了根元素的类型引起的循环引用。
 func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
 	if t.Implements(openAPISchemaType) {
@@ -195,32 +195,75 @@ func schemaFromType(d *Document, t reflect.Type, isRoot bool, rootName string, s
 		s.Type = TypeInteger
 		s.Minimum = 0
 	case reflect.Array, reflect.Slice:
-		s.Type = TypeArray
-		s.Items = &Schema{}
-
-		if s.XML != nil {
-			if index := strings.IndexByte(s.XML.Name, '>'); index > 0 {
-				s.Items.XML = &XML{Name: s.XML.Name[index+1:]}
-				s.XML.Name = s.XML.Name[:index]
-				s.XML.Wrapped = true
-			}
-		}
-		schemaFromType(d, t.Elem(), false, rootName, s.Items)
+		schemaFromSlice(d, t, isRoot, rootName, s)
 	case reflect.Map:
-		s.Type = TypeObject
-		s.AdditionalProperties = &Schema{}
-		schemaFromType(d, t.Elem(), false, rootName, s.AdditionalProperties)
+		schemaFromMap(d, t, isRoot, rootName, s)
 	case reflect.Struct:
-		if t == timeType { // 对时间作特殊处理
-			s.Type = TypeString
-			s.Format = FormatDateTime
-			return
-		}
 		schemaFromObjectType(d, t, isRoot, rootName, s)
 	}
 }
 
+func schemaFromMap(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
+	s.Type = TypeObject
+	s.AdditionalProperties = &Schema{}
+
+	typeName := getTypeName(t.Elem())
+
+	if d != nil {
+		if _, found := d.components.schemas[typeName]; found { // 已经存在于 components
+			s.Items.Ref = &Ref{Ref: typeName}
+			return
+		}
+	}
+
+	if isRoot {
+		rootName = typeName // isRoot == true 时，rootName 必然为空
+	} else if typeName == rootName { // 在字段中引用了根对象
+		s.Items.Ref = &Ref{Ref: typeName}
+		return
+	}
+
+	schemaFromType(d, t.Elem(), false, rootName, s.AdditionalProperties)
+}
+
+func schemaFromSlice(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
+	s.Type = TypeArray
+	s.Items = &Schema{}
+
+	typeName := getTypeName(t.Elem())
+
+	if d != nil {
+		if _, found := d.components.schemas[typeName]; found { // 已经存在于 components
+			s.Items.Ref = &Ref{Ref: typeName}
+			return
+		}
+	}
+
+	if isRoot {
+		rootName = typeName // isRoot == true 时，rootName 必然为空
+	} else if typeName == rootName { // 在字段中引用了根对象
+		s.Items.Ref = &Ref{Ref: typeName}
+		return
+	}
+
+	if s.XML != nil {
+		if index := strings.IndexByte(s.XML.Name, '>'); index > 0 {
+			s.Items.XML = &XML{Name: s.XML.Name[index+1:]}
+			s.XML.Name = s.XML.Name[:index]
+			s.XML.Wrapped = true
+		}
+	}
+
+	schemaFromType(d, t.Elem(), false, rootName, s.Items)
+}
+
 func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName string, s *Schema) {
+	if t == timeType { // 对时间作特殊处理
+		s.Type = TypeString
+		s.Format = FormatDateTime
+		return
+	}
+
 	typeName := getTypeName(t)
 
 	if d != nil {
