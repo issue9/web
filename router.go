@@ -112,8 +112,7 @@ func WithRecovery(status int, l *Logger) RouterOption {
 
 		he, ok := errors.AsType[*errs.HTTP](err)
 		if !ok {
-			he.Status = status
-			he.Message = err
+			he = &errs.HTTP{Status: status, Message: err}
 		}
 		http.Error(w, http.StatusText(he.Status), he.Status)
 		l.String(source.Stack(4, true, he.Message))
