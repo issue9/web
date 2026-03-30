@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,8 +18,7 @@ func NewError(status int, err error) error {
 		panic("err 不能为空")
 	}
 
-	var herr *HTTP
-	if errors.As(err, &herr) {
+	if herr, ok := errors.AsType[*HTTP](err); ok {
 		if herr.Status == status {
 			return herr
 		}

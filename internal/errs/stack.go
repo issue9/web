@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,8 +26,7 @@ func NewDepthStackError(depth int, err error) error {
 		return nil
 	}
 
-	var se *stackError
-	if errors.As(err, &se) {
+	if se, ok := errors.AsType[*stackError](err); ok {
 		return se
 	}
 

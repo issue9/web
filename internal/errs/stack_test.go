@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,8 +38,8 @@ func TestNewDepthStackError(t *testing.T) {
 							Contains(fmt.Sprintf("%+v", err), "34"). // 依赖调用 NewStackError 的行号
 							Equal(err.Error(), err1.Error())
 
-	var target1 *cerr
-	a.True(errors.As(err, &target1)).Equal(target1.Error(), err1.Error())
+	target1, ok := errors.AsType[*cerr](err)
+	a.True(ok).Equal(target1.Error(), err1.Error())
 
 	// 二次包装
 
@@ -49,6 +49,6 @@ func TestNewDepthStackError(t *testing.T) {
 	a.NotContains(fmt.Sprintf("%v", err), "34"). // 依赖调用 NewStackError 的行号
 							Contains(fmt.Sprintf("%+v", err), "34") // 依赖调用 NewStackError 的行号
 
-	var target2 *cerr
-	a.True(errors.As(err, &target2)).Equal(target2.Error(), err1.Error())
+	target2, ok := errors.AsType[*cerr](err)
+	a.True(ok).Equal(target2.Error(), err1.Error())
 }

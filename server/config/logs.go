@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -173,8 +173,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		ww, c, err := f(item.Args)
 		if err != nil {
-			var ce *web.FieldError
-			if errors.As(err, &ce) {
+			if ce, ok := errors.AsType[*web.FieldError](err); ok {
 				return nil, nil, ce.AddFieldParent("handlers[0]")
 			}
 			return nil, nil, web.NewFieldError("handlers[0].args", err)
@@ -195,8 +194,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			var ce *web.FieldError
-			if errors.As(err, &ce) {
+			if ce, ok := errors.AsType[*web.FieldError](err); ok {
 				return nil, nil, ce.AddFieldParent(field)
 			}
 			return nil, nil, web.NewFieldError(field+".args", err)

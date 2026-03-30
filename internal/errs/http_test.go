@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,8 +26,8 @@ func TestHTTP(t *testing.T) {
 		ErrorIs(err, err10).
 		ErrorIs(err, err11)
 
-	var target1 *HTTP
-	a.True(errors.As(err, &target1)).
+	target1, ok := errors.AsType[*HTTP](err)
+	a.True(ok).
 		Equal(target1.Error(), errors.Join(err10, err11).Error()).
 		Equal(target1.Status, http.StatusBadRequest)
 
@@ -36,8 +36,8 @@ func TestHTTP(t *testing.T) {
 	err2 := NewError(http.StatusBadGateway, err)
 	a.ErrorIs(err2, err10)
 
-	var target2 *HTTP
-	a.True(errors.As(err2, &target2)).
+	target2, ok := errors.AsType[*HTTP](err2)
+	a.True(ok).
 		ErrorIs(err2, err10).
 		ErrorIs(err2, err11).
 		Equal(target2.Status, http.StatusBadGateway)

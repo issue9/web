@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -78,8 +78,7 @@ func (ctx *Context) Render(status int, body any) {
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		// [Problem.Apply] 并未调用 [Context.Render]，应该不会死循环。
-		var p *Problem
-		if errors.As(err, &p) {
+		if p, ok := errors.AsType[*Problem](err); ok {
 			p.Apply(ctx)
 		} else {
 			ctx.Error(err, ProblemNotAcceptable).Apply(ctx)

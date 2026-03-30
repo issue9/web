@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -110,8 +110,8 @@ func WithRecovery(status int, l *Logger) RouterOption {
 			return
 		}
 
-		he := &errs.HTTP{}
-		if !errors.As(err, &he) {
+		he, ok := errors.AsType[*errs.HTTP](err)
+		if !ok {
 			he.Status = status
 			he.Message = err
 		}
