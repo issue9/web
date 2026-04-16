@@ -32,10 +32,10 @@ jobs:
       - name: Test
         env:
           LANGUAGE: en
-        run: go test $(go list ./... | grep -v cache/caches) -v -coverprofile='coverage.txt' -covermode=atomic -p=1 -parallel=1
+        run: go test -v -coverprofile='coverage.txt' -covermode=atomic -p=1 -parallel=1
 
       - name: Upload Coverage report
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/issue9/localeutil"
 	"github.com/kardianos/service"
 
 	"github.com/issue9/web"
@@ -113,6 +114,38 @@ func (app *app) Restart() {
 
 	old.Close(app.shutdownTimeout) // 新服务声明成功，尝试关闭旧服务。
 	<-app.exit                     // 等待 server.Serve 退出
+}
+
+type DaemonConfig struct {
+	DisplayName  web.LocaleStringer
+	Description  web.LocaleStringer
+	UserName     string
+	Arguments    []string
+	Executable   string   // 服务的可执行文件路径。
+	Dependencies []string // 服务依赖的其他服务。
+
+	// 以下字段不支持 windows
+
+	WorkingDirectory string // 服务的初始工作目录。
+	ChRoot           string
+	Option           map[string]any // 系统特定选项。
+	EnvVars          map[string]string
+}
+
+func (d *DaemonConfig) toServiceConfig(name string, p *localeutil.Printer) *service.Config {
+	return &service.Config{
+		Name:             name,
+		DisplayName:      d.DisplayName.LocaleString(p),
+		Description:      d.Description.LocaleString(p),
+		UserName:         d.UserName,
+		Arguments:        d.Arguments,
+		Executable:       d.Executable,
+		Dependencies:     d.Dependencies,
+		WorkingDirectory: d.WorkingDirectory,
+		ChRoot:           d.ChRoot,
+		Option:           d.Option,
+		EnvVars:          d.EnvVars,
+	}
 }
 
 // 执行守护进程功能并返回当前的状态

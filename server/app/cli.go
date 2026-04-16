@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -85,6 +85,8 @@ type CLIOptions[T comparable] struct {
 	//  - cmd.test_syntax
 	//  - daemon status %s
 	//  - syntax OK
+	//  - [DaemonConfig.DisplayName]
+	//  - [DaemonConfig.Description]
 	//
 	// NOTE: 此设置仅影响命令行的本地化，[web.Server] 的本地化由其自身管理。
 	Printer *message.Printer
@@ -107,7 +109,8 @@ type CLIOptions[T comparable] struct {
 	//  - stop 停止服务
 	//  - restart 重启服务
 	//  - status 查看服务状态
-	Daemon *service.Config
+	Daemon *DaemonConfig
+	daemon *service.Config
 }
 
 type cli[T comparable] struct {
@@ -166,8 +169,8 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 				return web.NewStackError(localeError(err, o.Printer))
 			}
 
-			if o.Daemon != nil && daemon != "" { // 在其它选项之前
-				status, err := app.runDaemon(daemon, o.Daemon)
+			if o.daemon != nil && daemon != "" { // 在其它选项之前
+				status, err := app.runDaemon(daemon, o.daemon)
 				if err == nil {
 					_, err = fmt.Fprintln(o.Out, web.Phrase("daemon status %s", statusString(status)).LocaleString(o.Printer))
 				}
@@ -248,9 +251,7 @@ func (o *CLIOptions[T]) sanitize() error {
 	}
 
 	if o.Daemon != nil {
-		if o.Daemon.Name == "" {
-			o.Daemon.Name = o.ID
-		}
+		o.daemon = o.Daemon.toServiceConfig(o.ID, o.Printer)
 	}
 
 	return nil
