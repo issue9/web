@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"

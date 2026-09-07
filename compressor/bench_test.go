@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 )
 
 func BenchmarkCodec_NewEncoder(b *testing.B) {

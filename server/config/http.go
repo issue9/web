@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -54,19 +54,19 @@ type (
 
 		tlsConfig *tls.Config
 
-		// ReadTimeout 对 [http.Server.ReadTimeout] 字段
+		// ReadTimeout 对应 [http.Server.ReadTimeout] 字段
 		ReadTimeout Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty" toml:"readTimeout,omitempty"`
 
-		// WriteTimeout 对 [http.Server.WriteTimeout] 字段
+		// WriteTimeout 对应 [http.Server.WriteTimeout] 字段
 		WriteTimeout Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty" toml:"writeTimeout,omitempty"`
 
-		// IdleTimeout 对 [http.Server.IdleTimeout] 字段
+		// IdleTimeout 对应 [http.Server.IdleTimeout] 字段
 		IdleTimeout Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty" toml:"idleTimeout,omitempty"`
 
-		// ReadHeaderTimeout 对 [http.Server.ReadHeaderTimeout] 字段
+		// ReadHeaderTimeout 对应 [http.Server.ReadHeaderTimeout] 字段
 		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty" toml:"readHeaderTimeout,omitempty"`
 
-		// MaxHeaderBytes 对 [http.Server.MaxHeaderBytes] 字段
+		// MaxHeaderBytes 对应 [http.Server.MaxHeaderBytes] 字段
 		MaxHeaderBytes int `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty" toml:"maxHeaderBytes,omitempty"`
 
 		// Recovery 拦截 panic 时反馈给客户端的状态码

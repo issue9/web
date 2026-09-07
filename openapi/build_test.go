@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ package openapi
 import (
 	"testing"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"

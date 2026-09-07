@@ -7,7 +7,7 @@ package app
 import (
 	"testing"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"github.com/issue9/localeutil"
 	"github.com/kardianos/service"
 	"golang.org/x/text/language"

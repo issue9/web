@@ -84,7 +84,7 @@ srv := server.New("app", "1.0.0", ...)
 router := s.Routers().New(...)
 doc := openapi.New(srv, web.Phrase("title")) // 声明文档对象
 
-router.Get("/users", doc.API(func(o* openapi.Operation){
+router.Get("/admins", getAdmins, doc.API(func(o* openapi.Operation){
 	o.Desc(web.Phrase("desc of api")). // 接口的描述
 		Body(). // 请求内容
 		Response() // 指定返回内容

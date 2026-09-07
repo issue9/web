@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ func marshal(v any) (url.Values, error) {
 				return m.MarshalText()
 			}
 		}
-		return []byte(fmt.Sprint(v)), nil
+		return fmt.Append(nil, v), nil
 	}
 
 	vals := url.Values{}
@@ -76,7 +76,7 @@ func unmarshal(vals url.Values, obj any) error {
 }
 
 func setField(obj reflect.Value, names []string, val []string) error {
-	for obj.Kind() == reflect.Ptr {
+	for obj.Kind() == reflect.Pointer {
 		if obj.IsNil() {
 			obj.Set(reflect.New(obj.Type().Elem()))
 		}
@@ -103,7 +103,7 @@ func setField(obj reflect.Value, names []string, val []string) error {
 
 		chkSliceType(obj)
 		slice := obj
-		for i := 0; i < len(val); i++ {
+		for i := range val {
 			oo := reflect.New(obj.Type().Elem())
 			if err := unmarshalByInterface(oo, val[i]); err != nil {
 				return err
@@ -136,7 +136,7 @@ func setField(obj reflect.Value, names []string, val []string) error {
 func setStructField(obj reflect.Value, names []string, val []string) error {
 	rtype := obj.Type()
 	l := obj.NumField()
-	for i := 0; i < l; i++ {
+	for i := range l {
 		rf := rtype.Field(i)
 		if rf.Anonymous {
 			if err := setField(obj.Field(i), names, val); err != nil {
@@ -171,7 +171,7 @@ func setMapField(obj reflect.Value, names []string, val []string) error {
 }
 
 func getFields(kv map[string]reflect.Value, name string, rv reflect.Value) error {
-	for rv.Kind() == reflect.Ptr {
+	for rv.Kind() == reflect.Pointer {
 		if rv.IsNil() {
 			rv.Set(reflect.New(rv.Type().Elem()))
 		}

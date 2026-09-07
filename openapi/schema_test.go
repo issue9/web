@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 
 	"github.com/issue9/web"
 )

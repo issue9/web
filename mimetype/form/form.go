@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -46,6 +46,7 @@ package form
 
 import (
 	"io"
+	"maps"
 	"net/url"
 
 	"github.com/issue9/mux/v9/header"
@@ -111,9 +112,7 @@ func Unmarshal(r io.Reader, v any) error {
 	}
 
 	if obj, ok := v.(url.Values); ok {
-		for k, v := range vals {
-			obj[k] = v
-		}
+		maps.Copy(obj, vals)
 		return nil
 	}
 

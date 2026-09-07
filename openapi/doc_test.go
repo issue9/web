@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 caixw
+// SPDX-FileCopyrightText: 2025-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 

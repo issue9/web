@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/issue9/assert/v4"
+	"github.com/issue9/assert/v5"
 	"golang.org/x/xerrors"
 )
 

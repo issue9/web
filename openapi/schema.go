@@ -283,9 +283,7 @@ func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName str
 	s.Type = TypeObject
 	s.Properties = make(map[string]*Schema, t.NumField())
 
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-
+	for f := range t.Fields() {
 		if f.Anonymous {
 			schemaFromType(d, f.Type, isRoot, rootName, s)
 			continue
@@ -343,7 +341,7 @@ func schemaFromObjectType(d *Document, t reflect.Type, isRoot bool, rootName str
 			Description: itemDesc,
 			XML:         xml,
 		}
-		schemaFromType(d, t.Field(i).Type, false, rootName, item)
+		schemaFromType(d, f.Type, false, rootName, item)
 		if item.Type == "" {
 			continue
 		}

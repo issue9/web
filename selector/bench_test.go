@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,7 +76,7 @@ func benchSelector_Next(b *testing.B, s Updateable, peers []Peer) {
 
 func buildPeers(size int) []Peer {
 	peers := make([]Peer, 0, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		peers = append(peers, NewPeer("http://localhost:808"+strconv.Itoa(i)))
 	}
 	return peers
@@ -84,7 +84,7 @@ func buildPeers(size int) []Peer {
 
 func buildWeightedPeers(size int) []Peer {
 	peers := make([]Peer, 0, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		peers = append(peers, NewWeightedPeer("http://localhost:808"+strconv.Itoa(i), i))
 	}
 	return peers

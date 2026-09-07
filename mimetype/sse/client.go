@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -90,6 +90,11 @@ func OnMessage(ctx context.Context, l *web.Logger, url string, c *http.Client, m
 		for {
 			m := newEmptyMessage()
 			for s.Scan() {
+				if s.Err() != nil {
+					l.Error(s.Err())
+					continue
+				}
+
 				if line := s.Text(); line != "" {
 					if err := m.append(line); err != nil {
 						l.Error(err)
