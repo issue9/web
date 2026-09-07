@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/issue9/logs/v7"
@@ -18,7 +17,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
@@ -180,53 +178,59 @@ func (conf *configOf[T]) buildHTTP() *web.FieldError {
 	return nil
 }
 
-var (
-	fileExistsRule = filter.V(func(p string) bool {
-		_, err := os.Stat(p)
-		return err == nil || errors.Is(err, fs.ErrExist)
-	}, locales.NotFound)
+func fileExistsRule(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil || errors.Is(err, fs.ErrExist)
+}
 
-	durShouldGreatThan0 = filter.V(func(v Duration) bool { return v >= 0 }, locales.ShouldGreatThan(0))
-)
+type Number interface {
+	~int | ~int64
+}
+
+func durShouldGreatThan0[T Number](d T) bool { return d < 0 }
 
 func (cert *certificateConfig) sanitize() *web.FieldError {
-	return filter.ToFieldError(
-		filter.New("cert", &cert.Cert, fileExistsRule),
-		filter.New("key", &cert.Key, fileExistsRule),
-	)
+	if !fileExistsRule(cert.Cert) {
+		return web.NewFieldError("cert", locales.NotFound)
+	}
+	if !fileExistsRule(cert.Key) {
+		return web.NewFieldError("key", locales.NotFound)
+	}
+	return nil
 }
 
 func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
-	err := filter.ToFieldError(
-		filter.New("readTimeout", &h.ReadTimeout, durShouldGreatThan0),
-		filter.New("writeTimeout", &h.WriteTimeout, durShouldGreatThan0),
-		filter.New("idleTimeout", &h.IdleTimeout, durShouldGreatThan0),
-		filter.New("readHeaderTimeout", &h.ReadHeaderTimeout, durShouldGreatThan0),
-		filter.New("maxHeaderBytes", &h.MaxHeaderBytes, filter.V(func(v int) bool { return v >= 0 }, locales.ShouldGreatThan(0))),
-		filter.New("requestID", &h.RequestID, filter.S(func(v *string) {
-			if *v == "" {
-				*v = header.XRequestID
-			}
-		})),
-		filter.New("trace", &h.Trace, filter.S(func(t *string) {
-			if *t == "" {
-				*t = "disable"
-			}
-		}), filter.V(func(t string) bool {
-			switch strings.ToLower(t) {
-			case "body":
-				h.trace = web.WithTrace(true)
-			case "nobody":
-				h.trace = web.WithTrace(false)
-			case "disable":
-			default:
-				return false
-			}
-			return true
-		}, locales.InvalidValue)),
-	)
-	if err != nil {
-		return err
+	if durShouldGreatThan0(h.ReadTimeout) {
+		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
+	}
+	if durShouldGreatThan0(h.WriteTimeout) {
+		return web.NewFieldError("writeTimeout", locales.ShouldGreatThan(0))
+	}
+	if durShouldGreatThan0(h.IdleTimeout) {
+		return web.NewFieldError("idleTimeout", locales.ShouldGreatThan(0))
+	}
+	if durShouldGreatThan0(h.ReadHeaderTimeout) {
+		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
+	}
+	if durShouldGreatThan0(h.MaxHeaderBytes) {
+		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
+	}
+	if h.RequestID == "" {
+		h.RequestID = header.XRequestID
+	}
+
+	if h.Trace == "" {
+		h.Trace = "disable"
+	}
+
+	switch h.Trace {
+	case "body":
+		h.trace = web.WithTrace(true)
+	case "nobody":
+		h.trace = web.WithTrace(false)
+	case "disable":
+	default:
+		return web.NewFieldError("trace", locales.InvalidValue)
 	}
 
 	if err := h.buildTLSConfig(); err != nil {
@@ -327,10 +331,13 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 }
 
 func (l *acmeConfig) sanitize() *web.FieldError {
-	return filter.ToFieldError(
-		filter.New("cache", &l.Cache, fileExistsRule),
-		filter.New("domains", &l.Domains, filter.V(func(v []string) bool { return len(v) > 0 }, locales.CanNotBeEmpty)),
-	)
+	if !fileExistsRule(l.Cache) {
+		return web.NewFieldError("cache", locales.NotFound)
+	}
+	if len(l.Domains) == 0 {
+		return web.NewFieldError("domains", locales.CanNotBeEmpty)
+	}
+	return nil
 }
 
 // Duration 转换为标准库的 [time.Duration]

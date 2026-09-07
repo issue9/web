@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,8 +74,6 @@ func (o *Operation) buildParameter(name, typ string, desc web.LocaleStringer, f 
 // NOTE: 当同一个路径包含不同的请求方法时，只需要定义其一个请求方法中的路径参数即可，
 // 会自动应用到所有的请求方法。
 func (o *Operation) Path(name, typ string, desc web.LocaleStringer, f func(*Parameter)) *Operation {
-	// TODO 如果支持泛型方法，typ 可以由泛型类型获得
-
 	p := o.buildParameter(name, typ, desc, f)
 	p.Required = true
 	o.Paths = append(o.Paths, p)

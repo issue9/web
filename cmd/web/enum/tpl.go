@@ -12,7 +12,7 @@ import(
 	"fmt"
 	{{if .SQL}}"database/sql/driver"{{end}}
 
-	{{if .Filter}}"github.com/issue9/web/filter"{{end}}
+	{{if .Filter}}"github.com/issue9/web"{{end}}
 	{{if .OpenAPI}}"github.com/issue9/web/openapi"{{end}}
 	"github.com/issue9/web/locales"
 	"github.com/fxamacker/cbor/v2"
@@ -129,13 +129,9 @@ func({{.Receiver}} {{.Name}})Value()(driver.Value,error) {
 func {{.Name}}Validator(v {{.Name}}) bool {return v.IsValid()}
 
 var(
-	{{.Name}}Rule = filter.V({{.Name}}Validator, locales.InvalidValue)
+	{{.Name}}Rule = web.ValidatorRule({{.Name}}Validator, locales.InvalidValue)
 
-	{{.Name}}SliceRule = filter.SV[[]{{.Name}}]({{.Name}}Validator, locales.InvalidValue)
-
-	{{.Name}}Filter = filter.NewBuilder({{.Name}}Rule)
-
-	{{.Name}}SliceFilter = filter.NewBuilder({{.Name}}SliceRule)
+	{{.Name}}SliceRule = web.SliceValidatorRule[[]{{.Name}}]({{.Name}}Validator, locales.InvalidValue)
 )
 {{end}}
 

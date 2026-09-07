@@ -1,14 +1,10 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
 package web
 
-import (
-	"sync"
-
-	"github.com/issue9/web/filter"
-)
+import "sync"
 
 var filterContextPool = &sync.Pool{New: func() any { return &FilterContext{} }}
 
@@ -79,15 +75,19 @@ func (v *FilterContext) addReason(name string, reason LocaleStringer) *FilterCon
 	return v
 }
 
-// Add 添加由过滤器 f 返回的错误信息
-func (v *FilterContext) Add(f filter.Filter) *FilterContext {
-	if !v.continueNext() {
+// 使用 rule 规则验证字段 name 表示的值 value
+func (v *FilterContext) Add[T any](name string, value *T, rule ...Rule[T]) *FilterContext {
+	if !v.continueNext() || len(rule) == 0 {
 		return v
 	}
 
-	if name, msg := f(); msg != nil {
-		v.addReason(name, msg)
+	for _, r := range rule {
+		if name, ls := r(name, value); ls != nil {
+			v.addReason(name, ls)
+			break
+		}
 	}
+
 	return v
 }
 

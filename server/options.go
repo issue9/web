@@ -17,13 +17,11 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v9"
 	"github.com/issue9/mux/v9/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	xj "github.com/issue9/web/mimetype/json"
@@ -206,21 +204,28 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 
 	switch t {
 	case typeHTTP: // 不需要处理任何数据
-		return o, nil
 	case typeGateway:
-		return o, filter.ToFieldError(
-			filter.New("Mapper", &o.Mapper, filter.V(func(v map[string]mux.Matcher) bool { return v != nil }, locales.CanNotBeEmpty)),
-			filter.New("Mapper", &o.Mapper, filter.MV[map[string]mux.Matcher](func(v mux.Matcher) bool { return v != nil }, locales.CanNotBeEmpty)),
-			filter.New("Registry", &o.Registry, filter.V(func(v registry.Registry) bool { return v != nil }, locales.CanNotBeEmpty)),
-		)
+		if o.Mapper == nil {
+			return o, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
+		}
+		if o.Mapper == nil {
+			return o, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
+		}
+		if o.Registry == nil {
+			return o, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+		}
 	case typeService:
-		return o, filter.ToFieldError(
-			filter.New("Peer", &o.Peer, filter.V(func(v selector.Peer) bool { return v != nil }, locales.CanNotBeEmpty)),
-			filter.New("Registry", &o.Registry, filter.V(func(v registry.Registry) bool { return v != nil }, locales.CanNotBeEmpty)),
-		)
+		if o.Peer == nil {
+			return o, web.NewFieldError("Peer", locales.CanNotBeEmpty)
+		}
+		if o.Registry == nil {
+			return o, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+		}
 	default:
 		panic("参数 t 取值错误")
 	}
+
+	return o, nil
 }
 
 func (o *Options) internalServer(id, version string, s web.Server) *web.InternalServer {
