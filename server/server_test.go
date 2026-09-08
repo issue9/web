@@ -49,10 +49,6 @@ func TestNew(t *testing.T) {
 		NotNil(srv.Cache()).
 		Equal(srv.Location(), time.Local)
 
-	s, ok := srv.(*httpServer)
-	a.True(ok).Equal(s.hs.Handler, s).
-		Equal(s.hs.Addr, "")
-
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
 		NotNil(d).

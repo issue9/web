@@ -11,11 +11,6 @@
 package server
 
 import (
-	"context"
-	"errors"
-	"net/http"
-	"time"
-
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
@@ -23,9 +18,7 @@ import (
 
 type (
 	httpServer struct {
-		*web.InternalServer
-		hs    *http.Server
-		state web.State
+		web.Server
 	}
 
 	serviceServer struct {
@@ -41,16 +34,12 @@ type (
 )
 
 func newHTTPServer(id, version string, o *Options, s web.Server) *httpServer {
-	srv := &httpServer{
-		hs:    o.HTTPServer,
-		state: web.Stopped,
-	}
+	srv := &httpServer{}
 	if s == nil {
 		s = srv
 	}
 
-	srv.InternalServer = o.internalServer(id, version, s)
-	srv.hs.Handler = srv
+	srv.Server = o.internalServer(id, version, s)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
 		plugin.Plugin(srv)
@@ -69,42 +58,6 @@ func NewHTTP(id, version string, o *Options) (web.Server, error) {
 	}
 
 	return newHTTPServer(id, version, o, nil), nil
-}
-
-func (srv *httpServer) State() web.State { return srv.state }
-
-func (srv *httpServer) Serve() (err error) {
-	if srv.State() == web.Running {
-		panic("当前已经处于运行状态")
-	}
-	srv.state = web.Running
-
-	if c := srv.hs.TLSConfig; c != nil && (len(c.Certificates) > 0 || c.GetCertificate != nil) {
-		err = srv.hs.ListenAndServeTLS("", "")
-	} else {
-		err = srv.hs.ListenAndServe()
-	}
-
-	<-srv.Done()
-	return err
-}
-
-func (srv *httpServer) Close(shutdownTimeout time.Duration) {
-	if srv.State() != web.Running {
-		return
-	}
-	srv.state = web.Stopped // 调用 Close 即设置状态
-
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-
-	defer func() {
-		srv.InternalServer.Close()
-		cancel()
-	}()
-
-	if err := srv.hs.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-		srv.Logs().ERROR().Error(err)
-	}
 }
 
 // NewService 声明微服务节点

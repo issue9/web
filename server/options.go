@@ -228,8 +228,8 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	return o, nil
 }
 
-func (o *Options) internalServer(id, version string, s web.Server) *web.InternalServer {
-	return web.InternalNewServer(s, id, version,
+func (o *Options) internalServer(id, version string, s web.Server) web.Server {
+	return web.InternalNewServer(s, o.HTTPServer, id, version,
 		o.Location, o.Logs, o.IDGenerator, o.locale,
 		o.Cache, o.Codec, o.RequestIDKey, o.ProblemTypePrefix,
 		o.OnRender, o.RoutersOptions...)

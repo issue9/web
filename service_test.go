@@ -84,7 +84,7 @@ func TestServer_service(t *testing.T) {
 					Equal(Running, srv2.state). // 确定不会改变其它服务的状态
 					Equal(srv3.state, Stopped)
 
-	s.Close(0)
+	s.close()                           // 并未调用 Serve，直接调用 Close 会阻塞，所以直接调用 close 结束。
 	time.Sleep(1000 * time.Millisecond) // 等待主服务设置状态值
 	a.Equal(srv1.state, Stopped).
 		Equal(sched.state, Stopped).
@@ -125,7 +125,7 @@ func TestService_state(t *testing.T) {
 		s1 := s.Services().services[1]
 		a.Equal(s1.state, Running)
 
-		s.Close(0)
+		s.close()
 		a.Wait(500*time.Millisecond). // 等待主服务设置状态值
 						Equal(s1.state, Stopped)
 	})
@@ -145,7 +145,7 @@ func TestService_state(t *testing.T) {
 						Equal(s1.state, Failed).
 						Contains(s1.err.Error(), "service panic")
 
-		s.Close(0)
+		s.close()
 	})
 
 	t.Run("error", func(t *testing.T) {
@@ -163,6 +163,6 @@ func TestService_state(t *testing.T) {
 						Equal(s1.state, Failed).
 						Contains(s1.err.Error(), "service error")
 
-		s.Close(0)
+		s.close()
 	})
 }

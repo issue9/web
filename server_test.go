@@ -26,12 +26,8 @@ import (
 var _ Locale = &locale.Locale{}
 
 type testServer struct {
-	*InternalServer
+	*internalServer
 	logBuf *bytes.Buffer
-}
-
-func onExitContext(ctx *Context, status int) {
-	ctx.Header().Set("exit-status", strconv.Itoa(status))
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
@@ -53,7 +49,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc := memory.New()
 	u := unique.NewNumber(100)
-	srv.InternalServer = InternalNewServer(srv, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, "", nil)
+	srv.internalServer = InternalNewServer(srv, &http.Server{Addr: ":8080"}, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, "", nil)
 	srv.Services().Add(Phrase("unique"), u)
 
 	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
@@ -61,11 +57,9 @@ func newTestServer(a *assert.Assertion) *testServer {
 	return srv
 }
 
-func (s *testServer) Close(time.Duration) { s.InternalServer.Close() }
-
-func (s *testServer) Serve() error { panic("未实现") }
-
-func (s *testServer) State() State { panic("未实现") }
+func onExitContext(ctx *Context, status int) {
+	ctx.Header().Set("exit-status", strconv.Itoa(status))
+}
 
 func TestOnExitContextFunc(t *testing.T) {
 	a := assert.New(t, false)

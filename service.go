@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +25,7 @@ const (
 
 type (
 	Services struct {
-		s         *InternalServer
+		server    Server
 		services  []*service
 		scheduled *scheduled.Server
 	}
@@ -62,11 +62,11 @@ type (
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 
-func (s *InternalServer) Services() *Services { return s.services }
+func (s *internalServer) Services() *Services { return s.services }
 
-func (s *InternalServer) initServices() {
+func (s *internalServer) initServices() {
 	s.services = &Services{
-		s:         s,
+		server:    s,
 		services:  make([]*service, 0, 5),
 		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
 	}
@@ -97,14 +97,14 @@ func (srv *service) serve(ctx context.Context) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.s.server.Logs().ERROR().Error(srv.err)
+			srv.s.server.Logs().ERROR().Error(srv.err)
 			srv.setState(Failed)
 		}
 	}()
 	srv.err = srv.service.Serve(ctx)
 	state := Stopped
 	if !errors.Is(srv.err, context.Canceled) && !errors.Is(srv.err, http.ErrServerClosed) {
-		srv.s.s.Logs().ERROR().Error(srv.err)
+		srv.s.server.Logs().ERROR().Error(srv.err)
 		state = Failed
 	}
 
@@ -123,7 +123,7 @@ func (srv *Services) Add(title LocaleStringer, f Service) context.CancelFunc {
 	}
 	srv.services = append(srv.services, s)
 
-	ctx, cancel := context.WithCancel(srv.s)
+	ctx, cancel := context.WithCancel(srv.server)
 	s.goServe(ctx)
 
 	return func() {

@@ -55,7 +55,7 @@ func TestPaths(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	b := s.InternalServer
+	b := s.internalServer
 
 	t.Run("empty", func(t *testing.T) {
 		a := assert.New(t, false)
@@ -136,7 +136,7 @@ func TestContext_PathID(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	b := s.InternalServer
+	b := s.internalServer
 
 	ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 
@@ -152,7 +152,7 @@ func TestContext_PathInt64(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	b := s.InternalServer
+	b := s.internalServer
 
 	ctx := b.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 

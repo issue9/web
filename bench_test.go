@@ -36,7 +36,7 @@ func BenchmarkRouter(b *testing.B) {
 		return nil
 	}
 
-	routertest.NewTester(s.InternalServer.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
+	routertest.NewTester(s.internalServer.call, notFound, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
 }
 
 func BenchmarkNewContext(b *testing.B) {

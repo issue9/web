@@ -6,6 +6,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"iter"
 	"net/http"
@@ -188,9 +189,10 @@ type (
 
 	PluginFunc func(Server)
 
-	// InternalServer 这是一个内部使用的类型，提供了大部分 [Server] 的实现。
-	InternalServer struct {
+	internalServer struct {
 		server Server
+		hs     *http.Server
+		state  State
 
 		id      string
 		version string
@@ -218,21 +220,22 @@ type (
 	}
 )
 
-// InternalNewServer 声明 [InternalServer]
+// InternalNewServer 创建 [Server]
 //
 // s 为实际的 [Server] 接口对象；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 // problemPrefix 可以为空；
 // onRender 在每个对象的渲染之前可以对内容进行的修改；
 //
-// NOTE: 此为内部使用函数，由调用者保证参数的正确性。
+// NOTE: 此函数仅供内部使用，由调用者保证参数的正确性。
 //
-// NOTE: [Server] 的实现者，不应该重新实现 [InternalServer] 已经实现的接口，
-// 否则可能出现 [InternalServer] 中的调用与 [Server] 的实现调用不同的问题。
-// 比如重新实现了 [Server.Location]，那么将出现 [InternalServer] 内部的 Location
-// 与 新实现的 Location 返回不同值的情况。
+// NOTE: [Server] 的实现者，不应该重新实现 [internalServer] 已经实现的接口，
+// 否则可能出现 [internalServer] 中的调用与 [Server] 的实现调用不同的问题。
+// 比如重新实现了 [Server.Location]，那么将出现 [internalServer] 内部的 Location
+// 与新实现的 Location 返回不同值的情况。
 func InternalNewServer(
 	s Server,
+	hs *http.Server,
 	id, ver string,
 	loc *time.Location,
 	logs *Logs,
@@ -244,9 +247,11 @@ func InternalNewServer(
 	problemPrefix string,
 	onRender func(int, any) (int, any),
 	o ...RouterOption,
-) *InternalServer {
-	is := &InternalServer{
+) *internalServer {
+	is := &internalServer{
 		server: s,
+		hs:     hs,
+		state:  Stopped,
 
 		id:      id,
 		version: ver,
@@ -268,6 +273,7 @@ func InternalNewServer(
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	is.initServices()
+
 	is.routers = &Routers{
 		g: mux.NewGroup(is.call,
 			notFound,
@@ -275,51 +281,52 @@ func InternalNewServer(
 			buildNodeHandle(http.StatusOK),
 			o...),
 	}
+	is.hs.Handler = is.routers.g
 
 	return is
 }
 
-func (s *InternalServer) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
+func (s *internalServer) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
 	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.server.UniqueID)
 }
 
-func (s *InternalServer) Config() *config.Config { return s.locale.Config() }
+func (s *internalServer) Config() *config.Config { return s.locale.Config() }
 
-func (s *InternalServer) Locale() Locale { return s.locale }
+func (s *internalServer) Locale() Locale { return s.locale }
 
-func (s *InternalServer) ID() string { return s.id }
+func (s *internalServer) ID() string { return s.id }
 
-func (s *InternalServer) Version() string { return s.version }
+func (s *internalServer) Version() string { return s.version }
 
-func (s *InternalServer) Vars() *sync.Map { return s.vars }
+func (s *internalServer) Vars() *sync.Map { return s.vars }
 
-func (s *InternalServer) CanCompress() bool { return !s.disableCompress }
+func (s *internalServer) CanCompress() bool { return !s.disableCompress }
 
-func (s *InternalServer) SetCompress(enable bool) { s.disableCompress = !enable }
+func (s *internalServer) SetCompress(enable bool) { s.disableCompress = !enable }
 
-func (s *InternalServer) Location() *time.Location { return s.location }
+func (s *internalServer) Location() *time.Location { return s.location }
 
-func (s *InternalServer) Now() time.Time { return time.Now().In(s.Location()) }
+func (s *internalServer) Now() time.Time { return time.Now().In(s.Location()) }
 
-func (s *InternalServer) Uptime() time.Time { return s.uptime }
+func (s *internalServer) Uptime() time.Time { return s.uptime }
 
-func (s *InternalServer) Cache() cache.Cleanable { return s.cache }
+func (s *internalServer) Cache() cache.Cleanable { return s.cache }
 
-func (s *InternalServer) ParseTime(layout, value string) (time.Time, error) {
+func (s *internalServer) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, s.Location())
 }
 
-func (s *InternalServer) UniqueID() string { return s.idgen() }
+func (s *internalServer) UniqueID() string { return s.idgen() }
 
-func (s *InternalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
+func (s *internalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
 
-func (s *InternalServer) OnExitContext(f ...OnExitContextFunc) {
+func (s *internalServer) OnExitContext(f ...OnExitContextFunc) {
 	s.exitContexts = append(s.exitContexts, f...)
 }
 
-func (s *InternalServer) Logs() *Logs { return s.logs }
+func (s *internalServer) Logs() *Logs { return s.logs }
 
-func (s *InternalServer) Close() {
+func (s *internalServer) close() {
 	slices.Reverse(s.closes)
 	for _, f := range s.closes {
 		if err := f(); err != nil { // 出错不退出，继续其它操作。
@@ -331,33 +338,69 @@ func (s *InternalServer) Close() {
 	close(s.done)
 }
 
-func (s *InternalServer) Deadline() (time.Time, bool) { return time.Time{}, false }
+func (s *internalServer) Deadline() (time.Time, bool) { return time.Time{}, false }
 
-func (s *InternalServer) Value(key any) any {
+func (s *internalServer) Value(key any) any {
 	if val, found := s.Vars().Load(key); found {
 		return val
 	}
 	return nil
 }
 
-func (s *InternalServer) Done() <-chan struct{} { return s.done }
+func (s *internalServer) Done() <-chan struct{} { return s.done }
 
-func (s *InternalServer) Err() error { return s.doneErr }
+func (s *internalServer) Err() error { return s.doneErr }
 
 func (f PluginFunc) Plugin(s Server) { f(s) }
 
-func (s *InternalServer) Use(p ...Plugin) {
+func (s *internalServer) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s.server)
 	}
 }
 
-func (s *InternalServer) Mimetypes() iter.Seq2[string, string] {
+func (s *internalServer) Mimetypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
 		for _, v := range s.codec.mediaTypes {
 			if !yield(v.Name, v.Problem) {
 				break
 			}
 		}
+	}
+}
+
+func (s *internalServer) State() State { return s.state }
+
+func (s *internalServer) Serve() (err error) {
+	if s.State() == Running {
+		panic("当前已经处于运行状态")
+	}
+	s.state = Running
+
+	if c := s.hs.TLSConfig; c != nil && (len(c.Certificates) > 0 || c.GetCertificate != nil) {
+		err = s.hs.ListenAndServeTLS("", "")
+	} else {
+		err = s.hs.ListenAndServe()
+	}
+
+	<-s.Done()
+	return err
+}
+
+func (s *internalServer) Close(shutdownTimeout time.Duration) {
+	if s.State() != Running {
+		return
+	}
+	s.state = Stopped // 调用 Close 即设置状态
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+
+	defer func() {
+		s.close()
+		cancel()
+	}()
+
+	if err := s.hs.Shutdown(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
+		s.Logs().ERROR().Error(err)
 	}
 }
