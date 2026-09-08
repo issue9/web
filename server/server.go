@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,13 +28,13 @@ type (
 		state web.State
 	}
 
-	service struct {
+	serviceServer struct {
 		*httpServer
 		registry registry.Registry
 		peer     selector.Peer
 	}
 
-	gateway struct {
+	gatewayServer struct {
 		*httpServer
 		registry registry.Registry
 	}
@@ -116,7 +116,7 @@ func NewService(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	s := &service{
+	s := &serviceServer{
 		registry: o.Registry,
 		peer:     o.Peer,
 	}
@@ -124,7 +124,7 @@ func NewService(id, version string, o *Options) (web.Server, error) {
 	return s, nil
 }
 
-func (s *service) Serve() error {
+func (s *serviceServer) Serve() error {
 	dreg, err := s.registry.Register(s.ID(), s.peer)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func NewGateway(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	g := &gateway{registry: o.Registry}
+	g := &gatewayServer{registry: o.Registry}
 	g.httpServer = newHTTPServer(id, version, o, g)
 
 	for name, match := range o.Mapper {

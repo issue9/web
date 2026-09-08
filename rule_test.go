@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v9/types"
 )
 
@@ -48,11 +47,11 @@ func TestValidatorRule(t *testing.T) {
 	a := assert.New(t, false)
 
 	id := " "
-	v := newFilter(a).Add("id", &id, ValidatorRule[string](required, localeutil.Phrase("required")))
+	v := newFilter(a).Add("id", &id, ValidatorRule[string](required, StringPhrase("required")))
 	a.Nil(v.problem.Params).Equal(id, " ")
 
 	id = "X "
-	v = newFilter(a).Add("id", &id, SanitizerRule(upper), ValidatorRule[string](required, localeutil.Phrase("required")))
+	v = newFilter(a).Add("id", &id, SanitizerRule(upper), ValidatorRule[string](required, StringPhrase("required")))
 	a.Nil(v.problem.Params).Equal(id, "X ")
 }
 
@@ -76,12 +75,12 @@ func TestSliceValidatorRule(t *testing.T) {
 	a := assert.New(t, false)
 
 	vals := []string{"s1 ", "s2"}
-	v := newFilter(a).Add("vals", &vals, SliceValidatorRule[[]string](required, localeutil.Phrase("required")))
+	v := newFilter(a).Add("vals", &vals, SliceValidatorRule[[]string](required, StringPhrase("required")))
 	a.Nil(v.problem.Params).Equal(vals, []string{"s1 ", "s2"})
 
 	vals = []string{"s1 ", ""}
-	v = newFilter(a).Add("vals", &vals, SliceValidatorRule[[]string](required, localeutil.Phrase("required")))
-	a.Equal(v.problem.Params[0].Reason, localeutil.Phrase("required")).
+	v = newFilter(a).Add("vals", &vals, SliceValidatorRule[[]string](required, StringPhrase("required")))
+	a.Equal(v.problem.Params[0].Reason, StringPhrase("required")).
 		Equal(v.problem.Params[0].Name, "vals[1]").
 		Equal(vals, []string{"s1 ", ""})
 }
@@ -90,12 +89,12 @@ func TestMapValidatorRule(t *testing.T) {
 	a := assert.New(t, false)
 
 	vals := map[string]string{"s1 ": "s1", "s2": "s2"}
-	v := newFilter(a).Add("vals", &vals, MapValidatorRule[map[string]string](required, localeutil.Phrase("required")))
+	v := newFilter(a).Add("vals", &vals, MapValidatorRule[map[string]string](required, StringPhrase("required")))
 	a.Nil(v.problem.Params)
 
 	vals = map[string]string{"s1 ": "x", "s2": ""}
-	v = newFilter(a).Add("vals", &vals, MapValidatorRule[map[string]string](required, localeutil.Phrase("required")))
-	a.Equal(v.problem.Params[0].Reason, localeutil.Phrase("required")).
+	v = newFilter(a).Add("vals", &vals, MapValidatorRule[map[string]string](required, StringPhrase("required")))
+	a.Equal(v.problem.Params[0].Reason, StringPhrase("required")).
 		Equal(v.problem.Params[0].Name, "vals[s2]").
 		Equal(vals, map[string]string{"s1 ": "x", "s2": ""})
 }

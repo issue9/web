@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ package locale
 
 import (
 	"io/fs"
+	"strings"
 
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil/message/serialize"
@@ -48,15 +49,16 @@ func New(id language.Tag, conf *config.Config) *Locale {
 }
 
 func buildAcceptLanguage(ls catalog.Catalog) string {
-	var s string
+	var s strings.Builder
 	for index, v := range ls.Languages() {
 		if index == 0 {
-			s += v.String()
+			s.WriteString(v.String())
 		} else {
-			s += ", " + v.String()
+			s.WriteString(", ")
+			s.WriteString(v.String())
 		}
 	}
-	return s
+	return s.String()
 }
 
 func (l *Locale) ID() language.Tag { return l.id }

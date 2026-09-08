@@ -30,8 +30,8 @@ import (
 
 var (
 	_ web.Server = &httpServer{}
-	_ web.Server = &gateway{}
-	_ web.Server = &service{}
+	_ web.Server = &gatewayServer{}
+	_ web.Server = &serviceServer{}
 )
 
 func buildHandler(code int) web.HandlerFunc {

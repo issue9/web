@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -354,7 +354,7 @@ func (s *InternalServer) Use(p ...Plugin) {
 
 func (s *InternalServer) Mimetypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
-		for _, v := range s.codec.types {
+		for _, v := range s.codec.mediaTypes {
 			if !yield(v.Name, v.Problem) {
 				break
 			}

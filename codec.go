@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,14 +19,14 @@ import (
 	"github.com/issue9/web/internal/qheader"
 )
 
-// Codec 编码解码工具
+// Codec 编解码工具
 //
 // 包含了压缩方法和媒体类型的处理
 type Codec struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	types              []*mediaType
+	mediaTypes         []*mediaType
 	clientAcceptHeader string // 生成客户端的 Accept 报头内容
 	serverAcceptHeader string // 生成服务端的 Accept 报头内容
 }
@@ -100,7 +100,7 @@ func buildCompression(c compressor.Compressor, types []string) *compression {
 func NewCodec() *Codec {
 	return &Codec{
 		compressions: make([]*compression, 0, 10),
-		types:        make([]*mediaType, 0, 10),
+		mediaTypes:   make([]*mediaType, 0, 10),
 	}
 }
 
@@ -150,11 +150,11 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	// 检测复复值
-	if slices.IndexFunc(e.types, func(v *mediaType) bool { return v.Name == name }) >= 0 {
+	if slices.IndexFunc(e.mediaTypes, func(v *mediaType) bool { return v.Name == name }) >= 0 {
 		panic(fmt.Sprintf("存在重复的项 %s", name))
 	}
 
-	e.types = append(e.types, &mediaType{
+	e.mediaTypes = append(e.mediaTypes, &mediaType{
 		Name:           name,
 		Marshal:        m,
 		Unmarshal:      u,
@@ -342,7 +342,7 @@ func (e *Codec) accept(h string) *mediaType {
 
 func (e *Codec) findMarshal(name string) *mediaType {
 	switch {
-	case len(e.types) == 0:
+	case len(e.mediaTypes) == 0:
 		return nil
 	case name == "" || name == "*/*":
 		return e.searchFunc(func(s string) bool { return true }) // 第一个元素
@@ -355,6 +355,6 @@ func (e *Codec) findMarshal(name string) *mediaType {
 }
 
 func (e *Codec) searchFunc(match func(string) bool) *mediaType {
-	item, _ := sliceutil.At(e.types, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
+	item, _ := sliceutil.At(e.mediaTypes, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
 }
