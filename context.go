@@ -315,12 +315,12 @@ func (ctx *Context) LocalePrinter() *message.Printer { return ctx.localePrinter 
 
 func (ctx *Context) LanguageTag() language.Tag { return ctx.languageTag }
 
-func (s *internalServer) freeContext(ctx *Context) {
+func (ctx *Context) freeContext() {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
 
-	for _, f := range s.exitContexts {
+	for _, f := range ctx.s.exitContexts {
 		f(ctx, ctx.status)
 	}
 

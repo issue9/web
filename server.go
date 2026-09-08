@@ -247,7 +247,7 @@ func InternalNewServer(
 	problemPrefix string,
 	onRender func(int, any) (int, any),
 	o ...RouterOption,
-) *internalServer {
+) Server {
 	is := &internalServer{
 		server: s,
 		hs:     hs,
