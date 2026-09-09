@@ -6,6 +6,7 @@
 package app
 
 import (
+	"slices"
 	"sync"
 	"time"
 
@@ -48,7 +49,7 @@ type app struct {
 // New 声明一个简要的 [App] 实现
 //
 // shutdown 每次关闭服务操作的等待时间；
-// newServer 构建新服务的方法。
+// newServer 构建新服务的方法；
 func New(shutdown time.Duration, newServer func() (web.Server, error)) App {
 	return newApp(shutdown, newServer)
 }
@@ -152,6 +153,10 @@ func (d *DaemonConfig) toServiceConfig(name string, p *localeutil.Printer) *serv
 //
 // action 可以是 [service.ControlAction] 和 'status' 中的任意元素；
 func (app *app) runDaemon(action string, conf *service.Config) (service.Status, error) {
+	if !isDaemonControl(action) {
+		return service.StatusUnknown, web.NewLocaleError("invalid daemon control action: %s", action)
+	}
+
 	d, err := service.New(app, conf)
 	if err != nil {
 		return service.StatusUnknown, err
@@ -181,4 +186,8 @@ func statusString(s service.Status) string {
 	default:
 		return "unknown"
 	}
+}
+
+func isDaemonControl(c string) bool {
+	return c == "status" || slices.Contains(service.ControlAction[:], c)
 }

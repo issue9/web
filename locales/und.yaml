@@ -31,6 +31,9 @@ messages:
 - key: exit context
   message:
     msg: exit context
+- key: "invalid daemon control action: %s"
+  message:
+    msg: "invalid daemon control action: %s"
 - key: invalid data %s
   message:
     msg: invalid data %s

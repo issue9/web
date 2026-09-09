@@ -74,6 +74,7 @@ type CLIOptions[T comparable] struct {
 	//  - cmd.test_syntax
 	//  - daemon status %s
 	//  - syntax OK
+	//  - invalid daemon control action: %s
 	//  - [DaemonConfig.DisplayName]
 	//  - [DaemonConfig.Description]
 	//
@@ -148,7 +149,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
 
 			var daemon string // -d 选项
-			if o.Daemon != nil {
+			if o.daemon != nil {
 				fs.StringVar(&daemon, "d", "", cmdDaemon.LocaleString(o.Printer))
 			}
 
@@ -158,7 +159,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 				return web.NewStackError(localeError(err, o.Printer))
 			}
 
-			if o.daemon != nil && daemon != "" { // 在其它选项之前
+			if daemon != "" { // 在其它选项之前
 				status, err := app.runDaemon(daemon, o.daemon)
 				if err == nil {
 					_, err = fmt.Fprintln(o.Out, web.Phrase("daemon status %s", statusString(status)).LocaleString(o.Printer))

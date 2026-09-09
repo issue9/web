@@ -49,8 +49,9 @@ func newHTTPServer(id, version string, o *Options, s web.Server) *httpServer {
 
 // NewHTTP 新建 HTTP 服务
 //
-// id, version 表示服务的 ID 和版本号；
-// o 指定了一些带有默认值的参数；
+// id 应用的 ID；
+// version 应用的版本号；
+// o 初始化应用的额外参数；
 func NewHTTP(id, version string, o *Options) (web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {

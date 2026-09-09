@@ -40,6 +40,9 @@ messages:
 - key: exit context
   message:
     msg: 已经退出当前的会话环境
+- key: "invalid daemon control action: %s"
+  message:
+    msg: "无效的操作：%s"
 - key: invalid data %s
   message:
     msg: invalid data %s
