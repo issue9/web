@@ -45,7 +45,7 @@ type (
 		// 项目的配置文件管理
 		//
 		// 如果为空，则采用 [DefaultConfigDir] 作为配置文件的目录，
-		// 同时加载 YAML、XML、TOML 和 JSON 三种文件类型的序列化方法。
+		// 同时加载 YAML、XML、TOML 和 JSON 几种文件类型的序列化方法。
 		Config *config.Config
 
 		// 服务器的时区

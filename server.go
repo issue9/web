@@ -28,6 +28,8 @@ import (
 
 type (
 	// Server 服务接口
+	//
+	// 创建该接口对象的方法在 [server] 包之下，提供了不同功能的服务对象。
 	Server interface {
 		context.Context
 

@@ -1,10 +1,13 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
 //go:generate web mdoc -lang=zh-CN -dir=./ -o=./CONFIG.md -object=configOf
 
 // Package config 从配置文件加载 [server.Options]
+//
+// NOTE: 部分配置项在实际运行之后再修改，可能导致程序出错，比如唯一 ID 的生成器，
+// 修改之后可能导致与之前的 ID 重复等问题。
 package config
 
 import (
@@ -144,11 +147,17 @@ type configOf[T comparable] struct {
 
 // Load 从配置文件初始化 [server.Options] 对象
 //
-// configDir 项目配置文件所在的目录；
-// filename 用于指定项目的配置文件，相对于 configDir 文件系统。
-// 如果此值为空，将返回 &Options{Config: config.Dir(nil, configDir)}；
+// configDir 项目配置文件所在的目录。
+// 有以下几种前缀用于指定不同的保存目录：
+//   - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Windows 的 AppData 等；
+//   - @ 表示当前程序的主目录；
+//   - ^ 表示绝对路径；
+//   - # 表示工作路径；
+//   - 其它则是直接采用 [config.Dir] 初始化。
 //
-// 序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
+// filename 用于指定项目的配置文件，相对于 configDir 文件系统。
+// 如果此值为空，将返回 &Options{Config: config.Dir(nil, configDir)}。
+// 文件的序列化方法由 [RegisterFileSerializer] 注册的列表中根据 filename 的扩展名进行查找。
 //
 // T 表示用户自定义的数据项，该数据来自配置文件中的 user 字段。
 // 如果实现了 [config.Sanitizer] 接口，则在加载后调用该接口；

@@ -54,23 +54,12 @@ type CLIOptions[T comparable] struct {
 	Out io.Writer
 
 	// 配置文件所在的目录
-	//
-	// 有以下几种前缀用于指定不同的保存目录：
-	//  - ~ 表示系统提供的配置文件目录，比如 Linux 的 XDG_CONFIG、Windows 的 AppData 等；
-	//  - @ 表示当前程序的主目录；
-	//  - ^ 表示绝对路径；
-	//  - # 表示工作路径；
-	//  - 其它则是直接采用 [config.Dir] 初始化。
-	// 如果为空则采用 [server.DefaultConfigDir] 中指定的值。
-	//
-	// NOTE: 具体说明可参考 [config.BuildDir] 的 dir 参数。
+	// 具体参数说明可参考 [config.Load] 中 configDir 参数的说明。
 	ConfigDir string
 
 	// 配置文件的文件名
 	//
-	// 相对于 ConfigDir 的文件名，不能为空。
-	//
-	// 需要保证序列化方法已经由 [config.RegisterFileSerializer] 注册；
+	// 具体参数说明可参考 [config.Load] 中 filename 参数的说明。
 	ConfigFilename string
 
 	// 本地化的打印对象
