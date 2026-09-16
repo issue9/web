@@ -24,9 +24,10 @@ jobs:
       - name: release
         uses: goreleaser/goreleaser-action@v7
         with:
+          distribution: goreleaser
           workdir: ./cmd/web
           version: "~> v2"
-          args: release
+          args: release --clean
         env:
           # 如果需要操作其它仓库，比如将 brew 写入其它仓库中，
           # 则不能使用默认的 GITHUB_TOKEN，需要自行创建。

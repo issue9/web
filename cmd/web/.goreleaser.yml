@@ -33,11 +33,12 @@ builds:
     ldflags:
       - -s -w -X main.commits={{.Commit}} -X main.version={{.Version}}
 
-brews:
+homebrew_casks:
   - repository:
       owner: caixw
       name: homebrew-brew
-    url_template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url:
+      template: "https://github.com/issue9/web/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     commit_author:
       name: goreleaserbot
@@ -48,7 +49,7 @@ brews:
     license: MIT
 
 archives:
-  - builds:
+  - ids:
       - web
     format_overrides:
       - goos: windows
