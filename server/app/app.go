@@ -117,6 +117,7 @@ func (app *app) Restart() {
 	<-app.exit                     // 等待 server.Serve 退出
 }
 
+// DaemonConfig 守护进程的一些配置
 type DaemonConfig struct {
 	DisplayName  web.LocaleStringer
 	Description  web.LocaleStringer

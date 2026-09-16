@@ -36,8 +36,7 @@ func TestSignalHUP(t *testing.T) {
 		Version:        "1.0.0",
 		ConfigDir:      ".",
 		ConfigFilename: "web.yaml",
-		ServeActions:   []string{"serve"},
-		NewServer: func(name, ver string, opt *server.Options, _ empty, _ string) (web.Server, error) {
+		NewServer: func(name, ver string, opt *server.Options, _ empty) (web.Server, error) {
 			return server.NewHTTP(name, ver, opt)
 		},
 	}
@@ -45,7 +44,7 @@ func TestSignalHUP(t *testing.T) {
 	SignalHUP(c)
 
 	go func() {
-		a.ErrorIs(c.exec([]string{"app", "-a=serve"}), http.ErrServerClosed)
+		a.ErrorIs(c.exec([]string{"app", "serve"}), http.ErrServerClosed)
 		exit <- struct{}{}
 	}()
 	time.Sleep(2000 * time.Millisecond) // 等待 go func 启动完成

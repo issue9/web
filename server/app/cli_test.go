@@ -6,11 +6,14 @@ package app
 
 import (
 	"bytes"
+	"flag"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/issue9/assert/v5"
 
+	"github.com/issue9/cmdopt"
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 )
@@ -30,10 +33,16 @@ func TestCLI(t *testing.T) {
 		ConfigFilename:  "web.yaml",
 		ShutdownTimeout: shutdownTimeout,
 		Out:             buf,
-		ServeActions:    []string{"serve"},
-		NewServer: func(name, ver string, opt *server.Options, _ empty, act string) (web.Server, error) {
-			action = act
+		NewServer: func(name, ver string, opt *server.Options, _ empty) (web.Server, error) {
 			return server.NewHTTP(name, ver, opt)
+		},
+		Commands: []*cmdopt.Command{
+			{Name: "install", Title: "title", Usage: "usage", Command: func(*flag.FlagSet) cmdopt.DoFunc {
+				return func(io.Writer) error {
+					action = "install"
+					return nil
+				}
+			}},
 		},
 	}
 	cmd := NewCLI(o)
@@ -41,7 +50,7 @@ func TestCLI(t *testing.T) {
 	a.NotError(ocli.exec([]string{"app", "-v"})).Contains(buf.String(), o.Version)
 
 	buf.Reset()
-	a.NotError(ocli.exec([]string{"app", "-a=install"})).Equal(action, "install")
+	a.NotError(ocli.exec([]string{"app", "install"})).Equal(action, "install")
 
 	buf.Reset()
 	msg := web.Phrase("syntax OK").LocaleString(o.Printer) + "\n"
@@ -60,7 +69,7 @@ func TestCLI_sanitize(t *testing.T) {
 	cmd = &CLIOptions[empty]{
 		ID:      "app",
 		Version: "1.1.1",
-		NewServer: func(name, ver string, opt *server.Options, _ empty, _ string) (web.Server, error) {
+		NewServer: func(name, ver string, opt *server.Options, _ empty) (web.Server, error) {
 			return server.NewHTTP(name, ver, opt)
 		},
 		ConfigFilename: "web.yaml",

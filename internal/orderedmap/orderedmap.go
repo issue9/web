@@ -15,6 +15,8 @@ import (
 )
 
 // OrderedMap 键名类型为 string 的有序 map
+//
+// TODO: go1.28 改用标准库代码
 type OrderedMap[V any] struct {
 	items   map[string]V
 	ordered []string

@@ -4,21 +4,36 @@ messages:
 - key: can not be empty
   message:
     msg: can not be empty
-- key: cmd.action
-  message:
-    msg: cmd.action
 - key: cmd.daemon
   message:
     msg: cmd.daemon
-- key: cmd.show_help
+- key: cmd.daemon_usage
   message:
-    msg: cmd.show_help
-- key: cmd.show_version
+    msg: cmd.daemon_usage
+- key: cmd.help
   message:
-    msg: cmd.show_version
+    msg: cmd.help
+- key: cmd.help_usage
+  message:
+    msg: cmd.help_usage
+- key: cmd.serve
+  message:
+    msg: cmd.serve
+- key: cmd.serve_usage
+  message:
+    msg: cmd.serve_usage
 - key: cmd.test_syntax
   message:
     msg: cmd.test_syntax
+- key: cmd.usage
+  message:
+    msg: cmd.usage
+- key: cmd.version
+  message:
+    msg: cmd.version
+- key: command %s not found
+  message:
+    msg: command %s not found
 - key: conflict with certificates
   message:
     msg: conflict with certificates

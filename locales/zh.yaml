@@ -6,10 +6,10 @@ messages:
 - key: can not be empty
   message:
     msg: 不能为空
-- key: cmd.action
-  message:
-    msg: 运行的指令
 - key: cmd.daemon
+  message:
+    msg: 将当前程序作为守护进程进行的相关操作
+- key: cmd.daemon_usage
   message:
     msg: |
       将当前程序作为守护进程进行的相关操作，包含以下几种取值：
@@ -19,15 +19,36 @@ messages:
        - stop 停止服务；
        - restart 重启服务；
        - status 查看守护进程的当前状态；
-- key: cmd.show_help
+- key: cmd.help
   message:
     msg: 显示帮助信息
-- key: cmd.show_version
+- key: cmd.help_usage
   message:
-    msg: 显示版本号
+    msg: |
+      可通过此命令查看子命令信息，若是未指定子命令显示当前信息。
+- key: cmd.serve
+  message:
+    msg: 启动服务
+- key: cmd.serve_usage
+  message:
+    msg: |
+      启动 web 服务
 - key: cmd.test_syntax
   message:
     msg: 测试配置文件的语法是否正确
+- key: cmd.usage
+  message:
+    msg: |
+      参数
+        {{flags}}
+      子命令
+        {{commands}}
+- key: cmd.version
+  message:
+    msg: 显示版本号
+- key: command %s not found
+  message:
+    msg: 子命令 %s 不存在
 - key: conflict with certificates
   message:
     msg: 与 certificates 字段存在冲突
@@ -42,7 +63,7 @@ messages:
     msg: 已经退出当前的会话环境
 - key: "invalid daemon control action: %s"
   message:
-    msg: "无效的操作：%s"
+    msg: 无效的操作：%s
 - key: invalid data %s
   message:
     msg: invalid data %s

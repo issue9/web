@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"time"
 
 	"github.com/kardianos/service"
 	"golang.org/x/text/message"
 
+	"github.com/issue9/cmdopt"
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
@@ -23,30 +23,38 @@ import (
 )
 
 const (
-	cmdShowVersion = web.StringPhrase("cmd.show_version")
-	cmdAction      = web.StringPhrase("cmd.action")
+	cmdVersion    = web.StringPhrase("cmd.version")
+	cmdTestSyntax = web.StringPhrase("cmd.test_syntax")
+	cmdUsage      = web.StringPhrase("cmd.usage")
+
 	cmdDaemon      = web.StringPhrase("cmd.daemon")
-	cmdShowHelp    = web.StringPhrase("cmd.show_help")
-	cmdTestSyntax  = web.StringPhrase("cmd.test_syntax")
+	cmdDaemonUsage = web.StringPhrase("cmd.daemon_usage")
+
+	cmdServe      = web.StringPhrase("cmd.serve")
+	cmdServeUsage = web.StringPhrase("cmd.serve_usage")
+
+	cmdHelp      = web.StringPhrase("cmd.help")
+	cmdHelpUsage = web.StringPhrase("cmd.help_usage")
 )
 
 type CLIOptions[T comparable] struct {
 	ID string // 程序 ID
 
-	// 程序版本
-	//
-	// 如果为空，则会尝试调用 [web.GetAppVersion] 获得相关的值。
-	Version string
-
 	// 初始化 [web.Server]
 	//
 	// id, version 即为 [CLIOptions.ID] 和 [CLIOptions.Version]；
 	// o 和 user 为从配置文件加载的数据信息；
-	// action 为 -a 命令行指定的参数；
-	NewServer func(id, version string, o *server.Options, user T, action string) (web.Server, error)
+	NewServer func(id, version string, o *server.Options, user T) (web.Server, error)
 
-	// 以服务运行的指令
-	ServeActions []string
+	// 其它子命令
+	//
+	// NOTE: 子命令名称不能是 daemon、help 和 serve
+	Commands []*cmdopt.Command
+
+	// 程序版本
+	//
+	// 如果为空，则会尝试调用 [web.GetAppVersion] 获得相关的值。
+	Version string
 
 	// 命令行输出信息的通道
 	//
@@ -54,6 +62,7 @@ type CLIOptions[T comparable] struct {
 	Out io.Writer
 
 	// 配置文件所在的目录
+	//
 	// 具体参数说明可参考 [config.Load] 中 configDir 参数的说明。
 	ConfigDir string
 
@@ -66,15 +75,21 @@ type CLIOptions[T comparable] struct {
 	//
 	// 若为空，则以 config.NewPrinter("*.yaml", locales.Locales) 进行初始化。
 	//
-	// 若是自定义，至少需要保证以下几个字符串的翻译项，才有效果：
-	//  - cmd.show_version
-	//  - cmd.action
-	//  - cmd.show_help
+	// 若是自定义，至少需要保证以下几个字符串的翻译项：
+	//  - cmd.version
+	//  - cmd.help
+	//  - cmd.help_usage
 	//  - can not be empty
 	//  - cmd.test_syntax
+	//  - cmd.usage
+	//  - cmd.daemon
+	//  - cmd.daemon_usage
+	//  - cmd.serve
+	//  - cmd.serve_usage
 	//  - daemon status %s
 	//  - syntax OK
 	//  - invalid daemon control action: %s
+	//  - command %s not found
 	//  - [DaemonConfig.DisplayName]
 	//  - [DaemonConfig.Description]
 	//
@@ -86,19 +101,12 @@ type CLIOptions[T comparable] struct {
 
 	// 在命令行解析出错时的处理方式
 	//
-	// 默认值为 [flag.ContinueOnError]
+	// 默认值为 [flag.ContinueOnError]。
 	ErrorHandling flag.ErrorHandling
 
 	// 守护进程的设置项
 	//
-	// 如果该值不为 nil，将会注册 -d 选项，
-	// 通过 -d 可以对服务进行以下操作：
-	//  - install 安装服务
-	//  - uninstall 卸载服务
-	//  - start 启动服务
-	//  - stop 停止服务
-	//  - restart 重启服务
-	//  - status 查看服务状态
+	// 如果该值不为 nil，将会注册 daemon 子命令，提供用以将当前应用转换为守护进程的相关操作。
 	Daemon *DaemonConfig
 	daemon *service.Config
 }
@@ -110,12 +118,12 @@ type cli[T comparable] struct {
 
 // NewCLI 提供一种简单的命令行生成方式
 //
-// 生成的命令行带以下几个参数：
+// 生成的命令行带以下参数和子命令：
 //   - -v 显示版本号；
-//   - -h 显示帮助信息；
-//   - -a 执行的指令，该值会传递给 [CLIOptions.NewServer]，由用户根据此值决定初始化方式；
-//   - -d 将当前程序作为守护进程的相关操作；
 //   - -t 测试配置文件的语法是否正确；
+//   - help 帮助子命令；
+//   - daemon 守护进程子命令；
+//   - serve 启动服务子命令；
 //
 // T 表示的是配置文件中的用户自定义数据类型，可参考 [config.Load] 中有关 User 的说明。
 //
@@ -125,81 +133,88 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 		panic(localeError(err, o.Printer))
 	}
 
-	var action string // -a 参数
-
-	initServer := func() (web.Server, error) {
+	app := newApp(o.ShutdownTimeout, func() (web.Server, error) {
 		opt, user, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
 		if err != nil {
 			return nil, web.NewStackError(err)
 		}
-		return o.NewServer(o.ID, o.Version, opt, user, action)
-	}
-
-	app := newApp(o.ShutdownTimeout, initServer)
+		return o.NewServer(o.ID, o.Version, opt, user)
+	})
 
 	return &cli[T]{
 		App: app,
-		exec: func(args []string) (err error) {
-			fs := flag.NewFlagSet(o.ID, o.ErrorHandling)
-			fs.SetOutput(o.Out)
+		exec: func(args []string) error {
+			rootCmd := func(fs *flag.FlagSet) cmdopt.DoFunc {
+				v := fs.Bool("v", false, cmdVersion.LocaleString(o.Printer))
+				t := fs.Bool("t", false, cmdTestSyntax.LocaleString(o.Printer))
 
-			v := fs.Bool("v", false, cmdShowVersion.LocaleString(o.Printer))
-			h := fs.Bool("h", false, cmdShowHelp.LocaleString(o.Printer))
-			t := fs.Bool("t", false, cmdTestSyntax.LocaleString(o.Printer))
-			fs.StringVar(&action, "a", "", cmdAction.LocaleString(o.Printer))
-
-			var daemon string // -d 选项
-			if o.daemon != nil {
-				fs.StringVar(&daemon, "d", "", cmdDaemon.LocaleString(o.Printer))
-			}
-
-			// 所有命令行解析在此之前完成
-
-			if err = fs.Parse(args[1:]); err != nil {
-				return web.NewStackError(localeError(err, o.Printer))
-			}
-
-			if daemon != "" { // 在其它选项之前
-				status, err := app.runDaemon(daemon, o.daemon)
-				if err == nil {
-					_, err = fmt.Fprintln(o.Out, web.Phrase("daemon status %s", statusString(status)).LocaleString(o.Printer))
-				}
-				return err
-			}
-
-			if *v {
-				_, err = fmt.Fprintln(o.Out, o.ID, o.Version)
-				return web.NewStackError(localeError(err, o.Printer))
-			}
-
-			if *h {
-				fs.PrintDefaults()
-				return nil
-			}
-
-			if *t {
-				_, _, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
-				if err != nil {
-					var msg string
-					if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
-						msg = le.LocaleString(o.Printer)
-					} else {
-						msg = err.Error()
+				return func(w io.Writer) error {
+					if *v {
+						_, err := fmt.Fprintln(o.Out, o.ID, o.Version)
+						return web.NewStackError(localeError(err, o.Printer))
 					}
 
-					fmt.Fprintln(o.Out, msg)
-				} else {
-					fmt.Fprintln(o.Out, web.Phrase("syntax OK").LocaleString(o.Printer))
+					if *t {
+						_, _, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
+						if err != nil {
+							var msg string
+							if le, ok := err.(web.LocaleStringer); ok { // 对错误信息进行本地化转换
+								msg = le.LocaleString(o.Printer)
+							} else {
+								msg = err.Error()
+							}
+
+							fmt.Fprintln(o.Out, msg)
+						} else {
+							fmt.Fprintln(o.Out, web.StringPhrase("syntax OK").LocaleString(o.Printer))
+						}
+						return nil
+					}
+
+					fs.Usage()
+					return nil
 				}
-				return nil
 			}
 
-			if slices.Index(o.ServeActions, action) < 0 { // 非服务
-				_, err = initServer()
-				return localeError(err, o.Printer)
+			opt := cmdopt.New(&cmdopt.Options{
+				Name:          o.ID,
+				Version:       o.Version,
+				Output:        o.Out,
+				ErrorHandling: o.ErrorHandling,
+				UsageTemplate: cmdUsage.LocaleString(o.Printer),
+				Command:       rootCmd,
+				NotFound:      func(s string) string { return web.Phrase("command %s not found", s).LocaleString(o.Printer) },
+			})
+
+			// help 子命令
+			cmdopt.Help(opt, "help", cmdHelp.LocaleString(o.Printer), cmdHelpUsage.LocaleString(o.Printer))
+
+			// daemon 子命令
+			if o.daemon != nil {
+				opt.New("daemon", cmdDaemon.LocaleString(o.Printer), cmdDaemonUsage.LocaleString(o.Printer), func(fs *flag.FlagSet) cmdopt.DoFunc {
+					return func(w io.Writer) error {
+						a := "status"
+						if fs.NArg() > 0 {
+							a = fs.Arg(0)
+						}
+
+						status, err := app.runDaemon(a, o.daemon)
+						if err == nil {
+							_, err = fmt.Fprintln(w, web.Phrase("daemon status %s", statusString(status)).LocaleString(o.Printer))
+						}
+						return err
+					}
+				})
 			}
 
-			return localeError(app.Exec(), o.Printer)
+			// serve 启动 web 服务
+			opt.New("serve", cmdServe.LocaleString(o.Printer), cmdServeUsage.LocaleString(o.Printer), func(fs *flag.FlagSet) cmdopt.DoFunc {
+				return func(w io.Writer) error { return localeError(app.Exec(), o.Printer) }
+			})
+
+			opt.NewCommand(o.Commands...)
+
+			return opt.Exec(args[1:])
 		},
 	}
 }
