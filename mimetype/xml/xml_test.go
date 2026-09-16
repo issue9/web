@@ -1,12 +1,23 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
 package xml
 
-import "github.com/issue9/web"
+import (
+	"testing"
+
+	"github.com/issue9/assert/v5"
+	"github.com/issue9/web"
+	"github.com/issue9/web/mimetype/mimetypetest"
+)
 
 var (
 	_ web.MarshalFunc   = Marshal
 	_ web.UnmarshalFunc = Unmarshal
 )
+
+func TestXML(t *testing.T) {
+	a := assert.New(t, false)
+	mimetypetest.Test(a, Marshal, Unmarshal)
+}

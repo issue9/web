@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
-	sj "encoding/json"
+	sj "encoding/json/v2"
 	sx "encoding/xml"
 	"fmt"
 	"slices"
@@ -208,7 +208,7 @@ func init() {
 
 	// RegisterFileSerializer
 
-	RegisterFileSerializer("json", sj.Marshal, sj.Unmarshal, ".json")
+	RegisterFileSerializer("json", func(a any) ([]byte, error) { return sj.Marshal(a) }, func(b []byte, a any) error { return sj.Unmarshal(b, a) }, ".json")
 	RegisterFileSerializer("xml", sx.Marshal, sx.Unmarshal, ".xml")
 	RegisterFileSerializer("yaml", sy.Marshal, sy.Unmarshal, ".yaml", ".yml")
 	RegisterFileSerializer("toml", st.Marshal, st.Unmarshal, ".toml")

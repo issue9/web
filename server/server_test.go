@@ -6,7 +6,7 @@ package server
 
 import (
 	"crypto/tls"
-	sj "encoding/json"
+	sj "encoding/json/v2"
 	"net/http"
 	"os"
 	"testing"
@@ -267,7 +267,7 @@ func TestHTTPServer_NewClient(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("http://localhost:8080"))
-	c := s.NewClient(nil, sel, header.JSON, sj.Marshal)
+	c := s.NewClient(nil, sel, header.JSON, func(a any) ([]byte, error) { return sj.Marshal(a) })
 	a.NotNil(c)
 
 	resp := &object{}

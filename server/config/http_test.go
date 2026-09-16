@@ -6,7 +6,7 @@ package config
 
 import (
 	"encoding"
-	"encoding/json"
+	"encoding/json/v2"
 	"encoding/xml"
 	"testing"
 	"time"

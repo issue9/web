@@ -9,7 +9,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
-	"encoding/json"
+	"encoding/json/v2"
 	"encoding/xml"
 	"io"
 	"testing"
@@ -35,7 +35,7 @@ func unmarshalTest(io.Reader, any) error { return mimetype.ErrUnsupported() }
 
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
 
-func unmarshalJSON(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }
+func unmarshalJSON(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }
 
 func marshalXML(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }
 

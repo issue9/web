@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ package openapi
 import (
 	"crypto/md5"
 	"encoding/hex"
-	sj "encoding/json"
+	sj "encoding/json/v2"
 	"strconv"
 
 	sy "github.com/goccy/go-yaml"

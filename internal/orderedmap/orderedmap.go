@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 caixw
+// SPDX-FileCopyrightText: 2025-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@
 package orderedmap
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"iter"
 	"slices"
 

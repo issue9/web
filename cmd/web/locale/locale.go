@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ package locale
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"flag"
 	"io"
 	"os"
@@ -119,7 +119,7 @@ func GetMarshalByExt(ext string) (serialize.MarshalFunc, string, error) {
 	switch strings.ToLower(ext) {
 	case "json", ".json":
 		return func(v any) ([]byte, error) {
-			return json.MarshalIndent(v, "", "\t")
+			return json.Marshal(v)
 		}, ".json", nil
 	case "yaml", "yml", ".yaml", ".yml":
 		return func(v any) ([]byte, error) {

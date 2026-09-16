@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,20 +49,26 @@ func main() {
 	}
 
 	var opt *cmdopt.CmdOpt
-	opt = cmdopt.New(os.Stdout, flag.ContinueOnError, usageTpl.LocaleString(p), func(fs *flag.FlagSet) cmdopt.DoFunc {
-		v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
+	opt = cmdopt.New(&cmdopt.Options{
+		Output:        os.Stdout,
+		ErrorHandling: flag.ContinueOnError,
+		UsageTemplate: usageTpl.LocaleString(p),
+		NotFound:      buildNotFound(p),
+		Command: func(fs *flag.FlagSet) cmdopt.DoFunc {
+			v := fs.Bool("v", false, web.StringPhrase("show version").LocaleString(p))
 
-		return func(w io.Writer) error {
-			if *v {
-				_, err := fmt.Fprintf(w, "web: %s\nbuild with: %s\n", web.GetAppVersion(web.Version), runtime.Version())
+			return func(w io.Writer) error {
+				if *v {
+					_, err := fmt.Fprintf(w, "web: %s\nbuild with: %s\n", web.GetAppVersion(web.Version), runtime.Version())
+					return err
+				}
+
+				// 没有任何选项指定，输出帮助信息。
+				_, err := io.WriteString(w, opt.Usage())
 				return err
 			}
-
-			// 没有任何选项指定，输出帮助信息。
-			_, err := io.WriteString(w, opt.Usage())
-			return err
-		}
-	}, buildNotFound(p))
+		},
+	})
 
 	mdoc.Init(opt, p)
 	locale.Init(opt, p)

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@
 package json
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"io"
 
 	"github.com/issue9/mux/v9/header"
@@ -21,4 +21,4 @@ const (
 
 func Marshal(_ *web.Context, v any) ([]byte, error) { return json.Marshal(v) }
 
-func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }
+func Unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }

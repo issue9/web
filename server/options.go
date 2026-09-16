@@ -5,7 +5,7 @@
 package server
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"encoding/xml"
 	"net/http"
 	"time"
@@ -141,6 +141,10 @@ type (
 	}
 )
 
+func jm(a any) ([]byte, error) { return json.Marshal(a) }
+
+func ju(b []byte, a any) error { return json.Unmarshal(b, a) }
+
 func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	if o == nil {
 		o = &Options{}
@@ -148,7 +152,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 
 	if o.Config == nil {
 		s := make(config.Serializer, 4)
-		s.Add(json.Marshal, json.Unmarshal, ".json").
+		s.Add(jm, ju, ".json").
 			Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
 			Add(xml.Marshal, xml.Unmarshal, ".xml").
 			Add(toml.Marshal, toml.Unmarshal, ".toml")

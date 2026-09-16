@@ -7,7 +7,7 @@ require (
 	github.com/caixw/gobuild v1.9.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v5 v5.0.0
-	github.com/issue9/cmdopt v0.14.0
+	github.com/issue9/cmdopt v0.15.0
 	github.com/issue9/errwrap v0.4.0
 	github.com/issue9/localeutil v0.34.0
 	github.com/issue9/logs/v7 v7.7.0

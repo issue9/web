@@ -6,7 +6,7 @@ package sse
 
 import (
 	"context"
-	sj "encoding/json"
+	sj "encoding/json/v2"
 	"net/http"
 	"os"
 	"strconv"
@@ -73,7 +73,7 @@ func TestOnMessage(t *testing.T) {
 		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 
-		event := s.NewEvent("event", sj.Marshal)
+		event := s.NewEvent("event", func(v any) ([]byte, error) { return sj.Marshal(v) })
 		a.NotError(event.Sent(1))
 		time.Sleep(time.Microsecond * 500)
 		a.NotError(event.Sent(&struct{ ID int }{ID: 5}))
@@ -112,7 +112,7 @@ func TestOnMessage(t *testing.T) {
 
 	// server event
 
-	event := e.NewEvent("se", sj.Marshal)
+	event := e.NewEvent("se", func(v any) ([]byte, error) { return sj.Marshal(v) })
 	event.Sent(func(sid int64, lastID string) any {
 		return &struct {
 			ID     int64

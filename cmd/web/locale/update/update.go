@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@
 package update
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"flag"
 	"io"
@@ -102,7 +102,7 @@ func getSrc(src string) (*message.File, error) {
 func getUnmarshalByExt(ext string) (serialize.UnmarshalFunc, error) {
 	switch strings.ToLower(ext) {
 	case "json", ".json":
-		return json.Unmarshal, nil
+		return func(data []byte, v interface{}) error { return json.Unmarshal(data, v) }, nil
 	case "yaml", "yml", ".yaml", ".yml":
 		return yaml.Unmarshal, nil
 	case "toml", ".toml":

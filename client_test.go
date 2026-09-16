@@ -6,7 +6,7 @@ package web
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"io"
 	"net/http"
 	"strconv"
@@ -25,7 +25,7 @@ func TestClient_NewRequest(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, header.JSON, json.Marshal, header.XRequestID, func() string { return "123" })
+	c := NewClient(nil, codec, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, header.XRequestID, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
@@ -44,7 +44,7 @@ func TestClient_ParseResponse(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, header.JSON, json.Marshal, "", nil)
+	c := NewClient(nil, codec, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

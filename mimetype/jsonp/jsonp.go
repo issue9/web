@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@
 package jsonp
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"io"
 	"sync"
 
@@ -78,4 +78,4 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	return []byte(b.String()), b.Err
 }
 
-func Unmarshal(r io.Reader, v any) error { return json.NewDecoder(r).Decode(v) }
+func Unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }

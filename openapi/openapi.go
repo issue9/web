@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -132,6 +132,7 @@ type (
 		s web.Server
 	}
 
+	// NOTE: orderedmap.OrderedMap 不支持 Unmarshal
 	paths = orderedmap.OrderedMap[*renderer[pathItemRenderer]]
 
 	openAPIRenderer struct {
