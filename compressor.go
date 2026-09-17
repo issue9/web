@@ -1,11 +1,8 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate go run ./make_data.go
-
-// Package compressor 提供了压缩算法的实现
-package compressor
+package web
 
 import (
 	"bytes"

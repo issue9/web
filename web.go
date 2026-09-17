@@ -1,10 +1,11 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
 //go:generate web locale -l=und -m -f=yaml ./
 //go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh.yaml
-//go:generate go run ./make_problems.go
+//go:generate go run ./generate_compressors.go
+//go:generate go run ./generate_problems.go
 
 // Package web 通用的 web 开发框架
 //
@@ -25,7 +26,7 @@ import (
 )
 
 // Version 当前框架的版本
-const Version = "0.104.3"
+const Version = "0.105.1"
 
 type (
 	Logger   = logs.Logger

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	filename = "statuses.go"
+	filename = "generated_statuses.go"
 	pkgName  = "status"
 )
 

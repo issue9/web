@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate go run ./make_statuses.go
+//go:generate go run ./generate_statuses.go
 
 // Package status 用于处理与状态码相关的功能
 package status

@@ -17,7 +17,6 @@ import (
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/mux/v9/header"
 
-	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/mimetype"
 )
@@ -45,8 +44,8 @@ func newCodec(a *assert.Assertion) *Codec {
 	c := NewCodec()
 	a.NotNil(c)
 
-	c.AddCompressor(compressor.NewGzip(gzip.BestSpeed)).
-		AddCompressor(compressor.NewDeflate(flate.DefaultCompression, nil)).
+	c.AddCompressor(NewGzip(gzip.BestSpeed)).
+		AddCompressor(NewDeflate(flate.DefaultCompression, nil)).
 		//AddCompressor(nil).
 		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json", true, true).
 		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml", true, true).
@@ -83,15 +82,15 @@ func TestCodec_AddMimetype(t *testing.T) {
 func TestBuildCompression(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := buildCompression(compressor.NewGzip(gzip.DefaultCompression), nil)
+	c := buildCompression(NewGzip(gzip.DefaultCompression), nil)
 	a.True(c.wildcard).
 		Length(c.types, 0).
 		Length(c.wildcardSuffix, 0)
 
-	c = buildCompression(compressor.NewGzip(gzip.DefaultCompression), []string{"text"})
+	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text"})
 	a.Equal(c.types, []string{"text"})
 
-	c = buildCompression(compressor.NewGzip(gzip.DefaultCompression), []string{"text", "*"})
+	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text", "*"})
 	a.Nil(c.types).
 		True(c.wildcard).
 		Nil(c.wildcardSuffix)
@@ -102,9 +101,9 @@ func TestCodec_contentEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(compressor.NewGzip(gzip.BestSpeed), header.Plain).
-		AddCompressor(compressor.NewZstd(), "application/*")
+	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
+		AddCompressor(NewGzip(gzip.BestSpeed), header.Plain).
+		AddCompressor(NewZstd(), "application/*")
 
 	r := &bytes.Buffer{}
 	rc, err := e.contentEncoding("zstd", r)
@@ -122,9 +121,9 @@ func TestCodec_acceptEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(compressor.NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(compressor.NewGzip(gzip.DefaultCompression), header.Plain).
-		AddCompressor(compressor.NewGzip(gzip.DefaultCompression), "application/*")
+	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
+		AddCompressor(NewGzip(gzip.DefaultCompression), header.Plain).
+		AddCompressor(NewGzip(gzip.DefaultCompression), "application/*")
 
 	a.Equal(e.acceptEncodingHeader, "compress,gzip")
 

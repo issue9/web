@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,19 +23,16 @@ import (
 )
 
 const (
-	pkg  = "compressor"
-	file = "readers_data.go"
+	pkg  = "web"
+	file = "generated_compressors.go"
 )
 
 func main() {
 	buf := &bytes.Buffer{}
 
 	b := &errwrap.Buffer{}
-
 	b.WString(status.FileHeader).
-		WString("package ").WString(pkg).WString("\n\n")
-
-	b.WString("var (\n")
+		WString("package ").WString(pkg).WString("\n\n").WString("var (\n")
 
 	// zstd
 	buf.Reset()

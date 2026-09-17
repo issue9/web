@@ -21,7 +21,6 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/transform"
 
-	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"
 )
 
@@ -58,7 +57,7 @@ type Context struct {
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
-	outputCompressor  compressor.Compressor
+	outputCompressor  Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
 	outputMimetype    *mediaType
@@ -109,7 +108,7 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 		return nil
 	}
 
-	var outputCompressor compressor.Compressor
+	var outputCompressor Compressor
 	if s.server.CanCompress() {
 		var na bool
 		if outputCompressor, na = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); na {

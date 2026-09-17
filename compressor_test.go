@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package compressor
+package web
 
 import (
 	"bytes"

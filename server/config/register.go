@@ -27,7 +27,6 @@ import (
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/mimetype/cbor"
 	"github.com/issue9/web/mimetype/form"
 	"github.com/issue9/web/mimetype/gob"
@@ -70,7 +69,7 @@ func (r *register[T]) get(name string) (T, bool) {
 var (
 	logHandlersFactory    = newRegister[LogsHandlerBuilder]()
 	cacheFactory          = newRegister[CacheBuilder]()
-	compressorFactory     = newRegister[compressor.Compressor]()
+	compressorFactory     = newRegister[web.Compressor]()
 	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
 	mimetypesFactory      = newRegister[mimetype]()
 	fileSerializerFactory = newRegister[fileSerializer]()
@@ -101,7 +100,7 @@ func RegisterCache(b CacheBuilder, name ...string) { cacheFactory.register(b, na
 // RegisterCompression 注册压缩方法
 //
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
-func RegisterCompression(id string, c compressor.Compressor) { compressorFactory.register(c, id) }
+func RegisterCompression(id string, c web.Compressor) { compressorFactory.register(c, id) }
 
 // RegisterIDGenerator 注册唯一 ID 生成器
 //
@@ -163,22 +162,22 @@ func init() {
 
 	// RegisterCompression
 
-	RegisterCompression("deflate-default", compressor.NewDeflate(flate.DefaultCompression, nil))
-	RegisterCompression("deflate-best-compression", compressor.NewDeflate(flate.BestCompression, nil))
-	RegisterCompression("deflate-best-speed", compressor.NewDeflate(flate.BestSpeed, nil))
+	RegisterCompression("deflate-default", web.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompression("deflate-best-compression", web.NewDeflate(flate.BestCompression, nil))
+	RegisterCompression("deflate-best-speed", web.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompression("gzip-default", compressor.NewGzip(gzip.DefaultCompression))
-	RegisterCompression("gzip-best-compression", compressor.NewGzip(gzip.BestCompression))
-	RegisterCompression("gzip-best-speed", compressor.NewGzip(gzip.BestSpeed))
+	RegisterCompression("gzip-default", web.NewGzip(gzip.DefaultCompression))
+	RegisterCompression("gzip-best-compression", web.NewGzip(gzip.BestCompression))
+	RegisterCompression("gzip-best-speed", web.NewGzip(gzip.BestSpeed))
 
-	RegisterCompression("compress-lsb-8", compressor.NewLZW(lzw.LSB, 8))
-	RegisterCompression("compress-msb-8", compressor.NewLZW(lzw.MSB, 8))
+	RegisterCompression("compress-lsb-8", web.NewLZW(lzw.LSB, 8))
+	RegisterCompression("compress-msb-8", web.NewLZW(lzw.MSB, 8))
 
-	RegisterCompression("br-default", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompression("br-best-compression", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompression("br-best-speed", compressor.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompression("br-default", web.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompression("br-best-compression", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompression("br-best-speed", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompression("zstd-default", compressor.NewZstd())
+	RegisterCompression("zstd-default", web.NewZstd())
 
 	// RegisterIDGenerator
 

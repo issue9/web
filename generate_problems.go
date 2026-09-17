@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	filename = "problems.go"
 	pkgName  = "web"
+	filename = "generated_problems.go"
 )
 
 func main() {

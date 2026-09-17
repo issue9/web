@@ -15,7 +15,6 @@ import (
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 
-	"github.com/issue9/web/compressor"
 	"github.com/issue9/web/internal/qheader"
 )
 
@@ -53,7 +52,7 @@ type mediaType struct {
 }
 
 type compression struct {
-	compressor compressor.Compressor
+	compressor Compressor
 
 	types []string
 
@@ -64,7 +63,7 @@ type compression struct {
 	wildcardSuffix []string
 }
 
-func buildCompression(c compressor.Compressor, types []string) *compression {
+func buildCompression(c Compressor, types []string) *compression {
 	m := &compression{compressor: c}
 
 	if len(types) == 0 {
@@ -113,7 +112,7 @@ func NewCodec() *Codec {
 //	*
 //
 // 如果为空，则和 * 是相同的，表示匹配所有。
-func (e *Codec) AddCompressor(c compressor.Compressor, t ...string) *Codec {
+func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
 	e.compressions = append(e.compressions, buildCompression(c, t))
 
 	names := make([]string, 0, len(e.compressions))
@@ -199,7 +198,7 @@ func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 //
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
-func (e *Codec) acceptEncoding(contentType, h string) (c compressor.Compressor, notAcceptable bool) {
+func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptable bool) {
 	if len(e.compressions) == 0 {
 		return
 	}

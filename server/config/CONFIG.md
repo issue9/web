@@ -73,11 +73,11 @@
 | requestID,omitempty | requestID,omitempty | requestID,omitempty | requestID,omitempty | string | x-request-id 的报头名称<br />如果为空，则采用 \[header.XRequestID] 作为默认值。<br /> |
 | certificates,omitempty | certificates,omitempty | certificates&gt;certificate,omitempty | certificates,omitempty | [certificateConfig](#certificateconfig) | 网站的域名证书<br />NOTE: 不能同时与 ACME 生效<br /> |
 | acme,omitempty | acme,omitempty | acme,omitempty | acme,omitempty | [acmeConfig](#acmeconfig) | ACME 协议的证书<br />NOTE: 不能同时与 Certificates 生效<br /> |
-| readTimeout,omitempty | readTimeout,omitempty | readTimeout,attr,omitempty | readTimeout,omitempty | [Duration](#duration) | ReadTimeout 对 \[http.Server.ReadTimeout] 字段<br /> |
-| writeTimeout,omitempty | writeTimeout,omitempty | writeTimeout,attr,omitempty | writeTimeout,omitempty | [Duration](#duration) | WriteTimeout 对 \[http.Server.WriteTimeout] 字段<br /> |
-| idleTimeout,omitempty | idleTimeout,omitempty | idleTimeout,attr,omitempty | idleTimeout,omitempty | [Duration](#duration) | IdleTimeout 对 \[http.Server.IdleTimeout] 字段<br /> |
-| readHeaderTimeout,omitempty | readHeaderTimeout,omitempty | readHeaderTimeout,attr,omitempty | readHeaderTimeout,omitempty | [Duration](#duration) | ReadHeaderTimeout 对 \[http.Server.ReadHeaderTimeout] 字段<br /> |
-| maxHeaderBytes,omitempty | maxHeaderBytes,omitempty | maxHeaderBytes,attr,omitempty | maxHeaderBytes,omitempty | int | MaxHeaderBytes 对 \[http.Server.MaxHeaderBytes] 字段<br /> |
+| readTimeout,omitempty | readTimeout,omitempty | readTimeout,attr,omitempty | readTimeout,omitempty | [Duration](#duration) | ReadTimeout 对应 \[http.Server.ReadTimeout] 字段<br /> |
+| writeTimeout,omitempty | writeTimeout,omitempty | writeTimeout,attr,omitempty | writeTimeout,omitempty | [Duration](#duration) | WriteTimeout 对应 \[http.Server.WriteTimeout] 字段<br /> |
+| idleTimeout,omitempty | idleTimeout,omitempty | idleTimeout,attr,omitempty | idleTimeout,omitempty | [Duration](#duration) | IdleTimeout 对应 \[http.Server.IdleTimeout] 字段<br /> |
+| readHeaderTimeout,omitempty | readHeaderTimeout,omitempty | readHeaderTimeout,attr,omitempty | readHeaderTimeout,omitempty | [Duration](#duration) | ReadHeaderTimeout 对应 \[http.Server.ReadHeaderTimeout] 字段<br /> |
+| maxHeaderBytes,omitempty | maxHeaderBytes,omitempty | maxHeaderBytes,attr,omitempty | maxHeaderBytes,omitempty | int | MaxHeaderBytes 对应 \[http.Server.MaxHeaderBytes] 字段<br /> |
 | recovery,omitempty | recovery,omitempty | recovery,attr,omitempty | recovery,omitempty | int | Recovery 拦截 panic 时反馈给客户端的状态码<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
 | headers,omitempty | headers,omitempty | headers&gt;header,omitempty | headers,omitempty | [headerConfig](#headerconfig) | 自定义报头功能<br />报头会输出到包括 404 在内的所有请求返回。可以为空。<br />NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。<br />NOTE: 报头内容可能会被后续的中间件修改。<br /> |
 | cors,omitempty | cors,omitempty | cors,omitempty | cors,omitempty | [corsConfig](#corsconfig) | 自定义[跨域请求](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors)设置项<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
