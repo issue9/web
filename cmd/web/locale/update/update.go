@@ -22,7 +22,7 @@ import (
 	"github.com/issue9/localeutil/message/serialize"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/locale"
+	"github.com/issue9/web/cmd/web/locale/locale"
 	"github.com/issue9/web/cmd/web/termlog"
 )
 

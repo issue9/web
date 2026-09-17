@@ -7,7 +7,7 @@ require (
 	github.com/caixw/gobuild v1.9.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v5 v5.0.0
-	github.com/issue9/cmdopt v0.15.0
+	github.com/issue9/cmdopt v0.15.1
 	github.com/issue9/errwrap v0.4.0
 	github.com/issue9/localeutil v0.34.0
 	github.com/issue9/logs/v7 v7.7.0
@@ -21,12 +21,12 @@ require (
 replace github.com/issue9/web => ../../
 
 require (
-	github.com/andybalholm/brotli v1.2.3 // indirect
+	github.com/andybalholm/brotli v1.2.4 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/issue9/cache v0.20.0 // indirect
 	github.com/issue9/config v0.10.0 // indirect
 	github.com/issue9/conv v1.4.0 // indirect
-	github.com/issue9/mux/v9 v9.3.0 // indirect
+	github.com/issue9/mux/v9 v9.4.0 // indirect
 	github.com/issue9/query/v3 v3.2.0 // indirect
 	github.com/issue9/scheduled v0.23.0 // indirect
 	github.com/issue9/sliceutil v0.18.0 // indirect

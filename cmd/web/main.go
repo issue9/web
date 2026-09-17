@@ -19,7 +19,7 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/enum"
-	"github.com/issue9/web/cmd/web/locale"
+	"github.com/issue9/web/cmd/web/locale/locale"
 	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
 	"github.com/issue9/web/cmd/web/mdoc"

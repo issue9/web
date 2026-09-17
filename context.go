@@ -368,7 +368,7 @@ var idempotentMethods = []string{http.MethodGet, http.MethodHead, http.MethodPut
 //
 // [幂等]: https://developer.mozilla.org/zh-CN/docs/Glossary/Idempotent
 func (ctx *Context) Idempotent() bool {
-	return slices.Index(idempotentMethods, ctx.Request().Method) >= 0
+	return slices.Contains(idempotentMethods, ctx.Request().Method)
 }
 
 // Unwrap [http.ResponseController] 通过此方法返回底层的 [http.ResponseWriter]
