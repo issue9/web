@@ -35,6 +35,14 @@ func newFilter(a *assert.Assertion) *FilterContext {
 	return ctx.NewFilterContext(false)
 }
 
+func TestRules(t *testing.T) {
+	a := assert.New(t, false)
+
+	id := "x "
+	v := newFilter(a).Add("id", &id, Rules(SanitizerRule(trimRight), SanitizerRule(upper)))
+	a.Length(v.problem.Params, 0).Equal(id, "X")
+}
+
 func TestSanitizerRule(t *testing.T) {
 	a := assert.New(t, false)
 

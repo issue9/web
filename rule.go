@@ -16,6 +16,18 @@ import (
 // 返回字段名和错误信息，如果验证成功，则返回两个空值；
 type Rule[T any] func(name string, value *T) (string, LocaleStringer)
 
+// Rule 将多个 [Rule] 合并为单个 [Rule]
+func Rules[T any](rule ...Rule[T]) Rule[T] {
+	return func(name string, value *T) (string, LocaleStringer) {
+		for _, r := range rule {
+			if name, msg := r(name, value); msg != nil {
+				return name, msg
+			}
+		}
+		return "", nil
+	}
+}
+
 // SanitizerRule 将一组修正数据的函数封装为 [Rule]
 func SanitizerRule[T any](f ...func(*T)) Rule[T] {
 	return func(_ string, v *T) (string, LocaleStringer) {

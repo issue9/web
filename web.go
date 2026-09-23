@@ -65,9 +65,7 @@ type (
 
 // GetAppVersion 获得应用的版本号
 //
-// 如果当前应用没有指定版本号，则采用参数 v 作为返回值。
-//
-// NOTE: 只有 go1.24 及之后且 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
+// 只有 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
 func GetAppVersion(v string) string {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		return info.Main.Version
