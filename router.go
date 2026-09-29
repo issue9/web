@@ -6,12 +6,13 @@ package web
 
 import (
 	"errors"
+	"iter"
 	"net/http"
 	"strconv"
 
-	"github.com/issue9/mux/v9"
-	"github.com/issue9/mux/v9/header"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10"
+	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/mux/v10/types"
 	"github.com/issue9/source"
 
 	"github.com/issue9/web/internal/errs"
@@ -44,6 +45,11 @@ type (
 
 func notFound(ctx *Context) Responser { return ctx.NotFound() }
 
+func trace(ctx *Context) Responser {
+	mux.Trace(ctx, ctx.Request(), false)
+	return nil
+}
+
 func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	return func(n types.Node) HandlerFunc {
 		return func(ctx *Context) Responser {
@@ -62,7 +68,7 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	}
 }
 
-func (s *internalServer) call(w http.ResponseWriter, r *http.Request, route types.Route, f HandlerFunc) {
+func (s *internalServer) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
 	if ctx := s.NewContext(w, r, route); ctx != nil {
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
@@ -89,7 +95,7 @@ func (r *Routers) New(name string, matcher RouterMatcher, o ...RouterOption) *Ro
 func (r *Routers) Remove(name string) { r.g.Remove(name) }
 
 // Routers 返回所有的路由
-func (r *Routers) Routers() []*Router { return r.g.Routers() }
+func (r *Routers) Routers() iter.Seq[*Router] { return r.g.Routers() }
 
 // Use 对所有的路由使用中间件
 func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
@@ -128,18 +134,11 @@ func WithDenyCORS() RouterOption { return mux.WithDenyCORS() }
 // WithAllowedCORS 允许跨域请求
 func WithAllowedCORS(maxAge int) RouterOption { return mux.WithAllowedCORS(maxAge) }
 
-// WithURLDomain 为 [Router.URL] 生成的地址带上域名
-func WithURLDomain(prefix string) RouterOption { return mux.WithURLDomain(prefix) }
+// WithPathPrefix 为 [Router.URL] 生成的地址带上域名
+func WithPathPrefix(prefix string) RouterOption { return mux.WithPathPrefix(prefix) }
 
 // WithTrace 控制 TRACE 请求是否有效
-//
-// body 表示是否显示 body 内容；
-func WithTrace(body bool) RouterOption {
-	return mux.WithTrace(func(ctx *Context) Responser {
-		mux.Trace(ctx, ctx.Request(), body)
-		return nil
-	})
-}
+func WithTrace(v bool) RouterOption { return mux.WithTrace(v) }
 
 func WithAnyInterceptor(rule string) RouterOption { return mux.WithAnyInterceptor(rule) }
 
@@ -147,6 +146,6 @@ func WithDigitInterceptor(rule string) RouterOption { return mux.WithDigitInterc
 
 func WithWordInterceptor(rule string) RouterOption { return mux.WithWordInterceptor(rule) }
 
-func WithInterceptor(f mux.InterceptorFunc, rule ...string) RouterOption {
+func WithInterceptor(f types.InterceptorFunc, rule ...string) RouterOption {
 	return mux.WithInterceptor(f, rule...)
 }

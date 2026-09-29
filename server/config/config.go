@@ -19,7 +19,7 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v9"
+	"github.com/issue9/mux/v10"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 

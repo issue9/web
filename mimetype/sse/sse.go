@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@
 // [SSE]: https://html.spec.whatwg.org/multipage/server-sent-events.html
 package sse
 
-import "github.com/issue9/mux/v9/header"
+import "github.com/issue9/mux/v10/header"
 
 // Mimetype sse 请求从服务端返回给客户端的内容类型
 const Mimetype = header.EventStream

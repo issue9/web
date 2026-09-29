@@ -10,7 +10,7 @@ import (
 
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/assert/v5/rest"
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 

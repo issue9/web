@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +42,7 @@ func (p *Paths) ID(key string) int64 {
 		return 0
 	}
 
-	id, err := p.filter().Context().Route().Params().Int(key)
+	id, err := p.filter().Context().Route().Int(key)
 	if err != nil {
 		p.filter().AddError(key, err)
 		return 0
@@ -59,7 +59,7 @@ func (p *Paths) Int64(key string) int64 {
 		return 0
 	}
 
-	ret, err := p.filter().Context().Route().Params().Int(key)
+	ret, err := p.filter().Context().Route().Int(key)
 	if err != nil {
 		p.filter().AddError(key, err)
 		return 0
@@ -73,7 +73,7 @@ func (p *Paths) String(key string) string {
 		return ""
 	}
 
-	ret, err := p.filter().Context().Route().Params().String(key)
+	ret, err := p.filter().Context().Route().String(key)
 	if err != nil {
 		p.filter().AddError(key, err)
 		return ""
@@ -89,7 +89,7 @@ func (p *Paths) Bool(key string) bool {
 		return false
 	}
 
-	ret, err := p.filter().Context().Route().Params().Bool(key)
+	ret, err := p.filter().Context().Route().Bool(key)
 	if err != nil {
 		p.filter().AddError(key, err)
 	}
@@ -102,7 +102,7 @@ func (p *Paths) Float64(key string) float64 {
 		return 0
 	}
 
-	ret, err := p.filter().Context().Route().Params().Float(key)
+	ret, err := p.filter().Context().Route().Float(key)
 	if err != nil {
 		p.filter().AddError(key, err)
 	}
@@ -116,7 +116,7 @@ func (p *Paths) Problem(id string) Responser { return p.filter().Problem(id) }
 //
 // NOTE: 若需要获取多个参数，使用 [Context.Paths] 会更方便。
 func (ctx *Context) PathID(key, id string) (int64, Responser) {
-	ret, err := ctx.Route().Params().Int(key)
+	ret, err := ctx.Route().Int(key)
 	if err != nil {
 		return 0, ctx.Problem(id).WithParam(key, Phrase(err.Error()).LocaleString(ctx.LocalePrinter()))
 	} else if ret <= 0 {
@@ -129,7 +129,7 @@ func (ctx *Context) PathID(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
-	ret, err := ctx.Route().Params().Int(key)
+	ret, err := ctx.Route().Int(key)
 	if err != nil {
 		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		return 0, ctx.Problem(id).WithParam(key, msg)
@@ -141,7 +141,7 @@ func (ctx *Context) PathInt64(key, id string) (int64, Responser) {
 //
 // NOTE: 若需要获取多个参数，可以使用 [Context.Paths] 获取会更方便。
 func (ctx *Context) PathString(key, id string) (string, Responser) {
-	ret, err := ctx.Route().Params().String(key)
+	ret, err := ctx.Route().String(key)
 	if err != nil {
 		msg := Phrase(err.Error()).LocaleString(ctx.LocalePrinter())
 		return "", ctx.Problem(id).WithParam(key, msg)

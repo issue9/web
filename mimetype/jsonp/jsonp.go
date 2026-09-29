@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 )

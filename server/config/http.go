@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
@@ -284,7 +284,7 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 		}
 
 		if h.URL != "" {
-			o.RoutersOptions = append(o.RoutersOptions, web.WithURLDomain(h.URL))
+			o.RoutersOptions = append(o.RoutersOptions, web.WithPathPrefix(h.URL))
 		}
 	}
 }

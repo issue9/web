@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/types"
 )
 
 func buildMinValidator(v int) func(int) bool { return func(a int) bool { return a >= v } }
@@ -31,7 +31,7 @@ func newFilter(a *assert.Assertion) *FilterContext {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 	return ctx.NewFilterContext(false)
 }
 

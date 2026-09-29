@@ -16,8 +16,8 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v9"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10"
+	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -101,7 +101,7 @@ type (
 		// [types.Route] 类型的参数需要用户通过 [types.NewContext] 自行创建。
 		//
 		// NOTE: 由此方法创建的对象在整个会话结束后会被回收。
-		NewContext(http.ResponseWriter, *http.Request, types.Route) *Context
+		NewContext(http.ResponseWriter, *http.Request, *types.Route) *Context
 
 		// NewClient 基于当前对象的相关字段创建 [Client] 对象
 		//
@@ -279,6 +279,7 @@ func InternalNewServer(
 	is.routers = &Routers{
 		g: mux.NewGroup(is.call,
 			notFound,
+			trace,
 			buildNodeHandle(http.StatusMethodNotAllowed),
 			buildNodeHandle(http.StatusOK),
 			o...),

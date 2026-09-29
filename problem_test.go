@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/mux/v9/header"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -34,7 +34,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx := srv.NewContext(w, r, types.NewContext())
+		ctx := srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:38"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
@@ -46,7 +46,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewContext())
+		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:50"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
@@ -58,7 +58,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewContext())
+		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(fs.ErrPermission, "").Apply(ctx)
 		a.Equal(w.Code, http.StatusForbidden)
 
@@ -67,7 +67,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewContext())
+		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(fs.ErrNotExist, "").Apply(ctx)
 		a.Equal(w.Code, http.StatusNotFound)
 	})
@@ -77,7 +77,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx := srv.NewContext(w, r, types.NewContext())
+		ctx := srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:81"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
@@ -89,7 +89,7 @@ func TestContext_Error(t *testing.T) {
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewContext())
+		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:93"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").

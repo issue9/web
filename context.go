@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v9/header"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -45,7 +45,7 @@ func ErrExitContext() error { return errExitContext }
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
 	s       *internalServer
-	route   types.Route
+	route   *types.Route
 	request *http.Request
 	exits   []OnExitContextFunc
 	id      string
@@ -82,7 +82,7 @@ type Context struct {
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, route types.Route) *Context {
+func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
 	id := r.Header.Get(s.requestIDKey)
 
 	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
@@ -192,7 +192,7 @@ func (ctx *Context) SetVar(key, val any) { ctx.vars[key] = val }
 func (ctx *Context) DelVar(key any) { delete(ctx.vars, key) }
 
 // Route 关联的路由信息
-func (ctx *Context) Route() types.Route { return ctx.route }
+func (ctx *Context) Route() *types.Route { return ctx.route }
 
 // Begin 当前对象的初始化时间
 func (ctx *Context) Begin() time.Time { return ctx.begin }

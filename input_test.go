@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/mux/v9/header"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/mux/v10/types"
 
 	"github.com/issue9/web/internal/qheader"
 )
@@ -38,12 +38,12 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, "*/*")
 	w = httptest.NewRecorder()
-	ctx = newTestServer(a).NewContext(w, r, types.NewContext())
+	ctx = newTestServer(a).NewContext(w, r, types.NewRoute())
 	return ctx, w
 }
 
-func newPathContext(kv ...string) *types.Context {
-	c := types.NewContext()
+func newPathContext(kv ...string) *types.Route {
+	c := types.NewRoute()
 	for i := 0; i < len(kv); i += 2 {
 		c.Set(kv[i], kv[i+1])
 	}
@@ -58,7 +58,7 @@ func TestPaths(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		a := assert.New(t, false)
-		ctx := s.NewContext(w, r, types.NewContext())
+		ctx := s.NewContext(w, r, types.NewRoute())
 		ps := ctx.Paths(false)
 		a.Equal(ps.Int64("id1"), 0).
 			NotNil(ps.Problem("41110"))
@@ -268,7 +268,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 	r.Header.Set(header.ContentType, header.JSON)
 	w := httptest.NewRecorder()
-	ctx := srv.NewContext(w, r, types.NewContext())
+	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	obj := &object{}
@@ -278,14 +278,14 @@ func TestContext_Unmarshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 	r.Header.Set(header.ContentType, header.JSON)
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r, types.NewContext())
+	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.Error(ctx.Unmarshal(``))
 
 	// 空提交
 	r = httptest.NewRequest(http.MethodPost, "/path", nil)
 	r.Header.Set(header.ContentType, header.JSON)
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r, types.NewContext())
+	ctx = srv.NewContext(w, r, types.NewRoute())
 	obj = &object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
@@ -294,7 +294,7 @@ func TestContext_Unmarshal(t *testing.T) {
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(objectGBKBytes))
 	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, "gb18030"))
 	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r, types.NewContext())
+	ctx = srv.NewContext(w, r, types.NewRoute())
 	obj = &object{}
 	a.NotError(ctx.Unmarshal(obj)).Equal(obj, objectInst)
 }
@@ -306,7 +306,7 @@ func TestContext_Read(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 	r.Header.Set(header.ContentType, header.JSON)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	obj := &object{}
 	a.Nil(ctx.Read(false, obj, "41110"))
@@ -315,7 +315,7 @@ func TestContext_Read(t *testing.T) {
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 	r.Header.Set(header.ContentType, header.JSON)
-	ctx = s.NewContext(w, r, types.NewContext())
+	ctx = s.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	resp := ctx.Read(false, ``, "41110")
 	a.NotNil(resp)

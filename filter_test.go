@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/types"
 )
 
 func TestFilterContext(t *testing.T) {
@@ -19,7 +19,7 @@ func TestFilterContext(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 
 	min2 := ValidatorRule(buildMinValidator(-2), Phrase("-2"))
 	min3 := ValidatorRule(buildMinValidator(-3), Phrase("-3"))
@@ -51,7 +51,7 @@ func TestFilterContext_New(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 
 	v := ctx.NewFilterContext(false)
 	v1 := v.New("v1.", func(f *FilterContext) {
@@ -74,7 +74,7 @@ func TestFilterContext_When(t *testing.T) {
 	s := newTestServer(a)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 
 	min18 := ValidatorRule(buildMinValidator(18), Phrase("不能小于 18"))
 	notEmpty := ValidatorRule(required[string], Phrase("不能为空"))

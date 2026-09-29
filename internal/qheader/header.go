@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024-2025 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import (
 	"io"
 
 	"github.com/goccy/go-yaml"
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 )

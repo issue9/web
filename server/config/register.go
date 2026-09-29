@@ -23,7 +23,7 @@ import (
 	"github.com/issue9/cache/caches/memory"
 	"github.com/issue9/cache/caches/redis"
 	"github.com/issue9/config"
-	"github.com/issue9/mux/v9"
+	"github.com/issue9/mux/v10"
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"

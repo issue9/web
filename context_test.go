@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/mux/v9/header"
-	"github.com/issue9/mux/v9/types"
+	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
 )
 
@@ -34,13 +34,13 @@ func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Co
 		r.Header.Set(header.Accept, "*/*")
 	}
 
-	return newTestServer(a).NewContext(w, r, types.NewContext())
+	return newTestServer(a).NewContext(w, r, types.NewRoute())
 }
 
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
-	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), types.NewContext())
+	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), types.NewRoute())
 	dur := 500 * time.Millisecond
 	begin := time.Now()
 
@@ -58,7 +58,7 @@ func TestNewContext(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.NotEmpty(w.Header().Get(header.XRequestID))
 	})
 
@@ -67,7 +67,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.XRequestID, "111")
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Header().Get(header.XRequestID), "111")
 	})
 
@@ -76,7 +76,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.Accept, "111")
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -85,7 +85,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.AcceptCharset, "111")
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -94,7 +94,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.AcceptEncoding, "*;q=0") // *;q=0
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
@@ -103,7 +103,7 @@ func TestNewContext(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		r.Header.Set(header.ContentType, "111")
 
-		s.NewContext(w, r, types.NewContext())
+		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusUnsupportedMediaType)
 	})
 }
@@ -115,7 +115,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, header.JSON)
-	ctx := srv.NewContext(w, r, types.NewContext())
+	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
@@ -139,7 +139,7 @@ func TestContext_SetCharset(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, header.JSON)
-	ctx := srv.NewContext(w, r, types.NewContext())
+	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
@@ -162,7 +162,7 @@ func TestContext_SetEncoding(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, header.JSON)
-	ctx := srv.NewContext(w, r, types.NewContext())
+	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
@@ -186,7 +186,7 @@ func TestContext_SetLanguage(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, header.JSON)
-	ctx := srv.NewContext(w, r, types.NewContext())
+	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	a.Equal(ctx.LanguageTag(), ctx.Server().Locale().ID())
@@ -202,13 +202,13 @@ func TestContext_IsXHR(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 	a.False(ctx.IsXHR())
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/p", nil)
 	r.Header.Set(header.XRequestedWith, "XMLHttpRequest")
-	ctx = s.NewContext(w, r, types.NewContext())
+	ctx = s.NewContext(w, r, types.NewRoute())
 	a.True(ctx.IsXHR())
 }
 
@@ -218,12 +218,12 @@ func TestContext_Idempotent(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	ctx := s.NewContext(w, r, types.NewContext())
+	ctx := s.NewContext(w, r, types.NewRoute())
 	a.True(ctx.Idempotent())
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPatch, "/p", nil)
-	ctx = s.NewContext(w, r, types.NewContext())
+	ctx = s.NewContext(w, r, types.NewRoute())
 	a.False(ctx.Idempotent())
 }
 

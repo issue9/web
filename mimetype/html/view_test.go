@@ -12,7 +12,7 @@ import (
 
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/logs/v7"
-	"github.com/issue9/mux/v9/header"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
