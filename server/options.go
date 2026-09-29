@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fpatron/jsonc/v2"
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/caches/memory"
@@ -141,9 +142,15 @@ type (
 	}
 )
 
-func jm(a any) ([]byte, error) { return json.Marshal(a) }
+func jsonMarshal(a any) ([]byte, error) { return json.Marshal(a) }
 
-func ju(b []byte, a any) error { return json.Unmarshal(b, a) }
+func jsonUnmarshal(b []byte, a any) error { return json.Unmarshal(b, a) }
+
+// JSONCMarshal jsonc 编码函数
+func JSONCMarshal(a any) ([]byte, error) { return json.Marshal(a) }
+
+// JSONCUnmarshal jsonc 解码函数
+func JSONCUnmarshal(b []byte, a any) error { return jsonc.Unmarshal(b, a) }
 
 func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	if o == nil {
@@ -152,7 +159,8 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 
 	if o.Config == nil {
 		s := make(config.Serializer, 4)
-		s.Add(jm, ju, ".json").
+		s.Add(jsonMarshal, jsonUnmarshal, ".json").
+			Add(JSONCMarshal, JSONCUnmarshal, ".jsonc").
 			Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
 			Add(xml.Marshal, xml.Unmarshal, ".xml").
 			Add(toml.Marshal, toml.Unmarshal, ".toml")

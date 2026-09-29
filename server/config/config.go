@@ -84,6 +84,7 @@ type configOf[T comparable] struct {
 	//  - xml 支持 .xml 后缀名的文件
 	//  - json 支持 .json 后缀名的文件
 	//  - toml 支持 .toml 后缀名的文件
+	//  - jsonc 支持 .jsonc 后缀名的文件
 	//
 	// 如果为空，表示支持以上所有格式。
 	FileSerializers []string `yaml:"fileSerializers,omitempty" json:"fileSerializers,omitempty" xml:"fileSerializers>fileSerializer,omitempty" toml:"fileSerializers,omitempty"`

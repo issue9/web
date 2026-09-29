@@ -211,6 +211,7 @@ func init() {
 	RegisterFileSerializer("xml", sx.Marshal, sx.Unmarshal, ".xml")
 	RegisterFileSerializer("yaml", sy.Marshal, sy.Unmarshal, ".yaml", ".yml")
 	RegisterFileSerializer("toml", st.Marshal, st.Unmarshal, ".toml")
+	RegisterFileSerializer("jsonc", server.JSONCMarshal, server.JSONCUnmarshal, ".jsonc")
 
 	// micro
 

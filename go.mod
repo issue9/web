@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/andybalholm/brotli v1.2.4
+	github.com/fpatron/jsonc/v2 v2.0.0-20260301162213-8bd9fe9747dd
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v5 v5.0.0
