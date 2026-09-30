@@ -264,15 +264,15 @@ func wrapDecoder(r io.ReadCloser, f func()) *decoder {
 }
 
 func (e *encoder) Close() error {
-	e.destroy()
 	err := e.WriteCloser.Close()
+	e.destroy()
 	encoderPool.Put(e)
 	return err
 }
 
 func (d *decoder) Close() error {
-	d.destroy()
 	err := d.ReadCloser.Close()
+	d.destroy()
 	decoderPool.Put(d)
 	return err
 }

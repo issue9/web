@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-var itemsPool = &sync.Pool{New: func() any { return new([]*Item) }}
+var itemsPool = &sync.Pool{New: func() any { return []*Item{} }}
 
 // Item 表示报头内容的单个元素内容
 //
@@ -24,7 +24,7 @@ type Item struct {
 	Err   error // 如果 Q 解析出错会出现在此
 }
 
-func PutQHeader(items *[]*Item) { itemsPool.Put(items) }
+func PutQHeader(items []*Item) { itemsPool.Put(items) }
 
 // ParseQHeader 解析报头内容
 //
@@ -40,7 +40,7 @@ func ParseQHeader(header string, any string) (items []*Item) {
 	}
 
 	headers := strings.Split(header, ",")
-	items = *itemsPool.Get().(*[]*Item)
+	items = itemsPool.Get().([]*Item)
 	il, hl := len(items), len(headers)
 	if il > hl {
 		items = items[:hl]
@@ -51,7 +51,7 @@ func ParseQHeader(header string, any string) (items []*Item) {
 	}
 
 	count := 0
-	for index, h := range headers {
+	for _, h := range headers {
 		if h = strings.TrimSpace(h); h == "" {
 			continue
 		}
@@ -63,13 +63,13 @@ func ParseQHeader(header string, any string) (items []*Item) {
 			q, err = strconv.ParseFloat(p, 32)
 		}
 
-		count++
-
 		// NOTE: 从 pool 取得的值，需要全部覆盖。
-		item := items[index]
+		item := items[count]
 		item.Value = v
 		item.Q = float32(q)
 		item.Err = err
+
+		count++
 	}
 	items = items[:count]
 	sortItems(items, any)

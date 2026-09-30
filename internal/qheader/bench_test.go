@@ -49,7 +49,7 @@ func BenchmarkParseQHeader(b *testing.B) {
 		for b.Loop() {
 			items := ParseQHeader(str, "*/*")
 			a.True(len(items) > 0)
-			PutQHeader(&items)
+			PutQHeader(items)
 		}
 	})
 
@@ -68,7 +68,7 @@ func BenchmarkParseQHeader(b *testing.B) {
 		for b.Loop() {
 			items := ParseQHeader(str, "*/*")
 			a.True(len(items) > 0)
-			PutQHeader(&items)
+			PutQHeader(items)
 		}
 	})
 }

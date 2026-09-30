@@ -204,7 +204,7 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptab
 	}
 
 	accepts := qheader.ParseQHeader(h, "*")
-	defer qheader.PutQHeader(&accepts)
+	defer qheader.PutQHeader(accepts)
 	if len(accepts) == 0 {
 		return
 	}
@@ -329,7 +329,7 @@ func (e *Codec) accept(h string) *mediaType {
 	}
 
 	items := qheader.ParseQHeader(h, "*/*")
-	defer qheader.PutQHeader(&items)
+	defer qheader.PutQHeader(items)
 	for _, item := range items {
 		if i := e.findMarshal(item.Value); i != nil {
 			return i

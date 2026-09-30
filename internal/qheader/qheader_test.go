@@ -51,6 +51,11 @@ func TestParse(t *testing.T) {
 
 	items = ParseQHeader("utf-8;q=x.9,gbk;q=0.8", "*/*")
 	a.Length(items, 2)
+
+	items = ParseQHeader("aaa;q=0.9, bbb;q=0.5", "*/*")
+	a.Length(items, 2).Equal(items[0].Value, "aaa").Equal(items[1].Value, "bbb")
+	items = ParseQHeader("xxx, , yyy", "*/*")
+	a.Length(items, 2).Equal(items[0].Value, "xxx").Equal(items[1].Value, "yyy")
 }
 
 func TestSortItems(t *testing.T) {
