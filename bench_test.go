@@ -16,6 +16,7 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v5"
+	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/routertest"
 	"github.com/issue9/mux/v10/types"
@@ -25,7 +26,6 @@ import (
 
 func BenchmarkRouter(b *testing.B) {
 	a := assert.New(b, false)
-	s := newTestServer(a)
 
 	h := func(c *Context) Responser {
 		_, err := c.Write([]byte(c.Request().URL.Path))
@@ -35,7 +35,19 @@ func BenchmarkRouter(b *testing.B) {
 		return nil
 	}
 
-	routertest.NewTester(s.internalServer.call, notFound, trace, buildNodeHandle(http.StatusMethodNotAllowed), buildNodeHandle(http.StatusOK)).Bench(b, h)
+	tt := routertest.NewTester(func(o ...mux.Option) *routertest.TestRouter[HandlerFunc] {
+		s := newTestServer(a)
+		r := s.Routers().g.New("main", nil, o...)
+		return &routertest.TestRouter[HandlerFunc]{
+			ServeHTTP: s.routers.g.ServeHTTP,
+			Handle:    func(pattern string, h HandlerFunc, methods ...string) { r.Handle(pattern, h, nil, methods...) },
+			Clean:     r.Clean,
+			Remove:    r.Remove,
+			URL:       r.URL,
+		}
+	})
+
+	tt.Bench(b, h)
 }
 
 func BenchmarkNewContext(b *testing.B) {

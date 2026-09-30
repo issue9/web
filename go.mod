@@ -10,13 +10,13 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v5 v5.0.0
 	github.com/issue9/cache v0.20.0
-	github.com/issue9/cmdopt v0.15.1
+	github.com/issue9/cmdopt v0.16.0
 	github.com/issue9/config v0.10.0
 	github.com/issue9/conv v1.4.0
 	github.com/issue9/errwrap v0.4.0
 	github.com/issue9/localeutil v0.34.0
 	github.com/issue9/logs/v7 v7.7.0
-	github.com/issue9/mux/v10 v10.0.0-beta.1
+	github.com/issue9/mux/v10 v10.0.0-beta.2
 	github.com/issue9/query/v3 v3.2.0
 	github.com/issue9/scheduled v0.23.0
 	github.com/issue9/sliceutil v0.18.0
@@ -33,6 +33,7 @@ require (
 )
 
 require (
+	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/issue9/rands/v3 v3.2.0 // indirect

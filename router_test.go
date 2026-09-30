@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/issue9/assert/v5"
@@ -22,11 +23,11 @@ func TestRouters(t *testing.T) {
 	r1 := rs.New("r1", nil)
 	a.NotNil(r1)
 	a.Equal(r1, rs.Get("r1")).
-		Length(rs.Routers(), 1)
+		Length(slices.Collect(rs.Routers()), 1)
 
 	rs.Remove("r1")
 	a.Nil(rs.Get("r1")).
-		Length(rs.Routers(), 0)
+		Length(slices.Collect(rs.Routers()), 0)
 }
 
 func TestRouters_Handle(t *testing.T) {
@@ -70,19 +71,19 @@ func TestRouters_Handle(t *testing.T) {
 	r = httptest.NewRequest(http.MethodGet, "/panic-http-error", nil)
 	router.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusConflict).
-		Contains(s.logBuf.String(), "router_test.go:44")
+		Contains(s.logBuf.String(), "router_test.go:45")
 
 	s.logBuf.Reset()
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/panic-error", nil)
 	router.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError).
-		Contains(s.logBuf.String(), "router_test.go:47")
+		Contains(s.logBuf.String(), "router_test.go:48")
 
 	s.logBuf.Reset()
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodGet, "/panic-string", nil)
 	router.ServeHTTP(w, r)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError).
-		Contains(s.logBuf.String(), "router_test.go:50")
+		Contains(s.logBuf.String(), "router_test.go:51")
 }

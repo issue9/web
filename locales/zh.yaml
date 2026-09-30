@@ -39,6 +39,7 @@ messages:
 - key: cmd.usage
   message:
     msg: |
+      {{name}}  {{version}}
       参数
         {{flags}}
       子命令

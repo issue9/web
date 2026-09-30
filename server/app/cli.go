@@ -183,7 +183,9 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 				ErrorHandling: o.ErrorHandling,
 				UsageTemplate: cmdUsage.LocaleString(o.Printer),
 				Command:       rootCmd,
-				NotFound:      func(s string) string { return web.Phrase("command %s not found", s).LocaleString(o.Printer) },
+				NotFound: func(_ *cmdopt.CmdOpt, s string, _ []string) string {
+					return web.Phrase("command %s not found", s).LocaleString(o.Printer)
+				},
 			})
 
 			// help 子命令
