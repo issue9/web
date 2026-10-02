@@ -81,23 +81,23 @@ func TestNewPrinter(t *testing.T) {
 	a.NotError(c.SetString(language.MustParse("zh-CN"), "k1", "zh-cn")).
 		NotError(c.SetString(language.MustParse("zh-TW"), "k1", "zh-tw"))
 
-	p, ok := NewPrinter(language.MustParse("und"), c)
-	a.Equal(p.Sprintf("k1"), "zh-tw").False(ok)
+	p, tag := NewPrinter(language.MustParse("und"), c)
+	a.Equal(p.Sprintf("k1"), "zh-tw").Equal(tag, language.MustParse("zh-TW"))
 }
 
 func Test_Load(t *testing.T) {
 	a := assert.New(t, false)
 
 	s := make(config.Serializer, 2)
-	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
-	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
+		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 	b := catalog.NewBuilder()
 	a.NotError(Load(s, b, "*.*", os.DirFS("./testdata")))
 
 	// zh-hant.xml
 
-	p, exact := NewPrinter(language.MustParse("zh-hant"), b)
-	a.True(exact).NotNil(p)
+	p, tag := NewPrinter(language.MustParse("zh-hant"), b)
+	a.Equal(tag, language.MustParse("zh-Hant")).NotNil(p)
 
 	a.Equal(p.Sprintf("k1"), "zh-hant")
 
@@ -111,8 +111,8 @@ func Test_Load(t *testing.T) {
 
 	// zh.yaml
 
-	p, exact = NewPrinter(language.MustParse("zh-Hans"), b)
-	a.True(exact).NotNil(p)
+	p, tag = NewPrinter(language.MustParse("zh-Hans"), b)
+	a.Equal(tag, language.MustParse("cmn-Hans")).NotNil(p)
 
 	a.Equal(p.Sprintf("k1"), "zh")
 
@@ -124,23 +124,18 @@ func Test_Load(t *testing.T) {
 	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
 	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
 
-	p, exact = NewPrinter(language.MustParse("cmn-Hans"), b)
-	a.True(exact).NotNil(p)
+	p, _ = NewPrinter(language.MustParse("cmn-Hans"), b)
 	a.Equal(p.Sprintf("k1"), "zh")
 
-	p, exact = NewPrinter(language.MustParse("zh-cmn-Hans"), b)
-	a.True(exact).NotNil(p)
+	p, _ = NewPrinter(language.MustParse("zh-cmn-Hans"), b)
 	a.Equal(p.Sprintf("k1"), "zh")
 
-	p, exact = NewPrinter(language.MustParse("zh"), b)
-	a.True(exact).NotNil(p)
+	p, _ = NewPrinter(language.MustParse("zh"), b)
 	a.Equal(p.Sprintf("k1"), "zh")
 
-	p, exact = NewPrinter(language.MustParse("zh-CN"), b)
-	a.True(exact).NotNil(p)
+	p, _ = NewPrinter(language.MustParse("zh-CN"), b)
 	a.Equal(p.Sprintf("k1"), "zh")
 
-	p, exact = NewPrinter(language.MustParse("cmn"), b)
-	a.True(exact).NotNil(p)
+	p, _ = NewPrinter(language.MustParse("cmn"), b)
 	a.Equal(p.Sprintf("k1"), "zh")
 }

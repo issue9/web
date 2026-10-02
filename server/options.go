@@ -14,7 +14,7 @@ import (
 	"github.com/fpatron/jsonc/v2"
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/cache"
-	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/cache/drivers/memory"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
@@ -56,7 +56,7 @@ type (
 
 		// 缓存系统
 		//
-		// 如果为空，采用 [github.com/issue9/cache/caches/memory.New] 作为默认值。
+		// 如果为空，采用 [github.com/issue9/cache/drivers/memory.New] 作为默认值。
 		Cache cache.Driver
 
 		// 日志系统

@@ -14,7 +14,7 @@ import (
 
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/cache"
-	"github.com/issue9/cache/caches/memory"
+	"github.com/issue9/cache/drivers/memory"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/header"
@@ -52,7 +52,6 @@ func TestNew(t *testing.T) {
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
 		NotNil(d).
-		NotNil(d.Driver()).
 		True(srv.CanCompress())
 	srv.SetCompress(false)
 	a.False(srv.CanCompress())

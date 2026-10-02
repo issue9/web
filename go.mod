@@ -9,7 +9,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v5 v5.0.0
-	github.com/issue9/cache v0.20.0
+	github.com/issue9/cache v0.21.0
 	github.com/issue9/cmdopt v0.16.0
 	github.com/issue9/config v0.10.0
 	github.com/issue9/conv v1.4.0
