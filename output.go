@@ -136,12 +136,8 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		}
 
 		if l := len(closes); l > 0 {
-			if l > 1 {
-				slices.Reverse(closes)
-			}
-
 			ctx.OnExit(func(*Context, int) {
-				for _, c := range closes {
+				for _, c := range slices.Backward(closes) {
 					if err := c.Close(); err != nil {
 						ctx.Logs().ERROR().Error(err)
 					}

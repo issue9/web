@@ -51,6 +51,7 @@ func BenchmarkRouter(b *testing.B) {
 }
 
 func BenchmarkNewContext(b *testing.B) {
+	b.ReportAllocs()
 	a := assert.New(b, false)
 	s := newTestServer(a)
 
@@ -66,10 +67,12 @@ func BenchmarkNewContext(b *testing.B) {
 }
 
 func BenchmarkContext_Render(b *testing.B) {
+	b.ReportAllocs()
 	a := assert.New(b, false)
 	s := newTestServer(a)
 
 	b.Run("none", func(b *testing.B) {
+		b.ReportAllocs()
 		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
@@ -84,6 +87,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("utf8", func(b *testing.B) {
+		b.ReportAllocs()
 		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
@@ -98,6 +102,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("gbk", func(b *testing.B) {
+		b.ReportAllocs()
 		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
@@ -113,6 +118,7 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 
 	b.Run("charset; encoding", func(b *testing.B) {
+		b.ReportAllocs()
 		for b.Loop() {
 			r := httptest.NewRequest(http.MethodGet, "/path", nil)
 			r.Header.Set(header.Accept, header.JSON)
@@ -134,6 +140,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
+	b.ReportAllocs()
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
@@ -153,6 +160,7 @@ func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a)
 
+	b.ReportAllocs()
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
@@ -176,6 +184,7 @@ func BenchmarkContext_Object(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
+	b.ReportAllocs()
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -191,6 +200,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	s := newTestServer(a)
 	o := &object{}
 
+	b.ReportAllocs()
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -202,6 +212,7 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 }
 
 func BenchmarkNewProblem(b *testing.B) {
+	b.ReportAllocs()
 	for b.Loop() {
 		p := newProblem()
 		p.Type = "id"
@@ -216,6 +227,7 @@ func BenchmarkNewProblem(b *testing.B) {
 func BenchmarkProblem_unmarshal_json(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a)
+	b.ReportAllocs()
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -237,6 +249,7 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 func BenchmarkNewFilterContext(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a)
+	b.ReportAllocs()
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", nil)
@@ -252,6 +265,8 @@ func BenchmarkNewFilterContext(b *testing.B) {
 }
 
 func BenchmarkCodec_NewEncoder(b *testing.B) {
+	b.ReportAllocs()
+
 	b.Run("gzip", func(b *testing.B) {
 		benchCompressor_NewEncoder(b, NewGzip(3))
 	})
@@ -278,6 +293,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("gzip", func(b *testing.B) {
 		c := NewGzip(3)
+		b.ReportAllocs()
 		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(gzipInitData))
 			a.NotError(err).
@@ -288,6 +304,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("zstd", func(b *testing.B) {
 		c := NewZstd()
+		b.ReportAllocs()
 		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(zstdInitData))
 			a.NotError(err).
@@ -298,6 +315,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("deflate", func(b *testing.B) {
 		c := NewDeflate(3, nil)
+		b.ReportAllocs()
 		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(deflateInitData))
 			a.NotError(err).
@@ -308,6 +326,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("lzw", func(b *testing.B) {
 		c := NewLZW(lzw.LSB, 5)
+		b.ReportAllocs()
 		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(lzwInitData))
 			a.NotError(err).
@@ -318,6 +337,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 
 	b.Run("br", func(b *testing.B) {
 		c := NewBrotli(brotli.WriterOptions{})
+		b.ReportAllocs()
 		for b.Loop() {
 			wc, err := c.NewDecoder(bytes.NewBuffer(brotliInitData))
 			a.NotError(err).
@@ -330,6 +350,7 @@ func BenchmarkCodec_NewDecoder(b *testing.B) {
 func benchCompressor_NewEncoder(b *testing.B, c Compressor) {
 	a := assert.New(b, false)
 	w := &bytes.Buffer{}
+	b.ReportAllocs()
 	for b.Loop() {
 		w.Reset()
 
@@ -343,6 +364,7 @@ func benchCompressor_NewEncoder(b *testing.B, c Compressor) {
 func BenchmarkCodec_accept(b *testing.B) {
 	a := assert.New(b, false)
 	mt := newCodec(a)
+	b.ReportAllocs()
 
 	for b.Loop() {
 		item := mt.accept("application/json;q=0.9")
@@ -357,6 +379,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
+		b.ReportAllocs()
 		for b.Loop() {
 			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8))
 			a.NotError(err).NotNil(marshal).Nil(encoding)
@@ -366,6 +389,7 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	b.Run("charset=gbk", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ResetTimer()
+		b.ReportAllocs()
 		for b.Loop() {
 			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, "gbk"))
 			a.NotError(err).NotNil(marshal).NotNil(encoding)
@@ -380,16 +404,20 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 		c := NewCodec()
 		a.NotNil(c)
 		c.AddCompressor(NewZstd(), "application/*")
+		b.ReportAllocs()
 
+		r := bytes.NewBuffer([]byte{})
+		var err error
 		for b.Loop() {
-			r := bytes.NewBuffer([]byte{})
-			_, err := c.contentEncoding("zstd", r)
-			a.NotError(err)
+			r.Reset()
+			_, err = c.contentEncoding("zstd", r)
 		}
+		a.NotError(err)
 	})
 
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
+		b.ReportAllocs()
 
 		c := NewCodec()
 		a.NotNil(c)
@@ -399,17 +427,20 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 			AddCompressor(NewZstd(), "application/*").
 			AddCompressor(NewLZW(lzw.LSB, 8), header.Plain)
 
+		r := bytes.NewBuffer([]byte{})
+		var err error
 		for b.Loop() {
-			r := bytes.NewBuffer([]byte{})
-			_, err := c.contentEncoding("zstd", r)
-			a.NotError(err)
+			r.Reset()
+			_, err = c.contentEncoding("zstd", r)
 		}
+		a.NotError(err)
 	})
 }
 
 func BenchmarkCodec_acceptEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
+		b.ReportAllocs()
 
 		c := NewCodec()
 		a.NotNil(c)
@@ -423,6 +454,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 
 	b.Run("5", func(b *testing.B) {
 		a := assert.New(b, false)
+		b.ReportAllocs()
 
 		c := NewCodec()
 		a.NotNil(c)
@@ -441,6 +473,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 
 func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 	a := assert.New(b, false)
+	b.ReportAllocs()
 
 	c := NewCodec()
 	a.NotNil(c)
