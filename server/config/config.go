@@ -21,6 +21,7 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10"
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
@@ -326,6 +327,6 @@ func NewPrinter(glob string, fsys ...fs.FS) (*localeutil.Printer, error) {
 		return nil, err
 	}
 
-	p, _ := locale.NewPrinter(tag, b)
-	return p, nil
+	tag, _, _ = b.Matcher().Match(tag) // 从 b 中查找最合适的 tag
+	return message.NewPrinter(tag, message.Catalog(b)), nil
 }

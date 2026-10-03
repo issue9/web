@@ -29,8 +29,8 @@
                 <case case="other">2</case>
             </var>
             <var name="string" arg="1" format="%d">
-                <case case="=1">一</case>
-                <case case="other">二</case>
+                <case case="=1">壹</case>
+                <case case="other">贰</case>
             </var>
         </message>
     </message>

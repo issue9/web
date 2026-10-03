@@ -13,7 +13,6 @@ import (
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message/catalog"
 )
 
 func TestLocale_Printer(t *testing.T) {
@@ -55,87 +54,49 @@ func TestLocale_AcceptLanguage(t *testing.T) {
 
 func TestLocale_NewPrinter(t *testing.T) {
 	a := assert.New(t, false)
-	l := New(language.SimplifiedChinese, nil)
-	a.NotNil(l).Equal(l.ID(), language.SimplifiedChinese)
+	s := make(config.Serializer, 2)
+	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
+		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	conf, err := config.New(s, "./testdata", nil)
+	a.NotError(err).NotNil(conf)
+	l := New(language.MustParse("cmn-Hans"), conf)
+	a.NotNil(l).Equal(l.ID(), language.MustParse("cmn-Hans"))
 
-	// language.SimplifiedChinese 是默认的 ID，初始化 l 时即已存在。
+	// language.MustParse("cmn-Hans") 是默认的 ID，初始化 l 时即已存在。
 
-	p1 := l.NewPrinter(language.SimplifiedChinese)
-	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans"))
-	p2 := l.NewPrinter(language.SimplifiedChinese)
+	p1 := l.NewPrinter(language.MustParse("cmn-Hans"))
+	a.NotError(l.SetString(language.MustParse("cmn-Hans"), "lang", "hans"))
+
+	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./testdata")))
+	p2 := l.NewPrinter(language.MustParse("cmn-Hans"))
 	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+	a.Equal(p2.Sprintf("k1"), "zh")
+
+	a.Equal(p2.Sprintf("k2", 1), "msg-1")
+	a.Equal(p2.Sprintf("k2", 3), "msg-3")
+	a.Equal(p2.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p2.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p2.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p2.Sprintf("k3", 2, 2), "2-二")
 
 	// language.TraditionalChinese 在调用 SetString 之前不存在，
 	// 所以 p1 会匹配成其它相似的值，p2 则会准确匹配到 TraditionalChinese。
 
 	p1 = l.NewPrinter(language.TraditionalChinese)
 	a.NotError(l.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	a.NotError(l.LoadMessages("*.xml", os.DirFS("./testdata")))
 	p2 = l.NewPrinter(language.TraditionalChinese)
 	a.NotEqual(p1.Sprintf("lang"), p2.Sprintf("lang"))
-}
 
-func TestNewPrinter(t *testing.T) {
-	a := assert.New(t, false)
+	a.Equal(p2.Sprintf("k1"), "zh-hant")
 
-	c := catalog.NewBuilder(catalog.Fallback(language.MustParse("zh-TW")))
-	a.NotError(c.SetString(language.MustParse("zh-CN"), "k1", "zh-cn")).
-		NotError(c.SetString(language.MustParse("zh-TW"), "k1", "zh-tw"))
+	a.Equal(p2.Sprintf("k2", 1), "msg-1")
+	a.Equal(p2.Sprintf("k2", 3), "msg-3")
+	a.Equal(p2.Sprintf("k2", 5), "msg-other")
 
-	p, tag := NewPrinter(language.MustParse("und"), c)
-	a.Equal(p.Sprintf("k1"), "zh-tw").Equal(tag, language.MustParse("zh-TW"))
-}
-
-func Test_Load(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := make(config.Serializer, 2)
-	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
-		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-	b := catalog.NewBuilder()
-	a.NotError(Load(s, b, "*.*", os.DirFS("./testdata")))
-
-	// zh-hant.xml
-
-	p, tag := NewPrinter(language.MustParse("zh-hant"), b)
-	a.Equal(tag, language.MustParse("zh-Hant")).NotNil(p)
-
-	a.Equal(p.Sprintf("k1"), "zh-hant")
-
-	a.Equal(p.Sprintf("k2", 1), "msg-1")
-	a.Equal(p.Sprintf("k2", 3), "msg-3")
-	a.Equal(p.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
-
-	// zh.yaml
-
-	p, tag = NewPrinter(language.MustParse("zh-Hans"), b)
-	a.Equal(tag, language.MustParse("cmn-Hans")).NotNil(p)
-
-	a.Equal(p.Sprintf("k1"), "zh")
-
-	a.Equal(p.Sprintf("k2", 1), "msg-1")
-	a.Equal(p.Sprintf("k2", 3), "msg-3")
-	a.Equal(p.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p.Sprintf("k3", 2, 2), "2-二")
-
-	p, _ = NewPrinter(language.MustParse("cmn-Hans"), b)
-	a.Equal(p.Sprintf("k1"), "zh")
-
-	p, _ = NewPrinter(language.MustParse("zh-cmn-Hans"), b)
-	a.Equal(p.Sprintf("k1"), "zh")
-
-	p, _ = NewPrinter(language.MustParse("zh"), b)
-	a.Equal(p.Sprintf("k1"), "zh")
-
-	p, _ = NewPrinter(language.MustParse("zh-CN"), b)
-	a.Equal(p.Sprintf("k1"), "zh")
-
-	p, _ = NewPrinter(language.MustParse("cmn"), b)
-	a.Equal(p.Sprintf("k1"), "zh")
+	a.Equal(p2.Sprintf("k3", 1, 1), "1-壹")
+	a.Equal(p2.Sprintf("k3", 1, 2), "2-壹")
+	a.Equal(p2.Sprintf("k3", 2, 2), "2-贰")
 }

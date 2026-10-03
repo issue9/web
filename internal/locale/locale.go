@@ -27,10 +27,10 @@ const maxPrinterIdle = 10 * time.Minute
 // Locale 实现了 web.Locale 接口
 type Locale struct {
 	*catalog.Builder
-	id      language.Tag
-	config  *config.Config
-	printer *message.Printer
-	ttl     *ttlcache.Cache[language.Tag, *message.Printer]
+	id       language.Tag
+	config   *config.Config
+	printer  *message.Printer
+	printers *ttlcache.Cache[language.Tag, *message.Printer]
 
 	acceptLanguage string // 根据内容生成 Accept-Language 报头
 }
@@ -44,13 +44,13 @@ func New(id language.Tag, conf *config.Config) *Locale {
 		panic(err)
 	}
 
-	p, _ := NewPrinter(id, b)
+	id, _, _ = b.Matcher().Match(id) // 从 b 中查找最合适的 tag
 	return &Locale{
 		Builder: b,
 		id:      id,
 		config:  conf,
-		printer: p,
-		ttl: ttlcache.New(
+		printer: message.NewPrinter(id, message.Catalog(b)),
+		printers: ttlcache.New(
 			ttlcache.WithCapacity[language.Tag, *message.Printer](maxPrinters),
 			ttlcache.WithTTL[language.Tag, *message.Printer](maxPrinterIdle),
 		),
@@ -82,7 +82,7 @@ func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
 	}
 
 	l.acceptLanguage = buildAcceptLanguage(l.Builder)
-	l.ttl.DeleteAll()
+	l.printers.DeleteAll()
 
 	return nil
 }
@@ -98,12 +98,18 @@ func (l *Locale) NewPrinter(id language.Tag) *message.Printer {
 		return l.Printer()
 	}
 
-	if item := l.ttl.Get(id); item != nil {
+	if item := l.printers.Get(id); item != nil {
 		return item.Value()
 	}
 
-	p, tag := NewPrinter(id, l)
-	l.ttl.Set(tag, p, ttlcache.DefaultTTL)
+	// 从 l 中查找最合适的 tag
+	id, _, _ = l.Matcher().Match(id)
+	if item := l.printers.Get(id); item != nil {
+		return item.Value()
+	}
+
+	p := message.NewPrinter(id, message.Catalog(l))
+	l.printers.Set(id, p, maxPrinterIdle)
 	return p
 }
 
@@ -112,7 +118,7 @@ func (l *Locale) SetString(tag language.Tag, key, msg string) error {
 	if err := l.Builder.SetString(tag, key, msg); err != nil {
 		return err
 	}
-	l.ttl.DeleteAll()
+	l.printers.DeleteAll()
 	return nil
 }
 
@@ -121,7 +127,7 @@ func (l *Locale) SetMacro(tag language.Tag, name string, msg ...catalog.Message)
 	if err := l.Builder.SetMacro(tag, name, msg...); err != nil {
 		return err
 	}
-	l.ttl.DeleteAll()
+	l.printers.DeleteAll()
 	return nil
 }
 
@@ -130,14 +136,8 @@ func (l *Locale) Set(tag language.Tag, key string, msg ...catalog.Message) error
 	if err := l.Builder.Set(tag, key, msg...); err != nil {
 		return err
 	}
-	l.ttl.DeleteAll()
+	l.printers.DeleteAll()
 	return nil
-}
-
-// NewPrinter 从 cat 是查找最符合 tag 的语言 ID 并返回对应的 [message.Printer] 对象
-func NewPrinter(tag language.Tag, cat catalog.Catalog) (*message.Printer, language.Tag) {
-	tag, _, _ = cat.Matcher().Match(tag) // 从 cat 中查找最合适的 tag
-	return message.NewPrinter(tag, message.Catalog(cat)), tag
 }
 
 func Load(s config.Serializer, b *catalog.Builder, glob string, fsys ...fs.FS) error {
