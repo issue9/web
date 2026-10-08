@@ -49,9 +49,8 @@ func TestClient_ParseResponse(t *testing.T) {
 		NotNil(c.marshal)
 
 	t.Run("empty", func(*testing.T) {
-		resp := &http.Response{}
-		p := newProblem
-		a.NotError(c.ParseResponse(resp, nil, p))
+		resp, err := c.ParseResponse[struct{}, any](&http.Response{})
+		a.NotError(err).Nil(resp)
 	})
 
 	t.Run("content-length=0", func(*testing.T) {
@@ -59,7 +58,8 @@ func TestClient_ParseResponse(t *testing.T) {
 			Header: http.Header{},
 		}
 		resp.Header.Set(header.ContentLength, "0")
-		a.NotError(c.ParseResponse(resp, nil, nil))
+		res, err := c.ParseResponse[any, any](resp)
+		a.NotError(err).Nil(res)
 	})
 
 	t.Run("normal", func(*testing.T) {
@@ -82,8 +82,7 @@ func TestClient_ParseResponse(t *testing.T) {
 			ContentLength: int64(body.Len()),
 		}
 
-		rsp := &object{}
-		p := newProblem
-		a.NotError(c.ParseResponse(resp, rsp, p)).Equal(rsp, obj)
+		rsp, err := c.ParseResponse[object, any](resp)
+		a.NotError(err).Equal(rsp, obj)
 	})
 }

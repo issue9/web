@@ -330,8 +330,7 @@ func (s *internalServer) OnExitContext(f ...OnExitContextFunc) {
 func (s *internalServer) Logs() *Logs { return s.logs }
 
 func (s *internalServer) close() {
-	slices.Reverse(s.closes)
-	for _, f := range s.closes {
+	for _, f := range slices.Backward(s.closes) {
 		if err := f(); err != nil { // 出错不退出，继续其它操作。
 			s.Logs().ERROR().Error(err)
 		}
